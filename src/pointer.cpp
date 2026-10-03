@@ -15,7 +15,7 @@ const HitRegion* App::hit_at(int x,int y)const{
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
-        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24);
+        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25);
 }
 void App::pointer_cancel(){pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
@@ -43,6 +43,7 @@ void App::pointer_scroll(int rows){
     if(!rows)return;
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
+    if(map_preview.open&&map_preview.editing)return;
     if(map_preview.open){map_preview.first_row=clamp(map_preview.first_row-rows,0,int(map_preview.map.config.rows)-3);return;}
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(title||paused||help)return;
@@ -116,6 +117,13 @@ void App::pointer_button(bool down){
     case HitKind::Close:pointer_key(Key::Back);break;
     case HitKind::DetailClose:detail_card=-1;break;
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
+    case HitKind::ReferenceAction:
+        pointer_cancel();
+        if(hit.value==0)map_preview.begin_edit();
+        else if(hit.value==1)map_preview.change_act();
+        else if(hit.value==2){map_preview.settings.increased_elites=!map_preview.settings.increased_elites;map_preview.generate();}
+        break;
+    case HitKind::SeedCharacter:reference_text(hit.value);break;
     default:break;
     }
 }

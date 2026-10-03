@@ -1,27 +1,51 @@
-# Map and seed scope — 0.5
+# Map and seed scope — 0.6
 
-Reference: **v0.111.0 / 41cef1ea**, verified against the supplied assembly/PCK hashes. Original assemblies and CIL dumps are not distributed.
+Reference: **v0.111.0 / 41cef1ea**, pinned in `config/reference-release.json`. The supplied assembly's SHA-256 was rechecked for this work. Assemblies, disassembly and private reference runners are not distributed.
 
-## Implemented
+## Implemented pipeline
 
-`reference_rng.cpp` implements XXH64, SplitMix64 initialization, xoshiro256** state transitions and named streams. Bounded sampling reproduces the inspected binary64 multiply-and-truncate path using integer limbs, including nearest-even rounding. ASCII seed normalization uppercases, maps O to 0 and I to 1, and trims outer whitespace. Unicode and the old-seed compatibility path are explicitly unsupported.
+The 0.5 explicit-quota constructor is now preceded by `act_quotas`, consuming the same named random stream before path generation. `generate_act_map` composes seed hashing, `act_<one-based index>_map`, quota generation and the existing seven-column generator. It keeps quota call counts separately and preserves the generator's stage counts and final random state.
 
-`reference_map.cpp` ports the **explicit-quota StandardActMap constructor**. Its input is a configured RNG state and counts for rests, shops, elites and unknown rooms. It implements seven-column paths, crossover checks, fixed room rows, constrained room assignment, duplicate-segment pruning, edge breaking, quota repair, centering, spreading and straightening.
+The inspected **integer** Gaussian branch uses two fresh random draws per attempt:
 
-Enumeration order is part of the behavior: candidate points sort by column then row before shuffling; edge sets preserve slot order after removals; segment groups use ordinal keys. Repair runs in the original shop/elite/rest/unknown order. The API records RNG call counts after paths, types, pruning and layout, and retains the final four-word state.
+```
+u1 = 1 - NextDouble()
+u2 = 1 - NextDouble()
+z = sqrt(-2 * log(u1)) * sin(2 * pi * u2)
+value = RoundToEven(mean + deviation * z)
+```
 
-The bounded workspace stores segment references instead of duplicate key strings. Capacity failures return an explicit error; they never fall back to a different map. The tested workspace is 1,114,120 bytes, separate from the 3,216-byte graph object.
+Values outside the inclusive bounds are rejected and both draws are repeated. This is not the cosine-based floating Gaussian overload, a clamped normal variable or a cached pair of normal samples.
 
-## Preview versus original run
+| Region model | Stream | Map rows, solo | Rest quota | Unknown quota |
+|---|---|---:|---|---|
+| Overgrowth | `act_1_map` | 16 | Gaussian(7, 1, 6, 7) | Gaussian(12, 1, 10, 14) |
+| Underdocks | `act_1_map` | 16 | Gaussian(7, 1, 6, 7) | Gaussian(12, 1, 10, 14) |
+| Hive | `act_2_map` | 15 | Gaussian(6, 1, 6, 7) | Gaussian(12, 1, 10, 14) minus 1 |
+| Glory | `act_3_map` | 14 | NextInt(5, 7), upper exclusive | Gaussian(12, 1, 10, 14) minus 1 |
 
-The title menu's reference preview uses `act_1_map`, canonical `NSP1RE-<number>` demonstration seeds and fixed quotas: seven rests, three shops, five elites and twelve unknown rooms, with a sixteen-row configuration. These are explicit inputs to the ported constructor, not a claim about the quotas the original game would choose for the same text seed.
+Shops have quota 3; elites have quota 5 or 8 according to the increased-elite setting. The API also carries the inspected multiplayer row reduction, treasure replacement and second-boss flags. These flags do not implement multiplayer or the corresponding encounters. The preview exposes region and elite-quota controls only.
 
-**Original Gaussian quota generation is not connected.** Its RNG consumption must precede construction exactly as in the reference. The preview therefore remains separate from the existing 12×3 expedition, whose xorshift streams and version-3 saves are unchanged. It does not substitute Nibbits for original map encounters.
+Quota means requested room counts, not a guarantee that the constrained/repaired final graph contains exactly that many rooms of each kind. Fixed rows and generation constraints also contribute to the result.
 
-## Comparison evidence
+## Portable arithmetic and boundaries
 
-Ten explicit-input cases matched restricted original-CIL replay: seeds 0, 1, 2, 3, 4, 5, 0xffffffffffffffff and 0x20261003 with the default explicit configuration; seeds 7 and 42 with six rests, ten unknowns, eight elites, treasure replacement and a second boss. Comparisons included node coordinates, types, modifiability, ordered child edges, all four stage call counts and final RNG state.
+`reference_math.cpp` implements software binary64 arithmetic using fixed-width integer limbs, with no hardware FPU, target floating-point library, fused multiply/add or 128-bit integer requirement. Elementary functions are adapted from the Go math implementations; original notices and the BSD license are retained.
 
-The reference runner executes the relevant original method bodies with bounded collection/LINQ/runtime adapters. It is not the full original executable and has its own possible adapter defects. A separate 1,000-map ASan/UBSan configuration-varying run checked graph structure, not original parity for all 1,000 maps.
+The arithmetic and bounded integer sampler round nearest-even. Logarithm and sine are approximations: **they are not claimed to reproduce every last bit of Windows' original math library**. Inputs to the quota sampler are bounded. If a value is within 2^-36 of a half-integer, generation returns `AmbiguousRounding` instead of silently selecting a side or consuming replacement random draws. The guard is conservative engineering protection, not a proof of universal cross-library equivalence. Other failures are explicit as well.
 
-Next acceptance: original quota generation and its floating-point boundaries; actual reference-run snapshots; exact default seeded topology; original room/encounter pools and full-run random call order. A matching explicit-quota graph alone is not PC seed compatibility.
+Seed entry accepts 1–64 ASCII characters after normalization. It uppercases, replaces O/I with 0/1, and trims outer whitespace. Unicode normalization and the raw lowercase `old` legacy seed path remain unsupported; the editor rejects that legacy prefix. These input limits are not advertised as the complete original seed-input specification.
+
+## Evidence from this iteration
+
+The private reference runner decodes and executes the relevant original `GetMapPointTypes`, standard-unknown-count and `NextGaussianInt` CIL method bodies, with adapters for the original random stream, constructors and host math calls. It evaluated 2,238,619 original instructions over **20,016 cases**: 16,016 region-quota cases and 4,000 sampler argument cases. Quotas, random call counts and final four-word RNG states matched the C++ implementation. Of those cases, 4,663 required rejection/redraw; the maximum sample case used 22 draws.
+
+The math adapters use the Linux host's libm, not the original Windows executable. This is a real original-method replay comparison, but is not an independent full-game oracle. A separate **1,000-map** ASan/UBSan run varied all four regions and configuration flags, checked graph validity, and compared the composed pipeline to the same generator fed separately generated quotas. That is integration/structural coverage, **not 1,000 new original-topology comparisons**.
+
+Version 0.5's ten explicit-quota original-CIL topology comparisons remain the earlier constructor evidence; they were not expanded into a full original-run suite here. In Firebird, six stable 0.6 preview frames matched native RGB565 output exactly, covering the default seed, a touchpad-entered seed, all four regions and the elevated elite quota.
+
+## Still separate from the playable game
+
+The preview now generates its quotas rather than accepting fixed demonstration counts. It still does not resolve the original run's region/unlock/modifier decisions, fill original encounter/event pools, or drive the playable expedition. Other region backgrounds and actual Boss artwork have not been ported into this diagnostic view. The legacy 12×3 expedition and version-3 saves are unchanged.
+
+Next acceptance is comparison against actual unmodified reference-game run/map captures across unlock and difficulty configurations, then original room/encounter binding and full-run random call order. The current result is a seeded regional map subsystem, **not yet certified full PC-seed or full-game parity**.

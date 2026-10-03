@@ -60,7 +60,7 @@ int main(int argc,char**argv){
     Display*d=XOpenDisplay(nullptr);if(!d){fprintf(stderr,"No X display. Use --headless for batch execution.\n");return 2;}
     Bool detectable;XkbSetDetectableAutoRepeat(d,True,&detectable);
     int screen=DefaultScreen(d);Window win=XCreateSimpleWindow(d,RootWindow(d,screen),0,0,960,720,0,0,0);
-    XStoreName(d,win,"nSpire II | Native expedition prototype 0.5");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
+    XStoreName(d,win,"nSpire II | Native expedition prototype 0.6");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
     Atom close=XInternAtom(d,"WM_DELETE_WINDOW",False);XSetWMProtocols(d,win,&close,1);XMapWindow(d,win);
     GC gc=XCreateGC(d,win,0,nullptr);int width=960,height=720;bool held[256]={};XImage*image=nullptr;
     auto last_frame=std::chrono::steady_clock::now();
@@ -84,7 +84,15 @@ int main(int argc,char**argv){
             }
             else if(e.type==LeaveNotify&&!app.pointer.held)app.pointer.visible=false;
             else if(e.type==KeyRelease)held[e.xkey.keycode&255]=false;
-            else if(e.type==KeyPress&&!held[e.xkey.keycode&255]){held[e.xkey.keycode&255]=true;spire::Key k;if(key(XLookupKeysym(&e.xkey,0),k))app.input(k);}
+            else if(e.type==KeyPress&&!held[e.xkey.keycode&255]){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
+                if(app.map_preview.open&&app.map_preview.editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
+                    char text[16];KeySym actual;int size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
+                    if(actual==XK_Return||actual==XK_KP_Enter)app.reference_text(13);
+                    else if(actual==XK_BackSpace)app.reference_text(8);
+                    else if(actual==XK_Escape)app.reference_text(27);
+                    else if(size==1&&(unsigned char)text[0]>=32)app.reference_text((unsigned char)text[0]);
+                    else {spire::Key k;if(key(symbol,k))app.input(k);}
+                }else {spire::Key k;if(key(symbol,k))app.input(k);}}
         }
         auto now=std::chrono::steady_clock::now();app.advance((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(now-last_frame).count());last_frame=now;app.render();int scale=std::max(1,std::min(width/320,height/240)),w=320*scale,h=240*scale;
         if(!image){image=XCreateImage(d,DefaultVisual(d,screen),DefaultDepth(d,screen),ZPixmap,0,nullptr,w,h,32,0);if(!image)break;image->data=(char*)calloc(image->bytes_per_line,h);if(!image->data){XDestroyImage(image);image=nullptr;break;}}

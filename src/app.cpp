@@ -134,21 +134,7 @@ static int choice_count(const App&a){
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
-    if(k==Key::ReferenceMap){
-        map_preview.open=!map_preview.open;
-        if(map_preview.open&&!map_preview.generated)map_preview.generate();
-        return;
-    }
-    if(map_preview.open){
-        if(k==Key::Back)map_preview.open=false;
-        else if(k==Key::Up)map_preview.first_row=mn(int(map_preview.map.config.rows)-3,map_preview.first_row+1);
-        else if(k==Key::Down)map_preview.first_row=mx(0,map_preview.first_row-1);
-        else if(k==Key::Left)map_preview.change_seed(-1);
-        else if(k==Key::Right)map_preview.change_seed(1);
-        else if(k==Key::Confirm)map_preview.generate();
-        else if(k==Key::Quit)quit=true;
-        return;
-    }
+    if(reference_input(k))return;
     if(detail_card>=0){
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_card=-1;
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
@@ -498,54 +484,7 @@ static void detail_screen(Canvas&c){
     c.close_button(290,26);c.hit(288,24,25,24,HitKind::DetailClose);
     if(lines>8){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
 }
-static void reference_map_screen(Canvas& c){
-    auto& a=c.a;auto& view=a.map_preview;const auto& map=view.map;
-    a.hit_count=0;c.rect(0,0,320,240,Ink);c.picture(A_MapBackground,0,0);c.rect(0,0,320,49,Panel);
-    c.centered("参考地图",0,1,320,16,Gold);c.centered("固定房间配额 · 尚未接入战斗",0,26,320,10,Muted);
-    c.close_button(293,3);
-    if(!view.generated){c.centered("生成失败，未使用替代地图",0,93,320,12,Red);c.num(int(map.error),155,117);}
-    else{
-        const int step=33,base=view.first_row;
-        for(unsigned i=0;i<map.count;++i){
-            const auto& p=map.points[i];if(!p.active||p.row<base||p.row>base+3)continue;
-            int x=29+p.col*42,y=161-(int(p.row)-base)*step;
-            for(unsigned j=0;j<p.children.used;++j){
-                uint8_t id=p.children.slots[j];if(id==reference::NoPoint)continue;const auto& q=map.points[id];
-                if(q.row>base+3)continue;c.line(x,y-7,29+q.col*42,y-step+7,rgb(91,69,47),true);
-            }
-        }
-        for(unsigned i=0;i<map.count;++i){
-            const auto& p=map.points[i];if(!p.active||p.row<base||p.row>base+3)continue;
-            int x=29+p.col*42,y=161-(int(p.row)-base)*step;int image=A_MapCombat;
-            switch(p.type){
-            case reference::PointType::Unknown:image=A_MapEvent;break;
-            case reference::PointType::Shop:image=A_MapShop;break;
-            case reference::PointType::Treasure:image=A_MapTreasure;break;
-            case reference::PointType::Rest:image=A_MapCamp;break;
-            case reference::PointType::Elite:image=A_MapFinal;break;
-            case reference::PointType::Start:image=A_MapMarker;break;
-            case reference::PointType::Boss:image=-1;break;
-            default:break;
-            }
-            if(view.selected==int(i))c.picture(A_MapHalo,x-15,y-15,30,30);
-            if(image>=0)c.picture(image,x-9,y-9,18,18);else c.centered("BOSS",x-20,y-9,40,10,Ink);
-            c.hit(x-14,y-14,28,28,HitKind::ReferenceNode,int(i));
-        }
-        for(int row=base;row<=base+3;++row)c.num(row,1,155-(row-base)*step,10,Ink);
-    }
-    c.text("↑",302,53,12,Ink);c.hit(296,50,24,24,HitKind::Scroll,-1);
-    c.text("↓",302,151,12,Ink);c.hit(296,148,24,25,HitKind::Scroll,1);
-    c.rect(0,180,320,60,Panel);
-    const char* names[]={"未分配","事件","商店","宝藏","休息处","战斗","精英","首领","起点"};
-    char detail[112]={};TextBuffer text{detail,sizeof detail,0};
-    if(view.selected>=0&&view.selected<map.count){const auto&p=map.points[view.selected];text.text(names[unsigned(p.type)]);text.text("  (");text.number(p.col);text.ch(',');text.number(p.row);text.text(")  路径 ");text.number(p.children.count());}
-    else text.text("配额：休息 7 / 商店 3 / 精英 5 / 事件 12");
-    c.centered(detail,0,181,320,10,Gold);
-    c.button("‹",5,198,39,false,24);c.hit(5,198,39,24,HitKind::Command,int(Key::Left));
-    c.centered(view.seed,48,199,224,12,White);
-    c.button("›",276,198,39,false,24);c.hit(276,198,39,24,HitKind::Command,int(Key::Right));
-    c.centered("↑↓ 浏览 · ←→ 换种子 · Esc 返回",0,224,320,10,Muted);
-}
+#include "reference_map_ui.inc"
 static void pointer_overlay(Canvas&c){
     auto&a=c.a;auto&p=a.pointer;if(!p.visible)return;
     if(p.armed_card>=0&&p.armed_card<a.game.card_count){
@@ -559,7 +498,7 @@ static void pointer_overlay(Canvas&c){
 void App::render(){
     Canvas c{*this};hit_count=0;c.rect(0,0,320,240,Ink);
     if(title){
-        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.5",18,78,10,Gold);
+        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.6",18,78,10,Gold);
         c.actor(0,257,207);const char*items[]={"开始远征","组合练习","继续存档","参考地图","操作说明","退出"};for(int i=0;i<6;i++){c.button(items[i],18,92+i*23,161,menu==i,22);c.hit(18,92+i*23,161,22,HitKind::Menu,i);}
         c.text("v0.111.0 / 41cef1ea",199,224,10,Muted,120);
     }else{

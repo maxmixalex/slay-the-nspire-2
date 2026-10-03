@@ -49,7 +49,7 @@ def refresh(source: Path, destination: Path, font_path: Path) -> tuple[int, str]
     for i in range(ng):
         cp = struct.unpack_from('<I', data, 40 + ni * 16 + i * 16)[0]
         chars.add(chr(cp))
-    for path in (ROOT / 'src').glob('*.cpp'):
+    for path in [p for p in (ROOT / 'src').iterdir() if p.suffix in ('.cpp', '.inc')]:
         chars.update(c for c in path.read_text(encoding='utf-8') if ord(c) > 127)
     chars.difference_update('\n\r')
     glyphs = []

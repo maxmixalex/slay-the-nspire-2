@@ -20,5 +20,7 @@ void pointer_move(int x,int y){app.pointer_move(x,y);}
 void pointer_button(int down){app.pointer_button(down!=0);}
 void pointer_cancel(){app.pointer_cancel();app.pointer.visible=false;}
 void pointer_scroll(int rows){app.pointer_scroll(rows);}
+int text_entry_active(){return app.map_preview.open&&app.map_preview.editing;}
+void text_input(int ch){app.reference_text(ch);}
 int closed(){return app.quit?1:0;}
 }

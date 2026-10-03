@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.3 (2026-10-03).
+nSpire II experimental native runtime, version 0.6 (2026-10-04).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -50,3 +50,25 @@ selection highlights and presentation effects are specific to this prototype.
 
 Fonts are read locally by the converter. No installable font file is included;
 only rasterized glyphs needed by the selected interface enter the content pack.
+
+## Software math added in 0.6
+
+`src/reference_math.cpp` adapts Go runtime/softfloat64.go and math/{log,sqrt,sin}.go.
+Copyright 2009-2011 The Go Authors. All rights reserved.
+The BSD-3-Clause license is preserved in `licenses/Go-BSD-3-Clause.txt` and must
+also accompany binary redistributions. The C++ adaptation uses explicit-width
+arithmetic, normal/subnormal rounding and restricted map-quota domains.
+
+The logarithm and square-root algorithms also retain this notice:
+Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+Developed at SunPro, a Sun Microsystems, Inc. business.
+Permission to use, copy, modify, and distribute this software is freely
+granted, provided that this notice is preserved.
+
+Sine coefficients: Cephes Math Library Release 2.8, June 2000.
+Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier.
+May be used freely, without support or guarantee.
+
+Reference implementations: https://go.dev/src/runtime/softfloat64.go and
+https://go.dev/src/math/ . These notices do not grant rights in the original
+game or imply exact last-bit equivalence to its Windows math library.

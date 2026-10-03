@@ -28,14 +28,14 @@ Direct inspection of `ModelDb.get_AllCharacters` confirms the standard registry,
 
 Localization has additional obsolete or placeholder entries. Counting `.title` keys therefore overstates the intended content denominator. Later coverage reports must use verified active pools and explicitly separate generated cards, tokens, curses, status cards and inaccessible/deprecated definitions.
 
-The executable currently models **14 card kinds, 10 relics, 3 potions and one character**. Their selected semantics have been inspected and exercised internally, but no full original-model differential suite exists yet. Version 0.5 does not expand those counts.
+The executable currently models **14 card kinds, 10 relics, 3 potions and one character**. Their selected semantics have been inspected and exercised internally, but no full original-model differential suite exists yet. Version 0.6 does not expand those counts.
 
 ## Work plan and current gaps
 
 | Area | Required acceptance | Current state |
 |---|---|---|
 | Seed and RNG | Same canonical seed, named streams, bounded sampling and call order; original reference vectors. | Reference primitives implemented and replay-checked; Unicode/legacy seeds and full-run integration remain open. |
-| Map | Exact topology, room types and stream state for fixed original seeds; original generation/pruning order. | Explicit-quota constructor port and separate preview; Gaussian quotas unfinished; playable expedition still custom. |
+| Map | Exact topology, room types and stream state for fixed original seeds; original generation/pruning order. | Regional quota pipeline and isolated seed editor implemented; quota CIL replay and target frame checks pass; complete original-run/unlock/encounter integration remains open. |
 | Cards and combat | Per-card/upgraded behavior, choice suspension, event ordering, damage rounding and combinations match original traces. | 14 modeled cards; bounded custom core. |
 | Relics and potions | Complete active pools, prices/acquisition, hooks, counters, removals, interactions and persistence. | 10 relics and 3 potions; limited shop pools. |
 | Characters | Each standard character's real starting state, pools and unique mechanics. | Ironclad subset only; no duplicate-logic character placeholders. |

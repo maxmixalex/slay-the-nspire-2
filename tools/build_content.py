@@ -165,7 +165,7 @@ def main()->None:
         animation_records.append((first,len(frames),meta['frame_ms'],*meta['pivot'],0))
         animation_meta.append(dict(id=name,first_image=first,**meta))
     chars=set(''.join(strings))|set(chr(c) for c in range(32,127))
-    for file in (ROOT/'src').glob('*.cpp'):chars.update(c for c in file.read_text(encoding='utf-8') if ord(c)>127)
+    for file in [p for p in (ROOT/'src').iterdir() if p.suffix in ('.cpp', '.inc')]:chars.update(c for c in file.read_text(encoding='utf-8') if ord(c)>127)
     chars.discard('\n');chars.discard('\r');chars.update('▼·（）')
     font_path=choose_font(args.font);glyphs=[]
     for size in (10,12,16,20):

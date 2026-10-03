@@ -41,6 +41,8 @@ struct App {
     void pointer_scroll(int rows);
     void pointer_key(Key);
     void open_card_detail(Card);
+    bool reference_input(Key);
+    void reference_text(int code);
 
     bool init(const uint8_t*,size_t,Callbacks);
     void input(Key);

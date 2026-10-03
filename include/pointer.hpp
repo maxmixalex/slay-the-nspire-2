@@ -3,7 +3,7 @@
 namespace spire {
 enum class HitKind : uint8_t {
     None, Menu, Choice, Hand, Enemy, Battlefield, Command,
-    PileTab, PileCard, Relic, Potion, Scroll, Close, DetailClose, OpenPile, ReferenceNode
+    PileTab, PileCard, Relic, Potion, Scroll, Close, DetailClose, OpenPile, ReferenceNode, ReferenceAction, SeedCharacter
 };
 struct HitRegion {
     int16_t x{}, y{}, w{}, h{};
