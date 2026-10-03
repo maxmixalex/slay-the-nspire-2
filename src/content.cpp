@@ -4,7 +4,7 @@ static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
 bool Content::open(const uint8_t*p,size_t n){
     data_=nullptr;
-    if(n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+4)!=2||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n||u32(p+32))return false;
+    if(n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+4)!=3||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n||u32(p+32))return false;
     auto ni=u32(p+16),ng=u32(p+20),ns=u32(p+24),nc=u32(p+28);
     if(ni<A_Count||ni>1024||ng>8192||ns<66||ns>2048||nc!=11)return false;
     uint32_t start=40+ni*16+ng*16+ns*8+nc*16;if(start>n)return false;
@@ -12,7 +12,17 @@ bool Content::open(const uint8_t*p,size_t n){
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),h=u16(r+6),fmt=u32(r+8),len=u32(r+12);
         uint32_t expected=fmt<2?w*h*(fmt?3:2):512+w*h*(fmt==3?2:1);
-        if(!w||w>320||!h||h>240||fmt>3||len!=expected||off<start||off%2||off>n||len>n-off)return false;
+        if(!w||w>320||!h||h>240||fmt>4||(fmt<4&&len!=expected)||off<start||off%2||off>n||len>n-off)return false;
+        if(fmt==4){uint32_t at=off,end=off+len;
+            for(unsigned y=0;y<h;y++){
+                if(end-at<2)return false;unsigned spans=u16(p+at);at+=2;if(spans>w)return false;unsigned last_x=0;
+                for(unsigned j=0;j<spans;j++){
+                    if(end-at<5)return false;unsigned x=u16(p+at),count=u16(p+at+2),mode=p[at+4];at+=5;
+                    if(!count||mode>1||x<last_x||x+count>w||count*(mode?3u:2u)>end-at)return false;
+                    last_x=x+count;at+=count*(mode?3u:2u);
+                }
+            }if(at!=end)return false;
+        }
     }
     uint32_t last=0;
     for(unsigned i=0;i<ng;i++){
@@ -25,16 +35,17 @@ bool Content::open(const uint8_t*p,size_t n){
     }
     for(unsigned i=0;i<nc;i++){
         const uint8_t*r=p+40+ni*16+ng*16+ns*8+i*16;uint32_t first=u32(r),count=u16(r+4),ms=u16(r+6);
-        if(!count||count>120||first>=ni||count>ni-first||!ms||ms>1000||u32(r+12))return false;
+        if(!count||count>256||first>=ni||count>ni-first||!ms||ms>1000||u32(r+12))return false;
         int px=(int16_t)u16(r+8),py=(int16_t)u16(r+10);if(px< -640||px>640||py< -480||py>480)return false;
     }
     data_=p;length_=(uint32_t)n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;return true;
 }
 Picture Content::image(int id)const{
-    if(!data_||id<0||(unsigned)id>=images_)return {nullptr,nullptr,nullptr,0,0};
+    if(!data_||id<0||(unsigned)id>=images_)return {nullptr,nullptr,nullptr,0,0,0};
     const uint8_t*r=data_+40+16*id;const uint8_t*p=data_+u32(r);uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=u32(r+8);
-    if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h};
-    return {p,fmt?p+w*h*2:nullptr,nullptr,w,h};
+    if(fmt==4)return {p,nullptr,nullptr,w,h,4};
+    if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
+    return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
 }
 Glyph Content::glyph(uint32_t cp,int size)const{
     if(!data_)return {nullptr,0,0,0};uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;

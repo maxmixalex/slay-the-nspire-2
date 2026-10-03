@@ -27,7 +27,14 @@ enum class LogKind : uint8_t { Turn, Play, Damage, Block, Exhaust, Draw, Shuffle
     Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion };
 struct Log { LogKind kind; int16_t a,b; };
 enum class Potion : uint8_t { Empty, Fire, Block, Blood };
-enum Relic : uint8_t { Vajra=1, Anchor=2, BagOfPreparation=4 };
+constexpr int RelicKinds=10;
+enum Relic : uint16_t { Vajra=1, Anchor=2, BagOfPreparation=4, BurningBlood=8,
+    Lantern=16, OddlySmoothStone=32, BloodVial=64, HappyFlower=128, Orichalcum=256, PenNib=512 };
+enum class RelicHook : uint8_t { CombatStart, TurnStart, TurnEnd, Victory };
+struct RelicDefinition { uint16_t id; const char* key; const char* name; const char* description; int asset; };
+extern const RelicDefinition relic_definitions[RelicKinds];
+const RelicDefinition* relic_definition(unsigned);
+
 struct State {
     Phase phase;
     uint8_t practice, floor, enemy_count;
@@ -44,10 +51,16 @@ struct State {
     Log logs[24]; uint16_t log_count;
     // Entire run state is serialized. Presentation clocks never enter this state.
     MapNode map[MapNodes]; int16_t current_node;
-    uint8_t next_row, encounter, relics, removals;
+    uint8_t next_row, encounter, removals;
+    uint16_t relics, shop_relic;
+    uint8_t relic_count, relic_order[RelicKinds], relic_counters[RelicKinds];
+    int16_t dexterity;
+    uint8_t double_attack;
+    uint16_t relic_flash;
+    uint32_t relic_revision;
     int16_t gold,last_gold;
     Potion potions[2];
-    uint8_t shop_cards[4],shop_relic,shop_potion,shop_sold;
+    uint8_t shop_cards[4],shop_potion,shop_sold;
     int16_t shop_prices[6];
     EventId event_id; uint8_t event_page,event_count,event_remaining;
     int16_t event_value,event_first;
@@ -85,4 +98,13 @@ int remove_price(const State&);
 bool has_upgrade(const State&);
 void heal(State&,int amount);
 void award_victory(State&);
+bool gain_relic(State&,unsigned id);
+unsigned random_relic(State&);
+void relic_hook(State&,RelicHook);
+void relic_attack_begin(State&);
+void relic_attack_end(State&);
+int relic_attack_multiplier(const State&,bool preview=false);
+int card_block(const State&,Card);
+unsigned relic_counter(const State&,unsigned id);
+
 } // namespace spire

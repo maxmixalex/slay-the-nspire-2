@@ -1,13 +1,15 @@
 #include "app.hpp"
+#include "rich_text.hpp"
 namespace spire {
 static int mn(int a,int b){return a<b?a:b;}static int mx(int a,int b){return a>b?a:b;}
 static uint16_t rgb(int r,int g,int b){return (uint16_t)((r>>3)<<11|(g>>2)<<5|(b>>3));}
 static const uint16_t Ink=rgb(16,20,22),Panel=rgb(27,29,31),Gold=rgb(223,186,112),White=rgb(239,229,206),Muted=rgb(153,156,150),Red=rgb(168,57,45),Blue=rgb(88,157,188),Green=rgb(118,180,112);
+static unsigned div255(unsigned v){v+=128;return (v+(v>>8))>>8;}
 static uint16_t blend(uint16_t a,uint16_t b,unsigned alpha){
-    unsigned r=(((a>>11)*(255-alpha)+(b>>11)*alpha)+127)/255;
+    unsigned r=div255((a>>11)*(255-alpha)+(b>>11)*alpha);
     unsigned ag=(a>>5)&63,bg=(b>>5)&63;
-    unsigned g=(ag*(255-alpha)+bg*alpha+127)/255;
-    unsigned bl=(((a&31)*(255-alpha)+(b&31)*alpha)+127)/255;
+    unsigned g=div255(ag*(255-alpha)+bg*alpha);
+    unsigned bl=div255((a&31)*(255-alpha)+(b&31)*alpha);
     return (uint16_t)((r<<11)|(g<<5)|bl);
 }
 struct TextBuffer{
@@ -32,11 +34,33 @@ struct Canvas{
     void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255){
         auto p=a.content.image(id);if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,320-x),top=mx(0,-y),bottom=mn(height,240-y);if(left>=right||top>=bottom)return;
+        if(p.format==4){
+            // Animation frames are prebaked at native size. Skip transparent runs entirely.
+            if(width!=p.w||height!=p.h)return;
+            const uint8_t* run=p.pixels;
+            for(int yy=0;yy<p.h;yy++){
+                unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
+                for(unsigned s=0;s<spans;s++){
+                    unsigned sx=run[0]|(unsigned)run[1]<<8,n=run[2]|(unsigned)run[3]<<8,mode=run[4];run+=5;
+                    unsigned stride=mode?3:2;
+                    if(yy>=top&&yy<bottom){int l=mx(left,(int)sx),h=mn(right,(int)(sx+n));
+                        if(l>=h){run+=n*stride;continue;}
+                        auto*dst=a.pixels+(y+yy)*320+x+l;const uint8_t*src=run+(l-(int)sx)*stride;
+                        for(int xx=l;xx<h;xx++,dst++,src+=stride){unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);uint16_t v=src[0]|(uint16_t)src[1]<<8;*dst=alpha==255?v:blend(*dst,v,alpha);}}
+                    run+=n*stride;
+                }
+            }
+            return;
+        }
+        if(width==p.w&&height==p.h&&!p.alpha&&!p.palette&&opacity==255){
+            for(int yy=top;yy<bottom;yy++){auto*dst=a.pixels+(y+yy)*320+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,dst++,src+=2)*dst=src[0]|(uint16_t)src[1]<<8;}
+            return;
+        }
         uint16_t source[320];for(int xx=left;xx<right;xx++)source[xx-left]=(uint16_t)(xx*p.w/width);
         for(int yy=top;yy<bottom;yy++){
             int row=(yy*p.h/height)*p.w;uint16_t*dst=a.pixels+(y+yy)*320+x+left;
             for(int xx=left;xx<right;xx++,dst++){
-                int i=row+source[xx-left];unsigned alpha=p.alpha?p.alpha[i]:255;if(opacity!=255)alpha=(alpha*opacity+127)/255;if(!alpha)continue;
+                int i=row+source[xx-left];unsigned alpha=p.alpha?p.alpha[i]:255;if(opacity!=255)alpha=div255(alpha*opacity);if(!alpha)continue;
                 const uint8_t*pixel=p.palette?p.palette+p.pixels[i]*2:p.pixels+i*2;uint16_t color=pixel[0]|(uint16_t)pixel[1]<<8;
                 *dst=alpha==255?color:blend(*dst,color,alpha);
             }
@@ -65,9 +89,16 @@ struct Canvas{
         }return x;
     }
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
-        int at=x,row=0;while(*p){uint32_t cp=utf8(p);auto g=a.content.glyph(cp,size);
-            if(cp=='\n'||(at>x&&at+g.advance>x+w)){at=x;row++;if(cp=='\n')continue;}
-            if(row>=skip&&row<skip+lines)glyph(g,at,y+(row-skip)*(size+3),color);at+=g.advance;
+        const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
+        RichReader reader(p);RichChar ch{};int at=x,row=0;
+        static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
+        while(reader.next(ch)){auto g=a.content.glyph(ch.codepoint,size);int advance=g.advance+(ch.style.bold?1:0);
+            if(ch.codepoint=='\n'||(at>x&&at+advance>x+w)){at=x;row++;if(ch.codepoint=='\n')continue;}
+            if(row>=skip&&row<skip+lines){int dy=ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
+                int dx=ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;
+                auto ink=colors[ch.style.color];int yy=y+(row-skip)*(size+3)+dy;
+                glyph(g,at+dx,yy,ink);if(ch.style.bold)glyph(g,at+dx+1,yy,ink);}
+            at+=advance;
         }return row+1;
     }
     void centered(const char*p,int x,int y,int w,int size=12,uint16_t color=White){text(p,x+mx(0,(w-width(p,size))/2),y,size,color,w);}
@@ -82,11 +113,13 @@ bool App::init(const uint8_t*p,size_t n,Callbacks cb){callbacks=cb;return conten
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
 void App::reset_presentation(){cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
+void App::draw_frame(){render();}
 void App::tick(){animation++;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 void App::card_description(Card c,int t,char*out,size_t cap)const{
     if(!cap)return;out[0]=0;TextBuffer b{out,cap,0};const char*p=content.string(c.kind*3+(c.upgraded?2:1));const auto&d=definitions[c.kind];
     while(*p){if(p[0]=='{'&&p[1]&&p[2]=='}'){
-            int value=0;switch(p[1]){case 'd':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
+            int value=0;switch(p[1]){case 'd':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
             b.number(value);p+=3;
         }else b.ch(*p++);}
 }
@@ -103,7 +136,7 @@ void App::input(Key k){
         if(k==Key::Up||k==Key::Left)menu=(menu+4)%5;if(k==Key::Down||k==Key::Right)menu=(menu+1)%5;
         if(k==Key::Confirm){
             if(menu<2){new_run(game,0x20261003u+run_number++*7919u,menu==1);title=false;reset_presentation();if(game.practice)message("组合练习：固定起手，练习消耗与能力");}
-            else if(menu==2){if(callbacks.load&&callbacks.load(game)){title=false;reset_presentation();message("已恢复完整远征状态");}else message("没有有效的 0.2 存档");}
+            else if(menu==2){if(callbacks.load&&callbacks.load(game)){title=false;reset_presentation();message("已恢复完整远征状态");}else message("没有有效的 0.3 存档");}
             else if(menu==3)help=true;else quit=true;
         }return;
     }
@@ -111,7 +144,7 @@ void App::input(Key k){
         if(k==Key::Back){paused=false;return;}if(k==Key::Up||k==Key::Left)menu=(menu+5)%6;if(k==Key::Down||k==Key::Right)menu=(menu+1)%6;
         if(k==Key::Confirm){switch(menu){case 0:paused=false;break;
             case 1:has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");paused=false;break;
-            case 2:if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的 0.2 存档");paused=false;break;
+            case 2:if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的 0.3 存档");paused=false;break;
             case 3:help=true;break;case 4:paused=false;title=true;menu=0;break;case 5:quit=true;break;}}return;
     }
     if(k==Key::Back){
@@ -121,12 +154,14 @@ void App::input(Key k){
         else{paused=true;menu=0;}return;
     }
     if(k==Key::Save){has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");return;}
-    if(k==Key::Load){if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的 0.2 存档");return;}
+    if(k==Key::Load){if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的 0.3 存档");return;}
     if(k==Key::Log){panel=panel==2?0:2;scroll=0;return;}
     if(k==Key::Inspect){panel=panel==1?0:1;scroll=0;return;}
     if(k==Key::Map){if(game.practice){message("组合练习没有远征路线");return;}panel=panel==3?0:3;map_scroll=0;return;}
+    if(k==Key::Relics){panel=panel==5?0:5;scroll=0;return;}
     if(k==Key::Potions){panel=panel==4?0:4;scroll=0;return;}
     if(panel){
+        if(panel==5){if(k==Key::Up||k==Key::Left)scroll=mx(0,scroll-1);if(k==Key::Down||k==Key::Right)scroll=mn(mx(0,game.relic_count-1),scroll+1);return;}
         if(panel==4){
             if(k==Key::Left||k==Key::Right)scroll=1-scroll;if(k==Key::Up||k==Key::Down)next_target(*this);
             if(k==Key::Confirm){if(use_potion(game,scroll,target)){panel=0;busy=8;next_target(*this);if(game.phase==Phase::Reward)cursor=0;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
@@ -206,14 +241,15 @@ static void log_line(App&a,Log l,char*b,size_t n){
     case LogKind::Remove:t.text("移除 ");t.text(a.content.string(l.a*3));break;
     case LogKind::Transform:t.text("变化 ");t.text(a.content.string(l.a*3));t.text(" → ");t.text(a.content.string(l.b*3));break;
     case LogKind::Event:t.text("事件选择已结算");break;
-    case LogKind::Relic:t.text("获得遗物：");t.text(l.a==Vajra?"金刚杵":l.a==Anchor?"锚":"准备背包");break;
+    case LogKind::Relic:t.text("获得遗物：");if(auto*d=relic_definition((unsigned)l.a))t.text(d->name);break;
     case LogKind::Potion:t.text("使用药水");break;
     default:t.text("容量上限：本局已安全停止");break;}
 }
 static void hud(Canvas&c){
     auto&s=c.a.game;c.rect(0,0,320,20,Panel);c.picture(A_Heart,4,3);char b[32]={};TextBuffer t{b,sizeof b,0};t.number(s.hp);t.ch('/');t.number(s.max_hp);c.text(b,21,2,12);
     c.picture(A_Coin,83,3);c.num(s.gold,99,2,12,Gold);c.text("层",140,3,10,Muted);c.num(s.floor,152,2,12);
-    c.picture(A_BurningBlood,177,2);int x=196;for(int i=0;i<3;i++)if(s.relics&(1<<i)){c.picture(A_Vajra+i,x,2,16,16);x+=16;}
+    int x=175;for(int i=0;i<mn(5,s.relic_count);i++){const auto&d=relic_definitions[s.relic_order[i]];c.picture(d.asset,x,2,14,14);x+=15;}
+    c.text("R",250,2,10,Gold);
     c.text("P",257,3,10,Muted);for(int i=0;i<2;i++)if(s.potions[i]!=Potion::Empty)c.picture(A_FirePotion+(int)s.potions[i]-1,272+i*22,1,16,18);else c.box(274+i*22,5,12,10,rgb(67,70,63));
 }
 static int room_asset(Room r){switch(r){case Room::Combat:return A_MapCombat;case Room::Event:return A_MapEvent;case Room::Shop:return A_MapShop;case Room::Camp:return A_MapCamp;case Room::Treasure:return A_MapTreasure;default:return A_MapFinal;}}
@@ -249,20 +285,24 @@ static void event_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;int e=(int)s.event_id;
     c.picture(A_EventBaths+e,0,20);if(e)c.picture(A_EventVegetationForeground+e-1,0,20);
     c.dim(0,20,320,27,110);c.centered(a.content.string(e==0?44:e==1?58:62),0,23,320,16,Gold);
-    c.dim(3,96,314,78,200);int total=c.paragraph(a.content.string(event_text(s)),10,100,300,0);
-    a.scroll=mn(a.scroll,mx(0,total-4));c.paragraph(a.content.string(event_text(s)),10,100,300,4,a.scroll);c.text("↑↓ 阅读",263,79,10,Gold);
-    if(total>4){c.rect(313,101,2,64,rgb(77,74,63));c.rect(313,101+58*a.scroll/mx(1,total-4),2,6,Gold);}
+    c.dim(4,73,312,99,210);int total=c.paragraph(a.content.string(event_text(s)),12,78,293,0);
+    a.scroll=mn(a.scroll,mx(0,total-6));c.paragraph(a.content.string(event_text(s)),12,78,293,6,a.scroll);
+    if(total>6){c.rect(313,79,2,84,rgb(77,74,63));c.rect(313,79+76*a.scroll/mx(1,total-6),2,8,Gold);}
     if(s.event_page>=2){c.button(e==1&&s.event_page==4?"战！":"继续前进",35,201,250,true,29);return;}
     for(int i=0;i<2;i++){
-        int x=5+i*158;c.button("",x,184,152,a.cursor==i,51);char b[96]={};TextBuffer t{b,sizeof b,0};const char*title="";
-        if(e==0){title=i?(s.event_page?"离开浴场":"敬而远之"):(s.event_page?"沉溺":"投身其中");if(i){t.text(s.event_page?"保留已获得的最大生命":"回复 10 点生命");}else{t.text("最大生命 +2 / 伤害 ");t.number(3+s.event_count);}}
-        else if(e==1){title=i?"休息":"坚持跋涉";if(i){t.text("回复 ");t.number((s.max_hp*3)/10);t.text(" 生命，进入战斗");}else{t.text("金币 +");t.number(s.event_value);t.text(" / 生命 -8");}}
-        else{title=i?"落单变形灵":"大群变形灵";t.text(i?"最大生命 +5":"失去全部金币，变化 2 张牌");}
-        c.centered(title,x+3,187,146,12,a.cursor==i?Gold:White);c.text(b,x+8,205,10,White,136,2);
+        int y=177+i*31;bool selected=a.cursor==i;char b[150]={};TextBuffer t{b,sizeof b,0};const char*title="";
+        if(e==0){title=i?(s.event_page?"离开浴场":"敬而远之"):(s.event_page?"沉溺":"投身其中");
+            if(i)t.text(s.event_page?"保留已获得的最大生命":"[green]回复 10 点生命[/green]");else{t.text("[green]最大生命 +2[/green]  [red]伤害 ");t.number(3+s.event_count);t.text("[/red]");}}
+        else if(e==1){title=i?"休息":"坚持跋涉";if(i){t.text("[green]回复 ");t.number((s.max_hp*3)/10);t.text(" 生命[/green]，进入战斗");}else{t.text("[gold]金币 +");t.number(s.event_value);t.text("[/gold]  [red]生命 -8[/red]");}}
+        else{title=i?"落单变形灵":"大群变形灵";t.text(i?"[green]最大生命 +5[/green]":"[red]失去全部金币[/red]，变化 2 张牌");}
+        c.rect(5,y,310,29,selected?rgb(65,52,37):Panel);c.box(5,y,310,29,selected?Gold:rgb(77,71,61));
+        if(selected){c.rect(5,y,3,29,Gold);c.text("›",11,y+4,16,Gold);}
+        c.text(title,25,y,12,selected?Gold:White,274);c.paragraph(b,25,y+14,280,1,0,10);
     }
+
 }
-static const char* relic_name(int r){return r==Vajra?"金刚杵":r==Anchor?"锚":"准备背包";}
-static const char* relic_desc(int r){return r==Vajra?"每场战斗开始时获得 1 点力量。":r==Anchor?"每场战斗开始时获得 10 点格挡。":"每场战斗的首回合额外抽 2 张牌。";}
+static const char* relic_name(int r){auto*d=relic_definition(r);return d?d->name:"售罄";}
+static const char* relic_desc(int r){auto*d=relic_definition(r);return d?d->description:"没有剩余的已实现遗物。";}
 static const char* potion_name(int p){return p==1?"火焰药水":p==2?"格挡药水":p==3?"血液药水":"空药水槽";}
 static const char* potion_desc(int p){return p==1?"对所选敌人造成 20 点无增幅伤害。":p==2?"在战斗中获得 12 点格挡。":p==3?"回复最大生命的 20%。":"可从商店购买药水，最多携带两瓶。";}
 static void shop_screen(Canvas&c){
@@ -275,7 +315,7 @@ static void shop_screen(Canvas&c){
     else if(a.cursor==5)desc=potion_desc(s.shop_potion);
     else if(a.cursor==6)desc="永久移除一张牌。每次商店仅限一次。";
     else desc="离开商店，继续选择下一层的路线。";
-    c.text(desc,11,68,10,White,214,2);
+    c.paragraph(desc,11,68,214,2,0,10);
     for(int i=0;i<4;i++){
         int x=21+77*i;bool sold=(s.shop_sold&(1<<i))!=0;small_card(c,{s.shop_cards[i],0},x,106,a.cursor==i,!sold,0);
         if(sold)c.centered("售罄",x-7,175,61,10,Muted);else{c.picture(A_Coin,x+2,174,11,11);c.num(s.shop_prices[i],x+17,173,12,s.gold>=s.shop_prices[i]?Gold:Muted);}
@@ -283,7 +323,7 @@ static void shop_screen(Canvas&c){
     c.dim(0,194,320,46,155);
     for(int i=4;i<8;i++){
         int x=(i-4)*80;if(a.cursor==i)c.box(x+2,195,76,43,Gold);
-        if(i<6){int im=i==4?(s.shop_relic==Vajra?A_Vajra:s.shop_relic==Anchor?A_Anchor:A_Bag):A_FirePotion+s.shop_potion-1;
+        if(i<6){int im=i==4?(relic_definition(s.shop_relic)?relic_definition(s.shop_relic)->asset:A_Chest):A_FirePotion+s.shop_potion-1;
             c.picture(im,x+6,199,22,26);c.text(i==4?relic_name(s.shop_relic):potion_name(s.shop_potion),x+29,198,10,White,48);
             if(s.shop_sold&(1<<i))c.text("售罄",x+29,216,10,Muted);else c.num(s.shop_prices[i],x+31,214,12,Gold);
         }else{c.centered(i==6?"移除卡牌":"离开",x,199,80,12,White);if(i==6){if(s.shop_sold&64)c.centered("已使用",x,216,80,10,Muted);else c.num(remove_price(s),x+27,214,12,Gold);}else c.centered("返回地图",x,216,80,10,Muted);}
@@ -358,6 +398,16 @@ static void panels(Canvas&c){
     }else if(a.panel==2){
         c.centered("本局记录（最近 24 条）",5,27,310,12,Gold);a.scroll=mn(a.scroll,mx(0,s.log_count-10));int first=mx(0,s.log_count-10-a.scroll);
         for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}c.text("↑↓ 滚动 · Esc 返回",15,216,10,Muted);
+    }else if(a.panel==5){
+        c.centered("遗物",0,30,320,16,Gold);int first=mx(0,a.scroll-5);
+        for(int i=first;i<mn(s.relic_count,first+6);i++){
+            const auto&d=relic_definitions[s.relic_order[i]];int y=57+(i-first)*20;
+            if(i==a.scroll)c.rect(10,y,300,20,rgb(66,53,35));c.picture(d.asset,15,y+1,18,18);
+            c.text(d.name,41,y,12,i==a.scroll?Gold:White,225);
+            if(d.id==HappyFlower||d.id==PenNib){c.num(relic_counter(s,d.id),276,y,12,Gold);}
+        }
+        if(s.relic_count){const auto&d=relic_definitions[s.relic_order[a.scroll]];c.paragraph(d.description,15,184,290,2);}
+        c.centered("↑↓ 查看 · 计数随存档保留 · R / Esc 返回",0,219,320,10,Muted);
     }else if(a.panel==4){
         c.centered("药水",0,33,320,20,Gold);for(int i=0;i<2;i++){int x=61+i*126;if(a.scroll==i)c.box(x-22,69,98,65,Gold);int p=(int)s.potions[i];if(p)c.picture(A_FirePotion+p-1,x+10,77,26,32);c.centered(potion_name(p),x-20,114,94,12);}
         c.text(potion_desc((int)s.potions[a.scroll]),20,146,12,White,280,2);c.text("目标：",20,185,12,Muted);c.num(a.target+1,57,184,12,Gold);c.text("↑↓ 切换敌人",98,185,12,Muted);c.centered("←→ 选药水 · Enter 使用 · Esc 取消",0,214,320,10,Gold);
@@ -366,7 +416,7 @@ static void panels(Canvas&c){
 void App::render(){
     Canvas c{*this};c.rect(0,0,320,240,Ink);
     if(title){
-        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.2",18,78,10,Gold);
+        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.3",18,78,10,Gold);
         c.actor(0,257,207);const char*items[]={"开始远征","组合练习","继续存档","操作说明","退出"};for(int i=0;i<5;i++)c.button(items[i],18,94+i*27,161,menu==i,25);
         c.text("v0.111.0 / 41cef1ea",199,224,10,Muted,120);
     }else{
@@ -386,7 +436,7 @@ void App::render(){
     }
     if(help){
         c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
-        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：路线预览    P：使用药水","S：保存    O：载入","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","12 层分岔路线，含商店、事件和营地。","本版仍为规则与内容子集，不含音频。"};
+        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：路线预览    P：药水    R：遗物","S：保存    O：载入","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","12 层分岔路线，含商店、事件和营地。","本版仍为规则与内容子集，不含音频。"};
         for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
     }
     if(notice_ticks){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}

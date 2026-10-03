@@ -2,13 +2,13 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.2 (2026-10-03).
+nSpire II experimental native runtime, version 0.3 (2026-10-03).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
-zyf722's nZATO. The Ndless clock register setup in
-`platform/ndless/main.cpp` follows nZATO's modern backend and retains GPL
-compatibility:
+zyf722's nZATO. The original clock adapter followed nZATO's modern backend. Version 0.3
+uses a foreground SP804 timer instead of resetting the OS timer. The
+project retains its existing GPL compatibility and attribution:
 
 https://github.com/zyf722/nZATO/blob/86a4785560e18d8230e4e7f9f9e18d9be7adc96e/cpp/platform/ndless/monotonic_clock.cpp
 
@@ -18,7 +18,8 @@ Ndless r2022's `zehn.h`, `genzehn.cpp`, `syscall-list.h`, `keys.h`,
 `lcd_blit.cpp` and touchpad declarations were consulted for the Zehn loader,
 stable syscall ABI, LCD function-pointer API and key protocol.
 This distribution does not bundle the Ndless SDK or a Firebird binary.
-The freestanding launcher still requires emulator execution validation.
+The 0.3 launcher has been exercised in Firebird on CX II CAS OS 6.4.0.74
+with Ndless r2022. Physical-device validation remains outstanding.
 
 https://github.com/ndless-nspire/Ndless/tree/r2022
 https://github.com/nspire-emus/firebird

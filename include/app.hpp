@@ -3,7 +3,7 @@
 #include "assets.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=6*1024*1024;
-struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;};
+struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
 class Content {
@@ -15,7 +15,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
 };
-enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions };
+enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics };
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };
 struct Motion {int clip=-1;uint32_t start=0;};
 struct App {
@@ -29,6 +29,9 @@ struct App {
     bool init(const uint8_t*,size_t,Callbacks);
     void input(Key);
     void tick();
+    void advance(uint32_t elapsed_ms);
+    void draw_frame();
+    uint32_t tick_remainder=0;
     void render();
     void card_description(Card,int,char*,size_t)const;
     void message(const char*);

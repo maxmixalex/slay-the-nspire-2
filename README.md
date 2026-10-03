@@ -1,51 +1,62 @@
 # Slay the Nspire 2
 
-Experimental native TI-Nspire Ndless adaptation of a bounded **Slay the Spire 2 v0.111.0 / 41cef1ea** rule and content subset. The imported prototype is named nSpire II 0.2.
+Experimental native TI-Nspire Ndless adaptation of **Slay the Spire 2 v0.111.0 / 41cef1ea**. The current prototype is nSpire II **0.3**.
 
-## Import status
+## Implemented
 
-The 0.2 C++ core, ARM/WASM/X11 backends and conversion sources are being preserved here before further development. **The repository import is not complete:** the upload tool blocked `tools/setup_pose.py`; that file is retained in the original `nSpire2-0.2-source.zip` delivered to the owner. Consequently, **content conversion from this checkout will fail until the missing helper is restored through an authorized upload**. Native compilation from the checked-in C++ sources does not use this helper. Do not report this as a complete source import.
+One character, 14 cards and upgrades, resumable combat choices, ten functional relics, three potions, a shop, camps and three adapted events. The twelve-floor expedition and its random generator are still custom; **original maps, PC seed compatibility and complete game content are not implemented**.
 
-No original game data, assemblies, PCK files, fonts, calculator ROM/flash images, Ndless installers or generated content packs are tracked.
+The relic inventory preserves acquisition order and counters. Press **R** to inspect it. Supported relics: Burning Blood, Vajra, Anchor, Bag of Preparation, Lantern, Oddly Smooth Stone, Blood Vial, Happy Flower, Orichalcum and Pen Nib. Shops and treasure use the shared acquisition path and exclude already-owned relics.
 
-## Current scope
+Event choices use full-width rows with separate effect text. Event descriptions retain nested colors, bold text, sine and jitter effects. Eleven original animation clips are sampled at approximately 24 fps offline. Sparse RGB565 scanlines skip transparent pixels; presentation timing is independent of input and uses elapsed time on each backend. There is no audio.
 
-- One character, 14 card definitions and upgrades, one enemy type, bounded combat resolution with resumable exhaust selection.
-- Custom twelve-floor, three-column expedition with shop, camp, treasure and three adapted events. This is **not the original map or seed behavior**.
-- Three hardcoded optional relics and two potion slots. A complete relic subsystem is not yet present.
-- Original art and offline-sampled animation supplied by a separately generated private content pack. No audio.
-- Same C++ game core on ARM926 Ndless, offline WebAssembly and Linux X11.
-- **Firebird and physical-device execution have not been verified.** Successful compilation is not a launch test.
+**The 0.3 ARM launcher was launched inside Firebird with CX II CAS OS 6.4.0.74 and Ndless r2022.** Title, combat, relic inspection, suspended-choice save/load, return to the OS and subsequent USB save retrieval were exercised. This is emulator validation, not physical-handheld certification or an original-game parity guarantee.
 
 ## Build
 
-The launcher uses LLVM and a freestanding Ndless ABI adapter, not a bundled SDK. With `clang++`, `ld.lld` and Python on PATH:
+No game files, assemblies, fonts, ROMs, flash images, installers or generated packs are tracked. The complete converter helpers are present in this checkout.
+
+The launcher uses LLVM and a freestanding Ndless ABI adapter:
 
 ```sh
 python3 tools/build_ndless.py
 ```
 
-A Linux host can be compiled with a C++17 compiler and X11 development headers:
+Requirements: Python, `clang++` with the ARM target, and `ld.lld`. For the desktop X11 host:
 
 ```sh
-mkdir -p dist
-c++ -std=c++17 -O2 -Iinclude src/core.cpp src/run.cpp src/content.cpp src/app.cpp src/host_x11.cpp -lX11 -o dist/nSpire2
+cmake -S . -B build/host
+cmake --build build/host
+# After content conversion:
+build/host/nSpire2 --pack dist/nSpire2.nsp.tns
 ```
 
-After generating a private `dist/nSpire2.nsp.tns`, `python3 tools/build_web.py` creates the self-contained desktop HTML using `wasm-ld`. It embeds game-derived content and is not a source artifact for public redistribution.
-
-The content converter requires Pillow, NumPy, a local Chinese-capable font, and the exact supported game installation. See the import warning above before attempting it:
+Create a private content pack from the exact supported installation, using a local Chinese-capable font:
 
 ```sh
+python3 -m pip install -r requirements.txt
 python3 tools/build_content.py /path/to/game --font /path/to/local-font
+python3 tools/build_web.py
 ```
 
-## Controls
+The converter reads `SlayTheSpire2.pck` and `release_info.json`; it does not execute the game. `build_web.py` needs `wasm-ld` and creates a self-contained desktop HTML using the same C++ core. That HTML embeds game-derived resources and is not a public source artifact.
 
-Directions or 4/6/8/2 navigate; Enter or 5 confirms; Space ends the turn; Tab inspects piles; L opens the log; M previews the map; P opens potions; S saves; O loads; Esc returns or opens the menu.
+The content format is NSP2/3. Version 0.3 cannot read 0.1/0.2 saves or older content packs. Use the launcher and content pack from the same build.
 
-Place `nSpire2.tns` and `nSpire2.nsp.tns` beside each other on the calculator. The 0.2 save format is incompatible with 0.1. Use copies of calculator images when testing.
+## Run
+
+Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator folder, with Ndless r2022 installed. The save is written beside them. Test with copies of calculator images; do not use your only flash dump as an emulator working image.
+
+Directions or 4/6/8/2 navigate; Enter or 5 confirms; Space ends the turn; Tab inspects piles; L opens the log; M previews the map; P opens potions; **R opens relics**; S saves; O loads; Esc returns or opens the menu. In events, up/down scroll text and left/right select the choice.
+
+To compile the supplied Firebird source and gif-h submodule offline:
+
+```sh
+python3 tools/build_firebird.py --source /path/to/firebird --gif-source /path/to/gif-h
+```
+
+This builds the upstream headless target. It is not by itself a game launch test. See [development and verification](docs/development.md) for the exercised environment and remaining work, and [map/seed compatibility](docs/map-seed.md) for the verified original-code findings.
 
 ## License
 
-The pre-existing repository MIT notice remains in `LICENSE` and is not an attempt to relicense the imported prototype. **Imported prototype source remains GPL-3.0-or-later**, as documented in `NOTICE.md`; the 0.2 distribution includes the GPL license text. The imported Ndless clock implementation follows GPL-licensed nZATO code. Game content and trademarks remain with their respective owners.
+The imported runtime and converter remain **GPL-3.0-or-later**, with the full license in `COPYING`. The pre-existing empty-repository MIT notice is preserved in `LICENSE`; it does not relicense the imported prototype. See [NOTICE.md](NOTICE.md) for attribution. Game assets and trademarks remain with their respective owners.

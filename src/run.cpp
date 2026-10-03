@@ -51,9 +51,7 @@ static void enter_shop(State&s){
         int base=card==DarkEmbrace?150:card==FeelNoPain||card==Whirlwind||card==Inflame||card==BurningPact?75:50;
         s.shop_prices[i]=(int16_t)(base*(80+(int)random_below(s.rng_world,41))/100);
     }
-    s.shop_relic=0;int available[3],count=0;
-    for(int i=0;i<3;i++)if(!(s.relics&(1<<i)))available[count++]=1<<i;
-    if(count)s.shop_relic=(uint8_t)available[random_below(s.rng_world,(uint32_t)count)];
+    s.shop_relic=(uint16_t)random_relic(s);
     if(!s.shop_relic)s.shop_sold|=1<<4;
     s.shop_potion=(uint8_t)(1+random_below(s.rng_world,3));s.shop_prices[4]=150;s.shop_prices[5]=50;
 }
@@ -73,7 +71,7 @@ bool choose_node(State&s,int column){
     s.revision++;return true;
 }
 void award_victory(State&s){
-    heal(s,6);s.last_gold=(int16_t)(10+random_below(s.rng_world,11)+(s.enemy_count>1?8:0));add_gold(s,s.last_gold);
+    relic_hook(s,RelicHook::Victory);s.last_gold=(int16_t)(10+random_below(s.rng_world,11)+(s.enemy_count>1?8:0));add_gold(s,s.last_gold);
 }
 int remove_price(const State&s){return min(9999,75+s.removals*25);}
 bool buy(State&s,int item){
@@ -81,7 +79,7 @@ bool buy(State&s,int item){
     if(item==6){if((s.shop_sold&64)||s.deck_count<=1||s.gold<remove_price(s))return false;s.phase=Phase::Remove;s.revision++;return true;}
     if(s.shop_sold&(1u<<item)||s.gold<s.shop_prices[item])return false;
     if(item<4){if(s.deck_count>=MaxDeck)return false;s.deck[s.deck_count++]={s.shop_cards[item],0};record(s,LogKind::Buy,s.shop_cards[item]);}
-    else if(item==4){if(!s.shop_relic||s.relics&s.shop_relic)return false;s.relics|=s.shop_relic;record(s,LogKind::Relic,s.shop_relic);}
+    else if(item==4){if(!s.shop_relic||s.relics&s.shop_relic)return false;if(!gain_relic(s,s.shop_relic))return false;}
     else{int slot=-1;for(int i=0;i<2;i++)if(s.potions[i]==Potion::Empty){slot=i;break;}if(slot<0)return false;s.potions[slot]=(Potion)s.shop_potion;}
     s.gold-=s.shop_prices[item];s.shop_sold|=(uint8_t)(1u<<item);s.revision++;return true;
 }
@@ -124,8 +122,8 @@ bool transform_card(State&s,int index){
 }
 bool take_treasure(State&s){
     if(s.phase!=Phase::Treasure)return false;
-    bool got=false;for(int r=0;r<3;r++)if(!(s.relics&(1<<r))){s.relics|=(uint8_t)(1<<r);record(s,LogKind::Relic,1<<r);got=true;break;}
-    if(!got)add_gold(s,50);finish_room(s);return true;
+    unsigned id=random_relic(s);
+    if(id)gain_relic(s,id);else add_gold(s,50);finish_room(s);return true;
 }
 bool use_potion(State&s,int slot,int target){
     if(slot<0||slot>=2||s.potions[slot]==Potion::Empty||s.phase==Phase::ExhaustChoice||s.phase==Phase::Dead||s.phase==Phase::Complete||s.phase==Phase::Error)return false;

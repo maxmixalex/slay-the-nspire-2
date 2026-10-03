@@ -17,7 +17,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
 from pck import Pack
 from setup_pose import decode_texture
-from animation import bake, load_textures
+from animation import Skeleton, bake, load_textures
+from sparse_image import encode as encode_sparse
 from asset_profile import ASSETS, CLIPS, EVENT_STRINGS
 
 CARDS = ['STRIKE_IRONCLAD','DEFEND_IRONCLAD','BASH','ANGER','POMMEL_STRIKE','SHRUG_IT_OFF',
@@ -104,12 +105,7 @@ def prepared(im:Image.Image,size:tuple,fit:str)->Image.Image:
 
 def encoded_image(im:Image.Image,alpha:bool,indexed:bool)->tuple[int,bytes]:
     if not indexed:return int(alpha),image_data(im,alpha)
-    rgba=im.convert('RGBA')
-    pal=rgba.convert('RGB').quantize(colors=256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE)
-    colors=pal.getpalette();colors=(colors+[0]*768)[:768]
-    a=np.array(colors,dtype=np.uint16).reshape(256,3)
-    p=((a[:,0]>>3)<<11)|((a[:,1]>>2)<<5)|(a[:,2]>>3)
-    return 3 if alpha else 2,p.astype('<u2').tobytes()+pal.tobytes()+(rgba.getchannel('A').tobytes() if alpha else b'')
+    return 4,encode_sparse(im)
 
 def main()->None:
     ap=argparse.ArgumentParser(description=__doc__)
@@ -127,7 +123,7 @@ def main()->None:
     for key in CARDS:strings += [cards[key+'.title'],description(cards[key+'.description'],False),description(cards[key+'.description'],True)]
     strings += [monsters.get('NIBBIT.name','Nibbit'),'铁甲战士']
     events=json.loads(pack.read('localization/zhs/events.json'))
-    for key in EVENT_STRINGS:strings.append(re.sub(r'\[/?[a-zA-Z_]+\]','',events[key]))
+    for key in EVENT_STRINGS:strings.append(events[key])
     assert len(strings)==66
     print('Converting original scene layers and interface textures…',flush=True)
     background=texture(pack,'overgrowth_00.png')
@@ -150,10 +146,19 @@ def main()->None:
         im=prepared(atlas(pack,source,texture_cache),size,fit)
         alpha=im.getchannel('A').getextrema()[0]<255
         pictures.append((im,alpha,False))
+    # Converted static images no longer need their full-resolution source atlases.
+    texture_cache.clear()
     animation_records=[];animation_meta=[]
-    for name,skeleton,original,count,height,width in CLIPS:
-        print(f'  Sampling {skeleton}/{original}: {count} frames',flush=True)
-        frames,meta=bake(pack,skeleton,original,texture,frames=count,height=height,max_width=width,cache=skeleton_cache,exclude_regions=('bg','pink_highlights') if name=='MerchantBottom' else ())
+    for name,skeleton,original,fps,height,width in CLIPS:
+        # Keep scale entries, but retain only the active full-resolution skeleton.
+        for cached in list(skeleton_cache):
+            if isinstance(cached,str) and cached!=skeleton:del skeleton_cache[cached]
+        print(f'  Sampling {skeleton}/{original}: {fps} fps',flush=True)
+        if skeleton not in skeleton_cache:
+            sk=Skeleton(pack.read(pack.imported(skeleton+'.skel','.spskel')))
+            skeleton_cache[skeleton]=(sk,load_textures(pack,skeleton,texture))
+        samples=max(1,math.ceil(skeleton_cache[skeleton][0].animations[original]['duration']*fps))
+        frames,meta=bake(pack,skeleton,original,texture,frames=samples,height=height,max_width=width,cache=skeleton_cache,exclude_regions=('bg','pink_highlights') if name=='MerchantBottom' else ())
         first=len(pictures);pictures.extend((im,True,True) for im in frames)
         animation_records.append((first,len(frames),meta['frame_ms'],*meta['pivot'],0))
         animation_meta.append(dict(id=name,first_image=first,**meta))
@@ -181,13 +186,13 @@ def main()->None:
         b=s.encode('utf-8');off=add(b+b'\0');text_dir.extend(struct.pack('<II',off,len(b)))
     anim_dir=b''.join(struct.pack('<IHHhhI',*r) for r in animation_records)
     body=bytes(images_dir+glyph_dir+text_dir+anim_dir+payload)
-    result=struct.pack('<4s9I',b'NSP2',2,0x41CEF1EA,40+len(body),len(pictures),len(glyphs),len(strings),len(animation_records),0,fnv(body))+body
+    result=struct.pack('<4s9I',b'NSP2',3,0x41CEF1EA,40+len(body),len(pictures),len(glyphs),len(strings),len(animation_records),0,fnv(body))+body
     if len(result)>6*1024*1024:raise ValueError(f'Content exceeds the 6 MiB bound: {len(result)}')
     args.output.mkdir(parents=True,exist_ok=True)
     output=args.output/'nSpire2.nsp.tns';output.write_bytes(result)
-    manifest={'format':'NSP2/2','game':info,'content_sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),
+    manifest={'format':'NSP2/3','game':info,'content_sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),
       'cards':CARDS,'images':len(pictures),'glyphs':len(glyphs),'language':'zhs','animations':animation_meta,
-      'scope':'14-card subset; original UI and offline sampled original animations; custom twelve-floor branching expedition; three adapted events; limited shop/potions/relics; no original map/seed/save parity.'}
+      'scope':'14-card subset; original UI and offline sampled original animations; custom twelve-floor branching expedition; three rich-text events; ten modeled relics; no original map/seed/save parity.'}
     (args.output/'content-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
     pack.close();print(f'Created {output}: {len(result):,} bytes, {len(pictures)} images, {len(glyphs)} glyphs',flush=True)
 

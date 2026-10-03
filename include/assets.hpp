@@ -62,7 +62,13 @@ enum Asset {
     A_BloodPotion=57,
     A_ChestBackground=58,
     A_Chest=59,
-    A_Count=60
+    A_Lantern=60,
+    A_SmoothStone=61,
+    A_BloodVial=62,
+    A_HappyFlower=63,
+    A_Orichalcum=64,
+    A_PenNib=65,
+    A_Count=66
 };
 enum AnimationId {
     AnimHeroIdle=0,

@@ -38,12 +38,14 @@ static bool load_game(spire::State&s){
 }
 static bool pressed(unsigned offset,unsigned mask){return (*(volatile uint16_t*)(0x900E0000u+offset)&mask)!=0;}
 struct Clock {
-    uint32_t source,control,value,last;
-    // Clock register setup follows nZATO's modern Ndless backend (GPL-3.0).
-    void init(){auto*v=(volatile uint32_t*)0x900C0004u;auto*c=(volatile uint32_t*)0x900C0008u;auto*s=(volatile uint32_t*)0x900C0080u;
-        value=*v;control=*c;source=*s;*c=0;*s=10;*c=0x82;last=*v;}
-    bool frame(){uint32_t now=*(volatile uint32_t*)0x900C0004u;if(last-now<1092)return false;last=now;return true;}
-    void restore(){auto*v=(volatile uint32_t*)0x900C0004u;auto*c=(volatile uint32_t*)0x900C0008u;auto*s=(volatile uint32_t*)0x900C0080u;*c=0;*s=source;*v=value;*c=control;}
+    uint32_t load, control, last;
+    // SP804 timer 2 is dedicated to this foreground runtime. Do not reset
+    // the OS's 0x900C timer: restoring its registers cannot restore elapsed time.
+    void init(){auto*t=(volatile uint32_t*)0x900D0000u;
+        load=t[0];control=t[2];t[2]=0;t[0]=0xffffffffu;t[2]=0x82;last=t[1];}
+    unsigned frame(){uint32_t now=*(volatile uint32_t*)0x900D0004u,dt=last-now;
+        if(dt<1092)return 0;last=now;return dt>32768?1000:(dt*1000)>>15;}
+    void restore(){auto*t=(volatile uint32_t*)0x900D0000u;t[2]=0;t[0]=load;t[2]=control;}
 };
 struct Touchpad {
     unsigned w,h;
@@ -72,10 +74,10 @@ extern "C" int main(int argc,char**argv){
     auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);return 7;}
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();Clock clock{};clock.init();
-    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions};
+    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics};
     uint32_t previous=0;unsigned repeat[4]={};app.render();blit(app.pixels);
     while(!app.quit){
-        if(!clock.frame())continue;
+        unsigned elapsed=clock.frame();if(!elapsed)continue;app.advance(elapsed);
         uint32_t p=pad.keys();
         if(pressed(0x14,0x80))p|=1u<<0; // 4
         if(pressed(0x14,8))p|=1u<<1; // 6
@@ -90,11 +92,11 @@ extern "C" int main(int argc,char**argv){
         if(pressed(0x16,1))p|=1u<<10; // L
         if(pressed(0x14,0x40))p|=1u<<11; // M
         if(pressed(0x14,4))p|=1u<<12; // P
+        if(pressed(0x14,1))p|=1u<<13; // R: relic collection
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
-        for(unsigned i=0;i<13;i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
-        bool dirty=edge||app.notice_ticks||app.feedback||(app.animation%2==0);app.tick();
-        if(dirty){app.render();blit(app.pixels);}
+        for(unsigned i=0;i<14;i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
+        app.render();blit(app.pixels);
     }
     clock.restore();nd_lcd_init(-1);return 0;
 }

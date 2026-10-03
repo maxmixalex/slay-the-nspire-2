@@ -62,6 +62,7 @@ int damage(const State&s,Card c,int t){
     int d=definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
     if(d<=0)return 0;
     d=max(0,d+s.strength);
+    d*=relic_attack_multiplier(s,true);
     if(t>=0&&t<s.enemy_count&&s.enemies[t].vulnerable>0)d=d*3/2;
     return d;
 }
@@ -100,7 +101,7 @@ static void resolve(State&s){
         switch(e.kind){
         case EffectKind::Damage:
             if(e.target>=0&&e.target<s.enemy_count&&s.enemies[e.target].hp>0){
-                auto& t=s.enemies[e.target];int amount=max(0,e.value+s.strength);
+                auto& t=s.enemies[e.target];int amount=max(0,e.value+s.strength)*relic_attack_multiplier(s);
                 if(t.vulnerable)amount=amount*3/2;
                 int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
                 record(s,LogKind::Damage,amount,e.target);
@@ -122,12 +123,12 @@ static void resolve(State&s){
             if(s.playing>=0){int id=s.playing;
                 if(definitions[s.cards[id].kind].type==CardType::Power)put(s,s.powers,id,Zone::Power);
                 else put(s,s.discard,id,Zone::Discard);s.playing=-1;}
-            if(!alive(s))victory(s);break;
+            relic_attack_end(s);if(!alive(s))victory(s);break;
         }
     }
 }
 void enter_combat(State&s){
-    s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=0;s.power_count=0;
+    s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;
     s.turn=1;s.energy=3;s.playing=-1;s.effect_count=s.card_count=0;
     s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;
     s.enemy_count=s.encounter?2:1;
@@ -141,8 +142,7 @@ void enter_combat(State&s){
         for(int k=0;k<5;k++)for(int j=0;j<s.draw.count;j++)if(s.cards[s.draw.ids[j]].kind==opening[k]){
             int id=remove(s.draw,j);put(s,s.hand,id,Zone::Hand);break;}
     }else draw(s,5+((s.relics&BagOfPreparation)?2:0));
-    if(s.relics&Vajra)s.strength=1;
-    if(s.relics&Anchor)s.block=10;
+    relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);
     record(s,LogKind::Turn,1);s.revision++;
 }
 void new_run(State&s,uint32_t seed,bool practice){
@@ -151,6 +151,7 @@ void new_run(State&s,uint32_t seed,bool practice){
     s.hp=s.max_hp=80;s.floor=1;s.practice=practice;s.playing=-1;s.gold=99;s.current_node=-1;s.event_first=-1;
     if(practice){for(int i=0;i<CardKinds;i++)s.deck[s.deck_count++]={(uint8_t)i,(uint8_t)(i==DarkEmbrace||i==TrueGrit)};}
     else {for(int i=0;i<5;i++)s.deck[s.deck_count++]={Strike,0};for(int i=0;i<4;i++)s.deck[s.deck_count++]={Defend,0};s.deck[s.deck_count++]={Bash,0};}
+    gain_relic(s,BurningBlood);
     create_map(s);
     if(practice){s.current_node=1;s.floor=1;s.encounter=0;enter_combat(s);}
 }
@@ -162,6 +163,8 @@ bool play(State&s,int h,int target){
     if(c.kind==Anger&&s.card_count==MaxCards){fail(s);return false;}
     s.energy-=energy;s.playing=remove(s.hand,h);s.zones[s.playing]=Zone::Limbo;
     int hit=d.damage+(c.upgraded?d.damage_up:0),block=d.block+(c.upgraded?d.block_up:0),cards=d.draw+(c.upgraded?d.draw_up:0),power=d.power+(c.upgraded?d.power_up:0);
+    if(d.type==CardType::Attack)relic_attack_begin(s);
+    if(block)block=max(0,block+s.dexterity);
     record(s,LogKind::Play,c.kind,c.upgraded);
     if(block)enqueue(s,EffectKind::Block,block);
     if(c.kind==Whirlwind){for(int j=0;j<energy;j++)for(int i=0;i<s.enemy_count;i++)enqueue(s,EffectKind::Damage,hit,i);}
@@ -182,6 +185,7 @@ bool choose_exhaust(State&s,int index){
 }
 bool end_turn(State&s){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1)return false;
+    relic_hook(s,RelicHook::TurnEnd);
     while(s.hand.count){int id=remove(s.hand,0);put(s,s.discard,id,Zone::Discard);}
     for(int i=0;i<s.enemy_count;i++){
         auto&e=s.enemies[i];if(e.hp==0)continue;e.block=0;
@@ -193,7 +197,7 @@ bool end_turn(State&s){
         e.move=(uint8_t)((e.move+1)%3);
         if(!s.hp){s.phase=Phase::Dead;break;}
     }
-    if(s.hp){s.block=0;s.energy=3;s.turn++;draw(s,5);record(s,LogKind::Turn,s.turn);}
+    if(s.hp){s.block=0;s.energy=3;s.turn++;draw(s,5);relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);}
     s.revision++;return true;
 }
 bool choose_reward(State&s,int index){
@@ -213,13 +217,18 @@ bool upgrade_card(State&s,int index){
 }
 const Pile& pile(const State&s,Zone z){switch(z){case Zone::Draw:return s.draw;case Zone::Hand:return s.hand;case Zone::Discard:return s.discard;case Zone::Exhaust:return s.exhaust;default:return s.powers;}}
 bool validate(const State&s){
-    if((int)s.phase>(int)Phase::Error||s.practice>1||s.floor>MapRows||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>3||s.turn<0||s.turn>20000)return false;
+    if((int)s.phase>(int)Phase::Error||s.practice>1||s.floor>MapRows||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>10||s.turn<0||s.turn>20000)return false;
     if(s.block<0||s.block>9999||s.strength<0||s.strength>9999||s.pain<0||s.pain>9999||s.embrace<0||s.embrace>99)return false;
     if(s.deck_count<1||s.deck_count>MaxDeck||s.card_count>MaxCards||s.hand.count>MaxHand||s.effect_count>MaxEffects||s.log_count>24||s.power_count>2)return false;
     if(s.enemy_count>2||s.playing< -1||s.playing>=s.card_count)return false;
-    if(s.current_node< -1||s.current_node>=MapNodes||s.next_row>MapRows||s.encounter>1||s.relics>7||s.gold<0||s.gold>9999||s.last_gold<0||s.last_gold>99)return false;
+    if(s.current_node< -1||s.current_node>=MapNodes||s.next_row>MapRows||s.encounter>1||s.relics>=1024||s.gold<0||s.gold>9999||s.last_gold<0||s.last_gold>99)return false;
     if((int)s.event_id>2||s.event_page>4||s.event_remaining>2||s.event_first< -1||s.event_first>=s.deck_count||s.event_value<0||s.event_value>9999)return false;
-    if(s.shop_sold>127||s.shop_relic>4||(s.shop_relic&&s.shop_relic!=1&&s.shop_relic!=2&&s.shop_relic!=4)||s.shop_potion>3)return false;
+    if(s.shop_sold>127||s.shop_relic>=1024||(s.shop_relic&&!relic_definition(s.shop_relic))||s.shop_potion>3)return false;
+    if(s.relic_count>RelicKinds||s.dexterity<0||s.dexterity>9999||s.double_attack>1||s.relic_flash>=1024)return false;
+    uint16_t owned=0;
+    for(unsigned i=0;i<s.relic_count;i++){unsigned index=s.relic_order[i];if(index>=RelicKinds)return false;unsigned bit=relic_definitions[index].id;if(owned&bit)return false;owned|=bit;}
+    if(owned!=s.relics)return false;
+    for(int i=0;i<RelicKinds;i++)if(s.relic_counters[i]>(relic_definitions[i].id==PenNib?9:relic_definitions[i].id==HappyFlower?2:0))return false;
     for(auto p:s.potions)if((int)p>3)return false;
     for(auto c:s.shop_cards)if(c>=CardKinds)return false;
     for(auto p:s.shop_prices)if(p<0||p>9999)return false;
@@ -259,6 +268,8 @@ static void code_state(State&s,Codec&c){
  for(auto&e:s.enemies){F(e.hp);F(e.max_hp);F(e.block);F(e.strength);F(e.vulnerable);F(e.move);}
  F(s.effect_count);if(s.effect_count>MaxEffects){c.good=false;return;}for(int i=0;i<s.effect_count;i++){auto&e=s.effects[i];F(e.kind);F(e.value);F(e.target);}
  F(s.playing);
+ F(s.relic_count);for(auto&v:s.relic_order)F(v);for(auto&v:s.relic_counters)F(v);
+ F(s.dexterity);F(s.double_attack);F(s.relic_flash);F(s.relic_revision);
  F(s.current_node);F(s.next_row);F(s.encounter);F(s.relics);F(s.removals);F(s.gold);F(s.last_gold);
  for(auto&n:s.map){F(n.room);F(n.links);F(n.visited);F(n.event);}
  for(auto&p:s.potions)F(p);for(auto&x:s.shop_cards)F(x);F(s.shop_relic);F(s.shop_potion);F(s.shop_sold);for(auto&x:s.shop_prices)F(x);
@@ -268,12 +279,12 @@ static void code_state(State&s,Codec&c){
 }
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
-    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(2);c.field(0x41CEF1EA);code_state(copy,c);
+    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(3);c.field(0x41CEF1EA);code_state(copy,c);
     uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(len<16||len>16384||len%4)return false;
-    Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E||c.field(0)!=2||c.field(0)!=0x41CEF1EA)return false;
+    Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E||c.field(0)!=3||c.field(0)!=0x41CEF1EA)return false;
     State tmp{};code_state(tmp,c);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
     s=tmp;return true;

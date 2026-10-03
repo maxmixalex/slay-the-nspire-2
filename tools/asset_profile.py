@@ -42,20 +42,27 @@ ASSETS = [
  ('BloodPotion','blood_potion.png',(22,26),'contain'),
  ('ChestBackground','chest_room_act_1.png',(320,222),'cover'),
  ('Chest','chest_icon.png',(64,58),'contain'),
+ ('Lantern','lantern.png',(22,22),'contain'),
+ ('SmoothStone','oddly_smooth_stone.png',(22,22),'contain'),
+ ('BloodVial','blood_vial.png',(22,22),'contain'),
+ ('HappyFlower','happy_flower.png',(22,22),'contain'),
+ ('Orichalcum','orichalcum.png',(22,22),'contain'),
+ ('PenNib','pen_nib.png',(22,22),'contain'),
+
 ]
-# Name, skeleton, original clip, samples, target standing height, maximum width.
+# Name, skeleton, original clip, frames per second, target standing height, maximum width.
 CLIPS=[
  ('HeroIdle','ironclad','idle_loop',24,86,160),
- ('HeroAttack','ironclad','attack',18,86,160),
- ('HeroHurt','ironclad','hurt',14,86,160),
- ('HeroCast','ironclad','cast',20,86,160),
- ('EnemyIdle','nibbit','idle_loop',20,40,110),
- ('EnemyAttack','nibbit','attack',12,40,110),
- ('EnemyHurt','nibbit','hurt',12,40,110),
- ('EnemyBuff','nibbit','hiss',20,40,110),
+ ('HeroAttack','ironclad','attack',24,86,160),
+ ('HeroHurt','ironclad','hurt',24,86,160),
+ ('HeroCast','ironclad','cast',24,86,160),
+ ('EnemyIdle','nibbit','idle_loop',24,40,110),
+ ('EnemyAttack','nibbit','attack',24,40,110),
+ ('EnemyHurt','nibbit','hurt',24,40,110),
+ ('EnemyBuff','nibbit','hiss',24,40,110),
  ('MerchantTop','shop_merchant_top','idle_loop',24,78,220),
  ('MerchantBottom','shop_merchant_bottom','idle_loop',24,80,240),
- ('CampHero','restsite_ironclad','overgrowth_loop',28,80,160),
+ ('CampHero','restsite_ironclad','overgrowth_loop',24,80,160),
 ]
 EVENT_STRINGS=[
  'ABYSSAL_BATHS.title','ABYSSAL_BATHS.pages.INITIAL.description',
