@@ -14,7 +14,8 @@ const HitRegion* App::hit_at(int x,int y)const{
 }
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)title<<8)|((uint32_t)paused<<9)|
-        ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16);
+        ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
+        ((uint32_t)pile_tab<<17);
 }
 void App::pointer_cancel(){pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
@@ -28,8 +29,8 @@ void App::pointer_move(int x,int y){
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
     const auto*h=hit_at(pointer.x,pointer.y);if(!h||!h->enabled)return;
     switch(h->kind){
-    case HitKind::Menu:menu=h->value;break;
-    case HitKind::Choice:cursor=h->value;break;
+    case HitKind::Menu:if(!pointer.held)menu=h->value;break;
+    case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
     case HitKind::Hand:
         if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}
         break;
@@ -39,9 +40,15 @@ void App::pointer_move(int x,int y){
 }
 void App::pointer_scroll(int rows){
     if(!rows)return;
+    // A release after scrolling must not activate the control now underneath.
+    pointer_cancel();
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(title||paused||help)return;
-    if(panel==1){scroll=clamp(scroll+rows*5,0,MaxCards);inspect_cursor=scroll;}
+    if(panel==1){
+        // The renderer aligns to ten-card pages. Half-page increments were
+        // rounded back to the same page on every wheel event.
+        scroll=clamp(scroll+(rows>0?10:-10),0,MaxCards);inspect_cursor=scroll;
+    }
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
     else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-MapRows,MapRows);
     else if(panel==5)scroll=clamp(scroll+rows,0,game.relic_count?game.relic_count-1:0);
