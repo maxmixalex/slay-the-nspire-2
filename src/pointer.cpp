@@ -1,0 +1,112 @@
+#include "app.hpp"
+namespace spire {
+static int clamp(int n,int lo,int hi){return n<lo?lo:n>hi?hi:n;}
+void App::add_hit(int x,int y,int w,int h,HitKind kind,int value,bool enabled){
+    if(w<=0||h<=0||x>=ScreenW||y>=ScreenH||x+w<=0||y+h<=0||hit_count>=MaxHits)return;
+    int right=clamp(x+w,0,ScreenW),bottom=clamp(y+h,0,ScreenH);
+    x=clamp(x,0,ScreenW);y=clamp(y,0,ScreenH);
+    hits[hit_count++]={(int16_t)x,(int16_t)y,(int16_t)(right-x),(int16_t)(bottom-y),kind,(int16_t)value,enabled};
+}
+const HitRegion* App::hit_at(int x,int y)const{
+    for(int i=hit_count-1;i>=0;--i){const auto&h=hits[i];
+        if(x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h)return &h;}
+    return nullptr;
+}
+uint32_t App::input_context()const{
+    return (uint32_t)game.phase|((uint32_t)title<<8)|((uint32_t)paused<<9)|
+        ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16);
+}
+void App::pointer_cancel(){pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
+void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
+void App::open_card_detail(Card card){
+    if(card.kind>=CardKinds)return;
+    detail_card=card.kind+256*card.upgraded;detail_scroll=0;pointer_cancel();
+}
+void App::pointer_move(int x,int y){
+    pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
+    if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
+        if(dx*dx+dy*dy>=25)pointer.dragging=true;}
+    const auto*h=hit_at(pointer.x,pointer.y);if(!h||!h->enabled)return;
+    switch(h->kind){
+    case HitKind::Menu:menu=h->value;break;
+    case HitKind::Choice:cursor=h->value;break;
+    case HitKind::Hand:
+        if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}
+        break;
+    case HitKind::Enemy:target=h->value;break;
+    default:break;
+    }
+}
+void App::pointer_scroll(int rows){
+    if(!rows)return;
+    if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
+    if(title||paused||help)return;
+    if(panel==1){scroll=clamp(scroll+rows*5,0,MaxCards);inspect_cursor=scroll;}
+    else if(panel==2)scroll=clamp(scroll-rows,0,24);
+    else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-MapRows,MapRows);
+    else if(panel==5)scroll=clamp(scroll+rows,0,game.relic_count?game.relic_count-1:0);
+    else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
+    else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)
+        cursor=clamp(cursor+rows,0,game.deck_count?game.deck_count-1:0);
+}
+void App::pointer_button(bool down){
+    // Input can arrive between timed frames. Hit geometry is rebuilt from the
+    // current screen rather than trusting regions from a previous overlay.
+    render();pointer_move(pointer.x,pointer.y);
+    const auto*found=hit_at(pointer.x,pointer.y);HitRegion hit=found?*found:HitRegion{};
+    if(down){
+        if(pointer.held)return;
+        pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
+        pointer.captured=hit;pointer.context=input_context();pointer.revision=game.revision;
+        return;
+    }
+    if(!pointer.held)return;
+    pointer.held=false;
+    HitRegion captured=pointer.captured;pointer.captured={};
+    if(pointer.context!=input_context()||pointer.revision!=game.revision){pointer_cancel();return;}
+    bool same=captured.kind==hit.kind&&captured.value==hit.value;
+    if(captured.kind==HitKind::Hand&&game.phase==Phase::Combat&&captured.enabled){
+        int id=captured.value,index=-1;
+        for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==id)index=i;
+        if(index<0||busy){pointer_cancel();return;}
+        Card card=game.cards[id];bool targeted=definitions[card.kind].targeted;
+        bool dropping=pointer.dragging&&(hit.kind==HitKind::Enemy||(!targeted&&hit.kind==HitKind::Battlefield));
+        if(dropping&&hit.enabled){cursor=index;if(hit.kind==HitKind::Enemy)target=hit.value;
+            pointer.armed_card=-1;pointer_key(Key::Confirm);return;}
+        if(same&&!pointer.dragging){
+            if(pointer.armed_card==id&&!targeted){cursor=index;pointer.armed_card=-1;pointer_key(Key::Confirm);}
+            else pointer.armed_card=pointer.armed_card==id?-1:id;
+            return;
+        }
+        pointer.armed_card=-1;return;
+    }
+    if(!same||!hit.enabled){if(pointer.dragging)pointer.armed_card=-1;return;}
+    if(hit.kind==HitKind::Enemy||hit.kind==HitKind::Battlefield){
+        if(pointer.armed_card<0||busy||game.phase!=Phase::Combat)return;
+        int index=-1;for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==pointer.armed_card)index=i;
+        if(index<0){pointer.armed_card=-1;return;}
+        bool targeted=definitions[game.cards[pointer.armed_card].kind].targeted;
+        if(targeted&&hit.kind!=HitKind::Enemy)return;
+        cursor=index;if(hit.kind==HitKind::Enemy)target=hit.value;
+        pointer.armed_card=-1;pointer_key(Key::Confirm);return;
+    }
+    pointer.armed_card=-1;
+    switch(hit.kind){
+    case HitKind::Menu:menu=hit.value;pointer_key(Key::Confirm);break;
+    case HitKind::Choice:cursor=hit.value;if(game.phase==Phase::Map)map_scroll=0;pointer_key(Key::Confirm);break;
+    case HitKind::Hand:
+        if(game.phase==Phase::ExhaustChoice)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==hit.value){cursor=i;pointer_key(Key::Confirm);break;}
+        break;
+    case HitKind::Command:pointer_key((Key)hit.value);break;
+    case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;break;
+    case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
+    case HitKind::PileCard:open_card_detail({(uint8_t)(hit.value&255),(uint8_t)(hit.value>>8)});break;
+    case HitKind::Relic:scroll=hit.value;break;
+    case HitKind::Potion:scroll=hit.value;break;
+    case HitKind::Scroll:pointer_scroll(hit.value);break;
+    case HitKind::Close:pointer_key(Key::Back);break;
+    case HitKind::DetailClose:detail_card=-1;break;
+    default:break;
+    }
+}
+} // namespace spire

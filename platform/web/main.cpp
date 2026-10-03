@@ -12,9 +12,13 @@ extern "C" {
 unsigned content_buffer(){return (unsigned)(size_t)content;}
 int start(unsigned n){return app.init(content,n,{save_game,load_game})?1:0;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}
-void input(int key){if(key>=0&&key<=(int)spire::Key::Relics)app.input((spire::Key)key);}
+void input(int key){if(key>=0&&key<=(int)spire::Key::Detail)app.input((spire::Key)key);}
 void frame(){app.tick();app.render();}
 void advance(unsigned elapsed_ms){app.advance(elapsed_ms);}
 void draw_frame(){app.render();}
+void pointer_move(int x,int y){app.pointer_move(x,y);}
+void pointer_button(int down){app.pointer_button(down!=0);}
+void pointer_cancel(){app.pointer_cancel();app.pointer.visible=false;}
+void pointer_scroll(int rows){app.pointer_scroll(rows);}
 int closed(){return app.quit?1:0;}
 }

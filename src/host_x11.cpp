@@ -33,7 +33,7 @@ static bool key(KeySym sym,spire::Key&k){
     case XK_Up:case XK_8:k=Key::Up;break;case XK_Down:case XK_2:k=Key::Down;break;
     case XK_Return:case XK_KP_Enter:case XK_5:k=Key::Confirm;break;case XK_space:k=Key::EndTurn;break;
     case XK_Escape:k=Key::Back;break;case XK_Tab:k=Key::Inspect;break;case XK_l:case XK_L:k=Key::Log;break;
-    case XK_m:case XK_M:k=Key::Map;break;case XK_p:case XK_P:k=Key::Potions;break;case XK_r:case XK_R:k=Key::Relics;break;
+    case XK_m:case XK_M:k=Key::Map;break;case XK_p:case XK_P:k=Key::Potions;break;case XK_r:case XK_R:k=Key::Relics;break;case XK_i:case XK_I:k=Key::Detail;break;
     case XK_s:case XK_S:k=Key::Save;break;case XK_o:case XK_O:k=Key::Load;break;default:return false;}return true;
 }
 int main(int argc,char**argv){
@@ -60,7 +60,7 @@ int main(int argc,char**argv){
     Display*d=XOpenDisplay(nullptr);if(!d){fprintf(stderr,"No X display. Use --headless for batch execution.\n");return 2;}
     Bool detectable;XkbSetDetectableAutoRepeat(d,True,&detectable);
     int screen=DefaultScreen(d);Window win=XCreateSimpleWindow(d,RootWindow(d,screen),0,0,960,720,0,0,0);
-    XStoreName(d,win,"nSpire II | Native expedition prototype 0.3");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask);
+    XStoreName(d,win,"nSpire II | Native expedition prototype 0.4");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
     Atom close=XInternAtom(d,"WM_DELETE_WINDOW",False);XSetWMProtocols(d,win,&close,1);XMapWindow(d,win);
     GC gc=XCreateGC(d,win,0,nullptr);int width=960,height=720;bool held[256]={};XImage*image=nullptr;
     auto last_frame=std::chrono::steady_clock::now();
@@ -69,7 +69,20 @@ int main(int argc,char**argv){
             XEvent e;XNextEvent(d,&e);
             if(e.type==ClientMessage&&(Atom)e.xclient.data.l[0]==close)app.quit=true;
             else if(e.type==ConfigureNotify){width=std::max(320,e.xconfigure.width);height=std::max(240,e.xconfigure.height);if(image){XDestroyImage(image);image=nullptr;}}
-            else if(e.type==FocusOut)memset(held,0,sizeof held);
+            else if(e.type==FocusOut){memset(held,0,sizeof held);app.pointer_cancel();app.pointer.visible=false;}
+            else if(e.type==MotionNotify||e.type==ButtonPress||e.type==ButtonRelease){
+                int scale=std::max(1,std::min(width/320,height/240));
+                int ex=e.type==MotionNotify?e.xmotion.x:e.xbutton.x,ey=e.type==MotionNotify?e.xmotion.y:e.xbutton.y;
+                int ox=(width-320*scale)/2,oy=(height-240*scale)/2;
+                bool inside=ex>=ox&&ey>=oy&&ex<ox+320*scale&&ey<oy+240*scale;
+                if(inside)app.pointer_move((ex-ox)/scale,(ey-oy)/scale);
+                if(e.type==ButtonPress&&inside){
+                    if(e.xbutton.button==Button1)app.pointer_button(true);
+                    else if(e.xbutton.button==Button3)app.input(spire::Key::Back);
+                    else if(e.xbutton.button==Button4||e.xbutton.button==Button5)app.pointer_scroll(e.xbutton.button==Button4?-1:1);
+                }else if(e.type==ButtonRelease&&e.xbutton.button==Button1){if(inside)app.pointer_button(false);else app.pointer_cancel();}
+            }
+            else if(e.type==LeaveNotify&&!app.pointer.held)app.pointer.visible=false;
             else if(e.type==KeyRelease)held[e.xkey.keycode&255]=false;
             else if(e.type==KeyPress&&!held[e.xkey.keycode&255]){held[e.xkey.keycode&255]=true;spire::Key k;if(key(XLookupKeysym(&e.xkey,0),k))app.input(k);}
         }

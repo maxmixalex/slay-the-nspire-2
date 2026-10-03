@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "touchpad.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
 unsigned nd_read(void*,unsigned,unsigned,void*);
@@ -56,11 +57,12 @@ struct Touchpad {
         asm volatile("msr cpsr_c,%0"::"r"(cpsr):"memory");
         w=ok&&restored?((unsigned)b[0]<<8)|b[1]:0;h=ok&&restored?((unsigned)b[2]<<8)|b[3]:0;
     }
-    unsigned keys(){
-        if(!w||!h)return 0;uint8_t b[12]={};if(!nd_touch_read(0,10,b)||!b[10])return 0;
-        unsigned x=((unsigned)b[2]<<8)|b[3],y=((unsigned)b[4]<<8)|b[5];
-        if(y*3>=h*2)return 1u<<2;if(y*3<=h)return 1u<<3;
-        if(x*3<=w)return 1u<<0;if(x*3>=w*2)return 1u<<1;return 1u<<4;
+    spire::TouchSample read(){
+        uint8_t b[12]={};
+        if(!w||!h||!nd_touch_read(0,10,b))return {};
+        return {(uint16_t)(((unsigned)b[2]<<8)|b[3]),
+                (uint16_t)(((unsigned)b[4]<<8)|b[5]),(uint16_t)w,(uint16_t)h,
+                b[0]!=0,b[10]!=0,true};
     }
 };
 extern "C" int main(int argc,char**argv){
@@ -73,12 +75,19 @@ extern "C" int main(int argc,char**argv){
     if(!nd_lcd_init(0))return 6;
     auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);return 7;}
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
-    Touchpad pad{};pad.init();Clock clock{};clock.init();
-    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics};
-    uint32_t previous=0;unsigned repeat[4]={};app.render();blit(app.pixels);
+    Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
+    Clock clock{};clock.init();uint32_t input_clock=0;
+    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail};
+    uint32_t previous=0x7fff;unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;app.render();blit(app.pixels);
     while(!app.quit){
         unsigned elapsed=clock.frame();if(!elapsed)continue;app.advance(elapsed);
-        uint32_t p=pad.keys();
+        input_clock+=elapsed;
+        auto sample=pad.read();auto pointer=pad_cursor.sample(sample,input_clock);
+        if(input_ready&&pointer.cancelled)app.pointer_cancel();
+        if(input_ready&&(pointer.moved||pointer.down||pointer.up||pointer.tap))app.pointer_move(pointer.x,pointer.y);
+        if(input_ready&&(pointer.down||pointer.tap))app.pointer_button(true);
+        if(input_ready&&(pointer.up||pointer.tap))app.pointer_button(false);
+        uint32_t p=0;
         if(pressed(0x14,0x80))p|=1u<<0; // 4
         if(pressed(0x14,8))p|=1u<<1; // 6
         if(pressed(0x1C,0x40))p|=1u<<2; // 8
@@ -93,9 +102,17 @@ extern "C" int main(int argc,char**argv){
         if(pressed(0x14,0x40))p|=1u<<11; // M
         if(pressed(0x14,4))p|=1u<<12; // P
         if(pressed(0x14,1))p|=1u<<13; // R: relic collection
+        if(pressed(0x16,0x10))p|=1u<<14; // I: inspect selected card
+        if(!input_ready){
+            // The document launcher may leave ENTER or the pad held. Require a
+            // stable release so opening the program cannot also start a run.
+            quiet_ms=(p==0&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
+            if(quiet_ms>=100)input_ready=true;
+            previous=p;pad_cursor.reset();app.render();blit(app.pixels);continue;
+        }
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
-        for(unsigned i=0;i<14;i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
+        for(unsigned i=0;i<15;i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
         app.render();blit(app.pixels);
     }
     clock.restore();nd_lcd_init(-1);return 0;

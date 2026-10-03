@@ -1,6 +1,7 @@
 #pragma once
 #include "core.hpp"
 #include "assets.hpp"
+#include "pointer.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=6*1024*1024;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
@@ -15,7 +16,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
 };
-enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics };
+enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail };
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };
 struct Motion {int clip=-1;uint32_t start=0;};
 struct App {
@@ -26,6 +27,19 @@ struct App {
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[3]={},hit_start[3]={};
     uint32_t animation=0,run_number=0;const char* notice="";
     Motion motion[3]{};
+    PointerState pointer{};
+    HitRegion hits[MaxHits]{}; int hit_count = 0;
+    int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
+    void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
+    const HitRegion* hit_at(int x,int y) const;
+    uint32_t input_context() const;
+    void pointer_move(int x,int y);
+    void pointer_button(bool pressed);
+    void pointer_cancel();
+    void pointer_scroll(int rows);
+    void pointer_key(Key);
+    void open_card_detail(Card);
+
     bool init(const uint8_t*,size_t,Callbacks);
     void input(Key);
     void tick();

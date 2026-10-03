@@ -16,6 +16,7 @@ import struct
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
 from pck import Pack
+from reference_inventory import verify_release
 from setup_pose import decode_texture
 from animation import Skeleton, bake, load_textures
 from sparse_image import encode as encode_sparse
@@ -116,6 +117,7 @@ def main()->None:
     info=json.loads((args.game/'release_info.json').read_text(encoding='utf-8-sig'))
     if info.get('version')!='v0.111.0' or info.get('commit')!=GAME_COMMIT:
         raise ValueError('This rule subset supports only v0.111.0 / 41cef1ea.')
+    verify_release(args.game)
     pack=Pack(args.game/'SlayTheSpire2.pck');texture_cache={};skeleton_cache={}
     cards=json.loads(pack.read('localization/zhs/cards.json'))
     monsters=json.loads(pack.read('localization/zhs/monsters.json'))

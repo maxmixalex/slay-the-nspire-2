@@ -1,0 +1,34 @@
+{
+  "version": "v0.111.0",
+  "commit": "41cef1ea",
+  "sha256": {
+    "assembly": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9",
+    "pck": "c60f672ee7804e6aefa1e19a582fa1c80b126a7b0eef4d084d3abf110df2eab7"
+  },
+  "metadata_type_counts": {
+    "Cards": 596,
+    "Relics": 300,
+    "Potions": 65,
+    "Characters": 8,
+    "Monsters": 121,
+    "Encounters": 91,
+    "Events": 68
+  },
+  "standard_character_registry": [
+    "Ironclad",
+    "Silent",
+    "Regent",
+    "Necrobinder",
+    "Defect"
+  ],
+  "character_registry_source": "ModelDb.get_AllCharacters, literal array in the pinned assembly",
+  "character_card_pool_counts": {
+    "IroncladCardPool": 90,
+    "SilentCardPool": 91,
+    "RegentCardPool": 91,
+    "NecrobinderCardPool": 91,
+    "DefectCardPool": 91
+  },
+  "card_pool_count_source": "GenerateAllCards literal arrays, before per-profile unlock filtering",
+  "scope_note": "Type counts include deprecated, token and non-selectable models. Availability and behavior must be verified separately."
+}
