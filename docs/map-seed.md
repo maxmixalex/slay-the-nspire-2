@@ -1,23 +1,27 @@
-# Map and seed compatibility
+# Map and seed scope — 0.5
 
-Status for **v0.111.0 / 41cef1ea**, inspected from the installation supplied by the project owner on 2026-10-03. These are read-only CIL inspection findings, not an assertion of runtime parity. Original assemblies and disassembly output are not distributed here.
+Reference: **v0.111.0 / 41cef1ea**, verified against the supplied assembly/PCK hashes. Original assemblies and CIL dumps are not distributed.
 
-## Current implementation
+## Implemented
 
-`src/run.cpp::create_map` still builds the original prototype's fixed twelve-row, three-column expedition. `random_below` still uses independent xorshift32 state. This is explicitly **not** a port of the original map or seed algorithms. Relic/UI/animation work in 0.3 does not change that claim.
+`reference_rng.cpp` implements XXH64, SplitMix64 initialization, xoshiro256** state transitions and named streams. Bounded sampling reproduces the inspected binary64 multiply-and-truncate path using integer limbs, including nearest-even rounding. ASCII seed normalization uppercases, maps O to 0 and I to 1, and trims outer whitespace. Unicode and the old-seed compatibility path are explicitly unsupported.
 
-## Verified original path
+`reference_map.cpp` ports the **explicit-quota StandardActMap constructor**. Its input is a configured RNG state and counts for rests, shops, elites and unknown rooms. It implements seven-column paths, crossover checks, fixed room rows, constrained room assignment, duplicate-segment pruning, edge breaking, quota repair, centering, spreading and straightening.
 
-`SeedHelper.CanonicalizeSeed` uppercases invariantly, replaces O with 0 and I with 1, then trims whitespace. For the normal seed path, `RunRngSet` calls `StringHelper.GetDeterministicHashCode`; that method hashes UTF-8 bytes using XXHash64. A separate old-seed compatibility path also exists and must not be silently folded into the normal algorithm.
+Enumeration order is part of the behavior: candidate points sort by column then row before shuffling; edge sets preserve slot order after removals; segment groups use ordinal keys. Repair runs in the original shop/elite/rest/unknown order. The API records RNG call counts after paths, types, pruning and layout, and retains the final four-word state.
 
-Named random streams use the run seed plus the deterministic hash of the stream name. `StandardActMap.CreateFor` constructs its stream with an `act_<one-based act index>_map` name. Drawing cards, generating a map and generating rewards must not consume a shared presentation RNG.
+The bounded workspace stores segment references instead of duplicate key strings. Capacity failures return an explicit error; they never fall back to a different map. The tested workspace is 1,114,120 bytes, separate from the 3,216-byte graph object.
 
-`MegaRandom.Reinitialise` fills four 64-bit words using SplitMix64. `NextULongInner` uses xoshiro256**: rotate-left(state[1] * 5, 7) * 9, followed by its state xor/shift/rotate update. `NextDouble` uses the upper 53 random bits. Bounded integers are derived from the floating-point sampling path, not an integer remainder. Merely replacing the prototype's xorshift with xoshiro would therefore not establish seed compatibility.
+## Preview versus original run
 
-`StandardActMap` builds paths across seven columns, assigns room types, and invokes path pruning/repair and layout post-processing. Audited entry points include `PathGenerate`, `GenerateNextCoord`, `HasInvalidCrossover`, `AssignPointTypes`, `MapPathPruning.PruneAndRepair`, centering, spreading and straightening. Room-pool construction and call order are part of the result, not cosmetic details.
+The title menu's reference preview uses `act_1_map`, canonical `NSP1RE-<number>` demonstration seeds and fixed quotas: seven rests, three shops, five elites and twelve unknown rooms, with a sixteen-row configuration. These are explicit inputs to the ported constructor, not a claim about the quotas the original game would choose for the same text seed.
 
-## Acceptance boundary for the next implementation
+**Original Gaussian quota generation is not connected.** Its RNG consumption must precede construction exactly as in the reference. The preview therefore remains separate from the existing 12×3 expedition, whose xorshift streams and version-3 saves are unchanged. It does not substitute Nibbits for original map encounters.
 
-Port the canonical seed/hash/random stream layer with original-assembly reference vectors first. Then port room-pool construction, path generation, type constraints and pruning in the original order. Compare exact node coordinates, room types, edges and random-stream state on fixed seeds. Finally bind supported room content, while explicitly flagging substitutions for unsupported encounters.
+## Comparison evidence
 
-Do not call a seeded random three-column graph an original map. Do not publish PC seed compatibility based only on deterministic repeats within this port. Full reward/shop/encounter parity is a separate milestone even after map topology matches.
+Ten explicit-input cases matched restricted original-CIL replay: seeds 0, 1, 2, 3, 4, 5, 0xffffffffffffffff and 0x20261003 with the default explicit configuration; seeds 7 and 42 with six rests, ten unknowns, eight elites, treasure replacement and a second boss. Comparisons included node coordinates, types, modifiability, ordered child edges, all four stage call counts and final RNG state.
+
+The reference runner executes the relevant original method bodies with bounded collection/LINQ/runtime adapters. It is not the full original executable and has its own possible adapter defects. A separate 1,000-map ASan/UBSan configuration-varying run checked graph structure, not original parity for all 1,000 maps.
+
+Next acceptance: original quota generation and its floating-point boundaries; actual reference-run snapshots; exact default seeded topology; original room/encounter pools and full-run random call order. A matching explicit-quota graph alone is not PC seed compatibility.

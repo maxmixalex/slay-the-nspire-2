@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>nSpire II 0.4 · 同源桌面运行时</title>
+<title>nSpire II 0.5 · 同源桌面运行时</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#151a19;color:#ece6d6;font:14px/1.7 system-ui,sans-serif;min-height:100vh;display:grid;place-content:center;padding:20px}main{width:min(960px,calc(100vw - 40px))}h1{font-size:18px;font-weight:500;margin:0 0 12px}small{color:#b5b8ac}canvas{display:block;width:100%;aspect-ratio:4/3;background:#111;image-rendering:pixelated;touch-action:none;cursor:none;box-shadow:0 12px 55px #0008;border:1px solid #5b5542;outline:none}p{margin:12px 0 0;color:#b5b8ac}kbd{font:inherit;color:#e2c992}button{background:#343c35;border:1px solid #6c725f;color:#eee9d9;border-radius:4px;padding:5px 10px;cursor:pointer}#error{white-space:pre-wrap;color:#ffb7a6}#actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}a{color:inherit}
 </style>
 <main>
-<h1>nSpire II 0.4 <small>｜同一 C++ 核心编译为 WebAssembly；不是 Firebird 模拟器。</small></h1>
+<h1>nSpire II 0.5 <small>｜同一 C++ 核心编译为 WebAssembly；不是 Firebird 模拟器。</small></h1>
 <canvas id="screen" width="320" height="240" tabindex="0" aria-label="nSpire II 游戏画面"></canvas>
 <div id="actions"><button data-key="2">↑ 目标 / 上</button><button data-key="0">← 选牌</button><button data-key="1">选牌 →</button><button data-key="3">↓ 目标 / 下</button><button data-key="4">Enter 确认</button><button data-key="6">结束回合</button><button data-key="7">查看牌堆</button><button data-key="10">记录</button><button data-key="12">地图</button><button data-key="13">药水</button><button data-key="14">遗物</button><button data-key="5">Esc 菜单</button></div>
 <p><kbd>方向键 / 4、6、8、2</kbd> 导航，<kbd>Enter / 5</kbd> 确认，<kbd>空格</kbd> 结束回合，<kbd>Tab</kbd> 牌堆，<kbd>L</kbd> 记录，<kbd>M</kbd> 地图，<kbd>P</kbd> 药水，<kbd>R</kbd> 遗物，<kbd>S</kbd> 保存，<kbd>O</kbd> 载入。存档保存在当前浏览器。可用鼠标或触摸板指针：点选手牌后点敌人，或将牌拖到敌人；非指向牌放到战场。滚轮翻页，点卡组卡牌查看详情。</p>
@@ -15,7 +15,7 @@
 'use strict';
 (async()=>{
  const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
- const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,Tab:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15};
+ const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,Tab:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,g:16,G:16};
  let memory,game;
  const decode=(s)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
  const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};

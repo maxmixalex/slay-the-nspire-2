@@ -134,6 +134,21 @@ static int choice_count(const App&a){
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
+    if(k==Key::ReferenceMap){
+        map_preview.open=!map_preview.open;
+        if(map_preview.open&&!map_preview.generated)map_preview.generate();
+        return;
+    }
+    if(map_preview.open){
+        if(k==Key::Back)map_preview.open=false;
+        else if(k==Key::Up)map_preview.first_row=mn(int(map_preview.map.config.rows)-3,map_preview.first_row+1);
+        else if(k==Key::Down)map_preview.first_row=mx(0,map_preview.first_row-1);
+        else if(k==Key::Left)map_preview.change_seed(-1);
+        else if(k==Key::Right)map_preview.change_seed(1);
+        else if(k==Key::Confirm)map_preview.generate();
+        else if(k==Key::Quit)quit=true;
+        return;
+    }
     if(detail_card>=0){
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_card=-1;
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
@@ -147,18 +162,19 @@ void App::input(Key k){
     if(k==Key::Quit){quit=true;return;}
     if(help){if(k==Key::Back||k==Key::Confirm)help=false;return;}
     if(title){
-        if(k==Key::Up||k==Key::Left)menu=(menu+4)%5;if(k==Key::Down||k==Key::Right)menu=(menu+1)%5;
+        if(k==Key::Up||k==Key::Left)menu=(menu+5)%6;if(k==Key::Down||k==Key::Right)menu=(menu+1)%6;
         if(k==Key::Confirm){
             if(menu<2){new_run(game,0x20261003u+run_number++*7919u,menu==1);title=false;reset_presentation();if(game.practice)message("组合练习：固定起手，练习消耗与能力");}
-            else if(menu==2){if(callbacks.load&&callbacks.load(game)){title=false;reset_presentation();message("已恢复完整远征状态");}else message("没有有效的 0.3 存档");}
-            else if(menu==3)help=true;else quit=true;
+            else if(menu==2){if(callbacks.load&&callbacks.load(game)){title=false;reset_presentation();message("已恢复完整远征状态");}else message("没有有效的存档");}
+            else if(menu==3){map_preview.open=true;if(!map_preview.generated)map_preview.generate();}
+            else if(menu==4)help=true;else quit=true;
         }return;
     }
     if(paused){
         if(k==Key::Back){paused=false;return;}if(k==Key::Up||k==Key::Left)menu=(menu+5)%6;if(k==Key::Down||k==Key::Right)menu=(menu+1)%6;
         if(k==Key::Confirm){switch(menu){case 0:paused=false;break;
             case 1:has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");paused=false;break;
-            case 2:if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的 0.3 存档");paused=false;break;
+            case 2:if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的存档");paused=false;break;
             case 3:help=true;break;case 4:paused=false;title=true;menu=0;break;case 5:quit=true;break;}}return;
     }
     if(k==Key::Back){
@@ -168,7 +184,7 @@ void App::input(Key k){
         else{paused=true;menu=0;}return;
     }
     if(k==Key::Save){has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");return;}
-    if(k==Key::Load){if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的 0.3 存档");return;}
+    if(k==Key::Load){if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的存档");return;}
     if(k==Key::Log){panel=panel==2?0:2;scroll=0;return;}
     if(k==Key::Inspect){panel=panel==1?0:1;scroll=inspect_cursor=0;return;}
     if(k==Key::Map){if(game.practice){message("组合练习没有远征路线");return;}panel=panel==3?0:3;map_scroll=0;return;}
@@ -482,6 +498,54 @@ static void detail_screen(Canvas&c){
     c.close_button(290,26);c.hit(288,24,25,24,HitKind::DetailClose);
     if(lines>8){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
 }
+static void reference_map_screen(Canvas& c){
+    auto& a=c.a;auto& view=a.map_preview;const auto& map=view.map;
+    a.hit_count=0;c.rect(0,0,320,240,Ink);c.picture(A_MapBackground,0,0);c.rect(0,0,320,49,Panel);
+    c.centered("参考地图",0,1,320,16,Gold);c.centered("固定房间配额 · 尚未接入战斗",0,26,320,10,Muted);
+    c.close_button(293,3);
+    if(!view.generated){c.centered("生成失败，未使用替代地图",0,93,320,12,Red);c.num(int(map.error),155,117);}
+    else{
+        const int step=33,base=view.first_row;
+        for(unsigned i=0;i<map.count;++i){
+            const auto& p=map.points[i];if(!p.active||p.row<base||p.row>base+3)continue;
+            int x=29+p.col*42,y=161-(int(p.row)-base)*step;
+            for(unsigned j=0;j<p.children.used;++j){
+                uint8_t id=p.children.slots[j];if(id==reference::NoPoint)continue;const auto& q=map.points[id];
+                if(q.row>base+3)continue;c.line(x,y-7,29+q.col*42,y-step+7,rgb(91,69,47),true);
+            }
+        }
+        for(unsigned i=0;i<map.count;++i){
+            const auto& p=map.points[i];if(!p.active||p.row<base||p.row>base+3)continue;
+            int x=29+p.col*42,y=161-(int(p.row)-base)*step;int image=A_MapCombat;
+            switch(p.type){
+            case reference::PointType::Unknown:image=A_MapEvent;break;
+            case reference::PointType::Shop:image=A_MapShop;break;
+            case reference::PointType::Treasure:image=A_MapTreasure;break;
+            case reference::PointType::Rest:image=A_MapCamp;break;
+            case reference::PointType::Elite:image=A_MapFinal;break;
+            case reference::PointType::Start:image=A_MapMarker;break;
+            case reference::PointType::Boss:image=-1;break;
+            default:break;
+            }
+            if(view.selected==int(i))c.picture(A_MapHalo,x-15,y-15,30,30);
+            if(image>=0)c.picture(image,x-9,y-9,18,18);else c.centered("BOSS",x-20,y-9,40,10,Ink);
+            c.hit(x-14,y-14,28,28,HitKind::ReferenceNode,int(i));
+        }
+        for(int row=base;row<=base+3;++row)c.num(row,1,155-(row-base)*step,10,Ink);
+    }
+    c.text("↑",302,53,12,Ink);c.hit(296,50,24,24,HitKind::Scroll,-1);
+    c.text("↓",302,151,12,Ink);c.hit(296,148,24,25,HitKind::Scroll,1);
+    c.rect(0,180,320,60,Panel);
+    const char* names[]={"未分配","事件","商店","宝藏","休息处","战斗","精英","首领","起点"};
+    char detail[112]={};TextBuffer text{detail,sizeof detail,0};
+    if(view.selected>=0&&view.selected<map.count){const auto&p=map.points[view.selected];text.text(names[unsigned(p.type)]);text.text("  (");text.number(p.col);text.ch(',');text.number(p.row);text.text(")  路径 ");text.number(p.children.count());}
+    else text.text("配额：休息 7 / 商店 3 / 精英 5 / 事件 12");
+    c.centered(detail,0,181,320,10,Gold);
+    c.button("‹",5,198,39,false,24);c.hit(5,198,39,24,HitKind::Command,int(Key::Left));
+    c.centered(view.seed,48,199,224,12,White);
+    c.button("›",276,198,39,false,24);c.hit(276,198,39,24,HitKind::Command,int(Key::Right));
+    c.centered("↑↓ 浏览 · ←→ 换种子 · Esc 返回",0,224,320,10,Muted);
+}
 static void pointer_overlay(Canvas&c){
     auto&a=c.a;auto&p=a.pointer;if(!p.visible)return;
     if(p.armed_card>=0&&p.armed_card<a.game.card_count){
@@ -495,8 +559,8 @@ static void pointer_overlay(Canvas&c){
 void App::render(){
     Canvas c{*this};hit_count=0;c.rect(0,0,320,240,Ink);
     if(title){
-        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.4",18,78,10,Gold);
-        c.actor(0,257,207);const char*items[]={"开始远征","组合练习","继续存档","操作说明","退出"};for(int i=0;i<5;i++){c.button(items[i],18,94+i*27,161,menu==i,25);c.hit(18,94+i*27,161,25,HitKind::Menu,i);}
+        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.5",18,78,10,Gold);
+        c.actor(0,257,207);const char*items[]={"开始远征","组合练习","继续存档","参考地图","操作说明","退出"};for(int i=0;i<6;i++){c.button(items[i],18,92+i*23,161,menu==i,22);c.hit(18,92+i*23,161,22,HitKind::Menu,i);}
         c.text("v0.111.0 / 41cef1ea",199,224,10,Muted,120);
     }else{
         switch(game.phase){
@@ -519,7 +583,8 @@ void App::render(){
         for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
     }
     if(detail_card>=0)detail_screen(c);
-    if(notice_ticks){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    if(map_preview.open)reference_map_screen(c);
+    if(notice_ticks&&!map_preview.open){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
     pointer_overlay(c);
 }
 } // namespace spire

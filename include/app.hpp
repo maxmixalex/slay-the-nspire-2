@@ -2,6 +2,7 @@
 #include "core.hpp"
 #include "assets.hpp"
 #include "pointer.hpp"
+#include "map_preview.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=6*1024*1024;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
@@ -16,7 +17,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
 };
-enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail };
+enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap };
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };
 struct Motion {int clip=-1;uint32_t start=0;};
 struct App {
@@ -28,6 +29,7 @@ struct App {
     uint32_t animation=0,run_number=0;const char* notice="";
     Motion motion[3]{};
     PointerState pointer{};
+    MapPreview map_preview{};
     HitRegion hits[MaxHits]{}; int hit_count = 0;
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);

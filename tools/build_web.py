@@ -9,7 +9,7 @@ def main():
     directory=ROOT/'build'/'web';directory.mkdir(parents=True,exist_ok=True)
     flags=['--target=wasm32','-std=c++17','-O2','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-stack-protector','-I'+str(ROOT/'include')]
     objects=[]
-    for i,source in enumerate(['src/core.cpp','src/relics.cpp','src/run.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/reference_rng.cpp','src/freestanding.cpp','platform/web/main.cpp']):
+    for i,source in enumerate(['src/core.cpp','src/relics.cpp','src/run.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/freestanding.cpp','platform/web/main.cpp']):
         out=directory/f'{i}.o';objects.append(str(out));subprocess.run([clang,*flags,'-c',str(ROOT/source),'-o',str(out)],check=True)
     output=directory/'nSpire2.wasm'
     subprocess.run([link,'--no-entry','--export-memory','--initial-memory=8388608','--max-memory=8388608','-z','stack-size=262144',*['--export='+e for e in ['content_buffer','start','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll']],*objects,'-o',str(output)],check=True)
