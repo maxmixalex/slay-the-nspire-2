@@ -20,7 +20,7 @@ def refresh(source: Path, destination: Path, font_path: Path) -> tuple[int, str]
         raise ValueError('Truncated content pack')
     magic, version, commit, size, ni, ng, ns, nc, reserved, digest = struct.unpack_from('<4s9I', data)
     if magic != b'NSP2' or version != 3 or commit != 0x41CEF1EA or reserved or size != len(data) or fnv(data[40:]) != digest:
-        raise ValueError('Expected an intact reference NSP2/3 pack')
+        raise ValueError('Expected NSP2/3. For v4 use extend_cards.py with the pinned installation.')
     if ni > 1024 or ng > 8192 or ns > 2048 or nc != 11:
         raise ValueError('Unsupported directory counts')
     directory_end = 40 + ni * 16 + ng * 16 + ns * 8 + nc * 16

@@ -3,13 +3,16 @@
 #include <stddef.h>
 
 namespace spire {
-constexpr int CardKinds=14, MaxCards=192, MaxDeck=64, MaxHand=10, MaxEnemies=2, MaxEffects=96;
+constexpr int CardKinds=24, MaxCards=192, MaxDeck=64, MaxHand=10, MaxEnemies=2, MaxEffects=96;
 constexpr int MapRows=12, MapColumns=3, MapNodes=MapRows*MapColumns;
 enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
-    TrueGrit, TwinStrike, Inflame, IronWave, Whirlwind, FeelNoPain, DarkEmbrace };
+    TrueGrit, TwinStrike, Inflame, IronWave, Whirlwind, FeelNoPain, DarkEmbrace,
+    Bloodletting, Hemokinesis, Impervious, Offering, Bludgeon, Thunderclap,
+    Uppercut, BodySlam, BattleTrance, FiendFire };
 enum class CardType : uint8_t { Attack, Skill, Power };
 struct Definition { const char* key; int8_t cost, damage, block, draw, power;
-    int8_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted; };
+    int8_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted;
+    int8_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; };
 extern const Definition definitions[CardKinds];
 struct Card { uint8_t kind, upgraded; };
 enum class Phase : uint8_t { Combat, ExhaustChoice, Reward, Camp, Upgrade, Complete, Dead,
@@ -19,12 +22,12 @@ struct MapNode { Room room; uint8_t links,visited,event; };
 enum class EventId : uint8_t { Baths, Vegetation, Grove };
 enum class Zone : uint8_t { Draw, Hand, Discard, Exhaust, Power, Limbo };
 enum class EffectKind : uint8_t { Damage, Block, Vulnerable, Draw, ChooseExhaust, RandomExhaust,
-    CopyDiscard, Strength, Pain, Embrace, Finish };
+    CopyDiscard, Strength, Pain, Embrace, Finish, LoseHp, Energy, Weak, NoDraw, ExhaustCard, WhirlwindHits };
 struct Effect { EffectKind kind; int16_t value, target; };
-struct Enemy { int16_t hp, max_hp, block, strength, vulnerable; uint8_t move; };
+struct Enemy { int16_t hp, max_hp, block, strength, vulnerable; uint8_t move; int16_t weak=0; };
 struct Pile { uint16_t ids[MaxCards]; uint16_t count; };
 enum class LogKind : uint8_t { Turn, Play, Damage, Block, Exhaust, Draw, Shuffle, Enemy,
-    Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion };
+    Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion, LoseHp, Energy, NoDraw, Weak };
 struct Log { LogKind kind; int16_t a,b; };
 enum class Potion : uint8_t { Empty, Fire, Block, Blood };
 constexpr int RelicKinds=10;
@@ -64,6 +67,7 @@ struct State {
     int16_t shop_prices[6];
     EventId event_id; uint8_t event_page,event_count,event_remaining;
     int16_t event_value,event_first;
+    uint8_t no_draw; // Cleared at the end of the player side, before next-turn draw.
 };
 struct SaveData { uint8_t bytes[16384]; size_t size; };
 void new_run(State&, uint32_t seed, bool practice=false);
@@ -75,6 +79,8 @@ bool choose_reward(State&, int index);
 bool camp(State&, bool upgrade);
 bool upgrade_card(State&, int deck_index);
 int cost(Card);
+int card_rarity(unsigned kind); // 2 common, 3 uncommon, 4 rare in the pinned registry.
+int card_base_damage(const State&,Card);
 int damage(const State&, Card, int target);
 int enemy_damage(const Enemy&);
 bool validate(const State&);

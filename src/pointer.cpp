@@ -27,7 +27,7 @@ void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
-    const auto*h=hit_at(pointer.x,pointer.y);if(!h||!h->enabled)return;
+    const auto*h=hit_at(pointer.x,pointer.y);if(!h||(!h->enabled&&h->kind!=HitKind::Hand))return;
     switch(h->kind){
     case HitKind::Menu:if(!pointer.held)menu=h->value;break;
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;

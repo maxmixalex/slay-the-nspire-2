@@ -1,0 +1,267 @@
+{
+  "reference_version": "v0.111.0",
+  "reference_commit": "41cef1ea",
+  "evidence": "Metadata and CIL inspection, not execution of the complete original game.",
+  "cards": [
+    {
+      "model": "Bloodletting",
+      "in_ironclad_pool": true,
+      "base_cost": 0,
+      "rarity_value": 3,
+      "inspected_methods": [
+        {
+          "method": "Bloodletting::.ctor",
+          "token": "0x06003bdf"
+        },
+        {
+          "method": "Bloodletting::get_CanonicalVars",
+          "token": "0x06003be0"
+        },
+        {
+          "method": "Bloodletting::OnUpgrade",
+          "token": "0x06003be3"
+        },
+        {
+          "method": "Bloodletting+<OnPlay>d__5::MoveNext",
+          "token": "0x0600a7fb"
+        }
+      ]
+    },
+    {
+      "model": "Hemokinesis",
+      "in_ironclad_pool": true,
+      "base_cost": 1,
+      "rarity_value": 3,
+      "inspected_methods": [
+        {
+          "method": "Hemokinesis::.ctor",
+          "token": "0x06004077"
+        },
+        {
+          "method": "Hemokinesis::get_CanonicalVars",
+          "token": "0x06004078"
+        },
+        {
+          "method": "Hemokinesis::OnUpgrade",
+          "token": "0x0600407a"
+        },
+        {
+          "method": "Hemokinesis+<OnPlay>d__3::MoveNext",
+          "token": "0x0600aa34"
+        }
+      ]
+    },
+    {
+      "model": "Impervious",
+      "in_ironclad_pool": true,
+      "base_cost": 2,
+      "rarity_value": 4,
+      "inspected_methods": [
+        {
+          "method": "Impervious::.ctor",
+          "token": "0x060040d1"
+        },
+        {
+          "method": "Impervious::get_CanonicalVars",
+          "token": "0x060040d3"
+        },
+        {
+          "method": "Impervious::get_CanonicalKeywords",
+          "token": "0x060040d4"
+        },
+        {
+          "method": "Impervious::OnUpgrade",
+          "token": "0x060040d6"
+        },
+        {
+          "method": "Impervious+<OnPlay>d__7::MoveNext",
+          "token": "0x0600aa6a"
+        }
+      ]
+    },
+    {
+      "model": "Offering",
+      "in_ironclad_pool": true,
+      "base_cost": 0,
+      "rarity_value": 4,
+      "inspected_methods": [
+        {
+          "method": "Offering::.ctor",
+          "token": "0x06004281"
+        },
+        {
+          "method": "Offering::get_CanonicalVars",
+          "token": "0x06004282"
+        },
+        {
+          "method": "Offering::get_CanonicalKeywords",
+          "token": "0x06004283"
+        },
+        {
+          "method": "Offering::OnUpgrade",
+          "token": "0x06004286"
+        },
+        {
+          "method": "Offering+<OnPlay>d__7::MoveNext",
+          "token": "0x0600ab4f"
+        }
+      ]
+    },
+    {
+      "model": "Bludgeon",
+      "in_ironclad_pool": true,
+      "base_cost": 3,
+      "rarity_value": 3,
+      "inspected_methods": [
+        {
+          "method": "Bludgeon::.ctor",
+          "token": "0x06003bea"
+        },
+        {
+          "method": "Bludgeon::get_CanonicalVars",
+          "token": "0x06003beb"
+        },
+        {
+          "method": "Bludgeon::OnUpgrade",
+          "token": "0x06003bed"
+        },
+        {
+          "method": "Bludgeon+<OnPlay>d__3::MoveNext",
+          "token": "0x0600a7ff"
+        }
+      ]
+    },
+    {
+      "model": "Thunderclap",
+      "in_ironclad_pool": true,
+      "base_cost": 1,
+      "rarity_value": 2,
+      "inspected_methods": [
+        {
+          "method": "Thunderclap::.ctor",
+          "token": "0x06004671"
+        },
+        {
+          "method": "Thunderclap::get_CanonicalVars",
+          "token": "0x06004672"
+        },
+        {
+          "method": "Thunderclap::OnUpgrade",
+          "token": "0x06004675"
+        },
+        {
+          "method": "Thunderclap+<OnPlay>d__5::MoveNext",
+          "token": "0x0600ad53"
+        }
+      ]
+    },
+    {
+      "model": "Uppercut",
+      "in_ironclad_pool": true,
+      "base_cost": 2,
+      "rarity_value": 3,
+      "inspected_methods": [
+        {
+          "method": "Uppercut::.ctor",
+          "token": "0x060046e8"
+        },
+        {
+          "method": "Uppercut::get_CanonicalVars",
+          "token": "0x060046e9"
+        },
+        {
+          "method": "Uppercut::OnUpgrade",
+          "token": "0x060046ec"
+        },
+        {
+          "method": "Uppercut+<OnPlay>d__6::MoveNext",
+          "token": "0x0600ad87"
+        }
+      ]
+    },
+    {
+      "model": "BodySlam",
+      "in_ironclad_pool": true,
+      "base_cost": 1,
+      "rarity_value": 2,
+      "inspected_methods": [
+        {
+          "method": "BodySlam::.ctor",
+          "token": "0x06003bf8"
+        },
+        {
+          "method": "BodySlam::get_CanonicalVars",
+          "token": "0x06003bf9"
+        },
+        {
+          "method": "BodySlam::OnUpgrade",
+          "token": "0x06003bfc"
+        },
+        {
+          "method": "BodySlam+<>c::.ctor",
+          "token": "0x0600a806"
+        },
+        {
+          "method": "BodySlam+<OnPlay>d__5::MoveNext",
+          "token": "0x0600a808"
+        }
+      ]
+    },
+    {
+      "model": "BattleTrance",
+      "in_ironclad_pool": true,
+      "base_cost": 0,
+      "rarity_value": 3,
+      "inspected_methods": [
+        {
+          "method": "BattleTrance::.ctor",
+          "token": "0x06003b8e"
+        },
+        {
+          "method": "BattleTrance::get_CanonicalVars",
+          "token": "0x06003b8f"
+        },
+        {
+          "method": "BattleTrance::OnUpgrade",
+          "token": "0x06003b91"
+        },
+        {
+          "method": "BattleTrance+<OnPlay>d__3::MoveNext",
+          "token": "0x0600a7cc"
+        }
+      ]
+    },
+    {
+      "model": "FiendFire",
+      "in_ironclad_pool": true,
+      "base_cost": 2,
+      "rarity_value": 4,
+      "inspected_methods": [
+        {
+          "method": "FiendFire::.ctor",
+          "token": "0x06003f2c"
+        },
+        {
+          "method": "FiendFire::get_CanonicalVars",
+          "token": "0x06003f2d"
+        },
+        {
+          "method": "FiendFire::get_CanonicalKeywords",
+          "token": "0x06003f2e"
+        },
+        {
+          "method": "FiendFire::OnUpgrade",
+          "token": "0x06003f31"
+        },
+        {
+          "method": "FiendFire+<>c__DisplayClass7_0::.ctor",
+          "token": "0x0600a984"
+        },
+        {
+          "method": "FiendFire+<OnPlay>d__7::MoveNext",
+          "token": "0x0600a986"
+        }
+      ]
+    }
+  ]
+}

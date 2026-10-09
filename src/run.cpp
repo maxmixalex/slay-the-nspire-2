@@ -48,7 +48,7 @@ static void enter_shop(State&s){
         int card;bool repeated;
         do{card=3+(int)random_below(s.rng_world,CardKinds-3);repeated=false;for(int j=0;j<i;j++)if(s.shop_cards[j]==card)repeated=true;}while(repeated);
         s.shop_cards[i]=(uint8_t)card;
-        int base=card==DarkEmbrace?150:card==FeelNoPain||card==Whirlwind||card==Inflame||card==BurningPact?75:50;
+        int rarity=card_rarity(card);int base=rarity==4?150:rarity==3?75:50;
         s.shop_prices[i]=(int16_t)(base*(80+(int)random_below(s.rng_world,41))/100);
     }
     s.shop_relic=(uint16_t)random_relic(s);

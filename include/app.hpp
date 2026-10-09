@@ -9,13 +9,16 @@ struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palett
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
 class Content {
-    const uint8_t* data_{};uint32_t length_{},images_{},glyphs_{},strings_{},clips_{};
+    const uint8_t* data_{};uint32_t length_{},images_{},glyphs_{},strings_{},clips_{},cards_{};
 public:
     bool open(const uint8_t*,size_t);
     Picture image(int id)const;
     Glyph glyph(uint32_t cp,int size)const;
     const char* string(int id)const;
     Clip clip(int id)const;
+    unsigned card_count()const{return cards_;}
+    int card_image(int kind)const;
+    const char* card_string(int kind,int variant=0)const;
 };
 enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap };
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };

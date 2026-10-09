@@ -28,7 +28,7 @@ Direct inspection of `ModelDb.get_AllCharacters` confirms the standard registry,
 
 Localization has additional obsolete or placeholder entries. Counting `.title` keys therefore overstates the intended content denominator. Later coverage reports must use verified active pools and explicitly separate generated cards, tokens, curses, status cards and inaccessible/deprecated definitions.
 
-The executable currently models **14 card kinds, 10 relics, 3 potions and one character**. Their selected semantics have been inspected and exercised internally, but no full original-model differential suite exists yet. Version 0.6 does not expand those counts.
+The executable currently models **24 card kinds, 10 relics, 3 potions and one character**. Their selected semantics have been inspected and exercised internally, but no full original-model differential suite exists yet. Version 0.7 adds ten audited card models; see `cards-0.7.md`.
 
 ## Work plan and current gaps
 
@@ -36,12 +36,12 @@ The executable currently models **14 card kinds, 10 relics, 3 potions and one ch
 |---|---|---|
 | Seed and RNG | Same canonical seed, named streams, bounded sampling and call order; original reference vectors. | Reference primitives implemented and replay-checked; Unicode/legacy seeds and full-run integration remain open. |
 | Map | Exact topology, room types and stream state for fixed original seeds; original generation/pruning order. | Regional quota pipeline and isolated seed editor implemented; quota CIL replay and target frame checks pass; complete original-run/unlock/encounter integration remains open. |
-| Cards and combat | Per-card/upgraded behavior, choice suspension, event ordering, damage rounding and combinations match original traces. | 14 modeled cards; bounded custom core. |
+| Cards and combat | Per-card/upgraded behavior, choice suspension, event ordering, damage rounding and combinations match original traces. | 24 modeled cards, including HP loss, energy, self/hand exhaustion, Weak and No Draw; no complete original-combat differential suite. |
 | Relics and potions | Complete active pools, prices/acquisition, hooks, counters, removals, interactions and persistence. | 10 relics and 3 potions; limited shop pools. |
 | Characters | Each standard character's real starting state, pools and unique mechanics. | Ironclad subset only; no duplicate-logic character placeholders. |
 | Enemies, encounters, events | Original AI/intent/HP, room pools, event choices and results. | Nibbit and three adapted events; several named substitutions. |
 | Run flow and progression | Original act transitions, rewards, difficulty, unlocks, profiles and failure/victory behavior. | Custom finite expedition and practice entry. |
-| UI | Reference captures for title, character selection, pause, combat, deck/piles, rewards, camp, shop, events, map and settings; preserve original flow. | Original art in adapted screens; grid/detail and pointer groundwork. |
+| UI | Reference captures for title, character selection, pause, combat, deck/piles, rewards, camp, shop, events, map and settings; preserve original flow. | Original art in adapted screens; 24-card grid/detail support and ten pointer-accessible hand slots; original screen-flow parity remains open. |
 | Assets, effects and audio | Original assets and timed presentation where practical; document performance-driven differences. | 11 offline-sampled clips; no audio; no complete effect parity. |
 | Multiplayer and other modes | Explicit feasibility and behavioral scope; no silent equivalence to offline play. | Not implemented; tracked separately, not counted as reproduced. |
 | Target reliability | Ndless startup, inputs, files, exit and sustained resource budgets, followed by physical-handheld tests. | Firebird CX II tests; physical device and memory peak outstanding. |

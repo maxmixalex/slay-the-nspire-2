@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.6 (2026-10-04).
+nSpire II experimental native runtime, version 0.7 (2026-10-09).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by

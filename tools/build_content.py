@@ -54,12 +54,14 @@ def image_data(im:Image.Image,alpha:bool)->bytes:
     return p.astype('<u2').tobytes()+(a[:,:,3].astype('u1').tobytes() if alpha else b'')
 
 def description(s:str,upgraded:bool)->str:
-    s=re.sub(r'\[/?[a-zA-Z_]+\]','',s)
+    # Keep the original color markup; the runtime uses the same rich-text renderer.
+    s=s.replace('{InCombat:\n（造成{CalculatedDamage:diff()}点伤害）|}', '\x1e\n（造成{d}点伤害）\x1f')
+    s=s.replace('{Energy:energyIcons()}', '{e} 点能量')
     s=s.replace('{IfUpgraded:show:| 随机}', '' if upgraded else '随机')
-    replacements={'Damage':'d','Block':'b','Cards':'n','VulnerablePower':'p','StrengthPower':'p','Power':'p'}
+    replacements={'Damage':'d','Block':'b','Cards':'n','VulnerablePower':'p','StrengthPower':'p','Power':'p','HpLoss':'h','CalculatedDamage':'d'}
     for key,value in replacements.items():s=s.replace('{'+key+':diff()}','{'+value+'}')
     remaining=re.findall(r'\{[^}]*\}',s)
-    if any(x not in ('{d}','{b}','{n}','{p}') for x in remaining):raise ValueError('Unsupported localization expression: '+s)
+    if any(x not in ('{d}','{b}','{n}','{p}','{h}','{e}') for x in remaining):raise ValueError('Unsupported localization expression: '+s)
     return s
 
 def choose_font(explicit:str|None)->Path:
@@ -196,6 +198,9 @@ def main()->None:
       'cards':CARDS,'images':len(pictures),'glyphs':len(glyphs),'language':'zhs','animations':animation_meta,
       'scope':'14-card subset; original UI and offline sampled original animations; custom twelve-floor branching expedition; three rich-text events; ten modeled relics; no original map/seed/save parity.'}
     (args.output/'content-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
-    pack.close();print(f'Created {output}: {len(result):,} bytes, {len(pictures)} images, {len(glyphs)} glyphs',flush=True)
+    pack.close()
+    from extend_cards import upgrade
+    final=upgrade(args.game,output,output,font_path)
+    print(f"Created {output}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)
 
 if __name__=='__main__':main()

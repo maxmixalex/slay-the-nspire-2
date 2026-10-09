@@ -112,7 +112,7 @@ struct Canvas{
         if(selected){rect(x+8,y+h-2,w-16,1,Gold);text("›",x+5,y+3,12,Gold);}centered(p,x+10,y+(h-18)/2,w-20,12,selected?Gold:White);
     }
 };
-bool App::init(const uint8_t*p,size_t n,Callbacks cb){callbacks=cb;return content.open(p,n);}
+bool App::init(const uint8_t*p,size_t n,Callbacks cb){callbacks=cb;return content.open(p,n)&&content.card_count()==CardKinds;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
 void App::reset_presentation(){pointer_cancel();detail_card=-1;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
@@ -120,9 +120,12 @@ void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_re
 void App::draw_frame(){render();}
 void App::tick(){animation++;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 void App::card_description(Card c,int t,char*out,size_t cap)const{
-    if(!cap)return;out[0]=0;TextBuffer b{out,cap,0};const char*p=content.string(c.kind*3+(c.upgraded?2:1));const auto&d=definitions[c.kind];
-    while(*p){if(p[0]=='{'&&p[1]&&p[2]=='}'){
-            int value=0;switch(p[1]){case 'd':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
+    if(!cap)return;out[0]=0;if(c.kind>=CardKinds)return;TextBuffer b{out,cap,0};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
+    while(*p){
+        if(*p=='\x1e'){++p;if(game.phase!=Phase::Combat&&game.phase!=Phase::ExhaustChoice){while(*p&&*p!='\x1f')++p;}continue;}
+        if(*p=='\x1f'){++p;continue;}
+        if(p[0]=='{'&&p[1]&&p[2]=='}'){
+            int value=0;switch(p[1]){case 'h':value=d.hp_loss;break;case 'e':value=d.energy_gain+(c.upgraded?d.energy_up:0);break;case 'd':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=(game.phase==Phase::Combat||game.phase==Phase::ExhaustChoice)?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
             b.number(value);p+=3;
         }else b.ch(*p++);}
 }
@@ -188,6 +191,7 @@ void App::input(Key k){
             if(k==Key::Down)++inspect_cursor;
             scroll=(inspect_cursor/10)*10;
             if(k==Key::Confirm||k==Key::Detail){
+                render(); // Keyboard batches may arrive before the next timed frame.
                 const HitRegion* pick=nullptr;int n=0;
                 for(int i=0;i<hit_count;i++)if(hits[i].kind==HitKind::PileCard){if(n++==inspect_cursor%10){pick=&hits[i];break;}}
                 if(pick)open_card_detail({(uint8_t)(pick->value&255),(uint8_t)(pick->value>>8)});
@@ -240,9 +244,9 @@ void App::input(Key k){
 static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number){
     int type=(int)definitions[card.kind].type;int frame=type==0?A_CardAttack:type==1?A_CardSkill:A_CardPower;
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
-    c.picture(frame,x,y);c.picture(A_Card0+card.kind,x+3,y+15);c.picture(A_CardBanner,x,y+1,47,11);
+    c.picture(frame,x,y);c.picture(c.a.content.card_image(card.kind),x+3,y+15);c.picture(A_CardBanner,x,y+1,47,11);
     // Card art and text are independent; the description remains legible below the stage.
-    c.centered(c.a.content.string(card.kind*3),x+3,y+48,41,10,card.upgraded?Green:White);
+    c.centered(c.a.content.card_string(card.kind),x+3,y+48,41,10,card.upgraded?Green:White);
     c.picture(A_Energy,x-1,y-1,15,15);int energy=cost(card);if(energy<0)c.text("X",x+4,y-1,10,White);else c.num(energy,x+4,y-1,10,White);
     if(card.upgraded)c.text("+",x+35,y+1,10,Green);if(number)c.num(number,x+32,y+33,10,Muted);
     if(!playable)c.dim(x,y,47,66,125);
@@ -250,10 +254,10 @@ static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playabl
 static void log_line(App&a,Log l,char*b,size_t n){
     b[0]=0;TextBuffer t{b,n,0};switch(l.kind){
     case LogKind::Turn:t.text("回合 ");t.number(l.a);break;
-    case LogKind::Play:t.text("打出 ");t.text(a.content.string(l.a*3));if(l.b)t.ch('+');break;
+    case LogKind::Play:t.text("打出 ");t.text(a.content.card_string(l.a));if(l.b)t.ch('+');break;
     case LogKind::Damage:t.text("对敌人 ");t.number(l.b+1);t.text(" 造成 ");t.number(l.a);t.text(" 点伤害（含格挡）");break;
     case LogKind::Block:t.text("获得格挡 ");t.number(l.a);break;
-    case LogKind::Exhaust:t.text("消耗 ");t.text(a.content.string(l.a*3));break;
+    case LogKind::Exhaust:t.text("消耗 ");t.text(a.content.card_string(l.a));break;
     case LogKind::Draw:t.text("抽牌 ");t.number(l.a);break;
     case LogKind::Shuffle:t.text("弃牌堆洗回抽牌堆");break;
     case LogKind::Enemy:t.text("敌人 ");t.number(l.a+1);t.text(l.b==0?"：撞击":l.b==1?"：切击 + 格挡":"：嘶鸣 + 力量");break;
@@ -261,14 +265,18 @@ static void log_line(App&a,Log l,char*b,size_t n){
     case LogKind::Pain:t.text("无惧疼痛 ");t.number(l.a);break;
     case LogKind::Embrace:t.text("黑暗之拥 ");t.number(l.a);break;
     case LogKind::Heal:t.text("恢复生命 ");t.number(l.a);break;
-    case LogKind::Reward:case LogKind::Buy:t.text(l.kind==LogKind::Buy?"购买 ":"获得 ");t.text(a.content.string(l.a*3));break;
-    case LogKind::Upgrade:t.text("升级 ");t.text(a.content.string(l.a*3));break;
+    case LogKind::Reward:case LogKind::Buy:t.text(l.kind==LogKind::Buy?"购买 ":"获得 ");t.text(a.content.card_string(l.a));break;
+    case LogKind::Upgrade:t.text("升级 ");t.text(a.content.card_string(l.a));break;
     case LogKind::Gold:t.text("获得金币 ");t.number(l.a);break;
-    case LogKind::Remove:t.text("移除 ");t.text(a.content.string(l.a*3));break;
-    case LogKind::Transform:t.text("变化 ");t.text(a.content.string(l.a*3));t.text(" → ");t.text(a.content.string(l.b*3));break;
+    case LogKind::Remove:t.text("移除 ");t.text(a.content.card_string(l.a));break;
+    case LogKind::Transform:t.text("变化 ");t.text(a.content.card_string(l.a));t.text(" → ");t.text(a.content.card_string(l.b));break;
     case LogKind::Event:t.text("事件选择已结算");break;
     case LogKind::Relic:t.text("获得遗物：");if(auto*d=relic_definition((unsigned)l.a))t.text(d->name);break;
     case LogKind::Potion:t.text("使用药水");break;
+    case LogKind::LoseHp:t.text("失去生命 ");t.number(l.a);break;
+    case LogKind::Energy:t.text("获得能量 ");t.number(l.a);break;
+    case LogKind::NoDraw:t.text("本回合不能抽牌");break;
+    case LogKind::Weak:t.text("给予虚弱 ");t.number(l.a);break;
     default:t.text("容量上限：本局已安全停止");break;}
 }
 static void hud(Canvas&c){
@@ -367,10 +375,10 @@ static void deck_select(Canvas&c){
     c.centered(name,0,25,320,16,Gold);int first=mx(0,a.cursor-5);
     for(int i=first;i<mn(s.deck_count,first+6);i++){
         int y=57+(i-first)*22;c.hit(12,y,296,22,HitKind::Choice,i);if(i==a.cursor)c.rect(12,y,296,22,rgb(66,53,35));Card card=s.deck[i];
-        c.num(i+1,15+6,y+1,12,Muted);c.text(a.content.string(card.kind*3),51,y+1,12,card.upgraded?Green:White);
+        c.num(i+1,15+6,y+1,12,Muted);c.text(a.content.card_string(card.kind),51,y+1,12,card.upgraded?Green:White);
         if(s.phase==Phase::Transform&&i==s.event_first)c.text("已变化",246,y+2,10,Muted);else if(card.upgraded)c.text("+",239,y,12,Green);
     }
-    if(s.deck_count){Card card=s.deck[mn(a.cursor,s.deck_count-1)];if(s.phase==Phase::Upgrade)card.upgraded=1;char b[320]={};a.card_description(card,-1,b,sizeof b);c.text(b,14,196,12,White,292,2);}
+    if(s.deck_count){Card card=s.deck[mn(a.cursor,s.deck_count-1)];if(s.phase==Phase::Upgrade)card.upgraded=1;char b[320]={};a.card_description(card,-1,b,sizeof b);c.paragraph(b,14,196,292,2);}
     if(s.phase==Phase::Transform){c.text("还需选择",15,224,10,Muted);c.num(s.event_remaining,61,222,12,Gold);c.text("张 · 变化结果来自已实现牌池",75,224,10,Muted);}
     else c.text("↑↓ 选择 · Enter 确认 · Esc 取消",17,224,10,Muted);
 }
@@ -378,6 +386,7 @@ static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(A_Battle,0,20);c.hit(0,20,320,120,HitKind::Battlefield);c.actor(0,62,125);
     if(s.block){c.picture(A_Block,7,120);c.num(s.block,23,119,12,Blue);}
     if(s.strength){c.text("力量",69,123,10,Gold);c.num(s.strength,92,122,10,Gold);}
+    if(s.no_draw)c.text("不能抽牌",7,40,10,Gold);
     if(s.pain||s.embrace){char b[48]={};TextBuffer t{b,sizeof b,0};if(s.pain){t.text("疼痛 ");t.number(s.pain);}if(s.embrace){t.text("  拥 ");t.number(s.embrace);}c.text(b,7,24,10,Green);}
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];int x=s.enemy_count==1?225:174+i*93;
@@ -385,6 +394,7 @@ static void combat_screen(Canvas&c){
         c.hit(x-40,38,80,101,HitKind::Enemy,i);c.actor(i+1,x,119);c.picture(e.move==2?A_BuffIntent:A_AttackIntent,x-24,40);
         if(e.move==2)c.text("+2",x-3,39,12,Green);else c.num(enemy_damage(e),x-3,39,12,Gold);
         if(e.move==1){c.picture(A_Block,x+21,42,10,10);c.num(5,x+32,40,10,Blue);}
+        if(e.weak){c.text("虚弱",x-31,90,10,Green);c.num(e.weak,x-9,90,10,Green);}
         if(a.target==i)c.text("▼",x-5,60,10,Gold);c.hp(e.hp,e.max_hp,x-32,122,64);
         if(e.vulnerable){c.text("易伤",x-31,76,10,Blue);c.num(e.vulnerable,x-9,76,10,Blue);}if(e.block){c.picture(A_Block,x+15,73,12,12);c.num(e.block,x+27,73,10,Blue);}
     }
@@ -392,22 +402,28 @@ static void combat_screen(Canvas&c){
         int age=(int)a.animation-a.hit_start[i];if(a.last_hit[i]&&age>=0&&age<24){int x=i==0?48:s.enemy_count==1?212:160+(i-1)*93;c.num(a.last_hit[i],x,83-age/2,16,i?Gold:Red);}
     }
     c.rect(0,140,320,100,Ink);c.rect(0,139,320,1,rgb(122,99,59));
-    if(s.hand.count){Card selected=s.cards[s.hand.ids[mn(a.cursor,s.hand.count-1)]];char b[320]={};a.card_description(selected,definitions[selected.kind].targeted?a.target:-1,b,sizeof b);c.text(b,7,142,12,White,308,2);}
+    if(s.hand.count){Card selected=s.cards[s.hand.ids[mn(a.cursor,s.hand.count-1)]];char b[320]={};a.card_description(selected,definitions[selected.kind].targeted?a.target:-1,b,sizeof b);c.paragraph(b,7,142,308,2);}
     else c.text("没有手牌，按空格结束回合",7,142,12,Muted);
     if(s.phase==Phase::ExhaustChoice){c.rect(0,21,320,18,Red);c.centered("选择一张手牌消耗 · Enter 确认",0,21,320,12);}
     c.picture(A_Energy,5,173);c.num(s.energy,17,177,20,White);c.picture(A_DrawPile,5,206,13,13);c.num(s.draw.count,20,204,10,Muted);
     c.picture(A_EndTurn,1,219,51,19);c.centered("结束回合",1,221,51,10,Gold);c.hit(1,219,53,21,HitKind::Command,(int)Key::EndTurn,s.phase==Phase::Combat);c.hit(1,199,53,20,HitKind::OpenPile,1);
-    int first=mx(0,a.cursor-4);for(int j=first;j<mn(s.hand.count,first+5);j++){
-        Card card=s.cards[s.hand.ids[j]];small_card(c,card,60+(j-first)*51,j==a.cursor?171:174,j==a.cursor,s.phase==Phase::ExhaustChoice||cost(card)<=s.energy,j+1);
-        c.hit(58+(j-first)*51,169,51,71,HitKind::Hand,s.hand.ids[j],!a.busy&&(s.phase==Phase::ExhaustChoice||cost(card)<=s.energy));
-        if(a.pointer.armed_card==s.hand.ids[j])c.box(57+(j-first)*51,169,53,70,Blue);
-    }
-    if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(A_Card0+a.fly_card,90+age*5,153-age*5,26,19,(unsigned)(a.card_fly*18));}
+    const int step=s.hand.count>1?mn(51,207/(s.hand.count-1)):51;
+    auto hand_card=[&](int j){
+        Card card=s.cards[s.hand.ids[j]];int x=60+j*step,y=j==a.cursor?169:174;
+        small_card(c,card,x,y,j==a.cursor,s.phase==Phase::ExhaustChoice||cost(card)<=s.energy,j+1);
+        if(a.pointer.armed_card==s.hand.ids[j])c.box(x-2,y-2,51,69,Blue);
+    };
+    for(int j=0;j<s.hand.count;j++)if(j!=a.cursor)hand_card(j);
+    if(s.hand.count)hand_card(mn(a.cursor,s.hand.count-1));
+    // Stable x-strips prevent the raised card from stealing adjacent hover targets.
+    for(int j=0;j<s.hand.count;j++)c.hit(60+j*step,168,j==s.hand.count-1?47:step,72,
+        HitKind::Hand,s.hand.ids[j],!a.busy&&(s.phase==Phase::ExhaustChoice||cost(s.cards[s.hand.ids[j]])<=s.energy));
+    if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),90+age*5,153-age*5,26,19,(unsigned)(a.card_fly*18));}
 }
 static void reward_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(A_Battle,0,20);c.actor(0,63,125);c.dim(0,20,320,120,100);
     c.centered("战斗胜利",0,28,320,20,Gold);c.picture(A_Coin,96,59);char b[100]={};TextBuffer t{b,sizeof b,0};t.ch('+');t.number(s.last_gold);t.text("   燃烧之血 +6");c.text(b,113,58,12,White);
-    if(a.cursor<3){a.card_description({s.reward[a.cursor],0},-1,b,sizeof b);c.text(b,12,91,12,White,296,2);}
+    if(a.cursor<3){a.card_description({s.reward[a.cursor],0},-1,b,sizeof b);c.paragraph(b,12,91,296,2);}
     c.rect(0,137,320,103,Ink);for(int i=0;i<3;i++){small_card(c,{s.reward[i],0},58+i*79,140,a.cursor==i,true,i+1);c.hit(55+i*79,138,53,71,HitKind::Choice,i);}
     c.button("跳过奖励，返回路线",35,211,250,a.cursor==3,26);c.hit(35,211,250,26,HitKind::Choice,3);
 }
@@ -469,11 +485,11 @@ static void panels(Canvas&c){
 static void detail_screen(Canvas&c){
     auto&a=c.a;Card card{(uint8_t)(a.detail_card&255),(uint8_t)(a.detail_card>>8)};
     a.hit_count=0;c.dim(0,0,320,240,170);c.rect(7,22,306,211,Panel);c.box(7,22,306,211,Gold);
-    char title[128]={};TextBuffer name{title,sizeof title,0};name.text(a.content.string(card.kind*3));if(card.upgraded)name.text("+");
+    char title[128]={};TextBuffer name{title,sizeof title,0};name.text(a.content.card_string(card.kind));if(card.upgraded)name.text("+");
     c.centered(title,18,28,270,16,card.upgraded?Green:Gold);
     int type=(int)definitions[card.kind].type;
     c.picture(type==0?A_CardAttack:type==1?A_CardSkill:A_CardPower,18,61,94,132);
-    c.picture(A_Card0+card.kind,24,90,82,60);c.picture(A_Energy,18,60,26,26);
+    c.picture(c.a.content.card_image(card.kind),24,90,82,60);c.picture(A_Energy,18,60,26,26);
     int energy=cost(card);if(energy<0)c.text("X",27,64,12);else c.num(energy,27,64,12);
     c.centered(title,21,161,87,12,card.upgraded?Green:White);
     char description[512]={};a.card_description(card,a.target,description,sizeof description);
@@ -498,7 +514,7 @@ static void pointer_overlay(Canvas&c){
 void App::render(){
     Canvas c{*this};hit_count=0;c.rect(0,0,320,240,Ink);
     if(title){
-        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.6",18,78,10,Gold);
+        c.picture(A_Title,0,0);c.dim(0,0,320,240,25);c.picture(A_Logo,45,7);c.text("Ndless 原生移植 · 远征原型 0.7",18,78,10,Gold);
         c.actor(0,257,207);const char*items[]={"开始远征","组合练习","继续存档","参考地图","操作说明","退出"};for(int i=0;i<6;i++){c.button(items[i],18,92+i*23,161,menu==i,22);c.hit(18,92+i*23,161,22,HitKind::Menu,i);}
         c.text("v0.111.0 / 41cef1ea",199,224,10,Muted,120);
     }else{

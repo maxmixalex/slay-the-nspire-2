@@ -3,11 +3,13 @@ namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
 bool Content::open(const uint8_t*p,size_t n){
-    data_=nullptr;
-    if(n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+4)!=3||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n||u32(p+32))return false;
+    data_=nullptr;cards_=0;
+    if(!p||n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n)return false;
+    const uint32_t version=u32(p+4),cards=u32(p+32);
+    if((version!=3&&version!=4)||(version==3&&cards)||(version==4&&cards!=CardKinds))return false;
     auto ni=u32(p+16),ng=u32(p+20),ns=u32(p+24),nc=u32(p+28);
     if(ni<A_Count||ni>1024||ng>8192||ns<66||ns>2048||nc!=11)return false;
-    uint32_t start=40+ni*16+ng*16+ns*8+nc*16;if(start>n)return false;
+    uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16;if(start>n)return false;
     uint32_t hash=2166136261u;for(size_t i=40;i<n;i++){hash^=p[i];hash*=16777619u;}if(hash!=u32(p+36))return false;
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),h=u16(r+6),fmt=u32(r+8),len=u32(r+12);
@@ -38,6 +40,14 @@ bool Content::open(const uint8_t*p,size_t n){
         if(!count||count>256||first>=ni||count>ni-first||!ms||ms>1000||u32(r+12))return false;
         int px=(int16_t)u16(r+8),py=(int16_t)u16(r+10);if(px< -640||px>640||py< -480||py>480)return false;
     }
+    for(unsigned i=0;i<cards;i++){
+        const uint8_t*r=p+40+ni*16+ng*16+ns*8+nc*16+i*16;
+        if(u32(r)>=ni||u32(r+4)>=ns||u32(r+8)>=ns||u32(r+12)>=ns)return false;
+        // Card art is always 41x30, independent of directory placement.
+        const uint8_t* im=p+40+u32(r)*16;
+        if(u16(im+4)!=41||u16(im+6)!=30)return false;
+    }
+    cards_=version==4?cards:14;
     data_=p;length_=(uint32_t)n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;return true;
 }
 Picture Content::image(int id)const{
@@ -61,5 +71,17 @@ Clip Content::clip(int id)const{
     if(!data_||id<0||(unsigned)id>=clips_)return {0,0,1,0,0};
     const uint8_t*r=data_+40+images_*16+glyphs_*16+strings_*8+id*16;
     return {u32(r),u16(r+4),u16(r+6),(int16_t)u16(r+8),(int16_t)u16(r+10)};
+}
+int Content::card_image(int kind)const{
+    if(!data_||kind<0||(unsigned)kind>=cards_)return -1;
+    if(u32(data_+4)==3)return A_Card0+kind;
+    const uint8_t*r=data_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;
+    return (int)u32(r);
+}
+const char* Content::card_string(int kind,int variant)const{
+    if(!data_||kind<0||(unsigned)kind>=cards_||variant<0||variant>2)return "";
+    if(u32(data_+4)==3)return string(kind*3+variant);
+    const uint8_t*r=data_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;
+    return string((int)u32(r+4+variant*4));
 }
 } // namespace spire

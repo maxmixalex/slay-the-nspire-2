@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>nSpire II 0.6 · 同源桌面运行时</title>
+<title>nSpire II 0.7 · 同源桌面运行时</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#151a19;color:#ece6d6;font:14px/1.7 system-ui,sans-serif;min-height:100vh;display:grid;place-content:center;padding:20px}main{width:min(960px,calc(100vw - 40px))}h1{font-size:18px;font-weight:500;margin:0 0 12px}small{color:#b5b8ac}canvas{display:block;width:100%;aspect-ratio:4/3;background:#111;image-rendering:pixelated;touch-action:none;cursor:none;box-shadow:0 12px 55px #0008;border:1px solid #5b5542;outline:none}p{margin:12px 0 0;color:#b5b8ac}kbd{font:inherit;color:#e2c992}button{background:#343c35;border:1px solid #6c725f;color:#eee9d9;border-radius:4px;padding:5px 10px;cursor:pointer}#error{white-space:pre-wrap;color:#ffb7a6}#actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}a{color:inherit}
 </style>
 <main>
-<h1>nSpire II 0.6 <small>｜同一 C++ 核心编译为 WebAssembly；不是 Firebird 模拟器。</small></h1>
+<h1>nSpire II 0.7 <small>｜同一 C++ 核心编译为 WebAssembly；不是 Firebird 模拟器。</small></h1>
 <canvas id="screen" width="320" height="240" tabindex="0" aria-label="nSpire II 游戏画面"></canvas>
 <div id="actions"><button data-key="2">↑ 目标 / 上</button><button data-key="0">← 选牌</button><button data-key="1">选牌 →</button><button data-key="3">↓ 目标 / 下</button><button data-key="4">Enter 确认</button><button data-key="6">结束回合</button><button data-key="7">查看牌堆</button><button data-key="10">记录</button><button data-key="12">地图</button><button data-key="16">参考地图</button><button data-key="13">药水</button><button data-key="14">遗物</button><button data-key="5">Esc 菜单</button></div>
 <p><kbd>方向键 / 4、6、8、2</kbd> 导航，<kbd>Enter / 5</kbd> 确认，<kbd>空格</kbd> 结束回合，<kbd>Tab</kbd> 牌堆，<kbd>L</kbd> 记录，<kbd>M</kbd> 地图，<kbd>P</kbd> 药水，<kbd>R</kbd> 遗物，<kbd>S</kbd> 保存，<kbd>O</kbd> 载入。存档保存在当前浏览器。可用鼠标或触摸板指针：点选手牌后点敌人，或将牌拖到敌人；非指向牌放到战场。滚轮翻页，点卡组卡牌查看详情。</p>
-<p>固定 v0.111.0 的 14 张卡牌规则子集。12 层分岔远征含商店、事件与营地，仍为自定义路线，不是完整原版地图。原版美术与动画由玩家安装包离线转换。</p><div id="error" role="alert"></div>
+<p>固定 v0.111.0 的 24 张卡牌规则子集。12 层分岔远征含商店、事件与营地，仍为自定义路线，不是完整原版地图。原版美术与动画由玩家安装包离线转换。</p><div id="error" role="alert"></div>
 </main>
 <script>
 'use strict';
@@ -20,8 +20,8 @@
  const decode=(s)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
  const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};
  const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{
-  save:(p,n)=>{try{localStorage.setItem('nSpire2-save-v3',encode(new Uint8Array(memory.buffer,p,n)));return 1}catch(e){return 0}},
-  load:(p,max)=>{try{const s=localStorage.getItem('nSpire2-save-v3');if(!s)return 0;const b=decode(s);if(b.length>max)return 0;new Uint8Array(memory.buffer,p,b.length).set(b);return b.length}catch(e){return 0}}
+  save:(p,n)=>{try{localStorage.setItem('nSpire2-save-v4',encode(new Uint8Array(memory.buffer,p,n)));return 1}catch(e){return 0}},
+  load:(p,max)=>{try{const s=localStorage.getItem('nSpire2-save-v4')||localStorage.getItem('nSpire2-save-v3');if(!s)return 0;const b=decode(s);if(b.length>max)return 0;new Uint8Array(memory.buffer,p,b.length).set(b);return b.length}catch(e){return 0}}
  }});
  game=result.instance.exports;memory=game.memory;const content=decode('__CONTENT__');new Uint8Array(memory.buffer,game.content_buffer(),content.length).set(content);
  if(!game.start(content.length))throw Error('内容包校验失败。');
