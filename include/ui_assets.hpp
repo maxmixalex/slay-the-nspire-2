@@ -78,6 +78,8 @@ enum UiAsset {
     U_SilentMapMarker=73,
     U_HornCleat=74, U_CaptainsWheel=75, U_MercuryHourglass=76, U_ArtOfWar=77,
     U_RegalPillow=78, U_MealTicket=79, U_OldCoin=80, U_CentennialPuzzle=81,
-    U_NoBlock=82, U_Count=83
+    U_NoBlock=82, U_FeelNoPain=83, U_DarkEmbrace=84, U_DemonForm=85,
+    U_InfiniteBlades=86, U_FlameBarrier=87, U_BlockNextTurn=88,
+    U_DrawNextTurn=89, U_Count=90
 };
 }

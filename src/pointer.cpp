@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "status.hpp"
 namespace spire {
 static int clamp(int n,int lo,int hi){return n<lo?lo:n>hi?hi:n;}
 void App::add_hit(int x,int y,int w,int h,HitKind kind,int value,bool enabled){
@@ -15,7 +16,7 @@ const HitRegion* App::hit_at(int x,int y)const{
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
-        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30);
+        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
 void App::pointer_cancel(){pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
@@ -43,7 +44,10 @@ void App::pointer_move(int x,int y){
         if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}
         break;
     case HitKind::CombatChoice:
-        if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}break;
+        if(!pointer.held){const auto& source=choice_pile(game);
+            for(int i=0;i<source.count;i++)if(source.ids[i]==h->value){cursor=i;break;}}
+        break;
+    case HitKind::StatusItem:if(!pointer.held)status_selected=h->value;break;
     case HitKind::Enemy:target=h->value;break;
     case HitKind::ReferenceNode:if(!pointer.held)map_preview.selected=h->value;break;
     default:break;
@@ -53,12 +57,19 @@ void App::pointer_scroll(int rows){
     if(!rows)return;
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
+    if(status_actor>=0){
+        int count=collect_statuses(game,status_actor,nullptr);
+        status_selected=clamp(status_selected+rows,0,count?count-1:0);return;
+    }
     if(map_preview.open&&map_preview.editing)return;
     if(map_preview.open){map_preview.first_row=clamp(map_preview.first_row-rows,0,int(map_preview.map.config.rows)-3);return;}
     if(detail_item>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(library){ui_action(rows>0?UiAction::NextPage:UiAction::PreviousPage);return;}
     if(title||paused||help||character_select||deck_candidate>=0)return;
+    if(!panel&&choice_phase(game.phase)){
+        ui_action(rows>0?UiAction::NextChoicePage:UiAction::PreviousChoicePage);return;
+    }
     if(panel==1){
         // The renderer aligns to ten-card pages. Half-page increments were
         // rounded back to the same page on every wheel event.
@@ -139,6 +150,8 @@ void App::pointer_button(bool down){
     case HitKind::UiAction:ui_action((UiAction)hit.value);break;
     case HitKind::LibraryItem:select_library_item(hit.value);break;
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
+    case HitKind::StatusActor:open_statuses(hit.value);break;
+    case HitKind::StatusItem:status_selected=hit.value;break;
     default:break;
     }
 }

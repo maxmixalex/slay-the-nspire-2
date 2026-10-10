@@ -16,14 +16,14 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
 static void supply(State&s,int n){for(int i=0;i<n;i++){int id=s.card_count++;s.cards[id]={DefendSilent,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=(uint16_t)id;}CHECK(validate(s));}
 static int hand(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
 static unsigned count(const State&s,Zone zone,unsigned kind){unsigned n=0;const auto&p=pile(s,zone);for(int i=0;i<p.count;i++)n+=s.cards[p.ids[i]].kind==kind;return n;}
-static void roundtrip(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==7);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!memcmp(a.bytes,b.bytes,a.size));}
+static void roundtrip(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==8);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!memcmp(a.bytes,b.bytes,a.size));}
 static void selection(State&s){CHECK(s.phase==Phase::DiscardChoice);CHECK(!end_turn(s));uint16_t ids[MaxHand];for(unsigned i=0;i<s.discard_required;i++)ids[i]=s.hand.ids[i];CHECK(choose_discard(s,ids,s.discard_required));CHECK(s.phase==Phase::Combat);roundtrip(s);}
 static void starting(){
  State s{};new_run(s,7,false,Character::Silent);CHECK(s.hp==70&&s.max_hp==70&&s.deck_count==12&&s.gold==99);CHECK(s.relics==RingOfTheSnake&&s.relic_count==1);
  unsigned counts[CardKinds]={};for(unsigned i=0;i<s.deck_count;i++)++counts[s.deck[i].kind];CHECK(counts[StrikeSilent]==5&&counts[DefendSilent]==5&&counts[Neutralize]==1&&counts[Survivor]==1);
  CHECK(choose_node(s,0));CHECK(s.hand.count==7);CHECK(end_turn(s));CHECK(s.hand.count==5);roundtrip(s);
- new_run(s,7,true,Character::Silent);CHECK(s.hand.count==7&&s.deck_count==33);for(unsigned i=0;i<s.deck_count;i++)CHECK(card_in_pool(s.deck[i].kind,Character::Silent)||card_colorless(s.deck[i].kind));
- CHECK(character_pool(Character::Ironclad,nullptr)==24&&character_pool(Character::Silent,nullptr)==24);CHECK(card_generated(Shiv)&&!card_in_pool(Shiv,Character::Silent));
+ new_run(s,7,true,Character::Silent);CHECK(s.hand.count==7&&s.deck_count==38);for(unsigned i=0;i<s.deck_count;i++)CHECK(card_in_pool(s.deck[i].kind,Character::Silent)||card_colorless(s.deck[i].kind));
+ CHECK(character_pool(Character::Ironclad,nullptr)==29&&character_pool(Character::Silent,nullptr)==29);CHECK(card_generated(Shiv)&&!card_in_pool(Shiv,Character::Silent));
  for(unsigned seed=0;seed<100;seed++){
    new_run(s,seed,false,Character::Silent);s.current_node=1;s.next_row=1;s.phase=Phase::Map;CHECK(choose_node(s,1));
    for(unsigned i=0;i<5;i++)CHECK(card_in_pool(s.shop_cards[i],Character::Silent)&&card_rarity(s.shop_cards[i])>=2);

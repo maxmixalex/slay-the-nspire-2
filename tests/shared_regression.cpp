@@ -15,7 +15,7 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
 }
 static void supply(State&s,unsigned count){for(unsigned i=0;i<count;i++){unsigned id=s.card_count++;s.cards[id]={Defend,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=(uint16_t)id;}CHECK(validate(s));}
 static int find(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
-static void rt(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==7);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
+static void rt(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==8);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static void unchanged(const State&a,const State&b){SaveData x{},y{};CHECK(save(a,x));CHECK(save(b,y));CHECK(x.size==y.size&&!std::memcmp(x.bytes,y.bytes,x.size));}
 static void cards(){
  for(unsigned up=0;up<2;up++){
@@ -44,7 +44,7 @@ static void cards(){
  CHECK(end_turn(s));CHECK(s.zones[0]==Zone::Hand&&s.zones[1]==Zone::Hand&&s.zones[2]==Zone::Discard&&s.hand.count==7);rt(s);
  s=fight({{PanicButton,0},{Impervious,0}});s.pain=3;s.power_count=1;s.power_order[0]=0;
  CHECK(play(s,0,0));CHECK(s.block==33);CHECK(play(s,0,0));CHECK(s.block==36);s.potions[0]=Potion::Block;CHECK(use_potion(s,0,0));CHECK(s.block==48);rt(s);
- for(unsigned i=Impatience;i<CardKinds;i++){CHECK(card_colorless(i)&&card_color(i)==CardColor::Colorless);CHECK(!card_in_pool(i,Character::Ironclad)&&!card_in_pool(i,Character::Silent));}
+ for(unsigned i=Impatience;i<=PanicButton;i++){CHECK(card_colorless(i)&&card_color(i)==CardColor::Colorless);CHECK(!card_in_pool(i,Character::Ironclad)&&!card_in_pool(i,Character::Silent));}
 }
 static void relics(){
  auto s=fight({{Defend,0}});CHECK(gain_relic(s,HornCleat));CHECK(gain_relic(s,CaptainsWheel));s.no_block=4;
@@ -77,6 +77,7 @@ static void stress(){
    if(s.phase==Phase::ExhaustManyChoice){uint16_t ids[MaxHand];unsigned count=random_below(r,s.exhaust_limit+1);for(unsigned j=0;j<count;j++)ids[j]=s.hand.ids[j];CHECK(choose_exhaust_many(s,ids,count));}
    else if(s.phase==Phase::ExhaustChoice){CHECK(choose_exhaust(s,0));}
    else if(s.phase==Phase::DiscardChoice){uint16_t ids[MaxHand];for(unsigned j=0;j<s.discard_required;j++)ids[j]=s.hand.ids[j];CHECK(choose_discard(s,ids,s.discard_required));}
+   else if(s.phase==Phase::ReturnChoice){CHECK(choose_return_to_draw(s,s.discard.ids[0]));}
    else if(s.hand.count&&random_below(r,5)){if(!play(s,random_below(r,s.hand.count),0))CHECK(end_turn(s));}
    else CHECK(end_turn(s));
    ++transitions;rt(s);

@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 namespace spire {
-constexpr int IroncladCards=24, SilentCards=24, CardKinds=58, MaxCards=192, MaxDeck=64, MaxHand=10, MaxEnemies=2, MaxEffects=96;
+constexpr int IroncladCards=29, SilentCards=29, CardKinds=68, MaxCards=192, MaxDeck=64, MaxHand=10, MaxEnemies=2, MaxEffects=96;
 constexpr int MapRows=12, MapColumns=3, MapNodes=MapRows*MapColumns;
 enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
     TrueGrit, TwinStrike, Inflame, IronWave, Whirlwind, FeelNoPain, DarkEmbrace,
@@ -12,7 +12,9 @@ enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, B
     StrikeSilent, DefendSilent, Neutralize, Survivor, Acrobatics, Backflip,
     DaggerThrow, DeadlyPoison, PoisonedStab, CloakAndDagger, BladeDance,
     DaggerSpray, Dash, LegSweep, Footwork, NoxiousFumes, BouncingFlask,
-    Prepared, Slice, Deflect, SuckerPunch, Adrenaline, Accuracy, LeadingStrike, Shiv, Impatience, MasterOfStrategy, Shockwave, Scrawl, Purity, HandOfGreed, PanicButton };
+    Prepared, Slice, Deflect, SuckerPunch, Adrenaline, Accuracy, LeadingStrike, Shiv, Impatience, MasterOfStrategy, Shockwave, Scrawl, Purity, HandOfGreed, PanicButton,
+    Headbutt, SwordBoomerang, PerfectedStrike, FlameBarrier, DemonForm,
+    DodgeAndRoll, InfiniteBlades, Backstab, EscapePlan, Predator };
 enum class Character : uint8_t { Ironclad, Silent };
 enum class CardColor : uint8_t { Ironclad, Silent, Colorless };
 constexpr int CharacterKinds=2;
@@ -29,13 +31,14 @@ struct Definition { const char* key; int8_t cost, damage, block, draw, power;
 extern const Definition definitions[CardKinds];
 struct Card { uint8_t kind, upgraded; };
 enum class Phase : uint8_t { Combat, ExhaustChoice, Reward, Camp, Upgrade, Complete, Dead,
-    Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice };
+    Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice };
 enum class Room : uint8_t { Combat, Event, Shop, Camp, Treasure, Final };
 struct MapNode { Room room; uint8_t links,visited,event; };
 enum class EventId : uint8_t { Baths, Vegetation, Grove };
 enum class Zone : uint8_t { Draw, Hand, Discard, Exhaust, Power, Limbo };
 enum class EffectKind : uint8_t { Damage, Block, Vulnerable, Draw, ChooseExhaust, RandomExhaust,
-    CopyDiscard, Strength, Pain, Embrace, Finish, LoseHp, Energy, Weak, NoDraw, ExhaustCard, WhirlwindHits, Poison, ChooseDiscard, CreateShivs, Dexterity, Noxious, Accuracy, RandomPoison, DrawIfNoAttacks, FillHand, ChooseExhaustMany, NoBlock, GreedDamage };
+    CopyDiscard, Strength, Pain, Embrace, Finish, LoseHp, Energy, Weak, NoDraw, ExhaustCard, WhirlwindHits, Poison, ChooseDiscard, CreateShivs, Dexterity, Noxious, Accuracy, RandomPoison, DrawIfNoAttacks, FillHand, ChooseExhaustMany, NoBlock, GreedDamage, ChooseReturn, RandomDamage, Demon, Blades,
+    DodgeBlock, DrawNextTurn, EscapeSkillBlock };
 struct Effect { EffectKind kind; int16_t value, target; };
 struct Enemy { int16_t hp, max_hp, block, strength, vulnerable; uint8_t move; int16_t weak=0, poison=0; };
 struct Pile { uint16_t ids[MaxCards]; uint16_t count; };
@@ -101,6 +104,7 @@ struct State {
     uint8_t discard_required; // Mandatory choice suspended before the queued Finish.
     uint8_t exhaust_limit; // Optional multi-exhaust allows 0..limit actual hand IDs.
     int16_t no_block; // Decrements after the enemy side, not immediately on play.
+    int16_t demon_form, infinite_blades, block_next_turn, draw_next_turn, flame_barrier;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
@@ -114,8 +118,12 @@ bool choose_exhaust_many(State&, const uint16_t* card_ids, unsigned count);
 unsigned choice_min(const State&);
 unsigned choice_max(const State&);
 bool card_retains(Card);
-inline bool combat_phase(Phase p) { return p==Phase::Combat || p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice; }
-inline bool choice_phase(Phase p) { return p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice; }
+bool card_innate(Card);
+bool card_strike_tag(unsigned kind);
+const Pile& choice_pile(const State&);
+bool choose_return_to_draw(State&, int card_id);
+inline bool combat_phase(Phase p) { return p==Phase::Combat || p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice; }
+inline bool choice_phase(Phase p) { return p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice; }
 unsigned random_reward_card(State&);
 bool end_turn(State&);
 bool choose_reward(State&, int index);

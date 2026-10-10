@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "status.hpp"
 namespace spire {
 unsigned App::library_items(uint8_t* out)const{
     unsigned count=0;uint8_t ids[CardKinds];
@@ -20,7 +21,8 @@ void App::sync_selection(){
 }
 void App::toggle_choice(int id){
     sync_selection();if(!choice_phase(game.phase)||id<0||id>=game.card_count)return;
-    bool in_hand=false;for(unsigned i=0;i<game.hand.count;i++)if(game.hand.ids[i]==id)in_hand=true;
+    const auto& source=choice_pile(game);
+    bool in_hand=false;for(unsigned i=0;i<source.count;i++)if(source.ids[i]==id)in_hand=true;
     if(!in_hand)return;
     for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
         for(unsigned j=i+1;j<choice_selected_count;j++)choice_selected[j-1]=choice_selected[j];--choice_selected_count;return;
@@ -34,21 +36,23 @@ void App::confirm_choice(){
     unsigned needed=choice_max(game);
     if(choice_selected_count<choice_min(game)||choice_selected_count>needed)return;
     bool done=false;
-    if(game.phase==Phase::ExhaustManyChoice)done=choose_exhaust_many(game,choice_selected,choice_selected_count);
+    if(game.phase==Phase::ReturnChoice)done=choose_return_to_draw(game,choice_selected[0]);
+    else if(game.phase==Phase::ExhaustManyChoice)done=choose_exhaust_many(game,choice_selected,choice_selected_count);
     else if(game.phase==Phase::DiscardChoice)done=choose_discard(game,choice_selected,needed);
     else for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==choice_selected[0]){done=choose_exhaust(game,i);break;}
     if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}
 }
 bool App::selection_input(Key key){
     if(title||paused||help||panel||!choice_phase(game.phase))return false;
-    sync_selection();int count=game.hand.count;if(!count)return false;
+    sync_selection();const auto& source=choice_pile(game);int count=source.count;if(!count)return false;
+    if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
     if(key==Key::Left)cursor=(cursor+count-1)%count;
     else if(key==Key::Right)cursor=(cursor+1)%count;
     else if(key==Key::Up)cursor=cursor>=5?cursor-5:cursor;
     else if(key==Key::Down)cursor=cursor+5<count?cursor+5:cursor;
-    else if(key==Key::Confirm)toggle_choice(game.hand.ids[cursor<count?cursor:count-1]);
+    else if(key==Key::Confirm)toggle_choice(source.ids[cursor]);
     else if(key==Key::EndTurn)confirm_choice();
-    else if(key==Key::Detail)open_card_detail(game.cards[game.hand.ids[cursor<count?cursor:count-1]]);
+    else if(key==Key::Detail)open_card_detail(game.cards[source.ids[cursor]]);
     else return false; // Pause, save/load and browsing remain available.
     return true;
 }
@@ -91,6 +95,12 @@ void App::ui_action(UiAction action){
     case UiAction::FilterAll:case UiAction::FilterIronclad:case UiAction::FilterSilent:case UiAction::FilterColorless:
         if(library&&library_tab==0){library_filter=(int)action-(int)UiAction::FilterAll;library_page=library_selected=0;}break;
     case UiAction::CycleSort:if(library&&library_tab==0){library_sort=(library_sort+1)%3;library_page=library_selected=0;}break;
+    case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
+        if(!title&&!paused&&!help&&!panel&&choice_phase(game.phase)){
+            int page=cursor/10+(action==UiAction::PreviousChoicePage?-1:1);
+            int last=(choice_pile(game).count-1)/10;
+            if(page<0)page=0;if(page>last)page=last;cursor=page*10;
+        }break;
     case UiAction::ConfirmChoice:confirm_choice();break;
     case UiAction::ClearChoice:choice_selected_count=0;break;
     case UiAction::ConfirmDeckChoice:confirm_deck_choice();break;
@@ -172,6 +182,27 @@ bool App::deck_input(Key key){
         if(game.phase==Phase::Transform&&cursor==game.event_first){message("请选择另一张牌");return true;}
         deck_candidate=cursor;deck_choice_revision=game.revision;deck_choice_phase=game.phase;pointer_cancel();
     }else return false;
+    return true;
+}
+}
+
+namespace spire {
+void App::open_statuses(int actor){
+    if(title||paused||help||panel||library||character_select||map_preview.open||!combat_phase(game.phase))return;
+    if(actor<0||actor>game.enemy_count)return;
+    status_actor=actor;status_selected=0;pointer_cancel();
+}
+bool App::status_input(Key key){
+    if(status_actor<0){if(key!=Key::Statuses)return false;open_statuses(0);return true;}
+    if(key==Key::Back||key==Key::Statuses){status_actor=-1;return true;}
+    if(key==Key::Quit){quit=true;return true;}
+    if(key==Key::Left||key==Key::Right){
+        int count=game.enemy_count+1;
+        status_actor=(status_actor+(key==Key::Left?count-1:1))%count;status_selected=0;
+    }
+    int count=collect_statuses(game,status_actor,nullptr);
+    if(key==Key::Up&&status_selected>0)--status_selected;
+    if(key==Key::Down&&status_selected+1<count)++status_selected;
     return true;
 }
 }

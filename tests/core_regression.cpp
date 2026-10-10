@@ -22,7 +22,7 @@ static void supply(State& s,int n){
 static void exhaust_powers(State& s){s.pain=3;s.embrace=1;s.power_order[0]=0;s.power_order[1]=1;s.power_count=2;}
 static int find(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
 static void roundtrip(State& s){
-    SaveData a{},b{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==7);
+    SaveData a{},b{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==8);
     State copy{};CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size);
     CHECK(!std::memcmp(a.bytes,b.bytes,a.size));
     a.bytes[a.size-1]^=1;State before=copy;CHECK(!load(copy,a.bytes,a.size));CHECK(!std::memcmp(&before,&copy,sizeof(State)));
@@ -81,7 +81,8 @@ static void stress(){
         for(unsigned j=0;j<180&&s.phase!=Phase::Reward&&s.phase!=Phase::Dead;j++){
             CHECK(validate(s));
             if(s.phase==Phase::ExhaustChoice){CHECK(choose_exhaust(s,random_below(r,s.hand.count)));}
-            else if(s.hand.count&&random_below(r,5)){
+            else if(s.phase==Phase::ReturnChoice){CHECK(choose_return_to_draw(s,s.discard.ids[0]));}
+   else if(s.hand.count&&random_below(r,5)){
                 unsigned h=random_below(r,s.hand.count);int t=s.enemy_count==2&&s.enemies[1].hp>0?1:0;
                 if(!play(s,h,t))CHECK(end_turn(s));
             }else CHECK(end_turn(s));

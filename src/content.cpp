@@ -40,10 +40,10 @@ bool Content::open(const uint8_t*p,size_t n){
     data_=nullptr;cards_=0;ui_offset_=ui_count_=0;cached_large=cached_small=nullptr;
     if(!p||n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n)return false;
     const uint32_t version=u32(p+4),cards=u32(p+32);
-    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7)||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=CardKinds))return false;
+    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8)||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version==8&&cards!=CardKinds))return false;
     auto ni=u32(p+16),ng=u32(p+20),ns=u32(p+24),nc=u32(p+28);
     if(ni<A_Count||ni>8192||ng>8192||ns<66||ns>2048||nc!=(version>=6?AnimationKinds:11))return false;
-    uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+(version>=5?(version>=7?U_Count:version==6?74:56)*4:0);if(start>n)return false;
+    uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+(version>=5?(version>=8?U_Count:version==7?83:version==6?74:56)*4:0);if(start>n)return false;
     uint32_t hash=2166136261u;for(size_t i=40;i<n;i++){hash^=p[i];hash*=16777619u;}if(hash!=u32(p+36))return false;
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),h=u16(r+6),fmt=u32(r+8),len=u32(r+12);
@@ -79,7 +79,7 @@ bool Content::open(const uint8_t*p,size_t n){
         if(u16(im+4)!=(version>=5?82:41)||u16(im+6)!=(version>=5?60:30))return false;
     }
     if(version>=5){
-        ui_count_=version>=7?U_Count:version==6?74:56;
+        ui_count_=version>=8?U_Count:version==7?83:version==6?74:56;
         ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
         for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni){ui_offset_=0;return false;}
         if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return false;

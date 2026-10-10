@@ -27,7 +27,7 @@ public:
     int potion_image(Potion)const;
     const char* card_string(int kind,int variant=0)const;
 };
-enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap,Collection };
+enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap,Collection,Statuses };
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };
 struct Motion {int clip=-1;uint32_t start=0;};
 struct App {
@@ -47,6 +47,9 @@ struct App {
     PointerState pointer{};
     MapPreview map_preview{};
     HitRegion hits[MaxHits]{}; int hit_count = 0;
+    int status_actor=-1, status_selected=0;
+    void open_statuses(int actor);
+    bool status_input(Key);
     int deck_candidate=-1;uint32_t deck_choice_revision=0;Phase deck_choice_phase=Phase::Map;
     bool deck_input(Key);
     bool deck_candidate_valid()const;

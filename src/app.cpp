@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "rich_text.hpp"
+#include "status.hpp"
 namespace spire {
 static int mn(int a,int b){return a<b?a:b;}static int mx(int a,int b){return a>b?a:b;}
 static uint16_t rgb(int r,int g,int b){return (uint16_t)((r>>3)<<11|(g>>2)<<5|(b>>3));}
@@ -134,7 +135,7 @@ struct Canvas{
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){callbacks=cb;return content.open(p,n)&&content.card_count()==CardKinds;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
 void App::draw_frame(){render();}
 void App::tick(){animation++;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
@@ -144,18 +145,19 @@ void App::card_description(Card c,int t,char*out,size_t cap)const{
         if(*p=='\x1e'){++p;if(library||!combat_phase(game.phase)){while(*p&&*p!='\x1f')++p;}continue;}
         if(*p=='\x1f'){++p;continue;}
         if(p[0]=='{'&&p[1]&&p[2]=='}'){
-            int value=0;switch(p[1]){case 's':value=d.creates+(c.upgraded?d.creates_up:0);break;case 'r':value=c.kind==BouncingFlask?(c.upgraded?4:3):1;break;case 'h':value=d.hp_loss;break;case 'e':value=d.energy_gain+(c.upgraded?d.energy_up:0);break;case 'd':value=(!library&&combat_phase(game.phase))?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=(!library&&combat_phase(game.phase))?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
+            int value=0;switch(p[1]){case 's':value=d.creates+(c.upgraded?d.creates_up:0);break;case 'r':value=(c.kind==BouncingFlask||c.kind==SwordBoomerang)?(c.upgraded?4:3):1;break;case 'h':value=d.hp_loss;break;case 'e':value=d.energy_gain+(c.upgraded?d.energy_up:0);break;case 'd':value=(!library&&combat_phase(game.phase))?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=(!library&&combat_phase(game.phase))?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
             b.number(value);p+=3;
         }else b.ch(*p++);}
 }
 static int choice_count(const App&a){
     switch(a.game.phase){case Phase::Map:return 3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.event_page>=2?1:2;
     case Phase::Reward:return 4;case Phase::Camp:return 2;case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
-    case Phase::Treasure:return 1;default:return a.game.hand.count;}
+    case Phase::Treasure:return 1;case Phase::ReturnChoice:return a.game.discard.count;default:return a.game.hand.count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
+    if(status_input(k))return;
     if(reference_input(k))return;
     if(detail_item>=0){
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_item=-1;
@@ -477,27 +479,20 @@ static void deck_select(Canvas&c){
     c.text("›",296,214,16,Gold);c.action(277,210,43,30,UiAction::NextDeckPage,page<last);
     char label[24]={};TextBuffer b{label,sizeof label,0};b.number(page+1);b.text(" / ");b.number(last+1);c.centered(label,112,218,96,10,Muted);
 }
+#include "status_ui.inc"
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);c.hit(0,42,320,118,HitKind::Battlefield);c.actor(0,60,133);
     if(s.block){c.picture(A_Block,7,120);c.num(s.block,23,119,12,Blue);}
-    int sx=70;
-    const int values[]={s.strength,s.dexterity,s.vigor,s.thorns};const int icons[]={U_Strength,U_Dexterity,U_Vigor,U_Thorns};
-    for(int i=0;i<4;i++)if(values[i]){c.ui(icons[i],sx,122,12,12);c.num(values[i],sx+13,121,10,Gold);sx+=28;}
-    if(s.no_draw){c.ui(U_NoDraw,5,46,13,13);c.text("不能抽牌",21,45,10,Gold);}
-    if(s.no_block){c.ui(U_NoBlock,79,46,13,13);c.num(s.no_block,94,45,10,Gold);}
-    if(s.noxious_fumes){c.ui(U_NoxiousFumes,7,63,13,13);c.num(s.noxious_fumes,22,62,10,Green);}
-    if(s.accuracy){c.ui(U_Accuracy,48,63,13,13);c.num(s.accuracy,63,62,10,Green);}
-    if(s.pain||s.embrace){char b[48]={};TextBuffer t{b,sizeof b,0};if(s.pain){t.text("疼痛 ");t.number(s.pain);}if(s.embrace){t.text("  拥 ");t.number(s.embrace);}c.text(b,7,63,10,Green);}
+    status_strip(c,0,6,47,126);
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];int x=s.enemy_count==1?225:174+i*93;
         if(!e.hp){c.centered("已击败",x-34,104,68,10,Muted);continue;}
         c.hit(x-40,38,80,101,HitKind::Enemy,i);c.actor(i+1,x,119);c.picture(e.move==2?A_BuffIntent:A_AttackIntent,x-24,40);
         if(e.move==2)c.text("+2",x-3,39,12,Green);else c.num(enemy_damage(e),x-3,39,12,Gold);
         if(e.move==1){c.picture(A_Block,x+21,42,10,10);c.num(5,x+32,40,10,Blue);}
-        if(e.weak){c.ui(U_Weak,x-31,90,13,13);c.num(e.weak,x-16,89,10,Green);}
-        if(e.poison){c.ui(U_Poison,x+1,90,13,13);c.num(e.poison,x+16,89,10,Green);}
+        status_strip(c,i+1,x-37,91,77);
         if(a.target==i)c.text("▼",x-5,60,10,Gold);c.hp(e.hp,e.max_hp,x-32,122,64);
-        if(e.vulnerable){c.text("易伤",x-31,76,10,Blue);c.num(e.vulnerable,x-9,76,10,Blue);}if(e.block){c.picture(A_Block,x+15,73,12,12);c.num(e.block,x+27,73,10,Blue);}
+        if(e.block){c.picture(A_Block,x+15,73,12,12);c.num(e.block,x+27,73,10,Blue);}
     }
     for(int i=0;i<3;i++){
         int age=(int)a.animation-a.hit_start[i];if(a.last_hit[i]&&age>=0&&age<24){int x=i==0?48:s.enemy_count==1?212:160+(i-1)*93;c.num(a.last_hit[i],x,83-age/2,16,i?Gold:Red);}
@@ -693,7 +688,7 @@ void App::render(){
         case Phase::Camp:camp_screen(c);break;
         case Phase::Upgrade:case Phase::Remove:case Phase::Transform:c.picture(A_Title,0,0);deck_select(c);break;
         case Phase::Reward:reward_screen(c);break;
-        case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:combat_screen(c);break;
+        case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:combat_screen(c);break;
         case Phase::Treasure:c.picture(A_ChestBackground,0,20);c.picture(A_Chest,128,91);c.centered("发现宝藏",0,37,320,20,Gold);c.button("打开宝箱",35,198,250,true,28);c.hit(35,198,250,28,HitKind::Choice,0);break;
         default:c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
@@ -707,7 +702,7 @@ void App::render(){
     }
     if(help){
         hit_count=0;c.hit(6,7,308,226,HitKind::Close);c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
-        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存    O：载入","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","12 层分岔路线，含商店、事件和营地。","触摸板：轻触/按下点击，按住可拖牌。"};
+        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  V：能力状态","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","12 层分岔路线，含商店、事件和营地。","触摸板：轻触/按下点击，按住可拖牌。"};
         for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
     }
     if(character_select)character_screen(c);
@@ -715,8 +710,9 @@ void App::render(){
     if(deck_candidate>=0&&!paused&&!help&&!panel)deck_confirm_screen(c);
     if(detail_card>=0)detail_screen(c);
     if(detail_item>=0)item_detail_screen(c);
+    if(status_actor>=0)status_screen(c);
     if(map_preview.open)reference_map_screen(c);
-    if(notice_ticks&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    if(notice_ticks&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
     pointer_overlay(c);
 }
 } // namespace spire

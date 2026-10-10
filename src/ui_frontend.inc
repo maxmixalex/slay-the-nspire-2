@@ -9,7 +9,7 @@ static void title_screen(Canvas&c){
         c.text(labels[i],35,y+1,12,Ink);c.text(labels[i],34,y,12,selected?Gold:White);
         c.hit(7,y,147,20,HitKind::Menu,i);
     }
-    c.text("nSpire II 0.10",218,219,10,White,100);
+    c.text("nSpire II 0.11",218,219,10,White,100);
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;bool silent=a.selected_character==Character::Silent;

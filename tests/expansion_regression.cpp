@@ -8,7 +8,7 @@ static unsigned checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
 static State combat(){State s{};new_run(s,17,true);s.practice=0;s.encounter=1;enter_combat(s);s.relics=0;s.relic_count=0;s.relic_flash=0;for(auto&e:s.enemies)e={46,46,0,0,0,0};CHECK(validate(s));return s;}
 static void hand(State&s,std::initializer_list<Card> cards){s.card_count=0;s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;for(auto c:cards){auto id=s.card_count++;s.cards[id]=c;s.zones[id]=Zone::Hand;s.hand.ids[s.hand.count++]=id;}for(int i=0;i<18;i++){auto id=s.card_count++;s.cards[id]={Defend,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=id;}}
-static void rt(const State&s){SaveData a{},b{};State t{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==7);CHECK(load(t,a.bytes,a.size));CHECK(save(t,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
+static void rt(const State&s){SaveData a{},b{};State t{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==8);CHECK(load(t,a.bytes,a.size));CHECK(save(t,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static bool drink(State&s,Potion p,int target=0){s.potions[0]=p;return use_potion(s,0,target);}
 static void potions(){
     for(int kind=1;kind<=PotionKinds;kind++){
@@ -68,7 +68,7 @@ static void colorless(){
 }
 static void rooms(){
     auto s=combat();s.current_node=1;s.next_row=1;s.phase=Phase::Map;s.gold=9999;CHECK(choose_node(s,1));CHECK(s.phase==Phase::Shop);
-    for(int i=0;i<5;i++){CHECK(s.shop_cards[i]>=3&&s.shop_cards[i]<24);for(int j=0;j<i;j++)CHECK(s.shop_cards[i]!=s.shop_cards[j]);}
+    for(int i=0;i<5;i++){CHECK(card_in_pool(s.shop_cards[i],Character::Ironclad)&&card_rarity(s.shop_cards[i])>=2);for(int j=0;j<i;j++)CHECK(s.shop_cards[i]!=s.shop_cards[j]);}
     CHECK(card_colorless(s.shop_cards[5])&&card_colorless(s.shop_cards[6]));
     CHECK(s.shop_relics[0]!=s.shop_relics[1]&&s.shop_relics[1]!=s.shop_relics[2]);rt(s);
     for(int i=0;i<ShopRemove;i++){

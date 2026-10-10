@@ -77,7 +77,7 @@ extern "C" int main(int argc,char**argv){
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
     Clock clock{};clock.init();uint32_t input_clock=0;
-    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail,spire::Key::ReferenceMap,spire::Key::Collection};
+    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail,spire::Key::ReferenceMap,spire::Key::Collection,spire::Key::Statuses};
     uint32_t previous=0xffff;unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;app.render();blit(app.pixels);
     while(!app.quit){
         unsigned elapsed=clock.frame();if(!elapsed)continue;app.advance(elapsed);
@@ -105,6 +105,7 @@ extern "C" int main(int argc,char**argv){
         if(pressed(0x16,0x10))p|=1u<<14; // I: inspect selected card
         if(pressed(0x16,0x40))p|=1u<<15; // G: reference map preview
         if(pressed(0x18,0x10))p|=1u<<16; // C: compendium
+        if(pressed(0x12,4))p|=1u<<17; // V: powers and statuses
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.

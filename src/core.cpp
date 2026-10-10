@@ -43,10 +43,29 @@ void draw_cards(State&s,int n){
     if(got)record(s,LogKind::Draw,got);
 }
 bool card_retains(Card c){return c.kind==Purity||(c.kind==Scrawl&&c.upgraded);}
+bool card_innate(Card c){return c.kind==Backstab||(c.kind==InfiniteBlades&&c.upgraded);}
+bool card_strike_tag(unsigned kind){
+    return kind==Strike||kind==StrikeSilent||kind==PommelStrike||kind==TwinStrike||
+           kind==LeadingStrike||kind==PerfectedStrike;
+}
+const Pile& choice_pile(const State&s){return s.phase==Phase::ReturnChoice?s.discard:s.hand;}
+// First-turn innate cards are placed above the shuffled ordinary cards. They
+// occupy normal hand slots; excess innate cards stay in draw under the hand cap.
+static int prioritize_innate(State&s){
+    uint16_t sorted[MaxCards];unsigned count=0,innate=0;
+    for(unsigned i=0;i<s.draw.count;i++)if(!card_innate(s.cards[s.draw.ids[i]]))sorted[count++]=s.draw.ids[i];
+    for(unsigned i=0;i<s.draw.count;i++)if(card_innate(s.cards[s.draw.ids[i]])){sorted[count++]=s.draw.ids[i];++innate;}
+    for(unsigned i=0;i<count;i++)s.draw.ids[i]=sorted[i];
+    return (int)innate;
+}
 int cost(Card c){if(c.kind>=CardKinds)return 99;return definitions[c.kind].cost-((c.kind==DarkEmbrace||c.kind==BodySlam)&&c.upgraded?1:0);}
 int card_base_damage(const State&s,Card c){
     if(c.kind>=CardKinds)return 0;
     if(c.kind==BodySlam)return s.block;
+    if(c.kind==PerfectedStrike){
+        int count=0;for(unsigned i=0;i<s.card_count;i++)if(card_strike_tag(s.cards[i].kind))++count;
+        return 6+count*(c.upgraded?3:2);
+    }
     if(c.kind==Shiv)return definitions[Shiv].damage+(c.upgraded?definitions[Shiv].damage_up:0)+s.accuracy;
     return definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
 }
@@ -111,6 +130,26 @@ static void resolve(State&s){
     while(s.effect_count&&s.phase==Phase::Combat){
         Effect e=s.effects[0];for(int i=1;i<s.effect_count;i++)s.effects[i-1]=s.effects[i];s.effect_count--;
         switch(e.kind){
+        case EffectKind::RandomDamage:{
+            int targets[MaxEnemies],count=0;
+            for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp>0)targets[count++]=i;
+            if(count)enqueue(s,EffectKind::Damage,e.value,targets[random_below(s.rng_cards,count)],true);
+            break;}
+        case EffectKind::ChooseReturn:
+            if(alive(s)&&s.discard.count)s.phase=Phase::ReturnChoice;
+            break;
+        case EffectKind::Demon:s.demon_form=(int16_t)min(9999,s.demon_form+e.value);break;
+        case EffectKind::Blades:s.infinite_blades=(int16_t)min(MaxCards,s.infinite_blades+e.value);break;
+        case EffectKind::DodgeBlock:{
+            int gained=min(9999-s.block,e.value);s.block+=(int16_t)gained;
+            s.block_next_turn=(int16_t)min(9999,s.block_next_turn+gained);
+            record(s,LogKind::Block,gained);break;}
+        case EffectKind::DrawNextTurn:s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+e.value);break;
+        case EffectKind::EscapeSkillBlock:{
+            unsigned before=s.hand.count;draw_cards(s,1);
+            if(s.hand.count>before&&definitions[s.cards[s.hand.ids[before]].kind].type==CardType::Skill)
+                enqueue(s,EffectKind::Block,e.value,0,true);
+            break;}
         case EffectKind::Damage:case EffectKind::GreedDamage:
             if(e.target>=0&&e.target<s.enemy_count&&s.enemies[e.target].hp>0){
                 auto& t=s.enemies[e.target];if(!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
@@ -211,6 +250,7 @@ void enter_combat(State&s){
     s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;s.no_draw=0;s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
     s.noxious_fumes=s.accuracy=s.discard_required=0;
     s.no_block=s.exhaust_limit=s.attacked_this_turn=0;s.relic_counters[24]=0;
+    s.demon_form=s.infinite_blades=s.block_next_turn=s.draw_next_turn=s.flame_barrier=0;
     s.turn=1;s.energy=3;s.playing=-1;s.effect_count=s.card_count=0;
     s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;
     s.enemy_count=s.encounter?2:1;
@@ -225,7 +265,10 @@ void enter_combat(State&s){
         const uint8_t* opening=s.character==Character::Silent?silent:ironclad;
         for(int k=0;k<(s.character==Character::Silent?7:5);k++)for(int j=0;j<s.draw.count;j++)if(s.cards[s.draw.ids[j]].kind==opening[k]){
             int id=remove(s.draw,j);put(s,s.hand,id,Zone::Hand);break;}
-    }else draw_cards(s,5+((s.relics&BagOfPreparation)?2:0)+((s.relics&RingOfTheSnake)?2:0));
+    }else{
+        int innate=prioritize_innate(s);
+        draw_cards(s,min(MaxHand,max(innate,5+((s.relics&BagOfPreparation)?2:0)+((s.relics&RingOfTheSnake)?2:0))));
+    }
     relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);
     record(s,LogKind::Turn,1);finish_combat_if_won(s);s.revision++;
 }
@@ -265,11 +308,18 @@ bool play(State&s,int h,int target){
     if(d.hp_loss)enqueue(s,EffectKind::LoseHp,d.hp_loss);
     if(d.energy_gain)enqueue(s,EffectKind::Energy,d.energy_gain+(c.upgraded?d.energy_up:0));
     if(c.kind==LegSweep)enqueue(s,EffectKind::Weak,power,target);
-    if(block)enqueue(s,EffectKind::Block,block);
+    if(c.kind==DodgeAndRoll)enqueue(s,EffectKind::DodgeBlock,block);
+    else if(c.kind==EscapePlan)enqueue(s,EffectKind::EscapeSkillBlock,block);
+    else if(block)enqueue(s,EffectKind::Block,block);
+    if(c.kind==FlameBarrier)s.flame_barrier=(int16_t)min(9999,s.flame_barrier+power);
+    if(c.kind==DemonForm)enqueue(s,EffectKind::Demon,power);
+    if(c.kind==InfiniteBlades)enqueue(s,EffectKind::Blades,1);
     if(c.kind==FiendFire){
         const int count=s.hand.count;
         for(int i=0;i<count;i++)enqueue(s,EffectKind::ExhaustCard,s.hand.ids[i]);
         for(int i=0;i<count;i++)enqueue(s,EffectKind::Damage,hit,target);
+    }else if(c.kind==SwordBoomerang){
+        for(int i=0;i<power;i++)enqueue(s,EffectKind::RandomDamage,hit);
     }else if(c.kind==DaggerSpray){
         for(int repeat=0;repeat<2;repeat++)for(int i=0;i<s.enemy_count;i++)enqueue(s,EffectKind::Damage,hit,i);
     }else if(c.kind==Whirlwind)enqueue(s,EffectKind::WhirlwindHits,hit,energy);
@@ -280,6 +330,8 @@ bool play(State&s,int h,int target){
         enqueue(s,c.kind==HandOfGreed?EffectKind::GreedDamage:EffectKind::Damage,hit,target);
         if(c.kind==TwinStrike)enqueue(s,EffectKind::Damage,hit,target);
     }
+    if(c.kind==Headbutt)enqueue(s,EffectKind::ChooseReturn);
+    if(c.kind==Predator)enqueue(s,EffectKind::DrawNextTurn,2);
     if(c.kind==Neutralize||c.kind==SuckerPunch)enqueue(s,EffectKind::Weak,power,target);
     if(c.kind==DeadlyPoison||c.kind==PoisonedStab)enqueue(s,EffectKind::Poison,power,target);
     if(c.kind==BouncingFlask)for(int i=0;i<(c.upgraded?4:3);i++)enqueue(s,EffectKind::RandomPoison,power);
@@ -342,6 +394,13 @@ bool choose_exhaust_many(State&s,const uint16_t* ids,unsigned count){
     for(unsigned i=count;i>0;i--)enqueue(s,EffectKind::ExhaustCard,ids[i-1],0,true);
     s.exhaust_limit=0;s.phase=Phase::Combat;resolve(s);s.revision++;return true;
 }
+bool choose_return_to_draw(State&s,int card_id){
+    if(s.phase!=Phase::ReturnChoice||card_id<0||card_id>=s.card_count)return false;
+    int index=-1;for(int i=0;i<s.discard.count;i++)if(s.discard.ids[i]==card_id){index=i;break;}
+    if(index<0)return false;
+    int id=remove(s.discard,index);put(s,s.draw,id,Zone::Draw);
+    s.phase=Phase::Combat;resolve(s);s.revision++;return true;
+}
 bool end_turn(State&s){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1)return false;
     relic_hook(s,RelicHook::TurnEnd);
@@ -371,6 +430,7 @@ bool end_turn(State&s){
         if(e.move!=2&&s.thorns)damage_unpowered(s,i,s.thorns);
         s.block-=absorb;int old_hp=s.hp;s.hp=max(0,s.hp-amount+absorb);
         relic_after_hp_loss(s,old_hp-s.hp);
+        if(s.hp>0&&e.move!=2&&s.flame_barrier)damage_unpowered(s,i,s.flame_barrier);
         if(e.move==1)e.block=5;
         if(e.move==2)e.strength=min(9999,e.strength+2);
         if(e.vulnerable>0)e.vulnerable--;
@@ -378,11 +438,21 @@ bool end_turn(State&s){
         e.move=(uint8_t)((e.move+1)%3);
         if(!s.hp){s.phase=Phase::Dead;break;}
     }
+    s.flame_barrier=0;
     if(s.no_block>0)--s.no_block; // NoBlockPower.AfterSideTurnEnd: enemy side.
     if(s.hp&&!alive(s)){victory(s);s.revision++;return true;}
-    if(s.hp){s.block=0;s.energy=3;s.turn++;
+    if(s.hp){s.block=s.block_next_turn;s.block_next_turn=0;s.energy=3;s.turn++;
+        if(s.block)record(s,LogKind::Block,s.block);
+        if(s.demon_form){s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
+        // Infinite Blades runs BeforeHandDraw; created cards occupy hand space
+        // before the standard draw and Predator's one-turn draw modifier.
+        if(s.infinite_blades){
+            if(s.infinite_blades>MaxCards-s.card_count){fail(s);s.revision++;return true;}
+            create_shivs(s,s.infinite_blades);
+        }
         for(int i=0;i<s.enemy_count;i++)if(s.noxious_fumes)apply_poison(s,i,s.noxious_fumes);
-        draw_cards(s,5);relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);finish_combat_if_won(s);}
+        int draw=5+s.draw_next_turn;s.draw_next_turn=0;
+        draw_cards(s,draw);relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);finish_combat_if_won(s);}
     s.revision++;return true;
 }
 bool choose_reward(State&s,int index){
@@ -402,13 +472,16 @@ bool upgrade_card(State&s,int index){
 }
 const Pile& pile(const State&s,Zone z){switch(z){case Zone::Draw:return s.draw;case Zone::Hand:return s.hand;case Zone::Discard:return s.discard;case Zone::Exhaust:return s.exhaust;default:return s.powers;}}
 bool validate(const State&s){
-    if((int)s.phase>(int)Phase::ExhaustManyChoice||s.practice>1||s.floor>MapRows||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>999||s.turn<0||s.turn>20000)return false;
+    if((int)s.phase>(int)Phase::ReturnChoice||s.practice>1||s.floor>MapRows||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>999||s.turn<0||s.turn>20000)return false;
     if((unsigned)s.character>=CharacterKinds||s.noxious_fumes<0||s.noxious_fumes>9999||s.accuracy<0||s.accuracy>9999||s.discard_required>MaxHand)return false;
     if(s.phase!=Phase::DiscardChoice&&s.discard_required)return false;
     if(s.phase==Phase::DiscardChoice&&(!s.discard_required||s.discard_required>s.hand.count))return false;
     if(s.exhaust_limit>MaxHand||s.no_block<0||s.no_block>9999||s.attacked_this_turn>1)return false;
     if(s.phase!=Phase::ExhaustManyChoice&&s.exhaust_limit)return false;
     if(s.phase==Phase::ExhaustManyChoice&&(!s.exhaust_limit||s.exhaust_limit>s.hand.count))return false;
+    if(s.demon_form<0||s.demon_form>9999||s.infinite_blades<0||s.infinite_blades>MaxCards||
+       s.block_next_turn<0||s.block_next_turn>9999||s.draw_next_turn<0||s.draw_next_turn>MaxCards||
+       s.flame_barrier<0||s.flame_barrier>9999)return false;
     if(s.relic_flash&~((1u<<RelicKinds)-1))return false;
     if(s.no_draw>1||s.reward_claimed>7||(unsigned)s.reward_potion>PotionKinds||s.potion_chance>100)return false;
     if(s.temporary_strength<0||s.temporary_strength>s.strength||s.temporary_dexterity<0||s.temporary_dexterity>s.dexterity||
@@ -443,9 +516,9 @@ bool validate(const State&s){
     if(s.playing>=0){if(seen[s.playing]||s.zones[s.playing]!=Zone::Limbo)return false;seen[s.playing]=1;}
     for(int i=0;i<s.card_count;i++)if(!seen[i])return false;
     for(int i=0;i<s.enemy_count;i++){const auto&e=s.enemies[i];if(e.hp<0||e.hp>e.max_hp||e.max_hp<42||e.max_hp>46||e.block<0||e.block>9999||e.strength<0||e.strength>9999||e.vulnerable<0||e.vulnerable>9999||e.move>2||e.weak<0||e.weak>9999||e.poison<0||e.poison>9999)return false;}
-    for(int i=0;i<s.effect_count;i++){const auto&e=s.effects[i];if((int)e.kind>(int)EffectKind::GreedDamage||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies))return false;
+    for(int i=0;i<s.effect_count;i++){const auto&e=s.effects[i];if((int)e.kind>(int)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies))return false;
         if(e.kind==EffectKind::ExhaustCard&&e.value>=s.card_count)return false;}
-    if(choice_phase(s.phase)&&(s.playing<0||!s.effect_count||!s.hand.count))return false;
+    if(choice_phase(s.phase)&&(s.playing<0||!s.effect_count||!choice_pile(s).count))return false;
     if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(s.playing>=0||s.effect_count))return false;
     return true;
 }
@@ -511,18 +584,28 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
   for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=51)c.good=false;
   for(unsigned i=0;i<s.effect_count;i++)if((unsigned)s.effects[i].kind>(unsigned)EffectKind::RandomPoison)c.good=false;
  }
+ if(version>=8){
+  F(s.demon_form);F(s.infinite_blades);F(s.block_next_turn);F(s.draw_next_turn);F(s.flame_barrier);
+ }else if(c.in){
+  if(s.phase==Phase::ReturnChoice)c.good=false;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=58)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=58)c.good=false;
+  for(auto k:s.shop_cards)if(k>=58)c.good=false;
+  for(auto k:s.reward)if(k>=58)c.good=false;
+  for(unsigned i=0;i<s.effect_count;i++)if((unsigned)s.effects[i].kind>(unsigned)EffectKind::GreedDamage)c.good=false;
+ }
 #undef F
 }
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
-    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(7);c.field(0x41CEF1EA);code_state(copy,c,7);
+    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(8);c.field(0x41CEF1EA);code_state(copy,c,8);
     uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(!data||len<16||len>16384||len%4)return false;
     Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
     const unsigned version=c.field(0);
-    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7)||c.field(0)!=0x41CEF1EA)return false;
+    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8)||c.field(0)!=0x41CEF1EA)return false;
     State tmp{};code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
     s=tmp;return true;

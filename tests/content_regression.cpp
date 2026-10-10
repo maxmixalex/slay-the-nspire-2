@@ -12,7 +12,7 @@ static std::vector<uint8_t> pack(){
     constexpr unsigned images=A_Count+160,strings=3*CardKinds+24,clips=AnimationKinds,cards=CardKinds;
     constexpr unsigned dir=40+images*16+strings*8+clips*16+cards*16+U_Count*4;
     std::vector<uint8_t>b(dir+images*82*60*2+strings*2);
-    put(b,0,0x3250534e);put(b,4,7);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
+    put(b,0,0x3250534e);put(b,4,8);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
     put(b,16,images);put(b,24,strings);put(b,28,clips);put(b,32,cards);
     for(unsigned i=0;i<images;i++){
         put(b,40+i*16,dir+i*9840);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,9840);

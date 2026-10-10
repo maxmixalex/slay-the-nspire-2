@@ -18,7 +18,7 @@ int main(int argc,char**argv){
  a.input(Key::Confirm);CHECK(a.character_select);action(UiAction::SelectSilent);CHECK(a.selected_character==Character::Silent);action(UiAction::StartCharacter);
  CHECK(!a.title&&a.game.character==Character::Silent&&a.game.hp==70&&a.game.deck_count==12);CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);
  SaveData prior{};CHECK(save(a.game,prior));a.input(Key::Collection);
- const unsigned counts[]={58,24,25,9};
+ const unsigned counts[]={68,29,30,9};
  for(unsigned filter=0;filter<4;filter++){
   action((UiAction)((int)UiAction::FilterAll+filter));CHECK(a.library_items()==counts[filter]);uint8_t ids[CardKinds];a.library_items(ids);
   for(unsigned i=0;i<counts[filter];i++){

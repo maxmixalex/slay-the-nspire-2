@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.10 (2026-10-10).
+nSpire II experimental native runtime, version 0.11 (2026-10-10).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -100,3 +100,12 @@ image payloads and all seventeen clip records are retained. Upgrade comparison,
 permanent deck choices and paged item details reuse the original-derived UI
 textures already present in the private pack. No original game code or assets
 are included in the public source.
+
+## Character tactics and status UI added in 0.11
+
+Ten original character card portraits and seven power icons are converted from
+the same pinned local installation. Existing decoded images, glyph coverage and
+clip timing are retained. Host-side python-lz4 performs high-compression encoding;
+the calculator keeps this project's independent LZ4 block decoder. No python-lz4
+or upstream LZ4 source/binary is bundled in the runtime. Public source excludes
+all original assets, private disassembly, calculator images and font files.

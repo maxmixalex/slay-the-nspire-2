@@ -59,14 +59,24 @@ const Definition definitions[CardKinds]={
  {"SCRAWL",1,0,0,0,0,0,0,0,0,CardType::Skill,false,0,0,0,true},
  {"PURITY",0,0,0,3,0,0,0,2,0,CardType::Skill,false,0,0,0,true},
  {"HAND_OF_GREED",2,20,0,0,20,5,0,0,5,CardType::Attack,true},
- {"PANIC_BUTTON",0,0,30,0,2,0,10,0,0,CardType::Skill,false,0,0,0,true}
+ {"PANIC_BUTTON",0,0,30,0,2,0,10,0,0,CardType::Skill,false,0,0,0,true},
+ {"HEADBUTT",1,9,0,0,0,3,0,0,0,CardType::Attack,true},
+ {"SWORD_BOOMERANG",1,3,0,0,3,0,0,0,1,CardType::Attack,false},
+ {"PERFECTED_STRIKE",2,6,0,0,2,0,0,0,1,CardType::Attack,true},
+ {"FLAME_BARRIER",2,0,12,0,4,0,4,0,2,CardType::Skill,false},
+ {"DEMON_FORM",3,0,0,0,3,0,0,0,1,CardType::Power,false},
+ {"DODGE_AND_ROLL",1,0,4,0,0,0,2,0,0,CardType::Skill,false},
+ {"INFINITE_BLADES",1,0,0,0,1,0,0,0,0,CardType::Power,false},
+ {"BACKSTAB",0,11,0,0,0,4,0,0,0,CardType::Attack,true,0,0,0,true},
+ {"ESCAPE_PLAN",0,0,3,0,0,0,2,0,0,CardType::Skill,false},
+ {"PREDATOR",2,15,0,0,2,5,0,0,0,CardType::Attack,true}
 
 };
 int card_rarity(unsigned kind){
 static constexpr uint8_t rarity[CardKinds]={
  1,1,1,2,2,2,3,2,2,3,2,3,3,4,3,3,4,4,3,2,3,2,3,4,3,3,
- 1,1,1,1,3,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,4,3,2,7,3,4,3,4,3,4,3};
+ 1,1,1,1,3,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,4,3,2,7,3,4,3,4,3,4,3,2,2,2,3,4,2,3,3,3,2};
     return kind<CardKinds?rarity[kind]:0;
 }
 
-bool card_colorless(unsigned kind){return kind==Finesse||kind==FlashOfSteel||(kind>=Impatience&&kind<CardKinds);}
+bool card_colorless(unsigned kind){return kind==Finesse||kind==FlashOfSteel||(kind>=Impatience&&kind<=PanicButton);}

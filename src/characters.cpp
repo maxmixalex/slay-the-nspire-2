@@ -6,12 +6,14 @@ const CharacterDefinition character_definitions[CharacterKinds]={
 };
 CardColor card_color(unsigned kind){
  if(card_colorless(kind))return CardColor::Colorless;
- return kind>=StrikeSilent&&kind<=Shiv?CardColor::Silent:CardColor::Ironclad;
+ return ((kind>=StrikeSilent&&kind<=Shiv)||(kind>=DodgeAndRoll&&kind<=Predator))?CardColor::Silent:CardColor::Ironclad;
 }
 bool card_generated(unsigned kind){return kind==Shiv;}
 bool card_in_pool(unsigned kind,Character character){
  if(kind>=CardKinds||card_generated(kind))return false;
- return character==Character::Ironclad?kind<IroncladCards:kind>=StrikeSilent&&kind<Shiv;
+ return character==Character::Ironclad?
+     (kind<=FiendFire||(kind>=Headbutt&&kind<=DemonForm)):
+     ((kind>=StrikeSilent&&kind<Shiv)||(kind>=DodgeAndRoll&&kind<=Predator));
 }
 unsigned character_pool(Character character,uint8_t* out,bool rewards_only){
  unsigned count=0;

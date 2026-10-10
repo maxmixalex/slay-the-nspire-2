@@ -214,7 +214,9 @@ def main()->None:
         from build_silent import build as silent
         silent(args.game,output,output,font_path)
         from build_shared import build as shared
-        final=shared(args.game,output,output,font_path)
+        shared(args.game,output,output,font_path)
+        from build_tactics import build as tactics
+        final=tactics(args.game,output,output,font_path)
         output.replace(args.output/'nSpire2.nsp.tns')
         (Path(staging)/'content-manifest.json').replace(args.output/'content-manifest.json')
         print(f"Created {args.output/'nSpire2.nsp.tns'}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)

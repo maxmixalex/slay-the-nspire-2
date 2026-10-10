@@ -1,3 +1,4 @@
 # Tested conversion environment. Native ARM and WASM builds do not import these.
 Pillow==12.3.0
 numpy==2.3.5
+lz4==4.4.5
