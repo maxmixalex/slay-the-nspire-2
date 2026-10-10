@@ -13,17 +13,34 @@ const RelicDefinition relic_definitions[RelicKinds]={
  {BloodVial,"BLOOD_VIAL","小血瓶","每场战斗的首回合回复 [green]2[/green] 点生命。",A_BloodVial},
  {HappyFlower,"HAPPY_FLOWER","开心小花","每经过 [gold]3[/gold] 个回合获得 [gold]1[/gold] 点能量。计数跨战斗保留。",A_HappyFlower},
  {Orichalcum,"ORICHALCUM","奥利哈钢","结束回合时若没有格挡，获得 [blue]6[/blue] 点格挡。",A_Orichalcum},
- {PenNib,"PEN_NIB","钢笔尖","每打出 [gold]10[/gold] 张攻击牌，第十张造成双倍伤害。计数跨战斗保留。",A_PenNib}
+ {PenNib,"PEN_NIB","钢笔尖","每打出 [gold]10[/gold] 张攻击牌，第十张造成双倍伤害。计数跨战斗保留。",A_PenNib},
+ {Strawberry,"STRAWBERRY","草莓","拾取时获得 [green]7[/green] 点最大生命值。",-1},
+ {Pear,"PEAR","梨","拾取时获得 [green]10[/green] 点最大生命值。",-1},
+ {Mango,"MANGO","芒果","拾取时获得 [green]14[/green] 点最大生命值。",-1},
+ {BagOfMarbles,"BAG_OF_MARBLES","弹珠袋","每场战斗开始时给予所有敌人 [blue]1[/blue] 层易伤。",-1},
+ {Akabeko,"AKABEKO","赤牛","每场战斗的第一张攻击额外造成 [gold]8[/gold] 点伤害。",-1},
+ {BronzeScales,"BRONZE_SCALES","铜制鳞片","每场战斗获得 [gold]3[/gold] 点荆棘。",-1},
+ {RingOfTheSnake,"RING_OF_THE_SNAKE","蛇之戒","每场战斗的首回合额外抽 [gold]2[/gold] 张牌。",-1},
+ {HornCleat,"HORN_CLEAT","船夹板","每场战斗的第二回合开始时，获得 [blue]14[/blue] 点格挡。",-1},
+ {CaptainsWheel,"CAPTAINS_WHEEL","舵盘","每场战斗的第三回合开始时，获得 [blue]18[/blue] 点格挡。",-1},
+ {MercuryHourglass,"MERCURY_HOURGLASS","水银沙漏","每个回合开始时，对所有敌人造成 [blue]3[/blue] 点伤害。",-1},
+ {ArtOfWar,"ART_OF_WAR","孙子兵法","若上一回合没有打出攻击牌，在本回合开始时获得 [gold]1[/gold] 点能量。",-1},
+ {RegalPillow,"REGAL_PILLOW","皇家枕头","在休息处休息时，额外回复 [green]15[/green] 点生命。",-1},
+ {MealTicket,"MEAL_TICKET","餐券","进入商店时，回复 [green]15[/green] 点生命。",-1},
+ {OldCoin,"OLD_COIN","古钱币","拾取时获得 [gold]300[/gold] 金币。",-1},
+ {CentennialPuzzle,"CENTENNIAL_PUZZLE","百年积木","每场战斗中，第一次失去生命时抽 [blue]3[/blue] 张牌。",-1}
 };
 const RelicDefinition* relic_definition(unsigned id){for(const auto&d:relic_definitions)if(d.id==id)return &d;return nullptr;}
-static void flash(State&s,unsigned id){s.relic_flash|=(uint16_t)id;++s.relic_revision;}
+static void flash(State&s,unsigned id){s.relic_flash|=(uint32_t)id;++s.relic_revision;}
 bool gain_relic(State&s,unsigned id){
  const auto*d=relic_definition(id);if(!d||(s.relics&id)||s.relic_count>=RelicKinds)return false;
- s.relic_order[s.relic_count++]=(uint8_t)(d-relic_definitions);s.relics|=(uint16_t)id;
- flash(s,id);record(s,LogKind::Relic,(int)id);return true;
+ s.relic_order[s.relic_count++]=(uint8_t)(d-relic_definitions);s.relics|=(uint32_t)id;
+ if(id==Strawberry||id==Pear||id==Mango)increase_max_hp(s,id==Strawberry?7:id==Pear?10:14);
+ if(id==OldCoin)gain_gold(s,300);
+ flash(s,id);record(s,LogKind::Relic,(int)id);s.revision++;return true;
 }
 unsigned random_relic(State&s){
- unsigned ids[RelicKinds],n=0;for(const auto&d:relic_definitions)if(d.id!=BurningBlood&&!(s.relics&d.id))ids[n++]=d.id;
+ unsigned ids[RelicKinds],n=0;for(const auto&d:relic_definitions)if(d.id!=BurningBlood&&d.id!=RingOfTheSnake&&!(s.relics&d.id))ids[n++]=d.id;
  return n?ids[random_below(s.rng_world,n)]:0;
 }
 unsigned relic_counter(const State&s,unsigned id){const auto*d=relic_definition(id);return d?s.relic_counters[d-relic_definitions]:0;}
@@ -35,9 +52,16 @@ void relic_hook(State&s,RelicHook hook){
    if(id==Vajra){s.strength+=1;triggered=true;}
    else if(id==Anchor){s.block+=10;triggered=true;}
    else if(id==OddlySmoothStone){s.dexterity+=1;triggered=true;}
-   else if(id==BagOfPreparation)triggered=true; // draw count is applied by combat entry.
+   else if(id==BagOfMarbles){for(int j=0;j<s.enemy_count;j++)s.enemies[j].vulnerable+=1;triggered=true;}
+   else if(id==BronzeScales){s.thorns+=3;triggered=true;}
+   else if(id==BagOfPreparation||id==RingOfTheSnake)triggered=true; // draw count is applied by combat entry.
   }else if(hook==RelicHook::TurnStart){
-   if(id==HappyFlower){auto&n=s.relic_counters[index];if(++n==3){n=0;++s.energy;triggered=true;}}
+   if(id==HornCleat&&s.turn==2){s.block+=14;triggered=true;}
+   else if(id==CaptainsWheel&&s.turn==3){s.block+=18;triggered=true;}
+   else if(id==MercuryHourglass){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,3);triggered=true;}
+   else if(id==ArtOfWar&&s.turn>1&&!s.attacked_this_turn){++s.energy;triggered=true;}
+   else if(id==HappyFlower){auto&n=s.relic_counters[index];if(++n==3){n=0;++s.energy;triggered=true;}}
+   else if(id==Akabeko&&s.turn==1){s.vigor+=8;triggered=true;}
    else if(id==Lantern&&s.turn==1){++s.energy;triggered=true;}
    else if(id==BloodVial&&s.turn==1){heal(s,2);triggered=true;}
   }else if(hook==RelicHook::TurnEnd){
@@ -45,16 +69,21 @@ void relic_hook(State&s,RelicHook hook){
   }else if(hook==RelicHook::Victory&&id==BurningBlood){heal(s,6);triggered=true;}
   if(triggered)flash(s,id);
  }
+ if(hook==RelicHook::TurnStart)s.attacked_this_turn=0;
+}
+void relic_after_hp_loss(State&s,int loss){
+ if(loss<=0||s.hp<=0||!combat_phase(s.phase)||!(s.relics&CentennialPuzzle)||s.relic_counters[24])return;
+ s.relic_counters[24]=1;flash(s,CentennialPuzzle);draw_cards(s,3);
 }
 void relic_attack_begin(State&s){
  s.double_attack=0;
  if(!(s.relics&PenNib))return;
  auto&n=s.relic_counters[9];if(++n==10){n=0;s.double_attack=1;flash(s,PenNib);}
 }
-void relic_attack_end(State&s){s.double_attack=0;}
+void relic_attack_end(State&s){s.double_attack=0;s.attack_vigor=0;}
 int relic_attack_multiplier(const State&s,bool preview){
  if(s.double_attack)return 2;
  return preview&&(s.relics&PenNib)&&relic_counter(s,PenNib)==9?2:1;
 }
-int card_block(const State&s,Card c){const auto&d=definitions[c.kind];int b=d.block+(c.upgraded?d.block_up:0);return b>0?b+s.dexterity:0;}
+int card_block(const State&s,Card c){const auto&d=definitions[c.kind];int b=d.block+(c.upgraded?d.block_up:0);return b>0&&!s.no_block?b+s.dexterity:0;}
 }

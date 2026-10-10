@@ -393,6 +393,12 @@ def raster(draw,scale,origin,canvas):
         alpha=layer[:,:,3:4];old=out[:,:,3:4];new=alpha+old*(1-alpha)
         if blend==1:
             out[:,:,:3]=np.minimum(1,out[:,:,:3]+layer[:,:,:3]*alpha);out[:,:,3:4]=new
+        elif blend in (2,3):
+            src=layer[:,:,:3];dst=out[:,:,:3]
+            mix=src*dst if blend==2 else src+dst-src*dst
+            premul=src*alpha*(1-old)+dst*old*(1-alpha)+mix*alpha*old
+            out[:,:,:3]=np.divide(premul,new,out=np.zeros_like(premul),where=new>0)
+            out[:,:,3:4]=new
         else:
             out[:,:,:3]=np.divide(layer[:,:,:3]*alpha+out[:,:,:3]*old*(1-alpha),new,out=np.zeros_like(out[:,:,:3]),where=new>0);out[:,:,3:4]=new
     return Image.fromarray(np.uint8(np.clip(out*255,0,255)))

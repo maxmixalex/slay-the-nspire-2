@@ -38,8 +38,7 @@ bool act_quotas(Random& rng, const ActSettings& settings, MapConfig& out, QuotaT
         trace.error = QuotaError::InvalidInput; return false;
     }
     MapConfig result{};
-    result.rows = uint8_t((settings.act == ActKind::Glory ? 14 : settings.act == ActKind::Hive ? 15 : 16) -
-                          (settings.multiplayer ? 1 : 0));
+    result.rows = uint8_t(settings.act == ActKind::Glory ? 14 : settings.act == ActKind::Hive ? 15 : 16);
     result.shops = 3;
     result.elites = settings.increased_elites ? 8 : 5;
     result.replace_treasure = settings.replace_treasure;

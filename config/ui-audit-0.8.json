@@ -1,0 +1,58 @@
+{
+  "reference_commit": "41cef1ea",
+  "scope": "Original scene/control layout and material parameters, reflowed rather than pixel-identical on 320x240. Scene stills, offline flame sampling and 56 auxiliary asset records.",
+  "sources": [
+    {
+      "path": "scenes/backgrounds/main_menu_bg.tscn",
+      "sha256": "133a2ce2e05fb8d2e72a8e2087019cb5405b105636e16889525e53cc379aeab7"
+    },
+    {
+      "path": "scenes/cards/card.tscn",
+      "sha256": "ca8f1cf93536b0d0d03daa7e9bd00073013316abcd158a82f6bfe4dc832b9cba"
+    },
+    {
+      "path": "scenes/merchant/merchant_inventory.tscn",
+      "sha256": "d1a39ffe934a92ddf603f57d22b5d98401ece206c88d9a104da8a731daf19349"
+    },
+    {
+      "path": "scenes/rest_site/overgrowth_rest_site.tscn",
+      "sha256": "d4a87f48c727d54643399978a376d895700da9dae1b0cd58429d183a0d389447"
+    },
+    {
+      "path": "scenes/rest_site/rest_site_button.tscn",
+      "sha256": "1372de521cf6fa4ec657b4c4c61b0331ca8dcb75807ea757d9af487d399a13a1"
+    },
+    {
+      "path": "scenes/rewards/reward_button.tscn",
+      "sha256": "c5da7776e868f1a46199dba070810409463e5edf63f34d19543e699100b49f1d"
+    },
+    {
+      "path": "scenes/screens/main_menu.tscn",
+      "sha256": "d8373903dc98b8516eae5223863caf4e3fd4e619e7a8caa240261a4231b0d5b6"
+    },
+    {
+      "path": "scenes/screens/pause_menu/pause_menu.tscn",
+      "sha256": "bc7fedffc274e1f741d0f4e6efa2fc19921da977e555f0da57d6b62115f9b3bb"
+    },
+    {
+      "path": "scenes/screens/rewards_screen.tscn",
+      "sha256": "68140982f9a6eaa778f7e8e404c8ea5370a3342b9f5337b6cb550c8788f6dfe2"
+    },
+    {
+      "path": "scenes/ui/top_bar.tscn",
+      "sha256": "793bfa91a1868ca67b7466cb621c5a36408efb8e5d029ff000ba5fb25f4a9125"
+    },
+    {
+      "path": "materials/cards/banners/card_banner_common_mat.tres",
+      "sha256": "b57c47cc2b166921712536b4c92de790da6c234773ae77512974f463b83aa60b"
+    },
+    {
+      "path": "materials/cards/banners/card_banner_uncommon_mat.tres",
+      "sha256": "1553efa3e7e2578fce5371f4b26af3202cd2f712252b8b45897bcd76dde16543"
+    },
+    {
+      "path": "materials/cards/banners/card_banner_rare_mat.tres",
+      "sha256": "6b3c6bf2ef1e3e85e01725c99d1c75ad7e7da61e70d4bb3217eec5f8aa348948"
+    }
+  ]
+}

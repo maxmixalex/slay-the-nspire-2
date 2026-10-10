@@ -15,7 +15,7 @@ const HitRegion* App::hit_at(int x,int y)const{
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
-        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25);
+        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30);
 }
 void App::pointer_cancel(){pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
@@ -27,13 +27,23 @@ void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
-    const auto*h=hit_at(pointer.x,pointer.y);if(!h||(!h->enabled&&h->kind!=HitKind::Hand))return;
+    const auto*h=hit_at(pointer.x,pointer.y);if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
     switch(h->kind){
+    case HitKind::UiAction:
+        if(!pointer.held&&game.phase==Phase::Reward&&!reward_cards){
+            if((UiAction)h->value==UiAction::RewardGold)cursor=0;
+            else if((UiAction)h->value==UiAction::RewardCards)cursor=1;
+            else if((UiAction)h->value==UiAction::RewardPotion)cursor=2;
+            else if((UiAction)h->value==UiAction::LeaveRewards)cursor=3;
+        }break;
     case HitKind::Menu:if(!pointer.held)menu=h->value;break;
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
+    case HitKind::LibraryItem:if(!pointer.held)library_selected=h->value;break;
     case HitKind::Hand:
         if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}
         break;
+    case HitKind::CombatChoice:
+        if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}break;
     case HitKind::Enemy:target=h->value;break;
     case HitKind::ReferenceNode:if(!pointer.held)map_preview.selected=h->value;break;
     default:break;
@@ -45,8 +55,10 @@ void App::pointer_scroll(int rows){
     pointer_cancel();
     if(map_preview.open&&map_preview.editing)return;
     if(map_preview.open){map_preview.first_row=clamp(map_preview.first_row-rows,0,int(map_preview.map.config.rows)-3);return;}
+    if(detail_item>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
-    if(title||paused||help)return;
+    if(library){ui_action(rows>0?UiAction::NextPage:UiAction::PreviousPage);return;}
+    if(title||paused||help||character_select||deck_candidate>=0)return;
     if(panel==1){
         // The renderer aligns to ten-card pages. Half-page increments were
         // rounded back to the same page on every wheel event.
@@ -57,7 +69,7 @@ void App::pointer_scroll(int rows){
     else if(panel==5)scroll=clamp(scroll+rows,0,game.relic_count?game.relic_count-1:0);
     else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
     else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)
-        cursor=clamp(cursor+rows,0,game.deck_count?game.deck_count-1:0);
+        ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
     // Input can arrive between timed frames. Hit geometry is rebuilt from the
@@ -124,6 +136,9 @@ void App::pointer_button(bool down){
         else if(hit.value==2){map_preview.settings.increased_elites=!map_preview.settings.increased_elites;map_preview.generate();}
         break;
     case HitKind::SeedCharacter:reference_text(hit.value);break;
+    case HitKind::UiAction:ui_action((UiAction)hit.value);break;
+    case HitKind::LibraryItem:select_library_item(hit.value);break;
+    case HitKind::CombatChoice:toggle_choice(hit.value);break;
     default:break;
     }
 }

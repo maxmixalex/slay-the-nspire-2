@@ -12,7 +12,7 @@ extern "C" {
 unsigned content_buffer(){return (unsigned)(size_t)content;}
 int start(unsigned n){return app.init(content,n,{save_game,load_game})?1:0;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}
-void input(int key){if(key>=0&&key<=(int)spire::Key::ReferenceMap)app.input((spire::Key)key);}
+void input(int key){if(key>=0&&key<=(int)spire::Key::Collection)app.input((spire::Key)key);}
 void frame(){app.tick();app.render();}
 void advance(unsigned elapsed_ms){app.advance(elapsed_ms);}
 void draw_frame(){app.render();}

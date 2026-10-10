@@ -1,0 +1,22 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "mode": "single-player",
+  "excluded_features": [
+    "audio",
+    "multiplayer",
+    "timeline-meta-progression"
+  ],
+  "excluded_features_are_deferred": false,
+  "animations_in_scope": true,
+  "implemented_content_requires_timeline": false,
+  "current_models": {
+    "characters_with_playable_subsets": 2,
+    "ironclad_pool_cards": 24,
+    "silent_pool_cards": 24,
+    "colorless_cards": 9,
+    "generated_cards": 1,
+    "relics": 25,
+    "potions": 16
+  },
+  "complete_original_run": false
+}

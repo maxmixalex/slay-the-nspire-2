@@ -1,6 +1,6 @@
-# Map and seed scope — 0.6
+# Map and seed scope — 0.9 (0.6 subsystem evidence retained)
 
-Reference: **v0.111.0 / 41cef1ea**, pinned in `config/reference-release.json`. The supplied assembly's SHA-256 was rechecked for this work. Assemblies, disassembly and private reference runners are not distributed.
+Reference: **v0.111.0 / 41cef1ea**, pinned in `config/reference-release.json`. The assembly/PCK hashes are checked before reference inspection or conversion. Assemblies, disassembly and private reference runners are not distributed.
 
 ## Implemented pipeline
 
@@ -24,7 +24,7 @@ Values outside the inclusive bounds are rejected and both draws are repeated. Th
 | Hive | `act_2_map` | 15 | Gaussian(6, 1, 6, 7) | Gaussian(12, 1, 10, 14) minus 1 |
 | Glory | `act_3_map` | 14 | NextInt(5, 7), upper exclusive | Gaussian(12, 1, 10, 14) minus 1 |
 
-Shops have quota 3; elites have quota 5 or 8 according to the increased-elite setting. The API also carries the inspected multiplayer row reduction, treasure replacement and second-boss flags. These flags do not implement multiplayer or the corresponding encounters. The preview exposes region and elite-quota controls only.
+Shops have quota 3; elites have quota 5 or 8 according to the increased-elite setting. The current API carries treasure replacement and second-boss flags. The former multiplayer row-reduction option was removed in 0.9 because multiplayer is explicitly excluded; solo dimensions are unchanged. These flags do not implement the corresponding encounters. The preview exposes region and elite-quota controls only.
 
 Quota means requested room counts, not a guarantee that the constrained/repaired final graph contains exactly that many rooms of each kind. Fixed rows and generation constraints also contribute to the result.
 
@@ -36,7 +36,7 @@ The arithmetic and bounded integer sampler round nearest-even. Logarithm and sin
 
 Seed entry accepts 1–64 ASCII characters after normalization. It uppercases, replaces O/I with 0/1, and trims outer whitespace. Unicode normalization and the raw lowercase `old` legacy seed path remain unsupported; the editor rejects that legacy prefix. These input limits are not advertised as the complete original seed-input specification.
 
-## Evidence from this iteration
+## Historical verification executed in 0.6 (not rerun as new 0.9 evidence)
 
 The private reference runner decodes and executes the relevant original `GetMapPointTypes`, standard-unknown-count and `NextGaussianInt` CIL method bodies, with adapters for the original random stream, constructors and host math calls. It evaluated 2,238,619 original instructions over **20,016 cases**: 16,016 region-quota cases and 4,000 sampler argument cases. Quotas, random call counts and final four-word RNG states matched the C++ implementation. Of those cases, 4,663 required rejection/redraw; the maximum sample case used 22 draws.
 
@@ -46,6 +46,8 @@ Version 0.5's ten explicit-quota original-CIL topology comparisons remain the ea
 
 ## Still separate from the playable game
 
-The preview now generates its quotas rather than accepting fixed demonstration counts. It still does not resolve the original run's region/unlock/modifier decisions, fill original encounter/event pools, or drive the playable expedition. Other region backgrounds and actual Boss artwork have not been ported into this diagnostic view. The legacy 12×3 expedition and version-3 saves are unchanged.
+The preview now generates its quotas rather than accepting fixed demonstration counts. It still does not resolve the original run's region/modifier decisions, fill original encounter/event pools, or drive the playable expedition. Other region backgrounds and actual Boss artwork have not been ported into this diagnostic view. The playable 12×3 expedition still uses its own map. The current runtime writes version-6 project saves and imports versions 3–5; map preview state is not a playable campaign save.
 
-Next acceptance is comparison against actual unmodified reference-game run/map captures across unlock and difficulty configurations, then original room/encounter binding and full-run random call order. The current result is a seeded regional map subsystem, **not yet certified full PC-seed or full-game parity**.
+Next acceptance is comparison against actual unmodified reference-game run/map captures across supported single-player region and difficulty configurations, then original room/encounter binding and full-run random call order. The current result is a seeded regional map subsystem, **not yet certified full PC-seed or full-game parity**.
+
+Audio, multiplayer and Timeline progression are outside the current product scope. Reference-run setup must supply supported single-player configuration directly rather than recreating Timeline progression.

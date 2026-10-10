@@ -1,37 +1,60 @@
-# Development status — 0.7
+# Development and validation — 0.10
 
-## Delivered scope
+## Executed scope
 
-This iteration moves from the standalone map preview to playable combat content: 14 to 24 modeled Ironclad cards, including upgrades and original extracted art/text. It adds HP-loss and energy effects, self-exhaust, captured-instance hand exhaustion, Weak and No Draw, and fixes X-cost effect queue growth. All ten hand slots remain reachable by pointer without hover moving a hidden five-card viewport. The reference map subsystem is unchanged and is still not connected to original room/encounter pools.
+Restored the actual 92-file 0.9 source archive and its private runtime pack, then reran the eight existing regression targets under ASan/UBSan. The previously mentioned unfinished 0.10 workspace was not present, so the new implementation was rebuilt from that verified baseline. A fresh connector read showed GitHub main still at 0.7 (`5f7715014a269c871d64816f28a5af91ff7d7138`), contradicting the preceding conversational push claim. Local validation and remote publication are treated separately; a local tree or an unreferenced blob is not a published commit.
 
-Card-art/string references now live in an NSP2/4 directory. Save version 4 persists the additional status fields and reads old version-3 saves. The old browser storage key remains available for fallback. The implementation inventory remains one character, ten relics, three potions and three adapted events; no new original encounter is claimed.
+Implemented seven colorless cards and eight relics, taking the total to 58 card models and 25 relics. Both playable character subsets and 16 potions remain. Optional exhaust, Retain, No Block, first-HP-loss draws, turn/room/acquisition relic hooks and save v7 are included. Deck grids, revision-checked confirmations, side-by-side upgrade cards, proper large-card colors and paged item details are functional. Audio, multiplayer and Timeline remain explicitly excluded. The custom expedition, bounded Nibbit encounters and separate reference-map preview remain distinct from a complete original run.
 
-## Executed checks
+## Original-reference evidence
 
-The checked-in regression targets run without the original installation. All three CTest targets passed under AddressSanitizer and UndefinedBehaviorSanitizer. Individual runs reported:
+The supplied assembly and PCK were re-extracted from the owner's archive volumes and verified against the existing SHA-256 lock. A private read-only metadata/CIL reader inspected the relevant constructors, canonical variables, keywords, upgrade/play methods and status/relic callbacks. No original executable was run. Public method tokens are in `config/shared-audit-0.10.json`; original assemblies, disassembly and private drivers are excluded from source delivery.
 
-- Core: **103,307 assertions**, including **9,885 generated transitions across 600 controlled combat scenarios**. Scenarios use increased HP to reach more states; these are not ordinary complete runs or original-game differential traces.
-- Input: **59 assertions**, including 24-card paging, cancellation, stable menu capture, ten accessible hand slots and unchanged serialized state during inspection.
-- Content: **224 assertions** when also given the actual delivered private pack, covering its card records/text/images and corruption rejection. The asset-free CTest variant uses a synthetic pack.
+Notable findings include Scrawl's Retain upgrade without a cost reduction, Purity's optional selection, Shockwave's colorless membership and Meal Ticket healing 15. Implementation tests reflect the inspected behavior. They are not an independent complete-original-runtime differential oracle, and unmodeled enemy/minion/death-prevention interactions are not implied.
 
-The card constructors, canonical values/keywords, upgrade methods and relevant play/status CIL were inspected directly from the hash-verified supplied assembly. The runtime regression expectations reflect that inspection. No new original-CIL execution oracle or full original combat differential suite was run in this iteration.
+## Regression results
 
-ARM, WebAssembly and CMake/X11 builds succeeded. The same native reader accepted the actual save retrieved from Firebird. Source packaging retains tests and the old-runtime save fixture; original installation files, disassembly, emulator images and private drivers are not included.
+The final ten CTest targets passed with AddressSanitizer and UndefinedBehaviorSanitizer enabled. Historical save fixtures and synthetic packs allow the default suite to run without original game assets.
 
-## Firebird
+| Target | Final executed result |
+|---|---|
+| core_regression | 103,307 checks; 9,885 generated transitions. |
+| input_regression | 60 checks. |
+| content_regression | 166 synthetic checks; 462 with the delivered private pack. |
+| expansion_regression | 867 checks. |
+| ui_flow_regression | 612 checks. |
+| compression_regression | 320,058 boundary checks. |
+| silent_regression | 70,866 checks; 8,930 generated transitions. |
+| silent_ui_regression | 780 asset-free checks. |
+| shared_regression | 29,435 checks; 4,556 generated transitions across 300 controlled mixed-character scenarios. |
+| shared_ui_regression | 74 synthetic checks; 91 with the delivered private pack. |
 
-Built the supplied Firebird source with its matching gif-h submodule and a private stepping/key/touchpad/USB/framebuffer frontend. Ran the final 0.7 Zehn launcher with Ndless r2022 on a copy of the supplied CX II CAS image, OS 6.4.0.74. Original uploaded calculator images were not modified.
+Generated scenarios use elevated HP and chosen item sets to exercise transitions. They are not complete ordinary runs or original-game differential games. New checks cover both upgrade states, optional zero/invalid/duplicate selections, captured exhaustion with draw hooks, retained hand capacity, No Block source discrimination, lethal-hit gold, first-loss and turn/room triggers, old v6 migration, permanent-choice cancellation and stale revisions. The historical v6 fixture was generated by the retained 0.9 runtime before modifying its codec.
 
-Ordinary practice launch, expanded deck paging and Offering's enlarged detail view were exercised with the emulated touchpad. A separately generated **controlled regression save** activated the two implemented exhaust powers and provided the new cards for focused testing. It is a test fixture, not an unassisted game run.
+## Final ARM execution in Firebird
 
-The controlled sequence used Offering to reach ten hand cards, then Battle Trance, Uppercut and Fiend Fire. No Draw prevented the exhaust hooks from refilling the hand; Fiend Fire exhausted the captured hand and itself. Save/load returned to the state before Fiend Fire. After normal application exit, USB retrieved the actual **1,760-byte version-4 save**: HP 74, energy 3, block 3, nine hand cards, one exhausted card, No Draw 1 and Weak 1 on the first enemy. The native decoder accepted its structure and checksum. USB was only used after returning to the calculator OS.
+Built the supplied Firebird source and matching gif-h submodule with a private stepping, keyboard, touchpad, USB and framebuffer frontend. Used a private copy of the owner's CX II CAS flash and boot image; uploaded originals were not modified. The supplied Ndless r2022 installer reported success. Opened the real final 0.10 Zehn launcher through the calculator document browser.
 
-Physical hardware, sustained handheld frame rate and measured peak memory remain untested. Existing animation clips are reused; the new cards do not have a complete set of original per-card effects/animations.
+Ordinary startup, the C compendium shortcut, the seven-item second relic page and full item details were exercised. Two explicitly controlled project-save fixtures then enabled targeted validation; neither fixture is an unassisted run or an original-game save.
 
-## Browser and content
+The shared-combat fixture used Panic Button, Bloodletting and Purity with the supported exhaust powers and new relics. Saving while Purity was pending, choosing two cards, loading back, and confirming zero cards all worked. The first-loss relic triggered once and No Block did not suppress the unpowered exhaust-trigger block. After normal exit to the OS, emulated USB retrieved the **2,124-byte v7 save**. The native decoder accepted it: Silent, HP 57, energy 11, block 33, No Block 2, Centennial Puzzle used, eight hand cards, optional maximum 3 and one remaining queued effect. Its entire byte sequence matched the native core's equivalent controlled sequence.
 
-Direct `file:` navigation returned `ERR_BLOCKED_BY_ADMINISTRATOR`. The actual generated HTML/WASM was instead exercised as an inline Chromium document using its DOM keyboard handlers and an explicitly supplied in-memory storage adapter. Version-3 fallback, writing the separate version-4 key and re-instantiating with the same adapter data produced identical saved bytes, with no page errors. This does not verify actual cross-session localStorage persistence or final file-page startup. X11 was built and used for headless captures/codec checks; its interactive input was not retested.
+The upgrade fixture exercised page three, Scrawl's base/upgraded comparison, cancellation and touchpad confirmation. A later OS-side retrieval was accepted by the native decoder and matched a direct native upgrade exactly: deck index 29 upgraded, then the custom route resumed.
 
-The incremental content pack is **6,252,215 bytes**, with 782 images, 3,296 glyphs and 24 card records. It fits the existing six-MiB resident buffer. Existing image bytes and clip records are retained; ten additional 41×30 card images and refreshed localized text/glyphs come from the pinned installation. Full skeleton resampling was not rerun. Repeating the incremental conversion is checked for byte identity before delivery.
+Three final stable frames—title, upgrade grid and upgrade comparison—matched all **76,800 RGB565 pixels** of the native core. This compares two backends of this project, not the adaptation against original PC screenshots. Existing animation payloads were retained rather than resampled.
 
-Next work remains original room/encounter binding and further card/shared-combat coverage, rather than declaring the expanded prototype an original full run. Earlier map and software-math evidence remains in Git history and `map-seed.md`.
+A driver attempt failed to dismiss an OS USB notification and consequently navigated menus instead of loading the upgrade fixture. Those mislabeled captures were discarded and the sequence was rerun with intermediate state checks. During that failed attempt one retrieval was queued while the game was in the foreground; it completed only after normal OS exit and was not used as upgrade-confirmation evidence. Final accepted save transfers completed in the OS. No physical-handheld certification, sustained frame-rate result or peak-RAM measurement is claimed.
+
+## Browser validation boundary
+
+System Chromium rejected direct local-file navigation with `ERR_BLOCKED_BY_ADMINISTRATOR`; no navigation policy was disabled. The actual generated HTML/WASM was instead exercised as an inline DOM test document with an explicitly supplied in-memory storage adapter.
+
+Actual DOM keyboard and pointer handlers tested v6 fallback, separate v7 writes, preservation of the old storage key, Panic Button/Bloodletting/Purity, two-card and zero-card confirmation, save/load and re-instantiation with the same adapter data. The pending choice bytes matched the native and Firebird save; the zero-selection result also matched the native codec exactly. No page errors occurred. These are inline DOM/codec checks, not proof of ordinary file-page startup or real cross-session localStorage persistence. The native X11 host was built and used headlessly; interactive X11 input was not separately exercised.
+
+## Content and build figures
+
+The executed path was incremental 0.9-to-0.10 conversion. Repeating conversion from the resulting NSP2/7 pack produced identical bytes. All **1,286 prior encoded image payloads**, **3,608 prior glyph records/payloads**, and **17 clip records** were compared and retained exactly. The old 11 clips/706 frames, six Silent clips/244 frames and 160-frame campfire layer are not reduced. No full skeleton conversion was rerun in this iteration; the full builder is wired to the same final shared-content stage.
+
+The delivered pack is **6,207,829 bytes** (1,302 images, 3,740 glyphs, 198 strings, 58 cards, 17 clips and 83 auxiliary images), leaving **83,627 bytes** inside the six-MiB resident limit. The launcher is **108,167 bytes**; the Zehn packer reports **8,046,136 bytes of static allocation** and 1,177 absolute relocations. WebAssembly is **383,671 bytes**. File sizes and static loader allocation are not measured runtime peak RAM.
+
+The final source archive is independently extracted and rebuilt before delivery. Source exclusions cover game data, original methods, fonts, calculator images, emulator binaries and private test drivers. The runtime package contains only the project launcher, private converted content and required notices. Remote publication must be confirmed by a ref read and matching tree, never inferred from successful blob creation alone.

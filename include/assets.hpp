@@ -81,6 +81,8 @@ enum AnimationId {
     AnimEnemyBuff=7,
     AnimMerchantTop=8,
     AnimMerchantBottom=9,
-    AnimCampHero=10
+    AnimCampHero=10,
+    AnimSilentIdle=11, AnimSilentAttack=12, AnimSilentHurt=13, AnimSilentCast=14, AnimSilentShiv=15, AnimSilentCamp=16,
+    AnimationKinds=17
 };
 }

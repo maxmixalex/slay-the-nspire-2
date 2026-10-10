@@ -7,7 +7,6 @@ enum class QuotaError : uint8_t { None, InvalidInput, AmbiguousRounding, Iterati
 struct ActSettings {
     ActKind act = ActKind::Overgrowth;
     bool increased_elites = false;
-    bool multiplayer = false;
     bool replace_treasure = false;
     bool second_boss = false;
 };

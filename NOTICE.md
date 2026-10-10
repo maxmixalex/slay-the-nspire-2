@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.7 (2026-10-09).
+nSpire II experimental native runtime, version 0.10 (2026-10-10).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -18,8 +18,8 @@ Ndless r2022's `zehn.h`, `genzehn.cpp`, `syscall-list.h`, `keys.h`,
 `lcd_blit.cpp` and touchpad declarations were consulted for the Zehn loader,
 stable syscall ABI, LCD function-pointer API and key protocol.
 This distribution does not bundle the Ndless SDK or a Firebird binary.
-The 0.3 launcher has been exercised in Firebird on CX II CAS OS 6.4.0.74
-with Ndless r2022. Physical-device validation remains outstanding.
+The current launcher has been exercised in Firebird on the supplied CX II CAS
+working-image copy with Ndless r2022. Physical-device validation remains outstanding.
 
 https://github.com/ndless-nspire/Ndless/tree/r2022
 https://github.com/nspire-emus/firebird
@@ -72,3 +72,31 @@ May be used freely, without support or guarantee.
 Reference implementations: https://go.dev/src/runtime/softfloat64.go and
 https://go.dev/src/math/ . These notices do not grant rights in the original
 game or imply exact last-bit equivalence to its Windows math library.
+
+## Interface/content conversion added in 0.8
+
+Original scene layouts, menu/selection artwork, UI textures and material controls
+are inspected only from the owner's pinned installation. Private outputs include
+converted scene stills, card-banner material colors and a bounded sampled campfire
+layer. These are presentation adaptations, not the complete Godot renderer.
+The independent LZ4 block encoder/decoder and glyph RLE retain image/coverage
+values losslessly; no upstream LZ4 implementation source is bundled.
+No original scene, shader, atlas or installable font is included in public source.
+
+## Silent content and product scope added in 0.9
+
+The added Silent portraits, character-selection still, card/power/relic/energy
+textures, colored frame materials and six sampled clips are converted from the
+owner's pinned local game installation. Existing payloads remain intact. No
+audio, multiplayer or Timeline progression implementation is included; these
+three areas are excluded by the requested product scope. Reading/skipping binary
+skeleton event metadata does not provide audio playback.
+
+## Shared content added in 0.10
+
+Seven additional colorless portraits, eight relic icons and a No Block power
+icon are converted from the same pinned local installation. Previously converted
+image payloads and all seventeen clip records are retained. Upgrade comparison,
+permanent deck choices and paged item details reuse the original-derived UI
+textures already present in the private pack. No original game code or assets
+are included in the public source.

@@ -24,9 +24,49 @@ const Definition definitions[CardKinds]={
  {"UPPERCUT",2,13,0,0,1,0,0,0,1,CardType::Attack,true},
  {"BODY_SLAM",1,0,0,0,0,0,0,0,0,CardType::Attack,true},
  {"BATTLE_TRANCE",0,0,0,3,0,0,0,1,0,CardType::Skill,false},
- {"FIEND_FIRE",2,7,0,0,0,3,0,0,0,CardType::Attack,true,0,0,0,true}
+ {"FIEND_FIRE",2,7,0,0,0,3,0,0,0,CardType::Attack,true,0,0,0,true},
+ {"FINESSE",0,0,4,1,0,0,3,0,0,CardType::Skill,false},
+ {"FLASH_OF_STEEL",0,5,0,1,0,3,0,0,0,CardType::Attack,true},
+ {"STRIKE_SILENT",1,6,0,0,0,3,0,0,0,CardType::Attack,true},
+ {"DEFEND_SILENT",1,0,5,0,0,0,3,0,0,CardType::Skill,false},
+ {"NEUTRALIZE",0,3,0,0,1,1,0,0,1,CardType::Attack,true},
+ {"SURVIVOR",1,0,8,0,0,0,3,0,0,CardType::Skill,false},
+ {"ACROBATICS",1,0,0,3,0,0,0,1,0,CardType::Skill,false},
+ {"BACKFLIP",1,0,5,2,0,0,3,0,0,CardType::Skill,false},
+ {"DAGGER_THROW",1,9,0,1,0,3,0,0,0,CardType::Attack,true},
+ {"DEADLY_POISON",1,0,0,0,5,0,0,0,2,CardType::Skill,true},
+ {"POISONED_STAB",1,6,0,0,3,2,0,0,1,CardType::Attack,true},
+ {"CLOAK_AND_DAGGER",1,0,6,0,0,0,0,0,0,CardType::Skill,false,0,0,0,false,1,1},
+ // Blade Dance is self-exhausting in this pinned STS2 release.
+ {"BLADE_DANCE",1,0,0,0,0,0,0,0,0,CardType::Skill,false,0,0,0,true,3,1},
+ {"DAGGER_SPRAY",1,4,0,0,0,2,0,0,0,CardType::Attack,false},
+ {"DASH",2,10,10,0,0,3,3,0,0,CardType::Attack,true},
+ {"LEG_SWEEP",2,0,11,0,2,0,3,0,1,CardType::Skill,true},
+ {"FOOTWORK",1,0,0,0,2,0,0,0,1,CardType::Power,false},
+ {"NOXIOUS_FUMES",1,0,0,0,2,0,0,0,1,CardType::Power,false},
+ {"BOUNCING_FLASK",2,0,0,0,3,0,0,0,0,CardType::Skill,false},
+ {"PREPARED",0,0,0,1,0,0,0,1,0,CardType::Skill,false},
+ {"SLICE",0,6,0,0,0,3,0,0,0,CardType::Attack,true},
+ {"DEFLECT",0,0,4,0,0,0,3,0,0,CardType::Skill,false},
+ {"SUCKER_PUNCH",1,8,0,0,1,2,0,0,1,CardType::Attack,true},
+ {"ADRENALINE",0,0,0,2,0,0,0,0,0,CardType::Skill,false,0,1,1,true},
+ {"ACCURACY",1,0,0,0,4,0,0,0,2,CardType::Power,false},
+ {"LEADING_STRIKE",1,3,0,0,0,3,0,0,0,CardType::Attack,true,0,0,0,false,2,0},
+ {"SHIV",0,4,0,0,0,2,0,0,0,CardType::Attack,true,0,0,0,true},
+ {"IMPATIENCE",0,0,0,2,0,0,0,1,0,CardType::Skill,false},
+ {"MASTER_OF_STRATEGY",0,0,0,3,0,0,0,1,0,CardType::Skill,false,0,0,0,true},
+ {"SHOCKWAVE",2,0,0,0,3,0,0,0,2,CardType::Skill,false,0,0,0,true},
+ {"SCRAWL",1,0,0,0,0,0,0,0,0,CardType::Skill,false,0,0,0,true},
+ {"PURITY",0,0,0,3,0,0,0,2,0,CardType::Skill,false,0,0,0,true},
+ {"HAND_OF_GREED",2,20,0,0,20,5,0,0,5,CardType::Attack,true},
+ {"PANIC_BUTTON",0,0,30,0,2,0,10,0,0,CardType::Skill,false,0,0,0,true}
+
 };
 int card_rarity(unsigned kind){
-    static constexpr uint8_t rarity[CardKinds]={1,1,1,2,2,2,3,2,2,3,2,3,3,4,3,3,4,4,3,2,3,2,3,4};
+static constexpr uint8_t rarity[CardKinds]={
+ 1,1,1,2,2,2,3,2,2,3,2,3,3,4,3,3,4,4,3,2,3,2,3,4,3,3,
+ 1,1,1,1,3,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,4,3,2,7,3,4,3,4,3,4,3};
     return kind<CardKinds?rarity[kind]:0;
 }
+
+bool card_colorless(unsigned kind){return kind==Finesse||kind==FlashOfSteel||(kind>=Impatience&&kind<CardKinds);}

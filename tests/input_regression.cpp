@@ -12,8 +12,9 @@ int main(){
     new_run(app.game,7,true);app.title=false;app.render();SaveData before{};CHECK(save(app.game,before));
     app.input(Key::Inspect);app.render();app.pointer_scroll(1);app.render();CHECK(app.scroll==10);
     app.pointer_scroll(1);app.render();CHECK(app.scroll==20);
-    app.pointer_scroll(1);app.render();CHECK(app.scroll==20);
-    app.pointer_scroll(-1);app.render();CHECK(app.scroll==10);unchanged(before);
+    app.pointer_scroll(1);app.render();CHECK(app.scroll==30);
+    app.pointer_scroll(1);app.render();CHECK(app.scroll==30);
+    app.pointer_scroll(-1);app.render();CHECK(app.scroll==20);unchanged(before);
     // Scrolling during capture cannot activate the new card under that position.
     app.pointer_move(33,80);app.pointer_button(true);app.pointer_scroll(1);app.pointer_button(false);
     CHECK(app.detail_card<0);unchanged(before);

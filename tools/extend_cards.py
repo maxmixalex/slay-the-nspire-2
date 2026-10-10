@@ -22,7 +22,7 @@ ADDITIONAL = ['BLOODLETTING', 'HEMOKINESIS', 'IMPERVIOUS', 'OFFERING', 'BLUDGEON
 EXHAUSTS = {'IMPERVIOUS', 'OFFERING', 'FIEND_FIRE'}
 
 
-def upgrade(game: Path, source: Path, destination: Path, font_path: Path) -> dict:
+def upgrade(game: Path, source: Path, destination: Path, font_path: Path, *, intermediate: bool = False) -> dict:
     verify_release(game)
     data = source.read_bytes()
     if len(data) < 40:
@@ -125,7 +125,7 @@ def upgrade(game: Path, source: Path, destination: Path, font_path: Path) -> dic
     card_dir = b''.join(struct.pack('<4I', *r) for r in records)
     body = image_dir+glyph_dir+bytes(string_dir)+animations+card_dir+bytes(payload)
     output = struct.pack('<4s9I', b'NSP2', 4, commit, 40+len(body), ni, ng, ns, nc, nk, fnv(body))+body
-    if len(output) > 6*1024*1024:
+    if len(output) > (32 if intermediate else 6)*1024*1024:
         raise ValueError(f'Content exceeds 6 MiB: {len(output)} bytes')
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(destination.name+'.tmp')

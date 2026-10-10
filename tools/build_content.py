@@ -13,6 +13,7 @@ import math
 from pathlib import Path
 import re
 import struct
+from tempfile import TemporaryDirectory
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
 from pck import Pack
@@ -28,7 +29,12 @@ GAME_COMMIT='41cef1ea'
 ROOT=Path(__file__).resolve().parents[1]
 
 def texture(pack:Pack,filename:str)->Image.Image:
-    name=pack.imported(filename,'.ctex')
+    if '/' in filename:
+        metadata=pack.read(filename+'.import').decode('utf-8')
+        paths=re.findall(r'path(?:\.[A-Za-z0-9_]+)?="res://([^\"]+\.ctex)"',metadata)
+        if len(paths)!=1:raise ValueError('Expected one .ctex path: '+filename)
+        name=paths[0]
+    else:name=pack.imported(filename,'.ctex')
     data=pack.read(name)
     if b'RIFF' in data[:80]:
         return decode_texture(data)
@@ -90,7 +96,7 @@ def atlas(pack:Pack,name:str,cache:dict)->Image.Image:
         return cache[name].copy()
     path='images/atlases/ui_atlas.sprites/'+name[1:]+'.tres'
     text=pack.read(path).decode('utf-8')
-    filename=re.search(r'path="res://[^\"]*/([^/\"]+\.png)"',text)[1]
+    filename=re.search(r'path(?:\.[A-Za-z0-9_]+)?="res://[^\"]*/([^/\"]+\.png)"',text)[1]
     x,y,w,h=map(int,re.search(r'region = Rect2\(([^)]+)\)',text)[1].split(','))
     if filename not in cache:cache[filename]=texture(pack,filename)
     return cache[filename].crop((x,y,x+w,y+h))
@@ -191,16 +197,26 @@ def main()->None:
     anim_dir=b''.join(struct.pack('<IHHhhI',*r) for r in animation_records)
     body=bytes(images_dir+glyph_dir+text_dir+anim_dir+payload)
     result=struct.pack('<4s9I',b'NSP2',3,0x41CEF1EA,40+len(body),len(pictures),len(glyphs),len(strings),len(animation_records),0,fnv(body))+body
-    if len(result)>6*1024*1024:raise ValueError(f'Content exceeds the 6 MiB bound: {len(result)}')
+    if len(result)>32*1024*1024:raise ValueError(f'Intermediate content exceeds 32 MiB: {len(result)}')
     args.output.mkdir(parents=True,exist_ok=True)
-    output=args.output/'nSpire2.nsp.tns';output.write_bytes(result)
-    manifest={'format':'NSP2/3','game':info,'content_sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),
-      'cards':CARDS,'images':len(pictures),'glyphs':len(glyphs),'language':'zhs','animations':animation_meta,
-      'scope':'14-card subset; original UI and offline sampled original animations; custom twelve-floor branching expedition; three rich-text events; ten modeled relics; no original map/seed/save parity.'}
-    (args.output/'content-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
-    pack.close()
-    from extend_cards import upgrade
-    final=upgrade(args.game,output,output,font_path)
-    print(f"Created {output}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)
+    # Never replace a valid output with one of the larger conversion intermediates.
+    with TemporaryDirectory(prefix='nspire-build-',dir=args.output) as staging:
+        output=Path(staging)/'nSpire2.nsp.tns';output.write_bytes(result)
+        manifest={'format':'NSP2/3','game':info,'content_sha256':hashlib.sha256(result).hexdigest(),'bytes':len(result),
+          'cards':CARDS,'images':len(pictures),'glyphs':len(glyphs),'language':'zhs','animations':animation_meta,
+          'scope':'14-card subset; original UI and offline sampled original animations; custom twelve-floor branching expedition; three rich-text events; ten modeled relics; no original map/seed/save parity.'}
+        (Path(staging)/'content-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
+        pack.close()
+        from extend_cards import upgrade
+        upgrade(args.game,output,output,font_path,intermediate=True)
+        from build_expansion import build as expand
+        expand(args.game,output,output,font_path)
+        from build_silent import build as silent
+        silent(args.game,output,output,font_path)
+        from build_shared import build as shared
+        final=shared(args.game,output,output,font_path)
+        output.replace(args.output/'nSpire2.nsp.tns')
+        (Path(staging)/'content-manifest.json').replace(args.output/'content-manifest.json')
+        print(f"Created {args.output/'nSpire2.nsp.tns'}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)
 
 if __name__=='__main__':main()
