@@ -1,0 +1,225 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9",
+  "evidence": "Read-only PE/CLI metadata and CIL inspection of the hash-verified user installation; no original executable was run. Names/tokens are references, not original source code.",
+  "pool": {
+    "model": "MegaCrit.Sts2.Core.Models.RelicPools.SharedRelicPool",
+    "method": "GenerateAllRelics",
+    "method_token": "0x060023d2",
+    "verification": "All five model types were resolved from MethodSpec generic arguments in the literal registry."
+  },
+  "models": [
+    {
+      "model": "MegaCrit.Sts2.Core.Models.Relics.Kunai",
+      "threshold": 3,
+      "effect": "Gain 1 Dexterity after every third Attack.",
+      "counter_reset": "player-turn start and combat boundaries",
+      "methods": [
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai::get_Rarity",
+          "token": "0x06001f19"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai::get_CanonicalVars",
+          "token": "0x06001f1c"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai::BeforeSideTurnStart",
+          "token": "0x06001f23"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai::AfterCardPlayed",
+          "token": "0x06001f24"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai::AfterCombatEnd",
+          "token": "0x06001f26"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai+<AfterCardPlayed>d__20::MoveNext",
+          "token": "0x06009c87"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai+<AfterCardPlayed>d__20::SetStateMachine",
+          "token": "0x06009c88"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Kunai+<DoActivateVisuals>d__21::MoveNext",
+          "token": "0x06009c89"
+        }
+      ]
+    },
+    {
+      "model": "MegaCrit.Sts2.Core.Models.Relics.Shuriken",
+      "threshold": 3,
+      "effect": "Gain 1 Strength after every third Attack.",
+      "counter_reset": "player-turn start and combat boundaries",
+      "methods": [
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken::get_Rarity",
+          "token": "0x06002216"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken::get_CanonicalVars",
+          "token": "0x06002219"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken::BeforeSideTurnStart",
+          "token": "0x06002220"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken::AfterCardPlayed",
+          "token": "0x06002221"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken::AfterCombatEnd",
+          "token": "0x06002223"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken+<AfterCardPlayed>d__20::MoveNext",
+          "token": "0x06009d9d"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken+<AfterCardPlayed>d__20::SetStateMachine",
+          "token": "0x06009d9e"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Shuriken+<DoActivateVisuals>d__21::MoveNext",
+          "token": "0x06009d9f"
+        }
+      ]
+    },
+    {
+      "model": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan",
+      "threshold": 3,
+      "effect": "Gain 4 unpowered Block after every third Attack.",
+      "counter_reset": "player-turn start and combat boundaries",
+      "methods": [
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan::get_Rarity",
+          "token": "0x06002051"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan::get_CanonicalVars",
+          "token": "0x06002054"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan::BeforeSideTurnStart",
+          "token": "0x0600205b"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan::AfterCardPlayed",
+          "token": "0x0600205c"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan::AfterCombatEnd",
+          "token": "0x0600205e"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan+<AfterCardPlayed>d__20::MoveNext",
+          "token": "0x06009d06"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan+<AfterCardPlayed>d__20::SetStateMachine",
+          "token": "0x06009d07"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.OrnamentalFan+<DoActivateVisuals>d__21::MoveNext",
+          "token": "0x06009d08"
+        }
+      ]
+    },
+    {
+      "model": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener",
+      "threshold": 3,
+      "effect": "Deal 5 unpowered damage to all living enemies after every third Skill.",
+      "counter_reset": "player-turn start and combat boundaries",
+      "methods": [
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener::get_Rarity",
+          "token": "0x06001f6b"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener::get_CanonicalVars",
+          "token": "0x06001f6e"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener::BeforeCombatStart",
+          "token": "0x06001f74"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener::AfterSideTurnStart",
+          "token": "0x06001f75"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener::AfterCardPlayed",
+          "token": "0x06001f76"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener::AfterCombatEnd",
+          "token": "0x06001f78"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener+<AfterCardPlayed>d__19::MoveNext",
+          "token": "0x06009cb1"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener+<AfterCardPlayed>d__19::SetStateMachine",
+          "token": "0x06009cb2"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.LetterOpener+<DoActivateVisuals>d__20::MoveNext",
+          "token": "0x06009cb3"
+        }
+      ]
+    },
+    {
+      "model": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku",
+      "threshold": 10,
+      "effect": "Gain 1 Energy after every tenth Attack.",
+      "counter_reset": "persists across turns and combats",
+      "methods": [
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku::get_Rarity",
+          "token": "0x06002022"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku::get_CanonicalVars",
+          "token": "0x06002025"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku::AfterCardPlayed",
+          "token": "0x0600202c"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku+<AfterCardPlayed>d__19::MoveNext",
+          "token": "0x06009cf8"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku+<AfterCardPlayed>d__19::SetStateMachine",
+          "token": "0x06009cf9"
+        },
+        {
+          "name": "MegaCrit.Sts2.Core.Models.Relics.Nunchaku+<DoActivateVisuals>d__20::MoveNext",
+          "token": "0x06009cfa"
+        }
+      ]
+    }
+  ],
+  "ordering": {
+    "method": "MegaCrit.Sts2.Core.Models.CardModel+<OnPlayWrapper>d__339::MoveNext",
+    "method_token": "0x06009b06",
+    "observed": "OnPlay completes, then Hook.AfterCardPlayed runs, then the source card moves to its result pile. Supported suspended choices therefore do not count a play before confirmation. Multi-hit attacks count once.",
+    "boundary": "No complete original combat differential or original death-scheduler oracle. Global ordering with all unimplemented original hooks is not claimed."
+  },
+  "ui_reference_scenes": [
+    "scenes/rooms/treasure_room.tscn",
+    "scenes/ui/treasure_relic_holder.tscn"
+  ],
+  "treasure_boundary": "Reveal/inspect/claim/proceed adapts the original scene structure; prototype selection pools, fallback gold and RNG remain custom.",
+  "excluded": [
+    "audio",
+    "multiplayer",
+    "timeline-meta-progression"
+  ]
+}

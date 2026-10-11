@@ -9,7 +9,7 @@ static void title_screen(Canvas&c){
         c.text(labels[i],35,y+1,12,Ink);c.text(labels[i],34,y,12,selected?Gold:White);
         c.hit(7,y,147,20,HitKind::Menu,i);
     }
-    c.text("nSpire II 0.11",218,219,10,White,100);
+    c.text("nSpire II 0.12",218,219,10,White,100);
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;bool silent=a.selected_character==Character::Silent;
@@ -85,7 +85,13 @@ static void item_detail_screen(Canvas&c){
     const char*desc=relic?relic_definitions[index].description:potion_definitions[index].description;
     int image=relic?a.content.relic_image(index):a.content.potion_image((Potion)(index+1));
     c.picture(image,140,40,40,46);c.centered(name,58,91,204,16,Gold);
-    int lines=c.paragraph(desc,67,119,188,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-5));
-    c.paragraph(desc,67,119,188,5,a.detail_scroll,12,White);
+    bool owned=relic&&a.detail_owned>=0&&a.detail_owned<a.game.relic_count&&a.game.relic_order[a.detail_owned]==index;
+    int top=owned&&relic_counter_limit(relic_definitions[index].id)?136:119;
+    if(top==136){char progress[96]={};relic_progress(a.game,relic_definitions[index].id,progress,sizeof progress);c.centered(progress,57,116,206,10,Green);}
+    int visible=top==136?4:5;
+    int lines=c.paragraph(desc,67,top,188,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-visible));
+    c.paragraph(desc,67,top,188,visible,a.detail_scroll,12,White);
+    if(lines>visible){c.text("↑",260,top,10,Gold);c.hit(251,top-2,26,20,HitKind::Scroll,-1,a.detail_scroll>0);
+        c.text("↓",260,178,10,Gold);c.hit(251,175,26,21,HitKind::Scroll,1,a.detail_scroll+visible<lines);}
     c.button("返回",112,201,96,true,25);c.action(107,198,106,32,UiAction::Back);
 }

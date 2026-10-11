@@ -61,7 +61,7 @@ void App::select_library_item(int index){
     if(!library||index<0||index>=count)return;
     library_selected=index;
     if(library_tab==0){uint8_t ids[CardKinds];library_items(ids);open_card_detail({ids[index],(uint8_t)library_upgraded});}
-    else{detail_item=library_tab==1?index:RelicKinds+index;detail_scroll=0;pointer_cancel();}
+    else{detail_owned=-1;detail_item=library_tab==1?index:RelicKinds+index;detail_scroll=0;pointer_cancel();}
 }
 void App::ui_action(UiAction action){
     pointer_cancel();
@@ -188,7 +188,7 @@ bool App::deck_input(Key key){
 
 namespace spire {
 void App::open_statuses(int actor){
-    if(title||paused||help||panel||library||character_select||map_preview.open||!combat_phase(game.phase))return;
+    if(title||paused||help||panel||library||character_select||detail_card>=0||detail_item>=0||map_preview.open||!combat_phase(game.phase))return;
     if(actor<0||actor>game.enemy_count)return;
     status_actor=actor;status_selected=0;pointer_cancel();
 }
@@ -204,5 +204,17 @@ bool App::status_input(Key key){
     if(key==Key::Up&&status_selected>0)--status_selected;
     if(key==Key::Down&&status_selected+1<count)++status_selected;
     return true;
+}
+}
+
+namespace spire {
+void App::open_owned_relic(int position){
+    if(title||paused||help||library||character_select||map_preview.open||status_actor>=0||
+       detail_card>=0||detail_item>=0||(panel&&panel!=5)||position<0||position>=game.relic_count)return;
+    detail_owned=position;detail_item=game.relic_order[position];detail_scroll=0;pointer_cancel();
+}
+void App::sync_relic_feedback(){
+    if(seen_relic_revision==game.relic_revision)return;
+    seen_relic_revision=game.relic_revision;relic_flash_mask=game.relic_flash;relic_flash_ticks=30;
 }
 }

@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.11 (2026-10-10).
+nSpire II experimental native runtime, version 0.12 (2026-10-11).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -109,3 +109,12 @@ clip timing are retained. Host-side python-lz4 performs high-compression encodin
 the calculator keeps this project's independent LZ4 block decoder. No python-lz4
 or upstream LZ4 source/binary is bundled in the runtime. Public source excludes
 all original assets, private disassembly, calculator images and font files.
+
+## Relic combinations and treasure UI added in 0.12
+
+Five original relic icons are converted from the same pinned user installation.
+All prior encoded image payloads, glyph coverage and clip records are retained.
+Treasure presentation adapts inspected original room/relic-holder scene structure,
+using existing original-derived panels and banners. Prototype acquisition odds,
+prices and the exhausted-pool fallback are not original-game parity claims.
+No original assembly bodies, assets, font files or calculator images are published.

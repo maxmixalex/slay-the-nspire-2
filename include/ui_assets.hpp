@@ -80,6 +80,7 @@ enum UiAsset {
     U_RegalPillow=78, U_MealTicket=79, U_OldCoin=80, U_CentennialPuzzle=81,
     U_NoBlock=82, U_FeelNoPain=83, U_DarkEmbrace=84, U_DemonForm=85,
     U_InfiniteBlades=86, U_FlameBarrier=87, U_BlockNextTurn=88,
-    U_DrawNextTurn=89, U_Count=90
+    U_DrawNextTurn=89, U_Kunai=90, U_Shuriken=91, U_OrnamentalFan=92,
+    U_LetterOpener=93, U_Nunchaku=94, U_Count=95
 };
 }

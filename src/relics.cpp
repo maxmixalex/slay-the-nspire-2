@@ -28,13 +28,18 @@ const RelicDefinition relic_definitions[RelicKinds]={
  {RegalPillow,"REGAL_PILLOW","皇家枕头","在休息处休息时，额外回复 [green]15[/green] 点生命。",-1},
  {MealTicket,"MEAL_TICKET","餐券","进入商店时，回复 [green]15[/green] 点生命。",-1},
  {OldCoin,"OLD_COIN","古钱币","拾取时获得 [gold]300[/gold] 金币。",-1},
- {CentennialPuzzle,"CENTENNIAL_PUZZLE","百年积木","每场战斗中，第一次失去生命时抽 [blue]3[/blue] 张牌。",-1}
+ {CentennialPuzzle,"CENTENNIAL_PUZZLE","百年积木","每场战斗中，第一次失去生命时抽 [blue]3[/blue] 张牌。",-1},
+ {Kunai,"KUNAI","苦无","每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [blue]1[/blue] 点敏捷。",-1},
+ {Shuriken,"SHURIKEN","手里剑","每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [gold]1[/gold] 点力量。",-1},
+ {OrnamentalFan,"ORNAMENTAL_FAN","精致折扇","每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [blue]4[/blue] 点格挡。",-1},
+ {LetterOpener,"LETTER_OPENER","开信刀","每在同一回合打出 [gold]3[/gold] 张技能牌，对所有敌人造成 [blue]5[/blue] 点伤害。",-1},
+ {Nunchaku,"NUNCHAKU","双截棍","每打出 [gold]10[/gold] 张攻击牌，获得 [gold]1[/gold] 点能量。计数跨战斗保留。",-1}
 };
 const RelicDefinition* relic_definition(unsigned id){for(const auto&d:relic_definitions)if(d.id==id)return &d;return nullptr;}
 static void flash(State&s,unsigned id){s.relic_flash|=(uint32_t)id;++s.relic_revision;}
 bool gain_relic(State&s,unsigned id){
  const auto*d=relic_definition(id);if(!d||(s.relics&id)||s.relic_count>=RelicKinds)return false;
- s.relic_order[s.relic_count++]=(uint8_t)(d-relic_definitions);s.relics|=(uint32_t)id;
+ s.relic_flash=0;s.relic_order[s.relic_count++]=(uint8_t)(d-relic_definitions);s.relics|=(uint32_t)id;
  if(id==Strawberry||id==Pear||id==Mango)increase_max_hp(s,id==Strawberry?7:id==Pear?10:14);
  if(id==OldCoin)gain_gold(s,300);
  flash(s,id);record(s,LogKind::Relic,(int)id);s.revision++;return true;
@@ -45,7 +50,6 @@ unsigned random_relic(State&s){
 }
 unsigned relic_counter(const State&s,unsigned id){const auto*d=relic_definition(id);return d?s.relic_counters[d-relic_definitions]:0;}
 void relic_hook(State&s,RelicHook hook){
- s.relic_flash=0;
  for(unsigned i=0;i<s.relic_count;i++){
   unsigned index=s.relic_order[i],id=relic_definitions[index].id;bool triggered=false;
   if(hook==RelicHook::CombatStart){
@@ -70,10 +74,44 @@ void relic_hook(State&s,RelicHook hook){
   if(triggered)flash(s,id);
  }
  if(hook==RelicHook::TurnStart)s.attacked_this_turn=0;
+ if(hook==RelicHook::Victory)relic_reset_turn_counters(s);
 }
 void relic_after_hp_loss(State&s,int loss){
  if(loss<=0||s.hp<=0||!combat_phase(s.phase)||!(s.relics&CentennialPuzzle)||s.relic_counters[24])return;
  s.relic_counters[24]=1;flash(s,CentennialPuzzle);draw_cards(s,3);
+}
+unsigned relic_counter_limit(unsigned id){
+ if(id==PenNib||id==Nunchaku)return 10;
+ if(id==HappyFlower||relic_counter_is_turn_scoped(id))return 3;
+ if(id==CentennialPuzzle)return 1;
+ return 0;
+}
+bool relic_counter_is_turn_scoped(unsigned id){
+ return id==Kunai||id==Shuriken||id==OrnamentalFan||id==LetterOpener;
+}
+void relic_reset_turn_counters(State&s){
+ for(int i=0;i<RelicKinds;i++)if(relic_counter_is_turn_scoped(relic_definitions[i].id))s.relic_counters[i]=0;
+}
+void relic_card_played(State&s,Card card){
+ if(s.hp<=0||s.phase!=Phase::Combat||card.kind>=CardKinds)return;
+ const CardType type=definitions[card.kind].type;
+ // AfterCardPlayed runs once after the card's commands/choices, before its
+ // result-pile move. Resolve in acquisition order; hits are not card plays.
+ for(unsigned i=0;i<s.relic_count;i++){
+  unsigned index=s.relic_order[i],id=relic_definitions[index].id;
+  bool relevant=id==LetterOpener?type==CardType::Skill:
+      (id==Kunai||id==Shuriken||id==OrnamentalFan||id==Nunchaku)&&type==CardType::Attack;
+  if(!relevant)continue;
+  auto& count=s.relic_counters[index];if(++count<relic_counter_limit(id))continue;
+  count=0;flash(s,id);
+  if(id==Kunai){if(s.dexterity<9999)++s.dexterity;record(s,LogKind::Dexterity,1);}
+  else if(id==Shuriken){if(s.strength<9999)++s.strength;record(s,LogKind::Strength,1);}
+  else if(id==OrnamentalFan){int amount=s.block>9995?9999-s.block:4;s.block+=(int16_t)amount;record(s,LogKind::Block,amount);}
+  else if(id==LetterOpener){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,5);}
+  else if(id==Nunchaku){if(s.energy<999)++s.energy;record(s,LogKind::Energy,1);}
+ }
+ // Finish performs victory after it moves the card out of limbo. Do not end
+ // combat here: a lethal Letter Opener proc must not orphan the playing card.
 }
 void relic_attack_begin(State&s){
  s.double_attack=0;

@@ -36,6 +36,7 @@ bool reachable(const State&s,int node){
     return (s.map[s.current_node].links&(1u<<(node%3)))!=0;
 }
 void finish_room(State&s){
+    s.treasure_state=0;s.treasure_relic=0;
     if(s.hp<=0){s.phase=Phase::Dead;return;}
     if(s.practice){s.phase=Phase::Complete;return;}
     if(s.current_node<0||s.current_node>=MapNodes){s.phase=Phase::Error;return;}
@@ -79,7 +80,7 @@ bool choose_node(State&s,int column){
     case Room::Combat:case Room::Final:enter_combat(s);break;
     case Room::Shop:enter_shop(s);break;
     case Room::Camp:s.phase=Phase::Camp;break;
-    case Room::Treasure:s.phase=Phase::Treasure;break;
+    case Room::Treasure:s.phase=Phase::Treasure;s.treasure_state=0;s.treasure_relic=0;break;
     case Room::Event:
         s.event_id=(EventId)s.map[id].event;s.event_page=s.event_count=s.event_remaining=0;s.event_first=-1;
         s.event_value=(int16_t)(s.event_id==EventId::Vegetation?61+random_below(s.rng_world,39):0);s.phase=Phase::Event;break;
@@ -119,13 +120,15 @@ bool buy(State&s,int item){
         if(s.deck_count>=MaxDeck)return false;
         s.deck[s.deck_count++]={s.shop_cards[item],0};record(s,LogKind::Buy,s.shop_cards[item]);
     }else if(item<ShopPotionStart){
-        if(!gain_relic(s,s.shop_relics[item-ShopRelicStart]))return false;
+        int balance=s.gold;s.gold-=s.shop_prices[item];
+        if(!gain_relic(s,s.shop_relics[item-ShopRelicStart])){s.gold=(int16_t)balance;return false;}
     }else{
         int slot=-1;for(int i=0;i<2;i++)if(s.potions[i]==Potion::Empty){slot=i;break;}
         if(slot<0||!potion_definition((Potion)s.shop_potions[item-ShopPotionStart]))return false;
         s.potions[slot]=(Potion)s.shop_potions[item-ShopPotionStart];
     }
-    s.gold-=s.shop_prices[item];s.shop_sold|=(uint16_t)(1u<<item);s.revision++;return true;
+    if(item<ShopRelicStart||item>=ShopPotionStart)s.gold-=s.shop_prices[item];
+    s.shop_sold|=(uint16_t)(1u<<item);s.revision++;return true;
 }
 bool remove_card(State&s,int index){
     if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1||s.gold<remove_price(s))return false;
@@ -164,9 +167,18 @@ bool transform_card(State&s,int index){
     if(!s.event_remaining){s.phase=Phase::Event;s.event_page=2;}
     s.revision++;return true;
 }
+bool open_treasure(State&s){
+    if(s.phase!=Phase::Treasure||s.treasure_state)return false;
+    s.treasure_relic=random_relic(s);s.treasure_state=1;s.revision++;return true;
+}
 bool take_treasure(State&s){
-    if(s.phase!=Phase::Treasure)return false;
-    unsigned id=random_relic(s);
-    if(id)gain_relic(s,id);else gain_gold(s,50);finish_room(s);return true;
+    if(s.phase!=Phase::Treasure||s.treasure_state!=1)return false;
+    if(s.treasure_relic){if(!gain_relic(s,s.treasure_relic))return false;}
+    else gain_gold(s,50);
+    s.treasure_state=2;s.revision++;return true;
+}
+bool leave_treasure(State&s){
+    if(s.phase!=Phase::Treasure||!s.treasure_state)return false;
+    finish_room(s);return true;
 }
 } // namespace spire

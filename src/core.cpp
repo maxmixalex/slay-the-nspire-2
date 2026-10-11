@@ -232,6 +232,7 @@ static void resolve(State&s){
             s.embrace=min(99,s.embrace+e.value);record(s,LogKind::Embrace,s.embrace);break;
         case EffectKind::Finish:
             if(s.playing>=0){int id=s.playing;
+                relic_card_played(s,s.cards[id]);
                 if(definitions[s.cards[id].kind].type==CardType::Attack)s.attacked_this_turn=1;
                 if(definitions[s.cards[id].kind].type==CardType::Power)put(s,s.powers,id,Zone::Power);
                 else if(definitions[s.cards[id].kind].exhausts)exhaust_id(s,id);
@@ -247,6 +248,7 @@ void damage_unpowered(State&s,int target,int amount){
 }
 void finish_combat_if_won(State&s){if(s.phase==Phase::Combat&&s.hp>0&&!alive(s))victory(s);}
 void enter_combat(State&s){
+    s.relic_flash=0;relic_reset_turn_counters(s);
     s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;s.no_draw=0;s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
     s.noxious_fumes=s.accuracy=s.discard_required=0;
     s.no_block=s.exhaust_limit=s.attacked_this_turn=0;s.relic_counters[24]=0;
@@ -300,7 +302,7 @@ bool play(State&s,int h,int target){
     Card c=s.cards[s.hand.ids[h]];if(c.kind>=CardKinds){fail(s);return false;}const Definition&d=definitions[c.kind];int n=cost(c);int energy=n<0?s.energy:n;
     if(energy>s.energy|| (d.targeted&&(target<0||target>=s.enemy_count||s.enemies[target].hp==0)))return false;
     if((c.kind==Anger&&s.card_count==MaxCards)||s.card_count+d.creates+(c.upgraded?d.creates_up:0)>MaxCards){fail(s);return false;}
-    s.energy-=energy;s.playing=remove(s.hand,h);s.zones[s.playing]=Zone::Limbo;
+    s.relic_flash=0;s.energy-=energy;s.playing=remove(s.hand,h);s.zones[s.playing]=Zone::Limbo;
     int hit=card_base_damage(s,c),block=d.block+(c.upgraded?d.block_up:0),cards=d.draw+(c.upgraded?d.draw_up:0),power=d.power+(c.upgraded?d.power_up:0);
     if(d.type==CardType::Attack)relic_attack_begin(s);
     if(block)block=s.no_block?0:max(0,block+s.dexterity);
@@ -403,7 +405,7 @@ bool choose_return_to_draw(State&s,int card_id){
 }
 bool end_turn(State&s){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1)return false;
-    relic_hook(s,RelicHook::TurnEnd);
+    s.relic_flash=0;relic_hook(s,RelicHook::TurnEnd);
     s.no_draw=0;
     s.strength=max(0,s.strength-s.temporary_strength);s.temporary_strength=0;
     s.dexterity=max(0,s.dexterity-s.temporary_dexterity);s.temporary_dexterity=0;
@@ -441,7 +443,7 @@ bool end_turn(State&s){
     s.flame_barrier=0;
     if(s.no_block>0)--s.no_block; // NoBlockPower.AfterSideTurnEnd: enemy side.
     if(s.hp&&!alive(s)){victory(s);s.revision++;return true;}
-    if(s.hp){s.block=s.block_next_turn;s.block_next_turn=0;s.energy=3;s.turn++;
+    if(s.hp){relic_reset_turn_counters(s);s.block=s.block_next_turn;s.block_next_turn=0;s.energy=3;s.turn++;
         if(s.block)record(s,LogKind::Block,s.block);
         if(s.demon_form){s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
         // Infinite Blades runs BeforeHandDraw; created cards occupy hand space
@@ -498,7 +500,17 @@ bool validate(const State&s){
     uint32_t owned=0;
     for(unsigned i=0;i<s.relic_count;i++){unsigned index=s.relic_order[i];if(index>=RelicKinds)return false;unsigned bit=relic_definitions[index].id;if(owned&bit)return false;owned|=bit;}
     if(owned!=s.relics)return false;
-    for(int i=0;i<RelicKinds;i++)if(s.relic_counters[i]>(relic_definitions[i].id==PenNib?9:relic_definitions[i].id==HappyFlower?2:relic_definitions[i].id==CentennialPuzzle?1:0))return false;
+    for(int i=0;i<RelicKinds;i++){
+        unsigned id=relic_definitions[i].id,limit=relic_counter_limit(id);
+        unsigned maximum=id==CentennialPuzzle?1:limit?limit-1:0;
+        if(s.relic_counters[i]>maximum||(!(s.relics&id)&&s.relic_counters[i]))return false;
+    }
+    if(s.treasure_state>2)return false;
+    if(s.phase!=Phase::Treasure&&(s.treasure_state||s.treasure_relic))return false;
+    if(!s.treasure_state&&s.treasure_relic)return false;
+    if(s.treasure_relic&&(!relic_definition(s.treasure_relic)||s.treasure_relic==BurningBlood||s.treasure_relic==RingOfTheSnake))return false;
+    if(s.treasure_relic&&s.treasure_state==1&&(s.relics&s.treasure_relic))return false;
+    if(s.treasure_relic&&s.treasure_state==2&&!(s.relics&s.treasure_relic))return false;
     for(auto p:s.potions)if((unsigned)p>PotionKinds)return false;
     for(auto c:s.shop_cards)if(c>=CardKinds)return false;
     for(auto p:s.shop_prices)if(p<0||p>9999)return false;
@@ -577,7 +589,7 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
  }
  if(version>=7){
   F(s.exhaust_limit);F(s.no_block);F(s.attacked_this_turn);
-  for(int i=17;i<RelicKinds;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
+  for(int i=17;i<25;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
  }else if(c.in){
   if(s.phase==Phase::ExhaustManyChoice||s.relic_count>17||s.relics>=1u<<17||s.relic_flash>=1u<<17)c.good=false;
   for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=51)c.good=false;
@@ -594,18 +606,27 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
   for(auto k:s.reward)if(k>=58)c.good=false;
   for(unsigned i=0;i<s.effect_count;i++)if((unsigned)s.effects[i].kind>(unsigned)EffectKind::GreedDamage)c.good=false;
  }
+ if(version>=9){
+  // Freeze v9 widths just as v7/v8 retain their 25-relic directory.
+  for(int i=25;i<30;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
+  F(s.treasure_state);F(s.treasure_relic);
+ }else if(c.in){
+  const uint32_t old_mask=(1u<<25)-1;
+  if(s.relic_count>25||(s.relics&~old_mask)||(s.relic_flash&~old_mask))c.good=false;
+  for(unsigned id:s.shop_relics)if(id&~old_mask)c.good=false;
+ }
 #undef F
 }
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
-    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(8);c.field(0x41CEF1EA);code_state(copy,c,8);
+    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(9);c.field(0x41CEF1EA);code_state(copy,c,9);
     uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(!data||len<16||len>16384||len%4)return false;
     Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
     const unsigned version=c.field(0);
-    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8)||c.field(0)!=0x41CEF1EA)return false;
+    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9)||c.field(0)!=0x41CEF1EA)return false;
     State tmp{};code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
     s=tmp;return true;

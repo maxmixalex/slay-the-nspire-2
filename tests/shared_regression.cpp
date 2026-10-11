@@ -15,7 +15,7 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
 }
 static void supply(State&s,unsigned count){for(unsigned i=0;i<count;i++){unsigned id=s.card_count++;s.cards[id]={Defend,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=(uint16_t)id;}CHECK(validate(s));}
 static int find(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
-static void rt(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==8);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
+static void rt(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==9);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static void unchanged(const State&a,const State&b){SaveData x{},y{};CHECK(save(a,x));CHECK(save(b,y));CHECK(x.size==y.size&&!std::memcmp(x.bytes,y.bytes,x.size));}
 static void cards(){
  for(unsigned up=0;up<2;up++){
@@ -61,7 +61,7 @@ static void relics(){
  s=fight({{Defend,0}});CHECK(gain_relic(s,CentennialPuzzle));supply(s,20);s.block=99;CHECK(end_turn(s));CHECK(!relic_counter(s,CentennialPuzzle));CHECK(end_turn(s));CHECK(relic_counter(s,CentennialPuzzle)==1&&s.hand.count==8);rt(s);
  s=fight({{Bloodletting,0}});CHECK(gain_relic(s,CentennialPuzzle));supply(s,20);s.no_draw=1;CHECK(play(s,0,0));CHECK(s.hand.count==0&&relic_counter(s,CentennialPuzzle)==1);rt(s);
  s=fight({{Bloodletting,0}});CHECK(gain_relic(s,CentennialPuzzle));supply(s,20);s.hp=3;CHECK(play(s,0,0));CHECK(s.phase==Phase::Dead&&s.hand.count==0&&s.draw.count==20);rt(s);
- new_run(s,7,true);for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==25&&s.relics==(1u<<25)-1);rt(s);enter_combat(s);CHECK(relic_counter(s,CentennialPuzzle)==0);rt(s);
+ new_run(s,7,true);for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==RelicKinds&&s.relics==(1u<<RelicKinds)-1);rt(s);enter_combat(s);CHECK(relic_counter(s,CentennialPuzzle)==0);rt(s);
 }
 static void migration(const char*path){
  FILE*f=std::fopen(path,"r");CHECK(f);std::vector<uint8_t>b;unsigned v;while(std::fscanf(f,"%2x",&v)==1)b.push_back((uint8_t)v);std::fclose(f);

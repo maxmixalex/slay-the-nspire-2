@@ -19,6 +19,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
+    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -54,7 +55,11 @@ struct App {
     bool deck_input(Key);
     bool deck_candidate_valid()const;
     void confirm_deck_choice();
-    int detail_item=-1;
+    int detail_item=-1,detail_owned=-1;
+    uint32_t seen_relic_revision=0,relic_flash_mask=0;
+    int relic_flash_ticks=0;
+    void open_owned_relic(int position);
+    void sync_relic_feedback();
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
     const HitRegion* hit_at(int x,int y) const;

@@ -47,7 +47,8 @@ enum class LogKind : uint8_t { Turn, Play, Damage, Block, Exhaust, Draw, Shuffle
 struct Log { LogKind kind; int32_t a,b; };
 enum class Potion : uint8_t { Empty, Fire, Block, Blood, Energy, Strength, Dexterity,
     Swift, Explosive, Vulnerable, Weak, Fruit, Forge, Flex, Speed, Bronze, Fortifier };
-constexpr int PotionKinds=16, RelicKinds=25;
+constexpr int PotionKinds=16, RelicKinds=30;
+static_assert(RelicKinds<32,"Expand relic masks and versioned save widths before adding more relics");
 constexpr int ShopCardCount=7, ShopRelicStart=7, ShopPotionStart=10, ShopRemove=13, ShopLeave=14;
 struct PotionDefinition { const char* key; const char* name; const char* description;
     uint8_t rarity; bool combat_only, targeted; };
@@ -59,7 +60,8 @@ enum Relic : uint32_t { Vajra=1, Anchor=2, BagOfPreparation=4, BurningBlood=8,
     Lantern=16, OddlySmoothStone=32, BloodVial=64, HappyFlower=128, Orichalcum=256, PenNib=512,
     Strawberry=1024, Pear=2048, Mango=4096, BagOfMarbles=8192, Akabeko=16384, BronzeScales=32768, RingOfTheSnake=65536,
     HornCleat=1u<<17, CaptainsWheel=1u<<18, MercuryHourglass=1u<<19, ArtOfWar=1u<<20,
-    RegalPillow=1u<<21, MealTicket=1u<<22, OldCoin=1u<<23, CentennialPuzzle=1u<<24 };
+    RegalPillow=1u<<21, MealTicket=1u<<22, OldCoin=1u<<23, CentennialPuzzle=1u<<24, Kunai=1u<<25, Shuriken=1u<<26,
+    OrnamentalFan=1u<<27, LetterOpener=1u<<28, Nunchaku=1u<<29 };
 enum class RelicHook : uint8_t { CombatStart, TurnStart, TurnEnd, Victory };
 struct RelicDefinition { uint32_t id; const char* key; const char* name; const char* description; int asset; };
 extern const RelicDefinition relic_definitions[RelicKinds];
@@ -105,6 +107,8 @@ struct State {
     uint8_t exhaust_limit; // Optional multi-exhaust allows 0..limit actual hand IDs.
     int16_t no_block; // Decrements after the enemy side, not immediately on play.
     int16_t demon_form, infinite_blades, block_next_turn, draw_next_turn, flame_barrier;
+    uint8_t treasure_state; // 0 closed, 1 revealed, 2 claimed; no implicit rerolls.
+    uint32_t treasure_relic; // Zero means the exhausted prototype pool offers 50 gold.
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
@@ -149,7 +153,9 @@ bool remove_card(State&,int deck_index);
 bool leave_shop(State&);
 bool event_choice(State&,int option);
 bool transform_card(State&,int deck_index);
+bool open_treasure(State&);
 bool take_treasure(State&);
+bool leave_treasure(State&);
 bool use_potion(State&,int slot,int target);
 bool can_use_potion(const State&,int slot,int target);
 bool discard_potion(State&,int slot);
@@ -170,6 +176,10 @@ void award_victory(State&);
 bool gain_relic(State&,unsigned id);
 unsigned random_relic(State&);
 void relic_hook(State&,RelicHook);
+void relic_card_played(State&,Card);
+unsigned relic_counter_limit(unsigned id);
+bool relic_counter_is_turn_scoped(unsigned id);
+void relic_reset_turn_counters(State&);
 void relic_attack_begin(State&);
 void relic_attack_end(State&);
 int relic_attack_multiplier(const State&,bool preview=false);

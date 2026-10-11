@@ -40,6 +40,7 @@ void App::pointer_move(int x,int y){
     case HitKind::Menu:if(!pointer.held)menu=h->value;break;
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
     case HitKind::LibraryItem:if(!pointer.held)library_selected=h->value;break;
+    case HitKind::Relic:if(!pointer.held){scroll=h->value;detail_scroll=0;}break;
     case HitKind::Hand:
         if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}
         break;
@@ -134,7 +135,8 @@ void App::pointer_button(bool down){
     case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::PileCard:open_card_detail({(uint8_t)(hit.value&255),(uint8_t)(hit.value>>8)});break;
-    case HitKind::Relic:scroll=hit.value;break;
+    case HitKind::Relic:scroll=hit.value;open_owned_relic(hit.value);break;
+    case HitKind::OwnedRelic:open_owned_relic(hit.value);break;
     case HitKind::Potion:scroll=hit.value;break;
     case HitKind::Scroll:pointer_scroll(hit.value);break;
     case HitKind::Close:pointer_key(Key::Back);break;

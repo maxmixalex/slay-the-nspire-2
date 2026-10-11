@@ -132,13 +132,13 @@ struct Canvas{
         if(selected){rect(x+8,y+h-2,w-16,1,Gold);text("›",x+5,y+3,12,Gold);}centered(p,x+10,y+(h-18)/2,w-20,12,selected?Gold:White);
     }
 };
-bool App::init(const uint8_t*p,size_t n,Callbacks cb){callbacks=cb;return content.open(p,n)&&content.card_count()==CardKinds;}
+bool App::init(const uint8_t*p,size_t n,Callbacks cb){callbacks=cb;return content.open(p,n)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
 void App::draw_frame(){render();}
-void App::tick(){animation++;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
+void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 void App::card_description(Card c,int t,char*out,size_t cap)const{
     if(!cap)return;out[0]=0;if(c.kind>=CardKinds)return;TextBuffer b{out,cap,0};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
     while(*p){
@@ -152,7 +152,7 @@ void App::card_description(Card c,int t,char*out,size_t cap)const{
 static int choice_count(const App&a){
     switch(a.game.phase){case Phase::Map:return 3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.event_page>=2?1:2;
     case Phase::Reward:return 4;case Phase::Camp:return 2;case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
-    case Phase::Treasure:return 1;case Phase::ReturnChoice:return a.game.discard.count;default:return a.game.hand.count;}
+    case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;default:return a.game.hand.count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
@@ -160,7 +160,7 @@ void App::input(Key k){
     if(status_input(k))return;
     if(reference_input(k))return;
     if(detail_item>=0){
-        if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_item=-1;
+        if(k==Key::Back||k==Key::Confirm||k==Key::Detail){detail_item=-1;detail_owned=-1;}
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
         else if(k==Key::Down)++detail_scroll;
         return;
@@ -177,7 +177,12 @@ void App::input(Key k){
     if(deck_input(k))return;
     if(k==Key::Detail&&!title&&!paused&&!help&&!panel){
         if(game.phase==Phase::Reward&&reward_cards&&cursor<3){open_card_detail({game.reward[cursor],0});return;}
+        if(game.phase==Phase::Treasure&&game.treasure_state&&game.treasure_relic){
+            const auto*d=relic_definition(game.treasure_relic);
+            if(d){detail_item=(int)(d-relic_definitions);detail_owned=-1;detail_scroll=0;}return;
+        }
         if(game.phase==Phase::Shop){
+            detail_owned=-1;detail_scroll=0;
             if(cursor<ShopCardCount)open_card_detail({game.shop_cards[cursor],0});
             else if(cursor<ShopPotionStart){for(int i=0;i<RelicKinds;i++)if(relic_definitions[i].id==game.shop_relics[cursor-ShopRelicStart])detail_item=i;}
             else if(cursor<ShopRemove)detail_item=RelicKinds+game.shop_potions[cursor-ShopPotionStart]-1;
@@ -223,7 +228,14 @@ void App::input(Key k){
     if(k==Key::Relics){panel=panel==5?0:5;scroll=0;return;}
     if(k==Key::Potions){panel=panel==4?0:4;scroll=0;return;}
     if(panel){
-        if(panel==5){if(k==Key::Up||k==Key::Left)scroll=mx(0,scroll-1);if(k==Key::Down||k==Key::Right)scroll=mn(mx(0,game.relic_count-1),scroll+1);return;}
+        if(panel==5){
+            if(k==Key::Left)scroll=mx(0,scroll-1);
+            if(k==Key::Right)scroll=mn(mx(0,game.relic_count-1),scroll+1);
+            if(k==Key::Up)scroll=mx(0,scroll-6);
+            if(k==Key::Down)scroll=mn(mx(0,game.relic_count-1),scroll+6);
+            if(k==Key::Confirm||k==Key::Detail)open_owned_relic(scroll);
+            return;
+        }
         if(panel==4){
             if(k==Key::Left||k==Key::Right)scroll=1-scroll;if(k==Key::Up||k==Key::Down)next_target(*this);
             if(k==Key::Confirm){if(use_potion(game,scroll,target)){panel=0;busy=8;next_target(*this);if(game.phase==Phase::Reward)cursor=0;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
@@ -275,7 +287,11 @@ void App::input(Key k){
         case Phase::Remove:acted=remove_card(game,cursor);if(acted)message("已移除所选卡牌");break;
         case Phase::Event:acted=event_choice(game,cursor);scroll=0;break;
         case Phase::Transform:acted=transform_card(game,cursor);if(!acted)message("请选择另一张尚未变化的牌");break;
-        case Phase::Treasure:acted=take_treasure(game);if(acted)message("宝藏已加入本局");break;
+        case Phase::Treasure:
+            if(!game.treasure_state)acted=open_treasure(game);
+            else if(cursor==0&&game.treasure_state==1){acted=take_treasure(game);if(acted)cursor=1;}
+            else if(cursor==1)acted=leave_treasure(game);
+            break;
         case Phase::Reward:acted=choose_reward(game,cursor==3?-1:cursor);if(acted){reward_cards=false;cursor=1;}break;
         case Phase::Camp:acted=camp(game,cursor==1);if(!acted)message("没有可以升级的牌");break;
         case Phase::Upgrade:acted=upgrade_card(game,cursor);if(!acted)message("这张牌已经升级");break;
@@ -333,6 +349,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
     case LogKind::Accuracy:t.text("精准 ");t.number(l.a);break;
     default:t.text("容量上限：本局已安全停止");break;}
 }
+#include "relic_ui.inc"
 static void hud(Canvas&c){
     auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
     c.picture(A_Heart,5,4,13,13);char b[32]={};TextBuffer t{b,sizeof b,0};t.number(s.hp);t.ch('/');t.number(s.max_hp);c.text(b,20,3,10,White);
@@ -344,17 +361,12 @@ static void hud(Canvas&c){
         else{c.box(x+4,5,10,12,rgb(92,90,83));c.rect(x+7,2,4,3,Muted);}
         c.hit(x,0,22,22,HitKind::Command,(int)Key::Potions);
     }
-    if(s.relic_count){c.picture(c.a.content.relic_image(s.relic_order[0]),208,5,12,12);c.hit(208,0,13,22,HitKind::Command,(int)Key::Relics);}
+    if(s.relic_count){c.picture(c.a.content.relic_image(s.relic_order[0]),208,5,12,12);c.hit(208,0,13,22,HitKind::OwnedRelic,0);}
     c.ui(U_TopMap,224,2,18,18);c.hit(216,0,33,22,HitKind::Command,(int)Key::Map);
     c.ui(U_TopDeck,257,2,18,18);c.hit(249,0,34,22,HitKind::Command,(int)Key::Inspect);
     c.ui(U_TopSettings,291,2,18,18);c.hit(283,0,37,22,HitKind::Command,(int)Key::Back);
-    // Original top-bar structure: relics form their own strip below the main bar.
-    if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp)){for(int i=0;i<s.relic_count&&i<15;i++){
-        c.picture(c.a.content.relic_image(s.relic_order[i]),3+i*19,24,17,17);
-        c.hit(2+i*19,22,19,20,HitKind::Command,(int)Key::Relics);
-    }
-    if(s.relic_count>15){char more[16]={};TextBuffer b{more,sizeof more,0};b.ch('+');b.number(s.relic_count-15);c.text(more,290,24,10,Gold);c.hit(286,22,34,20,HitKind::Command,(int)Key::Relics);}
-    }
+    if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp))owned_relic_strip(c);
+
 }
 
 static int room_asset(Room r){switch(r){case Room::Combat:return A_MapCombat;case Room::Event:return A_MapEvent;case Room::Shop:return A_MapShop;case Room::Camp:return A_MapCamp;case Room::Treasure:return A_MapTreasure;default:return A_MapFinal;}}
@@ -611,15 +623,7 @@ static void panels(Canvas&c){
         c.centered("本局记录（最近 24 条）",5,27,310,12,Gold);a.scroll=mn(a.scroll,mx(0,s.log_count-10));int first=mx(0,s.log_count-10-a.scroll);
         for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}c.text("↑↓ 滚动 · Esc 返回",15,216,10,Muted);
     }else if(a.panel==5){
-        c.centered("遗物",0,30,320,16,Gold);int first=mx(0,a.scroll-5);
-        for(int i=first;i<mn(s.relic_count,first+6);i++){
-            const auto&d=relic_definitions[s.relic_order[i]];int y=57+(i-first)*20;
-            c.hit(10,y,300,20,HitKind::Relic,i);if(i==a.scroll)c.rect(10,y,300,20,rgb(66,53,35));c.picture(a.content.relic_image(s.relic_order[i]),15,y+1,18,18);
-            c.text(d.name,41,y,12,i==a.scroll?Gold:White,225);
-            if(d.id==HappyFlower||d.id==PenNib){c.num(relic_counter(s,d.id),276,y,12,Gold);}
-        }
-        if(s.relic_count){const auto&d=relic_definitions[s.relic_order[a.scroll]];c.paragraph(d.description,15,184,290,2);}
-        c.centered("↑↓ 查看 · 计数随存档保留 · R / Esc 返回",0,219,320,10,Muted);
+        owned_relic_panel(c);
     }else if(a.panel==4){
         c.centered("药水",0,30,320,16,Gold);
         for(int i=0;i<2;i++){
@@ -638,7 +642,7 @@ static void panels(Canvas&c){
         c.hit(174,204,117,28,HitKind::Command,(int)Key::Confirm,usable);
     }
     c.close_button();
-    if(a.panel==2||a.panel==5){c.text("↑",299,53,12,Gold);c.hit(294,50,23,24,HitKind::Scroll,-1);c.text("↓",299,157,12,Gold);c.hit(294,153,23,24,HitKind::Scroll,1);}
+    if(a.panel==2){c.text("↑",299,53,12,Gold);c.hit(294,50,23,24,HitKind::Scroll,-1);c.text("↓",299,157,12,Gold);c.hit(294,153,23,24,HitKind::Scroll,1);}
 }
 static void detail_screen(Canvas&c){
     auto&a=c.a;Card card{(uint8_t)(a.detail_card&255),(uint8_t)(a.detail_card>>8)};
@@ -674,7 +678,7 @@ static void pointer_overlay(Canvas&c){
     c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
 }
 void App::render(){
-    Canvas c{*this};hit_count=0;c.rect(0,0,320,240,Ink);
+    Canvas c{*this};sync_relic_feedback();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);pointer_overlay(c);return;}
@@ -689,7 +693,7 @@ void App::render(){
         case Phase::Upgrade:case Phase::Remove:case Phase::Transform:c.picture(A_Title,0,0);deck_select(c);break;
         case Phase::Reward:reward_screen(c);break;
         case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:combat_screen(c);break;
-        case Phase::Treasure:c.picture(A_ChestBackground,0,20);c.picture(A_Chest,128,91);c.centered("发现宝藏",0,37,320,20,Gold);c.button("打开宝箱",35,198,250,true,28);c.hit(35,198,250,28,HitKind::Choice,0);break;
+        case Phase::Treasure:treasure_screen(c);break;
         default:c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
         if(panel)panels(c);hud(c);
@@ -712,7 +716,8 @@ void App::render(){
     if(detail_item>=0)item_detail_screen(c);
     if(status_actor>=0)status_screen(c);
     if(map_preview.open)reference_map_screen(c);
-    if(notice_ticks&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    owned_relic_tooltip(c);
     pointer_overlay(c);
 }
 } // namespace spire

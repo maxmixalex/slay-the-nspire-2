@@ -1,62 +1,68 @@
-# Development and validation - 0.11
+# Development and validation - 0.12
 
-## Baseline and implementation
+## Baseline and CI
 
-The remote 0.10 commit `0a78159f7d3eb6c3d7ae1100b44bd92db5e15993` was read through the GitHub connector. Its ten existing regression targets were rerun with ASan/UBSan. The unfinished 0.11 source objects were recovered and completed locally before publication. Orphaned blobs/trees were not treated as published changes. The 0.10 validation record is retained in `development-0.10.md`.
+GitHub main was read at `be9319c6af565d06d6fb7cbba5bc5e87a8566b59`. The uploaded 0.11 source archive reconstructed its exact Git tree. The first published change moved the sole CI workflow to `.github/disabled-workflows/ci.yml`: commit `1667fb2cdeb8e7260f0327571ab534e8450c72a9`. A connector read confirmed that no active workflow directory remained on main. No remote test run was requested for this release. Local test/build verification remains enabled. The previous validation record is retained as `development-0.11.md`.
 
-This iteration adds five Ironclad and five Silent models, bringing the total to 68 (29 + 29 + nine colorless + one generated Shiv). Relics/potions remain 25/16. Headbutt's discard-to-draw choice uses actual instances, pagination and suspended save state. Innate, recurring strength/Shivs, delayed draw/block, conditional block, Strike-tag counting and temporary retaliation join the supported mechanics. Status inspection has original icons, real amounts, rich descriptions, actor tabs and clickable pagination. Audio, multiplayer and Timeline remain excluded.
+## Implemented scope and reference
 
-## Reference inspection
+Five shared relics bring the count to 30: Kunai, Shuriken, Ornamental Fan, Letter Opener and Nunchaku. The existing 68 card models, 16 potions and two partial characters remain. Counters, completed-card hooks, result-pile ordering and save v9 are implemented. Owned relic grid/details/hover/trigger feedback and staged treasure reveal/claim/proceed use original-derived assets. No audio, multiplayer or Timeline work is included.
 
-The provided assembly and PCK were extracted without executing the game and checked against the existing SHA-256 lock. Read-only CLI metadata/CIL inspection covered the ten card families and related power callbacks. Generic calls in the original Ironclad/Silent GenerateAllCards methods confirm five additions in each pool (90 and 91 original literal entries). `config/tactics-audit-0.11.json` records actual method tokens. Neither extracted definitions nor this project's tests constitute a complete original-game combat differential oracle.
+The assembly and PCK were extracted read-only from the supplied multipart installation archive and verified against the existing lock. A private PE/CLI table and CIL reader inspected the five relic classes, generated async bodies and CardModel.OnPlayWrapper. MethodSpec generic arguments confirmed all five entries in SharedRelicPool.GenerateAllRelics. The original executable was not run. Public method tokens are in `config/relic-audit-0.12.json`; private disassembly and tooling are excluded from public source.
 
-Specific findings: Demon Form grants 3/4 strength; Infinite Blades creates one Shiv before hand draw and gains Innate when upgraded; Perfected Strike counts Strike-tagged combat AllCards rather than localized name substrings; Dodge and Roll carries forward the actual first block result.
+The actual treasure-room and treasure-relic-holder scenes were read from the PCK. Their banner, centered relic and proceed structure informed the adapted screen. Original complete selection odds, chest rarity rules, prices, encounter pools and a full original seeded run remain outside this iteration's implemented evidence.
 
-## Executed regression results
+## Final local regression results
 
-All twelve CTest targets passed under AddressSanitizer and UndefinedBehaviorSanitizer. The following counts are from the final verbose run; generated scenarios use controlled decks/HP and are not ordinary complete runs.
+Fourteen CTest targets passed with AddressSanitizer and UndefinedBehaviorSanitizer. Counts below come from the final verbose run. Generated sequences use controlled decks/items/HP, not complete ordinary runs.
 
 | Target | Checks | Generated transitions |
 |---|---:|---:|
 | core_regression | 103307 | 9885 |
 | input_regression | 60 | - |
-| content_regression | 186 | - |
+| content_regression | 189 | - |
 | expansion_regression | 867 | - |
-| ui_flow_regression | 672 | - |
+| ui_flow_regression | 692 | - |
 | compression_regression | 320058 | - |
 | silent_regression | 67028 | 8415 |
 | silent_ui_regression | 900 | - |
-| shared_regression | 28023 | 4330 |
-| shared_ui_regression | 74 | - |
+| shared_regression | 26763 | 4135 |
+| shared_ui_regression | 84 | - |
 | tactics_regression | 31369 | 5765 |
 | tactics_ui_regression | 305 | - |
+| relic_combo_regression | 15443 | 2873 |
+| relic_ui_regression | 221 | - |
 
-With the actual converted pack, content_regression passed 532 checks and tactics_ui_regression passed 348. Coverage includes invalid/stale choices, no-hand discard selection, multiple pages, card-instance identity, duplicate selection rejection, old-save migration, no-draw/hand-cap interactions and modal input isolation. The new v7 fixture was generated by the unmodified 0.10 runtime, not by relabeling a v8 save.
+With the real pack: content 535, shared UI 106, tactics UI 353, Silent UI 902 and relic UI 223 checks passed. Separate screenshot runs include per-pixel file-write assertions; those inflated counts are not advertised as additional gameplay coverage.
 
-## Final ARM execution in Firebird
+Tests cover per-card versus per-hit counts, zero-hit X-cost plays, suspended choices, trigger source discrimination, once-only thresholds, persistent versus per-turn counters, No Block/Dexterity/Strength/Vulnerable interactions, lethal Letter Opener cleanup, fatal self-damage, bounded stats and Old Coin purchase ordering. Treasure tests cover reveal/claim/skip, reload stability, duplicates, stale pointer releases and exhausted prototype pools. Migration includes a new v8 fixture generated by the unchanged 0.11 runtime with 25 relics and a pending Headbutt choice. Content tests distinguish a valid old pack from a bootable current profile.
 
-Built Firebird from the supplied source and matching gif-h with a private keyboard/touchpad/USB/framebuffer stepping frontend. Used private working copies of the supplied flash and the supplied CX II injected boot image. The latter has SHA-256 `74227e458bb5c17f9028ac3d54e1d1726f3148601fb2fb24eacc2c294d5c9838`. A different raw dump failed to reach a working OS; those failed boot attempts are not target evidence. The working boot image was already present in the user's archive, not patched during this iteration. Uploaded originals were not modified.
+## Final ARM in Firebird
 
-The existing Ndless r2022 installer reported success. The final 117183-byte launcher and 5674998-byte pack were transferred through emulated USB. The launcher was opened through the OS document browser. Ordinary startup, C compendium access, touchpad paging to the new cards and normal return to the OS all worked.
+Built the supplied Firebird source and matching gif-h submodule with a private stepping frontend exposing keyboard, touchpad, USB transfer and LCD capture. Used private working copies of the user's CX II injected boot image and CXII flash. Uploaded originals were not modified. The supplied r2022 installer reported successful installation in the emulated OS 6.2/6.4 environment. The final 121354-byte launcher and 5689194-byte pack were transferred through emulated USB and opened through the OS document browser.
 
-A separate explicitly controlled v8 fixture supplied 25 card instances, 80 HP, nine starting energy and a 46-HP enemy. Through normal calculator input, Demon Form was played, then Headbutt; the pending choice was saved. Touchpad paging selected a card from discard page two, confirmed it, then loaded back to the pending state. Repeating the selection and ending the turn produced three Strength. V opened the real status view, whose amounts/descriptions matched that state. This fixture is not an original-game save or an unassisted run.
+The first controlled project-save fixture had six card instances, six owned relics, 80 HP, nine energy and a 46-HP enemy. Normal input played Twin Strike, Slice and Headbutt. Twin Strike triggered Nunchaku from a preloaded counter of nine. The pending Headbutt save retained counters 2/3 for Kunai/Shuriken/Fan and 1/10 for Nunchaku. A physical touchpad click selected the first discard card; Space confirmed it. Kunai/Shuriken/Fan triggered only then, producing Dexterity 1, Strength 1 and Block 4. Nunchaku advanced to 2/10. Clicking the individual HUD icon opened Shuriken's actual detail; the save notice no longer covered its return button.
 
-After normal program exit, OS-side emulated USB retrieved both current and backup saves. The **1912-byte pending-choice save** and **1964-byte turn-two save** each matched the corresponding native-core sequence byte for byte. Turn two had HP 68, energy 3, Strength 3, five hand cards and 19 draw cards. No ARM gameplay memory injection was used to produce these results. Final title, compendium, discard-choice and status captures come from the emulated LCD.
+After normal exit, OS-side USB retrieved the **1624-byte pending save** and **1652-byte resolved save**. Both matched the corresponding native-core sequence byte for byte. The final launcher was rerun after the save-notice presentation fix, and these final accepted comparisons use that exact launcher.
 
-The USB upload function needs a full remote filename, not only a folder. Dismiss the OS transfer notification before navigating to the launcher. Save downloads used as evidence completed after normal game exit, not while a foreground transfer was blocked.
+The second controlled fixture entered a closed treasure room owning the old 25 relics. Opening revealed Kunai. The revealed state was saved, inspected and claimed by touchpad; loading restored the same unclaimed Kunai. Claiming again and saving produced a claimed state. Proceeding, loading the saved claimed room, opening the R inventory and navigating its second page all worked. After normal exit, **two 1672-byte USB-retrieved saves**, opened and claimed, matched native expected bytes exactly. No ARM gameplay RAM injection was used. These fixtures are synthetic project saves, not original saves or unassisted runs.
 
-## WASM and asset checks
+The private driver initially retained a stale USB connection after the installer/downloads. Queued operations stalled until the emulator's USB connection was reset. One attempted retest consequently loaded the previous fixture state; its captures were rejected and the sequence was rerun after checking the upload callback and visible HP/hand. Final accepted transfers completed in the OS and returned success. This is a test-driver/USB procedure boundary, not physical-device certification.
 
-Instantiated the actual WASM extracted from the delivered HTML in Node with explicit save/load callbacks. Pending Headbutt, selection, load, turn advance and status-modal isolation produced the same two native save byte sequences. This tests actual embedded WASM exports with a storage adapter, not browser DOM input or real persistent localStorage sessions.
+## Actual embedded WASM
 
-Incremental conversion retained all **1302 old images identically after decoding**, all **3740 old glyph records/payloads**, and all **17 clip directory records**. Independent comparison confirmed these properties. Re-converting the resulting NSP2/8 pack produced identical bytes. No old animation frames were removed, resized or retimed. Full skeleton sampling was not rerun.
+Extracted the actual WASM and content from the generated offline HTML and instantiated them in Node with explicit storage callbacks. The same pending/resolved card and opened/claimed treasure sequences matched all four native saves. Relic-detail modal isolation and restore of unclaimed treasure were also checked. The HTML writes a separate v9 key with v8-v3 fallback. This validates embedded WASM and an explicit storage adapter, not ordinary browser DOM input or real cross-session localStorage persistence.
 
-The pack contains 1319 images, 3812 glyphs, 228 strings, 68 cards, 17 clips and 90 auxiliary image entries. Its size is **5674998 bytes**, leaving **616458 bytes** below the six-MiB bound. Old unique encoded image payloads saved 616883 bytes; adding new content still leaves the whole pack 532831 bytes smaller than 0.10. SHA-256: `80ba8ba6014ea41b68e9471526746bcf6bd7c82da459aca1b4931bae3be7a5d5`.
+## Asset and build evidence
 
-The final ARM build is **117183 bytes**, with **8060912 bytes static allocation** and 1511 absolute relocations. WASM is **403352 bytes**. Static allocation/file size does not establish peak RAM or sustained handheld frame rate.
+Independent parsing compared **all 1319 old image payloads, 3812 old glyph records/payloads, 17 clip records, 228 strings, 68 card records and 90 prior auxiliary entries**. They remain identical. Re-converting the new pack produced exactly the same bytes. No animation frame was removed, resized or retimed. Only incremental conversion was executed; the complete skeleton bake was not rerun.
 
-## Remaining boundaries
+NSP2/9 contains **1324 images, 3836 glyphs, 228 strings, 68 cards, 17 clips and 95 auxiliary entries**. Size: **5689194 bytes**, with **602262 bytes** under the six-MiB resident limit. SHA-256: `1dbc25f55047b8708ddc32eee0013a385e76b2b1723b9c345c527e53c85c8ca5`.
 
-The expedition is still custom and the reference map is still a separate preview. Complete original encounters, event/room pools, remaining three characters and all card/relic/potion interactions are unfinished. Physical hardware and sustained performance are unverified. These gaps remain distinct from audio/multiplayer/Timeline, which are outside the requested product scope.
+Final ARM launcher: **121354 bytes**; Zehn static allocation **8068044 bytes**, 1500 absolute relocations. Actual WASM: **413363 bytes**. File sizes/static allocation are not measured runtime peak RAM or sustained handheld frame rate. Source-only build validation and converter syntax checks require no original assets; incremental conversion requires the pinned user installation and a private previous pack.
 
-Source delivery excludes original game data, fonts, calculator images, emulator binaries, private disassembly and test drivers. GitHub Actions adds source-only sanitizer tests and ARM compilation; its remote conclusion must be read separately from these locally executed results.
+## Remaining limits
+
+Physical hardware, sustained frame rate and peak RAM remain unverified. The custom expedition, bounded Nibbit and three adapted events remain; original encounter/act/event-pool integration and the other three characters are unfinished. Internal invariants and cross-backend byte matches are not a complete original combat differential oracle. Audio/multiplayer/Timeline are excluded rather than deferred.
+
+Source delivery excludes original assets, assemblies/PCKs, fonts, calculator images, emulator binaries, private test drivers and disassembly. Remote publication must be confirmed by a main-ref and matching tree read, not merely blob creation. Remote CI intentionally remains disabled.

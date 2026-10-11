@@ -12,7 +12,7 @@ static std::vector<uint8_t> pack(){
     constexpr unsigned images=A_Count+160,strings=3*CardKinds+24,clips=AnimationKinds,cards=CardKinds;
     constexpr unsigned dir=40+images*16+strings*8+clips*16+cards*16+U_Count*4;
     std::vector<uint8_t>b(dir+images*82*60*2+strings*2);
-    put(b,0,0x3250534e);put(b,4,8);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
+    put(b,0,0x3250534e);put(b,4,9);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
     put(b,16,images);put(b,24,strings);put(b,28,clips);put(b,32,cards);
     for(unsigned i=0;i<images;i++){
         put(b,40+i*16,dir+i*9840);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,9840);
@@ -39,6 +39,10 @@ int main(int argc,char**argv){
     b=original;b.back()^=1;CHECK(!c.open(b.data(),b.size()));
     CHECK(!c.open(nullptr,0));CHECK(c.card_count()==0);
     for(unsigned n=0;n<40;n++)CHECK(!c.open(original.data(),n));
+    // Card count alone cannot identify the new relic-art directory. A valid
+    // older profile stays readable by Content but must not boot this App.
+    b=original;put(b,4,8);hash(b);CHECK(c.open(b.data(),b.size()));
+    CHECK(!c.current_profile());static App legacy;CHECK(!legacy.init(b.data(),b.size(),{}));
     if(argc>1){
         FILE*f=std::fopen(argv[1],"rb");CHECK(f);std::vector<uint8_t> data(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);
         CHECK(c.open(data.data(),n));

@@ -8,7 +8,7 @@ static unsigned checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
 static State combat(){State s{};new_run(s,17,true);s.practice=0;s.encounter=1;enter_combat(s);s.relics=0;s.relic_count=0;s.relic_flash=0;for(auto&e:s.enemies)e={46,46,0,0,0,0};CHECK(validate(s));return s;}
 static void hand(State&s,std::initializer_list<Card> cards){s.card_count=0;s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;for(auto c:cards){auto id=s.card_count++;s.cards[id]=c;s.zones[id]=Zone::Hand;s.hand.ids[s.hand.count++]=id;}for(int i=0;i<18;i++){auto id=s.card_count++;s.cards[id]={Defend,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=id;}}
-static void rt(const State&s){SaveData a{},b{};State t{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==8);CHECK(load(t,a.bytes,a.size));CHECK(save(t,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
+static void rt(const State&s){SaveData a{},b{};State t{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==9);CHECK(load(t,a.bytes,a.size));CHECK(save(t,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static bool drink(State&s,Potion p,int target=0){s.potions[0]=p;return use_potion(s,0,target);}
 static void potions(){
     for(int kind=1;kind<=PotionKinds;kind++){
@@ -73,7 +73,9 @@ static void rooms(){
     CHECK(s.shop_relics[0]!=s.shop_relics[1]&&s.shop_relics[1]!=s.shop_relics[2]);rt(s);
     for(int i=0;i<ShopRemove;i++){
         if(i>=ShopPotionStart){discard_potion(s,0);discard_potion(s,1);}
-        int gold=s.gold;CHECK(buy(s,i));CHECK(s.gold==gold-s.shop_prices[i]);CHECK(!buy(s,i));rt(s);
+        int gold=s.gold;CHECK(buy(s,i));int expected=gold-s.shop_prices[i];
+        if(i>=ShopRelicStart&&i<ShopPotionStart&&s.shop_relics[i-ShopRelicStart]==OldCoin){expected+=300;if(expected>9999)expected=9999;}
+        CHECK(s.gold==expected);CHECK(!buy(s,i));rt(s);
     }
     CHECK(buy(s,ShopRemove));CHECK(remove_card(s,0));CHECK(!buy(s,ShopRemove));rt(s);
     s=combat();hand(s,{{Bludgeon,1}});s.enemies[0].hp=1;s.enemies[1].hp=0;int gold=s.gold;CHECK(play(s,0,0));CHECK(s.phase==Phase::Reward&&s.gold==gold);
