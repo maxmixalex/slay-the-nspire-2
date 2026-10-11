@@ -23,8 +23,10 @@ int main(){
     while(app.game.hand.count<10){auto& s=app.game;int id=s.draw.ids[--s.draw.count];s.hand.ids[s.hand.count++]=(uint16_t)id;s.zones[id]=Zone::Hand;}
     CHECK(save(app.game,before));app.render();
     for(int k=0;k<10;k++){
-        int x=60+k*23+1;app.pointer_move(x,199);app.render();
-        const auto* hit=app.hit_at(x,199);CHECK(hit&&hit->kind==HitKind::Hand&&hit->value==app.game.hand.ids[k]);
+        int x=-1;
+        for(int i=0;i<app.hit_count;i++){auto h=app.hits[i];if(h.kind==HitKind::Hand&&h.value==app.game.hand.ids[k]&&h.y+h.h==240)x=h.x+h.w/2;}
+        CHECK(x>=0);app.pointer_move(x,224);app.render();
+        const auto* hit=app.hit_at(x,224);CHECK(hit&&hit->kind==HitKind::Hand&&hit->value==app.game.hand.ids[k]);
         CHECK(app.cursor==k);unchanged(before);
     }
     // Drag away from a button cannot trigger it. Keyboard modal cancels capture.
