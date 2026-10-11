@@ -1,68 +1,21 @@
-# Development and validation - 0.12
+# 0.12 source recovery: executed evidence
 
-## Baseline and CI
+The published baseline was `1667fb2cdeb8e7260f0327571ab534e8450c72a9` (0.11 plus disabled CI). The previously unreferenced recovery commit was `22b9daab5ca998c6dbf43200b81c7500fadac0c3`. A checkpoint branch and draft PR were created before further changes. The recovered C++ source and include subtrees were reconstructed from the retained 0.11 archive and connector-read changes; their Git tree hashes exactly match `d5d5e619e201ea911172bc7a59b7298ffd6e85d5` and `ef475b968d72f00826ff648804f72959330f47e3`.
 
-GitHub main was read at `be9319c6af565d06d6fb7cbba5bc5e87a8566b59`. The uploaded 0.11 source archive reconstructed its exact Git tree. The first published change moved the sole CI workflow to `.github/disabled-workflows/ci.yml`: commit `1667fb2cdeb8e7260f0327571ab534e8450c72a9`. A connector read confirmed that no active workflow directory remained on main. No remote test run was requested for this release. Local test/build verification remains enabled. The previous validation record is retained as `development-0.11.md`.
+Completed missing publication pieces: `tools/build_relics.py`, its final-stage call in `tools/build_content.py`, 0.12 Zehn metadata, and the current-save-version assertion in `tests/tactics_regression.cpp`. Restored historical regression changes without deleting failing tests. Source excludes all private game data, calculator images and fonts.
 
-## Implemented scope and reference
+## Checks executed during this recovery
 
-Five shared relics bring the count to 30: Kunai, Shuriken, Ornamental Fan, Letter Opener and Nunchaku. The existing 68 card models, 16 potions and two partial characters remain. Counters, completed-card hooks, result-pile ordering and save v9 are implemented. Owned relic grid/details/hover/trigger feedback and staged treasure reveal/claim/proceed use original-derived assets. No audio, multiplayer or Timeline work is included.
+All fourteen CTest targets passed under AddressSanitizer and UndefinedBehaviorSanitizer. The final verbose run includes 15,443 relic-combination checks / 2,873 controlled transitions and 221 asset-free relic UI checks. Invalid actions, pending choices, persisted counters, treasure reroll/duplicate prevention and Old Coin at the gold cap are covered.
 
-The assembly and PCK were extracted read-only from the supplied multipart installation archive and verified against the existing lock. A private PE/CLI table and CIL reader inspected the five relic classes, generated async bodies and CardModel.OnPlayWrapper. MethodSpec generic arguments confirmed all five entries in SharedRelicPool.GenerateAllRelics. The original executable was not run. Public method tokens are in `config/relic-audit-0.12.json`; private disassembly and tooling are excluded from public source.
+The ARM launcher rebuilt to 121,354 bytes with 8,068,044 bytes reported static loader allocation and 1,500 absolute relocations. WASM rebuilt to 413,363 bytes. Static allocation is not a measured peak-RAM result.
 
-The actual treasure-room and treasure-relic-holder scenes were read from the PCK. Their banner, centered relic and proceed structure informed the adapted screen. Original complete selection odds, chest rarity rules, prices, encounter pools and a full original seeded run remain outside this iteration's implemented evidence.
+The provided installation was re-extracted locally and passed the existing assembly/PCK SHA-256 lock. Incremental conversion from the retained 0.11 private pack produced NSP2/9: 5,687,197 bytes, 1,324 images, 3,836 glyphs, 68 cards and 17 clips. Running the same converter on that output produced identical bytes. No animation resampling or frame deletion was performed.
 
-## Final local regression results
+Asset-aware tests passed: content 535 checks; shared UI 106; tactics UI 353; relic UI 223. The generated browser host embeds the rebuilt WASM and private pack. Browser DOM/persistent-storage and Firebird tests were not rerun at this checkpoint.
 
-Fourteen CTest targets passed with AddressSanitizer and UndefinedBehaviorSanitizer. Counts below come from the final verbose run. Generated sequences use controlled decks/items/HP, not complete ordinary runs.
+## Evidence boundary
 
-| Target | Checks | Generated transitions |
-|---|---:|---:|
-| core_regression | 103307 | 9885 |
-| input_regression | 60 | - |
-| content_regression | 189 | - |
-| expansion_regression | 867 | - |
-| ui_flow_regression | 692 | - |
-| compression_regression | 320058 | - |
-| silent_regression | 67028 | 8415 |
-| silent_ui_regression | 900 | - |
-| shared_regression | 26763 | 4135 |
-| shared_ui_regression | 84 | - |
-| tactics_regression | 31369 | 5765 |
-| tactics_ui_regression | 305 | - |
-| relic_combo_regression | 15443 | 2873 |
-| relic_ui_regression | 221 | - |
+Earlier staged prose contained a completed 0.12 Firebird report. Its private captures/drivers and 0.12 output package were not present in this workspace, so those claims are not presented as newly verified results. The retained 0.11 reports remain historical evidence only. No full original-game combat differential run, full fresh skeleton bake, sustained handheld frame-rate test or peak-RAM measurement was executed in this recovery.
 
-With the real pack: content 535, shared UI 106, tactics UI 353, Silent UI 902 and relic UI 223 checks passed. Separate screenshot runs include per-pixel file-write assertions; those inflated counts are not advertised as additional gameplay coverage.
-
-Tests cover per-card versus per-hit counts, zero-hit X-cost plays, suspended choices, trigger source discrimination, once-only thresholds, persistent versus per-turn counters, No Block/Dexterity/Strength/Vulnerable interactions, lethal Letter Opener cleanup, fatal self-damage, bounded stats and Old Coin purchase ordering. Treasure tests cover reveal/claim/skip, reload stability, duplicates, stale pointer releases and exhausted prototype pools. Migration includes a new v8 fixture generated by the unchanged 0.11 runtime with 25 relics and a pending Headbutt choice. Content tests distinguish a valid old pack from a bootable current profile.
-
-## Final ARM in Firebird
-
-Built the supplied Firebird source and matching gif-h submodule with a private stepping frontend exposing keyboard, touchpad, USB transfer and LCD capture. Used private working copies of the user's CX II injected boot image and CXII flash. Uploaded originals were not modified. The supplied r2022 installer reported successful installation in the emulated OS 6.2/6.4 environment. The final 121354-byte launcher and 5689194-byte pack were transferred through emulated USB and opened through the OS document browser.
-
-The first controlled project-save fixture had six card instances, six owned relics, 80 HP, nine energy and a 46-HP enemy. Normal input played Twin Strike, Slice and Headbutt. Twin Strike triggered Nunchaku from a preloaded counter of nine. The pending Headbutt save retained counters 2/3 for Kunai/Shuriken/Fan and 1/10 for Nunchaku. A physical touchpad click selected the first discard card; Space confirmed it. Kunai/Shuriken/Fan triggered only then, producing Dexterity 1, Strength 1 and Block 4. Nunchaku advanced to 2/10. Clicking the individual HUD icon opened Shuriken's actual detail; the save notice no longer covered its return button.
-
-After normal exit, OS-side USB retrieved the **1624-byte pending save** and **1652-byte resolved save**. Both matched the corresponding native-core sequence byte for byte. The final launcher was rerun after the save-notice presentation fix, and these final accepted comparisons use that exact launcher.
-
-The second controlled fixture entered a closed treasure room owning the old 25 relics. Opening revealed Kunai. The revealed state was saved, inspected and claimed by touchpad; loading restored the same unclaimed Kunai. Claiming again and saving produced a claimed state. Proceeding, loading the saved claimed room, opening the R inventory and navigating its second page all worked. After normal exit, **two 1672-byte USB-retrieved saves**, opened and claimed, matched native expected bytes exactly. No ARM gameplay RAM injection was used. These fixtures are synthetic project saves, not original saves or unassisted runs.
-
-The private driver initially retained a stale USB connection after the installer/downloads. Queued operations stalled until the emulator's USB connection was reset. One attempted retest consequently loaded the previous fixture state; its captures were rejected and the sequence was rerun after checking the upload callback and visible HP/hand. Final accepted transfers completed in the OS and returned success. This is a test-driver/USB procedure boundary, not physical-device certification.
-
-## Actual embedded WASM
-
-Extracted the actual WASM and content from the generated offline HTML and instantiated them in Node with explicit storage callbacks. The same pending/resolved card and opened/claimed treasure sequences matched all four native saves. Relic-detail modal isolation and restore of unclaimed treasure were also checked. The HTML writes a separate v9 key with v8-v3 fallback. This validates embedded WASM and an explicit storage adapter, not ordinary browser DOM input or real cross-session localStorage persistence.
-
-## Asset and build evidence
-
-Independent parsing compared **all 1319 old image payloads, 3812 old glyph records/payloads, 17 clip records, 228 strings, 68 card records and 90 prior auxiliary entries**. They remain identical. Re-converting the new pack produced exactly the same bytes. No animation frame was removed, resized or retimed. Only incremental conversion was executed; the complete skeleton bake was not rerun.
-
-NSP2/9 contains **1324 images, 3836 glyphs, 228 strings, 68 cards, 17 clips and 95 auxiliary entries**. Size: **5689194 bytes**, with **602262 bytes** under the six-MiB resident limit. SHA-256: `1dbc25f55047b8708ddc32eee0013a385e76b2b1723b9c345c527e53c85c8ca5`.
-
-Final ARM launcher: **121354 bytes**; Zehn static allocation **8068044 bytes**, 1500 absolute relocations. Actual WASM: **413363 bytes**. File sizes/static allocation are not measured runtime peak RAM or sustained handheld frame rate. Source-only build validation and converter syntax checks require no original assets; incremental conversion requires the pinned user installation and a private previous pack.
-
-## Remaining limits
-
-Physical hardware, sustained frame rate and peak RAM remain unverified. The custom expedition, bounded Nibbit and three adapted events remain; original encounter/act/event-pool integration and the other three characters are unfinished. Internal invariants and cross-backend byte matches are not a complete original combat differential oracle. Audio/multiplayer/Timeline are excluded rather than deferred.
-
-Source delivery excludes original assets, assemblies/PCKs, fonts, calculator images, emulator binaries, private test drivers and disassembly. Remote publication must be confirmed by a main-ref and matching tree read, not merely blob creation. Remote CI intentionally remains disabled.
+Remote CI stays disabled. The playable expedition remains custom; additional characters, original encounter/event pools and original seeded run integration are still missing. Audio, multiplayer and Timeline remain explicitly excluded.
