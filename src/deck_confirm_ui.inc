@@ -24,7 +24,10 @@ static void deck_confirm_screen(Canvas&c){
     }else{
         large_card(c,before,120,49,true);
         char text[128]={};TextBuffer b{text,sizeof text,0};
-        if(s.phase==Phase::Remove){b.text("永久移除 · 花费 ");b.number(remove_price(s));b.text(" 金币");}
+        if(s.phase==Phase::Remove){
+            if(s.event_deck_action==EventDeckAction::Remove)b.text("事件移除 · 不消耗金币");
+            else{b.text("永久移除 · 花费 ");b.number(remove_price(s));b.text(" 金币");}
+        }
         else b.text("替换为本职业牌池中的另一张牌");
         c.centered(text,4,176,312,10,White);
     }

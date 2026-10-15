@@ -1,0 +1,102 @@
+// Versioned little-endian field encoding, not a raw C++ object image.
+struct Codec{
+    uint8_t* out; const uint8_t* in; size_t at,limit; bool good;
+    uint32_t field(uint32_t v){if(at+4>limit){good=false;return 0;}uint32_t r=0;for(int i=0;i<4;i++){if(out)out[at+i]=(uint8_t)(v>>(8*i));else r|=(uint32_t)in[at+i]<<(8*i);}at+=4;return out?v:r;}
+};
+static uint32_t checksum(const uint8_t*p,size_t n){uint32_t h=2166136261u;for(size_t i=0;i<n;i++){h^=p[i];h*=16777619u;}return h;}
+template<class T> static void field(T& v,Codec&c){uint32_t raw=c.field((uint32_t)v);v=static_cast<T>(raw);if(c.in&&(uint32_t)v!=raw)c.good=false;}
+static void code_state(State&s,Codec&c,unsigned version){
+#define F(x) field(x,c)
+ F(s.phase);F(s.practice);F(s.floor);F(s.enemy_count);F(s.hp);F(s.max_hp);F(s.energy);F(s.block);F(s.strength);F(s.pain);F(s.embrace);F(s.turn);F(s.power_count);
+ for(int i=0;i<2;i++)F(s.power_order[i]);F(s.rng_cards);F(s.rng_world);F(s.seed);F(s.revision);F(s.deck_count);
+ if(s.deck_count>MaxDeck){c.good=false;return;}for(int i=0;i<s.deck_count;i++){F(s.deck[i].kind);F(s.deck[i].upgraded);}
+ F(s.card_count);if(s.card_count>MaxCards){c.good=false;return;}for(int i=0;i<s.card_count;i++){F(s.cards[i].kind);F(s.cards[i].upgraded);F(s.zones[i]);}
+ Pile*ps[]={&s.draw,&s.hand,&s.discard,&s.exhaust,&s.powers};for(int z=0;z<5;z++){auto&p=*ps[z];F(p.count);if(p.count>MaxCards){c.good=false;return;}for(int i=0;i<p.count;i++)F(p.ids[i]);}
+ for(auto&e:s.enemies){F(e.hp);F(e.max_hp);F(e.block);F(e.strength);F(e.vulnerable);F(e.move);}
+ F(s.effect_count);if(s.effect_count>MaxEffects){c.good=false;return;}for(int i=0;i<s.effect_count;i++){auto&e=s.effects[i];F(e.kind);F(e.value);F(e.target);}
+ F(s.playing);
+ F(s.relic_count);for(int i=0;i<10;i++)F(s.relic_order[i]);for(int i=0;i<10;i++)F(s.relic_counters[i]);
+ F(s.dexterity);F(s.double_attack);F(s.relic_flash);F(s.relic_revision);
+ F(s.current_node);F(s.next_row);F(s.encounter);F(s.relics);F(s.removals);F(s.gold);F(s.last_gold);
+ for(auto&n:s.map){F(n.room);F(n.links);F(n.visited);F(n.event);}
+ for(auto&p:s.potions)F(p);for(int i=0;i<4;i++)F(s.shop_cards[i]);F(s.shop_relics[0]);F(s.shop_potions[0]);F(s.shop_sold);
+ const int legacy_prices[]={0,1,2,3,7,10};for(int i:legacy_prices)F(s.shop_prices[i]);
+ F(s.event_id);F(s.event_page);F(s.event_count);F(s.event_remaining);F(s.event_value);F(s.event_first);
+ for(int i=0;i<3;i++)F(s.reward[i]);F(s.log_count);if(s.log_count>24){c.good=false;return;}for(int i=0;i<s.log_count;i++){auto&l=s.logs[i];F(l.kind);F(l.a);F(l.b);}
+if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
+ if(version>=5){
+  for(int i=10;i<16;i++)F(s.relic_order[i]);
+  for(int i=10;i<16;i++)F(s.relic_counters[i]);
+  for(int i=4;i<ShopCardCount;i++)F(s.shop_cards[i]);
+  for(int i=1;i<3;i++){F(s.shop_relics[i]);F(s.shop_potions[i]);}
+  const int extra_prices[]={4,5,6,8,9,11,12};for(int i:extra_prices)F(s.shop_prices[i]);
+  F(s.temporary_strength);F(s.temporary_dexterity);F(s.vigor);F(s.attack_vigor);F(s.thorns);
+  F(s.reward_claimed);F(s.reward_potion);F(s.potion_chance);
+ }else if(c.in){
+  const unsigned old=s.shop_sold;
+  if(old>127||s.relic_count>10||s.relics>=1024||s.relic_flash>=1024||s.shop_relics[0]>=1024||s.shop_potions[0]>3)c.good=false;
+  for(auto p:s.potions)if((unsigned)p>3)c.good=false;
+  s.shop_sold=uint16_t((old&15)|((old&16)<<3)|((old&32)<<5)|((old&64)<<7)|
+                     (1<<4)|(1<<5)|(1<<6)|(1<<8)|(1<<9)|(1<<11)|(1<<12));
+  s.reward_claimed=1;s.potion_chance=40;
+ }
+ if(version>=6){
+  F(s.character);F(s.noxious_fumes);F(s.accuracy);F(s.discard_required);
+  for(auto&e:s.enemies)F(e.poison);
+  for(int i=16;i<17;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
+ }else if(c.in){
+  if(s.phase==Phase::DiscardChoice||s.relic_count>(version>=5?16:10)||s.relics>65535||s.relic_flash>65535)c.good=false;
+  const unsigned max_kind=version>=5?26:version==4?24:14;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=max_kind)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=max_kind)c.good=false;
+  for(auto&l:s.logs)if(l.kind==LogKind::Relic&&l.a<0)l.a=(uint16_t)l.a;
+ }
+ if(version>=7){
+  F(s.exhaust_limit);F(s.no_block);F(s.attacked_this_turn);
+  for(int i=17;i<25;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
+ }else if(c.in){
+  if(s.phase==Phase::ExhaustManyChoice||s.relic_count>17||s.relics>=1u<<17||s.relic_flash>=1u<<17)c.good=false;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=51)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=51)c.good=false;
+  for(unsigned i=0;i<s.effect_count;i++)if((unsigned)s.effects[i].kind>(unsigned)EffectKind::RandomPoison)c.good=false;
+ }
+ if(version>=8){
+  F(s.demon_form);F(s.infinite_blades);F(s.block_next_turn);F(s.draw_next_turn);F(s.flame_barrier);
+ }else if(c.in){
+  if(s.phase==Phase::ReturnChoice)c.good=false;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=58)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=58)c.good=false;
+  for(auto k:s.shop_cards)if(k>=58)c.good=false;
+  for(auto k:s.reward)if(k>=58)c.good=false;
+  for(unsigned i=0;i<s.effect_count;i++)if((unsigned)s.effects[i].kind>(unsigned)EffectKind::GreedDamage)c.good=false;
+ }
+ if(version>=9){
+  // Freeze v9 widths just as v7/v8 retain their 25-relic directory.
+  for(int i=25;i<30;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
+  F(s.treasure_state);F(s.treasure_relic);
+ }else if(c.in){
+  const uint32_t old_mask=(1u<<25)-1;
+  if(s.relic_count>25||(s.relics&~old_mask)||(s.relic_flash&~old_mask))c.good=false;
+  for(unsigned id:s.shop_relics)if(id&~old_mask)c.good=false;
+ }
+ if(version>=10){F(s.event_deck_action);}
+ else if(c.in){
+  if((unsigned)s.event_id>=3)c.good=false;
+  for(const auto&node:s.map)if(node.event>=3)c.good=false;
+ }
+#undef F
+}
+bool save(const State&s,SaveData&out){
+    if(!validate(s)||s.phase==Phase::Error)return false;
+    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(10);c.field(0x41CEF1EA);code_state(copy,c,10);
+    uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
+}
+bool load(State&s,const uint8_t*data,size_t len){
+    if(!data||len<16||len>16384||len%4)return false;
+    Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
+    const unsigned version=c.field(0);
+    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10)||c.field(0)!=0x41CEF1EA)return false;
+    State tmp{};code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
+    uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
+    s=tmp;return true;
+}

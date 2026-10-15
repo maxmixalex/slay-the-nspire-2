@@ -9,10 +9,10 @@ static unsigned checks=0;
 static void put(std::vector<uint8_t>&b,size_t p,uint32_t n,unsigned width=4){for(unsigned i=0;i<width;i++)b[p+i]=(uint8_t)(n>>(i*8));}
 static void hash(std::vector<uint8_t>&b){uint32_t h=2166136261u;for(size_t i=40;i<b.size();i++){h^=b[i];h*=16777619u;}put(b,36,h);}
 static std::vector<uint8_t> pack(){
-    constexpr unsigned images=A_Count+160,strings=3*CardKinds+24,clips=AnimationKinds,cards=CardKinds;
+    constexpr unsigned images=A_Count+160,strings=EventTextEnd,clips=AnimationKinds,cards=CardKinds;
     constexpr unsigned dir=40+images*16+strings*8+clips*16+cards*16+U_Count*4;
     std::vector<uint8_t>b(dir+images*82*60*2+strings*2);
-    put(b,0,0x3250534e);put(b,4,9);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
+    put(b,0,0x3250534e);put(b,4,10);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
     put(b,16,images);put(b,24,strings);put(b,28,clips);put(b,32,cards);
     for(unsigned i=0;i<images;i++){
         put(b,40+i*16,dir+i*9840);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,9840);
@@ -32,9 +32,9 @@ int main(int argc,char**argv){
     auto original=pack();Content c;CHECK(c.open(original.data(),original.size()));CHECK(c.card_count()==CardKinds);
     for(int i=0;i<CardKinds;i++){CHECK(c.card_image(i)==i);CHECK(!std::strcmp(c.card_string(i),"X"));}
     CHECK(c.card_image(-1)==-1&&c.card_image(CardKinds)==-1);CHECK(!*c.card_string(CardKinds));
-    constexpr unsigned carddir=40+(A_Count+160)*16+(3*CardKinds+24)*8+AnimationKinds*16;
+    constexpr unsigned carddir=40+(A_Count+160)*16+(EventTextEnd)*8+AnimationKinds*16;
     auto b=original;put(b,carddir+23*16,9999);hash(b);CHECK(!c.open(b.data(),b.size()));
-    b=original;put(b,carddir+3*4,3*CardKinds+24);hash(b);CHECK(!c.open(b.data(),b.size()));
+    b=original;put(b,carddir+3*4,EventTextEnd);hash(b);CHECK(!c.open(b.data(),b.size()));
     b=original;put(b,32,25);hash(b);CHECK(!c.open(b.data(),b.size()));
     b=original;b.back()^=1;CHECK(!c.open(b.data(),b.size()));
     CHECK(!c.open(nullptr,0));CHECK(c.card_count()==0);

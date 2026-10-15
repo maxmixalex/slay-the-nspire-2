@@ -14,7 +14,7 @@ const HitRegion* App::hit_at(int x,int y)const{
     return nullptr;
 }
 uint32_t App::input_context()const{
-    return (uint32_t)game.phase|((uint32_t)title<<8)|((uint32_t)paused<<9)|
+    return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
@@ -58,6 +58,7 @@ void App::pointer_scroll(int rows){
     if(!rows)return;
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
+    if(event_reader){event_reader_scroll=clamp(event_reader_scroll+rows,0,2048);return;}
     if(status_actor>=0){
         int count=collect_statuses(game,status_actor,nullptr);
         status_selected=clamp(status_selected+rows,0,count?count-1:0);return;

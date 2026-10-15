@@ -22,11 +22,11 @@ void create_map(State&s){
         {Room::Camp,Room::Camp,Room::Camp},
         {Room::Final,Room::Final,Room::Final}
     };
-    unsigned event_offset=random_below(s.rng_world,3);
+    unsigned event_offset=random_below(s.rng_world,EventKinds);
     for(int row=0;row<MapRows;row++)for(int col=0;col<MapColumns;col++){
         auto&n=s.map[row*3+col];n.room=layout[row][col];n.visited=0;
         n.links=(uint8_t)(row==MapRows-1?0:col==0?3:col==2?6:7);
-        n.event=(uint8_t)((row+col+event_offset)%3);
+        n.event=(uint8_t)((row+col+event_offset)%EventKinds);
     }
     s.current_node=-1;s.next_row=0;s.floor=0;s.event_first=-1;s.phase=Phase::Map;
 }
@@ -36,7 +36,7 @@ bool reachable(const State&s,int node){
     return (s.map[s.current_node].links&(1u<<(node%3)))!=0;
 }
 void finish_room(State&s){
-    s.treasure_state=0;s.treasure_relic=0;
+    s.treasure_state=0;s.treasure_relic=0;s.event_deck_action=EventDeckAction::None;
     if(s.hp<=0){s.phase=Phase::Dead;return;}
     if(s.practice){s.phase=Phase::Complete;return;}
     if(s.current_node<0||s.current_node>=MapNodes){s.phase=Phase::Error;return;}
@@ -82,7 +82,7 @@ bool choose_node(State&s,int column){
     case Room::Camp:s.phase=Phase::Camp;break;
     case Room::Treasure:s.phase=Phase::Treasure;s.treasure_state=0;s.treasure_relic=0;break;
     case Room::Event:
-        s.event_id=(EventId)s.map[id].event;s.event_page=s.event_count=s.event_remaining=0;s.event_first=-1;
+        s.event_deck_action=EventDeckAction::None;s.event_id=(EventId)s.map[id].event;s.event_page=s.event_count=s.event_remaining=0;s.event_first=-1;
         s.event_value=(int16_t)(s.event_id==EventId::Vegetation?61+random_below(s.rng_world,39):0);s.phase=Phase::Event;break;
     }
     s.revision++;return true;
@@ -131,16 +131,56 @@ bool buy(State&s,int item){
     s.shop_sold|=(uint16_t)(1u<<item);s.revision++;return true;
 }
 bool remove_card(State&s,int index){
-    if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1||s.gold<remove_price(s))return false;
+    if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1)return false;
+    const bool event=s.event_deck_action==EventDeckAction::Remove;
+    if(!event&&s.gold<remove_price(s))return false;
     record(s,LogKind::Remove,s.deck[index].kind);for(int i=index+1;i<s.deck_count;i++)s.deck[i-1]=s.deck[i];s.deck_count--;
+    if(event){complete_event_selection(s);return true;}
     s.gold-=remove_price(s);s.shop_sold|=(1u<<ShopRemove);if(s.removals<255)s.removals++;s.phase=Phase::Shop;s.revision++;return true;
 }
 bool leave_shop(State&s){if(s.phase!=Phase::Shop)return false;finish_room(s);return true;}
 bool has_upgrade(const State&s){for(int i=0;i<s.deck_count;i++)if(!s.deck[i].upgraded)return true;return false;}
+bool event_option_enabled(const State&s,int option){
+    if(s.phase!=Phase::Event||s.event_deck_action!=EventDeckAction::None||option<0||option>1)return false;
+    if(s.event_page>=2)return option==0;
+    if(s.event_id==EventId::Baths&&option==0)return s.max_hp<=997;
+    if(s.event_id==EventId::Grove)return option==0?s.deck_count>=2:s.max_hp<=994;
+    // The bounded core still requires at least one permanent card.
+    if(s.event_id==EventId::DoorsOfLightAndDark&&option==1)return s.deck_count>1;
+    return (unsigned)s.event_id<EventKinds;
+}
+void complete_event_selection(State&s){
+    const auto action=s.event_deck_action;
+    if(action==EventDeckAction::None)return;
+    s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;
+    s.phase=Phase::Event;s.event_page=action==EventDeckAction::Transform?2:3;s.revision++;
+}
+bool cancel_event_selection(State&s){
+    if(s.event_deck_action==EventDeckAction::None)return false;
+    // Cancels only an uncommitted event selection, not Grove's paid two-card operation.
+    s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;
+    s.phase=Phase::Event;s.event_page=0;s.revision++;return true;
+}
 bool event_choice(State&s,int option){
-    if(s.phase!=Phase::Event||option<0||option>1)return false;
+    if(!event_option_enabled(s,option))return false;
     if(s.event_page>=2){if(option!=0)return false;if(s.event_id==EventId::Vegetation&&s.event_page==4){s.encounter=1;enter_combat(s);}else finish_room(s);return true;}
     switch(s.event_id){
+    case EventId::AromaOfChaos:
+        if(option==0){s.event_deck_action=EventDeckAction::Transform;s.event_remaining=1;s.event_first=-1;s.phase=Phase::Transform;}
+        else if(has_upgrade(s)){s.event_deck_action=EventDeckAction::Upgrade;s.phase=Phase::Upgrade;}
+        else s.event_page=3; // No eligible cards: still finish the original narrative.
+        break;
+    case EventId::DoorsOfLightAndDark:
+        if(option==0){
+            uint16_t eligible[MaxDeck];unsigned n=0;
+            for(unsigned i=0;i<s.deck_count;i++)if(!s.deck[i].upgraded)eligible[n++]=(uint16_t)i;
+            // Distinct eligible instances, shuffled before taking at most two.
+            // This expedition's RNG is not the original event RNG stream.
+            for(unsigned i=n;i>1;--i){unsigned j=random_below(s.rng_world,i);auto t=eligible[i-1];eligible[i-1]=eligible[j];eligible[j]=t;}
+            for(unsigned i=0;i<n&&i<2;i++){auto&c=s.deck[eligible[i]];c.upgraded=1;record(s,LogKind::Upgrade,c.kind);}
+            s.event_page=2;
+        }else{s.event_deck_action=EventDeckAction::Remove;s.phase=Phase::Remove;}
+        break;
     case EventId::Baths:
         if(option==0){
             int damage=3+s.event_count;if(s.max_hp>997)return false;
@@ -164,7 +204,10 @@ bool transform_card(State&s,int index){
     int old=s.deck[index].kind,k;do{k=(int)random_reward_card(s);}while(k==old);
     s.deck[index]={(uint8_t)k,0};record(s,LogKind::Transform,old,k);
     s.event_first=(int16_t)index;s.event_remaining--;
-    if(!s.event_remaining){s.phase=Phase::Event;s.event_page=2;}
+    if(!s.event_remaining){
+        if(s.event_deck_action==EventDeckAction::Transform)complete_event_selection(s);
+        else{s.phase=Phase::Event;s.event_page=2;}
+    }
     s.revision++;return true;
 }
 bool open_treasure(State&s){

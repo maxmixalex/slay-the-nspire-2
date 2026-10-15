@@ -2,6 +2,7 @@
 #include "rich_text.hpp"
 #include "status.hpp"
 #include "combat_layout.hpp"
+#include "event_assets.hpp"
 namespace spire {
 #include "canvas.inc"
 #include "app_input.inc"
@@ -259,8 +260,9 @@ void App::render(){
     if(detail_card>=0)detail_screen(c);
     if(detail_item>=0)item_detail_screen(c);
     if(status_actor>=0)status_screen(c);
+    if(event_reader)event_reader_screen(c);
     if(map_preview.open)reference_map_screen(c);
-    if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&game.phase!=Phase::Event&&game.phase!=Phase::Shop&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
     owned_relic_tooltip(c);
     pointer_overlay(c);
 }

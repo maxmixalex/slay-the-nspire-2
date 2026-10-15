@@ -13,7 +13,7 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
  for(int i=0;i<enemies;i++)s.enemies[i]={46,46,0,0,0,0};CHECK(validate(s));return s;
 }
 static void add(State&s,Zone zone,Card card={Defend,0}){auto id=s.card_count++;s.cards[id]=card;s.zones[id]=zone;auto&p=zone==Zone::Draw?s.draw:s.discard;p.ids[p.count++]=id;}
-static SaveData snapshot(const State&s){SaveData b{};CHECK(save(s,b)&&b.bytes[4]==9);return b;}
+static SaveData snapshot(const State&s){SaveData b{};CHECK(save(s,b)&&b.bytes[4]==10);return b;}
 static void same(const State&s,const SaveData&b){auto a=snapshot(s);CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static void rt(const State&s){auto b=snapshot(s);State t{};CHECK(load(t,b.bytes,b.size));same(t,b);}
 static void own(State&s){for(unsigned id:{Kunai,Shuriken,OrnamentalFan,LetterOpener,Nunchaku})CHECK(gain_relic(s,id));}

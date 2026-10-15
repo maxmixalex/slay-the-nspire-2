@@ -34,7 +34,9 @@ enum class Phase : uint8_t { Combat, ExhaustChoice, Reward, Camp, Upgrade, Compl
     Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice };
 enum class Room : uint8_t { Combat, Event, Shop, Camp, Treasure, Final };
 struct MapNode { Room room; uint8_t links,visited,event; };
-enum class EventId : uint8_t { Baths, Vegetation, Grove };
+enum class EventId : uint8_t { Baths, Vegetation, Grove, AromaOfChaos, DoorsOfLightAndDark };
+constexpr unsigned EventKinds=5;
+enum class EventDeckAction : uint8_t { None, Upgrade, Remove, Transform };
 enum class Zone : uint8_t { Draw, Hand, Discard, Exhaust, Power, Limbo };
 enum class EffectKind : uint8_t { Damage, Block, Vulnerable, Draw, ChooseExhaust, RandomExhaust,
     CopyDiscard, Strength, Pain, Embrace, Finish, LoseHp, Energy, Weak, NoDraw, ExhaustCard, WhirlwindHits, Poison, ChooseDiscard, CreateShivs, Dexterity, Noxious, Accuracy, RandomPoison, DrawIfNoAttacks, FillHand, ChooseExhaustMany, NoBlock, GreedDamage, ChooseReturn, RandomDamage, Demon, Blades,
@@ -109,6 +111,7 @@ struct State {
     int16_t demon_form, infinite_blades, block_next_turn, draw_next_turn, flame_barrier;
     uint8_t treasure_state; // 0 closed, 1 revealed, 2 claimed; no implicit rerolls.
     uint32_t treasure_relic; // Zero means the exhausted prototype pool offers 50 gold.
+    EventDeckAction event_deck_action; // v10: event choices must never use shop/camp completion.
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
@@ -152,6 +155,9 @@ bool buy(State&,int item);
 bool remove_card(State&,int deck_index);
 bool leave_shop(State&);
 bool event_choice(State&,int option);
+bool event_option_enabled(const State&,int option);
+bool cancel_event_selection(State&);
+void complete_event_selection(State&);
 bool transform_card(State&,int deck_index);
 bool open_treasure(State&);
 bool take_treasure(State&);

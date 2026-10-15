@@ -81,6 +81,9 @@ enum UiAsset {
     U_NoBlock=82, U_FeelNoPain=83, U_DarkEmbrace=84, U_DemonForm=85,
     U_InfiniteBlades=86, U_FlameBarrier=87, U_BlockNextTurn=88,
     U_DrawNextTurn=89, U_Kunai=90, U_Shuriken=91, U_OrnamentalFan=92,
-    U_LetterOpener=93, U_Nunchaku=94, U_Count=95
+    U_LetterOpener=93, U_Nunchaku=94,
+    U_EventFull0=95, U_EventFull1=96, U_EventFull2=97, U_EventFull3=98, U_EventFull4=99,
+    U_EventButton=100, U_EventOutline=101, U_ShopRemove=102, U_ShopRemoveUsed=103,
+    U_MerchantRug=104, U_Count=105
 };
 }

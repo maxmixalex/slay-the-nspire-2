@@ -2,7 +2,7 @@ static void invalidate_hand_tiles();
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){shop_open=event_reader=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
 void App::draw_frame(){render();}
 void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
@@ -24,6 +24,7 @@ static int choice_count(const App&a){
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
+    if(room_input(k))return;
     if(status_input(k))return;
     if(reference_input(k))return;
     if(detail_item>=0){
@@ -83,7 +84,7 @@ void App::input(Key k){
     if(k==Key::Back){
         if(reward_cards&&!panel){reward_cards=false;cursor=1;return;}
         if(panel){panel=0;scroll=map_scroll=0;}
-        else if(game.phase==Phase::Remove){game.phase=Phase::Shop;cursor=ShopRemove;}
+        else if(game.phase==Phase::Remove){game.phase=Phase::Shop;shop_open=true;cursor=ShopRemove;}
         else if(game.phase==Phase::Upgrade){game.phase=Phase::Camp;cursor=1;}
         else{paused=true;menu=0;}return;
     }
@@ -129,8 +130,8 @@ void App::input(Key k){
         else if(game.phase==Phase::Map){map_scroll=mx(-MapRows,mn(MapRows,map_scroll+(k==Key::Up?1:-1)));}
         else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
         else if(game.phase==Phase::Shop){
-            const int below[15]={5,6,7,8,9,13,13,10,11,12,14,14,14,0,0};
-            const int above[15]={13,13,14,14,14,0,1,2,3,4,7,8,9,5,10};
+            const int below[15]={5,6,7,8,13,14,14,10,11,12,14,14,14,14,0};
+            const int above[15]={14,14,14,14,14,0,1,2,3,4,7,8,9,4,5};
             cursor=(k==Key::Down?below:above)[cursor];
         }
         else if(game.phase==Phase::Camp)cursor=1-cursor;
@@ -167,7 +168,7 @@ void App::input(Key k){
     }
     if(acted){
         for(int i=0;i<3;i++){int hp=i?game.enemies[i-1].hp:game.hp;int hit=hp_before[i]-hp;if(hit>0){last_hit[i]=hit;hit_start[i]=(int)animation+6;if(i)animate(i,AnimEnemyHurt,6);}}
-        if(game.phase!=before){reward_cards=false;cursor=0;scroll=map_scroll=0;if(game.phase==Phase::Map){for(int i=0;i<3;i++)if(reachable(game,game.next_row*3+i)){cursor=i;break;}}}
+        if(game.phase!=before){shop_open=false;event_reader=false;reward_cards=false;cursor=0;scroll=map_scroll=0;if(game.phase==Phase::Map){for(int i=0;i<3;i++)if(reachable(game,game.next_row*3+i)){cursor=i;break;}}}
         cursor=mn(cursor,mx(0,choice_count(*this)-1));if(target>=game.enemy_count||game.enemies[target].hp==0){target=0;for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
     }
 }

@@ -49,7 +49,7 @@ static void owned_relic_panel(Canvas&c){
 }
 static void owned_relic_tooltip(Canvas&c){
     auto&a=c.a;
-    if(!a.pointer.visible||a.pointer.held||a.title||a.paused||a.help||a.panel||a.library||
+    if(a.event_reader||!a.pointer.visible||a.pointer.held||a.title||a.paused||a.help||a.panel||a.library||
        a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||
        a.deck_candidate>=0||choice_phase(a.game.phase))return;
     const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);

@@ -1,5 +1,6 @@
 #pragma once
 #include "core.hpp"
+#include "event_assets.hpp"
 #include "assets.hpp"
 #include "ui_assets.hpp"
 #include "ui_actions.hpp"
@@ -19,7 +20,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count;}
+    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count&&strings_>=EventTextEnd;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -36,6 +37,9 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool practice_entry=false;
+    bool shop_open=false,event_reader=false;
+    int event_reader_scroll=0;
+    bool room_input(Key);
     Character selected_character=Character::Ironclad;
     int library_filter=0,library_sort=0;
     uint16_t choice_selected[MaxHand]{};unsigned choice_selected_count=0;uint32_t choice_revision=0;

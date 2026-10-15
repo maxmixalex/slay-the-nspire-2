@@ -66,6 +66,15 @@ void App::select_library_item(int index){
 void App::ui_action(UiAction action){
     pointer_cancel();
     switch(action){
+    case UiAction::OpenShop:
+        if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;cursor=0;}break;
+    case UiAction::CloseShop:
+        if(game.phase==Phase::Shop){shop_open=false;cursor=0;}break;
+    case UiAction::LeaveShop:
+        if(!shop_open&&game.phase==Phase::Shop){leave_shop(game);reset_presentation();}break;
+    case UiAction::ReadEvent:
+        if(!title&&!paused&&!panel&&!library&&game.phase==Phase::Event){event_reader=true;event_reader_scroll=0;}break;
+    case UiAction::CloseEventReader:event_reader=false;break;
     case UiAction::StartCharacter:
         if(character_select){new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);character_select=false;title=false;reset_presentation();}break;
     case UiAction::LibraryCards:case UiAction::LibraryRelics:case UiAction::LibraryPotions:
@@ -157,7 +166,7 @@ void App::confirm_deck_choice(){
     if(!deck_candidate_valid()){deck_candidate=-1;return;}
     int index=deck_candidate;Phase phase=game.phase;deck_candidate=-1;pointer_cancel();
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
-    if(ok){reset_presentation();if(game.phase==Phase::Shop)cursor=ShopRemove;}
+    if(ok){reset_presentation();if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
     else message("此时无法完成这项操作");
 }
 bool App::deck_input(Key key){
@@ -169,6 +178,9 @@ bool App::deck_input(Key key){
         // The irreversible-action confirmation consumes navigation/game actions.
         // Save and load remain available; loading resets its captured revision.
         return key!=Key::Save&&key!=Key::Load&&key!=Key::Quit;
+    }
+    if(key==Key::Back&&game.event_deck_action!=EventDeckAction::None){
+        cancel_event_selection(game);reset_presentation();return true;
     }
     int count=game.deck_count;if(!count)return true;
     if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
@@ -216,5 +228,28 @@ void App::open_owned_relic(int position){
 void App::sync_relic_feedback(){
     if(seen_relic_revision==game.relic_revision)return;
     seen_relic_revision=game.relic_revision;relic_flash_mask=game.relic_flash;relic_flash_ticks=30;
+}
+}
+
+namespace spire {
+bool App::room_input(Key key){
+    if(event_reader){
+        if(key==Key::Back||key==Key::Detail||key==Key::Confirm){event_reader=false;pointer_cancel();}
+        else if(key==Key::Up||key==Key::Left){event_reader_scroll-=key==Key::Left?10:1;if(event_reader_scroll<0)event_reader_scroll=0;}
+        else if(key==Key::Down||key==Key::Right){event_reader_scroll+=key==Key::Right?10:1;if(event_reader_scroll>2048)event_reader_scroll=2048;}
+        else if(key==Key::Quit)quit=true;
+        return true;
+    }
+    if(title||paused||help||panel||library||character_select||map_preview.open||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;
+    if(game.phase==Phase::Event&&key==Key::Detail){ui_action(UiAction::ReadEvent);return true;}
+    if(game.phase!=Phase::Shop)return false;
+    if(shop_open){
+        if(key==Key::Back||(key==Key::Confirm&&cursor==ShopLeave)){ui_action(UiAction::CloseShop);return true;}
+        return false;
+    }
+    if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){cursor=cursor?0:1;return true;}
+    if(key==Key::Confirm){ui_action(cursor?UiAction::LeaveShop:UiAction::OpenShop);return true;}
+    if(key==Key::Detail){ui_action(UiAction::OpenShop);return true;}
+    return false;
 }
 }

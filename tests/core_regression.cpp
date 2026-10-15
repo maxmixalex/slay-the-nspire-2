@@ -22,7 +22,7 @@ static void supply(State& s,int n){
 static void exhaust_powers(State& s){s.pain=3;s.embrace=1;s.power_order[0]=0;s.power_order[1]=1;s.power_count=2;}
 static int find(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
 static void roundtrip(State& s){
-    SaveData a{},b{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==9);
+    SaveData a{},b{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==10);
     State copy{};CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size);
     CHECK(!std::memcmp(a.bytes,b.bytes,a.size));
     a.bytes[a.size-1]^=1;State before=copy;CHECK(!load(copy,a.bytes,a.size));CHECK(!std::memcmp(&before,&copy,sizeof(State)));

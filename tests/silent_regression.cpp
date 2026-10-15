@@ -16,7 +16,7 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
 static void supply(State&s,int n){for(int i=0;i<n;i++){int id=s.card_count++;s.cards[id]={DefendSilent,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=(uint16_t)id;}CHECK(validate(s));}
 static int hand(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
 static unsigned count(const State&s,Zone zone,unsigned kind){unsigned n=0;const auto&p=pile(s,zone);for(int i=0;i<p.count;i++)n+=s.cards[p.ids[i]].kind==kind;return n;}
-static void roundtrip(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==9);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!memcmp(a.bytes,b.bytes,a.size));}
+static void roundtrip(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==10);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!memcmp(a.bytes,b.bytes,a.size));}
 static void selection(State&s){CHECK(s.phase==Phase::DiscardChoice);CHECK(!end_turn(s));uint16_t ids[MaxHand];for(unsigned i=0;i<s.discard_required;i++)ids[i]=s.hand.ids[i];CHECK(choose_discard(s,ids,s.discard_required));CHECK(s.phase==Phase::Combat);roundtrip(s);}
 static void starting(){
  State s{};new_run(s,7,false,Character::Silent);CHECK(s.hp==70&&s.max_hp==70&&s.deck_count==12&&s.gold==99);CHECK(s.relics==RingOfTheSnake&&s.relic_count==1);
@@ -64,7 +64,7 @@ static void card_cases(){
 static void boundaries(){
  auto s=fight({{Prepared,1},{Neutralize,0},{DefendSilent,0}});supply(s,6);CHECK(play(s,0,0));CHECK(s.discard_required==2);auto prior=s;
  uint16_t ids[2]={s.hand.ids[0],s.hand.ids[0]};CHECK(!choose_discard(s,ids,2));CHECK(!memcmp(&s,&prior,sizeof s));CHECK(!choose_discard(s,ids,1));CHECK(!choose_discard(s,nullptr,2));ids[1]=s.draw.ids[0];CHECK(!choose_discard(s,ids,2));CHECK(!memcmp(&s,&prior,sizeof s));
- SaveData saved{};CHECK(save(s,saved));State loaded{};CHECK(load(loaded,saved.bytes,saved.size));CHECK(loaded.discard_required==2&&loaded.character==Character::Silent);ids[1]=s.hand.ids[1];CHECK(choose_discard(loaded,ids,2));CHECK(loaded.hand.count==2&&loaded.discard.count==3);roundtrip(loaded);
+ SaveData saved{};CHECK(save(s,saved));State loaded{};CHECK(load(loaded,saved.bytes,saved.size()));CHECK(loaded.discard_required==2&&loaded.character==Character::Silent);ids[1]=s.hand.ids[1];CHECK(choose_discard(loaded,ids,2));CHECK(loaded.hand.count==2&&loaded.discard.count==3);roundtrip(loaded);
  s=fight({{Prepared,1}});s.no_draw=1;CHECK(play(s,0,0));CHECK(s.phase==Phase::Combat&&s.discard_required==0&&s.hand.count==0);roundtrip(s);
  s=fight({{BladeDance,1},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0}});CHECK(play(s,0,0));CHECK(s.hand.count==10&&count(s,Zone::Hand,Shiv)==1&&count(s,Zone::Discard,Shiv)==3);roundtrip(s);
  s=fight({{Deflect,0}});s.hp=60;s.enemies[0].hp=5;s.enemies[0].poison=5;s.enemies[0].block=90;s.enemies[0].strength=500;CHECK(end_turn(s));CHECK(s.hp==60&&s.phase==Phase::Reward&&s.enemies[0].hp==0&&s.enemies[0].block==90);roundtrip(s);
