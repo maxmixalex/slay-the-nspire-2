@@ -1,5 +1,5 @@
 bool validate(const State&s){
-    if((int)s.phase>(int)Phase::ReturnChoice||s.practice>1||s.floor>MapRows||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>999||s.turn<0||s.turn>20000)return false;
+    if((int)s.phase>(int)Phase::ExtendedChoice||s.practice>1||s.floor>MapRows||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>999||s.turn<0||s.turn>20000)return false;
     if((unsigned)s.character>=CharacterKinds||s.noxious_fumes<0||s.noxious_fumes>9999||s.accuracy<0||s.accuracy>9999||s.discard_required>MaxHand)return false;
     if(s.phase!=Phase::DiscardChoice&&s.discard_required)return false;
     if(s.phase==Phase::DiscardChoice&&(!s.discard_required||s.discard_required>s.hand.count))return false;
@@ -59,11 +59,21 @@ bool validate(const State&s){
     for(int z=0;z<5;z++){const Pile&p=pile(s,(Zone)z);if(p.count>MaxCards)return false;
         for(int i=0;i<p.count;i++){int id=p.ids[i];if(id>=s.card_count||seen[id]||s.zones[id]!=(Zone)z)return false;seen[id]=1;}}
     if(s.playing>=0){if(seen[s.playing]||s.zones[s.playing]!=Zone::Limbo)return false;seen[s.playing]=1;}
+    for(unsigned i=0;i<s.expansion.depth;i++){
+        int id=s.expansion.frames[i].playing;if(id<0)continue;
+        if(id>=s.card_count||seen[id]||s.zones[id]!=Zone::Limbo)return false;seen[id]=1;
+    }
     for(int i=0;i<s.card_count;i++)if(!seen[i])return false;
-    for(int i=0;i<s.enemy_count;i++){const auto&e=s.enemies[i];if(e.hp<0||e.hp>e.max_hp||e.max_hp<42||e.max_hp>46||e.block<0||e.block>9999||e.strength<0||e.strength>9999||e.vulnerable<0||e.vulnerable>9999||e.move>2||e.weak<0||e.weak>9999||e.poison<0||e.poison>9999)return false;}
-    for(int i=0;i<s.effect_count;i++){const auto&e=s.effects[i];if((int)e.kind>(int)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies))return false;
-        if(e.kind==EffectKind::ExhaustCard&&e.value>=s.card_count)return false;}
-    if(choice_phase(s.phase)&&(s.playing<0||!s.effect_count||!choice_pile(s).count))return false;
+    for(int i=0;i<s.enemy_count;i++){const auto&e=s.enemies[i];if(e.hp<0||e.hp>e.max_hp||e.max_hp<42||e.max_hp>46||e.block<0||e.block>9999||e.strength< -9999||e.strength>9999||e.vulnerable<0||e.vulnerable>9999||e.move>2||e.weak<0||e.weak>9999||e.poison<0||e.poison>9999)return false;}
+    for(int i=0;i<s.effect_count;i++){
+        const auto&e=s.effects[i];
+        if(e.kind==EffectKind::Extended){if(!valid_extension_effect(s,e))return false;continue;}
+        if((unsigned)e.kind>(unsigned)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies)||e.aux)return false;
+        if(e.kind==EffectKind::ExhaustCard&&e.value>=s.card_count)return false;
+    }
+    if(choice_phase(s.phase)&&(!s.effect_count||!choice_pile(s).count))return false;
+    if(choice_phase(s.phase)&&s.phase!=Phase::ExtendedChoice&&s.playing<0)return false;
     if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(s.playing>=0||s.effect_count))return false;
+    if(!validate_extension(s))return false;
     return true;
 }

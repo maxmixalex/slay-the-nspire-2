@@ -25,24 +25,20 @@ static int make_card(State&s,Card c){
 static void shuffle(State&s){
     while(s.discard.count){int id=remove(s.discard,s.discard.count-1);put(s,s.draw,id,Zone::Draw);}
     for(int i=s.draw.count-1;i>0;i--){int j=(int)random_below(s.rng_cards,i+1);auto t=s.draw.ids[i];s.draw.ids[i]=s.draw.ids[j];s.draw.ids[j]=t;}
-    record(s,LogKind::Shuffle);
+    record(s,LogKind::Shuffle);shuffle_hook(s);
 }
 void draw_cards(State&s,int n){
-    if(s.no_draw)return;
-    int got=0;
-    while(n-->0&&s.hand.count<MaxHand){
-        if(!s.draw.count){if(!s.discard.count)break;shuffle(s);}
-        int id=remove(s.draw,s.draw.count-1);put(s,s.hand,id,Zone::Hand);got++;
-    }
-    if(got)record(s,LogKind::Draw,got);
+    if(n<=0||s.no_draw)return;
+    queue_extension(s,XOp::Draw,n,0,true);
+    resolve_pending(s);
 }
-bool card_retains(Card c){return c.kind==Purity||(c.kind==Scrawl&&c.upgraded);}
-bool card_innate(Card c){return c.kind==Backstab||(c.kind==InfiniteBlades&&c.upgraded);}
+bool card_retains(Card c){return c.kind<CardKinds&&(((c.upgraded?definitions[c.kind].upgraded_keywords:definitions[c.kind].keywords)&4)||c.kind==Purity||(c.kind==Scrawl&&c.upgraded));}
+bool card_innate(Card c){return c.kind<CardKinds&&(((c.upgraded?definitions[c.kind].upgraded_keywords:definitions[c.kind].keywords)&2)||c.kind==Backstab||(c.kind==InfiniteBlades&&c.upgraded));}
 bool card_strike_tag(unsigned kind){
     return kind==Strike||kind==StrikeSilent||kind==PommelStrike||kind==TwinStrike||
-           kind==LeadingStrike||kind==PerfectedStrike;
+           kind==LeadingStrike||kind==PerfectedStrike||kind==UltimateStrike||kind==SeekerStrike;
 }
-const Pile& choice_pile(const State&s){return s.phase==Phase::ReturnChoice?s.discard:s.hand;}
+const Pile& choice_pile(const State&s){return s.phase==Phase::ExtendedChoice?s.expansion.choices:s.phase==Phase::ReturnChoice?s.discard:s.hand;}
 // First-turn innate cards are placed above the shuffled ordinary cards. They
 // occupy normal hand slots; excess innate cards stay in draw under the hand cap.
 static int prioritize_innate(State&s){
@@ -52,10 +48,17 @@ static int prioritize_innate(State&s){
     for(unsigned i=0;i<count;i++)s.draw.ids[i]=sorted[i];
     return (int)innate;
 }
-int cost(Card c){if(c.kind>=CardKinds)return 99;return definitions[c.kind].cost-((c.kind==DarkEmbrace||c.kind==BodySlam)&&c.upgraded?1:0);}
+int cost(Card c){if(c.kind>=CardKinds)return 99;return definitions[c.kind].cost+(c.upgraded?definitions[c.kind].cost_up:0)-((c.kind==DarkEmbrace||c.kind==BodySlam)&&c.upgraded?1:0);}
 int card_base_damage(const State&s,Card c){
     if(c.kind>=CardKinds)return 0;
     if(c.kind==BodySlam)return s.block;
+    if(c.kind==GoldAxe)return s.gold;
+    if(c.kind==MindBlast)return s.draw.count;
+    if(c.kind==SovereignBlade){
+        int id=s.playing;
+        if(id>=0&&id<s.card_count&&s.cards[id].kind==SovereignBlade)return max(10,s.expansion.blade_damage[id]);
+        return 10;
+    }
     if(c.kind==PerfectedStrike){
         int count=0;for(unsigned i=0;i<s.card_count;i++)if(card_strike_tag(s.cards[i].kind))++count;
         return 6+count*(c.upgraded?3:2);
@@ -66,7 +69,7 @@ int card_base_damage(const State&s,Card c){
 int damage(const State&s,Card c,int t){
     if(c.kind>=CardKinds)return 0;
     int d=card_base_damage(s,c);
-    if(d<=0&&c.kind!=BodySlam)return 0;
+    if(d<=0&&definitions[c.kind].type!=CardType::Attack)return 0;
     d=max(0,d+s.strength+(s.attack_vigor?s.attack_vigor:s.vigor));
     d*=relic_attack_multiplier(s,true);
     if(t>=0&&t<s.enemy_count&&s.enemies[t].vulnerable>0)d=d*3/2;
@@ -86,7 +89,13 @@ static bool alive(const State&s){for(int i=0;i<s.enemy_count;i++)if(s.enemies[i]
 static void victory(State&s){
     if(s.phase==Phase::Reward||s.phase==Phase::Complete)return;
     award_victory(s);
-    s.effect_count=0;s.playing=-1;
+    // A lethal nested autoplay cannot leave its caller orphaned in Limbo.
+    for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){
+        Card c=s.cards[id];Zone z=definitions[c.kind].type==CardType::Power?Zone::Power:card_exhausts(c)?Zone::Exhaust:Zone::Discard;
+        put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
+    }
+    s.effect_count=0;s.playing=-1;s.expansion.depth=0;s.expansion.potion_active=0;s.expansion.enemy_side=0;
+    s.discard_required=s.exhaust_limit=0;clear_extended_choice(s);relic_attack_end(s);s.expansion.triple=0;
     // Bounded prototype reward pool, not the original game's rarity/odds system.
     for(int i=0;i<3;i++){
         int k;bool duplicate;
@@ -121,9 +130,12 @@ static void create_shivs(State&s,int count){
     record(s,LogKind::Create,count,Shiv);
 }
 static void resolve(State&s){
+    if(resolving)return;
+    struct Guard { Guard(){resolving=true;} ~Guard(){resolving=false;} } guard;
     while(s.effect_count&&s.phase==Phase::Combat){
         Effect e=s.effects[0];for(int i=1;i<s.effect_count;i++)s.effects[i-1]=s.effects[i];s.effect_count--;
         switch(e.kind){
+        case EffectKind::Extended:extension_effect(s,e);break;
         case EffectKind::RandomDamage:{
             int targets[MaxEnemies],count=0;
             for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp>0)targets[count++]=i;
@@ -139,17 +151,18 @@ static void resolve(State&s){
             s.block_next_turn=(int16_t)min(9999,s.block_next_turn+gained);
             record(s,LogKind::Block,gained);break;}
         case EffectKind::DrawNextTurn:s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+e.value);break;
-        case EffectKind::EscapeSkillBlock:{
-            unsigned before=s.hand.count;draw_cards(s,1);
-            if(s.hand.count>before&&definitions[s.cards[s.hand.ids[before]].kind].type==CardType::Skill)
-                enqueue(s,EffectKind::Block,e.value,0,true);
-            break;}
+        case EffectKind::EscapeSkillBlock:
+            s.expansion.last_drawn=-1;
+            queue_extension(s,XOp::EscapeBlock,e.value,0,true);
+            queue_extension(s,XOp::Draw,1,0,true);break;
         case EffectKind::Damage:case EffectKind::GreedDamage:
             if(e.target>=0&&e.target<s.enemy_count&&s.enemies[e.target].hp>0){
                 auto& t=s.enemies[e.target];if(!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
+                if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
                 int amount=max(0,e.value+s.strength+s.attack_vigor)*relic_attack_multiplier(s);
                 if(t.vulnerable)amount=amount*3/2;
                 int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
+                s.expansion.last_damage=(int16_t)min(9999,amount);
                 record(s,LogKind::Damage,amount,e.target);
                 if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];
@@ -193,15 +206,7 @@ static void resolve(State&s){
         case EffectKind::NoBlock:s.no_block=(int16_t)min(9999,s.no_block+e.value);break;
         case EffectKind::NoDraw:s.no_draw=1;record(s,LogKind::NoDraw);break;
         case EffectKind::Energy:s.energy=min(999,s.energy+e.value);record(s,LogKind::Energy,e.value);break;
-        case EffectKind::LoseHp:
-            {int old=s.hp;s.hp=max(0,s.hp-e.value);record(s,LogKind::LoseHp,old-s.hp);
-             relic_after_hp_loss(s,old-s.hp);}
-            if(!s.hp){
-                // Stop the queued card immediately on death. Keep the zone partition
-                // serializable, but do not heal, draw, or gain energy after dying.
-                if(s.playing>=0)put(s,s.discard,s.playing,Zone::Discard);
-                s.playing=-1;s.effect_count=0;s.phase=Phase::Dead;relic_attack_end(s);
-            }break;
+        case EffectKind::LoseHp:player_hp_loss(s,e.value,false,false);break;
         case EffectKind::ExhaustCard:
             // A captured instance, not a changing hand index. Draws from exhaust
             // hooks may enter the hand but must not join Fiend Fire's snapshot.
@@ -224,14 +229,7 @@ static void resolve(State&s){
         case EffectKind::Embrace:
             if(!s.embrace&&s.power_count<2)s.power_order[s.power_count++]=1;
             s.embrace=min(99,s.embrace+e.value);record(s,LogKind::Embrace,s.embrace);break;
-        case EffectKind::Finish:
-            if(s.playing>=0){int id=s.playing;
-                relic_card_played(s,s.cards[id]);
-                if(definitions[s.cards[id].kind].type==CardType::Attack)s.attacked_this_turn=1;
-                if(definitions[s.cards[id].kind].type==CardType::Power)put(s,s.powers,id,Zone::Power);
-                else if(definitions[s.cards[id].kind].exhausts)exhaust_id(s,id);
-                else put(s,s.discard,id,Zone::Discard);s.playing=-1;}
-            relic_attack_end(s);if(!alive(s))victory(s);break;
+        case EffectKind::Finish:finish_extended_card(s);break;
         }
     }
 }

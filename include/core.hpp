@@ -3,7 +3,7 @@
 #include <stddef.h>
 
 namespace spire {
-constexpr int IroncladCards=29, SilentCards=29, CardKinds=68, MaxCards=192, MaxDeck=64, MaxHand=10, MaxEnemies=2, MaxEffects=96;
+constexpr int IroncladCards=29, SilentCards=29, CardKinds=114, MaxCards=512, MaxDeck=128, MaxHand=10, MaxEnemies=2, MaxEffects=512;
 constexpr int MapRows=12, MapColumns=3, MapNodes=MapRows*MapColumns;
 enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
     TrueGrit, TwinStrike, Inflame, IronWave, Whirlwind, FeelNoPain, DarkEmbrace,
@@ -14,7 +14,8 @@ enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, B
     DaggerSpray, Dash, LegSweep, Footwork, NoxiousFumes, BouncingFlask,
     Prepared, Slice, Deflect, SuckerPunch, Adrenaline, Accuracy, LeadingStrike, Shiv, Impatience, MasterOfStrategy, Shockwave, Scrawl, Purity, HandOfGreed, PanicButton,
     Headbutt, SwordBoomerang, PerfectedStrike, FlameBarrier, DemonForm,
-    DodgeAndRoll, InfiniteBlades, Backstab, EscapePlan, Predator };
+    DodgeAndRoll, InfiniteBlades, Backstab, EscapePlan, Predator,
+    Alchemize, Anointed, Automation, BeatDown, Bolas, Calamity, Catastrophe, DarkShackles, Discovery, DramaticEntrance, Entropy, Equilibrium, EternalArmor, Fasten, Fisticuffs, GoldAxe, HiddenGem, JackOfAllTrades, Jackpot, Mayhem, MindBlast, Nostalgia, Omnislice, Panache, PrepTime, Production, Prolong, Prowess, Rend, Restlessness, RollingBoulder, Salvo, SecretTechnique, SecretWeapon, SeekerStrike, Splash, Stratagem, TheBomb, TheGambit, ThinkingAhead, ThrummingHatchet, UltimateDefend, UltimateStrike, Volley, Soul, SovereignBlade };
 enum class Character : uint8_t { Ironclad, Silent };
 enum class CardColor : uint8_t { Ironclad, Silent, Colorless };
 constexpr int CharacterKinds=2;
@@ -27,11 +28,11 @@ unsigned character_pool(Character, uint8_t* out, bool rewards_only=false);
 enum class CardType : uint8_t { Attack, Skill, Power };
 struct Definition { const char* key; int8_t cost, damage, block, draw, power;
     int8_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted;
-    int8_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; int8_t creates=0, creates_up=0; };
+    int8_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; int8_t creates=0, creates_up=0; int8_t cost_up=0; uint8_t keywords=0,upgraded_keywords=0; };
 extern const Definition definitions[CardKinds];
 struct Card { uint8_t kind, upgraded; };
 enum class Phase : uint8_t { Combat, ExhaustChoice, Reward, Camp, Upgrade, Complete, Dead,
-    Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice };
+    Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice, ExtendedChoice };
 enum class Room : uint8_t { Combat, Event, Shop, Camp, Treasure, Final };
 struct MapNode { Room room; uint8_t links,visited,event; };
 enum class EventId : uint8_t { Baths, Vegetation, Grove, AromaOfChaos, DoorsOfLightAndDark };
@@ -40,20 +41,21 @@ enum class EventDeckAction : uint8_t { None, Upgrade, Remove, Transform };
 enum class Zone : uint8_t { Draw, Hand, Discard, Exhaust, Power, Limbo };
 enum class EffectKind : uint8_t { Damage, Block, Vulnerable, Draw, ChooseExhaust, RandomExhaust,
     CopyDiscard, Strength, Pain, Embrace, Finish, LoseHp, Energy, Weak, NoDraw, ExhaustCard, WhirlwindHits, Poison, ChooseDiscard, CreateShivs, Dexterity, Noxious, Accuracy, RandomPoison, DrawIfNoAttacks, FillHand, ChooseExhaustMany, NoBlock, GreedDamage, ChooseReturn, RandomDamage, Demon, Blades,
-    DodgeBlock, DrawNextTurn, EscapeSkillBlock };
-struct Effect { EffectKind kind; int16_t value, target; };
+    DodgeBlock, DrawNextTurn, EscapeSkillBlock, Extended };
+struct Effect { EffectKind kind; int16_t value, target; int16_t aux=0; };
 struct Enemy { int16_t hp, max_hp, block, strength, vulnerable; uint8_t move; int16_t weak=0, poison=0; };
 struct Pile { uint16_t ids[MaxCards]; uint16_t count; };
 enum class LogKind : uint8_t { Turn, Play, Damage, Block, Exhaust, Draw, Shuffle, Enemy,
     Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion, LoseHp, Energy, NoDraw, Weak, Poison, Discard, Create, Dexterity, Noxious, Accuracy, PoisonDamage };
 struct Log { LogKind kind; int32_t a,b; };
 enum class Potion : uint8_t { Empty, Fire, Block, Blood, Energy, Strength, Dexterity,
-    Swift, Explosive, Vulnerable, Weak, Fruit, Forge, Flex, Speed, Bronze, Fortifier };
-constexpr int PotionKinds=16, RelicKinds=30;
+    Swift, Explosive, Vulnerable, Weak, Fruit, Forge, Flex, Speed, Bronze, Fortifier,
+    AttackPotion, BeetleJuice, BottledPotential, Clarity, ColorlessPotion, CureAll, DistilledChaos, DropletOfPrecognition, Duplicator, EntropicBrew, FairyInABottle, FyshOil, GamblersBrew, GigantificationPotion, HeartOfIron, LiquidMemories, LuckyTonic, MazalethsGift, OrobicAcid, PotionOfBinding, PowderedDemise, PowerPotion, RadiantTincture, RegenPotion, ShacklingPotion, ShipInABottle, SkillPotion, SneckoOil, StableSerum, TouchOfInsanity, SoldiersStew, Ashwater, PoisonPotion, GhostInAJar, CunningPotion, Ambergris, FoulPotion, GlowwaterPotion, PotionShapedRock, BoneBrew, PotOfGhouls, PotionOfDoom, FocusPotion, EssenceOfDarkness, PotionOfCapacity, StarPotion, CosmicConcoction, KingsCourage };
+constexpr int PotionKinds=64, RelicKinds=30;
 static_assert(RelicKinds<32,"Expand relic masks and versioned save widths before adding more relics");
 constexpr int ShopCardCount=7, ShopRelicStart=7, ShopPotionStart=10, ShopRemove=13, ShopLeave=14;
 struct PotionDefinition { const char* key; const char* name; const char* description;
-    uint8_t rarity; bool combat_only, targeted; };
+    uint8_t rarity; bool combat_only, targeted; uint8_t pool=0; bool automatic=false; };
 extern const PotionDefinition potion_definitions[PotionKinds];
 const PotionDefinition* potion_definition(Potion);
 bool card_colorless(unsigned kind);
@@ -68,6 +70,8 @@ enum class RelicHook : uint8_t { CombatStart, TurnStart, TurnEnd, Victory };
 struct RelicDefinition { uint32_t id; const char* key; const char* name; const char* description; int asset; };
 extern const RelicDefinition relic_definitions[RelicKinds];
 const RelicDefinition* relic_definition(unsigned);
+
+#include "expansion_state.inc"
 
 struct State {
     Phase phase;
@@ -112,10 +116,11 @@ struct State {
     uint8_t treasure_state; // 0 closed, 1 revealed, 2 claimed; no implicit rerolls.
     uint32_t treasure_relic; // Zero means the exhausted prototype pool offers 50 gold.
     EventDeckAction event_deck_action; // v10: event choices must never use shop/camp completion.
+    ExpansionState expansion;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
-struct SaveData { uint8_t bytes[16384]; size_t size; };
+struct SaveData { uint8_t bytes[65536]; size_t size; };
 void new_run(State&, uint32_t seed, bool practice=false, Character character=Character::Ironclad);
 void enter_combat(State&);
 bool play(State&, int hand_index, int target);
@@ -129,8 +134,8 @@ bool card_innate(Card);
 bool card_strike_tag(unsigned kind);
 const Pile& choice_pile(const State&);
 bool choose_return_to_draw(State&, int card_id);
-inline bool combat_phase(Phase p) { return p==Phase::Combat || p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice; }
-inline bool choice_phase(Phase p) { return p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice; }
+inline bool combat_phase(Phase p) { return p==Phase::Combat || p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice || p==Phase::ExtendedChoice; }
+inline bool choice_phase(Phase p) { return p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice || p==Phase::ExtendedChoice; }
 unsigned random_reward_card(State&);
 bool end_turn(State&);
 bool choose_reward(State&, int index);
@@ -192,4 +197,22 @@ int relic_attack_multiplier(const State&,bool preview=false);
 int card_block(const State&,Card);
 unsigned relic_counter(const State&,unsigned id);
 
+// Extended card/potion continuations share the ordinary combat dispatcher.
+int power_value(const State&,XPower);
+void gain_power(State&,XPower,int);
+void queue_extension(State&,XOp,int a=0,int b=0,bool first=false);
+int cost(const State&,int card_id);
+bool card_exhausts(Card);
+bool card_can_generate(unsigned);
+Card choice_card(const State&,int token);
+bool choose_extended(State&,const uint16_t*,unsigned);
+void resolve_pending(State&);
+void player_hp_loss(State&,int,bool attack,bool blockable);
+int enemy_damage(const State&,int);
+bool potion_in_pool(Potion,Character);
+Potion random_potion(State&);
+bool procure_potion(State&,Potion);
+void execute_potion(State&,Potion,int);
+bool lab_potion(State&,Potion);
+bool lab_card(State&,Card);
 } // namespace spire

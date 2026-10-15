@@ -1,4 +1,5 @@
 void enter_combat(State&s){
+    s.expansion=ExpansionState{};
     s.relic_flash=0;relic_reset_turn_counters(s);
     s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;s.no_draw=0;s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
     s.noxious_fumes=s.accuracy=s.discard_required=0;
@@ -47,16 +48,11 @@ void new_run(State&s,uint32_t seed,bool practice,Character character){
     create_map(s);
     if(practice){s.current_node=1;s.floor=1;s.encounter=0;enter_combat(s);}
 }
-bool play(State&s,int h,int target){
-    if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1||h<0||h>=s.hand.count)return false;
-    if(s.hand.ids[h]>=s.card_count){fail(s);return false;}
-    Card c=s.cards[s.hand.ids[h]];if(c.kind>=CardKinds){fail(s);return false;}const Definition&d=definitions[c.kind];int n=cost(c);int energy=n<0?s.energy:n;
-    if(energy>s.energy|| (d.targeted&&(target<0||target>=s.enemy_count||s.enemies[target].hp==0)))return false;
-    if((c.kind==Anger&&s.card_count==MaxCards)||s.card_count+d.creates+(c.upgraded?d.creates_up:0)>MaxCards){fail(s);return false;}
-    s.relic_flash=0;s.energy-=energy;s.playing=remove(s.hand,h);s.zones[s.playing]=Zone::Limbo;
+static void queue_legacy(State&s,Card c,int target,int energy){
+    const Definition&d=definitions[c.kind];
     int hit=card_base_damage(s,c),block=d.block+(c.upgraded?d.block_up:0),cards=d.draw+(c.upgraded?d.draw_up:0),power=d.power+(c.upgraded?d.power_up:0);
     if(d.type==CardType::Attack)relic_attack_begin(s);
-    if(block)block=s.no_block?0:max(0,block+s.dexterity);
+    if(block)block=powered_block(s,c,block);
     record(s,LogKind::Play,c.kind,c.upgraded);
     if(d.hp_loss)enqueue(s,EffectKind::LoseHp,d.hp_loss);
     if(d.energy_gain)enqueue(s,EffectKind::Energy,d.energy_gain+(c.upgraded?d.energy_up:0));
@@ -111,8 +107,18 @@ bool play(State&s,int h,int target){
     if(c.kind==Inflame)enqueue(s,EffectKind::Strength,power);
     if(c.kind==FeelNoPain)enqueue(s,EffectKind::Pain,power);
     if(c.kind==DarkEmbrace)enqueue(s,EffectKind::Embrace,1);
-    enqueue(s,EffectKind::Finish);resolve(s);s.revision++;return true;
+    enqueue(s,EffectKind::Finish);
 }
+bool play(State&s,int h,int target){
+    if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1||h<0||h>=s.hand.count)return false;
+    int id=s.hand.ids[h];if(id>=s.card_count||s.cards[id].kind>=CardKinds){fail(s);return false;}
+    Card c=s.cards[id];const auto&d=definitions[c.kind];int price=cost(s,id);
+    if(price>s.energy||(d.targeted&&(target<0||target>=s.enemy_count||!s.enemies[target].hp)))return false;
+    if((c.kind==Anger&&s.card_count==MaxCards)||s.card_count+d.creates+(c.upgraded?d.creates_up:0)>MaxCards){fail(s);return false;}
+    s.relic_flash=0;if(!start_instance(s,id,target,false))return false;
+    resolve_pending(s);++s.revision;return true;
+}
+
 bool choose_exhaust(State&s,int index){
     if(s.phase!=Phase::ExhaustChoice||index<0||index>=s.hand.count)return false;
     s.phase=Phase::Combat;exhaust(s,index);resolve(s);s.revision++;return true;
@@ -132,9 +138,9 @@ bool choose_discard(State&s,const uint16_t* ids,unsigned count){
     s.discard_required=0;s.phase=Phase::Combat;resolve(s);s.revision++;return true;
 }
 unsigned choice_min(const State&s){
-    return s.phase==Phase::ExhaustManyChoice?0:s.phase==Phase::DiscardChoice?s.discard_required:1;
+    return s.phase==Phase::ExtendedChoice?s.expansion.choice_min:s.phase==Phase::ExhaustManyChoice?0:s.phase==Phase::DiscardChoice?s.discard_required:1;
 }
-unsigned choice_max(const State&s){return s.phase==Phase::ExhaustManyChoice?s.exhaust_limit:choice_min(s);}
+unsigned choice_max(const State&s){return s.phase==Phase::ExtendedChoice?s.expansion.choice_max:s.phase==Phase::ExhaustManyChoice?s.exhaust_limit:choice_min(s);}
 bool choose_exhaust_many(State&s,const uint16_t* ids,unsigned count){
     if(s.phase!=Phase::ExhaustManyChoice||count>s.exhaust_limit||(count&&!ids))return false;
     for(unsigned i=0;i<count;i++){
@@ -156,57 +162,7 @@ bool choose_return_to_draw(State&s,int card_id){
 }
 bool end_turn(State&s){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1)return false;
-    s.relic_flash=0;relic_hook(s,RelicHook::TurnEnd);
-    s.no_draw=0;
-    s.strength=max(0,s.strength-s.temporary_strength);s.temporary_strength=0;
-    s.dexterity=max(0,s.dexterity-s.temporary_dexterity);s.temporary_dexterity=0;
-    for(int i=0;i<s.hand.count;){
-        if(card_retains(s.cards[s.hand.ids[i]])){++i;continue;}
-        int id=remove(s.hand,i);put(s,s.discard,id,Zone::Discard);
-    }
-    // Poison resolves for the enemy side before any enemy begins its move.
-    // It bypasses block and all attack-only modifiers in the supported model set.
-    for(int i=0;i<s.enemy_count;i++){
-        auto&e=s.enemies[i];if(e.hp>0&&e.poison>0){
-            int amount=e.poison;e.hp=(int16_t)max(0,e.hp-amount);
-            if(e.hp>0)--e.poison;
-            record(s,LogKind::PoisonDamage,amount,i);
-        }
-    }
-    if(!alive(s)){victory(s);s.revision++;return true;}
-    for(int i=0;i<s.enemy_count;i++){
-        auto&e=s.enemies[i];if(e.hp==0)continue;e.block=0;
-        record(s,LogKind::Enemy,i,e.move);
-        int amount=enemy_damage(e),absorb=min(s.block,amount);
-        // Thorns is BeforeDamageReceived in the pinned build. The already-started
-        // incoming hit still resolves even if its dealer dies to retaliation.
-        if(e.move!=2&&s.thorns)damage_unpowered(s,i,s.thorns);
-        s.block-=absorb;int old_hp=s.hp;s.hp=max(0,s.hp-amount+absorb);
-        relic_after_hp_loss(s,old_hp-s.hp);
-        if(s.hp>0&&e.move!=2&&s.flame_barrier)damage_unpowered(s,i,s.flame_barrier);
-        if(e.move==1)e.block=5;
-        if(e.move==2)e.strength=min(9999,e.strength+2);
-        if(e.vulnerable>0)e.vulnerable--;
-        if(e.weak>0)e.weak--;
-        e.move=(uint8_t)((e.move+1)%3);
-        if(!s.hp){s.phase=Phase::Dead;break;}
-    }
-    s.flame_barrier=0;
-    if(s.no_block>0)--s.no_block; // NoBlockPower.AfterSideTurnEnd: enemy side.
-    if(s.hp&&!alive(s)){victory(s);s.revision++;return true;}
-    if(s.hp){relic_reset_turn_counters(s);s.block=s.block_next_turn;s.block_next_turn=0;s.energy=3;s.turn++;
-        if(s.block)record(s,LogKind::Block,s.block);
-        if(s.demon_form){s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
-        // Infinite Blades runs BeforeHandDraw; created cards occupy hand space
-        // before the standard draw and Predator's one-turn draw modifier.
-        if(s.infinite_blades){
-            if(s.infinite_blades>MaxCards-s.card_count){fail(s);s.revision++;return true;}
-            create_shivs(s,s.infinite_blades);
-        }
-        for(int i=0;i<s.enemy_count;i++)if(s.noxious_fumes)apply_poison(s,i,s.noxious_fumes);
-        int draw=5+s.draw_next_turn;s.draw_next_turn=0;
-        draw_cards(s,draw);relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);finish_combat_if_won(s);}
-    s.revision++;return true;
+    s.relic_flash=0;queue_extension(s,XOp::TurnEnd);resolve_pending(s);++s.revision;return true;
 }
 bool choose_reward(State&s,int index){
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>2)return false;
