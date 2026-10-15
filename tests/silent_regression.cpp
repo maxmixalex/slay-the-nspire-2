@@ -64,7 +64,7 @@ static void card_cases(){
 static void boundaries(){
  auto s=fight({{Prepared,1},{Neutralize,0},{DefendSilent,0}});supply(s,6);CHECK(play(s,0,0));CHECK(s.discard_required==2);auto prior=s;
  uint16_t ids[2]={s.hand.ids[0],s.hand.ids[0]};CHECK(!choose_discard(s,ids,2));CHECK(!memcmp(&s,&prior,sizeof s));CHECK(!choose_discard(s,ids,1));CHECK(!choose_discard(s,nullptr,2));ids[1]=s.draw.ids[0];CHECK(!choose_discard(s,ids,2));CHECK(!memcmp(&s,&prior,sizeof s));
- SaveData saved{};CHECK(save(s,saved));State loaded{};CHECK(load(loaded,saved.bytes,saved.size()));CHECK(loaded.discard_required==2&&loaded.character==Character::Silent);ids[1]=s.hand.ids[1];CHECK(choose_discard(loaded,ids,2));CHECK(loaded.hand.count==2&&loaded.discard.count==3);roundtrip(loaded);
+ SaveData saved{};CHECK(save(s,saved));State loaded{};CHECK(load(loaded,saved.bytes,saved.size));CHECK(loaded.discard_required==2&&loaded.character==Character::Silent);ids[1]=s.hand.ids[1];CHECK(choose_discard(loaded,ids,2));CHECK(loaded.hand.count==2&&loaded.discard.count==3);roundtrip(loaded);
  s=fight({{Prepared,1}});s.no_draw=1;CHECK(play(s,0,0));CHECK(s.phase==Phase::Combat&&s.discard_required==0&&s.hand.count==0);roundtrip(s);
  s=fight({{BladeDance,1},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0},{StrikeSilent,0}});CHECK(play(s,0,0));CHECK(s.hand.count==10&&count(s,Zone::Hand,Shiv)==1&&count(s,Zone::Discard,Shiv)==3);roundtrip(s);
  s=fight({{Deflect,0}});s.hp=60;s.enemies[0].hp=5;s.enemies[0].poison=5;s.enemies[0].block=90;s.enemies[0].strength=500;CHECK(end_turn(s));CHECK(s.hp==60&&s.phase==Phase::Reward&&s.enemies[0].hp==0&&s.enemies[0].block==90);roundtrip(s);
