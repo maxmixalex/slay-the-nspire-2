@@ -53,7 +53,8 @@ enum class Potion : uint8_t { Empty, Fire, Block, Blood, Energy, Strength, Dexte
     Swift, Explosive, Vulnerable, Weak, Fruit, Forge, Flex, Speed, Bronze, Fortifier,
     AttackPotion, BeetleJuice, BottledPotential, Clarity, ColorlessPotion, CureAll, DistilledChaos, DropletOfPrecognition, Duplicator, EntropicBrew, FairyInABottle, FyshOil, GamblersBrew, GigantificationPotion, HeartOfIron, LiquidMemories, LuckyTonic, MazalethsGift, OrobicAcid, PotionOfBinding, PowderedDemise, PowerPotion, RadiantTincture, RegenPotion, ShacklingPotion, ShipInABottle, SkillPotion, SneckoOil, StableSerum, TouchOfInsanity, SoldiersStew, Ashwater, PoisonPotion, GhostInAJar, CunningPotion, Ambergris, FoulPotion, GlowwaterPotion, PotionShapedRock };
 constexpr int PotionKinds=55, RelicKinds=116;
-static_assert(RelicKinds<=RelicSet::Words*32,"Relic registry exceeds bounded set storage");
+static_assert(RelicKinds<=RelicSet::Words*32,"Relic set capacity exceeded");
+constexpr int MaxPotionSlots=4;
 constexpr int ShopCardCount=7, ShopRelicStart=7, ShopPotionStart=10, ShopRemove=13, ShopLeave=14;
 struct PotionDefinition { const char* key; const char* name; const char* description;
     uint8_t rarity; bool combat_only, targeted; uint8_t pool=0; bool automatic=false; };
@@ -275,6 +276,8 @@ bool gain_relic(State&,unsigned id);
 unsigned random_relic(State&);
 void relic_hook(State&,RelicHook);
 void relic_card_played(State&,Card);
+void relic_hook_one(State&,RelicHook,unsigned);
+void relic_card_played_one(State&,Card,unsigned);
 unsigned relic_counter_limit(unsigned id);
 bool relic_counter_is_turn_scoped(unsigned id);
 void relic_reset_turn_counters(State&);
@@ -284,21 +287,21 @@ int relic_attack_multiplier(const State&,bool preview=false);
 int card_block(const State&,Card);
 unsigned relic_counter(const State&,unsigned id);
 
-
 int cost(const State&,int card_id);
 bool card_exhausts(Card);
-bool card_can_generate(unsigned kind);
+bool card_can_generate(unsigned);
+bool card_defend_tag(unsigned);
 Card choice_card(const State&,int token);
 bool choose_bulk(State&,const uint16_t*,unsigned);
 void bulk_resolve(State&);
 void bulk_enqueue(State&,BulkOp,int a=0,int b=0,bool first=false);
+void bulk_effect(State&,Effect);
 int bulk_power(const State&,BulkPower);
 void bulk_power_add(State&,BulkPower,int);
 int enemy_damage(const State&,int);
-bool relic_in_pool(unsigned,Character);
+bool relic_in_pool(unsigned,Character,bool merchant=false);
 void bulk_merchant_restock(State&,int);
-bool card_defend_tag(unsigned);
-void bulk_upgrade_random(State&,int count,CardType);
+void bulk_upgrade_random(State&,int,CardType);
 void bulk_use_potion(State&,Potion,int);
 void bulk_relic_hook(State&,RelicHook,unsigned);
 void bulk_relic_obtained(State&,unsigned);
@@ -313,15 +316,13 @@ void bulk_add_dexterity(State&,int,bool temporary=false);
 int bulk_effective_dexterity(const State&);
 int bulk_attack_bonus(const State&,Card);
 int bulk_card_block(State&,Card,int);
-void bulk_player_damage(State&,int,bool attack);
+void bulk_player_damage(State&,int,bool attack,bool blockable=true);
 bool bulk_revival(State&);
 void bulk_deck_added(State&,Card&);
 void bulk_room_entered(State&,Room);
-void bulk_potion_changed(State&);
 bool potion_in_pool(Potion,Character);
 Potion random_potion(State&);
 bool procure_potion(State&,Potion);
-void bulk_grant_random(State&,int filter,bool upgraded=false,bool free=false);
-int shop_price(const State&,int amount);
+int shop_price(const State&,int);
 
 } // namespace spire

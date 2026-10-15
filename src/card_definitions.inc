@@ -69,14 +69,15 @@ const Definition definitions[CardKinds]={
  {"INFINITE_BLADES",1,0,0,0,1,0,0,0,0,CardType::Power,false},
  {"BACKSTAB",0,11,0,0,0,4,0,0,0,CardType::Attack,true,0,0,0,true},
  {"ESCAPE_PLAN",0,0,3,0,0,0,2,0,0,CardType::Skill,false},
- {"PREDATOR",2,15,0,0,2,5,0,0,0,CardType::Attack,true}
+ {"PREDATOR",2,15,0,0,2,5,0,0,0,CardType::Attack,true},
+#include "bulk_card_definitions.inc"
 
 };
 int card_rarity(unsigned kind){
 static constexpr uint8_t rarity[CardKinds]={
  1,1,1,2,2,2,3,2,2,3,2,3,3,4,3,3,4,4,3,2,3,2,3,4,3,3,
- 1,1,1,1,3,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,4,3,2,7,3,4,3,4,3,4,3,2,2,2,3,4,2,3,3,3,2};
+ 1,1,1,1,3,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,4,3,2,7,3,4,3,4,3,4,3,2,2,2,3,4,2,3,3,3,2,4,4,3,4,4,4,3,3,3,3,4,3,4,3,3,4,4,3,4,4,3,4,3,3,3,3,3,3,4,3,4,3,4,4,3,4,3,3,4,3,3,3,3,3};
     return kind<CardKinds?rarity[kind]:0;
 }
 
-bool card_colorless(unsigned kind){return kind==Finesse||kind==FlashOfSteel||(kind>=Impatience&&kind<=PanicButton);}
+bool card_colorless(unsigned kind){return kind>=Alchemize&&kind<CardKinds||kind==Finesse||kind==FlashOfSteel||(kind>=Impatience&&kind<=PanicButton);}

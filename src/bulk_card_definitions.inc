@@ -1,4 +1,4 @@
-// Appended IDs. Scalar values and keywords inspected in the pinned installation.
+// Append-only single-player colorless card models.
  {"ALCHEMIZE",1,0,0,0,0,0,0,0,0,CardType::Skill,false,0,0,0,false,0,0,-1,1,1},
  {"ANOINTED",1,0,0,0,0,0,0,0,0,CardType::Skill,false,0,0,0,false,0,0,0,1,5},
  {"AUTOMATION",1,0,0,0,0,0,0,0,0,CardType::Power,false,0,0,0,false,0,0,-1,0,0},

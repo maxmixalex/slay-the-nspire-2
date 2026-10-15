@@ -26,7 +26,7 @@ int main(){
     action(UiAction::RewardCards);CHECK(a.reward_cards);a.input(Key::Detail);CHECK(a.detail_card==Offering);a.input(Key::Back);CHECK(a.reward_cards);CHECK(findclick(HitKind::Choice,0));CHECK(!a.reward_cards&&(a.game.reward_claimed&2));
     action(UiAction::RewardPotion);CHECK(a.game.potions[0]==Potion::Fruit);snapshot();a.input(Key::Potions);a.render();CHECK(a.panel==4);action(UiAction::DiscardPotion);CHECK(a.game.potions[0]==Potion::Empty);a.input(Key::Back);
     action(UiAction::LeaveRewards);CHECK(a.game.phase==Phase::Complete);
-    init();a.game.practice=0;a.game.current_node=1;a.game.next_row=1;a.game.phase=Phase::Map;a.game.gold=9999;CHECK(choose_node(a.game,1));a.render();
+    init();a.game.practice=0;a.game.current_node=1;a.game.next_row=1;a.game.phase=Phase::Map;a.game.gold=9999;CHECK(choose_node(a.game,1));a.ui_action(UiAction::OpenShop);a.render();
     for(int i=0;i<ShopRemove;i++){
         a.cursor=i;a.input(Key::Detail);CHECK(i<7?a.detail_card>=0:a.detail_item>=0);a.input(Key::Back);CHECK(a.game.phase==Phase::Shop);
         if(i>=ShopPotionStart){discard_potion(a.game,0);discard_potion(a.game,1);}CHECK(findclick(HitKind::Choice,i));CHECK(a.game.shop_sold&(1u<<i));

@@ -32,8 +32,8 @@ bool can_use_potion(const State&s,int slot,int target){
     if(slot<0||slot>=s.potion_slots||s.hp<=0||choice_phase(s.phase)||s.phase==Phase::Dead||
        s.phase==Phase::Complete||s.phase==Phase::Error||s.effect_count||s.playing>=0)return false;
     const auto*d=potion_definition(s.potions[slot]);if(!d||d->automatic)return false;
-    if(s.potions[slot]==Potion::FoulPotion&&s.phase!=Phase::Combat&&s.phase!=Phase::Shop)return false;
     if(d->combat_only&&s.phase!=Phase::Combat)return false;
+    if(s.potions[slot]==Potion::FoulPotion&&s.phase!=Phase::Combat&&s.phase!=Phase::Shop)return false;
     if(d->targeted&&(target<0||target>=s.enemy_count||s.enemies[target].hp<=0))return false;
     return true;
 }
@@ -42,6 +42,7 @@ bool use_potion(State&s,int slot,int target){
     Potion p=s.potions[slot];
     // Consume first so the same bottle cannot be reused during any later hook.
     s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,(int)p);
+    const bool fighting=s.phase==Phase::Combat;if(fighting)s.bulk.potion_active=1;
     switch(p){
     case Potion::Fire:damage_unpowered(s,target,20);break;
     case Potion::Block:s.block=(int16_t)cap(9999,s.block+12);break;
@@ -49,7 +50,7 @@ bool use_potion(State&s,int slot,int target){
     case Potion::Energy:s.energy=(int16_t)cap(999,s.energy+2);break;
     case Potion::Strength:bulk_add_strength(s,2);break;
     case Potion::Dexterity:bulk_add_dexterity(s,2);break;
-    case Potion::Swift:draw_cards(s,3);break;
+    case Potion::Swift:bulk_enqueue(s,BulkOp::Draw,3);break;
     case Potion::Explosive:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,10);break;
     case Potion::Vulnerable:grant(s.enemies[target].vulnerable,3);break;
     case Potion::Weak:grant(s.enemies[target].weak,3);break;
@@ -61,7 +62,7 @@ bool use_potion(State&s,int slot,int target){
     case Potion::Fortifier:s.block=(int16_t)cap(9999,s.block*3);break;
     default:bulk_use_potion(s,p,target);break;
     }
-    if((s.relics&ReptileTrinket)&&combat_phase(s.phase)){int old=s.strength;bulk_add_strength(s,3);s.temporary_strength+=(int16_t)(s.strength-old);}
+    if(fighting&&s.hp>0&&combat_phase(s.phase))bulk_enqueue(s,BulkOp::FinishPotion);
     bulk_resolve(s);s.revision++;return true;
 }
 bool discard_potion(State&s,int slot){

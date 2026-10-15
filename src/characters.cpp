@@ -23,6 +23,11 @@ unsigned character_pool(Character character,uint8_t* out,bool rewards_only){
  return count;
 }
 unsigned random_reward_card(State&s){
+    if(s.relics&DingyRug){
+        uint8_t mixed[CardKinds];unsigned n=0;
+        for(unsigned i=0;i<CardKinds;i++)if(card_colorless(i)||(card_in_pool(i,s.character)&&card_rarity(i)>=2))mixed[n++]=(uint8_t)i;
+        return mixed[random_below(s.rng_world,n)];
+    }
  uint8_t pool[CardKinds];unsigned n=character_pool(s.character,pool,true);
  return n?pool[random_below(s.rng_world,n)]:Strike;
 }

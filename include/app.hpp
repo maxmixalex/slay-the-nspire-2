@@ -20,7 +20,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count&&strings_>=EventTextEnd;}
+    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count&&strings_>=401;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -37,24 +37,24 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool practice_entry=false;
-    bool shop_open=false,event_reader=false;
-    int event_reader_scroll=0;
-    bool room_input(Key);
+    bool hand_focus=false;
     int potion_popup=-1,potion_menu=0;
     bool potion_targeting=false;
     Potion popup_bottle=Potion::Empty;
     uint32_t potion_revision=0;
-    void open_potion_popup(int slot);
-    bool potion_input(Key);
-    void potion_action(UiAction);
-    void choose_potion_target(int target);
     void close_potion_popup();
+    void open_potion_popup(int);
+    void choose_potion_target(int);
+    void potion_action(UiAction);
+    bool potion_input(Key);
+    bool shop_open=false,event_reader=false;
+    int event_reader_scroll=0;
+    bool room_input(Key);
     Character selected_character=Character::Ironclad;
     int library_filter=0,library_sort=0;
     uint16_t choice_selected[MaxHand]{};unsigned choice_selected_count=0;uint32_t choice_revision=0;
     bool character_select=false,library=false,reward_cards=false,library_upgraded=false;
     int library_tab=0,library_page=0,library_selected=0;
-    bool hand_focus=false;
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[3]={},hit_start[3]={};
     uint32_t animation=0,run_number=0;const char* notice="";
@@ -62,7 +62,7 @@ struct App {
     PointerState pointer{};
     MapPreview map_preview{};
     HitRegion hits[MaxHits]{}; int hit_count = 0;
-    int status_actor=-1, status_selected=0;
+    int status_actor=-1, status_selected=0, status_scroll=0;
     void open_statuses(int actor);
     bool status_input(Key);
     int deck_candidate=-1;uint32_t deck_choice_revision=0;Phase deck_choice_phase=Phase::Map;
@@ -74,7 +74,8 @@ struct App {
     int relic_flash_ticks=0;
     void open_owned_relic(int position);
     void sync_relic_feedback();
-    int detail_instance=-1, detail_cost_override=-2;
+    int detail_cost_override=-2;
+    void open_choice_detail(int);
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
     const HitRegion* hit_at(int x,int y) const;
@@ -85,8 +86,6 @@ struct App {
     void pointer_scroll(int rows);
     void pointer_key(Key);
     void open_card_detail(Card);
-    void open_choice_detail(int);
-    int detail_energy()const;
     bool reference_input(Key);
     bool screen_input(Key);
     unsigned library_items(uint8_t* ids=nullptr)const;
