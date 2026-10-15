@@ -218,7 +218,9 @@ def main()->None:
         from build_tactics import build as tactics
         tactics(args.game,output,output,font_path)
         from build_relics import build as relics
-        final=relics(args.game,output,output,font_path)
+        relics(args.game,output,output,font_path)
+        from build_events import build as events
+        final=events(args.game,output,output,font_path)
         output.replace(args.output/'nSpire2.nsp.tns')
         (Path(staging)/'content-manifest.json').replace(args.output/'content-manifest.json')
         print(f"Created {args.output/'nSpire2.nsp.tns'}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)
