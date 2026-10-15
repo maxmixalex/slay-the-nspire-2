@@ -1,3 +1,4 @@
+#include "hand_focus.inc"
 static void invalidate_hand_tiles();
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
@@ -23,6 +24,7 @@ static int choice_count(const App&a){
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
+    HandInputFocus focus(*this,k);
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
     if(room_input(k))return;
     if(status_input(k))return;

@@ -72,8 +72,45 @@ static void rendering(const std::vector<uint8_t>&data){
     for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
     a.input(Key::Back);CHECK(a.detail_card<0);
 }
+static int raised_hits(){
+    int n=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Hand&&a.hits[i].h==68)++n;return n;
+}
+static void focus_transitions(){
+    for(int count=1;count<=10;count++){
+        setup(count);auto before=snap();CHECK(!a.hand_focus&&raised_hits()==0);
+        int selected=count/2;auto r=rail(selected);
+        a.pointer_move(r.x+r.w/2,224);a.render();CHECK(a.hand_focus&&a.cursor==selected&&raised_hits()==1);same(before);
+        auto p=hand_pose(count,selected,true);
+        a.pointer_move(p.cx,p.cy-HandTileH/2+8);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
+        a.pointer_move(238,82);a.render();CHECK(!a.hand_focus&&raised_hits()==0);same(before);
+        a.input(Key::Left);a.render();CHECK(a.hand_focus&&raised_hits()==1);same(before);
+        a.input(Key::Up);a.render();CHECK(a.hand_focus);same(before);
+        a.input(Key::Inspect);a.render();CHECK(a.panel==1&&!a.hand_focus);same(before);
+        a.input(Key::Back);a.render();CHECK(!a.panel&&!a.hand_focus&&raised_hits()==0);same(before);
+        a.input(Key::Right);CHECK(a.hand_focus);a.pointer_cancel();a.render();CHECK(!a.hand_focus&&raised_hits()==0);same(before);
+        a.input(Key::Right);a.input(Key::Back);a.render();CHECK(a.paused&&!a.hand_focus);same(before);
+        a.input(Key::Back);a.render();CHECK(!a.paused&&!a.hand_focus);same(before);
+        // The collapsed upper card face is also reachable, not only its rail.
+        r=rail(selected);p=hand_pose(count,selected,false);
+        a.pointer_move(r.x+r.w/2,p.cy-HandTileH*p.scale/(2*1024)+2);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
+        a.reset_presentation();CHECK(!a.hand_focus);same(before);
+    }
+    setup(5);auto r=rail(0);a.pointer_move(r.x+r.w/2,224);a.pointer_button(true);a.pointer_move(238,82);
+    CHECK(a.hand_focus&&a.pointer.held);a.pointer_button(false);a.render();
+    CHECK(!a.hand_focus&&a.game.enemies[0].hp==40&&a.game.hand.count==4);
+}
+static void capture(const char*prefix,bool focused){
+    char filename[1024];std::snprintf(filename,sizeof filename,"%s-%s.ppm",prefix,focused?"focused":"neutral");
+    FILE*f=std::fopen(filename,"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");
+    for(auto p:a.pixels){unsigned char rgb[3]={(unsigned char)((p>>11)*255/31),(unsigned char)(((p>>5)&63)*255/63),(unsigned char)((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}
+    CHECK(std::fclose(f)==0);
+}
 int main(int argc,char**argv){
     std::vector<uint8_t> data;
     if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
-    layouts();input_safety();rendering(data);std::printf("combat UI: %u checks passed\n",checks);
+    layouts();input_safety();focus_transitions();rendering(data);
+    if(argc>2&&!data.empty()){
+        new_run(a.game,7,true);a.reset_presentation();a.title=false;a.pointer.visible=false;a.animation=0;a.render();capture(argv[2],false);
+        a.input(Key::Right);a.render();capture(argv[2],true);
+    }std::printf("combat UI: %u checks passed\n",checks);
 }

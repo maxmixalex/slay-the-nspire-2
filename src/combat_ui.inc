@@ -88,12 +88,22 @@ static void combat_screen(Canvas&c){
         if(a.last_hit[i]&&age>=0&&age<24){int x=i==0?48:s.enemy_count==1?225:165+(i-1)*88;c.num(a.last_hit[i],x,91-age/2,16,i?Gold:Red);}
     }
     int selected=mn(mx(a.cursor,0),mx(0,s.hand.count-1));
-    // Non-focused cards sit on the arc; only the focused preview is enlarged.
-    for(int i=0;i<s.hand.count;i++)if(i!=selected)draw_hand_tile(c,hand_tile(c,i),hand_pose(s.hand.count,i,false),false);
+    const bool focused=a.hand_focus&&a.hand_can_focus();
+    // At rest every card remains on the arc. Focus is earned by hover or keys,
+    // not by the cursor index merely existing. The battlefield stays visible.
+    for(int i=0;i<s.hand.count;i++){
+        auto p=hand_pose(s.hand.count,i,false);
+        if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i),p,false);
+        auto r=hand_rail(s.hand.count,i);
+        int top=p.cy-HandTileH*p.scale/(2*1024);
+        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s.cards[s.hand.ids[i]])<=s.energy);
+    }
     if(s.hand.count){
-        draw_hand_tile(c,hand_tile(c,selected),hand_pose(s.hand.count,selected,true),true);
-        auto p=hand_pose(s.hand.count,selected,true);
-        c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&cost(s.cards[s.hand.ids[selected]])<=s.energy);
+        if(focused){
+            draw_hand_tile(c,hand_tile(c,selected),hand_pose(s.hand.count,selected,true),true);
+            auto p=hand_pose(s.hand.count,selected,true);
+            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&cost(s.cards[s.hand.ids[selected]])<=s.energy);
+        }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
         for(int i=0;i<s.hand.count;i++){

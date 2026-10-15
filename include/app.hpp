@@ -37,6 +37,8 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool practice_entry=false;
+    bool hand_focus=false; // Presentation only, never part of a saved run.
+    bool hand_can_focus()const;
     bool shop_open=false,event_reader=false;
     int event_reader_scroll=0;
     bool room_input(Key);
