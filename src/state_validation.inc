@@ -15,7 +15,7 @@ bool validate(const State&s){
        s.vigor<0||s.vigor>9999||s.attack_vigor<0||s.attack_vigor>9999||s.thorns<0||s.thorns>9999)return false;
     if(s.block<0||s.block>9999||s.strength<0||s.strength>9999||s.pain<0||s.pain>9999||s.embrace<0||s.embrace>99)return false;
     if(s.deck_count<1||s.deck_count>MaxDeck||s.card_count>MaxCards||s.hand.count>MaxHand||s.effect_count>MaxEffects||s.log_count>24||s.power_count>2)return false;
-    if(s.enemy_count>2||s.playing< -1||s.playing>=s.card_count)return false;
+    if(s.expansion.depth>MaxAutoFrames||s.enemy_count>2||s.playing< -1||s.playing>=s.card_count)return false;
     if(s.current_node< -1||s.current_node>=MapNodes||s.next_row>MapRows||s.encounter>1||s.gold<0||s.gold>9999||s.last_gold<0||s.last_gold>99)return false;
     if((unsigned)s.event_id>=EventKinds||s.event_page>4||s.event_remaining>2||s.event_first< -1||s.event_first>=s.deck_count||s.event_value<0||s.event_value>9999)return false;
     if(s.shop_sold>16383)return false;

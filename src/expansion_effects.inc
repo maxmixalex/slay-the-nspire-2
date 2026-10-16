@@ -163,7 +163,7 @@ static void extension_effect(State&s,Effect e){
   if(!alive(s)){victory(s);break;}queue_extension(s,XOp::TurnStart,0,0,true);break;
  case XOp::TurnStart:
   if(s.turn>=20000){fail(s);break;}
-  ++s.turn;x.enemy_side=0;s.block=s.block_next_turn;s.block_next_turn=0;s.energy=3;
+  ++s.turn;x.enemy_side=0;s.block=(int16_t)min(9999,s.block_next_turn+power_value(s,XPower::Plating));s.block_next_turn=0;s.energy=3;
   x.nonpower_started=0;x.returning=0;for(auto&v:x.turn_cost)v=0;for(auto&v:x.panache_count)v=0;
   relic_reset_turn_counters(s);if(s.block)record(s,LogKind::Block,s.block);
   if(power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);

@@ -45,6 +45,11 @@ static void status_screen(Canvas&c){
             if(p[0]=='{'&&p[1]=='n'&&p[2]=='}'){t.number(status_amount(s,a.status_actor,id));p+=3;}
             else t.ch(*p++);
         }
+        if(id==43){
+            t.text("\n");for(int i=0;i<MaxBombs;i++)if(s.expansion.bomb_turns[i]){t.number(s.expansion.bomb_turns[i]);t.text(" 回合 / ");t.number(s.expansion.bomb_damage[i]);t.text(" 伤害\n");}
+        }else if(id==46){
+            t.text("\n蓄能：");for(int i=0;i<s.expansion.orb_count;i++){if(i)t.text(" / ");t.number(s.expansion.dark[i]);}
+        }
         c.paragraph(description,145,118,156,6,0,12,White);
         if(count>6){char label[24]={};TextBuffer t{label,sizeof label,0};t.number(first/6+1);t.text(" / ");t.number((count+5)/6);c.centered(label,37,208,66,10,Muted);
             c.text("‹",15,205,12,Gold);c.hit(11,204,25,18,HitKind::Scroll,-6,first>0);

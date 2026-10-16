@@ -37,7 +37,7 @@
  {"SPLASH",1,0,0,0,0,0,0,0,0,CardType::Skill,false,0,0,0,false,0,0,0,0,0},
  {"STRATAGEM",1,0,0,0,1,0,0,0,0,CardType::Power,false,0,0,0,false,0,0,-1,0,0},
  {"THE_BOMB",2,0,0,0,40,0,0,0,10,CardType::Skill,false,0,0,0,false,0,0,0,0,0},
- {"THE_GAMBIT",0,0,50,0,0,0,25,0,0,0,CardType::Skill,false,0,0,0,false,0,0,0,0,0},
+ {"THE_GAMBIT",0,0,50,0,0,0,25,0,0,CardType::Skill,false,0,0,0,false,0,0,0,0,0},
  {"THINKING_AHEAD",0,0,0,2,0,0,0,0,0,CardType::Skill,false,0,0,0,false,0,0,0,1,0},
  {"THRUMMING_HATCHET",1,11,0,0,0,3,0,0,0,CardType::Attack,true,0,0,0,false,0,0,0,0,0},
  {"ULTIMATE_DEFEND",1,0,11,0,0,0,4,0,0,CardType::Skill,false,0,0,0,false,0,0,0,0,0},

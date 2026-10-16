@@ -120,8 +120,9 @@ void relic_attack_begin(State&s){
 }
 void relic_attack_end(State&s){s.double_attack=0;s.attack_vigor=0;}
 int relic_attack_multiplier(const State&s,bool preview){
- if(s.double_attack)return 2;
- return preview&&(s.relics&PenNib)&&relic_counter(s,PenNib)==9?2:1;
+ int n=s.double_attack||(preview&&(s.relics&PenNib)&&relic_counter(s,PenNib)==9)?2:1;
+ if(s.expansion.triple||(preview&&power_value(s,XPower::Gigantic)))n*=3;
+ return n;
 }
-int card_block(const State&s,Card c){const auto&d=definitions[c.kind];int b=d.block+(c.upgraded?d.block_up:0);return b>0&&!s.no_block?b+s.dexterity:0;}
+int card_block(const State&s,Card c){const auto&d=definitions[c.kind];int b=d.block+(c.upgraded?d.block_up:0);return b>0&&!s.no_block?b+s.dexterity+((c.kind==Defend||c.kind==DefendSilent||c.kind==UltimateDefend)?power_value(s,XPower::Fasten):0):0;}
 }

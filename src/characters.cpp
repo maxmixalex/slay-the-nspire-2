@@ -5,6 +5,7 @@ const CharacterDefinition character_definitions[CharacterKinds]={
  {"SILENT","静默猎手",70,RingOfTheSnake}
 };
 CardColor card_color(unsigned kind){
+ if(kind==Soul||kind==SovereignBlade)return CardColor::Token;
  if(card_colorless(kind))return CardColor::Colorless;
  return ((kind>=StrikeSilent&&kind<=Shiv)||(kind>=DodgeAndRoll&&kind<=Predator))?CardColor::Silent:CardColor::Ironclad;
 }

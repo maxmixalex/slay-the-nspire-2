@@ -20,7 +20,7 @@ void App::sync_selection(){
     if(choice_revision!=game.revision){choice_selected_count=0;choice_revision=game.revision;}
 }
 void App::toggle_choice(int id){
-    sync_selection();if(!choice_phase(game.phase)||id<0||id>=game.card_count)return;
+    sync_selection();if(!choice_phase(game.phase)||id<0||id>=MaxCards+3)return;
     const auto& source=choice_pile(game);
     bool in_hand=false;for(unsigned i=0;i<source.count;i++)if(source.ids[i]==id)in_hand=true;
     if(!in_hand)return;
@@ -36,7 +36,8 @@ void App::confirm_choice(){
     unsigned needed=choice_max(game);
     if(choice_selected_count<choice_min(game)||choice_selected_count>needed)return;
     bool done=false;
-    if(game.phase==Phase::ReturnChoice)done=choose_return_to_draw(game,choice_selected[0]);
+    if(game.phase==Phase::ExtendedChoice)done=choose_extended(game,choice_selected,choice_selected_count);
+    else if(game.phase==Phase::ReturnChoice)done=choose_return_to_draw(game,choice_selected[0]);
     else if(game.phase==Phase::ExhaustManyChoice)done=choose_exhaust_many(game,choice_selected,choice_selected_count);
     else if(game.phase==Phase::DiscardChoice)done=choose_discard(game,choice_selected,needed);
     else for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==choice_selected[0]){done=choose_exhaust(game,i);break;}
@@ -52,7 +53,7 @@ bool App::selection_input(Key key){
     else if(key==Key::Down)cursor=cursor+5<count?cursor+5:cursor;
     else if(key==Key::Confirm)toggle_choice(source.ids[cursor]);
     else if(key==Key::EndTurn)confirm_choice();
-    else if(key==Key::Detail)open_card_detail(game.cards[source.ids[cursor]]);
+    else if(key==Key::Detail)open_choice_detail(source.ids[cursor]);
     else return false; // Pause, save/load and browsing remain available.
     return true;
 }
@@ -66,6 +67,14 @@ void App::select_library_item(int index){
 void App::ui_action(UiAction action){
     pointer_cancel();
     switch(action){
+    case UiAction::LabCard:
+        if(library&&detail_card>=0&&lab_card(game,{(uint8_t)(detail_card&255),(uint8_t)(detail_card>>8)})){
+            detail_card=-1;library=false;reset_presentation();
+        }break;
+    case UiAction::LabPotion:
+        if(library&&detail_item>=RelicKinds&&lab_potion(game,(Potion)(detail_item-RelicKinds+1))){
+            detail_item=-1;library=false;reset_presentation();
+        }break;
     case UiAction::OpenShop:
         if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;cursor=0;}break;
     case UiAction::CloseShop:
