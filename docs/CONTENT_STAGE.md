@@ -1,9 +1,7 @@
-# 0.14 content integration stage
+# Colorless and potion integration — 2026-10-16
 
-Base: efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0. Keep remote CI disabled. Audio, multiplayer and Timeline remain excluded. Original reference: v0.111.0 / 41cef1ea.
+Continue from work/0.14-colorless-potions, not the earlier incomplete bulk relic branch. The registry and potion dispatcher are now connected. A new regression target enumerates all 53 single-player colorless cards in both upgrade states and all 64 active potions, and exercises suspended choices and nested autoplay. These tests have not yet been run at this source checkpoint.
 
-This stage prioritizes actual colorless card and potion behavior, acquisition, selections, persistence and original art. It is not a UI-only revision. The interrupted bulk/relic checkpoint is retained unchanged; additional relic work must not block this requested content milestone.
+Reference inspection used the owner's v0.111.0 / 41cef1ea assembly and PCK. ColorlessCardPool contains 65 models; 12 require multiplayer and remain excluded. All 53 single-player models have definitions. The 64 active potions exclude DeprecatedPotion. Soul and SovereignBlade are generated tokens, not extra colorless pool cards. Other character-specific potions are implemented for practice access; this does not add three playable characters.
 
-The supplied assembly and PCK have been re-hashed against config/reference-release.json. Read-only inspection of ColorlessCardPool.GenerateAllCards finds 65 models: 53 single-player eligible and 12 multiplayer-only. Potion pools comprise 45 shared, three for each of five standard characters, three event potions and one token potion, for 64 non-deprecated/non-mock models. Merely registering these models is not completion.
-
-Work directory during this session: /mnt/data/expansion/work. Private original installation and read-only IL inspection outputs are outside the public source tree. No new compilation or completed-content claim at this checkpoint. Persist actual source changes before compiling; record results and incomplete mechanics explicitly.
+Remaining before release: publish the locally authored original-rule corrections (GoldAxe uses finished card plays, damage-copy excludes overkill, Plating also grants next-turn block), acquisition/build-list changes, expanded choice/lab UI and the matching asset converter/profile. Run per-model regressions, old-save migrations, actual-pack UI tests, ARM and WASM builds. Keep main unchanged and CI disabled until the complete inputs are verified. Source-only backups remain local as a second recovery channel; private game data must never be pushed.

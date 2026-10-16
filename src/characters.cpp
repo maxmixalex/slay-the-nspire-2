@@ -8,7 +8,7 @@ CardColor card_color(unsigned kind){
  if(card_colorless(kind))return CardColor::Colorless;
  return ((kind>=StrikeSilent&&kind<=Shiv)||(kind>=DodgeAndRoll&&kind<=Predator))?CardColor::Silent:CardColor::Ironclad;
 }
-bool card_generated(unsigned kind){return kind==Shiv;}
+bool card_generated(unsigned kind){return kind==Shiv||kind==Soul||kind==SovereignBlade;}
 bool card_in_pool(unsigned kind,Character character){
  if(kind>=CardKinds||card_generated(kind))return false;
  return character==Character::Ironclad?
