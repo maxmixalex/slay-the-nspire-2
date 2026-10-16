@@ -22,7 +22,22 @@ void App::pointer_cancel(){hand_focus=false;pointer.held=pointer.dragging=false;
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card){
     if(card.kind>=CardKinds)return;
-    detail_card=card.kind+256*card.upgraded;detail_scroll=0;pointer_cancel();
+    detail_card=card.kind+256*card.upgraded;detail_scroll=0;detail_instance=-1;detail_cost_override=-2;pointer_cancel();
+}
+void App::open_choice_detail(int token){
+    if(token>=0&&token<game.card_count){
+        open_card_detail(game.cards[token]);detail_instance=token;
+        if(game.expansion.turn_cost[token]||game.expansion.combat_cost[token])detail_cost_override=cost(game,token);
+        if(game.phase==Phase::ExtendedChoice&&game.expansion.choice_free){
+            for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)detail_cost_override=0;
+        }
+        return;
+    }
+    if(game.phase!=Phase::ExtendedChoice||game.expansion.choice!=XChoice::Offer||token<MaxCards||token>=MaxCards+3)return;
+    bool offered=false;for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)offered=true;
+    if(!offered)return;
+    open_card_detail(choice_card(game,token));
+    if(game.expansion.choice_free)detail_cost_override=0;
 }
 void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
@@ -137,6 +152,7 @@ void App::pointer_button(bool down){
     case HitKind::Command:pointer_key((Key)hit.value);break;
     case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
+    case HitKind::InstanceCard:open_choice_detail(hit.value);break;
     case HitKind::PileCard:open_card_detail({(uint8_t)(hit.value&255),(uint8_t)(hit.value>>8)});break;
     case HitKind::Relic:scroll=hit.value;open_owned_relic(hit.value);break;
     case HitKind::OwnedRelic:open_owned_relic(hit.value);break;

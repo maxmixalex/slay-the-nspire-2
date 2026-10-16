@@ -6,13 +6,13 @@
 namespace spire {
 #include "canvas.inc"
 #include "app_input.inc"
-static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number){
+static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number,int fee=-2){
     int frame=c.a.content.frame_image(card);
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
     c.picture(frame,x,y,47,66);c.picture(c.a.content.card_image(card.kind),x+3,y+15,41,30);c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y+1,47,11);
     // Card art and text are independent; the description remains legible below the stage.
     c.centered(c.a.content.card_string(card.kind),x+3,y+48,41,10,card.upgraded?Green:White);
-    c.picture(c.a.content.energy_image(card),x-1,y-1,15,15);int energy=cost(card);c.energy_label(energy,x+4,y-2,12);
+    c.picture(c.a.content.energy_image(card),x-1,y-1,15,15);int energy=fee==-2?cost(card):fee;c.energy_label(energy,x+4,y-2,12);
     if(card.upgraded)c.text("+",x+35,y+1,10,Green);if(number)c.num(number,x+32,y+33,10,Muted);
     if(!playable)c.dim(x,y,47,66,125);
 }
@@ -45,7 +45,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
     case LogKind::PoisonDamage:t.text("中毒伤害 ");t.number(l.a);break;
     case LogKind::Poison:t.text("给予中毒 ");t.number(l.a);break;
     case LogKind::Discard:t.text("丢弃 ");t.text(a.content.card_string(l.a));break;
-    case LogKind::Create:t.text("添加小刀 ");t.number(l.a);break;
+    case LogKind::Create:t.text("生成 ");t.text(a.content.card_string(l.b));t.text(" × ");t.number(l.a);break;
     case LogKind::Dexterity:t.text("获得敏捷 ");t.number(l.a);break;
     case LogKind::Noxious:t.text("毒雾 ");t.number(l.a);break;
     case LogKind::Accuracy:t.text("精准 ");t.number(l.a);break;
@@ -73,7 +73,7 @@ static void hud(Canvas&c){
 #include "rooms_ui.inc"
 #include "status_ui.inc"
 #include "combat_ui.inc"
-static void large_card(Canvas&c,Card card,int x,int y,bool selected){
+static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2){
     int type=(int)definitions[card.kind].type;
     if(selected){c.box(x-2,y-2,84,116,Gold);c.box(x-1,y-1,82,114,Gold);}
     c.picture(c.a.content.frame_image(card),x,y,80,112);
@@ -83,7 +83,7 @@ static void large_card(Canvas&c,Card card,int x,int y,bool selected){
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+5+dx,y+1+dy,70,10,Ink);
     c.centered(name,x+5,y+1,70,10,card.upgraded?Green:White);
     c.picture(c.a.content.energy_image(card),x-3,y-5,19,19);
-    int energy=cost(card);c.energy_label(energy,x+3,y-4,12);
+    int energy=fee==-2?cost(card):fee;c.energy_label(energy,x+3,y-4,12);
     char text[320]={};c.a.card_description(card,-1,text,sizeof text);c.dim(x+5,y+73,70,29,135);c.paragraph(text,x+7,y+74,66,2,0,10,White);
     c.centered(type==0?"攻击":type==1?"技能":"能力",x+4,y+99,72,10,Muted);
 }
@@ -155,8 +155,8 @@ static void panels(Canvas&c){
             Card card=a.pile_tab==0?s.deck[ids[i]]:s.cards[ids[i]];
             int x=24+(i-a.scroll)%5*54,y=52+(i-a.scroll)/5*74;
             bool hovered=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+50&&a.pointer.y>=y-2&&a.pointer.y<y+68;
-            small_card(c,card,x,y,hovered||(!a.pointer.visible&&i==a.inspect_cursor),true,0);
-            c.hit(x-2,y-2,51,70,HitKind::PileCard,card.kind+(card.upgraded<<8));
+            small_card(c,card,x,y,hovered||(!a.pointer.visible&&i==a.inspect_cursor),true,0,a.pile_tab==0?cost(card):cost(s,ids[i]));
+            c.hit(x-2,y-2,51,70,a.pile_tab==0?HitKind::PileCard:HitKind::InstanceCard,a.pile_tab==0?card.kind+(card.upgraded<<8):ids[i]);
         }
         if(!n)c.centered("空",0,105,320,12,Muted);
         c.text("‹",14,201,16,Gold);c.hit(7,198,37,27,HitKind::Scroll,-2,a.scroll>0);
@@ -183,7 +183,7 @@ static void panels(Canvas&c){
                 c.button(label,x,176,133,a.target==i,23);c.action(x,174,133,26,i?UiAction::TargetSecond:UiAction::TargetFirst,s.enemies[i].hp>0);}
         }
         c.button("丢弃",28,205,113,false,25);c.action(25,204,119,28,UiAction::DiscardPotion,d!=nullptr);
-        bool usable=can_use_potion(s,a.scroll,a.target);c.button(usable?"使用":"无法使用",176,205,113,usable,25);
+        bool usable=can_use_potion(s,a.scroll,a.target);c.button(d&&d->automatic?"自动触发":usable?"使用":"无法使用",176,205,113,usable,25);
         c.hit(174,204,117,28,HitKind::Command,(int)Key::Confirm,usable);
     }
     c.close_button();
@@ -197,14 +197,23 @@ static void detail_screen(Canvas&c){
     int type=(int)definitions[card.kind].type;
     c.picture(a.content.frame_image(card),18,61,94,132);
     c.picture(c.a.content.card_image(card.kind),24,90,82,60);c.picture(a.content.energy_image(card),18,60,26,26);
-    int energy=cost(card);if(energy<0)c.text("X",27,64,12);else c.num(energy,27,64,12);
+    int energy=a.detail_cost_override==-2?cost(card):a.detail_cost_override;if(energy<0)c.text("X",27,64,12);else c.num(energy,27,64,12);
     c.centered(title,21,161,87,12,card.upgraded?Green:White);
-    char description[512]={};a.card_description(card,a.target,description,sizeof description);
+    char description[512]={};a.card_description(card,a.target,description,sizeof description,a.detail_instance);
     int lines=c.paragraph(description,123,66,177,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-8));
     c.paragraph(description,123,66,177,8,a.detail_scroll);
     c.text(type==0?"攻击":type==1?"技能":"能力",124,48,10,Muted);
-    c.button("返回",21,204,98,false,25);c.hit(20,202,101,28,HitKind::DetailClose);
-    c.button(card.upgraded?"查看基础":"预览升级",166,204,132,true,25);c.action(163,202,139,28,UiAction::ToggleCardUpgrade);
+    const bool lab=a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
+    if(lab){
+        c.button("返回",11,205,67,false,25);c.hit(9,202,72,31,HitKind::DetailClose);
+        c.button(card.upgraded?"基础":"升级",87,205,67,false,25);c.action(84,202,74,31,UiAction::ToggleCardUpgrade);
+        const bool room=a.game.card_count<MaxCards;
+        c.button(room?"加入手牌":"卡牌已满",168,205,135,room,25);
+        c.action(163,202,143,31,UiAction::LabCard,room);
+    }else{
+        c.button("返回",21,204,98,false,25);c.hit(20,202,101,28,HitKind::DetailClose);
+        c.button(card.upgraded?"查看基础":"预览升级",166,204,132,true,25);c.action(163,202,139,28,UiAction::ToggleCardUpgrade);
+    }
     c.close_button(290,26);c.hit(288,24,25,24,HitKind::DetailClose);
     if(lines>8){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
 }
@@ -237,7 +246,7 @@ void App::render(){
         case Phase::Camp:camp_screen(c);break;
         case Phase::Upgrade:case Phase::Remove:case Phase::Transform:c.picture(A_Title,0,0);deck_select(c);break;
         case Phase::Reward:reward_screen(c);break;
-        case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:combat_screen(c);break;
+        case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:case Phase::ExtendedChoice:combat_screen(c);break;
         case Phase::Treasure:treasure_screen(c);break;
         default:c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }

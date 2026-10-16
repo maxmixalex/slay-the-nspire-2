@@ -20,8 +20,8 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
 }
 static const HandTile& hand_tile(Canvas&c,int index){
     auto&a=c.a;Card card=a.game.cards[a.game.hand.ids[index]];
-    int energy=cost(card);bool playable=energy<=a.game.energy;
-    char description[512]{};a.card_description(card,definitions[card.kind].targeted?a.target:-1,description,sizeof description);
+    int energy=cost(a.game,a.game.hand.ids[index]);bool playable=energy<=a.game.energy;
+    char description[512]{};a.card_description(card,definitions[card.kind].targeted?a.target:-1,description,sizeof description,a.game.hand.ids[index]);
     auto&t=hand_tiles[index];
     if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&
        t.playable==playable&&same_text(t.description,description))return t;
@@ -77,7 +77,7 @@ static void combat_screen(Canvas&c){
         if(!e.hp){c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(x-37,48,74,95,HitKind::Enemy,i);c.actor(i+1,x,122);
         c.picture(e.move==2?A_BuffIntent:A_AttackIntent,x-21,50,17,17);
-        if(e.move==2)c.text("+2",x,48,12,Green);else c.num(enemy_damage(e),x,48,12,Gold);
+        if(e.move==2)c.text("+2",x,48,12,Green);else c.num(enemy_damage(s,i),x,48,12,Gold);
         if(e.move==1){c.picture(A_Block,x+19,51,10,10);c.num(5,x+30,48,10,Blue);}
         if(a.target==i)c.text("▼",x-5,72,10,Gold);
         c.hp(e.hp,e.max_hp,x-30,129,60);status_strip(c,i+1,x-31,149,62);
@@ -96,19 +96,19 @@ static void combat_screen(Canvas&c){
         if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i),p,false);
         auto r=hand_rail(s.hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
-        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s.cards[s.hand.ids[i]])<=s.energy);
+        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s,s.hand.ids[i])<=s.energy);
     }
     if(s.hand.count){
         if(focused){
             draw_hand_tile(c,hand_tile(c,selected),hand_pose(s.hand.count,selected,true),true);
             auto p=hand_pose(s.hand.count,selected,true);
-            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&cost(s.cards[s.hand.ids[selected]])<=s.energy);
+            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&cost(s,s.hand.ids[selected])<=s.energy);
         }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
         for(int i=0;i<s.hand.count;i++){
             auto r=hand_rail(s.hand.count,i);
-            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s.cards[s.hand.ids[i]])<=s.energy);
+            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s,s.hand.ids[i])<=s.energy);
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
     c.picture(s.character==Character::Silent?a.content.ui_image(U_SilentOrb):A_Energy,6,174,42,42);

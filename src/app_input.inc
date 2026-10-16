@@ -3,24 +3,15 @@ static void invalidate_hand_tiles();
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){shop_open=event_reader=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=-1;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){shop_open=event_reader=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
 void App::draw_frame(){render();}
 void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
-void App::card_description(Card c,int t,char*out,size_t cap)const{
-    if(!cap)return;out[0]=0;if(c.kind>=CardKinds)return;TextBuffer b{out,cap,0};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
-    while(*p){
-        if(*p=='\x1e'){++p;if(library||!combat_phase(game.phase)){while(*p&&*p!='\x1f')++p;}continue;}
-        if(*p=='\x1f'){++p;continue;}
-        if(p[0]=='{'&&p[1]&&p[2]=='}'){
-            int value=0;switch(p[1]){case 's':value=d.creates+(c.upgraded?d.creates_up:0);break;case 'r':value=(c.kind==BouncingFlask||c.kind==SwordBoomerang)?(c.upgraded?4:3):1;break;case 'h':value=d.hp_loss;break;case 'e':value=d.energy_gain+(c.upgraded?d.energy_up:0);break;case 'd':value=(!library&&combat_phase(game.phase))?damage(game,c,t):d.damage+(c.upgraded?d.damage_up:0);break;case 'b':value=(!library&&combat_phase(game.phase))?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;case 'p':value=d.power+(c.upgraded?d.power_up:0);break;default:b.ch(*p++);continue;}
-            b.number(value);p+=3;
-        }else b.ch(*p++);}
-}
+#include "card_description.inc"
 static int choice_count(const App&a){
     switch(a.game.phase){case Phase::Map:return 3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.event_page>=2?1:2;
     case Phase::Reward:return 4;case Phase::Camp:return 2;case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
-    case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;default:return a.game.hand.count;}
+    case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.game.hand.count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 void App::input(Key k){
@@ -30,12 +21,14 @@ void App::input(Key k){
     if(status_input(k))return;
     if(reference_input(k))return;
     if(detail_item>=0){
+        if(k==Key::EndTurn&&library&&!title&&!paused&&!help){ui_action(UiAction::LabPotion);return;}
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail){detail_item=-1;detail_owned=-1;}
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
         else if(k==Key::Down)++detail_scroll;
         return;
     }
     if(detail_card>=0){
+        if(k==Key::EndTurn&&library&&!title&&!paused&&!help){ui_action(UiAction::LabCard);return;}
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_card=-1;
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
         else if(k==Key::Down)++detail_scroll;
@@ -60,7 +53,7 @@ void App::input(Key k){
         }
     }
     if(k==Key::Detail&&!title&&!paused&&!help&&!panel&&combat_phase(game.phase)&&game.hand.count){
-        open_card_detail(game.cards[game.hand.ids[mn(cursor,game.hand.count-1)]]);return;
+        open_choice_detail(game.hand.ids[mn(mx(0,cursor),game.hand.count-1)]);return;
     }
 
     if(k==Key::Quit){quit=true;return;}
@@ -108,7 +101,7 @@ void App::input(Key k){
         }
         if(panel==4){
             if(k==Key::Left||k==Key::Right)scroll=1-scroll;if(k==Key::Up||k==Key::Down)next_target(*this);
-            if(k==Key::Confirm){if(use_potion(game,scroll,target)){panel=0;busy=8;next_target(*this);if(game.phase==Phase::Reward)cursor=0;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
+            if(k==Key::Confirm){if(use_potion(game,scroll,target)){panel=0;busy=choice_phase(game.phase)?0:8;next_target(*this);cursor=0;choice_selected_count=0;choice_revision=game.revision;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
         }
         if(panel==3){if(k==Key::Up)map_scroll=mn(MapRows,map_scroll+1);if(k==Key::Down)map_scroll=mx(-MapRows,map_scroll-1);return;}
         if(panel==1){
@@ -118,8 +111,8 @@ void App::input(Key k){
             if(k==Key::Confirm||k==Key::Detail){
                 render(); // Keyboard batches may arrive before the next timed frame.
                 const HitRegion* pick=nullptr;int n=0;
-                for(int i=0;i<hit_count;i++)if(hits[i].kind==HitKind::PileCard){if(n++==inspect_cursor%10){pick=&hits[i];break;}}
-                if(pick)open_card_detail({(uint8_t)(pick->value&255),(uint8_t)(pick->value>>8)});
+                for(int i=0;i<hit_count;i++)if((hits[i].kind==HitKind::PileCard||hits[i].kind==HitKind::InstanceCard)){if(n++==inspect_cursor%10){pick=&hits[i];break;}}
+                if(pick){if(pick->kind==HitKind::InstanceCard)open_choice_detail(pick->value);else open_card_detail({(uint8_t)(pick->value&255),(uint8_t)(pick->value>>8)});}
                 return;
             }
         }else{if(k==Key::Up)scroll=mx(0,scroll-1);if(k==Key::Down)scroll++;}
