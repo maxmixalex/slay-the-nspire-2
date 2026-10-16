@@ -7,7 +7,7 @@
 #include "pointer.hpp"
 #include "map_preview.hpp"
 namespace spire {
-constexpr int ScreenW=320,ScreenH=240,MaxPack=6*1024*1024;
+constexpr int ScreenW=320,ScreenH=240,MaxPack=8*1024*1024;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
@@ -20,7 +20,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count&&strings_>=EventTextEnd;}
+    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count&&strings_>=407;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -66,6 +66,8 @@ struct App {
     int relic_flash_ticks=0;
     void open_owned_relic(int position);
     void sync_relic_feedback();
+    int detail_cost_override=-2,detail_instance=-1;
+    void open_choice_detail(int token);
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
     const HitRegion* hit_at(int x,int y) const;
@@ -94,7 +96,7 @@ struct App {
     void draw_frame();
     uint32_t tick_remainder=0;
     void render();
-    void card_description(Card,int,char*,size_t)const;
+    void card_description(Card,int,char*,size_t,int instance=-1)const;
     void message(const char*);
     void animate(int actor,int clip,int delay=0);
     void reset_presentation();

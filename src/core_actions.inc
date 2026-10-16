@@ -52,7 +52,7 @@ int cost(Card c){if(c.kind>=CardKinds)return 99;return definitions[c.kind].cost+
 int card_base_damage(const State&s,Card c){
     if(c.kind>=CardKinds)return 0;
     if(c.kind==BodySlam)return s.block;
-    if(c.kind==GoldAxe)return s.gold;
+    if(c.kind==GoldAxe)return s.expansion.cards_finished;
     if(c.kind==MindBlast)return s.draw.count;
     if(c.kind==SovereignBlade){
         int id=s.playing;
@@ -66,9 +66,16 @@ int card_base_damage(const State&s,Card c){
     if(c.kind==Shiv)return definitions[Shiv].damage+(c.upgraded?definitions[Shiv].damage_up:0)+s.accuracy;
     return definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
 }
-int damage(const State&s,Card c,int t){
+int damage(const State&s,Card c,int t,int instance){
     if(c.kind>=CardKinds)return 0;
     int d=card_base_damage(s,c);
+    if(c.kind==SovereignBlade&&instance>=0&&instance<s.card_count&&s.cards[instance].kind==SovereignBlade)
+        d=max(10,s.expansion.blade_damage[instance]);
+    if(c.kind==Rend&&t>=0&&t<s.enemy_count){
+        const auto&e=s.enemies[t];const auto&x=s.expansion;
+        int debuffs=(e.strength<0)+(e.weak>0)+(e.vulnerable>0)+(e.poison>0)+(x.beetle[t]>0)+(x.demise[t]>0)+(x.doom[t]>0);
+        d+=debuffs*(definitions[c.kind].power+(c.upgraded?definitions[c.kind].power_up:0));
+    }
     if(d<=0&&definitions[c.kind].type!=CardType::Attack)return 0;
     d=max(0,d+s.strength+(s.attack_vigor?s.attack_vigor:s.vigor));
     d*=relic_attack_multiplier(s,true);
@@ -161,8 +168,8 @@ static void resolve(State&s){
                 if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
                 int amount=max(0,e.value+s.strength+s.attack_vigor)*relic_attack_multiplier(s);
                 if(t.vulnerable)amount=amount*3/2;
-                int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
-                s.expansion.last_damage=(int16_t)min(9999,amount);
+                int absorb=min(t.block,amount),actual=absorb+min((int)t.hp,amount-absorb);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
+                s.expansion.last_damage=(int16_t)min(9999,actual);
                 record(s,LogKind::Damage,amount,e.target);
                 if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];

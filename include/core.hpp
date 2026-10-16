@@ -17,7 +17,7 @@ enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, B
     DodgeAndRoll, InfiniteBlades, Backstab, EscapePlan, Predator,
     Alchemize, Anointed, Automation, BeatDown, Bolas, Calamity, Catastrophe, DarkShackles, Discovery, DramaticEntrance, Entropy, Equilibrium, EternalArmor, Fasten, Fisticuffs, GoldAxe, HiddenGem, JackOfAllTrades, Jackpot, Mayhem, MindBlast, Nostalgia, Omnislice, Panache, PrepTime, Production, Prolong, Prowess, Rend, Restlessness, RollingBoulder, Salvo, SecretTechnique, SecretWeapon, SeekerStrike, Splash, Stratagem, TheBomb, TheGambit, ThinkingAhead, ThrummingHatchet, UltimateDefend, UltimateStrike, Volley, Soul, SovereignBlade };
 enum class Character : uint8_t { Ironclad, Silent };
-enum class CardColor : uint8_t { Ironclad, Silent, Colorless };
+enum class CardColor : uint8_t { Ironclad, Silent, Colorless, Token };
 constexpr int CharacterKinds=2;
 struct CharacterDefinition { const char* key; const char* name; int starting_hp; uint32_t starting_relic; };
 extern const CharacterDefinition character_definitions[CharacterKinds];
@@ -144,7 +144,7 @@ bool upgrade_card(State&, int deck_index);
 int cost(Card);
 int card_rarity(unsigned kind); // 2 common, 3 uncommon, 4 rare in the pinned registry.
 int card_base_damage(const State&,Card);
-int damage(const State&, Card, int target);
+int damage(const State&, Card, int target, int instance=-1);
 int enemy_damage(const Enemy&);
 bool validate(const State&);
 bool save(const State&,SaveData&);
