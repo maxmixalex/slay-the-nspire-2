@@ -1,23 +1,19 @@
-# Work state — 2026-10-15
+# Work state — 2026-10-16
 
-## Completed and durable
+Continue on `work/0.14-colorless-potions`. Do NOT restart the earlier bulk relic recovery. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0` (tested 0.13); CI remains disabled. Reference v0.111.0 / 41cef1ea. Audio, multiplayer and Timeline remain excluded.
 
-The complete 0.13 recovery reached main at `203c9dd004f3c674a8650b65d92a192b0469792f`, replacing the old 0.12 head without force-pushing. The next SOURCE checkpoint, `8d3738561ebf1919f24a43bbaec673bd13d9c697`, fixes always-raised hand cards. It was committed to `work/0.13-persisted` and its ref read back BEFORE building. Validation is recorded in `hand-focus-20261015.md`, committed at `6245f9c6dad6e44b4f3826dd8f46168872e96ab0`.
+## Current source stage
 
-Hand focus now follows real hover/keyboard selection, preserves target navigation, collapses neutral/overlay states, and keeps stable instance-based selection/drag regions. All 17 ASan/UBSan CTest targets and six actual-pack targets passed. Combat UI: 1,218 checks. ARM and WASM compiled. Four native/WASM room sequences matched all 84 frames and eight saves. Every validation journal reported unchanged source inputs. Source files are preserved independently of this conversation.
+The extended engine has 53 single-player colorless card models, all 64 active potion models, and generated Soul/SovereignBlade tokens; 114 card IDs total, 30 relics and two incomplete characters. These are registry/implementation counts, not new successful test claims. Current source writes save v11 and requires NSP2/11 (114 cards, 407 strings, 185 auxiliary images).
 
-Final launcher: 121,162 bytes, SHA-256 `1d29edf67de845e8387cc5181eb00e5c9f540f702ff676f4077cc0fb047036e3`. WASM: 411,727 bytes. The unchanged private pack is 6,057,527 bytes, SHA-256 `e157ee346a4eb1fc2849bc2d18e5dc1f4ccf364b85386d92dc7306a1430908a5`.
+The renderer/description mismatch is corrected. ExtendedChoice is displayed over combat; three-card offers use explicit model tokens, pile choices use instances. Hand and detail costs respect temporary/free overrides, and Blade descriptions use the selected instance. Practice compendium details now expose card/potion acquisition buttons; title, paused and non-practice runs cannot use those actions. Shop and victory potions now use the existing character-scoped pool helper instead of selecting every registered potion.
 
-## Baseline and unfinished work
+Source checkpoint `1a131ac64da005f81ae3437306d1e1c1baf090ef` preserved the renderer/input stage and was read back. The subsequent stage includes the lab buttons/guards and acquisition pools. No compilation has yet been performed in this session. First verify the work-branch ref and local input hashes, then run logged builds and per-model tests. Migrate the older regression expectations for save v11 and the enlarged practice pool without changing historical fixture bytes.
 
-Playable baseline: 68 card models, 30 relics, 16 potions, five events, two incomplete characters. Requires NSP2/10; writes project save v10 and reads v3-v9. This recovery/focus revision does not add to those completed-content counts.
+## Actual environment and assets
 
-`checkpoint/bulk-20261015` preserves interrupted expansion fragments. Code commit: `1571b77275480316eb00a9f65bc040e0e0fdbeff`; recovery-notes commit: `20d788a94b58c478190079c731f19ea05fb49807`. It is NOT buildable. The 112/116/55 declarations are not implementation-completion evidence. Its continuation executor, core integration, historical migration, asset profile/converter and new regressions remain unfinished. Do not overwrite a working main with that incomplete tree.
+Container execution initially returned InvalidArgumentError but recovered. Current local working directory is `/mnt/data/nspire14`, reconstructed from the intact 0.13 source archive and actual fetched 0.14 sources. Core-model file Git blob hashes have been checked against the fetched branch; remaining build/test/metadata files still need reconciliation.
 
-Next: inspect the saved bulk branch and integrate coherent, buildable mechanisms against this persisted 0.13 baseline, with real per-model coverage. Keep original UI refinement in scope. Persist each source stage to a named branch, read the ref back, run logged validation, then record the result before the next stage. AGENTS.md and tools/run_logged.py define this cycle. Never re-create an intact source archive by manually guessing old file contents or by referencing unuploaded blob hashes.
+The retained private resource pack is the OLD NSP2/10, 6,057,527 bytes. It MUST NOT be distributed with the new launcher or claimed to exercise new art. The original game's currently accessible second split ZIP volume is truncated (130,023,424 bytes instead of 419,430,400). The PCK crosses the missing region. No complete verified original PCK or new NSP2/11 production pack is currently available. Do not weaken the release hash check, fabricate missing portraits, or call a synthetic test pack original-game content.
 
-## Recovery inputs and limits
-
-Original intact source archive: `/mnt/data/nSpire2-0.13-source.zip`, SHA-256 `7627a99a52c171b81b50a555562656bb5b617a0c3a3e4215583a9ad8f41cfeeb`. Working directory during this session: `/mnt/data/persistence/work`. Local paths are convenience hints, not durable prerequisites; use the repository when starting a new environment.
-
-Reference remains v0.111.0 / 41cef1ea. Audio, multiplayer and Timeline are excluded. Remote CI stays disabled. No new Firebird, physical-device, original-game differential, fresh asset-conversion, browser DOM/persistent-storage or sustained frame-rate test was run. Native/WASM agreement does not establish original-game parity. Public source excludes private assets, packs, embedded-content HTML, fonts and calculator images.
+Next: finish source-input reconciliation; run C++ sanitizer regressions, repair failures, and persist results. Compile ARM/WASM independently of the missing art. Use synthetic profiles only for parser/UI integration tests, explicitly distinguished from production visuals. No new Firebird, physical-device, fresh verified content conversion or PC-parity result has been obtained.

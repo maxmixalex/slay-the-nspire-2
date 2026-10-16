@@ -68,11 +68,11 @@ void App::ui_action(UiAction action){
     pointer_cancel();
     switch(action){
     case UiAction::LabCard:
-        if(library&&detail_card>=0&&lab_card(game,{(uint8_t)(detail_card&255),(uint8_t)(detail_card>>8)})){
+        if(library&&!title&&!paused&&!help&&!panel&&detail_card>=0&&lab_card(game,{(uint8_t)(detail_card&255),(uint8_t)(detail_card>>8)})){
             detail_card=-1;library=false;reset_presentation();
         }break;
     case UiAction::LabPotion:
-        if(library&&detail_item>=RelicKinds&&lab_potion(game,(Potion)(detail_item-RelicKinds+1))){
+        if(library&&!title&&!paused&&!help&&!panel&&detail_item>=RelicKinds&&lab_potion(game,(Potion)(detail_item-RelicKinds+1))){
             detail_item=-1;library=false;reset_presentation();
         }break;
     case UiAction::OpenShop:

@@ -67,7 +67,7 @@ static void enter_shop(State&s){
         unsigned id=0;if(n){unsigned j=random_below(s.rng_world,n);id=available[j];available[j]=available[--n];}
         s.shop_relics[i]=(uint32_t)id;s.shop_prices[ShopRelicStart+i]=150;
         if(!id)s.shop_sold|=uint16_t(1u<<(ShopRelicStart+i));
-        s.shop_potions[i]=(uint8_t)(1+random_below(s.rng_world,PotionKinds));
+        s.shop_potions[i]=(uint8_t)random_potion(s);
         s.shop_prices[ShopPotionStart+i]=potion_definitions[s.shop_potions[i]-1].rarity==3?100:
             potion_definitions[s.shop_potions[i]-1].rarity==2?75:50;
     }
@@ -95,7 +95,7 @@ void award_victory(State&s){
     // It does not claim the original float RNG, encounter modifiers or item pools.
     bool dropped=random_below(s.rng_world,100)<s.potion_chance;
     s.potion_chance=(uint8_t)(dropped?max(0,s.potion_chance-10):min(100,s.potion_chance+10));
-    if(dropped)s.reward_potion=(Potion)(1+random_below(s.rng_world,PotionKinds));
+    if(dropped)s.reward_potion=random_potion(s);
 }
 bool claim_reward_gold(State&s){
     if(s.phase!=Phase::Reward||(s.reward_claimed&1))return false;

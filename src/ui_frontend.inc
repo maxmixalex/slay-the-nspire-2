@@ -9,7 +9,7 @@ static void title_screen(Canvas&c){
         c.text(labels[i],35,y+1,12,Ink);c.text(labels[i],34,y,12,selected?Gold:White);
         c.hit(7,y,147,20,HitKind::Menu,i);
     }
-    c.text("nSpire II 0.13",218,219,10,White,100);
+    c.text("nSpire II 0.14",218,219,10,White,100);
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;bool silent=a.selected_character==Character::Silent;
@@ -93,5 +93,13 @@ static void item_detail_screen(Canvas&c){
     c.paragraph(desc,67,top,188,visible,a.detail_scroll,12,White);
     if(lines>visible){c.text("↑",260,top,10,Gold);c.hit(251,top-2,26,20,HitKind::Scroll,-1,a.detail_scroll>0);
         c.text("↓",260,178,10,Gold);c.hit(251,175,26,21,HitKind::Scroll,1,a.detail_scroll+visible<lines);}
-    c.button("返回",112,201,96,true,25);c.action(107,198,106,32,UiAction::Back);
+    const bool lab=!relic&&a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
+    if(lab){
+        bool room=false;for(auto p:a.game.potions)room|=p==Potion::Empty;
+        c.button("返回",57,201,72,false,25);c.action(53,198,80,32,UiAction::Back);
+        c.button(room?"获得药水":"药水栏已满",139,201,127,room,25);
+        c.action(135,198,135,32,UiAction::LabPotion,room);
+    }else{
+        c.button("返回",112,201,96,true,25);c.action(107,198,106,32,UiAction::Back);
+    }
 }
