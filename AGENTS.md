@@ -1,6 +1,6 @@
 # Development continuity
 
-Read `docs/WORK_STATE.md` before doing work. The active task is full single-player Ironclad and Silent card coverage, continuing the completed 0.14 potion/colorless stage. Preserve original UI fidelity and source persistence BEFORE long validation. The user requests parallel sub-agents.
+Read `docs/WORK_STATE.md` before doing work. The 0.15 single-player Ironclad and Silent card pools and retained 0.14 potion/colorless content have passed the recorded validation at `4df76b04e2a07e6be9a898793f03fd0ab8df4aae`. Continue from the verified work branch and its handoff record. Preserve original UI fidelity and source persistence BEFORE long validation. The user requests parallel sub-agents.
 
 ## Required checkpoint cycle
 

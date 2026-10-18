@@ -9,6 +9,21 @@
   "existing_count": 29,
   "added_count": 56,
   "pool_method": "0x060047f8",
+  "validation": {
+    "source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae",
+    "status": "passed",
+    "executed_at": "2026-10-18T16:41:00.272574+00:00",
+    "suite": "ironclad_completion_regression",
+    "checks": 4390,
+    "card_variants": 170,
+    "token_variants": 2,
+    "interaction_contracts": true,
+    "all_native_suites": 25,
+    "all_native_passed": 25,
+    "journal": "native-final-c5b65fe7bbf4.json",
+    "log_sha256": "d60defd77d7d19f2b7c49300057ea1ec26e954ee125223fac41d5a4e4ad75586",
+    "source_changed": false
+  },
   "excluded_multiplayer": [
     "Blaze",
     "DemonicShield",

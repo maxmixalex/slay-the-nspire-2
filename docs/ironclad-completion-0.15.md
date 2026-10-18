@@ -2,7 +2,7 @@
 
 ## Scope and execution status
 
-The pinned original declares 90 Ironclad cards. Excluding its five multiplayer-only models leaves **85 single-player cards**: 29 retained IDs and 56 appended at IDs 114–169. Primal Force adds the generated **Giant Rock token at ID 227**. All 85 base/upgraded variants now have explicit engine effect contracts in `tests/ironclad_completion_regression.cpp`. The first source checkpoint, `575b3fce9e12aaa455efc9156b3f904f08780b85`, was pushed and read back with the exact local tree before validation. Its first native validation is in progress; **no passing 0.15 execution result has yet been established in this document**. A subsequent correction distinguishes other-instance Block previews during a suspended choice and will be validated against its next source checkpoint.
+The pinned original declares 90 Ironclad cards. Excluding its five multiplayer-only models leaves **85 single-player cards**: 29 retained IDs and 56 appended at IDs 114–169. Primal Force adds the generated **Giant Rock token at ID 227**. All **170 base/upgraded variants** have explicit engine effect contracts in `tests/ironclad_completion_regression.cpp`. Source checkpoint **`4df76b04e2a07e6be9a898793f03fd0ab8df4aae`** was pushed and read back with the exact local tree before validation. Its complete native run passed **25 of 25 suites**, including **4,390 Ironclad checks** across the 170 variants, both Giant Rock variants and interaction contracts. This result includes suspended-choice Block previews and the shared AfterCardPlayed acquisition-order corrections described below.
 
 This audit is based on the supplied original assembly and PCK, fixed to **v0.111.0 / 41cef1ea**. It does not claim to have run the original game as a differential oracle. Original disassembly, text, image payloads and assembly data remain private. Public config stores model facts, resource paths and method-token references only.
 
@@ -161,6 +161,22 @@ Rampage's increase and Thrash's absorbed damage belong to a physical card instan
 The isolated module contains 18 positive powers with explicit acquisition order, bounded attack/HP/exhaust/block counters, per-auto-frame Rupture and Pillage continuations, and per-instance damage/cost/forced-exhaust state. It adds 26 serialized effect operations and one Armaments upgrade choice after the frozen pre-0.15 enums. Variable-length card effects use bounded continuations or preflight the shared queue/card capacities before moving their snapshot.
 
 Save v13 appends the Ironclad and Silent modules and shared AfterCardPlayed order to the historical prefix. Old v3–v12 files have no complete new-character history. Migration seeds the started-Attack counter only from visibly active Attack cards in the current play and suspended frames, so completing an old saved Headbutt does not create a finished count greater than its started count. Other unavailable history remains zero. The fixed historical actor-order migration is described above. The validator rejects duplicate or absent power-order members, illegal amount/instance bounds, reductions on non-Stomp cards, damage bonuses on unrelated models, impossible per-frame captures, malformed operation operands and Armaments choices that no longer reference eligible hand cards. The tests check rejected choices leave the serialized state unchanged and legitimate suspended choices produce identical results after loading.
+
+## Recorded validation
+
+The frozen source checkpoint was validated on 2026-10-18. The completed native journal records a zero exit status and `source_changed: false`; the tested runtime commit is distinct from the subsequent documentation-only update.
+
+| Record | Result |
+| --- | --- |
+| Tested source commit | `4df76b04e2a07e6be9a898793f03fd0ab8df4aae` |
+| Native suites | **25 passed / 25 total** |
+| Ironclad completion suite | **4,390 checks passed** |
+| Explicit Ironclad card variants | **170**, plus **2 Giant Rock variants** and interaction contracts |
+| Native journal | `native-final-c5b65fe7bbf4.json` |
+| Native log SHA-256 | `d60defd77d7d19f2b7c49300057ea1ec26e954ee125223fac41d5a4e4ad75586` |
+| Source changed during execution | `false` |
+
+The result comes from the completed frozen-source run, not an estimate from static coverage. Platform builds and actual-content UI validation are recorded separately in the final 0.15 validation report.
 
 ## Regression coverage and bounded claims
 

@@ -21,7 +21,7 @@
     ],
     "new_tokens": []
   },
-  "status": "implementation_in_progress",
+  "status": "implemented_and_regression_verified",
   "cards": [
     {
       "id": 170,
@@ -60,8 +60,9 @@
         "get_CanonicalVars": "0x06003ae8",
         "OnUpgrade": "0x06003aea"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 171,
@@ -91,8 +92,9 @@
         "get_CanonicalVars": "0x06003af2",
         "OnUpgrade": "0x06003af4"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 48,
@@ -122,8 +124,9 @@
         "get_CanonicalVars": "0x06003af6",
         "OnUpgrade": "0x06003af9"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 30,
@@ -153,8 +156,9 @@
         "get_CanonicalVars": "0x06003afb",
         "OnUpgrade": "0x06003afd"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 47,
@@ -193,8 +197,9 @@
         "get_CanonicalKeywords": "0x06003b06",
         "OnUpgrade": "0x06003b08"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 172,
@@ -226,8 +231,9 @@
         "get_CanonicalVars": "0x06003b0a",
         "OnUpgrade": "0x06003b0d"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 173,
@@ -257,8 +263,9 @@
         "get_CanonicalVars": "0x06003b30",
         "OnUpgrade": "0x06003b33"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 174,
@@ -299,8 +306,9 @@
         "get_CanonicalKeywords": "0x06003b55",
         "OnUpgrade": "0x06003b57"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 31,
@@ -334,8 +342,9 @@
         "get_CanonicalVars": "0x06003b64",
         "OnUpgrade": "0x06003b66"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 65,
@@ -372,8 +381,9 @@
         "get_CanonicalVars": "0x06003b69",
         "OnUpgrade": "0x06003b6b"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 175,
@@ -403,8 +413,9 @@
         "get_CanonicalVars": "0x06003bca",
         "OnUpgrade": "0x06003bcc"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 36,
@@ -439,8 +450,9 @@
         "get_CanonicalVars": "0x06003bc4",
         "OnUpgrade": "0x06003bc7"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 176,
@@ -474,8 +486,9 @@
         "get_CanonicalVars": "0x06003bf0",
         "OnUpgrade": "0x06003bf2"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 42,
@@ -509,8 +522,9 @@
         "get_CanonicalVars": "0x06003c23",
         "OnUpgrade": "0x06003c26"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 177,
@@ -540,8 +554,9 @@
         "get_CanonicalVars": "0x06003c3e",
         "OnUpgrade": "0x06003c40"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 178,
@@ -565,8 +580,9 @@
         ".ctor": "0x06003c4a",
         "OnUpgrade": "0x06003c4c"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 179,
@@ -596,8 +612,9 @@
         "get_CanonicalVars": "0x06003c6a",
         "OnUpgrade": "0x06003c6c"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 180,
@@ -627,8 +644,9 @@
         "get_CanonicalKeywords": "0x06003c86",
         "OnUpgrade": "0x06003c88"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 35,
@@ -662,8 +680,9 @@
         "get_CanonicalVars": "0x06003cdc",
         "OnUpgrade": "0x06003cdf"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 181,
@@ -693,8 +712,9 @@
         "get_CanonicalVars": "0x06003d3c",
         "OnUpgrade": "0x06003d3f"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 37,
@@ -724,8 +744,9 @@
         "get_CanonicalVars": "0x06003d71",
         "OnUpgrade": "0x06003d73"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 32,
@@ -755,8 +776,9 @@
         "get_CanonicalVars": "0x06003d77",
         "OnUpgrade": "0x06003d79"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 38,
@@ -790,8 +812,9 @@
         "get_CanonicalVars": "0x06003d8f",
         "OnUpgrade": "0x06003d91"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 33,
@@ -821,8 +844,9 @@
         "get_CanonicalVars": "0x06003d97",
         "OnUpgrade": "0x06003d9a"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 27,
@@ -852,8 +876,9 @@
         "get_CanonicalVars": "0x06003de3",
         "OnUpgrade": "0x06003de5"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 45,
@@ -883,8 +908,9 @@
         "get_CanonicalVars": "0x06003ded",
         "OnUpgrade": "0x06003def"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 63,
@@ -914,8 +940,9 @@
         "get_CanonicalVars": "0x06003e40",
         "OnUpgrade": "0x06003e42"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 182,
@@ -945,8 +972,9 @@
         "get_CanonicalVars": "0x06003e89",
         "OnUpgrade": "0x06003e8b"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 183,
@@ -976,8 +1004,9 @@
         "get_CanonicalVars": "0x06003eb8",
         "OnUpgrade": "0x06003ebb"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 66,
@@ -1007,8 +1036,9 @@
         "get_CanonicalVars": "0x06003eca",
         "OnUpgrade": "0x06003ecc"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 184,
@@ -1038,8 +1068,9 @@
         "get_CanonicalVars": "0x06003ee2",
         "OnUpgrade": "0x06003ee4"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 185,
@@ -1074,8 +1105,9 @@
         "get_CanonicalKeywords": "0x06003ee7",
         "OnUpgrade": "0x06003eea"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 186,
@@ -1105,8 +1137,9 @@
         "get_CanonicalVars": "0x06003efd",
         "OnUpgrade": "0x06003f02"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 187,
@@ -1144,11 +1177,12 @@
         "get_CanonicalVars": "0x06003f43",
         "OnUpgrade": "0x06003f45"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedHits": "attacks_finished_this_turn"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 188,
@@ -1186,11 +1220,12 @@
         "get_CanonicalVars": "0x06003f6b",
         "OnUpgrade": "0x06003f6d"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedHits": "skills_in_hand"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 189,
@@ -1225,8 +1260,9 @@
         "get_CanonicalKeywords": "0x06003f70",
         "OnUpgrade": "0x06003f72"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 190,
@@ -1256,8 +1292,9 @@
         "get_CanonicalVars": "0x060044c1",
         "OnUpgrade": "0x060044c3"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 40,
@@ -1287,8 +1324,9 @@
         "get_CanonicalVars": "0x06003f7e",
         "OnUpgrade": "0x06003f81"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 191,
@@ -1318,8 +1356,9 @@
         "get_CanonicalVars": "0x06004005",
         "OnUpgrade": "0x06004008"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 192,
@@ -1349,8 +1388,9 @@
         "get_CanonicalVars": "0x0600403f",
         "OnUpgrade": "0x06004042"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 193,
@@ -1384,8 +1424,9 @@
         "get_CanonicalVars": "0x06004051",
         "OnUpgrade": "0x06004055"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 194,
@@ -1418,8 +1459,9 @@
         ".ctor": "0x06004085",
         "get_CanonicalVars": "0x06004086"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 64,
@@ -1445,8 +1487,9 @@
         ".ctor": "0x060040e6",
         "OnUpgrade": "0x060040e9"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 195,
@@ -1479,11 +1522,12 @@
         ".ctor": "0x06004126",
         "get_CanonicalVars": "0x06004128"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedShivs": "shivs_in_exhaust"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 49,
@@ -1517,8 +1561,9 @@
         "get_CanonicalVars": "0x06004143",
         "OnUpgrade": "0x06004146"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 39,
@@ -1552,8 +1597,9 @@
         "get_CanonicalVars": "0x06004155",
         "OnUpgrade": "0x06004157"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 196,
@@ -1583,8 +1629,9 @@
         "get_HasEnergyCostX": "0x0600419c",
         "get_CanonicalKeywords": "0x0600419e"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 197,
@@ -1608,8 +1655,9 @@
         ".ctor": "0x060041b0",
         "OnUpgrade": "0x060041b3"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 198,
@@ -1643,11 +1691,12 @@
         "get_CanonicalVars": "0x060041c7",
         "OnUpgrade": "0x060041c9"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedDamage": "CalculationBase + ExtraDamage * cards_discarded_this_turn"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 199,
@@ -1684,11 +1733,12 @@
         "get_CanonicalVars": "0x0600420a",
         "OnUpgrade": "0x0600420d"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedBlock": "sum_enemy_poison"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 200,
@@ -1722,11 +1772,12 @@
         "get_CanonicalVars": "0x06004231",
         "OnUpgrade": "0x06004233"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedDamage": "CalculationBase + ExtraDamage * cards_drawn_this_combat"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 28,
@@ -1760,8 +1811,9 @@
         "get_CanonicalVars": "0x0600424c",
         "OnUpgrade": "0x0600424e"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 201,
@@ -1791,8 +1843,9 @@
         "get_CanonicalKeywords": "0x06004257",
         "OnUpgrade": "0x0600425a"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 41,
@@ -1822,8 +1875,9 @@
         "get_CanonicalVars": "0x06004273",
         "OnUpgrade": "0x06004276"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 202,
@@ -1853,8 +1907,9 @@
         "get_CanonicalVars": "0x0600429b",
         "OnUpgrade": "0x0600429d"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 203,
@@ -1884,8 +1939,9 @@
         "get_CanonicalVars": "0x060042ea",
         "OnUpgrade": "0x060042ec"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 204,
@@ -1920,8 +1976,9 @@
         "get_CanonicalKeywords": "0x060042f3",
         "OnUpgrade": "0x060042f6"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 205,
@@ -1951,8 +2008,9 @@
         "get_CanonicalVars": "0x06004301",
         "OnUpgrade": "0x06004303"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 34,
@@ -1986,8 +2044,9 @@
         "get_CanonicalVars": "0x0600430e",
         "OnUpgrade": "0x06004311"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 206,
@@ -2017,8 +2076,9 @@
         "get_CanonicalVars": "0x06004322",
         "OnUpgrade": "0x06004324"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 207,
@@ -2052,11 +2112,12 @@
         "get_CanonicalVars": "0x06004326",
         "OnUpgrade": "0x06004328"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_variables": {
         "CalculatedDamage": "max(0, CalculationBase - ExtraDamage * other_cards_in_hand)"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 67,
@@ -2086,8 +2147,9 @@
         "get_CanonicalVars": "0x0600432a",
         "OnUpgrade": "0x0600432c"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 43,
@@ -2117,8 +2179,9 @@
         "get_CanonicalVars": "0x0600432e",
         "OnUpgrade": "0x06004330"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 208,
@@ -2153,8 +2216,9 @@
         "get_CanonicalKeywords": "0x060043c3",
         "OnUpgrade": "0x060043c5"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 209,
@@ -2193,8 +2257,9 @@
         "get_CanonicalKeywords": "0x060043ef",
         "OnUpgrade": "0x060043f1"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 210,
@@ -2224,8 +2289,9 @@
         "get_CanonicalVars": "0x06004461",
         "OnUpgrade": "0x06004463"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 211,
@@ -2255,8 +2321,9 @@
         "get_CanonicalVars": "0x06004480",
         "OnUpgrade": "0x06004482"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 212,
@@ -2286,8 +2353,9 @@
         "get_CanonicalVars": "0x06004475",
         "OnUpgrade": "0x06004478"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 213,
@@ -2318,8 +2386,9 @@
         "get_CanonicalVars": "0x060044cb",
         "OnUpgrade": "0x060044cd"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 44,
@@ -2349,8 +2418,9 @@
         "get_CanonicalVars": "0x060044d7",
         "OnUpgrade": "0x060044d9"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 214,
@@ -2385,8 +2455,9 @@
         "get_CanonicalKeywords": "0x060044eb",
         "OnUpgrade": "0x060044ed"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 215,
@@ -2418,8 +2489,9 @@
         "get_CanonicalVars": "0x06004538",
         "OnUpgrade": "0x0600453a"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 216,
@@ -2442,8 +2514,9 @@
       "evidence": {
         ".ctor": "0x06004599"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 217,
@@ -2477,8 +2550,9 @@
         "get_CanonicalVars": "0x0600459d",
         "OnUpgrade": "0x0600459f"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 26,
@@ -2508,8 +2582,9 @@
         "get_CanonicalVars": "0x060045b9",
         "OnUpgrade": "0x060045bb"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 46,
@@ -2543,8 +2618,9 @@
         "get_CanonicalVars": "0x060045c1",
         "OnUpgrade": "0x060045c3"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 218,
@@ -2583,8 +2659,9 @@
         "get_CanonicalVars": "0x060045db",
         "OnUpgrade": "0x060045dd"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 29,
@@ -2614,8 +2691,9 @@
         "get_CanonicalVars": "0x060045e0",
         "OnUpgrade": "0x060045e2"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 219,
@@ -2650,8 +2728,9 @@
         "get_CanonicalKeywords": "0x06004603",
         "OnUpgrade": "0x06004606"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 220,
@@ -2687,8 +2766,9 @@
         "get_CanonicalKeywords": "0x0600463f",
         "OnUpgrade": "0x06004642"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 221,
@@ -2712,8 +2792,9 @@
         ".ctor": "0x0600467b",
         "OnUpgrade": "0x0600467d"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 222,
@@ -2737,8 +2818,9 @@
         ".ctor": "0x0600468a",
         "OnUpgrade": "0x0600468d"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 223,
@@ -2773,8 +2855,9 @@
         "get_CanonicalKeywords": "0x060046de",
         "OnUpgrade": "0x060046e0"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 224,
@@ -2804,8 +2887,9 @@
         "get_CanonicalVars": "0x060046e2",
         "OnUpgrade": "0x060046e7"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 225,
@@ -2829,8 +2913,9 @@
         ".ctor": "0x0600471a",
         "OnUpgrade": "0x0600471b"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 226,
@@ -2864,8 +2949,9 @@
         "get_CanonicalVars": "0x0600474b",
         "OnUpgrade": "0x0600474e"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint"
+      "implementation_status": "implemented",
+      "validation_status": "passed",
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     },
     {
       "id": 50,
@@ -2901,12 +2987,33 @@
         "get_CanonicalKeywords": "0x060044a1",
         "OnUpgrade": "0x060044a3"
       },
-      "implementation_status": "in_progress",
-      "validation_status": "pending_checkpoint",
+      "implementation_status": "implemented",
+      "validation_status": "passed",
       "dynamic_target": "AllEnemies while FanOfKnives is active",
       "dynamic_variables": {
         "Damage": "4 (+2 upgraded) + Accuracy + first_shiv_bonus"
-      }
+      },
+      "verified_source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
     }
-  ]
+  ],
+  "validation": {
+    "source_commit": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae",
+    "suite": "silent_completion_regression",
+    "result": "passed",
+    "checks": 17753,
+    "base_upgraded_variants": 174,
+    "single_player_models": 86,
+    "tokens": [
+      "Shiv"
+    ],
+    "native_regression_suites_passed": 25,
+    "native_regression_suites_total": 25,
+    "sanitizers": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer"
+    ],
+    "rounding_reference_combinations": 864,
+    "native_journal": "native-final-c5b65fe7bbf4",
+    "evidence_kind": "pinned static model inspection plus deterministic engine regressions; not original-game differential traces"
+  }
 }

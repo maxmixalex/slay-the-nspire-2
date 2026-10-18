@@ -20,5 +20,6 @@
   },
   "complete_original_run": false,
   "source_version": "0.15.0-prototype",
-  "validation_status": "first implementation checkpoint; pending verification"
+  "validation_status": "implemented and regression verified; see docs/validation-0.15.json",
+  "verified_runtime_source": "4df76b04e2a07e6be9a898793f03fd0ab8df4aae"
 }

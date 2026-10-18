@@ -1,8 +1,45 @@
 # Work state — 2026-10-18
 
-## Active 0.15 development
+## Completed 0.15 release stage
 
-The user requested continued development followed by the **complete Ironclad and Silent card pools**, with parallel agents. Continue on **`work/0.15-full-characters`**, created from and read back at `9c4d47e543a2ee9af58fe075700ff50cf205740b` (tree `949fc6b2b5e748ac1d7b4668252d87322c9299b4`). The completed 0.14 work branch is retained at that commit; its tested runtime remains `b4b67e714ca76e7afb72f3a170789ad90047e6f4`. No 0.15 behavior or build has passed yet.
+The complete **85-card single-player Ironclad pool and 86-card single-player Silent pool** are implemented and regression verified, together with the retained 53 colorless models and 64 potions. The current directory has **228 models**, including Shiv, Soul, Sovereign Blade and Giant Rock. Reference remains **v0.111.0 / 41cef1ea**. The three implementation/resource agents completed their separate audits, and the root integrated shared hooks, reviewed the final visuals and collected the release evidence.
+
+The exact tested runtime is **`4df76b04e2a07e6be9a898793f03fd0ab8df4aae`**, tree **`91496dce7dfb6580acea24a9ee860ce5e4f36b42`**. It was pushed to **`work/0.15-full-characters`** and the remote branch and complete tree were read back before testing. Later commits update documentation and validation metadata only; the release binaries stay tied to that runtime SHA. Main and the completed 0.14 branch are retained unchanged, and remote CI remains disabled.
+
+| Final verification | Actual result |
+| --- | --- |
+| Native ASan/UBSan | **25/25 suites, 748,629 checks/assertions passed**; these are repeated assertions, not unique scenario counts |
+| Ironclad completion | **4,390 checks**, 170 base/upgraded pool variants plus both Giant Rock variants and interactions |
+| Silent completion | **17,753 checks**, 174 variants across 86 pool models and Shiv, including 864 exact integer-rounding reference combinations |
+| Retained completion suites | Colorless **8,961 / 106 variants**; potions **34,202 / 64 models**; combined **7,897** |
+| Python / actual parser | **17/17 tests**; actual NSP2/12 parser **1,667 checks** |
+| Actual character UI | **22,225 checks**, all **344 acquisitions**: `(85 Ironclad + 86 Silent + Giant Rock) × 2` |
+| Actual colorless/potion UI | **7,374 checks**, all **106 variants and 64 potions** |
+| Backend room comparison | Four controlled scenarios, **84 exact RGB565 frames and eight exact saves** between native and WASM |
+| Fresh-process X11 persistence | v13 ordinary **44,720 bytes**; **384-instance / 48,908-byte** save reloads and re-saves exactly |
+| Save boundary / legacy migration | v13 full bounded fixture **61,956 bytes**, conservative **62,008 / 65,536**; genuine frozen v12 writer fixture passes |
+| ARM / WASM / X11 | All three built; ARM **195,304 bytes**, allocation **10,659,088 bytes**, **3,192 relocations** |
+| Visual review | Root reviewed all **18 final scenes** in the two contact sheets; no blocking findings |
+
+All **13 final journals** ended as passed, with `source_changed: false` and common source fingerprint `ba9286b978111d5eb38b0639b7497d1026d6115d46d9a4d5e3a8f145253a93ba`. The native journal is `native-final-c5b65fe7bbf4`. Full public source/artifact hashes, journal log hashes, exact scopes and limitations are in [validation-0.15.json](validation-0.15.json). The local complete receipt is `/workspace/scratch/5af9d4bf40b9/nspire-validation-4df76b04-receipt.json`; the immutable test root is `/tmp/nspire-stage-4df76b04`, with source-only backup `/tmp/nspire-recovery/source-4df76b04.tar`.
+
+The final **NSP2/12** pack is **7,511,131 bytes**, SHA-256 `2699415023cb3b825a84e0f3645800c6690ea258854583a02bbb28cadf318f66`. It contains 228 card records, 749 strings, 233 auxiliary entries, 1,622 images, 6,265 glyphs and 17 clips. All 1,460 prior image payloads were retained; 877,477 bytes remain below the 8 MiB resident resource limit. Sidestep uses the actual original beta portrait because the pinned installation has no final portrait. The older expansion UI success-line text still says NSP2/11; the supplied pack, parser and actual UI profile were verified as **NSP2/12**. That stale log label does not change the test or loaded content version.
+
+Use the existing canonical release names **`Slay-the-Nspire-2-calculator.zip`** and **`Slay-the-Nspire-2-offline.html`** for the matching 0.15 pair. The ZIP includes the launcher and resource pack together, Chinese instructions, exact build information, validation receipts and license notices. The self-contained HTML embeds the same pack and the WASM built at the tested commit. Keep original assets and generated releases out of the public source repository.
+
+The repairs validated in this final runtime include ordered after-play listeners, captured before-play amounts, nested continuation order, legacy in-progress attack migration, correct X-cost expectations, actual-instance cost previews and ARM arithmetic without an unsupported 64-bit division helper. Save **v13** records character modules plus a bounded shared power order; it reads project v3–v12 saves. New historical facts cannot be reconstructed: missing earlier histories remain zero, except visible pending attacks, and old after-play powers retain the former Panache-index-before-Calamity policy.
+
+### Remaining scope and next handoff
+
+The requested two single-player card pools and the preceding potion/colorless stage are complete to the recorded implementation and regression scope. The other three character systems, complete original encounters and runs, special potion acquisition routes, and exact original UI fidelity remain future work. The existing playable twelve-floor route and Nibbit encounters are adaptations. No Firebird or physical-device execution was performed; native/WASM agreement uses the project storage adapter and does not validate browser DOM/localStorage or original-game runtime parity. Audio, multiplayer and Timeline remain excluded.
+
+Continue from the latest verified work-branch head, preserving the tested runtime/artifact distinction. Before a new implementation batch, read the two character audits and append-only card/save contracts, then push and read back the next coherent source checkpoint before any long build or validation. Do not repeat this already-passing batch without a concrete change or remaining risk.
+
+## 0.15 development history
+
+The following checkpoint notes are historical. The completed result above supersedes their pending and failed states; the failed journals remain preserved.
+
+The user requested continued development followed by the **complete Ironclad and Silent card pools**, with parallel agents. Continue on **`work/0.15-full-characters`**, created from and read back at `9c4d47e543a2ee9af58fe075700ff50cf205740b` (tree `949fc6b2b5e748ac1d7b4668252d87322c9299b4`). The completed 0.14 work branch is retained at that commit; its tested runtime remains `b4b67e714ca76e7afb72f3a170789ad90047e6f4`. At the opening of that stage, no 0.15 behavior or build had passed.
 
 The locked assembly declares 90 Ironclad and 91 Silent models. Applying its multiplayer constraints leaves **85 Ironclad and 86 Silent single-player models**, including Silent's Ancient-rarity Suppress and WraithForm in the compendium/practice pool. Ordinary rewards and generated cards must exclude Ancient rarity. Existing character IDs remain unchanged; append the 56 missing Ironclad models at IDs 114–169, the 57 missing Silent models at 170–226, and generated GiantRock at 227. Inky is an enchantment, not a new card token. Do not import unrelated STS1 status cards from memory.
 

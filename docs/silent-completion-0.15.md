@@ -59,12 +59,21 @@ The new behavior includes active-discard/Sly play, temporary and permanent Sly/R
 
 ## Verification status
 
-**Implementation and the first regression suite were pushed in source checkpoint `575b3fce9e12aaa455efc9156b3f904f08780b85`; execution is pending.** No pass count or original-game differential-parity claim is made here.
+**Verified source: `4df76b04e2a07e6be9a898793f03fd0ab8df4aae`.** The source was pushed and read back before verification. Native journal `native-final-c5b65fe7bbf4` completed with all 25 regression suites passing under AddressSanitizer and UndefinedBehaviorSanitizer.
+
+| Verification | Result |
+| --- | --- |
+| Silent completion suite | **17,753 checks passed**, 174 base/upgraded variants, 86 single-player models plus Shiv |
+| Complete native regression set | **25/25 suites passed**, including shared character, save, UI, potion and colorless regressions |
+| Exact rounding reference | **864 combinations passed**, including high multipliers and saturation |
+| ARM link | Device executable produced successfully after removing the unsupported 64-bit division dependency |
+
+The preceding source checkpoint `433dc2c6920914d67e751417fdee7b93a441cf7f` had already passed 16,811 Silent checks. The final result above additionally covers shared post-play listener ordering and the device arithmetic replacement. Actual-asset UI results are maintained separately by the content/UI verification workflow.
 
 `tests/silent_completion_regression.cpp` covers **174 base/upgraded variants** across all 86 single-player models and Shiv. Its canonical table is a factual reference snapshot rather than a copy of values read from the runtime Definition array. Each model is played and checked for an observable effect: damage, Block, Poison, drawing/discarding, creation, power amount, modifier, delayed snapshot or status. Save/load round trips are exercised at choices and completed states.
 
 Focused cases cover Sly batch order and turn flushing, temporary/permanent Sly, Fan/Inky/Phantom interactions, captured-power replays, integer rounding, Poison repetitions, draw-only triggers, Tools choices with no playing card, negative Dexterity, DoubleDamage duration, ordered costs, Nightmare immutability and cloning, automatic GrandFinale, large hit counts, fatal reward groups, and malformed module state.
 
-The next source batch adds SerpentForm/Panache acquisition-order cases and 864 combinations checked against a host-side exact integer rounding reference. The device implementation performs no 64-bit division: it bounds the product, then uses a 32-step shift/subtract quotient so the ARM runtime does not require `__aeabi_ldivmod`.
+The verified source includes SerpentForm/Panache acquisition-order cases and 864 combinations checked against a host-side exact integer rounding reference. The device implementation performs no 64-bit division: it bounds the product, then uses a 32-step shift/subtract quotient so the ARM runtime does not require `__aeabi_ldivmod`.
 
-The engine remains a bounded single-player implementation: two enemies, ten hand cards, 512 combat card instances, 16 simultaneous Nightmare templates, and 192 permanent deck cards. Multiplayer-only cards are outside this scope. Passing deterministic regressions would establish the implemented contracts and save/continuation behavior; it would not by itself establish complete original-game RNG, encounter, or arbitrary cross-model differential parity.
+The engine remains a bounded single-player implementation: two enemies, ten hand cards, 512 combat card instances, 16 simultaneous Nightmare templates, and 192 permanent deck cards. Multiplayer-only cards are outside this scope. These passing deterministic regressions establish the tested implementation contracts and save/continuation behavior. They do not establish complete original-game RNG, encounter, or arbitrary cross-model differential parity.
