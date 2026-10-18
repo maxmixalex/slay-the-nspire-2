@@ -6,7 +6,11 @@ The accessible scratch workspaces no longer contained the previous checkout. All
 
 The user again prioritizes GitHub persistence, then completion of potions and single-player colorless cards, with parallel agents. Work is split between potion behavior, colorless behavior, and UI/acquisition regression coverage. The integration owner handles shared state, save compatibility, build wiring and checkpoints. Baseline validation has not yet run in this session. Historical success counts below must not be treated as fresh validation.
 
-Next: run the isolated recovered baseline, repair stale profile/save/practice expectations without changing historical fixture bytes, and verify persistent/queued/automatic effects rather than counting dispatch-only smoke tests. Persist every coherent stage before long validation. Reference assets must be recovered and their locked hashes checked before any original-game parity or production-art claim.
+The isolated recovered baseline compiled all 18 C++ regressions with GCC ASan/UBSan. Runtime result: 8 passed and 10 failed. Six failures were old save-v10 expectations, three were stale input/content/UI profiles, and the expansion fixture retained an out-of-range `last_drawn` after replacing all card instances (plus its original-16 potion loop had unintentionally expanded). Historical fixture bytes remain unchanged. Leak detection was disabled after LeakSanitizer failed to access the sandbox process information; address and undefined-behavior sanitizers remained active.
+
+The first completion stage fixes conflicting temporary/permanent free costs and choice queue capacity checks, exposes practice acquisition in the HUD with accurate full-hand feedback, migrates stale test expectations, and adds separate per-card, per-potion and UI acquisition regressions. The new assertions still await execution at this checkpoint. Do not label them passed merely because the tests have been written.
+
+Next: verify this source checkpoint, run all 21 regressions on an isolated snapshot, repair actual failures, and audit original semantics with the recovered reference files. Original split game ZIP uploads have been located again; their bytes and locked hashes still need verification. Persist every coherent stage before long validation.
 
 Continue on `work/0.14-colorless-potions`. Do NOT restart the earlier bulk relic recovery. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0` (tested 0.13); CI remains disabled. Reference v0.111.0 / 41cef1ea. Audio, multiplayer and Timeline remain excluded.
 

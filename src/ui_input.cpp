@@ -67,13 +67,16 @@ void App::select_library_item(int index){
 void App::ui_action(UiAction action){
     pointer_cancel();
     switch(action){
-    case UiAction::LabCard:
+    case UiAction::LabCard:{
+        const bool overflow=game.hand.count>=MaxHand;
         if(library&&!title&&!paused&&!help&&!panel&&detail_card>=0&&lab_card(game,{(uint8_t)(detail_card&255),(uint8_t)(detail_card>>8)})){
             detail_card=-1;library=false;reset_presentation();
-        }break;
+            message(overflow?"手牌已满，卡牌已加入弃牌堆":"卡牌已加入手牌");
+        }break;}
     case UiAction::LabPotion:
         if(library&&!title&&!paused&&!help&&!panel&&detail_item>=RelicKinds&&lab_potion(game,(Potion)(detail_item-RelicKinds+1))){
             detail_item=-1;library=false;reset_presentation();
+            message("已获得药水");
         }break;
     case UiAction::OpenShop:
         if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;cursor=0;}break;

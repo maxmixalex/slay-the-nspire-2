@@ -6,7 +6,7 @@
 using namespace spire;
 static unsigned checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
-static SaveData snapshot(const State&s){SaveData b{};CHECK(validate(s));CHECK(save(s,b)&&b.bytes[4]==10);return b;}
+static SaveData snapshot(const State&s){SaveData b{};CHECK(validate(s));CHECK(save(s,b)&&b.bytes[4]==11);return b;}
 static void same(const State&s,const SaveData&before){auto b=snapshot(s);CHECK(b.size==before.size&&!std::memcmp(b.bytes,before.bytes,b.size));}
 static void roundtrip(const State&s){auto b=snapshot(s);State t{};CHECK(load(t,b.bytes,b.size));same(t,b);}
 static State event(EventId id,Character ch=Character::Ironclad){State s{};new_run(s,140,false,ch);s.phase=Phase::Event;s.event_id=id;s.current_node=3;s.next_row=1;s.floor=2;s.map[3].room=Room::Event;s.map[3].event=(uint8_t)id;CHECK(validate(s));return s;}

@@ -58,7 +58,7 @@ int main(int argc,char**argv){
  if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
  return_choice();statuses();
  if(!data.empty()){
-  CHECK(a.content.card_count()==68);for(int id=Headbutt;id<CardKinds;id++)CHECK(a.content.image(a.content.card_image(id)).pixels);
+  CHECK(a.content.card_count()==CardKinds);for(int id=Headbutt;id<CardKinds;id++)CHECK(a.content.image(a.content.card_image(id)).pixels);
   for(int id=U_FeelNoPain;id<U_Count;id++)CHECK(a.content.image(a.content.ui_image(id)).pixels);
   CHECK(strstr(a.content.card_string(Backstab,1),"固有"));CHECK(strstr(a.content.card_string(InfiniteBlades,2),"固有"));
   CHECK(!strstr(a.content.card_string(InfiniteBlades,1),"固有"));

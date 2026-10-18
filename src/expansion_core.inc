@@ -67,7 +67,11 @@ static bool move_instance(State&s,int id,Pile&from,Pile&to,Zone z){
 }
 bool choose_extended(State&s,const uint16_t*ids,unsigned n){
  auto&x=s.expansion;
- if(s.phase!=Phase::ExtendedChoice||x.choice==XChoice::None||n<x.choice_min||n>x.choice_max||(n&&!ids))return false;
+ if(s.phase!=Phase::ExtendedChoice||x.choice==XChoice::None||n>MaxHand||n<x.choice_min||n>x.choice_max||(n&&!ids))return false;
+ // Refuse a continuation that cannot be queued before changing the choice or
+ // any pile. Optional exhaust uses the same atomic boundary as legacy Purity.
+ unsigned queued=x.choice==XChoice::Exhaust?n:x.choice==XChoice::DiscardRedraw?1:0;
+ if(s.effect_count+queued>MaxEffects)return false;
  uint16_t selected[MaxHand];
  for(unsigned i=0;i<n;i++){
   bool found=false;for(unsigned j=0;j<x.choices.count;j++)if(x.choices.ids[j]==ids[i])found=true;
@@ -81,7 +85,7 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
    if(s.hand.count>=MaxHand)break;
    if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,s.hand,Zone::Hand)&&free)x.turn_cost[id]=1;
   }else if(kind==XChoice::Top)move_instance(s,id,s.hand,s.draw,Zone::Draw);
-  else if(kind==XChoice::Free)x.combat_cost[id]=1;
+  else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;}
   else if(kind==XChoice::DiscardRedraw){if(move_instance(s,id,s.hand,s.discard,Zone::Discard))record(s,LogKind::Discard,s.cards[id].kind);}
   else if(kind==XChoice::Transform){
    uint8_t pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(k!=s.cards[id].kind&&matches_generated(s,k,0))pool[count++]=(uint8_t)k;

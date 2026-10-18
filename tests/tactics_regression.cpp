@@ -18,7 +18,7 @@ static void add(State&s,int n,Zone zone=Zone::Draw,Card card={Defend,0}){
     Pile& pile=zone==Zone::Draw?s.draw:zone==Zone::Discard?s.discard:s.exhaust;
     for(int i=0;i<n;i++){int id=s.card_count++;s.cards[id]=card;s.zones[id]=zone;pile.ids[pile.count++]=(uint16_t)id;}CHECK(validate(s));
 }
-static void rt(const State&s){SaveData b{},out{};State copy{};CHECK(validate(s));CHECK(save(s,b)&&b.bytes[4]==10);CHECK(load(copy,b.bytes,b.size));CHECK(save(copy,out));CHECK(b.size==out.size&&!std::memcmp(b.bytes,out.bytes,b.size));}
+static void rt(const State&s){SaveData b{},out{};State copy{};CHECK(validate(s));CHECK(save(s,b)&&b.bytes[4]==11);CHECK(load(copy,b.bytes,b.size));CHECK(save(copy,out));CHECK(b.size==out.size&&!std::memcmp(b.bytes,out.bytes,b.size));}
 static void equal(const State&a,const State&b){SaveData x{},y{};CHECK(save(a,x)&&save(b,y));CHECK(x.size==y.size&&!std::memcmp(x.bytes,y.bytes,x.size));}
 static void cards(){
     for(unsigned up=0;up<2;up++){

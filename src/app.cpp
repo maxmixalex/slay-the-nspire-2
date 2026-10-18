@@ -63,7 +63,9 @@ static void hud(Canvas&c){
         else{c.box(x+4,5,10,12,rgb(92,90,83));c.rect(x+7,2,4,3,Muted);}
         c.hit(x,0,22,22,HitKind::Command,(int)Key::Potions);
     }
-    c.ui(U_TopMap,224,2,18,18);c.hit(216,0,33,22,HitKind::Command,(int)Key::Map);
+    if(s.practice)c.text("图鉴",219,3,10,Gold);
+    else c.ui(U_TopMap,224,2,18,18);
+    c.hit(216,0,33,22,HitKind::Command,(int)(s.practice?Key::Collection:Key::Map));
     c.ui(U_TopDeck,257,2,18,18);c.hit(249,0,34,22,HitKind::Command,(int)Key::Inspect);
     c.ui(U_TopSettings,291,2,18,18);c.hit(283,0,37,22,HitKind::Command,(int)Key::Back);
     if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp))owned_relic_strip(c);
@@ -208,7 +210,7 @@ static void detail_screen(Canvas&c){
         c.button("返回",11,205,67,false,25);c.hit(9,202,72,31,HitKind::DetailClose);
         c.button(card.upgraded?"基础":"升级",87,205,67,false,25);c.action(84,202,74,31,UiAction::ToggleCardUpgrade);
         const bool room=a.game.card_count<MaxCards;
-        c.button(room?"加入手牌":"卡牌已满",168,205,135,room,25);
+        c.button(room?(a.game.hand.count<MaxHand?"加入手牌":"加入弃牌堆"):"卡牌已满",168,205,135,room,25);
         c.action(163,202,143,31,UiAction::LabCard,room);
     }else{
         c.button("返回",21,204,98,false,25);c.hit(20,202,101,28,HitKind::DetailClose);
@@ -260,7 +262,7 @@ void App::render(){
     }
     if(help){
         hit_count=0;c.hit(6,7,308,226,HitKind::Close);c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
-        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  V：能力状态","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","12 层分岔路线，含商店、事件和营地。","触摸板：轻触/按下点击，按住可拖牌。"};
+        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","12 层分岔路线，含商店、事件和营地。","触摸板：轻触/按下点击，按住可拖牌。"};
         for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
     }
     if(character_select)character_screen(c);

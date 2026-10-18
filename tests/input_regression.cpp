@@ -13,8 +13,11 @@ int main(){
     app.input(Key::Inspect);app.render();app.pointer_scroll(1);app.render();CHECK(app.scroll==10);
     app.pointer_scroll(1);app.render();CHECK(app.scroll==20);
     app.pointer_scroll(1);app.render();CHECK(app.scroll==30);
-    app.pointer_scroll(1);app.render();CHECK(app.scroll==30);
-    app.pointer_scroll(-1);app.render();CHECK(app.scroll==20);unchanged(before);
+    // The complete practice pool now spans nine pages (29 class + 53 colorless).
+    CHECK(app.game.deck_count==82);
+    for(int page=4;page<=8;page++){app.pointer_scroll(1);app.render();CHECK(app.scroll==page*10);}
+    app.pointer_scroll(1);app.render();CHECK(app.scroll==80);
+    app.pointer_scroll(-1);app.render();CHECK(app.scroll==70);unchanged(before);
     // Scrolling during capture cannot activate the new card under that position.
     app.pointer_move(33,80);app.pointer_button(true);app.pointer_scroll(1);app.pointer_button(false);
     CHECK(app.detail_card<0);unchanged(before);
