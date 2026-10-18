@@ -213,19 +213,34 @@ this two-character engine and are not claimed as covered.
 
 ## Validation record
 
-The explicit 106-variant suite passed with AddressSanitizer and
-UndefinedBehaviorSanitizer at checkpoint
-`8adeaeebe4a0380b92ceceff154e30ab5069696c`, together with generation/transform pool,
-choice save/resume, modifier and return-from-Exhaust scenarios present there.
-That whole-project run passed 20 of 21 suites; the older combined suite still had
-obsolete Fisticuffs, Omnislice and Plating expectations. The next source stage
-replaces those with full original-rule numbers and adds batch Limbo reservation,
-full-hand selection, Touch eligibility and Doom/Demise ordering coverage. The
-following stage adds explicit Entropy/Boulder ordering, separates early and late
-turn-start relic hooks, and checks cost expiry before an enemy-phase choice.
+Final source checkpoint **`b4b67e714ca76e7afb72f3a170789ad90047e6f4`** passed all
+**21 native suites, 651,275 assertions**, with AddressSanitizer and
+UndefinedBehaviorSanitizer enabled. The dedicated colorless suite passed
+**8,961 assertions across 106 explicit card-effect variants**, plus generated
+tokens, generation/transform pools, modifier boundaries, and serialized
+continuations. The combined colorless/potion suite passed **7,897 assertions**,
+including migration from a genuine save-v11 fixture written by the earlier
+checkpoint's writer.
 
-The newly added scenarios are **awaiting a verified source checkpoint and test
-run** at the time this audit was written. Source tests are not passing evidence.
-The integration owner records the later checkpoint results in `docs/WORK_STATE.md`.
+The passing run includes the complete batch-reservation and full-hand selection
+repairs, invalid/duplicate/orphan continuation rejection, return from Exhaust,
+temporary-cost cleanup before enemy-phase choices, Entropy/Boulder application
+order, and the split early/late turn-start relic effects. It also includes the
+corrected full-hit Fisticuffs/Omnislice and end-turn-only Plating expectations.
+
+The completed journal is `native-final-6173a9899340`: status `passed`,
+`source_changed: false`, log SHA-256
+`c1b5321a74e1753d6804fcac5b3a2490771262f847fde5043bc39bb0b15fb1e5`.
+The source was pushed and its branch/tree verified before this run.
+
+Historical checkpoints are retained for context: `8adeaeeb` passed the then-current
+106-variant colorless suite but the whole project had one obsolete combined-suite
+expectation failure. `afe33815` passed 8,820 colorless assertions and the corrected
+combined suite; its sole whole-project failure was an incorrect new potion-test
+damage expectation, subsequently corrected. These historical partial results do
+not supersede the final 21/21 result.
+
+`docs/WORK_STATE.md` records integration and platform results separately.
 Native/WASM agreement, ARM compilation and original-game parity are distinct
-claims; this audit establishes static rule evidence and bounded engine coverage.
+claims; this audit establishes static rule evidence and executed bounded-engine
+coverage, without claiming execution of the original game.

@@ -175,20 +175,40 @@
     }
   ],
   "validation": {
-    "passed_checkpoint": "8adeaeebe4a0380b92ceceff154e30ab5069696c",
-    "potion_completion_checks": 33831,
+    "passed_checkpoint": "b4b67e714ca76e7afb72f3a170789ad90047e6f4",
+    "potion_completion_checks": 34202,
     "potion_model_policies": 64,
     "sanitizers": [
       "AddressSanitizer",
       "UndefinedBehaviorSanitizer"
     ],
     "leak_sanitizer": "Disabled: sandbox process/thread inspection unavailable.",
-    "pending_source_assertions": "Corrected Distilled Chaos numeric expectations and the turn-1 enemy-damage/Stratagem cost-cleanup regression require the next verified checkpoint and complete suite run.",
-    "latest_attempt": {
+    "status": "passed",
+    "native_suites": {
+      "passed": 21,
+      "total": 21,
+      "reported_checks": 651275
+    },
+    "journal": "native-final-6173a9899340",
+    "source_changed": false,
+    "log_sha256": "c1b5321a74e1753d6804fcac5b3a2490771262f847fde5043bc39bb0b15fb1e5",
+    "scope": "The complete frozen native run passed, including every current potion completion assertion. This is engine regression evidence; platform validation and original-game parity are separate.",
+    "historical_failed_attempt": {
       "checkpoint": "afe33815cfc9f9ab24bbf457cdaeed0cd0e3f2df",
       "potion_completion": "Failed at the first Distilled Chaos batch damage assertion. The test used 3 instead of the pinned 5 for Flash of Steel; no complete passing count is claimed.",
-      "diagnosis": "A short diagnostic linked the unchanged frozen engine library and confirmed three completed cards, 5 block, total enemy HP 77, the original fourth card drawn and no potion marker. The shuffle case confirmed two completed cards, 5 block and total enemy HP 87."
-    }
+      "diagnosis": "A short diagnostic linked the unchanged frozen engine library and confirmed three completed cards, 5 block, total enemy HP 77, the original fourth card drawn and no potion marker. The shuffle case confirmed two completed cards, 5 block and total enemy HP 87.",
+      "resolution": "Corrected Flash of Steel damage expectations (77/87 remaining total enemy HP) passed in the full b4b67e714ca76e7afb72f3a170789ad90047e6f4 native run."
+    },
+    "historical_potion_passes": [
+      {
+        "checkpoint": "b0945483e4f50ca065c0b7c3a0d9f917a2b375e6",
+        "checks": 7573
+      },
+      {
+        "checkpoint": "8adeaeebe4a0380b92ceceff154e30ab5069696c",
+        "checks": 33831
+      }
+    ]
   },
   "remaining_scope": [
     "Original full character card pools and unlock progression are incomplete in this two-character expedition.",

@@ -44,6 +44,8 @@ The native suite includes separate colorless, potion and UI regressions. `expans
 
 ## Persistence and validation
 
+Verified build source: [`b4b67e71`](https://github.com/zyf722/slay-the-nspire-2/commit/b4b67e714ca76e7afb72f3a170789ad90047e6f4). All **21 C++ suites and 10 Python tests passed**, with ASan/UBSan on native regressions. Real-content UI exercised 106 colorless variants and all 64 potions; native/WASM room comparison matched 84 frames and eight saves. Fresh X11 processes loaded v12 saves including a 384-instance / 19,428-byte boundary case. ARM, WASM and X11 builds succeeded. [Full validation receipts and artifact hashes](docs/validation-0.14.json).
+
 Commit source to a named work branch and read the remote ref back **before** long compilation or conversion. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
 
 Current execution results belong in WORK_STATE, not inherited historical reports. Compilation, cross-backend agreement and actual target execution are different evidence levels. Physical performance, remaining characters, complete original encounters/runs and exact UI parity remain unverified or unfinished.
