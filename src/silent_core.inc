@@ -14,6 +14,8 @@ static void silent_register(State&s,unsigned entry){
 static void silent_gain_power(State&s,SPower p,int amount){
  auto&n=s.silent.powers[(unsigned)p];int old=n;n=(int16_t)max(0,min(9999,n+amount));
  if(!old&&n)silent_register(s,(unsigned)p);else if(old&&!n)silent_unregister(s,(unsigned)p);
+ unsigned actor=p==SPower::Afterimage?(unsigned)PostPlayActor::Afterimage:p==SPower::SerpentForm?(unsigned)PostPlayActor::SerpentForm:p==SPower::MasterPlanner?(unsigned)PostPlayActor::MasterPlanner:0;
+ if(actor){if(!old&&n)after_play_register(s,actor);else if(old&&!n)after_play_unregister(s,actor);}
 }
 static void silent_combat_start(State&s){s.silent=SilentState{};}
 static void silent_card_reset(State&s,int id){
@@ -70,20 +72,22 @@ static void silent_before_play(State&s,int id){
  if(definitions[s.cards[id].kind].type==CardType::Skill&&spower(s,SPower::FreeSkill))silent_gain_power(s,SPower::FreeSkill,-1);
 }
 static void silent_after_play(State&s,int id){
- if(id<0||id>=s.card_count)return;auto&v=s.silent;unsigned f=s.expansion.depth;Card c=s.cards[id];
- // Hooks are prepended in reverse order so each captured trigger completes
- // before the card's result-pile movement, including suspended nested draws.
- for(int t=MaxEnemies-1;t>=0;t--)if(v.strangle_before[f][t])queue_extension(s,XOp::SStrangle,t,v.strangle_before[f][t],true);
- if(v.serpent_before[f])queue_extension(s,XOp::SUnpoweredRandom,v.serpent_before[f],0,true);
- if(v.afterimage_before[f])enqueue(s,EffectKind::Block,v.afterimage_before[f],0,true);
- v.afterimage_before[f]=v.serpent_before[f]=0;for(auto&n:v.strangle_before[f])n=0;
+ if(id<0||id>=s.card_count)return;auto&v=s.silent;Card c=s.cards[id];
  if(definitions[c.kind].type==CardType::Attack)v.attacks_finished=(uint16_t)min(9999,v.attacks_finished+1);
- if(definitions[c.kind].type==CardType::Skill){
-  v.skills_finished=(uint16_t)min(9999,v.skills_finished+1);
-  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind==Pinpoint)v.discount[i]=(uint16_t)min(9999,v.discount[i]+1);
-  if(spower(s,SPower::MasterPlanner))v.sly[id]|=1;
- }
+ if(definitions[c.kind].type==CardType::Skill)v.skills_finished=(uint16_t)min(9999,v.skills_finished+1);
  if(c.kind==Shiv)v.shiv_finished=1;
+}
+static void silent_after_play_listener(State&s,unsigned actor){
+ if(s.playing<0||s.playing>=s.card_count)return;auto&v=s.silent;unsigned f=s.expansion.depth;Card c=s.cards[s.playing];
+ if(actor==(unsigned)PostPlayActor::Afterimage){int n=v.afterimage_before[f];v.afterimage_before[f]=0;if(n)enqueue(s,EffectKind::Block,n,0,true);}
+ else if(actor==(unsigned)PostPlayActor::SerpentForm){int n=v.serpent_before[f];v.serpent_before[f]=0;if(n)queue_extension(s,XOp::SUnpoweredRandom,n,0,true);}
+ else if(actor==(unsigned)PostPlayActor::MasterPlanner){if(spower(s,SPower::MasterPlanner)&&definitions[c.kind].type==CardType::Skill)v.sly[s.playing]|=1;}
+ else if(actor==(unsigned)PostPlayActor::Cards){
+  if(definitions[c.kind].type==CardType::Skill)for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==Pinpoint)v.discount[id]=(uint16_t)min(9999,v.discount[id]+1);
+ }
+ else if(actor==(unsigned)PostPlayActor::Enemies){
+  for(int t=MaxEnemies-1;t>=0;t--){int n=v.strangle_before[f][t];v.strangle_before[f][t]=0;if(n)queue_extension(s,XOp::SStrangle,t,n,true);}
+ }
 }
 static void silent_card_drawn(State&s,int id){
  auto&v=s.silent;v.drawn_combat=(uint16_t)min(9999,v.drawn_combat+1);unsigned f=s.expansion.depth;
@@ -123,11 +127,20 @@ static int silent_base_damage(const State&s,Card c,int,int instance,int current)
 static int silent_attack_factor(const State&s,int t,int amount){
  // The original command multiplies decimal factors before converting damage
  // to an integer. Keep Vulnerable and Tracking in the same integer fraction.
- int64_t n=amount;if(spower(s,SPower::DoubleDamage))n*=2;
+ if(amount<=0)return 0;uint64_t n=(unsigned)amount;if(spower(s,SPower::DoubleDamage))n*=2;
  int vulnerable=100,tracking=100;
  if(t>=0&&t<s.enemy_count){if(s.enemies[t].vulnerable)vulnerable=ironclad_vulnerable_multiplier(s);if(s.enemies[t].weak)tracking+=spower(s,SPower::Tracking);}
- n=n*vulnerable*tracking/10000;
- return (int)(n>9999999?9999999:n);
+ if(vulnerable==100&&tracking==100)return n>9999999?9999999:(int)n;
+ n=n*(unsigned)vulnerable*(unsigned)tracking;
+ if(n>=99999990000ULL)return 9999999;
+ // The ARM runtime deliberately has no 64-bit division helper. At this point
+ // n/2^32 < 24, so divide its low word with a 32-bit remainder in 32 steps.
+ uint32_t remainder=(uint32_t)(n>>32),low=(uint32_t)n,quotient=0;
+ for(int bit=31;bit>=0;--bit){
+  remainder=(remainder<<1)|((low>>bit)&1u);quotient<<=1;
+  if(remainder>=10000){remainder-=10000;quotient|=1u;}
+ }
+ return (int)quotient;
 }
 static int silent_modify_block(const State&s,int n){
  if(n<=0)return 0;int layers=spower(s,SPower::Shadowmeld);

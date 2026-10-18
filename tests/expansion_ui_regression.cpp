@@ -210,7 +210,7 @@ static void pile_choices_and_instances(){
     a.game.expansion.blade_damage[left]=25;a.game.expansion.blade_damage[right]=47;a.game.expansion.turn_cost[left]=1;
     before=snapshot();a.cursor=0;a.input(Key::Detail);CHECK(a.detail_instance==left&&a.detail_cost_override==0);
     char text[256];a.card_description(a.game.cards[left],0,text,sizeof text,a.detail_instance);CHECK(number_in(text,25));capture("blade-instance-25");
-    a.input(Key::Back);a.cursor=1;a.input(Key::Detail);CHECK(a.detail_instance==right&&a.detail_cost_override==-2);
+    a.input(Key::Back);a.cursor=1;a.input(Key::Detail);CHECK(a.detail_instance==right&&a.detail_cost_override==2&&a.detail_energy()==2);
     a.card_description(a.game.cards[right],0,text,sizeof text,a.detail_instance);CHECK(number_in(text,47));capture("blade-instance-47");
     a.input(Key::Back);unchanged(before);open_model(SovereignBlade);a.card_description({SovereignBlade,0},0,text,sizeof text);
     CHECK(number_in(text,10));capture("blade-catalog");unchanged(before);

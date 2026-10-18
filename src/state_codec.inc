@@ -88,6 +88,8 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
  if(version>=13){
 #include "ironclad_codec.inc"
 #include "silent_codec.inc"
+  static_assert(MaxPowerInstances+6==22,"v13 post-play listener width is frozen");
+  for(int n=0;n<22;n++)F(s.expansion.after_play_order[n]);
  }else if(c.in){
   // Old formats cannot carry the newly appended models, module operations or
   // selections. Keep their original directory/capacity limits explicit.
@@ -103,6 +105,18 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
    if((e.kind==EffectKind::Extended&&e.target>(int)XOp::TurnRelics)||
       (e.kind!=EffectKind::Extended&&e.aux))c.good=false;
   }
+  // The historical writers had no character history. Each suspended Attack
+  // is nevertheless visibly in progress and must be counted as started
+  // before its continuation records a finished play in the new module.
+  auto pending_attack=[&](int id){
+   if(id>=0&&id<s.card_count&&s.cards[id].kind<CardKinds&&definitions[s.cards[id].kind].type==CardType::Attack)
+    ++s.ironclad.attacks_started;
+  };
+  pending_attack(s.playing);for(unsigned i=0;i<s.expansion.depth;i++)pending_attack(s.expansion.frames[i].playing);
+  // Old engines dispatched Panache before Calamity. Preserve that explicit
+  // migration policy; the original acquisition history cannot be recovered.
+  for(unsigned i=0;i<MaxPowerInstances;i++)if(s.expansion.panache[i])after_play_register(s,(unsigned)PostPlayActor::PanacheStart+i);
+  if(power_value(s,XPower::Calamity))after_play_register(s,(unsigned)PostPlayActor::Calamity);
  }
 #undef F
 }

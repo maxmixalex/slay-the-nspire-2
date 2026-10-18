@@ -120,6 +120,14 @@ Every actual positive HP-loss event increments the combat history used by Tear A
 
 Crimson Mantle and Inferno maintain a separate self-damage amount for the number of applied copies. Two Mantles produce one two-HP loss at turn start, not two one-HP losses; the resulting Inferno/Rupture trigger is a single event. Their positive Block/Damage amounts still stack. Colossus always halves powered attack damage from Vulnerable enemies; stacked amounts extend enemy-side duration (`06009e8e`) instead of repeatedly dividing damage.
 
+### Shared AfterCardPlayed acquisition order
+
+The original hook list (`CombatState.IterateHookListeners`, `0600b3f4`) visits allies before enemies. Within the player's creature it visits powers in insertion order, then relics in acquisition order, potion slots, orbs and cards. Only after those player listeners does it visit each enemy's powers and model. The wrapper (`0600af9d`) does not reorder that list. The normal and late AfterCardPlayed passes take separate snapshots; the late overrides present in the original are outside these implemented card pools.
+
+A bounded 22-byte shared order records Calamity, Rage, Rupture, Afterimage, Serpent Form, Master Planner and each of the 16 supported Panache instances. An amount becoming positive adds an actor; stacking an active actor preserves its position; removal deletes it. Serialized listener continuations then execute the acquired player-power order, followed by relics, card-model hooks such as Pinpoint, and enemy hooks such as Strangle. Rupture keeps its captured damage until its own listener, and the Silent powers retain their original BeforeCardPlayed amount captures.
+
+The numeric regression uses a fifth played card leaving one enemy at 1 HP and another at 30. If Panache was acquired before Rage, Panache kills the weak enemy and Juggernaut subsequently hits the survivor, leaving 14 HP. In reverse acquisition order, the same controlled RNG sends Juggernaut to the weak enemy first and the survivor retains 20 HP after Panache. The tests also save and reload before the resolving attack. Old v3–v12 saves lack this acquisition history; their active player-power actors use fixed Panache-index order followed by Calamity instead of pretending to reconstruct the missing history.
+
 ### Block source and Unmovable
 
 The shared engine distinguishes card-powered Block from unpowered Block produced by powers, relics and potions. Both can trigger Juggernaut. Only card-powered Block enters Unmovable's count. Dexterity and the card-specific modifiers apply before its multiplicative stage.
@@ -152,7 +160,7 @@ Rampage's increase and Thrash's absorbed damage belong to a physical card instan
 
 The isolated module contains 18 positive powers with explicit acquisition order, bounded attack/HP/exhaust/block counters, per-auto-frame Rupture and Pillage continuations, and per-instance damage/cost/forced-exhaust state. It adds 26 serialized effect operations and one Armaments upgrade choice after the frozen pre-0.15 enums. Variable-length card effects use bounded continuations or preflight the shared queue/card capacities before moving their snapshot.
 
-Save v13 appends the Ironclad and Silent modules to the historical prefix. Old v3–v12 files have no new-module history and load those fields as zero. The validator rejects duplicate or absent power-order members, illegal amount/instance bounds, reductions on non-Stomp cards, damage bonuses on unrelated models, impossible per-frame captures, malformed operation operands and Armaments choices that no longer reference eligible hand cards. The tests check rejected choices leave the serialized state unchanged and legitimate suspended choices produce identical results after loading.
+Save v13 appends the Ironclad and Silent modules and shared AfterCardPlayed order to the historical prefix. Old v3–v12 files have no complete new-character history. Migration seeds the started-Attack counter only from visibly active Attack cards in the current play and suspended frames, so completing an old saved Headbutt does not create a finished count greater than its started count. Other unavailable history remains zero. The fixed historical actor-order migration is described above. The validator rejects duplicate or absent power-order members, illegal amount/instance bounds, reductions on non-Stomp cards, damage bonuses on unrelated models, impossible per-frame captures, malformed operation operands and Armaments choices that no longer reference eligible hand cards. The tests check rejected choices leave the serialized state unchanged and legitimate suspended choices produce identical results after loading.
 
 ## Regression coverage and bounded claims
 
@@ -160,6 +168,7 @@ The suite includes a concrete numeric or state-transition contract for all **170
 
 - Corruption/FreeAttack with X energy; ordered Snecko/Touch cost overrides and side-end cleanup.
 - Deferred Rupture, combined Mantle HP loss, Unmovable multi-Block and stacked event thresholds.
+- Player-power acquisition order across Ironclad and colorless effects, with the Panache/Rage/Juggernaut survivor-HP counterexample.
 - Havoc's forced exhaust through save/resume; Hellraiser's nested draws and Pillage's draw result.
 - Snapshot exhaust operations, automatic/generated cards, instance cloning, transform reset and Thrash's consumed Vigor exclusion.
 - Illegal choices and corrupted module state.

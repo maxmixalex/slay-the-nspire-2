@@ -7,6 +7,10 @@ enum class XPower:uint8_t {
  RollingBoulder,Stratagem,Entropy,Gambit,Focus,Count
 };
 constexpr int XPowerCount=(int)XPower::Count;
+enum class PostPlayActor:uint8_t {
+ Calamity=1,Rage=2,Rupture=3,Afterimage=4,SerpentForm=5,MasterPlanner=6,
+ PanacheStart=7,Relics=23,Cards=24,Enemies=25,Count=26
+};
 enum class XChoice:uint8_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,
 #include "ironclad_choices.inc"
 #include "silent_choices.inc"
@@ -21,6 +25,7 @@ enum class XOp:uint8_t {
  Noop,Summon,Forge,ChannelDark,OrbsEnd,BoulderTick,TurnRelics,
 #include "ironclad_ops.inc"
 #include "silent_ops.inc"
+ PostPlayListener,
  Count
 };
 static_assert((unsigned)XOp::Count<=256,"Expand saved operation IDs before exceeding uint8_t");
@@ -30,6 +35,9 @@ struct XFrame {
  uint8_t double_attack=0,triple=0,returning=0;
 };
 struct ExpansionState {
+ // Player AfterCardPlayed powers keep their actual acquisition order.
+ // Zero terminates the prefix; 7..22 identify independent Panache instances.
+ uint8_t after_play_order[MaxPowerInstances+6]{};
  int16_t powers[XPowerCount]{};
  int16_t automation[MaxPowerInstances]{},panache[MaxPowerInstances]{},boulder[MaxPowerInstances]{};
  uint8_t automation_count[MaxPowerInstances]{},panache_count[MaxPowerInstances]{},panache_skip[MaxPowerInstances]{};

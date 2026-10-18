@@ -9,6 +9,7 @@ static int ironclad_block(const State&,Card,int,int instance=-2);
 static void ironclad_after_block(State&,int,bool);
 static void ironclad_before_card(State&,Card);
 static void ironclad_after_card(State&,Card);
+static void ironclad_after_play_listener(State&,unsigned);
 static int ironclad_replays(State&,Card);
 static bool ironclad_exhausts(const State&,int);
 static void ironclad_after_draw(State&,int);

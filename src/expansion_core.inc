@@ -13,7 +13,11 @@ int power_value(const State&s,XPower p){return s.expansion.powers[(unsigned)p];}
 void gain_power(State&s,XPower p,int n){
  auto&x=s.expansion;auto&v=x.powers[(unsigned)p];
  if(p==XPower::Entropy&&!v&&n>0){x.entropy_boulder_prefix=0;for(auto b:x.boulder)if(b)++x.entropy_boulder_prefix;}
- v=(int16_t)max(0,min(9999,v+n));if(p==XPower::Entropy&&!v)x.entropy_boulder_prefix=0;
+ int old=v;v=(int16_t)max(0,min(9999,v+n));if(p==XPower::Entropy&&!v)x.entropy_boulder_prefix=0;
+ if(p==XPower::Calamity){
+  if(!old&&v)after_play_register(s,(unsigned)PostPlayActor::Calamity);
+  else if(old&&!v)after_play_unregister(s,(unsigned)PostPlayActor::Calamity);
+ }
 }
 void queue_extension(State&s,XOp op,int a,int b,bool first){
  if(a< -9999||a>9999||b< -9999||b>9999){fail(s);return;}
@@ -178,13 +182,9 @@ static void finish_extended_card(State&s){
  if(s.playing<0)return;auto&x=s.expansion;Card card=s.cards[s.playing];auto type=definitions[card.kind].type;
  x.cards_finished=(uint16_t)min(9999,x.cards_finished+1);
  queue_extension(s,XOp::AfterPlay,s.playing,0,true);
- relic_card_played(s,card);if(type==CardType::Attack)s.attacked_this_turn=1;
- if(type==CardType::Attack)for(int i=0;i<power_value(s,XPower::Calamity);i++)queue_extension(s,XOp::Generate,1,0,true);
- for(int i=MaxPowerInstances-1;i>=0;i--)if(x.panache[i]){
-  if(x.panache_skip[i]){x.panache_skip[i]=0;continue;}
-  if(++x.panache_count[i]==5){x.panache_count[i]=0;queue_extension(s,XOp::AllDamage,x.panache[i],0,true);}
- }
+ if(type==CardType::Attack)s.attacked_this_turn=1;
  ironclad_after_card(s,card);silent_after_play(s,s.playing);
+ queue_post_play_listeners(s);
 }
 static void after_play(State&s,int id){
  if(id!=s.playing||id<0||id>=s.card_count){fail(s);return;}auto&x=s.expansion;

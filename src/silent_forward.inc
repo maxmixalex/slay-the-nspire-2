@@ -12,6 +12,7 @@ static bool silent_can_play(const State&,Card);
 static int silent_extra_replays(State&,Card);
 static void silent_before_play(State&,int id);
 static void silent_after_play(State&,int id);
+static void silent_after_play_listener(State&,unsigned actor);
 static void silent_card_drawn(State&,int id);
 static void silent_card_discarded(State&,int id);
 static void silent_attack_damage(State&,int target,int unblocked);

@@ -108,7 +108,7 @@ static void extension_effect(State&s,Effect e){
  case XOp::Power:{
   if(a<0||a>=XPowerCount){fail(s);break;}
   int16_t*instances=a==(int)XPower::Automation?x.automation:a==(int)XPower::Panache?x.panache:a==(int)XPower::RollingBoulder?x.boulder:nullptr;
-  if(instances){int i=0;while(i<MaxPowerInstances&&instances[i])++i;if(i==MaxPowerInstances){fail(s);break;}instances[i]=(int16_t)b;if(a==(int)XPower::Panache)x.panache_skip[i]=1;}
+  if(instances){int i=0;while(i<MaxPowerInstances&&instances[i])++i;if(i==MaxPowerInstances){fail(s);break;}instances[i]=(int16_t)b;if(a==(int)XPower::Panache){x.panache_skip[i]=1;after_play_register(s,(unsigned)PostPlayActor::PanacheStart+i);}}
   if(a==(int)XPower::Gambit)x.powers[a]=1;else gain_power(s,(XPower)a,b);break;}
  case XOp::AllDamage:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,a);break;
  case XOp::StrengthLoss:
@@ -248,6 +248,7 @@ static void extension_effect(State&s,Effect e){
   int total=0;for(auto amount:x.boulder)total+=amount;
   x.powers[(int)XPower::RollingBoulder]=(int16_t)min(9999,total);break;}
  case XOp::TurnRelics:relic_hook(s,RelicHook::AfterHandDraw);break;
+ case XOp::PostPlayListener:post_play_listener(s,(unsigned)a);break;
  default:if(!ironclad_effect(s,e)&&!silent_effect(s,e))fail(s);break;
  }
 }

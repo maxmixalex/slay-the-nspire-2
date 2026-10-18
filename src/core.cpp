@@ -9,6 +9,7 @@ namespace spire {
 #include "expansion_core.inc"
 #include "ironclad_core.inc"
 #include "silent_core.inc"
+#include "post_play_core.inc"
 #include "core_turns.inc"
 #include "expansion_effects.inc"
 #include "expansion_validation.inc"

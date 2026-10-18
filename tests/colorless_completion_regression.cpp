@@ -121,7 +121,9 @@ static void card_contract(unsigned kind,unsigned up){
     case Discovery:{
         act(s,kind);CHECK(s.expansion.choice==XChoice::Offer&&s.expansion.choices.count==3);
         Card selected=choice_card(s,s.expansion.choices.ids[1]);pick(s,1,1);
-        CHECK(s.hand.count==1&&s.cards[s.hand.ids[0]].kind==selected.kind&&!s.cards[s.hand.ids[0]].upgraded&&cost(s,s.hand.ids[0])==0);
+        // Expanded character pools can offer an X card. The original local
+        // free-cost modifier leaves that canonical X cost unchanged.
+        CHECK(s.hand.count==1&&s.cards[s.hand.ids[0]].kind==selected.kind&&!s.cards[s.hand.ids[0]].upgraded&&cost(s,s.hand.ids[0])==(cost(selected)<0?cost(selected):0));
         CHECK(s.zones[0]==(up?Zone::Discard:Zone::Exhaust));break;}
     case DramaticEntrance:
         CHECK(card_innate(s.cards[0]));act(s,kind);CHECK(total_hp(s)==92-2*(11+4*(int)up)&&s.zones[0]==Zone::Exhaust);break;

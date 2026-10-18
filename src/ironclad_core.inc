@@ -8,6 +8,11 @@ static void ironclad_gain_power(State&s,IPower p,int n){
  if(!old&&value){if(i.power_count==IPowerCount){fail(s);return;}i.power_order[i.power_count++]=(uint8_t)k;}
  if(old&&!value)for(unsigned at=0;at<i.power_count;at++)if(i.power_order[at]==k){for(unsigned j=at+1;j<i.power_count;j++)i.power_order[j-1]=i.power_order[j];i.power_order[--i.power_count]=0;break;}
  i.powers[k]=(int16_t)value;
+ if(p==IPower::Rage||p==IPower::Rupture){
+  unsigned actor=p==IPower::Rage?(unsigned)PostPlayActor::Rage:(unsigned)PostPlayActor::Rupture;
+  if(!old&&value)after_play_register(s,actor);
+  if(old&&!value)after_play_unregister(s,actor);
+ }
 }
 static bool ironclad_choice(XChoice c){return c==XChoice::IUpgrade;}
 static bool choose_ironclad(State&s,const uint16_t*ids,unsigned n){
@@ -84,19 +89,21 @@ static void ironclad_before_card(State&s,Card c){
  }
 }
 static void ironclad_after_card(State&s,Card c){
- auto&i=s.ironclad;unsigned depth=s.expansion.depth;
+ auto&i=s.ironclad;
  if(definitions[c.kind].type==CardType::Attack)i.attacks_finished=(uint16_t)min(9999,i.attacks_finished+1);
- // Power listeners retain acquisition order. Rupture caused by this card is
- // deliberately delivered after its attack, including on each replay.
- for(int at=i.power_count-1;at>=0;at--){IPower p=(IPower)i.power_order[at];
-  if(p==IPower::Rage&&definitions[c.kind].type==CardType::Attack)enqueue(s,EffectKind::Block,ipower(s,p),0,true);
-  if(p==IPower::Rupture&&i.rupture_pending[depth])enqueue(s,EffectKind::Strength,i.rupture_pending[depth],0,true);
+}
+static void ironclad_after_play_listener(State&s,unsigned actor){
+ if(s.playing<0||s.playing>=s.card_count)return;auto&i=s.ironclad;unsigned depth=s.expansion.depth;
+ if(actor==(unsigned)PostPlayActor::Rage&&definitions[s.cards[s.playing].kind].type==CardType::Attack&&ipower(s,IPower::Rage))enqueue(s,EffectKind::Block,ipower(s,IPower::Rage),0,true);
+ if(actor==(unsigned)PostPlayActor::Rupture){
+  int pending=i.rupture_pending[depth];i.rupture_pending[depth]=0;i.rupture_registered[depth]=0;
+  if(pending)enqueue(s,EffectKind::Strength,pending,0,true);
  }
- i.rupture_pending[depth]=0;i.rupture_registered[depth]=0;
 }
 static void ironclad_after_play_group(State&s,int id){
  if(id>=0&&id<s.card_count)s.ironclad.forced_exhaust[id]=0;
  unsigned d=s.expansion.depth;s.ironclad.block_events_play[d]=0;s.ironclad.pillage_waiting[d]=0;s.ironclad.pillage_drawn[d]=0;
+ s.ironclad.rupture_pending[d]=0;s.ironclad.rupture_registered[d]=0;
 }
 static void ironclad_after_draw(State&s,int id){
  auto&i=s.ironclad;unsigned d=s.expansion.depth;

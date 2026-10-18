@@ -368,7 +368,35 @@ static void costs_clones_and_limits(){
  auto valid=s;valid.silent.nightmares[0].card={Stomp,0};valid.silent.nightmares[0].stomp_discount=2;valid.silent.nightmares[0].stomp_turn_origin=1;restore(valid);
 }
 
+static void multiplicative_rounding_reference(){
+ scenario="ARM-safe multiplication against host integer reference";upgrade=0;
+ const int bases[]={1,3,5,7,46,9999},strengths[]={0,9999},tracking[]={0,50,100,9999},cruelty[]={0,25,9999};
+ for(int base:bases)for(int strength:strengths)for(int track:tracking)for(int cruel:cruelty)for(int vulnerable=0;vulnerable<2;vulnerable++)for(int doubled=0;doubled<3;doubled++){
+  auto s=fight();s.silent.drawn_combat=(uint16_t)(base-1);s.strength=(int16_t)strength;
+  s.enemies[0].weak=1;s.enemies[0].vulnerable=(int16_t)vulnerable;
+  if(track){s.silent.powers[(unsigned)SPower::Tracking]=(int16_t)track;s.silent.power_order[s.silent.power_count++]=(uint8_t)SPower::Tracking;}
+  if(doubled){s.silent.powers[(unsigned)SPower::DoubleDamage]=(int16_t)doubled;s.silent.power_order[s.silent.power_count++]=(uint8_t)SPower::DoubleDamage;}
+  if(cruel){s.ironclad.powers[(unsigned)IPower::Cruelty]=(int16_t)cruel;s.ironclad.power_order[s.ironclad.power_count++]=(uint8_t)IPower::Cruelty;}
+  uint64_t exact=(uint64_t)(base+strength)*(doubled?2u:1u)*(vulnerable?(unsigned)(150+cruel):100u)*(unsigned)(100+track)/10000u;
+  int expected=exact>9999999?9999999:(int)exact;
+  CHECK(damage(s,{Murder,0},0)==expected);
+ }
+}
+
+static void shared_after_play_order(){
+ scenario="Serpent Form and Panache acquisition order";upgrade=0;
+ for(int serpent_first=0;serpent_first<2;serpent_first++){
+  auto s=fight();cast(s,serpent_first?SerpentForm:Panache);cast(s,serpent_first?Panache:SerpentForm);
+  s.enemies[0].hp=10;s.enemies[1].hp=46;s.expansion.panache_count[0]=4;s.rng_cards=2;
+  restore(s);cast(s,DefendSilent);
+  // With two targets the fixed test RNG first picks enemy 0. If Panache acts
+  // first, it removes that target and Serpent Form must hit enemy 1 instead.
+  CHECK(!s.enemies[0].hp&&s.enemies[1].hp==(serpent_first?36:32)&&s.block==5);
+  CHECK(s.expansion.panache_count[0]==0);restore(s);
+ }
+}
+
 int main(){
- complete_model_matrix();sly_choices_and_discard();shivs_and_power_triggers();temporal_resources();costs_clones_and_limits();
+ complete_model_matrix();sly_choices_and_discard();shivs_and_power_triggers();temporal_resources();costs_clones_and_limits();multiplicative_rounding_reference();shared_after_play_order();
  std::printf("Silent completion regression: %u checks; %u base/upgraded variants; 86 single-player models + Shiv\n",checks,variants);return 0;
 }

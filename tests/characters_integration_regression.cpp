@@ -64,6 +64,11 @@ static void capacity_bound(){
  invalid=s;invalid.silent.inky[0]=1;CHECK(!validate(invalid));
  invalid=s;invalid.effects[0]={EffectKind::Extended,MaxCards,(int16_t)XOp::SKnifeShiv,0};CHECK(!validate(invalid));
  invalid=s;invalid.effects[0]={EffectKind::Extended,MaxCards,(int16_t)XOp::IIncreaseDamage,1};CHECK(!validate(invalid));
+ invalid=s;invalid.expansion.after_play_order[0]=(uint8_t)PostPlayActor::Calamity;CHECK(!validate(invalid));
+ invalid=s;invalid.effects[0]={EffectKind::Extended,(int16_t)PostPlayActor::Count,(int16_t)XOp::PostPlayListener,0};CHECK(!validate(invalid));
+ auto ordered=s;gain_power(ordered,XPower::Calamity,1);roundtrip(ordered);
+ invalid=ordered;invalid.expansion.after_play_order[1]=invalid.expansion.after_play_order[0];CHECK(!validate(invalid));
+ invalid=ordered;invalid.expansion.after_play_order[0]=0;CHECK(!validate(invalid));
 }
 
 int main(int argc,char**argv){CHECK(argc==2);genuine_v12(argv[1]);capacity_bound();std::printf("character integration: %u checks\n",checks);}

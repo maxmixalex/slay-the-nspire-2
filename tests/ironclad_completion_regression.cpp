@@ -177,11 +177,28 @@ static void unmovable_preview_during_choice(){
  CHECK(card_block(s,s.cards[wall],wall)==16);CHECK(card_block(s,s.cards[arm],arm)==10);
  roundtrip(s);pick(s,1);ready(s);
 }
+static void player_power_acquisition_order(){
+ active_kind=Panache;active_upgrade=0;
+ auto first=fight(Panache);act(first,Panache);add(first,Juggernaut);act(first,Juggernaut);add(first,Rage);act(first,Rage);
+ supply(first,2,Production,Zone::Hand);act(first,Production);act(first,Production);
+ CHECK(first.expansion.panache_count[0]==4);int attack=add(first,Strike);first.enemies[0].hp=7;first.enemies[1].hp=30;first.rng_cards=2;
+ auto before=snapshot(first);State copy{};CHECK(load(copy,before.bytes,before.size));act_id(first,attack);act_id(copy,attack);
+ // The strike leaves enemy 0 at 1 HP. Panache, acquired before Rage,
+ // kills it before Juggernaut chooses, so the surviving enemy takes both.
+ CHECK(first.enemies[0].hp==0&&first.enemies[1].hp==14&&first.block==3);same(copy,snapshot(first));ready(first);
+ auto reverse=fight(Juggernaut);act(reverse,Juggernaut);add(reverse,Rage);act(reverse,Rage);add(reverse,Panache);act(reverse,Panache);
+ supply(reverse,4,Production,Zone::Hand);for(int j=0;j<4;j++)act(reverse,Production);CHECK(reverse.expansion.panache_count[0]==4);
+ add(reverse,Strike);reverse.enemies[0].hp=7;reverse.enemies[1].hp=30;reverse.rng_cards=2;act(reverse,Strike);
+ // Here Rage precedes Panache. The same RNG chooses the low-HP enemy
+ // for Juggernaut; only Panache then hits enemy 1.
+ CHECK(reverse.enemies[0].hp==0&&reverse.enemies[1].hp==20&&reverse.block==3);ready(reverse);
+ supply(reverse,8);next_turn(reverse);CHECK(!power(reverse,IPower::Rage));ready(reverse);
+}
 static void temporary_cost_order(){
  active_kind=Stomp;active_upgrade=0;auto s=fight(Stomp);add(s,Strike);act(s,Strike);CHECK(cost(s,0)==2);
- s.potions[0]=Potion::SneckoOil;CHECK(drink_potion(s,0));int set=cost(s,0);CHECK(set>=0&&set<=3);CHECK(s.ironclad.stomp_discount[0]==1&&s.ironclad.stomp_turn_origin[0]==1);
+ s.potions[0]=Potion::SneckoOil;CHECK(use_potion(s,0,0));int set=cost(s,0);CHECK(set>=0&&set<=3);CHECK(s.ironclad.stomp_discount[0]==1&&s.ironclad.stomp_turn_origin[0]==1);
  add(s,Strike);act(s,Strike);CHECK(cost(s,0)==(set?set-1:0));roundtrip(s);act_id(s,0);CHECK(!s.expansion.turn_cost[0]&&cost(s,0)==0);ready(s);
- auto free=fight(Stomp);add(free,Strike);act(free,Strike);free.potions[0]=Potion::TouchOfInsanity;CHECK(drink_potion(free,0));CHECK(free.expansion.choice==XChoice::Free);pick(free,1);CHECK(cost(free,0)==0&&free.ironclad.stomp_combat_origin[0]==1);
+ auto free=fight(Stomp);add(free,Strike);act(free,Strike);free.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(free,0,0));CHECK(free.expansion.choice==XChoice::Free);pick(free,1);CHECK(cost(free,0)==0&&free.ironclad.stomp_combat_origin[0]==1);
  supply(free,8);next_turn(free);CHECK(!free.ironclad.stomp_discount[0]&&cost(free,0)==0);ready(free);
 }
 static void autoplay_choices_and_pillage(){
@@ -217,6 +234,6 @@ int main(){
  for(unsigned j=0;j<count;j++)CHECK(covered[pool[j]][0]&&covered[pool[j]][1]);
  CHECK(card_strike_tag(AshenStrike)&&card_strike_tag(SetupStrike));
  CHECK(!card_can_generate(Feed)&&!card_can_generate(NotYet)&&!card_can_generate(Break)&&!card_can_generate(Corruption));
- no_global_free_x_cost();grouped_power_events();unmovable_preview_during_choice();temporary_cost_order();autoplay_choices_and_pillage();clone_and_transform_cross_character();reject_module_corruption();
+ no_global_free_x_cost();grouped_power_events();unmovable_preview_during_choice();player_power_acquisition_order();temporary_cost_order();autoplay_choices_and_pillage();clone_and_transform_cross_character();reject_module_corruption();
  std::printf("ironclad completion: %u checks passed across %u base/upgrade variants plus Giant Rock and interaction contracts\n",checks,variants);return 0;
 }

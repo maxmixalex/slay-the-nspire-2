@@ -41,7 +41,11 @@ static HitRegion hit(HitKind kind,int value){
     a.render();for(int i=a.hit_count-1;i>=0;i--)if(a.hits[i].kind==kind&&a.hits[i].value==value)return a.hits[i];
     std::fprintf(stderr,"missing hit %d/%d\n",(int)kind,value);CHECK(false);return {};
 }
-static void tap(HitKind kind,int value){auto h=hit(kind,value);CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);}
+static void tap(HitKind kind,int value){
+    auto h=hit(kind,value);
+    if(!h.enabled)std::fprintf(stderr,"disabled hit %d/%d detail=%d page=%d phase=%d acquisitions=%u\n",(int)kind,value,a.detail_card,a.library_page,(int)a.game.phase,acquisitions);
+    CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);
+}
 static void action(UiAction x){tap(HitKind::UiAction,(int)x);}
 static SaveData snapshot(){SaveData data{};CHECK(validate(a.game));CHECK(save(a.game,data));return data;}
 static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
@@ -117,7 +121,10 @@ static void overflow_and_catalog(){
         a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
         while(a.library_page<(CardKinds-1)/8)action(UiAction::NextPage);
         CHECK(a.library_page==28);uint8_t ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
-        CHECK(ids[CardKinds-1]==GiantRock);auto before=snapshot();action(UiAction::NextPage);unchanged(before);
+        CHECK(ids[CardKinds-1]==GiantRock);auto before=snapshot();
+        auto next=hit(HitKind::UiAction,(int)UiAction::NextPage);CHECK(!next.enabled);
+        a.pointer_move(next.x+next.w/2,next.y+next.h/2);a.pointer_button(true);a.pointer_button(false);
+        CHECK(a.library_page==28);unchanged(before);
         tap(HitKind::LibraryItem,CardKinds-1);CHECK((a.detail_card&255)==GiantRock);
     }
 }

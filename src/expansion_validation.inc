@@ -1,5 +1,12 @@
 static bool validate_extension(const State&s){
  const auto&x=s.expansion;
+ bool after_seen[(unsigned)PostPlayActor::Relics]{};bool after_gap=false;
+ for(unsigned actor:x.after_play_order){
+  if(!actor){after_gap=true;continue;}
+  if(after_gap||actor>=(unsigned)PostPlayActor::Relics||after_seen[actor]||!post_play_actor_active(s,actor))return false;
+  after_seen[actor]=true;
+ }
+ for(unsigned actor=1;actor<(unsigned)PostPlayActor::Relics;actor++)if(after_seen[actor]!=post_play_actor_active(s,actor))return false;
  if(x.depth>MaxAutoFrames||x.triple>1||x.returning>1||x.enemy_side>1||x.potion_active>1)return false;
  if(x.target< -1||x.target>=MaxEnemies||x.x<0||x.x>999||x.last_damage<0||x.last_damage>9999||x.last_drawn< -1||x.last_drawn>=s.card_count)return false;
  if(x.cards_finished>9999||x.nonpower_started>9999||x.choices.count>MaxCards)return false;

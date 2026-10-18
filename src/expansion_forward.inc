@@ -13,3 +13,8 @@ static void temporary_cost_set(State&,int);
 static void combat_cost_set(State&,int);
 static void copy_card_modifiers(State&,int,int);
 static void reset_card_modifiers(State&,int);
+static void after_play_register(State&,unsigned);
+static void after_play_unregister(State&,unsigned);
+static bool post_play_actor_active(const State&,unsigned);
+static void queue_post_play_listeners(State&);
+static void post_play_listener(State&,unsigned);
