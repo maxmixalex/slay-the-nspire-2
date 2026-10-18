@@ -1,4 +1,12 @@
-# Work state — 2026-10-16
+# Work state — 2026-10-18
+
+## Recovery receipt and active work
+
+The accessible scratch workspaces no longer contained the previous checkout. All 163 source files were restored from the current work-branch head `50a58c9b876c3038e549b97e7e7d245224d717d8`, with every Git blob checked and the complete tree verified as `2fb04a1bb26b50d96d6741cbe2cba17f4a9366cc`. The original commit and shallow local Git checkout were reconstructed as well. Current directory: `/workspace/scratch/5af9d4bf40b9/slay-the-nspire-2`. A source-only baseline archive and isolated test copy are retained locally.
+
+The user again prioritizes GitHub persistence, then completion of potions and single-player colorless cards, with parallel agents. Work is split between potion behavior, colorless behavior, and UI/acquisition regression coverage. The integration owner handles shared state, save compatibility, build wiring and checkpoints. Baseline validation has not yet run in this session. Historical success counts below must not be treated as fresh validation.
+
+Next: run the isolated recovered baseline, repair stale profile/save/practice expectations without changing historical fixture bytes, and verify persistent/queued/automatic effects rather than counting dispatch-only smoke tests. Persist every coherent stage before long validation. Reference assets must be recovered and their locked hashes checked before any original-game parity or production-art claim.
 
 Continue on `work/0.14-colorless-potions`. Do NOT restart the earlier bulk relic recovery. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0` (tested 0.13); CI remains disabled. Reference v0.111.0 / 41cef1ea. Audio, multiplayer and Timeline remain excluded.
 
