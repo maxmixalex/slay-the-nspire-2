@@ -14,6 +14,13 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     case XOp::ChooseDiscard:return a==0&&(b==0||b==1);
     case XOp::Transform:return a>=0&&a<=MaxHand&&b==0;
     case XOp::AutoDraw:case XOp::AutoDiscard:return a>=0&&a<=3&&b==0;
+    // AutoTop can suspend while reserving a batch. Low ten aux bits count
+    // queued reserved instances; bit 10 prevents repeating a pending shuffle.
+    case XOp::AutoTop:{
+        const int reserved=b&1023;
+        return a>=0&&a<=MaxCards&&b>=0&&(b&~2047)==0&&reserved<=MaxCards&&
+               (a?a:1)+reserved<=MaxCards;
+    }
     case XOp::AutoInstance:case XOp::ReturnNext:case XOp::AfterPlay:return instance&&b==0;
     case XOp::Draw:case XOp::DrawOne:return a>=0&&a<=MaxCards&&b==0;
     case XOp::EnchantReplay:return a>=0&&a<=255&&b==0;

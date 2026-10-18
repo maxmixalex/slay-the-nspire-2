@@ -305,6 +305,14 @@ static void original_continuation_boundaries(){
     uint32_t rng=full.rng_cards;queue_extension(full,XOp::AutoInstance,auto_id);resolve_pending(full);
     CHECK(full.hand.count==MaxHand&&full.draw.count==3&&full.rng_cards==rng&&full.discard.count==0);ready(full);
 
+    // General pile selection still resolves at the hand cap; its selected
+    // card goes to discard, as opposed to Anointed's explicit capacity limit.
+    active_kind=SecretWeapon;full=fight(Defend);supply(full,9,Defend,Zone::Hand);
+    auto_id=add(full,SecretWeapon,0,Zone::Discard);int chosen=add(full,Strike,0,Zone::Draw);
+    queue_extension(full,XOp::AutoInstance,auto_id);resolve_pending(full);
+    CHECK(full.expansion.choice==XChoice::Draw&&full.expansion.choices.ids[0]==chosen);pick(full,1);
+    CHECK(full.hand.count==MaxHand&&full.draw.count==0&&full.zones[chosen]==Zone::Discard&&full.zones[auto_id]==Zone::Exhaust);ready(full);
+
     for(unsigned up=0;up<2;up++){
         active_kind=BeatDown;active_upgrade=up;auto s=fight(BeatDown,up);int id=add(s,Strike,0,Zone::Discard);
         act(s,BeatDown);CHECK(s.expansion.cards_finished==2&&total_hp(s)==86&&s.zones[id]==Zone::Discard);ready(s);
@@ -321,9 +329,36 @@ static void original_continuation_boundaries(){
     }
 }
 
+static void reserved_autoplay_contracts(){
+    active_kind=Mayhem;active_upgrade=0;auto s=fight(Mayhem);act(s,Mayhem);add(s,Mayhem);act(s,Mayhem);
+    add(s,Strike,0,Zone::Draw);add(s,FlashOfSteel,0,Zone::Draw);supply(s,5);
+    next_turn(s);CHECK(total_hp(s)==81&&s.hand.count==5&&s.expansion.cards_finished==4&&s.discard.count==2);ready(s);
+
+    // The first reserved card is already outside draw when the next card
+    // requires a shuffle, whose Stratagem selection suspends the whole batch.
+    s=fight(Mayhem);act(s,Mayhem);add(s,Mayhem);act(s,Mayhem);add(s,Stratagem);act(s,Stratagem);
+    int reserved=add(s,FlashOfSteel,0,Zone::Draw);supply(s,5);
+    add(s,Strike,0,Zone::Discard);int selected=add(s,Defend,0,Zone::Discard);next_turn(s);
+    CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::Draw&&s.zones[reserved]==Zone::Limbo&&s.playing==-1);
+    CHECK(total_hp(s)==92&&s.expansion.cards_finished==3);roundtrip(s);
+    int queued=-1;for(unsigned i=0;i<s.effect_count;i++)if(s.effects[i].kind==EffectKind::Extended&&s.effects[i].target==(int)XOp::AutoInstance&&s.effects[i].value==reserved)queued=(int)i;
+    CHECK(queued>=0&&s.effect_count<MaxEffects);
+    auto duplicate=s;duplicate.effects[duplicate.effect_count++]=s.effects[queued];CHECK(!validate(duplicate));SaveData refused{};CHECK(!save(duplicate,refused));
+    auto orphan=s;orphan.effects[queued].value=s.hand.ids[0];CHECK(!validate(orphan));CHECK(!save(orphan,refused));
+    unsigned offset=0;while(offset<s.expansion.choices.count&&s.expansion.choices.ids[offset]!=selected)++offset;
+    CHECK(offset<s.expansion.choices.count);pick(s,1,offset);
+    CHECK(total_hp(s)==81&&s.hand.count==6&&s.expansion.cards_finished==5&&s.zones[reserved]==Zone::Discard);ready(s);
+
+    // Queue exhaustion is detected before any source is moved to Limbo.
+    s=fight(Defend);supply(s,3,FlashOfSteel);queue_extension(s,XOp::AutoTop,3);
+    while(s.effect_count<MaxEffects)queue_extension(s,XOp::Noop);
+    resolve_pending(s);CHECK(s.phase==Phase::Error&&s.draw.count==3);
+    for(unsigned i=0;i<s.draw.count;i++)CHECK(s.zones[s.draw.ids[i]]==Zone::Draw);
+}
+
 int main(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))for(unsigned up=0;up<2;up++)card_contract(kind,up);
     CHECK(variants==106);for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))CHECK(covered[kind][0]&&covered[kind][1]);
-    nested_choices();token_contracts();modifier_boundaries();generation_and_transform_pools();original_continuation_boundaries();
+    nested_choices();token_contracts();modifier_boundaries();generation_and_transform_pools();original_continuation_boundaries();reserved_autoplay_contracts();
     std::printf("colorless completion: %u checks, %u explicit card-effect variants, token and continuation contracts\n",checks,variants);
 }

@@ -32,7 +32,7 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::Clarity:op(XOp::Draw,1);pw(XPower::Clarity,3);break;
  case Potion::ColorlessPotion:op(XOp::Offer,4,1);break;
  case Potion::CureAll:s.energy=(int16_t)cap(999,s.energy+1);op(XOp::Draw,2);break;
- case Potion::DistilledChaos:for(int i=0;i<3;i++)op(XOp::AutoTop);break;
+ case Potion::DistilledChaos:op(XOp::AutoTop,3);break;
  case Potion::DropletOfPrecognition:op(XOp::ChooseDraw);break;
  case Potion::Duplicator:pw(XPower::Duplicator,1);break;
  // The original explicitly calls CreateRandomPotionOutOfCombat for each empty

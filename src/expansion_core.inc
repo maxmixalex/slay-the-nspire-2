@@ -94,8 +94,8 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
   int id=selected[i];
   if(kind==XChoice::Offer){id=create_to_hand(s,x.offers[id-MaxCards]);if(id<0)break;if(free)x.turn_cost[id]=1;}
   else if(kind==XChoice::Draw||kind==XChoice::Discard){
-   if(s.hand.count>=MaxHand)break;
-   if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,s.hand,Zone::Hand)&&free)x.turn_cost[id]=1;
+   bool room=s.hand.count<MaxHand;
+   if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&free)x.turn_cost[id]=1;
   }else if(kind==XChoice::Top)move_instance(s,id,s.hand,s.draw,Zone::Draw);
   else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;}
   else if(kind==XChoice::DiscardRedraw){if(move_instance(s,id,s.hand,s.discard,Zone::Discard))record(s,LogKind::Discard,s.cards[id].kind);}
@@ -115,14 +115,13 @@ static void offer_cards(State&s,int filter,int flags){
  set_extended_choice(s,XChoice::Offer,choices,1,1,flags);
 }
 static void choose_draw(State&s,int filter,int sample=0,int count=1){
- if(s.hand.count>=MaxHand)return;
  Pile eligible{};
  for(unsigned i=0;i<s.draw.count;i++){int id=s.draw.ids[i];if(!filter||(int)definitions[s.cards[id].kind].type==filter-1)eligible.ids[eligible.count++]=(uint16_t)id;}
  if(sample&&eligible.count>(unsigned)sample){
   for(unsigned i=0;i<(unsigned)sample;i++){unsigned j=i+random_below(s.rng_cards,eligible.count-i);auto t=eligible.ids[i];eligible.ids[i]=eligible.ids[j];eligible.ids[j]=t;}
   eligible.count=(uint16_t)sample;
  }
- set_extended_choice(s,XChoice::Draw,eligible,count,min(count,MaxHand-s.hand.count));
+ set_extended_choice(s,XChoice::Draw,eligible,count,count);
 }
 static void restore_frame(State&s){
  auto&x=s.expansion;
@@ -243,11 +242,14 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  int price=cost(s,id),spent=automatic?0:price<0?s.energy:price;
  if(spent>s.energy)return false;
  Zone z=s.zones[id];Pile*source=z==Zone::Hand?&s.hand:z==Zone::Draw?&s.draw:z==Zone::Discard?&s.discard:nullptr;
- if(!source)return false;int at=-1;for(unsigned i=0;i<source->count;i++)if(source->ids[i]==id){at=i;break;}if(at<0)return false;
+ bool reserved=automatic&&z==Zone::Limbo;
+ if(reserved){if(s.playing==id)return false;for(unsigned i=0;i<x.depth;i++)if(x.frames[i].playing==id)return false;}
+ if(!source&&!reserved)return false;int at=-1;
+ if(source){for(unsigned i=0;i<source->count;i++)if(source->ids[i]==id){at=i;break;}if(at<0)return false;}
  if(automatic&&x.depth==MaxAutoFrames){fail(s);return false;}
  if(automatic)x.frames[x.depth++]={s.playing,x.target,x.x,x.last_damage,s.attack_vigor,x.remaining,s.double_attack,x.triple,x.returning};
  int energy=cost(c)<0?s.energy:spent;
- remove(*source,at);s.zones[id]=Zone::Limbo;s.playing=(int16_t)id;s.energy-=(int16_t)spent;
+ if(source)remove(*source,at);s.zones[id]=Zone::Limbo;s.playing=(int16_t)id;s.energy-=(int16_t)spent;
  x.x=(int16_t)energy;x.target=(int16_t)target;x.last_drawn=-1;x.remaining=x.replay[id];
  s.attack_vigor=0;s.double_attack=0;x.triple=0;
  x.returning=d.type!=CardType::Power&&x.nonpower_started<power_value(s,XPower::Nostalgia);

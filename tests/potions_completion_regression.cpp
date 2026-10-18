@@ -202,7 +202,8 @@ static void timed_and_automatic(){
     quiet_turn(s);CHECK(s.hand.count==10&&s.zones[0]==Zone::Hand&&!power_value(s,XPower::Retain));
     // The draw pile still contains enough cards to avoid immediately drawing
     // the discarded originals again after the second retained turn.
-    for(auto&e:s.enemies)e.move=2;CHECK(end_turn(s));
+    for(auto&e:s.enemies)e.move=2;
+    CHECK(end_turn(s));
     CHECK(s.discard.count==10&&s.hand.count==5);restore(s);
     s=fight();s.enemies[0].move=0;drink(s,Potion::BeetleJuice);CHECK(enemy_damage(s,0)==8);
     for(int i=0;i<4;i++){quiet_turn(s);CHECK(s.expansion.beetle[0]==3-i);}
@@ -212,6 +213,9 @@ static void timed_and_automatic(){
     s=fight();drink(s,Potion::PowderedDemise);s.enemies[0].block=999;
     quiet_turn(s);CHECK(s.enemies[0].hp==37);quiet_turn(s);CHECK(s.enemies[0].hp==28);
     s=fight();s.enemies[0].hp=33;drink(s,Potion::PotionOfDoom);CHECK(s.enemies[0].hp==33);
+    quiet_turn(s);CHECK(!s.enemies[0].hp&&s.enemies[1].hp==46);
+    s=fight();s.enemies[0].hp=40;drink(s,Potion::PotionOfDoom);drink(s,Potion::PowderedDemise);
+    quiet_turn(s);CHECK(s.enemies[0].hp==31&&s.expansion.doom[0]==33);
     quiet_turn(s);CHECK(!s.enemies[0].hp&&s.enemies[1].hp==46);
     s=fight();drink(s,Potion::PoisonPotion);quiet_turn(s);CHECK(s.enemies[0].hp==40&&s.enemies[0].poison==5);
     quiet_turn(s);CHECK(s.enemies[0].hp==35&&s.enemies[0].poison==4);
@@ -329,8 +333,28 @@ static void pinned_cost_lifetimes(){
     s=fight();append(s,{Strike,0},Zone::Hand);id=append(s,{Whirlwind,0},Zone::Hand);s.rng_cards=2;
     drink(s,Potion::SneckoOil);CHECK(s.rng_cards==ordinary.rng_cards&&cost(s,0)==cost(ordinary,0));
     CHECK(cost(s,id)==-1&&!s.expansion.turn_cost[id]);
-    drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)id});CHECK(cost(s,id)==-1);
+    drink(s,Potion::TouchOfInsanity);CHECK(choice_pile(s).count==1&&choice_pile(s).ids[0]==0);
+    auto before=s;uint16_t excluded=(uint16_t)id;
+    CHECK(!choose_extended(s,&excluded,1));unchanged(s,before);select(s,{0});CHECK(cost(s,id)==-1);
     s.energy=2;CHECK(play(s,1,0));CHECK(s.energy==0&&s.enemies[0].hp==36&&s.enemies[1].hp==36);restore(s);
+
+    s=fight();id=append(s,{Whirlwind,0},Zone::Discard);drink(s,Potion::LiquidMemories);
+    select(s,{(uint16_t)id});CHECK(cost(s,id)==-1);s.energy=2;
+    CHECK(play(s,0,0));CHECK(s.energy==0&&s.enemies[0].hp==36&&s.enemies[1].hp==36);restore(s);
+
+    // Touch's original hand predicate excludes cards with no payable cost,
+    // including existing temporary/combat-free instances and X cards.
+    s=fight();append(s,{Finesse,0},Zone::Hand);int temporarily_free=append(s,{Strike,0},Zone::Hand);
+    s.expansion.turn_cost[temporarily_free]=1;int permanently_free=append(s,{Defend,0},Zone::Hand);
+    s.expansion.combat_cost[permanently_free]=1;append(s,{Whirlwind,0},Zone::Hand);
+    int eligible=append(s,{Bludgeon,0},Zone::Hand);drink(s,Potion::TouchOfInsanity);
+    CHECK(choice_pile(s).count==1&&choice_pile(s).ids[0]==eligible);
+    select(s,{(uint16_t)eligible});CHECK(cost(s,eligible)==0);restore(s);
+    s=fight();append(s,{Finesse,0},Zone::Hand);append(s,{Whirlwind,0},Zone::Hand);
+    drink(s,Potion::TouchOfInsanity);CHECK(s.phase==Phase::Combat&&!s.expansion.potion_active);restore(s);
+    s=fight();eligible=append(s,{Finesse,0},Zone::Hand);s.expansion.turn_cost[eligible]=3;
+    drink(s,Potion::TouchOfInsanity);CHECK(choice_pile(s).count==1&&choice_pile(s).ids[0]==eligible);
+    select(s,{(uint16_t)eligible});CHECK(cost(s,eligible)==0&&s.expansion.combat_cost[eligible]==1&&!s.expansion.turn_cost[eligible]);
 }
 static void pinned_stacking_and_piles(){
     auto s=fight();fill(s,Zone::Draw,60);
@@ -433,8 +457,62 @@ static void fairy_in_events(){
         CHECK(s.potions[1]==Potion::FairyInABottle);restore(s);
     }
 }
+static void pinned_full_hand_choices(){
+    for(Potion potion:{Potion::DropletOfPrecognition,Potion::LiquidMemories}){
+        auto s=fight();fill(s,Zone::Hand,MaxHand);s.no_draw=1;
+        Zone source=potion==Potion::DropletOfPrecognition?Zone::Draw:Zone::Discard;
+        int unchosen=append(s,{Strike,0},source),chosen=append(s,{Bludgeon,1},source);
+        s.expansion.turn_cost[chosen]=4;
+        drink(s,potion);CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.potion_active);
+        CHECK(choice_pile(s).count==2&&choice_min(s)==1&&choice_max(s)==1);
+        auto before=s;CHECK(!choose_extended(s,nullptr,0));unchanged(s,before);
+        select(s,{(uint16_t)chosen});
+        CHECK(s.hand.count==MaxHand&&s.zones[unchosen]==source&&s.zones[chosen]==Zone::Discard);
+        CHECK(s.cards[chosen].kind==Bludgeon&&s.cards[chosen].upgraded&&s.no_draw);
+        for(unsigned i=0;i<MaxHand;i++)CHECK(s.hand.ids[i]==i);
+        CHECK(s.expansion.last_drawn==-1&&!s.expansion.potion_active);
+        if(potion==Potion::DropletOfPrecognition){
+            CHECK(s.draw.count==1&&s.discard.count==1&&s.discard.ids[0]==chosen&&cost(s,chosen)==3);
+        }else{
+            CHECK(!s.draw.count&&s.discard.count==2&&s.discard.ids[1]==chosen&&cost(s,chosen)==0);
+        }
+        restore(s);
+        s=fight();fill(s,Zone::Hand,MaxHand);drink(s,potion);
+        CHECK(s.phase==Phase::Combat&&s.hand.count==MaxHand&&!s.expansion.potion_active);restore(s);
+    }
+}
+static void distilled_batch(){
+    auto s=fight();s.energy=0;
+    int drawn=append(s,{Defend,1},Zone::Draw);
+    append(s,{TwinStrike,0},Zone::Draw);append(s,{Defend,0},Zone::Draw);append(s,{FlashOfSteel,0},Zone::Draw);
+    drink(s,Potion::DistilledChaos);
+    CHECK(s.phase==Phase::Combat&&s.energy==0&&s.expansion.cards_finished==3);
+    CHECK(s.hand.count==1&&s.hand.ids[0]==drawn&&s.draw.count==0&&s.discard.count==3);
+    CHECK(s.block==5&&s.enemies[0].hp+s.enemies[1].hp==79&&!s.expansion.potion_active);restore(s);
+
+    // The first reserved card remains in Limbo while fetching the rest of the
+    // batch triggers a shuffle choice. Save/load must preserve its identity.
+    s=fight();s.energy=0;int reserved=append(s,{FlashOfSteel,0},Zone::Draw);
+    int chosen=append(s,{Strike,0},Zone::Discard);append(s,{Defend,0},Zone::Discard);
+    gain_power(s,XPower::Stratagem,1);drink(s,Potion::DistilledChaos);
+    CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.potion_active);
+    CHECK(s.zones[reserved]==Zone::Limbo&&s.playing==-1&&s.expansion.cards_finished==0);
+    select(s,{(uint16_t)chosen});
+    CHECK(s.phase==Phase::Combat&&s.expansion.cards_finished==2&&s.energy==0);
+    CHECK(s.hand.count==1&&s.hand.ids[0]==chosen&&s.discard.count==2&&!s.draw.count);
+    CHECK(s.block==5&&s.enemies[0].hp+s.enemies[1].hp==89&&!s.expansion.potion_active);restore(s);
+
+    // Early victory must retire all reserved instances as well as the playing
+    // card. The original tears down its CombatState at this point, so this
+    // checks the expedition's serializable boundary without inventing its pile.
+    s=fight();s.energy=3;append(s,{Strike,0},Zone::Draw);append(s,{Defend,0},Zone::Draw);
+    append(s,{Whirlwind,0},Zone::Draw);s.enemies[0].hp=s.enemies[1].hp=1;
+    drink(s,Potion::DistilledChaos);CHECK(s.phase==Phase::Reward&&!s.expansion.potion_active);
+    for(unsigned id=0;id<s.card_count;id++)CHECK(s.zones[id]!=Zone::Limbo);
+    restore(s);
+}
 int main(){
     scopes_and_inventory();resources_and_damage();choices_and_creation();timed_and_automatic();replay_autoplay_and_resources();acquisition();
-    pinned_cost_lifetimes();pinned_stacking_and_piles();pinned_generation();fairy_in_events();
+    pinned_cost_lifetimes();pinned_stacking_and_piles();pinned_generation();fairy_in_events();pinned_full_hand_choices();distilled_batch();
     std::printf("potion completion: %u checks; %u model policies\n",checks,policy_models);
 }

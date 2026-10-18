@@ -63,6 +63,26 @@ bool validate(const State&s){
         int id=s.expansion.frames[i].playing;if(id<0)continue;
         if(id>=s.card_count||seen[id]||s.zones[id]!=Zone::Limbo)return false;seen[id]=1;
     }
+    // Batch auto-play reserves its cards in Limbo before playing any of them.
+    // Each reservation is owned by exactly one queued AutoInstance, never by
+    // both a pending instruction and the active/suspended play stack.
+    for(unsigned i=0;i<s.effect_count;i++){
+        const auto&e=s.effects[i];if(e.kind!=EffectKind::Extended)continue;
+        if(e.target==(int)XOp::AutoInstance){
+            if(e.value<0||e.value>=s.card_count||e.aux)return false;
+            if(s.zones[e.value]==Zone::Limbo){if(seen[e.value])return false;seen[e.value]=1;}
+        }else if(e.target==(int)XOp::AutoTop){
+            if(!valid_extension_effect(s,e))return false;
+            const unsigned reserved=(unsigned)e.aux&1023;
+            if(reserved>s.effect_count-i-1)return false;
+            for(unsigned j=1;j<=reserved;j++){
+                const auto&next=s.effects[i+j];
+                if(next.kind!=EffectKind::Extended||next.target!=(int)XOp::AutoInstance||
+                   next.value<0||next.value>=s.card_count||next.aux||
+                   s.zones[next.value]!=Zone::Limbo)return false;
+            }
+        }
+    }
     for(int i=0;i<s.card_count;i++)if(!seen[i])return false;
     for(int i=0;i<s.enemy_count;i++){const auto&e=s.enemies[i];if(e.hp<0||e.hp>e.max_hp||e.max_hp<42||e.max_hp>46||e.block<0||e.block>9999||e.strength< -9999||e.strength>9999||e.vulnerable<0||e.vulnerable>9999||e.move>2||e.weak<0||e.weak>9999||e.poison<0||e.poison>9999)return false;}
     for(int i=0;i<s.effect_count;i++){

@@ -174,9 +174,11 @@ static void all_potions(){
 }
 static void interactions(){
  auto s=fight({GoldAxe,0});s.expansion.cards_finished=7;s.gold=999;CHECK(play(s,0,0));CHECK(s.enemies[0].hp==39);rt(s);
- s=fight({Fisticuffs,0});s.strength=90;s.enemies[0].hp=3;s.enemies[0].block=2;CHECK(play(s,0,0));CHECK(s.block==5);rt(s);
- s=fight({Omnislice,0});s.strength=90;s.enemies[0].hp=3;s.enemies[0].block=2;CHECK(play(s,0,0));CHECK(s.enemies[1].hp==41);rt(s);
- s=fight({EternalArmor,0});CHECK(play(s,0,0));CHECK(end_turn(s));CHECK(s.block==9&&power_value(s,XPower::Plating)==8);rt(s);
+ // The locked original includes overkill in the amount converted/copied.
+ s=fight({Fisticuffs,0});s.strength=90;s.enemies[0].hp=3;s.enemies[0].block=2;CHECK(play(s,0,0));CHECK(s.block==97);rt(s);
+ s=fight({Omnislice,0});s.strength=90;s.enemies[0].hp=3;s.enemies[0].block=2;CHECK(play(s,0,0));CHECK(s.enemies[1].hp==0&&s.expansion.last_damage==98);rt(s);
+ // Player Plating grants end-turn block, then loses one at the next start.
+ s=fight({EternalArmor,0});CHECK(play(s,0,0));CHECK(end_turn(s));CHECK(s.block==0&&power_value(s,XPower::Plating)==8);rt(s);
  s=fight({TwinStrike,0});s.potions[0]=Potion::GigantificationPotion;CHECK(use_potion(s,0,0));CHECK(damage(s,{TwinStrike,0},0)==15);CHECK(play(s,0,0));CHECK(s.enemies[0].hp==16&&!power_value(s,XPower::Gigantic));rt(s);
  s=fight({Discovery,0});CHECK(play(s,0,0));CHECK(s.phase==Phase::ExtendedChoice);auto saved=snapshot(s);State copy{};CHECK(load(copy,saved.bytes,saved.size));uint16_t id=s.expansion.choices.ids[1];CHECK(choose_extended(s,&id,1)&&choose_extended(copy,&id,1));same(copy,snapshot(s));
  s=fight({Catastrophe,0});s.draw.count=0;s.discard.count=0;s.card_count=1;append(s,{Discovery,0},Zone::Draw);CHECK(play(s,0,0));CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.depth==1);rt(s);resolve_choices(s);CHECK(s.expansion.cards_finished==2&&s.expansion.depth==0);rt(s);

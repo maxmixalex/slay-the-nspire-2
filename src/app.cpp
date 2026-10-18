@@ -199,7 +199,7 @@ static void detail_screen(Canvas&c){
     int type=(int)definitions[card.kind].type;
     c.picture(a.content.frame_image(card),18,61,94,132);
     c.picture(c.a.content.card_image(card.kind),24,90,82,60);c.picture(a.content.energy_image(card),18,60,26,26);
-    int energy=a.detail_cost_override==-2?cost(card):a.detail_cost_override;if(energy<0)c.text("X",27,64,12);else c.num(energy,27,64,12);
+    int energy=a.detail_cost_override==-2?cost(card):a.detail_cost_override;c.energy_label(energy,27,64,12);
     c.centered(title,21,161,87,12,card.upgraded?Green:White);
     char description[512]={};a.card_description(card,a.target,description,sizeof description,a.detail_instance);
     int lines=c.paragraph(description,123,66,177,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-8));

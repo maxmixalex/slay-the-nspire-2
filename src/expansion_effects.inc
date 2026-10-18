@@ -27,14 +27,41 @@ int enemy_damage(const State&s,int i){
  int n=max(0,(e.move==0?12:6)+e.strength),mul=(e.weak?75:100)*(s.expansion.beetle[i]?70:100);
  return n*mul/10000;
 }
-static void autoplay_from(State&s,Pile&p,int filter,bool top){
+static void autoplay_from(State&s,Pile&p,int filter){
  if(!alive(s))return;
- // Top-of-draw auto play refills an empty draw pile. Random draw selection does
- // not fabricate a shuffle when its sampled source contains no cards.
- if(top&&!p.count&&s.discard.count){queue_extension(s,XOp::AutoTop,0,0,true);shuffle(s);return;}
+ // Random selection does not shuffle an empty source pile.
  uint16_t ids[MaxCards];unsigned n=0;
  for(unsigned i=0;i<p.count;i++)if(!filter||(int)definitions[s.cards[p.ids[i]].kind].type==filter-1)ids[n++]=p.ids[i];
- if(n)start_instance(s,top?ids[n-1]:ids[random_below(s.rng_cards,n)],-1,true);
+ if(n)start_instance(s,ids[random_below(s.rng_cards,n)],-1,true);
+}
+static void autoplay_top_batch(State&s,int remaining,int progress){
+ if(!alive(s))return;
+ if(!remaining)remaining=1;
+ unsigned reserved=progress&1023;bool shuffled=(progress&1024)!=0;
+ if(remaining<1||remaining>MaxCards||progress<0||(progress&~2047)||reserved+remaining>MaxCards||reserved>s.effect_count){fail(s);return;}
+ for(unsigned i=0;i<reserved;i++){
+  const auto&e=s.effects[i];
+  if(e.kind!=EffectKind::Extended||e.target!=(int)XOp::AutoInstance||e.value<0||e.value>=s.card_count||s.zones[e.value]!=Zone::Limbo){fail(s);return;}
+ }
+ // Reserve the whole possible batch and the one suspended shuffle boundary
+ // before moving any card out of its pile. The shuffle hook may add a choice.
+ unsigned count=(unsigned)min(remaining,s.draw.count+s.discard.count);
+ unsigned shuffle_space=count>s.draw.count?1+(power_value(s,XPower::Stratagem)>0):0;
+ if(s.effect_count+count+shuffle_space>MaxEffects){fail(s);return;}
+ while(remaining){
+  if(!s.draw.count){
+   if(!shuffled&&s.discard.count){
+    queue_extension(s,XOp::AutoTop,remaining,(int)reserved|1024,true);shuffle(s);
+   }
+   return;
+  }
+  int id=s.draw.ids[s.draw.count-1];
+  queue_extension(s,XOp::AutoInstance,id,0,true);
+  if(s.phase==Phase::Error)return;
+  Effect next=s.effects[0];for(unsigned i=0;i<reserved;i++)s.effects[i]=s.effects[i+1];s.effects[reserved]=next;
+  remove(s.draw,s.draw.count-1);s.zones[id]=Zone::Limbo;
+  ++reserved;--remaining;shuffled=false;
+ }
 }
 static void next_enemy(State&s,int i){
  if(!alive(s)){victory(s);return;}
@@ -47,8 +74,9 @@ static void next_enemy(State&s,int i){
  if(attack&&s.flame_barrier)damage_unpowered(s,i,s.flame_barrier);
  if(e.hp){
   if(e.move==1)e.block=5;if(e.move==2)e.strength=(int16_t)min(9999,e.strength+2);
-  if(s.expansion.demise[i]){int n=min(e.hp,s.expansion.demise[i]);e.hp-=(int16_t)n;record(s,LogKind::LoseHp,n,i+1);}
   if(s.expansion.doom[i]>=e.hp&&s.expansion.doom[i])e.hp=0;
+  // Doom checks before the enemy side ends; Demise loses HP afterwards.
+  if(e.hp&&s.expansion.demise[i]){int n=min(e.hp,s.expansion.demise[i]);e.hp-=(int16_t)n;record(s,LogKind::LoseHp,n,i+1);}
  }
  if(e.weak)--e.weak;if(e.vulnerable)--e.vulnerable;if(s.expansion.beetle[i])--s.expansion.beetle[i];
  e.move=(uint8_t)((e.move+1)%3);
@@ -89,15 +117,17 @@ static void extension_effect(State&s,Effect e){
  case XOp::Offer:offer_cards(s,a,b);break;
  case XOp::Generate:generate_card(s,a,b);break;
  case XOp::ChooseDraw:choose_draw(s,a,b>0?b:0,b<0?-b:1);break;
- case XOp::ChooseDiscard:if(s.hand.count<MaxHand)set_extended_choice(s,XChoice::Discard,s.discard,1,1,b);break;
+ case XOp::ChooseDiscard:set_extended_choice(s,XChoice::Discard,s.discard,1,1,b);break;
  case XOp::ChooseTop:set_extended_choice(s,XChoice::Top,s.hand,1,1);break;
  case XOp::DiscardRedraw:set_extended_choice(s,XChoice::DiscardRedraw,s.hand,0,s.hand.count);break;
  case XOp::ExhaustAny:set_extended_choice(s,XChoice::Exhaust,s.hand,0,s.hand.count);break;
- case XOp::Free:set_extended_choice(s,XChoice::Free,s.hand,1,1);break;
+ case XOp::Free:{
+  Pile eligible{};for(unsigned i=0;i<s.hand.count;i++)if(cost(s,s.hand.ids[i])>0)eligible.ids[eligible.count++]=s.hand.ids[i];
+  set_extended_choice(s,XChoice::Free,eligible,1,1);break;}
  case XOp::Transform:set_extended_choice(s,XChoice::Transform,s.hand,a,a);break;
- case XOp::AutoDraw:autoplay_from(s,s.draw,a,false);break;
- case XOp::AutoDiscard:autoplay_from(s,s.discard,a,false);break;
- case XOp::AutoTop:autoplay_from(s,s.draw,0,true);break;
+ case XOp::AutoDraw:autoplay_from(s,s.draw,a);break;
+ case XOp::AutoDiscard:autoplay_from(s,s.discard,a);break;
+ case XOp::AutoTop:autoplay_top_batch(s,a,b);break;
  case XOp::AutoInstance:start_instance(s,a,-1,true);break;
  case XOp::Draw:queue_extension(s,XOp::DrawOne,a,0,true);break;
  case XOp::DrawOne:draw_one(s,a);break;
@@ -188,7 +218,7 @@ static void extension_effect(State&s,Effect e){
   queue_extension(s,XOp::Draw,n,0,true);break;}
  case XOp::TurnReady:{
   // Auto-pre-play begins after the ordinary hand draw and turn-start powers.
-  for(int i=0;i<power_value(s,XPower::Mayhem);i++)queue_extension(s,XOp::AutoTop,0,0,true);
+  if(power_value(s,XPower::Mayhem))queue_extension(s,XOp::AutoTop,min(MaxCards,power_value(s,XPower::Mayhem)),0,true);
   relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);
   if(power_value(s,XPower::Entropy))queue_extension(s,XOp::Transform,power_value(s,XPower::Entropy),0,true);
   int total=0;for(int i=MaxPowerInstances-1;i>=0;i--)if(x.boulder[i]){queue_extension(s,XOp::AllDamage,x.boulder[i],0,true);x.boulder[i]=(int16_t)min(9999,x.boulder[i]+5);total+=x.boulder[i];}
