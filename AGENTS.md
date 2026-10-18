@@ -1,6 +1,6 @@
 # Development continuity
 
-Read `docs/WORK_STATE.md` before doing work. The owner's priorities are original UI fidelity and broad relic/potion/single-player colorless-card coverage, with source persistence BEFORE long validation.
+Read `docs/WORK_STATE.md` before doing work. The active task is full single-player Ironclad and Silent card coverage, continuing the completed 0.14 potion/colorless stage. Preserve original UI fidelity and source persistence BEFORE long validation. The user requests parallel sub-agents.
 
 ## Required checkpoint cycle
 

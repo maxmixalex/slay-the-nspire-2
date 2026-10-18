@@ -1,12 +1,22 @@
 # Work state — 2026-10-18
 
+## Active 0.15 development
+
+The user requested continued development followed by the **complete Ironclad and Silent card pools**, with parallel agents. Continue on **`work/0.15-full-characters`**, created from and read back at `9c4d47e543a2ee9af58fe075700ff50cf205740b` (tree `949fc6b2b5e748ac1d7b4668252d87322c9299b4`). The completed 0.14 work branch is retained at that commit; its tested runtime remains `b4b67e714ca76e7afb72f3a170789ad90047e6f4`. No 0.15 behavior or build has passed yet.
+
+The locked assembly declares 90 Ironclad and 91 Silent models. Applying its multiplayer constraints leaves **85 Ironclad and 86 Silent single-player models**, including Silent's Ancient-rarity WraithForm in the compendium/practice pool. Ordinary rewards and generated cards must exclude Ancient rarity. Existing character IDs remain unchanged; append the 56 missing Ironclad models at IDs 114–169, the 57 missing Silent models at 170–226, and generated GiantRock at 227. Inky is an enchantment, not a new card token. Do not import unrelated STS1 status cards from memory.
+
+The root owns shared CardID/pool dispatch, combat hooks, status UI, save v13 integration, tests/build registration and verified source persistence. The `colorless` agent owns the isolated Ironclad state/operations/definitions/core/codec/validation and its audited config/regression; `potions` owns the corresponding Silent modules. `recover_workspace` owns original resource conversion, fixed historical resource profiles, descriptions, card-detail type/cost rendering and real-content UI coverage. Source state stays explicit and bounded; save v13 appends character modules after the frozen v3–v12 encoding. The intended content profile is NSP2/12. The practice deck capacity will grow to 192 to hold each full character pool plus all 53 colorless cards.
+
+The two existing downloadable artifacts are the completed 0.14 calculator ZIP and offline HTML. Keep them available until a fully verified matching 0.15 pair replaces them. Preserve every prior image payload while appending original card and power art; Sidestep may use the actual original beta portrait with that source recorded explicitly. No image generation is authorized.
+
 ## Completed 0.14 delivery
 
 Runtime source **`b4b67e714ca76e7afb72f3a170789ad90047e6f4`**, tree `5c97f84b8357176ddae5deec5b1911c7b0ff7aa8`, was pushed and read back before final validation. All **21 C++ suites and 10 Python tests passed**. All 12 final journals completed with unchanged frozen source. The build/artifact receipts and scope limits are recorded in [validation-0.14.json](validation-0.14.json). Later changes only update audit/result documentation; distributed binaries are identified by this tested source commit.
 
 ## Active branch and recovery receipt
 
-Continue on `work/0.14-colorless-potions`. The user prioritizes GitHub persistence before long validation, then completion of potions and single-player colorless cards, with parallel agents. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0` (historically tested 0.13). CI remains disabled. Reference remains **v0.111.0 / 41cef1ea**. Audio, multiplayer and Timeline are excluded.
+The completed 0.14 branch is `work/0.14-colorless-potions`; new development uses the 0.15 branch above. The user prioritizes GitHub persistence before long validation and parallel agents. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0` (historically tested 0.13). CI remains disabled. Reference remains **v0.111.0 / 41cef1ea**. Audio, multiplayer and Timeline are excluded.
 
 The accessible scratch workspaces did not contain the earlier checkout. All 163 source files were restored from work-branch commit `50a58c9b876c3038e549b97e7e7d245224d717d8`. Every Git blob and the complete tree `2fb04a1bb26b50d96d6741cbe2cba17f4a9366cc` were verified, and the exact shallow Git commit was reconstructed. The current working directory is `/workspace/scratch/5af9d4bf40b9/slay-the-nspire-2`.
 
@@ -14,7 +24,7 @@ Recovery checkpoint `0215379bff2dbb5478def539dd8aa670d35e4e93` and completion ch
 
 Original-rule checkpoint `8adeaeebe4a0380b92ceceff154e30ab5069696c` was subsequently pushed and read back; tree `9c5d5f0f3c5e96c6f96457dc604518b882c7bf28` matched the complete staged source. Its frozen test/build root is `/tmp/nspire-stage-8adeaeeb`. Follow-up checkpoint `afe33815cfc9f9ab24bbf457cdaeed0cd0e3f2df` was pushed and read back; its complete remote tree `67a0b819cee92d14fec31bd5a8045ec8993cb38d` matched local source. It adds batch auto-play reservations, full-hand pile selection, Touch eligibility and Doom/Demise ordering. Frozen validation root: `/tmp/nspire-stage-afe33815`. The final tested `b4b67e71` stage records turn-start acquisition order explicitly in save v12 and fixes temporary costs before enemy-side choices.
 
-## Current implementation scope
+## Completed 0.14 implementation scope
 
 The engine registers 53 single-player colorless card models, all 64 active potion models, and generated Soul/SovereignBlade tokens: 114 card IDs total, 30 relics and two partially implemented playable characters. These are implementation counts, not a claim that the entire original game is complete. Nine other-character potions and four special-acquisition potions can be exercised explicitly in practice; the other three playable character systems and original special event routes remain outside this stage.
 

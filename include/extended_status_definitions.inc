@@ -1,6 +1,6 @@
 // Append-only status IDs, corresponding to XPower and auxiliary mechanics.
  {"保留手牌","在接下来的 [gold]{n}[/gold] 个回合结束时保留手牌。",U_ExtPowerStart+0},
- {"覆甲","回合结束和下回合开始时获得 [blue]{n}[/blue] 点格挡；下回合开始时层数减一。",U_ExtPowerStart+1},
+ {"覆甲","回合结束获得 [blue]{n}[/blue] 点格挡；下回合开始时层数减一。",U_ExtPowerStart+1},
  {"缓冲","抵挡接下来的 [blue]{n}[/blue] 次生命损失。",U_ExtPowerStart+2},
  {"无实体","受到的伤害和生命损失降低至 1；剩余 [gold]{n}[/gold] 个敌方回合。",U_ExtPowerStart+3},
  {"仪式","回合结束时获得 [gold]{n}[/gold] 点力量。",U_ExtPowerStart+4},
