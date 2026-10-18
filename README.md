@@ -12,7 +12,7 @@ Practice exposes every colorless card and potion through the compendium. Open it
 
 Ordinary potion pools follow the current character and the pinned rarity weights. Other-character and special-acquisition bottles remain available for explicit practice use; this does not add the missing three characters or their original event routes. The 0.13 event, relic, treasure and fanned-hand UI work is retained. These layouts are adaptations, not complete original-PC fidelity.
 
-Read [current work state](docs/WORK_STATE.md) before resuming development and [the potion audit](docs/potions-completion-0.14.md) for tested behavior and original-rule evidence. Registry counts alone are not a passing test or a claim that the entire original game is complete.
+Read [current work state](docs/WORK_STATE.md) before resuming development and the [colorless](docs/colorless-completion-0.14.md) and [potion](docs/potions-completion-0.14.md) audits for tested behavior and original-rule evidence. Registry counts alone are not a passing test or a claim that the entire original game is complete.
 
 ## Build
 
@@ -38,7 +38,7 @@ python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label web -- pyt
 
 For a full conversion from the pinned installation, `build_content.py` now chains through the same final colorless/potion conversion. The conversion checks the original release metadata, assembly and PCK hashes. New launchers require **NSP2/11** (114 cards, 185 auxiliary images and 407 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
 
-New saves use **v11**; project v3-v10 saves remain readable. The browser writes to a separate v11 storage key and can import earlier keys. Old launchers cannot read the expanded v11 save. Keep a copy of an older save when testing a new launcher.
+New saves use **v12**; project v3-v11 saves remain readable. v12 records the acquisition order between Entropy and Rolling Boulder. Earlier v11 saves did not record that order and retain the previous engine's all-Boulders-before-Entropy ordering when migrated. The browser writes to a separate v12 storage key and can import earlier keys. Old launchers cannot read the new save. Keep a copy of an older save when testing a new launcher.
 
 The native suite includes separate colorless, potion and UI regressions. `expansion_ui_regression` optionally accepts a real NSP2/11 file and an existing private screenshot directory, so the same acquisition/choice tests can exercise converted art in addition to synthetic parser fixtures.
 

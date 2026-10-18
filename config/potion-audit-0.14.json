@@ -159,6 +159,19 @@
       },
       "finding": "CombatSide.Player=1 and Enemy=2. Doom uses BeforeSideTurnEnd for enemies and skips their AfterSideTurnEnd. Demise applies afterward. A creature at 40 HP with 33 Doom and 9 Demise survives the first enemy-turn end at 31 HP.",
       "implementation": "The enemy resolution checks Doom before applying Demise, and skips the HP-loss step if Doom already killed the creature."
+    },
+    {
+      "rule": "temporary cost cleanup precedes the enemy phase",
+      "methods": {
+        "CombatManager.<EndPlayerTurnPhaseTwoInternal>d__139.MoveNext": "0x0600b3c0",
+        "CombatManager.<FlushPlayerHand>d__140.MoveNext": "0x0600b3c4",
+        "PlayerCombatState.EndOfTurnCleanup": "0x060050d4",
+        "CardModel.EndOfTurnCleanup": "0x060018de",
+        "CardEnergyCost.EndOfTurnCleanup": "0x0600522a",
+        "CombatManager.<EndEnemyTurnInternal>d__136.MoveNext": "0x0600b3b8"
+      },
+      "finding": "The player phase waits for FlushPlayerHand and its AfterFlush hooks before AfterSideTurnEnd. Flush then cleans all card instances, including retained, draw, discard and exhaust cards, removing turn-expiring costs. Enemy-turn end also performs cleanup.",
+      "implementation": "The existing turn_cost storage is cleared at the player-flush boundary before enemies act. A regression suspends Centennial Puzzle at a Stratagem shuffle choice during enemy damage on turn 1 and checks that temporary costs have expired while permanent free costs remain."
     }
   ],
   "validation": {
@@ -170,7 +183,12 @@
       "UndefinedBehaviorSanitizer"
     ],
     "leak_sanitizer": "Disabled: sandbox process/thread inspection unavailable.",
-    "pending_source_assertions": "Full-hand choices, Touch eligibility, reserved Distilled Chaos batch and Doom/Demise ordering await a later pushed checkpoint and execution."
+    "pending_source_assertions": "Corrected Distilled Chaos numeric expectations and the turn-1 enemy-damage/Stratagem cost-cleanup regression require the next verified checkpoint and complete suite run.",
+    "latest_attempt": {
+      "checkpoint": "afe33815cfc9f9ab24bbf457cdaeed0cd0e3f2df",
+      "potion_completion": "Failed at the first Distilled Chaos batch damage assertion. The test used 3 instead of the pinned 5 for Flash of Steel; no complete passing count is claimed.",
+      "diagnosis": "A short diagnostic linked the unchanged frozen engine library and confirmed three completed cards, 5 block, total enemy HP 77, the original fourth card drawn and no potion marker. The shuffle case confirmed two completed cards, 5 block and total enemy HP 87."
+    }
   },
   "remaining_scope": [
     "Original full character card pools and unlock progression are incomplete in this two-character expedition.",

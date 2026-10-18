@@ -62,17 +62,20 @@ void relic_hook(State&s,RelicHook hook){
   }else if(hook==RelicHook::TurnStart){
    if(id==HornCleat&&s.turn==2){s.block+=14;triggered=true;}
    else if(id==CaptainsWheel&&s.turn==3){s.block+=18;triggered=true;}
-   else if(id==MercuryHourglass){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,3);triggered=true;}
    else if(id==ArtOfWar&&s.turn>1&&!s.attacked_this_turn){++s.energy;triggered=true;}
    else if(id==HappyFlower){auto&n=s.relic_counters[index];if(++n==3){n=0;++s.energy;triggered=true;}}
    else if(id==Akabeko&&s.turn==1){s.vigor+=8;triggered=true;}
    else if(id==Lantern&&s.turn==1){++s.energy;triggered=true;}
-   else if(id==BloodVial&&s.turn==1){heal(s,2);triggered=true;}
+  }else if(hook==RelicHook::AfterHandDraw){
+   if(id==MercuryHourglass){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,3);triggered=true;}
   }else if(hook==RelicHook::TurnEnd){
    if(id==Orichalcum&&s.block==0){s.block=6;triggered=true;}
   }else if(hook==RelicHook::Victory&&id==BurningBlood){heal(s,6);triggered=true;}
   if(triggered)flash(s,id);
  }
+ // Blood Vial uses AfterPlayerTurnStartLate, after Mercury's ordinary
+ // AfterPlayerTurnStart regardless of relic acquisition order.
+ if(hook==RelicHook::AfterHandDraw&&s.turn==1&&(s.relics&BloodVial)){heal(s,2);flash(s,BloodVial);}
  if(hook==RelicHook::TurnStart)s.attacked_this_turn=0;
  if(hook==RelicHook::Victory)relic_reset_turn_counters(s);
 }

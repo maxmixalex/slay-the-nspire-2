@@ -12,6 +12,7 @@ void enter_combat(State&s){
     for(int i=0;i<s.enemy_count;i++)s.enemies[i].max_hp=s.enemies[i].hp;
     for(int i=0;i<s.deck_count;i++){int id=make_card(s,s.deck[i]);if(id>=0)put(s,s.discard,id,Zone::Discard);}
     shuffle(s);
+    relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);
     if(s.practice&&s.floor==1){
         // Explicit practice opening: lets the player exercise two exhaust hooks.
         const uint8_t ironclad[5]={FeelNoPain,DarkEmbrace,BurningPact,TrueGrit,Strike};
@@ -23,7 +24,7 @@ void enter_combat(State&s){
         int innate=prioritize_innate(s);
         draw_cards(s,min(MaxHand,max(innate,5+((s.relics&BagOfPreparation)?2:0)+((s.relics&RingOfTheSnake)?2:0))));
     }
-    relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);
+    relic_hook(s,RelicHook::AfterHandDraw);
     record(s,LogKind::Turn,1);finish_combat_if_won(s);s.revision++;
 }
 void new_run(State&s,uint32_t seed,bool practice,Character character){

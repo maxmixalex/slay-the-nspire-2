@@ -20,8 +20,8 @@
  const decode=(s)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
  const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};
  const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{
-  save:(p,n)=>{try{localStorage.setItem('nSpire2-save-v11',encode(new Uint8Array(memory.buffer,p,n)));return 1}catch(e){return 0}},
-  load:(p,max)=>{try{const s=localStorage.getItem('nSpire2-save-v11')||localStorage.getItem('nSpire2-save-v10')||localStorage.getItem('nSpire2-save-v9')||localStorage.getItem('nSpire2-save-v8')||localStorage.getItem('nSpire2-save-v7')||localStorage.getItem('nSpire2-save-v6')||localStorage.getItem('nSpire2-save-v5')||localStorage.getItem('nSpire2-save-v4')||localStorage.getItem('nSpire2-save-v3');if(!s)return 0;const b=decode(s);if(b.length>max)return 0;new Uint8Array(memory.buffer,p,b.length).set(b);return b.length}catch(e){return 0}}
+  save:(p,n)=>{try{localStorage.setItem('nSpire2-save-v12',encode(new Uint8Array(memory.buffer,p,n)));return 1}catch(e){return 0}},
+  load:(p,max)=>{try{const s=localStorage.getItem('nSpire2-save-v12')||localStorage.getItem('nSpire2-save-v11')||localStorage.getItem('nSpire2-save-v10')||localStorage.getItem('nSpire2-save-v9')||localStorage.getItem('nSpire2-save-v8')||localStorage.getItem('nSpire2-save-v7')||localStorage.getItem('nSpire2-save-v6')||localStorage.getItem('nSpire2-save-v5')||localStorage.getItem('nSpire2-save-v4')||localStorage.getItem('nSpire2-save-v3');if(!s)return 0;const b=decode(s);if(b.length>max)return 0;new Uint8Array(memory.buffer,p,b.length).set(b);return b.length}catch(e){return 0}}
  }});
  game=result.instance.exports;memory=game.memory;const content=decode('__CONTENT__');new Uint8Array(memory.buffer,game.content_buffer(),content.length).set(content);
  if(!game.start(content.length))throw Error('内容包校验失败。');

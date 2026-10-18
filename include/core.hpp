@@ -66,7 +66,7 @@ enum Relic : uint32_t { Vajra=1, Anchor=2, BagOfPreparation=4, BurningBlood=8,
     HornCleat=1u<<17, CaptainsWheel=1u<<18, MercuryHourglass=1u<<19, ArtOfWar=1u<<20,
     RegalPillow=1u<<21, MealTicket=1u<<22, OldCoin=1u<<23, CentennialPuzzle=1u<<24, Kunai=1u<<25, Shuriken=1u<<26,
     OrnamentalFan=1u<<27, LetterOpener=1u<<28, Nunchaku=1u<<29 };
-enum class RelicHook : uint8_t { CombatStart, TurnStart, TurnEnd, Victory };
+enum class RelicHook : uint8_t { CombatStart, TurnStart, TurnEnd, Victory, AfterHandDraw };
 struct RelicDefinition { uint32_t id; const char* key; const char* name; const char* description; int asset; };
 extern const RelicDefinition relic_definitions[RelicKinds];
 const RelicDefinition* relic_definition(unsigned);

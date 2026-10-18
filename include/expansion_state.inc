@@ -15,7 +15,7 @@ enum class XOp:uint8_t {
  ReturnNext,Prolong,Restless,Bomb,ShuffleAll,RandomCosts,StrikeReplay,PotionDone,
  Demise,ExhaustHand,Strength,Dexterity,AfterPlay,TurnEnd,EndDiscard,EnemyStart,
  EnemyAct,EnemyDone,TurnStart,TurnDraw,TurnReady,RandomHits,Potion,PlayerDamage,
- Noop,Summon,Forge,ChannelDark,OrbsEnd,Count
+ Noop,Summon,Forge,ChannelDark,OrbsEnd,BoulderTick,TurnRelics,Count
 };
 struct XFrame {
  int16_t playing=-1,target=-1,x=0,last_damage=0,vigor=0;
@@ -26,8 +26,11 @@ struct ExpansionState {
  int16_t powers[XPowerCount]{};
  int16_t automation[MaxPowerInstances]{},panache[MaxPowerInstances]{},boulder[MaxPowerInstances]{};
  uint8_t automation_count[MaxPowerInstances]{},panache_count[MaxPowerInstances]{},panache_skip[MaxPowerInstances]{};
+ // Number of Boulder instances already applied when Entropy first appeared.
+ // Entropy stacks in place; later independent Boulders remain after it.
+ uint8_t entropy_boulder_prefix=0;
  // 0 = no cost override, n+1 = explicit cost n. turn_cost expires after the
- // physical card play (including its replays) or at the next player turn.
+ // physical card play (including its replays) or the side's turn end.
  uint8_t turn_cost[MaxCards]{},combat_cost[MaxCards]{},replay[MaxCards]{};
  uint16_t return_turn[MaxCards]{};
  int16_t blade_damage[MaxCards]{};

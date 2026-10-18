@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <initializer_list>
+#include <vector>
 using namespace spire;
 static unsigned checks,card_cases,potion_cases;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
@@ -20,7 +21,7 @@ static State fight(Card card={Defend,0}){
  for(int i=0;i<5;i++)append(s,{i%2?Defend:Strike,0},Zone::Discard);
  return s;
 }
-static SaveData snapshot(const State&s){SaveData b{};CHECK(validate(s));CHECK(save(s,b));CHECK(b.bytes[4]==11);return b;}
+static SaveData snapshot(const State&s){SaveData b{};CHECK(validate(s));CHECK(save(s,b));CHECK(b.bytes[4]==12);return b;}
 static void same(const State&s,const SaveData&b){auto a=snapshot(s);CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static void rt(const State&s){auto b=snapshot(s);State copy{};CHECK(load(copy,b.bytes,b.size));same(copy,b);}
 static void resolve_choices(State&s){
@@ -188,4 +189,23 @@ static void interactions(){
  // Malformed suspended frames cannot overrun the fixed stack during validation.
  s=fight();s.expansion.depth=255;CHECK(!validate(s));
 }
-int main(){registry();all_cards();all_potions();interactions();std::printf("colorless/potions: %u checks; %u card variants; %u potions\n",checks,card_cases,potion_cases);}
+static void legacy_v11(const char*path){
+ // Produced by the unmodified afe33815 v11 writer, with Entropy played before
+ // Rolling Boulder. That writer did not persist their acquisition boundary.
+ FILE*f=std::fopen(path,"r");CHECK(f);std::vector<uint8_t> bytes;unsigned value;
+ while(std::fscanf(f,"%2x",&value)==1)bytes.push_back((uint8_t)value);
+ std::fclose(f);
+ CHECK(bytes.size()==12580&&bytes[4]==11);
+ State s{};CHECK(load(s,bytes.data(),bytes.size()));
+ CHECK(s.phase==Phase::Combat&&s.cards[s.powers.ids[0]].kind==Entropy);
+ CHECK(power_value(s,XPower::Entropy)==1&&s.expansion.boulder[0]==5);
+ CHECK(s.expansion.entropy_boulder_prefix==1);
+ auto migrated=snapshot(s);CHECK(migrated.size==bytes.size()+4);
+ // The frozen v11 payload stays byte-identical; v12 appends just the boundary.
+ CHECK(!std::memcmp(migrated.bytes+8,bytes.data()+8,bytes.size()-12));rt(s);
+ auto invalid=s;invalid.expansion.entropy_boulder_prefix=2;SaveData refused{};
+ CHECK(!validate(invalid)&&!save(invalid,refused));
+ CHECK(end_turn(s));CHECK(s.phase==Phase::ExtendedChoice&&total_hp(s)==82);
+ CHECK(s.expansion.boulder[0]==10);rt(s);resolve_choices(s);rt(s);
+}
+int main(int argc,char**argv){registry();all_cards();all_potions();interactions();if(argc>1)legacy_v11(argv[1]);std::printf("colorless/potions: %u checks; %u card variants; %u potions\n",checks,card_cases,potion_cases);}

@@ -4,13 +4,16 @@ static bool validate_extension(const State&s){
  if(x.target< -1||x.target>=MaxEnemies||x.x<0||x.x>999||x.last_damage<0||x.last_damage>9999||x.last_drawn< -1||x.last_drawn>=s.card_count)return false;
  if(x.cards_finished>9999||x.nonpower_started>9999||x.choices.count>MaxCards)return false;
  for(auto n:x.powers)if(n<0||n>9999)return false;
- int auto_sum=0,pan_sum=0,boulder_sum=0;
+ int auto_sum=0,pan_sum=0,boulder_sum=0,boulder_count=0;
+ bool boulder_gap=false;
  for(int i=0;i<MaxPowerInstances;i++){
   if(x.automation[i]<0||x.automation[i]>9999||x.panache[i]<0||x.panache[i]>9999||x.boulder[i]<0||x.boulder[i]>9999||x.automation_count[i]>9||x.panache_count[i]>4||x.panache_skip[i]>1)return false;
   if(!x.automation[i]&&x.automation_count[i])return false;
   if(!x.panache[i]&&(x.panache_count[i]||x.panache_skip[i]))return false;
+  if(x.boulder[i]){if(boulder_gap)return false;++boulder_count;}else boulder_gap=true;
   auto_sum+=x.automation[i];pan_sum+=x.panache[i];boulder_sum+=x.boulder[i];
  }
+ if(x.entropy_boulder_prefix>boulder_count||(!x.powers[(int)XPower::Entropy]&&x.entropy_boulder_prefix))return false;
  if(x.powers[(int)XPower::Automation]!=min(9999,auto_sum)||x.powers[(int)XPower::Panache]!=min(9999,pan_sum)||x.powers[(int)XPower::RollingBoulder]!=min(9999,boulder_sum))return false;
  for(unsigned i=0;i<MaxCards;i++){
   if(x.turn_cost[i]>100||x.combat_cost[i]>100||x.blade_damage[i]<0||x.blade_damage[i]>9999)return false;

@@ -488,7 +488,10 @@ static void distilled_batch(){
     drink(s,Potion::DistilledChaos);
     CHECK(s.phase==Phase::Combat&&s.energy==0&&s.expansion.cards_finished==3);
     CHECK(s.hand.count==1&&s.hand.ids[0]==drawn&&s.draw.count==0&&s.discard.count==3);
-    CHECK(s.block==5&&s.enemies[0].hp+s.enemies[1].hp==79&&!s.expansion.potion_active);restore(s);
+    CHECK(s.block==5);
+    // In the pinned release Flash of Steel deals 5, then Twin Strike 5 twice.
+    CHECK(s.enemies[0].hp+s.enemies[1].hp==77);
+    CHECK(!s.expansion.potion_active);restore(s);
 
     // The first reserved card remains in Limbo while fetching the rest of the
     // batch triggers a shuffle choice. Save/load must preserve its identity.
@@ -500,7 +503,7 @@ static void distilled_batch(){
     select(s,{(uint16_t)chosen});
     CHECK(s.phase==Phase::Combat&&s.expansion.cards_finished==2&&s.energy==0);
     CHECK(s.hand.count==1&&s.hand.ids[0]==chosen&&s.discard.count==2&&!s.draw.count);
-    CHECK(s.block==5&&s.enemies[0].hp+s.enemies[1].hp==89&&!s.expansion.potion_active);restore(s);
+    CHECK(s.block==5&&s.enemies[0].hp+s.enemies[1].hp==87&&!s.expansion.potion_active);restore(s);
 
     // Early victory must retire all reserved instances as well as the playing
     // card. The original tears down its CombatState at this point, so this
@@ -511,8 +514,31 @@ static void distilled_batch(){
     for(unsigned id=0;id<s.card_count;id++)CHECK(s.zones[id]!=Zone::Limbo);
     restore(s);
 }
+static void costs_before_enemy_choice(){
+    auto s=fight();int recalled=append(s,{Bludgeon,0},Zone::Discard);
+    drink(s,Potion::LiquidMemories);select(s,{(uint16_t)recalled});CHECK(cost(s,recalled)==0);
+    drink(s,Potion::StableSerum);CHECK(gain_relic(s,CentennialPuzzle));
+    int drawn=append(s,{Strike,0},Zone::Discard);s.expansion.turn_cost[drawn]=4;
+    int combat_free=append(s,{Defend,0},Zone::Discard);
+    s.expansion.combat_cost[combat_free]=1;s.expansion.turn_cost[combat_free]=3;
+    int exhausted=append(s,{Defend,0},Zone::Exhaust);s.expansion.turn_cost[exhausted]=1;
+    gain_power(s,XPower::Stratagem,1);s.enemies[0].move=0;s.enemies[1].move=2;
+    CHECK(end_turn(s));
+    // Player flush is complete, but the enemy's first HP hit has suspended
+    // Centennial Puzzle's draw at a shuffle/Stratagem choice. This is still
+    // turn 1: checking only after the next player turn misses the old bug.
+    CHECK(s.phase==Phase::ExtendedChoice&&s.turn==1&&s.expansion.enemy_side&&s.hp==68);
+    CHECK(relic_counter(s,CentennialPuzzle)==1&&s.hand.count==1&&s.hand.ids[0]==recalled);
+    CHECK(cost(s,recalled)==3&&cost(s,drawn)==1&&cost(s,combat_free)==0&&cost(s,exhausted)==1);
+    for(unsigned id=0;id<s.card_count;id++)CHECK(!s.expansion.turn_cost[id]);
+    CHECK(choice_pile(s).count==2);select(s,{(uint16_t)drawn});
+    CHECK(s.phase==Phase::Combat&&s.turn==2&&!s.expansion.enemy_side&&s.hp==68);
+    CHECK(s.zones[recalled]==Zone::Hand&&s.zones[drawn]==Zone::Hand&&s.zones[combat_free]==Zone::Hand);
+    CHECK(s.zones[exhausted]==Zone::Exhaust&&cost(s,recalled)==3&&cost(s,drawn)==1&&cost(s,combat_free)==0);
+    restore(s);
+}
 int main(){
     scopes_and_inventory();resources_and_damage();choices_and_creation();timed_and_automatic();replay_autoplay_and_resources();acquisition();
-    pinned_cost_lifetimes();pinned_stacking_and_piles();pinned_generation();fairy_in_events();pinned_full_hand_choices();distilled_batch();
+    pinned_cost_lifetimes();pinned_stacking_and_piles();pinned_generation();fairy_in_events();pinned_full_hand_choices();distilled_batch();costs_before_enemy_choice();
     std::printf("potion completion: %u checks; %u model policies\n",checks,policy_models);
 }

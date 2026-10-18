@@ -16,7 +16,7 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
 static void supply(State&s,int n){for(int i=0;i<n;i++){int id=s.card_count++;s.cards[id]={DefendSilent,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=(uint16_t)id;}CHECK(validate(s));}
 static int hand(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
 static unsigned count(const State&s,Zone zone,unsigned kind){unsigned n=0;const auto&p=pile(s,zone);for(int i=0;i<p.count;i++)n+=s.cards[p.ids[i]].kind==kind;return n;}
-static void roundtrip(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==11);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!memcmp(a.bytes,b.bytes,a.size));}
+static void roundtrip(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==12);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!memcmp(a.bytes,b.bytes,a.size));}
 static void selection(State&s){CHECK(s.phase==Phase::DiscardChoice);CHECK(!end_turn(s));uint16_t ids[MaxHand];for(unsigned i=0;i<s.discard_required;i++)ids[i]=s.hand.ids[i];CHECK(choose_discard(s,ids,s.discard_required));CHECK(s.phase==Phase::Combat);roundtrip(s);}
 static void starting(){
  State s{};new_run(s,7,false,Character::Silent);CHECK(s.hp==70&&s.max_hp==70&&s.deck_count==12&&s.gold==99);CHECK(s.relics==RingOfTheSnake&&s.relic_count==1);

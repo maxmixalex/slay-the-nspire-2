@@ -29,6 +29,7 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     case XOp::Restless:return a>=0&&a<=MaxHand&&b>=0&&b<=999;
     case XOp::Bomb:return a>=0&&b>=1&&b<=3;
     case XOp::EnemyAct:return a>=0&&a<=s.enemy_count&&b==0;
+    case XOp::BoulderTick:return a>=0&&a<MaxPowerInstances&&b==0&&s.expansion.boulder[a]>0;
     case XOp::RandomHits:return a>=0&&b>=0&&b<=999;
     case XOp::ChannelDark:return a>=0&&a<=MaxOrbs&&b==0;
     case XOp::AllDamage:case XOp::EscapeBlock:case XOp::Strength:case XOp::Dexterity:

@@ -111,7 +111,9 @@ Draw. Direct moves and generated cards do not count as draws for Automation or
 other draw-triggered effects.
 
 `SetToFreeThisTurn` (`0x060018c5`) and Snecko's temporary cost assignment use expiry
-on turn end **or completion of the first physical play**. Replays finish before
+on the side's turn end **or completion of the first physical play**. Player-side
+cleanup follows hand flush, before enemy actions (`0x0600b3c0`, `0x0600b3c4`,
+`0x060050d4`); retained cards and cards outside Hand are also cleaned. Replays finish before
 cleanup (`CardModel.OnPlayWrapper`, `0x06009b06`). Canonical X/negative costs are
 returned before these overrides (`CardEnergyCost.GetWithModifiers`,
 `0x0600521d`). Snecko skips X and unplayable costs; Touch of Insanity considers only
@@ -150,8 +152,31 @@ previous turn; an already-in-Hand instance is left there.
 Normal hand draw and `AfterPlayerTurnStart` effects precede Mayhem's auto-pre-play
 phase: `SetupPlayerTurn` (`0x0600b3d0`), `RunAutoPrePlayPhase` (`0x0600b3cc`) and
 Mayhem's hook (`0x06009f72`). The suite exercises Entropy's saved choice before
-Mayhem begins. Cross-model ordering among several different effects within the
-same original hook is not exhaustively compared against original execution.
+Mayhem begins.
+
+Power application order also matters within that phase. `Creature.ApplyPowerInternal`
+(`0x060051e9`) appends new power instances. `CombatState.IterateHookListeners`
+(`0x0600b3f4`) visits the creature's powers in that order, then its relics;
+`Hook.IterateCombatHookListeners` (`0x0600af9d`) preserves that ordering and
+`AfterPlayerTurnStart` (`0x0600af55`) awaits each listener. Entropy stacks in its
+original place, while each Rolling Boulder remains an independent instance.
+The one-byte `entropy_boulder_prefix` records how many Boulders existed when
+Entropy was first applied. Each Boulder damages and then increases its own amount;
+an Entropy choice can suspend between earlier and later Boulders. Tests exercise
+both application orders, duplicated Boulders, later Entropy stacks, and save/resume
+at the choice. This ordering state is written explicitly in save v12. Importing
+v11 sets the prefix to all existing Boulders, preserving the former engine's
+behavior; the unrecorded original application order cannot be recovered.
+
+Mercury Hourglass's `AfterPlayerTurnStart` (`0x06001fc8`) follows those power
+listeners. Blood Vial uses `AfterPlayerTurnStartLate` (`0x06001c97`), after Mercury.
+The represented early effects remain before hand draw: Horn Cleat / Captain's
+Wheel use `AfterBlockCleared` (`0x06001ecc` / `0x06001d17`), Art of War uses
+`AfterEnergyReset` (`0x06001c38`), and Happy Flower / Akabeko / Lantern use
+`AfterSideTurnStart` (`0x06001eb6` / `0x06001c07` / `0x06001f3a`). Prep Time, Demon
+Form and Noxious Fumes also use `AfterSideTurnStart`; Infinite Blades uses
+`BeforeHandDraw` (`0x0600268d`). No global power-order system is needed for this
+bounded set of turn-start effects.
 
 Plating gives unpowered Block at the player turn's end (`0x06009fb2`) and decreases
 at the next player turn start (`0x06009fb0`); it does not grant a second start-of-
@@ -164,6 +189,12 @@ Fisticuffs (`0x0600a999`) and Omnislice (`0x0600ab54`) use `TotalDamage` plus
 Fisticuffs applies the resulting powered Block modifiers; Omnislice's secondary
 hits are unpowered and still encounter each other enemy's Block. Tests cover
 blocked damage and overkill instead of assuming damage equals HP removed.
+
+The Gambit observes actual unblocked HP loss, not the pre-prevention attack amount:
+`Creature.LoseHpInternal` (`0x060051d6`) constructs `DamageResult.UnblockedDamage`
+from the HP difference. Osty redirection and Buffer's
+`ModifyHpLostAfterOstyLate` (`0x06002451`) run before that result. If the player
+loses no HP after those protections, the Gambit death effect does not trigger.
 
 Rend's original predicate (`0x060043de`) counts Debuff powers excluding temporary
 helper powers. The represented enemy Debuffs are negative Strength, Weak,
@@ -189,7 +220,9 @@ choice save/resume, modifier and return-from-Exhaust scenarios present there.
 That whole-project run passed 20 of 21 suites; the older combined suite still had
 obsolete Fisticuffs, Omnislice and Plating expectations. The next source stage
 replaces those with full original-rule numbers and adds batch Limbo reservation,
-full-hand selection, Touch eligibility and Doom/Demise ordering coverage.
+full-hand selection, Touch eligibility and Doom/Demise ordering coverage. The
+following stage adds explicit Entropy/Boulder ordering, separates early and late
+turn-start relic hooks, and checks cost expiry before an enemy-phase choice.
 
 The newly added scenarios are **awaiting a verified source checkpoint and test
 run** at the time this audit was written. Source tests are not passing evidence.

@@ -10,7 +10,11 @@ static void clear_extended_choice(State&);
 static void death_cleanup(State&);
 static void queue_legacy(State&,Card,int,int);
 int power_value(const State&s,XPower p){return s.expansion.powers[(unsigned)p];}
-void gain_power(State&s,XPower p,int n){auto&v=s.expansion.powers[(unsigned)p];v=(int16_t)max(0,min(9999,v+n));}
+void gain_power(State&s,XPower p,int n){
+ auto&x=s.expansion;auto&v=x.powers[(unsigned)p];
+ if(p==XPower::Entropy&&!v&&n>0){x.entropy_boulder_prefix=0;for(auto b:x.boulder)if(b)++x.entropy_boulder_prefix;}
+ v=(int16_t)max(0,min(9999,v+n));if(p==XPower::Entropy&&!v)x.entropy_boulder_prefix=0;
+}
 void queue_extension(State&s,XOp op,int a,int b,bool first){
  if(a< -9999||a>9999||b< -9999||b>9999){fail(s);return;}
  if(enqueue(s,EffectKind::Extended,a,(int)op,first))s.effects[first?0:s.effect_count-1].aux=(int16_t)b;

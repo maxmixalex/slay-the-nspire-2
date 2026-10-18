@@ -356,9 +356,38 @@ static void reserved_autoplay_contracts(){
     for(unsigned i=0;i<s.draw.count;i++)CHECK(s.zones[s.draw.ids[i]]==Zone::Draw);
 }
 
+static void ordered_turn_start_contracts(){
+    // Entropy was applied before Boulder. Its choice precedes that damage,
+    // Mercury, and Mayhem; ordinary draw and early relic benefits are ready.
+    active_kind=Entropy;active_upgrade=0;auto s=fight(Entropy);act(s,Entropy);
+    add(s,RollingBoulder);act(s,RollingBoulder);add(s,Mayhem);act(s,Mayhem);
+    CHECK(gain_relic(s,MercuryHourglass));CHECK(gain_relic(s,ArtOfWar));CHECK(gain_relic(s,HornCleat));
+    CHECK(s.expansion.entropy_boulder_prefix==0);add(s,Strike,0,Zone::Draw);supply(s,5);next_turn(s);
+    CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::Transform&&s.hand.count==5);
+    CHECK(total_hp(s)==92&&s.energy==4&&s.block==14&&s.expansion.boulder[0]==5&&s.expansion.cards_finished==3);
+    pick(s,1);CHECK(total_hp(s)==70&&s.expansion.boulder[0]==10&&s.expansion.cards_finished==4&&s.energy==4);ready(s);
+
+    // Reversing application order changes the observable state at the choice.
+    s=fight(RollingBoulder);act(s,RollingBoulder);add(s,Entropy);act(s,Entropy);
+    CHECK(s.expansion.entropy_boulder_prefix==1);supply(s,8);next_turn(s);
+    CHECK(s.expansion.choice==XChoice::Transform&&total_hp(s)==82&&s.expansion.boulder[0]==10);
+    pick(s,1);CHECK(total_hp(s)==82);ready(s);
+
+    // A duplicated power applies two independent Boulders before Entropy.
+    // Later Boulders follow it; additional Entropy stacks preserve its place.
+    s=fight(RollingBoulder);gain_power(s,XPower::Duplicator,1);act(s,RollingBoulder);
+    add(s,Entropy);act(s,Entropy);add(s,RollingBoulder,1);act(s,RollingBoulder);
+    add(s,Entropy);act(s,Entropy);CHECK(s.expansion.entropy_boulder_prefix==2&&power_value(s,XPower::Entropy)==2);
+    supply(s,8);next_turn(s);
+    CHECK(s.expansion.choice==XChoice::Transform&&choice_min(s)==2&&total_hp(s)==72);
+    CHECK(s.expansion.boulder[0]==10&&s.expansion.boulder[1]==10&&s.expansion.boulder[2]==10);
+    auto invalid=s;invalid.expansion.entropy_boulder_prefix=4;CHECK(!validate(invalid));SaveData refused{};CHECK(!save(invalid,refused));
+    pick(s,2);CHECK(total_hp(s)==52&&s.expansion.boulder[2]==15&&power_value(s,XPower::RollingBoulder)==35);ready(s);
+}
+
 int main(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))for(unsigned up=0;up<2;up++)card_contract(kind,up);
     CHECK(variants==106);for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))CHECK(covered[kind][0]&&covered[kind][1]);
-    nested_choices();token_contracts();modifier_boundaries();generation_and_transform_pools();original_continuation_boundaries();reserved_autoplay_contracts();
+    nested_choices();token_contracts();modifier_boundaries();generation_and_transform_pools();original_continuation_boundaries();reserved_autoplay_contracts();ordered_turn_start_contracts();
     std::printf("colorless completion: %u checks, %u explicit card-effect variants, token and continuation contracts\n",checks,variants);
 }

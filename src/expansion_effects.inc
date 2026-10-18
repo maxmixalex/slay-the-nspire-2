@@ -181,6 +181,7 @@ static void extension_effect(State&s,Effect e){
   if(power_value(s,XPower::Retain))gain_power(s,XPower::Retain,-1);
   queue_extension(s,XOp::EnemyStart,0,0,true);break;
  case XOp::EnemyStart:
+  for(auto&v:x.turn_cost)v=0;
   s.strength=(int16_t)max(0,s.strength-s.temporary_strength);s.temporary_strength=0;
   s.dexterity=(int16_t)max(0,s.dexterity-s.temporary_dexterity);s.temporary_dexterity=0;
   s.no_draw=0;x.powers[(int)XPower::Duplicator]=0;x.enemy_side=1;
@@ -202,6 +203,7 @@ static void extension_effect(State&s,Effect e){
   if(s.demon_form){s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
   s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));
   for(int i=0;i<s.enemy_count;i++)if(s.noxious_fumes)apply_poison(s,i,s.noxious_fumes);
+  relic_hook(s,RelicHook::TurnStart);
   for(unsigned id=0;id<s.card_count;id++)if(x.return_turn[id]&&x.return_turn[id]<=s.turn){
    x.return_turn[id]=0;
    if(s.zones[id]==Zone::Draw){if(s.hand.count<MaxHand)move_instance(s,id,s.draw,s.hand,Zone::Hand);else move_instance(s,id,s.draw,s.discard,Zone::Discard);}
@@ -219,10 +221,21 @@ static void extension_effect(State&s,Effect e){
  case XOp::TurnReady:{
   // Auto-pre-play begins after the ordinary hand draw and turn-start powers.
   if(power_value(s,XPower::Mayhem))queue_extension(s,XOp::AutoTop,min(MaxCards,power_value(s,XPower::Mayhem)),0,true);
-  relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);
+  queue_extension(s,XOp::TurnRelics,0,0,true);record(s,LogKind::Turn,s.turn);
+  unsigned count=0;while(count<MaxPowerInstances&&x.boulder[count])++count;
+  unsigned prefix=power_value(s,XPower::Entropy)?x.entropy_boulder_prefix:count;
+  if(prefix>count){fail(s);break;}
+  for(unsigned i=count;i>prefix;i--)queue_extension(s,XOp::BoulderTick,(int)i-1,0,true);
   if(power_value(s,XPower::Entropy))queue_extension(s,XOp::Transform,power_value(s,XPower::Entropy),0,true);
-  int total=0;for(int i=MaxPowerInstances-1;i>=0;i--)if(x.boulder[i]){queue_extension(s,XOp::AllDamage,x.boulder[i],0,true);x.boulder[i]=(int16_t)min(9999,x.boulder[i]+5);total+=x.boulder[i];}
+  for(unsigned i=prefix;i>0;i--)queue_extension(s,XOp::BoulderTick,(int)i-1,0,true);
+  break;}
+ case XOp::BoulderTick:{
+  if(a<0||a>=MaxPowerInstances||!x.boulder[a]){fail(s);break;}
+  for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,x.boulder[a]);
+  x.boulder[a]=(int16_t)min(9999,x.boulder[a]+5);
+  int total=0;for(auto amount:x.boulder)total+=amount;
   x.powers[(int)XPower::RollingBoulder]=(int16_t)min(9999,total);break;}
+ case XOp::TurnRelics:relic_hook(s,RelicHook::AfterHandDraw);break;
  default:fail(s);break;
  }
 }
