@@ -31,7 +31,7 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance)const{
             case 'h':value=d.hp_loss;break;
             case 'e':value=d.energy_gain+(c.upgraded?d.energy_up:0);break;
             case 'd':value=live?damage(game,c,t,instance):d.damage+(c.upgraded?d.damage_up:0);break;
-            case 'b':value=live?card_block(game,c):d.block+(c.upgraded?d.block_up:0);break;
+            case 'b':value=live?card_block(game,c,instance):d.block+(c.upgraded?d.block_up:0);break;
             case 'n':value=d.draw+(c.upgraded?d.draw_up:0);break;
             case 'p':value=d.power+(c.upgraded?d.power_up:0);break;
             default:b.ch(*p++);continue;

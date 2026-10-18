@@ -222,7 +222,7 @@ void relic_reset_turn_counters(State&);
 void relic_attack_begin(State&);
 void relic_attack_end(State&);
 int relic_attack_multiplier(const State&,bool preview=false);
-int card_block(const State&,Card);
+int card_block(const State&,Card,int instance=-1);
 unsigned relic_counter(const State&,unsigned id);
 
 // Extended card/potion continuations share the ordinary combat dispatcher.

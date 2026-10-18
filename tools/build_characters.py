@@ -97,7 +97,7 @@ def localized(text:str,row:dict,upgraded:bool,keyword_titles:dict)->str:
     {Damage=9}. The runtime must resolve each named value in a live combat; an
     unsupported hook remains visibly unresolved and fails the UI regressions.
     """
-    def render(source:str,depth:int=0)->str:
+    def render(source:str,depth:int=0,context:str|None=None)->str:
         if depth>8:raise ValueError('Localization expression nesting exceeds bound')
         result=[];at=0
         while at<len(source):
@@ -113,16 +113,32 @@ def localized(text:str,row:dict,upgraded:bool,keyword_titles:dict)->str:
             if expression.startswith('IfUpgraded:show:'):
                 choices=_branches(expression[len('IfUpgraded:show:'):])
                 selected=choices[0] if upgraded else choices[1] if len(choices)>1 else ''
-                result.append(render(selected,depth+1))
+                result.append(render(selected,depth+1,context))
             elif expression.startswith('InCombat:'):
                 choices=_branches(expression[len('InCombat:'):])
                 if len(choices)>1 and choices[1]:raise ValueError('Unsupported nonempty noncombat branch')
-                result.append('\x1e'+render(choices[0],depth+1)+'\x1f')
+                result.append('\x1e'+render(choices[0],depth+1,context)+'\x1f')
             elif expression=='energyPrefix:energyIcons(1)':result.append(' 点能量')
             else:
-                match=re.fullmatch(r'([A-Za-z][A-Za-z0-9]*):(diff\(\)|energyIcons\(\))',expression)
+                conditional=re.fullmatch(r'([A-Za-z][A-Za-z0-9]*):(plural|choose\(1\)):(.*)',expression,re.S)
+                if conditional:
+                    name,style,alternatives=conditional.groups();choices=_branches(alternatives)
+                    if len(choices)!=2:raise ValueError(f'Expected two count alternatives: {expression}')
+                    if name in LIVE_VARIABLES or name in row.get('dynamic_variables',{}):
+                        raise ValueError(f'Unsupported live count conditional: {expression}')
+                    value=_canonical(row,name,upgraded)
+                    # The pinned pool uses singular/plural and choose(1) with
+                    # a single fallback. Empty-selector formats inherit this
+                    # exact variable, including through nested conditionals.
+                    result.append(render(choices[0 if value==1 else 1],depth+1,name))
+                    at=end;continue
+                match=re.fullmatch(r'([A-Za-z][A-Za-z0-9]*)?:(diff\(\)|inverseDiff\(\)|energyIcons\(\))',expression)
                 if not match:raise ValueError(f"Unsupported expression: {row['key']}: {expression}")
-                name,style=match.groups();value=_canonical(row,name,upgraded)
+                name,style=match.groups();name=name or context
+                if not name:raise ValueError(f'Value format without a selected variable: {expression}')
+                # inverseDiff changes comparison highlighting in the original
+                # formatter; it never negates the displayed numeric value.
+                value=_canonical(row,name,upgraded)
                 dynamic=name in LIVE_VARIABLES
                 if name in row.get('dynamic_variables',{}) and not dynamic:
                     raise ValueError(f"Unsupported live variable: {row['key']}.{name}")

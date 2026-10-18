@@ -5,7 +5,7 @@ static int ironclad_cost(const State&,int,int);
 static int ironclad_base_damage(const State&,Card,int,int,int);
 static int ironclad_vulnerable_multiplier(const State&);
 static int ironclad_enemy_damage(const State&,int,int);
-static int ironclad_block(const State&,Card,int);
+static int ironclad_block(const State&,Card,int,int instance=-2);
 static void ironclad_after_block(State&,int,bool);
 static void ironclad_before_card(State&,Card);
 static void ironclad_after_card(State&,Card);

@@ -409,11 +409,11 @@ static bool silent_var_name(const char*a,const char*b){if(!a||!b)return false;wh
 static bool silent_description_value(const State&s,Card c,int target,int instance,const char*name,int&out){
  if(c.kind>=CardKinds||(!card_in_pool(c.kind,Character::Silent)&&c.kind!=Shiv))return false;
  if(silent_var_name(name,"Damage")||silent_var_name(name,"CalculatedDamage")){out=damage(s,c,target,instance);return true;}
- if(silent_var_name(name,"Block")){out=card_block(s,c);return true;}
+ if(silent_var_name(name,"Block")){out=card_block(s,c,instance);return true;}
  if(c.kind==Finisher&&silent_var_name(name,"CalculatedHits")){out=s.silent.attacks_finished;return true;}
  if(c.kind==Flechettes&&silent_var_name(name,"CalculatedHits")){out=silent_hand_type_count(s,CardType::Skill);return true;}
  if(c.kind==KnifeTrap&&silent_var_name(name,"CalculatedShivs")){out=silent_shiv_count(s);return true;}
- if(c.kind==Mirage&&silent_var_name(name,"CalculatedBlock")){out=silent_modify_block(s,ironclad_block(s,c,powered_block(s,c,silent_poison_total(s))));return true;}
+ if(c.kind==Mirage&&silent_var_name(name,"CalculatedBlock")){out=silent_modify_block(s,ironclad_block(s,c,powered_block(s,c,silent_poison_total(s)),instance));return true;}
  switch(c.kind){
  case Abrasive:
   if(silent_var_name(name,"ThornsPower")){out=(c.upgraded?6:4);return true;}

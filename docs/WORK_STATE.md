@@ -18,6 +18,12 @@ The migration fixture `tests/fixtures/v12-entropy-choice.hex` was produced with 
 
 Next: push this source batch and verify the remote ref/tree, then run all suites, original resource conversion, ARM/X11/WASM builds, actual-pack UI, backend comparison and fresh-process v13 persistence against an immutable snapshot. Keep discovered failures explicit and push any repairs before their verification.
 
+### First execution results and follow-up repair
+
+Checkpoint `575b3fce9e12aaa455efc9156b3f904f08780b85` was pushed and read back with exact tree `d382ada89332aa99012d8233b5cb7e3ee41107b4`. Its source-only archive and frozen `/tmp/nspire-stage-575b3fce` are retained. Native, ARM and X11 compilation all stopped at the same missing comma between the historical and appended status arrays; no C++ suite ran. The converter stopped on the first previously unsupported localization form, `Cards:plural:牌|牌`. All 16 Python tests passed. Every completed journal reports unchanged frozen source. These failures are preserved under `native-final-206dfc24ab7d`, `arm-final-3ec729f66d7e`, `x11-build-ea1756267bda` and `pack-final-f524a467284f`.
+
+The follow-up source repairs that separator, supports the three additional expression forms found by enumerating all appended card descriptions (17 Python tests are now registered), and makes Unmovable block previews distinguish the current suspended CardPlay from another card instance. The latter has a numerical regression paused in Armaments' upgrade choice. Character audit documents are now present. Push these repairs before rerunning; no successful 0.15 runtime result is established yet.
+
 ## Completed 0.14 delivery
 
 Runtime source **`b4b67e714ca76e7afb72f3a170789ad90047e6f4`**, tree `5c97f84b8357176ddae5deec5b1911c7b0ff7aa8`, was pushed and read back before final validation. All **21 C++ suites and 10 Python tests passed**. All 12 final journals completed with unchanged frozen source. The build/artifact receipts and scope limits are recorded in [validation-0.14.json](validation-0.14.json). Later changes only update audit/result documentation; distributed binaries are identified by this tested source commit.

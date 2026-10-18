@@ -361,6 +361,11 @@ static void costs_clones_and_limits(){
  scenario="Reject malformed module state";s=fight();auto invalid=s;invalid.silent.power_count=1;invalid.silent.power_order[0]=(uint8_t)SPower::Afterimage;CHECK(!validate(invalid));
  invalid=s;invalid.silent.inky[0]=1;CHECK(!validate(invalid));
  invalid=s;invalid.silent.nightmare_active[0]=1;CHECK(!validate(invalid));
+ append(s,{DefendSilent,0},Zone::Hand);cast(s,Nightmare);CHECK(s.silent.nightmare_active[0]);restore(s);
+ invalid=s;invalid.silent.nightmares[0].iron_damage=1;CHECK(!validate(invalid));
+ invalid=s;invalid.silent.nightmares[0].stomp_discount=1;CHECK(!validate(invalid));
+ invalid=s;invalid.silent.nightmares[0].card={Skewer,0};invalid.silent.nightmares[0].bullet_free=1;CHECK(!validate(invalid));
+ auto valid=s;valid.silent.nightmares[0].card={Stomp,0};valid.silent.nightmares[0].stomp_discount=2;valid.silent.nightmares[0].stomp_turn_origin=1;restore(valid);
 }
 
 int main(){

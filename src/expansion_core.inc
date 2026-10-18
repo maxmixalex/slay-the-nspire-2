@@ -64,10 +64,10 @@ static int powered_block(const State&s,Card c,int n){
  if(s.no_block||n<=0)return 0;
  return max(0,min(9999,n+s.dexterity+((c.kind==Defend||c.kind==DefendSilent||c.kind==UltimateDefend)?power_value(s,XPower::Fasten):0)));
 }
-int card_block(const State&s,Card c){
+int card_block(const State&s,Card c,int instance){
  if(c.kind>=CardKinds)return 0;const auto&d=definitions[c.kind];
  int n=powered_block(s,c,d.block+(c.upgraded?d.block_up:0));
- return max(0,min(9999,silent_modify_block(s,ironclad_block(s,c,n))));
+ return max(0,min(9999,silent_modify_block(s,ironclad_block(s,c,n,instance))));
 }
 static bool matches_generated(const State&s,unsigned k,int filter){
  if(!card_can_generate(k))return false;

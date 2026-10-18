@@ -4,6 +4,9 @@ static bool valid_silent_snapshot(const SilentSnapshot&n,bool active){
  if(n.blade_damage<0||n.blade_damage>9999||n.iron_damage<0||n.iron_damage>9999||n.stomp_discount>9999||n.stomp_turn_origin>n.stomp_discount||n.stomp_combat_origin>n.stomp_discount)return false;
  if(n.inky&&n.card.kind!=Shiv)return false;
  if(n.blade_damage&&n.card.kind!=SovereignBlade)return false;
+ if(n.iron_damage&&n.card.kind!=Rampage&&n.card.kind!=Thrash)return false;
+ if((n.stomp_discount||n.stomp_turn_origin||n.stomp_combat_origin)&&n.card.kind!=Stomp)return false;
+ if(n.bullet_free&&cost(n.card)<0)return false;
  if(n.discount&&n.card.kind!=Pinpoint&&n.card.kind!=UpMySleeve)return false;
  if(!active&&(n.card.kind||n.card.upgraded||n.turn_cost||n.combat_cost||n.replay||n.return_turn||n.blade_damage||n.sly||n.retain||n.inky||n.bullet_free||n.discount||n.turn_origin||n.combat_origin||n.bullet_origin||n.iron_damage||n.stomp_discount||n.stomp_turn_origin||n.stomp_combat_origin))return false;
  return true;

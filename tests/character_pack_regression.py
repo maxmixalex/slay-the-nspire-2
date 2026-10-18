@@ -75,7 +75,26 @@ class CharacterPackTests(unittest.TestCase):
     def test_unknown_or_malformed_reference_expressions_fail(self):
         row={'key':'SYNTHETIC','variables':{},'dynamic_variables':{},'keywords':{'base':[],'upgraded':[]}}
         for text in ('{Unverified:diff()}','{Energy:unsupported()}','{IfUpgraded:show:a|b|c}',
-                     '{InCombat:a|nonempty}','{IfUpgraded:show:unclosed','stray }'):
+                     '{InCombat:a|nonempty}','{IfUpgraded:show:unclosed','stray }',
+                     '{:diff()}','{Skills:choose(2):one|many}','{Skills:choose(1):only}',
+                     '{Cards:plural:one|two|three}'):
             with self.subTest(text=text),self.assertRaises(ValueError):localized(text,row,False,{})
+    def test_reference_count_formats_keep_exact_values_and_context(self):
+        row={'key':'SYNTHETIC','variables':{'Cards':{'base':1,'upgraded':2},
+             'Skills':{'base':1,'upgraded':2},'ExtraDamage':{'base':2,'upgraded':1}},
+             'dynamic_variables':{},'keywords':{'base':[],'upgraded':[]}}
+        plural='{Cards:diff()} {Cards:plural:item|items}'
+        choose='{Skills:choose(1):one|{:diff()}}'
+        inverse='{ExtraDamage:inverseDiff()}'
+        self.assertEqual(localized(plural,row,False,{}),'1 item')
+        self.assertEqual(localized(plural,row,True,{}),'2 items')
+        self.assertEqual(localized(choose,row,False,{}),'one')
+        self.assertEqual(localized(choose,row,True,{}),'2')
+        self.assertEqual(localized(inverse,row,False,{}),'2')
+        self.assertEqual(localized(inverse,row,True,{}),'1')
+        nested='{Skills:choose(1):{:inverseDiff()}|{IfUpgraded:show:{:diff()}|other}}'
+        self.assertEqual(localized(nested,row,False,{}),'1')
+        self.assertEqual(localized(nested,row,True,{}),'2')
+        with self.assertRaises(ValueError):localized('{Damage:choose(1):one|many}',row,False,{})
 
 if __name__=='__main__':unittest.main()

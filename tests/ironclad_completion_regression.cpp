@@ -169,6 +169,14 @@ static void grouped_power_events(){
  auto exhausted=fight(DarkEmbrace);act(exhausted,DarkEmbrace);int wind2=add(exhausted,SecondWind),first=add(exhausted,Defend);supply(exhausted,4);act_id(exhausted,wind2);
  CHECK(exhausted.zones[first]==Zone::Exhaust&&exhausted.hand.count==1&&exhausted.exhaust.count==1&&exhausted.block==5);ready(exhausted);
 }
+static void unmovable_preview_during_choice(){
+ active_kind=Unmovable;active_upgrade=0;auto s=fight(Unmovable);act(s,Unmovable);int arm=add(s,Armaments),wall=add(s,BloodWall);act_id(s,arm);
+ CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::IUpgrade&&s.playing==arm&&s.block==10);
+ CHECK(s.ironclad.block_events_turn==1&&s.ironclad.block_events_play[s.expansion.depth]==1);
+ int value=-1;CHECK(character_description_value(s,s.cards[wall],-1,wall,"Block",value)&&value==16);
+ CHECK(card_block(s,s.cards[wall],wall)==16);CHECK(card_block(s,s.cards[arm],arm)==10);
+ roundtrip(s);pick(s,1);ready(s);
+}
 static void temporary_cost_order(){
  active_kind=Stomp;active_upgrade=0;auto s=fight(Stomp);add(s,Strike);act(s,Strike);CHECK(cost(s,0)==2);
  s.potions[0]=Potion::SneckoOil;CHECK(drink_potion(s,0));int set=cost(s,0);CHECK(set>=0&&set<=3);CHECK(s.ironclad.stomp_discount[0]==1&&s.ironclad.stomp_turn_origin[0]==1);
@@ -209,6 +217,6 @@ int main(){
  for(unsigned j=0;j<count;j++)CHECK(covered[pool[j]][0]&&covered[pool[j]][1]);
  CHECK(card_strike_tag(AshenStrike)&&card_strike_tag(SetupStrike));
  CHECK(!card_can_generate(Feed)&&!card_can_generate(NotYet)&&!card_can_generate(Break)&&!card_can_generate(Corruption));
- no_global_free_x_cost();grouped_power_events();temporary_cost_order();autoplay_choices_and_pillage();clone_and_transform_cross_character();reject_module_corruption();
+ no_global_free_x_cost();grouped_power_events();unmovable_preview_during_choice();temporary_cost_order();autoplay_choices_and_pillage();clone_and_transform_cross_character();reject_module_corruption();
  std::printf("ironclad completion: %u checks passed across %u base/upgrade variants plus Giant Rock and interaction contracts\n",checks,variants);return 0;
 }

@@ -56,9 +56,10 @@ static int ironclad_vulnerable_multiplier(const State&s){return 150+ipower(s,IPo
 static int ironclad_enemy_damage(const State&s,int enemy,int amount){
  return enemy>=0&&enemy<s.enemy_count&&s.enemies[enemy].vulnerable&&ipower(s,IPower::Colossus)?amount/2:amount;
 }
-static int ironclad_block(const State&s,Card,int amount){
+static int ironclad_block(const State&s,Card,int amount,int instance){
  const auto&i=s.ironclad;unsigned d=s.expansion.depth;
- if(ipower(s,IPower::Unmovable)&&i.block_events_turn-i.block_events_play[d]<ipower(s,IPower::Unmovable))amount=min(9999,amount*2);
+ int own_events=(instance==-2||(instance>=0&&instance==s.playing))?i.block_events_play[d]:0;
+ if(ipower(s,IPower::Unmovable)&&i.block_events_turn-own_events<ipower(s,IPower::Unmovable))amount=min(9999,amount*2);
  return amount;
 }
 static void ironclad_after_block(State&s,int amount,bool card_powered){
@@ -320,7 +321,7 @@ bool ironclad_description_value(const State&s,Card c,int target,int instance,con
  if(ironclad_word(key,"Block")||ironclad_word(key,"CalculatedBlock")){
   const auto&d=definitions[c.kind];int n=d.block+(c.upgraded?d.block_up:0);
   if(c.kind==ExpectAFight)n+=(c.upgraded?8:5)*s.strength;
-  out=min(9999,silent_modify_block(s,ironclad_block(s,c,powered_block(s,c,n))));return true;
+  out=min(9999,silent_modify_block(s,ironclad_block(s,c,powered_block(s,c,n),instance)));return true;
  }
  if(ironclad_word(key,"CalculatedHits")&&c.kind==TearAsunder){out=1+s.ironclad.hp_losses_combat;return true;}
  return false;
