@@ -1,5 +1,6 @@
 #pragma once
-// NSP2/5 auxiliary image directory; tools/ui_profile.py validates order.
+// Append-only auxiliary image directory. Historical prefixes are immutable;
+// tools/ui_profile.py and tools/character_ui_profile.py validate their order.
 namespace spire {
 enum UiAsset {
     U_TitleBackground=0,
@@ -87,6 +88,52 @@ enum UiAsset {
     U_MerchantRug=104, U_ExtPotionStart=105, U_ExtPowerStart=153,
     U_Demise=175, U_Shrink=176, U_Doom=177, U_Bomb=178,
     U_Star=179, U_DarkOrb=180, U_SoulFrame=181, U_BladeFrame=182,
-    U_SoulEnergy=183, U_BladeEnergy=184, U_Count=185
+    U_SoulEnergy=183, U_BladeEnergy=184,
+    U_Accelerant=185,
+    U_Afterimage=186,
+    U_Aggression=187,
+    U_Anticipate=188,
+    U_Artifact=189,
+    U_Barricade=190,
+    U_Blur=191,
+    U_Burst=192,
+    U_Colossus=193,
+    U_CorrosiveWave=194,
+    U_Corruption=195,
+    U_CrimsonMantle=196,
+    U_Cruelty=197,
+    U_EnergyNextTurn=198,
+    U_Envenom=199,
+    U_FanOfKnives=200,
+    U_FreeAttack=201,
+    U_FreeSkill=202,
+    U_Hellraiser=203,
+    U_Inferno=204,
+    U_Juggernaut=205,
+    U_Juggling=206,
+    U_Mangle=207,
+    U_MasterPlanner=208,
+    U_Nightmare=209,
+    U_OneTwoPunch=210,
+    U_PhantomBlades=211,
+    U_PiercingWail=212,
+    U_Pyre=213,
+    U_Rage=214,
+    U_Rupture=215,
+    U_SerpentForm=216,
+    U_SetupStrike=217,
+    U_ShadowStep=218,
+    U_Shadowmeld=219,
+    U_Speedster=220,
+    U_Stampede=221,
+    U_Strangle=222,
+    U_TheHunt=223,
+    U_ToolsOfTheTrade=224,
+    U_Tracking=225,
+    U_Unmovable=226,
+    U_Vicious=227,
+    U_WellLaidPlans=228,
+    U_WraithForm=229,
+    U_Inky=230, U_CurseFrame=231, U_DoubleDamage=232, U_Count=233
 };
 }

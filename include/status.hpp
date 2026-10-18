@@ -25,11 +25,18 @@ inline constexpr StatusDefinition status_definitions[]={
  {"下回合格挡","下回合清除格挡后，获得 [blue]{n}[/blue] 点格挡。",U_BlockNextTurn},
  {"下回合抽牌","下回合额外抽 [blue]{n}[/blue] 张牌。",U_DrawNextTurn},
 #include "extended_status_definitions.inc"
+#include "character_status_definitions.inc"
 };
 constexpr int StatusKinds=sizeof(status_definitions)/sizeof(status_definitions[0]);
+constexpr int IroncladStatusStart=47,SilentStatusStart=IroncladStatusStart+IPowerCount;
+constexpr int CharacterExtraStatusStart=SilentStatusStart+SPowerCount-2;
+static_assert(IPowerCount==18&&SPowerCount==22&&StatusKinds==CharacterExtraStatusStart+6,"Keep power and status directories aligned");
 inline int status_amount(const State&s,int actor,int id){
     if(id<0||id>=StatusKinds||actor<0||actor>s.enemy_count)return 0;
     if(actor){const auto&e=s.enemies[actor-1];if(!e.hp)return 0;
+        if(id==CharacterExtraStatusStart+1)return s.silent.strangle[actor-1];
+        if(id==CharacterExtraStatusStart+2)return s.silent.enemy_artifact[actor-1];
+        if(id==CharacterExtraStatusStart+3)return s.expansion.restore_strength[actor-1];
         if(id==40)return s.expansion.demise[actor-1];
         if(id==41)return s.expansion.beetle[actor-1];
         if(id==42)return s.expansion.doom[actor-1];
@@ -43,6 +50,11 @@ inline int status_amount(const State&s,int actor,int id){
     if(id==44)return s.expansion.stars;
     if(id==45)return s.expansion.osty_hp;
     if(id==46)return s.expansion.orb_count;
+    if(id>=IroncladStatusStart&&id<SilentStatusStart)return s.ironclad.powers[id-IroncladStatusStart];
+    if(id>=SilentStatusStart&&id<CharacterExtraStatusStart)return s.silent.powers[id-SilentStatusStart];
+    if(id==CharacterExtraStatusStart){int n=0;for(auto active:s.silent.nightmare_active)n+=active!=0;return n;}
+    if(id==CharacterExtraStatusStart+4)return s.ironclad.setup_strength;
+    if(id==CharacterExtraStatusStart+5)return s.silent.extra_rewards;
     return 0;
 }
 inline int collect_statuses(const State&s,int actor,int* out){

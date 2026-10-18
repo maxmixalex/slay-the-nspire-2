@@ -10,13 +10,15 @@
   "animations_in_scope": true,
   "implemented_content_requires_timeline": false,
   "current_models": {
-    "characters_with_playable_subsets": 2,
-    "ironclad_pool_cards": 29,
-    "silent_pool_cards": 29,
-    "colorless_cards": 9,
-    "generated_cards": 1,
+    "characters_with_single_player_card_pools": 2,
+    "ironclad_pool_cards": 85,
+    "silent_pool_cards": 86,
+    "colorless_cards": 53,
+    "generated_cards": 4,
     "relics": 30,
-    "potions": 16
+    "potions": 64
   },
-  "complete_original_run": false
+  "complete_original_run": false,
+  "source_version": "0.15.0-prototype",
+  "validation_status": "first implementation checkpoint; pending verification"
 }

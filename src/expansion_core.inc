@@ -21,17 +21,53 @@ void queue_extension(State&s,XOp op,int a,int b,bool first){
 }
 int cost(const State&s,int id){
  if(id<0||id>=s.card_count)return 99;
- int base=cost(s.cards[id]);if(base<0)return base;
- if(s.expansion.turn_cost[id])return s.expansion.turn_cost[id]-1;
- if(s.expansion.combat_cost[id])return s.expansion.combat_cost[id]-1;
- return base;
+ return card_preview_cost(s,s.cards[id],id);
+}
+int card_preview_cost(const State&s,Card c,int id){
+ int base=cost(c);if(base<0||id<0||id>=s.card_count||s.cards[id].kind!=c.kind)return base;
+ if(s.expansion.turn_cost[id])base=s.expansion.turn_cost[id]-1;
+ else if(s.expansion.combat_cost[id])base=s.expansion.combat_cost[id]-1;
+ return max(0,silent_cost(s,id,ironclad_cost(s,id,base)));
+}
+static void temporary_cost_set(State&s,int id){
+ ironclad_temporary_cost_set(s,id);silent_temporary_cost_set(s,id);
+}
+static void combat_cost_set(State&s,int id){
+ ironclad_combat_cost_set(s,id);silent_combat_cost_set(s,id);
+}
+static void copy_card_modifiers(State&s,int to,int from){
+ auto&x=s.expansion;x.turn_cost[to]=x.turn_cost[from];x.combat_cost[to]=x.combat_cost[from];
+ x.replay[to]=x.replay[from];x.blade_damage[to]=x.blade_damage[from];
+ ironclad_card_copied(s,to,from);silent_card_copied(s,to,from);
+}
+static void reset_card_modifiers(State&s,int id){
+ auto&x=s.expansion;x.turn_cost[id]=x.combat_cost[id]=x.replay[id]=0;
+ x.return_turn[id]=0;x.blade_damage[id]=0;
+ ironclad_card_reset(s,id);silent_card_reset(s,id);
 }
 bool card_exhausts(Card c){if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];return d.exhausts||((c.upgraded?d.upgraded_keywords:d.keywords)&1);}
-bool card_can_generate(unsigned k){return k<CardKinds&&card_rarity(k)>=2&&card_rarity(k)<=4&&!card_generated(k)&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem;}
-static void gain_unpowered_block(State&s,int n){n=max(0,min(n,9999-s.block));s.block+=(int16_t)n;record(s,LogKind::Block,n);}
+bool card_can_generate(unsigned k){return k<CardKinds&&card_rarity(k)>=2&&card_rarity(k)<=4&&!card_generated(k)&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem&&k!=Feed&&k!=NotYet&&k!=Nightmare&&k!=TheHunt;}
+void gain_unpowered_block(State&s,int n){
+ n=max(0,min(silent_modify_block(s,n),9999-s.block));s.block+=(int16_t)n;
+ record(s,LogKind::Block,n);ironclad_after_block(s,n,false);
+}
+static void gain_card_block(State&s,int n){
+ Card c=s.playing>=0?s.cards[s.playing]:Card{Defend,0};
+ n=ironclad_block(s,c,n);n=max(0,min(silent_modify_block(s,n),9999-s.block));
+ s.block+=(int16_t)n;record(s,LogKind::Block,n);ironclad_after_block(s,n,true);
+}
+static bool enqueue_card_block(State&s,int n,bool first){
+ if(!enqueue(s,EffectKind::Block,n,0,first))return false;
+ s.effects[first?0:s.effect_count-1].aux=1;return true;
+}
 static int powered_block(const State&s,Card c,int n){
  if(s.no_block||n<=0)return 0;
  return max(0,min(9999,n+s.dexterity+((c.kind==Defend||c.kind==DefendSilent||c.kind==UltimateDefend)?power_value(s,XPower::Fasten):0)));
+}
+int card_block(const State&s,Card c){
+ if(c.kind>=CardKinds)return 0;const auto&d=definitions[c.kind];
+ int n=powered_block(s,c,d.block+(c.upgraded?d.block_up:0));
+ return max(0,min(9999,silent_modify_block(s,ironclad_block(s,c,n))));
 }
 static bool matches_generated(const State&s,unsigned k,int filter){
  if(!card_can_generate(k))return false;
@@ -63,7 +99,7 @@ static void generate_card(State&s,int filter,int flags){
  while(count--&&n){
   unsigned j=random_below(s.rng_cards,n);uint8_t kind=pool[j];pool[j]=pool[--n];
   int id=create_to_hand(s,{kind,(uint8_t)((flags&2)!=0)});if(id<0)return;
-  if(flags&1)s.expansion.turn_cost[id]=1;
+  if(flags&1){s.expansion.turn_cost[id]=1;temporary_cost_set(s,id);}
  }
 }
 static void clear_extended_choice(State&s){auto&x=s.expansion;x.choice=XChoice::None;x.choices.count=0;x.choice_min=x.choice_max=x.choice_free=0;}
@@ -83,6 +119,8 @@ static bool move_instance(State&s,int id,Pile&from,Pile&to,Zone z){
 }
 bool choose_extended(State&s,const uint16_t*ids,unsigned n){
  auto&x=s.expansion;
+ if(ironclad_choice(x.choice))return choose_ironclad(s,ids,n);
+ if(x.choice==XChoice::SlySkill||x.choice==XChoice::NightmareCard)return silent_choose(s,ids,n);
  if(s.phase!=Phase::ExtendedChoice||x.choice==XChoice::None||n>MaxHand||n<x.choice_min||n>x.choice_max||(n&&!ids))return false;
  // Refuse a continuation that cannot be queued before changing the choice or
  // any pile. Optional exhaust uses the same atomic boundary as legacy Purity.
@@ -96,20 +134,23 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
  XChoice kind=x.choice;bool free=x.choice_free;clear_extended_choice(s);s.phase=Phase::Combat;
  for(unsigned i=0;i<n;i++){
   int id=selected[i];
-  if(kind==XChoice::Offer){id=create_to_hand(s,x.offers[id-MaxCards]);if(id<0)break;if(free)x.turn_cost[id]=1;}
+  if(kind==XChoice::Offer){id=create_to_hand(s,x.offers[id-MaxCards]);if(id<0)break;if(free){x.turn_cost[id]=1;temporary_cost_set(s,id);}}
   else if(kind==XChoice::Draw||kind==XChoice::Discard){
    bool room=s.hand.count<MaxHand;
-   if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&free)x.turn_cost[id]=1;
+   if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&free){x.turn_cost[id]=1;temporary_cost_set(s,id);}
   }else if(kind==XChoice::Top)move_instance(s,id,s.hand,s.draw,Zone::Draw);
-  else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;}
+  else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;combat_cost_set(s,id);}
   else if(kind==XChoice::DiscardRedraw){if(move_instance(s,id,s.hand,s.discard,Zone::Discard))record(s,LogKind::Discard,s.cards[id].kind);}
   else if(kind==XChoice::Transform){
    uint8_t pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(matches_transform(s.cards[id].kind,k))pool[count++]=(uint8_t)k;
-   if(count){s.cards[id]={pool[random_below(s.rng_cards,count)],0};x.turn_cost[id]=x.combat_cost[id]=x.replay[id]=0;x.return_turn[id]=0;x.blade_damage[id]=0;}
+   if(count){s.cards[id]={pool[random_below(s.rng_cards,count)],0};reset_card_modifiers(s,id);}
   }
  }
  if(kind==XChoice::Exhaust)for(unsigned i=n;i>0;i--)enqueue(s,EffectKind::ExhaustCard,selected[i-1],0,true);
- if(kind==XChoice::DiscardRedraw)queue_extension(s,XOp::Draw,(int)n,0,true);
+ if(kind==XChoice::DiscardRedraw){
+  for(unsigned i=n;i>0;i--)silent_card_discarded(s,selected[i-1]);
+  queue_extension(s,XOp::Draw,(int)n,0,true);
+ }
  resolve_pending(s);++s.revision;return true;
 }
 static void offer_cards(State&s,int filter,int flags){
@@ -143,6 +184,7 @@ static void finish_extended_card(State&s){
   if(x.panache_skip[i]){x.panache_skip[i]=0;continue;}
   if(++x.panache_count[i]==5){x.panache_count[i]=0;queue_extension(s,XOp::AllDamage,x.panache[i],0,true);}
  }
+ ironclad_after_card(s,card);silent_after_play(s,s.playing);
 }
 static void after_play(State&s,int id){
  if(id!=s.playing||id<0||id>=s.card_count){fail(s);return;}auto&x=s.expansion;
@@ -150,10 +192,10 @@ static void after_play(State&s,int id){
  // Both generated free cards and randomized costs expire when the complete
  // physical play (including its additional replays) has finished.
  x.turn_cost[id]=0;
- Card card=s.cards[id];auto type=definitions[card.kind].type;bool ex=card_exhausts(card)&&type!=CardType::Power;
+ Card card=s.cards[id];auto type=definitions[card.kind].type;bool ex=(card_exhausts(card)||ironclad_exhausts(s,id))&&type!=CardType::Power;
  if(type==CardType::Power)put(s,s.powers,id,Zone::Power);
  else if(!ex)put(s,x.returning?s.draw:s.discard,id,x.returning?Zone::Draw:Zone::Discard);
- relic_attack_end(s);restore_frame(s);
+ ironclad_after_play_group(s,id);relic_attack_end(s);restore_frame(s);
  if(ex)exhaust_id(s,id);
  if(!alive(s))victory(s);
 }
@@ -161,14 +203,16 @@ static void queue_current(State&s){
  if(s.playing<0||s.playing>=s.card_count){fail(s);return;}
  auto&x=s.expansion;Card c=s.cards[s.playing];const auto&d=definitions[c.kind];int old=s.effect_count;
  x.last_damage=0;
+ ironclad_before_card(s,c);silent_before_play(s,s.playing);
  if(d.type!=CardType::Power)x.nonpower_started=(uint16_t)min(9999,x.nonpower_started+1);
- if(c.kind<Alchemize)queue_legacy(s,c,x.target,x.x);
+ if(queue_ironclad(s,c,x.target,x.x)||queue_silent(s,c,x.target,x.x)){}
+ else if(c.kind<Alchemize)queue_legacy(s,c,x.target,x.x);
  else{
   record(s,LogKind::Play,c.kind,c.upgraded);
   if(d.type==CardType::Attack)relic_attack_begin(s);
-  int hit=card_base_damage(s,c),block=d.block+(c.upgraded?d.block_up:0),power=d.power+(c.upgraded?d.power_up:0),draw=d.draw+(c.upgraded?d.draw_up:0);
+  int hit=card_base_damage(s,c,x.target,s.playing),block=d.block+(c.upgraded?d.block_up:0),power=d.power+(c.upgraded?d.power_up:0),draw=d.draw+(c.upgraded?d.draw_up:0);
   auto op=[&](XOp o,int a=0,int b=0){queue_extension(s,o,a,b);};auto pw=[&](XPower p,int n){op(XOp::Power,(int)p,n);};
-  if(block)enqueue(s,EffectKind::Block,powered_block(s,c,block));
+  if(block)enqueue_card_block(s,powered_block(s,c,block));
   if(d.type==CardType::Attack){
    if(c.kind==DramaticEntrance)for(int i=0;i<s.enemy_count;i++)enqueue(s,EffectKind::Damage,hit,i);
    else if(c.kind==Volley)op(XOp::RandomHits,hit,x.x);
@@ -239,13 +283,14 @@ static void queue_current(State&s){
 static bool start_instance(State&s,int id,int target,bool automatic){
  if(id<0||id>=s.card_count||!alive(s)||s.hp<=0)return false;
  Card c=s.cards[id];if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];auto&x=s.expansion;
- if(d.targeted&&(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)){
+ if(cost(c)<-1||(!automatic&&!silent_can_play(s,c)))return false;
+ if(card_targets_enemy(s,c)&&(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)){
   if(!automatic)return false;int ids[MaxEnemies],n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)ids[n++]=i;
   if(!n)return false;target=ids[random_below(s.rng_cards,n)];
  }
  int price=cost(s,id),spent=automatic?0:price<0?s.energy:price;
  if(spent>s.energy)return false;
- Zone z=s.zones[id];Pile*source=z==Zone::Hand?&s.hand:z==Zone::Draw?&s.draw:z==Zone::Discard?&s.discard:nullptr;
+ Zone z=s.zones[id];Pile*source=z==Zone::Hand?&s.hand:z==Zone::Draw?&s.draw:z==Zone::Discard?&s.discard:(automatic&&z==Zone::Exhaust)?&s.exhaust:nullptr;
  bool reserved=automatic&&z==Zone::Limbo;
  if(reserved){if(s.playing==id)return false;for(unsigned i=0;i<x.depth;i++)if(x.frames[i].playing==id)return false;}
  if(!source&&!reserved)return false;int at=-1;
@@ -258,7 +303,15 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  s.attack_vigor=0;s.double_attack=0;x.triple=0;
  x.returning=d.type!=CardType::Power&&x.nonpower_started<power_value(s,XPower::Nostalgia);
  if(power_value(s,XPower::Duplicator)){++x.remaining;gain_power(s,XPower::Duplicator,-1);}
+ x.remaining=(uint16_t)min(9999,x.remaining+ironclad_replays(s,c)+silent_extra_replays(s,c));
  queue_current(s);return true;
+}
+bool can_play_card(const State&s,int id){
+ if(s.phase!=Phase::Combat||s.effect_count||s.playing>=0||id<0||id>=s.card_count||s.zones[id]!=Zone::Hand)return false;
+ Card c=s.cards[id];return c.kind<CardKinds&&cost(c)>=-1&&cost(s,id)<=s.energy&&silent_can_play(s,c);
+}
+bool card_targets_enemy(const State&s,Card c){
+ return c.kind<CardKinds&&silent_card_targets_enemy(s,c);
 }
 static void draw_hook(State&s){
  auto&x=s.expansion;
@@ -273,6 +326,7 @@ static void draw_one(State&s,int n){
  if(!s.draw.count){if(!s.discard.count)return;queue_extension(s,XOp::DrawOne,n,0,true);shuffle(s);return;}
  if(n>1)queue_extension(s,XOp::DrawOne,n-1,0,true);
  int id=remove(s.draw,s.draw.count-1);put(s,s.hand,id,Zone::Hand);s.expansion.last_drawn=(int16_t)id;record(s,LogKind::Draw,1);draw_hook(s);
+ ironclad_after_draw(s,id);silent_card_drawn(s,id);
 }
 void resolve_pending(State&s){resolve(s);if(!resolving&&s.phase==Phase::Combat&&s.playing<0&&!s.effect_count&&!s.expansion.depth)finish_combat_if_won(s);}
 bool lab_potion(State&s,Potion p){

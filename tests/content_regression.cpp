@@ -10,9 +10,11 @@ static void put(std::vector<uint8_t>&b,size_t p,uint32_t n,unsigned width=4){for
 static void hash(std::vector<uint8_t>&b){uint32_t h=2166136261u;for(size_t i=40;i<b.size();i++){h^=b[i];h*=16777619u;}put(b,36,h);}
 // Generated synthetic parser fixtures; historical save fixture bytes are
 // unrelated and are never rewritten when a content profile changes.
-static std::vector<uint8_t> pack(unsigned version=11){
-    const unsigned images=A_Count+160,strings=version==11?407:EventTextEnd,clips=AnimationKinds,cards=version==11?CardKinds:68;
-    const unsigned ui_count=version==11?U_Count:version==10?105:90;
+constexpr unsigned minimum_images=CardKinds>A_Count+160?CardKinds:A_Count+160;
+constexpr unsigned fixture_images=minimum_images>U_Count?minimum_images:U_Count;
+static std::vector<uint8_t> pack(unsigned version=ContentVersion){
+    const unsigned images=fixture_images,strings=version==12?ContentStrings:version==11?407:EventTextEnd,clips=AnimationKinds,cards=version==12?CardKinds:version==11?114:68;
+    const unsigned ui_count=version==12?U_Count:version==11?185:version==10?105:90;
     const unsigned dir=40+images*16+strings*8+clips*16+cards*16+ui_count*4;
     std::vector<uint8_t>b(dir+images*82*60*2+strings*2);
     put(b,0,0x3250534e);put(b,4,version);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
@@ -35,9 +37,9 @@ int main(int argc,char**argv){
     auto original=pack();Content c;CHECK(c.open(original.data(),original.size()));CHECK(c.card_count()==CardKinds);CHECK(c.current_profile());
     for(int i=0;i<CardKinds;i++){CHECK(c.card_image(i)==i);CHECK(!std::strcmp(c.card_string(i),"X"));}
     CHECK(c.card_image(-1)==-1&&c.card_image(CardKinds)==-1);CHECK(!*c.card_string(CardKinds));
-    constexpr unsigned carddir=40+(A_Count+160)*16+407*8+AnimationKinds*16;
+    constexpr unsigned carddir=40+fixture_images*16+ContentStrings*8+AnimationKinds*16;
     auto b=original;put(b,carddir+23*16,9999);hash(b);CHECK(!c.open(b.data(),b.size()));
-    b=original;put(b,carddir+3*4,407);hash(b);CHECK(!c.open(b.data(),b.size()));
+    b=original;put(b,carddir+3*4,ContentStrings);hash(b);CHECK(!c.open(b.data(),b.size()));
     b=original;put(b,32,25);hash(b);CHECK(!c.open(b.data(),b.size()));
     b=original;b.back()^=1;CHECK(!c.open(b.data(),b.size()));
     CHECK(!c.open(nullptr,0));CHECK(c.card_count()==0);
@@ -45,10 +47,14 @@ int main(int argc,char**argv){
     // Card count alone cannot identify the new relic-art directory. A valid
     // older profile stays readable by Content but must not boot this App.
     static App legacy;
-    for(unsigned version:{8u,10u}){
-        b=pack(version);CHECK(c.open(b.data(),b.size()));CHECK(c.card_count()==68);
+    for(unsigned version:{8u,10u,11u}){
+        b=pack(version);CHECK(c.open(b.data(),b.size()));CHECK(c.card_count()==(version==11?114u:68u));
         CHECK(!c.current_profile());CHECK(!legacy.init(b.data(),b.size(),{}));
     }
+    // The immutable v11 directories must not expand when the current registry
+    // does. Merely relabeling either version leaves an incompatible pack.
+    b=original;put(b,4,11);hash(b);CHECK(!c.open(b.data(),b.size()));
+    b=pack(11);put(b,4,12);hash(b);CHECK(!c.open(b.data(),b.size()));
     if(argc>1){
         FILE*f=std::fopen(argv[1],"rb");CHECK(f);std::vector<uint8_t> data(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);
         CHECK(c.open(data.data(),n));

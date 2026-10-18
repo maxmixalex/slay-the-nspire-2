@@ -1,5 +1,6 @@
 void enter_combat(State&s){
     s.expansion=ExpansionState{};
+    s.ironclad=IroncladState{};silent_combat_start(s);
     s.relic_flash=0;relic_reset_turn_counters(s);
     s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;s.no_draw=0;s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
     s.noxious_fumes=s.accuracy=s.discard_required=0;
@@ -35,8 +36,10 @@ void new_run(State&s,uint32_t seed,bool practice,Character character){
     s.hp=s.max_hp=(int16_t)character_definitions[(unsigned)character].starting_hp;
     s.potion_chance=40;s.floor=1;s.practice=practice;s.playing=-1;s.gold=99;s.current_node=-1;s.event_first=-1;
     if(practice){
-        for(unsigned i=0;i<CardKinds;i++)if(card_in_pool(i,character)||card_colorless(i))
+        for(unsigned i=0;i<CardKinds;i++)if(card_in_pool(i,character)||card_colorless(i)){
+            if(s.deck_count==MaxDeck){fail(s);return;}
             s.deck[s.deck_count++]={(uint8_t)i,(uint8_t)(i==DarkEmbrace||i==TrueGrit)};
+        }
     }else if(character==Character::Silent){
         for(int i=0;i<5;i++)s.deck[s.deck_count++]={StrikeSilent,0};
         for(int i=0;i<5;i++)s.deck[s.deck_count++]={DefendSilent,0};
@@ -51,7 +54,7 @@ void new_run(State&s,uint32_t seed,bool practice,Character character){
 }
 static void queue_legacy(State&s,Card c,int target,int energy){
     const Definition&d=definitions[c.kind];
-    int hit=card_base_damage(s,c),block=d.block+(c.upgraded?d.block_up:0),cards=d.draw+(c.upgraded?d.draw_up:0),power=d.power+(c.upgraded?d.power_up:0);
+    int hit=card_base_damage(s,c,target,s.playing),block=d.block+(c.upgraded?d.block_up:0),cards=d.draw+(c.upgraded?d.draw_up:0),power=d.power+(c.upgraded?d.power_up:0);
     if(d.type==CardType::Attack)relic_attack_begin(s);
     if(block)block=powered_block(s,c,block);
     record(s,LogKind::Play,c.kind,c.upgraded);
@@ -60,7 +63,7 @@ static void queue_legacy(State&s,Card c,int target,int energy){
     if(c.kind==LegSweep)enqueue(s,EffectKind::Weak,power,target);
     if(c.kind==DodgeAndRoll)enqueue(s,EffectKind::DodgeBlock,block);
     else if(c.kind==EscapePlan)enqueue(s,EffectKind::EscapeSkillBlock,block);
-    else if(block)enqueue(s,EffectKind::Block,block);
+    else if(block)enqueue_card_block(s,block);
     if(c.kind==FlameBarrier)s.flame_barrier=(int16_t)min(9999,s.flame_barrier+power);
     if(c.kind==DemonForm)enqueue(s,EffectKind::Demon,power);
     if(c.kind==InfiniteBlades)enqueue(s,EffectKind::Blades,1);
@@ -114,7 +117,7 @@ bool play(State&s,int h,int target){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1||h<0||h>=s.hand.count)return false;
     int id=s.hand.ids[h];if(id>=s.card_count||s.cards[id].kind>=CardKinds){fail(s);return false;}
     Card c=s.cards[id];const auto&d=definitions[c.kind];int price=cost(s,id);
-    if(price>s.energy||(d.targeted&&(target<0||target>=s.enemy_count||!s.enemies[target].hp)))return false;
+    if(price>s.energy||(card_targets_enemy(s,c)&&(target<0||target>=s.enemy_count||!s.enemies[target].hp)))return false;
     if((c.kind==Anger&&s.card_count==MaxCards)||s.card_count+d.creates+(c.upgraded?d.creates_up:0)>MaxCards){fail(s);return false;}
     s.relic_flash=0;if(!start_instance(s,id,target,false))return false;
     resolve_pending(s);++s.revision;return true;
@@ -128,14 +131,17 @@ bool choose_discard(State&s,const uint16_t* ids,unsigned count){
     if(s.phase!=Phase::DiscardChoice||!ids||count!=s.discard_required||!count||count>MaxHand)return false;
     // Validate the entire choice before moving any instance; invalid requests
     // cannot partially discard cards or consume RNG.
+    uint16_t selected[MaxHand];
     for(unsigned i=0;i<count;i++){
         bool in_hand=false;for(unsigned j=0;j<s.hand.count;j++)if(s.hand.ids[j]==ids[i])in_hand=true;
         if(!in_hand)return false;
         for(unsigned j=0;j<i;j++)if(ids[i]==ids[j])return false;
+        selected[i]=ids[i];
     }
-    for(unsigned i=0;i<count;i++)for(int j=0;j<s.hand.count;j++)if(s.hand.ids[j]==ids[i]){
+    for(unsigned i=0;i<count;i++)for(int j=0;j<s.hand.count;j++)if(s.hand.ids[j]==selected[i]){
         int id=remove(s.hand,j);put(s,s.discard,id,Zone::Discard);record(s,LogKind::Discard,s.cards[id].kind);break;
     }
+    for(unsigned i=count;i>0;i--)silent_card_discarded(s,selected[i-1]);
     s.discard_required=0;s.phase=Phase::Combat;resolve(s);s.revision++;return true;
 }
 unsigned choice_min(const State&s){
@@ -168,6 +174,7 @@ bool end_turn(State&s){
 bool choose_reward(State&s,int index){
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>2)return false;
     if(index>=0){if(s.deck_count==MaxDeck){fail(s);return false;}s.deck[s.deck_count++]={s.reward[index],0};record(s,LogKind::Reward,s.reward[index]);}
+    if(silent_next_reward(s)){s.revision++;return true;}
     s.reward_claimed|=2;s.revision++;return true;
 }
 bool camp(State&s,bool upgrading){

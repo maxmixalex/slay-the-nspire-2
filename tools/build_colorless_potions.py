@@ -61,6 +61,7 @@ def localized(text:str,key:str,upgraded:bool,keywords:int)->str:
 def build(game:Path,source:Path,output:Path,font_path:Path)->dict:
     verify_release(game)
     old=PackData(source.read_bytes())
+    if old.version not in (10,11):raise ValueError('Colorless conversion requires NSP2/10 or NSP2/11; character packs must use build_characters.py')
     # Repeated conversion uses the exact old prefix, not a growing duplicate tail.
     rows,potions=models();pack=PackData(source.read_bytes())
     retained_images=old.images[:];retained_glyphs=old.glyphs.copy();retained_clips=old.clips

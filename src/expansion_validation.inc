@@ -34,7 +34,10 @@ static bool validate_extension(const State&s){
   for(unsigned i=0;i<x.choices.count;i++){
    int id=x.choices.ids[i];for(unsigned j=0;j<i;j++)if(id==x.choices.ids[j])return false;
    if(x.choice==XChoice::Offer){if(id<MaxCards||id>=MaxCards+3||x.offers[id-MaxCards].kind>=CardKinds||x.offers[id-MaxCards].upgraded>1)return false;}
-   else {if(id<0||id>=s.card_count)return false;Zone z=x.choice==XChoice::Draw?Zone::Draw:x.choice==XChoice::Discard?Zone::Discard:Zone::Hand;if(s.zones[id]!=z)return false;}
+   else {if(id<0||id>=s.card_count)return false;
+    // Each character module validates its own choice source and operands.
+    if((unsigned)x.choice>(unsigned)XChoice::Transform)continue;
+    Zone z=x.choice==XChoice::Draw?Zone::Draw:x.choice==XChoice::Discard?Zone::Discard:Zone::Hand;if(s.zones[id]!=z)return false;}
   }
  }else if(x.choice!=XChoice::None||x.choices.count||x.choice_min||x.choice_max||x.choice_free)return false;
  if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(x.depth||x.potion_active))return false;

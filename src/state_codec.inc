@@ -85,18 +85,37 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
   for(const auto&node:s.map)if(node.event>=3)c.good=false;
  }
 #include "expansion_codec.inc"
+ if(version>=13){
+#include "ironclad_codec.inc"
+#include "silent_codec.inc"
+ }else if(c.in){
+  // Old formats cannot carry the newly appended models, module operations or
+  // selections. Keep their original directory/capacity limits explicit.
+  if(s.deck_count>128)c.good=false;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=114)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=114)c.good=false;
+  for(auto k:s.shop_cards)if(k>=114)c.good=false;
+  for(auto k:s.reward)if(k>=114)c.good=false;
+  for(auto card:s.expansion.offers)if(card.kind>=114)c.good=false;
+  if((unsigned)s.expansion.choice>(unsigned)XChoice::Transform)c.good=false;
+  for(unsigned i=0;i<s.effect_count;i++){
+   const auto&e=s.effects[i];
+   if((e.kind==EffectKind::Extended&&e.target>(int)XOp::TurnRelics)||
+      (e.kind!=EffectKind::Extended&&e.aux))c.good=false;
+  }
+ }
 #undef F
 }
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
-    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(12);c.field(0x41CEF1EA);code_state(copy,c,12);
+    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
     uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(!data||len<16||len>sizeof(SaveData::bytes)||len%4)return false;
     Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
     const unsigned version=c.field(0);
-    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10&&version!=11&&version!=12)||c.field(0)!=0x41CEF1EA)return false;
+    if((version<3||version>SaveVersion)||c.field(0)!=0x41CEF1EA)return false;
     State tmp{};code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
     s=tmp;return true;

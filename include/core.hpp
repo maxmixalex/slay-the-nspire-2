@@ -3,7 +3,8 @@
 #include <stddef.h>
 
 namespace spire {
-constexpr int IroncladCards=29, SilentCards=29, CardKinds=114, MaxCards=512, MaxDeck=128, MaxHand=10, MaxEnemies=2, MaxEffects=512;
+constexpr int IroncladCards=85, SilentCards=86, CardKinds=228, MaxCards=512, MaxDeck=192, MaxHand=10, MaxEnemies=2, MaxEffects=512;
+static_assert(CardKinds<=256,"Expand serialized card model IDs before exceeding uint8_t");
 constexpr int MapRows=12, MapColumns=3, MapNodes=MapRows*MapColumns;
 enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
     TrueGrit, TwinStrike, Inflame, IronWave, Whirlwind, FeelNoPain, DarkEmbrace,
@@ -15,7 +16,27 @@ enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, B
     Prepared, Slice, Deflect, SuckerPunch, Adrenaline, Accuracy, LeadingStrike, Shiv, Impatience, MasterOfStrategy, Shockwave, Scrawl, Purity, HandOfGreed, PanicButton,
     Headbutt, SwordBoomerang, PerfectedStrike, FlameBarrier, DemonForm,
     DodgeAndRoll, InfiniteBlades, Backstab, EscapePlan, Predator,
-    Alchemize, Anointed, Automation, BeatDown, Bolas, Calamity, Catastrophe, DarkShackles, Discovery, DramaticEntrance, Entropy, Equilibrium, EternalArmor, Fasten, Fisticuffs, GoldAxe, HiddenGem, JackOfAllTrades, Jackpot, Mayhem, MindBlast, Nostalgia, Omnislice, Panache, PrepTime, Production, Prolong, Prowess, Rend, Restlessness, RollingBoulder, Salvo, SecretTechnique, SecretWeapon, SeekerStrike, Splash, Stratagem, TheBomb, TheGambit, ThinkingAhead, ThrummingHatchet, UltimateDefend, UltimateStrike, Volley, Soul, SovereignBlade };
+    Alchemize, Anointed, Automation, BeatDown, Bolas, Calamity, Catastrophe, DarkShackles, Discovery, DramaticEntrance, Entropy, Equilibrium, EternalArmor, Fasten, Fisticuffs, GoldAxe, HiddenGem, JackOfAllTrades, Jackpot, Mayhem, MindBlast, Nostalgia, Omnislice, Panache, PrepTime, Production, Prolong, Prowess, Rend, Restlessness, RollingBoulder, Salvo, SecretTechnique, SecretWeapon, SeekerStrike, Splash, Stratagem, TheBomb, TheGambit, ThinkingAhead, ThrummingHatchet, UltimateDefend, UltimateStrike, Volley, Soul, SovereignBlade,
+    // Append-only NSP2/12 IDs; the v3-v12 save/model prefix remains unchanged.
+    Aggression, Armaments, AshenStrike, Barricade, BloodWall, Brand, Break,
+    Breakthrough, Bully, Cascade, Cinder, Colossus, Conflagration, Corruption,
+    CrimsonMantle, Cruelty, Dismantle, Dominate, DrumOfBattle, EvilEye,
+    ExpectAFight, Feed, FightMe, ForgottenRitual, Havoc, Hellraiser,
+    HowlFromBeyond, InfernalBlade, Inferno, Juggernaut, Juggling, Mangle,
+    MoltenFist, NotYet, OneTwoPunch, PactsEnd, Pillage, PrimalForce, Pyre, Rage,
+    Rampage, Rupture, SecondWind, SetupStrike, Spite, Stampede, Stoke, Stomp,
+    StoneArmor, Taunt, TearAsunder, Thrash, Tremble, Unmovable, Unrelenting, Vicious,
+    Abrasive, Accelerant, Afterimage, Anticipate, Assassinate, BladeOfInk, Blur,
+    BubbleBubble, BulletTime, Burst, CalculatedGamble, CorrosiveWave,
+    EchoingSlash, Envenom, Expertise, Expose, FanOfKnives, Finisher,
+    Flechettes, FlickFlack, Sidestep, GrandFinale, HandTrick, Haze,
+    HiddenDaggers, KnifeTrap, Malaise, MasterPlanner, MementoMori, Mirage,
+    Murder, Nightmare, Outbreak, PhantomBlades, PiercingWail, Pinpoint,
+    Pounce, PreciseCut, Reflex, Ricochet, SerpentForm, ShadowStep, Shadowmeld,
+    Skewer, Snakebite, Speedster, StormOfSteel, Strangle, Suppress, Tactician,
+    TheHunt, ToolsOfTheTrade, Tracking, Untouchable, UpMySleeve,
+    WellLaidPlans, WraithForm, GiantRock };
+static_assert(Aggression==114&&Abrasive==170&&GiantRock==227&&GiantRock+1==CardKinds,"Keep appended character IDs stable");
 enum class Character : uint8_t { Ironclad, Silent };
 enum class CardColor : uint8_t { Ironclad, Silent, Colorless, Token };
 constexpr int CharacterKinds=2;
@@ -25,7 +46,7 @@ CardColor card_color(unsigned kind);
 bool card_generated(unsigned kind);
 bool card_in_pool(unsigned kind, Character);
 unsigned character_pool(Character, uint8_t* out, bool rewards_only=false);
-enum class CardType : uint8_t { Attack, Skill, Power };
+enum class CardType : uint8_t { Attack, Skill, Power, Status, Curse };
 struct Definition { const char* key; int8_t cost, damage, block, draw, power;
     int8_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted;
     int8_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; int8_t creates=0, creates_up=0; int8_t cost_up=0; uint8_t keywords=0,upgraded_keywords=0; };
@@ -72,6 +93,8 @@ extern const RelicDefinition relic_definitions[RelicKinds];
 const RelicDefinition* relic_definition(unsigned);
 
 #include "expansion_state.inc"
+#include "ironclad_state.inc"
+#include "silent_state.inc"
 
 struct State {
     Phase phase;
@@ -117,13 +140,18 @@ struct State {
     uint32_t treasure_relic; // Zero means the exhausted prototype pool offers 50 gold.
     EventDeckAction event_deck_action; // v10: event choices must never use shop/camp completion.
     ExpansionState expansion;
+    IroncladState ironclad;
+    SilentState silent;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
+constexpr unsigned SaveVersion=13;
 struct SaveData { uint8_t bytes[65536]; size_t size; };
 void new_run(State&, uint32_t seed, bool practice=false, Character character=Character::Ironclad);
 void enter_combat(State&);
 bool play(State&, int hand_index, int target);
+bool can_play_card(const State&,int instance);
+bool card_targets_enemy(const State&,Card);
 bool choose_exhaust(State&, int hand_index);
 bool choose_discard(State&, const uint16_t* card_ids, unsigned count);
 bool choose_exhaust_many(State&, const uint16_t* card_ids, unsigned count);
@@ -143,7 +171,7 @@ bool camp(State&, bool upgrade);
 bool upgrade_card(State&, int deck_index);
 int cost(Card);
 int card_rarity(unsigned kind); // 2 common, 3 uncommon, 4 rare in the pinned registry.
-int card_base_damage(const State&,Card);
+int card_base_damage(const State&,Card,int target=-1,int instance=-1);
 int damage(const State&, Card, int target, int instance=-1);
 int enemy_damage(const Enemy&);
 bool validate(const State&);
@@ -202,12 +230,20 @@ int power_value(const State&,XPower);
 void gain_power(State&,XPower,int);
 void queue_extension(State&,XOp,int a=0,int b=0,bool first=false);
 int cost(const State&,int card_id);
+int card_preview_cost(const State&,Card,int instance);
 bool card_exhausts(Card);
 bool card_can_generate(unsigned);
 Card choice_card(const State&,int token);
 bool choose_extended(State&,const uint16_t*,unsigned);
 void resolve_pending(State&);
-void player_hp_loss(State&,int,bool attack,bool blockable);
+// card_source=-2 uses the active card for non-attack losses; -1 explicitly
+// identifies a power, potion or enemy source for damage-history hooks.
+void player_hp_loss(State&,int,bool attack,bool blockable,int card_source=-2);
+void gain_unpowered_block(State&,int);
+void apply_vulnerable(State&,int target,int amount);
+void apply_weak(State&,int target,int amount);
+void apply_poison(State&,int target,int amount);
+bool character_description_value(const State&,Card,int target,int instance,const char* variable,int& out);
 int enemy_damage(const State&,int);
 bool potion_in_pool(Potion,Character);
 Potion random_potion(State&,bool in_combat=false);

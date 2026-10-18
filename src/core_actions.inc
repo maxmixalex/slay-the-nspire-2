@@ -20,7 +20,8 @@ static bool put(State&s,Pile&p,int id,Zone z){
 }
 static int make_card(State&s,Card c){
     if(s.card_count==MaxCards){fail(s);return -1;}
-    int id=s.card_count++;s.cards[id]=c;return id;
+    int id=s.card_count++;s.cards[id]=c;
+    ironclad_card_created(s,id);silent_card_created(s,id);return id;
 }
 static void shuffle(State&s){
     while(s.discard.count){int id=remove(s.discard,s.discard.count-1);put(s,s.draw,id,Zone::Draw);}
@@ -36,7 +37,8 @@ bool card_retains(Card c){return c.kind<CardKinds&&(((c.upgraded?definitions[c.k
 bool card_innate(Card c){return c.kind<CardKinds&&(((c.upgraded?definitions[c.kind].upgraded_keywords:definitions[c.kind].keywords)&2)||c.kind==Backstab||(c.kind==InfiniteBlades&&c.upgraded));}
 bool card_strike_tag(unsigned kind){
     return kind==Strike||kind==StrikeSilent||kind==PommelStrike||kind==TwinStrike||
-           kind==LeadingStrike||kind==PerfectedStrike||kind==UltimateStrike||kind==SeekerStrike;
+           kind==LeadingStrike||kind==PerfectedStrike||kind==UltimateStrike||kind==SeekerStrike||
+           kind==AshenStrike||kind==SetupStrike;
 }
 const Pile& choice_pile(const State&s){return s.phase==Phase::ExtendedChoice?s.expansion.choices:s.phase==Phase::ReturnChoice?s.discard:s.hand;}
 // First-turn innate cards are placed above the shuffled ordinary cards. They
@@ -49,7 +51,7 @@ static int prioritize_innate(State&s){
     return (int)innate;
 }
 int cost(Card c){if(c.kind>=CardKinds)return 99;return definitions[c.kind].cost+(c.upgraded?definitions[c.kind].cost_up:0)-((c.kind==DarkEmbrace||c.kind==BodySlam)&&c.upgraded?1:0);}
-int card_base_damage(const State&s,Card c){
+int card_base_damage(const State&s,Card c,int target,int instance){
     if(c.kind>=CardKinds)return 0;
     if(c.kind==BodySlam)return s.block;
     if(c.kind==GoldAxe)return s.expansion.cards_finished;
@@ -63,12 +65,14 @@ int card_base_damage(const State&s,Card c){
         int count=0;for(unsigned i=0;i<s.card_count;i++)if(card_strike_tag(s.cards[i].kind))++count;
         return 6+count*(c.upgraded?3:2);
     }
-    if(c.kind==Shiv)return definitions[Shiv].damage+(c.upgraded?definitions[Shiv].damage_up:0)+s.accuracy;
-    return definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
+    int base=definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
+    if(c.kind==Shiv)base+=s.accuracy;
+    base=ironclad_base_damage(s,c,target,instance,base);
+    return silent_base_damage(s,c,target,instance,base);
 }
 int damage(const State&s,Card c,int t,int instance){
     if(c.kind>=CardKinds)return 0;
-    int d=card_base_damage(s,c);
+    int d=card_base_damage(s,c,t,instance);
     if(c.kind==SovereignBlade&&instance>=0&&instance<s.card_count&&s.cards[instance].kind==SovereignBlade)
         d=max(10,s.expansion.blade_damage[instance]);
     if(c.kind==Rend&&t>=0&&t<s.enemy_count){
@@ -77,9 +81,11 @@ int damage(const State&s,Card c,int t,int instance){
         d+=debuffs*(definitions[c.kind].power+(c.upgraded?definitions[c.kind].power_up:0));
     }
     if(d<=0&&definitions[c.kind].type!=CardType::Attack)return 0;
-    d=max(0,d+s.strength+(s.attack_vigor?s.attack_vigor:s.vigor));
-    d*=relic_attack_multiplier(s,true);
-    if(t>=0&&t<s.enemy_count&&s.enemies[t].vulnerable>0)d=d*3/2;
+    bool active=s.playing>=0&&instance==s.playing;
+    d=max(0,d+s.strength+(active&&s.attack_vigor?s.attack_vigor:s.vigor));
+    if(active)d*=(s.double_attack?2:1)*((s.expansion.triple||power_value(s,XPower::Gigantic))?3:1);
+    else d*=((s.relics&PenNib)&&relic_counter(s,PenNib)==9?2:1)*(power_value(s,XPower::Gigantic)?3:1);
+    d=silent_attack_factor(s,t,d);
     return d;
 }
 int enemy_damage(const Enemy&e){
@@ -98,9 +104,10 @@ static void victory(State&s){
     award_victory(s);
     // A lethal nested autoplay cannot leave its caller orphaned in Limbo.
     for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){
-        Card c=s.cards[id];Zone z=definitions[c.kind].type==CardType::Power?Zone::Power:card_exhausts(c)?Zone::Exhaust:Zone::Discard;
+        Card c=s.cards[id];Zone z=definitions[c.kind].type==CardType::Power?Zone::Power:(card_exhausts(c)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
         put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
     }
+    ironclad_combat_end(s);silent_combat_end(s);
     s.effect_count=0;s.playing=-1;s.expansion.depth=0;s.expansion.potion_active=0;s.expansion.enemy_side=0;
     s.discard_required=s.exhaust_limit=0;clear_extended_choice(s);relic_attack_end(s);s.expansion.triple=0;
     // Bounded prototype reward pool, not the original game's rarity/odds system.
@@ -114,6 +121,7 @@ static void victory(State&s){
 static void exhaust_id(State&s,int id){
     put(s,s.exhaust,id,Zone::Exhaust);
     record(s,LogKind::Exhaust,s.cards[id].kind);
+    ironclad_after_exhaust(s,id);
     // Exhaust hooks run before the suspended card's remaining commands.
     // A power card is removed from combat when played, not exhausted.
     for(int i=s.power_count-1;i>=0;i--){
@@ -122,8 +130,21 @@ static void exhaust_id(State&s,int id){
     }
 }
 static void exhaust(State&s,int index){exhaust_id(s,remove(s.hand,index));}
-static void apply_poison(State&s,int target,int count){
-    if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)return;
+void apply_vulnerable(State&s,int target,int count){
+    if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
+    if(silent_blocks_debuff(s,target))return;
+    auto&e=s.enemies[target];int added=min(9999-e.vulnerable,count);
+    e.vulnerable+=(int16_t)added;ironclad_after_vulnerable(s,target,added);
+}
+void apply_weak(State&s,int target,int count){
+    if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
+    if(silent_blocks_debuff(s,target))return;
+    auto&e=s.enemies[target];int added=min(9999-e.weak,count);e.weak+=(int16_t)added;
+    record(s,LogKind::Weak,added,target);
+}
+void apply_poison(State&s,int target,int count){
+    if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
+    if(silent_blocks_debuff(s,target))return;
     auto&e=s.enemies[target];e.poison=(int16_t)min(9999,e.poison+count);
     record(s,LogKind::Poison,count,target);
 }
@@ -154,9 +175,9 @@ static void resolve(State&s){
         case EffectKind::Demon:s.demon_form=(int16_t)min(9999,s.demon_form+e.value);break;
         case EffectKind::Blades:s.infinite_blades=(int16_t)min(MaxCards,s.infinite_blades+e.value);break;
         case EffectKind::DodgeBlock:{
-            int gained=min(9999-s.block,e.value);s.block+=(int16_t)gained;
+            int before=s.block;gain_card_block(s,e.value);int gained=s.block-before;
             s.block_next_turn=(int16_t)min(9999,s.block_next_turn+gained);
-            record(s,LogKind::Block,gained);break;}
+            break;}
         case EffectKind::DrawNextTurn:s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+e.value);break;
         case EffectKind::EscapeSkillBlock:
             s.expansion.last_drawn=-1;
@@ -167,27 +188,27 @@ static void resolve(State&s){
                 auto& t=s.enemies[e.target];if(!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
                 if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
                 int amount=max(0,e.value+s.strength+s.attack_vigor)*relic_attack_multiplier(s);
-                if(t.vulnerable)amount=amount*3/2;
+                amount=silent_attack_factor(s,e.target,amount);
                 int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
                 // Fisticuffs and Omnislice use TotalDamage + OverkillDamage.
                 // Their follow-up keeps damage beyond the target's remaining HP.
                 s.expansion.last_damage=(int16_t)min(9999,amount);
                 record(s,LogKind::Damage,amount,e.target);
+                silent_attack_damage(s,e.target,amount-absorb);
                 if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];
                     gain_gold(s,d.power+(card.upgraded?d.power_up:0));
                 }
+                if(!t.hp)silent_attack_killed(s,e.target);
             }break;
-        case EffectKind::Block:s.block=min(9999,s.block+e.value);record(s,LogKind::Block,e.value);break;
+        case EffectKind::Block:
+            if(e.aux==1)gain_card_block(s,e.value);else gain_unpowered_block(s,e.value);
+            break;
         case EffectKind::Vulnerable:
-            if(e.target>=0&&e.target<s.enemy_count&&s.enemies[e.target].hp>0)
-                s.enemies[e.target].vulnerable=min(9999,s.enemies[e.target].vulnerable+e.value);
+            apply_vulnerable(s,e.target,e.value);
             break;
         case EffectKind::Weak:
-            if(e.target>=0&&e.target<s.enemy_count&&s.enemies[e.target].hp>0){
-                s.enemies[e.target].weak=min(9999,s.enemies[e.target].weak+e.value);
-                record(s,LogKind::Weak,e.value,e.target);
-            }break;
+            apply_weak(s,e.target,e.value);break;
         case EffectKind::Poison:apply_poison(s,e.target,e.value);break;
         case EffectKind::RandomPoison:{
             int targets[MaxEnemies],count=0;
@@ -230,7 +251,7 @@ static void resolve(State&s){
         case EffectKind::Draw:draw_cards(s,e.value);break;
         case EffectKind::ChooseExhaust:if(s.hand.count)s.phase=Phase::ExhaustChoice;break;
         case EffectKind::RandomExhaust:if(s.hand.count)exhaust(s,(int)random_below(s.rng_cards,s.hand.count));break;
-        case EffectKind::CopyDiscard:{int id=make_card(s,s.cards[s.playing]);if(id>=0)put(s,s.discard,id,Zone::Discard);}break;
+        case EffectKind::CopyDiscard:{int id=make_card(s,s.cards[s.playing]);if(id>=0){copy_card_modifiers(s,id,s.playing);put(s,s.discard,id,Zone::Discard);}}break;
         case EffectKind::Strength:s.strength=min(9999,s.strength+e.value);record(s,LogKind::Strength,e.value);break;
         case EffectKind::Pain:
             if(!s.pain&&s.power_count<2)s.power_order[s.power_count++]=0;

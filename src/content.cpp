@@ -37,13 +37,15 @@ bool valid_image(const uint8_t* p,unsigned len,unsigned w,unsigned h,unsigned fm
 }
 }
 bool Content::open(const uint8_t*p,size_t n){
-    data_=nullptr;cards_=0;ui_offset_=ui_count_=0;cached_large=cached_small=nullptr;
+    data_=nullptr;version_=cards_=0;ui_offset_=ui_count_=0;cached_large=cached_small=nullptr;
     if(!p||n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n)return false;
     const uint32_t version=u32(p+4),cards=u32(p+32);
-    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10&&version!=11)||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=CardKinds))return false;
+    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10&&version!=11&&version!=12)||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=CardKinds))return false;
     auto ni=u32(p+16),ng=u32(p+20),ns=u32(p+24),nc=u32(p+28);
     if(ni<A_Count||ni>8192||ng>8192||ns<66||ns>2048||nc!=(version>=6?AnimationKinds:11))return false;
-    uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+(version>=5?(version>=11?U_Count:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:56)*4:0);if(start>n)return false;
+    if((version==11&&ns!=407)||(version==12&&ns!=ContentStrings))return false;
+    const unsigned auxiliary=version==12?U_Count:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+    uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;if(start>n)return false;
     uint32_t hash=2166136261u;for(size_t i=40;i<n;i++){hash^=p[i];hash*=16777619u;}if(hash!=u32(p+36))return false;
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),h=u16(r+6),fmt=u32(r+8),len=u32(r+12);
@@ -79,13 +81,13 @@ bool Content::open(const uint8_t*p,size_t n){
         if(u16(im+4)!=(version>=5?82:41)||u16(im+6)!=(version>=5?60:30))return false;
     }
     if(version>=5){
-        ui_count_=version>=11?U_Count:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:56;
+        ui_count_=auxiliary;
         ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
         for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni){ui_offset_=0;return false;}
         if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return false;
     }
     cards_=version>=4?cards:14;
-    data_=p;length_=(uint32_t)n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;return true;
+    data_=p;version_=version;length_=(uint32_t)n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;return true;
 }
 Picture Content::image(int id)const{
     if(!data_||id<0||(unsigned)id>=images_)return {nullptr,nullptr,nullptr,0,0,0};
@@ -135,14 +137,21 @@ int Content::frame_image(Card card)const{
     if(card.kind==SovereignBlade)return ui_image(U_BladeFrame);
     if(card.kind>=CardKinds)return -1;
     const int type=(int)definitions[card.kind].type;
-    int base=card_color(card.kind)==CardColor::Silent?U_GreenAttack:card_colorless(card.kind)?U_ColorlessAttack:U_RedAttack;
+    // The reference has skill-shaped status/curse frames; never index past
+    // an attack/skill/power triplet with the appended non-playable types.
+    if(type==(int)CardType::Curse)return ui_image(U_CurseFrame);
+    if(type==(int)CardType::Status)return ui_image(U_ColorlessSkill);
+    const CardColor color=card_color(card.kind);
+    int base=color==CardColor::Silent?U_GreenAttack:(color==CardColor::Colorless||color==CardColor::Token)?U_ColorlessAttack:U_RedAttack;
     const int image=ui_image(base+type);
     return image>=0?image:ui_image(U_BigAttack+type);
 }
 int Content::energy_image(Card card)const{
+    if(card.kind>=CardKinds||cost(card)==-2)return -1;
     if(card.kind==Soul)return ui_image(U_SoulEnergy);
     if(card.kind==SovereignBlade)return ui_image(U_BladeEnergy);
-    return card_color(card.kind)==CardColor::Silent?ui_image(U_SilentEnergy):card_colorless(card.kind)?ui_image(U_ColorlessEnergy):A_Energy;
+    const CardColor color=card_color(card.kind);
+    return color==CardColor::Silent?ui_image(U_SilentEnergy):(color==CardColor::Colorless||color==CardColor::Token)?ui_image(U_ColorlessEnergy):A_Energy;
 }
 int Content::potion_image(Potion p)const{
     unsigned i=(unsigned)p;if(!i||i>PotionKinds)return -1;

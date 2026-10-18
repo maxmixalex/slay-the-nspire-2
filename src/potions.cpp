@@ -47,21 +47,21 @@ bool use_potion(State&s,int slot,int target){
     if(fighting)s.expansion.potion_active=1;
     switch(p){
     case Potion::Fire:damage_unpowered(s,target,20);break;
-    case Potion::Block:s.block=(int16_t)cap(9999,s.block+12);break;
+    case Potion::Block:gain_unpowered_block(s,12);break;
     case Potion::Blood:heal(s,s.max_hp/5);break;
     case Potion::Energy:s.energy=(int16_t)cap(999,s.energy+2);break;
     case Potion::Strength:grant(s.strength,2);break;
     case Potion::Dexterity:grant(s.dexterity,2);break;
     case Potion::Swift:queue_extension(s,XOp::Draw,3);break;
     case Potion::Explosive:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,10);break;
-    case Potion::Vulnerable:grant(s.enemies[target].vulnerable,3);break;
-    case Potion::Weak:grant(s.enemies[target].weak,3);break;
+    case Potion::Vulnerable:apply_vulnerable(s,target,3);break;
+    case Potion::Weak:apply_weak(s,target,3);break;
     case Potion::Fruit:increase_max_hp(s,5);break;
     case Potion::Forge:for(int i=0;i<s.hand.count;i++)s.cards[s.hand.ids[i]].upgraded=1;break;
     case Potion::Flex:grant(s.strength,5,&s.temporary_strength);break;
     case Potion::Speed:grant(s.dexterity,5,&s.temporary_dexterity);break;
     case Potion::Bronze:grant(s.thorns,3);break;
-    case Potion::Fortifier:s.block=(int16_t)cap(9999,s.block*3);break;
+    case Potion::Fortifier:gain_unpowered_block(s,s.block*2);break;
     default:execute_potion(s,p,target);break;
     }
     if(fighting&&s.hp>0&&combat_phase(s.phase))queue_extension(s,XOp::PotionDone);

@@ -8,11 +8,14 @@
 #include "map_preview.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=8*1024*1024;
+// Each appended character/token model adds a title and two descriptions after
+// the complete, immutable 0.14 string directory.
+constexpr unsigned ContentVersion=12,ContentStrings=407+(CardKinds-114)*3;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
 class Content {
-    const uint8_t* data_{};uint32_t length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
+    const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
 public:
     bool open(const uint8_t*,size_t);
     Picture image(int id)const;
@@ -20,7 +23,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return cards_==CardKinds&&ui_count_==U_Count&&strings_>=407;}
+    bool current_profile()const{return version_==ContentVersion&&cards_==CardKinds&&ui_count_==U_Count&&strings_==ContentStrings;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -97,6 +100,7 @@ struct App {
     uint32_t tick_remainder=0;
     void render();
     void card_description(Card,int,char*,size_t,int instance=-1)const;
+    int detail_energy()const;
     void message(const char*);
     void animate(int actor,int clip,int delay=0);
     void reset_presentation();

@@ -27,7 +27,7 @@ void App::open_card_detail(Card card){
 void App::open_choice_detail(int token){
     if(token>=0&&token<game.card_count){
         open_card_detail(game.cards[token]);detail_instance=token;
-        if(game.expansion.turn_cost[token]||game.expansion.combat_cost[token])detail_cost_override=cost(game,token);
+        detail_cost_override=cost(game,token);
         if(game.phase==Phase::ExtendedChoice&&game.expansion.choice_free&&cost(game.cards[token])>=0){
             for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)detail_cost_override=0;
         }
@@ -121,7 +121,7 @@ void App::pointer_button(bool down){
         int id=captured.value,index=-1;
         for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==id)index=i;
         if(index<0||busy){pointer_cancel();return;}
-        Card card=game.cards[id];bool targeted=definitions[card.kind].targeted;
+        Card card=game.cards[id];bool targeted=card_targets_enemy(game,card);
         bool dropping=pointer.dragging&&(hit.kind==HitKind::Enemy||(!targeted&&hit.kind==HitKind::Battlefield));
         if(dropping&&hit.enabled){cursor=index;if(hit.kind==HitKind::Enemy)target=hit.value;
             pointer.armed_card=-1;pointer_key(Key::Confirm);return;}
@@ -137,7 +137,7 @@ void App::pointer_button(bool down){
         if(pointer.armed_card<0||busy||game.phase!=Phase::Combat)return;
         int index=-1;for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==pointer.armed_card)index=i;
         if(index<0){pointer.armed_card=-1;return;}
-        bool targeted=definitions[game.cards[pointer.armed_card].kind].targeted;
+        bool targeted=card_targets_enemy(game,game.cards[pointer.armed_card]);
         if(targeted&&hit.kind!=HitKind::Enemy)return;
         cursor=index;if(hit.kind==HitKind::Enemy)target=hit.value;
         pointer.armed_card=-1;pointer_key(Key::Confirm);return;

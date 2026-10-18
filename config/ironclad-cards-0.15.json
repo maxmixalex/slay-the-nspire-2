@@ -1,0 +1,2945 @@
+{
+  "schema": 1,
+  "reference_version": "v0.111.0",
+  "reference_commit": "41cef1ea",
+  "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9",
+  "evidence_scope": "Supplied original assembly metadata and CIL; no claim of executing the original game. No original description strings or assets included.",
+  "declared_pool_count": 90,
+  "single_player_count": 85,
+  "existing_count": 29,
+  "added_count": 56,
+  "pool_method": "0x060047f8",
+  "excluded_multiplayer": [
+    "Blaze",
+    "DemonicShield",
+    "Midnight",
+    "Outrage",
+    "Tank"
+  ],
+  "cards": [
+    {
+      "id": 114,
+      "model": "Aggression",
+      "key": "AGGRESSION",
+      "portrait": "images/packed/card_portraits/ironclad/aggression.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b14",
+        "OnPlay": "0x06003b15",
+        "OnUpgrade": "0x06003b16"
+      }
+    },
+    {
+      "id": 3,
+      "model": "Anger",
+      "key": "ANGER",
+      "portrait": "images/packed/card_portraits/ironclad/anger.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b27",
+        "get_CanonicalVars": "0x06003b28",
+        "OnPlay": "0x06003b29",
+        "OnUpgrade": "0x06003b2a"
+      }
+    },
+    {
+      "id": 115,
+      "model": "Armaments",
+      "key": "ARMAMENTS",
+      "portrait": "images/packed/card_portraits/ironclad/armaments.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b3e",
+        "get_CanonicalVars": "0x06003b40",
+        "OnPlay": "0x06003b41"
+      }
+    },
+    {
+      "id": 116,
+      "model": "AshenStrike",
+      "key": "ASHEN_STRIKE",
+      "portrait": "images/packed/card_portraits/ironclad/ashen_strike.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 6,
+          "upgraded": 6
+        },
+        "ExtraDamage": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b4c",
+        "get_CanonicalTags": "0x06003b4d",
+        "get_CanonicalVars": "0x06003b4e",
+        "OnPlay": "0x06003b50",
+        "OnUpgrade": "0x06003b51"
+      }
+    },
+    {
+      "id": 117,
+      "model": "Barricade",
+      "key": "BARRICADE",
+      "portrait": "images/packed/card_portraits/ironclad/barricade.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 2
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b85",
+        "OnPlay": "0x06003b87",
+        "OnUpgrade": "0x06003b88"
+      }
+    },
+    {
+      "id": 2,
+      "model": "Bash",
+      "key": "BASH",
+      "portrait": "images/packed/card_portraits/ironclad/bash.png",
+      "rarity": 1,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 10
+        },
+        "VulnerablePower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b89",
+        "get_CanonicalVars": "0x06003b8b",
+        "OnPlay": "0x06003b8c",
+        "OnUpgrade": "0x06003b8d"
+      }
+    },
+    {
+      "id": 22,
+      "model": "BattleTrance",
+      "key": "BATTLE_TRANCE",
+      "portrait": "images/packed/card_portraits/ironclad/battle_trance.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b8e",
+        "get_CanonicalVars": "0x06003b8f",
+        "OnPlay": "0x06003b90",
+        "OnUpgrade": "0x06003b91"
+      }
+    },
+    {
+      "id": 118,
+      "model": "BloodWall",
+      "key": "BLOOD_WALL",
+      "portrait": "images/packed/card_portraits/ironclad/blood_wall.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "HpLoss": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "Block": {
+          "base": 16,
+          "upgraded": 20
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003be4",
+        "get_CanonicalVars": "0x06003be7",
+        "OnPlay": "0x06003be8",
+        "OnUpgrade": "0x06003be9"
+      }
+    },
+    {
+      "id": 14,
+      "model": "Bloodletting",
+      "key": "BLOODLETTING",
+      "portrait": "images/packed/card_portraits/ironclad/bloodletting.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "HpLoss": {
+          "base": 3,
+          "upgraded": 3
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003bdf",
+        "get_CanonicalVars": "0x06003be0",
+        "OnPlay": "0x06003be2",
+        "OnUpgrade": "0x06003be3"
+      }
+    },
+    {
+      "id": 18,
+      "model": "Bludgeon",
+      "key": "BLUDGEON",
+      "portrait": "images/packed/card_portraits/ironclad/bludgeon.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 32,
+          "upgraded": 42
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003bea",
+        "get_CanonicalVars": "0x06003beb",
+        "OnPlay": "0x06003bec",
+        "OnUpgrade": "0x06003bed"
+      }
+    },
+    {
+      "id": 21,
+      "model": "BodySlam",
+      "key": "BODY_SLAM",
+      "portrait": "images/packed/card_portraits/ironclad/body_slam.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "ExtraDamage": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003bf8",
+        "get_CanonicalVars": "0x06003bf9",
+        "OnPlay": "0x06003bfb",
+        "OnUpgrade": "0x06003bfc"
+      }
+    },
+    {
+      "id": 119,
+      "model": "Brand",
+      "key": "BRAND",
+      "portrait": "images/packed/card_portraits/ironclad/brand.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "HpLoss": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "StrengthPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c27",
+        "get_CanonicalVars": "0x06003c29",
+        "OnPlay": "0x06003c2a",
+        "OnUpgrade": "0x06003c2b"
+      }
+    },
+    {
+      "id": 120,
+      "model": "Break",
+      "key": "BREAK",
+      "portrait": "images/packed/card_portraits/ironclad/break.png",
+      "rarity": 5,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 20,
+          "upgraded": 30
+        },
+        "VulnerablePower": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c2c",
+        "get_CanonicalVars": "0x06003c2e",
+        "OnPlay": "0x06003c2f",
+        "OnUpgrade": "0x06003c30"
+      }
+    },
+    {
+      "id": 121,
+      "model": "Breakthrough",
+      "key": "BREAKTHROUGH",
+      "portrait": "images/packed/card_portraits/ironclad/breakthrough.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 13
+        },
+        "HpLoss": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c31",
+        "get_CanonicalVars": "0x06003c32",
+        "OnPlay": "0x06003c33",
+        "OnUpgrade": "0x06003c34"
+      }
+    },
+    {
+      "id": 122,
+      "model": "Bully",
+      "key": "BULLY",
+      "portrait": "images/packed/card_portraits/ironclad/bully.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 4,
+          "upgraded": 4
+        },
+        "ExtraDamage": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c4d",
+        "get_CanonicalVars": "0x06003c4e",
+        "OnPlay": "0x06003c50",
+        "OnUpgrade": "0x06003c51"
+      }
+    },
+    {
+      "id": 6,
+      "model": "BurningPact",
+      "key": "BURNING_PACT",
+      "portrait": "images/packed/card_portraits/ironclad/burning_pact.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Cards": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c64",
+        "get_CanonicalVars": "0x06003c65",
+        "OnPlay": "0x06003c67",
+        "OnUpgrade": "0x06003c68"
+      }
+    },
+    {
+      "id": 123,
+      "model": "Cascade",
+      "key": "CASCADE",
+      "portrait": "images/packed/card_portraits/ironclad/cascade.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c9d",
+        "get_HasEnergyCostX": "0x06003c9e",
+        "OnPlay": "0x06003c9f"
+      }
+    },
+    {
+      "id": 124,
+      "model": "Cinder",
+      "key": "CINDER",
+      "portrait": "images/packed/card_portraits/ironclad/cinder.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 18,
+          "upgraded": 24
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003cc1",
+        "get_CanonicalVars": "0x06003cc2",
+        "OnPlay": "0x06003cc4",
+        "OnUpgrade": "0x06003cc5"
+      }
+    },
+    {
+      "id": 125,
+      "model": "Colossus",
+      "key": "COLOSSUS",
+      "portrait": "images/packed/card_portraits/ironclad/colossus.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 4,
+          "upgraded": 7
+        },
+        "Colossus": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003cf3",
+        "get_CanonicalVars": "0x06003cf6",
+        "OnPlay": "0x06003cf7",
+        "OnUpgrade": "0x06003cf8"
+      }
+    },
+    {
+      "id": 126,
+      "model": "Conflagration",
+      "key": "CONFLAGRATION",
+      "portrait": "images/packed/card_portraits/ironclad/conflagration.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "Repeat": {
+          "base": 4,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d0f",
+        "get_CanonicalVars": "0x06003d11",
+        "OnPlay": "0x06003d12",
+        "OnUpgrade": "0x06003d13"
+      }
+    },
+    {
+      "id": 127,
+      "model": "Corruption",
+      "key": "CORRUPTION",
+      "portrait": "images/packed/card_portraits/ironclad/corruption.png",
+      "rarity": 5,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 2
+      },
+      "variables": {
+        "Power": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d40",
+        "get_CanonicalVars": "0x06003d41",
+        "OnPlay": "0x06003d43",
+        "OnUpgrade": "0x06003d44"
+      }
+    },
+    {
+      "id": 128,
+      "model": "CrimsonMantle",
+      "key": "CRIMSON_MANTLE",
+      "portrait": "images/packed/card_portraits/ironclad/crimson_mantle.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "CrimsonMantlePower": {
+          "base": 7,
+          "upgraded": 10
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d5d",
+        "get_CanonicalVars": "0x06003d5e",
+        "OnPlay": "0x06003d60",
+        "OnUpgrade": "0x06003d61"
+      }
+    },
+    {
+      "id": 129,
+      "model": "Cruelty",
+      "key": "CRUELTY",
+      "portrait": "images/packed/card_portraits/ironclad/cruelty.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "CrueltyPower": {
+          "base": 25,
+          "upgraded": 50
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d62",
+        "get_CanonicalVars": "0x06003d63",
+        "OnPlay": "0x06003d65",
+        "OnUpgrade": "0x06003d66"
+      }
+    },
+    {
+      "id": 13,
+      "model": "DarkEmbrace",
+      "key": "DARK_EMBRACE",
+      "portrait": "images/packed/card_portraits/ironclad/dark_embrace.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d80",
+        "OnPlay": "0x06003d82",
+        "OnUpgrade": "0x06003d83"
+      }
+    },
+    {
+      "id": 1,
+      "model": "DefendIronclad",
+      "key": "DEFEND_IRONCLAD",
+      "portrait": "images/packed/card_portraits/ironclad/defend_ironclad.png",
+      "rarity": 1,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003dce",
+        "get_CanonicalTags": "0x06003dd0",
+        "get_CanonicalVars": "0x06003dd1",
+        "OnPlay": "0x06003dd2",
+        "OnUpgrade": "0x06003dd3"
+      }
+    },
+    {
+      "id": 62,
+      "model": "DemonForm",
+      "key": "DEMON_FORM",
+      "portrait": "images/packed/card_portraits/ironclad/demon_form.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "StrengthPower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003e08",
+        "get_CanonicalVars": "0x06003e0a",
+        "OnPlay": "0x06003e0b",
+        "OnUpgrade": "0x06003e0c"
+      }
+    },
+    {
+      "id": 130,
+      "model": "Dismantle",
+      "key": "DISMANTLE",
+      "portrait": "images/packed/card_portraits/ironclad/dismantle.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 10
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003e33",
+        "get_CanonicalVars": "0x06003e35",
+        "OnPlay": "0x06003e37",
+        "OnUpgrade": "0x06003e38"
+      }
+    },
+    {
+      "id": 131,
+      "model": "Dominate",
+      "key": "DOMINATE",
+      "portrait": "images/packed/card_portraits/ironclad/dominate.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 2
+        },
+        "StrengthPerVulnerable": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003e43",
+        "get_CanonicalKeywords": "0x06003e44",
+        "get_CanonicalVars": "0x06003e45",
+        "OnPlay": "0x06003e47",
+        "OnUpgrade": "0x06003e48"
+      }
+    },
+    {
+      "id": 132,
+      "model": "DrumOfBattle",
+      "key": "DRUM_OF_BATTLE",
+      "portrait": "images/packed/card_portraits/ironclad/drum_of_battle.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Cards": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003e6c",
+        "get_CanonicalVars": "0x06003e6e",
+        "OnPlay": "0x06003e6f",
+        "OnUpgrade": "0x06003e71"
+      }
+    },
+    {
+      "id": 133,
+      "model": "EvilEye",
+      "key": "EVIL_EYE",
+      "portrait": "images/packed/card_portraits/ironclad/evil_eye.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 8,
+          "upgraded": 11
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003ed2",
+        "get_CanonicalVars": "0x06003ed5",
+        "OnPlay": "0x06003ed7",
+        "OnUpgrade": "0x06003ed8"
+      }
+    },
+    {
+      "id": 134,
+      "model": "ExpectAFight",
+      "key": "EXPECT_A_FIGHT",
+      "portrait": "images/packed/card_portraits/ironclad/expect_a_fight.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 15,
+          "upgraded": 16
+        },
+        "CalculationExtra": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedBlock": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003edb",
+        "get_CanonicalVars": "0x06003edd",
+        "OnPlay": "0x06003edf",
+        "OnUpgrade": "0x06003ee0"
+      }
+    },
+    {
+      "id": 135,
+      "model": "Feed",
+      "key": "FEED",
+      "portrait": "images/packed/card_portraits/ironclad/feed.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 12
+        },
+        "MaxHp": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x06003f0e",
+        "get_CanBeGeneratedInCombat": "0x06003f0f",
+        "get_CanonicalVars": "0x06003f10",
+        "get_CanonicalKeywords": "0x06003f11",
+        "OnPlay": "0x06003f13",
+        "OnUpgrade": "0x06003f14"
+      }
+    },
+    {
+      "id": 12,
+      "model": "FeelNoPain",
+      "key": "FEEL_NO_PAIN",
+      "portrait": "images/packed/card_portraits/ironclad/feel_no_pain.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Power": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003f1a",
+        "get_CanonicalVars": "0x06003f1b",
+        "OnPlay": "0x06003f1d",
+        "OnUpgrade": "0x06003f1e"
+      }
+    },
+    {
+      "id": 23,
+      "model": "FiendFire",
+      "key": "FIEND_FIRE",
+      "portrait": "images/packed/card_portraits/ironclad/fiend_fire.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 10
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003f2c",
+        "get_CanonicalVars": "0x06003f2d",
+        "get_CanonicalKeywords": "0x06003f2e",
+        "OnPlay": "0x06003f30",
+        "OnUpgrade": "0x06003f31"
+      }
+    },
+    {
+      "id": 136,
+      "model": "FightMe",
+      "key": "FIGHT_ME",
+      "portrait": "images/packed/card_portraits/ironclad/fight_me.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 6
+        },
+        "Repeat": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "StrengthPower": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "EnemyStrength": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003f32",
+        "get_CanonicalVars": "0x06003f34",
+        "OnPlay": "0x06003f35",
+        "OnUpgrade": "0x06003f36"
+      }
+    },
+    {
+      "id": 61,
+      "model": "FlameBarrier",
+      "key": "FLAME_BARRIER",
+      "portrait": "images/packed/card_portraits/ironclad/flame_barrier.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Block": {
+          "base": 12,
+          "upgraded": 16
+        },
+        "DamageBack": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003f51",
+        "get_CanonicalVars": "0x06003f53",
+        "OnPlay": "0x06003f54",
+        "OnUpgrade": "0x06003f55"
+      }
+    },
+    {
+      "id": 137,
+      "model": "ForgottenRitual",
+      "key": "FORGOTTEN_RITUAL",
+      "portrait": "images/packed/card_portraits/ironclad/forgotten_ritual.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Energy": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003f8a",
+        "get_CanonicalKeywords": "0x06003f8b",
+        "get_CanonicalVars": "0x06003f8c",
+        "OnPlay": "0x06003f8f",
+        "OnUpgrade": "0x06003f90"
+      }
+    },
+    {
+      "id": 138,
+      "model": "Havoc",
+      "key": "HAVOC",
+      "portrait": "images/packed/card_portraits/ironclad/havoc.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600404c",
+        "OnPlay": "0x0600404d",
+        "OnUpgrade": "0x0600404f"
+      }
+    },
+    {
+      "id": 58,
+      "model": "Headbutt",
+      "key": "HEADBUTT",
+      "portrait": "images/packed/card_portraits/ironclad/headbutt.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 12
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004056",
+        "get_CanonicalVars": "0x06004057",
+        "OnPlay": "0x06004058",
+        "OnUpgrade": "0x06004059"
+      }
+    },
+    {
+      "id": 139,
+      "model": "Hellraiser",
+      "key": "HELLRAISER",
+      "portrait": "images/packed/card_portraits/ironclad/hellraiser.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004072",
+        "OnPlay": "0x06004074",
+        "OnUpgrade": "0x06004076"
+      }
+    },
+    {
+      "id": 15,
+      "model": "Hemokinesis",
+      "key": "HEMOKINESIS",
+      "portrait": "images/packed/card_portraits/ironclad/hemokinesis.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "HpLoss": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "Damage": {
+          "base": 15,
+          "upgraded": 20
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004077",
+        "get_CanonicalVars": "0x06004078",
+        "OnPlay": "0x06004079",
+        "OnUpgrade": "0x0600407a"
+      }
+    },
+    {
+      "id": 140,
+      "model": "HowlFromBeyond",
+      "key": "HOWL_FROM_BEYOND",
+      "portrait": "images/packed/card_portraits/ironclad/howl_from_beyond.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 18,
+          "upgraded": 24
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040a3",
+        "get_CanonicalVars": "0x060040a4",
+        "OnPlay": "0x060040a6",
+        "OnUpgrade": "0x060040a8"
+      }
+    },
+    {
+      "id": 16,
+      "model": "Impervious",
+      "key": "IMPERVIOUS",
+      "portrait": "images/packed/card_portraits/ironclad/impervious.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Block": {
+          "base": 30,
+          "upgraded": 40
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040d1",
+        "get_CanonicalVars": "0x060040d3",
+        "get_CanonicalKeywords": "0x060040d4",
+        "OnPlay": "0x060040d5",
+        "OnUpgrade": "0x060040d6"
+      }
+    },
+    {
+      "id": 141,
+      "model": "InfernalBlade",
+      "key": "INFERNAL_BLADE",
+      "portrait": "images/packed/card_portraits/ironclad/infernal_blade.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040de",
+        "get_CanonicalKeywords": "0x060040df",
+        "OnPlay": "0x060040e0",
+        "OnUpgrade": "0x060040e1"
+      }
+    },
+    {
+      "id": 142,
+      "model": "Inferno",
+      "key": "INFERNO",
+      "portrait": "images/packed/card_portraits/ironclad/inferno.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "InfernoPower": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040e2",
+        "get_CanonicalVars": "0x060040e3",
+        "OnPlay": "0x060040e4",
+        "OnUpgrade": "0x060040e5"
+      }
+    },
+    {
+      "id": 9,
+      "model": "Inflame",
+      "key": "INFLAME",
+      "portrait": "images/packed/card_portraits/ironclad/inflame.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "StrengthPower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040ea",
+        "get_CanonicalVars": "0x060040eb",
+        "OnPlay": "0x060040ee",
+        "OnUpgrade": "0x060040f0"
+      }
+    },
+    {
+      "id": 10,
+      "model": "IronWave",
+      "key": "IRON_WAVE",
+      "portrait": "images/packed/card_portraits/ironclad/iron_wave.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        },
+        "Block": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040ff",
+        "get_CanonicalVars": "0x06004101",
+        "OnPlay": "0x06004102",
+        "OnUpgrade": "0x06004103"
+      }
+    },
+    {
+      "id": 143,
+      "model": "Juggernaut",
+      "key": "JUGGERNAUT",
+      "portrait": "images/packed/card_portraits/ironclad/juggernaut.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "JuggernautPower": {
+          "base": 6,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004111",
+        "get_CanonicalVars": "0x06004113",
+        "OnPlay": "0x06004114",
+        "OnUpgrade": "0x06004115"
+      }
+    },
+    {
+      "id": 144,
+      "model": "Juggling",
+      "key": "JUGGLING",
+      "portrait": "images/packed/card_portraits/ironclad/juggling.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004116",
+        "OnPlay": "0x06004117",
+        "OnUpgrade": "0x06004118"
+      }
+    },
+    {
+      "id": 145,
+      "model": "Mangle",
+      "key": "MANGLE",
+      "portrait": "images/packed/card_portraits/ironclad/mangle.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 20,
+          "upgraded": 26
+        },
+        "StrengthLoss": {
+          "base": 10,
+          "upgraded": 15
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060041a0",
+        "get_CanonicalVars": "0x060041a1",
+        "OnPlay": "0x060041a3",
+        "OnUpgrade": "0x060041a4"
+      }
+    },
+    {
+      "id": 146,
+      "model": "MoltenFist",
+      "key": "MOLTEN_FIST",
+      "portrait": "images/packed/card_portraits/ironclad/molten_fist.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 14
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004216",
+        "get_CanonicalKeywords": "0x06004218",
+        "get_CanonicalVars": "0x06004219",
+        "OnPlay": "0x0600421b",
+        "OnUpgrade": "0x0600421c"
+      }
+    },
+    {
+      "id": 147,
+      "model": "NotYet",
+      "key": "NOT_YET",
+      "portrait": "images/packed/card_portraits/ironclad/not_yet.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Heal": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x0600426c",
+        "get_CanBeGeneratedInCombat": "0x0600426d",
+        "get_CanonicalVars": "0x0600426e",
+        "get_CanonicalKeywords": "0x0600426f",
+        "OnPlay": "0x06004270",
+        "OnUpgrade": "0x06004271"
+      }
+    },
+    {
+      "id": 17,
+      "model": "Offering",
+      "key": "OFFERING",
+      "portrait": "images/packed/card_portraits/ironclad/offering.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "HpLoss": {
+          "base": 6,
+          "upgraded": 6
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "Cards": {
+          "base": 3,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004281",
+        "get_CanonicalVars": "0x06004282",
+        "get_CanonicalKeywords": "0x06004283",
+        "OnPlay": "0x06004285",
+        "OnUpgrade": "0x06004286"
+      }
+    },
+    {
+      "id": 148,
+      "model": "OneTwoPunch",
+      "key": "ONE_TWO_PUNCH",
+      "portrait": "images/packed/card_portraits/ironclad/one_two_punch.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Attacks": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004290",
+        "get_CanonicalVars": "0x06004291",
+        "OnPlay": "0x06004292",
+        "OnUpgrade": "0x06004293"
+      }
+    },
+    {
+      "id": 149,
+      "model": "PactsEnd",
+      "key": "PACTS_END",
+      "portrait": "images/packed/card_portraits/ironclad/pacts_end.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 18,
+          "upgraded": 24
+        },
+        "Cards": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042ae",
+        "get_CanonicalVars": "0x060042af",
+        "OnPlay": "0x060042b1",
+        "OnUpgrade": "0x060042b3"
+      }
+    },
+    {
+      "id": 60,
+      "model": "PerfectedStrike",
+      "key": "PERFECTED_STRIKE",
+      "portrait": "images/packed/card_portraits/ironclad/perfected_strike.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 6,
+          "upgraded": 6
+        },
+        "ExtraDamage": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042e2",
+        "get_CanonicalTags": "0x060042e3",
+        "get_CanonicalVars": "0x060042e4",
+        "OnPlay": "0x060042e5",
+        "OnUpgrade": "0x060042e6"
+      }
+    },
+    {
+      "id": 150,
+      "model": "Pillage",
+      "key": "PILLAGE",
+      "portrait": "images/packed/card_portraits/ironclad/pillage.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042f7",
+        "get_CanonicalVars": "0x060042f8",
+        "OnPlay": "0x060042f9",
+        "OnUpgrade": "0x060042fa"
+      }
+    },
+    {
+      "id": 4,
+      "model": "PommelStrike",
+      "key": "POMMEL_STRIKE",
+      "portrait": "images/packed/card_portraits/ironclad/pommel_strike.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 10
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004318",
+        "get_CanonicalTags": "0x06004319",
+        "get_CanonicalVars": "0x0600431a",
+        "OnPlay": "0x0600431b",
+        "OnUpgrade": "0x0600431c"
+      }
+    },
+    {
+      "id": 151,
+      "model": "PrimalForce",
+      "key": "PRIMAL_FORCE",
+      "portrait": "images/packed/card_portraits/ironclad/primal_force.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004336",
+        "OnPlay": "0x06004338"
+      }
+    },
+    {
+      "id": 152,
+      "model": "Pyre",
+      "key": "PYRE",
+      "portrait": "images/packed/card_portraits/ironclad/pyre.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Energy": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004369",
+        "get_CanonicalVars": "0x0600436a",
+        "OnPlay": "0x0600436c",
+        "OnUpgrade": "0x0600436e"
+      }
+    },
+    {
+      "id": 153,
+      "model": "Rage",
+      "key": "RAGE",
+      "portrait": "images/packed/card_portraits/ironclad/rage.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Power": {
+          "base": 3,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600437b",
+        "get_CanonicalVars": "0x0600437c",
+        "OnPlay": "0x0600437e",
+        "OnUpgrade": "0x0600437f"
+      }
+    },
+    {
+      "id": 154,
+      "model": "Rampage",
+      "key": "RAMPAGE",
+      "portrait": "images/packed/card_portraits/ironclad/rampage.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 10
+        },
+        "Increase": {
+          "base": 5,
+          "upgraded": 10
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600438b",
+        "get_CanonicalVars": "0x0600438c",
+        "OnPlay": "0x0600438f",
+        "OnUpgrade": "0x06004391"
+      }
+    },
+    {
+      "id": 155,
+      "model": "Rupture",
+      "key": "RUPTURE",
+      "portrait": "images/packed/card_portraits/ironclad/rupture.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "StrengthPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004413",
+        "get_CanonicalVars": "0x06004414",
+        "OnPlay": "0x06004416",
+        "OnUpgrade": "0x06004417"
+      }
+    },
+    {
+      "id": 156,
+      "model": "SecondWind",
+      "key": "SECOND_WIND",
+      "portrait": "images/packed/card_portraits/ironclad/second_wind.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004442",
+        "get_CanonicalVars": "0x06004444",
+        "OnPlay": "0x06004446",
+        "OnUpgrade": "0x06004447"
+      }
+    },
+    {
+      "id": 157,
+      "model": "SetupStrike",
+      "key": "SETUP_STRIKE",
+      "portrait": "images/packed/card_portraits/ironclad/setup_strike.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 9
+        },
+        "StrengthPower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004464",
+        "get_CanonicalTags": "0x06004466",
+        "get_CanonicalVars": "0x06004467",
+        "OnPlay": "0x06004468",
+        "OnUpgrade": "0x06004469"
+      }
+    },
+    {
+      "id": 5,
+      "model": "ShrugItOff",
+      "key": "SHRUG_IT_OFF",
+      "portrait": "images/packed/card_portraits/ironclad/shrug_it_off.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 8,
+          "upgraded": 11
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060044b3",
+        "get_CanonicalVars": "0x060044b5",
+        "OnPlay": "0x060044b6",
+        "OnUpgrade": "0x060044b7"
+      }
+    },
+    {
+      "id": 158,
+      "model": "Spite",
+      "key": "SPITE",
+      "portrait": "images/packed/card_portraits/ironclad/spite.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 5
+        },
+        "Repeat": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004544",
+        "get_CanonicalVars": "0x06004546",
+        "OnPlay": "0x06004547",
+        "OnUpgrade": "0x06004548"
+      }
+    },
+    {
+      "id": 159,
+      "model": "Stampede",
+      "key": "STAMPEDE",
+      "portrait": "images/packed/card_portraits/ironclad/stampede.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "variables": {
+        "Power": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600457c",
+        "get_CanonicalVars": "0x0600457d",
+        "OnPlay": "0x0600457e",
+        "OnUpgrade": "0x0600457f"
+      }
+    },
+    {
+      "id": 160,
+      "model": "Stoke",
+      "key": "STOKE",
+      "portrait": "images/packed/card_portraits/ironclad/stoke.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004585",
+        "OnPlay": "0x06004586"
+      }
+    },
+    {
+      "id": 161,
+      "model": "Stomp",
+      "key": "STOMP",
+      "portrait": "images/packed/card_portraits/ironclad/stomp.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 12,
+          "upgraded": 15
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004587",
+        "get_CanonicalVars": "0x06004588",
+        "OnPlay": "0x06004589",
+        "OnUpgrade": "0x0600458a"
+      }
+    },
+    {
+      "id": 162,
+      "model": "StoneArmor",
+      "key": "STONE_ARMOR",
+      "portrait": "images/packed/card_portraits/ironclad/stone_armor.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "PlatingPower": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600458f",
+        "get_CanonicalVars": "0x06004590",
+        "OnPlay": "0x06004592",
+        "OnUpgrade": "0x06004593"
+      }
+    },
+    {
+      "id": 0,
+      "model": "StrikeIronclad",
+      "key": "STRIKE_IRONCLAD",
+      "portrait": "images/packed/card_portraits/ironclad/strike_ironclad.png",
+      "rarity": 1,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060045a8",
+        "get_CanonicalTags": "0x060045a9",
+        "get_CanonicalVars": "0x060045aa",
+        "OnPlay": "0x060045ab",
+        "OnUpgrade": "0x060045ac"
+      }
+    },
+    {
+      "id": 59,
+      "model": "SwordBoomerang",
+      "key": "SWORD_BOOMERANG",
+      "portrait": "images/packed/card_portraits/ironclad/sword_boomerang.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "RandomEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 3
+        },
+        "Repeat": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060045ef",
+        "get_CanonicalVars": "0x060045f0",
+        "OnPlay": "0x060045f1",
+        "OnUpgrade": "0x060045f2"
+      }
+    },
+    {
+      "id": 163,
+      "model": "Taunt",
+      "key": "TAUNT",
+      "portrait": "images/packed/card_portraits/ironclad/taunt.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 7
+        },
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004611",
+        "get_CanonicalVars": "0x06004613",
+        "OnPlay": "0x06004615",
+        "OnUpgrade": "0x06004616"
+      }
+    },
+    {
+      "id": 164,
+      "model": "TearAsunder",
+      "key": "TEAR_ASUNDER",
+      "portrait": "images/packed/card_portraits/ironclad/tear_asunder.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        },
+        "Repeat": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedHits": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004617",
+        "get_CanonicalVars": "0x06004618",
+        "OnPlay": "0x06004619",
+        "OnUpgrade": "0x0600461a"
+      }
+    },
+    {
+      "id": 165,
+      "model": "Thrash",
+      "key": "THRASH",
+      "portrait": "images/packed/card_portraits/ironclad/thrash.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600465e",
+        "get_CanonicalVars": "0x06004660",
+        "OnPlay": "0x06004663",
+        "OnUpgrade": "0x06004665"
+      }
+    },
+    {
+      "id": 19,
+      "model": "Thunderclap",
+      "key": "THUNDERCLAP",
+      "portrait": "images/packed/card_portraits/ironclad/thunderclap.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 4,
+          "upgraded": 7
+        },
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004671",
+        "get_CanonicalVars": "0x06004672",
+        "OnPlay": "0x06004674",
+        "OnUpgrade": "0x06004675"
+      }
+    },
+    {
+      "id": 166,
+      "model": "Tremble",
+      "key": "TREMBLE",
+      "portrait": "images/packed/card_portraits/ironclad/tremble.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "VulnerablePower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004699",
+        "get_CanonicalKeywords": "0x0600469a",
+        "get_CanonicalVars": "0x0600469b",
+        "OnPlay": "0x0600469d",
+        "OnUpgrade": "0x0600469e"
+      }
+    },
+    {
+      "id": 7,
+      "model": "TrueGrit",
+      "key": "TRUE_GRIT",
+      "portrait": "images/packed/card_portraits/ironclad/true_grit.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 7,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600469f",
+        "get_CanonicalVars": "0x060046a1",
+        "OnPlay": "0x060046a3",
+        "OnUpgrade": "0x060046a4"
+      }
+    },
+    {
+      "id": 8,
+      "model": "TwinStrike",
+      "key": "TWIN_STRIKE",
+      "portrait": "images/packed/card_portraits/ironclad/twin_strike.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060046ae",
+        "get_CanonicalTags": "0x060046af",
+        "get_CanonicalVars": "0x060046b0",
+        "OnPlay": "0x060046b1",
+        "OnUpgrade": "0x060046b2"
+      }
+    },
+    {
+      "id": 167,
+      "model": "Unmovable",
+      "key": "UNMOVABLE",
+      "portrait": "images/packed/card_portraits/ironclad/unmovable.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060046d3",
+        "OnPlay": "0x060046d5",
+        "OnUpgrade": "0x060046d6"
+      }
+    },
+    {
+      "id": 168,
+      "model": "Unrelenting",
+      "key": "UNRELENTING",
+      "portrait": "images/packed/card_portraits/ironclad/unrelenting.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 14,
+          "upgraded": 20
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060046d7",
+        "get_CanonicalVars": "0x060046d8",
+        "OnPlay": "0x060046d9",
+        "OnUpgrade": "0x060046da"
+      }
+    },
+    {
+      "id": 20,
+      "model": "Uppercut",
+      "key": "UPPERCUT",
+      "portrait": "images/packed/card_portraits/ironclad/uppercut.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 13,
+          "upgraded": 13
+        },
+        "Power": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060046e8",
+        "get_CanonicalVars": "0x060046e9",
+        "OnPlay": "0x060046eb",
+        "OnUpgrade": "0x060046ec"
+      }
+    },
+    {
+      "id": 169,
+      "model": "Vicious",
+      "key": "VICIOUS",
+      "portrait": "images/packed/card_portraits/ironclad/vicious.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060046fa",
+        "get_CanonicalVars": "0x060046fc",
+        "OnPlay": "0x060046fd",
+        "OnUpgrade": "0x060046fe"
+      }
+    },
+    {
+      "id": 11,
+      "model": "Whirlwind",
+      "key": "WHIRLWIND",
+      "portrait": "images/packed/card_portraits/ironclad/whirlwind.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600471d",
+        "get_HasEnergyCostX": "0x0600471e",
+        "get_CanonicalVars": "0x0600471f",
+        "OnPlay": "0x06004720",
+        "OnUpgrade": "0x06004721"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "id": 227,
+      "model": "GiantRock",
+      "key": "GIANT_ROCK",
+      "portrait": "images/packed/card_portraits/token/giant_rock.png",
+      "rarity": 7,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 20,
+          "upgraded": 24
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x06003fd5",
+        "get_CanonicalVars": "0x06003fd6",
+        "OnUpgrade": "0x06003fd8"
+      }
+    }
+  ]
+}

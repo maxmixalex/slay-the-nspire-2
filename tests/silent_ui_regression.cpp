@@ -19,7 +19,7 @@ int main(int argc,char**argv){
  CHECK(!a.title&&a.game.character==Character::Silent&&a.game.hp==70&&a.game.deck_count==12);CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);
  SaveData prior{};CHECK(save(a.game,prior));a.input(Key::Collection);
  // The Silent filter includes Shiv; generated Soul/Blade remain only in All.
- const unsigned counts[]={114,29,30,53};
+ const unsigned counts[]={CardKinds,IroncladCards,SilentCards+1,53};
  for(unsigned filter=0;filter<4;filter++){
   action((UiAction)((int)UiAction::FilterAll+filter));CHECK(a.library_items()==counts[filter]);uint8_t ids[CardKinds];a.library_items(ids);
   for(unsigned i=0;i<counts[filter];i++){

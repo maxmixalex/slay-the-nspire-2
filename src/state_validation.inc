@@ -11,7 +11,7 @@ bool validate(const State&s){
        s.flame_barrier<0||s.flame_barrier>9999)return false;
     if(s.relic_flash&~((1u<<RelicKinds)-1))return false;
     if(s.no_draw>1||s.reward_claimed>7||(unsigned)s.reward_potion>PotionKinds||s.potion_chance>100)return false;
-    if(s.temporary_strength<0||s.temporary_strength>s.strength||s.temporary_dexterity<0||s.temporary_dexterity>s.dexterity||
+    if(s.temporary_strength<0||s.temporary_strength>s.strength||s.temporary_dexterity<0||s.temporary_dexterity>9999||
        s.vigor<0||s.vigor>9999||s.attack_vigor<0||s.attack_vigor>9999||s.thorns<0||s.thorns>9999)return false;
     if(s.block<0||s.block>9999||s.strength<0||s.strength>9999||s.pain<0||s.pain>9999||s.embrace<0||s.embrace>99)return false;
     if(s.deck_count<1||s.deck_count>MaxDeck||s.card_count>MaxCards||s.hand.count>MaxHand||s.effect_count>MaxEffects||s.log_count>24||s.power_count>2)return false;
@@ -21,7 +21,7 @@ bool validate(const State&s){
     if(s.shop_sold>16383)return false;
     for(auto id:s.shop_relics)if(id&&!relic_definition(id))return false;
     for(auto p:s.shop_potions)if(p>PotionKinds)return false;
-    if(s.relic_count>RelicKinds||s.dexterity<0||s.dexterity>9999||s.double_attack>1)return false;
+    if(s.relic_count>RelicKinds||s.dexterity< -9999||s.dexterity>9999||s.double_attack>1)return false;
     uint32_t owned=0;
     for(unsigned i=0;i<s.relic_count;i++){unsigned index=s.relic_order[i];if(index>=RelicKinds)return false;unsigned bit=relic_definitions[index].id;if(owned&bit)return false;owned|=bit;}
     if(owned!=s.relics)return false;
@@ -88,12 +88,14 @@ bool validate(const State&s){
     for(int i=0;i<s.effect_count;i++){
         const auto&e=s.effects[i];
         if(e.kind==EffectKind::Extended){if(!valid_extension_effect(s,e))return false;continue;}
-        if((unsigned)e.kind>(unsigned)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies)||e.aux)return false;
+        if((unsigned)e.kind>(unsigned)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies))return false;
+        if(e.aux&&(e.kind!=EffectKind::Block||e.aux!=1))return false;
         if(e.kind==EffectKind::ExhaustCard&&e.value>=s.card_count)return false;
     }
     if(choice_phase(s.phase)&&(!s.effect_count||!choice_pile(s).count))return false;
-    if(choice_phase(s.phase)&&s.phase!=Phase::ExtendedChoice&&s.playing<0)return false;
+    if(choice_phase(s.phase)&&s.phase!=Phase::ExtendedChoice&&s.playing<0&&
+       !(s.phase==Phase::DiscardChoice&&!s.expansion.enemy_side&&s.silent.powers[(unsigned)SPower::ToolsOfTheTrade]>0))return false;
     if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(s.playing>=0||s.effect_count))return false;
-    if(!validate_extension(s))return false;
+    if(!validate_extension(s)||!valid_ironclad_state(s)||!valid_silent_state(s))return false;
     return true;
 }

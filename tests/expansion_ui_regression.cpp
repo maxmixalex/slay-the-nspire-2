@@ -48,12 +48,13 @@ static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned width
 // Deliberately synthetic: a single flat RGB portrait and ASCII placeholder text.
 // This tests the current parser/render/input integration, never original art.
 static std::vector<uint8_t> synthetic_profile(){
-    constexpr unsigned images=A_Count+160,strings=407;
+    constexpr unsigned minimum_images=CardKinds>A_Count+160?CardKinds:A_Count+160;
+    constexpr unsigned images=minimum_images>U_Count?minimum_images:U_Count,strings=ContentStrings;
     constexpr unsigned stringdir=40+images*16,clipdir=stringdir+strings*8;
     constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16;
     constexpr unsigned payload=uidir+U_Count*4;
     std::vector<uint8_t>b(payload+82*60*2);
-    put(b,0,0x3250534e);put(b,4,11);put(b,8,0x41cef1ea);put(b,16,images);put(b,24,strings);put(b,28,AnimationKinds);put(b,32,CardKinds);
+    put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);put(b,24,strings);put(b,28,AnimationKinds);put(b,32,CardKinds);
     for(unsigned i=0;i<images;i++){put(b,40+i*16,payload);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,82*60*2);}
     for(unsigned i=0;i<strings;i++){
         const char*text=i<CardKinds*3?(i%3?"Damage {d}; Block {b}; Draw {n}; Power {p};":definitions[i/3].key):"Synthetic UI text";

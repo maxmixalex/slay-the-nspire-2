@@ -21,7 +21,7 @@ static State fight(Card card={Defend,0}){
  for(int i=0;i<5;i++)append(s,{i%2?Defend:Strike,0},Zone::Discard);
  return s;
 }
-static SaveData snapshot(const State&s){SaveData b{};CHECK(validate(s));CHECK(save(s,b));CHECK(b.bytes[4]==12);return b;}
+static SaveData snapshot(const State&s){SaveData b{};CHECK(validate(s));CHECK(save(s,b));CHECK(b.bytes[4]==SaveVersion);return b;}
 static void same(const State&s,const SaveData&b){auto a=snapshot(s);CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static void rt(const State&s){auto b=snapshot(s);State copy{};CHECK(load(copy,b.bytes,b.size));same(copy,b);}
 static void resolve_choices(State&s){
@@ -42,7 +42,7 @@ static int count_kind(const State&s,Zone z,unsigned kind){int n=0;for(unsigned i
 static int total_hp(const State&s){return s.enemies[0].hp+s.enemies[1].hp;}
 static void registry(){
  unsigned n=0;for(unsigned k=0;k<CardKinds;k++)if(card_colorless(k)){++n;CHECK(card_rarity(k)==3||card_rarity(k)==4);CHECK(!card_generated(k));}
- CHECK(n==53);CHECK(PotionKinds==64);CHECK(CardKinds==114);
+ CHECK(n==53);CHECK(PotionKinds==64);CHECK(CardKinds==228);
  for(int p=1;p<=PotionKinds;p++){auto*d=potion_definition((Potion)p);CHECK(d&&*d->key&&*d->name&&*d->description);}
  CHECK(!potion_in_pool(Potion::BoneBrew,Character::Ironclad));CHECK(!potion_in_pool(Potion::Ambergris,Character::Silent));
  CHECK(potion_in_pool(Potion::Ashwater,Character::Ironclad));CHECK(!potion_in_pool(Potion::Blood,Character::Silent));
@@ -200,8 +200,9 @@ static void legacy_v11(const char*path){
  CHECK(s.phase==Phase::Combat&&s.cards[s.powers.ids[0]].kind==Entropy);
  CHECK(power_value(s,XPower::Entropy)==1&&s.expansion.boulder[0]==5);
  CHECK(s.expansion.entropy_boulder_prefix==1);
- auto migrated=snapshot(s);CHECK(migrated.size==bytes.size()+4);
- // The frozen v11 payload stays byte-identical; v12 appends just the boundary.
+ auto migrated=snapshot(s);CHECK(migrated.size>bytes.size()+4);
+ // The v11 payload remains byte-identical; v12 appended the boundary and
+ // v13 appends explicit character state without changing that prefix.
  CHECK(!std::memcmp(migrated.bytes+8,bytes.data()+8,bytes.size()-12));rt(s);
  auto invalid=s;invalid.expansion.entropy_boulder_prefix=2;SaveData refused{};
  CHECK(!validate(invalid)&&!save(invalid,refused));

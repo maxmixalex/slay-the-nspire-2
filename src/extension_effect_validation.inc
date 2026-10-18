@@ -2,6 +2,7 @@
 static bool valid_extension_effect(const State&s,const Effect&e){
     if(e.target<0||e.target>=(int)XOp::Count||e.value< -9999||e.value>9999||e.aux< -9999||e.aux>9999)return false;
     const int a=e.value,b=e.aux;const auto op=(XOp)e.target;
+    if(e.target>(int)XOp::TurnRelics)return valid_ironclad_effect(s,e)||valid_silent_effect(s,e);
     const bool actor=a>=0&&a<s.enemy_count,instance=a>=0&&a<s.card_count;
     switch(op){
     case XOp::Power:return a>=0&&a<XPowerCount&&b>0;

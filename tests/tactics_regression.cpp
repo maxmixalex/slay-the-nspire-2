@@ -18,7 +18,7 @@ static void add(State&s,int n,Zone zone=Zone::Draw,Card card={Defend,0}){
     Pile& pile=zone==Zone::Draw?s.draw:zone==Zone::Discard?s.discard:s.exhaust;
     for(int i=0;i<n;i++){int id=s.card_count++;s.cards[id]=card;s.zones[id]=zone;pile.ids[pile.count++]=(uint16_t)id;}CHECK(validate(s));
 }
-static void rt(const State&s){SaveData b{},out{};State copy{};CHECK(validate(s));CHECK(save(s,b)&&b.bytes[4]==12);CHECK(load(copy,b.bytes,b.size));CHECK(save(copy,out));CHECK(b.size==out.size&&!std::memcmp(b.bytes,out.bytes,b.size));}
+static void rt(const State&s){SaveData b{},out{};State copy{};CHECK(validate(s));CHECK(save(s,b)&&b.bytes[4]==SaveVersion);CHECK(load(copy,b.bytes,b.size));CHECK(save(copy,out));CHECK(b.size==out.size&&!std::memcmp(b.bytes,out.bytes,b.size));}
 static void equal(const State&a,const State&b){SaveData x{},y{};CHECK(save(a,x)&&save(b,y));CHECK(x.size==y.size&&!std::memcmp(x.bytes,y.bytes,x.size));}
 static void cards(){
     for(unsigned up=0;up<2;up++){
@@ -61,7 +61,7 @@ static void cards(){
     s.deck[0]={InfiniteBlades,1};enter_combat(s);CHECK(s.hand.count==10);CHECK(card_innate({InfiniteBlades,1})&&!card_innate({InfiniteBlades,0}));
     s.demon_form=4;s.infinite_blades=3;s.block_next_turn=12;s.draw_next_turn=3;s.flame_barrier=4;enter_combat(s);
     CHECK(!s.demon_form&&!s.infinite_blades&&!s.block_next_turn&&!s.draw_next_turn&&!s.flame_barrier);rt(s);
-    CHECK(character_pool(Character::Ironclad,nullptr)==29&&character_pool(Character::Silent,nullptr)==29);
+    CHECK(character_pool(Character::Ironclad,nullptr)==85&&character_pool(Character::Silent,nullptr)==86);
     for(unsigned i=Headbutt;i<=DemonForm;i++)CHECK(card_in_pool(i,Character::Ironclad)&&!card_in_pool(i,Character::Silent));
     for(unsigned i=DodgeAndRoll;i<=Predator;i++)CHECK(card_in_pool(i,Character::Silent)&&!card_colorless(i));
 }

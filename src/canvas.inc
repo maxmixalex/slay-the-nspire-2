@@ -134,7 +134,8 @@ struct Canvas{
     void centered(const char*p,int x,int y,int w,int size=12,uint16_t color=White){text(p,x+mx(0,(w-width(p,size))/2),y,size,color,w);}
     void num(int v,int x,int y,int size=12,uint16_t color=White){char b[16]={};TextBuffer t{b,sizeof b,0};t.number(v);text(b,x,y,size,color);}
     void energy_label(int value,int x,int y,int size=12){
-        char text[16]={};TextBuffer t{text,sizeof text,0};if(value<0)t.text("X");else t.number(value);
+        if(value==-2)return; // Unplayable models have no energy label.
+        char text[16]={};TextBuffer t{text,sizeof text,0};if(value==-1)t.text("X");else t.number(value);
         for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)if(i||j)this->text(text,x+i,y+j,size,Ink);
         this->text(text,x,y,size,White);
     }

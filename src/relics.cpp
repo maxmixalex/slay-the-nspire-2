@@ -54,14 +54,14 @@ void relic_hook(State&s,RelicHook hook){
   unsigned index=s.relic_order[i],id=relic_definitions[index].id;bool triggered=false;
   if(hook==RelicHook::CombatStart){
    if(id==Vajra){s.strength+=1;triggered=true;}
-   else if(id==Anchor){s.block+=10;triggered=true;}
+   else if(id==Anchor){gain_unpowered_block(s,10);triggered=true;}
    else if(id==OddlySmoothStone){s.dexterity+=1;triggered=true;}
-   else if(id==BagOfMarbles){for(int j=0;j<s.enemy_count;j++)s.enemies[j].vulnerable+=1;triggered=true;}
+   else if(id==BagOfMarbles){for(int j=0;j<s.enemy_count;j++)apply_vulnerable(s,j,1);triggered=true;}
    else if(id==BronzeScales){s.thorns+=3;triggered=true;}
    else if(id==BagOfPreparation||id==RingOfTheSnake)triggered=true; // draw count is applied by combat entry.
   }else if(hook==RelicHook::TurnStart){
-   if(id==HornCleat&&s.turn==2){s.block+=14;triggered=true;}
-   else if(id==CaptainsWheel&&s.turn==3){s.block+=18;triggered=true;}
+   if(id==HornCleat&&s.turn==2){gain_unpowered_block(s,14);triggered=true;}
+   else if(id==CaptainsWheel&&s.turn==3){gain_unpowered_block(s,18);triggered=true;}
    else if(id==ArtOfWar&&s.turn>1&&!s.attacked_this_turn){++s.energy;triggered=true;}
    else if(id==HappyFlower){auto&n=s.relic_counters[index];if(++n==3){n=0;++s.energy;triggered=true;}}
    else if(id==Akabeko&&s.turn==1){s.vigor+=8;triggered=true;}
@@ -69,7 +69,7 @@ void relic_hook(State&s,RelicHook hook){
   }else if(hook==RelicHook::AfterHandDraw){
    if(id==MercuryHourglass){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,3);triggered=true;}
   }else if(hook==RelicHook::TurnEnd){
-   if(id==Orichalcum&&s.block==0){s.block=6;triggered=true;}
+   if(id==Orichalcum&&s.block==0){gain_unpowered_block(s,6);triggered=true;}
   }else if(hook==RelicHook::Victory&&id==BurningBlood){heal(s,6);triggered=true;}
   if(triggered)flash(s,id);
  }
@@ -109,7 +109,7 @@ void relic_card_played(State&s,Card card){
   count=0;flash(s,id);
   if(id==Kunai){if(s.dexterity<9999)++s.dexterity;record(s,LogKind::Dexterity,1);}
   else if(id==Shuriken){if(s.strength<9999)++s.strength;record(s,LogKind::Strength,1);}
-  else if(id==OrnamentalFan){int amount=s.block>9995?9999-s.block:4;s.block+=(int16_t)amount;record(s,LogKind::Block,amount);}
+  else if(id==OrnamentalFan){gain_unpowered_block(s,4);}
   else if(id==LetterOpener){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,5);}
   else if(id==Nunchaku){if(s.energy<999)++s.energy;record(s,LogKind::Energy,1);}
  }
@@ -127,5 +127,4 @@ int relic_attack_multiplier(const State&s,bool preview){
  if(s.expansion.triple||(preview&&power_value(s,XPower::Gigantic)))n*=3;
  return n;
 }
-int card_block(const State&s,Card c){const auto&d=definitions[c.kind];int b=d.block+(c.upgraded?d.block_up:0);return b>0&&!s.no_block?b+s.dexterity+((c.kind==Defend||c.kind==DefendSilent||c.kind==UltimateDefend)?power_value(s,XPower::Fasten):0):0;}
 }

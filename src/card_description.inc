@@ -7,6 +7,22 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance)const{
     while(*p){
         if(*p=='\x1e'){++p;if(!live){while(*p&&*p!='\x1f')++p;}continue;}
         if(*p=='\x1f'){++p;continue;}
+        if(*p=='{'){
+            // The converter embeds the exact catalog value alongside the
+            // named live variable. Unknown live variables stay visibly
+            // unresolved so content/UI regressions reject an incomplete hook.
+            const char*start=p;const char*q=p+1;char variable[48]={};unsigned length=0;
+            while(((*q>='A'&&*q<='Z')||(*q>='a'&&*q<='z')||(*q>='0'&&*q<='9'))&&length+1<sizeof variable)variable[length++]=*q++;
+            if(length&&*q=='='){
+                ++q;bool negative=*q=='-';if(negative)++q;int value=0;bool digits=false;
+                while(*q>='0'&&*q<='9'&&value<1000000){digits=true;value=value*10+(*q++-'0');}
+                if(digits&&*q=='}'){
+                    if(negative)value=-value;
+                    if(!live||character_description_value(game,c,t,instance,variable,value)){b.number(value);p=q+1;continue;}
+                    while(start<=q)b.ch(*start++);p=q+1;continue;
+                }
+            }
+        }
         if(p[0]=='{'&&p[1]&&p[2]=='}'){
             int value=0;
             switch(p[1]){
@@ -22,5 +38,12 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance)const{
             }
             b.number(value);p+=3;
         }else b.ch(*p++);
+    }
+    if(live&&c.kind==Shiv&&!card_targets_enemy(game,c))b.text("\n[gold]作用于所有敌人。[/gold]");
+    if(live&&instance>=0&&instance<game.card_count&&game.cards[instance].kind==c.kind){
+        const unsigned keywords=c.upgraded?d.upgraded_keywords:d.keywords;
+        if(game.silent.inky[instance])b.text("\n[gold]墨影[/gold]：该牌的目标额外获得 [blue]1[/blue] 层虚弱。");
+        if(game.silent.sly[instance]&&!(keywords&16))b.text("\n[gold]奇巧。[/gold]");
+        if(game.silent.retain[instance]&&!card_retains(c))b.text("\n[gold]保留。[/gold]");
     }
 }

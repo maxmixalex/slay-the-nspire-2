@@ -20,8 +20,8 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
 }
 static const HandTile& hand_tile(Canvas&c,int index){
     auto&a=c.a;Card card=a.game.cards[a.game.hand.ids[index]];
-    int energy=cost(a.game,a.game.hand.ids[index]);bool playable=energy<=a.game.energy;
-    char description[512]{};a.card_description(card,definitions[card.kind].targeted?a.target:-1,description,sizeof description,a.game.hand.ids[index]);
+    int energy=cost(a.game,a.game.hand.ids[index]);bool playable=can_play_card(a.game,a.game.hand.ids[index]);
+    char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.game.hand.ids[index]);
     auto&t=hand_tiles[index];
     if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&
        t.playable==playable&&same_text(t.description,description))return t;
@@ -34,7 +34,7 @@ static const HandTile& hand_tile(Canvas&c,int index){
     tile.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,1,5,78,17);
     card_title(tile,a.content.card_string(card.kind),10,6,63,card.upgraded?Green:White);
     tile.picture(a.content.energy_image(card),0,0,18,18);tile.energy_label(energy,5,0,12);
-    tile.centered(definitions[card.kind].type==CardType::Attack?"攻击":definitions[card.kind].type==CardType::Skill?"技能":"能力",7,67,66,10,Muted);
+    tile.centered(card_type_label(definitions[card.kind].type),7,67,66,10,Muted);
     tile.paragraph(description,9,80,62,2,0,10,White);
     if(tile.paragraph(description,9,80,62,0,0,10)>2)tile.text("…",60,96,10,Gold,13);
     if(card.upgraded)tile.text("+",66,16,10,Green);
@@ -96,19 +96,19 @@ static void combat_screen(Canvas&c){
         if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i),p,false);
         auto r=hand_rail(s.hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
-        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s,s.hand.ids[i])<=s.energy);
+        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.busy&&can_play_card(s,s.hand.ids[i]));
     }
     if(s.hand.count){
         if(focused){
             draw_hand_tile(c,hand_tile(c,selected),hand_pose(s.hand.count,selected,true),true);
             auto p=hand_pose(s.hand.count,selected,true);
-            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&cost(s,s.hand.ids[selected])<=s.energy);
+            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&can_play_card(s,s.hand.ids[selected]));
         }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
         for(int i=0;i<s.hand.count;i++){
             auto r=hand_rail(s.hand.count,i);
-            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&cost(s,s.hand.ids[i])<=s.energy);
+            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&can_play_card(s,s.hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
     c.picture(s.character==Character::Silent?a.content.ui_image(U_SilentOrb):A_Energy,6,174,42,42);

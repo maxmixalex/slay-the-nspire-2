@@ -6,6 +6,11 @@
 namespace spire {
 #include "canvas.inc"
 #include "app_input.inc"
+static const char* card_type_label(CardType type){
+    switch(type){case CardType::Attack:return "攻击";case CardType::Skill:return "技能";
+    case CardType::Power:return "能力";case CardType::Status:return "状态";case CardType::Curse:return "诅咒";}
+    return "";
+}
 static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number,int fee=-2){
     int frame=c.a.content.frame_image(card);
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
@@ -87,7 +92,7 @@ static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2){
     c.picture(c.a.content.energy_image(card),x-3,y-5,19,19);
     int energy=fee==-2?cost(card):fee;c.energy_label(energy,x+3,y-4,12);
     char text[320]={};c.a.card_description(card,-1,text,sizeof text);c.dim(x+5,y+73,70,29,135);c.paragraph(text,x+7,y+74,66,2,0,10,White);
-    c.centered(type==0?"攻击":type==1?"技能":"能力",x+4,y+99,72,10,Muted);
+    c.centered(card_type_label((CardType)type),x+4,y+99,72,10,Muted);
 }
 static void reward_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);c.actor(0,54,130);c.dim(0,22,320,218,155);
@@ -191,6 +196,15 @@ static void panels(Canvas&c){
     c.close_button();
     if(a.panel==2){c.text("↑",299,53,12,Gold);c.hit(294,50,23,24,HitKind::Scroll,-1);c.text("↓",299,157,12,Gold);c.hit(294,153,23,24,HitKind::Scroll,1);}
 }
+int App::detail_energy()const{
+    if(detail_card<0)return -2;
+    Card card{(uint8_t)(detail_card&255),(uint8_t)(detail_card>>8)};
+    int energy=detail_instance>=0?card_preview_cost(game,card,detail_instance):detail_cost_override==-2?cost(card):detail_cost_override;
+    if(detail_instance>=0&&game.phase==Phase::ExtendedChoice&&game.expansion.choice_free&&cost(card)>=0){
+        for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==detail_instance){energy=0;break;}
+    }
+    return energy;
+}
 static void detail_screen(Canvas&c){
     auto&a=c.a;Card card{(uint8_t)(a.detail_card&255),(uint8_t)(a.detail_card>>8)};
     a.hit_count=0;c.dim(0,0,320,240,170);c.rect(7,22,306,211,Panel);c.box(7,22,306,211,Gold);
@@ -199,12 +213,14 @@ static void detail_screen(Canvas&c){
     int type=(int)definitions[card.kind].type;
     c.picture(a.content.frame_image(card),18,61,94,132);
     c.picture(c.a.content.card_image(card.kind),24,90,82,60);c.picture(a.content.energy_image(card),18,60,26,26);
-    int energy=a.detail_cost_override==-2?cost(card):a.detail_cost_override;c.energy_label(energy,27,64,12);
+    c.energy_label(a.detail_energy(),27,64,12);
     c.centered(title,21,161,87,12,card.upgraded?Green:White);
-    char description[512]={};a.card_description(card,a.target,description,sizeof description,a.detail_instance);
+    if(!a.library&&combat_phase(a.game.phase)&&a.detail_instance>=0&&a.detail_instance<a.game.card_count&&
+       a.game.cards[a.detail_instance].kind==card.kind&&a.game.silent.inky[a.detail_instance])c.ui(U_Inky,56,177,18,18);
+    char description[512]={};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.detail_instance);
     int lines=c.paragraph(description,123,66,177,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-8));
     c.paragraph(description,123,66,177,8,a.detail_scroll);
-    c.text(type==0?"攻击":type==1?"技能":"能力",124,48,10,Muted);
+    c.text(card_type_label((CardType)type),124,48,10,Muted);
     const bool lab=a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
     if(lab){
         c.button("返回",11,205,67,false,25);c.hit(9,202,72,31,HitKind::DetailClose);

@@ -7,7 +7,10 @@ enum class XPower:uint8_t {
  RollingBoulder,Stratagem,Entropy,Gambit,Focus,Count
 };
 constexpr int XPowerCount=(int)XPower::Count;
-enum class XChoice:uint8_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,Count};
+enum class XChoice:uint8_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,
+#include "ironclad_choices.inc"
+#include "silent_choices.inc"
+ Count};
 enum class XOp:uint8_t {
  Power,AllDamage,StrengthLoss,AllRare,Offer,Generate,ChooseDraw,ChooseDiscard,
  ChooseTop,DiscardRedraw,ExhaustAny,Free,Transform,AutoDraw,AutoDiscard,AutoTop,
@@ -15,8 +18,12 @@ enum class XOp:uint8_t {
  ReturnNext,Prolong,Restless,Bomb,ShuffleAll,RandomCosts,StrikeReplay,PotionDone,
  Demise,ExhaustHand,Strength,Dexterity,AfterPlay,TurnEnd,EndDiscard,EnemyStart,
  EnemyAct,EnemyDone,TurnStart,TurnDraw,TurnReady,RandomHits,Potion,PlayerDamage,
- Noop,Summon,Forge,ChannelDark,OrbsEnd,BoulderTick,TurnRelics,Count
+ Noop,Summon,Forge,ChannelDark,OrbsEnd,BoulderTick,TurnRelics,
+#include "ironclad_ops.inc"
+#include "silent_ops.inc"
+ Count
 };
+static_assert((unsigned)XOp::Count<=256,"Expand saved operation IDs before exceeding uint8_t");
 struct XFrame {
  int16_t playing=-1,target=-1,x=0,last_damage=0,vigor=0;
  uint16_t remaining=0;

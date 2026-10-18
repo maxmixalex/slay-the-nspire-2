@@ -15,7 +15,7 @@ static State fight(std::initializer_list<Card> cards,int enemies=1){
 }
 static void supply(State&s,unsigned count){for(unsigned i=0;i<count;i++){unsigned id=s.card_count++;s.cards[id]={Defend,0};s.zones[id]=Zone::Draw;s.draw.ids[s.draw.count++]=(uint16_t)id;}CHECK(validate(s));}
 static int find(const State&s,unsigned kind){for(int i=0;i<s.hand.count;i++)if(s.cards[s.hand.ids[i]].kind==kind)return i;return -1;}
-static void rt(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==12);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
+static void rt(const State&s){SaveData a{},b{};State copy{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==SaveVersion);CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size&&!std::memcmp(a.bytes,b.bytes,a.size));}
 static void unchanged(const State&a,const State&b){SaveData x{},y{};CHECK(save(a,x));CHECK(save(b,y));CHECK(x.size==y.size&&!std::memcmp(x.bytes,y.bytes,x.size));}
 static void cards(){
  for(unsigned up=0;up<2;up++){
