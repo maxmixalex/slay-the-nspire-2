@@ -9,7 +9,37 @@ using namespace spire;
 static App a;
 static SaveData stored;
 static unsigned checks,card_acquisitions,potion_acquisitions;
+static bool real_profile;
+static const char* screenshot_directory;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
+static bool number_in(const char* text,unsigned value){
+    while(*text){
+        if(*text>='0'&&*text<='9'){
+            char* end=nullptr;unsigned long found=std::strtoul(text,&end,10);
+            if(found==value)return true;text=end;
+        }else ++text;
+    }
+    return false;
+}
+// Optional local screenshots contain game-derived art and must remain private.
+// The caller creates the output directory; normal CTest writes no screenshots.
+static void capture(const char* name){
+    if(!screenshot_directory)return;
+    a.render();std::string path=std::string(screenshot_directory)+"/"+name+".ppm";
+    FILE* f=std::fopen(path.c_str(),"wb");CHECK(f);
+    CHECK(std::fprintf(f,"P6\n%d %d\n255\n",ScreenW,ScreenH)>0);
+    uint8_t row[ScreenW*3];
+    for(int y=0;y<ScreenH;y++){
+        for(int x=0;x<ScreenW;x++){
+            uint16_t p=a.pixels[y*ScreenW+x];
+            row[x*3]=(uint8_t)(((p>>11)&31)*255/31);
+            row[x*3+1]=(uint8_t)(((p>>5)&63)*255/63);
+            row[x*3+2]=(uint8_t)((p&31)*255/31);
+        }
+        CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);
+    }
+    CHECK(std::fclose(f)==0);
+}
 static bool save_cb(const State&s){return save(s,stored);}
 static bool load_cb(State&s){return load(s,stored.bytes,stored.size);}
 static SaveData snapshot(){SaveData b{};CHECK(validate(a.game));CHECK(save(a.game,b));return b;}
@@ -84,6 +114,12 @@ static void acquisitions(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))for(unsigned up=0;up<2;up++){
         setup();auto before=snapshot();tap(HitKind::Command,(int)Key::Collection);CHECK(a.library);unchanged(before);
         open_model(kind,up!=0);modal_only();unchanged(before);int id=a.game.card_count,deck=a.game.deck_count;
+        if(real_profile){
+            auto portrait=a.content.image(a.content.card_image(kind));CHECK(portrait.pixels&&portrait.w==82&&portrait.h==60);
+            char text[1024];a.card_description({(uint8_t)kind,(uint8_t)up},-1,text,sizeof text);
+            CHECK(*text&&!std::strchr(text,'{')&&!std::strchr(text,'}'));
+        }
+        if(kind==Discovery)capture(up?"discovery-upgrade":"discovery-base");
         action(UiAction::LabCard);CHECK(!a.library&&a.detail_card<0);CHECK(a.game.card_count==id+1&&a.game.deck_count==deck);
         CHECK(a.game.hand.count==1&&a.game.hand.ids[0]==id&&a.game.cards[id].kind==kind&&a.game.cards[id].upgraded==up);
         CHECK(a.game.zones[id]==Zone::Hand);CHECK(std::strstr(a.notice,"手牌"));CHECK(validate(a.game));++card_acquisitions;
@@ -91,6 +127,8 @@ static void acquisitions(){
     CHECK(card_acquisitions==106);
     for(unsigned id=1;id<=PotionKinds;id++){
         setup();auto before=snapshot();open_potion((Potion)id);modal_only();unchanged(before);
+        if(real_profile)CHECK(a.content.image(a.content.potion_image((Potion)id)).pixels);
+        if((Potion)id==Potion::ColorlessPotion)capture("colorless-potion-detail");
         action(UiAction::LabPotion);CHECK(!a.library&&a.detail_item<0&&a.game.potions[0]==(Potion)id&&a.game.potions[1]==Potion::Empty);
         CHECK(validate(a.game));++potion_acquisitions;
     }
@@ -123,16 +161,17 @@ static void offers(){
     for(Potion potion:offer_potions){
         setup();acquire_potion(potion);drink();CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Offer);
         CHECK(a.game.expansion.choices.count==3);auto before=snapshot();modal_only();
+        if(potion==Potion::ColorlessPotion)capture("colorless-potion-offer");
         CHECK(!hit(HitKind::UiAction,(int)UiAction::ConfirmChoice).enabled);action(UiAction::ConfirmChoice);unchanged(before);
         for(unsigned i=0;i<3;i++){
             int token=a.game.expansion.choices.ids[i];CHECK(token>=MaxCards&&token<MaxCards+3);
             if(potion==Potion::ColorlessPotion)CHECK(card_colorless(choice_card(a.game,token).kind));
             tap(HitKind::CombatChoice,token);CHECK(a.choice_selected_count==1&&a.choice_selected[0]==token);
-            a.input(Key::Detail);CHECK(a.detail_cost_override==0&&a.detail_instance==-1);
+            a.input(Key::Detail);CHECK((cost(choice_card(a.game,token))<0?a.detail_cost_override<0:a.detail_cost_override==0)&&a.detail_instance==-1);
             CHECK((a.detail_card&255)==choice_card(a.game,token).kind);modal_only();a.input(Key::Back);unchanged(before);
         }
         a.input(Key::Save);CHECK(stored.size);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
-        CHECK(cost(a.game,a.game.hand.ids[0])==0&&!a.game.expansion.potion_active);CHECK(validate(a.game));
+        CHECK(cost(a.game,a.game.hand.ids[0])==(cost(a.game.cards[a.game.hand.ids[0]])<0?-1:0)&&!a.game.expansion.potion_active);CHECK(validate(a.game));
         a.input(Key::Load);CHECK(a.game.phase==Phase::ExtendedChoice&&a.choice_selected_count==0);unchanged(before);
         auto h=hit(HitKind::CombatChoice,a.game.expansion.choices.ids[0]);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);
         a.input(Key::Collection);a.pointer_button(false);CHECK(a.library&&a.choice_selected_count==0);unchanged(before);a.input(Key::Back);
@@ -141,6 +180,22 @@ static void offers(){
     setup();open_model(Discovery);action(UiAction::LabCard);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.playing>=0);
     auto before=snapshot();tap(HitKind::CombatChoice,a.game.expansion.choices.ids[2]);unchanged(before);action(UiAction::ConfirmChoice);
     CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&a.game.expansion.cards_finished==1);CHECK(validate(a.game));
+}
+static void free_x_costs(){
+    for(unsigned kind:{(unsigned)Whirlwind,(unsigned)Volley}){
+        setup();acquire_potion(kind==Volley?Potion::ColorlessPotion:Potion::AttackPotion);drink();
+        CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Offer);
+        a.game.expansion.offers[0]={(uint8_t)kind,0};auto before=snapshot();
+        tap(HitKind::CombatChoice,MaxCards);if(kind==Volley)capture("x-cost-offer");
+        a.input(Key::Detail);CHECK((a.detail_card&255)==(int)kind&&a.detail_cost_override<0);
+        a.input(Key::Back);unchanged(before);action(UiAction::ConfirmChoice);
+        CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&cost(a.game,a.game.hand.ids[0])==-1);
+        setup();int id=append({(uint8_t)kind,0},Zone::Discard);
+        acquire_potion(Potion::LiquidMemories);drink();before=snapshot();tap(HitKind::CombatChoice,id);
+        a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override<0);
+        a.input(Key::Back);unchanged(before);action(UiAction::ConfirmChoice);
+        CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==-1);CHECK(validate(a.game));
+    }
 }
 static void pile_choices_and_instances(){
     setup();for(int i=0;i<26;i++)append({Strike,0},Zone::Discard);
@@ -153,11 +208,11 @@ static void pile_choices_and_instances(){
     setup();int left=append({SovereignBlade,0},Zone::Hand),right=append({SovereignBlade,0},Zone::Hand);
     a.game.expansion.blade_damage[left]=25;a.game.expansion.blade_damage[right]=47;a.game.expansion.turn_cost[left]=1;
     before=snapshot();a.cursor=0;a.input(Key::Detail);CHECK(a.detail_instance==left&&a.detail_cost_override==0);
-    char text[256];a.card_description(a.game.cards[left],0,text,sizeof text,a.detail_instance);CHECK(std::strstr(text,"Damage 25;"));
+    char text[256];a.card_description(a.game.cards[left],0,text,sizeof text,a.detail_instance);CHECK(number_in(text,25));capture("blade-instance-25");
     a.input(Key::Back);a.cursor=1;a.input(Key::Detail);CHECK(a.detail_instance==right&&a.detail_cost_override==-2);
-    a.card_description(a.game.cards[right],0,text,sizeof text,a.detail_instance);CHECK(std::strstr(text,"Damage 47;"));
+    a.card_description(a.game.cards[right],0,text,sizeof text,a.detail_instance);CHECK(number_in(text,47));capture("blade-instance-47");
     a.input(Key::Back);unchanged(before);open_model(SovereignBlade);a.card_description({SovereignBlade,0},0,text,sizeof text);
-    CHECK(std::strstr(text,"Damage 10;"));unchanged(before);
+    CHECK(number_in(text,10));capture("blade-catalog");unchanged(before);
 }
 static void statuses(){
     struct Case{Potion potion;int actor,status,amount;};
@@ -172,6 +227,7 @@ static void statuses(){
         auto before=snapshot();a.input(Key::Statuses);if(test.actor)a.input(Key::Right);CHECK(a.status_actor==test.actor);modal_only();
         int ids[StatusKinds],count=collect_statuses(a.game,test.actor,ids),selected=0;
         while(selected<count&&ids[selected]!=test.status)++selected;CHECK(selected<count);a.status_selected=selected;
+        if(test.potion==Potion::Clarity)capture("clarity-status");
         tap(HitKind::StatusItem,selected);a.input(Key::EndTurn);a.input(Key::Collection);CHECK(!a.library&&a.status_actor==test.actor);unchanged(before);
         a.input(Key::Back);CHECK(a.status_actor<0);unchanged(before);
     }
@@ -192,8 +248,16 @@ static void shop_and_rewards(){
         action(UiAction::RewardPotion);unchanged(before);
     }
 }
-int main(){
-    auto content=synthetic_profile();CHECK(a.init(content.data(),content.size(),{save_cb,load_cb}));
-    acquisitions();acquisition_guards();offers();pile_choices_and_instances();statuses();shop_and_rewards();
-    std::printf("expansion UI: %u checks; %u colorless variants acquired; %u potions acquired; synthetic NSP2/11 profile\n",checks,card_acquisitions,potion_acquisitions);
+int main(int argc,char** argv){
+    CHECK(argc<=3);std::vector<uint8_t> content;
+    if(argc>1){
+        real_profile=true;FILE* f=std::fopen(argv[1],"rb");CHECK(f);
+        CHECK(std::fseek(f,0,SEEK_END)==0);long size=std::ftell(f);CHECK(size>=40&&size<=MaxPack);
+        CHECK(std::fseek(f,0,SEEK_SET)==0);content.resize((size_t)size);
+        CHECK(std::fread(content.data(),1,content.size(),f)==content.size());CHECK(std::fclose(f)==0);
+    }else content=synthetic_profile();
+    if(argc>2)screenshot_directory=argv[2];
+    CHECK(a.init(content.data(),content.size(),{save_cb,load_cb}));
+    acquisitions();acquisition_guards();offers();free_x_costs();pile_choices_and_instances();statuses();shop_and_rewards();
+    std::printf("expansion UI: %u checks; %u colorless variants acquired; %u potions acquired; %s NSP2/11 profile\n",checks,card_acquisitions,potion_acquisitions,real_profile?"supplied private":"synthetic");
 }

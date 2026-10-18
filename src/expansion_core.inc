@@ -17,12 +17,13 @@ void queue_extension(State&s,XOp op,int a,int b,bool first){
 }
 int cost(const State&s,int id){
  if(id<0||id>=s.card_count)return 99;
+ int base=cost(s.cards[id]);if(base<0)return base;
  if(s.expansion.turn_cost[id])return s.expansion.turn_cost[id]-1;
  if(s.expansion.combat_cost[id])return s.expansion.combat_cost[id]-1;
- return cost(s.cards[id]);
+ return base;
 }
 bool card_exhausts(Card c){if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];return d.exhausts||((c.upgraded?d.upgraded_keywords:d.keywords)&1);}
-bool card_can_generate(unsigned k){return k<CardKinds&&!card_generated(k)&&k!=Alchemize;}
+bool card_can_generate(unsigned k){return k<CardKinds&&card_rarity(k)>=2&&card_rarity(k)<=4&&!card_generated(k)&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem;}
 static void gain_unpowered_block(State&s,int n){n=max(0,min(n,9999-s.block));s.block+=(int16_t)n;record(s,LogKind::Block,n);}
 static int powered_block(const State&s,Card c,int n){
  if(s.no_block||n<=0)return 0;
@@ -33,9 +34,15 @@ static bool matches_generated(const State&s,unsigned k,int filter){
  bool own=card_in_pool(k,s.character),neutral=card_colorless(k);
  if(filter==4)return neutral;
  if(filter==5)return !neutral&&!own&&definitions[k].type==CardType::Attack;
- if(!(own||neutral))return false;
+ if(!own)return false;
  if(filter==6)return cost({(uint8_t)k,0})==0;
  return !filter||(int)definitions[k].type==filter-1;
+}
+static bool matches_transform(unsigned original,unsigned candidate){
+ if(original==candidate||!card_can_generate(candidate))return false;
+ CardColor pool=card_color(original);
+ if(card_generated(original))pool=CardColor::Colorless;
+ return card_color(candidate)==pool;
 }
 static int create_to_hand(State&s,Card c){
  int id=make_card(s,c);if(id<0)return -1;
@@ -46,9 +53,14 @@ static int create_to_hand(State&s,Card c){
 static void generate_card(State&s,int filter,int flags){
  uint8_t pool[CardKinds];unsigned n=0;
  for(unsigned k=0;k<CardKinds;k++)if(matches_generated(s,k,filter))pool[n++]=(uint8_t)k;
- if(!n)return;
- int id=create_to_hand(s,{pool[random_below(s.rng_cards,n)],(uint8_t)((flags&2)!=0)});
- if(id>=0&&(flags&1))s.expansion.turn_cost[id]=1;
+ // The high bits request a single distinct batch; ordinary independent
+ // generation keeps a zero batch field and creates one card.
+ unsigned count=flags>>2;if(!count)count=1;
+ while(count--&&n){
+  unsigned j=random_below(s.rng_cards,n);uint8_t kind=pool[j];pool[j]=pool[--n];
+  int id=create_to_hand(s,{kind,(uint8_t)((flags&2)!=0)});if(id<0)return;
+  if(flags&1)s.expansion.turn_cost[id]=1;
+ }
 }
 static void clear_extended_choice(State&s){auto&x=s.expansion;x.choice=XChoice::None;x.choices.count=0;x.choice_min=x.choice_max=x.choice_free=0;}
 static void set_extended_choice(State&s,XChoice kind,const Pile&pool,int lo,int hi,int flags=0){
@@ -88,7 +100,7 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
   else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;}
   else if(kind==XChoice::DiscardRedraw){if(move_instance(s,id,s.hand,s.discard,Zone::Discard))record(s,LogKind::Discard,s.cards[id].kind);}
   else if(kind==XChoice::Transform){
-   uint8_t pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(k!=s.cards[id].kind&&matches_generated(s,k,0))pool[count++]=(uint8_t)k;
+   uint8_t pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(matches_transform(s.cards[id].kind,k))pool[count++]=(uint8_t)k;
    if(count){s.cards[id]={pool[random_below(s.rng_cards,count)],0};x.turn_cost[id]=x.combat_cost[id]=x.replay[id]=0;x.return_turn[id]=0;x.blade_damage[id]=0;}
   }
  }
@@ -132,6 +144,9 @@ static void finish_extended_card(State&s){
 static void after_play(State&s,int id){
  if(id!=s.playing||id<0||id>=s.card_count){fail(s);return;}auto&x=s.expansion;
  if(x.remaining&&alive(s)){--x.remaining;relic_attack_end(s);x.triple=0;queue_current(s);return;}
+ // Both generated free cards and randomized costs expire when the complete
+ // physical play (including its additional replays) has finished.
+ x.turn_cost[id]=0;
  Card card=s.cards[id];auto type=definitions[card.kind].type;bool ex=card_exhausts(card)&&type!=CardType::Power;
  if(type==CardType::Power)put(s,s.powers,id,Zone::Power);
  else if(!ex)put(s,x.returning?s.draw:s.discard,id,x.returning?Zone::Draw:Zone::Discard);
@@ -163,7 +178,15 @@ static void queue_current(State&s){
   case Alchemize:op(XOp::Potion);break;
   case Anointed:op(XOp::AllRare);break;
   case Automation:pw(XPower::Automation,1);break;
-  case BeatDown:for(int i=0;i<draw;i++)op(XOp::AutoDiscard,1);break;
+  case BeatDown:{
+   // Capture distinct discard instances before the first attack is played.
+   // Returned attacks must not enter the selection again within this play.
+   uint16_t ids[MaxCards];unsigned n=0;
+   for(unsigned i=0;i<s.discard.count;i++)if(definitions[s.cards[s.discard.ids[i]].kind].type==CardType::Attack)ids[n++]=s.discard.ids[i];
+   for(unsigned i=0;i<n&&i<(unsigned)draw;i++){
+    unsigned j=i+random_below(s.rng_cards,n-i);uint16_t id=ids[j];ids[j]=ids[i];ids[i]=id;op(XOp::AutoInstance,id);
+   }
+   break;}
   case Bolas:case ThrummingHatchet:op(XOp::ReturnNext,s.playing);break;
   case Calamity:pw(XPower::Calamity,1);break;
   case Catastrophe:for(int i=0;i<draw;i++)op(XOp::AutoDraw);break;
@@ -175,7 +198,11 @@ static void queue_current(State&s){
   case Fasten:pw(XPower::Fasten,power);break;
   case Fisticuffs:op(XOp::DamageBlock);break;
   case HiddenGem:op(XOp::EnchantReplay,power);break;
-  case JackOfAllTrades:for(int i=0;i<draw;i++)op(XOp::Generate,4);break;
+  case JackOfAllTrades:{
+   uint8_t pool[CardKinds];unsigned n=0;
+   for(unsigned k=0;k<CardKinds;k++)if(k!=JackOfAllTrades&&matches_generated(s,k,4))pool[n++]=(uint8_t)k;
+   for(int i=0;i<draw&&n;i++){unsigned j=random_below(s.rng_cards,n);op(XOp::Create,1,pool[j]);pool[j]=pool[--n];}
+   break;}
   case Jackpot:for(int i=0;i<draw;i++)op(XOp::Generate,6,c.upgraded?2:0);break;
   case Mayhem:pw(XPower::Mayhem,1);break;
   case Nostalgia:pw(XPower::Nostalgia,1);break;

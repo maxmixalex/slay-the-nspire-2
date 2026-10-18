@@ -74,7 +74,8 @@ static void stress(){
   State s{};new_run(s,seed,true,seed%2?Character::Silent:Character::Ironclad);s.max_hp=s.hp=999;
   for(int i=17;i<RelicKinds;i++)gain_relic(s,relic_definitions[i].id);enter_combat(s);
   for(unsigned n=0;n<180&&combat_phase(s.phase);n++){
-   if(s.phase==Phase::ExhaustManyChoice){uint16_t ids[MaxHand];unsigned count=random_below(r,s.exhaust_limit+1);for(unsigned j=0;j<count;j++)ids[j]=s.hand.ids[j];CHECK(choose_exhaust_many(s,ids,count));}
+   if(s.phase==Phase::ExtendedChoice){uint16_t ids[MaxHand];unsigned count=choice_min(s)+random_below(r,choice_max(s)-choice_min(s)+1);for(unsigned j=0;j<count;j++)ids[j]=choice_pile(s).ids[j];CHECK(choose_extended(s,ids,count));}
+   else if(s.phase==Phase::ExhaustManyChoice){uint16_t ids[MaxHand];unsigned count=random_below(r,s.exhaust_limit+1);for(unsigned j=0;j<count;j++)ids[j]=s.hand.ids[j];CHECK(choose_exhaust_many(s,ids,count));}
    else if(s.phase==Phase::ExhaustChoice){CHECK(choose_exhaust(s,0));}
    else if(s.phase==Phase::DiscardChoice){uint16_t ids[MaxHand];for(unsigned j=0;j<s.discard_required;j++)ids[j]=s.hand.ids[j];CHECK(choose_discard(s,ids,s.discard_required));}
    else if(s.phase==Phase::ReturnChoice){CHECK(choose_return_to_draw(s,s.discard.ids[0]));}

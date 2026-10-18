@@ -140,7 +140,7 @@ static void choices_and_creation(){
         CHECK(!use_potion(s,1,0));unchanged(s,before);
         uint16_t token=choice_pile(s).ids[1];Card chosen=choice_card(s,token);
         select(s,{token});CHECK(s.hand.count==3&&!s.expansion.potion_active);
-        int id=s.hand.ids[2];CHECK(s.cards[id].kind==chosen.kind&&cost(s,id)==0);
+        int id=s.hand.ids[2];CHECK(s.cards[id].kind==chosen.kind&&cost(s,id)==(cost(chosen)<0?cost(chosen):0));
     }
     auto s=fight();append(s,{Strike,0},Zone::Hand);
     int unchosen=append(s,{Defend,0},Zone::Draw),chosen=append(s,{Defend,1},Zone::Draw);
@@ -173,9 +173,12 @@ static void choices_and_creation(){
     s=fight();fill(s,Zone::Hand,9);drink(s,Potion::PotOfGhouls);CHECK(s.hand.count==10&&s.discard.count==1);
     CHECK(s.cards[s.hand.ids[9]].kind==Soul&&s.cards[s.discard.ids[0]].kind==Soul);
     s=fight();drink(s,Potion::OrobicAcid);CHECK(s.hand.count==3);
-    for(int i=0;i<3;i++){int id=s.hand.ids[i];CHECK(definitions[s.cards[id].kind].type==(CardType)i&&cost(s,id)==0);}
+    for(int i=0;i<3;i++){int id=s.hand.ids[i];CHECK(definitions[s.cards[id].kind].type==(CardType)i&&cost(s,id)==(cost(s.cards[id])<0?-1:0));}
     s=fight();drink(s,Potion::CosmicConcoction);CHECK(s.hand.count==3);
-    for(unsigned i=0;i<3;i++)CHECK(card_colorless(s.cards[s.hand.ids[i]].kind)&&s.cards[s.hand.ids[i]].upgraded);
+    for(unsigned i=0;i<3;i++){
+        CHECK(card_colorless(s.cards[s.hand.ids[i]].kind)&&s.cards[s.hand.ids[i]].upgraded);
+        for(unsigned j=0;j<i;j++)CHECK(s.cards[s.hand.ids[i]].kind!=s.cards[s.hand.ids[j]].kind);
+    }
     restore(s);
 }
 static void timed_and_automatic(){
@@ -191,8 +194,9 @@ static void timed_and_automatic(){
     for(int turn=0;turn<6;turn++){quiet_turn(s);CHECK(s.hp==health[turn]&&s.strength==turn+1);}
     s=fight();drink(s,Potion::ShipInABottle);CHECK(s.block==10&&s.block_next_turn==10);
     quiet_turn(s);CHECK(s.block==10&&!s.block_next_turn);quiet_turn(s);CHECK(!s.block);
-    s=fight();drink(s,Potion::HeartOfIron);quiet_turn(s);CHECK(s.block==7&&power_value(s,XPower::Plating)==6);
-    quiet_turn(s);CHECK(s.block==6&&power_value(s,XPower::Plating)==5);
+    s=fight();drink(s,Potion::HeartOfIron);s.enemies[0].move=0;
+    CHECK(end_turn(s));CHECK(s.hp==75&&!s.block&&power_value(s,XPower::Plating)==6);
+    quiet_turn(s);CHECK(s.hp==75&&!s.block&&power_value(s,XPower::Plating)==5);
     s=fight();fill(s,Zone::Hand,3);fill(s,Zone::Draw,30);drink(s,Potion::StableSerum);
     quiet_turn(s);CHECK(s.hand.count==8&&s.zones[0]==Zone::Hand&&power_value(s,XPower::Retain)==1);
     quiet_turn(s);CHECK(s.hand.count==10&&s.zones[0]==Zone::Hand&&!power_value(s,XPower::Retain));
@@ -286,7 +290,151 @@ static void acquisition(){
     s=fight();s.phase=Phase::Shop;s.hp=31;s.gold=9950;drink(s,Potion::FoulPotion);
     CHECK(s.hp==31&&s.gold==9999&&s.enemies[0].hp==46);restore(s);
 }
+// Static inspection of the locked DLL establishes these lifetime and stacking
+// rules. Unlike the earlier descriptor-only tests, the expected boundaries are
+// supported by CardEnergyCost, the matching power hooks and PotionFactory.
+static void pinned_cost_lifetimes(){
+    auto s=fight();int id=append(s,{Strike,0},Zone::Hand);s.rng_cards=2;
+    gain_power(s,XPower::Nostalgia,2);drink(s,Potion::SneckoOil);
+    CHECK(cost(s,id)==2);restore(s);CHECK(play(s,0,0));
+    CHECK(s.energy==18&&!s.expansion.turn_cost[id]&&s.zones[id]==Zone::Draw);
+    drink(s,Potion::Swift);CHECK(s.hand.count==1&&s.hand.ids[0]==id&&cost(s,id)==1);
+    CHECK(play(s,0,0));CHECK(s.energy==17&&s.enemies[0].hp==34);restore(s);
+
+    // Generated/returned "free this turn" cards use the same expiry as Snecko:
+    // their first play removes the override, including a same-turn return.
+    s=fight();id=append(s,{Strike,0},Zone::Discard);gain_power(s,XPower::Nostalgia,2);
+    drink(s,Potion::LiquidMemories);select(s,{(uint16_t)id});CHECK(cost(s,id)==0);
+    CHECK(play(s,0,0));CHECK(s.energy==20&&!s.expansion.turn_cost[id]);
+    drink(s,Potion::Swift);CHECK(s.hand.ids[0]==id&&cost(s,id)==1);
+    CHECK(play(s,0,0));CHECK(s.energy==19);restore(s);
+
+    // A later Snecko override expires back to Touch of Insanity's combat-wide
+    // zero cost. Applying Touch after Snecko makes the first play free too.
+    for(bool touch_first:{false,true}){
+        s=fight();id=append(s,{Strike,0},Zone::Hand);gain_power(s,XPower::Nostalgia,2);s.rng_cards=2;
+        if(touch_first){drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)id});}
+        drink(s,Potion::SneckoOil);CHECK(cost(s,id)==2);
+        if(!touch_first){drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)id});}
+        CHECK(cost(s,id)==(touch_first?2:0));CHECK(play(s,0,0));
+        int energy=touch_first?18:20;CHECK(s.energy==energy);
+        drink(s,Potion::Swift);CHECK(cost(s,id)==0&&s.expansion.combat_cost[id]==1);
+        CHECK(play(s,0,0));CHECK(s.energy==energy);restore(s);
+    }
+
+    // X-cost is excluded before sampling, and free-cost setters do not replace
+    // the X payment/captured value with a zero-energy play.
+    auto ordinary=fight();append(ordinary,{Strike,0},Zone::Hand);ordinary.rng_cards=2;
+    drink(ordinary,Potion::SneckoOil);
+    s=fight();append(s,{Strike,0},Zone::Hand);id=append(s,{Whirlwind,0},Zone::Hand);s.rng_cards=2;
+    drink(s,Potion::SneckoOil);CHECK(s.rng_cards==ordinary.rng_cards&&cost(s,0)==cost(ordinary,0));
+    CHECK(cost(s,id)==-1&&!s.expansion.turn_cost[id]);
+    drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)id});CHECK(cost(s,id)==-1);
+    s.energy=2;CHECK(play(s,1,0));CHECK(s.energy==0&&s.enemies[0].hp==36&&s.enemies[1].hp==36);restore(s);
+}
+static void pinned_stacking_and_piles(){
+    auto s=fight();fill(s,Zone::Draw,60);
+    for(int i=0;i<2;i++){drink(s,Potion::Clarity);drink(s,Potion::RadiantTincture);}
+    CHECK(s.hand.count==2&&s.energy==22);
+    for(int turn=0;turn<7;turn++){
+        quiet_turn(s);CHECK(s.hand.count==(turn<6?6:5)&&s.energy==(turn<6?4:3));
+        CHECK(power_value(s,XPower::Clarity)==(turn<6?5-turn:0));
+        CHECK(power_value(s,XPower::Radiance)==(turn<6?5-turn:0));
+    }
+    s=fight();fill(s,Zone::Hand,3,{Strike,0});
+    drink(s,Potion::Duplicator);drink(s,Potion::Duplicator);
+    CHECK(play(s,0,0));CHECK(s.enemies[0].hp==34&&power_value(s,XPower::Duplicator)==1);
+    CHECK(play(s,0,0));CHECK(s.enemies[0].hp==22&&!power_value(s,XPower::Duplicator));
+    CHECK(play(s,0,0));CHECK(s.enemies[0].hp==16&&s.energy==17&&s.expansion.cards_finished==5);restore(s);
+
+    s=fight();append(s,{TwinStrike,0},Zone::Hand);drink(s,Potion::SoldiersStew);
+    queue_extension(s,XOp::Create,1,Strike);resolve_pending(s);
+    CHECK(s.hand.count==2&&s.expansion.replay[0]==1&&!s.expansion.replay[1]);
+    CHECK(play(s,0,0));CHECK(play(s,0,0));
+    CHECK(s.enemies[0].hp==20&&s.expansion.cards_finished==3);restore(s);
+
+    // Bottled Potential affects hand/draw/discard, preserving exhausted cards
+    // and installed powers. Its shuffle can suspend for Stratagem before draw.
+    s=fight();fill(s,Zone::Hand,2);fill(s,Zone::Draw,6);fill(s,Zone::Discard,3);
+    int exhausted=append(s,{Strike,1},Zone::Exhaust),installed=append(s,{Inflame,0},Zone::Power);
+    gain_power(s,XPower::Stratagem,1);drink(s,Potion::BottledPotential);
+    CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.potion_active);
+    CHECK(!s.hand.count&&s.draw.count==11&&!s.discard.count&&choice_pile(s).count==11);
+    CHECK(choice_min(s)==1&&choice_max(s)==1);uint16_t chosen=choice_pile(s).ids[0];select(s,{chosen});
+    CHECK(s.hand.count==6&&s.draw.count==5&&s.zones[chosen]==Zone::Hand);
+    CHECK(s.exhaust.count==1&&s.exhaust.ids[0]==exhausted&&s.powers.count==1&&s.powers.ids[0]==installed);
+    CHECK(!s.expansion.potion_active);restore(s);
+}
+static void pinned_generation(){
+    // Repeated seeds expose duplicates from independent sampling. The original
+    // Cosmic Concoction factory samples three distinct, upgraded models.
+    for(uint32_t seed=1;seed<=80;seed++){
+        auto s=fight();s.rng_cards=seed;drink(s,Potion::CosmicConcoction);CHECK(s.hand.count==3);
+        for(unsigned i=0;i<3;i++){
+            const auto&c=s.cards[s.hand.ids[i]];CHECK(card_colorless(c.kind)&&c.upgraded);
+            for(unsigned j=0;j<i;j++)CHECK(c.kind!=s.cards[s.hand.ids[j]].kind);
+        }
+    }
+    for(Character c:{Character::Ironclad,Character::Silent})for(bool combat:{false,true}){
+        auto s=fight(c);s.rng_world=197;unsigned rarity[4]{},seen[PotionKinds+1]{};
+        for(unsigned i=0;i<4096;i++){
+            Potion p=random_potion(s,combat);CHECK(potion_in_pool(p,c));
+            if(combat)CHECK(p!=Potion::FairyInABottle&&p!=Potion::Fruit&&p!=Potion::RegenPotion);
+            ++rarity[potion_definition(p)->rarity];++seen[(unsigned)p];
+        }
+        // Broad deterministic distribution bounds detect model-uniform
+        // sampling without depending on original PC random seed equivalence.
+        CHECK(rarity[1]>2450&&rarity[1]<2850);
+        CHECK(rarity[2]>850&&rarity[2]<1200);
+        CHECK(rarity[3]>300&&rarity[3]<520);
+        for(unsigned k=1;k<=PotionKinds;k++){
+            Potion p=(Potion)k;bool allowed=potion_in_pool(p,c)&&
+                (!combat||(p!=Potion::FairyInABottle&&p!=Potion::Fruit&&p!=Potion::RegenPotion));
+            CHECK(bool(seen[k])==allowed);
+        }
+    }
+    struct Expected{uint32_t seed;Potion first,second;};
+    const Expected cases[]={
+        {12,Potion::RegenPotion,Potion::FyshOil},
+        {53,Potion::Fruit,Potion::Dexterity},
+        {382,Potion::FairyInABottle,Potion::RegenPotion},
+        {279,Potion::EntropicBrew,Potion::AttackPotion},
+        {15,Potion::SkillPotion,Potion::SkillPotion}
+    };
+    for(const auto&expected:cases){
+        auto s=fight();s.rng_world=expected.seed;drink(s,Potion::EntropicBrew);
+        CHECK(s.phase==Phase::Combat&&s.potions[0]==expected.first&&s.potions[1]==expected.second);restore(s);
+        s=fight();s.phase=Phase::Shop;s.rng_world=expected.seed;drink(s,Potion::EntropicBrew);
+        CHECK(s.potions[0]==expected.first&&s.potions[1]==expected.second);restore(s);
+    }
+    // The combat-generation opcode used by Alchemize has its stricter filter.
+    auto s=fight();s.rng_world=382;append(s,{Alchemize,0},Zone::Hand);
+    CHECK(play(s,0,0));CHECK(s.potions[0]!=Potion::Empty&&s.potions[0]!=Potion::FairyInABottle&&
+        s.potions[0]!=Potion::Fruit&&s.potions[0]!=Potion::RegenPotion);restore(s);
+}
+static void fairy_in_events(){
+    for(EventId event:{EventId::Baths,EventId::Vegetation}){
+        auto s=fight();s.phase=Phase::Event;s.event_id=event;s.event_value=event==EventId::Vegetation?75:0;
+        s.max_hp=event==EventId::Baths?78:80;s.hp=1;s.potions[0]=s.potions[1]=Potion::FairyInABottle;
+        int gold=s.gold;CHECK(event_choice(s,0));
+        CHECK(s.phase==Phase::Event&&s.hp==24&&s.max_hp==80);
+        CHECK(s.potions[0]==Potion::Empty&&s.potions[1]==Potion::FairyInABottle);
+        if(event==EventId::Baths)CHECK(s.event_count==1&&s.event_page==1&&s.gold==gold);
+        else CHECK(s.event_page==2&&s.gold==gold+75);
+        restore(s);
+
+        s=fight();s.phase=Phase::Event;s.event_id=event;s.event_value=event==EventId::Vegetation?75:0;
+        s.max_hp=event==EventId::Baths?78:80;s.hp=1;gold=s.gold;
+        CHECK(event_choice(s,0));CHECK(s.phase==Phase::Dead&&s.hp==0&&s.gold==gold&&s.event_page==0);restore(s);
+
+        s=fight();s.phase=Phase::Event;s.event_id=event;s.event_value=event==EventId::Vegetation?75:0;
+        s.max_hp=event==EventId::Baths?78:80;s.hp=10;s.potions[1]=Potion::FairyInABottle;
+        CHECK(event_choice(s,0));CHECK(s.phase==Phase::Event&&s.hp==(event==EventId::Baths?9:2));
+        CHECK(s.potions[1]==Potion::FairyInABottle);restore(s);
+    }
+}
 int main(){
     scopes_and_inventory();resources_and_damage();choices_and_creation();timed_and_automatic();replay_autoplay_and_resources();acquisition();
+    pinned_cost_lifetimes();pinned_stacking_and_piles();pinned_generation();fairy_in_events();
     std::printf("potion completion: %u checks; %u model policies\n",checks,policy_models);
 }

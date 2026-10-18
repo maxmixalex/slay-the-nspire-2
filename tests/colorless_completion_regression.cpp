@@ -22,7 +22,7 @@ static State fight(unsigned kind,unsigned up=0){
     State s{};new_run(s,0x41cef1ea,false);
     s.phase=Phase::Combat;s.current_node=0;s.floor=s.turn=1;s.enemy_count=2;s.energy=100;
     s.relics=s.relic_count=s.relic_flash=0;s.deck_count=1;s.deck[0]={(uint8_t)kind,(uint8_t)up};
-    for(auto&e:s.enemies)e={2000,2000,0,0,0,2};
+    for(auto&e:s.enemies)e={46,46,0,0,0,2};
     add(s,kind,up);
     return s;
 }
@@ -72,7 +72,7 @@ static void card_contract(unsigned kind,unsigned up){
     case Finesse:
         supply(s,3);act(s,kind);CHECK(s.block==4+3*(int)up&&s.hand.count==1&&s.draw.count==2);break;
     case FlashOfSteel:
-        supply(s,3);act(s,kind);CHECK(s.enemies[0].hp==2000-5-3*(int)up&&s.hand.count==1);break;
+        supply(s,3);act(s,kind);CHECK(s.enemies[0].hp==46-5-3*(int)up&&s.hand.count==1);break;
     case Impatience:{
         supply(s,8);act(s,kind);CHECK(s.hand.count==2+up);
         auto blocked=fight(kind,up);supply(blocked,8);add(blocked,Strike);act(blocked,kind);CHECK(blocked.hand.count==1&&blocked.draw.count==8);roundtrip(blocked);break;}
@@ -88,7 +88,7 @@ static void card_contract(unsigned kind,unsigned up){
         uint16_t ids[]={(uint16_t)b,(uint16_t)a};CHECK(choose_exhaust_many(s,ids,2));
         CHECK(s.exhaust.count==3&&!s.hand.count&&s.draw.count==2);break;}
     case HandOfGreed:{
-        act(s,kind);CHECK(s.enemies[0].hp==2000-20-5*(int)up&&s.gold==99);
+        act(s,kind);CHECK(s.enemies[0].hp==46-20-5*(int)up&&s.gold==99);
         auto lethal=fight(kind,up);lethal.enemies[0].hp=1;act(lethal,kind);CHECK(!lethal.enemies[0].hp&&lethal.gold==119+5*(int)up);ready(lethal);break;}
     case PanicButton:
         act(s,kind);CHECK(s.block==30+10*(int)up&&s.no_block==2);add(s,UltimateDefend);act(s,UltimateDefend);CHECK(s.block==30+10*(int)up);break;
@@ -104,17 +104,17 @@ static void card_contract(unsigned kind,unsigned up){
         draw_cards(s,1);CHECK(s.energy==energy+1&&s.expansion.automation_count[0]==0);break;}
     case BeatDown:
         supply(s,3+(int)up,Shiv,Zone::Discard);act(s,kind);
-        CHECK(s.expansion.cards_finished==4+up&&s.exhaust.count==3+up&&total_hp(s)==4000-4*(3+(int)up)&&s.energy==97);break;
+        CHECK(s.expansion.cards_finished==4+up&&s.exhaust.count==3+up&&total_hp(s)==92-4*(3+(int)up)&&s.energy==97);break;
     case Bolas:case ThrummingHatchet:{
         const int hit=kind==Bolas?3+(int)up:11+3*(int)up;
-        act(s,kind);CHECK(s.enemies[0].hp==2000-hit&&s.expansion.return_turn[0]==2);
+        act(s,kind);CHECK(s.enemies[0].hp==46-hit&&s.expansion.return_turn[0]==2);
         supply(s,8);next_turn(s);CHECK(contains(s.hand,0)&&!s.expansion.return_turn[0]&&s.hand.count==6);break;}
     case Calamity:{
         act(s,kind);int strike=add(s,Strike);CHECK(power_value(s,XPower::Calamity)==1&&s.energy==97+(int)up);act(s,Strike);
         CHECK(s.hand.count==1&&s.card_count==3&&definitions[s.cards[s.hand.ids[0]].kind].type==CardType::Attack&&s.zones[strike]==Zone::Discard);break;}
     case Catastrophe:
         supply(s,2+(int)up,Shiv);act(s,kind);
-        CHECK(s.expansion.cards_finished==3+up&&s.exhaust.count==2+up&&total_hp(s)==4000-4*(2+(int)up)&&s.energy==98);break;
+        CHECK(s.expansion.cards_finished==3+up&&s.exhaust.count==2+up&&total_hp(s)==92-4*(2+(int)up)&&s.energy==98);break;
     case DarkShackles:
         s.enemies[0].strength=3;act(s,kind);CHECK(s.enemies[0].strength==-6-6*(int)up&&s.expansion.restore_strength[0]==9+6*(int)up);
         s.enemies[0].move=0;s.enemies[1].move=2;CHECK(end_turn(s));CHECK(s.enemies[0].strength==3&&!s.expansion.restore_strength[0]);break;
@@ -124,7 +124,7 @@ static void card_contract(unsigned kind,unsigned up){
         CHECK(s.hand.count==1&&s.cards[s.hand.ids[0]].kind==selected.kind&&!s.cards[s.hand.ids[0]].upgraded&&cost(s,s.hand.ids[0])==0);
         CHECK(s.zones[0]==(up?Zone::Discard:Zone::Exhaust));break;}
     case DramaticEntrance:
-        CHECK(card_innate(s.cards[0]));act(s,kind);CHECK(total_hp(s)==4000-2*(11+4*(int)up)&&s.zones[0]==Zone::Exhaust);break;
+        CHECK(card_innate(s.cards[0]));act(s,kind);CHECK(total_hp(s)==92-2*(11+4*(int)up)&&s.zones[0]==Zone::Exhaust);break;
     case Entropy:{
         act(s,kind);CHECK(power_value(s,XPower::Entropy)==1&&card_innate({(uint8_t)kind,(uint8_t)up})==(up!=0));supply(s,8);
         next_turn(s);CHECK(s.expansion.choice==XChoice::Transform&&choice_min(s)==1&&choice_max(s)==1);
@@ -132,43 +132,44 @@ static void card_contract(unsigned kind,unsigned up){
         CHECK(s.cards[id].kind!=old&&s.hand.count==5&&s.draw.count==3);break;}
     case Equilibrium:case Salvo:{
         int retained=add(s,Defend);supply(s,8);act(s,kind);CHECK(power_value(s,XPower::Retain)==1);
-        if(kind==Equilibrium)CHECK(s.block==13+3*(int)up);else CHECK(s.enemies[0].hp==2000-12-4*(int)up);
+        if(kind==Equilibrium)CHECK(s.block==13+3*(int)up);else CHECK(s.enemies[0].hp==46-12-4*(int)up);
         next_turn(s);CHECK(contains(s.hand,retained)&&!power_value(s,XPower::Retain)&&s.hand.count==6);break;}
     case EternalArmor:
-        act(s,kind);CHECK(power_value(s,XPower::Plating)==9+3*(int)up);next_turn(s);CHECK(s.block==9+3*(int)up&&power_value(s,XPower::Plating)==8+3*(int)up);break;
+        act(s,kind);CHECK(power_value(s,XPower::Plating)==9+3*(int)up);next_turn(s);CHECK(s.block==0&&power_value(s,XPower::Plating)==8+3*(int)up);break;
     case Fasten:
         act(s,kind);add(s,Defend);add(s,UltimateDefend);add(s,Finesse);
         act(s,Defend);CHECK(s.block==9+2*(int)up);act(s,UltimateDefend);CHECK(s.block==24+4*(int)up);act(s,Finesse);CHECK(s.block==28+4*(int)up);break;
     case Fisticuffs:
-        s.enemies[0].block=3;act(s,kind);CHECK(s.enemies[0].hp==1996-2*(int)up&&s.block==7+2*(int)up);break;
+        s.enemies[0].block=3;act(s,kind);CHECK(s.enemies[0].hp==42-2*(int)up&&s.block==7+2*(int)up);break;
     case GoldAxe:
-        s.expansion.cards_finished=7;s.gold=1;act(s,kind);CHECK(s.enemies[0].hp==1993&&s.expansion.cards_finished==8&&s.gold==1);CHECK(card_retains({(uint8_t)kind,(uint8_t)up})==(up!=0));break;
+        s.expansion.cards_finished=7;s.gold=1;act(s,kind);CHECK(s.enemies[0].hp==39&&s.expansion.cards_finished==8&&s.gold==1);CHECK(card_retains({(uint8_t)kind,(uint8_t)up})==(up!=0));break;
     case HiddenGem:{
         int id=add(s,Strike,0,Zone::Draw);act(s,kind);CHECK(s.expansion.replay[id]==2+up);draw_cards(s,1);act(s,Strike);
-        CHECK(s.expansion.cards_finished==4+up&&s.enemies[0].hp==2000-6*(3+(int)up)&&s.zones[id]==Zone::Discard&&s.energy==98);break;}
+        CHECK(s.expansion.cards_finished==4+up&&s.enemies[0].hp==46-6*(3+(int)up)&&s.zones[id]==Zone::Discard&&s.energy==98);break;}
     case JackOfAllTrades:
         s.no_draw=1;act(s,kind);CHECK(s.hand.count==1+up&&s.zones[0]==Zone::Exhaust);
-        for(unsigned i=0;i<s.hand.count;i++)CHECK(card_colorless(s.cards[s.hand.ids[i]].kind)&&s.cards[s.hand.ids[i]].kind!=Alchemize);break;
+        for(unsigned i=0;i<s.hand.count;i++)CHECK(card_colorless(s.cards[s.hand.ids[i]].kind)&&s.cards[s.hand.ids[i]].kind!=JackOfAllTrades&&card_can_generate(s.cards[s.hand.ids[i]].kind));
+        if(up)CHECK(s.cards[s.hand.ids[0]].kind!=s.cards[s.hand.ids[1]].kind);break;
     case Jackpot:
-        act(s,kind);CHECK(s.enemies[0].hp==1975-5*(int)up&&s.hand.count==3);
+        act(s,kind);CHECK(s.enemies[0].hp==21-5*(int)up&&s.hand.count==3);
         for(unsigned i=0;i<s.hand.count;i++){Card c=s.cards[s.hand.ids[i]];CHECK(cost({c.kind,0})==0&&c.upgraded==up);}break;
     case Mayhem:
-        act(s,kind);CHECK(s.energy==98+(int)up);supply(s,5);add(s,Shiv,0,Zone::Draw);next_turn(s);
-        CHECK(total_hp(s)==3996&&s.exhaust.count==1&&s.expansion.cards_finished==2&&s.hand.count==5&&s.energy==3);break;
+        act(s,kind);CHECK(s.energy==98+(int)up);add(s,Shiv,0,Zone::Draw);supply(s,5);next_turn(s);
+        CHECK(total_hp(s)==88&&s.exhaust.count==1&&s.expansion.cards_finished==2&&s.hand.count==5&&s.energy==3);break;
     case MindBlast:
-        supply(s,7);CHECK(card_innate(s.cards[0]));act(s,kind);CHECK(s.enemies[0].hp==1993&&s.energy==99+(int)up);break;
+        supply(s,7);CHECK(card_innate(s.cards[0]));act(s,kind);CHECK(s.enemies[0].hp==39&&s.energy==99+(int)up);break;
     case Nostalgia:{
         act(s,kind);CHECK(s.energy==99+(int)up);int first=add(s,Strike),second=add(s,Defend);act(s,Strike);CHECK(s.zones[first]==Zone::Draw&&s.draw.ids[s.draw.count-1]==first);
         act(s,Defend);CHECK(s.zones[second]==Zone::Discard&&s.expansion.nonpower_started==2);break;}
     case Omnislice:
-        act(s,kind);CHECK(total_hp(s)==4000-2*(8+3*(int)up));break;
+        act(s,kind);CHECK(total_hp(s)==92-2*(8+3*(int)up));break;
     case Panache:
         act(s,kind);CHECK(s.expansion.panache_count[0]==0);supply(s,5,Production,Zone::Hand);
-        for(int i=0;i<4;i++)act(s,Production);CHECK(total_hp(s)==4000&&s.expansion.panache_count[0]==4);
-        act(s,Production);CHECK(total_hp(s)==4000-2*(10+4*(int)up)&&s.expansion.panache_count[0]==0);break;
+        for(int i=0;i<4;i++)act(s,Production);CHECK(total_hp(s)==92&&s.expansion.panache_count[0]==4);
+        act(s,Production);CHECK(total_hp(s)==92-2*(10+4*(int)up)&&s.expansion.panache_count[0]==0);break;
     case PrepTime:
         act(s,kind);next_turn(s);CHECK(s.vigor==4+2*(int)up);next_turn(s);CHECK(s.vigor==8+4*(int)up);
-        s.energy=100;add(s,TwinStrike);act(s,TwinStrike);CHECK(s.enemies[0].hp==2000-2*(13+4*(int)up)&&!s.vigor&&!s.attack_vigor);break;
+        s.energy=100;add(s,TwinStrike);act(s,TwinStrike);CHECK(s.enemies[0].hp==46-2*(13+4*(int)up)&&!s.vigor&&!s.attack_vigor);break;
     case Production:
         act(s,kind);CHECK(s.energy==102+(int)up&&s.zones[0]==Zone::Exhaust);break;
     case Prolong:
@@ -179,20 +180,20 @@ static void card_contract(unsigned kind,unsigned up){
     case Rend:{
         s.enemies[0].strength=-2;s.enemies[0].weak=1;s.enemies[0].vulnerable=1;
         const int amount=(10+2*(int)up+3*(5+3*(int)up))*3/2;
-        CHECK(damage(s,s.cards[0],0)==amount);act(s,kind);CHECK(s.enemies[0].hp==2000-amount);break;}
+        CHECK(damage(s,s.cards[0],0)==amount);act(s,kind);CHECK(s.enemies[0].hp==(amount<46?46-amount:0));break;}
     case Restlessness:{
         supply(s,6);act(s,kind);CHECK(s.hand.count==2+up&&s.energy==102+(int)up&&card_retains({(uint8_t)kind,(uint8_t)up}));
         auto blocked=fight(kind,up);supply(blocked,6);add(blocked,Defend);act(blocked,kind);CHECK(blocked.hand.count==1&&blocked.energy==100&&blocked.draw.count==6);ready(blocked);break;}
     case RollingBoulder:
-        act(s,kind);CHECK(total_hp(s)==4000);next_turn(s);CHECK(total_hp(s)==4000-2*(5+5*(int)up));
-        next_turn(s);CHECK(total_hp(s)==4000-2*(15+10*(int)up)&&power_value(s,XPower::RollingBoulder)==15+5*(int)up);break;
+        act(s,kind);CHECK(total_hp(s)==92);next_turn(s);CHECK(total_hp(s)==92-2*(5+5*(int)up));
+        next_turn(s);CHECK(total_hp(s)==92-2*(15+10*(int)up)&&power_value(s,XPower::RollingBoulder)==15+5*(int)up);break;
     case SecretTechnique:case SecretWeapon:{
         int attack=add(s,Strike,0,Zone::Draw),skill=add(s,Defend,0,Zone::Draw),power=add(s,Inflame,0,Zone::Draw);
         act(s,kind);CHECK(s.expansion.choice==XChoice::Draw&&s.expansion.choices.count==1);
         CHECK(s.expansion.choices.ids[0]==(kind==SecretTechnique?skill:attack));pick(s,1);
         CHECK(s.hand.count==1&&s.draw.count==2&&contains(s.draw,power)&&s.zones[0]==(up?Zone::Discard:Zone::Exhaust));break;}
     case SeekerStrike:
-        supply(s,8);act(s,kind);CHECK(s.enemies[0].hp==1991-3*(int)up&&s.expansion.choice==XChoice::Draw&&s.expansion.choices.count==3);
+        supply(s,8);act(s,kind);CHECK(s.enemies[0].hp==37-3*(int)up&&s.expansion.choice==XChoice::Draw&&s.expansion.choices.count==3);
         pick(s,1,2);CHECK(s.hand.count==1&&s.draw.count==7);break;
     case Splash:
         act(s,kind);CHECK(s.expansion.choice==XChoice::Offer&&s.expansion.choices.count==3);
@@ -203,9 +204,9 @@ static void card_contract(unsigned kind,unsigned up){
         CHECK(s.expansion.choice==XChoice::Draw&&choice_min(s)==1&&s.expansion.choices.count==4);pick(s,1);
         CHECK(s.hand.count==2&&s.draw.count==2);break;}
     case TheBomb:
-        act(s,kind);CHECK(s.expansion.bomb_turns[0]==3);next_turn(s);CHECK(total_hp(s)==4000&&s.expansion.bomb_turns[0]==2);
-        next_turn(s);CHECK(total_hp(s)==4000&&s.expansion.bomb_turns[0]==1);next_turn(s);
-        CHECK(total_hp(s)==4000-2*(40+10*(int)up)&&!s.expansion.bomb_turns[0]&&!s.expansion.bomb_damage[0]);break;
+        act(s,kind);CHECK(s.expansion.bomb_turns[0]==3);next_turn(s);CHECK(total_hp(s)==92&&s.expansion.bomb_turns[0]==2);
+        next_turn(s);CHECK(total_hp(s)==92&&s.expansion.bomb_turns[0]==1);for(auto&e:s.enemies)e.block=10;next_turn(s);
+        CHECK(total_hp(s)==92-2*(30+10*(int)up)&&!s.expansion.bomb_turns[0]&&!s.expansion.bomb_damage[0]);break;
     case TheGambit:{
         act(s,kind);CHECK(s.block==50+25*(int)up&&power_value(s,XPower::Gambit)==1);
         player_hp_loss(s,1,false,false);CHECK(s.hp==79&&s.phase==Phase::Combat);player_hp_loss(s,1,true,true);CHECK(s.hp==79&&s.phase==Phase::Combat);
@@ -216,10 +217,10 @@ static void card_contract(unsigned kind,unsigned up){
     case UltimateDefend:
         act(s,kind);CHECK(s.block==11+4*(int)up&&s.energy==99);break;
     case UltimateStrike:
-        act(s,kind);CHECK(s.enemies[0].hp==1986-6*(int)up&&s.energy==99&&card_strike_tag(kind));break;
+        act(s,kind);CHECK(s.enemies[0].hp==32-6*(int)up&&s.energy==99&&card_strike_tag(kind));break;
     case Volley:{
-        s.energy=7;act(s,kind);CHECK(total_hp(s)==4000-7*(10+4*(int)up)&&s.energy==0&&s.expansion.cards_finished==1);
-        auto zero=fight(kind,up);zero.energy=0;act(zero,kind);CHECK(total_hp(zero)==4000&&zero.expansion.cards_finished==1&&zero.attacked_this_turn);ready(zero);break;}
+        s.energy=3;act(s,kind);CHECK(total_hp(s)==92-3*(10+4*(int)up)&&s.energy==0&&s.expansion.cards_finished==1);
+        auto zero=fight(kind,up);zero.energy=0;act(zero,kind);CHECK(total_hp(zero)==92&&zero.expansion.cards_finished==1&&zero.attacked_this_turn);ready(zero);break;}
     default:CHECK(false);
     }
     drain_choices(s);ready(s);covered[kind][up]=true;++variants;
@@ -249,23 +250,80 @@ static void token_contracts(){
         CHECK(s.hand.count==2+up&&s.zones[0]==Zone::Exhaust&&s.energy==100);ready(s);
         active_kind=SovereignBlade;s=fight(SovereignBlade,up);s.expansion.blade_damage[0]=37;
         CHECK(card_retains(s.cards[0])&&damage(s,s.cards[0],0,0)==37);act(s,SovereignBlade);
-        CHECK(s.enemies[0].hp==1963&&s.energy==98+(int)up&&s.expansion.blade_damage[0]==37);ready(s);
+        CHECK(s.enemies[0].hp==9&&s.energy==98+(int)up&&s.expansion.blade_damage[0]==37);ready(s);
     }
 }
 
 static void modifier_boundaries(){
     for(unsigned kind:{(unsigned)Fisticuffs,(unsigned)Omnislice})for(unsigned up=0;up<2;up++){
-        active_kind=kind;active_upgrade=up;auto s=fight(kind,up);s.strength=50;s.enemies[0].block=2;s.enemies[0].hp=3;
-        act(s,kind);CHECK(!s.enemies[0].hp);if(kind==Fisticuffs)CHECK(s.block==5);else CHECK(s.enemies[1].hp==1995);ready(s);
+        active_kind=kind;active_upgrade=up;auto s=fight(kind,up);s.strength=10;s.enemies[0].block=2;s.enemies[0].hp=3;
+        act(s,kind);CHECK(!s.enemies[0].hp);if(kind==Fisticuffs)CHECK(s.block==17+2*(int)up);else CHECK(s.enemies[1].hp==28-3*(int)up);ready(s);
     }
     active_kind=Fisticuffs;active_upgrade=0;auto s=fight(Fisticuffs);s.dexterity=3;s.no_block=1;act(s,Fisticuffs);CHECK(!s.block);ready(s);
     active_kind=Automation;s=fight(Automation);act(s,Automation);supply(s,10);s.no_draw=1;draw_cards(s,10);
     CHECK(s.expansion.automation_count[0]==0&&s.energy==99&&!s.hand.count);ready(s);
 }
 
+static void generation_and_transform_pools(){
+    for(unsigned character=0;character<CharacterKinds;character++)for(unsigned seed=1;seed<=64;seed++){
+        active_kind=Discovery;active_upgrade=0;auto s=fight(Discovery);s.character=(Character)character;s.rng_cards=seed;
+        act(s,Discovery);
+        for(unsigned i=0;i<3;i++){
+            unsigned k=choice_card(s,s.expansion.choices.ids[i]).kind;
+            CHECK(card_in_pool(k,s.character)&&card_rarity(k)>=2&&card_rarity(k)<=4);
+            for(unsigned j=0;j<i;j++)CHECK(k!=choice_card(s,s.expansion.choices.ids[j]).kind);
+        }
+        pick(s,1);ready(s);
+        active_kind=JackOfAllTrades;active_upgrade=1;s=fight(JackOfAllTrades,1);s.rng_cards=seed;
+        act(s,JackOfAllTrades);CHECK(s.hand.count==2);
+        for(unsigned i=0;i<2;i++){
+            unsigned k=s.cards[s.hand.ids[i]].kind;
+            CHECK(card_colorless(k)&&k!=JackOfAllTrades&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem);
+        }
+        CHECK(s.cards[s.hand.ids[0]].kind!=s.cards[s.hand.ids[1]].kind);ready(s);
+    }
+    for(unsigned old:{(unsigned)Strike,(unsigned)StrikeSilent,(unsigned)Finesse,(unsigned)Shiv,(unsigned)Soul,(unsigned)SovereignBlade}){
+        active_kind=Entropy;active_upgrade=0;auto s=fight(old,1);
+        s.expansion.turn_cost[0]=4;s.expansion.combat_cost[0]=1;s.expansion.replay[0]=2;
+        queue_extension(s,XOp::Transform,1);resolve_pending(s);pick(s,1);
+        unsigned k=s.cards[0].kind;
+        CHECK(k!=old&&!s.cards[0].upgraded&&!s.expansion.turn_cost[0]&&!s.expansion.combat_cost[0]&&!s.expansion.replay[0]);
+        if(old==Strike)CHECK(card_in_pool(k,Character::Ironclad));
+        else if(old==StrikeSilent)CHECK(card_in_pool(k,Character::Silent));
+        else CHECK(card_colorless(k)&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem);
+        CHECK(card_rarity(k)>=2&&card_rarity(k)<=4);ready(s);
+    }
+}
+
+static void original_continuation_boundaries(){
+    active_kind=Anointed;active_upgrade=0;auto full=fight(Anointed);supply(full,8,Defend,Zone::Hand);
+    supply(full,4,Offering);int common=add(full,Anger,0,Zone::Draw);full.no_draw=1;
+    act(full,Anointed);CHECK(full.hand.count==MaxHand&&kind_count(full,full.hand,Offering)==2);
+    CHECK(full.draw.count==3&&kind_count(full,full.draw,Offering)==2&&contains(full.draw,common)&&full.discard.count==0);ready(full);
+    // An automatic Anointed played into a full hand leaves every rare in draw.
+    full=fight(Defend);supply(full,9,Defend,Zone::Hand);int auto_id=add(full,Anointed,0,Zone::Draw);supply(full,3,Offering);
+    uint32_t rng=full.rng_cards;queue_extension(full,XOp::AutoInstance,auto_id);resolve_pending(full);
+    CHECK(full.hand.count==MaxHand&&full.draw.count==3&&full.rng_cards==rng&&full.discard.count==0);ready(full);
+
+    for(unsigned up=0;up<2;up++){
+        active_kind=BeatDown;active_upgrade=up;auto s=fight(BeatDown,up);int id=add(s,Strike,0,Zone::Discard);
+        act(s,BeatDown);CHECK(s.expansion.cards_finished==2&&total_hp(s)==86&&s.zones[id]==Zone::Discard);ready(s);
+    }
+    active_kind=Mayhem;active_upgrade=0;auto s=fight(Mayhem);act(s,Mayhem);add(s,Entropy);act(s,Entropy);
+    add(s,Shiv,0,Zone::Draw);supply(s,5);next_turn(s);
+    CHECK(s.expansion.choice==XChoice::Transform&&s.hand.count==5&&total_hp(s)==92);
+    pick(s,1);CHECK(total_hp(s)==88&&s.hand.count==5&&s.exhaust.count==1);ready(s);
+
+    for(unsigned kind:{(unsigned)Bolas,(unsigned)ThrummingHatchet}){
+        active_kind=kind;s=fight(kind);act(s,kind);draw_cards(s,1);CHECK(contains(s.hand,0));
+        add(s,Purity);act(s,Purity);uint16_t id=0;CHECK(choose_exhaust_many(s,&id,1));CHECK(s.zones[0]==Zone::Exhaust);
+        supply(s,5);next_turn(s);CHECK(s.zones[0]==Zone::Hand&&s.hand.count==6&&!s.expansion.return_turn[0]);ready(s);
+    }
+}
+
 int main(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))for(unsigned up=0;up<2;up++)card_contract(kind,up);
     CHECK(variants==106);for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))CHECK(covered[kind][0]&&covered[kind][1]);
-    nested_choices();token_contracts();modifier_boundaries();
+    nested_choices();token_contracts();modifier_boundaries();generation_and_transform_pools();original_continuation_boundaries();
     std::printf("colorless completion: %u checks, %u explicit card-effect variants, token and continuation contracts\n",checks,variants);
 }

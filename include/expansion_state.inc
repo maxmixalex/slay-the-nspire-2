@@ -26,7 +26,8 @@ struct ExpansionState {
  int16_t powers[XPowerCount]{};
  int16_t automation[MaxPowerInstances]{},panache[MaxPowerInstances]{},boulder[MaxPowerInstances]{};
  uint8_t automation_count[MaxPowerInstances]{},panache_count[MaxPowerInstances]{},panache_skip[MaxPowerInstances]{};
- // 0 = no cost override, n+1 = explicit cost n.
+ // 0 = no cost override, n+1 = explicit cost n. turn_cost expires after the
+ // physical card play (including its replays) or at the next player turn.
  uint8_t turn_cost[MaxCards]{},combat_cost[MaxCards]{},replay[MaxCards]{};
  uint16_t return_turn[MaxCards]{};
  int16_t blade_damage[MaxCards]{};

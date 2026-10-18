@@ -210,7 +210,7 @@ void resolve_pending(State&);
 void player_hp_loss(State&,int,bool attack,bool blockable);
 int enemy_damage(const State&,int);
 bool potion_in_pool(Potion,Character);
-Potion random_potion(State&);
+Potion random_potion(State&,bool in_combat=false);
 bool procure_potion(State&,Potion);
 void execute_potion(State&,Potion,int);
 bool lab_potion(State&,Potion);

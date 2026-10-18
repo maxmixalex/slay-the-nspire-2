@@ -28,7 +28,7 @@ void App::open_choice_detail(int token){
     if(token>=0&&token<game.card_count){
         open_card_detail(game.cards[token]);detail_instance=token;
         if(game.expansion.turn_cost[token]||game.expansion.combat_cost[token])detail_cost_override=cost(game,token);
-        if(game.phase==Phase::ExtendedChoice&&game.expansion.choice_free){
+        if(game.phase==Phase::ExtendedChoice&&game.expansion.choice_free&&cost(game.cards[token])>=0){
             for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)detail_cost_override=0;
         }
         return;
@@ -37,7 +37,7 @@ void App::open_choice_detail(int token){
     bool offered=false;for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)offered=true;
     if(!offered)return;
     open_card_detail(choice_card(game,token));
-    if(game.expansion.choice_free)detail_cost_override=0;
+    if(game.expansion.choice_free&&cost(choice_card(game,token))>=0)detail_cost_override=0;
 }
 void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;

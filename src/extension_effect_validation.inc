@@ -6,7 +6,10 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     switch(op){
     case XOp::Power:return a>=0&&a<XPowerCount&&b>0;
     case XOp::StrengthLoss:case XOp::Demise:return actor&&b>=0;
-    case XOp::Offer:case XOp::Generate:return a>=0&&a<=6&&b>=0&&b<=3;
+    case XOp::Offer:return a>=0&&a<=6&&b>=0&&b<=3;
+    // Low two bits are free/upgraded; the upper bits request up to three
+    // distinct models. Zero retains the original single-card operation.
+    case XOp::Generate:return a>=0&&a<=6&&b>=0&&b<=15;
     case XOp::ChooseDraw:return a>=0&&a<=3&&b>=-MaxHand&&b<=MaxCards;
     case XOp::ChooseDiscard:return a==0&&(b==0||b==1);
     case XOp::Transform:return a>=0&&a<=MaxHand&&b==0;

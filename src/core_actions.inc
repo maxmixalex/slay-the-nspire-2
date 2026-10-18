@@ -168,8 +168,10 @@ static void resolve(State&s){
                 if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
                 int amount=max(0,e.value+s.strength+s.attack_vigor)*relic_attack_multiplier(s);
                 if(t.vulnerable)amount=amount*3/2;
-                int absorb=min(t.block,amount),actual=absorb+min((int)t.hp,amount-absorb);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
-                s.expansion.last_damage=(int16_t)min(9999,actual);
+                int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
+                // Fisticuffs and Omnislice use TotalDamage + OverkillDamage.
+                // Their follow-up keeps damage beyond the target's remaining HP.
+                s.expansion.last_damage=(int16_t)min(9999,amount);
                 record(s,LogKind::Damage,amount,e.target);
                 if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];

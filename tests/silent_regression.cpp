@@ -22,7 +22,7 @@ static void starting(){
  State s{};new_run(s,7,false,Character::Silent);CHECK(s.hp==70&&s.max_hp==70&&s.deck_count==12&&s.gold==99);CHECK(s.relics==RingOfTheSnake&&s.relic_count==1);
  unsigned counts[CardKinds]={};for(unsigned i=0;i<s.deck_count;i++)++counts[s.deck[i].kind];CHECK(counts[StrikeSilent]==5&&counts[DefendSilent]==5&&counts[Neutralize]==1&&counts[Survivor]==1);
  CHECK(choose_node(s,0));CHECK(s.hand.count==7);CHECK(end_turn(s));CHECK(s.hand.count==5);roundtrip(s);
- new_run(s,7,true,Character::Silent);CHECK(s.hand.count==7&&s.deck_count==38);for(unsigned i=0;i<s.deck_count;i++)CHECK(card_in_pool(s.deck[i].kind,Character::Silent)||card_colorless(s.deck[i].kind));
+ new_run(s,7,true,Character::Silent);CHECK(s.hand.count==7&&s.deck_count==82);for(unsigned i=0;i<s.deck_count;i++)CHECK(card_in_pool(s.deck[i].kind,Character::Silent)||card_colorless(s.deck[i].kind));
  CHECK(character_pool(Character::Ironclad,nullptr)==29&&character_pool(Character::Silent,nullptr)==29);CHECK(card_generated(Shiv)&&!card_in_pool(Shiv,Character::Silent));
  for(unsigned seed=0;seed<100;seed++){
    new_run(s,seed,false,Character::Silent);s.current_node=1;s.next_row=1;s.phase=Phase::Map;CHECK(choose_node(s,1));
@@ -82,8 +82,12 @@ static void stress(){
  for(unsigned seed=1;seed<=400;seed++){
   State s{};new_run(s,seed,true,Character::Silent);s.hp=s.max_hp=999;
   for(unsigned turn=0;turn<180&&combat_phase(s.phase);turn++){
-   CHECK(validate(s));if(s.phase==Phase::DiscardChoice){uint16_t ids[MaxHand];for(unsigned i=0;i<s.discard_required;i++)ids[i]=s.hand.ids[i];CHECK(choose_discard(s,ids,s.discard_required));}
+   CHECK(validate(s));
+   if(s.phase==Phase::ExtendedChoice){uint16_t ids[MaxHand];unsigned count=choice_min(s)+random_below(rng,choice_max(s)-choice_min(s)+1);for(unsigned i=0;i<count;i++)ids[i]=choice_pile(s).ids[i];CHECK(choose_extended(s,ids,count));}
+   else if(s.phase==Phase::DiscardChoice){uint16_t ids[MaxHand];for(unsigned i=0;i<s.discard_required;i++)ids[i]=s.hand.ids[i];CHECK(choose_discard(s,ids,s.discard_required));}
    else if(s.phase==Phase::ExhaustManyChoice){CHECK(choose_exhaust_many(s,nullptr,0));}
+   else if(s.phase==Phase::ExhaustChoice){CHECK(choose_exhaust(s,0));}
+   else if(s.phase==Phase::ReturnChoice){CHECK(choose_return_to_draw(s,s.discard.ids[0]));}
    else if(s.hand.count&&random_below(rng,5)){int target=s.enemy_count>1&&s.enemies[1].hp?1:0;if(!play(s,random_below(rng,s.hand.count),target))CHECK(end_turn(s));}
    else CHECK(end_turn(s));++transitions;roundtrip(s);
   }

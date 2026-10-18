@@ -5,7 +5,7 @@ static void death_cleanup(State&s){
 }
 static bool revive(State&s){
  if(s.hp>0)return true;
- if(!combat_phase(s.phase))return false;
+ // RunState includes owned potions in death-prevention hooks outside combat.
  for(auto&p:s.potions)if(p==Potion::FairyInABottle){p=Potion::Empty;s.hp=(int16_t)max(1,s.max_hp*3/10);record(s,LogKind::Potion,(int)Potion::FairyInABottle);record(s,LogKind::Heal,s.hp);return true;}
  return false;
 }
@@ -81,10 +81,11 @@ static void extension_effect(State&s,Effect e){
  case XOp::AllDamage:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,a);break;
  case XOp::StrengthLoss:
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){int n=min(b,min(9999+s.enemies[a].strength,9999-x.restore_strength[a]));s.enemies[a].strength-=(int16_t)n;x.restore_strength[a]+=(int16_t)n;}break;
- case XOp::AllRare:
-  for(int i=(int)s.draw.count-1;i>=0;i--){int id=s.draw.ids[i];if(card_rarity(s.cards[id].kind)==4){
-   if(s.hand.count<MaxHand)move_instance(s,id,s.draw,s.hand,Zone::Hand);else move_instance(s,id,s.draw,s.discard,Zone::Discard);
-  }}break;
+ case XOp::AllRare:{
+  uint16_t ids[MaxCards];unsigned n=0;
+  for(unsigned i=0;i<s.draw.count;i++)if(card_rarity(s.cards[s.draw.ids[i]].kind)==4)ids[n++]=s.draw.ids[i];
+  while(n&&s.hand.count<MaxHand){unsigned j=random_below(s.rng_cards,n);int id=ids[j];ids[j]=ids[--n];move_instance(s,id,s.draw,s.hand,Zone::Hand);}
+  break;}
  case XOp::Offer:offer_cards(s,a,b);break;
  case XOp::Generate:generate_card(s,a,b);break;
  case XOp::ChooseDraw:choose_draw(s,a,b>0?b:0,b<0?-b:1);break;
@@ -115,7 +116,8 @@ static void extension_effect(State&s,Effect e){
  case XOp::Bomb:{int i=0;while(i<MaxBombs&&x.bomb_turns[i])++i;if(i==MaxBombs){fail(s);break;}x.bomb_damage[i]=(int16_t)a;x.bomb_turns[i]=(uint8_t)b;break;}
  case XOp::ShuffleAll:
   while(s.hand.count){int id=remove(s.hand,s.hand.count-1);put(s,s.discard,id,Zone::Discard);}shuffle(s);break;
- case XOp::RandomCosts:for(unsigned i=0;i<s.hand.count;i++)x.turn_cost[s.hand.ids[i]]=(uint8_t)(1+random_below(s.rng_cards,4));break;
+ case XOp::RandomCosts:
+  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(cost(s.cards[id])>=0&&cost(s,id)>=0)x.turn_cost[id]=(uint8_t)(1+random_below(s.rng_cards,4));}break;
  case XOp::StrikeReplay:for(unsigned id=0;id<s.card_count;id++)if(card_strike_tag(s.cards[id].kind)&&x.replay[id]<255)++x.replay[id];break;
  case XOp::PotionDone:x.potion_active=0;break;
  case XOp::Demise:if(a>=0&&a<s.enemy_count&&s.enemies[a].hp)x.demise[a]=(int16_t)min(9999,x.demise[a]+b);break;
@@ -127,7 +129,7 @@ static void extension_effect(State&s,Effect e){
   if(b<=0||!alive(s))break;if(b>1)queue_extension(s,XOp::RandomHits,a,b-1,true);
   int ids[MaxEnemies],n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)ids[n++]=i;
   if(n)enqueue(s,EffectKind::Damage,a,ids[random_below(s.rng_cards,n)],true);break;}
- case XOp::Potion:procure_potion(s,random_potion(s));break;
+ case XOp::Potion:procure_potion(s,random_potion(s,true));break;
  case XOp::PlayerDamage:player_hp_loss(s,a,false,true);break;
  case XOp::Summon:
   if(!x.osty_hp)x.osty_max_hp=0;
@@ -163,7 +165,7 @@ static void extension_effect(State&s,Effect e){
   if(!alive(s)){victory(s);break;}queue_extension(s,XOp::TurnStart,0,0,true);break;
  case XOp::TurnStart:
   if(s.turn>=20000){fail(s);break;}
-  ++s.turn;x.enemy_side=0;s.block=(int16_t)min(9999,s.block_next_turn+power_value(s,XPower::Plating));s.block_next_turn=0;s.energy=3;
+  ++s.turn;x.enemy_side=0;s.block=s.block_next_turn;s.block_next_turn=0;s.energy=3;
   x.nonpower_started=0;x.returning=0;for(auto&v:x.turn_cost)v=0;for(auto&v:x.panache_count)v=0;
   relic_reset_turn_counters(s);if(s.block)record(s,LogKind::Block,s.block);
   if(power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);
@@ -174,9 +176,9 @@ static void extension_effect(State&s,Effect e){
    x.return_turn[id]=0;
    if(s.zones[id]==Zone::Draw){if(s.hand.count<MaxHand)move_instance(s,id,s.draw,s.hand,Zone::Hand);else move_instance(s,id,s.draw,s.discard,Zone::Discard);}
    else if(s.zones[id]==Zone::Discard&&s.hand.count<MaxHand)move_instance(s,id,s.discard,s.hand,Zone::Hand);
+   else if(s.zones[id]==Zone::Exhaust){bool room=s.hand.count<MaxHand;move_instance(s,id,s.exhaust,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard);}
   }
   queue_extension(s,XOp::TurnDraw,0,0,true);
-  for(int i=0;i<power_value(s,XPower::Mayhem);i++)queue_extension(s,XOp::AutoTop,0,0,true);
   if(s.infinite_blades)queue_extension(s,XOp::Create,s.infinite_blades,Shiv,true);
   break;
  case XOp::TurnDraw:{
@@ -185,6 +187,8 @@ static void extension_effect(State&s,Effect e){
   if(power_value(s,XPower::Radiance)){s.energy=(int16_t)min(999,s.energy+1);gain_power(s,XPower::Radiance,-1);}
   queue_extension(s,XOp::Draw,n,0,true);break;}
  case XOp::TurnReady:{
+  // Auto-pre-play begins after the ordinary hand draw and turn-start powers.
+  for(int i=0;i<power_value(s,XPower::Mayhem);i++)queue_extension(s,XOp::AutoTop,0,0,true);
   relic_hook(s,RelicHook::TurnStart);record(s,LogKind::Turn,s.turn);
   if(power_value(s,XPower::Entropy))queue_extension(s,XOp::Transform,power_value(s,XPower::Entropy),0,true);
   int total=0;for(int i=MaxPowerInstances-1;i>=0;i--)if(x.boulder[i]){queue_extension(s,XOp::AllDamage,x.boulder[i],0,true);x.boulder[i]=(int16_t)min(9999,x.boulder[i]+5);total+=x.boulder[i];}

@@ -75,7 +75,8 @@ static void stress(){
     for(unsigned seed=1;seed<=300;seed++){
         State s{};new_run(s,seed,true,seed%2?Character::Silent:Character::Ironclad);s.hp=s.max_hp=999;
         for(int turn=0;turn<180&&combat_phase(s.phase);turn++){
-            if(s.phase==Phase::ReturnChoice)CHECK(choose_return_to_draw(s,s.discard.ids[random_below(rng,s.discard.count)]));
+            if(s.phase==Phase::ExtendedChoice){uint16_t ids[MaxHand];unsigned count=choice_min(s)+random_below(rng,choice_max(s)-choice_min(s)+1);for(unsigned j=0;j<count;j++)ids[j]=choice_pile(s).ids[j];CHECK(choose_extended(s,ids,count));}
+            else if(s.phase==Phase::ReturnChoice)CHECK(choose_return_to_draw(s,s.discard.ids[random_below(rng,s.discard.count)]));
             else if(s.phase==Phase::ExhaustChoice)CHECK(choose_exhaust(s,0));
             else if(s.phase==Phase::ExhaustManyChoice)CHECK(choose_exhaust_many(s,nullptr,0));
             else if(s.phase==Phase::DiscardChoice){uint16_t ids[MaxHand];for(unsigned j=0;j<s.discard_required;j++)ids[j]=s.hand.ids[j];CHECK(choose_discard(s,ids,s.discard_required));}

@@ -1,38 +1,46 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Current source: **0.13 recovery**.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Current source: **0.14 colorless cards and potions**, on `work/0.14-colorless-potions`.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
-## Current implemented baseline
+## Current content
 
-68 card models (29 Ironclad, 29 Silent, nine colorless, one generated Shiv), 30 relics, 16 potions and five adapted events. Both playable characters are incomplete subsets. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
+114 card models: 29 Ironclad, 29 Silent, **53 single-player colorless** and three generated tokens (Shiv, Soul and Sovereign Blade). There are **64 active potion models**, 30 relics and five adapted events. Both playable characters remain incomplete subsets. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
 
-0.13 includes Aroma of Chaos and Doors of Light and Dark, pending event deck choices, outcome narratives, free event removal, full-text event reading, and separate merchant-room/rug interaction. It retains the fanned-hand combat UI and relic/treasure work. These layouts are adaptations, not complete original-PC fidelity.
+Practice exposes every colorless card and potion through the compendium. Open it with **C** or the practice HUD button, inspect an entry and use its acquisition button. Card variants, potion targeting, multi-card selections, generated offers, nested automatic plays and persistent statuses share the same engine and UI on native and browser builds. A full hand sends newly created cards to discard; a full potion inventory must be freed before acquiring another bottle.
 
-Large bulk-expansion fragments are preserved on `checkpoint/bulk-20261015`, not counted as completed content. Read [current work state](docs/WORK_STATE.md) before resuming development.
+Ordinary potion pools follow the current character and the pinned rarity weights. Other-character and special-acquisition bottles remain available for explicit practice use; this does not add the missing three characters or their original event routes. The 0.13 event, relic, treasure and fanned-hand UI work is retained. These layouts are adaptations, not complete original-PC fidelity.
+
+Read [current work state](docs/WORK_STATE.md) before resuming development and [the potion audit](docs/potions-completion-0.14.md) for tested behavior and original-rule evidence. Registry counts alone are not a passing test or a claim that the entire original game is complete.
 
 ## Build
 
 Remote CI is disabled by request. Its definition stays in `.github/disabled-workflows/ci.yml`.
 
 ```sh
-python3 tools/build_ndless.py
+# Set this to the full commit whose remote branch and source tree were verified.
+NSPIRE_CHECKPOINT='<verified-full-commit-sha>'
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label arm -- python3 tools/build_ndless.py
 cmake -S . -B build/host -DSPIRE_X11=OFF
-cmake --build build/host --parallel
-ctest --test-dir build/host --output-on-failure
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label native-build -- cmake --build build/host --parallel
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label native-tests -- ctest --test-dir build/host --output-on-failure
 python3 tests/event_pack_regression.py
 python3 tests/logged_command_regression.py
 ```
 
-ARM requires LLVM clang++ and ld.lld. The X11 host is optional. Install converter dependencies from requirements.txt. Convert an existing private 0.12 NSP2/9 pack:
+ARM requires LLVM clang++ and ld.lld; the browser build also requires wasm-ld. The X11 host is optional. Install converter dependencies from requirements.txt. Convert an existing private 0.13 NSP2/10 pack without resampling its retained animation frames:
 
 ```sh
-python3 tools/build_events.py /path/to/game /path/to/old/nSpire2.nsp.tns --output dist/nSpire2.nsp.tns --font /path/to/local-font
-python3 tools/build_web.py
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label content -- python3 tools/build_colorless_potions.py /path/to/game /path/to/old/nSpire2.nsp.tns --output dist/nSpire2.nsp.tns --font /path/to/local-font
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label web -- python3 tools/build_web.py
 ```
 
-`build_content.py` also chains through this final conversion stage. New launchers require NSP2/10 (68 cards, 105 auxiliary images, 269 strings). Replace both launcher and pack, and back up saves. New saves use v10; project v3-v9 saves remain readable. Old launchers cannot read v10.
+For a full conversion from the pinned installation, `build_content.py` now chains through the same final colorless/potion conversion. The conversion checks the original release metadata, assembly and PCK hashes. New launchers require **NSP2/11** (114 cards, 185 auxiliary images and 407 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
+
+New saves use **v11**; project v3-v10 saves remain readable. The browser writes to a separate v11 storage key and can import earlier keys. Old launchers cannot read the expanded v11 save. Keep a copy of an older save when testing a new launcher.
+
+The native suite includes separate colorless, potion and UI regressions. `expansion_ui_regression` optionally accepts a real NSP2/11 file and an existing private screenshot directory, so the same acquisition/choice tests can exercise converted art in addition to synthetic parser fixtures.
 
 ## Persistence and validation
 

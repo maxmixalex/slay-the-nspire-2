@@ -4,7 +4,7 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 void heal(State&s,int amount){int old=s.hp;s.hp=(int16_t)min(s.max_hp,s.hp+max(0,amount));record(s,LogKind::Heal,s.hp-old);}
 void increase_max_hp(State&s,int amount){amount=min(amount,999-s.max_hp);s.max_hp+=amount;s.hp+=amount;}
-static void lose_hp(State&s,int amount){s.hp=(int16_t)max(0,s.hp-amount);if(!s.hp)s.phase=Phase::Dead;}
+static void lose_hp(State&s,int amount){player_hp_loss(s,amount,false,false);}
 void gain_gold(State&s,int amount){s.gold=(int16_t)min(9999,s.gold+amount);record(s,LogKind::Gold,amount);}
 void create_map(State&s){
     // A finite expedition graph, not the original game's map generator.

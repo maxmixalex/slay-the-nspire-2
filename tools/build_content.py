@@ -220,7 +220,9 @@ def main()->None:
         from build_relics import build as relics
         relics(args.game,output,output,font_path)
         from build_events import build as events
-        final=events(args.game,output,output,font_path)
+        events(args.game,output,output,font_path)
+        from build_colorless_potions import build as colorless_potions
+        final=colorless_potions(args.game,output,output,font_path)
         output.replace(args.output/'nSpire2.nsp.tns')
         (Path(staging)/'content-manifest.json').replace(args.output/'content-manifest.json')
         print(f"Created {args.output/'nSpire2.nsp.tns'}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)

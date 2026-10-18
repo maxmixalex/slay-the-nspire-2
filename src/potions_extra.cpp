@@ -6,8 +6,18 @@ bool potion_in_pool(Potion p,Character c){
  if(p==Potion::Blood)return c==Character::Ironclad;
  return !d->pool||(d->pool==1&&c==Character::Ironclad)||(d->pool==2&&c==Character::Silent);
 }
-Potion random_potion(State&s){
- Potion pool[PotionKinds];unsigned n=0;for(unsigned p=1;p<=PotionKinds;p++)if(potion_in_pool((Potion)p,s.character))pool[n++]=(Potion)p;
+Potion random_potion(State&s,bool in_combat){
+ // Pinned PotionFactory selects the rarity first: common 65%, uncommon 25%,
+ // rare 10%. The adapted expedition keeps its own deterministic RNG stream.
+ const unsigned roll=random_below(s.rng_world,100);
+ const unsigned rarity=roll<10?3:roll<35?2:1;
+ Potion pool[PotionKinds];unsigned n=0;
+ for(unsigned p=1;p<=PotionKinds;p++){
+  Potion potion=(Potion)p;
+  if(!potion_in_pool(potion,s.character)||potion_definition(potion)->rarity!=rarity)continue;
+  if(in_combat&&(potion==Potion::FairyInABottle||potion==Potion::Fruit||potion==Potion::RegenPotion))continue;
+  pool[n++]=potion;
+ }
  return n?pool[random_below(s.rng_world,n)]:Potion::Empty;
 }
 bool procure_potion(State&s,Potion p){if(!potion_definition(p))return false;for(auto&slot:s.potions)if(slot==Potion::Empty){slot=p;return true;}return false;}
@@ -25,7 +35,9 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::DistilledChaos:for(int i=0;i<3;i++)op(XOp::AutoTop);break;
  case Potion::DropletOfPrecognition:op(XOp::ChooseDraw);break;
  case Potion::Duplicator:pw(XPower::Duplicator,1);break;
- case Potion::EntropicBrew:for(auto&slot:s.potions)if(slot==Potion::Empty)slot=random_potion(s);break;
+ // The original explicitly calls CreateRandomPotionOutOfCombat for each empty
+ // slot, even when drunk in combat. It permits recovery bottles and repeats.
+ case Potion::EntropicBrew:for(auto&slot:s.potions)if(slot==Potion::Empty)slot=random_potion(s,false);break;
  case Potion::FairyInABottle:break; // automatic only; cannot enter the manual path
  case Potion::FyshOil:op(XOp::Strength,1);op(XOp::Dexterity,1);break;
  case Potion::GamblersBrew:op(XOp::DiscardRedraw);break;
@@ -62,7 +74,7 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::EssenceOfDarkness:op(XOp::ChannelDark,x.orb_slots);break;
  case Potion::PotionOfCapacity:x.orb_slots=(uint8_t)cap(MaxOrbs,x.orb_slots+2);break;
  case Potion::StarPotion:x.stars=(int16_t)cap(9999,x.stars+3);break;
- case Potion::CosmicConcoction:for(int i=0;i<3;i++)op(XOp::Generate,4,2);break;
+ case Potion::CosmicConcoction:op(XOp::Generate,4,(3<<2)|2);break;
  case Potion::KingsCourage:op(XOp::Forge,15);break;
  default:break;
  }

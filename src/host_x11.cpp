@@ -22,7 +22,7 @@ static bool save_game(const spire::State&s){
 }
 static bool load_game(spire::State&s){
     FILE*f=fopen(save_path.c_str(),"rb");if(!f)return false;
-    static uint8_t b[16385];size_t n=fread(b,1,sizeof b,f);bool ok=!ferror(f);fclose(f);return ok&&spire::load(s,b,n);
+    static uint8_t b[sizeof(spire::SaveData::bytes)+1];size_t n=fread(b,1,sizeof b,f);bool ok=!ferror(f);fclose(f);return ok&&spire::load(s,b,n);
 }
 static void capture(const char*path){
     app.render();FILE*f=fopen(path,"wb");if(!f){perror(path);exit(3);}fprintf(f,"P6\n320 240\n255\n");
@@ -60,7 +60,7 @@ int main(int argc,char**argv){
     Display*d=XOpenDisplay(nullptr);if(!d){fprintf(stderr,"No X display. Use --headless for batch execution.\n");return 2;}
     Bool detectable;XkbSetDetectableAutoRepeat(d,True,&detectable);
     int screen=DefaultScreen(d);Window win=XCreateSimpleWindow(d,RootWindow(d,screen),0,0,960,720,0,0,0);
-    XStoreName(d,win,"nSpire II | Native expedition prototype 0.12");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
+    XStoreName(d,win,"nSpire II | Colorless and potions 0.14");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
     Atom close=XInternAtom(d,"WM_DELETE_WINDOW",False);XSetWMProtocols(d,win,&close,1);XMapWindow(d,win);
     GC gc=XCreateGC(d,win,0,nullptr);int width=960,height=720;bool held[256]={};XImage*image=nullptr;
     auto last_frame=std::chrono::steady_clock::now();

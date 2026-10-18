@@ -16,8 +16,9 @@ static const char* choice_title(const State&s){
     }
 }
 static int choice_display_cost(const State&s,int token){
+    const int base=cost(choice_card(s,token));if(base<0)return base;
     if(s.phase==Phase::ExtendedChoice&&s.expansion.choice_free)return 0;
-    return token<s.card_count?cost(s,token):cost(choice_card(s,token));
+    return token<s.card_count?cost(s,token):base;
 }
 static void card_choice_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.sync_selection();a.hit_count=0;

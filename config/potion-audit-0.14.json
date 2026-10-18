@@ -1,0 +1,125 @@
+{
+  "reference_version": "v0.111.0",
+  "reference_commit": "41cef1ea",
+  "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9",
+  "audit_date": "2026-10-18",
+  "evidence": "Fresh static inspection of the exact recovered assembly. Behavioral summaries and method identifiers only; no original assembly or disassembly is published. These findings are not an original-game execution oracle.",
+  "rules": [
+    {
+      "rule": "potion rarity selection",
+      "methods": {"PotionFactory.CreateRandomPotions": "0x06004f1b"},
+      "finding": "Select rarity first: rare 10%, uncommon 25%, common 65%, then select a model in that rarity.",
+      "implementation": "random_potion uses the same probability weights with the expedition's independent integer RNG. Original floating-point draws and PC seeds are not reproduced."
+    },
+    {
+      "rule": "combat generation restrictions",
+      "methods": {
+        "PotionFactory.CreateRandomPotionInCombat": "0x06004f1a",
+        "FairyInABottle.get_CanBeGeneratedInCombat": "0x06002b2c",
+        "FruitJuice.get_CanBeGeneratedInCombat": "0x06002b57",
+        "RegenPotion.get_CanBeGeneratedInCombat": "0x06002be5"
+      },
+      "finding": "The combat factory filters CanBeGeneratedInCombat; these three active models return false.",
+      "implementation": "Explicit combat context filters Alchemize generation without accidentally filtering victory drops while their state is still Combat."
+    },
+    {
+      "rule": "Entropic Brew exception",
+      "methods": {"EntropicBrew.<OnUse>d__6.MoveNext": "0x0600a11c", "PotionFactory.CreateRandomPotionOutOfCombat": "0x06004f18"},
+      "finding": "Always calls the out-of-combat factory separately for each open potion slot, with null exclusions. Recovery bottles, repeated models and Entropic Brew itself are allowed even when used during combat.",
+      "implementation": "Preserves occupied slots and uses random_potion(state,false) for each empty slot after consuming the bottle."
+    },
+    {
+      "rule": "temporary cost lifetime and X cost",
+      "methods": {
+        "CardModel.SetToFreeThisTurn": "0x060018c5",
+        "CardModel.SetToFreeThisCombat": "0x060018c6",
+        "CardEnergyCost.SetThisTurnOrUntilPlayed": "0x06005223",
+        "CardEnergyCost.GetWithModifiers": "0x0600521d",
+        "CardEnergyCost.<AfterCardPlayedCleanup>b__32_0": "0x0600b0cc",
+        "CardModel.<OnPlayWrapper>d__339.MoveNext": "0x06009b06",
+        "SneckoOil.<OnUse>b__12_0": "0x0600a174",
+        "SneckoOil.<OnUse>d__12.MoveNext": "0x0600a175"
+      },
+      "finding": "Temporary free effects and Snecko costs expire after the first completed physical play/replay group or at turn end. X/negative canonical costs bypass local modifiers; Snecko skips X and negative effective costs before sampling.",
+      "implementation": "The existing turn_cost array is cleared after the completed play. Its serialized representation is retained. The cost getter preserves negative/X values; Touch of Insanity clears earlier temporary overrides."
+    },
+    {
+      "rule": "Clarity and Radiance stacking",
+      "methods": {
+        "ClarityPower.ModifyHandDraw": "0x06002487",
+        "ClarityPower.<AfterSideTurnStart>d__5.MoveNext": "0x06009e8c",
+        "RadiancePower.get_CanonicalVars": "0x060027b9",
+        "RadiancePower.<AfterEnergyReset>d__8.MoveNext": "0x06009fc6"
+      },
+      "finding": "Each applicable turn grants a fixed one extra card or energy and decrements one layer; layers extend duration.",
+      "implementation": "Existing duration representation retained; two-bottle regressions verify six turns of one extra benefit."
+    },
+    {
+      "rule": "Duplicator stacking",
+      "methods": {
+        "DuplicationPower.ModifyCardPlayCount": "0x06002557",
+        "DuplicationPower.<AfterModifyingCardPlayCount>d__5.MoveNext": "0x06009ee2",
+        "DuplicationPower.AfterSideTurnEnd": "0x06002559"
+      },
+      "finding": "Adds one replay, decrements one layer per modified card play, and expires unused layers after the side turn.",
+      "implementation": "Existing next-N-cards behavior retained and covered by a two-bottle, three-card numerical regression."
+    },
+    {
+      "rule": "Soldier's Stew instance scope",
+      "methods": {"SoldiersStew.OnUse": "0x06002c0a", "SoldiersStew.<OnUse>b__8_0": "0x0600a179"},
+      "finding": "Enumerates the current combat cards, filters the Strike tag, and increments each existing instance's BaseReplayCount. No generation listener is installed.",
+      "implementation": "Existing instance replay fields retained; a Strike created after use receives no retroactive replay."
+    },
+    {
+      "rule": "Bottled Potential pile scope",
+      "methods": {"BottledPotential.<OnUse>d__8.MoveNext": "0x0600a106", "CardPileCmd.<Shuffle>d__22.MoveNext": "0x0600b27e"},
+      "finding": "Moves the hand into draw, shuffles draw and discard together, then draws five. Does not recover exhausted cards or installed powers.",
+      "implementation": "Equivalent pile membership is retained without discard triggers. Added an exhaust/power preservation and nested Stratagem-selection regression."
+    },
+    {
+      "rule": "generated card pools and distinct batches",
+      "methods": {
+        "AttackPotion.<OnUse>d__6.MoveNext": "0x0600a0fc",
+        "OrobicAcid.<OnUse>d__6.MoveNext": "0x0600a150",
+        "CosmicConcoction.<OnUse>d__8.MoveNext": "0x0600a10c",
+        "CardFactory.GetDistinctForCombat": "0x06004f0c"
+      },
+      "finding": "Attack/skill/power generation uses the owner's character pool and combat eligibility. Cosmic Concoction requests three distinct colorless models before upgrading and adding them.",
+      "implementation": "Shared generation filters apply the supported owner's pool. Generate flags retain free/upgraded low bits and encode an optional distinct batch count above them; Cosmic Concoction requests count 3, upgraded."
+    },
+    {
+      "rule": "Plating timing",
+      "methods": {
+        "PlatingPower.BeforeSideTurnStart": "0x0600278a",
+        "PlatingPower.BeforeSideTurnEndEarly state machine": "0x06009fb2",
+        "PlatingPower.AfterSideTurnStart state machine": "0x06009fb0"
+      },
+      "finding": "For players, grants current-amount block at side-turn end, then decrements at the next applicable side-turn start; the start-turn block branch excludes players.",
+      "implementation": "Removes the duplicate player-start block payment. Heart of Iron is tested against an actual enemy attack before the next player turn."
+    },
+    {
+      "rule": "Fairy outside combat and fractional healing",
+      "methods": {
+        "FairyInABottle.ShouldDie": "0x06002b2e",
+        "FairyInABottle.<AfterPreventingDeath>d__10.MoveNext": "0x0600a122",
+        "RunState.<IterateHookListeners>d__118.MoveNext": "0x060097bc",
+        "Hook.ShouldDie": "0x06004cee",
+        "CreatureCmd.<KillWithoutCheckingWinCondition>d__15.MoveNext": "0x0600b30d",
+        "Creature.SetCurrentHpInternal": "0x060051da"
+      },
+      "finding": "Run-level death prevention includes carried potions without a combat state. Positive fractional resulting HP is truncated when stored, with Fairy ensuring at least 1 HP.",
+      "implementation": "The common revival path supports lethal event HP loss. Actual Baths/Vegetation event tests cover one-bottle consumption, continuation, nonlethal preservation and death without a bottle."
+    }
+  ],
+  "validation": {
+    "prior_checkpoint": "b0945483e4f50ca065c0b7c3a0d9f917a2b375e6",
+    "prior_potion_completion_checks": 7573,
+    "new_source_backed_assertions": "Awaiting sanitizer execution after the next source checkpoint; syntax checked only."
+  },
+  "remaining_scope": [
+    "Original full character card pools and unlock progression are incomplete in this two-character expedition.",
+    "Special potion acquisition events are not implemented; explicit practice acquisition is available.",
+    "Only dark orbs and a limited summon/Regent resource surface are modeled.",
+    "No original-game differential execution, Firebird run or physical-device performance proof is supplied by this audit."
+  ]
+}
