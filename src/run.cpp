@@ -109,10 +109,12 @@ bool claim_reward_potion(State&s){
 bool leave_rewards(State&s){if(s.phase!=Phase::Reward)return false;finish_room(s);return true;}
 int rest_heal_amount(const State&s){return s.max_hp*3/10+((s.relics&RegalPillow)?15:0);}
 int remove_price(const State&s){return min(9999,75+s.removals*25);}
+static bool has_removable(const State&s){for(unsigned i=0;i<s.deck_count;i++)if(card_removable(s.deck[i]))return true;return false;}
+static unsigned transformable_count(const State&s){unsigned count=0;for(unsigned i=0;i<s.deck_count;i++)if(card_transformable(s.deck[i]))++count;return count;}
 bool buy(State&s,int item){
     if(s.phase!=Phase::Shop||item<0||item>ShopRemove)return false;
     if(item==ShopRemove){
-        if((s.shop_sold&(1u<<ShopRemove))||s.deck_count<=1||s.gold<remove_price(s))return false;
+        if((s.shop_sold&(1u<<ShopRemove))||s.deck_count<=1||!has_removable(s)||s.gold<remove_price(s))return false;
         s.phase=Phase::Remove;s.revision++;return true;
     }
     if((s.shop_sold&(1u<<item))||s.gold<s.shop_prices[item])return false;
@@ -144,9 +146,10 @@ bool event_option_enabled(const State&s,int option){
     if(s.phase!=Phase::Event||s.event_deck_action!=EventDeckAction::None||option<0||option>1)return false;
     if(s.event_page>=2)return option==0;
     if(s.event_id==EventId::Baths&&option==0)return s.max_hp<=997;
-    if(s.event_id==EventId::Grove)return option==0?s.deck_count>=2:s.max_hp<=994;
+    if(s.event_id==EventId::Grove)return option==0?transformable_count(s)>=2:s.max_hp<=994;
+    if(s.event_id==EventId::AromaOfChaos&&option==0)return transformable_count(s)>0;
     // The bounded core still requires at least one permanent card.
-    if(s.event_id==EventId::DoorsOfLightAndDark&&option==1)return s.deck_count>1;
+    if(s.event_id==EventId::DoorsOfLightAndDark&&option==1)return s.deck_count>1&&has_removable(s);
     return (unsigned)s.event_id<EventKinds;
 }
 void complete_event_selection(State&s){

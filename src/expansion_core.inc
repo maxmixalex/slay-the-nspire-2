@@ -394,7 +394,7 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  if(spent>s.energy||stars_spent>x.stars)return false;
  Zone z=s.zones[id];Pile*source=z==Zone::Hand?&s.hand:z==Zone::Draw?&s.draw:z==Zone::Discard?&s.discard:(automatic&&z==Zone::Exhaust)?&s.exhaust:nullptr;
  bool reserved=automatic&&z==Zone::Limbo;
- if(reserved){if(s.playing==id)return false;for(unsigned i=0;i<x.depth;i++)if(x.frames[i].playing==id)return false;}
+ if(automatic){if(s.playing==id)return false;for(unsigned i=0;i<x.depth;i++)if(x.frames[i].playing==id)return false;}
  if(!source&&!reserved)return false;int at=-1;
  if(source){for(unsigned i=0;i<source->count;i++)if(source->ids[i]==id){at=i;break;}if(at<0)return false;}
  if(cost(c)<-1){
@@ -404,7 +404,6 @@ static bool start_instance(State&s,int id,int target,bool automatic){
   // AutoTop cards. An already active ancestor is rejected above.
   if(source)remove(*source,at);s.zones[id]=Zone::Limbo;
   bool exhausted=card_exhausts(c)||s.ironclad.forced_exhaust[id];
-  s.ironclad.forced_exhaust[id]=0;
   if(exhausted)exhaust_id(s,id);else put(s,s.discard,id,Zone::Discard);
   return true;
  }

@@ -110,8 +110,9 @@ class AllCharacterPackTests(unittest.TestCase):
 
     def test_empty_status_description_and_unpowered_burn(self):
         rows = {row['key']: row for row in models()}
-        keywords = {'UNPLAYABLE.title': 'Unplayable', 'ETHEREAL.title': 'Ethereal'}
+        keywords = {'UNPLAYABLE.title': 'Unplayable', 'ETHEREAL.title': 'Ethereal', 'EXHAUST.title': 'Exhaust'}
         self.assertEqual(localized('', rows['WOUND'], False, keywords), '[gold]Unplayable。[/gold]')
+        self.assertEqual(localized('', rows['DEBRIS'], False, keywords), '[gold]Exhaust。[/gold]')
         value = localized('Burn {Damage:diff()}.', rows['BURN'], False, keywords)
         self.assertIn('Burn 2.', value); self.assertNotIn('{Damage=', value)
 

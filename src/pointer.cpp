@@ -30,7 +30,7 @@ void App::open_choice_detail(int token){
         open_card_detail(game.cards[token]);detail_instance=token;
         detail_cost_override=cost(game,token);
         if(choice_free_energy(game)&&cost(game.cards[token])>=0){
-            for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)detail_cost_override=0;
+            for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)detail_cost_override=card_free_preview_cost(game,game.cards[token],token);
         }
         return;
     }
@@ -38,7 +38,7 @@ void App::open_choice_detail(int token){
     bool offered=false;for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)offered=true;
     if(!offered)return;
     open_card_detail(choice_card(game,token));
-    if(choice_free_energy(game)&&cost(choice_card(game,token))>=0)detail_cost_override=0;
+    if(choice_free_energy(game)&&cost(choice_card(game,token))>=0)detail_cost_override=card_free_preview_cost(game,choice_card(game,token));
 }
 void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;

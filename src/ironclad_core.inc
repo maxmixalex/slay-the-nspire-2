@@ -151,7 +151,7 @@ static void ironclad_turn_end(State&s){
 static void ironclad_player_side_end(State&s){
  auto&i=s.ironclad;ironclad_gain_power(s,IPower::Rage,-ipower(s,IPower::Rage));ironclad_gain_power(s,IPower::OneTwoPunch,-ipower(s,IPower::OneTwoPunch));
  if(i.setup_strength){s.strength=(int16_t)max(-9999,s.strength-i.setup_strength);i.setup_strength=0;}
- for(unsigned id=0;id<s.card_count;id++)i.stomp_discount[id]=i.stomp_turn_origin[id]=i.stomp_combat_origin[id]=0;
+ for(unsigned id=0;id<s.card_count;id++){i.stomp_discount[id]=i.stomp_turn_origin[id]=i.stomp_combat_origin[id]=0;i.forced_exhaust[id]=0;}
 }
 static void ironclad_enemy_side_end(State&s){if(ipower(s,IPower::Colossus))ironclad_gain_power(s,IPower::Colossus,-1);}
 static void ironclad_combat_end(State&s){

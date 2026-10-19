@@ -106,6 +106,17 @@ static void stars_and_upgraded_transform(){
     a.open_choice_detail(target);CHECK(a.detail_energy()==cost(a.game,target)&&a.detail_energy()>0);a.input(Key::Back);
     tap(HitKind::CombatChoice,target);capture("regent-minion-choice");action(UiAction::ConfirmChoice);
     CHECK(a.game.cards[target].kind==MinionStrike&&a.game.cards[target].upgraded);CHECK(validate(a.game));
+    // A local zero Set still passes through BorrowedTime. Full-resource free
+    // selections must preview the resulting energy and the independent stars.
+    start(Character::Regent);clear_hand();a.game.energy=10;target=add({RegentReflect,0});
+    play_ui(add({NecroBorrowedTime,0}));a.game.potions[0]=Potion::TouchOfInsanity;
+    a.input(Key::Potions);a.input(Key::Confirm);
+    CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Free);
+    a.open_choice_detail(target);CHECK(a.detail_energy()==1&&a.detail_stars()==0);
+    before=snapshot();capture("regent-free-resource-choice");unchanged(before);a.input(Key::Back);
+    tap(HitKind::CombatChoice,target);action(UiAction::ConfirmChoice);
+    CHECK(cost(a.game,target)==1&&card_star_cost(a.game,a.game.cards[target],target)==0);
+    CHECK(a.game.expansion.star_combat_free[target]&&validate(a.game));
 }
 static void orbs_and_osty(){
     start(Character::Defect);auto&s=a.game;s.expansion.orb_slots=10;s.expansion.orb_count=5;s.expansion.powers[(int)XPower::Focus]=-2;

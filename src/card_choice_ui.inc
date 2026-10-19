@@ -10,7 +10,7 @@ static const char* choice_title(const State&s){
     case XChoice::Discard:return "从弃牌堆选择";
     case XChoice::Top:return "放回抽牌堆顶";
     case XChoice::DiscardRedraw:return "丢弃并重新抽牌";
-    case XChoice::Free:return "选择能量费降为零的牌";
+    case XChoice::Free:return "选择本场固定费用归零的牌";
     case XChoice::Transform:return "选择要变化的牌";
     case XChoice::IUpgrade:return "选择要升级的牌";
     case XChoice::SlySkill:return "选择赋予奇巧的技能牌";
@@ -34,8 +34,12 @@ static const char* choice_title(const State&s){
 }
 static int choice_display_cost(const State&s,int token){
     const int base=cost(choice_card(s,token));if(base<0)return base;
-    if(choice_free_energy(s))return 0;
+    if(choice_free_energy(s))return card_free_preview_cost(s,choice_card(s,token),token<s.card_count?token:-1);
     return token<s.card_count?cost(s,token):base;
+}
+static int choice_display_stars(const State&s,int token){
+    const int stars=card_star_cost(s,choice_card(s,token),token<s.card_count?token:-1);
+    return stars>=0&&choice_free_energy(s)?0:stars;
 }
 static void card_choice_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.sync_selection();a.hit_count=0;
@@ -45,7 +49,7 @@ static void card_choice_screen(Canvas&c){
     a.cursor=mn(mx(0,a.cursor),mx(0,source.count-1));const int first=offer?0:a.cursor/10*10;
     c.dim(0,0,320,240,215);c.centered(choice_title(s),0,8,320,16,Gold);
     char label[96]={};TextBuffer text{label,sizeof label,0};
-    if(offer&&choice_free_energy(s))text.text("本回合零能量费 · ");
+    if(offer&&choice_free_energy(s))text.text("本回合减免固定费用 · ");
     text.text("已选择 ");text.number(a.choice_selected_count);text.text(optional?" / 最多 ":" / ");text.number(limit);
     c.centered(label,0,31,320,10,White);
     for(int i=first;i<mn(source.count,first+(offer?3:10));i++){
@@ -53,12 +57,12 @@ static void card_choice_screen(Canvas&c){
         for(unsigned j=0;j<a.choice_selected_count;j++)if(a.choice_selected[j]==id)selected=true;
         if(offer){
             const int x=23+i*97,y=65;
-            large_card(c,card,x,y,selected||a.cursor==i,choice_display_cost(s,id),card_star_cost(s,card,id<s.card_count?id:-1),id<s.card_count?id:-1);
+            large_card(c,card,x,y,selected||a.cursor==i,choice_display_cost(s,id),choice_display_stars(s,id),id<s.card_count?id:-1);
             if(selected)c.box(x-4,y-4,88,120,Green);
             c.hit(x-5,y-5,90,126,HitKind::CombatChoice,id);
         }else{
             const int x=26+(i-first)%5*56,y=48+(i-first)/5*73;
-            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id),card_star_cost(s,card,id<s.card_count?id:-1));
+            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id),choice_display_stars(s,id));
             if(selected){c.box(x-3,y-3,53,72,Green);c.rect(x+32,y+46,14,17,Panel);c.text("✓",x+33,y+46,12,Green);}
             c.hit(x-3,y-3,53,72,HitKind::CombatChoice,id);
         }

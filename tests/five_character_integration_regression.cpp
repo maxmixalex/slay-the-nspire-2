@@ -123,4 +123,19 @@ static void capacity_and_ownership(){
  bad=s;bad.effects[0]={EffectKind::Damage,1,0,3};CHECK(!validate(bad));
  s.effects[0]={EffectKind::Damage,1,0,2};roundtrip(s);
 }
-int main(int argc,char**argv){CHECK(argc==2);genuine_v13(argv[1]);capacity_and_ownership();std::printf("five-character integration: %u checks passed\n",checks);}
+static void eternal_deck_choices(){
+ State s{};new_run(s,73,false,Character::Necrobinder);s.deck_count=2;
+ s.deck[0]={NecroForbiddenGrimoire,0};s.deck[1]={NecroForbiddenGrimoire,1};s.gold=123;
+ s.phase=Phase::Event;s.current_node=0;s.floor=1;s.map[0].room=Room::Event;
+ for(EventId event:{EventId::Grove,EventId::AromaOfChaos,EventId::DoorsOfLightAndDark}){
+  s.event_id=event;s.map[0].event=(uint8_t)event;const int option=event==EventId::DoorsOfLightAndDark?1:0;
+  auto before=snapshot(s);CHECK(!event_option_enabled(s,option)&&!event_choice(s,option));same(s,before);
+ }
+ s.phase=Phase::Shop;auto before=snapshot(s);CHECK(!buy(s,ShopRemove));same(s,before);
+ s.phase=Phase::Event;s.event_id=EventId::Grove;s.map[0].event=(uint8_t)EventId::Grove;
+ s.deck[0]={NecroStrikeNecrobinder,0};CHECK(!event_option_enabled(s,0));
+ s.deck[1]={NecroDefendNecrobinder,0};CHECK(event_option_enabled(s,0)&&event_choice(s,0));
+ CHECK(s.gold==0&&s.phase==Phase::Transform&&s.event_remaining==2);
+ CHECK(transform_card(s,0)&&transform_card(s,1));CHECK(s.phase==Phase::Event&&s.event_page==2);roundtrip(s);
+}
+int main(int argc,char**argv){CHECK(argc==2);genuine_v13(argv[1]);capacity_and_ownership();eternal_deck_choices();std::printf("five-character integration: %u checks passed\n",checks);}

@@ -30,9 +30,10 @@ class PackTests(unittest.TestCase):
         lock=json.loads((root/'config/reference-release.json').read_text())
         page=(root/'platform/web/player.html').read_text()
         self.assertEqual(set(re.findall(r'v0\.\d+\.0',page)),{lock['version']})
-        self.assertIn("setItem('nSpire2-save-v13'",page)
-        self.assertNotIn("setItem('nSpire2-save-v10'",page)
-        for version in range(3,13):self.assertIn("getItem('nSpire2-save-v%d'"%version,page)
+        self.assertIn("setItem('nSpire2-save-v14'",page)
+        for version in range(3,14):
+            self.assertNotIn("setItem('nSpire2-save-v%d'"%version,page)
+            self.assertIn("getItem('nSpire2-save-v%d'"%version,page)
     def test_roundtrip_preserves_records(self):
         p=PackData(synthetic());legacy=(p.images[:],p.glyphs.copy(),p.clips,p.cards[:]);p.strings+=['new']*41;p.aux+=[0]*10
         output=p.encode();q=PackData(output)

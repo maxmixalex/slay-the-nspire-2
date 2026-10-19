@@ -286,7 +286,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
             if name + '.import' not in pck.entries: raise ValueError('Missing original portrait: ' + name)
             if key + '.title' not in card_text: raise ValueError('Missing original card title: ' + key)
             text = card_text.get(key + '.description')
-            if text is None and key not in ('DAZED', 'WOUND'): raise ValueError('Missing original description: ' + key)
+            if text is None and key not in ('DAZED', 'WOUND', 'DEBRIS'): raise ValueError('Missing original description: ' + key)
             first = len(pack.strings)
             pack.strings.extend([card_text[key + '.title'], localized(text or '', row, False, keywords),
                                  localized(text or '', row, True, keywords)])

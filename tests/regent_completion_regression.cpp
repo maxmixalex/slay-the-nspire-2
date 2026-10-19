@@ -359,7 +359,48 @@ static void suspended_choices_and_corruption(){
  scenario="Regent suffix rejects malformed counters";active_kind=RegentOrbit;auto bad=fight(RegentOrbit);act(bad);State invalid=bad;invalid.regent.orbit_remainder[0]=4;CHECK(!validate(invalid));invalid=bad;invalid.regent.power_order[1]=1;CHECK(!validate(invalid));invalid=bad;invalid.regent.stars_spent[MaxAutoFrames]=2;CHECK(!validate(invalid));invalid=bad;invalid.regent.kick_discount[0]=1;CHECK(!validate(invalid));
 }
 
+static void shared_local_costs_and_star_expiry(){
+ active_kind=RegentDevastate;active_upgrade=0;
+ scenario="BulletTime Set hides earlier Transfigure Add, then both fixed resources expire after the physical play";
+ {auto s=fight(RegentDevastate);cast(s,NecroTransfigure);CHECK(cost(s,0)==2&&card_star_cost(s,s.cards[0],0)==4);
+  cast(s,BulletTime);CHECK(cost(s,0)==0&&card_star_cost(s,s.cards[0],0)==0&&s.expansion.star_turn_free[0]);roundtrip(s);
+  s.energy=s.expansion.stars=0;act(s);settle(s);CHECK(!s.energy&&!s.expansion.stars&&cost(s,0)==2&&card_star_cost(s,s.cards[0],0)==4&&!s.expansion.star_turn_free[0]);
+ }
+ scenario="A Transfigure Add after BulletTime Set still costs one energy but no fixed stars";
+ {auto s=fight(RegentDevastate);cast(s,BulletTime);cast(s,NecroTransfigure);CHECK(cost(s,0)==1&&card_star_cost(s,s.cards[0],0)==0);
+  s.energy=1;s.expansion.stars=0;act(s);settle(s);CHECK(!s.energy&&cost(s,0)==2&&card_star_cost(s,s.cards[0],0)==4);
+ }
+ scenario="RocketPunch until-play reductions and BulletTime Set expire together";
+ {auto s=fight(DefectRocketPunch);cast(s,DefectTurbo);cast(s,DefectTurbo);cast(s,DefectTurbo);CHECK(s.defect.cost_delta[0]==-3&&cost(s,0)==0);
+  cast(s,BulletTime);CHECK(cost(s,0)==0&&s.defect.turn_origin[0]==-3);act(s);settle(s);CHECK(!s.defect.cost_delta[0]&&!s.expansion.turn_cost[0]&&cost(s,0)==2);
+ }
+ scenario="Negative local subtotals skip BorrowedTime, while a new zero Set enables its global addition";
+ {auto s=fight(DefectRocketPunch);cast(s,DefectTurbo);cast(s,DefectTurbo);cast(s,DefectTurbo);cast(s,NecroBorrowedTime);cast(s,NecroBorrowedTime);
+  CHECK(cost(s,0)==0&&card_free_preview_cost(s,s.cards[0],0)==2);cast(s,BulletTime);CHECK(cost(s,0)==2);ready(s);
+ }
+ scenario="TouchOfInsanity accepts star-only costs and preserves its combat star Set across plays and turns";
+ {auto s=fight(RegentAstralPulse);s.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(s,0,0));CHECK(s.expansion.choice==XChoice::Free&&s.expansion.choices.count==1);pick(s,1);
+  CHECK(s.expansion.star_combat_free[0]&&!s.expansion.star_turn_free[0]&&card_star_cost(s,s.cards[0],0)==0);s.expansion.stars=0;act(s);settle(s);CHECK(card_star_cost(s,s.cards[0],0)==0);
+  supply(s,8);next_turn(s);CHECK(s.expansion.star_combat_free[0]&&card_star_cost(s,s.cards[0],0)==0);roundtrip(s);
+ }
+ scenario="TouchOfInsanity also sees a local cost hidden by a global free power";
+ {auto s=fight(RegentDefend);cast(s,Pounce);CHECK(cost(s,0)==0);s.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(s,0,0));CHECK(s.expansion.choice==XChoice::Free&&s.expansion.choices.count==1);pick(s,1);CHECK(s.expansion.combat_cost[0]==1);ready(s);}
+ scenario="LiquidMemories reduces both fixed costs until the recovered card is played";
+ {auto s=fight(RegentDevastate);transfer(s,0,Zone::Discard);s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));pick(s,1);
+  CHECK(s.zones[0]==Zone::Hand&&cost(s,0)==0&&card_star_cost(s,s.cards[0],0)==0);act(s);settle(s);CHECK(cost(s,0)==1&&card_star_cost(s,s.cards[0],0)==4);
+ }
+ scenario="Energy-only free attacks and SneckoOil leave fixed star costs intact";
+ {auto s=fight(RegentDevastate);cast(s,Unrelenting);CHECK(cost(s,0)==0&&card_star_cost(s,s.cards[0],0)==4&&!s.expansion.star_turn_free[0]);ready(s);}
+ {auto s=fight(RegentReflect);supply(s,7);s.potions[0]=Potion::SneckoOil;CHECK(use_potion(s,0,0));settle(s);CHECK(card_star_cost(s,s.cards[0],0)==3&&!s.expansion.star_turn_free[0]&&!s.expansion.star_combat_free[0]);}
+ scenario="BulletTime leaves star X and energy X resource payment intact";
+ {auto s=fight(RegentStardust);int energy_x=add(s,RegentHeavenlyDrill);cast(s,BulletTime);CHECK(card_star_cost(s,s.cards[0],0)==-1&&cost(s,energy_x)==-1&&!s.expansion.turn_cost[energy_x]);
+  s.energy=2;s.expansion.stars=3;act(s);settle(s);CHECK(s.energy==2&&!s.expansion.stars&&card_star_cost(s,s.cards[0],0)==-1);
+ }
+ scenario="The turn boundary clears unplayed fixed-star reductions";
+ {auto s=fight(RegentCloakOfStars);cast(s,BulletTime);CHECK(card_star_cost(s,s.cards[0],0)==0);supply(s,8);next_turn(s);CHECK(!s.expansion.star_turn_free[0]&&card_star_cost(s,s.cards[0],0)==1);}
+}
+
 int main(){
- starting_character();matrix();stars_payment_and_before_play();orbit_instances_and_draw_growth();blades_and_generation();late_return_and_enemy_hooks();suspended_choices_and_corruption();
+ starting_character();matrix();stars_payment_and_before_play();orbit_instances_and_draw_growth();blades_and_generation();late_return_and_enemy_hooks();suspended_choices_and_corruption();shared_local_costs_and_star_expiry();
  std::printf("Regent completion regression: %u checks, %u base/upgraded/token variants passed\n",checks,variants);return 0;
 }

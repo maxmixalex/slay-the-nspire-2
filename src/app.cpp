@@ -215,13 +215,21 @@ int App::detail_energy()const{
     Card card=card_from_token(detail_card);
     int energy=detail_instance>=0?card_preview_cost(game,card,detail_instance):detail_cost_override==-2?cost(card):detail_cost_override;
     if(detail_instance>=0&&choice_free_energy(game)&&cost(card)>=0){
-        for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==detail_instance){energy=0;break;}
+        for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==detail_instance){energy=card_free_preview_cost(game,card,detail_instance);break;}
     }
     return energy;
 }
 int App::detail_stars()const{
     if(detail_card<0)return 0;
-    return card_star_cost(game,card_from_token(detail_card),library?-1:detail_instance);
+    Card card=card_from_token(detail_card);int stars=card_star_cost(game,card,library?-1:detail_instance);
+    if(!library&&stars>=0&&choice_free_energy(game)){
+        for(unsigned i=0;i<game.expansion.choices.count;i++){
+            int token=game.expansion.choices.ids[i];
+            if((detail_instance>=0&&token==detail_instance)||
+               (detail_instance<0&&game.expansion.choice==XChoice::Offer&&token>=MaxCards&&token<MaxCards+3&&game.expansion.offers[token-MaxCards].kind==card.kind))return 0;
+        }
+    }
+    return stars;
 }
 static void detail_screen(Canvas&c){
     auto&a=c.a;Card card=card_from_token(a.detail_card);

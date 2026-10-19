@@ -30,7 +30,8 @@ int main(){
   s.pain=3;s.power_order[0]=0;s.power_count=1;s.potions[0]=Potion::DistilledChaos;
   roundtrip(s);CHECK(use_potion(s,0,0));CHECK(s.phase==Phase::Combat&&s.energy==10&&!s.draw.count);
   CHECK(s.zones[id]==(force?Zone::Exhaust:Zone::Discard));CHECK(s.block==(force?3:0));
-  CHECK(!s.expansion.cards_finished&&!s.ironclad.attacks_started&&!s.ironclad.forced_exhaust[id]);roundtrip(s);
+  CHECK(!s.expansion.cards_finished&&!s.ironclad.attacks_started&&s.ironclad.forced_exhaust[id]==(uint8_t)force);roundtrip(s);
+  CHECK(end_turn(s));CHECK(!s.ironclad.forced_exhaust[id]);roundtrip(s);
  }
  // Havoc uses the same command directly and installs ExhaustOnNextPlay first.
  auto s=fight();add(s,Havoc,Zone::Hand);int id=add(s,Wound,Zone::Draw);s.pain=3;s.power_order[0]=0;s.power_count=1;
