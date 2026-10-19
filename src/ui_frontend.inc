@@ -9,25 +9,28 @@ static void title_screen(Canvas&c){
         c.text(labels[i],35,y+1,12,Ink);c.text(labels[i],34,y,12,selected?Gold:White);
         c.hit(7,y,147,20,HitKind::Menu,i);
     }
-    c.text("nSpire II 0.15",218,219,10,White,100);
+    c.text("nSpire II 0.16",218,219,10,White,100);
 }
 static void character_screen(Canvas&c){
-    auto&a=c.a;a.hit_count=0;bool silent=a.selected_character==Character::Silent;
+    auto&a=c.a;a.hit_count=0;
     const auto& definition=character_definitions[(unsigned)a.selected_character];
-    c.ui(silent?U_SilentBackground:U_CharacterBackground,0,0);c.dim(0,0,150,208,140);
+    c.ui(character_background(a.selected_character),0,0);c.dim(0,0,150,208,140);
     c.text(definition.name,13,17,20,Gold);
     c.picture(A_Heart,15,54,15,15);char hp[32]={};TextBuffer h{hp,sizeof hp,0};h.number(definition.starting_hp);h.text(" / ");h.number(definition.starting_hp);c.text(hp,37,51,12,White);
-    c.paragraph(silent?"一位来自尖塔之外的女猎手。\n随时准备刀刺与毒杀任何拦路者。":"铁甲军团最后的士兵。\n并非出自自身的意愿，用刀剑与烈焰击溃敌人们。",14,78,127,4,0,12,White);
-    c.picture(silent?a.content.ui_image(U_SnakeRing):A_BurningBlood,14,145,25,25);
-    c.text(silent?"蛇之戒":"燃烧之血",46,148,12,Gold);
-    c.paragraph(silent?"每场战斗的首个回合，多抽 [green]2[/green] 张牌。":"每场战斗结束时，回复 [green]6[/green] 点生命。",14,177,130,2,0,10,White);
+    c.paragraph(character_summary(a.selected_character),14,78,127,4,0,12,White);
+    if(const auto*relic=relic_definition(definition.starting_relic)){
+        c.picture(a.content.relic_image((int)(relic-relic_definitions)),14,142,25,25);
+        c.text(relic->name,46,145,12,Gold,99);
+        c.paragraph(relic->description,14,175,130,2,0,10,White);
+    }
     c.dim(0,209,320,31,130);
     c.button("返回",3,216,82,false,23);c.action(1,209,86,31,UiAction::Back);
-    for(int i=0;i<2;i++){
-        int x=115+i*43;bool selected=i==(int)a.selected_character;
-        if(selected){c.rect(x-3,203,39,37,rgb(87,68,38));c.box(x-3,203,39,37,Gold);}
-        c.ui(i?U_SilentPortrait:U_CharPortrait,x,203,32,36,selected?255:145);
-        c.action(x-3,202,39,38,i?UiAction::SelectSilent:UiAction::SelectIronclad);
+    const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
+    for(int i=0;i<CharacterKinds;i++){
+        int x=159+i*31;bool selected=i==(int)a.selected_character;
+        if(selected){c.rect(x-2,173,31,35,rgb(87,68,38));c.box(x-2,173,31,35,Gold);}
+        c.ui(character_portrait((Character)i),x,175,27,30,selected?255:145);
+        c.action(x-2,172,31,36,actions[i]);
     }
     c.ui(U_RewardSkip,218,211,99,27);c.centered(a.practice_entry?"练习 ›":"启程 ›",218,214,99,12,Gold);c.action(213,207,107,33,UiAction::StartCharacter);
 }
@@ -43,15 +46,17 @@ static void library_screen(Canvas&c){
         c.action(x,22,104,23,(UiAction)((int)UiAction::LibraryCards+i));
     }
     if(a.library_tab==0){
-        const char* filters[]={"全部","铁甲","猎手","无色"};
-        for(int i=0;i<4;i++){int x=4+i*48;if(a.library_filter==i)c.rect(x,46,46,18,rgb(67,54,38));
-            c.centered(filters[i],x,46,46,10,a.library_filter==i?Gold:Muted);c.action(x,45,47,19,(UiAction)((int)UiAction::FilterAll+i));}
-        const char* sorts[]={"默认排序","按费用","按类型"};c.text(sorts[a.library_sort],230,46,10,Gold,85);c.action(220,45,100,19,UiAction::CycleSort);
-        uint8_t ids[CardKinds];const int count=(int)a.library_items(ids),last=mx(0,(count-1)/8);
+        const char* filters[]={"全部","铁甲","猎手","故障","储君","亡灵","无色"};
+        const int filter_ids[]={0,1,2,4,5,6,3};
+        const UiAction filter_actions[]={UiAction::FilterAll,UiAction::FilterIronclad,UiAction::FilterSilent,UiAction::FilterDefect,UiAction::FilterRegent,UiAction::FilterNecrobinder,UiAction::FilterColorless};
+        for(int i=0;i<7;i++){int x=4+i*33;bool selected=a.library_filter==filter_ids[i];if(selected)c.rect(x,46,32,18,rgb(67,54,38));
+            c.centered(filters[i],x,46,32,10,selected?Gold:Muted);c.action(x,45,33,19,filter_actions[i]);}
+        const char* sorts[]={"默认排序","按费用","按类型"};c.centered(sorts[a.library_sort],238,46,79,10,Gold);c.action(237,45,83,19,UiAction::CycleSort);
+        CardKind ids[CardKinds];const int count=(int)a.library_items(ids),last=mx(0,(count-1)/8);
         a.library_page=mn(mx(0,a.library_page),last);a.library_selected=mn(mx(0,a.library_selected),count-1);
         for(int i=a.library_page*8;i<mn(count,a.library_page*8+8);i++){
             int k=i-a.library_page*8,x=29+(k%4)*69,y=68+(k/4)*71;
-            small_card(c,{ids[i],(uint8_t)a.library_upgraded},x,y,i==a.library_selected,true,0);
+            small_card(c,{ids[i],(uint8_t)(a.library_upgraded&&card_upgradeable({ids[i],0}))},x,y,i==a.library_selected,true,0);
             c.hit(x-3,y-2,55,70,HitKind::LibraryItem,i);
         }
         c.action(108,211,116,29,UiAction::ToggleUpgrades);c.centered(a.library_upgraded?"升级版本 +":"基础版本",108,215,116,12,Green);

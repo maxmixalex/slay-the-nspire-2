@@ -33,27 +33,33 @@ const RelicDefinition relic_definitions[RelicKinds]={
  {Shuriken,"SHURIKEN","手里剑","每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [gold]1[/gold] 点力量。",-1},
  {OrnamentalFan,"ORNAMENTAL_FAN","精致折扇","每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [blue]4[/blue] 点格挡。",-1},
  {LetterOpener,"LETTER_OPENER","开信刀","每在同一回合打出 [gold]3[/gold] 张技能牌，对所有敌人造成 [blue]5[/blue] 点伤害。",-1},
- {Nunchaku,"NUNCHAKU","双截棍","每打出 [gold]10[/gold] 张攻击牌，获得 [gold]1[/gold] 点能量。计数跨战斗保留。",-1}
+ {Nunchaku,"NUNCHAKU","双截棍","每打出 [gold]10[/gold] 张攻击牌，获得 [gold]1[/gold] 点能量。计数跨战斗保留。",-1},
+ {CrackedCore,"CRACKED_CORE","破损核心","战斗开始时生成 [blue]1[/blue] 个闪电充能球。",-1},
+ {DivineRight,"DIVINE_RIGHT","天赋君权","战斗开始时获得 [gold]3[/gold] 颗星星。",-1},
+ {BoundPhylactery,"BOUND_PHYLACTERY","缚魂命匣","每个回合开始时召唤 [blue]1[/blue]。",-1}
 };
-const RelicDefinition* relic_definition(unsigned id){for(const auto&d:relic_definitions)if(d.id==id)return &d;return nullptr;}
-static void flash(State&s,unsigned id){s.relic_flash|=(uint32_t)id;++s.relic_revision;}
-bool gain_relic(State&s,unsigned id){
+const RelicDefinition* relic_definition(RelicMask id){for(const auto&d:relic_definitions)if(d.id==id)return &d;return nullptr;}
+static void flash(State&s,RelicMask id){s.relic_flash|=id;++s.relic_revision;}
+bool gain_relic(State&s,RelicMask id){
  const auto*d=relic_definition(id);if(!d||(s.relics&id)||s.relic_count>=RelicKinds)return false;
- s.relic_flash=0;s.relic_order[s.relic_count++]=(uint8_t)(d-relic_definitions);s.relics|=(uint32_t)id;
+ s.relic_flash=0;s.relic_order[s.relic_count++]=(uint8_t)(d-relic_definitions);s.relics|=id;
  if(id==Strawberry||id==Pear||id==Mango)increase_max_hp(s,id==Strawberry?7:id==Pear?10:14);
  if(id==OldCoin)gain_gold(s,300);
- flash(s,id);record(s,LogKind::Relic,(int)id);s.revision++;return true;
+ flash(s,id);if(d-relic_definitions>=30)record(s,LogKind::RelicIndex,(int)(d-relic_definitions));else record(s,LogKind::Relic,(int)id);s.revision++;return true;
 }
-unsigned random_relic(State&s){
- unsigned ids[RelicKinds],n=0;for(const auto&d:relic_definitions)if(d.id!=BurningBlood&&d.id!=RingOfTheSnake&&!(s.relics&d.id))ids[n++]=d.id;
+RelicMask random_relic(State&s){
+ RelicMask ids[RelicKinds];unsigned n=0;for(const auto&d:relic_definitions)if(d.id!=BurningBlood&&d.id!=RingOfTheSnake&&d.id!=CrackedCore&&d.id!=DivineRight&&d.id!=BoundPhylactery&&!(s.relics&d.id))ids[n++]=d.id;
  return n?ids[random_below(s.rng_world,n)]:0;
 }
-unsigned relic_counter(const State&s,unsigned id){const auto*d=relic_definition(id);return d?s.relic_counters[d-relic_definitions]:0;}
+unsigned relic_counter(const State&s,RelicMask id){const auto*d=relic_definition(id);return d?s.relic_counters[d-relic_definitions]:0;}
 void relic_hook(State&s,RelicHook hook){
  for(unsigned i=0;i<s.relic_count;i++){
-  unsigned index=s.relic_order[i],id=relic_definitions[index].id;bool triggered=false;
+  unsigned index=s.relic_order[i];RelicMask id=relic_definitions[index].id;bool triggered=false;
   if(hook==RelicHook::CombatStart){
-   if(id==Vajra){s.strength+=1;triggered=true;}
+   if(id==CrackedCore){queue_extension(s,XOp::DChannel,(int)DOrb::Lightning,1);triggered=true;}
+   else if(id==DivineRight){regent_gain_stars(s,3);triggered=true;}
+   else if(id==BoundPhylactery){queue_extension(s,XOp::Summon,1);triggered=true;}
+   else if(id==Vajra){s.strength+=1;triggered=true;}
    else if(id==Anchor){gain_unpowered_block(s,10);triggered=true;}
    else if(id==OddlySmoothStone){s.dexterity+=1;triggered=true;}
    else if(id==BagOfMarbles){for(int j=0;j<s.enemy_count;j++)apply_vulnerable(s,j,1);triggered=true;}
@@ -83,13 +89,13 @@ void relic_after_hp_loss(State&s,int loss){
  if(loss<=0||s.hp<=0||!combat_phase(s.phase)||!(s.relics&CentennialPuzzle)||s.relic_counters[24])return;
  s.relic_counters[24]=1;flash(s,CentennialPuzzle);draw_cards(s,3);
 }
-unsigned relic_counter_limit(unsigned id){
+unsigned relic_counter_limit(RelicMask id){
  if(id==PenNib||id==Nunchaku)return 10;
  if(id==HappyFlower||relic_counter_is_turn_scoped(id))return 3;
  if(id==CentennialPuzzle)return 1;
  return 0;
 }
-bool relic_counter_is_turn_scoped(unsigned id){
+bool relic_counter_is_turn_scoped(RelicMask id){
  return id==Kunai||id==Shuriken||id==OrnamentalFan||id==LetterOpener;
 }
 void relic_reset_turn_counters(State&s){
@@ -101,7 +107,7 @@ void relic_card_played(State&s,Card card){
  // AfterCardPlayed runs once after the card's commands/choices, before its
  // result-pile move. Resolve in acquisition order; hits are not card plays.
  for(unsigned i=0;i<s.relic_count;i++){
-  unsigned index=s.relic_order[i],id=relic_definitions[index].id;
+  unsigned index=s.relic_order[i];RelicMask id=relic_definitions[index].id;
   bool relevant=id==LetterOpener?type==CardType::Skill:
       (id==Kunai||id==Shuriken||id==OrnamentalFan||id==Nunchaku)&&type==CardType::Attack;
   if(!relevant)continue;

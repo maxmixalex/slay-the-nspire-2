@@ -1,6 +1,6 @@
 // Included after Card/Pile definitions inside namespace spire. All dimensions
 // are bounded; no coroutine stack or transient pointer is part of a save.
-constexpr int MaxAutoFrames=12, MaxPowerInstances=16, MaxBombs=16, MaxOrbs=10;
+constexpr int MaxAutoFrames=12, MaxPowerInstances=16, MaxBombs=16, MaxOrbs=10,MaxPostPlayPowers=49;
 enum class XPower:uint8_t {
  Retain,Plating,Buffer,Intangible,Ritual,Regen,Clarity,Radiance,Gigantic,
  Duplicator,Automation,Calamity,Mayhem,Nostalgia,Panache,PrepTime,Fasten,
@@ -9,13 +9,18 @@ enum class XPower:uint8_t {
 constexpr int XPowerCount=(int)XPower::Count;
 enum class PostPlayActor:uint8_t {
  Calamity=1,Rage=2,Rupture=3,Afterimage=4,SerpentForm=5,MasterPlanner=6,
- PanacheStart=7,Relics=23,Cards=24,Enemies=25,Count=26
+ PanacheStart=7,Relics=23,Cards=24,Enemies=25,
+ DefectStorm=26,DefectSubroutine=27,RegentBlackHole=28,RegentPaleBlueDot=29,RegentVoidForm=30,
+ RegentMonologueStart=31,NecroDevourLife=47,NecroHaunt=48,DefectSmokestack=49,DefectTrashToTreasure=50,RegentArsenal=51,RegentPillarOfCreation=52,Count=53
 };
-enum class XChoice:uint8_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,
+enum class XChoice:uint16_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,
 #include "ironclad_choices.inc"
 #include "silent_choices.inc"
+#include "defect_choices.inc"
+#include "regent_choices.inc"
+#include "necro_choices.inc"
  Count};
-enum class XOp:uint8_t {
+enum class XOp:uint16_t {
  Power,AllDamage,StrengthLoss,AllRare,Offer,Generate,ChooseDraw,ChooseDiscard,
  ChooseTop,DiscardRedraw,ExhaustAny,Free,Transform,AutoDraw,AutoDiscard,AutoTop,
  AutoInstance,Draw,DrawOne,EscapeBlock,EnchantReplay,Create,CopyDamage,DamageBlock,
@@ -26,9 +31,13 @@ enum class XOp:uint8_t {
 #include "ironclad_ops.inc"
 #include "silent_ops.inc"
  PostPlayListener,
+#include "defect_ops.inc"
+#include "regent_ops.inc"
+#include "necro_ops.inc"
+ AllCharactersLate,AllCharactersBefore,AllCharactersBody,AllCharactersFlush,AllCharactersSideEnd,AllCharactersDrawBefore,AllCharactersBeetle,
  Count
 };
-static_assert((unsigned)XOp::Count<=256,"Expand saved operation IDs before exceeding uint8_t");
+static_assert((unsigned)XOp::Count<32768,"Operation IDs must fit signed effect operands");
 struct XFrame {
  int16_t playing=-1,target=-1,x=0,last_damage=0,vigor=0;
  uint16_t remaining=0;
@@ -37,7 +46,7 @@ struct XFrame {
 struct ExpansionState {
  // Player AfterCardPlayed powers keep their actual acquisition order.
  // Zero terminates the prefix; 7..22 identify independent Panache instances.
- uint8_t after_play_order[MaxPowerInstances+6]{};
+ uint8_t after_play_order[MaxPostPlayPowers]{};
  int16_t powers[XPowerCount]{};
  int16_t automation[MaxPowerInstances]{},panache[MaxPowerInstances]{},boulder[MaxPowerInstances]{};
  uint8_t automation_count[MaxPowerInstances]{},panache_count[MaxPowerInstances]{},panache_skip[MaxPowerInstances]{};

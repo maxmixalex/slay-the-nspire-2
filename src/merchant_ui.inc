@@ -1,6 +1,6 @@
 // Five class cards, two colorless, three relics/potions and a right-hand removal service.
-static const char* relic_name(int r){auto*d=relic_definition(r);return d?d->name:"售罄";}
-static const char* relic_desc(int r){auto*d=relic_definition(r);return d?d->description:"没有剩余的已实现遗物。";}
+static const char* relic_name(RelicMask r){auto*d=relic_definition(r);return d?d->name:"售罄";}
+static const char* relic_desc(RelicMask r){auto*d=relic_definition(r);return d?d->description:"没有剩余的已实现遗物。";}
 static const char* potion_name(int p){auto*d=potion_definition((Potion)p);return d?d->name:"空药水槽";}
 static const char* potion_desc(int p){auto*d=potion_definition((Potion)p);return d?d->description:"药水栏为空。可在商店购买或领取战斗掉落。";}
 static void merchant_price(Canvas&c,int item,int x,int y,int w){

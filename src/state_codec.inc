@@ -5,9 +5,15 @@ struct Codec{
 };
 static uint32_t checksum(const uint8_t*p,size_t n){uint32_t h=2166136261u;for(size_t i=0;i<n;i++){h^=p[i];h*=16777619u;}return h;}
 template<class T> static void field(T& v,Codec&c){uint32_t raw=c.field((uint32_t)v);v=static_cast<T>(raw);if(c.in&&(uint32_t)v!=raw)c.good=false;}
+// All historical fields occupy four bytes, even after a C++ field widens.
+// Relic masks keep their low word at the old offset and append their high word
+// in v14. Encoding the low word must never truncate the in-memory copy.
+static void field(RelicMask&v,Codec&c){uint32_t raw=c.field((uint32_t)v);if(c.in)v=(v&0xffffffff00000000ull)|raw;}
+static void field_high(RelicMask&v,Codec&c){uint32_t raw=c.field((uint32_t)(v>>32));if(c.in)v=(v&0xffffffffull)|(RelicMask(raw)<<32);}
 static void code_state(State&s,Codec&c,unsigned version){
 #define F(x) field(x,c)
  F(s.phase);F(s.practice);F(s.floor);F(s.enemy_count);F(s.hp);F(s.max_hp);F(s.energy);F(s.block);F(s.strength);F(s.pain);F(s.embrace);F(s.turn);F(s.power_count);
+ if(s.enemy_count>MaxEnemies){c.good=false;return;}
  for(int i=0;i<2;i++)F(s.power_order[i]);F(s.rng_cards);F(s.rng_world);F(s.seed);F(s.revision);F(s.deck_count);
  if(s.deck_count>MaxDeck){c.good=false;return;}for(int i=0;i<s.deck_count;i++){F(s.deck[i].kind);F(s.deck[i].upgraded);}
  F(s.card_count);if(s.card_count>MaxCards){c.good=false;return;}for(int i=0;i<s.card_count;i++){F(s.cards[i].kind);F(s.cards[i].upgraded);F(s.zones[i]);}
@@ -117,6 +123,55 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
   // migration policy; the original acquisition history cannot be recovered.
   for(unsigned i=0;i<MaxPowerInstances;i++)if(s.expansion.panache[i])after_play_register(s,(unsigned)PostPlayActor::PanacheStart+i);
   if(power_value(s,XPower::Calamity))after_play_register(s,(unsigned)PostPlayActor::Calamity);
+ }
+ if(version>=14){
+#include "defect_codec.inc"
+#include "regent_codec.inc"
+#include "necro_codec.inc"
+  static_assert(MaxPostPlayPowers==49&&RelicKinds==33,"v14 shared dimensions are frozen");
+  for(int n=22;n<MaxPostPlayPowers;n++)F(s.expansion.after_play_order[n]);
+  field_high(s.relics,c);field_high(s.relic_flash,c);
+  for(auto&mask:s.shop_relics)field_high(mask,c);field_high(s.treasure_relic,c);
+  for(int n=30;n<33;n++){F(s.relic_order[n]);F(s.relic_counters[n]);}
+  for(int slot=0;slot<16;slot++){
+   auto&n=s.silent.nightmares[slot];
+   F(n.defect_value);F(n.defect_cost_delta);F(n.defect_turn_origin);F(n.defect_combat_origin);
+   F(n.regent_kick_discount);F(n.regent_kick_turn_origin);F(n.regent_kick_combat_origin);F(n.regent_punch_damage);
+   F(n.necro_ethereal);F(n.necro_flatten_zero);F(n.necro_cost_delta);F(n.necro_turn_origin);F(n.necro_combat_origin);F(n.necro_flatten_origin);F(n.necro_scythe_value);
+  }
+ }else if(c.in){
+  // The v13 writer could express neither new models nor new characters,
+  // operations, relics or listener actors. A widened C++ enum must not make
+  // a forged historical payload acceptable under a newer directory.
+  constexpr unsigned old_models=228,old_relics=30;
+  constexpr RelicMask old_mask=(RelicMask(1)<<old_relics)-1;
+  if((unsigned)s.character>(unsigned)Character::Silent||s.relic_count>old_relics||
+     (s.relics&~old_mask)||(s.relic_flash&~old_mask)||(s.treasure_relic&~old_mask)||
+     s.strength<0||s.temporary_strength>s.strength||s.expansion.powers[(unsigned)XPower::Focus]<0||s.expansion.x>999)c.good=false;
+  for(auto mask:s.shop_relics)if(mask&~old_mask)c.good=false;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=old_models)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=old_models)c.good=false;
+  for(auto k:s.shop_cards)if(k>=old_models)c.good=false;
+  for(auto k:s.reward)if(k>=old_models)c.good=false;
+  for(auto card:s.expansion.offers)if(card.kind>=old_models)c.good=false;
+  for(const auto&n:s.silent.nightmares)if(n.card.kind>=old_models)c.good=false;
+  if((unsigned)s.expansion.choice>(unsigned)XChoice::NightmareCard)c.good=false;
+  for(unsigned actor:s.expansion.after_play_order)if(actor>=(unsigned)PostPlayActor::Relics)c.good=false;
+  for(unsigned i=0;i<s.effect_count;i++){
+   const auto&e=s.effects[i];
+   if(e.kind==EffectKind::Extended){
+    if(e.target>(int)XOp::PostPlayListener)c.good=false;
+    if(e.target==(int)XOp::PostPlayListener&&e.value>=(int)PostPlayActor::DefectStorm)c.good=false;
+    if(e.target==(int)XOp::Create&&(e.aux<0||e.aux>=512||card_from_token(e.aux).kind>=old_models))c.good=false;
+   }else if(e.kind==EffectKind::Damage&&e.aux)c.good=false;
+  }
+  for(unsigned i=0;i<s.enemy_count;i++)if(s.enemies[i].max_hp<42||s.enemies[i].max_hp>46)c.good=false;
+  for(unsigned i=0;i<s.log_count;i++)if((unsigned)s.logs[i].kind>(unsigned)LogKind::PoisonDamage)c.good=false;
+  if(s.playing>=0&&(s.playing>=s.card_count||s.zones[s.playing]!=Zone::Limbo))c.good=false;
+  for(unsigned i=0;i<s.expansion.depth;i++){const auto&f=s.expansion.frames[i];int id=f.playing;if(f.x>999||(id>=0&&(id>=s.card_count||s.zones[id]!=Zone::Limbo)))c.good=false;}
+  // The old dark-orb representation is already DOrb::Dark=0. Pet presence is
+  // directly observable and prevents inventing an extra death after loading.
+  s.necro.osty_was_alive=(uint8_t)(s.expansion.osty_hp>0);
  }
 #undef F
 }

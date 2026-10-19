@@ -26,11 +26,14 @@ inline constexpr StatusDefinition status_definitions[]={
  {"下回合抽牌","下回合额外抽 [blue]{n}[/blue] 张牌。",U_DrawNextTurn},
 #include "extended_status_definitions.inc"
 #include "character_status_definitions.inc"
+#include "five_character_status_definitions.inc"
 };
 constexpr int StatusKinds=sizeof(status_definitions)/sizeof(status_definitions[0]);
 constexpr int IroncladStatusStart=47,SilentStatusStart=IroncladStatusStart+IPowerCount;
 constexpr int CharacterExtraStatusStart=SilentStatusStart+SPowerCount-2;
-static_assert(IPowerCount==18&&SPowerCount==22&&StatusKinds==CharacterExtraStatusStart+6,"Keep power and status directories aligned");
+constexpr int DefectStatusStart=CharacterExtraStatusStart+6,RegentStatusStart=DefectStatusStart+DPowerCount;
+constexpr int NecroStatusStart=RegentStatusStart+RPowerCount,FiveCharacterExtraStatusStart=NecroStatusStart+NPowerCount;
+static_assert(IPowerCount==18&&SPowerCount==22&&DPowerCount==24&&RPowerCount==22&&NPowerCount==22&&StatusKinds==FiveCharacterExtraStatusStart+5,"Keep power and status directories aligned");
 inline int status_amount(const State&s,int actor,int id){
     if(id<0||id>=StatusKinds||actor<0||actor>s.enemy_count)return 0;
     if(actor){const auto&e=s.enemies[actor-1];if(!e.hp)return 0;
@@ -40,12 +43,18 @@ inline int status_amount(const State&s,int actor,int id){
         if(id==40)return s.expansion.demise[actor-1];
         if(id==41)return s.expansion.beetle[actor-1];
         if(id==42)return s.expansion.doom[actor-1];
+        if(id==FiveCharacterExtraStatusStart)return s.regent.conqueror[actor-1];
+        if(id==FiveCharacterExtraStatusStart+1)return s.necro.debilitate[actor-1];
+        if(id==FiveCharacterExtraStatusStart+2)return s.necro.hang[actor-1];
+        if(id==FiveCharacterExtraStatusStart+3)return s.necro.oblivion[actor-1];
+        if(id==FiveCharacterExtraStatusStart+4)return s.necro.sic_em[actor-1];
         switch(id){case 0:return e.strength;case 4:return e.weak;case 5:return e.vulnerable;case 6:return e.poison;default:return 0;}}
     const int values[]={s.strength,s.dexterity,s.vigor,s.thorns,0,0,0,s.pain,s.embrace,
         s.no_draw,s.no_block,s.noxious_fumes,s.accuracy,s.demon_form,s.infinite_blades,
         s.flame_barrier,s.block_next_turn,s.draw_next_turn};
     if(id<18)return values[id];
     if(id<40)return s.expansion.powers[id-18];
+    if(id==42)return s.necro.player_doom;
     if(id==43){int n=0;for(auto turns:s.expansion.bomb_turns)n+=turns!=0;return n;}
     if(id==44)return s.expansion.stars;
     if(id==45)return s.expansion.osty_hp;
@@ -55,9 +64,16 @@ inline int status_amount(const State&s,int actor,int id){
     if(id==CharacterExtraStatusStart){int n=0;for(auto active:s.silent.nightmare_active)n+=active!=0;return n;}
     if(id==CharacterExtraStatusStart+4)return s.ironclad.setup_strength;
     if(id==CharacterExtraStatusStart+5)return s.silent.extra_rewards;
+    if(id>=DefectStatusStart&&id<RegentStatusStart)return s.defect.powers[id-DefectStatusStart];
+    if(id>=RegentStatusStart&&id<NecroStatusStart)return s.regent.powers[id-RegentStatusStart];
+    if(id>=NecroStatusStart&&id<FiveCharacterExtraStatusStart)return s.necro.powers[id-NecroStatusStart];
     return 0;
 }
 inline int collect_statuses(const State&s,int actor,int* out){
-    int count=0;for(int i=0;i<StatusKinds;i++)if(status_amount(s,actor,i)!=0){if(out)out[count]=i;++count;}return count;
+    int count=0;for(int i=0;i<StatusKinds;i++){
+        const bool resource=actor==0&&((i==44&&s.character==Character::Regent)||
+            (i==45&&(s.character==Character::Necrobinder||s.expansion.osty_max_hp>0))||(i==46&&s.expansion.orb_slots>0));
+        if(resource||status_amount(s,actor,i)!=0){if(out)out[count]=i;++count;}
+    }return count;
 }
 }

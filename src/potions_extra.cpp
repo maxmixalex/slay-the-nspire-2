@@ -4,7 +4,7 @@ static int cap(int a,int b){return a<b?a:b;}
 bool potion_in_pool(Potion p,Character c){
  const auto*d=potion_definition(p);if(!d)return false;
  if(p==Potion::Blood)return c==Character::Ironclad;
- return !d->pool||(d->pool==1&&c==Character::Ironclad)||(d->pool==2&&c==Character::Silent);
+ return !d->pool||(d->pool==1&&c==Character::Ironclad)||(d->pool==2&&c==Character::Silent)||(d->pool==3&&c==Character::Necrobinder)||(d->pool==4&&c==Character::Defect)||(d->pool==5&&c==Character::Regent);
 }
 Potion random_potion(State&s,bool in_combat){
  // Pinned PotionFactory selects the rarity first: common 65%, uncommon 25%,
@@ -27,7 +27,7 @@ void execute_potion(State&s,Potion p,int t){
  auto pw=[&](XPower k,int n){op(XOp::Power,(int)k,n);};
  switch(p){
  case Potion::AttackPotion:op(XOp::Offer,1,1);break;
- case Potion::BeetleJuice:x.beetle[t]=(int16_t)cap(9999,x.beetle[t]+4);break;
+ case Potion::BeetleJuice:op(XOp::AllCharactersBeetle,t,4);break;
  case Potion::BottledPotential:op(XOp::ShuffleAll);op(XOp::Draw,5);break;
  case Potion::Clarity:op(XOp::Draw,1);pw(XPower::Clarity,3);break;
  case Potion::ColorlessPotion:op(XOp::Offer,4,1);break;
@@ -69,11 +69,11 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::PotionShapedRock:damage_unpowered(s,t,15);break;
  case Potion::BoneBrew:op(XOp::Summon,15);break;
  case Potion::PotOfGhouls:op(XOp::Create,2,Soul);break;
- case Potion::PotionOfDoom:if(s.enemies[t].hp)x.doom[t]=(int16_t)cap(9999,x.doom[t]+33);break;
+ case Potion::PotionOfDoom:op(XOp::NDoom,t,33);break;
  case Potion::FocusPotion:pw(XPower::Focus,2);break;
  case Potion::EssenceOfDarkness:op(XOp::ChannelDark,x.orb_slots);break;
- case Potion::PotionOfCapacity:x.orb_slots=(uint8_t)cap(MaxOrbs,x.orb_slots+2);break;
- case Potion::StarPotion:x.stars=(int16_t)cap(9999,x.stars+3);break;
+ case Potion::PotionOfCapacity:op(XOp::DSlots,2);break;
+ case Potion::StarPotion:op(XOp::RStars,3);break;
  case Potion::CosmicConcoction:op(XOp::Generate,4,(3<<2)|2);break;
  case Potion::KingsCourage:op(XOp::Forge,15);break;
  default:break;

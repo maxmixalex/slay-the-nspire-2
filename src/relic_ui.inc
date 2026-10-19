@@ -1,11 +1,11 @@
 // Original-derived relic art and panels, adapted to the calculator's resolution.
-static void relic_progress(const State&s,unsigned id,char*out,size_t size){
+static void relic_progress(const State&s,RelicMask id,char*out,size_t size){
     if(!size)return;out[0]=0;TextBuffer b{out,size,0};unsigned limit=relic_counter_limit(id);
     if(!limit)return;
     if(id==CentennialPuzzle){b.text(relic_counter(s,id)?"本场已触发":"本场尚未触发");return;}
     b.text(relic_counter_is_turn_scoped(id)?"本回合 ":"累计 ");b.number(relic_counter(s,id));b.text(" / ");b.number(limit);
 }
-static void relic_badge(Canvas&c,unsigned id,int x,int y){
+static void relic_badge(Canvas&c,RelicMask id,int x,int y){
     unsigned limit=relic_counter_limit(id);if(!limit)return;
     if(relic_counter_is_turn_scoped(id)&&!combat_phase(c.a.game.phase))return;
     unsigned value=relic_counter(c.a.game,id);
@@ -16,7 +16,7 @@ static void relic_badge(Canvas&c,unsigned id,int x,int y){
 static void owned_relic_strip(Canvas&c){
     auto&a=c.a;auto&s=a.game;
     for(int i=0;i<s.relic_count&&i<15;i++){
-        int x=3+i*19;unsigned index=s.relic_order[i],id=relic_definitions[index].id;
+        int x=3+i*19;unsigned index=s.relic_order[i];RelicMask id=relic_definitions[index].id;
         bool active=a.relic_flash_ticks>0&&(a.relic_flash_mask&id);
         if(active){c.box(x-1,23,19,20,Gold);c.rect(x+2,42,13,1,Green);}
         c.picture(a.content.relic_image(index),x,24,17,17);
@@ -31,7 +31,7 @@ static void owned_relic_panel(Canvas&c){
     c.centered("遗物",5,28,310,16,Gold);
     for(int i=first;i<mn(count,first+18);i++){
         int j=i-first,x=20+j%6*49,y=55+j/6*35;
-        unsigned index=s.relic_order[i],id=relic_definitions[index].id;
+        unsigned index=s.relic_order[i];RelicMask id=relic_definitions[index].id;
         if(i==a.scroll){c.rect(x-4,y-2,38,33,rgb(75,58,37));c.box(x-4,y-2,38,33,Gold);}
         c.picture(a.content.relic_image(index),x,y,25,25);relic_badge(c,id,x+20,y+16);
         c.hit(x-5,y-3,46,34,HitKind::Relic,i);

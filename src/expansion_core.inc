@@ -13,7 +13,7 @@ int power_value(const State&s,XPower p){return s.expansion.powers[(unsigned)p];}
 void gain_power(State&s,XPower p,int n){
  auto&x=s.expansion;auto&v=x.powers[(unsigned)p];
  if(p==XPower::Entropy&&!v&&n>0){x.entropy_boulder_prefix=0;for(auto b:x.boulder)if(b)++x.entropy_boulder_prefix;}
- int old=v;v=(int16_t)max(0,min(9999,v+n));if(p==XPower::Entropy&&!v)x.entropy_boulder_prefix=0;
+ int old=v;v=(int16_t)max(p==XPower::Focus?-9999:0,min(9999,v+n));if(p==XPower::Entropy&&!v)x.entropy_boulder_prefix=0;
  if(p==XPower::Calamity){
   if(!old&&v)after_play_register(s,(unsigned)PostPlayActor::Calamity);
   else if(old&&!v)after_play_unregister(s,(unsigned)PostPlayActor::Calamity);
@@ -31,26 +31,26 @@ int card_preview_cost(const State&s,Card c,int id){
  int base=cost(c);if(base<0||id<0||id>=s.card_count||s.cards[id].kind!=c.kind)return base;
  if(s.expansion.turn_cost[id])base=s.expansion.turn_cost[id]-1;
  else if(s.expansion.combat_cost[id])base=s.expansion.combat_cost[id]-1;
- return max(0,silent_cost(s,id,ironclad_cost(s,id,base)));
+ return max(0,regent_cost(s,id,necro_cost(s,id,defect_cost(s,id,silent_cost(s,id,ironclad_cost(s,id,base))))));
 }
 static void temporary_cost_set(State&s,int id){
- ironclad_temporary_cost_set(s,id);silent_temporary_cost_set(s,id);
+ ironclad_temporary_cost_set(s,id);silent_temporary_cost_set(s,id);defect_temporary_cost_set(s,id);regent_temporary_cost_set(s,id);necro_temporary_cost_set(s,id);
 }
 static void combat_cost_set(State&s,int id){
- ironclad_combat_cost_set(s,id);silent_combat_cost_set(s,id);
+ ironclad_combat_cost_set(s,id);silent_combat_cost_set(s,id);defect_combat_cost_set(s,id);regent_combat_cost_set(s,id);necro_combat_cost_set(s,id);
 }
 static void copy_card_modifiers(State&s,int to,int from){
  auto&x=s.expansion;x.turn_cost[to]=x.turn_cost[from];x.combat_cost[to]=x.combat_cost[from];
  x.replay[to]=x.replay[from];x.blade_damage[to]=x.blade_damage[from];
- ironclad_card_copied(s,to,from);silent_card_copied(s,to,from);
+ ironclad_card_copied(s,to,from);silent_card_copied(s,to,from);defect_card_copied(s,to,from);regent_card_copied(s,to,from);necro_card_copied(s,to,from);
 }
 static void reset_card_modifiers(State&s,int id){
  auto&x=s.expansion;x.turn_cost[id]=x.combat_cost[id]=x.replay[id]=0;
  x.return_turn[id]=0;x.blade_damage[id]=0;
- ironclad_card_reset(s,id);silent_card_reset(s,id);
+ ironclad_card_reset(s,id);silent_card_reset(s,id);defect_card_reset(s,id);regent_card_reset(s,id);necro_card_reset(s,id);
 }
 bool card_exhausts(Card c){if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];return d.exhausts||((c.upgraded?d.upgraded_keywords:d.keywords)&1);}
-bool card_can_generate(unsigned k){return k<CardKinds&&card_rarity(k)>=2&&card_rarity(k)<=4&&!card_generated(k)&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem&&k!=Feed&&k!=NotYet&&k!=Nightmare&&k!=TheHunt;}
+bool card_can_generate(unsigned k){return k<CardKinds&&card_rarity(k)>=2&&card_rarity(k)<=4&&!card_generated(k)&&k!=Alchemize&&k!=HandOfGreed&&k!=HiddenGem&&k!=Feed&&k!=NotYet&&k!=Nightmare&&k!=TheHunt&&k!=NecroEidolon&&k!=NecroTransfigure;}
 void gain_unpowered_block(State&s,int n){
  n=max(0,min(silent_modify_block(s,n),9999-s.block));s.block+=(int16_t)n;
  record(s,LogKind::Block,n);ironclad_after_block(s,n,false);
@@ -66,11 +66,13 @@ static bool enqueue_card_block(State&s,int n,bool first){
 }
 static int powered_block(const State&s,Card c,int n){
  if(s.no_block||n<=0)return 0;
- return max(0,min(9999,n+s.dexterity+((c.kind==Defend||c.kind==DefendSilent||c.kind==UltimateDefend)?power_value(s,XPower::Fasten):0)));
+ return max(0,min(9999,n+s.dexterity+((c.kind==Defend||c.kind==DefendSilent||c.kind==UltimateDefend||c.kind==DefectDefend||c.kind==RegentDefend||c.kind==NecroDefendNecrobinder)?power_value(s,XPower::Fasten):0)));
 }
 int card_block(const State&s,Card c,int instance){
  if(c.kind>=CardKinds)return 0;const auto&d=definitions[c.kind];
- int n=powered_block(s,c,d.block+(c.upgraded?d.block_up:0));
+ int base=defect_base_block(s,c,instance,d.block+(c.upgraded?d.block_up:0));
+ base=necro_base_block(s,c,instance,base);if(c.kind==SovereignBlade)base=regent_blade_block(s);
+ int n=powered_block(s,c,base);
  return max(0,min(9999,silent_modify_block(s,ironclad_block(s,c,n,instance))));
 }
 static bool matches_generated(const State&s,unsigned k,int filter){
@@ -79,7 +81,7 @@ static bool matches_generated(const State&s,unsigned k,int filter){
  if(filter==4)return neutral;
  if(filter==5)return !neutral&&!own&&definitions[k].type==CardType::Attack;
  if(!own)return false;
- if(filter==6)return cost({(uint8_t)k,0})==0;
+ if(filter==6)return cost({(CardKind)k,0})==0;
  return !filter||(int)definitions[k].type==filter-1;
 }
 static bool matches_transform(unsigned original,unsigned candidate){
@@ -88,20 +90,20 @@ static bool matches_transform(unsigned original,unsigned candidate){
  if(card_generated(original))pool=CardColor::Colorless;
  return card_color(candidate)==pool;
 }
-static int create_to_hand(State&s,Card c){
+static int create_to_hand(State&s,Card c,bool notify=true){
  int id=make_card(s,c);if(id<0)return -1;
  if(c.kind==SovereignBlade)s.expansion.blade_damage[id]=10;
  bool room=s.hand.count<MaxHand;put(s,room?s.hand:s.discard,id,room?Zone::Hand:Zone::Discard);
- record(s,LogKind::Create,1,c.kind);return id;
+ record(s,LogKind::Create,1,c.kind);if(notify)notify_card_generated(s,id);return id;
 }
 static void generate_card(State&s,int filter,int flags){
- uint8_t pool[CardKinds];unsigned n=0;
- for(unsigned k=0;k<CardKinds;k++)if(matches_generated(s,k,filter))pool[n++]=(uint8_t)k;
+ CardKind pool[CardKinds];unsigned n=0;
+ for(unsigned k=0;k<CardKinds;k++)if(matches_generated(s,k,filter))pool[n++]=(CardKind)k;
  // The high bits request a single distinct batch; ordinary independent
  // generation keeps a zero batch field and creates one card.
  unsigned count=flags>>2;if(!count)count=1;
  while(count--&&n){
-  unsigned j=random_below(s.rng_cards,n);uint8_t kind=pool[j];pool[j]=pool[--n];
+  unsigned j=random_below(s.rng_cards,n);CardKind kind=pool[j];pool[j]=pool[--n];
   int id=create_to_hand(s,{kind,(uint8_t)((flags&2)!=0)});if(id<0)return;
   if(flags&1){s.expansion.turn_cost[id]=1;temporary_cost_set(s,id);}
  }
@@ -125,6 +127,8 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
  auto&x=s.expansion;
  if(ironclad_choice(x.choice))return choose_ironclad(s,ids,n);
  if(x.choice==XChoice::SlySkill||x.choice==XChoice::NightmareCard)return silent_choose(s,ids,n);
+ if(regent_choice(x.choice))return choose_regent(s,ids,n);
+ if(x.choice>=XChoice::NCleanse&&x.choice<=XChoice::NTransfigure)return necro_choose(s,ids,n);
  if(s.phase!=Phase::ExtendedChoice||x.choice==XChoice::None||n>MaxHand||n<x.choice_min||n>x.choice_max||(n&&!ids))return false;
  // Refuse a continuation that cannot be queued before changing the choice or
  // any pile. Optional exhaust uses the same atomic boundary as legacy Purity.
@@ -146,8 +150,8 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
   else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;combat_cost_set(s,id);}
   else if(kind==XChoice::DiscardRedraw){if(move_instance(s,id,s.hand,s.discard,Zone::Discard))record(s,LogKind::Discard,s.cards[id].kind);}
   else if(kind==XChoice::Transform){
-   uint8_t pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(matches_transform(s.cards[id].kind,k))pool[count++]=(uint8_t)k;
-   if(count){s.cards[id]={pool[random_below(s.rng_cards,count)],0};reset_card_modifiers(s,id);}
+   CardKind pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(matches_transform(s.cards[id].kind,k))pool[count++]=(CardKind)k;
+   if(count){s.cards[id]={pool[random_below(s.rng_cards,count)],0};reset_card_modifiers(s,id);notify_card_generated(s,id);}
   }
  }
  if(kind==XChoice::Exhaust)for(unsigned i=n;i>0;i--)enqueue(s,EffectKind::ExhaustCard,selected[i-1],0,true);
@@ -158,7 +162,7 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
  resolve_pending(s);++s.revision;return true;
 }
 static void offer_cards(State&s,int filter,int flags){
- uint8_t pool[CardKinds];unsigned n=0;for(unsigned k=0;k<CardKinds;k++)if(matches_generated(s,k,filter))pool[n++]=(uint8_t)k;
+ CardKind pool[CardKinds];unsigned n=0;for(unsigned k=0;k<CardKinds;k++)if(matches_generated(s,k,filter))pool[n++]=(CardKind)k;
  Pile choices{};
  for(unsigned i=0;i<3&&n;i++){unsigned j=random_below(s.rng_cards,n);s.expansion.offers[i]={pool[j],(uint8_t)((flags&2)!=0)};pool[j]=pool[--n];choices.ids[choices.count++]=(uint16_t)(MaxCards+i);}
  set_extended_choice(s,XChoice::Offer,choices,1,1,flags);
@@ -182,30 +186,52 @@ static void finish_extended_card(State&s){
  if(s.playing<0)return;auto&x=s.expansion;Card card=s.cards[s.playing];auto type=definitions[card.kind].type;
  x.cards_finished=(uint16_t)min(9999,x.cards_finished+1);
  queue_extension(s,XOp::AfterPlay,s.playing,0,true);
+ queue_extension(s,XOp::AllCharactersLate,0,0,true);
  if(type==CardType::Attack)s.attacked_this_turn=1;
- ironclad_after_card(s,card);silent_after_play(s,s.playing);
+ ironclad_after_card(s,card);silent_after_play(s,s.playing);defect_after_play(s,s.playing);regent_after_card(s,card);necro_after_play(s,s.playing);
  queue_post_play_listeners(s);
 }
 static void after_play(State&s,int id){
  if(id!=s.playing||id<0||id>=s.card_count){fail(s);return;}auto&x=s.expansion;
  if(x.remaining&&alive(s)){--x.remaining;relic_attack_end(s);x.triple=0;queue_current(s);return;}
- // Both generated free cards and randomized costs expire when the complete
- // physical play (including its additional replays) has finished.
+ // Result-pile moves only own a card that is still in the play pile.
+ // Nested Flak/Make It So can already have exhausted or recalled that instance.
+ Card card=s.cards[id];auto type=definitions[card.kind].type;
+ bool ex=(card_exhausts(card)||ironclad_exhausts(s,id))&&type!=CardType::Power;
+ bool hand=regent_returns_to_hand(s,id)||defect_returns_to_hand(s,id);
+ if(s.zones[id]==Zone::Limbo){
+  if(hand){bool room=s.hand.count<MaxHand;put(s,room?s.hand:s.discard,id,room?Zone::Hand:Zone::Discard);ex=false;}
+  else if(type==CardType::Power){put(s,s.powers,id,Zone::Power);ex=false;}
+  else if(!ex)put(s,x.returning?s.draw:s.discard,id,x.returning?Zone::Draw:Zone::Discard);
+ }else ex=false;
  x.turn_cost[id]=0;
- Card card=s.cards[id];auto type=definitions[card.kind].type;bool ex=(card_exhausts(card)||ironclad_exhausts(s,id))&&type!=CardType::Power;
- if(type==CardType::Power)put(s,s.powers,id,Zone::Power);
- else if(!ex)put(s,x.returning?s.draw:s.discard,id,x.returning?Zone::Draw:Zone::Discard);
- ironclad_after_play_group(s,id);relic_attack_end(s);restore_frame(s);
+ // Flatten's SetThisTurn is not a generated free-until-play modifier.
+ if(s.necro.flatten_zero[id])x.turn_cost[id]=1;
+ ironclad_after_play_group(s,id);defect_after_play_group(s,id);regent_after_play_group(s,id);necro_after_play_group(s,id);
+ relic_attack_end(s);restore_frame(s);
  if(ex)exhaust_id(s,id);
- if(!alive(s))victory(s);
+ if(!alive(s)){victory(s);return;}
+ if(s.regent.end_turn_requested&&s.playing<0&&!x.depth){s.regent.end_turn_requested=0;queue_extension(s,XOp::TurnEnd,0,0,true);}
 }
-static void queue_current(State&s){
+
+static void queue_current(State&s){queue_extension(s,XOp::AllCharactersBefore,0,0,true);}
+static void before_current(State&s){
+ if(s.playing<0||s.playing>=s.card_count){fail(s);return;}
+ const int old=s.effect_count;Card c=s.cards[s.playing];
+ // Necrobinder reads the effective cost before one-shot free-power/skill
+ // listeners consume their layers. Captures happen once per replay.
+ necro_before_play(s,s.playing);ironclad_before_card(s,c);silent_before_play(s,s.playing);
+ defect_before_play(s,s.playing);regent_before_card(s,c);
+ queue_extension(s,XOp::AllCharactersBody);
+ const int added=s.effect_count-old;
+ if(old&&added){Effect temp[MaxEffects];for(int i=0;i<added;i++)temp[i]=s.effects[old+i];for(int i=old-1;i>=0;--i)s.effects[i+added]=s.effects[i];for(int i=0;i<added;i++)s.effects[i]=temp[i];}
+}
+static void queue_card_body(State&s){
  if(s.playing<0||s.playing>=s.card_count){fail(s);return;}
  auto&x=s.expansion;Card c=s.cards[s.playing];const auto&d=definitions[c.kind];int old=s.effect_count;
  x.last_damage=0;
- ironclad_before_card(s,c);silent_before_play(s,s.playing);
  if(d.type!=CardType::Power)x.nonpower_started=(uint16_t)min(9999,x.nonpower_started+1);
- if(queue_ironclad(s,c,x.target,x.x)||queue_silent(s,c,x.target,x.x)){}
+ if(queue_ironclad(s,c,x.target,x.x)||queue_silent(s,c,x.target,x.x)||queue_defect(s,c,x.target,x.x)||queue_regent(s,c,x.target,x.x)||queue_necro(s,c,x.target,x.x)||queue_common_token(s,c,x.target)){}
  else if(c.kind<Alchemize)queue_legacy(s,c,x.target,x.x);
  else{
   record(s,LogKind::Play,c.kind,c.upgraded);
@@ -246,8 +272,8 @@ static void queue_current(State&s){
   case Fisticuffs:op(XOp::DamageBlock);break;
   case HiddenGem:op(XOp::EnchantReplay,power);break;
   case JackOfAllTrades:{
-   uint8_t pool[CardKinds];unsigned n=0;
-   for(unsigned k=0;k<CardKinds;k++)if(k!=JackOfAllTrades&&matches_generated(s,k,4))pool[n++]=(uint8_t)k;
+   CardKind pool[CardKinds];unsigned n=0;
+   for(unsigned k=0;k<CardKinds;k++)if(k!=JackOfAllTrades&&matches_generated(s,k,4))pool[n++]=(CardKind)k;
    for(int i=0;i<draw&&n;i++){unsigned j=random_below(s.rng_cards,n);op(XOp::Create,1,pool[j]);pool[j]=pool[--n];}
    break;}
   case Jackpot:for(int i=0;i<draw;i++)op(XOp::Generate,6,c.upgraded?2:0);break;
@@ -283,13 +309,15 @@ static void queue_current(State&s){
 static bool start_instance(State&s,int id,int target,bool automatic){
  if(id<0||id>=s.card_count||!alive(s)||s.hp<=0)return false;
  Card c=s.cards[id];if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];auto&x=s.expansion;
- if(cost(c)<-1||(!automatic&&!silent_can_play(s,c)))return false;
+ if(cost(c)<-1||(!automatic&&(!silent_can_play(s,c)||!necro_can_play(s,c))))return false;
  if(card_targets_enemy(s,c)&&(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)){
   if(!automatic)return false;int ids[MaxEnemies],n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)ids[n++]=i;
   if(!n)return false;target=ids[random_below(s.rng_cards,n)];
  }
- int price=cost(s,id),spent=automatic?0:price<0?s.energy:price;
- if(spent>s.energy)return false;
+ int price=cost(s,id),resource_energy=price<0?s.energy:price;
+ int star_price=card_star_cost(s,c,id),resource_stars=star_price<0?x.stars:star_price;
+ int spent=automatic?0:resource_energy,stars_spent=automatic?0:resource_stars;
+ if(spent>s.energy||stars_spent>x.stars)return false;
  Zone z=s.zones[id];Pile*source=z==Zone::Hand?&s.hand:z==Zone::Draw?&s.draw:z==Zone::Discard?&s.discard:(automatic&&z==Zone::Exhaust)?&s.exhaust:nullptr;
  bool reserved=automatic&&z==Zone::Limbo;
  if(reserved){if(s.playing==id)return false;for(unsigned i=0;i<x.depth;i++)if(x.frames[i].playing==id)return false;}
@@ -297,21 +325,22 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  if(source){for(unsigned i=0;i<source->count;i++)if(source->ids[i]==id){at=i;break;}if(at<0)return false;}
  if(automatic&&x.depth==MaxAutoFrames){fail(s);return false;}
  if(automatic)x.frames[x.depth++]={s.playing,x.target,x.x,x.last_damage,s.attack_vigor,x.remaining,s.double_attack,x.triple,x.returning};
- int energy=cost(c)<0?s.energy:spent;
- if(source)remove(*source,at);s.zones[id]=Zone::Limbo;s.playing=(int16_t)id;s.energy-=(int16_t)spent;
+ int energy=resource_energy;
+ if(source)remove(*source,at);s.zones[id]=Zone::Limbo;s.playing=(int16_t)id;s.energy-=(int16_t)spent;x.stars-=(int16_t)stars_spent;
  x.x=(int16_t)energy;x.target=(int16_t)target;x.last_drawn=-1;x.remaining=x.replay[id];
  s.attack_vigor=0;s.double_attack=0;x.triple=0;
  x.returning=d.type!=CardType::Power&&x.nonpower_started<power_value(s,XPower::Nostalgia);
  if(power_value(s,XPower::Duplicator)){++x.remaining;gain_power(s,XPower::Duplicator,-1);}
- x.remaining=(uint16_t)min(9999,x.remaining+ironclad_replays(s,c)+silent_extra_replays(s,c));
- queue_current(s);return true;
+ x.remaining=(uint16_t)min(9999,x.remaining+ironclad_replays(s,c)+silent_extra_replays(s,c)+defect_extra_replays(s,c)+regent_replays(s,c));
+ defect_play_start(s,id,resource_energy,automatic,spent);necro_start_instance(s,id,resource_energy);
+ queue_current(s);regent_begin_play(s,id,automatic,spent,stars_spent);return true;
 }
 bool can_play_card(const State&s,int id){
  if(s.phase!=Phase::Combat||s.effect_count||s.playing>=0||id<0||id>=s.card_count||s.zones[id]!=Zone::Hand)return false;
- Card c=s.cards[id];return c.kind<CardKinds&&cost(c)>=-1&&cost(s,id)<=s.energy&&silent_can_play(s,c);
+ Card c=s.cards[id];return c.kind<CardKinds&&cost(c)>=-1&&cost(s,id)<=s.energy&&card_star_cost(s,c,id)<=s.expansion.stars&&silent_can_play(s,c)&&necro_can_play(s,c);
 }
 bool card_targets_enemy(const State&s,Card c){
- return c.kind<CardKinds&&silent_card_targets_enemy(s,c);
+ return c.kind<CardKinds&&regent_targets_enemy(s,c,silent_card_targets_enemy(s,c));
 }
 static void draw_hook(State&s){
  auto&x=s.expansion;
@@ -326,7 +355,8 @@ static void draw_one(State&s,int n){
  if(!s.draw.count){if(!s.discard.count)return;queue_extension(s,XOp::DrawOne,n,0,true);shuffle(s);return;}
  if(n>1)queue_extension(s,XOp::DrawOne,n-1,0,true);
  int id=remove(s.draw,s.draw.count-1);put(s,s.hand,id,Zone::Hand);s.expansion.last_drawn=(int16_t)id;record(s,LogKind::Draw,1);draw_hook(s);
- ironclad_after_draw(s,id);silent_card_drawn(s,id);
+ ironclad_after_draw(s,id);silent_card_drawn(s,id);defect_card_drawn(s,id);regent_after_draw(s,id);necro_card_drawn(s,id);
+ if(s.cards[id].kind==Void){s.energy=(int16_t)max(0,s.energy-1);record(s,LogKind::Energy,-1);}
 }
 void resolve_pending(State&s){resolve(s);if(!resolving&&s.phase==Phase::Combat&&s.playing<0&&!s.effect_count&&!s.expansion.depth)finish_combat_if_won(s);}
 bool lab_potion(State&s,Potion p){
@@ -334,6 +364,6 @@ bool lab_potion(State&s,Potion p){
  if(!procure_potion(s,p))return false;++s.revision;return true;
 }
 bool lab_card(State&s,Card c){
- if(!s.practice||s.phase!=Phase::Combat||s.effect_count||s.playing>=0||c.kind>=CardKinds||c.upgraded>1||s.card_count>=MaxCards)return false;
+ if(!s.practice||s.phase!=Phase::Combat||s.effect_count||s.playing>=0||c.kind>=CardKinds||c.upgraded>1||(c.upgraded&&!card_upgradeable({c.kind,0}))||s.card_count>=MaxCards)return false;
  create_to_hand(s,c);++s.revision;return true;
 }

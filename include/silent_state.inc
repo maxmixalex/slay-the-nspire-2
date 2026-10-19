@@ -12,6 +12,14 @@ struct SilentSnapshot {
  uint16_t discount=0,turn_origin=0,combat_origin=0,bullet_origin=0,return_turn=0;
  int16_t blade_damage=0,iron_damage=0;
  uint16_t stomp_discount=0,stomp_turn_origin=0,stomp_combat_origin=0;
+ // v14 appends these snapshot facts in the codec; the v13 snapshot prefix
+ // remains byte-for-byte stable. Permanent bindings and play history are not
+ // clone modifiers and are deliberately absent.
+ int16_t defect_value=0,defect_cost_delta=0,defect_turn_origin=0,defect_combat_origin=0;
+ uint16_t regent_kick_discount=0,regent_kick_turn_origin=0,regent_kick_combat_origin=0;
+ int16_t regent_punch_damage=0;
+ uint8_t necro_ethereal=0,necro_flatten_zero=0;
+ int16_t necro_cost_delta=0,necro_turn_origin=0,necro_combat_origin=0,necro_flatten_origin=0,necro_scythe_value=0;
 };
 struct SilentState {
  int16_t powers[SPowerCount]{};

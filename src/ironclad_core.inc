@@ -159,8 +159,8 @@ static void ironclad_combat_end(State&s){
  for(unsigned id=0;id<s.card_count;id++)i.forced_exhaust[id]=0;
 }
 static void ironclad_copy_to_hand(State&s,int original){
- if(original<0||original>=s.card_count)return;int id=create_to_hand(s,s.cards[original]);if(id<0)return;
- copy_card_modifiers(s,id,original);
+ if(original<0||original>=s.card_count)return;int id=create_to_hand(s,s.cards[original],false);if(id<0)return;
+ copy_card_modifiers(s,id,original);notify_card_generated(s,id);
 }
 static bool queue_ironclad(State&s,Card c,int target,int energy){
  if((c.kind<Aggression||c.kind>Vicious)&&c.kind!=GiantRock)return false;
@@ -242,7 +242,7 @@ static bool ironclad_effect(State&s,Effect e){
   if(b)a+=(c.upgraded?8:5)*s.strength;
   enqueue_card_block(s,powered_block(s,c,max(0,min(9999,a))),true);break;}
  case XOp::IUpgrade:{
-  Pile eligible{};for(unsigned at=0;at<s.hand.count;at++){int id=s.hand.ids[at];if(!s.cards[id].upgraded)eligible.ids[eligible.count++]=(uint16_t)id;}
+  Pile eligible{};for(unsigned at=0;at<s.hand.count;at++){int id=s.hand.ids[at];if(card_upgradeable(s.cards[id]))eligible.ids[eligible.count++]=(uint16_t)id;}
   if(a)for(unsigned at=0;at<eligible.count;at++){s.cards[eligible.ids[at]].upgraded=1;record(s,LogKind::Upgrade,s.cards[eligible.ids[at]].kind);}
   else set_extended_choice(s,XChoice::IUpgrade,eligible,1,1);break;}
  case XOp::IDominateStrength:
@@ -265,7 +265,7 @@ static bool ironclad_effect(State&s,Effect e){
   if(id>=0&&id<s.card_count&&definitions[s.cards[id].kind].type==CardType::Attack&&s.hand.count<MaxHand&&!s.no_draw&&(s.draw.count||s.discard.count))queue_extension(s,XOp::IPillageDraw,0,0,true);break;}
  case XOp::IPrimalForce:
   for(unsigned at=0;at<s.hand.count;at++){int id=s.hand.ids[at];if(definitions[s.cards[id].kind].type!=CardType::Attack)continue;
-   s.cards[id]={GiantRock,(uint8_t)a};reset_card_modifiers(s,id);record(s,LogKind::Transform,GiantRock);
+   s.cards[id]={GiantRock,(uint8_t)a};reset_card_modifiers(s,id);notify_card_generated(s,id);record(s,LogKind::Transform,GiantRock);
   }break;
  case XOp::ISecondWind:{
   uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(definitions[s.cards[s.hand.ids[at]].kind].type!=CardType::Attack)ids[n++]=s.hand.ids[at];
@@ -294,7 +294,7 @@ static bool ironclad_effect(State&s,Effect e){
   uint16_t ids[MaxCards];unsigned n=0;for(unsigned at=0;at<s.discard.count;at++)if(definitions[s.cards[s.discard.ids[at]].kind].type==CardType::Attack)ids[n++]=s.discard.ids[at];
   unsigned count=(unsigned)min(a,n);
   for(unsigned at=0;at<count;at++){unsigned pick=at+random_below(s.rng_cards,n-at);uint16_t id=ids[pick];ids[pick]=ids[at];ids[at]=id;bool room=s.hand.count<MaxHand;
-   if(move_instance(s,id,s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&!s.cards[id].upgraded){s.cards[id].upgraded=1;record(s,LogKind::Upgrade,s.cards[id].kind);}
+   if(move_instance(s,id,s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&card_upgradeable(s.cards[id])){s.cards[id].upgraded=1;record(s,LogKind::Upgrade,s.cards[id].kind);}
   }break;}
  case XOp::IStartPower:{
   IPower p=(IPower)a;if(!ipower(s,p))break;

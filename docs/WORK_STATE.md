@@ -14,6 +14,12 @@ Private inputs are `/workspace/scratch/5af9d4bf40b9/reference-inputs/extracted/{
 
 Next: finish the three audited modules and shared infrastructure, push the coherent source stage, then build and validate all five characters plus the retained content. Create a genuine v13 continuation fixture from the unchanged restored 0.15 writer before testing migration. Record actual failures and push repairs before rerunning changed source.
 
+### First 0.16 source checkpoint: integration in progress
+
+All three isolated modules now contain explicit executable branches for their 86-card single-player pools and required generated cards, plus literal base/upgraded numeric suites. Shared integration now contains five-character entry, append-only models through 496, wide model tokens, independent star/energy payment, ordered before/body/after/late continuations, all five orbs, Osty/Doom damage hooks, permanent deck growth and cross-character snapshots. Four generated-card powers share acquisition order with the bounded power directory. The UI and resource agent source is being checkpointed while its final call sites/tests are still being completed.
+
+This is an **in-progress work-branch preservation checkpoint**, not a release or successful build. No 0.16 build, conversion or regression has run. The next step is to finish the shared validator and UI call sites, publish the next frozen source stage and run the pure core regression suites, followed by the real content/UI and native/WASM/ARM verification. The existing 0.15 downloads remain the verified pair.
+
 ## Completed 0.15 release stage
 
 The complete **85-card single-player Ironclad pool and 86-card single-player Silent pool** are implemented and regression verified, together with the retained 53 colorless models and 64 potions. The current directory has **228 models**, including Shiv, Soul, Sovereign Blade and Giant Rock. Reference remains **v0.111.0 / 41cef1ea**. The three implementation/resource agents completed their separate audits, and the root integrated shared hooks, reviewed the final visuals and collected the release evidence.

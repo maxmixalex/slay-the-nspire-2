@@ -1,16 +1,18 @@
 #include "app.hpp"
 #include "status.hpp"
 namespace spire {
-unsigned App::library_items(uint8_t* out)const{
-    unsigned count=0;uint8_t ids[CardKinds];
+unsigned App::library_items(CardKind* out)const{
+    unsigned count=0;CardKind ids[CardKinds];
+    const CardColor filters[]={CardColor::Token,CardColor::Ironclad,CardColor::Silent,CardColor::Colorless,
+        CardColor::Defect,CardColor::Regent,CardColor::Necrobinder};
     for(unsigned i=0;i<CardKinds;i++){
         CardColor color=card_color(i);
-        if(library_filter&&color!=(library_filter==1?CardColor::Ironclad:library_filter==2?CardColor::Silent:CardColor::Colorless))continue;
-        ids[count++]=(uint8_t)i;
+        if(library_filter>0&&library_filter<7&&color!=filters[library_filter])continue;
+        ids[count++]=(CardKind)i;
     }
     if(library_sort)for(unsigned i=1;i<count;i++){
-        uint8_t id=ids[i];unsigned j=i;
-        auto order=[&](unsigned k){return library_sort==1?cost({(uint8_t)k,(uint8_t)library_upgraded}):(int)definitions[k].type;};
+        CardKind id=ids[i];unsigned j=i;
+        auto order=[&](CardKind k){return library_sort==1?cost({k,(uint8_t)(library_upgraded&&card_upgradeable({k,0}))}):(int)definitions[k].type;};
         while(j&&order(ids[j-1])>order(id)){ids[j]=ids[j-1];--j;}ids[j]=id;
     }
     if(out)for(unsigned i=0;i<count;i++)out[i]=ids[i];
@@ -61,7 +63,7 @@ void App::select_library_item(int index){
     int count=library_tab==0?(int)library_items():library_tab==1?RelicKinds:PotionKinds;
     if(!library||index<0||index>=count)return;
     library_selected=index;
-    if(library_tab==0){uint8_t ids[CardKinds];library_items(ids);open_card_detail({ids[index],(uint8_t)library_upgraded});}
+    if(library_tab==0){CardKind ids[CardKinds];library_items(ids);open_card_detail({ids[index],(uint8_t)(library_upgraded&&card_upgradeable({ids[index],0}))});}
     else{detail_owned=-1;detail_item=library_tab==1?index:RelicKinds+index;detail_scroll=0;pointer_cancel();}
 }
 void App::ui_action(UiAction action){
@@ -69,7 +71,7 @@ void App::ui_action(UiAction action){
     switch(action){
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
-        if(library&&!title&&!paused&&!help&&!panel&&detail_card>=0&&lab_card(game,{(uint8_t)(detail_card&255),(uint8_t)(detail_card>>8)})){
+        if(library&&!title&&!paused&&!help&&!panel&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
             detail_card=-1;library=false;reset_presentation();
             message(overflow?"手牌已满，卡牌已加入弃牌堆":"卡牌已加入手牌");
         }break;}
@@ -98,7 +100,8 @@ void App::ui_action(UiAction action){
             library_selected=library_page*per;
         }break;
     case UiAction::ToggleUpgrades:if(library&&library_tab==0)library_upgraded=!library_upgraded;break;
-    case UiAction::ToggleCardUpgrade:if(detail_card>=0)detail_card^=256;break;
+    case UiAction::ToggleCardUpgrade:
+        if(detail_card>=0){Card c=card_from_token(detail_card);if(c.upgraded||card_upgradeable(c)){c.upgraded=!c.upgraded;detail_card=card_token(c);}}break;
     case UiAction::DiscardPotion:
         if(panel==4&&discard_potion(game,scroll))message("已丢弃药水");break;
     case UiAction::TargetFirst:if(panel==4&&game.enemy_count&&game.enemies[0].hp>0)target=0;break;
@@ -110,11 +113,25 @@ void App::ui_action(UiAction action){
     case UiAction::RewardPotion:
         if(game.phase==Phase::Reward&&!claim_reward_potion(game))message("药水栏已满，可先打开药水栏丢弃一瓶");break;
     case UiAction::LeaveRewards:
-        if(game.phase==Phase::Reward){leave_rewards(game);reward_cards=false;cursor=0;}break;
-    case UiAction::SelectIronclad:case UiAction::SelectSilent:
-        if(character_select)selected_character=action==UiAction::SelectIronclad?Character::Ironclad:Character::Silent;break;
+        if(game.phase==Phase::Reward){leave_rewards(game);reward_cards=grimoire_select=false;cursor=0;}break;
+    case UiAction::RewardGrimoire:
+        if(!title&&!paused&&!help&&!panel&&game.phase==Phase::Reward&&game.necro.grimoire_pending){grimoire_select=true;reward_cards=false;cursor=0;}break;
+    case UiAction::SkipGrimoire:
+        if(!title&&!paused&&!help&&!panel&&grimoire_select&&game.phase==Phase::Reward&&necro_grimoire_choice(game,-1)){
+            deck_candidate=-1;if(!game.necro.grimoire_pending){grimoire_select=false;cursor=3;}
+        }break;
+    case UiAction::ShowStars:case UiAction::ShowOrbs:case UiAction::ShowOsty:{
+        open_statuses(0);if(status_actor<0)break;
+        const int wanted=action==UiAction::ShowStars?44:action==UiAction::ShowOsty?45:46;
+        int ids[StatusKinds],n=collect_statuses(game,0,ids);for(int i=0;i<n;i++)if(ids[i]==wanted){status_selected=i;break;}
+        break;}
+    case UiAction::SelectIronclad:case UiAction::SelectSilent:case UiAction::SelectDefect:case UiAction::SelectRegent:case UiAction::SelectNecrobinder:
+        if(character_select)selected_character=action==UiAction::SelectIronclad?Character::Ironclad:action==UiAction::SelectSilent?Character::Silent:
+            action==UiAction::SelectDefect?Character::Defect:action==UiAction::SelectRegent?Character::Regent:Character::Necrobinder;break;
     case UiAction::FilterAll:case UiAction::FilterIronclad:case UiAction::FilterSilent:case UiAction::FilterColorless:
         if(library&&library_tab==0){library_filter=(int)action-(int)UiAction::FilterAll;library_page=library_selected=0;}break;
+    case UiAction::FilterDefect:case UiAction::FilterRegent:case UiAction::FilterNecrobinder:
+        if(library&&library_tab==0){library_filter=4+(int)action-(int)UiAction::FilterDefect;library_page=library_selected=0;}break;
     case UiAction::CycleSort:if(library&&library_tab==0){library_sort=(library_sort+1)%3;library_page=library_selected=0;}break;
     case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
         if(!title&&!paused&&!help&&!panel&&choice_phase(game.phase)){
@@ -127,7 +144,8 @@ void App::ui_action(UiAction action){
     case UiAction::ConfirmDeckChoice:confirm_deck_choice();break;
     case UiAction::CancelDeckChoice:deck_candidate=-1;break;
     case UiAction::PreviousDeckPage:case UiAction::NextDeckPage:
-        if(!title&&!paused&&!panel&&deck_candidate<0&&(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)){
+        if(!title&&!paused&&!panel&&deck_candidate<0&&(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||
+            (grimoire_select&&game.phase==Phase::Reward&&game.necro.grimoire_pending))){
             int page=cursor/10+(action==UiAction::PreviousDeckPage?-1:1);
             if(page<0)page=0;int last=(game.deck_count-1)/10;if(page>last)page=last;cursor=page*10;
         }break;
@@ -152,15 +170,18 @@ bool App::screen_input(Key key){
     }
     if(character_select){
         if(key==Key::Confirm)ui_action(UiAction::StartCharacter);
-        else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)selected_character=selected_character==Character::Ironclad?Character::Silent:Character::Ironclad;
+        else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)
+            selected_character=(Character)(((int)selected_character+(key==Key::Left||key==Key::Up?CharacterKinds-1:1))%CharacterKinds);
         else if(key==Key::Back)character_select=false;
         else if(key==Key::Quit)quit=true;
         return true;
     }
-    if(!title&&!paused&&!help&&!panel&&game.phase==Phase::Reward&&!reward_cards){
-        if(key==Key::Left||key==Key::Up){cursor=(cursor+3)%4;return true;}
-        if(key==Key::Right||key==Key::Down){cursor=(cursor+1)%4;return true;}
-        if(key==Key::Confirm){const UiAction actions[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion,UiAction::LeaveRewards};ui_action(actions[cursor%4]);return true;}
+    if(!title&&!paused&&!help&&!panel&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
+        const int count=game.necro.grimoire_pending?5:4;
+        if(key==Key::Left||key==Key::Up){cursor=(cursor+count-1)%count;return true;}
+        if(key==Key::Right||key==Key::Down){cursor=(cursor+1)%count;return true;}
+        if(key==Key::Confirm){const UiAction actions[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion,UiAction::RewardGrimoire,UiAction::LeaveRewards};
+            int at=cursor%count;if(count==4&&at==3)at=4;ui_action(actions[at]);return true;}
     }
     return false;
 }
@@ -169,20 +190,28 @@ bool App::screen_input(Key key){
 namespace spire {
 static bool deck_phase(Phase phase){return phase==Phase::Upgrade||phase==Phase::Remove||phase==Phase::Transform;}
 bool App::deck_candidate_valid()const{
-    if(deck_candidate<0||deck_candidate>=game.deck_count||deck_choice_revision!=game.revision||deck_choice_phase!=game.phase||!deck_phase(game.phase))return false;
-    if(game.phase==Phase::Upgrade&&game.deck[deck_candidate].upgraded)return false;
-    if(game.phase==Phase::Transform&&deck_candidate==game.event_first)return false;
+    const bool grimoire=grimoire_select&&game.phase==Phase::Reward&&game.necro.grimoire_pending;
+    if(deck_candidate<0||deck_candidate>=game.deck_count||deck_choice_revision!=game.revision||deck_choice_phase!=game.phase||(!deck_phase(game.phase)&&!grimoire))return false;
+    Card c=game.deck[deck_candidate];
+    if(game.phase==Phase::Upgrade&&!card_upgradeable(c))return false;
+    if(game.phase==Phase::Transform&&(deck_candidate==game.event_first||!card_transformable(c)))return false;
+    if((grimoire||game.phase==Phase::Remove)&&(!card_removable(c)||game.deck_count<=1))return false;
     return true;
 }
 void App::confirm_deck_choice(){
     if(!deck_candidate_valid()){deck_candidate=-1;return;}
     int index=deck_candidate;Phase phase=game.phase;deck_candidate=-1;pointer_cancel();
+    if(grimoire_select&&phase==Phase::Reward){
+        if(necro_grimoire_choice(game,index)){cursor=index<game.deck_count?index:game.deck_count-1;if(!game.necro.grimoire_pending){grimoire_select=false;cursor=3;}}
+        else message("此时无法移除这张牌");return;
+    }
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
     if(ok){reset_presentation();if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
     else message("此时无法完成这项操作");
 }
 bool App::deck_input(Key key){
-    if(title||paused||help||panel||library||!deck_phase(game.phase))return false;
+    if(grimoire_select&&(game.phase!=Phase::Reward||!game.necro.grimoire_pending))grimoire_select=false;
+    if(title||paused||help||panel||library||(!deck_phase(game.phase)&&!grimoire_select))return false;
     if(deck_candidate>=0){
         if(!deck_candidate_valid()){deck_candidate=-1;return true;}
         if(key==Key::Back){deck_candidate=-1;return true;}
@@ -191,6 +220,8 @@ bool App::deck_input(Key key){
         // Save and load remain available; loading resets its captured revision.
         return key!=Key::Save&&key!=Key::Load&&key!=Key::Quit;
     }
+    if(grimoire_select&&key==Key::Back){grimoire_select=false;cursor=3;return true;}
+    if(grimoire_select&&key==Key::EndTurn){ui_action(UiAction::SkipGrimoire);return true;}
     if(key==Key::Back&&game.event_deck_action!=EventDeckAction::None){
         cancel_event_selection(game);reset_presentation();return true;
     }
@@ -200,10 +231,11 @@ bool App::deck_input(Key key){
     else if(key==Key::Right)cursor=cursor+1<count?cursor+1:count-1;
     else if(key==Key::Up)cursor=cursor>=5?cursor-5:cursor;
     else if(key==Key::Down)cursor=cursor+5<count?cursor+5:count-1;
-    else if(key==Key::Detail)open_card_detail(game.deck[cursor]);
+    else if(key==Key::Detail)open_card_detail(game.deck[cursor],cursor);
     else if(key==Key::Confirm){
-        if(game.phase==Phase::Upgrade&&game.deck[cursor].upgraded){message("这张牌已经升级");return true;}
-        if(game.phase==Phase::Transform&&cursor==game.event_first){message("请选择另一张牌");return true;}
+        if(game.phase==Phase::Upgrade&&!card_upgradeable(game.deck[cursor])){message("这张牌不能继续升级");return true;}
+        if(game.phase==Phase::Transform&&(cursor==game.event_first||!card_transformable(game.deck[cursor]))){message("请选择另一张可变化的牌");return true;}
+        if((grimoire_select||game.phase==Phase::Remove)&&(!card_removable(game.deck[cursor])||game.deck_count<=1)){message("这张牌不能移除");return true;}
         deck_candidate=cursor;deck_choice_revision=game.revision;deck_choice_phase=game.phase;pointer_cancel();
     }else return false;
     return true;

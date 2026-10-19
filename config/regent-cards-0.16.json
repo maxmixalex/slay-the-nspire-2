@@ -1,0 +1,3806 @@
+{
+  "schema": 1,
+  "reference_version": "v0.111.0",
+  "reference_commit": "41cef1ea",
+  "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9",
+  "evidence_scope": "Supplied original assembly metadata and CIL. Numeric implementation data only; original descriptions and assets remain private. No original runtime execution claimed.",
+  "declared_pool_count": 91,
+  "single_player_count": 86,
+  "existing_count": 0,
+  "added_count": 86,
+  "pool_method": "0x0600481d",
+  "validation": {
+    "status": "implementation and numeric regression source complete; executable validation pending verified source checkpoint",
+    "card_models_with_executable_cases": 86,
+    "regression_variants_authored": 181,
+    "executed": false,
+    "test_source": "tests/regent_completion_regression.cpp",
+    "historical_0_15_result_is_not_regent_validation": true
+  },
+  "excluded_multiplayer": [
+    "Constellation",
+    "HammerTime",
+    "Largesse",
+    "Plot",
+    "Tutor"
+  ],
+  "starting": {
+    "hp": 75,
+    "gold": 99,
+    "relic": "DivineRight",
+    "relic_stars": 3,
+    "deck": {
+      "StrikeRegent": 4,
+      "DefendRegent": 4,
+      "FallingStar": 1,
+      "Venerate": 1
+    },
+    "evidence": {
+      "hp": "0x06003abc",
+      "gold": "0x06003abd",
+      "deck": "0x06003ac2",
+      "relic": "0x06003ac3",
+      "divine_stars": "0x06001d86"
+    }
+  },
+  "cards": [
+    {
+      "id": 314,
+      "enum": "RegentAlignment",
+      "model": "Alignment",
+      "key": "ALIGNMENT",
+      "portrait": "images/packed/card_portraits/regent/alignment.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b1c",
+        "get_CanonicalStarCost": "0x06003b1d",
+        "get_CanonicalVars": "0x06003b1e",
+        "get_ExtraHoverTips": "0x06003b1f",
+        "OnPlay": "0x06003b20",
+        "OnUpgrade": "0x06003b21"
+      }
+    },
+    {
+      "id": 315,
+      "enum": "RegentArsenal",
+      "model": "Arsenal",
+      "key": "ARSENAL",
+      "portrait": "images/packed/card_portraits/regent/arsenal.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "ArsenalPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b42",
+        "get_ExtraHoverTips": "0x06003b43",
+        "get_CanonicalVars": "0x06003b44",
+        "OnPlay": "0x06003b45",
+        "OnUpgrade": "0x06003b46"
+      }
+    },
+    {
+      "id": 316,
+      "enum": "RegentAstralPulse",
+      "model": "AstralPulse",
+      "key": "ASTRAL_PULSE",
+      "portrait": "images/packed/card_portraits/regent/astral_pulse.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003b58",
+        "get_CanonicalStarCost": "0x06003b59",
+        "get_CanonicalVars": "0x06003b5a",
+        "OnPlay": "0x06003b5b",
+        "OnUpgrade": "0x06003b5c"
+      }
+    },
+    {
+      "id": 317,
+      "enum": "RegentBeatIntoShape",
+      "model": "BeatIntoShape",
+      "key": "BEAT_INTO_SHAPE",
+      "portrait": "images/packed/card_portraits/regent/beat_into_shape.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        },
+        "CalculationBase": {
+          "base": 5,
+          "upgraded": 7
+        },
+        "CalculationExtra": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedForge": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003ba0",
+        "get_CanonicalVars": "0x06003ba1",
+        "get_ExtraHoverTips": "0x06003ba2",
+        "OnPlay": "0x06003ba3",
+        "OnUpgrade": "0x06003ba4"
+      }
+    },
+    {
+      "id": 318,
+      "enum": "RegentBegone",
+      "model": "Begone",
+      "key": "BEGONE",
+      "portrait": "images/packed/card_portraits/regent/begone.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003baa",
+        "get_ExtraHoverTips": "0x06003bab",
+        "OnPlay": "0x06003bac"
+      }
+    },
+    {
+      "id": 319,
+      "enum": "RegentBigBang",
+      "model": "BigBang",
+      "key": "BIG_BANG",
+      "portrait": "images/packed/card_portraits/regent/big_bang.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Stars": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Forge": {
+          "base": 5,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Innate"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003bb8",
+        "get_CanonicalKeywords": "0x06003bb9",
+        "get_CanonicalVars": "0x06003bba",
+        "get_ExtraHoverTips": "0x06003bbb",
+        "OnPlay": "0x06003bbc",
+        "OnUpgrade": "0x06003bbd"
+      }
+    },
+    {
+      "id": 320,
+      "enum": "RegentBlackHole",
+      "model": "BlackHole",
+      "key": "BLACK_HOLE",
+      "portrait": "images/packed/card_portraits/regent/black_hole.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "BlackHolePower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003bbe",
+        "get_CanonicalVars": "0x06003bbf",
+        "OnPlay": "0x06003bc0",
+        "OnUpgrade": "0x06003bc1"
+      }
+    },
+    {
+      "id": 321,
+      "enum": "RegentBombardment",
+      "model": "Bombardment",
+      "key": "BOMBARDMENT",
+      "portrait": "images/packed/card_portraits/regent/bombardment.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 18,
+          "upgraded": 24
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c04",
+        "get_CanonicalKeywords": "0x06003c05",
+        "get_CanonicalVars": "0x06003c06",
+        "OnPlay": "0x06003c07",
+        "AfterAutoPrePlayPhaseEnteredEarly": "0x06003c08",
+        "OnUpgrade": "0x06003c09"
+      }
+    },
+    {
+      "id": 322,
+      "enum": "RegentBulwark",
+      "model": "Bulwark",
+      "key": "BULWARK",
+      "portrait": "images/packed/card_portraits/regent/bulwark.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 12,
+          "upgraded": 15
+        },
+        "Forge": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c52",
+        "get_GainsBlock": "0x06003c53",
+        "get_CanonicalVars": "0x06003c54",
+        "get_ExtraHoverTips": "0x06003c55",
+        "OnPlay": "0x06003c56",
+        "OnUpgrade": "0x06003c57"
+      }
+    },
+    {
+      "id": 323,
+      "enum": "RegentBundleOfJoy",
+      "model": "BundleOfJoy",
+      "key": "BUNDLE_OF_JOY",
+      "portrait": "images/packed/card_portraits/regent/bundle_of_joy.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003c58",
+        "get_CanonicalVars": "0x06003c59",
+        "get_CanonicalKeywords": "0x06003c5a",
+        "OnPlay": "0x06003c5b",
+        "OnUpgrade": "0x06003c5c"
+      }
+    },
+    {
+      "id": 324,
+      "enum": "RegentCelestialMight",
+      "model": "CelestialMight",
+      "key": "CELESTIAL_MIGHT",
+      "portrait": "images/packed/card_portraits/regent/celestial_might.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 6
+        },
+        "Repeat": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003ca4",
+        "get_CanonicalVars": "0x06003ca5",
+        "OnPlay": "0x06003ca6",
+        "OnUpgrade": "0x06003ca7"
+      }
+    },
+    {
+      "id": 325,
+      "enum": "RegentCharge",
+      "model": "Charge",
+      "key": "CHARGE",
+      "portrait": "images/packed/card_portraits/regent/charge.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003cad",
+        "get_ExtraHoverTips": "0x06003cae",
+        "get_CanonicalVars": "0x06003caf",
+        "OnPlay": "0x06003cb0"
+      }
+    },
+    {
+      "id": 326,
+      "enum": "RegentChildOfTheStars",
+      "model": "ChildOfTheStars",
+      "key": "CHILD_OF_THE_STARS",
+      "portrait": "images/packed/card_portraits/regent/child_of_the_stars.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "BlockForStars": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003cb7",
+        "get_CanonicalVars": "0x06003cb8",
+        "get_ExtraHoverTips": "0x06003cb9",
+        "OnPlay": "0x06003cba",
+        "OnUpgrade": "0x06003cbb"
+      }
+    },
+    {
+      "id": 327,
+      "enum": "RegentCloakOfStars",
+      "model": "CloakOfStars",
+      "key": "CLOAK_OF_STARS",
+      "portrait": "images/packed/card_portraits/regent/cloak_of_stars.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Block": {
+          "base": 7,
+          "upgraded": 10
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003ce0",
+        "get_CanonicalStarCost": "0x06003ce1",
+        "get_GainsBlock": "0x06003ce2",
+        "get_CanonicalVars": "0x06003ce3",
+        "OnPlay": "0x06003ce4",
+        "OnUpgrade": "0x06003ce5"
+      }
+    },
+    {
+      "id": 328,
+      "enum": "RegentCollisionCourse",
+      "model": "CollisionCourse",
+      "key": "COLLISION_COURSE",
+      "portrait": "images/packed/card_portraits/regent/collision_course.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 14
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003cee",
+        "get_ExtraHoverTips": "0x06003cef",
+        "get_CanonicalVars": "0x06003cf0",
+        "OnPlay": "0x06003cf1",
+        "OnUpgrade": "0x06003cf2"
+      }
+    },
+    {
+      "id": 329,
+      "enum": "RegentComet",
+      "model": "Comet",
+      "key": "COMET",
+      "portrait": "images/packed/card_portraits/regent/comet.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 5,
+        "upgraded": 5
+      },
+      "variables": {
+        "Damage": {
+          "base": 33,
+          "upgraded": 44
+        },
+        "VulnerablePower": {
+          "base": 3,
+          "upgraded": 3
+        },
+        "WeakPower": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003cf9",
+        "get_CanonicalStarCost": "0x06003cfa",
+        "get_CanonicalVars": "0x06003cfb",
+        "get_ExtraHoverTips": "0x06003cfc",
+        "OnPlay": "0x06003cfd",
+        "OnUpgrade": "0x06003cfe"
+      }
+    },
+    {
+      "id": 330,
+      "enum": "RegentConqueror",
+      "model": "Conqueror",
+      "key": "CONQUEROR",
+      "portrait": "images/packed/card_portraits/regent/conqueror.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Forge": {
+          "base": 3,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d14",
+        "get_CanonicalVars": "0x06003d15",
+        "get_ExtraHoverTips": "0x06003d16",
+        "OnPlay": "0x06003d17",
+        "OnUpgrade": "0x06003d18"
+      }
+    },
+    {
+      "id": 331,
+      "enum": "RegentConvergence",
+      "model": "Convergence",
+      "key": "CONVERGENCE",
+      "portrait": "images/packed/card_portraits/regent/convergence.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Stars": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d26",
+        "get_CanonicalVars": "0x06003d27",
+        "get_ExtraHoverTips": "0x06003d28",
+        "OnPlay": "0x06003d29",
+        "OnUpgrade": "0x06003d2a"
+      }
+    },
+    {
+      "id": 332,
+      "enum": "RegentCosmicIndifference",
+      "model": "CosmicIndifference",
+      "key": "COSMIC_INDIFFERENCE",
+      "portrait": "images/packed/card_portraits/regent/cosmic_indifference.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d45",
+        "get_GainsBlock": "0x06003d46",
+        "get_CanonicalVars": "0x06003d47",
+        "OnPlay": "0x06003d48",
+        "OnUpgrade": "0x06003d49"
+      }
+    },
+    {
+      "id": 333,
+      "enum": "RegentCrashLanding",
+      "model": "CrashLanding",
+      "key": "CRASH_LANDING",
+      "portrait": "images/packed/card_portraits/regent/crash_landing.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 21,
+          "upgraded": 26
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d4f",
+        "get_ExtraHoverTips": "0x06003d50",
+        "get_CanonicalVars": "0x06003d51",
+        "OnPlay": "0x06003d52",
+        "OnUpgrade": "0x06003d53"
+      }
+    },
+    {
+      "id": 334,
+      "enum": "RegentCrescentSpear",
+      "model": "CrescentSpear",
+      "key": "CRESCENT_SPEAR",
+      "portrait": "images/packed/card_portraits/regent/crescent_spear.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 8,
+          "upgraded": 8
+        },
+        "ExtraDamage": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d58",
+        "get_CanonicalStarCost": "0x06003d59",
+        "get_CanonicalVars": "0x06003d5a",
+        "OnPlay": "0x06003d5b",
+        "OnUpgrade": "0x06003d5c"
+      }
+    },
+    {
+      "id": 335,
+      "enum": "RegentCrushUnder",
+      "model": "CrushUnder",
+      "key": "CRUSH_UNDER",
+      "portrait": "images/packed/card_portraits/regent/crush_under.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 9
+        },
+        "StrengthLoss": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003d67",
+        "get_ExtraHoverTips": "0x06003d68",
+        "get_CanonicalVars": "0x06003d69",
+        "OnPlay": "0x06003d6a",
+        "OnUpgrade": "0x06003d6b"
+      }
+    },
+    {
+      "id": 336,
+      "enum": "RegentDecisionsDecisions",
+      "model": "DecisionsDecisions",
+      "key": "DECISIONS_DECISIONS",
+      "portrait": "images/packed/card_portraits/regent/decisions_decisions.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 6,
+        "upgraded": 6
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 5
+        },
+        "Repeat": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003dc2",
+        "get_CanonicalStarCost": "0x06003dc3",
+        "get_CanonicalVars": "0x06003dc4",
+        "get_CanonicalKeywords": "0x06003dc5",
+        "OnPlay": "0x06003dc6",
+        "OnUpgrade": "0x06003dc7"
+      }
+    },
+    {
+      "id": 337,
+      "enum": "RegentDefend",
+      "model": "DefendRegent",
+      "key": "DEFEND_REGENT",
+      "portrait": "images/packed/card_portraits/regent/defend_regent.png",
+      "rarity": 1,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Defend"
+      ],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x06003dda",
+        "get_GainsBlock": "0x06003ddb",
+        "get_CanonicalTags": "0x06003ddc",
+        "get_CanonicalVars": "0x06003ddd",
+        "OnPlay": "0x06003dde",
+        "OnUpgrade": "0x06003ddf"
+      }
+    },
+    {
+      "id": 338,
+      "enum": "RegentDevastate",
+      "model": "Devastate",
+      "key": "DEVASTATE",
+      "portrait": "images/packed/card_portraits/regent/devastate.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 4,
+        "upgraded": 4
+      },
+      "variables": {
+        "Damage": {
+          "base": 35,
+          "upgraded": 45
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003e18",
+        "get_CanonicalStarCost": "0x06003e19",
+        "get_CanonicalVars": "0x06003e1a",
+        "OnPlay": "0x06003e1b",
+        "OnUpgrade": "0x06003e1c"
+      }
+    },
+    {
+      "id": 339,
+      "enum": "RegentDyingStar",
+      "model": "DyingStar",
+      "key": "DYING_STAR",
+      "portrait": "images/packed/card_portraits/regent/dying_star.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 11
+        },
+        "StrengthLoss": {
+          "base": 9,
+          "upgraded": 11
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003e7c",
+        "get_CanonicalStarCost": "0x06003e7d",
+        "get_CanonicalVars": "0x06003e7e",
+        "get_CanonicalKeywords": "0x06003e7f",
+        "get_ExtraHoverTips": "0x06003e80",
+        "OnPlay": "0x06003e81",
+        "OnUpgrade": "0x06003e82"
+      }
+    },
+    {
+      "id": 340,
+      "enum": "RegentFallingStar",
+      "model": "FallingStar",
+      "key": "FALLING_STAR",
+      "portrait": "images/packed/card_portraits/regent/falling_star.png",
+      "rarity": 1,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 12
+        },
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "WeakPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x06003ef6",
+        "get_CanonicalStarCost": "0x06003ef7",
+        "get_CanonicalVars": "0x06003ef8",
+        "get_ExtraHoverTips": "0x06003ef9",
+        "OnPlay": "0x06003efa",
+        "OnUpgrade": "0x06003efb"
+      }
+    },
+    {
+      "id": 341,
+      "enum": "RegentForegoneConclusion",
+      "model": "ForegoneConclusion",
+      "key": "FOREGONE_CONCLUSION",
+      "portrait": "images/packed/card_portraits/regent/foregone_conclusion.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003f86",
+        "get_CanonicalVars": "0x06003f87",
+        "OnPlay": "0x06003f88",
+        "OnUpgrade": "0x06003f89"
+      }
+    },
+    {
+      "id": 342,
+      "enum": "RegentFurnace",
+      "model": "Furnace",
+      "key": "FURNACE",
+      "portrait": "images/packed/card_portraits/regent/furnace.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Forge": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003faa",
+        "get_ExtraHoverTips": "0x06003fab",
+        "get_CanonicalVars": "0x06003fac",
+        "OnPlay": "0x06003fad",
+        "OnUpgrade": "0x06003fae"
+      }
+    },
+    {
+      "id": 343,
+      "enum": "RegentGammaBlast",
+      "model": "GammaBlast",
+      "key": "GAMMA_BLAST",
+      "portrait": "images/packed/card_portraits/regent/gamma_blast.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Damage": {
+          "base": 13,
+          "upgraded": 18
+        },
+        "VulnerablePower": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "WeakPower": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003fb4",
+        "get_CanonicalStarCost": "0x06003fb5",
+        "get_ExtraHoverTips": "0x06003fb6",
+        "get_CanonicalVars": "0x06003fb7",
+        "OnPlay": "0x06003fb8",
+        "OnUpgrade": "0x06003fb9"
+      }
+    },
+    {
+      "id": 344,
+      "enum": "RegentGatherLight",
+      "model": "GatherLight",
+      "key": "GATHER_LIGHT",
+      "portrait": "images/packed/card_portraits/regent/gather_light.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 8,
+          "upgraded": 11
+        },
+        "Stars": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003fbf",
+        "get_GainsBlock": "0x06003fc0",
+        "get_CanonicalVars": "0x06003fc1",
+        "OnPlay": "0x06003fc2",
+        "OnUpgrade": "0x06003fc3"
+      }
+    },
+    {
+      "id": 345,
+      "enum": "RegentGenesis",
+      "model": "Genesis",
+      "key": "GENESIS",
+      "portrait": "images/packed/card_portraits/regent/genesis.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "StarsPerTurn": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003fc4",
+        "get_CanonicalVars": "0x06003fc5",
+        "OnPlay": "0x06003fc6",
+        "OnUpgrade": "0x06003fc7"
+      }
+    },
+    {
+      "id": 346,
+      "enum": "RegentGlimmer",
+      "model": "Glimmer",
+      "key": "GLIMMER",
+      "portrait": "images/packed/card_portraits/regent/glimmer.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "PutBack": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003fe5",
+        "get_CanonicalVars": "0x06003fe6",
+        "OnPlay": "0x06003fe7",
+        "OnUpgrade": "0x06003fe8"
+      }
+    },
+    {
+      "id": 347,
+      "enum": "RegentGlitterstream",
+      "model": "Glitterstream",
+      "key": "GLITTERSTREAM",
+      "portrait": "images/packed/card_portraits/regent/glitterstream.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 11,
+          "upgraded": 13
+        },
+        "BlockNextTurn": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003ff0",
+        "get_GainsBlock": "0x06003ff1",
+        "get_CanonicalVars": "0x06003ff2",
+        "OnPlay": "0x06003ff3",
+        "OnUpgrade": "0x06003ff4"
+      }
+    },
+    {
+      "id": 348,
+      "enum": "RegentGlow",
+      "model": "Glow",
+      "key": "GLOW",
+      "portrait": "images/packed/card_portraits/regent/glow.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Stars": {
+          "base": 1,
+          "upgraded": 2
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06003ff5",
+        "get_CanonicalVars": "0x06003ff6",
+        "OnPlay": "0x06003ff7",
+        "OnUpgrade": "0x06003ff8"
+      }
+    },
+    {
+      "id": 349,
+      "enum": "RegentGuards",
+      "model": "Guards",
+      "key": "GUARDS",
+      "portrait": "images/packed/card_portraits/regent/guards.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004018",
+        "get_CanonicalKeywords": "0x06004019",
+        "get_ExtraHoverTips": "0x0600401a",
+        "OnPlay": "0x0600401b"
+      }
+    },
+    {
+      "id": 350,
+      "enum": "RegentGuidingStar",
+      "model": "GuidingStar",
+      "key": "GUIDING_STAR",
+      "portrait": "images/packed/card_portraits/regent/guiding_star.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "variables": {
+        "Damage": {
+          "base": 12,
+          "upgraded": 13
+        },
+        "Cards": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600401c",
+        "get_CanonicalStarCost": "0x0600401d",
+        "get_CanonicalVars": "0x0600401e",
+        "OnPlay": "0x0600401f",
+        "OnUpgrade": "0x06004020"
+      }
+    },
+    {
+      "id": 351,
+      "enum": "RegentHeavenlyDrill",
+      "model": "HeavenlyDrill",
+      "key": "HEAVENLY_DRILL",
+      "portrait": "images/packed/card_portraits/regent/heavenly_drill.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 10
+        },
+        "Energy": {
+          "base": 4,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600405a",
+        "get_HasEnergyCostX": "0x0600405b",
+        "get_ShouldGlowGoldInternal": "0x0600405c",
+        "get_CanonicalVars": "0x0600405d",
+        "OnPlay": "0x0600405e",
+        "OnUpgrade": "0x0600405f"
+      }
+    },
+    {
+      "id": 352,
+      "enum": "RegentHegemony",
+      "model": "Hegemony",
+      "key": "HEGEMONY",
+      "portrait": "images/packed/card_portraits/regent/hegemony.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 15,
+          "upgraded": 18
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004060",
+        "get_CanonicalVars": "0x06004061",
+        "get_ExtraHoverTips": "0x06004062",
+        "OnPlay": "0x06004063",
+        "OnUpgrade": "0x06004064"
+      }
+    },
+    {
+      "id": 353,
+      "enum": "RegentHeirloomHammer",
+      "model": "HeirloomHammer",
+      "key": "HEIRLOOM_HAMMER",
+      "portrait": "images/packed/card_portraits/regent/heirloom_hammer.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 20,
+          "upgraded": 25
+        },
+        "Repeat": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004065",
+        "get_CanonicalVars": "0x06004066",
+        "OnPlay": "0x06004067",
+        "OnUpgrade": "0x06004068"
+      }
+    },
+    {
+      "id": 354,
+      "enum": "RegentHiddenCache",
+      "model": "HiddenCache",
+      "key": "HIDDEN_CACHE",
+      "portrait": "images/packed/card_portraits/regent/hidden_cache.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Stars": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "StarNextTurnPower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004081",
+        "get_CanonicalVars": "0x06004082",
+        "OnPlay": "0x06004083",
+        "OnUpgrade": "0x06004084"
+      }
+    },
+    {
+      "id": 355,
+      "enum": "RegentIAmInvincible",
+      "model": "IAmInvincible",
+      "key": "I_AM_INVINCIBLE",
+      "portrait": "images/packed/card_portraits/regent/i_am_invincible.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060040b5",
+        "get_GainsBlock": "0x060040b6",
+        "get_CanonicalVars": "0x060040b7",
+        "OnPlay": "0x060040b8",
+        "AfterAutoPostPlayPhaseEntered": "0x060040b9",
+        "OnUpgrade": "0x060040ba"
+      }
+    },
+    {
+      "id": 356,
+      "enum": "RegentKinglyKick",
+      "model": "KinglyKick",
+      "key": "KINGLY_KICK",
+      "portrait": "images/packed/card_portraits/regent/kingly_kick.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 4,
+        "upgraded": 4
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 27,
+          "upgraded": 35
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004119",
+        "get_CanonicalVars": "0x0600411a",
+        "OnPlay": "0x0600411b",
+        "OnUpgrade": "0x0600411c",
+        "AfterCardDrawn": "0x0600411d"
+      }
+    },
+    {
+      "id": 357,
+      "enum": "RegentKinglyPunch",
+      "model": "KinglyPunch",
+      "key": "KINGLY_PUNCH",
+      "portrait": "images/packed/card_portraits/regent/kingly_punch.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 10
+        },
+        "Increase": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600411e",
+        "get_ExtraDamage": "0x0600411f",
+        "set_ExtraDamage": "0x06004120",
+        "get_CanonicalVars": "0x06004121",
+        "OnPlay": "0x06004122",
+        "AfterCardDrawn": "0x06004123",
+        "OnUpgrade": "0x06004124",
+        "AfterDowngraded": "0x06004125"
+      }
+    },
+    {
+      "id": 358,
+      "enum": "RegentKnockoutBlow",
+      "model": "KnockoutBlow",
+      "key": "KNOCKOUT_BLOW",
+      "portrait": "images/packed/card_portraits/regent/knockout_blow.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 30,
+          "upgraded": 38
+        },
+        "Stars": {
+          "base": 5,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600412f",
+        "get_CanonicalVars": "0x06004130",
+        "OnPlay": "0x06004131",
+        "OnUpgrade": "0x06004132"
+      }
+    },
+    {
+      "id": 359,
+      "enum": "RegentKnowThyPlace",
+      "model": "KnowThyPlace",
+      "key": "KNOW_THY_PLACE",
+      "portrait": "images/packed/card_portraits/regent/know_thy_place.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "WeakPower": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004133",
+        "get_CanonicalVars": "0x06004134",
+        "get_CanonicalKeywords": "0x06004135",
+        "get_ExtraHoverTips": "0x06004136",
+        "OnPlay": "0x06004137",
+        "OnUpgrade": "0x06004138"
+      }
+    },
+    {
+      "id": 360,
+      "enum": "RegentLunarBlast",
+      "model": "LunarBlast",
+      "key": "LUNAR_BLAST",
+      "portrait": "images/packed/card_portraits/regent/lunar_blast.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 4,
+          "upgraded": 5
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedHits": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004173",
+        "get_CanonicalVars": "0x06004174",
+        "OnPlay": "0x06004175",
+        "OnUpgrade": "0x06004176"
+      }
+    },
+    {
+      "id": 361,
+      "enum": "RegentMakeItSo",
+      "model": "MakeItSo",
+      "key": "MAKE_IT_SO",
+      "portrait": "images/packed/card_portraits/regent/make_it_so.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        },
+        "Cards": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004194",
+        "get_CanonicalVars": "0x06004195",
+        "OnPlay": "0x06004196",
+        "AfterCardPlayedLate": "0x06004197",
+        "OnUpgrade": "0x06004198",
+        "<AfterCardPlayedLate>b__4_0": "0x06004199"
+      }
+    },
+    {
+      "id": 362,
+      "enum": "RegentManifestAuthority",
+      "model": "ManifestAuthority",
+      "key": "MANIFEST_AUTHORITY",
+      "portrait": "images/packed/card_portraits/regent/manifest_authority.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 7,
+          "upgraded": 8
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060041a5",
+        "get_ExtraHoverTips": "0x060041a6",
+        "get_GainsBlock": "0x060041a7",
+        "get_CanonicalVars": "0x060041a8",
+        "OnPlay": "0x060041a9",
+        "OnUpgrade": "0x060041aa"
+      }
+    },
+    {
+      "id": 363,
+      "enum": "RegentMeteorShower",
+      "model": "MeteorShower",
+      "key": "METEOR_SHOWER",
+      "portrait": "images/packed/card_portraits/regent/meteor_shower.png",
+      "rarity": 5,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Damage": {
+          "base": 14,
+          "upgraded": 21
+        },
+        "VulnerablePower": {
+          "base": 2,
+          "upgraded": 2
+        },
+        "WeakPower": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x060041cf",
+        "get_CanonicalStarCost": "0x060041d0",
+        "get_CanonicalVars": "0x060041d1",
+        "get_ExtraHoverTips": "0x060041d2",
+        "OnPlay": "0x060041d3",
+        "OnUpgrade": "0x060041d4"
+      }
+    },
+    {
+      "id": 364,
+      "enum": "RegentMonarchsGaze",
+      "model": "MonarchsGaze",
+      "key": "MONARCHS_GAZE",
+      "portrait": "images/packed/card_portraits/regent/monarchs_gaze.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "StrengthLoss": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004222",
+        "get_CanonicalVars": "0x06004223",
+        "get_ExtraHoverTips": "0x06004224",
+        "OnPlay": "0x06004225",
+        "OnUpgrade": "0x06004226"
+      }
+    },
+    {
+      "id": 365,
+      "enum": "RegentMonologue",
+      "model": "Monologue",
+      "key": "MONOLOGUE",
+      "portrait": "images/packed/card_portraits/regent/monologue.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Power": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004227",
+        "get_CanonicalVars": "0x06004228",
+        "get_ExtraHoverTips": "0x06004229",
+        "OnPlay": "0x0600422a",
+        "OnUpgrade": "0x0600422b"
+      }
+    },
+    {
+      "id": 366,
+      "enum": "RegentNeutronAegis",
+      "model": "NeutronAegis",
+      "key": "NEUTRON_AEGIS",
+      "portrait": "images/packed/card_portraits/regent/neutron_aegis.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 5,
+        "upgraded": 5
+      },
+      "variables": {
+        "PlatingPower": {
+          "base": 8,
+          "upgraded": 11
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600424f",
+        "get_CanonicalStarCost": "0x06004250",
+        "get_ExtraHoverTips": "0x06004251",
+        "get_CanonicalVars": "0x06004252",
+        "OnPlay": "0x06004253",
+        "OnUpgrade": "0x06004254"
+      }
+    },
+    {
+      "id": 367,
+      "enum": "RegentOrbit",
+      "model": "Orbit",
+      "key": "ORBIT",
+      "portrait": "images/packed/card_portraits/regent/orbit.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004294",
+        "get_ExtraHoverTips": "0x06004295",
+        "get_CanonicalVars": "0x06004296",
+        "OnPlay": "0x06004297",
+        "OnUpgrade": "0x06004298"
+      }
+    },
+    {
+      "id": 368,
+      "enum": "RegentPaleBlueDot",
+      "model": "PaleBlueDot",
+      "key": "PALE_BLUE_DOT",
+      "portrait": "images/packed/card_portraits/regent/pale_blue_dot.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        },
+        "CardPlay": {
+          "base": 5,
+          "upgraded": 5
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042b9",
+        "get_CanonicalVars": "0x060042ba",
+        "OnPlay": "0x060042bb",
+        "OnUpgrade": "0x060042bc"
+      }
+    },
+    {
+      "id": 369,
+      "enum": "RegentParry",
+      "model": "Parry",
+      "key": "PARRY",
+      "portrait": "images/packed/card_portraits/regent/parry.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "ParryPower": {
+          "base": 10,
+          "upgraded": 14
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042c7",
+        "get_ExtraHoverTips": "0x060042c8",
+        "get_CanonicalVars": "0x060042c9",
+        "OnPlay": "0x060042ca",
+        "OnUpgrade": "0x060042cb"
+      }
+    },
+    {
+      "id": 370,
+      "enum": "RegentParticleWall",
+      "model": "ParticleWall",
+      "key": "PARTICLE_WALL",
+      "portrait": "images/packed/card_portraits/regent/particle_wall.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "Block": {
+          "base": 9,
+          "upgraded": 12
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042d1",
+        "get_CanonicalStarCost": "0x060042d2",
+        "get_GainsBlock": "0x060042d3",
+        "get_CanonicalVars": "0x060042d4",
+        "OnPlay": "0x060042d5",
+        "GetResultLocationForCardPlay": "0x060042d6",
+        "OnUpgrade": "0x060042d7"
+      }
+    },
+    {
+      "id": 371,
+      "enum": "RegentPatter",
+      "model": "Patter",
+      "key": "PATTER",
+      "portrait": "images/packed/card_portraits/regent/patter.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 8,
+          "upgraded": 10
+        },
+        "VigorPower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042d8",
+        "get_GainsBlock": "0x060042d9",
+        "get_CanonicalVars": "0x060042da",
+        "get_ExtraHoverTips": "0x060042db",
+        "OnPlay": "0x060042dc",
+        "OnUpgrade": "0x060042dd"
+      }
+    },
+    {
+      "id": 372,
+      "enum": "RegentPhotonCut",
+      "model": "PhotonCut",
+      "key": "PHOTON_CUT",
+      "portrait": "images/packed/card_portraits/regent/photon_cut.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 13
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        },
+        "PutBack": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042ed",
+        "get_CanonicalVars": "0x060042ee",
+        "OnPlay": "0x060042ef",
+        "OnUpgrade": "0x060042f0"
+      }
+    },
+    {
+      "id": 373,
+      "enum": "RegentPillarOfCreation",
+      "model": "PillarOfCreation",
+      "key": "PILLAR_OF_CREATION",
+      "portrait": "images/packed/card_portraits/regent/pillar_of_creation.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Block": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060042fb",
+        "get_ExtraHoverTips": "0x060042fc",
+        "get_CanonicalVars": "0x060042fd",
+        "OnPlay": "0x060042fe",
+        "OnUpgrade": "0x060042ff"
+      }
+    },
+    {
+      "id": 374,
+      "enum": "RegentProphesize",
+      "model": "Prophesize",
+      "key": "PROPHESIZE",
+      "portrait": "images/packed/card_portraits/regent/prophesize.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004344",
+        "get_CanonicalVars": "0x06004345",
+        "OnPlay": "0x06004346",
+        "OnUpgrade": "0x06004347"
+      }
+    },
+    {
+      "id": 375,
+      "enum": "RegentQuasar",
+      "model": "Quasar",
+      "key": "QUASAR",
+      "portrait": "images/packed/card_portraits/regent/quasar.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004374",
+        "get_CanonicalStarCost": "0x06004375",
+        "OnPlay": "0x06004376"
+      }
+    },
+    {
+      "id": 376,
+      "enum": "RegentRadiate",
+      "model": "Radiate",
+      "key": "RADIATE",
+      "portrait": "images/packed/card_portraits/regent/radiate.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "Stars": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedHits": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004377",
+        "get_CanonicalVars": "0x06004378",
+        "OnPlay": "0x06004379",
+        "OnUpgrade": "0x0600437a"
+      }
+    },
+    {
+      "id": 377,
+      "enum": "RegentRefineBlade",
+      "model": "RefineBlade",
+      "key": "REFINE_BLADE",
+      "portrait": "images/packed/card_portraits/regent/refine_blade.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Forge": {
+          "base": 8,
+          "upgraded": 12
+        },
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060043b6",
+        "get_CanonicalVars": "0x060043b7",
+        "get_ExtraHoverTips": "0x060043b8",
+        "OnPlay": "0x060043b9",
+        "OnUpgrade": "0x060043ba"
+      }
+    },
+    {
+      "id": 378,
+      "enum": "RegentReflect",
+      "model": "Reflect",
+      "key": "REFLECT",
+      "portrait": "images/packed/card_portraits/regent/reflect.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {
+        "Block": {
+          "base": 15,
+          "upgraded": 20
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060043bb",
+        "get_CanonicalStarCost": "0x060043bc",
+        "get_GainsBlock": "0x060043bd",
+        "get_CanonicalVars": "0x060043be",
+        "OnPlay": "0x060043bf",
+        "OnUpgrade": "0x060043c0"
+      }
+    },
+    {
+      "id": 379,
+      "enum": "RegentResonance",
+      "model": "Resonance",
+      "key": "RESONANCE",
+      "portrait": "images/packed/card_portraits/regent/resonance.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "variables": {
+        "StrengthPower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060043df",
+        "get_CanonicalStarCost": "0x060043e0",
+        "get_CanonicalVars": "0x060043e1",
+        "get_ExtraHoverTips": "0x060043e2",
+        "OnPlay": "0x060043e3",
+        "OnUpgrade": "0x060043e4"
+      }
+    },
+    {
+      "id": 380,
+      "enum": "RegentRoyalGamble",
+      "model": "RoyalGamble",
+      "key": "ROYAL_GAMBLE",
+      "portrait": "images/packed/card_portraits/regent/royal_gamble.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 5,
+        "upgraded": 5
+      },
+      "variables": {
+        "Stars": {
+          "base": 9,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Retain"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004408",
+        "get_CanonicalStarCost": "0x06004409",
+        "get_CanonicalVars": "0x0600440a",
+        "get_CanonicalKeywords": "0x0600440b",
+        "OnPlay": "0x0600440c",
+        "OnUpgrade": "0x0600440d"
+      }
+    },
+    {
+      "id": 381,
+      "enum": "RegentRoyalties",
+      "model": "Royalties",
+      "key": "ROYALTIES",
+      "portrait": "images/packed/card_portraits/regent/royalties.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Gold": {
+          "base": 30,
+          "upgraded": 40
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600440e",
+        "get_CanBeGeneratedInCombat": "0x0600440f",
+        "get_CanonicalVars": "0x06004410",
+        "OnPlay": "0x06004411",
+        "OnUpgrade": "0x06004412"
+      }
+    },
+    {
+      "id": 382,
+      "enum": "RegentSeekingEdge",
+      "model": "SeekingEdge",
+      "key": "SEEKING_EDGE",
+      "portrait": "images/packed/card_portraits/regent/seeking_edge.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Forge": {
+          "base": 7,
+          "upgraded": 11
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004456",
+        "get_ExtraHoverTips": "0x06004457",
+        "get_CanonicalVars": "0x06004458",
+        "OnPlay": "0x06004459",
+        "OnUpgrade": "0x0600445a"
+      }
+    },
+    {
+      "id": 383,
+      "enum": "RegentSevenStars",
+      "model": "SevenStars",
+      "key": "SEVEN_STARS",
+      "portrait": "images/packed/card_portraits/regent/seven_stars.png",
+      "rarity": 4,
+      "type": "Attack",
+      "target": "AllEnemies",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 7,
+        "upgraded": 7
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 7
+        },
+        "Repeat": {
+          "base": 7,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600446a",
+        "get_CanonicalStarCost": "0x0600446b",
+        "get_CanonicalVars": "0x0600446c",
+        "OnPlay": "0x0600446d",
+        "OnUpgrade": "0x0600446e"
+      }
+    },
+    {
+      "id": 384,
+      "enum": "RegentShiningStrike",
+      "model": "ShiningStrike",
+      "key": "SHINING_STRIKE",
+      "portrait": "images/packed/card_portraits/regent/shining_strike.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 11
+        },
+        "Stars": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004497",
+        "get_CanonicalTags": "0x06004498",
+        "get_CanonicalVars": "0x06004499",
+        "OnPlay": "0x0600449a",
+        "GetResultLocationForCardPlay": "0x0600449b",
+        "OnUpgrade": "0x0600449c"
+      }
+    },
+    {
+      "id": 385,
+      "enum": "RegentSolarStrike",
+      "model": "SolarStrike",
+      "key": "SOLAR_STRIKE",
+      "portrait": "images/packed/card_portraits/regent/solar_strike.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 10
+        },
+        "Stars": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060044fc",
+        "get_CanonicalTags": "0x060044fd",
+        "get_CanonicalVars": "0x060044fe",
+        "OnPlay": "0x060044ff",
+        "OnUpgrade": "0x06004500"
+      }
+    },
+    {
+      "id": 386,
+      "enum": "RegentSpectrumShift",
+      "model": "SpectrumShift",
+      "key": "SPECTRUM_SHIFT",
+      "portrait": "images/packed/card_portraits/regent/spectrum_shift.png",
+      "rarity": 3,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004533",
+        "get_CanonicalVars": "0x06004534",
+        "OnPlay": "0x06004535",
+        "OnUpgrade": "0x06004536"
+      }
+    },
+    {
+      "id": 387,
+      "enum": "RegentSpoilsOfBattle",
+      "model": "SpoilsOfBattle",
+      "key": "SPOILS_OF_BATTLE",
+      "portrait": "images/packed/card_portraits/regent/spoils_of_battle.png",
+      "rarity": 2,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Forge": {
+          "base": 6,
+          "upgraded": 9
+        },
+        "Cards": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600455c",
+        "get_CanonicalVars": "0x0600455d",
+        "get_ExtraHoverTips": "0x0600455e",
+        "OnPlay": "0x0600455f",
+        "OnUpgrade": "0x06004560"
+      }
+    },
+    {
+      "id": 388,
+      "enum": "RegentStardust",
+      "model": "Stardust",
+      "key": "STARDUST",
+      "portrait": "images/packed/card_portraits/regent/stardust.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "RandomEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004580",
+        "get_HasStarCostX": "0x06004581",
+        "get_CanonicalVars": "0x06004582",
+        "OnPlay": "0x06004583",
+        "OnUpgrade": "0x06004584"
+      }
+    },
+    {
+      "id": 389,
+      "enum": "RegentStrike",
+      "model": "StrikeRegent",
+      "key": "STRIKE_REGENT",
+      "portrait": "images/packed/card_portraits/regent/strike_regent.png",
+      "rarity": 1,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [
+        "Strike"
+      ],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x060045b2",
+        "get_CanonicalTags": "0x060045b3",
+        "get_CanonicalVars": "0x060045b4",
+        "OnPlay": "0x060045b5",
+        "OnUpgrade": "0x060045b6"
+      }
+    },
+    {
+      "id": 390,
+      "enum": "RegentSummonForth",
+      "model": "SummonForth",
+      "key": "SUMMON_FORTH",
+      "portrait": "images/packed/card_portraits/regent/summon_forth.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Forge": {
+          "base": 8,
+          "upgraded": 11
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060045c4",
+        "get_CanonicalVars": "0x060045c5",
+        "get_ExtraHoverTips": "0x060045c6",
+        "OnPlay": "0x060045c7",
+        "OnUpgrade": "0x060045c8"
+      }
+    },
+    {
+      "id": 391,
+      "enum": "RegentSupermassive",
+      "model": "Supermassive",
+      "key": "SUPERMASSIVE",
+      "portrait": "images/packed/card_portraits/regent/supermassive.png",
+      "rarity": 3,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 5,
+          "upgraded": 5
+        },
+        "ExtraDamage": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": "computed at runtime"
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060045d4",
+        "get_CanonicalVars": "0x060045d5",
+        "OnPlay": "0x060045d6",
+        "OnUpgrade": "0x060045d7"
+      }
+    },
+    {
+      "id": 392,
+      "enum": "RegentSwordSage",
+      "model": "SwordSage",
+      "key": "SWORD_SAGE",
+      "portrait": "images/packed/card_portraits/regent/sword_sage.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "SwordSagePower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060045f3",
+        "get_ExtraHoverTips": "0x060045f4",
+        "get_CanonicalVars": "0x060045f5",
+        "OnPlay": "0x060045f6",
+        "OnUpgrade": "0x060045f7"
+      }
+    },
+    {
+      "id": 393,
+      "enum": "RegentTerraforming",
+      "model": "Terraforming",
+      "key": "TERRAFORMING",
+      "portrait": "images/packed/card_portraits/regent/terraforming.png",
+      "rarity": 3,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "VigorPower": {
+          "base": 7,
+          "upgraded": 10
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x0600461f",
+        "get_CanonicalVars": "0x06004620",
+        "get_ExtraHoverTips": "0x06004621",
+        "OnPlay": "0x06004622",
+        "OnUpgrade": "0x06004623"
+      }
+    },
+    {
+      "id": 394,
+      "enum": "RegentTheSealedThrone",
+      "model": "TheSealedThrone",
+      "key": "THE_SEALED_THRONE",
+      "portrait": "images/packed/card_portraits/regent/the_sealed_throne.png",
+      "rarity": 5,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "star_cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x0600464f",
+        "get_CanonicalStarCost": "0x06004650",
+        "OnPlay": "0x06004651",
+        "OnUpgrade": "0x06004652"
+      }
+    },
+    {
+      "id": 395,
+      "enum": "RegentTheSmith",
+      "model": "TheSmith",
+      "key": "THE_SMITH",
+      "portrait": "images/packed/card_portraits/regent/the_smith.png",
+      "rarity": 4,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 4,
+        "upgraded": 4
+      },
+      "variables": {
+        "Forge": {
+          "base": 30,
+          "upgraded": 40
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004653",
+        "get_CanonicalStarCost": "0x06004654",
+        "get_CanonicalVars": "0x06004655",
+        "get_ExtraHoverTips": "0x06004656",
+        "OnPlay": "0x06004657",
+        "OnUpgrade": "0x06004658"
+      }
+    },
+    {
+      "id": 396,
+      "enum": "RegentTyranny",
+      "model": "Tyranny",
+      "key": "TYRANNY",
+      "portrait": "images/packed/card_portraits/regent/tyranny.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {},
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x060046b3",
+        "get_ExtraHoverTips": "0x060046b4",
+        "OnPlay": "0x060046b5",
+        "OnUpgrade": "0x060046b6"
+      }
+    },
+    {
+      "id": 397,
+      "enum": "RegentVenerate",
+      "model": "Venerate",
+      "key": "VENERATE",
+      "portrait": "images/packed/card_portraits/regent/venerate.png",
+      "rarity": 1,
+      "type": "Skill",
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Stars": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": false,
+      "evidence": {
+        ".ctor": "0x060046f6",
+        "get_CanonicalVars": "0x060046f7",
+        "OnPlay": "0x060046f8",
+        "OnUpgrade": "0x060046f9"
+      }
+    },
+    {
+      "id": 398,
+      "enum": "RegentVoidForm",
+      "model": "VoidForm",
+      "key": "VOID_FORM",
+      "portrait": "images/packed/card_portraits/regent/void_form.png",
+      "rarity": 4,
+      "type": "Power",
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "VoidFormPower": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004704",
+        "get_CanonicalKeywords": "0x06004705",
+        "get_CanonicalVars": "0x06004706",
+        "OnPlay": "0x06004707",
+        "OnUpgrade": "0x06004708"
+      }
+    },
+    {
+      "id": 399,
+      "enum": "RegentWroughtInWar",
+      "model": "WroughtInWar",
+      "key": "WROUGHT_IN_WAR",
+      "portrait": "images/packed/card_portraits/regent/wrought_in_war.png",
+      "rarity": 2,
+      "type": "Attack",
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "star_cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 9
+        },
+        "Forge": {
+          "base": 7,
+          "upgraded": 9
+        }
+      },
+      "dynamic_variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "tags": [],
+      "can_generate_in_combat": true,
+      "evidence": {
+        ".ctor": "0x06004752",
+        "get_CanonicalVars": "0x06004753",
+        "get_ExtraHoverTips": "0x06004754",
+        "OnPlay": "0x06004755",
+        "OnUpgrade": "0x06004756"
+      }
+    }
+  ],
+  "generated_models": [
+    "MinionStrike",
+    "MinionDiveBomb",
+    "MinionSacrifice",
+    "Debris"
+  ],
+  "retained_generated_models": [
+    "SovereignBlade"
+  ],
+  "generated_metadata": [
+    {
+      "model": "MinionStrike",
+      "enum": "MinionStrike",
+      "key": "MINION_STRIKE",
+      "portrait": "images/packed/card_portraits/token/minion_strike.png",
+      "type": "Attack",
+      "cost": 0,
+      "damage": [
+        6,
+        9
+      ],
+      "draw": 1,
+      "keywords": [
+        "Exhaust"
+      ],
+      "tags": [
+        "Strike",
+        "Minion"
+      ],
+      "max_upgrade_level": 1,
+      "evidence": [
+        "0x06004201",
+        "0x06004204",
+        "0x06004205",
+        "0x06004206"
+      ]
+    },
+    {
+      "model": "MinionDiveBomb",
+      "enum": "MinionDiveBomb",
+      "key": "MINION_DIVE_BOMB",
+      "portrait": "images/packed/card_portraits/token/minion_dive_bomb.png",
+      "type": "Attack",
+      "cost": 0,
+      "damage": [
+        13,
+        16
+      ],
+      "keywords": [
+        "Exhaust"
+      ],
+      "tags": [
+        "Minion"
+      ],
+      "max_upgrade_level": 1,
+      "evidence": [
+        "0x060041f4",
+        "0x060041f6",
+        "0x060041f8",
+        "0x060041f9"
+      ]
+    },
+    {
+      "model": "MinionSacrifice",
+      "enum": "MinionSacrifice",
+      "key": "MINION_SACRIFICE",
+      "portrait": "images/packed/card_portraits/token/minion_sacrifice.png",
+      "type": "Skill",
+      "cost": 0,
+      "block": [
+        7,
+        10
+      ],
+      "keywords": [
+        "Exhaust"
+      ],
+      "tags": [
+        "Minion"
+      ],
+      "max_upgrade_level": 1,
+      "evidence": [
+        "0x060041fa",
+        "0x060041fe",
+        "0x060041ff",
+        "0x06004200"
+      ]
+    },
+    {
+      "model": "Debris",
+      "enum": "Debris",
+      "key": "DEBRIS",
+      "portrait": "images/packed/card_portraits/status/debris.png",
+      "type": "Status",
+      "cost": 1,
+      "keywords": [
+        "Exhaust"
+      ],
+      "max_upgrade_level": 0,
+      "evidence": [
+        "0x06003db2",
+        "0x06003db3",
+        "0x06003db4",
+        "0x06003db5"
+      ]
+    }
+  ],
+  "state_powers": [
+    {
+      "enum": "Arsenal",
+      "model": "ArsenalPower",
+      "key": "ARSENAL_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "BlackHole",
+      "model": "BlackHolePower",
+      "key": "BLACK_HOLE_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "ChildOfTheStars",
+      "model": "ChildOfTheStarsPower",
+      "key": "CHILD_OF_THE_STARS_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Furnace",
+      "model": "FurnacePower",
+      "key": "FURNACE_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Genesis",
+      "model": "GenesisPower",
+      "key": "GENESIS_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "MonarchsGaze",
+      "model": "MonarchsGazePower",
+      "key": "MONARCHS_GAZE_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "PaleBlueDot",
+      "model": "PaleBlueDotPower",
+      "key": "PALE_BLUE_DOT_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Parry",
+      "model": "ParryPower",
+      "key": "PARRY_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "PillarOfCreation",
+      "model": "PillarOfCreationPower",
+      "key": "PILLAR_OF_CREATION_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Reflect",
+      "model": "ReflectPower",
+      "key": "REFLECT_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Royalties",
+      "model": "RoyaltiesPower",
+      "key": "ROYALTIES_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "SeekingEdge",
+      "model": "SeekingEdgePower",
+      "key": "SEEKING_EDGE_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "SpectrumShift",
+      "model": "SpectrumShiftPower",
+      "key": "SPECTRUM_SHIFT_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "SwordSage",
+      "model": "SwordSagePower",
+      "key": "SWORD_SAGE_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "TheSealedThrone",
+      "model": "TheSealedThronePower",
+      "key": "THE_SEALED_THRONE_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Tyranny",
+      "model": "TyrannyPower",
+      "key": "TYRANNY_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "VoidForm",
+      "model": "VoidFormPower",
+      "key": "VOID_FORM_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "ForegoneConclusion",
+      "model": "ForegoneConclusionPower",
+      "key": "FOREGONE_CONCLUSION_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "EnergyNextTurn",
+      "model": "EnergyNextTurnPower",
+      "key": "ENERGY_NEXT_TURN_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "StarsNextTurn",
+      "model": "StarNextTurnPower",
+      "key": "STAR_NEXT_TURN_POWER",
+      "instanced": false
+    },
+    {
+      "enum": "Monologue",
+      "model": "MonologuePower",
+      "key": "MONOLOGUE_POWER",
+      "instanced": true
+    },
+    {
+      "enum": "Orbit",
+      "model": "OrbitPower",
+      "key": "ORBIT_POWER",
+      "instanced": true
+    }
+  ],
+  "enemy_power_keys": [
+    "CONQUEROR_POWER",
+    "MONARCHS_GAZE_STRENGTH_DOWN_POWER",
+    "CRUSH_UNDER_POWER",
+    "DYING_STAR_POWER"
+  ],
+  "payment_evidence": {
+    "spend_resources": "0x06009b0c",
+    "energy_then_star_hooks": [
+      "0x06009b0a",
+      "0x06009b0e"
+    ],
+    "star_x_bypasses_modifiers": "0x060018da",
+    "energy_x_bypasses_modifiers": "0x06005220",
+    "automatic_resource_values": "0x0600b229"
+  }
+}

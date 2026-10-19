@@ -9,11 +9,12 @@ bool validate(const State&s){
     if(s.demon_form<0||s.demon_form>9999||s.infinite_blades<0||s.infinite_blades>MaxCards||
        s.block_next_turn<0||s.block_next_turn>9999||s.draw_next_turn<0||s.draw_next_turn>MaxCards||
        s.flame_barrier<0||s.flame_barrier>9999)return false;
-    if(s.relic_flash&~((1u<<RelicKinds)-1))return false;
+    constexpr RelicMask relic_mask=(RelicMask(1)<<RelicKinds)-1;
+    if((s.relic_flash&~relic_mask)||(s.relics&~relic_mask))return false;
     if(s.no_draw>1||s.reward_claimed>7||(unsigned)s.reward_potion>PotionKinds||s.potion_chance>100)return false;
-    if(s.temporary_strength<0||s.temporary_strength>s.strength||s.temporary_dexterity<0||s.temporary_dexterity>9999||
+    if(s.temporary_strength<0||s.temporary_strength>9999||s.temporary_dexterity<0||s.temporary_dexterity>9999||
        s.vigor<0||s.vigor>9999||s.attack_vigor<0||s.attack_vigor>9999||s.thorns<0||s.thorns>9999)return false;
-    if(s.block<0||s.block>9999||s.strength<0||s.strength>9999||s.pain<0||s.pain>9999||s.embrace<0||s.embrace>99)return false;
+    if(s.block<0||s.block>9999||s.strength< -9999||s.strength>9999||s.pain<0||s.pain>9999||s.embrace<0||s.embrace>99)return false;
     if(s.deck_count<1||s.deck_count>MaxDeck||s.card_count>MaxCards||s.hand.count>MaxHand||s.effect_count>MaxEffects||s.log_count>24||s.power_count>2)return false;
     if(s.expansion.depth>MaxAutoFrames||s.enemy_count>2||s.playing< -1||s.playing>=s.card_count)return false;
     if(s.current_node< -1||s.current_node>=MapNodes||s.next_row>MapRows||s.encounter>1||s.gold<0||s.gold>9999||s.last_gold<0||s.last_gold>99)return false;
@@ -22,18 +23,18 @@ bool validate(const State&s){
     for(auto id:s.shop_relics)if(id&&!relic_definition(id))return false;
     for(auto p:s.shop_potions)if(p>PotionKinds)return false;
     if(s.relic_count>RelicKinds||s.dexterity< -9999||s.dexterity>9999||s.double_attack>1)return false;
-    uint32_t owned=0;
-    for(unsigned i=0;i<s.relic_count;i++){unsigned index=s.relic_order[i];if(index>=RelicKinds)return false;unsigned bit=relic_definitions[index].id;if(owned&bit)return false;owned|=bit;}
+    RelicMask owned=0;
+    for(unsigned i=0;i<s.relic_count;i++){unsigned index=s.relic_order[i];if(index>=RelicKinds)return false;RelicMask bit=relic_definitions[index].id;if(owned&bit)return false;owned|=bit;}
     if(owned!=s.relics)return false;
     for(int i=0;i<RelicKinds;i++){
-        unsigned id=relic_definitions[i].id,limit=relic_counter_limit(id);
+        RelicMask id=relic_definitions[i].id;unsigned limit=relic_counter_limit(id);
         unsigned maximum=id==CentennialPuzzle?1:limit?limit-1:0;
         if(s.relic_counters[i]>maximum||(!(s.relics&id)&&s.relic_counters[i]))return false;
     }
     if(s.treasure_state>2)return false;
     if(s.phase!=Phase::Treasure&&(s.treasure_state||s.treasure_relic))return false;
     if(!s.treasure_state&&s.treasure_relic)return false;
-    if(s.treasure_relic&&(!relic_definition(s.treasure_relic)||s.treasure_relic==BurningBlood||s.treasure_relic==RingOfTheSnake))return false;
+    if(s.treasure_relic&&(!relic_definition(s.treasure_relic)||s.treasure_relic==BurningBlood||s.treasure_relic==RingOfTheSnake||s.treasure_relic==CrackedCore||s.treasure_relic==DivineRight||s.treasure_relic==BoundPhylactery))return false;
     if(s.treasure_relic&&s.treasure_state==1&&(s.relics&s.treasure_relic))return false;
     if(s.treasure_relic&&s.treasure_state==2&&!(s.relics&s.treasure_relic))return false;
     for(auto p:s.potions)if((unsigned)p>PotionKinds)return false;
@@ -51,51 +52,64 @@ bool validate(const State&s){
         if(s.event_deck_action!=EventDeckAction::Transform&&s.event_remaining)return false;
     }else if(s.phase==Phase::Transform&&s.event_id==EventId::AromaOfChaos)return false;
     if(combat_phase(s.phase)&&(!s.enemy_count||s.turn<1))return false;
-    for(int i=0;i<s.deck_count;i++)if(s.deck[i].kind>=CardKinds||s.deck[i].upgraded>1)return false;
-    for(int i=0;i<s.card_count;i++)if(s.cards[i].kind>=CardKinds||s.cards[i].upgraded>1)return false;
+    for(int i=0;i<s.deck_count;i++)if(s.deck[i].kind>=CardKinds||s.deck[i].upgraded>1||(s.deck[i].upgraded&&!card_upgradeable({s.deck[i].kind,0})))return false;
+    for(int i=0;i<s.card_count;i++)if(s.cards[i].kind>=CardKinds||s.cards[i].upgraded>1||(s.cards[i].upgraded&&!card_upgradeable({s.cards[i].kind,0})))return false;
     for(int i=0;i<3;i++)if(s.reward[i]>=CardKinds)return false;
     for(int i=0;i<s.power_count;i++)if(s.power_order[i]>1||(i&&s.power_order[0]==s.power_order[1]))return false;
     uint8_t seen[MaxCards]={};
     for(int z=0;z<5;z++){const Pile&p=pile(s,(Zone)z);if(p.count>MaxCards)return false;
         for(int i=0;i<p.count;i++){int id=p.ids[i];if(id>=s.card_count||seen[id]||s.zones[id]!=(Zone)z)return false;seen[id]=1;}}
-    if(s.playing>=0){if(seen[s.playing]||s.zones[s.playing]!=Zone::Limbo)return false;seen[s.playing]=1;}
+    // A callback can return an active card to Hand or Exhaust before its
+    // CardPlay finishes. It still has one physical pile owner and one active
+    // frame; frames must never share the same instance.
+    bool active[MaxCards]{};
+    auto active_card=[&](int id){
+        if(id<0||id>=s.card_count||active[id])return false;active[id]=true;
+        if(s.zones[id]==Zone::Limbo){if(seen[id])return false;seen[id]=1;return true;}
+        return (s.zones[id]==Zone::Hand||s.zones[id]==Zone::Exhaust)&&seen[id];
+    };
+    if(s.playing>=0&&!active_card(s.playing))return false;
     for(unsigned i=0;i<s.expansion.depth;i++){
         int id=s.expansion.frames[i].playing;if(id<0)continue;
-        if(id>=s.card_count||seen[id]||s.zones[id]!=Zone::Limbo)return false;seen[id]=1;
+        if(!active_card(id))return false;
     }
     // Batch auto-play reserves its cards in Limbo before playing any of them.
-    // Each reservation is owned by exactly one queued AutoInstance, never by
-    // both a pending instruction and the active/suspended play stack.
+    // Non-active Limbo reservations are owned by exactly one AutoInstance.
+    // Decisions can queue later plays of an already active instance; Eidolon
+    // references cards still in Exhaust. Such plans do not own another card.
     for(unsigned i=0;i<s.effect_count;i++){
         const auto&e=s.effects[i];if(e.kind!=EffectKind::Extended)continue;
         if(e.target==(int)XOp::AutoInstance){
             if(e.value<0||e.value>=s.card_count||e.aux)return false;
-            if(s.zones[e.value]==Zone::Limbo){if(seen[e.value])return false;seen[e.value]=1;}
+            if(s.zones[e.value]==Zone::Limbo&&!active[e.value]){if(seen[e.value])return false;seen[e.value]=1;}
         }else if(e.target==(int)XOp::AutoTop){
             if(!valid_extension_effect(s,e))return false;
             const unsigned reserved=(unsigned)e.aux&1023;
             if(reserved>s.effect_count-i-1)return false;
+            bool batch_seen[MaxCards]{};
             for(unsigned j=1;j<=reserved;j++){
                 const auto&next=s.effects[i+j];
                 if(next.kind!=EffectKind::Extended||next.target!=(int)XOp::AutoInstance||
-                   next.value<0||next.value>=s.card_count||next.aux||
-                   s.zones[next.value]!=Zone::Limbo)return false;
+                   next.value<0||next.value>=s.card_count||next.aux)return false;
+                if(active[next.value]||batch_seen[next.value])return false;batch_seen[next.value]=true;
+                Zone z=s.zones[next.value];if(z!=Zone::Limbo&&z!=Zone::Hand&&z!=Zone::Exhaust)return false;
             }
         }
     }
     for(int i=0;i<s.card_count;i++)if(!seen[i])return false;
-    for(int i=0;i<s.enemy_count;i++){const auto&e=s.enemies[i];if(e.hp<0||e.hp>e.max_hp||e.max_hp<42||e.max_hp>46||e.block<0||e.block>9999||e.strength< -9999||e.strength>9999||e.vulnerable<0||e.vulnerable>9999||e.move>2||e.weak<0||e.weak>9999||e.poison<0||e.poison>9999)return false;}
+    for(int i=0;i<s.enemy_count;i++){const auto&e=s.enemies[i];if(e.hp<0||e.hp>e.max_hp||e.max_hp<1||e.max_hp>9999||e.block<0||e.block>9999||e.strength< -9999||e.strength>9999||e.vulnerable<0||e.vulnerable>9999||e.move>2||e.weak<0||e.weak>9999||e.poison<0||e.poison>9999)return false;}
     for(int i=0;i<s.effect_count;i++){
         const auto&e=s.effects[i];
         if(e.kind==EffectKind::Extended){if(!valid_extension_effect(s,e))return false;continue;}
         if((unsigned)e.kind>(unsigned)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies))return false;
-        if(e.aux&&(e.kind!=EffectKind::Block||e.aux!=1))return false;
+        if(e.aux&&!((e.kind==EffectKind::Block&&e.aux==1)||(e.kind==EffectKind::Damage&&e.aux==2)))return false;
         if(e.kind==EffectKind::ExhaustCard&&e.value>=s.card_count)return false;
     }
     if(choice_phase(s.phase)&&(!s.effect_count||!choice_pile(s).count))return false;
     if(choice_phase(s.phase)&&s.phase!=Phase::ExtendedChoice&&s.playing<0&&
        !(s.phase==Phase::DiscardChoice&&!s.expansion.enemy_side&&s.silent.powers[(unsigned)SPower::ToolsOfTheTrade]>0))return false;
     if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(s.playing>=0||s.effect_count))return false;
-    if(!validate_extension(s)||!valid_ironclad_state(s)||!valid_silent_state(s))return false;
+    for(unsigned i=0;i<s.log_count;i++)if((unsigned)s.logs[i].kind>(unsigned)LogKind::RelicIndex)return false;
+    if(!validate_extension(s)||!valid_ironclad_state(s)||!valid_silent_state(s)||!valid_defect_state(s)||!valid_regent_state(s)||!valid_necro_state(s))return false;
     return true;
 }

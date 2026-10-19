@@ -90,8 +90,8 @@ struct Canvas{
     }
     void actor(int actor,int x,int y){
         int id=actor?AnimEnemyIdle:AnimHeroIdle;uint32_t elapsed=a.animation*33;
-        const auto&m=a.motion[actor];if(m.clip>=0&&(int32_t)(a.animation-m.start)>=0){int actual=m.clip;if(actor==0&&a.game.character==Character::Silent&&actual>=AnimHeroIdle&&actual<=AnimHeroCast)actual=AnimSilentIdle+actual;auto c=a.content.clip(actual);uint32_t t=(a.animation-m.start)*33;if(t<(uint32_t)c.count*c.frame_ms){id=m.clip;elapsed=t;}}
-        if(actor==0&&a.game.character==Character::Silent&&id>=AnimHeroIdle&&id<=AnimHeroCast)id=AnimSilentIdle+(id-AnimHeroIdle);
+        const auto&m=a.motion[actor];if(m.clip>=0&&(int32_t)(a.animation-m.start)>=0){int actual=actor?m.clip:character_animation(a.game.character,m.clip);auto c=a.content.clip(actual);uint32_t t=(a.animation-m.start)*33;if(t<(uint32_t)c.count*c.frame_ms){id=m.clip;elapsed=t;}}
+        if(actor==0)id=character_animation(a.game.character,id);
         clip(id,x,y,elapsed+((id==AnimEnemyIdle)?actor*347:0));
     }
     int width(const char*p,int size){int w=0;while(*p&&*p!='\n')w+=a.content.glyph(utf8(p),size).advance;return w;}
@@ -138,6 +138,12 @@ struct Canvas{
         char text[16]={};TextBuffer t{text,sizeof text,0};if(value==-1)t.text("X");else t.number(value);
         for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)if(i||j)this->text(text,x+i,y+j,size,Ink);
         this->text(text,x,y,size,White);
+    }
+    void star_label(int value,int x,int y,int size=12){
+        ui(U_Star,x,y+1,size+1,size+1);
+        char label[16]={};TextBuffer t{label,sizeof label,0};if(value<0)t.ch('X');else t.number(value);
+        for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)if(i||j)text(label,x+size+2+i,y+j,size,Ink);
+        text(label,x+size+2,y,size,Gold);
     }
     void hp(int value,int total,int x,int y,int w){rect(x,y,w,5,Ink);rect(x,y,w*value/mx(1,total),5,Red);char b[24]={};TextBuffer t{b,sizeof b,0};t.number(value);t.ch('/');t.number(total);centered(b,x,y+3,w,10);}
     void button(const char*p,int x,int y,int w,bool selected,int h=25){

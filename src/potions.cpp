@@ -57,7 +57,7 @@ bool use_potion(State&s,int slot,int target){
     case Potion::Vulnerable:apply_vulnerable(s,target,3);break;
     case Potion::Weak:apply_weak(s,target,3);break;
     case Potion::Fruit:increase_max_hp(s,5);break;
-    case Potion::Forge:for(int i=0;i<s.hand.count;i++)s.cards[s.hand.ids[i]].upgraded=1;break;
+    case Potion::Forge:for(int i=0;i<s.hand.count;i++)if(card_upgradeable(s.cards[s.hand.ids[i]]))s.cards[s.hand.ids[i]].upgraded=1;break;
     case Potion::Flex:grant(s.strength,5,&s.temporary_strength);break;
     case Potion::Speed:grant(s.dexterity,5,&s.temporary_dexterity);break;
     case Potion::Bronze:grant(s.thorns,3);break;

@@ -16,19 +16,20 @@ const HitRegion* App::hit_at(int x,int y)const{
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
-        ((uint32_t)pile_tab<<17)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
+        ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
 void App::pointer_cancel(){hand_focus=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
-void App::open_card_detail(Card card){
+void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
-    detail_card=card.kind+256*card.upgraded;detail_scroll=0;detail_instance=-1;detail_cost_override=-2;pointer_cancel();
+    detail_card=card_token(card);detail_scroll=0;detail_instance=-1;detail_cost_override=-2;
+    detail_deck_index=deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==card.kind?deck_index:-1;pointer_cancel();
 }
 void App::open_choice_detail(int token){
     if(token>=0&&token<game.card_count){
         open_card_detail(game.cards[token]);detail_instance=token;
         detail_cost_override=cost(game,token);
-        if(game.phase==Phase::ExtendedChoice&&game.expansion.choice_free&&cost(game.cards[token])>=0){
+        if(choice_free_energy(game)&&cost(game.cards[token])>=0){
             for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)detail_cost_override=0;
         }
         return;
@@ -37,7 +38,7 @@ void App::open_choice_detail(int token){
     bool offered=false;for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)offered=true;
     if(!offered)return;
     open_card_detail(choice_card(game,token));
-    if(game.expansion.choice_free&&cost(choice_card(game,token))>=0)detail_cost_override=0;
+    if(choice_free_energy(game)&&cost(choice_card(game,token))>=0)detail_cost_override=0;
 }
 void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
@@ -48,11 +49,12 @@ void App::pointer_move(int x,int y){
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
     switch(h->kind){
     case HitKind::UiAction:
-        if(!pointer.held&&game.phase==Phase::Reward&&!reward_cards){
+        if(!pointer.held&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
             if((UiAction)h->value==UiAction::RewardGold)cursor=0;
             else if((UiAction)h->value==UiAction::RewardCards)cursor=1;
             else if((UiAction)h->value==UiAction::RewardPotion)cursor=2;
-            else if((UiAction)h->value==UiAction::LeaveRewards)cursor=3;
+            else if((UiAction)h->value==UiAction::RewardGrimoire)cursor=3;
+            else if((UiAction)h->value==UiAction::LeaveRewards)cursor=game.necro.grimoire_pending?4:3;
         }break;
     case HitKind::Menu:if(!pointer.held)menu=h->value;break;
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
@@ -98,7 +100,7 @@ void App::pointer_scroll(int rows){
     else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-MapRows,MapRows);
     else if(panel==5)scroll=clamp(scroll+rows,0,game.relic_count?game.relic_count-1:0);
     else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
-    else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)
+    else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
@@ -153,7 +155,8 @@ void App::pointer_button(bool down){
     case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::InstanceCard:open_choice_detail(hit.value);break;
-    case HitKind::PileCard:open_card_detail({(uint8_t)(hit.value&255),(uint8_t)(hit.value>>8)});break;
+    case HitKind::PileCard:open_card_detail(card_from_token(hit.value));break;
+    case HitKind::DeckCard:if(hit.value>=0&&hit.value<game.deck_count)open_card_detail(game.deck[hit.value],hit.value);break;
     case HitKind::Relic:scroll=hit.value;open_owned_relic(hit.value);break;
     case HitKind::OwnedRelic:open_owned_relic(hit.value);break;
     case HitKind::Potion:scroll=hit.value;break;

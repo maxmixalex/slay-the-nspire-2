@@ -1,0 +1,5 @@
+ DPower,DChannel,DChannelAppend,DOrbPassive,DEvoke,DEvokeAll,DSlots,DFocus,
+ DPowerTurn,DGeneratedListener,DRocketDiscount,DAdaptiveClone,DAllForOne,
+ DClaw,DCompact,DGenetic,DModded,DMomentum,DScrape,DScrapeDiscard,
+ DFlak,DHits,DUproar,DFtl,DTesla,DDarkness,DVoltaic,DStatus,DReboot,
+ DOrbsStart,DExhaustStatus,DDoubleEnergy,DCompileDraw,DSynchronize,

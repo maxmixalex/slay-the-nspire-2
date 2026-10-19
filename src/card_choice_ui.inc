@@ -10,14 +10,31 @@ static const char* choice_title(const State&s){
     case XChoice::Discard:return "从弃牌堆选择";
     case XChoice::Top:return "放回抽牌堆顶";
     case XChoice::DiscardRedraw:return "丢弃并重新抽牌";
-    case XChoice::Free:return "选择一张牌免费打出";
+    case XChoice::Free:return "选择本回合零能量费的牌";
     case XChoice::Transform:return "选择要变化的牌";
+    case XChoice::IUpgrade:return "选择要升级的牌";
+    case XChoice::SlySkill:return "选择赋予奇巧的技能牌";
+    case XChoice::NightmareCard:return "选择下回合复制的牌";
+    case XChoice::RTransformHand:return "将一张手牌变为仆从打击";
+    case XChoice::RTransformDraw:return "选择变为仆从俯冲的抽牌";
+    case XChoice::RTransformGuards:return "将任意手牌变为仆从捐躯";
+    case XChoice::RDecisions:return "选择一张技能免费打出三次";
+    case XChoice::RHeirloom:return "选择一张无色牌复制";
+    case XChoice::RDiscardTop:return "将一张弃牌放回抽牌堆顶";
+    case XChoice::RForegone:return "从抽牌堆选择加入手牌";
+    case XChoice::RTyranny:return "暴政：选择要消耗的手牌";
+    case XChoice::NCleanse:return "选择要消耗的抽牌堆卡牌";
+    case XChoice::NDredge:return "将弃牌堆的牌放回手牌";
+    case XChoice::NEthereal:return "选择赋予虚无的手牌";
+    case XChoice::NRetain:return "选择赋予保留的手牌";
+    case XChoice::NSeance:return "将一张抽牌变化为灵魂";
+    case XChoice::NTransfigure:return "选择增费并赋予重放的牌";
     default:return "选择要消耗的牌";
     }
 }
 static int choice_display_cost(const State&s,int token){
     const int base=cost(choice_card(s,token));if(base<0)return base;
-    if(s.phase==Phase::ExtendedChoice&&s.expansion.choice_free)return 0;
+    if(choice_free_energy(s))return 0;
     return token<s.card_count?cost(s,token):base;
 }
 static void card_choice_screen(Canvas&c){
@@ -28,7 +45,7 @@ static void card_choice_screen(Canvas&c){
     a.cursor=mn(mx(0,a.cursor),mx(0,source.count-1));const int first=offer?0:a.cursor/10*10;
     c.dim(0,0,320,240,215);c.centered(choice_title(s),0,8,320,16,Gold);
     char label[96]={};TextBuffer text{label,sizeof label,0};
-    if(offer&&s.expansion.choice_free)text.text("本回合免费 · ");
+    if(offer&&choice_free_energy(s))text.text("本回合零能量费 · ");
     text.text("已选择 ");text.number(a.choice_selected_count);text.text(optional?" / 最多 ":" / ");text.number(limit);
     c.centered(label,0,31,320,10,White);
     for(int i=first;i<mn(source.count,first+(offer?3:10));i++){
@@ -36,12 +53,12 @@ static void card_choice_screen(Canvas&c){
         for(unsigned j=0;j<a.choice_selected_count;j++)if(a.choice_selected[j]==id)selected=true;
         if(offer){
             const int x=23+i*97,y=65;
-            large_card(c,card,x,y,selected||a.cursor==i,choice_display_cost(s,id));
+            large_card(c,card,x,y,selected||a.cursor==i,choice_display_cost(s,id),card_star_cost(s,card,id<s.card_count?id:-1),id<s.card_count?id:-1);
             if(selected)c.box(x-4,y-4,88,120,Green);
             c.hit(x-5,y-5,90,126,HitKind::CombatChoice,id);
         }else{
             const int x=26+(i-first)%5*56,y=48+(i-first)/5*73;
-            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id));
+            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id),card_star_cost(s,card,id<s.card_count?id:-1));
             if(selected){c.box(x-3,y-3,53,72,Green);c.rect(x+32,y+46,14,17,Panel);c.text("✓",x+33,y+46,12,Green);}
             c.hit(x-3,y-3,53,72,HitKind::CombatChoice,id);
         }

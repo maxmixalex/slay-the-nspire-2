@@ -1,9 +1,12 @@
-"""Strict private NSP2/10..12 reader and append-only versioned encoder."""
+"""Strict private NSP2/10..13 reader and append-only versioned encoder."""
 import struct
 from build_content import fnv
 from character_ui_profile import CARDS,STRINGS,AUXILIARY
-LIMIT=8*1024*1024
-PROFILES={10:(68,269,105),11:(114,407,185),12:(CARDS,STRINGS,AUXILIARY)}
+from all_character_ui_profile import CARDS as ALL_CARDS,STRINGS as ALL_STRINGS,AUXILIARY as ALL_AUXILIARY,CLIPS as ALL_CLIPS
+LIMIT=12*1024*1024
+PROFILES={10:(68,269,105),11:(114,407,185),12:(CARDS,STRINGS,AUXILIARY),13:(ALL_CARDS,ALL_STRINGS,ALL_AUXILIARY)}
+CLIP_COUNTS={10:17,11:17,12:17,13:ALL_CLIPS}
+GLYPH_LIMITS={10:8192,11:8192,12:8192,13:16384}
 
 class PackData:
     """Bounded directory reader/writer shared by conversion regression tests."""
@@ -12,9 +15,9 @@ class PackData:
         data=bytes(data)
         magic,self.version,commit,n,ni,ng,ns,nc,nk,digest=struct.unpack_from('<4s9I',data)
         if (magic!=b'NSP2' or self.version not in PROFILES or commit!=0x41cef1ea or
-            n!=len(data) or digest!=fnv(data[40:])):raise ValueError('Expected intact NSP2/10, NSP2/11 or NSP2/12')
+            n!=len(data) or digest!=fnv(data[40:])):raise ValueError('Expected intact pinned NSP2/10..13')
         expected_cards,expected_strings,nu=PROFILES[self.version]
-        if ni>8192 or ng>8192 or ns!=expected_strings or nc!=17 or nk!=expected_cards:
+        if ni>8192 or ng>GLYPH_LIMITS[self.version] or ns!=expected_strings or nc!=CLIP_COUNTS[self.version] or nk!=expected_cards:
             raise ValueError('Incompatible directory profile')
         clips_at=40+ni*16+ng*16+ns*8;cards_at=clips_at+nc*16;aux_at=cards_at+nk*16
         end=aux_at+nu*4
@@ -46,11 +49,12 @@ class PackData:
         if any(r[0]>=ni or any(t>=ns for t in r[1:]) for r in self.cards) or any(i>=ni for i in self.aux):raise ValueError('Invalid directory reference')
         for i in range(nc):
             first,count,ms,px,py,reserved=struct.unpack_from('<IHHhhI',self.clips,i*16)
-            if not 0<count<=256 or first+count>ni or not 0<ms<=1000 or reserved:raise ValueError('Invalid clip')
+            if not 0<count<=256 or first+count>ni or not 0<ms<=1000 or reserved or not -640<=px<=640 or not -480<=py<=480:raise ValueError('Invalid clip')
     def encode(self,version:int=11)->bytes:
         ni,ng,ns,nk,nu=len(self.images),len(self.glyphs),len(self.strings),len(self.cards),len(self.aux)
-        if version not in (11,12) or ni>8192 or ng>8192 or (nk,ns,nu)!=PROFILES[version]:raise ValueError('Output profile exceeded')
-        start=40+ni*16+ng*16+ns*8+17*16+nk*16+nu*4
+        if version not in (11,12,13) or ni>8192 or ng>GLYPH_LIMITS[version] or (nk,ns,nu)!=PROFILES[version] or len(self.clips)!=CLIP_COUNTS[version]*16:raise ValueError('Output profile exceeded')
+        nc=CLIP_COUNTS[version]
+        start=40+ni*16+ng*16+ns*8+nc*16+nk*16+nu*4
         payload=bytearray();unique={}
         def add(raw:bytes,align:int=1)->int:
             key=(align,raw)
@@ -61,6 +65,6 @@ class PackData:
         glyphs=b''.join(struct.pack('<IIHBBHH',cp,add(raw),px,w,h,advance,enc) for (cp,px),(w,h,advance,enc,raw) in sorted(self.glyphs.items(),key=lambda p:(p[0][1],p[0][0])))
         strings=b''.join(struct.pack('<II',add(t.encode()+b'\0'),len(t.encode())) for t in self.strings)
         body=images+glyphs+strings+self.clips+b''.join(struct.pack('<4I',*r) for r in self.cards)+struct.pack('<'+'I'*nu,*self.aux)+payload
-        output=struct.pack('<4s9I',b'NSP2',version,0x41cef1ea,40+len(body),ni,ng,ns,17,nk,fnv(body))+body
+        output=struct.pack('<4s9I',b'NSP2',version,0x41cef1ea,40+len(body),ni,ng,ns,nc,nk,fnv(body))+body
         if len(output)>LIMIT:raise ValueError(f'Pack exceeds resident buffer: {len(output)}')
         return output

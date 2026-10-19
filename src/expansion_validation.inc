@@ -1,16 +1,20 @@
 static bool validate_extension(const State&s){
  const auto&x=s.expansion;
- bool after_seen[(unsigned)PostPlayActor::Relics]{};bool after_gap=false;
+ bool after_seen[(unsigned)PostPlayActor::Count]{};bool after_gap=false;
  for(unsigned actor:x.after_play_order){
   if(!actor){after_gap=true;continue;}
-  if(after_gap||actor>=(unsigned)PostPlayActor::Relics||after_seen[actor]||!post_play_actor_active(s,actor))return false;
+  if(after_gap||actor>=(unsigned)PostPlayActor::Count||
+     (actor>=(unsigned)PostPlayActor::Relics&&actor<=(unsigned)PostPlayActor::Enemies)||after_seen[actor]||!post_play_actor_active(s,actor))return false;
   after_seen[actor]=true;
  }
- for(unsigned actor=1;actor<(unsigned)PostPlayActor::Relics;actor++)if(after_seen[actor]!=post_play_actor_active(s,actor))return false;
+ for(unsigned actor=1;actor<(unsigned)PostPlayActor::Count;actor++){
+  if(actor>=(unsigned)PostPlayActor::Relics&&actor<=(unsigned)PostPlayActor::Enemies)continue;
+  if(after_seen[actor]!=post_play_actor_active(s,actor))return false;
+ }
  if(x.depth>MaxAutoFrames||x.triple>1||x.returning>1||x.enemy_side>1||x.potion_active>1)return false;
- if(x.target< -1||x.target>=MaxEnemies||x.x<0||x.x>999||x.last_damage<0||x.last_damage>9999||x.last_drawn< -1||x.last_drawn>=s.card_count)return false;
+ if(x.target< -1||x.target>=MaxEnemies||x.x<0||x.x>9999||x.last_damage<0||x.last_damage>9999||x.last_drawn< -1||x.last_drawn>=s.card_count)return false;
  if(x.cards_finished>9999||x.nonpower_started>9999||x.choices.count>MaxCards)return false;
- for(auto n:x.powers)if(n<0||n>9999)return false;
+ for(unsigned p=0;p<XPowerCount;p++)if(x.powers[p]<(p==(unsigned)XPower::Focus?-9999:0)||x.powers[p]>9999)return false;
  int auto_sum=0,pan_sum=0,boulder_sum=0,boulder_count=0;
  bool boulder_gap=false;
  for(int i=0;i<MaxPowerInstances;i++){
@@ -33,7 +37,7 @@ static bool validate_extension(const State&s){
  if(x.stars<0||x.stars>9999||x.osty_hp<0||x.osty_hp>x.osty_max_hp||x.osty_max_hp>9999||x.orb_slots>MaxOrbs||x.orb_count>x.orb_slots)return false;
  for(int i=0;i<MaxOrbs;i++)if(x.dark[i]<0||x.dark[i]>9999||(i>=x.orb_count&&x.dark[i]))return false;
  for(unsigned i=0;i<x.depth;i++){
-  const auto&f=x.frames[i];if(f.playing< -1||f.playing>=s.card_count||f.target< -1||f.target>=MaxEnemies||f.x<0||f.x>999||f.last_damage<0||f.last_damage>9999||f.vigor<0||f.vigor>9999||f.double_attack>1||f.triple>1||f.returning>1)return false;
+  const auto&f=x.frames[i];if(f.playing< -1||f.playing>=s.card_count||f.target< -1||f.target>=MaxEnemies||f.x<0||f.x>9999||f.last_damage<0||f.last_damage>9999||f.vigor<0||f.vigor>9999||f.double_attack>1||f.triple>1||f.returning>1)return false;
  }
  if((unsigned)x.choice>=(unsigned)XChoice::Count)return false;
  if(s.phase==Phase::ExtendedChoice){

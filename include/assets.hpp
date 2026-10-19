@@ -83,6 +83,27 @@ enum AnimationId {
     AnimMerchantBottom=9,
     AnimCampHero=10,
     AnimSilentIdle=11, AnimSilentAttack=12, AnimSilentHurt=13, AnimSilentCast=14, AnimSilentShiv=15, AnimSilentCamp=16,
-    AnimationKinds=17
+    AnimDefectIdle=17,
+    AnimDefectAttack=18,
+    AnimDefectHurt=19,
+    AnimDefectCast=20,
+    AnimDefectCamp=21,
+    AnimRegentIdle=22,
+    AnimRegentAttack=23,
+    AnimRegentHurt=24,
+    AnimRegentCast=25,
+    AnimRegentCamp=26,
+    AnimNecrobinderIdle=27,
+    AnimNecrobinderAttack=28,
+    AnimNecrobinderHurt=29,
+    AnimNecrobinderCast=30,
+    AnimNecrobinderCamp=31,
+    AnimOstyIdle=32,
+    AnimOstyAttack=33,
+    AnimOstyHurt=34,
+    AnimOstyDie=35,
+    AnimOstyRevive=36,
+    AnimOstyCamp=37,
+    AnimationKinds=38
 };
 }

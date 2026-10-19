@@ -1,0 +1,1 @@
+ RTransformHand,RTransformDraw,RTransformGuards,RDecisions,RHeirloom,RDiscardTop,RForegone,RTyranny,

@@ -1,6 +1,6 @@
 void enter_combat(State&s){
     s.expansion=ExpansionState{};
-    s.ironclad=IroncladState{};silent_combat_start(s);
+    s.ironclad=IroncladState{};silent_combat_start(s);defect_combat_start(s);s.regent=RegentState{};necro_combat_start(s);
     s.relic_flash=0;relic_reset_turn_counters(s);
     s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;s.no_draw=0;s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
     s.noxious_fumes=s.accuracy=s.discard_required=0;
@@ -11,14 +11,17 @@ void enter_combat(State&s){
     s.enemy_count=s.encounter?2:1;
     for(int i=0;i<s.enemy_count;i++)s.enemies[i]={(int16_t)(42+random_below(s.rng_world,5)),0,0,0,0,(uint8_t)(s.enemy_count==1?0:(i==0?1:2))};
     for(int i=0;i<s.enemy_count;i++)s.enemies[i].max_hp=s.enemies[i].hp;
-    for(int i=0;i<s.deck_count;i++){int id=make_card(s,s.deck[i]);if(id>=0)put(s,s.discard,id,Zone::Discard);}
+    for(int i=0;i<s.deck_count;i++){int id=make_card(s,s.deck[i]);if(id>=0){notify_deck_card_created(s,id,i);put(s,s.discard,id,Zone::Discard);}}
     shuffle(s);
-    relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);
+    relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);resolve_pending(s);
     if(s.practice&&s.floor==1){
         // Explicit practice opening: lets the player exercise two exhaust hooks.
-        const uint8_t ironclad[5]={FeelNoPain,DarkEmbrace,BurningPact,TrueGrit,Strike};
-        const uint8_t silent[7]={DeadlyPoison,Acrobatics,BladeDance,Neutralize,Survivor,Footwork,PoisonedStab};
-        const uint8_t* opening=s.character==Character::Silent?silent:ironclad;
+        const CardKind ironclad[5]={FeelNoPain,DarkEmbrace,BurningPact,TrueGrit,Strike};
+        const CardKind silent[7]={DeadlyPoison,Acrobatics,BladeDance,Neutralize,Survivor,Footwork,PoisonedStab};
+        const CardKind defect[5]={DefectZap,DefectDualcast,DefectBallLightning,DefectCoolheaded,DefectDefragment};
+        const CardKind regent[5]={RegentFallingStar,RegentVenerate,RegentWroughtInWar,RegentCloakOfStars,RegentStrike};
+        const CardKind necro[5]={NecroBodyguard,NecroUnleash,NecroGraveWarden,NecroScourge,NecroCountdown};
+        const CardKind* opening=s.character==Character::Silent?silent:s.character==Character::Defect?defect:s.character==Character::Regent?regent:s.character==Character::Necrobinder?necro:ironclad;
         for(int k=0;k<(s.character==Character::Silent?7:5);k++)for(int j=0;j<s.draw.count;j++)if(s.cards[s.draw.ids[j]].kind==opening[k]){
             int id=remove(s.draw,j);put(s,s.hand,id,Zone::Hand);break;}
     }else{
@@ -38,12 +41,19 @@ void new_run(State&s,uint32_t seed,bool practice,Character character){
     if(practice){
         for(unsigned i=0;i<CardKinds;i++)if(card_in_pool(i,character)||card_colorless(i)){
             if(s.deck_count==MaxDeck){fail(s);return;}
-            s.deck[s.deck_count++]={(uint8_t)i,(uint8_t)(i==DarkEmbrace||i==TrueGrit)};
+            s.deck[s.deck_count++]={(CardKind)i,(uint8_t)(i==DarkEmbrace||i==TrueGrit)};
         }
     }else if(character==Character::Silent){
         for(int i=0;i<5;i++)s.deck[s.deck_count++]={StrikeSilent,0};
         for(int i=0;i<5;i++)s.deck[s.deck_count++]={DefendSilent,0};
         s.deck[s.deck_count++]={Neutralize,0};s.deck[s.deck_count++]={Survivor,0};
+    }else if(character==Character::Defect||character==Character::Regent||character==Character::Necrobinder){
+        CardKind strike=character==Character::Defect?DefectStrike:character==Character::Regent?RegentStrike:NecroStrikeNecrobinder;
+        CardKind defend=character==Character::Defect?DefectDefend:character==Character::Regent?RegentDefend:NecroDefendNecrobinder;
+        for(int i=0;i<4;i++)s.deck[s.deck_count++]={strike,0};
+        for(int i=0;i<4;i++)s.deck[s.deck_count++]={defend,0};
+        s.deck[s.deck_count++]={CardKind(character==Character::Defect?DefectZap:character==Character::Regent?RegentFallingStar:NecroBodyguard),0};
+        s.deck[s.deck_count++]={CardKind(character==Character::Defect?DefectDualcast:character==Character::Regent?RegentVenerate:NecroUnleash),0};
     }else{
         for(int i=0;i<5;i++)s.deck[s.deck_count++]={Strike,0};
         for(int i=0;i<4;i++)s.deck[s.deck_count++]={Defend,0};s.deck[s.deck_count++]={Bash,0};
@@ -173,7 +183,7 @@ bool end_turn(State&s){
 }
 bool choose_reward(State&s,int index){
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>2)return false;
-    if(index>=0){if(s.deck_count==MaxDeck){fail(s);return false;}s.deck[s.deck_count++]={s.reward[index],0};record(s,LogKind::Reward,s.reward[index]);}
+    if(index>=0){if(s.deck_count==MaxDeck){fail(s);return false;}notify_deck_replaced(s,s.deck_count);s.deck[s.deck_count++]={s.reward[index],0};record(s,LogKind::Reward,s.reward[index]);}
     if(silent_next_reward(s)){s.revision++;return true;}
     s.reward_claimed|=2;s.revision++;return true;
 }
@@ -184,7 +194,7 @@ bool camp(State&s,bool upgrading){
     return true;
 }
 bool upgrade_card(State&s,int index){
-    if(s.phase!=Phase::Upgrade||index<0||index>=s.deck_count||s.deck[index].upgraded)return false;
+    if(s.phase!=Phase::Upgrade||index<0||index>=s.deck_count||!card_upgradeable(s.deck[index]))return false;
     s.deck[index].upgraded=1;record(s,LogKind::Upgrade,s.deck[index].kind);
     if(s.event_deck_action==EventDeckAction::Upgrade)complete_event_selection(s);else finish_room(s);
     return true;

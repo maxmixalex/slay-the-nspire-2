@@ -3,7 +3,7 @@ static void invalidate_hand_tiles();
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){shop_open=event_reader=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
 void App::draw_frame(){render();}
 void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
@@ -32,7 +32,7 @@ void App::input(Key k){
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_card=-1;
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
         else if(k==Key::Down)++detail_scroll;
-        else if(k==Key::Left||k==Key::Right)detail_card^=256;
+        else if(k==Key::Left||k==Key::Right)ui_action(UiAction::ToggleCardUpgrade);
         return;
     }
     if(screen_input(k))return;
@@ -111,8 +111,8 @@ void App::input(Key k){
             if(k==Key::Confirm||k==Key::Detail){
                 render(); // Keyboard batches may arrive before the next timed frame.
                 const HitRegion* pick=nullptr;int n=0;
-                for(int i=0;i<hit_count;i++)if((hits[i].kind==HitKind::PileCard||hits[i].kind==HitKind::InstanceCard)){if(n++==inspect_cursor%10){pick=&hits[i];break;}}
-                if(pick){if(pick->kind==HitKind::InstanceCard)open_choice_detail(pick->value);else open_card_detail({(uint8_t)(pick->value&255),(uint8_t)(pick->value>>8)});}
+                for(int i=0;i<hit_count;i++)if((hits[i].kind==HitKind::PileCard||hits[i].kind==HitKind::InstanceCard||hits[i].kind==HitKind::DeckCard)){if(n++==inspect_cursor%10){pick=&hits[i];break;}}
+                if(pick){if(pick->kind==HitKind::InstanceCard)open_choice_detail(pick->value);else if(pick->kind==HitKind::DeckCard)open_card_detail(game.deck[pick->value],pick->value);else open_card_detail(card_from_token(pick->value));}
                 return;
             }
         }else{if(k==Key::Up)scroll=mx(0,scroll-1);if(k==Key::Down)scroll++;}
@@ -143,7 +143,7 @@ void App::input(Key k){
         case Phase::Combat:{
             Card card{};if(cursor<game.hand.count)card=game.cards[game.hand.ids[cursor]];
             acted=play(game,cursor,target);
-            if(!acted)message("能量不足，或没有可打出的牌");else{animate(0,card.kind==Shiv?AnimSilentShiv:definitions[card.kind].type==CardType::Attack?AnimHeroAttack:AnimHeroCast);fly_card=card.kind;card_fly=12;busy=12;feedback=8;}break;}
+            if(!acted)message("资源不足，或尚未满足出牌条件");else{animate(0,card.kind==Shiv&&game.character==Character::Silent?AnimSilentShiv:definitions[card.kind].type==CardType::Attack?AnimHeroAttack:AnimHeroCast);fly_card=card.kind;card_fly=12;busy=12;feedback=8;}break;}
         case Phase::ExhaustChoice:acted=choose_exhaust(game,cursor);break;
         case Phase::Map:if(map_scroll){map_scroll=0;message("已返回可选楼层，再次确认进入");}else{acted=choose_node(game,cursor);if(!acted)message("这条路线不相连，请选择亮起的节点");}break;
         case Phase::Shop:acted=cursor==ShopLeave?leave_shop(game):buy(game,cursor);if(!acted)message("金币不足、已售出，或物品槽已满");else if(game.phase==Phase::Shop)message("购买成功");break;

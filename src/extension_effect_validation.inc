@@ -3,7 +3,10 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     if(e.target<0||e.target>=(int)XOp::Count||e.value< -9999||e.value>9999||e.aux< -9999||e.aux>9999)return false;
     const int a=e.value,b=e.aux;const auto op=(XOp)e.target;
     if(op==XOp::PostPlayListener)return s.playing>=0&&a>0&&a<(int)PostPlayActor::Count&&b==0;
-    if(e.target>(int)XOp::TurnRelics)return valid_ironclad_effect(s,e)||valid_silent_effect(s,e);
+    if(op==XOp::AllCharactersLate||op==XOp::AllCharactersBefore||op==XOp::AllCharactersBody)return s.playing>=0&&a==0&&b==0;
+    if(op==XOp::AllCharactersFlush||op==XOp::AllCharactersSideEnd||op==XOp::AllCharactersDrawBefore)return a==0&&b==0;
+    if(op==XOp::AllCharactersBeetle)return a>=0&&a<s.enemy_count&&b>0&&b<=9999;
+    if(e.target>(int)XOp::TurnRelics)return valid_ironclad_effect(s,e)||valid_silent_effect(s,e)||valid_defect_effect(s,e)||valid_regent_effect(s,e)||valid_necro_effect(s,e);
     const bool actor=a>=0&&a<s.enemy_count,instance=a>=0&&a<s.card_count;
     switch(op){
     case XOp::Power:return a>=0&&a<XPowerCount&&b>0;
@@ -26,7 +29,7 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     case XOp::AutoInstance:case XOp::ReturnNext:case XOp::AfterPlay:return instance&&b==0;
     case XOp::Draw:case XOp::DrawOne:return a>=0&&a<=MaxCards&&b==0;
     case XOp::EnchantReplay:return a>=0&&a<=255&&b==0;
-    case XOp::Create:return a>=0&&a<=MaxCards&&b>=0&&b<512&&(b&255)<CardKinds;
+    case XOp::Create:{Card c=card_from_token(b);return a>=0&&a<=MaxCards&&b>=0&&c.kind<CardKinds&&card_token(c)==b;}
     case XOp::CopyDamage:return actor&&b==0;
     case XOp::Restless:return a>=0&&a<=MaxHand&&b>=0&&b<=999;
     case XOp::Bomb:return a>=0&&b>=1&&b<=3;
@@ -34,7 +37,8 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     case XOp::BoulderTick:return a>=0&&a<MaxPowerInstances&&b==0&&s.expansion.boulder[a]>0;
     case XOp::RandomHits:return a>=0&&b>=0&&b<=999;
     case XOp::ChannelDark:return a>=0&&a<=MaxOrbs&&b==0;
-    case XOp::AllDamage:case XOp::EscapeBlock:case XOp::Strength:case XOp::Dexterity:
+    case XOp::Strength:case XOp::Dexterity:return a>=-9999&&a<=9999&&b==0;
+    case XOp::AllDamage:case XOp::EscapeBlock:
     case XOp::PlayerDamage:case XOp::Summon:case XOp::Forge:return a>=0&&b==0;
     default:return a==0&&b==0;
     }

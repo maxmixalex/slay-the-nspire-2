@@ -1,0 +1,3452 @@
+{
+  "reference": {
+    "tag": "v0.111.0",
+    "commit": "41cef1ea",
+    "assembly_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
+  },
+  "scope": {
+    "declared_pool": 91,
+    "pool_method": "0x0600480c",
+    "multiplayer_excluded": [
+      "Cacophony",
+      "GlimpseBeyond",
+      "LegionOfBone",
+      "Soulbound",
+      "Underworld"
+    ],
+    "single_player_pool": 86,
+    "existing_models": 0,
+    "new_models": 86,
+    "existing_tokens": [
+      "Soul"
+    ],
+    "new_tokens": [
+      "SweepingGaze"
+    ],
+    "ancient_only": [
+      "ForbiddenGrimoire",
+      "Protector"
+    ],
+    "generation_excluded": [
+      "Eidolon",
+      "Transfigure"
+    ]
+  },
+  "starting_character": {
+    "hp": 66,
+    "deck": {
+      "StrikeNecrobinder": 4,
+      "DefendNecrobinder": 4,
+      "Bodyguard": 1,
+      "Unleash": 1
+    },
+    "relic": "BoundPhylactery",
+    "relic_summon": 1
+  },
+  "status": "source_complete_pending_integration_validation",
+  "cards": [
+    {
+      "model": "Afterlife",
+      "key": "AFTERLIFE",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Summon": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003b0e",
+        "get_CanonicalKeywords": "0x06003b0f",
+        "get_CanonicalVars": "0x06003b10",
+        "OnPlay": "0x06003b12",
+        "OnUpgrade": "0x06003b13",
+        "OnPlay.MoveNext": "0x0600a792"
+      },
+      "id": 400,
+      "enum": "NecroAfterlife",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "BansheesCry",
+      "key": "BANSHEES_CRY",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 9,
+        "upgraded": 7
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 33,
+          "upgraded": 33
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003b78",
+        "get_CanonicalVars": "0x06003b7a",
+        "OnPlay": "0x06003b7b",
+        "OnUpgrade": "0x06003b7c",
+        "OnPlay.MoveNext": "0x0600a7c1"
+      },
+      "id": 401,
+      "enum": "NecroBansheesCry",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "BlightStrike",
+      "key": "BLIGHT_STRIKE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 10
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003bd9",
+        "get_CanonicalVars": "0x06003bdb",
+        "OnPlay": "0x06003bdd",
+        "OnUpgrade": "0x06003bde",
+        "OnPlay.MoveNext": "0x0600a7f9"
+      },
+      "id": 402,
+      "enum": "NecroBlightStrike",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Bodyguard",
+      "key": "BODYGUARD",
+      "type": "Skill",
+      "rarity": 1,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Summon": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003bf3",
+        "get_CanonicalVars": "0x06003bf4",
+        "OnPlay": "0x06003bf6",
+        "OnUpgrade": "0x06003bf7",
+        "OnPlay.MoveNext": "0x0600a803"
+      },
+      "id": 403,
+      "enum": "NecroBodyguard",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "BoneShards",
+      "key": "BONE_SHARDS",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 9,
+          "upgraded": 12
+        },
+        "Block": {
+          "base": 9,
+          "upgraded": 12
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c0a",
+        "get_CanonicalVars": "0x06003c0e",
+        "OnPlay": "0x06003c0f",
+        "OnUpgrade": "0x06003c10",
+        "OnPlay.MoveNext": "0x0600a812"
+      },
+      "id": 404,
+      "enum": "NecroBoneShards",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "BorrowedTime",
+      "key": "BORROWED_TIME",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Energy": {
+          "base": 4,
+          "upgraded": 6
+        },
+        "ExtraCost": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c1d",
+        "get_CanonicalVars": "0x06003c1e",
+        "OnPlay": "0x06003c20",
+        "OnUpgrade": "0x06003c21",
+        "OnPlay.MoveNext": "0x0600a818"
+      },
+      "id": 405,
+      "enum": "NecroBorrowedTime",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Bury",
+      "key": "BURY",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 4,
+        "upgraded": 4
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 52,
+          "upgraded": 63
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c6d",
+        "get_CanonicalVars": "0x06003c6e",
+        "OnPlay": "0x06003c6f",
+        "OnUpgrade": "0x06003c70",
+        "OnPlay.MoveNext": "0x0600a83e"
+      },
+      "id": 406,
+      "enum": "NecroBury",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Calcify",
+      "key": "CALCIFY",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalcifyPower": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c81",
+        "get_CanonicalVars": "0x06003c82",
+        "OnPlay": "0x06003c83",
+        "OnUpgrade": "0x06003c84",
+        "OnPlay.MoveNext": "0x0600a846"
+      },
+      "id": 407,
+      "enum": "NecroCalcify",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "CallOfTheVoid",
+      "key": "CALL_OF_THE_VOID",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c89",
+        "get_CanonicalVars": "0x06003c8a",
+        "OnPlay": "0x06003c8c",
+        "OnUpgrade": "0x06003c8d",
+        "OnPlay.MoveNext": "0x0600a84a"
+      },
+      "id": 408,
+      "enum": "NecroCallOfTheVoid",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "CaptureSpirit",
+      "key": "CAPTURE_SPIRIT",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "Cards": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003c98",
+        "get_CanonicalVars": "0x06003c99",
+        "OnPlay": "0x06003c9b",
+        "OnUpgrade": "0x06003c9c",
+        "OnPlay.MoveNext": "0x0600a850"
+      },
+      "id": 409,
+      "enum": "NecroCaptureSpirit",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Cleanse",
+      "key": "CLEANSE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Summon": {
+          "base": 3,
+          "upgraded": 5
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003cd5",
+        "get_CanonicalVars": "0x06003cd6",
+        "OnPlay": "0x06003cd8",
+        "OnUpgrade": "0x06003cd9",
+        "OnPlay.MoveNext": "0x0600a874"
+      },
+      "id": 410,
+      "enum": "NecroCleanse",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Countdown",
+      "key": "COUNTDOWN",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CountdownPower": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d4a",
+        "get_CanonicalVars": "0x06003d4b",
+        "OnPlay": "0x06003d4d",
+        "OnUpgrade": "0x06003d4e",
+        "OnPlay.MoveNext": "0x0600a8a5"
+      },
+      "id": 411,
+      "enum": "NecroCountdown",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "DanseMacabre",
+      "key": "DANSE_MACABRE",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DanseMacabrePower": {
+          "base": 4,
+          "upgraded": 6
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d7b",
+        "get_CanonicalVars": "0x06003d7c",
+        "OnPlay": "0x06003d7e",
+        "OnUpgrade": "0x06003d7f",
+        "OnPlay.MoveNext": "0x0600a8be"
+      },
+      "id": 412,
+      "enum": "NecroDanseMacabre",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "DeathMarch",
+      "key": "DEATH_MARCH",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 8,
+          "upgraded": 9
+        },
+        "ExtraDamage": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003da0",
+        "get_CanonicalVars": "0x06003da1",
+        "OnPlay": "0x06003da2",
+        "OnUpgrade": "0x06003da3",
+        "OnPlay.MoveNext": "0x0600a8d4"
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": {
+          "kind": "calculated"
+        }
+      },
+      "id": 413,
+      "enum": "NecroDeathMarch",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Deathbringer",
+      "key": "DEATHBRINGER",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DoomPower": {
+          "base": 21,
+          "upgraded": 26
+        },
+        "WeakPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003d9b",
+        "get_CanonicalVars": "0x06003d9c",
+        "OnPlay": "0x06003d9e",
+        "OnUpgrade": "0x06003d9f",
+        "OnPlay.MoveNext": "0x0600a8cd"
+      },
+      "id": 414,
+      "enum": "NecroDeathbringer",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "DeathsDoor",
+      "key": "DEATHS_DOOR",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 7
+        },
+        "Repeat": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003da4",
+        "get_CanonicalVars": "0x06003da7",
+        "OnPlay": "0x06003da9",
+        "OnUpgrade": "0x06003daa",
+        "OnPlay.MoveNext": "0x0600a8d6"
+      },
+      "id": 415,
+      "enum": "NecroDeathsDoor",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Debilitate",
+      "key": "DEBILITATE",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 12
+        },
+        "DebilitatePower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003dad",
+        "get_CanonicalVars": "0x06003daf",
+        "OnPlay": "0x06003db0",
+        "OnUpgrade": "0x06003db1",
+        "OnPlay.MoveNext": "0x0600a8d8"
+      },
+      "id": 416,
+      "enum": "NecroDebilitate",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "DefendNecrobinder",
+      "key": "DEFEND_NECROBINDER",
+      "type": "Skill",
+      "rarity": 1,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003dd4",
+        "get_CanonicalVars": "0x06003dd7",
+        "OnPlay": "0x06003dd8",
+        "OnUpgrade": "0x06003dd9",
+        "OnPlay.MoveNext": "0x0600a8e7"
+      },
+      "id": 417,
+      "enum": "NecroDefendNecrobinder",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Defile",
+      "key": "DEFILE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 13,
+          "upgraded": 17
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003de6",
+        "get_CanonicalVars": "0x06003de7",
+        "get_CanonicalKeywords": "0x06003de8",
+        "OnPlay": "0x06003de9",
+        "OnUpgrade": "0x06003dea",
+        "OnPlay.MoveNext": "0x0600a8ed"
+      },
+      "id": 418,
+      "enum": "NecroDefile",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Defy",
+      "key": "DEFY",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "Block": {
+          "base": 6,
+          "upgraded": 9
+        },
+        "WeakPower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003df5",
+        "get_CanonicalVars": "0x06003df7",
+        "get_CanonicalKeywords": "0x06003df8",
+        "OnPlay": "0x06003dfa",
+        "OnUpgrade": "0x06003dfb",
+        "OnPlay.MoveNext": "0x0600a8f3"
+      },
+      "id": 419,
+      "enum": "NecroDefy",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Delay",
+      "key": "DELAY",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 11,
+          "upgraded": 13
+        },
+        "Energy": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003dfc",
+        "get_CanonicalVars": "0x06003dfe",
+        "OnPlay": "0x06003e00",
+        "OnUpgrade": "0x06003e01",
+        "OnPlay.MoveNext": "0x0600a8f5"
+      },
+      "id": 420,
+      "enum": "NecroDelay",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Demesne",
+      "key": "DEMESNE",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e02",
+        "get_CanonicalVars": "0x06003e03",
+        "get_CanonicalKeywords": "0x06003e04",
+        "OnPlay": "0x06003e06",
+        "OnUpgrade": "0x06003e07",
+        "OnPlay.MoveNext": "0x0600a8f7"
+      },
+      "id": 421,
+      "enum": "NecroDemesne",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "DevourLife",
+      "key": "DEVOUR_LIFE",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DevourLifePower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e1d",
+        "get_CanonicalVars": "0x06003e1f",
+        "OnPlay": "0x06003e20",
+        "OnUpgrade": "0x06003e21",
+        "OnPlay.MoveNext": "0x0600a904"
+      },
+      "id": 422,
+      "enum": "NecroDevourLife",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Dirge",
+      "key": "DIRGE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Summon": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e22",
+        "get_CanonicalKeywords": "0x06003e24",
+        "get_CanonicalVars": "0x06003e25",
+        "OnPlay": "0x06003e27",
+        "OnUpgrade": "0x06003e28",
+        "OnPlay.MoveNext": "0x0600a906"
+      },
+      "id": 423,
+      "enum": "NecroDirge",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "DrainPower",
+      "key": "DRAIN_POWER",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 12
+        },
+        "Cards": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e5d",
+        "get_CanonicalVars": "0x06003e5e",
+        "OnPlay": "0x06003e5f",
+        "OnUpgrade": "0x06003e60",
+        "OnPlay.MoveNext": "0x0600a923"
+      },
+      "id": 424,
+      "enum": "NecroDrainPower",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Dredge",
+      "key": "DREDGE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e67",
+        "get_CanonicalVars": "0x06003e68",
+        "get_CanonicalKeywords": "0x06003e69",
+        "OnPlay": "0x06003e6a",
+        "OnUpgrade": "0x06003e6b",
+        "OnPlay.MoveNext": "0x0600a927"
+      },
+      "id": 425,
+      "enum": "NecroDredge",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Eidolon",
+      "key": "EIDOLON",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {},
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003e8c",
+        "get_CanonicalKeywords": "0x06003e8e",
+        "OnPlay": "0x06003e90",
+        "OnUpgrade": "0x06003e91",
+        "OnPlay.MoveNext": "0x0600a940"
+      },
+      "id": 426,
+      "enum": "NecroEidolon",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "EndOfDays",
+      "key": "END_OF_DAYS",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DoomPower": {
+          "base": 29,
+          "upgraded": 37
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e92",
+        "get_CanonicalVars": "0x06003e93",
+        "OnPlay": "0x06003e95",
+        "OnUpgrade": "0x06003e96",
+        "OnPlay.MoveNext": "0x0600a942"
+      },
+      "id": 427,
+      "enum": "NecroEndOfDays",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "EnfeeblingTouch",
+      "key": "ENFEEBLING_TOUCH",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "StrengthLoss": {
+          "base": 8,
+          "upgraded": 11
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003e9e",
+        "get_CanonicalVars": "0x06003e9f",
+        "get_CanonicalKeywords": "0x06003ea0",
+        "OnPlay": "0x06003ea2",
+        "OnUpgrade": "0x06003ea3",
+        "OnPlay.MoveNext": "0x0600a949"
+      },
+      "id": 428,
+      "enum": "NecroEnfeeblingTouch",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Eradicate",
+      "key": "ERADICATE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": -1,
+        "upgraded": -1
+      },
+      "keywords": {
+        "base": [
+          "Retain"
+        ],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 11,
+          "upgraded": 14
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003ec2",
+        "get_CanonicalKeywords": "0x06003ec4",
+        "get_CanonicalVars": "0x06003ec5",
+        "OnPlay": "0x06003ec6",
+        "OnUpgrade": "0x06003ec7",
+        "OnPlay.MoveNext": "0x0600a953"
+      },
+      "id": 429,
+      "enum": "NecroEradicate",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Fear",
+      "key": "FEAR",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 8
+        },
+        "VulnerablePower": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f08",
+        "get_CanonicalVars": "0x06003f09",
+        "get_CanonicalKeywords": "0x06003f0a",
+        "OnPlay": "0x06003f0c",
+        "OnUpgrade": "0x06003f0d",
+        "OnPlay.MoveNext": "0x0600a973"
+      },
+      "id": 430,
+      "enum": "NecroFear",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Fetch",
+      "key": "FETCH",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 3,
+          "upgraded": 6
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f23",
+        "get_CanonicalVars": "0x06003f27",
+        "OnPlay": "0x06003f28",
+        "OnUpgrade": "0x06003f29",
+        "OnPlay.MoveNext": "0x0600a982"
+      },
+      "id": 431,
+      "enum": "NecroFetch",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Flatten",
+      "key": "FLATTEN",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 12,
+          "upgraded": 16
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f5e",
+        "get_CanonicalVars": "0x06003f62",
+        "OnPlay": "0x06003f63",
+        "OnUpgrade": "0x06003f64",
+        "OnPlay.MoveNext": "0x0600a9a8"
+      },
+      "id": 432,
+      "enum": "NecroFlatten",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "ForbiddenGrimoire",
+      "key": "FORBIDDEN_GRIMOIRE",
+      "type": "Power",
+      "rarity": 5,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Eternal"
+        ],
+        "upgraded": [
+          "Eternal"
+        ]
+      },
+      "variables": {},
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06003f82",
+        "get_CanonicalKeywords": "0x06003f83",
+        "OnPlay": "0x06003f84",
+        "OnUpgrade": "0x06003f85",
+        "OnPlay.MoveNext": "0x0600a9b6"
+      },
+      "id": 433,
+      "enum": "NecroForbiddenGrimoire",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Friendship",
+      "key": "FRIENDSHIP",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "StrengthPower": {
+          "base": 2,
+          "upgraded": 1
+        },
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06003f98",
+        "get_CanonicalVars": "0x06003f99",
+        "OnPlay": "0x06003f9b",
+        "OnUpgrade": "0x06003f9c",
+        "OnPlay.MoveNext": "0x0600a9c1"
+      },
+      "id": 434,
+      "enum": "NecroFriendship",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "GraveWarden",
+      "key": "GRAVE_WARDEN",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 8,
+          "upgraded": 11
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600400e",
+        "get_CanonicalVars": "0x06004010",
+        "OnPlay": "0x06004012",
+        "OnUpgrade": "0x06004013",
+        "OnPlay.MoveNext": "0x0600a9f9"
+      },
+      "id": 435,
+      "enum": "NecroGraveWarden",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Graveblast",
+      "key": "GRAVEBLAST",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004009",
+        "get_CanonicalKeywords": "0x0600400a",
+        "get_CanonicalVars": "0x0600400b",
+        "OnPlay": "0x0600400c",
+        "OnUpgrade": "0x0600400d",
+        "OnPlay.MoveNext": "0x0600a9f7"
+      },
+      "id": 436,
+      "enum": "NecroGraveblast",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Hang",
+      "key": "HANG",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004043",
+        "get_CanonicalVars": "0x06004044",
+        "OnPlay": "0x06004045",
+        "OnUpgrade": "0x06004046",
+        "OnPlay.MoveNext": "0x0600aa13"
+      },
+      "id": 437,
+      "enum": "NecroHang",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Haunt",
+      "key": "HAUNT",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "HpLoss": {
+          "base": 7,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004047",
+        "get_CanonicalVars": "0x06004048",
+        "OnPlay": "0x0600404a",
+        "OnUpgrade": "0x0600404b",
+        "OnPlay.MoveNext": "0x0600aa15"
+      },
+      "id": 438,
+      "enum": "NecroHaunt",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "HighFive",
+      "key": "HIGH_FIVE",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 11,
+          "upgraded": 13
+        },
+        "VulnerablePower": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600408f",
+        "get_CanonicalVars": "0x06004092",
+        "OnPlay": "0x06004095",
+        "OnUpgrade": "0x06004096",
+        "OnPlay.MoveNext": "0x0600aa42"
+      },
+      "id": 439,
+      "enum": "NecroHighFive",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Invoke",
+      "key": "INVOKE",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Summon": {
+          "base": 2,
+          "upgraded": 3
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060040fa",
+        "get_CanonicalVars": "0x060040fc",
+        "OnPlay": "0x060040fd",
+        "OnUpgrade": "0x060040fe",
+        "OnPlay.MoveNext": "0x0600aa7d"
+      },
+      "id": 440,
+      "enum": "NecroInvoke",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Lethality",
+      "key": "LETHALITY",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "LethalityPower": {
+          "base": 50,
+          "upgraded": 75
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004158",
+        "get_CanonicalKeywords": "0x06004159",
+        "get_CanonicalVars": "0x0600415a",
+        "OnPlay": "0x0600415b",
+        "OnUpgrade": "0x0600415c",
+        "OnPlay.MoveNext": "0x0600aab3"
+      },
+      "id": 441,
+      "enum": "NecroLethality",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Melancholy",
+      "key": "MELANCHOLY",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 13,
+          "upgraded": 17
+        },
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060041bf",
+        "get_CanonicalVars": "0x060041c1",
+        "OnPlay": "0x060041c3",
+        "OnUpgrade": "0x060041c5",
+        "OnPlay.MoveNext": "0x0600aae5"
+      },
+      "id": 442,
+      "enum": "NecroMelancholy",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Misery",
+      "key": "MISERY",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 7,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600420e",
+        "get_CanonicalVars": "0x0600420f",
+        "OnPlay": "0x06004210",
+        "OnUpgrade": "0x06004211",
+        "OnPlay.MoveNext": "0x0600ab1a"
+      },
+      "id": 443,
+      "enum": "NecroMisery",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "NecroMastery",
+      "key": "NECRO_MASTERY",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Summon": {
+          "base": 5,
+          "upgraded": 8
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004234",
+        "get_CanonicalVars": "0x06004235",
+        "OnPlay": "0x06004237",
+        "OnUpgrade": "0x06004238",
+        "OnPlay.MoveNext": "0x0600ab2f"
+      },
+      "id": 444,
+      "enum": "NecroNecroMastery",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "NegativePulse",
+      "key": "NEGATIVE_PULSE",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 5,
+          "upgraded": 6
+        },
+        "DoomPower": {
+          "base": 7,
+          "upgraded": 11
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004239",
+        "get_CanonicalVars": "0x0600423b",
+        "OnPlay": "0x0600423d",
+        "OnUpgrade": "0x0600423e",
+        "OnPlay.MoveNext": "0x0600ab31"
+      },
+      "id": 445,
+      "enum": "NecroNegativePulse",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Neurosurge",
+      "key": "NEUROSURGE",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "NeurosurgePower": {
+          "base": 3,
+          "upgraded": 3
+        },
+        "Energy": {
+          "base": 3,
+          "upgraded": 4
+        },
+        "Cards": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004245",
+        "get_CanonicalVars": "0x06004246",
+        "OnPlay": "0x06004248",
+        "OnUpgrade": "0x06004249",
+        "OnPlay.MoveNext": "0x0600ab35"
+      },
+      "id": 446,
+      "enum": "NecroNeurosurge",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "NoEscape",
+      "key": "NO_ESCAPE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DoomThreshold": {
+          "base": 10,
+          "upgraded": 10
+        },
+        "CalculationBase": {
+          "base": 10,
+          "upgraded": 15
+        },
+        "CalculationExtra": {
+          "base": 5,
+          "upgraded": 5
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600425b",
+        "get_CanonicalVars": "0x0600425c",
+        "OnPlay": "0x0600425e",
+        "OnUpgrade": "0x0600425f",
+        "OnPlay.MoveNext": "0x0600ab40"
+      },
+      "dynamic_variables": {
+        "CalculatedDoom": {
+          "kind": "calculated"
+        }
+      },
+      "id": 447,
+      "enum": "NecroNoEscape",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Oblivion",
+      "key": "OBLIVION",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DoomPower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600427c",
+        "get_CanonicalVars": "0x0600427d",
+        "OnPlay": "0x0600427f",
+        "OnUpgrade": "0x06004280",
+        "OnPlay.MoveNext": "0x0600ab4d"
+      },
+      "id": 448,
+      "enum": "NecroOblivion",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Pagestorm",
+      "key": "PAGESTORM",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060042b4",
+        "get_CanonicalVars": "0x060042b5",
+        "OnPlay": "0x060042b7",
+        "OnUpgrade": "0x060042b8",
+        "OnPlay.MoveNext": "0x0600ab69"
+      },
+      "id": 449,
+      "enum": "NecroPagestorm",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Parse",
+      "key": "PARSE",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "Cards": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060042cc",
+        "get_CanonicalVars": "0x060042cd",
+        "get_CanonicalKeywords": "0x060042ce",
+        "OnPlay": "0x060042cf",
+        "OnUpgrade": "0x060042d0",
+        "OnPlay.MoveNext": "0x0600ab73"
+      },
+      "id": 450,
+      "enum": "NecroParse",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Poke",
+      "key": "POKE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004312",
+        "get_CanonicalVars": "0x06004315",
+        "OnPlay": "0x06004316",
+        "OnUpgrade": "0x06004317",
+        "OnPlay.MoveNext": "0x0600ab96"
+      },
+      "id": 451,
+      "enum": "NecroPoke",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Protector",
+      "key": "PROTECTOR",
+      "type": "Attack",
+      "rarity": 5,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 10,
+          "upgraded": 15
+        },
+        "ExtraDamage": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x06004348",
+        "get_CanonicalVars": "0x0600434b",
+        "OnPlay": "0x0600434c",
+        "OnUpgrade": "0x0600434d",
+        "OnPlay.MoveNext": "0x0600abb5"
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": {
+          "kind": "calculated"
+        }
+      },
+      "id": 452,
+      "enum": "NecroProtector",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "PullAggro",
+      "key": "PULL_AGGRO",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Summon": {
+          "base": 4,
+          "upgraded": 5
+        },
+        "Block": {
+          "base": 7,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004353",
+        "get_CanonicalVars": "0x06004355",
+        "OnPlay": "0x06004357",
+        "OnUpgrade": "0x06004358",
+        "OnPlay.MoveNext": "0x0600abb9"
+      },
+      "id": 453,
+      "enum": "NecroPullAggro",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "PullFromBelow",
+      "key": "PULL_FROM_BELOW",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 5,
+          "upgraded": 7
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004359",
+        "get_CanonicalVars": "0x0600435b",
+        "OnPlay": "0x0600435c",
+        "OnUpgrade": "0x0600435d",
+        "OnPlay.MoveNext": "0x0600abc0"
+      },
+      "dynamic_variables": {
+        "CalculatedHits": {
+          "kind": "calculated"
+        }
+      },
+      "id": 454,
+      "enum": "NecroPullFromBelow",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Putrefy",
+      "key": "PUTREFY",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Power": {
+          "base": 2,
+          "upgraded": 3
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004363",
+        "get_CanonicalVars": "0x06004364",
+        "get_CanonicalKeywords": "0x06004365",
+        "OnPlay": "0x06004367",
+        "OnUpgrade": "0x06004368",
+        "OnPlay.MoveNext": "0x0600abc4"
+      },
+      "id": 455,
+      "enum": "NecroPutrefy",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Rattle",
+      "key": "RATTLE",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 7,
+          "upgraded": 9
+        },
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004392",
+        "get_CanonicalVars": "0x06004395",
+        "OnPlay": "0x06004396",
+        "OnUpgrade": "0x06004397",
+        "OnPlay.MoveNext": "0x0600abe6"
+      },
+      "dynamic_variables": {
+        "CalculatedHits": {
+          "kind": "calculated"
+        }
+      },
+      "id": 456,
+      "enum": "NecroRattle",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Reanimate",
+      "key": "REANIMATE",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Summon": {
+          "base": 20,
+          "upgraded": 25
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004398",
+        "get_CanonicalVars": "0x06004399",
+        "get_CanonicalKeywords": "0x0600439a",
+        "OnPlay": "0x0600439c",
+        "OnUpgrade": "0x0600439d",
+        "OnPlay.MoveNext": "0x0600abe8"
+      },
+      "id": 457,
+      "enum": "NecroReanimate",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Reap",
+      "key": "REAP",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [
+          "Retain"
+        ],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 27,
+          "upgraded": 33
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600439e",
+        "get_CanonicalVars": "0x0600439f",
+        "get_CanonicalKeywords": "0x060043a0",
+        "OnPlay": "0x060043a1",
+        "OnUpgrade": "0x060043a2",
+        "OnPlay.MoveNext": "0x0600abea"
+      },
+      "id": 458,
+      "enum": "NecroReap",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "ReaperForm",
+      "key": "REAPER_FORM",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {},
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060043a3",
+        "OnPlay": "0x060043a5",
+        "OnUpgrade": "0x060043a6",
+        "OnPlay.MoveNext": "0x0600abec"
+      },
+      "id": 459,
+      "enum": "NecroReaperForm",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Reave",
+      "key": "REAVE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 13
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060043a7",
+        "get_CanonicalVars": "0x060043a8",
+        "OnPlay": "0x060043aa",
+        "OnUpgrade": "0x060043ab",
+        "OnPlay.MoveNext": "0x0600abee"
+      },
+      "id": 460,
+      "enum": "NecroReave",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "RightHandHand",
+      "key": "RIGHT_HAND_HAND",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 4,
+          "upgraded": 6
+        },
+        "Energy": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060043f2",
+        "get_CanonicalVars": "0x060043f6",
+        "OnPlay": "0x060043f7",
+        "OnUpgrade": "0x060043f9",
+        "OnPlay.MoveNext": "0x0600ac0d"
+      },
+      "id": 461,
+      "enum": "NecroRightHandHand",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Sacrifice",
+      "key": "SACRIFICE",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Retain"
+        ],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "CalculationExtra": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004418",
+        "get_CanonicalKeywords": "0x0600441a",
+        "get_CanonicalVars": "0x0600441c",
+        "OnPlay": "0x0600441d",
+        "OnUpgrade": "0x0600441e",
+        "OnPlay.MoveNext": "0x0600ac21"
+      },
+      "dynamic_variables": {
+        "CalculatedBlock": {
+          "kind": "calculated"
+        }
+      },
+      "id": 462,
+      "enum": "NecroSacrifice",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Scourge",
+      "key": "SCOURGE",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "DoomPower": {
+          "base": 13,
+          "upgraded": 16
+        },
+        "Cards": {
+          "base": 1,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004429",
+        "get_CanonicalVars": "0x0600442a",
+        "OnPlay": "0x0600442c",
+        "OnUpgrade": "0x0600442d",
+        "OnPlay.MoveNext": "0x0600ac27"
+      },
+      "id": 463,
+      "enum": "NecroScourge",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SculptingStrike",
+      "key": "SCULPTING_STRIKE",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 9,
+          "upgraded": 12
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004436",
+        "get_CanonicalVars": "0x06004439",
+        "OnPlay": "0x0600443a",
+        "OnUpgrade": "0x0600443b",
+        "OnPlay.MoveNext": "0x0600ac33"
+      },
+      "id": 464,
+      "enum": "NecroSculptingStrike",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Seance",
+      "key": "SEANCE",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Ethereal"
+        ]
+      },
+      "variables": {
+        "Cards": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600443c",
+        "get_CanonicalVars": "0x0600443d",
+        "get_CanonicalKeywords": "0x0600443e",
+        "OnPlay": "0x06004440",
+        "OnUpgrade": "0x06004441",
+        "OnPlay.MoveNext": "0x0600ac35"
+      },
+      "id": 465,
+      "enum": "NecroSeance",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SentryMode",
+      "key": "SENTRY_MODE",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "SentryModePower": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600445b",
+        "get_CanonicalVars": "0x0600445c",
+        "OnPlay": "0x0600445e",
+        "OnUpgrade": "0x0600445f",
+        "OnPlay.MoveNext": "0x0600ac4c"
+      },
+      "id": 466,
+      "enum": "NecroSentryMode",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Severance",
+      "key": "SEVERANCE",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 13,
+          "upgraded": 18
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600446f",
+        "get_CanonicalVars": "0x06004470",
+        "OnPlay": "0x06004472",
+        "OnUpgrade": "0x06004473",
+        "OnPlay.MoveNext": "0x0600ac54"
+      },
+      "id": 467,
+      "enum": "NecroSeverance",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SharedFate",
+      "key": "SHARED_FATE",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "EnemyStrengthLoss": {
+          "base": 2,
+          "upgraded": 3
+        },
+        "PlayerStrengthLoss": {
+          "base": 2,
+          "upgraded": 2
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600448a",
+        "get_CanonicalKeywords": "0x0600448b",
+        "get_CanonicalVars": "0x0600448c",
+        "OnPlay": "0x0600448e",
+        "OnUpgrade": "0x0600448f",
+        "OnPlay.MoveNext": "0x0600ac5e"
+      },
+      "id": 468,
+      "enum": "NecroSharedFate",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Shroud",
+      "key": "SHROUD",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044ae",
+        "get_CanonicalVars": "0x060044b0",
+        "OnPlay": "0x060044b1",
+        "OnUpgrade": "0x060044b2",
+        "OnPlay.MoveNext": "0x0600ac6e"
+      },
+      "id": 469,
+      "enum": "NecroShroud",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SicEm",
+      "key": "SIC_EM",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 5,
+          "upgraded": 6
+        },
+        "SicEmPower": {
+          "base": 3,
+          "upgraded": 4
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044b8",
+        "get_CanonicalVars": "0x060044bc",
+        "OnPlay": "0x060044bd",
+        "OnUpgrade": "0x060044be",
+        "OnPlay.MoveNext": "0x0600ac72"
+      },
+      "id": 470,
+      "enum": "NecroSicEm",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SleightOfFlesh",
+      "key": "SLEIGHT_OF_FLESH",
+      "type": "Power",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "SleightOfFleshPower": {
+          "base": 9,
+          "upgraded": 13
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044d2",
+        "get_CanonicalVars": "0x060044d3",
+        "OnPlay": "0x060044d4",
+        "OnUpgrade": "0x060044d5",
+        "OnPlay.MoveNext": "0x0600ac7f"
+      },
+      "id": 471,
+      "enum": "NecroSleightOfFlesh",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Snap",
+      "key": "SNAP",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "OstyDamage": {
+          "base": 7,
+          "upgraded": 10
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060044ee",
+        "get_CanonicalVars": "0x060044f2",
+        "OnPlay": "0x060044f3",
+        "OnUpgrade": "0x060044f4",
+        "OnPlay.MoveNext": "0x0600ac8e"
+      },
+      "id": 472,
+      "enum": "NecroSnap",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SoulStorm",
+      "key": "SOUL_STORM",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 9,
+          "upgraded": 9
+        },
+        "ExtraDamage": {
+          "base": 4,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004511",
+        "get_CanonicalVars": "0x06004513",
+        "OnPlay": "0x06004514",
+        "OnUpgrade": "0x06004515",
+        "OnPlay.MoveNext": "0x0600ac9e"
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": {
+          "kind": "calculated"
+        }
+      },
+      "id": 473,
+      "enum": "NecroSoulStorm",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Sow",
+      "key": "SOW",
+      "type": "Attack",
+      "rarity": 2,
+      "target": "AllEnemies",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Retain"
+        ],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 8,
+          "upgraded": 11
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600452e",
+        "get_CanonicalVars": "0x0600452f",
+        "get_CanonicalKeywords": "0x06004530",
+        "OnPlay": "0x06004531",
+        "OnUpgrade": "0x06004532",
+        "OnPlay.MoveNext": "0x0600acaa"
+      },
+      "id": 474,
+      "enum": "NecroSow",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "SpiritOfAsh",
+      "key": "SPIRIT_OF_ASH",
+      "type": "Power",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "BlockOnExhaust": {
+          "base": 4,
+          "upgraded": 5
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x0600453f",
+        "get_CanonicalVars": "0x06004540",
+        "OnPlay": "0x06004542",
+        "OnUpgrade": "0x06004543",
+        "OnPlay.MoveNext": "0x0600acb2"
+      },
+      "id": 475,
+      "enum": "NecroSpiritOfAsh",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Spur",
+      "key": "SPUR",
+      "type": "Skill",
+      "rarity": 3,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Retain"
+        ],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Summon": {
+          "base": 3,
+          "upgraded": 5
+        },
+        "Heal": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004565",
+        "get_CanonicalKeywords": "0x06004566",
+        "get_CanonicalVars": "0x06004568",
+        "OnPlay": "0x06004569",
+        "OnUpgrade": "0x0600456a",
+        "OnPlay.MoveNext": "0x0600acc4"
+      },
+      "id": 476,
+      "enum": "NecroSpur",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Squeeze",
+      "key": "SQUEEZE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 3,
+        "upgraded": 3
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 25,
+          "upgraded": 30
+        },
+        "ExtraDamage": {
+          "base": 5,
+          "upgraded": 6
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004570",
+        "get_CanonicalVars": "0x06004573",
+        "OnPlay": "0x06004574",
+        "OnUpgrade": "0x06004575",
+        "OnPlay.MoveNext": "0x0600accd"
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": {
+          "kind": "calculated"
+        }
+      },
+      "id": 477,
+      "enum": "NecroSqueeze",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "StrikeNecrobinder",
+      "key": "STRIKE_NECROBINDER",
+      "type": "Attack",
+      "rarity": 1,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 6,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x060045ad",
+        "get_CanonicalVars": "0x060045af",
+        "OnPlay": "0x060045b0",
+        "OnUpgrade": "0x060045b1",
+        "OnPlay.MoveNext": "0x0600acea"
+      },
+      "id": 478,
+      "enum": "NecroStrikeNecrobinder",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "TheScythe",
+      "key": "THE_SCYTHE",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "variables": {
+        "Damage": {
+          "base": 13,
+          "upgraded": 13
+        },
+        "Increase": {
+          "base": 5,
+          "upgraded": 7
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004643",
+        "get_CanonicalKeywords": "0x06004648",
+        "get_CanonicalVars": "0x06004649",
+        "OnPlay": "0x0600464a",
+        "OnUpgrade": "0x0600464b",
+        "OnPlay.MoveNext": "0x0600ad40"
+      },
+      "id": 479,
+      "enum": "NecroTheScythe",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "TimesUp",
+      "key": "TIMES_UP",
+      "type": "Attack",
+      "rarity": 4,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 2,
+        "upgraded": 2
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Retain"
+        ]
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 0,
+          "upgraded": 0
+        },
+        "ExtraDamage": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004676",
+        "get_CanonicalVars": "0x06004678",
+        "OnPlay": "0x06004679",
+        "OnUpgrade": "0x0600467a",
+        "OnPlay.MoveNext": "0x0600ad58"
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": {
+          "kind": "calculated"
+        }
+      },
+      "id": 480,
+      "enum": "NecroTimesUp",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Transfigure",
+      "key": "TRANSFIGURE",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": []
+      },
+      "variables": {
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x0600468e",
+        "get_CanonicalKeywords": "0x06004690",
+        "get_CanonicalVars": "0x06004691",
+        "OnPlay": "0x06004693",
+        "OnUpgrade": "0x06004694",
+        "OnPlay.MoveNext": "0x0600ad62"
+      },
+      "id": 481,
+      "enum": "NecroTransfigure",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Undeath",
+      "key": "UNDEATH",
+      "type": "Skill",
+      "rarity": 4,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Block": {
+          "base": 7,
+          "upgraded": 9
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060046c2",
+        "get_CanonicalVars": "0x060046c4",
+        "OnPlay": "0x060046c5",
+        "OnUpgrade": "0x060046c6",
+        "OnPlay.MoveNext": "0x0600ad76"
+      },
+      "id": 482,
+      "enum": "NecroUndeath",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Unleash",
+      "key": "UNLEASH",
+      "type": "Attack",
+      "rarity": 1,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "CalculationBase": {
+          "base": 6,
+          "upgraded": 9
+        },
+        "ExtraDamage": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": false,
+      "evidence": {
+        ".ctor": "0x060046cd",
+        "get_CanonicalVars": "0x060046d0",
+        "OnPlay": "0x060046d1",
+        "OnUpgrade": "0x060046d2",
+        "OnPlay.MoveNext": "0x0600ad7d"
+      },
+      "dynamic_variables": {
+        "CalculatedDamage": {
+          "kind": "calculated"
+        }
+      },
+      "id": 483,
+      "enum": "NecroUnleash",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Veilpiercer",
+      "key": "VEILPIERCER",
+      "type": "Attack",
+      "rarity": 3,
+      "target": "AnyEnemy",
+      "cost": {
+        "base": 1,
+        "upgraded": 1
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "variables": {
+        "Damage": {
+          "base": 10,
+          "upgraded": 13
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x060046f1",
+        "get_CanonicalVars": "0x060046f2",
+        "OnPlay": "0x060046f4",
+        "OnUpgrade": "0x060046f5",
+        "OnPlay.MoveNext": "0x0600ad8f"
+      },
+      "id": 484,
+      "enum": "NecroVeilpiercer",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    },
+    {
+      "model": "Wisp",
+      "key": "WISP",
+      "type": "Skill",
+      "rarity": 2,
+      "target": "Self",
+      "cost": {
+        "base": 0,
+        "upgraded": 0
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Retain"
+        ]
+      },
+      "variables": {
+        "Energy": {
+          "base": 1,
+          "upgraded": 1
+        }
+      },
+      "generation_allowed": true,
+      "evidence": {
+        ".ctor": "0x06004730",
+        "get_CanonicalVars": "0x06004731",
+        "get_CanonicalKeywords": "0x06004732",
+        "OnPlay": "0x06004734",
+        "OnUpgrade": "0x06004735",
+        "OnPlay.MoveNext": "0x0600adb1"
+      },
+      "id": 485,
+      "enum": "NecroWisp",
+      "new_in_0_16": true,
+      "implementation_status": "implemented",
+      "validation_status": "pending_pushed_checkpoint"
+    }
+  ],
+  "state_powers": [
+    {
+      "enum": "Calcify",
+      "model": "CalcifyPower",
+      "key": "CALCIFY_POWER"
+    },
+    {
+      "enum": "CallOfTheVoid",
+      "model": "CallOfTheVoidPower",
+      "key": "CALL_OF_THE_VOID_POWER"
+    },
+    {
+      "enum": "Countdown",
+      "model": "CountdownPower",
+      "key": "COUNTDOWN_POWER"
+    },
+    {
+      "enum": "DanseMacabre",
+      "model": "DanseMacabrePower",
+      "key": "DANSE_MACABRE_POWER"
+    },
+    {
+      "enum": "Demesne",
+      "model": "DemesnePower",
+      "key": "DEMESNE_POWER"
+    },
+    {
+      "enum": "DevourLife",
+      "model": "DevourLifePower",
+      "key": "DEVOUR_LIFE_POWER"
+    },
+    {
+      "enum": "Friendship",
+      "model": "FriendshipPower",
+      "key": "FRIENDSHIP_POWER"
+    },
+    {
+      "enum": "Haunt",
+      "model": "HauntPower",
+      "key": "HAUNT_POWER"
+    },
+    {
+      "enum": "Lethality",
+      "model": "LethalityPower",
+      "key": "LETHALITY_POWER"
+    },
+    {
+      "enum": "NecroMastery",
+      "model": "NecroMasteryPower",
+      "key": "NECRO_MASTERY_POWER"
+    },
+    {
+      "enum": "Neurosurge",
+      "model": "NeurosurgePower",
+      "key": "NEUROSURGE_POWER"
+    },
+    {
+      "enum": "Pagestorm",
+      "model": "PagestormPower",
+      "key": "PAGESTORM_POWER"
+    },
+    {
+      "enum": "ReaperForm",
+      "model": "ReaperFormPower",
+      "key": "REAPER_FORM_POWER"
+    },
+    {
+      "enum": "SentryMode",
+      "model": "SentryModePower",
+      "key": "SENTRY_MODE_POWER"
+    },
+    {
+      "enum": "Shroud",
+      "model": "ShroudPower",
+      "key": "SHROUD_POWER"
+    },
+    {
+      "enum": "SleightOfFlesh",
+      "model": "SleightOfFleshPower",
+      "key": "SLEIGHT_OF_FLESH_POWER"
+    },
+    {
+      "enum": "SpiritOfAsh",
+      "model": "SpiritOfAshPower",
+      "key": "SPIRIT_OF_ASH_POWER"
+    },
+    {
+      "enum": "Veilpiercer",
+      "model": "VeilpiercerPower",
+      "key": "VEILPIERCER_POWER"
+    },
+    {
+      "enum": "BorrowedTime",
+      "model": "BorrowedTimePower",
+      "key": "BORROWED_TIME_POWER"
+    },
+    {
+      "enum": "EnergyNextTurn",
+      "model": "EnergyNextTurnPower",
+      "key": "ENERGY_NEXT_TURN_POWER"
+    },
+    {
+      "enum": "SummonNextTurn",
+      "model": "SummonNextTurnPower",
+      "key": "SUMMON_NEXT_TURN_POWER"
+    },
+    {
+      "enum": "ForbiddenGrimoire",
+      "model": "ForbiddenGrimoirePower",
+      "key": "FORBIDDEN_GRIMOIRE_POWER"
+    }
+  ],
+  "shared_token": {
+    "model": "SweepingGaze",
+    "id": 496,
+    "key": "SWEEPING_GAZE",
+    "cost": {
+      "base": 0,
+      "upgraded": 0
+    },
+    "variables": {
+      "OstyDamage": {
+        "base": 10,
+        "upgraded": 15
+      }
+    },
+    "keywords": {
+      "base": [
+        "Ethereal",
+        "Exhaust"
+      ],
+      "upgraded": [
+        "Ethereal",
+        "Exhaust"
+      ]
+    },
+    "target": "RandomEnemy",
+    "portrait": "sweeping_gaze",
+    "evidence": {
+      ".ctor": "0x060045e8",
+      "get_CanonicalVars": "0x060045ec",
+      "OnUpgrade": "0x060045ee"
+    }
+  }
+}

@@ -111,7 +111,7 @@ static void silent_attack_killed(State&s,int){
 }
 static bool silent_next_reward(State&s){
  if(!s.silent.extra_rewards)return false;--s.silent.extra_rewards;
- for(int i=0;i<3;i++){int k;bool duplicate;do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);s.reward[i]=(uint8_t)k;}
+ for(int i=0;i<3;i++){int k;bool duplicate;do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);s.reward[i]=(CardKind)k;}
  s.reward_claimed&=(uint8_t)~2;return true;
 }
 static int silent_hand_type_count(const State&s,CardType type){int n=0;for(unsigned i=0;i<s.hand.count;i++)if(definitions[s.cards[s.hand.ids[i]].kind].type==type)++n;return n;}
@@ -124,24 +124,30 @@ static int silent_base_damage(const State&s,Card c,int,int instance,int current)
  if(c.kind==Shiv&&!s.silent.shiv_finished)return min(9999,current+spower(s,SPower::PhantomBlades));
  return current;
 }
-static int silent_attack_factor(const State&s,int t,int amount){
- // The original command multiplies decimal factors before converting damage
- // to an integer. Keep Vulnerable and Tracking in the same integer fraction.
- if(amount<=0)return 0;uint64_t n=(unsigned)amount;if(spower(s,SPower::DoubleDamage))n*=2;
+// Saturating multiply and a bounded division avoid target-specific 64-bit
+// division helpers while retaining one final rounding for all damage factors.
+static uint64_t attack_product(uint64_t value,unsigned factor,uint64_t limit){
+ uint64_t result=0;while(factor){if(factor&1u){if(value>=limit-result)return limit;result+=value;}factor>>=1;if(factor)value=value>=limit-value?limit:value+value;}return result;
+}
+static int silent_attack_factor(const State&s,int t,int amount,Card c,int instance){
+ if(amount<=0)return 0;constexpr uint64_t limit=9999999000000ULL;
+ uint64_t n=(unsigned)amount;
+ if(spower(s,SPower::DoubleDamage))n*=2;
  int vulnerable=100,tracking=100;
- if(t>=0&&t<s.enemy_count){if(s.enemies[t].vulnerable)vulnerable=ironclad_vulnerable_multiplier(s);if(s.enemies[t].weak)tracking+=spower(s,SPower::Tracking);}
- if(vulnerable==100&&tracking==100)return n>9999999?9999999:(int)n;
- n=n*(unsigned)vulnerable*(unsigned)tracking;
- if(n>=99999990000ULL)return 9999999;
- // The ARM runtime deliberately has no 64-bit division helper. At this point
- // n/2^32 < 24, so divide its low word with a 32-bit remainder in 32 steps.
- uint32_t remainder=(uint32_t)(n>>32),low=(uint32_t)n,quotient=0;
- for(int bit=31;bit>=0;--bit){
-  remainder=(remainder<<1)|((low>>bit)&1u);quotient<<=1;
-  if(remainder>=10000){remainder-=10000;quotient|=1u;}
+ if(t>=0&&t<s.enemy_count){
+  if(s.enemies[t].vulnerable)vulnerable=necro_vulnerable_multiplier(s,t,ironclad_vulnerable_multiplier(s));
+  if(s.enemies[t].weak)tracking+=spower(s,SPower::Tracking);
  }
+ n=attack_product(n,(unsigned)vulnerable,limit);
+ n=attack_product(n,(unsigned)tracking,limit);
+ n=attack_product(n,(unsigned)necro_damage_multiplier(s,c,t,instance),limit);
+ n=attack_product(n,(unsigned)regent_damage_multiplier(s,c,t),limit);
+ if(n>=limit)return 9999999;
+ uint32_t remainder=0,quotient=0;
+ for(int bit=63;bit>=0;--bit){remainder=(remainder<<1)|unsigned((n>>bit)&1u);if(bit<32)quotient<<=1;if(remainder>=1000000){remainder-=1000000;if(bit<32)quotient|=1u;}}
  return (int)quotient;
 }
+
 static int silent_modify_block(const State&s,int n){
  if(n<=0)return 0;int layers=spower(s,SPower::Shadowmeld);
  while(layers--&&n<9999)n=min(9999,n*2);return n;
@@ -194,16 +200,23 @@ static SilentSnapshot silent_capture(const State&s,int id){
  const auto&v=s.silent;const auto&x=s.expansion;const auto&i=s.ironclad;SilentSnapshot n{};
  n.card=s.cards[id];n.turn_cost=x.turn_cost[id];n.combat_cost=x.combat_cost[id];n.replay=x.replay[id];n.return_turn=x.return_turn[id];n.blade_damage=x.blade_damage[id];
  n.sly=v.sly[id];n.retain=v.retain[id];n.inky=v.inky[id];n.bullet_free=v.bullet_free[id];n.discount=v.discount[id];n.turn_origin=v.turn_origin[id];n.combat_origin=v.combat_origin[id];n.bullet_origin=v.bullet_origin[id];
- n.iron_damage=i.damage_bonus[id];n.stomp_discount=i.stomp_discount[id];n.stomp_turn_origin=i.stomp_turn_origin[id];n.stomp_combat_origin=i.stomp_combat_origin[id];return n;
+ n.iron_damage=i.damage_bonus[id];n.stomp_discount=i.stomp_discount[id];n.stomp_turn_origin=i.stomp_turn_origin[id];n.stomp_combat_origin=i.stomp_combat_origin[id];
+ n.defect_value=s.defect.value[id];n.defect_cost_delta=s.defect.cost_delta[id];n.defect_turn_origin=s.defect.turn_origin[id];n.defect_combat_origin=s.defect.combat_origin[id];
+ n.regent_kick_discount=s.regent.kick_discount[id];n.regent_kick_turn_origin=s.regent.kick_turn_origin[id];n.regent_kick_combat_origin=s.regent.kick_combat_origin[id];n.regent_punch_damage=s.regent.punch_damage[id];
+ n.necro_ethereal=s.necro.ethereal[id];n.necro_flatten_zero=s.necro.flatten_zero[id];n.necro_cost_delta=s.necro.cost_delta[id];n.necro_turn_origin=s.necro.turn_origin[id];n.necro_combat_origin=s.necro.combat_origin[id];n.necro_flatten_origin=s.necro.flatten_origin[id];n.necro_scythe_value=s.necro.scythe_value[id];return n;
 }
 static int silent_clone(State&s,const SilentSnapshot&n){
- int id=create_to_hand(s,n.card);if(id<0)return -1;auto&v=s.silent;auto&x=s.expansion;auto&i=s.ironclad;
+ int id=create_to_hand(s,n.card,false);if(id<0)return -1;auto&v=s.silent;auto&x=s.expansion;auto&i=s.ironclad;
  x.turn_cost[id]=n.turn_cost;x.combat_cost[id]=n.combat_cost;x.replay[id]=n.replay;
  // A past scheduled return must not become an invalid stale turn index.
  x.return_turn[id]=n.return_turn>=(unsigned)s.turn?n.return_turn:0;x.blade_damage[id]=n.blade_damage;
  v.sly[id]=n.sly;v.retain[id]=n.retain;v.inky[id]=n.inky;v.bullet_free[id]=n.bullet_free;v.discount[id]=n.discount;v.turn_origin[id]=n.turn_origin;v.combat_origin[id]=n.combat_origin;v.bullet_origin[id]=n.bullet_origin;
  if(n.card.kind==Shiv&&spower(s,SPower::PhantomBlades))v.retain[id]|=1;
- i.damage_bonus[id]=n.iron_damage;i.stomp_discount[id]=n.stomp_discount;i.stomp_turn_origin[id]=n.stomp_turn_origin;i.stomp_combat_origin[id]=n.stomp_combat_origin;i.forced_exhaust[id]=0;return id;
+ i.damage_bonus[id]=n.iron_damage;i.stomp_discount[id]=n.stomp_discount;i.stomp_turn_origin[id]=n.stomp_turn_origin;i.stomp_combat_origin[id]=n.stomp_combat_origin;i.forced_exhaust[id]=0;
+ s.defect.value[id]=n.defect_value;s.defect.cost_delta[id]=n.defect_cost_delta;s.defect.turn_origin[id]=n.defect_turn_origin;s.defect.combat_origin[id]=n.defect_combat_origin;
+ s.regent.kick_discount[id]=n.regent_kick_discount;s.regent.kick_turn_origin[id]=n.regent_kick_turn_origin;s.regent.kick_combat_origin[id]=n.regent_kick_combat_origin;s.regent.punch_damage[id]=n.regent_punch_damage;
+ s.necro.ethereal[id]=n.necro_ethereal;s.necro.flatten_zero[id]=n.necro_flatten_zero;s.necro.cost_delta[id]=n.necro_cost_delta;s.necro.turn_origin[id]=n.necro_turn_origin;s.necro.combat_origin[id]=n.necro_combat_origin;s.necro.flatten_origin[id]=n.necro_flatten_origin;s.necro.scythe_value[id]=n.necro_scythe_value;
+ notify_card_generated(s,id);return id;
 }
 static bool silent_choose(State&s,const uint16_t*ids,unsigned count){
  auto&x=s.expansion;XChoice kind=x.choice;
@@ -319,7 +332,7 @@ static bool silent_effect(State&s,Effect e){
  const auto op=(XOp)e.target;int a=e.value,b=e.aux;auto&v=s.silent;
  switch(op){
  case XOp::SPower:
-  if(a>=SPowerCount){int t=a-SPowerCount;if(t>=0&&t<s.enemy_count&&s.enemies[t].hp&&!silent_blocks_debuff(s,t))v.strangle[t]=(int16_t)min(9999,v.strangle[t]+b);break;}
+  if(a>=SPowerCount){int t=a-SPowerCount;if(t>=0&&t<s.enemy_count&&s.enemies[t].hp&&!silent_blocks_debuff(s,t)){int change=min(9999-v.strangle[t],b);v.strangle[t]+=(int16_t)change;necro_note_debuff(s,t,NDebuff::Strangle);necro_debuff_applied(s,t,change);}break;}
   silent_gain_power(s,(SPower)a,b);
   if(a==(int)SPower::InfiniteBlades)s.infinite_blades=(int16_t)min(MaxCards,s.infinite_blades+b);
   if(a==(int)SPower::NoxiousFumes){s.noxious_fumes=(int16_t)min(9999,s.noxious_fumes+b);record(s,LogKind::Noxious,b);}
@@ -388,7 +401,7 @@ static bool silent_effect(State&s,Effect e){
   }break;
  }
  case XOp::SMalaise:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0){if(!silent_blocks_debuff(s,a))s.enemies[a].strength=(int16_t)max(-9999,s.enemies[a].strength-b);enqueue(s,EffectKind::Weak,b,a,true);}break;
+  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0){if(!silent_blocks_debuff(s,a)){int change=min(9999+s.enemies[a].strength,b);s.enemies[a].strength-=(int16_t)change;necro_note_debuff(s,a,NDebuff::Strength);necro_debuff_applied(s,a,change);}enqueue(s,EffectKind::Weak,b,a,true);}break;
  case XOp::SPoisonTrigger:silent_enemy_poison(s);break;
  case XOp::SStrangle:
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){int n=min(s.enemies[a].hp,b);s.enemies[a].hp-=(int16_t)n;record(s,LogKind::LoseHp,n,a+1);}break;

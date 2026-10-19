@@ -13,7 +13,7 @@ static void map_screen(Canvas&c,bool inspect=false){
         for(int col=0;col<3;col++){
             int id=row*3+col;const auto&node=s.map[id];bool allowed=reachable(s,id),selected=allowed&&col==a.cursor&&!inspect;
             if(selected)c.picture(A_MapHalo,xs[col]-21,y-21,43,43,(unsigned)(210+(a.animation%30<15?a.animation%15:14-a.animation%15)*3));
-            if(node.visited)c.picture(s.character==Character::Silent?a.content.ui_image(U_SilentMapMarker):A_MapMarker,xs[col]-12,y-11,23,23);
+            if(node.visited)c.picture(character_map_image(a.content,s.character),xs[col]-12,y-11,23,23);
             else c.picture(room_asset(node.room),xs[col]-12,y-12,24,24,allowed?255:row<(int)s.next_row?70:155);
             if(selected)c.text("▼",xs[col]-5,y-31,10,Ink);
             if(allowed&&!inspect)c.hit(xs[col]-19,y-19,38,38,HitKind::Choice,col);
@@ -30,19 +30,23 @@ static void map_screen(Canvas&c,bool inspect=false){
 
 static void deck_select(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.dim(0,20,320,220,225);
-    const char* title=s.phase==Phase::Upgrade?"选择一张牌升级":s.phase==Phase::Remove?"移除一张牌":"选择一张牌变化";
+    const bool grimoire=a.grimoire_select&&s.phase==Phase::Reward&&s.necro.grimoire_pending;
+    const char* title=grimoire?"禁忌魔典：永久移除一张牌":s.phase==Phase::Upgrade?"选择一张牌升级":s.phase==Phase::Remove?"移除一张牌":"选择一张牌变化";
     c.centered(title,0,25,320,16,Gold);
     a.cursor=mn(mx(0,a.cursor),s.deck_count-1);int first=a.cursor/10*10;
     for(int i=first;i<mn(s.deck_count,first+10);i++){
         Card card=s.deck[i];int x=24+(i-first)%5*55,y=54+(i-first)/5*73;
-        bool allowed=s.phase==Phase::Upgrade?!card.upgraded:s.phase==Phase::Transform?i!=s.event_first:true;
+        bool allowed=s.phase==Phase::Upgrade?card_upgradeable(card):s.phase==Phase::Transform?(i!=s.event_first&&card_transformable(card)):(card_removable(card)&&s.deck_count>1);
         small_card(c,card,x,y,a.cursor==i,allowed,0);
         c.hit(x-3,y-2,53,71,HitKind::Choice,i,allowed);
     }
-    if(s.phase==Phase::Transform){char text[64]={};TextBuffer b{text,sizeof text,0};b.text("还需变化 ");b.number(s.event_remaining);b.text(" 张 · 确认前不会扣除卡牌");c.centered(text,0,196,320,10,Muted);}
+    if(grimoire){char text[96]={};TextBuffer b{text,sizeof text,0};b.text("剩余 ");b.number(s.necro.grimoire_pending);b.text(" 次 · I 详情 · Enter 确认 · 空格放弃一次");c.centered(text,0,196,320,10,Muted);}
+    else if(s.phase==Phase::Transform){char text[64]={};TextBuffer b{text,sizeof text,0};b.text("还需变化 ");b.number(s.event_remaining);b.text(" 张 · 确认前不会扣除卡牌");c.centered(text,0,196,320,10,Muted);}
     else c.centered("方向键选牌 · I 详情 · Enter 预览并确认",0,196,320,10,Muted);
     int page=first/10,last=(s.deck_count-1)/10;
     c.text("‹",12,214,16,Gold);c.action(0,210,43,30,UiAction::PreviousDeckPage,page>0);
     c.text("›",296,214,16,Gold);c.action(277,210,43,30,UiAction::NextDeckPage,page<last);
-    char label[24]={};TextBuffer b{label,sizeof label,0};b.number(page+1);b.text(" / ");b.number(last+1);c.centered(label,112,218,96,10,Muted);
+    char label[24]={};TextBuffer b{label,sizeof label,0};b.number(page+1);b.text(" / ");b.number(last+1);c.centered(label,grimoire?129:112,218,grimoire?61:96,10,Muted);
+    if(grimoire){c.button("返回",44,213,78,false,24);c.action(42,210,82,30,UiAction::Back);
+        c.button("放弃一次",194,213,81,false,24);c.action(192,210,83,30,UiAction::SkipGrimoire);}
 }

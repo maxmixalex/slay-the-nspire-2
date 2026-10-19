@@ -40,11 +40,11 @@ bool Content::open(const uint8_t*p,size_t n){
     data_=nullptr;version_=cards_=0;ui_offset_=ui_count_=0;cached_large=cached_small=nullptr;
     if(!p||n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n)return false;
     const uint32_t version=u32(p+4),cards=u32(p+32);
-    if((version!=3&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10&&version!=11&&version!=12)||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=CardKinds))return false;
+    if(version<3||version>13||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=CardKinds))return false;
     auto ni=u32(p+16),ng=u32(p+20),ns=u32(p+24),nc=u32(p+28);
-    if(ni<A_Count||ni>8192||ng>8192||ns<66||ns>2048||nc!=(version>=6?AnimationKinds:11))return false;
-    if((version==11&&ns!=407)||(version==12&&ns!=ContentStrings))return false;
-    const unsigned auxiliary=version==12?U_Count:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+    if(ni<A_Count||ni>8192||ng>(version==13?16384u:8192u)||ns<66||ns>2048||nc!=(version==13?AnimationKinds:version>=6?17:11))return false;
+    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=ContentStrings))return false;
+    const unsigned auxiliary=version==13?U_Count:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;if(start>n)return false;
     uint32_t hash=2166136261u;for(size_t i=40;i<n;i++){hash^=p[i];hash*=16777619u;}if(hash!=u32(p+36))return false;
     for(unsigned i=0;i<ni;i++){
@@ -130,6 +130,7 @@ int Content::ui_image(int key)const{
 }
 int Content::relic_image(int index)const{
     if(index<0||index>=RelicKinds)return -1;
+    if(index>=30)return ui_image(U_CrackedCore+index-30);
     return index>=25?ui_image(U_Kunai+index-25):index>=17?ui_image(U_HornCleat+index-17):index==16?ui_image(U_SnakeRing):index<10?relic_definitions[index].asset:ui_image(U_Strawberry+index-10);
 }
 int Content::frame_image(Card card)const{
@@ -142,7 +143,9 @@ int Content::frame_image(Card card)const{
     if(type==(int)CardType::Curse)return ui_image(U_CurseFrame);
     if(type==(int)CardType::Status)return ui_image(U_ColorlessSkill);
     const CardColor color=card_color(card.kind);
-    int base=color==CardColor::Silent?U_GreenAttack:(color==CardColor::Colorless||color==CardColor::Token)?U_ColorlessAttack:U_RedAttack;
+    int base=color==CardColor::Silent?U_GreenAttack:color==CardColor::Defect?U_BlueAttack:
+        color==CardColor::Regent?U_OrangeAttack:color==CardColor::Necrobinder?U_PinkAttack:
+        (color==CardColor::Colorless||color==CardColor::Token)?U_ColorlessAttack:U_RedAttack;
     const int image=ui_image(base+type);
     return image>=0?image:ui_image(U_BigAttack+type);
 }
@@ -151,7 +154,9 @@ int Content::energy_image(Card card)const{
     if(card.kind==Soul)return ui_image(U_SoulEnergy);
     if(card.kind==SovereignBlade)return ui_image(U_BladeEnergy);
     const CardColor color=card_color(card.kind);
-    return color==CardColor::Silent?ui_image(U_SilentEnergy):(color==CardColor::Colorless||color==CardColor::Token)?ui_image(U_ColorlessEnergy):A_Energy;
+    return color==CardColor::Silent?ui_image(U_SilentEnergy):color==CardColor::Defect?ui_image(U_DefectEnergy):
+        color==CardColor::Regent?ui_image(U_RegentEnergy):color==CardColor::Necrobinder?ui_image(U_NecrobinderEnergy):
+        (color==CardColor::Colorless||color==CardColor::Token)?ui_image(U_ColorlessEnergy):A_Energy;
 }
 int Content::potion_image(Potion p)const{
     unsigned i=(unsigned)p;if(!i||i>PotionKinds)return -1;

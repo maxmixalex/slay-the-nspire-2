@@ -3,10 +3,12 @@
 #include <stddef.h>
 
 namespace spire {
-constexpr int IroncladCards=85, SilentCards=86, CardKinds=228, MaxCards=512, MaxDeck=192, MaxHand=10, MaxEnemies=2, MaxEffects=512;
-static_assert(CardKinds<=256,"Expand serialized card model IDs before exceeding uint8_t");
+using CardKind=uint16_t;
+using RelicMask=uint64_t;
+constexpr int IroncladCards=85, SilentCards=86, DefectCards=86, RegentCards=86, NecroCards=86, CardKinds=497, MaxCards=512, MaxDeck=192, MaxHand=10, MaxEnemies=2, MaxEffects=512;
+static_assert(CardKinds<16384,"Card model tokens must fit signed effect operands");
 constexpr int MapRows=12, MapColumns=3, MapNodes=MapRows*MapColumns;
-enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
+enum CardId : CardKind { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
     TrueGrit, TwinStrike, Inflame, IronWave, Whirlwind, FeelNoPain, DarkEmbrace,
     Bloodletting, Hemokinesis, Impervious, Offering, Bludgeon, Thunderclap,
     Uppercut, BodySlam, BattleTrance, FiendFire, Finesse, FlashOfSteel,
@@ -35,23 +37,34 @@ enum CardId : uint8_t { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, B
     Pounce, PreciseCut, Reflex, Ricochet, SerpentForm, ShadowStep, Shadowmeld,
     Skewer, Snakebite, Speedster, StormOfSteel, Strangle, Suppress, Tactician,
     TheHunt, ToolsOfTheTrade, Tracking, Untouchable, UpMySleeve,
-    WellLaidPlans, WraithForm, GiantRock };
-static_assert(Aggression==114&&Abrasive==170&&GiantRock==227&&GiantRock+1==CardKinds,"Keep appended character IDs stable");
-enum class Character : uint8_t { Ironclad, Silent };
-enum class CardColor : uint8_t { Ironclad, Silent, Colorless, Token };
-constexpr int CharacterKinds=2;
-struct CharacterDefinition { const char* key; const char* name; int starting_hp; uint32_t starting_relic; };
+    WellLaidPlans, WraithForm, GiantRock,
+#include "defect_ids.inc"
+#include "regent_ids.inc"
+#include "necro_ids.inc"
+    Dazed,Wound,Slimed,Burn,Void,Fuel,MinionStrike,MinionDiveBomb,MinionSacrifice,Debris,SweepingGaze };
+static_assert(Aggression==114&&Abrasive==170&&GiantRock==227&&Dazed==486&&SweepingGaze+1==CardKinds,"Keep appended character IDs stable");
+enum class Character : uint8_t { Ironclad, Silent, Defect, Regent, Necrobinder };
+enum class CardColor : uint8_t { Ironclad, Silent, Colorless, Token, Defect, Regent, Necrobinder };
+constexpr int CharacterKinds=5;
+struct CharacterDefinition { const char* key; const char* name; int starting_hp; RelicMask starting_relic; };
 extern const CharacterDefinition character_definitions[CharacterKinds];
 CardColor card_color(unsigned kind);
 bool card_generated(unsigned kind);
 bool card_in_pool(unsigned kind, Character);
-unsigned character_pool(Character, uint8_t* out, bool rewards_only=false);
+unsigned character_pool(Character, CardKind* out, bool rewards_only=false);
 enum class CardType : uint8_t { Attack, Skill, Power, Status, Curse };
-struct Definition { const char* key; int8_t cost, damage, block, draw, power;
-    int8_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted;
-    int8_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; int8_t creates=0, creates_up=0; int8_t cost_up=0; uint8_t keywords=0,upgraded_keywords=0; };
+struct Definition { const char* key; int16_t cost, damage, block, draw, power;
+    int16_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted;
+    int16_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; int16_t creates=0, creates_up=0; int16_t cost_up=0; uint8_t keywords=0,upgraded_keywords=0; };
 extern const Definition definitions[CardKinds];
-struct Card { uint8_t kind, upgraded; };
+struct Card { CardKind kind; uint8_t upgraded; };
+// Keep historical model tokens byte-for-byte: bit 8 is the upgrade flag;
+// new model-ID bits occupy bit 9 upward instead of colliding with that flag.
+constexpr int card_token(Card c){return int(c.kind&255u)|int((c.kind&0x7f00u)<<1)|(int(c.upgraded)<<8);}
+constexpr Card card_from_token(int v){return {CardKind((unsigned(v)&255u)|((unsigned(v)>>1)&0x7f00u)),uint8_t((unsigned(v)>>8)&1u)};}
+bool card_upgradeable(Card);
+bool card_removable(Card);
+bool card_transformable(Card);
 enum class Phase : uint8_t { Combat, ExhaustChoice, Reward, Camp, Upgrade, Complete, Dead,
     Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice, ExtendedChoice };
 enum class Room : uint8_t { Combat, Event, Shop, Camp, Treasure, Final };
@@ -67,13 +80,13 @@ struct Effect { EffectKind kind; int16_t value, target; int16_t aux=0; };
 struct Enemy { int16_t hp, max_hp, block, strength, vulnerable; uint8_t move; int16_t weak=0, poison=0; };
 struct Pile { uint16_t ids[MaxCards]; uint16_t count; };
 enum class LogKind : uint8_t { Turn, Play, Damage, Block, Exhaust, Draw, Shuffle, Enemy,
-    Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion, LoseHp, Energy, NoDraw, Weak, Poison, Discard, Create, Dexterity, Noxious, Accuracy, PoisonDamage };
+    Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion, LoseHp, Energy, NoDraw, Weak, Poison, Discard, Create, Dexterity, Noxious, Accuracy, PoisonDamage, RelicIndex };
 struct Log { LogKind kind; int32_t a,b; };
 enum class Potion : uint8_t { Empty, Fire, Block, Blood, Energy, Strength, Dexterity,
     Swift, Explosive, Vulnerable, Weak, Fruit, Forge, Flex, Speed, Bronze, Fortifier,
     AttackPotion, BeetleJuice, BottledPotential, Clarity, ColorlessPotion, CureAll, DistilledChaos, DropletOfPrecognition, Duplicator, EntropicBrew, FairyInABottle, FyshOil, GamblersBrew, GigantificationPotion, HeartOfIron, LiquidMemories, LuckyTonic, MazalethsGift, OrobicAcid, PotionOfBinding, PowderedDemise, PowerPotion, RadiantTincture, RegenPotion, ShacklingPotion, ShipInABottle, SkillPotion, SneckoOil, StableSerum, TouchOfInsanity, SoldiersStew, Ashwater, PoisonPotion, GhostInAJar, CunningPotion, Ambergris, FoulPotion, GlowwaterPotion, PotionShapedRock, BoneBrew, PotOfGhouls, PotionOfDoom, FocusPotion, EssenceOfDarkness, PotionOfCapacity, StarPotion, CosmicConcoction, KingsCourage };
-constexpr int PotionKinds=64, RelicKinds=30;
-static_assert(RelicKinds<32,"Expand relic masks and versioned save widths before adding more relics");
+constexpr int PotionKinds=64, RelicKinds=33;
+static_assert(RelicKinds<64,"Relic masks use 64 bits");
 constexpr int ShopCardCount=7, ShopRelicStart=7, ShopPotionStart=10, ShopRemove=13, ShopLeave=14;
 struct PotionDefinition { const char* key; const char* name; const char* description;
     uint8_t rarity; bool combat_only, targeted; uint8_t pool=0; bool automatic=false; };
@@ -81,20 +94,23 @@ extern const PotionDefinition potion_definitions[PotionKinds];
 const PotionDefinition* potion_definition(Potion);
 bool card_colorless(unsigned kind);
 
-enum Relic : uint32_t { Vajra=1, Anchor=2, BagOfPreparation=4, BurningBlood=8,
+enum Relic : RelicMask { Vajra=1, Anchor=2, BagOfPreparation=4, BurningBlood=8,
     Lantern=16, OddlySmoothStone=32, BloodVial=64, HappyFlower=128, Orichalcum=256, PenNib=512,
     Strawberry=1024, Pear=2048, Mango=4096, BagOfMarbles=8192, Akabeko=16384, BronzeScales=32768, RingOfTheSnake=65536,
     HornCleat=1u<<17, CaptainsWheel=1u<<18, MercuryHourglass=1u<<19, ArtOfWar=1u<<20,
     RegalPillow=1u<<21, MealTicket=1u<<22, OldCoin=1u<<23, CentennialPuzzle=1u<<24, Kunai=1u<<25, Shuriken=1u<<26,
-    OrnamentalFan=1u<<27, LetterOpener=1u<<28, Nunchaku=1u<<29 };
+    OrnamentalFan=1u<<27, LetterOpener=1u<<28, Nunchaku=1u<<29,CrackedCore=1ull<<30,DivineRight=1ull<<31,BoundPhylactery=1ull<<32 };
 enum class RelicHook : uint8_t { CombatStart, TurnStart, TurnEnd, Victory, AfterHandDraw };
-struct RelicDefinition { uint32_t id; const char* key; const char* name; const char* description; int asset; };
+struct RelicDefinition { RelicMask id; const char* key; const char* name; const char* description; int asset; };
 extern const RelicDefinition relic_definitions[RelicKinds];
-const RelicDefinition* relic_definition(unsigned);
+const RelicDefinition* relic_definition(RelicMask);
 
 #include "expansion_state.inc"
 #include "ironclad_state.inc"
 #include "silent_state.inc"
+#include "defect_state.inc"
+#include "regent_state.inc"
+#include "necro_state.inc"
 
 struct State {
     Phase phase;
@@ -108,20 +124,20 @@ struct State {
     Enemy enemies[MaxEnemies];
     Effect effects[MaxEffects]; uint16_t effect_count;
     int16_t playing;
-    uint8_t reward[3];
+    CardKind reward[3];
     Log logs[24]; uint16_t log_count;
     // Entire run state is serialized. Presentation clocks never enter this state.
     MapNode map[MapNodes]; int16_t current_node;
     uint8_t next_row, encounter, removals;
-    uint32_t relics, shop_relics[3];
+    RelicMask relics, shop_relics[3];
     uint8_t relic_count, relic_order[RelicKinds], relic_counters[RelicKinds];
     int16_t dexterity;
     uint8_t double_attack;
-    uint32_t relic_flash;
+    RelicMask relic_flash;
     uint32_t relic_revision;
     int16_t gold,last_gold;
     Potion potions[2];
-    uint8_t shop_cards[ShopCardCount],shop_potions[3]; uint16_t shop_sold;
+    CardKind shop_cards[ShopCardCount]; uint8_t shop_potions[3]; uint16_t shop_sold;
     int16_t shop_prices[13];
     EventId event_id; uint8_t event_page,event_count,event_remaining;
     int16_t event_value,event_first;
@@ -137,16 +153,19 @@ struct State {
     int16_t no_block; // Decrements after the enemy side, not immediately on play.
     int16_t demon_form, infinite_blades, block_next_turn, draw_next_turn, flame_barrier;
     uint8_t treasure_state; // 0 closed, 1 revealed, 2 claimed; no implicit rerolls.
-    uint32_t treasure_relic; // Zero means the exhausted prototype pool offers 50 gold.
+    RelicMask treasure_relic; // Zero means the exhausted prototype pool offers 50 gold.
     EventDeckAction event_deck_action; // v10: event choices must never use shop/camp completion.
     ExpansionState expansion;
     IroncladState ironclad;
     SilentState silent;
+    DefectState defect;
+    RegentState regent;
+    NecroState necro;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
-constexpr unsigned SaveVersion=13;
-struct SaveData { uint8_t bytes[65536]; size_t size; };
+constexpr unsigned SaveVersion=14,SaveCapacity=131072;
+struct SaveData { uint8_t bytes[SaveCapacity]; size_t size; };
 void new_run(State&, uint32_t seed, bool practice=false, Character character=Character::Ironclad);
 void enter_combat(State&);
 bool play(State&, int hand_index, int target);
@@ -212,18 +231,18 @@ int remove_price(const State&);
 bool has_upgrade(const State&);
 void heal(State&,int amount);
 void award_victory(State&);
-bool gain_relic(State&,unsigned id);
-unsigned random_relic(State&);
+bool gain_relic(State&,RelicMask id);
+RelicMask random_relic(State&);
 void relic_hook(State&,RelicHook);
 void relic_card_played(State&,Card);
-unsigned relic_counter_limit(unsigned id);
-bool relic_counter_is_turn_scoped(unsigned id);
+unsigned relic_counter_limit(RelicMask id);
+bool relic_counter_is_turn_scoped(RelicMask id);
 void relic_reset_turn_counters(State&);
 void relic_attack_begin(State&);
 void relic_attack_end(State&);
 int relic_attack_multiplier(const State&,bool preview=false);
 int card_block(const State&,Card,int instance=-1);
-unsigned relic_counter(const State&,unsigned id);
+unsigned relic_counter(const State&,RelicMask id);
 
 // Extended card/potion continuations share the ordinary combat dispatcher.
 int power_value(const State&,XPower);
@@ -244,6 +263,11 @@ void apply_vulnerable(State&,int target,int amount);
 void apply_weak(State&,int target,int amount);
 void apply_poison(State&,int target,int amount);
 bool character_description_value(const State&,Card,int target,int instance,const char* variable,int& out);
+bool character_deck_description_value(const State&,Card,int deck_index,const char* variable,int& out);
+void notify_deck_card_created(State&,int instance,int deck_index);
+void notify_deck_removed(State&,int index);
+void notify_deck_replaced(State&,int index);
+void notify_deck_copied(State&,int to,int from);
 int enemy_damage(const State&,int);
 bool potion_in_pool(Potion,Character);
 Potion random_potion(State&,bool in_combat=false);
@@ -251,4 +275,7 @@ bool procure_potion(State&,Potion);
 void execute_potion(State&,Potion,int);
 bool lab_potion(State&,Potion);
 bool lab_card(State&,Card);
+int card_star_cost(const State&,Card,int instance=-1);
+void regent_gain_stars(State&,int);
+bool necro_grimoire_choice(State&,int deck_index);
 } // namespace spire

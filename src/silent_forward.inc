@@ -20,7 +20,7 @@ static void silent_attack_damage(State&,int target,int unblocked);
 static void silent_attack_killed(State&,int target);
 static int silent_base_damage(const State&,Card,int target,int instance,int current);
 // Combines Vulnerable/Cruelty, Tracking and DoubleDamage with one final rounding.
-static int silent_attack_factor(const State&,int target,int amount);
+static int silent_attack_factor(const State&,int target,int amount,Card,int instance);
 // Apply to any raw Block gain once, after additive Dexterity for card gains.
 static int silent_modify_block(const State&,int amount);
 static bool silent_retains(const State&,int id);

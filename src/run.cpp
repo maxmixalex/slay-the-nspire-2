@@ -36,7 +36,7 @@ bool reachable(const State&s,int node){
     return (s.map[s.current_node].links&(1u<<(node%3)))!=0;
 }
 void finish_room(State&s){
-    s.treasure_state=0;s.treasure_relic=0;s.event_deck_action=EventDeckAction::None;
+    s.treasure_state=0;s.treasure_relic=0;s.event_deck_action=EventDeckAction::None;s.necro.grimoire_pending=0;
     if(s.hp<=0){s.phase=Phase::Dead;return;}
     if(s.practice){s.phase=Phase::Complete;return;}
     if(s.current_node<0||s.current_node>=MapNodes){s.phase=Phase::Error;return;}
@@ -50,22 +50,22 @@ static void enter_shop(State&s){
     // legacy RNG are explicit, not the original factory's probabilities.
     for(int i=0;i<ShopCardCount;i++){
         int card;bool repeated;
-        uint8_t neutral[CardKinds];unsigned n_neutral=0;
-        for(unsigned k=0;k<CardKinds;k++)if(card_colorless(k))neutral[n_neutral++]=(uint8_t)k;
+        CardKind neutral[CardKinds];unsigned n_neutral=0;
+        for(unsigned k=0;k<CardKinds;k++)if(card_colorless(k))neutral[n_neutral++]=(CardKind)k;
         do{card=i<5?(int)random_reward_card(s):neutral[random_below(s.rng_world,n_neutral)];
            repeated=false;for(int j=0;j<i;j++)if(s.shop_cards[j]==card)repeated=true;
         }while(repeated);
-        s.shop_cards[i]=(uint8_t)card;
+        s.shop_cards[i]=(CardKind)card;
         int rarity=card_rarity(card),base=rarity==4?150:rarity==3?75:50;
         if(card_colorless(card))base=base*6/5;
         s.shop_prices[i]=(int16_t)(base*(80+(int)random_below(s.rng_world,41))/100);
     }
     // Three distinct, unowned relics. Exhausted pools produce unavailable slots.
-    unsigned available[RelicKinds],n=0;
-    for(const auto&d:relic_definitions)if(d.id!=BurningBlood&&d.id!=RingOfTheSnake&&!(s.relics&d.id))available[n++]=d.id;
+    RelicMask available[RelicKinds];unsigned n=0;
+    for(const auto&d:relic_definitions)if(d.id!=BurningBlood&&d.id!=RingOfTheSnake&&d.id!=CrackedCore&&d.id!=DivineRight&&d.id!=BoundPhylactery&&!(s.relics&d.id))available[n++]=d.id;
     for(int i=0;i<3;i++){
-        unsigned id=0;if(n){unsigned j=random_below(s.rng_world,n);id=available[j];available[j]=available[--n];}
-        s.shop_relics[i]=(uint32_t)id;s.shop_prices[ShopRelicStart+i]=150;
+        RelicMask id=0;if(n){unsigned j=random_below(s.rng_world,n);id=available[j];available[j]=available[--n];}
+        s.shop_relics[i]=id;s.shop_prices[ShopRelicStart+i]=150;
         if(!id)s.shop_sold|=uint16_t(1u<<(ShopRelicStart+i));
         s.shop_potions[i]=(uint8_t)random_potion(s);
         s.shop_prices[ShopPotionStart+i]=potion_definitions[s.shop_potions[i]-1].rarity==3?100:
@@ -118,7 +118,7 @@ bool buy(State&s,int item){
     if((s.shop_sold&(1u<<item))||s.gold<s.shop_prices[item])return false;
     if(item<ShopCardCount){
         if(s.deck_count>=MaxDeck)return false;
-        s.deck[s.deck_count++]={s.shop_cards[item],0};record(s,LogKind::Buy,s.shop_cards[item]);
+        notify_deck_replaced(s,s.deck_count);s.deck[s.deck_count++]={s.shop_cards[item],0};record(s,LogKind::Buy,s.shop_cards[item]);
     }else if(item<ShopPotionStart){
         int balance=s.gold;s.gold-=s.shop_prices[item];
         if(!gain_relic(s,s.shop_relics[item-ShopRelicStart])){s.gold=(int16_t)balance;return false;}
@@ -131,15 +131,15 @@ bool buy(State&s,int item){
     s.shop_sold|=(uint16_t)(1u<<item);s.revision++;return true;
 }
 bool remove_card(State&s,int index){
-    if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1)return false;
+    if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s.deck[index]))return false;
     const bool event=s.event_deck_action==EventDeckAction::Remove;
     if(!event&&s.gold<remove_price(s))return false;
-    record(s,LogKind::Remove,s.deck[index].kind);for(int i=index+1;i<s.deck_count;i++)s.deck[i-1]=s.deck[i];s.deck_count--;
+    record(s,LogKind::Remove,s.deck[index].kind);notify_deck_removed(s,index);for(int i=index+1;i<s.deck_count;i++)s.deck[i-1]=s.deck[i];s.deck_count--;
     if(event){complete_event_selection(s);return true;}
     s.gold-=remove_price(s);s.shop_sold|=(1u<<ShopRemove);if(s.removals<255)s.removals++;s.phase=Phase::Shop;s.revision++;return true;
 }
 bool leave_shop(State&s){if(s.phase!=Phase::Shop)return false;finish_room(s);return true;}
-bool has_upgrade(const State&s){for(int i=0;i<s.deck_count;i++)if(!s.deck[i].upgraded)return true;return false;}
+bool has_upgrade(const State&s){for(int i=0;i<s.deck_count;i++)if(card_upgradeable(s.deck[i]))return true;return false;}
 bool event_option_enabled(const State&s,int option){
     if(s.phase!=Phase::Event||s.event_deck_action!=EventDeckAction::None||option<0||option>1)return false;
     if(s.event_page>=2)return option==0;
@@ -173,7 +173,7 @@ bool event_choice(State&s,int option){
     case EventId::DoorsOfLightAndDark:
         if(option==0){
             uint16_t eligible[MaxDeck];unsigned n=0;
-            for(unsigned i=0;i<s.deck_count;i++)if(!s.deck[i].upgraded)eligible[n++]=(uint16_t)i;
+            for(unsigned i=0;i<s.deck_count;i++)if(card_upgradeable(s.deck[i]))eligible[n++]=(uint16_t)i;
             // Distinct eligible instances, shuffled before taking at most two.
             // This expedition's RNG is not the original event RNG stream.
             for(unsigned i=n;i>1;--i){unsigned j=random_below(s.rng_world,i);auto t=eligible[i-1];eligible[i-1]=eligible[j];eligible[j]=t;}
@@ -200,9 +200,9 @@ bool event_choice(State&s,int option){
     record(s,LogKind::Event,(int)s.event_id,option);s.revision++;return true;
 }
 bool transform_card(State&s,int index){
-    if(s.phase!=Phase::Transform||index<0||index>=s.deck_count||index==s.event_first||!s.event_remaining)return false;
+    if(s.phase!=Phase::Transform||index<0||index>=s.deck_count||index==s.event_first||!s.event_remaining||!card_transformable(s.deck[index]))return false;
     int old=s.deck[index].kind,k;do{k=(int)random_reward_card(s);}while(k==old);
-    s.deck[index]={(uint8_t)k,0};record(s,LogKind::Transform,old,k);
+    notify_deck_replaced(s,index);s.deck[index]={(CardKind)k,0};record(s,LogKind::Transform,old,k);
     s.event_first=(int16_t)index;s.event_remaining--;
     if(!s.event_remaining){
         if(s.event_deck_action==EventDeckAction::Transform)complete_event_selection(s);

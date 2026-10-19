@@ -21,7 +21,7 @@ static bool put(State&s,Pile&p,int id,Zone z){
 static int make_card(State&s,Card c){
     if(s.card_count==MaxCards){fail(s);return -1;}
     int id=s.card_count++;s.cards[id]=c;
-    ironclad_card_created(s,id);silent_card_created(s,id);return id;
+    ironclad_card_created(s,id);silent_card_created(s,id);defect_card_created(s,id);regent_card_created(s,id);necro_card_created(s,id);return id;
 }
 static void shuffle(State&s){
     while(s.discard.count){int id=remove(s.discard,s.discard.count-1);put(s,s.draw,id,Zone::Draw);}
@@ -38,7 +38,7 @@ bool card_innate(Card c){return c.kind<CardKinds&&(((c.upgraded?definitions[c.ki
 bool card_strike_tag(unsigned kind){
     return kind==Strike||kind==StrikeSilent||kind==PommelStrike||kind==TwinStrike||
            kind==LeadingStrike||kind==PerfectedStrike||kind==UltimateStrike||kind==SeekerStrike||
-           kind==AshenStrike||kind==SetupStrike;
+           kind==AshenStrike||kind==SetupStrike||kind==DefectStrike||kind==DefectMeteorStrike||kind==DefectFocusedStrike||kind==DefectAdaptiveStrike||kind==RegentStrike||kind==MinionStrike||kind==NecroStrikeNecrobinder||kind==NecroSculptingStrike;
 }
 const Pile& choice_pile(const State&s){return s.phase==Phase::ExtendedChoice?s.expansion.choices:s.phase==Phase::ReturnChoice?s.discard:s.hand;}
 // First-turn innate cards are placed above the shuffled ordinary cards. They
@@ -68,7 +68,8 @@ int card_base_damage(const State&s,Card c,int target,int instance){
     int base=definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
     if(c.kind==Shiv)base+=s.accuracy;
     base=ironclad_base_damage(s,c,target,instance,base);
-    return silent_base_damage(s,c,target,instance,base);
+    base=silent_base_damage(s,c,target,instance,base);base=defect_base_damage(s,c,target,instance,base);
+    base=regent_base_damage(s,c,target,instance,base);return necro_base_damage(s,c,target,instance,base);
 }
 int damage(const State&s,Card c,int t,int instance){
     if(c.kind>=CardKinds)return 0;
@@ -82,10 +83,11 @@ int damage(const State&s,Card c,int t,int instance){
     }
     if(d<=0&&definitions[c.kind].type!=CardType::Attack)return 0;
     bool active=s.playing>=0&&instance==s.playing;
-    d=max(0,d+s.strength+(active&&s.attack_vigor?s.attack_vigor:s.vigor));
+    bool pet=necro_osty_attack(c);if(pet&&!s.expansion.osty_hp)return 0;
+    d=max(0,d+(pet?necro_osty_bonus(s):s.strength+(active&&s.attack_vigor?s.attack_vigor:s.vigor)));
     if(active)d*=(s.double_attack?2:1)*((s.expansion.triple||power_value(s,XPower::Gigantic))?3:1);
     else d*=((s.relics&PenNib)&&relic_counter(s,PenNib)==9?2:1)*(power_value(s,XPower::Gigantic)?3:1);
-    d=silent_attack_factor(s,t,d);
+    d=silent_attack_factor(s,t,d,c,instance);
     return d;
 }
 int enemy_damage(const Enemy&e){
@@ -107,14 +109,14 @@ static void victory(State&s){
         Card c=s.cards[id];Zone z=definitions[c.kind].type==CardType::Power?Zone::Power:(card_exhausts(c)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
         put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
     }
-    ironclad_combat_end(s);silent_combat_end(s);
+    ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);
     s.effect_count=0;s.playing=-1;s.expansion.depth=0;s.expansion.potion_active=0;s.expansion.enemy_side=0;
     s.discard_required=s.exhaust_limit=0;clear_extended_choice(s);relic_attack_end(s);s.expansion.triple=0;
     // Bounded prototype reward pool, not the original game's rarity/odds system.
     for(int i=0;i<3;i++){
         int k;bool duplicate;
         do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);
-        s.reward[i]=(uint8_t)k;
+        s.reward[i]=(CardKind)k;
     }
     s.phase=Phase::Reward;
 }
@@ -135,18 +137,19 @@ void apply_vulnerable(State&s,int target,int count){
     if(silent_blocks_debuff(s,target))return;
     auto&e=s.enemies[target];int added=min(9999-e.vulnerable,count);
     e.vulnerable+=(int16_t)added;ironclad_after_vulnerable(s,target,added);
+    if(added){necro_note_debuff(s,target,NDebuff::Vulnerable);necro_debuff_applied(s,target,added);}
 }
 void apply_weak(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
     if(silent_blocks_debuff(s,target))return;
     auto&e=s.enemies[target];int added=min(9999-e.weak,count);e.weak+=(int16_t)added;
-    record(s,LogKind::Weak,added,target);
+    record(s,LogKind::Weak,added,target);if(added){necro_note_debuff(s,target,NDebuff::Weak);necro_debuff_applied(s,target,added);}
 }
 void apply_poison(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
     if(silent_blocks_debuff(s,target))return;
-    auto&e=s.enemies[target];e.poison=(int16_t)min(9999,e.poison+count);
-    record(s,LogKind::Poison,count,target);
+    auto&e=s.enemies[target];int added=min(9999-e.poison,count);e.poison+=(int16_t)added;
+    record(s,LogKind::Poison,added,target);if(added){necro_note_debuff(s,target,NDebuff::Poison);necro_debuff_applied(s,target,added);}
 }
 static void create_shivs(State&s,int count){
     for(int i=0;i<count;i++){
@@ -154,6 +157,7 @@ static void create_shivs(State&s,int count){
         // Newly created cards overflow to discard, not draw. They are not drawn,
         // so Battle Trance's No Draw must not suppress creation.
         if(s.hand.count<MaxHand)put(s,s.hand,id,Zone::Hand);else put(s,s.discard,id,Zone::Discard);
+        notify_card_generated(s,id);
     }
     record(s,LogKind::Create,count,Shiv);
 }
@@ -185,21 +189,24 @@ static void resolve(State&s){
             queue_extension(s,XOp::Draw,1,0,true);break;
         case EffectKind::Damage:case EffectKind::GreedDamage:
             if(e.target>=0&&e.target<s.enemy_count&&s.enemies[e.target].hp>0){
-                auto& t=s.enemies[e.target];if(!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
+                auto& t=s.enemies[e.target];int old_hp=t.hp;bool pet=e.aux==2;
+                if(!pet&&!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
                 if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
-                int amount=max(0,e.value+s.strength+s.attack_vigor)*relic_attack_multiplier(s);
-                amount=silent_attack_factor(s,e.target,amount);
+                int amount=max(0,e.value+(pet?necro_osty_bonus(s):s.strength+s.attack_vigor))*relic_attack_multiplier(s);
+                Card card=s.playing>=0?s.cards[s.playing]:Card{Strike,0};
+                amount=silent_attack_factor(s,e.target,amount,card,s.playing);
                 int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
                 // Fisticuffs and Omnislice use TotalDamage + OverkillDamage.
                 // Their follow-up keeps damage beyond the target's remaining HP.
                 s.expansion.last_damage=(int16_t)min(9999,amount);
                 record(s,LogKind::Damage,amount,e.target);
                 silent_attack_damage(s,e.target,amount-absorb);
+                necro_attack_damage(s,e.target,absorb+min(old_hp,amount-absorb),pet);regent_after_damage(s,e.target,true);
                 if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];
                     gain_gold(s,d.power+(card.upgraded?d.power_up:0));
                 }
-                if(!t.hp)silent_attack_killed(s,e.target);
+                if(!t.hp){silent_attack_killed(s,e.target);defect_attack_killed(s,e.target);}
             }break;
         case EffectKind::Block:
             if(e.aux==1)gain_card_block(s,e.value);else gain_unpowered_block(s,e.value);
@@ -251,7 +258,7 @@ static void resolve(State&s){
         case EffectKind::Draw:draw_cards(s,e.value);break;
         case EffectKind::ChooseExhaust:if(s.hand.count)s.phase=Phase::ExhaustChoice;break;
         case EffectKind::RandomExhaust:if(s.hand.count)exhaust(s,(int)random_below(s.rng_cards,s.hand.count));break;
-        case EffectKind::CopyDiscard:{int id=make_card(s,s.cards[s.playing]);if(id>=0){copy_card_modifiers(s,id,s.playing);put(s,s.discard,id,Zone::Discard);}}break;
+        case EffectKind::CopyDiscard:{int id=make_card(s,s.cards[s.playing]);if(id>=0){copy_card_modifiers(s,id,s.playing);put(s,s.discard,id,Zone::Discard);notify_card_generated(s,id);}}break;
         case EffectKind::Strength:s.strength=min(9999,s.strength+e.value);record(s,LogKind::Strength,e.value);break;
         case EffectKind::Pain:
             if(!s.pain&&s.power_count<2)s.power_order[s.power_count++]=0;
@@ -261,11 +268,12 @@ static void resolve(State&s){
             s.embrace=min(99,s.embrace+e.value);record(s,LogKind::Embrace,s.embrace);break;
         case EffectKind::Finish:finish_extended_card(s);break;
         }
+        necro_observe_deaths(s);
     }
 }
 void damage_unpowered(State&s,int target,int amount){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)return;
     auto&e=s.enemies[target];int absorbed=min(e.block,max(0,amount));e.block-=absorbed;
-    e.hp=(int16_t)max(0,e.hp-max(0,amount)+absorbed);record(s,LogKind::Damage,amount,target);
+    e.hp=(int16_t)max(0,e.hp-max(0,amount)+absorbed);record(s,LogKind::Damage,amount,target);necro_observe_deaths(s);
 }
 void finish_combat_if_won(State&s){if(s.phase==Phase::Combat&&s.hp>0&&!alive(s))victory(s);}

@@ -8,7 +8,19 @@ static bool valid_silent_snapshot(const SilentSnapshot&n,bool active){
  if((n.stomp_discount||n.stomp_turn_origin||n.stomp_combat_origin)&&n.card.kind!=Stomp)return false;
  if(n.bullet_free&&cost(n.card)<0)return false;
  if(n.discount&&n.card.kind!=Pinpoint&&n.card.kind!=UpMySleeve)return false;
+ if(n.card.upgraded&&!card_upgradeable({n.card.kind,0}))return false;
+ if(n.defect_value<0||n.defect_value>9999||n.defect_cost_delta< -9999||n.defect_cost_delta>9999||n.defect_turn_origin< -9999||n.defect_turn_origin>9999||n.defect_combat_origin< -9999||n.defect_combat_origin>9999)return false;
+ if(n.defect_value&&n.card.kind!=DefectClaw&&n.card.kind!=DefectGeneticAlgorithm)return false;
+ if((n.defect_cost_delta||n.defect_turn_origin||n.defect_combat_origin)&&n.card.kind!=DefectModded&&n.card.kind!=DefectRocketPunch)return false;
+ if(n.regent_kick_discount>9999||n.regent_kick_turn_origin>n.regent_kick_discount||n.regent_kick_combat_origin>n.regent_kick_discount||n.regent_punch_damage<0||n.regent_punch_damage>9999)return false;
+ if((n.regent_kick_discount||n.regent_kick_turn_origin||n.regent_kick_combat_origin)&&n.card.kind!=RegentKinglyKick)return false;
+ if(n.regent_punch_damage&&n.card.kind!=RegentKinglyPunch)return false;
+ if(n.necro_ethereal>1||n.necro_flatten_zero>1||n.necro_cost_delta< -9999||n.necro_cost_delta>9999||n.necro_turn_origin< -9999||n.necro_turn_origin>9999||n.necro_combat_origin< -9999||n.necro_combat_origin>9999||n.necro_flatten_origin< -9999||n.necro_flatten_origin>9999||n.necro_scythe_value<0||n.necro_scythe_value>9986)return false;
+ if((n.necro_flatten_zero||n.necro_flatten_origin)&&n.card.kind!=NecroFlatten)return false;
+ if(n.necro_scythe_value&&n.card.kind!=NecroTheScythe)return false;
+ if(n.necro_cost_delta<0&&n.card.kind!=NecroBansheesCry&&n.card.kind!=NecroMelancholy)return false;
  if(!active&&(n.card.kind||n.card.upgraded||n.turn_cost||n.combat_cost||n.replay||n.return_turn||n.blade_damage||n.sly||n.retain||n.inky||n.bullet_free||n.discount||n.turn_origin||n.combat_origin||n.bullet_origin||n.iron_damage||n.stomp_discount||n.stomp_turn_origin||n.stomp_combat_origin))return false;
+ if(!active&&(n.defect_value||n.defect_cost_delta||n.defect_turn_origin||n.defect_combat_origin||n.regent_kick_discount||n.regent_kick_turn_origin||n.regent_kick_combat_origin||n.regent_punch_damage||n.necro_ethereal||n.necro_flatten_zero||n.necro_cost_delta||n.necro_turn_origin||n.necro_combat_origin||n.necro_flatten_origin||n.necro_scythe_value))return false;
  return true;
 }
 static bool valid_silent_state(const State&s){
