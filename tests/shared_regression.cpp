@@ -61,7 +61,7 @@ static void relics(){
  s=fight({{Defend,0}});CHECK(gain_relic(s,CentennialPuzzle));supply(s,20);s.block=99;CHECK(end_turn(s));CHECK(!relic_counter(s,CentennialPuzzle));CHECK(end_turn(s));CHECK(relic_counter(s,CentennialPuzzle)==1&&s.hand.count==8);rt(s);
  s=fight({{Bloodletting,0}});CHECK(gain_relic(s,CentennialPuzzle));supply(s,20);s.no_draw=1;CHECK(play(s,0,0));CHECK(s.hand.count==0&&relic_counter(s,CentennialPuzzle)==1);rt(s);
  s=fight({{Bloodletting,0}});CHECK(gain_relic(s,CentennialPuzzle));supply(s,20);s.hp=3;CHECK(play(s,0,0));CHECK(s.phase==Phase::Dead&&s.hand.count==0&&s.draw.count==20);rt(s);
- new_run(s,7,true);for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==RelicKinds&&s.relics==(1u<<RelicKinds)-1);rt(s);enter_combat(s);CHECK(relic_counter(s,CentennialPuzzle)==0);rt(s);
+ new_run(s,7,true);for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==RelicKinds&&s.relics==(RelicMask(1)<<RelicKinds)-1);rt(s);enter_combat(s);CHECK(relic_counter(s,CentennialPuzzle)==0);rt(s);
 }
 static void migration(const char*path){
  FILE*f=std::fopen(path,"r");CHECK(f);std::vector<uint8_t>b;unsigned v;while(std::fscanf(f,"%2x",&v)==1)b.push_back((uint8_t)v);std::fclose(f);

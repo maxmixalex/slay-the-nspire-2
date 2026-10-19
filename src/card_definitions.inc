@@ -84,6 +84,7 @@ int card_rarity(unsigned kind){
 static constexpr uint8_t rarity[CardKinds]={
  1,1,1,2,2,2,3,2,2,3,2,3,3,4,3,3,4,4,3,2,3,2,3,4,3,3,1,1,1,1,3,2,2,2,2,2,2,2,3,3,3,3,3,2,2,2,2,4,3,2,7,3,4,3,4,3,4,3,2,2,2,3,4,2,3,3,3,2,4,4,3,4,4,4,3,3,3,3,4,3,4,3,3,4,4,3,4,4,3,4,3,3,3,3,3,3,4,3,4,3,4,4,3,4,3,3,4,3,3,3,3,3,7,7,
 #include "character_rarities.inc"
+,
 #include "all_character_rarities.inc"
 };
     return kind<CardKinds?rarity[kind]:0;

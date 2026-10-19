@@ -50,7 +50,7 @@ static void potions(){
 static void relics(){
     auto s=combat();CHECK(gain_relic(s,Strawberry));CHECK(s.max_hp==87&&s.hp==87);CHECK(!gain_relic(s,Strawberry));
     CHECK(gain_relic(s,Pear));CHECK(gain_relic(s,Mango));CHECK(s.max_hp==111&&s.hp==111);rt(s);
-    for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==RelicKinds&&s.relics==((1u<<RelicKinds)-1));rt(s);
+    for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==RelicKinds&&s.relics==((RelicMask(1)<<RelicKinds)-1));rt(s);
     enter_combat(s);CHECK(s.thorns==3&&s.vigor==8&&s.enemies[0].vulnerable==1&&s.enemies[1].vulnerable==1);rt(s);
     s=combat();CHECK(gain_relic(s,Akabeko));enter_combat(s);hand(s,{{TwinStrike,0},{Strike,0}});s.enemies[0]={46,46,0,0,0,0};
     CHECK(damage(s,{TwinStrike,0},0)==13);CHECK(play(s,0,0));CHECK(s.enemies[0].hp==20&&!s.vigor&&!s.attack_vigor);CHECK(play(s,0,0));CHECK(s.enemies[0].hp==14);rt(s);
