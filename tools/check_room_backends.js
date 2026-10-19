@@ -14,6 +14,10 @@ const assert = require('node:assert/strict');
     let memory, game, saved = 0;
     let storage = fs.readFileSync(path.join(root, scenario.name + '-fixture.bin'));
     const { instance } = await WebAssembly.instantiate(wasm, { env: {
+      resource_read: (offset, p, n) => {
+        if (offset < 0 || n < 0 || offset > pack.length || n > pack.length - offset) return 0;
+        new Uint8Array(memory.buffer, p, n).set(pack.subarray(offset, offset + n)); return 1;
+      },
       save: (p, n) => {
         storage = Buffer.from(new Uint8Array(memory.buffer, p, n));
         assert.deepEqual(storage, fs.readFileSync(path.join(root, `${scenario.name}-save-${saved++}.bin`)));
@@ -26,7 +30,6 @@ const assert = require('node:assert/strict');
       }
     }});
     game = instance.exports; memory = game.memory;
-    new Uint8Array(memory.buffer, game.content_buffer(), pack.length).set(pack);
     assert.equal(game.start(pack.length), 1);
     for (const [i, key] of scenario.steps.entries()) {
       if (key < 0) game.advance(99); else game.input(key);

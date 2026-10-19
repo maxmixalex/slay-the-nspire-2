@@ -6,7 +6,13 @@ The user requested the following order: complete all original single-player even
 
 Three parallel agents own enemy/encounter behavior, event behavior, and original resource/map/UI analysis; root owns shared state, integration, migration, reference-run routing and checkpoint publication. Initial inspection found hard-coded two-enemy storage, a 12 × 3 expedition, five adapted events and a separate seven-column original-map subsystem. These are integration gaps, not completed original-world support. The 13 MiB resident resource pack has only 720,710 bytes free and ARM static allocation only 602,932 bytes below its 16 MiB ceiling; full-world assets require bounded random-access resource loading rather than another unchecked resident-buffer increase.
 
-The pinned assembly declares 121 monster, 91 encounter and 68 event types. These are metadata counts pending reachability and dependency classification, not implementation counts. The task ledger and acceptance details are in [world-parity-0.17.md](world-parity-0.17.md). No new 0.17 build, original-run parity result or fidelity percentage is claimed at this initial source checkpoint.
+Reachability analysis identifies 108 original single-player monsters, 88 concrete encounters (80 act encounters and eight event encounters), 66 events including eight Ancients and the Lantern Key forced event, and 297 single-player relic models. Legacy Nibbit remains a separate compatibility model. These are implementation targets, not passing-execution counts. Enemy storage must handle at least six simultaneous original creatures; the shared engine will provide eight slots. Nested event/relic rewards and enemy status cards extend the append-only card directory to at least 558 models. The task ledger and acceptance details are in [world-parity-0.17.md](world-parity-0.17.md).
+
+### Resource storage source stage
+
+The first coherent runtime stage replaces production resident pack arrays with bounded random-access resource loading in Ndless, X11 and WASM. Directory, decoded picture, glyph and string caches have fixed limits; the file remains immutable and its complete checksum and payload formats are checked at open. The browser keeps the embedded pack outside WASM memory. Historical memory-backed parsing remains available, and old resource directory counts are frozen explicitly for versions 3–13. New reader and actual-pack memory/range comparison suites are prepared. Details are in [resource-source-0.17.md](resource-source-0.17.md).
+
+This source stage precedes wider world-state integration and must be pushed and read back before native, ARM, WASM and actual-pack validation. No 0.17 build, original-run parity result or fidelity percentage is claimed yet. The completed 0.16 download pair remains the delivered runtime while the three agents continue event, enemy and relic mechanisms.
 
 ## Completed 0.16: all five single-player character pools
 

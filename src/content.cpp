@@ -4,23 +4,30 @@ namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
 namespace {
-// Independent large-scene/small-sprite caches avoid re-inflating a background
-// for every icon. Pictures borrow these buffers until the next same-tier image.
-static uint8_t large_pixels[320*240*3],small_pixels[32768];
-static const uint8_t* cached_large=nullptr;
-static const uint8_t* cached_small=nullptr;
-const uint8_t* inflate(const uint8_t* source,unsigned length,unsigned& format){
-    if(length<6)return nullptr;
-    format=source[0];unsigned size=u32(source+1);
-    if(format>4||!size||size>sizeof large_pixels)return nullptr;
-    bool large=size>sizeof small_pixels;
-    auto& cached=large?cached_large:cached_small;
-    auto* pixels=large?large_pixels:small_pixels;
-    if(cached!=source){
-        cached=nullptr;if(!decode_lz4(source+5,length-5,pixels,size))return nullptr;
-        cached=source;
-    }
-    return pixels;
+// A view lives until its bounded cache slot is reused. Only directories
+// are resident; file payloads use these bounded shared decoding buffers.
+constexpr unsigned MaxImageBytes=320u*240u*8u+2u*240u;
+constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
+constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
+static uint8_t tiny_pixels[64][4096],small_pixels[16][32768],medium_pixels[8][131072],large_pixels[2][MaxImageBytes];
+static uint8_t encoded_pixels[MaxEncodedImage];
+struct ImageCache {const Content* owner{};uint32_t offset{};unsigned format{};};
+static ImageCache image_cache[90];static unsigned image_cursor[4]{};
+static uint8_t* image_buffer(unsigned slot){return slot<64?tiny_pixels[slot]:slot<80?small_pixels[slot-64]:slot<88?medium_pixels[slot-80]:large_pixels[slot-88];}
+static unsigned image_slot(unsigned size){
+    if(size<=4096)return image_cursor[0]++%64;
+    if(size<=32768)return 64+image_cursor[1]++%16;
+    if(size<=131072)return 80+image_cursor[2]++%8;
+    return 88+image_cursor[3]++%2;
+}
+struct GlyphCache {const Content* owner{};uint32_t offset{};uint8_t bytes[MaxGlyphBytes]{};};
+static GlyphCache glyph_cache[64];static unsigned glyph_cursor=0;
+struct StringCache {const Content* owner{};uint32_t offset{};char bytes[MaxStringBytes]{};};
+static StringCache string_cache[8];static unsigned string_cursor=0;
+static void clear_caches(const Content* owner){
+    for(auto&v:image_cache)if(v.owner==owner)v={};
+    for(auto&v:glyph_cache)if(v.owner==owner)v.owner=nullptr;
+    for(auto&v:string_cache)if(v.owner==owner)v.owner=nullptr;
 }
 bool valid_image(const uint8_t* p,unsigned len,unsigned w,unsigned h,unsigned fmt){
     if(fmt<4){unsigned expected=fmt<2?w*h*(fmt?3:2):512+w*h*(fmt==3?2:1);return len==expected;}
@@ -36,97 +43,129 @@ bool valid_image(const uint8_t* p,unsigned len,unsigned w,unsigned h,unsigned fm
     return at==len;
 }
 }
-bool Content::open(const uint8_t*p,size_t n){
-    data_=nullptr;version_=cards_=0;ui_offset_=ui_count_=0;cached_large=cached_small=nullptr;
-    if(!p||n<40||n>MaxPack||u32(p)!=0x3250534E||u32(p+8)!=0x41CEF1EA||u32(p+12)!=n)return false;
-    const uint32_t version=u32(p+4),cards=u32(p+32);
-    if(version<3||version>13||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=CardKinds))return false;
-    auto ni=u32(p+16),ng=u32(p+20),ns=u32(p+24),nc=u32(p+28);
-    if(ni<A_Count||ni>8192||ng>(version==13?16384u:8192u)||ns<66||ns>2048||nc!=(version==13?AnimationKinds:version>=6?17:11))return false;
-    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=ContentStrings))return false;
-    const unsigned auxiliary=version==13?U_Count:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
-    uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;if(start>n)return false;
-    uint32_t hash=2166136261u;for(size_t i=40;i<n;i++){hash^=p[i];hash*=16777619u;}if(hash!=u32(p+36))return false;
+const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const{
+    if(!io_good_||!reader_.contains(offset,count)){io_good_=false;return nullptr;}
+    if(data_)return data_+offset;
+    if(!scratch||count>capacity||!reader_.read(offset,scratch,count)){io_good_=false;return nullptr;}
+    return scratch;
+}
+bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(p,n));}
+bool Content::open(ResourceSource source){
+    data_=metadata_=nullptr;version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
+    if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
+    uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
+    if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
+    const uint32_t version=u32(h+4),cards=u32(h+32);
+    if(version<3||version>14||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version==14&&cards!=CardKinds))return false;
+    auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
+    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
+    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||(version==14&&ns!=ContentStrings))return false;
+    const unsigned auxiliary=version>=14?U_Count:version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+    const uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
+    if(start>n||start>DirectoryCapacity)return false;
+    uint32_t hash=0;if(!reader_.fnv1a(40,n-40,hash)||hash!=u32(h+36))return false;
+    if(source.direct){data_=source.direct;metadata_=source.direct;}
+    else {if(!reader_.read(0,directory_,start))return false;metadata_=directory_;}
+    const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
+    auto reject=[&](){data_=metadata_=nullptr;version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
     for(unsigned i=0;i<ni;i++){
-        const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),h=u16(r+6),fmt=u32(r+8),len=u32(r+12);
-        if(!w||w>320||!h||h>240||fmt>5||(fmt==5&&version<5)||off<start||off%2||off>n||len>n-off)return false;
-        const uint8_t* raw=p+off;
-        if(fmt==5){raw=inflate(raw,len,fmt);if(!raw)return false;len=u32(p+off+1);}
-        if(!valid_image(raw,len,w,h,fmt))return false;
+        const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),height=u16(r+6),fmt=u32(r+8),len=u32(r+12);
+        if(!w||w>320||!height||height>240||fmt>5||(fmt==5&&version<5)||off<start||off%2||off>n||len>n-off||len>MaxEncodedImage)return reject();
+        if(!image((int)i).pixels)return reject();
     }
     uint32_t last=0;
     for(unsigned i=0;i<ng;i++){
-        const uint8_t*r=p+40+ni*16+i*16;uint32_t cp=u32(r),off=u32(r+4),size=u16(r+8),w=r[10],h=r[11],key=(size<<24)|cp,encoded=u16(r+14);
-        if(cp>0x10FFFF||!w||w>40||!h||h>40||size>32||u16(r+12)>40||off<start||off>n||(encoded?encoded:w*h)>n-off||(i&&key<=last)||(version<5&&encoded))return false;
+        const uint8_t*r=p+40+ni*16+i*16;uint32_t cp=u32(r),off=u32(r+4),size=u16(r+8),w=r[10],height=r[11],key=(size<<24)|cp,encoded=u16(r+14);
+        if(cp>0x10FFFF||!w||w>40||!height||height>40||size>32||u16(r+12)>40||off<start||off>n||(encoded?encoded:w*height)>n-off||(i&&key<=last)||(version<5&&encoded))return reject();
         if(encoded){
-            if(encoded%2||encoded>2*w*h)return false;
-            unsigned total=0;for(unsigned j=0;j<encoded;j+=2){if(!p[off+j])return false;total+=p[off+j];}
-            if(total!=w*h)return false;
+            if(encoded%2||encoded>2*w*height)return reject();
+            const uint8_t*bytes=payload(off,encoded,encoded_pixels,sizeof encoded_pixels);if(!bytes)return reject();
+            unsigned total=0;for(unsigned j=0;j<encoded;j+=2){if(!bytes[j])return reject();total+=bytes[j];}
+            if(total!=w*height)return reject();
         }last=key;
     }
     for(unsigned i=0;i<ns;i++){
-        const uint8_t*r=p+40+ni*16+ng*16+i*8;uint32_t off=u32(r),len=u32(r+4);
-        if(off<start||off>=n||len>n-off-1||p[off+len])return false;
+        const uint8_t*r=p+40+ni*16+ng*16+i*8;uint32_t off=u32(r),len=u32(r+4);uint8_t zero=1;
+        if(off<start||off>=n||len>=MaxStringBytes||len>n-off-1||!reader_.u8(off+len,zero)||zero)return reject();
     }
     for(unsigned i=0;i<nc;i++){
         const uint8_t*r=p+40+ni*16+ng*16+ns*8+i*16;uint32_t first=u32(r),count=u16(r+4),ms=u16(r+6);
-        if(!count||count>256||first>=ni||count>ni-first||!ms||ms>1000||u32(r+12))return false;
-        int px=(int16_t)u16(r+8),py=(int16_t)u16(r+10);if(px< -640||px>640||py< -480||py>480)return false;
+        if(!count||count>256||first>=ni||count>ni-first||!ms||ms>1000||u32(r+12))return reject();
+        int px=(int16_t)u16(r+8),py=(int16_t)u16(r+10);if(px< -640||px>640||py< -480||py>480)return reject();
     }
     for(unsigned i=0;i<cards;i++){
         const uint8_t*r=p+40+ni*16+ng*16+ns*8+nc*16+i*16;
-        if(u32(r)>=ni||u32(r+4)>=ns||u32(r+8)>=ns||u32(r+12)>=ns)return false;
-        // Card portraits are versioned independently of directory placement.
+        if(u32(r)>=ni||u32(r+4)>=ns||u32(r+8)>=ns||u32(r+12)>=ns)return reject();
         const uint8_t* im=p+40+u32(r)*16;
-        if(u16(im+4)!=(version>=5?82:41)||u16(im+6)!=(version>=5?60:30))return false;
+        if(u16(im+4)!=(version>=5?82:41)||u16(im+6)!=(version>=5?60:30))return reject();
     }
     if(version>=5){
-        ui_count_=auxiliary;
-        ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
-        for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni){ui_offset_=0;return false;}
-        if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return false;
+        ui_count_=auxiliary;ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
+        for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni)return reject();
+        if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return reject();
     }
-    cards_=version>=4?cards:14;
-    data_=p;version_=version;length_=(uint32_t)n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;return true;
+    cards_=version>=4?cards:14;return true;
 }
 Picture Content::image(int id)const{
-    if(!data_||id<0||(unsigned)id>=images_)return {nullptr,nullptr,nullptr,0,0,0};
-    const uint8_t*r=data_+40+16*id;const uint8_t*p=data_+u32(r);uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=u32(r+8);
-    if(fmt==5){p=inflate(p,u32(r+12),fmt);if(!p)return {nullptr,nullptr,nullptr,0,0,0};}
+    const Picture empty{nullptr,nullptr,nullptr,0,0,0};
+    if(!metadata_||!io_good_||id<0||(unsigned)id>=images_)return empty;
+    const uint8_t*r=metadata_+40+16*id;const uint32_t off=u32(r),length=u32(r+12);
+    uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=u32(r+8),size=length;
+    const uint8_t*p=nullptr;
+    for(unsigned i=0;i<90;i++)if(image_cache[i].owner==this&&image_cache[i].offset==off){p=image_buffer(i);fmt=image_cache[i].format;break;}
+    if(!p){
+        if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5)){io_good_=false;return empty;}fmt=header[0];size=u32(header+1);}
+        if(fmt>4||!size||size>MaxImageBytes){io_good_=false;return empty;}
+        const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return empty;
+        if(u32(r+8)!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}}
+        else {
+            const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t*output=image_buffer(slot);
+            if(u32(r+8)==5){if(!decode_lz4(source+5,length-5,output,size)){io_good_=false;return empty;}}
+            else for(unsigned i=0;i<size;i++)output[i]=source[i];
+            p=output;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}cache={this,off,fmt};
+        }
+    }
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
 }
 Glyph Content::glyph(uint32_t cp,int size)const{
-    if(!data_)return {nullptr,0,0,0};uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;
-    while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=data_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
-    if((unsigned)lo<glyphs_){const uint8_t*r=data_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key)return {data_+u32(r+4),r[10],r[11],u16(r+12),u16(r+14)};}
+    if(!metadata_||!io_good_)return {nullptr,0,0,0};uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;
+    while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=metadata_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
+    if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
+        const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;
+        if(data_)bytes=data_+off;
+        else {for(const auto&v:glyph_cache)if(v.owner==this&&v.offset==off){bytes=v.bytes;break;}
+            if(!bytes){auto&v=glyph_cache[glyph_cursor++%64];v.owner=nullptr;bytes=payload(off,len,v.bytes,sizeof v.bytes);if(bytes){v.owner=this;v.offset=off;}}}
+        if(!bytes)return {nullptr,0,0,0};return {bytes,r[10],r[11],u16(r+12),u16(r+14)};
+    }}
     if(cp!='?')return glyph('?',size);return {nullptr,0,0,(uint16_t)(size/2)};
 }
 const char* Content::string(int id)const{
-    if(!data_||id<0||(unsigned)id>=strings_)return "";
-    return (const char*)(data_+u32(data_+40+images_*16+glyphs_*16+id*8));
+    if(!metadata_||!io_good_||id<0||(unsigned)id>=strings_)return "";
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;const uint32_t off=u32(r),len=u32(r+4)+1;
+    if(data_)return (const char*)(data_+off);
+    for(const auto&v:string_cache)if(v.owner==this&&v.offset==off)return v.bytes;
+    auto&v=string_cache[string_cursor++%8];v.owner=nullptr;
+    if(!payload(off,len,(uint8_t*)v.bytes,sizeof v.bytes))return "";v.owner=this;v.offset=off;return v.bytes;
 }
 Clip Content::clip(int id)const{
-    if(!data_||id<0||(unsigned)id>=clips_)return {0,0,1,0,0};
-    const uint8_t*r=data_+40+images_*16+glyphs_*16+strings_*8+id*16;
+    if(!metadata_||id<0||(unsigned)id>=clips_)return {0,0,1,0,0};
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+id*16;
     return {u32(r),u16(r+4),u16(r+6),(int16_t)u16(r+8),(int16_t)u16(r+10)};
 }
 int Content::card_image(int kind)const{
-    if(!data_||kind<0||(unsigned)kind>=cards_)return -1;
-    if(u32(data_+4)==3)return A_Card0+kind;
-    const uint8_t*r=data_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;
-    return (int)u32(r);
+    if(!metadata_||kind<0||(unsigned)kind>=cards_)return -1;
+    if(version_==3)return A_Card0+kind;
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return (int)u32(r);
 }
 const char* Content::card_string(int kind,int variant)const{
-    if(!data_||kind<0||(unsigned)kind>=cards_||variant<0||variant>2)return "";
-    if(u32(data_+4)==3)return string(kind*3+variant);
-    const uint8_t*r=data_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;
-    return string((int)u32(r+4+variant*4));
+    if(!metadata_||kind<0||(unsigned)kind>=cards_||variant<0||variant>2)return "";
+    if(version_==3)return string(kind*3+variant);
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return string((int)u32(r+4+variant*4));
 }
 int Content::ui_image(int key)const{
-    if(!data_||!ui_offset_||key<0||(unsigned)key>=ui_count_)return -1;
-    return (int)u32(data_+ui_offset_+key*4);
+    if(!metadata_||!ui_offset_||key<0||(unsigned)key>=ui_count_)return -1;return (int)u32(metadata_+ui_offset_+key*4);
 }
 int Content::relic_image(int index)const{
     if(index<0||index>=RelicKinds)return -1;

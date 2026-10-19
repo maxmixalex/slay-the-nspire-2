@@ -5,6 +5,8 @@ void* nd_open(const char*,const char*);
 unsigned nd_read(void*,unsigned,unsigned,void*);
 unsigned nd_write(const void*,unsigned,unsigned,void*);
 int nd_close(void*);
+int nd_seek(void*,long,int);
+long nd_tell(void*);
 int nd_rename(const char*,const char*);
 int nd_unlink(const char*);
 unsigned nd_hwtype();
@@ -15,9 +17,11 @@ int nd_touch_read(unsigned,unsigned,void*);
 int nd_touch_write(unsigned,unsigned,const void*);
 }
 static spire::App app;
-static uint8_t content[spire::MaxPack];
 static spire::SaveData scratch;
 static char pack_path[512],save_path[512],temp_path[512],backup_path[512];
+static bool read_resource(void* file,uint32_t offset,void* output,uint32_t count){
+    return nd_seek(file,(long)offset,0)==0&&nd_read(output,1,count,file)==count;
+}
 static bool sibling(char*out,const char*launcher,const char*filename){
     int slash=-1,n=0;while(launcher&&launcher[n]){if(n>=420)return false;if(launcher[n]=='/')slash=n;n++;}
     int at=0;while(at<=slash){out[at]=launcher[at];at++;}while(*filename&&at<510)out[at++]=*filename++;out[at]=0;return !*filename;
@@ -70,10 +74,10 @@ extern "C" int main(int argc,char**argv){
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
     if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns"))return 3;
     void*f=nd_open(pack_path,"rb");if(!f)return 4;
-    unsigned n=nd_read(content,1,sizeof content,f);uint8_t extra=0;bool end=nd_read(&extra,1,1,f)==0;nd_close(f);
-    if(!end||!app.init(content,n,{save_game,load_game}))return 5;
-    if(!nd_lcd_init(0))return 6;
-    auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);return 7;}
+    if(nd_seek(f,0,2)!=0){nd_close(f);return 5;}long length=nd_tell(f);
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({f,(uint32_t)length,read_resource,nullptr},{save_game,load_game})){nd_close(f);return 5;}
+    if(!nd_lcd_init(0)){nd_close(f);return 6;}
+    auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);nd_close(f);return 7;}
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
     Clock clock{};clock.init();uint32_t input_clock=0;
@@ -118,5 +122,5 @@ extern "C" int main(int argc,char**argv){
         for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
         app.render();blit(app.pixels);
     }
-    clock.restore();nd_lcd_init(-1);return 0;
+    clock.restore();nd_lcd_init(-1);nd_close(f);return 0;
 }

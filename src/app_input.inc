@@ -1,6 +1,7 @@
 #include "hand_focus.inc"
 static void invalidate_hand_tiles();
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
+bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(source)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
 void App::reset_presentation(){shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}

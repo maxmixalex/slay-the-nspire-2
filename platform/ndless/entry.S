@@ -22,6 +22,9 @@ nd_call nd_open,0
 nd_call nd_read,1
 nd_call nd_write,2
 nd_call nd_close,3
+/* Stable Ndless SDK syscall-list.h: nuc_fseek=33, nuc_ftell=89. */
+nd_call nd_seek,33
+nd_call nd_tell,89
 nd_call nd_unlink,19
 nd_call nd_rename,20
 nd_call nd_touch_read,75

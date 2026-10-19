@@ -12,7 +12,10 @@
 #include <algorithm>
 
 static spire::App app;
-static uint8_t pack[spire::MaxPack];
+struct ResourceFile {FILE* file;~ResourceFile(){if(file)fclose(file);}};
+static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
+    FILE*file=(FILE*)context;return fseek(file,(long)offset,SEEK_SET)==0&&fread(output,1,count,file)==count;
+}
 static std::string save_path;
 static bool save_game(const spire::State&s){
     static spire::SaveData b{};if(!spire::save(s,b))return false;
@@ -43,8 +46,9 @@ int main(int argc,char**argv){
         std::string a=argv[i];if(a=="--headless")headless=true;
         else if((a=="--pack"||a=="--save"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];if(a=="--pack")packpath=v;else if(a=="--save")save_path=v;else if(a=="--capture")shot=v;else actions=v;}
         else {fprintf(stderr,"Usage: %s [--pack FILE] [--save FILE] [--headless] [--actions enter,right,…] [--capture FILE.ppm]\n",argv[0]);return 2;}}
-    FILE*f=fopen(packpath.c_str(),"rb");if(!f){perror(packpath.c_str());return 2;}size_t n=fread(pack,1,sizeof pack,f);bool eof=fgetc(f)==EOF;fclose(f);
-    if(!eof||!app.init(pack,n,{save_game,load_game})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
+    ResourceFile resource{fopen(packpath.c_str(),"rb")};if(!resource.file){perror(packpath.c_str());return 2;}
+    if(fseek(resource.file,0,SEEK_END)!=0)return 2;long length=ftell(resource.file);
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({resource.file,(uint32_t)length,read_resource,nullptr},{save_game,load_game})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
     if(!actions.empty()){
         size_t start=0;while(start<actions.size()){
             size_t end=actions.find(',',start);if(end==std::string::npos)end=actions.size();std::string a=actions.substr(start,end-start);

@@ -1,0 +1,252 @@
+{
+  "reference": {
+    "version": "v0.111.0",
+    "build": "41cef1ea"
+  },
+  "map_columns": 7,
+  "acts": [
+    {
+      "model": "Overgrowth",
+      "act_index": 0,
+      "rooms": 15,
+      "grid_rows": 16,
+      "floors": 17,
+      "initial_weak_encounters": 3,
+      "encounters": [
+        "BygoneEffigyElite",
+        "ByrdonisElite",
+        "CeremonialBeastBoss",
+        "CubexConstructNormal",
+        "FlyconidNormal",
+        "FogmogNormal",
+        "FuzzyWurmCrawlerWeak",
+        "InkletsNormal",
+        "MawlerNormal",
+        "NibbitsNormal",
+        "NibbitsWeak",
+        "OvergrowthCrawlers",
+        "PhrogParasiteElite",
+        "RubyRaidersNormal",
+        "ShrinkerBeetleWeak",
+        "SlimesNormal",
+        "SlimesWeak",
+        "SlitheringStranglerNormal",
+        "SnappingJaxfruitNormal",
+        "TheKinBoss",
+        "VantomBoss",
+        "VineShamblerNormal"
+      ],
+      "events": [
+        "AromaOfChaos",
+        "ByrdonisNest",
+        "DenseVegetation",
+        "JungleMazeAdventure",
+        "LuminousChoir",
+        "MorphicGrove",
+        "SapphireSeed",
+        "SunkenStatue",
+        "TabletOfTruth",
+        "UnrestSite",
+        "Wellspring",
+        "WhisperingHollow",
+        "WoodCarvings"
+      ],
+      "ancients": [
+        "Neow"
+      ],
+      "evidence": {
+        "encounters": "060048ee",
+        "events": "060048f3"
+      }
+    },
+    {
+      "model": "Underdocks",
+      "act_index": 0,
+      "rooms": 15,
+      "grid_rows": 16,
+      "floors": 17,
+      "initial_weak_encounters": 3,
+      "encounters": [
+        "CorpseSlugsNormal",
+        "CorpseSlugsWeak",
+        "CultistsNormal",
+        "FossilStalkerNormal",
+        "GremlinMercNormal",
+        "HauntedShipNormal",
+        "LagavulinMatriarchBoss",
+        "LivingFogNormal",
+        "PhantasmalGardenersElite",
+        "PunchConstructNormal",
+        "SeapunkNormal",
+        "SeapunkWeak",
+        "SewerClamNormal",
+        "SkulkingColonyElite",
+        "SludgeSpinnerWeak",
+        "SoulFyshBoss",
+        "TerrorEelElite",
+        "ToadpolesWeak",
+        "TwoTailedRatsNormal",
+        "WaterfallGiantBoss"
+      ],
+      "events": [
+        "AbyssalBaths",
+        "DrowningBeacon",
+        "EndlessConveyor",
+        "PunchOff",
+        "SpiralingWhirlpool",
+        "SunkenStatue",
+        "SunkenTreasury",
+        "DoorsOfLightAndDark",
+        "TrashHeap",
+        "WaterloggedScriptorium"
+      ],
+      "ancients": [
+        "Neow"
+      ],
+      "evidence": {
+        "encounters": "06004905",
+        "events": "0600490a"
+      }
+    },
+    {
+      "model": "Hive",
+      "act_index": 1,
+      "rooms": 14,
+      "grid_rows": 15,
+      "floors": 16,
+      "initial_weak_encounters": 2,
+      "encounters": [
+        "BowlbugsNormal",
+        "BowlbugsWeak",
+        "ChompersNormal",
+        "DecimillipedeElite",
+        "EntomancerElite",
+        "ExoskeletonsNormal",
+        "ExoskeletonsWeak",
+        "HunterKillerNormal",
+        "KaiserCrabBoss",
+        "InfestedPrismsElite",
+        "KnowledgeDemonBoss",
+        "LouseProgenitorNormal",
+        "MytesNormal",
+        "OvicopterNormal",
+        "SlumberingBeetleNormal",
+        "SpinyToadNormal",
+        "TheInsatiableBoss",
+        "TheObscuraNormal",
+        "ThievingHopperWeak",
+        "TunnelerWeak"
+      ],
+      "events": [
+        "Amalgamator",
+        "Bugslayer",
+        "ColorfulPhilosophers",
+        "ColossalFlower",
+        "FieldOfManSizedHoles",
+        "InfestedAutomaton",
+        "LostWisp",
+        "SpiritGrafter",
+        "TheLanternKey",
+        "ZenWeaver"
+      ],
+      "ancients": [
+        "Orobas",
+        "Pael",
+        "Tezcatara"
+      ],
+      "evidence": {
+        "encounters": "060048d7",
+        "events": "060048dc"
+      }
+    },
+    {
+      "model": "Glory",
+      "act_index": 2,
+      "rooms": 13,
+      "grid_rows": 14,
+      "floors": 15,
+      "initial_weak_encounters": 2,
+      "encounters": [
+        "AxebotsNormal",
+        "ConstructMenagerieNormal",
+        "DevotedSculptorWeak",
+        "AeonglassBoss",
+        "FabricatorNormal",
+        "FrogKnightNormal",
+        "GlobeHeadNormal",
+        "KnightsElite",
+        "MechaKnightElite",
+        "OwlMagistrateNormal",
+        "QueenBoss",
+        "ScrollsOfBitingNormal",
+        "ScrollsOfBitingWeak",
+        "SlimedBerserkerNormal",
+        "SoulNexusElite",
+        "TestSubjectBoss",
+        "TheLostAndForgottenNormal",
+        "TurretOperatorWeak"
+      ],
+      "events": [
+        "BattlewornDummy",
+        "GraveOfTheForgotten",
+        "HungryForMushrooms",
+        "Reflections",
+        "RoundTeaParty",
+        "Trial",
+        "TinkerTime"
+      ],
+      "ancients": [
+        "Nonupeipe",
+        "Tanx",
+        "Vakuu"
+      ],
+      "evidence": {
+        "encounters": "060048c0",
+        "events": "060048c5"
+      }
+    }
+  ],
+  "shared_events": [
+    "BrainLeech",
+    "CrystalSphere",
+    "DollRoom",
+    "FakeMerchant",
+    "PotionCourier",
+    "RanwidTheElder",
+    "RelicTrader",
+    "RoomFullOfCheese",
+    "SelfHelpBook",
+    "SlipperyBridge",
+    "StoneOfAllTime",
+    "Symbiote",
+    "TeaMaster",
+    "TheFutureOfPotions",
+    "TheLegendsWereTrue",
+    "ThisOrThat",
+    "WarHistorianRepy",
+    "WelcomeToWongos"
+  ],
+  "shared_ancients": [
+    "Darv"
+  ],
+  "special_final_event": "TheArchitect",
+  "evidence": {
+    "shared_events": "06001a46",
+    "shared_ancients": "06001a49",
+    "generate_rooms": "060017bb",
+    "run_generate_rooms": "06000c44",
+    "enter_next_act": "06009784"
+  },
+  "ordinary_ineligible_shared_events": [
+    "WarHistorianRepy"
+  ],
+  "forced_event_routes": [
+    {
+      "act_index": 2,
+      "point": "Unknown",
+      "room": "Event",
+      "event": "WarHistorianRepy",
+      "card": "LanternKey"
+    }
+  ]
+}

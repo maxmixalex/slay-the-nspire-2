@@ -6,8 +6,12 @@
 #include "ui_actions.hpp"
 #include "pointer.hpp"
 #include "map_preview.hpp"
+#include "resource_source.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
+// MaxPack remains the historical in-memory fixture limit. Production hosts
+// use bounded range reads and may open larger immutable resource files.
+constexpr uint32_t MaxContentFile=256u*1024u*1024u;
 // Each appended character/token model adds a title and two descriptions after
 // the complete, immutable 0.14 string directory.
 constexpr unsigned ContentVersion=13,ContentStrings=749+(CardKinds-228)*3;
@@ -16,8 +20,17 @@ struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encode
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
 class Content {
     const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
+    static constexpr uint32_t DirectoryCapacity=2u*1024u*1024u;
+    uint8_t directory_[DirectoryCapacity]{};
+    const uint8_t* metadata_{};
+    ResourceReader reader_{};
+    mutable bool io_good_=true;
+    const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
 public:
     bool open(const uint8_t*,size_t);
+    bool open(ResourceSource);
+    bool healthy()const{return metadata_&&io_good_;}
+    ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
     Glyph glyph(uint32_t cp,int size)const;
     const char* string(int id)const;
@@ -100,6 +113,7 @@ struct App {
     void reference_text(int code);
 
     bool init(const uint8_t*,size_t,Callbacks);
+    bool init(ResourceSource,Callbacks);
     void input(Key);
     void tick();
     void advance(uint32_t elapsed_ms);
