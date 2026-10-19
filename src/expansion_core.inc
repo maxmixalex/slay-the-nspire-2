@@ -449,5 +449,5 @@ bool lab_potion(State&s,Potion p){
 }
 bool lab_card(State&s,Card c){
  if(!s.practice||s.phase!=Phase::Combat||s.effect_count||s.playing>=0||c.kind>=CardKinds||c.upgraded>1||(c.upgraded&&!card_upgradeable({c.kind,0}))||s.card_count>=MaxCards)return false;
- create_to_hand(s,c);++s.revision;return true;
+ create_to_hand(s,c);resolve_pending(s);++s.revision;return true;
 }

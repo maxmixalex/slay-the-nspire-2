@@ -15,7 +15,9 @@ int main(int argc,char**argv){
  std::vector<uint8_t> data;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
  init();auto before=snapshot();a.input(Key::Collection);action(UiAction::LibraryRelics);action(UiAction::NextPage);a.render();CHECK(a.library_page==1);
- unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].value>=18&&a.hits[i].value<RelicKinds);CHECK(a.hits[i].y+a.hits[i].h<=154);}CHECK(count==RelicKinds-18);unchanged(before);
+ // The three appended starter relics fill a third row on this page. All
+ // item targets must still end before the selected name at y=163.
+ unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].value>=18&&a.hits[i].value<RelicKinds);CHECK(a.hits[i].y+a.hits[i].h<=160);}CHECK(count==RelicKinds-18);unchanged(before);
  CHECK(click(HitKind::LibraryItem,24));CHECK(a.detail_item==24);a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::LibraryItem);unchanged(before);
  a.input(Key::Back);CHECK(a.library&&a.library_page==1);a.input(Key::Back);CHECK(!a.library);
  init();a.game.phase=Phase::Upgrade;a.cursor=31;before=snapshot();CHECK(click(HitKind::Choice,31));CHECK(a.deck_candidate==31);unchanged(before);
@@ -30,7 +32,9 @@ int main(int argc,char**argv){
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);unchanged(before);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.exhaust.count==1);
  if(!data.empty()){
   CHECK(a.content.frame_image({StrikeSilent,0})==a.content.ui_image(U_GreenAttack));CHECK(a.content.energy_image({StrikeSilent,0})==a.content.ui_image(U_SilentEnergy));
-  for(int i=17;i<RelicKinds;i++)CHECK(a.content.relic_image(i)==a.content.ui_image(i>=25?U_Kunai+i-25:U_HornCleat+i-17));
+  for(int i=17;i<30;i++)CHECK(a.content.relic_image(i)==a.content.ui_image(i>=25?U_Kunai+i-25:U_HornCleat+i-17));
+  const int starters[]={U_CrackedCore,U_DivineRight,U_BoundPhylactery};
+  for(int i=0;i<3;i++)CHECK(a.content.relic_image(30+i)==a.content.ui_image(starters[i]));
   CHECK(std::strstr(a.content.card_string(Scrawl,2),"保留"));CHECK(!std::strstr(a.content.card_string(Scrawl,1),"保留"));
   CHECK(std::strstr(a.content.card_string(Purity,1),"保留"));
   char desc[512];a.card_description({HandOfGreed,1},0,desc,sizeof desc);CHECK(!std::strchr(desc,'{'));CHECK(std::strstr(desc,"25"));

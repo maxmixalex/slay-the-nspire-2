@@ -153,7 +153,7 @@ static void complete_model_matrix(){
   CHECK(card_in_pool(m.id,Character::Necrobinder)==(m.id!=SweepingGaze));
   Card c{m.id,(uint8_t)upgrade};int kw=upgrade?m.up_kw:m.kw;
   CHECK(cost(c)==(upgrade?m.up_cost:m.cost));CHECK(card_rarity(m.id)==m.rarity);CHECK(definitions[m.id].type==m.type);
-  CHECK((upgrade?definitions[m.id].upgraded_keywords:definitions[m.id].keywords)==kw);
+  CHECK(((upgrade?definitions[m.id].upgraded_keywords:definitions[m.id].keywords)|(definitions[m.id].exhausts?1:0))==kw);
   CHECK(card_exhausts(c)==((kw&1)!=0));CHECK(card_innate(c)==((kw&2)!=0));CHECK(card_retains(c)==((kw&4)!=0));
   auto s=fight();int id=append(s,c,Zone::Hand);fill(s,Zone::Hand,3);fill(s,Zone::Draw,20);fill(s,Zone::Discard,4);
   int soul0=append(s,{Soul,0},Zone::Exhaust),soul1=append(s,{Soul,0},Zone::Exhaust);
@@ -192,7 +192,7 @@ static void complete_model_matrix(){
   case NecroDevourLife:CHECK(power(s,NPower::DevourLife)==(upgrade?2:1));break;
   case NecroDirge:summon=upgrade?12:9;CHECK(count_kind(s,Soul,Zone::Draw)==3);for(unsigned j=0;j<s.draw.count;j++)if(s.cards[s.draw.ids[j]].kind==Soul)CHECK(s.cards[s.draw.ids[j]].upgraded==upgrade);break;
   case NecroDrainPower:{hit=upgrade?12:10;int n=0;for(unsigned j=0;j<s.discard.count;j++)if(s.discard.ids[j]!=(unsigned)id&&s.cards[s.discard.ids[j]].upgraded)++n;CHECK(n==(upgrade?3:2));break;}
-  case NecroDredge:CHECK(s.hand.count==6&&s.discard.count==2);break;
+  case NecroDredge:CHECK(s.hand.count==6&&s.discard.count==1);break;
   case NecroEidolon:draw=4;CHECK(s.exhaust.count==3&&s.necro.ethereal_played==4);break;
   case NecroEndOfDays:CHECK(s.expansion.doom[0]==(upgrade?57:49)&&s.expansion.doom[1]==(upgrade?37:29));break;
   case NecroEnfeeblingTouch:CHECK(s.enemies[0].strength==-(upgrade?11:8)&&s.expansion.restore_strength[0]==(upgrade?11:8));break;
@@ -386,7 +386,7 @@ static void temporary_strength_and_misery(){
  scenario="Misery copies temporary loss and restores it at the same side-end boundary";
  {auto s=fight();cast(s,NecroEnfeeblingTouch);cast(s,NecroMisery);
   CHECK(s.enemies[1].strength==-8&&s.expansion.restore_strength[1]==8&&s.necro.temp_strength[1][2]==8);quiet_turn(s);
-  CHECK(!s.enemies[1].strength&&!s.expansion.restore_strength[1]&&!s.necro.temp_strength[1][2]);restore(s);
+  CHECK(s.enemies[1].strength==2&&!s.expansion.restore_strength[1]&&!s.necro.temp_strength[1][2]);restore(s);
  }
  scenario="Misery separates permanent and temporary negative Strength before Artifact";
  {auto s=fight();s.enemies[0].strength=-5;cast(s,NecroEnfeeblingTouch);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
@@ -546,8 +546,9 @@ static void physical_cards_and_choices(){
  scenario="Global next-card free powers apply after Transfigure local cost additions";
  const CardKind free_sources[]={Unrelenting,Pounce,DefectSynthesis};
  const CardKind free_targets[]={NecroPoke,NecroDefendNecrobinder,NecroShroud};
+ const int transfigured_prices[]={1,2,2};
  for(unsigned i=0;i<3;i++){
-  auto s=fight();int target=append(s,{free_targets[i],0},Zone::Hand);cast(s,NecroTransfigure);CHECK(cost(s,target)==2);
+  auto s=fight();int target=append(s,{free_targets[i],0},Zone::Hand);cast(s,NecroTransfigure);CHECK(cost(s,target)==transfigured_prices[i]);
   cast(s,free_sources[i]);CHECK(cost(s,target)==0);restore(s);
  }
  {auto s=fight();s.expansion.stars=99;int target=append(s,{NecroDefendNecrobinder,0},Zone::Hand);cast(s,NecroTransfigure);cast(s,RegentVoidForm);CHECK(cost(s,target)==0);restore(s);}

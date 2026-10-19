@@ -28,7 +28,7 @@ Glass's passive does not decay its local base when Focus reduces the result to z
 
 ## Cards and continuation behavior
 
-The implementation uses the existing bounded, serialized effect queue. Multi-hit attacks, channel loops, repeated evokes and random attacks resume through explicit operations. Hologram and Scavenge reuse existing choice machinery. Scrape additionally stores its explicit draw results per automatic-play frame, so an automatic Headbutt choice can suspend a Scrape without losing its captured cards.
+The implementation uses the existing bounded, serialized effect queue. Multi-hit attacks, channel loops, repeated evokes and random attacks resume through explicit operations. Hologram and Scavenge reuse existing choice machinery. Scrape additionally stores its explicit draw results per automatic-play frame. A Hellraiser-triggered Sculpting Strike can suspend Scrape at its Ethereal choice without losing those captured cards; Hellraiser only triggers the original Strike tag.
 
 ### Instance and resource rules
 
@@ -44,7 +44,7 @@ The implementation uses the existing bounded, serialized effect queue. Multi-hit
 
 - BoostAway creates Dazed, FightThrough creates two Wounds, GunkUp creates Slimed, Overclock creates Burn and Turbo creates Void in Discard. Each created Status produces one generation event after it enters its pile. Smokestack and TrashToTreasure run in power acquisition order, followed by RocketPunch's card listener.
 - Compact changes current hand Status instances into Fuel/Fuel+, clears the old instance modifiers, and preserves hand positions. Successful combat transformation announces each replacement through the original generation hook, so Regent's Arsenal/Pillar and creation history see the new Fuel. Since the replacement is a Skill, Status-only generation listeners do not fire.
-- FlakCannon captures all non-exhausted Status cards in the original `AllPiles` order: Hand, Draw, Discard, then PlayPile. It exhausts each captured instance with normal exhaust hooks before performing one random attack per captured Status. Its snapshot includes a suspended Slimed in PlayPile if Slimed drew a Hellraiser-triggered automatic FlakCannon. End-of-play cleanup must respect an instance already moved to Exhaust.
+- FlakCannon captures all non-exhausted Status cards in the original `AllPiles` order: Hand, Draw, Discard, then PlayPile. It exhausts each captured instance with normal exhaust hooks before performing one random attack per captured Status. The PlayPile case is exercised by an explicit queued Flak operation at a real Slimed/Sculpting Strike pause; this is an operation-boundary fixture, not a natural Hellraiser/Flak card sequence. End-of-play cleanup must respect an instance already moved to Exhaust.
 - Iteration triggers on the first Status drawn in a turn, including whether such a draw already happened before Iteration was acquired. Scrape discards only its explicit draw results with a nonzero cost or X cost; nested Iteration draws do not become part of that captured batch. It moves the whole discard batch before Sly callbacks run.
 - Reboot moves Hand directly into Draw, combines and shuffles the draw/discard cards, and draws four/six. It does not activate active-discard listeners. The current Reboot, exhausted cards and installed Power cards remain outside the shuffle.
 - Uproar makes its two attacks, then automatically plays an eligible random Attack from Draw. Voltaic captures the number of Lightning orbs previously channeled in the combat before beginning its own channel loop.

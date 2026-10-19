@@ -38,7 +38,7 @@ bool card_innate(Card c){return c.kind<CardKinds&&(((c.upgraded?definitions[c.ki
 bool card_strike_tag(unsigned kind){
     return kind==Strike||kind==StrikeSilent||kind==PommelStrike||kind==TwinStrike||
            kind==LeadingStrike||kind==PerfectedStrike||kind==UltimateStrike||kind==SeekerStrike||
-           kind==AshenStrike||kind==SetupStrike||kind==DefectStrike||kind==DefectMeteorStrike||kind==DefectFocusedStrike||kind==DefectAdaptiveStrike||kind==RegentStrike||kind==MinionStrike||kind==NecroStrikeNecrobinder||kind==NecroSculptingStrike;
+           kind==AshenStrike||kind==SetupStrike||kind==DefectStrike||kind==DefectMeteorStrike||kind==DefectFocusedStrike||kind==DefectAdaptiveStrike||kind==RegentStrike||kind==RegentSolarStrike||kind==RegentShiningStrike||kind==MinionStrike||kind==NecroStrikeNecrobinder||kind==NecroSculptingStrike;
 }
 const Pile& choice_pile(const State&s){return s.phase==Phase::ExtendedChoice?s.expansion.choices:s.phase==Phase::ReturnChoice?s.discard:s.hand;}
 // First-turn innate cards are placed above the shuffled ordinary cards. They

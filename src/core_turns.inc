@@ -126,6 +126,9 @@ static void queue_legacy(State&s,Card c,int target,int energy){
 bool play(State&s,int h,int target){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1||h<0||h>=s.hand.count)return false;
     int id=s.hand.ids[h];if(id>=s.card_count||s.cards[id].kind>=CardKinds){fail(s);return false;}
+    // All resource and card-specific rejection checks precede mutable play
+    // setup, including clearing the previous relic's presentation signal.
+    if(!can_play_card(s,id))return false;
     Card c=s.cards[id];const auto&d=definitions[c.kind];int price=cost(s,id);
     if(price>s.energy||(card_targets_enemy(s,c)&&(target<0||target>=s.enemy_count||!s.enemies[target].hp)))return false;
     if((c.kind==Anger&&s.card_count==MaxCards)||s.card_count+d.creates+(c.upgraded?d.creates_up:0)>MaxCards){fail(s);return false;}

@@ -281,7 +281,8 @@ static void starting_character(){
  CHECK(s.hp==75&&s.max_hp==75&&s.gold==99&&s.deck_count==10);CHECK(s.relics&DivineRight);
  int strike=0,defend=0,falling=0,venerate=0;for(unsigned i=0;i<s.deck_count;i++){Card c=s.deck[i];CHECK(!c.upgraded);strike+=c.kind==RegentStrike;defend+=c.kind==RegentDefend;falling+=c.kind==RegentFallingStar;venerate+=c.kind==RegentVenerate;}
  CHECK(strike==4&&defend==4&&falling==1&&venerate==1);enter_combat(s);CHECK(s.expansion.stars==3&&s.regent.stars_gained_turn==3&&s.hand.count==5&&!s.regent.cards_created);ready(s);
- CHECK(card_strike_tag(RegentStrike)&&card_strike_tag(RegentSolarStrike)&&card_strike_tag(RegentShiningStrike)&&card_strike_tag(MinionStrike));
+ CHECK(card_strike_tag(RegentStrike));CHECK(card_strike_tag(RegentSolarStrike));
+ CHECK(card_strike_tag(RegentShiningStrike));CHECK(card_strike_tag(MinionStrike));
  State upgrade{};new_run(upgrade,31,false,Character::Regent);upgrade.phase=Phase::Upgrade;upgrade.deck_count=1;upgrade.deck[0]={Debris,0};auto before=snapshot(upgrade);CHECK(!upgrade_card(upgrade,0));same(upgrade,before);
 }
 

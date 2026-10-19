@@ -59,9 +59,9 @@ static void treasure(){
  auto claimed=snapshot(t);CHECK(!take_treasure(t)&&!open_treasure(t));same(t,claimed);rt(t);
  CHECK(leave_treasure(t));CHECK(t.phase==Phase::Map&&!t.treasure_state&&!t.treasure_relic&&t.relic_count==count+1);rt(t);
  CHECK(leave_treasure(s));CHECK(s.phase==Phase::Map&&s.relic_count==count&&!s.treasure_state);rt(s);
- s=chest();for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==30);int gold=s.gold;rng=s.rng_world;
+ s=chest();for(const auto&d:relic_definitions)gain_relic(s,d.id);CHECK(s.relic_count==33);int gold=s.gold;rng=s.rng_world;
  CHECK(open_treasure(s));CHECK(!s.treasure_relic&&s.rng_world==rng);CHECK(take_treasure(s));CHECK(s.gold==gold+50);rt(s);
- State bad=s;bad.phase=Phase::Map;CHECK(!validate(bad));bad=s;bad.treasure_state=3;CHECK(!validate(bad));bad=s;bad.treasure_relic=1u<<31;CHECK(!validate(bad));
+ State bad=s;bad.phase=Phase::Map;CHECK(!validate(bad));bad=s;bad.treasure_state=3;CHECK(!validate(bad));bad=s;bad.treasure_relic=RelicMask(1)<<40;CHECK(!validate(bad));
  // Buying Old Coin spends first; hitting the gold cap must not eat the payment.
  s=chest();s.phase=Phase::Shop;s.gold=9900;s.shop_relics[0]=OldCoin;s.shop_prices[ShopRelicStart]=150;
  CHECK(buy(s,ShopRelicStart));CHECK(s.gold==9999);rt(s);

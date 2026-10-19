@@ -266,7 +266,9 @@ static void complete_model_matrix(){
  }
  CHECK(variants==172);
 }
-static void effect(State&s,XOp op,int a=0,int b=0){queue_extension(s,op,a,b);restore(s);resolve_pending(s);settle(s);}
+// A newly queued synchronous effect is not an externally suspended state.
+// Save/load checks belong after resolution or at an actual choice boundary.
+static void effect(State&s,XOp op,int a=0,int b=0){queue_extension(s,op,a,b);resolve_pending(s);settle(s);}
 static void orb_values_and_order(){
  scenario="five orb passive and evoke values";upgrade=0;
  const DOrb kinds[]={DOrb::Lightning,DOrb::Frost,DOrb::Dark,DOrb::Plasma,DOrb::Glass};
@@ -439,10 +441,12 @@ static void statuses_draws_and_choices(){
   CHECK(s.zones[claw]==Zone::Hand&&s.zones[nested1]==Zone::Hand&&s.zones[nested2]==Zone::Hand);
  }
  scenario="Scrape captured draw identities survive a nested automatic choice";
- {auto s=fight();cast(s,Hellraiser);fill(s,Zone::Draw,3);int headbutt=append(s,{Headbutt,0},Zone::Draw),zap=append(s,{DefectZap,1},Zone::Discard);
+ {auto s=fight();cast(s,Hellraiser);fill(s,Zone::Draw,3);int sculpt=append(s,{NecroSculptingStrike,0},Zone::Draw),zap=append(s,{DefectZap,1},Zone::Hand);
   int scrape=append(s,{DefectScrape,0},Zone::Hand);CHECK(play(s,hand_index(s,scrape),0));
-  CHECK(s.phase==Phase::ReturnChoice&&s.expansion.depth==1&&s.defect.scrape_count[0]==1&&s.defect.scrape_drawn[0][0]==headbutt+1);
-  restore(s);CHECK(choose_return_to_draw(s,zap));settle(s);CHECK(s.zones[zap]==Zone::Hand&&s.hand.count==1);
+  CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::NEthereal&&s.expansion.depth==1);
+  CHECK(s.defect.scrape_count[0]==1&&s.defect.scrape_drawn[0][0]==sculpt+1);
+  choose(s,zap);CHECK(s.zones[zap]==Zone::Hand&&s.hand.count==1&&s.necro.ethereal[zap]);
+  CHECK(s.zones[sculpt]==Zone::Discard&&s.silent.drawn_combat==4&&s.silent.discarded_turn==3);
   for(unsigned f=0;f<=MaxAutoFrames;f++)CHECK(!s.defect.scrape_waiting[f]&&!s.defect.scrape_count[f]);
  }
  scenario="status creation triggers each power once and discounts Rocket Punch";
@@ -466,10 +470,17 @@ static void statuses_draws_and_choices(){
   int created=s.regent.cards_created;cast(s,DefectCompact);
   CHECK(s.cards[wound].kind==Fuel&&s.cards[burn].kind==Fuel);CHECK(s.regent.cards_created==created+2&&s.strength==2&&s.block==10);
  }
- scenario="Flak Cannon can exhaust the suspended Slimed which drew it";
- {auto s=fight();cast(s,Hellraiser);int flak=append(s,{DefectFlakCannon,0},Zone::Draw),slimed=append(s,{Slimed,0},Zone::Hand);
-  CHECK(play(s,hand_index(s,slimed),0));settle(s);CHECK(s.zones[slimed]==Zone::Exhaust&&s.zones[flak]==Zone::Discard&&s.exhaust.count==1);
-  CHECK(s.enemies[0].hp+s.enemies[1].hp==1992&&s.defect.cards_finished==2);
+ scenario="Flak snapshot operation includes an active ancestor Status and cleanup is idempotent";
+ {auto s=fight();cast(s,Hellraiser);int sculpt=append(s,{NecroSculptingStrike,0},Zone::Draw),slimed=append(s,{Slimed,0},Zone::Hand);
+  int zap=append(s,{DefectZap,1},Zone::Hand);CHECK(play(s,hand_index(s,slimed),0));
+  CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::NEthereal&&s.expansion.depth==1);
+  CHECK(s.zones[slimed]==Zone::Limbo&&s.zones[sculpt]==Zone::Limbo);restore(s);
+  // A direct operation-boundary fixture: Hellraiser cannot play Flak Cannon,
+  // which has no Strike tag. Resume the real choice with Flak's queued body
+  // to exercise its PlayPile snapshot while the Slimed ancestor is active.
+  queue_extension(s,XOp::DFlak,8,0,true);choose(s,zap);
+  CHECK(s.zones[slimed]==Zone::Exhaust&&s.zones[sculpt]==Zone::Discard&&s.exhaust.count==1);
+  CHECK(s.enemies[0].hp+s.enemies[1].hp==1983&&s.defect.cards_finished==3);
  }
  scenario="Reboot moves the hand directly without discard listeners";
  {auto s=fight();append(s,{Reflex,0},Zone::Hand);append(s,{Tactician,0},Zone::Hand);fill(s,Zone::Draw,8);cast(s,DefectReboot);

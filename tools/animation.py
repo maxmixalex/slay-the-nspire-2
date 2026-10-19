@@ -107,7 +107,7 @@ class Skeleton:
             name=r.st();order=r.vi();bones=[r.vi() for _ in range(r.vi())];target=r.vi();f=r.byte()
             mix=(r.fl() if f&64 else 1) if f&32 else 0
             soft=r.fl() if f&128 else 0
-            self.iks.append(dict(name=name,order=order,bones=bones,target=target,mix=mix,soft=soft,bend=1 if f&2 else -1,stretch=bool(f&8)))
+            self.iks.append(dict(name=name,order=order,bones=bones,target=target,mix=mix,soft=soft,bend=1 if f&2 else -1,compress=bool(f&4),stretch=bool(f&8),uniform=bool(f&16)))
         self.transforms=[]
         for _ in range(r.vi()):
             name=r.st();order=r.vi();bones=[r.vi() for _ in range(r.vi())];target=r.vi();f=r.byte()
@@ -166,7 +166,7 @@ class Skeleton:
                 return f,t,np.array([mix,soft]),(1 if f&8 else -1)
             flags,t,v,b=ik_frame()
             for i in range(n):
-                frame=[t,v,0,b];frames.append(frame)
+                frame=[t,v,0,b,bool(flags&16),bool(flags&32)];frames.append(frame)
                 if i+1==n:break
                 flags,t,v,b=ik_frame()
                 frame[2]=1 if flags&64 else [r.floats(4),r.floats(4)] if flags&128 else 0
@@ -254,6 +254,56 @@ def rotation(angle):
 def normalize_angle(angle):return (angle+180)%360-180
 
 
+def relative_world(bone,target,offset,mix):
+    """Apply the Spine 4.2 relative-world constraint in our unit skeleton space.
+
+    The target contributes an added transform, including world translation;
+    its reflection changes the sign of angular offsets, not the translation.
+    Reference: EsotericSoftware/spine-runtimes, 4.2,
+    spine-ts/spine-core/src/TransformConstraint.ts, applyRelativeWorld.
+    """
+    handedness=1 if np.linalg.det(target[:2,:2])>0 else -1
+    if mix[0]:
+        angle=math.degrees(math.atan2(target[1,0],target[0,0]))+offset[0]*handedness
+        bone[:2,:2]=rotation(normalize_angle(angle)*mix[0])@bone[:2,:2]
+    destination=target@np.array([offset[1],offset[2],1])
+    bone[:2,2]+=destination[:2]*mix[1:3]
+    for axis in (0,1):
+        bone[:2,axis]*=1+(np.linalg.norm(target[:2,axis])-1+offset[3+axis])*mix[3+axis]
+    if mix[5]>0:
+        tx=math.atan2(target[1,0],target[0,0]);ty=math.atan2(target[1,1],target[0,1])
+        delta=normalize_angle(math.degrees(ty-tx))-90+offset[5]*handedness
+        bone[:2,1]=rotation(delta*mix[5])@bone[:2,1]
+
+
+def scaled_ik(values,inherit,parent,world,target,length,compress,stretch,uniform,mix):
+    """One-bone IK with the authored local-space reach and scale switches.
+
+    Reference: Spine 4.2 IkConstraint.apply1; global skeleton scale is one in
+    this offline sampler. The returned values preserve both local shears.
+    """
+    out=values.copy();angle=-out[5]-out[0]
+    if inherit==1:delta=target-world[:2,2]
+    else:
+        linear=parent[:2,:2].copy()
+        if inherit==2:
+            axis=linear[:,0].copy();amount=abs(np.linalg.det(linear))/max(0.0001,float(axis@axis))
+            linear[:,1]=np.array([-axis[1],axis[0]])*amount
+            angle+=math.degrees(math.atan2(axis[1],axis[0]))
+        if abs(np.linalg.det(linear))<=0.0001:delta=np.zeros(2)
+        else:delta=np.linalg.solve(linear,target-parent[:2,2])-out[1:3]
+    angle+=math.degrees(math.atan2(delta[1],delta[0]))
+    if out[3]<0:angle+=180
+    out[0]+=normalize_angle(angle)*mix
+    if inherit in (3,4):delta=target-world[:2,2]
+    reach=length*out[3];distance=np.linalg.norm(delta)
+    if reach>0.0001 and ((compress and distance<reach) or (stretch and distance>reach)):
+        scale=1+(distance/reach-1)*mix
+        out[3]*=scale
+        if uniform:out[4]*=scale
+    return out
+
+
 def pose(sk,clip,t):
     values=[b['values'].copy() for b in sk.bones];inherits=[b['inherit'] for b in sk.bones]
     slots=copy.deepcopy(sk.slots);iks=copy.deepcopy(sk.iks);trans=copy.deepcopy(sk.transforms);deforms={};order=list(range(len(slots)))
@@ -272,6 +322,7 @@ def pose(sk,clip,t):
         elif group=='ik':
             iks[index]['mix'],iks[index]['soft']=v
             a=[f for f in frames if f[0]<=t][-1];iks[index]['bend']=a[3]
+            iks[index]['compress'],iks[index]['stretch']=a[4:6]
         elif group=='transform':trans[index]['mix']=v
         elif group=='deform':deforms[index]=v
         elif group=='order':order=v
@@ -281,6 +332,20 @@ def pose(sk,clip,t):
         local=matrix(values[i]);p=sk.bones[i]['parent'];inherit=inherits[i]
         if p<0:world[i]=local
         elif inherit==0:world[i]=world[p]@local
+        elif inherit==2:
+            # Spine 4.2 Bone.updateWorldTransformWith: NoRotationOrReflection.
+            # Cancel parent rotation/reflection while retaining its stretch.
+            par=world[p];linear=par[:2,:2];axis=linear[:,0];length2=float(axis@axis)
+            if length2>0.0001:
+                scale=abs(np.linalg.det(linear))/length2
+                basis=np.column_stack((axis,np.array([-axis[1],axis[0]])*scale))
+                angle=math.degrees(math.atan2(axis[1],axis[0]))
+            else:
+                basis=np.array([[0.,-linear[0,1]],[0.,linear[1,1]]])
+                angle=90-math.degrees(math.atan2(linear[1,1],linear[0,1]))
+            adjusted=values[i].copy();adjusted[0]-=angle
+            world[i]=np.eye(3);world[i][:2,:2]=basis@matrix(adjusted)[:2,:2]
+            world[i][:2,2]=(par@np.array([values[i][1],values[i][2],1]))[:2]
         elif inherit in (3,4):
             par=world[p];m=par[:2,:2];r=math.radians(values[i][0]);co,si=math.cos(r),math.sin(r)
             a=m@np.array([co,si]);a/=max(1e-8,np.linalg.norm(a));sign=-1 if np.linalg.det(m)<0 and inherit==3 else 1
@@ -300,7 +365,14 @@ def pose(sk,clip,t):
             if mix<=0:continue
             target=world[a['target']][:2,2].copy();chain=a['bones']
             if len(chain)==1:
-                i=chain[0];d=target-world[i][:2,2];ang=math.degrees(math.atan2(d[1],d[0]));cur=math.degrees(math.atan2(world[i][1,0],world[i][0,0]));rotate_world(i,normalize_angle(ang-cur)*mix)
+                i=chain[0]
+                if a.get('compress') or a.get('stretch'):
+                    p=sk.bones[i]['parent']
+                    if p<0:raise ValueError('Scaled IK requires a parent bone')
+                    values[i]=scaled_ik(values[i],inherits[i],world[p],world[i],target,sk.bones[i]['length'],a.get('compress',False),a.get('stretch',False),a.get('uniform',False),mix)
+                    update(i);children(i)
+                else:
+                    d=target-world[i][:2,2];ang=math.degrees(math.atan2(d[1],d[0]));cur=math.degrees(math.atan2(world[i][1,0],world[i][0,0]));rotate_world(i,normalize_angle(ang-cur)*mix)
             elif len(chain)==2:
                 p,c=chain;origin=world[p][:2,2].copy();middle=world[c][:2,2].copy();vec=target-origin
                 l1=np.linalg.norm(middle-origin);l2=sk.bones[c]['length']*np.linalg.norm(world[c][:2,0]);dist=np.linalg.norm(vec)
@@ -313,12 +385,13 @@ def pose(sk,clip,t):
             else:raise ValueError('Unsupported IK chain')
         else:
             a=trans[index];target=world[a['target']];o=a['offset'];m=a['mix']
-            if a['local'] or a['relative']:
-                # Assets selected for this profile use absolute world constraints.
-                if np.any(m):raise ValueError('Local/relative transform needs a separate profile')
+            if a['local']:
+                if np.any(m):raise ValueError('Local transform needs a separate profile')
                 continue
             for i in a['bones']:
                 b=world[i]
+                if a['relative']:
+                    relative_world(b,target,o,m);children(i);continue
                 if m[0]:
                     desired=math.degrees(math.atan2(target[1,0],target[0,0]))+o[0];cur=math.degrees(math.atan2(b[1,0],b[0,0]));b[:2,:2]=rotation(normalize_angle(desired-cur)*m[0])@b[:2,:2]
                 dest=(target@np.array([o[1],o[2],1]))[:2];b[0,2]+=(dest[0]-b[0,2])*m[1];b[1,2]+=(dest[1]-b[1,2])*m[2]
@@ -351,26 +424,98 @@ def load_textures(pack,name,texture):
     return out
 
 
+def cross2(a,b):return float(a[0]*b[1]-a[1]*b[0])
+
+
+def polygon_triangles(polygon):
+    """Triangulate a simple clipping contour, including concave contours."""
+    points=[]
+    for point in polygon:
+        if not points or np.linalg.norm(point-points[-1])>1e-8:points.append(point)
+    if len(points)>1 and np.linalg.norm(points[0]-points[-1])<=1e-8:points.pop()
+    if len(points)<3:return []
+    area=sum(cross2(a,b) for a,b in zip(points,points[1:]+points[:1]))
+    if abs(area)<=1e-8:return []
+    if area<0:points.reverse()
+    result=[]
+    while len(points)>3:
+        for i,b in enumerate(points):
+            a,c=points[i-1],points[(i+1)%len(points)];turn=cross2(b-a,c-b)
+            if abs(turn)<=1e-8:
+                points.pop(i);break
+            if turn<0:continue
+            other=[p for j,p in enumerate(points) if j not in ((i-1)%len(points),i,(i+1)%len(points))]
+            if any(cross2(b-a,p-a)>=-1e-8 and cross2(c-b,p-b)>=-1e-8 and cross2(a-c,p-c)>=-1e-8 for p in other):continue
+            result.append(np.array([a,b,c]));points.pop(i);break
+        else:raise ValueError('Clipping attachment must be a simple polygon')
+    if len(points)==3:result.append(np.array(points))
+    return result
+
+
+def clip_mesh(vertices,uv,triangles,polygon):
+    """Intersect mesh triangles with a contour, interpolating UV at each cut.
+
+    A concave contour is first partitioned into disjoint triangles. Clipping
+    each mesh triangle against those convex pieces retains its texture map
+    and permits tight sampled bounds, without painting outside the contour.
+    """
+    contours=polygon_triangles(polygon);out=[];indices=[]
+    for tri in triangles:
+        source=np.column_stack((vertices[tri],uv[tri]))
+        for contour in contours:
+            current=list(source)
+            for a,b in zip(contour,np.roll(contour,-1,axis=0)):
+                previous=current;current=[]
+                if not previous:break
+                last=previous[-1];before=cross2(b-a,last[:2]-a)
+                for point in previous:
+                    after=cross2(b-a,point[:2]-a)
+                    if (after>=-1e-8)!=(before>=-1e-8):
+                        fraction=before/(before-after)
+                        current.append(last+(point-last)*fraction)
+                    if after>=-1e-8:current.append(point)
+                    last,before=point,after
+            if len(current)<3:continue
+            first=len(out);out.extend(current)
+            for j in range(1,len(current)-1):
+                if abs(cross2(current[j][:2]-current[0][:2],current[j+1][:2]-current[0][:2]))>1e-8:
+                    indices.append((first,first+j,first+j+1))
+    if not indices:return np.empty((0,2)),np.empty((0,2)),np.empty((0,3),dtype=int)
+    out=np.asarray(out);return out[:,:2],out[:,2:],np.asarray(indices,dtype=int)
+
+
+def attachment_vertices(attachment,world,bone,deformation=None):
+    result=[];at=0
+    for influences in attachment['vertices']:
+        vertex=np.zeros(3)
+        for bi,x,y,weight in influences:
+            if deformation is not None:x+=deformation[at];y+=deformation[at+1]
+            at+=2;vertex+=(world[bi if bi>=0 else bone]@np.array([x,y,1]))*weight
+        result.append(vertex[:2])
+    return np.array(result)
+
+
 def geometry(sk,world,slots,deforms,order,textures,exclude_regions=()):
-    draw=[];atts=sk.skins[0][1]
+    draw=[];atts=sk.skins[0][1];clipping=None;clip_end=-1
     for si in order:
         s=slots[si];name=s['attachment'];o=atts.get((si,name))
-        if not o or o['kind'] not in (0,2) or s['color'][3]<=0 or o['path'] in exclude_regions:continue
-        tex=textures.get(o['path'])
-        if tex is None:raise ValueError('Missing region '+o['path'])
-        if o['kind']==0:
-            w,h=o['w'],o['h'];local=matrix([o['rotation'],o['x'],o['y'],o['sx'],o['sy'],0,0]);vs=np.array([[-w/2,-h/2,1],[-w/2,h/2,1],[w/2,h/2,1],[w/2,-h/2,1]])
-            vs=(world[s['bone']]@local@vs.T).T[:,:2];uv=np.array([[0,1],[0,0],[1,0],[1,1.]]);tris=np.array([[0,1,2],[2,3,0]])
-        else:
-            deformation=deforms.get((0,si,o.get('deform_parent',name)));vs=[];at=0
-            for influences in o['vertices']:
-                v=np.zeros(3)
-                for bi,x,y,weight in influences:
-                    if deformation is not None:x+=deformation[at];y+=deformation[at+1]
-                    at+=2;v+=(world[bi if bi>=0 else s['bone']]@np.array([x,y,1]))*weight
-                vs.append(v[:2])
-            vs=np.array(vs);uv=o['uv'];tris=o['triangles']
-        draw.append((vs,uv,tris,tex,s['color']*rgba(o['color']),s['blend']))
+        if o and o['kind']==6:
+            if clipping is None:
+                clipping=attachment_vertices(o,world,s['bone'],deforms.get((0,si,name)))
+                clip_end=o['end_slot']
+        elif o and o['kind'] in (0,2) and s['color'][3]>0 and o['path'] not in exclude_regions:
+            tex=textures.get(o['path'])
+            if tex is None:raise ValueError('Missing region '+o['path'])
+            if o['kind']==0:
+                w,h=o['w'],o['h'];local=matrix([o['rotation'],o['x'],o['y'],o['sx'],o['sy'],0,0]);vs=np.array([[-w/2,-h/2,1],[-w/2,h/2,1],[w/2,h/2,1],[w/2,-h/2,1]])
+                vs=(world[s['bone']]@local@vs.T).T[:,:2];uv=np.array([[0,1],[0,0],[1,0],[1,1.]]);tris=np.array([[0,1,2],[2,3,0]])
+            else:
+                deformation=deforms.get((0,si,o.get('deform_parent',name)))
+                vs=attachment_vertices(o,world,s['bone'],deformation);uv=o['uv'];tris=o['triangles']
+            if clipping is not None:vs,uv,tris=clip_mesh(vs,uv,tris,clipping)
+            if len(tris):draw.append((vs,uv,tris,tex,s['color']*rgba(o['color']),s['blend']))
+        # The end slot is included in the clipped range, even when empty.
+        if si==clip_end:clipping=None;clip_end=-1
     return draw
 
 

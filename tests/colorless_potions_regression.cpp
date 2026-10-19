@@ -84,7 +84,9 @@ static void all_cards(){
   case SecretTechnique:CHECK(s.hand.count==2&&definitions[s.cards[s.hand.ids[1]].kind].type==CardType::Skill);break;
   case SecretWeapon:CHECK(s.hand.count==2&&definitions[s.cards[s.hand.ids[1]].kind].type==CardType::Attack);break;
   case SeekerStrike:CHECK(s.hand.count==2);break;
-  case Splash:CHECK(s.hand.count==2&&card_in_pool(s.cards[s.hand.ids[1]].kind,Character::Silent)&&cost(s,s.hand.ids[1])==0);break;
+  case Splash:{CHECK(s.hand.count==2);int id=s.hand.ids[1];Card c=s.cards[id];
+   CHECK(definitions[c.kind].type==CardType::Attack&&!card_colorless(c.kind)&&!card_in_pool(c.kind,s.character)&&card_rarity(c.kind)>=2&&card_rarity(c.kind)<=4);
+   CHECK(cost(s,id)==0||cost(c)==-1);CHECK(card_star_cost(s,c,id)==0||card_star_cost(s,c)==-1);break;}
   case Stratagem:CHECK(power_value(s,XPower::Stratagem)==1);break;
   case TheBomb:CHECK(s.expansion.bomb_turns[0]==3&&s.expansion.bomb_damage[0]==40+10*(int)up);break;
   case TheGambit:CHECK(s.block==50+25*(int)up&&power_value(s,XPower::Gambit)==1);break;

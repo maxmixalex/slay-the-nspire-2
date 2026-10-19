@@ -61,7 +61,8 @@ static void clear_hand(){auto&s=a.game;while(s.hand.count){unsigned id=s.hand.id
 static int add(Card card){
     if(a.game.hand.count==MaxHand)clear_hand();unsigned id=a.game.card_count;
     a.library=true;a.open_card_detail(card);action(UiAction::LabCard);
-    CHECK(!a.library&&a.detail_card<0&&a.game.card_count==id+1);CHECK(a.game.cards[id].kind==card.kind&&a.game.cards[id].upgraded==card.upgraded);return (int)id;
+    CHECK(!a.library&&a.detail_card<0&&a.game.card_count==id+1);CHECK(a.game.cards[id].kind==card.kind&&a.game.cards[id].upgraded==card.upgraded);
+    CHECK(!a.game.effect_count&&a.game.playing<0&&validate(a.game));return (int)id;
 }
 static void play_ui(int id){
     int index=-1;for(int i=0;i<a.game.hand.count;i++)if(a.game.hand.ids[i]==id)index=i;CHECK(index>=0);
@@ -95,7 +96,8 @@ static void directory_and_characters(){
 static void stars_and_upgraded_transform(){
     start(Character::Regent);clear_hand();int pulse=add({RegentAstralPulse,0});a.game.expansion.stars=2;
     CHECK(!hit(HitKind::Hand,pulse).enabled);a.open_choice_detail(pulse);CHECK(a.detail_energy()==0&&a.detail_stars()==3);capture("regent-star-cost");a.input(Key::Back);
-    auto before=snapshot();play_ui(pulse);unchanged(before);CHECK(a.game.zones[pulse]==Zone::Hand);
+    auto before=snapshot();RelicMask flash=a.game.relic_flash;CHECK(flash&DivineRight);
+    play_ui(pulse);unchanged(before);CHECK(a.game.zones[pulse]==Zone::Hand&&a.game.relic_flash==flash);
     a.game.expansion.stars=3;CHECK(hit(HitKind::Hand,pulse).enabled);play_ui(pulse);CHECK(a.game.expansion.stars==0);
     int dust=add({RegentStardust,1});a.open_choice_detail(dust);CHECK(a.detail_stars()==-1);capture("regent-star-x");a.input(Key::Back);
     a.game.energy=10;int form=add({RegentVoidForm,1});play_ui(form);CHECK(a.game.phase==Phase::Combat&&a.game.turn==2);

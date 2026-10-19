@@ -199,8 +199,8 @@ static void card_contract(unsigned kind,unsigned up){
         pick(s,1,2);CHECK(s.hand.count==1&&s.draw.count==7);break;
     case Splash:
         act(s,kind);CHECK(s.expansion.choice==XChoice::Offer&&s.expansion.choices.count==3);
-        for(unsigned i=0;i<3;i++){Card c=choice_card(s,s.expansion.choices.ids[i]);CHECK(definitions[c.kind].type==CardType::Attack&&!card_colorless(c.kind)&&card_in_pool(c.kind,Character::Silent)&&c.upgraded==up);}
-        pick(s,1);CHECK(cost(s,s.hand.ids[0])==0);break;
+        for(unsigned i=0;i<3;i++){Card c=choice_card(s,s.expansion.choices.ids[i]);CHECK(definitions[c.kind].type==CardType::Attack&&!card_colorless(c.kind)&&!card_in_pool(c.kind,s.character)&&card_rarity(c.kind)>=2&&card_rarity(c.kind)<=4&&c.upgraded==up);}
+        pick(s,1);{int id=s.hand.ids[0];Card c=s.cards[id];CHECK(cost(s,id)==0||cost(c)==-1);CHECK(card_star_cost(s,c,id)==0||card_star_cost(s,c)==-1);}break;
     case Stratagem:{
         act(s,kind);CHECK(s.energy==99+(int)up);supply(s,4,Defend,Zone::Discard);draw_cards(s,1);
         CHECK(s.expansion.choice==XChoice::Draw&&choice_min(s)==1&&s.expansion.choices.count==4);pick(s,1);
