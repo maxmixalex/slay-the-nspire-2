@@ -67,7 +67,7 @@ void App::pointer_move(int x,int y){
         if(!pointer.held){const auto& source=choice_pile(game);
             for(int i=0;i<source.count;i++)if(source.ids[i]==h->value){cursor=i;break;}}
         break;
-    case HitKind::StatusItem:if(!pointer.held)status_selected=h->value;break;
+    case HitKind::StatusItem:if(!pointer.held&&status_selected!=h->value){status_selected=h->value;status_scroll=0;}break;
     case HitKind::Enemy:target=h->value;break;
     case HitKind::ReferenceNode:if(!pointer.held)map_preview.selected=h->value;break;
     default:break;
@@ -80,7 +80,7 @@ void App::pointer_scroll(int rows){
     if(event_reader){event_reader_scroll=clamp(event_reader_scroll+rows,0,2048);return;}
     if(status_actor>=0){
         int count=collect_statuses(game,status_actor,nullptr);
-        status_selected=clamp(status_selected+rows,0,count?count-1:0);return;
+        status_selected=clamp(status_selected+rows,0,count?count-1:0);status_scroll=0;return;
     }
     if(map_preview.open&&map_preview.editing)return;
     if(map_preview.open){map_preview.first_row=clamp(map_preview.first_row-rows,0,int(map_preview.map.config.rows)-3);return;}
@@ -175,7 +175,7 @@ void App::pointer_button(bool down){
     case HitKind::LibraryItem:select_library_item(hit.value);break;
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
     case HitKind::StatusActor:open_statuses(hit.value);break;
-    case HitKind::StatusItem:status_selected=hit.value;break;
+    case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;
     }
 }

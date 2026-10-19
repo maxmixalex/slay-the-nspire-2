@@ -14,7 +14,7 @@ static void silent_register(State&s,unsigned entry){
 static void silent_gain_power(State&s,SPower p,int amount){
  auto&n=s.silent.powers[(unsigned)p];int old=n;n=(int16_t)max(0,min(9999,n+amount));
  if(!old&&n)silent_register(s,(unsigned)p);else if(old&&!n)silent_unregister(s,(unsigned)p);
- unsigned actor=p==SPower::Afterimage?(unsigned)PostPlayActor::Afterimage:p==SPower::SerpentForm?(unsigned)PostPlayActor::SerpentForm:p==SPower::MasterPlanner?(unsigned)PostPlayActor::MasterPlanner:0;
+ unsigned actor=p==SPower::Afterimage?(unsigned)PostPlayActor::Afterimage:p==SPower::SerpentForm?(unsigned)PostPlayActor::SerpentForm:p==SPower::MasterPlanner?(unsigned)PostPlayActor::MasterPlanner:p==SPower::Envenom?(unsigned)PostPlayActor::SilentEnvenom:0;
  if(actor){if(!old&&n)after_play_register(s,actor);else if(old&&!n)after_play_unregister(s,actor);}
 }
 static void silent_combat_start(State&s){s.silent=SilentState{};}
@@ -104,7 +104,7 @@ static bool silent_blocks_debuff(State&s,int t){
  --s.silent.enemy_artifact[t];return true;
 }
 static void silent_attack_damage(State&s,int t,int unblocked){
- if(unblocked>0&&spower(s,SPower::Envenom))apply_poison(s,t,spower(s,SPower::Envenom));
+ if(unblocked>0&&spower(s,SPower::Envenom))enqueue(s,EffectKind::Poison,spower(s,SPower::Envenom),t,true);
 }
 static void silent_attack_killed(State&s,int){
  if(s.playing>=0&&s.cards[s.playing].kind==TheHunt)s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);
@@ -199,6 +199,7 @@ static void silent_combat_end(State&s){
 static SilentSnapshot silent_capture(const State&s,int id){
  const auto&v=s.silent;const auto&x=s.expansion;const auto&i=s.ironclad;SilentSnapshot n{};
  n.card=s.cards[id];n.turn_cost=x.turn_cost[id];n.combat_cost=x.combat_cost[id];n.replay=x.replay[id];n.return_turn=x.return_turn[id];n.blade_damage=x.blade_damage[id];
+ n.star_turn_free=x.star_turn_free[id];n.star_combat_free=x.star_combat_free[id];
  n.sly=v.sly[id];n.retain=v.retain[id];n.inky=v.inky[id];n.bullet_free=v.bullet_free[id];n.discount=v.discount[id];n.turn_origin=v.turn_origin[id];n.combat_origin=v.combat_origin[id];n.bullet_origin=v.bullet_origin[id];
  n.iron_damage=i.damage_bonus[id];n.stomp_discount=i.stomp_discount[id];n.stomp_turn_origin=i.stomp_turn_origin[id];n.stomp_combat_origin=i.stomp_combat_origin[id];
  n.defect_value=s.defect.value[id];n.defect_cost_delta=s.defect.cost_delta[id];n.defect_turn_origin=s.defect.turn_origin[id];n.defect_combat_origin=s.defect.combat_origin[id];
@@ -208,6 +209,7 @@ static SilentSnapshot silent_capture(const State&s,int id){
 static int silent_clone(State&s,const SilentSnapshot&n){
  int id=create_to_hand(s,n.card,false);if(id<0)return -1;auto&v=s.silent;auto&x=s.expansion;auto&i=s.ironclad;
  x.turn_cost[id]=n.turn_cost;x.combat_cost[id]=n.combat_cost;x.replay[id]=n.replay;
+ x.star_turn_free[id]=n.star_turn_free;x.star_combat_free[id]=n.star_combat_free;
  // A past scheduled return must not become an invalid stale turn index.
  x.return_turn[id]=n.return_turn>=(unsigned)s.turn?n.return_turn:0;x.blade_damage[id]=n.blade_damage;
  v.sly[id]=n.sly;v.retain[id]=n.retain;v.inky[id]=n.inky;v.bullet_free[id]=n.bullet_free;v.discount[id]=n.discount;v.turn_origin[id]=n.turn_origin;v.combat_origin[id]=n.combat_origin;v.bullet_origin[id]=n.bullet_origin;
@@ -303,7 +305,7 @@ static bool queue_silent(State&s,Card c,int target,int energy){
  case Nightmare:op(XOp::SNightmareChoice);break;
  case Outbreak:for(int t=0;t<s.enemy_count;t++)enqueue(s,EffectKind::Poison,p,t);op(XOp::SPoisonTrigger);break;
  case PhantomBlades:power(SPower::PhantomBlades,p);break;
- case PiercingWail:for(int t=0;t<s.enemy_count;t++)op(XOp::StrengthLoss,t,p);break;
+ case PiercingWail:for(int t=0;t<s.enemy_count;t++)op(XOp::NTempStrength,(int)NTempStrength::PiercingWail*MaxEnemies+t,p);break;
  case Pounce:attack(hit);power(SPower::FreeSkill,1);break;
  case Reflex:op(XOp::Draw,draw);break;
  case Ricochet:op(XOp::RandomHits,hit,p);break;
@@ -341,7 +343,7 @@ static bool silent_effect(State&s,Effect e){
  case XOp::SAbrasive:s.dexterity=(int16_t)min(9999,s.dexterity+1);s.thorns=(int16_t)min(9999,s.thorns+a);record(s,LogKind::Dexterity,1);break;
  case XOp::SAnticipate:{int n=min(a,min(9999-s.dexterity,9999-s.temporary_dexterity));s.dexterity+=(int16_t)n;s.temporary_dexterity+=(int16_t)n;record(s,LogKind::Dexterity,n);break;}
  case XOp::SBulletTime:
-  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(cost(s.cards[id])>=0){s.expansion.turn_cost[id]=0;v.bullet_free[id]=1;v.bullet_origin[id]=v.discount[id];}}
+  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(cost(s.cards[id])>=0)set_free_this_turn(s,id);}
   s.no_draw=1;record(s,LogKind::NoDraw);break;
  case XOp::SCreateShivs:
   if(s.card_count+a>MaxCards){fail(s);break;}

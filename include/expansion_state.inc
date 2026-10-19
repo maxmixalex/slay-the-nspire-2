@@ -1,6 +1,6 @@
 // Included after Card/Pile definitions inside namespace spire. All dimensions
 // are bounded; no coroutine stack or transient pointer is part of a save.
-constexpr int MaxAutoFrames=12, MaxPowerInstances=16, MaxBombs=16, MaxOrbs=10,MaxPostPlayPowers=49;
+constexpr int MaxAutoFrames=12, MaxPowerInstances=16, MaxBombs=16, MaxOrbs=10,MaxPostPlayPowers=52;
 enum class XPower:uint8_t {
  Retain,Plating,Buffer,Intangible,Ritual,Regen,Clarity,Radiance,Gigantic,
  Duplicator,Automation,Calamity,Mayhem,Nostalgia,Panache,PrepTime,Fasten,
@@ -11,7 +11,8 @@ enum class PostPlayActor:uint8_t {
  Calamity=1,Rage=2,Rupture=3,Afterimage=4,SerpentForm=5,MasterPlanner=6,
  PanacheStart=7,Relics=23,Cards=24,Enemies=25,
  DefectStorm=26,DefectSubroutine=27,RegentBlackHole=28,RegentPaleBlueDot=29,RegentVoidForm=30,
- RegentMonologueStart=31,NecroDevourLife=47,NecroHaunt=48,DefectSmokestack=49,DefectTrashToTreasure=50,RegentArsenal=51,RegentPillarOfCreation=52,Count=53
+ RegentMonologueStart=31,NecroDevourLife=47,NecroHaunt=48,DefectSmokestack=49,DefectTrashToTreasure=50,RegentArsenal=51,RegentPillarOfCreation=52,
+ SilentEnvenom=53,RegentMonarchsGaze=54,NecroReaperForm=55,Count=56
 };
 enum class XChoice:uint16_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,
 #include "ironclad_choices.inc"
@@ -44,7 +45,7 @@ struct XFrame {
  uint8_t double_attack=0,triple=0,returning=0;
 };
 struct ExpansionState {
- // Player AfterCardPlayed powers keep their actual acquisition order.
+ // Relevant player powers share their actual acquisition order across hooks.
  // Zero terminates the prefix; 7..22 identify independent Panache instances.
  uint8_t after_play_order[MaxPostPlayPowers]{};
  int16_t powers[XPowerCount]{};
@@ -68,4 +69,6 @@ struct ExpansionState {
  int16_t bomb_damage[MaxBombs]{};uint8_t bomb_turns[MaxBombs]{};
  int16_t stars=0,osty_hp=0,osty_max_hp=0;
  uint8_t orb_slots=0,orb_count=0;int16_t dark[MaxOrbs]{};
+ // The original free-card helpers set energy and stars independently.
+ uint8_t star_turn_free[MaxCards]{},star_combat_free[MaxCards]{};
 };

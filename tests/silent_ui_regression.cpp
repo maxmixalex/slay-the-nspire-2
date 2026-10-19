@@ -21,9 +21,9 @@ int main(int argc,char**argv){
  // The Silent filter includes Shiv; generated Soul/Blade remain only in All.
  const unsigned counts[]={CardKinds,IroncladCards,SilentCards+1,53};
  for(unsigned filter=0;filter<4;filter++){
-  action((UiAction)((int)UiAction::FilterAll+filter));CHECK(a.library_items()==counts[filter]);uint8_t ids[CardKinds];a.library_items(ids);
+  action((UiAction)((int)UiAction::FilterAll+filter));CHECK(a.library_items()==counts[filter]);CardKind ids[CardKinds];a.library_items(ids);
   for(unsigned i=0;i<counts[filter];i++){
-   a.library_page=i/8;a.library_selected=i;CHECK(click(HitKind::LibraryItem,i));CHECK((a.detail_card&255)==ids[i]);a.input(Key::Back);same(prior);
+   a.library_page=i/8;a.library_selected=i;CHECK(click(HitKind::LibraryItem,i));CHECK(card_from_token(a.detail_card).kind==ids[i]);a.input(Key::Back);same(prior);
   }
   action(UiAction::CycleSort);CHECK(a.library_sort==1);a.library_items(ids);
   for(unsigned i=1;i<counts[filter];i++)CHECK(cost({ids[i-1],0})<=cost({ids[i],0}));

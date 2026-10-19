@@ -53,20 +53,21 @@ static void start(Character character){
     a.reset_presentation();a.title=true;a.paused=a.help=a.library=a.character_select=a.map_preview.open=false;
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
     a.menu=3;a.input(Key::Confirm);CHECK(a.character_select&&a.practice_entry);
-    action(character==Character::Ironclad?UiAction::SelectIronclad:UiAction::SelectSilent);action(UiAction::StartCharacter);
+    const UiAction characters[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
+    action(characters[(unsigned)character]);action(UiAction::StartCharacter);
     CHECK(!a.title&&!a.character_select&&a.game.character==character&&a.game.practice);
     CHECK(a.game.deck_count==(character==Character::Ironclad?138:139));
     CHECK(a.game.deck_count>128&&a.game.deck_count<=MaxDeck);CHECK(validate(a.game));
 }
 static void open_model(unsigned model,unsigned upgraded){
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
-    action(UiAction::FilterAll);uint8_t ids[CardKinds];unsigned count=a.library_items(ids),index=0;
+    action(UiAction::FilterAll);CardKind ids[CardKinds];unsigned count=a.library_items(ids),index=0;
     CHECK(count==CardKinds);while(index<count&&ids[index]!=model)++index;CHECK(index<count);
     while(a.library_page<(int)index/8)action(UiAction::NextPage);
     while(a.library_page>(int)index/8)action(UiAction::PreviousPage);
-    tap(HitKind::LibraryItem,(int)index);CHECK((a.detail_card&255)==(int)model);
-    if(((a.detail_card>>8)&1)!=(int)upgraded)action(UiAction::ToggleCardUpgrade);
-    CHECK(a.detail_card==(int)(model+256*upgraded));
+    tap(HitKind::LibraryItem,(int)index);CHECK(card_from_token(a.detail_card).kind==model);
+    if(card_from_token(a.detail_card).upgraded!=(int)upgraded)action(UiAction::ToggleCardUpgrade);
+    CHECK(a.detail_card==card_token({(CardKind)model,(uint8_t)upgraded}));
 }
 static void description(Card card,int instance=-1){
     char text[1024]={};auto before=snapshot();a.card_description(card,0,text,sizeof text,instance);
@@ -91,7 +92,7 @@ static void all_models(){
             ++count;
             for(unsigned upgraded=0;upgraded<2;upgraded++){
                 start((Character)character);auto before=snapshot();open_model(model,upgraded);
-                Card card{(uint8_t)model,(uint8_t)upgraded};description(card);unchanged(before);
+                Card card{(CardKind)model,(uint8_t)upgraded};description(card);unchanged(before);
                 if(real_profile){CHECK(a.content.image(a.content.card_image(model)).pixels);CHECK(a.content.image(a.content.frame_image(card)).pixels);}
                 if(cost(card)==-2)CHECK(a.content.energy_image(card)==-1);
                 const unsigned old_count=a.game.card_count;action(UiAction::LabCard);CHECK(!a.library&&a.detail_card<0);
@@ -109,7 +110,7 @@ static void all_models(){
         unsigned id=a.game.card_count;action(UiAction::LabCard);CHECK(a.game.cards[id].kind==GiantRock&&a.game.cards[id].upgraded==upgraded);
         description({GiantRock,(uint8_t)upgraded},(int)id);++acquisitions;
     }
-    CHECK(acquisitions==344);
+    CHECK(acquisitions==2*(IroncladCards+SilentCards+DefectCards+RegentCards+NecroCards)+2);
 }
 static void overflow_and_catalog(){
     for(Character character:{Character::Ironclad,Character::Silent}){
@@ -120,12 +121,12 @@ static void overflow_and_catalog(){
         CHECK(std::strstr(a.notice,"弃牌堆"));CHECK(validate(s));
         a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
         while(a.library_page<(CardKinds-1)/8)action(UiAction::NextPage);
-        CHECK(a.library_page==28);uint8_t ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
-        CHECK(ids[CardKinds-1]==GiantRock);auto before=snapshot();
+        CHECK(a.library_page==(CardKinds-1)/8);CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
+        CHECK(ids[CardKinds-1]==SweepingGaze);auto before=snapshot();
         auto next=hit(HitKind::UiAction,(int)UiAction::NextPage);CHECK(!next.enabled);
         a.pointer_move(next.x+next.w/2,next.y+next.h/2);a.pointer_button(true);a.pointer_button(false);
-        CHECK(a.library_page==28);unchanged(before);
-        tap(HitKind::LibraryItem,CardKinds-1);CHECK((a.detail_card&255)==GiantRock);
+        CHECK(a.library_page==(CardKinds-1)/8);unchanged(before);
+        tap(HitKind::LibraryItem,CardKinds-1);CHECK(card_from_token(a.detail_card).kind==SweepingGaze);
     }
 }
 static void named_value_and_screens(){

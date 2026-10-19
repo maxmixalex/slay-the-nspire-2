@@ -125,6 +125,8 @@ void App::ui_action(UiAction action){
         const int wanted=action==UiAction::ShowStars?44:action==UiAction::ShowOsty?45:46;
         int ids[StatusKinds],n=collect_statuses(game,0,ids);for(int i=0;i<n;i++)if(ids[i]==wanted){status_selected=i;break;}
         break;}
+    case UiAction::MoreStatus:
+        if(status_actor>=0)status_scroll=status_scroll>=status_scroll_limit?0:status_scroll+5;break;
     case UiAction::SelectIronclad:case UiAction::SelectSilent:case UiAction::SelectDefect:case UiAction::SelectRegent:case UiAction::SelectNecrobinder:
         if(character_select)selected_character=action==UiAction::SelectIronclad?Character::Ironclad:action==UiAction::SelectSilent?Character::Silent:
             action==UiAction::SelectDefect?Character::Defect:action==UiAction::SelectRegent?Character::Regent:Character::Necrobinder;break;
@@ -246,7 +248,7 @@ namespace spire {
 void App::open_statuses(int actor){
     if(title||paused||help||panel||library||character_select||detail_card>=0||detail_item>=0||map_preview.open||!combat_phase(game.phase))return;
     if(actor<0||actor>game.enemy_count)return;
-    status_actor=actor;status_selected=0;pointer_cancel();
+    status_actor=actor;status_selected=status_scroll=status_scroll_limit=0;pointer_cancel();
 }
 bool App::status_input(Key key){
     if(status_actor<0){if(key!=Key::Statuses)return false;open_statuses(0);return true;}
@@ -254,11 +256,12 @@ bool App::status_input(Key key){
     if(key==Key::Quit){quit=true;return true;}
     if(key==Key::Left||key==Key::Right){
         int count=game.enemy_count+1;
-        status_actor=(status_actor+(key==Key::Left?count-1:1))%count;status_selected=0;
+        status_actor=(status_actor+(key==Key::Left?count-1:1))%count;status_selected=status_scroll=status_scroll_limit=0;
     }
     int count=collect_statuses(game,status_actor,nullptr);
-    if(key==Key::Up&&status_selected>0)--status_selected;
-    if(key==Key::Down&&status_selected+1<count)++status_selected;
+    if(key==Key::Up&&status_selected>0){--status_selected;status_scroll=0;}
+    if(key==Key::Down&&status_selected+1<count){++status_selected;status_scroll=0;}
+    if(key==Key::Confirm)ui_action(UiAction::MoreStatus);
     return true;
 }
 }

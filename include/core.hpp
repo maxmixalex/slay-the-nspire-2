@@ -276,6 +276,7 @@ void execute_potion(State&,Potion,int);
 bool lab_potion(State&,Potion);
 bool lab_card(State&,Card);
 int card_star_cost(const State&,Card,int instance=-1);
+int card_free_preview_cost(const State&,Card,int instance=-1);
 void regent_gain_stars(State&,int);
 bool necro_grimoire_choice(State&,int deck_index);
 } // namespace spire

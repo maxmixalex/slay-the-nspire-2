@@ -27,6 +27,7 @@ static bool validate_extension(const State&s){
  if(x.entropy_boulder_prefix>boulder_count||(!x.powers[(int)XPower::Entropy]&&x.entropy_boulder_prefix))return false;
  if(x.powers[(int)XPower::Automation]!=min(9999,auto_sum)||x.powers[(int)XPower::Panache]!=min(9999,pan_sum)||x.powers[(int)XPower::RollingBoulder]!=min(9999,boulder_sum))return false;
  for(unsigned i=0;i<MaxCards;i++){
+  if(x.star_turn_free[i]>1||x.star_combat_free[i]>1||(i>=s.card_count&&(x.star_turn_free[i]||x.star_combat_free[i])))return false;
   if(x.turn_cost[i]>100||x.combat_cost[i]>100||x.blade_damage[i]<0||x.blade_damage[i]>9999)return false;
   if(i>=s.card_count&&(x.turn_cost[i]||x.combat_cost[i]||x.replay[i]||x.return_turn[i]||x.blade_damage[i]))return false;
   if(x.return_turn[i]&&(x.return_turn[i]<(unsigned)s.turn||x.return_turn[i]>20001))return false;

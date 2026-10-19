@@ -156,6 +156,11 @@ def localized(text: str, row: dict, upgraded: bool, keyword_titles: dict) -> str
                 options = _branches(expression[len('InCombat:'):])
                 if len(options) > 1 and options[1]: raise ValueError('Unsupported noncombat alternative')
                 result.append('\x1e' + render(options[0], depth + 1, context) + '\x1f')
+            elif expression.startswith('IsTargeting:'):
+                options = _branches(expression[len('IsTargeting:'):])
+                if row['key'] not in ('NO_ESCAPE', 'TIMES_UP') or len(options) != 2 or options[1]:
+                    raise ValueError('Unsupported target conditional')
+                result.append('\x1c' + render(options[0], depth + 1, context) + '\x1d')
             elif expression.startswith('IsOstyAlive:'):
                 # Sacrifice's block hook explicitly returns zero while Osty
                 # is dead. Keep that live value instead of a catalog boolean.

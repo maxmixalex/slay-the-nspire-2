@@ -270,7 +270,7 @@ static void pointer_overlay(Canvas&c){
     c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
 }
 void App::render(){
-    Canvas c{*this};sync_relic_feedback();hit_count=0;c.rect(0,0,320,240,Ink);
+    Canvas c{*this};sync_relic_feedback();sync_character_feedback();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);pointer_overlay(c);return;}

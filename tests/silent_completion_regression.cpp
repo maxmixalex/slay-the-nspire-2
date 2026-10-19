@@ -137,7 +137,7 @@ static void settle(State&s){
  }
  CHECK(false);
 }
-static int cast(State&s,unsigned kind,unsigned up=0,int target=0){int id=append(s,{(uint8_t)kind,(uint8_t)up},Zone::Hand);CHECK(play(s,hand_index(s,id),target));settle(s);return id;}
+static int cast(State&s,unsigned kind,unsigned up=0,int target=0){int id=append(s,{(CardKind)kind,(uint8_t)up},Zone::Hand);CHECK(play(s,hand_index(s,id),target));settle(s);return id;}
 static void quiet_turn(State&s){for(auto&e:s.enemies)e.move=2;CHECK(end_turn(s));settle(s);CHECK(s.phase==Phase::Combat);}
 static void choose(State&s,int id){CHECK(s.phase==Phase::ExtendedChoice);restore(s);uint16_t selected=(uint16_t)id;CHECK(choose_extended(s,&selected,1));settle(s);}
 static void recall(State&s,int id){
@@ -145,7 +145,7 @@ static void recall(State&s,int id){
 }
 
 static void complete_model_matrix(){
- uint8_t ids[CardKinds];CHECK(character_pool(Character::Silent,ids)==86);CHECK(sizeof canonical/sizeof canonical[0]==87);
+ CardKind ids[CardKinds];CHECK(character_pool(Character::Silent,ids)==86);CHECK(sizeof canonical/sizeof canonical[0]==87);
  bool seen[CardKinds]{};
  for(const auto&m:canonical){
   CHECK(!seen[m.id]);seen[m.id]=true;CHECK(card_in_pool(m.id,Character::Silent)==(m.id!=Shiv));
@@ -203,7 +203,7 @@ static void complete_model_matrix(){
    case BladeOfInk:shivs=upgrade?3:2;for(unsigned i=24;i<s.card_count;i++)if(s.zones[i]==Zone::Hand)CHECK(s.silent.inky[i]);break;
    case Blur:block=upgrade?8:5;CHECK(power(s,SPower::Blur)==1);break;
    case BubbleBubble:CHECK(s.enemies[0].poison==(upgrade?15:12));break;
-   case BulletTime:CHECK(s.no_draw);for(unsigned i=0;i<s.hand.count;i++)CHECK(cost(s,s.hand.ids[i])==0&&s.silent.bullet_free[s.hand.ids[i]]);break;
+   case BulletTime:CHECK(s.no_draw);for(unsigned i=0;i<s.hand.count;i++)CHECK(cost(s,s.hand.ids[i])==0&&s.expansion.turn_cost[s.hand.ids[i]]==1);break;
    case Burst:CHECK(power(s,SPower::Burst)==(upgrade?2:1));break;
    case CalculatedGamble:draw=3;CHECK(s.hand.count==3&&s.silent.discarded_turn==3);break;
    case CorrosiveWave:CHECK(power(s,SPower::CorrosiveWave)==(upgrade?3:2));break;
@@ -331,11 +331,11 @@ static void temporal_resources(){
 }
 
 static void costs_clones_and_limits(){
- scenario="Whole-turn free cost and X payment";upgrade=0;
+ scenario="BulletTime expires after the physical play and preserves X payment";upgrade=0;
  auto s=fight();int defend=append(s,{DefendSilent,0},Zone::Hand),skewer=append(s,{Skewer,0},Zone::Hand);
  cast(s,BulletTime);CHECK(cost(s,defend)==0&&cost(s,skewer)==-1&&s.no_draw);
  s.expansion.turn_cost[defend]=3;CHECK(cost(s,defend)==2);CHECK(play(s,hand_index(s,defend),0));settle(s);
- CHECK(!s.expansion.turn_cost[defend]&&s.silent.bullet_free[defend]&&cost(s,defend)==0);
+ CHECK(!s.expansion.turn_cost[defend]&&!s.silent.bullet_free[defend]&&cost(s,defend)==1);
  s.energy=3;CHECK(play(s,hand_index(s,skewer),0));settle(s);CHECK(!s.energy&&s.enemies[0].hp==22);
  scenario="Ordered Pinpoint discounts";s=fight();int pinpoint=append(s,{Pinpoint,0},Zone::Hand);cast(s,DefendSilent);CHECK(cost(s,pinpoint)==2);
  s.expansion.turn_cost[pinpoint]=3;s.silent.turn_origin[pinpoint]=s.silent.discount[pinpoint];CHECK(cost(s,pinpoint)==2);

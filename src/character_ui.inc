@@ -42,3 +42,16 @@ static const char* orb_name(unsigned kind){
     const char*names[]={"黑暗","闪电","冰霜","等离子","玻璃"};
     return names[kind<(unsigned)DOrb::Count?kind:0];
 }
+static void orb_values(const State&s,int index,int&passive,int&evoke){
+    passive=evoke=0;if(index<0||index>=s.expansion.orb_count)return;
+    const int focus=s.expansion.powers[(int)XPower::Focus],raw=s.expansion.dark[index];
+    switch((DOrb)s.defect.orb_kind[index]){
+    case DOrb::Dark:passive=6+focus;if(passive>9999-raw)passive=9999-raw;evoke=raw;break;
+    case DOrb::Lightning:passive=3+focus;evoke=8+focus;break;
+    case DOrb::Frost:passive=2+focus;evoke=5+focus;break;
+    case DOrb::Plasma:passive=1;evoke=2;break;
+    case DOrb::Glass:passive=raw+focus;evoke=2*passive;if(evoke>9999)evoke=9999;break;
+    case DOrb::Count:break;
+    }
+    if(passive<0)passive=0;if(evoke<0)evoke=0;
+}

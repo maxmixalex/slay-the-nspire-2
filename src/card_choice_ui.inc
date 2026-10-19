@@ -10,7 +10,7 @@ static const char* choice_title(const State&s){
     case XChoice::Discard:return "从弃牌堆选择";
     case XChoice::Top:return "放回抽牌堆顶";
     case XChoice::DiscardRedraw:return "丢弃并重新抽牌";
-    case XChoice::Free:return "选择本回合零能量费的牌";
+    case XChoice::Free:return "选择能量费降为零的牌";
     case XChoice::Transform:return "选择要变化的牌";
     case XChoice::IUpgrade:return "选择要升级的牌";
     case XChoice::SlySkill:return "选择赋予奇巧的技能牌";

@@ -78,7 +78,8 @@ static void next_enemy(State&s,int i){
  if(attack)regent_after_blocked_attack(s,i,blocked);
  if(attack&&s.flame_barrier)damage_unpowered(s,i,s.flame_barrier);
  if(e.hp){
-  if(e.move==1)e.block=5;if(e.move==2)e.strength=(int16_t)min(9999,e.strength+2);
+  if(e.move==1)e.block=5;
+  if(e.move==2){int old=e.strength;e.strength=(int16_t)min(9999,e.strength+2);if(e.strength!=old){necro_note_debuff(s,i,NDebuff::Strength);necro_prune_debuffs(s);}}
  }
  if(e.weak)--e.weak;if(e.vulnerable)--e.vulnerable;if(s.expansion.beetle[i])--s.expansion.beetle[i];
  e.move=(uint8_t)((e.move+1)%3);
@@ -103,7 +104,8 @@ static void extension_effect(State&s,Effect e){
   if(a==(int)XPower::Gambit)x.powers[a]=1;else gain_power(s,(XPower)a,b);break;}
  case XOp::AllDamage:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,a);break;
  case XOp::StrengthLoss:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0&&!silent_blocks_debuff(s,a)){int n=min(b,min(9999+s.enemies[a].strength,9999-x.restore_strength[a]));s.enemies[a].strength-=(int16_t)n;x.restore_strength[a]+=(int16_t)n;necro_note_debuff(s,a,NDebuff::Strength);necro_debuff_applied(s,a,n);}break;
+  // Legacy continuations did not store the temporary source separately.
+  necro_apply_temp_strength(s,a,b,(unsigned)NTempStrength::DarkShackles);break;
  case XOp::AllRare:{
   uint16_t ids[MaxCards];unsigned n=0;
   for(unsigned i=0;i<s.draw.count;i++)if(card_rarity(s.cards[s.draw.ids[i]].kind)==4)ids[n++]=s.draw.ids[i];
@@ -117,15 +119,14 @@ static void extension_effect(State&s,Effect e){
  case XOp::DiscardRedraw:set_extended_choice(s,XChoice::DiscardRedraw,s.hand,0,s.hand.count);break;
  case XOp::ExhaustAny:set_extended_choice(s,XChoice::Exhaust,s.hand,0,s.hand.count);break;
  case XOp::Free:{
-  Pile eligible{};for(unsigned i=0;i<s.hand.count;i++)if(cost(s,s.hand.ids[i])>0)eligible.ids[eligible.count++]=s.hand.ids[i];
+  Pile eligible{};for(unsigned i=0;i<s.hand.count;i++)if(card_has_reducible_cost(s,s.hand.ids[i]))eligible.ids[eligible.count++]=s.hand.ids[i];
   set_extended_choice(s,XChoice::Free,eligible,1,1);break;}
  case XOp::Transform:set_extended_choice(s,XChoice::Transform,s.hand,a,a);break;
  case XOp::AutoDraw:autoplay_from(s,s.draw,a);break;
  case XOp::AutoDiscard:autoplay_from(s,s.discard,a);break;
  case XOp::AutoTop:autoplay_top_batch(s,a,b);break;
  case XOp::AutoInstance:
-  if(!start_instance(s,a,-1,true)&&a>=0&&a<s.card_count&&s.zones[a]==Zone::Limbo)
-   put(s,s.discard,a,Zone::Discard);
+  start_instance(s,a,-1,true);
   break;
  case XOp::Draw:queue_extension(s,XOp::DrawOne,a,0,true);break;
  case XOp::DrawOne:draw_one(s,a);break;
@@ -180,6 +181,7 @@ static void extension_effect(State&s,Effect e){
   ironclad_player_side_end(s);silent_player_side_end(s);defect_player_side_end(s);regent_player_side_end(s);necro_player_side_end(s);
   if(s.phase==Phase::Dead)break;
   for(auto&v:x.turn_cost)v=0;
+  for(auto&v:x.star_turn_free)v=0;
   s.strength=(int16_t)max(-9999,s.strength-s.temporary_strength);s.temporary_strength=0;
   s.dexterity=(int16_t)max(-9999,s.dexterity-s.temporary_dexterity);s.temporary_dexterity=0;
   s.no_draw=0;x.powers[(int)XPower::Duplicator]=0;x.enemy_side=1;
@@ -193,7 +195,10 @@ static void extension_effect(State&s,Effect e){
   ironclad_enemy_side_end(s);regent_enemy_side_end(s);
   s.flame_barrier=0;if(s.no_block)--s.no_block;
   if(power_value(s,XPower::Intangible))gain_power(s,XPower::Intangible,-1);
-  for(int i=0;i<s.enemy_count;i++){s.enemies[i].strength=(int16_t)min(9999,s.enemies[i].strength+x.restore_strength[i]);x.restore_strength[i]=0;}
+  for(int i=0;i<s.enemy_count;i++){
+   s.enemies[i].strength=(int16_t)min(9999,s.enemies[i].strength+x.restore_strength[i]);x.restore_strength[i]=0;
+   necro_clear_temp_strength(s,i);
+  }
   if(!alive(s)){victory(s);break;}queue_extension(s,XOp::TurnStart,0,0,true);break;
  case XOp::TurnStart:
   if(s.turn>=20000){fail(s);break;}
@@ -201,7 +206,7 @@ static void extension_effect(State&s,Effect e){
   {bool keep=ironclad_retains_block(s);if(!keep)keep=silent_keeps_block(s);
    s.block=(int16_t)min(9999,(keep?s.block:0)+s.block_next_turn);s.block_next_turn=0;}
   s.energy=(int16_t)min(999,3+ironclad_max_energy(s)+necro_max_energy(s));silent_turn_start(s);defect_turn_start(s);regent_turn_start(s);necro_turn_start(s);
-  x.nonpower_started=0;x.returning=0;for(auto&v:x.turn_cost)v=0;for(auto&v:x.panache_count)v=0;
+  x.nonpower_started=0;x.returning=0;for(auto&v:x.turn_cost)v=0;for(auto&v:x.star_turn_free)v=0;for(auto&v:x.panache_count)v=0;
   relic_reset_turn_counters(s);if(s.block)record(s,LogKind::Block,s.block);
   if(power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);
   if(s.demon_form){s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}

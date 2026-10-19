@@ -10,13 +10,13 @@ static bool covered[CardKinds][2]{};
 
 static int add(State&s,unsigned kind,unsigned up=0,Zone zone=Zone::Hand){
  CHECK(s.card_count<MaxCards);int id=s.card_count++;
- s.cards[id]={(uint8_t)kind,(uint8_t)up};s.zones[id]=zone;
+ s.cards[id]={(CardKind)kind,(uint8_t)up};s.zones[id]=zone;
  Pile&p=zone==Zone::Hand?s.hand:zone==Zone::Draw?s.draw:zone==Zone::Discard?s.discard:zone==Zone::Exhaust?s.exhaust:s.powers;
  CHECK(p.count<MaxCards);p.ids[p.count++]=(uint16_t)id;return id;
 }
 static State fight(unsigned kind,unsigned up=0){
  State s{};new_run(s,0x41cef1ea,false);s.phase=Phase::Combat;s.current_node=0;s.floor=s.turn=1;s.enemy_count=2;s.energy=100;
- s.relics=s.relic_count=s.relic_flash=0;s.deck_count=1;s.deck[0]={(uint8_t)kind,(uint8_t)up};
+ s.relics=s.relic_count=s.relic_flash=0;s.deck_count=1;s.deck[0]={(CardKind)kind,(uint8_t)up};
  for(auto&e:s.enemies)e={46,46,0,0,0,2};add(s,kind,up);return s;
 }
 static void supply(State&s,int n,unsigned kind=Defend,Zone zone=Zone::Draw){for(int j=0;j<n;j++)add(s,kind,0,zone);}
@@ -92,7 +92,7 @@ static void card_contract(unsigned kind,unsigned up){
  case PerfectedStrike:add(s,Strike);add(s,SetupStrike);add(s,AshenStrike);act(s,kind);CHECK(s.enemies[0].hp==46-6-4*(2+u));break;
  case FlameBarrier:act(s,kind);CHECK(s.block==12+4*u&&s.flame_barrier==4+2*u);s.enemies[0].move=0;s.enemies[1].move=2;CHECK(end_turn(s));CHECK(s.enemies[0].hp==46-4-2*u&&s.hp==80);break;
  case DemonForm:act(s,kind);supply(s,8);next_turn(s);CHECK(s.strength==3+u);break;
- case Aggression:{act(s,kind);int id=add(s,Strike,0,Zone::Discard);supply(s,8);next_turn(s);CHECK(contains(s.hand,id)&&s.cards[id].upgraded&&s.hand.count==6&&card_innate({(uint8_t)kind,(uint8_t)up})==(up!=0));break;}
+ case Aggression:{act(s,kind);int id=add(s,Strike,0,Zone::Discard);supply(s,8);next_turn(s);CHECK(contains(s.hand,id)&&s.cards[id].upgraded&&s.hand.count==6&&card_innate({(CardKind)kind,(uint8_t)up})==(up!=0));break;}
  case Armaments:{int a=add(s,Strike),b=add(s,Defend);act(s,kind);if(!up){CHECK(s.expansion.choice==XChoice::IUpgrade);pick(s,1);CHECK(s.cards[a].upgraded&&!s.cards[b].upgraded);}else CHECK(s.cards[a].upgraded&&s.cards[b].upgraded);CHECK(s.block==5&&s.deck[0].upgraded==up);break;}
  case AshenStrike:supply(s,2,Defend,Zone::Exhaust);act(s,kind);CHECK(s.enemies[0].hp==46-6-2*(3+u));break;
  case Barricade:s.block=13;act(s,kind);supply(s,8);next_turn(s);CHECK(s.block==13&&power(s,IPower::Barricade)==1);break;
@@ -122,7 +122,7 @@ static void card_contract(unsigned kind,unsigned up){
  case InfernalBlade:act(s,kind);CHECK(s.hand.count==1&&s.zones[0]==Zone::Exhaust);{int id=s.hand.ids[0];CHECK(card_in_pool(s.cards[id].kind,Character::Ironclad)&&card_can_generate(s.cards[id].kind)&&definitions[s.cards[id].kind].type==CardType::Attack);CHECK(cost(s,id)==(s.cards[id].kind==Whirlwind?-1:0));}break;
  case Inferno:act(s,kind);supply(s,8);next_turn(s);CHECK(s.hp==79&&total_hp(s)==92-2*(6+3*u));add(s,Bloodletting);act(s,Bloodletting);CHECK(s.hp==76&&total_hp(s)==92-4*(6+3*u));break;
  case Juggernaut:act(s,kind);s.strength=9;s.enemies[0].vulnerable=s.enemies[1].vulnerable=3;add(s,Defend);act(s,Defend);CHECK(s.block==5&&total_hp(s)==92-6-2*u);break;
- case Juggling:{act(s,kind);add(s,Strike);add(s,Strike);int rampage=add(s,Rampage,up);act(s,Strike);act(s,Strike);act_id(s,rampage);CHECK(s.hand.count==1&&s.cards[s.hand.ids[0]].kind==Rampage&&!s.ironclad.damage_bonus[s.hand.ids[0]]&&s.ironclad.damage_bonus[rampage]==5+5*u&&card_innate({(uint8_t)kind,(uint8_t)up})==(up!=0));break;}
+ case Juggling:{act(s,kind);add(s,Strike);add(s,Strike);int rampage=add(s,Rampage,up);act(s,Strike);act(s,Strike);act_id(s,rampage);CHECK(s.hand.count==1&&s.cards[s.hand.ids[0]].kind==Rampage&&!s.ironclad.damage_bonus[s.hand.ids[0]]&&s.ironclad.damage_bonus[rampage]==5+5*u&&card_innate({(CardKind)kind,(uint8_t)up})==(up!=0));break;}
  case Mangle:act(s,kind);CHECK(s.enemies[0].hp==46-20-6*u&&s.enemies[0].strength==-10-5*u);s.enemies[0].move=0;s.enemies[1].move=2;CHECK(end_turn(s));CHECK(s.enemies[0].strength==0&&s.hp==78+2*u);break;
  case MoltenFist:s.enemies[0].vulnerable=2;act(s,kind);CHECK(s.enemies[0].hp==46-(10+4*u)*150/100&&s.enemies[0].vulnerable==4&&s.zones[0]==Zone::Exhaust);break;
  case NotYet:s.hp=40;act(s,kind);CHECK(s.hp==50+3*u&&s.zones[0]==Zone::Exhaust);break;
@@ -229,7 +229,7 @@ static void reject_module_corruption(){
 }
 
 int main(){
- uint8_t pool[CardKinds]{};unsigned count=character_pool(Character::Ironclad,pool,false);CHECK(count==85);
+ CardKind pool[CardKinds]{};unsigned count=character_pool(Character::Ironclad,pool,false);CHECK(count==85);
  for(unsigned j=0;j<count;j++)for(unsigned up=0;up<2;up++)card_contract(pool[j],up);
  for(unsigned j=0;j<count;j++)CHECK(covered[pool[j]][0]&&covered[pool[j]][1]);
  CHECK(card_strike_tag(AshenStrike)&&card_strike_tag(SetupStrike));

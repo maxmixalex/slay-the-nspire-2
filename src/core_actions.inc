@@ -200,8 +200,7 @@ static void resolve(State&s){
                 // Their follow-up keeps damage beyond the target's remaining HP.
                 s.expansion.last_damage=(int16_t)min(9999,amount);
                 record(s,LogKind::Damage,amount,e.target);
-                silent_attack_damage(s,e.target,amount-absorb);
-                necro_attack_damage(s,e.target,absorb+min(old_hp,amount-absorb),pet);regent_after_damage(s,e.target,true);
+                all_characters_attack_damage(s,e.target,absorb+min(old_hp,amount-absorb),amount-absorb,pet);
                 if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];
                     gain_gold(s,d.power+(card.upgraded?d.power_up:0));

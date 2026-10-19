@@ -20,6 +20,7 @@ struct SilentSnapshot {
  int16_t regent_punch_damage=0;
  uint8_t necro_ethereal=0,necro_flatten_zero=0;
  int16_t necro_cost_delta=0,necro_turn_origin=0,necro_combat_origin=0,necro_flatten_origin=0,necro_scythe_value=0;
+ uint8_t star_turn_free=0,star_combat_free=0;
 };
 struct SilentState {
  int16_t powers[SPowerCount]{};

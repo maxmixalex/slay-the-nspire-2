@@ -38,12 +38,12 @@ The implementation uses the existing bounded, serialized effect queue. Multi-hit
 - GeneticAlgorithm blocks for its current local value, then adds three/four to that instance and its associated permanent deck card. Per-deck values and combat-instance deck bindings survive saves and subsequent battles. Creating a temporary clone clears the deck binding. Removing, transforming or copying a permanent deck card has an explicit metadata hook.
 - Modded adds one slot, draws one/two, then adds one to its own combat cost. MomentumStrike sets its own combat cost to zero. RocketPunch subtracts one until its next physical play for each Status generated in combat. Explicit cost setters retain the relative order of prior and later additive modifiers.
 - HelixDrill uses actual energy-spent history for the current turn, subtracting its current modified cost while the card is in PlayPile. FTL uses the count of finished card plays. EchoForm uses the count of physical series started in the current turn and gives each of the first N series one extra play.
-- SignalBoost adds one repeat to the next Power series per charge. Synthesis installs a late free-Power cost only in Hand/PlayPile. Feral changes the final result location of the first N zero-energy, non-duplicate Attacks to Hand, including an Attack which normally Exhausts; it also consults zero-energy attacks played before the power was acquired.
+- SignalBoost adds one repeat to the next Power series per charge. Synthesis installs a late free-Power cost only in Hand/PlayPile. Feral changes the final result location of the first N zero-energy, non-duplicate Attacks to Hand, including an Attack which normally Exhausts; it also consults zero-energy attacks played before the power was acquired. Its zero-energy test uses the original `ResourceInfo.EnergyValue`: an automatically played Attack can retain a positive resource value while spending no actual energy. HelixDrill's expenditure history tracks only the latter.
 
 ### Status creation, exhaust and draw rules
 
 - BoostAway creates Dazed, FightThrough creates two Wounds, GunkUp creates Slimed, Overclock creates Burn and Turbo creates Void in Discard. Each created Status produces one generation event after it enters its pile. Smokestack and TrashToTreasure run in power acquisition order, followed by RocketPunch's card listener.
-- Compact changes current hand Status instances into Fuel/Fuel+, clears the old instance modifiers, and preserves hand positions. It does not announce a newly generated Status.
+- Compact changes current hand Status instances into Fuel/Fuel+, clears the old instance modifiers, and preserves hand positions. Successful combat transformation announces each replacement through the original generation hook, so Regent's Arsenal/Pillar and creation history see the new Fuel. Since the replacement is a Skill, Status-only generation listeners do not fire.
 - FlakCannon captures all non-exhausted Status cards in the original `AllPiles` order: Hand, Draw, Discard, then PlayPile. It exhausts each captured instance with normal exhaust hooks before performing one random attack per captured Status. Its snapshot includes a suspended Slimed in PlayPile if Slimed drew a Hellraiser-triggered automatic FlakCannon. End-of-play cleanup must respect an instance already moved to Exhaust.
 - Iteration triggers on the first Status drawn in a turn, including whether such a draw already happened before Iteration was acquired. Scrape discards only its explicit draw results with a nonzero cost or X cost; nested Iteration draws do not become part of that captured batch. It moves the whole discard batch before Sly callbacks run.
 - Reboot moves Hand directly into Draw, combines and shuffles the draw/discard cards, and draws four/six. It does not activate active-discard listeners. The current Reboot, exhausted cards and installed Power cards remain outside the shuffle.
@@ -55,7 +55,7 @@ The shared status/token definitions are maintained centrally. In this pinned bui
 
 | Boundary | Defect work |
 | --- | --- |
-| Physical play starts | Capture paid energy and EchoForm/SignalBoost repeat count; advance resource history once |
+| Physical play starts | Capture `ResourceInfo.EnergyValue` for Feral separately from actual energy spent; advance expenditure history once and capture EchoForm/SignalBoost repeats |
 | Before each repeated play | Capture existing Storm/Subroutine amounts and consume applicable free-Power charge |
 | After each repeated play | Run captured Storm/Subroutine in the shared acquired-power listener order; update finished history |
 | Final physical result location | Apply Feral once, clear RocketPunch's until-played reduction, clear the frame's captures |
@@ -75,7 +75,7 @@ Buffer uses the existing shared Buffer mechanism. BulkUp applies slot loss and o
 
 `include/defect_state.inc` contains 24 ordered powers, typed orb metadata, turn/channel/resource counters, per-instance values and ordered costs, permanent GeneticAlgorithm metadata, and per-automatic-frame capture state. `src/defect_codec.inc` appends these to save version 14 with the established four-byte field encoding. `src/defect_validation.inc` rejects invalid orb kinds/values, missing or duplicate power-order entries, malformed temporary-Focus totals, wrong-kind instance metadata, invalid deck bindings and illegal queued operands.
 
-Shared engine hooks are declared in `src/defect_forward.inc`. The four permanent-deck hooks are `defect_deck_card_created`, `defect_deck_removed`, `defect_deck_replaced` and `defect_deck_copied`. Combat creation/reset/copy hooks remain separate from `notify_card_generated`: building the opening deck or transforming a card must not accidentally announce player-created Status cards. Nightmare snapshots must copy `value`, `cost_delta`, `turn_origin` and `combat_origin`, then clear a clone's `deck_origin`.
+Shared engine hooks are declared in `src/defect_forward.inc`. The four permanent-deck hooks are `defect_deck_card_created`, `defect_deck_removed`, `defect_deck_replaced` and `defect_deck_copied`. Combat creation/reset/copy hooks remain separate from `notify_card_generated`: building the opening deck does not announce player-generated cards. Successful combat transformations announce the replacement's type after replacing/resetting the old instance. Nightmare snapshots must copy `value`, `cost_delta`, `turn_origin` and `combat_origin`, then clear a clone's `deck_origin`.
 
 ### Mechanism evidence index
 

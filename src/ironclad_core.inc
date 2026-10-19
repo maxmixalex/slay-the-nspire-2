@@ -200,7 +200,7 @@ static bool queue_ironclad(State&s,Card c,int target,int energy){
  case Inferno:power(IPower::Inferno,p);break;
  case Juggernaut:power(IPower::Juggernaut,p);break;
  case Juggling:power(IPower::Juggling,1);break;
- case Mangle:attack(hit);op(XOp::StrengthLoss,target,p);break;
+ case Mangle:attack(hit);op(XOp::NTempStrength,(int)NTempStrength::Mangle*MaxEnemies+target,p);break;
  case MoltenFist:attack(hit);op(XOp::IDoubleVulnerable,target);break;
  case NotYet:op(XOp::IHeal,p);break;
  case OneTwoPunch:power(IPower::OneTwoPunch,p);break;
@@ -254,7 +254,10 @@ static bool ironclad_effect(State&s,Effect e){
  case XOp::IFeedReward:
   if(a>=0&&a<s.enemy_count&&!s.enemies[a].hp){int n=min(999-s.max_hp,b);if(n>0){s.max_hp+=(int16_t)n;heal(s,n);}}break;
  case XOp::IEnemyStrength:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp)s.enemies[a].strength=(int16_t)min(9999,s.enemies[a].strength+b);break;
+  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){
+   int old=s.enemies[a].strength;s.enemies[a].strength=(int16_t)min(9999,old+b);
+   if(s.enemies[a].strength!=old){necro_note_debuff(s,a,NDebuff::Strength);necro_prune_debuffs(s);}
+  }break;
  case XOp::IIncreaseDamage:
   if(a>=0&&a<s.card_count)i.damage_bonus[a]=(int16_t)min(9999,i.damage_bonus[a]+b);break;
  case XOp::IPillageDraw:{

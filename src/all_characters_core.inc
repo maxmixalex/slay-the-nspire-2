@@ -1,4 +1,18 @@
 // Shared operations deliberately keep the old model/serialized ID prefix.
+static void all_characters_attack_damage(State&s,int t,int total,int unblocked,bool pet){
+ if(t<0||t>=s.enemy_count)return;
+ necro_attack_damage(s,t,total,pet);
+ // BeatIntoShape counts blocked powered hits too, but its history predicate
+ // requires the player as dealer. Osty remains eligible for ReaperForm.
+ if(!pet)regent_after_damage(s,t,true);
+ for(int at=MaxPostPlayPowers-1;at>=0;--at){unsigned actor=s.expansion.after_play_order[at];
+  if(actor==(unsigned)PostPlayActor::SilentEnvenom&&!pet)silent_attack_damage(s,t,unblocked);
+  else if(actor==(unsigned)PostPlayActor::RegentMonarchsGaze&&!pet)
+   queue_extension(s,XOp::NTempStrength,(int)NTempStrength::MonarchsGaze*MaxEnemies+t,rpower(s,RPower::MonarchsGaze),true);
+  else if(actor==(unsigned)PostPlayActor::NecroReaperForm&&total>0)
+   queue_extension(s,XOp::NDoom,t,min(9999,total*npower(s,NPower::ReaperForm)),true);
+ }
+}
 static void notify_card_generated(State&s,int id){
  if(id<0||id>=s.card_count)return;
  if(!combat_phase(s.phase))return;

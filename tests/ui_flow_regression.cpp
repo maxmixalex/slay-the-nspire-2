@@ -18,7 +18,7 @@ int main(){
         action((UiAction)((int)UiAction::LibraryCards+tab));CHECK(a.library_tab==tab);
         int total=tab==0?CardKinds:tab==1?RelicKinds:PotionKinds;
         for(int i=0;i<total;i++){a.library_selected=i;a.library_page=tab==0?i/8:i/18;a.render();CHECK(findclick(HitKind::LibraryItem,i));
-            if(tab==0){CHECK((a.detail_card&255)==i);action(UiAction::ToggleCardUpgrade);CHECK(a.detail_card>>8);a.input(Key::Back);}else{CHECK(a.detail_item>=0);a.input(Key::Back);}unchanged();}
+            if(tab==0){CHECK(card_from_token(a.detail_card).kind==i);action(UiAction::ToggleCardUpgrade);CHECK(card_from_token(a.detail_card).upgraded==card_upgradeable({(CardKind)i,0}));a.input(Key::Back);}else{CHECK(a.detail_item>=0);a.input(Key::Back);}unchanged();}
     }
     a.input(Key::Back);CHECK(!a.library);unchanged();
     a.title=false;a.game.phase=Phase::Reward;a.game.reward_claimed=0;a.game.last_gold=20;a.game.reward_potion=Potion::Fruit;a.game.reward[0]=Offering;a.game.reward[1]=Strike;a.game.reward[2]=Bludgeon;

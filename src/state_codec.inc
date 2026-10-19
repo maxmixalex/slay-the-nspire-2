@@ -128,7 +128,7 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
 #include "defect_codec.inc"
 #include "regent_codec.inc"
 #include "necro_codec.inc"
-  static_assert(MaxPostPlayPowers==49&&RelicKinds==33,"v14 shared dimensions are frozen");
+  static_assert(MaxPostPlayPowers==52&&RelicKinds==33,"v14 shared dimensions are frozen");
   for(int n=22;n<MaxPostPlayPowers;n++)F(s.expansion.after_play_order[n]);
   field_high(s.relics,c);field_high(s.relic_flash,c);
   for(auto&mask:s.shop_relics)field_high(mask,c);field_high(s.treasure_relic,c);
@@ -138,7 +138,9 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
    F(n.defect_value);F(n.defect_cost_delta);F(n.defect_turn_origin);F(n.defect_combat_origin);
    F(n.regent_kick_discount);F(n.regent_kick_turn_origin);F(n.regent_kick_combat_origin);F(n.regent_punch_damage);
    F(n.necro_ethereal);F(n.necro_flatten_zero);F(n.necro_cost_delta);F(n.necro_turn_origin);F(n.necro_combat_origin);F(n.necro_flatten_origin);F(n.necro_scythe_value);
+   F(n.star_turn_free);F(n.star_combat_free);
   }
+  for(int id=0;id<512;id++){F(s.expansion.star_turn_free[id]);F(s.expansion.star_combat_free[id]);}
  }else if(c.in){
   // The v13 writer could express neither new models nor new characters,
   // operations, relics or listener actors. A widened C++ enum must not make
@@ -169,9 +171,40 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
   for(unsigned i=0;i<s.log_count;i++)if((unsigned)s.logs[i].kind>(unsigned)LogKind::PoisonDamage)c.good=false;
   if(s.playing>=0&&(s.playing>=s.card_count||s.zones[s.playing]!=Zone::Limbo))c.good=false;
   for(unsigned i=0;i<s.expansion.depth;i++){const auto&f=s.expansion.frames[i];int id=f.playing;if(f.x>999||(id>=0&&(id>=s.card_count||s.zones[id]!=Zone::Limbo)))c.good=false;}
-  // The old dark-orb representation is already DOrb::Dark=0. Pet presence is
-  // directly observable and prevents inventing an extra death after loading.
+  // The old dark-orb representation is already DOrb::Dark=0. Existing dead
+  // creatures and pet presence are observable; they are the migration
+  // baseline, so a newly generated Melancholy cannot count an old death again.
   s.necro.osty_was_alive=(uint8_t)(s.expansion.osty_hp>0);
+  for(unsigned t=0;t<s.enemy_count;t++)if(!s.enemies[t].hp)s.necro.enemy_dead_mask|=(uint8_t)(1u<<t);
+  // Envenom is the only historical player damage listener in this new shared
+  // directory. Its old cross-hook position was never stored; append it after
+  // the preserved active prefix, before powers acquired after migration.
+  // Register only after rejecting impossible actors from the old payload.
+  if(spower(s,SPower::Envenom))after_play_register(s,(unsigned)PostPlayActor::SilentEnvenom);
+  // The historical BulletTime representation incorrectly lasted until side
+  // end. Its original command uses SetThisTurnOrUntilPlayed. Check the old
+  // fields before normalizing them, so malformed flags/origins cannot hide.
+  if(!valid_silent_state(s))c.good=false;
+  if(c.good){
+   for(unsigned id=0;id<s.card_count;id++)if(s.silent.bullet_free[id]){
+    s.expansion.star_turn_free[id]=1;
+    if(!s.expansion.turn_cost[id]){
+     int origin=s.silent.bullet_origin[id];s.expansion.turn_cost[id]=1;temporary_cost_set(s,id);
+     // Silent's captured boundary is known. Stomp's cross-module boundary
+     // was absent, so its visible current discount is the migration baseline.
+     s.silent.turn_origin[id]=(uint16_t)origin;
+    }
+    s.silent.bullet_free[id]=s.silent.bullet_origin[id]=0;
+   }
+   for(auto&n:s.silent.nightmares)if(n.bullet_free){
+    n.star_turn_free=1;
+    if(!n.turn_cost){
+     n.turn_cost=1;n.turn_origin=n.bullet_origin;n.stomp_turn_origin=n.stomp_discount;
+     n.defect_turn_origin=n.defect_cost_delta;n.regent_kick_turn_origin=n.regent_kick_discount;n.necro_turn_origin=n.necro_cost_delta;
+    }
+    n.bullet_free=n.bullet_origin=0;
+   }
+  }
  }
 #undef F
 }

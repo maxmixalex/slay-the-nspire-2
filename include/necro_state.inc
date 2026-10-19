@@ -7,8 +7,13 @@ enum class NPower : uint8_t {
  SummonNextTurn,ForbiddenGrimoire,Count
 };
 constexpr int NPowerCount=(int)NPower::Count;
-enum class NDebuff:uint8_t {Weak,Vulnerable,Poison,Strength,Beetle,Demise,Doom,Strangle,Debilitate,Hang,Oblivion,SicEm,Count};
+enum class NDebuff:uint8_t {
+ Weak,Vulnerable,Poison,Strength,Beetle,Demise,Doom,Strangle,Debilitate,Hang,Oblivion,SicEm,Conqueror,
+ DarkShackles,Mangle,EnfeeblingTouch,PiercingWail,CrushUnder,DyingStar,MonarchsGaze,Count
+};
 constexpr int NDebuffCount=(int)NDebuff::Count;
+enum class NTempStrength:uint8_t {DarkShackles,Mangle,EnfeeblingTouch,PiercingWail,CrushUnder,DyingStar,MonarchsGaze,Count};
+constexpr int NTempStrengthCount=(int)NTempStrength::Count;
 struct NecroState {
  int16_t powers[NPowerCount]{};
  uint8_t power_order[NPowerCount]{},power_count=0;
@@ -21,6 +26,9 @@ struct NecroState {
  uint8_t ethereal[MaxCards]{},fetch_played[MaxCards]{},flatten_zero[MaxCards]{};
  int16_t flatten_origin[MaxCards]{};
  int16_t debilitate[MaxEnemies]{},hang[MaxEnemies]{},oblivion[MaxEnemies]{},sic_em[MaxEnemies]{};
+ // Temporary wrappers retain separate acquisition order and Artifact attempts.
+ // ExpansionState::restore_strength keeps the unchanged historical total.
+ int16_t temp_strength[MaxEnemies][NTempStrengthCount]{};
  // Every CardPlay (including replays) has its own captured Before values.
  int16_t oblivion_before[MaxAutoFrames+1][MaxEnemies]{};
  int16_t attack_total[MaxAutoFrames+1]{};

@@ -155,7 +155,8 @@ static bool regent_void_free(const State&s,int id){
 }
 int card_star_cost(const State&s,Card c,int id){
  int n=regent_base_star_cost(c);if(n<0)return n;
- if(id>=0&&id<s.card_count&&s.cards[id].kind==c.kind&&regent_void_free(s,id))return 0;
+ if(id>=0&&id<s.card_count&&s.cards[id].kind==c.kind&&
+    (s.expansion.star_turn_free[id]||s.expansion.star_combat_free[id]||regent_void_free(s,id)))return 0;
  return n;
 }
 static int regent_cost(const State&s,int id,int price){
@@ -191,6 +192,7 @@ static int regent_replays(const State&s,Card c){return c.kind==SovereignBlade?rp
 static bool regent_targets_enemy(const State&s,Card c,bool previous){return c.kind==SovereignBlade&&rpower(s,RPower::SeekingEdge)?false:previous;}
 static bool regent_returns_to_hand(const State&s,int id){return id>=0&&id<s.card_count&&s.cards[id].kind==RegentParticleWall&&!s.expansion.returning;}
 static unsigned regent_actor(RPower p){
+ if(p==RPower::MonarchsGaze)return(unsigned)PostPlayActor::RegentMonarchsGaze;
  if(p==RPower::Arsenal)return(unsigned)PostPlayActor::RegentArsenal;
  if(p==RPower::PillarOfCreation)return(unsigned)PostPlayActor::RegentPillarOfCreation;
  if(p==RPower::BlackHole)return(unsigned)PostPlayActor::RegentBlackHole;
@@ -247,6 +249,7 @@ static void regent_after_card(State&s,Card c){
  if(definitions[c.kind].type==CardType::Skill)r.skills_finished_turn=(uint16_t)min(9999,r.skills_finished_turn+1);
 }
 static bool regent_post_play_actor_active(const State&s,unsigned actor){
+ if(actor==(unsigned)PostPlayActor::RegentMonarchsGaze)return rpower(s,RPower::MonarchsGaze)>0;
  if(actor==(unsigned)PostPlayActor::RegentArsenal)return rpower(s,RPower::Arsenal)>0;
  if(actor==(unsigned)PostPlayActor::RegentPillarOfCreation)return rpower(s,RPower::PillarOfCreation)>0;
  if(actor==(unsigned)PostPlayActor::RegentBlackHole)return rpower(s,RPower::BlackHole)>0;
@@ -281,7 +284,6 @@ static void regent_after_play_group(State&s,int){
 }
 static void regent_after_damage(State&s,int enemy,bool powered){
  if(!powered||enemy<0||enemy>=s.enemy_count)return;auto&r=s.regent;r.hits_turn[enemy]=(uint16_t)min(9999,r.hits_turn[enemy]+1);
- if(s.enemies[enemy].hp>0&&rpower(s,RPower::MonarchsGaze))queue_extension(s,XOp::StrengthLoss,enemy,rpower(s,RPower::MonarchsGaze),true);
 }
 static void regent_after_blocked_attack(State&s,int enemy,int amount){
  if(amount>0&&enemy>=0&&enemy<s.enemy_count&&s.enemies[enemy].hp&&rpower(s,RPower::Reflect))queue_extension(s,XOp::RUnpoweredDamage,amount,enemy,true);
@@ -386,7 +388,8 @@ static bool queue_regent(State&s,Card c,int target,int energy){
  case RegentConvergence:op(XOp::Power,(int)XPower::Retain,1);pw(RPower::EnergyNextTurn,rvar(c,"Energy"));pw(RPower::StarsNextTurn,rvar(c,"Stars"));break;
  case RegentCosmicIndifference:defend();op(XOp::RDiscardTop);break;
  case RegentCrashLanding:all();op(XOp::RDebris,0);break;
- case RegentCrushUnder:case RegentDyingStar:all();for(int t=0;t<s.enemy_count;t++)op(XOp::StrengthLoss,t,rvar(c,"StrengthLoss"));break;
+ case RegentCrushUnder:case RegentDyingStar:
+  all();for(int t=0;t<s.enemy_count;t++)op(XOp::NTempStrength,(int)(c.kind==RegentCrushUnder?NTempStrength::CrushUnder:NTempStrength::DyingStar)*MaxEnemies+t,rvar(c,"StrengthLoss"));break;
  case RegentDecisionsDecisions:op(XOp::Draw,rvar(c,"Cards"));op(XOp::RDecisions);break;
  case RegentForegoneConclusion:pw(RPower::ForegoneConclusion,rvar(c,"Cards"));break;
  case RegentFurnace:pw(RPower::Furnace,rvar(c,"Forge"));break;
@@ -479,12 +482,18 @@ static bool regent_effect(State&s,Effect e){
   if(a>=0&&a<s.card_count){int id=create_to_hand(s,s.cards[a]);if(id>=0){copy_card_modifiers(s,id,a);x.return_turn[id]=x.return_turn[a]>=(unsigned)s.turn?x.return_turn[a]:0;}}break;
  case XOp::RDiscardTop:set_extended_choice(s,XChoice::RDiscardTop,s.discard,1,1);break;
  case XOp::RConqueror:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&!silent_blocks_debuff(s,a))r.conqueror[a]=(int16_t)min(9999,r.conqueror[a]+b);break;
+  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0&&!silent_blocks_debuff(s,a)){
+   int added=min(9999-r.conqueror[a],b);r.conqueror[a]+=(int16_t)added;
+   if(added){necro_note_debuff(s,a,NDebuff::Conqueror);necro_debuff_applied(s,a,added);}
+  }break;
  case XOp::RKnockoutReward:
   if(a>=0&&a<s.enemy_count&&!s.enemies[a].hp&&x.last_damage>0)regent_gain_stars(s,b);break;
  case XOp::RForgeHits:forge_blade(s,a);break;
  case XOp::RStrengthLoss:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0&&!silent_blocks_debuff(s,a))s.enemies[a].strength=(int16_t)max(-9999,s.enemies[a].strength-b);break;
+  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0&&!silent_blocks_debuff(s,a)){
+   int lost=min(9999+s.enemies[a].strength,b);s.enemies[a].strength-=(int16_t)lost;
+   if(lost){necro_note_debuff(s,a,NDebuff::Strength);necro_prune_debuffs(s);necro_debuff_applied(s,a,lost);}
+  }break;
  case XOp::RStartPower:{
   RPower p=(RPower)a;int amount=rpower(s,p);if(!amount)break;
   if(p==RPower::EnergyNextTurn||p==RPower::StarsNextTurn||p==RPower::ForegoneConclusion)queue_extension(s,XOp::RPower,(int)p,-amount,true);

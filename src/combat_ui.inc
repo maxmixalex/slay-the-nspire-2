@@ -5,7 +5,7 @@ struct HandTile {
     bool valid=false,playable=false;
     const Content* owner=nullptr;
     Card card{};
-    int energy=0;
+    int energy=0,stars=0;
     char description[512]{};
     uint16_t pixels[HandTileW*HandTileH]{};
     uint8_t alpha[HandTileW*HandTileH]{};
@@ -20,24 +20,26 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
 }
 static const HandTile& hand_tile(Canvas&c,int index){
     auto&a=c.a;Card card=a.game.cards[a.game.hand.ids[index]];
-    int energy=cost(a.game,a.game.hand.ids[index]);bool playable=can_play_card(a.game,a.game.hand.ids[index]);
+    const int instance=a.game.hand.ids[index];int energy=cost(a.game,instance),stars=card_star_cost(a.game,card,instance);bool playable=can_play_card(a.game,instance);
     char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.game.hand.ids[index]);
     auto&t=hand_tiles[index];
-    if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&
+    if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
        t.playable==playable&&same_text(t.description,description))return t;
-    t.owner=&a.content;t.card=card;t.energy=energy;t.playable=playable;
+    t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
     for(int i=0;i<HandTileW*HandTileH;i++){t.pixels[i]=0;t.alpha[i]=0;}
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
+    const bool star_card=card_star_cost(a.game,card)!=0;const int header=star_card?13:0;
     tile.picture(a.content.frame_image(card),3,5,74,104);
-    tile.picture(a.content.card_image(card.kind),8,24,64,44);
-    tile.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,1,5,78,17);
-    card_title(tile,a.content.card_string(card.kind),10,6,63,card.upgraded?Green:White);
+    tile.picture(a.content.card_image(card.kind),8,24+header,64,44-header);
+    tile.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,1,5+header,78,17);
+    card_title(tile,a.content.card_string(card.kind),10,6+header,63,card.upgraded?Green:White);
     tile.picture(a.content.energy_image(card),0,0,18,18);tile.energy_label(energy,5,0,12);
+    if(star_card)tile.star_label(stars,23,0,12);
     tile.centered(card_type_label(definitions[card.kind].type),7,67,66,10,Muted);
     tile.paragraph(description,9,80,62,2,0,10,White);
     if(tile.paragraph(description,9,80,62,0,0,10)>2)tile.text("…",60,96,10,Gold,13);
-    if(card.upgraded)tile.text("+",66,16,10,Green);
+    if(card.upgraded)tile.text("+",66,star_card?0:16,10,Green);
     if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
     t.valid=true;return t;
 }
@@ -70,8 +72,27 @@ static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);
     c.hit(0,44,320,140,HitKind::Battlefield);
     c.actor(0,60,124);c.hp(s.hp,s.max_hp,29,129,62);
+    if(s.expansion.orb_slots){
+        const int count=s.expansion.orb_slots,left=mx(3,60-count*7);
+        for(int i=0;i<count;i++){
+            int x=left+(count-1-i)*14;
+            if(i<s.expansion.orb_count)c.ui(orb_image(s.defect.orb_kind[i]),x,46,13,13);
+            else c.box(x+2,48,9,9,Muted);
+        }
+        c.action(left-2,44,count*14+4,19,UiAction::ShowOrbs);
+    }
+    const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
+    if(pet){
+        const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
+        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,112,123,elapsed,true,false);
+        else if(s.expansion.osty_hp>0)c.clip(AnimOstyIdle,112,123,a.animation*33);
+        else c.ui(U_OstyPortrait,103,109,18,18,100);
+        c.hp(s.expansion.osty_hp,s.expansion.osty_max_hp,99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
+    }
     if(s.block){c.picture(A_Block,8,128,14,14);c.num(s.block,10,139,10,Blue);}
-    status_strip(c,0,24,149,96);
+    const bool stars=s.character==Character::Regent||s.expansion.stars>0;
+    if(stars){c.star_label(s.expansion.stars,3,149,10);c.action(0,147,48,20,UiAction::ShowStars);}
+    status_strip(c,0,stars?51:24,149,stars?69:96);
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];int x=s.enemy_count==1?238:178+i*88;
         if(!e.hp){c.centered("已击败",x-32,105,64,10,Muted);continue;}
@@ -111,7 +132,7 @@ static void combat_screen(Canvas&c){
             c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&can_play_card(s,s.hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
-    c.picture(s.character==Character::Silent?a.content.ui_image(U_SilentOrb):A_Energy,6,174,42,42);
+    c.picture(character_energy_image(a.content,s.character),6,174,42,42);
     c.num(s.energy,18,182,20,White);
     c.picture(A_EndTurn,254,174,64,29);c.centered("结束回合",254,180,64,10,Gold);
     if(a.busy)c.dim(254,174,64,29,80);
@@ -119,6 +140,6 @@ static void combat_screen(Canvas&c){
     combat_pile(c,A_DrawPile,s.draw.count,8,215,1);
     combat_pile(c,A_DiscardPile,s.discard.count,291,215,2);
     if(s.exhaust.count)combat_pile(c,A_ExhaustPile,s.exhaust.count,293,106,3);
-    c.text("I 详情",3,160,10,Muted,44);c.hit(0,157,49,17,HitKind::Command,(int)Key::Detail,s.hand.count>0);
+    c.text("I 详情",stars?268:3,160,10,Muted,44);c.hit(stars?265:0,157,49,17,HitKind::Command,(int)Key::Detail,s.hand.count>0);
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}
 }

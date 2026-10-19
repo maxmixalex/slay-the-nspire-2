@@ -62,7 +62,7 @@ int main(int argc,char**argv){
   for(int id=U_FeelNoPain;id<U_Count;id++)CHECK(a.content.image(a.content.ui_image(id)).pixels);
   CHECK(strstr(a.content.card_string(Backstab,1),"固有"));CHECK(strstr(a.content.card_string(InfiniteBlades,2),"固有"));
   CHECK(!strstr(a.content.card_string(InfiniteBlades,1),"固有"));
-  a.library=true;char text[512];for(int id=Headbutt;id<CardKinds;id++)for(int up=0;up<2;up++){a.card_description({(uint8_t)id,(uint8_t)up},0,text,sizeof text);CHECK(*text&&!strchr(text,'{'));}
+  a.library=true;char text[512];for(int id=Headbutt;id<CardKinds;id++)for(int up=0;up<2;up++){a.card_description({(CardKind)id,(uint8_t)up},0,text,sizeof text);CHECK(*text&&!strchr(text,'{'));}
  }
  printf("tactics UI: %u checks passed\n",checks);
 }

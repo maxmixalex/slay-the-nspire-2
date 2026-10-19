@@ -159,7 +159,7 @@ static void complete_model_matrix(){
   int soul0=append(s,{Soul,0},Zone::Exhaust),soul1=append(s,{Soul,0},Zone::Exhaust);
   s.expansion.doom[0]=20;s.necro.drawn_turn=2;s.necro.ethereal_played=2;s.necro.osty_attacks_turn=1;
   if(m.id==NecroBansheesCry)s.necro.cost_delta[id]=-4;
-  if(m.id==NecroFlatten){s.expansion.turn_cost[id]=1;s.necro.flatten_zero[id]=1;}
+  if(m.id==NecroFlatten)s.necro.flatten_zero[id]=1;
   if(m.id==NecroEidolon)s.necro.ethereal[soul0]=s.necro.ethereal[soul1]=1;
   if(cost(c)<0)s.energy=3;
   int starting_energy=s.energy,price=cost(s,id);if(price<0)price=starting_energy;
@@ -362,10 +362,83 @@ static void doom_and_debuffs(){
  scenario="Misery copies all modeled debuffs in acquisition order through Artifact";
  {auto s=fight();apply_vulnerable(s,0,2);apply_weak(s,0,3);apply_poison(s,0,4);resolve_pending(s);settle(s);
   s.enemies[0].strength=-5;s.expansion.beetle[0]=6;s.expansion.demise[0]=7;s.expansion.doom[0]=8;s.silent.strangle[0]=9;
-  s.necro.debilitate[0]=2;s.necro.hang[0]=4;s.necro.oblivion[0]=3;s.necro.sic_em[0]=5;s.silent.enemy_artifact[1]=1;
+  s.necro.debilitate[0]=2;s.necro.hang[0]=4;s.necro.oblivion[0]=3;s.necro.sic_em[0]=5;s.regent.conqueror[0]=2;s.silent.enemy_artifact[1]=1;
   cast(s,NecroMisery);CHECK(!s.enemies[1].vulnerable&&s.enemies[1].weak==3&&s.enemies[1].poison==4&&s.enemies[1].strength==-5);
   CHECK(s.expansion.beetle[1]==6&&s.expansion.demise[1]==7&&s.expansion.doom[1]==8&&s.silent.strangle[1]==9);
-  CHECK(s.necro.debilitate[1]==2&&s.necro.hang[1]==4&&s.necro.oblivion[1]==3&&s.necro.sic_em[1]==5&&!s.silent.enemy_artifact[1]);restore(s);
+  CHECK(s.necro.debilitate[1]==2&&s.necro.hang[1]==4&&s.necro.oblivion[1]==3&&s.necro.sic_em[1]==5&&s.regent.conqueror[1]==2&&!s.silent.enemy_artifact[1]);restore(s);
+ }
+ scenario="Misery freezes its debuffs before damage-triggered ReaperForm or Envenom";
+ {auto s=fight();cast(s,NecroReaperForm);cast(s,NecroMisery);CHECK(s.expansion.doom[0]==7&&!s.expansion.doom[1]);}
+ {auto s=fight();cast(s,Envenom);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
+  CHECK(s.enemies[0].poison==1&&!s.enemies[1].poison&&s.silent.enemy_artifact[1]==1);restore(s);
+ }
+}
+
+static void temporary_strength_and_misery(){
+ scenario="Every temporary Strength source keeps its distinct restoration wrapper";
+ const CardKind models[]={DarkShackles,Mangle,NecroEnfeeblingTouch,PiercingWail,RegentCrushUnder,RegentDyingStar,RegentMonarchsGaze};
+ const int amounts[]={9,10,8,6,1,9,1};
+ for(unsigned source=0;source<NTempStrengthCount;source++){
+  auto s=fight();s.expansion.stars=99;cast(s,models[source]);if(source==6)cast(s,NecroStrikeNecrobinder);
+  CHECK(s.necro.temp_strength[0][source]==amounts[source]&&s.expansion.restore_strength[0]==amounts[source]);
+  CHECK(s.necro.debuff_order[0][0]==(unsigned)NDebuff::Strength+1&&s.necro.debuff_order[0][1]==(unsigned)NDebuff::DarkShackles+source+1);restore(s);
+ }
+ scenario="Misery copies temporary loss and restores it at the same side-end boundary";
+ {auto s=fight();cast(s,NecroEnfeeblingTouch);cast(s,NecroMisery);
+  CHECK(s.enemies[1].strength==-8&&s.expansion.restore_strength[1]==8&&s.necro.temp_strength[1][2]==8);quiet_turn(s);
+  CHECK(!s.enemies[1].strength&&!s.expansion.restore_strength[1]&&!s.necro.temp_strength[1][2]);restore(s);
+ }
+ scenario="Misery separates permanent and temporary negative Strength before Artifact";
+ {auto s=fight();s.enemies[0].strength=-5;cast(s,NecroEnfeeblingTouch);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
+  CHECK(s.enemies[1].strength==-8&&s.expansion.restore_strength[1]==8&&!s.silent.enemy_artifact[1]);
+ }
+ scenario="Misery preserves signed positive reconciliation while Artifact blocks the wrapper";
+ {auto s=fight();s.enemies[0].strength=5;cast(s,NecroEnfeeblingTouch);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
+  CHECK(s.enemies[0].strength==-3&&s.enemies[1].strength==5&&!s.expansion.restore_strength[1]&&!s.silent.enemy_artifact[1]);
+ }
+ scenario="A nonnegative source Strength is excluded before temporary reconciliation";
+ {auto s=fight();s.enemies[0].strength=10;cast(s,NecroEnfeeblingTouch);cast(s,NecroMisery);
+  CHECK(s.enemies[0].strength==2&&s.enemies[1].strength==-8&&s.expansion.restore_strength[1]==8);
+ }
+ scenario="Distinct temporary wrappers consume Artifact in actual acquisition order";
+ {auto s=fight();cast(s,NecroEnfeeblingTouch);cast(s,DarkShackles);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
+  CHECK(s.enemies[1].strength==-9&&s.expansion.restore_strength[1]==9&&s.necro.temp_strength[1][0]==9&&!s.necro.temp_strength[1][2]);
+ }
+ scenario="Temporary wrappers trigger Sleight only through unblocked internal Strength";
+ {auto s=fight();cast(s,NecroSleightOfFlesh);cast(s,NecroEnfeeblingTouch);CHECK(s.enemies[0].hp==991);cast(s,NecroMisery);CHECK(s.enemies[1].hp==991);}
+ {auto s=fight();cast(s,NecroSleightOfFlesh);s.silent.enemy_artifact[0]=2;cast(s,NecroEnfeeblingTouch);
+  CHECK(s.enemies[0].hp==1000&&!s.enemies[0].strength&&!s.expansion.restore_strength[0]&&s.silent.enemy_artifact[0]==1);
+ }
+ scenario="Strength keeps its original power position while crossing from positive to negative";
+ {auto s=fight();cast(s,FightMe);apply_weak(s,0,1);resolve_pending(s);settle(s);cast(s,NecroSharedFate);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
+  CHECK(!s.enemies[1].strength&&s.enemies[1].weak==1&&!s.silent.enemy_artifact[1]);
+ }
+ scenario="Conqueror is a real acquired Debuff for Misery and SleightOfFlesh";
+ {auto s=fight();cast(s,NecroSleightOfFlesh);cast(s,RegentConqueror);CHECK(s.enemies[0].hp==991);
+  apply_weak(s,0,1);resolve_pending(s);settle(s);s.silent.enemy_artifact[1]=1;cast(s,NecroMisery);
+  CHECK(!s.regent.conqueror[1]&&s.enemies[1].weak==1&&s.enemies[1].hp==991&&!s.silent.enemy_artifact[1]);restore(s);
+ }
+}
+
+static void damage_listener_order(){
+ scenario="AfterDamageGiven powers complete in cross-character acquisition order";
+ const CardKind powers[]={Envenom,NecroReaperForm,RegentMonarchsGaze};
+ const unsigned orders[][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
+ for(const auto&order:orders){
+  auto s=fight();for(unsigned i:order)cast(s,powers[i]);s.silent.enemy_artifact[0]=1;restore(s);cast(s,NecroStrikeNecrobinder);
+  CHECK(s.enemies[0].poison==(order[0]==0?0:1)&&s.expansion.doom[0]==(order[0]==1?0:6));
+  CHECK(s.enemies[0].strength==(order[0]==2?0:-1)&&s.expansion.restore_strength[0]==(order[0]==2?0:1)&&!s.silent.enemy_artifact[0]);
+  CHECK(s.regent.hits_turn[0]==1);restore(s);
+ }
+ scenario="Osty qualifies for ReaperForm's pet exception, but not Envenom or MonarchsGaze";
+ {auto s=fight();for(CardKind p:powers)cast(s,p);cast(s,NecroPoke);
+  CHECK(s.enemies[0].hp==994&&s.expansion.doom[0]==6&&!s.enemies[0].poison&&!s.enemies[0].strength&&!s.expansion.restore_strength[0]);
+  CHECK(!s.regent.hits_turn[0]);restore(s);
+ }
+ scenario="Blocked player hits count for BeatIntoShape and skip Envenom's Artifact attempt";
+ {auto s=fight();for(CardKind p:powers)cast(s,p);s.enemies[0].block=10;s.silent.enemy_artifact[0]=1;cast(s,NecroStrikeNecrobinder);
+  CHECK(s.enemies[0].hp==1000&&s.enemies[0].block==4&&s.regent.hits_turn[0]==1);
+  CHECK(!s.enemies[0].poison&&!s.expansion.doom[0]&&s.enemies[0].strength==-1&&s.expansion.restore_strength[0]==1&&!s.silent.enemy_artifact[0]);restore(s);
  }
 }
 
@@ -465,9 +538,27 @@ static void physical_cards_and_choices(){
   int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));choose(s,cry);quiet_turn(s);
   int count=0;for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==NecroBansheesCry){++count;CHECK(cost(s,id)==5);}CHECK(count==4);
  }
+ scenario="Transfigure composes with RocketPunch local reductions before the final zero clamp";
+ {auto s=fight();int rocket=append(s,{DefectRocketPunch,0},Zone::Hand);cast(s,DefectTurbo);cast(s,DefectTurbo);cast(s,DefectTurbo);
+  CHECK(s.defect.cost_delta[rocket]==-3&&cost(s,rocket)==0);cast(s,NecroTransfigure);
+  CHECK(s.necro.cost_delta[rocket]==1&&cost(s,rocket)==0&&s.expansion.replay[rocket]==1);restore(s);
+ }
+ scenario="Global next-card free powers apply after Transfigure local cost additions";
+ const CardKind free_sources[]={Unrelenting,Pounce,DefectSynthesis};
+ const CardKind free_targets[]={NecroPoke,NecroDefendNecrobinder,NecroShroud};
+ for(unsigned i=0;i<3;i++){
+  auto s=fight();int target=append(s,{free_targets[i],0},Zone::Hand);cast(s,NecroTransfigure);CHECK(cost(s,target)==2);
+  cast(s,free_sources[i]);CHECK(cost(s,target)==0);restore(s);
+ }
+ {auto s=fight();s.expansion.stars=99;int target=append(s,{NecroDefendNecrobinder,0},Zone::Hand);cast(s,NecroTransfigure);cast(s,RegentVoidForm);CHECK(cost(s,target)==0);restore(s);}
 }
 
 static void eidolon_and_persistence(){
+ scenario="Eidolon excludes unplayable Ethereal cards from its captured candidates";
+ {auto s=fight();int dazed=append(s,{Dazed,0},Zone::Exhaust),void_card=append(s,{Void,0},Zone::Exhaust);int energy=s.energy;
+  cast(s,NecroEidolon);CHECK(s.zones[dazed]==Zone::Exhaust&&s.zones[void_card]==Zone::Exhaust);
+  CHECK(s.exhaust.count==3&&s.expansion.cards_finished==1&&!s.necro.ethereal_played&&!s.necro.drawn_turn&&s.energy==energy-2);restore(s);
+ }
  scenario="Eidolon captures identities without prematurely removing later Souls";
  {auto s=fight();fill(s,Zone::Draw,12);int storm=append(s,{NecroSoulStorm,0},Zone::Exhaust),a=append(s,{Soul,0},Zone::Exhaust),b=append(s,{Soul,0},Zone::Exhaust);
   s.necro.ethereal[storm]=s.necro.ethereal[a]=s.necro.ethereal[b]=1;cast(s,NecroEidolon);
@@ -537,6 +628,6 @@ static void character_start_and_validation(){
  }
 }
 int main(){
- complete_model_matrix();osty_damage_and_life();doom_and_debuffs();turns_draws_and_souls();physical_cards_and_choices();eidolon_and_persistence();character_start_and_validation();
+ complete_model_matrix();osty_damage_and_life();doom_and_debuffs();temporary_strength_and_misery();damage_listener_order();turns_draws_and_souls();physical_cards_and_choices();eidolon_and_persistence();character_start_and_validation();
  std::printf("Necrobinder completion: %u canonical variants, %u checks passed\n",variants,checks);return 0;
 }

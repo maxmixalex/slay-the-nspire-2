@@ -13,8 +13,9 @@ static void hash(std::vector<uint8_t>&b){uint32_t h=2166136261u;for(size_t i=40;
 constexpr unsigned minimum_images=CardKinds>A_Count+160?CardKinds:A_Count+160;
 constexpr unsigned fixture_images=minimum_images>U_Count?minimum_images:U_Count;
 static std::vector<uint8_t> pack(unsigned version=ContentVersion){
-    const unsigned images=fixture_images,strings=version==12?ContentStrings:version==11?407:EventTextEnd,clips=AnimationKinds,cards=version==12?CardKinds:version==11?114:68;
-    const unsigned ui_count=version==12?U_Count:version==11?185:version==10?105:90;
+    const unsigned images=fixture_images,strings=version==13?ContentStrings:version==12?749:version==11?407:EventTextEnd;
+    const unsigned clips=version==13?AnimationKinds:17,cards=version==13?CardKinds:version==12?228:version==11?114:68;
+    const unsigned ui_count=version==13?U_Count:version==12?233:version==11?185:version==10?105:90;
     const unsigned dir=40+images*16+strings*8+clips*16+cards*16+ui_count*4;
     std::vector<uint8_t>b(dir+images*82*60*2+strings*2);
     put(b,0,0x3250534e);put(b,4,version);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
@@ -47,14 +48,17 @@ int main(int argc,char**argv){
     // Card count alone cannot identify the new relic-art directory. A valid
     // older profile stays readable by Content but must not boot this App.
     static App legacy;
-    for(unsigned version:{8u,10u,11u}){
-        b=pack(version);CHECK(c.open(b.data(),b.size()));CHECK(c.card_count()==(version==11?114u:68u));
+    for(unsigned version:{8u,10u,11u,12u}){
+        b=pack(version);CHECK(c.open(b.data(),b.size()));CHECK(c.card_count()==(version==12?228u:version==11?114u:68u));
         CHECK(!c.current_profile());CHECK(!legacy.init(b.data(),b.size(),{}));
     }
-    // The immutable v11 directories must not expand when the current registry
+    // The immutable v11/v12 directories must not expand when the current registry
     // does. Merely relabeling either version leaves an incompatible pack.
     b=original;put(b,4,11);hash(b);CHECK(!c.open(b.data(),b.size()));
     b=pack(11);put(b,4,12);hash(b);CHECK(!c.open(b.data(),b.size()));
+    b=original;put(b,4,12);hash(b);CHECK(!c.open(b.data(),b.size()));
+    b=pack(12);put(b,4,13);hash(b);CHECK(!c.open(b.data(),b.size()));
+    b=original;put(b,28,17);hash(b);CHECK(!c.open(b.data(),b.size()));
     if(argc>1){
         FILE*f=std::fopen(argv[1],"rb");CHECK(f);std::vector<uint8_t> data(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);
         CHECK(c.open(data.data(),n));
@@ -62,6 +66,18 @@ int main(int argc,char**argv){
             CHECK(c.image(c.card_image(i)).pixels);CHECK(c.image(c.card_image(i)).w==82);
             for(int v=0;v<3;v++)CHECK(*c.card_string(i,v));
         }
+        CHECK(c.current_profile());
+        for(int i=233;i<U_Count;i++){auto picture=c.image(c.ui_image(i));CHECK(picture.pixels&&picture.w&&picture.h);}
+        for(int i=17;i<AnimationKinds;i++){
+            Clip clip=c.clip(i);CHECK(clip.count&&clip.frame_ms);CHECK(c.image(clip.first).pixels);CHECK(c.image(clip.first+clip.count-1).pixels);
+        }
+        CHECK(c.frame_image(Card{DefectZap,0})==c.ui_image(U_BlueSkill));
+        CHECK(c.frame_image(Card{RegentAlignment,0})==c.ui_image(U_OrangeSkill));
+        CHECK(c.frame_image(Card{NecroAfterlife,0})==c.ui_image(U_PinkSkill));
+        CHECK(c.energy_image(Card{DefectZap,0})==c.ui_image(U_DefectEnergy));
+        CHECK(c.energy_image(Card{RegentAlignment,0})==c.ui_image(U_RegentEnergy));
+        CHECK(c.energy_image(Card{NecroAfterlife,0})==c.ui_image(U_NecrobinderEnergy));
+        for(int i=30;i<33;i++)CHECK(c.relic_image(i)==c.ui_image(U_CrackedCore+i-30));
         static App a;CHECK(a.init(data.data(),n,{}));new_run(a.game,7,true);a.title=false;
         const Card offering{Offering,1};char desc[512];a.card_description(offering,0,desc,sizeof desc);
         CHECK(std::strstr(desc,"6"));CHECK(std::strstr(desc,"5"));CHECK(!std::strchr(desc,'{'));

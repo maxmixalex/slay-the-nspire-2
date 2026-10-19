@@ -59,10 +59,12 @@ struct App {
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[3]={},hit_start[3]={};
     uint32_t animation=0,run_number=0;const char* notice="";
     Motion motion[3]{};
+    Motion osty_motion{};int last_osty_hp=0,last_osty_attacks=0;
+    void sync_character_feedback();
     PointerState pointer{};
     MapPreview map_preview{};
     HitRegion hits[MaxHits]{}; int hit_count = 0;
-    int status_actor=-1, status_selected=0;
+    int status_actor=-1, status_selected=0,status_scroll=0,status_scroll_limit=0;
     void open_statuses(int actor);
     bool status_input(Key);
     int deck_candidate=-1;uint32_t deck_choice_revision=0;Phase deck_choice_phase=Phase::Map;

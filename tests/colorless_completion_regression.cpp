@@ -13,7 +13,7 @@ static bool covered[CardKinds][2]{};
 static int add(State&s,unsigned kind,unsigned up=0,Zone zone=Zone::Hand){
     CHECK(s.card_count<MaxCards);
     int id=s.card_count++;
-    s.cards[id]={(uint8_t)kind,(uint8_t)up};s.zones[id]=zone;
+    s.cards[id]={(CardKind)kind,(uint8_t)up};s.zones[id]=zone;
     Pile&p=zone==Zone::Hand?s.hand:zone==Zone::Draw?s.draw:zone==Zone::Discard?s.discard:zone==Zone::Exhaust?s.exhaust:s.powers;
     p.ids[p.count++]=(uint16_t)id;
     return id;
@@ -21,7 +21,7 @@ static int add(State&s,unsigned kind,unsigned up=0,Zone zone=Zone::Hand){
 static State fight(unsigned kind,unsigned up=0){
     State s{};new_run(s,0x41cef1ea,false);
     s.phase=Phase::Combat;s.current_node=0;s.floor=s.turn=1;s.enemy_count=2;s.energy=100;
-    s.relics=s.relic_count=s.relic_flash=0;s.deck_count=1;s.deck[0]={(uint8_t)kind,(uint8_t)up};
+    s.relics=s.relic_count=s.relic_flash=0;s.deck_count=1;s.deck[0]={(CardKind)kind,(uint8_t)up};
     for(auto&e:s.enemies)e={46,46,0,0,0,2};
     add(s,kind,up);
     return s;
@@ -97,7 +97,7 @@ static void card_contract(unsigned kind,unsigned up){
     case Anointed:{
         int common=add(s,Inflame,0,Zone::Draw),rare1=add(s,Offering,0,Zone::Draw),rare2=add(s,DemonForm,1,Zone::Draw);
         s.no_draw=1;act(s,kind);CHECK(s.hand.count==2&&contains(s.hand,rare1)&&contains(s.hand,rare2)&&contains(s.draw,common)&&s.zones[0]==Zone::Exhaust);
-        CHECK(card_retains({(uint8_t)kind,(uint8_t)up})==(up!=0));break;}
+        CHECK(card_retains({(CardKind)kind,(uint8_t)up})==(up!=0));break;}
     case Automation:{
         act(s,kind);CHECK(power_value(s,XPower::Automation)==1&&s.energy==99+(int)up);supply(s,12);int energy=s.energy;
         draw_cards(s,9);CHECK(s.energy==energy&&s.expansion.automation_count[0]==9);
@@ -128,7 +128,7 @@ static void card_contract(unsigned kind,unsigned up){
     case DramaticEntrance:
         CHECK(card_innate(s.cards[0]));act(s,kind);CHECK(total_hp(s)==92-2*(11+4*(int)up)&&s.zones[0]==Zone::Exhaust);break;
     case Entropy:{
-        act(s,kind);CHECK(power_value(s,XPower::Entropy)==1&&card_innate({(uint8_t)kind,(uint8_t)up})==(up!=0));supply(s,8);
+        act(s,kind);CHECK(power_value(s,XPower::Entropy)==1&&card_innate({(CardKind)kind,(uint8_t)up})==(up!=0));supply(s,8);
         next_turn(s);CHECK(s.expansion.choice==XChoice::Transform&&choice_min(s)==1&&choice_max(s)==1);
         int id=s.expansion.choices.ids[0];unsigned old=s.cards[id].kind;pick(s,1);
         CHECK(s.cards[id].kind!=old&&s.hand.count==5&&s.draw.count==3);break;}
@@ -144,7 +144,7 @@ static void card_contract(unsigned kind,unsigned up){
     case Fisticuffs:
         s.enemies[0].block=3;act(s,kind);CHECK(s.enemies[0].hp==42-2*(int)up&&s.block==7+2*(int)up);break;
     case GoldAxe:
-        s.expansion.cards_finished=7;s.gold=1;act(s,kind);CHECK(s.enemies[0].hp==39&&s.expansion.cards_finished==8&&s.gold==1);CHECK(card_retains({(uint8_t)kind,(uint8_t)up})==(up!=0));break;
+        s.expansion.cards_finished=7;s.gold=1;act(s,kind);CHECK(s.enemies[0].hp==39&&s.expansion.cards_finished==8&&s.gold==1);CHECK(card_retains({(CardKind)kind,(uint8_t)up})==(up!=0));break;
     case HiddenGem:{
         int id=add(s,Strike,0,Zone::Draw);act(s,kind);CHECK(s.expansion.replay[id]==2+up);draw_cards(s,1);act(s,Strike);
         CHECK(s.expansion.cards_finished==4+up&&s.enemies[0].hp==46-6*(3+(int)up)&&s.zones[id]==Zone::Discard&&s.energy==98);break;}
@@ -184,7 +184,7 @@ static void card_contract(unsigned kind,unsigned up){
         const int amount=(10+2*(int)up+3*(5+3*(int)up))*3/2;
         CHECK(damage(s,s.cards[0],0)==amount);act(s,kind);CHECK(s.enemies[0].hp==(amount<46?46-amount:0));break;}
     case Restlessness:{
-        supply(s,6);act(s,kind);CHECK(s.hand.count==2+up&&s.energy==102+(int)up&&card_retains({(uint8_t)kind,(uint8_t)up}));
+        supply(s,6);act(s,kind);CHECK(s.hand.count==2+up&&s.energy==102+(int)up&&card_retains({(CardKind)kind,(uint8_t)up}));
         auto blocked=fight(kind,up);supply(blocked,6);add(blocked,Defend);act(blocked,kind);CHECK(blocked.hand.count==1&&blocked.energy==100&&blocked.draw.count==6);ready(blocked);break;}
     case RollingBoulder:
         act(s,kind);CHECK(total_hp(s)==92);next_turn(s);CHECK(total_hp(s)==92-2*(5+5*(int)up));

@@ -95,11 +95,11 @@ static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
 static void open_model(unsigned model,bool upgraded=false){
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
     action(card_colorless(model)?UiAction::FilterColorless:UiAction::FilterAll);
-    uint8_t ids[CardKinds];unsigned count=a.library_items(ids),index=0;
+    CardKind ids[CardKinds];unsigned count=a.library_items(ids),index=0;
     while(index<count&&ids[index]!=model)++index;CHECK(index<count);
     while(a.library_page<(int)index/8)action(UiAction::NextPage);
-    tap(HitKind::LibraryItem,(int)index);CHECK((a.detail_card&255)==(int)model);
-    if(((a.detail_card>>8)!=0)!=upgraded)action(UiAction::ToggleCardUpgrade);
+    tap(HitKind::LibraryItem,(int)index);CHECK(card_from_token(a.detail_card).kind==model);
+    if((card_from_token(a.detail_card).upgraded!=0)!=upgraded)action(UiAction::ToggleCardUpgrade);
 }
 static void open_potion(Potion potion){
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryPotions);
@@ -117,7 +117,7 @@ static void acquisitions(){
         open_model(kind,up!=0);modal_only();unchanged(before);int id=a.game.card_count,deck=a.game.deck_count;
         if(real_profile){
             auto portrait=a.content.image(a.content.card_image(kind));CHECK(portrait.pixels&&portrait.w==82&&portrait.h==60);
-            char text[1024];a.card_description({(uint8_t)kind,(uint8_t)up},-1,text,sizeof text);
+            char text[1024];a.card_description({(CardKind)kind,(uint8_t)up},-1,text,sizeof text);
             CHECK(*text&&!std::strchr(text,'{')&&!std::strchr(text,'}'));
         }
         if(kind==Discovery)capture(up?"discovery-upgrade":"discovery-base");
@@ -169,7 +169,7 @@ static void offers(){
             if(potion==Potion::ColorlessPotion)CHECK(card_colorless(choice_card(a.game,token).kind));
             tap(HitKind::CombatChoice,token);CHECK(a.choice_selected_count==1&&a.choice_selected[0]==token);
             a.input(Key::Detail);CHECK((cost(choice_card(a.game,token))<0?a.detail_cost_override<0:a.detail_cost_override==0)&&a.detail_instance==-1);
-            CHECK((a.detail_card&255)==choice_card(a.game,token).kind);modal_only();a.input(Key::Back);unchanged(before);
+            CHECK(card_from_token(a.detail_card).kind==choice_card(a.game,token).kind);modal_only();a.input(Key::Back);unchanged(before);
         }
         a.input(Key::Save);CHECK(stored.size);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
         CHECK(cost(a.game,a.game.hand.ids[0])==(cost(a.game.cards[a.game.hand.ids[0]])<0?-1:0)&&!a.game.expansion.potion_active);CHECK(validate(a.game));
@@ -186,12 +186,12 @@ static void free_x_costs(){
     for(unsigned kind:{(unsigned)Whirlwind,(unsigned)Volley}){
         setup();acquire_potion(kind==Volley?Potion::ColorlessPotion:Potion::AttackPotion);drink();
         CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Offer);
-        a.game.expansion.offers[0]={(uint8_t)kind,0};auto before=snapshot();
+        a.game.expansion.offers[0]={(CardKind)kind,0};auto before=snapshot();
         tap(HitKind::CombatChoice,MaxCards);if(kind==Volley)capture("x-cost-offer");
-        a.input(Key::Detail);CHECK((a.detail_card&255)==(int)kind&&a.detail_cost_override<0);
+        a.input(Key::Detail);CHECK(card_from_token(a.detail_card).kind==kind&&a.detail_cost_override<0);
         a.input(Key::Back);unchanged(before);action(UiAction::ConfirmChoice);
         CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&cost(a.game,a.game.hand.ids[0])==-1);
-        setup();int id=append({(uint8_t)kind,0},Zone::Discard);
+        setup();int id=append({(CardKind)kind,0},Zone::Discard);
         acquire_potion(Potion::LiquidMemories);drink();before=snapshot();tap(HitKind::CombatChoice,id);
         a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override<0);
         a.input(Key::Back);unchanged(before);action(UiAction::ConfirmChoice);
@@ -238,8 +238,8 @@ static void statuses(){
 static void shop_and_rewards(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind)){
         setup(false);auto&s=a.game;s.phase=Phase::Map;s.current_node=1;s.next_row=1;s.gold=9999;CHECK(choose_node(s,1));
-        s.shop_cards[5]=(uint8_t)kind;a.reset_presentation();action(UiAction::OpenShop);a.cursor=5;
-        auto before=snapshot();a.input(Key::Detail);CHECK((a.detail_card&255)==(int)kind);a.input(Key::Back);unchanged(before);
+        s.shop_cards[5]=(CardKind)kind;a.reset_presentation();action(UiAction::OpenShop);a.cursor=5;
+        auto before=snapshot();a.input(Key::Detail);CHECK(card_from_token(a.detail_card).kind==kind);a.input(Key::Back);unchanged(before);
         int gold=s.gold,count=s.deck_count,price=s.shop_prices[5];tap(HitKind::Choice,5);
         CHECK(s.deck_count==count+1&&s.deck[count].kind==kind&&s.gold==gold-price&&(s.shop_sold&(1u<<5)));CHECK(validate(s));
     }

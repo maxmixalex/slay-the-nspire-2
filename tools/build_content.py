@@ -224,7 +224,9 @@ def main()->None:
         from build_colorless_potions import build as colorless_potions
         colorless_potions(args.game,output,output,font_path)
         from build_characters import build as characters
-        final=characters(args.game,output,output,font_path)
+        characters(args.game,output,output,font_path)
+        from build_all_characters import build as all_characters
+        final=all_characters(args.game,output,output,font_path)
         output.replace(args.output/'nSpire2.nsp.tns')
         (Path(staging)/'content-manifest.json').replace(args.output/'content-manifest.json')
         print(f"Created {args.output/'nSpire2.nsp.tns'}: {final['bytes']:,} bytes, {final['images']} images, {final['glyphs']} glyphs",flush=True)

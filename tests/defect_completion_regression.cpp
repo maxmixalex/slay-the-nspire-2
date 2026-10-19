@@ -412,6 +412,11 @@ static void card_instances_and_replays(){
  {auto s=fight();fill(s,Zone::Draw,12);cast(s,DefectStrike);cast(s,DefectStrike);cast(s,DefectStrike);unsigned drawn=s.silent.drawn_combat;
   cast(s,DefectFtl);CHECK(s.silent.drawn_combat==drawn);int hp=s.enemies[0].hp;cast(s,DefectHelixDrill,1);CHECK(s.enemies[0].hp==hp-15);
  }
+ scenario="Automatic attack resource value differs from actual energy expenditure";
+ {auto s=fight();cast(s,DefectFeral);int sunder=append(s,{DefectSunder,0},Zone::Draw);cast(s,DefectUproar);
+  CHECK(s.energy==16&&s.defect.energy_spent_turn==4);CHECK(s.zones[sunder]==Zone::Discard&&!s.defect.feral_used);
+  int hp=s.enemies[0].hp;cast(s,DefectHelixDrill,1);CHECK(s.enemies[0].hp==hp-20);
+ }
  scenario="Sunder energy requires this attack to kill";
  {auto s=fight();s.enemies[0].hp=26;cast(s,DefectSunder);CHECK(!s.enemies[0].hp&&s.energy==20&&s.phase==Phase::Combat);}
  scenario="Go for the Eyes leaves a non-attacking intent untouched";
@@ -455,6 +460,11 @@ static void statuses_draws_and_choices(){
   int hand=append(s,{Wound,0},Zone::Hand),draw=append(s,{Dazed,0},Zone::Draw),discard=append(s,{Void,0},Zone::Discard),old=append(s,{Burn,0},Zone::Exhaust);
   cast(s,DefectFlakCannon);CHECK(s.zones[hand]==Zone::Exhaust&&s.zones[draw]==Zone::Exhaust&&s.zones[discard]==Zone::Exhaust&&s.zones[old]==Zone::Exhaust);
   CHECK(s.silent.drawn_combat==3&&s.block==9&&s.enemies[0].hp+s.enemies[1].hp==1976);
+ }
+ scenario="Compact announces replacement Fuel to cross-character creation powers";
+ {auto s=fight();cast(s,RegentArsenal);cast(s,RegentPillarOfCreation);int wound=append(s,{Wound,0},Zone::Hand),burn=append(s,{Burn,0},Zone::Hand);
+  int created=s.regent.cards_created;cast(s,DefectCompact);
+  CHECK(s.cards[wound].kind==Fuel&&s.cards[burn].kind==Fuel);CHECK(s.regent.cards_created==created+2&&s.strength==2&&s.block==10);
  }
  scenario="Flak Cannon can exhaust the suspended Slimed which drew it";
  {auto s=fight();cast(s,Hellraiser);int flak=append(s,{DefectFlakCannon,0},Zone::Draw),slimed=append(s,{Slimed,0},Zone::Hand);

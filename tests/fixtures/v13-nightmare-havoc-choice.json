@@ -1,0 +1,45 @@
+{
+  "writer_commit": "7f486bdf757fb9af9dff89cdc8a785f049a404fc",
+  "save_version": 13,
+  "bytes": 41820,
+  "ids": {
+    "target": 2,
+    "returned": 4,
+    "headbutt": 13,
+    "havoc": 14
+  },
+  "resumed": {
+    "hp": 70,
+    "energy": 22,
+    "block": 4,
+    "enemy_hp": [
+      42,
+      26
+    ],
+    "hand": 1,
+    "draw": 9,
+    "discard": 1,
+    "exhaust": 2,
+    "cards_finished": 5,
+    "attacks_finished": 1,
+    "skills_finished": 2,
+    "nightmare_active": 1
+  },
+  "sha256": "6d20885d2d6536fe10d9c8389bbeac80b7d24beed99476eb0700fda24ed92b00",
+  "producer_sha256": "c5c4e5903c36f53b948d33324d7014fbabb3a4556e0a089a172878dcd4645207",
+  "build_journal": "v13-frozen-fixture-build-43b4b36a598a",
+  "producer_journal": "v13-frozen-fixture-produce-no-lsan-cd4c07016151",
+  "source_changed": false,
+  "environment_note": "LeakSanitizer cannot run under the provided ptrace environment; detect_leaks=0 was applied to the unchanged ASan/UBSan producer. The initial failed producer journal is retained as v13-frozen-fixture-produce-801e9c9e002d.",
+  "v13_offsets": {
+    "deck_kind_0": 92,
+    "effect_kind_0": 416,
+    "effect_value_0": 420,
+    "effect_target_0": 424,
+    "relic_count": 444,
+    "relic_order_0": 448,
+    "relic_mask": 556,
+    "character": 1528,
+    "effect_aux_0": 1708
+  }
+}

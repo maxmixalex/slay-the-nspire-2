@@ -41,13 +41,13 @@ static void capacity_bound(){
  // nested plays, a full queue, maximum permanent deck and all 512 instances.
  State s{};new_run(s,0x41cef1ea,false);s.phase=Phase::ExtendedChoice;s.floor=s.turn=1;s.enemy_count=2;s.current_node=0;
  s.relics=s.relic_count=s.relic_flash=0;s.deck_count=MaxDeck;s.card_count=MaxCards;
- for(unsigned i=0;i<s.deck_count;i++)s.deck[i]={(uint8_t)(i%CardKinds),0};
+ for(unsigned i=0;i<s.deck_count;i++)s.deck[i]={(CardKind)(i%CardKinds),0};
  for(auto&e:s.enemies)e={46,46,0,0,0,2};
  s.playing=MaxCards-1;s.cards[s.playing]={SecretWeapon,0};s.zones[s.playing]=Zone::Limbo;
  auto&x=s.expansion;x.depth=MaxAutoFrames;x.choice=XChoice::Draw;x.choice_min=x.choice_max=1;
  const unsigned remaining=MaxCards-MaxAutoFrames-1;
  for(unsigned i=0;i<remaining;i++){
-  s.cards[i]={(uint8_t)(i%CardKinds),(uint8_t)(i%2)};s.zones[i]=Zone::Draw;
+  s.cards[i]={(CardKind)(i%CardKinds),(uint8_t)(i%2&&card_upgradeable({(CardKind)(i%CardKinds),0}))};s.zones[i]=Zone::Draw;
   s.draw.ids[s.draw.count++]=(uint16_t)i;x.choices.ids[x.choices.count++]=(uint16_t)i;
  }
  for(unsigned i=0;i<MaxAutoFrames;i++){
@@ -59,7 +59,7 @@ static void capacity_bound(){
  // The only unsaturated variable field is the mutually exclusive choice
  // pile: at most the 13 Limbo instances could add 4 bytes apiece.
  CHECK(b.size+4*(MaxAutoFrames+1)<=sizeof(b.bytes));
- std::printf("v13 bounded save: %zu bytes; conservative ceiling %zu / %zu\n",b.size,b.size+4*(MaxAutoFrames+1),sizeof(b.bytes));
+ std::printf("current bounded save: %zu bytes; conservative ceiling %zu / %zu\n",b.size,b.size+4*(MaxAutoFrames+1),sizeof(b.bytes));
  auto invalid=s;invalid.expansion.depth=MaxAutoFrames+1;CHECK(!validate(invalid));
  invalid=s;invalid.silent.inky[0]=1;CHECK(!validate(invalid));
  invalid=s;invalid.effects[0]={EffectKind::Extended,MaxCards,(int16_t)XOp::SKnifeShiv,0};CHECK(!validate(invalid));

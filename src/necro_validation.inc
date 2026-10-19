@@ -21,6 +21,11 @@ static bool valid_necro_state(const State&s){
  for(int t=0;t<MaxEnemies;t++){
   if(v.debilitate[t]<0||v.debilitate[t]>9999||v.hang[t]<0||v.hang[t]>9999||v.oblivion[t]<0||v.oblivion[t]>9999||v.sic_em[t]<0||v.sic_em[t]>9999||v.debuff_count[t]>NDebuffCount)return false;
   if(t>=s.enemy_count&&(v.debilitate[t]||v.hang[t]||v.oblivion[t]||v.sic_em[t]||v.debuff_count[t]))return false;
+  int restored=0;for(int p=0;p<NTempStrengthCount;p++){
+   if(v.temp_strength[t][p]<0||v.temp_strength[t][p]>9999||(t>=s.enemy_count&&v.temp_strength[t][p]))return false;
+   restored+=v.temp_strength[t][p];
+  }
+  if(restored>s.expansion.restore_strength[t])return false;
   bool order_seen[NDebuffCount]{};
   for(unsigned i=0;i<NDebuffCount;i++){
    unsigned n=v.debuff_order[t][i];if(i>=v.debuff_count[t]){if(n)return false;continue;}
@@ -58,7 +63,8 @@ static bool valid_necro_effect(const State&s,const Effect&e){
  case XOp::NDoom:return a>=-1&&a<s.enemy_count&&b>=0&&b<=9999;
  case XOp::NDoomFromDamage:return a>=0&&a<s.enemy_count&&b==0;
  case XOp::NEnemyPower:return a>=0&&a<5*MaxEnemies&&a%MaxEnemies<s.enemy_count&&b>=0&&b<=9999&&(a/MaxEnemies!=1||b==0);
- case XOp::NApplyCopiedDebuff:return a>=0&&a<NDebuffCount*MaxEnemies&&a%MaxEnemies<s.enemy_count&&b>0&&b<=9999;
+ case XOp::NApplyCopiedDebuff:return a>=0&&a<NDebuffCount*MaxEnemies&&a%MaxEnemies<s.enemy_count&&b>=-9999&&b<=9999&&b!=0&&(a/MaxEnemies==(int)NDebuff::Strength||b>0);
+ case XOp::NTempStrength:return a>=0&&a<NTempStrengthCount*MaxEnemies&&a%MaxEnemies<s.enemy_count&&b>0&&b<=9999;
  case XOp::NEnemyHpLoss:case XOp::NDebuffDamage:return a>=0&&a<=9999&&b>=0&&b<s.enemy_count;
  case XOp::NMakeSoul:return a>=0&&a<=9999&&b>=0&&b<=5;
  case XOp::NChooseDredge:return a>=1&&a<=3&&b==0;

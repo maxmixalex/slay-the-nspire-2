@@ -1,4 +1,5 @@
 static void notify_card_generated(State&,int);
+static void all_characters_attack_damage(State&,int target,int total,int unblocked,bool pet);
 void notify_deck_card_created(State&,int,int);
 void notify_deck_removed(State&,int);
 void notify_deck_replaced(State&,int);

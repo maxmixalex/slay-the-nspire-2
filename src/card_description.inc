@@ -6,6 +6,8 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance,int dec
     const bool permanent=!library&&deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==c.kind;
     const bool live=!library&&!permanent&&combat_phase(game.phase);
     while(*p){
+        if(*p=='\x1c'){++p;if(!live||t<0||t>=game.enemy_count||!game.enemies[t].hp){while(*p&&*p!='\x1d')++p;}continue;}
+        if(*p=='\x1d'){++p;continue;}
         if(*p=='\x1e'){++p;if(!live){while(*p&&*p!='\x1f')++p;}continue;}
         if(*p=='\x1f'){++p;continue;}
         if(*p=='{'){

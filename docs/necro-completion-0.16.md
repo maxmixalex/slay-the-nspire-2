@@ -34,9 +34,19 @@ High Five 在没有 Osty 时禁止手动打出；其他宠物攻击可被打出�
 
 Blight Strike 与 Reaper Form 使用 `DamageResult::TotalDamage`，即吸收的格挡伤害加实际生命伤害，不含过量伤害。Reaper Form 包含玩家与其 Osty 的有加成攻击。Blight Strike 自己再附加一次实际伤害对应的灾厄，顺序在攻击回调之后。依据 `0x06005202`、`0x0600a7f8`、`0x06009fd5`。
 
+Envenom、Monarch's Gaze 和 Reaper Form 都属于同一个 `AfterDamageGiven` 回调，按玩家首次取得能力的顺序逐个完成；每项施加引起的二次效果先完成，才轮到下一项。Envenom 与 Monarch's Gaze 要求玩家本人作为伤害来源，Osty 只触发 Reaper Form 的宠物例外。玩家能力整体先于敌方 Sic 'Em；敌方更早取得该减益也不会改变双方顺序。相关方法为 `0x06009eec`、`0x06009f74`、`0x06009fd5`、`0x0600af1d` 和 `0x0600b3f4`。跨角色回归覆盖三项能力的全部六种取得顺序以及 Artifact 的首次阻挡。
+
+这些共享回调复用 52 项玩家能力取得顺序目录，其中三项新监听者的 `AfterCardPlayed` 为空回调；伤害发生时，分别排入可暂停、可保存的 Poison、Doom 和临时失力指令，保证二次效果先于后续监听者。旧 v13 的 Envenom 在完成历史载荷合法性检查后，追加到原有活动顺序尾部；原版尚未记录的跨钩子取得位置不予虚构。之后新取得的 Reaper Form 或 Monarch's Gaze 会自然排在它之后。
+
+Beat Into Shape 也只统计本回合玩家本人对目标造成的有加成伤害事件，包含完全被格挡的事件，排除 Osty。谓词为 `0x0600a7db`。Fisticuffs 使用自身攻击结果的 `TotalDamage + OverkillDamage`，不读取这项历史，依据 `0x0600a99a`、`0x0600a999`。
+
 Shroud 对由己方施加的灾厄提供无加成格挡，包含对玩家自身的灾厄；Sleight of Flesh 对自己施加到敌人的非临时减益造成可被格挡的无加成伤害。Artifact 成功阻止的减益不触发这两者。Debilitate 将虚弱与易伤的偏离 100% 的部分加倍：75% 变成 50%，150% 变成 200%；堆叠只延长持续回合。相关方法为 `0x0600a01e`、`0x0600a02e`、`0x0600250f`、`0x06002510`。
 
-Misery 先快照来源的减益数值和取得顺序，再逐个向其他敌人施加。覆盖 Weak、Vulnerable、Poison、负 Strength、Beetle、Demise、Doom、Strangle、Debilitate、Hang、Oblivion、Sic 'Em；每项独立经过 Artifact 与二次效果。旧存档没有顺序时使用固定后备顺序。临时力量恢复包装本身不被复制。Oblivion 在每次 CardPlay 前捕获旧层数，避免自己施加的新层数立即触发；每次重放独立捕获，玩家回合结束清除。
+Misery 在自身攻击前快照来源的减益数值和取得顺序，攻击后再逐个向其他敌人施加；这次攻击触发 Reaper Form 或 Envenom 新增的灾厄/中毒不进入快照。来源被这次攻击击杀后，已捕获的减益仍复制到其他存活敌人。覆盖 Weak、Vulnerable、Poison、负 Strength、Beetle、Demise、Doom、Strangle、Debilitate、Hang、Oblivion、Sic 'Em、Conqueror，以及七种临时失去力量包装；每项独立经过 Artifact 与二次效果。
+
+七种临时来源分别是 Dark Shackles、Mangle、Enfeebling Touch、Piercing Wail、Crush Under、Dying Star 和 Monarch's Gaze。它们保留独立层数、取得顺序和 Artifact 尝试；Misery 先把临时数值加回捕获的有符号 Strength，再复制各临时包装。因此“当前力量 −3、临时失去 8”会复制永久 +5 和临时 −8，回合结束恢复到 +5。若来源力量本来非负，则初始减益筛选不捕获这个 Strength。临时包装先遇到 Artifact；未被阻挡时，内部负力量触发一次 Sleight of Flesh，包装本身因实现 ITemporaryPower 而不再触发。Strength 在原始金额非零时保持取得位置，即便暂时为正数。
+
+旧存档没有取得顺序时使用固定后备顺序；旧格式合并保存的临时力量不能恢复各来源，将无法归属的余量迁移为单一 Dark Shackles 包装，保留当前失力与恢复总量。Oblivion 在每次 CardPlay 前捕获旧层数，避免自己施加的新层数立即触发；每次重放独立捕获，玩家回合结束清除。
 
 ## 卡牌实例、费用和回合钩子
 
@@ -58,13 +68,15 @@ Cleanse 从抽牌堆消耗一张；Dredge 从弃牌堆选择最多 3 张，按�
 
 Seance 生成一张新的基础 Soul，清除旧卡的升级、费用、关键词、重放与实例成长，同时保留原抽牌堆位置。Eternal 的永久牌组限制不阻止战斗中的转换；`CardModel::IsTransformable` 为 `0x0600189a`，TransformTo 为 `0x0600b239`。
 
-Eidolon 快照当时消耗区内所有虚无实例，再按消耗区顺序逐张自动打出。快照不会提前把全部牌移出消耗区，因此前面的 Soul Storm 仍能数到后面尚未打出的 Souls；若先前的牌结束战斗，后续候选仍留在消耗区。嵌套选择保存各层 CardPlay 的灾厄捕获、费用资源值与首次攻击历史，子牌结束后还原父层。
+Eidolon 快照当时消耗区内具有虚无且可打出的实例，再按消耗区顺序逐张自动打出；Dazed、Void 等不可打出的牌不进入候选，留在消耗区且不产生打出历史。快照不会提前把全部牌移出消耗区，因此前面的 Soul Storm 仍能数到后面尚未打出的 Souls；若先前的牌结束战斗，后续候选仍留在消耗区。嵌套选择保存各层 CardPlay 的灾厄捕获、费用资源值与首次攻击历史，子牌结束后还原父层。
 
 ## 保存与回归接口
 
 `src/necro_forward.inc` 定义完整接线面。每次物理打出只初始化一次资源快照；每次重放独立调用 Before、Body、普通 After 和 Late。结束物理组后先清空该 frame 的 Necro 捕获，再还原父层。普通玩家能力按取得顺序触发。
 
-新增状态包括 22 个能力及取得顺序、12 种减益的取得顺序、512 张实例的费用/关键词/成长、13 层待执行快照、192 个永久牌组增长值与待领取移牌数。所有字段进入 v14 后缀，保留旧版前缀；Nightmare 的新角色实例修饰由共享后缀保存。验证明确拒绝越界实例、错误卡种的修饰、非活动层残留捕获与非法指令操作数。
+新增状态包括 22 个能力及取得顺序、20 种减益的取得顺序、七种临时失力来源、512 张实例的费用/关键词/成长、13 层待执行快照、192 个永久牌组增长值与待领取移牌数。所有字段进入 v14 后缀，保留旧版前缀；Nightmare 的新角色实例修饰由共享后缀保存。验证明确拒绝越界实例、错误卡种的修饰、非活动层残留捕获与非法指令操作数。
+
+旧版迁移把当前已经死亡的敌人和现存奥斯蒂作为可观察的起点，不推测旧版不存在的历史计数。加载后才生成的 Melancholy 不会把已死亡的敌人再算一次。
 
 `tests/necro_completion_regression.cpp` 使用独立字面量的费用、关键词、稀有度和效果断言。除 174 个形态外，覆盖宠物吸收与过量伤害、力量/Vigor 区分、伤害倍率、灾厄与 Artifact、无色 Soul 联动、费用修改先后、Fetch 重放、Flatten 跨物理组、Misery 复制、Eidolon 暂停/致死中断、The Scythe 跨战斗及 Grimoire 索引维护。保存测试要求重新编码字节完全一致。测试结果须在已推送冻结源码上执行后填写。
 

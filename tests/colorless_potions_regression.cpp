@@ -42,7 +42,7 @@ static int count_kind(const State&s,Zone z,unsigned kind){int n=0;for(unsigned i
 static int total_hp(const State&s){return s.enemies[0].hp+s.enemies[1].hp;}
 static void registry(){
  unsigned n=0;for(unsigned k=0;k<CardKinds;k++)if(card_colorless(k)){++n;CHECK(card_rarity(k)==3||card_rarity(k)==4);CHECK(!card_generated(k));}
- CHECK(n==53);CHECK(PotionKinds==64);CHECK(CardKinds==228);
+ CHECK(n==53);CHECK(PotionKinds==64);CHECK(CardKinds==497);
  for(int p=1;p<=PotionKinds;p++){auto*d=potion_definition((Potion)p);CHECK(d&&*d->key&&*d->name&&*d->description);}
  CHECK(!potion_in_pool(Potion::BoneBrew,Character::Ironclad));CHECK(!potion_in_pool(Potion::Ambergris,Character::Silent));
  CHECK(potion_in_pool(Potion::Ashwater,Character::Ironclad));CHECK(!potion_in_pool(Potion::Blood,Character::Silent));
@@ -50,9 +50,9 @@ static void registry(){
 }
 static void all_cards(){
  for(unsigned k=0;k<CardKinds;k++)if(card_colorless(k))for(unsigned up=0;up<2;up++){
-  auto s=fight({(uint8_t)k,(uint8_t)up});s.hp=40;append(s,{Defend,0},Zone::Hand);s.gold=3;
+  auto s=fight({(CardKind)k,(uint8_t)up});s.hp=40;append(s,{Defend,0},Zone::Hand);s.gold=3;
   int before=total_hp(s);CHECK(play(s,0,0));resolve_choices(s);
-  CHECK(s.zones[0]==(definitions[k].type==CardType::Power?Zone::Power:card_exhausts({(uint8_t)k,(uint8_t)up})?Zone::Exhaust:Zone::Discard));
+  CHECK(s.zones[0]==(definitions[k].type==CardType::Power?Zone::Power:card_exhausts({(CardKind)k,(uint8_t)up})?Zone::Exhaust:Zone::Discard));
   CHECK(s.expansion.cards_finished>=1);++card_cases;
   if(definitions[k].type==CardType::Attack&&k!=GoldAxe)CHECK(total_hp(s)<before);
   switch(k){

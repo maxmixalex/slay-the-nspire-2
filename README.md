@@ -1,18 +1,18 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Current version: **0.15 complete single-player Ironclad and Silent pools**, on `work/0.15-full-characters`. The verified runtime source is [`4df76b04`](https://github.com/zyf722/slay-the-nspire-2/commit/4df76b04e2a07e6be9a898793f03fd0ab8df4aae); later audit/result metadata does not change the distributed binaries.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Active development is **0.16: all five single-player character pools**, on `work/0.16-five-characters`. The first source integration checkpoint is [`2eabce11`](https://github.com/zyf722/slay-the-nspire-2/commit/2eabce11a5ad5e5f2460e67eb5f9713c8ea424eb); its runtime validation is pending. The last distributed verified runtime remains 0.15 at [`4df76b04`](https://github.com/zyf722/slay-the-nspire-2/commit/4df76b04e2a07e6be9a898793f03fd0ab8df4aae) until this stage completes.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
 ## Current content
 
-228 card models: **85 single-player Ironclad**, **86 single-player Silent**, **53 single-player colorless** and four generated tokens (Shiv, Soul, Sovereign Blade and Giant Rock). There are **64 active potion models**, 30 relics and five adapted events. The two character pools include their base and upgraded rules. Ancient-rarity Break, Corruption, Suppress and Wraith Form are available in the compendium/practice pool and excluded from ordinary rewards and generation. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
+497 card models: **85 single-player Ironclad**, **86 each for Silent, Defect, Regent and Necrobinder**, **53 single-player colorless** and 15 generated/status models. There are **64 active potion models**, 33 relics and five adapted events. The five character pools include their base and upgraded rules. New 0.16 execution is still pending verification. Ancient-rarity cards are available in the compendium/practice pool and excluded from ordinary rewards and generation. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
 
 Practice exposes every character/colorless card and potion through the compendium. Open it with **C** or the practice HUD button, inspect an entry and use its acquisition button. Card variants, potion targeting, multi-card selections, generated offers, nested automatic plays and persistent statuses share the same engine and UI on native and browser builds. A full hand sends newly created cards to discard; a full potion inventory must be freed before acquiring another bottle.
 
-Ordinary potion pools follow the current character and the pinned rarity weights. Other-character and special-acquisition bottles remain available for explicit practice use; this does not add the missing three characters or their original event routes. The 0.13 event, relic, treasure and fanned-hand UI work is retained. These layouts are adaptations, not complete original-PC fidelity.
+Ordinary potion pools follow all five current characters and the pinned rarity weights. Other-character and special-acquisition bottles remain available for explicit practice use; their original special acquisition routes are separate work. The 0.13 event, relic, treasure and fanned-hand UI work is retained. These layouts are adaptations, not complete original-PC fidelity.
 
-Read [current work state](docs/WORK_STATE.md) before resuming development and the [Ironclad](docs/ironclad-completion-0.15.md), [Silent](docs/silent-completion-0.15.md), [colorless](docs/colorless-completion-0.14.md) and [potion](docs/potions-completion-0.14.md) audits for tested behavior and original-rule evidence. Registry counts alone are not a passing test or a claim that the entire original game is complete.
+Read [current work state](docs/WORK_STATE.md) before resuming development and the [Ironclad](docs/ironclad-completion-0.15.md), [Silent](docs/silent-completion-0.15.md), [Defect](docs/defect-completion-0.16.md), [Regent](docs/regent-completion-0.16.md), [Necrobinder](docs/necro-completion-0.16.md), [colorless](docs/colorless-completion-0.14.md) and [potion](docs/potions-completion-0.14.md) audits for implementation scope and original-rule evidence. Registry counts alone are not a passing test or a claim that the entire original game is complete.
 
 ## Build
 
@@ -28,30 +28,31 @@ python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label native-tes
 python3 tests/event_pack_regression.py
 python3 tests/logged_command_regression.py
 python3 tests/character_pack_regression.py
+python3 tests/all_character_pack_regression.py
 ```
 
-ARM requires LLVM clang++ and ld.lld; the browser build also requires wasm-ld. The X11 host is optional. Install converter dependencies from requirements.txt. Convert an existing private 0.14 NSP2/11 pack without resampling its retained animation frames:
+ARM requires LLVM clang++ and ld.lld; the browser build also requires wasm-ld. The X11 host is optional. Install converter dependencies from requirements.txt. Convert an existing private 0.15 NSP2/12 pack without resampling its retained animation frames:
 
 ```sh
-python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label content -- python3 tools/build_characters.py /path/to/game /path/to/old/nSpire2.nsp.tns --output dist/nSpire2.nsp.tns --font /path/to/local-font
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label content -- python3 tools/build_all_characters.py /path/to/game /path/to/old/nSpire2.nsp.tns --output dist/nSpire2.nsp.tns --font /path/to/local-font
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label web -- python3 tools/build_web.py
 ```
 
-For a full conversion from the pinned installation, `build_content.py` now chains through the same final character conversion. The conversion checks the original release metadata, assembly and PCK hashes. New launchers require **NSP2/12** (228 cards, 233 auxiliary images and 749 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
+For a full conversion from the pinned installation, `build_content.py` now chains through the same final character conversion. The conversion checks the original release metadata, assembly and PCK hashes. New launchers require **NSP2/13** (497 cards, 339 auxiliary images and 1,556 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
 
-New saves use **v13**; project v3-v12 saves remain readable. v13 appends explicit character powers, histories, per-instance modifiers, Nightmare snapshots and the acquisition order of after-play powers. Historical writers did not record the new character histories: migration starts them at zero except for visibly in-progress attacks, whose started count is seeded so continuation remains valid. Old saves retain the previous engine's Panache-index-before-Calamity after-play order. v12 records the acquisition order between Entropy and Rolling Boulder. Earlier v11 saves did not record that order and retain the previous engine's all-Boulders-before-Entropy ordering when migrated. The browser writes to a separate v13 storage key and can import earlier keys. Old launchers cannot read the new save. Keep a copy of an older save when testing a new launcher.
+New saves use **v14** and retain readers for project v3–v13. The appended v14 payload records all three new character modules, wide card/relic identifiers, independent star prices, persistent deck growth, expanded acquisition order and cross-character Nightmare modifiers. Earlier writers did not record the new histories; migration preserves encoded facts and seeds only observable pending play/death baselines. The genuine frozen v13 continuation fixture and earlier historical fixtures exercise those boundaries. Older Entropy/Boulder and Panache/Calamity acquisition orders retain their documented historical migration policies. The browser writes to a separate v14 storage key and can import earlier keys. Old launchers cannot read the new save.
 
-The native suite includes complete character, colorless, potion, historical migration and UI regressions. `expansion_ui_regression` optionally accepts a real NSP2/12 file and an existing private screenshot directory, so the same acquisition/choice tests can exercise converted art in addition to synthetic parser fixtures. `character_ui_regression` accepts the same two optional arguments for all 344 character/token variants.
+The native suite includes all character, colorless, potion, historical migration and UI regressions. `expansion_ui_regression`, `character_ui_regression` and `five_character_ui_regression` optionally accept a real NSP2/13 file and an existing private screenshot directory. They cover all 860 character/Giant Rock variants, retained colorless/potion flows, generated/status cards and five-character mechanics. The optional native/WASM oracle adds five controlled combat sequences to the four retained room sequences.
 
 ## Persistence and validation
 
-At the verified 0.15 runtime source, **25/25 C++ suites and 17/17 Python tests passed**, with ASan/UBSan on native regressions. The native suites report 748,629 checks/assertions, including Ironclad's 4,390 checks across 170 base/upgraded variants plus Giant Rock and interactions, and Silent's 17,753 checks across 174 variants. Checks include repeated assertions and are not counts of unique scenarios.
+The following results are historical. At the verified 0.15 runtime source, **25/25 C++ suites and 17/17 Python tests passed**, with ASan/UBSan on native regressions. The native suites report 748,629 checks/assertions, including Ironclad's 4,390 checks across 170 base/upgraded variants plus Giant Rock and interactions, and Silent's 17,753 checks across 174 variants. Checks include repeated assertions and are not counts of unique scenarios.
 
 Real-content UI passed 22,225 checks across all **344 character/token variants**, plus 7,374 checks covering all **106 colorless variants and 64 potions**. The real NSP2/12 parser passed 1,667 checks. Native/WASM room comparison matched 84 frames and eight saves. Fresh X11 processes loaded v13 saves including a 384-instance case and re-saved identical bytes. The deliberately full bounded v13 fixture measured 61,956 bytes; its conservative 62,008-byte ceiling fits the 65,536-byte save buffer. ARM, WASM and X11 builds succeeded. [Current validation receipts and artifact hashes](docs/validation-0.15.json) include the exact build source and evidence limits; [0.14 results](docs/validation-0.14.json) are historical.
 
 Commit source to a named work branch and read the remote ref back **before** long compilation or conversion. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
 
-Current execution results belong in WORK_STATE, not inherited historical reports. Compilation, cross-backend agreement and actual target execution are different evidence levels. Physical performance, remaining characters, complete original encounters/runs and exact UI parity remain unverified or unfinished.
+Current execution results belong in WORK_STATE, not inherited historical reports. Compilation, cross-backend agreement and actual target execution are different evidence levels. Physical performance, complete original encounters/runs and exact UI parity remain unverified or unfinished.
 
 ## Controls and license
 

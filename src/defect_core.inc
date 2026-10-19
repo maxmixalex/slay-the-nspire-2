@@ -371,9 +371,13 @@ static bool defect_effect(State&s,Effect e){
    if(cost(s.cards[id])>=0&&cost(s,id)==0&&(type==CardType::Attack||type==CardType::Skill||type==CardType::Power)){remove(s.discard,i);put(s,s.hand,id,Zone::Hand);}else ++i;
   }break;
  case XOp::DClaw:for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==DefectClaw)v.value[id]=(int16_t)min(9999,v.value[id]+a);break;
- case XOp::DCompact:
-  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(definitions[s.cards[id].kind].type==CardType::Status){s.cards[id]={Fuel,(uint8_t)a};reset_card_modifiers(s,id);}}
-  break;
+ case XOp::DCompact:{
+  uint16_t changed[MaxHand];unsigned n=0;
+  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(definitions[s.cards[id].kind].type==CardType::Status){s.cards[id]={Fuel,(uint8_t)a};reset_card_modifiers(s,id);changed[n++]=(uint16_t)id;}}
+  // The original successful combat Transform announces each replacement to
+  // AfterCardGeneratedForCombat, even when the replacement is a Skill.
+  for(int i=(int)n-1;i>=0;i--)notify_card_generated(s,changed[i]);break;
+ }
  case XOp::DGenetic:
   if(a>=0&&a<s.card_count){v.value[a]=(int16_t)min(9998,v.value[a]+b);unsigned origin=v.deck_origin[a];if(origin&&origin<=s.deck_count&&s.deck[origin-1].kind==DefectGeneticAlgorithm)v.genetic_deck[origin-1]=(uint16_t)min(9998,v.genetic_deck[origin-1]+b);}break;
  case XOp::DModded:if(a>=0&&a<s.card_count)v.cost_delta[a]=(int16_t)min(9999,v.cost_delta[a]+1);break;

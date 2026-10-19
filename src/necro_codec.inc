@@ -1,7 +1,7 @@
  // v14 appends these fields without changing the v13 prefix.
  {
   auto&v=s.necro;
-  static_assert(NPowerCount==22&&NDebuffCount==12&&MaxCards==512&&MaxDeck==192&&MaxEnemies==2&&MaxAutoFrames==12,"v14 Necrobinder save dimensions are frozen");
+  static_assert(NPowerCount==22&&NDebuffCount==20&&NTempStrengthCount==7&&MaxCards==512&&MaxDeck==192&&MaxEnemies==2&&MaxAutoFrames==12,"v14 Necrobinder save dimensions are frozen");
   for(int p=0;p<22;p++)F(v.powers[p]);
   for(int p=0;p<22;p++)F(v.power_order[p]);F(v.power_count);
   F(v.drawn_turn);F(v.ethereal_played);F(v.osty_attacks_turn);F(v.attacks_started_turn);F(v.creature_deaths);
@@ -12,7 +12,8 @@
   }
   for(int t=0;t<2;t++){
    F(v.debilitate[t]);F(v.hang[t]);F(v.oblivion[t]);F(v.sic_em[t]);
-   for(int p=0;p<12;p++)F(v.debuff_order[t][p]);F(v.debuff_count[t]);
+   for(int p=0;p<20;p++)F(v.debuff_order[t][p]);F(v.debuff_count[t]);
+   for(int p=0;p<7;p++)F(v.temp_strength[t][p]);
   }
   for(int f=0;f<13;f++){
    for(int t=0;t<2;t++)F(v.oblivion_before[f][t]);

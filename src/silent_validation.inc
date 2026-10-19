@@ -1,4 +1,5 @@
 static bool valid_silent_snapshot(const SilentSnapshot&n,bool active){
+ if(n.star_turn_free>1||n.star_combat_free>1||(!active&&(n.star_turn_free||n.star_combat_free)))return false;
  if(n.card.kind>=CardKinds||n.card.upgraded>1||n.turn_cost>100||n.combat_cost>100||n.sly>3||n.retain>3||n.inky>1||n.bullet_free>1)return false;
  if(n.discount>9999||n.turn_origin>n.discount||n.combat_origin>n.discount||n.bullet_origin>n.discount||n.return_turn>20001)return false;
  if(n.blade_damage<0||n.blade_damage>9999||n.iron_damage<0||n.iron_damage>9999||n.stomp_discount>9999||n.stomp_turn_origin>n.stomp_discount||n.stomp_combat_origin>n.stomp_discount)return false;

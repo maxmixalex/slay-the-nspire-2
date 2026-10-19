@@ -27,11 +27,65 @@ int cost(const State&s,int id){
  if(id<0||id>=s.card_count)return 99;
  return card_preview_cost(s,s.cards[id],id);
 }
-int card_preview_cost(const State&s,Card c,int id){
+static int local_energy_cost(const State&s,Card c,int id){
  int base=cost(c);if(base<0||id<0||id>=s.card_count||s.cards[id].kind!=c.kind)return base;
- if(s.expansion.turn_cost[id])base=s.expansion.turn_cost[id]-1;
- else if(s.expansion.combat_cost[id])base=s.expansion.combat_cost[id]-1;
- return max(0,regent_cost(s,id,necro_cost(s,id,defect_cost(s,id,silent_cost(s,id,ironclad_cost(s,id,base))))));
+ const auto&x=s.expansion;const auto&i=s.ironclad;const auto&v=s.silent;
+ const auto&d=s.defect;const auto&r=s.regent;const auto&n=s.necro;
+ int stomp=0,silent=0,defect=0,kick=0,necro=0;
+ // LocalCostModifier applies its entire ordered Add/Set list before any
+ // clamp or global hook. Each latest Set captures the preceding Add totals;
+ // independent expiry boundaries retain the older Set underneath it.
+ if(x.turn_cost[id]){
+  base=x.turn_cost[id]-1;stomp=i.stomp_turn_origin[id];silent=v.turn_origin[id];
+  defect=d.turn_origin[id];kick=r.kick_turn_origin[id];necro=n.turn_origin[id];
+ }else if(n.flatten_zero[id]){
+  // Flatten has a true SetThisTurn, not SetThisTurnOrUntilPlayed. Only
+  // Necrobinder's Transfigure can add a local cost to a Flatten instance.
+  base=0;necro=n.flatten_origin[id];
+ }else if(v.bullet_free[id]){
+  // The historical v13 writer stored BulletTime separately. New plays use
+  // the shared until-play Set; keep old saved instances readable here.
+  base=0;silent=v.bullet_origin[id];
+ }else if(x.combat_cost[id]){
+  base=x.combat_cost[id]-1;stomp=i.stomp_combat_origin[id];silent=v.combat_origin[id];
+  defect=d.combat_origin[id];kick=r.kick_combat_origin[id];necro=n.combat_origin[id];
+ }
+ if(c.kind==Stomp)base-=int(i.stomp_discount[id])-stomp;
+ base-=int(v.discount[id])-silent;
+ base+=int(d.cost_delta[id])-defect;
+ if(c.kind==RegentKinglyKick)base-=int(r.kick_discount[id])-kick;
+ base+=int(n.cost_delta[id])-necro;
+ return base;
+}
+static int global_energy_cost(const State&s,Card c,int id,int base,bool active){
+ const auto&i=s.ironclad;const auto&v=s.silent;const auto&d=s.defect;const auto&r=s.regent;const auto&n=s.necro;
+ // ModifyEnergyCostInCombat skips both global passes for a negative local
+ // subtotal. In particular, BorrowedTime cannot revive a negative subtotal.
+ if(base>=0){
+  base+=n.powers[(int)NPower::BorrowedTime];
+  const CardType type=definitions[c.kind].type;
+  const bool ethereal=(id>=0&&id<s.card_count&&s.cards[id].kind==c.kind&&n.ethereal[id])||
+      ((c.upgraded?definitions[c.kind].upgraded_keywords:definitions[c.kind].keywords)&8);
+  if((type==CardType::Skill&&i.powers[(int)IPower::Corruption])||
+     (active&&((type==CardType::Attack&&i.powers[(int)IPower::FreeAttack])||
+               (type==CardType::Skill&&v.powers[(int)SPower::FreeSkill])||
+               (type==CardType::Power&&d.powers[(int)DPower::FreePower])||
+               (n.powers[(int)NPower::Veilpiercer]&&ethereal)||
+               r.void_played_turn<r.powers[(int)RPower::VoidForm])))base=0;
+ }
+ return max(0,min(9999,base));
+}
+int card_preview_cost(const State&s,Card c,int id){
+ const int base=cost(c);if(base<0||id<0||id>=s.card_count||s.cards[id].kind!=c.kind)return base;
+ return global_energy_cost(s,c,id,local_energy_cost(s,c,id),s.zones[id]==Zone::Hand||s.zones[id]==Zone::Limbo);
+}
+int card_free_preview_cost(const State&s,Card c,int id){
+ const int base=cost(c);return base<0?base:global_energy_cost(s,c,id,0,true);
+}
+static bool card_has_reducible_cost(const State&s,int id){
+ if(id<0||id>=s.card_count)return false;const Card c=s.cards[id];
+ const int stars=(s.expansion.star_turn_free[id]||s.expansion.star_combat_free[id])?0:card_star_cost(s,c);
+ return local_energy_cost(s,c,id)>0||cost(s,id)>0||stars>0||card_star_cost(s,c,id)>0;
 }
 static void temporary_cost_set(State&s,int id){
  ironclad_temporary_cost_set(s,id);silent_temporary_cost_set(s,id);defect_temporary_cost_set(s,id);regent_temporary_cost_set(s,id);necro_temporary_cost_set(s,id);
@@ -39,13 +93,32 @@ static void temporary_cost_set(State&s,int id){
 static void combat_cost_set(State&s,int id){
  ironclad_combat_cost_set(s,id);silent_combat_cost_set(s,id);defect_combat_cost_set(s,id);regent_combat_cost_set(s,id);necro_combat_cost_set(s,id);
 }
+static void set_free_this_turn(State&s,int id){
+ if(id<0||id>=s.card_count)return;auto&x=s.expansion;
+ if(cost(s.cards[id])>=0){x.turn_cost[id]=1;temporary_cost_set(s,id);}
+ x.star_turn_free[id]=1;
+ s.silent.bullet_free[id]=0;s.silent.bullet_origin[id]=0;
+}
+static void set_free_this_combat(State&s,int id){
+ if(id<0||id>=s.card_count)return;auto&x=s.expansion;
+ if(cost(s.cards[id])>=0){x.combat_cost[id]=1;x.turn_cost[id]=0;combat_cost_set(s,id);}
+ x.star_combat_free[id]=1;x.star_turn_free[id]=0;
+}
+static void flatten_cost_set(State&s,int id){
+ if(id<0||id>=s.card_count||s.cards[id].kind!=NecroFlatten)return;
+ s.expansion.turn_cost[id]=0;
+ s.silent.bullet_free[id]=0;s.silent.bullet_origin[id]=0;
+ s.necro.flatten_zero[id]=1;s.necro.flatten_origin[id]=s.necro.cost_delta[id];
+}
 static void copy_card_modifiers(State&s,int to,int from){
  auto&x=s.expansion;x.turn_cost[to]=x.turn_cost[from];x.combat_cost[to]=x.combat_cost[from];
+ x.star_turn_free[to]=x.star_turn_free[from];x.star_combat_free[to]=x.star_combat_free[from];
  x.replay[to]=x.replay[from];x.blade_damage[to]=x.blade_damage[from];
  ironclad_card_copied(s,to,from);silent_card_copied(s,to,from);defect_card_copied(s,to,from);regent_card_copied(s,to,from);necro_card_copied(s,to,from);
 }
 static void reset_card_modifiers(State&s,int id){
  auto&x=s.expansion;x.turn_cost[id]=x.combat_cost[id]=x.replay[id]=0;
+ x.star_turn_free[id]=x.star_combat_free[id]=0;
  x.return_turn[id]=0;x.blade_damage[id]=0;
  ironclad_card_reset(s,id);silent_card_reset(s,id);defect_card_reset(s,id);regent_card_reset(s,id);necro_card_reset(s,id);
 }
@@ -105,7 +178,7 @@ static void generate_card(State&s,int filter,int flags){
  while(count--&&n){
   unsigned j=random_below(s.rng_cards,n);CardKind kind=pool[j];pool[j]=pool[--n];
   int id=create_to_hand(s,{kind,(uint8_t)((flags&2)!=0)});if(id<0)return;
-  if(flags&1){s.expansion.turn_cost[id]=1;temporary_cost_set(s,id);}
+  if(flags&1)set_free_this_turn(s,id);
  }
 }
 static void clear_extended_choice(State&s){auto&x=s.expansion;x.choice=XChoice::None;x.choices.count=0;x.choice_min=x.choice_max=x.choice_free=0;}
@@ -142,12 +215,12 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
  XChoice kind=x.choice;bool free=x.choice_free;clear_extended_choice(s);s.phase=Phase::Combat;
  for(unsigned i=0;i<n;i++){
   int id=selected[i];
-  if(kind==XChoice::Offer){id=create_to_hand(s,x.offers[id-MaxCards]);if(id<0)break;if(free){x.turn_cost[id]=1;temporary_cost_set(s,id);}}
+  if(kind==XChoice::Offer){id=create_to_hand(s,x.offers[id-MaxCards]);if(id<0)break;if(free)set_free_this_turn(s,id);}
   else if(kind==XChoice::Draw||kind==XChoice::Discard){
    bool room=s.hand.count<MaxHand;
-   if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&free){x.turn_cost[id]=1;temporary_cost_set(s,id);}
+   if(move_instance(s,id,kind==XChoice::Draw?s.draw:s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&free)set_free_this_turn(s,id);
   }else if(kind==XChoice::Top)move_instance(s,id,s.hand,s.draw,Zone::Draw);
-  else if(kind==XChoice::Free){x.combat_cost[id]=1;x.turn_cost[id]=0;combat_cost_set(s,id);}
+  else if(kind==XChoice::Free)set_free_this_combat(s,id);
   else if(kind==XChoice::DiscardRedraw){if(move_instance(s,id,s.hand,s.discard,Zone::Discard))record(s,LogKind::Discard,s.cards[id].kind);}
   else if(kind==XChoice::Transform){
    CardKind pool[CardKinds];unsigned count=0;for(unsigned k=0;k<CardKinds;k++)if(matches_transform(s.cards[id].kind,k))pool[count++]=(CardKind)k;
@@ -204,9 +277,10 @@ static void after_play(State&s,int id){
   else if(type==CardType::Power){put(s,s.powers,id,Zone::Power);ex=false;}
   else if(!ex)put(s,x.returning?s.draw:s.discard,id,x.returning?Zone::Draw:Zone::Discard);
  }else ex=false;
- x.turn_cost[id]=0;
- // Flatten's SetThisTurn is not a generated free-until-play modifier.
- if(s.necro.flatten_zero[id])x.turn_cost[id]=1;
+ x.turn_cost[id]=0;x.star_turn_free[id]=0;
+ // A true whole-turn Flatten Set remains in its separate layer; ending the
+ // physical play removes all until-play Sets above it, including BulletTime.
+ s.silent.bullet_free[id]=0;s.silent.bullet_origin[id]=0;
  ironclad_after_play_group(s,id);defect_after_play_group(s,id);regent_after_play_group(s,id);necro_after_play_group(s,id);
  relic_attack_end(s);restore_frame(s);
  if(ex)exhaust_id(s,id);
@@ -263,7 +337,7 @@ static void queue_card_body(State&s){
   case Bolas:case ThrummingHatchet:op(XOp::ReturnNext,s.playing);break;
   case Calamity:pw(XPower::Calamity,1);break;
   case Catastrophe:for(int i=0;i<draw;i++)op(XOp::AutoDraw);break;
-  case DarkShackles:op(XOp::StrengthLoss,x.target,power);break;
+  case DarkShackles:op(XOp::NTempStrength,(int)NTempStrength::DarkShackles*MaxEnemies+x.target,power);break;
   case Discovery:op(XOp::Offer,0,1);break;
   case Entropy:pw(XPower::Entropy,draw);break;
   case Equilibrium:case Salvo:pw(XPower::Retain,1);break;
@@ -309,7 +383,7 @@ static void queue_card_body(State&s){
 static bool start_instance(State&s,int id,int target,bool automatic){
  if(id<0||id>=s.card_count||!alive(s)||s.hp<=0)return false;
  Card c=s.cards[id];if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];auto&x=s.expansion;
- if(cost(c)<-1||(!automatic&&(!silent_can_play(s,c)||!necro_can_play(s,c))))return false;
+ if(!automatic&&(cost(c)<-1||!silent_can_play(s,c)||!necro_can_play(s,c)))return false;
  if(card_targets_enemy(s,c)&&(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)){
   if(!automatic)return false;int ids[MaxEnemies],n=0;for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp)ids[n++]=i;
   if(!n)return false;target=ids[random_below(s.rng_cards,n)];
@@ -323,6 +397,17 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  if(reserved){if(s.playing==id)return false;for(unsigned i=0;i<x.depth;i++)if(x.frames[i].playing==id)return false;}
  if(!source&&!reserved)return false;int at=-1;
  if(source){for(unsigned i=0;i<source->count;i++)if(source->ids[i]==id){at=i;break;}if(at<0)return false;}
+ if(cost(c)<-1){
+  // Original AutoPlay moves an Unplayable card through the play pile to its
+  // result pile without starting a CardPlay or consuming temporary prices.
+  // This also applies to ordinary draw/discard sources, not just reserved
+  // AutoTop cards. An already active ancestor is rejected above.
+  if(source)remove(*source,at);s.zones[id]=Zone::Limbo;
+  bool exhausted=card_exhausts(c)||s.ironclad.forced_exhaust[id];
+  s.ironclad.forced_exhaust[id]=0;
+  if(exhausted)exhaust_id(s,id);else put(s,s.discard,id,Zone::Discard);
+  return true;
+ }
  if(automatic&&x.depth==MaxAutoFrames){fail(s);return false;}
  if(automatic)x.frames[x.depth++]={s.playing,x.target,x.x,x.last_damage,s.attack_vigor,x.remaining,s.double_attack,x.triple,x.returning};
  int energy=resource_energy;

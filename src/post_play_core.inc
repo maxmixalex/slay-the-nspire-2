@@ -9,12 +9,14 @@ static bool post_play_actor_active(const State&s,unsigned actor){
  case PostPlayActor::Afterimage:return s.silent.powers[(unsigned)SPower::Afterimage]>0;
  case PostPlayActor::SerpentForm:return s.silent.powers[(unsigned)SPower::SerpentForm]>0;
  case PostPlayActor::MasterPlanner:return s.silent.powers[(unsigned)SPower::MasterPlanner]>0;
+ case PostPlayActor::SilentEnvenom:return spower(s,SPower::Envenom)>0;
  case PostPlayActor::DefectSmokestack:return dpower(s,DPower::Smokestack)>0;
  case PostPlayActor::DefectTrashToTreasure:return dpower(s,DPower::TrashToTreasure)>0;
  case PostPlayActor::DefectStorm:return dpower(s,DPower::Storm)>0;
  case PostPlayActor::DefectSubroutine:return dpower(s,DPower::Subroutine)>0;
  case PostPlayActor::NecroDevourLife:return npower(s,NPower::DevourLife)>0;
  case PostPlayActor::NecroHaunt:return npower(s,NPower::Haunt)>0;
+ case PostPlayActor::NecroReaperForm:return npower(s,NPower::ReaperForm)>0;
  default:return actor>=(unsigned)PostPlayActor::PanacheStart&&actor<(unsigned)PostPlayActor::Relics&&
                 s.expansion.panache[actor-(unsigned)PostPlayActor::PanacheStart]>0||regent_post_play_actor_active(s,actor);
  }

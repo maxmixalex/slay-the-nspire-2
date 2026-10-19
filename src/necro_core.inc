@@ -12,7 +12,7 @@ static void necro_gain_power(State&s,NPower p,int amount){
  n=(int16_t)max(0,min(9999,n+amount));
  if(!old&&n){if(v.power_count==NPowerCount){fail(s);return;}v.power_order[v.power_count++]=(uint8_t)p;}
  else if(old&&!n)necro_unregister(s,(unsigned)p);
- unsigned actor=p==NPower::DevourLife?(unsigned)PostPlayActor::NecroDevourLife:p==NPower::Haunt?(unsigned)PostPlayActor::NecroHaunt:0;
+ unsigned actor=p==NPower::DevourLife?(unsigned)PostPlayActor::NecroDevourLife:p==NPower::Haunt?(unsigned)PostPlayActor::NecroHaunt:p==NPower::ReaperForm?(unsigned)PostPlayActor::NecroReaperForm:0;
  if(actor){if(!old&&n)after_play_register(s,actor);else if(old&&!n)after_play_unregister(s,actor);}
 }
 static void necro_combat_start(State&s){
@@ -26,7 +26,7 @@ static void necro_card_reset(State&s,int id){
 static void necro_card_created(State&s,int id){
  if(id<0||id>=s.card_count)return;necro_card_reset(s,id);auto&v=s.necro;
  if(s.cards[id].kind==NecroBansheesCry)v.cost_delta[id]=(int16_t)-min(9999,2*v.ethereal_played);
- if(s.cards[id].kind==NecroFlatten&&v.osty_attacks_turn){s.expansion.turn_cost[id]=1;temporary_cost_set(s,id);v.flatten_zero[id]=1;v.flatten_origin[id]=v.cost_delta[id];}
+ if(s.cards[id].kind==NecroFlatten&&v.osty_attacks_turn)flatten_cost_set(s,id);
 }
 static void necro_card_copied(State&s,int to,int from){
  if(to<0||from<0||to>=s.card_count||from>=s.card_count)return;auto&v=s.necro;
@@ -168,9 +168,9 @@ static void necro_apply_doom(State&s,int t,int amount){
 static void necro_attack_damage(State&s,int t,int total,bool pet){
  if(t<0||t>=s.enemy_count)return;
  s.necro.attack_total[s.expansion.depth]=(int16_t)min(9999,s.necro.attack_total[s.expansion.depth]+max(0,total));
- // Player AfterDamageGiven powers precede the target's SicEm reaction.
+ // Queue the target's reaction first; the shared dispatcher prepends player
+ // powers in acquisition order so every secondary effect finishes before it.
  if(pet&&s.necro.sic_em[t])queue_extension(s,XOp::NSummon,s.necro.sic_em[t],1,true);
- if(total>0&&npower(s,NPower::ReaperForm))queue_extension(s,XOp::NDoom,t,min(9999,total*npower(s,NPower::ReaperForm)),true);
 }
 static void necro_death_event(State&s){
  auto&v=s.necro;v.creature_deaths=(uint16_t)min(9999,v.creature_deaths+1);
@@ -300,7 +300,7 @@ static bool queue_necro(State&s,Card c,int target,int energy){
  case NecroDredge:op(XOp::NChooseDredge,3);break;
  case NecroEidolon:op(XOp::NEidolon);break;
  case NecroEndOfDays:alldoom(up?37:29);op(XOp::NCheckDoom);break;
- case NecroEnfeeblingTouch:op(XOp::StrengthLoss,target,up?11:8);break;
+ case NecroEnfeeblingTouch:op(XOp::NTempStrength,(int)NTempStrength::EnfeeblingTouch*MaxEnemies+target,up?11:8);break;
  case NecroEradicate:op(XOp::NRepeatedHit,up?14:11,energy);break;
  case NecroFear:single(up?8:7);enqueue(s,EffectKind::Vulnerable,up?2:1,target);break;
  case NecroFetch:single(up?6:3);petdone();op(XOp::NFetchDraw,s.playing);break;
@@ -315,7 +315,7 @@ static bool queue_necro(State&s,Card c,int target,int energy){
  case NecroInvoke:pw(NPower::SummonNextTurn,up?3:2);pw(NPower::EnergyNextTurn,up?3:2);break;
  case NecroLethality:pw(NPower::Lethality,up?75:50);break;
  case NecroMelancholy:block(up?17:13);break;
- case NecroMisery:single(up?9:7);op(XOp::NMisery,target);break;
+ case NecroMisery:single(up?9:7);necro_copy_debuffs(s,target,false);break;
  case NecroNecroMastery:summon(up?8:5);pw(NPower::NecroMastery,1);break;
  case NecroNegativePulse:block(up?6:5);alldoom(up?11:7);break;
  case NecroNeurosurge:enqueue(s,EffectKind::Energy,up?4:3);op(XOp::Draw,2);pw(NPower::Neurosurge,3);break;
@@ -382,13 +382,25 @@ static void necro_deck_replaced(State&s,int at){
 static void necro_deck_copied(State&s,int to,int from){
  if(to>=0&&to<MaxDeck&&from>=0&&from<s.deck_count)s.necro.scythe_deck[to]=s.necro.scythe_deck[from];
 }
+static int necro_temp_strength_amount(const State&s,int t,unsigned source){
+ if(t<0||t>=s.enemy_count||source>=NTempStrengthCount)return 0;
+ int amount=s.necro.temp_strength[t][source];
+ if(source==0){
+  // Historical saves stored only the total. Unattributed remainder migrates
+  // as one DarkShackles wrapper; its lost source grouping is unrecoverable.
+  int known=0;for(int p=0;p<NTempStrengthCount;p++)known+=s.necro.temp_strength[t][p];
+  amount+=max(0,s.expansion.restore_strength[t]-known);
+ }
+ return amount;
+}
 static int necro_debuff_amount(const State&s,int t,NDebuff p){
  if(t<0||t>=s.enemy_count)return 0;const auto&e=s.enemies[t];const auto&x=s.expansion;const auto&v=s.necro;
+ if(p>=NDebuff::DarkShackles&&p<NDebuff::Count)return necro_temp_strength_amount(s,t,(unsigned)p-(unsigned)NDebuff::DarkShackles);
  switch(p){
  case NDebuff::Weak:return e.weak;case NDebuff::Vulnerable:return e.vulnerable;case NDebuff::Poison:return e.poison;
  case NDebuff::Strength:return max(0,-e.strength);case NDebuff::Beetle:return x.beetle[t];case NDebuff::Demise:return x.demise[t];
  case NDebuff::Doom:return x.doom[t];case NDebuff::Strangle:return s.silent.strangle[t];case NDebuff::Debilitate:return v.debilitate[t];
- case NDebuff::Hang:return v.hang[t];case NDebuff::Oblivion:return v.oblivion[t];case NDebuff::SicEm:return v.sic_em[t];
+ case NDebuff::Hang:return v.hang[t];case NDebuff::Oblivion:return v.oblivion[t];case NDebuff::SicEm:return v.sic_em[t];case NDebuff::Conqueror:return s.regent.conqueror[t];
  default:return 0;
  }
 }
@@ -399,12 +411,45 @@ static void necro_note_debuff(State&s,int t,NDebuff p){
 }
 static void necro_prune_debuffs(State&s){
  auto&v=s.necro;for(int t=0;t<s.enemy_count;t++){
-  unsigned n=0;for(unsigned i=0;i<v.debuff_count[t];i++){auto p=(NDebuff)(v.debuff_order[t][i]-1);if(necro_debuff_amount(s,t,p)>0)v.debuff_order[t][n++]=v.debuff_order[t][i];}
+  unsigned n=0;for(unsigned i=0;i<v.debuff_count[t];i++){
+   auto p=(NDebuff)(v.debuff_order[t][i]-1);
+   // Strength remains the same acquired power while positive. Misery later
+   // filters for a negative amount without changing that acquisition slot.
+   if((p==NDebuff::Strength?s.enemies[t].strength!=0:necro_debuff_amount(s,t,p)>0))v.debuff_order[t][n++]=v.debuff_order[t][i];
+  }
   for(unsigned i=n;i<NDebuffCount;i++)v.debuff_order[t][i]=0;v.debuff_count[t]=(uint8_t)n;
  }
 }
+static void necro_clear_temp_strength(State&s,int t){
+ if(t<0||t>=MaxEnemies)return;
+ for(int p=0;p<NTempStrengthCount;p++)s.necro.temp_strength[t][p]=0;
+ necro_prune_debuffs(s);
+}
+static void necro_apply_temp_strength(State&s,int t,int amount,unsigned source){
+ if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||amount<=0||source>=NTempStrengthCount)return;
+ // The temporary wrapper encounters Artifact first. Its BeforeApplied then
+ // applies negative Strength silently; that non-temporary inner power is the
+ // single SleightOfFlesh trigger. The wrapper itself is ITemporaryPower.
+ if(silent_blocks_debuff(s,t))return;
+ int n=min(amount,min(9999+s.enemies[t].strength,9999-s.expansion.restore_strength[t]));if(!n)return;
+ s.enemies[t].strength-=(int16_t)n;s.expansion.restore_strength[t]+=(int16_t)n;
+ s.necro.temp_strength[t][source]+=(int16_t)n;
+ necro_note_debuff(s,t,NDebuff::Strength);
+ necro_note_debuff(s,t,(NDebuff)((unsigned)NDebuff::DarkShackles+source));
+ necro_prune_debuffs(s);necro_debuff_applied(s,t,n,false);
+}
 static void necro_apply_copied_debuff(State&s,int t,NDebuff p,int amount){
- if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||amount<=0)return;
+ if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||!amount)return;
+ if(p==NDebuff::Strength){
+  // Removing temporary contributions can leave a positive permanent amount.
+  // Preserve its sign: a copied buff neither consumes Artifact nor triggers
+  // SleightOfFlesh, while a copied negative Strength is its own debuff attempt.
+  if(amount<0&&silent_blocks_debuff(s,t))return;
+  int old=s.enemies[t].strength,value=max(-9999,min(9999,old+amount));s.enemies[t].strength=(int16_t)value;
+  if(value!=old){necro_note_debuff(s,t,NDebuff::Strength);necro_prune_debuffs(s);if(value<old)necro_debuff_applied(s,t,old-value,false);}return;
+ }
+ if(amount<0)return;
+ if(p>=NDebuff::DarkShackles&&p<NDebuff::Count){necro_apply_temp_strength(s,t,amount,(unsigned)p-(unsigned)NDebuff::DarkShackles);return;}
  // Common applications own their Artifact and secondary power callbacks.
  if(p==NDebuff::Weak){apply_weak(s,t,amount);return;}
  if(p==NDebuff::Vulnerable){apply_vulnerable(s,t,amount);return;}
@@ -412,25 +457,31 @@ static void necro_apply_copied_debuff(State&s,int t,NDebuff p,int amount){
  if(p==NDebuff::Doom){necro_apply_doom(s,t,amount);return;}
  if(silent_blocks_debuff(s,t))return;
  int n=0;auto&v=s.necro;auto&x=s.expansion;
- if(p==NDebuff::Strength){n=min(amount,9999+s.enemies[t].strength);s.enemies[t].strength-=(int16_t)n;}
- else{
-  int16_t*value=p==NDebuff::Beetle?&x.beetle[t]:p==NDebuff::Demise?&x.demise[t]:p==NDebuff::Strangle?&s.silent.strangle[t]:p==NDebuff::Debilitate?&v.debilitate[t]:p==NDebuff::Hang?&v.hang[t]:p==NDebuff::Oblivion?&v.oblivion[t]:p==NDebuff::SicEm?&v.sic_em[t]:nullptr;
-  if(!value)return;n=min(9999-*value,amount);*value+=(int16_t)n;
- }
+ int16_t*value=p==NDebuff::Beetle?&x.beetle[t]:p==NDebuff::Demise?&x.demise[t]:p==NDebuff::Strangle?&s.silent.strangle[t]:p==NDebuff::Debilitate?&v.debilitate[t]:p==NDebuff::Hang?&v.hang[t]:p==NDebuff::Oblivion?&v.oblivion[t]:p==NDebuff::SicEm?&v.sic_em[t]:p==NDebuff::Conqueror?&s.regent.conqueror[t]:nullptr;
+ if(!value)return;n=min(9999-*value,amount);*value+=(int16_t)n;
  necro_note_debuff(s,t,p);necro_debuff_applied(s,t,n,false);
 }
-static void necro_copy_debuffs(State&s,int from){
+static void necro_copy_debuffs(State&s,int from,bool front){
  if(from<0||from>=s.enemy_count)return;necro_prune_debuffs(s);
- // Snapshot every amount before the first copied debuff can cause damage or
- // kill a creature. Unknown legacy acquisition order has a stable fallback.
+ // Called while the card body is queued: snapshot before its attack resolves,
+ // then apply these frozen amounts after that attack. ReaperForm/Envenom from
+ // the hit must not join the snapshot. Legacy order has a stable fallback.
  uint8_t order[NDebuffCount]{};int amounts[NDebuffCount]{};unsigned count=0;bool seen[NDebuffCount]{};
- for(unsigned i=0;i<s.necro.debuff_count[from];i++){
-  unsigned p=s.necro.debuff_order[from][i]-1;int n=necro_debuff_amount(s,from,(NDebuff)p);
-  if(n>0){order[count]=(uint8_t)p;amounts[count++]=n;seen[p]=true;}
+ auto capture=[&](unsigned p){
+  if(seen[p])return;seen[p]=true;
+  int n=necro_debuff_amount(s,from,(NDebuff)p);
+  if(p==(unsigned)NDebuff::Strength)n=s.enemies[from].strength<0?s.enemies[from].strength+s.expansion.restore_strength[from]:0;
+  if(n){order[count]=(uint8_t)p;amounts[count++]=n;}
+ };
+ for(unsigned i=0;i<s.necro.debuff_count[from];i++)capture(s.necro.debuff_order[from][i]-1);
+ for(unsigned p=0;p<NDebuffCount;p++)capture(p);
+ if(front){
+  for(int t=s.enemy_count-1;t>=0;t--)if(t!=from&&s.enemies[t].hp>0)
+   for(unsigned i=count;i>0;i--)queue_extension(s,XOp::NApplyCopiedDebuff,(int)order[i-1]*MaxEnemies+t,amounts[i-1],true);
+ }else{
+  for(int t=0;t<s.enemy_count;t++)if(t!=from&&s.enemies[t].hp>0)
+   for(unsigned i=0;i<count;i++)queue_extension(s,XOp::NApplyCopiedDebuff,(int)order[i]*MaxEnemies+t,amounts[i]);
  }
- for(unsigned p=0;p<NDebuffCount;p++)if(!seen[p]){int n=necro_debuff_amount(s,from,(NDebuff)p);if(n>0){order[count]=(uint8_t)p;amounts[count++]=n;}}
- for(int t=s.enemy_count-1;t>=0;t--)if(t!=from&&s.enemies[t].hp>0)
-  for(unsigned i=count;i>0;i--)queue_extension(s,XOp::NApplyCopiedDebuff,(int)order[i-1]*MaxEnemies+t,amounts[i-1],true);
 }
 static void necro_hp_loss_enemy(State&s,int t,int n){
  if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||n<=0)return;
@@ -495,13 +546,14 @@ static bool necro_effect(State&s,Effect e){
  XOp op=(XOp)e.target;int a=e.value,b=e.aux;auto&v=s.necro;auto&x=s.expansion;
  switch(op){
  case XOp::NPower:necro_gain_power(s,(NPower)a,b);break;
+ case XOp::NTempStrength:necro_apply_temp_strength(s,a%MaxEnemies,b,(unsigned)a/MaxEnemies);break;
  case XOp::NSummon:
   if(b>1)queue_extension(s,XOp::NSummon,a,b-1,true);if(b>0)necro_summon(s,a);break;
  case XOp::NHealOsty:if(x.osty_hp>0)x.osty_hp=(int16_t)min(x.osty_max_hp,x.osty_hp+a);break;
  case XOp::NKillOsty:{int old=x.osty_hp;x.osty_hp=0;necro_osty_hp_lost(s,old);break;}
  case XOp::NFinishOsty:
   v.osty_attacks_turn=(uint16_t)min(9999,v.osty_attacks_turn+1);
-  for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==NecroFlatten){x.turn_cost[id]=1;temporary_cost_set(s,id);v.flatten_zero[id]=1;v.flatten_origin[id]=v.cost_delta[id];}break;
+  for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==NecroFlatten)flatten_cost_set(s,id);break;
  case XOp::NDoom:necro_apply_doom(s,a,b);break;
  case XOp::NDoomFromDamage:necro_apply_doom(s,a,v.attack_total[x.depth]);break;
  case XOp::NCheckDoom:
@@ -509,7 +561,7 @@ static bool necro_effect(State&s,Effect e){
   necro_observe_deaths(s);break;
  case XOp::NEnemyPower:{
   int kind=a/MaxEnemies,t=a%MaxEnemies;NDebuff p=kind==0?NDebuff::Debilitate:kind==1?NDebuff::Hang:kind==2?NDebuff::Oblivion:kind==3?NDebuff::SicEm:NDebuff::Strength;
-  necro_apply_copied_debuff(s,t,p,kind==1?max(2,v.hang[t]):b);break;
+  necro_apply_copied_debuff(s,t,p,kind==1?max(2,v.hang[t]):kind==4?-b:b);break;
  }
  case XOp::NApplyCopiedDebuff:necro_apply_copied_debuff(s,a%MaxEnemies,(NDebuff)(a/MaxEnemies),b);break;
  case XOp::NEnemyHpLoss:necro_hp_loss_enemy(s,b,a);break;
@@ -531,7 +583,7 @@ static bool necro_effect(State&s,Effect e){
  case XOp::NChooseTransfigure:necro_choice_begin(s,XChoice::NTransfigure,1);break;
  case XOp::NEidolon:{
   uint16_t ids[MaxCards];unsigned n=0;
-  for(unsigned i=0;i<s.exhaust.count;i++)if(necro_ethereal(s,s.exhaust.ids[i]))ids[n++]=s.exhaust.ids[i];
+  for(unsigned i=0;i<s.exhaust.count;i++){int id=s.exhaust.ids[i];if(necro_ethereal(s,id)&&cost(s.cards[id])!=-2)ids[n++]=(uint16_t)id;}
   if(s.effect_count+n>MaxEffects){fail(s);break;}
   // Capture identities without removing them: early SoulStorm must still see
   // Souls whose scheduled autoplay has not started. A lethal play leaves the
@@ -542,7 +594,7 @@ static bool necro_effect(State&s,Effect e){
   uint16_t ids[MaxCards];unsigned n=0;for(unsigned i=0;i<s.discard.count;i++)if(necro_has_upgrade(s.cards[s.discard.ids[i]]))ids[n++]=s.discard.ids[i];
   for(int i=0;i<a&&n;i++){unsigned at=random_below(s.rng_cards,n);int id=ids[at];ids[at]=ids[--n];s.cards[id].upgraded=1;record(s,LogKind::Upgrade,id);}break;
  }
- case XOp::NMisery:necro_copy_debuffs(s,a);break;
+ case XOp::NMisery:necro_copy_debuffs(s,a,true);break;
  case XOp::NFetchDraw:if(a>=0&&a<s.card_count&&!v.fetch_played[a])queue_extension(s,XOp::Draw,1,0,true);break;
  case XOp::NRepeatedHit:
   if(b>0&&x.target>=0&&x.target<s.enemy_count&&s.enemies[x.target].hp>0){
