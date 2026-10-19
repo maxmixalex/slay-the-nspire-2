@@ -1,4 +1,18 @@
-# Work state — 2026-10-18
+# Work state — 2026-10-19
+
+## Active 0.16: remaining three complete character pools
+
+The user explicitly requested **all single-player Defect, Regent and Necrobinder cards and their mechanisms**, continuing the completed 0.15 stage. Source work uses **`work/0.16-five-characters`**, based on exact restored commit `7f486bdf757fb9af9dff89cdc8a785f049a404fc`, tree `58c6cdbb729c2822c52f74fb01028262670b8e1e`. All 203 source blobs and the complete tree were verified during recovery. The previous scratch files had expired; the source and original inputs have now been recovered instead of restarting from memory. Original DLL, PCK and the 0.15 NSP2/12 input pack all match their recorded hashes. The last distributed verified runtime is still 0.15; no new 0.16 behavior is validated yet.
+
+The reference stays pinned to **v0.111.0 / 41cef1ea**. Each remaining original pool declares 91 cards and excludes five multiplayer-only models, giving **86 single-player cards per character / 258 additional pool cards**. Defect IDs append at 228–313, Regent at 314–399, Necrobinder at 400–485; required generated/status models follow. Preserve all prior IDs 0–227. Do not equate these scope counts or newly authored code with passing execution results.
+
+The Defect agent owns the isolated `defect_*` state, operations, choices, rules, definitions, codec, validation, audited config and completion suite. The Regent agent owns corresponding `regent_*` files. The recovery agent, after recovering all private inputs, owns `necro_*` and the Necrobinder audit/suite. Root owns all shared files and integrates hooks, CardKind/token width, five-character entry, resources, rewards, save v14, cross-character tests and verified GitHub persistence. Agents must not compile unpublished mutable source. The next long validation must run from an immutable archive of a pushed and read-back checkpoint.
+
+Mechanisms include Defect's actual five orb types and Focus; Regent's stars, independent star costs, Forge and existing Sovereign Blade; Necrobinder's Osty, Soul and Doom. Reuse the existing potion/colorless state where those mechanics already exist. Inspect the actual original triggers and targets: for example, the pinned Defect commonly evokes the rightmost orb, unlike assumptions imported from earlier games. New source must preserve bounded queues, choices, nested effects and explicit serialization; new output will use save v14 and the NSP2/13 resource profile. The completed 0.15 calculator ZIP and offline HTML remain the downloadable pair until a fully verified matching replacement is ready.
+
+Private inputs are `/workspace/scratch/5af9d4bf40b9/reference-inputs/extracted/{sts2.dll,SlayTheSpire2.pck,release_info.json,nSpire2-0.15.nsp.tns}`. Private audit tools and dependencies are `/tmp/nspire-il.py` and `/tmp/nspire-python-deps`. The recovered installation has unrelated mod PCKs; only the hash-locked root game PCK is a reference. Never publish those inputs, extracted original text/art, private IL or generated packs/HTML in Git. No image generation is authorized. Audio, multiplayer and Timeline remain excluded, and remote CI remains disabled.
+
+Next: finish the three audited modules and shared infrastructure, push the coherent source stage, then build and validate all five characters plus the retained content. Create a genuine v13 continuation fixture from the unchanged restored 0.15 writer before testing migration. Record actual failures and push repairs before rerunning changed source.
 
 ## Completed 0.15 release stage
 
