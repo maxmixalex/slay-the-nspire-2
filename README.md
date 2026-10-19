@@ -1,12 +1,12 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Active development is **0.16: all five single-player character pools**, on `work/0.16-five-characters`. The first source integration checkpoint is [`2eabce11`](https://github.com/zyf722/slay-the-nspire-2/commit/2eabce11a5ad5e5f2460e67eb5f9713c8ea424eb); its runtime validation is pending. The last distributed verified runtime remains 0.15 at [`4df76b04`](https://github.com/zyf722/slay-the-nspire-2/commit/4df76b04e2a07e6be9a898793f03fd0ab8df4aae) until this stage completes.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. **0.16 completes all five single-player character card pools** on `work/0.16-five-characters`. The verified runtime is [`8c6977d3`](https://github.com/zyf722/slay-the-nspire-2/commit/8c6977d3cc1dc9f17926a480127bc1067abd0286), with **31/31 native suites, 30/30 Python tests, actual-resource UI and ARM/WASM/X11 builds passing**. Later work-branch commits update documentation only. Exact scope, artifact hashes and journal receipts are in [validation-0.16.json](docs/validation-0.16.json).
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
 ## Current content
 
-497 card models: **85 single-player Ironclad**, **86 each for Silent, Defect, Regent and Necrobinder**, **53 single-player colorless** and 15 generated/status models. There are **64 active potion models**, 33 relics and five adapted events. The five character pools include their base and upgraded rules. New 0.16 execution is still pending verification. Ancient-rarity cards are available in the compendium/practice pool and excluded from ordinary rewards and generation. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
+497 card models: **85 single-player Ironclad**, **86 each for Silent, Defect, Regent and Necrobinder**, **53 single-player colorless** and 15 generated/status models. There are **64 active potion models**, 33 relics and five adapted events. The five character pools include executable base and upgraded rules and numerical regression coverage. Defect has five orb types and Focus; Regent has independent star payments and Forge; Necrobinder has Osty, Soul and Doom. Ancient-rarity cards are available in the compendium/practice pool and excluded from ordinary rewards and generation. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
 
 Practice exposes every character/colorless card and potion through the compendium. Open it with **C** or the practice HUD button, inspect an entry and use its acquisition button. Card variants, potion targeting, multi-card selections, generated offers, nested automatic plays and persistent statuses share the same engine and UI on native and browser builds. A full hand sends newly created cards to discard; a full potion inventory must be freed before acquiring another bottle.
 
@@ -25,10 +25,7 @@ python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label arm -- pyt
 cmake -S . -B build/host -DSPIRE_X11=OFF
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label native-build -- cmake --build build/host --parallel
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label native-tests -- ctest --test-dir build/host --output-on-failure
-python3 tests/event_pack_regression.py
-python3 tests/logged_command_regression.py
-python3 tests/character_pack_regression.py
-python3 tests/all_character_pack_regression.py
+python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label python-tests -- python3 -m unittest discover -s tests -p '*_regression.py'
 ```
 
 ARM requires LLVM clang++ and ld.lld; the browser build also requires wasm-ld. The X11 host is optional. Install converter dependencies from requirements.txt. Convert an existing private 0.15 NSP2/12 pack without resampling its retained animation frames:
@@ -46,9 +43,13 @@ The native suite includes all character, colorless, potion, historical migration
 
 ## Persistence and validation
 
-The following results are historical. At the verified 0.15 runtime source, **25/25 C++ suites and 17/17 Python tests passed**, with ASan/UBSan on native regressions. The native suites report 748,629 checks/assertions, including Ironclad's 4,390 checks across 170 base/upgraded variants plus Giant Rock and interactions, and Silent's 17,753 checks across 174 variants. Checks include repeated assertions and are not counts of unique scenarios.
+At the verified **0.16** runtime source, **31/31 C++ suites and 30/30 Python tests passed**, with ASan/UBSan on native regressions. The native suites report **929,474 checks/assertions**. The new completion suites pass Defect **16,190 checks / 172 variants**, Regent **9,892 / 181**, and Necrobinder **19,494 / 174**; the latter variant counts include their required generated cards where stated in the audits. Checks include repeated assertions and are not counts of unique scenarios. Earlier [0.15](docs/validation-0.15.json) and [0.14](docs/validation-0.14.json) reports remain historical.
 
-Real-content UI passed 22,225 checks across all **344 character/token variants**, plus 7,374 checks covering all **106 colorless variants and 64 potions**. The real NSP2/12 parser passed 1,667 checks. Native/WASM room comparison matched 84 frames and eight saves. Fresh X11 processes loaded v13 saves including a 384-instance case and re-saved identical bytes. The deliberately full bounded v13 fixture measured 61,956 bytes; its conservative 62,008-byte ceiling fits the 65,536-byte save buffer. ARM, WASM and X11 builds succeeded. [Current validation receipts and artifact hashes](docs/validation-0.15.json) include the exact build source and evidence limits; [0.14 results](docs/validation-0.14.json) are historical.
+Actual-resource UI passed **81,026 checks**: **66,478** across all **860 character/Giant Rock acquisitions**, **7,173** for five-character mechanisms and **7,375** for all **106 colorless variants / 64 potions**. The real NSP2/13 parser passed **3,736 checks**. Forty final UI scenes and two Osty animation-end scenes were visually reviewed. Native/WASM comparison matched **384 RGB565 frames and 23 saves** across four room and five character-combat sequences. It uses the project storage adapter; browser DOM/localStorage and original-PC differential parity are separate claims.
+
+Fresh X11 host processes loaded and identically re-saved v14 ordinary **88,764-byte** and **512-instance / 109,012-byte** files using production file callbacks in headless action mode. The fully bounded save also contains 192 permanent cards, 12 automatic frames, 512 effects and 16 Nightmare snapshots; its conservative **109,064-byte** ceiling fits **131,072 bytes**. The genuine old v13 fixture migrates **41,820 to 88,876 bytes** while retaining and resuming its suspended payload.
+
+The final **12,910,778-byte NSP2/13** pack contains 2,638 images, 7,215 glyph records and 38 clips. All 1,622 old image payloads, 6,265 old glyph payloads and earlier card/string/auxiliary/clip records are preserved. It fits the **13 MiB** resource buffer with 720,710 bytes remaining. ARM produces a **284,458-byte** launcher with **16,174,284-byte** static allocation, below the unchanged 16 MiB packer ceiling. WASM is **817,288 bytes**, links with fixed **16 MiB** memory and is embedded with the identical pack in the **18,319,349-byte** offline HTML. No new Firebird or physical-device execution is established. All **19 final journals** passed with unchanged frozen source; the two canonical release files are `Slay-the-Nspire-2-calculator.zip` and `Slay-the-Nspire-2-offline.html`.
 
 Commit source to a named work branch and read the remote ref back **before** long compilation or conversion. `tools/run_logged.py` records the supplied checkpoint, input hashes, command, running/completed state, exit code and log hash. It does not itself verify or push a remote commit. A running journal after interruption is not a passed test.
 

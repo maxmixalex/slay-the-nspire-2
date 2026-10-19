@@ -1,6 +1,6 @@
 # Shared energy and star costs — 0.16
 
-This source audit uses the pinned original v0.111.0 / `41cef1ea` assembly. The method identifiers below identify original methods; the assembly and private disassembly remain outside the repository. The new implementation and regression cases described here are authored and awaiting the next pushed, frozen validation checkpoint.
+This source audit uses the pinned original v0.111.0 / `41cef1ea` assembly. The method identifiers below identify original methods; the assembly and private disassembly remain outside the repository. The shared cost scenarios passed within the formal Regent, Necrobinder and five-character UI repair suites at pushed/read-back checkpoint `79b17017674cbbc02e8255e9bdc714c87472dfe6`, and passed again in the final 31-suite gate at `8c6977d3cc1dc9f17926a480127bc1067abd0286`. Separate actual NSP2/13 UI execution and visual review passed at that final checkpoint.
 
 ## Ordered local changes and global powers
 
@@ -35,4 +35,6 @@ Star X returns before temporary, combat or global star modifiers. The UI retains
 
 `regent_completion_regression.cpp` adds ordered Transfigure / Bullet Time scenarios in both directions, Rocket Punch's negative additions and expiration, Borrowed Time's negative-subtotal guard, Touch of Insanity's star-only and globally concealed candidates, persistent combat star reductions, Liquid Memories' two-resource expiration, energy-only reductions, both X resources and turn-end expiration. Existing Necrobinder scenarios cover cross-character additions and the late free powers; Silent and Necrobinder lifetime fixtures now use the original Bullet Time / Flatten distinction.
 
-`five_character_ui_regression.cpp` adds a real potion selection flow with Borrowed Time and Reflect, checking an energy preview of one and a star preview of zero, read-only rendering, and equality with the committed combat costs. These are pending execution claims, not passing results.
+`five_character_ui_regression.cpp` adds a real potion selection flow with Borrowed Time and Reflect, checking an energy preview of one and a star preview of zero, read-only rendering, and equality with the committed combat costs. The formal repair gate passed 8/8 suites with ASan/UBSan, including Regent's 9,892 checks / 181 variants and the five-character synthetic UI's 1,687 checks. Journal `native016-targeted-78c63eab0b28` reports unchanged source; its log SHA-256 is `80b5c30551d9e33a0bd455856d7abf976927f3b133176fec953eb62254a22018`.
+
+The final full native gate passed 31/31 suites. The same frozen five-character UI executable then passed 7,173 checks with the actual NSP2/13 pack, including the Borrowed Time / Reflect selection. Its captured preview visibly shows energy one and stars zero and was inspected. The actual expansion UI also passed 7,375 checks, including retained X and free-offer displays; both results retain separate journals. See [five-character verification](five-character-ui-0.16.md) for the exact checkpoint, pack and log hashes, all three actual-resource suite results and remaining boundaries.

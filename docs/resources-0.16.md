@@ -16,8 +16,8 @@ The converter distinguishes static numeric text from live damage, Block, Osty da
 | Localized strings | 749 | 1,556 |
 | Auxiliary images | 233 | 339 |
 | Animation clips | 17 | 38 |
-| Image payloads in the supplied 0.15 pack | 1,622 | Measured during conversion |
-| Glyph payloads in the supplied 0.15 pack | 6,265 | Measured during conversion |
+| Image payloads | 1,622 | 2,638 |
+| Glyph payloads | 6,265 | 7,215 |
 
 Every earlier image record's dimensions, encoding and compressed payload bytes are preserved. Earlier card, string, auxiliary and animation records retain their exact values and order. Existing glyph dimensions, metrics, encoding and payload bytes are retained; only missing glyphs are rasterized. Physical payload offsets may move because directories grow. Reopening and encoding the new pack again must produce identical bytes, and both pre-encoding and post-decoding checks compare the historical prefixes.
 
@@ -55,7 +55,7 @@ Clipping partitions the authored concave contour into disjoint triangles and int
 
 The application and versioned pack encoder use a **13 MiB resident resource limit**. The fixed WebAssembly memory remains **16 MiB**, with the remaining space reserved for code data, game state, frame buffers, image caches and the stack. The linker must validate that budget. ARM/Ndless allocation and the final compressed pack size must be checked against the built artifact; neither is inferred from the registry count. The former 12 MiB limit was increased after the actual complete encoding exceeded it by 327,866 bytes; sampling rates, dimensions and all historical payloads are retained. The encoder already uses LZ4's maximum high-compression level 12.
 
-Source implementation is prepared. **No successful 0.16 conversion, parser regression, render check or pack-size result is claimed yet.** Execution follows a source checkpoint that has been pushed to GitHub and read back with a matching tree. The intended verification includes eight asset-free resource tests plus the five geometric tests above, the versioned C++ parser suite, the retained-payload comparison, actual five-character UI rendering, clip/image bounds and final resident size. Failed commands retain their journals. Original-runtime differential testing and physical-device execution remain separate evidence.
+The complete resource conversion, all 30 Python tests, the actual C++ pack parser and independent on-disk payload/font inspection **passed at the pushed, read-back checkpoint `8c6977d3cc1dc9f17926a480127bc1067abd0286`**, tree `db96da21a4f39ae8612857fab5c2ea1b4e1295a3`. The actual pack occupies **12,910,778 bytes** and leaves **720,710 bytes** within the 13 MiB resource allocation. Its SHA-256 is `4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917`. Actual character UI, backend and device evidence is maintained separately; resource counts and successful decoding alone do not establish original-runtime parity. Failed commands retain their journals.
 
 The first frozen conversion attempt at `2eabce11a5ad5e5f2460e67eb5f9713c8ea424eb` stopped at NoEscape's unsupported `IsTargeting` localization condition before producing a pack. Journal `pack16-preservation-34ae4b4084d1` records exit 1 and `source_changed: false`. Its source repair added explicit target conditions for NoEscape and TimesUp and matching Python/UI regression cases.
 
@@ -63,6 +63,23 @@ At `865a92783a825d95d05c20689aca90eeceee8723`, all eight new resource tests pass
 
 Checkpoint `7b61bed6326639d137137af453451820b973310e` passed all **25 Python tests** (`python16-all-acd085dbd0ce`, log SHA-256 `d7a049640131560b4d386fc413ecc224e66fa8f182f0f26e20ff8c4dfc234994`). Its conversion passed all new card text/portraits and 106 auxiliary visuals and sampled all five Defect clips, then stopped at Regent's previously unsupported inheritance mode 2. Journal `pack16-preservation-342a84f747db` retains exit 1, unchanged source and log SHA-256 `e2bdfb2398079ec7f290b4ef92280e8e2e34fd5bfee736047c7416de2630d5d2`. No pack was produced. The subsequent complete structure audit motivated the four observed mathematical additions above.
 
-At `79b17017674cbbc02e8255e9bdc714c87472dfe6`, all **30 Python tests passed**, including the five new geometric cases (`python16-all-42539a43c098`). The complete conversion then passed all 21 appended animation clips and font construction but failed its final resident-size gate: the encoded data occupied **12,910,778 bytes**, 327,866 bytes above the former 12 MiB limit. No partial pack was written. Journal `pack16-preservation-058304a1e28b` retains exit 1, `source_changed: false` and log SHA-256 `40c4827f38a967ca4e0a90c7b5299ee58419b617f7ed2eae29a6bf6cb7ab7ecd`. A 13 MiB resource allocation provides 720,710 bytes beyond that measured encoding; its next complete conversion and the actual ARM/WASM allocation checks require the next pushed source checkpoint. Failed attempts remain preserved and are not counted as successful pack evidence.
+At `79b17017674cbbc02e8255e9bdc714c87472dfe6`, all **30 Python tests passed**, including the five new geometric cases (`python16-all-42539a43c098`). The complete conversion then passed all 21 appended animation clips and font construction but failed its final resident-size gate: the encoded data occupied **12,910,778 bytes**, 327,866 bytes above the former 12 MiB limit. No partial pack was written. Journal `pack16-preservation-058304a1e28b` retains exit 1, `source_changed: false` and log SHA-256 `40c4827f38a967ca4e0a90c7b5299ee58419b617f7ed2eae29a6bf6cb7ab7ecd`. The successor checkpoint increased only the resource allocation to 13 MiB, retained 16 MiB fixed WASM memory and repeated the complete conversion successfully. Failed attempts remain preserved and are not counted as successful pack evidence.
+
+### Final resource verification
+
+All four final journals below completed with `source_changed: false` and common source fingerprint `9fadd7740d7abde1d3144e293f22a6846476d84b6cefe74927f3065182a5ea2e`.
+
+| Verification at `8c6977d3` | Result | Journal |
+| --- | --- | --- |
+| Python regressions | 30 tests passed, including eight resource and five geometric cases | `python16-all-c3aa036bdc09` |
+| Full original-resource conversion | 497 card records, 1,556 strings, 339 auxiliary records, 2,638 images, 7,215 glyphs and 38 clips | `pack16-preservation-f67bf8c7225a` |
+| Independent on-disk inspection | Exact historical prefixes, canonical byte-for-byte re-encoding, zero missing new font code points | `pack16-readback-4bc9ac39bda7` |
+| Actual C++ content parser | 3,736 checks passed, including real card portraits/text, new auxiliary and clip references, character frame/energy mapping and application opening/rendering | `content16-actual-d0b8e6389395` |
+
+The new image records consist of **269 card portraits, 106 auxiliary visuals and 641 sampled animation frames**. Every one of the previous 1,622 image payloads and 6,265 glyph payloads retains its original bytes. The 228 card records, 749 strings, 233 auxiliary references and 17 clips also remain exact. All 2,638 images use the existing independently decoded LZ4 wrapper. The maximum image dimensions are 320 × 240, and the largest clip in the complete pack has 161 frames, within the 256-frame bound.
+
+The 950 new glyph records cover **190 additional Unicode code points** at all five sizes, 8/10/12/16/20. Independent inspection of the supplied original font's Unicode `cmap` found no missing new code points. Every character in the final localized strings has a glyph at all five sizes. The maximum glyph is 20 pixels wide and 25 pixels high, within the runtime's 40 × 40 bounds. The original font file remains private and is not included in the source or output pack.
+
+Final log SHA-256 values are `7d0de73b3e33cc7ef2d3c4d32678aafd8cc5761646a5a2214f84c38c15754089` (Python), `5081436f06c7ec4b0c52e5408679c4aba039c7cd21d9cb52983fae6ce01ef28d` (conversion), `1c2191f3a069afb18a2a6ec269afd35932ccc73a810b37df0e048561ef8bd534` (readback) and `b720952aaeee36e90a95b4382df66eed68397a7304f1a5b82a85f4229dd32495` (actual parser). The private output also contains `content-manifest.json` and `content-readback.json` with exact counts, allocation, hashes and source checkpoint.
 
 For an existing verified 0.15 pack, invoke `tools/build_all_characters.py` with the reference installation, that pack, a private output path and a Chinese-capable font. The full `tools/build_content.py` pipeline also invokes the new stage after its historical stages. Only rasterized missing glyphs enter the resource pack; the font file is never copied into it.

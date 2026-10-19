@@ -1,6 +1,45 @@
 # Work state — 2026-10-19
 
-## Active 0.16: remaining three complete character pools
+## Completed 0.16: all five single-player character pools
+
+The requested **Defect, Regent and Necrobinder single-player card pools and their character mechanisms are implemented and verified**, retaining the completed Ironclad, Silent, colorless and potion content. Three implementation/resource agents worked in parallel; root integrated shared behavior, reviewed the final scenes and packaged the matching outputs. Reference remains **v0.111.0 / 41cef1ea**, with audio, multiplayer and Timeline excluded.
+
+The exact tested runtime is **`8c6977d3cc1dc9f17926a480127bc1067abd0286`**, tree **`db96da21a4f39ae8612857fab5c2ea1b4e1295a3`**, pushed and read back on **`work/0.16-five-characters`** before validation. Later commits update documentation and receipts only. The frozen build root and source-only archive are `/tmp/nspire-stage-8c6977d3` and `/tmp/nspire-recovery/source-8c6977d3.tar`. Main and disabled remote CI remain unchanged.
+
+| Final verification | Executed result |
+| --- | --- |
+| Native ASan/UBSan | **31/31 suites; 929,474 checks/assertions**; all 81 build steps, including X11, passed |
+| Defect completion | **16,190 checks / 172 base-upgrade variants** |
+| Regent completion | **9,892 checks / 181 base-upgrade/token variants** |
+| Necrobinder completion | **19,494 checks / 174 base-upgrade/token variants** |
+| Python / actual parser | **30/30 tests; 3,736 actual NSP2/13 parser checks** |
+| Actual character UI | **66,478 checks; 860 character/Giant Rock acquisitions** |
+| Actual five-character mechanisms UI | **7,173 checks** |
+| Actual colorless/potion UI | **7,375 checks; 106 variants / 64 potions** |
+| Backend comparison | **384 exact RGB565 frames and 23 exact saves** across nine room/combat scenarios |
+| Fresh-process X11 persistence | v14 **88,764-byte** ordinary and **109,012-byte / 512-instance** files load/re-save exactly through production file callbacks |
+| Migration / full capacity | Genuine v13 **41,820 to 88,876 bytes**; v14 full fixture **109,012**, conservative **109,064 / 131,072** |
+| ARM | **284,458-byte** launcher; **16,174,284-byte** allocation; **5,597** relocations; unchanged 16 MiB allocation ceiling |
+| WASM / HTML | **817,288-byte** WASM; fixed **16 MiB** memory; **18,319,349-byte** self-contained HTML |
+| Visual review | **40 formal captured scenes plus two Osty animation-end scenes** reviewed by root and the UI agent; no blocking findings |
+
+The native count includes repeated assertions and is not an independent-scenario count. The three actual UI suites total **81,026 checks**. An additional frozen-engine Osty clip-end diagnostic passed 540 checks; it is recorded separately and is not added to those formal counts. All **19 final journals** are `passed`, `source_changed: false`, with source fingerprint **`9fadd7740d7abde1d3144e293f22a6846476d84b6cefe74927f3065182a5ea2e`**. The full native journal is `native016-ctest-54a1d9ac8e6f`; [validation-0.16.json](validation-0.16.json) records all final scopes, file hashes, journal log hashes and the screenshot evidence. All earlier failed journals remain retained.
+
+The directory now has **497 models**: 85 Ironclad, 86 each Silent/Defect/Regent/Necrobinder, 53 colorless and 15 generated/status models, plus 64 potions and 33 relics. This stage adds 258 character models and 11 generated/status models after the unchanged old IDs 0–227. The core includes five orb types/Focus; stars, independent star/energy prices and Forge; Osty, Soul and Doom; exact bounded payment/trigger/choice/replay sequencing; complete temporary-cost and Nightmare snapshots; and permanent Genetic Algorithm/Scythe growth.
+
+The final private **NSP2/13** pack is **12,910,778 bytes**, SHA-256 **`4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917`**. It contains 1,556 strings, 339 auxiliary entries, 2,638 images, 7,215 glyph records and 38 clips. All 1,622 prior image payloads, 6,265 prior glyph payloads and old card/string/auxiliary/clip records are preserved byte-for-byte. Full original selected cycles add 641 animation frames; all text has glyph coverage at five sizes. To preserve those frames and dimensions after maximum lossless compression, the resource buffer is 13 MiB, with 720,710 bytes free beyond the actual pack. ARM allocation and WASM linking verified the resulting bounds.
+
+The matching release files retain the canonical names **`Slay-the-Nspire-2-calculator.zip`** and **`Slay-the-Nspire-2-offline.html`**. The ZIP contains the paired launcher and pack, Chinese instructions, build metadata, validation receipts and license notices. The HTML embeds the exact verified WASM and identical pack; ZIP CRC and embedded payloads have been checked. Private game-derived files remain outside Git. Source and validation documentation persist in the verified work branch.
+
+### Next work and evidence limits
+
+The current card-pool task is complete to this recorded implementation and regression scope. Complete original encounters/runs, original special-potion acquisition routes, further original-UI fidelity, and new Firebird/physical-device execution remain separate work. The playable twelve-floor route, Nibbit encounters and five events are adaptations. Original rules were inspected from the pinned installation; the original game was not run as a differential oracle. Native/WASM agreement uses the shared storage adapter and does not establish browser DOM/localStorage behavior. X11 persistence used production headless actions, not display-server interaction. The visual review covers the 42 recorded scenes, not an individual review of every card portrait. Older saves preserve encoded facts and documented historical-order policies; missing histories cannot be reconstructed.
+
+Continue from the current work branch. Preserve the tested runtime SHA versus later documentation-head distinction, push/read back changed source before long execution, and do not repeat this completed validation without a concrete new change or risk.
+
+## 0.16 development history: recovery and integration
+
+The following entries are historical. The completed stage above supersedes their earlier pending and failed states; failures remain recorded for continuity.
 
 The user explicitly requested **all single-player Defect, Regent and Necrobinder cards and their mechanisms**, continuing the completed 0.15 stage. Source work uses **`work/0.16-five-characters`**, based on exact restored commit `7f486bdf757fb9af9dff89cdc8a785f049a404fc`, tree `58c6cdbb729c2822c52f74fb01028262670b8e1e`. All 203 source blobs and the complete tree were verified during recovery. The previous scratch files had expired; the source and original inputs have now been recovered instead of restarting from memory. Original DLL, PCK and the 0.15 NSP2/12 input pack all match their recorded hashes. The last distributed verified runtime is still 0.15; no new 0.16 behavior is validated yet.
 
