@@ -1,6 +1,6 @@
 # Development continuity
 
-Read `docs/WORK_STATE.md` before doing work. The active 0.16 task is complete single-player Defect, Regent and Necrobinder card pools and their character mechanisms, continuing the verified 0.15 Ironclad/Silent/colorless/potion build. Continue on `work/0.16-five-characters` and read its handoff record. Preserve original UI fidelity and source persistence BEFORE long validation. The user requests parallel sub-agents.
+Read `docs/WORK_STATE.md` before doing work. The active 0.17 task is all original single-player events and enemies, followed by playable original maps, followed by original UI fidelity targeting at least 95%, with calculator-screen scaling and layout adjustments permitted. Continue on `work/0.17-world-parity` from completed 0.16 head `4abacfa4`. Preserve the verified five-character/card/potion foundation. Read `docs/world-parity-0.17.md` for scope and integration boundaries. Preserve source persistence BEFORE long validation. The user requests parallel sub-agents.
 
 ## Required checkpoint cycle
 

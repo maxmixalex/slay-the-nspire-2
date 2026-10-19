@@ -1,5 +1,13 @@
 # Work state — 2026-10-19
 
+## Active 0.17: original events, enemies, maps and UI
+
+The user requested the following order: complete all original single-player events and enemies, then integrate the original map, then restore original UI with a 95%+ fidelity target. Scaling and layout adjustments required by the 320 × 240 calculator screen are permitted. Work continues on **`work/0.17-world-parity`**, branched from the remotely verified completed 0.16 documentation head **`4abacfa4cd3cfbb3d21f5065d8134edb2aca681e`**, tree **`fd34b8092ef7526335ce87cf924418028ddf1583`**. The previous runtime and its delivered artifacts remain the completed historical baseline below.
+
+Three parallel agents own enemy/encounter behavior, event behavior, and original resource/map/UI analysis; root owns shared state, integration, migration, reference-run routing and checkpoint publication. Initial inspection found hard-coded two-enemy storage, a 12 × 3 expedition, five adapted events and a separate seven-column original-map subsystem. These are integration gaps, not completed original-world support. The 13 MiB resident resource pack has only 720,710 bytes free and ARM static allocation only 602,932 bytes below its 16 MiB ceiling; full-world assets require bounded random-access resource loading rather than another unchecked resident-buffer increase.
+
+The pinned assembly declares 121 monster, 91 encounter and 68 event types. These are metadata counts pending reachability and dependency classification, not implementation counts. The task ledger and acceptance details are in [world-parity-0.17.md](world-parity-0.17.md). No new 0.17 build, original-run parity result or fidelity percentage is claimed at this initial source checkpoint.
+
 ## Completed 0.16: all five single-player character pools
 
 The requested **Defect, Regent and Necrobinder single-player card pools and their character mechanisms are implemented and verified**, retaining the completed Ironclad, Silent, colorless and potion content. Three implementation/resource agents worked in parallel; root integrated shared behavior, reviewed the final scenes and packaged the matching outputs. Reference remains **v0.111.0 / 41cef1ea**, with audio, multiplayer and Timeline excluded.
