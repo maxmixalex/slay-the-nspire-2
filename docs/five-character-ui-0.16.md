@@ -14,7 +14,7 @@ Forbidden Grimoire rewards open an optional permanent-deck removal flow. Eternal
 
 ## Resource contract
 
-The intended resource profile is NSP2/13: 497 models, 1,556 strings, 339 auxiliary images and 38 animation clips, with a 12 MiB input limit. The complete current-profile check includes animation count. All earlier auxiliary and animation IDs retain their meanings; the three new character sets, orb art, Osty and character powers append to them. Original resource conversion and its input hashes are documented separately by the resource module. No original asset payload or generated pack is stored in the source repository.
+The intended resource profile is NSP2/13: 497 models, 1,556 strings, 339 auxiliary images and 38 animation clips, with a 13 MiB input limit. The complete current-profile check includes animation count. All earlier auxiliary and animation IDs retain their meanings; the three new character sets, orb art, Osty and character powers append to them. Original resource conversion and its input hashes are documented separately by the resource module. No original asset payload or generated pack is stored in the source repository.
 
 ## Verification status
 

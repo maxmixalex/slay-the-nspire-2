@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.14 (2026-10-18).
+nSpire II experimental native runtime, version 0.16 (2026-10-19).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -19,8 +19,9 @@ Ndless r2022's `zehn.h`, `genzehn.cpp`, `syscall-list.h`, `keys.h`,
 stable syscall ABI, LCD function-pointer API and key protocol.
 This distribution does not bundle the Ndless SDK or a Firebird binary.
 Historical 0.12 reports describe Firebird execution on the supplied CX II CAS
-working-image copy with Ndless r2022. The 0.14 ARM launcher has been compiled;
-this stage has no new Firebird or physical-device execution result.
+working-image copy with Ndless r2022. Later ARM build receipts are recorded in
+the versioned validation documents; 0.16 has no new Firebird or physical-device
+execution result.
 
 https://github.com/ndless-nspire/Ndless/tree/r2022
 https://github.com/nspire-emus/firebird

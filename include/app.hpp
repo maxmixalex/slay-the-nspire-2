@@ -7,7 +7,7 @@
 #include "pointer.hpp"
 #include "map_preview.hpp"
 namespace spire {
-constexpr int ScreenW=320,ScreenH=240,MaxPack=12*1024*1024;
+constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // Each appended character/token model adds a title and two descriptions after
 // the complete, immutable 0.14 string directory.
 constexpr unsigned ContentVersion=13,ContentStrings=749+(CardKinds-228)*3;

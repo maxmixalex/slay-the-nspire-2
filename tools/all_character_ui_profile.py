@@ -85,7 +85,7 @@ AUXILIARY = BASE_AUXILIARY + len(ALL_CHARACTER_UI)
 POWER_STARTS = {'Defect': 266, 'Regent': 290, 'Necro': 312}
 
 # Entire original cycles are sampled. New clips use fewer samples per second
-# than the historical Ironclad/Silent clips to fit the 12 MiB resident budget;
+# than the historical Ironclad/Silent clips to fit the 13 MiB resident budget;
 # neither their duration nor any historical frame payload is shortened.
 NEW_CLIPS = [
     *[(name + kind, slug if kind != 'Camp' else 'restsite_' + slug,

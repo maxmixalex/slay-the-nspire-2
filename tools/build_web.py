@@ -12,7 +12,7 @@ def main():
     for i,source in enumerate(['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/web/main.cpp']):
         out=directory/f'{i}.o';objects.append(str(out));subprocess.run([clang,*flags,'-c',str(ROOT/source),'-o',str(out)],check=True)
     output=directory/'nSpire2.wasm'
-    # Fixed sixteen-MiB WASM memory covers the twelve-MiB pack, caches and stack.
+    # Fixed sixteen-MiB WASM memory covers the thirteen-MiB pack, caches and stack.
     # Ndless static allocation is bounded independently by the Zehn packer.
     subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['content_buffer','start','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input']],*objects,'-o',str(output)],check=True)
     content=(ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
