@@ -103,7 +103,7 @@ void relic_reset_turn_counters(State&s){
 }
 void relic_card_played(State&s,Card card){
  if(s.hp<=0||s.phase!=Phase::Combat||card.kind>=CardKinds)return;
- const CardType type=definitions[card.kind].type;
+ const CardType type=card_type(s,card);
  // AfterCardPlayed runs once after the card's commands/choices, before its
  // result-pile move. Resolve in acquisition order; hits are not card plays.
  for(unsigned i=0;i<s.relic_count;i++){

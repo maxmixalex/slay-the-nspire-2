@@ -51,7 +51,7 @@ static bool valid_silent_state(const State&s){
  if(s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::SlySkill||s.expansion.choice==XChoice::NightmareCard)){
   const auto&x=s.expansion;if(x.choice_min!=1||x.choice_max!=1||x.choice_free)return false;
   for(unsigned i=0;i<x.choices.count;i++){int id=x.choices.ids[i];if(id<0||id>=s.card_count||s.zones[id]!=Zone::Hand)return false;
-   if(x.choice==XChoice::SlySkill&&(definitions[s.cards[id].kind].type!=CardType::Skill||silent_is_sly(s,id)))return false;
+   if(x.choice==XChoice::SlySkill&&(card_type(s,s.cards[id],id)!=CardType::Skill||silent_is_sly(s,id)))return false;
   }
  }
  bool nightmare_queued[MaxNightmares]{};

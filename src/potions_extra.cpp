@@ -20,7 +20,20 @@ Potion random_potion(State&s,bool in_combat){
  }
  return n?pool[random_below(s.rng_world,n)]:Potion::Empty;
 }
-bool procure_potion(State&s,Potion p){if(!potion_definition(p))return false;for(auto&slot:s.potions)if(slot==Potion::Empty){slot=p;return true;}return false;}
+unsigned potion_slot_count(const State&s){return s.potion_slots>=LegacyPotionSlots&&s.potion_slots<=MaxPotionSlots?s.potion_slots:LegacyPotionSlots;}
+Potion potion_at(const State&s,unsigned slot){return slot<potion_slot_count(s)?s.potions[slot]:Potion::Empty;}
+bool potion_set(State&s,unsigned slot,Potion p){if(slot>=potion_slot_count(s)||unsigned(p)>PotionKinds)return false;s.potions[slot]=p;return true;}
+bool add_potion_slots(State&s,unsigned count){
+ unsigned before=potion_slot_count(s);if(count>MaxPotionSlots-before)return false;
+ for(unsigned i=before;i<before+count;++i)s.potions[i]=Potion::Empty;
+ s.potion_slots=(uint8_t)(before+count);return true;
+}
+bool procure_potion_at(State&s,Potion p,unsigned slot){
+ if(!potion_definition(p)||slot>=potion_slot_count(s)||s.potions[slot]!=Potion::Empty||has_world_relic(s,world_relic_id("SOZU")))return false;
+ s.potions[slot]=p;world_relic_hook(s,WorldRelicHook::AfterPotionProcured,(int)p,(int)slot);return true;
+}
+bool procure_potion(State&s,Potion p){if(!potion_definition(p))return false;for(unsigned i=0;i<potion_slot_count(s);++i)if(s.potions[i]==Potion::Empty)return procure_potion_at(s,p,i);return false;}
+
 void execute_potion(State&s,Potion p,int t){
  auto&x=s.expansion;
  auto op=[&](XOp o,int a=0,int b=0){queue_extension(s,o,a,b);};
@@ -37,7 +50,7 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::Duplicator:pw(XPower::Duplicator,1);break;
  // The original explicitly calls CreateRandomPotionOutOfCombat for each empty
  // slot, even when drunk in combat. It permits recovery bottles and repeats.
- case Potion::EntropicBrew:for(auto&slot:s.potions)if(slot==Potion::Empty)slot=random_potion(s,false);break;
+ case Potion::EntropicBrew:for(unsigned i=0;i<potion_slot_count(s);++i)if(s.potions[i]==Potion::Empty)procure_potion_at(s,random_potion(s,false),i);break;
  case Potion::FairyInABottle:break; // automatic only; cannot enter the manual path
  case Potion::FyshOil:op(XOp::Strength,1);op(XOp::Dexterity,1);break;
  case Potion::GamblersBrew:op(XOp::DiscardRedraw);break;

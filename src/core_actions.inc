@@ -21,7 +21,7 @@ static bool put(State&s,Pile&p,int id,Zone z){
 static int make_card(State&s,Card c){
     if(s.card_count==MaxCards){fail(s);return -1;}
     int id=s.card_count++;s.cards[id]=c;
-    ironclad_card_created(s,id);silent_card_created(s,id);defect_card_created(s,id);regent_card_created(s,id);necro_card_created(s,id);return id;
+    ironclad_card_created(s,id);silent_card_created(s,id);defect_card_created(s,id);regent_card_created(s,id);necro_card_created(s,id);event_card_created(s,id);enemy_card_created(s,id);return id;
 }
 static void shuffle(State&s){
     while(s.discard.count){int id=remove(s.discard,s.discard.count-1);put(s,s.draw,id,Zone::Draw);}
@@ -45,8 +45,8 @@ const Pile& choice_pile(const State&s){return s.phase==Phase::ExtendedChoice?s.e
 // occupy normal hand slots; excess innate cards stay in draw under the hand cap.
 static int prioritize_innate(State&s){
     uint16_t sorted[MaxCards];unsigned count=0,innate=0;
-    for(unsigned i=0;i<s.draw.count;i++)if(!card_innate(s.cards[s.draw.ids[i]]))sorted[count++]=s.draw.ids[i];
-    for(unsigned i=0;i<s.draw.count;i++)if(card_innate(s.cards[s.draw.ids[i]])){sorted[count++]=s.draw.ids[i];++innate;}
+    for(unsigned i=0;i<s.draw.count;i++)if(!card_innate(s,s.cards[s.draw.ids[i]],s.draw.ids[i]))sorted[count++]=s.draw.ids[i];
+    for(unsigned i=0;i<s.draw.count;i++)if(card_innate(s,s.cards[s.draw.ids[i]],s.draw.ids[i])){sorted[count++]=s.draw.ids[i];++innate;}
     for(unsigned i=0;i<count;i++)s.draw.ids[i]=sorted[i];
     return (int)innate;
 }
@@ -69,7 +69,7 @@ int card_base_damage(const State&s,Card c,int target,int instance){
     if(c.kind==Shiv)base+=s.accuracy;
     base=ironclad_base_damage(s,c,target,instance,base);
     base=silent_base_damage(s,c,target,instance,base);base=defect_base_damage(s,c,target,instance,base);
-    base=regent_base_damage(s,c,target,instance,base);return necro_base_damage(s,c,target,instance,base);
+    base=regent_base_damage(s,c,target,instance,base);base=necro_base_damage(s,c,target,instance,base);return event_card_base_damage(s,c,instance,base);
 }
 int damage(const State&s,Card c,int t,int instance){
     if(c.kind>=CardKinds)return 0;
@@ -81,7 +81,8 @@ int damage(const State&s,Card c,int t,int instance){
         int debuffs=(e.strength<0)+(e.weak>0)+(e.vulnerable>0)+(e.poison>0)+(x.beetle[t]>0)+(x.demise[t]>0)+(x.doom[t]>0);
         d+=debuffs*(definitions[c.kind].power+(c.upgraded?definitions[c.kind].power_up:0));
     }
-    if(d<=0&&definitions[c.kind].type!=CardType::Attack)return 0;
+    if(d<=0&&card_type(s,c)!=CardType::Attack)return 0;
+    d+=event_enchantment_damage_add(s,c,instance);
     bool active=s.playing>=0&&instance==s.playing;
     bool pet=necro_osty_attack(c);if(pet&&!s.expansion.osty_hp)return 0;
     d=max(0,d+(pet?necro_osty_bonus(s):s.strength+(active&&s.attack_vigor?s.attack_vigor:s.vigor)));
@@ -100,13 +101,13 @@ static bool enqueue(State&s,EffectKind k,int v=0,int t=0,bool first=false){
     if(first)for(int i=s.effect_count;i>0;i--)s.effects[i]=s.effects[i-1];
     s.effects[first?0:s.effect_count]={k,(int16_t)v,(int16_t)t};s.effect_count++;return true;
 }
-static bool alive(const State&s){for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp>0)return true;return false;}
+static bool alive(const State&s){return enemy_keeps_combat_alive(s);}
 static void victory(State&s){
     if(s.phase==Phase::Reward||s.phase==Phase::Complete)return;
     award_victory(s);
     // A lethal nested autoplay cannot leave its caller orphaned in Limbo.
     for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){
-        Card c=s.cards[id];Zone z=definitions[c.kind].type==CardType::Power?Zone::Power:(card_exhausts(c)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
+        Card c=s.cards[id];Zone z=card_type(s,c)==CardType::Power?Zone::Power:(card_exhausts(s,c,id)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
         put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
     }
     ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);
@@ -134,20 +135,20 @@ static void exhaust_id(State&s,int id){
 static void exhaust(State&s,int index){exhaust_id(s,remove(s.hand,index));}
 void apply_vulnerable(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
-    if(silent_blocks_debuff(s,target))return;
+    if(enemy_blocks_debuff(s,target)||silent_blocks_debuff(s,target))return;
     auto&e=s.enemies[target];int added=min(9999-e.vulnerable,count);
     e.vulnerable+=(int16_t)added;ironclad_after_vulnerable(s,target,added);
     if(added){necro_note_debuff(s,target,NDebuff::Vulnerable);necro_debuff_applied(s,target,added);}
 }
 void apply_weak(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
-    if(silent_blocks_debuff(s,target))return;
+    if(enemy_blocks_debuff(s,target)||silent_blocks_debuff(s,target))return;
     auto&e=s.enemies[target];int added=min(9999-e.weak,count);e.weak+=(int16_t)added;
     record(s,LogKind::Weak,added,target);if(added){necro_note_debuff(s,target,NDebuff::Weak);necro_debuff_applied(s,target,added);}
 }
 void apply_poison(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
-    if(silent_blocks_debuff(s,target))return;
+    if(enemy_blocks_debuff(s,target)||silent_blocks_debuff(s,target))return;
     auto&e=s.enemies[target];int added=min(9999-e.poison,count);e.poison+=(int16_t)added;
     record(s,LogKind::Poison,added,target);if(added){necro_note_debuff(s,target,NDebuff::Poison);necro_debuff_applied(s,target,added);}
 }
@@ -192,20 +193,25 @@ static void resolve(State&s){
                 auto& t=s.enemies[e.target];int old_hp=t.hp;bool pet=e.aux==2;
                 if(!pet&&!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
                 if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
-                int amount=max(0,e.value+(pet?necro_osty_bonus(s):s.strength+s.attack_vigor))*relic_attack_multiplier(s);
                 Card card=s.playing>=0?s.cards[s.playing]:Card{Strike,0};
+                int amount=max(0,e.value+event_enchantment_damage_add(s,card,s.playing)+(pet?necro_osty_bonus(s):s.strength+s.attack_vigor))*relic_attack_multiplier(s);
                 amount=silent_attack_factor(s,e.target,amount,card,s.playing);
-                int absorb=min(t.block,amount);t.block-=absorb;t.hp=max(0,t.hp-amount+absorb);
+                amount=enemy_damage_cap(s,e.target,amount,true);enemy_before_damage(s,e.target,amount,true,pet);
+                int absorb=min(t.block,amount);t.block-=absorb;int hp_loss=enemy_hp_loss_cap(s,e.target,amount-absorb);t.hp=max(0,t.hp-hp_loss);
                 // Fisticuffs and Omnislice use TotalDamage + OverkillDamage.
                 // Their follow-up keeps damage beyond the target's remaining HP.
                 s.expansion.last_damage=(int16_t)min(9999,amount);
                 record(s,LogKind::Damage,amount,e.target);
-                all_characters_attack_damage(s,e.target,absorb+min(old_hp,amount-absorb),amount-absorb,pet);
-                if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0){
+                all_characters_attack_damage(s,e.target,absorb+min(old_hp,hp_loss),hp_loss,pet);
+                enemy_after_damage(s,e.target,absorb,min(old_hp,hp_loss),true,pet);
+                if(e.kind==EffectKind::GreedDamage&&!t.hp&&s.playing>=0&&!s.expansion.attack_observed[s.expansion.depth]){
                     Card card=s.cards[s.playing];const auto& d=definitions[card.kind];
                     gain_gold(s,d.power+(card.upgraded?d.power_up:0));
                 }
-                if(!t.hp){silent_attack_killed(s,e.target);defect_attack_killed(s,e.target);}
+                if(!t.hp){
+                    if(s.expansion.attack_observed[s.expansion.depth])s.expansion.attack_killed[s.expansion.depth]|=uint8_t(1U<<e.target);
+                    else {silent_attack_killed(s,e.target);defect_attack_killed(s,e.target);}
+                }
             }break;
         case EffectKind::Block:
             if(e.aux==1)gain_card_block(s,e.value);else gain_unpowered_block(s,e.value);
@@ -232,7 +238,7 @@ static void resolve(State&s){
             break;
         case EffectKind::DrawIfNoAttacks:{
             bool attack=false;for(unsigned i=0;i<s.hand.count;i++)
-                if(definitions[s.cards[s.hand.ids[i]].kind].type==CardType::Attack)attack=true;
+                if(card_type(s,s.cards[s.hand.ids[i]],s.hand.ids[i])==CardType::Attack)attack=true;
             if(!attack)draw_cards(s,e.value);break;}
         case EffectKind::FillHand:draw_cards(s,MaxHand-s.hand.count);break;
         case EffectKind::ChooseExhaustMany:
@@ -267,12 +273,25 @@ static void resolve(State&s){
             s.embrace=min(99,s.embrace+e.value);record(s,LogKind::Embrace,s.embrace);break;
         case EffectKind::Finish:finish_extended_card(s);break;
         }
-        necro_observe_deaths(s);
+        enemy_check_deaths(s);necro_observe_deaths(s);
     }
 }
 void damage_unpowered(State&s,int target,int amount){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)return;
-    auto&e=s.enemies[target];int absorbed=min(e.block,max(0,amount));e.block-=absorbed;
-    e.hp=(int16_t)max(0,e.hp-max(0,amount)+absorbed);record(s,LogKind::Damage,amount,target);necro_observe_deaths(s);
+    amount=enemy_damage_cap(s,target,max(0,amount),false);enemy_before_damage(s,target,amount,false);
+    auto&e=s.enemies[target];int absorbed=min(e.block,amount);e.block-=absorbed;
+    int loss=min(e.hp,enemy_hp_loss_cap(s,target,amount-absorbed));e.hp-=loss;
+    record(s,LogKind::Damage,amount,target);enemy_after_damage(s,target,absorbed,loss,false);enemy_check_deaths(s);necro_observe_deaths(s);
 }
+static void enemy_reset_shared_slot(State&s,int t){
+ if(t<0||t>=MaxEnemies)return;
+ s.enemies[t]={};auto&x=s.expansion;auto&v=s.silent;auto&r=s.regent;auto&n=s.necro;
+ x.restore_strength[t]=x.demise[t]=x.beetle[t]=x.doom[t]=0;
+ v.strangle[t]=v.enemy_artifact[t]=0;r.hits_turn[t]=r.conqueror[t]=0;
+ n.debilitate[t]=n.hang[t]=n.oblivion[t]=n.sic_em[t]=0;n.debuff_count[t]=0;
+ for(auto&entry:n.debuff_order[t])entry=0;for(auto&entry:n.temp_strength[t])entry=0;
+ for(unsigned f=0;f<=MaxAutoFrames;++f){v.strangle_before[f][t]=n.oblivion_before[f][t]=0;}
+ n.enemy_dead_mask&=uint8_t(~(1U<<t));
+}
+
 void finish_combat_if_won(State&s){if(s.phase==Phase::Combat&&s.hp>0&&!alive(s))victory(s);}

@@ -6,7 +6,7 @@ static void draw_hook(State&);
 static void shuffle_hook(State&);
 static void clear_extended_choice(State&);
 static void queue_legacy(State&,Card,int,int);
-static int powered_block(const State&,Card,int);
+static int powered_block(const State&,Card,int,int instance=-1);
 static bool enqueue_card_block(State&,int,bool first=false);
 static void gain_card_block(State&,int);
 static void temporary_cost_set(State&,int);
@@ -21,3 +21,6 @@ static void after_play_unregister(State&,unsigned);
 static bool post_play_actor_active(const State&,unsigned);
 static void queue_post_play_listeners(State&);
 static void post_play_listener(State&,unsigned);
+
+static void enemy_reset_shared_slot(State&,int);
+static bool card_attack_command(const Effect&);

@@ -37,7 +37,8 @@ bool validate(const State&s){
     if(s.treasure_relic&&(!relic_definition(s.treasure_relic)||s.treasure_relic==BurningBlood||s.treasure_relic==RingOfTheSnake||s.treasure_relic==CrackedCore||s.treasure_relic==DivineRight||s.treasure_relic==BoundPhylactery))return false;
     if(s.treasure_relic&&s.treasure_state==1&&(s.relics&s.treasure_relic))return false;
     if(s.treasure_relic&&s.treasure_state==2&&!(s.relics&s.treasure_relic))return false;
-    for(auto p:s.potions)if((unsigned)p>PotionKinds)return false;
+    if(s.potion_slots<LegacyPotionSlots||s.potion_slots>MaxPotionSlots)return false;
+    for(unsigned i=0;i<MaxPotionSlots;i++)if((unsigned)s.potions[i]>PotionKinds||(i>=s.potion_slots&&s.potions[i]!=Potion::Empty))return false;
     for(auto c:s.shop_cards)if(c>=CardKinds)return false;
     for(auto p:s.shop_prices)if(p<0||p>9999)return false;
     for(int i=0;i<MapNodes;i++){auto n=s.map[i];if((int)n.room>(int)Room::Final||n.links>7||n.visited>1||n.event>=EventKinds)return false;}

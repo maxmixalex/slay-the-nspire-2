@@ -37,7 +37,7 @@ static bool valid_regent_state(const State&s){
   Zone zone=(k==XChoice::RTransformDraw||k==XChoice::RForegone)?Zone::Draw:k==XChoice::RDiscardTop?Zone::Discard:Zone::Hand;
   for(unsigned i=0;i<x.choices.count;i++){
    int id=x.choices.ids[i];if(id<0||id>=s.card_count||s.zones[id]!=zone)return false;
-   if(k==XChoice::RDecisions&&definitions[s.cards[id].kind].type!=CardType::Skill)return false;
+   if(k==XChoice::RDecisions&&card_type(s,s.cards[id],id)!=CardType::Skill)return false;
    if(k==XChoice::RHeirloom&&!card_colorless(s.cards[id].kind))return false;
   }
  }

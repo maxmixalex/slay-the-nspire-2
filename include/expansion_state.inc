@@ -1,6 +1,6 @@
 // Included after Card/Pile definitions inside namespace spire. All dimensions
 // are bounded; no coroutine stack or transient pointer is part of a save.
-constexpr int MaxAutoFrames=12, MaxPowerInstances=16, MaxBombs=16, MaxOrbs=10,MaxPostPlayPowers=52;
+constexpr int MaxAutoFrames=12, MaxPowerInstances=16, MaxBombs=16, MaxOrbs=10,MaxPostPlayPowers=54;
 enum class XPower:uint8_t {
  Retain,Plating,Buffer,Intangible,Ritual,Regen,Clarity,Radiance,Gigantic,
  Duplicator,Automation,Calamity,Mayhem,Nostalgia,Panache,PrepTime,Fasten,
@@ -12,7 +12,7 @@ enum class PostPlayActor:uint8_t {
  PanacheStart=7,Relics=23,Cards=24,Enemies=25,
  DefectStorm=26,DefectSubroutine=27,RegentBlackHole=28,RegentPaleBlueDot=29,RegentVoidForm=30,
  RegentMonologueStart=31,NecroDevourLife=47,NecroHaunt=48,DefectSmokestack=49,DefectTrashToTreasure=50,RegentArsenal=51,RegentPillarOfCreation=52,
- SilentEnvenom=53,RegentMonarchsGaze=54,NecroReaperForm=55,Count=56
+ SilentEnvenom=53,RegentMonarchsGaze=54,NecroReaperForm=55,EnemyTender=56,EnemySmoggy=57,Count=58
 };
 enum class XChoice:uint16_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,Free,Transform,
 #include "ironclad_choices.inc"
@@ -20,6 +20,8 @@ enum class XChoice:uint16_t {None,Offer,Draw,Discard,Top,DiscardRedraw,Exhaust,F
 #include "defect_choices.inc"
 #include "regent_choices.inc"
 #include "necro_choices.inc"
+#include "event_card_choices.inc"
+#include "enemy_choices.inc"
  Count};
 enum class XOp:uint16_t {
  Power,AllDamage,StrengthLoss,AllRare,Offer,Generate,ChooseDraw,ChooseDiscard,
@@ -36,6 +38,10 @@ enum class XOp:uint16_t {
 #include "regent_ops.inc"
 #include "necro_ops.inc"
  AllCharactersLate,AllCharactersBefore,AllCharactersBody,AllCharactersFlush,AllCharactersSideEnd,AllCharactersDrawBefore,AllCharactersBeetle,
+#include "event_card_ops.inc"
+#include "enemy_ops.inc"
+#include "world_relic_ops.inc"
+ SharedCheckWeakAfterHit,SharedAfterCardBody,SharedAfflictionAfterBody,SharedAttackEnd,SharedAttackStart,SharedAttackReward,
  Count
 };
 static_assert((unsigned)XOp::Count<32768,"Operation IDs must fit signed effect operands");
@@ -71,4 +77,7 @@ struct ExpansionState {
  uint8_t orb_slots=0,orb_count=0;int16_t dark[MaxOrbs]{};
  // The original free-card helpers set energy and stars independently.
  uint8_t star_turn_free[MaxCards]{},star_combat_free[MaxCards]{};
+ // One AttackCommand result per nested physical frame. Kills remain true
+ // across revival and slot reuse; Fatal permission is captured before damage.
+ uint8_t attack_observed[MaxAutoFrames+1]{},attack_killed[MaxAutoFrames+1]{},attack_fatal[MaxAutoFrames+1]{};
 };

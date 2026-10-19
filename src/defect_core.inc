@@ -62,7 +62,7 @@ static int defect_cost(const State&s,int id,int current){
  if(id<0||id>=s.card_count||current<0)return current;const auto&v=s.defect;
  int origin=s.expansion.turn_cost[id]?v.turn_origin[id]:s.expansion.combat_cost[id]?v.combat_origin[id]:0;
  current=max(0,min(999,current+v.cost_delta[id]-origin));
- if(dpower(s,DPower::FreePower)&&definitions[s.cards[id].kind].type==CardType::Power&&
+ if(dpower(s,DPower::FreePower)&&card_type(s,s.cards[id],id)==CardType::Power&&
     (s.zones[id]==Zone::Hand||s.zones[id]==Zone::Limbo))return 0;
  return current;
 }
@@ -74,7 +74,7 @@ static int defect_base_block(const State&s,Card c,int instance,int current){
 }
 static int defect_extra_replays(State&s,Card c){
  int n=s.defect.physical_started<dpower(s,DPower::EchoForm)?1:0;
- if(definitions[c.kind].type==CardType::Power&&dpower(s,DPower::SignalBoost)){defect_gain_power(s,DPower::SignalBoost,-1);++n;}
+ if(card_type(s,c)==CardType::Power&&dpower(s,DPower::SignalBoost)){defect_gain_power(s,DPower::SignalBoost,-1);++n;}
  return n;
 }
 static void defect_play_start(State&s,int id,int resource_energy,bool,int actual_spent){
@@ -84,10 +84,10 @@ static void defect_play_start(State&s,int id,int resource_energy,bool,int actual
 }
 static void defect_before_play(State&s,int id){
  if(id<0||id>=s.card_count)return;auto&v=s.defect;unsigned d=s.expansion.depth;
- bool power=definitions[s.cards[id].kind].type==CardType::Power;
+ bool power=card_type(s,s.cards[id],id)==CardType::Power;
  v.storm_before[d]=(int16_t)(power?dpower(s,DPower::Storm):0);v.subroutine_before[d]=(int16_t)(power?dpower(s,DPower::Subroutine):0);
  if(power&&dpower(s,DPower::FreePower))defect_gain_power(s,DPower::FreePower,-1);
- if(definitions[s.cards[id].kind].type==CardType::Attack&&!v.spent[d])v.zero_attacks_started=(uint16_t)min(9999,v.zero_attacks_started+1);
+ if(card_type(s,s.cards[id],id)==CardType::Attack&&!v.spent[d])v.zero_attacks_started=(uint16_t)min(9999,v.zero_attacks_started+1);
 }
 static void defect_after_play(State&s,int){s.defect.cards_finished=(uint16_t)min(9999,s.defect.cards_finished+1);}
 static void defect_after_play_listener(State&s,unsigned actor){
@@ -96,7 +96,7 @@ static void defect_after_play_listener(State&s,unsigned actor){
  if(actor==(unsigned)PostPlayActor::DefectSubroutine){int n=v.subroutine_before[d];v.subroutine_before[d]=0;if(n)enqueue(s,EffectKind::Energy,n,0,true);}
 }
 static bool defect_returns_to_hand(State&s,int id){
- if(id<0||id>=s.card_count||definitions[s.cards[id].kind].type!=CardType::Attack||s.defect.spent[s.expansion.depth]||
+ if(id<0||id>=s.card_count||card_type(s,s.cards[id],id)!=CardType::Attack||s.defect.spent[s.expansion.depth]||
     s.defect.feral_used>=dpower(s,DPower::Feral))return false;
  ++s.defect.feral_used;return true;
 }
@@ -109,13 +109,13 @@ static void defect_after_play_group(State&s,int id){
 static void defect_card_drawn(State&s,int id){
  if(id<0||id>=s.card_count)return;auto&v=s.defect;unsigned d=s.expansion.depth;
  if(v.scrape_waiting[d]){v.scrape_waiting[d]=0;if(v.scrape_count[d]<MaxHand)v.scrape_drawn[d][v.scrape_count[d]++]=(uint16_t)(id+1);}
- if(definitions[s.cards[id].kind].type==CardType::Status){
+ if(card_type(s,s.cards[id],id)==CardType::Status){
   if(!v.status_drawn&&dpower(s,DPower::Iteration))queue_extension(s,XOp::Draw,dpower(s,DPower::Iteration),0,true);
   v.status_drawn=1;
  }
 }
 static void defect_card_generated(State&s,int id,bool player_created){
- if(!player_created||id<0||id>=s.card_count||definitions[s.cards[id].kind].type!=CardType::Status)return;
+ if(!player_created||id<0||id>=s.card_count||card_type(s,s.cards[id],id)!=CardType::Status)return;
  // Player powers run before card-model listeners. Reverse insertion preserves order.
  queue_extension(s,XOp::DRocketDiscount,0,0,true);
  auto&v=s.defect;for(int i=v.power_count-1;i>=0;i--){DPower p=(DPower)v.power_order[i];
@@ -205,10 +205,10 @@ static void defect_combat_end(State&s){
 }
 static Pile defect_status_snapshot(const State&s){
  Pile out{};const Pile* piles[]={&s.hand,&s.draw,&s.discard};
- for(const Pile*p:piles)for(unsigned i=0;i<p->count;i++){int id=p->ids[i];if(definitions[s.cards[id].kind].type==CardType::Status)out.ids[out.count++]=(uint16_t)id;}
+ for(const Pile*p:piles)for(unsigned i=0;i<p->count;i++){int id=p->ids[i];if(card_type(s,s.cards[id],id)==CardType::Status)out.ids[out.count++]=(uint16_t)id;}
  // Original AllPiles ends with PlayPile, ordered outer play before nested play.
  for(unsigned f=0;f<=s.expansion.depth;f++){int id=f<s.expansion.depth?s.expansion.frames[f].playing:s.playing;
-  if(id>=0&&id<s.card_count&&s.zones[id]==Zone::Limbo&&definitions[s.cards[id].kind].type==CardType::Status)out.ids[out.count++]=(uint16_t)id;
+  if(id>=0&&id<s.card_count&&s.zones[id]==Zone::Limbo&&card_type(s,s.cards[id],id)==CardType::Status)out.ids[out.count++]=(uint16_t)id;
  }
  return out;
 }
@@ -262,7 +262,7 @@ static bool queue_defect(State&s,Card c,int target,int energy){
  case DefectGeneticAlgorithm:defend(block);op(XOp::DGenetic,s.playing,c.upgraded?4:3);break;
  case DefectGlacier:defend(block);channel(DOrb::Frost,2);break;
  case DefectGlasswork:defend(block);channel(DOrb::Glass);break;
- case DefectGoForTheEyes:attack(hit);if(target>=0&&target<s.enemy_count&&s.enemies[target].move!=2)enqueue(s,EffectKind::Weak,p,target);break;
+ case DefectGoForTheEyes:attack(hit);op(XOp::SharedCheckWeakAfterHit,target,p);break;
  case DefectGunkUp:op(XOp::DHits,hit,3);status(Slimed);break;
  case DefectHailstorm:pw(DPower::Hailstorm,p);break;
  case DefectHelixDrill:op(XOp::DHits,hit,max(0,(int)s.defect.energy_spent_turn-cost(s,s.playing)));break;
@@ -367,13 +367,13 @@ static bool defect_effect(State&s,Effect e){
   x.turn_cost[id]=0;x.combat_cost[id]=1;combat_cost_set(s,id);put(s,s.discard,id,Zone::Discard);record(s,LogKind::Create,1,s.cards[id].kind);notify_card_generated(s,id);break;
  }
  case XOp::DAllForOne:
-  for(unsigned i=0;i<s.discard.count&&s.hand.count<MaxHand;){int id=s.discard.ids[i];CardType type=definitions[s.cards[id].kind].type;
+  for(unsigned i=0;i<s.discard.count&&s.hand.count<MaxHand;){int id=s.discard.ids[i];CardType type=card_type(s,s.cards[id],id);
    if(cost(s.cards[id])>=0&&cost(s,id)==0&&(type==CardType::Attack||type==CardType::Skill||type==CardType::Power)){remove(s.discard,i);put(s,s.hand,id,Zone::Hand);}else ++i;
   }break;
  case XOp::DClaw:for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==DefectClaw)v.value[id]=(int16_t)min(9999,v.value[id]+a);break;
  case XOp::DCompact:{
   uint16_t changed[MaxHand];unsigned n=0;
-  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(definitions[s.cards[id].kind].type==CardType::Status){s.cards[id]={Fuel,(uint8_t)a};reset_card_modifiers(s,id);changed[n++]=(uint16_t)id;}}
+  for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(card_type(s,s.cards[id],id)==CardType::Status){s.cards[id]={Fuel,(uint8_t)a};reset_card_modifiers(s,id);changed[n++]=(uint16_t)id;}}
   // The original successful combat Transform announces each replacement to
   // AfterCardGeneratedForCombat, even when the replacement is a Skill.
   for(int i=(int)n-1;i>=0;i--)notify_card_generated(s,changed[i]);break;
@@ -409,7 +409,7 @@ static bool defect_effect(State&s,Effect e){
   if(b>0&&alive(s)){if(b>1)queue_extension(s,XOp::DHits,a,b-1,true);enqueue(s,EffectKind::Damage,a,x.target,true);}break;
  case XOp::DUproar:{
   uint16_t eligible[MaxCards];unsigned n=0;
-  for(unsigned i=0;i<s.draw.count;i++){int id=s.draw.ids[i];if(definitions[s.cards[id].kind].type==CardType::Attack&&cost(s.cards[id])>=-1)eligible[n++]=(uint16_t)id;}
+  for(unsigned i=0;i<s.draw.count;i++){int id=s.draw.ids[i];if(card_type(s,s.cards[id],id)==CardType::Attack&&cost(s.cards[id])>=-1)eligible[n++]=(uint16_t)id;}
   if(n)queue_extension(s,XOp::AutoInstance,eligible[random_below(s.rng_cards,n)],0,true);break;
  }
  case XOp::DFtl:if(v.cards_finished<(unsigned)a)queue_extension(s,XOp::Draw,1,0,true);break;

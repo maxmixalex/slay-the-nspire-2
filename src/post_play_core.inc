@@ -3,6 +3,8 @@
 // its nested effects finish before the next listener, including save/choices.
 static bool post_play_actor_active(const State&s,unsigned actor){
  switch((PostPlayActor)actor){
+ case PostPlayActor::EnemyTender:return enemy_power_value(s,-1,EnemyPower::Tender)>0;
+ case PostPlayActor::EnemySmoggy:return enemy_power_value(s,-1,EnemyPower::Smoggy)>0;
  case PostPlayActor::Calamity:return power_value(s,XPower::Calamity)>0;
  case PostPlayActor::Rage:return s.ironclad.powers[(unsigned)IPower::Rage]>0;
  case PostPlayActor::Rupture:return s.ironclad.powers[(unsigned)IPower::Rupture]>0;
@@ -46,7 +48,7 @@ static void post_play_listener(State&s,unsigned actor){
  const Card c=s.cards[s.playing];
  if(actor==(unsigned)PostPlayActor::Relics){relic_card_played(s,c);return;}
  if(actor==(unsigned)PostPlayActor::Calamity){
-  if(definitions[c.kind].type==CardType::Attack)
+  if(card_type(s,c)==CardType::Attack)
    for(int i=0;i<power_value(s,XPower::Calamity);i++)queue_extension(s,XOp::Generate,1,0,true);
   return;
  }
@@ -60,5 +62,10 @@ static void post_play_listener(State&s,unsigned actor){
   ironclad_after_play_listener(s,actor);
  else if(actor==(unsigned)PostPlayActor::DefectStorm||actor==(unsigned)PostPlayActor::DefectSubroutine)defect_after_play_listener(s,actor);
  else if(regent_post_play_actor_active(s,actor))regent_after_play_listener(s,actor);
- else {silent_after_play_listener(s,actor);necro_after_play_listener(s,actor);}
+ else {
+  if(actor==(unsigned)PostPlayActor::Enemies&&s.enemy_world.active){enemy_after_card_play(s,s.playing);return;}
+  if(actor==(unsigned)PostPlayActor::EnemyTender||actor==(unsigned)PostPlayActor::EnemySmoggy){enemy_player_after_play_listener(s,actor);return;}
+  if(actor==(unsigned)PostPlayActor::Cards)event_card_after_play(s,s.playing);
+  silent_after_play_listener(s,actor);necro_after_play_listener(s,actor);
+ }
 }

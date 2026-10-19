@@ -1,11 +1,15 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include "world_rng.hpp"
+#include "world_relics.hpp"
 
 namespace spire {
 using CardKind=uint16_t;
 using RelicMask=uint64_t;
-constexpr int IroncladCards=85, SilentCards=86, DefectCards=86, RegentCards=86, NecroCards=86, CardKinds=497, MaxCards=512, MaxDeck=192, MaxHand=10, MaxEnemies=2, MaxEffects=512;
+constexpr int IroncladCards=85, SilentCards=86, DefectCards=86, RegentCards=86, NecroCards=86, CardKinds=558, MaxCards=512, MaxDeck=192, MaxHand=10, MaxEnemies=8, MaxEffects=512;
+constexpr int LegacyEnemies=2;
+constexpr unsigned LegacyPotionSlots=2,MaxPotionSlots=16;
 static_assert(CardKinds<16384,"Card model tokens must fit signed effect operands");
 constexpr int MapRows=12, MapColumns=3, MapNodes=MapRows*MapColumns;
 enum CardId : CardKind { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, BurningPact,
@@ -41,8 +45,10 @@ enum CardId : CardKind { Strike, Defend, Bash, Anger, PommelStrike, ShrugItOff, 
 #include "defect_ids.inc"
 #include "regent_ids.inc"
 #include "necro_ids.inc"
-    Dazed,Wound,Slimed,Burn,Void,Fuel,MinionStrike,MinionDiveBomb,MinionSacrifice,Debris,SweepingGaze };
-static_assert(Aggression==114&&Abrasive==170&&GiantRock==227&&Dazed==486&&SweepingGaze+1==CardKinds,"Keep appended character IDs stable");
+    Dazed,Wound,Slimed,Burn,Void,Fuel,MinionStrike,MinionDiveBomb,MinionSacrifice,Debris,SweepingGaze,
+#include "event_card_ids.inc"
+};
+static_assert(Aggression==114&&Abrasive==170&&GiantRock==227&&Dazed==486&&SweepingGaze==496&&EventCardBadLuck==497&&EventCardWrithe+1==CardKinds,"Keep appended character IDs stable");
 enum class Character : uint8_t { Ironclad, Silent, Defect, Regent, Necrobinder };
 enum class CardColor : uint8_t { Ironclad, Silent, Colorless, Token, Defect, Regent, Necrobinder };
 constexpr int CharacterKinds=5;
@@ -52,7 +58,7 @@ CardColor card_color(unsigned kind);
 bool card_generated(unsigned kind);
 bool card_in_pool(unsigned kind, Character);
 unsigned character_pool(Character, CardKind* out, bool rewards_only=false);
-enum class CardType : uint8_t { Attack, Skill, Power, Status, Curse };
+enum class CardType : uint8_t { Attack, Skill, Power, Status, Curse, Quest };
 struct Definition { const char* key; int16_t cost, damage, block, draw, power;
     int16_t damage_up, block_up, draw_up, power_up; CardType type; bool targeted;
     int16_t hp_loss=0, energy_gain=0, energy_up=0; bool exhausts=false; int16_t creates=0, creates_up=0; int16_t cost_up=0; uint8_t keywords=0,upgraded_keywords=0; };
@@ -66,7 +72,7 @@ bool card_upgradeable(Card);
 bool card_removable(Card);
 bool card_transformable(Card);
 enum class Phase : uint8_t { Combat, ExhaustChoice, Reward, Camp, Upgrade, Complete, Dead,
-    Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice, ExtendedChoice };
+    Map, Shop, Remove, Event, Transform, Treasure, Error, DiscardChoice, ExhaustManyChoice, ReturnChoice, ExtendedChoice, WorldRelicChoice, OriginalEventChoice };
 enum class Room : uint8_t { Combat, Event, Shop, Camp, Treasure, Final };
 struct MapNode { Room room; uint8_t links,visited,event; };
 enum class EventId : uint8_t { Baths, Vegetation, Grove, AromaOfChaos, DoorsOfLightAndDark };
@@ -77,7 +83,7 @@ enum class EffectKind : uint8_t { Damage, Block, Vulnerable, Draw, ChooseExhaust
     CopyDiscard, Strength, Pain, Embrace, Finish, LoseHp, Energy, Weak, NoDraw, ExhaustCard, WhirlwindHits, Poison, ChooseDiscard, CreateShivs, Dexterity, Noxious, Accuracy, RandomPoison, DrawIfNoAttacks, FillHand, ChooseExhaustMany, NoBlock, GreedDamage, ChooseReturn, RandomDamage, Demon, Blades,
     DodgeBlock, DrawNextTurn, EscapeSkillBlock, Extended };
 struct Effect { EffectKind kind; int16_t value, target; int16_t aux=0; };
-struct Enemy { int16_t hp, max_hp, block, strength, vulnerable; uint8_t move; int16_t weak=0, poison=0; };
+struct Enemy { int32_t hp, max_hp; int16_t block, strength, vulnerable; uint8_t move; int16_t weak=0, poison=0; };
 struct Pile { uint16_t ids[MaxCards]; uint16_t count; };
 enum class LogKind : uint8_t { Turn, Play, Damage, Block, Exhaust, Draw, Shuffle, Enemy,
     Strength, Pain, Embrace, Heal, Reward, Upgrade, Capacity, Gold, Buy, Remove, Event, Transform, Relic, Potion, LoseHp, Energy, NoDraw, Weak, Poison, Discard, Create, Dexterity, Noxious, Accuracy, PoisonDamage, RelicIndex };
@@ -106,11 +112,17 @@ extern const RelicDefinition relic_definitions[RelicKinds];
 const RelicDefinition* relic_definition(RelicMask);
 
 #include "expansion_state.inc"
+#include "event_card_state.inc"
 #include "ironclad_state.inc"
 #include "silent_state.inc"
 #include "defect_state.inc"
 #include "regent_state.inc"
 #include "necro_state.inc"
+#include "enemy_state.inc"
+#include "world_state.inc"
+#include "world_factory_state.inc"
+#include "original_event_state.inc"
+#include "world_relic_state.inc"
 
 struct State {
     Phase phase;
@@ -136,7 +148,8 @@ struct State {
     RelicMask relic_flash;
     uint32_t relic_revision;
     int16_t gold,last_gold;
-    Potion potions[2];
+    Potion potions[MaxPotionSlots];
+    uint8_t potion_slots=LegacyPotionSlots;
     CardKind shop_cards[ShopCardCount]; uint8_t shop_potions[3]; uint16_t shop_sold;
     int16_t shop_prices[13];
     EventId event_id; uint8_t event_page,event_count,event_remaining;
@@ -161,16 +174,35 @@ struct State {
     DefectState defect;
     RegentState regent;
     NecroState necro;
+    WorldState world;
+    WorldFactoryState world_factory;
+    EventCardState event_cards;
+    OriginalEventState original_events;
+    EventRunFacts event_run;
+    EnemyWorldState enemy_world;
+    WorldRelicState world_relics;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
 
 };
-constexpr unsigned SaveVersion=14,SaveCapacity=131072;
+constexpr unsigned SaveVersion=15,SaveCapacity=262144;
+#include "event_card_api.inc"
+CardType card_type(const State&,Card,int instance=-1,int deck_index=-1);
+uint8_t card_keywords(const State&,Card,int instance=-1,int deck_index=-1);
+bool card_removable(const State&,Card,int deck_index=-1);
+bool card_transformable(const State&,Card,int deck_index=-1);
+bool card_retains(const State&,Card,int instance=-1,int deck_index=-1);
+bool card_innate(const State&,Card,int instance=-1,int deck_index=-1);
+bool card_exhausts(const State&,Card,int instance=-1,int deck_index=-1);
 struct SaveData { uint8_t bytes[SaveCapacity]; size_t size; };
+unsigned potion_slot_count(const State&);
+Potion potion_at(const State&,unsigned slot);
+bool potion_set(State&,unsigned slot,Potion);
+bool add_potion_slots(State&,unsigned count);
 void new_run(State&, uint32_t seed, bool practice=false, Character character=Character::Ironclad);
 void enter_combat(State&);
 bool play(State&, int hand_index, int target);
 bool can_play_card(const State&,int instance);
-bool card_targets_enemy(const State&,Card);
+bool card_targets_enemy(const State&,Card,int instance=-1,int deck_index=-1);
 bool choose_exhaust(State&, int hand_index);
 bool choose_discard(State&, const uint16_t* card_ids, unsigned count);
 bool choose_exhaust_many(State&, const uint16_t* card_ids, unsigned count);
@@ -182,7 +214,7 @@ bool card_strike_tag(unsigned kind);
 const Pile& choice_pile(const State&);
 bool choose_return_to_draw(State&, int card_id);
 inline bool combat_phase(Phase p) { return p==Phase::Combat || p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice || p==Phase::ExtendedChoice; }
-inline bool choice_phase(Phase p) { return p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice || p==Phase::ExtendedChoice; }
+inline bool choice_phase(Phase p) { return p==Phase::ExhaustChoice || p==Phase::DiscardChoice || p==Phase::ExhaustManyChoice || p==Phase::ReturnChoice || p==Phase::ExtendedChoice || p==Phase::WorldRelicChoice || p==Phase::OriginalEventChoice; }
 unsigned random_reward_card(State&);
 bool end_turn(State&);
 bool choose_reward(State&, int index);
@@ -272,6 +304,7 @@ int enemy_damage(const State&,int);
 bool potion_in_pool(Potion,Character);
 Potion random_potion(State&,bool in_combat=false);
 bool procure_potion(State&,Potion);
+bool procure_potion_at(State&,Potion,unsigned slot);
 void execute_potion(State&,Potion,int);
 bool lab_potion(State&,Potion);
 bool lab_card(State&,Card);

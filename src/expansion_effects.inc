@@ -35,7 +35,7 @@ static void autoplay_from(State&s,Pile&p,int filter){
  if(!alive(s))return;
  // Random selection does not shuffle an empty source pile.
  uint16_t ids[MaxCards];unsigned n=0;
- for(unsigned i=0;i<p.count;i++)if(!filter||(int)definitions[s.cards[p.ids[i]].kind].type==filter-1)ids[n++]=p.ids[i];
+ for(unsigned i=0;i<p.count;i++)if(!filter||(int)card_type(s,s.cards[p.ids[i]],p.ids[i])==filter-1)ids[n++]=p.ids[i];
  if(n)start_instance(s,ids[random_below(s.rng_cards,n)],-1,true);
 }
 static void autoplay_top_batch(State&s,int remaining,int progress){
@@ -71,6 +71,7 @@ static void next_enemy(State&s,int i){
  if(!alive(s)){victory(s);return;}
  if(i>=s.enemy_count){queue_extension(s,XOp::EnemyDone,0,0,true);return;}
  queue_extension(s,XOp::EnemyAct,i+1,0,true);
+ if(s.enemy_world.active){enemy_queue_turn(s,i);return;}
  auto&e=s.enemies[i];if(!e.hp)return;
  e.block=0;int hit=enemy_damage(s,i);bool attack=e.move!=2;record(s,LogKind::Enemy,i,e.move);
  if(attack&&s.thorns)damage_unpowered(s,i,s.thorns);
@@ -95,6 +96,27 @@ static void extension_effect(State&s,Effect e){
  auto&x=s.expansion;auto op=(XOp)e.target;int a=e.value,b=e.aux;
  switch(op){
  case XOp::Noop:break;
+ case XOp::SharedAfterCardBody:
+  queue_extension(s,XOp::SharedAfflictionAfterBody,a,0,true);event_card_after_body(s,a);break;
+ case XOp::SharedAfflictionAfterBody:
+  enqueue(s,EffectKind::Finish,0,0,true);enemy_card_after_body(s,a);break;
+ case XOp::SharedCheckWeakAfterHit:
+  if(enemy_allow_target(s,a)&&(enemy_intent(s,a).flags&EnemyIntentAttack))apply_weak(s,a,b);break;
+ case XOp::SharedAttackStart:{
+  unsigned f=x.depth;x.attack_observed[f]=1;x.attack_killed[f]=x.attack_fatal[f]=0;
+  for(int t=0;t<s.enemy_count;++t)if(enemy_allow_target(s,t)&&enemy_death_is_fatal(s,t))x.attack_fatal[f]|=uint8_t(1U<<t);
+  break;}
+ case XOp::SharedAttackEnd:
+  queue_extension(s,XOp::SharedAttackReward,a,0,true);enemy_after_player_attack(s);break;
+ case XOp::SharedAttackReward:{
+  if(a<0||a>=s.card_count)break;unsigned f=x.depth;bool killed=x.attack_killed[f]!=0,fatal=(x.attack_killed[f]&x.attack_fatal[f])!=0;
+  Card c=s.cards[a];const auto&d=definitions[c.kind];int p=d.power+(c.upgraded?d.power_up:0);
+  if(fatal&&c.kind==HandOfGreed)gain_gold(s,p);
+  else if(fatal&&c.kind==Feed)increase_max_hp(s,p);
+  else if(fatal&&c.kind==TheHunt)s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);
+  else if(killed&&c.kind==DefectSunder)enqueue(s,EffectKind::Energy,3,0,true);
+  x.attack_observed[f]=2;break;}
+
  case XOp::AllCharactersBeetle:
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&!silent_blocks_debuff(s,a)){int n=min(9999-x.beetle[a],b);x.beetle[a]+=(int16_t)n;necro_note_debuff(s,a,NDebuff::Beetle);necro_debuff_applied(s,a,n);}break;
  case XOp::Power:{
@@ -131,7 +153,7 @@ static void extension_effect(State&s,Effect e){
  case XOp::Draw:queue_extension(s,XOp::DrawOne,a,0,true);break;
  case XOp::DrawOne:draw_one(s,a);break;
  case XOp::EscapeBlock:
-  if(x.last_drawn>=0&&x.last_drawn<s.card_count&&definitions[s.cards[x.last_drawn].kind].type==CardType::Skill)gain_card_block(s,a);break;
+  if(x.last_drawn>=0&&x.last_drawn<s.card_count&&card_type(s,s.cards[x.last_drawn],x.last_drawn)==CardType::Skill)gain_card_block(s,a);break;
  case XOp::EnchantReplay:{
   uint16_t ids[MaxCards];unsigned n=0;for(unsigned i=0;i<s.draw.count;i++)if(!x.replay[s.draw.ids[i]])ids[n++]=s.draw.ids[i];
   if(n)x.replay[ids[random_below(s.rng_cards,n)]]=(uint8_t)min(255,a);break;}
@@ -148,7 +170,7 @@ static void extension_effect(State&s,Effect e){
  case XOp::RandomCosts:
   for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(cost(s.cards[id])>=0&&cost(s,id)>=0){x.turn_cost[id]=(uint8_t)(1+random_below(s.rng_cards,4));temporary_cost_set(s,id);}}break;
  case XOp::StrikeReplay:for(unsigned id=0;id<s.card_count;id++)if(card_strike_tag(s.cards[id].kind)&&x.replay[id]<255)++x.replay[id];break;
- case XOp::PotionDone:x.potion_active=0;break;
+ case XOp::PotionDone:x.potion_active=0;world_relic_hook(s,WorldRelicHook::AfterPotionUsed,a,b);break;
  case XOp::Demise:if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&!silent_blocks_debuff(s,a)){int n=min(9999-x.demise[a],b);x.demise[a]+=(int16_t)n;necro_note_debuff(s,a,NDebuff::Demise);necro_debuff_applied(s,a,n);}break;
  case XOp::ExhaustHand:for(unsigned i=s.hand.count;i>0;i--)enqueue(s,EffectKind::ExhaustCard,s.hand.ids[i-1],0,true);break;
  case XOp::Strength:s.strength=(int16_t)max(-9999,min(9999,s.strength+a));record(s,LogKind::Strength,a);break;
@@ -174,7 +196,7 @@ static void extension_effect(State&s,Effect e){
   queue_extension(s,XOp::OrbsEnd,0,0,true);defect_turn_end(s);regent_turn_end(s);ironclad_turn_end(s);burn_hand(s);break;
  case XOp::EndDiscard:
   if(!alive(s)){victory(s);break;}
-  for(unsigned i=0;i<s.hand.count;){int id=s.hand.ids[i];if(card_retains(s.cards[id])||silent_retains(s,id)||power_value(s,XPower::Retain)){++i;continue;}remove(s.hand,i);put(s,s.discard,id,Zone::Discard);}
+  for(unsigned i=0;i<s.hand.count;){int id=s.hand.ids[i];if(card_retains(s,s.cards[id],id)||silent_retains(s,id)||power_value(s,XPower::Retain)){++i;continue;}remove(s.hand,i);put(s,s.discard,id,Zone::Discard);}
   if(power_value(s,XPower::Retain))gain_power(s,XPower::Retain,-1);
   queue_extension(s,XOp::AllCharactersSideEnd,0,0,true);break;
  case XOp::EnemyStart:
@@ -191,7 +213,7 @@ static void extension_effect(State&s,Effect e){
  case XOp::EnemyAct:next_enemy(s,a);break;
  case XOp::EnemyDone:
   necro_enemy_side_end(s);
-  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp&&x.demise[t]){int n=min(s.enemies[t].hp,x.demise[t]);s.enemies[t].hp-=(int16_t)n;record(s,LogKind::LoseHp,n,t+1);}
+  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp&&x.demise[t]){int n=min(s.enemies[t].hp,x.demise[t]);s.enemies[t].hp-=n;record(s,LogKind::LoseHp,n,t+1);}
   ironclad_enemy_side_end(s);regent_enemy_side_end(s);
   s.flame_barrier=0;if(s.no_block)--s.no_block;
   if(power_value(s,XPower::Intangible))gain_power(s,XPower::Intangible,-1);
@@ -253,6 +275,6 @@ static void extension_effect(State&s,Effect e){
  case XOp::AllCharactersSideEnd:queue_extension(s,XOp::EnemyStart,0,0,true);defect_after_turn_end(s);break;
  case XOp::AllCharactersDrawBefore:
   queue_extension(s,XOp::TurnDraw,0,0,true);silent_before_hand_draw(s);defect_before_hand_draw(s);regent_before_hand_draw(s);necro_before_hand_draw(s);break;
- default:if(!ironclad_effect(s,e)&&!silent_effect(s,e)&&!defect_effect(s,e)&&!regent_effect(s,e)&&!necro_effect(s,e))fail(s);break;
+ default:if(!event_card_effect(s,e)&&!enemy_effect(s,e)&&!ironclad_effect(s,e)&&!silent_effect(s,e)&&!defect_effect(s,e)&&!regent_effect(s,e)&&!necro_effect(s,e))fail(s);break;
  }
 }

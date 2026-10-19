@@ -104,8 +104,8 @@ static void necro_before_play(State&s,int id){
  if(id<0||id>=s.card_count)return;auto&v=s.necro;unsigned f=s.expansion.depth;Card c=s.cards[id];
  v.attack_total[f]=0;
  for(int t=0;t<MaxEnemies;t++)v.oblivion_before[f][t]=v.oblivion[t];
- v.first_attack[f]=(uint8_t)(definitions[c.kind].type==CardType::Attack&&!v.attacks_started_turn&&!v.play_index[f]);
- if(definitions[c.kind].type==CardType::Attack)v.attacks_started_turn=(uint16_t)min(9999,v.attacks_started_turn+1);
+ v.first_attack[f]=(uint8_t)(card_type(s,c)==CardType::Attack&&!v.attacks_started_turn&&!v.play_index[f]);
+ if(card_type(s,c)==CardType::Attack)v.attacks_started_turn=(uint16_t)min(9999,v.attacks_started_turn+1);
  v.play_index[f]=(uint16_t)min(9999,v.play_index[f]+1);
  // The model dispatches powers in acquisition order, before OnPlay. Veilpiercer
  // consumes a layer at its own place in that ordering.
@@ -407,7 +407,7 @@ static int necro_debuff_amount(const State&s,int t,NDebuff p){
 static void necro_note_debuff(State&s,int t,NDebuff p){
  if(t<0||t>=s.enemy_count||(unsigned)p>=NDebuffCount)return;auto&v=s.necro;
  uint8_t entry=(uint8_t)((unsigned)p+1);for(unsigned i=0;i<v.debuff_count[t];i++)if(v.debuff_order[t][i]==entry)return;
- if(v.debuff_count[t]==NDebuffCount){fail(s);return;}v.debuff_order[t][v.debuff_count[t]++]=entry;
+ if(v.debuff_count[t]==NDebuffCount){fail(s);return;}v.debuff_order[t][v.debuff_count[t]++]=entry;enemy_note_legacy_power(s,t,p);
 }
 static void necro_prune_debuffs(State&s){
  auto&v=s.necro;for(int t=0;t<s.enemy_count;t++){
@@ -419,6 +419,7 @@ static void necro_prune_debuffs(State&s){
   }
   for(unsigned i=n;i<NDebuffCount;i++)v.debuff_order[t][i]=0;v.debuff_count[t]=(uint8_t)n;
  }
+ enemy_prune_legacy_powers(s);
 }
 static void necro_clear_temp_strength(State&s,int t){
  if(t<0||t>=MaxEnemies)return;
@@ -485,7 +486,7 @@ static void necro_copy_debuffs(State&s,int from,bool front){
 }
 static void necro_hp_loss_enemy(State&s,int t,int n){
  if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||n<=0)return;
- int lost=min(s.enemies[t].hp,n);s.enemies[t].hp-=(int16_t)lost;record(s,LogKind::LoseHp,lost,t+1);necro_observe_deaths(s);
+ int lost=min(s.enemies[t].hp,n);s.enemies[t].hp-=lost;record(s,LogKind::LoseHp,lost,t+1);necro_observe_deaths(s);
 }
 static int necro_random_enemy(State&s){
  int ids[MaxEnemies],count=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0)ids[count++]=t;
@@ -633,7 +634,7 @@ static bool necro_description_value(const State&s,Card c,int target,int instance
  if(necro_var_name(name,"CalculatedHits")){out=c.kind==NecroRattle?min(9999,1+s.necro.osty_attacks_turn):s.necro.ethereal_played;return true;}
  if(necro_var_name(name,"CalculatedDoom")){out=min(9999,(c.upgraded?15:10)+5*((target>=0&&target<s.enemy_count)?s.expansion.doom[target]/10:0));return true;}
  if(necro_var_name(name,"CalculatedBlock")||necro_var_name(name,"Block")){out=card_block(s,c,instance);return true;}
- if(necro_var_name(name,"CalculatedDamage")||necro_var_name(name,"OstyDamage")||(necro_var_name(name,"Damage")&&definitions[c.kind].type==CardType::Attack)){out=damage(s,c,target,instance);return true;}
+ if(necro_var_name(name,"CalculatedDamage")||necro_var_name(name,"OstyDamage")||(necro_var_name(name,"Damage")&&card_type(s,c)==CardType::Attack)){out=damage(s,c,target,instance);return true;}
  struct Entry{CardKind kind;const char*name;int16_t base,up;};
  static const Entry entries[]={
   {NecroAfterlife,"Summon",6,9},

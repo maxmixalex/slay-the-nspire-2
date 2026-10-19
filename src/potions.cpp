@@ -29,13 +29,13 @@ static void grant(int16_t& stat,int amount,int16_t* temporary=nullptr){
     if(temporary)*temporary=(int16_t)(*temporary+n);
 }
 bool can_use_potion(const State&s,int slot,int target){
-    if(slot<0||slot>=2||s.hp<=0||choice_phase(s.phase)||s.phase==Phase::Dead||
+    if(slot<0||slot>=(int)potion_slot_count(s)||s.hp<=0||choice_phase(s.phase)||s.phase==Phase::Dead||
        s.phase==Phase::Complete||s.phase==Phase::Error||s.effect_count||s.playing>=0)return false;
     const auto*d=potion_definition(s.potions[slot]);if(!d||d->automatic)return false;
     if(d->combat_only&&s.phase!=Phase::Combat)return false;
     if(s.effect_count||s.playing>=0)return false;
     if(s.potions[slot]==Potion::FoulPotion&&s.phase!=Phase::Combat&&s.phase!=Phase::Shop)return false;
-    if(d->targeted&&(target<0||target>=s.enemy_count||s.enemies[target].hp<=0))return false;
+    if(d->targeted&&!enemy_allow_target(s,target))return false;
     return true;
 }
 bool use_potion(State&s,int slot,int target){
@@ -64,12 +64,13 @@ bool use_potion(State&s,int slot,int target){
     case Potion::Fortifier:gain_unpowered_block(s,s.block*2);break;
     default:execute_potion(s,p,target);break;
     }
-    if(fighting&&s.hp>0&&combat_phase(s.phase))queue_extension(s,XOp::PotionDone);
+    if(fighting&&s.hp>0&&combat_phase(s.phase))queue_extension(s,XOp::PotionDone,(int)p,target);
+    else if(s.hp>0)world_relic_hook(s,WorldRelicHook::AfterPotionUsed,(int)p,target);
     resolve_pending(s);s.revision++;return true;
 }
 bool discard_potion(State&s,int slot){
-    if(slot<0||slot>=2||!potion_definition(s.potions[slot])||choice_phase(s.phase)||
+    if(slot<0||slot>=(int)potion_slot_count(s)||!potion_definition(s.potions[slot])||choice_phase(s.phase)||
        s.phase==Phase::Dead||s.phase==Phase::Error||s.phase==Phase::Complete)return false;
-    s.potions[slot]=Potion::Empty;s.revision++;return true;
+    Potion old=s.potions[slot];s.potions[slot]=Potion::Empty;world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,(int)old,slot);s.revision++;return true;
 }
 }

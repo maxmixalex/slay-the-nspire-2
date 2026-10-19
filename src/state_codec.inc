@@ -2,6 +2,7 @@
 struct Codec{
     uint8_t* out; const uint8_t* in; size_t at,limit; bool good;
     uint32_t field(uint32_t v){if(at+4>limit){good=false;return 0;}uint32_t r=0;for(int i=0;i<4;i++){if(out)out[at+i]=(uint8_t)(v>>(8*i));else r|=(uint32_t)in[at+i]<<(8*i);}at+=4;return out?v:r;}
+    uint32_t compact(uint32_t v,unsigned count){if(at>limit||count>limit-at){good=false;return 0;}uint32_t r=0;for(unsigned i=0;i<count;++i){if(out)out[at+i]=(uint8_t)(v>>(8*i));else r|=(uint32_t)in[at+i]<<(8*i);}at+=count;return out?v:r;}
 };
 static uint32_t checksum(const uint8_t*p,size_t n){uint32_t h=2166136261u;for(size_t i=0;i<n;i++){h^=p[i];h*=16777619u;}return h;}
 template<class T> static void field(T& v,Codec&c){uint32_t raw=c.field((uint32_t)v);v=static_cast<T>(raw);if(c.in&&(uint32_t)v!=raw)c.good=false;}
@@ -10,26 +11,32 @@ template<class T> static void field(T& v,Codec&c){uint32_t raw=c.field((uint32_t
 // in v14. Encoding the low word must never truncate the in-memory copy.
 static void field(RelicMask&v,Codec&c){uint32_t raw=c.field((uint32_t)v);if(c.in)v=(v&0xffffffff00000000ull)|raw;}
 static void field_high(RelicMask&v,Codec&c){uint32_t raw=c.field((uint32_t)(v>>32));if(c.in)v=(v&0xffffffffull)|(RelicMask(raw)<<32);}
+static void field64(uint64_t&v,Codec&c){field(v,c);field_high(v,c);}
+template<unsigned Bytes,class T> static void compact_field(T&v,Codec&c){
+    static_assert(sizeof(T)<=Bytes,"Compact fields use their declared integer width");
+    constexpr uint32_t mask=Bytes==1?255u:65535u;
+    uint32_t raw=c.compact((uint32_t)v,Bytes);if(c.in){v=static_cast<T>(raw);if(((uint32_t)v&mask)!=raw)c.good=false;}
+}
 static void code_state(State&s,Codec&c,unsigned version){
 #define F(x) field(x,c)
  F(s.phase);F(s.practice);F(s.floor);F(s.enemy_count);F(s.hp);F(s.max_hp);F(s.energy);F(s.block);F(s.strength);F(s.pain);F(s.embrace);F(s.turn);F(s.power_count);
- if(s.enemy_count>MaxEnemies){c.good=false;return;}
+ if(s.enemy_count>(version>=15?MaxEnemies:LegacyEnemies)){c.good=false;return;}
  for(int i=0;i<2;i++)F(s.power_order[i]);F(s.rng_cards);F(s.rng_world);F(s.seed);F(s.revision);F(s.deck_count);
  if(s.deck_count>MaxDeck){c.good=false;return;}for(int i=0;i<s.deck_count;i++){F(s.deck[i].kind);F(s.deck[i].upgraded);}
  F(s.card_count);if(s.card_count>MaxCards){c.good=false;return;}for(int i=0;i<s.card_count;i++){F(s.cards[i].kind);F(s.cards[i].upgraded);F(s.zones[i]);}
  Pile*ps[]={&s.draw,&s.hand,&s.discard,&s.exhaust,&s.powers};for(int z=0;z<5;z++){auto&p=*ps[z];F(p.count);if(p.count>MaxCards){c.good=false;return;}for(int i=0;i<p.count;i++)F(p.ids[i]);}
- for(auto&e:s.enemies){F(e.hp);F(e.max_hp);F(e.block);F(e.strength);F(e.vulnerable);F(e.move);}
+ for(int t=0;t<LegacyEnemies;t++){auto&e=s.enemies[t];F(e.hp);F(e.max_hp);F(e.block);F(e.strength);F(e.vulnerable);F(e.move);}
  F(s.effect_count);if(s.effect_count>MaxEffects){c.good=false;return;}for(int i=0;i<s.effect_count;i++){auto&e=s.effects[i];F(e.kind);F(e.value);F(e.target);}
  F(s.playing);
  F(s.relic_count);for(int i=0;i<10;i++)F(s.relic_order[i]);for(int i=0;i<10;i++)F(s.relic_counters[i]);
  F(s.dexterity);F(s.double_attack);F(s.relic_flash);F(s.relic_revision);
  F(s.current_node);F(s.next_row);F(s.encounter);F(s.relics);F(s.removals);F(s.gold);F(s.last_gold);
  for(auto&n:s.map){F(n.room);F(n.links);F(n.visited);F(n.event);}
- for(auto&p:s.potions)F(p);for(int i=0;i<4;i++)F(s.shop_cards[i]);F(s.shop_relics[0]);F(s.shop_potions[0]);F(s.shop_sold);
+ for(unsigned p=0;p<LegacyPotionSlots;++p)F(s.potions[p]);for(int i=0;i<4;i++)F(s.shop_cards[i]);F(s.shop_relics[0]);F(s.shop_potions[0]);F(s.shop_sold);
  const int legacy_prices[]={0,1,2,3,7,10};for(int i:legacy_prices)F(s.shop_prices[i]);
  F(s.event_id);F(s.event_page);F(s.event_count);F(s.event_remaining);F(s.event_value);F(s.event_first);
  for(int i=0;i<3;i++)F(s.reward[i]);F(s.log_count);if(s.log_count>24){c.good=false;return;}for(int i=0;i<s.log_count;i++){auto&l=s.logs[i];F(l.kind);F(l.a);F(l.b);}
-if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
+if(version>=4){F(s.no_draw);for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].weak);}
  if(version>=5){
   for(int i=10;i<16;i++)F(s.relic_order[i]);
   for(int i=10;i<16;i++)F(s.relic_counters[i]);
@@ -48,7 +55,7 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
  }
  if(version>=6){
   F(s.character);F(s.noxious_fumes);F(s.accuracy);F(s.discard_required);
-  for(auto&e:s.enemies)F(e.poison);
+  for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].poison);
   for(int i=16;i<17;i++){F(s.relic_order[i]);F(s.relic_counters[i]);}
  }else if(c.in){
   if(s.phase==Phase::DiscardChoice||s.relic_count>(version>=5?16:10)||s.relics>65535||s.relic_flash>65535)c.good=false;
@@ -115,7 +122,7 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
   // is nevertheless visibly in progress and must be counted as started
   // before its continuation records a finished play in the new module.
   auto pending_attack=[&](int id){
-   if(id>=0&&id<s.card_count&&s.cards[id].kind<CardKinds&&definitions[s.cards[id].kind].type==CardType::Attack)
+   if(id>=0&&id<s.card_count&&s.cards[id].kind<CardKinds&&card_type(s,s.cards[id],id)==CardType::Attack)
     ++s.ironclad.attacks_started;
   };
   pending_attack(s.playing);for(unsigned i=0;i<s.expansion.depth;i++)pending_attack(s.expansion.frames[i].playing);
@@ -128,8 +135,8 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
 #include "defect_codec.inc"
 #include "regent_codec.inc"
 #include "necro_codec.inc"
-  static_assert(MaxPostPlayPowers==52&&RelicKinds==33,"v14 shared dimensions are frozen");
-  for(int n=22;n<MaxPostPlayPowers;n++)F(s.expansion.after_play_order[n]);
+  static_assert(MaxPostPlayPowers>=52&&RelicKinds==33,"v14 shared dimensions are frozen");
+  for(int n=22;n<52;n++)F(s.expansion.after_play_order[n]);
   field_high(s.relics,c);field_high(s.relic_flash,c);
   for(auto&mask:s.shop_relics)field_high(mask,c);field_high(s.treasure_relic,c);
   for(int n=30;n<33;n++){F(s.relic_order[n]);F(s.relic_counters[n]);}
@@ -204,6 +211,34 @@ if(version>=4){F(s.no_draw);for(auto&e:s.enemies)F(e.weak);}
     }
     n.bullet_free=n.bullet_origin=0;
    }
+  }
+ }
+ if(version>=15){
+#define B(x) compact_field<1>(x,c)
+#define H(x) compact_field<2>(x,c)
+#include "world_codec.inc"
+  // New compact suffixes end on a canonical four-byte boundary, preserving
+  // the historical checksum envelope without altering any old field offset.
+  while(c.at%4&&c.good)if(c.compact(0,1)!=0&&c.in)c.good=false;
+#undef H
+#undef B
+ }else if(c.in){
+  // Operand groups in genuine old saves used a two-enemy stride. Decode their
+  // original range before translating the queued continuation to eight slots.
+  if((unsigned)s.phase>(unsigned)Phase::ExtendedChoice)c.good=false;
+  for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind>=497)c.good=false;
+  for(unsigned i=0;i<s.card_count;i++)if(s.cards[i].kind>=497)c.good=false;
+  for(unsigned i=0;i<s.effect_count;i++)if(s.effects[i].kind==EffectKind::Extended){
+   auto&e=s.effects[i];auto op=(XOp)e.target;
+   if(op==XOp::NTempStrength||op==XOp::NEnemyPower||op==XOp::NApplyCopiedDebuff){
+    int groups=op==XOp::NTempStrength?NTempStrengthCount:op==XOp::NEnemyPower?5:NDebuffCount;
+    if(e.value<0||e.value>=groups*LegacyEnemies)c.good=false;
+    else e.value=(int16_t)((e.value/LegacyEnemies)*MaxEnemies+e.value%LegacyEnemies);
+   }else if(op==XOp::SKnifeShiv){
+    if(e.aux<0||e.aux>=2*LegacyEnemies)c.good=false;
+    else e.aux=(int16_t)((e.aux/LegacyEnemies)*MaxEnemies+e.aux%LegacyEnemies);
+   }
+   if(e.target>(int)XOp::AllCharactersBeetle)c.good=false;
   }
  }
 #undef F

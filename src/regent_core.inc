@@ -246,7 +246,7 @@ static void regent_before_card(State&s,Card){
 }
 static void regent_after_card(State&s,Card c){
  auto&r=s.regent;r.cards_finished_turn=(uint16_t)min(9999,r.cards_finished_turn+1);
- if(definitions[c.kind].type==CardType::Skill)r.skills_finished_turn=(uint16_t)min(9999,r.skills_finished_turn+1);
+ if(card_type(s,c)==CardType::Skill)r.skills_finished_turn=(uint16_t)min(9999,r.skills_finished_turn+1);
 }
 static bool regent_post_play_actor_active(const State&s,unsigned actor){
  if(actor==(unsigned)PostPlayActor::RegentMonarchsGaze)return rpower(s,RPower::MonarchsGaze)>0;
@@ -275,7 +275,7 @@ static void regent_return_to_hand(State&s,int id){
  else if(z==Zone::Limbo)put(s,room?s.hand:s.discard,id,room?Zone::Hand:Zone::Discard);
 }
 static void regent_after_play_late(State&s,Card c){
- if(definitions[c.kind].type!=CardType::Skill||!s.regent.skills_finished_turn||s.regent.skills_finished_turn%3)return;
+ if(card_type(s,c)!=CardType::Skill||!s.regent.skills_finished_turn||s.regent.skills_finished_turn%3)return;
  for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==RegentMakeItSo)regent_return_to_hand(s,id);
 }
 static void regent_after_play_group(State&s,int){
@@ -337,7 +337,7 @@ static bool choose_regent(State&s,const uint16_t*ids,unsigned n){
   if(!found||id<0||id>=s.card_count)return false;for(unsigned j=0;j<i;j++)if(selected[j]==id)return false;
   Zone expected=(kind==XChoice::RTransformDraw||kind==XChoice::RForegone)?Zone::Draw:kind==XChoice::RDiscardTop?Zone::Discard:Zone::Hand;
   if(s.zones[id]!=expected)return false;
-  if(kind==XChoice::RDecisions&&definitions[s.cards[id].kind].type!=CardType::Skill)return false;
+  if(kind==XChoice::RDecisions&&card_type(s,s.cards[id],id)!=CardType::Skill)return false;
   if(kind==XChoice::RHeirloom&&!card_colorless(s.cards[id].kind))return false;
   selected[i]=(uint16_t)id;
  }
@@ -471,7 +471,7 @@ static bool regent_effect(State&s,Effect e){
  case XOp::RTransformCard:
   if(a>=0&&a<s.card_count){Card c=card_from_token(b);s.cards[a]=c;reset_card_modifiers(s,a);notify_card_generated(s,a);record(s,LogKind::Create,1,c.kind);}break;
  case XOp::RDecisions:{
-  Pile choices{};for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(definitions[s.cards[id].kind].type==CardType::Skill)choices.ids[choices.count++]=(uint16_t)id;}
+  Pile choices{};for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(card_type(s,s.cards[id],id)==CardType::Skill)choices.ids[choices.count++]=(uint16_t)id;}
   set_extended_choice(s,XChoice::RDecisions,choices,1,1);break;
  }
  case XOp::RHeirloom:{
@@ -487,7 +487,7 @@ static bool regent_effect(State&s,Effect e){
    if(added){necro_note_debuff(s,a,NDebuff::Conqueror);necro_debuff_applied(s,a,added);}
   }break;
  case XOp::RKnockoutReward:
-  if(a>=0&&a<s.enemy_count&&!s.enemies[a].hp&&x.last_damage>0)regent_gain_stars(s,b);break;
+  if(a>=0&&a<s.enemy_count&&(x.attack_observed[x.depth]?(x.attack_killed[x.depth]&(1U<<a)):!s.enemies[a].hp)&&x.last_damage>0)regent_gain_stars(s,b);break;
  case XOp::RForgeHits:forge_blade(s,a);break;
  case XOp::RStrengthLoss:
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0&&!silent_blocks_debuff(s,a)){

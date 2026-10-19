@@ -79,6 +79,7 @@ const Definition definitions[CardKinds]={
 #include "regent_definitions.inc"
 #include "necro_definitions.inc"
 #include "common_token_definitions.inc"
+#include "event_card_definitions.inc"
 };
 int card_rarity(unsigned kind){
 static constexpr uint8_t rarity[CardKinds]={
@@ -86,6 +87,8 @@ static constexpr uint8_t rarity[CardKinds]={
 #include "character_rarities.inc"
 ,
 #include "all_character_rarities.inc"
+,
+#include "event_card_rarities.inc"
 };
     return kind<CardKinds?rarity[kind]:0;
 }

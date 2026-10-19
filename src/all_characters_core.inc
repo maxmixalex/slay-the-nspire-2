@@ -17,8 +17,8 @@ static void notify_card_generated(State&s,int id){
  if(id<0||id>=s.card_count)return;
  if(!combat_phase(s.phase))return;
  s.regent.cards_created=(uint16_t)min(9999,s.regent.cards_created+1);
- bool status=definitions[s.cards[id].kind].type==CardType::Status;
- if(status)queue_extension(s,XOp::DRocketDiscount,0,0,true);
+ bool status=card_type(s,s.cards[id],id)==CardType::Status;
+ if(status)queue_extension(s,XOp::DRocketDiscount,0,0,true);enemy_card_generated(s,id);
  // Powers precede the card-model hook, each in the recorded acquisition order.
  for(int at=MaxPostPlayPowers-1;at>=0;--at){unsigned actor=s.expansion.after_play_order[at];
   if(status&&actor==(unsigned)PostPlayActor::DefectSmokestack)queue_extension(s,XOp::DGeneratedListener,(int)DPower::Smokestack,dpower(s,DPower::Smokestack),true);
@@ -27,12 +27,13 @@ static void notify_card_generated(State&s,int id){
   else if(actor==(unsigned)PostPlayActor::RegentPillarOfCreation)queue_extension(s,XOp::RUnpoweredBlock,rpower(s,RPower::PillarOfCreation),0,true);
  }
 }
-void notify_deck_card_created(State&s,int id,int index){defect_deck_card_created(s,id,index);necro_deck_card_created(s,id,index);}
-void notify_deck_removed(State&s,int index){defect_deck_removed(s,index);necro_deck_removed(s,index);}
-void notify_deck_replaced(State&s,int index){defect_deck_replaced(s,index);necro_deck_replaced(s,index);}
-void notify_deck_copied(State&s,int to,int from){defect_deck_copied(s,to,from);necro_deck_copied(s,to,from);}
+void notify_deck_card_created(State&s,int id,int index){defect_deck_card_created(s,id,index);necro_deck_card_created(s,id,index);event_card_deck_created(s,id,index);}
+void notify_deck_removed(State&s,int index){defect_deck_removed(s,index);necro_deck_removed(s,index);event_card_deck_removed(s,index);}
+void notify_deck_replaced(State&s,int index){defect_deck_replaced(s,index);necro_deck_replaced(s,index);event_card_deck_replaced(s,index);}
+void notify_deck_copied(State&s,int to,int from){defect_deck_copied(s,to,from);necro_deck_copied(s,to,from);event_card_deck_copied(s,to,from);}
 bool character_deck_description_value(const State&s,Card c,int index,const char*key,int&out){
  if(index<0||index>=s.deck_count||s.deck[index].kind!=c.kind)return false;
+ if(event_card_deck_description_value(s,c,index,key,out))return true;
  if(c.kind==DefectGeneticAlgorithm&&defect_word(key,"Block")){out=min(9999,1+s.defect.genetic_deck[index]);return true;}
  if(c.kind==NecroTheScythe&&defect_word(key,"Damage")){out=min(9999,13+s.necro.scythe_deck[index]);return true;}
  return false;
@@ -54,5 +55,5 @@ static void burn_hand(State&s){
 static void exhaust_ethereal_hand(State&s){
  // Capture only the hand that exists at hand-flush time. Exhaust-trigger draws
  // complete before ordinary discard but do not join this ethereal snapshot.
- for(unsigned i=s.hand.count;i>0;--i){int id=s.hand.ids[i-1];if(necro_ethereal(s,id))enqueue(s,EffectKind::ExhaustCard,id,0,true);}
+ for(unsigned i=s.hand.count;i>0;--i){int id=s.hand.ids[i-1];if(necro_ethereal(s,id)||enemy_card_ethereal(s,id)||(card_keywords(s,s.cards[id],id)&8))enqueue(s,EffectKind::ExhaustCard,id,0,true);}
 }

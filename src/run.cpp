@@ -103,7 +103,7 @@ bool claim_reward_gold(State&s){
 }
 bool claim_reward_potion(State&s){
     if(s.phase!=Phase::Reward||(s.reward_claimed&4)||s.reward_potion==Potion::Empty)return false;
-    for(auto& p:s.potions)if(p==Potion::Empty){p=s.reward_potion;s.reward_claimed|=4;s.revision++;return true;}
+    if(procure_potion(s,s.reward_potion)){s.reward_claimed|=4;s.revision++;return true;}
     return false;
 }
 bool leave_rewards(State&s){if(s.phase!=Phase::Reward)return false;finish_room(s);return true;}
@@ -125,7 +125,7 @@ bool buy(State&s,int item){
         int balance=s.gold;s.gold-=s.shop_prices[item];
         if(!gain_relic(s,s.shop_relics[item-ShopRelicStart])){s.gold=(int16_t)balance;return false;}
     }else{
-        int slot=-1;for(int i=0;i<2;i++)if(s.potions[i]==Potion::Empty){slot=i;break;}
+        int slot=-1;for(unsigned i=0;i<potion_slot_count(s);i++)if(s.potions[i]==Potion::Empty){slot=i;break;}
         if(slot<0||!potion_definition((Potion)s.shop_potions[item-ShopPotionStart]))return false;
         s.potions[slot]=(Potion)s.shop_potions[item-ShopPotionStart];
     }

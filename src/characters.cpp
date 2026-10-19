@@ -8,6 +8,7 @@ const CharacterDefinition character_definitions[CharacterKinds]={
  {"NECROBINDER","亡灵契约师",66,BoundPhylactery}
 };
 CardColor card_color(unsigned kind){
+ if(kind>=EventCardBadLuck&&kind<CardKinds)return event_card_color(kind);
  if(kind==Soul||kind==SovereignBlade||kind==GiantRock||(kind>=Dazed&&kind<CardKinds))return CardColor::Token;
  if(kind>=DefectAdaptiveStrike&&kind<=DefectZap)return CardColor::Defect;
  if(kind>=RegentAlignment&&kind<=RegentWroughtInWar)return CardColor::Regent;
@@ -16,9 +17,32 @@ CardColor card_color(unsigned kind){
  return ((kind>=StrikeSilent&&kind<=Shiv)||(kind>=DodgeAndRoll&&kind<=Predator)||(kind>=Abrasive&&kind<=WraithForm))?CardColor::Silent:CardColor::Ironclad;
 }
 bool card_generated(unsigned kind){return kind==Shiv||kind==Soul||kind==SovereignBlade||kind==GiantRock||(kind>=Dazed&&kind<CardKinds);}
-bool card_upgradeable(Card c){return c.kind<CardKinds&&!c.upgraded&&!(c.kind==Dazed||c.kind==Wound||c.kind==Slimed||c.kind==Burn||c.kind==Void||c.kind==Debris);}
+bool card_upgradeable(Card c){
+ if(c.kind>=CardKinds||c.upgraded)return false;
+ if(c.kind>=EventCardBadLuck&&(definitions[c.kind].type==CardType::Curse||definitions[c.kind].type==CardType::Quest||definitions[c.kind].type==CardType::Status))return false;
+ return !(c.kind==Dazed||c.kind==Wound||c.kind==Slimed||c.kind==Burn||c.kind==Void||c.kind==Debris);
+}
 bool card_removable(Card c){return c.kind<CardKinds&&!((c.upgraded?definitions[c.kind].upgraded_keywords:definitions[c.kind].keywords)&64);}
 bool card_transformable(Card c){return card_removable(c);}
+CardType card_type(const State&s,Card c,int instance,int deck_index){
+ if(instance<0&&deck_index<0&&s.playing>=0&&s.playing<s.card_count&&s.cards[s.playing].kind==c.kind&&s.cards[s.playing].upgraded==c.upgraded)instance=s.playing;
+ CardType result=c.kind<CardKinds?definitions[c.kind].type:CardType::Status;
+ event_card_type(s,c,instance,deck_index,result);return result;
+}
+uint8_t card_keywords(const State&s,Card c,int instance,int deck_index){
+ if(c.kind>=CardKinds)return 128;
+ if(instance<0&&deck_index<0&&s.playing>=0&&s.playing<s.card_count&&s.cards[s.playing].kind==c.kind&&s.cards[s.playing].upgraded==c.upgraded)instance=s.playing;
+ const auto&d=definitions[c.kind];uint8_t bits=c.upgraded?d.upgraded_keywords:d.keywords;
+ if(d.exhausts)bits|=1;
+ if(c.kind==Purity||(c.kind==Scrawl&&c.upgraded))bits|=4;
+ if(c.kind==Backstab||(c.kind==InfiniteBlades&&c.upgraded))bits|=2;
+ return event_card_keywords(s,c,instance,deck_index,bits);
+}
+bool card_removable(const State&s,Card c,int deck_index){return c.kind<CardKinds&&!(card_keywords(s,c,-1,deck_index)&64);}
+bool card_transformable(const State&s,Card c,int deck_index){return card_removable(s,c,deck_index);}
+bool card_retains(const State&s,Card c,int instance,int deck_index){return (card_keywords(s,c,instance,deck_index)&4)!=0;}
+bool card_innate(const State&s,Card c,int instance,int deck_index){return (card_keywords(s,c,instance,deck_index)&2)!=0;}
+bool card_exhausts(const State&s,Card c,int instance,int deck_index){return (card_keywords(s,c,instance,deck_index)&1)!=0;}
 bool card_in_pool(unsigned kind,Character character){
  if(kind>=CardKinds||card_generated(kind))return false;
  if(character==Character::Defect)return kind>=DefectAdaptiveStrike&&kind<=DefectZap;

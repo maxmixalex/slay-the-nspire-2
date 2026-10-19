@@ -1,4 +1,6 @@
 #include "core.hpp"
+#include "world_card_factory.hpp"
+#include "original_events.hpp"
 
 namespace spire {
 #include "card_definitions.inc"
@@ -9,6 +11,8 @@ namespace spire {
 #include "regent_forward.inc"
 #include "necro_forward.inc"
 #include "all_characters_forward.inc"
+#include "event_card_forward.inc"
+#include "enemy_forward.inc"
 #include "core_actions.inc"
 #include "expansion_core.inc"
 #include "ironclad_core.inc"
@@ -17,6 +21,9 @@ namespace spire {
 #include "regent_core.inc"
 #include "necro_core.inc"
 #include "all_characters_core.inc"
+#include "event_card_core.inc"
+#include "enemy_core.inc"
+#include "enemy_token_core.inc"
 #include "post_play_core.inc"
 #include "core_turns.inc"
 #include "expansion_effects.inc"
@@ -26,6 +33,8 @@ namespace spire {
 #include "defect_validation.inc"
 #include "regent_validation.inc"
 #include "necro_validation.inc"
+#include "event_card_validation.inc"
+#include "enemy_validation.inc"
 #include "extension_effect_validation.inc"
 #include "state_validation.inc"
 #include "state_codec.inc"
@@ -34,6 +43,9 @@ bool character_description_value(const State&s,Card c,int target,int instance,co
            silent_description_value(s,c,target,instance,variable,out)||
            defect_description_value(s,c,target,instance,variable,out)||
            regent_description_value(s,c,target,instance,variable,out)||
-           necro_description_value(s,c,target,instance,variable,out);
+           necro_description_value(s,c,target,instance,variable,out)||
+           event_card_description_value(s,c,target,instance,variable,out)||
+           enemy_description_value(s,c,target,instance,variable,out)||
+           enemy_token_description_value(s,c,target,instance,variable,out);
 }
 } // namespace spire

@@ -43,18 +43,22 @@ seeks to the requested offset and requires an exact read. The Ndless seek
 and tell wrappers use the official SDK syscall numbers 33 and 89. The browser
 retains its decoded pack in host memory and copies only requested ranges into
 the fixed 16 MiB WASM memory. The standalone HTML still embeds one complete
-pack and runs offline. These are implemented source changes awaiting the
-logged target builds and validation below.
+pack and runs offline. These source changes passed the frozen target builds and validation below.
 
 The dedicated `resource_source_regression` fixture covers truncated providers,
 retry after a read failure, partial final pages, page crossings, cache capacity
 and eviction, bulk-read cache retention, source reset, near-4-GiB range checks
 without large allocation, little-endian values, memory parity, and segmented
-FNV checksums. It is prepared source; no new 0.17 execution result is claimed
-before the checkpoint and logged validation cycle.
+FNV checksums. The prepared fixtures passed after publication and freezing of the resource stage.
 
 The additional `resource_content_regression REAL_PACK` executable compares
 every image, glyph, string and clip through memory and callback sources,
 alternates both sources through identical rendered UI actions, and verifies
 rejection/recovery after a provider failure. It is deliberately not a default
 CTest entry because its input is the owner's private original-derived pack.
+
+## Executed resource validation
+
+Runtime commit `5b665a8b81d70df9215dff31e74a705d7cfeb121` was remotely verified before all seven logged executions. Native ASan/UBSan compilation, both default fixtures, the actual private pack comparison, ARM and WASM builds, and the production WASM range callback against existing native captures all passed with unchanged source. The actual comparison made 39,164 checks and rendered 40 exact memory/range frames. The backend check compared 384 frames and 23 byte-exact historical v14 saves. ARM allocation is 8,434,016 bytes compared with the prior 16,174,284, without increasing the 16 MiB ceiling. See `validation-resource-0.17.json` for the exact journals and hashes.
+
+The tested content remains the completed NSP2/13 input. Expanded world models, map behavior, NSP2/14 assets and hardware performance have separate outstanding acceptance checks.

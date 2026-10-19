@@ -21,6 +21,9 @@ struct SilentSnapshot {
  uint8_t necro_ethereal=0,necro_flatten_zero=0;
  int16_t necro_cost_delta=0,necro_turn_origin=0,necro_combat_origin=0,necro_flatten_origin=0,necro_scythe_value=0;
  uint8_t star_turn_free=0,star_combat_free=0;
+ EventCardFacts event_facts{};
+ uint8_t event_disabled=0,enemy_affliction=0,enemy_dampen_restore=0;
+ int16_t event_momentum=0,event_maul_damage=0,enemy_affliction_amount=0,enemy_card_value=0;
 };
 struct SilentState {
  int16_t powers[SPowerCount]{};

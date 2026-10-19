@@ -1,0 +1,2 @@
+ EventCardSpecial,EventEnchantAfterBody,EventCardToric,EventCardGenerate,
+ EventCardOffer,EventCardHandEnd,EventCardMaterialize,

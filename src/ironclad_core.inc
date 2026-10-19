@@ -46,8 +46,8 @@ static void ironclad_combat_cost_set(State&s,int id){
 static int ironclad_cost(const State&s,int id,int price){
  if(id<0||id>=s.card_count||price<0)return price;Card c=s.cards[id];const auto&i=s.ironclad;
  if(c.kind==Stomp){int origin=s.expansion.turn_cost[id]?i.stomp_turn_origin[id]:s.expansion.combat_cost[id]?i.stomp_combat_origin[id]:0;price=max(0,price-(i.stomp_discount[id]-origin));}
- if(ipower(s,IPower::Corruption)&&definitions[c.kind].type==CardType::Skill)return 0;
- if(ipower(s,IPower::FreeAttack)&&definitions[c.kind].type==CardType::Attack&&(s.zones[id]==Zone::Hand||s.zones[id]==Zone::Limbo))return 0;
+ if(ipower(s,IPower::Corruption)&&card_type(s,c)==CardType::Skill)return 0;
+ if(ipower(s,IPower::FreeAttack)&&card_type(s,c)==CardType::Attack&&(s.zones[id]==Zone::Hand||s.zones[id]==Zone::Limbo))return 0;
  return price;
 }
 static int ironclad_base_damage(const State&s,Card c,int target,int instance,int base){
@@ -73,15 +73,15 @@ static void ironclad_after_block(State&s,int amount,bool card_powered){
  if(ipower(s,IPower::Juggernaut))queue_extension(s,XOp::IUnpoweredRandom,ipower(s,IPower::Juggernaut),0,true);
 }
 static int ironclad_replays(State&s,Card c){
- if(definitions[c.kind].type==CardType::Attack&&ipower(s,IPower::OneTwoPunch)){ironclad_gain_power(s,IPower::OneTwoPunch,-1);return 1;}return 0;
+ if(card_type(s,c)==CardType::Attack&&ipower(s,IPower::OneTwoPunch)){ironclad_gain_power(s,IPower::OneTwoPunch,-1);return 1;}return 0;
 }
 static bool ironclad_exhausts(const State&s,int id){
- return id>=0&&id<s.card_count&&(s.ironclad.forced_exhaust[id]||(ipower(s,IPower::Corruption)&&definitions[s.cards[id].kind].type==CardType::Skill));
+ return id>=0&&id<s.card_count&&(s.ironclad.forced_exhaust[id]||(ipower(s,IPower::Corruption)&&card_type(s,s.cards[id],id)==CardType::Skill));
 }
 static void ironclad_before_card(State&s,Card c){
  auto&i=s.ironclad;unsigned depth=s.expansion.depth;i.block_events_play[depth]=0;i.rupture_pending[depth]=0;
  i.rupture_registered[depth]=(uint8_t)(!s.expansion.enemy_side&&ipower(s,IPower::Rupture)>0);
- if(definitions[c.kind].type==CardType::Attack){
+ if(card_type(s,c)==CardType::Attack){
   i.attacks_started=(uint16_t)min(9999,i.attacks_started+1);
   for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==Stomp)i.stomp_discount[id]=(uint16_t)min(9999,i.stomp_discount[id]+1);
   if(ipower(s,IPower::FreeAttack))ironclad_gain_power(s,IPower::FreeAttack,-1);
@@ -90,11 +90,11 @@ static void ironclad_before_card(State&s,Card c){
 }
 static void ironclad_after_card(State&s,Card c){
  auto&i=s.ironclad;
- if(definitions[c.kind].type==CardType::Attack)i.attacks_finished=(uint16_t)min(9999,i.attacks_finished+1);
+ if(card_type(s,c)==CardType::Attack)i.attacks_finished=(uint16_t)min(9999,i.attacks_finished+1);
 }
 static void ironclad_after_play_listener(State&s,unsigned actor){
  if(s.playing<0||s.playing>=s.card_count)return;auto&i=s.ironclad;unsigned depth=s.expansion.depth;
- if(actor==(unsigned)PostPlayActor::Rage&&definitions[s.cards[s.playing].kind].type==CardType::Attack&&ipower(s,IPower::Rage))enqueue(s,EffectKind::Block,ipower(s,IPower::Rage),0,true);
+ if(actor==(unsigned)PostPlayActor::Rage&&card_type(s,s.cards[s.playing],s.playing)==CardType::Attack&&ipower(s,IPower::Rage))enqueue(s,EffectKind::Block,ipower(s,IPower::Rage),0,true);
  if(actor==(unsigned)PostPlayActor::Rupture){
   int pending=i.rupture_pending[depth];i.rupture_pending[depth]=0;i.rupture_registered[depth]=0;
   if(pending)enqueue(s,EffectKind::Strength,pending,0,true);
@@ -250,7 +250,7 @@ static bool ironclad_effect(State&s,Effect e){
  case XOp::IDoubleVulnerable:
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&s.enemies[a].vulnerable)enqueue(s,EffectKind::Vulnerable,s.enemies[a].vulnerable,a,true);break;
  case XOp::IFeed:
-  if(x.target>=0&&x.target<s.enemy_count&&s.enemies[x.target].hp){queue_extension(s,XOp::IFeedReward,x.target,b,true);enqueue(s,EffectKind::Damage,a,x.target,true);}break;
+  if(x.target>=0&&x.target<s.enemy_count&&s.enemies[x.target].hp){if(!x.attack_observed[x.depth])queue_extension(s,XOp::IFeedReward,x.target,b,true);enqueue(s,EffectKind::Damage,a,x.target,true);}break;
  case XOp::IFeedReward:
   if(a>=0&&a<s.enemy_count&&!s.enemies[a].hp){int n=min(999-s.max_hp,b);if(n>0){s.max_hp+=(int16_t)n;heal(s,n);}}break;
  case XOp::IEnemyStrength:
@@ -265,13 +265,13 @@ static bool ironclad_effect(State&s,Effect e){
   queue_extension(s,XOp::IPillageCheck,depth,0,true);queue_extension(s,XOp::Draw,1,0,true);break;}
  case XOp::IPillageCheck:{
   int id=i.pillage_drawn[a];i.pillage_drawn[a]=0;i.pillage_waiting[a]=0;
-  if(id>=0&&id<s.card_count&&definitions[s.cards[id].kind].type==CardType::Attack&&s.hand.count<MaxHand&&!s.no_draw&&(s.draw.count||s.discard.count))queue_extension(s,XOp::IPillageDraw,0,0,true);break;}
+  if(id>=0&&id<s.card_count&&card_type(s,s.cards[id],id)==CardType::Attack&&s.hand.count<MaxHand&&!s.no_draw&&(s.draw.count||s.discard.count))queue_extension(s,XOp::IPillageDraw,0,0,true);break;}
  case XOp::IPrimalForce:
-  for(unsigned at=0;at<s.hand.count;at++){int id=s.hand.ids[at];if(definitions[s.cards[id].kind].type!=CardType::Attack)continue;
+  for(unsigned at=0;at<s.hand.count;at++){int id=s.hand.ids[at];if(card_type(s,s.cards[id],id)!=CardType::Attack)continue;
    s.cards[id]={GiantRock,(uint8_t)a};reset_card_modifiers(s,id);notify_card_generated(s,id);record(s,LogKind::Transform,GiantRock);
   }break;
  case XOp::ISecondWind:{
-  uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(definitions[s.cards[s.hand.ids[at]].kind].type!=CardType::Attack)ids[n++]=s.hand.ids[at];
+  uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(card_type(s,s.cards[s.hand.ids[at]],s.hand.ids[at])!=CardType::Attack)ids[n++]=s.hand.ids[at];
   if(s.effect_count+2*n>MaxEffects){fail(s);break;}
   for(unsigned at=n;at>0;at--){queue_extension(s,XOp::IBlock,a,0,true);enqueue(s,EffectKind::ExhaustCard,ids[at-1],0,true);}break;}
  case XOp::IStoke:{
@@ -280,7 +280,7 @@ static bool ironclad_effect(State&s,Effect e){
   for(unsigned at=0;at<n;at++)queue_extension(s,XOp::Generate,0,a?2:0,true);
   for(unsigned at=n;at>0;at--)enqueue(s,EffectKind::ExhaustCard,ids[at-1],0,true);break;}
  case XOp::IThrash:{
-  uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(definitions[s.cards[s.hand.ids[at]].kind].type==CardType::Attack)ids[n++]=s.hand.ids[at];
+  uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(card_type(s,s.cards[s.hand.ids[at]],s.hand.ids[at])==CardType::Attack)ids[n++]=s.hand.ids[at];
   if(!n)break;int id=ids[random_below(s.rng_cards,n)];Card c=s.cards[id];
   // ModifyDamageHookType.All with the victim as card source and no enemy
   // target. The shared preview excludes captures consumed by this Thrash.
@@ -294,7 +294,7 @@ static bool ironclad_effect(State&s,Effect e){
   int id=s.draw.ids[s.draw.count-1];i.forced_exhaust[id]=1;
   if(!start_instance(s,id,-1,true))i.forced_exhaust[id]=0;break;}
  case XOp::IAggression:{
-  uint16_t ids[MaxCards];unsigned n=0;for(unsigned at=0;at<s.discard.count;at++)if(definitions[s.cards[s.discard.ids[at]].kind].type==CardType::Attack)ids[n++]=s.discard.ids[at];
+  uint16_t ids[MaxCards];unsigned n=0;for(unsigned at=0;at<s.discard.count;at++)if(card_type(s,s.cards[s.discard.ids[at]],s.discard.ids[at])==CardType::Attack)ids[n++]=s.discard.ids[at];
   unsigned count=(unsigned)min(a,n);
   for(unsigned at=0;at<count;at++){unsigned pick=at+random_below(s.rng_cards,n-at);uint16_t id=ids[pick];ids[pick]=ids[at];ids[at]=id;bool room=s.hand.count<MaxHand;
    if(move_instance(s,id,s.discard,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard)&&card_upgradeable(s.cards[id])){s.cards[id].upgraded=1;record(s,LogKind::Upgrade,s.cards[id].kind);}
@@ -305,7 +305,7 @@ static bool ironclad_effect(State&s,Effect e){
   player_hp_loss(s,p==IPower::CrimsonMantle?i.crimson_self_damage:i.inferno_self_damage,false,false,-1);break;}
  case XOp::IStampede:{
   if(a<=0||!alive(s))break;
-  uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(definitions[s.cards[s.hand.ids[at]].kind].type==CardType::Attack)ids[n++]=s.hand.ids[at];
+  uint16_t ids[MaxHand];unsigned n=0;for(unsigned at=0;at<s.hand.count;at++)if(card_type(s,s.cards[s.hand.ids[at]],s.hand.ids[at])==CardType::Attack)ids[n++]=s.hand.ids[at];
   if(!n)break;if(a>1)queue_extension(s,XOp::IStampede,a-1,0,true);
   int id=ids[random_below(s.rng_cards,n)];start_instance(s,id,-1,true);break;}
  case XOp::IHowls:

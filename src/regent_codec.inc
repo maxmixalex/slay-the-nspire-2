@@ -1,7 +1,7 @@
  // Save v14 Regent suffix. F is the shared four-byte integer codec.
  {
   auto&r=s.regent;
-  static_assert(RPowerCount==22&&MaxCards==512&&MaxPowerInstances==16&&MaxAutoFrames==12&&MaxEnemies==2,"v14 Regent dimensions are frozen");
+  static_assert(RPowerCount==22&&MaxCards==512&&MaxPowerInstances==16&&MaxAutoFrames==12&&LegacyEnemies==2,"v14 Regent dimensions are frozen");
   for(int p=0;p<22;p++)F(r.powers[p]);
   for(int p=0;p<22;p++)F(r.power_order[p]);F(r.power_count);
   F(r.cards_created);F(r.stars_gained_turn);F(r.cards_finished_turn);F(r.skills_finished_turn);

@@ -47,7 +47,7 @@ static int silent_cost(const State&s,int id,int current){
  int origin=s.expansion.turn_cost[id]?v.turn_origin[id]:s.expansion.combat_cost[id]?v.combat_origin[id]:0;
  if(!s.expansion.turn_cost[id]&&v.bullet_free[id]){current=0;origin=v.bullet_origin[id];}
  current=max(0,current-max(0,(int)v.discount[id]-origin));
- if(spower(s,SPower::FreeSkill)&&definitions[s.cards[id].kind].type==CardType::Skill&&
+ if(spower(s,SPower::FreeSkill)&&card_type(s,s.cards[id],id)==CardType::Skill&&
     (s.zones[id]==Zone::Hand||s.zones[id]==Zone::Limbo))return 0;
  return current;
 }
@@ -61,7 +61,7 @@ static bool silent_retains(const State&s,int id){
         (s.cards[id].kind==Shiv&&spower(s,SPower::PhantomBlades)));
 }
 static int silent_extra_replays(State&s,Card c){
- if(definitions[c.kind].type!=CardType::Skill||!spower(s,SPower::Burst))return 0;
+ if(card_type(s,c)!=CardType::Skill||!spower(s,SPower::Burst))return 0;
  silent_gain_power(s,SPower::Burst,-1);return 1;
 }
 static void silent_before_play(State&s,int id){
@@ -69,21 +69,21 @@ static void silent_before_play(State&s,int id){
  v.afterimage_before[f]=(int16_t)spower(s,SPower::Afterimage);
  v.serpent_before[f]=(int16_t)spower(s,SPower::SerpentForm);
  for(int t=0;t<MaxEnemies;t++)v.strangle_before[f][t]=v.strangle[t];
- if(definitions[s.cards[id].kind].type==CardType::Skill&&spower(s,SPower::FreeSkill))silent_gain_power(s,SPower::FreeSkill,-1);
+ if(card_type(s,s.cards[id],id)==CardType::Skill&&spower(s,SPower::FreeSkill))silent_gain_power(s,SPower::FreeSkill,-1);
 }
 static void silent_after_play(State&s,int id){
  if(id<0||id>=s.card_count)return;auto&v=s.silent;Card c=s.cards[id];
- if(definitions[c.kind].type==CardType::Attack)v.attacks_finished=(uint16_t)min(9999,v.attacks_finished+1);
- if(definitions[c.kind].type==CardType::Skill)v.skills_finished=(uint16_t)min(9999,v.skills_finished+1);
+ if(card_type(s,c)==CardType::Attack)v.attacks_finished=(uint16_t)min(9999,v.attacks_finished+1);
+ if(card_type(s,c)==CardType::Skill)v.skills_finished=(uint16_t)min(9999,v.skills_finished+1);
  if(c.kind==Shiv)v.shiv_finished=1;
 }
 static void silent_after_play_listener(State&s,unsigned actor){
  if(s.playing<0||s.playing>=s.card_count)return;auto&v=s.silent;unsigned f=s.expansion.depth;Card c=s.cards[s.playing];
  if(actor==(unsigned)PostPlayActor::Afterimage){int n=v.afterimage_before[f];v.afterimage_before[f]=0;if(n)enqueue(s,EffectKind::Block,n,0,true);}
  else if(actor==(unsigned)PostPlayActor::SerpentForm){int n=v.serpent_before[f];v.serpent_before[f]=0;if(n)queue_extension(s,XOp::SUnpoweredRandom,n,0,true);}
- else if(actor==(unsigned)PostPlayActor::MasterPlanner){if(spower(s,SPower::MasterPlanner)&&definitions[c.kind].type==CardType::Skill)v.sly[s.playing]|=1;}
+ else if(actor==(unsigned)PostPlayActor::MasterPlanner){if(spower(s,SPower::MasterPlanner)&&card_type(s,c)==CardType::Skill)v.sly[s.playing]|=1;}
  else if(actor==(unsigned)PostPlayActor::Cards){
-  if(definitions[c.kind].type==CardType::Skill)for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==Pinpoint)v.discount[id]=(uint16_t)min(9999,v.discount[id]+1);
+  if(card_type(s,c)==CardType::Skill)for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==Pinpoint)v.discount[id]=(uint16_t)min(9999,v.discount[id]+1);
  }
  else if(actor==(unsigned)PostPlayActor::Enemies){
   for(int t=MaxEnemies-1;t>=0;t--){int n=v.strangle_before[f][t];v.strangle_before[f][t]=0;if(n)queue_extension(s,XOp::SStrangle,t,n,true);}
@@ -114,7 +114,7 @@ static bool silent_next_reward(State&s){
  for(int i=0;i<3;i++){int k;bool duplicate;do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);s.reward[i]=(CardKind)k;}
  s.reward_claimed&=(uint8_t)~2;return true;
 }
-static int silent_hand_type_count(const State&s,CardType type){int n=0;for(unsigned i=0;i<s.hand.count;i++)if(definitions[s.cards[s.hand.ids[i]].kind].type==type)++n;return n;}
+static int silent_hand_type_count(const State&s,CardType type){int n=0;for(unsigned i=0;i<s.hand.count;i++)if(card_type(s,s.cards[s.hand.ids[i]],s.hand.ids[i])==type)++n;return n;}
 static int silent_shiv_count(const State&s){int n=0;for(unsigned i=0;i<s.exhaust.count;i++)if(s.cards[s.exhaust.ids[i]].kind==Shiv)++n;return n;}
 static int silent_poison_total(const State&s){int n=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp)n+=s.enemies[t].poison;return min(9999,n);}
 static int silent_base_damage(const State&s,Card c,int,int instance,int current){
@@ -130,21 +130,25 @@ static uint64_t attack_product(uint64_t value,unsigned factor,uint64_t limit){
  uint64_t result=0;while(factor){if(factor&1u){if(value>=limit-result)return limit;result+=value;}factor>>=1;if(factor)value=value>=limit-value?limit:value+value;}return result;
 }
 static int silent_attack_factor(const State&s,int t,int amount,Card c,int instance){
- if(amount<=0)return 0;constexpr uint64_t limit=9999999000000ULL;
- uint64_t n=(unsigned)amount;
- if(spower(s,SPower::DoubleDamage))n*=2;
+ if(amount<=0)return 0;
+ // Decimal modifiers form one product; intermediate integer truncation would
+ // change Weak + Shrink + vulnerable and the two independent flying powers.
+ bool pet=necro_osty_attack(c);
+ uint64_t denominator=200000000000ULL<<enemy_target_halves(s,t);
+ uint64_t limit=denominator*9999999ULL,n=(unsigned)amount;
  int vulnerable=100,tracking=100;
  if(t>=0&&t<s.enemy_count){
   if(s.enemies[t].vulnerable)vulnerable=necro_vulnerable_multiplier(s,t,ironclad_vulnerable_multiplier(s));
   if(s.enemies[t].weak)tracking+=spower(s,SPower::Tracking);
  }
- n=attack_product(n,(unsigned)vulnerable,limit);
- n=attack_product(n,(unsigned)tracking,limit);
- n=attack_product(n,(unsigned)necro_damage_multiplier(s,c,t,instance),limit);
- n=attack_product(n,(unsigned)regent_damage_multiplier(s,c,t),limit);
+ const unsigned factors[]={unsigned(spower(s,SPower::DoubleDamage)?2:1),unsigned(vulnerable),unsigned(tracking),
+  unsigned(necro_damage_multiplier(s,c,t,instance)),unsigned(regent_damage_multiplier(s,c,t)),
+  unsigned(enemy_player_weak_percent(s,pet)),unsigned(enemy_player_shrink_percent(s,pet)),
+  unsigned(enemy_target_slow_tenths(s,t)),unsigned(event_enchantment_damage_halves(s,c,instance))};
+ for(unsigned factor:factors)n=attack_product(n,factor,limit);
  if(n>=limit)return 9999999;
- uint32_t remainder=0,quotient=0;
- for(int bit=63;bit>=0;--bit){remainder=(remainder<<1)|unsigned((n>>bit)&1u);if(bit<32)quotient<<=1;if(remainder>=1000000){remainder-=1000000;if(bit<32)quotient|=1u;}}
+ uint64_t remainder=0;uint32_t quotient=0;
+ for(int bit=63;bit>=0;--bit){remainder=(remainder<<1)|unsigned((n>>bit)&1u);if(bit<32)quotient<<=1;if(remainder>=denominator){remainder-=denominator;if(bit<32)quotient|=1u;}}
  return (int)quotient;
 }
 
@@ -190,7 +194,7 @@ static void silent_player_side_end(State&s){
 static void silent_enemy_poison(State&s){
  for(int t=0;t<s.enemy_count;t++){
   auto&e=s.enemies[t];int ticks=min(e.poison,1+spower(s,SPower::Accelerant));
-  while(ticks--&&e.hp&&e.poison){int n=e.poison;e.hp=(int16_t)max(0,e.hp-n);if(e.hp)--e.poison;record(s,LogKind::PoisonDamage,n,t);}
+  while(ticks--&&e.hp&&e.poison){int n=e.poison;e.hp=max(0,e.hp-n);if(e.hp)--e.poison;record(s,LogKind::PoisonDamage,n,t);}
  }
 }
 static void silent_combat_end(State&s){
@@ -204,7 +208,9 @@ static SilentSnapshot silent_capture(const State&s,int id){
  n.iron_damage=i.damage_bonus[id];n.stomp_discount=i.stomp_discount[id];n.stomp_turn_origin=i.stomp_turn_origin[id];n.stomp_combat_origin=i.stomp_combat_origin[id];
  n.defect_value=s.defect.value[id];n.defect_cost_delta=s.defect.cost_delta[id];n.defect_turn_origin=s.defect.turn_origin[id];n.defect_combat_origin=s.defect.combat_origin[id];
  n.regent_kick_discount=s.regent.kick_discount[id];n.regent_kick_turn_origin=s.regent.kick_turn_origin[id];n.regent_kick_combat_origin=s.regent.kick_combat_origin[id];n.regent_punch_damage=s.regent.punch_damage[id];
- n.necro_ethereal=s.necro.ethereal[id];n.necro_flatten_zero=s.necro.flatten_zero[id];n.necro_cost_delta=s.necro.cost_delta[id];n.necro_turn_origin=s.necro.turn_origin[id];n.necro_combat_origin=s.necro.combat_origin[id];n.necro_flatten_origin=s.necro.flatten_origin[id];n.necro_scythe_value=s.necro.scythe_value[id];return n;
+ n.necro_ethereal=s.necro.ethereal[id];n.necro_flatten_zero=s.necro.flatten_zero[id];n.necro_cost_delta=s.necro.cost_delta[id];n.necro_turn_origin=s.necro.turn_origin[id];n.necro_combat_origin=s.necro.combat_origin[id];n.necro_flatten_origin=s.necro.flatten_origin[id];n.necro_scythe_value=s.necro.scythe_value[id];
+ n.event_facts=s.event_cards.cards[id];n.event_disabled=s.event_cards.enchantment_disabled[id];n.event_momentum=s.event_cards.momentum[id];n.event_maul_damage=s.event_cards.maul_damage[id];
+ n.enemy_affliction=s.enemy_world.affliction[id];n.enemy_affliction_amount=s.enemy_world.affliction_amount[id];n.enemy_dampen_restore=s.enemy_world.dampen_restore[id];n.enemy_card_value=s.enemy_world.card_value[id];return n;
 }
 static int silent_clone(State&s,const SilentSnapshot&n){
  int id=create_to_hand(s,n.card,false);if(id<0)return -1;auto&v=s.silent;auto&x=s.expansion;auto&i=s.ironclad;
@@ -218,6 +224,8 @@ static int silent_clone(State&s,const SilentSnapshot&n){
  s.defect.value[id]=n.defect_value;s.defect.cost_delta[id]=n.defect_cost_delta;s.defect.turn_origin[id]=n.defect_turn_origin;s.defect.combat_origin[id]=n.defect_combat_origin;
  s.regent.kick_discount[id]=n.regent_kick_discount;s.regent.kick_turn_origin[id]=n.regent_kick_turn_origin;s.regent.kick_combat_origin[id]=n.regent_kick_combat_origin;s.regent.punch_damage[id]=n.regent_punch_damage;
  s.necro.ethereal[id]=n.necro_ethereal;s.necro.flatten_zero[id]=n.necro_flatten_zero;s.necro.cost_delta[id]=n.necro_cost_delta;s.necro.turn_origin[id]=n.necro_turn_origin;s.necro.combat_origin[id]=n.necro_combat_origin;s.necro.flatten_origin[id]=n.necro_flatten_origin;s.necro.scythe_value[id]=n.necro_scythe_value;
+ s.event_cards.cards[id]=n.event_facts;s.event_cards.enchantment_disabled[id]=n.event_disabled;s.event_cards.momentum[id]=n.event_momentum;s.event_cards.maul_damage[id]=n.event_maul_damage;
+ s.enemy_world.affliction[id]=n.enemy_affliction;s.enemy_world.affliction_amount[id]=n.enemy_affliction_amount;s.enemy_world.dampen_restore[id]=n.enemy_dampen_restore;s.enemy_world.card_value[id]=n.enemy_card_value;
  notify_card_generated(s,id);return id;
 }
 static bool silent_choose(State&s,const uint16_t*ids,unsigned count){
@@ -225,7 +233,7 @@ static bool silent_choose(State&s,const uint16_t*ids,unsigned count){
  if(s.phase!=Phase::ExtendedChoice||(kind!=XChoice::SlySkill&&kind!=XChoice::NightmareCard)||!ids||count!=1||x.choice_min!=1||x.choice_max!=1)return false;
  int id=ids[0];bool found=false;for(unsigned i=0;i<x.choices.count;i++)if(x.choices.ids[i]==id)found=true;
  if(!found||id<0||id>=s.card_count||s.zones[id]!=Zone::Hand)return false;
- if(kind==XChoice::SlySkill&&(definitions[s.cards[id].kind].type!=CardType::Skill||silent_is_sly(s,id)))return false;
+ if(kind==XChoice::SlySkill&&(card_type(s,s.cards[id],id)!=CardType::Skill||silent_is_sly(s,id)))return false;
  int slot=0;if(kind==XChoice::NightmareCard){while(slot<MaxNightmares&&s.silent.nightmare_active[slot])++slot;if(slot==MaxNightmares||s.silent.power_count>=SPowerCount+MaxNightmares)return false;}
  if(kind==XChoice::SlySkill)s.silent.sly[id]|=2;
  else{s.silent.nightmares[slot]=silent_capture(s,id);s.silent.nightmare_active[slot]=1;silent_register(s,SPowerCount+slot);}
@@ -369,7 +377,7 @@ static bool silent_effect(State&s,Effect e){
  case XOp::SExpose:
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){v.enemy_artifact[a]=0;s.enemies[a].block=0;enqueue(s,EffectKind::Vulnerable,b,a,true);}break;
  case XOp::SSlyChoice:{
-  Pile eligible{};for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(definitions[s.cards[id].kind].type==CardType::Skill&&!silent_is_sly(s,id))eligible.ids[eligible.count++]=(uint16_t)id;}
+  Pile eligible{};for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(card_type(s,s.cards[id],id)==CardType::Skill&&!silent_is_sly(s,id))eligible.ids[eligible.count++]=(uint16_t)id;}
   set_extended_choice(s,XChoice::SlySkill,eligible,1,1);break;
  }
  case XOp::SNightmareChoice:set_extended_choice(s,XChoice::NightmareCard,s.hand,1,1);break;
@@ -394,7 +402,7 @@ static bool silent_effect(State&s,Effect e){
  }
  case XOp::SEscapeBlock:{
   unsigned f=s.expansion.depth;v.retain_waiting[f]=0;int id=v.retain_drawn[f]-1;v.retain_drawn[f]=0;
-  if(id>=0&&id<s.card_count&&definitions[s.cards[id].kind].type==CardType::Skill)enqueue_card_block(s,a,true);
+  if(id>=0&&id<s.card_count&&card_type(s,s.cards[id],id)==CardType::Skill)enqueue_card_block(s,a,true);
   break;
  }
  case XOp::SKnifeShiv:{
@@ -406,7 +414,7 @@ static bool silent_effect(State&s,Effect e){
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0){if(!silent_blocks_debuff(s,a)){int change=min(9999+s.enemies[a].strength,b);s.enemies[a].strength-=(int16_t)change;necro_note_debuff(s,a,NDebuff::Strength);necro_debuff_applied(s,a,change);}enqueue(s,EffectKind::Weak,b,a,true);}break;
  case XOp::SPoisonTrigger:silent_enemy_poison(s);break;
  case XOp::SStrangle:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){int n=min(s.enemies[a].hp,b);s.enemies[a].hp-=(int16_t)n;record(s,LogKind::LoseHp,n,a+1);}break;
+  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){int n=min(s.enemies[a].hp,b);s.enemies[a].hp-=n;record(s,LogKind::LoseHp,n,a+1);}break;
  case XOp::SUnpoweredRandom:{
   int ids[MaxEnemies],n=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp)ids[n++]=t;
   if(n)damage_unpowered(s,ids[random_below(s.rng_cards,n)],a);break;
