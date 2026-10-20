@@ -1,5 +1,6 @@
 // Optional asset-aware native oracle for this project's WASM backend (not PC parity).
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -40,7 +41,7 @@ static std::vector<int> combat_steps(unsigned character){
  return result;
 }
 int main(int argc,char**argv){
- if(argc!=3)return 2;root=argv[2];std::vector<uint8_t>pack(MaxPack);FILE*f=fopen(argv[1],"rb");if(!f)return 2;size_t n=fread(pack.data(),1,pack.size(),f);fclose(f);
+ if(argc!=3)return 2;root=argv[2];FILE*f=fopen(argv[1],"rb");if(!f)return 2;std::vector<uint8_t>pack(spire_test::pack_size(f));size_t n=fread(pack.data(),1,pack.size(),f);fclose(f);
  const char*names[]={"aroma-transform","aroma-upgrade-silent","doors-remove","shop",
   "ironclad-combat","silent-combat","defect-orbs","regent-stars-forge","necro-osty-doom"};
  std::vector<int>steps[]={

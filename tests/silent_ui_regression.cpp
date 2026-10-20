@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
 #include <cstdio>
@@ -15,7 +16,7 @@ static void action(UiAction x){CHECK(click(HitKind::UiAction,(int)x));}
 static void same(const SaveData&b){SaveData now{};CHECK(save(a.game,now));CHECK(now.size==b.size&&!memcmp(now.bytes,b.bytes,b.size));}
 int main(int argc,char**argv){
  std::vector<uint8_t> content;
- if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);content.resize(MaxPack);size_t n=fread(content.data(),1,content.size(),f);fclose(f);CHECK(a.init(content.data(),n,{save_cb,load_cb}));}
+ if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);content.resize(spire_test::pack_size(f));size_t n=fread(content.data(),1,content.size(),f);fclose(f);CHECK(a.init(content.data(),n,{save_cb,load_cb}));}
  else a.callbacks={save_cb,load_cb};
  a.input(Key::Confirm);CHECK(a.character_select);action(UiAction::SelectSilent);CHECK(a.selected_character==Character::Silent);action(UiAction::StartCharacter);
  CHECK(!a.title&&a.game.character==Character::Silent&&a.game.hp==70&&a.game.deck_count==12);
@@ -40,7 +41,8 @@ int main(int argc,char**argv){
  action(UiAction::LibraryRelics);CHECK(click(HitKind::LibraryItem,16));CHECK(a.library_selected==16);CHECK(a.detail_item==16);a.input(Key::Back);CHECK(a.library);a.input(Key::Back);CHECK(!a.library);
  // Construct a choice using real instance IDs; production UI must stay modal.
  new_run(a.game,7,true,Character::Silent);a.reset_presentation();a.title=false;
- a.game.cards[a.game.hand.ids[1]]={Prepared,1};a.cursor=1;a.input(Key::Confirm);
+ // A substituted fixture card is detached from the old permanent identity.
+ a.game.cards[a.game.hand.ids[1]]={Prepared,1};a.game.event_cards.deck_origin[a.game.hand.ids[1]]=0;a.cursor=1;a.input(Key::Confirm);
  CHECK(a.game.phase==Phase::DiscardChoice&&a.game.discard_required==2);a.busy=0;a.render();CHECK(save(a.game,prior));
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Hand);
  int first=a.game.hand.ids[0],second=a.game.hand.ids[1];

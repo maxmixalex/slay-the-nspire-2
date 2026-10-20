@@ -1,4 +1,4 @@
-# Work state — 2026-10-19
+# Work state — 2026-10-20
 
 ## Recovery and integration checkpoint — 2026-10-20
 
@@ -38,6 +38,18 @@ Presentation now observes actual enemy move starts without changing saved state 
 The private converter is source-ready with 1,600 new enemy clip variants, 33,074 new animation frames, 737 auxiliary images and 4,341 original locale records appended after the preserved NSP2/13 payloads. This plans 36,510 images, 1,638 total clips, 1,076 auxiliary entries and 6,080 strings. Complete model cycles, common model scale/pivots, shared scene coordinates and checked resumable caches are implemented. These counts describe the conversion plan; a finished pack, its actual compressed size, and rendered visual acceptance have not yet been established.
 
 Next: push/read back this stage and all uploaded blobs, freeze it, then run the repaired native suite, actual private conversion and ARM/WASM builds with journals. The original-world UI and generated content still require actual-pack integration and scene review. No 95% fidelity or original-game differential result is claimed. The previous 0.16 download pair, main and disabled remote CI remain unchanged.
+
+## Original event composition and conversion repairs — 2026-10-20
+
+Checkpoint `5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7`, tree `f6111c488b50c976e9906210de0d7058277ad222`, was pushed/read back with all 83 changed blobs verified before execution. All 102 native ASan/UBSan build steps passed with unchanged source. Its full CTest run remains in progress at this source preservation point. The repaired Feral, original-event continuation, five-character integration, five-character UI and colorless completion suites passed; remaining failures have explicit retained journals. Two UI fixtures substituted card models while retaining their old permanent origins, a potion fixture checked all eight storage slots instead of the active enemy count, an intent fixture selected the wrong Test Subject move, an observer test compared object padding, and a History Course fixture wrongly fixed an automatic replay's target. Corrective tests preserve their actual gameplay and serialization assertions.
+
+The run also exposed a real modal bug: drawing the event under a potion panel clamped the shared scroll field and hid its second page. Rendering now preserves the active panel's scroll; the test uses actual potion-key, wheel and selection inputs to reach slot 16. SpecialCardReward details now retain their enchantment, price and Genetic Algorithm/The Scythe growth snapshot, and Mad Science's detail type follows the offered instance. Actual-pack fixture readers measure the complete file instead of silently truncating it at the historical 13 MiB limit.
+
+The first full private conversion stopped at Fake Merchant's inline Shader resource, before enemy baking. The scene parser now treats multiline quoted shader text as data and supports its scoped resource identity. Its reviewed UV distortion remains an explicitly reported static approximation; unknown shader omissions remain diagnostic entries. The targeted Fake Merchant scene rendered, and 17 scene tests passed, but neither is a full-pack result. Resource caches now independently bind texture, scene, enemy bounds and enemy raster dependencies, and strictly checked migration can reuse unchanged completed jobs from the previous converter.
+
+The private profile now plans 37,112 images, 1,641 clips, 1,138 auxiliary entries and 6,080 strings. It adds 60 original map images and three original Boss map cycles (540 frames), plus the two Ancient option button layers. Ancient offers retain the centered three-row hierarchy and original acquisition text precedence. Fake Merchant uses six individually priced and sold-out stock positions in the authored 2/3/1 arrangement; its completed page exposes Proceed instead of a retained relic. Independent event UI and native/WASM world capture drivers are source-ready. Actual map rendering, private pack size, full animation baking and visual acceptance remain pending.
+
+Both first cross-target builds stopped at a new `string.h` dependency in the card factory. Its two key comparisons now use a local unsigned-byte comparator suitable for freestanding ARM and WASM, with matching sort semantics. The repaired source passed a short ARM syntax check; no successful new cross-target link or emulator execution is claimed. Next: publish/freeze this repair stage, resume private conversion, rerun the failed and new suites, and complete ARM/WASM plus actual-pack rendering. The completed 0.16 artifact pair, main and disabled remote CI remain unchanged.
 
 ## Active 0.17: original events, enemies, maps and UI
 

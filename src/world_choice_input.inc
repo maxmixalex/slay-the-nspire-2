@@ -35,7 +35,7 @@ void App::world_choice_detail(int id){
   else if(w.choice==WorldRelicChoice::OfferBundle&&id*3<w.offer_count)open_card_offer(card_from_token(w.offers[id*3]),w.offer_facts[id*3]);
   else if(w.choice==WorldRelicChoice::Hand&&id<game.card_count)open_choice_detail(id);
   else if(w.choice==WorldRelicChoice::Potion&&id<int(potion_slot_count(game))&&potion_at(game,id)!=Potion::Empty){detail_item=WorldRelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
-  else if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==2)detail_item=r.value;else if(r.kind==3)detail_item=WorldRelicKinds+r.value-1;else if(r.kind==5)open_card_detail(card_from_token(r.value));detail_owned=-1;detail_scroll=0;}
+  else if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==2)detail_item=r.value;else if(r.kind==3)detail_item=WorldRelicKinds+r.value-1;else if(r.kind==5)open_card_offer(card_from_token(r.value),r.facts[0],r.tokens[0],r.tokens[1]);detail_owned=-1;detail_scroll=0;}
   else if(w.choice!=WorldRelicChoice::OfferReward&&id<game.deck_count)open_card_detail(game.deck[id],id);
  }else if(game.phase==Phase::OriginalEventChoice){
   const auto&e=game.original_events;

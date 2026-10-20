@@ -257,7 +257,7 @@ static void detail_screen(Canvas&c){
     a.hit_count=0;c.dim(0,0,320,240,170);c.rect(7,22,306,211,Panel);c.box(7,22,306,211,Gold);
     char title[128]={};TextBuffer name{title,sizeof title,0};name.text(a.content.card_string(card.kind));if(card.upgraded)name.text("+");
     c.centered(title,18,28,270,16,card.upgraded?Green:Gold);
-    int type=(int)definitions[card.kind].type;
+    int type=(int)a.card_face_type(card,a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr);
     c.picture(a.card_face_frame(card,a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr),18,61,94,132);
     c.picture(c.a.card_face_image(card,a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr),24,90,82,60);c.picture(a.content.energy_image(card),18,60,26,26);
     c.energy_label(a.detail_energy(),27,64,12);
@@ -307,6 +307,9 @@ void App::render(){
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     if(title){title_screen(c);
     }else{
+        // The room beneath a modal can clamp its own text scroll. It must not
+        // replace the active potion/deck/log/relic panel's independent cursor.
+        const int panel_scroll=scroll;
         const bool combat_linger=int32_t(combat_linger_until-animation)>0;
         if(combat_linger)combat_screen(c);else switch(game.phase){
         case Phase::Map:map_screen(c);break;
@@ -320,7 +323,7 @@ void App::render(){
         case Phase::WorldRelicChoice:case Phase::OriginalEventChoice:c.picture(A_Title,0,0);break;
         default:c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);if(!game.world.active)c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
-        if(panel)panels(c);hud(c);
+        if(panel){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger&&!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
         else if(!combat_linger&&!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
         if(paused){hit_count=0;c.dim(0,0,320,240,185);c.centered("暂停",0,22,320,20,Gold);

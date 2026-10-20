@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include "rich_text.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -53,6 +54,6 @@ static void shop(){
  s.gold=9999;a.cursor=0;a.input(Key::Confirm);CHECK(s.shop_sold&1);before=snap();a.input(Key::Confirm);same(before);
  a.input(Key::Save);a.input(Key::Back);a.input(Key::Load);CHECK(!a.shop_open&&s.phase==Phase::Shop&&s.hp==55);same(before);action(UiAction::OpenShop);a.input(Key::Back);action(UiAction::LeaveShop);CHECK(s.phase==Phase::Map);
 }
-int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){data.resize(MaxPack);FILE*f=fopen(argv[1],"rb");CHECK(f);size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
+int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
 reading(!data.empty());choices();shop();if(!data.empty()){for(int i=U_EventFull0;i<U_Count;i++)CHECK(a.content.image(a.content.ui_image(i)).pixels);CHECK(strcmp(a.content.string(255),a.content.string(AromaSilentText)));CHECK(!strstr(a.content.string(AromaSilentText),"{AromaPrinciple}"));CHECK(a.content.glyph(0x5546,8).pixels);}
 printf("event/shop UI: %u checks passed\n",checks);}

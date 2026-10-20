@@ -134,6 +134,7 @@ struct App {
     void sync_relic_feedback();
     int detail_cost_override=-2,detail_instance=-1,detail_deck_index=-1;
     EventCardFacts detail_facts{};bool detail_has_facts=false;
+    uint16_t detail_genetic=0,detail_scythe=0;
     void open_choice_detail(int token);
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
@@ -145,7 +146,7 @@ struct App {
     void pointer_scroll(int rows);
     void pointer_key(Key);
     void open_card_detail(Card,int deck_index=-1);
-    void open_card_offer(Card,const EventCardFacts&);
+    void open_card_offer(Card,const EventCardFacts&,uint16_t genetic=0,uint16_t scythe=0);
     int card_face_image(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     CardType card_face_type(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     int card_face_frame(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;

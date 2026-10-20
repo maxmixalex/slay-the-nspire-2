@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -209,7 +210,7 @@ static void inky_and_dynamic_targets(){
 }
 int main(int argc,char**argv){
     std::vector<uint8_t> bytes;
-    if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(MaxPack);size_t n=std::fread(bytes.data(),1,bytes.size(),f);CHECK(!std::ferror(f));std::fclose(f);bytes.resize(n);real_profile=true;}
+    if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));size_t n=std::fread(bytes.data(),1,bytes.size(),f);CHECK(!std::ferror(f));std::fclose(f);bytes.resize(n);real_profile=true;}
     else bytes=synthetic_profile();
     if(argc>2)screenshot_directory=argv[2];
     CHECK(a.init(bytes.data(),bytes.size(),{save_cb,load_cb}));CHECK(a.content.current_profile());

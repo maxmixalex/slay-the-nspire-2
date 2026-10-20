@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -45,7 +46,7 @@ static void treasure(){
 }
 int main(int argc,char**argv){
  std::vector<uint8_t> data;
- if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
+ if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
  if(argc>2)capture_dir=argv[2];inventory();a.input(Key::Back);a.input(Key::Back);
  setup();auto before=snapshot();a.pointer_move(25,29);a.render();for(int i=0;i<60;i++){a.advance(33);a.render();}same(before);
  unsigned strike=0;while(strike<a.game.hand.count&&a.game.cards[a.game.hand.ids[strike]].kind!=Strike)++strike;CHECK(strike<a.game.hand.count);

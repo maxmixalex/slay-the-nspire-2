@@ -1599,3 +1599,6 @@
  {"Zapbot.die",1635},
  {"Zapbot.hurt",1636},
  {"Zapbot.idle_loop",1637},
+ {"map.CEREMONIAL_BEAST_BOSS",1638},
+ {"map.QUEEN_BOSS",1639},
+ {"map.THE_INSATIABLE_BOSS",1640},

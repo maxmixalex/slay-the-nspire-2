@@ -35,11 +35,12 @@ adapter assemblies and cache files are rejected if their resolved paths fall
 inside the public source repository. No original game executable is run.
 
 The generated public profile currently contains 558 cards, 6,080 strings,
-1,076 auxiliary entries and 1,638 animation entries. The new enemy directory
+1,138 auxiliary entries and 1,641 animation entries. The new enemy directory
 keeps all 732 actually used native clip names as 1,600 skin/phase/move variants,
-with 33,074 frames. With the unchanged historical images and new portraits and
-auxiliary images, the plan has 36,510 images. Even at the 32,768-glyph directory
-bound, its directory occupies 1,196,568 bytes of the 2 MiB limit. Actual payload
+with 33,074 frames. Three original map-boss loops add 540 frames. With the
+unchanged historical images and new portraits and auxiliary images, the plan
+has 37,112 images. Even at the 32,768-glyph directory bound, its directory
+occupies 1,206,496 bytes of the 2 MiB limit. Actual payload
 size remains unknown until all frames are encoded; the 256 MiB file limit is
 checked during construction and on the final canonical decode/re-encode.
 
@@ -50,11 +51,28 @@ line break. Glyph coverage includes all text at five sizes and visible character
 from the complete runtime source. Enemy images use complete original periods,
 8 fps for loops and 12 fps for actions, with 60 Hz physics integration.
 
-Cache receipts bind each complete job to input hashes, conversion source and
-settings, and verify the payload hash before reuse. Partial files lack completion
-receipts. Core or UI changes do not invalidate unchanged image/geometry caches;
+Cache receipts bind each complete job to input hashes, its actual rendering
+code/data dependencies and settings, and verify the payload hash before reuse.
+Partial files lack completion receipts. Textures, scene renders, AtlasTexture
+resources, enemy bounds, enemy frames and map-boss frames have separate dependency
+scopes. An enemy scope includes its complete numeric model row. Core repairs or
+additional map/UI catalog entries do not invalidate unchanged enemy geometry;
 the final manifest and source-change guard still record the complete source
-fingerprint. Bounds jobs and completed raster jobs can resume independently.
+fingerprint. Bounds jobs and completed raster jobs resume independently.
+
+Migration from schema-1 caches is restricted to the exact converter recorded in
+checkpoint `5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7`. It verifies the old producer
+hash, unchanged renderer function and dependency hashes, settings, original
+receipt identity, payload length and SHA-256. A new receipt records its original
+identity and key. Old files remain unchanged; a mismatched job is rendered again.
+
+`config/world-map-ui-0.17.json` appends original map backgrounds, outlines,
+ancient/boss icons and atlas regions. Its three boss animations retain the native
+clip duration, default skin, authored scale/anchor and RGB shader mask channels.
+The UI applies the original act and visited colors at presentation time. The
+converter checks every frame against the declared canvas and rejects overflow
+instead of silently clipping or changing scale. Integer frame intervals are
+stored separately from actual duration so loop playback can use the true period.
 
 Every ordinary model receives one measured scale and pivot across all clips,
 skins and conditional phases. Source-driven target controls use the explicitly

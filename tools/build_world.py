@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import math
 import os
 from pathlib import Path
 import struct
 import sys
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 import lz4
@@ -26,35 +27,43 @@ from build_characters import KEYWORD_KEYS
 from build_content import ROOT, atlas, choose_font, image_data, prepared, texture
 from build_expansion import rle
 from build_tactics import compact_image
+from animation import raster
 from content_pack14 import PackData, GLYPH_LIMITS
 from pck import Pack
 from reference_inventory import sha256, verify_release
 from sparse_image import encode as sparse_encode
 from world_enemy_assets import SpineSampler, bake_enemy, manifest as enemy_manifest, RUNTIME_SHA256
 from world_enemy_profile import plan as enemy_plan
-from world_scene_assets import render_scene
+from world_scene_assets import render_scene, load_scene_texture
 from world_ui_profile import (BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS,
     CARDS, STRINGS, AUXILIARY, CLIPS, TEXT_BASE, TEXT_KEYS, AUXILIARY_ROWS, CLIP_ROWS,
+    ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
     FILE_LIMIT, DIRECTORY_LIMIT, validate_headers)
 
 SOURCE_SHA256 = '4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917'
 IMAGE_LIMIT = 65535
 FONT_SIZES = (8, 10, 12, 16, 20)
-CACHE_SCHEMA = 1
+CACHE_SCHEMA = 2
+# Verified checkpoint 5f5f652f. This exact earlier converter is the only v1
+# producer accepted for migration; each job's own renderer inputs are checked
+# below before its unchanged key and payload digest are accepted.
+LEGACY_BUILDER_SHA256 = '0c77076571131dedff2e15cb8edb5ab073da8ff008cd33506c4f2636fb5312aa'
+LEGACY_FUNCTIONS = {
+    'encode_image': 'b50ef3e45d6e8c7b4680e69a068ddb0f40d8ead738fef5f9f3709a10c7de594f',
+    'job_state': '911e69fde9fa183587a737c9cf8216afe991ed7351df6136a1f9e7acb2c53a0d',
+    # Exact extractions of the three rendering call sites in the pinned v1
+    # producer. Any future change to these functions disables v1 reuse.
+    'render_texture': '35b99cee67d672516f439a372575a519c28b96c654266aac9d6ab7aa26d9f6a5',
+    'render_world_scene': '3675d1c2eef85357e2881bbe69212ff27f80a11a8f64026ed0722c72d4d80a92',
+    'sample_enemy': '7ea8d198f1bd731275e31d8c8a2adca054d773ecd6e3620c653254c2c4c07977',
+}
+TEXTURE_SOURCES = ('tools/build_content.py', 'tools/setup_pose.py', 'tools/animation.py', 'tools/pck.py')
+GEOMETRY_SOURCES = TEXTURE_SOURCES + ('tools/world_enemy_assets.py', 'tools/SpineSampleAdapter.cs')
+ENCODER_SOURCES = ('tools/build_tactics.py', 'tools/lz4_block.py', 'tools/sparse_image.py')
 # These pinned cards consist solely of their original keyword text. Their
 # localization table intentionally has no .description entry.
 KEYWORD_ONLY_CARDS = frozenset(('CLUMSY', 'GREED', 'INJURY', 'POOR_SLEEP',
     'SPORE_MIND', 'SOOT', 'CURSE_OF_THE_BELL', 'FOLLY', 'ASCENDERS_BANE', 'WRITHE'))
-CONVERSION_SOURCES = (
-    'tools/build_world.py', 'tools/world_enemy_assets.py', 'tools/SpineSampleAdapter.cs',
-    'tools/world_enemy_profile.py', 'tools/world_ui_profile.py', 'tools/world_scene_assets.py',
-    'tools/build_content.py', 'tools/setup_pose.py', 'tools/animation.py', 'tools/pck.py',
-    'tools/reference_inventory.py', 'tools/sparse_image.py', 'tools/build_characters.py',
-    'tools/build_expansion.py', 'tools/build_tactics.py', 'tools/lz4_block.py',
-    'tools/card_banner.py', 'tools/content_pack14.py', 'tools/asset_profile.py',
-    'tools/character_ui_profile.py', 'tools/all_character_ui_profile.py',
-    'config/enemy-visuals-0.17.json', 'config/world-cards-0.17.json',
-    'config/world-ui-0.17.json', 'config/reference-release.json')
 # Exact original Kaiser scene/camera placement in the 320 x 218 content stage.
 KAISER_LAYOUT = dict(scale=0.1513888888888889,
     origin=[7.702777777777754, 33.70925925925924], size=[320, 218], crop=True)
@@ -101,39 +110,89 @@ class ConversionCache:
     payload hash match. A process interruption cannot mark a partial job done.
     No pickle or executable serialized input is used.
     """
-    def __init__(self, directory: Path, dependencies: dict):
+    def __init__(self, directory: Path, dependencies: dict, *, source_files=None):
         self.dependencies = dependencies
         self.identity = hashlib.sha256(canonical(dependencies)).hexdigest()
-        self.directory = private_path(directory, 'Cache') / self.identity
+        root = private_path(directory, 'Cache')
+        self.directory = root / self.identity
         self.directory.mkdir(parents=True, exist_ok=True)
-        self.hits = self.misses = 0
+        self.hits = self.misses = self.legacy_hits = 0
+        self.source_files = source_files or {}
+        self.legacy = []
+        if source_files:
+            for path in sorted(root.glob('*/dependencies.json')):
+                previous = json.loads(path.read_bytes())
+                identity = hashlib.sha256(canonical(previous)).hexdigest()
+                if (previous.get('schema') != 1 or path.parent.name != identity or
+                    previous.get('source', {}).get('tools/build_world.py') != LEGACY_BUILDER_SHA256):
+                    continue
+                # The common input identity remains exact. Catalog additions,
+                # unrelated core files and font changes cannot affect images.
+                if all(previous.get(name) == value for name, value in dependencies.items() if name != 'schema'):
+                    self.legacy.append((path.parent, identity, previous['source']))
         atomic_bytes(self.directory / 'dependencies.json', canonical(dependencies) + b'\n')
 
-    def key(self, kind: str, settings: dict) -> str:
+    def key(self, kind: str, settings: dict, scope=None) -> str:
         return hashlib.sha256(canonical(dict(schema=CACHE_SCHEMA, kind=kind,
-            dependency=self.identity, settings=settings))).hexdigest()
+            dependency=self.identity, settings=settings, scope=scope or {}))).hexdigest()
 
-    def get(self, kind: str, settings: dict):
-        key = self.key(kind, settings)
-        receipt = self.directory / kind / (key + '.json')
-        if not receipt.is_file():
-            self.misses += 1
-            return None
+    def _legacy_matches(self, scope, sources):
+        if scope.get('pipeline') not in ('texture-rgba-1', 'scene-rgba-1', 'enemy-bounds-1', 'enemy-rgba-1'):
+            return False
+        if any(sources.get(name) != value for name, value in scope.get('files', {}).items()):
+            return False
+        if any(LEGACY_FUNCTIONS.get(name) != value for name, value in scope.get('functions', {}).items()):
+            return False
+        # V1 bound the whole manifest instead of a single model row. Exact old
+        # manifest equality is required for this one-time migration. V2 jobs
+        # thereafter bind their own complete numeric model specification.
+        if 'model' in scope and sources.get('config/enemy-visuals-0.17.json') != self.source_files.get('config/enemy-visuals-0.17.json'):
+            return False
+        return True
+
+    @staticmethod
+    def _read(receipt, key, schema):
         row = json.loads(receipt.read_bytes())
-        if row.get('key') != key or row.get('schema') != CACHE_SCHEMA:
+        if row.get('key') != key or row.get('schema') != schema:
             raise ValueError('Private cache receipt identity mismatch: ' + key)
         payload = receipt.with_suffix('.bin').read_bytes()
         if len(payload) != row['bytes'] or hashlib.sha256(payload).hexdigest() != row['sha256']:
             raise ValueError('Private cache payload is incomplete or changed: ' + key)
-        self.hits += 1
         return row['metadata'], payload
 
-    def put(self, kind: str, settings: dict, metadata: dict, payload=b''):
-        key = self.key(kind, settings)
+    def get(self, kind: str, settings: dict, *, scope=None):
+        scope = scope or {}
+        key = self.key(kind, settings, scope)
+        receipt = self.directory / kind / (key + '.json')
+        if not receipt.is_file():
+            for directory, identity, sources in self.legacy:
+                if not self._legacy_matches(scope, sources):
+                    continue
+                old_key = hashlib.sha256(canonical(dict(schema=1, kind=kind,
+                    dependency=identity, settings=settings))).hexdigest()
+                old_receipt = directory / kind / (old_key + '.json')
+                if not old_receipt.is_file():
+                    continue
+                metadata, payload = self._read(old_receipt, old_key, 1)
+                self.put(kind, settings, metadata, payload, scope=scope,
+                         reused_from=dict(identity=identity, key=old_key, schema=1))
+                self.hits += 1
+                self.legacy_hits += 1
+                return metadata, payload
+            self.misses += 1
+            return None
+        result = self._read(receipt, key, CACHE_SCHEMA)
+        self.hits += 1
+        return result
+
+    def put(self, kind: str, settings: dict, metadata: dict, payload=b'', *, scope=None, reused_from=None):
+        scope = scope or {}
+        key = self.key(kind, settings, scope)
         receipt = self.directory / kind / (key + '.json')
         atomic_bytes(receipt.with_suffix('.bin'), payload)
         atomic_bytes(receipt, canonical(dict(schema=CACHE_SCHEMA, key=key,
-            bytes=len(payload), sha256=hashlib.sha256(payload).hexdigest(), metadata=metadata)) + b'\n')
+            bytes=len(payload), sha256=hashlib.sha256(payload).hexdigest(), metadata=metadata,
+            scope=scope, reused_from=reused_from)) + b'\n')
         return metadata, payload
 
 
@@ -174,6 +233,104 @@ def encode_image(image: Image.Image, animation=False) -> tuple:
         alpha = image.getchannel('A').getextrema()[0] < 255
         fmt, raw = compact_image(int(alpha), image_data(image, alpha))
     return (*image.size, fmt, raw)
+
+
+def render_texture(pack, path, size, fit, kind, texture_cache):
+    image = atlas(pack, path, texture_cache) if kind == 'atlas' else texture(pack, path)
+    return prepared(image, tuple(size), fit)
+
+
+def render_world_scene(pack, row, sampler):
+    return render_scene(pack, row['path'], *row['size'], mode=row['kind'],
+                        sampler=sampler, plane=row.get('plane', 'all'))
+
+
+def render_atlas_resource(pack, row, texture_cache):
+    image = load_scene_texture(pack, row['path'], cache=texture_cache)
+    return prepared(image, tuple(row['size']), row['fit'])
+
+
+def sample_enemy(pack, model, job, sampler, *, layout=None, measure=False):
+    return bake_enemy(pack, model, job['clip'], sampler=sampler,
+        frames=job['frames'], skin_variant=job['skins'],
+        visual_state=job_state(job, layout), measure_only=measure)
+
+
+def sample_map_clip(pack, job, sampler):
+    """Preserve the original boss-map RGB mask and the declared scene anchor.
+
+    The original shader colors these channels at presentation time. Baking a
+    specific act color here would prevent the same clip from being used on
+    other maps or in its visited state. Bounds failures require an explicit
+    canvas/anchor correction; no automatic resize or silent crop is allowed.
+    """
+    resource = job['resource']
+    metadata = sampler.metadata(resource)
+    clips = {row['name']: row for row in metadata['clips']}
+    if job['clip'] not in clips or abs(clips[job['clip']]['duration'] - job['duration']) > 0.00001:
+        raise ValueError('Original map animation duration/name drift: ' + job['key'])
+    times = [index * job['duration'] / job['frames'] for index in range(job['frames'])]
+    sampled = sampler.sample(resource, job['clip'], times, skins=job['skins'], loop=job['loop'])
+    if len(sampled) != job['frames']:
+        raise ValueError('Map sampler did not return its full declared period')
+    matrix = np.asarray(job['transform'], dtype=float).reshape(2, 3)
+    low, high = np.full(2, np.inf), np.full(2, -np.inf)
+    images = []
+    for frame in sampled:
+        layers = []
+        for vertices, uvs, triangles, pixels, color, blend in sampler.draw(resource, frame):
+            points = (matrix @ np.column_stack((vertices, np.ones(len(vertices)))).T).T
+            if len(points):
+                low, high = np.minimum(low, points.min(axis=0)), np.maximum(high, points.max(axis=0))
+            # The manifest transform yields Godot/downwards canvas points;
+            # raster performs its own y flip from the geometry convention.
+            layers.append((points * [1, -1], uvs, triangles, pixels, color, blend))
+        if (not np.all(np.isfinite(low)) or np.any(low < -0.001) or
+                np.any(high > np.asarray(job['size']) + 0.001)):
+            raise ValueError('Original map animation exceeds its explicit canvas: ' +
+                job['key'] + ' bounds=' + str([low.tolist(), high.tolist()]) +
+                ' size=' + str(job['size']))
+        images.append(raster(layers, 1., np.zeros(2), tuple(job['size'])))
+    return images, dict(resource=resource, clip=job['clip'], skins=job['skins'],
+        source_version=metadata.get('source_version'), frames=job['frames'],
+        duration_ms=job['duration_ms'], frame_ms=job['frame_ms'],
+        size=job['size'], pivot=job['pivot'], loop=job['loop'],
+        shader=job['shader'], transform=job['transform'],
+        bounds=[low.tolist(), high.tolist()], runtime_sha256=RUNTIME_SHA256,
+        physics_step=1/60, original_channels=True)
+
+
+def function_hash(function) -> str:
+    return hashlib.sha256(inspect.getsource(function).encode()).hexdigest()
+
+
+def render_scope(kind: str, source_files: dict, *, model=None) -> dict:
+    """Hash the code/data that can actually change this category's pixels."""
+    if kind == 'texture':
+        paths, functions = TEXTURE_SOURCES + ENCODER_SOURCES, [render_texture, encode_image]
+        pipeline = 'texture-rgba-1'
+    elif kind == 'scene':
+        paths = GEOMETRY_SOURCES + ENCODER_SOURCES + ('tools/world_scene_assets.py',)
+        functions, pipeline = [render_world_scene, encode_image], 'scene-rgba-1'
+    elif kind == 'atlas-tres':
+        paths = TEXTURE_SOURCES + ENCODER_SOURCES + ('tools/world_scene_assets.py',)
+        functions, pipeline = [render_atlas_resource, encode_image], 'atlas-tres-rgba-1'
+    elif kind == 'map-clip':
+        paths = GEOMETRY_SOURCES + ENCODER_SOURCES
+        functions, pipeline = [sample_map_clip, encode_image], 'map-boss-rgba-1'
+    elif kind in ('bounds', 'clip'):
+        paths = GEOMETRY_SOURCES + (ENCODER_SOURCES if kind == 'clip' else ())
+        functions = [sample_enemy, job_state] + ([encode_image] if kind == 'clip' else [])
+        pipeline = 'enemy-rgba-1' if kind == 'clip' else 'enemy-bounds-1'
+        if model is None:
+            raise ValueError('Enemy cache scope requires its entire original model specification')
+    else:
+        raise ValueError('Unknown rendering dependency scope: ' + kind)
+    result = dict(pipeline=pipeline, files={name: source_files[name] for name in paths},
+                  functions={function.__name__: function_hash(function) for function in functions})
+    if model is not None:
+        result['model'] = hashlib.sha256(canonical(model)).hexdigest()
+    return result
 
 
 def card_models() -> list[dict]:
@@ -290,8 +447,9 @@ def plan_summary() -> dict:
     worst_directory = (40 + images * 16 + GLYPH_LIMITS[14] * 16 + STRINGS * 8 +
                        CLIPS * 16 + CARDS * 16 + AUXILIARY * 4)
     return dict(cards=CARDS, strings=STRINGS, auxiliary_images=AUXILIARY, clips=CLIPS,
-        original_used_enemy_clips=plan['used_clips'], enemy_variants=len(CLIP_ROWS),
-        enemy_frames=sum(j['frames'] for j in CLIP_ROWS), expected_images=images,
+        original_used_enemy_clips=plan['used_clips'], enemy_variants=len(ENEMY_CLIP_ROWS),
+        enemy_frames=sum(j['frames'] for j in ENEMY_CLIP_ROWS), map_clips=len(MAP_CLIP_ROWS),
+        map_frames=sum(j['frames'] for j in MAP_CLIP_ROWS), expected_images=images,
         maximum_directory_bytes=worst_directory, directory_limit=DIRECTORY_LIMIT,
         file_limit=FILE_LIMIT,
         payload_size='Unknown until all original frames are losslessly encoded')
@@ -327,11 +485,9 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
     # the entire source; cached image geometry depends on this explicit closure.
     cache_dependencies = dict(schema=CACHE_SCHEMA, pck=hashes['pck'],
         spine_runtime=RUNTIME_SHA256, fastnoise_header=dependencies['fastnoise_header'],
-        source={name: source_files[name] for name in CONVERSION_SOURCES},
         python=dependencies['python'], numpy=dependencies['numpy'], pillow=dependencies['pillow'],
-        lz4=dependencies['lz4'],
-        canonical_placement=CANONICAL_PLACEMENT, shared_kaiser_layout=KAISER_LAYOUT)
-    cache = ConversionCache(cache_dir, cache_dependencies)
+        lz4=dependencies['lz4'])
+    cache = ConversionCache(cache_dir, cache_dependencies, source_files=source_files)
     pack = PackData(source.read_bytes())
     prefix = retained_prefix(pack)
     image_meta, animation_meta, layouts = [], [], {}
@@ -358,6 +514,10 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                 fastnoise_header=fastnoise_header) as sampler:
             card_text = json.loads(pck.read('localization/zhs/cards.json'))
             keywords = json.loads(pck.read('localization/zhs/card_keywords.json'))
+            texture_scope = render_scope('texture', source_files)
+            scene_scope = render_scope('scene', source_files)
+            atlas_scope = render_scope('atlas-tres', source_files)
+            map_scope = render_scope('map-clip', source_files)
             for row in rows:
                 key, path = row['key'], row['portrait']
                 if key + '.title' not in card_text or (key + '.description' not in card_text and key not in KEYWORD_ONLY_CARDS):
@@ -368,11 +528,11 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                     card_description(description, row, False, keywords),
                     card_description(description, row, True, keywords)])
                 settings = dict(path=path, size=[82, 60], fit='cover')
-                cached = cache.get('image', settings)
+                cached = cache.get('image', settings, scope=texture_scope)
                 if cached is None:
-                    image = prepared(texture(pck, path), (82, 60), 'cover')
+                    image = render_texture(pck, path, (82, 60), 'cover', 'texture', {})
                     cached = cache.put('image', settings, dict(path=path),
-                        encoded_frames([encode_image(image)]))
+                        encoded_frames([encode_image(image)]), scope=texture_scope)
                 index = append_image(decoded_frames(cached[1], 1)[0])
                 if row['id'] != len(pack.cards):
                     raise ValueError('Appended card directory order changed')
@@ -388,18 +548,19 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                 if name not in tables[table] or not isinstance(tables[table][name], str):
                     raise ValueError('Original localization key is missing: ' + key)
                 pack.strings.append(tables[table][name].replace('\\n', '\n'))
-            texture_cache = {}
+            texture_cache, atlas_texture_cache = {}, OrderedDict()
             for number, row in enumerate(AUXILIARY_ROWS):
                 print(f'World image {number + 1}/{len(AUXILIARY_ROWS)} {row["key"]}', flush=True)
-                cached = cache.get('image', row)
+                is_tres = row['kind'] == 'atlas' and row['path'].endswith('.tres')
+                scope = scene_scope if row['kind'] in ('background', 'scene') else atlas_scope if is_tres else texture_scope
+                cached = cache.get('image', row, scope=scope)
                 if cached is None:
                     if row['kind'] in ('background', 'scene'):
-                        image, diagnostics = render_scene(pck, row['path'], *row['size'],
-                            mode=row['kind'], sampler=sampler, plane=row.get('plane', 'all'))
+                        image, diagnostics = render_world_scene(pck, row, sampler)
+                    elif is_tres:
+                        image, diagnostics = render_atlas_resource(pck, row, atlas_texture_cache), {}
                     elif row['kind'] in ('texture', 'atlas'):
-                        image = (atlas(pck, row['path'], texture_cache) if row['kind'] == 'atlas'
-                                 else texture(pck, row['path']))
-                        image = prepared(image, tuple(row['size']), row['fit'])
+                        image = render_texture(pck, row['path'], row['size'], row['fit'], row['kind'], texture_cache)
                         diagnostics = {}
                     else:
                         raise ValueError('Unsupported world image kind: ' + row['kind'])
@@ -410,14 +571,14 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                         if len(shared) != 1 or not np.allclose(shared[0]['screen_transform'], expected, atol=1e-9, rtol=0):
                             raise ValueError('Shared Kaiser original scene placement changed')
                     cached = cache.put('image', row, dict(diagnostics=diagnostics),
-                        encoded_frames([encode_image(image)]))
+                        encoded_frames([encode_image(image)]), scope=scope)
                 index = append_image(decoded_frames(cached[1], 1)[0])
                 pack.aux.append(index)
                 image_meta.append(dict(row, image=index, **cached[0]))
 
             models = {row['model']: row for row in enemy_manifest()['models']}
             by_model = defaultdict(list)
-            for job in CLIP_ROWS:
+            for job in ENEMY_CLIP_ROWS:
                 by_model[job['model']].append(job)
             # Measure every output frame before rasterizing any clip in a model.
             # This prevents clip, skin and conditional phase changes from moving
@@ -428,29 +589,29 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                     layouts[name] = dict(KAISER_LAYOUT)
                     continue
                 measured = []
+                bounds_scope = render_scope('bounds', source_files, model=model)
                 for index, job in enumerate(jobs):
                     settings = dict(job=job, placement=CANONICAL_PLACEMENT)
-                    cached = cache.get('bounds', settings)
+                    cached = cache.get('bounds', settings, scope=bounds_scope)
                     if cached is None:
                         print(f'Measure {name} {index + 1}/{len(jobs)} {job["key"]}', flush=True)
-                        _, metadata = bake_enemy(pck, model, job['clip'], sampler=sampler,
-                            frames=job['frames'], skin_variant=job['skins'],
-                            visual_state=job_state(job), measure_only=True)
-                        cached = cache.put('bounds', settings, metadata)
+                        _, metadata = sample_enemy(pck, model, job, sampler, measure=True)
+                        cached = cache.put('bounds', settings, metadata, scope=bounds_scope)
                     measured.append(cached[0])
                 layouts[name] = choose_layout(measured)
                 atomic_bytes(cache.directory / 'layouts.json', canonical(layouts) + b'\n')
 
-            for number, job in enumerate(CLIP_ROWS):
-                print(f'Enemy clip {number + 1}/{len(CLIP_ROWS)} {job["key"]}', flush=True)
+            for number, job in enumerate(ENEMY_CLIP_ROWS):
+                print(f'Enemy clip {number + 1}/{len(ENEMY_CLIP_ROWS)} {job["key"]}', flush=True)
                 state = job_state(job, layouts[job['model']])
                 settings = dict(job=job, visual_state=state)
-                cached = cache.get('clip', settings)
+                scope = render_scope('clip', source_files, model=models[job['model']])
+                cached = cache.get('clip', settings, scope=scope)
                 if cached is None:
-                    images, metadata = bake_enemy(pck, models[job['model']], job['clip'],
-                        sampler=sampler, frames=job['frames'], skin_variant=job['skins'], visual_state=state)
+                    images, metadata = sample_enemy(pck, models[job['model']], job, sampler,
+                                                    layout=layouts[job['model']])
                     cached = cache.put('clip', settings, metadata,
-                        encoded_frames([encode_image(image, animation=True) for image in images]))
+                        encoded_frames([encode_image(image, animation=True) for image in images]), scope=scope)
                 metadata, payload = cached
                 frames = decoded_frames(payload, job['frames'])
                 if (metadata['frames'] != job['frames'] or metadata['size'] != layouts[job['model']]['size'] or
@@ -463,6 +624,24 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                 directory = BASE_CLIPS + number
                 if job['id'] != directory:
                     raise ValueError('Generated animation directory order drift')
+                pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
+                animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
+            for number, job in enumerate(MAP_CLIP_ROWS):
+                print(f'Map clip {number + 1}/{len(MAP_CLIP_ROWS)} {job["key"]}', flush=True)
+                cached = cache.get('clip', job, scope=map_scope)
+                if cached is None:
+                    images, metadata = sample_map_clip(pck, job, sampler)
+                    cached = cache.put('clip', job, metadata,
+                        encoded_frames([encode_image(image, animation=True) for image in images]), scope=map_scope)
+                metadata, payload = cached
+                frames = decoded_frames(payload, job['frames'])
+                if any(metadata[key] != job[key] for key in ('frames', 'duration_ms', 'frame_ms', 'size', 'pivot', 'shader')):
+                    raise ValueError('Cached map clip differs from its original profile')
+                directory, first = BASE_CLIPS + len(ENEMY_CLIP_ROWS) + number, len(pack.images)
+                if job['id'] != directory:
+                    raise ValueError('Generated map animation directory order drift')
+                for frame in frames:
+                    append_image(frame)
                 pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
                 animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
     finally:
@@ -492,8 +671,9 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
         retained_auxiliary_records=len(prefix[3]), retained_animation_clips=BASE_CLIPS,
         retained_glyph_payloads=len(prefix[5]), dependencies=dependencies,
         cache_identity=cache.identity, cache_hits=cache.hits, cache_misses=cache.misses,
+        cache_migrated_jobs=cache.legacy_hits,
         source_paths=image_meta, animations=animation_meta, layouts=layouts,
-        animation_sampling='Full original selected periods; idle 8 fps, actions 12 fps; physics 60 Hz; old clips unchanged',
+        animation_sampling='Full original selected periods; enemy idle 8 fps, actions 12 fps, map bosses 20 fps; physics 60 Hz; old clips unchanged',
         normalized_target_layout=CANONICAL_PLACEMENT,
         limitations=[
             'Offline Spine geometry/raster and scene diagnostics do not establish 95% visual similarity.',

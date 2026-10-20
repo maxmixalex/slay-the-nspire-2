@@ -1,5 +1,7 @@
 """Asset-free checks of scene geometry and runtime layer construction."""
 import sys
+import hashlib
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 
@@ -7,7 +9,8 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from world_scene_assets import SceneRenderError, background_layers, parse_value, render_scene
+import world_scene_assets
+from world_scene_assets import SceneLoader, SceneRenderError, background_layers, load_scene_texture, parse_value, render_scene
 
 
 class Pack:
@@ -29,6 +32,62 @@ def render(pack, path='main.tscn', size=(16, 16), **kwargs):
 
 
 class SceneGeometry(unittest.TestCase):
+    def test_full_path_atlas_resource_preserves_transparent_margin(self):
+        resource = '''[gd_resource type="AtlasTexture" format=3]
+[ext_resource type="Texture2D" path="res://atlas.png" id="a"]
+[resource]
+atlas = ExtResource("a")
+region = Rect2(2, 1, 2, 3)
+margin = Rect2(1, 2, 3, 4)
+'''
+        p = Pack({'compressed.sprites/icon.tres': resource},
+                 {'atlas.png': Image.new('RGBA', (8, 8), 'blue')})
+        image = load_scene_texture(p, 'res://compressed.sprites/icon.tres', texture_loader=texture)
+        self.assertEqual(image.size, (5, 7))
+        self.assertEqual(image.getbbox(), (1, 2, 3, 5))
+        self.assertEqual(image.getpixel((2, 4)), (0, 0, 255, 255))
+
+    def test_inline_shader_scope_multiline_and_explicit_static_policy(self):
+        # This synthetic shader is deliberately unrelated to the private game
+        # source. Its assignment and header-looking line must remain one value.
+        code = 'shader_type canvas_item;\n[not_a_resource]\nvoid fragment() {\n    COLOR = vec4(1.0);\n}\n'
+        scene = '''[gd_scene format=3]
+[ext_resource type="Texture2D" path="res://red.png" id="red"]
+[sub_resource type="Shader" id="Inline"]
+code = "''' + code + '''"
+[sub_resource type="ShaderMaterial" id="Material"]
+shader = SubResource("Inline")
+shader_parameter/speed = 0.388
+shader_parameter/strength = 0.058
+[node name="Root" type="Node2D"]
+[node name="Backdrop" type="Sprite2D" parent="."]
+centered = false
+texture = ExtResource("red")
+[node name="Effect" type="Sprite2D" parent="."]
+position = Vector2(3, 0)
+centered = false
+texture = ExtResource("red")
+material = SubResource("Material")
+'''
+        p = Pack({'main.tscn': scene}, {'red.png': Image.new('RGBA', (2, 2), 'red')})
+        doc = SceneLoader(p).document('main.tscn')
+        self.assertEqual(list(doc.internal['Inline'][1]), ['code'])
+        self.assertEqual(parse_value(doc.internal['Inline'][1]['code'].text), code)
+        digest = hashlib.sha256(code.encode()).hexdigest()
+        image, diagnostics = render(p)
+        self.assertEqual(image.getbbox(), (0, 0, 2, 2))
+        omitted = next(x for x in diagnostics['omitted'] if x.get('reason') == 'dynamic_shader')
+        self.assertEqual(omitted['shader'], 'main.tscn::Inline')
+        self.assertEqual(omitted['shader_sha256'], digest)
+        with patch.dict(world_scene_assets._STATIC_INLINE_SHADERS,
+                        {digest: 'synthetic_explicit_static_policy'}):
+            image, diagnostics = render(p, sample_time=1.25)
+        self.assertEqual(image.getbbox(), (0, 0, 5, 2))
+        policy = diagnostics['approximations'][0]
+        self.assertEqual(policy['reason'], 'synthetic_explicit_static_policy')
+        self.assertEqual(policy['shader_sha256'], digest)
+        self.assertEqual((policy['speed'], policy['strength'], policy['sample_time']), (.388, .058, 1.25))
+
     def test_nested_rotation_scale_and_sprite_origin(self):
         strip = Image.new('RGBA', (2, 1))
         strip.putdata([(255, 0, 0, 255), (0, 0, 255, 255)])

@@ -1,7 +1,10 @@
 #include "world_card_factory.hpp"
-#include <string.h>
 namespace spire {
 namespace {
+int compare_keys(const char*a,const char*b){
+ while(*a&&static_cast<unsigned char>(*a)==static_cast<unsigned char>(*b)){++a;++b;}
+ return int(static_cast<unsigned char>(*a))-int(static_cast<unsigned char>(*b));
+}
 #include "world_card_metadata.inc"
 #include "world_potion_metadata.inc"
 using reference::math::Real;
@@ -62,7 +65,7 @@ int world_float_truncate(Real x){
  uint64_t m=(x.bits&UINT64_C(0xfffffffffffff))|UINT64_C(0x10000000000000);
  int n=int(m>>(52-e));return negative?-n:n;
 }
-CardKind world_card_id(const char*key){if(key)for(unsigned k=0;k<CardKinds;++k)if(!strcmp(key,definitions[k].key))return CardKind(k);return CardKinds;}
+CardKind world_card_id(const char*key){if(key)for(unsigned k=0;k<CardKinds;++k)if(!compare_keys(key,definitions[k].key))return CardKind(k);return CardKinds;}
 WorldCardPool world_card_pool(CardKind k){return k<CardKinds?WorldCardPool(world_model_pool[k]):WorldCardPool::Event;}
 unsigned world_card_pool_models(WorldCardPool p,CardKind*out,unsigned capacity){
  if(unsigned(p)>=11)return 0;const auto&v=world_pools[unsigned(p)];unsigned n=v.count<capacity?v.count:capacity;for(unsigned i=0;i<n;++i)out[i]=v.ids[i];return n;
@@ -70,7 +73,7 @@ unsigned world_card_pool_models(WorldCardPool p,CardKind*out,unsigned capacity){
 bool world_card_modifier_allowed(CardKind k){return k<CardKinds&&(world_model_policy[k]&2);}
 bool world_card_combat_allowed(CardKind k){return k<CardKinds&&(world_model_policy[k]&1);}
 bool world_card_gains_block(CardKind k){return k<CardKinds&&(world_model_policy[k]&4);}
-void world_stable_cards(CardKind*cards,unsigned count){for(unsigned i=1;i<count;++i){CardKind c=cards[i];unsigned j=i;while(j&&strcmp(definitions[cards[j-1]].key,definitions[c].key)>0){cards[j]=cards[j-1];--j;}cards[j]=c;}}
+void world_stable_cards(CardKind*cards,unsigned count){for(unsigned i=1;i<count;++i){CardKind c=cards[i];unsigned j=i;while(j&&compare_keys(definitions[cards[j-1]].key,definitions[c].key)>0){cards[j]=cards[j-1];--j;}cards[j]=c;}}
 unsigned world_card_candidates(const State&s,const WorldCardOptions&o,CardKind*out,unsigned capacity,bool combat){
  unsigned n=0;bool seen[CardKinds]{};
  for(unsigned i=0;i<o.pool_count&&i<11;++i){unsigned p=o.pools[i]==WorldCardPool::Own?unsigned(s.character):unsigned(o.pools[i]);if(p>=11)continue;

@@ -25,10 +25,10 @@ void App::pointer_cancel(){hand_focus=false;pointer.held=pointer.dragging=false;
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
-    detail_card=card_token(card);detail_scroll=0;detail_instance=-1;detail_cost_override=-2;detail_has_facts=false;
+    detail_card=card_token(card);detail_scroll=0;detail_instance=-1;detail_cost_override=-2;detail_has_facts=false;detail_genetic=detail_scythe=0;
     detail_deck_index=deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==card.kind?deck_index:-1;pointer_cancel();
 }
-void App::open_card_offer(Card card,const EventCardFacts&facts){open_card_detail(card);detail_facts=facts;detail_has_facts=true;}
+void App::open_card_offer(Card card,const EventCardFacts&facts,uint16_t genetic,uint16_t scythe){open_card_detail(card);detail_facts=facts;detail_has_facts=true;detail_genetic=genetic;detail_scythe=scythe;}
 void App::open_choice_detail(int token){
     if(token>=0&&token<game.card_count){
         open_card_detail(game.cards[token]);detail_instance=token;

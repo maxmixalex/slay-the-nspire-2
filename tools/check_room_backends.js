@@ -32,7 +32,14 @@ const assert = require('node:assert/strict');
     game = instance.exports; memory = game.memory;
     assert.equal(game.start(pack.length), 1);
     for (const [i, key] of scenario.steps.entries()) {
-      if (key < 0) game.advance(99); else game.input(key);
+      if (typeof key === 'number') {
+        if (key < 0) game.advance(99); else game.input(key);
+      } else if (Object.hasOwn(key, 'key')) game.input(key.key);
+      else if (Object.hasOwn(key, 'advance')) game.advance(key.advance);
+      else if (Object.hasOwn(key, 'scroll')) game.pointer_scroll(key.scroll);
+      else if (Object.hasOwn(key, 'click')) {
+        game.pointer_move(...key.click); game.pointer_button(1); game.pointer_button(0);
+      } else throw Error(`Unknown capture action ${JSON.stringify(key)}`);
       game.draw_frame();
       const actual = Buffer.from(new Uint8Array(memory.buffer, game.framebuffer(), 320 * 240 * 2));
       assert.deepEqual(actual, fs.readFileSync(path.join(root, `${scenario.name}-frame-${i}.rgb`)), `${scenario.name} frame ${i}`);

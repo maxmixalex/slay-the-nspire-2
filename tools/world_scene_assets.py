@@ -15,6 +15,7 @@ overrides for callers exporting a particular encounter/window configuration.
 from __future__ import annotations
 
 import ast
+import hashlib
 import math
 import re
 from collections import OrderedDict
@@ -27,6 +28,16 @@ from PIL import Image, ImageChops
 
 class SceneRenderError(ValueError):
     pass
+
+
+# Audited v0.111.0 inline shader fingerprints; no original shader source is
+# distributed. Fake Merchant's masked noise UV wobble changes a small authored
+# image, not a screen-texture mask. A static scene deliberately keeps that image
+# undistorted and records the unsupported motion and its original parameters.
+_STATIC_INLINE_SHADERS = {
+    'cfd5ba28dcfd923c2bf72f11ad941475b737802f1dd74e6efd2861075d79c4ff':
+        'masked_noise_uv_distortion_frozen_to_authored_texture',
+}
 
 
 @dataclass(frozen=True)
@@ -84,7 +95,14 @@ class _Reader:
     def value(self):
         token = self.pop()
         if token.startswith(('"', '&"', '^"')):
-            return ast.literal_eval(token[token.index('"'):])
+            # Godot permits physical newlines inside a quoted resource string.
+            # Escape only those physical control characters before the safe
+            # literal decoder; the shader remains data and is never executed.
+            quoted = token[token.index('"'):].replace('\r', '\\r').replace('\n', '\\n')
+            try:
+                return ast.literal_eval(quoted)
+            except (ValueError, SyntaxError) as exc:
+                raise SceneRenderError('Invalid quoted Godot resource value') from exc
         if token in ('true', 'false', 'null'):
             return {'true': True, 'false': False, 'null': None}[token]
         if token[0] in '+-.0123456789':
@@ -183,29 +201,54 @@ class Document:
     resource: tuple | None = None
 
 
+def _quoted_after(text, quoted=False):
+    escaped = False
+    for character in text:
+        if escaped:
+            escaped = False
+        elif character == '\\' and quoted:
+            escaped = True
+        elif character == '"':
+            quoted = not quoted
+        elif character == ';' and not quoted:
+            break
+    return quoted
+
+
 def _sections(text, path):
-    pattern = re.compile(r'^\[([a-z_]+)(.*?)\]\s*$', re.M)
-    matches = list(pattern.finditer(text))
+    # A shader's quoted source can itself contain assignments and bracketed
+    # lines. Only recognize headers and property keys outside that string.
+    blocks = []
+    quoted = False
+    for line in text.splitlines():
+        match = None if quoted else re.match(r'^\[([a-z_]+)(.*?)\]\s*$', line)
+        if match:
+            blocks.append((match[1], match[2], []))
+        elif blocks:
+            blocks[-1][2].append(line)
+        quoted = _quoted_after(line, quoted)
+    if quoted:
+        raise SceneRenderError('Unterminated resource string: ' + path)
     result = []
-    for i, match in enumerate(matches):
-        reader = _Reader(match[2], path)
+    for kind, attributes, lines in blocks:
+        reader = _Reader(attributes, path)
         attrs = {}
         while reader.peek() is not None:
             key = reader.pop()
             reader.pop('=')
             attrs[key] = reader.value()
-        body = text[match.end():matches[i + 1].start() if i + 1 < len(matches) else len(text)]
         props = {}
-        key = None
-        for line in body.splitlines():
-            found = re.match(r'^([^\s=][^=]*?)\s*=\s*(.*)$', line)
+        key, quoted = None, False
+        for line in lines:
+            found = None if quoted else re.match(r'^([^\s=][^=]*?)\s*=\s*(.*)$', line)
             if found:
                 key = found[1].strip()
                 props[key] = Property(found[2], path)
-            elif key and line.strip() and not line.lstrip().startswith(';'):
+            elif key and (quoted or line.strip() and not line.lstrip().startswith(';')):
                 prev = props[key]
                 props[key] = Property(prev.text + '\n' + line, path)
-        result.append((match[1], attrs, props))
+            quoted = _quoted_after(line, quoted)
+        result.append((kind, attrs, props))
     return result
 
 
@@ -228,6 +271,15 @@ class SceneLoader:
         return self.documents[path]
 
     def resource(self, ref):
+        if isinstance(ref, str):
+            path = ref.removeprefix('res://')
+            if not path.endswith('.tres'):
+                return {'type': 'Texture2D', 'path': path}, {}
+            doc = self.document(path)
+            header = next((a for k, a, p in doc.sections if k == 'gd_resource'), {})
+            if doc.resource is None:
+                raise SceneRenderError('Resource file has no root resource: ' + path)
+            return {**header, 'path': path}, doc.resource[1]
         if not isinstance(ref, Ref):
             raise SceneRenderError('Expected a scoped resource reference')
         doc = self.document(ref.scope)
@@ -420,13 +472,27 @@ class _Renderer:
     def material(self, node):
         ref = _property(node.props, 'material')
         if ref is None:
-            return None, {}, 0
+            return None, {}, 0, {}
         attrs, props = self.loader.resource(ref)
         blend = int(_property(props, 'blend_mode', 0))
         # Godot CanvasItemMaterial: mix/add/sub/mul/premul; Spine uses a different enum.
         blend = {0: 0, 1: 1, 2: 4, 3: 2, 4: 5}.get(blend, 0)
         shader = _property(props, 'shader')
-        return self.loader.path(shader) if shader else None, props, blend
+        if shader is None:
+            return None, props, blend, {}
+        shader_attrs, shader_props = self.loader.resource(shader)
+        source = shader_attrs.get('path')
+        if source:
+            return str(source).removeprefix('res://'), props, blend, {}
+        if shader_attrs.get('type') != 'Shader':
+            raise SceneRenderError('Material shader is not a Shader resource: ' + node.scope)
+        code = _property(shader_props, 'code')
+        if not isinstance(code, str):
+            raise SceneRenderError('Inline Shader has no source string: ' + node.scope)
+        digest = hashlib.sha256(code.encode('utf-8')).hexdigest()
+        identity = shader.scope + '::' + shader.key
+        return identity, props, blend, {'inline_sha256': digest,
+            'static_reason': _STATIC_INLINE_SHADERS.get(digest)}
 
     def control_size(self, node, parent_size, image=None):
         props = node.props
@@ -685,7 +751,7 @@ class _Renderer:
         own_tint = tint * _vector(_property(props, 'self_modulate', (1, 1, 1, 1)), 4)
         z = int(_property(props, 'z_index', 0)) + (parent_z if _property(props, 'z_as_relative', True) else 0)
         layer = None
-        shader, material, blend = self.material(node)
+        shader, material, blend, shader_info = self.material(node)
         if image is not None:
             image, rect = self.image_geometry(node, image, size)
             wind = None
@@ -701,8 +767,15 @@ class _Renderer:
                 wind = (force * max(0, 1 - height), force * max(0, -height))
             elif shader and shader.endswith('/vfx_water_reflection.gdshader'):
                 self.report('approximations', node, path, reason='water_distortion_frozen_to_authored_texture', shader=shader)
+            elif shader_info.get('static_reason'):
+                self.report('approximations', node, path, reason=shader_info['static_reason'],
+                            shader=shader, shader_sha256=shader_info['inline_sha256'],
+                            speed=float(_property(material, 'shader_parameter/speed', .1)),
+                            strength=float(_property(material, 'shader_parameter/strength', .1)),
+                            sample_time=self.time)
             elif shader:
-                self.report('omitted', node, path, reason='dynamic_shader', shader=shader)
+                self.report('omitted', node, path, reason='dynamic_shader', shader=shader,
+                            **({'shader_sha256': shader_info['inline_sha256']} if shader_info else {}))
                 image = None
             if image is not None:
                 layer = self.image_layer(image, rect, matrix, own_tint, wind)
@@ -792,6 +865,24 @@ class _Renderer:
         self.diagnostics['draw_commands'] = sum(command[1] is not None for command in self.commands)
         self.diagnostics['plane'] = plane
         return image, self.diagnostics
+
+
+def load_scene_texture(pack, path, *, texture_loader=None, cache=None):
+    """Read a Texture2D or AtlasTexture, including its untrimmed margin.
+
+    ``path`` is the complete original resource path. ``cache`` may be a shared
+    OrderedDict of decoded source textures; it remains bounded to 96 MiB.
+    This also supports compressed.sprites resources outside ui_atlas.sprites.
+    """
+    if texture_loader is None:
+        from build_content import texture as texture_loader
+    renderer = _Renderer(pack, 1, 1, (1, 1), texture_loader, None, 0., 1)
+    if cache is not None:
+        if not isinstance(cache, OrderedDict):
+            raise SceneRenderError('Texture cache must be an OrderedDict')
+        renderer.textures = cache
+        renderer.texture_bytes = sum(image.width * image.height * 4 for image in cache.values())
+    return renderer.texture(path).copy()
 
 
 def render_scene(pack, path, width=320, height=218, mode='scene', *, variants=None,

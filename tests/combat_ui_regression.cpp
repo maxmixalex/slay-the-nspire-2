@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include "combat_layout.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -107,7 +108,7 @@ static void capture(const char*prefix,bool focused){
 }
 int main(int argc,char**argv){
     std::vector<uint8_t> data;
-    if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
+    if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
     layouts();input_safety();focus_transitions();rendering(data);
     if(argc>2&&!data.empty()){
         new_run(a.game,7,true);a.reset_presentation();a.title=false;a.pointer.visible=false;a.animation=0;a.render();capture(argv[2],false);

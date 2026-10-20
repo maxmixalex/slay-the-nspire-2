@@ -217,10 +217,15 @@ int main(){
  require(play(s,0,0)&&s.hand.count==1,"Music Box creates a hand clone after the first attack");unsigned music_clone=s.hand.ids[0];
  require(!s.world_relics.card_is_dupe[music_clone]&&play(s,0,0)&&relic(WorldRelicHistoryCourse).values[0]==int(music_clone+1),"an ordinary Music Box clone remains eligible for History Course");
  relic(WorldRelicMusicBox).flags|=WorldRelicMelted;s.turn=2;hook(WorldRelicHook::BeforeSideTurnStart);
- unsigned history_dupe=s.card_count;hook(WorldRelicHook::AfterAutoPrePlay);
+ unsigned history_dupe=s.card_count;int history_first_hp=s.enemies[0].hp,history_second_hp=s.enemies[1].hp;
+ require(history_first_hp==1988&&history_second_hp==2000,"both manual Music Box attacks resolve against their chosen target");hook(WorldRelicHook::AfterAutoPrePlay);
  require(s.card_count==history_dupe+1&&s.world_relics.card_is_dupe[history_dupe]&&s.zones[history_dupe]==Zone::Power,"History Course's replay dupe finishes in non-circulating storage");
  for(const Pile*p:{&s.draw,&s.hand,&s.discard,&s.exhaust})for(unsigned i=0;i<p->count;i++)require(p->ids[i]!=history_dupe,"a completed replay dupe never enters draw, hand, discard or exhaust");
- require(relic(WorldRelicHistoryCourse).values[0]==0&&s.enemies[0].hp==1982,"History replay deals its attack once without replacing the next turn's original-card history");save_pending();
+ // History passes a null target to AutoPlay; the replay chooses a living
+ // enemy independently of the original manual attack's target.
+ int history_first_loss=history_first_hp-s.enemies[0].hp,history_second_loss=history_second_hp-s.enemies[1].hp;
+ require((history_first_loss==6&&history_second_loss==0)||(history_first_loss==0&&history_second_loss==6),"History replay attacks exactly one automatically selected enemy once");
+ require(relic(WorldRelicHistoryCourse).values[0]==0,"History replay does not replace the next turn's original-card history");save_pending();
  // Earring pays before automatic play. Orbit and resource history see that
  // payment; CardPlay still reports automatic zero-spent metadata.
  reset();add(WorldRelicWhisperingEarring);add(WorldRelicBrilliantScarf);prepared_hand({Bash,DefectHelixDrill,Defend});s.energy=2;orbit_fixture(2);

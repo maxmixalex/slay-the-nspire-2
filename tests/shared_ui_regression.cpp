@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -13,7 +14,7 @@ static void unchanged(const SaveData&b){auto now=snapshot();CHECK(b.size==now.si
 static void init(){new_run(a.game,7,true);a.reset_presentation();a.title=a.library=a.paused=a.help=false;}
 int main(int argc,char**argv){
  std::vector<uint8_t> data;
- if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
+ if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
  init();auto before=snapshot();a.input(Key::Collection);action(UiAction::LibraryRelics);action(UiAction::NextPage);a.render();CHECK(a.library_page==1);
  // The original relic directory fills this page. Every item target must
  // still end before the selected name at y=163.
@@ -28,7 +29,7 @@ int main(int argc,char**argv){
  action(UiAction::CancelDeckChoice);unchanged(before);a.input(Key::Confirm);action(UiAction::ConfirmDeckChoice);CHECK(a.game.deck_count==deck-1&&a.game.gold==gold-75&&a.game.phase==Phase::Shop);
  init();a.game.phase=Phase::Transform;a.game.event_id=EventId::Grove;a.game.event_remaining=2;a.cursor=3;before=snapshot();a.input(Key::Confirm);unchanged(before);action(UiAction::ConfirmDeckChoice);CHECK(a.game.event_remaining==1&&a.game.event_first==3&&a.game.phase==Phase::Transform);
  a.cursor=3;a.input(Key::Confirm);CHECK(a.deck_candidate<0);a.cursor=4;a.input(Key::Confirm);CHECK(a.deck_candidate==4);a.game.revision++;auto stale=snapshot();a.confirm_deck_choice();unchanged(stale);CHECK(a.deck_candidate<0);
- init();a.game.cards[a.game.hand.ids[0]]={Purity,0};a.cursor=0;a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustManyChoice);before=snapshot();a.render();
+ init();a.game.cards[a.game.hand.ids[0]]={Purity,0};a.game.event_cards.deck_origin[a.game.hand.ids[0]]=0;a.cursor=0;a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustManyChoice);before=snapshot();a.render();
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);unchanged(before);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.exhaust.count==1);
  if(!data.empty()){
   CHECK(a.content.frame_image({StrikeSilent,0})==a.content.ui_image(U_GreenAttack));CHECK(a.content.energy_image({StrikeSilent,0})==a.content.ui_image(U_SilentEnergy));

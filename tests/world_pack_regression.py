@@ -1,5 +1,6 @@
 """Asset-free bounds, resumable-cache and original clip-coverage regressions."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -10,10 +11,12 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from build_world import (ConversionCache, card_description, choose_layout,
-    decoded_frames, encoded_frames, plan_summary, private_path, ROOT, FONT_SIZES)
+    decoded_frames, encoded_frames, plan_summary, private_path, ROOT, FONT_SIZES,
+    canonical, LEGACY_BUILDER_SHA256, LEGACY_FUNCTIONS, sample_map_clip)
 from world_enemy_assets import manifest
 from world_enemy_profile import plan, skins
-from world_ui_profile import BASE_CLIPS, CLIP_ROWS, AUXILIARY_ROWS, validate_headers
+from world_ui_profile import (BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
+    CLIP_ROWS, AUXILIARY_ROWS, validate_headers)
 
 
 class WorldPack(unittest.TestCase):
@@ -48,7 +51,7 @@ class WorldPack(unittest.TestCase):
         self.assertEqual(sorted(row['slot_mask'] for row in gardener), [2, 5])
 
     def test_shared_other_arm_keeps_terminal_death_track(self):
-        jobs = [j for j in CLIP_ROWS if j['model'] == 'Crusher' and
+        jobs = [j for j in ENEMY_CLIP_ROWS if j['model'] == 'Crusher' and
                 j['visual_state']['facts']['kaiser_right_dead'] and j['clip'] == 'left/idle_loop']
         self.assertTrue(jobs)
         for job in jobs:
@@ -101,6 +104,50 @@ class WorldPack(unittest.TestCase):
             (cache.directory / 'clip' / (key + '.bin')).write_bytes(b'partial')
             self.assertIsNone(cache.get('clip', {}))
 
+    def test_map_catalog_changes_do_not_invalidate_identical_enemy_jobs(self):
+        with TemporaryDirectory(prefix='nspire-cache-test-') as directory:
+            common = {'schema': 2, 'pck': 'a'}
+            source = {'tools/animation.py': 'same', 'config/world-ui-0.17.json': 'before'}
+            scope = {'pipeline': 'enemy-rgba-1', 'files': {'tools/animation.py': 'same'}, 'model': 'one-model'}
+            first = ConversionCache(Path(directory), common, source_files=source)
+            first.put('clip', {'job': 1}, {'frames': 1}, b'unchanged', scope=scope)
+            source['config/world-ui-0.17.json'] = 'appended-map-catalog'
+            source['src/core.cpp'] = 'different-combat-code'
+            second = ConversionCache(Path(directory), common, source_files=source)
+            self.assertEqual(second.get('clip', {'job': 1}, scope=scope), ({'frames': 1}, b'unchanged'))
+            changed = dict(scope, model='different-model')
+            self.assertIsNone(second.get('clip', {'job': 1}, scope=changed))
+            changed = dict(scope, files={'tools/animation.py': 'different-rasterizer'})
+            self.assertIsNone(second.get('clip', {'job': 1}, scope=changed))
+
+    def test_v1_migration_pins_producer_code_settings_and_full_payload_hash(self):
+        with TemporaryDirectory(prefix='nspire-cache-test-') as directory:
+            root = Path(directory)
+            source = {'tools/build_world.py': LEGACY_BUILDER_SHA256,
+                      'tools/animation.py': 'geometry', 'config/enemy-visuals-0.17.json': 'all-models'}
+            old = {'schema': 1, 'pck': 'pck', 'source': source}
+            identity = hashlib.sha256(canonical(old)).hexdigest()
+            folder = root / identity
+            (folder / 'clip').mkdir(parents=True)
+            (folder / 'dependencies.json').write_bytes(canonical(old))
+            settings = {'job': {'clip': 'native-clip', 'frames': 1}, 'layout': [1, 2]}
+            old_key = hashlib.sha256(canonical(dict(schema=1, kind='clip', dependency=identity, settings=settings))).hexdigest()
+            payload = b'verified-original-frame'
+            receipt = folder / 'clip' / (old_key + '.json')
+            receipt.with_suffix('.bin').write_bytes(payload)
+            receipt.write_bytes(canonical(dict(schema=1, key=old_key, bytes=len(payload),
+                sha256=hashlib.sha256(payload).hexdigest(), metadata={'frames': 1})))
+            scope = dict(pipeline='enemy-rgba-1', files={'tools/animation.py': 'geometry'},
+                         functions={'encode_image': LEGACY_FUNCTIONS['encode_image']}, model='this-model')
+            cache = ConversionCache(root, {'schema': 2, 'pck': 'pck'}, source_files=source)
+            self.assertIsNone(cache.get('clip', dict(settings, layout=[2, 2]), scope=scope))
+            self.assertIsNone(cache.get('clip', settings, scope=dict(scope, files={'tools/animation.py': 'changed'})))
+            self.assertEqual(cache.get('clip', settings, scope=scope), ({'frames': 1}, payload))
+            self.assertEqual(cache.legacy_hits, 1)
+            imported = cache.directory / 'clip' / (cache.key('clip', settings, scope) + '.json')
+            self.assertEqual(json.loads(imported.read_bytes())['reused_from']['key'], old_key)
+            self.assertEqual(receipt.with_suffix('.bin').read_bytes(), payload)
+
     def test_frame_cache_rejects_truncation_and_extra_bytes(self):
         frame = (2, 1, 0, b'\x01\x02\x03\x04')
         data = encoded_frames([frame])
@@ -110,6 +157,48 @@ class WorldPack(unittest.TestCase):
                 decoded_frames(bad, 1)
         with self.assertRaises(ValueError):
             decoded_frames(data, 2)
+
+    def test_map_clips_append_without_reordering_enemy_directory(self):
+        self.assertEqual(CLIP_ROWS[:len(ENEMY_CLIP_ROWS)], plan()['jobs'])
+        self.assertEqual([row['id'] for row in MAP_CLIP_ROWS], [1638, 1639, 1640])
+        self.assertEqual(sum(row['frames'] for row in MAP_CLIP_ROWS), 540)
+        for row in MAP_CLIP_ROWS:
+            self.assertEqual(row['shader'], 'boss_map_channels')
+            self.assertTrue(row['loop'])
+            self.assertLess(abs(row['frames'] * row['frame_ms'] - row['duration_ms']), 50)
+
+    def test_map_clip_preserves_mask_channels_anchor_and_full_period(self):
+        class Sampler:
+            def metadata(self, resource):
+                return {'clips': [{'name': 'original', 'duration': 1.}], 'source_version': '4.2'}
+            def sample(self, resource, clip, times, **settings):
+                self.times, self.settings = times, settings
+                return [{'t': t} for t in times]
+            def draw(self, resource, frame):
+                pixels = np.zeros((2, 2, 4), dtype=float)
+                pixels[:, :, 0] = pixels[:, :, 3] = 1
+                return [(np.array([[0., 0.], [2., 0.], [0., 2.]]),
+                         np.array([[0., 0.], [1., 0.], [0., 1.]]),
+                         np.array([[0, 1, 2]]), pixels, np.ones(4), 0)]
+        job = dict(key='map.original', resource='private.tres', clip='original',
+                   duration=1., duration_ms=1000, frames=2, frame_ms=500, skins=['default'],
+                   size=[4, 4], pivot=[2, 2], transform=[1, 0, 1, 0, -1, 3],
+                   loop=True, shader='boss_map_channels')
+        sampler = Sampler()
+        frames, metadata = sample_map_clip(None, job, sampler)
+        self.assertEqual(sampler.times, [0., .5])
+        self.assertEqual(sampler.settings, {'skins': ['default'], 'loop': True})
+        self.assertEqual(metadata['pivot'], [2, 2])
+        self.assertEqual(metadata['bounds'], [[1., 1.], [3., 3.]])
+        self.assertEqual(len(frames), 2)
+        pixels = np.asarray(frames[0])
+        visible = pixels[:, :, 3] > 0
+        self.assertTrue(visible.any())
+        self.assertTrue(np.all(pixels[visible, :3] == [255, 0, 0]))
+        with self.assertRaisesRegex(ValueError, 'exceeds its explicit canvas'):
+            sample_map_clip(None, dict(job, transform=[1, 0, 10, 0, -1, 3]), sampler)
+        with self.assertRaisesRegex(ValueError, 'duration/name drift'):
+            sample_map_clip(None, dict(job, duration=2), sampler)
 
     def test_localized_templates_keep_nested_branches_and_real_newlines(self):
         text = '{IfUpgraded:show:{Damage:diff()}|{Block:diff()}}\\n{InCombat:{Damage:diff()}|}'
@@ -133,6 +222,8 @@ class WorldPack(unittest.TestCase):
         self.assertIn('background_front.KAISER_CRAB_BOSS', keys)
         self.assertIn('rewards.CARD_REMOVAL', keys)
         self.assertTrue({f'intents.ATTACK_{i}' for i in range(2, 6)} <= keys)
+        self.assertTrue({'events.ANCIENT_OPTION', 'events.ANCIENT_OPTION_OUTLINE',
+                         'map.BG_OVERGROWTH_TOP', 'map.LEGEND', 'map.ANCIENT_VAKUU'} <= keys)
         validate_headers()
 
 

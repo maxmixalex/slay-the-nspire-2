@@ -76,12 +76,12 @@ static void world_choice_screen(Canvas&c){
    c.hit(44,yy-2,237,70,HitKind::WorldChoice,ids[i]);
   }
  }else if(rewards){
-  for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i],kind=0,model=0,amount=0;
-   if(relic){const auto&r=w.rewards[w.offers[at]];kind=r.kind==1?4:r.kind==2?3:r.kind==3?2:r.kind==4?1:r.kind;model=r.value;amount=r.value;}
+  for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i],kind=0,model=0,amount=0;const EventCardFacts*facts=nullptr;
+   if(relic){const auto&r=w.rewards[w.offers[at]];kind=r.kind==1?4:r.kind==2?3:r.kind==3?2:r.kind==4?1:r.kind;model=r.value;amount=r.value;if(r.kind==5)facts=&r.facts[0];}
    else{const auto&r=e.rewards[at];kind=r.kind;model=r.model;amount=r.amount;}
    int x=8+(i-first)%2*156,y=48+(i-first)/2*28;bool selected=world_selected(a,at);
    c.ui(U_RewardButton,x,y,148,26);if(selected||a.cursor==i)c.box(x-1,y-1,150,28,selected?Green:Gold);
-   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.relic_face_image(model):kind==5?a.card_face_image(card_from_token(model)):kind==6?a.content.world_image("rewards","CARD_REMOVAL"):a.content.ui_image(U_RewardCard);
+   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.relic_face_image(model):kind==5?a.card_face_image(card_from_token(model),-1,-1,facts):kind==6?a.content.world_image("rewards","CARD_REMOVAL"):a.content.ui_image(U_RewardCard);
    if(kind==6&&image<0)image=a.content.ui_image(U_ShopRemove);
    c.picture(image,x+4,y+2,22,22);char name[128]{};TextBuffer b{name,sizeof name,0};
    if(kind==1){b.number(amount);b.text(" 金币");}else if(kind==2){const auto*d=potion_definition(Potion(model));if(d)b.text(d->name);}

@@ -201,7 +201,7 @@ static void choices_statuses_and_eight_slots(){
  cast(s,Thunderclap);for(int t=1;t<MaxEnemies;++t)CHECK(s.enemies[t].hp==hp[t]-4&&s.enemies[t].vulnerable==1);persist(s);
  untouched=s;s.enemy_world.models[7].slot=s.enemy_world.models[0].slot;CHECK(!validate(s));s=untouched;
  s.enemy_world.models[7].combat_id=s.enemy_world.models[0].combat_id;CHECK(!validate(s));s=untouched;
- s.enemy_world.returned_gold_count=33;CHECK(!validate(s));s=untouched;
+ s.enemy_world.returned_gold_count=MaxEnemyExtraRewards+1;CHECK(!validate(s));s=untouched;
  s.enemy_world.models[7].captured_card=1;CHECK(!validate(s));s=untouched;persist(s);
 }
 static int visual_fact(const State&s,int target,const char*key){int value=-9;CHECK(enemy_visual_fact(s,target,key,value));return value;}
@@ -216,7 +216,8 @@ static void visual_predicates_and_unpowered_death_block(){
  for(unsigned ascension:{0u,9u}){
   intent_state=fight(EncounterId::AeonglassBoss,ascension);intent_state.enemy_world.models[0].node=2;
   CHECK(enemy_intent(intent_state,0).status_cards==(ascension?2:1));
-  intent_state=fight(EncounterId::TestSubjectBoss,ascension);intent_state.enemy_world.models[0].node=5;
+  intent_state=fight(EncounterId::TestSubjectBoss,ascension);intent_state.enemy_world.models[0].node=6;
+  CHECK(!strcmp(enemy_intent(intent_state,0).move_key,"BURNING_GROWL_MOVE"));
   CHECK(enemy_intent(intent_state,0).status_cards==(ascension?5:3));
  }
  scenario="Paper Krane weak intent and attack precede Debilitate amplification";

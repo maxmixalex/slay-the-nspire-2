@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include "status.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -191,7 +192,7 @@ static void complete_status_directory(){
     capture("five-character-statuses");a.input(Key::Back);
 }
 int main(int argc,char**argv){
-    std::vector<uint8_t>b;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);b.resize(MaxPack);size_t n=std::fread(b.data(),1,b.size(),f);CHECK(!std::ferror(f));std::fclose(f);b.resize(n);real_profile=true;}else b=synthetic_profile();
+    std::vector<uint8_t>b;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);b.resize(spire_test::pack_size(f));size_t n=std::fread(b.data(),1,b.size(),f);CHECK(!std::ferror(f));std::fclose(f);b.resize(n);real_profile=true;}else b=synthetic_profile();
     if(argc>2)screenshots=argv[2];CHECK(a.init(b.data(),b.size(),{save_cb,load_cb}));
     directory_and_characters();stars_and_upgraded_transform();orbs_and_osty();permanent_card_previews();target_conditional_previews();grimoire_and_relic_width();complete_status_directory();
     std::printf("five-character UI: %u checks passed; %s profile\n",checks,real_profile?"actual":"synthetic");

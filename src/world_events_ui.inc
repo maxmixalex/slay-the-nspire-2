@@ -2,19 +2,112 @@ static bool ui_ancient_event(OriginalEventId id){switch(id){case OriginalEventId
 static const char* native_event_title(const App&a){const char*text=a.content.world_title(ui_ancient_event(a.game.original_events.id)?"ancients":"events",original_event_key(a.game.original_events.id));return *text?text:original_event_key(a.game.original_events.id);}
 static void native_event_option(const App&a,int option,bool description,char*out,size_t size){
  const auto&e=a.game.original_events;if(!size)return;out[0]=0;
- if(ui_ancient_event(e.id)&&option>=0&&option<e.offer_count&&e.offers[option]<WorldRelicKinds){
-  if(description)a.relic_description(RelicId(e.offers[option]),out,size);else{TextBuffer b{out,size,0};b.text(a.relic_title(RelicId(e.offers[option])));}return;
+ // The finished page retains its old offers for saved continuations, but its
+ // sole Choice 0 is now Proceed. It must not look like a second acquisition.
+ if(e.finished){
+  a.original_event_text(option,description,out,size);
+  if(!*out&&!description){TextBuffer b{out,size,0};const char*text=a.content.world_string(ui_ancient_event(e.id)?"ancients":"events","PROCEED.title");b.text(*text?text:"继续前进");}return;
+ }
+ if(ui_ancient_event(e.id)&&option>=0&&option<e.offer_count){
+  // EventOption.FromRelic gives an ancient's own option text precedence,
+  // then uses the relic's acquisition description before its normal tooltip.
+  char key[256]{};
+  if(original_event_text_key(a.game,option,description,key,sizeof key))a.localized_text("ancients",key,out,size,int(e.id));
+  if(*out)return;
+  if(e.offers[option]<WorldRelicKinds){
+   RelicId relic=RelicId(e.offers[option]);
+   if(description){key[0]=0;TextBuffer b{key,sizeof key,0};b.text(world_relic_key(relic));b.text(".eventDescription");a.localized_text("relics",key,out,size,int(relic));if(!*out)a.relic_description(relic,out,size);}
+   else{TextBuffer b{out,size,0};b.text(a.relic_title(relic));}
+  }else if(!description){TextBuffer b{out,size,0};b.text("当前无法选择");}
+  return;
  }
  if(e.id==OriginalEventId::FakeMerchant&&option>=0&&option<6){
   if(e.offers[option]>=WorldRelicKinds){TextBuffer b{out,size,0};b.text("售罄");return;}
   if(description){a.relic_description(RelicId(e.offers[option]),out,size);return;}
   TextBuffer b{out,size,0};b.text(a.relic_title(RelicId(e.offers[option])));b.text(" · ");b.number(e.choice_prices[option]);b.text(" 金币");return;
  }
+ if(e.id==OriginalEventId::FakeMerchant&&option==6){if(!description){TextBuffer b{out,size,0};b.text("离开");}return;}
  a.original_event_text(option,description,out,size);
  if(!*out&&!description){TextBuffer b{out,size,0};b.text(e.finished?"继续前进":"继续");}
 }
+static void native_ancient_screen(Canvas&c){
+ auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
+ c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
+ c.centered(native_event_title(a),14,27,292,16,Gold);
+ char key[128]{};TextBuffer k{key,sizeof key,0};k.text(original_event_key(e.id));k.text(".epithet");
+ c.centered(a.content.world_string("ancients",key),22,46,276,10,White);
+ char text[8192]{};a.original_event_text(-1,true,text,sizeof text);
+ const int lines=c.paragraph(text,35,61,250,0,0,10);
+ a.scroll=mn(mx(0,a.scroll),mx(0,lines-2));
+ if(*text){c.dim(27,58,266,31,120);c.paragraph(text,35,61,250,2,a.scroll,10);}
+ c.text("全文 I",141,93,10,Gold);c.action(130,89,72,20,UiAction::ReadEvent);
+ c.text("↑",265,93,10,a.scroll?Gold:Muted);c.hit(254,89,26,20,HitKind::Scroll,-1,a.scroll>0);
+ c.text("↓",293,93,10,a.scroll+2<lines?Gold:Muted);c.hit(282,89,26,20,HitKind::Scroll,1,a.scroll+2<lines);
+ const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));
+ // The original ancient scene is a centered VBox of three 1000x100 rows.
+ // Keep that hierarchy while enlarging type and targets for 320x240.
+ for(int i=0;i<count&&i<3;i++){
+  const int y=e.finished?196:110+i*43;bool enabled=original_event_option_enabled(s,i),selected=a.cursor==i;
+  int image=a.content.world_image("events","ANCIENT_OPTION");if(image<0)image=a.content.ui_image(U_EventButton);
+  c.picture(image,14,y,292,40,enabled?255:115);
+  if(selected){image=a.content.world_image("events","ANCIENT_OPTION_OUTLINE");if(image<0)image=a.content.ui_image(U_EventOutline);c.picture(image,14,y,292,40,190);}
+  bool icon=!e.finished&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
+  if(icon)c.picture(a.relic_face_image(e.offers[i]),22,y+6,28,28,enabled?255:110);
+  char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
+  int tx=icon?60:26,tw=icon?234:268;
+  if(e.finished)c.centered(label,26,y+12,268,12,enabled?Gold:Muted);
+  else{
+   c.text(label,tx,y+2,10,enabled?Gold:Muted,tw);
+   int rows=c.paragraph(description,tx,y+14,tw,2,0,10,enabled?White:Muted);
+   if(rows>2){c.dim(283,y+26,14,12,180);c.text("…",285,y+26,10,enabled?Gold:Muted,12);}
+  }
+  c.hit(14,y,292,40,HitKind::Choice,i,enabled);
+ }
+}
+static void native_fake_price(Canvas&c,int amount,int x,int y,bool enabled){
+ char text[24]{};TextBuffer b{text,sizeof text,0};b.number(amount);int left=x-(c.width(text,10)+13)/2;
+ c.picture(A_Coin,left,y+2,10,10,enabled?255:135);c.text(text,left+12,y,10,enabled?Gold:Red);
+}
+static void native_fake_merchant_screen(Canvas&c){
+ auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
+ c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);c.dim(0,22,320,218,100);
+ c.picture(a.content.world_image("events","FAKE_MERCHANT_RUG"),0,38,320,180);
+ c.centered(native_event_title(a),6,25,308,16,Gold);
+ const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));
+ // Authored relic origins in the 1747x978 rug: two, three, then one.
+ // Icons and prices are enlarged independently so every stock slot is legible.
+ static const int positions[6][2]={{869,218},{1144,288},{737,516},{1010,583},{1345,498},{823,847}};
+ for(int i=0;i<6;i++){
+  const int x=positions[i][0]*320/1747,y=38+positions[i][1]*180/978;
+  const bool stocked=i<e.offer_count&&e.offers[i]<WorldRelicKinds,enabled=original_event_option_enabled(s,i);
+  // A 36px width keeps the staggered top-right and middle-right targets
+  // disjoint after the icon/type enlargement; their authored centers remain.
+  if(a.cursor==i)c.box(x-18,y-17,36,46,stocked?Gold:Muted);
+  if(stocked){c.picture(a.relic_face_image(e.offers[i]),x-14,y-14,28,28,enabled?255:125);native_fake_price(c,e.choice_prices[i],x,y+15,enabled);}
+  else{c.dim(x-20,y-15,41,40,100);c.centered("售罄",x-20,y-3,41,10,Muted);}
+  c.hit(x-18,y-17,36,46,HitKind::Choice,i,enabled);
+ }
+ char title[256]{},description[4096]{};
+ if(a.cursor<6){
+  if(a.cursor<e.offer_count&&e.offers[a.cursor]<WorldRelicKinds){TextBuffer b{title,sizeof title,0};b.text(a.relic_title(RelicId(e.offers[a.cursor])));}
+  else{TextBuffer b{title,sizeof title,0};b.text("售罄");}
+  native_event_option(a,a.cursor,true,description,sizeof description);
+ }else{native_event_option(a,6,false,title,sizeof title);a.original_event_text(-1,true,description,sizeof description);}
+ c.dim(4,59,106,140,185);c.paragraph(title,9,62,96,2,0,10,Gold);
+ int lines=c.paragraph(description,9,91,96,0,0,10);a.scroll=mn(mx(0,a.scroll),mx(0,lines-6));
+ c.paragraph(description,9,91,96,6,a.scroll,10,White);
+ c.text("全文 I",10,181,10,Gold);c.action(4,176,66,22,UiAction::ReadEvent);
+ c.text("↑",77,181,10,a.scroll?Gold:Muted);c.hit(71,176,19,22,HitKind::Scroll,-1,a.scroll>0);
+ c.text("↓",97,181,10,a.scroll+6<lines?Gold:Muted);c.hit(91,176,19,22,HitKind::Scroll,1,a.scroll+6<lines);
+ char leave[128]{};native_event_option(a,6,false,leave,sizeof leave);
+ c.ui(U_RewardSkip,219,208,96,29);if(a.cursor==6)c.box(219,208,96,29,Gold);
+ c.centered(leave,225,214,84,12,Gold);c.hit(218,205,98,34,HitKind::Choice,6,original_event_option_enabled(s,6));
+ c.text("← → 选择 · I 全文",8,225,10,Muted,200);
+}
 static void native_event_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
+ if(ui_ancient_event(e.id)){native_ancient_screen(c);return;}
+ if(e.id==OriginalEventId::FakeMerchant&&!e.finished){native_fake_merchant_screen(c);return;}
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
  for(int x=122;x<320;x++)c.dim(x,22,1,218,unsigned(mn(178,(x-122)*5)));
  c.centered(native_event_title(a),131,27,182,16,Gold);
@@ -26,7 +119,7 @@ static void native_event_screen(Canvas&c){
  const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));int first=a.cursor/3*3;
  for(int i=first;i<mn(count,first+3);i++){int y=137+(i-first)*33;bool enabled=original_event_option_enabled(s,i),selected=a.cursor==i;
   c.ui(U_EventButton,130,y,186,32,enabled?255:115);if(selected)c.ui(U_EventOutline,130,y,186,32,170);
-  bool icon=(ui_ancient_event(e.id)||e.id==OriginalEventId::FakeMerchant)&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
+  bool icon=!e.finished&&(ui_ancient_event(e.id)||e.id==OriginalEventId::FakeMerchant)&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
   int tx=icon?163:140,tw=icon?141:164;if(icon)c.picture(a.relic_face_image(e.offers[i]),135,y+4,24,24,enabled?255:100);
   char label[256]{},description[2048]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
   c.text(label,tx,y+1,10,enabled?Gold:Muted,tw);c.paragraph(description,tx,y+15,tw,1,0,8,enabled?White:Muted);

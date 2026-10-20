@@ -6,6 +6,7 @@ store only resource keys and append-only directory indexes.
 from __future__ import annotations
 import argparse
 import json
+import math
 from pathlib import Path
 from world_enemy_profile import plan as enemy_plan, generated_cpp as enemy_cpp
 
@@ -26,7 +27,29 @@ AUXILIARY_ROWS.append(dict(key='rewards.CARD_REMOVAL', kind='texture',
 for _level in range(2, 6):
     AUXILIARY_ROWS.append(dict(key=f'intents.ATTACK_{_level}', kind='texture',
         path=f'images/packed/intents/attack/intent_attack_{_level}.png', size=[24,24], fit='contain'))
-CLIP_ROWS = enemy_plan()['jobs']
+for _suffix in ('', '_OUTLINE'):
+    AUXILIARY_ROWS.append(dict(key='events.ANCIENT_OPTION' + _suffix, kind='texture',
+        path='images/packed/common_ui/ancient_event_option_button' + _suffix.lower() + '.png',
+        size=[292,40], fit='stretch'))
+MAP_PROFILE = json.loads((ROOT / 'config/world-map-ui-0.17.json').read_text())
+if MAP_PROFILE.get('schema') != 1 or MAP_PROFILE.get('reference') != 'v0.111.0 / 41cef1ea':
+    raise ValueError('Original map resource reference/schema drift')
+for _row in MAP_PROFILE['images']:
+    if not _row['key'].startswith('map.'):
+        raise ValueError('Map resource must use its stable map.* key')
+    AUXILIARY_ROWS.append(dict(_row))
+ENEMY_CLIP_ROWS = enemy_plan()['jobs']
+MAP_CLIP_ROWS = []
+for _row in MAP_PROFILE['clips']:
+    if (not _row['key'].startswith('map.') or _row['shader'] != 'boss_map_channels' or
+        not 0 < _row['duration'] <= 120 or not 1 <= _row['frames'] <= 256 or
+        not 0 < _row['frame_ms'] <= 1000 or
+        abs(round(_row['duration'] * 1000) - _row['duration_ms']) > 1 or
+        len(_row['transform']) != 6 or not all(math.isfinite(v) for v in _row['transform']) or
+        not 0 < _row['size'][0] <= 320 or not 0 < _row['size'][1] <= 240):
+        raise ValueError('Invalid original map clip specification: ' + _row['key'])
+    MAP_CLIP_ROWS.append(dict(_row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS)))
+CLIP_ROWS = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS
 STRINGS = TEXT_BASE + len(TEXT_KEYS)
 AUXILIARY = BASE_AUXILIARY + len(AUXILIARY_ROWS)
 CLIPS = BASE_CLIPS + len(CLIP_ROWS)

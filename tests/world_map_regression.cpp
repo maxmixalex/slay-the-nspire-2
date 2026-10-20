@@ -73,7 +73,12 @@ static void scoped_core_observer(){
  CoreObserver restored=set_core_observer({});record(game,LogKind::Gold,42);
  require(restored.context==&outer&&outer.count==41&&inner.count==1&&outer.last.a==41&&inner.last.a==40,"nested scopes restore their observer and receive logs beyond the 24-entry window");
  for(int i=0;i<43;i++)record(other,LogKind::Gold,i);
- require(!std::memcmp(&game,&other,sizeof game),"record observer never changes game state or its serialized fields");
+ require(game.log_count==other.log_count,"observer preserves the complete retained log count");
+ for(unsigned i=0;i<game.log_count;i++)require(game.logs[i].kind==other.logs[i].kind&&game.logs[i].a==other.logs[i].a&&game.logs[i].b==other.logs[i].b,"observer preserves every retained log field");
+ // Log has padding between kind and a. Independently constructed log entries
+ // need not have equal padding, so compare the complete canonical encoding.
+ require(save(game,bytes)&&save(other,again),"both observed and unobserved states remain serializable");
+ require(bytes.size==again.size&&!std::memcmp(bytes.bytes,again.bytes,bytes.size),"record observer never changes any serialized game field or RNG state");
  set_core_observer(original);for(unsigned i=0;i<24;i++)game.logs[i]=previous_logs[i];game.log_count=previous_count;
 }
 static void combat_extra_reward_group(){

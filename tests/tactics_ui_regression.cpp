@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "content_fixture.hpp"
 #include "status.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -55,7 +56,7 @@ static void statuses(){
 }
 int main(int argc,char**argv){
  std::vector<uint8_t> data;
- if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
+ if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
  return_choice();statuses();
  if(!data.empty()){
   CHECK(a.content.card_count()==CardKinds);for(int id=Headbutt;id<CardKinds;id++)CHECK(a.content.image(a.content.card_image(id)).pixels);

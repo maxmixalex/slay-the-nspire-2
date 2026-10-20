@@ -142,11 +142,11 @@ static void all_potions(){
   case Potion::LuckyTonic:CHECK(power_value(s,XPower::Buffer)==1);break;
   case Potion::MazalethsGift:CHECK(power_value(s,XPower::Ritual)==1);break;
   case Potion::OrobicAcid:CHECK(s.hand.count==7);for(int i=4;i<7;i++)CHECK(cost(s,s.hand.ids[i])==0);break;
-  case Potion::PotionOfBinding:for(auto&e:s.enemies)CHECK(e.weak==1&&e.vulnerable==1);break;
+  case Potion::PotionOfBinding:for(int i=0;i<MaxEnemies;i++)CHECK(s.enemies[i].weak==(i<s.enemy_count?1:0)&&s.enemies[i].vulnerable==(i<s.enemy_count?1:0));break;
   case Potion::PowderedDemise:CHECK(s.expansion.demise[0]==9);break;
   case Potion::RadiantTincture:CHECK(s.energy==21&&power_value(s,XPower::Radiance)==3);break;
   case Potion::RegenPotion:CHECK(power_value(s,XPower::Regen)==5);break;
-  case Potion::ShacklingPotion:for(auto&e:s.enemies)CHECK(e.strength==-7);break;
+  case Potion::ShacklingPotion:for(int i=0;i<MaxEnemies;i++)CHECK(s.enemies[i].strength==(i<s.enemy_count?-7:0));break;
   case Potion::ShipInABottle:CHECK(s.block==16&&s.block_next_turn==10);break;
   case Potion::SneckoOil:CHECK(s.hand.count==10);for(int i=0;i<10;i++)CHECK(cost(s,s.hand.ids[i])>=0&&cost(s,s.hand.ids[i])<=3);break;
   case Potion::StableSerum:CHECK(power_value(s,XPower::Retain)==2);break;

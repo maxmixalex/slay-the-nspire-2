@@ -5,11 +5,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <vector>
 using namespace spire;
 static App a;
 static SaveData before,after;
 static unsigned checks;
+static const char* screenshot_directory;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s phase=%d\n",__FILE__,__LINE__,#x,int(a.game.phase));std::exit(1);}}while(0)
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned n,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=(uint8_t)(n>>(8*i));}
 static std::vector<uint8_t> synthetic_profile(){
@@ -37,6 +39,12 @@ static std::vector<uint8_t> synthetic_profile(){
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static bool has(HitKind kind,int value){for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value)return true;return false;}
+static void capture(const char*name){
+ if(!screenshot_directory)return;a.pointer.visible=false;a.render();
+ const std::string path=std::string(screenshot_directory)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);
+ std::fprintf(f,"P6\n320 240\n255\n");unsigned char row[ScreenW*3];
+ for(int y=0;y<ScreenH;y++){for(int x=0;x<ScreenW;x++){unsigned p=a.pixels[y*ScreenW+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
+}
 static void world(){a.title=true;a.character_select=true;a.practice_entry=false;a.run_settings=false;a.selected_character=Character::Ironclad;a.selected_ascension=0;a.selected_region=reference::ActKind::Overgrowth;a.selected_seed[0]=0;a.ui_action(UiAction::StartCharacter);CHECK(!a.title&&a.game.original_events.id==OriginalEventId::Neow);CHECK(validate(a.game));
  // Later checks supply their own event outcomes, after verifying ordinary Neow entry.
  a.game.original_events=OriginalEventState{};CHECK(world_finish_room(a.game));}
@@ -44,18 +52,36 @@ static void options_and_readers(){
  a.character_select=true;a.practice_entry=false;a.title=true;a.ui_action(UiAction::RunSettings);CHECK(a.run_settings);a.ui_action(UiAction::RunRegion);a.ui_action(UiAction::RunAscensionUp);a.ui_action(UiAction::RunAscensionUp);
  a.ui_action(UiAction::RunSeed);CHECK(a.map_preview.editing&&a.run_seed_editing);a.reference_text(-1);for(const char*p="WORLD-UI-17";*p;p++)a.reference_text(*p);a.reference_text(13);CHECK(!a.map_preview.open&&!a.run_seed_editing&&a.selected_seed[0]);
  a.ui_action(UiAction::StartCharacter);CHECK(a.game.world.active&&a.game.world.ascension==2);CHECK(a.game.original_events.id==OriginalEventId::Neow);snapshot();
- a.render();CHECK(a.hit_count>0);a.ui_action(UiAction::ReadEvent);a.render();CHECK(a.event_reader);a.pointer_scroll(1);a.render();a.ui_action(UiAction::CloseEventReader);unchanged();
+ a.render();CHECK(a.hit_count>0);capture("ancient-neow");a.ui_action(UiAction::ReadEvent);a.render();CHECK(a.event_reader);capture("ancient-reader");a.pointer_scroll(1);a.render();a.ui_action(UiAction::CloseEventReader);unchanged();
  a.library=true;a.library_tab=1;a.library_selected=WorldRelicKinds-1;a.library_page=a.library_selected/18;a.render();CHECK(has(HitKind::LibraryItem,WorldRelicKinds-1));a.select_library_item(WorldRelicKinds-1);a.render();CHECK(a.detail_item==WorldRelicKinds-1);a.input(Key::Back);a.library=false;unchanged();
 }
 static void crystal_and_large_rewards(){
  world();CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,31,1));a.game.gold=250;CHECK(original_event_choose(a.game,1));CHECK(a.game.phase==Phase::OriginalEventChoice);a.reset_presentation();snapshot();a.render();
- unsigned cells=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::CrystalCell)cells++;CHECK(cells==CrystalCells&&a.hit_count<=MaxHits);a.input(Key::Right);a.input(Key::Down);a.render();unchanged();
+ unsigned cells=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::CrystalCell)cells++;CHECK(cells==CrystalCells&&a.hit_count<=MaxHits);capture("crystal-board");a.input(Key::Right);a.input(Key::Down);a.render();unchanged();
  auto&e=a.game.original_events;e.finished=1;e.selection=OriginalEventSelection::Rewards;e.select_min=0;e.select_max=1;e.select_cancelable=1;e.reward_active=1;e.reward_count=MaxOriginalEventRewards;e.reward_current=NoOriginalEventReward;e.reward_card_count=0;
  for(unsigned i=0;i<e.reward_count;i++){e.rewards[i]={};e.rewards[i].kind=1;e.rewards[i].amount=1;}a.game.phase=Phase::OriginalEventChoice;a.choice_revision=0;a.cursor=MaxOriginalEventRewards-1;snapshot();a.render();CHECK(has(HitKind::WorldChoice,MaxOriginalEventRewards-1));a.world_choice_detail(MaxOriginalEventRewards-1);unchanged();
  int gold=a.game.gold;a.toggle_world_choice(MaxOriginalEventRewards-1);CHECK(a.game.original_events.rewards[MaxOriginalEventRewards-1].claimed&&a.game.gold==gold+1);CHECK(save(a.game,after));CHECK(after.size<=sizeof after.bytes);
 }
+static void special_reward_snapshots(){
+ const CardKind models[]={DefectGeneticAlgorithm,NecroTheScythe,NecroTheScythe,NecroTheScythe};
+ const EventEnchantment enchants[]={EventEnchantment::Nimble,EventEnchantment::Sharp,EventEnchantment::Corrupted,EventEnchantment::TezcatarasEmber};
+ const char*values[]={"17","49","60","43"};
+ for(unsigned i=0;i<4;i++){
+  new_run(a.game,0x1717,false);init_world_relics(a.game);a.game.phase=Phase::WorldRelicChoice;
+  auto&w=a.game.world_relics;w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;
+  w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;
+  auto&r=w.rewards[0];r.group=1;r.kind=5;r.value=card_token({models[i],0});r.tokens[0]=i?0:12;r.tokens[1]=i?27:0;
+  r.facts[0].enchantment=enchants[i];r.facts[0].enchantment_amount=i==0?4:i==1?9:1;r.facts[0].energy_offset=i==3?-1:0;
+  a.title=a.library=false;a.reset_presentation();snapshot();a.world_choice_detail(0);a.render();
+  CHECK(a.detail_has_facts&&a.detail_instance==-1&&a.detail_deck_index==-1);CHECK(a.detail_genetic==r.tokens[0]&&a.detail_scythe==r.tokens[1]);
+  char text[2048]{};a.card_description({models[i],0},-1,text,sizeof text);CHECK(std::strstr(text,values[i]));CHECK(!std::strchr(text,'{'));
+  CHECK(a.detail_energy()==a.card_offer_cost({models[i],0},&r.facts[0]));unchanged();
+  if(i==2)capture("reward-grown-scythe");
+  a.input(Key::Back);a.open_card_detail({models[i],0});CHECK(!a.detail_has_facts&&!a.detail_genetic&&!a.detail_scythe);a.input(Key::Back);unchanged();
+ }
+}
 static void potion_lock_and_capacity(){
- world();a.game.potion_slots=16;for(unsigned i=0;i<16;i++)CHECK(potion_set(a.game,i,Potion::Strength));CHECK(original_event_begin(a.game,OriginalEventId::StoneOfAllTime,7,1));CHECK(original_event_blocks_potions(a.game));a.panel=4;a.scroll=15;snapshot();a.render();CHECK(has(HitKind::Potion,15));a.ui_action(UiAction::DiscardPotion);CHECK(potion_at(a.game,15)==Potion::Strength);unchanged();a.panel=0;
+ world();a.game.potion_slots=16;for(unsigned i=0;i<16;i++)CHECK(potion_set(a.game,i,Potion::Strength));CHECK(original_event_begin(a.game,OriginalEventId::StoneOfAllTime,7,1));CHECK(original_event_blocks_potions(a.game));a.input(Key::Potions);CHECK(a.panel==4);a.pointer_scroll(1);for(int i=0;i<7;i++)a.input(Key::Right);CHECK(a.scroll==15);snapshot();a.render();CHECK(has(HitKind::Potion,15));CHECK(a.scroll==15);capture("potion-full-second-page");a.ui_action(UiAction::DiscardPotion);CHECK(potion_at(a.game,15)==Potion::Strength);unchanged();a.panel=0;
 }
 static void offer_facts(){
  world();EventCardFacts facts{};facts.science_type=1;facts.rider=unsigned(TinkerRider::Wisdom);facts.energy_offset=-1;
@@ -72,17 +98,17 @@ static void enemy_visual_fight(EncounterId encounter){
 static void original_enemy_presentation(){
  CHECK(world_enemy_fact_count()<=MaxEnemyVisualFacts);enemy_visual_fight(EncounterId::NibbitsWeak);
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip>=38&&clip<AnimationKinds&&loop);
- CHECK(has(HitKind::EnemyIntent,0));const int idle=clip;const unsigned turn=a.game.turn;
- a.input(Key::EndTurn);CHECK(a.game.turn==turn+1);CHECK(a.enemy_visual_clock>a.animation);CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip!=idle&&!loop);snapshot();
+ CHECK(has(HitKind::EnemyIntent,0));capture("combat-nibbit-idle");const int idle=clip;const unsigned turn=a.game.turn;
+ a.input(Key::EndTurn);CHECK(a.game.turn==turn+1);CHECK(a.enemy_visual_clock>a.animation);CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip!=idle&&!loop);snapshot();capture("combat-nibbit-action");
  for(unsigned i=0;i<32;i++){a.advance(250);a.render();}unchanged();CHECK(a.enemy_frame(0,clip,elapsed,loop)&&loop);CHECK(!a.enemy_presentation[0].overflow);
  {UiCoreObserver observer(a);damage_unpowered(a.game,0,9999);resolve_pending(a.game);}
- CHECK(a.enemy_presentation[0].dead);CHECK(a.enemy_frame(0,clip,elapsed,loop)&&!loop);CHECK(a.combat_linger_until>a.animation);snapshot();a.render();unchanged();
+ CHECK(a.enemy_presentation[0].dead);CHECK(a.enemy_frame(0,clip,elapsed,loop)&&!loop);CHECK(a.combat_linger_until>a.animation);snapshot();a.render();capture("combat-nibbit-death");unchanged();
  // Actual shared-scene clips replace both arm placeholders. Rendering and
  // idle advancement cannot draw new game RNG or change a saved boss phase.
  enemy_visual_fight(EncounterId::KaiserCrabBoss);CHECK(a.game.enemy_count==2);
  for(int i=0;i<2;i++){CHECK(world_enemy_visual(unsigned(a.game.enemy_world.models[i].kind))->shared_group==1);CHECK(a.enemy_frame(i,clip,elapsed,loop)&&clip>=38);}
- snapshot();for(unsigned i=0;i<3;i++){a.advance(250);a.render();}unchanged();
+ snapshot();for(unsigned i=0;i<3;i++){a.advance(250);a.render();}capture("combat-kaiser-shared");unchanged();
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();original_enemy_presentation();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

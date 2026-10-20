@@ -253,7 +253,7 @@ int main(int argc,char** argv){
     CHECK(argc<=3);std::vector<uint8_t> content;
     if(argc>1){
         real_profile=true;FILE* f=std::fopen(argv[1],"rb");CHECK(f);
-        CHECK(std::fseek(f,0,SEEK_END)==0);long size=std::ftell(f);CHECK(size>=40&&size<=MaxPack);
+        CHECK(std::fseek(f,0,SEEK_END)==0);long size=std::ftell(f);CHECK(size>=40&&size<=MaxContentFile);
         CHECK(std::fseek(f,0,SEEK_SET)==0);content.resize((size_t)size);
         CHECK(std::fread(content.data(),1,content.size(),f)==content.size());CHECK(std::fclose(f)==0);
     }else content=synthetic_profile();
