@@ -233,8 +233,13 @@ uint32_t random_below(uint32_t&, uint32_t bound);
 // Presentation observers are process-local and never enter State or a save.
 // Callbacks may inspect the exact recorded state, but must not invoke actions.
 // Swapping returns the previous binding for a nested, scoped registration.
-struct CoreObserver {void* context=nullptr;void(*on_log)(void*,const State&,Log)=nullptr;};
+struct CoreObserver {
+    void* context=nullptr;
+    void(*on_log)(void*,const State&,Log)=nullptr;
+    void(*on_enemy_animation)(void*,const State&,int,const char*)=nullptr;
+};
 CoreObserver set_core_observer(CoreObserver);
+void notify_enemy_animation(const State&,int slot,const char* trigger);
 void record(State&,LogKind,int a=0,int b=0);
 void create_map(State&);
 void finish_room(State&);

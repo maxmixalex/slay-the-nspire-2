@@ -37,5 +37,6 @@
  B(w.rest_count);for(auto&v:w.rest_options)B(v);B(w.rest_pending);F(w.rest_used);H(w.rest_deck_before);
  B(w.combat_ending);B(w.reward_rerolled);B(w.reward_can_reroll);H(w.combat_bonus_gold);
  for(auto&v:s.expansion.feral_result)B(v);
+ for(auto&act:w.visited_rooms)for(auto&v:act)B(v);
 #undef WCF
 }

@@ -71,6 +71,12 @@ bool world_rest_cancel(State& s){
     w.rest_pending>w.rest_count||WorldRestOption(w.rest_options[w.rest_pending-1])!=WorldRestOption::Smith)return false;
  w.rest_pending=0;w.rest_deck_before=0;w.finish_pending=0;s.phase=Phase::Camp;++s.revision;return true;
 }
+bool world_rest_can_proceed(const State& s){
+ const auto&w=s.world;
+ return w.active&&w.room_open&&w.room_type==unsigned(WorldRoom::Rest)&&s.phase==Phase::Camp&&!w.rest_pending&&
+        !world_relic_pending(s)&&!s.original_events.active&&(w.rest_used||!w.rest_count);
+}
+bool world_rest_proceed(State& s){return world_rest_can_proceed(s)&&world_finish_room(s);}
 bool world_rest_selection_allowed(const State& s,unsigned count){
  const auto& w=s.world;
  if(!w.active||!w.rest_pending||w.rest_pending>w.rest_count||WorldRestOption(w.rest_options[w.rest_pending-1])!=WorldRestOption::Cook)return true;

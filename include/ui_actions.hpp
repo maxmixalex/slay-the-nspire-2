@@ -9,6 +9,9 @@ enum class UiAction {
     RewardGrimoire, SkipGrimoire, ShowStars, ShowOrbs, ShowOsty, MoreStatus,
     RewardRelic, ConfirmWorldChoice, ClearWorldChoice, PreviousWorldPage, NextWorldPage,
     CrystalSmall, CrystalLarge, SacrificeReward, RerollReward,
-    RunSettings, RunAscensionDown, RunAscensionUp, RunRegion, RunSeed, RunSeedClear
+    RunSettings, RunAscensionDown, RunAscensionUp, RunRegion, RunSeed, RunSeedClear,
+    ToggleMapLegend, MapLegendUnknown, MapLegendShop, MapLegendTreasure,
+    MapLegendRest, MapLegendMonster, MapLegendElite,
+    LeaveCamp, LeaveWorldRewards
 };
 }

@@ -7,7 +7,8 @@ static void merchant_price(Canvas&c,int item,int x,int y,int w){
     auto&s=c.a.game;bool sold=s.shop_sold&(1u<<item);int price=s.world.active?world_shop_price(s,item):item==ShopRemove?remove_price(s):s.shop_prices[item];
     if(sold){c.centered("售罄",x,y,w,10,Muted);return;}
     char value[24]{};TextBuffer t{value,sizeof value,0};t.number(price);int textw=c.width(value,10),left=x+mx(0,(w-textw-13)/2);
-    c.picture(A_Coin,left,y+2,10,10);c.text(value,left+12,y,10,s.gold>=price?Gold:Red);
+    const bool sale=s.world.active&&item<ShopCardCount&&s.world.shop_sale==item;
+    c.picture(A_Coin,left,y+2,10,10);c.text(value,left+12,y,10,s.gold>=price?(sale?Green:Gold):Red);
 }
 static void merchant_card(Canvas&c,Card card,int x,int y,bool selected,bool sold,const EventCardFacts*facts=nullptr){
     if(selected)c.box(x-2,y-2,49,66,Gold);
@@ -34,6 +35,7 @@ static void shop_screen(Canvas&c){
     for(int i=0;i<ShopCardCount;i++){
         int x=i<5?22+i*55:22+(i-5)*55,y=i<5?63:142;bool sold=s.shop_sold&(1u<<i);
         merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},x,y,a.cursor==i,sold,s.world.active?&s.world.shop_facts[i]:nullptr);merchant_price(c,i,x-1,y+61,48);
+        if(s.world.active&&s.world.shop_sale==i&&!sold){int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,x+27,y-7,24,19);}
         c.hit(x-2,y-3,49,78,HitKind::Choice,i,!sold);
     }
     for(int i=0;i<3;i++){
@@ -51,7 +53,7 @@ static void shop_screen(Canvas&c){
     c.ui(removed?U_ShopRemoveUsed:U_ShopRemove,261,149,51,51,removed?140:255);
     if(a.cursor==ShopRemove)c.box(259,146,55,68,Gold);
     merchant_price(c,ShopRemove,259,201,55);c.hit(259,144,57,71,HitKind::Choice,ShopRemove,!removed);
-    const char*name=a.cursor<7?a.content.card_string(s.shop_cards[a.cursor]):a.cursor<10?(s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7])):a.cursor<13?potion_name(s.shop_potions[a.cursor-10]):a.cursor==13?"移除一张牌":"返回商人";
+    const char*name=a.cursor<7?a.content.card_string(s.world.active?s.world.shop_cards[a.cursor].kind:s.shop_cards[a.cursor]):a.cursor<10?(s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7])):a.cursor<13?potion_name(s.shop_potions[a.cursor-10]):a.cursor==13?"移除一张牌":"返回商人";
     c.dim(14,43,246,18,180);c.centered(name,16,43,240,10,Gold);
     c.text("详情 I",265,44,10,Gold);c.hit(260,41,59,20,HitKind::Command,(int)Key::Detail,a.cursor<13);
     c.button("返回",3,218,80,a.cursor==ShopLeave,22);c.hit(0,217,90,23,HitKind::Choice,ShopLeave);

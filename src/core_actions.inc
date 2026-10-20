@@ -2,6 +2,10 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 static CoreObserver core_observer{};
 CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
+void notify_enemy_animation(const State&s,int slot,const char*trigger){
+    const CoreObserver observer=core_observer;
+    if(observer.on_enemy_animation)observer.on_enemy_animation(observer.context,s,slot,trigger);
+}
 void record(State&s,LogKind k,int a,int b){
     if(s.log_count==24){for(int i=1;i<24;i++)s.logs[i-1]=s.logs[i];s.log_count--;}
     const Log entry{k,(int32_t)a,(int32_t)b};s.logs[s.log_count++]=entry;

@@ -8,6 +8,7 @@
 #include "map_preview.hpp"
 #include "resource_source.hpp"
 #include "world_enemy_assets.hpp"
+#include "world_map_layout.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -78,7 +79,7 @@ struct EnemyPresentation {
     int state=-1,clip=-1,move=-1,hp=0;
     uint32_t start=0,until=0;
     const char* next_clip=nullptr;
-    bool loop=true,dead=false,overflow=false;
+    bool loop=true,dead=false,overflow=false,direct=false;
     EnemyVisualFacts facts{};
     EnemyVisualCommand queue[MaxEnemyVisualCommands]{};uint8_t count=0;
 };
@@ -104,6 +105,8 @@ struct App {
     int library_tab=0,library_page=0,library_selected=0;
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[MaxEnemies+1]={},hit_start[MaxEnemies+1]={};
+    bool map_legend=false;uint8_t map_legend_item=0;
+    bool map_input(Key);
     uint32_t animation=0,run_number=0;const char* notice="";
     Motion motion[MaxEnemies+1]{};
     EnemyPresentation enemy_presentation[MaxEnemies]{};
@@ -111,6 +114,7 @@ struct App {
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();
     void observe_core(const State&,Log);
+    void observe_enemy_animation(const State&,int slot,const char* trigger);
     void enemy_trigger(int,const char*,int move=-1,bool direct=false,const EnemyVisualFacts* facts=nullptr,uint32_t earliest=0);
     bool enemy_frame(int,int& clip,uint32_t& elapsed,bool& loop);
     int combat_background()const;
@@ -161,6 +165,8 @@ struct App {
     unsigned world_choice_options(uint16_t* out,unsigned capacity)const;
     unsigned world_choice_min()const;
     unsigned world_choice_max()const;
+    bool world_choice_is_card_reward()const;
+    unsigned world_choice_page_size()const;
     void toggle_world_choice(int);
     void confirm_world_choice();
     void world_choice_detail(int);

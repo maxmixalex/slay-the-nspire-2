@@ -67,6 +67,37 @@ static void cast(State&s,CardKind kind,int target=0){
  int id=add_card(s,kind);s.energy=99;int at=-1;for(unsigned i=0;i<s.hand.count;++i)if(s.hand.ids[i]==id)at=(int)i;
  CHECK(at>=0&&play(s,at,target));choose_pending(s);
 }
+static void zero_weight_branch_and_gold_bits(){
+ scenario="Flyconid zero-weight branch preserves original fallback and RNG";
+ auto s=fight(EncounterId::FlyconidNormal);int t=alive(s,EnemyId::Flyconid);CHECK(t>=0);
+ auto&m=s.enemy_world.models[t];m.node=m.previous=2;m.age=4;m.flags|=EnemyActed;m.history_count=4;
+ const uint8_t history[]={2,0,1,2};std::memcpy(m.history,history,sizeof history);
+ for(unsigned i=0;i<3;++i)m.seen_moves[i]=1;
+ auto expected=world_rng(s,WorldRng::MonsterAi);expected.next();
+ effect(s,XOp::EnemySideHook,1,0);
+ CHECK(m.node==0&&m.history_count==5&&m.history[4]==0);
+ CHECK(!std::memcmp(&world_rng(s,WorldRng::MonsterAi),&expected,sizeof expected));persist(s);
+
+ scenario="native binary32 escape gold proportions preserve every rounding boundary";
+ const uint32_t cards_rng=s.rng_cards,legacy_world_rng=s.rng_world;
+ reference::Random streams[WorldRngCount];std::memcpy(streams,s.world.rng,sizeof streams);
+ for(unsigned spawned=1;spawned<=EnemyKinds;++spawned)for(unsigned escaped=0;escaped<=spawned;++escaped){
+  s.enemy_world.spawned_model_count=(uint16_t)spawned;s.enemy_world.escaped_count=(uint16_t)escaped;
+  // Volatile stores require the division and subtraction to round separately
+  // to binary32, matching the original C# expression on all host compilers.
+  volatile float quotient=float(escaped)/float(spawned);
+  volatile float proportion=1.0f-quotient;float value=proportion;uint32_t bits=0;
+  static_assert(sizeof value==sizeof bits,"binary32 host float required");std::memcpy(&bits,&value,sizeof bits);
+  CHECK(encounter_gold_proportion_bits(s)==bits);
+  if(escaped==spawned)CHECK(bits==0);
+ }
+ s.enemy_world.spawned_model_count=0;s.enemy_world.escaped_count=0;CHECK(encounter_gold_proportion_bits(s)==0x3f800000U);
+ s.enemy_world.encounter=EncounterId::GremlinMercNormal;auto&fat=s.enemy_world.models[0];fat.kind=EnemyId::FatGremlin;
+ fat.flags=EnemyPresent;fat.stolen_gold=37;CHECK(encounter_gold_proportion_bits(s)==0x3f800000U);
+ fat.flags|=EnemyEscaped;fat.stolen_gold=0;CHECK(encounter_gold_proportion_bits(s)==0x3f000000U);
+ fat.stolen_gold=37;CHECK(encounter_gold_proportion_bits(s)==0);
+ CHECK(s.rng_cards==cards_rng&&s.rng_world==legacy_world_rng&&!std::memcmp(streams,s.world.rng,sizeof streams));
+}
 static void metadata_and_all_encounters(){
  scenario="model and encounter lookup";CHECK(EnemyKinds==109&&EncounterKinds==89);
  for(unsigned i=1;i<EnemyKinds;++i){const auto*d=enemy_definition(EnemyId(i));CHECK(d&&d->key&&d->model);CHECK(enemy_id(d->key)==EnemyId(i)&&enemy_id(d->model)==EnemyId(i));}
@@ -273,6 +304,7 @@ static void visual_predicates_and_unpowered_death_block(){
 }
 
 int main(){
+ zero_weight_branch_and_gold_bits();
  visual_predicates_and_unpowered_death_block();
  metadata_and_all_encounters();caps_and_waking();death_replacement_and_revival();stolen_assets_and_timeout();choices_statuses_and_eight_slots();
  std::printf("original enemy checks: %u; executed encounter/ascension variants: %u\n",checks,encounters);return 0;

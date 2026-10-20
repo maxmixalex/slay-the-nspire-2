@@ -91,6 +91,8 @@ void App::ui_action(UiAction action){
         if(game.phase==Phase::Shop){shop_open=false;cursor=0;}break;
     case UiAction::LeaveShop:
         if(!shop_open&&game.phase==Phase::Shop){leave_shop(game);reset_presentation();}break;
+    case UiAction::LeaveCamp:
+        if(!title&&!paused&&!panel&&world_rest_proceed(game))reset_presentation();break;
     case UiAction::ReadEvent:
         if(!title&&!paused&&!panel&&!library&&game.phase==Phase::Event){event_reader=true;event_reader_scroll=0;}break;
     case UiAction::CloseEventReader:event_reader=false;break;
@@ -107,6 +109,11 @@ void App::ui_action(UiAction action){
     case UiAction::RunSeed:
         if(character_select){map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);}break;
     case UiAction::RunSeedClear:if(character_select)selected_seed[0]=0;break;
+    case UiAction::ToggleMapLegend:
+        if(!title&&!paused&&!help&&!library&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map)))map_legend=!map_legend;break;
+    case UiAction::MapLegendUnknown:case UiAction::MapLegendShop:case UiAction::MapLegendTreasure:
+    case UiAction::MapLegendRest:case UiAction::MapLegendMonster:case UiAction::MapLegendElite:
+        if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map)))map_legend_item=uint8_t(int(action)-int(UiAction::MapLegendUnknown));break;
     case UiAction::LibraryCards:case UiAction::LibraryRelics:case UiAction::LibraryPotions:
         if(library){library_tab=(int)action-(int)UiAction::LibraryCards;library_page=library_selected=0;}break;
     case UiAction::PreviousPage:case UiAction::NextPage:
@@ -159,9 +166,18 @@ void App::ui_action(UiAction action){
         }break;
     case UiAction::ConfirmChoice:confirm_choice();break;
     case UiAction::ConfirmWorldChoice:confirm_world_choice();break;
+    case UiAction::LeaveWorldRewards:{
+        const bool rewards=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Rewards;
+        if(!rewards||world_choice_min())break;
+        const bool terminal=game.world.active&&game.phase==Phase::WorldRelicChoice&&game.world_relics.return_phase==uint8_t(Phase::Reward);
+        choice_selected_count=0;confirm_world_choice();
+        // A terminal combat set's Skip is the room's Proceed action. Nested
+        // event/relic sets resume their parent and are never closed here.
+        if(terminal&&game.phase==Phase::Reward&&!world_relic_pending(game)&&ui_reward_actions(game,nullptr)==1){leave_rewards(game);reset_presentation();}
+        break;}
     case UiAction::ClearWorldChoice:choice_selected_count=0;break;
     case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:{
-        const unsigned per=game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferBundle?2:10;
+        const unsigned per=world_choice_page_size();
         unsigned count=world_choice_options(nullptr,0);int page=cursor/int(per)+(action==UiAction::PreviousWorldPage?-1:1);
         if(page<0)page=0;if(page>int((count?count-1:0)/per))page=int((count?count-1:0)/per);cursor=page*int(per);break;}
     case UiAction::RewardRelic:if(game.phase==Phase::Reward)world_claim_reward_relic(game);break;

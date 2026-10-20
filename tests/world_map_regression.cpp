@@ -2,6 +2,7 @@
 #include "world_run.hpp"
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
+#include "world_map_layout.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -111,8 +112,30 @@ static void combat_extra_reward_group(){
  require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Reward,"all optional extras can be skipped together");
  require(leave_rewards(game)&&game.phase==Phase::Map,"closing the complete group returns to the next native map frontier");persisted();
 }
+static void visited_room_history(){
+ start();require(game.world.visited_rooms[0][game.world.current_point]==unsigned(WorldRoom::Event),"first ancient records its original room type");
+ const auto&map=game.world.maps[0];uint8_t parents[reference::MaxPoints],queue[reference::MaxPoints];
+ for(auto&v:parents)v=reference::NoPoint;parents[map.root]=map.root;queue[0]=map.root;unsigned head=0,count=1,target=reference::NoPoint;
+ while(head<count){unsigned at=queue[head++];if(map.points[at].type==reference::PointType::Unknown){target=at;break;}
+  const auto&children=map.points[at].children;for(unsigned i=0;i<children.used;++i){unsigned next=children.slots[i];if(next!=reference::NoPoint&&parents[next]==reference::NoPoint){parents[next]=uint8_t(at);queue[count++]=uint8_t(next);}}
+ }
+ require(target!=reference::NoPoint,"fixture has a reachable original unknown node");uint8_t path[reference::MaxRows+2];unsigned length=0;
+ for(unsigned at=target;at!=map.root;at=parents[at]){require(length<sizeof path,"unknown path is bounded");path[length++]=uint8_t(at);}
+ finish_routing_fixture();while(length){unsigned at=path[--length];if(at==target)game.world.unknown_monster_bits=0x3f800000U;
+  require(world_choose_point(game,at),"follow original links to an unknown room");if(at!=target)finish_routing_fixture();
+ }
+ require(game.phase==Phase::Combat&&game.world.visited_rooms[0][target]==unsigned(WorldRoom::Monster),"unknown room remembers its resolved combat type");
+ require(game.world.maps[0].points[target].type==reference::PointType::Unknown&&world_map_visible_type(game,target)==reference::PointType::Monster,"revealing an unknown icon does not rewrite the original map graph");persisted();
+ other=game;game.world.visited_rooms[0][target]=unsigned(WorldRoom::Boss);require(!world_valid_run(game),"impossible unknown-to-boss history is rejected");game=other;
+ game.world.visited_rooms[0][target]=0;require(!world_valid_run(game),"visited points require their original room history");game=other;
+ // A parent event owns the map visit even when it starts a nested encounter.
+ start();const unsigned event_point=game.world.current_point;game.original_events=OriginalEventState{};
+ require(original_event_begin(game,OriginalEventId::FakeMerchant,game.seed,0),"prepare an event-owned combat at the visited event coordinate");
+ require(world_enter_event_combat(game,"FAKE_MERCHANT",true),"event enters its native combat room");
+ require(game.world.room_type==unsigned(WorldRoom::Monster)&&game.world.parent_room_type==unsigned(WorldRoom::Event)&&game.world.visited_rooms[0][event_point]==unsigned(WorldRoom::Event),"nested combat cannot replace the first map-room type");persisted();
+}
 int main(){
- start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
+ visited_room_history();start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
  for(unsigned a=0;a<3;++a){const auto& rooms=game.world.rooms[a];
   require(rooms.ready&&rooms.elite_count==15&&rooms.event_count>0,"all three room queues generated up front");
   require(rooms.boss_count==1,"base ascension has one boss per act");
@@ -153,11 +176,13 @@ int main(){
  // cook selection, and Miniature Tent's per-option use without rerolling a map.
  game.original_events=OriginalEventState{};game.world.room_type=uint8_t(WorldRoom::Rest);game.phase=Phase::Camp;
  game.world.rest_count=2;game.world.rest_options[0]=uint8_t(WorldRestOption::Heal);game.world.rest_options[1]=uint8_t(WorldRestOption::Smith);
+ require(!world_rest_can_proceed(game)&&!world_rest_proceed(game),"rest cannot be skipped before any option is completed");
  require(world_rest_choose(game,1)&&game.phase==Phase::Upgrade,"native smith opens deck selection");
  require(world_rest_cancel(game)&&game.phase==Phase::Camp&&!game.world.rest_used,"cancelled smith leaves option unused");
  require(gain_world_relic(game,WorldRelicMiniatureTent),"obtain tent fixture");
  game.hp=30;require(world_rest_choose(game,0),"rest heals through native option");
  require(game.phase==Phase::Camp&&(game.world.rest_used&1)&&!world_rest_option_enabled(game,0)&&world_rest_option_enabled(game,1),"tent preserves unused camp options");
+ require(world_rest_can_proceed(game),"tent exposes Proceed even while another option remains usable");
  require(gain_world_relic(game,WorldRelicMeatCleaver),"obtain cook fixture");
  game.world.rest_options[2]=uint8_t(WorldRestOption::Cook);game.world.rest_count=3;
  unsigned deck=game.deck_count,maxhp=game.max_hp;
@@ -166,6 +191,7 @@ int main(){
  require(!world_rest_selection_allowed(game,1),"cook refuses a one-card partial operation");
  require(world_relic_select(game,eligible,2),"cook accepts exactly two instances");
  require(game.deck_count==deck-2&&game.max_hp==maxhp+5&&game.phase==Phase::Camp,"cook removes two then gains five maximum HP");
+ require(world_rest_proceed(game)&&game.phase==Phase::Map&&!game.world.room_open,"tent can leave through the ordinary room controller after optional actions");persisted();
 
  // Exercise the shared engine through a real first combat, including its
  // complete first draw, enemy side and native reward handoff. The final damage

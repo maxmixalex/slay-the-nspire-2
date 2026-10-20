@@ -37,10 +37,10 @@ inside the public source repository. No original game executable is run.
 The generated public profile currently contains 558 cards, 6,080 strings,
 1,138 auxiliary entries and 1,641 animation entries. The new enemy directory
 keeps all 732 actually used native clip names as 1,600 skin/phase/move variants,
-with 33,074 frames. Three original map-boss loops add 540 frames. With the
+with 33,210 frames. Three original map-boss loops add 540 frames. With the
 unchanged historical images and new portraits and auxiliary images, the plan
-has 37,112 images. Even at the 32,768-glyph directory bound, its directory
-occupies 1,206,496 bytes of the 2 MiB limit. Actual payload
+has 37,248 images. Even at the 32,768-glyph directory bound, its directory
+occupies 1,208,672 bytes of the 2 MiB limit. Actual payload
 size remains unknown until all frames are encoded; the 256 MiB file limit is
 checked during construction and on the final canonical decode/re-encode.
 
@@ -50,6 +50,8 @@ SmartFormat branches and live variable names, while literal `\\n` becomes a real
 line break. Glyph coverage includes all text at five sizes and visible characters
 from the complete runtime source. Enemy images use complete original periods,
 8 fps for loops and 12 fps for actions, with 60 Hz physics integration.
+Vantom's charge composites keep the full independent tail-extension period,
+including Ink Blot's 0.15-second delay and the body's intervening idle loop.
 
 Cache receipts bind each complete job to input hashes, its actual rendering
 code/data dependencies and settings, and verify the payload hash before reuse.

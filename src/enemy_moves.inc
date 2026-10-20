@@ -86,6 +86,7 @@ static void enemy_execute_special(State&s,int t,int step){
  case EnemyId::Ovicopter:for(int i=0;i<3;++i){int slot=enemy_open_slot(s,true);if(slot>=0){int spawned=enemy_spawn(s,EnemyId::ToughEgg,slot,t);if(spawned>=0)enemy_apply_power(s,spawned,EnemyPower::Minion,1,t);}}break;
  case EnemyId::TestSubject:if(step==1)m.data[1]=(int16_t)min(996,m.data[1]+1);else{
   ++m.data[0];m.flags&=(uint8_t)~EnemyDown;int hp=value(m.data[0]==1?EnemyValue::SecondFormHp:EnemyValue::ThirdFormHp);s.enemies[t].max_hp=s.enemies[t].hp=hp;
+  notify_enemy_animation(s,t,"RespawnTrigger");
   if(m.data[0]==1)q.power(t,EnemyPower::PainfulStabs,1);else{q.power(t,EnemyPower::Nemesis,1);q.remove(t,EnemyPower::Adaptable);q.remove(t,EnemyPower::PainfulStabs);}
  }break;
  case EnemyId::ThievingHopper:enemy_take_card(s,t);break;

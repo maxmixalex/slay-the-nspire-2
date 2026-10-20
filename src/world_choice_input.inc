@@ -6,12 +6,24 @@ unsigned App::world_choice_options(uint16_t*out,unsigned capacity)const{
 }
 unsigned App::world_choice_min()const{return game.phase==Phase::WorldRelicChoice?game.world_relics.choice_min:game.original_events.select_min;}
 unsigned App::world_choice_max()const{return game.phase==Phase::WorldRelicChoice?game.world_relics.choice_max:game.original_events.select_max;}
+bool App::world_choice_is_card_reward()const{
+ if(original_event_has_card_reward(game))return true;
+ if(game.phase!=Phase::WorldRelicChoice)return false;const auto&w=game.world_relics;
+ if(w.choice!=WorldRelicChoice::OfferCard||!w.choice_reward||w.choice_reward>w.reward_count)return false;
+ const auto&r=w.rewards[w.choice_reward-1];return r.group&&r.kind==1&&!(r.flags&1)&&w.choice_max==1;
+}
+unsigned App::world_choice_page_size()const{
+ if(world_choice_is_card_reward())return 3;
+ if(game.phase==Phase::WorldRelicChoice){if(game.world_relics.choice==WorldRelicChoice::OfferReward)return 4;if(game.world_relics.choice==WorldRelicChoice::OfferBundle)return 2;}
+ if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Rewards)return 4;
+ return 10;
+}
 void App::toggle_world_choice(int id){
  if(!world_choice_phase(game.phase)||id<0)return;sync_selection();
  uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
  for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
  const bool reward=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
- if(reward){uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
+ if(reward||world_choice_is_card_reward()){uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
   if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}return;
  }
  for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
@@ -62,12 +74,15 @@ bool App::world_choice_input(Key key){
  }
  uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);
  if(count>MaxWorldUiChoices)return false;if(cursor<0||cursor>=int(count))cursor=0;
+ const bool rewards=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
+ const bool card_reward=world_choice_is_card_reward();const int columns=rewards?1:card_reward?0:5;
  if(key==Key::Left&&count)cursor=(cursor+int(count)-1)%int(count);
  else if(key==Key::Right&&count)cursor=(cursor+1)%int(count);
- else if(key==Key::Up&&count)cursor=cursor>=5?cursor-5:cursor;
- else if(key==Key::Down&&count)cursor=cursor+5<int(count)?cursor+5:cursor;
+ else if(key==Key::Up&&count)cursor=cursor>=columns?cursor-columns:cursor;
+ else if(key==Key::Down&&count)cursor=cursor+columns<int(count)?cursor+columns:cursor;
  else if(key==Key::Confirm&&count)toggle_world_choice(ids[cursor]);
- else if(key==Key::EndTurn)confirm_world_choice();
+ else if(key==Key::EndTurn&&rewards)ui_action(UiAction::LeaveWorldRewards);
+ else if(key==Key::EndTurn||(key==Key::Back&&card_reward&&world_choice_min()==0)){if(card_reward)choice_selected_count=0;confirm_world_choice();}
  else if(key==Key::Detail&&count)world_choice_detail(ids[cursor]);
  else return false;
  return true;

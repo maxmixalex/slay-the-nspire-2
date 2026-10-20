@@ -14,10 +14,13 @@ bool encounter_combat_reward(const State&s,unsigned i,unsigned&kind,int&value){c
 bool encounter_combat_reward_card(const State&s,unsigned i,EventDeckSnapshot&snap){const auto&w=s.enemy_world;if(i>=w.returned_gold_count||w.returned_reward_kind[i]!=2)return false;snap=w.returned_cards[i];return true;}
 unsigned encounter_escaped_enemies(const State&s){return s.enemy_world.escaped_count;}
 uint32_t encounter_gold_proportion_bits(const State&s){
- union Bits{float f;uint32_t u;};Bits bits{};
- if(s.enemy_world.encounter==EncounterId::GremlinMercNormal){bits.f=1.0f;for(const auto&m:s.enemy_world.models)if(m.kind==EnemyId::FatGremlin&&(m.flags&EnemyEscaped))bits.f=m.stolen_gold?0.0f:0.5f;}
- else bits.f=s.enemy_world.spawned_model_count?1.0f-float(s.enemy_world.escaped_count)/float(s.enemy_world.spawned_model_count):1.0f;
- return bits.u;
+ if(s.enemy_world.encounter==EncounterId::GremlinMercNormal){uint32_t bits=0x3f800000U;for(const auto&m:s.enemy_world.models)if(m.kind==EnemyId::FatGremlin&&(m.flags&EnemyEscaped))bits=m.stolen_gold?0U:0x3f000000U;return bits;}
+ if(!s.enemy_world.spawned_model_count)return 0x3f800000U;
+ // Preserve both original binary32 rounding boundaries without requiring
+ // compiler-rt floating point helpers on the freestanding ARMv5 target.
+ using reference::math::Real;
+ Real escaped=world_float_round(Real::integer(s.enemy_world.escaped_count)/Real::integer(s.enemy_world.spawned_model_count));
+ return world_float_bits(world_float_round(Real::integer(1)-escaped));
 }
 bool encounter_shares_tags(EncounterId a,EncounterId b){return unsigned(a)<EncounterKinds&&unsigned(b)<EncounterKinds&&(encounter_metadata[unsigned(a)].tags&encounter_metadata[unsigned(b)].tags);}
 bool encounter_rewards_allowed(EncounterId id){return unsigned(id)<EncounterKinds&&encounter_metadata[unsigned(id)].rewards;}

@@ -14,22 +14,29 @@ static void title_screen(Canvas&c){
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;
     const auto& definition=character_definitions[(unsigned)a.selected_character];
-    c.ui(character_background(a.selected_character),0,0);c.dim(0,0,150,208,140);
-    c.text(definition.name,13,17,20,Gold);
-    c.picture(A_Heart,15,54,15,15);char hp[32]={};TextBuffer h{hp,sizeof hp,0};h.number(definition.starting_hp);h.text(" / ");h.number(definition.starting_hp);c.text(hp,37,51,12,White);
-    c.paragraph(character_summary(a.selected_character),14,78,127,4,0,12,White);
+    c.ui(character_background(a.selected_character),0,0);
+    int information=a.content.world_image("character","INFO_PANEL");if(information>=0)c.picture(information,0,0,155,209);else c.dim(0,0,150,208,140);
+    const char*title=a.content.world_title("characters",definition.key);c.text(*title?title:definition.name,13,15,20,Gold);
+    c.picture(A_Heart,14,49,13,14);char hp[32]={};TextBuffer h{hp,sizeof hp,0};h.number(definition.starting_hp);h.ch('/');h.number(definition.starting_hp);c.text(hp,31,48,10,White);
+    // All five pinned single-player models begin with 99 gold.
+    c.picture(A_Coin,101,50,12,12);c.num(99,116,48,10,Gold);
+    char description_key[96]{},description[1024]{};TextBuffer key{description_key,sizeof description_key,0};key.text(definition.key);key.text(".description");a.localized_text("characters",description_key,description,sizeof description);
+    c.paragraph(*description?description:character_summary(a.selected_character),14,73,132,5,0,10,White);
     if(const auto*relic=relic_definition(definition.starting_relic)){
-        c.picture(a.relic_face_image((int)(relic-relic_definitions)),14,142,25,25);
-        c.text(relic->name,46,145,12,Gold,99);
-        c.paragraph(relic->description,14,175,130,2,0,10,White);
+        RelicId id=RelicId(relic-relic_definitions);char text[1024]{};a.relic_description(id,text,sizeof text);
+        c.picture(a.relic_face_image(id),14,141,25,25);
+        c.text(a.relic_title(id),46,145,12,Gold,99);
+        c.paragraph(text,14,172,132,3,0,10,White);
     }
     c.dim(0,209,320,31,130);
     c.button("返回",3,216,82,false,23);c.action(1,209,86,31,UiAction::Back);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
     for(int i=0;i<CharacterKinds;i++){
         int x=159+i*31;bool selected=i==(int)a.selected_character;
-        if(selected){c.rect(x-2,173,31,35,rgb(87,68,38));c.box(x-2,173,31,35,Gold);}
+        int outline=a.content.world_image("character","OUTLINE");
+        if(selected&&outline<0){c.rect(x-2,173,31,35,rgb(87,68,38));c.box(x-2,173,31,35,Gold);}
         c.ui(character_portrait((Character)i),x,175,27,30,selected?255:145);
+        if(selected&&outline>=0)c.picture(outline,x-3,172,33,36);
         c.action(x-2,172,31,36,actions[i]);
     }
     c.ui(U_RewardSkip,218,211,99,27);c.centered(a.practice_entry?"练习 ›":"启程 ›",218,214,99,12,Gold);c.action(213,207,107,33,UiAction::StartCharacter);

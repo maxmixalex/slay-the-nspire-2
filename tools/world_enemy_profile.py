@@ -158,6 +158,26 @@ def contexts(model, clip, facts):
         context = dict(common, move=move['key'])
         if model.get('shared_group'):
             context.update(shared_setup(model, clip, facts, move))
+        if model['model'] == 'Vantom' and clip == 'charge_up':
+            catalog = {row['name']: row for row in model['clips']}
+            tail = next(t for t in model['tracks'] if t['method'] == move['method']
+                        and t['clip'].startswith('_tracks/charge_up_'))
+            # The body returns to idle before the second/third tail extension
+            # ends. Bake that real base-track transition, then retain the full
+            # overlay period instead of cutting it at the body's 2/3 second.
+            tracks = [dict(track=0, clip='idle_loop', loop=True, queued=True)]
+            delay = .15 if move['method'] == 'InkBlotMove' else 0.
+            if delay:
+                # InkBlot awaits CHARGE_UP for .15s before SetAnimation on the
+                # tail. Restore the prior phase before this delayed override.
+                phase = next(p for p in model['phase_tracks'] if p['fact'] == 'tail_charge')
+                tracks.extend([
+                    dict(track=1, **phase['values'][str(facts['tail_charge'])]),
+                    dict(track=1, clip=tail['clip'], loop=False, queued=True, delay=delay),
+                    dict(track=1, clip='_tracks/charged_2', loop=True, queued=True),
+                ])
+            context['tracks'] = tracks
+            context['duration_seconds'] = max(catalog[clip]['duration'], delay + catalog[tail['clip']]['duration'])
         if model['model'].startswith('DecimillipedeSegment'):
             context['decimillipede_strike'] = True
             context['duration_seconds'] = 1.25

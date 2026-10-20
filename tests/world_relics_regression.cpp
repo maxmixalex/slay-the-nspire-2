@@ -235,6 +235,8 @@ int main(){
  reset();add(WorldRelicWhisperingEarring);add(WorldRelicGalacticDust);prepared_hand({RegentStardust});s.energy=0;s.expansion.stars=5;relic(WorldRelicGalacticDust).values[0]=5;
  s.regent.powers[unsigned(RPower::ChildOfTheStars)]=2;s.regent.power_order[s.regent.power_count++]=uint8_t(RPower::ChildOfTheStars);
  s.regent.powers[unsigned(RPower::BlackHole)]=10;s.regent.power_order[s.regent.power_count++]=uint8_t(RPower::BlackHole);
+ s.expansion.after_play_order[0]=uint8_t(PostPlayActor::RegentBlackHole);
+ require(validate(s),"paid-auto star fixture registers its Black Hole listener before play");
  hook(WorldRelicHook::AfterAutoPrePlayLate);
  require(s.expansion.stars==0&&s.block==20&&relic(WorldRelicGalacticDust).values[0]==0,"paid-auto star spending triggers both the power and relic listeners");
  require(s.enemies[0].hp+s.enemies[1].hp==3975,"Stardust keeps captured star X and automatic zero-spent metadata suppresses Black Hole");save_pending();

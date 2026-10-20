@@ -44,6 +44,8 @@ const char* world_rest_option_key(const State&,unsigned index);
 bool world_rest_option_enabled(const State&,unsigned index);
 bool world_rest_choose(State&,unsigned index);
 bool world_rest_cancel(State&);
+bool world_rest_can_proceed(const State&);
+bool world_rest_proceed(State&);
 // Cook accepts either a cancelled selection or exactly two cards.
 bool world_rest_selection_allowed(const State&,unsigned count);
 bool world_relic_rest_select(State&,bool cook);

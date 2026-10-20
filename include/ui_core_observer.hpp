@@ -6,7 +6,8 @@ namespace spire {
 struct UiCoreObserver {
  App& app;CoreObserver previous;bool was_combat;
  static void receive(void* context,const State&s,Log log){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_core(s,log);}
- explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive})),was_combat(combat_phase(a.game.phase)){app.sync_enemy_feedback();}
+ static void receive_animation(void* context,const State&s,int slot,const char*trigger){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_enemy_animation(s,slot,trigger);}
+ explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation})),was_combat(combat_phase(a.game.phase)){app.sync_enemy_feedback();}
  ~UiCoreObserver(){
   set_core_observer(previous);app.sync_enemy_feedback();
   if(app.game.enemy_world.active&&combat_phase(app.game.phase)&&int32_t(app.enemy_visual_clock-app.animation)>app.busy)app.busy=int(app.enemy_visual_clock-app.animation);

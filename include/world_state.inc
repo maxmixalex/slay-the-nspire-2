@@ -52,4 +52,7 @@ struct WorldState {
     // while this engine retains its saved callback queue until rewards open.
     uint8_t combat_ending=0,reward_rerolled=0,reward_can_reroll=0;
     uint16_t combat_bonus_gold=0;
+    // First room at each visited map point. Event-owned combat and the final
+    // Architect room do not overwrite the room shown by the traveled map icon.
+    uint8_t visited_rooms[WorldActCount][reference::MaxPoints]{};
 };

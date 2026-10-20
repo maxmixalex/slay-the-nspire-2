@@ -60,6 +60,25 @@ class WorldPack(unittest.TestCase):
             self.assertFalse(other['loop'])
             self.assertTrue(other['clip'].startswith('right/die'))
 
+    def test_vantom_body_followup_preserves_complete_tail_extension(self):
+        jobs = [j for j in ENEMY_CLIP_ROWS if j['model'] == 'Vantom' and
+                j['clip'] == 'charge_up' and j['move'] >= 0]
+        self.assertEqual(len(jobs), 24)
+        for job in jobs:
+            tracks = job['visual_state']['tracks']
+            self.assertEqual(tracks[0], dict(track=0, clip='idle_loop', loop=True, queued=True))
+            if job['move'] == 0:
+                self.assertAlmostEqual(job['duration'], .15 + 1.3333334)
+                phase = job['visual_state']['facts']['tail_charge']
+                self.assertEqual(tracks[1]['clip'], '_tracks/charged_' + str(phase))
+                self.assertEqual(tracks[2], dict(track=1, clip='_tracks/charge_up_2', loop=False, queued=True, delay=.15))
+                self.assertEqual(tracks[3]['clip'], '_tracks/charged_2')
+            elif job['move'] == 1:
+                self.assertAlmostEqual(job['duration'], 1.3333334)
+            else:
+                self.assertEqual(job['move'], 3)
+                self.assertAlmostEqual(job['duration'], .6666667)
+
     def test_common_layout_contains_all_clips_without_pivot_or_scale_change(self):
         rows = [dict(bounds=[[-20, -50], [20, 30]], reference_bounds=[[-20, -50], [20, 30]]),
                 dict(bounds=[[-300, -40], [80, 60]], reference_bounds=[[-10, -25], [10, 15]])]

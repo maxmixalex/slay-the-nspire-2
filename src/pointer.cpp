@@ -19,7 +19,7 @@ const HitRegion* App::hit_at(int x,int y)const{
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
-        ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
+        ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
 void App::pointer_cancel(){hand_focus=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
@@ -91,6 +91,7 @@ void App::pointer_scroll(int rows){
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(library){ui_action(rows>0?UiAction::NextPage:UiAction::PreviousPage);return;}
     if(title||paused||help||character_select||deck_candidate>=0)return;
+    if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map))){map_legend_item=uint8_t(clamp(int(map_legend_item)+rows,0,5));return;}
     if(!panel&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)){ui_action(rows>0?UiAction::NextWorldPage:UiAction::PreviousWorldPage);return;}
     if(!panel&&choice_phase(game.phase)){
         ui_action(rows>0?UiAction::NextChoicePage:UiAction::PreviousChoicePage);return;
@@ -171,7 +172,7 @@ void App::pointer_button(bool down){
     case HitKind::DetailClose:detail_card=-1;break;
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
     case HitKind::WorldNode:
-        if(!panel&&game.phase==Phase::Map&&world_choose_point(game,unsigned(hit.value)))reset_presentation();break;
+        if(!map_legend&&!panel&&game.phase==Phase::Map&&world_choose_point(game,unsigned(hit.value)))reset_presentation();break;
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
     case HitKind::CrystalCell:

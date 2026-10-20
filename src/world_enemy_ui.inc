@@ -26,7 +26,7 @@ static bool ui_enemy_set_clip(App&a,int slot,int clip,const EnemyVisualFacts&fac
 static bool ui_enemy_set_state(App&a,int slot,int state,const EnemyVisualFacts&facts,uint32_t start){
  auto&m=a.enemy_presentation[slot];const auto*node=world_enemy_state(m.model,state);if(!node)return false;
  int clip=world_enemy_resolve_clip(m.model,node->clip,m.skin,m.move,ui_enemy_fact,const_cast<EnemyVisualFacts*>(&facts));if(clip<0)return false;
- if(!ui_enemy_set_clip(a,slot,clip,facts,start,node->loop!=0))return false;m.state=state;m.next_clip=nullptr;return true;
+ if(!ui_enemy_set_clip(a,slot,clip,facts,start,node->loop!=0))return false;m.state=state;m.next_clip=nullptr;m.direct=false;return true;
 }
 static void ui_enemy_advance(App&a,int slot){
  auto&m=a.enemy_presentation[slot];if(!m.identity)return;
@@ -36,12 +36,19 @@ static void ui_enemy_advance(App&a,int slot){
    EnemyVisualCommand command=m.queue[0];for(unsigned i=1;i<m.count;i++)m.queue[i-1]=m.queue[i];--m.count;m.move=command.move;
    int state=command.direct?-1:world_enemy_transition(m.model,m.state,command.action,ui_enemy_fact,&command.facts);
    if(state>=0&&ui_enemy_set_state(a,slot,state,command.facts,a.animation))return;
-   if(command.direct){int clip=world_enemy_resolve_clip(m.model,command.action,m.skin,command.move,ui_enemy_fact,&command.facts);if(ui_enemy_set_clip(a,slot,clip,command.facts,a.animation,false)){const auto*move=world_enemy_move(m.model,command.move);m.next_clip=move?move->next_clip:nullptr;return;}}
+   if(command.direct){int clip=world_enemy_resolve_clip(m.model,command.action,m.skin,command.move,ui_enemy_fact,&command.facts);if(ui_enemy_set_clip(a,slot,clip,command.facts,a.animation,false)){const auto*move=world_enemy_move(m.model,command.move);m.next_clip=move?move->next_clip:nullptr;m.direct=true;return;}}
    continue; // Unregistered original trigger holds the current animation.
   }
   if(finished){
-   if(m.next_clip){auto facts=ui_enemy_facts(a.game,slot);int clip=world_enemy_resolve_clip(m.model,m.next_clip,m.skin,-1,ui_enemy_fact,&facts);m.next_clip=nullptr;if(ui_enemy_set_clip(a,slot,clip,facts,m.until,true))continue;}
+   if(m.next_clip){auto facts=ui_enemy_facts(a.game,slot);int clip=world_enemy_resolve_clip(m.model,m.next_clip,m.skin,-1,ui_enemy_fact,&facts);m.next_clip=nullptr;m.direct=false;m.move=-1;if(ui_enemy_set_clip(a,slot,clip,facts,m.until,true))continue;}
+   if(m.direct)m.move=-1;
    const auto*state=world_enemy_state(m.model,m.state);if(state&&state->next>=0){if(ui_enemy_set_state(a,slot,state->next,m.facts,m.until))continue;}
+   // Direct tracks keep the animator's logical state. Restore its settled
+   // loop even when the state id is unchanged; otherwise a strike overlay
+   // freezes the actor at its last frame. Detached segments retain dead_loop.
+   if(m.direct){auto facts=ui_enemy_facts(a.game,slot);int next=m.dead?m.state:world_enemy_resume(m.model,ui_enemy_fact,&facts);m.move=-1;m.direct=false;
+    const auto*resume=world_enemy_state(m.model,next);if(resume&&resume->loop&&ui_enemy_set_state(a,slot,next,facts,a.animation))continue;
+   }
    // Terminal death states hold their last frame. Living actors may have a
    // changed saved idle predicate, e.g. egg hatch or a resurrected stage.
    if(!m.dead){auto facts=ui_enemy_facts(a.game,slot);int next=world_enemy_resume(m.model,ui_enemy_fact,&facts);m.move=-1;if(next>=0&&next!=m.state&&ui_enemy_set_state(a,slot,next,facts,a.animation))continue;}
@@ -55,7 +62,7 @@ static void ui_enemy_advance(App&a,int slot){
 }
 void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const EnemyVisualFacts*facts,uint32_t earliest){
  if(slot<0||slot>=game.enemy_count||!game.enemy_world.active)return;auto&m=enemy_presentation[slot];if(!m.identity)return;
- const bool terminal=ui_visual_equal(trigger,"Dead")||ui_visual_equal(trigger,"Revive");
+ const bool terminal=ui_visual_equal(trigger,"Dead")||ui_visual_equal(trigger,"Revive")||ui_visual_equal(trigger,"DeadTrigger");
  if(!direct&&(terminal||ui_visual_equal(trigger,"Hit"))){auto snapshot=facts?*facts:ui_enemy_facts(game,slot);
   int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&snapshot);if(state>=0){if(terminal)m.count=0;m.move=move;ui_enemy_set_state(*this,slot,state,snapshot,animation);return;}
   if(terminal)return;
@@ -75,9 +82,9 @@ void App::sync_enemy_feedback(){
   if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){
    m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.hp=game.enemies[i].hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
    int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
-   ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,"Dead");
+   ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
   }else{
-   int hp=game.enemies[i].hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,"Dead");}
+   int hp=game.enemies[i].hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");}
    else if(hp>0&&m.hp<=0){m.dead=false;enemy_trigger(i,"Revive");}
    m.hp=hp;
   }
@@ -87,6 +94,20 @@ void App::sync_enemy_feedback(){
 void App::observe_core(const State&s,Log log){
  if(&s!=&game||!s.enemy_world.active)return;
  if(log.kind==LogKind::Enemy&&log.a>=0&&log.a<s.enemy_count){int slot=log.a;auto facts=ui_enemy_facts(s,slot);const auto*move=world_enemy_move(unsigned(s.enemy_world.models[slot].kind),log.b);
+  const auto kind=s.enemy_world.models[slot].kind;
+  // Respawns increments inside the original action, before its trigger.
+  // That exact boundary reports through observe_enemy_animation instead.
+  if(kind==EnemyId::TestSubject&&log.b==0)return;
+  if(kind>=EnemyId::DecimillipedeSegmentBack&&kind<=EnemyId::DecimillipedeSegmentMiddle&&log.b>=0&&log.b<=2){
+   sync_enemy_feedback();uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation,end=when;
+   for(int i=0;i<s.enemy_count;i++){const auto other=s.enemy_world.models[i].kind;
+    if(other<EnemyId::DecimillipedeSegmentBack||other>EnemyId::DecimillipedeSegmentMiddle)continue;
+    auto snapshot=ui_enemy_facts(s,i);auto&m=enemy_presentation[i];const char*action=m.dead?"dead_loop":"idle_loop";
+    int clip=world_enemy_resolve_clip(m.model,action,m.skin,log.b,ui_enemy_fact,&snapshot);
+    enemy_trigger(i,action,log.b,true,&snapshot,when);if(clip>=0&&int32_t(when+ui_enemy_ticks(*this,clip)-end)>0)end=when+ui_enemy_ticks(*this,clip);
+   }
+   enemy_visual_clock=end;return;
+  }
   if(move){sync_enemy_feedback();auto&m=enemy_presentation[slot];uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;int projected=m.state;
    for(unsigned i=0;i<move->action_count;i++)if(const auto*action=world_enemy_action(*move,i)){
     int clip=-1;
@@ -98,6 +119,18 @@ void App::observe_core(const State&s,Log log){
    enemy_visual_clock=when;
   }
  }else if(log.kind==LogKind::Damage&&log.b>=0&&log.b<s.enemy_count&&s.enemies[log.b].hp>0)enemy_trigger(log.b,"Hit");
+}
+void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
+ if(&s!=&game||!s.enemy_world.active||slot<0||slot>=s.enemy_count||!trigger)return;
+ sync_enemy_feedback();auto&m=enemy_presentation[slot];auto facts=ui_enemy_facts(s,slot);
+ uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
+ int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&facts);
+ const auto*node=world_enemy_state(m.model,state);int clip=node?world_enemy_resolve_clip(m.model,node->clip,m.skin,-1,ui_enemy_fact,&facts):-1;
+ // Power hooks can replace a generic death/hurt animation at this exact
+ // simulation boundary. Future hooks retain their order behind queued moves.
+ if(when==animation&&state>=0){m.move=-1;ui_enemy_set_state(*this,slot,state,facts,animation);}
+ else enemy_trigger(slot,trigger,-1,false,&facts,when);
+ if(clip>=0)enemy_visual_clock=when+ui_enemy_ticks(*this,clip);
 }
 bool App::enemy_frame(int slot,int&clip,uint32_t&elapsed,bool&loop){
  if(slot<0||slot>=game.enemy_count||!game.enemy_world.active)return false;ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];

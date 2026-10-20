@@ -71,7 +71,7 @@ static void enemy_die(State&s,int t){
  int ordered[MaxEnemies];unsigned n=enemy_ordered_slots(s,ordered);
  for(unsigned at=0;at<n;++at){int other=ordered[at];if(other==t||!enemy_slot_alive(s,other))continue;
   int ravenous=enemy_power_value(s,other,EnemyPower::Ravenous);
-  if(ravenous){if(w.models[other].kind==EnemyId::CorpseSlug)w.models[other].data[8]=1;enemy_stun(s,other);enemy_apply_power(s,other,EnemyPower::Strength,ravenous,other);}
+  if(ravenous){notify_enemy_animation(s,other,"DevourStartTrigger");if(w.models[other].kind==EnemyId::CorpseSlug)w.models[other].data[8]=1;enemy_stun(s,other);enemy_apply_power(s,other,EnemyPower::Strength,ravenous,other);}
   if(enemy_power_value(s,other,EnemyPower::CrabRage)){
    enemy_apply_power(s,other,EnemyPower::Strength,6,other);
    enemy_gain_block(s,other,99);
@@ -80,8 +80,8 @@ static void enemy_die(State&s,int t){
   auto&observer=w.models[other];
   if(kind==EnemyId::TorchHeadAmalgam&&observer.kind==EnemyId::Queen){observer.data[0]=1;if(observer.node==2)enemy_set_move(s,other,5,true);}
  }
- if(illusion){m.resume_node=m.previous;m.flags|=EnemyDown;enemy_set_move(s,t,30,true);}
- else if(adaptable){m.flags|=EnemyDown;enemy_set_move(s,t,0,true);}
+ if(illusion){m.resume_node=m.previous;m.flags|=EnemyDown;enemy_set_move(s,t,30,true);notify_enemy_animation(s,t,"StunTrigger");}
+ else if(adaptable){m.flags|=EnemyDown;enemy_set_move(s,t,0,true);notify_enemy_animation(s,t,"DeadTrigger");}
  else if(reattach){m.flags|=EnemyDown;enemy_set_move(s,t,3,true);}
  else if(steam){m.data[2]=1;s.enemies[t].hp=s.enemies[t].max_hp=999999999;enemy_set_move(s,t,6,true);}
  const bool retained=illusion||adaptable||reattach||steam;
@@ -101,7 +101,7 @@ static void enemy_die(State&s,int t){
   int replacement=enemy_create(s,EnemyId::Axebot,named_slot,-1,10*(3-stock));
   if(replacement>=0){auto&fresh=w.models[replacement];fresh.data[0]=(int16_t)(3-stock);enemy_initial_powers(s,replacement);
    if(w.side)fresh.data[11]=1;else{enemy_set_move(s,replacement,enemy_initial_node(s,replacement));fresh.previous=fresh.node;}
-   world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,replacement);}
+   notify_enemy_animation(s,replacement,"respawn");world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,replacement);}
  }
  if(infested)for(int slot=1;slot<=4;++slot)enemy_spawn(s,EnemyId::Wriggler,slot,t);
  if(surprise){

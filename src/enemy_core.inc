@@ -95,7 +95,7 @@ static void enemy_clear_power(State&s,int t,EnemyPower p){
  }else{
   if(p==EnemyPower::Burrowed)s.enemies[t].block=0;
   else if(p==EnemyPower::VitalSpark)enemy_clear_matching_afflictions(s,EnemyAffliction::Tainted);
-  else if(p==EnemyPower::Sandpit&&enemy_slot_alive(s,t)&&s.hp>0){s.expansion.osty_hp=0;s.hp=0;death_cleanup(s);}
+  else if(p==EnemyPower::Sandpit&&enemy_slot_alive(s,t)&&s.hp>0){notify_enemy_animation(s,t,"EatPlayerTrigger");s.expansion.osty_hp=0;player_kill(s,true);}
  }
  enemy_aux(s,t,p)=0;enemy_source(s,t,p)=0;
 }
@@ -208,7 +208,10 @@ static int enemy_random_branch(State&s,int t,int branch){
   if(m.kind==EnemyId::TwoTailedRat)w=e.node==3?(rat?100663296u:0u):(rat?11184811u:134217728u);
   weights[i]=eligible?w:0;sum=(uint32_t)enemy_round_significand(uint64_t(sum)+weights[i],24);
  }
- if(!sum){fail(s);return 0;}uint32_t roll=enemy_float_sample(world_rng(s,WorldRng::MonsterAi),sum);
+ // Original RandomBranchState still calls NextFloat(0) when cooldowns remove
+ // every weight, then its first subtraction satisfies 0 <= 0. This consumes
+ // one RNG value and selects the first declared branch (Flyconid reaches it).
+ uint32_t roll=enemy_float_sample(world_rng(s,WorldRng::MonsterAi),sum);
  for(unsigned i=0;i<n;i++){if(roll<=weights[i])return entries[i].node;roll=(uint32_t)enemy_round_significand(uint64_t(roll-weights[i]),24);}
  fail(s);return 0;
 }

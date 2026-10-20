@@ -51,6 +51,7 @@ static void crystal_screen(Canvas&c){
  }
  c.dim(0,214,320,26,185);c.centered("方向键定位 · Enter 占卜 · 空格切换工具",0,219,320,10,White);
 }
+#include "world_reward_choice_ui.inc"
 static void world_choice_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;a.sync_selection();a.hit_count=0;
  if(s.phase==Phase::OriginalEventChoice&&s.original_events.selection==OriginalEventSelection::Crystal){crystal_screen(c);return;}
@@ -64,6 +65,8 @@ static void world_choice_screen(Canvas&c){
  const bool hand=relic&&w.choice==WorldRelicChoice::Hand;
  uint16_t ids[MaxWorldUiChoices];unsigned count=a.world_choice_options(ids,MaxWorldUiChoices);count=mn(int(count),MaxWorldUiChoices);
  a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));const int first=a.cursor/10*10;
+ if(rewards){native_reward_set_screen(c,ids,count);return;}
+ if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
  c.dim(0,0,320,240,224);c.centered(world_choice_heading(s),0,6,320,16,Gold);
  char label[128]{};TextBuffer title{label,sizeof label,0};
  if(potion){unsigned id=relic?w.offers[0]:e.offers[0];const auto*d=potion_definition(Potion(id));title.text(d?d->name:"");title.text(" · 选择替换位置");}
@@ -74,19 +77,6 @@ static void world_choice_screen(Canvas&c){
   for(int i=first_bundle;i<mn(int(count),first_bundle+2);i++){int yy=47+(i-first_bundle)*73;bool selected=world_selected(a,ids[i]);
    for(int j=0;j<3;j++){unsigned at=ids[i]*3+j;if(at<w.offer_count)small_card(c,card_from_token(w.offers[at]),56+j*79,yy,selected||a.cursor==i,true,0,-2,-2,-1,-1,&w.offer_facts[at]);}
    c.hit(44,yy-2,237,70,HitKind::WorldChoice,ids[i]);
-  }
- }else if(rewards){
-  for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i],kind=0,model=0,amount=0;const EventCardFacts*facts=nullptr;
-   if(relic){const auto&r=w.rewards[w.offers[at]];kind=r.kind==1?4:r.kind==2?3:r.kind==3?2:r.kind==4?1:r.kind;model=r.value;amount=r.value;if(r.kind==5)facts=&r.facts[0];}
-   else{const auto&r=e.rewards[at];kind=r.kind;model=r.model;amount=r.amount;}
-   int x=8+(i-first)%2*156,y=48+(i-first)/2*28;bool selected=world_selected(a,at);
-   c.ui(U_RewardButton,x,y,148,26);if(selected||a.cursor==i)c.box(x-1,y-1,150,28,selected?Green:Gold);
-   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.relic_face_image(model):kind==5?a.card_face_image(card_from_token(model),-1,-1,facts):kind==6?a.content.world_image("rewards","CARD_REMOVAL"):a.content.ui_image(U_RewardCard);
-   if(kind==6&&image<0)image=a.content.ui_image(U_ShopRemove);
-   c.picture(image,x+4,y+2,22,22);char name[128]{};TextBuffer b{name,sizeof name,0};
-   if(kind==1){b.number(amount);b.text(" 金币");}else if(kind==2){const auto*d=potion_definition(Potion(model));if(d)b.text(d->name);}
-   else if(kind==3)b.text(a.relic_title(RelicId(model)));else if(kind==5)b.text(a.content.card_string(card_from_token(model).kind));else if(kind==6)b.text("移除一张牌");else b.text("选择一张牌");
-   c.text(name,x+30,y+5,10,White,112);c.hit(x,y,148,26,HitKind::WorldChoice,at);
   }
  }else if(potion||relics){
   for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i];int x=12+(i-first)%5*61,y=48+(i-first)/5*67;

@@ -35,6 +35,19 @@ bool world_valid_run(const State&s){
         }else if(a<=w.act_index)return false;
         for(unsigned i=0;i<reference::MaxPoints;++i){
             if(w.visited[a][i]>1||(w.visited[a][i]&&(!w.map_ready[a]||i>=m.count||!m.points[i].active)))return false;
+            const auto room=WorldRoom(w.visited_rooms[a][i]);
+            if(w.visited_rooms[a][i]>unsigned(WorldRoom::Rest)||bool(w.visited[a][i])!=(room!=WorldRoom::None))return false;
+            if(w.visited[a][i])switch(m.points[i].type){
+            case PointType::Unknown:if(room!=WorldRoom::Monster&&room!=WorldRoom::Elite&&room!=WorldRoom::Treasure&&room!=WorldRoom::Shop&&room!=WorldRoom::Event)return false;break;
+            case PointType::Monster:if(room!=WorldRoom::Monster)return false;break;
+            case PointType::Elite:if(room!=WorldRoom::Elite)return false;break;
+            case PointType::Boss:if(room!=WorldRoom::Boss)return false;break;
+            case PointType::Treasure:if(room!=WorldRoom::Treasure)return false;break;
+            case PointType::Shop:if(room!=WorldRoom::Shop)return false;break;
+            case PointType::Rest:if(room!=WorldRoom::Rest)return false;break;
+            case PointType::Start:if(room!=WorldRoom::Event)return false;break;
+            default:return false;
+            }
             visited+=w.visited[a][i];
         }
     }

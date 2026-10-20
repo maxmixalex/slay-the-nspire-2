@@ -80,7 +80,11 @@ static bool enemy_effect(State&s,Effect e){
  case XOp::EnemyApplyPower:enemy_apply_power(s,(b/80)%9-1,(EnemyPower)(b%80),a,b/720-1);break;
  case XOp::EnemyRemovePower:enemy_clear_power(s,a,(EnemyPower)b);break;
  case XOp::EnemyHeal:
-  if(b<0)heal(s,a);else if(enemy_slot_exists(s,b)){s.enemies[b].hp=min(s.enemies[b].max_hp,s.enemies[b].hp+a);if(s.enemies[b].hp>0)w.models[b].flags&=(uint8_t)~EnemyDown;}break;
+  if(b<0)heal(s,a);else if(enemy_slot_exists(s,b)){
+   const bool illusion_waking=(w.models[b].flags&EnemyDown)&&enemy_power_value(s,b,EnemyPower::Illusion);
+   s.enemies[b].hp=min(s.enemies[b].max_hp,s.enemies[b].hp+a);
+   if(s.enemies[b].hp>0){w.models[b].flags&=(uint8_t)~EnemyDown;if(illusion_waking)notify_enemy_animation(s,b,"WakeUpTrigger");}
+  }break;
  case XOp::EnemyPlayerDamage:player_hp_loss(s,a,false,(b&1)!=0,-1);break;
  case XOp::EnemyLoseMaxHp:player_lose_max_hp(s,a);break;
  case XOp::EnemyGenerateCard:enemy_generate_card(s,(CardKind)a,b%1024,b/1024);break;

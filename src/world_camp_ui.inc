@@ -8,7 +8,22 @@ static void native_camp_screen(Canvas&c){
   char title[96]{};TextBuffer b{title,sizeof title,0};b.text("OPTION_");b.text(key);b.text(".name");const char*name=a.content.world_string("rest_site_ui",title);
   c.centered(name,x,187,78,12,a.cursor==i?Gold:enabled?White:Muted);c.hit(x,129,78,73,HitKind::Choice,i,enabled);
  }
- char key[128]{},description[1024]{};TextBuffer b{key,sizeof key,0};b.text("OPTION_");b.text(world_rest_option_key(s,a.cursor));b.text(".description");a.localized_text("rest_site_ui",key,description,sizeof description,int(s.world.rest_options[a.cursor]));
- c.dim(0,204,320,36,200);c.paragraph(description,8,207,304,2,0,10,White);
+ const bool can_proceed=world_rest_can_proceed(s);
+ char key[128]{},description[1024]{};TextBuffer b{key,sizeof key,0};
+ if(count){
+  const bool used=(s.world.rest_used&(uint32_t(1)<<a.cursor))!=0;
+  const bool enabled=world_rest_option_enabled(s,a.cursor);
+  const auto option=WorldRestOption(s.world.rest_options[a.cursor]);
+  b.text("OPTION_");b.text(world_rest_option_key(s,a.cursor));
+  b.text(!enabled&&!used&&(option==WorldRestOption::Smith||option==WorldRestOption::Cook)?".descriptionDisabled":".description");
+  if(used){TextBuffer done{description,sizeof description,0};done.text("已完成此选项。");}
+  else a.localized_text("rest_site_ui",key,description,sizeof description,int(option));
+ }
+ c.dim(0,204,320,36,200);c.paragraph(description,8,207,can_proceed?190:304,2,0,10,White);
+ if(can_proceed){
+  c.ui(U_RewardSkip,211,211,103,27);const char*text=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+  c.centered(*text?text:"前进",212,214,101,12,Gold);c.action(207,208,111,32,UiAction::LeaveCamp);
+  c.text("空格",285,203,8,Muted);
+ }
  if(count>4){c.text("‹",5,115,12,Gold);c.hit(0,111,31,24,HitKind::Command,(int)Key::Left);c.text("›",304,115,12,Gold);c.hit(289,111,31,24,HitKind::Command,(int)Key::Right);}
 }

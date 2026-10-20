@@ -484,7 +484,10 @@ class _Renderer:
         source = shader_attrs.get('path')
         if source:
             return str(source).removeprefix('res://'), props, blend, {}
-        if shader_attrs.get('type') != 'Shader':
+        # VisualShader is a Shader subclass. Godot serializes both its graph
+        # and the generated code string in an inline resource; the same strict
+        # hash/diagnostic path applies without treating its mask as plain art.
+        if shader_attrs.get('type') not in ('Shader', 'VisualShader'):
             raise SceneRenderError('Material shader is not a Shader resource: ' + node.scope)
         code = _property(shader_props, 'code')
         if not isinstance(code, str):

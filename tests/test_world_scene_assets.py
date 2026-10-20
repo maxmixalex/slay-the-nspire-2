@@ -88,6 +88,34 @@ material = SubResource("Material")
         self.assertEqual(policy['shader_sha256'], digest)
         self.assertEqual((policy['speed'], policy['strength'], policy['sample_time']), (.388, .058, 1.25))
 
+    def test_visual_shader_inherits_shader_code_and_keeps_mask_out_of_static_art(self):
+        scene = '''[gd_scene format=3]
+[ext_resource type="Texture2D" path="res://mask.png" id="mask"]
+[sub_resource type="VisualShader" id="graph"]
+code = "shader_type canvas_item; void fragment() { COLOR = vec4(TIME); }"
+mode = 1
+nodes/fragment/connections = PackedInt32Array(1, 0, 0, 0)
+[sub_resource type="ShaderMaterial" id="mat"]
+shader = SubResource("graph")
+[node name="Root" type="Node2D"]
+[node name="Backdrop" type="Sprite2D" parent="."]
+position = Vector2(4, 0)
+centered = false
+texture = ExtResource("mask")
+[node name="Effect" type="Sprite2D" parent="."]
+centered = false
+texture = ExtResource("mask")
+material = SubResource("mat")
+'''
+        pack = Pack({'main.tscn': scene}, {'mask.png': Image.new('RGBA', (2, 2), 'red')})
+        image, diagnostics = render(pack)
+        self.assertEqual(image.getbbox(), (4, 0, 6, 2))
+        omitted = diagnostics['omitted'][0]
+        self.assertEqual(omitted['reason'], 'dynamic_shader')
+        self.assertEqual(omitted['shader'], 'main.tscn::graph')
+        self.assertEqual(omitted['shader_sha256'], hashlib.sha256(
+            b'shader_type canvas_item; void fragment() { COLOR = vec4(TIME); }').hexdigest())
+
     def test_nested_rotation_scale_and_sprite_origin(self):
         strip = Image.new('RGBA', (2, 1))
         strip.putdata([(255, 0, 0, 255), (0, 0, 255, 255)])

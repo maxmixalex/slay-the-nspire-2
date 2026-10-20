@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "date": "2026-10-20",
+  "release_ready": false,
+  "scope": "Frozen source validation receipts through c6663cff, including retained failures. Local journals and logs are not embedded.",
+  "results": [
+    {
+      "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
+      "ctest_passed": 22,
+      "ctest_failed": 16,
+      "ctest_total": 38,
+      "ctest_seconds": 852.75
+    },
+    {
+      "checkpoint": "5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7",
+      "native_build_steps_passed": 102,
+      "ctest_passed": 31,
+      "ctest_failed": 7,
+      "ctest_total": 38,
+      "ctest_seconds": 1237.15
+    },
+    {
+      "checkpoint": "c6663cffffac19de1d50de9cadc95a55f6625f91",
+      "native_build_steps_passed": 108,
+      "targeted_ctest_passed": 6,
+      "targeted_ctest_failed": 2,
+      "targeted_ctest_total": 8,
+      "targeted_ctest_seconds": 124.77,
+      "wasm_bytes": 4523730,
+      "arm_link": "failed: unsupported compiler-rt __aeabi_fsub helper",
+      "private_pack": "failed: VisualShader resource was rejected as non-Shader",
+      "passed_targeted_suites": [
+        "silent_ui_regression",
+        "shared_ui_regression",
+        "colorless_potions_regression",
+        "world_map_regression",
+        "world_ui_regression",
+        "world_event_ui_regression"
+      ],
+      "failed_targeted_suites": [
+        "enemies_regression",
+        "world_relics_regression"
+      ]
+    }
+  ],
+  "journals": [
+    {
+      "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:13:50.367871+00:00",
+      "ended_at": "2026-10-20T17:28:03.343429+00:00",
+      "log": "world17-ctest-b43faf017eb3.log",
+      "log_sha256": "0268a5aebe655505ef9d951652bc32b38f1d2ee408b73871598e154b31c2b8c2",
+      "source_sha256": "c9720aeb8924eff7d9e69e9db231d0f04954ab6e4920bc36950c60c6c9771813"
+    },
+    {
+      "checkpoint": "5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:36:39.748551+00:00",
+      "ended_at": "2026-10-20T17:38:32.811391+00:00",
+      "log": "world17-native-e8ec25d5fa42.log",
+      "log_sha256": "55f01ea1a148009d26b77c759b5b3065e708fc88d9a80cf2e111e20e463f1d3a",
+      "source_sha256": "133271a2bc3569e296c689e43c7aef267131b84207396c59e7fed0dec2b30f82"
+    },
+    {
+      "checkpoint": "5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:39:42.068870+00:00",
+      "ended_at": "2026-10-20T18:00:19.404654+00:00",
+      "log": "world17-ctest-0daac5988417.log",
+      "log_sha256": "b48c87d4267b08fd6274b39c4a569784710e9a77e7387260fe301a9d152519fd",
+      "source_sha256": "133271a2bc3569e296c689e43c7aef267131b84207396c59e7fed0dec2b30f82"
+    },
+    {
+      "checkpoint": "5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:36:25.519462+00:00",
+      "ended_at": "2026-10-20T17:36:52.914203+00:00",
+      "log": "world17-pack-2935fbad60f7.log",
+      "log_sha256": "c7defb2d19e2dcaa59d0ac2e0ce802529bff57313d4d3674b671f3357879d696",
+      "source_sha256": "133271a2bc3569e296c689e43c7aef267131b84207396c59e7fed0dec2b30f82"
+    },
+    {
+      "checkpoint": "5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:36:32.097112+00:00",
+      "ended_at": "2026-10-20T17:37:23.281765+00:00",
+      "log": "world17-arm-723a7d0884da.log",
+      "log_sha256": "c2d5d117f0376a4774e20a21c1cadc6299c3c2dcf3c997aff6bd6c5323710bdf",
+      "source_sha256": "133271a2bc3569e296c689e43c7aef267131b84207396c59e7fed0dec2b30f82"
+    },
+    {
+      "checkpoint": "5f5f652f8e38e0a5ca3d9036fe6a1fd7d67228e7",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:36:32.562256+00:00",
+      "ended_at": "2026-10-20T17:37:38.231153+00:00",
+      "log": "world17-wasm-f7ca0ca01dd0.log",
+      "log_sha256": "5cb6b21e91f22e9b48baf286b306a8239d89545ea08c7153fa08f8f3786fb073",
+      "source_sha256": "133271a2bc3569e296c689e43c7aef267131b84207396c59e7fed0dec2b30f82"
+    },
+    {
+      "checkpoint": "c6663cffffac19de1d50de9cadc95a55f6625f91",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:51:54.555301+00:00",
+      "ended_at": "2026-10-20T17:56:29.614672+00:00",
+      "log": "world17-native-c1ad01384eea.log",
+      "log_sha256": "1451eaa3f73dd0666c6bca5594999755f5d367f34ff466f4f6ef9a92d5077790",
+      "source_sha256": "a38540fe303c95f7dfe48c57780515229d1a4fc9a295b84d7a1fbd64ed4f349c"
+    },
+    {
+      "checkpoint": "c6663cffffac19de1d50de9cadc95a55f6625f91",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:57:00.905404+00:00",
+      "ended_at": "2026-10-20T17:59:05.740918+00:00",
+      "log": "world17-repaired-ctest-b30d3db08328.log",
+      "log_sha256": "b6a8fb5135f50ba390a1630be549ed5c53fe42c889736ca2f9dd5c0d6091fcf0",
+      "source_sha256": "a38540fe303c95f7dfe48c57780515229d1a4fc9a295b84d7a1fbd64ed4f349c"
+    },
+    {
+      "checkpoint": "c6663cffffac19de1d50de9cadc95a55f6625f91",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:51:40.481484+00:00",
+      "ended_at": "2026-10-20T17:54:38.128199+00:00",
+      "log": "world17-wasm-b83ef7f20757.log",
+      "log_sha256": "1520884fc959dae0a3b187f38e933dfcf8b2503a6b541a1df2fb4b8e8b40b4da",
+      "source_sha256": "a38540fe303c95f7dfe48c57780515229d1a4fc9a295b84d7a1fbd64ed4f349c"
+    },
+    {
+      "checkpoint": "c6663cffffac19de1d50de9cadc95a55f6625f91",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:51:40.706725+00:00",
+      "ended_at": "2026-10-20T17:54:09.012669+00:00",
+      "log": "world17-arm-33b7797968e8.log",
+      "log_sha256": "ce822482c983e32a86495ee59d058503c8fe4c1c531a78ef539916f83b761a8a",
+      "source_sha256": "a38540fe303c95f7dfe48c57780515229d1a4fc9a295b84d7a1fbd64ed4f349c"
+    },
+    {
+      "checkpoint": "c6663cffffac19de1d50de9cadc95a55f6625f91",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-20T17:51:40.715580+00:00",
+      "ended_at": "2026-10-20T17:54:34.289927+00:00",
+      "log": "world17-pack-a74e0ae921ca.log",
+      "log_sha256": "52ddf27818e49bc45b31dfe7243cfc241e6db2fe21c6584e1cf9bf1531689e32",
+      "source_sha256": "a38540fe303c95f7dfe48c57780515229d1a4fc9a295b84d7a1fbd64ed4f349c"
+    }
+  ],
+  "limits": [
+    "No completed private NSP2/14 pack yet.",
+    "No original-game differential run or measured 95% UI fidelity.",
+    "No successful new ARM link, emulator run, or physical calculator timing.",
+    "Native/WASM agreement must be checked with the completed private pack.",
+    "Historical 0.16 delivery remains unchanged."
+  ]
+}

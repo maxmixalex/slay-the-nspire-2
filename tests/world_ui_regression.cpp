@@ -109,6 +109,42 @@ static void original_enemy_presentation(){
  for(int i=0;i<2;i++){CHECK(world_enemy_visual(unsigned(a.game.enemy_world.models[i].kind))->shared_group==1);CHECK(a.enemy_frame(i,clip,elapsed,loop)&&clip>=38);}
  snapshot();for(unsigned i=0;i<3;i++){a.advance(250);a.render();}capture("combat-kaiser-shared");unchanged();
 }
+static const WorldEnemyVisualClip* visual_clip(int slot){
+ int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(slot,clip,elapsed,loop));const auto*row=world_enemy_clip_directory(unsigned(clip));CHECK(row);return row;
+}
+static void settle_enemy_visuals(){
+ snapshot();for(unsigned frame=0;frame<80;frame++){a.advance(250);for(int slot=0;slot<a.game.enemy_count;slot++)visual_clip(slot);}a.render();unchanged();
+}
+static void observed_enemy_kill(int slot){
+ UiCoreObserver observer(a);a.game.enemies[slot].block=0;damage_unpowered(a.game,slot,9999);resolve_pending(a.game);CHECK(a.game.phase!=Phase::Error);
+}
+static void original_enemy_transformations(){
+ enemy_visual_fight(EncounterId::TestSubjectBoss);
+ for(int form=0;form<2;form++){
+  observed_enemy_kill(0);CHECK(a.game.phase==Phase::Combat&&(a.game.enemy_world.models[0].flags&EnemyDown));
+  CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"knockout2":"knockout1"));CHECK(a.enemy_presentation[0].dead);
+  settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"knocked_out_loop2":"knocked_out_loop1"));
+  if(!form)capture("combat-test-subject-down");
+  a.input(Key::EndTurn);CHECK(a.game.enemy_world.models[0].data[0]==form+1&&a.game.enemies[0].hp>0);
+  CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"regenerate2":"regenerate1"));CHECK(!a.enemy_presentation[0].dead);
+  if(!form)capture("combat-test-subject-regenerate");
+  settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"idle_loop3":"idle_loop2"));
+ }
+ observed_enemy_kill(0);CHECK(!std::strcmp(visual_clip(0)->native_clip,"die"));settle_enemy_visuals();CHECK(a.enemy_presentation[0].dead&&!a.enemy_presentation[0].loop);
+
+ enemy_visual_fight(EncounterId::DecimillipedeElite);observed_enemy_kill(0);settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,"dead_loop"));
+ // One real segment action shakes every segment, including a detached one.
+ // The dead segment must return to dead_loop and the other two to idle_loop.
+ a.game.enemy_world.models[1].node=0;
+ {UiCoreObserver observer(a);record(a.game,LogKind::Enemy,1,0);queue_extension(a.game,XOp::EnemyMove,1,0);queue_extension(a.game,XOp::EnemyMoveFinish,1,0);resolve_pending(a.game);}
+ CHECK(a.game.phase==Phase::Combat);for(int i=0;i<3;i++){CHECK(visual_clip(i)->move==0);CHECK(a.enemy_presentation[i].direct&&!a.enemy_presentation[i].loop);}
+ capture("combat-decimillipede-shared-strike");settle_enemy_visuals();
+ for(int i=0;i<3;i++){CHECK(!std::strcmp(visual_clip(i)->native_clip,i?"idle_loop":"dead_loop"));CHECK(a.enemy_presentation[i].loop&&!a.enemy_presentation[i].direct&&!a.enemy_presentation[i].count&&!a.enemy_presentation[i].overflow);}
+
+ enemy_visual_fight(EncounterId::CorpseSlugsWeak);observed_enemy_kill(0);
+ CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_start"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_loop"));
+ a.input(Key::EndTurn);CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_end"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"idle_loop"));
+}
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

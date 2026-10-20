@@ -4,7 +4,7 @@ bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();ca
 bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(source)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies|| (actor&&game.enemy_world.active))return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=game.expansion.osty_hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -25,11 +25,13 @@ static int choice_count(const App&a){
     case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.game.hand.count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
+#include "world_map_input.inc"
 void App::input(Key k){
     UiCoreObserver observer(*this);
     if(!title&&!paused&&int32_t(combat_linger_until-animation)>0&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     HandInputFocus focus(*this,k);
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
+    if(map_input(k))return;
     if(room_input(k))return;
     if(status_input(k))return;
     if(reference_input(k))return;
@@ -150,6 +152,7 @@ void App::input(Key k){
     if(busy&&(k==Key::Confirm||k==Key::EndTurn))return;
     Phase before=game.phase;bool acted=false;int hp_before[MaxEnemies+1]={game.hp};
     for(int i=0;i<game.enemy_count;i++)hp_before[i+1]=game.enemies[i].hp;
+    if(k==Key::EndTurn&&game.phase==Phase::Camp&&world_rest_can_proceed(game))acted=world_rest_proceed(game);
     if(k==Key::EndTurn&&game.phase==Phase::Combat){
         uint8_t moves[MaxEnemies]{};for(int i=0;i<game.enemy_count;i++)moves[i]=game.enemies[i].move;acted=end_turn(game);
         if(acted){for(int i=0;i<game.enemy_count;i++)if(hp_before[i+1])animate(i+1,moves[i]==2?AnimEnemyBuff:AnimEnemyAttack,i*12);animate(0,AnimHeroHurt,7);busy=18+10*(game.enemy_count-1);feedback=10;}

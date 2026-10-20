@@ -20,18 +20,18 @@ static void enemy_visual_attack_end(State&s,int t){
 static void enemy_visual_move_begin(State&s,int t,int node){
  auto&m=s.enemy_world.models[t];
  switch(m.kind){
- case EnemyId::CeremonialBeast:if(node==1)m.data[8]|=2;if(node==2||node==31)m.data[8]&=~1;break;
- case EnemyId::CorpseSlug:if(node==31)m.data[8]=0;break;
+ case EnemyId::CeremonialBeast:if(node==1)m.data[8]|=2;if(node==2||node==31){m.data[8]&=~1;if(node==31)notify_enemy_animation(s,t,"Unstun");}break;
+ case EnemyId::CorpseSlug:if(node==31){notify_enemy_animation(s,t,"DevourEndkTrigger");m.data[8]=0;}break;
  case EnemyId::CubexConstruct:if(node==0)m.data[8]=2;break;
  case EnemyId::FuzzyWurmCrawler:if(node<=2)m.data[8]=(int16_t)(node==2);break;
  case EnemyId::KnowledgeDemon:if(node==2||node==3)m.data[8]=(int16_t)(node==2);break;
  case EnemyId::MechaKnight:if(node==2||node==3)m.data[8]=(int16_t)(node==2);break;
  case EnemyId::Rocket:if(node>=2&&node<=4)m.data[8]=(int16_t)(node==2?1:node==3?2:0);break;
- case EnemyId::SlumberingBeetle:if(node==31)m.data[8]=1;break;
+ case EnemyId::SlumberingBeetle:if(node==31){m.data[8]=1;notify_enemy_animation(s,t,"WakeUp");}break;
  case EnemyId::SoulFysh:if(node==3||node==4)m.data[8]=(int16_t)(node==3);break;
  case EnemyId::SpinyToad:if(node==0||node==1)m.data[8]=(int16_t)(node==0);break;
  case EnemyId::ThievingHopper:if(node==3)m.data[8]=1;break;
- case EnemyId::Tunneler:if(node<=3||node==31)m.data[8]=0;break;
+ case EnemyId::Tunneler:if(node<=3||node==31){m.data[8]=0;if(node==31)notify_enemy_animation(s,t,"WakeUp");}break;
  default:break;
  }
 }

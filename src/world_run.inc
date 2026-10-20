@@ -161,7 +161,8 @@ bool world_choose_point(State&s,unsigned point){
     if(room==WorldRoom::None)return world_fail(s);
     if(w.current_point<w.maps[w.act_index].count&&!w.maps[w.act_index].points[w.current_point].children.contains(uint8_t(point)))world_use_free_travel(s);
     w.current_point=uint8_t(point);w.map_column=p.col;w.map_row=p.row;w.room_type=uint8_t(room);w.room_open=1;w.point_had_shop=room==WorldRoom::Shop;
-    w.visited[w.act_index][point]=1;++w.total_floor;s.floor=uint8_t(w.total_floor);s.treasure_state=0;s.treasure_relic=0;
+    w.visited[w.act_index][point]=1;w.visited_rooms[w.act_index][point]=uint8_t(room);
+    ++w.total_floor;s.floor=uint8_t(w.total_floor);s.treasure_state=0;s.treasure_relic=0;
     w.treasure_relic=NoWorldRelic;w.treasure_gold=0;w.treasure_gold_claimed=0;w.reward_count=0;w.reward_relic=NoWorldRelic;
     w.rest_count=w.rest_pending=0;w.rest_used=0;w.rest_deck_before=0;
     s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;
@@ -196,7 +197,9 @@ bool world_refresh_map_modifiers(State&s){
     reference::ActSettings settings;settings.act=reference::ActKind(w.rooms[w.act_index].region);
     settings.increased_elites=w.ascension>=1;settings.second_boss=w.rooms[w.act_index].boss_count==2;settings.variant=uint8_t(variant);
     reference::QuotaTrace trace;if(!reference::generate_act_map(w.maps[w.act_index],w.run_seed,settings,trace))return world_fail(s);
-    for(auto&v:w.visited[w.act_index])v=0;w.current_point=w.maps[w.act_index].root;w.visited[w.act_index][w.current_point]=1;
+    for(auto&v:w.visited[w.act_index])v=0;for(auto&v:w.visited_rooms[w.act_index])v=0;
+    w.current_point=w.maps[w.act_index].root;w.visited[w.act_index][w.current_point]=1;
+    w.visited_rooms[w.act_index][w.current_point]=uint8_t(WorldRoom::Event);
     world_relic_map_generated(s);return true;
 }
 bool world_enter_event_combat(State&s,const char*key,bool resume_parent){
