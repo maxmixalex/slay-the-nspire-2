@@ -6,13 +6,15 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from build_world import (ConversionCache, card_description, choose_layout,
     decoded_frames, encoded_frames, plan_summary, private_path, ROOT, FONT_SIZES,
-    canonical, LEGACY_BUILDER_SHA256, LEGACY_FUNCTIONS, sample_map_clip)
+    canonical, LEGACY_BUILDER_SHA256, LEGACY_FUNCTIONS, sample_map_clip,
+    cached_enemy_clip, render_scope, source_fingerprint, sample_enemy_batched)
 from world_enemy_assets import manifest
 from world_enemy_profile import plan, skins
 from world_ui_profile import (BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
@@ -20,6 +22,49 @@ from world_ui_profile import (BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
 
 
 class WorldPack(unittest.TestCase):
+    def test_batched_sampling_restores_reference_binding_after_failure(self):
+        import world_enemy_assets
+        import world_raster
+        previous = world_enemy_assets.raster
+        def stopped(*args, **kwargs):
+            self.assertIs(world_enemy_assets.raster, world_raster.raster)
+            raise ValueError('sampling failure')
+        with patch('build_world.sample_enemy', side_effect=stopped):
+            with self.assertRaisesRegex(ValueError, 'sampling failure'):
+                sample_enemy_batched(None, {}, {}, None)
+        self.assertIs(world_enemy_assets.raster, previous)
+
+    def test_batched_scope_does_not_remeasure_geometry_or_reuse_changed_batch_code(self):
+        source = source_fingerprint()
+        model = manifest()['models'][0]
+        changed = dict(source, **{'tools/world_raster.py': 'a new raster implementation'})
+        for kind in ('bounds', 'clip-reference', 'scene'):
+            self.assertEqual(render_scope(kind, source, model=model),
+                             render_scope(kind, changed, model=model))
+        for kind in ('clip', 'map-clip'):
+            self.assertNotEqual(render_scope(kind, source, model=model),
+                                render_scope(kind, changed, model=model))
+
+    def test_reference_pixel_reuse_checks_all_inputs_and_payload(self):
+        with TemporaryDirectory(prefix='nspire-cache-test-') as directory:
+            source = source_fingerprint()
+            model = manifest()['models'][0]
+            settings, metadata, payload = {'job': 'fixed'}, {'frames': 1}, b'reference pixels'
+            cache = ConversionCache(Path(directory), {'schema': 2, 'pck': 'fixed'})
+            original = render_scope('clip-reference', source, model=model)
+            cache.put('clip', settings, metadata, payload, scope=original)
+            self.assertIsNone(cached_enemy_clip(cache, {'job': 'different'}, source, model))
+            changed = dict(source, **{'tools/animation.py': 'different original geometry'})
+            self.assertIsNone(cached_enemy_clip(cache, settings, changed, model))
+            self.assertEqual(cached_enemy_clip(cache, settings, source, model), (metadata, payload))
+            scope = render_scope('clip', source, model=model)
+            receipt = cache.directory / 'clip' / (cache.key('clip', settings, scope) + '.json')
+            self.assertEqual(json.loads(receipt.read_bytes())['reused_from']['key'],
+                             cache.key('clip', settings, original))
+            receipt.with_suffix('.bin').write_bytes(b'corrupted batched record')
+            with self.assertRaisesRegex(ValueError, 'incomplete or changed'):
+                cached_enemy_clip(cache, settings, source, model)
+
     def test_common_text_append_preserves_all_original_world_ids(self):
         base = json.loads((ROOT / 'config/world-ui-0.17.json').read_text())['text_keys']
         self.assertEqual(TEXT_KEYS[:len(base)], base)

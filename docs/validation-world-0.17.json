@@ -3,7 +3,7 @@
   "reference": "v0.111.0 / 41cef1ea",
   "date": "2026-10-20",
   "release_ready": false,
-  "scope": "Frozen source validation receipts through 14fcf1e4, including retained failures. Local journals and logs are not embedded.",
+  "scope": "Frozen source validation receipts through 4b9dad96, including retained failures and interrupted runs. Local journals and logs are not embedded.",
   "results": [
     {
       "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
@@ -66,6 +66,38 @@
       ],
       "separate_enemy_suite": "failed: KnowledgeDemon pending virtual card choice rejected by structural validator",
       "private_pack": "in progress at source preservation: all 799 world images completed, full enemy raster conversion pending"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "native_build_steps_passed": 118,
+      "wasm_bytes": 4600560,
+      "python_converter_tests_passed": 38,
+      "arm_link": "failed: unsupported global constructor entry for the frontend saved-state probe",
+      "full_ctest": "interrupted: 16 of 44 suites reported passed before executor transport loss; no full-suite pass",
+      "focused_ctest_passed": 2,
+      "focused_ctest_failed": 2,
+      "focused_ctest_total": 4,
+      "focused_ctest_seconds": 138.77,
+      "passed_targeted_suites": [
+        "card_result_regression",
+        "world_frontend_ui_regression"
+      ],
+      "failed_targeted_suites": [
+        "enemies_regression",
+        "world_game_over_ui_regression"
+      ],
+      "enemy_failure": "Gremlin Surprise precreation ID order incorrectly substituted for original add order",
+      "game_over_failure": "Synthetic 2x2 Proceed art gave the wrong button aspect ratio and obscured the gold row"
+    },
+    {
+      "checkpoint": "4b9dad9645f531b3cda3884c2a906bc425570ca6",
+      "raster_reference_clips": 5,
+      "raster_reference_frames": 69,
+      "raster_different_rgba_bytes": 0,
+      "reference_seconds": 37.27548519199263,
+      "batched_seconds": 13.30180109000139,
+      "speedup": 2.8022885727867046,
+      "scope": "Exact raster implementation comparison on these five complete original clips, including three two-color models. Not an original-game display oracle or an exhaustive comparison of every enemy frame."
     }
   ],
   "journals": [
@@ -244,6 +276,94 @@
       "log": "world17-enemies-f80e3f0117e4.log",
       "log_sha256": "bfa0b65afa0b3362a3c2b515d8c7500b8abaf3bfdb807f6e1d07b475ec8307fc",
       "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:29:38.936685+00:00",
+      "ended_at": "2026-10-20T18:31:30.158002+00:00",
+      "log": "world17-arm-3d972bc3934c.log",
+      "log_sha256": "4465702b4dd3215b45bc246ecff05ab5da21381b4f3be378eef94f6c7c2bca82",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:29:30.555707+00:00",
+      "ended_at": "2026-10-20T18:29:35.795631+00:00",
+      "log": "world17-configure-e4b76fe9b968.log",
+      "log_sha256": "972f0f874837970018adf0b18a01b4bba89841bf8c985699862ca00559c1d797",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:30:43.289891+00:00",
+      "ended_at": "2026-10-20T18:30:49.333054+00:00",
+      "log": "world17-converter-tests-abfc34e40dcc.log",
+      "log_sha256": "b5340217adb2f06cd8ddc19903440677982fbf693b8c03d3a86a6ce0edc69422",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:29:47.799557+00:00",
+      "ended_at": "2026-10-20T18:33:18.358203+00:00",
+      "log": "world17-native-38ac92f463e1.log",
+      "log_sha256": "4298a5a29e8f3ae657fa070c5a1369a0774995112256c9523989b262aa9dd110",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:43:40.316425+00:00",
+      "ended_at": "2026-10-20T18:45:59.199158+00:00",
+      "log": "world17-new-flow-resume-de04f1fc2546.log",
+      "log_sha256": "982e5c1f1f399f01778d680ef4f92ef3586e377816fc6634cd0af62c06155d20",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:29:39.082448+00:00",
+      "ended_at": "2026-10-20T18:32:29.884880+00:00",
+      "log": "world17-wasm-cc206ad066c8.log",
+      "log_sha256": "de8303d04b715a2145e6ddbe33cdf0b2f685cc1c0ae2931091afcbbf2cef72b3",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "84a6ebf32899108920ee225abd0c71de13bc4aaf",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:45:21.313151+00:00",
+      "ended_at": "2026-10-20T18:45:52.939411+00:00",
+      "log": "world17-conversion-profile-108713afe98b.log",
+      "log_sha256": "b4492159a66bd0b8db2b81a3d1fcd282b3dea62aca13cb7c304ba16ef6e3a8bc",
+      "source_sha256": "84c2caad19b4ffdaea26b2adac0b241b9a6a76285662b70201f0e1858b61b15a"
+    },
+    {
+      "checkpoint": "4b9dad9645f531b3cda3884c2a906bc425570ca6",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:52:53.380444+00:00",
+      "ended_at": "2026-10-20T18:53:45.701118+00:00",
+      "log": "world17-raster-compare-21be606aa5cc.log",
+      "log_sha256": "8f4b0ccb271e333edcf9e26f507fb738e239eeabd499c4e6ce20705acd7c45b9",
+      "source_sha256": "84bfcc4cbbafef0d8df92a7eda5337749b78e03c0141d4f6d094d6f7ab28a33b"
     }
   ],
   "limits": [
@@ -252,5 +372,47 @@
     "No successful new ARM link, emulator run, or physical calculator timing.",
     "Native/WASM agreement must be checked with the completed private pack.",
     "Historical 0.16 delivery remains unchanged."
+  ],
+  "interrupted_runs": [
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "log": "world17-ctest-63977c63cbca.log",
+      "journal_recorded_status": "running",
+      "status": "interrupted_unknown",
+      "reason": "Executor transport disconnected; recovery lost the process sessions. Original unfinished journal retained unchanged.",
+      "last_observed_log_sha256": "1c4cef7d2f3a96dff256b5cda19e252266766abf6e791a12d10f87c44d449a28",
+      "started_at": "2026-10-20T18:34:21.778579+00:00",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "log": "world17-new-flow-45af975d0019.log",
+      "journal_recorded_status": "running",
+      "status": "interrupted_unknown",
+      "reason": "Executor transport disconnected; recovery lost the process sessions. Original unfinished journal retained unchanged.",
+      "last_observed_log_sha256": "b151472fd648dc62e15cf0d1b362ff4d58de34ea4e1dfe773b0bb7086b7589dc",
+      "started_at": "2026-10-20T18:36:33.705897+00:00",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "log": "world17-pack-5537cfd33eb3.log",
+      "journal_recorded_status": "running",
+      "status": "interrupted_unknown",
+      "reason": "Executor transport disconnected; recovery lost the process sessions. Original unfinished journal retained unchanged.",
+      "last_observed_log_sha256": "c3023db09511670c41cbb8d3d89c75fbc74669114e7592e2a8039fe21a15122c",
+      "started_at": "2026-10-20T18:12:25.970760+00:00",
+      "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
+    },
+    {
+      "checkpoint": "84a6ebf32899108920ee225abd0c71de13bc4aaf",
+      "log": "world17-prefetch-fa14c6368be4.log",
+      "journal_recorded_status": "running",
+      "status": "interrupted_unknown",
+      "reason": "Executor transport disconnected; recovery lost the process sessions. Original unfinished journal retained unchanged.",
+      "last_observed_log_sha256": "0cf74d4d5e117ade2a177e8bdec8fa534554c6af77646e1b209f1b41d4729b91",
+      "started_at": "2026-10-20T18:35:25.082139+00:00",
+      "source_sha256": "84c2caad19b4ffdaea26b2adac0b241b9a6a76285662b70201f0e1858b61b15a"
+    }
   ]
 }

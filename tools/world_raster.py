@@ -1,7 +1,7 @@
 """Batch the reference rasterizer's small NumPy solves without dropping frames.
 
-The original ``animation.raster`` remains the pixel oracle. This candidate is
-not selected by the content converter until its full RGBA comparisons pass.
+The original ``animation.raster`` remains the pixel oracle. Batched output was
+compared byte-for-byte against it on synthetic cases and original full clips.
 Triangle order, pixel centers, interpolation and blend arithmetic are retained.
 Temporary batches are bounded by both triangle count and sampled pixel count.
 """

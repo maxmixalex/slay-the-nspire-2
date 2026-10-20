@@ -35,12 +35,13 @@ adapter assemblies and cache files are rejected if their resolved paths fall
 inside the public source repository. No original game executable is run.
 
 The generated public profile currently contains 558 cards, 6,100 strings,
-1,153 auxiliary entries and 1,641 animation entries. The new enemy directory
+1,170 auxiliary entries and 1,647 animation entries. The new enemy directory
 keeps all 732 actually used native clip names as 1,600 skin/phase/move variants,
-with 33,210 frames. Three original map-boss loops add 540 frames. With the
+with 33,210 frames. Three original map-boss loops add 540 frames, and the
+three treasure opening/shine queues add 99 frames. With the
 unchanged historical images and new portraits and auxiliary images, the plan
-has 37,263 images. Even at the 32,768-glyph directory bound, its directory
-occupies 1,209,132 bytes of the 2 MiB limit. Actual payload
+has 37,379 images. Even at the 32,768-glyph directory bound, its directory
+occupies 1,211,152 bytes of the 2 MiB limit. Actual payload
 size remains unknown until all frames are encoded; the 256 MiB file limit is
 checked during construction and on the final canonical decode/re-encode.
 

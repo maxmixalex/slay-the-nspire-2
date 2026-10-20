@@ -25,7 +25,8 @@ from PIL import Image
 
 from build_world import (CACHE_SCHEMA, CANONICAL_PLACEMENT, KAISER_LAYOUT,
     ConversionCache, canonical, choose_layout, encode_image, encoded_frames,
-    job_state, private_path, render_scope, sample_enemy, source_fingerprint)
+    job_state, private_path, render_scope, sample_enemy_batched, source_fingerprint,
+    cached_enemy_clip)
 from build_content import texture
 from pck import Pack
 from reference_inventory import sha256, verify_release
@@ -89,18 +90,18 @@ def initialize_worker(game, directory, dependencies, sources, runtime, dotnet, f
     atexit.register(sampler.close)
     models = {row['model']: row for row in manifest()['models']}
     scopes = {name: render_scope('clip', sources, model=model) for name, model in models.items()}
-    _worker = cache, pck, sampler, models, scopes
+    _worker = cache, pck, sampler, models, scopes, sources
 
 
 def prefetch_job(item):
     number, job, layout = item
-    cache, pck, sampler, models, scopes = _worker
+    cache, pck, sampler, models, scopes, sources = _worker
     settings = dict(job=job, visual_state=job_state(job, layout))
     scope = scopes[job['model']]
-    cached = cache.get('clip', settings, scope=scope)
+    cached = cached_enemy_clip(cache, settings, sources, models[job['model']])
     if cached is not None:
         return number, job['key'], 'reused', len(cached[1])
-    images, metadata = sample_enemy(pck, models[job['model']], job, sampler, layout=layout)
+    images, metadata = sample_enemy_batched(pck, models[job['model']], job, sampler, layout=layout)
     if (metadata['frames'] != job['frames'] or metadata['size'] != layout['size'] or
             not 0 < metadata['frame_ms'] <= 1000 or
             abs(metadata['duration_ms'] - round(job['duration'] * 1000)) > 1):
@@ -165,7 +166,7 @@ def main():
         job = ENEMY_CLIP_ROWS[number]
         scope = render_scope('clip', sources, model=models[job['model']])
         settings = dict(job=job, visual_state=job_state(job, layouts[job['model']]))
-        if cache.get('clip', settings, scope=scope) is None:
+        if cached_enemy_clip(cache, settings, sources, models[job['model']]) is None:
             pending.append((number, job, layouts[job['model']]))
     print(f'Prefetch: {len(pending)} missing clips; {args.workers} workers; cache {cache.identity}', flush=True)
     with ProcessPoolExecutor(max_workers=args.workers,

@@ -9,6 +9,7 @@ import json
 import math
 from pathlib import Path
 from world_enemy_profile import plan as enemy_plan, generated_cpp as enemy_cpp
+from world_room_profile import room_plan, generated_room_header
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS = 497, 1556, 339, 38
@@ -43,6 +44,8 @@ if COMMON_PROFILE.get('schema') != 1 or COMMON_PROFILE.get('reference') != 'v0.1
     raise ValueError('Original common UI reference/schema drift')
 AUXILIARY_ROWS.extend(dict(row) for row in COMMON_PROFILE['images'])
 TEXT_KEYS.extend(COMMON_PROFILE.get('text_keys', []))
+ROOM_PROFILE = room_plan()
+AUXILIARY_ROWS.extend(dict(row) for row in ROOM_PROFILE['images'])
 ENEMY_CLIP_ROWS = enemy_plan()['jobs']
 MAP_CLIP_ROWS = []
 for _row in MAP_PROFILE['clips']:
@@ -54,7 +57,9 @@ for _row in MAP_PROFILE['clips']:
         not 0 < _row['size'][0] <= 320 or not 0 < _row['size'][1] <= 240):
         raise ValueError('Invalid original map clip specification: ' + _row['key'])
     MAP_CLIP_ROWS.append(dict(_row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS)))
-CLIP_ROWS = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS
+ROOM_CLIP_ROWS = [dict(row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) + index)
+                  for index, row in enumerate(ROOM_PROFILE['clips'])]
+CLIP_ROWS = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS + ROOM_CLIP_ROWS
 STRINGS = TEXT_BASE + len(TEXT_KEYS)
 AUXILIARY = BASE_AUXILIARY + len(AUXILIARY_ROWS)
 CLIPS = BASE_CLIPS + len(CLIP_ROWS)
@@ -82,6 +87,7 @@ def generated_files() -> dict[str, str]:
             f' {{{json.dumps(key, ensure_ascii=True)},{index}}},\n' for key, index in sorted(rows))
     return {
         'include/world_assets.hpp': header,
+        'include/world_room_assets.hpp': generated_room_header(),
         'src/world_text_index.inc': table((key, TEXT_BASE + i) for i, key in enumerate(TEXT_KEYS)),
         'src/world_image_index.inc': table((row['key'], BASE_AUXILIARY + i) for i, row in enumerate(AUXILIARY_ROWS)),
         'src/world_clip_index.inc': table((row['key'], BASE_CLIPS + i) for i, row in enumerate(CLIP_ROWS)),

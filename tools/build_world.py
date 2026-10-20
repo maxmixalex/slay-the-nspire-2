@@ -27,7 +27,7 @@ from build_characters import KEYWORD_KEYS
 from build_content import ROOT, atlas, choose_font, image_data, prepared, texture
 from build_expansion import rle
 from build_tactics import compact_image
-from animation import raster
+from world_raster import raster
 from content_pack14 import PackData, GLYPH_LIMITS
 from pck import Pack
 from reference_inventory import sha256, verify_release
@@ -36,9 +36,10 @@ from world_enemy_assets import SpineSampler, bake_enemy, manifest as enemy_manif
 from world_enemy_profile import plan as enemy_plan
 from world_scene_assets import render_scene, load_scene_texture
 from world_ui_assets import component as ui_component
+from world_room_assets import render_room_image, sample_treasure
 from world_ui_profile import (BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS,
     CARDS, STRINGS, AUXILIARY, CLIPS, TEXT_BASE, TEXT_KEYS, AUXILIARY_ROWS, CLIP_ROWS,
-    ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
+    ENEMY_CLIP_ROWS, MAP_CLIP_ROWS, ROOM_CLIP_ROWS,
     FILE_LIMIT, DIRECTORY_LIMIT, validate_headers)
 
 SOURCE_SHA256 = '4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917'
@@ -261,6 +262,22 @@ def sample_enemy(pack, model, job, sampler, *, layout=None, measure=False):
         visual_state=job_state(job, layout), measure_only=measure)
 
 
+def sample_enemy_batched(pack, model, job, sampler, *, layout=None):
+    """Use identical sampled geometry with bounded batched pixel operations.
+
+    Each converter/prefetch worker executes one job at a time in its own
+    process. Restore the reference binding even if rendering raises; bounds
+    and independent scene sampling continue to use their original code path.
+    """
+    import world_enemy_assets as enemy_renderer
+    previous = enemy_renderer.raster
+    try:
+        enemy_renderer.raster = raster
+        return sample_enemy(pack, model, job, sampler, layout=layout)
+    finally:
+        enemy_renderer.raster = previous
+
+
 def sample_map_clip(pack, job, sampler):
     """Preserve the original boss-map RGB mask and the declared scene anchor.
 
@@ -324,12 +341,23 @@ def render_scope(kind: str, source_files: dict, *, model=None) -> dict:
         paths = TEXTURE_SOURCES + ENCODER_SOURCES + ('tools/world_scene_assets.py', 'tools/world_ui_assets.py')
         functions, pipeline = [render_ui_component, encode_image], 'ui-component-rgba-1'
     elif kind == 'map-clip':
-        paths = GEOMETRY_SOURCES + ENCODER_SOURCES
-        functions, pipeline = [sample_map_clip, encode_image], 'map-boss-rgba-1'
-    elif kind in ('bounds', 'clip'):
-        paths = GEOMETRY_SOURCES + (ENCODER_SOURCES if kind == 'clip' else ())
-        functions = [sample_enemy, job_state] + ([encode_image] if kind == 'clip' else [])
-        pipeline = 'enemy-rgba-1' if kind == 'clip' else 'enemy-bounds-1'
+        paths = GEOMETRY_SOURCES + ENCODER_SOURCES + ('tools/world_raster.py',)
+        functions, pipeline = [sample_map_clip, encode_image], 'map-boss-batched-rgba-1'
+    elif kind in ('room-image', 'room-clip'):
+        paths = GEOMETRY_SOURCES + ENCODER_SOURCES + (
+            'tools/world_scene_assets.py', 'tools/world_room_assets.py',
+            'tools/world_room_profile.py', 'config/world-room-ui-0.17.json')
+        functions = [render_room_image if kind == 'room-image' else sample_treasure, encode_image]
+        pipeline = 'room-image-rgba-1' if kind == 'room-image' else 'treasure-clip-rgba-1'
+    elif kind in ('bounds', 'clip', 'clip-reference'):
+        pixels = kind != 'bounds'
+        paths = GEOMETRY_SOURCES + (ENCODER_SOURCES if pixels else ())
+        functions = [sample_enemy, job_state] + ([encode_image] if pixels else [])
+        pipeline = 'enemy-rgba-1' if pixels else 'enemy-bounds-1'
+        if kind == 'clip':
+            paths += ('tools/world_raster.py',)
+            functions += [sample_enemy_batched]
+            pipeline = 'enemy-batched-rgba-1'
         if model is None:
             raise ValueError('Enemy cache scope requires its entire original model specification')
     else:
@@ -339,6 +367,27 @@ def render_scope(kind: str, source_files: dict, *, model=None) -> dict:
     if model is not None:
         result['model'] = hashlib.sha256(canonical(model)).hexdigest()
     return result
+
+
+def cached_enemy_clip(cache, settings, source_files, model):
+    """Reuse checked reference pixels, while binding new pixels to new code.
+
+    The reference implementation is retained unchanged. Its complete geometry,
+    encoder, model and job identities must match before an old payload is
+    imported. A changed batching implementation cannot reuse another batching
+    version's output, and never weakens the checksum checks of either record.
+    """
+    scope = render_scope('clip', source_files, model=model)
+    cached = cache.get('clip', settings, scope=scope)
+    if cached is not None:
+        return cached
+    reference = render_scope('clip-reference', source_files, model=model)
+    cached = cache.get('clip', settings, scope=reference)
+    if cached is not None:
+        return cache.put('clip', settings, cached[0], cached[1], scope=scope,
+            reused_from=dict(pipeline=reference['pipeline'],
+                             key=cache.key('clip', settings, reference)))
+    return None
 
 
 def card_models() -> list[dict]:
@@ -457,7 +506,9 @@ def plan_summary() -> dict:
     return dict(cards=CARDS, strings=STRINGS, auxiliary_images=AUXILIARY, clips=CLIPS,
         original_used_enemy_clips=plan['used_clips'], enemy_variants=len(ENEMY_CLIP_ROWS),
         enemy_frames=sum(j['frames'] for j in ENEMY_CLIP_ROWS), map_clips=len(MAP_CLIP_ROWS),
-        map_frames=sum(j['frames'] for j in MAP_CLIP_ROWS), expected_images=images,
+        map_frames=sum(j['frames'] for j in MAP_CLIP_ROWS),
+        room_clips=len(ROOM_CLIP_ROWS), room_frames=sum(j['frames'] for j in ROOM_CLIP_ROWS),
+        expected_images=images,
         maximum_directory_bytes=worst_directory, directory_limit=DIRECTORY_LIMIT,
         file_limit=FILE_LIMIT,
         payload_size='Unknown until all original frames are losslessly encoded')
@@ -527,6 +578,8 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
             atlas_scope = render_scope('atlas-tres', source_files)
             component_scope = render_scope('ui-component', source_files)
             map_scope = render_scope('map-clip', source_files)
+            room_image_scope = render_scope('room-image', source_files)
+            room_clip_scope = render_scope('room-clip', source_files)
             for row in rows:
                 key, path = row['key'], row['portrait']
                 if key + '.title' not in card_text or (key + '.description' not in card_text and key not in KEYWORD_ONLY_CARDS):
@@ -561,11 +614,15 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
             for number, row in enumerate(AUXILIARY_ROWS):
                 print(f'World image {number + 1}/{len(AUXILIARY_ROWS)} {row["key"]}', flush=True)
                 is_tres = row['kind'] == 'atlas' and row['path'].endswith('.tres')
-                scope = scene_scope if row['kind'] in ('background', 'scene') else component_scope if row['kind'] == 'component' else atlas_scope if is_tres else texture_scope
+                scope = (room_image_scope if row['kind'] in ('rest-scene', 'treasure-still') else
+                    scene_scope if row['kind'] in ('background', 'scene') else
+                    component_scope if row['kind'] == 'component' else atlas_scope if is_tres else texture_scope)
                 cached = cache.get('image', row, scope=scope)
                 if cached is None:
                     if row['kind'] in ('background', 'scene'):
                         image, diagnostics = render_world_scene(pck, row, sampler)
+                    elif row['kind'] in ('rest-scene', 'treasure-still'):
+                        image, diagnostics = render_room_image(pck, row, sampler)
                     elif row['kind'] == 'component':
                         image, diagnostics = render_ui_component(pck, row, atlas_texture_cache), {}
                     elif is_tres:
@@ -617,10 +674,10 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                 state = job_state(job, layouts[job['model']])
                 settings = dict(job=job, visual_state=state)
                 scope = render_scope('clip', source_files, model=models[job['model']])
-                cached = cache.get('clip', settings, scope=scope)
+                cached = cached_enemy_clip(cache, settings, source_files, models[job['model']])
                 if cached is None:
-                    images, metadata = sample_enemy(pck, models[job['model']], job, sampler,
-                                                    layout=layouts[job['model']])
+                    images, metadata = sample_enemy_batched(pck, models[job['model']], job, sampler,
+                                                           layout=layouts[job['model']])
                     cached = cache.put('clip', settings, metadata,
                         encoded_frames([encode_image(image, animation=True) for image in images]), scope=scope)
                 metadata, payload = cached
@@ -655,6 +712,25 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                     append_image(frame)
                 pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
                 animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
+            for number, job in enumerate(ROOM_CLIP_ROWS):
+                print(f'Room clip {number + 1}/{len(ROOM_CLIP_ROWS)} {job["key"]}', flush=True)
+                cached = cache.get('clip', job, scope=room_clip_scope)
+                if cached is None:
+                    images, metadata = sample_treasure(pck, job, sampler)
+                    cached = cache.put('clip', job, metadata,
+                        encoded_frames([encode_image(image, animation=True) for image in images]), scope=room_clip_scope)
+                metadata, payload = cached
+                frames = decoded_frames(payload, job['frames'])
+                if any(metadata[key] != job[key] for key in ('frames', 'duration_ms', 'frame_ms', 'size', 'pivot')):
+                    raise ValueError('Cached room clip differs from its original profile')
+                directory = BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) + number
+                if job['id'] != directory or len(pack.clips) // 16 != directory:
+                    raise ValueError('Generated room animation directory order drift')
+                first = len(pack.images)
+                for frame in frames:
+                    append_image(frame)
+                pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
+                animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
     finally:
         pck.close()
 
@@ -684,7 +760,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
         cache_identity=cache.identity, cache_hits=cache.hits, cache_misses=cache.misses,
         cache_migrated_jobs=cache.legacy_hits,
         source_paths=image_meta, animations=animation_meta, layouts=layouts,
-        animation_sampling='Full original selected periods; enemy idle 8 fps, actions 12 fps, map bosses 20 fps; physics 60 Hz; old clips unchanged',
+        animation_sampling='Full original selected periods; enemy idle 8 fps, actions 12 fps, map bosses and treasure 20 fps; physics 60 Hz; old clips unchanged',
         normalized_target_layout=CANONICAL_PLACEMENT,
         limitations=[
             'Offline Spine geometry/raster and scene diagnostics do not establish 95% visual similarity.',
