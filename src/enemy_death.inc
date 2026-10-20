@@ -39,6 +39,7 @@ static void enemy_applier_died(State&s,int t){
 static void enemy_escape(State&s,int t){
  if(!enemy_slot_exists(s,t))return;auto&m=s.enemy_world.models[t];
  enemy_release_captured_instance(s,t,false);
+ if(m.kind==EnemyId::ThievingHopper)m.data[8]=0;
  m.flags|=EnemyRemoved|EnemyEscaped;m.flags&=(uint8_t)~(EnemyDown|EnemyDying);s.enemies[t].hp=0;
  if(s.enemy_world.escaped_count<65534)++s.enemy_world.escaped_count;
  enemy_face_remaining(s);
@@ -63,10 +64,10 @@ static void enemy_die(State&s,int t){
  int ordered[MaxEnemies];unsigned n=enemy_ordered_slots(s,ordered);
  for(unsigned at=0;at<n;++at){int other=ordered[at];if(other==t||!enemy_slot_alive(s,other))continue;
   int ravenous=enemy_power_value(s,other,EnemyPower::Ravenous);
-  if(ravenous){enemy_stun(s,other);enemy_apply_power(s,other,EnemyPower::Strength,ravenous,other);}
+  if(ravenous){if(w.models[other].kind==EnemyId::CorpseSlug)w.models[other].data[8]=1;enemy_stun(s,other);enemy_apply_power(s,other,EnemyPower::Strength,ravenous,other);}
   if(enemy_power_value(s,other,EnemyPower::CrabRage)){
    enemy_apply_power(s,other,EnemyPower::Strength,6,other);
-   enemy_gain_block(s,other,99,true);
+   enemy_gain_block(s,other,99);
    enemy_clear_power(s,other,EnemyPower::CrabRage);
   }
   auto&observer=w.models[other];

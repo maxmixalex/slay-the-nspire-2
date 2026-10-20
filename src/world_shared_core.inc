@@ -3,9 +3,42 @@
 static bool world_shared_active(const State&s){return s.world.active||s.enemy_world.active||s.world_relics.active;}
 static void world_stage(State&s,WorldStage op,int value,bool first){queue_extension(s,XOp::WorldStage,int(op),value,first);}
 static bool world_victory_pending(const State&s){
- for(unsigned i=0;i<s.effect_count;i++){const auto&e=s.effects[i];if(e.kind==EffectKind::Extended&&e.target==int(XOp::WorldStage)&&e.value>=int(WorldStage::VictoryEarly)&&e.value<=int(WorldStage::VictoryCleanup))return true;}return false;
+ for(unsigned i=0;i<s.effect_count;i++){const auto&e=s.effects[i];if(e.kind==EffectKind::Extended&&e.target==int(XOp::WorldStage)&&
+  ((e.value>=int(WorldStage::VictoryEarly)&&e.value<=int(WorldStage::VictoryCleanup))||e.value==int(WorldStage::VictoryPlayerEnd)||e.value==int(WorldStage::VictoryPowerClear)))return true;}return false;
+}
+static void world_clear_player_powers(State&s){
+ // Player.AfterCombatEnd removes powers without invoking their removal hooks.
+ // Combat card instances remain owned until the final cleanup, so a saved
+ // callback never leaves a Limbo reservation or a permanent-deck binding lost.
+ s.block=s.strength=s.dexterity=s.pain=s.embrace=0;s.power_count=s.double_attack=s.no_draw=0;
+ for(auto&v:s.power_order)v=0;
+ s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
+ s.noxious_fumes=s.accuracy=s.no_block=s.demon_form=s.infinite_blades=0;
+ s.block_next_turn=s.draw_next_turn=s.flame_barrier=0;
+ auto clear=[](auto&v){for(auto&n:v)n={};};
+ auto powers=[&](auto&v){clear(v.powers);clear(v.power_order);v.power_count=0;};
+ powers(s.ironclad);powers(s.silent);powers(s.defect);powers(s.regent);powers(s.necro);powers(s.event_cards);
+ s.ironclad.setup_strength=0;s.defect.temporary_focus=0;s.regent.pale_activated=0;s.necro.player_doom=0;s.necro.doom_applied_turn=0;
+ clear(s.silent.nightmare_active);clear(s.silent.nightmares);
+ clear(s.regent.orbit);clear(s.regent.orbit_remainder);clear(s.regent.monologue);clear(s.regent.monologue_applied);
+ for(auto&row:s.regent.monologue_capture)clear(row);
+ clear(s.event_cards.toric_block);clear(s.event_cards.toric_turns);
+ auto&x=s.expansion;clear(x.powers);clear(x.after_play_order);clear(x.automation);clear(x.automation_count);
+ clear(x.panache);clear(x.panache_count);clear(x.panache_skip);clear(x.boulder);x.entropy_boulder_prefix=0;
+ auto&e=s.enemy_world;clear(e.player_power);clear(e.player_aux);clear(e.player_power_order);clear(e.player_duration_skip);clear(e.player_source);e.player_power_count=0;
 }
 static void world_card_entered(State&s,int id){if(combat_phase(s.phase)&&s.turn&&s.world_relics.active)world_relic_hook(s,WorldRelicHook::AfterCardEnteredCombat,id);}
+static bool shared_spend_card_energy(State&s,int amount){
+ if(s.phase!=Phase::Combat||s.hp<=0||amount<0||amount>s.energy)return false;
+ s.energy-=int16_t(amount);s.defect.energy_spent_turn=uint16_t(min(9999,int(s.defect.energy_spent_turn)+amount));
+ regent_energy_spent(s,amount);return true;
+}
+static bool shared_spend_card_stars(State&s,int amount){
+ if(s.phase!=Phase::Combat||s.hp<=0||amount<0||amount>s.expansion.stars)return false;
+ s.expansion.stars-=int16_t(amount);
+ if(amount)world_stage(s,WorldStage::StarsSpent,amount);
+ regent_stars_spent(s,amount);return true;
+}
 static void world_shared_effect(State&s,WorldStage op,int value){
  auto&x=s.expansion;
  auto next=[&](WorldStage to,int n=0){world_stage(s,to,n);};
@@ -18,12 +51,12 @@ static void world_shared_effect(State&s,WorldStage op,int value){
  case WorldStage::CombatStart:next(WorldStage::CombatStartLate);hook(WorldRelicHook::BeforeCombatStart);break;
  case WorldStage::CombatStartLate:next(WorldStage::PlayerStart,1);hook(WorldRelicHook::BeforeCombatStartLate);break;
  case WorldStage::PlayerStart:
-  if(!value){if(s.turn>=20000){fail(s);break;}++s.turn;}
+  if(value!=1){if(s.turn>=20000){fail(s);break;}++s.turn;}
   x.enemy_side=0;x.nonpower_started=0;x.returning=0;
   for(auto&n:x.turn_cost)n=0;for(auto&n:x.star_turn_free)n=0;for(auto&n:x.panache_count)n=0;
-  next(WorldStage::PlayerEnemyStart);hook(WorldRelicHook::BeforeSideTurnStart,0);break;
+  next(WorldStage::PlayerEnemyStart,value==2?2:0);hook(WorldRelicHook::BeforeSideTurnStart,0);break;
  case WorldStage::PlayerEnemyStart:
-  next(WorldStage::PlayerClearBlock);if(s.enemy_world.active)queue_extension(s,XOp::EnemySideHook,1,0,true);break;
+  next(WorldStage::PlayerClearBlock);if(s.enemy_world.active)queue_extension(s,XOp::EnemySideHook,value==2?2:1,0,true);break;
  case WorldStage::PlayerClearBlock:{
   if(s.turn>1){bool keep=ironclad_retains_block(s);if(!keep)keep=silent_keeps_block(s);if(!keep)keep=wr_retain_block(s);if(!keep)s.block=0;}
   next(WorldStage::PlayerBlockRelics);
@@ -105,8 +138,8 @@ static void world_shared_effect(State&s,WorldStage op,int value){
   for(auto&n:x.turn_cost)n=0;for(auto&n:x.star_turn_free)n=0;
   world_relic_gain_strength(s,-s.temporary_strength);s.temporary_strength=0;world_relic_gain_dexterity(s,-s.temporary_dexterity);s.temporary_dexterity=0;
   s.no_draw=0;x.powers[(int)XPower::Duplicator]=0;
-  if(x.skip_enemy){--x.skip_enemy;next(WorldStage::PlayerStart);break;}
-  if(wr_extra_turn(s,true)){next(WorldStage::PlayerStart);break;}
+  if(x.skip_enemy){--x.skip_enemy;next(WorldStage::PlayerStart,2);break;}
+  if(wr_extra_turn(s,true)){next(WorldStage::PlayerStart,2);break;}
   x.enemy_side=1;next(WorldStage::EnemyBeforeStart);break;
  case WorldStage::EnemyBeforeStart:next(WorldStage::EnemyAfterStart);hook(WorldRelicHook::BeforeSideTurnStart,1);break;
  case WorldStage::EnemyAfterStart:next(WorldStage::EnemyActBegin);if(s.enemy_world.active)queue_extension(s,XOp::EnemySideHook,0,0,true);silent_enemy_poison(s);break;
@@ -127,8 +160,14 @@ static void world_shared_effect(State&s,WorldStage op,int value){
  case WorldStage::EnemyAfterEnd:next(WorldStage::NextPlayer);if(s.enemy_world.active)queue_extension(s,XOp::EnemySideHook,0,1,true);break;
  case WorldStage::NextPlayer:if(!alive(s))victory(s);else next(WorldStage::PlayerStart);break;
  case WorldStage::VictoryEarly:next(WorldStage::VictoryNormal);hook(WorldRelicHook::AfterCombatVictoryEarly);break;
- case WorldStage::VictoryNormal:next(WorldStage::VictoryEnd);hook(WorldRelicHook::AfterCombatVictory);break;
- case WorldStage::VictoryEnd:next(WorldStage::VictoryCleanup);hook(WorldRelicHook::AfterCombatEnd);break;
+ case WorldStage::VictoryNormal:next(WorldStage::VictoryCleanup);hook(WorldRelicHook::AfterCombatVictory);break;
+ case WorldStage::VictoryEnd:next(WorldStage::VictoryPowerClear);hook(WorldRelicHook::AfterCombatEnd);break;
+ case WorldStage::VictoryPlayerEnd:
+  // RunState dispatches permanent deck cards, then player powers, before
+  // the creature's relic listeners. All still see the pre-clear power state.
+  next(WorldStage::VictoryEnd);
+  ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);event_card_combat_end(s,true);break;
+ case WorldStage::VictoryPowerClear:world_clear_player_powers(s);next(WorldStage::VictoryEarly);break;
  case WorldStage::VictoryCleanup:victory_cleanup(s);break;
  case WorldStage::BeforeCardRelics:
   next(WorldStage::BeforeCardCards);if(s.playing>=0)hook(WorldRelicHook::BeforeCardPlayed,s.playing,s.defect.spent[x.depth],s.regent.stars_spent[x.depth]|(s.regent.automatic[x.depth]?0x10000:0));break;
@@ -139,6 +178,11 @@ static void world_shared_effect(State&s,WorldStage op,int value){
  case WorldStage::StarsSpent:hook(WorldRelicHook::AfterStarsSpent,value);break;
  case WorldStage::HandEmptied:if(!s.hand.count&&s.playing<0&&!x.depth&&!x.potion_active&&!x.enemy_side)hook(WorldRelicHook::AfterHandEmptied);break;
  case WorldStage::OrbPassive:defect_orb_passive(s,unsigned(value)%MaxOrbs,value/MaxOrbs-1);break;
+ case WorldStage::PlayerDeath:if(value||!revive(s))death_cleanup(s);break;
+ case WorldStage::AutoPotionUsed:hook(WorldRelicHook::AfterPotionUsed,value,-1);break;
+ case WorldStage::SetMaxHp:s.max_hp=int16_t(value);s.hp=int16_t(min(s.hp,s.max_hp));break;
+ case WorldStage::GambitKill:
+  if(power_value(s,XPower::Gambit)){x.powers[int(XPower::Gambit)]=0;player_kill(s);}break;
  default:fail(s);break;
  }
 }

@@ -5,7 +5,7 @@ void wr_strength(State& s,int amount){
  world_relic_gain_strength(s,amount);
 }
 void wr_red_skull(State& s,WorldRelicInstance& r){
- if(s.hp<=0||world_room_type(s)<1||world_room_type(s)>3)return;
+ if(s.hp<=0||s.world.combat_ending||world_room_type(s)<1||world_room_type(s)>3)return;
  bool low=int(s.hp)*2<=s.max_hp;
  if(low&&!r.values[0]){r.values[0]=1;world_relic_flash(s,r.id);wr_strength(s,3);}
  else if(!low&&r.values[0]){r.values[0]=0;world_relic_flash(s,r.id);wr_strength(s,-3);}
@@ -94,16 +94,23 @@ void world_relic_run_hook(State& s,unsigned serial,WorldRelicHook hook,int a,int
 }
 
 unsigned world_card_reward_alternatives(const State& s){
- if(!s.world_relics.active||w_first(s,WorldRelicPaelsWing,true)<0)return 0;
- if(s.phase==Phase::Reward&&s.world.active&&s.world.reward_count&&!(s.reward_claimed&2))return 1;
+ if(!s.world_relics.active)return 0;
+ bool card=false,reroll=false;
+ if(s.phase==Phase::Reward&&s.world.active&&s.world.reward_count&&!(s.reward_claimed&2)){card=true;reroll=s.world.reward_can_reroll&&!s.world.reward_rerolled;}
  const auto&w=s.world_relics;
  if(s.phase==Phase::WorldRelicChoice&&w.choice==WorldRelicChoice::OfferCard&&w.choice_reward&&w.choice_reward<=w.reward_count){
-  const auto&r=w.rewards[w.choice_reward-1];if(r.group&&r.kind==1&&!(r.flags&1))return 1;
+  const auto&r=w.rewards[w.choice_reward-1];if(r.group&&r.kind==1&&!(r.flags&1)){card=true;reroll=world_relic_can_reroll_reward(s);}
  }
- return original_event_has_card_reward(s)?1:0;
+ if(original_event_has_card_reward(s)){card=true;reroll=original_event_can_reroll_reward(s);}
+ return (card&&w_first(s,WorldRelicPaelsWing,true)>=0?1U:0U)|(reroll?2U:0U);
 }
 bool world_take_card_reward_alternative(State& s,unsigned bit){
- if(bit!=1||!(world_card_reward_alternatives(s)&bit))return false;
+ if((bit!=1&&bit!=2)||!(world_card_reward_alternatives(s)&bit))return false;
+ if(bit==2){
+  if(s.phase==Phase::Reward)return world_reroll_reward(s);
+  if(s.phase==Phase::WorldRelicChoice)return world_relic_reroll_reward(s);
+  return original_event_reroll_reward(s);
+ }
  int at=w_first(s,WorldRelicPaelsWing,true);if(at<0)return false;
  auto&w=s.world_relics;
  if(s.phase==Phase::Reward)s.reward_claimed|=2;
@@ -126,10 +133,45 @@ bool world_relic_combat_rewards(State& s){
  struct Extra {uint8_t kind;uint16_t serial;};
  Extra extras[MaxWorldRelicRewards]{};unsigned count=0;bool cards=false;
  const auto room=WorldRoom(world_room_type(s));unsigned group=0;
+ // The main combat rewards and CombatRoom.ExtraRewards are one RewardsSet.
+ // Move the already populated main values into its saved group; generating
+ // them here again would consume RNG twice and subscribe the card reward to
+ // RelicObtained twice. The legacy fields remain a reader for older saves.
+ auto main_slot=[&](unsigned kind)->WorldRelicReward*{
+  if(!group)group=w_new_group(s,0);return group?w_reward_slot(s,group,kind):nullptr;
+ };
+ if(!(s.reward_claimed&1)){auto* r=main_slot(4);if(!r)return false;r->value=uint16_t(s.last_gold);}
+ if(!(s.reward_claimed&4)&&s.reward_potion!=Potion::Empty){auto* r=main_slot(3);if(!r)return false;r->value=uint16_t(s.reward_potion);}
+ if(!(s.reward_claimed&2)&&s.world.reward_count){
+  auto* r=main_slot(1);if(!r)return false;
+  WorldCardOptions options;options.source=WorldCardSource::Encounter;options.flags=WorldIsCardReward|WorldIsFromCombat;
+  options.odds=room==WorldRoom::Boss?WorldCardOdds::BossEncounter:room==WorldRoom::Elite?WorldCardOdds::EliteEncounter:WorldCardOdds::RegularEncounter;
+  r->value=3;r->count=s.world.reward_count;r->flags=uint8_t(32|(s.world.reward_can_reroll?16:0));w_store_options(*r,options);
+  for(unsigned i=0;i<r->count;++i){r->tokens[i]=uint16_t(card_token(s.world.reward_cards[i]));r->facts[i]=s.world.reward_facts[i];}cards=true;
+ }
+ if(!s.world.reward_relic_claimed&&s.world.reward_relic!=NoWorldRelic){auto* r=main_slot(2);if(!r)return false;r->value=s.world.reward_relic;}
+ s.reward_claimed=7;s.world.reward_relic_claimed=1;s.world.reward_count=0;
+ s.world.reward_can_reroll=s.world.reward_rerolled=0;
+ // Event-room extras already belong to CombatRoom before the fight starts.
+ // Populate them in that original order, before Heist and AfterCombatEnd gold,
+ // so acquiring an extra relic can still modify the unclaimed main reward.
+ if(!(room==WorldRoom::Boss&&s.world.act_index==2))for(unsigned i=0;i<original_event_combat_reward_count(s);++i){
+  uint8_t kind=0;uint16_t value=0;if(!original_event_combat_reward(s,i,kind,value)){w_error(s);return false;}
+  if(!group)group=w_new_group(s,0);if(!group)return false;
+  if(kind==2){RelicId id=value==NoWorldRelic?random_world_relic(s):value;if(id==NoWorldRelic){w_error(s);return false;}w_reward_relic(s,group,id);}
+  else if(kind==3){if(!value)w_reward_potion(s,group);else{auto* reward=w_reward_slot(s,group,3);if(!reward)return false;reward->value=value;}}
+  else if(kind==5){auto* reward=w_reward_slot(s,group,5);if(!reward)return false;reward->value=value;}
+  else{w_error(s);return false;}
+ }
  if(!(room==WorldRoom::Boss&&s.world.act_index==2))for(unsigned i=0;i<encounter_returned_gold_count(s);++i){
   if(!group)group=w_new_group(s,0);if(!group)return false;
   auto* reward=w_reward_slot(s,group,4);if(!reward)return false;
   const int gold=encounter_returned_gold(s,i);reward->value=uint16_t(world_rng(s,WorldRng::Rewards).range(gold,gold+1));
+ }
+ if(!(room==WorldRoom::Boss&&s.world.act_index==2)&&s.world.combat_bonus_gold){
+  if(!group)group=w_new_group(s,0);if(!group)return false;
+  auto* reward=w_reward_slot(s,group,4);if(!reward)return false;
+  const int gold=s.world.combat_bonus_gold;reward->value=uint16_t(world_rng(s,WorldRng::Rewards).range(gold,gold+1));
  }
  auto add=[&](unsigned kind,unsigned serial,unsigned n=1){
   if(count+n>MaxWorldRelicRewards){w_error(s);return false;}
@@ -150,7 +192,7 @@ bool world_relic_combat_rewards(State& s){
  }
  if(!count&&!group)return false;if(!group)group=w_new_group(s,0);if(!group)return false;
  for(unsigned i=0;i<count;++i){const auto& extra=extras[i];
-  if(extra.kind==4){auto* reward=w_reward_slot(s,group,4);if(!reward)return false;reward->value=uint16_t(world_rng(s,WorldRng::Rewards).range(15,16));}
+  if(extra.kind==4){auto* reward=w_reward_slot(s,group,4);if(!reward)return false;reward->value=15;}
   else if(extra.kind==2){RelicId id=random_world_relic(s);if(id==NoWorldRelic){w_error(s);return false;}w_reward_relic(s,group,id);}
   else if(!w_reward_cards(s,group,wr_room_card_options(extra.kind==5)))return false;
  }

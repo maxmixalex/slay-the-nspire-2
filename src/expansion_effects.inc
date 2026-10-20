@@ -8,33 +8,73 @@ static void death_cleanup(State&s){
 }
 static bool revive(State&s){
  if(s.hp>0)return true;
- if(wr_revive(s))return true;
- // RunState includes owned potions in death-prevention hooks outside combat.
- for(auto&p:s.potions)if(p==Potion::FairyInABottle){p=Potion::Empty;s.hp=(int16_t)max(1,s.max_hp*3/10);record(s,LogKind::Potion,(int)Potion::FairyInABottle);record(s,LogKind::Heal,s.hp);return true;}
- return false;
+ // Fairy is an ordinary ShouldDie listener; Lizard Tail is ShouldDieLate.
+ // OnUseWrapper consumes the bottle and awaits healing before potion listeners.
+ for(unsigned slot=0;slot<potion_slot_count(s);++slot)if(s.potions[slot]==Potion::FairyInABottle){
+  s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,int(Potion::FairyInABottle));
+  before_potion_use(s,Potion::FairyInABottle,-1);
+  const bool saved=combat_phase(s.phase)&&world_shared_active(s);
+  if(saved)world_stage(s,WorldStage::AutoPotionUsed,int(Potion::FairyInABottle));
+  heal(s,max(1,s.max_hp*3/10));
+  if(!saved)world_relic_hook(s,WorldRelicHook::AfterPotionUsed,int(Potion::FairyInABottle),-1);
+  return true;
+ }
+ return wr_revive(s);
 }
-void player_hp_loss(State&s,int amount,bool attack,bool blockable,int card_source){
- if(s.hp<=0)return;auto&x=s.expansion;amount=max(0,amount);
- const bool in_combat=combat_phase(s.phase);int dealer=s.enemy_world.actor<s.enemy_count?s.enemy_world.actor:-1;
+void player_kill(State&s,bool force){
+ if(s.phase==Phase::Dead||s.phase==Phase::Error)return;
+ const int old=s.hp;s.hp=0;
+ if(combat_phase(s.phase)&&world_shared_active(s)){
+  world_stage(s,WorldStage::PlayerDeath,force?1:0);
+  if(old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,0,-1);
+ }else{
+  if(old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,0,-1);
+  if(force||!revive(s))death_cleanup(s);
+ }
+}
+void player_lose_max_hp(State&s,int amount){
+ if(amount<=0||s.phase==Phase::Dead||s.phase==Phase::Error)return;
+ // Damage uses the raw new maximum, even below one; SetMaxHp clamps only
+ // after the damage callbacks and any death prevention have completed.
+ const int raw=s.max_hp-amount,target=max(1,raw),loss=max(0,s.hp-raw);
+ const bool saved=combat_phase(s.phase)&&world_shared_active(s);
+ if(saved)world_stage(s,WorldStage::SetMaxHp,target);
+ if(loss)player_hp_loss(s,loss,false,false,-1);
+ if(!saved){s.max_hp=int16_t(target);s.hp=int16_t(min(s.hp,s.max_hp));}
+}
+int player_hp_loss(State&s,int amount,bool attack,bool blockable,int card_source,int dealer){
+ if(s.hp<=0)return 0;auto&x=s.expansion;amount=max(0,amount);
+ const bool in_combat=combat_phase(s.phase);
+ if(dealer<0||dealer>=s.enemy_count)dealer=-1;
+ if(card_source==-2)card_source=attack?-1:s.playing;
+ if(card_source<0||card_source>=s.card_count)card_source=-1;
  if(attack)amount=amount*wr_incoming_damage_percent(s,dealer,true)/100;
- if(combat_phase(s.phase)&&power_value(s,XPower::Intangible))amount=min(1,amount);
+ if(in_combat&&power_value(s,XPower::Intangible))amount=min(1,amount);
  int absorbed=blockable?min(s.block,amount):0;s.block-=(int16_t)absorbed;int unblocked=amount-absorbed,loss=unblocked;
  if(attack&&x.osty_hp){int old_pet=x.osty_hp,pet=min(loss,x.osty_hp);x.osty_hp-=(int16_t)pet;loss-=pet;necro_osty_hp_lost(s,old_pet);}
  loss=wr_player_hp_loss(s,loss);
- if(loss&&combat_phase(s.phase)&&power_value(s,XPower::Buffer)){gain_power(s,XPower::Buffer,-1);loss=0;}
- int old=s.hp;s.hp=(int16_t)max(0,s.hp-loss);record(s,LogKind::LoseHp,old-s.hp);
- if(!s.hp&&!revive(s)){death_cleanup(s);return;}
- if(combat_phase(s.phase)){
-  if(card_source==-2)card_source=attack?-1:s.playing;
-  world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);
-  if(old>s.hp)world_relic_hook(s,WorldRelicHook::AfterHpLost,old-s.hp,(attack?1:0)|(blockable?2:0)|(in_combat?4:0),card_source);
+ if(loss&&in_combat&&power_value(s,XPower::Buffer)){gain_power(s,XPower::Buffer,-1);loss=0;}
+ const int old=s.hp;s.hp=(int16_t)max(0,s.hp-loss);const int actual=old-s.hp;record(s,LogKind::LoseHp,actual);
+ const int flags=(attack?1:0)|(blockable?2:0)|(in_combat?4:0)|(!s.hp?8:0);
+ if(in_combat&&world_shared_active(s)){
+  // AfterBlockBroken -> HPChanged -> DamageGiven -> DamageReceived / Kill.
+  // Capture WasTargetKilled but recheck HP after Given (Paper Cuts can itself
+  // cause a nested damage/death-prevention sequence). None uses healed HP as
+  // the amount of this DamageResult.
+  queue_extension(s,XOp::SharedPlayerDamageReceived,actual,(card_source+1)*16+flags,true);
+  if(actual&&attack&&dealer>=0)queue_extension(s,XOp::SharedPlayerDamageGiven,actual,dealer,true);
+  if(actual)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);
   if(absorbed&&!s.block)world_relic_hook(s,WorldRelicHook::AfterBlockBroken,-1,dealer);
-  ironclad_hp_lost(s,min(old,loss),card_source);relic_after_hp_loss(s,min(old,loss));
- }else if(old!=s.hp){world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);world_relic_hook(s,WorldRelicHook::AfterHpLost,old-s.hp,(attack?1:0)|(blockable?2:0),card_source);
+  return actual;
  }
- if(attack&&loss>0&&power_value(s,XPower::Gambit)){
-  x.powers[(int)XPower::Gambit]=0;s.hp=0;if(!revive(s))death_cleanup(s);
- }
+ // Historical routes remain synchronous. Lethal damage does not dispatch
+ // AfterDamageReceived merely because a later Fairy heals the player.
+ if(actual)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);
+ if(!s.hp){if(!revive(s))death_cleanup(s);return actual;}
+ if(in_combat){ironclad_hp_lost(s,actual,card_source);relic_after_hp_loss(s,actual);}
+ if(actual)world_relic_hook(s,WorldRelicHook::AfterHpLost,actual,flags&7,card_source);
+ if(attack&&actual&&power_value(s,XPower::Gambit)){x.powers[int(XPower::Gambit)]=0;player_kill(s);}
+ return actual;
 }
 int enemy_damage(const State&s,int i){
  if(i<0||i>=s.enemy_count)return 0;const auto&e=s.enemies[i];if(e.move==2)return 0;
@@ -85,7 +125,7 @@ static void next_enemy(State&s,int i){
  auto&e=s.enemies[i];if(!e.hp)return;
  e.block=0;int hit=enemy_damage(s,i);bool attack=e.move!=2;record(s,LogKind::Enemy,i,e.move);
  if(attack&&s.thorns)damage_unpowered(s,i,s.thorns);
- int blocked=min(s.block,hit);player_hp_loss(s,hit,attack,true);if(s.phase==Phase::Dead)return;
+ int blocked=min(s.block,hit);player_hp_loss(s,hit,attack,true,-1,i);if(s.phase==Phase::Dead)return;
  if(attack)regent_after_blocked_attack(s,i,blocked);
  if(attack&&s.flame_barrier)damage_unpowered(s,i,s.flame_barrier);
  if(e.hp){
@@ -108,6 +148,15 @@ static void extension_effect(State&s,Effect e){
  case XOp::Noop:break;
  case XOp::WorldStage:world_shared_effect(s,(WorldStage)a,b);break;
  case XOp::WRelicHook:world_relic_effect(s,a);break;
+ case XOp::SharedPlayerDamageGiven:enemy_player_damage_given(s,b,a);break;
+ case XOp::SharedPlayerDamageReceived:{
+  const int flags=b&15,source=b/16-1;
+  if((flags&8)&&!s.hp){player_kill(s);break;}
+  queue_extension(s,XOp::SharedPlayerDamageRelics,a,b,true);
+  if(a&&(flags&1)&&power_value(s,XPower::Gambit))world_stage(s,WorldStage::GambitKill);
+  ironclad_hp_lost(s,a,source);break;}
+ case XOp::SharedPlayerDamageRelics:
+  relic_after_hp_loss(s,a);if(a)world_relic_hook(s,WorldRelicHook::AfterHpLost,a,b&7,b/16-1);break;
  case XOp::SharedAfterCardBody:
   queue_extension(s,XOp::SharedAfflictionAfterBody,a,0,true);event_card_after_body(s,a);break;
  case XOp::SharedAfflictionAfterBody:

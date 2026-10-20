@@ -21,7 +21,9 @@ bool world_choose_column(State&, int column);
 bool world_finish_room(State&);
 bool world_claim_reward_card(State&, int index);
 bool world_claim_reward_relic(State&);
-// Bit 1 is Pael's Wing's SACRIFICE. The predicate only exposes true
+bool world_reroll_reward(State&);
+// Bit 1 is Pael's Wing's SACRIFICE; bit 2 is Driftwood's REROLL.
+// Each reroll belongs to one reward and can only be used once. Exposes true
 // CardReward screens; generated-card offers and event CardSelect are excluded.
 unsigned world_card_reward_alternatives(const State&);
 bool world_take_card_reward_alternative(State&,unsigned alternative_bit);
@@ -32,7 +34,8 @@ const char* world_region_key(const State&);
 bool world_refresh_map_modifiers(State&);
 int world_shop_price(const State&,int item);
 void world_resume_room(State&);
-// Reward additions retain their own RNG draw and claim, including fixed gold.
+// Pre-existing extra rewards retain their own population draw and claim.
+// Fixed-gold rewards appended by a modifier are already populated.
 // The combat result reports whether any additional card reward was generated.
 bool world_relic_combat_rewards(State&);
 void world_relic_rest_rewards(State&);

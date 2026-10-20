@@ -11,7 +11,7 @@ static void enemy_queue_move(State&s,int t,int node){
  if(fixed.count!=255){
   for(unsigned i=0;i<fixed.count;++i){const auto&a=enemy_fixed_actions[fixed.first+i];int target=a.target==-2?t:a.target,amount=enemy_asc(s,a.base,a.tough,a.deadly);
    switch(a.op){
-   case EnemyFixedOp::Attack:{int hits=a.extra;if((m.kind==EnemyId::Entomancer&&node==1)||(m.kind==EnemyId::Exoskeleton&&node==0)||(m.kind==EnemyId::TrackerRubyRaider&&node==1))hits+=s.enemy_world.ascension>=9;q.attack(amount,hits);break;}
+   case EnemyFixedOp::Attack:{int hits=a.extra;if((m.kind==EnemyId::Entomancer&&node==1)||(m.kind==EnemyId::Exoskeleton&&node==0)||(m.kind==EnemyId::TrackerRubyRaider&&node==1))hits+=s.enemy_world.ascension>=9;q.attack(amount,hits);if((m.kind==EnemyId::CeremonialBeast&&node==1)||(m.kind==EnemyId::CrossbowRubyRaider&&node==0))q.special(254);break;}
    case EnemyFixedOp::Power:q.power(target,(EnemyPower)a.extra,amount);break;
    case EnemyFixedOp::Block:q.block(target,amount,a.extra!=0);break;
    case EnemyFixedOp::Heal:q.heal(target,amount);break;
@@ -70,7 +70,7 @@ static void enemy_take_card(State&s,int t){
  if(!event_take_deck_card(s,deck,m.captured_deck))return;enemy_remove_instance(s,id);m.captured_card=(uint16_t)(id+1);enemy_apply_power(s,t,EnemyPower::Swipe,1,t);
 }
 static void enemy_execute_special(State&s,int t,int step){
- if(!enemy_slot_exists(s,t))return;auto&m=s.enemy_world.models[t];EnemyCommands q{s,t};auto value=[&](EnemyValue v){return enemy_number(s,t,v);};
+ if(!enemy_slot_exists(s,t))return;if(step==254){enemy_visual_attack_end(s,t);return;}auto&m=s.enemy_world.models[t];EnemyCommands q{s,t};auto value=[&](EnemyValue v){return enemy_number(s,t,v);};
  switch(m.kind){
  case EnemyId::Aeonglass:
   for(int id=0;id<s.card_count;++id)if(s.cards[id].kind==EventCardWither)s.enemy_world.card_value[id]=(int16_t)min(9999,s.enemy_world.card_value[id]+1);

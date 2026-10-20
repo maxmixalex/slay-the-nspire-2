@@ -77,21 +77,21 @@ static void world_choice_screen(Canvas&c){
   }
  }else if(rewards){
   for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i],kind=0,model=0,amount=0;
-   if(relic){const auto&r=w.rewards[w.offers[at]];kind=r.kind==1?4:r.kind==4?1:r.kind;model=r.value;amount=r.value;}
+   if(relic){const auto&r=w.rewards[w.offers[at]];kind=r.kind==1?4:r.kind==2?3:r.kind==3?2:r.kind==4?1:r.kind;model=r.value;amount=r.value;}
    else{const auto&r=e.rewards[at];kind=r.kind;model=r.model;amount=r.amount;}
    int x=8+(i-first)%2*156,y=48+(i-first)/2*28;bool selected=world_selected(a,at);
    c.ui(U_RewardButton,x,y,148,26);if(selected||a.cursor==i)c.box(x-1,y-1,150,28,selected?Green:Gold);
-   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.content.relic_image(model):a.content.ui_image(U_RewardCard);
+   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.relic_face_image(model):kind==5?a.card_face_image(card_from_token(model)):a.content.ui_image(U_RewardCard);
    c.picture(image,x+4,y+2,22,22);char name[128]{};TextBuffer b{name,sizeof name,0};
    if(kind==1){b.number(amount);b.text(" 金币");}else if(kind==2){const auto*d=potion_definition(Potion(model));if(d)b.text(d->name);}
-   else if(kind==3)b.text(a.relic_title(RelicId(model)));else b.text("选择一张牌");
+   else if(kind==3)b.text(a.relic_title(RelicId(model)));else if(kind==5)b.text(a.content.card_string(card_from_token(model).kind));else b.text("选择一张牌");
    c.text(name,x+30,y+5,10,White,112);c.hit(x,y,148,26,HitKind::WorldChoice,at);
   }
  }else if(potion||relics){
   for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i];int x=12+(i-first)%5*61,y=48+(i-first)/5*67;
    const unsigned model=potion?unsigned(potion_at(s,at)):e.offers[at];bool selected=world_selected(a,at);
    if(selected||i==a.cursor)c.box(x-2,y-2,58,65,selected?Green:Gold);
-   c.picture(potion?a.content.potion_image(Potion(model)):a.content.relic_image(model),x+13,y+1,30,34);
+   c.picture(potion?a.content.potion_image(Potion(model)):a.relic_face_image(model),x+13,y+1,30,34);
    const auto*pd=potion?potion_definition(Potion(model)):nullptr;
    const char*name=potion?(pd?pd->name:"空药水槽"):a.relic_title(RelicId(model));
    c.paragraph(name,x,y+37,54,2,0,10,White);c.hit(x-2,y-2,58,65,HitKind::WorldChoice,at);
@@ -108,12 +108,15 @@ static void world_choice_screen(Canvas&c){
    c.hit(x-3,y-3,large?86:53,large?118:72,HitKind::WorldChoice,at);
   }
  }
- if(count>10&&!bundle){c.text("‹",12,191,16,Gold);c.action(0,187,42,21,UiAction::PreviousWorldPage,first>0);c.text("›",295,191,16,Gold);c.action(278,187,42,21,UiAction::NextWorldPage,first+10<int(count));}
- else if(offer&&(world_card_reward_alternatives(s)&1)){c.button("献祭牌奖励",96,189,128,false,20);c.action(94,187,132,23,UiAction::SacrificeReward);}
+ if(count>(bundle?2:10)){const int page_first=bundle?a.cursor/2*2:first,per=bundle?2:10;c.text("‹",12,191,16,Gold);c.action(0,187,42,21,UiAction::PreviousWorldPage,page_first>0);c.text("›",295,191,16,Gold);c.action(278,187,42,21,UiAction::NextWorldPage,page_first+per<int(count));}
+ else if(offer&&world_card_reward_alternatives(s)){
+  unsigned alternatives=world_card_reward_alternatives(s);if(alternatives&1){c.button("献祭牌奖励",18,189,133,false,20);c.action(16,187,137,23,UiAction::SacrificeReward);}
+  if(alternatives&2){c.button("重掷",169,189,133,false,20);c.action(167,187,137,23,UiAction::RerollReward);}
+ }
  else c.centered(potion?"选择已有药水会替换它 · 不选可跳过":"Enter 选择 · 空格确认 · I 详情",0,192,320,10,Muted);
  c.button("清除",4,213,77,false,24);c.action(1,209,83,31,UiAction::ClearWorldChoice,a.choice_selected_count);
  c.button("详情",85,213,77,false,24);c.hit(82,209,83,31,HitKind::Command,(int)Key::Detail,count>0);
  const bool ready=a.choice_selected_count>=a.world_choice_min()&&a.choice_selected_count<=a.world_choice_max()&&world_rest_selection_allowed(s,a.choice_selected_count);
- c.button(!a.choice_selected_count&&a.world_choice_min()==0?"跳过":"确认",185,210,129,ready,28);
+ c.button(rewards?count?"跳过剩余":"继续":!a.choice_selected_count&&a.world_choice_min()==0?"跳过":"确认",185,210,129,ready,28);
  if(!ready)c.dim(185,210,129,28,95);c.action(181,208,138,32,UiAction::ConfirmWorldChoice,ready);
 }

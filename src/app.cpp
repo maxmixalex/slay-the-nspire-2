@@ -17,12 +17,12 @@ static const char* card_type_label(CardType type){
     return "";
 }
 static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr){
-    int frame=c.a.content.frame_image(card);
+    int frame=c.a.card_face_frame(card,instance,deck,facts);
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
     c.picture(frame,x,y,47,66);c.picture(c.a.card_face_image(card,instance,deck,facts),x+3,y+15,41,30);c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y+1,47,11);
     // Card art and text are independent; the description remains legible below the stage.
     c.centered(c.a.content.card_string(card.kind),x+3,y+48,41,10,card.upgraded?Green:White);
-    c.picture(c.a.content.energy_image(card),x-1,y-1,15,15);int energy=fee==-2?cost(card):fee;c.energy_label(energy,x+4,y-2,12);
+    c.picture(c.a.content.energy_image(card),x-1,y-1,15,15);int energy=fee==-2?c.a.card_offer_cost(card,facts):fee;c.energy_label(energy,x+4,y-2,12);
     const int base_stars=card_star_cost(c.a.game,card);if(base_stars)c.star_label(stars==-2?base_stars:stars,x+17,y-2,10);
     if(card.upgraded)c.text("+",x+(base_stars?39:35),y+1,10,Green);if(number)c.num(number,x+32,y+33,10,Muted);
     if(!playable)c.dim(x,y,47,66,125);
@@ -90,17 +90,17 @@ static void hud(Canvas&c){
 #include "status_ui.inc"
 #include "combat_ui.inc"
 static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2,int stars=-2,int instance=-1,int deck_index=-1,const EventCardFacts*facts=nullptr){
-    int type=(int)definitions[card.kind].type;
+    int type=(int)c.a.card_face_type(card,instance,deck_index,facts);
     const int base_stars=card_star_cost(c.a.game,card),header=base_stars?13:0;
     if(selected){c.box(x-2,y-2,84,116,Gold);c.box(x-1,y-1,82,114,Gold);}
-    c.picture(c.a.content.frame_image(card),x,y,80,112);
+    c.picture(c.a.card_face_frame(card,instance,deck_index,facts),x,y,80,112);
     c.picture(c.a.card_face_image(card,instance,deck_index,facts),x+5,y+20+header,70,51-header);
     c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y+1+header,80,17);
     const char*name=c.a.content.card_string(card.kind);
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+5+dx,y+1+header+dy,70,10,Ink);
     c.centered(name,x+5,y+1+header,70,10,card.upgraded?Green:White);
     c.picture(c.a.content.energy_image(card),x-3,y-5,19,19);
-    int energy=fee==-2?cost(card):fee;c.energy_label(energy,x+3,y-4,12);
+    int energy=fee==-2?c.a.card_offer_cost(card,facts):fee;c.energy_label(energy,x+3,y-4,12);
     if(base_stars)c.star_label(stars==-2?base_stars:stars,x+22,y-4,12);
     char text[1024]={};if(facts)c.a.world_card_description(card,-1,text,sizeof text,instance,deck_index,facts);else c.a.card_description(card,-1,text,sizeof text,instance,deck_index);c.dim(x+5,y+73,70,29,135);c.paragraph(text,x+7,y+74,66,2,0,10,White);
     c.centered(card_type_label((CardType)type),x+4,y+99,72,10,Muted);
@@ -217,7 +217,7 @@ static void panels(Canvas&c){
                 c.button(label,x,y,70,a.target==i,19);c.hit(x,y,70,19,HitKind::EnemySelect,i,s.enemies[i].hp>0);
             }
         }
-        c.button("丢弃",28,205,113,false,25);c.action(25,204,119,28,UiAction::DiscardPotion,d!=nullptr);
+        c.button("丢弃",28,205,113,false,25);c.action(25,204,119,28,UiAction::DiscardPotion,d!=nullptr&&!original_event_blocks_potions(s));
         bool usable=can_use_potion(s,a.scroll,a.target);c.button(d&&d->automatic?"自动触发":usable?"使用":"无法使用",176,205,113,usable,25);
         c.hit(174,204,117,28,HitKind::Command,(int)Key::Confirm,usable);
     }
@@ -251,7 +251,7 @@ static void detail_screen(Canvas&c){
     char title[128]={};TextBuffer name{title,sizeof title,0};name.text(a.content.card_string(card.kind));if(card.upgraded)name.text("+");
     c.centered(title,18,28,270,16,card.upgraded?Green:Gold);
     int type=(int)definitions[card.kind].type;
-    c.picture(a.content.frame_image(card),18,61,94,132);
+    c.picture(a.card_face_frame(card,a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr),18,61,94,132);
     c.picture(c.a.card_face_image(card,a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr),24,90,82,60);c.picture(a.content.energy_image(card),18,60,26,26);
     c.energy_label(a.detail_energy(),27,64,12);
     if(card_star_cost(a.game,card))c.star_label(a.detail_stars(),54,64,12);

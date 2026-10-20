@@ -1,5 +1,6 @@
 #include "core.hpp"
 #include "original_events.hpp"
+#include "world_run.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -21,6 +22,19 @@ int main(){
   require(original_event_id(original_event_key(id))==id,"canonical key roundtrip");
  }
  require(original_event_id("missing-event")==OriginalEventId::None,"unknown event rejected");
+ // Enter every reachable model through the real dispatcher, with inventories
+ // satisfying the finite event dependencies. This is an initial-state/save
+ // integration check; individual outcome assertions remain below.
+ for(unsigned i=1;i<unsigned(OriginalEventId::Count);i++){
+  reset();game.gold=1000;potion_set(game,0,Potion::Blood);potion_set(game,1,Potion::Strength);
+  const RelicId tradable[]={WorldRelicAnchor,WorldRelicVajra,WorldRelicOddlySmoothStone,WorldRelicStrawberry,WorldRelicPear};
+  for(auto relic:tradable)require(gain_world_relic(game,relic),"prepare event dependency inventory");
+  auto id=OriginalEventId(i);if(id==OriginalEventId::WarHistorianRepy)require(event_add_deck_card(game,{EventCardLanternKey,0})>=0,"prepare forced historian dependency");
+  const unsigned act=id==OriginalEventId::Neow?0:1;
+  if(!original_event_begin(game,id,0x71ef23,act)||!validate(game)){std::fprintf(stderr,"initial event dispatch/save failed: %s\n",original_event_key(id));return 1;}
+  unsigned enabled=0;for(unsigned option=0;option<original_event_option_count(game);option++)if(original_event_option_enabled(game,int(option)))++enabled;
+  require(enabled>0,"every entered event provides a usable initial option");persisted();
+ }
  reset();before=game;require(!original_event_begin(game,OriginalEventId::None,123,0),"invalid event cannot begin");
  require(!std::memcmp(&game,&before,sizeof game),"rejected begin leaves every state byte intact");
  require(original_event_begin(game,OriginalEventId::AbyssalBaths,123,0),"begin baths");
@@ -105,5 +119,56 @@ int main(){
  reset();potion_set(game,0,Potion::Strength);require(original_event_begin(game,OriginalEventId::StoneOfAllTime,7,1),"begin potion title fixture");
  require(original_event_description_reference(game,"DrinkRandomPotion",0,true,reference)&&reference.model==unsigned(Potion::Strength),"event remembers selected potion title");
  require(original_event_choose(game,0),"consume named potion");require(original_event_description_reference(game,"DrinkRandomPotion",-1,true,reference)&&reference.model==unsigned(Potion::Strength),"consumed potion remains named on outcome page");persisted();
+ reset();for(unsigned i=0;i<potion_slot_count(game);i++)potion_set(game,i,Potion::Strength);
+ require(original_event_begin(game,OriginalEventId::DrowningBeacon,9,0)&&original_event_choose(game,0),"beacon offers Glowwater to full potion inventory");persisted();
+ require(original_event_potion(game,1),"replace one potion through discard and procure stages");require(potion_at(game,1)==Potion::GlowwaterPotion&&potion_at(game,0)==Potion::Strength&&game.original_events.finished,"potion replacement completes before the queued event outcome");persisted();
+ reset();require(gain_world_relic(game,WorldRelicDriftwood)&&gain_world_relic(game,WorldRelicLastingCandy),"obtain event-reward modifier fixtures");
+ require(original_event_begin(game,OriginalEventId::ColorfulPhilosophers,5,0)&&original_event_choose(game,0),"create restricted event card rewards with Driftwood");
+ for(unsigned i=0;i<game.world_relics.count;i++)if(game.world_relics.entries[i].id==WorldRelicLastingCandy)require(game.world_relics.entries[i].values[0]==0,"event rewards do not advance Candy's combat-only cadence");
+ require(original_event_reward(game,0)&&original_event_can_reroll_reward(game),"open rerollable event card reward");persisted();
+ require(original_event_reroll_reward(game)&&game.original_events.reward_current==0&&!game.original_events.rewards[0].claimed,"event reroll keeps the reward unclaimed and selected");
+ for(unsigned i=0;i<game.original_events.offer_count;i++)require(card_rarity(card_from_token(game.original_events.offers[i]).kind)==2,"Colorful reroll retains the original rarity predicate");require(!original_event_reroll_reward(game),"event reward reroll is single use");persisted();
+ reset();require(gain_world_relic(game,WorldRelicDriftwood),"obtain future-potion reroll fixture");potion_set(game,0,Potion::Strength);
+ require(original_event_begin(game,OriginalEventId::TheFutureOfPotions,3,1)&&original_event_choose(game,0),"trade potion for typed upgraded reward");require(original_event_reward(game,0),"open future-potion card reward");persisted();
+ require(original_event_reroll_reward(game),"reroll future-potion reward");unsigned type_mask=game.original_events.rewards[0].type_mask;
+ for(unsigned i=0;i<game.original_events.offer_count;i++){Card card=card_from_token(game.original_events.offers[i]);require((type_mask&(1u<<unsigned(card_type(game,card))))&&!card_upgradeable(card),"future-potion reroll preserves card type and after-generation upgrade");}persisted();
+
+ // Ordinary event transforms append in the player's selected order.
+ reset();game.deck_count=4;game.deck[0]={Bash,0};game.deck[1]={Strike,0};game.deck[2]={Defend,0};game.deck[3]={Defend,1};
+ require(original_event_begin(game,OriginalEventId::MorphicGrove,123,0)&&original_event_choose(game,0),"open two-card transform");uint16_t transforms[]={2,0};persisted();
+ require(original_event_select(game,transforms,2),"transform in unsorted selection order");
+ require(game.deck_count==4&&game.deck[0].kind==Strike&&game.deck[1].kind==Defend&&game.deck[1].upgraded,"sequential event transforms preserve untouched original order");persisted();
+ reset();game.hp=game.max_hp=3;potion_set(game,0,Potion::FairyInABottle);require(original_event_begin(game,OriginalEventId::TabletOfTruth,19,0),"begin insufficient-maximum tablet");unsigned prior_rng=game.original_events.rng_calls;
+ require(original_event_choose(game,0)&&game.phase==Phase::Event&&game.hp==1&&game.max_hp==1,"tablet's explicit Kill allows normal death prevention");
+ require(potion_at(game,0)==Potion::Empty&&game.original_events.page==1&&game.original_events.rng_calls==prior_rng,"revived decipher advances dialogue without the skipped upgrade roll");persisted();
+ const OriginalEventId locked[]={OriginalEventId::StoneOfAllTime,OriginalEventId::RanwidTheElder,OriginalEventId::TheFutureOfPotions};
+ for(auto id:locked){reset();potion_set(game,0,Potion::Blood);require(original_event_begin(game,id,7,1),"begin event with locked potion inventory");
+  before=game;require(original_event_blocks_potions(game)&&!can_use_potion(game,0,-1)&&!use_potion(game,0,-1),"event potion lock reaches the public use API");require(!std::memcmp(&game,&before,sizeof game),"blocked potion use changes no state");}
+ reset();potion_set(game,0,Potion::Blood);require(original_event_begin(game,OriginalEventId::StoneOfAllTime,7,1)&&original_event_choose(game,0),"event may consume its own offered potion while ordinary use is locked");
+ require(potion_at(game,0)==Potion::Empty&&game.original_events.finished&&!original_event_blocks_potions(game),"finished event releases potion lock");
+ reset();require(world_begin_run(game,reference::ActKind::Overgrowth,0),"start native world for event combat fixture");game.original_events=OriginalEventState{};potion_set(game,0,Potion::FoulPotion);
+ require(original_event_begin(game,OriginalEventId::FakeMerchant,23,1)&&original_event_can_use_foul(game)&&can_use_potion(game,0,-1),"Foul Potion is usable on the original Fake Merchant");
+ require(use_potion(game,0,-1)&&game.original_events.combat_pending&&game.enemy_world.encounter==EncounterId::FakeMerchantEventEncounter,"public potion use enters the exact event encounter");
+ require(potion_at(game,0)==Potion::Empty&&original_event_combat_reward_count(game)==7,"Foul consumes one bottle and retains all seven extra rewards");uint8_t reward_kind=0;uint16_t reward_value=0;
+ require(original_event_combat_reward(game,0,reward_kind,reward_value)&&reward_kind==2&&reward_value==WorldRelicFakeMerchantsRug,"Fake Merchant extra rewards begin with the genuine rug");persisted();
+ for(unsigned i=0;i<game.enemy_count;i++)game.enemies[i].hp=0;resolve_pending(game);
+ auto& rewards=game.world_relics;
+ require(game.phase==Phase::WorldRelicChoice&&rewards.choice==WorldRelicChoice::OfferReward&&!game.world.reward_count&&game.reward_claimed==7,"main and event combat rewards have one saved owner");
+ const unsigned group=rewards.choice_group;unsigned kinds[6]{};
+ for(unsigned i=0;i<rewards.offer_count;i++){const auto& reward=rewards.rewards[rewards.offers[i]];require(reward.group==group&&reward.kind<6,"every combat reward belongs to the same group");++kinds[reward.kind];}
+ require(kinds[1]==1&&kinds[2]==7&&kinds[3]<=1&&kinds[4]==1,"one menu contains the main card and gold, potion roll, rug and all unbought fake wares");persisted();
+ auto reward_position=[&](unsigned kind,unsigned value=65535){for(unsigned i=0;i<rewards.offer_count;i++){const auto& reward=rewards.rewards[rewards.offers[i]];if(reward.kind==kind&&(value==65535||reward.value==value))return uint16_t(i);}require(false,"requested combat reward is offered");return uint16_t(0);};
+ uint16_t position=reward_position(1);const unsigned main_reward=rewards.offers[position];
+ require(world_relic_select(game,&position,1)&&rewards.choice==WorldRelicChoice::OfferCard,"open the main card before claiming event extras");persisted();
+ require(world_relic_select(game,nullptr,0)&&rewards.choice==WorldRelicChoice::OfferReward&&!(rewards.rewards[main_reward].flags&1),"back leaves the same main card reward unclaimed");
+ position=reward_position(2,WorldRelicFakeMerchantsRug);
+ require(world_relic_select(game,&position,1)&&has_world_relic(game,WorldRelicFakeMerchantsRug)&&rewards.choice_group==group&&rewards.choice==WorldRelicChoice::OfferReward,"claim an event relic and return to the combined reward menu");persisted();
+ position=reward_position(1);require(world_relic_select(game,&position,1)&&rewards.choice==WorldRelicChoice::OfferCard,"return to the original main card after the event relic");
+ const unsigned deck_before_reward=game.deck_count;const Card chosen=card_from_token(rewards.offers[0]);position=0;
+ require(world_relic_select(game,&position,1)&&game.deck_count==deck_before_reward+1&&card_token(game.deck[deck_before_reward])==card_token(chosen),"main card is obtained once from the combined group");
+ require(rewards.choice==WorldRelicChoice::OfferReward&&rewards.choice_group==group&&game.original_events.combat_pending&&!game.original_events.finished,"claiming the main card does not finish the event while extras remain");persisted();
+ require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Reward&&!world_relic_pending(game),"skip the remaining combined combat rewards");persisted();
+ require(world_finish_room(game),"proceed after the combined combat reward closes");
+ require(game.original_events.finished&&!game.original_events.reward_active&&original_event_combat_reward_count(game)==0,"event continuation cannot offer the combat extras a second time");persisted();
  std::printf("original event continuation checks: %u\n",checks);return 0;
 }

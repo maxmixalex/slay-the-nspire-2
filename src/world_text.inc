@@ -108,7 +108,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   }
   if(world_relic_description_reference(s,id,name,ref,x.relic_position))return wt_reference(x,ref);
  }
- for(const auto&v:world_text_numbers)if(wt_equal(x.model_key,v.model)&&wt_equal(name,v.name))return wt_number(wt_equal(x.table,"cards")&&x.card.upgraded?v.upgraded:v.base,v.scale);
+ for(const auto&v:world_text_numbers)if(wt_equal(x.model_key,v.model)&&wt_equal(name,v.name)){int value=wt_equal(x.table,"cards")&&x.card.upgraded?v.upgraded:v.base;if(wt_equal(x.table,"cards")&&x.facts&&x.instance<0&&x.deck<0&&v.scale==1)event_card_offer_description_value(s,x.card,*x.facts,name,value);return wt_number(value,v.scale);}
  // Typed PowerVar names have a Power suffix while the independent mechanics
  // metadata uses the corresponding power's short name in a few old models.
  if(wt_suffix(name,"Power")){char short_name[96]{};unsigned n=0;while(name[n])++n;for(unsigned i=0;i+5<n&&i+1<sizeof short_name;i++)short_name[i]=name[i];
@@ -138,11 +138,14 @@ void App::original_event_text(int option,bool description,char*out,size_t cap)co
  if(original_event_text_key(game,option,description,key,sizeof key)){WorldTextContext x{this,"events",{},int(game.original_events.id)};x.option=option;x.description=description;wt_model_key(x,key);char raw[8192]{};TextBuffer b{raw,sizeof raw,0};b.text(content.world_string("events",key));LocalizedTemplate(out,cap,wt_resolve,&x).format(raw);}
 }
 void App::world_card_description(Card card,int target,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{
- if(!cap)return;out[0]=0;WorldTextContext x{this,"cards",{},int(card.kind),target,0,card,instance,deck,facts};
+ if(!cap)return;out[0]=0;if(card.kind>=CardKinds)return;
+ if(card.kind<EventCardBadLuck){card_description(card,target,out,cap,instance,deck,facts);return;}
+ WorldTextContext x{this,"cards",{},int(card.kind),target,0,card,instance,deck,facts};
  if(!x.facts&&instance>=0&&instance<game.card_count)x.facts=&game.event_cards.cards[instance];
  if(!x.facts&&deck>=0&&deck<game.deck_count)x.facts=&game.event_cards.deck[deck];
  wt_model_key(x,definitions[card.kind].key);char source[8192]{};TextBuffer b{source,sizeof source,0};b.text(content.card_string(card.kind,card.upgraded?2:1));
  LocalizedTemplate(out,cap,wt_resolve,&x).format(source);
+ card_modifier_text(card,out,cap,instance,deck,x.facts);
 }
 int App::card_face_image(Card card,int instance,int deck,const EventCardFacts*facts)const{
  if(!facts&&instance>=0&&instance<game.card_count)facts=&game.event_cards.cards[instance];
@@ -150,4 +153,35 @@ int App::card_face_image(Card card,int instance,int deck,const EventCardFacts*fa
  if(card.kind==EventCardMadScience){const char*keys[]={"MAD_SCIENCE_ATTACK","MAD_SCIENCE_SKILL","MAD_SCIENCE_POWER"};unsigned type=facts?facts->science_type:0;int image=content.world_image("cards",keys[type<3?type:0]);if(image>=0)return image;}
  if(card.kind==EventCardWither){unsigned level=instance>=0&&instance<game.card_count?game.enemy_world.card_value[instance]:0;int image=content.world_image("cards",level==0?"WITHER1":level==1?"WITHER2":"WITHER3");if(image>=0)return image;}
  return content.card_image(card.kind);
+}
+CardType App::card_face_type(Card card,int instance,int deck,const EventCardFacts*facts)const{
+ if(card.kind>=CardKinds)return CardType::Skill;
+ if(card.kind==EventCardMadScience&&facts)return CardType(facts->science_type<3?facts->science_type:0);
+ return card_type(game,card,instance,deck);
+}
+int App::card_face_frame(Card card,int instance,int deck,const EventCardFacts*facts)const{
+ if(card.kind==EventCardMadScience)return content.ui_image(U_ColorlessAttack+int(card_face_type(card,instance,deck,facts)));
+ return content.frame_image(card);
+}
+int App::card_offer_cost(Card card,const EventCardFacts*facts)const{
+ int n=cost(card);if(facts)event_card_offer_description_value(game,card,*facts,"EnergyCost",n);return n;
+}
+int App::relic_face_image(RelicId id)const{
+ if(id==WorldRelicYummyCookie){const char*keys[]={"YUMMY_COOKIE_IRONCLAD","YUMMY_COOKIE_SILENT","YUMMY_COOKIE_DEFECT","YUMMY_COOKIE_REGENT","YUMMY_COOKIE_NECRO"};int image=content.world_image("relics",keys[unsigned(game.character)<5?unsigned(game.character):0]);if(image>=0)return image;}
+ return content.relic_image(id);
+}
+void App::card_modifier_text(Card card,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{
+ if(!cap||card.kind>=CardKinds)return;
+ if(!facts&&instance>=0&&instance<game.card_count)facts=&game.event_cards.cards[instance];
+ if(!facts&&deck>=0&&deck<game.deck_count)facts=&game.event_cards.deck[deck];
+ size_t n=0;while(n<cap&&out[n])++n;if(n>=cap)return;TextBuffer b{out,cap,n};
+ auto append=[&](const char*table,const char*key,int amount){
+  char full[160]{},text[2048]{};TextBuffer k{full,sizeof full,0};k.text(key);k.text(".description");WorldTextContext x{this,table,{},-1,-1,amount,card,instance,deck,facts};wt_model_key(x,full);
+  char source[4096]{};TextBuffer raw{source,sizeof source,0};raw.text(content.world_string(table,full));LocalizedTemplate(text,sizeof text,wt_resolve,&x).format(source);
+  b.text("\n[purple]");b.text(content.world_title(table,key));b.text("[/purple]");if(*text){b.text("：");b.text(text);}
+ };
+ if(facts&&facts->enchantment!=EventEnchantment::None)append("enchantments",event_enchantment_key(facts->enchantment),facts->enchantment_amount);
+ if(instance>=0&&instance<game.card_count){unsigned affliction=game.enemy_world.affliction[instance];const char*keys[]={"","BOUND","ENTANGLED","GALVANIZED","HEXED","TAINTED","RINGING","SMOG"};
+  if(affliction&&affliction<sizeof keys/sizeof*keys)append("afflictions",keys[affliction],game.enemy_world.affliction_amount[instance]);
+ }
 }

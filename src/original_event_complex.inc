@@ -139,12 +139,12 @@ bool complex_choose(State&s,unsigned option){auto&e=s.original_events;const char
   if(e.page)chosen=unsigned(e.values[option]);else if(!option)chosen=unsigned(rand_range(s,0,3));else{damage(s,option==1?5:15);unsigned ids[]={2,0,1};auto rng=event_random(s);reference::shuffle(ids,3,rng);keep_random(s,rng);e.page=uint8_t(option);page(s,option==1?"TAKE_SOME_TIME":"EXAMINE");options(s);for(unsigned i=0;i<(option==1?2U:3U);i++){e.values[i]=int16_t(ids[i]);option_key(s,i,"TAKE.options.","TAKE");e.offers[i]=dolls[ids[i]];}e.offer_count=option==1?2:3;return true;}
   relic(s,dolls[chosen]);done=chosen==0?"DAUGHTER_OF_WIND":chosen==1?"MR_STRUGGLES":"FABLE";break;}
  case OriginalEventId::SelfHelpBook:if(e.page)done="NO_OPTIONS";else{const EventEnchantment enchant[]={EventEnchantment::Sharp,EventEnchantment::Nimble,EventEnchantment::Swift};const OriginalEventFilter filter[]={OriginalEventFilter::Attack,OriginalEventFilter::Skill,OriginalEventFilter::Power};select_deck(s,OriginalEventSelection::Enchant,1,filter[option],enchant[option],2);}break;
- case OriginalEventId::PunchOff:if(e.page){combat(s,"PunchOffEventEncounter");push_step(s,OriginalEventOp::Special,CX_Bundle,-1,1);done="I_CAN_TAKE_THEM";}else if(!option){card(s,EventCardInjury);push_step(s,OriginalEventOp::Special,CX_Bundle,0,1);}else{e.page=1;page(s,"I_CAN_TAKE_THEM");options(s,"I_CAN_TAKE_THEM.options.FIGHT");return true;}break;
+ case OriginalEventId::PunchOff:if(e.page){combat(s,"PunchOffEventEncounter");done="I_CAN_TAKE_THEM";}else if(!option){card(s,EventCardInjury);push_step(s,OriginalEventOp::Special,CX_Bundle,0,1);}else{e.page=1;page(s,"I_CAN_TAKE_THEM");options(s,"I_CAN_TAKE_THEM.options.FIGHT");return true;}break;
  case OriginalEventId::TheFutureOfPotions:{const auto*def=potion_definition(potion_at(s,unsigned(e.values[option])));if(!def)return false;
   int rarity=def->rarity==3||def->rarity==4?4:def->rarity==2?3:2;push_step(s,OriginalEventOp::Special,CX_DiscardPotion,e.values[option]);
   push_step(s,OriginalEventOp::Special,CX_Future,rarity,e.values[3+option]);done="DONE";break;}
  case OriginalEventId::Trial:
-  if(e.page==5){if(!option){s.hp=0;s.phase=Phase::Dead;return true;}e.page=1;page(s,"REJECT");options(s,"REJECT.options.ACCEPT","REJECT.options.DOUBLE_DOWN");return true;}
+  if(e.page==5){if(!option){event_dead(s);return true;}e.page=1;page(s,"REJECT");options(s,"REJECT.options.ACCEPT","REJECT.options.DOUBLE_DOWN");return true;}
   if(e.page<=1){if(option){if(e.page){e.page=5;options(s,"CONFIRM_ABANDON","CANCEL");}else{e.page=1;page(s,"REJECT");options(s,"REJECT.options.ACCEPT","REJECT.options.DOUBLE_DOWN");}return true;}
    e.page=uint8_t(2+rand_range(s,0,3));const char*pages[]={"MERCHANT","NOBLE","NONDESCRIPT"};const char*prefix[]={"MERCHANT.options.","NOBLE.options.","NONDESCRIPT.options."};page(s,pages[e.page-2]);options(s);option_key(s,0,prefix[e.page-2],"GUILTY");option_key(s,1,prefix[e.page-2],"INNOCENT");return true;}
   if(e.page==2){card(s,option?EventCardShame:EventCardRegret);if(option)select_deck(s,OriginalEventSelection::Upgrade,2);else{queue_random_relic(s);queue_random_relic(s);}done=option?"MERCHANT_INNOCENT":"MERCHANT_GUILTY";}
@@ -172,7 +172,10 @@ bool complex_special(State&s,int op,int a,int b,int c,int){auto&e=s.original_eve
  switch(op){
  case CX_DiscardPotion:{if(a<0||a>=int(potion_slot_count(s)))return false;Potion old=potion_at(s,unsigned(a));if(old==Potion::Empty)return false;if(!potion_set(s,unsigned(a),Potion::Empty))return false;world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,int(old),a);return true;}
  case CX_RandomUpgrade:if(b)rand_range(s,0,100);else random_one_upgrade(s,a!=0);return true;
- case CX_Tablet:{int loss=e.values[0];if(loss>=s.max_hp){s.max_hp=1;s.hp=0;s.phase=Phase::Dead;return true;}s.max_hp=int16_t(s.max_hp-loss);s.hp=int16_t(smaller(s.hp,s.max_hp));random_one_upgrade(s,e.page==4);++e.page;
+ case CX_Tablet:{if(!a){const int loss=e.values[0];const bool lethal=loss>=s.max_hp;
+   maxhp(s,lethal?1-s.max_hp:-loss);if(lethal)push_step(s,OriginalEventOp::KillPlayer);
+   push_step(s,OriginalEventOp::Special,CX_Tablet,1,lethal?0:1);return true;
+  }if(b)random_one_upgrade(s,e.page==4);++e.page;
   const char*pages[]={"","DECIPHER_1","DECIPHER_2","DECIPHER_3","DECIPHER_4","DECIPHER_5"};if(e.page==5){finish_page(s,pages[e.page]);return true;}
   e.values[0]=e.page==1?6:e.page==2?12:e.page==3?24:int16_t(s.max_hp-1);page(s,pages[e.page]);options(s);const char*prefix[]={"","DECIPHER_1.options.","DECIPHER_2.options.","DECIPHER_3.options.","DECIPHER_4.options."};option_key(s,0,prefix[e.page],"DECIPHER");option_key(s,1,"DECIPHER.options.","GIVE_UP");return true;}
  case CX_RemoveAt:return event_remove_deck_card(s,a);

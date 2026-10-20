@@ -6,6 +6,10 @@ struct WorldRelicCardSnapshot {
  uint16_t token=0,genetic=0,scythe=0;
  EventCardFacts facts{};
 };
+struct WorldRelicTransformEntry {
+ uint16_t original=0,index=0;
+ WorldRelicCardSnapshot card{};
+};
 struct WorldRelicInstance {
  RelicId id=NoWorldRelic;
  uint16_t floor=0,serial=0;
@@ -19,6 +23,7 @@ struct WorldRelicStep {
  WorldRelicOp op=WorldRelicOp::None;
  uint16_t owner=0;
  int32_t a=0,b=0,c=0;
+ WorldRelicCardSnapshot card{};
 };
 struct WorldRelicHookFrame {
  WorldRelicHook hook=WorldRelicHook::BeforeCombatStart;
@@ -27,7 +32,7 @@ struct WorldRelicHookFrame {
  int32_t args[3]{};
 };
 struct WorldRelicReward {
- uint8_t group=0,kind=0,flags=0,count=0; // kind: 1 card, 2 relic, 3 potion, 4 gold.
+ uint8_t group=0,kind=0,flags=0,count=0; // kind: 1 card choice, 2 relic, 3 potion, 4 gold, 5 special card.
  uint16_t value=0,tokens[8]{};
  EventCardFacts facts[8]{};
  uint16_t rarity_mask=0,creation_flags=0;
@@ -72,4 +77,9 @@ struct WorldRelicState {
  // Snapshot listener identity, not slot numbers: replacement/removal during
  // one hook must not change which later listeners were present at its start.
  WorldRelicHookFrame hook_frames[MaxWorldRelicHookFrames]{};
+ // All originals leave the deck before a batch begins its awaited additions.
+ uint16_t transform_count=0,transform_cursor=0;
+ WorldRelicTransformEntry transforms[MaxDeck]{};
+ // Byrdpip captures the original combat pile order before transforming eggs.
+ uint16_t byrdpip_count=0,byrdpip_cursor=0,byrdpip_cards[MaxCards]{};
 };

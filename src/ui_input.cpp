@@ -95,9 +95,16 @@ void App::ui_action(UiAction action){
     case UiAction::StartCharacter:
         if(character_select){
             new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);
-            if(!practice_entry)world_begin_run(game);
-            character_select=false;title=false;reset_presentation();
+            if(!practice_entry){if(*selected_seed&&!world_set_seed(game,selected_seed)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
+            character_select=run_settings=false;title=false;reset_presentation();
         }break;
+    case UiAction::RunSettings:if(character_select&&!practice_entry)run_settings=!run_settings;break;
+    case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
+    case UiAction::RunAscensionUp:if(character_select&&selected_ascension<10)selected_ascension++;break;
+    case UiAction::RunRegion:if(character_select)selected_region=selected_region==reference::ActKind::Overgrowth?reference::ActKind::Underdocks:reference::ActKind::Overgrowth;break;
+    case UiAction::RunSeed:
+        if(character_select){map_preview.open=true;run_seed_editing=true;map_preview.begin_edit();unsigned n=0;do{map_preview.draft[n]=selected_seed[n];}while(selected_seed[n++]);}break;
+    case UiAction::RunSeedClear:if(character_select)selected_seed[0]=0;break;
     case UiAction::LibraryCards:case UiAction::LibraryRelics:case UiAction::LibraryPotions:
         if(library){library_tab=(int)action-(int)UiAction::LibraryCards;library_page=library_selected=0;}break;
     case UiAction::PreviousPage:case UiAction::NextPage:
@@ -110,7 +117,7 @@ void App::ui_action(UiAction action){
     case UiAction::ToggleCardUpgrade:
         if(detail_card>=0){Card c=card_from_token(detail_card);if(c.upgraded||card_upgradeable(c)){c.upgraded=!c.upgraded;detail_card=card_token(c);}}break;
     case UiAction::DiscardPotion:
-        if(panel==4&&discard_potion(game,scroll))message("已丢弃药水");break;
+        if(panel==4&&!original_event_blocks_potions(game)&&discard_potion(game,scroll))message("已丢弃药水");break;
     case UiAction::TargetFirst:if(panel==4&&game.enemy_count&&game.enemies[0].hp>0)target=0;break;
     case UiAction::TargetSecond:if(panel==4&&game.enemy_count>1&&game.enemies[1].hp>0)target=1;break;
     case UiAction::RewardCards:
@@ -152,11 +159,14 @@ void App::ui_action(UiAction action){
     case UiAction::ConfirmWorldChoice:confirm_world_choice();break;
     case UiAction::ClearWorldChoice:choice_selected_count=0;break;
     case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:{
-        unsigned count=world_choice_options(nullptr,0);int page=cursor/10+(action==UiAction::PreviousWorldPage?-1:1);
-        if(page<0)page=0;if(page>int((count?count-1:0)/10))page=int((count?count-1:0)/10);cursor=page*10;break;}
+        const unsigned per=game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferBundle?2:10;
+        unsigned count=world_choice_options(nullptr,0);int page=cursor/int(per)+(action==UiAction::PreviousWorldPage?-1:1);
+        if(page<0)page=0;if(page>int((count?count-1:0)/per))page=int((count?count-1:0)/per);cursor=page*int(per);break;}
     case UiAction::RewardRelic:if(game.phase==Phase::Reward)world_claim_reward_relic(game);break;
     case UiAction::SacrificeReward:
         if(world_take_card_reward_alternative(game,1)){reward_cards=false;choice_selected_count=0;choice_revision=game.revision;cursor=0;pointer_cancel();}break;
+    case UiAction::RerollReward:
+        if(world_take_card_reward_alternative(game,2)){choice_selected_count=0;choice_revision=game.revision;cursor=0;pointer_cancel();}break;
     case UiAction::CrystalSmall:original_event_crystal_tool(game,false);break;
     case UiAction::CrystalLarge:original_event_crystal_tool(game,true);break;
     case UiAction::ClearChoice:choice_selected_count=0;break;
@@ -188,7 +198,16 @@ bool App::screen_input(Key key){
         return true;
     }
     if(character_select){
+        if(run_settings){
+            if(key==Key::Back||key==Key::EndTurn)run_settings=false;
+            else if(key==Key::Left)ui_action(UiAction::RunAscensionDown);
+            else if(key==Key::Right)ui_action(UiAction::RunAscensionUp);
+            else if(key==Key::Up||key==Key::Down)ui_action(UiAction::RunRegion);
+            else if(key==Key::Confirm)ui_action(UiAction::RunSeed);
+            return true;
+        }
         if(key==Key::Confirm)ui_action(UiAction::StartCharacter);
+        else if(key==Key::EndTurn&&!practice_entry)run_settings=true;
         else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)
             selected_character=(Character)(((int)selected_character+(key==Key::Left||key==Key::Up?CharacterKinds-1:1))%CharacterKinds);
         else if(key==Key::Back)character_select=false;

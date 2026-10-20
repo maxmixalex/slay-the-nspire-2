@@ -12,7 +12,7 @@
   H(w.bag_sizes[b][r]);for(auto&id:w.bags[b][r])H(id);
  }
  B(w.step_count);B(w.step_cursor);B(w.running);
- for(auto&v:w.steps){B(v.op);H(v.owner);F(v.a);F(v.b);F(v.c);}
+ for(auto&v:w.steps){B(v.op);H(v.owner);F(v.a);F(v.b);F(v.c);H(v.card.token);H(v.card.genetic);H(v.card.scythe);WRF(v.card.facts);}
  B(w.choice);B(w.return_phase);B(w.choice_filter);B(w.choice_cancelable);
  H(w.choice_owner);H(w.choice_min);H(w.choice_max);B(w.choice_enchantment);H(w.choice_amount);
  H(w.offer_count);for(auto&v:w.offers)H(v);for(auto&f:w.offer_facts){WRF(f);}
@@ -35,5 +35,7 @@
   B(f.hook);B(f.active);H(f.count);H(f.cursor);
   for(auto&v:f.serials)H(v);for(auto&v:f.args)F(v);
  }
+ H(w.transform_count);H(w.transform_cursor);for(auto&r:w.transforms){H(r.original);H(r.index);H(r.card.token);H(r.card.genetic);H(r.card.scythe);WRF(r.card.facts);}
+ H(w.byrdpip_count);H(w.byrdpip_cursor);for(auto&v:w.byrdpip_cards)H(v);
 #undef WRF
 }

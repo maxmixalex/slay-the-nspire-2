@@ -8,6 +8,7 @@ enum class UiAction {
     SelectDefect, SelectRegent, SelectNecrobinder, FilterDefect, FilterRegent, FilterNecrobinder,
     RewardGrimoire, SkipGrimoire, ShowStars, ShowOrbs, ShowOsty, MoreStatus,
     RewardRelic, ConfirmWorldChoice, ClearWorldChoice, PreviousWorldPage, NextWorldPage,
-    CrystalSmall, CrystalLarge, SacrificeReward
+    CrystalSmall, CrystalLarge, SacrificeReward, RerollReward,
+    RunSettings, RunAscensionDown, RunAscensionUp, RunRegion, RunSeed, RunSeedClear
 };
 }

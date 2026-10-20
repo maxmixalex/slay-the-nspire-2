@@ -56,7 +56,7 @@ static void enemy_initial_powers(State&s,int t){
  case EnemyId::Chomper:power(EnemyPower::Artifact,2);break;
  case EnemyId::CorpseSlug:power(EnemyPower::Ravenous,val(EnemyValue::RavenousStr));break;
  case EnemyId::Crusher:power(EnemyPower::BackAttackLeft,1);power(EnemyPower::CrabRage,1);break;
- case EnemyId::CubexConstruct:s.enemies[t].block=13;power(EnemyPower::Artifact,1);m.data[0]=1;break;
+ case EnemyId::CubexConstruct:s.enemies[t].block=13;power(EnemyPower::Artifact,1);m.data[0]=m.data[8]=1;break;
  case EnemyId::DecimillipedeSegmentBack:case EnemyId::DecimillipedeSegmentFront:case EnemyId::DecimillipedeSegmentMiddle:{
   const auto&d=enemy_definitions[unsigned(m.kind)];int low=s.enemy_world.ascension>=8?d.min_hp_8:d.min_hp,high=s.enemy_world.ascension>=8?d.max_hp_8:d.max_hp;int hp=s.enemies[t].max_hp+(s.enemies[t].max_hp&1);
   for(int tries=0;tries<8;++tries){bool used=false;for(int i=0;i<s.enemy_count;++i)if(i!=t&&enemy_slot_exists(s,i)&&s.enemies[i].max_hp==hp)used=true;if(!used)break;hp+=2;if(hp>high)hp=low;}
@@ -90,7 +90,7 @@ static void enemy_initial_powers(State&s,int t){
  case EnemyId::ThievingHopper:power(EnemyPower::EscapeArtist,5);break;
  case EnemyId::ToughEgg:if(!m.data[0])power(EnemyPower::Hatch,s.enemy_world.side?2:1);break;
  case EnemyId::TwoTailedRat:m.data[0]=2;break;
- case EnemyId::Vantom:power(EnemyPower::Slippery,val(EnemyValue::SlipperyAmt));break;
+ case EnemyId::Vantom:power(EnemyPower::Slippery,val(EnemyValue::SlipperyAmt));m.data[8]=1;break;
  case EnemyId::WaterfallGiant:m.data[0]=(int16_t)val(EnemyValue::BasePressureGunDamage);break;
  case EnemyId::Zapbot:power(EnemyPower::HighVoltage,2);break;
  default:break;

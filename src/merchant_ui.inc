@@ -40,7 +40,7 @@ static void shop_screen(Canvas&c){
         int x=141+i*37,item=ShopRelicStart+i,index=-1;bool sold=s.shop_sold&(1u<<item);
         if(s.world.active)index=s.world.shop_relics[i]==NoWorldRelic?-1:s.world.shop_relics[i];else for(int r=0;r<RelicKinds;r++)if(relic_definitions[r].id==s.shop_relics[i])index=r;
         if(a.cursor==item)c.box(x-3,139,33,38,Gold);
-        if(index>=0)c.picture(a.content.relic_image(index),x,140,26,26,sold?70:255);
+        if(index>=0)c.picture(a.relic_face_image(index),x,140,26,26,sold?70:255);
         merchant_price(c,item,x-4,164,36);c.hit(x-4,137,36,41,HitKind::Choice,item,!sold);
         item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);
         if(a.cursor==item)c.box(x-3,179,33,38,Gold);

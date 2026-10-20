@@ -98,6 +98,14 @@ static void metadata_and_all_encounters(){
  CHECK(encounters==174);
 }
 static void caps_and_waking(){
+ scenario="extra player turn keeps the planned intent and move RNG";
+ auto extra=fight(EncounterId::NibbitsNormal);quiet_turn(extra);
+ EnemyModelState planned[MaxEnemies];for(int t=0;t<extra.enemy_count;++t)planned[t]=extra.enemy_world.models[t];
+ effect(extra,XOp::EnemySideHook,2,0);
+ for(int t=0;t<extra.enemy_count;++t){const auto&a=planned[t];const auto&b=extra.enemy_world.models[t];
+  CHECK(a.node==b.node&&a.previous==b.previous&&a.history_count==b.history_count);
+  CHECK(!std::memcmp(&a.rng,&b.rng,sizeof a.rng));
+ }persist(extra);
  scenario="hard caps and side-scoped loss";
  auto s=fight(EncounterId::ExoskeletonsWeak);int t=alive(s,EnemyId::Exoskeleton),before=s.enemies[t].hp;
  damage_unpowered(s,t,100);resolve_pending(s);CHECK(s.enemies[t].hp==before-9);persist(s);
@@ -188,7 +196,51 @@ static void choices_statuses_and_eight_slots(){
  s.enemy_world.returned_gold_count=33;CHECK(!validate(s));s=untouched;
  s.enemy_world.models[7].captured_card=1;CHECK(!validate(s));s=untouched;persist(s);
 }
+static int visual_fact(const State&s,int target,const char*key){int value=-9;CHECK(enemy_visual_fact(s,target,key,value));return value;}
+static void visual_predicates_and_unpowered_death_block(){
+ scenario="Crab Rage adds unpowered block despite Dexterity and Frail";
+ auto s=fight(EncounterId::KaiserCrabBoss);int rocket=alive(s,EnemyId::Rocket),crusher=alive(s,EnemyId::Crusher);
+ CHECK(rocket>=0&&crusher>=0);power(s,rocket,EnemyPower::Dexterity,7);power(s,rocket,EnemyPower::Frail,2);
+ s.enemies[rocket].block=0;kill(s,crusher);CHECK(s.enemies[rocket].block==99);persist(s);
+
+ scenario="Cubex does not leave its burrow merely because charge is intended";
+ s=fight(EncounterId::CubexConstructNormal);CHECK(visual_fact(s,0,"IsBurrowed")==1&&visual_fact(s,0,"IsCharging")==0);
+ CHECK(s.enemy_world.models[0].node==0);move(s,0,0);CHECK(visual_fact(s,0,"IsBurrowed")==0&&visual_fact(s,0,"IsCharging")==1);persist(s);
+ int value=77;CHECK(!enemy_visual_fact(s,0,"unknown_predicate",value)&&value==77);
+
+ scenario="Crossbow reload state changes after the move and survives a save";
+ s=fight(EncounterId::RubyRaidersNormal);int crossbow=alive(s,EnemyId::CrossbowRubyRaider);CHECK(crossbow>=0);
+ CHECK(visual_fact(s,crossbow,"IsCrossbowReloaded")==0);move(s,crossbow,1);CHECK(visual_fact(s,crossbow,"IsCrossbowReloaded")==1);persist(s);
+ move(s,crossbow,0);CHECK(visual_fact(s,crossbow,"IsCrossbowReloaded")==0);persist(s);
+
+ scenario="Death keeps the puffed branch after powers are removed";
+ s=fight(EncounterId::FuzzyWurmCrawlerWeak);move(s,0,2);CHECK(visual_fact(s,0,"IsPuffed")==1);kill(s,0);
+ CHECK(visual_fact(s,0,"IsPuffed")==1);persist(s);
+
+ scenario="Thorned death is a Boolean fact even when the power amount is five";
+ s=fight(EncounterId::ToadpolesWeak);power(s,0,EnemyPower::Thorns,5);CHECK(visual_fact(s,0,"Thorns")==1);kill(s,0);
+ CHECK(enemy_power_value(s,0,EnemyPower::Thorns)==0&&visual_fact(s,0,"Thorns")==1);persist(s);
+
+ scenario="Underground death retains the Burrowed animation predicate";
+ s=fight(EncounterId::TunnelerWeak);power(s,0,EnemyPower::Burrowed,1);kill(s,0);
+ CHECK(enemy_power_value(s,0,EnemyPower::Burrowed)==0&&visual_fact(s,0,"Burrowed")==1);persist(s);
+ untouched=s;s.enemy_world.models[0].data[8]=4;CHECK(!validate(s));s=untouched;
+ s.enemy_world.models[0].data[9]=5;CHECK(!validate(s));s=untouched;persist(s);
+
+ scenario="Lagavulin shell eyes remain awake after healing above half HP";
+ s=fight(EncounterId::LagavulinMatriarchBoss);CHECK(visual_fact(s,0,"IsShellAwake")==0);
+ s.enemies[0].block=0;damage_unpowered(s,0,s.enemies[0].hp-s.enemies[0].max_hp/2);resolve_pending(s);
+ CHECK(visual_fact(s,0,"IsAwake")==1&&visual_fact(s,0,"IsShellAwake")==1);
+ effect(s,XOp::EnemyHeal,999,0);CHECK(visual_fact(s,0,"IsShellAwake")==1);persist(s);
+
+ scenario="Vantom tail charge persists between moves independently of its intent";
+ s=fight(EncounterId::VantomBoss);CHECK(visual_fact(s,0,"tail_charge")==1);
+ const int charge[]={2,3,0,1};
+ for(int node=0;node<4;++node){s.block=9999;move(s,0,node);CHECK(visual_fact(s,0,"tail_charge")==charge[node]);persist(s);}
+}
+
 int main(){
+ visual_predicates_and_unpowered_death_block();
  metadata_and_all_encounters();caps_and_waking();death_replacement_and_revival();stolen_assets_and_timeout();choices_statuses_and_eight_slots();
  std::printf("original enemy checks: %u; executed encounter/ascension variants: %u\n",checks,encounters);return 0;
 }

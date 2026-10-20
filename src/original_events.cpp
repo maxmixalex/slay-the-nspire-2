@@ -1,6 +1,7 @@
 #include "original_events.hpp"
 #include "world_card_factory.hpp"
 #include "world_run.hpp"
+#include "reference_sort.hpp"
 
 namespace spire {
 namespace {
@@ -19,6 +20,7 @@ const EventName names[]={
 };
 static_assert(sizeof(names)/sizeof(names[0])==unsigned(OriginalEventId::Count),"Complete event name registry");
 void fail(State&s){s.phase=Phase::Error;record(s,LogKind::Capacity,MaxOriginalEventSteps);}
+void event_dead(State&s){s.hp=0;s.phase=Phase::Dead;if(s.world.active)s.world.finished=1;original_event_finish_run(s);}
 reference::Random event_random(const State&s){reference::Random rng;
  for(unsigned i=0;i<4;i++)rng.words[i]=s.original_events.rng_words[i];
  rng.calls=s.original_events.rng_calls;rng.good=(rng.words[0]|rng.words[1]|rng.words[2]|rng.words[3])!=0;return rng;
@@ -88,7 +90,7 @@ void apply_selection(State&s){auto&e=s.original_events;
    world_relic_hook(s,WorldRelicHook::AfterDeckAdded,s.deck_count-1);
   }else{
    unsigned index=selected;
-   if(e.selection==OriginalEventSelection::Remove)for(unsigned i=0;i<cursor;i++)if(e.selected[i]<selected)--index;
+   if(e.selection==OriginalEventSelection::Remove||e.selection==OriginalEventSelection::Transform)for(unsigned i=0;i<cursor;i++)if(e.selected[i]<selected)--index;
    if(index>=s.deck_count){fail(s);return;}
    switch(e.selection){
    case OriginalEventSelection::Remove:if(!event_remove_deck_card(s,int(index))){fail(s);return;}break;
@@ -114,7 +116,8 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
  case OriginalEventOp::Damage:if(step.a<0)return false;player_hp_loss(s,step.a,false,false,-1);return true;
  case OriginalEventOp::Heal:heal(s,step.a<0?s.max_hp:step.a);return true;
  case OriginalEventOp::MaxHp:
-  if(step.a>=0)increase_max_hp(s,step.a);else{s.max_hp=int16_t(larger(1,s.max_hp+step.a));s.hp=int16_t(smaller(s.hp,s.max_hp));}return true;
+  if(step.a>=0)increase_max_hp(s,step.a);else player_lose_max_hp(s,-int(step.a));return true;
+ case OriginalEventOp::KillPlayer:player_kill(s,step.a!=0);return true;
  case OriginalEventOp::Gold:if(step.a<0&&s.gold<-step.a)return false;gain_gold(s,step.a);return true;
  case OriginalEventOp::AddCard:case OriginalEventOp::AddCurse:
   if(step.a<0||step.a>=CardKinds||step.b!=1||step.c<0||step.c>1||s.deck_count>=MaxDeck)return false;
@@ -126,6 +129,13 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
   if(step.a<=0||step.a> PotionKinds)return false;
   // Every PotionReward is optional, including when an empty slot is available.
   e.offer_count=1;e.offers[0]=uint16_t(step.a);return pause_selection(s,OriginalEventSelection::Potion,OriginalEventFilter::Any,0,1,true);
+ case OriginalEventOp::ProcurePotion:{
+  if(step.a<=0||step.a>PotionKinds||step.b<0||step.b>=int(potion_slot_count(s))||step.c<0||step.c>1)return false;
+  if(!step.c){if(e.step_count>=MaxOriginalEventSteps)return false;for(unsigned i=e.step_count;i>e.step_cursor;i--)e.steps[i]=e.steps[i-1];e.steps[e.step_cursor]={OriginalEventOp::ProcurePotion,step.a,step.b,1};++e.step_count;
+   return potion_at(s,unsigned(step.b))==Potion::Empty||discard_potion(s,step.b);}
+  const bool obtained=procure_potion_at(s,Potion(step.a),unsigned(step.b));if(!obtained&&!has_world_relic(s,WorldRelicSozu))return false;
+  if(e.reward_active&&e.reward_current<e.reward_count){if(obtained)e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;}return true;
+ }
  case OriginalEventOp::Select:{
   if(step.a<=0||step.a>=int(OriginalEventSelection::Count)||step.b<0||step.b>=int(OriginalEventFilter::Count)||step.c<0||step.d<0)return false;
   if(!pause_selection(s,OriginalEventSelection(step.a),OriginalEventFilter(step.b),unsigned(step.c),unsigned(step.d),step.e!=0))return false;
@@ -217,6 +227,10 @@ void original_event_resume(State&s){auto&e=s.original_events;
  if(e.selection_committed)apply_selection(s);
  if(e.selection!=OriginalEventSelection::None||world_relic_pending(s)||s.phase==Phase::Error||s.phase==Phase::Dead)return;
  s.phase=Phase::Event;
+ // Replacing a bottle is an awaited discard followed by procurement. Finish
+ // these saved steps before reopening the enclosing reward set.
+ while(e.step_cursor<e.step_count&&e.steps[e.step_cursor].op==OriginalEventOp::ProcurePotion&&!world_relic_pending(s)&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){auto step=e.steps[e.step_cursor++];if(!perform_step(s,step)){fail(s);return;}}
+ if(world_relic_pending(s)||s.phase==Phase::Dead||s.phase==Phase::Error)return;
  if(e.reward_active){reward_menu(s);if(e.reward_active)return;}
  while(e.step_cursor<e.step_count&&!e.combat_pending&&!world_relic_pending(s)&&e.selection==OriginalEventSelection::None&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){
   auto step=e.steps[e.step_cursor++];if(!perform_step(s,step)){fail(s);return;}
@@ -258,12 +272,10 @@ bool original_event_potion(State&s,int slot){auto&e=s.original_events;
  if(slot>=0){
   // Acquisition callbacks run even when a full inventory required a decision.
   // Sozu prevents acquisition before any existing bottle can be discarded.
-  if(has_world_relic(s,WorldRelicSozu))return false;
-  const Phase phase=s.phase;s.phase=Phase::Event;
-  if(potion_at(s,unsigned(slot))!=Potion::Empty&&!discard_potion(s,slot)){s.phase=phase;return false;}
-  if(!potion_set(s,unsigned(slot),potion))return false;world_relic_hook(s,WorldRelicHook::AfterPotionProcured,int(potion));
+  if(has_world_relic(s,WorldRelicSozu)||e.step_count+2>MaxOriginalEventSteps)return false;
+  for(unsigned i=e.step_count;i>e.step_cursor;i--)e.steps[i]=e.steps[i-1];e.steps[e.step_cursor]={OriginalEventOp::ProcurePotion,int16_t(potion),int16_t(slot),0};++e.step_count;
  }
- if(e.reward_active&&e.reward_current<e.reward_count){if(slot>=0)e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;}
+ if(slot<0&&e.reward_active&&e.reward_current<e.reward_count)e.reward_current=NoOriginalEventReward;
  clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
 bool original_event_reward(State&s,int index){auto&e=s.original_events;
@@ -280,13 +292,20 @@ bool original_event_reward(State&s,int index){auto&e=s.original_events;
 }
 bool original_event_has_card_reward(const State&s){const auto&e=s.original_events;return e.active&&s.phase==Phase::OriginalEventChoice&&e.selection==OriginalEventSelection::OfferCard&&e.reward_active&&e.reward_current<e.reward_count&&e.rewards[e.reward_current].kind==4&&!e.rewards[e.reward_current].claimed&&!e.selection_committed;}
 bool original_event_consume_card_reward(State&s){if(!original_event_has_card_reward(s))return false;auto&e=s.original_events;e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;clear_selection(s);++s.revision;return true;}
+bool original_event_can_reroll_reward(const State&s){return original_event_has_card_reward(s)&&(s.original_events.rewards[s.original_events.reward_current].flags&4)!=0;}
+bool original_event_reroll_reward(State&s){if(!original_event_can_reroll_reward(s))return false;auto&e=s.original_events;auto&r=e.rewards[e.reward_current];WorldCardOptions options;
+ options.flags=r.creation_flags;options.rarity_mask=r.rarity_mask;options.type_mask=r.type_mask;options.zero_energy=r.zero_energy;options.pool_count=r.pool_count;options.odds=WorldCardOdds(r.odds);options.source=WorldCardSource(r.source);for(unsigned i=0;i<r.pool_count;i++)options.pools[i]=WorldCardPool(r.pools[i]);
+ Card cards[MaxOriginalEventOffers];EventCardFacts facts[MaxOriginalEventOffers];unsigned made=0;auto local=event_random(s);auto&rng=(r.flags&16)?local:world_rng(s,WorldRng::Rewards);
+ if(!world_create_reward(s,rng,r.original_count,options,cards,facts,MaxOriginalEventOffers,&made)||made!=r.count){fail(s);return false;}if(r.flags&16)keep_random(s,local);
+ r.flags=uint8_t((r.flags&~4)|8);for(unsigned i=0;i<made;i++){if((r.flags&2)&&card_upgradeable(cards[i]))cards[i].upgraded=1;e.reward_cards[r.first+i]=e.offers[i]=uint16_t(card_token(cards[i]));e.reward_facts[r.first+i]=e.offer_facts[i]=facts[i];}e.offer_count=uint16_t(made);++s.revision;return true;
+}
 bool original_event_leave(State&s){auto&e=s.original_events;
  if(!e.active||!e.finished||e.combat_pending||e.selection!=OriginalEventSelection::None||e.step_cursor<e.step_count||world_relic_pending(s)||s.phase!=Phase::Event)return false;
  e.active=0;finish_room(s);++s.revision;return true;
 }
 void original_event_after_combat(State&s,bool won){auto&e=s.original_events;
  if(!e.active||!e.combat_pending)return;e.combat_pending=0;bool resume=e.resume_after_combat!=0;e.resume_after_combat=0;e.encounter=0;
- if(!won||s.hp<=0){s.phase=Phase::Dead;return;}
+ if(!won||s.hp<=0){event_dead(s);return;}
  s.phase=Phase::Event;
  if(!resume){e.finished=1;e.option_count=1;e.options[0]=0;copy_text(e.option_keys[0],"LEAVE");}
  original_event_resume(s);++s.revision;
@@ -341,9 +360,22 @@ void original_event_finish_run(State&s){auto&f=s.event_run;if(f.completion_recor
 }
 #include "original_event_text.inc"
 bool original_event_blocks_potions(const State&s){const auto&e=s.original_events;return e.active&&!e.finished&&(e.id==OriginalEventId::StoneOfAllTime||e.id==OriginalEventId::RanwidTheElder||e.id==OriginalEventId::TheFutureOfPotions);}
-bool original_event_foul_potion(State&s){auto&e=s.original_events;if(!e.active||e.id!=OriginalEventId::FakeMerchant||e.finished||e.combat_pending||e.selection!=OriginalEventSelection::None)return false;
+bool original_event_can_use_foul(const State&s){const auto&e=s.original_events;
+ return s.phase==Phase::Event&&e.active&&e.id==OriginalEventId::FakeMerchant&&!e.finished&&!e.combat_pending&&e.selection==OriginalEventSelection::None&&!world_relic_pending(s);
+}
+unsigned original_event_combat_reward_count(const State&s){const auto&e=s.original_events;if(!e.active||!e.combat_pending)return 0;
+ if(e.id==OriginalEventId::TheLanternKey)return 1;if(e.id==OriginalEventId::PunchOff)return 2;
+ if(e.id==OriginalEventId::FakeMerchant){unsigned count=1;for(unsigned i=0;i<6;i++)if(e.values[2+i]>=0&&e.values[2+i]<WorldRelicKinds)++count;return count;}return 0;
+}
+bool original_event_combat_reward(const State&s,unsigned index,uint8_t&kind,uint16_t&value){const auto&e=s.original_events;if(index>=original_event_combat_reward_count(s))return false;
+ if(e.id==OriginalEventId::TheLanternKey){kind=5;value=uint16_t(card_token({EventCardLanternKey,0}));return true;}
+ if(e.id==OriginalEventId::PunchOff){kind=index?3:2;value=index?0:NoWorldRelic;return true;}
+ if(!index){kind=2;value=WorldRelicFakeMerchantsRug;return true;}--index;
+ for(unsigned i=0;i<6;i++)if(e.values[2+i]>=0&&e.values[2+i]<WorldRelicKinds){if(!index){kind=2;value=uint16_t(e.values[2+i]);return true;}--index;}return false;
+}
+bool original_event_foul_potion(State&s){if(!original_event_can_use_foul(s))return false;auto&e=s.original_events;
  for(unsigned i=0;i<6;i++)e.values[2+i]=e.offers[i]<WorldRelicKinds?int16_t(e.offers[i]):-1;
- combat(s,"FakeMerchantEventEncounter");push_step(s,OriginalEventOp::Special,CX_FakeRewards);finish_page(s,"INITIAL");original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
+ combat(s,"FakeMerchantEventEncounter");finish_page(s,"INITIAL");original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
 
 #include "original_event_validation.inc"

@@ -16,6 +16,11 @@ static int enemy_card_energy_cost(const State&s,int id,int base){
  if(s.cards[id].kind==EventCardFranticEscape)base+=s.enemy_world.card_value[id];
  return min(999,base);
 }
+static void enemy_player_damage_given(State&s,int dealer,int actual_loss){
+ if(!s.enemy_world.active||dealer<0||dealer>=s.enemy_count||actual_loss<=0)return;
+ int amount=enemy_power_value(s,dealer,EnemyPower::PaperCuts);
+ if(amount>0)queue_extension(s,XOp::EnemyLoseMaxHp,amount,0,true);
+}
 static void enemy_before_potion(State&s,int target){
  if(!s.enemy_world.active||!enemy_allow_target(s,target)||!enemy_power_value(s,-1,EnemyPower::Surrounded))return;
  if(enemy_power_value(s,target,EnemyPower::BackAttackLeft))s.enemy_world.facing=1;
@@ -126,14 +131,15 @@ static void enemy_after_damage(State&s,int t,int blocked,int loss,bool attack,bo
   case EnemyPower::HardenedShell:enemy_aux(s,t,p)=(int16_t)min(9999,enemy_aux(s,t,p)+loss);break;
   case EnemyPower::Slippery:if(loss>0)enemy_tick(s,t,p);break;
   case EnemyPower::Flutter:if(loss>0&&attack){enemy_tick(s,t,p);if(!enemy_power_value(s,t,p)&&enemy_slot_alive(s,t))enemy_stun_to(s,t,enemy_next_node(s,t));}break;
-  case EnemyPower::Burrowed:if(blocked>0&&!s.enemies[t].block){enemy_stun_to(s,t,0);enemy_clear_power(s,t,p);}break;
-  case EnemyPower::Asleep:if(loss>0){enemy_clear_power(s,t,EnemyPower::Plating);enemy_stun_to(s,t,1);enemy_clear_power(s,t,p);}break;
+  case EnemyPower::Burrowed:if(blocked>0&&!s.enemies[t].block){if(m.kind==EnemyId::Tunneler)m.data[8]=1;enemy_stun_to(s,t,0);enemy_clear_power(s,t,p);}break;
+  case EnemyPower::Asleep:if(loss>0){if(m.kind==EnemyId::LagavulinMatriarch)m.data[8]|=1;enemy_clear_power(s,t,EnemyPower::Plating);enemy_stun_to(s,t,1);enemy_clear_power(s,t,p);}break;
   case EnemyPower::Slumber:if(loss>0){enemy_tick(s,t,p);if(!enemy_power_value(s,t,p))enemy_stun_to(s,t,1);}break;
-  case EnemyPower::Plow:if(loss>0&&s.enemies[t].hp<=amount){enemy_clear_power(s,t,EnemyPower::TemporaryStrength);enemy_clear_power(s,t,EnemyPower::Strength);enemy_stun_to(s,t,3);enemy_clear_power(s,t,p);}break;
+  case EnemyPower::Plow:if(loss>0&&s.enemies[t].hp<=amount){if(m.kind==EnemyId::CeremonialBeast)m.data[8]|=1;enemy_clear_power(s,t,EnemyPower::TemporaryStrength);enemy_clear_power(s,t,EnemyPower::Strength);enemy_stun_to(s,t,3);enemy_clear_power(s,t,p);}break;
   case EnemyPower::Shriek:if(loss>0&&s.enemies[t].hp<=amount){enemy_stun_to(s,t,3);enemy_clear_power(s,t,p);}break;
   default:break;
   }
  }
+ if(m.kind==EnemyId::LagavulinMatriarch&&s.enemies[t].hp<=s.enemies[t].max_hp/2)m.data[8]|=2;
  (void)blocked;q.flush();
 }
 static void enemy_after_player_attack(State&s){
@@ -145,12 +151,14 @@ static void enemy_after_player_attack(State&s){
   s.enemy_world.turn_attacks[t]=0;
  }
 }
-static void enemy_side_start(State&s,bool player){
+static void enemy_side_start(State&s,bool player,bool prepare){
  if(!s.enemy_world.active)return;auto&w=s.enemy_world;w.side=(uint8_t)!player;w.actor=255;
  int order[MaxEnemies];unsigned n=enemy_ordered_slots(s,order);
  for(unsigned i=0;i<n;++i){int t=order[i];enemy_aux(s,t,EnemyPower::HardenedShell)=0;w.turn_damage[t]=w.turn_attacks[t]=0;}
  if(player){w.cards_played_turn=w.bound_draws_turn=0;w.bound_played=w.used_types=0;
-  for(unsigned i=0;i<n;++i){int t=order[i];auto&m=w.models[t];
+  // Extra player turns run side-start powers but do not prepare or re-roll
+  // monsters. Their pending move and private RNG state remain untouched.
+  if(prepare)for(unsigned i=0;i<n;++i){int t=order[i];auto&m=w.models[t];
    if(m.data[11]){m.data[11]=0;enemy_set_move(s,t,enemy_initial_node(s,t));m.previous=m.node;}
    else if(m.age&&(!enemy_must_perform(m)||(m.flags&EnemyActed))){int next=enemy_next_node(s,t);m.flags&=(uint8_t)~(EnemyStunned|EnemyImmediate);enemy_set_move(s,t,next);}
   }
@@ -223,8 +231,8 @@ static void enemy_power_hook(State&s,int t,EnemyPower p,int stage){
  case EnemyPower::Hatch:enemy_tick(s,t,p);break;
  case EnemyPower::HighVoltage:case EnemyPower::Territorial:enemy_apply_power(s,t,EnemyPower::Strength,amount,t);break;
  case EnemyPower::Ritual:if(t>=0){if(enemy_aux(s,t,p))enemy_aux(s,t,p)=0;else enemy_apply_power(s,t,EnemyPower::Strength,amount,t);}break;
- case EnemyPower::Asleep:enemy_tick(s,t,p);break;
- case EnemyPower::Slumber:enemy_tick(s,t,p);if(!enemy_power_value(s,t,p))enemy_clear_power(s,t,EnemyPower::Plating);break;
+ case EnemyPower::Asleep:enemy_tick(s,t,p);if(!enemy_power_value(s,t,p)&&t>=0&&s.enemy_world.models[t].kind==EnemyId::LagavulinMatriarch)s.enemy_world.models[t].data[8]|=1;break;
+ case EnemyPower::Slumber:enemy_tick(s,t,p);if(!enemy_power_value(s,t,p)){enemy_clear_power(s,t,EnemyPower::Plating);if(t>=0&&s.enemy_world.models[t].kind==EnemyId::SlumberingBeetle)s.enemy_world.models[t].data[8]=1;}break;
  case EnemyPower::Nemesis:enemy_aux(s,t,p)^=1;if(enemy_aux(s,t,p))enemy_apply_power(s,t,EnemyPower::Intangible,1,t);else enemy_clear_power(s,t,EnemyPower::Intangible);break;
  case EnemyPower::Shrink:if(amount>0)enemy_tick(s,t,p);break;
  case EnemyPower::TemporaryStrength:enemy_clear_power(s,t,p);enemy_apply_power(s,t,EnemyPower::Strength,-amount,t);break;

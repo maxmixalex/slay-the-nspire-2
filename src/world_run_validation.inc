@@ -1,11 +1,12 @@
 bool world_valid_run(const State&s){
     const auto&w=s.world;
     if(w.active>1||w.rng_ready>1||w.act_index>=WorldActCount||w.ascension>10||w.room_type>uint8_t(WorldRoom::Map)||
-       w.room_open>1||w.event_combat_parent>1||w.parent_room_type>uint8_t(WorldRoom::Map)||w.final_event>1||w.finished>1||w.point_had_shop>1||w.finish_pending>1)return false;
+       w.room_open>1||w.event_combat_parent>1||w.parent_room_type>uint8_t(WorldRoom::Map)||w.final_event>1||w.finished>1||w.point_had_shop>1||w.finish_pending>1||
+       w.combat_ending>1||w.reward_rerolled>1||w.reward_can_reroll>1||(w.reward_rerolled&&w.reward_can_reroll)||w.combat_bonus_gold>9999)return false;
     if(w.rng_ready){for(const auto&r:w.rng)if(!r.good||!(r.words[0]|r.words[1]|r.words[2]|r.words[3]))return false;}
     if(!w.active)return true;
     if(!w.rng_ready||s.practice||w.total_floor>64||w.rooms_completed>w.total_floor||w.combat_count>255||s.floor!=w.total_floor)return false;
-    if(!w.map_ready[w.act_index]||w.finished!=(s.phase==Phase::Complete))return false;
+    if(!w.map_ready[w.act_index]||w.finished!=(s.phase==Phase::Complete||s.phase==Phase::Dead))return false;
     const uint32_t odds[]={w.unknown_monster_bits,w.unknown_elite_bits,w.unknown_shop_bits,w.unknown_treasure_bits,w.potion_drop_bits};
     for(auto bits:odds){Real value=world_float(bits);if(!value.finite()||value<Real::integer(-100)||Real::integer(100)<value)return false;}
     unsigned visited=0;

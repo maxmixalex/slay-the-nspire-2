@@ -48,4 +48,8 @@ struct WorldState {
     uint8_t rest_count=0,rest_options[MaxWorldRestOptions]{},rest_pending=0;
     uint32_t rest_used=0;
     uint16_t rest_deck_before=0;
+    // The original combat manager becomes inactive before AfterCombatEnd,
+    // while this engine retains its saved callback queue until rewards open.
+    uint8_t combat_ending=0,reward_rerolled=0,reward_can_reroll=0;
+    uint16_t combat_bonus_gold=0;
 };

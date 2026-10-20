@@ -35,9 +35,9 @@ void notify_deck_replaced(State&s,int index){defect_deck_replaced(s,index);necro
 void notify_deck_copied(State&s,int to,int from){defect_deck_copied(s,to,from);necro_deck_copied(s,to,from);event_card_deck_copied(s,to,from);}
 bool character_deck_description_value(const State&s,Card c,int index,const char*key,int&out){
  if(index<0||index>=s.deck_count||s.deck[index].kind!=c.kind)return false;
+ if(c.kind==DefectGeneticAlgorithm&&defect_word(key,"Block")){out=min(9999,1+s.defect.genetic_deck[index]);event_card_offer_description_value(s,c,s.event_cards.deck[index],key,out);return true;}
+ if(c.kind==NecroTheScythe&&defect_word(key,"Damage")){out=min(9999,13+s.necro.scythe_deck[index]);event_card_offer_description_value(s,c,s.event_cards.deck[index],key,out);return true;}
  if(event_card_deck_description_value(s,c,index,key,out))return true;
- if(c.kind==DefectGeneticAlgorithm&&defect_word(key,"Block")){out=min(9999,1+s.defect.genetic_deck[index]);return true;}
- if(c.kind==NecroTheScythe&&defect_word(key,"Damage")){out=min(9999,13+s.necro.scythe_deck[index]);return true;}
  return false;
 }
 static bool queue_common_token(State&s,Card c,int){

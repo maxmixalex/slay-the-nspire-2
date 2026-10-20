@@ -35,5 +35,6 @@
  B(w.shop_sale);B(w.treasure_gold_claimed);H(w.treasure_gold);
  B(w.shop_pending_item);B(w.shop_auto_active);B(w.shop_auto_cursor);B(w.shop_free_remove);H(w.shop_pending_price);
  B(w.rest_count);for(auto&v:w.rest_options)B(v);B(w.rest_pending);F(w.rest_used);H(w.rest_deck_before);
+ B(w.combat_ending);B(w.reward_rerolled);B(w.reward_can_reroll);H(w.combat_bonus_gold);
 #undef WCF
 }

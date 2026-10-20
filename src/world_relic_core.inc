@@ -73,7 +73,7 @@ static bool wr_revive(State&s){auto*r=wr_find(s,WorldRelicLizardTail);if(!s.worl
 static bool wr_extra_turn(State&s,bool commit){auto*r=wr_find(s,WorldRelicPaelsEye);if(!s.world_relics.active||!r||r->values[0]||!r->values[1]||s.world_relics.manual_plays_turn||(s.turn==1&&wr_has(s,WorldRelicWhisperingEarring)))return false;if(commit){r->values[0]=1;world_relic_flash(s,r->id);}return true;}
 static int wr_orb_value(const State&s,DOrb kind,int n){return n+(kind==DOrb::Lightning&&wr_has(s,WorldRelicInfusedCore)?1:0);}
 static int wr_orb_passive_count(State&s,int slot,int n,bool commit){if(slot==0&&wr_has(s,WorldRelicGoldPlatedCables)){if(commit)world_relic_flash(s,WorldRelicGoldPlatedCables);return n+1;}return n;}
-enum WRAction {WRA_FillPotions=1,WRA_GenerateDraw,WRA_GenerateHand,WRA_GenerateBatch,WRA_Exhaust,WRA_Discard,WRA_Draw,WRA_Strength,WRA_History,WRA_Whisper,WRA_OrbPassives,WRA_Delayed};
+enum WRAction {WRA_FillPotions=1,WRA_GenerateDraw,WRA_GenerateHand,WRA_GenerateBatch,WRA_Exhaust,WRA_Discard,WRA_Draw,WRA_Strength,WRA_History,WRA_Whisper,WRA_OrbPassives,WRA_Delayed,WRA_TransformEgg,WRA_WhisperStars,WRA_WhisperPlay};
 static int wr_frame(State&s){for(unsigned i=0;i<MaxWorldRelicHookFrames;i++)if(!s.world_relics.hook_frames[i].active)return int(i);fail(s);return -1;}
 static void wr_action(State&s,unsigned owner,int op,int a=0,int b=0){int at=wr_frame(s);if(at<0)return;auto&f=s.world_relics.hook_frames[at];f=WorldRelicHookFrame{};f.active=1;f.hook=WorldRelicHook::Internal;f.count=1;f.serials[0]=uint16_t(owner);f.args[0]=op;f.args[1]=a;f.args[2]=b;queue_extension(s,XOp::WRelicHook,at,0,true);}
 static int wr_generated(State&s,Card card,const EventCardFacts* facts,bool in_draw=false,bool free=false,bool retained=false){int id=make_card(s,card);if(id<0)return -1;if(facts)s.event_cards.cards[id]=*facts;
@@ -109,13 +109,33 @@ static void wr_internal(State&s,WorldRelicInstance&r,int op,int a,int b){switch(
  case WRA_Discard:if(wr_card(s,a)&&s.zones[a]==Zone::Hand){move_instance(s,a,s.hand,s.discard,Zone::Discard);record(s,LogKind::Discard,s.cards[a].kind);silent_card_discarded(s,a);}break;
  case WRA_Draw:wr_draw(s,a);break;case WRA_Strength:world_relic_gain_strength(s,a);break;
  case WRA_OrbPassives:if(a<s.expansion.orb_count){if(a+1<s.expansion.orb_count)wr_action(s,r.serial,op,a+1);queue_extension(s,XOp::DOrbPassive,a,-1,true);}break;
+ case WRA_TransformEgg:{auto&w=s.world_relics;
+  if(w.byrdpip_cursor==w.byrdpip_count){for(unsigned i=0;i<w.byrdpip_count;i++)w.byrdpip_cards[i]=0;w.byrdpip_count=w.byrdpip_cursor=0;w.byrdpip_present=1;break;}
+  if(w.byrdpip_cursor>w.byrdpip_count||w.byrdpip_count>MaxCards){fail(s);return;}
+  const unsigned id=w.byrdpip_cards[w.byrdpip_cursor++];if(!wr_card(s,int(id))||s.cards[id].kind!=EventCardByrdonisEgg){fail(s);return;}
+  wr_action(s,r.serial,WRA_TransformEgg);s.cards[id]={EventCardByrdSwoop,0};reset_card_modifiers(s,int(id));
+  record(s,LogKind::Transform,EventCardByrdonisEgg,EventCardByrdSwoop);notify_card_generated(s,int(id));break;}
  case WRA_History:if(wr_card(s,a)){int id=make_card(s,s.cards[a]);if(id>=0){copy_card_modifiers(s,id,a);s.zones[id]=Zone::Limbo;r.values[2]=id+1;queue_extension(s,XOp::AutoInstance,id,0,true);world_card_entered(s,id);}}break;
  case WRA_Whisper:{if(a>=13||s.turn!=1||!alive(s)){r.values[3]=0;return;}r.values[3]=1;int id=-1;
   for(unsigned i=0;i<s.hand.count;i++){int candidate=s.hand.ids[i];Card card=s.cards[candidate];int price=cost(s,candidate),stars=card_star_cost(s,card,candidate);
    if(cost(card)>=-1&&price<=s.energy&&stars<=s.expansion.stars&&silent_can_play(s,card)&&necro_can_play(s,card)&&enemy_card_can_play(s,candidate,false)&&event_card_play_allowed(s,candidate,false)&&wr_can_play(s,false)){id=candidate;break;}}
   if(id<0){r.values[3]=0;return;}int energy=cost(s,id),stars=card_star_cost(s,s.cards[id],id);energy=energy<0?s.energy:energy;stars=stars<0?s.expansion.stars:stars;
   int target=-1;if(card_targets_enemy(s,s.cards[id],id))for(int t=0;t<s.enemy_count;t++)if(enemy_allow_target(s,t)){target=t;break;}
-  wr_action(s,r.serial,op,a+1);if(!start_instance(s,id,target,true)){r.values[3]=0;return;}s.energy-=int16_t(energy);s.expansion.stars-=int16_t(stars);if(stars)world_relic_hook(s,WorldRelicHook::AfterStarsSpent,stars);break;}
+  // SpendResources is awaited before AutoPlay(skipXCapture). Keep the raw
+  // captured X amounts separate from the later automatic ResourceInfo values.
+  r.values[0]=id+1;r.values[1]=energy;r.values[2]=stars;
+  wr_action(s,r.serial,WRA_WhisperStars,a,target);
+  if(!shared_spend_card_energy(s,energy))fail(s);break;}
+ case WRA_WhisperStars:
+  if(!alive(s)){r.values[3]=0;break;}
+  wr_action(s,r.serial,WRA_WhisperPlay,a,b);
+  if(!shared_spend_card_stars(s,int(r.values[2])))fail(s);break;
+ case WRA_WhisperPlay:{
+  if(!alive(s)){r.values[3]=0;break;}
+  const int id=int(r.values[0])-1,captured_energy=int(r.values[1]),captured_stars=int(r.values[2]);
+  wr_action(s,r.serial,WRA_Whisper,a+1);
+  if(!start_instance(s,id,b,true,captured_energy,captured_stars))r.values[3]=0;
+  break;}
  default:break;}}
 static void wr_listener(State&s,WorldRelicInstance&r,WorldRelicHook hook,int a,int b,int c){auto&v=r.values;bool first=s.turn<=1;bool card=wr_card(s,a);CardType type=wr_type(s,a);auto flash=[&](){world_relic_flash(s,r.id);};
  switch(hook){
@@ -307,7 +327,16 @@ static void wr_dispatch(State&s,unsigned serial,WorldRelicHook hook,int a,int b,
  WRDispatchScope scope;
  if(hook==WorldRelicHook::Internal){wr_internal(s,s.world_relics.entries[at],a,b,c);return;}
  world_relic_run_hook(s,serial,hook,a,b,c);at=world_relic_instance_index(s,serial);if(at>=0&&wr_live(s.world_relics.entries[at]))wr_listener(s,s.world_relics.entries[at],hook,a,b,c);}
+void world_relic_schedule_acquisition(State&s){auto&w=s.world_relics;int index=-1;
+ for(unsigned i=0;i<MaxWorldRelicHookFrames;i++)if(w.hook_frames[i].active&&w.hook_frames[i].hook==WorldRelicHook::Acquisition){index=int(i);break;}
+ if(index<0){index=wr_frame(s);if(index<0)return;auto&f=w.hook_frames[index];f=WorldRelicHookFrame{};f.active=1;f.hook=WorldRelicHook::Acquisition;}
+ // Nested acquisition must precede the suspended parent's next listener.
+ // Move its existing marker instead of creating two independent pumps.
+ for(unsigned i=0;i<s.effect_count;i++)if(s.effects[i].kind==EffectKind::Extended&&s.effects[i].target==int(XOp::WRelicHook)&&s.effects[i].value==index){for(unsigned j=i+1;j<s.effect_count;j++)s.effects[j-1]=s.effects[j];s.effects[--s.effect_count]={};break;}
+ queue_extension(s,XOp::WRelicHook,index,0,true);
+}
 void world_relic_effect(State&s,int index){if(index<0||index>=int(MaxWorldRelicHookFrames))return;auto&f=s.world_relics.hook_frames[index];if(!f.active)return;
+ if(f.hook==WorldRelicHook::Acquisition){f=WorldRelicHookFrame{};world_relic_acquisition_resume(s);return;}
  while(f.active&&s.world_relics.choice==WorldRelicChoice::None&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){
   if(f.cursor==f.count){f=WorldRelicHookFrame{};return;}
   unsigned serial=f.serials[f.cursor++];auto hook=f.hook;int a=f.args[0],b=f.args[1],c=f.args[2];bool combat=combat_phase(s.phase);
@@ -339,7 +368,14 @@ void world_relic_resume(State&s){if(s.world_relics.choice!=WorldRelicChoice::Non
 void world_relic_combat_acquired(State&s,unsigned serial){if(!combat_phase(s.phase))return;int at=world_relic_instance_index(s,serial);if(at<0)return;auto&r=s.world_relics.entries[at];switch(r.id){
  case WorldRelicSneckoEye:case WorldRelicFakeSneckoEye:r.values[0]=1;break;
  case WorldRelicBeltBuckle:wr_buckle(s,r);break;case WorldRelicPaelsLegion:s.world_relics.legion_present=1;break;
- case WorldRelicByrdpip:s.world_relics.byrdpip_present=1;for(int id=0;id<s.card_count;id++)if(s.cards[id].kind==EventCardByrdonisEgg){s.cards[id]={EventCardByrdSwoop,0};reset_card_modifiers(s,id);}break;
+ case WorldRelicByrdpip:{auto&w=s.world_relics;if(w.byrdpip_count){fail(s);return;}
+  auto capture=[&](unsigned id){if(id<s.card_count&&s.cards[id].kind==EventCardByrdonisEgg){if(w.byrdpip_count>=MaxCards){fail(s);return;}w.byrdpip_cards[w.byrdpip_count++]=uint16_t(id);}};
+  for(unsigned i=0;i<s.hand.count;i++)capture(s.hand.ids[i]);
+  for(unsigned i=s.draw.count;i>0;i--)capture(s.draw.ids[i-1]);
+  for(unsigned i=0;i<s.discard.count;i++)capture(s.discard.ids[i]);
+  for(unsigned i=0;i<s.exhaust.count;i++)capture(s.exhaust.ids[i]);
+  for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo)capture(id);
+  if(w.byrdpip_count)wr_action(s,r.serial,WRA_TransformEgg);else w.byrdpip_present=1;break;}
  default:break;}}
 void world_relic_combat_select(State&s,unsigned serial,const uint16_t*ids,unsigned count){int at=world_relic_instance_index(s,serial);if(at<0)return;auto&r=s.world_relics.entries[at];
  if(r.id==WorldRelicToolbox||r.id==WorldRelicChoicesParadox){if(count){unsigned index=ids[0];if(index<s.world_relics.offer_count){Card card=card_from_token(s.world_relics.offers[index]);EventCardFacts facts=s.world_relics.offer_facts[index];wr_generated(s,card,&facts,false,false,r.id==WorldRelicChoicesParadox);}}return;}

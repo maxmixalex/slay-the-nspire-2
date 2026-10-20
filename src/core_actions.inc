@@ -126,7 +126,7 @@ static void victory_cleanup(State&s){
         Card c=s.cards[id];Zone z=card_type(s,c)==CardType::Power?Zone::Power:(card_exhausts(s,c,id)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
         put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
     }
-    ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);event_card_combat_end(s,true);
+    if(!world_shared_active(s)){ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);event_card_combat_end(s,true);}
     s.effect_count=0;s.playing=-1;s.expansion.depth=0;s.expansion.potion_active=0;s.expansion.enemy_side=0;
     s.discard_required=s.exhaust_limit=0;clear_extended_choice(s);relic_attack_end(s);s.expansion.triple=0;
     // Bounded prototype reward pool, not the original game's rarity/odds system.
@@ -140,7 +140,7 @@ static void victory_cleanup(State&s){
 }
 static void victory(State&s){
     if(s.phase==Phase::Reward||s.phase==Phase::Complete||s.phase==Phase::Dead||s.phase==Phase::Error)return;
-    if(world_shared_active(s)){if(!world_victory_pending(s))world_stage(s,WorldStage::VictoryEarly);return;}
+    if(world_shared_active(s)){if(!world_victory_pending(s)){s.world.combat_ending=1;world_stage(s,WorldStage::VictoryPlayerEnd);}return;}
     victory_cleanup(s);
 }
 static void exhaust_id(State&s,int id,bool ethereal=false){

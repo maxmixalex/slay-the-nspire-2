@@ -343,6 +343,7 @@ unsigned encounter_pool(unsigned act,EncounterClass,EncounterId*out,unsigned cap
 bool encounter_setup(State&,EncounterId,unsigned ascension=0);
 bool enemy_allow_target(const State&,int);
 bool enemy_keeps_combat_alive(const State&);
+bool enemy_visual_fact(const State&,int target,const char*key,int&value);
 int enemy_power_value(const State&,int target,EnemyPower); // -1 is the player.
 void enemy_note_ally_created(State&);
 bool enemy_encounter_timed_out(const State&);

@@ -43,6 +43,7 @@ enum class XOp:uint16_t {
 #include "world_relic_ops.inc"
  SharedCheckWeakAfterHit,SharedAfterCardBody,SharedAfflictionAfterBody,SharedAttackEnd,SharedAttackStart,SharedAttackReward,
  WorldStage,
+ SharedPlayerDamageGiven,SharedPlayerDamageReceived,SharedPlayerDamageRelics,
  Count
 };
 static_assert((unsigned)XOp::Count<32768,"Operation IDs must fit signed effect operands");

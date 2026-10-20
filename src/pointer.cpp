@@ -99,6 +99,7 @@ void App::pointer_scroll(int rows){
         // rounded back to the same page on every wheel event.
         scroll=clamp(scroll+(rows>0?10:-10),0,MaxCards);inspect_cursor=scroll;
     }
+    else if(panel==4)scroll=clamp(scroll+(rows>0?8:-8),0,int(potion_slot_count(game))-1);
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
     else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-reference::MaxRows,reference::MaxRows);
     else if(panel==5)scroll=clamp(scroll+rows,0,ui_owned_relic_count(game)?int(ui_owned_relic_count(game))-1:0);

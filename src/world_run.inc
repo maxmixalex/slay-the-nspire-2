@@ -208,7 +208,7 @@ bool world_enter_event_combat(State&s,const char*key,bool resume_parent){
 }
 bool world_finish_room(State&s){
     auto&w=s.world;if(!w.active)return false;
-    if(s.hp<=0){s.phase=Phase::Dead;original_event_finish_run(s);return true;}
+    if(s.hp<=0){w.finished=1;s.phase=Phase::Dead;original_event_finish_run(s);return true;}
     if(w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255)return false;
     if(world_relic_pending(s)||s.phase==Phase::OriginalEventChoice){w.finish_pending=1;return false;}
     w.finish_pending=0;

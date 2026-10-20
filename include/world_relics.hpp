@@ -15,7 +15,7 @@ enum WorldRelicModel:RelicId {
 static_assert(WorldRelicKinds<=WorldRelicCapacity,"Relic model registry exceeds bounded storage");
 enum class WorldRelicPool:uint8_t { Reward,Starter,Common,Uncommon,Rare,Shop,Event,Ancient };
 enum class WorldRelicChoice:uint8_t { None,Remove,Upgrade,Transform,Duplicate,Enchant,OfferCard,OfferBundle,OfferReward,Potion,Hand,CombatOffer,Count };
-enum class WorldRelicOp:uint8_t { None,Obtain,Damage,Heal,MaxHp,Gold,AddCard,Select,CardReward,PotionReward,RelicReward,RandomUpgrade,TransformBasic,RemoveKind,EnchantAll,Finish,RewardGroup,Special,Count };
+enum class WorldRelicOp:uint8_t { None,Obtain,Damage,Heal,MaxHp,Gold,AddCard,Select,CardReward,PotionReward,RelicReward,RandomUpgrade,TransformBasic,RemoveKind,EnchantAll,Finish,RewardGroup,Special,RestoreCard,ApplyChoice,ProcurePotion,DiscardPotion,TransformAppend,Count };
 enum class WorldRelicHook:uint8_t {
  BeforeCombatStart,BeforeCombatStartLate,BeforeSideTurnStart,AfterSideTurnStart,
  BeforeHandDraw,AfterHandDraw,AfterHandDrawLate,BeforeSideTurnEndVeryEarly,
@@ -28,7 +28,7 @@ enum class WorldRelicHook:uint8_t {
  AfterPotionProcured,AfterPotionDiscarded,AfterRoomEntered,AfterRest,
  AfterGoldGained,AfterItemPurchased,AfterDeckAdded,AfterDeckRemoved,
  AfterEnergyReset,AfterEnergyResetLate,AfterFlush,AfterDiedToDoom,
- AfterAutoPrePlay,AfterAutoPrePlayLate,AfterCardEnteredCombat,Internal,Count
+ AfterAutoPrePlay,AfterAutoPrePlayLate,AfterCardEnteredCombat,Internal,Acquisition,Count
 };
 enum WorldRelicFlags:uint8_t { WorldRelicWax=1,WorldRelicMelted=2,WorldRelicDisabled=4 };
 struct WorldRelicDefinition {const char* key;const char* model;uint8_t rarity,character_mask,flags;};
@@ -48,16 +48,24 @@ RelicId world_relic_pull_shared(State&,WorldRelicPool);
 bool world_relic_pending(const State&);
 bool world_relic_select(State&,const uint16_t*,unsigned count);
 bool world_relic_potion(State&,int slot); // -1 returns to the containing reward set.
+bool world_relic_can_reroll_reward(const State&);
+bool world_relic_reroll_reward(State&);
 unsigned world_relic_eligible(const State&,uint16_t* out,unsigned capacity);
 void init_world_relics(State&);
 void world_relic_hook(State&,WorldRelicHook,int a=0,int b=0,int c=0);
 void world_relic_effect(State&,int frame_index);
 void world_relic_resume(State&);
+// A saved combat continuation yields to every callback emitted by one pickup
+// step before the next pickup step can execute.
+void world_relic_schedule_acquisition(State&);
+void world_relic_acquisition_resume(State&);
 bool world_relic_replace(State&,unsigned serial,RelicId);
 int world_relic_counter(const State&,RelicId);
 // Per owned instance, including duplicates. Returns the stable original counter
 // visibility/value; activation-flash animation is separate presentation state.
 bool world_relic_display(const State&,unsigned position,int& amount);
+// Original disabled presentation is not a blanket listener-disable flag.
+bool world_relic_disabled(const State&,unsigned position);
 bool world_relic_description_value(const State&,RelicId,const char* key,int& amount,int position=-1);
 bool world_relic_description_reference(const State&,RelicId,const char* key,OriginalTextReference&,int position=-1,unsigned item=0);
 unsigned world_relic_description_reference_count(const State&,RelicId,const char* key,int position=-1);

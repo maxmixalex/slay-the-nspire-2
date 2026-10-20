@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "original_events.hpp"
 namespace spire {
 static int cap(int a,int b){return a<b?a:b;}
 bool potion_in_pool(Potion p,Character c){
@@ -77,7 +78,10 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::GhostInAJar:pw(XPower::Intangible,1);break;
  case Potion::CunningPotion:op(XOp::Create,3,Shiv+256);break;
  case Potion::Ambergris:heal(s,s.max_hp/2);if(s.phase==Phase::Combat&&x.skip_enemy<255)++x.skip_enemy;break;
- case Potion::FoulPotion:if(s.phase==Phase::Shop)gain_gold(s,100);else{op(XOp::AllDamage,12);op(XOp::PlayerDamage,12);}break;
+ case Potion::FoulPotion:
+  if(s.phase==Phase::Shop)gain_gold(s,100);
+  else if(original_event_can_use_foul(s))original_event_foul_potion(s);
+  else{op(XOp::AllDamage,12);op(XOp::PlayerDamage,12);}break;
  case Potion::GlowwaterPotion:op(XOp::ExhaustHand);op(XOp::Draw,10);break;
  case Potion::PotionShapedRock:damage_unpowered(s,t,15);break;
  case Potion::BoneBrew:op(XOp::Summon,15);break;

@@ -227,18 +227,21 @@ static void regent_card_generated(State&s,int id){
   if(p==RPower::PillarOfCreation)queue_extension(s,XOp::RUnpoweredBlock,rpower(s,p),0,true);
  }
 }
-static void regent_begin_play(State&s,int id,bool automatic,int energy_spent,int stars_spent){
- auto&r=s.regent;unsigned depth=s.expansion.depth;r.automatic[depth]=(uint8_t)automatic;r.stars_spent[depth]=(int16_t)stars_spent;
- r.star_x[depth]=(int16_t)(automatic?s.expansion.stars:stars_spent);
- if(id>=0&&id<s.card_count&&regent_base_star_cost(s.cards[id])<0)r.star_x[depth]=(int16_t)wr_x_value(s,r.star_x[depth]);
- // These hooks finish before the card's BeforeCardPlayed hooks.
- // Front insertion reverses call order: SpendResources completes energy
- // spending (including Orbit) before it starts spending stars.
- if(stars_spent>0&&rpower(s,RPower::ChildOfTheStars))queue_extension(s,XOp::RUnpoweredBlock,min(9999,stars_spent*rpower(s,RPower::ChildOfTheStars)),0,true);
- if(energy_spent>0)for(int at=MaxPowerInstances-1;at>=0;--at)if(r.orbit[at]){
+static void regent_energy_spent(State&s,int energy_spent){
+ auto&r=s.regent;if(energy_spent>0)for(int at=MaxPowerInstances-1;at>=0;--at)if(r.orbit[at]){
   int amount=r.orbit_remainder[at]+energy_spent;int triggers=amount/4;r.orbit_remainder[at]=(uint8_t)(amount%4);
   if(triggers)enqueue(s,EffectKind::Energy,min(999,r.orbit[at]*triggers),0,true);
  }
+}
+static void regent_stars_spent(State&s,int stars_spent){
+ if(stars_spent>0&&rpower(s,RPower::ChildOfTheStars))queue_extension(s,XOp::RUnpoweredBlock,min(9999,stars_spent*rpower(s,RPower::ChildOfTheStars)),0,true);
+}
+static void regent_begin_play(State&s,int id,bool automatic,int energy_spent,int stars_spent,int captured_star_x){
+ auto&r=s.regent;unsigned depth=s.expansion.depth;r.automatic[depth]=(uint8_t)automatic;r.stars_spent[depth]=(int16_t)stars_spent;
+ r.star_x[depth]=(int16_t)(automatic?(captured_star_x>=0?captured_star_x:s.expansion.stars):stars_spent);
+ if(id>=0&&id<s.card_count&&regent_base_star_cost(s.cards[id])<0)r.star_x[depth]=(int16_t)wr_x_value(s,r.star_x[depth]);
+ // Front insertion preserves energy callbacks before star callbacks.
+ regent_stars_spent(s,stars_spent);regent_energy_spent(s,energy_spent);
 }
 static void regent_before_card(State&s,Card){
  auto&r=s.regent;unsigned depth=s.expansion.depth;
@@ -322,7 +325,10 @@ static void regent_player_side_end(State&s){
 }
 static void regent_enemy_side_end(State&s){for(auto&v:s.regent.conqueror)if(v)--v;}
 static void regent_combat_end(State&s,bool won){
- auto&r=s.regent;if(won&&rpower(s,RPower::Royalties))gain_gold(s,rpower(s,RPower::Royalties));
+ auto&r=s.regent;if(won&&rpower(s,RPower::Royalties)){
+  if(s.world.active)s.world.combat_bonus_gold=uint16_t(min(9999,int(s.world.combat_bonus_gold)+rpower(s,RPower::Royalties)));
+  else gain_gold(s,rpower(s,RPower::Royalties));
+ }
  r.end_turn_requested=0;for(unsigned d=0;d<=MaxAutoFrames;d++){r.stars_spent[d]=r.star_x[d]=0;r.automatic[d]=0;for(unsigned at=0;at<MaxPowerInstances;at++)r.monologue_capture[at][d]=0;}
 }
 

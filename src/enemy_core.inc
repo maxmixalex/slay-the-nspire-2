@@ -282,6 +282,7 @@ EnemyIntent enemy_intent(const State&s,int t){
  return {d->key,d->flags,(int16_t)min(9999,(d->flags&EnemyIntentAttack)?enemy_attack_value(s,t,enemy_raw_move_damage(s,t,m.node)):0),(int16_t)hits};
 }
 #include "enemy_encounters.inc"
+#include "enemy_visuals.inc"
 #include "enemy_moves.inc"
 #include "enemy_death.inc"
 #include "enemy_hooks.inc"

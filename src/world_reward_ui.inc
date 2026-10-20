@@ -8,7 +8,9 @@ static void native_reward_screen(Canvas&c){
    if(count<=3)large_card(c,card,x,y,a.cursor==i,-2,-2,-1,-1,&facts);else small_card(c,card,x,y,a.cursor==i,true,0,-2,-2,-1,-1,&facts);
    c.hit(x-3,y-3,count<=3?86:53,count<=3?118:71,HitKind::Choice,i);
   }
-  if(world_card_reward_alternatives(s)&1){c.button("献祭牌奖励",99,189,123,false,20);c.action(96,187,129,23,UiAction::SacrificeReward);}
+  unsigned alternatives=world_card_reward_alternatives(s);
+  if(alternatives&1){c.button("献祭牌奖励",18,189,133,false,20);c.action(16,187,137,23,UiAction::SacrificeReward);}
+  if(alternatives&2){c.button("重掷",169,189,133,false,20);c.action(167,187,137,23,UiAction::RerollReward);}
   c.button("详情 I",14,211,91,false,25);c.hit(10,207,99,31,HitKind::Command,(int)Key::Detail,a.cursor<count);
   c.ui(U_RewardSkip,211,211,92,25);c.centered("跳过",211,213,92,12,a.cursor==count?Gold:White);c.hit(207,207,104,31,HitKind::Choice,count);return;
  }
@@ -19,7 +21,7 @@ static void native_reward_screen(Canvas&c){
    case UiAction::RewardGold:claimed=s.reward_claimed&1;image=a.content.ui_image(U_RewardGold);t.number(s.last_gold);t.text(" 金币");break;
    case UiAction::RewardCards:claimed=s.reward_claimed&2;available=s.world.reward_count!=0;image=a.content.ui_image(U_RewardCard);t.text("选择一张牌");break;
    case UiAction::RewardPotion:claimed=s.reward_claimed&4;available=s.reward_potion!=Potion::Empty;image=a.content.potion_image(s.reward_potion);if(const auto*d=potion_definition(s.reward_potion))t.text(d->name);else t.text("没有药水掉落");break;
-   case UiAction::RewardRelic:claimed=s.world.reward_relic_claimed;image=a.content.relic_image(s.world.reward_relic);t.text(a.relic_title(s.world.reward_relic));break;
+   case UiAction::RewardRelic:claimed=s.world.reward_relic_claimed;image=a.relic_face_image(s.world.reward_relic);t.text(a.relic_title(s.world.reward_relic));break;
    case UiAction::RewardGrimoire:image=a.content.ui_image(U_NecroPowerStart+(int)NPower::ForbiddenGrimoire);t.text("魔典移牌 × ");t.number(s.necro.grimoire_pending);break;
    default:break;
   }

@@ -23,7 +23,7 @@
   H(snapshot.genetic);H(snapshot.scythe);
  }
  B(e.reward_active);H(e.reward_count);H(e.reward_current);H(e.reward_card_count);
- for(auto&r:e.rewards){B(r.kind);B(r.claimed);H(r.first);B(r.count);H(r.model);H(r.amount);}
+ for(auto&r:e.rewards){B(r.kind);B(r.claimed);H(r.first);B(r.count);H(r.model);H(r.amount);B(r.flags);B(r.original_count);B(r.type_mask);B(r.zero_energy);H(r.rarity_mask);H(r.creation_flags);for(auto&pool:r.pools)B(pool);B(r.pool_count);B(r.odds);B(r.source);}
  for(auto&card:e.reward_cards)H(card);
  for(auto&f:e.reward_facts){B(f.enchantment);B(f.science_type);B(f.rider);H(f.enchantment_amount);H(f.energy_offset);H(f.progress);}
  B(e.combat_pending);B(e.resume_after_combat);H(e.encounter);

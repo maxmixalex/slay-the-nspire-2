@@ -1,11 +1,12 @@
 // Card model text comes from the private reference pack. Values are resolved
 // against the selected instance, not whichever equal model was last played.
-void App::card_description(Card c,int t,char*out,size_t cap,int instance,int deck_index)const{
+void App::card_description(Card c,int t,char*out,size_t cap,int instance,int deck_index,const EventCardFacts*facts)const{
     if(!cap)return;out[0]=0;if(c.kind>=CardKinds)return;
-    if(c.kind>=EventCardBadLuck){world_card_description(c,t,out,cap,instance,deck_index,detail_has_facts&&detail_card==card_token(c)?&detail_facts:nullptr);return;}
+    if(!facts&&detail_has_facts&&detail_card==card_token(c))facts=&detail_facts;
+    if(c.kind>=EventCardBadLuck){world_card_description(c,t,out,cap,instance,deck_index,facts);return;}
     TextBuffer b{out,cap,0};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
     const bool permanent=!library&&deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==c.kind;
-    const bool live=!library&&!permanent&&combat_phase(game.phase);
+    const bool live=!library&&!permanent&&!(facts&&instance<0)&&combat_phase(game.phase);
     while(*p){
         if(*p=='\x1c'){++p;if(!live||t<0||t>=game.enemy_count||!game.enemies[t].hp){while(*p&&*p!='\x1d')++p;}continue;}
         if(*p=='\x1d'){++p;continue;}
@@ -23,6 +24,7 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance,int dec
                 if(digits&&*q=='}'){
                     if(negative)value=-value;
                     if(permanent)character_deck_description_value(game,c,deck_index,variable,value);
+                    if(!live&&!permanent&&facts)event_card_offer_description_value(game,c,*facts,variable,value);
                     if(!live||character_description_value(game,c,t,instance,variable,value)){b.number(value);p=q+1;continue;}
                     while(start<=q)b.ch(*start++);p=q+1;continue;
                 }
@@ -41,6 +43,7 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance,int dec
             case 'p':value=d.power+(c.upgraded?d.power_up:0);break;
             default:b.ch(*p++);continue;
             }
+            if(!live&&!permanent&&facts&&(p[1]=='d'||p[1]=='b'))event_card_offer_description_value(game,c,*facts,p[1]=='d'?"Damage":"Block",value);
             b.number(value);p+=3;
         }else b.ch(*p++);
     }
@@ -58,4 +61,5 @@ void App::card_description(Card c,int t,char*out,size_t cap,int instance,int dec
         if(game.necro.ethereal[instance]&&!(keywords&8))b.text("\n[gold]虚无。[/gold]");
         if(game.expansion.replay[instance]){b.text("\n[gold]重放 ");b.number(game.expansion.replay[instance]);b.text("。[/gold]");}
     }
+    card_modifier_text(c,out,cap,instance,deck_index,facts);
 }

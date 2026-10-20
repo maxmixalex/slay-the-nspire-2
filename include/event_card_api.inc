@@ -22,4 +22,8 @@ int event_card_spoils_act(const State&);
 bool event_card_forces_historian(const State&,unsigned act_index);
 void event_card_before_room(State&,bool unknown_point,bool first_room_at_point);
 bool event_card_description_value(const State&,Card,int target,int instance,const char*,int&);
+// Detached offers have no combat instance or deck slot. Damage/Block take the
+// canonical value in/out; EnergyCost and CardType return their complete value.
+// This applies permanent facts only and never mutates state or draws RNG.
+bool event_card_offer_description_value(const State&,Card,const EventCardFacts&,const char*,int&);
 bool event_card_deck_description_value(const State&,Card,int deck_index,const char*,int&);

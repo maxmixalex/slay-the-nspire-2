@@ -13,7 +13,8 @@ enum class WorldStage:uint8_t {
  EnemyBeforeEndEarly,EnemyBeforeEnd,EnemyEndPowers,EnemyEndRelics,EnemyAfterEnd,
  NextPlayer,VictoryEarly,VictoryNormal,VictoryEnd,VictoryCleanup,
  BeforeCardRelics,BeforeCardCards,DrawRelics,DrawCards,DrawEnemies,
- StarsSpent,HandEmptied,OrbPassive,Count
+ StarsSpent,HandEmptied,OrbPassive,VictoryPlayerEnd,VictoryPowerClear,
+ PlayerDeath,AutoPotionUsed,SetMaxHp,GambitKill,Count
 };
 static void world_stage(State&,WorldStage,int value=0,bool first=true);
 static void world_shared_effect(State&,WorldStage,int);
@@ -22,3 +23,8 @@ static void victory_cleanup(State&);
 static void before_current_cards(State&);
 static bool world_victory_pending(const State&);
 static void world_card_entered(State&,int);
+static bool revive(State&);
+static void death_cleanup(State&);
+static void enemy_player_damage_given(State&,int dealer,int actual_loss);
+static bool shared_spend_card_energy(State&,int amount);
+static bool shared_spend_card_stars(State&,int amount);

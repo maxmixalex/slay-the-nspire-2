@@ -77,18 +77,25 @@ bool event_card_enchant(State&s,int deck,EventEnchantment e,int amount){
 }
 int event_add_deck_card(State&s,Card c,const EventCardFacts*facts){
  if(c.kind>=CardKinds||c.upgraded>1||s.deck_count>=MaxDeck)return -1;
- int index=s.deck_count++;s.deck[index]=c;notify_deck_replaced(s,index);s.event_cards.deck[index]=facts?*facts:ec_default(c);
+ EventCardFacts added=facts?*facts:ec_default(c);if(!world_relic_modify_deck_card(s,c,added))return -1;
+ int index=s.deck_count++;s.deck[index]=c;notify_deck_replaced(s,index);s.event_cards.deck[index]=added;
  record(s,LogKind::Reward,c.kind,c.upgraded);world_relic_hook(s,WorldRelicHook::AfterDeckAdded,index);return index;
 }
-static bool ec_remove_deck(State&s,int index,bool hooks){
+static bool ec_remove_deck(State&s,int index,bool hooks,bool log=true){
  if(index<0||index>=s.deck_count)return false;Card removed=s.deck[index];
  notify_deck_removed(s,index);for(int i=index+1;i<s.deck_count;++i)s.deck[i-1]=s.deck[i];s.deck[--s.deck_count]={};
- record(s,LogKind::Remove,removed.kind);if(hooks)world_relic_hook(s,WorldRelicHook::AfterDeckRemoved,removed.kind,index);return true;
+ if(log)record(s,LogKind::Remove,removed.kind);if(hooks)world_relic_hook(s,WorldRelicHook::AfterDeckRemoved,removed.kind,index);return true;
 }
 bool event_remove_deck_card(State&s,int index){return index>=0&&index<s.deck_count&&card_removable(s,s.deck[index],index)&&ec_remove_deck(s,index,true);}
 bool event_replace_deck_card(State&s,int index,Card c,const EventCardFacts*facts){
- if(index<0||index>=s.deck_count||c.kind>=CardKinds||!card_transformable(s,s.deck[index],index))return false;
- Card old=s.deck[index];notify_deck_replaced(s,index);s.deck[index]=c;s.event_cards.deck[index]=facts?*facts:ec_default(c);record(s,LogKind::Transform,old.kind,c.kind);return true;
+ if(index<0||index>=s.deck_count||c.kind>=CardKinds||c.upgraded>1||!card_transformable(s,s.deck[index],index))return false;
+ // CardCmd.Transform removes the original before applying deck modifiers,
+ // then appends the replacement. Removal is internal, not a remove-card hook.
+ EventCardFacts added=facts?*facts:ec_default(c);const Card old=s.deck[index];
+ if(!ec_remove_deck(s,index,false,false))return false;
+ if(!world_relic_modify_deck_card(s,c,added)){fail(s);return false;}
+ const int appended=s.deck_count++;s.deck[appended]=c;notify_deck_replaced(s,appended);s.event_cards.deck[appended]=added;
+ record(s,LogKind::Transform,old.kind,c.kind);world_relic_hook(s,WorldRelicHook::AfterDeckAdded,appended);return true;
 }
 bool event_take_deck_card(State&s,int index,EventDeckSnapshot&snap){
  if(index<0||index>=s.deck_count)return false;snap={s.deck[index],s.event_cards.deck[index],s.defect.genetic_deck[index],s.necro.scythe_deck[index]};return ec_remove_deck(s,index,false);
@@ -104,7 +111,13 @@ bool event_card_spoils_complete(State&s,int deck){
 int event_card_spoils_act(const State&s){for(unsigned i=0;i<s.deck_count;++i)if(s.deck[i].kind==EventCardSpoilsMap)return s.event_cards.deck[i].progress;return -1;}
 bool event_card_forces_historian(const State&s,unsigned act){if(act!=2)return false;for(unsigned i=0;i<s.deck_count;++i)if(s.deck[i].kind==EventCardLanternKey)return true;return false;}
 void event_card_before_room(State&s,bool unknown,bool first){
- if(!unknown||!first)return;for(unsigned i=0;i<s.deck_count;++i)if(s.deck[i].kind==EventCardDowsing&&++s.event_cards.deck[i].progress>=5)event_replace_deck_card(s,i,{EventCardAbundance,0});
+ if(!unknown||!first)return;
+ // Appended replacements (and BingBong copies) are not part of this hook's
+ // initial deck snapshot; adjacent original rods must both advance once.
+ for(unsigned i=0,remaining=s.deck_count;remaining&&i<s.deck_count;--remaining){
+  if(s.deck[i].kind==EventCardDowsing&&++s.event_cards.deck[i].progress>=5&&event_replace_deck_card(s,int(i),{EventCardAbundance,0}))continue;
+  ++i;
+ }
 }
 static void event_card_reset(State&s,int id){if(id<0||id>=MaxCards)return;auto&v=s.event_cards;v.cards[id]=ec_default(id<s.card_count?s.cards[id]:Card{});v.deck_origin[id]=0;v.enchantment_disabled[id]=0;v.momentum[id]=v.maul_damage[id]=0;}
 static void event_card_created(State&s,int id){event_card_reset(s,id);}
@@ -125,14 +138,18 @@ static int event_card_base_block(const State&s,Card c,int id,int base){
  if(c.kind==EventCardStack)return min(9999,int(s.discard.count)+(c.upgraded?3:0));
  if(c.kind==EventCardMadScience)return card_type(s,c,id)==CardType::Skill?8:0;return base;
 }
-static int event_enchantment_damage_add(const State&s,Card c,int id){
- const auto*f=event_card_facts(s,c,id);if(!f)return 0;
- switch(f->enchantment){case EventEnchantment::Sharp:return f->enchantment_amount;case EventEnchantment::TezcatarasEmber:return 3;
- case EventEnchantment::Vigorous:return id>=0&&!s.event_cards.enchantment_disabled[id]?f->enchantment_amount:0;
- case EventEnchantment::Momentum:return id>=0?s.event_cards.momentum[id]:0;default:return 0;}
+static int ec_fact_damage_add(const EventCardFacts&f,bool vigorous,int momentum){
+ switch(f.enchantment){case EventEnchantment::Sharp:return f.enchantment_amount;case EventEnchantment::TezcatarasEmber:return 3;
+ case EventEnchantment::Vigorous:return vigorous?f.enchantment_amount:0;
+ case EventEnchantment::Momentum:return momentum;default:return 0;}
 }
-static int event_enchantment_damage_halves(const State&s,Card c,int id){auto e=ec_enchantment(s,c,id);return e==EventEnchantment::Corrupted?3:e==EventEnchantment::Instinct?4:2;}
-static int event_enchantment_block_add(const State&s,Card c,int id){const auto*f=event_card_facts(s,c,id);return !f?0:f->enchantment==EventEnchantment::Nimble?f->enchantment_amount:f->enchantment==EventEnchantment::Goopy?f->enchantment_amount-1:0;}
+static int ec_fact_damage_halves(const EventCardFacts&f){return f.enchantment==EventEnchantment::Corrupted?3:f.enchantment==EventEnchantment::Instinct?4:2;}
+static int ec_fact_block_add(const EventCardFacts&f){return f.enchantment==EventEnchantment::Nimble?f.enchantment_amount:f.enchantment==EventEnchantment::Goopy?f.enchantment_amount-1:0;}
+static int event_enchantment_damage_add(const State&s,Card c,int id){
+ const auto*f=event_card_facts(s,c,id);return f?ec_fact_damage_add(*f,id>=0&&!s.event_cards.enchantment_disabled[id],id>=0?s.event_cards.momentum[id]:0):0;
+}
+static int event_enchantment_damage_halves(const State&s,Card c,int id){const auto*f=event_card_facts(s,c,id);return f?ec_fact_damage_halves(*f):2;}
+static int event_enchantment_block_add(const State&s,Card c,int id){const auto*f=event_card_facts(s,c,id);return f?ec_fact_block_add(*f):0;}
 static int event_card_replays(const State&s,int id){if(id<0||id>=s.card_count)return 0;auto e=s.event_cards.cards[id].enchantment;return e==EventEnchantment::Spiral||(e==EventEnchantment::Glam&&!s.event_cards.enchantment_disabled[id]);}
 static bool event_card_play_allowed(const State&s,int id,bool automatic){
  if(id<0||id>=s.card_count)return false;
@@ -343,17 +360,22 @@ bool event_card_description_value(const State&s,Card c,int target,int instance,c
  if(c.kind==EventCardMadScience){const auto*f=event_card_facts(s,c,instance);if(ec_word(key,"TinkerTimeType")){out=f?f->science_type:0;return true;}if(ec_word(key,"TinkerTimeRider")){out=f?f->rider:0;return true;}}
  return false;
 }
-bool event_card_deck_description_value(const State&s,Card c,int deck,const char*key,int&out){
- if(deck<0||deck>=s.deck_count||s.deck[deck].kind!=c.kind)return false;
- const auto&f=s.event_cards.deck[deck];
+bool event_card_offer_description_value(const State&,Card c,const EventCardFacts&f,const char*key,int&out){
+ if(c.kind>=CardKinds||c.upgraded>1||!key)return false;
+ if(ec_word(key,"EnergyCost")){out=cost(c);if(out>=0)out=max(0,out+f.energy_offset);return true;}
+ if(ec_word(key,"CardType")){out=int(c.kind==EventCardMadScience?CardType(f.science_type):definitions[c.kind].type);return true;}
  if((c.kind==EventCardGuilty&&ec_word(key,"Combats"))||(c.kind==EventCardDowsing&&ec_word(key,"Rooms"))){out=max(0,5-f.progress);return true;}
- if(c.kind==EventCardMadScience&&ec_word(key,"Block")){out=f.science_type==1?8:0;return true;}
  if(c.kind==EventCardMadScience&&ec_word(key,"TinkerTimeType")){out=f.science_type;return true;}
  if(c.kind==EventCardMadScience&&ec_word(key,"TinkerTimeRider")){out=f.rider;return true;}
- if(ec_word(key,"Damage")&&definitions[c.kind].damage){out=definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
-  if(f.enchantment==EventEnchantment::Sharp||f.enchantment==EventEnchantment::Vigorous)out+=f.enchantment_amount;
-  if(f.enchantment==EventEnchantment::TezcatarasEmber)out+=3;
-  if(f.enchantment==EventEnchantment::Corrupted)out=out*3/2;if(f.enchantment==EventEnchantment::Instinct)out*=2;return true;}
- if(ec_word(key,"Block")&&(definitions[c.kind].block||c.kind==EventCardStack)){out=definitions[c.kind].block+(c.upgraded?definitions[c.kind].block_up:0);if(f.enchantment==EventEnchantment::Nimble)out+=f.enchantment_amount;if(f.enchantment==EventEnchantment::Goopy)out+=f.enchantment_amount-1;return true;}
+ for(const auto&v:ec_variables)if(c.kind==v.kind&&ec_word(key,v.key)){out=v.base+(c.upgraded?v.upgrade:0);return true;}
+ if(ec_word(key,"Damage")){out=max(0,(out+ec_fact_damage_add(f,true,0))*ec_fact_damage_halves(f)/2);return true;}
+ if(ec_word(key,"Block")||ec_word(key,"CalculatedBlock")){out=max(0,out+ec_fact_block_add(f));return true;}
  return false;
+}
+bool event_card_deck_description_value(const State&s,Card c,int deck,const char*key,int&out){
+ if(deck<0||deck>=s.deck_count||s.deck[deck].kind!=c.kind)return false;
+ if(ec_word(key,"Damage")&&definitions[c.kind].damage)out=definitions[c.kind].damage+(c.upgraded?definitions[c.kind].damage_up:0);
+ else if((ec_word(key,"Block")||ec_word(key,"CalculatedBlock"))&&(definitions[c.kind].block||c.kind==EventCardStack))out=definitions[c.kind].block+(c.upgraded?definitions[c.kind].block_up:0);
+ else if(c.kind==EventCardMadScience&&(ec_word(key,"Block")||ec_word(key,"CalculatedBlock")))out=8;
+ return event_card_offer_description_value(s,c,s.event_cards.deck[deck],key,out);
 }

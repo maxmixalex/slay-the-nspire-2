@@ -34,7 +34,7 @@ enum class OriginalEventFilter:uint8_t {
 enum class OriginalEventOp:uint8_t {
  None,Damage,Heal,MaxHp,Gold,AddCard,AddCurse,GainRelic,LoseRelic,Potion,
  Select,RandomUpgrade,RandomTransform,CardReward,RandomRelic,RandomPotion,
- Combat,Rest,Finish,Page,Continue,EnchantAll,RemoveKind,Special,Count
+ Combat,Rest,Finish,Page,Continue,EnchantAll,RemoveKind,Special,ProcurePotion,KillPlayer,Count
 };
 struct OriginalEventStep {
  OriginalEventOp op=OriginalEventOp::None;
@@ -47,6 +47,11 @@ struct CrystalItemState {
 struct OriginalEventReward {
  uint8_t kind=0,claimed=0,count=0; // gold, potion, relic, card reward
  uint16_t first=0,model=0,amount=0;
+ // CardReward keeps the creation request for Driftwood, not its old options.
+ // flags: subscribed, upgrade after generation, can reroll, rerolled, event RNG.
+ uint8_t flags=0,original_count=0,type_mask=0,zero_energy=0;
+ uint16_t rarity_mask=0,creation_flags=0;
+ uint8_t pools[11]{},pool_count=0,odds=0,source=0;
 };
 struct OriginalEventState {
  OriginalEventId id=OriginalEventId::None;

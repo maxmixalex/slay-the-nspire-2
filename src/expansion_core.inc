@@ -1,6 +1,5 @@
 // A serialized continuation queue allows potions, automatic card plays and
 // ordinary card plays to suspend in the same instance-based selection UI.
-static bool start_instance(State&,int,int,bool);
 static void queue_current(State&);
 static void extension_effect(State&,Effect);
 static void finish_extended_card(State&);
@@ -420,7 +419,7 @@ static void queue_card_body(State&s){
  int added=s.effect_count-old;
  if(old&&added){Effect temp[MaxEffects];for(int i=0;i<added;i++)temp[i]=s.effects[old+i];for(int i=old-1;i>=0;i--)s.effects[i+added]=s.effects[i];for(int i=0;i<added;i++)s.effects[i]=temp[i];}
 }
-static bool start_instance(State&s,int id,int target,bool automatic){
+static bool start_instance(State&s,int id,int target,bool automatic,int captured_x,int captured_star_x){
  if(id<0||id>=s.card_count||!alive(s)||s.hp<=0)return false;
  Card c=s.cards[id];if(c.kind>=CardKinds)return false;const auto&d=definitions[c.kind];auto&x=s.expansion;
  if(!wr_can_play(s,automatic)||!enemy_card_can_play(s,id,automatic)||!event_card_play_allowed(s,id,automatic))return false;
@@ -450,7 +449,9 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  }
  if(automatic&&x.depth==MaxAutoFrames){fail(s);return false;}
  if(automatic)x.frames[x.depth++]={s.playing,x.target,x.x,x.last_damage,s.attack_vigor,x.remaining,s.double_attack,x.triple,x.returning};
- int energy=resource_energy;
+ // Paid AutoPlay(skipXCapture:true) retains the card's previous X captures,
+ // while ResourceInfo.EnergyValue still reads its current post-payment cost.
+ int energy=automatic&&captured_x>=0&&cost(c)==-1?captured_x:resource_energy;
  if(source)remove(*source,at);s.zones[id]=Zone::Limbo;s.playing=(int16_t)id;s.energy-=(int16_t)spent;x.stars-=(int16_t)stars_spent;
  x.x=(int16_t)(cost(c)==-1?wr_x_value(s,energy):energy);x.target=(int16_t)target;x.last_drawn=-1;x.remaining=x.replay[id];
  s.attack_vigor=0;s.double_attack=0;x.triple=0;
@@ -460,7 +461,7 @@ static bool start_instance(State&s,int id,int target,bool automatic){
  x.remaining=(uint16_t)min(9999,wr_play_count(s,id,x.remaining+1,true)-1);
  defect_play_start(s,id,resource_energy,automatic,spent);necro_start_instance(s,id,resource_energy);
  event_card_prepare_play(s,id,card_type(s,c,id)!=CardType::Power&&!card_exhausts(s,c,id)&&!ironclad_exhausts(s,id)&&!x.returning&&!regent_returns_to_hand(s,id)&&!defect_returns_to_hand(s,id));
- queue_current(s);if(stars_spent)world_stage(s,WorldStage::StarsSpent,stars_spent);regent_begin_play(s,id,automatic,spent,stars_spent);return true;
+ queue_current(s);if(stars_spent)world_stage(s,WorldStage::StarsSpent,stars_spent);regent_begin_play(s,id,automatic,spent,stars_spent,captured_star_x);return true;
 }
 bool can_play_card(const State&s,int id){
  if(s.phase!=Phase::Combat||s.effect_count||s.playing>=0||id<0||id>=s.card_count||s.zones[id]!=Zone::Hand)return false;

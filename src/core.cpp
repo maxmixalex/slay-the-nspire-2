@@ -43,6 +43,12 @@ namespace spire {
 #include "extension_effect_validation.inc"
 #include "state_validation.inc"
 #include "state_codec.inc"
+void before_potion_use(State&s,Potion potion,int target){
+    const auto* definition=potion_definition(potion);
+    // Callers may retain a selected enemy for self/all-enemy bottles. Only a
+    // genuinely targeted potion turns the Surrounded player's facing.
+    enemy_before_potion(s,definition&&definition->targeted?target:-1);
+}
 bool character_description_value(const State&s,Card c,int target,int instance,const char*variable,int&out){
     return ironclad_description_value(s,c,target,instance,variable,out)||
            silent_description_value(s,c,target,instance,variable,out)||

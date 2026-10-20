@@ -1,5 +1,6 @@
 #include "core.hpp"
 #include "world_run.hpp"
+#include "original_events.hpp"
 namespace spire {
 // Values and use/target scopes inspected in the pinned 41cef1ea assembly.
 const PotionDefinition potion_definitions[PotionKinds]={
@@ -32,20 +33,23 @@ static void grant(int16_t& stat,int amount,int16_t* temporary=nullptr){
 bool can_use_potion(const State&s,int slot,int target){
     if(slot<0||slot>=(int)potion_slot_count(s)||s.hp<=0||choice_phase(s.phase)||s.phase==Phase::Dead||
        s.phase==Phase::Complete||s.phase==Phase::Error||s.effect_count||s.playing>=0)return false;
+    if(original_event_blocks_potions(s))return false;
     const auto*d=potion_definition(s.potions[slot]);if(!d||d->automatic)return false;
     if(d->combat_only&&s.phase!=Phase::Combat)return false;
     if(s.effect_count||s.playing>=0)return false;
-    if(s.potions[slot]==Potion::FoulPotion&&s.phase!=Phase::Combat&&s.phase!=Phase::Shop)return false;
+    if(s.potions[slot]==Potion::FoulPotion&&s.phase!=Phase::Combat&&s.phase!=Phase::Shop&&!original_event_can_use_foul(s))return false;
     if(d->targeted&&!enemy_allow_target(s,target))return false;
     return true;
 }
 bool use_potion(State&s,int slot,int target){
     if(!can_use_potion(s,slot,target))return false;
     Potion p=s.potions[slot];
+    const auto* definition=potion_definition(p);if(!definition->targeted)target=-1;
     // Consume first so the same bottle cannot be reused during any later hook.
     s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,(int)p);
     const bool fighting=s.phase==Phase::Combat;
     if(fighting)s.expansion.potion_active=1;
+    before_potion_use(s,p,target);
     switch(p){
     case Potion::Fire:damage_unpowered(s,target,20);break;
     case Potion::Block:gain_unpowered_block(s,12);break;
@@ -65,7 +69,7 @@ bool use_potion(State&s,int slot,int target){
     case Potion::Fortifier:gain_unpowered_block(s,s.block*2);break;
     default:execute_potion(s,p,target);break;
     }
-    if(fighting&&s.hp>0&&combat_phase(s.phase))queue_extension(s,XOp::PotionDone,(int)p,target);
+    if(fighting&&combat_phase(s.phase))queue_extension(s,XOp::PotionDone,(int)p,target);
     else if(s.hp>0)world_relic_hook(s,WorldRelicHook::AfterPotionUsed,(int)p,target);
     resolve_pending(s);s.revision++;return true;
 }

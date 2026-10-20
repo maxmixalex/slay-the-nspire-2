@@ -1,5 +1,6 @@
 void enter_combat(State&s){
     const EncounterId pending_encounter=s.enemy_world.encounter;
+    s.world.combat_ending=0;s.world.combat_bonus_gold=0;
     s.expansion=ExpansionState{};
     s.ironclad=IroncladState{};silent_combat_start(s);defect_combat_start(s);s.regent=RegentState{};necro_combat_start(s);
     s.relic_flash=0;relic_reset_turn_counters(s);

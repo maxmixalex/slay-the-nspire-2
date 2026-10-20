@@ -1,5 +1,5 @@
 static bool resolving=false;
-static bool start_instance(State&,int,int,bool);
+static bool start_instance(State&,int,int,bool,int captured_x=-1,int captured_star_x=-1);
 static void extension_effect(State&,Effect);
 static void finish_extended_card(State&);
 static void draw_hook(State&);

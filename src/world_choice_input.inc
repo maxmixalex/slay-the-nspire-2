@@ -10,6 +10,10 @@ void App::toggle_world_choice(int id){
  if(!world_choice_phase(game.phase)||id<0)return;sync_selection();
  uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
  for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
+ const bool reward=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
+ if(reward){uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
+  if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}return;
+ }
  for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
   for(unsigned j=i+1;j<choice_selected_count;j++)choice_selected[j-1]=choice_selected[j];--choice_selected_count;return;
  }
@@ -31,7 +35,7 @@ void App::world_choice_detail(int id){
   else if(w.choice==WorldRelicChoice::OfferBundle&&id*3<w.offer_count)open_card_offer(card_from_token(w.offers[id*3]),w.offer_facts[id*3]);
   else if(w.choice==WorldRelicChoice::Hand&&id<game.card_count)open_choice_detail(id);
   else if(w.choice==WorldRelicChoice::Potion&&id<int(potion_slot_count(game))&&potion_at(game,id)!=Potion::Empty){detail_item=WorldRelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
-  else if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==2)detail_item=r.value;else if(r.kind==3)detail_item=WorldRelicKinds+r.value-1;detail_owned=-1;detail_scroll=0;}
+  else if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==2)detail_item=r.value;else if(r.kind==3)detail_item=WorldRelicKinds+r.value-1;else if(r.kind==5)open_card_detail(card_from_token(r.value));detail_owned=-1;detail_scroll=0;}
   else if(w.choice!=WorldRelicChoice::OfferReward&&id<game.deck_count)open_card_detail(game.deck[id],id);
  }else if(game.phase==Phase::OriginalEventChoice){
   const auto&e=game.original_events;

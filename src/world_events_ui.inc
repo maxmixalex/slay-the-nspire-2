@@ -27,7 +27,7 @@ static void native_event_screen(Canvas&c){
  for(int i=first;i<mn(count,first+3);i++){int y=137+(i-first)*33;bool enabled=original_event_option_enabled(s,i),selected=a.cursor==i;
   c.ui(U_EventButton,130,y,186,32,enabled?255:115);if(selected)c.ui(U_EventOutline,130,y,186,32,170);
   bool icon=(ui_ancient_event(e.id)||e.id==OriginalEventId::FakeMerchant)&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
-  int tx=icon?163:140,tw=icon?141:164;if(icon)c.picture(a.content.relic_image(e.offers[i]),135,y+4,24,24,enabled?255:100);
+  int tx=icon?163:140,tw=icon?141:164;if(icon)c.picture(a.relic_face_image(e.offers[i]),135,y+4,24,24,enabled?255:100);
   char label[256]{},description[2048]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
   c.text(label,tx,y+1,10,enabled?Gold:Muted,tw);c.paragraph(description,tx,y+15,tw,1,0,8,enabled?White:Muted);
   c.hit(130,y,186,32,HitKind::Choice,i,enabled);

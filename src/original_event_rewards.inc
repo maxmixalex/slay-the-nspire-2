@@ -10,7 +10,7 @@ bool reward_cards(State&s,unsigned count,const WorldCardOptions&options,bool eve
  if(e.reward_count>=MaxOriginalEventRewards||e.reward_card_count+count>MaxOriginalEventRewardCards)return false;
  Card cards[MaxOriginalEventOffers];EventCardFacts facts[MaxOriginalEventOffers];unsigned made=0;auto local=event_random(s);auto&rng=event_rng?local:world_rng(s,WorldRng::Rewards);
  if(!world_create_reward(s,rng,count,options,cards,facts,MaxOriginalEventOffers,&made)||e.reward_card_count+made>MaxOriginalEventRewardCards)return false;if(event_rng)keep_random(s,rng);
- auto*r=reward_slot(s,4);if(!r)return false;r->first=e.reward_card_count;r->count=uint8_t(made);
+ auto*r=reward_slot(s,4);if(!r)return false;r->first=e.reward_card_count;r->count=uint8_t(made);r->flags=uint8_t(1|(upgrade?2:0)|(event_rng?16:0));r->original_count=uint8_t(count);r->type_mask=options.type_mask;r->zero_energy=options.zero_energy;r->rarity_mask=options.rarity_mask;r->creation_flags=options.flags;r->pool_count=options.pool_count;r->odds=uint8_t(options.odds);r->source=uint8_t(options.source);for(unsigned i=0;i<options.pool_count;i++)r->pools[i]=uint8_t(options.pools[i]);
  for(unsigned i=0;i<made;i++){if(upgrade&&card_upgradeable(cards[i]))cards[i].upgraded=1;e.reward_cards[e.reward_card_count]=uint16_t(card_token(cards[i]));e.reward_facts[e.reward_card_count++]=facts[i];}return true;
 }
 bool reward_fixed_card(State&s,Card card){auto&e=s.original_events;if(e.reward_card_count>=MaxOriginalEventRewardCards)return false;auto*r=reward_slot(s,4);if(!r)return false;r->first=e.reward_card_count;r->count=1;e.reward_cards[e.reward_card_count]=uint16_t(card_token(card));e.reward_facts[e.reward_card_count++]={};return true;}
@@ -19,6 +19,7 @@ bool reward_menu(State&s){auto&e=s.original_events;unsigned left=0;for(unsigned 
 }
 bool reward_offer(State&s){auto&e=s.original_events;
  // RewardsSet populates the supplied sequence, then sorts it for presentation.
- for(unsigned i=1;i<e.reward_count;i++){auto value=e.rewards[i];unsigned j=i;while(j&&e.rewards[j-1].kind>value.kind){e.rewards[j]=e.rewards[j-1];--j;}e.rewards[j]=value;}
- world_relic_before_reward_offered(s,e.reward_card_count!=0);e.reward_active=1;return world_relic_pending(s)||reward_menu(s);
+ reference::comparison_sort(e.rewards,e.reward_count,[](const OriginalEventReward&r){return r.kind==4?((r.flags&1)?5:4):int(r.kind);});
+ if(has_world_relic(s,WorldRelicDriftwood))for(unsigned i=0;i<e.reward_count;i++)if(e.rewards[i].kind==4&&(e.rewards[i].flags&1)&&!(e.rewards[i].flags&8))e.rewards[i].flags|=4;
+ e.reward_active=1;return world_relic_pending(s)||reward_menu(s);
 }

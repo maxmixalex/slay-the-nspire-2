@@ -4,7 +4,7 @@ static void seed_editor(Canvas& c) {
     c.rect(0,0,320,240,Panel);c.centered("输入种子",0,3,320,16,Gold);c.close_button(294,3);
     c.rect(8,29,304,39,Ink);c.box(8,29,304,39,Gold);
     c.text(view.draft,14,32,10,White,290,2);
-    c.text(*view.error?view.error:"输入后选择生成；I / O 自动转为 1 / 0",9,71,10,*view.error?Red:Muted,302);
+    c.text(*view.error?view.error:a.run_seed_editing?"留空使用新种子；I / O 自动转为 1 / 0":"输入后选择生成；I / O 自动转为 1 / 0",9,71,10,*view.error?Red:Muted,302);
     for(int i=0;i<40;++i) {
         int x=8+(i%10)*31,y=93+(i/10)*26;
         int code=i<SeedKeyCount?SeedKeys[i]:i==SeedKeyCount?8:-1;
@@ -16,7 +16,7 @@ static void seed_editor(Canvas& c) {
     }
     c.button("返回",24,202,119,view.editor_selection==SeedKeyCount+2,28);
     c.hit(24,202,119,28,HitKind::SeedCharacter,27);
-    c.button("生成地图",176,202,119,view.editor_selection==SeedKeyCount+3,28);
+    c.button(a.run_seed_editing?"应用种子":"生成地图",176,202,119,view.editor_selection==SeedKeyCount+3,28);
     c.hit(176,202,119,28,HitKind::SeedCharacter,13);
 }
 static void reference_map_screen(Canvas& c) {

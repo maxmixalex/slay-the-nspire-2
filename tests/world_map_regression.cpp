@@ -1,5 +1,6 @@
 #include "core.hpp"
 #include "world_run.hpp"
+#include "world_card_factory.hpp"
 #include "original_events.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -36,8 +37,27 @@ static unsigned choose_first(){
  unsigned point=candidates[0];require(world_reachable(game,point),"frontier point reachable");
  require(world_choose_point(game,point),"frontier point enters");return point;
 }
+static void detached_offer_preview(){
+ other=game;EventCardFacts f{};int value=6;
+ f.enchantment=EventEnchantment::Sharp;f.enchantment_amount=4;
+ require(event_card_offer_description_value(game,{Strike,0},f,"Damage",value)&&value==10,"detached Sharp uses supplied canonical damage");
+ f.enchantment=EventEnchantment::Corrupted;value=5;
+ require(event_card_offer_description_value(game,{Strike,0},f,"Damage",value)&&value==7,"detached multiplicative damage uses original floor rounding");
+ f.enchantment=EventEnchantment::TezcatarasEmber;f.energy_offset=-1;value=99;
+ require(event_card_offer_description_value(game,{Strike,0},f,"EnergyCost",value)&&value==0,"detached Ember displays its permanent energy offset");
+ f.energy_offset=0;require(event_card_offer_description_value(game,{Whirlwind,0},f,"EnergyCost",value)&&value==-1,"detached energy preview preserves X");
+ f={};f.science_type=uint8_t(CardType::Skill);f.rider=uint8_t(TinkerRider::Energized);f.enchantment=EventEnchantment::Nimble;f.enchantment_amount=3;
+ value=8;require(event_card_offer_description_value(game,{EventCardMadScience,0},f,"Block",value)&&value==11,"detached Mad Science applies Nimble to its canonical skill block");
+ require(event_card_offer_description_value(game,{EventCardMadScience,0},f,"CardType",value)&&value==int(CardType::Skill),"detached Mad Science preserves the generated type");
+ require(event_card_offer_description_value(game,{EventCardMadScience,0},f,"TinkerTimeRider",value)&&value==int(TinkerRider::Energized),"detached Mad Science preserves the selected rider");
+ require(event_card_offer_description_value(game,{EventCardMadScience,0},f,"EnergizedEnergy",value)&&value==2,"detached rider reuses event canonical variables");
+ value=37;require(!event_card_offer_description_value(game,{Strike,0},f,"UnknownVariable",value)&&value==37,"unknown detached variable preserves caller canonical value");
+ require(!std::memcmp(&game,&other,sizeof game),"detached previews never mutate the state or RNG");
+ game.deck[0]={DefectGeneticAlgorithm,0};game.defect.genetic_deck[0]=17;game.event_cards.deck[0]={};game.event_cards.deck[0].enchantment=EventEnchantment::Nimble;game.event_cards.deck[0].enchantment_amount=3;value=1;
+ require(character_deck_description_value(game,game.deck[0],0,"Block",value)&&value==21,"permanent growth is resolved before detached enchantment preview");game=other;
+}
 int main(){
- start();require(game.potion_slots==3,"default run has three potion slots");persisted();
+ start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();persisted();
  for(unsigned a=0;a<3;++a){const auto& rooms=game.world.rooms[a];
   require(rooms.ready&&rooms.elite_count==15&&rooms.event_count>0,"all three room queues generated up front");
   require(rooms.boss_count==1,"base ascension has one boss per act");
@@ -96,20 +116,114 @@ int main(){
  // complete first draw, enemy side and native reward handoff. The final damage
  // is an explicit fixture command, not a player strategy or enemy-parity claim.
  start();finish_routing_fixture();
- require(gain_world_relic(game,WorldRelicAnchor)&&gain_world_relic(game,WorldRelicVajra)&&gain_world_relic(game,WorldRelicPaelsWing),"obtain shared-engine fixtures before room entry");
+ require(gain_world_relic(game,WorldRelicAnchor)&&gain_world_relic(game,WorldRelicVajra)&&gain_world_relic(game,WorldRelicPaelsWing)&&gain_world_relic(game,WorldRelicDriftwood),"obtain shared-engine fixtures before room entry");
+ require(gain_world_relic(game,WorldRelicChosenCheese)&&gain_world_relic(game,WorldRelicMeatOnTheBone)&&gain_world_relic(game,WorldRelicRedSkull),"obtain ordered victory listeners");
  choose_first();require(game.phase==Phase::Combat&&game.turn==1&&game.enemy_world.active,"map enters a native encounter");
  require(game.block==10&&game.strength==1,"first-turn clear retains Anchor and native Vajra runs exactly once");
  require(game.hand.count==5&&game.playing<0&&!game.effect_count,"first draw and native hooks completely resume");persisted();
  require(end_turn(game),"end player side through native continuations");
  require(game.phase==Phase::Combat&&game.turn==2&&!game.expansion.enemy_side&&!game.enemy_world.side&&!game.effect_count,"enemy side completes before the next player turn");persisted();
+ other=game;game.expansion.skip_enemy=1;require(end_turn(game),"extra player turn resumes through native continuation");
+ require(game.phase==Phase::Combat&&game.turn==3&&!game.expansion.enemy_side&&!game.effect_count,"extra player turn completes its normal draw");
+ for(unsigned i=0;i<game.enemy_count;i++){
+  const auto&a=game.enemy_world.models[i];const auto&b=other.enemy_world.models[i];
+  require(a.node==b.node&&a.previous==b.previous&&a.history_count==b.history_count&&!std::memcmp(a.history,b.history,sizeof a.history)&&!std::memcmp(&a.rng,&b.rng,sizeof a.rng),"extra player turn preserves enemy intent, history and RNG");
+ }
+ persisted();
+ // Gold from Royalties is a room reward. It must not trigger gold pickup
+ // listeners while the power's AfterCombatEnd callback is still executing.
+ queue_extension(game,XOp::RPower,int(RPower::Royalties),7);resolve_pending(game);
+ const unsigned ending_max_hp=game.max_hp;const int ending_hp=game.max_hp/2;
+ const int old_hp=game.hp;game.hp=int16_t(ending_hp);world_relic_hook(game,WorldRelicHook::AfterHpChanged,old_hp,game.hp,-1);resolve_pending(game);
+ require(game.strength==4,"Red Skull activates before the ending fixture");
+ const int gold_before_victory=game.gold;
  for(unsigned guard=0;guard<64&&game.phase==Phase::Combat;guard++){
   for(unsigned i=0;i<game.enemy_count;i++)if(enemy_allow_target(game,int(i)))damage_unpowered(game,int(i),9999);
   resolve_pending(game);
  }
- require(game.phase==Phase::Reward&&game.world.reward_count>=3,"victory generates original rewards after all death hooks");
- require(world_card_reward_alternatives(game)==1,"Pael's Wing is offered for an actual native card reward");
+ require(game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferReward,"Royalties remains a separately claimable reward");
+ require(game.gold==gold_before_victory&&game.world.combat_bonus_gold==7,"Royalties does not grant gold during combat-end callbacks");
+ require(game.max_hp==ending_max_hp+1&&game.hp==ending_hp+7,"Cheese increases HP before Meat on the Bone tests its threshold, then Burning Blood heals");
+ require(game.world.combat_ending&&game.strength==0&&game.block==0,"combat-end power removal precedes victory healing without reactivating Red Skull");persisted();
+ const unsigned combat_group=game.world_relics.choice_group;
+ require(combat_group&&game.world.reward_count==0&&game.reward_claimed==7&&game.world.reward_relic_claimed,"main rewards transfer once to the canonical combat group");
+ int royalties_offer=-1,main_card=-1;
+ for(unsigned i=0;i<game.world_relics.offer_count;i++){
+  const auto index=game.world_relics.offers[i];const auto&r=game.world_relics.rewards[index];
+  require(r.group==combat_group,"all main and extra combat rewards share one freely selectable group");
+  if(r.kind==4&&r.value==7)royalties_offer=int(i);
+  if(r.kind==1&&(r.creation_flags&WorldIsFromCombat))main_card=int(index);
+ }
+ require(royalties_offer>=0&&main_card>=0,"Royalties and original main card reward coexist");
+ uint16_t gold_offer=uint16_t(royalties_offer);require(world_relic_select(game,&gold_offer,1),"Royalties gold can be selected before main rewards");
+ require(game.gold==gold_before_victory+7,"claiming Royalties grants its exact amount");
+ require(game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferReward&&game.world_relics.rewards[main_card].count>=3,"taking an extra returns to the same combat reward group");
+ int card_offer=-1;for(unsigned i=0;i<game.world_relics.offer_count;i++)if(game.world_relics.offers[i]==main_card)card_offer=int(i);
+ require(card_offer>=0,"unclaimed main card reward stays selectable after an extra");
+ uint16_t card_choice=uint16_t(card_offer);require(world_relic_select(game,&card_choice,1),"main card reward opens from shared reward list");
+ require(world_card_reward_alternatives(game)==3,"Pael's Wing and Driftwood are offered for the actual native card reward");
+ const unsigned reward_rng=world_rng(game,WorldRng::Rewards).calls;const unsigned claim_mask=game.reward_claimed;
+ const int reward_gold=game.last_gold;const auto reward_potion=game.reward_potion;const unsigned reroll_deck=game.deck_count;
+ require(world_take_card_reward_alternative(game,2),"Driftwood rerolls the current native card reward");
+ require(game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferCard&&(game.world_relics.rewards[main_card].flags&4)&&!(game.world_relics.rewards[main_card].flags&16)&&world_card_reward_alternatives(game)==1,"reroll preserves the same offer and removes only its reroll alternative");
+ require(world_rng(game,WorldRng::Rewards).calls>reward_rng&&game.reward_claimed==claim_mask&&game.last_gold==reward_gold&&game.reward_potion==reward_potion&&game.deck_count==reroll_deck,"reroll changes card RNG without claiming cards or regenerating gold and potions");persisted();
+ other=game;require(!world_take_card_reward_alternative(game,2)&&!std::memcmp(&game,&other,sizeof game),"saved reward cannot be rerolled twice");
  unsigned old_deck=game.deck_count;require(world_take_card_reward_alternative(game,1),"sacrifice consumes the card reward");
- require((game.reward_claimed&2)&&game.deck_count==old_deck&&world_relic_counter(game,WorldRelicPaelsWing)==1,"sacrifice records one reward without adding a card");
+ require((game.world_relics.rewards[main_card].flags&1)&&game.deck_count==old_deck&&world_relic_counter(game,WorldRelicPaelsWing)==1,"sacrifice records one reward without adding a card");
  other=game;require(!world_take_card_reward_alternative(game,1)&&!std::memcmp(&game,&other,sizeof game),"already consumed reward cannot be sacrificed twice");persisted();
+ require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Reward&&!game.world_relics.group_active[combat_group-1],"proceed closes the entire combat group");
+ other=game;require(!claim_reward_gold(game)&&!claim_reward_potion(game)&&!world_claim_reward_relic(game)&&!world_claim_reward_card(game,0)&&!std::memcmp(&game,&other,sizeof game),"transferred main rewards cannot be claimed a second time through historical APIs");
+ require(leave_rewards(game)&&game.phase==Phase::Map,"shared reward completion returns through native room controller");persisted();
+
+ // Death prevention is an awaited part of damage, and automatic potion use
+ // must keep the original DamageResult separate from the later healing.
+ start();finish_routing_fixture();game.potion_slots=8;for(auto&p:game.potions)p=Potion::Empty;game.potions[7]=Potion::FairyInABottle;
+ require(gain_world_relic(game,WorldRelicLizardTail)&&gain_world_relic(game,WorldRelicBeltBuckle)&&gain_world_relic(game,WorldRelicReptileTrinket),"obtain ordered death-prevention and potion listeners");
+ require(gain_world_relic(game,WorldRelicCentennialPuzzle)&&gain_world_relic(game,WorldRelicSelfFormingClay),"obtain damage-received listeners");
+ choose_first();game.hp=1;game.block=0;const auto losses_before=game.ironclad.hp_losses_combat;
+ require(player_hp_loss(game,25,true,true,-1,0)==1,"lethal DamageResult reports capped original loss");
+ require(game.hp==0&&game.phase==Phase::Combat&&game.effect_count&&game.potions[7]==Potion::FairyInABottle,"lethal callbacks remain saved before potion prevention");persisted();
+ resolve_pending(game);
+ require(game.phase==Phase::Combat&&game.hp==game.max_hp*3/10&&game.potions[7]==Potion::Empty,"Fairy from an extended slot heals through its potion wrapper");
+ require(!world_relic_counter(game,WorldRelicLizardTail),"ordinary Fairy prevention precedes late Lizard Tail");
+ require(game.dexterity==2&&game.strength==3&&game.world_relics.reptile_trinket==3,"automatic Fairy fires Belt Buckle and Reptile Trinket once");
+ require(game.ironclad.hp_losses_combat==losses_before&&!world_relic_counter(game,WorldRelicCentennialPuzzle)&&!game.world_relics.self_forming_clay,"lethal damage does not invent a received callback after revival");persisted();
+ player_kill(game);resolve_pending(game);
+ require(game.phase==Phase::Combat&&game.hp==game.max_hp/2&&world_relic_counter(game,WorldRelicLizardTail)==1,"explicit non-force Kill uses the remaining Tail");
+ require(game.ironclad.hp_losses_combat==losses_before&&!world_relic_counter(game,WorldRelicCentennialPuzzle)&&!game.world_relics.self_forming_clay,"explicit Kill is not reported as damage");persisted();
+ game.potions[7]=Potion::FairyInABottle;player_kill(game,true);resolve_pending(game);
+ require(game.phase==Phase::Dead&&game.world.finished&&game.potions[7]==Potion::FairyInABottle,"force Kill bypasses death prevention");persisted();
+
+ // The card choice suspends inside the bottle's effect. PotionDone operands
+ // and potion_active must survive an actual save before AfterPotionUsed.
+ start();finish_routing_fixture();require(gain_world_relic(game,WorldRelicReptileTrinket),"obtain potion-resume listener");choose_first();
+ for(auto&p:game.potions)p=Potion::Empty;game.potions[0]=Potion::ColorlessPotion;
+ require(use_potion(game,0,0)&&game.phase==Phase::ExtendedChoice&&game.expansion.potion_active,"manual card potion suspends at its actual offer");
+ require(game.strength==0,"AfterPotionUsed waits for the offered card");
+ bool potion_done=false;for(unsigned i=0;i<game.effect_count;++i){const auto&e=game.effects[i];if(e.kind==EffectKind::Extended&&e.target==int(XOp::PotionDone)){potion_done=e.value==int(Potion::ColorlessPotion)&&e.aux==-1;}}
+ require(potion_done,"non-targeted potion continuation records no enemy target");persisted();
+ const uint16_t offered=MaxCards;require(choose_extended(game,&offered,1),"saved colorless potion offer resolves");
+ require(game.phase==Phase::Combat&&!game.expansion.potion_active&&game.strength==3,"manual potion resumes once after its selection");persisted();
+
+ // LoseMaxHp damages against the raw new cap before SetMaxHp. Tungsten
+ // modifies that damage; the subsequent cap is not a second damage result.
+ start();finish_routing_fixture();require(gain_world_relic(game,WorldRelicTungstenRod)&&gain_world_relic(game,WorldRelicCentennialPuzzle)&&gain_world_relic(game,WorldRelicSelfFormingClay),"obtain maximum-HP damage fixtures");choose_first();
+ game.hp=game.max_hp;const int max_before=game.max_hp;player_lose_max_hp(game,5);resolve_pending(game);
+ require(game.max_hp==max_before-5&&game.hp==game.max_hp&&game.ironclad.hp_losses_combat==1,"maximum-HP loss awaits one real damage result then applies the cap");
+ require(world_relic_counter(game,WorldRelicCentennialPuzzle)==1&&game.world_relics.self_forming_clay==3,"maximum-HP damage notifies received listeners");
+ bool reduced_loss=false;for(unsigned i=0;i<game.log_count;++i)if(game.logs[i].kind==LogKind::LoseHp&&game.logs[i].a==4)reduced_loss=true;
+ require(reduced_loss,"Tungsten reduces the damage before the new maximum is clamped");persisted();
+
+ // Transform appends after removal. Adjacent original rods each advance once,
+ // and their replacements notify permanent-deck listeners including copies.
+ start();finish_routing_fixture();const int rod_a=event_add_deck_card(game,{EventCardDowsing,0});const int rod_b=event_add_deck_card(game,{EventCardDowsing,0});
+ require(rod_a>=0&&rod_b==rod_a+1,"adjacent Dowsing rods added");game.event_cards.deck[rod_a].progress=game.event_cards.deck[rod_b].progress=4;
+ require(gain_world_relic(game,WorldRelicBingBong)&&gain_world_relic(game,WorldRelicLuckyFysh),"obtain transform deck listeners");
+ const int transform_gold=game.gold;const unsigned transform_deck=game.deck_count;
+ event_card_before_room(game,true,true);unsigned abundance=0,rods=0;for(unsigned i=0;i<game.deck_count;++i){abundance+=game.deck[i].kind==EventCardAbundance;rods+=game.deck[i].kind==EventCardDowsing;}
+ require(!rods&&abundance==4&&game.deck_count==transform_deck+2,"both rods transform and each replacement clones exactly once");
+ require(game.gold==transform_gold+60,"transformed replacements and copies notify Lucky Fysh");persisted();
+
+ start();game.hp=0;require(world_finish_room(game)&&game.phase==Phase::Dead&&game.world.finished,"native death closes and records the run");persisted();
  std::printf("original world routing checks: %u\n",checks);return 0;
 }

@@ -29,6 +29,8 @@ bool original_event_has_card_reward(const State&);
 // Consume the current CardReward for an alternative. Caller applies that
 // alternative, then calls original_event_resume after its own hooks finish.
 bool original_event_consume_card_reward(State&);
+bool original_event_can_reroll_reward(const State&);
+bool original_event_reroll_reward(State&);
 bool original_event_leave(State&);
 void original_event_after_combat(State&,bool won);
 bool original_event_crystal_tool(State&,bool large);
@@ -41,6 +43,11 @@ bool original_event_description_reference(const State&,const char* key,int optio
 void original_event_new_run(State&);
 void original_event_finish_run(State&);
 bool original_event_blocks_potions(const State&);
+bool original_event_can_use_foul(const State&);
+// CombatRoom.ExtraRewards descriptors; reading never consumes random draws.
+// kind 2 relic (NoWorldRelic = random), 3 potion (0 = random), 5 special card.
+unsigned original_event_combat_reward_count(const State&);
+bool original_event_combat_reward(const State&,unsigned index,uint8_t& kind,uint16_t& value);
 bool original_event_foul_potion(State&);
 bool valid_original_event_state(const State&);
 } // namespace spire

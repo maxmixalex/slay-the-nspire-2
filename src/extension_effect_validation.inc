@@ -5,12 +5,19 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     if(op==XOp::WorldStage){
         if(a<0||a>=int(WorldStage::Count))return false;
         const auto stage=WorldStage(a);
-        if(stage==WorldStage::PlayerStart)return b==0||b==1;
+        if(stage==WorldStage::PlayerStart)return b>=0&&b<=2;
+        if(stage==WorldStage::PlayerEnemyStart)return b==0||b==2;
         if(stage==WorldStage::DrawRelics||stage==WorldStage::DrawCards||stage==WorldStage::DrawEnemies)return b>=0&&b<s.card_count;
         if(stage==WorldStage::StarsSpent)return b>0&&b<=9999;
         if(stage==WorldStage::OrbPassive)return b>=0&&b<MaxOrbs*(MaxEnemies+1);
+        if(stage==WorldStage::PlayerDeath)return b==0||b==1;
+        if(stage==WorldStage::AutoPotionUsed)return b==int(Potion::FairyInABottle);
+        if(stage==WorldStage::SetMaxHp)return b>=1&&b<=999;
         return b==0;
     }
+    if(op==XOp::SharedPlayerDamageGiven)return a>0&&a<=999&&b>=0&&b<s.enemy_count;
+    if(op==XOp::SharedPlayerDamageReceived||op==XOp::SharedPlayerDamageRelics)
+        return a>=0&&a<=999&&b>=0&&b/16<=s.card_count;
     if(op==XOp::SharedCheckWeakAfterHit)return a>=0&&a<s.enemy_count&&b>=0;
     if(op==XOp::SharedAfterCardBody||op==XOp::SharedAfflictionAfterBody||op==XOp::SharedAttackEnd||op==XOp::SharedAttackStart||op==XOp::SharedAttackReward)return a>=0&&a<s.card_count&&b==0;
     if(op==XOp::PostPlayListener)return s.playing>=0&&a>0&&a<(int)PostPlayActor::Count&&b==0;
@@ -47,6 +54,7 @@ static bool valid_extension_effect(const State&s,const Effect&e){
     case XOp::EnemyAct:return a>=0&&a<=s.enemy_count&&b==0;
     case XOp::BoulderTick:return a>=0&&a<MaxPowerInstances&&b==0&&s.expansion.boulder[a]>0;
     case XOp::RandomHits:return a>=0&&b>=0&&b<=999;
+    case XOp::PotionDone:return (a==0&&b==0)||(a>0&&a<=PotionKinds&&b>=-1&&b<s.enemy_count);
     case XOp::ChannelDark:return a>=0&&a<=MaxOrbs&&b==0;
     case XOp::Strength:case XOp::Dexterity:return a>=-9999&&a<=9999&&b==0;
     case XOp::AllDamage:case XOp::EscapeBlock:

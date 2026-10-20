@@ -5,7 +5,11 @@ bool valid_original_event_state(const State&s){const auto&e=s.original_events;
  if(!terminated(e.page_key,sizeof e.page_key))return false;
  for(const auto&key:e.option_keys)if(!terminated(key,sizeof key))return false;
  if(e.step_count>MaxOriginalEventSteps||e.step_cursor>e.step_count)return false;
- for(const auto&step:e.steps)if(unsigned(step.op)>=unsigned(OriginalEventOp::Count))return false;
+ for(const auto&step:e.steps){if(unsigned(step.op)>=unsigned(OriginalEventOp::Count))return false;
+  if(step.op==OriginalEventOp::MaxHp&&(step.a< -9999||step.a>9999))return false;
+  if(step.op==OriginalEventOp::KillPlayer&&(step.a<0||step.a>1))return false;
+  if(step.op==OriginalEventOp::ProcurePotion&&(step.a<=0||step.a>PotionKinds||step.b<0||step.b>=int(MaxPotionSlots)||step.c<0||step.c>1))return false;
+ }
  if(unsigned(e.selection)>=unsigned(OriginalEventSelection::Count)||unsigned(e.filter)>=unsigned(OriginalEventFilter::Count))return false;
  if(e.select_min>e.select_max||e.select_max>MaxDeck||e.select_cancelable>1||e.select_enchantment>=EventEnchantmentKinds||e.select_amount<0||e.select_amount>9999||e.select_extra<0||e.select_extra>CardKinds)return false;
  if(e.offer_count>MaxOriginalEventOffers||e.selected_count>MaxDeck||e.selected_cursor>e.selected_count||e.selection_committed>1)return false;
@@ -37,6 +41,10 @@ bool valid_original_event_state(const State&s){const auto&e=s.original_events;
  for(unsigned i=0;i<e.reward_count;i++){const auto&r=e.rewards[i];if(r.kind<1||r.kind>4||r.claimed>1)return false;
   if(r.kind==2&&(r.model==0||r.model>PotionKinds))return false;if(r.kind==3&&r.model>=WorldRelicKinds)return false;
   if(r.kind==4&&(!r.count||r.count>MaxOriginalEventOffers||r.first+r.count>e.reward_card_count))return false;
+  if(r.flags>31||r.original_count>MaxOriginalEventOffers||r.zero_energy>1||r.pool_count>11||r.odds>unsigned(WorldCardOdds::Uniform)||r.source>unsigned(WorldCardSource::Other))return false;
+  if((r.flags&1)&&(r.kind!=4||!r.original_count||!r.pool_count))return false;
+  if((r.flags&4)&&(r.flags&8))return false;
+  for(unsigned j=0;j<r.pool_count;j++)if(r.pools[j]>unsigned(WorldCardPool::Own))return false;
  }
  for(unsigned i=0;i<e.reward_card_count;i++){Card card=card_from_token(e.reward_cards[i]);if(card.kind>=CardKinds||card_token(card)!=e.reward_cards[i]||!event_card_facts_valid(card,e.reward_facts[i]))return false;}
  if(e.crystal_tool<1||e.crystal_tool>2||e.crystal_item_count>MaxCrystalItems||e.crystal_revealed_count>MaxCrystalReveals)return false;

@@ -165,7 +165,7 @@ bool rules_choose(State&s,unsigned option){auto&e=s.original_events;
  case OriginalEventId::LostWisp:if(!option){card(s,EventCardDecay);relic(s,WorldRelicLostWisp);}else gold(s,e.values[0]);break;
  case OriginalEventId::Wellspring:if(!option)queue_random_potion(s,WorldPotionUniform);else{select_deck(s,OriginalEventSelection::Remove);card(s,EventCardGuilty);}break;
  case OriginalEventId::TheLanternKey:
-  if(e.page){combat(s,"MysteriousKnightEventEncounter");fixed_offer(s,EventCardLanternKey);done="KEEP_THE_KEY";break;}
+  if(e.page){combat(s,"MysteriousKnightEventEncounter");done="KEEP_THE_KEY";break;}
   if(!option){gold(s,100);done="DONE.options.RETURN_THE_KEY";}else{e.page=1;page(s,"KEEP_THE_KEY");options(s,"KEEP_THE_KEY.options.FIGHT");return true;}break;
  case OriginalEventId::UnrestSite:if(!option){healing(s,e.values[0]);card(s,EventCardPoorSleep);}else{maxhp(s,-8);queue_random_relic(s);}break;
  case OriginalEventId::PotionCourier:if(!option)push_step(s,OriginalEventOp::Special,ES_Continue,-1);else queue_random_potion(s,2);break;

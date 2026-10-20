@@ -1,8 +1,11 @@
 #include "core.hpp"
 #include "world_run.hpp"
+#include "original_events.hpp"
+#include "world_card_factory.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 using namespace spire;
 static State s,loaded,original;
 static SaveData encoded,roundtrip;
@@ -15,6 +18,23 @@ static void combat(){enter_combat(s);resolve_pending(s);require(s.phase==Phase::
 static void hook(WorldRelicHook h,int a=0,int b=0,int c=0){world_relic_hook(s,h,a,b,c);resolve_pending(s);require(s.phase!=Phase::Error,"listener did not overflow or reject continuation");}
 static void save_pending(){require(validate(s),"pending world relic state validates");require(save(s,encoded),"serialize pending world relic");require(load(loaded,encoded.bytes,encoded.size),"load pending world relic");require(save(loaded,roundtrip),"reserialize pending world relic");require(encoded.size==roundtrip.size&&!std::memcmp(encoded.bytes,roundtrip.bytes,encoded.size),"pending hook serials and counters are byte exact");s=loaded;}
 static unsigned card_in_hand(CardType type){for(unsigned i=0;i<s.hand.count;i++)if(card_type(s,s.cards[s.hand.ids[i]],s.hand.ids[i])==type)return s.hand.ids[i];std::abort();}
+static void prepared_hand(std::initializer_list<CardKind> kinds){
+ s.phase=Phase::Combat;s.floor=s.turn=1;s.current_node=0;s.enemy_count=2;
+ for(auto&enemy:s.enemies)enemy={2000,2000,0,0,0,2};
+ s.card_count=s.hand.count=0;
+ for(auto kind:kinds){unsigned id=s.card_count++;s.cards[id]={kind,0};s.zones[id]=Zone::Hand;s.hand.ids[s.hand.count++]=uint16_t(id);}
+}
+static void orbit_fixture(unsigned remainder=0){
+ s.regent.powers[unsigned(RPower::Orbit)]=1;s.regent.power_order[s.regent.power_count++]=uint8_t(RPower::Orbit);
+ s.regent.orbit[0]=1;s.regent.orbit_remainder[0]=uint8_t(remainder);
+}
+// Advance one already-queued relic callback through its production handler so
+// a save can be taken between resource payment and its awaited continuation.
+static void relic_front(){
+ require(s.effect_count&&s.effects[0].kind==EffectKind::Extended&&s.effects[0].target==int(XOp::WRelicHook),"queued relic callback exists");
+ Effect effect=s.effects[0];for(unsigned i=1;i<s.effect_count;i++)s.effects[i-1]=s.effects[i];s.effects[--s.effect_count]=Effect{};
+ world_relic_effect(s,effect.value);
+}
 int main(){
  reset();add(WorldRelicAnchor);add(WorldRelicVajra);combat();require(s.block==10&&s.strength==1,"native first-33 relics are not also executed by legacy hooks");
  reset();add(WorldRelicShuriken);add(WorldRelicRuinedHelmet);add(WorldRelicNunchaku);combat();unsigned attack=card_in_hand(CardType::Attack);
@@ -50,6 +70,99 @@ int main(){
  require(cost(s,int(attack))==0,"fifth manual play has zero energy cost");
  hook(WorldRelicHook::AfterCardPlayed,int(attack),1,0x10000);require(relic(WorldRelicBrilliantScarf).values[0]==4,"automatic CardPlay does not consume Scarf's manual-play counter");
  hook(WorldRelicHook::AfterCardPlayed,int(attack),0,0);require(cost(s,int(attack))>0,"Scarf discount ends after fifth manual play");
+ reset();add(WorldRelicBeltBuckle);combat();unsigned old_slots=potion_slot_count(s);require(gain_world_relic(s,WorldRelicAlchemicalCoffer),"obtain Coffer in combat");
+ require(potion_slot_count(s)==old_slots+4&&world_relic_pending(s),"Coffer saves the pending per-bottle continuation");
+ for(unsigned i=0;i<potion_slot_count(s);i++)require(potion_at(s,i)==Potion::Empty,"no bottle jumps ahead of acquisition continuation");save_pending();resolve_pending(s);
+ require(!world_relic_pending(s)&&s.dexterity==0,"first Coffer procurement updates Buckle before completing pickup");
+ for(unsigned i=0;i<potion_slot_count(s);i++)require((potion_at(s,i)!=Potion::Empty)==(i>=old_slots),"Coffer fills only the four newly added slots");
+ reset();add(WorldRelicSozu);old_slots=potion_slot_count(s);add(WorldRelicAlchemicalCoffer);require(potion_slot_count(s)==old_slots+4,"Sozu does not prevent added potion capacity");for(unsigned i=0;i<potion_slot_count(s);i++)require(potion_at(s,i)==Potion::Empty,"Sozu blocks every generated Coffer bottle");
+ reset();int genetic=event_add_deck_card(s,{DefectGeneticAlgorithm,1});require(genetic>=0,"create permanent Genetic Algorithm");s.defect.genetic_deck[genetic]=7;add(WorldRelicBingBong);
+ require(gain_world_relic(s,WorldRelicDollysMirror)&&s.world_relics.choice==WorldRelicChoice::Duplicate,"Dolly opens duplicate choice");save_pending();unsigned old_deck=s.deck_count;uint16_t source=uint16_t(genetic);require(world_relic_select(s,&source,1),"duplicate stored genetic card");
+ require(s.deck_count==old_deck+2&&s.defect.genetic_deck[old_deck]==7&&s.defect.genetic_deck[old_deck+1]==7,"BingBong sees complete permanent metadata before its clone callback");
+ reset();s.deck_count=MaxDeck;for(unsigned i=0;i<s.deck_count;i++)s.deck[i]={i&1?Defend:Strike,0};add(WorldRelicPandorasBox);
+ for(unsigned i=0;i<s.deck_count;i++)require(s.deck[i].kind!=Strike&&s.deck[i].kind!=Defend,"Pandora transforms beyond the continuation queue capacity");require(!s.world_relics.step_count,"completed batch acquisition releases every queued step");
+ reset();add(WorldRelicNunchaku);add(WorldRelicNunchaku);s.world_relics.entries[0].values[0]=3;s.world_relics.entries[1].values[0]=8;int amount=0;
+ require(world_relic_display(s,0,amount)&&amount==3&&world_relic_display(s,1,amount)&&amount==8,"display counters use the requested owned copy");s.world_relics.entries[1].flags|=WorldRelicMelted;require(!world_relic_display(s,1,amount),"melted owned copy does not show an active counter");
+ reset();add(WorldRelicDriftwood);require(gain_world_relic(s,WorldRelicGlassEye)&&s.world_relics.choice==WorldRelicChoice::OfferReward,"Glass Eye exposes its five independent rewards");uint16_t first_reward=0;
+ require(world_relic_select(s,&first_reward,1)&&world_relic_can_reroll_reward(s),"Driftwood adds a reroll to the opened card reward");save_pending();unsigned current_reward=s.world_relics.choice_reward;
+ require(world_relic_reroll_reward(s)&&s.world_relics.choice==WorldRelicChoice::OfferCard&&s.world_relics.choice_reward==current_reward,"reroll remains in the same unclaimed reward");require(!world_relic_can_reroll_reward(s)&&!world_relic_reroll_reward(s),"one reward cannot be rerolled twice");
+ for(unsigned i=0;i<s.world_relics.offer_count;i++)require(card_rarity(card_from_token(s.world_relics.offers[i]).kind)==2,"reroll keeps Glass Eye's original common-rarity restriction");save_pending();
  original=s;s.world_relics.hook_frames[0].active=1;s.world_relics.hook_frames[0].count=1;s.world_relics.hook_frames[0].serials[0]=uint16_t(s.world_relics.last_serial+1);require(!valid_world_relic_state(s),"forged listener serial rejected");s=original;
+
+ // Transforming one card removes it, then appends its replacement. A batch
+ // removes all originals before the first replacement triggers any listener.
+ reset();s.deck_count=4;s.deck[0]={Bash,0};s.deck[1]={Strike,0};s.deck[2]={Defend,0};s.deck[3]={Defend,1};
+ require(event_card_enchant(s,0,EventEnchantment::Sharp,3)&&event_card_enchant(s,3,EventEnchantment::Nimble,2),"prepare distinct Claws enchantments");
+ require(gain_world_relic(s,WorldRelicClaws)&&s.world_relics.choice==WorldRelicChoice::Transform,"Claws opens its optional batch");uint16_t claws[]={3,0};save_pending();
+ require(world_relic_select(s,claws,2),"Claws accepts selection order independent of deck order");
+ require(s.deck_count==4&&s.deck[0].kind==Strike&&s.deck[1].kind==Defend&&s.deck[2].kind==EventCardMaul&&s.deck[3].kind==EventCardMaul,"batch replacements append after untouched originals");
+ require(!s.deck[2].upgraded&&s.event_cards.deck[2].enchantment==EventEnchantment::Sharp&&s.event_cards.deck[2].enchantment_amount==3,"batch orders by pile index at removal");
+ require(s.deck[3].upgraded&&s.event_cards.deck[3].enchantment==EventEnchantment::None,"Claws keeps upgrade but rejects a block-only enchantment on Maul");save_pending();
+ reset();add(WorldRelicNutritiousSoup);require(gain_world_relic(s,WorldRelicEmptyCage),"open removal after Eternal enchantments");uint16_t removable[MaxDeck];unsigned available=world_relic_eligible(s,removable,MaxDeck);
+ for(unsigned i=0;i<available;i++)require(s.deck[removable[i]].kind!=Strike,"native relic choice excludes Eternal basic attacks");save_pending();
+ reset();add(WorldRelicNutritiousSoup);unsigned eternal=0;for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind==Strike)++eternal;add(WorldRelicPandorasBox);
+ unsigned kept=0;for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind==Strike){++kept;require(s.event_cards.deck[i].enchantment==EventEnchantment::TezcatarasEmber,"Pandora retains the Eternal card facts");}
+ require(kept==eternal,"Pandora does not select Eternal basics");
+ // Seventeen equal current-pile indexes cross the locked runtime's insertion
+ // threshold. This fixed permutation distinguishes its unstable partition sort.
+ reset();s.deck_count=18;for(unsigned i=0;i<17;i++)s.deck[i]={i&1?Defend:Strike,0};s.deck[17]={Bash,0};original=s;Card predicted[17];EventCardFacts predicted_facts;
+ for(unsigned i=0;i<17;i++)require(world_transform_card(original,world_rng(original,WorldRng::Niche),original.deck[i],false,predicted[i],predicted_facts),"prepare independent transform draws");
+ add(WorldRelicPandorasBox);const unsigned tie_order[]={0,14,13,12,11,10,9,15,8,6,5,4,3,2,1,7,16};require(s.deck[0].kind==Bash,"untouched starter precedes batch replacements");
+ for(unsigned i=0;i<17;i++)require(card_token(s.deck[i+1])==card_token(predicted[tie_order[i]]),"equal-index batch order follows locked comparison sort");
+ reset();s.deck_count=MaxDeck;for(unsigned i=0;i<MaxDeck-1;i++)s.deck[i]={i&1?Defend:Strike,0};s.deck[MaxDeck-1]={Bash,0};combat();
+ require(gain_world_relic(s,WorldRelicPandorasBox),"obtain full batch in combat");world_relic_acquisition_resume(s);
+ require(s.deck_count==1&&s.world_relics.transform_count==MaxDeck-1&&s.world_relics.transform_cursor==0,"all originals removed before first asynchronous append");save_pending();resolve_pending(s);
+ require(s.deck_count==MaxDeck&&!world_relic_pending(s)&&!s.world_relics.transform_count,"saved full batch resumes every replacement");
+ reset();add(WorldRelicSelfFormingClay);add(WorldRelicCentennialPuzzle);combat();s.hp=s.max_hp=80;
+ require(gain_world_relic(s,WorldRelicLeafyPoultice),"obtain maximum-HP loss in combat");save_pending();resolve_pending(s);
+ require(s.max_hp==68&&s.hp==68&&s.world_relics.self_forming_clay==3&&relic(WorldRelicCentennialPuzzle).values[0]==1,"LoseMaxHp sends real damage before committing new maximum");
+ reset();add(WorldRelicRegalite);require(event_add_deck_card(s,{EventCardByrdonisEgg,0})>=0&&event_add_deck_card(s,{EventCardByrdonisEgg,0})>=0,"prepare two hatchable eggs");combat();int prior_block=s.block;unsigned prior_generated=s.regent.cards_created;
+ require(gain_world_relic(s,WorldRelicByrdpip)&&!s.world_relics.byrdpip_present,"pet waits for permanent and combat transformations");save_pending();resolve_pending(s);
+ for(unsigned i=0;i<s.deck_count;i++)require(s.deck[i].kind!=EventCardByrdonisEgg,"permanent eggs transformed");for(unsigned i=0;i<s.card_count;i++)require(s.cards[i].kind!=EventCardByrdonisEgg,"combat eggs transformed");
+ require(s.world_relics.byrdpip_present&&s.regent.cards_created==prior_generated+2&&s.block==prior_block+4,"combat transforms emit generated-card callbacks before the pet appears");
+ reset();require(original_event_begin(s,OriginalEventId::ColorfulPhilosophers,5,0)&&original_event_choose(s,0),"prepare existing subscribed card rewards");add(WorldRelicSilverCrucible);add(WorldRelicSilkenTress);
+ require(relic(WorldRelicSilverCrucible).values[0]==0&&relic(WorldRelicSilkenTress).values[0]==0,"RelicObtained uses AfterModifyingRewards rather than spending card-option callbacks");
+ for(unsigned i=0;i<s.original_events.reward_card_count;i++){Card card=card_from_token(s.original_events.reward_cards[i]);require(!card_upgradeable(card)&&s.original_events.reward_facts[i].enchantment==EventEnchantment::Glam,"all pre-existing rewards receive the newly obtained modifiers");}
+ WorldCardOptions options;options.flags=WorldIsCardReward|WorldNoUpgradeRoll;options.odds=WorldCardOdds::Uniform;Card next;EventCardFacts next_facts;
+ require(world_create_reward(s,world_rng(s,WorldRng::Rewards),1,options,&next,&next_facts),"generate a later card reward");
+ require(relic(WorldRelicSilverCrucible).values[0]==1&&relic(WorldRelicSilkenTress).values[0]==1,"normal generation consumes card-option callbacks once per reward");save_pending();
+ reset();add(WorldRelicPumpkinCandle);relic(WorldRelicPumpkinCandle).values[0]=0;require(world_relic_disabled(s,0)&&world_relic_display(s,0,amount)&&amount==0,"disabled candle still shows its original zero counter");
+ reset();add(WorldRelicDriftwood);add(WorldRelicPaelsWing);auto&w=s.world_relics;w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=5;w.rewards[0].value=uint16_t(card_token({EventCardLanternKey,0}));
+ w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;save_pending();old_deck=s.deck_count;uint16_t special=0;
+ require(world_relic_select(s,&special,1)&&s.deck_count==old_deck+1&&s.deck[old_deck].kind==EventCardLanternKey,"special card reward adds its exact card directly");
+ require(s.phase==Phase::Map&&!world_relic_pending(s)&&relic(WorldRelicPaelsWing).values[0]==0,"special card does not expose card-reward alternatives");
+ // Back from a full potion inventory preserves the reward. Taking the last
+ // bottle must free the group and every UI index before a save is allowed.
+ reset();for(unsigned i=0;i<potion_slot_count(s);i++)potion_set(s,i,Potion::Blood);
+ w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=3;w.rewards[0].value=uint16_t(Potion::Strength);
+ w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;save_pending();
+ uint16_t bottle=0;require(world_relic_select(s,&bottle,1)&&w.choice==WorldRelicChoice::Potion,"full inventory opens bottle replacement");save_pending();
+ require(world_relic_potion(s,-1)&&w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1),"canceling bottle replacement returns to the unclaimed reward");save_pending();
+ require(world_relic_select(s,&bottle,1)&&world_relic_potion(s,0)&&potion_at(s,0)==Potion::Strength,"last bottle can replace a held potion after returning");
+ require(s.phase==Phase::Map&&!world_relic_pending(s)&&!w.group_count&&!w.reward_count&&!w.choice_group&&!w.choice_reward&&!w.offer_count,"last potion clears the completed reward group's saved indexes");save_pending();
+ // Acquiring a reward-producing relic nests a new set inside its parent.
+ // Closing that child must resume, then close the already claimed parent.
+ reset();w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=2;w.rewards[0].value=WorldRelicCauldron;
+ w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;
+ uint16_t cauldron=0;require(world_relic_select(s,&cauldron,1)&&w.choice==WorldRelicChoice::OfferReward&&w.choice_group==2&&w.offer_count==5,"Cauldron opens a separately saved nested reward group");save_pending();
+ original=s;w.offers[1]=w.offers[0];require(!valid_world_relic_state(s),"duplicate reward-menu indexes are rejected");s=original;
+ require(world_relic_select(s,nullptr,0)&&s.phase==Phase::Map&&!world_relic_pending(s)&&!w.group_count&&!w.reward_count,"closing nested rewards resumes and releases the parent group");save_pending();
+ // Earring pays before automatic play. Orbit and resource history see that
+ // payment; CardPlay still reports automatic zero-spent metadata.
+ reset();add(WorldRelicWhisperingEarring);add(WorldRelicBrilliantScarf);prepared_hand({Bash,DefectHelixDrill,Defend});s.energy=2;orbit_fixture(2);
+ hook(WorldRelicHook::AfterAutoPrePlayLate);
+ require(s.hand.count==0&&s.energy==0&&s.regent.orbit_remainder[0]==1&&s.defect.energy_spent_turn==3,"Earring awaits Orbit refund before choosing the next affordable card");
+ require(s.enemies[0].hp==1984&&s.block==5&&relic(WorldRelicBrilliantScarf).values[0]==0,"Helix Drill sees paid-auto energy history while Scarf sees only automatic plays");save_pending();
+ reset();add(WorldRelicWhisperingEarring);add(WorldRelicGalacticDust);prepared_hand({RegentStardust});s.energy=0;s.expansion.stars=5;relic(WorldRelicGalacticDust).values[0]=5;
+ s.regent.powers[unsigned(RPower::ChildOfTheStars)]=2;s.regent.power_order[s.regent.power_count++]=uint8_t(RPower::ChildOfTheStars);
+ s.regent.powers[unsigned(RPower::BlackHole)]=10;s.regent.power_order[s.regent.power_count++]=uint8_t(RPower::BlackHole);
+ hook(WorldRelicHook::AfterAutoPrePlayLate);
+ require(s.expansion.stars==0&&s.block==20&&relic(WorldRelicGalacticDust).values[0]==0,"paid-auto star spending triggers both the power and relic listeners");
+ require(s.enemies[0].hp+s.enemies[1].hp==3975,"Stardust keeps captured star X and automatic zero-spent metadata suppresses Black Hole");save_pending();
+ reset();add(WorldRelicWhisperingEarring);add(WorldRelicChemicalX);add(WorldRelicIntimidatingHelmet);add(WorldRelicIvoryTile);prepared_hand({RegentHeavenlyDrill});s.energy=4;orbit_fixture();
+ world_relic_hook(s,WorldRelicHook::AfterAutoPrePlayLate);relic_front();relic_front();
+ require(s.energy==0&&relic(WorldRelicWhisperingEarring).values[1]==4,"paid energy and captured X survive before Orbit completes");save_pending();resolve_pending(s);
+ require(s.enemies[0].hp==1904&&s.energy==1&&s.block==0,"captured energy X differs from the later automatic ResourceInfo energy value");
+ require(s.defect.energy_spent_turn==4&&!world_relic_pending(s),"paid-auto history is recorded once and every continuation finishes");save_pending();
  std::printf("world relic runtime checks: %u\n",checks);return 0;
 }

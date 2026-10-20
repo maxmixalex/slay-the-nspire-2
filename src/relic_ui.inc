@@ -14,7 +14,7 @@ static void relic_badge(Canvas&c,RelicMask id,int x,int y){
     c.rect(x,y,13,13,Panel);c.num(value,x+1,y-1,10,active?Green:Gold);
 }
 static bool ui_relic_flash(const App&a,RelicId id){return a.relic_flash_ticks>0&&(a.game.world_relics.active?a.world_relic_flash==id:id<RelicKinds&&(a.relic_flash_mask&relic_definitions[id].id));}
-static unsigned ui_relic_opacity(const State&s,unsigned position){return s.world_relics.active&&position<s.world_relics.count&&(s.world_relics.entries[position].flags&(WorldRelicMelted|WorldRelicDisabled))?95:255;}
+static unsigned ui_relic_opacity(const State&s,unsigned position){return s.world_relics.active&&position<s.world_relics.count&&((s.world_relics.entries[position].flags&WorldRelicMelted)||world_relic_disabled(s,position))?95:255;}
 static void ui_relic_badge(Canvas&c,unsigned position,int x,int y){
  const auto&s=c.a.game;RelicId id=ui_owned_relic_id(s,position);
  if(!s.world_relics.active){if(id<RelicKinds)relic_badge(c,relic_definitions[id].id,x,y);return;}
@@ -27,14 +27,14 @@ static void ui_relic_progress(const State&s,unsigned position,char*out,size_t si
  if(!size)return;out[0]=0;RelicId id=ui_owned_relic_id(s,position);if(id==NoWorldRelic)return;
  if(!s.world_relics.active){if(id<RelicKinds)relic_progress(s,relic_definitions[id].id,out,size);return;}
  const auto&r=s.world_relics.entries[position];TextBuffer b{out,size,0};
- if(r.flags&WorldRelicMelted){b.text("已融化");return;}if(r.flags&WorldRelicDisabled){b.text("已失效");return;}
- int value=0;if(world_relic_display(s,position,value)){b.text("计数：");b.number(value);}if(r.flags&WorldRelicWax)b.text(" · 蜡制遗物");
+ if(r.flags&WorldRelicMelted){b.text("已融化");return;}if(world_relic_disabled(s,position))b.text("已用尽");
+ int value=0;if(world_relic_display(s,position,value)){if(b.n)b.text(" · ");b.text("计数：");b.number(value);}if(r.flags&WorldRelicWax)b.text(" · 蜡制遗物");
 }
 static void owned_relic_strip(Canvas&c){
  auto&a=c.a;auto&s=a.game;unsigned count=ui_owned_relic_count(s);
  for(unsigned i=0;i<count&&i<15;i++){int x=3+i*19;RelicId id=ui_owned_relic_id(s,i);
   if(ui_relic_flash(a,id)){c.box(x-1,23,19,20,Gold);c.rect(x+2,42,13,1,Green);}
-  c.picture(a.content.relic_image(id),x,24,17,17,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+7,31);c.hit(x-1,22,19,22,HitKind::OwnedRelic,i);
+  c.picture(a.relic_face_image(id),x,24,17,17,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+7,31);c.hit(x-1,22,19,22,HitKind::OwnedRelic,i);
  }
  if(count>15){char more[16]{};TextBuffer b{more,sizeof more,0};b.ch('+');b.number(count-15);c.text(more,290,25,10,Gold);c.hit(287,22,33,22,HitKind::Command,(int)Key::Relics);}
 }
@@ -43,7 +43,7 @@ static void owned_relic_panel(Canvas&c){
  c.centered("遗物",5,28,310,16,Gold);
  for(int i=first;i<mn(count,first+18);i++){int j=i-first,x=20+j%6*49,y=55+j/6*35;RelicId id=ui_owned_relic_id(s,i);
   if(i==a.scroll){c.rect(x-4,y-2,38,33,rgb(75,58,37));c.box(x-4,y-2,38,33,Gold);}
-  c.picture(a.content.relic_image(id),x,y,25,25,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+20,y+16);c.hit(x-5,y-3,46,34,HitKind::Relic,i);
+  c.picture(a.relic_face_image(id),x,y,25,25,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+20,y+16);c.hit(x-5,y-3,46,34,HitKind::Relic,i);
  }
  if(count){RelicId id=ui_owned_relic_id(s,a.scroll);c.centered(a.relic_title(id),15,161,290,12,Gold);
   char progress[128]{},description[2048]{};ui_relic_progress(s,a.scroll,progress,sizeof progress);a.relic_description(id,description,sizeof description,a.scroll);
@@ -71,7 +71,7 @@ static void treasure_screen(Canvas&c){
     c.centered(taken?"已领取":"宝藏",47,40,226,20,Gold);
     unsigned opacity=taken?120:220+(a.animation%16<8?a.animation%8:15-a.animation%16)*4;
     c.picture(A_MapHalo,118,69,84,84,opacity);
-    int image=world_id!=NoWorldRelic?a.content.relic_image(world_id):d?a.content.relic_image((int)(d-relic_definitions)):A_Coin;
+    int image=world_id!=NoWorldRelic?a.relic_face_image(world_id):d?a.relic_face_image((int)(d-relic_definitions)):A_Coin;
     c.picture(image,138,88,44,44,taken?135:255);
     c.centered(world_id!=NoWorldRelic?a.relic_title(world_id):d?d->name:"50 金币",13,143,294,16,Gold);
     c.paragraph(world_id!=NoWorldRelic?description:d?d->description:"已获得全部可用遗物，改为获得 [gold]50[/gold] 金币。",31,165,258,2,0,12,White);

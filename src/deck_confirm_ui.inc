@@ -1,7 +1,7 @@
 // A larger original-framed card keeps upgrade text inside the card itself.
 static void comparison_card(Canvas&c,Card card,int x,int y,int deck_index=-1){
     const int stars=card_star_cost(c.a.game,card),header=stars?16:0;
-    c.picture(c.a.content.frame_image(card),x,y,118,166);
+    c.picture(c.a.card_face_frame(card,-1,deck_index),x,y,118,166);
     c.picture(c.a.content.card_image(card.kind),x+6,y+27+header,106,77-header);
     c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y+1+header,118,24);
     char title[128]={};TextBuffer t{title,sizeof title,0};t.text(c.a.content.card_string(card.kind));if(card.upgraded)t.ch('+');

@@ -35,6 +35,7 @@ static bool valid_enemy_state(const State&s){
   if(m.captured_card>s.card_count||m.captured_deck.card.upgraded>1||!event_card_facts_valid(m.captured_deck.card,m.captured_deck.facts))return false;
   if(m.captured_card&&(!(m.flags&EnemyPresent)||(m.flags&EnemyRemoved)||s.zones[m.captured_card-1]!=Zone::Limbo||m.kind!=EnemyId::ThievingHopper))return false;
   for(auto value:m.data)if(value<-9999||value>9999)return false;
+  if(m.data[8]<0||m.data[8]>3||m.data[9]<0||m.data[9]>4)return false;
   for(unsigned p=0;p<EnemyPowerCount;++p){
    if(m.power[p]<-9999||m.power[p]>9999||m.power_aux[p]<-9999||m.power_aux[p]>9999||m.duration_skip[p]>1||m.source[p]>MaxEnemies)return false;
   }
@@ -70,7 +71,7 @@ static bool valid_enemy_effect(const State&s,const Effect&e){
  case XOp::EnemySpawn:return a>0&&a<EnemyKinds&&b>=0&&b<72;
  case XOp::EnemyEscape:case XOp::EnemyDie:return actor(a)&&b>=0&&b<=3;
  case XOp::EnemyTransform:return actor(a)&&b>0&&b<EnemyKinds;
- case XOp::EnemySideHook:return a>=0&&a<=1&&b>=0&&b<=1;
+ case XOp::EnemySideHook:return a>=0&&a<=2&&b>=0&&b<=1&&(a<2||b==0);
  case XOp::EnemyPowerHook:return target(a)&&b>=0&&b<EnemyPowerCount*16;
  case XOp::EnemyCardHook:return a>=0&&a<s.card_count&&b>=0&&b<=16;
  case XOp::EnemyKnowledgeChoice:return actor(a)&&b>=0&&b<=16;

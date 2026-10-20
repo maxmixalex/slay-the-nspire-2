@@ -19,7 +19,7 @@ static void character_screen(Canvas&c){
     c.picture(A_Heart,15,54,15,15);char hp[32]={};TextBuffer h{hp,sizeof hp,0};h.number(definition.starting_hp);h.text(" / ");h.number(definition.starting_hp);c.text(hp,37,51,12,White);
     c.paragraph(character_summary(a.selected_character),14,78,127,4,0,12,White);
     if(const auto*relic=relic_definition(definition.starting_relic)){
-        c.picture(a.content.relic_image((int)(relic-relic_definitions)),14,142,25,25);
+        c.picture(a.relic_face_image((int)(relic-relic_definitions)),14,142,25,25);
         c.text(relic->name,46,145,12,Gold,99);
         c.paragraph(relic->description,14,175,130,2,0,10,White);
     }
@@ -33,6 +33,14 @@ static void character_screen(Canvas&c){
         c.action(x-2,172,31,36,actions[i]);
     }
     c.ui(U_RewardSkip,218,211,99,27);c.centered(a.practice_entry?"练习 ›":"启程 ›",218,214,99,12,Gold);c.action(213,207,107,33,UiAction::StartCharacter);
+    if(!a.practice_entry){c.button("远征设置",99,216,108,false,23);c.action(96,209,114,31,UiAction::RunSettings);}
+    if(a.run_settings){a.hit_count=0;c.dim(0,0,320,240,218);c.ui(U_RewardPanel,17,17,286,213);c.centered("远征设置",0,26,320,20,Gold);
+        c.text("进阶等级",39,69,12,White);c.button("−",174,63,36,false,26);c.action(172,62,40,29,UiAction::RunAscensionDown,a.selected_ascension>0);c.num(a.selected_ascension,222,67,16,Gold);c.button("+",252,63,36,false,26);c.action(250,62,40,29,UiAction::RunAscensionUp,a.selected_ascension<10);
+        c.text("第一幕",39,105,12,White);c.button(a.content.world_title("acts",a.selected_region==reference::ActKind::Overgrowth?"OVERGROWTH":"UNDERDOCKS"),156,98,132,false,26);c.action(154,97,136,29,UiAction::RunRegion);
+        c.text("种子",39,141,12,White);c.text(*a.selected_seed?a.selected_seed:"自动生成",87,141,196,10,Gold);c.action(84,134,202,31,UiAction::RunSeed);
+        c.button("编辑种子",38,170,113,false,24);c.action(36,168,117,28,UiAction::RunSeed);c.button("清除",171,170,113,false,24);c.action(169,168,117,28,UiAction::RunSeedClear,*a.selected_seed);
+        c.button("返回",100,202,120,true,24);c.action(98,200,124,28,UiAction::RunSettings);
+    }
 }
 static void library_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.ui(U_TitleBackground,0,0);c.dim(0,0,320,240,225);
@@ -69,7 +77,7 @@ static void library_screen(Canvas&c){
         for(int i=first;i<mn(count,first+18);i++){
             int j=i-first;int x=22+(j%6)*49,y=53+(j/6)*35;bool selected=i==a.library_selected;
             if(selected){c.rect(x-4,y-2,38,34,rgb(75,58,37));c.box(x-4,y-2,38,34,Gold);}
-            int image=a.library_tab==1?a.content.relic_image(i):a.content.potion_image((Potion)(i+1));
+            int image=a.library_tab==1?a.relic_face_image(i):a.content.potion_image((Potion)(i+1));
             c.picture(image,x+2,y,25,29);c.hit(x-5,y-3,47,35,HitKind::LibraryItem,i);
         }
         int index=mn(count-1,mx(0,a.library_selected));const char*name;const char*desc;char description[2048]{};
@@ -89,7 +97,7 @@ static void item_detail_screen(Canvas&c){
     const char*name=relic?a.relic_title(RelicId(index)):potion_definitions[index].name;
     char description[4096]{};if(relic)a.relic_description(RelicId(index),description,sizeof description,a.detail_owned);
     const char*desc=relic?description:potion_definitions[index].description;
-    int image=relic?a.content.relic_image(index):a.content.potion_image((Potion)(index+1));
+    int image=relic?a.relic_face_image(index):a.content.potion_image((Potion)(index+1));
     c.picture(image,140,40,40,46);c.centered(name,58,91,204,16,Gold);
     bool owned=relic&&a.detail_owned>=0&&a.detail_owned<int(ui_owned_relic_count(a.game))&&ui_owned_relic_id(a.game,a.detail_owned)==index;
     char progress[128]{};if(owned)ui_relic_progress(a.game,a.detail_owned,progress,sizeof progress);int top=*progress?136:119;

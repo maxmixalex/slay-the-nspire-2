@@ -72,6 +72,10 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool practice_entry=false;
+    bool run_settings=false,run_seed_editing=false;
+    uint8_t selected_ascension=0;
+    reference::ActKind selected_region=reference::ActKind::Overgrowth;
+    char selected_seed[65]{};
     bool hand_focus=false; // Presentation only, never part of a saved run.
     bool hand_can_focus()const;
     bool shop_open=false,event_reader=false;
@@ -120,6 +124,11 @@ struct App {
     void open_card_detail(Card,int deck_index=-1);
     void open_card_offer(Card,const EventCardFacts&);
     int card_face_image(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
+    CardType card_face_type(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
+    int card_face_frame(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
+    int card_offer_cost(Card,const EventCardFacts*)const;
+    int relic_face_image(RelicId)const;
+    void card_modifier_text(Card,char*,size_t,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     bool reference_input(Key);
     bool screen_input(Key);
     unsigned library_items(CardKind* ids=nullptr)const;
@@ -146,7 +155,7 @@ struct App {
     void draw_frame();
     uint32_t tick_remainder=0;
     void render();
-    void card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1)const;
+    void card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
     void world_card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
     void localized_text(const char* table,const char* key,char*,size_t,int model=-1,int actor=-1,int amount=0)const;
     void original_event_text(int option,bool description,char*,size_t)const;

@@ -5,7 +5,7 @@ struct HandTile {
     bool valid=false,playable=false;
     const Content* owner=nullptr;
     Card card{};
-    int energy=0,stars=0;
+    int energy=0,stars=0,portrait=-1,frame=-1;
     char description[512]{};
     uint16_t pixels[HandTileW*HandTileH]{};
     uint8_t alpha[HandTileW*HandTileH]{};
@@ -22,21 +22,22 @@ static const HandTile& hand_tile(Canvas&c,int index){
     auto&a=c.a;Card card=a.game.cards[a.game.hand.ids[index]];
     const int instance=a.game.hand.ids[index];int energy=cost(a.game,instance),stars=card_star_cost(a.game,card,instance);bool playable=can_play_card(a.game,instance);
     char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.game.hand.ids[index]);
+    int portrait=a.card_face_image(card,instance),frame=a.card_face_frame(card,instance);
     auto&t=hand_tiles[index];
     if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
-       t.playable==playable&&same_text(t.description,description))return t;
-    t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;
+       t.playable==playable&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description))return t;
+    t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
     for(int i=0;i<HandTileW*HandTileH;i++){t.pixels[i]=0;t.alpha[i]=0;}
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     const bool star_card=card_star_cost(a.game,card)!=0;const int header=star_card?13:0;
-    tile.picture(a.content.frame_image(card),3,5,74,104);
-    tile.picture(a.card_face_image(card,instance),8,24+header,64,44-header);
+    tile.picture(frame,3,5,74,104);
+    tile.picture(portrait,8,24+header,64,44-header);
     tile.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,1,5+header,78,17);
     card_title(tile,a.content.card_string(card.kind),10,6+header,63,card.upgraded?Green:White);
     tile.picture(a.content.energy_image(card),0,0,18,18);tile.energy_label(energy,5,0,12);
     if(star_card)tile.star_label(stars,23,0,12);
-    tile.centered(card_type_label(definitions[card.kind].type),7,67,66,10,Muted);
+    tile.centered(card_type_label(a.card_face_type(card,instance)),7,67,66,10,Muted);
     tile.paragraph(description,9,80,62,2,0,10,White);
     if(tile.paragraph(description,9,80,62,0,0,10)>2)tile.text("…",60,96,10,Gold,13);
     if(card.upgraded)tile.text("+",66,star_card?0:16,10,Green);

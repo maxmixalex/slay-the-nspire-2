@@ -32,7 +32,7 @@ static WorldRoom world_roll_unknown(State&s,unsigned point){
 }
 static bool world_make_rewards(State&s){
     auto&w=s.world;auto&rng=world_rng(s,WorldRng::Rewards);
-    s.last_gold=0;s.reward_claimed=0;s.reward_potion=Potion::Empty;w.reward_count=0;w.reward_relic=NoWorldRelic;w.reward_relic_claimed=0;
+    s.last_gold=0;s.reward_claimed=0;s.reward_potion=Potion::Empty;w.reward_count=0;w.reward_relic=NoWorldRelic;w.reward_relic_claimed=0;w.reward_rerolled=w.reward_can_reroll=0;
     for(auto&c:w.reward_cards)c={};for(auto&f:w.reward_facts)f={};
     if(!encounter_rewards_allowed(s.enemy_world.encounter)){
         s.reward_claimed=7;w.reward_relic_claimed=1;return world_finish_room(s);
@@ -65,6 +65,7 @@ static bool world_make_rewards(State&s){
     unsigned count=unsigned(world_relic_modify_card_reward_count(s,3,options));
     if(count>MaxWorldRewardCards||!world_create_reward(s,rng,count,options,w.reward_cards,w.reward_facts,MaxWorldRewardCards,&count))return world_fail(s);
     w.reward_count=uint8_t(count);for(unsigned i=0;i<3;++i)s.reward[i]=i<count?w.reward_cards[i].kind:Strike;
+    for(unsigned i=0;i<s.world_relics.count;++i){const auto&r=s.world_relics.entries[i];if(r.id==WorldRelicDriftwood&&!(r.flags&(WorldRelicMelted|WorldRelicDisabled)))w.reward_can_reroll=1;}
     if(room==WorldRoom::Elite)w.reward_relic=random_world_relic(s);
     else w.reward_relic_claimed=1;
     const bool extra_cards=world_relic_combat_rewards(s);
@@ -268,6 +269,17 @@ bool world_claim_reward_card(State&s,int index){
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>=int(s.world.reward_count))return false;
     if(index>=0&&event_add_deck_card(s,s.world.reward_cards[index],&s.world.reward_facts[index])<0)return false;
     s.reward_claimed|=2;++s.revision;return true;
+}
+bool world_reroll_reward(State&s){
+    auto&w=s.world;if(!w.active||s.phase!=Phase::Reward||!w.reward_count||(s.reward_claimed&2)||!w.reward_can_reroll||w.reward_rerolled)return false;
+    WorldCardOptions options;options.source=WorldCardSource::Encounter;
+    options.odds=w.room_type==unsigned(WorldRoom::Boss)?WorldCardOdds::BossEncounter:w.room_type==unsigned(WorldRoom::Elite)?WorldCardOdds::EliteEncounter:WorldCardOdds::RegularEncounter;
+    options.flags=WorldIsCardReward|WorldIsFromCombat;
+    unsigned count=unsigned(world_relic_modify_card_reward_count(s,3,options));
+    if(count>MaxWorldRewardCards||!world_create_reward(s,world_rng(s,WorldRng::Rewards),count,options,w.reward_cards,w.reward_facts,MaxWorldRewardCards,&count))return world_fail(s);
+    w.reward_count=uint8_t(count);w.reward_rerolled=1;w.reward_can_reroll=0;
+    for(unsigned i=0;i<3;++i)s.reward[i]=i<count?w.reward_cards[i].kind:Strike;
+    ++s.revision;return true;
 }
 bool world_claim_reward_relic(State&s){
     auto&w=s.world;if(s.phase!=Phase::Reward||w.reward_relic_claimed||w.reward_relic==NoWorldRelic)return false;

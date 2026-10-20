@@ -289,7 +289,12 @@ bool choose_extended(State&,const uint16_t*,unsigned);
 void resolve_pending(State&);
 // card_source=-2 uses the active card for non-attack losses; -1 explicitly
 // identifies a power, potion or enemy source for damage-history hooks.
-void player_hp_loss(State&,int,bool attack,bool blockable,int card_source=-2);
+// Returns this DamageResult's HP loss before death prevention or healing.
+// dealer is an explicit enemy slot; nested non-enemy damage leaves it at -1.
+int player_hp_loss(State&,int,bool attack,bool blockable,int card_source=-2,int dealer=-1);
+void player_kill(State&,bool force=false);
+void player_lose_max_hp(State&,int amount);
+void before_potion_use(State&,Potion,int target);
 void gain_unpowered_block(State&,int);
 void apply_vulnerable(State&,int target,int amount);
 void apply_weak(State&,int target,int amount);

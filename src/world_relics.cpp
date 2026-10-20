@@ -2,6 +2,7 @@
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
+#include "reference_sort.hpp"
 
 namespace spire {
 #include "world_relic_definitions.inc"
@@ -66,6 +67,7 @@ void w_clean_bags(State& s){auto& w=s.world_relics;for(unsigned b=0;b<2;b++)for(
  for(unsigned i=n;i<w.bag_sizes[b][r];i++)w.bags[b][r][i]=0;w.bag_sizes[b][r]=uint16_t(n);
 }}
 bool w_enqueue(State& s,WorldRelicOp op,unsigned owner,int a=0,int b=0,int c=0){auto& w=s.world_relics;
+ if(w.step_cursor){unsigned remaining=w.step_count-w.step_cursor;for(unsigned i=0;i<remaining;i++)w.steps[i]=w.steps[i+w.step_cursor];for(unsigned i=remaining;i<w.step_count;i++)w.steps[i]=WorldRelicStep{};w.step_count=uint8_t(remaining);w.step_cursor=0;}
  if(w.step_count>=MaxWorldRelicSteps){w_error(s);return false;}
  // Insertion at the current cursor gives awaited child acquisitions precedence
  // over the continuation of the reward/event that caused them.
@@ -90,7 +92,10 @@ void w_initial_values(WorldRelicInstance& r){
 void w_pump(State& s){auto& w=s.world_relics;if(w.running||w.choice!=WorldRelicChoice::None)return;
  w.running=1;
  while(w.step_cursor<w.step_count&&w.choice==WorldRelicChoice::None&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){
-  WorldRelicStep step=w.steps[w.step_cursor++];w_step(s,step);
+  WorldRelicStep step=w.steps[w.step_cursor++];const bool combat=combat_phase(s.phase);
+  if(combat)world_relic_schedule_acquisition(s);
+  if(s.phase==Phase::Error)break;w_step(s,step);
+  if(combat)break;
  }
  w.running=0;
  if(w.step_cursor==w.step_count&&w.choice==WorldRelicChoice::None){
@@ -170,9 +175,16 @@ bool world_relic_replace(State&s,unsigned serial,RelicId id){int at=world_relic_
  auto&w=s.world_relics;for(unsigned i=unsigned(at)+1;i<w.count;i++)w.entries[i-1]=w.entries[i];w.entries[--w.count]=WorldRelicInstance{};
  if(old<RelicKinds&&w_first(s,old)<0){s.relics&=~(RelicMask(1)<<old);for(unsigned i=0;i<s.relic_count;i++)if(s.relic_order[i]==old){for(unsigned j=i+1;j<s.relic_count;j++)s.relic_order[j-1]=s.relic_order[j];s.relic_order[--s.relic_count]=0;break;}s.relic_counters[old]=0;}
  if(!w_enqueue(s,WorldRelicOp::Obtain,0,id,at+1))return false;w_pump(s);return s.phase!=Phase::Error;}
-bool world_relic_pending(const State& s){return s.world_relics.choice!=WorldRelicChoice::None||s.world_relics.step_cursor<s.world_relics.step_count;}
+bool world_relic_pending(const State& s){const auto&w=s.world_relics;if(w.choice!=WorldRelicChoice::None||w.step_cursor<w.step_count||w.transform_count||w.byrdpip_count)return true;for(const auto&f:w.hook_frames)if(f.active)return true;return false;}
+void world_relic_acquisition_resume(State&s){w_pump(s);if(!world_relic_pending(s)&&!combat_phase(s.phase)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){original_event_resume(s);world_resume_room(s);}}
 int world_relic_counter(const State& s,RelicId id){int at=w_first(s,id);if(at<0)return 0;const auto& r=s.world_relics.entries[at];
  switch(id){case WorldRelicPaelsTooth:return s.world_relics.tooth_count;case WorldRelicToyBox:case WorldRelicFishingRod:return r.values[0]%3;case WorldRelicWingedBoots:return w_max(0,3-r.values[0]);default:return r.values[0];}
+}
+bool world_relic_disabled(const State&s,unsigned position){if(!s.world_relics.active||position>=s.world_relics.count)return false;const auto&r=s.world_relics.entries[position];
+ if((r.flags&(WorldRelicMelted|WorldRelicDisabled))||w_used(r))return true;
+ if(r.id==WorldRelicLavaRock)return r.values[0]!=0;
+ if(r.id==WorldRelicPaelsTooth)return s.world_relics.tooth_count==0;
+ if(r.id==WorldRelicPumpkinCandle)return r.values[0]<=0;return false;
 }
 bool world_relic_display(const State&s,unsigned position,int&amount){amount=0;if(!s.world_relics.active||position>=s.world_relics.count)return false;
  const auto&r=s.world_relics.entries[position];if(r.flags&(WorldRelicMelted|WorldRelicDisabled))return false;
@@ -183,6 +195,7 @@ bool world_relic_display(const State&s,unsigned position,int&amount){amount=0;if
  case WorldRelicJossPaper:case WorldRelicPendulum:case WorldRelicPollinousCore:case WorldRelicPumpkinCandle:
  case WorldRelicSwordOfStone:case WorldRelicTuningFork:amount=value;return true;
  case WorldRelicEmberTea:amount=w_max(0,value);return true;
+ case WorldRelicPaelsTooth:amount=s.world_relics.tooth_count;return amount>0;
  case WorldRelicFishingRod:amount=value%3;return true;
  case WorldRelicGalacticDust:case WorldRelicNunchaku:case WorldRelicPenNib:amount=value%10;return true;
  case WorldRelicIronClub:amount=value%4;return true;
@@ -249,24 +262,23 @@ bool world_relic_setup_offer(State& s,RelicId id,int value){return world_relic_p
 namespace {
 void w_forget_prepared(State& s,RelicId id){auto& w=s.world_relics;for(unsigned i=0;i<w.prepared_count;i++)if(w.prepared[i].id==id){for(unsigned j=i+1;j<w.prepared_count;j++)w.prepared[j-1]=w.prepared[j];w.prepared[--w.prepared_count]={};return;}}
 WorldRelicCardSnapshot w_snapshot(const State& s,unsigned i){return {uint16_t(card_token(s.deck[i])),s.defect.genetic_deck[i],s.necro.scythe_deck[i],s.event_cards.deck[i]};}
-int w_restore_card(State& s,const WorldRelicCardSnapshot& snap,bool upgrade=false){Card c=card_from_token(snap.token);if(upgrade&&card_upgradeable(c))c.upgraded=1;int idx=event_add_deck_card(s,c,&snap.facts);if(idx>=0){s.defect.genetic_deck[idx]=snap.genetic;s.necro.scythe_deck[idx]=snap.scythe;}return idx;}
-bool w_transform(State& s,unsigned idx,reference::Random& rng,CardKind replacement=CardKinds,bool upgrade=false,bool carry=false){if(idx>=s.deck_count)return false;Card c;EventCardFacts f;
- if(!world_transform_card(s,rng,s.deck[idx],false,c,f,replacement))return false;
- if(carry){c.upgraded=s.deck[idx].upgraded;f=s.event_cards.deck[idx];}
- if(upgrade&&card_upgradeable(c))c.upgraded=1;
- return event_replace_deck_card(s,int(idx),c,&f);
+int w_restore_card(State& s,const WorldRelicCardSnapshot& snap,bool upgrade=false){EventDeckSnapshot card{card_from_token(snap.token),snap.facts,snap.genetic,snap.scythe};if(upgrade&&card_upgradeable(card.card))card.card.upgraded=1;
+ if(!world_relic_modify_deck_card(s,card.card,card.facts))return -1;
+ int idx=event_restore_deck_card(s,card);if(idx>=0){record(s,LogKind::Reward,card.card.kind,card.card.upgraded);world_relic_hook(s,WorldRelicHook::AfterDeckAdded,idx);}return idx;}
+bool w_queue_card(State&s,const WorldRelicCardSnapshot&card,unsigned owner=0){if(!w_enqueue(s,WorldRelicOp::RestoreCard,owner))return false;s.world_relics.steps[s.world_relics.step_cursor].card=card;return true;}
+#include "world_relic_transform.inc"
+bool w_transform(State& s,unsigned idx,reference::Random& rng,CardKind replacement=CardKinds,bool upgrade=false,unsigned carry=0){
+ WorldRelicCardSnapshot card;if(!w_transform_card(s,idx,rng,replacement,upgrade,carry,card))return false;
+ return event_replace_deck_card(s,int(idx),card_from_token(card.token),&card.facts);
 }
-void w_add(State& s,CardKind kind,unsigned count=1,bool upgraded=false){for(unsigned i=0;i<count;i++)event_add_deck_card(s,{kind,uint8_t(upgraded&&card_upgradeable({kind,0}))});}
-void w_curses(State& s,unsigned count){WorldCardOptions o;o.pools[0]=WorldCardPool::Curse;CardKind cards[CardKinds];unsigned n=world_card_candidates(s,o,cards,CardKinds),out=0;
- for(unsigned i=0;i<n;i++)if(world_card_modifier_allowed(cards[i]))cards[out++]=cards[i];n=out;world_stable_cards(cards,n);
- for(unsigned i=0;i<count&&n;i++){unsigned at=world_rng(s,WorldRng::Niche).below(n);w_add(s,cards[at]);for(unsigned j=at+1;j<n;j++)cards[j-1]=cards[j];--n;}
-}
+void w_add(State& s,CardKind kind,unsigned count=1,bool upgraded=false){if(count)w_enqueue(s,WorldRelicOp::AddCard,0,kind,int(count),upgraded?1:0);}
+void w_curses(State& s,unsigned count){if(count)w_enqueue(s,WorldRelicOp::Special,0,1,int(count));}
 // Choice filters are persisted so saves can reconstruct the exact allowed set.
 enum WFilter {WAny,WRemove,WUpgradeable,WTransform,WNonQuest,WEnchant,WTooth,WClaws};
 bool w_deck_eligible(const State& s,unsigned idx){if(idx>=s.deck_count)return false;Card c=s.deck[idx];const auto& w=s.world_relics;switch(w.choice_filter){
- case WRemove:return card_removable(c);case WUpgradeable:return card_upgradeable(c);case WTransform:case WClaws:return card_transformable(c);
+ case WRemove:return card_removable(s,c,int(idx));case WUpgradeable:return card_upgradeable(c);case WTransform:case WClaws:return card_transformable(s,c,int(idx));
  case WNonQuest:return definitions[c.kind].type!=CardType::Quest;case WEnchant:return event_card_can_enchant(s,int(idx),w.choice_enchantment);
- case WTooth:return card_removable(c)&&card_upgradeable(c);default:return true;}}
+ case WTooth:return card_removable(s,c,int(idx))&&card_upgradeable(c);default:return true;}}
 void w_choose_deck(State& s,WorldRelicInstance& r,WorldRelicChoice kind,unsigned maximum,unsigned filter,unsigned minimum=65535,EventEnchantment enchant=EventEnchantment::None,int amount=0){
  auto& w=s.world_relics;w.choice_filter=uint8_t(filter);w.choice_enchantment=enchant;w.choice_amount=int16_t(amount);
  unsigned n=0;for(unsigned i=0;i<s.deck_count;i++)if(w_deck_eligible(s,i))++n;
@@ -286,6 +298,9 @@ WorldRelicReward* w_reward_slot(State& s,unsigned group,unsigned kind){if(!group
  auto& r=w.rewards[i];r=WorldRelicReward{};r.group=uint8_t(group);r.kind=uint8_t(kind);if(i>=w.reward_count)w.reward_count=uint8_t(i+1);return &r;
  }w_error(s);return nullptr;}
 void w_group_free(State& s,unsigned group){auto& w=s.world_relics;if(!group||group>MaxWorldRelicRewardGroups)return;
+ // A last potion can complete a group through world_relic_potion rather than
+ // the general selection exit. Never retain a selection into a freed group.
+ if(w.choice_group==group){w.choice_group=w.choice_reward=0;w.offer_count=0;}
  for(auto& r:w.rewards)if(r.group==group)r=WorldRelicReward{};w.group_active[group-1]=0;w.group_skip[group-1]=0;w.group_owner[group-1]=0;
  while(w.reward_count&&!w.rewards[w.reward_count-1].group)--w.reward_count;
  while(w.group_count&&!w.group_active[w.group_count-1])--w.group_count;
@@ -295,13 +310,15 @@ void w_reward_potion(State& s,unsigned group){auto* r=w_reward_slot(s,group,3);i
 WorldCardOptions w_options(WorldCardOdds odds=WorldCardOdds::RegularEncounter,unsigned rarity=0){WorldCardOptions o;o.odds=odds;o.flags=WorldIsCardReward|WorldNoUpgradeRoll;o.rarity_mask=rarity?world_rarity_mask(rarity):0;return o;}
 void w_store_options(WorldRelicReward& r,const WorldCardOptions& o){r.rarity_mask=o.rarity_mask;r.creation_flags=o.flags;r.pool_count=o.pool_count;r.odds=uint8_t(o.odds);r.source=uint8_t(o.source);for(unsigned i=0;i<o.pool_count;i++)r.pools[i]=uint8_t(o.pools[i]);}
 bool w_reward_cards(State& s,unsigned group,const WorldCardOptions& o,unsigned n=3){auto* r=w_reward_slot(s,group,1);if(!r)return false;Card cards[8];EventCardFacts facts[8];
+ r->value=uint16_t(n);r->flags|=32;
  if(n>8||!world_create_reward(s,world_rng(s,WorldRng::Rewards),n,o,cards,facts,8,&n)){w_error(s);return false;}
  r->count=uint8_t(n);for(unsigned i=0;i<n;i++){r->tokens[i]=uint16_t(card_token(cards[i]));r->facts[i]=facts[i];}w_store_options(*r,o);
  if(w_first(s,WorldRelicDriftwood,true)>=0)r->flags|=16;return true;
 }
-void w_schedule_group(State& s,unsigned group){if(group)w_enqueue(s,WorldRelicOp::RewardGroup,s.world_relics.group_owner[group-1],int(group));}
+void w_schedule_group(State& s,unsigned group){if(group){if(w_first(s,WorldRelicDriftwood,true)>=0)for(auto&r:s.world_relics.rewards)if(r.group==group&&r.kind==1&&!(r.flags&4))r.flags|=16;w_enqueue(s,WorldRelicOp::RewardGroup,s.world_relics.group_owner[group-1],int(group));}}
 void w_group_show(State& s,unsigned group){auto& w=s.world_relics;if(!group||group>w.group_count||!w.group_active[group-1])return;w.offer_count=0;
  for(unsigned i=0;i<w.reward_count;i++)if(w.rewards[i].group==group&&!(w.rewards[i].flags&1))w.offers[w.offer_count++]=uint16_t(i);
+ reference::comparison_sort(w.offers,w.offer_count,[&w](uint16_t index){const unsigned ranks[]={0,5,3,2,1,4};return ranks[w.rewards[index].kind];});
  if(!w.offer_count){w_group_free(s,group);return;}w.choice_group=uint8_t(group);w.choice_reward=0;w.choice_cancelable=w.group_skip[group-1];
  w_pause(s,WorldRelicChoice::OfferReward,w.group_owner[group-1],w.choice_cancelable?0:1,1);
 }
@@ -313,11 +330,7 @@ void w_single_card_offer(State& s,unsigned owner,WorldCardOptions options,unsign
  if(count>8||!world_create_reward(s,world_rng(s,WorldRng::Rewards),count,options,cards,facts,8,&count)){w_error(s);return;}
  s.world_relics.choice_group=s.world_relics.choice_reward=0;w_show_cards(s,owner,cards,facts,count);
 }
-void w_basic_transform(State& s,bool all,bool remove_hp=false){uint16_t indices[MaxDeck];unsigned count=0;bool strike=false,defend=false;
- for(unsigned i=0;i<s.deck_count;i++){Card c=s.deck[i];bool a=w_basic_strike(c.kind),b=w_basic_defend(c.kind);if((a||b)&&card_removable(c)&&(all||(a&&!strike)||(b&&!defend))){indices[count++]=uint16_t(i);strike|=a;defend|=b;}}
- (void)remove_hp;
- for(unsigned i=0;i<count;i++)w_transform(s,indices[i],world_rng(s,all?WorldRng::Niche:WorldRng::Transformations));
-}
+void w_basic_transform(State& s,bool all,unsigned serial){w_enqueue(s,WorldRelicOp::TransformBasic,serial,all?1:0);}
 void w_scroll_boxes(State& s,WorldRelicInstance& r){WorldCardOptions o=w_options(WorldCardOdds::Uniform,2);o.flags|=WorldNoRarityModification;world_relic_modify_card_creation(s,o);
  CardKind common[CardKinds],uncommon[CardKinds];unsigned nc=world_card_candidates(s,o,common,CardKinds);o.rarity_mask=world_rarity_mask(3);world_relic_modify_card_creation(s,o);unsigned nu=world_card_candidates(s,o,uncommon,CardKinds);
  Card cards[6];EventCardFacts facts[6]{};bool used[CardKinds]{};auto& rng=world_rng(s,WorldRng::Rewards);
@@ -334,14 +347,14 @@ void w_kaleidoscope(State& s,WorldRelicInstance& r){unsigned group=w_new_group(s
  unsigned pools[4],n=0;for(unsigned c=0;c<CharacterKinds;c++)if(c!=unsigned(s.character))pools[n++]=c;
  // StableShuffle sorts CharacterCardPool models by their original model ID.
  for(unsigned i=1;i<n;i++){unsigned x=pools[i],j=i;const char* names[]={"IRONCLAD_CARD_POOL","SILENT_CARD_POOL","DEFECT_CARD_POOL","REGENT_CARD_POOL","NECROBINDER_CARD_POOL"};while(j&&w_cmp(names[pools[j-1]],names[x])>0){pools[j]=pools[j-1];--j;}pools[j]=x;}
- reference::shuffle(pools,n,world_rng(s,WorldRng::Niche));auto* reward=w_reward_slot(s,group,1);if(!reward)return;reward->count=3;
- for(unsigned i=0;i<3;i++){WorldCardOptions o=w_options();o.flags=WorldNoUpgradeRoll|WorldNoCardPoolModifications;o.pools[0]=WorldCardPool(pools[i]);Card c;EventCardFacts f;
+ reference::shuffle(pools,n,world_rng(s,WorldRng::Niche));auto* reward=w_reward_slot(s,group,1);if(!reward)return;reward->count=3;reward->value=3;
+ for(unsigned i=0;i<3;i++){WorldCardOptions o=w_options();o.flags=WorldNoCardPoolModifications;o.pools[0]=WorldCardPool(pools[i]);Card c;EventCardFacts f;
   if(!world_create_reward(s,world_rng(s,WorldRng::Rewards),1,o,&c,&f)){w_error(s);return;}reward->tokens[i]=uint16_t(card_token(c));reward->facts[i]=f;
  }
  WorldCardOptions late=w_options(WorldCardOdds::Uniform);late.flags=WorldNoCardPoolModifications|WorldNoCardModelModifications|WorldIsCardReward;late.pool_count=0;
  Card cards[8];EventCardFacts facts[8];for(unsigned i=0;i<3;i++){cards[i]=card_from_token(reward->tokens[i]);facts[i]=reward->facts[i];}
  unsigned count=3;world_relic_modify_reward_options(s,cards,facts,count,8,late);reward->count=uint8_t(count);for(unsigned i=0;i<count;i++){reward->tokens[i]=uint16_t(card_token(cards[i]));reward->facts[i]=facts[i];}
- w_store_options(*reward,w_options());
+ WorldCardOptions reroll=w_options();reroll.pool_count=0;w_store_options(*reward,reroll);
  }w_schedule_group(s,group);
 }
 void w_neows_bones(State& s,WorldRelicInstance& r){
@@ -361,29 +374,29 @@ void w_obtained(State& s,WorldRelicInstance& r){unsigned id=r.id,owner_serial=r.
  case WorldRelicBigMushroom:increase_max_hp(s,20);break;case WorldRelicFakeMango:increase_max_hp(s,3);break;
  case WorldRelicLoomingFruit:increase_max_hp(s,31);break;case WorldRelicNutritiousOyster:increase_max_hp(s,11);break;
  case WorldRelicOldCoin:gain_gold(s,300);break;case WorldRelicGoldenPearl:gain_gold(s,150);break;case WorldRelicSignetRing:gain_gold(s,888);break;
- case WorldRelicLeesWaffle:increase_max_hp(s,7);heal(s,s.max_hp);break;case WorldRelicFakeLeesWaffle:heal(s,s.max_hp/10);break;
+ case WorldRelicLeesWaffle:w_enqueue(s,WorldRelicOp::Heal,r.serial,-1);increase_max_hp(s,7);break;case WorldRelicFakeLeesWaffle:heal(s,s.max_hp/10);break;
  case WorldRelicPotionBelt:add_potion_slots(s,2);break;
  case WorldRelicAlchemicalCoffer:{unsigned old=potion_slot_count(s);if(!add_potion_slots(s,4))break;Potion potions[4];unsigned n=world_random_potions(s,world_rng(s,WorldRng::CombatPotionGeneration),4,potions);
-  for(unsigned i=0;i<n;i++)potion_set(s,old+i,potions[i]);break;}
- case WorldRelicPhialHolster:{add_potion_slots(s,1);Potion p[2];unsigned n=world_random_potions(s,world_rng(s,WorldRng::CombatPotionGeneration),2,p);for(unsigned i=0;i<n;i++)procure_potion(s,p[i]);break;}
+  for(unsigned i=n;i>0;i--)w_enqueue(s,WorldRelicOp::ProcurePotion,r.serial,int(potions[i-1]),int(old+i-1));break;}
+ case WorldRelicPhialHolster:{add_potion_slots(s,1);Potion p[2];unsigned n=world_random_potions(s,world_rng(s,WorldRng::CombatPotionGeneration),2,p);for(unsigned i=n;i>0;i--)w_enqueue(s,WorldRelicOp::ProcurePotion,r.serial,int(p[i-1]),-1);break;}
  case WorldRelicArcaneScroll:{WorldCardOptions o=w_options(WorldCardOdds::Uniform,4);o.flags=WorldNoUpgradeRoll;Card c;EventCardFacts f;if(world_create_reward(s,world_rng(s,WorldRng::Rewards),1,o,&c,&f))event_add_deck_card(s,c,&f);else w_error(s);break;}
  case WorldRelicArchaicTooth:{if(!world_relic_prepare(s,r.id))break;int at=world_relic_prepared_value(s,r.id);if(at>=0&&at<s.deck_count){r.card_tokens[0]=uint16_t(card_token(s.deck[at]));r.card_tokens[1]=uint16_t(card_token({w_transcend(s.deck[at].kind),s.deck[at].upgraded}));r.card_facts[0]=r.card_facts[1]=s.event_cards.deck[at];r.values[7]=1;w_transform(s,unsigned(at),world_rng(s,WorldRng::Transformations),w_transcend(s.deck[at].kind),false,true);}w_forget_prepared(s,WorldRelicArchaicTooth);break;}
  case WorldRelicAstrolabe:w_choose_deck(s,r,WorldRelicChoice::Transform,3,WTransform);break;
  case WorldRelicBeautifulBracelet:w_random_enchant(s,EventEnchantment::Swift,4,2);break;
  case WorldRelicBiiigHug:w_choose_deck(s,r,WorldRelicChoice::Remove,4,WRemove);break;
  case WorldRelicBloodSoakedRose:w_add(s,EventCardEnthralled);break;
- case WorldRelicByrdpip:{reference::Random rng;rng.named(world_run_seed(s),"BYRDPIP");r.skin=uint8_t(rng.below(4));for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind==EventCardByrdonisEgg)w_transform(s,i,world_rng(s,WorldRng::Transformations),EventCardByrdSwoop);break;}
- case WorldRelicCallingBell:{w_add(s,EventCardCurseOfTheBell);unsigned g=w_new_group(s,r.serial);for(unsigned rarity=2;rarity<=4;rarity++)w_reward_relic(s,g,world_relic_pull(s,WorldRelicPool(rarity)));w_schedule_group(s,g);break;}
+ case WorldRelicByrdpip:{reference::Random rng;rng.named(world_run_seed(s),"BYRDPIP");r.skin=uint8_t(rng.below(4));w_enqueue(s,WorldRelicOp::Special,r.serial,3);break;}
+ case WorldRelicCallingBell:w_enqueue(s,WorldRelicOp::Special,r.serial,2);w_add(s,EventCardCurseOfTheBell);break;
  case WorldRelicCauldron:{unsigned g=w_new_group(s,r.serial);for(unsigned i=0;i<5;i++)w_reward_potion(s,g);w_schedule_group(s,g);break;}
  case WorldRelicClaws:w_choose_deck(s,r,WorldRelicChoice::Transform,6,WClaws,0);break;
- case WorldRelicCursedPearl:w_add(s,EventCardGreed);gain_gold(s,333);break;
- case WorldRelicDistinguishedCape:w_curses(s,2);w_add(s,EventCardApparition,3);break;
+ case WorldRelicCursedPearl:w_enqueue(s,WorldRelicOp::Gold,r.serial,333);w_add(s,EventCardGreed);break;
+ case WorldRelicDistinguishedCape:w_add(s,EventCardApparition,3);w_curses(s,2);break;
  case WorldRelicDollysMirror:w_choose_deck(s,r,WorldRelicChoice::Duplicate,1,WNonQuest);break;
  case WorldRelicDowsingRod:w_add(s,EventCardDowsing);break;
  case WorldRelicDustyTome:if(world_relic_prepare(s,r.id)){int card=world_relic_prepared_value(s,r.id);r.values[0]=card;r.values[7]=1;if(card>=0&&card<CardKinds)w_add(s,CardKind(card),1,true);w_forget_prepared(s,WorldRelicDustyTome);}break;
  case WorldRelicElectricShrymp:w_choose_deck(s,r,WorldRelicChoice::Enchant,1,WEnchant,65535,EventEnchantment::Imbued,1);break;
  case WorldRelicEmptyCage:w_choose_deck(s,r,WorldRelicChoice::Remove,2,WRemove);break;
- case WorldRelicFragrantMushroom:player_hp_loss(s,15,false,false,-1);if(s.hp>0)w_random_upgrade(s,2);break;
+ case WorldRelicFragrantMushroom:w_enqueue(s,WorldRelicOp::RandomUpgrade,r.serial,2);player_hp_loss(s,15,false,false,-1);break;
  case WorldRelicFurCoat:r.values[0]=int(world_act_index(s));world_relic_map_generated(s);break;
  case WorldRelicGlassEye:{unsigned g=w_new_group(s,r.serial);for(unsigned i=0;i<5;i++){auto o=w_options(WorldCardOdds::Uniform,i<2?2:i<4?3:4);o.flags=WorldNoUpgradeRoll|WorldNoRarityModification|WorldIsCardReward;w_reward_cards(s,g,o);}w_schedule_group(s,g);break;}
  case WorldRelicGnarledHammer:w_choose_deck(s,r,WorldRelicChoice::Enchant,3,WEnchant,0,EventEnchantment::Sharp,3);break;
@@ -394,10 +407,10 @@ void w_obtained(State& s,WorldRelicInstance& r){unsigned id=r.id,owner_serial=r.
  case WorldRelicKifuda:w_choose_deck(s,r,WorldRelicChoice::Enchant,3,WEnchant,0,EventEnchantment::Adroit,3);break;
  case WorldRelicLargeCapsule:w_enqueue(s,WorldRelicOp::AddCard,r.serial,w_defend(s.character),1);w_enqueue(s,WorldRelicOp::AddCard,r.serial,w_strike(s.character),1);w_enqueue(s,WorldRelicOp::RelicReward,r.serial,-1,0,1);w_enqueue(s,WorldRelicOp::RelicReward,r.serial,-1,0,1);break;
  case WorldRelicLeadPaperweight:{WorldCardOptions o=w_options();o.flags=WorldNoUpgradeRoll;o.pools[0]=WorldCardPool::Colorless;w_single_card_offer(s,r.serial,o,2);break;}
- case WorldRelicLeafyPoultice:s.max_hp=w_max(1,s.max_hp-12);if(s.hp>s.max_hp)s.hp=s.max_hp;w_basic_transform(s,false);break;
+ case WorldRelicLeafyPoultice:w_basic_transform(s,false,r.serial);w_enqueue(s,WorldRelicOp::MaxHp,r.serial,-12);break;
  case WorldRelicLostCoffer:{unsigned g=w_new_group(s,r.serial);w_reward_cards(s,g,w_options());w_reward_potion(s,g);w_schedule_group(s,g);break;}
  case WorldRelicNeowsBones:w_neows_bones(s,r);break;
- case WorldRelicNeowsSacrifice:procure_potion(s,Potion::Ambergris);w_add(s,EventCardGuilty);break;
+ case WorldRelicNeowsSacrifice:w_add(s,EventCardGuilty);w_enqueue(s,WorldRelicOp::ProcurePotion,r.serial,int(Potion::Ambergris),-1);break;
  case WorldRelicNeowsTalisman:{int strike=-1,defend=-1;for(unsigned i=0;i<s.deck_count;i++){if(w_basic_strike(s.deck[i].kind))strike=int(i);if(w_basic_defend(s.deck[i].kind))defend=int(i);}if(strike>=0&&card_upgradeable(s.deck[strike]))s.deck[strike].upgraded=1;if(defend>=0&&card_upgradeable(s.deck[defend]))s.deck[defend].upgraded=1;break;}
  case WorldRelicNeowsTorment:w_add(s,EventCardNeowsFury);break;
  case WorldRelicNewLeaf:w_choose_deck(s,r,WorldRelicChoice::Transform,1,WTransform);break;
@@ -409,7 +422,7 @@ void w_obtained(State& s,WorldRelicInstance& r){unsigned id=r.id,owner_serial=r.
  case WorldRelicPaelsHorn:w_add(s,EventCardRelax,2);break;
  case WorldRelicPaelsLegion:{reference::Random rng;rng.named(world_run_seed(s),"PAELS_LEGION");r.skin=uint8_t(rng.below(4));break;}
  case WorldRelicPaelsTooth:w_choose_deck(s,r,WorldRelicChoice::Remove,5,WTooth);break;
- case WorldRelicPandorasBox:w_basic_transform(s,true);break;
+ case WorldRelicPandorasBox:w_basic_transform(s,true,r.serial);break;
  case WorldRelicPomander:w_choose_deck(s,r,WorldRelicChoice::Upgrade,1,WUpgradeable);break;
  case WorldRelicPrecariousShears:w_enqueue(s,WorldRelicOp::Damage,r.serial,16);w_choose_deck(s,r,WorldRelicChoice::Remove,2,WRemove);break;
  case WorldRelicPreciseScissors:w_choose_deck(s,r,WorldRelicChoice::Remove,1,WRemove);break;
@@ -422,7 +435,7 @@ void w_obtained(State& s,WorldRelicInstance& r){unsigned id=r.id,owner_serial=r.
  case WorldRelicSeaGlass:{world_relic_prepare(s,r.id);int character=world_relic_prepared_value(s,r.id);r.values[0]=character<0?0:character;r.values[7]=1;WorldCardOptions o=w_options(WorldCardOdds::Uniform);o.pools[0]=WorldCardPool(character<0?0:character);o.flags=WorldNoRarityModification|WorldNoCardPoolModifications|WorldNoUpgradeRoll;
   Card cards[15];EventCardFacts facts[15];for(unsigned i=0;i<3;i++){o.rarity_mask=world_rarity_mask(i+2);if(!world_create_reward(s,world_rng(s,WorldRng::Rewards),5,o,cards+i*5,facts+i*5)){w_error(s);return;}}
   w.choice_group=w.choice_reward=0;w_show_cards(s,r.serial,cards,facts,15,0,15);w_forget_prepared(s,r.id);break;}
- case WorldRelicSereTalon:s.max_hp=w_max(1,s.max_hp-9);if(s.hp>s.max_hp)s.hp=s.max_hp;w_add(s,EventCardWish,3);break;
+ case WorldRelicSereTalon:w_add(s,EventCardWish,3);w_enqueue(s,WorldRelicOp::MaxHp,r.serial,-9);break;
  case WorldRelicSilkenTress:s.gold=0;break;
  case WorldRelicSmallCapsule:{unsigned g=w_new_group(s,r.serial);w_reward_relic(s,g,random_world_relic(s));w_schedule_group(s,g);break;}
  case WorldRelicStorybook:w_add(s,EventCardBrightestFlame);break;
@@ -438,32 +451,69 @@ void w_obtained(State& s,WorldRelicInstance& r){unsigned id=r.id,owner_serial=r.
  }
  // These callbacks only apply when the relic was actually obtained during a
  // running combat; normal room/start callbacks are dispatched independently.
- world_relic_combat_acquired(s,owner_serial);
+ if(id!=WorldRelicByrdpip)world_relic_combat_acquired(s,owner_serial);
 }
 void w_step(State& s,const WorldRelicStep& step){auto& w=s.world_relics;switch(step.op){
  case WorldRelicOp::Obtain:{if(step.a<0||step.a>=WorldRelicKinds||w.count>=WorldRelicCapacity||w.last_serial==65535){w_error(s);return;}
   unsigned at=step.b>0?unsigned(step.b-1):w.count;if(at>w.count)at=w.count;for(unsigned i=w.count;i>at;i--)w.entries[i]=w.entries[i-1];++w.count;
   auto& r=w.entries[at];r=WorldRelicInstance{};r.id=RelicId(step.a);r.floor=uint16_t(world_total_floor(s));r.serial=++w.last_serial;r.flags=uint8_t(step.c&WorldRelicWax);w_initial_values(r);
   if(r.id<RelicKinds){RelicMask bit=RelicMask(1)<<r.id;if(!(s.relics&bit)){s.relics|=bit;s.relic_order[s.relic_count++]=uint8_t(r.id);}}
-  if(!(world_relic_definitions[r.id].flags&8))w_bag_remove(s,r.id);world_relic_flash(s,r.id);unsigned serial=r.serial;w_obtained(s,r);
-  // Existing card rewards subscribe to RelicObtained, including rewards in an
-  // outer set while an acquired relic opens a nested set.
-  int current=world_relic_instance_index(s,serial);if(current>=0)for(unsigned i=0;i<w.reward_count;i++){auto& reward=w.rewards[i];if(!reward.group||reward.kind!=1||(reward.flags&1))continue;
+  if(!(world_relic_definitions[r.id].flags&8))w_bag_remove(s,r.id);world_relic_flash(s,r.id);unsigned serial=r.serial;
+  // Player.AddRelicInternal notifies existing rewards before AfterObtained.
+  // Newly created rewards in that callback already see the owned relic.
+  // OnRelicObtained calls AfterModifyingRewards, not the similarly named
+  // AfterModifyingCardRewardOptions; Silver/Tress do not spend a use here.
+  int current=world_relic_instance_index(s,serial);
+  // An event's outer CardReward objects exist before any reward set opened
+  // by one of its relics. Their subscriptions therefore run first.
+  auto&e=s.original_events;if(current>=0&&e.active&&e.reward_active)for(unsigned i=0;i<e.reward_count;i++){auto&reward=e.rewards[i];if(reward.kind!=4||reward.claimed||!(reward.flags&1))continue;
+   Card cards[MaxOriginalEventOffers];EventCardFacts facts[MaxOriginalEventOffers];unsigned count=reward.count;for(unsigned j=0;j<count;j++){cards[j]=card_from_token(e.reward_cards[reward.first+j]);facts[j]=e.reward_facts[reward.first+j];}
+   WorldCardOptions o;o.flags=reward.creation_flags;o.rarity_mask=reward.rarity_mask;o.type_mask=reward.type_mask;o.zero_energy=reward.zero_energy;o.pool_count=reward.pool_count;o.odds=WorldCardOdds(reward.odds);o.source=WorldCardSource(reward.source);for(unsigned j=0;j<o.pool_count;j++)o.pools[j]=WorldCardPool(reward.pools[j]);
+   w_apply_reward_relic(s,w.entries[current],cards,facts,count,MaxOriginalEventOffers,o,false);
+   // All original event CardRewards use Other; LastingCandy cannot append
+   // an Encounter-only fourth option to this shared event card buffer.
+   if(count!=reward.count){w_error(s);return;}for(unsigned j=0;j<count;j++){e.reward_cards[reward.first+j]=uint16_t(card_token(cards[j]));e.reward_facts[reward.first+j]=facts[j];if(e.reward_current==i&&e.selection==OriginalEventSelection::OfferCard){e.offers[j]=e.reward_cards[reward.first+j];e.offer_facts[j]=facts[j];}}
+  }
+  const bool primary_open=s.world.active&&s.world.reward_count&&!(s.reward_claimed&2)&&(s.phase==Phase::Reward||(s.phase==Phase::WorldRelicChoice&&Phase(w.return_phase)==Phase::Reward));
+  if(current>=0&&primary_open){auto&world=s.world;WorldCardOptions o;o.source=WorldCardSource::Encounter;o.flags=WorldIsCardReward|WorldIsFromCombat;o.odds=world_room_type(s)==unsigned(WorldRoom::Boss)?WorldCardOdds::BossEncounter:world_room_type(s)==unsigned(WorldRoom::Elite)?WorldCardOdds::EliteEncounter:WorldCardOdds::RegularEncounter;unsigned count=world.reward_count;
+   w_apply_reward_relic(s,w.entries[current],world.reward_cards,world.reward_facts,count,MaxWorldRewardCards,o,false);world.reward_count=uint8_t(count);for(unsigned i=0;i<3;i++)s.reward[i]=i<count?world.reward_cards[i].kind:Strike;}
+  if(current>=0)for(unsigned i=0;i<w.reward_count;i++){auto& reward=w.rewards[i];if(!reward.group||reward.kind!=1||(reward.flags&1)||!(reward.flags&32))continue;
    Card cards[8];EventCardFacts facts[8];unsigned count=reward.count;for(unsigned j=0;j<count;j++){cards[j]=card_from_token(reward.tokens[j]);facts[j]=reward.facts[j];}
    WorldCardOptions o;o.flags=reward.creation_flags;o.rarity_mask=reward.rarity_mask;o.pool_count=reward.pool_count;o.odds=WorldCardOdds(reward.odds);o.source=WorldCardSource(reward.source);for(unsigned j=0;j<o.pool_count;j++)o.pools[j]=WorldCardPool(reward.pools[j]);
    w_apply_reward_relic(s,w.entries[current],cards,facts,count,8,o,false);reward.count=uint8_t(count);for(unsigned j=0;j<count;j++){reward.tokens[j]=uint16_t(card_token(cards[j]));reward.facts[j]=facts[j];}
-  }break;}
+  }current=world_relic_instance_index(s,serial);if(current>=0)w_obtained(s,w.entries[current]);break;}
  case WorldRelicOp::Damage:player_hp_loss(s,step.a,false,false,-1);break;
  case WorldRelicOp::Heal:heal(s,step.a<0?s.max_hp:step.a);break;
- case WorldRelicOp::MaxHp:if(step.a>=0)increase_max_hp(s,step.a);else{s.max_hp=w_max(1,s.max_hp+step.a);if(s.hp>s.max_hp)s.hp=s.max_hp;}break;
+ case WorldRelicOp::MaxHp:if(step.a>=0)increase_max_hp(s,step.a);else player_lose_max_hp(s,-step.a);break;
+ case WorldRelicOp::TransformAppend:w_transform_append(s,step.owner);break;
  case WorldRelicOp::Gold:gain_gold(s,step.a);break;
- case WorldRelicOp::AddCard:w_add(s,CardKind(step.a),unsigned(w_max(0,step.b)),step.c!=0);break;
+ case WorldRelicOp::AddCard:if(step.a<0||step.a>=CardKinds||step.b<0||step.b>int(MaxDeck)){w_error(s);return;}if(step.b){if(step.b>1)w_enqueue(s,WorldRelicOp::AddCard,step.owner,step.a,step.b-1,step.c);if(event_add_deck_card(s,{CardKind(step.a),uint8_t(step.c&&card_upgradeable({CardKind(step.a),0}))})<0)w_error(s);}break;
+ case WorldRelicOp::RestoreCard:if(w_restore_card(s,step.card)<0)w_error(s);break;
+ case WorldRelicOp::ApplyChoice:{unsigned at=unsigned(step.b),filter=unsigned(step.c)&255;if(at>=s.deck_count){w_error(s);return;}switch(WorldRelicChoice(step.a)){
+  case WorldRelicChoice::Remove:if(!event_remove_deck_card(s,int(at)))w_error(s);break;
+  case WorldRelicChoice::Upgrade:if(card_upgradeable(s.deck[at])){s.deck[at].upgraded=1;record(s,LogKind::Upgrade,s.deck[at].kind);}break;
+  case WorldRelicChoice::Transform:if(!w_transform(s,at,world_rng(s,filter==WClaws?WorldRng::Transformations:WorldRng::Niche),filter==WClaws?CardKind(EventCardMaul):CardKind(CardKinds),(step.c&256)!=0,filter==WClaws?2:0))w_error(s);break;
+  case WorldRelicChoice::Enchant:if(!event_card_enchant(s,int(at),step.card.facts.enchantment,step.card.facts.enchantment_amount))w_error(s);break;
+  default:w_error(s);break;}break;}
+ case WorldRelicOp::ProcurePotion:if(step.a<=0||step.a>PotionKinds||step.b< -1||step.b>=int(potion_slot_count(s))){w_error(s);return;}if(step.b<0)procure_potion(s,Potion(step.a));else procure_potion_at(s,Potion(step.a),unsigned(step.b));break;
+ case WorldRelicOp::DiscardPotion:if(step.a<0||step.a>=int(potion_slot_count(s))){w_error(s);return;}if(potion_at(s,unsigned(step.a))!=Potion::Empty&&!discard_potion(s,step.a))w_error(s);break;
  case WorldRelicOp::RandomUpgrade:w_random_upgrade(s,unsigned(w_max(0,step.a)),unsigned(w_max(0,step.b)));break;
- case WorldRelicOp::TransformBasic:w_basic_transform(s,step.a!=0);break;
+ case WorldRelicOp::TransformBasic:{uint16_t ids[MaxDeck];unsigned count=0;
+  if(step.a){for(unsigned i=0;i<s.deck_count;i++)if((w_basic_strike(s.deck[i].kind)||w_basic_defend(s.deck[i].kind))&&card_removable(s,s.deck[i],int(i)))ids[count++]=uint16_t(i);}
+  else{for(unsigned i=0;i<s.deck_count;i++)if(w_basic_strike(s.deck[i].kind)){ids[count++]=uint16_t(i);break;}
+   for(unsigned i=0;i<s.deck_count;i++)if(w_basic_defend(s.deck[i].kind)){ids[count++]=uint16_t(i);break;}}
+  if(!w_transform_batch(s,step.owner,ids,count,step.a?1:0))w_error(s);break;}
  case WorldRelicOp::RelicReward:{RelicId id=step.a<0?random_world_relic(s):RelicId(step.a);
   if(step.c)w_enqueue(s,WorldRelicOp::Obtain,0,id);else{unsigned g=w_new_group(s,step.owner);w_reward_relic(s,g,id,step.b!=0);w_schedule_group(s,g);}break;}
  case WorldRelicOp::RewardGroup:w_group_show(s,unsigned(step.a));break;
- case WorldRelicOp::Special:if(step.a==1)w_curses(s,1);break;
+ case WorldRelicOp::Special:
+  if(step.a==1){WorldCardOptions o;o.pools[0]=WorldCardPool::Curse;CardKind cards[CardKinds];unsigned n=world_card_candidates(s,o,cards,CardKinds),out=0;for(unsigned i=0;i<n;i++)if(world_card_modifier_allowed(cards[i])&&int(cards[i])+1!=step.c)cards[out++]=cards[i];n=out;world_stable_cards(cards,n);if(!n){w_error(s);return;}CardKind card=cards[world_rng(s,WorldRng::Niche).below(n)];if(step.b>1)w_enqueue(s,WorldRelicOp::Special,step.owner,1,step.b-1,int(card)+1);if(event_add_deck_card(s,{card,0})<0)w_error(s);}
+  else if(step.a==2){unsigned g=w_new_group(s,step.owner);for(unsigned rarity=2;rarity<=4;rarity++)w_reward_relic(s,g,world_relic_pull(s,WorldRelicPool(rarity)));w_schedule_group(s,g);}
+  else if(step.a==3){bool found=false;for(unsigned i=unsigned(w_max(0,step.b));i<s.deck_count;i++)if(s.deck[i].kind==EventCardByrdonisEgg){found=true;
+   w_enqueue(s,WorldRelicOp::Special,step.owner,3,int(i));if(!w_transform(s,i,world_rng(s,WorldRng::Transformations),EventCardByrdSwoop))w_error(s);break;}
+   if(!found)world_relic_combat_acquired(s,step.owner);
+  }
+  else w_error(s);break;
  case WorldRelicOp::None:case WorldRelicOp::Finish:break;
  default:w_error(s);break;
 }}
@@ -478,32 +528,28 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
   if(reward.kind==2){reward.flags|=1;w_enqueue(s,WorldRelicOp::Obtain,0,reward.value,0,(reward.flags&2)?WorldRelicWax:0);}
   else if(reward.kind==3){
    bool full=true;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)full=false;
-   if(!full||w_first(s,WorldRelicSozu,true)>=0){procure_potion(s,Potion(reward.value));reward.flags|=1;}
+   if(!full||w_first(s,WorldRelicSozu,true)>=0){w_enqueue(s,WorldRelicOp::ProcurePotion,serial,int(reward.value),-1);reward.flags|=1;}
    else{w.offer_count=1;w.offers[0]=reward.value;w.choice_cancelable=1;w_pause(s,WorldRelicChoice::Potion,serial,0,1);}
   }else if(reward.kind==1){Card cards[8];for(unsigned i=0;i<reward.count;i++)cards[i]=card_from_token(reward.tokens[i]);w_show_cards(s,serial,cards,reward.facts,reward.count);}
-  else if(reward.kind==4){reward.flags|=1;gain_gold(s,reward.value);}
+  else if(reward.kind==4){reward.flags|=1;w_enqueue(s,WorldRelicOp::Gold,serial,reward.value);}
+  else if(reward.kind==5){reward.flags|=1;w_queue_card(s,{reward.value,0,0,reward.facts[0]},serial);}
   return;
  }
  if(choice==WorldRelicChoice::OfferCard){
-  Card cards[MaxWorldRelicOffers];EventCardFacts facts[MaxWorldRelicOffers];for(unsigned i=0;i<count;i++){cards[i]=card_from_token(w.offers[ids[i]]);facts[i]=w.offer_facts[ids[i]];}
   if(reward_index&&reward_index<=w.reward_count&&count)w.rewards[reward_index-1].flags|=1;
-  for(unsigned i=0;i<count;i++)event_add_deck_card(s,cards[i],&facts[i]);return;
+  for(unsigned i=count;i>0;i--){WorldRelicCardSnapshot card{w.offers[ids[i-1]],0,0,w.offer_facts[ids[i-1]]};if(!w_queue_card(s,card,serial))return;}return;
  }
- if(choice==WorldRelicChoice::OfferBundle){unsigned first=ids[0]*3;Card cards[3];EventCardFacts facts[3];for(unsigned i=0;i<3;i++){cards[i]=card_from_token(w.offers[first+i]);facts[i]=w.offer_facts[first+i];}for(unsigned i=0;i<3;i++)event_add_deck_card(s,cards[i],&facts[i]);return;}
+ if(choice==WorldRelicChoice::OfferBundle){unsigned first=ids[0]*3;for(unsigned i=3;i>0;i--){WorldRelicCardSnapshot card{w.offers[first+i-1],0,0,w.offer_facts[first+i-1]};if(!w_queue_card(s,card,serial))return;}return;}
  if(choice==WorldRelicChoice::Hand||choice==WorldRelicChoice::CombatOffer){world_relic_combat_select(s,serial,ids,count);return;}
  uint16_t selected[MaxDeck];for(unsigned i=0;i<count;i++)selected[i]=ids[i];
+ if(choice==WorldRelicChoice::Transform&&filter==WClaws){if(!w_transform_batch(s,serial,selected,count,2))w_error(s);return;}
  if(filter==WTooth){w_sort_deck(s,selected,count);w.tooth_count=uint8_t(count);for(unsigned i=0;i<count;i++)w.tooth_cards[i]=w_snapshot(s,selected[i]);}
- for(unsigned i=0;i<count;i++){
-  unsigned at=selected[i];if(choice==WorldRelicChoice::Remove)for(unsigned j=0;j<i;j++)if(selected[j]<selected[i])--at;
+ for(unsigned remaining=count;remaining>0;remaining--){unsigned i=remaining-1;
+  unsigned at=selected[i];if(choice==WorldRelicChoice::Remove||choice==WorldRelicChoice::Transform)for(unsigned j=0;j<i;j++)if(selected[j]<selected[i])--at;
   if(at>=s.deck_count){w_error(s);return;}
-  switch(choice){
-  case WorldRelicChoice::Remove:event_remove_deck_card(s,int(at));break;
-  case WorldRelicChoice::Upgrade:if(card_upgradeable(s.deck[at])){s.deck[at].upgraded=1;record(s,LogKind::Upgrade,s.deck[at].kind);}break;
-  case WorldRelicChoice::Duplicate:w_restore_card(s,w_snapshot(s,at));break;
-  case WorldRelicChoice::Transform:w_transform(s,at,world_rng(s,filter==WClaws?WorldRng::Transformations:WorldRng::Niche),filter==WClaws?CardKind(EventCardMaul):CardKind(CardKinds),owner_id==WorldRelicAstrolabe,filter==WClaws);break;
-  case WorldRelicChoice::Enchant:event_card_enchant(s,int(at),w.choice_enchantment,w.choice_amount);break;
-  default:w_error(s);return;
-  }
+  if(choice==WorldRelicChoice::Duplicate){if(!w_queue_card(s,w_snapshot(s,selected[i]),serial))return;}
+  else{if(!w_enqueue(s,WorldRelicOp::ApplyChoice,serial,int(choice),int(at),int(filter)|(owner_id==WorldRelicAstrolabe?256:0)))return;
+   if(choice==WorldRelicChoice::Enchant){auto&f=w.steps[w.step_cursor].card.facts;f.enchantment=w.choice_enchantment;f.enchantment_amount=w.choice_amount;}}
  }
 }
 }
@@ -526,10 +572,15 @@ bool world_relic_select(State& s,const uint16_t* ids,unsigned count){auto& w=s.w
  if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){w.offer_count=0;w.choice_group=w.choice_reward=0;original_event_resume(s);world_resume_room(s);}
  if(s.phase==Phase::Combat)resolve_pending(s);return s.phase!=Phase::Error;
 }
-bool world_relic_potion(State& s,int slot){auto& w=s.world_relics;if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::Potion||slot>=int(potion_slot_count(s)))return false;
+bool world_relic_potion(State& s,int slot){auto& w=s.world_relics;if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::Potion||slot< -1||slot>=int(potion_slot_count(s))||(slot>=0&&w_first(s,WorldRelicSozu,true)>=0))return false;
  unsigned reward=w.choice_reward;Potion potion=Potion(w.offers[0]);w_clear_choice(s);
- if(slot>=0){if(potion_at(s,unsigned(slot))!=Potion::Empty)discard_potion(s,slot);potion_set(s,unsigned(slot),potion);if(reward&&reward<=w.reward_count)w.rewards[reward-1].flags|=1;}
- w_pump(s);world_relic_resume(s);++s.revision;if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){original_event_resume(s);world_resume_room(s);}return true;
+ if(slot>=0){w_enqueue(s,WorldRelicOp::ProcurePotion,w.choice_owner,int(potion),slot);if(potion_at(s,unsigned(slot))!=Potion::Empty)w_enqueue(s,WorldRelicOp::DiscardPotion,w.choice_owner,slot);if(reward&&reward<=w.reward_count)w.rewards[reward-1].flags|=1;}
+ w_pump(s);world_relic_resume(s);++s.revision;if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){original_event_resume(s);world_resume_room(s);}if(s.phase==Phase::Combat)resolve_pending(s);return s.phase!=Phase::Error;
+}
+bool world_relic_can_reroll_reward(const State&s){const auto&w=s.world_relics;if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::OfferCard||!w.choice_reward||w.choice_reward>w.reward_count)return false;const auto&r=w.rewards[w.choice_reward-1];return r.group&&r.kind==1&&!(r.flags&1)&&(r.flags&16);}
+bool world_relic_reroll_reward(State&s){if(!world_relic_can_reroll_reward(s))return false;auto&w=s.world_relics;auto&r=w.rewards[w.choice_reward-1];WorldCardOptions o;o.flags=r.creation_flags;o.rarity_mask=r.rarity_mask;o.pool_count=r.pool_count;o.odds=WorldCardOdds(r.odds);o.source=WorldCardSource(r.source);for(unsigned i=0;i<o.pool_count;i++)o.pools[i]=WorldCardPool(r.pools[i]);
+ Card cards[8];EventCardFacts facts[8];unsigned n=0;if(!r.value||r.value>8||!world_create_reward(s,world_rng(s,WorldRng::Rewards),r.value,o,cards,facts,8,&n)){w_error(s);return false;}
+ r.flags=uint8_t((r.flags&~16)|4);r.count=uint8_t(n);w.offer_count=uint16_t(n);for(unsigned i=0;i<n;i++){r.tokens[i]=w.offers[i]=uint16_t(card_token(cards[i]));r.facts[i]=w.offer_facts[i]=facts[i];}++s.revision;return true;
 }
 
 void world_relic_modify_card_creation(State& s,WorldCardOptions& o){if(!s.world_relics.active||(o.flags&WorldNoCardPoolModifications)||!(o.flags&WorldIsCardReward))return;
