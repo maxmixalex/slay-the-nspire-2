@@ -13,7 +13,6 @@ static int event_enchantment_damage_halves(const State&,Card,int);
 static int event_enchantment_block_add(const State&,Card,int);
 static int event_card_replays(const State&,int);
 static void event_card_begin_play(State&,int);
-static void event_card_prepare_play(State&,int,bool discard_result);
 static void event_card_after_body(State&,int);
 static void event_card_after_play(State&,int);
 static void event_card_after_draw(State&,int);

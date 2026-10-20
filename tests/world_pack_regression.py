@@ -16,10 +16,18 @@ from build_world import (ConversionCache, card_description, choose_layout,
 from world_enemy_assets import manifest
 from world_enemy_profile import plan, skins
 from world_ui_profile import (BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
-    CLIP_ROWS, AUXILIARY_ROWS, validate_headers)
+    CLIP_ROWS, AUXILIARY_ROWS, TEXT_KEYS, TEXT_BASE, validate_headers)
 
 
 class WorldPack(unittest.TestCase):
+    def test_common_text_append_preserves_all_original_world_ids(self):
+        base = json.loads((ROOT / 'config/world-ui-0.17.json').read_text())['text_keys']
+        self.assertEqual(TEXT_KEYS[:len(base)], base)
+        self.assertEqual(TEXT_BASE + TEXT_KEYS.index('main_menu_ui.COMPENDIUM'), 6080)
+        self.assertGreater(TEXT_KEYS.index('settings_ui.FASTMODE'), len(base)-1)
+        self.assertEqual(TEXT_BASE + TEXT_KEYS.index('main_menu_ui.ABANDON_RUN'), 6095)
+        self.assertEqual(len(TEXT_KEYS), len(set(TEXT_KEYS)))
+
     def test_every_used_clip_has_full_period_and_own_native_name(self):
         jobs = plan()['jobs']
         by_clip = {}

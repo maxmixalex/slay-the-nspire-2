@@ -1,10 +1,11 @@
 #include "hand_focus.inc"
 static void invalidate_hand_tiles();
-bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
-bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(source)&&content.current_profile();}
+#include "frontend_input.inc"
+bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
+bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();callbacks=cb;if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies|| (actor&&game.enemy_world.active))return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=game.expansion.osty_hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -15,7 +16,7 @@ void App::sync_character_feedback(){
     }
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
-void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms;while(tick_remainder>=33){tick_remainder-=33;tick();}}
+void App::advance(uint32_t ms){if(ms>250)ms=250;tick_remainder+=ms*(fast_mode?2:1);while(tick_remainder>=33){tick_remainder-=33;tick();}}
 void App::draw_frame(){render();}
 void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"
@@ -31,6 +32,7 @@ void App::input(Key k){
     if(!title&&!paused&&int32_t(combat_linger_until-animation)>0&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     HandInputFocus focus(*this,k);
     if(!pointer.dispatching){pointer_cancel();pointer.visible=false;}
+    if(frontend_input(k))return;
     if(map_input(k))return;
     if(room_input(k))return;
     if(status_input(k))return;
@@ -50,6 +52,7 @@ void App::input(Key k){
         else if(k==Key::Left||k==Key::Right)ui_action(UiAction::ToggleCardUpgrade);
         return;
     }
+    if(game_over_input(k))return;
     if(screen_input(k))return;
     if(world_choice_input(k))return;
     if(selection_input(k))return;
@@ -74,25 +77,6 @@ void App::input(Key k){
     }
 
     if(k==Key::Quit){quit=true;return;}
-    if(help){if(k==Key::Back||k==Key::Confirm)help=false;return;}
-    if(title){
-        if(k==Key::Up||k==Key::Left)menu=(menu+6)%7;if(k==Key::Down||k==Key::Right)menu=(menu+1)%7;
-        if(k==Key::Confirm){
-            if(menu==0){practice_entry=false;character_select=true;}
-            else if(menu==1){if(callbacks.load&&callbacks.load(game)){title=false;reset_presentation();message("已恢复存档");}else message("没有有效的存档");}
-            else if(menu==2){library=true;library_page=library_selected=0;}
-            else if(menu==3){practice_entry=true;character_select=true;}
-            else if(menu==4){map_preview.open=true;if(!map_preview.generated)map_preview.generate();}
-            else if(menu==5)help=true;else quit=true;
-        }return;
-    }
-    if(paused){
-        if(k==Key::Back){paused=false;return;}if(k==Key::Up||k==Key::Left)menu=(menu+5)%6;if(k==Key::Down||k==Key::Right)menu=(menu+1)%6;
-        if(k==Key::Confirm){switch(menu){case 0:paused=false;break;
-            case 1:has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");paused=false;break;
-            case 2:if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的存档");paused=false;break;
-            case 3:help=true;break;case 4:paused=false;title=true;menu=0;break;case 5:quit=true;break;}}return;
-    }
     if(k==Key::Back){
         if(reward_cards&&!panel){reward_cards=false;cursor=1;return;}
         if(panel){panel=0;scroll=map_scroll=0;}
@@ -100,8 +84,8 @@ void App::input(Key k){
         else if(game.phase==Phase::Upgrade){if(game.world.active)world_rest_cancel(game);else game.phase=Phase::Camp;cursor=1;}
         else{paused=true;menu=0;}return;
     }
-    if(k==Key::Save){has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");return;}
-    if(k==Key::Load){if(callbacks.load&&callbacks.load(game)){reset_presentation();message("已载入");}else message("没有有效的存档");return;}
+    if(k==Key::Save){message(save_current_run()?"已保存远征":"保存失败");return;}
+    if(k==Key::Load){if(load_saved_run())message("已载入");else message("没有有效的存档");return;}
     if(k==Key::Log){panel=panel==2?0:2;scroll=0;return;}
     if(k==Key::Inspect){panel=panel==1?0:1;scroll=inspect_cursor=0;return;}
     if(k==Key::Map){if(game.practice){message("组合练习没有远征路线");return;}panel=panel==3?0:3;map_scroll=0;return;}

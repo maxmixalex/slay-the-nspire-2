@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 #include <string>
 #include <chrono>
 #include <thread>
@@ -27,6 +28,7 @@ static bool load_game(spire::State&s){
     FILE*f=fopen(save_path.c_str(),"rb");if(!f)return false;
     static uint8_t b[sizeof(spire::SaveData::bytes)+1];size_t n=fread(b,1,sizeof b,f);bool ok=!ferror(f);fclose(f);return ok&&spire::load(s,b,n);
 }
+static bool clear_save(){return std::remove(save_path.c_str())==0||errno==ENOENT;}
 static void capture(const char*path){
     app.render();FILE*f=fopen(path,"wb");if(!f){perror(path);exit(3);}fprintf(f,"P6\n320 240\n255\n");
     for(auto p:app.pixels){uint8_t c[3]={(uint8_t)(((p>>11)*255+15)/31),(uint8_t)((((p>>5)&63)*255+31)/63),(uint8_t)(((p&31)*255+15)/31)};fwrite(c,1,3,f);}fclose(f);
@@ -48,7 +50,7 @@ int main(int argc,char**argv){
         else {fprintf(stderr,"Usage: %s [--pack FILE] [--save FILE] [--headless] [--actions enter,right,…] [--capture FILE.ppm]\n",argv[0]);return 2;}}
     ResourceFile resource{fopen(packpath.c_str(),"rb")};if(!resource.file){perror(packpath.c_str());return 2;}
     if(fseek(resource.file,0,SEEK_END)!=0)return 2;long length=ftell(resource.file);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({resource.file,(uint32_t)length,read_resource,nullptr},{save_game,load_game})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({resource.file,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
     if(!actions.empty()){
         size_t start=0;while(start<actions.size()){
             size_t end=actions.find(',',start);if(end==std::string::npos)end=actions.size();std::string a=actions.substr(start,end-start);
@@ -64,7 +66,7 @@ int main(int argc,char**argv){
     Display*d=XOpenDisplay(nullptr);if(!d){fprintf(stderr,"No X display. Use --headless for batch execution.\n");return 2;}
     Bool detectable;XkbSetDetectableAutoRepeat(d,True,&detectable);
     int screen=DefaultScreen(d);Window win=XCreateSimpleWindow(d,RootWindow(d,screen),0,0,960,720,0,0,0);
-    XStoreName(d,win,"nSpire II | Five character pools 0.16");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
+    XStoreName(d,win,"nSpire II | Original world 0.17");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
     Atom close=XInternAtom(d,"WM_DELETE_WINDOW",False);XSetWMProtocols(d,win,&close,1);XMapWindow(d,win);
     GC gc=XCreateGC(d,win,0,nullptr);int width=960,height=720;bool held[256]={};XImage*image=nullptr;
     auto last_frame=std::chrono::steady_clock::now();

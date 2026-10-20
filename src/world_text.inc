@@ -42,6 +42,10 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(name,"IsMultiplayer"))return wt_number(0);
  if(wt_equal(name,"InCombat"))return wt_number(!a.library&&combat_phase(s.phase));
  if(wt_equal(name,"OnPlayer"))return wt_number(x.actor<=0);
+ if(wt_equal(x.table,"game_over_screen")&&s.world.active){
+  if(wt_equal(name,"FloorCount"))return wt_number(s.world.total_floor);
+  if(wt_equal(name,"AscensionLevel"))return wt_number(s.world.ascension);
+ }
  if(wt_equal(name,"singleStarIcon"))return wt_string("[gold]星星[/gold]");
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){

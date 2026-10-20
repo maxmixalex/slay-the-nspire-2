@@ -36,7 +36,7 @@ static bool valid_necro_state(const State&s){
   if(v.attack_total[f]<0||v.attack_total[f]>9999||v.play_index[f]>9999||v.resource_energy[f]>9999||v.first_attack[f]>1)return false;
   bool pending=v.attack_total[f]||v.play_index[f]||v.resource_energy[f]||v.first_attack[f];
   for(int t=0;t<MaxEnemies;t++){if(v.oblivion_before[f][t]<0||v.oblivion_before[f][t]>9999)return false;pending=pending||v.oblivion_before[f][t];}
-  if(pending&&(f>s.expansion.depth||!combat_phase(s.phase)))return false;
+  if(pending&&(f>s.expansion.depth||!saved_combat_phase(s)))return false;
  }
  if(s.phase==Phase::ExtendedChoice&&s.expansion.choice>=XChoice::NCleanse&&s.expansion.choice<=XChoice::NTransfigure){
   const auto&x=s.expansion;XChoice k=x.choice;

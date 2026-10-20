@@ -1,15 +1,61 @@
 // Original scene textures and interaction flow, reflowed for 320x240.
+static const char* frontend_text(const App&a,const char*table,const char*key,const char*fallback){const char*text=a.content.world_string(table,key);return *text?text:fallback;}
+static const char* frontend_label(const App&a,FrontMenu item){
+ static const char*keys[]={"SINGLE_PLAYER","CONTINUE","ABANDON_RUN","COMPENDIUM","SETTINGS","QUIT"};
+ static const char*fallback[]={"单人游戏","继续游戏","放弃游戏","图鉴","设置","退出游戏"};
+ return frontend_text(a,"main_menu_ui",keys[item],fallback[item]);
+}
 static void title_screen(Canvas&c){
     auto&a=c.a;c.ui(U_TitleBackground,0,0);c.picture(A_Logo,3,5);
-    const char*labels[]={"开始游戏","继续游戏","图鉴","组合练习","参考地图","操作说明","退出游戏"};
-    for(int i=0;i<7;i++){
-        int y=84+i*20;bool selected=a.menu==i;
-        if(selected)c.dim(6,y,146,20,100);
-        if(selected){c.rect(9,y+5,2,13,Gold);c.text("›",19,y,12,Gold);}
-        c.text(labels[i],35,y+1,12,Ink);c.text(labels[i],34,y,12,selected?Gold:White);
-        c.hit(7,y,147,20,HitKind::Menu,i);
+    const int count=a.title_menu_count();
+    for(int i=0;i<count;i++){
+        int y=90+i*27;bool selected=a.menu==i;const char*label=frontend_label(a,front_item(a,i));
+        if(selected){int mark=a.content.world_image("menu","HIGHLIGHT");if(mark>=0)c.picture(mark,12,y,20,20);else c.text("›",17,y,16,Gold);}
+        c.text(label,40,y+1,16,Ink,129);c.text(label,39,y,16,selected?Gold:White,129);
+        c.hit(7,y-3,155,27,HitKind::Menu,i);
     }
-    c.text("nSpire II 0.17",218,219,10,White,100);
+    if(a.has_save&&front_item(a,a.menu)==FrontContinue){
+        int panel=a.content.world_image("menu","CONTINUE_PANEL");if(panel>=0)c.picture(panel,174,91,138,66);else c.dim(174,91,138,66,160);
+        c.ui(character_portrait(a.saved_character),180,101,27,40);
+        const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
+        c.text(*name?name:ch.name,214,99,12,Gold,92);
+        char row[96]{};TextBuffer b{row,sizeof row,0};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text(row,214,119,10,White,92);
+        row[0]=0;b.n=0;b.text("进阶 ");b.number(a.saved_ascension);c.text(row,214,133,10,White,92);
+        row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,184,145,11,12);c.text(row,201,145,10,White,105);
+    }
+    c.text("nSpire II 0.17",215,222,10,White,102);
+}
+static void native_pause_screen(Canvas&c){
+ auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,185);
+ c.centered(frontend_text(a,"gameplay_ui","PAUSE_MENU.PAUSED","暂停"),0,16,320,20,Gold);
+ const char*keys[]={"PAUSE_MENU.RESUME","PAUSE_MENU.SETTINGS","PAUSE_MENU.COMPENDIUM","PAUSE_MENU.GIVE_UP","PAUSE_MENU.SAVE_AND_QUIT"};
+ const char*fallback[]={"继续游戏","设置","图鉴","放弃游戏","保存并返回主菜单"};
+ for(int i=0;i<5;i++){const int y=54+i*32;const bool enabled=i!=3||resumable_run(a.game),selected=a.menu==i;
+  c.ui(U_RewardButton,61,y,198,28,enabled?255:110);if(selected)c.box(60,y-1,200,30,Gold);
+  c.centered(frontend_text(a,"gameplay_ui",keys[i],fallback[i]),65,y+5,190,12,!enabled?Muted:selected?Gold:White);c.hit(58,y-1,204,31,HitKind::Menu,i,enabled);
+ }
+}
+static void frontend_settings_screen(Canvas&c){
+ auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,220);c.ui(U_RewardPanel,20,8,280,226);
+ c.centered(frontend_text(a,"main_menu_ui","SETTINGS","设置"),0,17,320,20,Gold);
+ const int count=a.title?5:3;
+ const char*labels[]={frontend_text(a,"settings_ui","FASTMODE","加速模式"),"操作说明","组合练习","参考地图","返回"};
+ const UiAction actions[]={UiAction::SettingsFastMode,UiAction::SettingsControls,UiAction::SettingsPractice,UiAction::SettingsReference,UiAction::SettingsBack};
+ for(int i=0;i<count;i++){int index=!a.title&&i==2?4:i,y=55+i*29;
+  c.ui(U_RewardButton,54,y,212,26);if(a.settings_item==i)c.box(53,y-1,214,28,Gold);
+  c.centered(labels[index],58,y+4,204,12,a.settings_item==i?Gold:White);c.action(51,y-1,218,28,actions[index]);
+  if(!index){c.box(67,y+7,11,11,Gold);if(a.fast_mode){int tick=a.content.world_image("common","CONFIRM_TICK");if(tick>=0)c.picture(tick,65,y+4,15,15);else c.text("+",68,y+3,12,Gold);}}
+ }
+ if(!a.title)c.paragraph(frontend_text(a,"settings_ui","FASTMODE_DESCRIPTION","战斗动画和转场加快。"),44,153,234,3,0,10,White);
+ c.centered("本次运行生效 · Esc 返回",24,214,272,10,Muted);
+}
+static void frontend_confirm_screen(Canvas&c){
+ auto&a=c.a;const bool quitting=a.frontend_confirm==3;a.hit_count=0;c.dim(0,0,320,240,210);c.ui(U_RewardPanel,29,43,262,165);
+ c.centered(frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",quitting?"退出游戏":"你确定吗？"),41,63,238,16,Gold);
+ c.paragraph(frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。"),51,98,218,3,0,12,White);
+ native_back(c,39,161,109,31,frontend_text(a,"main_menu_ui","GENERIC_POPUP.cancel","取消"),true,!a.frontend_choice);
+ native_confirm(c,172,161,109,31,frontend_text(a,"main_menu_ui","GENERIC_POPUP.confirm","确认"),true,a.frontend_choice);
+ c.action(36,151,115,46,UiAction::FrontendCancel);c.action(169,151,115,46,UiAction::FrontendAccept);
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;
@@ -29,17 +75,17 @@ static void character_screen(Canvas&c){
         c.paragraph(text,14,172,132,3,0,10,White);
     }
     c.dim(0,209,320,31,130);
-    c.button("返回",3,216,82,false,23);c.action(1,209,86,31,UiAction::Back);
+    native_back(c,2,212,84,28,"返回");c.action(1,209,86,31,UiAction::Back);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
     for(int i=0;i<CharacterKinds;i++){
         int x=159+i*31;bool selected=i==(int)a.selected_character;
         int outline=a.content.world_image("character","OUTLINE");
-        if(selected&&outline<0){c.rect(x-2,173,31,35,rgb(87,68,38));c.box(x-2,173,31,35,Gold);}
-        c.ui(character_portrait((Character)i),x,175,27,30,selected?255:145);
-        if(selected&&outline>=0)c.picture(outline,x-3,172,33,36);
-        c.action(x-2,172,31,36,actions[i]);
+        if(selected&&outline<0){c.rect(x-2,161,31,46,rgb(87,68,38));c.box(x-2,161,31,46,Gold);}
+        if(selected&&outline>=0)c.picture(outline,x-3,160,33,47);
+        c.ui(character_portrait((Character)i),x,164,27,40,selected?255:145);
+        c.action(x-2,159,31,48,actions[i]);
     }
-    c.ui(U_RewardSkip,218,211,99,27);c.centered(a.practice_entry?"练习 ›":"启程 ›",218,214,99,12,Gold);c.action(213,207,107,33,UiAction::StartCharacter);
+    native_proceed(c,215,212,103,28,a.practice_entry?"练习":"启程");c.action(213,207,107,33,UiAction::StartCharacter);
     if(!a.practice_entry){c.button("远征设置",99,216,108,false,23);c.action(96,209,114,31,UiAction::RunSettings);}
     if(a.run_settings){a.hit_count=0;c.dim(0,0,320,240,218);c.ui(U_RewardPanel,17,17,286,213);c.centered("远征设置",0,26,320,20,Gold);
         c.text("进阶等级",39,69,12,White);c.button("−",174,63,36,false,26);c.action(172,62,40,29,UiAction::RunAscensionDown,a.selected_ascension>0);c.num(a.selected_ascension,222,67,16,Gold);c.button("+",252,63,36,false,26);c.action(250,62,40,29,UiAction::RunAscensionUp,a.selected_ascension<10);

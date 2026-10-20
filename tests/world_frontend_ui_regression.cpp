@@ -1,0 +1,195 @@
+#include "app.hpp"
+#include "content_fixture.hpp"
+#include "original_events.hpp"
+#include "world_run.hpp"
+#include "world_relics.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <vector>
+
+using namespace spire;
+static App a;
+static SaveData before,after,disk,expected;
+static bool disk_exists=false,read_ok=true,write_ok=true,delete_ok=true;
+static unsigned reads=0,writes=0,deletes=0;
+static unsigned checks;
+static const char* capture_directory;
+#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"world frontend UI: %s:%d %s (event=%s phase=%u)\n",__FILE__,__LINE__,#x,original_event_key(a.game.original_events.id),unsigned(a.game.phase));std::exit(1);}}while(0)
+
+struct TextIndex {const char* key;uint16_t index;};
+static const TextIndex world_text[]={
+#include "../src/world_text_index.inc"
+};
+static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=uint8_t(value>>(8*i));}
+static bool ends(const std::string&s,const char*tail){size_t n=std::strlen(tail);return s.size()>=n&&s.compare(s.size()-n,n,tail)==0;}
+static std::vector<uint8_t> synthetic_profile(){
+ // Distinct glyphs and image colors make saved facts and navigation visible.
+ // This is an interaction fixture, not replacement artwork.
+ constexpr unsigned images=U_Count>CardKinds?U_Count:CardKinds,glyphs=4*95;
+ constexpr unsigned glyphdir=40+images*16,stringdir=glyphdir+glyphs*16;
+ constexpr unsigned clipdir=stringdir+ContentStrings*8,carddir=clipdir+AnimationKinds*16;
+ constexpr unsigned uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
+ std::vector<uint8_t>b(payload);
+ put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);put(b,20,glyphs);put(b,24,ContentStrings);put(b,28,AnimationKinds);put(b,32,CardKinds);
+ for(unsigned i=0;i<images;i++){
+  unsigned w=i?2:82,h=i?2:60,offset=unsigned(b.size()),length=w*h*2;
+  put(b,40+i*16,offset);put(b,44+i*16,w,2);put(b,46+i*16,h,2);put(b,52+i*16,length);b.resize(offset+length);
+  for(unsigned pixel=0;pixel<w*h;pixel++)put(b,offset+pixel*2,((i*13+pixel*5)&31)<<11|((i*29+pixel*7)&63)<<5|((i*7+pixel*3)&31),2);
+ }
+ const unsigned sizes[]={8,10,12,16};unsigned glyph=0;
+ for(unsigned size:sizes)for(unsigned cp=32;cp<127;cp++,glyph++){
+  unsigned at=glyphdir+glyph*16,offset=unsigned(b.size());put(b,at,cp);put(b,at+4,offset);put(b,at+8,size,2);b[at+10]=5;b[at+11]=7;put(b,at+12,6,2);b.resize(offset+35);
+  for(unsigned y=0;y<7;y++)for(unsigned x=0;x<5;x++)b[offset+y*5+x]=cp==' '?0:uint8_t((cp>>((x+y*3)%7)&1)?255:0);
+ }
+ std::vector<std::string>strings(ContentStrings,"SYNTHETIC_UI_TEXT");
+ for(unsigned i=0;i<CardKinds;i++){strings[i*3]=definitions[i].key;strings[i*3+1]="CARD_DESCRIPTION";strings[i*3+2]="UPGRADED_DESCRIPTION";}
+ for(const auto&row:world_text){
+  CHECK(row.index<strings.size());std::string key=row.key;
+  strings[row.index]=key;
+  if(ends(key,".description")||ends(key,".eventDescription")||key.find(".talk.firstVisitEver.")!=std::string::npos){
+   strings[row.index]="EVENT_READER_TEXT ";for(unsigned i=0;i<40;i++)strings[row.index]+="visible rules and saved choices ";
+  }
+  if(key=="ancients.PROCEED.title"||key=="events.PROCEED.title")strings[row.index]="PROCEED";
+  if(key=="game_over_screen.SCORE_LINE.floorsClimbed")strings[row.index]="CLIMBED {FloorCount} floors";
+  if(key=="game_over_screen.SCORE_LINE.ascension")strings[row.index]="ASCENSION {AscensionLevel}";
+  if(key=="game_over_screen.SCORE_LINE.goldGained")strings[row.index]="TOTAL GOLD {GoldAmount}";
+ }
+ for(unsigned i=0;i<ContentStrings;i++){put(b,stringdir+i*8,unsigned(b.size()));put(b,stringdir+i*8+4,unsigned(strings[i].size()));b.insert(b.end(),strings[i].begin(),strings[i].end());b.push_back(0);}
+ for(unsigned i=0;i<AnimationKinds;i++){put(b,clipdir+i*16+4,1,2);put(b,clipdir+i*16+6,33,2);}
+ for(unsigned i=0;i<CardKinds;i++){put(b,carddir+i*16,0);for(unsigned j=1;j<4;j++)put(b,carddir+i*16+j*4,i*3+j-1);}
+ for(unsigned i=0;i<U_Count;i++)put(b,uidir+i*4,i==U_CampFlames?A_Count:i);
+ put(b,12,unsigned(b.size()));uint32_t hash=2166136261u;for(unsigned i=40;i<b.size();i++){hash^=b[i];hash*=16777619u;}put(b,36,hash);return b;
+}
+
+static bool store_run(const State&s){++writes;if(!write_ok)return false;if(!save(s,disk))return false;disk_exists=true;return true;}
+static bool restore_run(State&s){++reads;return read_ok&&disk_exists&&load(s,disk.bytes,disk.size);}
+static bool erase_run(){++deletes;if(!delete_ok)return false;disk_exists=false;return true;}
+static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
+static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&&!std::memcmp(after.bytes,before.bytes,before.size));}
+static void same_saved(const SaveData&target){CHECK(save(a.game,after));CHECK(after.size==target.size&&!std::memcmp(after.bytes,target.bytes,target.size));}
+static void presentation(bool title=false){
+ a.title=title;a.paused=a.help=a.library=a.character_select=a.settings_open=a.quit=false;a.frontend_confirm=a.frontend_choice=a.settings_item=0;
+ a.run_settings=a.practice_entry=false;a.map_preview.open=false;a.menu=0;a.reset_presentation();a.pointer.visible=false;
+}
+static void start(Character character=Character::Ironclad,uint32_t seed=0x82179){
+ new_run(a.game,seed,false,character);CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));presentation();CHECK(validate(a.game));
+}
+static void empty_disk(){disk_exists=false;read_ok=write_ok=delete_ok=true;a.has_save=false;}
+static void put_disk(){CHECK(validate(a.game));CHECK(store_run(a.game));expected=disk;}
+static void capture(const char*name){
+ if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
+ FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
+ for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
+}
+static HitRegion find_hit(HitKind kind,int value){
+ a.render();HitRegion found{};unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value){found=a.hits[i];++count;}
+ CHECK(count==1&&found.enabled&&found.x>=0&&found.y>=0&&found.x+found.w<=ScreenW&&found.y+found.h<=ScreenH);return found;
+}
+static void press(HitKind kind,int value){const auto h=find_hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;}
+static void action(UiAction value){press(HitKind::UiAction,int(value));}
+static void menu_rows(unsigned count){
+ a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){CHECK(a.hits[i].value>=0&&unsigned(a.hits[i].value)<count);seen|=1u<<a.hits[i].value;}
+ CHECK(seen==((1u<<count)-1));
+}
+static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
+
+static void probe_is_read_only(){
+ empty_disk();start(Character::Silent,1001);const uint32_t saved_seed=a.game.seed;const int hp=a.game.hp,max_hp=a.game.max_hp,floor=a.game.world.total_floor;put_disk();
+ start(Character::Regent,1002);snapshot();unsigned r=reads;
+ CHECK(a.refresh_save()&&a.has_save&&reads==r+1);CHECK(a.saved_character==Character::Silent&&a.saved_seed==saved_seed&&a.saved_hp==hp&&a.saved_max_hp==max_hp&&a.saved_floor==floor&&a.saved_world&&!a.saved_practice&&a.saved_ascension==3);unchanged();
+ a.return_to_title();CHECK(a.title&&a.has_save&&a.title_menu_count()==5);unchanged();
+ read_ok=false;CHECK(!a.refresh_save()&&!a.has_save);unchanged();read_ok=true;
+ disk.bytes[disk.size-1]^=1;CHECK(!a.refresh_save()&&!a.has_save);unchanged();disk.bytes[disk.size-1]^=1;CHECK(a.refresh_save());unchanged();
+}
+static void main_menu_and_continue(){
+ empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==4);menu_rows(4);capture("frontend-title-new");
+ a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
+ press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
+ press(HitKind::Menu,1);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
+ press(HitKind::Menu,2);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
+ press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
+
+ start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);capture("frontend-title-continue");
+ a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
+ press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library);unchanged();
+ press(HitKind::Menu,3);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,4);CHECK(a.frontend_confirm==3);a.input(Key::Back);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
+ press(HitKind::Menu,0);CHECK(!a.title&&!a.character_select&&a.game.character==Character::Silent);same_saved(expected);
+ // A decodable terminal save is not resumable. The shortcut must not replace
+ // the visible run before this admission check has succeeded.
+ player_kill(a.game,true);resolve_pending(a.game);CHECK(a.game.phase==Phase::Dead);put_disk();
+ start(Character::Regent,2003);snapshot();a.return_to_title();CHECK(!a.has_save);a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();
+ disk.bytes[disk.size-1]^=1;a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();disk.bytes[disk.size-1]^=1;
+}
+static void pause_save_failure_and_success(){
+ empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);capture("frontend-pause");
+ unsigned w=writes;write_ok=false;press(HitKind::Menu,4);CHECK(a.paused&&!a.title&&!disk_exists&&writes==w+1&&a.notice_ticks);unchanged();
+ write_ok=true;press(HitKind::Menu,4);CHECK(a.title&&!a.paused&&a.has_save&&disk_exists);same_saved(disk);unchanged();
+ // The saved expedition remains exactly resumable after returning to title.
+ a.game.gold+=9;CHECK(validate(a.game));a.menu=0;a.input(Key::Confirm);CHECK(!a.title&&!a.paused);same_saved(disk);
+ a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,1);CHECK(a.settings_open&&a.paused);a.input(Key::Back);CHECK(!a.settings_open&&a.paused);
+ press(HitKind::Menu,2);CHECK(a.library&&a.paused);a.input(Key::Back);CHECK(!a.library&&a.paused);press(HitKind::Menu,0);CHECK(!a.paused&&!a.title);same_saved(disk);
+}
+static void abandon_saved_with_confirmation(){
+ empty_disk();start(Character::Regent,4001);put_disk();snapshot();a.return_to_title();unsigned d=deletes;
+ press(HitKind::Menu,1);CHECK(a.frontend_confirm==1&&a.frontend_choice==0&&disk_exists&&deletes==d);capture("frontend-abandon-confirm");
+ // Cancel is initially selected; one Enter cannot destroy the saved game.
+ a.input(Key::Confirm);CHECK(!a.frontend_confirm&&a.has_save&&disk_exists&&deletes==d);unchanged();
+ press(HitKind::Menu,1);delete_ok=false;confirm_accept();CHECK(a.title&&a.has_save&&disk_exists&&deletes==d+1&&a.notice_ticks);unchanged();
+ delete_ok=true;press(HitKind::Menu,1);action(UiAction::FrontendAccept);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+2&&a.title_menu_count()==4);unchanged();menu_rows(4);
+}
+static void abandon_current_bypasses_prevention(){
+ empty_disk();start(Character::Ironclad,5001);a.game.potion_slots=8;for(auto&p:a.game.potions)p=Potion::Empty;a.game.potions[7]=Potion::FairyInABottle;
+ CHECK(gain_world_relic(a.game,WorldRelicLizardTail));resolve_pending(a.game);put_disk();snapshot();unsigned d=deletes;
+ a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,3);CHECK(a.frontend_confirm==2&&deletes==d);action(UiAction::FrontendCancel);CHECK(a.paused&&a.game.hp>0&&disk_exists);unchanged();
+ delete_ok=false;press(HitKind::Menu,3);confirm_accept();CHECK(a.paused&&a.game.hp>0&&disk_exists&&deletes==d+1);unchanged();
+ delete_ok=true;press(HitKind::Menu,3);confirm_accept();CHECK(!a.paused&&!a.title&&a.game.phase==Phase::Dead&&a.game.world.finished&&a.game.hp==0&&!disk_exists&&deletes==d+2);
+ CHECK(a.game.potions[7]==Potion::FairyInABottle&&world_relic_counter(a.game,WorldRelicLizardTail)==0&&a.game.event_run.completion_recorded);snapshot();
+ a.input(Key::Back);CHECK(a.paused);a.render();bool disabled=false;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu&&a.hits[i].value==3)disabled=!a.hits[i].enabled;CHECK(disabled);
+ a.menu=3;a.input(Key::Confirm);CHECK(a.paused&&!a.frontend_confirm);a.menu=0;a.input(Key::Confirm);CHECK(!a.paused);unchanged();
+}
+static void protected_saved_expeditions(){
+ // A different seed must survive a completed practice/expedition's end UI.
+ empty_disk();start(Character::Ironclad,6001);put_disk();start(Character::Ironclad,6002);player_kill(a.game,true);resolve_pending(a.game);snapshot();unsigned d=deletes;
+ CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();a.input(Key::Confirm);CHECK(a.game_over_summary);action(UiAction::GameOverMainMenu);CHECK(a.title&&a.has_save&&disk_exists&&deletes==d);unchanged();
+ a.menu=0;a.input(Key::Confirm);CHECK(!a.title);same_saved(expected);
+ // Equal seed with a different character is also a distinct saved run.
+ empty_disk();start(Character::Silent,6101);put_disk();start(Character::Defect,6101);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
+ CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();
+ // Isolate the practice bit with two legacy states, for which world=false
+ // and the seed/character are equal. A finished practice cannot erase a run.
+ empty_disk();new_run(a.game,6201,false,Character::Ironclad);presentation();put_disk();new_run(a.game,6201,true,Character::Ironclad);presentation();player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
+ CHECK(a.game.practice&&!a.game.world.active&&a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();
+}
+static void ending_clears_only_its_checkpoint(){
+ empty_disk();start(Character::Ironclad,7001);put_disk();player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();unsigned d=deletes;
+ a.input(Key::Confirm);CHECK(a.game_over_summary);delete_ok=false;action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+1);unchanged();
+ delete_ok=true;action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+2);unchanged();
+ a.input(Key::Load);CHECK(a.title&&!a.has_save&&a.game.phase==Phase::Dead);unchanged();
+}
+static void modal_isolation_and_fast_mode(){
+ empty_disk();start(Character::Silent,8001);snapshot();a.return_to_title();a.menu=0;auto h=find_hit(HitKind::Menu,0);
+ a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.frontend_confirm=3;a.frontend_choice=0;a.pointer_button(false);CHECK(!a.character_select&&!a.quit&&a.frontend_confirm==3);unchanged();
+ a.character_select=true;unsigned run=a.run_number;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;
+ a.input(Key::Load);a.input(Key::Save);a.input(Key::EndTurn);CHECK(a.frontend_confirm==3&&!a.quit);unchanged();
+ a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind==HitKind::UiAction&&(a.hits[i].value==int(UiAction::FrontendAccept)||a.hits[i].value==int(UiAction::FrontendCancel)));
+ action(UiAction::FrontendCancel);CHECK(!a.frontend_confirm);unchanged();
+ press(HitKind::Menu,2);CHECK(a.settings_open);a.character_select=true;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;unchanged();
+ action(UiAction::SettingsControls);CHECK(a.help&&a.settings_open);bool fast=a.fast_mode;a.input(Key::Confirm);CHECK(!a.help&&a.settings_open&&a.fast_mode==fast);unchanged();
+ action(UiAction::SettingsFastMode);CHECK(a.fast_mode!=fast);action(UiAction::SettingsFastMode);CHECK(a.fast_mode==fast);unchanged();
+ // Only wall-clock presentation advances faster. No rules, draws, event
+ // offers, gameplay RNG stream or encoded field changes during these ticks.
+ a.animation=1000;a.tick_remainder=0;a.busy=a.card_fly=a.feedback=a.notice_ticks=12;a.fast_mode=false;
+ a.advance(66);CHECK(a.animation==1002&&a.busy==10&&a.card_fly==10);unchanged();
+ action(UiAction::SettingsFastMode);CHECK(a.fast_mode);a.advance(66);CHECK(a.animation==1006&&a.busy==6&&a.card_fly==6);a.render();unchanged();
+ action(UiAction::SettingsBack);CHECK(!a.settings_open);a.fast_mode=false;
+}
+int main(int argc,char**argv){
+ std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
+ if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
+ probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
+ std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");
+}

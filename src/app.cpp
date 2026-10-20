@@ -11,6 +11,7 @@ namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"
 #include "canvas.inc"
+#include "native_controls.inc"
 #include "world_text.inc"
 #include "world_enemy_ui.inc"
 #include "app_input.inc"
@@ -288,6 +289,7 @@ static void detail_screen(Canvas&c){
 #include "ui_frontend.inc"
 #include "card_choice_ui.inc"
 #include "world_choice_ui.inc"
+#include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
 static void pointer_overlay(Canvas&c){
     auto&a=c.a;auto&p=a.pointer;if(!p.visible)return;
@@ -321,17 +323,16 @@ void App::render(){
         case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:case Phase::ExtendedChoice:combat_screen(c);break;
         case Phase::Treasure:treasure_screen(c);break;
         case Phase::WorldRelicChoice:case Phase::OriginalEventChoice:c.picture(A_Title,0,0);break;
-        default:c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);if(!game.world.active)c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
+        default:if(game.world.active&&(game.phase==Phase::Complete||game.phase==Phase::Dead)){native_game_over_screen(c);break;}c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);if(!game.world.active)c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
         if(panel){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger&&!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
         else if(!combat_linger&&!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
-        if(paused){hit_count=0;c.dim(0,0,320,240,185);c.centered("暂停",0,22,320,20,Gold);
-            const char*items[]={"继续游戏","保存游戏","读取存档","操作说明","返回主菜单","退出游戏"};
-            for(int i=0;i<6;i++){int y=60+i*28;c.ui(U_RewardButton,63,y,194,25);if(menu==i)c.box(62,y-1,196,27,Gold);
-                c.centered(items[i],65,y+3,190,12,menu==i?Gold:White);c.hit(60,y-1,200,27,HitKind::Menu,i);}}
+        if(paused)native_pause_screen(c);
 
     }
+    if(settings_open)frontend_settings_screen(c);
+    if(frontend_confirm)frontend_confirm_screen(c);
     if(help){
         hit_count=0;c.hit(6,7,308,226,HitKind::Close);c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
         const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","三幕路线，含首领、古代之民与事件。","触摸板：轻触/按下点击，按住可拖牌。"};

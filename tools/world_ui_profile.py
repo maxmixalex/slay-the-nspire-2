@@ -15,7 +15,7 @@ BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS = 497, 1556, 339, 38
 CARDS = 558
 TEXT_BASE = BASE_STRINGS + (CARDS - BASE_CARDS) * 3
 PROFILE = json.loads((ROOT / 'config/world-ui-0.17.json').read_text())
-TEXT_KEYS = PROFILE['text_keys']
+TEXT_KEYS = list(PROFILE['text_keys'])
 AUXILIARY_ROWS = [dict(row) for row in PROFILE['images']]
 # Keep the shared crab behind the authored foreground. Appending preserves all
 # 731 prior world image ids; the original background id becomes its back plane.
@@ -38,6 +38,11 @@ for _row in MAP_PROFILE['images']:
     if not _row['key'].startswith('map.'):
         raise ValueError('Map resource must use its stable map.* key')
     AUXILIARY_ROWS.append(dict(_row))
+COMMON_PROFILE = json.loads((ROOT / 'config/world-common-ui-0.17.json').read_text())
+if COMMON_PROFILE.get('schema') != 1 or COMMON_PROFILE.get('reference') != 'v0.111.0 / 41cef1ea':
+    raise ValueError('Original common UI reference/schema drift')
+AUXILIARY_ROWS.extend(dict(row) for row in COMMON_PROFILE['images'])
+TEXT_KEYS.extend(COMMON_PROFILE.get('text_keys', []))
 ENEMY_CLIP_ROWS = enemy_plan()['jobs']
 MAP_CLIP_ROWS = []
 for _row in MAP_PROFILE['clips']:
@@ -58,8 +63,11 @@ DIRECTORY_LIMIT = 2 * 1024 * 1024
 
 
 def generated_files() -> dict[str, str]:
-    if TEXT_KEYS != sorted(set(TEXT_KEYS)):
-        raise ValueError('Localization keys must be unique and sorted')
+    # Appended catalogs retain every prior text id, including additions to an
+    # existing catalog. Sort only the final lookup table, not its stable ids.
+    if (PROFILE['text_keys'] != sorted(set(PROFILE['text_keys'])) or
+            len(TEXT_KEYS) != len(set(TEXT_KEYS))):
+        raise ValueError('Localization keys must be unique and the original catalog sorted')
     if len({r['key'] for r in AUXILIARY_ROWS}) != len(AUXILIARY_ROWS):
         raise ValueError('Duplicate image key')
     if len({r['key'] for r in CLIP_ROWS}) != len(CLIP_ROWS):

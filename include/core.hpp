@@ -193,6 +193,9 @@ bool card_transformable(const State&,Card,int deck_index=-1);
 bool card_retains(const State&,Card,int instance=-1,int deck_index=-1);
 bool card_innate(const State&,Card,int instance=-1,int deck_index=-1);
 bool card_exhausts(const State&,Card,int instance=-1,int deck_index=-1);
+// Zone::Power denotes the original removed-from-combat result. Active plays
+// expose their captured result; all other instance queries are pure previews.
+bool card_play_result(const State&,int instance,Zone&pile,bool&top);
 struct SaveData { uint8_t bytes[SaveCapacity]; size_t size; };
 unsigned potion_slot_count(const State&);
 Potion potion_at(const State&,unsigned slot);

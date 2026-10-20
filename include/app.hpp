@@ -69,7 +69,7 @@ inline bool choice_free_energy(const State&s){
     return s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::Free||
         (s.expansion.choice_free&&(s.expansion.choice==XChoice::Offer||s.expansion.choice==XChoice::Discard)));
 }
-struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };
+struct Callbacks { bool(*save)(const State&);bool(*load)(State&);bool(*clear_save)()=nullptr; };
 struct Motion {int clip=-1;uint32_t start=0;};
 constexpr unsigned MaxEnemyVisualFacts=64,MaxEnemyVisualCommands=24;
 struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
@@ -87,8 +87,24 @@ struct App {
     State game{};Content content{};Callbacks callbacks{};
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
+    bool settings_open=false,fast_mode=false;
+    uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0;
+    Character saved_character=Character::Ironclad;
+    uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0;
+    uint8_t saved_ascension=0;bool saved_world=false,saved_practice=false;
+    bool refresh_save();
+    bool load_saved_run();
+    bool save_current_run();
+    bool finish_saved_run();
+    void return_to_title();
+    bool frontend_input(Key);
+    void accept_frontend_confirm();
+    int title_menu_count()const{return has_save?5:4;}
     bool practice_entry=false;
     bool run_settings=false,run_seed_editing=false;
+    bool game_over_summary=false;
+    bool game_over_available()const;
+    bool game_over_input(Key);
     uint8_t selected_ascension=0;
     reference::ActKind selected_region=reference::ActKind::Overgrowth;
     char selected_seed[65]{};

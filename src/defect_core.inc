@@ -19,6 +19,10 @@ static void defect_gain_power(State&s,DPower p,int amount){
   }
  }
  v.powers[k]=(int16_t)value;unsigned actor=defect_actor(p);
+ if(p==DPower::Feral){
+  if(!old&&value)card_result_register(s,CardResultActor::Feral);
+  else if(old&&!value)card_result_unregister(s,CardResultActor::Feral);
+ }
  if(actor){if(!old&&value)after_play_register(s,actor);else if(old&&!value)after_play_unregister(s,actor);}
 }
 static void defect_card_reset(State&s,int id){
@@ -87,7 +91,6 @@ static void defect_before_play(State&s,int id){
  bool power=card_type(s,s.cards[id],id)==CardType::Power;
  v.storm_before[d]=(int16_t)(power?dpower(s,DPower::Storm):0);v.subroutine_before[d]=(int16_t)(power?dpower(s,DPower::Subroutine):0);
  if(power&&dpower(s,DPower::FreePower))defect_gain_power(s,DPower::FreePower,-1);
- if(card_type(s,s.cards[id],id)==CardType::Attack&&!v.spent[d])v.zero_attacks_started=(uint16_t)min(9999,v.zero_attacks_started+1);
 }
 static void defect_after_play(State&s,int){s.defect.cards_finished=(uint16_t)min(9999,s.defect.cards_finished+1);}
 static void defect_after_play_listener(State&s,unsigned actor){
@@ -107,6 +110,7 @@ static bool defect_returns_to_hand(State&s,int id){
 static void defect_after_play_group(State&s,int id){
  auto&v=s.defect;unsigned d=s.expansion.depth;
  s.expansion.feral_result[d]=0;
+ s.expansion.result_location[d]=0;
  if(id>=0&&id<s.card_count&&s.cards[id].kind==DefectRocketPunch)v.cost_delta[id]=v.turn_origin[id]=v.combat_origin[id]=0;
  v.spent[d]=0;v.storm_before[d]=v.subroutine_before[d]=0;v.scrape_waiting[d]=v.scrape_count[d]=0;
  for(auto&n:v.scrape_drawn[d])n=0;
@@ -208,6 +212,7 @@ static void defect_player_side_end(State&s){
 static void defect_combat_end(State&s){
  auto&v=s.defect;for(unsigned d=0;d<=MaxAutoFrames;d++){v.storm_before[d]=v.subroutine_before[d]=0;v.spent[d]=v.scrape_waiting[d]=v.scrape_count[d]=0;for(auto&n:v.scrape_drawn[d])n=0;}
  for(auto&result:s.expansion.feral_result)result=0;
+ for(auto&result:s.expansion.result_location)result=0;
 }
 static Pile defect_status_snapshot(const State&s){
  Pile out{};const Pile* piles[]={&s.hand,&s.draw,&s.discard};

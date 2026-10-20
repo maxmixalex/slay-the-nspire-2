@@ -1,5 +1,6 @@
 static bool validate_extension(const State&s){
  const auto&x=s.expansion;
+ if(!card_result_state_valid(s))return false;
  bool after_seen[(unsigned)PostPlayActor::Count]{};bool after_gap=false;
  for(unsigned actor:x.after_play_order){
   if(!actor){after_gap=true;continue;}
@@ -14,7 +15,7 @@ static bool validate_extension(const State&s){
  if(x.depth>MaxAutoFrames||x.triple>1||x.returning>1||x.enemy_side>1||x.potion_active>1)return false;
  if(x.target< -1||x.target>=MaxEnemies||x.x<0||x.x>9999||x.last_damage<0||x.last_damage>9999||x.last_drawn< -1||x.last_drawn>=s.card_count)return false;
  if(x.cards_finished>9999||x.nonpower_started>9999||x.choices.count>MaxCards)return false;
- for(unsigned i=0;i<=MaxAutoFrames;i++)if(x.feral_result[i]>2||(x.feral_result[i]&&(i>x.depth||!combat_phase(s.phase))))return false;
+ for(unsigned i=0;i<=MaxAutoFrames;i++)if(x.feral_result[i]>2||(x.feral_result[i]&&(i>x.depth||!saved_combat_phase(s))))return false;
  for(unsigned p=0;p<XPowerCount;p++)if(x.powers[p]<(p==(unsigned)XPower::Focus?-9999:0)||x.powers[p]>9999)return false;
  int auto_sum=0,pan_sum=0,boulder_sum=0,boulder_count=0;
  bool boulder_gap=false;
@@ -46,7 +47,10 @@ static bool validate_extension(const State&s){
   if(x.choice==XChoice::None||!x.choices.count||!x.choice_max||x.choice_min>x.choice_max||x.choice_max>MaxHand||x.choice_max>x.choices.count||x.choice_free>1)return false;
   for(unsigned i=0;i<x.choices.count;i++){
    int id=x.choices.ids[i];for(unsigned j=0;j<i;j++)if(id==x.choices.ids[j])return false;
-   if(x.choice==XChoice::Offer){if(id<MaxCards||id>=MaxCards+3||x.offers[id-MaxCards].kind>=CardKinds||x.offers[id-MaxCards].upgraded>1)return false;}
+   if(x.choice==XChoice::Offer||x.choice==XChoice::EnemyKnowledge||x.choice==XChoice::EventAbundance){
+    const int count=x.choice==XChoice::EnemyKnowledge?2:3;
+    if(id<MaxCards||id>=MaxCards+count||x.offers[id-MaxCards].kind>=CardKinds||x.offers[id-MaxCards].upgraded>1)return false;
+   }
    else {if(id<0||id>=s.card_count)return false;
     // Each character module validates its own choice source and operands.
     if((unsigned)x.choice>(unsigned)XChoice::Transform)continue;

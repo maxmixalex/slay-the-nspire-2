@@ -7,6 +7,9 @@ enum class XPower:uint8_t {
  RollingBoulder,Stratagem,Entropy,Gambit,Focus,Count
 };
 constexpr int XPowerCount=(int)XPower::Count;
+// The four original result-location modifiers share Creature.Powers order.
+enum class CardResultActor:uint8_t {None,Feral,Corruption,Nostalgia,Rebound,Count};
+constexpr unsigned CardResultActors=unsigned(CardResultActor::Count)-1;
 enum class PostPlayActor:uint8_t {
  Calamity=1,Rage=2,Rupture=3,Afterimage=4,SerpentForm=5,MasterPlanner=6,
  PanacheStart=7,Relics=23,Cards=24,Enemies=25,
@@ -85,4 +88,8 @@ struct ExpansionState {
  // v15: Feral captures its result before the physical play and nested cards.
  // Zero migrates older pending plays; one declines, two returns to Hand.
  uint8_t feral_result[MaxAutoFrames+1]{};
+ // v15: independent acquisition order and one final location per physical
+ // play. Location is pile 1=None,2=Discard,3=Draw,4=Hand,5=Exhaust, bit 3=Top;
+ // zero is reserved for an uncaptured historical continuation.
+ uint8_t result_order[CardResultActors]{},result_location[MaxAutoFrames+1]{};
 };

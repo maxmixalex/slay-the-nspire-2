@@ -23,7 +23,7 @@ static void world_clear_player_powers(State&s){
  clear(s.regent.orbit);clear(s.regent.orbit_remainder);clear(s.regent.monologue);clear(s.regent.monologue_applied);
  for(auto&row:s.regent.monologue_capture)clear(row);
  clear(s.event_cards.toric_block);clear(s.event_cards.toric_turns);
- auto&x=s.expansion;clear(x.powers);clear(x.after_play_order);clear(x.automation);clear(x.automation_count);
+ auto&x=s.expansion;clear(x.powers);clear(x.after_play_order);clear(x.result_order);clear(x.automation);clear(x.automation_count);
  clear(x.panache);clear(x.panache_count);clear(x.panache_skip);clear(x.boulder);x.entropy_boulder_prefix=0;
  auto&e=s.enemy_world;clear(e.player_power);clear(e.player_aux);clear(e.player_power_order);clear(e.player_duration_skip);clear(e.player_source);e.player_power_count=0;
 }

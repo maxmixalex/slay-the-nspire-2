@@ -130,6 +130,11 @@ static void original_enemy_transformations(){
   if(!form)capture("combat-test-subject-regenerate");
   settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"idle_loop3":"idle_loop2"));
  }
+ // The third form gains Nemesis; this real end-turn route has already
+ // applied its first Intangible. A damage call must not bypass that power.
+ CHECK(enemy_power_value(a.game,0,EnemyPower::Intangible)==1);
+ const int third_hp=a.game.enemies[0].hp;observed_enemy_kill(0);CHECK(a.game.enemies[0].hp==third_hp-1);
+ settle_enemy_visuals();a.input(Key::EndTurn);settle_enemy_visuals();CHECK(!enemy_power_value(a.game,0,EnemyPower::Intangible));
  observed_enemy_kill(0);CHECK(!std::strcmp(visual_clip(0)->native_clip,"die"));settle_enemy_visuals();CHECK(a.enemy_presentation[0].dead&&!a.enemy_presentation[0].loop);
 
  enemy_visual_fight(EncounterId::DecimillipedeElite);observed_enemy_kill(0);settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,"dead_loop"));

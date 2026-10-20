@@ -8,6 +8,10 @@ static void ironclad_gain_power(State&s,IPower p,int n){
  if(!old&&value){if(i.power_count==IPowerCount){fail(s);return;}i.power_order[i.power_count++]=(uint8_t)k;}
  if(old&&!value)for(unsigned at=0;at<i.power_count;at++)if(i.power_order[at]==k){for(unsigned j=at+1;j<i.power_count;j++)i.power_order[j-1]=i.power_order[j];i.power_order[--i.power_count]=0;break;}
  i.powers[k]=(int16_t)value;
+ if(p==IPower::Corruption){
+  if(!old&&value)card_result_register(s,CardResultActor::Corruption);
+  if(old&&!value)card_result_unregister(s,CardResultActor::Corruption);
+ }
  if(p==IPower::Rage||p==IPower::Rupture){
   unsigned actor=p==IPower::Rage?(unsigned)PostPlayActor::Rage:(unsigned)PostPlayActor::Rupture;
   if(!old&&value)after_play_register(s,actor);
@@ -101,7 +105,9 @@ static void ironclad_after_play_listener(State&s,unsigned actor){
  }
 }
 static void ironclad_after_play_group(State&s,int id){
- if(id>=0&&id<s.card_count)s.ironclad.forced_exhaust[id]=0;
+ // ExhaustOnNextPlay was consumed by base result capture. A flag newly
+ // applied during this body belongs to a subsequent physical play.
+ (void)id;
  unsigned d=s.expansion.depth;s.ironclad.block_events_play[d]=0;s.ironclad.pillage_waiting[d]=0;s.ironclad.pillage_drawn[d]=0;
  s.ironclad.rupture_pending[d]=0;s.ironclad.rupture_registered[d]=0;
 }

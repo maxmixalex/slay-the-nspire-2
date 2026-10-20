@@ -217,6 +217,12 @@ static void choices_statuses_and_eight_slots(){
  scenario="Knowledge choices suspend, reject invalid input atomically, and resume";auto s=fight(EncounterId::KnowledgeDemonBoss);
  for(int stage=0;stage<3;++stage){effect(s,XOp::EnemyKnowledgeChoice,0);CHECK(s.phase==Phase::ExtendedChoice&&choice_min(s)==1&&choice_max(s)==1);persist(s);
   CHECK(choice_card(s,MaxCards).kind==EventCardDisintegration);untouched=s;uint16_t invalid=MaxCards+2;CHECK(!choose_extended(s,&invalid,1));CHECK(!std::memcmp(&s,&untouched,sizeof s));
+  s.expansion.offers[0].kind=Strike;CHECK(!validate(s));s=untouched;
+  s.expansion.offers[1].upgraded=1;CHECK(!validate(s));s=untouched;
+  s.expansion.choices.ids[1]=MaxCards+2;CHECK(!validate(s));s=untouched;
+  s.enemy_world.choice_stage=3;CHECK(!validate(s));s=untouched;
+  s.enemy_world.models[0].data[0]=(int16_t)(stage+1);CHECK(!validate(s));s=untouched;
+  s.enemy_world.models[0].kind=EnemyId::Nibbit;CHECK(!validate(s));s=untouched;
   uint16_t token=MaxCards+1;CHECK(choose_extended(s,&token,1));CHECK(s.enemy_world.models[0].data[0]==stage+1);persist(s);
  }CHECK(enemy_power_value(s,-1,EnemyPower::MindRot)==1&&enemy_power_value(s,-1,EnemyPower::Sloth)==3&&enemy_power_value(s,-1,EnemyPower::WasteAway)==1);
 

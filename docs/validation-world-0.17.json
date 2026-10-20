@@ -3,7 +3,7 @@
   "reference": "v0.111.0 / 41cef1ea",
   "date": "2026-10-20",
   "release_ready": false,
-  "scope": "Frozen source validation receipts through c6663cff, including retained failures. Local journals and logs are not embedded.",
+  "scope": "Frozen source validation receipts through 14fcf1e4, including retained failures. Local journals and logs are not embedded.",
   "results": [
     {
       "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
@@ -42,6 +42,30 @@
         "enemies_regression",
         "world_relics_regression"
       ]
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "native_build_steps_passed": 112,
+      "wasm_bytes": 4563409,
+      "arm_launcher_bytes": 820236,
+      "arm_allocation_bytes": 9921688,
+      "arm_relocations": 28173,
+      "focused_ctest_passed": 4,
+      "focused_ctest_failed": 2,
+      "focused_ctest_total": 6,
+      "focused_ctest_seconds": 10.07,
+      "passed_targeted_suites": [
+        "world_relics_regression",
+        "world_event_ui_regression",
+        "world_map_ui_regression",
+        "world_reward_ui_regression"
+      ],
+      "failed_targeted_suites": [
+        "world_map_regression",
+        "world_ui_regression"
+      ],
+      "separate_enemy_suite": "failed: KnowledgeDemon pending virtual card choice rejected by structural validator",
+      "private_pack": "in progress at source preservation: all 799 world images completed, full enemy raster conversion pending"
     }
   ],
   "journals": [
@@ -165,6 +189,61 @@
       "log": "world17-pack-a74e0ae921ca.log",
       "log_sha256": "52ddf27818e49bc45b31dfe7243cfc241e6db2fe21c6584e1cf9bf1531689e32",
       "source_sha256": "a38540fe303c95f7dfe48c57780515229d1a4fc9a295b84d7a1fbd64ed4f349c"
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:12:38.690024+00:00",
+      "ended_at": "2026-10-20T18:15:38.713191+00:00",
+      "log": "world17-native-83a3df7dcfcd.log",
+      "log_sha256": "32cdd4abf6f5a9917ca521921c80debd3937fd0f2b6744fd16d92b92c6df626e",
+      "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:12:26.274639+00:00",
+      "ended_at": "2026-10-20T18:14:08.076977+00:00",
+      "log": "world17-arm-026786e646e8.log",
+      "log_sha256": "a3d206b264dbcf1dca09b17c73574c01faf919306aa990126db47532d13abdbd",
+      "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:12:26.100858+00:00",
+      "ended_at": "2026-10-20T18:14:29.250620+00:00",
+      "log": "world17-wasm-35edd51bdd1e.log",
+      "log_sha256": "a3a49e7a4bac3cf855074dec8e3f98edfaabc3fd0116677510caa9d3a8d6b3d2",
+      "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:16:01.517527+00:00",
+      "ended_at": "2026-10-20T18:16:11.711091+00:00",
+      "log": "world17-focused-e22be9124f07.log",
+      "log_sha256": "87a3398baa4e39b1e5e2ccb5f469b0d57689e336485beb4f0ad0e0a858cefd67",
+      "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
+    },
+    {
+      "checkpoint": "14fcf1e4478a582d39024ba8cb96a466c0bb8dd4",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-20T18:17:19.018967+00:00",
+      "ended_at": "2026-10-20T18:17:41.755033+00:00",
+      "log": "world17-enemies-f80e3f0117e4.log",
+      "log_sha256": "bfa0b65afa0b3362a3c2b515d8c7500b8abaf3bfdb807f6e1d07b475ec8307fc",
+      "source_sha256": "4bf8fd15c4f33cd1dac95d1ca7310df128cb08833dabe86bfee0a2d9f9f1cc3b"
     }
   ],
   "limits": [

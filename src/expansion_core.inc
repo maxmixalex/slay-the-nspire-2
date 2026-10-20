@@ -17,6 +17,10 @@ void gain_power(State&s,XPower p,int n){
   if(!old&&v)after_play_register(s,(unsigned)PostPlayActor::Calamity);
   else if(old&&!v)after_play_unregister(s,(unsigned)PostPlayActor::Calamity);
  }
+ if(p==XPower::Nostalgia){
+  if(!old&&v)card_result_register(s,CardResultActor::Nostalgia);
+  else if(old&&!v)card_result_unregister(s,CardResultActor::Nostalgia);
+ }
 }
 void queue_extension(State&s,XOp op,int a,int b,bool first){
  if(a< -9999||a>9999||b< -9999||b>9999){fail(s);return;}
@@ -277,18 +281,18 @@ static void after_play(State&s,int id){
  if(x.remaining&&alive(s)){--x.remaining;relic_attack_end(s);x.triple=0;queue_current(s);return;}
  // Result-pile moves only own a card that is still in the play pile.
  // Nested Flak/Make It So can already have exhausted or recalled that instance.
- Card card=s.cards[id];auto type=card_type(s,card);
- const bool dupe=s.world_relics.card_is_dupe[id]!=0;
- bool ex=!dupe&&(card_exhausts(s,card,id)||ironclad_exhausts(s,id))&&type!=CardType::Power;
- bool hand=regent_returns_to_hand(s,id)||(x.feral_result[x.depth]?x.feral_result[x.depth]==2:defect_returns_to_hand(s,id));
+ const bool captured=x.result_location[x.depth]!=0;
+ const uint8_t result=captured?x.result_location[x.depth]:card_result_legacy(s,id);
+ // Historical pending plays consumed this flag at completion. New plays
+ // consume it at base capture and retain flags subsequently applied by a body.
+ if(!captured)s.ironclad.forced_exhaust[id]=0;
+ bool ex=(result&7)==ResultExhaust;
  if(s.zones[id]==Zone::Limbo){
-  // Original PileType.None instances stay out of every recyclable pile. The
-  // bounded engine stores them alongside its spent Power card instances.
-  if(dupe){put(s,s.powers,id,Zone::Power);ex=false;}
-  else if(hand){bool room=s.hand.count<MaxHand;put(s,room?s.hand:s.discard,id,room?Zone::Hand:Zone::Discard);ex=false;}
-  else if(type==CardType::Power){put(s,s.powers,id,Zone::Power);ex=false;}
-  else if(!ex){bool to_draw=x.returning||event_card_returns_to_draw(s,id);put(s,to_draw?s.draw:s.discard,id,to_draw?Zone::Draw:Zone::Discard);if(to_draw)event_card_after_return_to_draw(s,id);}
+  // PileType.None is stored with spent Power instances. All other results
+  // retain the one location captured before the physical play's first body.
+  if(!ex)card_result_put(s,id,result);
  }else ex=false;
+ event_card_after_return_to_draw(s,id);
  x.turn_cost[id]=0;x.star_turn_free[id]=0;
  // A true whole-turn Flatten Set remains in its separate layer; ending the
  // physical play removes all until-play Sets above it, including BulletTime.
@@ -334,7 +338,9 @@ static void queue_card_body(State&s){
  if(s.playing<0||s.playing>=s.card_count){fail(s);return;}
  auto&x=s.expansion;Card c=s.cards[s.playing];const auto&d=definitions[c.kind];int old=s.effect_count;
  x.last_damage=0;x.attack_observed[x.depth]=x.attack_killed[x.depth]=x.attack_fatal[x.depth]=0;
- if(card_type(s,c,s.playing)!=CardType::Power)x.nonpower_started=(uint16_t)min(9999,x.nonpower_started+1);
+ const auto history_type=card_type(s,c,s.playing);
+ if(history_type==CardType::Attack||history_type==CardType::Skill)x.nonpower_started=(uint16_t)min(9999,x.nonpower_started+1);
+ if(history_type==CardType::Attack&&!s.defect.spent[x.depth])s.defect.zero_attacks_started=(uint16_t)min(9999,s.defect.zero_attacks_started+1);
  if(queue_event_card(s,c,x.target,x.x)||queue_enemy_token(s,c,x.target,x.x)||queue_ironclad(s,c,x.target,x.x)||queue_silent(s,c,x.target,x.x)||queue_defect(s,c,x.target,x.x)||queue_regent(s,c,x.target,x.x)||queue_necro(s,c,x.target,x.x)||queue_common_token(s,c,x.target)){}
  else if(c.kind<Alchemize)queue_legacy(s,c,x.target,x.x);
  else{
@@ -448,8 +454,9 @@ static bool start_instance(State&s,int id,int target,bool automatic,int captured
   // This also applies to ordinary draw/discard sources, not just reserved
   // AutoTop cards. An already active ancestor is rejected above.
   if(source)remove(*source,at);s.zones[id]=Zone::Limbo;
-  bool exhausted=card_exhausts(s,c,id)||s.ironclad.forced_exhaust[id];
-  if(exhausted)exhaust_id(s,id);else put(s,s.discard,id,Zone::Discard);
+  if(s.world_relics.card_is_dupe[id])put(s,s.powers,id,Zone::Power);
+  else if(card_exhausts(s,c,id)||s.ironclad.forced_exhaust[id])exhaust_id(s,id);
+  else put(s,s.discard,id,Zone::Discard);
   return true;
  }
  if(automatic&&x.depth==MaxAutoFrames){fail(s);return false;}
@@ -460,15 +467,11 @@ static bool start_instance(State&s,int id,int target,bool automatic,int captured
  if(source)remove(*source,at);s.zones[id]=Zone::Limbo;s.playing=(int16_t)id;s.energy-=(int16_t)spent;x.stars-=(int16_t)stars_spent;
  x.x=(int16_t)(cost(c)==-1?wr_x_value(s,energy):energy);x.target=(int16_t)target;x.last_drawn=-1;x.remaining=x.replay[id];
  s.attack_vigor=0;s.double_attack=0;x.triple=0;
- x.returning=card_type(s,c,id)!=CardType::Power&&x.nonpower_started<power_value(s,XPower::Nostalgia);
+ card_result_capture(s,id,resource_energy);
  if(power_value(s,XPower::Duplicator)){++x.remaining;gain_power(s,XPower::Duplicator,-1);}
  x.remaining=(uint16_t)min(9999,x.remaining+ironclad_replays(s,c)+silent_extra_replays(s,c)+defect_extra_replays(s,c)+regent_replays(s,c)+event_card_replays(s,id));
  x.remaining=(uint16_t)min(9999,wr_play_count(s,id,x.remaining+1,true)-1);
  defect_play_start(s,id,resource_energy,automatic,spent);necro_start_instance(s,id,resource_energy);
- // OnPlayWrapper captures the result once, before any nested card body. Its
- // modifier callbacks consume Feral now; completion only reads the snapshot.
- x.feral_result[x.depth]=defect_returns_to_hand(s,id)?2:1;
- event_card_prepare_play(s,id,!s.world_relics.card_is_dupe[id]&&card_type(s,c,id)!=CardType::Power&&!card_exhausts(s,c,id)&&!ironclad_exhausts(s,id)&&!x.returning&&!regent_returns_to_hand(s,id)&&x.feral_result[x.depth]!=2);
  queue_current(s);if(stars_spent)world_stage(s,WorldStage::StarsSpent,stars_spent);regent_begin_play(s,id,automatic,spent,stars_spent,captured_star_x);return true;
 }
 bool can_play_card(const State&s,int id){

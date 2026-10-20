@@ -32,7 +32,7 @@ static State combat_fixture(Character character){
  if(!validate(s))std::exit(10);return s;
 }
 static std::vector<int> combat_steps(unsigned character){
- std::vector<int> result={3,4}; // Load the controlled fixture from the title.
+ std::vector<int> result={4}; // Load the controlled fixture from the title.
  for(unsigned i=0;i<combat_cards[character].size();i++){
   // Inspect the current physical instance, play it, and let its animation end.
   for(int key:{15,5,4,-1,-1,-1,-1})result.push_back(key);
@@ -45,23 +45,24 @@ int main(int argc,char**argv){
  const char*names[]={"aroma-transform","aroma-upgrade-silent","doors-remove","shop",
   "ironclad-combat","silent-combat","defect-orbs","regent-stars-forge","necro-osty-doom"};
  std::vector<int>steps[]={
-  {3,4,-1,15,3,-1,5,4,8,1,4,4,15,-1,5,9,1,4,4,8},
-  {3,4,1,4,8,1,4,4,15,3,-1,5,9,1,4,4,8},
-  {3,4,1,4,8,1,4,4,15,-1,5,9,1,4,4,8},
-  {3,4,-1,4,1,15,-1,5,4,8,5,4,1,1,1,1,1,1,1,1,1,1,1,1,1,4,4,4,8,5,9},
+  {4,-1,15,3,-1,5,4,8,1,4,4,15,-1,5,9,1,4,4,8},
+  {4,1,4,8,1,4,4,15,3,-1,5,9,1,4,4,8},
+  {4,1,4,8,1,4,4,15,-1,5,9,1,4,4,8},
+  {4,-1,4,1,15,-1,5,4,8,5,4,1,1,1,1,1,1,1,1,1,1,1,1,1,4,4,4,8,5,9},
   combat_steps(0),combat_steps(1),combat_steps(2),combat_steps(3),combat_steps(4)
  };
  FILE*manifest=fopen((root+"/scenarios.json").c_str(),"w");if(!manifest)return 3;fprintf(manifest,"{\"cases\":[");
  for(int c=0;c<9;c++){
-  name=names[c];saved=0;app=App{};if(!app.init(pack.data(),n,{save_cb,load_cb}))return 4;
+  name=names[c];saved=0;app=App{};
   State s=c>=4?combat_fixture((Character)(c-4)):fixture(c==2?EventId::DoorsOfLightAndDark:EventId::AromaOfChaos,c==1?Character::Silent:Character::Ironclad,c==3);if(!save(s,storage))return 5;
+  if(!app.init(pack.data(),n,{save_cb,load_cb}))return 4;
   write(root+"/"+name+"-fixture.bin",storage.bytes,storage.size);
   fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",c?",":"",name.c_str());unsigned index=0;
   for(int key:steps[c]){
    uint32_t revision=app.game.revision;
    if(key<0)app.advance(99);else app.input((Key)key);app.render();
    if(!app.title&&!validate(app.game))return 6;
-   if(c>=4&&index>=4&&(index-4)%7==0&&(index-4)/7<combat_cards[c-4].size()){
+   if(c>=4&&index>=3&&(index-3)%7==0&&(index-3)/7<combat_cards[c-4].size()){
     if(app.game.revision==revision||app.game.phase!=Phase::Combat)return 11;
    }
    write(root+"/"+name+"-frame-"+std::to_string(index)+".rgb",app.pixels,sizeof app.pixels);

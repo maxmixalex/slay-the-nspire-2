@@ -21,6 +21,14 @@ static void after_play_unregister(State&,unsigned);
 static bool post_play_actor_active(const State&,unsigned);
 static void queue_post_play_listeners(State&);
 static void post_play_listener(State&,unsigned);
+enum : uint8_t {ResultNone=1,ResultDiscard=2,ResultDraw=3,ResultHand=4,ResultExhaust=5,ResultTop=8};
+static void card_result_register(State&,CardResultActor);
+static void card_result_unregister(State&,CardResultActor);
+static void card_result_capture(State&,int,int resource_energy);
+static uint8_t card_result_legacy(State&,int);
+static void card_result_put(State&,int,uint8_t);
+static bool card_result_state_valid(const State&);
+static void card_result_migrate_order(State&);
 
 static void enemy_reset_shared_slot(State&,int);
 static bool card_attack_command(const Effect&);

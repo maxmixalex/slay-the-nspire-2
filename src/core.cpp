@@ -25,6 +25,7 @@ namespace spire {
 #include "necro_core.inc"
 #include "all_characters_core.inc"
 #include "event_card_core.inc"
+#include "card_result_core.inc"
 #include "enemy_core.inc"
 #include "enemy_token_core.inc"
 #include "world_relic_core.inc"

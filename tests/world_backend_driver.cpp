@@ -63,10 +63,10 @@ int main(int argc,char**argv){
  manifest=std::fopen((directory+"/scenarios.json").c_str(),"w");require(manifest,"open manifest");std::fputs("{\"cases\":[",manifest);
  unsigned total_frames=0,total_saves=0;
  for(unsigned index=0;index<6;index++){
-  name=names[index];saved=frames=0;app=App{};require(app.init(pack.data(),pack.size(),{save_cb,load_cb}),"open actual world pack");
-  world_fixture(index);require(save(initial,storage),"save controlled native room");write(directory+"/"+name+"-fixture.bin",storage.bytes,storage.size);
+  name=names[index];saved=frames=0;app=App{};
+  world_fixture(index);require(save(initial,storage),"save controlled native room");require(app.init(pack.data(),pack.size(),{save_cb,load_cb}),"open actual world pack");write(directory+"/"+name+"-fixture.bin",storage.bytes,storage.size);
   std::fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",index?",":"",name.c_str());
-  key(Key::Down);key(Key::Confirm);require(!app.title,"load native fixture from title");
+  key(Key::Confirm);require(!app.title,"load native fixture from title");
   if(index==0){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
   else if(index==1){key(Key::Detail);key(Key::Down);key(Key::Back);key(Key::Right);key(Key::Save);key(Key::Load);}
   else if(index==2||index==3){

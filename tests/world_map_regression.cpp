@@ -131,7 +131,7 @@ static void visited_room_history(){
  // A parent event owns the map visit even when it starts a nested encounter.
  start();const unsigned event_point=game.world.current_point;game.original_events=OriginalEventState{};
  require(original_event_begin(game,OriginalEventId::FakeMerchant,game.seed,0),"prepare an event-owned combat at the visited event coordinate");
- require(world_enter_event_combat(game,"FAKE_MERCHANT",true),"event enters its native combat room");
+ require(world_enter_event_combat(game,"FakeMerchantEventEncounter",true)&&game.enemy_world.encounter==EncounterId::FakeMerchantEventEncounter,"event enters its native combat room");
  require(game.world.room_type==unsigned(WorldRoom::Monster)&&game.world.parent_room_type==unsigned(WorldRoom::Event)&&game.world.visited_rooms[0][event_point]==unsigned(WorldRoom::Event),"nested combat cannot replace the first map-room type");persisted();
 }
 int main(){

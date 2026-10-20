@@ -24,9 +24,9 @@ static bool valid_regent_state(const State&s){
  for(int f=0;f<=MaxAutoFrames;f++){
   if(r.stars_spent[f]<0||r.stars_spent[f]>9999||r.star_x[f]<0||r.star_x[f]>9999||r.automatic[f]>1)return false;
   bool pending=r.stars_spent[f]||r.star_x[f]||r.automatic[f];for(int slot=0;slot<MaxPowerInstances;slot++)pending=pending||r.monologue_capture[slot][f];
-  if(pending&&(f>s.expansion.depth||!combat_phase(s.phase)||(f==s.expansion.depth&&s.playing<0)))return false;
+  if(pending&&(f>s.expansion.depth||!saved_combat_phase(s)||(f==s.expansion.depth&&s.playing<0)))return false;
  }
- if(r.end_turn_requested&&!combat_phase(s.phase))return false;
+ if(r.end_turn_requested&&!saved_combat_phase(s))return false;
  if(s.phase==Phase::ExtendedChoice&&regent_choice(s.expansion.choice)){
   const auto&x=s.expansion;XChoice k=x.choice;
   if(k!=XChoice::RTransformHand&&k!=XChoice::RTransformDraw&&k!=XChoice::RTransformGuards&&x.choice_free)return false;

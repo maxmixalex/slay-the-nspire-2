@@ -38,5 +38,6 @@
  B(w.combat_ending);B(w.reward_rerolled);B(w.reward_can_reroll);H(w.combat_bonus_gold);
  for(auto&v:s.expansion.feral_result)B(v);
  for(auto&act:w.visited_rooms)for(auto&v:act)B(v);
+ for(auto&v:s.expansion.result_order)B(v);for(auto&v:s.expansion.result_location)B(v);
 #undef WCF
 }

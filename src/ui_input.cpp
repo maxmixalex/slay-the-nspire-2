@@ -73,7 +73,17 @@ void App::select_library_item(int index){
 void App::ui_action(UiAction action){
     UiCoreObserver observer(*this);
     pointer_cancel();
+    // Opaque frontend modals own all actions until explicitly dismissed.
+    if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
+    if(settings_open&&action!=UiAction::SettingsFastMode&&action!=UiAction::SettingsControls&&action!=UiAction::SettingsPractice&&action!=UiAction::SettingsReference&&action!=UiAction::SettingsBack&&action!=UiAction::Back)return;
     switch(action){
+    case UiAction::FrontendAccept:accept_frontend_confirm();break;
+    case UiAction::FrontendCancel:frontend_confirm=frontend_choice=0;break;
+    case UiAction::SettingsFastMode:if(settings_open)fast_mode=!fast_mode;break;
+    case UiAction::SettingsControls:if(settings_open)help=true;break;
+    case UiAction::SettingsPractice:if(settings_open&&title){settings_open=false;practice_entry=true;character_select=true;}break;
+    case UiAction::SettingsReference:if(settings_open&&title){settings_open=false;map_preview.open=true;if(!map_preview.generated)map_preview.generate();}break;
+    case UiAction::SettingsBack:settings_open=false;break;
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
         if(library&&!title&&!paused&&!help&&!panel&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
@@ -91,6 +101,10 @@ void App::ui_action(UiAction action){
         if(game.phase==Phase::Shop){shop_open=false;cursor=0;}break;
     case UiAction::LeaveShop:
         if(!shop_open&&game.phase==Phase::Shop){leave_shop(game);reset_presentation();}break;
+    case UiAction::GameOverSummary:
+        if(game_over_available()&&!game_over_summary){game_over_summary=true;pointer_cancel();}break;
+    case UiAction::GameOverMainMenu:
+        if(game_over_available()&&game_over_summary){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}break;
     case UiAction::LeaveCamp:
         if(!title&&!paused&&!panel&&world_rest_proceed(game))reset_presentation();break;
     case UiAction::ReadEvent:

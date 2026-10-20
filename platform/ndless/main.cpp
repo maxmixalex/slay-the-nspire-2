@@ -41,6 +41,13 @@ static bool load_game(spire::State&s){
     unsigned n=nd_read(scratch.bytes,1,sizeof scratch.bytes,f);uint8_t extra=0;bool end=nd_read(&extra,1,1,f)==0;nd_close(f);
     return end&&spire::load(s,scratch.bytes,n);
 }
+static bool clear_save(){
+    // A deliberate abandon also removes the preceding atomic-save backup.
+    // Otherwise a later recovery could bring back an abandoned expedition.
+    const char*paths[]={backup_path,temp_path,save_path};for(unsigned i=0;i<3;i++){const char*path=paths[i];
+        void*f=nd_open(path,"rb");if(!f)continue;if(nd_close(f)!=0||nd_unlink(path)!=0)return false;
+    }return true;
+}
 static bool pressed(unsigned offset,unsigned mask){return (*(volatile uint16_t*)(0x900E0000u+offset)&mask)!=0;}
 struct Clock {
     uint32_t load, control, last;
@@ -75,7 +82,7 @@ extern "C" int main(int argc,char**argv){
     if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns"))return 3;
     void*f=nd_open(pack_path,"rb");if(!f)return 4;
     if(nd_seek(f,0,2)!=0){nd_close(f);return 5;}long length=nd_tell(f);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({f,(uint32_t)length,read_resource,nullptr},{save_game,load_game})){nd_close(f);return 5;}
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({f,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save})){nd_close(f);return 5;}
     if(!nd_lcd_init(0)){nd_close(f);return 6;}
     auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);nd_close(f);return 7;}
     while(pressed(0x10,2)){} // Release ENTER used to open the document.

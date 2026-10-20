@@ -162,7 +162,6 @@ static bool event_card_play_allowed(const State&s,int id,bool automatic){
 static void event_card_begin_play(State&s,int){
  auto&v=s.event_cards;v.plays_started=(uint16_t)min(9999,v.plays_started+1);
 }
-static void event_card_prepare_play(State&s,int,bool discard){auto&v=s.event_cards;v.rebound_return[s.expansion.depth]=discard&&ec_power(s,EventCardPower::Rebound)>0;if(v.rebound_return[s.expansion.depth])--v.powers[unsigned(EventCardPower::Rebound)];}
 static bool event_card_returns_to_draw(const State&s,int){return s.event_cards.rebound_return[s.expansion.depth]!=0;}
 static void event_card_after_return_to_draw(State&s,int){s.event_cards.rebound_return[s.expansion.depth]=0;}
 enum class ECSpecial:int16_t {Enlightenment,Maul,Whistle,FeedingFrenzy,Entrench,UpgradeAll,MaxHpLoss,MadScience,Rebound,Power,Thorns};
@@ -170,6 +169,10 @@ static void ec_gain_power(State&s,EventCardPower p,int amount){
  auto&v=s.event_cards;unsigned k=unsigned(p);int before=v.powers[k];v.powers[k]=(int16_t)max(0,min(9999,before+amount));
  if(!before&&v.powers[k]){if(v.power_count>=EventCardPowerKinds+MaxPowerInstances){fail(s);return;}v.power_order[v.power_count++]=(uint8_t)k;}
  if(before&&!v.powers[k])for(unsigned i=0;i<v.power_count;++i)if(v.power_order[i]==k){for(unsigned j=i+1;j<v.power_count;++j)v.power_order[j-1]=v.power_order[j];v.power_order[--v.power_count]=0;break;}
+ if(p==EventCardPower::Rebound){
+  if(!before&&v.powers[k])card_result_register(s,CardResultActor::Rebound);
+  if(before&&!v.powers[k])card_result_unregister(s,CardResultActor::Rebound);
+ }
 }
 static void ec_generate(State&s,int mode,int count){
  WorldCardOptions o;if(mode==1)o.type_mask=world_type_mask(CardType::Skill);else if(mode==2)o.type_mask=world_type_mask(CardType::Attack);else if(mode==3)o.rarity_mask=world_rarity_mask(2);

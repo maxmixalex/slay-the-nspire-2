@@ -28,7 +28,7 @@ static bool valid_defect_state(const State&s){
    unsigned n=v.scrape_drawn[f][i];if(i>=v.scrape_count[f]){if(n)return false;continue;}
    if(!n||n>s.card_count)return false; // A reshuffle can draw one instance twice.
   }
-  if(pending&&(f>s.expansion.depth||!combat_phase(s.phase)))return false;
+  if(pending&&(f>s.expansion.depth||!saved_combat_phase(s)))return false;
  }
  return true;
 }

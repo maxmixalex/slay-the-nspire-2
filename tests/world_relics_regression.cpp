@@ -12,11 +12,12 @@ using namespace spire;
 // every variable count gives 109116 bytes, including its header/checksum. The
 // v15 fields in the new world tail are compact and no wider than their C++
 // storage; counting the whole tail also includes padding. Add the six extended
-// legacy enemy slots, extra potion slots and saved Feral result, plus alignment.
+// legacy enemy slots, extra potion slots, saved Feral result and ordered
+// result-location listeners/captures, plus alignment.
 constexpr size_t LegacyEncodedCeiling=109116;
 constexpr size_t SharedV15Bytes=1+MaxPotionSlots-LegacyPotionSlots+
  (MaxEnemies-LegacyEnemies)*(19+8+4+4+8+1+NDebuffCount+2*NTempStrengthCount+4*(MaxAutoFrames+1))+
- (MaxAutoFrames+1);
+ (MaxAutoFrames+1)+4+(MaxAutoFrames+1);
 constexpr size_t EncodedCapacityCeiling=LegacyEncodedCeiling+SharedV15Bytes+
  sizeof(State)-offsetof(State,world)+3;
 static_assert(EncodedCapacityCeiling<=SaveCapacity,"Every bounded v15 state must fit the save buffer");

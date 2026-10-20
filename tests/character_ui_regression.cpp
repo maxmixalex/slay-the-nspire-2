@@ -53,7 +53,7 @@ static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.
 static void start(Character character){
     a.reset_presentation();a.title=true;a.paused=a.help=a.library=a.character_select=a.map_preview.open=false;
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
-    a.menu=3;a.input(Key::Confirm);CHECK(a.character_select&&a.practice_entry);
+    a.menu=a.has_save?3:2;a.input(Key::Confirm);CHECK(a.settings_open);a.ui_action(UiAction::SettingsPractice);CHECK(a.character_select&&a.practice_entry);
     const UiAction characters[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
     action(characters[(unsigned)character]);action(UiAction::StartCharacter);
     CHECK(!a.title&&!a.character_select&&a.game.character==character&&a.game.practice);

@@ -12,6 +12,9 @@ enum class UiAction {
     RunSettings, RunAscensionDown, RunAscensionUp, RunRegion, RunSeed, RunSeedClear,
     ToggleMapLegend, MapLegendUnknown, MapLegendShop, MapLegendTreasure,
     MapLegendRest, MapLegendMonster, MapLegendElite,
-    LeaveCamp, LeaveWorldRewards
+    LeaveCamp, LeaveWorldRewards,
+    GameOverSummary, GameOverMainMenu,
+    FrontendAccept, FrontendCancel, SettingsFastMode, SettingsControls,
+    SettingsPractice, SettingsReference, SettingsBack
 };
 }

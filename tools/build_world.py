@@ -35,6 +35,7 @@ from sparse_image import encode as sparse_encode
 from world_enemy_assets import SpineSampler, bake_enemy, manifest as enemy_manifest, RUNTIME_SHA256
 from world_enemy_profile import plan as enemy_plan
 from world_scene_assets import render_scene, load_scene_texture
+from world_ui_assets import component as ui_component
 from world_ui_profile import (BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS,
     CARDS, STRINGS, AUXILIARY, CLIPS, TEXT_BASE, TEXT_KEYS, AUXILIARY_ROWS, CLIP_ROWS,
     ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
@@ -250,6 +251,10 @@ def render_atlas_resource(pack, row, texture_cache):
     return prepared(image, tuple(row['size']), row['fit'])
 
 
+def render_ui_component(pack, row, texture_cache):
+    return ui_component(load_scene_texture(pack, row['path'], cache=texture_cache), row)
+
+
 def sample_enemy(pack, model, job, sampler, *, layout=None, measure=False):
     return bake_enemy(pack, model, job['clip'], sampler=sampler,
         frames=job['frames'], skin_variant=job['skins'],
@@ -315,6 +320,9 @@ def render_scope(kind: str, source_files: dict, *, model=None) -> dict:
     elif kind == 'atlas-tres':
         paths = TEXTURE_SOURCES + ENCODER_SOURCES + ('tools/world_scene_assets.py',)
         functions, pipeline = [render_atlas_resource, encode_image], 'atlas-tres-rgba-1'
+    elif kind == 'ui-component':
+        paths = TEXTURE_SOURCES + ENCODER_SOURCES + ('tools/world_scene_assets.py', 'tools/world_ui_assets.py')
+        functions, pipeline = [render_ui_component, encode_image], 'ui-component-rgba-1'
     elif kind == 'map-clip':
         paths = GEOMETRY_SOURCES + ENCODER_SOURCES
         functions, pipeline = [sample_map_clip, encode_image], 'map-boss-rgba-1'
@@ -517,6 +525,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
             texture_scope = render_scope('texture', source_files)
             scene_scope = render_scope('scene', source_files)
             atlas_scope = render_scope('atlas-tres', source_files)
+            component_scope = render_scope('ui-component', source_files)
             map_scope = render_scope('map-clip', source_files)
             for row in rows:
                 key, path = row['key'], row['portrait']
@@ -552,11 +561,13 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
             for number, row in enumerate(AUXILIARY_ROWS):
                 print(f'World image {number + 1}/{len(AUXILIARY_ROWS)} {row["key"]}', flush=True)
                 is_tres = row['kind'] == 'atlas' and row['path'].endswith('.tres')
-                scope = scene_scope if row['kind'] in ('background', 'scene') else atlas_scope if is_tres else texture_scope
+                scope = scene_scope if row['kind'] in ('background', 'scene') else component_scope if row['kind'] == 'component' else atlas_scope if is_tres else texture_scope
                 cached = cache.get('image', row, scope=scope)
                 if cached is None:
                     if row['kind'] in ('background', 'scene'):
                         image, diagnostics = render_world_scene(pck, row, sampler)
+                    elif row['kind'] == 'component':
+                        image, diagnostics = render_ui_component(pck, row, atlas_texture_cache), {}
                     elif is_tres:
                         image, diagnostics = render_atlas_resource(pck, row, atlas_texture_cache), {}
                     elif row['kind'] in ('texture', 'atlas'):

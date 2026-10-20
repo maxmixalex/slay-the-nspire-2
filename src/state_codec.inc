@@ -246,6 +246,7 @@ if(version>=4){F(s.no_draw);for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].weak)
    }
    if(e.target>(int)XOp::AllCharactersBeetle)c.good=false;
   }
+  card_result_migrate_order(s);
  }
 #undef F
 }

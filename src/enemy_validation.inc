@@ -12,9 +12,20 @@ static bool valid_enemy_state(const State&s){
  const auto&w=s.enemy_world;
  if(w.active>1||w.ascension>10||w.side>1||w.timed_out>1||w.facing>1||
     unsigned(w.encounter)>=EncounterKinds||w.slot_limit>MaxEnemies||w.turn_count>MaxEnemies||
-    (w.actor!=255&&w.actor>=s.enemy_count)||w.choice_stage>16||
+    (w.actor!=255&&w.actor>=s.enemy_count)||w.choice_stage>2||
     (w.choice_enemy!=255&&w.choice_enemy>=s.enemy_count)||!w.next_creature_id)return false;
  if(w.active&&(!w.slot_limit||w.encounter==EncounterId::None||!s.enemy_count||!enemy_valid_rng(w.composition_rng,true)))return false;
+ if(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::EnemyKnowledge){
+  const auto&x=s.expansion;
+  if(!w.active||w.choice_enemy>=s.enemy_count||x.choices.count!=2||x.choice_min!=1||x.choice_max!=1||x.choice_free||
+     x.choices.ids[0]!=MaxCards||x.choices.ids[1]!=MaxCards+1)return false;
+  const auto&m=w.models[w.choice_enemy];
+  if(m.kind!=EnemyId::KnowledgeDemon||!(m.flags&EnemyPresent)||(m.flags&(EnemyRemoved|EnemyDown))||
+     s.enemies[w.choice_enemy].hp<=0||m.data[0]!=w.choice_stage)return false;
+  const CardKind alternative[]={EventCardMindRot,EventCardSloth,EventCardWasteAway};
+  if(x.offers[0].kind!=EventCardDisintegration||x.offers[0].upgraded||
+     x.offers[1].kind!=alternative[w.choice_stage]||x.offers[1].upgraded)return false;
+ }
  if(!enemy_valid_power_order(w.player_power_order,w.player_power_count))return false;
  bool named_slots[MaxEnemies]{},turn_slots[MaxEnemies]{};
  for(unsigned i=0;i<w.turn_count;++i){
@@ -84,7 +95,7 @@ static bool valid_enemy_effect(const State&s,const Effect&e){
  case XOp::EnemySideHook:return a>=0&&a<=2&&b>=0&&b<=1&&(a<2||b==0);
  case XOp::EnemyPowerHook:return target(a)&&b>=0&&b<EnemyPowerCount*16;
  case XOp::EnemyCardHook:return a>=0&&a<s.card_count&&b>=0&&b<=16;
- case XOp::EnemyKnowledgeChoice:return actor(a)&&b>=0&&b<=16;
+ case XOp::EnemyKnowledgeChoice:return actor(a)&&b==0;
  case XOp::EnemyFranticEscape:case XOp::EnemyWither:return a>=0&&a<s.card_count&&b==0;
  case XOp::EnemyCardDamage:return a>=0&&a<=9999&&b>=0&&(b>>1)<s.card_count;
  case XOp::EnemyAwaken:return actor(a)&&b>=0&&b<MaxEnemyMoves;

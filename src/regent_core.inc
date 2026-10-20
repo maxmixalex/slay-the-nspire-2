@@ -435,7 +435,7 @@ static bool queue_regent(State&s,Card c,int target,int energy){
  case RegentRoyalties:pw(RPower::Royalties,rvar(c,"Gold"));break;
  case RegentSeekingEdge:pw(RPower::SeekingEdge,1);forge();break;
  case RegentSevenStars:all(rvar(c,"Repeat"));break;
- case RegentShiningStrike:attack();stars();s.expansion.returning=1;break;
+ case RegentShiningStrike:attack();stars();break;
  case RegentSolarStrike:attack();stars();break;
  case RegentSpectrumShift:pw(RPower::SpectrumShift,rvar(c,"Cards"));break;
  case RegentSpoilsOfBattle:forge();op(XOp::Draw,rvar(c,"Cards"));break;
