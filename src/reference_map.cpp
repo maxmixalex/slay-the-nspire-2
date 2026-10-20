@@ -73,6 +73,37 @@ struct Builder {
             if (!found) { fail(MapError::InvalidGraph); return; }
         }
     }
+    void spoils_path(uint8_t id) {
+        const int treasure=int(m.config.rows)-7;
+        while(good()&&m.points[id].row<m.config.rows-1){
+            const auto&p=m.points[id];int row=p.row+1;
+            int radius=absolute(row-treasure),end=int(m.config.rows)-1-row;
+            int cap=end+1;if(cap>3)cap=3;if(cap<0)cap=0;
+            if(radius>cap)radius=cap;if(radius>3)radius=3;
+            int low=3-radius,high=3+radius,directions[3]={-1,0,1};
+            int distance=treasure-p.row;
+            if(distance>3||distance<=0)shuffle(directions,3,rng);
+            else if(p.col<3){directions[0]=1;directions[1]=0;directions[2]=-1;}
+            else if(p.col>3){directions[0]=-1;directions[1]=0;directions[2]=1;}
+            else{directions[0]=0;directions[1]=-1;directions[2]=1;}
+            int selected=-1;
+            for(int direction:directions){
+                int col=int(p.col)+direction;if(col<0)col=0;if(col>=Columns)col=Columns-1;
+                if(col<low||col>high||crossover(id,unsigned(col)))continue;
+                uint8_t next=m.grid[col][row];
+                bool parent_allowed=next==NoPoint||m.points[next].parents.contains(id)||m.points[next].parents.count()<3;
+                bool child_allowed=id==m.root||p.children.count()<3||(next!=NoPoint&&p.children.contains(next));
+                if(parent_allowed&&child_allowed){selected=col;break;}
+            }
+            if(selected<0){
+                selected=3;if(selected<low)selected=low;if(selected>high)selected=high;
+                if(absolute(selected-p.col)>1){selected=int(p.col)+(selected>p.col?1:-1);if(selected<low)selected=low;if(selected>high)selected=high;}
+                if(crossover(id,unsigned(selected))){selected=p.col;if(selected<low)selected=low;if(selected>high)selected=high;}
+            }
+            if(absolute(selected-p.col)>1){fail(MapError::InvalidGraph);return;}
+            uint8_t next=point(unsigned(selected),unsigned(row));edge(id,next);id=next;
+        }
+    }
     void paths() {
         PointSet starts{};
         for (unsigned i = 0; i < Columns && good(); ++i) {
@@ -82,7 +113,7 @@ struct Builder {
                 p = point(rng.below(Columns), 1);
             }
             if (!starts.add(p)) { fail(MapError::Capacity); return; }
-            path(p);
+            if(m.config.variant==2)spoils_path(p);else path(p);
         }
         for (unsigned col = 0; col < Columns; ++col) {
             uint8_t p = m.grid[col][m.config.rows - 1]; if (p != NoPoint) edge(p, m.boss);
@@ -384,5 +415,30 @@ bool generate_map(ReferenceMap& map, Random rng, const MapConfig& config, MapWor
     map.final_rng = b.rng;
     if (b.good() && !map.valid()) map.error = MapError::InvalidGraph;
     return b.good();
+}
+bool generate_golden_map(ReferenceMap&map,Random rng,MapWorkspace&work){
+    map=ReferenceMap{};map.config.rows=17;map.config.variant=1;map.config.prune=false;
+    for(auto&column:map.grid)for(auto&cell:column)cell=NoPoint;
+    Builder b{map,rng,work};map.boss=b.make(3,17);map.root=b.make(3,0);
+    map.points[map.root].type=PointType::Start;map.points[map.boss].type=PointType::Boss;
+    const PointType types[]={PointType::Monster,PointType::Unknown,PointType::Monster,PointType::Rest,
+        PointType::Monster,PointType::Rest,PointType::Unknown,PointType::Treasure,
+        PointType::Unknown,PointType::Treasure,PointType::Unknown,PointType::Shop,
+        PointType::Elite,PointType::Rest,PointType::Elite,PointType::Rest};
+    uint8_t previous=map.root;
+    for(unsigned i=0;i<16;++i){uint8_t p=b.point(3,i+1);map.points[p].type=types[i];b.edge(previous,p);previous=p;}
+    b.edge(previous,map.boss);map.final_rng=rng;
+    for(auto&calls:map.stage_calls)calls=rng.calls;
+    if(!map.valid())map.error=MapError::InvalidGraph;return b.good();
+}
+bool generate_spoils_map(ReferenceMap&map,Random rng,const MapConfig&config,MapWorkspace&work){
+    map=ReferenceMap{};map.config=config;map.config.variant=2;map.config.second_boss=false;map.config.replace_treasure=false;
+    for(auto&column:map.grid)for(auto&cell:column)cell=NoPoint;
+    if(!rng.good||config.rows<10||config.rows>MaxRows){map.error=MapError::Configuration;return false;}
+    Builder b{map,rng,work};map.boss=b.make(3,config.rows);map.root=b.make(3,0);
+    b.paths();map.stage_calls[0]=b.rng.calls;
+    if(b.good())b.types();map.stage_calls[1]=b.rng.calls;
+    if(b.good()&&config.prune)b.prune();map.stage_calls[2]=map.stage_calls[3]=b.rng.calls;map.final_rng=b.rng;
+    if(b.good()&&!map.valid())map.error=MapError::InvalidGraph;return b.good();
 }
 } // namespace spire::reference

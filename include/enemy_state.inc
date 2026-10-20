@@ -300,6 +300,7 @@ struct EnemyModelState {
  int16_t data[12]{},power[EnemyPowerCount]{},power_aux[EnemyPowerCount]{};
  uint8_t power_order[EnemyPowerCount]{},power_count=0,duration_skip[EnemyPowerCount]{},source[EnemyPowerCount]{};
  uint16_t captured_card=0;
+ EventDeckSnapshot captured_deck{};
  int16_t stolen_gold=0,attack_unblocked_hits=0,attack_total_damage=0,attack_vigor=0;
 };
 struct EnemyWorldState {
@@ -323,6 +324,16 @@ struct EnemyWorldState {
 struct State;
 const EnemyDefinition* enemy_definition(EnemyId);
 const EncounterDefinition* encounter_definition(EncounterId);
+EncounterId encounter_id(const char* model_or_key);
+EnemyId enemy_id(const char* model_or_key);
+// Spawn history counts distinct canonical monster models, not live slots.
+unsigned encounter_spawned_models(const State&);
+unsigned encounter_escaped_enemies(const State&);
+bool encounter_shares_tags(EncounterId,EncounterId);
+int encounter_min_gold(EncounterId,unsigned ascension=0);
+int encounter_max_gold(EncounterId,unsigned ascension=0);
+bool encounter_rewards_allowed(EncounterId);
+uint32_t encounter_gold_proportion_bits(const State&);
 EnemyIntent enemy_intent(const State&,int);
 unsigned encounter_pool(unsigned act,EncounterClass,EncounterId*out,unsigned capacity);
 bool encounter_setup(State&,EncounterId,unsigned ascension=0);

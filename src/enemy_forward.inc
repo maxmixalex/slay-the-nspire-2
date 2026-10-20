@@ -46,3 +46,5 @@ static int enemy_target_halves(const State&,int);
 static int enemy_target_slow_tenths(const State&,int);
 static void enemy_after_player_attack(State&);
 static void enemy_before_potion(State&,int target);
+static void enemy_player_after_play_listener(State&,unsigned);
+static void enemy_note_legacy_power(State&,int,NDebuff);

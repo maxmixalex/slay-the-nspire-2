@@ -3,8 +3,8 @@ static void invalidate_hand_tiles();
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(p,n)&&content.current_profile();}
 bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(source)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
-void App::animate(int actor,int id,int delay){if(actor<0||actor>2)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<3;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
+void App::reset_presentation(){shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=game.expansion.osty_hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -20,7 +20,7 @@ void App::draw_frame(){render();}
 void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"
 static int choice_count(const App&a){
-    switch(a.game.phase){case Phase::Map:return 3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.event_page>=2?1:2;
+    switch(a.game.phase){case Phase::Map:return a.game.world.active?reference::Columns:3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.event_page>=2?1:2;
     case Phase::Reward:return 4;case Phase::Camp:return 2;case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
     case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.game.hand.count;}
 }
@@ -47,6 +47,7 @@ void App::input(Key k){
         return;
     }
     if(screen_input(k))return;
+    if(world_choice_input(k))return;
     if(selection_input(k))return;
     if(deck_input(k))return;
     if(k==Key::Detail&&!title&&!paused&&!help&&!panel){
@@ -111,10 +112,10 @@ void App::input(Key k){
             return;
         }
         if(panel==4){
-            if(k==Key::Left||k==Key::Right)scroll=1-scroll;if(k==Key::Up||k==Key::Down)next_target(*this);
+            if(k==Key::Left||k==Key::Right)scroll=(scroll+int(potion_slot_count(game))+(k==Key::Left?-1:1))%int(potion_slot_count(game));if(k==Key::Up||k==Key::Down)next_target(*this);
             if(k==Key::Confirm){if(use_potion(game,scroll,target)){panel=0;busy=choice_phase(game.phase)?0:8;next_target(*this);cursor=0;choice_selected_count=0;choice_revision=game.revision;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
         }
-        if(panel==3){if(k==Key::Up)map_scroll=mn(MapRows,map_scroll+1);if(k==Key::Down)map_scroll=mx(-MapRows,map_scroll-1);return;}
+        if(panel==3){if(k==Key::Up)map_scroll=mn(reference::MaxRows,map_scroll+1);if(k==Key::Down)map_scroll=mx(-reference::MaxRows,map_scroll-1);return;}
         if(panel==1){
             if(k==Key::Up)inspect_cursor=mx(0,inspect_cursor-1);
             if(k==Key::Down)++inspect_cursor;
@@ -133,7 +134,7 @@ void App::input(Key k){
     int count=choice_count(*this);if(k==Key::Left)cursor=count?(cursor+count-1)%count:0;if(k==Key::Right)cursor=count?(cursor+1)%count:0;
     if(k==Key::Up||k==Key::Down){
         if(game.phase==Phase::Event){scroll=mx(0,scroll+(k==Key::Up?-1:1));}
-        else if(game.phase==Phase::Map){map_scroll=mx(-MapRows,mn(MapRows,map_scroll+(k==Key::Up?1:-1)));}
+        else if(game.phase==Phase::Map){map_scroll=mx(-reference::MaxRows,mn(reference::MaxRows,map_scroll+(k==Key::Up?1:-1)));}
         else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
         else if(game.phase==Phase::Shop){
             const int below[15]={5,6,7,8,13,14,14,10,11,12,14,14,14,14,0};
@@ -144,9 +145,10 @@ void App::input(Key k){
         else if(!library&&combat_phase(game.phase))next_target(*this);
     }
     if(busy&&(k==Key::Confirm||k==Key::EndTurn))return;
-    Phase before=game.phase;bool acted=false;int hp_before[3]={game.hp,game.enemies[0].hp,game.enemies[1].hp};
+    Phase before=game.phase;bool acted=false;int hp_before[MaxEnemies+1]={game.hp};
+    for(int i=0;i<game.enemy_count;i++)hp_before[i+1]=game.enemies[i].hp;
     if(k==Key::EndTurn&&game.phase==Phase::Combat){
-        uint8_t moves[2]={game.enemies[0].move,game.enemies[1].move};acted=end_turn(game);
+        uint8_t moves[MaxEnemies]{};for(int i=0;i<game.enemy_count;i++)moves[i]=game.enemies[i].move;acted=end_turn(game);
         if(acted){for(int i=0;i<game.enemy_count;i++)if(hp_before[i+1])animate(i+1,moves[i]==2?AnimEnemyBuff:AnimEnemyAttack,i*12);animate(0,AnimHeroHurt,7);busy=18+10*(game.enemy_count-1);feedback=10;}
     }
     if(k==Key::Confirm){
@@ -156,7 +158,7 @@ void App::input(Key k){
             acted=play(game,cursor,target);
             if(!acted)message("资源不足，或尚未满足出牌条件");else{animate(0,card.kind==Shiv&&game.character==Character::Silent?AnimSilentShiv:definitions[card.kind].type==CardType::Attack?AnimHeroAttack:AnimHeroCast);fly_card=card.kind;card_fly=12;busy=12;feedback=8;}break;}
         case Phase::ExhaustChoice:acted=choose_exhaust(game,cursor);break;
-        case Phase::Map:if(map_scroll){map_scroll=0;message("已返回可选楼层，再次确认进入");}else{acted=choose_node(game,cursor);if(!acted)message("这条路线不相连，请选择亮起的节点");}break;
+        case Phase::Map:if(map_scroll){map_scroll=0;message("已返回可选楼层，再次确认进入");}else{acted=game.world.active?world_choose_column(game,cursor):choose_node(game,cursor);if(!acted)message("这条路线不相连，请选择亮起的节点");}break;
         case Phase::Shop:acted=cursor==ShopLeave?leave_shop(game):buy(game,cursor);if(!acted)message("金币不足、已售出，或物品槽已满");else if(game.phase==Phase::Shop)message("购买成功");break;
         case Phase::Remove:acted=remove_card(game,cursor);if(acted)message("已移除所选卡牌");break;
         case Phase::Event:acted=event_choice(game,cursor);scroll=0;break;
@@ -173,8 +175,8 @@ void App::input(Key k){
         }
     }
     if(acted){
-        for(int i=0;i<3;i++){int hp=i?game.enemies[i-1].hp:game.hp;int hit=hp_before[i]-hp;if(hit>0){last_hit[i]=hit;hit_start[i]=(int)animation+6;if(i)animate(i,AnimEnemyHurt,6);}}
-        if(game.phase!=before){shop_open=false;event_reader=false;reward_cards=false;cursor=0;scroll=map_scroll=0;if(game.phase==Phase::Map){for(int i=0;i<3;i++)if(reachable(game,game.next_row*3+i)){cursor=i;break;}}}
+        for(int i=0;i<=game.enemy_count;i++){int hp=i?game.enemies[i-1].hp:game.hp;int hit=hp_before[i]-hp;if(hit>0){last_hit[i]=hit;hit_start[i]=(int)animation+6;if(i)animate(i,AnimEnemyHurt,6);}}
+        if(game.phase!=before){shop_open=false;event_reader=false;reward_cards=false;cursor=0;scroll=map_scroll=0;if(game.phase==Phase::Map){for(int i=0;i<(game.world.active?reference::Columns:3);i++)if(game.world.active?([&](){uint8_t ids[reference::Columns];unsigned n=world_available_points(game,ids,reference::Columns);for(unsigned j=0;j<n;j++)if(game.world.maps[game.world.act_index].points[ids[j]].col==i)return true;return false;})():reachable(game,game.next_row*3+i)){cursor=i;break;}}}
         cursor=mn(cursor,mx(0,choice_count(*this)-1));if(target>=game.enemy_count||game.enemies[target].hp==0){target=0;for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
     }
 }

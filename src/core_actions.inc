@@ -23,10 +23,11 @@ static int make_card(State&s,Card c){
     int id=s.card_count++;s.cards[id]=c;
     ironclad_card_created(s,id);silent_card_created(s,id);defect_card_created(s,id);regent_card_created(s,id);necro_card_created(s,id);event_card_created(s,id);enemy_card_created(s,id);return id;
 }
-static void shuffle(State&s){
+static void shuffle(State&s,bool initial=false){
     while(s.discard.count){int id=remove(s.discard,s.discard.count-1);put(s,s.draw,id,Zone::Draw);}
     for(int i=s.draw.count-1;i>0;i--){int j=(int)random_below(s.rng_cards,i+1);auto t=s.draw.ids[i];s.draw.ids[i]=s.draw.ids[j];s.draw.ids[j]=t;}
     record(s,LogKind::Shuffle);shuffle_hook(s);
+    event_card_after_shuffle(s,initial);
 }
 void draw_cards(State&s,int n){
     if(n<=0||s.no_draw)return;
@@ -104,22 +105,23 @@ static bool enqueue(State&s,EffectKind k,int v=0,int t=0,bool first=false){
 static bool alive(const State&s){return enemy_keeps_combat_alive(s);}
 static void victory(State&s){
     if(s.phase==Phase::Reward||s.phase==Phase::Complete)return;
-    award_victory(s);
+    if(!s.world.active)award_victory(s);
     // A lethal nested autoplay cannot leave its caller orphaned in Limbo.
     for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){
         Card c=s.cards[id];Zone z=card_type(s,c)==CardType::Power?Zone::Power:(card_exhausts(s,c,id)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
         put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
     }
-    ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);
+    ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);event_card_combat_end(s,true);
     s.effect_count=0;s.playing=-1;s.expansion.depth=0;s.expansion.potion_active=0;s.expansion.enemy_side=0;
     s.discard_required=s.exhaust_limit=0;clear_extended_choice(s);relic_attack_end(s);s.expansion.triple=0;
     // Bounded prototype reward pool, not the original game's rarity/odds system.
-    for(int i=0;i<3;i++){
+    for(int i=0;!s.world.active&&i<3;i++){
         int k;bool duplicate;
         do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);
         s.reward[i]=(CardKind)k;
     }
     s.phase=Phase::Reward;
+    if(s.world.active)award_victory(s);
 }
 static void exhaust_id(State&s,int id){
     put(s,s.exhaust,id,Zone::Exhaust);

@@ -3,6 +3,8 @@
 #include "status.hpp"
 #include "combat_layout.hpp"
 #include "event_assets.hpp"
+#include "world_run.hpp"
+#include "original_events.hpp"
 namespace spire {
 #include "character_ui.inc"
 #include "canvas.inc"

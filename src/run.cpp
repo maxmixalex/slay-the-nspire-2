@@ -1,11 +1,15 @@
 #include "core.hpp"
+#include "world_run.hpp"
+#include "world_card_factory.hpp"
+#include "original_events.hpp"
 namespace spire {
+namespace {static bool world_make_rewards(State&);static bool world_buy(State&,int);static bool world_open_treasure(State&);static bool world_take_treasure(State&);}
 static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 void heal(State&s,int amount){int old=s.hp;s.hp=(int16_t)min(s.max_hp,s.hp+max(0,amount));record(s,LogKind::Heal,s.hp-old);}
 void increase_max_hp(State&s,int amount){amount=min(amount,999-s.max_hp);s.max_hp+=amount;s.hp+=amount;}
 static void lose_hp(State&s,int amount){player_hp_loss(s,amount,false,false);}
-void gain_gold(State&s,int amount){s.gold=(int16_t)min(9999,s.gold+amount);record(s,LogKind::Gold,amount);}
+void gain_gold(State&s,int amount){int old=s.gold;s.gold=(int16_t)min(9999,max(0,s.gold+amount));record(s,LogKind::Gold,amount);if(s.world_relics.active&&s.gold>old)world_relic_hook(s,WorldRelicHook::AfterGoldGained,s.gold-old);}
 void create_map(State&s){
     // A finite expedition graph, not the original game's map generator.
     const Room layout[MapRows][MapColumns]={
@@ -31,11 +35,13 @@ void create_map(State&s){
     s.current_node=-1;s.next_row=0;s.floor=0;s.event_first=-1;s.phase=Phase::Map;
 }
 bool reachable(const State&s,int node){
+    if(s.world.active)return node>=0&&world_reachable(s,unsigned(node));
     if(node<0||node>=MapNodes||s.next_row>=MapRows||node/3!=s.next_row||s.map[node].visited)return false;
     if(s.current_node<0)return s.next_row==0;
     return (s.map[s.current_node].links&(1u<<(node%3)))!=0;
 }
 void finish_room(State&s){
+    if(s.world.active){world_finish_room(s);return;}
     s.treasure_state=0;s.treasure_relic=0;s.event_deck_action=EventDeckAction::None;s.necro.grimoire_pending=0;
     if(s.hp<=0){s.phase=Phase::Dead;return;}
     if(s.practice){s.phase=Phase::Complete;return;}
@@ -73,6 +79,7 @@ static void enter_shop(State&s){
     }
 }
 bool choose_node(State&s,int column){
+    if(s.world.active)return world_choose_column(s,column);
     int id=s.next_row*3+column;
     if(s.phase!=Phase::Map||column<0||column>=3||!reachable(s,id))return false;
     s.current_node=(int16_t)id;s.floor=(uint8_t)(s.next_row+1);s.encounter=(uint8_t)(s.floor>=6?1:0);
@@ -89,6 +96,7 @@ bool choose_node(State&s,int column){
 }
 void award_victory(State&s){
     relic_hook(s,RelicHook::Victory);
+    if(s.world.active){world_make_rewards(s);return;}
     s.last_gold=(int16_t)(10+random_below(s.rng_world,11)+(s.enemy_count>1?8:0));
     s.reward_claimed=0;s.reward_potion=Potion::Empty;
     // Legacy expedition only: 40% initial, +/-10 percentage points after a roll.
@@ -107,11 +115,12 @@ bool claim_reward_potion(State&s){
     return false;
 }
 bool leave_rewards(State&s){if(s.phase!=Phase::Reward)return false;finish_room(s);return true;}
-int rest_heal_amount(const State&s){return s.max_hp*3/10+((s.relics&RegalPillow)?15:0);}
-int remove_price(const State&s){return min(9999,75+s.removals*25);}
+int rest_heal_amount(const State&s){return s.max_hp*3/10+((s.world.active?has_world_relic(s,WorldRelicRegalPillow):(s.relics&RegalPillow)!=0)?15:0);}
+int remove_price(const State&s){return s.world.active?world_shop_price(s,ShopRemove):min(9999,75+s.removals*25);}
 static bool has_removable(const State&s){for(unsigned i=0;i<s.deck_count;i++)if(card_removable(s.deck[i]))return true;return false;}
 static unsigned transformable_count(const State&s){unsigned count=0;for(unsigned i=0;i<s.deck_count;i++)if(card_transformable(s.deck[i]))++count;return count;}
 bool buy(State&s,int item){
+    if(s.world.active)return world_buy(s,item);
     if(s.phase!=Phase::Shop||item<0||item>ShopRemove)return false;
     if(item==ShopRemove){
         if((s.shop_sold&(1u<<ShopRemove))||s.deck_count<=1||!has_removable(s)||s.gold<remove_price(s))return false;
@@ -133,6 +142,12 @@ bool buy(State&s,int item){
     s.shop_sold|=(uint16_t)(1u<<item);s.revision++;return true;
 }
 bool remove_card(State&s,int index){
+    if(s.world.active&&s.phase==Phase::Remove&&s.event_deck_action==EventDeckAction::None){
+        if(index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s,s.deck[index],index)||(s.shop_sold&(1U<<ShopRemove)))return false;
+        int price=remove_price(s);if(s.gold<price||!event_remove_deck_card(s,index))return false;
+        s.gold-=int16_t(price);s.shop_sold|=1U<<ShopRemove;if(s.removals<255)++s.removals;s.phase=Phase::Shop;
+        world_relic_hook(s,WorldRelicHook::AfterItemPurchased,ShopRemove,price);++s.revision;return true;
+    }
     if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s.deck[index]))return false;
     const bool event=s.event_deck_action==EventDeckAction::Remove;
     if(!event&&s.gold<remove_price(s))return false;
@@ -143,6 +158,7 @@ bool remove_card(State&s,int index){
 bool leave_shop(State&s){if(s.phase!=Phase::Shop)return false;finish_room(s);return true;}
 bool has_upgrade(const State&s){for(int i=0;i<s.deck_count;i++)if(card_upgradeable(s.deck[i]))return true;return false;}
 bool event_option_enabled(const State&s,int option){
+    if(s.original_events.active)return original_event_option_enabled(s,option);
     if(s.phase!=Phase::Event||s.event_deck_action!=EventDeckAction::None||option<0||option>1)return false;
     if(s.event_page>=2)return option==0;
     if(s.event_id==EventId::Baths&&option==0)return s.max_hp<=997;
@@ -165,6 +181,7 @@ bool cancel_event_selection(State&s){
     s.phase=Phase::Event;s.event_page=0;s.revision++;return true;
 }
 bool event_choice(State&s,int option){
+    if(s.original_events.active)return original_event_choose(s,option);
     if(!event_option_enabled(s,option))return false;
     if(s.event_page>=2){if(option!=0)return false;if(s.event_id==EventId::Vegetation&&s.event_page==4){s.encounter=1;enter_combat(s);}else finish_room(s);return true;}
     switch(s.event_id){
@@ -214,10 +231,12 @@ bool transform_card(State&s,int index){
     s.revision++;return true;
 }
 bool open_treasure(State&s){
+    if(s.world.active)return world_open_treasure(s);
     if(s.phase!=Phase::Treasure||s.treasure_state)return false;
     s.treasure_relic=random_relic(s);s.treasure_state=1;s.revision++;return true;
 }
 bool take_treasure(State&s){
+    if(s.world.active)return world_take_treasure(s);
     if(s.phase!=Phase::Treasure||s.treasure_state!=1)return false;
     if(s.treasure_relic){if(!gain_relic(s,s.treasure_relic))return false;}
     else gain_gold(s,50);
@@ -227,4 +246,5 @@ bool leave_treasure(State&s){
     if(s.phase!=Phase::Treasure||!s.treasure_state)return false;
     finish_room(s);return true;
 }
+#include "world_run.inc"
 } // namespace spire

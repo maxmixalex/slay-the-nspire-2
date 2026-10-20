@@ -18,7 +18,7 @@ constexpr unsigned MaxOriginalEventOptions=16,MaxOriginalEventSteps=48;
 constexpr unsigned MaxOriginalEventOffers=32,MaxCrystalItems=150,CrystalCells=121;
 enum class OriginalEventSelection:uint8_t {
  None,Remove,Upgrade,Transform,Enchant,Duplicate,OfferCard,Potion,Relic,
- Crystal,Merchant,TransferEnchantment,Count
+ Crystal,Merchant,TransferEnchantment,Rewards,Count
 };
 enum class OriginalEventFilter:uint8_t {
  Any,Removable,Upgradeable,Transformable,BasicStrike,BasicDefend,Basic,
@@ -37,12 +37,17 @@ struct CrystalItemState {
  uint8_t kind=0,x=0,y=0,w=0,h=0,subscriptions=0,revealed=0;
  uint16_t model=0,amount=0;
 };
+constexpr unsigned MaxOriginalEventRewards=16;
+struct OriginalEventReward {
+ uint8_t kind=0,claimed=0,first=0,count=0; // gold, potion, relic, card reward
+ uint16_t model=0,amount=0;
+};
 struct OriginalEventState {
  OriginalEventId id=OriginalEventId::None;
  uint8_t active=0,finished=0,act_index=0,page=0;
  uint8_t option_count=0,options[MaxOriginalEventOptions]{};
- char page_key[40]{};
- char option_keys[MaxOriginalEventOptions][40]{};
+ char page_key[64]{};
+ char option_keys[MaxOriginalEventOptions][64]{};
  int16_t values[16]{};
  uint64_t rng_words[4]{};
  uint32_t rng_calls=0;
@@ -57,7 +62,14 @@ struct OriginalEventState {
  uint16_t offer_count=0,offers[MaxOriginalEventOffers]{};
  EventCardFacts offer_facts[MaxOriginalEventOffers]{};
  int16_t choice_prices[MaxOriginalEventOptions]{};
- uint16_t selected_count=0,selected[MaxDeck]{};
+ uint16_t selected_count=0,selected[MaxDeck]{},selected_cursor=0;
+ uint8_t remembered[MaxDeck]{};
+ uint8_t selection_committed=0;
+ EventDeckSnapshot selected_cards[MaxDeck]{};
+ uint8_t reward_active=0,reward_count=0,reward_current=255,reward_card_count=0;
+ OriginalEventReward rewards[MaxOriginalEventRewards]{};
+ uint16_t reward_cards[MaxOriginalEventOffers]{};
+ EventCardFacts reward_facts[MaxOriginalEventOffers]{};
  uint8_t combat_pending=0,resume_after_combat=0;
  uint16_t encounter=0;
  uint8_t crystal_tool=1,crystal_charges=0,crystal_item_count=0;

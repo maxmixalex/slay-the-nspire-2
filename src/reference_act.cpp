@@ -34,7 +34,7 @@ unsigned act_index(ActKind act) {
 }
 bool act_quotas(Random& rng, const ActSettings& settings, MapConfig& out, QuotaTrace& trace) {
     trace = QuotaTrace{};
-    if (!rng.good || unsigned(settings.act) > unsigned(ActKind::Glory)) {
+    if (!rng.good || unsigned(settings.act) > unsigned(ActKind::Glory) || settings.variant>2) {
         trace.error = QuotaError::InvalidInput; return false;
     }
     MapConfig result{};
@@ -62,6 +62,19 @@ bool generate_act_map(ReferenceMap& out, uint64_t run_seed, const ActSettings& s
     if (!act_quotas(rng, settings, config, trace)) {
         out = ReferenceMap{}; out.error = MapError::Configuration; return false;
     }
-    return generate_map(out, rng, config, scratch);
+    if(!generate_map(out, rng, config, scratch))return false;
+    if(settings.variant==1)return generate_golden_map(out,out.final_rng,scratch);
+    if(settings.variant==2){
+        Random spoils;spoils.named(run_seed,"spoils_map");
+        if(!act_quotas(spoils,settings,config,trace)){out.error=MapError::Configuration;return false;}
+        config.second_boss=false;config.replace_treasure=false;
+        return generate_spoils_map(out,spoils,config,scratch);
+    }
+    return true;
+}
+bool generate_act_map(ReferenceMap& out, uint64_t run_seed, const ActSettings& settings,
+                      QuotaTrace& trace) {
+    static MapWorkspace scratch;
+    return generate_act_map(out,run_seed,settings,scratch,trace);
 }
 }

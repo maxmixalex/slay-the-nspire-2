@@ -94,19 +94,31 @@ static void combat_screen(Canvas&c){
     if(stars){c.star_label(s.expansion.stars,3,149,10);c.action(0,147,48,20,UiAction::ShowStars);}
     status_strip(c,0,stars?51:24,149,stars?69:96);
     for(int i=0;i<s.enemy_count;i++){
-        const auto&e=s.enemies[i];int x=s.enemy_count==1?238:178+i*88;
+        const auto&e=s.enemies[i];const auto pos=enemy_pose(s.enemy_count,i);int x=pos.x;
         if(!e.hp){c.centered("已击败",x-32,105,64,10,Muted);continue;}
-        c.hit(x-37,48,74,95,HitKind::Enemy,i);c.actor(i+1,x,122);
-        c.picture(e.move==2?A_BuffIntent:A_AttackIntent,x-21,50,17,17);
-        if(e.move==2)c.text("+2",x,48,12,Green);else c.num(enemy_damage(s,i),x,48,12,Gold);
-        if(e.move==1){c.picture(A_Block,x+19,51,10,10);c.num(5,x+30,48,10,Blue);}
-        if(a.target==i)c.text("▼",x-5,72,10,Gold);
-        c.hp(e.hp,e.max_hp,x-30,129,60);status_strip(c,i+1,x-31,149,62);
-        if(e.block){c.picture(A_Block,x-44,126,13,13);c.num(e.block,x-43,138,10,Blue);}
+        c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);c.actor(i+1,x,pos.feet,pos.scale);
+        EnemyIntent intent=s.enemy_world.active?enemy_intent(s,i):EnemyIntent{"",uint16_t(e.move==2?EnemyIntentBuff:EnemyIntentAttack),int16_t(enemy_damage(s,i)),1};
+        const bool attacking=(intent.flags&EnemyIntentAttack)!=0;
+        c.picture(attacking?A_AttackIntent:A_BuffIntent,x-pos.width/2,pos.intent,13,13);
+        char label[32]{};TextBuffer tb{label,sizeof label,0};
+        if(attacking){tb.number(intent.damage);if(intent.hits>1){tb.text("×");tb.number(intent.hits);}}
+        else if(intent.flags&EnemyIntentSleep)tb.text("沉睡");
+        else if(intent.flags&EnemyIntentStun)tb.text("晕眩");
+        else if(intent.flags&EnemyIntentEscape)tb.text("逃跑");
+        else if(intent.flags&EnemyIntentSummon)tb.text("召唤");
+        else if(intent.flags&EnemyIntentBuff)tb.text("强化");
+        else if(intent.flags&EnemyIntentDebuff)tb.text("弱化");
+        else if(intent.flags&EnemyIntentBlock)tb.text("防御");
+        else tb.text("？");
+        c.text(label,x-pos.width/2+14,pos.intent,10,attacking?Gold:Green,pos.width-11);
+        if(a.target==i)c.text("▼",x-5,pos.intent+14,8,Gold);
+        c.hp(e.hp,e.max_hp,x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
+        if(e.block){c.picture(A_Block,x-pos.width/2-7,pos.hp-11,10,10);c.num(e.block,x-pos.width/2+4,pos.hp-12,8,Blue);}
+
     }
-    for(int i=0;i<3;i++){
+    for(int i=0;i<=s.enemy_count;i++){
         int age=(int)a.animation-a.hit_start[i];
-        if(a.last_hit[i]&&age>=0&&age<24){int x=i==0?48:s.enemy_count==1?225:165+(i-1)*88;c.num(a.last_hit[i],x,91-age/2,16,i?Gold:Red);}
+        if(a.last_hit[i]&&age>=0&&age<24){auto p=enemy_pose(s.enemy_count,i?i-1:0);int x=i?p.x-12:48;c.num(a.last_hit[i],x,(i?p.feet-30:91)-age/2,s.enemy_count>4?10:16,i?Gold:Red);}
     }
     int selected=mn(mx(a.cursor,0),mx(0,s.hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();

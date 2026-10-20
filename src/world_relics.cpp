@@ -1,6 +1,7 @@
 #include "core.hpp"
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
+#include "world_run.hpp"
 
 namespace spire {
 #include "world_relic_definitions.inc"
@@ -142,15 +143,17 @@ void init_world_relics(State& s){auto& w=s.world_relics;if(w.active)return;w.act
  }
  w_bags(s);
 }
-RelicId world_relic_pull(State& s,WorldRelicPool pool,bool back,bool shop){init_world_relics(s);w_bags(s);w_clean_bags(s);auto& w=s.world_relics;
+static RelicId w_pull(State& s,WorldRelicPool pool,bool back,bool shop,unsigned bag){init_world_relics(s);w_bags(s);w_clean_bags(s);auto& w=s.world_relics;
  if(pool==WorldRelicPool::Reward)return random_world_relic(s,pool);
- unsigned rarity=unsigned(pool);while(rarity>=2&&rarity<=5){unsigned r=rarity-2,n=w.bag_sizes[1][r];
-  for(unsigned t=0;t<n;t++){unsigned at=back?n-1-t:t;RelicId id=w.bags[1][r][at];if(!w_allowed(s,id,shop))continue;
-   for(unsigned j=at+1;j<n;j++)w.bags[1][r][j-1]=w.bags[1][r][j];w.bags[1][r][n-1]=0;--w.bag_sizes[1][r];w_bag_remove(s,id,0);return id;
+ unsigned rarity=unsigned(pool);while(rarity>=2&&rarity<=5){unsigned r=rarity-2,n=w.bag_sizes[bag][r];
+  for(unsigned t=0;t<n;t++){unsigned at=back?n-1-t:t;RelicId id=w.bags[bag][r][at];if(!w_allowed(s,id,shop))continue;
+   for(unsigned j=at+1;j<n;j++)w.bags[bag][r][j-1]=w.bags[bag][r][j];w.bags[bag][r][n-1]=0;--w.bag_sizes[bag][r];w_bag_remove(s,id,int(1-bag));return id;
   }
   rarity=rarity==5?2:rarity==2?3:rarity==3?4:0;
  }return WorldRelicCirclet;
 }
+RelicId world_relic_pull(State& s,WorldRelicPool pool,bool back,bool shop){return w_pull(s,pool,back,shop,1);}
+RelicId world_relic_pull_shared(State& s,WorldRelicPool pool){return w_pull(s,pool,false,false,0);}
 RelicId random_world_relic(State& s,WorldRelicPool pool){
  if(pool==WorldRelicPool::Reward){auto v=world_random_float(world_rng(s,WorldRng::Rewards));pool=v<world_float(0x3f000000)?WorldRelicPool::Common:v<world_float(0x3f547ae1)?WorldRelicPool::Uncommon:WorldRelicPool::Rare;}
  return world_relic_pull(s,pool);
@@ -486,13 +489,13 @@ bool world_relic_select(State& s,const uint16_t* ids,unsigned count){auto& w=s.w
  uint16_t eligible[MaxWorldRelicOffers];unsigned n=world_relic_eligible(s,eligible,MaxWorldRelicOffers);
  for(unsigned i=0;i<count;i++){bool found=false;for(unsigned j=0;j<n&&j<MaxWorldRelicOffers;j++)if(eligible[j]==ids[i])found=true;for(unsigned j=0;j<i;j++)if(ids[j]==ids[i])return false;if(!found)return false;}
  w_select_apply(s,ids,count);w_pump(s);++s.revision;
- if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){w.offer_count=0;w.choice_group=w.choice_reward=0;original_event_resume(s);}
+ if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){w.offer_count=0;w.choice_group=w.choice_reward=0;original_event_resume(s);world_resume_room(s);}
  if(s.phase==Phase::Combat)resolve_pending(s);return s.phase!=Phase::Error;
 }
 bool world_relic_potion(State& s,int slot){auto& w=s.world_relics;if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::Potion||slot>=int(potion_slot_count(s)))return false;
  unsigned reward=w.choice_reward;Potion potion=Potion(w.offers[0]);w_clear_choice(s);
  if(slot>=0){if(potion_at(s,unsigned(slot))!=Potion::Empty)discard_potion(s,slot);potion_set(s,unsigned(slot),potion);if(reward&&reward<=w.reward_count)w.rewards[reward-1].flags|=1;}
- w_pump(s);++s.revision;if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead)original_event_resume(s);return true;
+ w_pump(s);++s.revision;if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){original_event_resume(s);world_resume_room(s);}return true;
 }
 
 void world_relic_modify_card_creation(State& s,WorldCardOptions& o){if(!s.world_relics.active||(o.flags&WorldNoCardPoolModifications)||!(o.flags&WorldIsCardReward))return;
@@ -558,4 +561,5 @@ int world_relic_modify_upgrade_odds(State&,Card,int odds){return odds;}
 int world_relic_modify_card_reward_count(State&,int count,const WorldCardOptions&){return count;}
 void world_relic_before_reward_offered(State& s,bool cards){if(!cards)return;for(unsigned i=0;i<s.world_relics.count;i++){auto& r=s.world_relics.entries[i];if(r.id==WorldRelicLastingCandy&&w_present(r)){if(r.values[0]>0&&r.values[0]%2==1)world_relic_flash(s,r.id);++r.values[0];}}}
 
+#include "world_relic_validation.inc"
 } // namespace spire

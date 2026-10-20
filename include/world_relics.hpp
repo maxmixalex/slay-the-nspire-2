@@ -43,6 +43,7 @@ unsigned world_relic_list(const State&,RelicId* out,unsigned capacity,bool trada
 unsigned world_relic_candidates(const State&,RelicId* out,unsigned capacity,WorldRelicPool,bool in_shop=false);
 RelicId random_world_relic(State&,WorldRelicPool pool=WorldRelicPool::Reward);
 RelicId world_relic_pull(State&,WorldRelicPool,bool from_back=false,bool in_shop=false);
+RelicId world_relic_pull_shared(State&,WorldRelicPool);
 bool world_relic_pending(const State&);
 bool world_relic_select(State&,const uint16_t*,unsigned count);
 bool world_relic_potion(State&,int slot); // -1 returns to the containing reward set.

@@ -6,6 +6,7 @@
 #include "enemy_graphs.inc"
 #include "enemy_power_definitions.inc"
 static int enemy_asc(const State&s,int ordinary,int tough,int deadly){return s.enemy_world.ascension>=9?deadly:s.enemy_world.ascension>=8?tough:ordinary;}
+#include "enemy_numbers.inc"
 static bool enemy_slot_exists(const State&s,int t){return t>=0&&t<s.enemy_count&&(s.enemy_world.models[t].flags&EnemyPresent)&&!(s.enemy_world.models[t].flags&EnemyRemoved);}
 static bool enemy_slot_alive(const State&s,int t){return enemy_slot_exists(s,t)&&s.enemies[t].hp>0;}
 static unsigned enemy_teammates(const State&s,int except=-1){unsigned n=0;for(int t=0;t<s.enemy_count;t++)if(t!=except&&enemy_slot_alive(s,t))++n;return n;}
@@ -211,7 +212,7 @@ static int enemy_resolve_node(State&s,int t,int node){
    case EnemyId::SlumberingBeetle:node=enemy_power_value(s,t,EnemyPower::Slumber)?0:1;break;
    case EnemyId::TestSubject:node=m.data[0]<2?3:4;break;
    case EnemyId::Toadpole:node=m.data[0]?2:1;break;
-   case EnemyId::Wriggler:node=m.slot%2?1:0;break;
+   case EnemyId::Wriggler:node=(m.slot-(s.enemy_world.encounter==EncounterId::PhrogParasiteElite?1:0))%2?1:0;break;
    default:fail(s);return 0;
   }
  }fail(s);return 0;
@@ -259,3 +260,4 @@ EnemyIntent enemy_intent(const State&s,int t){
  if(m.kind==EnemyId::TestSubject&&m.node==3)hits=min(999,3+m.data[1]);
  return {d->key,d->flags,(int16_t)min(9999,(d->flags&EnemyIntentAttack)?enemy_attack_value(s,t,enemy_raw_move_damage(s,t,m.node)):0),(int16_t)hits};
 }
+#include "enemy_encounters.inc"

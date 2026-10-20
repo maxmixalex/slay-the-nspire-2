@@ -1,4 +1,5 @@
 void enter_combat(State&s){
+    const EncounterId pending_encounter=s.enemy_world.encounter;
     s.expansion=ExpansionState{};
     s.ironclad=IroncladState{};silent_combat_start(s);defect_combat_start(s);s.regent=RegentState{};necro_combat_start(s);
     s.relic_flash=0;relic_reset_turn_counters(s);
@@ -8,11 +9,17 @@ void enter_combat(State&s){
     s.demon_form=s.infinite_blades=s.block_next_turn=s.draw_next_turn=s.flame_barrier=0;
     s.turn=1;s.energy=3;s.playing=-1;s.effect_count=s.card_count=0;
     s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;
-    s.enemy_count=s.encounter?2:1;
-    for(int i=0;i<s.enemy_count;i++)s.enemies[i]={(int16_t)(42+random_below(s.rng_world,5)),0,0,0,0,(uint8_t)(s.enemy_count==1?0:(i==0?1:2))};
-    for(int i=0;i<s.enemy_count;i++)s.enemies[i].max_hp=s.enemies[i].hp;
+    if(s.world.active){
+        if(!encounter_setup(s,pending_encounter,s.world.ascension)){fail(s);return;}
+    }else{
+        enemy_reset_combat(s);
+        s.enemy_count=s.encounter?2:1;
+        for(int i=0;i<s.enemy_count;i++)s.enemies[i]={(int16_t)(42+random_below(s.rng_world,5)),0,0,0,0,(uint8_t)(s.enemy_count==1?0:(i==0?1:2))};
+        for(int i=0;i<s.enemy_count;i++)s.enemies[i].max_hp=s.enemies[i].hp;
+    }
+    event_card_combat_start(s);
     for(int i=0;i<s.deck_count;i++){int id=make_card(s,s.deck[i]);if(id>=0){notify_deck_card_created(s,id,i);put(s,s.discard,id,Zone::Discard);}}
-    shuffle(s);
+    shuffle(s,true);
     relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);resolve_pending(s);
     if(s.practice&&s.floor==1){
         // Explicit practice opening: lets the player exercise two exhaust hooks.
@@ -185,6 +192,7 @@ bool end_turn(State&s){
     s.relic_flash=0;queue_extension(s,XOp::TurnEnd);resolve_pending(s);++s.revision;return true;
 }
 bool choose_reward(State&s,int index){
+    if(s.world.active)return world_claim_reward_card(s,index);
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>2)return false;
     if(index>=0){if(s.deck_count==MaxDeck){fail(s);return false;}notify_deck_replaced(s,s.deck_count);s.deck[s.deck_count++]={s.reward[index],0};record(s,LogKind::Reward,s.reward[index]);}
     if(silent_next_reward(s)){s.revision++;return true;}

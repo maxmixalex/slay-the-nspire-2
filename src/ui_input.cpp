@@ -1,6 +1,9 @@
 #include "app.hpp"
 #include "status.hpp"
+#include "world_run.hpp"
+#include "original_events.hpp"
 namespace spire {
+#include "world_choice_input.inc"
 unsigned App::library_items(CardKind* out)const{
     unsigned count=0;CardKind ids[CardKinds];
     const CardColor filters[]={CardColor::Token,CardColor::Ironclad,CardColor::Silent,CardColor::Colorless,
@@ -90,7 +93,11 @@ void App::ui_action(UiAction action){
         if(!title&&!paused&&!panel&&!library&&game.phase==Phase::Event){event_reader=true;event_reader_scroll=0;}break;
     case UiAction::CloseEventReader:event_reader=false;break;
     case UiAction::StartCharacter:
-        if(character_select){new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);character_select=false;title=false;reset_presentation();}break;
+        if(character_select){
+            new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);
+            if(!practice_entry)world_begin_run(game);
+            character_select=false;title=false;reset_presentation();
+        }break;
     case UiAction::LibraryCards:case UiAction::LibraryRelics:case UiAction::LibraryPotions:
         if(library){library_tab=(int)action-(int)UiAction::LibraryCards;library_page=library_selected=0;}break;
     case UiAction::PreviousPage:case UiAction::NextPage:
@@ -142,6 +149,14 @@ void App::ui_action(UiAction action){
             if(page<0)page=0;if(page>last)page=last;cursor=page*10;
         }break;
     case UiAction::ConfirmChoice:confirm_choice();break;
+    case UiAction::ConfirmWorldChoice:confirm_world_choice();break;
+    case UiAction::ClearWorldChoice:choice_selected_count=0;break;
+    case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:{
+        unsigned count=world_choice_options(nullptr,0);int page=cursor/10+(action==UiAction::PreviousWorldPage?-1:1);
+        if(page<0)page=0;if(page>int((count?count-1:0)/10))page=int((count?count-1:0)/10);cursor=page*10;break;}
+    case UiAction::RewardRelic:if(game.phase==Phase::Reward)world_claim_reward_relic(game);break;
+    case UiAction::CrystalSmall:original_event_crystal_tool(game,false);break;
+    case UiAction::CrystalLarge:original_event_crystal_tool(game,true);break;
     case UiAction::ClearChoice:choice_selected_count=0;break;
     case UiAction::ConfirmDeckChoice:confirm_deck_choice();break;
     case UiAction::CancelDeckChoice:deck_candidate=-1;break;

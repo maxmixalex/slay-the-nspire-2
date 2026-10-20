@@ -1,7 +1,6 @@
 #include "map_preview.hpp"
 namespace spire {
 namespace {
-reference::MapWorkspace workspace;
 unsigned length(const char* s) { unsigned n = 0; while (s[n]) ++n; return n; }
 void copy(char* out, const char* in) { unsigned i = 0; do { out[i] = in[i]; } while (in[i++]); }
 }
@@ -11,7 +10,7 @@ bool MapPreview::generate() {
         generated = false; error = "种子须为 1–64 个 ASCII 字符"; return false;
     }
     copy(seed, canonical); first_row = 0; selected = -1;
-    generated = reference::generate_act_map(map, reference::hash64(seed, length(seed)), settings, workspace, quota);
+    generated = reference::generate_act_map(map, reference::hash64(seed, length(seed)), settings, quota);
     error = generated ? "" : quota.error == reference::QuotaError::AmbiguousRounding ?
         "舍入临界值：停止生成，未替换结果" : "生成失败，未使用替代地图";
     return generated;

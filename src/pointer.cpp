@@ -1,5 +1,7 @@
 #include "app.hpp"
 #include "status.hpp"
+#include "world_run.hpp"
+#include "original_events.hpp"
 namespace spire {
 static int clamp(int n,int lo,int hi){return n<lo?lo:n>hi?hi:n;}
 void App::add_hit(int x,int y,int w,int h,HitKind kind,int value,bool enabled){
@@ -97,7 +99,7 @@ void App::pointer_scroll(int rows){
         scroll=clamp(scroll+(rows>0?10:-10),0,MaxCards);inspect_cursor=scroll;
     }
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
-    else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-MapRows,MapRows);
+    else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-reference::MaxRows,reference::MaxRows);
     else if(panel==5)scroll=clamp(scroll+rows,0,game.relic_count?game.relic_count-1:0);
     else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
     else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)
@@ -164,6 +166,12 @@ void App::pointer_button(bool down){
     case HitKind::Close:pointer_key(Key::Back);break;
     case HitKind::DetailClose:detail_card=-1;break;
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
+    case HitKind::WorldNode:
+        if(!panel&&game.phase==Phase::Map&&world_choose_point(game,unsigned(hit.value)))reset_presentation();break;
+    case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
+    case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
+    case HitKind::CrystalCell:
+        if(game.phase==Phase::OriginalEventChoice&&hit.value>=0&&hit.value<CrystalCells){cursor=hit.value;original_event_crystal_click(game,hit.value%11,hit.value/11);}break;
     case HitKind::ReferenceAction:
         pointer_cancel();
         if(hit.value==0)map_preview.begin_edit();

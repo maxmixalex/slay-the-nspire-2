@@ -52,8 +52,27 @@ struct Canvas{
         auto p=a.content.image(id);if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);if(left>=right||top>=bottom)return;
         if(p.format==4){
+            if(width!=p.w||height!=p.h){
+                const uint8_t*run=p.pixels;
+                for(unsigned sy=0;sy<p.h;sy++){
+                    int y0=(int(sy)*height+p.h-1)/p.h,y1=(int(sy+1)*height+p.h-1)/p.h;
+                    unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
+                    for(unsigned s=0;s<spans;s++){
+                        unsigned sx=run[0]|(unsigned)run[1]<<8,n=run[2]|(unsigned)run[3]<<8,mode=run[4];run+=5;
+                        unsigned stride=mode?3:2;
+                        if(y1>top&&y0<bottom)for(unsigned j=0;j<n;j++){
+                            int x0=(int(sx+j)*width+p.w-1)/p.w,x1=(int(sx+j+1)*width+p.w-1)/p.w;
+                            if(x1<=left||x0>=right)continue;const uint8_t*src=run+j*stride;
+                            unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);
+                            uint16_t color=src[0]|uint16_t(src[1])<<8;
+                            for(int yy=mx(top,y0);yy<mn(bottom,y1);yy++)for(int xx=mx(left,x0);xx<mn(right,x1);xx++)paint((y+yy)*pitch+x+xx,color,alpha);
+                        }
+                        run+=n*stride;
+                    }
+                }
+                return;
+            }
             // Animation frames are prebaked at native size. Skip transparent runs entirely.
-            if(width!=p.w||height!=p.h)return;
             const uint8_t* run=p.pixels;
             for(int yy=0;yy<p.h;yy++){
                 unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
@@ -88,11 +107,16 @@ struct Canvas{
         index=loop?index%c.count:(unsigned)mn((int)index,c.count-1);
         picture((int)c.first+(int)index,x-(anchored?c.pivot_x:0),y-(anchored?c.pivot_y:0));
     }
-    void actor(int actor,int x,int y){
+    void actor(int actor,int x,int y,int scale=1024){
+        if(actor<0||actor>MaxEnemies)return;
         int id=actor?AnimEnemyIdle:AnimHeroIdle;uint32_t elapsed=a.animation*33;
         const auto&m=a.motion[actor];if(m.clip>=0&&(int32_t)(a.animation-m.start)>=0){int actual=actor?m.clip:character_animation(a.game.character,m.clip);auto c=a.content.clip(actual);uint32_t t=(a.animation-m.start)*33;if(t<(uint32_t)c.count*c.frame_ms){id=m.clip;elapsed=t;}}
         if(actor==0)id=character_animation(a.game.character,id);
-        clip(id,x,y,elapsed+((id==AnimEnemyIdle)?actor*347:0));
+        elapsed+=((id==AnimEnemyIdle)?actor*347:0);
+        if(scale==1024){clip(id,x,y,elapsed);return;}
+        auto cl=a.content.clip(id);if(!cl.count)return;
+        int image=int(cl.first)+(elapsed/cl.frame_ms)%cl.count;auto p=a.content.image(image);
+        picture(image,x-cl.pivot_x*scale/1024,y-cl.pivot_y*scale/1024,mx(1,p.w*scale/1024),mx(1,p.h*scale/1024));
     }
     int width(const char*p,int size){int w=0;while(*p&&*p!='\n')w+=a.content.glyph(utf8(p),size).advance;return w;}
     void glyph(Glyph g,int x,int y,uint16_t color){
@@ -145,7 +169,15 @@ struct Canvas{
         for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)if(i||j)text(label,x+size+2+i,y+j,size,Ink);
         text(label,x+size+2,y,size,Gold);
     }
-    void hp(int value,int total,int x,int y,int w){rect(x,y,w,5,Ink);rect(x,y,w*value/mx(1,total),5,Red);char b[24]={};TextBuffer t{b,sizeof b,0};t.number(value);t.ch('/');t.number(total);centered(b,x,y+3,w,10);}
+    void hp(int value,int total,int x,int y,int w){
+        if(w<1)return;total=mx(1,total);value=mn(mx(0,value),total);int filled=0;
+        // Compare integer pixel thresholds without multiplying billion-HP
+        // bosses by a screen width in signed 32-bit arithmetic.
+        while(filled<w&&total/w*(filled+1)+(total%w*(filled+1)+w-1)/w<=value)++filled;
+        rect(x,y,w,5,Ink);rect(x,y,filled,5,Red);char b[32]={};TextBuffer t{b,sizeof b,0};
+        auto amount=[&](int v){if(v>=1000000){t.number(v/1000000);t.ch('M');}else if(v>=10000){t.number(v/1000);t.ch('k');}else t.number(v);};
+        amount(value);t.ch('/');amount(total);int size=width(b,10)>w?8:10;centered(b,x,y+3,w,size);
+    }
     void button(const char*p,int x,int y,int w,bool selected,int h=25){
         picture(A_WideButton,x,y,w,h,selected?255:195);
         if(selected){rect(x+8,y+h-2,w-16,1,Gold);text("›",x+5,y+3,12,Gold);}centered(p,x+10,y+(h-18)/2,w-20,12,selected?Gold:White);

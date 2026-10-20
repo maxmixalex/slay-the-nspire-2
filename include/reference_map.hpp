@@ -26,6 +26,7 @@ struct MapPoint {
 struct MapConfig {
     uint8_t rows = 16, rests = 7, shops = 3, elites = 5, unknowns = 12;
     bool replace_treasure = false, second_boss = false, prune = true;
+    uint8_t variant = 0; // 0 StandardActMap, 1 GoldenPathActMap, 2 SpoilsActMap.
 };
 struct ReferenceMap {
     MapPoint points[MaxPoints]{};
@@ -55,4 +56,6 @@ struct MapWorkspace {
 // room quotas and the RNG after any quota draws. Gaussian room-pool construction
 // and complete run/encounter seed parity are separate, not implied by this API.
 bool generate_map(ReferenceMap&, Random rng, const MapConfig&, MapWorkspace&);
+bool generate_golden_map(ReferenceMap&,Random rng,MapWorkspace&);
+bool generate_spoils_map(ReferenceMap&,Random rng,const MapConfig&,MapWorkspace&);
 } // namespace spire::reference

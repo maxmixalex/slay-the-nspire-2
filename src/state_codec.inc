@@ -217,6 +217,12 @@ if(version>=4){F(s.no_draw);for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].weak)
 #define B(x) compact_field<1>(x,c)
 #define H(x) compact_field<2>(x,c)
 #include "world_codec.inc"
+#include "world_run_codec.inc"
+#include "event_card_codec.inc"
+#include "original_event_codec.inc"
+#include "enemy_codec.inc"
+#include "world_relic_codec.inc"
+  F(s.world_factory.rarity_offset_bits);B(s.world_factory.initialized);
   // New compact suffixes end on a canonical four-byte boundary, preserving
   // the historical checksum envelope without altering any old field offset.
   while(c.at%4&&c.good)if(c.compact(0,1)!=0&&c.in)c.good=false;

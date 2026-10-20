@@ -1,6 +1,7 @@
 #include "core.hpp"
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
+#include "world_run.hpp"
 
 namespace spire {
 #include "card_definitions.inc"

@@ -22,4 +22,14 @@ inline HandRail hand_rail(int count,int index){
     return {left,190,right-left,50};
 }
 constexpr int HandTileW=80,HandTileH=112;
+struct CreaturePose {int x,feet,width,scale,intent,hp,status;};
+inline CreaturePose enemy_pose(int count,int index){
+ if(count<1)count=1;if(count>MaxEnemies)count=MaxEnemies;
+ if(index<0)index=0;if(index>=count)index=count-1;
+ if(count==1)return {238,122,60,1024,50,129,149};
+ if(count==2)return {178+index*88,122,60,1024,50,129,149};
+ if(count<=4){int width=180/count;return {137+width/2+index*width,122,width-4,720,58,129,148};}
+ int columns=(count+1)/2,row=index/columns,col=index%columns,width=180/columns;
+ int feet=row?145:86;return {137+width/2+col*width,feet,width-5,448,row?113:50,feet+3,feet+18};
+}
 }

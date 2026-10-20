@@ -1,5 +1,16 @@
 # Work state — 2026-10-19
 
+## Recovery and integration checkpoint — 2026-10-20
+
+The active branch was recovered exactly at `85794331b1cbe6fc8e13d516ce4042d8fbc4d95b`; all 315 source blobs and its tree were checked against GitHub. The 0.14–0.16 branches are ancestors of this work branch, so their implementation was retained rather than re-created or cherry-picked. The owner's pinned DLL, PCK and completed 0.16 private pack have been recovered and their recorded SHA-256 values verified.
+
+This checkpoint preserves resumed source work, **not a buildable release or a new passing runtime**. Three agents are implementing original enemies/encounters, events, and original run routing in parallel. New source includes encounter composition, move/number data, enemy and event codecs, 43 of 66 event rule implementations with explicit remaining gaps, original reward-group state, three-act routing/queues/room logic, original seven-column map entry, and shared save/choice integration. The original map/run translation units passed a short syntax-only check; no new integrated native, WASM, ARM or visual run has been performed.
+
+Root has widened animation/damage presentation arrays to all eight enemy slots, added bounded multi-enemy geometry and overflow-safe billion-HP bars, connected the new game entry to the original run, kept historical save widths, serialized new relic continuations, and added original-world selection input. Missing work includes the rest of enemy move/power execution, 23 complex events, relic combat/run hooks, complete new resource conversion, selection/reward display, full shared hook timing, integration validation and visual comparison. The old NSP2/13 profile cannot yet satisfy the appended 558-card profile. No 95% UI-fidelity result is claimed.
+
+Next: complete the explicit missing modules, persist and read back that source stage, then freeze it before long build/conversion/validation with `tools/run_logged.py`. Keep the completed 0.16 downloadable pair until a matching new runtime and private content pack pass relevant verification. Main and disabled remote CI remain unchanged.
+
+
 ## Active 0.17: original events, enemies, maps and UI
 
 The user requested the following order: complete all original single-player events and enemies, then integrate the original map, then restore original UI with a 95%+ fidelity target. Scaling and layout adjustments required by the 320 × 240 calculator screen are permitted. Work continues on **`work/0.17-world-parity`**, branched from the remotely verified completed 0.16 documentation head **`4abacfa4cd3cfbb3d21f5065d8134edb2aca681e`**, tree **`fd34b8092ef7526335ce87cf924418028ddf1583`**. The previous runtime and its delivered artifacts remain the completed historical baseline below.
