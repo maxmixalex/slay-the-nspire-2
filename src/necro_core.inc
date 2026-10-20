@@ -203,7 +203,7 @@ static void necro_turn_start(State&s){
  for(unsigned id=0;id<s.card_count;id++){v.fetch_played[id]=0;v.turn_origin[id]=0;}
  // BoundPhylactery's first summon is the CombatStart relic hook. Later
  // summons occur after energy reset, before BeforeHandDraw.
- if((s.relics&BoundPhylactery)&&s.turn>1)necro_summon(s,1);
+ if(!s.world_relics.active&&(s.relics&BoundPhylactery)&&s.turn>1)necro_summon(s,1);
  int energy=npower(s,NPower::EnergyNextTurn);if(energy){s.energy=(int16_t)min(999,s.energy+energy);necro_gain_power(s,NPower::EnergyNextTurn,-energy);}
  int pet=npower(s,NPower::SummonNextTurn);if(pet){necro_summon(s,pet);necro_gain_power(s,NPower::SummonNextTurn,-pet);}
 }

@@ -4,7 +4,7 @@ bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();ca
 bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();callbacks=cb;return content.open(source)&&content.current_profile();}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies)return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(){shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(){shop_open=event_reader=grimoire_select=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=game.expansion.osty_hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -20,8 +20,8 @@ void App::draw_frame(){render();}
 void App::tick(){animation++;if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"
 static int choice_count(const App&a){
-    switch(a.game.phase){case Phase::Map:return a.game.world.active?reference::Columns:3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.event_page>=2?1:2;
-    case Phase::Reward:return 4;case Phase::Camp:return 2;case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
+    switch(a.game.phase){case Phase::Map:return a.game.world.active?reference::Columns:3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.original_events.active?original_event_option_count(a.game):a.game.event_page>=2?1:2;
+    case Phase::Reward:return a.game.world.active?int(a.game.world.reward_count)+1:4;case Phase::Camp:return world_rest_option_count(a.game);case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
     case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.game.hand.count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
@@ -51,16 +51,17 @@ void App::input(Key k){
     if(selection_input(k))return;
     if(deck_input(k))return;
     if(k==Key::Detail&&!title&&!paused&&!help&&!panel){
-        if(game.phase==Phase::Reward&&reward_cards&&cursor<3){open_card_detail({game.reward[cursor],0});return;}
-        if(game.phase==Phase::Treasure&&game.treasure_state&&game.treasure_relic){
+        if(game.phase==Phase::Reward&&reward_cards&&cursor<int(game.world.active?game.world.reward_count:3)){if(game.world.active)open_card_offer(game.world.reward_cards[cursor],game.world.reward_facts[cursor]);else open_card_detail({game.reward[cursor],0});return;}
+        if(game.phase==Phase::Treasure&&game.treasure_state&&(game.world.active?game.world.treasure_relic!=NoWorldRelic:game.treasure_relic!=0)){
+            if(game.world.active){detail_item=game.world.treasure_relic;detail_owned=-1;detail_scroll=0;return;}
             const auto*d=relic_definition(game.treasure_relic);
             if(d){detail_item=(int)(d-relic_definitions);detail_owned=-1;detail_scroll=0;}return;
         }
         if(game.phase==Phase::Shop){
             detail_owned=-1;detail_scroll=0;
-            if(cursor<ShopCardCount)open_card_detail({game.shop_cards[cursor],0});
-            else if(cursor<ShopPotionStart){for(int i=0;i<RelicKinds;i++)if(relic_definitions[i].id==game.shop_relics[cursor-ShopRelicStart])detail_item=i;}
-            else if(cursor<ShopRemove)detail_item=RelicKinds+game.shop_potions[cursor-ShopPotionStart]-1;
+            if(cursor<ShopCardCount){if(game.world.active)open_card_offer(game.world.shop_cards[cursor],game.world.shop_facts[cursor]);else open_card_detail({game.shop_cards[cursor],0});}
+            else if(cursor<ShopPotionStart){if(game.world.active)detail_item=game.world.shop_relics[cursor-ShopRelicStart];else for(int i=0;i<RelicKinds;i++)if(relic_definitions[i].id==game.shop_relics[cursor-ShopRelicStart])detail_item=i;}
+            else if(cursor<ShopRemove)detail_item=WorldRelicKinds+game.shop_potions[cursor-ShopPotionStart]-1;
             return;
         }
     }
@@ -92,7 +93,7 @@ void App::input(Key k){
         if(reward_cards&&!panel){reward_cards=false;cursor=1;return;}
         if(panel){panel=0;scroll=map_scroll=0;}
         else if(game.phase==Phase::Remove){game.phase=Phase::Shop;shop_open=true;cursor=ShopRemove;}
-        else if(game.phase==Phase::Upgrade){game.phase=Phase::Camp;cursor=1;}
+        else if(game.phase==Phase::Upgrade){if(game.world.active)world_rest_cancel(game);else game.phase=Phase::Camp;cursor=1;}
         else{paused=true;menu=0;}return;
     }
     if(k==Key::Save){has_save=callbacks.save&&callbacks.save(game);message(has_save?"已保存远征":"保存失败");return;}
@@ -105,9 +106,9 @@ void App::input(Key k){
     if(panel){
         if(panel==5){
             if(k==Key::Left)scroll=mx(0,scroll-1);
-            if(k==Key::Right)scroll=mn(mx(0,game.relic_count-1),scroll+1);
+            if(k==Key::Right)scroll=mn(mx(0,int(ui_owned_relic_count(game))-1),scroll+1);
             if(k==Key::Up)scroll=mx(0,scroll-6);
-            if(k==Key::Down)scroll=mn(mx(0,game.relic_count-1),scroll+6);
+            if(k==Key::Down)scroll=mn(mx(0,int(ui_owned_relic_count(game))-1),scroll+6);
             if(k==Key::Confirm||k==Key::Detail)open_owned_relic(scroll);
             return;
         }
@@ -141,7 +142,7 @@ void App::input(Key k){
             const int above[15]={14,14,14,14,14,0,1,2,3,4,7,8,9,4,5};
             cursor=(k==Key::Down?below:above)[cursor];
         }
-        else if(game.phase==Phase::Camp)cursor=1-cursor;
+        else if(game.phase==Phase::Camp)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
         else if(!library&&combat_phase(game.phase))next_target(*this);
     }
     if(busy&&(k==Key::Confirm||k==Key::EndTurn))return;
@@ -168,8 +169,8 @@ void App::input(Key k){
             else if(cursor==0&&game.treasure_state==1){acted=take_treasure(game);if(acted)cursor=1;}
             else if(cursor==1)acted=leave_treasure(game);
             break;
-        case Phase::Reward:acted=choose_reward(game,cursor==3?-1:cursor);if(acted){reward_cards=false;cursor=1;}break;
-        case Phase::Camp:acted=camp(game,cursor==1);if(!acted)message("没有可以升级的牌");break;
+        case Phase::Reward:acted=choose_reward(game,cursor==int(game.world.active?game.world.reward_count:3)?-1:cursor);if(acted){reward_cards=false;cursor=1;}break;
+        case Phase::Camp:acted=game.world.active?world_rest_choose(game,cursor):camp(game,cursor==1);if(!acted)message("没有可以升级的牌");break;
         case Phase::Upgrade:acted=upgrade_card(game,cursor);if(!acted)message("这张牌已经升级");break;
         default:break;
         }

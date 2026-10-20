@@ -27,19 +27,26 @@ bool valid_original_event_state(const State&s){const auto&e=s.original_events;
   else if(e.selection==OriginalEventSelection::Relic&&e.offers[i]>=WorldRelicKinds)return false;
   else if(e.selection==OriginalEventSelection::Potion&&(e.offers[i]==0||e.offers[i]>PotionKinds))return false;
  }
+ for(auto seen:e.remembered)if(seen>1)return false;
  for(auto price:e.choice_prices)if(price<0||price>9999)return false;
  if(e.combat_pending>1||e.resume_after_combat>1||e.encounter>=unsigned(EncounterId::Count))return false;
  if(e.combat_pending&&(!e.active||!e.encounter||e.selection!=OriginalEventSelection::None))return false;
  if(!e.combat_pending&&(e.resume_after_combat||e.encounter))return false;
- if(e.crystal_tool<1||e.crystal_tool>3||e.crystal_item_count>MaxCrystalItems||e.crystal_revealed_count>e.crystal_item_count)return false;
+ if(e.reward_active>1||e.reward_count>MaxOriginalEventRewards||e.reward_card_count>MaxOriginalEventRewardCards||(e.reward_current!=NoOriginalEventReward&&e.reward_current>=e.reward_count))return false;
+ if(e.selection==OriginalEventSelection::Rewards&&!e.reward_active)return false;
+ for(unsigned i=0;i<e.reward_count;i++){const auto&r=e.rewards[i];if(r.kind<1||r.kind>4||r.claimed>1)return false;
+  if(r.kind==2&&(r.model==0||r.model>PotionKinds))return false;if(r.kind==3&&r.model>=WorldRelicKinds)return false;
+  if(r.kind==4&&(!r.count||r.count>MaxOriginalEventOffers||r.first+r.count>e.reward_card_count))return false;
+ }
+ for(unsigned i=0;i<e.reward_card_count;i++){Card card=card_from_token(e.reward_cards[i]);if(card.kind>=CardKinds||card_token(card)!=e.reward_cards[i]||!event_card_facts_valid(card,e.reward_facts[i]))return false;}
+ if(e.crystal_tool<1||e.crystal_tool>2||e.crystal_item_count>MaxCrystalItems||e.crystal_revealed_count>MaxCrystalReveals)return false;
  for(unsigned i=0;i<CrystalCells;i++)if(e.crystal_clear[i]>1||e.crystal_owner[i]>e.crystal_item_count)return false;
  for(unsigned i=0;i<e.crystal_item_count;i++){
   const auto&item=e.crystal_items[i];
-  if(item.x>=11||item.y>=11||item.w==0||item.h==0||item.w>11-item.x||item.h>11-item.y||item.revealed>1)return false;
+  if(item.x>=11||item.y>=11||item.w==0||item.h==0||item.w>11-item.x||item.h>11-item.y||item.revealed>1||item.kind>4||item.subscriptions>10)return false;
  }
  for(unsigned i=0;i<e.crystal_revealed_count;i++){
   if(e.crystal_revealed[i]>=e.crystal_item_count)return false;
-  for(unsigned j=0;j<i;j++)if(e.crystal_revealed[i]==e.crystal_revealed[j])return false;
  }
  if(s.event_run.freed_repy>1||s.event_run.completion_recorded>1)return false;
  return true;

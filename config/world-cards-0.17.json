@@ -1,0 +1,1634 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "cards": [
+    {
+      "id": 497,
+      "model": "BadLuck",
+      "key": "BAD_LUCK",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {
+        "HpLoss": {
+          "base": "13",
+          "upgraded": "13"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Eternal",
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Eternal",
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/bad_luck.png"
+    },
+    {
+      "id": 498,
+      "model": "ByrdonisEgg",
+      "key": "BYRDONIS_EGG",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Quest",
+      "rarity": "Quest",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/quest/byrdonis_egg.png"
+    },
+    {
+      "id": 499,
+      "model": "Caltrops",
+      "key": "CALTROPS",
+      "pool": "Event",
+      "visual_pool": "Silent",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "ThornsPower": {
+          "base": "3",
+          "upgraded": "5"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Power",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/caltrops.png"
+    },
+    {
+      "id": 500,
+      "model": "Clash",
+      "key": "CLASH",
+      "pool": "Event",
+      "visual_pool": "Ironclad",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "14",
+          "upgraded": "18"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/clash.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 501,
+      "model": "Clumsy",
+      "key": "CLUMSY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable",
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Unplayable",
+          "Ethereal"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/clumsy.png"
+    },
+    {
+      "id": 502,
+      "model": "Debt",
+      "key": "DEBT",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Gold": {
+          "base": "10",
+          "upgraded": "10"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/debt.png"
+    },
+    {
+      "id": 503,
+      "model": "Decay",
+      "key": "DECAY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "2",
+          "upgraded": "2"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/decay.png"
+    },
+    {
+      "id": 504,
+      "model": "Distraction",
+      "key": "DISTRACTION",
+      "pool": "Event",
+      "visual_pool": "Silent",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/distraction.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 505,
+      "model": "Doubt",
+      "key": "DOUBT",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "WeakPower": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/doubt.png"
+    },
+    {
+      "id": 506,
+      "model": "DualWield",
+      "key": "DUAL_WIELD",
+      "pool": "Event",
+      "visual_pool": "Ironclad",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Cards": {
+          "base": "1",
+          "upgraded": "2"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/dual_wield.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 507,
+      "model": "Enlightenment",
+      "key": "ENLIGHTENMENT",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/enlightenment.png"
+    },
+    {
+      "id": 508,
+      "model": "Entrench",
+      "key": "ENTRENCH",
+      "pool": "Event",
+      "visual_pool": "Ironclad",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true,
+      "variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/entrench.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 509,
+      "model": "Exterminate",
+      "key": "EXTERMINATE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "3",
+          "upgraded": "4"
+        },
+        "Repeat": {
+          "base": "4",
+          "upgraded": "4"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/exterminate.png"
+    },
+    {
+      "id": 510,
+      "model": "FeedingFrenzy",
+      "key": "FEEDING_FRENZY",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "StrengthPower": {
+          "base": "5",
+          "upgraded": "5"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/feeding_frenzy.png"
+    },
+    {
+      "id": 511,
+      "model": "Greed",
+      "key": "GREED",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Eternal",
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Eternal",
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/greed.png"
+    },
+    {
+      "id": 512,
+      "model": "Guilty",
+      "key": "GUILTY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Combats": {
+          "base": "5",
+          "upgraded": "5"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/guilty.png"
+    },
+    {
+      "id": 513,
+      "model": "HelloWorld",
+      "key": "HELLO_WORLD",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "type": "Power",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/hello_world.png"
+    },
+    {
+      "id": 514,
+      "model": "Injury",
+      "key": "INJURY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/injury.png"
+    },
+    {
+      "id": 515,
+      "model": "LanternKey",
+      "key": "LANTERN_KEY",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Quest",
+      "rarity": "Quest",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/quest/lantern_key.png"
+    },
+    {
+      "id": 516,
+      "model": "MadScience",
+      "key": "MAD_SCIENCE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "12",
+          "upgraded": "12"
+        },
+        "Block": {
+          "base": "8",
+          "upgraded": "8"
+        },
+        "SappingWeak": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "SappingVulnerable": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "ViolenceHits": {
+          "base": "3",
+          "upgraded": "3"
+        },
+        "ChokingDamage": {
+          "base": "6",
+          "upgraded": "6"
+        },
+        "EnergizedEnergy": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "WisdomCards": {
+          "base": "3",
+          "upgraded": "3"
+        },
+        "ExpertiseStrength": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "ExpertiseDexterity": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "CuriousReduction": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": [
+          "Innate"
+        ]
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/mad_science_attack.png"
+    },
+    {
+      "id": 517,
+      "model": "Metamorphosis",
+      "key": "METAMORPHOSIS",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Cards": {
+          "base": "3",
+          "upgraded": "5"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/metamorphosis.png"
+    },
+    {
+      "id": 518,
+      "model": "Normality",
+      "key": "NORMALITY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "CalculationBase": {
+          "base": "3",
+          "upgraded": "3"
+        },
+        "CalculationExtra": {
+          "base": "-1",
+          "upgraded": "-1"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/normality.png"
+    },
+    {
+      "id": 519,
+      "model": "Outmaneuver",
+      "key": "OUTMANEUVER",
+      "pool": "Event",
+      "visual_pool": "Silent",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Energy": {
+          "base": "2",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/outmaneuver.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 520,
+      "model": "Peck",
+      "key": "PECK",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "Repeat": {
+          "base": "3",
+          "upgraded": "4"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/peck.png"
+    },
+    {
+      "id": 521,
+      "model": "PoorSleep",
+      "key": "POOR_SLEEP",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable",
+          "Retain"
+        ],
+        "upgraded": [
+          "Unplayable",
+          "Retain"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/poor_sleep.png"
+    },
+    {
+      "id": 522,
+      "model": "Rebound",
+      "key": "REBOUND",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "9",
+          "upgraded": "12"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/rebound.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 523,
+      "model": "Regret",
+      "key": "REGRET",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/regret.png"
+    },
+    {
+      "id": 524,
+      "model": "RipAndTear",
+      "key": "RIP_AND_TEAR",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "7",
+          "upgraded": "9"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/rip_and_tear.png"
+    },
+    {
+      "id": 525,
+      "model": "Shame",
+      "key": "SHAME",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Frail": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/shame.png"
+    },
+    {
+      "id": 526,
+      "model": "SpoilsMap",
+      "key": "SPOILS_MAP",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Gold": {
+          "base": "600",
+          "upgraded": "600"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Quest",
+      "rarity": "Quest",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/quest/spoils_map.png"
+    },
+    {
+      "id": 527,
+      "model": "SporeMind",
+      "key": "SPORE_MIND",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/spore_mind.png"
+    },
+    {
+      "id": 528,
+      "model": "Squash",
+      "key": "SQUASH",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "10",
+          "upgraded": "12"
+        },
+        "VulnerablePower": {
+          "base": "2",
+          "upgraded": "2"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/squash.png"
+    },
+    {
+      "id": 529,
+      "model": "Stack",
+      "key": "STACK",
+      "pool": "Event",
+      "visual_pool": "Defect",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true,
+      "variables": {
+        "CalculationBase": {
+          "base": "0",
+          "upgraded": "3"
+        },
+        "CalculationExtra": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/beta/stack.png",
+      "portrait_reference_fallback": "reference beta art"
+    },
+    {
+      "id": 530,
+      "model": "ToricToughness",
+      "key": "TORIC_TOUGHNESS",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true,
+      "variables": {
+        "Turns": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "Block": {
+          "base": "5",
+          "upgraded": "7"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/toric_toughness.png"
+    },
+    {
+      "id": 531,
+      "model": "Beckon",
+      "key": "BECKON",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "HpLoss": {
+          "base": "6",
+          "upgraded": "6"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/status/beckon.png"
+    },
+    {
+      "id": 532,
+      "model": "Disintegration",
+      "key": "DISINTEGRATION",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "DisintegrationPower": {
+          "base": "6",
+          "upgraded": "6"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/token/disintegration.png"
+    },
+    {
+      "id": 533,
+      "model": "FranticEscape",
+      "key": "FRANTIC_ESCAPE",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/status/frantic_escape.png"
+    },
+    {
+      "id": 534,
+      "model": "Infection",
+      "key": "INFECTION",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "3",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/status/infection.png"
+    },
+    {
+      "id": 535,
+      "model": "MindRot",
+      "key": "MIND_ROT",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "MindRotPower": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/token/mind_rot.png"
+    },
+    {
+      "id": 536,
+      "model": "Sloth",
+      "key": "SLOTH",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "SlothPower": {
+          "base": "3",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/token/sloth.png"
+    },
+    {
+      "id": 537,
+      "model": "Toxic",
+      "key": "TOXIC",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "5",
+          "upgraded": "5"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/status/toxic.png"
+    },
+    {
+      "id": 538,
+      "model": "WasteAway",
+      "key": "WASTE_AWAY",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "WasteAwayPower": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/token/waste_away.png"
+    },
+    {
+      "id": 539,
+      "model": "Wither",
+      "key": "WITHER",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "3",
+          "upgraded": "6"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/status/wither1.png"
+    },
+    {
+      "id": 540,
+      "model": "Apotheosis",
+      "key": "APOTHEOSIS",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust",
+          "Innate"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Innate"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/apotheosis.png"
+    },
+    {
+      "id": 541,
+      "model": "Apparition",
+      "key": "APPARITION",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "IntangiblePower": {
+          "base": "1",
+          "upgraded": "1"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Ethereal",
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/apparition.png"
+    },
+    {
+      "id": 542,
+      "model": "BrightestFlame",
+      "key": "BRIGHTEST_FLAME",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "MaxHp": {
+          "base": "2",
+          "upgraded": "2"
+        },
+        "Energy": {
+          "base": "2",
+          "upgraded": "3"
+        },
+        "Cards": {
+          "base": "2",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Skill",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/brightest_flame.png"
+    },
+    {
+      "id": 543,
+      "model": "Dowsing",
+      "key": "DOWSING",
+      "pool": "Quest",
+      "visual_pool": "Quest",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Rooms": {
+          "base": "5",
+          "upgraded": "5"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Quest",
+      "rarity": "Quest",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/quest/dowsing.png"
+    },
+    {
+      "id": 544,
+      "model": "Luminesce",
+      "key": "LUMINESCE",
+      "pool": "Token",
+      "visual_pool": "Token",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Energy": {
+          "base": "2",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Exhaust",
+          "Retain"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Retain"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Token",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/token/luminesce.png"
+    },
+    {
+      "id": 545,
+      "model": "Maul",
+      "key": "MAUL",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "5",
+          "upgraded": "6"
+        },
+        "Increase": {
+          "base": "2",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/maul.png"
+    },
+    {
+      "id": 546,
+      "model": "NeowsFury",
+      "key": "NEOWS_FURY",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "10",
+          "upgraded": "14"
+        },
+        "Cards": {
+          "base": "2",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Attack",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/neows_fury.png"
+    },
+    {
+      "id": 547,
+      "model": "Relax",
+      "key": "RELAX",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": true,
+      "variables": {
+        "Block": {
+          "base": "16",
+          "upgraded": "18"
+        },
+        "Cards": {
+          "base": "2",
+          "upgraded": "3"
+        },
+        "Energy": {
+          "base": "2",
+          "upgraded": "3"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/relax.png"
+    },
+    {
+      "id": 548,
+      "model": "Soot",
+      "key": "SOOT",
+      "pool": "Status",
+      "visual_pool": "Status",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Unplayable"
+        ]
+      },
+      "type": "Status",
+      "rarity": "Status",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/status/soot.png"
+    },
+    {
+      "id": 549,
+      "model": "Whistle",
+      "key": "WHISTLE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "33",
+          "upgraded": "44"
+        }
+      },
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Attack",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/whistle.png"
+    },
+    {
+      "id": 550,
+      "model": "Wish",
+      "key": "WISH",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust",
+          "Retain"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/wish.png"
+    },
+    {
+      "id": 551,
+      "model": "Abundance",
+      "key": "ABUNDANCE",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": false,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Exhaust"
+        ],
+        "upgraded": [
+          "Exhaust"
+        ]
+      },
+      "type": "Skill",
+      "rarity": "Ancient",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/abundance.png"
+    },
+    {
+      "id": 552,
+      "model": "ByrdSwoop",
+      "key": "BYRD_SWOOP",
+      "pool": "Event",
+      "visual_pool": "Event",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {
+        "Damage": {
+          "base": "14",
+          "upgraded": "18"
+        }
+      },
+      "keywords": {
+        "base": [],
+        "upgraded": []
+      },
+      "type": "Attack",
+      "rarity": "Event",
+      "max_upgrade_level": 1,
+      "portrait": "images/packed/card_portraits/event/byrd_swoop.png"
+    },
+    {
+      "id": 553,
+      "model": "CurseOfTheBell",
+      "key": "CURSE_OF_THE_BELL",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Eternal",
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Eternal",
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/curse_of_the_bell.png"
+    },
+    {
+      "id": 554,
+      "model": "Enthralled",
+      "key": "ENTHRALLED",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Eternal"
+        ],
+        "upgraded": [
+          "Eternal"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/enthralled.png"
+    },
+    {
+      "id": 555,
+      "model": "Folly",
+      "key": "FOLLY",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Unplayable",
+          "Eternal",
+          "Innate",
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Unplayable",
+          "Eternal",
+          "Innate",
+          "Ethereal"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/folly.png"
+    },
+    {
+      "id": 556,
+      "model": "AscendersBane",
+      "key": "ASCENDERS_BANE",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": false,
+      "modifier": false,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Eternal",
+          "Unplayable",
+          "Ethereal"
+        ],
+        "upgraded": [
+          "Eternal",
+          "Unplayable",
+          "Ethereal"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/ascenders_bane.png"
+    },
+    {
+      "id": 557,
+      "model": "Writhe",
+      "key": "WRITHE",
+      "pool": "Curse",
+      "visual_pool": "Curse",
+      "combat": true,
+      "modifier": true,
+      "gains_block": false,
+      "variables": {},
+      "keywords": {
+        "base": [
+          "Innate",
+          "Unplayable"
+        ],
+        "upgraded": [
+          "Innate",
+          "Unplayable"
+        ]
+      },
+      "type": "Curse",
+      "rarity": "Curse",
+      "max_upgrade_level": 0,
+      "portrait": "images/packed/card_portraits/curse/writhe.png"
+    }
+  ]
+}

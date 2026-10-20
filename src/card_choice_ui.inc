@@ -5,7 +5,11 @@ static const char* choice_title(const State&s){
     if(s.phase==Phase::DiscardChoice)return "选择要丢弃的牌";
     if(s.phase!=Phase::ExtendedChoice)return "选择要消耗的牌";
     switch(s.expansion.choice){
-    case XChoice::Offer:return "选择一张牌";
+    case XChoice::Offer:case XChoice::EventAbundance:return "选择一张牌";
+    case XChoice::EnemyKnowledge:return "选择知识的代价";
+    case XChoice::EventDualWield:return "选择要复制的牌";
+    case XChoice::EventNeowsFury:return "选择要消耗的手牌";
+    case XChoice::EventWish:return "选择一张牌加入手牌";
     case XChoice::Draw:return "从抽牌堆选择";
     case XChoice::Discard:return "从弃牌堆选择";
     case XChoice::Top:return "放回抽牌堆顶";
@@ -44,7 +48,7 @@ static int choice_display_stars(const State&s,int token){
 static void card_choice_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.sync_selection();a.hit_count=0;
     const auto&source=choice_pile(s);const unsigned limit=choice_max(s);
-    const bool offer=s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::Offer;
+    const bool offer=s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::Offer||s.expansion.choice==XChoice::EnemyKnowledge||s.expansion.choice==XChoice::EventAbundance);
     const bool optional=choice_min(s)==0;
     a.cursor=mn(mx(0,a.cursor),mx(0,source.count-1));const int first=offer?0:a.cursor/10*10;
     c.dim(0,0,320,240,215);c.centered(choice_title(s),0,8,320,16,Gold);
@@ -56,13 +60,13 @@ static void card_choice_screen(Canvas&c){
         const int id=source.ids[i];Card card=choice_card(s,id);bool selected=false;
         for(unsigned j=0;j<a.choice_selected_count;j++)if(a.choice_selected[j]==id)selected=true;
         if(offer){
-            const int x=23+i*97,y=65;
+            const int x=(320-source.count*94)/2+7+i*94,y=65;
             large_card(c,card,x,y,selected||a.cursor==i,choice_display_cost(s,id),choice_display_stars(s,id),id<s.card_count?id:-1);
             if(selected)c.box(x-4,y-4,88,120,Green);
             c.hit(x-5,y-5,90,126,HitKind::CombatChoice,id);
         }else{
             const int x=26+(i-first)%5*56,y=48+(i-first)/5*73;
-            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id),choice_display_stars(s,id));
+            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id),choice_display_stars(s,id),id<s.card_count?id:-1);
             if(selected){c.box(x-3,y-3,53,72,Green);c.rect(x+32,y+46,14,17,Panel);c.text("✓",x+33,y+46,12,Green);}
             c.hit(x-3,y-3,53,72,HitKind::CombatChoice,id);
         }

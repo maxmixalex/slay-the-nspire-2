@@ -98,6 +98,7 @@ static void silent_card_drawn(State&s,int id){
 static void silent_card_discarded(State&s,int id){
  s.silent.discarded_turn=(uint16_t)min(9999,s.silent.discarded_turn+1);
  if(silent_is_sly(s,id))queue_extension(s,XOp::AutoInstance,id,0,true);
+ world_relic_hook(s,WorldRelicHook::AfterCardDiscarded,id);
 }
 static bool silent_blocks_debuff(State&s,int t){
  if(t<0||t>=s.enemy_count||!s.silent.enemy_artifact[t])return false;
@@ -348,8 +349,8 @@ static bool silent_effect(State&s,Effect e){
   if(a==(int)SPower::NoxiousFumes){s.noxious_fumes=(int16_t)min(9999,s.noxious_fumes+b);record(s,LogKind::Noxious,b);}
   if(a==(int)SPower::PhantomBlades)for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==Shiv)v.retain[id]|=1;
   break;
- case XOp::SAbrasive:s.dexterity=(int16_t)min(9999,s.dexterity+1);s.thorns=(int16_t)min(9999,s.thorns+a);record(s,LogKind::Dexterity,1);break;
- case XOp::SAnticipate:{int n=min(a,min(9999-s.dexterity,9999-s.temporary_dexterity));s.dexterity+=(int16_t)n;s.temporary_dexterity+=(int16_t)n;record(s,LogKind::Dexterity,n);break;}
+ case XOp::SAbrasive:world_relic_gain_dexterity(s,1);s.thorns=(int16_t)min(9999,s.thorns+a);break;
+ case XOp::SAnticipate:{int n=min(a,min(9999-s.dexterity,9999-s.temporary_dexterity));world_relic_gain_dexterity(s,n);s.temporary_dexterity+=(int16_t)n;break;}
  case XOp::SBulletTime:
   for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(cost(s.cards[id])>=0)set_free_this_turn(s,id);}
   s.no_draw=1;record(s,LogKind::NoDraw);break;

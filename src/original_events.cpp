@@ -1,5 +1,6 @@
 #include "original_events.hpp"
 #include "world_card_factory.hpp"
+#include "world_run.hpp"
 
 namespace spire {
 namespace {
@@ -104,7 +105,7 @@ void apply_selection(State&s){auto&e=s.original_events;
   }
  }
  if(e.selection_committed&&e.selected_cursor==e.selected_count&&!world_relic_pending(s)&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){
-  if(e.reward_active&&e.reward_current<e.reward_count){if(e.selected_count)e.rewards[e.reward_current].claimed=1;e.reward_current=255;}clear_selection(s);
+  if(e.reward_active&&e.reward_current<e.reward_count){if(e.selected_count)e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;}clear_selection(s);
  }
 }
 bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events;
@@ -164,7 +165,12 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
   e.combat_pending=1;e.resume_after_combat=uint8_t(step.b!=0);e.encounter=uint16_t(step.a);
   if(!world_enter_event_combat(s,definition->key,e.resume_after_combat!=0)){e.combat_pending=e.resume_after_combat=0;e.encounter=0;return false;}return true;
  }
- case OriginalEventOp::Rest:heal(s,rest_heal_amount(s));world_relic_hook(s,WorldRelicHook::AfterRest);return true;
+ case OriginalEventOp::Rest:
+  if(step.a){world_relic_rest_rewards(s);return true;}
+  if(e.step_count>=MaxOriginalEventSteps)return false;
+  for(unsigned i=e.step_count;i>e.step_cursor;i--)e.steps[i]=e.steps[i-1];
+  e.steps[e.step_cursor]={OriginalEventOp::Rest,1};++e.step_count;
+  heal(s,rest_heal_amount(s));world_relic_hook(s,WorldRelicHook::AfterRest);return true;
  case OriginalEventOp::Finish:e.finished=1;e.option_count=1;e.options[0]=0;copy_text(e.option_keys[0],"LEAVE");return true;
  case OriginalEventOp::Page:if(step.a<0||step.a>255)return false;e.page=uint8_t(step.a);return true;
  case OriginalEventOp::EnchantAll:
@@ -191,7 +197,7 @@ bool original_event_allowed(const State&s,OriginalEventId id,unsigned act,unsign
 }
 bool original_event_begin(State&s,OriginalEventId id,uint64_t run_seed,unsigned act){
  if(!rules_implemented(id)||act>=3||s.original_events.active||s.hp<=0||world_relic_pending(s)||combat_phase(s.phase)||choice_phase(s.phase))return false;
- s.original_events={};auto&e=s.original_events;e.id=id;e.active=1;e.act_index=uint8_t(act);
+ s.original_events=OriginalEventState{};auto&e=s.original_events;e.id=id;e.active=1;e.act_index=uint8_t(act);
  reference::Random rng;rng.named(run_seed,original_event_key(id));keep_random(s,rng);
  s.phase=Phase::Event;if(!rules_begin(s)){fail(s);return false;}
  original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
@@ -211,7 +217,7 @@ void original_event_resume(State&s){auto&e=s.original_events;
  if(e.selection_committed)apply_selection(s);
  if(e.selection!=OriginalEventSelection::None||world_relic_pending(s)||s.phase==Phase::Error||s.phase==Phase::Dead)return;
  s.phase=Phase::Event;
- if(e.reward_active){reward_menu(s);return;}
+ if(e.reward_active){reward_menu(s);if(e.reward_active)return;}
  while(e.step_cursor<e.step_count&&!e.combat_pending&&!world_relic_pending(s)&&e.selection==OriginalEventSelection::None&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){
   auto step=e.steps[e.step_cursor++];if(!perform_step(s,step)){fail(s);return;}
  }
@@ -257,21 +263,23 @@ bool original_event_potion(State&s,int slot){auto&e=s.original_events;
   if(potion_at(s,unsigned(slot))!=Potion::Empty&&!discard_potion(s,slot)){s.phase=phase;return false;}
   if(!potion_set(s,unsigned(slot),potion))return false;world_relic_hook(s,WorldRelicHook::AfterPotionProcured,int(potion));
  }
- if(e.reward_active&&e.reward_current<e.reward_count){if(slot>=0)e.rewards[e.reward_current].claimed=1;e.reward_current=255;}
+ if(e.reward_active&&e.reward_current<e.reward_count){if(slot>=0)e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;}
  clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
 bool original_event_reward(State&s,int index){auto&e=s.original_events;
  if(!e.active||!e.reward_active||s.phase!=Phase::OriginalEventChoice||e.selection!=OriginalEventSelection::Rewards||world_relic_pending(s)||index< -1||index>=int(e.reward_count))return false;
- if(index<0){e.reward_active=0;e.reward_current=255;clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;}
+ if(index<0){e.reward_active=0;e.reward_current=NoOriginalEventReward;clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;}
  auto&r=e.rewards[index];if(r.claimed)return false;
- clear_selection(s);s.phase=Phase::Event;e.reward_current=uint8_t(index);
- if(r.kind==1){r.claimed=1;gain_gold(s,r.amount);e.reward_current=255;}
+ clear_selection(s);s.phase=Phase::Event;e.reward_current=uint16_t(index);
+ if(r.kind==1){r.claimed=1;gain_gold(s,r.amount);e.reward_current=NoOriginalEventReward;}
  else if(r.kind==2){e.offer_count=1;e.offers[0]=r.model;pause_selection(s,OriginalEventSelection::Potion,OriginalEventFilter::Any,0,1,true);}
- else if(r.kind==3){r.claimed=1;if(!gain_world_relic(s,r.model)){fail(s);return false;}e.reward_current=255;}
+ else if(r.kind==3){r.claimed=1;if(!gain_world_relic(s,r.model)){fail(s);return false;}e.reward_current=NoOriginalEventReward;}
  else if(r.kind==4){e.offer_count=r.count;for(unsigned i=0;i<r.count;i++){e.offers[i]=e.reward_cards[r.first+i];e.offer_facts[i]=e.reward_facts[r.first+i];}pause_selection(s,OriginalEventSelection::OfferCard,OriginalEventFilter::Any,0,1,true);}
  else{fail(s);return false;}
  original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
+bool original_event_has_card_reward(const State&s){const auto&e=s.original_events;return e.active&&s.phase==Phase::OriginalEventChoice&&e.selection==OriginalEventSelection::OfferCard&&e.reward_active&&e.reward_current<e.reward_count&&e.rewards[e.reward_current].kind==4&&!e.rewards[e.reward_current].claimed&&!e.selection_committed;}
+bool original_event_consume_card_reward(State&s){if(!original_event_has_card_reward(s))return false;auto&e=s.original_events;e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;clear_selection(s);++s.revision;return true;}
 bool original_event_leave(State&s){auto&e=s.original_events;
  if(!e.active||!e.finished||e.combat_pending||e.selection!=OriginalEventSelection::None||e.step_cursor<e.step_count||world_relic_pending(s)||s.phase!=Phase::Event)return false;
  e.active=0;finish_room(s);++s.revision;return true;
@@ -283,24 +291,60 @@ void original_event_after_combat(State&s,bool won){auto&e=s.original_events;
  if(!resume){e.finished=1;e.option_count=1;e.options[0]=0;copy_text(e.option_keys[0],"LEAVE");}
  original_event_resume(s);++s.revision;
 }
-bool original_event_crystal_tool(State&,bool){return false;}
-bool original_event_crystal_click(State&,unsigned,unsigned){return false;}
+bool original_event_crystal_tool(State&s,bool large){auto&e=s.original_events;if(!e.active||e.id!=OriginalEventId::CrystalSphere||e.selection!=OriginalEventSelection::Crystal||s.phase!=Phase::OriginalEventChoice||!e.crystal_charges)return false;e.crystal_tool=large?2:1;++s.revision;return true;}
+bool original_event_crystal_click(State&s,unsigned x,unsigned y){auto&e=s.original_events;
+ if(!e.active||e.id!=OriginalEventId::CrystalSphere||e.selection!=OriginalEventSelection::Crystal||s.phase!=Phase::OriginalEventChoice||!e.crystal_charges||x>=11||y>=11||e.crystal_clear[y*11+x]||world_relic_pending(s))return false;
+ e.selection=OriginalEventSelection::None;s.phase=Phase::Event;--e.crystal_charges;
+ if(e.crystal_tool==2){
+  for(int dx=-1;dx<=1;dx+=2)if(int(x)+dx>=0&&int(x)+dx<11)push_step(s,OriginalEventOp::Special,CX_CrystalClear,int(x)+dx,int(y));
+  for(int dy=-1;dy<=1;dy+=2)if(int(y)+dy>=0&&int(y)+dy<11)push_step(s,OriginalEventOp::Special,CX_CrystalClear,int(x),int(y)+dy);
+  for(int dx=-1;dx<=1;dx+=2)for(int dy=-1;dy<=1;dy+=2)if(int(x)+dx>=0&&int(x)+dx<11&&int(y)+dy>=0&&int(y)+dy<11)push_step(s,OriginalEventOp::Special,CX_CrystalClear,int(x)+dx,int(y)+dy);
+ }
+ push_step(s,OriginalEventOp::Special,CX_CrystalClear,int(x),int(y));push_step(s,OriginalEventOp::Special,CX_CrystalNext);
+ original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
+}
 bool original_event_text_key(const State&s,int option,bool description,char*out,unsigned capacity){
  if(!out||!capacity)return false;const auto&e=s.original_events;
  if(!e.active||unsigned(e.id)>=unsigned(OriginalEventId::Count)||option< -1||option>=int(e.option_count))return false;
  const char*parts[5]={original_event_key(e.id),".pages.",option<0?e.page_key:e.option_keys[option],description?".description":".title",""};
+ if(e.id==OriginalEventId::Trial&&option<0&&description&&e.page>=2&&e.page<=4){parts[0]=e.finished?"TRIAL.trialResult":"TRIAL.trialFormat";parts[1]=parts[2]=parts[3]="";}
+ char architect_next[64]{};
+ if(e.id==OriginalEventId::TheArchitect){parts[1]=".";parts[2]=option<0?e.page_key:"PROCEED";parts[3]="";
+  if(option>=0&&!e.finished){unsigned n=0;while(e.page_key[n]&&n+1<sizeof architect_next){architect_next[n]=e.page_key[n];++n;}while(n&&architect_next[n-1]!='.')--n;const char*next="next";for(unsigned i=0;next[i]&&n+1<sizeof architect_next;i++)architect_next[n++]=next[i];architect_next[n]=0;parts[2]=architect_next;}
+  if(option>=0&&e.finished){parts[0]="PROCEED";parts[1]="";parts[2]="";parts[3]=description?".description":".title";}
+ }
  unsigned size=0;for(const char*p:parts)for(unsigned i=0;p[i];i++)++size;if(size+1>capacity)return false;
  unsigned at=0;for(const char*p:parts)for(unsigned i=0;p[i];i++)out[at++]=p[i];out[at]=0;return true;
 }
 bool original_event_description_value(const State&s,const char*key,int&value){
- if(s.original_events.id==OriginalEventId::AbyssalBaths){
-  if(same(key,"MaxHp"))value=2;else if(same(key,"Damage"))value=s.original_events.values[0];else if(same(key,"Heal"))value=10;else return false;return true;
- }return false;
+ const auto&e=s.original_events;
+ if(same(key,"Damage")&&e.id==OriginalEventId::AbyssalBaths){value=e.values[0];return true;}
+ if(same(key,"Gold")){switch(e.id){case OriginalEventId::DenseVegetation:case OriginalEventId::ThisOrThat:case OriginalEventId::SunkenStatue:case OriginalEventId::LostWisp:case OriginalEventId::WhisperingHollow:case OriginalEventId::LuminousChoir:case OriginalEventId::PunchOff:value=e.values[0];return true;default:break;}}
+ if(same(key,"Heal")){if(e.id==OriginalEventId::DenseVegetation){value=e.values[1];return true;}if(e.id==OriginalEventId::UnrestSite||e.id==OriginalEventId::SpiralingWhirlpool){value=e.values[0];return true;}}
+ if(e.id==OriginalEventId::SunkenTreasury&&(same(key,"SmallChestGold")||same(key,"LargeChestGold"))){value=e.values[same(key,"SmallChestGold")?0:1];return true;}
+ if(e.id==OriginalEventId::JungleMazeAdventure&&(same(key,"SoloGold")||same(key,"JoinForcesGold"))){value=e.values[same(key,"SoloGold")?0:1];return true;}
+ if(e.id==OriginalEventId::CrystalSphere&&same(key,"UncoverFutureCost")){value=e.values[0];return true;}
+ if(e.id==OriginalEventId::TabletOfTruth&&same(key,"DecipherMaxHpLoss")){value=e.values[0];return true;}
+ if(e.id==OriginalEventId::SlipperyBridge&&same(key,"HpLoss")){value=3+e.values[0];return true;}
+ if(e.id==OriginalEventId::Trial&&same(key,"EntrantNumber")){value=e.values[0];return true;}
+ if(e.id==OriginalEventId::ColossalFlower){if(same(key,"Prize1"))value=35;else if(same(key,"Prize2"))value=75;else if(same(key,"Prize3"))value=135;else return false;return true;}
+ if(e.id==OriginalEventId::WelcomeToWongos){unsigned points=s.event_run.wongo_total%2000+s.event_run.wongo_earned;
+  if(same(key,"WongoPointAmount")){value=int(points);return true;}if(same(key,"RemainingWongoPointAmount")){value=2000-int(points);return true;}if(same(key,"TotalWongoBadgeAmount")){value=int((s.event_run.wongo_total+s.event_run.wongo_earned)/2000);return true;}}
+ struct Var{OriginalEventId id;const char*key;int value;};static const Var vars[]={
+#include "original_event_values.inc"
+ };for(auto&var:vars)if(var.id==e.id&&same(key,var.key)){value=var.value;return true;}return false;
 }
-void original_event_new_run(State&s){s.original_events={};s.event_run.wongo_earned=0;s.event_run.freed_repy=s.event_run.completion_recorded=0;}
-void original_event_finish_run(State&s){s.event_run.completion_recorded=1;}
-bool original_event_blocks_potions(const State&){return false;}
-bool original_event_foul_potion(State&){return false;}
+void original_event_new_run(State&s){s.original_events=OriginalEventState{};s.event_run.wongo_earned=0;s.event_run.freed_repy=s.event_run.completion_recorded=0;}
+void original_event_finish_run(State&s){auto&f=s.event_run;if(f.completion_recorded)return;f.completion_recorded=1;
+ if(UINT32_MAX-f.wongo_total>=f.wongo_earned)f.wongo_total+=f.wongo_earned;else f.wongo_total=UINT32_MAX;
+ if(s.phase==Phase::Complete){if(f.wins<UINT32_MAX)++f.wins;if(f.character_wins[unsigned(s.character)]<UINT32_MAX)++f.character_wins[unsigned(s.character)];}
+}
+#include "original_event_text.inc"
+bool original_event_blocks_potions(const State&s){const auto&e=s.original_events;return e.active&&!e.finished&&(e.id==OriginalEventId::StoneOfAllTime||e.id==OriginalEventId::RanwidTheElder||e.id==OriginalEventId::TheFutureOfPotions);}
+bool original_event_foul_potion(State&s){auto&e=s.original_events;if(!e.active||e.id!=OriginalEventId::FakeMerchant||e.finished||e.combat_pending||e.selection!=OriginalEventSelection::None)return false;
+ for(unsigned i=0;i<6;i++)e.values[2+i]=e.offers[i]<WorldRelicKinds?int16_t(e.offers[i]):-1;
+ combat(s,"FakeMerchantEventEncounter");push_step(s,OriginalEventOp::Special,CX_FakeRewards);finish_page(s,"INITIAL");original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
+}
 
 #include "original_event_validation.inc"
 } // namespace spire

@@ -168,7 +168,9 @@ int Content::ui_image(int key)const{
     if(!metadata_||!ui_offset_||key<0||(unsigned)key>=ui_count_)return -1;return (int)u32(metadata_+ui_offset_+key*4);
 }
 int Content::relic_image(int index)const{
-    if(index<0||index>=RelicKinds)return -1;
+    if(index<0||index>=WorldRelicKinds)return -1;
+    if(version_>=14)return world_image("relics",world_relic_key(RelicId(index)));
+    if(index>=RelicKinds)return -1;
     if(index>=30)return ui_image(U_CrackedCore+index-30);
     return index>=25?ui_image(U_Kunai+index-25):index>=17?ui_image(U_HornCleat+index-17):index==16?ui_image(U_SnakeRing):index<10?relic_definitions[index].asset:ui_image(U_Strawberry+index-10);
 }
@@ -181,6 +183,7 @@ int Content::frame_image(Card card)const{
     // an attack/skill/power triplet with the appended non-playable types.
     if(type==(int)CardType::Curse)return ui_image(U_CurseFrame);
     if(type==(int)CardType::Status)return ui_image(U_ColorlessSkill);
+    if(type==(int)CardType::Quest)return version_>=14?world_image("cards","QUEST_FRAME"):ui_image(U_ColorlessSkill);
     const CardColor color=card_color(card.kind);
     int base=color==CardColor::Silent?U_GreenAttack:color==CardColor::Defect?U_BlueAttack:
         color==CardColor::Regent?U_OrangeAttack:color==CardColor::Necrobinder?U_PinkAttack:
@@ -201,4 +204,5 @@ int Content::potion_image(Potion p)const{
     unsigned i=(unsigned)p;if(!i||i>PotionKinds)return -1;
     return i>16?ui_image(U_ExtPotionStart+(int)i-17):i<=3?A_FirePotion+(int)i-1:ui_image(U_EnergyPotion+(int)i-4);
 }
+#include "world_content.inc"
 } // namespace spire

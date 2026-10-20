@@ -1,4 +1,5 @@
 #pragma once
+#include "world_assets.hpp"
 // Append-only auxiliary image directory. Historical prefixes are immutable;
 // tools/ui_profile.py and tools/character_ui_profile.py validate their order.
 namespace spire {
@@ -245,6 +246,6 @@ enum UiAsset {
     U_Hang=336,
     U_Oblivion=337,
     U_SicEm=338,
-    U_Count=339
+    U_Count=WorldAuxiliaryCount
 };
 }

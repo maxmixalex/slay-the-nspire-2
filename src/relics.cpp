@@ -53,6 +53,7 @@ RelicMask random_relic(State&s){
 }
 unsigned relic_counter(const State&s,RelicMask id){const auto*d=relic_definition(id);return d?s.relic_counters[d-relic_definitions]:0;}
 void relic_hook(State&s,RelicHook hook){
+ if(s.world_relics.active)return;
  for(unsigned i=0;i<s.relic_count;i++){
   unsigned index=s.relic_order[i];RelicMask id=relic_definitions[index].id;bool triggered=false;
   if(hook==RelicHook::CombatStart){
@@ -86,6 +87,7 @@ void relic_hook(State&s,RelicHook hook){
  if(hook==RelicHook::Victory)relic_reset_turn_counters(s);
 }
 void relic_after_hp_loss(State&s,int loss){
+ if(s.world_relics.active)return;
  if(loss<=0||s.hp<=0||!combat_phase(s.phase)||!(s.relics&CentennialPuzzle)||s.relic_counters[24])return;
  s.relic_counters[24]=1;flash(s,CentennialPuzzle);draw_cards(s,3);
 }
@@ -102,6 +104,7 @@ void relic_reset_turn_counters(State&s){
  for(int i=0;i<RelicKinds;i++)if(relic_counter_is_turn_scoped(relic_definitions[i].id))s.relic_counters[i]=0;
 }
 void relic_card_played(State&s,Card card){
+ if(s.world_relics.active)return;
  if(s.hp<=0||s.phase!=Phase::Combat||card.kind>=CardKinds)return;
  const CardType type=card_type(s,card);
  // AfterCardPlayed runs once after the card's commands/choices, before its
@@ -124,12 +127,13 @@ void relic_card_played(State&s,Card card){
 }
 void relic_attack_begin(State&s){
  s.double_attack=0;
+ if(s.world_relics.active)return;
  if(!(s.relics&PenNib))return;
  auto&n=s.relic_counters[9];if(++n==10){n=0;s.double_attack=1;flash(s,PenNib);}
 }
 void relic_attack_end(State&s){s.double_attack=0;s.attack_vigor=0;}
 int relic_attack_multiplier(const State&s,bool preview){
- int n=s.double_attack||(preview&&(s.relics&PenNib)&&relic_counter(s,PenNib)==9)?2:1;
+ int n=!s.world_relics.active&&(s.double_attack||(preview&&(s.relics&PenNib)&&relic_counter(s,PenNib)==9))?2:1;
  if(s.expansion.triple||(preview&&power_value(s,XPower::Gigantic)))n*=3;
  return n;
 }

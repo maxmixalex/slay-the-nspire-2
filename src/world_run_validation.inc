@@ -54,5 +54,13 @@ bool world_valid_run(const State&s){
     for(unsigned i=0;i<w.reward_count;++i)if(w.reward_cards[i].kind>=CardKinds||w.reward_cards[i].upgraded>1||!event_card_facts_valid(w.reward_cards[i],w.reward_facts[i]))return false;
     for(unsigned i=0;i<ShopCardCount;++i)if(w.shop_cards[i].kind>=CardKinds||w.shop_cards[i].upgraded>1||!event_card_facts_valid(w.shop_cards[i],w.shop_facts[i]))return false;
     for(auto price:w.shop_base_prices)if(price<0||price>20000)return false;
+    if((w.shop_pending_item>=ShopRemove&&w.shop_pending_item!=255)||w.shop_pending_price<0||w.shop_pending_price>9999||
+       (w.shop_pending_item==255&&w.shop_pending_price)||w.shop_auto_active>1||w.shop_auto_cursor>ShopRemove+1||w.shop_free_remove>1)return false;
+    if((w.shop_pending_item!=255||w.shop_auto_active||w.shop_free_remove)&&w.room_type!=unsigned(WorldRoom::Shop))return false;
+    if(w.shop_free_remove&&s.phase!=Phase::Remove)return false;
+    if(w.rest_count>MaxWorldRestOptions||w.rest_pending>w.rest_count||w.rest_deck_before>MaxDeck)return false;
+    if(w.rest_count<32&&(w.rest_used>>w.rest_count))return false;
+    for(unsigned i=0;i<w.rest_count;++i)if(w.rest_options[i]>=unsigned(WorldRestOption::Count))return false;
+    if(w.rest_pending&&w.room_type!=unsigned(WorldRoom::Rest))return false;
     return true;
 }

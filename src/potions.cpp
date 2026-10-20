@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "world_run.hpp"
 namespace spire {
 // Values and use/target scopes inspected in the pinned 41cef1ea assembly.
 const PotionDefinition potion_definitions[PotionKinds]={
@@ -50,16 +51,16 @@ bool use_potion(State&s,int slot,int target){
     case Potion::Block:gain_unpowered_block(s,12);break;
     case Potion::Blood:heal(s,s.max_hp/5);break;
     case Potion::Energy:s.energy=(int16_t)cap(999,s.energy+2);break;
-    case Potion::Strength:grant(s.strength,2);break;
-    case Potion::Dexterity:grant(s.dexterity,2);break;
+    case Potion::Strength:world_relic_gain_strength(s,2);break;
+    case Potion::Dexterity:world_relic_gain_dexterity(s,2);break;
     case Potion::Swift:queue_extension(s,XOp::Draw,3);break;
     case Potion::Explosive:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,10);break;
     case Potion::Vulnerable:apply_vulnerable(s,target,3);break;
     case Potion::Weak:apply_weak(s,target,3);break;
     case Potion::Fruit:increase_max_hp(s,5);break;
     case Potion::Forge:for(int i=0;i<s.hand.count;i++)if(card_upgradeable(s.cards[s.hand.ids[i]]))s.cards[s.hand.ids[i]].upgraded=1;break;
-    case Potion::Flex:grant(s.strength,5,&s.temporary_strength);break;
-    case Potion::Speed:grant(s.dexterity,5,&s.temporary_dexterity);break;
+    case Potion::Flex:{int amount=cap(5,9999-s.strength);world_relic_gain_strength(s,amount);s.temporary_strength=(int16_t)cap(9999,s.temporary_strength+amount);break;}
+    case Potion::Speed:{int amount=cap(5,9999-s.dexterity);world_relic_gain_dexterity(s,amount);s.temporary_dexterity=(int16_t)cap(9999,s.temporary_dexterity+amount);break;}
     case Potion::Bronze:grant(s.thorns,3);break;
     case Potion::Fortifier:gain_unpowered_block(s,s.block*2);break;
     default:execute_potion(s,p,target);break;

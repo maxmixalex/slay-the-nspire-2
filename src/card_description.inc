@@ -2,6 +2,7 @@
 // against the selected instance, not whichever equal model was last played.
 void App::card_description(Card c,int t,char*out,size_t cap,int instance,int deck_index)const{
     if(!cap)return;out[0]=0;if(c.kind>=CardKinds)return;
+    if(c.kind>=EventCardBadLuck){world_card_description(c,t,out,cap,instance,deck_index,detail_has_facts&&detail_card==card_token(c)?&detail_facts:nullptr);return;}
     TextBuffer b{out,cap,0};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
     const bool permanent=!library&&deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==c.kind;
     const bool live=!library&&!permanent&&combat_phase(game.phase);

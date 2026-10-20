@@ -11,6 +11,14 @@ Root has widened animation/damage presentation arrays to all eight enemy slots, 
 Next: complete the explicit missing modules, persist and read back that source stage, then freeze it before long build/conversion/validation with `tools/run_logged.py`. Keep the completed 0.16 downloadable pair until a matching new runtime and private content pack pass relevant verification. Main and disabled remote CI remain unchanged.
 
 
+## Integrated world source checkpoint — 2026-10-20
+
+The next source stage joins executable enemy move/power/summon/death modules, all 66 event rule modules, original three-act routing, native room entry and reward/camp/shop hooks, and the original-world choice UI. Original relic acquisition, combat/run listeners and dynamic descriptions are now present; remaining nested acquisition continuations are under active review. These are implemented-source statements, not passing content or fidelity counts.
+
+The new UI supports the complete relic directory, sixteen potion slots, per-instance card offers, independently claimed event rewards, actual camp choices and Crystal Sphere's 121-cell board. Crystal retry/subscription bounds require 825 reveal records, 770 rewards and 495 offered-card records; indexes and the v15 suffix retain those values. Canonical resource metadata covers new cards, events, relics, power icons, intents, rest choices and scenes. The private NSP2/14 pack and actual original-enemy/scene animation integration are still being built. Complete Spine 4.2 runtime inspection loaded all 102 distinct skeletons; no conversion pass or 95% visual result is claimed.
+
+Short syntax checks pass for the current runtime and UI source. This checkpoint is to be frozen for the first integrated ASan/UBSan build and regression execution. New source tests cover enemies, original events, map routing, relics and bounded localization; runtime outcomes are still pending. Keep failures explicit, complete nested acquisition continuations and the new resource converter, then checkpoint each repair before long validation. The completed 0.16 downloadable pair, main and disabled CI remain unchanged.
+
 ## Active 0.17: original events, enemies, maps and UI
 
 The user requested the following order: complete all original single-player events and enemies, then integrate the original map, then restore original UI with a 95%+ fidelity target. Scaling and layout adjustments required by the 320 × 240 calculator screen are permitted. Work continues on **`work/0.17-world-parity`**, branched from the remotely verified completed 0.16 documentation head **`4abacfa4cd3cfbb3d21f5065d8134edb2aca681e`**, tree **`fd34b8092ef7526335ce87cf924418028ddf1583`**. The previous runtime and its delivered artifacts remain the completed historical baseline below.

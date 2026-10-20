@@ -1,4 +1,5 @@
 // Original portrait/option textures, reflowed around an unobscured left illustration.
+#include "world_events_ui.inc"
 static bool event_equal(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 static int event_body_text(const State&s){
     if(s.event_id==EventId::Baths&&s.event_page==1)return s.event_count<=1?46:48+mn(9,s.event_count-1);
@@ -6,7 +7,7 @@ static int event_body_text(const State&s){
     int base=EventTextBase+(int)s.event_id*EventTextStride;
     return base+(s.event_page<2?1:s.event_page==2?2:3);
 }
-static const char* event_title(Canvas&c){return c.a.content.string(EventTextBase+(int)c.a.game.event_id*EventTextStride);}
+static const char* event_title(Canvas&c){return c.a.game.original_events.active?native_event_title(c.a):c.a.content.string(EventTextBase+(int)c.a.game.event_id*EventTextStride);}
 static void event_option_text(Canvas&c,int option,char*out,size_t size){
     auto&s=c.a.game;TextBuffer b{out,size,0};out[0]=0;
     if(s.event_id==EventId::Baths&&s.event_page==1&&option==1){b.text("保留已获得的最大生命");return;}
@@ -30,7 +31,10 @@ static void event_option_text(Canvas&c,int option,char*out,size_t size){
 static void event_reader_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,235);
     c.ui(U_RewardPanel,4,5,312,230);c.centered(event_title(c),18,18,278,16,Gold);c.close_button(289,10);
-    const char*text=a.content.string(event_body_text(a.game));int lines=c.paragraph(text,20,49,277,0,0,12);
+    char full[12288]{};const char*text=a.content.string(event_body_text(a.game));
+    if(a.game.original_events.active){a.original_event_text(-1,true,full,sizeof full);TextBuffer b{full,sizeof full,0};while(full[b.n])++b.n;
+        for(unsigned i=0;i<original_event_option_count(a.game);i++){char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);b.text("\n\n[gold]");b.text(label);b.text("[/gold]\n");b.text(description);}text=full;}
+    int lines=c.paragraph(text,20,49,277,0,0,12);
     a.event_reader_scroll=mn(mx(0,a.event_reader_scroll),mx(0,lines-10));
     c.paragraph(text,20,49,277,10,a.event_reader_scroll,12);
     c.text("‹",15,211,16,Gold);c.hit(8,205,34,31,HitKind::Scroll,-10,a.event_reader_scroll>0);
@@ -39,6 +43,7 @@ static void event_reader_screen(Canvas&c){
     c.centered(page,40,211,78,10,Muted);c.button("返回事件",130,207,144,true,26);c.action(124,204,153,32,UiAction::CloseEventReader);
 }
 static void event_screen(Canvas&c){
+    if(c.a.game.original_events.active){native_event_screen(c);return;}
     auto&a=c.a;auto&s=a.game;int base=EventTextBase+(int)s.event_id*EventTextStride;
     c.ui(U_EventFull0+(int)s.event_id,0,22);
     // Gradient is confined to the text column, not an opaque rectangle over the illustration.

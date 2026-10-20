@@ -2,6 +2,14 @@
 #include "core.hpp"
 
 namespace spire {
+enum class OriginalTextReferenceKind:uint8_t {None,Localized,Card,Relic,RelicDescription,Potion,Enchantment,EnchantmentDescription};
+struct OriginalTextReference {
+ OriginalTextReferenceKind kind=OriginalTextReferenceKind::None;
+ uint16_t model=0; // Card uses card_token; other models use their public id.
+ EventCardFacts facts{};
+ const char* table=nullptr;
+ char key[128]{};
+};
 const char* original_event_key(OriginalEventId);
 OriginalEventId original_event_id(const char* key);
 // A registered name is not an implemented event. Unknown bodies fail before
@@ -17,12 +25,19 @@ bool original_event_select(State&,const uint16_t* indices,unsigned count);
 unsigned original_event_eligible(const State&,uint16_t* out,unsigned capacity);
 bool original_event_potion(State&,int slot); // -1 declines; occupied slot replaces.
 bool original_event_reward(State&,int index); // -1 leaves the entire reward set.
+bool original_event_has_card_reward(const State&);
+// Consume the current CardReward for an alternative. Caller applies that
+// alternative, then calls original_event_resume after its own hooks finish.
+bool original_event_consume_card_reward(State&);
 bool original_event_leave(State&);
 void original_event_after_combat(State&,bool won);
 bool original_event_crystal_tool(State&,bool large);
 bool original_event_crystal_click(State&,unsigned x,unsigned y);
 bool original_event_text_key(const State&,int option,bool description,char* out,unsigned capacity);
 bool original_event_description_value(const State&,const char* key,int& result);
+// option=-1 addresses the page; description distinguishes dynamic option
+// titles (notably potion rarity) from option descriptions (card rarity).
+bool original_event_description_reference(const State&,const char* key,int option,bool description,OriginalTextReference&);
 void original_event_new_run(State&);
 void original_event_finish_run(State&);
 bool original_event_blocks_potions(const State&);

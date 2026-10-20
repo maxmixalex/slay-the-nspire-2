@@ -157,7 +157,7 @@ int card_star_cost(const State&s,Card c,int id){
  int n=regent_base_star_cost(c);if(n<0)return n;
  if(id>=0&&id<s.card_count&&s.cards[id].kind==c.kind&&
     (s.expansion.star_turn_free[id]||s.expansion.star_combat_free[id]||regent_void_free(s,id)))return 0;
- return n;
+ return wr_star_cost(s,c,id,n);
 }
 static int regent_cost(const State&s,int id,int price){
  if(id<0||id>=s.card_count||price<0)return price;
@@ -227,9 +227,10 @@ static void regent_card_generated(State&s,int id){
   if(p==RPower::PillarOfCreation)queue_extension(s,XOp::RUnpoweredBlock,rpower(s,p),0,true);
  }
 }
-static void regent_begin_play(State&s,int,bool automatic,int energy_spent,int stars_spent){
+static void regent_begin_play(State&s,int id,bool automatic,int energy_spent,int stars_spent){
  auto&r=s.regent;unsigned depth=s.expansion.depth;r.automatic[depth]=(uint8_t)automatic;r.stars_spent[depth]=(int16_t)stars_spent;
  r.star_x[depth]=(int16_t)(automatic?s.expansion.stars:stars_spent);
+ if(id>=0&&id<s.card_count&&regent_base_star_cost(s.cards[id])<0)r.star_x[depth]=(int16_t)wr_x_value(s,r.star_x[depth]);
  // These hooks finish before the card's BeforeCardPlayed hooks.
  // Front insertion reverses call order: SpendResources completes energy
  // spending (including Orbit) before it starts spending stars.
@@ -515,7 +516,7 @@ static bool regent_effect(State&s,Effect e){
   else if(s.draw.count&&a>=0&&a<s.card_count&&s.cards[a].kind==RegentIAmInvincible&&s.draw.ids[s.draw.count-1]==a)start_instance(s,a,-1,true);break;
  case XOp::RUnpoweredDamage:damage_unpowered(s,b,a);break;
  case XOp::RMonologueStrength:{
-  int amount=min(b,min(9999-s.strength,9999-r.monologue_applied[a]));s.strength+=(int16_t)amount;r.monologue_applied[a]+=(int16_t)amount;record(s,LogKind::Strength,amount);break;
+  int amount=min(b,min(9999-s.strength,9999-r.monologue_applied[a]));world_relic_gain_strength(s,amount);r.monologue_applied[a]+=(int16_t)amount;break;
  }
  case XOp::REndTurn:r.end_turn_requested=1;break;
  case XOp::RReturnBlade:

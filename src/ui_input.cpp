@@ -63,11 +63,11 @@ bool App::selection_input(Key key){
     return true;
 }
 void App::select_library_item(int index){
-    int count=library_tab==0?(int)library_items():library_tab==1?RelicKinds:PotionKinds;
+    int count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds;
     if(!library||index<0||index>=count)return;
     library_selected=index;
     if(library_tab==0){CardKind ids[CardKinds];library_items(ids);open_card_detail({ids[index],(uint8_t)(library_upgraded&&card_upgradeable({ids[index],0}))});}
-    else{detail_owned=-1;detail_item=library_tab==1?index:RelicKinds+index;detail_scroll=0;pointer_cancel();}
+    else{detail_owned=-1;detail_item=library_tab==1?index:WorldRelicKinds+index;detail_scroll=0;pointer_cancel();}
 }
 void App::ui_action(UiAction action){
     pointer_cancel();
@@ -79,7 +79,7 @@ void App::ui_action(UiAction action){
             message(overflow?"手牌已满，卡牌已加入弃牌堆":"卡牌已加入手牌");
         }break;}
     case UiAction::LabPotion:
-        if(library&&!title&&!paused&&!help&&!panel&&detail_item>=RelicKinds&&lab_potion(game,(Potion)(detail_item-RelicKinds+1))){
+        if(library&&!title&&!paused&&!help&&!panel&&detail_item>=WorldRelicKinds&&lab_potion(game,(Potion)(detail_item-WorldRelicKinds+1))){
             detail_item=-1;library=false;reset_presentation();
             message("已获得药水");
         }break;
@@ -101,7 +101,7 @@ void App::ui_action(UiAction action){
     case UiAction::LibraryCards:case UiAction::LibraryRelics:case UiAction::LibraryPotions:
         if(library){library_tab=(int)action-(int)UiAction::LibraryCards;library_page=library_selected=0;}break;
     case UiAction::PreviousPage:case UiAction::NextPage:
-        if(library){int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?RelicKinds:PotionKinds;
+        if(library){int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds;
             int last=(count-1)/per;library_page+=action==UiAction::PreviousPage?-1:1;
             if(library_page<0)library_page=0;if(library_page>last)library_page=last;
             library_selected=library_page*per;
@@ -155,6 +155,8 @@ void App::ui_action(UiAction action){
         unsigned count=world_choice_options(nullptr,0);int page=cursor/10+(action==UiAction::PreviousWorldPage?-1:1);
         if(page<0)page=0;if(page>int((count?count-1:0)/10))page=int((count?count-1:0)/10);cursor=page*10;break;}
     case UiAction::RewardRelic:if(game.phase==Phase::Reward)world_claim_reward_relic(game);break;
+    case UiAction::SacrificeReward:
+        if(world_take_card_reward_alternative(game,1)){reward_cards=false;choice_selected_count=0;choice_revision=game.revision;cursor=0;pointer_cancel();}break;
     case UiAction::CrystalSmall:original_event_crystal_tool(game,false);break;
     case UiAction::CrystalLarge:original_event_crystal_tool(game,true);break;
     case UiAction::ClearChoice:choice_selected_count=0;break;
@@ -172,7 +174,7 @@ void App::ui_action(UiAction action){
 bool App::screen_input(Key key){
     if(key==Key::Collection){library=!library;library_page=library_selected=0;pointer_cancel();return true;}
     if(library){
-        int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?RelicKinds:PotionKinds,columns=library_tab==0?4:6;
+        int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds,columns=library_tab==0?4:6;
         if(key==Key::Back){library=false;return true;}
         if(key==Key::Quit){quit=true;return true;}
         if(key==Key::Inspect){library_tab=(library_tab+1)%3;library_page=library_selected=0;return true;}
@@ -194,11 +196,10 @@ bool App::screen_input(Key key){
         return true;
     }
     if(!title&&!paused&&!help&&!panel&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
-        const int count=game.necro.grimoire_pending?5:4;
+        UiAction actions[6];const int count=ui_reward_actions(game,actions);
         if(key==Key::Left||key==Key::Up){cursor=(cursor+count-1)%count;return true;}
         if(key==Key::Right||key==Key::Down){cursor=(cursor+1)%count;return true;}
-        if(key==Key::Confirm){const UiAction actions[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion,UiAction::RewardGrimoire,UiAction::LeaveRewards};
-            int at=cursor%count;if(count==4&&at==3)at=4;ui_action(actions[at]);return true;}
+        if(key==Key::Confirm){ui_action(actions[cursor%count]);return true;}
     }
     return false;
 }
@@ -284,10 +285,11 @@ bool App::status_input(Key key){
 namespace spire {
 void App::open_owned_relic(int position){
     if(title||paused||help||library||character_select||map_preview.open||status_actor>=0||
-       detail_card>=0||detail_item>=0||(panel&&panel!=5)||position<0||position>=game.relic_count)return;
-    detail_owned=position;detail_item=game.relic_order[position];detail_scroll=0;pointer_cancel();
+       detail_card>=0||detail_item>=0||(panel&&panel!=5)||position<0||position>=int(ui_owned_relic_count(game)))return;
+    detail_owned=position;detail_item=ui_owned_relic_id(game,position);detail_scroll=0;pointer_cancel();
 }
 void App::sync_relic_feedback(){
+    if(seen_world_relic_revision!=game.world_relics.flash_revision){seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=game.world_relics.last_flash;relic_flash_ticks=30;}
     if(seen_relic_revision==game.relic_revision)return;
     seen_relic_revision=game.relic_revision;relic_flash_mask=game.relic_flash;relic_flash_ticks=30;
 }

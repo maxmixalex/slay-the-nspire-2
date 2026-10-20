@@ -22,14 +22,14 @@
   auto&f=snapshot.facts;B(f.enchantment);B(f.science_type);B(f.rider);H(f.enchantment_amount);H(f.energy_offset);H(f.progress);
   H(snapshot.genetic);H(snapshot.scythe);
  }
- B(e.reward_active);B(e.reward_count);B(e.reward_current);B(e.reward_card_count);
- for(auto&r:e.rewards){B(r.kind);B(r.claimed);B(r.first);B(r.count);H(r.model);H(r.amount);}
+ B(e.reward_active);H(e.reward_count);H(e.reward_current);H(e.reward_card_count);
+ for(auto&r:e.rewards){B(r.kind);B(r.claimed);H(r.first);B(r.count);H(r.model);H(r.amount);}
  for(auto&card:e.reward_cards)H(card);
  for(auto&f:e.reward_facts){B(f.enchantment);B(f.science_type);B(f.rider);H(f.enchantment_amount);H(f.energy_offset);H(f.progress);}
  B(e.combat_pending);B(e.resume_after_combat);H(e.encounter);
  B(e.crystal_tool);B(e.crystal_charges);B(e.crystal_item_count);
  for(auto&cell:e.crystal_clear)B(cell);for(auto&cell:e.crystal_owner)B(cell);
  for(auto&item:e.crystal_items){B(item.kind);B(item.x);B(item.y);B(item.w);B(item.h);B(item.subscriptions);B(item.revealed);H(item.model);H(item.amount);}
- B(e.crystal_revealed_count);for(auto&index:e.crystal_revealed)B(index);
- auto&facts=s.event_run;F(facts.wongo_total);F(facts.wongo_earned);B(facts.freed_repy);B(facts.completion_recorded);
+ H(e.crystal_revealed_count);for(auto&index:e.crystal_revealed)B(index);
+ auto&facts=s.event_run;F(facts.wongo_total);F(facts.wongo_earned);F(facts.wins);for(auto&n:facts.character_wins)F(n);B(facts.freed_repy);B(facts.completion_recorded);
 }

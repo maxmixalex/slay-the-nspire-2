@@ -16,6 +16,7 @@ static void all_characters_attack_damage(State&s,int t,int total,int unblocked,b
 static void notify_card_generated(State&s,int id){
  if(id<0||id>=s.card_count)return;
  if(!combat_phase(s.phase))return;
+ world_relic_hook(s,WorldRelicHook::AfterCardGenerated,id);
  s.regent.cards_created=(uint16_t)min(9999,s.regent.cards_created+1);
  bool status=card_type(s,s.cards[id],id)==CardType::Status;
  if(status)queue_extension(s,XOp::DRocketDiscount,0,0,true);enemy_card_generated(s,id);
@@ -26,6 +27,7 @@ static void notify_card_generated(State&s,int id){
   else if(actor==(unsigned)PostPlayActor::RegentArsenal)enqueue(s,EffectKind::Strength,rpower(s,RPower::Arsenal),0,true);
   else if(actor==(unsigned)PostPlayActor::RegentPillarOfCreation)queue_extension(s,XOp::RUnpoweredBlock,rpower(s,RPower::PillarOfCreation),0,true);
  }
+ world_card_entered(s,id);
 }
 void notify_deck_card_created(State&s,int id,int index){defect_deck_card_created(s,id,index);necro_deck_card_created(s,id,index);event_card_deck_created(s,id,index);}
 void notify_deck_removed(State&s,int index){defect_deck_removed(s,index);necro_deck_removed(s,index);event_card_deck_removed(s,index);}
@@ -55,5 +57,5 @@ static void burn_hand(State&s){
 static void exhaust_ethereal_hand(State&s){
  // Capture only the hand that exists at hand-flush time. Exhaust-trigger draws
  // complete before ordinary discard but do not join this ethereal snapshot.
- for(unsigned i=s.hand.count;i>0;--i){int id=s.hand.ids[i-1];if(necro_ethereal(s,id)||enemy_card_ethereal(s,id)||(card_keywords(s,s.cards[id],id)&8))enqueue(s,EffectKind::ExhaustCard,id,0,true);}
+ for(unsigned i=s.hand.count;i>0;--i){int id=s.hand.ids[i-1];if(necro_ethereal(s,id)||enemy_card_ethereal(s,id)||(card_keywords(s,s.cards[id],id)&8)){enqueue(s,EffectKind::ExhaustCard,id,0,true);s.effects[0].aux=1;}}
 }

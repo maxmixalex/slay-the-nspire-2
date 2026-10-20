@@ -32,7 +32,9 @@ static bool valid_enemy_state(const State&s){
    if((m.flags&EnemyDown)&&s.enemies[i].hp!=0)return false;
   }
   if(m.stolen_gold<0||m.stolen_gold>9999||m.attack_unblocked_hits<0||m.attack_total_damage<0||m.attack_vigor<0)return false;
-  if(m.captured_card>s.card_count)return false;
+  if(m.captured_card>s.card_count||m.captured_deck.card.upgraded>1||!event_card_facts_valid(m.captured_deck.card,m.captured_deck.facts))return false;
+  if(m.captured_card&&(!(m.flags&EnemyPresent)||(m.flags&EnemyRemoved)||s.zones[m.captured_card-1]!=Zone::Limbo||m.kind!=EnemyId::ThievingHopper))return false;
+  for(auto value:m.data)if(value<-9999||value>9999)return false;
   for(unsigned p=0;p<EnemyPowerCount;++p){
    if(m.power[p]<-9999||m.power[p]>9999||m.power_aux[p]<-9999||m.power_aux[p]>9999||m.duration_skip[p]>1||m.source[p]>MaxEnemies)return false;
   }
@@ -40,6 +42,8 @@ static bool valid_enemy_state(const State&s){
  for(unsigned p=0;p<EnemyPowerCount;++p)if(w.player_power[p]<-9999||w.player_power[p]>9999||w.player_aux[p]<-9999||w.player_aux[p]>9999||w.player_duration_skip[p]>1||w.player_source[p]>MaxEnemies)return false;
  unsigned models=0;for(auto v:w.spawned_models){if(v>1)return false;models+=v;}
  if(models!=w.spawned_model_count||w.escaped_count>65534||w.bound_played>1||w.used_types>7)return false;
+ if(w.returned_gold_count>32)return false;
+ for(unsigned i=0;i<32;++i)if(w.returned_gold[i]>9999||(i<w.returned_gold_count?!w.returned_gold[i]:w.returned_gold[i]!=0))return false;
  for(unsigned id=0;id<MaxCards;++id){
   if(w.affliction[id]>=unsigned(EnemyAffliction::Count)||w.dampen_restore[id]>1||w.affliction_amount[id]<0||w.affliction_amount[id]>9999||w.card_value[id]<0||w.card_value[id]>9999)return false;
   if((!w.affliction[id])!=(!w.affliction_amount[id]))return false;
@@ -62,7 +66,7 @@ static bool valid_enemy_effect(const State&s,const Effect&e){
  case XOp::EnemyRemovePower:return target(a)&&b>=0&&b<EnemyPowerCount;
  case XOp::EnemyHeal:return a>=0&&a<=9999&&target(b);
  case XOp::EnemyPlayerDamage:case XOp::EnemyLoseMaxHp:return a>=0&&a<=9999&&b>=0&&b<4;
- case XOp::EnemyGenerateCard:return a>=0&&a<CardKinds&&b>=0&&b/1024<=3&&b%1024<=MaxCards;
+ case XOp::EnemyGenerateCard:return a>=0&&a<CardKinds&&b>=0&&b/1024<=4&&b%1024<=MaxCards;
  case XOp::EnemySpawn:return a>0&&a<EnemyKinds&&b>=0&&b<72;
  case XOp::EnemyEscape:case XOp::EnemyDie:return actor(a)&&b>=0&&b<=3;
  case XOp::EnemyTransform:return actor(a)&&b>0&&b<EnemyKinds;

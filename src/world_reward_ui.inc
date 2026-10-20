@@ -1,0 +1,30 @@
+static void native_reward_screen(Canvas&c){
+ auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);c.actor(0,54,130);c.dim(0,22,320,218,155);
+ if(a.grimoire_select&&s.necro.grimoire_pending){deck_select(c);return;}
+ if(a.reward_cards){
+  const int count=s.world.reward_count;a.cursor=mn(mx(0,a.cursor),count);c.centered("选择一张牌",0,28,320,20,Gold);
+  for(int i=0;i<count;i++){const auto&card=s.world.reward_cards[i];const auto&facts=s.world.reward_facts[i];
+   int x=count<=3?(320-count*94)/2+7+i*94:35+i%4*67,y=count<=3?69:52+i/4*72;
+   if(count<=3)large_card(c,card,x,y,a.cursor==i,-2,-2,-1,-1,&facts);else small_card(c,card,x,y,a.cursor==i,true,0,-2,-2,-1,-1,&facts);
+   c.hit(x-3,y-3,count<=3?86:53,count<=3?118:71,HitKind::Choice,i);
+  }
+  if(world_card_reward_alternatives(s)&1){c.button("献祭牌奖励",99,189,123,false,20);c.action(96,187,129,23,UiAction::SacrificeReward);}
+  c.button("详情 I",14,211,91,false,25);c.hit(10,207,99,31,HitKind::Command,(int)Key::Detail,a.cursor<count);
+  c.ui(U_RewardSkip,211,211,92,25);c.centered("跳过",211,213,92,12,a.cursor==count?Gold:White);c.hit(207,207,104,31,HitKind::Choice,count);return;
+ }
+ UiAction actions[6];int count=ui_reward_actions(s,actions);a.cursor=mn(mx(0,a.cursor),count-1);
+ c.ui(U_RewardPanel,50,32,220,202);c.ui(U_RewardBanner,38,30,244,48);c.centered("战利品",60,42,200,20,Gold);
+ for(int i=0;i<count-1;i++){int y=81+i*26;UiAction action=actions[i];bool claimed=false,available=true;int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0};
+  switch(action){
+   case UiAction::RewardGold:claimed=s.reward_claimed&1;image=a.content.ui_image(U_RewardGold);t.number(s.last_gold);t.text(" 金币");break;
+   case UiAction::RewardCards:claimed=s.reward_claimed&2;available=s.world.reward_count!=0;image=a.content.ui_image(U_RewardCard);t.text("选择一张牌");break;
+   case UiAction::RewardPotion:claimed=s.reward_claimed&4;available=s.reward_potion!=Potion::Empty;image=a.content.potion_image(s.reward_potion);if(const auto*d=potion_definition(s.reward_potion))t.text(d->name);else t.text("没有药水掉落");break;
+   case UiAction::RewardRelic:claimed=s.world.reward_relic_claimed;image=a.content.relic_image(s.world.reward_relic);t.text(a.relic_title(s.world.reward_relic));break;
+   case UiAction::RewardGrimoire:image=a.content.ui_image(U_NecroPowerStart+(int)NPower::ForbiddenGrimoire);t.text("魔典移牌 × ");t.number(s.necro.grimoire_pending);break;
+   default:break;
+  }
+  c.ui(U_RewardButton,69,y,182,24,(claimed||!available)?110:255);if(a.cursor==i&&!claimed&&available)c.box(68,y-1,184,26,Gold);
+  c.picture(image,75,y+1,22,22);c.text(claimed?"已领取":text,103,y+4,10,claimed?Muted:White,143);c.action(68,y-1,184,26,action,!claimed&&available);
+ }
+ c.ui(U_RewardSkip,213,211,99,25);c.centered("前进 ›",213,214,99,12,a.cursor==count-1?Gold:White);c.action(209,208,107,30,UiAction::LeaveRewards);
+}

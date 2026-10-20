@@ -7,7 +7,7 @@ void enter_combat(State&s){
     s.noxious_fumes=s.accuracy=s.discard_required=0;
     s.no_block=s.exhaust_limit=s.attacked_this_turn=0;s.relic_counters[24]=0;
     s.demon_form=s.infinite_blades=s.block_next_turn=s.draw_next_turn=s.flame_barrier=0;
-    s.turn=1;s.energy=3;s.playing=-1;s.effect_count=s.card_count=0;
+    s.turn=s.world.active?0:1;s.energy=3;s.playing=-1;s.effect_count=s.card_count=0;
     s.draw.count=s.hand.count=s.discard.count=s.exhaust.count=s.powers.count=0;
     if(s.world.active){
         if(!encounter_setup(s,pending_encounter,s.world.ascension)){fail(s);return;}
@@ -20,6 +20,10 @@ void enter_combat(State&s){
     event_card_combat_start(s);
     for(int i=0;i<s.deck_count;i++){int id=make_card(s,s.deck[i]);if(id>=0){notify_deck_card_created(s,id,i);put(s,s.discard,id,Zone::Discard);}}
     shuffle(s,true);
+    event_card_combat_start(s);
+    if(world_shared_active(s)){
+        s.turn=1;world_stage(s,WorldStage::EnterRoom);resolve_pending(s);++s.revision;return;
+    }
     relic_hook(s,RelicHook::CombatStart);relic_hook(s,RelicHook::TurnStart);resolve_pending(s);
     if(s.practice&&s.floor==1){
         // Explicit practice opening: lets the player exercise two exhaust hooks.
@@ -36,10 +40,13 @@ void enter_combat(State&s){
         draw_cards(s,min(MaxHand,max(innate,5+((s.relics&BagOfPreparation)?2:0)+((s.relics&RingOfTheSnake)?2:0))));
     }
     relic_hook(s,RelicHook::AfterHandDraw);
+    event_card_auto_preplay(s);resolve_pending(s);
     record(s,LogKind::Turn,1);finish_combat_if_won(s);s.revision++;
 }
 void new_run(State&s,uint32_t seed,bool practice,Character character){
+    const EventRunFacts previous_facts=s.event_run;
     s=State{};
+    s.event_run=previous_facts;
     if((unsigned)character>=CharacterKinds){s.phase=Phase::Error;return;}
     s.character=character;s.seed=seed?seed:1;
     s.rng_cards=s.seed^0xA341316Cu;s.rng_world=s.seed^0xC8013EA4u;
@@ -200,6 +207,7 @@ bool choose_reward(State&s,int index){
 }
 bool camp(State&s,bool upgrading){
     if(s.phase!=Phase::Camp)return false;
+    if(s.world.active){for(unsigned i=0;i<world_rest_option_count(s);i++)if(s.world.rest_options[i]==unsigned(upgrading?WorldRestOption::Smith:WorldRestOption::Heal))return world_rest_choose(s,i);return false;}
     if(upgrading){if(!has_upgrade(s))return false;s.phase=Phase::Upgrade;s.revision++;}
     else{heal(s,rest_heal_amount(s));finish_room(s);}
     return true;

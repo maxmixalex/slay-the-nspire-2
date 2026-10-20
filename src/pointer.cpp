@@ -24,9 +24,10 @@ void App::pointer_cancel(){hand_focus=false;pointer.held=pointer.dragging=false;
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
-    detail_card=card_token(card);detail_scroll=0;detail_instance=-1;detail_cost_override=-2;
+    detail_card=card_token(card);detail_scroll=0;detail_instance=-1;detail_cost_override=-2;detail_has_facts=false;
     detail_deck_index=deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==card.kind?deck_index:-1;pointer_cancel();
 }
+void App::open_card_offer(Card card,const EventCardFacts&facts){open_card_detail(card);detail_facts=facts;detail_has_facts=true;}
 void App::open_choice_detail(int token){
     if(token>=0&&token<game.card_count){
         open_card_detail(game.cards[token]);detail_instance=token;
@@ -36,7 +37,7 @@ void App::open_choice_detail(int token){
         }
         return;
     }
-    if(game.phase!=Phase::ExtendedChoice||game.expansion.choice!=XChoice::Offer||token<MaxCards||token>=MaxCards+3)return;
+    if(game.phase!=Phase::ExtendedChoice||(game.expansion.choice!=XChoice::Offer&&game.expansion.choice!=XChoice::EnemyKnowledge&&game.expansion.choice!=XChoice::EventAbundance)||token<MaxCards||token>=MaxCards+3)return;
     bool offered=false;for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==token)offered=true;
     if(!offered)return;
     open_card_detail(choice_card(game,token));
@@ -52,11 +53,7 @@ void App::pointer_move(int x,int y){
     switch(h->kind){
     case HitKind::UiAction:
         if(!pointer.held&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
-            if((UiAction)h->value==UiAction::RewardGold)cursor=0;
-            else if((UiAction)h->value==UiAction::RewardCards)cursor=1;
-            else if((UiAction)h->value==UiAction::RewardPotion)cursor=2;
-            else if((UiAction)h->value==UiAction::RewardGrimoire)cursor=3;
-            else if((UiAction)h->value==UiAction::LeaveRewards)cursor=game.necro.grimoire_pending?4:3;
+            UiAction actions[6];unsigned count=ui_reward_actions(game,actions);for(unsigned i=0;i<count;i++)if(actions[i]==(UiAction)h->value)cursor=i;
         }break;
     case HitKind::Menu:if(!pointer.held)menu=h->value;break;
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
@@ -69,6 +66,9 @@ void App::pointer_move(int x,int y){
         if(!pointer.held){const auto& source=choice_pile(game);
             for(int i=0;i<source.count;i++)if(source.ids[i]==h->value){cursor=i;break;}}
         break;
+    case HitKind::WorldChoice:
+        if(!pointer.held){uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);for(unsigned i=0;i<count&&i<MaxWorldUiChoices;i++)if(ids[i]==h->value){cursor=i;break;}}break;
+    case HitKind::CrystalCell:if(!pointer.held)cursor=h->value;break;
     case HitKind::StatusItem:if(!pointer.held&&status_selected!=h->value){status_selected=h->value;status_scroll=0;}break;
     case HitKind::Enemy:target=h->value;break;
     case HitKind::ReferenceNode:if(!pointer.held)map_preview.selected=h->value;break;
@@ -90,6 +90,7 @@ void App::pointer_scroll(int rows){
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(library){ui_action(rows>0?UiAction::NextPage:UiAction::PreviousPage);return;}
     if(title||paused||help||character_select||deck_candidate>=0)return;
+    if(!panel&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)){ui_action(rows>0?UiAction::NextWorldPage:UiAction::PreviousWorldPage);return;}
     if(!panel&&choice_phase(game.phase)){
         ui_action(rows>0?UiAction::NextChoicePage:UiAction::PreviousChoicePage);return;
     }
@@ -100,7 +101,7 @@ void App::pointer_scroll(int rows){
     }
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
     else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-reference::MaxRows,reference::MaxRows);
-    else if(panel==5)scroll=clamp(scroll+rows,0,game.relic_count?game.relic_count-1:0);
+    else if(panel==5)scroll=clamp(scroll+rows,0,ui_owned_relic_count(game)?int(ui_owned_relic_count(game))-1:0);
     else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
     else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);

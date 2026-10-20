@@ -149,7 +149,7 @@ static void defect_orb_fire(State&s,DOrb kind,int raw,bool evoke,int target=-1){
   if(target>=0)damage_unpowered(s,target,raw);return;
  }
  if(kind==DOrb::Lightning){
-  n=max(0,(evoke?8:3)+focus);if(target<0)target=defect_random_enemy(s);
+  n=max(0,wr_orb_value(s,kind,(evoke?8:3)+focus));if(target<0)target=defect_random_enemy(s);
   if(target>=0&&target<s.enemy_count&&s.enemies[target].hp){
    damage_unpowered(s,target,n);
    if(evoke&&dpower(s,DPower::Thunder)&&s.enemies[target].hp)damage_unpowered(s,target,dpower(s,DPower::Thunder));
@@ -334,8 +334,9 @@ static bool defect_effect(State&s,Effect e){
   if(alive(s)&&x.orb_slots&&x.orb_count<x.orb_slots){
    unsigned i=x.orb_count++;v.orb_kind[i]=(uint8_t)a;x.dark[i]=(int16_t)(a==(int)DOrb::Dark?6:a==(int)DOrb::Glass?4:0);
    if(a==(int)DOrb::Lightning)v.lightning_channeled=(uint16_t)min(9999,v.lightning_channeled+1);
+   world_relic_hook(s,WorldRelicHook::AfterOrbChanneled,a,int(i));
   }break;
- case XOp::DOrbPassive:defect_orb_passive(s,(unsigned)a,b);break;
+ case XOp::DOrbPassive:{int count=wr_orb_passive_count(s,a,1,true);for(int i=count-1;i>0;--i)world_stage(s,WorldStage::OrbPassive,a+MaxOrbs*(b+1));defect_orb_passive(s,(unsigned)a,b);break;}
  case XOp::DOrbsStart:for(int i=x.orb_count-1;i>=0;i--)if(v.orb_kind[i]==(unsigned)DOrb::Plasma)queue_extension(s,XOp::DOrbPassive,i,-1,true);break;
  case XOp::DEvoke:{
   if(b<=0||!x.orb_count||!alive(s))break;unsigned at=a<0?x.orb_count-1:(unsigned)a;if(at>=x.orb_count)break;

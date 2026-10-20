@@ -31,7 +31,7 @@ static const HandTile& hand_tile(Canvas&c,int index){
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     const bool star_card=card_star_cost(a.game,card)!=0;const int header=star_card?13:0;
     tile.picture(a.content.frame_image(card),3,5,74,104);
-    tile.picture(a.content.card_image(card.kind),8,24+header,64,44-header);
+    tile.picture(a.card_face_image(card,instance),8,24+header,64,44-header);
     tile.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,1,5+header,78,17);
     card_title(tile,a.content.card_string(card.kind),10,6+header,63,card.upgraded?Green:White);
     tile.picture(a.content.energy_image(card),0,0,18,18);tile.energy_label(energy,5,0,12);

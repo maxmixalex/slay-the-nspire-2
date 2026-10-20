@@ -2,6 +2,17 @@
 static bool valid_extension_effect(const State&s,const Effect&e){
     if(e.target<0||e.target>=(int)XOp::Count||e.value< -9999||e.value>9999||e.aux< -9999||e.aux>9999)return false;
     const int a=e.value,b=e.aux;const auto op=(XOp)e.target;
+    if(op==XOp::WorldStage){
+        if(a<0||a>=int(WorldStage::Count))return false;
+        const auto stage=WorldStage(a);
+        if(stage==WorldStage::PlayerStart)return b==0||b==1;
+        if(stage==WorldStage::DrawRelics||stage==WorldStage::DrawCards||stage==WorldStage::DrawEnemies)return b>=0&&b<s.card_count;
+        if(stage==WorldStage::StarsSpent)return b>0&&b<=9999;
+        if(stage==WorldStage::OrbPassive)return b>=0&&b<MaxOrbs*(MaxEnemies+1);
+        return b==0;
+    }
+    if(op==XOp::SharedCheckWeakAfterHit)return a>=0&&a<s.enemy_count&&b>=0;
+    if(op==XOp::SharedAfterCardBody||op==XOp::SharedAfflictionAfterBody||op==XOp::SharedAttackEnd||op==XOp::SharedAttackStart||op==XOp::SharedAttackReward)return a>=0&&a<s.card_count&&b==0;
     if(op==XOp::PostPlayListener)return s.playing>=0&&a>0&&a<(int)PostPlayActor::Count&&b==0;
     if(op==XOp::AllCharactersLate||op==XOp::AllCharactersBefore||op==XOp::AllCharactersBody)return s.playing>=0&&a==0&&b==0;
     if(op==XOp::AllCharactersFlush||op==XOp::AllCharactersSideEnd||op==XOp::AllCharactersDrawBefore)return a==0&&b==0;
@@ -27,7 +38,7 @@ static bool valid_extension_effect(const State&s,const Effect&e){
                (a?a:1)+reserved<=MaxCards;
     }
     case XOp::AutoInstance:case XOp::ReturnNext:case XOp::AfterPlay:return instance&&b==0;
-    case XOp::Draw:case XOp::DrawOne:return a>=0&&a<=MaxCards&&b==0;
+    case XOp::Draw:case XOp::DrawOne:return a>=0&&a<=MaxCards&&(b==0||b==1);
     case XOp::EnchantReplay:return a>=0&&a<=255&&b==0;
     case XOp::Create:{Card c=card_from_token(b);return a>=0&&a<=MaxCards&&b>=0&&c.kind<CardKinds&&card_token(c)==b;}
     case XOp::CopyDamage:return actor&&b==0;

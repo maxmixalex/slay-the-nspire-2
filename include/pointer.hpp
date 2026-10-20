@@ -12,7 +12,7 @@ struct HitRegion {
     int16_t value{};
     bool enabled = true;
 };
-constexpr int MaxHits = 96;
+constexpr int MaxHits = 160; // 121 crystal cells plus tools, HUD and navigation.
 struct PointerState {
     int x = 160, y = 120;
     bool visible{}, held{}, dragging{}, dispatching{};

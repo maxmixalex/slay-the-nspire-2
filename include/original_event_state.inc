@@ -16,6 +16,13 @@ enum class OriginalEventId:uint8_t {
 constexpr unsigned OriginalEventKinds=(unsigned)OriginalEventId::Count-1;
 constexpr unsigned MaxOriginalEventOptions=16,MaxOriginalEventSteps=48;
 constexpr unsigned MaxOriginalEventOffers=32,MaxCrystalItems=150,CrystalCells=121;
+// The source constructor can append fifteen items on each of ten attempts.
+// Each attempt subscribes every item again: 15 * (1+...+10) is the strict
+// revealed-entry bound; fourteen reward items and three 3-card rewards occur
+// per attempt. Preserve every callback, including failed-placement retries.
+constexpr unsigned MaxCrystalReveals=825,MaxOriginalEventRewards=770;
+constexpr unsigned MaxOriginalEventRewardCards=495;
+constexpr uint16_t NoOriginalEventReward=UINT16_MAX;
 enum class OriginalEventSelection:uint8_t {
  None,Remove,Upgrade,Transform,Enchant,Duplicate,OfferCard,Potion,Relic,
  Crystal,Merchant,TransferEnchantment,Rewards,Count
@@ -37,10 +44,9 @@ struct CrystalItemState {
  uint8_t kind=0,x=0,y=0,w=0,h=0,subscriptions=0,revealed=0;
  uint16_t model=0,amount=0;
 };
-constexpr unsigned MaxOriginalEventRewards=16;
 struct OriginalEventReward {
- uint8_t kind=0,claimed=0,first=0,count=0; // gold, potion, relic, card reward
- uint16_t model=0,amount=0;
+ uint8_t kind=0,claimed=0,count=0; // gold, potion, relic, card reward
+ uint16_t first=0,model=0,amount=0;
 };
 struct OriginalEventState {
  OriginalEventId id=OriginalEventId::None;
@@ -66,18 +72,21 @@ struct OriginalEventState {
  uint8_t remembered[MaxDeck]{};
  uint8_t selection_committed=0;
  EventDeckSnapshot selected_cards[MaxDeck]{};
- uint8_t reward_active=0,reward_count=0,reward_current=255,reward_card_count=0;
+ uint8_t reward_active=0;
+ uint16_t reward_count=0,reward_current=NoOriginalEventReward,reward_card_count=0;
  OriginalEventReward rewards[MaxOriginalEventRewards]{};
- uint16_t reward_cards[MaxOriginalEventOffers]{};
- EventCardFacts reward_facts[MaxOriginalEventOffers]{};
+ uint16_t reward_cards[MaxOriginalEventRewardCards]{};
+ EventCardFacts reward_facts[MaxOriginalEventRewardCards]{};
  uint8_t combat_pending=0,resume_after_combat=0;
  uint16_t encounter=0;
  uint8_t crystal_tool=1,crystal_charges=0,crystal_item_count=0;
  uint8_t crystal_clear[CrystalCells]{},crystal_owner[CrystalCells]{};
  CrystalItemState crystal_items[MaxCrystalItems]{};
- uint8_t crystal_revealed_count=0,crystal_revealed[MaxCrystalItems]{};
+ uint16_t crystal_revealed_count=0;
+ uint8_t crystal_revealed[MaxCrystalReveals]{};
 };
 struct EventRunFacts {
  uint32_t wongo_total=0,wongo_earned=0;
+ uint32_t wins=0,character_wins[5]{};
  uint8_t freed_repy=0,completion_recorded=0;
 };

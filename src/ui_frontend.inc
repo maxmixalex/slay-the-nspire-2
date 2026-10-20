@@ -9,7 +9,7 @@ static void title_screen(Canvas&c){
         c.text(labels[i],35,y+1,12,Ink);c.text(labels[i],34,y,12,selected?Gold:White);
         c.hit(7,y,147,20,HitKind::Menu,i);
     }
-    c.text("nSpire II 0.16",218,219,10,White,100);
+    c.text("nSpire II 0.17",218,219,10,White,100);
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;
@@ -38,7 +38,7 @@ static void library_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.ui(U_TitleBackground,0,0);c.dim(0,0,320,240,225);
     c.centered("图鉴",0,1,320,16,Gold);c.close_button(294,3);
     const char* tabs[]={"卡牌","遗物","药水"};
-    const int totals[]={(int)a.library_items(),RelicKinds,PotionKinds};
+    const int totals[]={(int)a.library_items(),WorldRelicKinds,PotionKinds};
     for(int i=0;i<3;i++){
         int x=5+i*104;char label[32]={};TextBuffer b{label,sizeof label,0};b.text(tabs[i]);b.ch(' ');b.number(i==0?CardKinds:totals[i]);
         c.ui(U_LibraryCards+i,x+6,24,18,18);c.text(label,x+29,25,10,i==a.library_tab?Gold:Muted);
@@ -72,8 +72,8 @@ static void library_screen(Canvas&c){
             int image=a.library_tab==1?a.content.relic_image(i):a.content.potion_image((Potion)(i+1));
             c.picture(image,x+2,y,25,29);c.hit(x-5,y-3,47,35,HitKind::LibraryItem,i);
         }
-        int index=mn(count-1,mx(0,a.library_selected));const char*name;const char*desc;
-        if(a.library_tab==1){name=relic_definitions[index].name;desc=relic_definitions[index].description;}
+        int index=mn(count-1,mx(0,a.library_selected));const char*name;const char*desc;char description[2048]{};
+        if(a.library_tab==1){name=a.relic_title(RelicId(index));a.relic_description(RelicId(index),description,sizeof description);desc=description;}
         else{name=potion_definitions[index].name;desc=potion_definitions[index].description;}
         c.centered(name,10,163,300,16,Gold);c.paragraph(desc,20,189,282,2,0,12,White);
         c.text("‹",12,215,16,Gold);c.action(0,211,44,29,UiAction::PreviousPage,a.library_page>0);
@@ -84,15 +84,16 @@ static void library_screen(Canvas&c){
 
 static void item_detail_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,190);c.ui(U_RewardPanel,43,26,234,206);
-    bool relic=a.detail_item<RelicKinds;int index=relic?a.detail_item:a.detail_item-RelicKinds;
-    if(index<0||index>=(relic?RelicKinds:PotionKinds)){a.detail_item=-1;return;}
-    const char*name=relic?relic_definitions[index].name:potion_definitions[index].name;
-    const char*desc=relic?relic_definitions[index].description:potion_definitions[index].description;
+    bool relic=a.detail_item<WorldRelicKinds;int index=relic?a.detail_item:a.detail_item-WorldRelicKinds;
+    if(index<0||index>=(relic?WorldRelicKinds:PotionKinds)){a.detail_item=-1;return;}
+    const char*name=relic?a.relic_title(RelicId(index)):potion_definitions[index].name;
+    char description[4096]{};if(relic)a.relic_description(RelicId(index),description,sizeof description,a.detail_owned);
+    const char*desc=relic?description:potion_definitions[index].description;
     int image=relic?a.content.relic_image(index):a.content.potion_image((Potion)(index+1));
     c.picture(image,140,40,40,46);c.centered(name,58,91,204,16,Gold);
-    bool owned=relic&&a.detail_owned>=0&&a.detail_owned<a.game.relic_count&&a.game.relic_order[a.detail_owned]==index;
-    int top=owned&&relic_counter_limit(relic_definitions[index].id)?136:119;
-    if(top==136){char progress[96]={};relic_progress(a.game,relic_definitions[index].id,progress,sizeof progress);c.centered(progress,57,116,206,10,Green);}
+    bool owned=relic&&a.detail_owned>=0&&a.detail_owned<int(ui_owned_relic_count(a.game))&&ui_owned_relic_id(a.game,a.detail_owned)==index;
+    char progress[128]{};if(owned)ui_relic_progress(a.game,a.detail_owned,progress,sizeof progress);int top=*progress?136:119;
+    if(*progress)c.centered(progress,57,116,206,10,Green);
     int visible=top==136?4:5;
     int lines=c.paragraph(desc,67,top,188,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-visible));
     c.paragraph(desc,67,top,188,visible,a.detail_scroll,12,White);
@@ -100,7 +101,7 @@ static void item_detail_screen(Canvas&c){
         c.text("↓",260,178,10,Gold);c.hit(251,175,26,21,HitKind::Scroll,1,a.detail_scroll+visible<lines);}
     const bool lab=!relic&&a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
     if(lab){
-        bool room=false;for(auto p:a.game.potions)room|=p==Potion::Empty;
+        bool room=false;for(unsigned i=0;i<potion_slot_count(a.game);i++)room|=potion_at(a.game,i)==Potion::Empty;
         c.button("返回",57,201,72,false,25);c.action(53,198,80,32,UiAction::Back);
         c.button(room?"获得药水":"药水栏已满",139,201,127,room,25);
         c.action(135,198,135,32,UiAction::LabPotion,room);

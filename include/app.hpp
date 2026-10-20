@@ -14,7 +14,7 @@ constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 constexpr uint32_t MaxContentFile=256u*1024u*1024u;
 // Each appended character/token model adds a title and two descriptions after
 // the complete, immutable 0.14 string directory.
-constexpr unsigned ContentVersion=13,ContentStrings=749+(CardKinds-228)*3;
+constexpr unsigned ContentVersion=14,ContentStrings=WorldStringCount;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
@@ -44,7 +44,22 @@ public:
     int energy_image(Card)const;
     int potion_image(Potion)const;
     const char* card_string(int kind,int variant=0)const;
+    // Keys and directory indexes are public metadata; localized reference
+    // strings and image payloads remain in the owner's private resource pack.
+    const char* world_string(const char* table,const char* key)const;
+    const char* world_title(const char* table,const char* key)const;
+    int world_image(const char* group,const char* key)const;
+    int world_clip(const char* model,const char* action)const;
 };
+inline unsigned ui_owned_relic_count(const State&s){return s.world_relics.active?s.world_relics.count:s.relic_count;}
+inline RelicId ui_owned_relic_id(const State&s,unsigned position){return position<ui_owned_relic_count(s)?(s.world_relics.active?s.world_relics.entries[position].id:s.relic_order[position]):NoWorldRelic;}
+constexpr unsigned MaxWorldUiChoices=MaxOriginalEventRewards>MaxWorldRelicOffers?MaxOriginalEventRewards:MaxWorldRelicOffers;
+inline unsigned ui_reward_actions(const State&s,UiAction*out){
+ unsigned n=0;const UiAction base[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion};for(auto a:base){if(out)out[n]=a;++n;}
+ if(s.world.active&&s.world.reward_relic!=NoWorldRelic){if(out)out[n]=UiAction::RewardRelic;++n;}
+ if(s.necro.grimoire_pending){if(out)out[n]=UiAction::RewardGrimoire;++n;}
+ if(out)out[n]=UiAction::LeaveRewards;return n+1;
+}
 enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap,Collection,Statuses };
 inline bool choice_free_energy(const State&s){
     return s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::Free||
@@ -86,10 +101,12 @@ struct App {
     void confirm_deck_choice();
     int detail_item=-1,detail_owned=-1;
     uint32_t seen_relic_revision=0;RelicMask relic_flash_mask=0;
+    uint32_t seen_world_relic_revision=0;RelicId world_relic_flash=NoWorldRelic;
     int relic_flash_ticks=0;
     void open_owned_relic(int position);
     void sync_relic_feedback();
     int detail_cost_override=-2,detail_instance=-1,detail_deck_index=-1;
+    EventCardFacts detail_facts{};bool detail_has_facts=false;
     void open_choice_detail(int token);
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
@@ -101,6 +118,8 @@ struct App {
     void pointer_scroll(int rows);
     void pointer_key(Key);
     void open_card_detail(Card,int deck_index=-1);
+    void open_card_offer(Card,const EventCardFacts&);
+    int card_face_image(Card,int instance=-1,int deck=-1,const EventCardFacts* facts=nullptr)const;
     bool reference_input(Key);
     bool screen_input(Key);
     unsigned library_items(CardKind* ids=nullptr)const;
@@ -128,6 +147,11 @@ struct App {
     uint32_t tick_remainder=0;
     void render();
     void card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1)const;
+    void world_card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
+    void localized_text(const char* table,const char* key,char*,size_t,int model=-1,int actor=-1,int amount=0)const;
+    void original_event_text(int option,bool description,char*,size_t)const;
+    const char* relic_title(RelicId)const;
+    void relic_description(RelicId,char*,size_t,int position=-1)const;
     int detail_energy()const;
     int detail_stars()const;
     void message(const char*);

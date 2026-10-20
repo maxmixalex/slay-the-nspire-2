@@ -66,7 +66,7 @@ static const EnemyPowerMeta enemy_power_meta[]={
  {"SWIPE",0,1,0},
  {"TAINTED",1,0,0},
  {"TANGLED",1,0,0},
- {"TEMPORARY_STRENGTH",1,0,0},
+ {"TEMPORARY_STRENGTH",0,0,1},
  {"TENDER",1,0,0},
  {"TERRITORIAL",0,0,0},
  {"THIEVERY",0,0,0},

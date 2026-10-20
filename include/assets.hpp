@@ -1,4 +1,5 @@
 #pragma once
+#include "world_assets.hpp"
 // Indices match tools/asset_profile.py. Content conversion validates this header.
 namespace spire {
 enum Asset {
@@ -104,6 +105,6 @@ enum AnimationId {
     AnimOstyDie=35,
     AnimOstyRevive=36,
     AnimOstyCamp=37,
-    AnimationKinds=38
+    AnimationKinds=WorldAnimationKinds
 };
 }

@@ -3,7 +3,8 @@
 enum EventSpecial { ES_SetSelection=1,ES_GenerateCard,ES_Reflections,ES_DuplicateAll,
  ES_FixedOffer,ES_GridReward,ES_Continue,ES_Custom=100 };
 bool push_step(State&s,OriginalEventOp op,int a=0,int b=0,int c=0,int d=0,int f=0){
- auto&e=s.original_events;if(e.step_count>=MaxOriginalEventSteps){fail(s);return false;}
+ auto&e=s.original_events;if(e.step_count>=MaxOriginalEventSteps&&e.step_cursor){unsigned left=e.step_count-e.step_cursor;for(unsigned i=0;i<left;i++)e.steps[i]=e.steps[e.step_cursor+i];for(unsigned i=left;i<MaxOriginalEventSteps;i++)e.steps[i]={};e.step_count=uint8_t(left);e.step_cursor=0;}
+ if(e.step_count>=MaxOriginalEventSteps){fail(s);return false;}
  e.steps[e.step_count++]={op,int16_t(a),int16_t(b),int16_t(c),int16_t(d),int16_t(f)};return true;
 }
 void page(State&s,const char*key){auto&e=s.original_events;if(!copy_text(e.page_key,key))fail(s);e.finished=0;}
@@ -29,8 +30,8 @@ void damage(State&s,int value){push_step(s,OriginalEventOp::Damage,value);}
 void healing(State&s,int value){push_step(s,OriginalEventOp::Heal,value);}
 void gold(State&s,int value){push_step(s,OriginalEventOp::Gold,value);}
 void maxhp(State&s,int value){push_step(s,OriginalEventOp::MaxHp,value);}
-void random_relic(State&s){push_step(s,OriginalEventOp::RandomRelic,int(WorldRelicPool::Reward));}
-void random_potion(State&s,unsigned rarity=0){push_step(s,OriginalEventOp::RandomPotion,int(rarity),1);}
+void queue_random_relic(State&s){push_step(s,OriginalEventOp::RandomRelic,int(WorldRelicPool::Reward));}
+void queue_random_potion(State&s,unsigned rarity=0){push_step(s,OriginalEventOp::RandomPotion,int(rarity),1);}
 void combat(State&s,const char*key,bool resume=false){auto id=encounter_id(key);if(id==EncounterId::None){fail(s);return;}push_step(s,OriginalEventOp::Combat,int(id),resume);}
 void fixed_offer(State&s,CardKind kind){push_step(s,OriginalEventOp::Special,ES_FixedOffer,int(kind));}
 int rand_range(State&s,int low,int high){auto rng=event_random(s);int value=rng.range(low,high);keep_random(s,rng);return value;}
@@ -104,7 +105,7 @@ bool rules_begin(State&s){auto&e=s.original_events;page(s,"INITIAL");
  if(e.id==OriginalEventId::AbyssalBaths){e.values[0]=3;options(s,"INITIAL.options.IMMERSE","INITIAL.options.ABSTAIN");return true;}
  if(e.id==OriginalEventId::ColorfulPhilosophers){
   const WorldCardPool order[]={WorldCardPool::Necrobinder,WorldCardPool::Ironclad,WorldCardPool::Regent,WorldCardPool::Silent,WorldCardPool::Defect};
-  const char*colors[]={"PURPLE","RED","ORANGE","GREEN","BLUE"};
+  const char*colors[]={"NECROBINDER","IRONCLAD","REGENT","SILENT","DEFECT"};
   unsigned list[5],n=0;for(unsigned i=0;i<5;i++)if(unsigned(order[i])!=unsigned(s.character))list[n++]=i;
   while(n>3){unsigned at=unsigned(rand_range(s,0,int(n)));for(unsigned i=at+1;i<n;i++)list[i-1]=list[i];--n;}
   for(unsigned i=0;i<n;i++){option_key(s,i,"INITIAL.options.",colors[list[i]]);e.values[i]=int16_t(order[list[i]]);}return true;
@@ -140,7 +141,7 @@ bool rules_enabled(const State&s,unsigned option){const auto&e=s.original_events
 }
 bool rules_choose(State&s,unsigned option){auto&e=s.original_events;
  if(ancient(e.id)){relic(s,e.offers[option]);finish_page(s,"DONE");return true;}
- if(e.id==OriginalEventId::ColorfulPhilosophers){for(int rarity=2;rarity<=4;rarity++)push_step(s,OriginalEventOp::Special,ES_GridReward,3,e.values[option],rarity,0);finish_page(s,"DONE");return true;}
+ if(e.id==OriginalEventId::ColorfulPhilosophers){push_step(s,OriginalEventOp::Special,ES_Continue,e.values[option]);finish_page(s,"DONE");return true;}
  const char*done=nullptr;for(auto&entry:simple_events)if(entry.id==e.id){done=option==0?entry.a:option==1?entry.b:entry.c;break;}
  switch(e.id){
  case OriginalEventId::AbyssalBaths:
@@ -157,29 +158,29 @@ bool rules_choose(State&s,unsigned option){auto&e=s.original_events;
  case OriginalEventId::HungryForMushrooms:relic(s,option?WorldRelicFragrantMushroom:WorldRelicBigMushroom);break;
  case OriginalEventId::Bugslayer:card(s,option?EventCardSquash:EventCardExterminate);break;
  case OriginalEventId::ByrdonisNest:if(option)card(s,EventCardByrdonisEgg);else maxhp(s,7);break;
- case OriginalEventId::ThisOrThat:if(!option){damage(s,6);gold(s,e.values[0]);}else{random_relic(s);card(s,EventCardClumsy);}break;
+ case OriginalEventId::ThisOrThat:if(!option){damage(s,6);gold(s,e.values[0]);}else{queue_random_relic(s);card(s,EventCardClumsy);}break;
  case OriginalEventId::SunkenStatue:if(!option)relic(s,WorldRelicSwordOfStone);else{gold(s,e.values[0]);damage(s,7);}break;
  case OriginalEventId::SunkenTreasury:gold(s,e.values[option]);if(option)card(s,EventCardGreed);break;
  case OriginalEventId::DrowningBeacon:if(!option)push_step(s,OriginalEventOp::Potion,int(Potion::GlowwaterPotion));else{maxhp(s,-13);relic(s,WorldRelicFresnelLens);}break;
  case OriginalEventId::LostWisp:if(!option){card(s,EventCardDecay);relic(s,WorldRelicLostWisp);}else gold(s,e.values[0]);break;
- case OriginalEventId::Wellspring:if(!option)random_potion(s,WorldPotionUniform);else{select_deck(s,OriginalEventSelection::Remove);card(s,EventCardGuilty);}break;
+ case OriginalEventId::Wellspring:if(!option)queue_random_potion(s,WorldPotionUniform);else{select_deck(s,OriginalEventSelection::Remove);card(s,EventCardGuilty);}break;
  case OriginalEventId::TheLanternKey:
   if(e.page){combat(s,"MysteriousKnightEventEncounter");fixed_offer(s,EventCardLanternKey);done="KEEP_THE_KEY";break;}
   if(!option){gold(s,100);done="DONE.options.RETURN_THE_KEY";}else{e.page=1;page(s,"KEEP_THE_KEY");options(s,"KEEP_THE_KEY.options.FIGHT");return true;}break;
- case OriginalEventId::UnrestSite:if(!option){healing(s,e.values[0]);card(s,EventCardPoorSleep);}else{maxhp(s,-8);random_relic(s);}break;
- case OriginalEventId::PotionCourier:if(!option)for(unsigned i=0;i<3;i++)push_step(s,OriginalEventOp::Potion,int(Potion::FoulPotion));else random_potion(s,2);break;
+ case OriginalEventId::UnrestSite:if(!option){healing(s,e.values[0]);card(s,EventCardPoorSleep);}else{maxhp(s,-8);queue_random_relic(s);}break;
+ case OriginalEventId::PotionCourier:if(!option)push_step(s,OriginalEventOp::Special,ES_Continue,-1);else queue_random_potion(s,2);break;
  case OriginalEventId::InfestedAutomaton:push_step(s,OriginalEventOp::Special,ES_GenerateCard,int(option));break;
  case OriginalEventId::SpiritGrafter:if(!option){healing(s,25);card(s,EventCardMetamorphosis);}else{select_deck(s,OriginalEventSelection::Upgrade);damage(s,10);}break;
  case OriginalEventId::RoomFullOfCheese:if(!option)push_step(s,OriginalEventOp::Special,ES_GridReward,8,int(WorldCardPool::Own),2,2);else{damage(s,14);relic(s,WorldRelicChosenCheese);}break;
  case OriginalEventId::SpiralingWhirlpool:if(!option)select_deck(s,OriginalEventSelection::Enchant,1,OriginalEventFilter::Any,EventEnchantment::Spiral);else healing(s,e.values[0]);break;
  case OriginalEventId::SapphireSeed:if(!option){healing(s,9);select_deck(s,OriginalEventSelection::Upgrade);}else select_deck(s,OriginalEventSelection::Enchant,1,OriginalEventFilter::Any,EventEnchantment::Sown);break;
  case OriginalEventId::RoundTeaParty:
-  if(e.page){damage(s,11);random_relic(s);done="CONTINUE_FIGHT";}
+  if(e.page){damage(s,11);queue_random_relic(s);done="CONTINUE_FIGHT";}
   else if(!option){relic(s,WorldRelicRoyalPoison);healing(s,-1);}else{e.page=1;page(s,"PICK_FIGHT");options(s,"PICK_FIGHT.options.CONTINUE_FIGHT");return true;}break;
- case OriginalEventId::WhisperingHollow:if(!option){gold(s,-e.values[0]);random_potion(s);random_potion(s);}else{select_deck(s,OriginalEventSelection::Transform);damage(s,9);}break;
+ case OriginalEventId::WhisperingHollow:if(!option){gold(s,-e.values[0]);push_step(s,OriginalEventOp::Special,ES_Continue,-2);}else{select_deck(s,OriginalEventSelection::Transform);damage(s,9);}break;
  case OriginalEventId::TrashHeap:if(!option){const RelicId pool[]={WorldRelicDarkstonePeriapt,WorldRelicDreamCatcher,WorldRelicHandDrill,WorldRelicMawBank,WorldRelicTheBoot};damage(s,8);relic(s,pool[rand_range(s,0,5)]);}else{const CardKind pool[]={EventCardCaltrops,EventCardClash,EventCardDistraction,EventCardDualWield,EventCardEntrench,EventCardHelloWorld,EventCardOutmaneuver,EventCardRebound,EventCardRipAndTear,EventCardStack};gold(s,100);card(s,pool[rand_range(s,0,10)]);}break;
- case OriginalEventId::TheLegendsWereTrue:if(!option)card(s,EventCardSpoilsMap);else{damage(s,8);random_potion(s,WorldPotionUniform);}break;
- case OriginalEventId::LuminousChoir:if(!option){select_deck(s,OriginalEventSelection::Remove,2);card(s,EventCardSporeMind);}else{gold(s,-e.values[0]);random_relic(s);}break;
+ case OriginalEventId::TheLegendsWereTrue:if(!option)card(s,EventCardSpoilsMap);else{damage(s,8);queue_random_potion(s,WorldPotionUniform);}break;
+ case OriginalEventId::LuminousChoir:if(!option){select_deck(s,OriginalEventSelection::Remove,2);card(s,EventCardSporeMind);}else{gold(s,-e.values[0]);queue_random_relic(s);}break;
  case OriginalEventId::Reflections:if(!option)push_step(s,OriginalEventOp::Special,ES_Reflections);else{push_step(s,OriginalEventOp::Special,ES_DuplicateAll);card(s,EventCardBadLuck);}break;
  case OriginalEventId::FieldOfManSizedHoles:if(!option){select_deck(s,OriginalEventSelection::Remove,2);card(s,EventCardNormality);}else select_deck(s,OriginalEventSelection::Enchant,1,OriginalEventFilter::Any,EventEnchantment::PerfectFit);break;
  case OriginalEventId::BrainLeech:if(!option)push_step(s,OriginalEventOp::Special,ES_GridReward,5,int(WorldCardPool::Own),-1,1);else{damage(s,5);push_step(s,OriginalEventOp::Special,ES_GridReward,3,int(WorldCardPool::Colorless),-1,0);}break;
@@ -198,6 +199,7 @@ bool event_special(State&s,int op,int a,int b,int c,int d){auto&e=s.original_eve
   if(!world_create_reward(s,world_rng(s,WorldRng::Rewards),1,o,&result,&facts))return false;return event_add_deck_card(s,result,&facts)>=0;}
  case ES_GridReward:{WorldCardOptions o;o.pools[0]=WorldCardPool(b);o.odds=c<0?WorldCardOdds::RegularEncounter:WorldCardOdds::Uniform;if(c>0)o.rarity_mask=world_rarity_mask(c);
   if(c>=0)o.flags|=WorldNoRarityModification;if(!d){o.flags|=WorldIsCardReward|WorldNoRarityModification|WorldNoCardPoolModifications;if(e.id==OriginalEventId::ColorfulPhilosophers)o.flags&=~WorldNoUpgradeRoll;}
+  if(!d){reward_reset(s);return reward_cards(s,unsigned(a),o)&&reward_offer(s);}
   Card cards[MaxOriginalEventOffers];EventCardFacts facts[MaxOriginalEventOffers];unsigned count=0;
   if(!world_create_reward(s,world_rng(s,WorldRng::Rewards),unsigned(a),o,cards,facts,MaxOriginalEventOffers,&count))return false;
   e.offer_count=uint16_t(count);for(unsigned i=0;i<count;i++){e.offers[i]=uint16_t(card_token(cards[i]));e.offer_facts[i]=facts[i];}
@@ -208,6 +210,9 @@ bool event_special(State&s,int op,int a,int b,int c,int d){auto&e=s.original_eve
   keep_random(s,rng);return true;}
  case ES_DuplicateAll:{unsigned count=s.deck_count;if(count*2+1>MaxDeck)return false;e.selection=OriginalEventSelection::Duplicate;e.filter=OriginalEventFilter::Any;e.select_min=e.select_max=uint8_t(count);e.selected_count=uint16_t(count);e.selected_cursor=0;e.selection_committed=1;
   for(unsigned i=0;i<count;i++){e.selected[i]=uint16_t(i);e.selected_cards[i]={s.deck[i],s.event_cards.deck[i],s.defect.genetic_deck[i],s.necro.scythe_deck[i]};}apply_selection(s);return s.phase!=Phase::Error;}
+ case ES_Continue:{reward_reset(s);if(a== -1){for(unsigned i=0;i<3;i++)if(!reward_potion(s,Potion::FoulPotion))return false;}
+  else if(a== -2){if(!reward_random_potion(s)||!reward_random_potion(s))return false;}
+  else for(unsigned rarity=2;rarity<=4;rarity++){WorldCardOptions o;o.pools[0]=WorldCardPool(a);o.odds=WorldCardOdds::Uniform;o.rarity_mask=world_rarity_mask(rarity);o.flags=WorldIsCardReward|WorldNoRarityModification|WorldNoCardPoolModifications;if(!reward_cards(s,3,o))return false;}return reward_offer(s);}
  default:return complex_special(s,op,a,b,c,d);
  }
 }

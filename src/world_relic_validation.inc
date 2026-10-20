@@ -12,7 +12,7 @@ bool valid_world_relic_state(const State&s){
  if((w.choice!=WorldRelicChoice::None)!=(s.phase==Phase::WorldRelicChoice))return false;
  auto token_valid=[](unsigned token,const EventCardFacts& facts){
   Card card=card_from_token(int(token));return card_token(card)==int(token)&&card.kind<CardKinds&&
-   card.upgraded<=1&&(!card.upgraded||card_upgradeable(card))&&event_card_facts_valid(card,facts);
+   card.upgraded<=1&&(!card.upgraded||card_upgradeable({card.kind,0}))&&event_card_facts_valid(card,facts);
  };
  for(unsigned i=0;i<w.count;i++){
   const auto&r=w.entries[i];
@@ -35,7 +35,8 @@ bool valid_world_relic_state(const State&s){
   const auto&v=w.steps[i];if(unsigned(v.op)>=unsigned(WorldRelicOp::Count)||v.owner>w.last_serial)return false;
  }
  if(w.choice_owner>w.last_serial)return false;
- if(w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::OfferBundle)
+ for(auto value:w.card_is_dupe)if(value>1)return false;
+ if(w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer||w.choice==WorldRelicChoice::OfferBundle)
   for(unsigned i=0;i<w.offer_count;i++)if(!token_valid(w.offers[i],w.offer_facts[i]))return false;
  if(w.choice==WorldRelicChoice::OfferBundle&&w.offer_count%3)return false;
  if(w.choice==WorldRelicChoice::OfferReward)for(unsigned i=0;i<w.offer_count;i++){
@@ -52,7 +53,7 @@ bool valid_world_relic_state(const State&s){
  }
  for(unsigned i=0;i<w.reward_count;i++){
   const auto&r=w.rewards[i];if(!r.group)continue;
-  if(r.group>w.group_count||!w.group_active[r.group-1]||r.kind<1||r.kind>3||r.count>8||r.pool_count>11||
+  if(r.group>w.group_count||!w.group_active[r.group-1]||r.kind<1||r.kind>4||r.count>8||r.pool_count>11||
      r.odds>unsigned(WorldCardOdds::Uniform)||r.source>unsigned(WorldCardSource::Other))return false;
   if(r.kind==2&&r.value>=WorldRelicKinds)return false;
   if(r.kind==3&&(!r.value||r.value>PotionKinds))return false;

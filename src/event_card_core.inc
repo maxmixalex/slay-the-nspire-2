@@ -252,7 +252,7 @@ static bool event_card_effect(State&s,Effect e){
   case ECSpecial::Enlightenment:for(unsigned i=0;i<s.hand.count;++i){int id=s.hand.ids[i];if(card_preview_cost(s,s.cards[id],id)>1){if(b){combat_cost_set(s,id);x.combat_cost[id]=2;}else{temporary_cost_set(s,id);x.turn_cost[id]=2;}}}break;
   case ECSpecial::Maul:for(unsigned id=0;id<s.card_count;++id)if(s.cards[id].kind==EventCardMaul)v.maul_damage[id]=(int16_t)min(9999,v.maul_damage[id]+b);break;
   case ECSpecial::Whistle:enemy_stun(s,b);break;
-  case ECSpecial::FeedingFrenzy:s.strength=(int16_t)min(9999,s.strength+b);ec_gain_power(s,EventCardPower::FeedingFrenzy,b);break;
+  case ECSpecial::FeedingFrenzy:world_relic_gain_strength(s,b);ec_gain_power(s,EventCardPower::FeedingFrenzy,b);break;
   case ECSpecial::Entrench:gain_unpowered_block(s,s.block);break;
   case ECSpecial::UpgradeAll:for(unsigned id=0;id<s.card_count;++id)if(int(id)!=s.playing&&card_upgradeable(s.cards[id]))s.cards[id].upgraded=1;break;
   case ECSpecial::MaxHpLoss:s.max_hp=(int16_t)max(1,s.max_hp-b);s.hp=(int16_t)min(s.hp,s.max_hp);break;

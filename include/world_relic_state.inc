@@ -27,7 +27,7 @@ struct WorldRelicHookFrame {
  int32_t args[3]{};
 };
 struct WorldRelicReward {
- uint8_t group=0,kind=0,flags=0,count=0; // kind: 1 card, 2 relic, 3 potion.
+ uint8_t group=0,kind=0,flags=0,count=0; // kind: 1 card, 2 relic, 3 potion, 4 gold.
  uint16_t value=0,tokens[8]{};
  EventCardFacts facts[8]{};
  uint16_t rarity_mask=0,creation_flags=0;
@@ -63,6 +63,7 @@ struct WorldRelicState {
  uint8_t tooth_count=0;
  WorldRelicCardSnapshot tooth_cards[5]{};
  uint32_t play_serial_counter=0,play_serial[MaxAutoFrames+1]{};
+ uint8_t card_is_dupe[MaxCards]{};
  uint16_t manual_plays_turn=0;
  int16_t self_forming_clay=0,reptile_trinket=0,helical_dart=0;
  uint8_t byrdpip_present=0,legion_present=0;

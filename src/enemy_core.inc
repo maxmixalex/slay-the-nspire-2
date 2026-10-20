@@ -21,7 +21,7 @@ int enemy_power_value(const State&s,int t,EnemyPower p){
 }
 static void enemy_write_power(State&s,int t,EnemyPower p,int amount){
  if(t>=0){switch(p){case EnemyPower::Strength:s.enemies[t].strength=(int16_t)amount;return;case EnemyPower::Weak:s.enemies[t].weak=(int16_t)amount;return;case EnemyPower::Vulnerable:s.enemies[t].vulnerable=(int16_t)amount;return;case EnemyPower::Artifact:s.silent.enemy_artifact[t]=(int16_t)amount;return;case EnemyPower::Debilitate:s.necro.debilitate[t]=(int16_t)amount;return;default:break;}}
- else switch(p){case EnemyPower::Strength:s.strength=(int16_t)amount;return;case EnemyPower::Dexterity:s.dexterity=(int16_t)amount;return;case EnemyPower::Thorns:s.thorns=(int16_t)amount;return;case EnemyPower::Vigor:s.vigor=(int16_t)amount;return;case EnemyPower::Plating:gain_power(s,XPower::Plating,amount-power_value(s,XPower::Plating));return;case EnemyPower::Ritual:gain_power(s,XPower::Ritual,amount-power_value(s,XPower::Ritual));return;case EnemyPower::Intangible:gain_power(s,XPower::Intangible,amount-power_value(s,XPower::Intangible));return;default:break;}
+ else switch(p){case EnemyPower::Strength:world_relic_gain_strength(s,amount-s.strength);return;case EnemyPower::Dexterity:world_relic_gain_dexterity(s,amount-s.dexterity);return;case EnemyPower::Thorns:s.thorns=(int16_t)amount;return;case EnemyPower::Vigor:s.vigor=(int16_t)amount;return;case EnemyPower::Plating:gain_power(s,XPower::Plating,amount-power_value(s,XPower::Plating));return;case EnemyPower::Ritual:gain_power(s,XPower::Ritual,amount-power_value(s,XPower::Ritual));return;case EnemyPower::Intangible:gain_power(s,XPower::Intangible,amount-power_value(s,XPower::Intangible));return;default:break;}
  enemy_raw_power(s,t,p)=(int16_t)amount;
 }
 static void enemy_power_order_add(State&s,int t,EnemyPower p){
@@ -47,8 +47,10 @@ struct EnemyCommands{
  void flush(){for(unsigned i=count;i>0;i--)queue_extension(s,(XOp)values[i-1].target,values[i-1].value,values[i-1].aux,true);}
 };
 static bool enemy_must_perform(const EnemyModelState&m){return m.node==31||m.node==30||(m.kind==EnemyId::TestSubject&&m.node==0)||(m.kind==EnemyId::WaterfallGiant&&m.node==6)||(m.kind>=EnemyId::DecimillipedeSegmentBack&&m.kind<=EnemyId::DecimillipedeSegmentMiddle&&m.node==4);}
+static void enemy_log_move(State&,int,int);
 static void enemy_set_move(State&s,int t,int node,bool immediate=false){
  auto&m=s.enemy_world.models[t];m.node=(uint8_t)node;m.flags&=(uint8_t)~EnemyActed;if(immediate)m.flags|=EnemyImmediate;
+ if(!immediate)enemy_log_move(s,t,node);
  const auto*def=enemy_move_spec(m.kind,(unsigned)node);s.enemies[t].move=(uint8_t)(def&&(def->flags&EnemyIntentAttack)?0:2);
 }
 static void enemy_log_move(State&s,int t,int node){
@@ -57,7 +59,7 @@ static void enemy_log_move(State&s,int t,int node){
  m.history[m.history_count++]=(uint8_t)node;m.previous=(uint8_t)node;if(m.seen_moves[node]<65535)++m.seen_moves[node];
 }
 void enemy_stun(State&s,int t){if(!enemy_slot_alive(s,t))return;auto&m=s.enemy_world.models[t];if(enemy_must_perform(m)&&!(m.flags&EnemyActed))return;m.resume_node=m.previous;m.flags|=EnemyStunned;enemy_set_move(s,t,31,true);}
-static void enemy_stun_to(State&s,int t,int next){enemy_stun(s,t);if(enemy_slot_alive(s,t))s.enemy_world.models[t].resume_node=(uint8_t)next;}
+static void enemy_stun_to(State&s,int t,int next){if(!enemy_slot_alive(s,t))return;auto&m=s.enemy_world.models[t];if(enemy_must_perform(m)&&!(m.flags&EnemyActed))return;enemy_stun(s,t);if(m.node==31)m.resume_node=(uint8_t)next;}
 bool enemy_allow_target(const State&s,int t){if(!s.enemy_world.active)return t>=0&&t<s.enemy_count&&s.enemies[t].hp>0;return enemy_slot_alive(s,t)&&!(s.enemy_world.models[t].flags&EnemyDown);}
 bool enemy_keeps_combat_alive(const State&s){
  if(!s.enemy_world.active){for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0)return true;return false;}
@@ -84,6 +86,8 @@ static void enemy_clear_power(State&s,int t,EnemyPower p){
  if(t< -1||t>=s.enemy_count||(unsigned)p>=EnemyPowerCount)return;int old=enemy_power_value(s,t,p);if(!old)return;
  enemy_write_power(s,t,p,0);enemy_power_order_remove(s,t,p);enemy_skip(s,t,p)=0;
  if(t<0){
+  if(p==EnemyPower::Tender)after_play_unregister(s,(unsigned)PostPlayActor::EnemyTender);
+  if(p==EnemyPower::Smoggy){after_play_unregister(s,(unsigned)PostPlayActor::EnemySmoggy);enemy_clear_matching_afflictions(s,EnemyAffliction::Smog);}
   if(p==EnemyPower::Dampen){for(int id=0;id<s.card_count;id++)if(s.enemy_world.dampen_restore[id]){s.cards[id].upgraded=s.enemy_world.dampen_restore[id];s.enemy_world.dampen_restore[id]=0;}s.enemy_world.dampen_casters=0;}
   else if(p==EnemyPower::Hex)enemy_clear_matching_afflictions(s,EnemyAffliction::Hexed);
   else if(p==EnemyPower::Ringing)enemy_clear_matching_afflictions(s,EnemyAffliction::Ringing);
@@ -95,15 +99,18 @@ static void enemy_clear_power(State&s,int t,EnemyPower p){
  }
  enemy_aux(s,t,p)=0;enemy_source(s,t,p)=0;
 }
-static void enemy_apply_power(State&s,int t,EnemyPower p,int amount,int source){
+static void enemy_apply_power(State&s,int t,EnemyPower p,int amount,int source,bool internal){
  if(t< -1||t>=s.enemy_count||(unsigned)p>=EnemyPowerCount||!amount||(t>=0&&!enemy_slot_alive(s,t)))return;
  const auto&meta=enemy_power_meta[(unsigned)p];int old=enemy_power_value(s,t,p);
+ if(t<0&&p==EnemyPower::Dampen&&old){if(source>=0)s.enemy_world.dampen_casters|=(uint8_t)(1u<<source);return;}
  bool negative=meta.debuff||(amount<0&&(p==EnemyPower::Strength||p==EnemyPower::Dexterity));
- if(negative&&enemy_blocks_debuff(s,t))return;
+ if(negative&&!internal&&enemy_blocks_debuff(s,t))return;
+ amount=wr_debuff_amount(s,t,p,amount,source<0?s.playing:-1,internal);
  int next=meta.single?(old?old:amount):old+amount;next=max(meta.negative?-9999:0,min(9999,next));
- if(!next){enemy_clear_power(s,t,p);return;}enemy_write_power(s,t,p,next);
+ if(!next){enemy_clear_power(s,t,p);return;}enemy_write_power(s,t,p,next);next=enemy_power_value(s,t,p);
  if(!old){enemy_power_order_add(s,t,p);enemy_source(s,t,p)=(uint8_t)(source+1);if(t<0&&meta.debuff)enemy_skip(s,t,p)=1;}
  int change=next-old;
+ if(p==EnemyPower::TemporaryStrength)enemy_apply_power(s,t,EnemyPower::Strength,change,source,true);
  if(t>=0){
   if(p==EnemyPower::Weak){necro_note_debuff(s,t,NDebuff::Weak);necro_debuff_applied(s,t,change);}
   else if(p==EnemyPower::Vulnerable){ironclad_after_vulnerable(s,t,change);necro_note_debuff(s,t,NDebuff::Vulnerable);necro_debuff_applied(s,t,change);}
@@ -113,6 +120,8 @@ static void enemy_apply_power(State&s,int t,EnemyPower p,int amount,int source){
   if(!old&&p==EnemyPower::WitheringPresence)enemy_aux(s,t,p)=6;
   if(p==EnemyPower::VitalSpark)for(int id=0;id<s.card_count;id++)if(s.enemy_world.affliction[id]==(unsigned)EnemyAffliction::Tainted)s.enemy_world.affliction_amount[id]=(int16_t)next;
  }else{
+  if(!old&&p==EnemyPower::Tender)after_play_register(s,(unsigned)PostPlayActor::EnemyTender);
+  if(!old&&p==EnemyPower::Smoggy)after_play_register(s,(unsigned)PostPlayActor::EnemySmoggy);
   if(source>=0&&change<0){EnemyPower stolen=p==EnemyPower::Dexterity?EnemyPower::PossessSpeed:EnemyPower::PossessStrength;if((p==EnemyPower::Strength||p==EnemyPower::Dexterity)&&enemy_power_value(s,source,stolen))enemy_aux(s,source,stolen)=(int16_t)max(-9999,enemy_aux(s,source,stolen)+change);}
   if(p==EnemyPower::Dampen){if(source>=0)s.enemy_world.dampen_casters|=(uint8_t)(1u<<source);if(!old)for(int id=0;id<s.card_count;id++)if(s.cards[id].upgraded){s.enemy_world.dampen_restore[id]=s.cards[id].upgraded;s.cards[id].upgraded=0;}}
   if(!old&&(p==EnemyPower::Hex||p==EnemyPower::Ringing||p==EnemyPower::Tangled))for(int id=0;id<s.card_count;id++){
@@ -132,6 +141,11 @@ static int enemy_player_block_multiplier(const State&s,int n){return enemy_power
 static int enemy_player_energy(const State&s,int n){return max(0,n-enemy_power_value(s,-1,EnemyPower::WasteAway));}
 static int enemy_player_draw(const State&s,int n){return max(0,n-enemy_power_value(s,-1,EnemyPower::MindRot));}
 static int enemy_enemy_block_value(const State&s,int t,int n,bool powered){if(powered)n+=enemy_power_value(s,t,EnemyPower::Dexterity);if(powered&&enemy_power_value(s,t,EnemyPower::Frail))n=n*3/4;return max(0,n);}
+static void enemy_gain_block(State&s,int t,int amount,bool powered=false){
+ if(!enemy_slot_alive(s,t))return;int modified=enemy_enemy_block_value(s,t,amount,powered);if(!modified)return;
+ s.enemies[t].block=(int16_t)min(9999,s.enemies[t].block+modified);
+ world_relic_hook(s,WorldRelicHook::AfterBlock,modified,t,-1);
+}
 static int enemy_damage_cap(const State&s,int t,int n,bool){
  if(enemy_power_value(s,t,EnemyPower::HardToKill))n=min(n,enemy_power_value(s,t,EnemyPower::HardToKill));
  if(enemy_power_value(s,t,EnemyPower::Intangible))n=min(n,1);
@@ -142,8 +156,14 @@ static int enemy_hp_loss_cap(const State&s,int t,int n){
  if(t>=0&&enemy_power_value(s,t,EnemyPower::HardenedShell))n=min(n,max(0,enemy_power_value(s,t,EnemyPower::HardenedShell)-s.enemy_world.models[t].power_aux[(unsigned)EnemyPower::HardenedShell]));
  return max(0,n);
 }
+static bool enemy_has_named_slots(const State&);
 static unsigned enemy_ordered_slots(const State&s,int*out){
- unsigned n=0;for(int t=0;t<s.enemy_count;t++)if(enemy_slot_exists(s,t)){unsigned at=n;while(at&&s.enemy_world.models[out[at-1]].combat_id>s.enemy_world.models[t].combat_id){out[at]=out[at-1];--at;}out[at]=t;++n;}return n;
+ const bool named=enemy_has_named_slots(s);unsigned n=0;
+ for(int t=0;t<s.enemy_count;++t)if(enemy_slot_exists(s,t)){
+  const auto&m=s.enemy_world.models[t];const unsigned key=named?m.slot:m.combat_id;unsigned at=n;
+  while(at){const auto&prior=s.enemy_world.models[out[at-1]];if((named?prior.slot:prior.combat_id)<=key)break;out[at]=out[at-1];--at;}
+  out[at]=t;++n;
+ }return n;
 }
 bool enemy_infinite_hp(const State&s,int t){return enemy_slot_exists(s,t)&&s.enemy_world.models[t].kind==EnemyId::WaterfallGiant&&s.enemy_world.models[t].data[2]!=0;}
 bool enemy_death_is_fatal(const State&s,int t){
@@ -258,6 +278,11 @@ EnemyIntent enemy_intent(const State&s,int t){
  if(!enemy_slot_exists(s,t))return {"",0,0,0};if(m.node==31)return {"STUNNED",EnemyIntentStun,0,0};if(m.node==30)return {"REVIVE_MOVE",EnemyIntentHeal,0,0};
  const auto*d=enemy_move_spec(m.kind,m.node);if(!d)return {"",0,0,0};int hits=d->hits;
  if(m.kind==EnemyId::TestSubject&&m.node==3)hits=min(999,3+m.data[1]);
+ if(s.enemy_world.ascension>=9&&((m.kind==EnemyId::Entomancer&&m.node==1)||(m.kind==EnemyId::Exoskeleton&&m.node==0)||(m.kind==EnemyId::TrackerRubyRaider&&m.node==1)))++hits;
  return {d->key,d->flags,(int16_t)min(9999,(d->flags&EnemyIntentAttack)?enemy_attack_value(s,t,enemy_raw_move_damage(s,t,m.node)):0),(int16_t)hits};
 }
 #include "enemy_encounters.inc"
+#include "enemy_moves.inc"
+#include "enemy_death.inc"
+#include "enemy_hooks.inc"
+#include "enemy_runtime.inc"

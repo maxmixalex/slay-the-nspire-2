@@ -2,6 +2,7 @@
 // Legacy save readers never reinterpret their xorshift streams as these RNGs.
 constexpr unsigned WorldActCount=3,MaxWorldEncounterQueue=32,MaxWorldEventQueue=32;
 constexpr unsigned MaxWorldRewardCards=8;
+constexpr unsigned MaxWorldRestOptions=32;
 struct WorldActRooms {
     uint8_t ready=0,region=0;
     uint8_t encounter_count=0,elite_count=0,event_count=0,boss_count=0,ancient=0;
@@ -40,4 +41,11 @@ struct WorldState {
     int16_t shop_base_prices[ShopRemove+1]{};
     uint8_t shop_sale=0,treasure_gold_claimed=0;
     int16_t treasure_gold=0;
+    // A purchase can await the obtained relic's choices before Courier
+    // restocking and AfterItemPurchased. Parasol resumes that same sequence.
+    uint8_t shop_pending_item=255,shop_auto_active=0,shop_auto_cursor=0,shop_free_remove=0;
+    int16_t shop_pending_price=0;
+    uint8_t rest_count=0,rest_options[MaxWorldRestOptions]{},rest_pending=0;
+    uint32_t rest_used=0;
+    uint16_t rest_deck_before=0;
 };

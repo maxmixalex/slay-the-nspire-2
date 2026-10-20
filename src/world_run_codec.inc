@@ -33,5 +33,7 @@
  for(unsigned i=0;i<ShopCardCount;++i){H(w.shop_cards[i].kind);B(w.shop_cards[i].upgraded);WCF(w.shop_facts[i]);}
  for(auto&v:w.shop_base_prices)H(v);
  B(w.shop_sale);B(w.treasure_gold_claimed);H(w.treasure_gold);
+ B(w.shop_pending_item);B(w.shop_auto_active);B(w.shop_auto_cursor);B(w.shop_free_remove);H(w.shop_pending_price);
+ B(w.rest_count);for(auto&v:w.rest_options)B(v);B(w.rest_pending);F(w.rest_used);H(w.rest_deck_before);
 #undef WCF
 }

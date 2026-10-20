@@ -1,27 +1,29 @@
-"""Strict private NSP2/10..13 reader and append-only versioned encoder."""
+"""Strict private NSP2/10..14 reader and append-only versioned encoder."""
 import struct
 from build_content import fnv
 from character_ui_profile import CARDS,STRINGS,AUXILIARY
 from all_character_ui_profile import CARDS as ALL_CARDS,STRINGS as ALL_STRINGS,AUXILIARY as ALL_AUXILIARY,CLIPS as ALL_CLIPS
+from world_ui_profile import CARDS as WORLD_CARDS,STRINGS as WORLD_STRINGS,AUXILIARY as WORLD_AUXILIARY,CLIPS as WORLD_CLIPS,FILE_LIMIT,DIRECTORY_LIMIT
 LIMIT=13*1024*1024
-PROFILES={10:(68,269,105),11:(114,407,185),12:(CARDS,STRINGS,AUXILIARY),13:(ALL_CARDS,ALL_STRINGS,ALL_AUXILIARY)}
-CLIP_COUNTS={10:17,11:17,12:17,13:ALL_CLIPS}
-GLYPH_LIMITS={10:8192,11:8192,12:8192,13:16384}
+PROFILES={10:(68,269,105),11:(114,407,185),12:(CARDS,STRINGS,AUXILIARY),13:(ALL_CARDS,ALL_STRINGS,ALL_AUXILIARY),14:(WORLD_CARDS,WORLD_STRINGS,WORLD_AUXILIARY)}
+CLIP_COUNTS={10:17,11:17,12:17,13:ALL_CLIPS,14:WORLD_CLIPS}
+GLYPH_LIMITS={10:8192,11:8192,12:8192,13:16384,14:32768}
 
 class PackData:
     """Bounded directory reader/writer shared by conversion regression tests."""
     def __init__(self,data:bytes):
-        if not 40<=len(data)<=LIMIT:raise ValueError('Pack size outside resident limit')
+        if not 40<=len(data)<=FILE_LIMIT:raise ValueError('Pack size outside file limit')
         data=bytes(data)
         magic,self.version,commit,n,ni,ng,ns,nc,nk,digest=struct.unpack_from('<4s9I',data)
         if (magic!=b'NSP2' or self.version not in PROFILES or commit!=0x41cef1ea or
-            n!=len(data) or digest!=fnv(data[40:])):raise ValueError('Expected intact pinned NSP2/10..13')
+            n!=len(data) or digest!=fnv(data[40:])):raise ValueError('Expected intact pinned NSP2/10..14')
+        if self.version<14 and n>LIMIT:raise ValueError('Historical pack size outside resident limit')
         expected_cards,expected_strings,nu=PROFILES[self.version]
-        if ni>8192 or ng>GLYPH_LIMITS[self.version] or ns!=expected_strings or nc!=CLIP_COUNTS[self.version] or nk!=expected_cards:
+        if ni>(65535 if self.version>=14 else 8192) or ng>GLYPH_LIMITS[self.version] or ns!=expected_strings or nc!=CLIP_COUNTS[self.version] or nk!=expected_cards:
             raise ValueError('Incompatible directory profile')
         clips_at=40+ni*16+ng*16+ns*8;cards_at=clips_at+nc*16;aux_at=cards_at+nk*16
         end=aux_at+nu*4
-        if end>n:raise ValueError('Truncated directories')
+        if end>n or end>DIRECTORY_LIMIT:raise ValueError('Truncated or oversized directories')
         def block(off:int,count:int)->bytes:
             if off<end or count<0 or off>n-count:raise ValueError('Payload outside pack')
             return data[off:off+count]
@@ -52,9 +54,10 @@ class PackData:
             if not 0<count<=256 or first+count>ni or not 0<ms<=1000 or reserved or not -640<=px<=640 or not -480<=py<=480:raise ValueError('Invalid clip')
     def encode(self,version:int=11)->bytes:
         ni,ng,ns,nk,nu=len(self.images),len(self.glyphs),len(self.strings),len(self.cards),len(self.aux)
-        if version not in (11,12,13) or ni>8192 or ng>GLYPH_LIMITS[version] or (nk,ns,nu)!=PROFILES[version] or len(self.clips)!=CLIP_COUNTS[version]*16:raise ValueError('Output profile exceeded')
+        if version not in (11,12,13,14) or ni>(65535 if version>=14 else 8192) or ng>GLYPH_LIMITS[version] or (nk,ns,nu)!=PROFILES[version] or len(self.clips)!=CLIP_COUNTS[version]*16:raise ValueError('Output profile exceeded')
         nc=CLIP_COUNTS[version]
         start=40+ni*16+ng*16+ns*8+nc*16+nk*16+nu*4
+        if start>DIRECTORY_LIMIT:raise ValueError('Output directory exceeds bounded cache')
         payload=bytearray();unique={}
         def add(raw:bytes,align:int=1)->int:
             key=(align,raw)
@@ -66,5 +69,5 @@ class PackData:
         strings=b''.join(struct.pack('<II',add(t.encode()+b'\0'),len(t.encode())) for t in self.strings)
         body=images+glyphs+strings+self.clips+b''.join(struct.pack('<4I',*r) for r in self.cards)+struct.pack('<'+'I'*nu,*self.aux)+payload
         output=struct.pack('<4s9I',b'NSP2',version,0x41cef1ea,40+len(body),ni,ng,ns,nc,nk,fnv(body))+body
-        if len(output)>LIMIT:raise ValueError(f'Pack exceeds resident buffer: {len(output)}')
+        if len(output)>(FILE_LIMIT if version>=14 else LIMIT):raise ValueError(f'Pack exceeds versioned size limit: {len(output)}')
         return output

@@ -46,7 +46,9 @@ static void queue_post_play_listeners(State&s){
 static void post_play_listener(State&s,unsigned actor){
  if(s.playing<0||s.playing>=s.card_count){fail(s);return;}
  const Card c=s.cards[s.playing];
- if(actor==(unsigned)PostPlayActor::Relics){relic_card_played(s,c);return;}
+ if(actor==(unsigned)PostPlayActor::Relics){
+  if(s.world_relics.active)world_relic_hook(s,WorldRelicHook::AfterCardPlayed,s.playing,s.defect.spent[s.expansion.depth],s.regent.stars_spent[s.expansion.depth]|(s.regent.automatic[s.expansion.depth]?0x10000:0));
+  else relic_card_played(s,c);return;}
  if(actor==(unsigned)PostPlayActor::Calamity){
   if(card_type(s,c)==CardType::Attack)
    for(int i=0;i<power_value(s,XPower::Calamity);i++)queue_extension(s,XOp::Generate,1,0,true);

@@ -16,14 +16,27 @@ uint32_t random_below(uint32_t&r,uint32_t bound){
 static uint16_t remove(Pile&p,int i){uint16_t id=p.ids[i];for(int j=i+1;j<p.count;j++)p.ids[j-1]=p.ids[j];--p.count;return id;}
 static bool put(State&s,Pile&p,int id,Zone z){
     if(id<0||id>=s.card_count||p.count>=MaxCards){fail(s);return false;}
-    p.ids[p.count++]=(uint16_t)id;s.zones[id]=z;return true;
+    const Zone from=s.zones[id];p.ids[p.count++]=(uint16_t)id;s.zones[id]=z;
+    if(s.turn&&combat_phase(s.phase)&&from!=z)world_relic_hook(s,WorldRelicHook::AfterCardChangedPiles,id,int(from),int(z));
+    return true;
 }
 static int make_card(State&s,Card c){
     if(s.card_count==MaxCards){fail(s);return -1;}
-    int id=s.card_count++;s.cards[id]=c;
+    int id=s.card_count++;s.cards[id]=c;s.zones[id]=Zone::Limbo;s.world_relics.card_is_dupe[id]=0;
     ironclad_card_created(s,id);silent_card_created(s,id);defect_card_created(s,id);regent_card_created(s,id);necro_card_created(s,id);event_card_created(s,id);enemy_card_created(s,id);return id;
 }
 static void shuffle(State&s,bool initial=false){
+    if(world_shared_active(s)){
+        uint16_t ids[MaxCards];unsigned count=0;
+        for(unsigned i=0;i<s.discard.count;i++)ids[count++]=s.discard.ids[i];
+        for(unsigned i=s.draw.count;i>0;i--)ids[count++]=s.draw.ids[i-1];
+        if(!initial)for(unsigned i=1;i<count;i++){uint16_t id=ids[i];unsigned j=i;
+            while(j){Card a=s.cards[ids[j-1]],b=s.cards[id];const char*ak=definitions[a.kind].key,*bk=definitions[b.kind].key;while(*ak&&*ak==*bk){++ak;++bk;}int cmp=int((unsigned char)*ak)-int((unsigned char)*bk);if(cmp<0||(!cmp&&a.upgraded<=b.upgraded))break;ids[j]=ids[j-1];--j;}ids[j]=id;
+        }
+        reference::shuffle(ids,count,world_rng(s,WorldRng::Shuffle));s.discard.count=0;s.draw.count=(uint16_t)count;
+        for(unsigned i=0;i<count;i++){s.draw.ids[i]=ids[count-i-1];s.zones[ids[i]]=Zone::Draw;}
+        record(s,LogKind::Shuffle);if(!initial){world_relic_hook(s,WorldRelicHook::AfterShuffle);event_card_after_shuffle(s,false);shuffle_hook(s);}return;
+    }
     while(s.discard.count){int id=remove(s.discard,s.discard.count-1);put(s,s.draw,id,Zone::Draw);}
     for(int i=s.draw.count-1;i>0;i--){int j=(int)random_below(s.rng_cards,i+1);auto t=s.draw.ids[i];s.draw.ids[i]=s.draw.ids[j];s.draw.ids[j]=t;}
     record(s,LogKind::Shuffle);shuffle_hook(s);
@@ -83,12 +96,13 @@ int damage(const State&s,Card c,int t,int instance){
         d+=debuffs*(definitions[c.kind].power+(c.upgraded?definitions[c.kind].power_up:0));
     }
     if(d<=0&&card_type(s,c)!=CardType::Attack)return 0;
-    d+=event_enchantment_damage_add(s,c,instance);
+    d=wr_damage_add(s,c,instance,d+event_enchantment_damage_add(s,c,instance));
     bool active=s.playing>=0&&instance==s.playing;
     bool pet=necro_osty_attack(c);if(pet&&!s.expansion.osty_hp)return 0;
     d=max(0,d+(pet?necro_osty_bonus(s):s.strength+(active&&s.attack_vigor?s.attack_vigor:s.vigor)));
     if(active)d*=(s.double_attack?2:1)*((s.expansion.triple||power_value(s,XPower::Gigantic))?3:1);
-    else d*=((s.relics&PenNib)&&relic_counter(s,PenNib)==9?2:1)*(power_value(s,XPower::Gigantic)?3:1);
+    else d*=(!s.world_relics.active&&(s.relics&PenNib)&&relic_counter(s,PenNib)==9?2:1)*(power_value(s,XPower::Gigantic)?3:1);
+    d=d*wr_damage_percent(s,c,instance,t)/100;
     d=silent_attack_factor(s,t,d,c,instance);
     return d;
 }
@@ -103,9 +117,10 @@ static bool enqueue(State&s,EffectKind k,int v=0,int t=0,bool first=false){
     s.effects[first?0:s.effect_count]={k,(int16_t)v,(int16_t)t};s.effect_count++;return true;
 }
 static bool alive(const State&s){return enemy_keeps_combat_alive(s);}
-static void victory(State&s){
+static void victory_cleanup(State&s){
     if(s.phase==Phase::Reward||s.phase==Phase::Complete)return;
     if(!s.world.active)award_victory(s);
+    if(s.world.active)s.phase=Phase::Reward;
     // A lethal nested autoplay cannot leave its caller orphaned in Limbo.
     for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){
         Card c=s.cards[id];Zone z=card_type(s,c)==CardType::Power?Zone::Power:(card_exhausts(s,c,id)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
@@ -123,10 +138,15 @@ static void victory(State&s){
     s.phase=Phase::Reward;
     if(s.world.active)award_victory(s);
 }
-static void exhaust_id(State&s,int id){
+static void victory(State&s){
+    if(s.phase==Phase::Reward||s.phase==Phase::Complete||s.phase==Phase::Dead||s.phase==Phase::Error)return;
+    if(world_shared_active(s)){if(!world_victory_pending(s))world_stage(s,WorldStage::VictoryEarly);return;}
+    victory_cleanup(s);
+}
+static void exhaust_id(State&s,int id,bool ethereal=false){
     put(s,s.exhaust,id,Zone::Exhaust);
     record(s,LogKind::Exhaust,s.cards[id].kind);
-    ironclad_after_exhaust(s,id);
+    world_relic_hook(s,WorldRelicHook::AfterCardExhausted,id,ethereal?1:0);ironclad_after_exhaust(s,id);
     // Exhaust hooks run before the suspended card's remaining commands.
     // A power card is removed from combat when played, not exhausted.
     for(int i=s.power_count-1;i>=0;i--){
@@ -134,10 +154,11 @@ static void exhaust_id(State&s,int id){
         if(s.power_order[i]==1&&s.embrace)enqueue(s,EffectKind::Draw,s.embrace,0,true);
     }
 }
-static void exhaust(State&s,int index){exhaust_id(s,remove(s.hand,index));}
+static void exhaust(State&s,int index,bool ethereal=false){exhaust_id(s,remove(s.hand,index),ethereal);}
 void apply_vulnerable(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
     if(enemy_blocks_debuff(s,target)||silent_blocks_debuff(s,target))return;
+    count=wr_debuff_amount(s,target,EnemyPower::Vulnerable,count,s.playing);
     auto&e=s.enemies[target];int added=min(9999-e.vulnerable,count);
     e.vulnerable+=(int16_t)added;ironclad_after_vulnerable(s,target,added);
     if(added){necro_note_debuff(s,target,NDebuff::Vulnerable);necro_debuff_applied(s,target,added);}
@@ -145,12 +166,14 @@ void apply_vulnerable(State&s,int target,int count){
 void apply_weak(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
     if(enemy_blocks_debuff(s,target)||silent_blocks_debuff(s,target))return;
+    count=wr_debuff_amount(s,target,EnemyPower::Weak,count,s.playing);
     auto&e=s.enemies[target];int added=min(9999-e.weak,count);e.weak+=(int16_t)added;
     record(s,LogKind::Weak,added,target);if(added){necro_note_debuff(s,target,NDebuff::Weak);necro_debuff_applied(s,target,added);}
 }
 void apply_poison(State&s,int target,int count){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0||count<=0)return;
     if(enemy_blocks_debuff(s,target)||silent_blocks_debuff(s,target))return;
+    count=wr_poison_amount(s,target,count);
     auto&e=s.enemies[target];int added=min(9999-e.poison,count);e.poison+=(int16_t)added;
     record(s,LogKind::Poison,added,target);if(added){necro_note_debuff(s,target,NDebuff::Poison);necro_debuff_applied(s,target,added);}
 }
@@ -196,10 +219,13 @@ static void resolve(State&s){
                 if(!pet&&!s.attack_vigor&&s.vigor){s.attack_vigor=s.vigor;s.vigor=0;}
                 if(!s.expansion.triple&&power_value(s,XPower::Gigantic)){s.expansion.triple=1;gain_power(s,XPower::Gigantic,-1);}
                 Card card=s.playing>=0?s.cards[s.playing]:Card{Strike,0};
-                int amount=max(0,e.value+event_enchantment_damage_add(s,card,s.playing)+(pet?necro_osty_bonus(s):s.strength+s.attack_vigor))*relic_attack_multiplier(s);
+                int amount=max(0,wr_damage_add(s,card,s.playing,e.value+event_enchantment_damage_add(s,card,s.playing))+(pet?necro_osty_bonus(s):s.strength+s.attack_vigor))*relic_attack_multiplier(s);
+                amount=amount*wr_damage_percent(s,card,s.playing,e.target)/100;
                 amount=silent_attack_factor(s,e.target,amount,card,s.playing);
                 amount=enemy_damage_cap(s,e.target,amount,true);enemy_before_damage(s,e.target,amount,true,pet);
-                int absorb=min(t.block,amount);t.block-=absorb;int hp_loss=enemy_hp_loss_cap(s,e.target,amount-absorb);t.hp=max(0,t.hp-hp_loss);
+                int absorb=min(t.block,amount);t.block-=absorb;int hp_loss=enemy_hp_loss_cap(s,e.target,wr_enemy_hp_loss(s,amount-absorb,true));t.hp=max(0,t.hp-hp_loss);
+                if(absorb&&!t.block)world_relic_hook(s,WorldRelicHook::AfterBlockBroken,e.target,pet?-2:-1);
+                if(old_hp!=t.hp)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old_hp,t.hp,e.target);
                 // Fisticuffs and Omnislice use TotalDamage + OverkillDamage.
                 // Their follow-up keeps damage beyond the target's remaining HP.
                 s.expansion.last_damage=(int16_t)min(9999,amount);
@@ -229,7 +255,7 @@ static void resolve(State&s){
             for(int i=0;i<s.enemy_count;i++)if(s.enemies[i].hp>0)targets[count++]=i;
             if(count)apply_poison(s,targets[random_below(s.rng_cards,count)],e.value);
             break;}
-        case EffectKind::Dexterity:s.dexterity=(int16_t)min(9999,s.dexterity+e.value);record(s,LogKind::Dexterity,e.value);break;
+        case EffectKind::Dexterity:world_relic_gain_dexterity(s,e.value);break;
         case EffectKind::Noxious:s.noxious_fumes=(int16_t)min(9999,s.noxious_fumes+e.value);record(s,LogKind::Noxious,e.value);break;
         case EffectKind::Accuracy:s.accuracy=(int16_t)min(9999,s.accuracy+e.value);record(s,LogKind::Accuracy,e.value);break;
         case EffectKind::CreateShivs:create_shivs(s,e.value);break;
@@ -254,7 +280,7 @@ static void resolve(State&s){
         case EffectKind::ExhaustCard:
             // A captured instance, not a changing hand index. Draws from exhaust
             // hooks may enter the hand but must not join Fiend Fire's snapshot.
-            for(int i=0;i<s.hand.count;i++)if(s.hand.ids[i]==e.value){exhaust(s,i);break;}
+            for(int i=0;i<s.hand.count;i++)if(s.hand.ids[i]==e.value){exhaust(s,i,e.aux==1);break;}
             break;
         case EffectKind::WhirlwindHits:
             if(e.target>0&&alive(s)){
@@ -266,7 +292,7 @@ static void resolve(State&s){
         case EffectKind::ChooseExhaust:if(s.hand.count)s.phase=Phase::ExhaustChoice;break;
         case EffectKind::RandomExhaust:if(s.hand.count)exhaust(s,(int)random_below(s.rng_cards,s.hand.count));break;
         case EffectKind::CopyDiscard:{int id=make_card(s,s.cards[s.playing]);if(id>=0){copy_card_modifiers(s,id,s.playing);put(s,s.discard,id,Zone::Discard);notify_card_generated(s,id);}}break;
-        case EffectKind::Strength:s.strength=min(9999,s.strength+e.value);record(s,LogKind::Strength,e.value);break;
+        case EffectKind::Strength:world_relic_gain_strength(s,e.value);break;
         case EffectKind::Pain:
             if(!s.pain&&s.power_count<2)s.power_order[s.power_count++]=0;
             s.pain=min(9999,s.pain+e.value);record(s,LogKind::Pain,s.pain);break;
@@ -276,13 +302,16 @@ static void resolve(State&s){
         case EffectKind::Finish:finish_extended_card(s);break;
         }
         enemy_check_deaths(s);necro_observe_deaths(s);
+        if(s.phase!=Phase::Combat&&wr_automatic_choice(s))continue;
     }
 }
 void damage_unpowered(State&s,int target,int amount){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)return;
     amount=enemy_damage_cap(s,target,max(0,amount),false);enemy_before_damage(s,target,amount,false);
-    auto&e=s.enemies[target];int absorbed=min(e.block,amount);e.block-=absorbed;
+    auto&e=s.enemies[target];int old_hp=e.hp,absorbed=min(e.block,amount);e.block-=absorbed;
     int loss=min(e.hp,enemy_hp_loss_cap(s,target,amount-absorbed));e.hp-=loss;
+    if(absorbed&&!e.block)world_relic_hook(s,WorldRelicHook::AfterBlockBroken,target,-1);
+    if(loss)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old_hp,e.hp,target);
     record(s,LogKind::Damage,amount,target);enemy_after_damage(s,target,absorbed,loss,false);enemy_check_deaths(s);necro_observe_deaths(s);
 }
 static void enemy_reset_shared_slot(State&s,int t){

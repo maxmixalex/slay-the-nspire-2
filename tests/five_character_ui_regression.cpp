@@ -16,7 +16,7 @@ static bool save_cb(const State&s){return save(s,stored);}
 static bool load_cb(State&s){return load(s,stored.bytes,stored.size);}
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned n,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=(uint8_t)(n>>(8*i));}
 static std::vector<uint8_t> synthetic_profile(){
-    constexpr unsigned images=CardKinds,strings=ContentStrings;
+    constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,strings=ContentStrings;
     constexpr unsigned stringdir=40+images*16,clipdir=stringdir+strings*8;
     constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
     std::vector<uint8_t>b(payload+82*60*2);

@@ -19,7 +19,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_DIRS = ('src', 'include', 'platform', 'tools', 'tests', 'config')
-INPUT_SUFFIXES = {'.cpp', '.hpp', '.h', '.inc', '.c', '.S', '.ld', '.py', '.js', '.html', '.json', '.hex'}
+INPUT_SUFFIXES = {'.cpp', '.hpp', '.h', '.inc', '.c', '.cs', '.S', '.ld', '.py', '.js', '.html', '.json', '.hex'}
 
 
 def now() -> str:

@@ -6,10 +6,21 @@ namespace spire {
 namespace {static bool world_make_rewards(State&);static bool world_buy(State&,int);static bool world_open_treasure(State&);static bool world_take_treasure(State&);}
 static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
-void heal(State&s,int amount){int old=s.hp;s.hp=(int16_t)min(s.max_hp,s.hp+max(0,amount));record(s,LogKind::Heal,s.hp-old);}
-void increase_max_hp(State&s,int amount){amount=min(amount,999-s.max_hp);s.max_hp+=amount;s.hp+=amount;}
+void heal(State&s,int amount){int old=s.hp;s.hp=(int16_t)min(s.max_hp,s.hp+max(0,amount));record(s,LogKind::Heal,s.hp-old);if(s.world_relics.active&&s.hp!=old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);}
+void increase_max_hp(State&s,int amount){int old=s.hp;amount=min(amount,999-s.max_hp);s.max_hp+=amount;s.hp+=amount;if(s.world_relics.active&&s.hp!=old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);}
 static void lose_hp(State&s,int amount){player_hp_loss(s,amount,false,false);}
-void gain_gold(State&s,int amount){int old=s.gold;s.gold=(int16_t)min(9999,max(0,s.gold+amount));record(s,LogKind::Gold,amount);if(s.world_relics.active&&s.gold>old)world_relic_hook(s,WorldRelicHook::AfterGoldGained,s.gold-old);}
+void gain_gold(State&s,int amount){
+    if(s.world_relics.active&&amount>0){
+        using reference::math::Real;Real value=Real::integer(amount);
+        for(unsigned i=0;i<s.world_relics.count;++i){const auto&r=s.world_relics.entries[i];if(r.flags&WorldRelicMelted)continue;
+            if(r.id==WorldRelicEctoplasm){if(Real::integer(0)<value)world_relic_flash(s,r.id);value=Real::integer(0);}
+            else if(r.id==WorldRelicBowlerHat&&Real::integer(0)<value){value=value*(Real::integer(5)/Real::integer(4));world_relic_flash(s,r.id);}
+        }
+        amount=Real::integer(9999)<value?9999:world_float_truncate(value);
+    }
+    s.gold=int16_t(min(9999,max(0,s.gold+amount)));record(s,LogKind::Gold,amount);
+    if(s.world_relics.active&&amount>0)world_relic_hook(s,WorldRelicHook::AfterGoldGained,amount);
+}
 void create_map(State&s){
     // A finite expedition graph, not the original game's map generator.
     const Room layout[MapRows][MapColumns]={
@@ -144,8 +155,9 @@ bool buy(State&s,int item){
 bool remove_card(State&s,int index){
     if(s.world.active&&s.phase==Phase::Remove&&s.event_deck_action==EventDeckAction::None){
         if(index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s,s.deck[index],index)||(s.shop_sold&(1U<<ShopRemove)))return false;
-        int price=remove_price(s);if(s.gold<price||!event_remove_deck_card(s,index))return false;
+        int price=s.world.shop_free_remove?0:remove_price(s);if(s.gold<price||!event_remove_deck_card(s,index))return false;
         s.gold-=int16_t(price);s.shop_sold|=1U<<ShopRemove;if(s.removals<255)++s.removals;s.phase=Phase::Shop;
+        s.world.shop_free_remove=0;
         world_relic_hook(s,WorldRelicHook::AfterItemPurchased,ShopRemove,price);++s.revision;return true;
     }
     if(s.phase!=Phase::Remove||index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s.deck[index]))return false;

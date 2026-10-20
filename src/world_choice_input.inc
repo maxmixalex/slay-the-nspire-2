@@ -8,8 +8,8 @@ unsigned App::world_choice_min()const{return game.phase==Phase::WorldRelicChoice
 unsigned App::world_choice_max()const{return game.phase==Phase::WorldRelicChoice?game.world_relics.choice_max:game.original_events.select_max;}
 void App::toggle_world_choice(int id){
  if(!world_choice_phase(game.phase)||id<0)return;sync_selection();
- uint16_t ids[MaxWorldRelicOffers];unsigned n=world_choice_options(ids,MaxWorldRelicOffers);bool eligible=false;
- for(unsigned i=0;i<n&&i<MaxWorldRelicOffers;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
+ uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
+ for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
  for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
   for(unsigned j=i+1;j<choice_selected_count;j++)choice_selected[j-1]=choice_selected[j];--choice_selected_count;return;
  }
@@ -27,16 +27,19 @@ void App::world_choice_detail(int id){
  if(id<0)return;
  if(game.phase==Phase::WorldRelicChoice){
   const auto&w=game.world_relics;
-  if(w.choice==WorldRelicChoice::OfferCard&&id<w.offer_count)open_card_detail(card_from_token(w.offers[id]));
-  else if(w.choice==WorldRelicChoice::OfferBundle&&id*3<w.offer_count)open_card_detail(card_from_token(w.offers[id*3]));
+  if((w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer)&&id<w.offer_count)open_card_offer(card_from_token(w.offers[id]),w.offer_facts[id]);
+  else if(w.choice==WorldRelicChoice::OfferBundle&&id*3<w.offer_count)open_card_offer(card_from_token(w.offers[id*3]),w.offer_facts[id*3]);
   else if(w.choice==WorldRelicChoice::Hand&&id<game.card_count)open_choice_detail(id);
-  else if(w.choice==WorldRelicChoice::Potion&&id<int(potion_slot_count(game))){detail_item=RelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
+  else if(w.choice==WorldRelicChoice::Potion&&id<int(potion_slot_count(game))&&potion_at(game,id)!=Potion::Empty){detail_item=WorldRelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
+  else if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==2)detail_item=r.value;else if(r.kind==3)detail_item=WorldRelicKinds+r.value-1;detail_owned=-1;detail_scroll=0;}
   else if(w.choice!=WorldRelicChoice::OfferReward&&id<game.deck_count)open_card_detail(game.deck[id],id);
  }else if(game.phase==Phase::OriginalEventChoice){
   const auto&e=game.original_events;
-  if(e.selection==OriginalEventSelection::OfferCard&&id<e.offer_count)open_card_detail(card_from_token(e.offers[id]));
-  else if(e.selection==OriginalEventSelection::Potion&&id<int(potion_slot_count(game))){detail_item=RelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
-  else if(e.selection!=OriginalEventSelection::Relic&&e.selection!=OriginalEventSelection::Crystal&&id<game.deck_count)open_card_detail(game.deck[id],id);
+  if(e.selection==OriginalEventSelection::OfferCard&&id<e.offer_count)open_card_offer(card_from_token(e.offers[id]),e.offer_facts[id]);
+  else if(e.selection==OriginalEventSelection::Potion&&id<int(potion_slot_count(game))&&potion_at(game,id)!=Potion::Empty){detail_item=WorldRelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
+  else if(e.selection==OriginalEventSelection::Relic&&id<e.offer_count){detail_item=e.offers[id];detail_owned=-1;detail_scroll=0;}
+  else if(e.selection==OriginalEventSelection::Rewards&&id<e.reward_count){const auto&r=e.rewards[id];if(r.kind==3)detail_item=r.model;else if(r.kind==2)detail_item=WorldRelicKinds+r.model-1;detail_owned=-1;detail_scroll=0;}
+  else if(e.selection!=OriginalEventSelection::Relic&&e.selection!=OriginalEventSelection::Crystal&&e.selection!=OriginalEventSelection::Rewards&&id<game.deck_count)open_card_detail(game.deck[id],id);
  }
 }
 bool App::world_choice_input(Key key){
@@ -53,8 +56,8 @@ bool App::world_choice_input(Key key){
   else return false;
   return true;
  }
- uint16_t ids[MaxWorldRelicOffers];unsigned count=world_choice_options(ids,MaxWorldRelicOffers);
- if(count>MaxWorldRelicOffers)return false;if(cursor<0||cursor>=int(count))cursor=0;
+ uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);
+ if(count>MaxWorldUiChoices)return false;if(cursor<0||cursor>=int(count))cursor=0;
  if(key==Key::Left&&count)cursor=(cursor+int(count)-1)%int(count);
  else if(key==Key::Right&&count)cursor=(cursor+1)%int(count);
  else if(key==Key::Up&&count)cursor=cursor>=5?cursor-5:cursor;

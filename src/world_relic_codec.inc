@@ -28,6 +28,7 @@
  B(w.prepared_count);for(auto&r:w.prepared){H(r.id);for(auto&v:r.values)H(v);}
  B(w.tooth_count);for(auto&r:w.tooth_cards){H(r.token);H(r.genetic);H(r.scythe);WRF(r.facts);}
  F(w.play_serial_counter);for(auto&v:w.play_serial)F(v);H(w.manual_plays_turn);
+ for(auto&v:w.card_is_dupe)B(v);
  H(w.self_forming_clay);H(w.reptile_trinket);H(w.helical_dart);
  B(w.byrdpip_present);B(w.legion_present);H(w.last_flash);F(w.flash_revision);
  for(auto&f:w.hook_frames){

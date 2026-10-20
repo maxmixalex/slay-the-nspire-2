@@ -318,6 +318,8 @@ struct EnemyWorldState {
  int16_t affliction_amount[MaxCards]{},card_value[MaxCards]{};
  uint8_t spawned_models[EnemyKinds]{},dampen_casters=0,bound_played=0,used_types=0;
  uint16_t escaped_count=0,spawned_model_count=0,cards_played_turn=0,bound_draws_turn=0;
+ uint8_t returned_gold_count=0;
+ uint16_t returned_gold[32]{};
  uint8_t facing=0,choice_enemy=255,choice_stage=0;
  int16_t turn_damage[MaxEnemies]{},turn_attacks[MaxEnemies]{};
 };
@@ -328,6 +330,8 @@ EncounterId encounter_id(const char* model_or_key);
 EnemyId enemy_id(const char* model_or_key);
 // Spawn history counts distinct canonical monster models, not live slots.
 unsigned encounter_spawned_models(const State&);
+unsigned encounter_returned_gold_count(const State&);
+int encounter_returned_gold(const State&,unsigned index);
 unsigned encounter_escaped_enemies(const State&);
 bool encounter_shares_tags(EncounterId,EncounterId);
 int encounter_min_gold(EncounterId,unsigned ascension=0);

@@ -30,6 +30,7 @@
  for(auto&v:w.spawned_models)B(v);
  B(w.dampen_casters);B(w.bound_played);B(w.used_types);
  H(w.escaped_count);H(w.spawned_model_count);H(w.cards_played_turn);H(w.bound_draws_turn);
+ B(w.returned_gold_count);for(auto&v:w.returned_gold)H(v);
  B(w.facing);B(w.choice_enemy);B(w.choice_stage);
  for(auto&v:w.turn_damage)H(v);for(auto&v:w.turn_attacks)H(v);
 }

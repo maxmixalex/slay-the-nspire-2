@@ -110,7 +110,7 @@ bool validate(const State&s){
         const auto&e=s.effects[i];
         if(e.kind==EffectKind::Extended){if(!valid_extension_effect(s,e))return false;continue;}
         if((unsigned)e.kind>(unsigned)EffectKind::EscapeSkillBlock||e.value<0||e.value>9999||e.target<0||e.target>=(e.kind==EffectKind::WhirlwindHits?1000:MaxEnemies))return false;
-        if(e.aux&&!((e.kind==EffectKind::Block&&e.aux==1)||(e.kind==EffectKind::Damage&&e.aux==2)))return false;
+        if(e.aux&&!((e.kind==EffectKind::Block&&e.aux==1)||(e.kind==EffectKind::Damage&&e.aux==2)||(e.kind==EffectKind::ExhaustCard&&e.aux==1)))return false;
         if(e.kind==EffectKind::ExhaustCard&&e.value>=s.card_count)return false;
     }
     if(combat_phase(s.phase)&&choice_phase(s.phase)&&(!s.effect_count||!choice_pile(s).count))return false;

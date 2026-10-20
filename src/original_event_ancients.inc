@@ -3,7 +3,6 @@ void ancient_options(State&s,const RelicId*ids,unsigned count){auto&e=s.original
 bool ancient_begin(State&s){auto&e=s.original_events;
  world_relic_clear_offers(s);if(e.id==OriginalEventId::Neow)s.hp=0;
  int amount=s.max_hp-s.hp;if(world_ascension(s)>=2)amount=amount*8/10;heal(s,amount);
- if(has_world_relic(s,WorldRelicWaxChoker)){finish_page(s,"INITIAL");return true;}
  auto rng=event_random(s);RelicId offers[3]{};
  switch(e.id){
  case OriginalEventId::Neow:{

@@ -39,7 +39,7 @@ static void deck_select(Canvas&c){
     for(int i=first;i<mn(s.deck_count,first+10);i++){
         Card card=s.deck[i];int x=24+(i-first)%5*55,y=54+(i-first)/5*73;
         bool allowed=s.phase==Phase::Upgrade?card_upgradeable(card):s.phase==Phase::Transform?(i!=s.event_first&&card_transformable(card)):(card_removable(card)&&s.deck_count>1);
-        small_card(c,card,x,y,a.cursor==i,allowed,0);
+        small_card(c,card,x,y,a.cursor==i,allowed,0,-2,-2,-1,i);
         c.hit(x-3,y-2,53,71,HitKind::Choice,i,allowed);
     }
     if(grimoire){char text[96]={};TextBuffer b{text,sizeof text,0};b.text("剩余 ");b.number(s.necro.grimoire_pending);b.text(" 次 · I 详情 · Enter 确认 · 空格放弃一次");c.centered(text,0,196,320,10,Muted);}

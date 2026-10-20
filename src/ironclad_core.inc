@@ -317,7 +317,7 @@ static bool ironclad_effect(State&s,Effect e){
  case XOp::IAllHits:
   if(b>0&&alive(s)){if(b>1)queue_extension(s,XOp::IAllHits,a,b-1,true);for(int t=s.enemy_count-1;t>=0;t--)if(s.enemies[t].hp)enqueue(s,EffectKind::Damage,a,t,true);}break;
  case XOp::ITemporaryStrength:{
-  int actual=min(9999-s.strength,a);s.strength+=(int16_t)actual;i.setup_strength=(int16_t)min(9999,i.setup_strength+actual);record(s,LogKind::Strength,actual);break;}
+  int actual=min(9999-s.strength,a);world_relic_gain_strength(s,actual);i.setup_strength=(int16_t)min(9999,i.setup_strength+actual);break;}
  case XOp::IHeal:heal(s,a);break;
  case XOp::IUnpoweredRandom:{int targets[MaxEnemies],n=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp)targets[n++]=t;if(n)damage_unpowered(s,targets[random_below(s.rng_cards,n)],a);break;}
  default:return false;

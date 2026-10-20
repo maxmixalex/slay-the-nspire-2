@@ -1,10 +1,13 @@
 // Encounter construction preserves original composition and Niche RNG draw order.
 #include "enemy_encounter_definitions.inc"
+static bool enemy_has_named_slots(const State&s){return unsigned(s.enemy_world.encounter)<EncounterKinds&&encounter_metadata[unsigned(s.enemy_world.encounter)].slots!=0;}
 const EncounterDefinition* encounter_definition(EncounterId id){return unsigned(id)<EncounterKinds?&encounter_definitions[unsigned(id)]:nullptr;}
 static bool enemy_text_equal(const char*a,const char*b){if(!a||!b)return false;while(*a&&*b){if(*a++!=*b++)return false;}return *a==*b;}
 EncounterId encounter_id(const char*name){for(unsigned i=1;i<EncounterKinds;++i)if(enemy_text_equal(name,encounter_metadata[i].model)||enemy_text_equal(name,encounter_definitions[i].key))return EncounterId(i);return EncounterId::None;}
 EnemyId enemy_id(const char*name){for(unsigned i=1;i<EnemyKinds;++i)if(enemy_text_equal(name,enemy_definitions[i].model)||enemy_text_equal(name,enemy_definitions[i].key))return EnemyId(i);return EnemyId::LegacyNibbit;}
 unsigned encounter_spawned_models(const State&s){return s.enemy_world.spawned_model_count;}
+unsigned encounter_returned_gold_count(const State&s){return s.enemy_world.returned_gold_count;}
+int encounter_returned_gold(const State&s,unsigned i){return i<s.enemy_world.returned_gold_count?s.enemy_world.returned_gold[i]:0;}
 unsigned encounter_escaped_enemies(const State&s){return s.enemy_world.escaped_count;}
 uint32_t encounter_gold_proportion_bits(const State&s){
  union Bits{float f;uint32_t u;};Bits bits{};
@@ -86,6 +89,7 @@ static void enemy_initial_powers(State&s,int t){
  case EnemyId::TheLost:power(EnemyPower::PossessStrength,1);break;
  case EnemyId::ThievingHopper:power(EnemyPower::EscapeArtist,5);break;
  case EnemyId::ToughEgg:if(!m.data[0])power(EnemyPower::Hatch,s.enemy_world.side?2:1);break;
+ case EnemyId::TwoTailedRat:m.data[0]=2;break;
  case EnemyId::Vantom:power(EnemyPower::Slippery,val(EnemyValue::SlipperyAmt));break;
  case EnemyId::WaterfallGiant:m.data[0]=(int16_t)val(EnemyValue::BasePressureGunDamage);break;
  case EnemyId::Zapbot:power(EnemyPower::HighVoltage,2);break;
@@ -95,7 +99,8 @@ static void enemy_initial_powers(State&s,int t){
 static int enemy_spawn(State&s,EnemyId kind,int slot,int owner=-1){
  int t=enemy_create(s,kind,slot,owner);if(t<0)return t;
  if(kind==EnemyId::Wriggler)s.enemy_world.models[t].data[0]=1;
- enemy_initial_powers(s,t);if(s.enemy_world.side)s.enemy_world.models[t].data[11]=1;else{enemy_set_move(s,t,enemy_initial_node(s,t));s.enemy_world.models[t].previous=s.enemy_world.models[t].node;}return t;
+ enemy_initial_powers(s,t);if(s.enemy_world.side)s.enemy_world.models[t].data[11]=1;else{enemy_set_move(s,t,enemy_initial_node(s,t));s.enemy_world.models[t].previous=s.enemy_world.models[t].node;}
+ world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,t);return t;
 }
 struct EnemyComposition{
  EnemyId kind[MaxEnemies]{};uint8_t slot[MaxEnemies]{},count=0;int16_t data[MaxEnemies][12]{};
@@ -208,5 +213,7 @@ bool encounter_setup(State&s,EncounterId id,unsigned ascension){
  // All starting actors exist before AfterAddedToRoom, including HP uniqueness checks.
  for(int t=0;t<s.enemy_count;++t)enemy_initial_powers(s,t);
  for(int t=0;t<s.enemy_count;++t){enemy_set_move(s,t,enemy_initial_node(s,t));w.models[t].previous=w.models[t].node;}
+ // Initial creatures receive AfterRoomEntered relic effects. The distinct
+ // AfterCreatureAddedToCombat hook belongs only to mid-combat summons.
  return s.phase!=Phase::Error;
 }

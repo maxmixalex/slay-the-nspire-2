@@ -11,6 +11,8 @@ static bool world_open_treasure(State&);
 static bool world_take_treasure(State&);
 static bool world_prepare_treasure(State&);
 static bool world_buy(State&,int);
+static bool world_make_rest(State&);
+static void world_continue_shop(State&);
 static WorldRoom world_roll_unknown(State&,unsigned);
 static unsigned world_map_variant(const State&s){
     // Deck listeners precede relic listeners: Golden Compass wins over Spoils.
@@ -161,6 +163,7 @@ bool world_choose_point(State&s,unsigned point){
     w.current_point=uint8_t(point);w.map_column=p.col;w.map_row=p.row;w.room_type=uint8_t(room);w.room_open=1;w.point_had_shop=room==WorldRoom::Shop;
     w.visited[w.act_index][point]=1;++w.total_floor;s.floor=uint8_t(w.total_floor);s.treasure_state=0;s.treasure_relic=0;
     w.treasure_relic=NoWorldRelic;w.treasure_gold=0;w.treasure_gold_claimed=0;w.reward_count=0;w.reward_relic=NoWorldRelic;
+    w.rest_count=w.rest_pending=0;w.rest_used=0;w.rest_deck_before=0;
     s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;
     event_card_before_room(s,p.type==PointType::Unknown,true);
     if(s.phase==Phase::Dead||s.phase==Phase::Error)return s.phase!=Phase::Error;
@@ -168,7 +171,7 @@ bool world_choose_point(State&s,unsigned point){
     case WorldRoom::Monster:case WorldRoom::Elite:case WorldRoom::Boss:
         if(!world_start_combat(s,world_pull_encounter(s,room)))return false;break;
     case WorldRoom::Shop:if(!world_make_shop(s))return false;break;
-    case WorldRoom::Rest:s.phase=Phase::Camp;break;
+    case WorldRoom::Rest:if(!world_make_rest(s))return false;break;
     case WorldRoom::Treasure:s.phase=Phase::Treasure;break;
     case WorldRoom::Event:{
         OriginalEventId id=p.type==PointType::Start?OriginalEventId(w.rooms[w.act_index].ancient):world_pull_event(s,event_card_forces_historian(s,w.act_index));
@@ -177,8 +180,11 @@ bool world_choose_point(State&s,unsigned point){
     }
     default:return world_fail(s);
     }
-    world_relic_hook(s,WorldRelicHook::AfterRoomEntered);
+    // Combat setup invokes this after constructing/shuffling the deck and
+    // before the initial draw. Noncombat rooms have no combat continuation.
+    if(!world_room_is_combat(s))world_relic_hook(s,WorldRelicHook::AfterRoomEntered);
     if(room==WorldRoom::Treasure&&!world_prepare_treasure(s))return world_fail(s);
+    if(room==WorldRoom::Shop)world_resume_room(s);
     ++s.revision;return s.phase!=Phase::Error;
 }
 bool world_refresh_map_modifiers(State&s){
@@ -203,8 +209,20 @@ bool world_enter_event_combat(State&s,const char*key,bool resume_parent){
 bool world_finish_room(State&s){
     auto&w=s.world;if(!w.active)return false;
     if(s.hp<=0){s.phase=Phase::Dead;original_event_finish_run(s);return true;}
+    if(w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255)return false;
     if(world_relic_pending(s)||s.phase==Phase::OriginalEventChoice){w.finish_pending=1;return false;}
     w.finish_pending=0;
+    if(w.rest_pending){
+        unsigned index=w.rest_pending-1;if(index>=w.rest_count)return world_fail(s);
+        const auto option=WorldRestOption(w.rest_options[index]);
+        if(option==WorldRestOption::Cook){
+            if(s.deck_count==w.rest_deck_before){w.rest_pending=0;w.rest_deck_before=0;s.phase=Phase::Camp;++s.revision;return true;}
+            if(s.deck_count+2!=w.rest_deck_before)return world_fail(s);
+            increase_max_hp(s,5);
+        }
+        w.rest_used|=uint32_t(1)<<index;w.rest_pending=0;w.rest_deck_before=0;s.phase=Phase::Camp;
+        if(has_world_relic(s,WorldRelicMiniatureTent)){world_relic_flash(s,WorldRelicMiniatureTent);++s.revision;return true;}
+    }
     if(w.event_combat_parent&&s.original_events.combat_pending){
         w.event_combat_parent=0;w.room_type=w.parent_room_type;w.parent_room_type=0;
         original_event_after_combat(s,true);
@@ -229,8 +247,11 @@ bool world_finish_room(State&s){
     ++s.revision;return true;
 }
 void world_resume_room(State&s){
-    if(s.world.active&&s.world.finish_pending&&!world_relic_pending(s)&&s.phase!=Phase::OriginalEventChoice)world_finish_room(s);
+    if(!s.world.active||world_relic_pending(s)||s.phase==Phase::OriginalEventChoice||s.phase==Phase::Error||s.phase==Phase::Dead)return;
+    if(s.world.room_type==unsigned(WorldRoom::Shop))world_continue_shop(s);
+    if(s.world.finish_pending&&!world_relic_pending(s)&&s.phase!=Phase::OriginalEventChoice)world_finish_room(s);
 }
 
 #include "world_run_rooms.inc"
+#include "world_run_rest.inc"
 #include "world_run_validation.inc"

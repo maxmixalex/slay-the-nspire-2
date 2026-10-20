@@ -1,4 +1,5 @@
 // Original power icons and textured panels, reflowed for a 320x240 display.
+#include "world_status_ui.inc"
 static void status_strip(Canvas&c,int actor,int x,int y,int width){
     int ids[StatusKinds],count=collect_statuses(c.a.game,actor,ids);
     if(!count)return;
@@ -6,7 +7,7 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
     if(count>slots)--visible;
     for(int i=0;i<visible;i++){
         int xx=x+i*30,value=status_amount(c.a.game,actor,ids[i]);
-        c.ui(status_definitions[ids[i]].image,xx,y,13,13);
+        c.picture(ui_status_image(c.a,ids[i]),xx,y,13,13);
         if(value<100)c.num(value,xx+14,y-1,10,White);else c.text("99+",xx+13,y-1,10,White);
     }
     if(count>visible){char b[16]={};TextBuffer t{b,sizeof b,0};t.ch('+');t.number(count-visible);c.text(b,x+visible*30,y-1,10,Gold);}
@@ -34,12 +35,14 @@ static void orb_status_detail(Canvas&c){
 static void status_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.hit_count=0;
     c.dim(0,0,320,240,215);c.ui(U_RewardPanel,4,5,312,233);
-    c.centered("能力与状态",0,9,320,16,Gold);c.close_button(289,10);
+    char heading[160]{};TextBuffer hb{heading,sizeof heading,0};
+    if(a.status_actor>0){hb.text(ui_enemy_name(a,a.status_actor-1));hb.text(" · ");hb.number(s.enemies[a.status_actor-1].hp);hb.ch('/');hb.number(s.enemies[a.status_actor-1].max_hp);}else hb.text("能力与状态");
+    c.centered(heading,7,9,282,12,Gold);c.close_button(289,10);
     for(int actor=0;actor<=s.enemy_count;actor++){
         int width=300/(s.enemy_count+1),x=10+actor*width;
         char label[48]={};TextBuffer t{label,sizeof label,0};
-        if(actor){t.text("敌人 ");t.number(actor);if(!s.enemies[actor-1].hp)t.text(" · 已击败");}
-        else t.text(character_definitions[(int)s.character].name);
+        if(actor){if(s.enemy_count<=4)t.text("敌人 ");t.number(actor);if(!s.enemies[actor-1].hp)t.text(" ×");}
+        else t.text(s.enemy_count>4?"我方":character_definitions[(int)s.character].name);
         if(a.status_actor==actor)c.rect(x,54,width-5,1,Gold);
         c.centered(label,x,35,width-5,10,a.status_actor==actor?Gold:Muted);
         c.hit(x,33,width-5,25,HitKind::StatusActor,actor);
@@ -52,18 +55,14 @@ static void status_screen(Canvas&c){
         for(int i=first;i<mn(count,first+6);i++){
             int y=66+(i-first)*23,id=ids[i];bool selected=i==a.status_selected;
             if(selected){c.rect(12,y,116,22,rgb(74,58,39));c.rect(12,y,2,22,Gold);}
-            c.ui(status_definitions[id].image,17,y+3,15,15);
-            c.text(status_definitions[id].name,37,y+2,10,selected?Gold:White,87);
+            c.picture(ui_status_image(a,id),17,y+3,15,15);
+            c.text(ui_status_title(a,id),37,y+2,10,selected?Gold:White,87);
             c.hit(12,y,116,22,HitKind::StatusItem,i);
         }
-        int id=ids[a.status_selected];const auto&d=status_definitions[id];
-        c.ui(d.image,145,65,25,25);c.num(status_amount(s,a.status_actor,id),181,66,16,Gold);
-        c.text(d.name,145,95,12,Gold,155);
-        char description[768]={};TextBuffer t{description,sizeof description,0};
-        for(const char*p=d.description;*p;){
-            if(p[0]=='{'&&p[1]=='n'&&p[2]=='}'){t.number(status_amount(s,a.status_actor,id));p+=3;}
-            else t.ch(*p++);
-        }
+        int id=ids[a.status_selected];
+        c.picture(ui_status_image(a,id),145,65,25,25);c.num(status_amount(s,a.status_actor,id),181,66,16,Gold);
+        c.text(ui_status_title(a,id),145,95,12,Gold,155);
+        char description[2048]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0};while(description[t.n])++t.n;
         if(id==43){
             t.text("\n");for(int i=0;i<MaxBombs;i++)if(s.expansion.bomb_turns[i]){t.number(s.expansion.bomb_turns[i]);t.text(" 回合 / ");t.number(s.expansion.bomb_damage[i]);t.text(" 伤害\n");}
         }else if(id==44){

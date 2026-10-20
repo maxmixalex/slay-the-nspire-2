@@ -38,7 +38,11 @@ static bool world_make_rewards(State&s){
         s.reward_claimed=7;w.reward_relic_claimed=1;return world_finish_room(s);
     }
     WorldRoom room=WorldRoom(w.room_type);
-    if(room==WorldRoom::Boss&&w.act_index==2){s.reward_claimed=7;w.reward_relic_claimed=1;return true;}
+    if(room==WorldRoom::Boss&&w.act_index==2){
+        s.reward_claimed=7;w.reward_relic_claimed=1;
+        const bool extra_cards=world_relic_combat_rewards(s);
+        world_relic_before_reward_offered(s,extra_cards);return s.phase!=Phase::Error;
+    }
     bool potion=has_world_relic(s,WorldRelicWhiteBeastStatue);
     if(!potion){
         Real chance=world_float(w.potion_drop_bits);
@@ -46,11 +50,11 @@ static bool world_make_rewards(State&s){
         potion=world_random_float(rng)<chance;
         w.potion_drop_bits=world_float_bits(world_float_round(world_float(w.potion_drop_bits)+(potion?-world_float(0x3dcccccdU):world_float(0x3dcccccdU))));
     }
-    int lo=room==WorldRoom::Boss?100:encounter_min_gold(s.enemy_world.encounter,w.ascension);
-    int hi=room==WorldRoom::Boss?100:encounter_max_gold(s.enemy_world.encounter,w.ascension);
+    int lo=encounter_min_gold(s.enemy_world.encounter,w.ascension);
+    int hi=encounter_max_gold(s.enemy_world.encounter,w.ascension);
     Real proportion=Real::integer(1);
-    if(room==WorldRoom::Monster){unsigned spawned=encounter_spawned_models(s),escaped=encounter_escaped_enemies(s);
-        if(spawned)proportion=world_float_round(Real::integer(1)-world_float_round(Real::integer(int(escaped))/Real::integer(int(spawned))));
+    if(room==WorldRoom::Monster){
+        proportion=world_float(encounter_gold_proportion_bits(s));
         lo=world_round(world_float_round(Real::integer(lo)*proportion));hi=world_round(world_float_round(Real::integer(hi)*proportion));
     }
     if(Real::integer(0)<proportion)s.last_gold=int16_t(rng.range(lo,hi+1));else s.reward_claimed|=1;
@@ -63,7 +67,8 @@ static bool world_make_rewards(State&s){
     w.reward_count=uint8_t(count);for(unsigned i=0;i<3;++i)s.reward[i]=i<count?w.reward_cards[i].kind:Strike;
     if(room==WorldRoom::Elite)w.reward_relic=random_world_relic(s);
     else w.reward_relic_claimed=1;
-    world_relic_before_reward_offered(s,count!=0);return s.phase!=Phase::Error;
+    const bool extra_cards=world_relic_combat_rewards(s);
+    world_relic_before_reward_offered(s,count!=0||extra_cards);return s.phase!=Phase::Error;
 }
 static unsigned world_shop_rarity(State&s){
     if(!s.world_factory.initialized){s.world_factory.initialized=1;s.world_factory.rarity_offset_bits=0xbd4ccccdU;}
@@ -131,6 +136,7 @@ static void world_update_shop(State&s){
 }
 static bool world_make_shop(State&s){
     auto&w=s.world;s.phase=Phase::Shop;s.shop_sold=(1U<<ShopRemove)-1;
+    w.shop_pending_item=255;w.shop_pending_price=0;w.shop_auto_active=0;w.shop_auto_cursor=0;w.shop_free_remove=0;
     for(auto&c:w.shop_cards)c={};for(auto&f:w.shop_facts)f={};
     w.shop_sale=uint8_t(world_rng(s,WorldRng::Shops).below(5));
     for(unsigned i=0;i<ShopCardCount;++i)if(!world_populate_shop_card(s,i,i==w.shop_sale))return false;
@@ -141,29 +147,66 @@ static bool world_make_shop(State&s){
     w.shop_base_prices[ShopRemove]=int16_t((w.ascension>=6?100:75)+(w.ascension>=6?50:25)*s.removals);
     world_update_shop(s);return true;
 }
-static bool world_buy(State&s,int item){
-    if(s.phase!=Phase::Shop||item<0||item>ShopRemove||(s.shop_sold&(1U<<item)))return false;
-    int price=world_shop_price(s,item);if(s.gold<price)return false;
-    if(item==ShopRemove){
-        bool eligible=false;for(unsigned i=0;i<s.deck_count;++i)if(card_removable(s,s.deck[i],i))eligible=true;
-        if(!eligible||s.deck_count<=1)return false;s.phase=Phase::Remove;++s.revision;return true;
-    }
-    if(item<ShopCardCount){
-        if(s.deck_count>=MaxDeck)return false;
-        if(event_add_deck_card(s,s.world.shop_cards[item],&s.world.shop_facts[item])<0)return false;
-        s.gold-=int16_t(price);record(s,LogKind::Buy,s.shop_cards[item]);
-    }else if(item<ShopPotionStart){
-        s.gold-=int16_t(price);if(!gain_world_relic(s,s.world.shop_relics[item-ShopRelicStart]))return false;
-    }else{
-        if(!procure_potion(s,Potion(s.shop_potions[item-ShopPotionStart])))return false;s.gold-=int16_t(price);
-    }
-    s.shop_sold|=uint16_t(1U<<item);
+static bool world_finish_purchase(State&s){
+    auto&w=s.world;const int item=w.shop_pending_item,price=w.shop_pending_price;
+    if(item<0||item>=ShopRemove)return false;
+    w.shop_pending_item=255;w.shop_pending_price=0;s.shop_sold|=uint16_t(1U<<item);
     if(has_world_relic(s,WorldRelicTheCourier)){
         if(item<ShopCardCount){if(!world_populate_shop_card(s,unsigned(item),false))return false;if(s.world.shop_sale==item)s.world.shop_sale=255;}
         else if(item<ShopPotionStart){if(!world_populate_shop_relic(s,unsigned(item-ShopRelicStart),world_relic_rarity(world_rng(s,WorldRng::Rewards))))return false;}
         else if(!world_populate_shop_potion(s,unsigned(item-ShopPotionStart)))return false;
     }
     world_update_shop(s);world_relic_hook(s,WorldRelicHook::AfterItemPurchased,item,price);++s.revision;return s.phase!=Phase::Error;
+}
+static bool world_buy_priced(State&s,int item,bool free){
+    if(s.phase!=Phase::Shop||item<0||item>ShopRemove||s.world.shop_pending_item!=255||(s.shop_sold&(1U<<item)))return false;
+    int price=free?0:world_shop_price(s,item);if(s.gold<price)return false;
+    if(item==ShopRemove){
+        bool eligible=false;for(unsigned i=0;i<s.deck_count;++i)if(card_removable(s,s.deck[i],i))eligible=true;
+        if(!eligible||s.deck_count<=1)return false;s.world.shop_free_remove=uint8_t(free);s.phase=Phase::Remove;++s.revision;return true;
+    }
+    if(item<ShopCardCount){
+        if(s.deck_count>=MaxDeck)return false;
+        if(event_add_deck_card(s,s.world.shop_cards[item],&s.world.shop_facts[item])<0)return false;
+        s.gold-=int16_t(price);record(s,LogKind::Buy,s.shop_cards[item]);
+    }else if(item<ShopPotionStart){
+        s.world.shop_pending_item=uint8_t(item);s.world.shop_pending_price=int16_t(price);
+        s.gold-=int16_t(price);if(!gain_world_relic(s,s.world.shop_relics[item-ShopRelicStart]))return false;
+    }else{
+        if(!procure_potion(s,Potion(s.shop_potions[item-ShopPotionStart])))return false;s.gold-=int16_t(price);
+    }
+    s.world.shop_pending_item=uint8_t(item);s.world.shop_pending_price=int16_t(price);
+    // Acquiring a relic can suspend for a selection or a nested reward set.
+    // Courier restocks only after that awaited acquisition completes.
+    if(world_relic_pending(s))return true;
+    return world_finish_purchase(s);
+}
+static bool world_buy(State&s,int item){
+    if(s.world.shop_auto_active)return false;
+    return world_buy_priced(s,item,false);
+}
+static void world_continue_shop(State&s){
+    auto&w=s.world;if(s.phase!=Phase::Shop||world_relic_pending(s))return;
+    if(w.shop_pending_item!=255&&!world_finish_purchase(s))return;
+    while(w.shop_auto_active&&s.phase==Phase::Shop&&!world_relic_pending(s)){
+        if(w.shop_auto_cursor<ShopRemove){
+            int item=w.shop_auto_cursor++;
+            // A full potion belt or deck is an ordinary failed purchase. The
+            // original Parasol continues with the remaining inventory.
+            world_buy_priced(s,item,true);
+            if(s.phase==Phase::Error||s.phase==Phase::Dead)return;
+        }else{
+            w.shop_auto_active=0;w.shop_auto_cursor=ShopRemove+1;
+            world_buy_priced(s,ShopRemove,true);break;
+        }
+    }
+}
+struct WorldPriceInteger {uint32_t word[4]{};};
+static void world_price_multiply(WorldPriceInteger& value,unsigned factor){
+    uint64_t carry=0;for(unsigned i=0;i<4;++i){carry+=uint64_t(value.word[i])*factor;value.word[i]=uint32_t(carry);carry>>=32;}
+}
+static bool world_price_less(const WorldPriceInteger&a,const WorldPriceInteger&b){
+    for(unsigned i=4;i;--i){if(a.word[i-1]!=b.word[i-1])return a.word[i-1]<b.word[i-1];}return false;
 }
 static bool world_should_treasure(const State&s){
     for(unsigned i=0;i<s.world_relics.count;++i){const auto&r=s.world_relics.entries[i];
@@ -206,12 +249,20 @@ int world_shop_price(const State&s,int item){
     if(item<0||item>ShopRemove)return 0;
     int base=item==ShopRemove?(s.world.ascension>=6?100:75)+(s.world.ascension>=6?50:25)*s.removals:s.world.shop_base_prices[item];
     // Both source hooks multiply decimal values; truncate once after all hooks.
-    int numerator=base,denominator=1;
+    // Four limbs avoid signed overflow with duplicate relics. Since every
+    // modifier decreases a base <= 20000, an intermediate ratio below one
+    // can return zero. The largest remaining numerator fits 106 bits.
+    WorldPriceInteger numerator{},denominator{};numerator.word[0]=unsigned(base);denominator.word[0]=1;
     for(unsigned i=0;i<s.world_relics.count;++i){const auto&r=s.world_relics.entries[i];if(r.flags&WorldRelicMelted)continue;
-        if(r.id==WorldRelicMembershipCard)denominator*=2;
-        if(r.id==WorldRelicTheCourier){numerator*=4;denominator*=5;}
+        if(r.id==WorldRelicMembershipCard)world_price_multiply(denominator,2);
+        if(r.id==WorldRelicTheCourier){world_price_multiply(numerator,4);world_price_multiply(denominator,5);}
+        if(world_price_less(numerator,denominator))return 0;
     }
-    return min(9999,numerator/denominator);
+    unsigned low=0,high=unsigned(base)+1;
+    while(low+1<high){unsigned mid=low+(high-low)/2;WorldPriceInteger product=denominator;world_price_multiply(product,mid);
+        if(world_price_less(numerator,product))high=mid;else low=mid;
+    }
+    return min(9999,int(low));
 }
 bool world_claim_reward_card(State&s,int index){
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>=int(s.world.reward_count))return false;
