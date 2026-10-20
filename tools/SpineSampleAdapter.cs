@@ -182,12 +182,19 @@ static class SpineSampleAdapter {
     static void SetTrack(AnimationState state, JsonElement track) {
         int index = Int(track, "track");
         if (index < 0 || index > 15) throw new InvalidDataException("Track index out of bounds");
+        TrackEntry entry;
         if (String(track, "clip") == "") {
-            if (Bool(track, "queued")) state.AddEmptyAnimation(index, Float(track, "mix"), Float(track, "delay"));
-            else state.SetEmptyAnimation(index, Float(track, "mix"));
+            if (Bool(track, "queued")) entry = state.AddEmptyAnimation(index, Float(track, "mix"), Float(track, "delay"));
+            else entry = state.SetEmptyAnimation(index, Float(track, "mix"));
         } else if (Bool(track, "queued"))
-            state.AddAnimation(index, String(track, "clip"), Bool(track, "loop"), Float(track, "delay"));
-        else state.SetAnimation(index, String(track, "clip"), Bool(track, "loop"));
+            entry = state.AddAnimation(index, String(track, "clip"), Bool(track, "loop"), Float(track, "delay"));
+        else entry = state.SetAnimation(index, String(track, "clip"), Bool(track, "loop"));
+        if (track.TryGetProperty("time", out var offset)) {
+            float time = offset.GetSingle();
+            if (!float.IsFinite(time) || time < 0 || time > 120)
+                throw new InvalidDataException("Track pose offset must be finite within [0, 120]");
+            entry.TrackTime = time;
+        }
     }
 
     // A Drive node supplies a transform relative to its SpineSprite. This is

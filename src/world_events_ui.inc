@@ -1,5 +1,5 @@
 static bool ui_ancient_event(OriginalEventId id){switch(id){case OriginalEventId::Neow:case OriginalEventId::Darv:case OriginalEventId::Nonupeipe:case OriginalEventId::Tanx:case OriginalEventId::Orobas:case OriginalEventId::Pael:case OriginalEventId::Tezcatara:case OriginalEventId::Vakuu:return true;default:return false;}}
-static const char* native_event_title(const App&a){const char*text=a.content.world_title("events",original_event_key(a.game.original_events.id));return *text?text:original_event_key(a.game.original_events.id);}
+static const char* native_event_title(const App&a){const char*text=a.content.world_title(ui_ancient_event(a.game.original_events.id)?"ancients":"events",original_event_key(a.game.original_events.id));return *text?text:original_event_key(a.game.original_events.id);}
 static void native_event_option(const App&a,int option,bool description,char*out,size_t size){
  const auto&e=a.game.original_events;if(!size)return;out[0]=0;
  if(ui_ancient_event(e.id)&&option>=0&&option<e.offer_count&&e.offers[option]<WorldRelicKinds){

@@ -81,10 +81,11 @@ static void world_choice_screen(Canvas&c){
    else{const auto&r=e.rewards[at];kind=r.kind;model=r.model;amount=r.amount;}
    int x=8+(i-first)%2*156,y=48+(i-first)/2*28;bool selected=world_selected(a,at);
    c.ui(U_RewardButton,x,y,148,26);if(selected||a.cursor==i)c.box(x-1,y-1,150,28,selected?Green:Gold);
-   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.relic_face_image(model):kind==5?a.card_face_image(card_from_token(model)):a.content.ui_image(U_RewardCard);
+   int image=kind==1?A_Coin:kind==2?a.content.potion_image(Potion(model)):kind==3?a.relic_face_image(model):kind==5?a.card_face_image(card_from_token(model)):kind==6?a.content.world_image("rewards","CARD_REMOVAL"):a.content.ui_image(U_RewardCard);
+   if(kind==6&&image<0)image=a.content.ui_image(U_ShopRemove);
    c.picture(image,x+4,y+2,22,22);char name[128]{};TextBuffer b{name,sizeof name,0};
    if(kind==1){b.number(amount);b.text(" 金币");}else if(kind==2){const auto*d=potion_definition(Potion(model));if(d)b.text(d->name);}
-   else if(kind==3)b.text(a.relic_title(RelicId(model)));else if(kind==5)b.text(a.content.card_string(card_from_token(model).kind));else b.text("选择一张牌");
+   else if(kind==3)b.text(a.relic_title(RelicId(model)));else if(kind==5)b.text(a.content.card_string(card_from_token(model).kind));else if(kind==6)b.text("移除一张牌");else b.text("选择一张牌");
    c.text(name,x+30,y+5,10,White,112);c.hit(x,y,148,26,HitKind::WorldChoice,at);
   }
  }else if(potion||relics){

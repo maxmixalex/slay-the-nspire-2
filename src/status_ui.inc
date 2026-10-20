@@ -6,7 +6,7 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
     int slots=mx(1,width/30),visible=mn(count,slots);
     if(count>slots)--visible;
     for(int i=0;i<visible;i++){
-        int xx=x+i*30,value=status_amount(c.a.game,actor,ids[i]);
+        int xx=x+i*30,value=ui_status_amount(c.a.game,actor,ids[i]);
         c.picture(ui_status_image(c.a,ids[i]),xx,y,13,13);
         if(value<100)c.num(value,xx+14,y-1,10,White);else c.text("99+",xx+13,y-1,10,White);
     }
@@ -60,7 +60,7 @@ static void status_screen(Canvas&c){
             c.hit(12,y,116,22,HitKind::StatusItem,i);
         }
         int id=ids[a.status_selected];
-        c.picture(ui_status_image(a,id),145,65,25,25);c.num(status_amount(s,a.status_actor,id),181,66,16,Gold);
+        c.picture(ui_status_image(a,id),145,65,25,25);c.num(ui_status_amount(s,a.status_actor,id),181,66,16,Gold);
         c.text(ui_status_title(a,id),145,95,12,Gold,155);
         char description[2048]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0};while(description[t.n])++t.n;
         if(id==43){

@@ -6,8 +6,12 @@ static bool enemy_text_equal(const char*a,const char*b){if(!a||!b)return false;w
 EncounterId encounter_id(const char*name){for(unsigned i=1;i<EncounterKinds;++i)if(enemy_text_equal(name,encounter_metadata[i].model)||enemy_text_equal(name,encounter_definitions[i].key))return EncounterId(i);return EncounterId::None;}
 EnemyId enemy_id(const char*name){for(unsigned i=1;i<EnemyKinds;++i)if(enemy_text_equal(name,enemy_definitions[i].model)||enemy_text_equal(name,enemy_definitions[i].key))return EnemyId(i);return EnemyId::LegacyNibbit;}
 unsigned encounter_spawned_models(const State&s){return s.enemy_world.spawned_model_count;}
-unsigned encounter_returned_gold_count(const State&s){return s.enemy_world.returned_gold_count;}
-int encounter_returned_gold(const State&s,unsigned i){return i<s.enemy_world.returned_gold_count?s.enemy_world.returned_gold[i]:0;}
+unsigned encounter_returned_gold_count(const State&s){unsigned n=0;for(unsigned i=0;i<s.enemy_world.returned_gold_count;++i)n+=s.enemy_world.returned_reward_kind[i]==0;return n;}
+int encounter_returned_gold(const State&s,unsigned index){for(unsigned i=0;i<s.enemy_world.returned_gold_count;++i)if(!s.enemy_world.returned_reward_kind[i]){if(!index)return s.enemy_world.returned_gold[i];--index;}return 0;}
+void encounter_add_card_reward(State&s){auto&w=s.enemy_world;if(w.returned_gold_count>=MaxEnemyExtraRewards){fail(s);return;}unsigned i=w.returned_gold_count++;w.returned_reward_kind[i]=1;w.returned_gold[i]=3;}
+unsigned encounter_combat_reward_count(const State&s){return s.enemy_world.returned_gold_count;}
+bool encounter_combat_reward(const State&s,unsigned i,unsigned&kind,int&value){const auto&w=s.enemy_world;if(i>=w.returned_gold_count)return false;kind=w.returned_reward_kind[i];value=w.returned_gold[i];return true;}
+bool encounter_combat_reward_card(const State&s,unsigned i,EventDeckSnapshot&snap){const auto&w=s.enemy_world;if(i>=w.returned_gold_count||w.returned_reward_kind[i]!=2)return false;snap=w.returned_cards[i];return true;}
 unsigned encounter_escaped_enemies(const State&s){return s.enemy_world.escaped_count;}
 uint32_t encounter_gold_proportion_bits(const State&s){
  union Bits{float f;uint32_t u;};Bits bits{};

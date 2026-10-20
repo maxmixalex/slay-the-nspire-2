@@ -35,7 +35,8 @@ static bool valid_enemy_state(const State&s){
   if(m.captured_card>s.card_count||m.captured_deck.card.upgraded>1||!event_card_facts_valid(m.captured_deck.card,m.captured_deck.facts))return false;
   if(m.captured_card&&(!(m.flags&EnemyPresent)||(m.flags&EnemyRemoved)||s.zones[m.captured_card-1]!=Zone::Limbo||m.kind!=EnemyId::ThievingHopper))return false;
   for(auto value:m.data)if(value<-9999||value>9999)return false;
-  if(m.data[8]<0||m.data[8]>3||m.data[9]<0||m.data[9]>4)return false;
+  const int visual_max=m.kind==EnemyId::SewerClam?7:3;
+  if(m.data[8]<0||m.data[8]>visual_max||m.data[9]<0||m.data[9]>visual_max+1)return false;
   for(unsigned p=0;p<EnemyPowerCount;++p){
    if(m.power[p]<-9999||m.power[p]>9999||m.power_aux[p]<-9999||m.power_aux[p]>9999||m.duration_skip[p]>1||m.source[p]>MaxEnemies)return false;
   }
@@ -43,8 +44,17 @@ static bool valid_enemy_state(const State&s){
  for(unsigned p=0;p<EnemyPowerCount;++p)if(w.player_power[p]<-9999||w.player_power[p]>9999||w.player_aux[p]<-9999||w.player_aux[p]>9999||w.player_duration_skip[p]>1||w.player_source[p]>MaxEnemies)return false;
  unsigned models=0;for(auto v:w.spawned_models){if(v>1)return false;models+=v;}
  if(models!=w.spawned_model_count||w.escaped_count>65534||w.bound_played>1||w.used_types>7)return false;
- if(w.returned_gold_count>32)return false;
- for(unsigned i=0;i<32;++i)if(w.returned_gold[i]>9999||(i<w.returned_gold_count?!w.returned_gold[i]:w.returned_gold[i]!=0))return false;
+ if(w.returned_gold_count>MaxEnemyExtraRewards)return false;
+ for(unsigned i=0;i<MaxEnemyExtraRewards;++i){if(w.returned_reward_kind[i]>2||w.returned_gold[i]>9999)return false;
+  const auto&snap=w.returned_cards[i];
+  if(!event_card_facts_valid(snap.card,snap.facts)||snap.card.upgraded>1||snap.genetic>9999||snap.scythe>9999)return false;
+  if(i<w.returned_gold_count){if(w.returned_reward_kind[i]==0&&!w.returned_gold[i])return false;
+   if(w.returned_reward_kind[i]==1&&w.returned_gold[i]!=3)return false;
+   if(w.returned_reward_kind[i]==2&&w.returned_gold[i]!=card_token(snap.card))return false;
+  }
+  else if(w.returned_gold[i]||w.returned_reward_kind[i])return false;
+  if(w.returned_reward_kind[i]!=2&&(snap.card.kind||snap.card.upgraded||snap.facts.enchantment!=EventEnchantment::None||snap.facts.science_type||snap.facts.rider||snap.facts.enchantment_amount||snap.facts.energy_offset||snap.facts.progress||snap.genetic||snap.scythe))return false;
+ }
  for(unsigned id=0;id<MaxCards;++id){
   if(w.affliction[id]>=unsigned(EnemyAffliction::Count)||w.dampen_restore[id]>1||w.affliction_amount[id]<0||w.affliction_amount[id]>9999||w.card_value[id]<0||w.card_value[id]>9999)return false;
   if((!w.affliction[id])!=(!w.affliction_amount[id]))return false;

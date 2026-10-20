@@ -41,6 +41,7 @@ static void enemy_visual_move_end(State&s,int t,int node){
  case EnemyId::CeremonialBeast:if(node==1)m.data[8]&=~2;break;
  case EnemyId::CrossbowRubyRaider:if(node==0||node==1)m.data[8]=(int16_t)(node==1);break;
  case EnemyId::FatGremlin:case EnemyId::SneakyGremlin:if(node==0)m.data[8]=1;break;
+ case EnemyId::SewerClam:if(node==0&&m.data[8]<7)++m.data[8];break;
  case EnemyId::TheObscura:if(node==0)m.data[8]=1;break;
  case EnemyId::ThievingHopper:if(node==4)m.data[8]=0;break;
  case EnemyId::Vantom:if(node>=0&&node<4)m.data[8]=(int16_t)(node==0?2:node==1?3:node==2?0:1);break;
@@ -52,6 +53,12 @@ bool enemy_visual_fact(const State&s,int t,const char*key,int&out){
  const auto&m=s.enemy_world.models[t];const unsigned bits=enemy_visual_bits(s,t);
  auto answer=[&](const char*name,int value){if(!enemy_text_equal(key,name))return false;out=value;return true;};
  if(answer("live_combat",s.enemy_world.active!=0))return true;
+ if(answer("EnemyDown",(m.flags&EnemyDown)!=0)||answer("Shrink",enemy_power_value(s,t,EnemyPower::Shrink)!=0))return true;
+ if(m.kind==EnemyId::Crusher||m.kind==EnemyId::Rocket){
+  int left=-1,right=-1;for(int other=0;other<s.enemy_count;++other){if(s.enemy_world.models[other].kind==EnemyId::Crusher)left=other;if(s.enemy_world.models[other].kind==EnemyId::Rocket)right=other;}
+  if(answer("kaiser_left_dead",left<0||s.enemies[left].hp<=0)||answer("kaiser_right_dead",right<0||s.enemies[right].hp<=0))return true;
+  if(answer("right_arm_state",right>=0?(int)enemy_visual_bits(s,right):0))return true;
+ }
  if(enemy_text_equal(key,"living_primary_teammates")){
   int count=0;for(int other=0;other<s.enemy_count;++other)if(other!=t&&enemy_slot_alive(s,other)&&!enemy_power_value(s,other,EnemyPower::Minion))++count;
   out=count;return true;
@@ -73,6 +80,7 @@ bool enemy_visual_fact(const State&s,int t,const char*key,int&out){
  case EnemyId::Parafright:return answer("IllusionReviving",(m.flags&EnemyDown)!=0);
  case EnemyId::PhantasmalGardener:return answer("SkittishUsed",m.power_aux[(unsigned)EnemyPower::Skittish]!=0);
  case EnemyId::Rocket:return answer("right_arm_state",(int)bits);
+ case EnemyId::SewerClam:return answer("coral_growth_step",(int)bits);
  case EnemyId::SoulFysh:return answer("IsInvisible",(bits&1)!=0);
  case EnemyId::SpinyToad:return answer("IsSpiny",(bits&1)!=0);
  case EnemyId::TestSubject:return answer("Respawns",m.data[0]);

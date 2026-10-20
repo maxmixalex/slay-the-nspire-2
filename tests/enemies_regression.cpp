@@ -76,7 +76,10 @@ static void metadata_and_all_encounters(){
  CHECK(encounter_min_gold(EncounterId::AeonglassBoss,3)==75&&encounter_max_gold(EncounterId::AeonglassBoss)==100);
  CHECK(encounter_min_gold(EncounterId::FakeMerchantEventEncounter,10)==300);
  CHECK(!encounter_rewards_allowed(EncounterId::BattlewornDummyEventV1Encounter));
- CHECK(encounter_shares_tags(EncounterId::NibbitsNormal,EncounterId::NibbitsWeak));
+ // The pinned normal pair deliberately inherits the empty Tags collection;
+ // only the solitary weak encounter declares EncounterTag.Nibbit.
+ CHECK(!encounter_shares_tags(EncounterId::NibbitsNormal,EncounterId::NibbitsWeak));
+ CHECK(encounter_shares_tags(EncounterId::BowlbugsNormal,EncounterId::BowlbugsWeak));
  for(unsigned region=0;region<4;++region)for(auto type:{EncounterClass::Weak,EncounterClass::Normal,EncounterClass::Elite,EncounterClass::Boss}){
   EncounterId pool[EncounterKinds];unsigned n=encounter_pool(region,type,pool,EncounterKinds);CHECK(n>0&&n<EncounterKinds);
   for(unsigned i=0;i<n;++i){CHECK(encounter_definition(pool[i])->type==type);for(unsigned j=0;j<i;++j)CHECK(pool[i]!=pool[j]);}
@@ -161,12 +164,17 @@ static void stolen_assets_and_timeout(){
  effect(s,XOp::EnemySideHook,0,0);CHECK(s.enemy_world.turn_order[0]==sneaky&&s.enemy_world.turn_order[1]==fat);
  kill(s,fat);CHECK(s.gold==79&&encounter_returned_gold_count(s)==1&&encounter_returned_gold(s,0)==20);persist(s);
 
- scenario="Hopper snapshot restores the exact permanent card";s=fight(EncounterId::ThievingHopperWeak,0,true);
+ scenario="Hopper returns an optional exact-card reward before deck insertion";s=fight(EncounterId::ThievingHopperWeak,0,true);
  while(s.hand.count){int id=s.hand.ids[--s.hand.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}
  unsigned deck=s.deck_count;move(s,0,0);CHECK(s.deck_count==deck-1&&s.enemy_world.models[0].captured_card);
  CHECK(s.enemy_world.models[0].captured_deck.card.kind==DefectGeneticAlgorithm&&s.enemy_world.models[0].captured_deck.genetic==37);persist(s);
- kill(s,0);CHECK(s.deck_count==deck&&s.deck[deck-1].kind==DefectGeneticAlgorithm&&s.deck[deck-1].upgraded);
- CHECK(s.defect.genetic_deck[deck-1]==37&&s.event_cards.deck[deck-1].energy_offset==-1);persist(s);
+ kill(s,0);CHECK(s.deck_count==deck-1&&encounter_combat_reward_count(s)==1&&!s.enemy_world.models[0].captured_card);
+ EventDeckSnapshot returned{};unsigned reward_kind=9;int reward_value=-1;
+ CHECK(encounter_combat_reward(s,0,reward_kind,reward_value)&&reward_kind==2);
+ CHECK(encounter_combat_reward_card(s,0,returned)&&returned.card.kind==DefectGeneticAlgorithm&&returned.card.upgraded);
+ CHECK(returned.genetic==37&&returned.facts.energy_offset==-1&&reward_value==card_token(returned.card));
+ CHECK(encounter_returned_gold_count(s)==0);persist(s);
+ encounter_add_card_reward(s);CHECK(encounter_combat_reward_count(s)==2&&encounter_combat_reward(s,1,reward_kind,reward_value)&&reward_kind==1&&reward_value==3);persist(s);
  s=fight(EncounterId::ThievingHopperWeak);deck=s.deck_count;move(s,0,0);CHECK(s.deck_count==deck-1);persist(s);
  effect(s,XOp::EnemyEscape,0);CHECK(s.deck_count==deck-1&&!s.enemy_world.models[0].captured_card&&encounter_escaped_enemies(s)==1);persist(s);
 
@@ -198,10 +206,30 @@ static void choices_statuses_and_eight_slots(){
 }
 static int visual_fact(const State&s,int target,const char*key){int value=-9;CHECK(enemy_visual_fact(s,target,key,value));return value;}
 static void visual_predicates_and_unpowered_death_block(){
+ scenario="original intent kinds and ascension-specific status card counts";
+ auto intent_state=fight(EncounterId::ThievingHopperWeak);
+ intent_state.enemy_world.models[0].node=0;
+ CHECK(enemy_intent(intent_state,0).flags==(EnemyIntentAttack|EnemyIntentCardDebuff));
+ intent_state=fight(EncounterId::ShrinkerBeetleWeak);
+ intent_state.enemy_world.models[0].node=0;
+ CHECK(enemy_intent(intent_state,0).flags==EnemyIntentDebuffStrong);
+ for(unsigned ascension:{0u,9u}){
+  intent_state=fight(EncounterId::AeonglassBoss,ascension);intent_state.enemy_world.models[0].node=2;
+  CHECK(enemy_intent(intent_state,0).status_cards==(ascension?2:1));
+  intent_state=fight(EncounterId::TestSubjectBoss,ascension);intent_state.enemy_world.models[0].node=5;
+  CHECK(enemy_intent(intent_state,0).status_cards==(ascension?5:3));
+ }
+ scenario="Paper Krane weak intent and attack precede Debilitate amplification";
+ auto s=fight(EncounterId::NibbitsNormal);CHECK(gain_world_relic(s,WorldRelicPaperKrane));resolve_pending(s);
+ power(s,0,EnemyPower::Weak,2);s.enemy_world.models[0].node=0;s.block=0;
+ CHECK(enemy_intent(s,0).damage==7);int before=s.hp;move(s,0,0);CHECK(before-s.hp==7);
+ power(s,0,EnemyPower::Debilitate,2);CHECK(enemy_intent(s,0).damage==2);before=s.hp;move(s,0,0);CHECK(before-s.hp==2);persist(s);
+
  scenario="Crab Rage adds unpowered block despite Dexterity and Frail";
- auto s=fight(EncounterId::KaiserCrabBoss);int rocket=alive(s,EnemyId::Rocket),crusher=alive(s,EnemyId::Crusher);
+ s=fight(EncounterId::KaiserCrabBoss);int rocket=alive(s,EnemyId::Rocket),crusher=alive(s,EnemyId::Crusher);
  CHECK(rocket>=0&&crusher>=0);power(s,rocket,EnemyPower::Dexterity,7);power(s,rocket,EnemyPower::Frail,2);
- s.enemies[rocket].block=0;kill(s,crusher);CHECK(s.enemies[rocket].block==99);persist(s);
+ s.enemies[rocket].block=0;kill(s,crusher);CHECK(s.enemies[rocket].block==99);
+ CHECK(visual_fact(s,rocket,"kaiser_left_dead")==1&&visual_fact(s,rocket,"kaiser_right_dead")==0);persist(s);
 
  scenario="Cubex does not leave its burrow merely because charge is intended";
  s=fight(EncounterId::CubexConstructNormal);CHECK(visual_fact(s,0,"IsBurrowed")==1&&visual_fact(s,0,"IsCharging")==0);
@@ -237,6 +265,10 @@ static void visual_predicates_and_unpowered_death_block(){
  s=fight(EncounterId::VantomBoss);CHECK(visual_fact(s,0,"tail_charge")==1);
  const int charge[]={2,3,0,1};
  for(int node=0;node<4;++node){s.block=9999;move(s,0,node);CHECK(visual_fact(s,0,"tail_charge")==charge[node]);persist(s);}
+
+ scenario="Sewer Clam growth follows completed casts and has a finite cap";
+ s=fight(EncounterId::SewerClamNormal);CHECK(visual_fact(s,0,"coral_growth_step")==0);
+ for(int cast=1;cast<=9;++cast){move(s,0,0);CHECK(visual_fact(s,0,"coral_growth_step")== (cast<7?cast:7));persist(s);}
 }
 
 int main(){

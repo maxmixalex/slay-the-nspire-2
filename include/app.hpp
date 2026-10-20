@@ -7,6 +7,7 @@
 #include "pointer.hpp"
 #include "map_preview.hpp"
 #include "resource_source.hpp"
+#include "world_enemy_assets.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -55,8 +56,10 @@ inline unsigned ui_owned_relic_count(const State&s){return s.world_relics.active
 inline RelicId ui_owned_relic_id(const State&s,unsigned position){return position<ui_owned_relic_count(s)?(s.world_relics.active?s.world_relics.entries[position].id:s.relic_order[position]):NoWorldRelic;}
 constexpr unsigned MaxWorldUiChoices=MaxOriginalEventRewards>MaxWorldRelicOffers?MaxOriginalEventRewards:MaxWorldRelicOffers;
 inline unsigned ui_reward_actions(const State&s,UiAction*out){
- unsigned n=0;const UiAction base[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion};for(auto a:base){if(out)out[n]=a;++n;}
- if(s.world.active&&s.world.reward_relic!=NoWorldRelic){if(out)out[n]=UiAction::RewardRelic;++n;}
+ unsigned n=0;const UiAction base[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion};
+ const bool transferred=s.world.active&&s.world.reward_count==0&&(s.reward_claimed&7)==7;
+ if(!transferred)for(auto a:base){if(out)out[n]=a;++n;}
+ if(s.world.active&&s.world.reward_relic!=NoWorldRelic&&!s.world.reward_relic_claimed){if(out)out[n]=UiAction::RewardRelic;++n;}
  if(s.necro.grimoire_pending){if(out)out[n]=UiAction::RewardGrimoire;++n;}
  if(out)out[n]=UiAction::LeaveRewards;return n+1;
 }
@@ -67,6 +70,18 @@ inline bool choice_free_energy(const State&s){
 }
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&); };
 struct Motion {int clip=-1;uint32_t start=0;};
+constexpr unsigned MaxEnemyVisualFacts=64,MaxEnemyVisualCommands=24;
+struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
+struct EnemyVisualCommand {const char* action=nullptr;EnemyVisualFacts facts{};int16_t move=-1;uint8_t direct=0;uint32_t earliest=0;};
+struct EnemyPresentation {
+    uint16_t identity=0;uint8_t model=0,skin=0;
+    int state=-1,clip=-1,move=-1,hp=0;
+    uint32_t start=0,until=0;
+    const char* next_clip=nullptr;
+    bool loop=true,dead=false,overflow=false;
+    EnemyVisualFacts facts{};
+    EnemyVisualCommand queue[MaxEnemyVisualCommands]{};uint8_t count=0;
+};
 struct App {
     State game{};Content content{};Callbacks callbacks{};
     uint16_t pixels[ScreenW*ScreenH]{};
@@ -91,6 +106,14 @@ struct App {
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[MaxEnemies+1]={},hit_start[MaxEnemies+1]={};
     uint32_t animation=0,run_number=0;const char* notice="";
     Motion motion[MaxEnemies+1]{};
+    EnemyPresentation enemy_presentation[MaxEnemies]{};
+    uint32_t enemy_visual_clock=0,combat_linger_until=0;
+    uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
+    void sync_enemy_feedback();
+    void observe_core(const State&,Log);
+    void enemy_trigger(int,const char*,int move=-1,bool direct=false,const EnemyVisualFacts* facts=nullptr,uint32_t earliest=0);
+    bool enemy_frame(int,int& clip,uint32_t& elapsed,bool& loop);
+    int combat_background()const;
     Motion osty_motion{};int last_osty_hp=0,last_osty_attacks=0;
     void sync_character_feedback();
     PointerState pointer{};
@@ -159,7 +182,7 @@ struct App {
     void world_card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
     void localized_text(const char* table,const char* key,char*,size_t,int model=-1,int actor=-1,int amount=0)const;
     void original_event_text(int option,bool description,char*,size_t)const;
-    const char* relic_title(RelicId)const;
+    const char* relic_title(RelicId,int position=-1)const;
     void relic_description(RelicId,char*,size_t,int position=-1)const;
     int detail_energy()const;
     int detail_stars()const;

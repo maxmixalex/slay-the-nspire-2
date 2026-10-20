@@ -94,7 +94,7 @@ static void item_detail_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,190);c.ui(U_RewardPanel,43,26,234,206);
     bool relic=a.detail_item<WorldRelicKinds;int index=relic?a.detail_item:a.detail_item-WorldRelicKinds;
     if(index<0||index>=(relic?WorldRelicKinds:PotionKinds)){a.detail_item=-1;return;}
-    const char*name=relic?a.relic_title(RelicId(index)):potion_definitions[index].name;
+    const char*name=relic?a.relic_title(RelicId(index),a.detail_owned):potion_definitions[index].name;
     char description[4096]{};if(relic)a.relic_description(RelicId(index),description,sizeof description,a.detail_owned);
     const char*desc=relic?description:potion_definitions[index].description;
     int image=relic?a.relic_face_image(index):a.content.potion_image((Potion)(index+1));

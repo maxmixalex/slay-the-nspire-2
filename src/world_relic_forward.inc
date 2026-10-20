@@ -15,6 +15,10 @@ static int wr_star_cost(const State&,Card,int instance,int current);
 static int wr_damage_add(const State&,Card,int instance,int current,bool powered=true);
 static int wr_damage_percent(const State&,Card,int instance,int target,bool powered=true);
 static int wr_incoming_damage_percent(const State&,int dealer,bool powered);
+// WeakPower/VulnerablePower call these directly on the affected player's
+// first matching relic. Apply before Debilitate, without rounding damage.
+static int wr_enemy_weak_percent(const State&,int current_percent);
+static int wr_player_vulnerable_percent(const State&,int current_percent,bool pet);
 static int wr_block_percent(const State&,Card,int instance,bool powered=true);
 static int wr_player_hp_loss(State&,int current);
 static int wr_enemy_hp_loss(State&,int current,bool powered);

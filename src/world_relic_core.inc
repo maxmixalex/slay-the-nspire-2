@@ -45,6 +45,8 @@ static int wr_damage_percent(const State&s,Card c,int id,int,bool powered){if(!s
  if(r.id==WorldRelicVitruvianMinion&&wr_minion(c))factor*=2;
  if(powered&&r.id==WorldRelicPenNib&&((r.values[1]&&r.values[1]==id+1)||(!r.values[1]&&r.values[0]==9&&(!wr_card(s,id)||s.zones[id]!=Zone::Limbo))))factor*=2;}return factor;}
 static int wr_incoming_damage_percent(const State&s,int dealer,bool powered){return powered&&dealer>=0&&dealer<s.enemy_count&&s.enemies[dealer].hp<=s.expansion.doom[dealer]&&wr_has(s,WorldRelicUndyingSigil)?50:100;}
+static int wr_enemy_weak_percent(const State&s,int value){return value-(wr_has(s,WorldRelicPaperKrane)?15:0);}
+static int wr_player_vulnerable_percent(const State&s,int value,bool pet){return value+(!pet&&wr_has(s,WorldRelicPaperPhrog)?25:0);}
 static int wr_block_percent(const State&s,Card c,int id,bool powered){if(!s.world_relics.active)return 100;int factor=100;for(unsigned i=0;i<s.world_relics.count;i++){const auto&r=s.world_relics.entries[i];if(!wr_live(r))continue;
  if(r.id==WorldRelicVitruvianMinion&&wr_minion(c))factor*=2;
  if(powered&&wr_card(s,id)&&r.id==WorldRelicPaelsLegion&&r.values[0]<=0)factor*=2;
@@ -115,7 +117,7 @@ static void wr_internal(State&s,WorldRelicInstance&r,int op,int a,int b){switch(
   const unsigned id=w.byrdpip_cards[w.byrdpip_cursor++];if(!wr_card(s,int(id))||s.cards[id].kind!=EventCardByrdonisEgg){fail(s);return;}
   wr_action(s,r.serial,WRA_TransformEgg);s.cards[id]={EventCardByrdSwoop,0};reset_card_modifiers(s,int(id));
   record(s,LogKind::Transform,EventCardByrdonisEgg,EventCardByrdSwoop);notify_card_generated(s,int(id));break;}
- case WRA_History:if(wr_card(s,a)){int id=make_card(s,s.cards[a]);if(id>=0){copy_card_modifiers(s,id,a);s.zones[id]=Zone::Limbo;r.values[2]=id+1;queue_extension(s,XOp::AutoInstance,id,0,true);world_card_entered(s,id);}}break;
+ case WRA_History:if(wr_card(s,a)){int id=make_card(s,s.cards[a]);if(id>=0){copy_card_modifiers(s,id,a);s.world_relics.card_is_dupe[id]=1;s.zones[id]=Zone::Limbo;r.values[2]=id+1;queue_extension(s,XOp::AutoInstance,id,0,true);world_card_entered(s,id);}}break;
  case WRA_Whisper:{if(a>=13||s.turn!=1||!alive(s)){r.values[3]=0;return;}r.values[3]=1;int id=-1;
   for(unsigned i=0;i<s.hand.count;i++){int candidate=s.hand.ids[i];Card card=s.cards[candidate];int price=cost(s,candidate),stars=card_star_cost(s,card,candidate);
    if(cost(card)>=-1&&price<=s.energy&&stars<=s.expansion.stars&&silent_can_play(s,card)&&necro_can_play(s,card)&&enemy_card_can_play(s,candidate,false)&&event_card_play_allowed(s,candidate,false)&&wr_can_play(s,false)){id=candidate;break;}}

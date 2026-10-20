@@ -337,6 +337,7 @@ bool original_event_text_key(const State&s,int option,bool description,char*out,
 }
 bool original_event_description_value(const State&s,const char*key,int&value){
  const auto&e=s.original_events;
+ if(e.id==OriginalEventId::BattlewornDummy){const char*keys[]={"Setting1Hp","Setting2Hp","Setting3Hp"};const EnemyId models[]={EnemyId::BattleFriendV1,EnemyId::BattleFriendV2,EnemyId::BattleFriendV3};for(unsigned i=0;i<3;i++)if(same(key,keys[i])){const auto*d=enemy_definition(models[i]);if(!d)return false;value=d->min_hp;return true;}}
  if(same(key,"Damage")&&e.id==OriginalEventId::AbyssalBaths){value=e.values[0];return true;}
  if(same(key,"Gold")){switch(e.id){case OriginalEventId::DenseVegetation:case OriginalEventId::ThisOrThat:case OriginalEventId::SunkenStatue:case OriginalEventId::LostWisp:case OriginalEventId::WhisperingHollow:case OriginalEventId::LuminousChoir:case OriginalEventId::PunchOff:value=e.values[0];return true;default:break;}}
  if(same(key,"Heal")){if(e.id==OriginalEventId::DenseVegetation){value=e.values[1];return true;}if(e.id==OriginalEventId::UnrestSite||e.id==OriginalEventId::SpiralingWhirlpool){value=e.values[0];return true;}}

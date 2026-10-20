@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from world_enemy_profile import plan as enemy_plan, generated_cpp as enemy_cpp
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS = 497, 1556, 339, 38
@@ -14,8 +15,18 @@ CARDS = 558
 TEXT_BASE = BASE_STRINGS + (CARDS - BASE_CARDS) * 3
 PROFILE = json.loads((ROOT / 'config/world-ui-0.17.json').read_text())
 TEXT_KEYS = PROFILE['text_keys']
-AUXILIARY_ROWS = PROFILE['images']
-CLIP_ROWS = PROFILE.get('clips', [])
+AUXILIARY_ROWS = [dict(row) for row in PROFILE['images']]
+# Keep the shared crab behind the authored foreground. Appending preserves all
+# 731 prior world image ids; the original background id becomes its back plane.
+_crab = next(row for row in AUXILIARY_ROWS if row['key'] == 'backgrounds.KAISER_CRAB_BOSS')
+_crab['plane'] = 'back'
+AUXILIARY_ROWS.append(dict(_crab, key='background_front.KAISER_CRAB_BOSS', plane='front'))
+AUXILIARY_ROWS.append(dict(key='rewards.CARD_REMOVAL', kind='texture',
+    path='images/ui/reward_screen/reward_icon_card_removal.png', size=[24,24], fit='contain'))
+for _level in range(2, 6):
+    AUXILIARY_ROWS.append(dict(key=f'intents.ATTACK_{_level}', kind='texture',
+        path=f'images/packed/intents/attack/intent_attack_{_level}.png', size=[24,24], fit='contain'))
+CLIP_ROWS = enemy_plan()['jobs']
 STRINGS = TEXT_BASE + len(TEXT_KEYS)
 AUXILIARY = BASE_AUXILIARY + len(AUXILIARY_ROWS)
 CLIPS = BASE_CLIPS + len(CLIP_ROWS)
@@ -43,6 +54,7 @@ def generated_files() -> dict[str, str]:
         'src/world_text_index.inc': table((key, TEXT_BASE + i) for i, key in enumerate(TEXT_KEYS)),
         'src/world_image_index.inc': table((row['key'], BASE_AUXILIARY + i) for i, row in enumerate(AUXILIARY_ROWS)),
         'src/world_clip_index.inc': table((row['key'], BASE_CLIPS + i) for i, row in enumerate(CLIP_ROWS)),
+        'src/world_enemy_assets.inc': enemy_cpp(),
     }
 
 

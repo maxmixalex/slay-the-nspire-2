@@ -82,4 +82,7 @@ struct ExpansionState {
  // One AttackCommand result per nested physical frame. Kills remain true
  // across revival and slot reuse; Fatal permission is captured before damage.
  uint8_t attack_observed[MaxAutoFrames+1]{},attack_killed[MaxAutoFrames+1]{},attack_fatal[MaxAutoFrames+1]{};
+ // v15: Feral captures its result before the physical play and nested cards.
+ // Zero migrates older pending plays; one declines, two returns to Hand.
+ uint8_t feral_result[MaxAutoFrames+1]{};
 };

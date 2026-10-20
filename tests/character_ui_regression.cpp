@@ -122,11 +122,11 @@ static void overflow_and_catalog(){
         a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
         while(a.library_page<(CardKinds-1)/8)action(UiAction::NextPage);
         CHECK(a.library_page==(CardKinds-1)/8);CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
-        CHECK(ids[CardKinds-1]==SweepingGaze);auto before=snapshot();
+        CHECK(ids[CardKinds-1]==EventCardWrithe);auto before=snapshot();
         auto next=hit(HitKind::UiAction,(int)UiAction::NextPage);CHECK(!next.enabled);
         a.pointer_move(next.x+next.w/2,next.y+next.h/2);a.pointer_button(true);a.pointer_button(false);
         CHECK(a.library_page==(CardKinds-1)/8);unchanged(before);
-        tap(HitKind::LibraryItem,CardKinds-1);CHECK(card_from_token(a.detail_card).kind==SweepingGaze);
+        tap(HitKind::LibraryItem,CardKinds-1);CHECK(card_from_token(a.detail_card).kind==EventCardWrithe);
     }
 }
 static void named_value_and_screens(){

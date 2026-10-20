@@ -13316,11 +13316,11 @@
           "node": 1,
           "triggers": [
             "Plow",
-            "EndPlow",
-            "Attack"
+            "EndPlow"
           ],
           "direct_clips": [],
-          "method": "PlowMove"
+          "method": "PlowMove",
+          "attacker_animation": "explicit_trigger_with_no_implicit_attack"
         },
         {
           "key": "STUN_MOVE",
@@ -84807,11 +84807,11 @@
           "key": "THIEVERY_MOVE",
           "node": 0,
           "triggers": [
-            "Steal",
-            "Attack"
+            "Steal"
           ],
           "direct_clips": [],
-          "method": "ThieveryMove"
+          "method": "ThieveryMove",
+          "attacker_animation": "explicit_trigger_with_no_implicit_attack"
         },
         {
           "key": "NAB_MOVE",
@@ -89370,11 +89370,11 @@
           "key": "BELOW_MOVE",
           "node": 2,
           "triggers": [
-            "BurrowAttack",
-            "Attack"
+            "BurrowAttack"
           ],
           "direct_clips": [],
-          "method": "BelowMove"
+          "method": "BelowMove",
+          "attacker_animation": "explicit_trigger_with_no_implicit_attack"
         },
         {
           "key": "DIZZY_MOVE",
@@ -92649,13 +92649,13 @@
           "key": "DISMEMBER_MOVE",
           "node": 2,
           "triggers": [
-            "ATTACK_HEAVY",
-            "Attack"
+            "ATTACK_HEAVY"
           ],
           "direct_clips": [
             "_tracks/attack_heavy"
           ],
-          "method": "DismemberMove"
+          "method": "DismemberMove",
+          "attacker_animation": "explicit_trigger_with_no_implicit_attack"
         },
         {
           "key": "PREPARE_MOVE",

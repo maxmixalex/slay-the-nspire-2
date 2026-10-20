@@ -64,7 +64,11 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(!a.library&&x.instance>=0&&character_description_value(s,x.card,x.actor,x.instance,name,value))return wt_number(value);
   if(!a.library&&combat_phase(s.phase)&&x.deck<0&&!x.facts&&character_description_value(s,x.card,x.actor,x.instance,name,value))return wt_number(value);
  }
- if(wt_equal(x.table,"events")){
+ if(wt_equal(x.table,"intents")&&x.model>=0&&x.model<s.enemy_count){auto intent=enemy_intent(s,x.model);
+  if(wt_equal(name,"Damage"))return wt_number(intent.damage);if(wt_equal(name,"Repeat"))return wt_number(intent.hits);
+  if(wt_equal(name,"CardCount"))return wt_number(intent.status_cards);
+ }
+ if(wt_equal(x.table,"events")||wt_equal(x.table,"ancients")){
   int value=0;if(original_event_description_value(s,name,value))return wt_number(value);
   OriginalTextReference ref;if(original_event_description_reference(s,name,x.option,x.description,ref))return wt_reference(x,ref);
   if(wt_equal(name,"event"))return wt_string(a.content.world_title("events",original_event_key(s.original_events.id)));
@@ -99,7 +103,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   }
  }
  if(wt_equal(x.table,"relics")){
-  RelicId id=RelicId(x.model);if(wt_equal(name,"Title"))return wt_string(a.relic_title(id));
+  RelicId id=RelicId(x.model);if(wt_equal(name,"Title"))return wt_string(a.relic_title(id,x.relic_position));
   int value=0;if(world_relic_description_value(s,id,name,value,x.relic_position))return wt_number(value);
   OriginalTextReference ref;
   if(wt_equal(name,"CardTitles")){char list[2048]{};TextBuffer b{list,sizeof list,0};unsigned count=world_relic_description_reference_count(s,id,name,x.relic_position);
@@ -124,8 +128,8 @@ void App::localized_text(const char*table,const char*key,char*out,size_t cap,int
  const char*raw=content.world_string(table,key);char source[8192]{};TextBuffer b{source,sizeof source,0};b.text(raw);
  LocalizedTemplate(out,cap,wt_resolve,&x).format(source);
 }
-const char* App::relic_title(RelicId id)const{
- if(id>=WorldRelicKinds)return "";const char*text=content.world_title("relics",world_relic_key(id));
+const char* App::relic_title(RelicId id,int position)const{
+ if(id>=WorldRelicKinds)return "";char key[128]{};world_relic_title_key(game,id,key,sizeof key,position);const char*text=content.world_string("relics",key);
  return *text?text:id<RelicKinds?relic_definitions[id].name:world_relic_key(id);
 }
 void App::relic_description(RelicId id,char*out,size_t cap,int position)const{
@@ -135,6 +139,15 @@ void App::relic_description(RelicId id,char*out,size_t cap,int position)const{
 }
 void App::original_event_text(int option,bool description,char*out,size_t cap)const{
  if(!cap)return;out[0]=0;char key[256]{};
+ if(option<0&&description&&!game.original_events.finished){
+  const auto id=game.original_events.id;
+  if(id==OriginalEventId::Neow||id==OriginalEventId::Darv||id==OriginalEventId::Nonupeipe||id==OriginalEventId::Tanx||id==OriginalEventId::Orobas||id==OriginalEventId::Pael||id==OriginalEventId::Tezcatara||id==OriginalEventId::Vakuu){
+   // No cross-run AncientStats profile exists yet. The exact first-visit line
+   // is the explicit historyless fallback; it does not invent a visit count.
+   TextBuffer b{key,sizeof key,0};b.text(original_event_key(id));b.text(".talk.firstVisitEver.0-0.ancient");
+   localized_text("ancients",key,out,cap,int(id));return;
+  }
+ }
  if(original_event_text_key(game,option,description,key,sizeof key)){WorldTextContext x{this,"events",{},int(game.original_events.id)};x.option=option;x.description=description;wt_model_key(x,key);char raw[8192]{};TextBuffer b{raw,sizeof raw,0};b.text(content.world_string("events",key));LocalizedTemplate(out,cap,wt_resolve,&x).format(raw);}
 }
 void App::world_card_description(Card card,int target,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{

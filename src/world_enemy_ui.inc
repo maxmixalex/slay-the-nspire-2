@@ -1,0 +1,110 @@
+// The source simulation reports actual move starts, before their animator
+// predicates change. These snapshots are presentation-only and never saved.
+static bool ui_visual_equal(const char*a,const char*b){if(!a||!b)return false;while(*a&&*a==*b){++a;++b;}return *a==*b;}
+static EnemyVisualFacts ui_enemy_facts(const State&s,int slot){EnemyVisualFacts f;
+ const unsigned n=world_enemy_fact_count();for(unsigned i=0;i<n&&i<MaxEnemyVisualFacts;i++)if(enemy_visual_fact(s,slot,world_enemy_fact_name(i),f.values[i]))f.known|=uint64_t(1)<<i;return f;
+}
+static bool ui_enemy_fact(void* context,const char*key,int&value){const auto&f=*static_cast<const EnemyVisualFacts*>(context);
+ for(unsigned i=0;i<world_enemy_fact_count()&&i<MaxEnemyVisualFacts;i++)if(ui_visual_equal(key,world_enemy_fact_name(i))){if(!(f.known&(uint64_t(1)<<i)))return false;value=f.values[i];return true;}return false;
+}
+static unsigned ui_enemy_skin(const State&s,int slot,unsigned model){
+ const auto*v=world_enemy_visual(model);if(!v||!v->skin_count)return 0;
+ // Appearance has its own stable presentation hash, never a gameplay draw.
+ // Named original slots constrain the applicable skins before weighting.
+ uint32_t hash=uint32_t(s.enemy_world.models[slot].combat_id)*2654435761u^s.seed^uint32_t(model)*2246822519u;unsigned total=0;
+ for(unsigned i=0;i<v->skin_count;i++){const auto*k=world_enemy_skin(model,i);if(k&&(!k->slot_mask||(k->slot_mask&(1u<<s.enemy_world.models[slot].slot))))total+=k->weight;}
+ if(!total)return 0;unsigned choice=hash%total;
+ for(unsigned i=0;i<v->skin_count;i++){const auto*k=world_enemy_skin(model,i);if(!k|| (k->slot_mask&&!(k->slot_mask&(1u<<s.enemy_world.models[slot].slot))))continue;if(choice<k->weight)return i;choice-=k->weight;}return 0;
+}
+static uint32_t ui_enemy_ticks(const App&a,int clip){
+ const auto*row=clip>=0?world_enemy_clip_directory(unsigned(clip)):nullptr;auto c=a.content.clip(clip);
+ unsigned ms=row?row->duration_ms:uint32_t(c.count)*c.frame_ms;return (ms+32)/33? (ms+32)/33:1;
+}
+static bool ui_enemy_set_clip(App&a,int slot,int clip,const EnemyVisualFacts&facts,uint32_t start,bool loop){
+ if(clip<0)return false;auto&m=a.enemy_presentation[slot];m.clip=clip;m.facts=facts;m.loop=loop;m.start=start;m.until=start+ui_enemy_ticks(a,clip);return true;
+}
+static bool ui_enemy_set_state(App&a,int slot,int state,const EnemyVisualFacts&facts,uint32_t start){
+ auto&m=a.enemy_presentation[slot];const auto*node=world_enemy_state(m.model,state);if(!node)return false;
+ int clip=world_enemy_resolve_clip(m.model,node->clip,m.skin,m.move,ui_enemy_fact,const_cast<EnemyVisualFacts*>(&facts));if(clip<0)return false;
+ if(!ui_enemy_set_clip(a,slot,clip,facts,start,node->loop!=0))return false;m.state=state;m.next_clip=nullptr;return true;
+}
+static void ui_enemy_advance(App&a,int slot){
+ auto&m=a.enemy_presentation[slot];if(!m.identity)return;
+ for(unsigned pass=0;pass<MaxEnemyVisualCommands+2;pass++){
+  bool finished=m.clip<0||(!m.loop&&int32_t(a.animation-m.until)>=0);
+  if(m.count&&(m.loop||finished)&&int32_t(a.animation-m.queue[0].earliest)>=0){
+   EnemyVisualCommand command=m.queue[0];for(unsigned i=1;i<m.count;i++)m.queue[i-1]=m.queue[i];--m.count;m.move=command.move;
+   int state=command.direct?-1:world_enemy_transition(m.model,m.state,command.action,ui_enemy_fact,&command.facts);
+   if(state>=0&&ui_enemy_set_state(a,slot,state,command.facts,a.animation))return;
+   if(command.direct){int clip=world_enemy_resolve_clip(m.model,command.action,m.skin,command.move,ui_enemy_fact,&command.facts);if(ui_enemy_set_clip(a,slot,clip,command.facts,a.animation,false)){const auto*move=world_enemy_move(m.model,command.move);m.next_clip=move?move->next_clip:nullptr;return;}}
+   continue; // Unregistered original trigger holds the current animation.
+  }
+  if(finished){
+   if(m.next_clip){auto facts=ui_enemy_facts(a.game,slot);int clip=world_enemy_resolve_clip(m.model,m.next_clip,m.skin,-1,ui_enemy_fact,&facts);m.next_clip=nullptr;if(ui_enemy_set_clip(a,slot,clip,facts,m.until,true))continue;}
+   const auto*state=world_enemy_state(m.model,m.state);if(state&&state->next>=0){if(ui_enemy_set_state(a,slot,state->next,m.facts,m.until))continue;}
+   // Terminal death states hold their last frame. Living actors may have a
+   // changed saved idle predicate, e.g. egg hatch or a resurrected stage.
+   if(!m.dead){auto facts=ui_enemy_facts(a.game,slot);int next=world_enemy_resume(m.model,ui_enemy_fact,&facts);m.move=-1;if(next>=0&&next!=m.state&&ui_enemy_set_state(a,slot,next,facts,a.animation))continue;}
+  }
+  if(m.loop&&!m.count&&!m.dead){auto facts=ui_enemy_facts(a.game,slot);int resume=world_enemy_resume(m.model,ui_enemy_fact,&facts);const auto*state=world_enemy_state(m.model,resume);
+   // Only settled loops are refreshed. Initial spawn clips must not replay
+   // whenever a saved phase predicate or shared arm changes.
+   if(state&&state->loop){int clip=world_enemy_resolve_clip(m.model,state->clip,m.skin,-1,ui_enemy_fact,&facts);if(clip>=0&&clip!=m.clip){m.move=-1;ui_enemy_set_state(a,slot,resume,facts,a.animation);}}
+  }return;
+ }
+}
+void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const EnemyVisualFacts*facts,uint32_t earliest){
+ if(slot<0||slot>=game.enemy_count||!game.enemy_world.active)return;auto&m=enemy_presentation[slot];if(!m.identity)return;
+ const bool terminal=ui_visual_equal(trigger,"Dead")||ui_visual_equal(trigger,"Revive");
+ if(!direct&&(terminal||ui_visual_equal(trigger,"Hit"))){auto snapshot=facts?*facts:ui_enemy_facts(game,slot);
+  int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&snapshot);if(state>=0){if(terminal)m.count=0;m.move=move;ui_enemy_set_state(*this,slot,state,snapshot,animation);return;}
+  if(terminal)return;
+  // Repeated simultaneous damage notifications need no duplicate hurt queue.
+  for(unsigned i=0;i<m.count;i++)if(ui_visual_equal(m.queue[i].action,trigger))return;
+ }
+ if(m.count>=MaxEnemyVisualCommands){m.overflow=true;return;}
+ auto&command=m.queue[m.count++];command={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),earliest?earliest:animation};ui_enemy_advance(*this,slot);
+}
+void App::sync_enemy_feedback(){
+ if(!game.enemy_world.active){for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=animation;enemy_visual_encounter=-1;return;}
+ if(enemy_visual_seed!=game.seed||enemy_visual_floor!=game.floor||enemy_visual_combat!=game.world.combat_count||enemy_visual_encounter!=int(game.enemy_world.encounter)){
+  for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;
+  enemy_visual_seed=game.seed;enemy_visual_floor=game.floor;enemy_visual_combat=game.world.combat_count;enemy_visual_encounter=int(game.enemy_world.encounter);
+ }
+ for(int i=0;i<game.enemy_count;i++){auto&m=enemy_presentation[i];const auto&source=game.enemy_world.models[i];
+  if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){
+   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.hp=game.enemies[i].hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
+   int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
+   ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,"Dead");
+  }else{
+   int hp=game.enemies[i].hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,"Dead");}
+   else if(hp>0&&m.hp<=0){m.dead=false;enemy_trigger(i,"Revive");}
+   m.hp=hp;
+  }
+  ui_enemy_advance(*this,i);
+ }
+}
+void App::observe_core(const State&s,Log log){
+ if(&s!=&game||!s.enemy_world.active)return;
+ if(log.kind==LogKind::Enemy&&log.a>=0&&log.a<s.enemy_count){int slot=log.a;auto facts=ui_enemy_facts(s,slot);const auto*move=world_enemy_move(unsigned(s.enemy_world.models[slot].kind),log.b);
+  if(move){sync_enemy_feedback();auto&m=enemy_presentation[slot];uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;int projected=m.state;
+   for(unsigned i=0;i<move->action_count;i++)if(const auto*action=world_enemy_action(*move,i)){
+    int clip=-1;
+    if(action->direct)clip=world_enemy_resolve_clip(m.model,action->name,m.skin,log.b,ui_enemy_fact,&facts);
+    else{const auto*before=world_enemy_state(m.model,projected);if(before&&!before->loop&&before->next>=0)projected=before->next;
+     int state=world_enemy_transition(m.model,projected,action->name,ui_enemy_fact,&facts);if(const auto*node=world_enemy_state(m.model,state)){projected=state;clip=world_enemy_resolve_clip(m.model,node->clip,m.skin,log.b,ui_enemy_fact,&facts);}}
+    enemy_trigger(slot,action->name,log.b,action->direct!=0,&facts,when);if(clip>=0)when+=ui_enemy_ticks(*this,clip);
+   }
+   enemy_visual_clock=when;
+  }
+ }else if(log.kind==LogKind::Damage&&log.b>=0&&log.b<s.enemy_count&&s.enemies[log.b].hp>0)enemy_trigger(log.b,"Hit");
+}
+bool App::enemy_frame(int slot,int&clip,uint32_t&elapsed,bool&loop){
+ if(slot<0||slot>=game.enemy_count||!game.enemy_world.active)return false;ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];
+ clip=m.clip;elapsed=int32_t(animation-m.start)>=0?(animation-m.start)*33:0;loop=m.loop;return clip>=0;
+}
+int App::combat_background()const{
+ if(game.enemy_world.active){const auto*e=encounter_definition(game.enemy_world.encounter);if(e){int image=content.world_image("backgrounds",e->key);if(image>=0)return image;}}
+ if(game.world.active){int image=content.world_image("backgrounds",world_region_key(game));if(image>=0)return image;}
+ return content.ui_image(U_BattleBackground);
+}

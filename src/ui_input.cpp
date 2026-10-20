@@ -2,6 +2,7 @@
 #include "status.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "ui_core_observer.hpp"
 namespace spire {
 #include "world_choice_input.inc"
 unsigned App::library_items(CardKind* out)const{
@@ -70,6 +71,7 @@ void App::select_library_item(int index){
     else{detail_owned=-1;detail_item=library_tab==1?index:WorldRelicKinds+index;detail_scroll=0;pointer_cancel();}
 }
 void App::ui_action(UiAction action){
+    UiCoreObserver observer(*this);
     pointer_cancel();
     switch(action){
     case UiAction::LabCard:{

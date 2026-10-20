@@ -15,9 +15,9 @@ int main(int argc,char**argv){
  std::vector<uint8_t> data;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
  init();auto before=snapshot();a.input(Key::Collection);action(UiAction::LibraryRelics);action(UiAction::NextPage);a.render();CHECK(a.library_page==1);
- // The three appended starter relics fill a third row on this page. All
- // item targets must still end before the selected name at y=163.
- unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].value>=18&&a.hits[i].value<RelicKinds);CHECK(a.hits[i].y+a.hits[i].h<=160);}CHECK(count==RelicKinds-18);unchanged(before);
+ // The original relic directory fills this page. Every item target must
+ // still end before the selected name at y=163.
+ unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].value>=18&&a.hits[i].value<36);CHECK(a.hits[i].y+a.hits[i].h<=160);}CHECK(count==18);unchanged(before);
  CHECK(click(HitKind::LibraryItem,24));CHECK(a.detail_item==24);a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::LibraryItem);unchanged(before);
  a.input(Key::Back);CHECK(a.library&&a.library_page==1);a.input(Key::Back);CHECK(!a.library);
  init();a.game.phase=Phase::Upgrade;a.cursor=31;before=snapshot();CHECK(click(HitKind::Choice,31));CHECK(a.deck_candidate==31);unchanged(before);

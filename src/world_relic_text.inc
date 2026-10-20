@@ -23,6 +23,14 @@ EventEnchantment wrt_enchantment(RelicId id,int&amount){amount=1;switch(id){
  default:return EventEnchantment::None;
 }}
 }
+bool world_relic_title_key(const State&s,RelicId id,char*out,unsigned capacity,int position){
+ if(id>=WorldRelicKinds||!out||!capacity)return false;
+ const auto*r=wrt_instance(s,id,position);const char*variant="";int character=-1;
+ if(id==WorldRelicSeaGlass){character=position<0?world_relic_prepared_value(s,id):-1;if(character<0&&r&&r->values[7])character=int(r->values[0]);}
+ const char*characters[]={".IRONCLAD",".SILENT",".DEFECT",".REGENT",".NECROBINDER"};if(character>=0&&character<5)variant=characters[character];
+ const char*parts[]={world_relic_key(id),variant,".title"};unsigned needed=1;for(const char*p:parts)for(unsigned i=0;p[i];i++)++needed;
+ if(needed>capacity)return false;unsigned used=0;for(const char*p:parts)for(unsigned i=0;p[i];i++)out[used++]=p[i];out[used]=0;return true;
+}
 bool world_relic_description_value(const State&s,RelicId id,const char*key,int&value,int position){
  if(id>=WorldRelicKinds||!key)return false;const auto*r=wrt_instance(s,id,position);
  if(w_equal(key,"Combats")&&(id==WorldRelicBoneTea||id==WorldRelicEmberTea||id==WorldRelicTeaOfDiscourtesy)){value=r?w_max(0,int(r->values[0])):id==WorldRelicEmberTea?5:1;return true;}

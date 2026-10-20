@@ -163,16 +163,25 @@ bool world_relic_combat_rewards(State& s){
   else if(kind==5){auto* reward=w_reward_slot(s,group,5);if(!reward)return false;reward->value=value;}
   else{w_error(s);return false;}
  }
- if(!(room==WorldRoom::Boss&&s.world.act_index==2))for(unsigned i=0;i<encounter_returned_gold_count(s);++i){
+ if(!(room==WorldRoom::Boss&&s.world.act_index==2))for(unsigned i=0;i<encounter_combat_reward_count(s);++i){
   if(!group)group=w_new_group(s,0);if(!group)return false;
-  auto* reward=w_reward_slot(s,group,4);if(!reward)return false;
-  const int gold=encounter_returned_gold(s,i);reward->value=uint16_t(world_rng(s,WorldRng::Rewards).range(gold,gold+1));
+  unsigned kind=0;int value=0;if(!encounter_combat_reward(s,i,kind,value)){w_error(s);return false;}
+  if(kind==0){auto* reward=w_reward_slot(s,group,4);if(!reward)return false;reward->value=uint16_t(world_rng(s,WorldRng::Rewards).range(value,value+1));}
+  else if(kind==1){WorldCardOptions options=wr_room_card_options(room==WorldRoom::Boss);if(room==WorldRoom::Elite)options.odds=WorldCardOdds::EliteEncounter;
+   if(!w_reward_cards(s,group,options,unsigned(value)))return false;cards=true;
+  }else if(kind==2){EventDeckSnapshot card{};if(!encounter_combat_reward_card(s,i,card)){w_error(s);return false;}
+   auto* reward=w_reward_slot(s,group,5);if(!reward)return false;reward->value=uint16_t(card_token(card.card));reward->facts[0]=card.facts;reward->tokens[0]=card.genetic;reward->tokens[1]=card.scythe;
+  }else{w_error(s);return false;}
  }
  if(!(room==WorldRoom::Boss&&s.world.act_index==2)&&s.world.combat_bonus_gold){
   if(!group)group=w_new_group(s,0);if(!group)return false;
   auto* reward=w_reward_slot(s,group,4);if(!reward)return false;
   const int gold=s.world.combat_bonus_gold;reward->value=uint16_t(world_rng(s,WorldRng::Rewards).range(gold,gold+1));
  }
+ if(!(room==WorldRoom::Boss&&s.world.act_index==2))for(unsigned i=0;i<s.necro.grimoire_pending;++i){
+  if(!group)group=w_new_group(s,0);if(!group||!w_reward_slot(s,group,6))return false;
+ }
+ s.necro.grimoire_pending=0;
  auto add=[&](unsigned kind,unsigned serial,unsigned n=1){
   if(count+n>MaxWorldRelicRewards){w_error(s);return false;}
   for(unsigned i=0;i<n;++i)extras[count++]={uint8_t(kind),uint16_t(serial)};return true;

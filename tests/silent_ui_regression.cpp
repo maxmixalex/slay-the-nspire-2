@@ -1,4 +1,6 @@
 #include "app.hpp"
+#include "world_run.hpp"
+#include "original_events.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -16,10 +18,14 @@ int main(int argc,char**argv){
  if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);content.resize(MaxPack);size_t n=fread(content.data(),1,content.size(),f);fclose(f);CHECK(a.init(content.data(),n,{save_cb,load_cb}));}
  else a.callbacks={save_cb,load_cb};
  a.input(Key::Confirm);CHECK(a.character_select);action(UiAction::SelectSilent);CHECK(a.selected_character==Character::Silent);action(UiAction::StartCharacter);
- CHECK(!a.title&&a.game.character==Character::Silent&&a.game.hp==70&&a.game.deck_count==12);CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);
+ CHECK(!a.title&&a.game.character==Character::Silent&&a.game.hp==70&&a.game.deck_count==12);
+ CHECK(a.game.world.active&&a.game.original_events.id==OriginalEventId::Neow);
+ // Retained Silent combat/choice fixtures use the legacy route explicitly;
+ // the ordinary character-selection flow above now enters the original run.
+ new_run(a.game,7,false,Character::Silent);a.reset_presentation();CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);
  SaveData prior{};CHECK(save(a.game,prior));a.input(Key::Collection);
  // The Silent filter includes Shiv; generated Soul/Blade remain only in All.
- const unsigned counts[]={CardKinds,IroncladCards,SilentCards+1,53};
+ unsigned counts[]={CardKinds,0,0,0};for(unsigned i=0;i<CardKinds;i++){auto color=card_color(i);counts[1]+=color==CardColor::Ironclad;counts[2]+=color==CardColor::Silent;counts[3]+=color==CardColor::Colorless;}
  for(unsigned filter=0;filter<4;filter++){
   action((UiAction)((int)UiAction::FilterAll+filter));CHECK(a.library_items()==counts[filter]);CardKind ids[CardKinds];a.library_items(ids);
   for(unsigned i=0;i<counts[filter];i++){

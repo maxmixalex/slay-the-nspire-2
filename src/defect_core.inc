@@ -95,13 +95,18 @@ static void defect_after_play_listener(State&s,unsigned actor){
  if(actor==(unsigned)PostPlayActor::DefectStorm){int n=v.storm_before[d];v.storm_before[d]=0;if(n)queue_extension(s,XOp::DChannel,(int)DOrb::Lightning,n,true);}
  if(actor==(unsigned)PostPlayActor::DefectSubroutine){int n=v.subroutine_before[d];v.subroutine_before[d]=0;if(n)enqueue(s,EffectKind::Energy,n,0,true);}
 }
-static bool defect_returns_to_hand(State&s,int id){
+static bool defect_would_return_to_hand(const State&s,int id){
  if(id<0||id>=s.card_count||card_type(s,s.cards[id],id)!=CardType::Attack||s.defect.spent[s.expansion.depth]||
-    s.defect.feral_used>=dpower(s,DPower::Feral))return false;
+    s.world_relics.card_is_dupe[id]||s.defect.feral_used>=dpower(s,DPower::Feral))return false;
+ return true;
+}
+static bool defect_returns_to_hand(State&s,int id){
+ if(!defect_would_return_to_hand(s,id))return false;
  ++s.defect.feral_used;return true;
 }
 static void defect_after_play_group(State&s,int id){
  auto&v=s.defect;unsigned d=s.expansion.depth;
+ s.expansion.feral_result[d]=0;
  if(id>=0&&id<s.card_count&&s.cards[id].kind==DefectRocketPunch)v.cost_delta[id]=v.turn_origin[id]=v.combat_origin[id]=0;
  v.spent[d]=0;v.storm_before[d]=v.subroutine_before[d]=0;v.scrape_waiting[d]=v.scrape_count[d]=0;
  for(auto&n:v.scrape_drawn[d])n=0;
@@ -202,6 +207,7 @@ static void defect_player_side_end(State&s){
 }
 static void defect_combat_end(State&s){
  auto&v=s.defect;for(unsigned d=0;d<=MaxAutoFrames;d++){v.storm_before[d]=v.subroutine_before[d]=0;v.spent[d]=v.scrape_waiting[d]=v.scrape_count[d]=0;for(auto&n:v.scrape_drawn[d])n=0;}
+ for(auto&result:s.expansion.feral_result)result=0;
 }
 static Pile defect_status_snapshot(const State&s){
  Pile out{};const Pile* piles[]={&s.hand,&s.draw,&s.discard};

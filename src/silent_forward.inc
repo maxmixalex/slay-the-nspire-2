@@ -18,6 +18,7 @@ static void silent_card_discarded(State&,int id);
 static void silent_attack_damage(State&,int target,int unblocked);
 // Call after damage/victory attribution, but before the card's Finish.
 static void silent_attack_killed(State&,int target);
+static void silent_hunt_reward(State&);
 static int silent_base_damage(const State&,Card,int target,int instance,int current);
 // Combines Vulnerable/Cruelty, Tracking and DoubleDamage with one final rounding.
 static int silent_attack_factor(const State&,int target,int amount,Card,int instance);

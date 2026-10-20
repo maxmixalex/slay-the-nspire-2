@@ -22,6 +22,7 @@ static void defect_play_start(State&,int,int,bool,int);
 static void defect_before_play(State&,int);
 static void defect_after_play(State&,int);
 static void defect_after_play_listener(State&,unsigned);
+static bool defect_would_return_to_hand(const State&,int);
 static bool defect_returns_to_hand(State&,int);
 static void defect_after_play_group(State&,int);
 static void defect_card_drawn(State&,int);

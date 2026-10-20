@@ -45,7 +45,7 @@ static void owned_relic_panel(Canvas&c){
   if(i==a.scroll){c.rect(x-4,y-2,38,33,rgb(75,58,37));c.box(x-4,y-2,38,33,Gold);}
   c.picture(a.relic_face_image(id),x,y,25,25,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+20,y+16);c.hit(x-5,y-3,46,34,HitKind::Relic,i);
  }
- if(count){RelicId id=ui_owned_relic_id(s,a.scroll);c.centered(a.relic_title(id),15,161,290,12,Gold);
+ if(count){RelicId id=ui_owned_relic_id(s,a.scroll);c.centered(a.relic_title(id,a.scroll),15,161,290,12,Gold);
   char progress[128]{},description[2048]{};ui_relic_progress(s,a.scroll,progress,sizeof progress);a.relic_description(id,description,sizeof description,a.scroll);
   if(*progress)c.centered(progress,15,180,290,10,Green);c.paragraph(description,20,*progress?197:182,280,*progress?1:2,0,10,White);
  }else c.centered("没有遗物",0,106,320,12,Muted);
@@ -55,7 +55,7 @@ static void owned_relic_panel(Canvas&c){
 static void owned_relic_tooltip(Canvas&c){
  auto&a=c.a;if(a.event_reader||!a.pointer.visible||a.pointer.held||a.title||a.paused||a.help||a.panel||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
  const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return;
- RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,a.pointer.x-66),150),y=47;c.rect(x,y,166,87,Panel);c.box(x,y,166,87,Gold);c.text(a.relic_title(id),x+8,y+5,12,Gold,150);
+ RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,a.pointer.x-66),150),y=47;c.rect(x,y,166,87,Panel);c.box(x,y,166,87,Gold);c.text(a.relic_title(id,hit->value),x+8,y+5,12,Gold,150);
  char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress);a.relic_description(id,description,sizeof description,hit->value);
  if(*progress)c.text(progress,x+8,y+24,10,Green,150);c.paragraph(description,x+8,y+(*progress?40:25),150,3,0,10,White);
 }

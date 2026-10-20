@@ -14,6 +14,7 @@ static bool validate_extension(const State&s){
  if(x.depth>MaxAutoFrames||x.triple>1||x.returning>1||x.enemy_side>1||x.potion_active>1)return false;
  if(x.target< -1||x.target>=MaxEnemies||x.x<0||x.x>9999||x.last_damage<0||x.last_damage>9999||x.last_drawn< -1||x.last_drawn>=s.card_count)return false;
  if(x.cards_finished>9999||x.nonpower_started>9999||x.choices.count>MaxCards)return false;
+ for(unsigned i=0;i<=MaxAutoFrames;i++)if(x.feral_result[i]>2||(x.feral_result[i]&&(i>x.depth||!combat_phase(s.phase))))return false;
  for(unsigned p=0;p<XPowerCount;p++)if(x.powers[p]<(p==(unsigned)XPower::Focus?-9999:0)||x.powers[p]>9999)return false;
  int auto_sum=0,pan_sum=0,boulder_sum=0,boulder_count=0;
  bool boulder_gap=false;
@@ -52,6 +53,6 @@ static bool validate_extension(const State&s){
     Zone z=x.choice==XChoice::Draw?Zone::Draw:x.choice==XChoice::Discard?Zone::Discard:Zone::Hand;if(s.zones[id]!=z)return false;}
   }
  }else if(x.choice!=XChoice::None||x.choices.count||x.choice_min||x.choice_max||x.choice_free)return false;
- if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(x.depth||x.potion_active))return false;
+ if(!choice_phase(s.phase)&&!(s.phase==Phase::Combat&&s.effect_count)&&s.phase!=Phase::Error&&(x.depth||x.potion_active))return false;
  return true;
 }

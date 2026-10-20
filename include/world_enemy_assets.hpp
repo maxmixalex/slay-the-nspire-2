@@ -46,6 +46,7 @@ struct WorldEnemyVisualClip {
     const char* key; // Full Content directory key, without any localization.
     uint16_t directory,condition;
     int16_t move; // -1=ordinary context; exact matching move takes precedence.
+    uint32_t duration_ms,original_ms;
     uint8_t skin,loop;
 };
 
@@ -55,6 +56,7 @@ const WorldEnemyVisualMove* world_enemy_move(unsigned model,int node);
 const WorldEnemyVisualAction* world_enemy_action(const WorldEnemyVisualMove&,unsigned index);
 const WorldEnemyVisualSkin* world_enemy_skin(unsigned model,unsigned skin);
 const WorldEnemyVisualClip* world_enemy_clip_row(unsigned model,unsigned index);
+const WorldEnemyVisualClip* world_enemy_clip_directory(unsigned directory);
 const WorldEnemyVisualTransition* world_enemy_transition_row(unsigned model,unsigned index);
 bool world_enemy_condition(unsigned condition,WorldEnemyFactReader,void* context);
 int world_enemy_initial(unsigned model,WorldEnemyFactReader=nullptr,void* context=nullptr);

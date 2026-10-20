@@ -56,8 +56,58 @@ static void detached_offer_preview(){
  game.deck[0]={DefectGeneticAlgorithm,0};game.defect.genetic_deck[0]=17;game.event_cards.deck[0]={};game.event_cards.deck[0].enchantment=EventEnchantment::Nimble;game.event_cards.deck[0].enchantment_amount=3;value=1;
  require(character_deck_description_value(game,game.deck[0],0,"Block",value)&&value==21,"permanent growth is resolved before detached enchantment preview");game=other;
 }
+struct ObserverProbe {unsigned count=0;const State* expected=nullptr;Log last{};};
+static void observe_log(void* opaque,const State&s,Log entry){
+ auto& probe=*static_cast<ObserverProbe*>(opaque);++probe.count;probe.last=entry;
+ require(probe.expected==&s,"observer receives the originating state without copying it");
+ require(s.log_count&&s.logs[s.log_count-1].kind==entry.kind&&s.logs[s.log_count-1].a==entry.a&&s.logs[s.log_count-1].b==entry.b,"observer runs after the exact log has been appended");
+}
+static void scoped_core_observer(){
+ Log previous_logs[24];for(unsigned i=0;i<24;i++)previous_logs[i]=game.logs[i];const auto previous_count=game.log_count;other=game;
+ ObserverProbe outer{0,&game,{}},inner{0,&game,{}};
+ CoreObserver original=set_core_observer({&outer,observe_log});
+ for(int i=0;i<40;i++)record(game,LogKind::Gold,i);
+ CoreObserver enclosing=set_core_observer({&inner,observe_log});record(game,LogKind::Gold,40);
+ require(enclosing.context==&outer&&enclosing.on_log==observe_log,"observer setter returns the enclosing binding");
+ set_core_observer(enclosing);record(game,LogKind::Gold,41);
+ CoreObserver restored=set_core_observer({});record(game,LogKind::Gold,42);
+ require(restored.context==&outer&&outer.count==41&&inner.count==1&&outer.last.a==41&&inner.last.a==40,"nested scopes restore their observer and receive logs beyond the 24-entry window");
+ for(int i=0;i<43;i++)record(other,LogKind::Gold,i);
+ require(!std::memcmp(&game,&other,sizeof game),"record observer never changes game state or its serialized fields");
+ set_core_observer(original);for(unsigned i=0;i<24;i++)game.logs[i]=previous_logs[i];game.log_count=previous_count;
+}
+static void combat_extra_reward_group(){
+ start();finish_routing_fixture();
+ while(game.deck_count)require(event_remove_deck_card(game,int(game.deck_count)-1),"replace fixture deck through permanent-card removal");
+ require(event_add_deck_card(game,{TheHunt,0})>=0&&event_add_deck_card(game,{Strike,0})>=0,"add real Hunt and removable card instances before combat");
+ choose_first();require(game.phase==Phase::Combat,"extra-reward fixture enters a real native combat");
+ require(encounter_setup(game,EncounterId::NibbitsNormal,0),"use a two-enemy encounter with ordinary Fatal behavior");
+ queue_extension(game,XOp::NPower,int(NPower::ForbiddenGrimoire),1);
+ queue_extension(game,XOp::RPower,int(RPower::Royalties),9);resolve_pending(game);
+ int hunt=-1;for(unsigned i=0;i<game.hand.count;++i)if(game.cards[game.hand.ids[i]].kind==TheHunt)hunt=int(i);
+ require(hunt>=0,"first draw contains the actual Hunt instance");game.enemies[0].hp=1;
+ require(play(game,hunt,0),"Hunt kills the first ordinary enemy through its attack command");
+ unsigned extra_kind=99;int extra_value=0;
+ require(encounter_combat_reward_count(game)==1&&encounter_combat_reward(game,0,extra_kind,extra_value)&&extra_kind==1&&extra_value==3,"Fatal appends one original three-card reward before combat ends");
+ require(!game.silent.extra_rewards&&game.phase==Phase::Combat,"native Hunt has one saved reward owner while the other enemy remains");persisted();
+ for(unsigned guard=0;guard<64&&game.phase==Phase::Combat;++guard){
+  for(unsigned i=0;i<game.enemy_count;++i)if(enemy_allow_target(game,int(i)))damage_unpowered(game,int(i),9999);
+  resolve_pending(game);
+ }
+ require(game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferReward,"Hunt, end-of-combat powers and main rewards open one group");
+ const unsigned group=game.world_relics.choice_group;unsigned main_cards=0,hunt_cards=0,removals=0,royalties=0;
+ for(unsigned i=0;i<game.world_relics.offer_count;++i){const auto&r=game.world_relics.rewards[game.world_relics.offers[i]];
+  require(r.group==group,"every combat reward stays in the same selectable group");
+  if(r.kind==1){require(r.count==3,"both main and Hunt rewards preserve three original options");if(r.creation_flags&WorldIsFromCombat)++main_cards;else ++hunt_cards;}
+  if(r.kind==6)++removals;if(r.kind==4&&r.value==9)++royalties;
+ }
+ require(main_cards==1&&hunt_cards==1&&removals==1&&royalties==1,"main CardReward, Hunt, Grimoire and Royalties all survive the original reward handoff");
+ require(!game.silent.extra_rewards&&!game.necro.grimoire_pending,"transferred native rewards cannot also reopen through historical counters");persisted();
+ require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Reward,"all optional extras can be skipped together");
+ require(leave_rewards(game)&&game.phase==Phase::Map,"closing the complete group returns to the next native map frontier");persisted();
+}
 int main(){
- start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();persisted();
+ start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
  for(unsigned a=0;a<3;++a){const auto& rooms=game.world.rooms[a];
   require(rooms.ready&&rooms.elite_count==15&&rooms.event_count>0,"all three room queues generated up front");
   require(rooms.boss_count==1,"base ascension has one boss per act");
@@ -183,6 +233,8 @@ int main(){
  choose_first();game.hp=1;game.block=0;const auto losses_before=game.ironclad.hp_losses_combat;
  require(player_hp_loss(game,25,true,true,-1,0)==1,"lethal DamageResult reports capped original loss");
  require(game.hp==0&&game.phase==Phase::Combat&&game.effect_count&&game.potions[7]==Potion::FairyInABottle,"lethal callbacks remain saved before potion prevention");persisted();
+ other=game;game.effects[0].kind=EffectKind(255);
+ require(!validate(game),"allowing a pending Combat save still rejects an unknown continuation operation");game=other;
  resolve_pending(game);
  require(game.phase==Phase::Combat&&game.hp==game.max_hp*3/10&&game.potions[7]==Potion::Empty,"Fairy from an extended slot heals through its potion wrapper");
  require(!world_relic_counter(game,WorldRelicLizardTail),"ordinary Fairy prevention precedes late Lizard Tail");
@@ -224,6 +276,7 @@ int main(){
  require(!rods&&abundance==4&&game.deck_count==transform_deck+2,"both rods transform and each replacement clones exactly once");
  require(game.gold==transform_gold+60,"transformed replacements and copies notify Lucky Fysh");persisted();
 
+ combat_extra_reward_group();
  start();game.hp=0;require(world_finish_room(game)&&game.phase==Phase::Dead&&game.world.finished,"native death closes and records the run");persisted();
  std::printf("original world routing checks: %u\n",checks);return 0;
 }

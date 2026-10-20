@@ -6,7 +6,20 @@
 #include <cstdlib>
 #include <cstring>
 #include <initializer_list>
+#include <cstddef>
 using namespace spire;
+// The frozen v3-v14 writer uses four bytes per field. Independently maximizing
+// every variable count gives 109116 bytes, including its header/checksum. The
+// v15 fields in the new world tail are compact and no wider than their C++
+// storage; counting the whole tail also includes padding. Add the six extended
+// legacy enemy slots, extra potion slots and saved Feral result, plus alignment.
+constexpr size_t LegacyEncodedCeiling=109116;
+constexpr size_t SharedV15Bytes=1+MaxPotionSlots-LegacyPotionSlots+
+ (MaxEnemies-LegacyEnemies)*(19+8+4+4+8+1+NDebuffCount+2*NTempStrengthCount+4*(MaxAutoFrames+1))+
+ (MaxAutoFrames+1);
+constexpr size_t EncodedCapacityCeiling=LegacyEncodedCeiling+SharedV15Bytes+
+ sizeof(State)-offsetof(State,world)+3;
+static_assert(EncodedCapacityCeiling<=SaveCapacity,"Every bounded v15 state must fit the save buffer");
 static State s,loaded,original;
 static SaveData encoded,roundtrip;
 static unsigned checks=0;
@@ -28,12 +41,36 @@ static void orbit_fixture(unsigned remainder=0){
  s.regent.powers[unsigned(RPower::Orbit)]=1;s.regent.power_order[s.regent.power_count++]=uint8_t(RPower::Orbit);
  s.regent.orbit[0]=1;s.regent.orbit_remainder[0]=uint8_t(remainder);
 }
+static void single_reward(unsigned kind,unsigned value=0){auto&w=s.world_relics;
+ w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=uint8_t(kind);w.rewards[0].value=uint16_t(value);
+ w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;
+}
 // Advance one already-queued relic callback through its production handler so
 // a save can be taken between resource payment and its awaited continuation.
 static void relic_front(){
  require(s.effect_count&&s.effects[0].kind==EffectKind::Extended&&s.effects[0].target==int(XOp::WRelicHook),"queued relic callback exists");
  Effect effect=s.effects[0];for(unsigned i=1;i<s.effect_count;i++)s.effects[i-1]=s.effects[i];s.effects[--s.effect_count]=Effect{};
  world_relic_effect(s,effect.value);
+}
+static void reward_capacity(){
+ reset();single_reward(4,1);auto&w=s.world_relics;
+ w.reward_count=MaxWorldRelicRewards;w.offer_count=MaxWorldRelicRewards;
+ for(unsigned i=0;i<MaxWorldRelicRewards;i++){
+  auto&r=w.rewards[i];r=WorldRelicReward{};r.group=1;r.kind=4;r.value=uint16_t(i+1);w.offers[i]=uint16_t(i);
+ }
+ // The enemy queue is serialized independently of the populated reward set.
+ // Fill both so the boundary save also retains the last extra descriptor.
+ auto&enemy=s.enemy_world;enemy.returned_gold_count=MaxEnemyExtraRewards;
+ for(unsigned i=0;i<MaxEnemyExtraRewards;i++)enemy.returned_gold[i]=uint16_t(i+1);
+ save_pending();require(encoded.size<=EncodedCapacityCeiling,"reward boundary save stays below the conservative complete-state ceiling");
+ require(w.reward_count==128&&enemy.returned_gold_count==96&&enemy.returned_gold[95]==96,"all bounded reward and source entries survive the codec");
+ uint16_t last=MaxWorldRelicRewards-1;int gold=s.gold;
+ require(world_relic_select(s,&last,1)&&s.gold==gold+int(MaxWorldRelicRewards)&&w.offer_count==MaxWorldRelicRewards-1,"last reward index can be claimed without truncation");save_pending();
+ require(world_relic_select(s,nullptr,0)&&!world_relic_pending(s)&&!w.reward_count,"skipping the remaining full group releases every entry");save_pending();
+ reset();single_reward(4,1);w.reward_count=MaxWorldRelicRewards;
+ for(auto&r:w.rewards){r=WorldRelicReward{};r.group=1;r.kind=4;r.value=1;}
+ w.choice=WorldRelicChoice::None;w.choice_group=w.choice_reward=0;w.offer_count=0;s.phase=Phase::Map;
+ require(!gain_world_relic(s,WorldRelicCauldron)&&s.phase==Phase::Error&&w.reward_count==MaxWorldRelicRewards,"overflow of a full reward store fails explicitly instead of dropping new rewards");
 }
 int main(){
  reset();add(WorldRelicAnchor);add(WorldRelicVajra);combat();require(s.block==10&&s.strength==1,"native first-33 relics are not also executed by legacy hooks");
@@ -55,6 +92,7 @@ int main(){
  hook(WorldRelicHook::AfterHandDraw);require(s.phase==Phase::WorldRelicChoice&&s.world_relics.choice==WorldRelicChoice::Hand,"Toasty pauses its ordered hook at a real hand selection");save_pending();
  uint16_t chosen=0;require(world_relic_select(s,&chosen,1),"resolve Toasty selection");resolve_pending(s);
  require(s.strength==1&&s.exhaust.count==1&&s.hand.count==1&&s.cards[s.hand.ids[0]].kind==Defend,"Burning Sticks exhaust callback runs before Toasty's Strength continuation");
+ require(!s.world_relics.card_is_dupe[s.hand.ids[0]],"Burning Sticks creates an ordinary clone rather than a replay dupe");
  for(const auto&f:s.world_relics.hook_frames)require(!f.active,"finished nested hook frame released");
  reset();add(WorldRelicToastyMittens);add(WorldRelicMrStruggles);
  s.phase=Phase::Combat;s.turn=1;s.enemy_count=1;s.enemies[0].hp=s.enemies[0].max_hp=100;s.playing=-1;s.card_count=1;s.cards[0]={Defend,0};s.zones[0]=Zone::Hand;s.hand.count=1;s.hand.ids[0]=0;
@@ -127,6 +165,11 @@ int main(){
  require(world_create_reward(s,world_rng(s,WorldRng::Rewards),1,options,&next,&next_facts),"generate a later card reward");
  require(relic(WorldRelicSilverCrucible).values[0]==1&&relic(WorldRelicSilkenTress).values[0]==1,"normal generation consumes card-option callbacks once per reward");save_pending();
  reset();add(WorldRelicPumpkinCandle);relic(WorldRelicPumpkinCandle).values[0]=0;require(world_relic_disabled(s,0)&&world_relic_display(s,0,amount)&&amount==0,"disabled candle still shows its original zero counter");
+ reset();char title_key[96]{};require(world_relic_title_key(s,WorldRelicSeaGlass,title_key,sizeof title_key)&&!std::strcmp(title_key,"SEA_GLASS.title"),"canonical Sea Glass has its ordinary title key");
+ require(world_relic_setup_offer(s,WorldRelicSeaGlass,int(Character::Defect))&&world_relic_title_key(s,WorldRelicSeaGlass,title_key,sizeof title_key)&&!std::strcmp(title_key,"SEA_GLASS.DEFECT.title"),"prepared Sea Glass title follows the offered character");
+ require(gain_world_relic(s,WorldRelicSeaGlass)&&s.world_relics.choice==WorldRelicChoice::OfferCard&&world_relic_select(s,nullptr,0),"obtain and leave the prepared Sea Glass card grid");
+ require(world_relic_setup_offer(s,WorldRelicSeaGlass,int(Character::Silent))&&world_relic_title_key(s,WorldRelicSeaGlass,title_key,sizeof title_key)&&!std::strcmp(title_key,"SEA_GLASS.SILENT.title"),"a new offer uses its newly prepared title");
+ require(world_relic_title_key(s,WorldRelicSeaGlass,title_key,sizeof title_key,0)&&!std::strcmp(title_key,"SEA_GLASS.DEFECT.title"),"an owned Sea Glass keeps its own title while another offer exists");save_pending();
  reset();add(WorldRelicDriftwood);add(WorldRelicPaelsWing);auto&w=s.world_relics;w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=5;w.rewards[0].value=uint16_t(card_token({EventCardLanternKey,0}));
  w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;save_pending();old_deck=s.deck_count;uint16_t special=0;
  require(world_relic_select(s,&special,1)&&s.deck_count==old_deck+1&&s.deck[old_deck].kind==EventCardLanternKey,"special card reward adds its exact card directly");
@@ -147,6 +190,37 @@ int main(){
  uint16_t cauldron=0;require(world_relic_select(s,&cauldron,1)&&w.choice==WorldRelicChoice::OfferReward&&w.choice_group==2&&w.offer_count==5,"Cauldron opens a separately saved nested reward group");save_pending();
  original=s;w.offers[1]=w.offers[0];require(!valid_world_relic_state(s),"duplicate reward-menu indexes are rejected");s=original;
  require(world_relic_select(s,nullptr,0)&&s.phase==Phase::Map&&!world_relic_pending(s)&&!w.group_count&&!w.reward_count,"closing nested rewards resumes and releases the parent group");save_pending();
+ reset();single_reward(5,unsigned(card_token({DefectGeneticAlgorithm,1})));w.rewards[0].tokens[0]=123;save_pending();old_deck=s.deck_count;
+ uint16_t recovered=0;require(world_relic_select(s,&recovered,1)&&s.deck_count==old_deck+1&&s.deck[old_deck].kind==DefectGeneticAlgorithm&&s.deck[old_deck].upgraded&&s.defect.genetic_deck[old_deck]==123,"stolen-card reward preserves its upgrade and permanent growth");save_pending();
+ reset();s.deck_count=2;s.deck[0]={Strike,0};s.deck[1]={Defend,0};for(auto&facts:s.event_cards.deck)facts=EventCardFacts{};
+ require(event_card_enchant(s,0,EventEnchantment::TezcatarasEmber,1),"prepare a permanent card that cannot be removed");single_reward(6);save_pending();
+ uint16_t removal=0;require(world_relic_select(s,&removal,1)&&w.choice==WorldRelicChoice::Remove,"card-removal reward opens a saved deck selection");
+ uint16_t removal_options[MaxDeck];require(world_relic_eligible(s,removal_options,MaxDeck)==1&&removal_options[0]==1,"reward removal respects Eternal eligibility");save_pending();
+ original=s;require(!world_relic_select(s,&removal,1)&&!std::memcmp(&s,&original,sizeof s),"protected card rejection is atomic");
+ require(world_relic_select(s,nullptr,0)&&w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1),"cancel leaves card removal available in its parent reward set");save_pending();
+ require(world_relic_select(s,&removal,1),"reopen card-removal reward");removal=1;
+ require(world_relic_select(s,&removal,1)&&s.deck_count==1&&s.deck[0].kind==Strike&&s.phase==Phase::Map&&!world_relic_pending(s),"one successful removal completes and releases its reward");save_pending();
+ single_reward(6);removal=0;require(world_relic_select(s,&removal,1)&&w.choice==WorldRelicChoice::OfferReward&&s.deck_count==1,"no removable cards returns to the still-skippable reward set");
+ require(world_relic_select(s,nullptr,0),"skip removal when only protected cards remain");save_pending();
+ // These two relics are called by Weak/Vulnerable directly, not ordinary
+ // AbstractModel override hooks. Modifiers precede Debilitate and rounding.
+ reset();add(WorldRelicPaperPhrog);prepared_hand({Strike,Defend});s.energy=3;s.enemies[0].vulnerable=1;
+ require(damage(s,{Strike,0},0,0)==10,"Paper Phrog changes powered player vulnerability to 175 percent before flooring");
+ s.expansion.osty_hp=s.expansion.osty_max_hp=1;require(damage(s,{NecroFlatten,0},0)==18,"a pet dealer does not inherit Paper Phrog from its owner");
+ s.necro.debilitate[0]=1;require(damage(s,{Strike,0},0,0)==15&&damage(s,{NecroFlatten,0},0)==24,"Debilitate doubles the adjusted excess vulnerability for the correct dealer");s.necro.debilitate[0]=0;
+ require(play(s,0,0)&&s.enemies[0].hp==1990,"Paper Phrog preview and resolved player attack agree");save_pending();
+ reset();add(WorldRelicPaperKrane);prepared_hand({Defend});s.enemies[0].move=0;s.enemies[0].weak=1;
+ require(enemy_damage(s,0)==7,"Paper Krane makes the legacy powered attack use 60 percent weakness");s.necro.debilitate[0]=1;
+ require(enemy_damage(s,0)==2,"Krane is applied before Debilitate's stronger weakness");relic(WorldRelicPaperKrane).flags|=WorldRelicMelted;
+ require(enemy_damage(s,0)==6,"a melted Krane no longer modifies weakness");
+ reset();add(WorldRelicHistoryCourse);add(WorldRelicMusicBox);prepared_hand({Strike});s.energy=3;
+ require(play(s,0,0)&&s.hand.count==1,"Music Box creates a hand clone after the first attack");unsigned music_clone=s.hand.ids[0];
+ require(!s.world_relics.card_is_dupe[music_clone]&&play(s,0,0)&&relic(WorldRelicHistoryCourse).values[0]==int(music_clone+1),"an ordinary Music Box clone remains eligible for History Course");
+ relic(WorldRelicMusicBox).flags|=WorldRelicMelted;s.turn=2;hook(WorldRelicHook::BeforeSideTurnStart);
+ unsigned history_dupe=s.card_count;hook(WorldRelicHook::AfterAutoPrePlay);
+ require(s.card_count==history_dupe+1&&s.world_relics.card_is_dupe[history_dupe]&&s.zones[history_dupe]==Zone::Power,"History Course's replay dupe finishes in non-circulating storage");
+ for(const Pile*p:{&s.draw,&s.hand,&s.discard,&s.exhaust})for(unsigned i=0;i<p->count;i++)require(p->ids[i]!=history_dupe,"a completed replay dupe never enters draw, hand, discard or exhaust");
+ require(relic(WorldRelicHistoryCourse).values[0]==0&&s.enemies[0].hp==1982,"History replay deals its attack once without replacing the next turn's original-card history");save_pending();
  // Earring pays before automatic play. Orbit and resource history see that
  // payment; CardPlay still reports automatic zero-spent metadata.
  reset();add(WorldRelicWhisperingEarring);add(WorldRelicBrilliantScarf);prepared_hand({Bash,DefectHelixDrill,Defend});s.energy=2;orbit_fixture(2);
@@ -164,5 +238,6 @@ int main(){
  require(s.energy==0&&relic(WorldRelicWhisperingEarring).values[1]==4,"paid energy and captured X survive before Orbit completes");save_pending();resolve_pending(s);
  require(s.enemies[0].hp==1904&&s.energy==1&&s.block==0,"captured energy X differs from the later automatic ResourceInfo energy value");
  require(s.defect.energy_spent_turn==4&&!world_relic_pending(s),"paid-auto history is recorded once and every continuation finishes");save_pending();
- std::printf("world relic runtime checks: %u\n",checks);return 0;
+ reward_capacity();
+ std::printf("world relic runtime checks: %u; conservative v15 save ceiling %zu / %u\n",checks,EncodedCapacityCeiling,SaveCapacity);return 0;
 }

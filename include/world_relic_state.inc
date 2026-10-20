@@ -1,7 +1,12 @@
 // Included inside spire after EventCardFacts; no transient pointer is saved.
 constexpr unsigned MaxWorldRelicSteps=64,MaxWorldRelicOffers=192,WorldRelicBagSize=128;
 constexpr unsigned MaxWorldRelicHookFrames=32;
-constexpr unsigned MaxWorldRelicRewards=32,MaxWorldRelicRewardGroups=8;
+// The combat group also owns its main and event rewards. Keep room for those
+// after the bounded enemy extra queue, and fail explicitly if a generated set
+// exceeds the total capacity; rewards must never be silently truncated.
+constexpr unsigned MaxWorldRelicRewards=128,MaxWorldRelicRewardGroups=8;
+static_assert(MaxWorldRelicRewards>=MaxEnemyExtraRewards+32,"Combat extras need room for primary and event rewards");
+static_assert(MaxWorldRelicRewards<=UINT8_MAX&&MaxWorldRelicRewards<=MaxWorldRelicOffers,"Reward counts and choice indexes must fit their saved fields");
 struct WorldRelicCardSnapshot {
  uint16_t token=0,genetic=0,scythe=0;
  EventCardFacts facts{};
@@ -32,7 +37,8 @@ struct WorldRelicHookFrame {
  int32_t args[3]{};
 };
 struct WorldRelicReward {
- uint8_t group=0,kind=0,flags=0,count=0; // kind: 1 card choice, 2 relic, 3 potion, 4 gold, 5 special card.
+ uint8_t group=0,kind=0,flags=0,count=0; // kind: 1 card choice, 2 relic, 3 potion, 4 gold, 5 special card, 6 card removal.
+ // For a special card, value is its token; tokens[0/1] preserve its growth.
  uint16_t value=0,tokens[8]{};
  EventCardFacts facts[8]{};
  uint16_t rarity_mask=0,creation_flags=0;

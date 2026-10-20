@@ -4,6 +4,12 @@ static const char* ui_status_key(int id){
  if(id>=EnemyStatusStart&&id<EventCardStatusStart)return world_enemy_power_keys[id-EnemyStatusStart];return nullptr;
 }
 static int ui_status_image(const App&a,int id){const char*key=ui_status_key(id);return key?a.content.world_image("powers",key):a.content.ui_image(status_definitions[id].image);}
+static int ui_status_amount(const State&s,int actor,int id){
+ if(id==EnemyStatusStart+int(EnemyPower::Slow)||id==EnemyStatusStart+int(EnemyPower::WitheringPresence)){
+  unsigned power=unsigned(id-EnemyStatusStart);int aux=actor>0?s.enemy_world.models[actor-1].power_aux[power]:s.enemy_world.player_aux[power];
+  return id==EnemyStatusStart+int(EnemyPower::Slow)?aux*10:aux;
+ }return status_amount(s,actor,id);
+}
 static const char* ui_status_title(const App&a,int id){const char*key=ui_status_key(id);if(!key)return status_definitions[id].name;
  const char*title=a.content.world_title("powers",key);return *title?title:key;
 }

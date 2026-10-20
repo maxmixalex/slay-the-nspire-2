@@ -1,7 +1,7 @@
 static void death_cleanup(State&s){
  enemy_player_died(s);
  ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,false);necro_combat_end(s);
- for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo)put(s,s.discard,id,Zone::Discard);
+ for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){const bool dupe=s.world_relics.card_is_dupe[id];put(s,dupe?s.powers:s.discard,id,dupe?Zone::Power:Zone::Discard);}
  s.playing=-1;s.effect_count=0;s.expansion.depth=0;s.expansion.potion_active=0;s.expansion.enemy_side=0;
  s.discard_required=s.exhaust_limit=0;clear_extended_choice(s);relic_attack_end(s);s.expansion.triple=0;s.phase=Phase::Dead;
  event_card_combat_end(s,false);if(s.world.active){s.world.finished=1;original_event_finish_run(s);}
@@ -78,7 +78,7 @@ int player_hp_loss(State&s,int amount,bool attack,bool blockable,int card_source
 }
 int enemy_damage(const State&s,int i){
  if(i<0||i>=s.enemy_count)return 0;const auto&e=s.enemies[i];if(e.move==2)return 0;
- int n=max(0,(e.move==0?12:6)+e.strength),mul=(e.weak?necro_weak_multiplier(s,i,75):100)*(s.expansion.beetle[i]?70:100);
+ int n=max(0,(e.move==0?12:6)+e.strength),mul=(e.weak?necro_weak_multiplier(s,i,wr_enemy_weak_percent(s,75)):100)*(s.expansion.beetle[i]?70:100);
  return ironclad_enemy_damage(s,i,n*mul/10000);
 }
 static void autoplay_from(State&s,Pile&p,int filter){
@@ -174,7 +174,7 @@ static void extension_effect(State&s,Effect e){
   Card c=s.cards[a];const auto&d=definitions[c.kind];int p=d.power+(c.upgraded?d.power_up:0);
   if(fatal&&c.kind==HandOfGreed)gain_gold(s,p);
   else if(fatal&&c.kind==Feed)increase_max_hp(s,p);
-  else if(fatal&&c.kind==TheHunt)s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);
+  else if(fatal&&c.kind==TheHunt)silent_hunt_reward(s);
   else if(killed&&c.kind==DefectSunder)enqueue(s,EffectKind::Energy,3,0,true);
   x.attack_observed[f]=2;break;}
 

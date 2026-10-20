@@ -74,8 +74,8 @@ static void directory_and_characters(){
     const UiAction filters[]={UiAction::FilterIronclad,UiAction::FilterSilent,UiAction::FilterDefect,UiAction::FilterRegent,UiAction::FilterNecrobinder};
     for(unsigned character=0;character<CharacterKinds;character++){
         start((Character)character);a.input(Key::Collection);action(UiAction::LibraryCards);action(filters[character]);
-        CardKind ids[CardKinds];unsigned n=a.library_items(ids);CHECK(n==(character==1?87u:character?86u:85u));
-        for(unsigned i=0;i<n;i++)CHECK(card_in_pool(ids[i],(Character)character)||(character==1&&ids[i]==Shiv));
+        CardKind ids[CardKinds];unsigned n=a.library_items(ids);const unsigned expected[]={88,90,90,86,86};CHECK(n==expected[character]);
+        for(unsigned i=0;i<n;i++)CHECK(card_in_pool(ids[i],(Character)character)||(character==1&&ids[i]==Shiv)||ids[i]>=EventCardBadLuck);
         auto before=snapshot();a.render();unchanged(before);
         if(character==2)capture("defect-library");if(character==3)capture("regent-library");if(character==4)capture("necro-library");
         a.input(Key::Back);a.character_select=true;

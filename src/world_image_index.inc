@@ -1,4 +1,5 @@
 // Public keys only; payloads remain in the private resource pack.
+ {"background_front.KAISER_CRAB_BOSS",1070},
  {"backgrounds.CEREMONIAL_BEAST_BOSS",1000},
  {"backgrounds.FACTORY",1001},
  {"backgrounds.FAKE_MERCHANT_EVENT_ENCOUNTER",1002},
@@ -136,6 +137,10 @@
  {"events.WOOD_CARVINGS",403},
  {"events.ZEN_WEAVER",404},
  {"intents.ATTACK",979},
+ {"intents.ATTACK_2",1072},
+ {"intents.ATTACK_3",1073},
+ {"intents.ATTACK_4",1074},
+ {"intents.ATTACK_5",1075},
  {"intents.BLOCK",980},
  {"intents.BUFF",981},
  {"intents.CARD_DEBUFF",983},
@@ -730,3 +735,4 @@
  {"rest.KINDLE",997},
  {"rest.LIFT",996},
  {"rest.SMITH",993},
+ {"rewards.CARD_REMOVAL",1071},

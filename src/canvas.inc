@@ -14,7 +14,7 @@ struct TextBuffer{
     char*p;size_t cap,n;
     void ch(char v){if(n+1<cap){p[n++]=v;p[n]=0;}}
     void text(const char*s){while(*s)ch(*s++);}
-    void number(int v){if(v<0){ch('-');v=-v;}char b[12];int n=0;do{b[n++]=(char)('0'+v%10);v/=10;}while(v&&n<12);while(n)ch(b[--n]);}
+    void number(int v){uint32_t u=v<0?uint32_t(-(v+1))+1:uint32_t(v);if(v<0)ch('-');char b[12];int n=0;do{b[n++]=(char)('0'+u%10);u/=10;}while(u&&n<12);while(n)ch(b[--n]);}
 };
 static uint32_t utf8(const char*&p){
     uint32_t x=(uint8_t)*p++;if(x<128)return x;int n=x<224?1:(x<240?2:3);x&=(1u<<(6-n))-1;
@@ -109,13 +109,16 @@ struct Canvas{
     }
     void actor(int actor,int x,int y,int scale=1024){
         if(actor<0||actor>MaxEnemies)return;
-        int id=actor?AnimEnemyIdle:AnimHeroIdle;uint32_t elapsed=a.animation*33;
-        const auto&m=a.motion[actor];if(m.clip>=0&&(int32_t)(a.animation-m.start)>=0){int actual=actor?m.clip:character_animation(a.game.character,m.clip);auto c=a.content.clip(actual);uint32_t t=(a.animation-m.start)*33;if(t<(uint32_t)c.count*c.frame_ms){id=m.clip;elapsed=t;}}
-        if(actor==0)id=character_animation(a.game.character,id);
-        elapsed+=((id==AnimEnemyIdle)?actor*347:0);
-        if(scale==1024){clip(id,x,y,elapsed);return;}
+        int id=actor?AnimEnemyIdle:AnimHeroIdle;uint32_t elapsed=a.animation*33;bool loop=true;
+        if(actor&&a.game.enemy_world.active){if(!a.enemy_frame(actor-1,id,elapsed,loop))return;}else{
+            const auto&m=a.motion[actor];if(m.clip>=0&&(int32_t)(a.animation-m.start)>=0){int actual=actor?m.clip:character_animation(a.game.character,m.clip);auto c=a.content.clip(actual);uint32_t t=(a.animation-m.start)*33;if(t<(uint32_t)c.count*c.frame_ms){id=m.clip;elapsed=t;loop=false;}}
+            if(actor==0)id=character_animation(a.game.character,id);
+            elapsed+=((id==AnimEnemyIdle)?actor*347:0);
+        }
+        if(scale==1024){clip(id,x,y,elapsed,true,loop);return;}
         auto cl=a.content.clip(id);if(!cl.count)return;
-        int image=int(cl.first)+(elapsed/cl.frame_ms)%cl.count;auto p=a.content.image(image);
+        unsigned frame=elapsed/cl.frame_ms;frame=loop?frame%cl.count:unsigned(mn(int(frame),cl.count-1));
+        int image=int(cl.first)+int(frame);auto p=a.content.image(image);
         picture(image,x-cl.pivot_x*scale/1024,y-cl.pivot_y*scale/1024,mx(1,p.w*scale/1024),mx(1,p.h*scale/1024));
     }
     int width(const char*p,int size){int w=0;while(*p&&*p!='\n')w+=a.content.glyph(utf8(p),size).advance;return w;}

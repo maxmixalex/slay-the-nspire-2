@@ -9,6 +9,69 @@ assembly or runtime binary. The pinned reference remains v0.111.0 / 41cef1ea;
 the assembly SHA-256 is
 `0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`.
 
+## Complete private world-pack conversion
+
+`tools/build_world.py` appends the world resource profile to the completed
+NSP2/13 pack. It requires that pack's exact recorded SHA-256 and the original
+release's PCK/DLL hashes. The source and cache contain distinct evidence: a
+source-ready converter is not a completed resource conversion or a visual
+similarity result.
+
+```sh
+python tools/world_ui_profile.py
+python tools/build_world.py --plan
+python tools/build_world.py /private/game /private/nSpire2-0.16.nsp.tns \
+  --output /private/world/nSpire2-0.17.nsp.tns \
+  --font /private/ReferenceCJK.otf \
+  --runtime /private/OurNotes.Spine.Runtime.dll \
+  --dotnet /private/dotnet \
+  --fastnoise-header /private/FastNoiseLite.h \
+  --cache /private/world-cache
+```
+
+Run a full conversion only from the verified frozen source checkpoint, through
+`tools/run_logged.py` as required by `AGENTS.md`. All output, intermediate assets,
+adapter assemblies and cache files are rejected if their resolved paths fall
+inside the public source repository. No original game executable is run.
+
+The generated public profile currently contains 558 cards, 6,080 strings,
+1,076 auxiliary entries and 1,638 animation entries. The new enemy directory
+keeps all 732 actually used native clip names as 1,600 skin/phase/move variants,
+with 33,074 frames. With the unchanged historical images and new portraits and
+auxiliary images, the plan has 36,510 images. Even at the 32,768-glyph directory
+bound, its directory occupies 1,196,568 bytes of the 2 MiB limit. Actual payload
+size remains unknown until all frames are encoded; the 256 MiB file limit is
+checked during construction and on the final canonical decode/re-encode.
+
+The converter preserves every historical image payload, card record, string,
+auxiliary reference, clip record and glyph payload. Original localization retains
+SmartFormat branches and live variable names, while literal `\\n` becomes a real
+line break. Glyph coverage includes all text at five sizes and visible characters
+from the complete runtime source. Enemy images use complete original periods,
+8 fps for loops and 12 fps for actions, with 60 Hz physics integration.
+
+Cache receipts bind each complete job to input hashes, conversion source and
+settings, and verify the payload hash before reuse. Partial files lack completion
+receipts. Core or UI changes do not invalidate unchanged image/geometry caches;
+the final manifest and source-change guard still record the complete source
+fingerprint. Bounds jobs and completed raster jobs can resume independently.
+
+Every ordinary model receives one measured scale and pivot across all clips,
+skins and conditional phases. Source-driven target controls use the explicitly
+recorded original single-player/single-enemy placement before fitting the actor
+to the calculator stage. Multi-enemy placement remains a calculator layout
+adaptation to review visually. Kaiser uses its exact shared 320 × 218 scene
+canvas, original camera placement and separate back/front planes; it is not
+duplicated for the two arm targets.
+
+The generated `world_enemy_assets.hpp`/`.inc` API exposes native states,
+transitions, ordered move triggers, conditions, skin weights and clip durations.
+Unknown facts fail condition evaluation instead of becoming zero. A missing
+animator trigger retains the current state. The app may query a directory row
+with `world_enemy_clip_directory` for the actual baked duration. Static scene
+diagnostics retain dynamic-node, particle and shader limitations; neither these
+metadata counts nor passing asset-free tests establishes 95% visual parity.
+
 ## Runtime dependency
 
 The independent `tools/SpineSampleAdapter.cs` uses a separately supplied, licensed
@@ -63,7 +126,9 @@ looked up relative to that atlas, so duplicate page basenames do not collide.
 loop=False, physics_step=1/60, bone_drives=())` returns a list of raw frame dictionaries.
 `setup_tracks` are installed before the primary clip. `tracks` are installed
 after it. Each track command has a `track` index, `clip`, `loop` and optional
-`queued`/`delay` fields. An empty clip selects an empty track. The sample times
+`queued`/`delay` fields. A setup track's optional `time` starts at that exact
+native clip time; this preserves the other Kaiser arm's terminal death pose.
+An empty clip selects an empty track. The sample times
 must be ordered and finite, between zero and 120 seconds, with at most 256 samples
 per request. Physics advances in bounded steps, independently of the output
 frame rate.
@@ -77,10 +142,17 @@ compose these tuples directly, keeping additive/multiply/screen slots separate.
 convenience wrapper and also returns bone and slot matrices.
 
 `bake_enemy(pack, model_row, clip, texture=None, *, frames=16, height=88,
-max_width=160, cache=None, sampler=None, skin_variant=None, visual_state=None)`
+max_width=160, cache=None, sampler=None, skin_variant=None, visual_state=None,
+measure_only=False)`
 returns `(PIL_RGBA_images, metadata)`. Metadata includes the original duration,
 frame period, pivot, dimensions, chosen skins, shared scale and dependency hash.
-Pass one cache across a model's clips to retain a common scale. The skin variant
+`measure_only=True` returns all-frame geometry bounds and reference-pose bounds
+without rasterizing. The full builder measures every skin, move and conditional
+variant before selecting one common model layout. Its `visual_state['layout']`
+contains the shared `scale`, `origin`, `size` and measured `bounds`, and applies
+unchanged to every clip. This retains both scale and pivot across actions.
+Passing only a cache retains a common scale but does not establish a common
+pivot; use the measured layout for runtime animation. The skin variant
 is a skin name or ordered list of component skin names. The visual state can
 specify `setup_tracks`, `tracks`, a native move key in `move`, `base_clip`,
 `track`, an explicit scale and per-child clip/start selections.

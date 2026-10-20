@@ -12,13 +12,24 @@ static void enemy_face_remaining(State&s){
 static void enemy_release_captured_instance(State&s,int t,bool restore){
  auto&m=s.enemy_world.models[t];if(!m.captured_card)return;
  const int id=m.captured_card-1;
- if(restore)event_restore_deck_card(s,m.captured_deck);
+ if(restore){auto&w=s.enemy_world;if(w.returned_gold_count>=MaxEnemyExtraRewards){fail(s);return;}unsigned i=w.returned_gold_count++;
+  w.returned_reward_kind[i]=2;w.returned_gold[i]=(uint16_t)card_token(m.captured_deck.card);w.returned_cards[i]=m.captured_deck;}
  // A stolen card was removed from combat. Keep its instance in the terminal
  // pile once its holder leaves; it is never returned to the hand or draw pile.
  if(id>=0&&id<s.card_count&&s.zones[id]==Zone::Limbo)put(s,s.exhaust,id,Zone::Exhaust);
  m.captured_card=0;m.captured_deck=EventDeckSnapshot{};
 }
 static void enemy_player_died(State&s){for(int t=0;t<s.enemy_count;++t)enemy_release_captured_instance(s,t,false);}
+static void enemy_before_death(State&s,int t){
+ auto&w=s.enemy_world;auto&m=w.models[t];
+ for(unsigned at=0;at<m.power_count;++at){const auto p=(EnemyPower)m.power_order[at];
+  if(p==EnemyPower::Swipe)enemy_release_captured_instance(s,t,true);
+  else if(p==EnemyPower::Heist&&m.stolen_gold>0){if(w.returned_gold_count>=MaxEnemyExtraRewards){fail(s);return;}
+   unsigned i=w.returned_gold_count++;w.returned_reward_kind[i]=0;w.returned_gold[i]=(uint16_t)m.stolen_gold;}
+  if(s.phase==Phase::Error)return;
+ }
+ enemy_release_captured_instance(s,t,false);
+}
 static void enemy_applier_died(State&s,int t){
  auto&w=s.enemy_world;
  const EnemyPower remove_on_applier_death[]={EnemyPower::Constrict,EnemyPower::Hex,EnemyPower::Shrink};
@@ -55,11 +66,7 @@ static void enemy_die(State&s,int t){
  const bool adaptable=enemy_power_value(s,t,EnemyPower::Adaptable)!=0;
  const bool reattach=enemy_power_value(s,t,EnemyPower::Reattach)!=0;
  const bool steam=enemy_power_value(s,t,EnemyPower::SteamEruption)!=0;
- if(enemy_power_value(s,t,EnemyPower::Heist)&&stolen>0){
-  if(w.returned_gold_count>=32){fail(s);return;}
-  w.returned_gold[w.returned_gold_count++]=(uint16_t)stolen;
- }
- enemy_release_captured_instance(s,t,true);enemy_applier_died(s,t);
+ enemy_applier_died(s,t);
  // Death observers run even when the defeated creature will revive.
  int ordered[MaxEnemies];unsigned n=enemy_ordered_slots(s,ordered);
  for(unsigned at=0;at<n;++at){int other=ordered[at];if(other==t||!enemy_slot_alive(s,other))continue;

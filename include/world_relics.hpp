@@ -66,6 +66,9 @@ int world_relic_counter(const State&,RelicId);
 bool world_relic_display(const State&,unsigned position,int& amount);
 // Original disabled presentation is not a blanket listener-disable flag.
 bool world_relic_disabled(const State&,unsigned position);
+// Original localized title key; Sea Glass includes its prepared/owned
+// character variant. Explicit positions address a particular owned copy.
+bool world_relic_title_key(const State&,RelicId,char* out,unsigned capacity,int position=-1);
 bool world_relic_description_value(const State&,RelicId,const char* key,int& amount,int position=-1);
 bool world_relic_description_reference(const State&,RelicId,const char* key,OriginalTextReference&,int position=-1,unsigned item=0);
 unsigned world_relic_description_reference_count(const State&,RelicId,const char* key,int position=-1);

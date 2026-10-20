@@ -117,7 +117,8 @@ static void copy_card_modifiers(State&s,int to,int from){
  x.star_turn_free[to]=x.star_turn_free[from];x.star_combat_free[to]=x.star_combat_free[from];
  x.replay[to]=x.replay[from];x.blade_damage[to]=x.blade_damage[from];
  ironclad_card_copied(s,to,from);silent_card_copied(s,to,from);defect_card_copied(s,to,from);regent_card_copied(s,to,from);necro_card_copied(s,to,from);event_card_copied(s,to,from);enemy_card_copied(s,to,from);
- s.world_relics.card_is_dupe[to]=1;
+ // CreateClone preserves this flag. Only explicit CreateDupe callers set it.
+ s.world_relics.card_is_dupe[to]=s.world_relics.card_is_dupe[from];
 }
 static void reset_card_modifiers(State&s,int id){
  auto&x=s.expansion;x.turn_cost[id]=x.combat_cost[id]=x.replay[id]=0;
@@ -277,10 +278,14 @@ static void after_play(State&s,int id){
  // Result-pile moves only own a card that is still in the play pile.
  // Nested Flak/Make It So can already have exhausted or recalled that instance.
  Card card=s.cards[id];auto type=card_type(s,card);
- bool ex=(card_exhausts(s,card,id)||ironclad_exhausts(s,id))&&type!=CardType::Power;
- bool hand=regent_returns_to_hand(s,id)||defect_returns_to_hand(s,id);
+ const bool dupe=s.world_relics.card_is_dupe[id]!=0;
+ bool ex=!dupe&&(card_exhausts(s,card,id)||ironclad_exhausts(s,id))&&type!=CardType::Power;
+ bool hand=regent_returns_to_hand(s,id)||(x.feral_result[x.depth]?x.feral_result[x.depth]==2:defect_returns_to_hand(s,id));
  if(s.zones[id]==Zone::Limbo){
-  if(hand){bool room=s.hand.count<MaxHand;put(s,room?s.hand:s.discard,id,room?Zone::Hand:Zone::Discard);ex=false;}
+  // Original PileType.None instances stay out of every recyclable pile. The
+  // bounded engine stores them alongside its spent Power card instances.
+  if(dupe){put(s,s.powers,id,Zone::Power);ex=false;}
+  else if(hand){bool room=s.hand.count<MaxHand;put(s,room?s.hand:s.discard,id,room?Zone::Hand:Zone::Discard);ex=false;}
   else if(type==CardType::Power){put(s,s.powers,id,Zone::Power);ex=false;}
   else if(!ex){bool to_draw=x.returning||event_card_returns_to_draw(s,id);put(s,to_draw?s.draw:s.discard,id,to_draw?Zone::Draw:Zone::Discard);if(to_draw)event_card_after_return_to_draw(s,id);}
  }else ex=false;
@@ -460,7 +465,10 @@ static bool start_instance(State&s,int id,int target,bool automatic,int captured
  x.remaining=(uint16_t)min(9999,x.remaining+ironclad_replays(s,c)+silent_extra_replays(s,c)+defect_extra_replays(s,c)+regent_replays(s,c)+event_card_replays(s,id));
  x.remaining=(uint16_t)min(9999,wr_play_count(s,id,x.remaining+1,true)-1);
  defect_play_start(s,id,resource_energy,automatic,spent);necro_start_instance(s,id,resource_energy);
- event_card_prepare_play(s,id,card_type(s,c,id)!=CardType::Power&&!card_exhausts(s,c,id)&&!ironclad_exhausts(s,id)&&!x.returning&&!regent_returns_to_hand(s,id)&&!defect_returns_to_hand(s,id));
+ // OnPlayWrapper captures the result once, before any nested card body. Its
+ // modifier callbacks consume Feral now; completion only reads the snapshot.
+ x.feral_result[x.depth]=defect_returns_to_hand(s,id)?2:1;
+ event_card_prepare_play(s,id,!s.world_relics.card_is_dupe[id]&&card_type(s,c,id)!=CardType::Power&&!card_exhausts(s,c,id)&&!ironclad_exhausts(s,id)&&!x.returning&&!regent_returns_to_hand(s,id)&&x.feral_result[x.depth]!=2);
  queue_current(s);if(stars_spent)world_stage(s,WorldStage::StarsSpent,stars_spent);regent_begin_play(s,id,automatic,spent,stars_spent,captured_star_x);return true;
 }
 bool can_play_card(const State&s,int id){

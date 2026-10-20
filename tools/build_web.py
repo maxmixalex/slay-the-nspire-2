@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Compile the same C++ game to a self-contained offline browser host."""
 from pathlib import Path
-import subprocess,shutil,base64
+import subprocess,shutil,base64,argparse
 ROOT=Path(__file__).resolve().parents[1]
-def main():
+def compile_runtime():
     clang=shutil.which('clang++');link=shutil.which('wasm-ld')
     if not clang or not link:raise SystemExit('LLVM clang++ and wasm-ld are required.')
     directory=ROOT/'build'/'web';directory.mkdir(parents=True,exist_ok=True)
@@ -15,9 +15,24 @@ def main():
     # Fixed sixteen-MiB WASM memory contains bounded directories, caches and stack.
     # Pack payloads remain in the host ArrayBuffer and enter through range reads.
     subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input']],*objects,'-o',str(output)],check=True)
+    print(f'Built WebAssembly runtime; {output.stat().st_size:,} bytes')
+    return output
+
+def package_runtime():
+    output=ROOT/'build'/'web'/'nSpire2.wasm'
+    if not output.is_file():raise SystemExit('Compile the matching WebAssembly runtime before packaging.')
     content=(ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
     text=(ROOT/'platform/web/player.html').read_text(encoding='utf-8').replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__CONTENT__',base64.b64encode(content).decode())
     notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()
     text+='\n<!-- '+notices.replace('--','—')+' -->\n'
     (ROOT/'dist'/'nSpire2-desktop.html').write_text(text,encoding='utf-8');print(f'Built offline desktop host; WebAssembly {output.stat().st_size:,} bytes')
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument('--compile-only',action='store_true',help='Build the runtime while private content conversion runs separately')
+    mode.add_argument('--package-only',action='store_true',help='Package the already built runtime and the matching private pack')
+    args=parser.parse_args()
+    if not args.package_only:compile_runtime()
+    if not args.compile_only:package_runtime()
 if __name__=='__main__':main()

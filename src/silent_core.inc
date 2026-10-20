@@ -107,9 +107,11 @@ static bool silent_blocks_debuff(State&s,int t){
 static void silent_attack_damage(State&s,int t,int unblocked){
  if(unblocked>0&&spower(s,SPower::Envenom))enqueue(s,EffectKind::Poison,spower(s,SPower::Envenom),t,true);
 }
-static void silent_attack_killed(State&s,int){
- if(s.playing>=0&&s.cards[s.playing].kind==TheHunt)s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);
+static void silent_hunt_reward(State&s){
+ if(s.world.active)encounter_add_card_reward(s);
+ else s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);
 }
+static void silent_attack_killed(State&s,int){if(s.playing>=0&&s.cards[s.playing].kind==TheHunt)silent_hunt_reward(s);}
 static bool silent_next_reward(State&s){
  if(!s.silent.extra_rewards)return false;--s.silent.extra_rewards;
  for(int i=0;i<3;i++){int k;bool duplicate;do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);s.reward[i]=(CardKind)k;}
@@ -139,7 +141,7 @@ static int silent_attack_factor(const State&s,int t,int amount,Card c,int instan
  uint64_t limit=denominator*9999999ULL,n=(unsigned)amount;
  int vulnerable=100,tracking=100;
  if(t>=0&&t<s.enemy_count){
-  if(s.enemies[t].vulnerable)vulnerable=necro_vulnerable_multiplier(s,t,ironclad_vulnerable_multiplier(s));
+  if(s.enemies[t].vulnerable)vulnerable=necro_vulnerable_multiplier(s,t,wr_player_vulnerable_percent(s,ironclad_vulnerable_multiplier(s),pet));
   if(s.enemies[t].weak)tracking+=spower(s,SPower::Tracking);
  }
  const unsigned factors[]={unsigned(spower(s,SPower::DoubleDamage)?2:1),unsigned(vulnerable),unsigned(tracking),

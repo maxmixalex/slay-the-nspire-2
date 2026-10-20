@@ -645,7 +645,7 @@ def _compose(sampler: SpineSampler, model: dict, clip: str, times, skins, visual
 
 
 def bake_enemy(pack, model_row, clip, texture=None, *, frames=16, height=88, max_width=160,
-               cache=None, sampler=None, skin_variant=None, visual_state=None):
+               cache=None, sampler=None, skin_variant=None, visual_state=None, measure_only=False):
     """Bake one explicit original clip with its selected skin and skeletal layers.
 
     Shared KaiserCrab rows require visual_state['shared_background']=True; scene
@@ -683,24 +683,36 @@ def bake_enemy(pack, model_row, clip, texture=None, *, frames=16, height=88, max
             raise ValueError(f"{model['model']}/{clip} has no visible skeletal geometry")
         vertices = np.concatenate(nonempty)
         low, high = vertices.min(axis=0), vertices.max(axis=0)
+        idle_clip = model['entries']['idle']['clip']
+        idle = _compose(sampler, model, idle_clip, [0], skins, visual_state)
+        reference = np.concatenate([d[0] for ds in idle for d in ds if len(d[0])])
+        reference_low, reference_high = reference.min(axis=0), reference.max(axis=0)
         scale_key = ('enemy-scale', model['id'], tuple(skins), height, max_width)
         if scale_key not in cache:
-            idle_clip = model['entries']['idle']['clip']
-            idle = _compose(sampler, model, idle_clip, [0], skins, visual_state)
-            reference = np.concatenate([d[0] for ds in idle for d in ds if len(d[0])])
-            span = np.maximum(reference.max(axis=0) - reference.min(axis=0), 1)
+            span = np.maximum(reference_high-reference_low, 1)
             cache[scale_key] = min((height - 4) / span[1], (max_width - 4) / span[0])
-        scale = visual_state.get('scale', cache[scale_key])
-        width, pixel_height = np.ceil((high-low)*scale).astype(int) + 4
-        if width > 320 or pixel_height > 240:
+        layout = visual_state.get('layout')
+        if layout:
+            scale = float(layout['scale'])
+            origin = np.asarray(layout['origin'], dtype=float)
+            width, pixel_height = map(int, layout['size'])
+            if not layout.get('crop', False):
+                bounds_low, bounds_high = np.asarray(layout['bounds'])
+                if np.any(low < bounds_low-.001) or np.any(high > bounds_high+.001):
+                    raise ValueError('Geometry escaped its measured common model layout')
+        else:
+            scale = visual_state.get('scale', cache[scale_key])
+            width, pixel_height = np.ceil((high-low)*scale).astype(int) + 4
+            origin = np.array([2-low[0]*scale, 2+high[1]*scale])
+        if not measure_only and (width > 320 or pixel_height > 240 or width<1 or pixel_height<1):
             raise ValueError(f"{model['model']}/{clip} exceeds the calculator stage at shared scale: {width}x{pixel_height}")
-        origin = np.array([2-low[0]*scale, 2+high[1]*scale])
-        images = [raster(draw, scale, origin, (int(width), int(pixel_height))) for draw in samples]
+        images = [] if measure_only else [raster(draw, scale, origin, (int(width), int(pixel_height))) for draw in samples]
         return images, dict(name=model['skeleton'], model=model['model'], clip=clip,
             source_version=model['source_version'], runtime_sha256=RUNTIME_SHA256,
             skins=skins, duration_ms=max(1, round(duration*1000)), original_duration_ms=max(1, round(original_duration*1000)),
             frame_ms=max(1, round(duration*1000/frames)), frames=frames,
             pivot=[round(origin[0]), round(origin[1])], size=[int(width), int(pixel_height)],
+            bounds=[low.tolist(), high.tolist()], reference_bounds=[reference_low.tolist(), reference_high.tolist()],
             scale=scale, physics_step=1/60, godot_y_down=True,
             drive_nodes=len(model.get('scene_controls', [])),
             visual_state=visual_state)

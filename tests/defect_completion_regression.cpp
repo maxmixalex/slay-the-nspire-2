@@ -394,6 +394,18 @@ static void card_instances_and_replays(){
  {auto s=fight();cast(s,DefectFeral);int id=cast(s,Shiv);CHECK(s.zones[id]==Zone::Hand&&s.defect.feral_used==1);
   CHECK(play(s,hand_index(s,id),0));settle(s);CHECK(s.zones[id]==Zone::Exhaust);
  }
+ scenario="Feral applies to an ordinary generated clone";
+ {auto s=fight();cast(s,DefectFeral);int original=cast(s,DefectAdaptiveStrike),copy=-1;
+  for(unsigned i=0;i<s.discard.count;i++){int id=s.discard.ids[i];if(id!=original&&s.cards[id].kind==DefectAdaptiveStrike)copy=id;}
+  CHECK(copy>=0&&!s.world_relics.card_is_dupe[copy]);move_hand(s,copy);CHECK(play(s,hand_index(s,copy),0));settle(s);
+  CHECK(s.zones[copy]==Zone::Hand&&s.defect.feral_used==1);CHECK(play(s,hand_index(s,copy),0));settle(s);CHECK(s.zones[copy]==Zone::Discard);
+ }
+ scenario="Feral reserves the outer result before a nested automatic attack";
+ {auto s=fight();cast(s,DefectFeral);int outer=append(s,{DefectUproar,0},Zone::Discard);
+  s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));choose(s,outer);CHECK(cost(s,outer)==0);
+  int inner=append(s,{DefectClaw,0},Zone::Draw);CHECK(play(s,hand_index(s,outer),0));settle(s);
+  CHECK(s.zones[outer]==Zone::Hand&&s.zones[inner]==Zone::Discard&&s.defect.feral_used==1);
+ }
  scenario="Synthesis free power cost is limited to hand and limbo";
  {auto s=fight();int old=cast(s,DefectDefragment);cast(s,DefectSynthesis);int next=append(s,{DefectDefragment,1},Zone::Hand);
   CHECK(cost(s,old)==1&&cost(s,next)==0&&s.energy==17);CHECK(play(s,hand_index(s,next),0));settle(s);

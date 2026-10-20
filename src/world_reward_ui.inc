@@ -1,5 +1,5 @@
 static void native_reward_screen(Canvas&c){
- auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);c.actor(0,54,130);c.dim(0,22,320,218,155);
+ auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);c.actor(0,54,130);c.dim(0,22,320,218,155);
  if(a.grimoire_select&&s.necro.grimoire_pending){deck_select(c);return;}
  if(a.reward_cards){
   const int count=s.world.reward_count;a.cursor=mn(mx(0,a.cursor),count);c.centered("选择一张牌",0,28,320,20,Gold);

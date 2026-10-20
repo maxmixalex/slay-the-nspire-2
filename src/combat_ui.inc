@@ -69,10 +69,32 @@ static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     card_title(c,label,x-2,y+13,27,Gold);
     c.hit(x-3,y-3,29,28,HitKind::OpenPile,tab);
 }
+static void combat_actors(Canvas&c){
+    auto&a=c.a;const auto&s=a.game;c.actor(0,60,124);
+    const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
+    if(pet){const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
+        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,112,123,elapsed,true,false);
+        else if(s.expansion.osty_hp>0)c.clip(AnimOstyIdle,112,123,a.animation*33);
+        else c.ui(U_OstyPortrait,103,109,18,18,100);
+    }
+    int shared=-1;bool shared_action=false;
+    for(int i=0;i<s.enemy_count;i++){
+        const auto*v=s.enemy_world.active?world_enemy_visual(unsigned(s.enemy_world.models[i].kind)):nullptr;
+        if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
+            if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
+        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s.enemy_count,i);c.actor(i+1,p.x,p.feet,p.scale);}
+    }
+    if(shared>=0){int clip;uint32_t elapsed;bool loop;
+        // The original Kaiser actor shares one background skeleton. Its baked
+        // 320 x 218 frame is already in scene coordinates; draw it only once.
+        if(a.enemy_frame(shared,clip,elapsed,loop))c.clip(clip,0,22,elapsed,false,loop);
+        c.picture(a.content.world_image("background_front","KAISER_CRAB_BOSS"),0,22,320,218);
+    }
+}
 static void combat_screen(Canvas&c){
-    auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);
+    auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
-    c.actor(0,60,124);c.hp(s.hp,s.max_hp,29,129,62);
+    combat_actors(c);c.hp(s.hp,s.max_hp,29,129,62);
     if(s.expansion.orb_slots){
         const int count=s.expansion.orb_slots,left=mx(3,60-count*7);
         for(int i=0;i<count;i++){
@@ -84,10 +106,6 @@ static void combat_screen(Canvas&c){
     }
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
-        const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
-        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,112,123,elapsed,true,false);
-        else if(s.expansion.osty_hp>0)c.clip(AnimOstyIdle,112,123,a.animation*33);
-        else c.ui(U_OstyPortrait,103,109,18,18,100);
         c.hp(s.expansion.osty_hp,s.expansion.osty_max_hp,99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
     }
     if(s.block){c.picture(A_Block,8,128,14,14);c.num(s.block,10,139,10,Blue);}
@@ -96,23 +114,15 @@ static void combat_screen(Canvas&c){
     status_strip(c,0,stars?51:24,149,stars?69:96);
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];const auto pos=enemy_pose(s.enemy_count,i);int x=pos.x;
-        if(!e.hp){c.centered("已击败",x-32,105,64,10,Muted);continue;}
-        c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);c.actor(i+1,x,pos.feet,pos.scale);
-        EnemyIntent intent=s.enemy_world.active?enemy_intent(s,i):EnemyIntent{"",uint16_t(e.move==2?EnemyIntentBuff:EnemyIntentAttack),int16_t(enemy_damage(s,i)),1};
-        const bool attacking=(intent.flags&EnemyIntentAttack)!=0;
-        c.picture(attacking?A_AttackIntent:A_BuffIntent,x-pos.width/2,pos.intent,13,13);
-        char label[32]{};TextBuffer tb{label,sizeof label,0};
-        if(attacking){tb.number(intent.damage);if(intent.hits>1){tb.text("×");tb.number(intent.hits);}}
-        else if(intent.flags&EnemyIntentSleep)tb.text("沉睡");
-        else if(intent.flags&EnemyIntentStun)tb.text("晕眩");
-        else if(intent.flags&EnemyIntentEscape)tb.text("逃跑");
-        else if(intent.flags&EnemyIntentSummon)tb.text("召唤");
-        else if(intent.flags&EnemyIntentBuff)tb.text("强化");
-        else if(intent.flags&EnemyIntentDebuff)tb.text("弱化");
-        else if(intent.flags&EnemyIntentBlock)tb.text("防御");
-        else tb.text("？");
-        c.text(label,x-pos.width/2+14,pos.intent,10,attacking?Gold:Green,pos.width-11);
-        if(a.target==i)c.text("▼",x-5,pos.intent+14,8,Gold);
+        if(!e.hp){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
+        c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);
+        if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
+        else{
+            const bool attacking=e.move!=2;c.picture(attacking?A_AttackIntent:A_BuffIntent,x-pos.width/2,pos.intent,13,13);
+            char label[32]{};TextBuffer tb{label,sizeof label,0};if(attacking)tb.number(enemy_damage(s,i));else tb.text("强化");
+            c.text(label,x-pos.width/2+14,pos.intent,10,attacking?Gold:Green,pos.width-11);
+            if(a.target==i)c.text("▼",x-5,pos.intent+14,8,Gold);
+        }
         c.hp(e.hp,e.max_hp,x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
         if(e.block){c.picture(A_Block,x-pos.width/2-7,pos.hp-11,10,10);c.num(e.block,x-pos.width/2+4,pos.hp-12,8,Blue);}
 

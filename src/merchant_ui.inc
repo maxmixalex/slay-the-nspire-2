@@ -11,13 +11,13 @@ static void merchant_price(Canvas&c,int item,int x,int y,int w){
 }
 static void merchant_card(Canvas&c,Card card,int x,int y,bool selected,bool sold,const EventCardFacts*facts=nullptr){
     if(selected)c.box(x-2,y-2,49,66,Gold);
-    c.picture(c.a.content.frame_image(card),x,y,45,63);
+    c.picture(c.a.card_face_frame(card,-1,-1,facts),x,y,45,63);
     c.picture(c.a.card_face_image(card,-1,-1,facts),x+3,y+15,39,29);
     c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y,45,12);
     c.text(c.a.content.card_string(card.kind),x+8,y+1,8,Ink,35);
     c.text(c.a.content.card_string(card.kind),x+7,y,8,White,36);
-    c.picture(c.a.content.energy_image(card),x-6,y-6,14,14);c.energy_label(cost(card),x-2,y-7,10);
-    c.centered(definitions[card.kind].type==CardType::Attack?"攻击":definitions[card.kind].type==CardType::Skill?"技能":"能力",x+3,y+46,39,10,Muted);
+    c.picture(c.a.content.energy_image(card),x-6,y-6,14,14);c.energy_label(c.a.card_offer_cost(card,facts),x-2,y-7,10);
+    c.centered(card_type_label(c.a.card_face_type(card,-1,-1,facts)),x+3,y+46,39,10,Muted);
     if(sold)c.dim(x,y,45,63,170);
 }
 static void shop_screen(Canvas&c){

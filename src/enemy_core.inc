@@ -264,13 +264,17 @@ static int enemy_raw_move_damage(const State&s,int t,int node){
 static int enemy_attack_value(const State&s,int t,int base){
  if(t<0||t>=s.enemy_count)return 0;const auto&m=s.enemy_world.models[t];int vigor=m.attack_vigor?m.attack_vigor:enemy_power_value(s,t,EnemyPower::Vigor);
  int n=max(0,base+s.enemies[t].strength+vigor+enemy_power_value(s,-1,EnemyPower::Tainted));
- int weak=s.enemies[t].weak?necro_weak_multiplier(s,t,75):100;
+ int weak=s.enemies[t].weak?necro_weak_multiplier(s,t,wr_enemy_weak_percent(s,75)):100;
  int vulnerable=enemy_power_value(s,-1,EnemyPower::Vulnerable)?150+enemy_power_value(s,t,EnemyPower::Cruelty):100;
  if(vulnerable!=100&&enemy_power_value(s,-1,EnemyPower::Debilitate))vulnerable=vulnerable*2-100;
  bool back=enemy_power_value(s,-1,EnemyPower::Surrounded)&&enemy_power_value(s,t,s.enemy_world.facing?EnemyPower::BackAttackRight:EnemyPower::BackAttackLeft);
  uint64_t numerator=(uint64_t)n*(unsigned)max(0,weak)*(unsigned)max(0,vulnerable)*(s.expansion.beetle[t]?70u:100u)*(back?3u:2u);
- // Bounded integer division avoids platform floating-point differences.
- uint64_t q=numerator/2000000u;return ironclad_enemy_damage(s,t,(int)(q>9999999u?9999999u:q));
+ // Bounded long division is exact and needs no unsupported ARM 64-bit divide
+ // helper. The remainder stays below 4,000,000 before each subtraction.
+ uint64_t q=0;uint32_t remainder=0;
+ for(unsigned bit=64;bit;){--bit;remainder=(remainder<<1)|(uint32_t)((numerator>>bit)&1u);
+  if(remainder>=2000000u){remainder-=2000000u;q|=uint64_t(1)<<bit;}}
+ return ironclad_enemy_damage(s,t,(int)(q>9999999u?9999999u:q));
 }
 EnemyIntent enemy_intent(const State&s,int t){
  if(t<0||t>=s.enemy_count)return {"",0,0,0};const auto&m=s.enemy_world.models[t];
@@ -279,7 +283,7 @@ EnemyIntent enemy_intent(const State&s,int t){
  const auto*d=enemy_move_spec(m.kind,m.node);if(!d)return {"",0,0,0};int hits=d->hits;
  if(m.kind==EnemyId::TestSubject&&m.node==3)hits=min(999,3+m.data[1]);
  if(s.enemy_world.ascension>=9&&((m.kind==EnemyId::Entomancer&&m.node==1)||(m.kind==EnemyId::Exoskeleton&&m.node==0)||(m.kind==EnemyId::TrackerRubyRaider&&m.node==1)))++hits;
- return {d->key,d->flags,(int16_t)min(9999,(d->flags&EnemyIntentAttack)?enemy_attack_value(s,t,enemy_raw_move_damage(s,t,m.node)):0),(int16_t)hits};
+ return {d->key,d->flags,(int16_t)min(9999,(d->flags&EnemyIntentAttack)?enemy_attack_value(s,t,enemy_raw_move_damage(s,t,m.node)):0),(int16_t)hits,(int16_t)(s.enemy_world.ascension>=9?d->status_cards_9:d->status_cards)};
 }
 #include "enemy_encounters.inc"
 #include "enemy_visuals.inc"

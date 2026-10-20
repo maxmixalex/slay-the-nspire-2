@@ -32,6 +32,7 @@ int main(){
   auto id=OriginalEventId(i);if(id==OriginalEventId::WarHistorianRepy)require(event_add_deck_card(game,{EventCardLanternKey,0})>=0,"prepare forced historian dependency");
   const unsigned act=id==OriginalEventId::Neow?0:1;
   if(!original_event_begin(game,id,0x71ef23,act)||!validate(game)){std::fprintf(stderr,"initial event dispatch/save failed: %s\n",original_event_key(id));return 1;}
+  if(id==OriginalEventId::BattlewornDummy){int hp=0;require(original_event_description_value(game,"Setting1Hp",hp)&&hp==75&&original_event_description_value(game,"Setting2Hp",hp)&&hp==150&&original_event_description_value(game,"Setting3Hp",hp)&&hp==300,"dummy option HP uses the actual single-player monster models");}
   unsigned enabled=0;for(unsigned option=0;option<original_event_option_count(game);option++)if(original_event_option_enabled(game,int(option)))++enabled;
   require(enabled>0,"every entered event provides a usable initial option");persisted();
  }
@@ -89,7 +90,9 @@ int main(){
  require(original_event_crystal_tool(game,false),"switch to one-cell tool");
  for(unsigned n=0;n<6;n++){unsigned cell=0;while(cell<CrystalCells&&game.original_events.crystal_clear[cell])++cell;require(cell<CrystalCells,"unrevealed cell exists");require(original_event_crystal_click(game,cell%11,cell/11),"consume crystal click");persisted();}
  require(game.original_events.crystal_charges==0,"all six clicks consumed once");
- require(game.original_events.finished,"crystal finish page reached after last click");
+ require(game.original_events.reward_active&&game.original_events.selection==OriginalEventSelection::Rewards&&!game.original_events.finished,"last crystal click awaits revealed rewards before completing the event");persisted();
+ require(original_event_reward(game,-1),"close crystal rewards through the public reward action");
+ require(game.original_events.finished&&!std::strcmp(game.original_events.page_key,"FINISH"),"crystal finish page reached after reward continuation");persisted();
  before=game;game.original_events.reward_count=MaxOriginalEventRewards+1;require(!valid_original_event_state(game),"excess reward count rejected");game=before;
  reset();game.gold=1000;require(original_event_begin(game,OriginalEventId::FakeMerchant,23,1),"begin fake merchant");
  require(game.original_events.offer_count==6&&game.original_events.option_count==7,"six distinct fake wares and leave");

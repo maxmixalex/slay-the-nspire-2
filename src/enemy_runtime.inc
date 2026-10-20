@@ -91,6 +91,9 @@ static bool enemy_effect(State&s,Effect e){
   if(b==2)enemy_die(s,a);
   else if(enemy_slot_exists(s,a)&&s.enemies[a].hp==0){
    w.models[a].flags|=EnemyDying;enemy_visual_snapshot_death(s,a);
+   // Swipe.BeforeDeath registers an optional exact-card reward before any
+   // AfterDeath listeners; claiming it later is the only deck insertion.
+   enemy_before_death(s,a);if(s.phase==Phase::Error)break;
    queue_extension(s,XOp::EnemyDie,a,2,true);
    world_relic_hook(s,WorldRelicHook::AfterEnemyDeath,a,enemy_power_value(s,a,EnemyPower::Minion)!=0);
   }break;

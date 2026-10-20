@@ -6,10 +6,13 @@
 #include "world_run.hpp"
 #include "original_events.hpp"
 #include "localized_template.hpp"
+#include "ui_core_observer.hpp"
 namespace spire {
+#include "world_enemy_assets.inc"
 #include "character_ui.inc"
 #include "canvas.inc"
 #include "world_text.inc"
+#include "world_enemy_ui.inc"
 #include "app_input.inc"
 static const char* card_type_label(CardType type){
     switch(type){case CardType::Attack:return "攻击";case CardType::Skill:return "技能";
@@ -17,6 +20,7 @@ static const char* card_type_label(CardType type){
     return "";
 }
 static void small_card(Canvas&c,Card card,int x,int y,bool selected,bool playable,int number,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr){
+    if(!facts)facts=event_card_facts(c.a.game,card,instance,deck);
     int frame=c.a.card_face_frame(card,instance,deck,facts);
     if(selected){c.rect(x-2,y-2,51,70,rgb(91,74,47));c.box(x-2,y-2,51,70,Gold);}
     c.picture(frame,x,y,47,66);c.picture(c.a.card_face_image(card,instance,deck,facts),x+3,y+15,41,30);c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y+1,47,11);
@@ -88,8 +92,10 @@ static void hud(Canvas&c){
 
 #include "rooms_ui.inc"
 #include "status_ui.inc"
+#include "world_intent_ui.inc"
 #include "combat_ui.inc"
 static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2,int stars=-2,int instance=-1,int deck_index=-1,const EventCardFacts*facts=nullptr){
+    if(!facts)facts=event_card_facts(c.a.game,card,instance,deck_index);
     int type=(int)c.a.card_face_type(card,instance,deck_index,facts);
     const int base_stars=card_star_cost(c.a.game,card),header=base_stars?13:0;
     if(selected){c.box(x-2,y-2,84,116,Gold);c.box(x-1,y-1,82,114,Gold);}
@@ -227,7 +233,8 @@ static void panels(Canvas&c){
 int App::detail_energy()const{
     if(detail_card<0)return -2;
     Card card=card_from_token(detail_card);
-    int energy=detail_instance>=0?card_preview_cost(game,card,detail_instance):detail_cost_override==-2?cost(card):detail_cost_override;
+    const EventCardFacts*facts=detail_has_facts?&detail_facts:event_card_facts(game,card,-1,detail_deck_index);
+    int energy=detail_instance>=0?card_preview_cost(game,card,detail_instance):detail_cost_override==-2?card_offer_cost(card,facts):detail_cost_override;
     if(detail_instance>=0&&choice_free_energy(game)&&cost(card)>=0){
         for(unsigned i=0;i<game.expansion.choices.count;i++)if(game.expansion.choices.ids[i]==detail_instance){energy=card_free_preview_cost(game,card,detail_instance);break;}
     }
@@ -293,14 +300,15 @@ static void pointer_overlay(Canvas&c){
     c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
 }
 void App::render(){
-    Canvas c{*this};sync_relic_feedback();sync_character_feedback();hit_count=0;c.rect(0,0,320,240,Ink);
+    Canvas c{*this};sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     if(title){title_screen(c);
     }else{
-        switch(game.phase){
+        const bool combat_linger=int32_t(combat_linger_until-animation)>0;
+        if(combat_linger)combat_screen(c);else switch(game.phase){
         case Phase::Map:map_screen(c);break;
         case Phase::Shop:shop_screen(c);break;
         case Phase::Event:event_screen(c);break;
@@ -313,8 +321,8 @@ void App::render(){
         default:c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);if(!game.world.active)c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
         if(panel)panels(c);hud(c);
-        if(!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
-        else if(!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
+        if(!combat_linger&&!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
+        else if(!combat_linger&&!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
         if(paused){hit_count=0;c.dim(0,0,320,240,185);c.centered("暂停",0,22,320,20,Gold);
             const char*items[]={"继续游戏","保存游戏","读取存档","操作说明","返回主菜单","退出游戏"};
             for(int i=0;i<6;i++){int y=60+i*28;c.ui(U_RewardButton,63,y,194,25);if(menu==i)c.box(62,y-1,196,27,Gold);
@@ -336,6 +344,7 @@ void App::render(){
     if(map_preview.open)reference_map_screen(c);
     if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&game.phase!=Phase::Event&&game.phase!=Phase::Shop&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
     owned_relic_tooltip(c);
+    enemy_intent_tooltip(c);
     pointer_overlay(c);
 }
 } // namespace spire

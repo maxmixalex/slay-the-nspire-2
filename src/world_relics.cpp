@@ -318,7 +318,7 @@ bool w_reward_cards(State& s,unsigned group,const WorldCardOptions& o,unsigned n
 void w_schedule_group(State& s,unsigned group){if(group){if(w_first(s,WorldRelicDriftwood,true)>=0)for(auto&r:s.world_relics.rewards)if(r.group==group&&r.kind==1&&!(r.flags&4))r.flags|=16;w_enqueue(s,WorldRelicOp::RewardGroup,s.world_relics.group_owner[group-1],int(group));}}
 void w_group_show(State& s,unsigned group){auto& w=s.world_relics;if(!group||group>w.group_count||!w.group_active[group-1])return;w.offer_count=0;
  for(unsigned i=0;i<w.reward_count;i++)if(w.rewards[i].group==group&&!(w.rewards[i].flags&1))w.offers[w.offer_count++]=uint16_t(i);
- reference::comparison_sort(w.offers,w.offer_count,[&w](uint16_t index){const unsigned ranks[]={0,5,3,2,1,4};return ranks[w.rewards[index].kind];});
+ reference::comparison_sort(w.offers,w.offer_count,[&w](uint16_t index){const unsigned ranks[]={0,5,3,2,1,4,7};return ranks[w.rewards[index].kind];});
  if(!w.offer_count){w_group_free(s,group);return;}w.choice_group=uint8_t(group);w.choice_reward=0;w.choice_cancelable=w.group_skip[group-1];
  w_pause(s,WorldRelicChoice::OfferReward,w.group_owner[group-1],w.choice_cancelable?0:1,1);
 }
@@ -532,7 +532,11 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
    else{w.offer_count=1;w.offers[0]=reward.value;w.choice_cancelable=1;w_pause(s,WorldRelicChoice::Potion,serial,0,1);}
   }else if(reward.kind==1){Card cards[8];for(unsigned i=0;i<reward.count;i++)cards[i]=card_from_token(reward.tokens[i]);w_show_cards(s,serial,cards,reward.facts,reward.count);}
   else if(reward.kind==4){reward.flags|=1;w_enqueue(s,WorldRelicOp::Gold,serial,reward.value);}
-  else if(reward.kind==5){reward.flags|=1;w_queue_card(s,{reward.value,0,0,reward.facts[0]},serial);}
+  else if(reward.kind==5){reward.flags|=1;w_queue_card(s,{reward.value,reward.tokens[0],reward.tokens[1],reward.facts[0]},serial);}
+  else if(reward.kind==6){
+   unsigned available=0;for(unsigned i=0;i<s.deck_count;i++)if(card_removable(s,s.deck[i],int(i)))++available;
+   if(available){w.offer_count=0;w.choice_cancelable=1;w_pause(s,WorldRelicChoice::Remove,serial,0,1,WRemove);}
+  }
   return;
  }
  if(choice==WorldRelicChoice::OfferCard){
@@ -541,6 +545,7 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
  }
  if(choice==WorldRelicChoice::OfferBundle){unsigned first=ids[0]*3;for(unsigned i=3;i>0;i--){WorldRelicCardSnapshot card{w.offers[first+i-1],0,0,w.offer_facts[first+i-1]};if(!w_queue_card(s,card,serial))return;}return;}
  if(choice==WorldRelicChoice::Hand||choice==WorldRelicChoice::CombatOffer){world_relic_combat_select(s,serial,ids,count);return;}
+ if(choice==WorldRelicChoice::Remove&&count&&reward_index&&reward_index<=w.reward_count&&w.rewards[reward_index-1].kind==6)w.rewards[reward_index-1].flags|=1;
  uint16_t selected[MaxDeck];for(unsigned i=0;i<count;i++)selected[i]=ids[i];
  if(choice==WorldRelicChoice::Transform&&filter==WClaws){if(!w_transform_batch(s,serial,selected,count,2))w_error(s);return;}
  if(filter==WTooth){w_sort_deck(s,selected,count);w.tooth_count=uint8_t(count);for(unsigned i=0;i<count;i++)w.tooth_cards[i]=w_snapshot(s,selected[i]);}

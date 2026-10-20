@@ -104,7 +104,7 @@ static void open_model(unsigned model,bool upgraded=false){
 static void open_potion(Potion potion){
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryPotions);
     int index=(int)potion-1;while(a.library_page<index/18)action(UiAction::NextPage);
-    tap(HitKind::LibraryItem,index);CHECK(a.detail_item==RelicKinds+index);
+    tap(HitKind::LibraryItem,index);CHECK(a.detail_item==WorldRelicKinds+index);
 }
 static void acquire_potion(Potion potion){open_potion(potion);action(UiAction::LabPotion);CHECK(!a.library&&a.game.potions[0]==potion);}
 static void drink(){a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Confirm);CHECK(a.panel==0);}

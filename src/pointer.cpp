@@ -2,6 +2,7 @@
 #include "status.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "ui_core_observer.hpp"
 namespace spire {
 static int clamp(int n,int lo,int hi){return n<lo?lo:n>hi?hi:n;}
 void App::add_hit(int x,int y,int w,int h,HitKind kind,int value,bool enabled){
@@ -70,7 +71,7 @@ void App::pointer_move(int x,int y){
         if(!pointer.held){uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);for(unsigned i=0;i<count&&i<MaxWorldUiChoices;i++)if(ids[i]==h->value){cursor=i;break;}}break;
     case HitKind::CrystalCell:if(!pointer.held)cursor=h->value;break;
     case HitKind::StatusItem:if(!pointer.held&&status_selected!=h->value){status_selected=h->value;status_scroll=0;}break;
-    case HitKind::Enemy:target=h->value;break;
+    case HitKind::Enemy:case HitKind::EnemyIntent:target=h->value;break;
     case HitKind::ReferenceNode:if(!pointer.held)map_preview.selected=h->value;break;
     default:break;
     }
@@ -108,6 +109,7 @@ void App::pointer_scroll(int rows){
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
+    UiCoreObserver observer(*this);
     // Input can arrive between timed frames. Hit geometry is rebuilt from the
     // current screen rather than trusting regions from a previous overlay.
     render();pointer_move(pointer.x,pointer.y);
@@ -128,8 +130,8 @@ void App::pointer_button(bool down){
         for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==id)index=i;
         if(index<0||busy){pointer_cancel();return;}
         Card card=game.cards[id];bool targeted=card_targets_enemy(game,card);
-        bool dropping=pointer.dragging&&(hit.kind==HitKind::Enemy||(!targeted&&hit.kind==HitKind::Battlefield));
-        if(dropping&&hit.enabled){cursor=index;if(hit.kind==HitKind::Enemy)target=hit.value;
+        bool dropping=pointer.dragging&&(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||(!targeted&&hit.kind==HitKind::Battlefield));
+        if(dropping&&hit.enabled){cursor=index;if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent)target=hit.value;
             pointer.armed_card=-1;pointer_key(Key::Confirm);return;}
         if(same&&!pointer.dragging){
             if(pointer.armed_card==id&&!targeted){cursor=index;pointer.armed_card=-1;pointer_key(Key::Confirm);}
@@ -139,13 +141,13 @@ void App::pointer_button(bool down){
         pointer.armed_card=-1;return;
     }
     if(!same||!hit.enabled){if(pointer.dragging)pointer.armed_card=-1;return;}
-    if(hit.kind==HitKind::Enemy||hit.kind==HitKind::Battlefield){
+    if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||hit.kind==HitKind::Battlefield){
         if(pointer.armed_card<0||busy||game.phase!=Phase::Combat)return;
         int index=-1;for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==pointer.armed_card)index=i;
         if(index<0){pointer.armed_card=-1;return;}
         bool targeted=card_targets_enemy(game,game.cards[pointer.armed_card]);
-        if(targeted&&hit.kind!=HitKind::Enemy)return;
-        cursor=index;if(hit.kind==HitKind::Enemy)target=hit.value;
+        if(targeted&&hit.kind!=HitKind::Enemy&&hit.kind!=HitKind::EnemyIntent)return;
+        cursor=index;if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent)target=hit.value;
         pointer.armed_card=-1;pointer_key(Key::Confirm);return;
     }
     pointer.armed_card=-1;

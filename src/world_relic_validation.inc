@@ -69,11 +69,12 @@ bool valid_world_relic_state(const State&s){
  }
  for(unsigned i=0;i<w.reward_count;i++){
   const auto&r=w.rewards[i];if(!r.group)continue;
-  if(r.group>w.group_count||!w.group_active[r.group-1]||r.kind<1||r.kind>5||r.count>8||r.pool_count>11||
+  if(r.group>w.group_count||!w.group_active[r.group-1]||r.kind<1||r.kind>6||r.count>8||r.pool_count>11||
      r.odds>unsigned(WorldCardOdds::Uniform)||r.source>unsigned(WorldCardSource::Other))return false;
   if(r.kind==2&&r.value>=WorldRelicKinds)return false;
   if(r.kind==3&&(!r.value||r.value>PotionKinds))return false;
-  if(r.kind==5&&(!token_valid(r.value,r.facts[0])||r.count||r.pool_count||(r.flags&~1)))return false;
+  if(r.kind==5&&(!token_valid(r.value,r.facts[0])||r.tokens[0]>9998||r.tokens[1]>9986||r.count||r.pool_count||(r.flags&~1)))return false;
+  if(r.kind==6&&(r.value||r.count||r.pool_count||(r.flags&~1)))return false;
   if(r.flags&~55)return false;
   if(r.kind==1&&((r.flags&4)&&(r.flags&16)))return false;
   if(r.kind==1&&(r.flags&16)&&(!r.value||r.value>8))return false;

@@ -42,7 +42,7 @@ static int count_kind(const State&s,Zone z,unsigned kind){int n=0;for(unsigned i
 static int total_hp(const State&s){return s.enemies[0].hp+s.enemies[1].hp;}
 static void registry(){
  unsigned n=0;for(unsigned k=0;k<CardKinds;k++)if(card_colorless(k)){++n;CHECK(card_rarity(k)==3||card_rarity(k)==4);CHECK(!card_generated(k));}
- CHECK(n==53);CHECK(PotionKinds==64);CHECK(CardKinds==497);
+ CHECK(n==53);CHECK(PotionKinds==64);CHECK(CardKinds==558);
  for(int p=1;p<=PotionKinds;p++){auto*d=potion_definition((Potion)p);CHECK(d&&*d->key&&*d->name&&*d->description);}
  CHECK(!potion_in_pool(Potion::BoneBrew,Character::Ironclad));CHECK(!potion_in_pool(Potion::Ambergris,Character::Silent));
  CHECK(potion_in_pool(Potion::Ashwater,Character::Ironclad));CHECK(!potion_in_pool(Potion::Blood,Character::Silent));

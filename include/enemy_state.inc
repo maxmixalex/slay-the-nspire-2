@@ -280,14 +280,15 @@ enum class EnemyPower:uint8_t {
 constexpr int EnemyPowerCount=(int)EnemyPower::Count;
 enum class EnemyAffliction:uint8_t { None,Bound,Entangled,Galvanized,Hexed,Tainted,Ringing,Smog,Count };
 constexpr int MaxEnemyMoves=32,MaxEnemyMoveHistory=8;
+constexpr unsigned MaxEnemyExtraRewards=96;
 enum EnemyIntentFlag:uint16_t { EnemyIntentAttack=1,EnemyIntentBlock=2,EnemyIntentBuff=4,
  EnemyIntentDebuff=8,EnemyIntentStatus=16,EnemyIntentHeal=32,EnemyIntentSummon=64,
  EnemyIntentEscape=128,EnemyIntentStun=256,EnemyIntentSleep=512,EnemyIntentDeath=1024,
- EnemyIntentUnknown=2048 };
+ EnemyIntentUnknown=2048,EnemyIntentCardDebuff=4096,EnemyIntentDebuffStrong=8192 };
 enum class EncounterClass:uint8_t { Weak,Normal,Elite,Boss,Event,Display };
 struct EnemyDefinition { const char*key; const char*model; int16_t min_hp,max_hp,min_hp_8,max_hp_8; };
 struct EncounterDefinition { const char*key; EncounterClass type; uint8_t act; };
-struct EnemyIntent { const char*move_key; uint16_t flags; int16_t damage,hits; };
+struct EnemyIntent { const char*move_key; uint16_t flags; int16_t damage,hits,status_cards=0; };
 enum EnemySlotFlag:uint8_t { EnemyPresent=1,EnemyActed=2,EnemyDying=4,EnemyRemoved=8,
  EnemyDown=16,EnemyStunned=32,EnemyImmediate=64,EnemyEscaped=128 };
 struct EnemyModelState {
@@ -319,7 +320,9 @@ struct EnemyWorldState {
  uint8_t spawned_models[EnemyKinds]{},dampen_casters=0,bound_played=0,used_types=0;
  uint16_t escaped_count=0,spawned_model_count=0,cards_played_turn=0,bound_draws_turn=0;
  uint8_t returned_gold_count=0;
- uint16_t returned_gold[32]{};
+ uint8_t returned_reward_kind[MaxEnemyExtraRewards]{}; // 0=gold, 1=The Hunt, 2=stolen original card.
+ uint16_t returned_gold[MaxEnemyExtraRewards]{};
+ EventDeckSnapshot returned_cards[MaxEnemyExtraRewards]{};
  uint8_t facing=0,choice_enemy=255,choice_stage=0;
  int16_t turn_damage[MaxEnemies]{},turn_attacks[MaxEnemies]{};
 };
@@ -332,6 +335,10 @@ EnemyId enemy_id(const char* model_or_key);
 unsigned encounter_spawned_models(const State&);
 unsigned encounter_returned_gold_count(const State&);
 int encounter_returned_gold(const State&,unsigned index);
+void encounter_add_card_reward(State&);
+unsigned encounter_combat_reward_count(const State&);
+bool encounter_combat_reward(const State&,unsigned index,unsigned&kind,int&value);
+bool encounter_combat_reward_card(const State&,unsigned index,EventDeckSnapshot&);
 unsigned encounter_escaped_enemies(const State&);
 bool encounter_shares_tags(EncounterId,EncounterId);
 int encounter_min_gold(EncounterId,unsigned ascension=0);

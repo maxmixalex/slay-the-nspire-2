@@ -1,8 +1,14 @@
 static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
+static CoreObserver core_observer{};
+CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
 void record(State&s,LogKind k,int a,int b){
     if(s.log_count==24){for(int i=1;i<24;i++)s.logs[i-1]=s.logs[i];s.log_count--;}
-    s.logs[s.log_count++]={k,(int32_t)a,(int32_t)b};
+    const Log entry{k,(int32_t)a,(int32_t)b};s.logs[s.log_count++]=entry;
+    // Capture the binding so a nested presentation scope can replace and
+    // restore it without changing the context of the current notification.
+    const CoreObserver observer=core_observer;
+    if(observer.on_log)observer.on_log(observer.context,s,entry);
 }
 static void fail(State&s){s.phase=Phase::Error;record(s,LogKind::Capacity);}
 uint32_t random_below(uint32_t&r,uint32_t bound){
@@ -123,7 +129,7 @@ static void victory_cleanup(State&s){
     if(s.world.active)s.phase=Phase::Reward;
     // A lethal nested autoplay cannot leave its caller orphaned in Limbo.
     for(unsigned id=0;id<s.card_count;id++)if(s.zones[id]==Zone::Limbo){
-        Card c=s.cards[id];Zone z=card_type(s,c)==CardType::Power?Zone::Power:(card_exhausts(s,c,id)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
+        Card c=s.cards[id];Zone z=s.world_relics.card_is_dupe[id]||card_type(s,c)==CardType::Power?Zone::Power:(card_exhausts(s,c,id)||ironclad_exhausts(s,id))?Zone::Exhaust:Zone::Discard;
         put(s,z==Zone::Power?s.powers:z==Zone::Exhaust?s.exhaust:s.discard,id,z);
     }
     if(!world_shared_active(s)){ironclad_combat_end(s);silent_combat_end(s);defect_combat_end(s);regent_combat_end(s,true);necro_combat_end(s);event_card_combat_end(s,true);}

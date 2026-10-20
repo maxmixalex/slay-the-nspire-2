@@ -79,7 +79,10 @@ static void card_contract(unsigned kind,unsigned up){
     case MasterOfStrategy:
         supply(s,8);act(s,kind);CHECK(s.hand.count==3+up&&s.zones[0]==Zone::Exhaust);break;
     case Shockwave:
-        act(s,kind);for(const auto&e:s.enemies)CHECK(e.weak==3+2*(int)up&&e.vulnerable==3+2*(int)up);CHECK(s.zones[0]==Zone::Exhaust);break;
+        act(s,kind);
+        for(unsigned i=0;i<s.enemy_count;i++)CHECK(s.enemies[i].weak==3+2*(int)up&&s.enemies[i].vulnerable==3+2*(int)up);
+        for(unsigned i=s.enemy_count;i<MaxEnemies;i++)CHECK(!s.enemies[i].weak&&!s.enemies[i].vulnerable);
+        CHECK(s.zones[0]==Zone::Exhaust);break;
     case Scrawl:
         supply(s,14);add(s,Defend);CHECK(card_retains(s.cards[0])==(up!=0));act(s,kind);CHECK(s.hand.count==MaxHand&&s.draw.count==5&&s.zones[0]==Zone::Exhaust&&s.energy==99);break;
     case Purity:{

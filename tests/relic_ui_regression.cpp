@@ -48,8 +48,9 @@ int main(int argc,char**argv){
  if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(MaxPack);size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}
  if(argc>2)capture_dir=argv[2];inventory();a.input(Key::Back);a.input(Key::Back);
  setup();auto before=snapshot();a.pointer_move(25,29);a.render();for(int i=0;i<60;i++){a.advance(33);a.render();}same(before);
- a.game.cards[a.game.hand.ids[0]]={Strike,0};a.game.relic_counters[25]=a.game.relic_counters[26]=a.game.relic_counters[27]=2;a.game.relic_counters[29]=9;
- CHECK(play(a.game,0,0));a.render();CHECK(a.relic_flash_ticks==30&&(a.relic_flash_mask&Shuriken));before=snapshot();
+ unsigned strike=0;while(strike<a.game.hand.count&&a.game.cards[a.game.hand.ids[strike]].kind!=Strike)++strike;CHECK(strike<a.game.hand.count);
+ a.game.relic_counters[25]=a.game.relic_counters[26]=a.game.relic_counters[27]=2;a.game.relic_counters[29]=9;
+ CHECK(play(a.game,int(strike),0));a.render();CHECK(a.relic_flash_ticks==30&&(a.relic_flash_mask&Shuriken));before=snapshot();
  for(int i=0;i<31;i++)a.tick();a.render();CHECK(!a.relic_flash_ticks);same(before);a.open_owned_relic(26);shot("relic-detail");a.input(Key::Back);
  treasure();printf("relic UI: %u checks passed\n",checks);
 }

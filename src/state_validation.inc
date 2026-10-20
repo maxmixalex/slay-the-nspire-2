@@ -116,7 +116,11 @@ bool validate(const State&s){
     if(combat_phase(s.phase)&&choice_phase(s.phase)&&(!s.effect_count||!choice_pile(s).count))return false;
     if(combat_phase(s.phase)&&choice_phase(s.phase)&&s.phase!=Phase::ExtendedChoice&&s.playing<0&&
        !(s.phase==Phase::DiscardChoice&&!s.expansion.enemy_side&&s.silent.powers[(unsigned)SPower::ToolsOfTheTrade]>0))return false;
-    if(!choice_phase(s.phase)&&s.phase!=Phase::Error&&(s.playing>=0||s.effect_count))return false;
+    // Public damage and relic acquisition can return before their awaited
+    // Combat callbacks run. Their operands and frame/pile owners were checked
+    // above; a saved continuation needs no artificial choice screen.
+    const bool pending_combat=s.phase==Phase::Combat&&s.effect_count;
+    if(!choice_phase(s.phase)&&!pending_combat&&s.phase!=Phase::Error&&(s.playing>=0||s.effect_count))return false;
     for(unsigned i=0;i<s.log_count;i++)if((unsigned)s.logs[i].kind>(unsigned)LogKind::RelicIndex)return false;
     if(!validate_extension(s)||!valid_ironclad_state(s)||!valid_silent_state(s)||!valid_defect_state(s)||!valid_regent_state(s)||!valid_necro_state(s)||!valid_event_card_state(s)||!valid_enemy_state(s)||!valid_original_event_state(s)||!valid_world_relic_state(s)||!world_valid_run(s))return false;
     return true;
