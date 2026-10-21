@@ -7,6 +7,9 @@
 #include "original_events.hpp"
 #include "localized_template.hpp"
 #include "ui_core_observer.hpp"
+#include "world_room_assets.hpp"
+#include "world_rest_actors.hpp"
+#include "presentation_blend.hpp"
 namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"

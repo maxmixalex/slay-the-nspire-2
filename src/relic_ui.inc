@@ -59,7 +59,9 @@ static void owned_relic_tooltip(Canvas&c){
  char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress);a.relic_description(id,description,sizeof description,hit->value);
  if(*progress)c.text(progress,x+8,y+24,10,Green,150);c.paragraph(description,x+8,y+(*progress?40:25),150,3,0,10,White);
 }
+#include "world_treasure_ui.inc"
 static void treasure_screen(Canvas&c){
+    if(c.a.game.world.active){native_treasure_screen(c);return;}
     auto&a=c.a;auto&s=a.game;c.picture(A_ChestBackground,0,20);
     if(!s.treasure_state){
         c.picture(A_Chest,128,91);c.centered("发现宝藏",0,37,320,20,Gold);

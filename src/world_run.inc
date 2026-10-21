@@ -224,7 +224,12 @@ bool world_finish_room(State&s){
             increase_max_hp(s,5);
         }
         w.rest_used|=uint32_t(1)<<index;w.rest_pending=0;w.rest_deck_before=0;s.phase=Phase::Camp;
-        if(has_world_relic(s,WorldRelicMiniatureTent)){world_relic_flash(s,WorldRelicMiniatureTent);++s.revision;return true;}
+        if(has_world_relic(s,WorldRelicMiniatureTent))world_relic_flash(s,WorldRelicMiniatureTent);
+        else w.rest_used=w.rest_count==32?~uint32_t(0):(uint32_t(1)<<w.rest_count)-1;
+        // Selection finishes the option, not the room. The original rest site
+        // always reveals Proceed after its callbacks and remaining-options
+        // update, including when all options were cleared without a Tent.
+        ++s.revision;return true;
     }
     if(w.event_combat_parent&&s.original_events.combat_pending){
         w.event_combat_parent=0;w.room_type=w.parent_room_type;w.parent_room_type=0;

@@ -35,12 +35,17 @@ const char* world_rest_option_key(const State& s,unsigned index){
 }
 bool world_rest_option_enabled(const State& s,unsigned index){
  if(!s.world.active)return index==0||(index==1&&has_upgrade(s));
- const auto& w=s.world;if(s.phase!=Phase::Camp||index>=w.rest_count||w.rest_pending||(w.rest_used&(uint32_t(1)<<index)))return false;
+ const auto& w=s.world;if(s.phase!=Phase::Camp||!world_rest_option_visible(s,index)||w.rest_pending)return false;
  switch(WorldRestOption(w.rest_options[index])){
  case WorldRestOption::Smith:return has_upgrade(s);
  case WorldRestOption::Cook:{unsigned n=0;for(unsigned i=0;i<s.deck_count;++i)if(card_removable(s,s.deck[i],int(i)))++n;return n>=2;}
  default:return true;
  }
+}
+bool world_rest_option_visible(const State& s,unsigned index){
+ if(!s.world.active)return index<2;
+ const auto& w=s.world;
+ return index<w.rest_count&&index<MaxWorldRestOptions&&!(w.rest_used&(uint32_t(1)<<index));
 }
 bool world_rest_choose(State& s,unsigned index){
  if(!s.world.active||!world_rest_option_enabled(s,index))return false;

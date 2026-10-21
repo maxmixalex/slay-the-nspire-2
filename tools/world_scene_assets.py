@@ -602,6 +602,15 @@ class _Renderer:
             result = Image.fromarray(np.uint8(np.clip(np.rint(data), 0, 255)))
         return result
 
+    def shader_layer(self, node, path, image, rect, matrix, tint, shader,
+                     material, blend, shader_info):
+        """Optional reviewed shader evaluator; ordinary scene output is unchanged.
+
+        A subclass returns a full-canvas RGBA image and its blend mode, or None
+        to retain the existing shader handling and explicit omission report.
+        """
+        return None
+
     def spine(self, node, path, matrix, tint, clips, z):
         resource = self.loader.path(_property(node.props, 'skeleton_data_res'))
         if self.sampler is None:
@@ -758,7 +767,11 @@ class _Renderer:
         if image is not None:
             image, rect = self.image_geometry(node, image, size)
             wind = None
-            if shader and shader.endswith('/wind_sway.gdshader'):
+            handled = self.shader_layer(node, path, image, rect, matrix, own_tint,
+                                        shader, material, blend, shader_info)
+            if handled is not None:
+                layer, blend = handled
+            elif shader and shader.endswith('/wind_sway.gdshader'):
                 def amount(key, default):
                     return float(_property(material, 'shader_parameter/' + key, default))
                 time = self.time * amount('speed', 1) + amount('offset', 0)
@@ -781,7 +794,8 @@ class _Renderer:
                             **({'shader_sha256': shader_info['inline_sha256']} if shader_info else {}))
                 image = None
             if image is not None:
-                layer = self.image_layer(image, rect, matrix, own_tint, wind)
+                if handled is None:
+                    layer = self.image_layer(image, rect, matrix, own_tint, wind)
                 if node.kind == 'TextureRect' and int(_property(props, 'stretch_mode', 0)) == 6:
                     bounds = self.image_layer(Image.new('RGBA', (1, 1), 'white'),
                                               (0, 0, *size), matrix, np.ones(4))

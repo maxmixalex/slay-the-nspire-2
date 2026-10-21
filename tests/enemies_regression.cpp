@@ -190,10 +190,24 @@ static void death_replacement_and_revival(){
  move(s,0,7);CHECK(s.phase==Phase::Reward);
 }
 static void stolen_assets_and_timeout(){
- scenario="Gremlin Heist remains an independent gold reward";auto s=fight(EncounterId::GremlinMercNormal);s.gold=99;move(s,0,0);CHECK(s.gold==79);
- kill(s,0);int fat=alive(s,EnemyId::FatGremlin),sneaky=alive(s,EnemyId::SneakyGremlin);CHECK(fat>=0&&sneaky>=0);CHECK(s.enemy_world.models[fat].stolen_gold==20);
- effect(s,XOp::EnemySideHook,0,0);CHECK(s.enemy_world.turn_order[0]==sneaky&&s.enemy_world.turn_order[1]==fat);
- kill(s,fat);CHECK(s.gold==79&&encounter_returned_gold_count(s)==1&&encounter_returned_gold(s,0)==20);persist(s);
+ State s{};
+ for(unsigned ascension:{0u,8u}){
+  scenario=ascension?"Gremlin Surprise preserves A8 creation, HP and add order":"Gremlin Surprise preserves creation, HP and add order";
+  s=fight(EncounterId::GremlinMercNormal,ascension);s.gold=99;move(s,0,0);CHECK(s.gold==79);
+  // With Niche seed 2 both original rolls select the same HP. Fat has a
+  // combat ID already, but is not in the enemy list used for Sneaky's roll.
+  world_rng(s,WorldRng::Niche).reset(2);auto expected_rng=world_rng(s,WorldRng::Niche);expected_rng.next();expected_rng.next();
+  const unsigned next_id=s.enemy_world.next_creature_id;const int expected_hp=ascension?14:13;
+  kill(s,0);int fat=alive(s,EnemyId::FatGremlin),sneaky=alive(s,EnemyId::SneakyGremlin);CHECK(fat>=0&&sneaky>=0);
+  CHECK(s.enemies[fat].hp==expected_hp&&s.enemies[fat].max_hp==expected_hp&&s.enemies[sneaky].hp==expected_hp&&s.enemies[sneaky].max_hp==expected_hp);
+  const auto&actual_rng=world_rng(s,WorldRng::Niche);CHECK(actual_rng.calls==expected_rng.calls&&actual_rng.good==expected_rng.good);
+  for(unsigned i=0;i<4;++i)CHECK(actual_rng.words[i]==expected_rng.words[i]);
+  CHECK(s.enemy_world.models[fat].combat_id==next_id&&s.enemy_world.models[sneaky].combat_id==next_id+1&&s.enemy_world.next_creature_id==next_id+2);
+  CHECK(s.enemy_world.models[fat].stolen_gold==20);persist(s);
+  effect(s,XOp::EnemySideHook,0,0);CHECK(s.enemy_world.turn_count==2&&s.enemy_world.turn_order[0]==sneaky&&s.enemy_world.turn_order[1]==fat);
+  CHECK(s.enemy_world.turn_ids[0]==s.enemy_world.models[sneaky].combat_id&&s.enemy_world.turn_ids[1]==s.enemy_world.models[fat].combat_id);persist(s);
+  kill(s,fat);CHECK(s.gold==79&&encounter_returned_gold_count(s)==1&&encounter_returned_gold(s,0)==20);persist(s);
+ }
 
  scenario="Hopper returns an optional exact-card reward before deck insertion";s=fight(EncounterId::ThievingHopperWeak,0,true);
  while(s.hand.count){int id=s.hand.ids[--s.hand.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}

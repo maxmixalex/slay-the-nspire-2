@@ -33,18 +33,20 @@ int encounter_min_gold(EncounterId id,unsigned ascension){return encounter_gold(
 int encounter_max_gold(EncounterId id,unsigned ascension){return encounter_gold(id,ascension,true);}
 unsigned encounter_pool(unsigned region,EncounterClass type,EncounterId*out,unsigned capacity){unsigned n=0;for(const auto&e:encounter_pool_entries)if(e.region==region&&encounter_definitions[unsigned(e.id)].type==type){if(out&&n<capacity)out[n]=e.id;++n;}return n;}
 static void enemy_reset_combat(State&s){s.enemy_world=EnemyWorldState{};}
-static int enemy_unique_hp(State&s,EnemyId kind,int except=-1,int bonus=0){
+static int enemy_unique_hp(State&s,EnemyId kind,int except=-1,int bonus=0,int pending_add=-1){
  const auto&d=enemy_definitions[unsigned(kind)];int low=(s.enemy_world.ascension>=8?d.min_hp_8:d.min_hp)+bonus,high=(s.enemy_world.ascension>=8?d.max_hp_8:d.max_hp)+bonus;
- int choices[128],n=0;for(int hp=low;hp<=high&&n<128;++hp){bool used=false;for(int i=0;i<s.enemy_count;++i)if(i!=except&&enemy_slot_exists(s,i)&&s.enemies[i].max_hp==hp){used=true;break;}if(!used)choices[n++]=hp;}
+ // A created actor can already own an identity without belonging to the
+ // original enemy list. Only actors added to that list constrain unique HP.
+ int choices[128],n=0;for(int hp=low;hp<=high&&n<128;++hp){bool used=false;for(int i=0;i<s.enemy_count;++i)if(i!=except&&i!=pending_add&&enemy_slot_exists(s,i)&&s.enemies[i].max_hp==hp){used=true;break;}if(!used)choices[n++]=hp;}
  auto&r=world_rng(s,WorldRng::Niche);return n?choices[r.below((unsigned)n)]:r.range(low,high+1);
 }
-static int enemy_create(State&s,EnemyId kind,int slot,int owner=-1,int bonus=0){
+static int enemy_create(State&s,EnemyId kind,int slot,int owner=-1,int bonus=0,int pending_add=-1){
  if(kind==EnemyId::LegacyNibbit||unsigned(kind)>=EnemyKinds||slot<0||slot>=s.enemy_world.slot_limit)return -1;
  int t=-1;for(int i=0;i<s.enemy_count;++i)if(!enemy_slot_exists(s,i)&&i!=s.enemy_world.actor){t=i;break;}
  if(t<0){if(s.enemy_count>=MaxEnemies){fail(s);return -1;}t=s.enemy_count++;}
  enemy_reset_shared_slot(s,t);auto&m=s.enemy_world.models[t];m=EnemyModelState{};m.kind=kind;m.slot=(uint8_t)slot;m.owner=owner<0?255:(uint8_t)owner;
  // HP is sampled before attaching this new combat identity.
- int hp=enemy_unique_hp(s,kind,t,bonus);s.enemies[t].hp=s.enemies[t].max_hp=(int16_t)hp;
+ int hp=enemy_unique_hp(s,kind,t,bonus,pending_add);s.enemies[t].hp=s.enemies[t].max_hp=(int16_t)hp;
  m.flags=EnemyPresent;m.combat_id=s.enemy_world.next_creature_id++;m.spawned_this_side=s.enemy_world.side;
  const int col=world_map_column(s),row=world_map_row(s);m.rng.reset(world_run_seed(s)+(col<0?0:col)+(row<0?0:row)+world_act_index(s)+m.combat_id);
  if(!s.enemy_world.spawned_models[unsigned(kind)]){s.enemy_world.spawned_models[unsigned(kind)]=1;++s.enemy_world.spawned_model_count;}
@@ -103,8 +105,8 @@ static void enemy_initial_powers(State&s,int t){
  default:break;
  }
 }
-static int enemy_spawn(State&s,EnemyId kind,int slot,int owner=-1){
- int t=enemy_create(s,kind,slot,owner);if(t<0)return t;
+static int enemy_spawn(State&s,EnemyId kind,int slot,int owner=-1,int pending_add=-1){
+ int t=enemy_create(s,kind,slot,owner,0,pending_add);if(t<0)return t;
  if(kind==EnemyId::Wriggler)s.enemy_world.models[t].data[0]=1;
  enemy_initial_powers(s,t);if(s.enemy_world.side)s.enemy_world.models[t].data[11]=1;else{enemy_set_move(s,t,enemy_initial_node(s,t));s.enemy_world.models[t].previous=s.enemy_world.models[t].node;}
  world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,t);return t;

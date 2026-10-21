@@ -41,6 +41,10 @@ bool world_relic_combat_rewards(State&);
 void world_relic_rest_rewards(State&);
 unsigned world_rest_option_count(const State&);
 const char* world_rest_option_key(const State&,unsigned index);
+// Slots keep their original identity after a selection. Hidden options were
+// consumed or disabled by the completed choice; disabled visible options remain
+// in the original room's remaining-options list.
+bool world_rest_option_visible(const State&,unsigned index);
 bool world_rest_option_enabled(const State&,unsigned index);
 bool world_rest_choose(State&,unsigned index);
 bool world_rest_cancel(State&);

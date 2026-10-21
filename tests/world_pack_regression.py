@@ -18,10 +18,39 @@ from build_world import (ConversionCache, card_description, choose_layout,
 from world_enemy_assets import manifest
 from world_enemy_profile import plan, skins
 from world_ui_profile import (BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
-    CLIP_ROWS, AUXILIARY_ROWS, TEXT_KEYS, TEXT_BASE, validate_headers)
+    ROOM_CLIP_ROWS, REST_ACTOR_CLIP_ROWS, CLIP_ROWS, AUXILIARY_ROWS, TEXT_KEYS, TEXT_BASE, validate_headers)
 
 
 class WorldPack(unittest.TestCase):
+    def test_room_shader_and_actor_cache_closures_do_not_discard_enemy_frames(self):
+        source = source_fingerprint()
+        model = manifest()['models'][0]
+        for path in ('tools/world_room_shaders.py', 'tools/world_rest_actor_assets.py', 'tools/world_rest_actors.py'):
+            changed = dict(source, **{path: 'a changed room renderer'})
+            for kind in ('bounds', 'clip-reference', 'clip', 'map-clip', 'texture', 'room-clip'):
+                self.assertEqual(render_scope(kind, source, model=model),
+                                 render_scope(kind, changed, model=model))
+            self.assertNotEqual(render_scope('rest-actor-clip', source),
+                                render_scope('rest-actor-clip', changed))
+            if path.endswith('world_room_shaders.py'):
+                self.assertNotEqual(render_scope('room-image', source),
+                                    render_scope('room-image', changed))
+            else:
+                self.assertEqual(render_scope('room-image', source),
+                                 render_scope('room-image', changed))
+
+    def test_rest_actor_planes_append_after_every_prior_animation(self):
+        before = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS + ROOM_CLIP_ROWS
+        self.assertEqual(CLIP_ROWS[:len(before)], before)
+        start = BASE_CLIPS + len(before)
+        self.assertEqual(start, 1647)
+        self.assertEqual([row['id'] for row in REST_ACTOR_CLIP_ROWS],
+                         list(range(start, start + len(REST_ACTOR_CLIP_ROWS))))
+        summary = plan_summary()
+        self.assertEqual(summary['rest_actor_frames'], sum(row['frames'] for row in REST_ACTOR_CLIP_ROWS))
+        self.assertLessEqual(summary['expected_images'], 65535)
+        self.assertLessEqual(summary['maximum_directory_bytes'], 2 * 1024 * 1024)
+
     def test_batched_sampling_restores_reference_binding_after_failure(self):
         import world_enemy_assets
         import world_raster

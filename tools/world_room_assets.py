@@ -10,7 +10,7 @@ import numpy as np
 from animation import raster
 from world_enemy_assets import RUNTIME_SHA256
 from world_room_profile import room_profile
-from world_scene_assets import _Renderer, Property, SceneRenderError, _property
+from world_scene_assets import Property, SceneRenderError, _property
 
 
 def _child(node, name):
@@ -29,8 +29,9 @@ def render_rest(pack, row, *, sampler=None, texture_loader=None):
         raise ValueError('Unreviewed original rest scene: ' + row['path'])
     if texture_loader is None:
         from build_content import texture as texture_loader
-    renderer = _Renderer(pack, *row['size'], tuple(row['viewport']),
-                         texture_loader, sampler, 0., 1)
+    from world_room_shaders import RoomRenderer
+    renderer = RoomRenderer(pack, *row['size'], tuple(row['viewport']),
+                            texture_loader, sampler, 0., 1)
     room = renderer.loader.instantiate(rest['source_scene'])
     parent = _child(room, rest['parent']['node'])
     actual_origin, actual_size = renderer.control_size(parent, np.array(row['viewport'], float), None)
@@ -53,7 +54,7 @@ def render_rest(pack, row, *, sampler=None, texture_loader=None):
         mode='rest-scene', screen_origin=row['screen_origin'], dark=row['dark'],
         room_parent_origin=list(actual_origin), room_parent_size=list(actual_size),
         background_origin=list(origin), background_size=list(size),
-        character_layer='separate_original_rest_character_not_yet_converted')
+        character_layer='separate_rest_actor_clip_family_in_common_room_camera')
     try:
         renderer.visit(parent, np.eye(3), np.asarray(row['viewport'], float),
                        np.ones(4), 0, room.name + '/' + parent.name)

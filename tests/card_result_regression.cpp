@@ -33,8 +33,10 @@ static void play_id(int id){CHECK(play(s,index_of(s.hand,id),0));CHECK(s.phase==
 static int cast(CardKind kind,unsigned up=0){int id=append(kind,Zone::Hand,up);play_id(id);return id;}
 static void ordered_modifiers(){
  scenario="Rebound then Corruption consumes Rebound before the final Exhaust";
- reset();cast(EventCardRebound);cast(Corruption);int skill=append(Defend);preview(skill,Zone::Exhaust,true);CHECK(rebound()==1);play_id(skill);
- CHECK(s.zones[skill]==Zone::Exhaust&&!rebound());CHECK(s.event_cards.power_count==0);
+ reset();cast(EventCardRebound);cast(Corruption);const int old_exhaust=append(Dazed,Zone::Exhaust);int skill=append(Defend);preview(skill,Zone::Exhaust,true);CHECK(rebound()==1);play_id(skill);
+ // OnPlayWrapper uses CardCmd.Exhaust for this pile, whose insertion is always
+ // Bottom even though the complete captured modifier location retains Top.
+ CHECK(s.zones[skill]==Zone::Exhaust&&!rebound()&&s.exhaust.ids[0]==old_exhaust&&s.exhaust.ids[s.exhaust.count-1]==skill);CHECK(s.event_cards.power_count==0);
  CHECK(s.expansion.result_order[0]==unsigned(CardResultActor::Corruption)&&!s.expansion.result_order[1]);roundtrip();
  scenario="depleted Rebound reacquires after the existing Corruption listener";
  cast(EventCardRebound);skill=append(Defend);preview(skill,Zone::Exhaust,false);play_id(skill);CHECK(rebound()==1&&s.zones[skill]==Zone::Exhaust);roundtrip();
@@ -52,6 +54,32 @@ static void ordered_modifiers(){
  scenario="Rebound preceding Nostalgia consumes its charge even with the same final pile";
  reset();cast(EventCardRebound);gain_power(s,XPower::Nostalgia,3);attack=append(Strike);preview(attack,Zone::Draw,true);play_id(attack);
  CHECK(s.zones[attack]==Zone::Draw&&!rebound());roundtrip();
+}
+static void power_lifecycle(){
+ scenario="stacking keeps the power's original list position and Feral's internal history";
+ reset();cast(DefectClaw);cast(DefectFeral);cast(Corruption);gain_power(s,XPower::Nostalgia,3);cast(EventCardRebound);
+ CHECK(s.defect.zero_attacks_started==1&&s.defect.feral_used==1);
+ const CardResultActor original[]={CardResultActor::Feral,CardResultActor::Corruption,CardResultActor::Nostalgia,CardResultActor::Rebound};
+ for(unsigned i=0;i<CardResultActors;++i)CHECK(s.expansion.result_order[i]==unsigned(original[i]));
+ queue_extension(s,XOp::DPower,int(DPower::Feral),1);queue_extension(s,XOp::IPower,int(IPower::Corruption),1);resolve_pending(s);
+ gain_power(s,XPower::Nostalgia,2);cast(EventCardRebound);
+ CHECK(s.defect.powers[unsigned(DPower::Feral)]==2&&s.defect.feral_used==1&&s.ironclad.powers[unsigned(IPower::Corruption)]==1&&rebound()==2);
+ for(unsigned i=0;i<CardResultActors;++i)CHECK(s.expansion.result_order[i]==unsigned(original[i]));roundtrip();
+ scenario="negative removal compacts the list and a new instance rejoins at its end";
+ queue_extension(s,XOp::DPower,int(DPower::Feral),-9999);resolve_pending(s);
+ CHECK(s.expansion.result_order[0]==unsigned(CardResultActor::Corruption)&&s.expansion.result_order[1]==unsigned(CardResultActor::Nostalgia)&&s.expansion.result_order[2]==unsigned(CardResultActor::Rebound)&&!s.expansion.result_order[3]);
+ queue_extension(s,XOp::DPower,int(DPower::Feral),1);resolve_pending(s);
+ CHECK(s.expansion.result_order[3]==unsigned(CardResultActor::Feral)&&s.defect.feral_used==s.defect.zero_attacks_started);roundtrip();
+ queue_extension(s,XOp::IPower,int(IPower::Corruption),-9999);resolve_pending(s);gain_power(s,XPower::Nostalgia,-9999);
+ CHECK(s.expansion.result_order[0]==unsigned(CardResultActor::Rebound)&&s.expansion.result_order[1]==unsigned(CardResultActor::Feral)&&!s.expansion.result_order[2]);roundtrip();
+ scenario="Rebound side-end removal leaves the other power's acquisition order intact";
+ CHECK(end_turn(s)&&s.phase==Phase::Combat&&s.turn==2&&!rebound());
+ CHECK(s.expansion.result_order[0]==unsigned(CardResultActor::Feral)&&!s.expansion.result_order[1]&&!s.defect.feral_used);roundtrip();
+ scenario="removing a power while its physical card is paused does not recalculate that card";
+ reset();gain_power(s,XPower::Nostalgia,1);const int recalled=append(Defend,Zone::Discard),headbutt=append(Headbutt);
+ CHECK(play(s,index_of(s.hand,headbutt),0)&&s.phase==Phase::ReturnChoice);
+ gain_power(s,XPower::Nostalgia,-9999);CHECK(!s.expansion.result_order[0]);preview(headbutt,Zone::Draw,true);roundtrip();
+ CHECK(choose_return_to_draw(s,recalled)&&s.zones[headbutt]==Zone::Draw&&s.draw.ids[s.draw.count-1]==headbutt);roundtrip();
 }
 static void base_locations(){
  scenario="Particle Wall supplies Hand Bottom before power modifiers";
@@ -135,4 +163,4 @@ static void dupes_and_validation(){
  s.expansion.depth=MaxAutoFrames+1;CHECK(!validate(s));CHECK(load(s,before.bytes,before.size));
  for(auto result:s.expansion.result_location)CHECK(!result);
 }
-int main(){ordered_modifiers();base_locations();physical_capture_and_history();dupes_and_validation();std::printf("card result: %u checks passed\n",checks);}
+int main(){ordered_modifiers();power_lifecycle();base_locations();physical_capture_and_history();dupes_and_validation();std::printf("card result: %u checks passed\n",checks);}

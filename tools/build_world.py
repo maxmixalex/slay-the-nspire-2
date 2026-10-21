@@ -37,9 +37,10 @@ from world_enemy_profile import plan as enemy_plan
 from world_scene_assets import render_scene, load_scene_texture
 from world_ui_assets import component as ui_component
 from world_room_assets import render_room_image, sample_treasure
+from world_rest_actors import sample_rest_actor
 from world_ui_profile import (BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS,
     CARDS, STRINGS, AUXILIARY, CLIPS, TEXT_BASE, TEXT_KEYS, AUXILIARY_ROWS, CLIP_ROWS,
-    ENEMY_CLIP_ROWS, MAP_CLIP_ROWS, ROOM_CLIP_ROWS,
+    ENEMY_CLIP_ROWS, MAP_CLIP_ROWS, ROOM_CLIP_ROWS, REST_ACTOR_CLIP_ROWS,
     FILE_LIMIT, DIRECTORY_LIMIT, validate_headers)
 
 SOURCE_SHA256 = '4b83320460798a5dd57d4faeee3cdf9613bef7413259ac57b61fb74d109a5917'
@@ -343,12 +344,19 @@ def render_scope(kind: str, source_files: dict, *, model=None) -> dict:
     elif kind == 'map-clip':
         paths = GEOMETRY_SOURCES + ENCODER_SOURCES + ('tools/world_raster.py',)
         functions, pipeline = [sample_map_clip, encode_image], 'map-boss-batched-rgba-1'
-    elif kind in ('room-image', 'room-clip'):
+    elif kind in ('room-image', 'room-clip', 'rest-actor-clip'):
         paths = GEOMETRY_SOURCES + ENCODER_SOURCES + (
             'tools/world_scene_assets.py', 'tools/world_room_assets.py',
             'tools/world_room_profile.py', 'config/world-room-ui-0.17.json')
-        functions = [render_room_image if kind == 'room-image' else sample_treasure, encode_image]
-        pipeline = 'room-image-rgba-1' if kind == 'room-image' else 'treasure-clip-rgba-1'
+        if kind == 'rest-actor-clip':
+            paths += ('tools/world_rest_actors.py', 'tools/world_rest_actor_assets.py',
+                      'tools/world_room_shaders.py')
+            functions, pipeline = [sample_rest_actor, encode_image], 'rest-actor-plane-rgba-1'
+        else:
+            if kind == 'room-image':
+                paths += ('tools/world_room_shaders.py',)
+            functions = [render_room_image if kind == 'room-image' else sample_treasure, encode_image]
+            pipeline = 'room-image-rgba-1' if kind == 'room-image' else 'treasure-clip-rgba-1'
     elif kind in ('bounds', 'clip', 'clip-reference'):
         pixels = kind != 'bounds'
         paths = GEOMETRY_SOURCES + (ENCODER_SOURCES if pixels else ())
@@ -503,11 +511,15 @@ def plan_summary() -> dict:
     images = 2638 + CARDS - BASE_CARDS + len(AUXILIARY_ROWS) + sum(j['frames'] for j in CLIP_ROWS)
     worst_directory = (40 + images * 16 + GLYPH_LIMITS[14] * 16 + STRINGS * 8 +
                        CLIPS * 16 + CARDS * 16 + AUXILIARY * 4)
+    if images > IMAGE_LIMIT or worst_directory > DIRECTORY_LIMIT:
+        raise ValueError('Planned world profile exceeds the image or directory reader bound')
     return dict(cards=CARDS, strings=STRINGS, auxiliary_images=AUXILIARY, clips=CLIPS,
         original_used_enemy_clips=plan['used_clips'], enemy_variants=len(ENEMY_CLIP_ROWS),
         enemy_frames=sum(j['frames'] for j in ENEMY_CLIP_ROWS), map_clips=len(MAP_CLIP_ROWS),
         map_frames=sum(j['frames'] for j in MAP_CLIP_ROWS),
         room_clips=len(ROOM_CLIP_ROWS), room_frames=sum(j['frames'] for j in ROOM_CLIP_ROWS),
+        rest_actor_clips=len(REST_ACTOR_CLIP_ROWS),
+        rest_actor_frames=sum(j['frames'] for j in REST_ACTOR_CLIP_ROWS),
         expected_images=images,
         maximum_directory_bytes=worst_directory, directory_limit=DIRECTORY_LIMIT,
         file_limit=FILE_LIMIT,
@@ -580,6 +592,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
             map_scope = render_scope('map-clip', source_files)
             room_image_scope = render_scope('room-image', source_files)
             room_clip_scope = render_scope('room-clip', source_files)
+            rest_actor_scope = render_scope('rest-actor-clip', source_files)
             for row in rows:
                 key, path = row['key'], row['portrait']
                 if key + '.title' not in card_text or (key + '.description' not in card_text and key not in KEYWORD_ONLY_CARDS):
@@ -731,6 +744,25 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                     append_image(frame)
                 pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
                 animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
+            for number, job in enumerate(REST_ACTOR_CLIP_ROWS):
+                print(f'Rest actor clip {number + 1}/{len(REST_ACTOR_CLIP_ROWS)} {job["key"]}', flush=True)
+                cached = cache.get('clip', job, scope=rest_actor_scope)
+                if cached is None:
+                    images, metadata = sample_rest_actor(pck, job, sampler)
+                    cached = cache.put('clip', job, metadata,
+                        encoded_frames([encode_image(image, animation=True) for image in images]), scope=rest_actor_scope)
+                metadata, payload = cached
+                frames = decoded_frames(payload, job['frames'])
+                if any(metadata[key] != job[key] for key in ('frames', 'duration_ms', 'frame_ms', 'size', 'pivot', 'blend', 'plane_encoding')):
+                    raise ValueError('Cached rest actor plane differs from its original profile')
+                directory = BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) + len(ROOM_CLIP_ROWS) + number
+                if job['id'] != directory or len(pack.clips) // 16 != directory:
+                    raise ValueError('Generated rest actor animation directory order drift')
+                first = len(pack.images)
+                for frame in frames:
+                    append_image(frame)
+                pack.clips += struct.pack('<IHHhhI', first, len(frames), metadata['frame_ms'], *metadata['pivot'], 0)
+                animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
     finally:
         pck.close()
 
@@ -760,7 +792,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
         cache_identity=cache.identity, cache_hits=cache.hits, cache_misses=cache.misses,
         cache_migrated_jobs=cache.legacy_hits,
         source_paths=image_meta, animations=animation_meta, layouts=layouts,
-        animation_sampling='Full original selected periods; enemy idle 8 fps, actions 12 fps, map bosses and treasure 20 fps; physics 60 Hz; old clips unchanged',
+        animation_sampling='Full original selected periods; enemy idle 8 fps, actions 12 fps, map bosses and treasure 20 fps, rest actors up to 20 fps with a 256-frame period cap; physics 60 Hz; old clips unchanged',
         normalized_target_layout=CANONICAL_PLACEMENT,
         limitations=[
             'Offline Spine geometry/raster and scene diagnostics do not establish 95% visual similarity.',

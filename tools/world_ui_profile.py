@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 from world_enemy_profile import plan as enemy_plan, generated_cpp as enemy_cpp
 from world_room_profile import room_plan, generated_room_header
+from world_rest_actors import rest_actor_plan, generated_rest_actor_header
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_CARDS, BASE_STRINGS, BASE_AUXILIARY, BASE_CLIPS = 497, 1556, 339, 38
@@ -59,7 +60,10 @@ for _row in MAP_PROFILE['clips']:
     MAP_CLIP_ROWS.append(dict(_row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS)))
 ROOM_CLIP_ROWS = [dict(row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) + index)
                   for index, row in enumerate(ROOM_PROFILE['clips'])]
-CLIP_ROWS = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS + ROOM_CLIP_ROWS
+REST_ACTOR_CLIP_ROWS = [dict(row, id=BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) +
+                           len(ROOM_CLIP_ROWS) + index)
+                       for index, row in enumerate(rest_actor_plan()['clips'])]
+CLIP_ROWS = ENEMY_CLIP_ROWS + MAP_CLIP_ROWS + ROOM_CLIP_ROWS + REST_ACTOR_CLIP_ROWS
 STRINGS = TEXT_BASE + len(TEXT_KEYS)
 AUXILIARY = BASE_AUXILIARY + len(AUXILIARY_ROWS)
 CLIPS = BASE_CLIPS + len(CLIP_ROWS)
@@ -88,6 +92,7 @@ def generated_files() -> dict[str, str]:
     return {
         'include/world_assets.hpp': header,
         'include/world_room_assets.hpp': generated_room_header(),
+        'include/world_rest_actors.hpp': generated_rest_actor_header(),
         'src/world_text_index.inc': table((key, TEXT_BASE + i) for i, key in enumerate(TEXT_KEYS)),
         'src/world_image_index.inc': table((row['key'], BASE_AUXILIARY + i) for i, row in enumerate(AUXILIARY_ROWS)),
         'src/world_clip_index.inc': table((row['key'], BASE_CLIPS + i) for i, row in enumerate(CLIP_ROWS)),

@@ -70,6 +70,9 @@ inline bool choice_free_energy(const State&s){
         (s.expansion.choice_free&&(s.expansion.choice==XChoice::Offer||s.expansion.choice==XChoice::Discard)));
 }
 struct Callbacks { bool(*save)(const State&);bool(*load)(State&);bool(*clear_save)()=nullptr; };
+// Session-local evidence of a complete canonical checkpoint, not a run UUID
+// or a compare-and-swap token supplied by the storage host.
+struct SaveCheckpoint {uint64_t hash=0;uint32_t size=0;};
 struct Motion {int clip=-1;uint32_t start=0;};
 constexpr unsigned MaxEnemyVisualFacts=64,MaxEnemyVisualCommands=24;
 struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
@@ -91,7 +94,10 @@ struct App {
     uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0;
     Character saved_character=Character::Ironclad;
     uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0;
-    uint8_t saved_ascension=0;bool saved_world=false,saved_practice=false;
+    uint64_t saved_run_seed=0;
+    uint8_t saved_ascension=0,saved_region=0;bool saved_world=false,saved_practice=false;
+    SaveCheckpoint saved_checkpoint{},run_checkpoint{},confirmed_checkpoint{};
+    void forget_run_checkpoint();
     bool refresh_save();
     bool load_saved_run();
     bool save_current_run();
@@ -105,6 +111,29 @@ struct App {
     bool game_over_summary=false;
     bool game_over_available()const;
     bool game_over_input(Key);
+    // Room animation clocks describe presentation only. Reloading an opened
+    // chest shows its final pose without repeating any reward operation.
+    // 0 restored, 1 awaiting extra rewards, 2 opening, 3 closing, 4 closing
+    // a restored chest (which must not replay its Spine opening sequence).
+    uint8_t treasure_presentation=0;
+    uint32_t treasure_open_tick=0,treasure_banner_tick=0,treasure_close_tick=0;
+    uint16_t treasure_chest_from=65535,treasure_banner_from=0;
+    int8_t treasure_banner_y=0;
+    uint64_t treasure_room_seed=0;
+    uint16_t treasure_room_point=0xffff;
+    uint8_t treasure_room_act=255;
+    void reset_treasure_presentation();
+    void sync_treasure_presentation();
+    unsigned treasure_chest_opacity()const;
+    unsigned treasure_collection_opacity()const;
+    unsigned treasure_banner_opacity()const;
+    int treasure_banner_offset()const;
+    bool treasure_can_proceed()const;
+    bool treasure_input(Key);
+    void treasure_action(UiAction);
+    unsigned camp_options(uint8_t*,unsigned)const;
+    bool camp_input(Key);
+    void camp_page(int);
     uint8_t selected_ascension=0;
     reference::ActKind selected_region=reference::ActKind::Overgrowth;
     char selected_seed[65]{};

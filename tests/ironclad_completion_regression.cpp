@@ -203,7 +203,14 @@ static void temporary_cost_order(){
 }
 static void autoplay_choices_and_pillage(){
  active_kind=Havoc;active_upgrade=0;auto s=fight(Havoc);int victim=add(s,Strike),arm=add(s,Armaments,0,Zone::Draw);act(s,Havoc);
- CHECK(s.expansion.depth==1&&s.expansion.choice==XChoice::IUpgrade&&s.ironclad.forced_exhaust[arm]);roundtrip(s);
+ // OnPlayWrapper captures the result before Armaments opens its choice.
+ // GetResultLocationForCardPlay consumes ExhaustOnNextPlay at that boundary;
+ // the saved physical-play result, rather than the flag, retains Exhaust.
+ CHECK(s.expansion.depth==1&&s.expansion.choice==XChoice::IUpgrade&&s.playing==arm&&s.zones[arm]==Zone::Limbo);
+ CHECK(!s.ironclad.forced_exhaust[arm]&&s.expansion.result_location[1]&&s.expansion.result_location[0]);
+ auto pending=snapshot(s);Zone pile=Zone::Power;bool top=true;
+ for(unsigned n=0;n<3;n++){CHECK(card_play_result(s,arm,pile,top)&&pile==Zone::Exhaust&&!top);CHECK(card_play_result(s,0,pile,top)&&pile==Zone::Discard&&!top);same(s,pending);}
+ roundtrip(s);
  State broken=s;broken.ironclad.forced_exhaust[arm]=2;CHECK(!validate(broken));pick(s,1);CHECK(s.cards[victim].upgraded&&s.zones[arm]==Zone::Exhaust&&!s.ironclad.forced_exhaust[arm]);ready(s);
  auto pillage=fight(Hellraiser);act(pillage,Hellraiser);int attack=add(pillage,Pillage);add(pillage,Defend,0,Zone::Draw);add(pillage,Strike,0,Zone::Draw);act_id(pillage,attack);
  CHECK(pillage.hand.count==1&&pillage.cards[pillage.hand.ids[0]].kind==Defend&&total_hp(pillage)==80&&pillage.expansion.cards_finished==3);ready(pillage);

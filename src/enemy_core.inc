@@ -163,7 +163,18 @@ static unsigned enemy_ordered_slots(const State&s,int*out){
   const auto&m=s.enemy_world.models[t];const unsigned key=named?m.slot:m.combat_id;unsigned at=n;
   while(at){const auto&prior=s.enemy_world.models[out[at-1]];if((named?prior.slot:prior.combat_id)<=key)break;out[at]=out[at-1];--at;}
   out[at]=t;++n;
- }return n;
+ }
+ // Surprise creates Fat first (and assigns its HP/RNG identity), but adds
+ // Sneaky before Fat. GremlinMercNormal has no Slots override, so the original
+ // enemy list retains that addition order rather than creation-ID order.
+ if(!named&&s.enemy_world.encounter==EncounterId::GremlinMercNormal){
+  unsigned fat=n,sneaky=n;
+  for(unsigned i=0;i<n;++i){const auto kind=s.enemy_world.models[out[i]].kind;
+   if(kind==EnemyId::FatGremlin)fat=i;else if(kind==EnemyId::SneakyGremlin)sneaky=i;
+  }
+  if(fat<sneaky&&sneaky<n){int t=out[fat];out[fat]=out[sneaky];out[sneaky]=t;}
+ }
+ return n;
 }
 bool enemy_infinite_hp(const State&s,int t){return enemy_slot_exists(s,t)&&s.enemy_world.models[t].kind==EnemyId::WaterfallGiant&&s.enemy_world.models[t].data[2]!=0;}
 bool enemy_death_is_fatal(const State&s,int t){

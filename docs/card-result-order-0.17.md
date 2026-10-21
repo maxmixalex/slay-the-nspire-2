@@ -19,6 +19,8 @@ The complete pinned model search finds four result-location power overrides:
 
 Consequently, Rebound followed by Corruption consumes a charge before sending a Skill to Exhaust, while Corruption followed by Rebound preserves the charge. Rebound followed by Feral consumes both changed listeners for an eligible Attack; Feral followed by Rebound preserves Rebound. Nostalgia and Rebound can produce the same final Draw Top result but differ in whether Rebound was the listener that changed it. A fixed priority list cannot represent these cases.
 
+The final Exhaust branch has its own original rule: `CardModel.OnPlayWrapper` calls `CardCmd.Exhaust`, which inserts at Bottom. Thus Rebound followed by Corruption retains an Exhaust/Top capture for modifier comparisons and previews, but its final exhaust operation inserts at Bottom. Other recyclable piles use the captured position directly.
+
 ## Base result and card overrides
 
 `CardModel.GetResultLocationForCardPlay` returns None for a Dupe or Power card before checking exhaust flags. Otherwise it consumes `ExhaustOnNextPlay` and returns Exhaust when that flag or the Exhaust keyword applies; all other cards initially return Discard Bottom.
@@ -40,6 +42,12 @@ Historical v3–v14 field offsets remain unchanged. Those formats contain no Reb
 `card_play_result(const State&, int instance, Zone& pile, bool& top)` is read-only. During an active physical play it reports the committed snapshot, including outer frames during a nested choice. Otherwise it evaluates the current instance without consuming Feral, Rebound or ExhaustOnNextPlay and without changing RNG. `Zone::Power` represents the original None result in this bounded engine, where removed combat instances remain outside recyclable piles.
 
 Nostalgia's history counter now counts Attack and Skill entries only. Feral's zero-energy Attack history advances at the shared play-start boundary after BeforeCardPlayed listeners, rather than during their preparation. Hand insertion distinguishes Particle Wall's Bottom from Feral's Top, including the original Top position when a full hand redirects Feral into Discard.
+
+## Independent lifecycle audit
+
+The follow-up audit checked every production reference to the four powers and every reset of their owning state. `defect_gain_power`, `ironclad_gain_power`, `gain_power` and `ec_gain_power` register a new nonzero instance and unregister its removal; stacking retains its position. `PowerCmd.Apply` confirms that the original calls `AfterApplied` only for a new instance. Feral consequently initializes its internal count from this turn's qualifying history only on first application or reacquisition, not on a stack increase.
+
+Rebound's player-side-end removal uses its setter. Victory clears the power arrays and shared order together; new combat resets the expansion state before rebuilding powers. Nested physical captures remain independent of later live-power removal, and the validator checks that live order and saved frames remain individually consistent. The audit found no additional direct gameplay writes to the four amounts in the enemy modules. No runtime change was needed for these lifecycle paths; added regressions exercise stack order, negative removal, reacquisition, side-end removal and a removal while a result is suspended in a card choice.
 
 ## Regression and verification status
 

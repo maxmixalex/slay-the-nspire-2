@@ -106,12 +106,17 @@ void App::ui_action(UiAction action){
     case UiAction::GameOverMainMenu:
         if(game_over_available()&&game_over_summary){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}break;
     case UiAction::LeaveCamp:
-        if(!title&&!paused&&!panel&&world_rest_proceed(game))reset_presentation();break;
+        camp_input(Key::EndTurn);break;
+    case UiAction::TreasureOpen:case UiAction::TreasureTake:case UiAction::TreasureLeave:
+        treasure_action(action);break;
+    case UiAction::PreviousCampPage:camp_page(-1);break;
+    case UiAction::NextCampPage:camp_page(1);break;
     case UiAction::ReadEvent:
         if(!title&&!paused&&!panel&&!library&&game.phase==Phase::Event){event_reader=true;event_reader_scroll=0;}break;
     case UiAction::CloseEventReader:event_reader=false;break;
     case UiAction::StartCharacter:
         if(character_select){
+            forget_run_checkpoint();
             new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);
             if(!practice_entry){if(*selected_seed&&!world_set_seed(game,selected_seed)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
             character_select=run_settings=false;title=false;reset_presentation();

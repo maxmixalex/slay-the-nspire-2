@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "reference": "v0.111.0 / 41cef1ea",
-  "date": "2026-10-20",
+  "date": "2026-10-21",
   "release_ready": false,
-  "scope": "Frozen source validation receipts through 4b9dad96, including retained failures and interrupted runs. Local journals and logs are not embedded.",
+  "scope": "Frozen source validation receipts through 4b9dad96, including retained failures/interrupted runs and the completed remaining-suite run on 0f750373. Source8/source9 short diagnostics are recorded separately, not as a rebuilt runtime.",
   "results": [
     {
       "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
@@ -87,7 +87,40 @@
         "world_game_over_ui_regression"
       ],
       "enemy_failure": "Gremlin Surprise precreation ID order incorrectly substituted for original add order",
-      "game_over_failure": "Synthetic 2x2 Proceed art gave the wrong button aspect ratio and obscured the gold row"
+      "game_over_failure": "Synthetic 2x2 Proceed art gave the wrong button aspect ratio and obscured the gold row",
+      "remaining_ctest_passed": 22,
+      "remaining_ctest_failed": 2,
+      "remaining_ctest_total": 24,
+      "remaining_ctest_seconds": 1067.58,
+      "passed_remaining_suites": [
+        "core_regression",
+        "relic_combo_regression",
+        "colorless_completion_regression",
+        "potions_completion_regression",
+        "expansion_ui_regression",
+        "silent_completion_regression",
+        "defect_completion_regression",
+        "regent_completion_regression",
+        "necro_completion_regression",
+        "events_regression",
+        "characters_integration_regression",
+        "five_character_integration_regression",
+        "autoplay_status_regression",
+        "original_events_regression",
+        "world_map_regression",
+        "world_relics_regression",
+        "localized_template_regression",
+        "world_ui_regression",
+        "world_event_ui_regression",
+        "world_map_ui_regression",
+        "world_reward_ui_regression",
+        "character_ui_regression"
+      ],
+      "failed_remaining_suites": [
+        "ironclad_completion_regression",
+        "five_character_ui_regression"
+      ],
+      "remaining_failure_diagnosis": "Obsolete Havoc/Armaments forced-exhaust flag expectation and fixed title practice-row fixture; source9 adjusts only those fixtures. Original frozen run remains failed."
     },
     {
       "checkpoint": "4b9dad9645f531b3cda3884c2a906bc425570ca6",
@@ -364,6 +397,17 @@
       "log": "world17-raster-compare-21be606aa5cc.log",
       "log_sha256": "8f4b0ccb271e333edcf9e26f507fb738e239eeabd499c4e6ce20705acd7c45b9",
       "source_sha256": "84bfcc4cbbafef0d8df92a7eda5337749b78e03c0141d4f6d094d6f7ab28a33b"
+    },
+    {
+      "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-21T02:19:30.357214+00:00",
+      "ended_at": "2026-10-21T02:37:18.008402+00:00",
+      "log": "world17-remaining-63e43055a928.log",
+      "log_sha256": "8f592a6b64e9b5f3b0f07ba73f96eeccc66e8eeccf31568363cf179bf07fb9ae",
+      "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
     }
   ],
   "limits": [
@@ -414,5 +458,160 @@
       "started_at": "2026-10-20T18:35:25.082139+00:00",
       "source_sha256": "84c2caad19b4ffdaea26b2adac0b241b9a6a76285662b70201f0e1858b61b15a"
     }
-  ]
+  ],
+  "audit_20261021": {
+    "date": "2026-10-21",
+    "report": "docs/source8-evidence-20261021.md",
+    "method": "Read-only reinspection of existing journals, log hashes, cache receipts and source archive. No new build, regression run, rendering or conversion.",
+    "completed_journal_logs_rehashed": true,
+    "audited_checkpoints": [
+      "0f750373da39b980726b543b993f3bca49c7cf2e",
+      "84a6ebf32899108920ee225abd0c71de13bc4aaf",
+      "4b9dad9645f531b3cda3884c2a906bc425570ca6"
+    ],
+    "cache": {
+      "schema2_enemy_clips": {
+        "validated_receipts": 122,
+        "planned_jobs": 1600,
+        "remaining_jobs": 1478,
+        "validated_frames": 2639,
+        "planned_frames": 33210,
+        "payload_bytes": 14167819,
+        "scope_match": "All 122 match the audited current retained enemy-rgba-1 reference renderer job/layout/scope keys; no new batched receipts were produced."
+      },
+      "schema2_bounds": {
+        "validated_receipts": 1144,
+        "shared_layout_jobs": 456,
+        "missing_required_bounds": 0,
+        "payload_bytes": 0
+      },
+      "schema2_images": {
+        "validated_receipts": 884,
+        "payload_bytes": 5811958,
+        "current_job_scope_rederived": false
+      },
+      "legacy_schema1_images": {
+        "validated_receipts": 77,
+        "payload_bytes": 739720,
+        "additive_to_current_output_count": false
+      },
+      "invalid_receipts": 0,
+      "orphan_bin_files": 0,
+      "temporary_files": 0,
+      "limits": "Receipt integrity and enemy reference-cache eligibility only; not a complete pack, behavior parity, UI fidelity, or eligibility after future renderer changes."
+    },
+    "stage8a_source_archive": {
+      "manifest": "checkpoint-20261020-stage8a.json",
+      "manifest_sha256": "fe5eb448e362e2e832b91468eee31923b9e576fde46fb4237d69c2cf8d08aea5",
+      "archive": "source-stage8a-20261020.tar",
+      "archive_sha256": "42a5cd9aa192a4da06701c7180c497ffd81677d163b9bb46d9e840537542b9e6",
+      "archive_bytes": 8232960,
+      "regular_files": 425,
+      "changed_blobs_verified": 15,
+      "changed_blob_bytes": 334107,
+      "parent": "4b9dad9645f531b3cda3884c2a906bc425570ca6",
+      "tree": "fbc6fe1a2db3819c02232ffcd147aa16c8e25d03",
+      "stage8a_push_receipt_present_at_audit": false,
+      "remote_ref_update_proven_by_this_audit": false
+    },
+    "prior_reported_mutable_python_tests": {
+      "passed": 51,
+      "new_frozen_journal_established_by_audit": false
+    },
+    "deliverables": {
+      "completed_017_pack_present": false,
+      "matching_017_offline_html_present": false,
+      "matching_017_calculator_zip_present": false,
+      "existing_html_and_zip_version": "0.16",
+      "frozen7_compile_only_wasm_bytes": 4600560,
+      "frozen7_compile_only_wasm_sha256": "ee1763f2897786b415593dc879c841a16116604786c0ae785232e151a90c9d0b"
+    },
+    "next_gate": "Remote ref and blob readback for the coherent checkpoint, then frozen logged builds/regressions; complete private pack and validate matching new delivery bundles.",
+    "release_ready": false
+  },
+  "source9_short_diagnostics": {
+    "release_ready": false,
+    "parent_local_checkpoint": "81a0dd913afc55ee7176fa8f3a37408155e509b4",
+    "verified_remote_work_head": "4b9dad9645f531b3cda3884c2a906bc425570ca6",
+    "before_final_review": {
+      "kind": "short_source_diagnostic_unverified_checkpoint",
+      "passed": true,
+      "started_at": "2026-10-21T02:36:58.226674+00:00",
+      "ended_at": "2026-10-21T02:37:12.963525+00:00",
+      "source_changed": false,
+      "source_sha256": "1c8b92118308c689d892da1b7c2351271149732bae766dff0ae004bc641dc867",
+      "log_sha256": "e648065f17c2736977746a7cc4f7e3ff8a08dcae500dadc66c770b1c6e5520d6"
+    },
+    "before_final_review_counts": {
+      "python_tests": 75,
+      "cpp_syntax_units": 5,
+      "additive_rgb565_checks": 2622597
+    },
+    "isolated_old_library_fixture_diagnostics": [
+      {
+        "name": "havoc",
+        "checks_passed": 4407,
+        "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+        "new_fixture_only": true,
+        "asan": true,
+        "ubsan": true,
+        "lsan": false,
+        "receipt_sha256": "f2d569cffba669f264264d350e05b218633a186e943bea38c553b7041f2be6f6",
+        "log_sha256": "40f55980b6d97112339d742a1b42f32d5afa5541952ab0048f9dd04cde22d0ef"
+      },
+      {
+        "name": "five_character_ui",
+        "checks_passed": 2703,
+        "checkpoint": "0f750373da39b980726b543b993f3bca49c7cf2e",
+        "new_fixture_only": true,
+        "asan": true,
+        "ubsan": true,
+        "lsan": false,
+        "receipt_sha256": "e47085fd3b0b649bc73524655c7194e11cdfd0ffd2f80de7511a3393d4bf78dc",
+        "log_sha256": "0585d3760b8fbe8ed560d0513cc7acdf2f3a548d1f4e24eedf0479fae8b12ea4"
+      }
+    ],
+    "planned_directory": {
+      "images": 45719,
+      "clips": 1695,
+      "rest_actor_clips": 48,
+      "rest_actor_frames": 8340,
+      "auxiliary": 1170,
+      "strings": 6100,
+      "maximum_directory_bytes": 1345360
+    },
+    "not_verified": [
+      "new full native runtime",
+      "new full 46-suite engine run",
+      "new ARM/WASM",
+      "complete private pack",
+      "GPU/original-game visual comparison",
+      "Firebird or physical-device performance"
+    ],
+    "post_review": {
+      "kind": "post_review_targeted_short_diagnostic_unverified_checkpoint",
+      "passed": true,
+      "started_at": "2026-10-21T02:42:31.943908+00:00",
+      "ended_at": "2026-10-21T02:42:34.784985+00:00",
+      "source_changed": false,
+      "source_sha256": "81ba0ff0687be546ece2b8f79506abd4321d477aa286d19329ff1046bca910b8",
+      "log_sha256": "69f4a43464af249242dd3e762a9fd34e53f395c7398968d6e85181d5dfb9c228",
+      "changed_since_previous_check": [
+        "tests/world_room_ui_regression.cpp",
+        "tools/world_room_assets.py"
+      ]
+    },
+    "post_review_counts": {
+      "repeated_related_python_tests": 14,
+      "cpp_syntax_units": 2,
+      "new_full_runtime_suites_executed": 0
+    },
+    "independent_integration_review": {
+      "receipt_sha256": "b969d7b93d4f3b30088c17af4037fc366e0b9802bc9b58a63d73d1a4dde52143",
+      "canvas_picture_assertions": 73824,
+      "treasure_easing_assertions": 8003,
+      "unchanged_enemy_model_scope_combinations": 327,
+      "room_fixture_repairs": "Transparent actor image and Defect ordered-plane assertions; reset presentation deadlines after artificial wrap-time jump. Engine suite remains unexecuted."
+    }
+  }
 }

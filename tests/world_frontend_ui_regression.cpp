@@ -12,6 +12,7 @@
 using namespace spire;
 static App a;
 static SaveData before,after,disk,expected;
+static State candidate;
 static bool disk_exists=false,read_ok=true,write_ok=true,delete_ok=true;
 static unsigned reads=0,writes=0,deletes=0;
 static unsigned checks;
@@ -73,11 +74,16 @@ static void presentation(bool title=false){
  a.title=title;a.paused=a.help=a.library=a.character_select=a.settings_open=a.quit=false;a.frontend_confirm=a.frontend_choice=a.settings_item=0;
  a.run_settings=a.practice_entry=false;a.map_preview.open=false;a.menu=0;a.reset_presentation();a.pointer.visible=false;
 }
-static void start(Character character=Character::Ironclad,uint32_t seed=0x82179){
- new_run(a.game,seed,false,character);CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));presentation();CHECK(validate(a.game));
+static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,const char*run_seed=nullptr,unsigned ascension=3,reference::ActKind region=reference::ActKind::Overgrowth){
+ a.forget_run_checkpoint();new_run(a.game,seed,false,character);if(run_seed)CHECK(world_set_seed(a.game,run_seed));
+ CHECK(world_begin_run(a.game,region,ascension));presentation();CHECK(validate(a.game));
 }
-static void empty_disk(){disk_exists=false;read_ok=write_ok=delete_ok=true;a.has_save=false;}
-static void put_disk(){CHECK(validate(a.game));CHECK(store_run(a.game));expected=disk;}
+static void empty_disk(){disk_exists=false;read_ok=write_ok=delete_ok=true;a.has_save=false;a.saved_checkpoint={};a.forget_run_checkpoint();a.callbacks={store_run,restore_run,erase_run};}
+static void put_disk(){CHECK(validate(a.game));CHECK(a.save_current_run());expected=disk;}
+static void disk_unchanged(){CHECK(disk_exists&&disk.size==expected.size&&!std::memcmp(disk.bytes,expected.bytes,disk.size));}
+static void external_run(Character character,uint32_t seed,const char*run_seed,unsigned ascension,reference::ActKind region){
+ new_run(candidate,seed,false,character);CHECK(world_set_seed(candidate,run_seed));CHECK(world_begin_run(candidate,region,ascension));CHECK(store_run(candidate));
+}
 static void capture(const char*name){
  if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
@@ -164,6 +170,91 @@ static void protected_saved_expeditions(){
  empty_disk();new_run(a.game,6201,false,Character::Ironclad);presentation();put_disk();new_run(a.game,6201,true,Character::Ironclad);presentation();player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
  CHECK(a.game.practice&&!a.game.world.active&&a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();
 }
+static void canonical_identity_and_checkpoint_ownership(){
+ // A fresh App starts with the same bootstrap seed. Native seed text changes
+ // the independent 64-bit original run seed, not that bootstrap identity.
+ empty_disk();start(Character::Ironclad,6301,"SAVED_NATIVE_SEED");const uint64_t native_seed=a.game.world.run_seed;put_disk();
+ start(Character::Ironclad,6301,"OTHER_NATIVE_SEED");CHECK(a.game.seed==6301&&a.game.world.run_seed!=native_seed);
+ player_kill(a.game,true);resolve_pending(a.game);snapshot();unsigned d=deletes;
+ CHECK(a.finish_saved_run()&&deletes==d&&a.saved_run_seed==native_seed);disk_unchanged();unchanged();
+ // Ascension and initial region are equally material native parameters.
+ empty_disk();start(Character::Ironclad,6302,"MATCHED_NATIVE_SEED",3);put_disk();
+ start(Character::Ironclad,6302,"MATCHED_NATIVE_SEED",4);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
+ CHECK(a.finish_saved_run()&&deletes==d&&a.saved_ascension==3);disk_unchanged();unchanged();
+ empty_disk();start(Character::Ironclad,6303,"MATCHED_NATIVE_SEED",3,reference::ActKind::Overgrowth);put_disk();
+ start(Character::Ironclad,6303,"MATCHED_NATIVE_SEED",3,reference::ActKind::Underdocks);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
+ CHECK(a.finish_saved_run()&&deletes==d&&a.saved_region==unsigned(reference::ActKind::Overgrowth));disk_unchanged();unchanged();
+
+ // Identical parameters across hosts are not a global run ID. Without a
+ // successful Continue/save association, cleanup must preserve the old run.
+ empty_disk();start(Character::Silent,6304,"SAME_PARAMETERS");put_disk();start(Character::Silent,6304,"SAME_PARAMETERS");
+ CHECK(!a.run_checkpoint.size);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
+ CHECK(!a.finish_saved_run()&&deletes==d);disk_unchanged();unchanged();
+ CHECK(a.load_saved_run()&&a.run_checkpoint.size);same_saved(expected);
+ player_kill(a.game,true);resolve_pending(a.game);CHECK(a.finish_saved_run()&&!disk_exists&&deletes==d+1);
+
+ // Association is with an exact checkpoint, not merely its run tuple. An
+ // external write that advances only its gold still invalidates cleanup.
+ empty_disk();start(Character::Silent,6305,"SAME_PROGRESS_PARAMETERS");put_disk();const SaveCheckpoint linked=a.run_checkpoint;
+ CHECK(load(candidate,disk.bytes,disk.size));candidate.gold+=7;CHECK(validate(candidate));CHECK(store_run(candidate));expected=disk;
+ a.game.gold+=11;player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
+ CHECK(!a.finish_saved_run()&&deletes==d&&a.run_checkpoint.hash==linked.hash&&a.saved_checkpoint.hash!=linked.hash);disk_unchanged();unchanged();
+}
+static void refreshed_continue_metadata(){
+ empty_disk();start(Character::Silent,6401,"OLD_CACHED_SAVE",3);put_disk();start(Character::Defect,6402);snapshot();a.return_to_title();
+ CHECK(a.saved_character==Character::Silent&&a.saved_seed==6401);unchanged();
+ external_run(Character::Regent,6403,"REPLACED_BEFORE_CONTINUE",7,reference::ActKind::Underdocks);expected=disk;
+ const uint64_t actual_seed=candidate.world.run_seed;const int actual_hp=candidate.hp,actual_max_hp=candidate.max_hp;
+ press(HitKind::Menu,0);CHECK(!a.title&&a.game.character==Character::Regent);same_saved(expected);
+ CHECK(a.saved_character==Character::Regent&&a.saved_seed==6403&&a.saved_run_seed==actual_seed&&a.saved_ascension==7&&a.saved_region==unsigned(reference::ActKind::Underdocks));
+ CHECK(a.saved_hp==actual_hp&&a.saved_max_hp==actual_max_hp&&a.saved_floor==a.game.world.total_floor&&a.saved_world&&!a.saved_practice);
+ CHECK(a.run_checkpoint.size==a.saved_checkpoint.size&&a.run_checkpoint.hash==a.saved_checkpoint.hash);
+ player_kill(a.game,true);resolve_pending(a.game);unsigned d=deletes;CHECK(a.finish_saved_run()&&!disk_exists&&deletes==d+1);
+}
+static void title_confirmation_rechecks_complete_save(){
+ empty_disk();start(Character::Ironclad,6501,"TITLE_SAVED_SEED");put_disk();start(Character::Defect,6502);snapshot();a.return_to_title();unsigned d=deletes;
+ // Even opening the dialog requires a successful fresh read.
+ read_ok=false;press(HitKind::Menu,1);CHECK(!a.frontend_confirm&&!a.has_save&&a.notice_ticks&&deletes==d);disk_unchanged();unchanged();
+ read_ok=true;CHECK(a.refresh_save());press(HitKind::Menu,1);CHECK(a.frontend_confirm==1);
+ external_run(Character::Regent,6503,"TITLE_REPLACEMENT",6,reference::ActKind::Underdocks);expected=disk;
+ confirm_accept();CHECK(a.title&&a.has_save&&deletes==d&&a.saved_character==Character::Regent&&a.saved_seed==6503);disk_unchanged();unchanged();
+ // Replacing only progress under exactly the same native parameters must
+ // also require a new confirmation; comparing the identity tuple is unsafe.
+ press(HitKind::Menu,1);CHECK(a.frontend_confirm==1);candidate.gold+=13;CHECK(store_run(candidate));expected=disk;
+ confirm_accept();CHECK(a.title&&a.has_save&&deletes==d&&a.notice_ticks);disk_unchanged();unchanged();
+ press(HitKind::Menu,1);read_ok=false;confirm_accept();CHECK(a.title&&deletes==d&&a.notice_ticks);disk_unchanged();unchanged();
+ read_ok=true;CHECK(a.refresh_save());press(HitKind::Menu,1);confirm_accept();CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+1);unchanged();
+}
+static void unreadable_checkpoint_does_not_abandon(){
+ empty_disk();start(Character::Necrobinder,6601,"READ_FAILURE");put_disk();snapshot();unsigned d=deletes;
+ a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,3);read_ok=false;
+ // A previous failed menu probe must not erase the known association.
+ CHECK(!a.refresh_save()&&!a.has_save&&a.run_checkpoint.size&&a.saved_checkpoint.size);
+ confirm_accept();CHECK(a.paused&&a.game.hp>0&&a.game.phase!=Phase::Dead&&deletes==d&&a.notice_ticks);disk_unchanged();unchanged();
+ read_ok=true;press(HitKind::Menu,3);confirm_accept();CHECK(!a.paused&&a.game.phase==Phase::Dead&&!disk_exists&&deletes==d+1);
+}
+static void optional_clear_uses_successful_terminal_probe(){
+ empty_disk();start(Character::Ironclad,6701,"FALLBACK_ACTIVE");a.game.potion_slots=8;for(auto&p:a.game.potions)p=Potion::Empty;a.game.potions[7]=Potion::FairyInABottle;
+ CHECK(gain_world_relic(a.game,WorldRelicLizardTail));resolve_pending(a.game);put_disk();snapshot();a.callbacks.clear_save=nullptr;
+ unsigned d=deletes,w=writes;a.input(Key::Back);press(HitKind::Menu,3);write_ok=false;confirm_accept();
+ CHECK(a.paused&&a.game.hp>0&&a.game.phase!=Phase::Dead&&deletes==d&&writes==w+1);disk_unchanged();unchanged();
+ write_ok=true;press(HitKind::Menu,3);confirm_accept();CHECK(!a.paused&&a.game.phase==Phase::Dead&&a.game.hp==0&&a.game.world.finished&&disk_exists&&!a.has_save&&deletes==d&&writes==w+2);
+ CHECK(a.game.potions[7]==Potion::FairyInABottle&&world_relic_counter(a.game,WorldRelicLizardTail)==0&&a.game.event_run.completion_recorded);same_saved(disk);
+ CHECK(load(candidate,disk.bytes,disk.size)&&candidate.phase==Phase::Dead);snapshot();CHECK(!a.refresh_save()&&!a.load_saved_run());unchanged();
+
+ // Title abandonment writes a terminal version of the selected save while
+ // retaining the unrelated visible game byte-for-byte, on failure or success.
+ empty_disk();start(Character::Silent,6702,"FALLBACK_TITLE");put_disk();start(Character::Defect,6703);snapshot();a.return_to_title();a.callbacks.clear_save=nullptr;
+ d=deletes;w=writes;press(HitKind::Menu,1);write_ok=false;confirm_accept();CHECK(a.title&&a.has_save&&writes==w+1&&deletes==d);disk_unchanged();unchanged();
+ write_ok=true;press(HitKind::Menu,1);confirm_accept();CHECK(a.title&&!a.has_save&&disk_exists&&writes==w+2&&deletes==d);unchanged();
+ CHECK(load(candidate,disk.bytes,disk.size)&&candidate.phase==Phase::Dead&&candidate.character==Character::Silent);CHECK(!a.load_saved_run());unchanged();
+
+ // Ending an already terminal visible run also requires the fallback write
+ // to succeed before forgetting its earlier resumable checkpoint.
+ empty_disk();start(Character::Regent,6704,"FALLBACK_ENDING");put_disk();player_kill(a.game,true);resolve_pending(a.game);snapshot();a.callbacks.clear_save=nullptr;
+ w=writes;write_ok=false;CHECK(!a.finish_saved_run()&&writes==w+1);disk_unchanged();unchanged();
+ write_ok=true;CHECK(a.finish_saved_run()&&!a.has_save&&disk_exists&&writes==w+2);same_saved(disk);unchanged();a.callbacks.clear_save=erase_run;
+}
 static void ending_clears_only_its_checkpoint(){
  empty_disk();start(Character::Ironclad,7001);put_disk();player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();unsigned d=deletes;
  a.input(Key::Confirm);CHECK(a.game_over_summary);delete_ok=false;action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+1);unchanged();
@@ -190,6 +281,8 @@ static void modal_isolation_and_fast_mode(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
- probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
+ probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
+ canonical_identity_and_checkpoint_ownership();refreshed_continue_metadata();title_confirmation_rechecks_complete_save();unreadable_checkpoint_does_not_abandon();optional_clear_uses_successful_terminal_probe();
+ ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");
 }

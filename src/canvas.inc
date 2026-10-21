@@ -25,8 +25,21 @@ struct Canvas{
     uint16_t* pixels=a.pixels;
     int pitch=320, clip_w=320, clip_h=240;
     uint8_t* coverage=nullptr;
-    void paint(int at,uint16_t color,unsigned alpha=255){
+    // Local UI layers can modulate images and text together. Appending this
+    // field preserves cached-card aggregate initializers and opaque drawing.
+    uint8_t opacity=255;
+    void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
+        if(opacity!=255)alpha=div255(alpha*opacity);
         if(!alpha)return;
+        if(mode==presentation::Add){
+            if(!coverage||coverage[at]==255)pixels[at]=presentation::add_opaque(pixels[at],color,alpha);
+            else{
+                const unsigned previous=coverage[at];
+                pixels[at]=presentation::add_covered(pixels[at],color,alpha,previous);
+                coverage[at]=(uint8_t)(alpha+div255(previous*(255-alpha)));
+            }
+            return;
+        }
         if(!coverage){pixels[at]=alpha==255?color:blend(pixels[at],color,alpha);return;}
         unsigned previous=coverage[at];
         if(alpha==255||!previous){pixels[at]=color;coverage[at]=(uint8_t)alpha;return;}
@@ -48,7 +61,7 @@ struct Canvas{
         int dx=xx>x?xx-x:x-xx,dy=yy>y?y-yy:yy-y,sx=x<xx?1:-1,sy=y<yy?1:-1,err=dx+dy,step=0;
         for(;;){if(!dots||(step/3)%2==0)rect(x,y,1,1,color);if(x==xx&&y==yy)break;int e=err*2;if(e>=dy){err+=dy;x+=sx;}if(e<=dx){err+=dx;y+=sy;}step++;}
     }
-    void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255){
+    void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
         auto p=a.content.image(id);if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);if(left>=right||top>=bottom)return;
         if(p.format==4){
@@ -65,7 +78,7 @@ struct Canvas{
                             if(x1<=left||x0>=right)continue;const uint8_t*src=run+j*stride;
                             unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);
                             uint16_t color=src[0]|uint16_t(src[1])<<8;
-                            for(int yy=mx(top,y0);yy<mn(bottom,y1);yy++)for(int xx=mx(left,x0);xx<mn(right,x1);xx++)paint((y+yy)*pitch+x+xx,color,alpha);
+                            for(int yy=mx(top,y0);yy<mn(bottom,y1);yy++)for(int xx=mx(left,x0);xx<mn(right,x1);xx++)paint((y+yy)*pitch+x+xx,color,alpha,blend_mode);
                         }
                         run+=n*stride;
                     }
@@ -82,14 +95,14 @@ struct Canvas{
                     if(yy>=top&&yy<bottom){int l=mx(left,(int)sx),h=mn(right,(int)(sx+n));
                         if(l>=h){run+=n*stride;continue;}
                         int at=(y+yy)*pitch+x+l;const uint8_t*src=run+(l-(int)sx)*stride;
-                        for(int xx=l;xx<h;xx++,at++,src+=stride){unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);uint16_t v=src[0]|(uint16_t)src[1]<<8;paint(at,v,alpha);}}
+                        for(int xx=l;xx<h;xx++,at++,src+=stride){unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);uint16_t v=src[0]|(uint16_t)src[1]<<8;paint(at,v,alpha,blend_mode);}}
                     run+=n*stride;
                 }
             }
             return;
         }
         if(width==p.w&&height==p.h&&!p.alpha&&!p.palette&&opacity==255){
-            for(int yy=top;yy<bottom;yy++){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,at++,src+=2)paint(at,src[0]|(uint16_t)src[1]<<8);}
+            for(int yy=top;yy<bottom;yy++){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,at++,src+=2)paint(at,src[0]|(uint16_t)src[1]<<8,255,blend_mode);}
             return;
         }
         uint16_t source[320];for(int xx=left;xx<right;xx++)source[xx-left]=(uint16_t)(xx*p.w/width);
@@ -98,7 +111,7 @@ struct Canvas{
             for(int xx=left;xx<right;xx++,at++){
                 int i=row+source[xx-left];unsigned alpha=p.alpha?p.alpha[i]:255;if(opacity!=255)alpha=div255(alpha*opacity);if(!alpha)continue;
                 const uint8_t*pixel=p.palette?p.palette+p.pixels[i]*2:p.pixels+i*2;uint16_t color=pixel[0]|(uint16_t)pixel[1]<<8;
-                paint(at,color,alpha);
+                paint(at,color,alpha,blend_mode);
             }
         }
     }

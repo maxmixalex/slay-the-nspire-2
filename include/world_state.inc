@@ -46,6 +46,8 @@ struct WorldState {
     uint8_t shop_pending_item=255,shop_auto_active=0,shop_auto_cursor=0,shop_free_remove=0;
     int16_t shop_pending_price=0;
     uint8_t rest_count=0,rest_options[MaxWorldRestOptions]{},rest_pending=0;
+    // Original option slots removed from the remaining-options list. A normal
+    // completed choice removes every slot; Miniature Tent removes only its own.
     uint32_t rest_used=0;
     uint16_t rest_deck_before=0;
     // The original combat manager becomes inactive before AfterCombatEnd,

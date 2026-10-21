@@ -19,6 +19,9 @@ struct TextIndex {const char* key;uint16_t index;};
 static const TextIndex world_text[]={
 #include "../src/world_text_index.inc"
 };
+static const TextIndex world_images[]={
+#include "../src/world_image_index.inc"
+};
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=uint8_t(value>>(8*i));}
 static bool ends(const std::string&s,const char*tail){size_t n=std::strlen(tail);return s.size()>=n&&s.compare(s.size()-n,n,tail)==0;}
 static std::vector<uint8_t> synthetic_profile(){
@@ -31,7 +34,12 @@ static std::vector<uint8_t> synthetic_profile(){
  std::vector<uint8_t>b(payload);
  put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);put(b,20,glyphs);put(b,24,ContentStrings);put(b,28,AnimationKinds);put(b,32,CardKinds);
  for(unsigned i=0;i<images;i++){
-  unsigned w=i?2:82,h=i?2:60,offset=unsigned(b.size()),length=w*h*2;
+  unsigned w=i?2:82,h=i?2:60;
+  // Native controls preserve the original image aspect ratio. A square test
+  // texture would turn the Proceed button into a tall opaque panel and cover
+  // the saved-facts row, unlike the 104x51 source component.
+  for(const auto&entry:world_images)if(entry.index==i&&(!std::strcmp(entry.key,"common.PROCEED")||!std::strcmp(entry.key,"common.PROCEED_OUTLINE"))){w=104;h=51;}
+  unsigned offset=unsigned(b.size()),length=w*h*2;
   put(b,40+i*16,offset);put(b,44+i*16,w,2);put(b,46+i*16,h,2);put(b,52+i*16,length);b.resize(offset+length);
   for(unsigned pixel=0;pixel<w*h;pixel++)put(b,offset+pixel*2,((i*13+pixel*5)&31)<<11|((i*29+pixel*7)&63)<<5|((i*7+pixel*3)&31),2);
  }

@@ -105,10 +105,11 @@ static void enemy_die(State&s,int t){
  }
  if(infested)for(int slot=1;slot<=4;++slot)enemy_spawn(s,EnemyId::Wriggler,slot,t);
  if(surprise){
-  // Fat is created first in the original, before Sneaky is attached.
+  // Fat is created first, but is not added to the original enemy list until
+  // after Sneaky. Its reserved identity must not constrain Sneaky's HP roll.
   int fat=enemy_create(s,EnemyId::FatGremlin,1,t);
   if(fat>=0){w.models[fat].stolen_gold=(int16_t)stolen;enemy_initial_powers(s,fat);if(stolen)enemy_apply_power(s,fat,EnemyPower::Heist,stolen,t);}
-  enemy_spawn(s,EnemyId::SneakyGremlin,0,t);
+  enemy_spawn(s,EnemyId::SneakyGremlin,0,t,fat);
   if(fat>=0){if(w.side)w.models[fat].data[11]=1;else{enemy_set_move(s,fat,enemy_initial_node(s,fat));w.models[fat].previous=w.models[fat].node;}
    world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,fat);}
  }

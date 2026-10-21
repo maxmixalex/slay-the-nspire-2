@@ -255,7 +255,9 @@ bool take_treasure(State&s){
     s.treasure_state=2;s.revision++;return true;
 }
 bool leave_treasure(State&s){
-    if(s.phase!=Phase::Treasure||!s.treasure_state)return false;
+    if(s.phase!=Phase::Treasure)return false;
+    if(s.world.active)return s.world.room_open&&s.world.room_type==uint8_t(WorldRoom::Treasure)&&world_finish_room(s);
+    if(!s.treasure_state)return false;
     finish_room(s);return true;
 }
 #include "world_run.inc"

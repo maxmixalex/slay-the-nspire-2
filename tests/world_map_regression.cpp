@@ -134,8 +134,52 @@ static void visited_room_history(){
  require(world_enter_event_combat(game,"FakeMerchantEventEncounter",true)&&game.enemy_world.encounter==EncounterId::FakeMerchantEventEncounter,"event enters its native combat room");
  require(game.world.room_type==unsigned(WorldRoom::Monster)&&game.world.parent_room_type==unsigned(WorldRoom::Event)&&game.world.visited_rooms[0][event_point]==unsigned(WorldRoom::Event),"nested combat cannot replace the first map-room type");persisted();
 }
+static void room_proceed_boundaries(){
+ // Successful ordinary rest options stay in the room after the original
+ // synchronizer clears its options. Only the separate Proceed action travels.
+ start();game.original_events=OriginalEventState{};game.world.room_type=uint8_t(WorldRoom::Rest);game.phase=Phase::Camp;
+ game.world.rest_count=2;game.world.rest_options[0]=uint8_t(WorldRestOption::Heal);game.world.rest_options[1]=uint8_t(WorldRestOption::Smith);
+ require(world_rest_option_visible(game,0)&&world_rest_option_visible(game,1)&&!world_rest_option_visible(game,2),"new rest exposes exactly its original option slots");
+ require(world_rest_choose(game,1)&&game.phase==Phase::Upgrade,"ordinary smith opens the actual card upgrade selection");
+ require(world_rest_cancel(game)&&!world_rest_can_proceed(game)&&world_rest_option_visible(game,1),"cancelling ordinary smith does not finish or remove its option");
+ require(world_rest_choose(game,1)&&upgrade_card(game,0),"ordinary smith completes through the shared upgrade path");
+ require(game.deck[0].upgraded&&game.phase==Phase::Camp&&game.world.room_open&&!game.world.rest_pending&&world_rest_can_proceed(game),"ordinary smith finishes its option and reveals Proceed without closing the room");
+ require(!world_rest_option_visible(game,0)&&!world_rest_option_visible(game,1)&&!world_rest_option_enabled(game,0)&&!world_rest_choose(game,0),"ordinary completion removes every remaining option");persisted();
+ require(game.phase==Phase::Camp&&world_rest_can_proceed(game)&&!world_rest_option_visible(game,1),"ordinary completed rest resumes with Proceed and its removed options intact");
+ const unsigned rooms_before=game.world.rooms_completed;
+ require(world_rest_proceed(game)&&game.phase==Phase::Map&&!game.world.room_open&&game.world.rooms_completed==rooms_before+1,"ordinary rest travels exactly once through Proceed");
+ require(!world_rest_proceed(game),"completed rest cannot proceed twice");persisted();
+
+ // AfterRest can pause in a real reward group. That group must complete before
+ // the room removes its options, and Proceed must not repeat its heal or RNG.
+ start();game.original_events=OriginalEventState{};game.world.room_type=uint8_t(WorldRoom::Rest);game.phase=Phase::Camp;
+ game.world.rest_count=2;game.world.rest_options[0]=uint8_t(WorldRestOption::Heal);game.world.rest_options[1]=uint8_t(WorldRestOption::Smith);
+ require(gain_world_relic(game,WorldRelicDreamCatcher),"obtain actual delayed rest reward listener");game.hp=30;
+ require(world_rest_choose(game,0)&&game.phase==Phase::WorldRelicChoice&&game.world.rest_pending==1&&game.world.finish_pending,"ordinary heal awaits its Dream Catcher card reward");
+ require(!world_rest_can_proceed(game)&&!world_rest_proceed(game),"pending rest reward blocks room travel");persisted();
+ require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Camp&&!game.world.rest_pending&&!world_relic_pending(game),"finishing a rest reward resumes its original Camp continuation");
+ require(world_rest_can_proceed(game)&&!world_rest_option_visible(game,0)&&!world_rest_option_visible(game,1),"awaited ordinary rest clears its options before exposing Proceed");persisted();
+ const int healed_hp=game.hp;const unsigned reward_calls=world_rng(game,WorldRng::Rewards).calls;
+ require(world_rest_proceed(game)&&game.phase==Phase::Map&&game.hp==healed_hp&&world_rng(game,WorldRng::Rewards).calls==reward_calls,"Proceed does not repeat the completed heal or card reward draw");persisted();
+
+ // Reach an actual map-generated treasure room. Its relic has already been
+ // prepared on room entry, but an unopened chest may be left without any of
+ // the chest's gold, relic-acquisition callbacks or opening RNG being run.
+ start();finish_routing_fixture();
+ for(unsigned guard=0;guard<20&&game.phase!=Phase::Treasure;++guard){choose_first();if(game.phase!=Phase::Treasure)finish_routing_fixture();}
+ require(game.phase==Phase::Treasure&&game.world.room_open&&!game.treasure_state&&game.world.treasure_relic!=NoWorldRelic,"original map enters a closed chest with its prepared relic");persisted();
+ const int gold=game.gold;const unsigned relics=game.world_relics.count;
+ reference::Random streams[WorldRngCount];for(unsigned i=0;i<WorldRngCount;++i)streams[i]=game.world.rng[i];
+ require(leave_treasure(game)&&game.phase==Phase::Map&&!game.world.room_open,"native unopened treasure accepts Proceed");
+ require(game.gold==gold&&game.world_relics.count==relics&&!game.world.treasure_gold_claimed,"leaving a closed chest gives no opening gold or relic");
+ for(unsigned i=0;i<WorldRngCount;++i){const auto&before=streams[i];const auto&after=game.world.rng[i];
+  require(before.calls==after.calls&&before.good==after.good,"skipping a closed chest consumes no named RNG draw");
+  for(unsigned j=0;j<4;++j)require(before.words[j]==after.words[j],"closed-chest travel preserves every named generator word");
+ }
+ require(!leave_treasure(game)&&!open_treasure(game)&&!take_treasure(game),"a skipped chest cannot be opened or claimed after travel");persisted();
+}
 int main(){
- visited_room_history();start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
+ room_proceed_boundaries();visited_room_history();start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
  for(unsigned a=0;a<3;++a){const auto& rooms=game.world.rooms[a];
   require(rooms.ready&&rooms.elite_count==15&&rooms.event_count>0,"all three room queues generated up front");
   require(rooms.boss_count==1,"base ascension has one boss per act");
@@ -181,7 +225,7 @@ int main(){
  require(world_rest_cancel(game)&&game.phase==Phase::Camp&&!game.world.rest_used,"cancelled smith leaves option unused");
  require(gain_world_relic(game,WorldRelicMiniatureTent),"obtain tent fixture");
  game.hp=30;require(world_rest_choose(game,0),"rest heals through native option");
- require(game.phase==Phase::Camp&&(game.world.rest_used&1)&&!world_rest_option_enabled(game,0)&&world_rest_option_enabled(game,1),"tent preserves unused camp options");
+ require(game.phase==Phase::Camp&&(game.world.rest_used&1)&&!world_rest_option_visible(game,0)&&world_rest_option_visible(game,1)&&!world_rest_option_enabled(game,0)&&world_rest_option_enabled(game,1),"tent removes its used option and preserves unused camp options");
  require(world_rest_can_proceed(game),"tent exposes Proceed even while another option remains usable");
  require(gain_world_relic(game,WorldRelicMeatCleaver),"obtain cook fixture");
  game.world.rest_options[2]=uint8_t(WorldRestOption::Cook);game.world.rest_count=3;
