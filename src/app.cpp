@@ -14,6 +14,12 @@ namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"
 #include "canvas.inc"
+static void world_region_image_key(const State&s,char*out,size_t size){
+ // Run models retain names such as Overgrowth; both original-image families
+ // register uppercase keys. Normalize only at the presentation boundary.
+ if(size)out[0]=0;TextBuffer b{out,size,0};
+ for(const char*p=world_region_key(s);*p;++p)b.ch(*p>='a'&&*p<='z'?char(*p-'a'+'A'):*p);
+}
 #include "native_controls.inc"
 #include "world_text.inc"
 #include "world_enemy_ui.inc"

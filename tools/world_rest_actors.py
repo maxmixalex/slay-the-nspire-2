@@ -103,7 +103,7 @@ def generated_rest_actor_header() -> str:
                    str(row['character']) + ',' + str(len(row['blends'])) + ',{' +
                    ','.join(str(value) for value in row['blends'] + [0] * (3 - len(row['blends']))) + '}},\n'
                    for row in REST_ACTORS)
-    return ('#pragma once\n#include <cstdint>\n'
+    return ('#pragma once\n#include <stdint.h>\n'
             '// Generated original rest actors; periods and ordered blend planes only.\n'
             'namespace spire {\n'
             'struct WorldRestActor { const char* key; uint32_t duration_ms; uint8_t character,planes,blend[3]; };\n'

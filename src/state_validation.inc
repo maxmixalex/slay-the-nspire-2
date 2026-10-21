@@ -32,7 +32,13 @@ bool validate(const State&s){
         if(s.relic_counters[i]>maximum||(!(s.relics&id)&&s.relic_counters[i]))return false;
     }
     if(s.treasure_state>2)return false;
-    if(s.phase!=Phase::Treasure&&(s.treasure_state||s.treasure_relic))return false;
+    // Obtain grants the native chest relic before its awaited pickup choice.
+    // The claimed chest remains in its open room until that choice resumes it.
+    const bool native_treasure_choice=s.world.active&&s.world.room_open&&
+        s.world.room_type==unsigned(WorldRoom::Treasure)&&s.treasure_state==2&&!s.treasure_relic&&
+        s.phase==Phase::WorldRelicChoice&&s.world_relics.active&&
+        s.world_relics.choice!=WorldRelicChoice::None&&s.world_relics.return_phase==unsigned(Phase::Treasure);
+    if(s.phase!=Phase::Treasure&&!native_treasure_choice&&(s.treasure_state||s.treasure_relic))return false;
     if(!s.treasure_state&&s.treasure_relic)return false;
     if(s.treasure_relic&&(!relic_definition(s.treasure_relic)||s.treasure_relic==BurningBlood||s.treasure_relic==RingOfTheSnake||s.treasure_relic==CrackedCore||s.treasure_relic==DivineRight||s.treasure_relic==BoundPhylactery))return false;
     if(s.treasure_relic&&s.treasure_state==1&&(s.relics&s.treasure_relic))return false;

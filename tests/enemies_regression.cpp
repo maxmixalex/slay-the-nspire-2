@@ -31,7 +31,12 @@ static int add_card(State&s,CardKind kind,int pile=1){int id=s.card_count;effect
 static State fight(EncounterId encounter,unsigned ascension=0,bool special_deck=false){
  State s{};new_run(s,0x41cef1ea,false);s.phase=Phase::Combat;s.current_node=1;s.floor=s.turn=1;
  s.relics=s.relic_count=s.relic_flash=0;s.hp=s.max_hp=999;s.energy=99;s.playing=-1;
- if(special_deck){s.deck[0]={DefectGeneticAlgorithm,1};s.defect.genetic_deck[0]=37;s.event_cards.deck[0].energy_offset=-1;}
+ if(special_deck){
+  s.deck[0]={DefectGeneticAlgorithm,1};s.defect.genetic_deck[0]=37;
+  // Permanent cost offsets belong to the original enchantment that created
+  // them; an untagged -1 offset is deliberately rejected by the save codec.
+  CHECK(event_card_enchant(s,0,EventEnchantment::TezcatarasEmber,1));
+ }
  CHECK(encounter_setup(s,encounter,ascension));
  // Construct real instances after initial enemy powers, just as enter_combat
  // does. This fixture isolates combat from event/map room prerequisites.
@@ -210,13 +215,19 @@ static void stolen_assets_and_timeout(){
  }
 
  scenario="Hopper returns an optional exact-card reward before deck insertion";s=fight(EncounterId::ThievingHopperWeak,0,true);
+ const EventCardFacts enchanted=s.event_cards.deck[0];CHECK(enchanted.energy_offset==-1&&!card_removable(s,s.deck[0],0));
+ s.event_cards.deck[0].enchantment=EventEnchantment::None;s.event_cards.deck[0].enchantment_amount=0;CHECK(!validate(s));s.event_cards.deck[0]=enchanted;
  while(s.hand.count){int id=s.hand.ids[--s.hand.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}
  unsigned deck=s.deck_count;move(s,0,0);CHECK(s.deck_count==deck-1&&s.enemy_world.models[0].captured_card);
+ // ThievingHopper filters DeckVersion, rarity and Imbued. Its forced
+ // CardPileCmd.RemoveFromDeck path does not exclude Eternal cards.
  CHECK(s.enemy_world.models[0].captured_deck.card.kind==DefectGeneticAlgorithm&&s.enemy_world.models[0].captured_deck.genetic==37);persist(s);
+ CHECK(s.enemy_world.models[0].captured_deck.facts.enchantment==EventEnchantment::TezcatarasEmber&&s.enemy_world.models[0].captured_deck.facts.enchantment_amount==1&&s.enemy_world.models[0].captured_deck.facts.energy_offset==-1);
  kill(s,0);CHECK(s.deck_count==deck-1&&encounter_combat_reward_count(s)==1&&!s.enemy_world.models[0].captured_card);
  EventDeckSnapshot returned{};unsigned reward_kind=9;int reward_value=-1;
  CHECK(encounter_combat_reward(s,0,reward_kind,reward_value)&&reward_kind==2);
  CHECK(encounter_combat_reward_card(s,0,returned)&&returned.card.kind==DefectGeneticAlgorithm&&returned.card.upgraded);
+ CHECK(returned.facts.enchantment==EventEnchantment::TezcatarasEmber&&returned.facts.enchantment_amount==1);
  CHECK(returned.genetic==37&&returned.facts.energy_offset==-1&&reward_value==card_token(returned.card));
  CHECK(encounter_returned_gold_count(s)==0);persist(s);
  encounter_add_card_reward(s);CHECK(encounter_combat_reward_count(s)==2&&encounter_combat_reward(s,1,reward_kind,reward_value)&&reward_kind==1&&reward_value==3);persist(s);

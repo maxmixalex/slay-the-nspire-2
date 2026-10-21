@@ -178,8 +178,55 @@ static void room_proceed_boundaries(){
  }
  require(!leave_treasure(game)&&!open_treasure(game)&&!take_treasure(game),"a skipped chest cannot be opened or claimed after travel");persisted();
 }
+static void treasure_acquisition_continuation(){
+ start();finish_routing_fixture();
+ for(unsigned guard=0;guard<20&&game.phase!=Phase::Treasure;++guard){choose_first();if(game.phase!=Phase::Treasure)finish_routing_fixture();}
+ require(game.phase==Phase::Treasure&&validate(game),"pending acquisition fixture reaches a real native treasure room");
+ // Dolly is normally a shop relic. Inject its model to isolate the awaited
+ // pickup continuation, without asserting anything about treasure rarity RNG.
+ game.world.treasure_relic=WorldRelicDollysMirror;
+ auto in_bags=[](const State&s){unsigned count=0;const auto&w=s.world_relics;
+  for(unsigned b=0;b<2;++b)for(unsigned r=0;r<4;++r)for(unsigned i=0;i<w.bag_sizes[b][r];++i)
+   count+=w.bags[b][r][i]==WorldRelicDollysMirror;return count;};
+ require(in_bags(game)==2&&!has_world_relic(game,WorldRelicDollysMirror),"Dolly begins unowned in both native bags");
+ require(open_treasure(game)&&game.treasure_state==1,"native chest opens before its relic is acquired");persisted();
+ const unsigned deck=game.deck_count,relics=game.world_relics.count;
+ reference::Random streams[WorldRngCount];for(unsigned i=0;i<WorldRngCount;++i)streams[i]=game.world.rng[i];
+ require(take_treasure(game)&&game.treasure_state==2&&game.phase==Phase::WorldRelicChoice&&
+         game.world_relics.choice==WorldRelicChoice::Duplicate&&game.world_relics.return_phase==unsigned(Phase::Treasure),"claimed chest suspends in the actual Dolly pickup choice");
+ require(game.world.room_open&&game.world.room_type==unsigned(WorldRoom::Treasure)&&world_relic_pending(game)&&
+         has_world_relic(game,WorldRelicDollysMirror)&&game.world_relics.count==relics+1&&!in_bags(game),"pickup owns Dolly and removes it from both bags before awaiting selection");
+ require(world_valid_run(game)&&valid_world_relic_state(game),"native room and relic validators accept their pending continuation");persisted();
+ require(game.treasure_state==2&&game.phase==Phase::WorldRelicChoice&&game.deck_count==deck&&
+         game.world_relics.count==relics+1&&world_relic_pending(game),"pending chest reload neither grants again nor resolves the unselected card");
+
+ other=game;
+ auto rejected=[&](const char*message){require(!validate(game),message);game=other;};
+ game.world_relics.return_phase=unsigned(Phase::Map);rejected("claimed treasure cannot resume to an unrelated phase");
+ game.world_relics.choice=WorldRelicChoice::None;game.world_relics.step_count=game.world_relics.step_cursor=0;
+ require(!world_relic_pending(game),"nonpending corruption actually clears the pending work");rejected("claimed treasure cannot retain a choice phase without pending work");
+ game.world.room_open=0;rejected("closed room cannot own a claimed treasure continuation");
+ game.world.room_type=unsigned(WorldRoom::Rest);rejected("another room cannot own a claimed treasure continuation");
+ game.world.active=0;rejected("legacy run cannot use the native treasure continuation exception");
+ game.world_relics.active=0;rejected("inactive relic state cannot own the pending pickup choice");
+ game.treasure_state=1;rejected("unclaimed chest cannot masquerade as the awaited pickup continuation");
+ require(!open_treasure(game)&&!take_treasure(game)&&!leave_treasure(game),"pending pickup blocks reopening reclaiming and premature travel");
+ require(!std::memcmp(&game,&other,sizeof game),"blocked treasure actions preserve the complete pending state");
+
+ uint16_t eligible[MaxDeck];require(world_relic_eligible(game,eligible,MaxDeck)>0,"pending Dolly has a real selectable deck instance");
+ const Card selected=game.deck[eligible[0]];
+ require(world_relic_select(game,eligible,1)&&game.phase==Phase::Treasure&&game.treasure_state==2&&!world_relic_pending(game),"saved pickup resumes the same claimed chest after selecting once");
+ require(game.deck_count==deck+1&&game.deck[deck].kind==selected.kind&&game.deck[deck].upgraded==selected.upgraded&&
+         game.world_relics.count==relics+1&&!in_bags(game),"resumed pickup duplicates exactly one card and never reacquires Dolly");persisted();
+ require(!take_treasure(game)&&!open_treasure(game),"completed pickup cannot be claimed or opened again");
+ require(leave_treasure(game)&&game.phase==Phase::Map&&!game.world.room_open&&!game.treasure_state&&game.world.treasure_relic==NoWorldRelic,"completed pickup leaves through the native room controller and clears the chest");persisted();
+ for(unsigned i=0;i<WorldRngCount;++i){const auto&before=streams[i];const auto&after=game.world.rng[i];
+  require(before.calls==after.calls&&before.good==after.good,"Dolly continuation save and resume consume no named RNG draw");
+  for(unsigned j=0;j<4;++j)require(before.words[j]==after.words[j],"Dolly continuation preserves every named RNG word");
+ }
+}
 int main(){
- room_proceed_boundaries();visited_room_history();start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
+ treasure_acquisition_continuation();room_proceed_boundaries();visited_room_history();start();require(game.potion_slots==3,"default run has three potion slots");detached_offer_preview();scoped_core_observer();persisted();
  for(unsigned a=0;a<3;++a){const auto& rooms=game.world.rooms[a];
   require(rooms.ready&&rooms.elite_count==15&&rooms.event_count>0,"all three room queues generated up front");
   require(rooms.boss_count==1,"base ascension has one boss per act");

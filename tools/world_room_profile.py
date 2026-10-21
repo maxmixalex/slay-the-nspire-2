@@ -61,7 +61,7 @@ def generated_room_header() -> str:
     opening, shine = profile['treasure']['animation_queue']
     width, height = profile['output']['size']
     x, y = profile['output']['screen_origin']
-    return ('#pragma once\n#include <cstdint>\n'
+    return ('#pragma once\n#include <stdint.h>\n'
         '// Generated original room timings and canvas geometry; no art data.\n'
         'namespace spire {\n'
         f'constexpr uint32_t WorldTreasureOpeningDurationMs={round(opening["source_duration_seconds"] * 1000)};\n'

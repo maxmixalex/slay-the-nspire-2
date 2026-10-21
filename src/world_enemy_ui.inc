@@ -138,6 +138,6 @@ bool App::enemy_frame(int slot,int&clip,uint32_t&elapsed,bool&loop){
 }
 int App::combat_background()const{
  if(game.enemy_world.active){const auto*e=encounter_definition(game.enemy_world.encounter);if(e){int image=content.world_image("backgrounds",e->key);if(image>=0)return image;}}
- if(game.world.active){int image=content.world_image("backgrounds",world_region_key(game));if(image>=0)return image;}
+ if(game.world.active){char region[24]{};world_region_image_key(game,region,sizeof region);int image=content.world_image("backgrounds",region);if(image>=0)return image;}
  return content.ui_image(U_BattleBackground);
 }

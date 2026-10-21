@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 // Generated original rest actors; periods and ordered blend planes only.
 namespace spire {
 struct WorldRestActor { const char* key; uint32_t duration_ms; uint8_t character,planes,blend[3]; };

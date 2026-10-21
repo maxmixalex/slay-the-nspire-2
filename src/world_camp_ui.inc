@@ -38,7 +38,8 @@ static void camp_actors(Canvas&c,bool dark){
  }
 }
 static void camp_scene(Canvas&c,bool dark){
- auto&a=c.a;char key[32]{};TextBuffer b{key,sizeof key,0};b.text(world_region_key(a.game));if(dark)b.text("_DARK");
+ auto&a=c.a;char region[24]{},key[32]{};world_region_image_key(a.game,region,sizeof region);TextBuffer b{key,sizeof key,0};b.text(region);
+ if(dark)b.text("_DARK");
  int image=a.content.world_image("rest_background",key);if(image>=0){c.picture(image,WorldRoomOriginX,WorldRoomOriginY,WorldRoomWidth,WorldRoomHeight);camp_actors(c,dark);return;}
  // Preserve the old private fixtures' complete presentation. The native act
  // backgrounds do not receive misregistered first-act figures or fire layers;

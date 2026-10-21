@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 // Generated original room timings and canvas geometry; no art data.
 namespace spire {
 constexpr uint32_t WorldTreasureOpeningDurationMs=1133;

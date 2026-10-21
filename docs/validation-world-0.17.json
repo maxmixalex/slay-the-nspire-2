@@ -408,6 +408,61 @@
       "log": "world17-remaining-63e43055a928.log",
       "log_sha256": "8f592a6b64e9b5f3b0f07ba73f96eeccc66e8eeccf31568363cf179bf07fb9ae",
       "source_sha256": "98db3cd8d5432c5034b3b5a8c215cad7408f8573b42d5d9a250cae2ba8ac601f"
+    },
+    {
+      "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-21T02:55:22.590027+00:00",
+      "ended_at": "2026-10-21T02:56:08.811372+00:00",
+      "log": "source9-arm-0ea2f2a847ef.log",
+      "log_sha256": "e8ef2c29b2ca3800e21e7f426b3a9e980465efed6affead8b82a017ba499a0de",
+      "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad"
+    },
+    {
+      "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-21T02:55:31.738963+00:00",
+      "ended_at": "2026-10-21T02:57:36.934975+00:00",
+      "log": "source9-native-build-b5d2795d6000.log",
+      "log_sha256": "1ff40d1d550d94ba9a688dff8c63790e0e921dd7187c8f6a9533eab0338adcb1",
+      "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad"
+    },
+    {
+      "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-21T02:55:22.940434+00:00",
+      "ended_at": "2026-10-21T02:55:27.276650+00:00",
+      "log": "source9-native-configure-821a80828c57.log",
+      "log_sha256": "0a83691675f448df97485244325efcbe6e0097c03b47c610bbec3ccb1e10cf4d",
+      "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad"
+    },
+    {
+      "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "started_at": "2026-10-21T02:58:09.258064+00:00",
+      "ended_at": "2026-10-21T02:59:30.866859+00:00",
+      "log": "source9-native-risk9-708c78e1dfc9.log",
+      "log_sha256": "2b9367c8c04c1b1e73f61998a4b5897505a95ca63d4cce77a230797d90247b33",
+      "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad"
+    },
+    {
+      "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-21T02:55:23.048465+00:00",
+      "ended_at": "2026-10-21T02:56:06.564346+00:00",
+      "log": "source9-wasm-2bf4cbf5422f.log",
+      "log_sha256": "5c8fee9a1552d14516095f3bfa545b11b310198d5920dde236cb53ebaecdbc98",
+      "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad"
     }
   ],
   "limits": [
@@ -612,6 +667,491 @@
       "treasure_easing_assertions": 8003,
       "unchanged_enemy_model_scope_combinations": 327,
       "room_fixture_repairs": "Transparent actor image and Defect ordered-plane assertions; reset presentation deadlines after artificial wrap-time jump. Engine suite remains unexecuted."
+    }
+  },
+  "source9_formal_validation": {
+    "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+    "tree": "05a8e3db7ae31e5ca897e309ffc404d749599db0",
+    "local_equivalent_commit": "aa3badfd794f971f7fd1f6a093c739bff8679f03",
+    "remote_checked_at_utc": "2026-10-21 02:50:57 UTC",
+    "all_tree_blobs_verified": 438,
+    "uploaded_contents_verified": 49,
+    "main_unchanged": "efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0",
+    "frozen_source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+    "completed_stages": [
+      {
+        "journal": "source9-arm-0ea2f2a847ef.json",
+        "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+        "status": "failed",
+        "returncode": 1,
+        "source_changed": false,
+        "started_at": "2026-10-21T02:55:22.590027+00:00",
+        "ended_at": "2026-10-21T02:56:08.811372+00:00",
+        "log": "source9-arm-0ea2f2a847ef.log",
+        "log_sha256": "e8ef2c29b2ca3800e21e7f426b3a9e980465efed6affead8b82a017ba499a0de",
+        "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+        "seconds": 46.221345,
+        "command": [
+          "python3",
+          "tools/build_ndless.py"
+        ]
+      },
+      {
+        "journal": "source9-native-build-b5d2795d6000.json",
+        "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-21T02:55:31.738963+00:00",
+        "ended_at": "2026-10-21T02:57:36.934975+00:00",
+        "log": "source9-native-build-b5d2795d6000.log",
+        "log_sha256": "1ff40d1d550d94ba9a688dff8c63790e0e921dd7187c8f6a9533eab0338adcb1",
+        "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+        "seconds": 125.196012,
+        "command": [
+          "env",
+          "ASAN_OPTIONS=detect_leaks=0",
+          "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+          "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+          "--build",
+          "build/native",
+          "-j3"
+        ]
+      },
+      {
+        "journal": "source9-native-configure-821a80828c57.json",
+        "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-21T02:55:22.940434+00:00",
+        "ended_at": "2026-10-21T02:55:27.276650+00:00",
+        "log": "source9-native-configure-821a80828c57.log",
+        "log_sha256": "0a83691675f448df97485244325efcbe6e0097c03b47c610bbec3ccb1e10cf4d",
+        "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+        "seconds": 4.336216,
+        "command": [
+          "env",
+          "ASAN_OPTIONS=detect_leaks=0",
+          "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+          "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+          "-S",
+          ".",
+          "-B",
+          "build/native",
+          "-G",
+          "Ninja",
+          "-DBUILD_TESTING=ON",
+          "-DSPIRE_X11=ON",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DCMAKE_MAKE_PROGRAM=/tmp/nspire-python-deps/bin/ninja",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++",
+          "-DX11_X11_INCLUDE_PATH=/tmp/nspire-llvm/usr/include",
+          "-DX11_X11_LIB=/lib/x86_64-linux-gnu/libX11.so.6",
+          "-DCMAKE_CXX_FLAGS=-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -fmax-errors=10",
+          "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined -no-pie"
+        ]
+      },
+      {
+        "journal": "source9-native-risk9-708c78e1dfc9.json",
+        "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+        "status": "failed",
+        "returncode": 8,
+        "source_changed": false,
+        "started_at": "2026-10-21T02:58:09.258064+00:00",
+        "ended_at": "2026-10-21T02:59:30.866859+00:00",
+        "log": "source9-native-risk9-708c78e1dfc9.log",
+        "log_sha256": "2b9367c8c04c1b1e73f61998a4b5897505a95ca63d4cce77a230797d90247b33",
+        "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+        "seconds": 81.608795,
+        "command": [
+          "env",
+          "ASAN_OPTIONS=detect_leaks=0",
+          "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+          "/tmp/nspire-python-deps/cmake/data/bin/ctest",
+          "--test-dir",
+          "build/native",
+          "--output-on-failure",
+          "-j2",
+          "--timeout",
+          "600",
+          "--output-junit",
+          "/tmp/nspire-stage-7efafe07/build/journal/source9-native-risk9.xml",
+          "-R",
+          "^(world_room_ui_regression|world_frontend_ui_regression|enemies_regression|ironclad_completion_regression|five_character_integration_regression|five_character_ui_regression|card_result_regression|world_game_over_ui_regression|presentation_blend_regression)$"
+        ]
+      },
+      {
+        "journal": "source9-wasm-2bf4cbf5422f.json",
+        "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+        "status": "failed",
+        "returncode": 1,
+        "source_changed": false,
+        "started_at": "2026-10-21T02:55:23.048465+00:00",
+        "ended_at": "2026-10-21T02:56:06.564346+00:00",
+        "log": "source9-wasm-2bf4cbf5422f.log",
+        "log_sha256": "5c8fee9a1552d14516095f3bfa545b11b310198d5920dde236cb53ebaecdbc98",
+        "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+        "seconds": 43.515881,
+        "command": [
+          "python3",
+          "tools/build_web.py",
+          "--compile-only"
+        ]
+      }
+    ],
+    "native_risk_tests": [
+      {
+        "name": "ironclad_completion_regression",
+        "seconds": 4.38199,
+        "status": "passed"
+      },
+      {
+        "name": "five_character_integration_regression",
+        "seconds": 0.396295,
+        "status": "passed"
+      },
+      {
+        "name": "five_character_ui_regression",
+        "seconds": 28.5652,
+        "status": "passed"
+      },
+      {
+        "name": "enemies_regression",
+        "seconds": 77.1305,
+        "status": "failed"
+      },
+      {
+        "name": "world_game_over_ui_regression",
+        "seconds": 8.80226,
+        "status": "passed"
+      },
+      {
+        "name": "world_room_ui_regression",
+        "seconds": 0.706734,
+        "status": "failed"
+      },
+      {
+        "name": "presentation_blend_regression",
+        "seconds": 0.017698,
+        "status": "passed"
+      },
+      {
+        "name": "card_result_regression",
+        "seconds": 0.577443,
+        "status": "passed"
+      },
+      {
+        "name": "world_frontend_ui_regression",
+        "seconds": 20.1714,
+        "status": "passed"
+      }
+    ],
+    "native_risk_passed": 7,
+    "native_risk_failed": 2,
+    "full_suite_complete": false,
+    "full_pack_complete": false,
+    "release_ready": false,
+    "cross_build_failure": {
+      "kind": "missing_freestanding_C++_standard_header",
+      "header": "include/world_room_assets.hpp",
+      "diagnostic": "fatal error: 'cstdint' file not found",
+      "source10_fix": "Use <stdint.h> in all three runtime presentation headers and both header generators; no type/algorithm change."
+    },
+    "native_risk_failures": {
+      "world_room_ui_regression": "Original CamelCase region names missed uppercase rest-background image keys, forcing legacy Camp fallback and skipping native actor layers. The same presentation-key mismatch affects ordinary combat region backgrounds; source10 fixes the lookup and retains boss override priority.",
+      "enemies_regression": "Invalid synthetic input before theft: permanent energy_offset=-1 without its TezcatarasEmber enchantment. Source10 fixes the test using event_card_enchant; runtime validator and theft/reward logic unchanged."
+    }
+  },
+  "source10_short_diagnostics": {
+    "kind": "short_freestanding_header_diagnostic_unverified_source10",
+    "parent_checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+    "started_at": "2026-10-21T02:59:14.546619+00:00",
+    "ended_at": "2026-10-21T02:59:16.477064+00:00",
+    "source_sha256": "40d494f3060e2b4e717d949b85ce7fb5602951edc48f512ec15aab65ed840fe2",
+    "commands": [
+      {
+        "command": [
+          "python3",
+          "tools/world_ui_profile.py"
+        ],
+        "returncode": 0,
+        "seconds": 0.2738117959961528
+      },
+      {
+        "command": [
+          "/tmp/nspire-task-toolchain/clang++",
+          "--target=arm-none-eabi",
+          "-mcpu=arm926ej-s",
+          "-marm",
+          "-mfloat-abi=soft",
+          "-ffreestanding",
+          "-fno-builtin",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-fno-threadsafe-statics",
+          "-std=c++17",
+          "-Iinclude",
+          "-fsyntax-only",
+          "src/app.cpp"
+        ],
+        "returncode": 0,
+        "seconds": 1.0599714389973087
+      },
+      {
+        "command": [
+          "/tmp/nspire-task-toolchain/clang++",
+          "--target=wasm32",
+          "-ffreestanding",
+          "-fno-builtin",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-fno-threadsafe-statics",
+          "-std=c++17",
+          "-Iinclude",
+          "-fsyntax-only",
+          "src/app.cpp"
+        ],
+        "returncode": 0,
+        "seconds": 0.5864517630034243
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "returncode": 0,
+        "seconds": 0.009610352004528977
+      }
+    ],
+    "source_changed": false,
+    "passed": true,
+    "log_sha256": "12892af96f76d8184bcc7365489a07f85aef8331cd695911b47d928812237bae",
+    "receipt_sha256": "f08481ed2015e0865a55a73a06549d3588288560ed092bcbe879e666de47dbb1",
+    "boundary": "Bounded header, fixture and predicate diagnostics at their stated file identities. No full native/cross-target build or full source10 suite execution before push/readback.",
+    "hopper_fixture_repair": {
+      "receipt": "source10-hopper-fixture-repair-receipt.json",
+      "receipt_sha256": "571744b1e8898f9fd371e388390ecbfde2fcb43acf6258538a291bb260b72df7",
+      "checks": 289,
+      "seconds": 0.380876,
+      "test_sha256": "3a31fe673b58a0fa3bc8dbc84e3efde57603b06f042e3a7b973d0503a19ca43e",
+      "run_log_sha256": "4e09c575f9db182b8bbe394c375aeb992c2aa50ac9ee853ec66d1523469b0443",
+      "scope": "New enemies test TU, stolen_assets_and_timeout only, linked with the frozen source9 core archive; not the complete source10 runtime or enemies suite."
+    },
+    "room_repair_attempt1": {
+      "kind": "isolated_frozen_core_new_frontend_and_test_diagnostic",
+      "frozen_checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "frozen_archive_sha256": "f587ec0fdcdeed4a9f704341851e50e9bd736a4bf9a7065ae058fad200a53601",
+      "started_at": "2026-10-21T03:07:50.759873+00:00",
+      "ended_at": "2026-10-21T03:08:49.008657+00:00",
+      "status": "failed",
+      "commands": [
+        {
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-O1",
+            "-g",
+            "-fsanitize=address,undefined",
+            "-fno-omit-frame-pointer",
+            "-fno-pie",
+            "-fmax-errors=10",
+            "-I/tmp/nspire-stage-7efafe07/include",
+            "-c",
+            "tests/world_room_ui_regression.cpp",
+            "-o",
+            "/tmp/nspire-source10-room/attempt1/room-test.o"
+          ],
+          "returncode": 0,
+          "seconds": 5.238813984004082,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-O1",
+            "-g",
+            "-fsanitize=address,undefined",
+            "-fno-omit-frame-pointer",
+            "-fno-pie",
+            "-fmax-errors=10",
+            "-I/tmp/nspire-stage-7efafe07/include",
+            "-c",
+            "src/app.cpp",
+            "-o",
+            "/tmp/nspire-source10-room/attempt1/app.o"
+          ],
+          "returncode": 0,
+          "seconds": 42.31076152299647,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "g++",
+            "-fsanitize=address,undefined",
+            "-no-pie",
+            "/tmp/nspire-source10-room/attempt1/app.o",
+            "/tmp/nspire-source10-room/attempt1/room-test.o",
+            "/tmp/nspire-stage-7efafe07/build/native/libspire_core.a",
+            "-Wl,-Map=/tmp/nspire-source10-room/attempt1/link.map",
+            "-o",
+            "/tmp/nspire-source10-room/attempt1/world-room-diagnostic"
+          ],
+          "returncode": 0,
+          "seconds": 0.502368776993535,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/tmp/nspire-source10-room/attempt1/world-room-diagnostic"
+          ],
+          "returncode": 1,
+          "seconds": 15.274555301999499,
+          "stdout": "",
+          "stderr": "world room UI: tests/world_room_ui_regression.cpp:90 validate(a.game) (event= phase=18)\n"
+        }
+      ],
+      "validation_scope": "New App translation unit and revised room test with unchanged frozen headers and other engine/content objects. Not a complete source10 build or formal checkpoint regression.",
+      "frontend_link_check": {
+        "render_definitions": [
+          "0000000000506fc2 T spire::App::render()"
+        ],
+        "combat_background_definitions": [
+          "00000000004b5534 T spire::App::combat_background() const"
+        ],
+        "frozen_app_member_selected": false,
+        "explicit_new_object": "/tmp/nspire-source10-room/attempt1/app.o"
+      },
+      "source_changed": false,
+      "frozen_archive_unchanged": true,
+      "passed": false,
+      "log_sha256": "d7007ecee5aab5cf423746905b55c8588c0489dbcdf48b6dcaee3c363698eba9",
+      "receipt": "source10-room-attempt1/receipt.json",
+      "receipt_sha256": "750b5df69123ce9542b1e6263baf21ad2bc705f43374884a7c772020a39c1e6c",
+      "failure": "Old frozen core rejects claimed native Treasure awaiting Dolly selection; partial room execution, not full suite pass."
+    },
+    "dolly_acquisition_repair": {
+      "base_checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+      "scope": "Source10 narrow native Treasure acquisition validator repair; not a rebuilt source10 runtime or full regression result",
+      "commands": {
+        "predicate_probe": {
+          "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+          "command": [
+            "build/native/dolly-source9-predicate-probe"
+          ],
+          "elapsed_seconds": 1.480804,
+          "ended_at": "2026-10-21T03:14:50.100896+00:00",
+          "journal": "/tmp/nspire-stage-7efafe07/build/journal/source10-dolly-predicate-d2d904487961.json",
+          "journal_sha256": "5d3719cbc144329cb6b15c83adbf92a58c010e608d386d0232ba4ef4a04a7945",
+          "log": "/tmp/nspire-stage-7efafe07/build/journal/source10-dolly-predicate-d2d904487961.log",
+          "log_sha256": "e46026a2faef633bab8d807e212db578268a17ef3b366fcace24caff458eab50",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+          "started_at": "2026-10-21T03:14:48.620092+00:00",
+          "status": "passed"
+        },
+        "probe_build": {
+          "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-Iinclude",
+            "-O1",
+            "-g",
+            "-fsanitize=address,undefined",
+            "-fno-omit-frame-pointer",
+            "-fno-pie",
+            "-no-pie",
+            "build/native/dolly-source9-predicate-probe.cpp",
+            "build/native/libspire_core.a",
+            "-o",
+            "build/native/dolly-source9-predicate-probe"
+          ],
+          "elapsed_seconds": 3.167635,
+          "ended_at": "2026-10-21T03:14:33.930193+00:00",
+          "journal": "/tmp/nspire-stage-7efafe07/build/journal/source10-dolly-predicate-build-3239f94a4549.json",
+          "journal_sha256": "fcad97d25f4c81c6b15f7314e3fa2471044f2c0d3fdc094cfcd45ce89c378780",
+          "log": "/tmp/nspire-stage-7efafe07/build/journal/source10-dolly-predicate-build-3239f94a4549.log",
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+          "started_at": "2026-10-21T03:14:30.762558+00:00",
+          "status": "passed"
+        },
+        "short_syntax": {
+          "checkpoint": "7efafe07e956bba6a49b2c9f0cca85100c7e9598",
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-fmax-errors=10",
+            "-fsyntax-only",
+            "-I/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2/include",
+            "/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2/src/core.cpp",
+            "/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2/tests/world_map_regression.cpp"
+          ],
+          "elapsed_seconds": 1.092021,
+          "ended_at": "2026-10-21T03:17:06.988206+00:00",
+          "journal": "/tmp/nspire-stage-7efafe07/build/journal/source10-dolly-short-syntax-2f2c353b3945.json",
+          "journal_sha256": "0412552bf41456a4fe4ed46636994ddbf7df56219c59b41b8822198481d8360e",
+          "log": "/tmp/nspire-stage-7efafe07/build/journal/source10-dolly-short-syntax-2f2c353b3945.log",
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "returncode": 0,
+          "source_changed": false,
+          "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad",
+          "started_at": "2026-10-21T03:17:05.896185+00:00",
+          "status": "passed"
+        }
+      },
+      "execution_boundary": {
+        "full_source10_build_and_46_suites": "Pending source10 push/readback and frozen build, by root instruction.",
+        "new_positive_negative_tests_executed": false,
+        "predicate_probe_checks": 53,
+        "predicate_probe_uses": "Frozen source9 core and frozen world_map routing helpers; no repair compiled into probe. It demonstrates the old rejection and valid bag/room/relic state.",
+        "short_syntax_uses": "Current source10 core.cpp/state_validation.inc and world_map regression TU with current headers, syntax only; not linked or executed."
+      },
+      "observed_failure": {
+        "bag_entries_after": 0,
+        "bag_entries_before": 2,
+        "choice": 4,
+        "legacy_relic": 0,
+        "native_relic": 84,
+        "owned": true,
+        "pending": true,
+        "phase": 18,
+        "return_phase": 12,
+        "room_open": 1,
+        "room_type": 4,
+        "treasure_state": 2,
+        "valid_world_relic_state": true,
+        "validate": false,
+        "validate_after_only_clearing_treasure_state_in_diagnostic_copy": true,
+        "world_valid_run": true
+      },
+      "repair": "Only permit the claimed native Treasure continuation when native room and relic state are active, Treasure room is open, treasure_state is 2, the legacy relic mask is zero, phase is WorldRelicChoice, a choice exists, and its return phase is Treasure. Existing state, room and relic validators still run; no indexed helper, State layout, RNG or codec changes.",
+      "root_cause": "The legacy phase!=Treasure predicate rejects an otherwise valid claimed native chest while its obtained relic awaits a WorldRelicChoice returning to Treasure. The obtain path already removed Dolly from both native bags.",
+      "source_tests_added": [
+        "actual native map room with explicit Dolly acquisition model injection; not a treasure rarity distribution claim",
+        "validate plus canonical save/load of opened and pending chest",
+        "Dolly granted once and removed from both native bags before selection",
+        "reject wrong return phase, nonpending choice, closed room, other room, legacy run, inactive native relic state, unclaimed chest",
+        "reject reopen/reclaim/leave while pending without mutation",
+        "select once after pending reload, add exactly one duplicate, keep one obtained relic",
+        "reject repeated claim and return through native room completion",
+        "all named RNG calls, validity flags and words preserved through pickup, save/load, selection and room exit"
+      ],
+      "receipt": "source10-dolly-repair-receipt.json",
+      "receipt_sha256": "7ce34023d96b370d3a0b6108d1eb96615b316a6c51830008f99760c50b7573a3",
+      "source_sha256": {
+        "state_validation.inc": "23490e460a85bda8726c31614a97b9a99f973380f48f9b51b6b298c89935879d",
+        "world_map_regression.cpp": "ba419dec54a53e43d404ce043ef4a52e86398cc34d7ae82fc5cc44493c8cbb30"
+      }
     }
   }
 }

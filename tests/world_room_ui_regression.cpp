@@ -104,6 +104,14 @@ static void capture(const char*name){
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
 static uint16_t scene_pixel(){a.render();return a.pixels[100*ScreenW+5];}
+static void rest_scene_pixel(const char*key){
+ if(actual_profile)return;const int id=a.content.world_image("rest_background",key);CHECK(id>=0);
+ const auto image=a.content.image(id);CHECK(image.pixels&&image.w==2&&image.h==2&&!image.alpha&&!image.palette);
+ const uint16_t expected=uint16_t(image.pixels[0]|uint16_t(image.pixels[1])<<8);
+ // The fixture's ordinary actor is transparent. This uncovered point must
+ // come from the exact registered scene, never the legacy fallback image.
+ CHECK(scene_pixel()==expected);
+}
 static void advance_to(unsigned tick){while(a.animation<tick)a.advance(33);CHECK(a.animation==tick);a.render();}
 static void treasure_alpha(unsigned chest,unsigned collection,unsigned banner,int y=0){
  CHECK(a.treasure_chest_opacity()==chest);CHECK(a.treasure_collection_opacity()==collection);CHECK(a.treasure_banner_opacity()==banner);CHECK(a.treasure_banner_offset()==y);
@@ -147,9 +155,9 @@ static void blocked_actions(UiAction action){
 static void ordinary_rest(){
  begin_room(WorldRoom::Rest);CHECK(a.camp_options(nullptr,0)==2);a.render();CHECK(choices()==2&&!world_rest_can_proceed(a.game));
  snapshot();a.input(Key::EndTurn);unchanged();click(HitKind::Choice,1);CHECK(a.game.phase==Phase::Upgrade);a.input(Key::Back);CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_used&&!world_rest_can_proceed(a.game));
- a.game.hp=30;present();const int heal_before=a.game.hp;const uint16_t lit=scene_pixel();capture("rest-overgrowth-choices");click(HitKind::Choice,0);
+ a.game.hp=30;present();const int heal_before=a.game.hp;const uint16_t lit=scene_pixel();rest_scene_pixel("OVERGROWTH");capture("rest-overgrowth-choices");click(HitKind::Choice,0);
  CHECK(a.game.phase==Phase::Camp&&a.game.hp>heal_before&&a.game.world.room_open&&world_rest_can_proceed(a.game));CHECK(!a.camp_options(nullptr,0));a.render();CHECK(!choices()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
- if(!actual_profile)CHECK(scene_pixel()!=lit);capture("rest-overgrowth-completed");blocked_actions(UiAction::LeaveCamp);
+ if(!actual_profile)CHECK(scene_pixel()!=lit);rest_scene_pixel("OVERGROWTH_DARK");capture("rest-overgrowth-completed");blocked_actions(UiAction::LeaveCamp);
  snapshot();CHECK(a.save_current_run());a.advance(250);CHECK(a.load_saved_run());CHECK(a.game.phase==Phase::Camp&&!a.camp_options(nullptr,0));a.render();unchanged();
  const int hp=a.game.hp;const unsigned rooms=a.game.world.rooms_completed;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Map&&!a.game.world.room_open&&a.game.hp==hp&&a.game.world.rooms_completed==rooms+1);snapshot();a.ui_action(UiAction::LeaveCamp);unchanged();
 }
@@ -171,6 +179,22 @@ static void rest_actor_layers(){
   CHECK(a.game.rng_cards==cards&&a.game.rng_world==world);
   for(unsigned i=0;i<WorldRngCount;i++){CHECK(streams[i].calls==a.game.world.rng[i].calls&&streams[i].good==a.game.world.rng[i].good);for(unsigned j=0;j<4;j++)CHECK(streams[i].words[j]==a.game.world.rng[i].words[j]);}
  }
+}
+static void combat_backgrounds(){
+ struct Region{reference::ActKind start;unsigned act;const char*key;};
+ const Region regions[]={{reference::ActKind::Overgrowth,0,"OVERGROWTH"},{reference::ActKind::Underdocks,0,"UNDERDOCKS"},{reference::ActKind::Overgrowth,1,"HIVE"},{reference::ActKind::Overgrowth,2,"GLORY"}};
+ for(const auto&r:regions){
+  begin_room(WorldRoom::Monster,r.start,r.act);const auto*encounter=encounter_definition(a.game.enemy_world.encounter);
+  CHECK(encounter&&a.content.world_image("backgrounds",encounter->key)<0);
+  const int expected=a.content.world_image("backgrounds",r.key);CHECK(expected>=0&&expected!=a.content.ui_image(U_BattleBackground));
+  snapshot();CHECK(a.combat_background()==expected);a.render();unchanged();
+ }
+ // This fixed real route reaches The Kin. Its dedicated scene must retain
+ // priority over the current region after region-key normalization.
+ begin_room(WorldRoom::Boss);const auto*encounter=encounter_definition(a.game.enemy_world.encounter);
+ CHECK(encounter&&!std::strcmp(encounter->key,"THE_KIN_BOSS"));
+ const int boss=a.content.world_image("backgrounds","THE_KIN_BOSS"),region=a.content.world_image("backgrounds","OVERGROWTH");
+ CHECK(boss>=0&&region>=0&&boss!=region);snapshot();CHECK(a.combat_background()==boss);a.render();unchanged();
 }
 static void paged_tent(){
  const RelicId relics[]={WorldRelicMiniatureTent,WorldRelicShovel,WorldRelicGirya,WorldRelicPumpkinCandle,WorldRelicMeatCleaver};
@@ -267,17 +291,17 @@ static void treasure_clock_wrap(){
  a.reset_presentation();cleared_treasure();treasure_alpha(128,255,255);CHECK(scene_pixel()==finished);unchanged();
 }
 static void region_captures(){
- struct Room{reference::ActKind start;unsigned act;const char*name;};
- const Room entries[]={{reference::ActKind::Underdocks,0,"underdocks"},{reference::ActKind::Overgrowth,1,"hive"},{reference::ActKind::Overgrowth,2,"glory"}};
+ struct Room{reference::ActKind start;unsigned act;const char*name;const char*lit;const char*dark;};
+ const Room entries[]={{reference::ActKind::Underdocks,0,"underdocks","UNDERDOCKS","UNDERDOCKS_DARK"},{reference::ActKind::Overgrowth,1,"hive","HIVE","HIVE_DARK"},{reference::ActKind::Overgrowth,2,"glory","GLORY","GLORY_DARK"}};
  for(const auto&e:entries){
-  begin_room(WorldRoom::Rest,e.start,e.act);char name[80]{};std::snprintf(name,sizeof name,"rest-%s-choices",e.name);capture(name);snapshot();a.render();a.advance(66);a.render();unchanged();click(HitKind::Choice,0);std::snprintf(name,sizeof name,"rest-%s-completed",e.name);capture(name);CHECK(!a.camp_options(nullptr,0));
+  begin_room(WorldRoom::Rest,e.start,e.act);rest_scene_pixel(e.lit);char name[80]{};std::snprintf(name,sizeof name,"rest-%s-choices",e.name);capture(name);snapshot();a.render();a.advance(66);a.render();unchanged();click(HitKind::Choice,0);std::snprintf(name,sizeof name,"rest-%s-completed",e.name);capture(name);CHECK(!a.camp_options(nullptr,0));rest_scene_pixel(e.dark);
   begin_room(WorldRoom::Treasure,e.start,e.act);std::snprintf(name,sizeof name,"treasure-%s-closed",e.name);capture(name);click(UiAction::TreasureOpen);advance_to(a.treasure_open_tick+50);std::snprintf(name,sizeof name,"treasure-%s-open",e.name);capture(name);snapshot();a.render();unchanged();
  }
 }
 int main(int argc,char**argv){
  std::vector<uint8_t>data;actual_profile=argc>1;if(actual_profile){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));CHECK(a.content.current_profile());
- ordinary_rest();rest_actor_layers();paged_tent();closed_chest();opening_and_reload();actual_claim();restored_claim();empty_chest();treasure_clock_wrap();region_captures();
+ ordinary_rest();rest_actor_layers();combat_backgrounds();paged_tent();closed_chest();opening_and_reload();actual_claim();restored_claim();empty_chest();treasure_clock_wrap();region_captures();
  a.treasure_presentation=3;a.treasure_open_tick=17;a.treasure_banner_tick=19;a.treasure_close_tick=23;a.treasure_chest_from=123;a.treasure_banner_from=456;a.treasure_banner_y=7;CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));cleared_treasure();
  std::printf("world room UI: %u checks passed; %s profile; stable rest choices and real treasure acquisition with presentation-only timing\n",checks,actual_profile?"actual":"synthetic");
 }
