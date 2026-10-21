@@ -75,6 +75,57 @@ __aeabi_idivmod:
     cmp r4,#0
     rsbmi r1,r1,#0
     pop {r4-r6,pc}
+
+.section .text.__aeabi_uldivmod,"ax",%progbits
+.global __aeabi_uldivmod
+.type __aeabi_uldivmod,%function
+/* RTABI32 5.2: numerator r0:r1, denominator r2:r3, quotient r0:r1,
+ * remainder r2:r3 (low word first). No runtime or hardware division needed.
+ * Keep the 65th remainder bit: large unsigned divisors can overflow a shift.
+ * As with uidivmod above, a zero divisor returns zero; retain the numerator
+ * as remainder. Presentation callers always supply a nonzero duration. */
+__aeabi_uldivmod:
+    orrs ip,r2,r3
+    moveq r2,r0
+    moveq r3,r1
+    moveq r0,#0
+    moveq r1,#0
+    bxeq lr
+    push {r4-r8,lr}
+    mov r4,#0
+    mov r5,#0
+    mov r6,#0
+    mov r7,#0
+    mov r8,#64
+1:
+    adds r0,r0,r0
+    adcs r1,r1,r1
+    adcs r4,r4,r4
+    adcs r5,r5,r5
+    bcs 2f
+    cmp r5,r3
+    cmpeq r4,r2
+    blo 3f
+2:
+    subs r4,r4,r2
+    sbc r5,r5,r3
+    adds r6,r6,r6
+    adc r7,r7,r7
+    orr r6,r6,#1
+    b 4f
+3:
+    adds r6,r6,r6
+    adc r7,r7,r7
+4:
+    subs r8,r8,#1
+    bne 1b
+    mov r0,r6
+    mov r1,r7
+    mov r2,r4
+    mov r3,r5
+    pop {r4-r8,pc}
+.size __aeabi_uldivmod,.-__aeabi_uldivmod
+.section .text,"ax",%progbits
 .global __aeabi_memcpy
 .global __aeabi_memcpy4
 .global __aeabi_memcpy8

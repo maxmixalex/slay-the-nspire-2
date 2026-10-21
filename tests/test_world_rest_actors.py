@@ -1,8 +1,10 @@
 """Asset-free rest actor placement, track dispatch and blend-plane regressions."""
 from copy import deepcopy
 from pathlib import Path
+import struct
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
@@ -11,8 +13,8 @@ from PIL import Image
 
 TOOLS = Path(__file__).resolve().parents[1] / 'tools'
 sys.path.insert(0, str(TOOLS))
-from world_rest_actors import ACT_CLIPS, REST_ACTORS, rest_actor_plan
-from world_rest_actor_assets import (_ActorRenderer, _actor_scene, _plane_image,
+from world_rest_actors import ACT_CLIPS, REST_ACTORS, ROOT_SCALE, rest_actor_plan
+from world_rest_actor_assets import (DARK_GRAY_MODULATE, _ActorRenderer, _actor_scene, _plane_image,
                                       sample_rest_actor)
 from world_room_profile import room_profile
 from world_room_shaders import RoomRenderer
@@ -33,21 +35,32 @@ def no_texture(pack, path):
 
 
 class Sampler:
+    def __init__(self, recipe=REST_ACTORS[0], layers=None):
+        self.recipe, self.layers = recipe, layers
+        self.bones, self.slots = [], []
+
+    def frame_layers(self, dark):
+        return self.layers if self.layers is not None else [
+            ('body', [0., 0., 1., 1.] if dark else [0., 1., 0., 1.], 0)]
+
     def metadata(self, resource):
-        return dict(source_version='4.2.37', available_skins=['default'],
-            clips=[dict(name=name, duration=6.666667, events=[], timeline_types=[])
+        return dict(source_version=self.recipe['source_version'], available_skins=['default'],
+            clips=[dict(name=name, duration=self.recipe['duration'], events=[], timeline_types=[])
                    for name in ACT_CLIPS] + [dict(name='_tracks/light_off', duration=0.)])
 
     def sample(self, resource, clip, times, **settings):
         self.request = dict(resource=resource, clip=clip, times=times, **settings)
-        return [dict(time=time, dark=bool(settings['tracks']), draw=[dict(slot='body')],
-                     bones=[], slots=[], draw_order=['body']) for time in times]
+        dark = bool(settings['tracks'])
+        draw = [dict(slot=slot) for slot, _, _ in self.frame_layers(dark)]
+        return [dict(time=time, dark=dark, draw=draw, bones=self.bones, slots=self.slots,
+                     draw_order=self.recipe.get('draw_order', [item['slot'] for item in draw]))
+                for time in times]
 
     def draw(self, resource, frame):
-        color = [0., 0., 1., 1.] if frame['dark'] else [0., 1., 0., 1.]
         return [(np.array([[0., 0.], [10., 0.], [10., -10.], [0., -10.]]),
                  np.array([[0., 0.], [1., 0.], [1., 1.], [0., 1.]]),
-                 np.array([[0, 1, 2], [2, 3, 0]]), np.array([[color]]), np.ones(4), 0)]
+                 np.array([[0, 1, 2], [2, 3, 0]]), np.array([[color]]), np.ones(4), blend)
+                for _, color, blend in self.frame_layers(frame['dark'])]
 
 
 def fixture(character='IRONCLAD'):
@@ -103,6 +116,18 @@ color = Color(1, 0, 0, 1)
     return profile, row, Pack(documents)
 
 
+def center_actor(profile, pack, recipe):
+    """Put synthetic geometry in view without changing any reviewed actor transform."""
+    origin = np.array([20., 20.]) - .5 * ROOT_SCALE[0] * np.asarray(recipe['position'])
+    profile['rest']['singleplayer_actor']['evaluated_origin'] = origin.tolist()
+    x, y = origin - profile['rest']['parent']['evaluated_origin']
+    for old, new in [('offset_left = 8', f'offset_left = {x}'),
+                     ('offset_right = 8', f'offset_right = {x}'),
+                     ('offset_top = 9', f'offset_top = {y}'),
+                     ('offset_bottom = 9', f'offset_bottom = {y}')]:
+        pack.documents['room.tscn'] = pack.documents['room.tscn'].replace(old, new)
+
+
 def composite(background, rgba, blend):
     src = np.asarray(rgba, float) / 255
     alpha = src[3]
@@ -152,11 +177,132 @@ class OriginalRestActors(unittest.TestCase):
         self.assertTrue(sampler.request['loop'])
         self.assertEqual(lit[0].getbbox(), (10, 12, 14, 16))
         self.assertEqual(lit[0].getpixel((10, 12)), (0, 255, 0, 255))
-        self.assertEqual(dark[0].getpixel((10, 12)), (0, 0, 255, 255))
+        self.assertEqual(dark[0].getpixel((10, 12)), (0, 0, 169, 255))
         self.assertEqual(metadata['diagnostics']['actor_root_position'], [0., 0.])
         self.assertEqual(metadata['diagnostics']['actor_root_scale'], [.760006, .760006])
         self.assertEqual(metadata['diagnostics']['singleplayer_origin'], [10., 12.])
         self.assertEqual(dark_metadata['shader_time'], 0.)
+        self.assertEqual(metadata['diagnostics']['singleplayer_modulate'], [1., 1., 1., 1.])
+        self.assertEqual(dark_metadata['diagnostics']['singleplayer_modulate'], list(DARK_GRAY_MODULATE))
+
+    def test_dark_gray_is_the_exact_godot_byte_to_binary32_color(self):
+        self.assertEqual([struct.unpack('<I', struct.pack('<f', channel))[0]
+                          for channel in DARK_GRAY_MODULATE], [0x3f29a9aa] * 3 + [0x3f800000])
+        self.assertEqual(DARK_GRAY_MODULATE[0], 0.6627451181411743)
+
+    def test_all_six_actor_material_chains_inherit_rgb_without_changing_alpha(self):
+        for recipe in REST_ACTORS:
+            with self.subTest(actor=recipe['key']):
+                profile, _, pack = fixture(recipe['scene_character'])
+                center_actor(profile, pack, recipe)
+                row = next(job for job in rest_actor_plan(profile)['clips'] if job['actor'] == recipe['key'])
+                row.update(frames=1, frame_ms=row['duration_ms'])
+                slot = 'orb' if recipe['key'] == 'DEFECT' else 'throne shadow' if recipe['key'] == 'REGENT' else 'body'
+                blend = 2 if recipe.get('material_overrides') else 0
+                sampler = Sampler(recipe, [(slot, [1., 1., 1., 127/255], blend)])
+                with patch('world_rest_actor_assets.room_profile', return_value=profile):
+                    lit, _ = sample_rest_actor(pack, row, sampler, texture_loader=no_texture)
+                    dark, info = sample_rest_actor(pack, dict(row, dark=True), sampler, texture_loader=no_texture)
+                self.assertEqual(lit[0].getpixel((22, 21)), (255, 255, 255, 127))
+                self.assertEqual(dark[0].getpixel((22, 21)), (169, 169, 169, 127))
+                self.assertEqual(dark[0].getpixel((0, 0)), (0, 0, 0, 0))
+                self.assertEqual(lit[0].getbbox(), dark[0].getbbox())
+                self.assertEqual(info['diagnostics']['singleplayer_container'], 'Room/BgContainer/Character_1')
+                self.assertEqual(info['diagnostics']['spines'][0]['effective_slot_blends'], {slot: 0})
+
+    def test_authored_parent_modulate_drift_is_rejected_for_both_lighting_states(self):
+        for tint in ('Color(0.9999999, 1, 1, 1)', 'Color(1, 1, 1, .5)'):
+            for dark in (False, True):
+                with self.subTest(tint=tint, dark=dark):
+                    profile, row, pack = fixture()
+                    pack.documents['room.tscn'] += 'modulate = ' + tint + '\n'
+                    renderer = _ActorRenderer(pack, 64, 64, (64, 64), no_texture, None, 0., 1)
+                    with self.assertRaisesRegex(SceneRenderError, 'authored modulate drift'):
+                        _actor_scene(renderer, REST_ACTORS[0], dict(row, dark=dark), profile)
+
+    def test_defect_tints_each_emission_before_additive_plane_saturation(self):
+        recipe = REST_ACTORS[2]
+        profile, _, pack = fixture('DEFECT')
+        center_actor(profile, pack, recipe)
+        row = next(job for job in rest_actor_plan(profile)['clips']
+                   if job['actor'] == 'DEFECT' and job['dark'] and job['plane'] == 1)
+        row.update(frames=1, frame_ms=row['duration_ms'])
+        for count, expected in ((1, 169), (2, 255)):
+            with self.subTest(emitting_slots=count):
+                sampler = Sampler(recipe, [(slot, [1., 0., 0., 1.], 1)
+                                           for slot in ('glow4', 'glow3')[:count]])
+                with patch('world_rest_actor_assets.room_profile', return_value=profile):
+                    images, metadata = sample_rest_actor(pack, row, sampler, texture_loader=no_texture)
+                self.assertEqual(images[0].getpixel((22, 21)), (expected, 0, 0, 255))
+                self.assertEqual(metadata['diagnostics']['ordered_plane_blends'], [0, 1, 0])
+                self.assertEqual(metadata['diagnostics']['plane_draw_commands'], count)
+        # A naive post-darken of the saturated two-slot plane would give 169.
+        self.assertNotEqual(round(255 * DARK_GRAY_MODULATE[0]), expected)
+
+    def test_necro_and_osty_attached_fire_replace_color_after_parent_tint(self):
+        shader = 'shaders/vfx/vfx_stepped_shader_fire_dark.tres'
+        for recipe in REST_ACTORS[4:]:
+            with self.subTest(actor=recipe['key']):
+                profile, _, pack = fixture('NECROBINDER')
+                center_actor(profile, pack, recipe)
+                row = next(job for job in rest_actor_plan(profile)['clips'] if job['actor'] == recipe['key'])
+                row.update(frames=1, frame_ms=row['duration_ms'])
+                pack.documents[shader] = '[gd_resource type="VisualShader" format=3]\n[resource]\ncode = "synthetic shader fixture"\n'
+                declarations = f'''[ext_resource type="Texture2D" path="res://fire.png" id="fire_texture"]
+[ext_resource type="Shader" path="res://{shader}" id="fire_shader"]
+[sub_resource type="ShaderMaterial" id="fire_material"]
+shader = ExtResource("fire_shader")
+'''
+                pack.documents['actor.tscn'] = pack.documents['actor.tscn'].replace('[node name="Actor"', declarations + '[node name="Actor"')
+                follower = 'SpineBoneNode' if recipe['key'] == 'NECROBINDER' else 'SpineSlotNode'
+                reference = 'bone_name = "flame"' if recipe['key'] == 'NECROBINDER' else 'slot_name = "body"'
+                pack.documents['actor.tscn'] += f'''[node name="Follower" type="{follower}" parent="{recipe['node']}"]
+{reference}
+[node name="Fire" type="Sprite2D" parent="{recipe['node']}/Follower"]
+texture = ExtResource("fire_texture")
+material = SubResource("fire_material")
+centered = false
+'''
+                blend = 2 if recipe.get('material_overrides') else 0
+                sampler = Sampler(recipe, [('body', [1., 1., 1., 127/255], blend)])
+                sampler.bones = [dict(name='flame', node_matrix=[1., 0., 30., 0., 1., 0.])]
+                sampler.slots = [dict(slot='body', node_matrix=[1., 0., 30., 0., 1., 0.])]
+                texture = lambda pack, path: Image.new('RGBA', (10, 10), (0, 0, 255, 255))
+                with patch('world_rest_actor_assets.room_profile', return_value=profile), \
+                        patch.object(RoomRenderer, '_verify_shader'), \
+                        patch.object(RoomRenderer, '_shader_texture', return_value=np.ones((1, 1, 4), np.float32)):
+                    lit, _ = sample_rest_actor(pack, row, sampler, texture_loader=texture)
+                    dark, info = sample_rest_actor(pack, dict(row, dark=True), sampler, texture_loader=texture)
+                self.assertEqual(lit[0].getpixel((22, 21)), (255, 255, 255, 127))
+                self.assertEqual(dark[0].getpixel((22, 21)), (169, 169, 169, 127))
+                fire_x = int(np.ceil(20 + .5 * ROOT_SCALE[0] * recipe['scale'][0] * 30)) + 1
+                self.assertEqual(lit[0].getpixel((fire_x, 21)), (255, 0, 0, 255))
+                self.assertEqual(dark[0].getpixel((fire_x, 21)), lit[0].getpixel((fire_x, 21)))
+                self.assertEqual(info['diagnostics']['room_shaders'][0]['kind'], 'dark_fire')
+                self.assertEqual(info['diagnostics']['room_shaders'][0]['sample_time'], 0.)
+
+    def test_dark_gray_renderer_change_invalidates_actor_cache_without_discarding_enemy_or_room_clips(self):
+        from build_world import ConversionCache, render_scope, source_fingerprint
+        from world_enemy_assets import manifest
+        source = source_fingerprint()
+        previous = dict(source, **{'tools/world_rest_actor_assets.py': 'previous renderer without parent tint'})
+        for model in manifest()['models']:
+            for kind in ('bounds', 'clip-reference', 'clip'):
+                with self.subTest(model=model['key'], kind=kind):
+                    self.assertEqual(render_scope(kind, source, model=model), render_scope(kind, previous, model=model))
+        for kind in ('texture', 'scene', 'atlas-tres', 'ui-component', 'map-clip', 'room-image', 'room-clip'):
+            self.assertEqual(render_scope(kind, source), render_scope(kind, previous))
+        current_scope, old_scope = [render_scope('rest-actor-clip', version) for version in (source, previous)]
+        self.assertNotEqual(current_scope, old_scope)
+        jobs = rest_actor_plan()['clips']
+        self.assertEqual((len(jobs), sum(job['frames'] for job in jobs)), (48, 8340))
+        self.assertEqual((sum(job['dark'] for job in jobs), sum(job['frames'] for job in jobs if job['dark'])), (24, 4170))
+        with TemporaryDirectory() as directory:
+            cache = ConversionCache(Path(directory), {'schema': 2, 'input': 'synthetic'})
+            settings, metadata, payload = jobs[1], {'frames': jobs[1]['frames']}, b'old actor pixels'
+            cache.put('clip', settings, metadata, payload, scope=old_scope)
+            self.assertEqual(cache.get('clip', settings, scope=old_scope), (metadata, payload))
+            self.assertIsNone(cache.get('clip', settings, scope=current_scope))
 
     def test_necrobinder_keeps_authored_osty_position_and_separate_child(self):
         profile, row, pack = fixture('NECROBINDER')

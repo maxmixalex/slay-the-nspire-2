@@ -16,6 +16,14 @@ from world_room_shaders import RoomRenderer
 from world_scene_assets import Property, SceneRenderError, _property, _vector
 
 
+# Godot 4.5.1-stable Colors.cs defines DarkGray as 0xA9A9A9FF;
+# Color(uint) divides each byte by 255.0f. Keep that binary32 value, not a
+# rounded decimal or a linear-light conversion of these LDR numeric channels.
+# https://github.com/godotengine/godot/blob/4.5.1-stable/modules/mono/glue/GodotSharp/GodotSharp/Core/Colors.cs
+# https://github.com/godotengine/godot/blob/4.5.1-stable/modules/mono/glue/GodotSharp/GodotSharp/Core/Color.cs
+DARK_GRAY_MODULATE = (float(np.float32(169) / np.float32(255)),) * 3 + (1.,)
+
+
 def _child(node, name):
     matches = [child for child in node.children if child.name == name]
     if len(matches) != 1:
@@ -94,6 +102,16 @@ def _actor_scene(renderer, recipe, row, profile):
     _same(np.asarray(parent_origin) + container_origin, single['evaluated_origin'], 'single-player origin')
     _same(_vector(_property(container.props, 'scale', (1, 1))), single['scale'], 'single-player scale')
     _same(container_size, [0., 0.], 'single-player container size')
+    if not np.array_equal(_vector(_property(container.props, 'modulate', (1, 1, 1, 1)), 4), np.ones(4)):
+        raise SceneRenderError('Original rest single-player authored modulate drift')
+    if row['dark']:
+        # NRestSiteRoom.ExtinguishFireIfAble sets Character_1..4.Modulate
+        # after HideFlameGlow. Inherit this before individual draw/plane
+        # blending; post-darkening a complete additive plane loses saturated
+        # emission. The reviewed attached fire shaders replace COLOR and
+        # therefore intentionally ignore this inherited input themselves.
+        container.props['modulate'] = Property(
+            'Color(' + ', '.join(map(repr, DARK_GRAY_MODULATE)) + ')', container.scope)
     actor = renderer.loader.instantiate(row['path'])
     _same(_vector(_property(actor.props, 'position')), recipe['root_position'], 'authored actor position')
     _same(_vector(_property(actor.props, 'scale', (1, 1))), ROOT_SCALE, 'actor root scale')
@@ -120,6 +138,11 @@ def _actor_scene(renderer, recipe, row, profile):
         actor=row['actor'], actor_node=row['node'], room_parent_origin=list(parent_origin),
         room_parent_size=list(parent_size), singleplayer_origin=list(single['evaluated_origin']),
         singleplayer_scale=list(single['scale']), actor_root_position=[0., 0.],
+        singleplayer_container=room.name + '/' + parent.name + '/' + container.name,
+        singleplayer_modulate=_vector(_property(container.props, 'modulate', (1, 1, 1, 1)), 4).tolist(),
+        modulation_policy='inherited_before_raster_and_ordered_plane_composition',
+        attached_fire_modulation='reviewed_fragment_replaces_COLOR_without_inherited_modulate'
+            if recipe['character'] == 4 else None,
         actor_root_scale=list(ROOT_SCALE), spine_position=list(recipe['position']),
         spine_scale=list(recipe['scale']), removed_runtime_meshes=removed,
         material_overrides=[dict(source_slot_blend=source, effective_blend=effective,

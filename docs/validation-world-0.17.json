@@ -463,6 +463,113 @@
       "log": "source9-wasm-2bf4cbf5422f.log",
       "log_sha256": "5c8fee9a1552d14516095f3bfa545b11b310198d5920dde236cb53ebaecdbc98",
       "source_sha256": "4a73e410b5552913ab20c6ee3e823308d01c2990e1b68ce3b22b61e905813aad"
+    },
+    {
+      "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+      "command": [
+        "env",
+        "ASAN_OPTIONS=detect_leaks=0",
+        "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+        "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+        "-S",
+        ".",
+        "-B",
+        "build/native",
+        "-G",
+        "Ninja",
+        "-DBUILD_TESTING=ON",
+        "-DSPIRE_X11=ON",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DCMAKE_MAKE_PROGRAM=/tmp/nspire-python-deps/bin/ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++",
+        "-DX11_X11_INCLUDE_PATH=/tmp/nspire-llvm/usr/include",
+        "-DX11_X11_LIB=/lib/x86_64-linux-gnu/libX11.so.6",
+        "-DCMAKE_CXX_FLAGS=-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -fmax-errors=10",
+        "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined -no-pie"
+      ],
+      "cwd": "/tmp/nspire-stage-1d4133ff",
+      "ended_at": "2026-10-21T03:21:45.746759+00:00",
+      "log": "source10-native-configure-03fe9e9d93a1.log",
+      "log_sha256": "1d1aed1af72acb56eaeb388804643c2824eb13284fe702308dd85308fe13a5f8",
+      "pid": 3,
+      "returncode": 0,
+      "schema": 1,
+      "source_changed": false,
+      "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+      "started_at": "2026-10-21T03:21:43.028166+00:00",
+      "status": "passed",
+      "journal": "source10-native-configure-03fe9e9d93a1.json",
+      "journal_sha256": "8b5ff4eae0df714a287d0667522af754959943d87454c9c65289fa97674db009",
+      "elapsed_seconds": 2.718593
+    },
+    {
+      "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+      "command": [
+        "env",
+        "ASAN_OPTIONS=detect_leaks=0",
+        "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+        "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+        "--build",
+        "build/native",
+        "-j3"
+      ],
+      "cwd": "/tmp/nspire-stage-1d4133ff",
+      "ended_at": "2026-10-21T03:24:56.147511+00:00",
+      "log": "source10-native-build-5da49c7ec706.log",
+      "log_sha256": "77a3283198e69020374ae876ecd32fe3c650ae6327711117801efea1db89a63d",
+      "pid": 3,
+      "returncode": 0,
+      "schema": 1,
+      "source_changed": false,
+      "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+      "started_at": "2026-10-21T03:22:05.357410+00:00",
+      "status": "passed",
+      "journal": "source10-native-build-5da49c7ec706.json",
+      "journal_sha256": "e1546945f679d9bcb5cc1767f27f48a890ed575df8be0f6a242e1104f44541e9",
+      "elapsed_seconds": 170.790101
+    },
+    {
+      "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+      "command": [
+        "python3",
+        "tools/build_ndless.py"
+      ],
+      "cwd": "/tmp/nspire-stage-1d4133ff",
+      "ended_at": "2026-10-21T03:22:37.624370+00:00",
+      "log": "source10-arm-efc140e5ecf5.log",
+      "log_sha256": "2f796182530d7dc8df4dfc0ed8a82210a41ab51ab8d83b6e216bb7292cd30bde",
+      "pid": 3,
+      "returncode": 1,
+      "schema": 1,
+      "source_changed": false,
+      "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+      "started_at": "2026-10-21T03:21:34.111374+00:00",
+      "status": "failed",
+      "journal": "source10-arm-efc140e5ecf5.json",
+      "journal_sha256": "d59e41cc8031e7b999001f16727c1d3ce6b69aa166d462aa01246e4032553aba",
+      "elapsed_seconds": 63.512996
+    },
+    {
+      "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+      "command": [
+        "python3",
+        "tools/build_web.py",
+        "--compile-only"
+      ],
+      "cwd": "/tmp/nspire-stage-1d4133ff",
+      "ended_at": "2026-10-21T03:22:55.085906+00:00",
+      "log": "source10-wasm-ac50dcebecd2.log",
+      "log_sha256": "4b3a4c1ec17fe9a52eff3cdce363e81417c1fafe038b1488f02d8a008c83e4e1",
+      "pid": 3,
+      "returncode": 0,
+      "schema": 1,
+      "source_changed": false,
+      "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+      "started_at": "2026-10-21T03:21:34.103875+00:00",
+      "status": "passed",
+      "journal": "source10-wasm-ac50dcebecd2.json",
+      "journal_sha256": "cc3b57db2246dc1cac679ba99dbfab2f77caa278d953b672a6db1d50ab1b196e",
+      "elapsed_seconds": 80.982031
     }
   ],
   "limits": [
@@ -1153,5 +1260,439 @@
         "world_map_regression.cpp": "ba419dec54a53e43d404ce043ef4a52e86398cc34d7ae82fc5cc44493c8cbb30"
       }
     }
+  },
+  "source10_formal_validation": {
+    "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+    "tree": "f8ad9f8a63bf5fb58de12a0679c8de51ea870cd2",
+    "remote_readback_receipt_sha256": "bb90e6385f0e6fe2b47eb72f31532fba17fb12f493d8a635dfdba7bb200a41e7",
+    "remote_paths_verified": 439,
+    "remote_changed_contents_verified": 15,
+    "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+    "build_stages": [
+      {
+        "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+        "command": [
+          "env",
+          "ASAN_OPTIONS=detect_leaks=0",
+          "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+          "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+          "-S",
+          ".",
+          "-B",
+          "build/native",
+          "-G",
+          "Ninja",
+          "-DBUILD_TESTING=ON",
+          "-DSPIRE_X11=ON",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DCMAKE_MAKE_PROGRAM=/tmp/nspire-python-deps/bin/ninja",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++",
+          "-DX11_X11_INCLUDE_PATH=/tmp/nspire-llvm/usr/include",
+          "-DX11_X11_LIB=/lib/x86_64-linux-gnu/libX11.so.6",
+          "-DCMAKE_CXX_FLAGS=-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -fmax-errors=10",
+          "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined -no-pie"
+        ],
+        "cwd": "/tmp/nspire-stage-1d4133ff",
+        "ended_at": "2026-10-21T03:21:45.746759+00:00",
+        "log": "source10-native-configure-03fe9e9d93a1.log",
+        "log_sha256": "1d1aed1af72acb56eaeb388804643c2824eb13284fe702308dd85308fe13a5f8",
+        "pid": 3,
+        "returncode": 0,
+        "schema": 1,
+        "source_changed": false,
+        "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+        "started_at": "2026-10-21T03:21:43.028166+00:00",
+        "status": "passed",
+        "journal": "source10-native-configure-03fe9e9d93a1.json",
+        "journal_sha256": "8b5ff4eae0df714a287d0667522af754959943d87454c9c65289fa97674db009",
+        "elapsed_seconds": 2.718593
+      },
+      {
+        "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+        "command": [
+          "env",
+          "ASAN_OPTIONS=detect_leaks=0",
+          "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+          "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+          "--build",
+          "build/native",
+          "-j3"
+        ],
+        "cwd": "/tmp/nspire-stage-1d4133ff",
+        "ended_at": "2026-10-21T03:24:56.147511+00:00",
+        "log": "source10-native-build-5da49c7ec706.log",
+        "log_sha256": "77a3283198e69020374ae876ecd32fe3c650ae6327711117801efea1db89a63d",
+        "pid": 3,
+        "returncode": 0,
+        "schema": 1,
+        "source_changed": false,
+        "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+        "started_at": "2026-10-21T03:22:05.357410+00:00",
+        "status": "passed",
+        "journal": "source10-native-build-5da49c7ec706.json",
+        "journal_sha256": "e1546945f679d9bcb5cc1767f27f48a890ed575df8be0f6a242e1104f44541e9",
+        "elapsed_seconds": 170.790101
+      },
+      {
+        "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+        "command": [
+          "python3",
+          "tools/build_ndless.py"
+        ],
+        "cwd": "/tmp/nspire-stage-1d4133ff",
+        "ended_at": "2026-10-21T03:22:37.624370+00:00",
+        "log": "source10-arm-efc140e5ecf5.log",
+        "log_sha256": "2f796182530d7dc8df4dfc0ed8a82210a41ab51ab8d83b6e216bb7292cd30bde",
+        "pid": 3,
+        "returncode": 1,
+        "schema": 1,
+        "source_changed": false,
+        "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+        "started_at": "2026-10-21T03:21:34.111374+00:00",
+        "status": "failed",
+        "journal": "source10-arm-efc140e5ecf5.json",
+        "journal_sha256": "d59e41cc8031e7b999001f16727c1d3ce6b69aa166d462aa01246e4032553aba",
+        "elapsed_seconds": 63.512996
+      },
+      {
+        "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+        "command": [
+          "python3",
+          "tools/build_web.py",
+          "--compile-only"
+        ],
+        "cwd": "/tmp/nspire-stage-1d4133ff",
+        "ended_at": "2026-10-21T03:22:55.085906+00:00",
+        "log": "source10-wasm-ac50dcebecd2.log",
+        "log_sha256": "4b3a4c1ec17fe9a52eff3cdce363e81417c1fafe038b1488f02d8a008c83e4e1",
+        "pid": 3,
+        "returncode": 0,
+        "schema": 1,
+        "source_changed": false,
+        "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+        "started_at": "2026-10-21T03:21:34.103875+00:00",
+        "status": "passed",
+        "journal": "source10-wasm-ac50dcebecd2.json",
+        "journal_sha256": "cc3b57db2246dc1cac679ba99dbfab2f77caa278d953b672a6db1d50ab1b196e",
+        "elapsed_seconds": 80.982031
+      }
+    ],
+    "native_build_steps": 122,
+    "native_full_46": {
+      "journal": "source10-native-all46-b73aa6efa60d.json",
+      "status_at_source11_stage": "running",
+      "result": "unfinished; do not count as passed",
+      "per_test_timeout": 1200,
+      "stage_timeout": 7200
+    },
+    "python_summary": {
+      "schema": 1,
+      "scope": "Source10 frozen Python converter, room shader/actor, cache and generated profile validation; no native/C++ run, private conversion or GPU oracle.",
+      "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+      "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+      "source_changed": false,
+      "unique_tests_passed": 75,
+      "test_groups": {
+        "test_world_prefetch": 2,
+        "test_world_raster": 3,
+        "test_world_rest_actors": 9,
+        "test_world_room_assets": 5,
+        "test_world_room_shaders": 13,
+        "test_world_scene_assets": 18,
+        "test_world_ui_assets": 4,
+        "world_pack_regression": 21
+      },
+      "dependency_environment": {
+        "PYTHONPATH": "/tmp/nspire-python-deps:tools",
+        "python": "3.12.14",
+        "Pillow": "12.3.0",
+        "numpy": "2.3.5",
+        "lz4": "4.4.5",
+        "module_paths": {
+          "PIL": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/PIL/__init__.py",
+          "numpy": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/numpy/__init__.py",
+          "lz4": "/tmp/nspire-python-deps/lz4/__init__.py"
+        }
+      },
+      "first_attempt": "Missing lz4 in bare python3 environment; discovery recorded 52 passing tests and one failed import (two prefetch cases did not load); pack and plan failed before execution. Failed journals remain retained. These 52 are not additional coverage.",
+      "records": [
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-p",
+            "test_world*.py",
+            "-v"
+          ],
+          "started_at": "2026-10-21T03:22:09.727165+00:00",
+          "ended_at": "2026-10-21T03:22:13.361317+00:00",
+          "status": "failed",
+          "returncode": 1,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "c6131910469e1f8398278b40f0c979a510bd0c82ecd1c3b91d9d0dae2bc773fe",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-world54-0236aa6d6428.json",
+          "journal_sha256": "5d39d8ef16605f815cba26e504ccef1ece24954b9795b45837b37bc5ea28431b",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-world54-0236aa6d6428.log",
+          "elapsed_seconds": 3.634152,
+          "passed_groups": {
+            "test_world_raster": 3,
+            "test_world_rest_actors": 9,
+            "test_world_room_assets": 5,
+            "test_world_room_shaders": 13,
+            "test_world_scene_assets": 18,
+            "test_world_ui_assets": 4
+          }
+        },
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "python3",
+            "tests/world_pack_regression.py",
+            "-v"
+          ],
+          "started_at": "2026-10-21T03:22:09.863777+00:00",
+          "ended_at": "2026-10-21T03:22:11.317140+00:00",
+          "status": "failed",
+          "returncode": 1,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "2b2bc5189f648f4d0bf3863d1a54f3b926960eed965b50b6c97657fb0f75c71b",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-pack21-9d573be4dc14.json",
+          "journal_sha256": "2782a9992c119db3dad9b022240978295c15a5da9ddddb6ccffefdd61dd73076",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-pack21-9d573be4dc14.log",
+          "elapsed_seconds": 1.453363,
+          "passed_groups": {}
+        },
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "python3",
+            "tools/world_ui_profile.py"
+          ],
+          "started_at": "2026-10-21T03:22:09.561608+00:00",
+          "ended_at": "2026-10-21T03:22:10.415204+00:00",
+          "status": "passed",
+          "returncode": 0,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "7183e833de71b898628bf39be558997347e4711c02f6dd7f7005697521d68378",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-profile-validation-b5c62753489e.json",
+          "journal_sha256": "c8334a1eceaee027e44949ef4a973b144643e15a169dcab53ac374a2762de98e",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-profile-validation-b5c62753489e.log",
+          "elapsed_seconds": 0.853596,
+          "passed_groups": {}
+        },
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "python3",
+            "tools/build_world.py",
+            "--plan"
+          ],
+          "started_at": "2026-10-21T03:22:10.406321+00:00",
+          "ended_at": "2026-10-21T03:22:11.541206+00:00",
+          "status": "failed",
+          "returncode": 1,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "70b70907f71bf27b238dd93b278ad25b4779074899942fc5de3c63e1ba24b712",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-directory-plan-d7843ae5943e.json",
+          "journal_sha256": "b5449b1445cd6a38873b66e9d43c481978f185e940a0d021be41d5a884dee104",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-directory-plan-d7843ae5943e.log",
+          "elapsed_seconds": 1.134885,
+          "passed_groups": {}
+        },
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "env",
+            "PYTHONPATH=/tmp/nspire-python-deps:tools",
+            "python3",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-p",
+            "test_world*.py",
+            "-v"
+          ],
+          "started_at": "2026-10-21T03:23:02.672539+00:00",
+          "ended_at": "2026-10-21T03:23:07.928492+00:00",
+          "status": "passed",
+          "returncode": 0,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "f9c7123c8e9bfaff511859bafaf3f7685dfc07c7670c77cfacf3f5485b8cfe6e",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-world54-env-9403e2461700.json",
+          "journal_sha256": "33aea0f6167278470027e2102d78c32eb7bac575f3ee24e904c1b8ffdd62231e",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-world54-env-9403e2461700.log",
+          "elapsed_seconds": 5.255953,
+          "passed_groups": {
+            "test_world_prefetch": 2,
+            "test_world_raster": 3,
+            "test_world_rest_actors": 9,
+            "test_world_room_assets": 5,
+            "test_world_room_shaders": 13,
+            "test_world_scene_assets": 18,
+            "test_world_ui_assets": 4
+          }
+        },
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "env",
+            "PYTHONPATH=/tmp/nspire-python-deps:tools",
+            "python3",
+            "tests/world_pack_regression.py",
+            "-v"
+          ],
+          "started_at": "2026-10-21T03:23:02.723028+00:00",
+          "ended_at": "2026-10-21T03:23:06.552616+00:00",
+          "status": "passed",
+          "returncode": 0,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "7744d5ed09edd73d1ac86daec4ff05ab0cbda074d98ba69c1869b4871b95e3c8",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-pack21-env-ed066a252798.json",
+          "journal_sha256": "d296b7ca68a8d32d848aa07e5993fbd6fdb99c4d34d425be983f2cf9d4e38b79",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-python-pack21-env-ed066a252798.log",
+          "elapsed_seconds": 3.829588,
+          "passed_groups": {
+            "__main__": 21
+          }
+        },
+        {
+          "checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+          "command": [
+            "env",
+            "PYTHONPATH=/tmp/nspire-python-deps:tools",
+            "python3",
+            "tools/build_world.py",
+            "--plan"
+          ],
+          "started_at": "2026-10-21T03:23:02.775129+00:00",
+          "ended_at": "2026-10-21T03:23:05.110183+00:00",
+          "status": "passed",
+          "returncode": 0,
+          "source_sha256": "a4c0157bfb939c477882268d4b401de6e3ea1d5c1753407034f322662fd73db7",
+          "source_changed": false,
+          "log_sha256": "2eef39cd6e6d84e5a7298b73b16c3a58c7aa9c8ce00beca22f65764f32afdffc",
+          "journal": "/tmp/nspire-stage-1d4133ff/build/journal/source10-directory-plan-env-ca43327e6815.json",
+          "journal_sha256": "181a6763e711bd1087737a03648817070b73c857dad9e88d5acaa13f596426fb",
+          "log": "/tmp/nspire-stage-1d4133ff/build/journal/source10-directory-plan-env-ca43327e6815.log",
+          "elapsed_seconds": 2.335054,
+          "passed_groups": {}
+        }
+      ],
+      "directory_plan": {
+        "cards": 558,
+        "strings": 6100,
+        "auxiliary_images": 1170,
+        "clips": 1695,
+        "original_used_enemy_clips": 732,
+        "enemy_variants": 1600,
+        "enemy_frames": 33210,
+        "map_clips": 3,
+        "map_frames": 540,
+        "room_clips": 6,
+        "room_frames": 99,
+        "rest_actor_clips": 48,
+        "rest_actor_frames": 8340,
+        "expected_images": 45719,
+        "maximum_directory_bytes": 1345360,
+        "directory_limit": 2097152,
+        "file_limit": 268435456,
+        "payload_size": "Unknown until all original frames are losslessly encoded"
+      },
+      "all_required_groups_passed": true,
+      "remaining": "Native/ARM/WASM and actual private pack rendering are separate gates managed by the parent. No full-pack or UI-fidelity result claimed."
+    },
+    "python_summary_sha256": "18c19b13a4c5fee4173cbc4261545f921e93794d01178eb870e1e1b3a6dd9867",
+    "wasm": {
+      "bytes": 4795012,
+      "sha256": "97a40b6f5111ac9b4fbb429eceb752e2bf584f3867cb095fbf57321990f966d1",
+      "packaged": false
+    },
+    "arm_failure": "Undefined __aeabi_uldivmod from full-period rest/treasure frame normalization; all compilation reached linker. Source11 supplies ARM EABI helper without changing C++."
+  },
+  "source11_short_diagnostics": {
+    "arm_helper": {
+      "kind": "isolated_ARM_helper_diagnostic_before_source11_checkpoint",
+      "parent_checkpoint": "1d4133ff49c6a50720c9a8ffa29cdaa3f936d040",
+      "started_at": "2026-10-21T03:27:58.545044+00:00",
+      "source_files": {
+        "platform/ndless/entry.S": "33e5ec4febf9e3301fd5622b33937d2d9edf2c950928e6f78179c77164e4d9ba",
+        "tests/arm_division_regression.py": "7c146f3d4a8f4582383c4515778f768aa0677d547a29c58e04887e33d52f038d"
+      },
+      "status": "passed",
+      "commands": [
+        {
+          "command": [
+            "/tmp/nspire-task-toolchain/clang++",
+            "--target=arm-none-eabi",
+            "-mcpu=arm926ej-s",
+            "-marm",
+            "-c",
+            "platform/ndless/entry.S",
+            "-o",
+            "/workspace/scratch/4b16fc0ccb5c/source11-arm-helper-short-20261021/entry.o"
+          ],
+          "returncode": 0,
+          "seconds": 2.4766391209996073
+        },
+        {
+          "command": [
+            "/tmp/nspire-task-toolchain/ld.lld",
+            "--entry=__aeabi_uldivmod",
+            "--gc-sections",
+            "-Ttext=0x10000",
+            "/workspace/scratch/4b16fc0ccb5c/source11-arm-helper-short-20261021/entry.o",
+            "-o",
+            "/workspace/scratch/4b16fc0ccb5c/source11-arm-helper-short-20261021/division.elf"
+          ],
+          "returncode": 0,
+          "seconds": 0.36308945099881385
+        },
+        {
+          "command": [
+            "python3",
+            "tests/arm_division_regression.py",
+            "/workspace/scratch/4b16fc0ccb5c/source11-arm-helper-short-20261021/division.elf"
+          ],
+          "returncode": 0,
+          "seconds": 3.6787980279987096
+        }
+      ],
+      "ended_at": "2026-10-21T03:28:05.068973+00:00",
+      "source_changed": false,
+      "log_sha256": "5667b347ff7429e362a880d803206827c799f961a9e429370b651ab4cf853e8c",
+      "artifacts": {
+        "entry.o": "5bde41f2ebb4e3b0fd1755f8fef703b04f8d6e461ae9fe2ae38ae6992452aaf0",
+        "division.elf": "642f91c2a39cbcb26046dd5647e044777af1718b342a815c493b2f9e625f629a"
+      },
+      "receipt_sha256": "b9065e6347951d0dc6a478afc146857833679cbb08c5ab38afc7b5715db31d9c",
+      "vectors": 5249,
+      "helper_bytes": 140,
+      "emulator": "Unicorn 2.1.2 ARM926",
+      "oracle": "Python divmod",
+      "boundary": "Isolated helper ELF only, not full production runtime or calculator performance."
+    },
+    "rest_actor_tint": {
+      "receipt": "source11-rest-darkgray-evidence-20261021.json",
+      "receipt_sha256": "3e9f95e248fc620c35354bec7fc8aec3841d06f5ce4b9c88293c5b8e98864864",
+      "file_check_receipt_sha256": "1e5ea08c64d03afd11f300be292dccae74fb19d39e308efe1f1f337bf4f002d0",
+      "log_sha256": "2bdd81d7a7c3066b5179049d0b08f26805276c7f0f7081a3d17bb251b12ec7eb",
+      "tests_passed": 15,
+      "seconds": 4.559,
+      "boundary": "Synthetic targeted actor/material/cache tests, not actual complete private rendering or GPU comparison."
+    },
+    "release_ready": false
   }
 }
