@@ -2,6 +2,13 @@
 
 Reference remains the owner's pinned v0.111.0 / 41cef1ea installation. User order: all single-player events and enemies; playable original maps; original UI targeting 95%+ fidelity after justified adaptation to 320 × 240. Audio, multiplayer and Timeline remain excluded. Remote CI stays disabled. Original assembly/PCK data, disassembly, fonts and derived assets stay private.
 
+The owner subsequently requested investigation of Sprite Dicing, streaming and a
+**30–40 MB calculator installation**. The actual complete lossless pack is
+77.10 MiB; this newer target is not yet reached. Storage and access evidence,
+the shared decoded-image cache and bounded compression experiments are tracked
+in [resource-budget-0.17.md](resource-budget-0.17.md). Pixel/frame changes must
+not be disguised as the allowed screen-readability adaptation.
+
 ## Work boundaries
 
 | Area | Owner | Required result |

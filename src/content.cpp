@@ -5,33 +5,93 @@ namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
 namespace {
-// A view lives until its bounded cache slot is reused. Only directories
-// are resident; file payloads use these bounded shared decoding buffers.
+// A view lives until its entry is evicted or its owner is reopened/failed.
+// Entries never move: unrelated allocations and group-cache reuse preserve
+// every surviving view. All sizes and owners share the bounded image pool;
+// callers must finish using a view before unbounded further image requests.
 constexpr unsigned MaxImageBytes=320u*240u*8u+2u*240u;
 constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
-static uint8_t tiny_pixels[64][4096],small_pixels[16][32768],medium_pixels[8][131072],large_pixels[2][MaxImageBytes];
+constexpr unsigned ImageBufferBudget=64u*4096u+16u*32768u+8u*131072u+2u*MaxImageBytes;
+constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=90;
+alignas(4) static uint8_t image_pixels[ImagePages*ImagePageBytes];
 static uint8_t encoded_pixels[MaxEncodedImage];
 #include "content_tiles.inc"
 // Keep a directory index in the existing key word. The immutable, resident
 // descriptor supplies offset, geometry, stored format and encoded length
-// without enlarging the cache or adding range reads during lookup.
-struct ImageCache {const Content* owner{};uint32_t image{};unsigned format{};};
-static ImageCache image_cache[90];static unsigned image_cursor[4]{};
-static uint8_t* image_buffer(unsigned slot){return slot<64?tiny_pixels[slot]:slot<80?small_pixels[slot-64]:slot<88?medium_pixels[slot-80]:large_pixels[slot-88];}
-static unsigned image_slot(unsigned size){
-    if(size<=4096)return image_cursor[0]++%64;
-    if(size<=32768)return 64+image_cursor[1]++%16;
-    if(size<=131072)return 80+image_cursor[2]++%8;
-    return 88+image_cursor[3]++%2;
+// without copying the descriptor or adding range reads during lookup.
+struct ImageCache {
+    const Content* owner{};uint32_t image{},age{};
+    uint16_t first{};uint8_t pages{},format{};
+};
+static ImageCache image_cache[ImageEntries];
+static uint32_t image_used[(ImagePages+31)/32]{},image_age=0;
+static_assert(ImagePages==748&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
+              "Image page indexes and lengths must fit the bounded entry");
+static_assert(sizeof image_pixels+sizeof image_cache+sizeof image_used+sizeof image_age<=
+              ImageBufferBudget+ImageEntries*(sizeof(const Content*)+2*sizeof(unsigned))+4*sizeof(unsigned),
+              "Image pixels and bookkeeping must not exceed the previous four-tier cache");
+static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
+static void discard_image(ImageCache& cache){
+    for(unsigned i=cache.first;i<unsigned(cache.first)+cache.pages;++i)image_used[i/32]&=~(uint32_t(1)<<(i%32));
+    cache={};
 }
+static uint32_t next_image_age(){
+    if(image_age==0xffffffffu){
+        // Preserve LRU order across the bounded counter's wrap. Empty and
+        // unpublished reservations have no age and cannot become victims.
+        uint8_t order[ImageEntries];unsigned count=0;
+        for(unsigned i=0;i<ImageEntries;++i)if(image_cache[i].owner){
+            unsigned at=count;
+            while(at&&image_cache[order[at-1]].age>image_cache[i].age){order[at]=order[at-1];--at;}
+            order[at]=uint8_t(i);++count;
+        }
+        for(unsigned i=0;i<count;++i)image_cache[order[i]].age=i+1;
+        image_age=count;
+    }
+    return ++image_age;
+}
+static ImageCache* reserve_image(unsigned size){
+    if(!size||size>MaxImageBytes)return nullptr;
+    const unsigned pages=(size+ImagePageBytes-1)/ImagePageBytes;
+    // At most all 90 published entries can be evicted. No compaction or
+    // allocation moves another entry while a caller still holds its view.
+    for(unsigned attempt=0;attempt<=ImageEntries;++attempt){
+        unsigned run=0,first=ImagePages;
+        for(unsigned i=0;i<ImagePages;++i){
+            run=(image_used[i/32]&(uint32_t(1)<<(i%32)))?0:run+1;
+            if(run==pages){first=i+1-pages;break;}
+        }
+        if(first<ImagePages)for(auto& cache:image_cache)if(!cache.pages){
+            cache.first=uint16_t(first);cache.pages=uint8_t(pages);
+            for(unsigned i=first;i<first+pages;++i)image_used[i/32]|=uint32_t(1)<<(i%32);
+            return &cache;
+        }
+        ImageCache* victim=nullptr;
+        for(auto& cache:image_cache)if(cache.owner&&(!victim||cache.age<victim->age))victim=&cache;
+        if(!victim)return nullptr;
+        discard_image(*victim);
+    }
+    return nullptr;
+}
+struct ImageReservation {
+    ImageCache* cache;
+    explicit ImageReservation(unsigned size):cache(reserve_image(size)){}
+    ImageReservation(const ImageReservation&)=delete;
+    ImageReservation& operator=(const ImageReservation&)=delete;
+    ~ImageReservation(){if(cache&&!cache->owner)discard_image(*cache);}
+    uint8_t* bytes()const{return cache?image_buffer(*cache):nullptr;}
+    void publish(const Content* owner,uint32_t image,unsigned format){
+        cache->image=image;cache->format=uint8_t(format);cache->age=next_image_age();cache->owner=owner;
+    }
+};
 struct GlyphCache {const Content* owner{};uint32_t glyph{};uint8_t bytes[MaxGlyphBytes]{};};
 static GlyphCache glyph_cache[64];static unsigned glyph_cursor=0;
 struct StringCache {const Content* owner{};uint32_t offset{};char bytes[MaxStringBytes]{};};
 static StringCache string_cache[8];static unsigned string_cursor=0;
 static void clear_caches(const Content* owner){
     clear_tile_cache(owner);
-    for(auto&v:image_cache)if(v.owner==owner)v={};
+    for(auto&v:image_cache)if(v.owner==owner)discard_image(v);
     for(auto&v:glyph_cache)if(v.owner==owner)v.owner=nullptr;
     for(auto&v:string_cache)if(v.owner==owner)v.owner=nullptr;
 }
@@ -138,14 +198,15 @@ bool Content::open(ResourceSource source){
 Picture Content::image(int id)const{
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
     if(!metadata_||!io_good_||id<0||(unsigned)id>=images_)return empty;
+    const auto fail=[&](){io_good_=false;clear_caches(this);return empty;};
     const uint8_t*r=metadata_+40+16*id;const uint32_t off=u32(r),length=u32(r+12);
     const uint32_t shape=u32(r+4),stored_format=u32(r+8);
     uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=stored_format,size=length;
     const uint8_t*p=nullptr;
-    for(unsigned i=0;i<90;i++)if(image_cache[i].owner==this){
+    for(unsigned i=0;i<ImageEntries;i++)if(image_cache[i].owner==this){
         const uint8_t*key=metadata_+40+16*image_cache[i].image;
         if(u32(key)==off&&u32(key+4)==shape&&u32(key+8)==stored_format&&u32(key+12)==length){
-            p=image_buffer(i);fmt=image_cache[i].format;
+            p=image_buffer(image_cache[i]);fmt=image_cache[i].format;image_cache[i].age=next_image_age();
             // A byte-identical descriptor and shape can inherit a successful
             // picture's validation; merely sharing a payload offset cannot.
             if(stored_format==6&&tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
@@ -156,25 +217,23 @@ Picture Content::image(int id)const{
         if(fmt==6){
             TileFrame frame;
             if(!tile_metadata_||length!=16||!frame.open(this,reader_,tile_metadata_,
-                    uint32_t(tile_metadata_-metadata_),off,w,h)){io_good_=false;return empty;}
+                    uint32_t(tile_metadata_-metadata_),off,w,h))return fail();
             size=frame.output_size;fmt=4;
-            const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t* output=image_buffer(slot);
+            ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
             const bool all=!tile_validated_||!(tile_validated_[unsigned(id)/8]&(1u<<(unsigned(id)%8)));
-            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,all,output)){
-                io_good_=false;return empty;
-            }
-            p=output;cache={this,(uint32_t)id,fmt};
+            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,all,output))return fail();
+            p=output;reservation.publish(this,uint32_t(id),fmt);
             if(tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
         }else{
-            if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5)){io_good_=false;return empty;}fmt=header[0];size=u32(header+1);}
-            if(fmt>4||!size||size>MaxImageBytes){io_good_=false;return empty;}
-            const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return empty;
-            if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}}
+            if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5))return fail();fmt=header[0];size=u32(header+1);}
+            if(fmt>4||!size||size>MaxImageBytes)return fail();
+            const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return fail();
+            if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt))return fail();}
             else {
-                const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t*output=image_buffer(slot);
-                if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size)){io_good_=false;return empty;}}
+                ImageReservation reservation(size);uint8_t*output=reservation.bytes();if(!output)return fail();
+                if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size))return fail();}
                 else for(unsigned i=0;i<size;i++)output[i]=source[i];
-                p=output;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}cache={this,(uint32_t)id,fmt};
+                p=output;if(!valid_image(p,size,w,h,fmt))return fail();reservation.publish(this,uint32_t(id),fmt);
             }
         }
     }

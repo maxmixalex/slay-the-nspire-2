@@ -9,9 +9,10 @@ reader remains supported.
 The new representation stores globally deduplicated **16 × 16 RGB565 and
 8-bit-alpha tiles**, plus the original format-4 scanline geometry. Reconstructing
 an image produces the original format-4 bytes, including the original choice of
-opaque/alpha spans and nonzero RGB values beneath zero alpha. The runtime's
-existing image-cache size classes therefore use the same decoded byte counts.
-Using a dense three-byte-per-pixel cache entry would not preserve those classes.
+opaque/alpha spans and nonzero RGB values beneath zero alpha. Decoded image
+byte counts therefore stay unchanged. A dense three-byte-per-pixel cache entry
+would increase the working memory needed by sparse images. Source22 shares the
+former four-tier allocation through a bounded page pool described below.
 
 This document defines the file format and converter gates. Source availability,
 synthetic tests, a complete converted pack, native/WASM comparisons, ARM memory
@@ -40,7 +41,10 @@ increasing compressed storage and the number of groups referenced by a frame.
 Choose it using complete-pack sizes and access traces. The parameter changes
 storage grouping only; it does not change pixels, tile IDs or animation timing.
 
-The default output cap is **80 MiB**, below the format's 256 MiB maximum. The
+The existing converter's default output cap is **80 MiB**, below the format's
+256 MiB maximum. The owner's newer **30–40 MB installed-size objective** is a
+separate research target; the actual 77.10 MiB pack does not meet it. See
+[resource-budget-0.17.md](resource-budget-0.17.md). The
 tool fails before publishing if the complete output exceeds the requested cap.
 `--max-output-bytes` can change that explicit diagnostic/delivery constraint.
 It never overwrites its input or an existing output. The fully verified file is
@@ -252,7 +256,7 @@ conversion's complete original-byte comparison provide the required gates.
 
 ## Runtime memory and access phases
 
-The intended runtime cache has 64 pages of 64 KiB, or **4 MiB of raw storage**,
+The compressed-group cache has 64 pages of 64 KiB, or **4 MiB of raw storage**,
 and at most 64 entries. The decoder needs one continuous output/dictionary
 range, so allocation uses contiguous first fit. If no run is available, it
 evicts the oldest eligible unpinned entry until a continuous run exists. Total
@@ -260,6 +264,17 @@ free-page count alone is insufficient. There is no heap, cache compaction or
 second full-group output buffer. The current frame's index group remains
 pinned while tile groups are consumed; cached groups needed for the frame are
 consumed before missing groups.
+
+The separate decoded-picture cache uses **748 pages of 4 KiB and 90 entries**
+from source22 onward. All image sizes share these pages. Contiguous first-fit
+allocation evicts least-recently-used entries as necessary; hits update recency.
+It does not compact or move surviving entries. Pixel buffers plus bookkeeping
+fit within the previous four-tier cache budget, enforced by a compile-time
+assertion on both native and 32-bit targets. A view survives until its own entry
+is evicted or its owner is reset/failed; callers consume it synchronously before
+requesting an unbounded sequence of further pictures. Unpublished reservations
+are reclaimed on every failure, and exact descriptor/shape/format/length identity
+is still necessary for alias hits.
 
 Source20 initially reconstructed every image during opening. Its full-pack
 access model, including the existing 90 image-cache slots, still decoded about

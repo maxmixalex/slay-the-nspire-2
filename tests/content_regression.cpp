@@ -72,6 +72,16 @@ struct AliasProvider {
     }
     ResourceSource source(){return {this,(uint32_t)bytes->size(),read,nullptr};}
 };
+static std::vector<uint8_t> image_pressure_pack(){
+    const AliasImage tiny{1,1,0,2};auto bytes=alias_pack(tiny,tiny,{0x34,0x12});
+    // Distinct payload offsets make 159 real image keys, exceeding the shared
+    // 90-entry limit. Reopening one two-key owner is not cache pressure.
+    if(bytes.size()%2)bytes.push_back(0);
+    for(unsigned i=1;i<160;++i){
+        put(bytes,40+i*16,(unsigned)bytes.size());bytes.push_back(uint8_t(i));bytes.push_back(uint8_t(i*31));
+    }
+    put(bytes,12,(unsigned)bytes.size());hash(bytes);return bytes;
+}
 static void image_cache_aliases(){
     auto memory=std::make_unique<Content>(),ranged=std::make_unique<Content>();
     AliasProvider source{nullptr};
@@ -140,10 +150,10 @@ static void image_cache_aliases(){
     std::vector<uint8_t> packed_spans={4,11,0,0,0,0xb0};packed_spans.insert(packed_spans.end(),span_bytes.begin(),span_bytes.end());
     rejected({2,1,5,17},{1,2,5,17},packed_spans);
 
-    // Evict only the small image bucket through another Content owner. The
-    // original tiny alias remains cached when a later large read fails.
-    auto evictor=std::make_unique<Content>();AliasProvider other{&recovery};
-    for(unsigned i=0;i<17;++i)CHECK(evictor->open(other.source()));
+    // Populate another owner past the entry limit, then explicitly retain
+    // the tiny alias again before failing the evicted card's real read.
+    const auto pressure=image_pressure_pack();auto evictor=std::make_unique<Content>();AliasProvider other{&pressure};
+    CHECK(evictor->open(other.source()));CHECK(ranged->image(1).pixels);
     source.fail=true;CHECK(ranged->image(1).pixels);CHECK(!ranged->image(0).pixels);
     CHECK(!ranged->healthy()&&!ranged->image(1).pixels&&!ranged->image(3).pixels);
     CHECK(memory->healthy()&&memory->image(1).pixels); // Other owners stay usable.
@@ -190,8 +200,8 @@ static void glyph_cache_aliases(){
     source.bytes=&original;CHECK(memory->open(original.data(),original.size()));CHECK(ranged->open(source.source()));
     CHECK(ranged->glyph('A',10).pixels&&ranged->glyph('B',10).pixels);
     // A later failed image read invalidates cached glyph views as well.
-    auto evictor=std::make_unique<Content>();AliasProvider other{&original};
-    for(unsigned i=0;i<17;++i)CHECK(evictor->open(other.source()));
+    const auto pressure=image_pressure_pack();auto evictor=std::make_unique<Content>();AliasProvider other{&pressure};
+    CHECK(evictor->open(other.source()));
     source.fail=true;CHECK(!ranged->image(0).pixels);CHECK(!ranged->healthy());
     CHECK(!ranged->glyph('A',10).pixels&&!ranged->glyph('B',10).pixels);
     CHECK(memory->healthy()&&!std::memcmp(memory->glyph('B',10).pixels,old_bytes.data(),old_bytes.size()));

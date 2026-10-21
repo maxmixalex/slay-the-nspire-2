@@ -46,7 +46,7 @@ Bytes stored_lzma2(const Bytes&raw){
 }
 struct Span {unsigned x,count,mode;};
 struct Pixel {uint16_t color=0;uint8_t alpha=0;};
-enum class Pattern {Mixed,Alpha,Opaque,Empty,ManySpans};
+enum class Pattern {Mixed,Alpha,Opaque,Empty,ManySpans,AlphaSpans};
 struct Frame {
     unsigned w,h;
     Bytes expected,geometry;
@@ -70,7 +70,8 @@ Frame frame(unsigned w,unsigned h,Pattern pattern,unsigned salt=0){
             if(y%3==1){row.push_back({0,2,0});row.push_back({w-2,2,1});}
             if(y%3==2)row.push_back({1,w-2,1});
         }
-        if(pattern==Pattern::ManySpans)for(unsigned x=0;x<w;++x)row.push_back({x,1,x&1});
+        if(pattern==Pattern::ManySpans||pattern==Pattern::AlphaSpans)
+            for(unsigned x=0;x<w;++x)row.push_back({x,1,pattern==Pattern::AlphaSpans?1u:x&1});
         append(f.expected,uint32_t(row.size()),2);append(f.geometry,uint32_t(row.size()),2);
         for(const Span&s:row){
             f.span_offsets.push_back(f.geometry.size());
@@ -216,6 +217,87 @@ struct Provider {
 void picture(const Content&c,unsigned id,const Frame&f){
     const Picture p=c.image(int(id));CHECK(p.pixels&&p.w==f.w&&p.h==f.h&&p.format==4);
     CHECK(!p.alpha&&!p.palette);CHECK(!std::memcmp(p.pixels,f.expected.data(),f.expected.size()));CHECK(c.healthy());
+}
+bool same_reads(ResourceReadStats a,ResourceReadStats b){
+    return a.callbacks==b.callbacks&&a.cache_hits==b.cache_hits&&a.cache_misses==b.cache_misses&&
+        a.bypasses==b.bypasses&&a.direct_reads==b.direct_reads&&a.callback_bytes==b.callback_bytes;
+}
+void empty_image_pool(){
+    // Drive the real public API through more than 90 distinct one-page keys,
+    // then clear that owner. This gives allocation tests a known empty pool
+    // without exposing cache internals or relying on earlier test ordering.
+    Package p;p.per_group=680;
+    std::vector<std::vector<unsigned>> plans(2);
+    for(unsigned i=0;i<100;++i){p.frames.push_back(frame(1,1,Pattern::Alpha,900+i));plans[i/50].push_back(i);}
+    p.collect();p.make_groups(plans);p.encode();Provider provider{&p.bytes};auto content=std::make_unique<Content>();
+    CHECK(content->open(provider.source()));
+    for(unsigned i=0;i<p.frames.size();++i)picture(*content,p.image_id(i),p.frames[i]);
+    CHECK(!content->open(nullptr,0));CHECK(!content->healthy());
+}
+void image_pool_cycles_and_fragmentation(){
+    label="23 medium frames retain a complete loop";
+    Package cycle;cycle.per_group=680;std::vector<unsigned> all;
+    for(unsigned i=0;i<23;++i){cycle.frames.push_back(frame(320,218,Pattern::Mixed,100+i));all.push_back(i);}
+    cycle.collect();cycle.make_groups({all});cycle.encode();
+    for(const Frame&f:cycle.frames)CHECK(f.expected.size()>32768&&f.expected.size()<=131072);
+    auto content=std::make_unique<Content>();Provider source{&cycle.bytes};
+    for(bool ranged:{false,true}){
+        empty_image_pool();CHECK(ranged?content->open(source.source()):content->open(cycle.bytes.data(),cycle.bytes.size()));
+        std::vector<Picture> kept;
+        for(unsigned i=0;i<cycle.frames.size();++i){picture(*content,cycle.image_id(i),cycle.frames[i]);kept.push_back(content->image(cycle.image_id(i)));}
+        const auto before=content->read_stats();
+        for(unsigned i=0;i<cycle.frames.size();++i){
+            const Picture p=content->image(cycle.image_id(i));CHECK(p.pixels==kept[i].pixels);
+            CHECK(!std::memcmp(p.pixels,cycle.frames[i].expected.data(),cycle.frames[i].expected.size()));
+        }
+        CHECK(content->image(cycle.alias_id()).pixels==kept[0].pixels);
+        CHECK(same_reads(before,content->read_stats()));CHECK(content->healthy()&&!source.bad_range);
+    }
+
+    label="contiguous allocation evicts LRU holes without moving survivors";
+    empty_image_pool();Package mixed;mixed.per_group=680;std::vector<std::vector<unsigned>> plans;
+    for(unsigned i=0;i<5;++i){mixed.frames.push_back(frame(160,218,Pattern::ManySpans,200+i));plans.push_back({i});}
+    mixed.frames.push_back(frame(320,240,Pattern::AlphaSpans,777));plans.push_back({5});
+    CHECK(mixed.frames[0].expected.size()==262036&&mixed.frames[5].expected.size()==ImageBound);
+    mixed.collect();mixed.make_groups(plans);mixed.encode();
+    auto holes=std::make_unique<Content>(),survivors=std::make_unique<Content>(),large=std::make_unique<Content>();
+    Provider a{&mixed.bytes},b{&mixed.bytes},c{&mixed.bytes};
+    CHECK(holes->open(a.source()));CHECK(survivors->open(b.source()));CHECK(large->open(c.source()));
+    std::vector<Picture> kept;
+    for(unsigned i=0;i<5;++i){picture(*holes,mixed.image_id(i),mixed.frames[i]);picture(*survivors,mixed.image_id(i),mixed.frames[i]);kept.push_back(survivors->image(mixed.image_id(i)));}
+    // Ten interleaved 64-page frames plus three 3-page card images leave a
+    // 99-page tail. Reopening one owner frees five separated 64-page holes.
+    // A 151-page maximum image needs eviction/coalescing despite enough total
+    // free pages. Refreshing the first survivor makes the second the victim.
+    CHECK(holes->open(a.source()));const auto before_refresh=survivors->read_stats();
+    CHECK(survivors->image(mixed.image_id(0)).pixels==kept[0].pixels);
+    CHECK(same_reads(before_refresh,survivors->read_stats()));
+    picture(*large,mixed.image_id(5),mixed.frames[5]);const Picture largest=large->image(mixed.image_id(5));
+    const auto before_survivors=survivors->read_stats();
+    for(unsigned i:{0u,2u,3u,4u}){
+        CHECK(!std::memcmp(kept[i].pixels,mixed.frames[i].expected.data(),mixed.frames[i].expected.size()));
+        CHECK(survivors->image(mixed.image_id(i)).pixels==kept[i].pixels);
+    }
+    CHECK(same_reads(before_survivors,survivors->read_stats()));
+    picture(*survivors,mixed.image_id(1),mixed.frames[1]);
+    CHECK(!same_reads(before_survivors,survivors->read_stats()));
+    CHECK(!std::memcmp(largest.pixels,mixed.frames[5].expected.data(),mixed.frames[5].expected.size()));
+    CHECK(!a.bad_range&&!b.bad_range&&!c.bad_range);
+
+    label="failed large reservations release pages and never publish a key";
+    auto faulty=std::make_unique<Content>();Provider fault{&mixed.bytes};
+    // Six abandoned 151-page reservations exceed the complete 748-page pool
+    // if even one error path leaks its destination. Corruption is injected
+    // only after successful structural opening of the immutable fixture.
+    for(unsigned attempt=0;attempt<6;++attempt){
+        fault.fail_first=fault.fail_last=0;CHECK(faulty->open(fault.source()));
+        const unsigned group=mixed.frames[5].ids[0]/mixed.per_group;
+        fault.fail_first=mixed.group_offsets[group]+32;fault.fail_last=fault.fail_first+1;
+        const unsigned before=fault.failed;CHECK(!faulty->image(mixed.image_id(5)).pixels);
+        CHECK(fault.failed>before&&!faulty->healthy());CHECK(!faulty->image(0).pixels&&!faulty->glyph('?',10).pixels);
+    }
+    fault.fail_first=fault.fail_last=0;CHECK(faulty->open(fault.source()));
+    picture(*faulty,mixed.image_id(5),mixed.frames[5]);CHECK(!fault.bad_range);
 }
 void valid_packages(){
     auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();
@@ -416,7 +498,7 @@ void maximum_frame_and_unused_tile(){
 }
 Package pressure(bool tiny){
     Package p;p.per_group=680;p.alignment=4096;
-    const unsigned count=tiny?70:16;
+    const unsigned count=tiny?100:16;
     for(unsigned i=0;i<count;++i)p.frames.push_back(frame(tiny?1:80,tiny?1:200,tiny?Pattern::Alpha:Pattern::ManySpans,31+i));
     p.collect();p.scatter(10);std::vector<std::vector<unsigned>> plans;
     if(tiny){for(unsigned begin=0;begin<count;begin+=35){std::vector<unsigned> ids;for(unsigned i=begin;i<std::min(count,begin+35);++i)ids.push_back(i);plans.push_back(std::move(ids));}}
@@ -429,7 +511,7 @@ void fill_pressure(Content&content,Provider&source,const Package&p){
     picture(content,p.alias_id(),p.frames[0]);
 }
 void owners_lifetime_and_fragmentation(const Package&pressure_medium){
-    label="owners and cache lifetime";Package a=basic(85,1),b=basic(85,123);
+    label="owners and cache lifetime";empty_image_pool();Package a=basic(85,1),b=basic(85,123);
     auto first=std::make_unique<Content>(),second=std::make_unique<Content>(),evictor=std::make_unique<Content>();
     Provider pa{&a.bytes},pb{&b.bytes},pe{&pressure_medium.bytes};
     CHECK(first->open(pa.source()));CHECK(second->open(pb.source()));
@@ -438,7 +520,9 @@ void owners_lifetime_and_fragmentation(const Package&pressure_medium){
     // Ten full tile groups exceed the 4 MiB pool. Index groups require 2--8
     // pages, deliberately mixing allocation lengths and forcing evictions.
     // Each medium frame references all ten tile groups while its index group
-    // must remain pinned. Existing tiny image views must survive group reuse.
+    // must remain pinned. The 16 decoded medium frames occupy 480 image pages;
+    // the fresh tiny views fit beside them and must retain their addresses.
+    // This asserts surviving-view stability, not permanent size-tier isolation.
     CHECK(pressure_medium.groups[0].raw.size()==523600);
     CHECK(evictor->open(pe.source()));
     const uint64_t before_reconstruction=evictor->read_stats().callback_bytes;
@@ -466,19 +550,25 @@ void failures_and_inactive_rebuild(const Package&pressure_tiny){
         label=corrupt?"storage corruption invalidates decoded views":"partial read failure invalidates decoded views";
         Package p=basic();Provider source{&p.bytes},evict{&pressure_tiny.bytes};
         CHECK(target->open(source.source()));CHECK(target->glyph('?',10).pixels);picture(*target,1,p.frames[0]);
-        // More than 64 tiny images and more than 4 MiB of groups evict both
+        // More than 90 unique images and more than 4 MiB of groups evict both
         // caches, without resetting the target's ResourceReader page cache.
         fill_pressure(*other,evict,pressure_tiny);
+        // After 100 frames and the frame-zero alias, frames 11..99 and zero
+        // fill the 90 entries. Refresh the oldest hit; frame 12 is now the
+        // next victim. A hit must update recency without any resource reads.
+        const unsigned oldest=unsigned(pressure_tiny.frames.size())-90+1;
+        const auto before_hit=other->read_stats();const Picture kept=other->image(pressure_tiny.image_id(oldest));
+        CHECK(kept.pixels&&same_reads(before_hit,other->read_stats()));
         source.fail_first=p.group_offsets[0]+32+3+2;source.fail_last=source.fail_first+1;source.corrupt=corrupt;
         CHECK(!target->image(1).pixels);CHECK(source.failed>0);CHECK(!target->healthy());
         CHECK(!target->image(int(p.alias_id())).pixels&&!target->glyph('?',10).pixels);CHECK(!*target->string(0));
         CHECK(other->healthy());
         // A failed destination reuse must not leave another owner's old key
         // pointing at partially overwritten image or group bytes.
-        // Seventy unique tiny frames plus the final frame-zero alias leave
-        // frame seven as the next of the 64 tiny slots to be reused. Check it
-        // before the longer pass can itself evict a stale destination key.
-        picture(*other,pressure_tiny.image_id(7),pressure_tiny.frames[7]);
+        CHECK(!std::memcmp(kept.pixels,pressure_tiny.frames[oldest].expected.data(),pressure_tiny.frames[oldest].expected.size()));
+        const auto before_victim=other->read_stats();
+        picture(*other,pressure_tiny.image_id(oldest+1),pressure_tiny.frames[oldest+1]);
+        CHECK(!same_reads(before_victim,other->read_stats()));
         for(unsigned i=0;i<pressure_tiny.frames.size();++i)picture(*other,pressure_tiny.image_id(i),pressure_tiny.frames[i]);
         source.fail_first=source.fail_last=0;CHECK(target->open(source.source()));picture(*target,1,p.frames[0]);
         CHECK(!source.bad_range&&!evict.bad_range);
@@ -606,6 +696,7 @@ void validation_workspace_fallbacks(const Package&pressure_tiny){
 } // namespace
 int main(){
     valid_packages();malformed_container();malformed_geometry();maximum_frame_and_unused_tile();
+    image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);
     owners_lifetime_and_fragmentation(medium);failures_and_inactive_rebuild(tiny);
