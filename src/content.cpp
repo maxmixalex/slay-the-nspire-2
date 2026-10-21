@@ -14,9 +14,10 @@ constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 constexpr unsigned ImageBufferBudget=64u*4096u+16u*32768u+8u*131072u+2u*MaxImageBytes;
 // Keep the historical four-tier pixel budget. Small animation frames need
-// more keys than the former 90 entries even when their complete decoded
-// working set fits these pages; only the bounded metadata grows here.
-constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=256;
+// more keys even when the decoded working set fits these pages: a measured
+// three-enemy/title/HUD trace has 257 unique descriptors but uses 681 pages.
+// Only bounded metadata grows; the pixel budget remains exactly 748 pages.
+constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=320;
 alignas(4) static uint8_t image_pixels[ImagePages*ImagePageBytes];
 static uint8_t encoded_pixels[MaxEncodedImage];
 #include "content_tiles.inc"
@@ -29,14 +30,31 @@ struct ImageCache {
 };
 static ImageCache image_cache[ImageEntries];
 static uint32_t image_used[(ImagePages+31)/32]{},image_age=0;
+static_assert(ImagePageBytes==Content::image_page_bytes()&&ImagePages==Content::image_capacity_pages()&&
+              ImageEntries==Content::image_capacity_entries(),"Public preparation budget must match the cache");
 static_assert(ImagePages==748&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
-static_assert(ImageEntries<=256,"Age-wrap entry indexes must fit one byte");
+static_assert(ImageEntries<=65536,"Age-wrap entry indexes must fit two bytes");
 static_assert(sizeof image_pixels<=ImageBufferBudget,
               "Image pixels must not exceed the previous four-tier cache");
 static_assert(sizeof image_cache+sizeof image_used+sizeof image_age<=8u*1024u,
               "Image-cache bookkeeping must remain below 8 KiB");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
+static ImageCache* find_image(const Content* owner,const uint8_t* metadata,unsigned id){
+    const uint8_t* descriptor=metadata+40+16*id;
+    for(auto& cache:image_cache)if(cache.owner==owner){
+        const uint8_t* key=metadata+40+16*cache.image;
+        if(u32(key)==u32(descriptor)&&u32(key+4)==u32(descriptor+4)&&
+           u32(key+8)==u32(descriptor+8)&&u32(key+12)==u32(descriptor+12))return &cache;
+    }
+    return nullptr;
+}
+static unsigned image_page_bound(const uint8_t* descriptor){
+    const unsigned format=u32(descriptor+8),pixels=unsigned(u16(descriptor+4))*u16(descriptor+6);
+    const unsigned spans=pixels*8u+2u*u16(descriptor+6),palette=512u+2u*pixels;
+    const unsigned bytes=format<5?u32(descriptor+12):spans>palette?spans:palette;
+    return (bytes+ImagePageBytes-1)/ImagePageBytes;
+}
 static void discard_image(ImageCache& cache){
     for(unsigned i=cache.first;i<unsigned(cache.first)+cache.pages;++i)image_used[i/32]&=~(uint32_t(1)<<(i%32));
     cache={};
@@ -45,11 +63,11 @@ static uint32_t next_image_age(){
     if(image_age==0xffffffffu){
         // Preserve LRU order across the bounded counter's wrap. Empty and
         // unpublished reservations have no age and cannot become victims.
-        uint8_t order[ImageEntries];unsigned count=0;
+        uint16_t order[ImageEntries];unsigned count=0;
         for(unsigned i=0;i<ImageEntries;++i)if(image_cache[i].owner){
             unsigned at=count;
             while(at&&image_cache[order[at-1]].age>image_cache[i].age){order[at]=order[at-1];--at;}
-            order[at]=uint8_t(i);++count;
+            order[at]=uint16_t(i);++count;
         }
         for(unsigned i=0;i<count;++i)image_cache[order[i]].age=i+1;
         image_age=count;
@@ -122,51 +140,99 @@ const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,
 }
 bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(p,n));}
 bool Content::open(ResourceSource source){
-    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=nullptr;
+    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=image_pages_=nullptr;
     version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
+    reader_.progress(ResourceStage::Header,0,1);
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>NativeUiContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>LocaleContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
-    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||(version>=14&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount)))return false;
-    const unsigned auxiliary=version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
+       (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
+       (version==LocaleContentVersion&&ns!=LocaleStringCount))return false;
+    const unsigned auxiliary=version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(base>n||base>DirectoryCapacity)return false;
-    uint32_t hash=0;if(!reader_.fnv1a(40,n-40,hash)||hash!=u32(h+36))return false;
+    reader_.progress(ResourceStage::Header,1,1);
+    // The encoded-image scratch is idle before any image/group decode. A
+    // 64 KiB scan cuts filesystem/host crossings without growing memory or
+    // replacing the full-file integrity check with a partial checksum.
+    uint32_t hash=0;if(!reader_.fnv1a_buffered(40,n-40,hash,encoded_pixels,65536)||hash!=u32(h+36))return false;
     uint32_t start=base;
     if(version>=TileContentVersion){
         uint8_t header[64];
         if(!reader_.read(base,header,sizeof header)||
            !tile_header_bounds(header,base,n,ni,DirectoryCapacity,start))return false;
     }
+    reader_.progress(ResourceStage::Directory,0,start);
     if(source.direct){data_=source.direct;metadata_=source.direct;}
     else {if(!reader_.read(0,directory_,start))return false;metadata_=directory_;}
+    reader_.progress(ResourceStage::Directory,start,start);
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
     directory_bytes_=start;tile_metadata_=version>=TileContentVersion?p+base:nullptr;
-    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=nullptr;
+    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=image_pages_=nullptr;
         version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
     if(tile_metadata_&&!valid_tile_directory(tile_metadata_,n))return reject();
     const uint32_t payload_start=tile_metadata_?u32(tile_metadata_+32)+16*u32(tile_metadata_+28):start;
+    unsigned available=DirectoryCapacity-start;
+    if(images_<=available){
+        available-=images_;image_pages_=directory_+start+available;
+        for(unsigned i=0;i<images_;++i)image_pages_[i]=0;
+    }
+    // Remember exact descriptors already validated in this open pass. Images
+    // sharing bytes but having a different shape/format still require their
+    // own check. The temporary table borrows the unused directory tail and is
+    // discarded before tile catalog validation reuses that same workspace.
+    unsigned retained=0;for(unsigned i=0;i<ni;++i)if(u32(p+40+16*i+8)!=6)++retained;
+    unsigned seen_slots=1;while(seen_slots<retained*2u)seen_slots<<=1;
+    uint8_t* seen=seen_slots<=available/2?directory_+start:nullptr;
+    if(seen)for(unsigned i=0;i<seen_slots*2;++i)seen[i]=255;
+    reader_.progress(ResourceStage::Images,0,ni);
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),height=u16(r+6),fmt=u32(r+8),len=u32(r+12);
         if(!w||w>320||!height||height>240||fmt>6||(fmt==5&&version<5)||
            (fmt==6&&(!tile_metadata_||len!=16))||off<(fmt==6?start:payload_start)||
            off%2||off>n||len>n-off||len>MaxEncodedImage)return reject();
         if(fmt==6){unsigned slot=0;if(!tile_descriptor_slot(tile_metadata_,off,slot))return reject();}
-        else if(!image((int)i).pixels)return reject();
+        else {
+            unsigned slot=0;bool checked=false;
+            if(seen){
+                slot=(off*2654435761u^u32(r+4)*2246822519u^fmt*3266489917u^len)&(seen_slots-1);
+                while(u16(seen+slot*2)!=65535u){
+                    const uint8_t* prior=p+40+16*u16(seen+slot*2);
+                    if(u32(prior)==off&&u32(prior+4)==u32(r+4)&&u32(prior+8)==fmt&&u32(prior+12)==len){
+                        checked=true;if(image_pages_)image_pages_[i]=image_pages_[u16(seen+slot*2)];break;
+                    }
+                    slot=(slot+1)&(seen_slots-1);
+                }
+            }
+            if(!checked){
+                if(!image((int)i).pixels)return reject();
+                if(seen){seen[slot*2]=uint8_t(i);seen[slot*2+1]=uint8_t(i>>8);}
+            }
+        }
+        if((i&15u)==15u||i+1==ni)reader_.progress(ResourceStage::Images,i+1,ni);
     }
     if(tile_metadata_){
-        const unsigned bytes=(images_+7)/8;unsigned available=DirectoryCapacity-directory_bytes_;
+        const unsigned bytes=(images_+7)/8;
         if(bytes<=available){
-            tile_validated_=directory_+DirectoryCapacity-bytes;available-=bytes;
+            available-=bytes;tile_validated_=directory_+start+available;
             for(unsigned i=0;i<bytes;++i)tile_validated_[i]=0;
         }
+        const unsigned descriptors=u32(tile_metadata_+28);
+        uint8_t* frame_pages=nullptr;
+        if(image_pages_&&descriptors<=available){available-=descriptors;frame_pages=directory_+start+available;}
         if(!validate_tile_catalog(this,reader_,tile_metadata_,base,p+40,images_,
-                directory_+directory_bytes_,available))return reject();
+                directory_+directory_bytes_,available,frame_pages))return reject();
+        if(frame_pages)for(unsigned i=0;i<images_;++i)if(u32(p+40+16*i+8)==6){
+            unsigned slot=0;if(!tile_descriptor_slot(tile_metadata_,u32(p+40+16*i),slot))return reject();
+            image_pages_[i]=frame_pages[slot];
+        }
     }
+    reader_.progress(ResourceStage::Glyphs,0,ng);
     uint32_t last=0;
     for(unsigned i=0;i<ng;i++){
         const uint8_t*r=p+40+ni*16+i*16;uint32_t cp=u32(r),off=u32(r+4),size=u16(r+8),w=r[10],height=r[11],key=(size<<24)|cp,encoded=u16(r+14);
@@ -177,10 +243,19 @@ bool Content::open(ResourceSource source){
             unsigned total=0;for(unsigned j=0;j<encoded;j+=2){if(!bytes[j])return reject();total+=bytes[j];}
             if(total!=w*height)return reject();
         }last=key;
+        if((i&63u)==63u||i+1==ng)reader_.progress(ResourceStage::Glyphs,i+1,ng);
     }
+    reader_.progress(ResourceStage::Strings,0,ns);
     for(unsigned i=0;i<ns;i++){
         const uint8_t*r=p+40+ni*16+ng*16+i*8;uint32_t off=u32(r),len=u32(r+4);uint8_t zero=1;
         if(off<payload_start||off>=n||len>=MaxStringBytes||len>n-off-1||!reader_.u8(off+len,zero)||zero)return reject();
+        if((i&63u)==63u||i+1==ns)reader_.progress(ResourceStage::Strings,i+1,ns);
+    }
+    if(version==LocaleContentVersion){
+        const uint8_t* row=p+40+ni*16+ng*16+LocaleMarkerString*8;uint8_t marker[3];
+        if(u32(row+4)!=3||!reader_.read(u32(row),marker,3)||
+           !((marker[0]=='z'&&marker[1]=='h'&&marker[2]=='s')||
+             (marker[0]=='e'&&marker[1]=='n'&&marker[2]=='g')))return reject();
     }
     for(unsigned i=0;i<nc;i++){
         const uint8_t*r=p+40+ni*16+ng*16+ns*8+i*16;uint32_t first=u32(r),count=u16(r+4),ms=u16(r+6);
@@ -198,25 +273,44 @@ bool Content::open(ResourceSource source){
         for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni)return reject();
         if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return reject();
     }
-    cards_=version>=4?cards:14;return true;
+    cards_=version>=4?cards:14;reader_.progress(ResourceStage::Ready,1,1);return true;
+}
+bool Content::image_cached(int id)const{
+    if(!healthy()||id<0||unsigned(id)>=images_)return false;
+    const uint8_t* descriptor=metadata_+40+16*unsigned(id);
+    return (data_&&u32(descriptor+8)<5)||find_image(this,metadata_,unsigned(id));
+}
+bool Content::image_alias(int first,int second)const{
+    if(!healthy()||first<0||second<0||unsigned(first)>=images_||unsigned(second)>=images_)return false;
+    const uint8_t* a=metadata_+40+16*unsigned(first);const uint8_t* b=metadata_+40+16*unsigned(second);
+    return u32(a)==u32(b)&&u32(a+4)==u32(b+4)&&u32(a+8)==u32(b+8)&&u32(a+12)==u32(b+12);
+}
+unsigned Content::image_cache_pages(int id)const{
+    if(!healthy()||id<0||unsigned(id)>=images_)return 0;
+    const uint8_t* descriptor=metadata_+40+16*unsigned(id);
+    if(data_&&u32(descriptor+8)<5)return 0;
+    if(image_pages_&&image_pages_[id])return image_pages_[id];
+    if(const auto* cache=find_image(this,metadata_,unsigned(id)))return cache->pages;
+    return image_page_bound(descriptor);
+}
+ImageCacheUsage Content::image_cache_usage()const{
+    ImageCacheUsage used;
+    if(healthy())for(const auto& cache:image_cache)if(cache.owner==this){++used.entries;used.pages+=cache.pages;}
+    return used;
 }
 Picture Content::image(int id)const{
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
     if(!metadata_||!io_good_||id<0||(unsigned)id>=images_)return empty;
     const auto fail=[&](){io_good_=false;clear_caches(this);return empty;};
     const uint8_t*r=metadata_+40+16*id;const uint32_t off=u32(r),length=u32(r+12);
-    const uint32_t shape=u32(r+4),stored_format=u32(r+8);
+    const uint32_t stored_format=u32(r+8);
     uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=stored_format,size=length;
     const uint8_t*p=nullptr;
-    for(unsigned i=0;i<ImageEntries;i++)if(image_cache[i].owner==this){
-        const uint8_t*key=metadata_+40+16*image_cache[i].image;
-        if(u32(key)==off&&u32(key+4)==shape&&u32(key+8)==stored_format&&u32(key+12)==length){
-            p=image_buffer(image_cache[i]);fmt=image_cache[i].format;image_cache[i].age=next_image_age();
-            // A byte-identical descriptor and shape can inherit a successful
-            // picture's validation; merely sharing a payload offset cannot.
-            if(stored_format==6&&tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
-            break;
-        }
+    if(auto* cache=find_image(this,metadata_,unsigned(id))){
+        p=image_buffer(*cache);fmt=cache->format;size=unsigned(cache->pages)*ImagePageBytes;cache->age=next_image_age();
+        // A byte-identical descriptor and shape can inherit a successful
+        // picture's validation; merely sharing a payload offset cannot.
+        if(stored_format==6&&tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
     }
     if(!p){
         if(fmt==6){
@@ -242,6 +336,7 @@ Picture Content::image(int id)const{
             }
         }
     }
+    if(image_pages_&&!(data_&&stored_format<5))image_pages_[id]=uint8_t((size+ImagePageBytes-1)/ImagePageBytes);
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
@@ -328,4 +423,5 @@ int Content::potion_image(Potion p)const{
     return i>16?ui_image(U_ExtPotionStart+(int)i-17):i<=3?A_FirePotion+(int)i-1:ui_image(U_EnergyPotion+(int)i-4);
 }
 #include "world_content.inc"
+#include "locale_content.inc"
 } // namespace spire

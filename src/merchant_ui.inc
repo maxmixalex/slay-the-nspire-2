@@ -1,24 +1,23 @@
 // Five class cards, two colorless, three relics/potions and a right-hand removal service.
 static const char* relic_name(RelicMask r){auto*d=relic_definition(r);return d?d->name:"售罄";}
 static const char* relic_desc(RelicMask r){auto*d=relic_definition(r);return d?d->description:"没有剩余的已实现遗物。";}
-static const char* potion_name(int p){auto*d=potion_definition((Potion)p);return d?d->name:"空药水槽";}
+static const char* potion_name(int p,const Content*content=nullptr){auto*d=potion_definition((Potion)p);if(d&&content){const char*name=content->world_title("potions",d->key);if(*name)return name;}const char*name=d?d->name:"空药水槽";return content?content->ui_text(name):name;}
 static const char* potion_desc(int p){auto*d=potion_definition((Potion)p);return d?d->description:"药水栏为空。可在商店购买或领取战斗掉落。";}
+static void ui_potion_description(const App&a,int p,char*out,size_t size){
+ if(!size)return;out[0]=0;if(const auto*d=potion_definition((Potion)p)){char key[96]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".description");
+  if(*a.content.world_string("potions",key)){a.localized_text("potions",key,out,size);return;}}
+ TextBuffer b{out,size,0,&a.content};b.text(potion_desc(p));
+}
 static void merchant_price(Canvas&c,int item,int x,int y,int w){
     auto&s=c.a.game;bool sold=s.shop_sold&(1u<<item);int price=s.world.active?world_shop_price(s,item):item==ShopRemove?remove_price(s):s.shop_prices[item];
     if(sold){c.centered("售罄",x,y,w,10,Muted);return;}
-    char value[24]{};TextBuffer t{value,sizeof value,0};t.number(price);int textw=c.width(value,10),left=x+mx(0,(w-textw-13)/2);
+    char value[24]{};TextBuffer t{value,sizeof value,0,&c.a.content};t.number(price);int textw=c.width(value,10),left=x+mx(0,(w-textw-13)/2);
     const bool sale=s.world.active&&item<ShopCardCount&&s.world.shop_sale==item;
     c.picture(A_Coin,left,y+2,10,10);c.text(value,left+12,y,10,s.gold>=price?(sale?Green:Gold):Red);
 }
 static void merchant_card(Canvas&c,Card card,int x,int y,bool selected,bool sold,const EventCardFacts*facts=nullptr){
     if(selected)c.box(x-2,y-2,49,66,Gold);
-    c.picture(c.a.card_face_frame(card,-1,-1,facts),x,y,45,63);
-    c.picture(c.a.card_face_image(card,-1,-1,facts),x+3,y+15,39,29);
-    c.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,x,y,45,12);
-    c.text(c.a.content.card_string(card.kind),x+8,y+1,8,Ink,35);
-    c.text(c.a.content.card_string(card.kind),x+7,y,8,White,36);
-    c.picture(c.a.content.energy_image(card),x-6,y-6,14,14);c.energy_label(c.a.card_offer_cost(card,facts),x-2,y-7,10);
-    c.centered(card_type_label(c.a.card_face_type(card,-1,-1,facts)),x+3,y+46,39,10,Muted);
+    draw_card_face(c,card,x,y,45,63,-2,-2,-1,-1,facts);
     if(sold)c.dim(x,y,45,63,170);
 }
 static void shop_screen(Canvas&c){
@@ -53,7 +52,7 @@ static void shop_screen(Canvas&c){
     c.ui(removed?U_ShopRemoveUsed:U_ShopRemove,261,149,51,51,removed?140:255);
     if(a.cursor==ShopRemove)c.box(259,146,55,68,Gold);
     merchant_price(c,ShopRemove,259,201,55);c.hit(259,144,57,71,HitKind::Choice,ShopRemove,!removed);
-    const char*name=a.cursor<7?a.content.card_string(s.world.active?s.world.shop_cards[a.cursor].kind:s.shop_cards[a.cursor]):a.cursor<10?(s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7])):a.cursor<13?potion_name(s.shop_potions[a.cursor-10]):a.cursor==13?"移除一张牌":"返回商人";
+    const char*name=a.cursor<7?a.content.card_string(s.world.active?s.world.shop_cards[a.cursor].kind:s.shop_cards[a.cursor]):a.cursor<10?(s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7])):a.cursor<13?potion_name(s.shop_potions[a.cursor-10],&a.content):a.cursor==13?"移除一张牌":"返回商人";
     c.dim(14,43,246,18,180);c.centered(name,16,43,240,10,Gold);
     c.text("详情 I",265,44,10,Gold);c.hit(260,41,59,20,HitKind::Command,(int)Key::Detail,a.cursor<13);
     c.button("返回",3,218,80,a.cursor==ShopLeave,22);c.hit(0,217,90,23,HitKind::Choice,ShopLeave);
@@ -63,7 +62,8 @@ static void shop_screen(Canvas&c){
         int x=141+(a.cursor>=10?a.cursor-10:a.cursor-7)*37,y=a.cursor>=10?178:137;
         if(a.pointer.x>=x-4&&a.pointer.x<x+32&&a.pointer.y>=y&&a.pointer.y<y+39){
             char description[2048]{};if(a.cursor<10&&s.world.active)a.relic_description(s.world.shop_relics[a.cursor-7],description,sizeof description);
-            const char*desc=a.cursor<10?(s.world.active?description:relic_desc(s.shop_relics[a.cursor-7])):potion_desc(s.shop_potions[a.cursor-10]);
+            if(a.cursor>=10)ui_potion_description(a,s.shop_potions[a.cursor-10],description,sizeof description);
+            const char*desc=a.cursor<10?(s.world.active?description:relic_desc(s.shop_relics[a.cursor-7])):description;
             c.ui(U_RewardPanel,11,64,297,67);c.text(name,23,69,12,Gold,269);c.paragraph(desc,23,89,269,2,0,10);
         }
     }

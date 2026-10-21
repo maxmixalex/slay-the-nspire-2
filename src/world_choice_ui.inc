@@ -41,7 +41,7 @@ static void crystal_screen(Canvas&c){
   c.hit(xx,yy,cell,cell,HitKind::CrystalCell,at,!e.crystal_clear[at]&&e.crystal_charges);
  }
  char text[512]{};a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",text,sizeof text);
- if(!*text){TextBuffer b{text,sizeof text,0};b.text("剩余占卜：");b.number(e.crystal_charges);}c.paragraph(text,192,39,118,3,0,10,Gold);
+ if(!*text){TextBuffer b{text,sizeof text,0,&c.a.content};b.text("剩余占卜：");b.number(e.crystal_charges);}c.paragraph(text,192,39,118,3,0,10,Gold);
  for(int tool=1;tool<=2;tool++){int yy=tool==1?84:139;
   c.picture(a.content.world_image("crystal",tool==1?"SMALL_DIVINATION_ICON":"BIG_DIVINATION_ICON"),194,yy,31,31);
   a.localized_text("events",tool==1?"CRYSTAL_SPHERE.button.DIVINATION_LABEL_SMALL":"CRYSTAL_SPHERE.button.DIVINATION_LABEL_BIG",text,sizeof text);
@@ -68,7 +68,7 @@ static void world_choice_screen(Canvas&c){
  if(rewards){native_reward_set_screen(c,ids,count);return;}
  if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
  c.dim(0,0,320,240,224);c.centered(world_choice_heading(s),0,6,320,16,Gold);
- char label[128]{};TextBuffer title{label,sizeof label,0};
+ char label[128]{};TextBuffer title{label,sizeof label,0,&c.a.content};
  if(potion){unsigned id=relic?w.offers[0]:e.offers[0];const auto*d=potion_definition(Potion(id));title.text(d?d->name:"");title.text(" · 选择替换位置");}
  else{title.text("已选择 ");title.number(a.choice_selected_count);title.text(" / ");title.number(a.world_choice_max());if(a.world_choice_min()==0)title.text(" · 可跳过");}
  c.centered(label,0,29,320,10,White);

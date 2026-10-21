@@ -30,17 +30,9 @@ static const HandTile& hand_tile(Canvas&c,int index){
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
     for(int i=0;i<HandTileW*HandTileH;i++){t.pixels[i]=0;t.alpha[i]=0;}
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
-    const bool star_card=card_star_cost(a.game,card)!=0;const int header=star_card?13:0;
-    tile.picture(frame,3,5,74,104);
-    tile.picture(portrait,8,24+header,64,44-header);
-    tile.ui(card_rarity(card.kind)==4?U_RareBanner:card_rarity(card.kind)==3?U_BigBanner:U_CommonBanner,1,5+header,78,17);
-    card_title(tile,a.content.card_string(card.kind),10,6+header,63,card.upgraded?Green:White);
-    tile.picture(a.content.energy_image(card),0,0,18,18);tile.energy_label(energy,5,0,12);
-    if(star_card)tile.star_label(stars,23,0,12);
-    tile.centered(card_type_label(a.card_face_type(card,instance)),7,67,66,10,Muted);
-    tile.paragraph(description,9,80,62,2,0,10,White);
-    if(tile.paragraph(description,9,80,62,0,0,10)>2)tile.text("…",60,96,10,Gold,13);
-    if(card.upgraded)tile.text("+",66,star_card?0:16,10,Green);
+    // Left inset contains the original star cost below the energy icon;
+    // neither resource adds a second title row or moves the card portrait.
+    draw_card_face(tile,card,8,6,69,97,energy,stars,instance,-1,nullptr,description);
     if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
     t.valid=true;return t;
 }
@@ -79,15 +71,17 @@ static void combat_actors(Canvas&c){
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
+        if(s.enemy_world.active&&!a.enemy_opacity(i))continue;
         const auto*v=s.enemy_world.active?world_enemy_visual(unsigned(s.enemy_world.models[i].kind)):nullptr;
         if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
-        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s.enemy_count,i);c.actor(i+1,p.x,p.feet,p.scale);}
+        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s.enemy_count,i);Canvas actor=c;
+            if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.x,p.feet,p.scale);}
     }
     if(shared>=0){int clip;uint32_t elapsed;bool loop;
         // The original Kaiser actor shares one background skeleton. Its baked
         // 320 x 218 frame is already in scene coordinates; draw it only once.
-        if(a.enemy_frame(shared,clip,elapsed,loop))c.clip(clip,0,22,elapsed,false,loop);
+        if(a.enemy_frame(shared,clip,elapsed,loop)){Canvas actor=c;actor.opacity=uint8_t(a.enemy_opacity(shared));actor.clip(clip,0,22,elapsed,false,loop);}
         c.picture(a.content.world_image("background_front","KAISER_CRAB_BOSS"),0,22,320,218);
     }
 }

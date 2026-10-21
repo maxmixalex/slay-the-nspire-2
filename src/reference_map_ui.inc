@@ -27,13 +27,13 @@ static void reference_map_screen(Canvas& c) {
     if(view.selected>=0&&view.selected<map.count){
         const auto& point=map.points[view.selected];
         const char* names[]={"未分配","事件","商店","宝藏","休息处","战斗","精英","首领","起点"};
-        char detail[80]={};TextBuffer t{detail,sizeof detail,0};t.text(names[unsigned(point.type)]);
+        char detail[80]={};TextBuffer t{detail,sizeof detail,0,&c.a.content};t.text(names[unsigned(point.type)]);
         t.text("  (");t.number(point.col);t.ch(',');t.number(point.row);t.ch(')');
         c.text(detail,119,6,10,Gold,168);
     }else c.text("配额已按种子生成",119,6,10,Muted);
     c.close_button(294,3);
     const char* acts[]={"Overgrowth","Underdocks","Hive","Glory"};
-    char label[64]={};TextBuffer b{label,sizeof label,0};b.text(acts[unsigned(view.settings.act)]);b.text("  ›");
+    char label[64]={};TextBuffer b{label,sizeof label,0,&c.a.content};b.text(acts[unsigned(view.settings.act)]);b.text("  ›");
     c.button(label,5,26,173,true,23);c.hit(5,26,173,23,HitKind::ReferenceAction,1);
     c.button(view.settings.increased_elites?"精英配额 8":"精英配额 5",182,26,111,false,23);
     c.hit(182,26,111,23,HitKind::ReferenceAction,2);
@@ -72,7 +72,7 @@ static void reference_map_screen(Canvas& c) {
     c.rect(296,52,24,24,Panel);c.centered("↑",296,54,24,12,Gold);c.hit(296,52,24,24,HitKind::Scroll,-1);
     c.rect(296,149,24,25,Panel);c.centered("↓",296,151,24,12,Gold);c.hit(296,149,24,25,HitKind::Scroll,1);
     c.rect(0,179,320,61,Panel);
-    char quotas[100]={};TextBuffer q{quotas,sizeof quotas,0};
+    char quotas[100]={};TextBuffer q{quotas,sizeof quotas,0,&c.a.content};
     q.text("休息 ");q.number(map.config.rests);q.text(" / 商店 ");q.number(map.config.shops);
     q.text(" / 精英 ");q.number(map.config.elites);q.text(" / 事件 ");q.number(map.config.unknowns);
     c.centered(quotas,0,180,320,10,Gold);

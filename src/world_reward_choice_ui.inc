@@ -11,7 +11,7 @@ static void native_reward_backdrop(Canvas&c){
 static void native_reward_pages(Canvas&c,unsigned count,unsigned per,int y){
  auto&a=c.a;const unsigned pages=(count+per-1)/per,page=unsigned(a.cursor)/per;
  if(pages<=1)return;
- char label[40]{};TextBuffer b{label,sizeof label,0};b.number(page+1);b.text(" / ");b.number(pages);
+ char label[40]{};TextBuffer b{label,sizeof label,0,&c.a.content};b.number(page+1);b.text(" / ");b.number(pages);
  c.centered(label,99,y+1,122,10,Muted);
  c.centered("‹",55,y-2,35,16,page?Gold:Muted);c.action(52,y-2,41,21,UiAction::PreviousWorldPage,page>0);
  c.centered("›",230,y-2,35,16,page+1<pages?Gold:Muted);c.action(227,y-2,41,21,UiAction::NextWorldPage,page+1<pages);
@@ -32,7 +32,7 @@ static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count)
    kind==5?a.card_face_image(card_from_token(model),-1,-1,facts):kind==6?a.content.world_image("rewards","CARD_REMOVAL"):a.content.ui_image(U_RewardCard);
   if(kind==6&&image<0)image=a.content.ui_image(U_ShopRemove);
   c.picture(image,x+5,y+2,23,23);
-  char name[256]{};TextBuffer b{name,sizeof name,0};
+  char name[256]{};TextBuffer b{name,sizeof name,0,&c.a.content};
   if(kind==1){b.number(amount);b.text(" 金币");}
   else if(kind==2){const auto*d=potion_definition(Potion(model));if(d)b.text(d->name);}
   else if(kind==3)b.text(a.relic_title(RelicId(model)));

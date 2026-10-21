@@ -22,7 +22,7 @@ static void native_event_option(const App&a,int option,bool description,char*out
  // sole Choice 0 is now Proceed. It must not look like a second acquisition.
  if(e.finished){
   a.original_event_text(option,description,out,size);
-  if(!*out&&!description){TextBuffer b{out,size,0};const char*text=a.content.world_string(ui_ancient_event(e.id)?"ancients":"events","PROCEED.title");b.text(*text?text:"继续前进");}return;
+  if(!*out&&!description){TextBuffer b{out,size,0,&a.content};const char*text=a.content.world_string(ui_ancient_event(e.id)?"ancients":"events","PROCEED.title");b.text(*text?text:"继续前进");}return;
  }
  if(ui_ancient_event(e.id)&&option>=0&&option<e.offer_count){
   // EventOption.FromRelic gives an ancient's own option text precedence,
@@ -32,25 +32,25 @@ static void native_event_option(const App&a,int option,bool description,char*out
   if(*out)return;
   if(e.offers[option]<WorldRelicKinds){
    RelicId relic=RelicId(e.offers[option]);
-   if(description){key[0]=0;TextBuffer b{key,sizeof key,0};b.text(world_relic_key(relic));b.text(".eventDescription");a.localized_text("relics",key,out,size,int(relic));if(!*out)a.relic_description(relic,out,size);}
-   else{TextBuffer b{out,size,0};b.text(a.relic_title(relic));}
-  }else if(!description){TextBuffer b{out,size,0};b.text("当前无法选择");}
+   if(description){key[0]=0;TextBuffer b{key,sizeof key,0,&a.content};b.text(world_relic_key(relic));b.text(".eventDescription");a.localized_text("relics",key,out,size,int(relic));if(!*out)a.relic_description(relic,out,size);}
+   else{TextBuffer b{out,size,0,&a.content};b.text(a.relic_title(relic));}
+  }else if(!description){TextBuffer b{out,size,0,&a.content};b.text("当前无法选择");}
   return;
  }
  if(e.id==OriginalEventId::FakeMerchant&&option>=0&&option<6){
-  if(e.offers[option]>=WorldRelicKinds){TextBuffer b{out,size,0};b.text("售罄");return;}
+  if(e.offers[option]>=WorldRelicKinds){TextBuffer b{out,size,0,&a.content};b.text("售罄");return;}
   if(description){a.relic_description(RelicId(e.offers[option]),out,size);return;}
-  TextBuffer b{out,size,0};b.text(a.relic_title(RelicId(e.offers[option])));b.text(" · ");b.number(e.choice_prices[option]);b.text(" 金币");return;
+  TextBuffer b{out,size,0,&a.content};b.text(a.relic_title(RelicId(e.offers[option])));b.text(" · ");b.number(e.choice_prices[option]);b.text(" 金币");return;
  }
- if(e.id==OriginalEventId::FakeMerchant&&option==6){if(!description){TextBuffer b{out,size,0};b.text("离开");}return;}
+ if(e.id==OriginalEventId::FakeMerchant&&option==6){if(!description){TextBuffer b{out,size,0,&a.content};b.text("离开");}return;}
  a.original_event_text(option,description,out,size);
- if(!*out&&!description){TextBuffer b{out,size,0};b.text(e.finished?"继续前进":"继续");}
+ if(!*out&&!description){TextBuffer b{out,size,0,&a.content};b.text(e.finished?"继续前进":"继续");}
 }
 static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
  c.centered(native_event_title(a),14,27,292,16,Gold);
- char key[128]{};TextBuffer k{key,sizeof key,0};k.text(original_event_key(e.id));k.text(".epithet");
+ char key[128]{};TextBuffer k{key,sizeof key,0,&c.a.content};k.text(original_event_key(e.id));k.text(".epithet");
  c.centered(a.content.world_string("ancients",key),22,46,276,10,White);
  char text[8192]{};a.original_event_text(-1,true,text,sizeof text);
  const int lines=c.paragraph(text,35,61,250,0,0,10);
@@ -93,7 +93,7 @@ static void native_ancient_screen(Canvas&c){
  }
 }
 static void native_fake_price(Canvas&c,int amount,int x,int y,bool enabled){
- char text[24]{};TextBuffer b{text,sizeof text,0};b.number(amount);int left=x-(c.width(text,10)+13)/2;
+ char text[24]{};TextBuffer b{text,sizeof text,0,&c.a.content};b.number(amount);int left=x-(c.width(text,10)+13)/2;
  c.picture(A_Coin,left,y+2,10,10,enabled?255:135);c.text(text,left+12,y,10,enabled?Gold:Red);
 }
 static void native_fake_merchant_screen(Canvas&c){
@@ -117,8 +117,8 @@ static void native_fake_merchant_screen(Canvas&c){
  }
  char title[256]{},description[4096]{};
  if(a.cursor<6){
-  if(a.cursor<e.offer_count&&e.offers[a.cursor]<WorldRelicKinds){TextBuffer b{title,sizeof title,0};b.text(a.relic_title(RelicId(e.offers[a.cursor])));}
-  else{TextBuffer b{title,sizeof title,0};b.text("售罄");}
+  if(a.cursor<e.offer_count&&e.offers[a.cursor]<WorldRelicKinds){TextBuffer b{title,sizeof title,0,&c.a.content};b.text(a.relic_title(RelicId(e.offers[a.cursor])));}
+  else{TextBuffer b{title,sizeof title,0,&c.a.content};b.text("售罄");}
   native_event_option(a,a.cursor,true,description,sizeof description);
  }else{native_event_option(a,6,false,title,sizeof title);a.original_event_text(-1,true,description,sizeof description);}
  c.dim(4,59,106,140,185);c.paragraph(title,9,62,96,2,0,10,Gold);
@@ -154,5 +154,5 @@ static void native_event_screen(Canvas&c){
   c.hit(130,y,186,32,HitKind::Choice,i,enabled);
  }
  if(count){char focused[4096]{};native_event_option(a,a.cursor,true,focused,sizeof focused);c.dim(4,148,123,90,195);c.paragraph(focused,10,151,111,6,0,10,White);}
- if(count>3){char page[32]{};TextBuffer b{page,sizeof page,0};b.number(first+1);b.text("–");b.number(mn(first+3,count));b.text(" / ");b.number(count);c.text(page,8,132,10,Gold,116);}
+ if(count>3){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first+1);b.text("–");b.number(mn(first+3,count));b.text(" / ");b.number(count);c.text(page,8,132,10,Gold,116);}
 }

@@ -3,8 +3,8 @@
 void App::card_description(Card c,int t,char*out,size_t cap,int instance,int deck_index,const EventCardFacts*facts)const{
     if(!cap)return;out[0]=0;if(c.kind>=CardKinds)return;
     if(!facts&&detail_has_facts&&detail_card==card_token(c))facts=&detail_facts;
-    if(c.kind>=EventCardBadLuck){world_card_description(c,t,out,cap,instance,deck_index,facts);return;}
-    TextBuffer b{out,cap,0};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
+    if(c.kind>=EventCardBadLuck||content.version()>=LocaleContentVersion){world_card_description(c,t,out,cap,instance,deck_index,facts);return;}
+    TextBuffer b{out,cap,0,&content};const char*p=content.card_string(c.kind,c.upgraded?2:1);const auto&d=definitions[c.kind];
     const bool permanent=!library&&deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==c.kind;
     const bool live=!library&&!permanent&&!(facts&&instance<0)&&combat_phase(game.phase);
     const auto offered_value=[&](const char*key,int&value){

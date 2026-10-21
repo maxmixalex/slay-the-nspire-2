@@ -1,4 +1,5 @@
 #include "resource_source.hpp"
+#include "loading_screen.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -8,8 +9,10 @@ using namespace spire;
 static unsigned checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
 struct File {
+    struct Progress {ResourceStage stage;uint32_t completed,total;};
     uint32_t readable{},calls{},last_offset{},last_count{},fail_offset=~0u;
     uint8_t salt{};
+    std::vector<Progress> progress;
     static uint8_t byte(uint32_t p,uint8_t salt){return (uint8_t)((p*17u)^(p>>8)^salt);}
     static bool read(void* context,uint32_t offset,void* dst,uint32_t count){
         auto& f=*static_cast<File*>(context);++f.calls;f.last_offset=offset;f.last_count=count;
@@ -19,6 +22,9 @@ struct File {
         return true;
     }
     ResourceSource source(uint32_t advertised=0){return {this,advertised?advertised:readable,read,nullptr};}
+    static void report(void*context,ResourceStage stage,uint32_t completed,uint32_t total){
+        static_cast<File*>(context)->progress.push_back({stage,completed,total});
+    }
 };
 static void check_bytes(const uint8_t* bytes,uint32_t offset,uint32_t n,uint8_t salt=0){
     for(uint32_t i=0;i<n;++i)CHECK(bytes[i]==File::byte(offset+i,salt));
@@ -113,4 +119,51 @@ static void memory_and_hash(){
     ResourceReader preferred(direct);uint8_t byte=0;const unsigned calls=file.calls;
     CHECK(preferred.u8(0,byte));CHECK(file.calls==calls);
 }
-int main(){bounds();cache();repeated_text_working_set();failures();memory_and_hash();std::printf("resource source: %u checks passed\n",checks);}
+static void buffered_integrity_progress(){
+    constexpr unsigned count=2*65536+17;
+    File file;file.readable=count;file.salt=97;
+    ResourceSource source=file.source();source.progress=File::report;ResourceReader reader(source);
+    std::vector<uint8_t> scratch(65536,0xa5),bytes(count);
+    uint32_t expected=2166136261u;
+    for(unsigned i=0;i<count;++i){bytes[i]=File::byte(i,file.salt);expected^=bytes[i];expected*=16777619u;}
+    uint32_t hash=19;CHECK(reader.fnv1a_buffered(0,count,hash,scratch.data(),unsigned(scratch.size())));
+    CHECK(hash==expected&&file.calls==3&&file.progress.size()==4);
+    const unsigned completed[]={0,65536,131072,count};
+    for(unsigned i=0;i<4;++i){CHECK(file.progress[i].stage==ResourceStage::Integrity);
+        CHECK(file.progress[i].completed==completed[i]&&file.progress[i].total==count);}
+    // A source failure never reports the failed chunk as complete or changes
+    // the caller's checksum, even though the scratch buffer is disposable.
+    file.progress.clear();file.fail_offset=65536;CHECK(reader.reset(source));hash=19;
+    CHECK(!reader.fnv1a_buffered(0,count,hash,scratch.data(),unsigned(scratch.size())));
+    CHECK(hash==19&&file.progress.size()==2&&file.progress.back().completed==65536);
+    file.progress.clear();const unsigned calls=file.calls;
+    CHECK(!reader.fnv1a_buffered(0,count,hash,nullptr,65536));
+    CHECK(!reader.fnv1a_buffered(0,count,hash,scratch.data(),0));
+    CHECK(!reader.fnv1a_buffered(count,1,hash,scratch.data(),65536));
+    CHECK(hash==19&&file.calls==calls&&file.progress.empty());
+    CHECK(reader.fnv1a_buffered(count,0,hash,nullptr,0,71));CHECK(hash==71);
+    CHECK(file.progress.size()==1&&file.progress[0].completed==0&&file.progress[0].total==0);
+    // A direct immutable source needs no copy or usable scratch. The same
+    // independently computed checksum and completed-byte boundaries apply.
+    file.progress.clear();source.direct=bytes.data();CHECK(reader.reset(source));
+    CHECK(reader.fnv1a_buffered(0,count,hash,nullptr,0));CHECK(hash==expected&&file.calls==calls);
+    CHECK(file.progress.size()==4&&reader.stats().direct_reads==3);
+    uint32_t first=0,joined=0;
+    CHECK(reader.fnv1a_buffered(0,65536,first,nullptr,0));
+    CHECK(reader.fnv1a_buffered(65536,count-65536,joined,nullptr,0,first));CHECK(joined==expected);
+}
+static void boot_display_progress(){
+    constexpr unsigned pixels=320*240;
+    std::vector<uint16_t> frame(pixels+2,0x55aa);auto* screen=frame.data()+1;
+    const auto gold=[&](){unsigned count=0;for(unsigned x=40;x<280;++x)if(screen[170*320+x]==0xc568)++count;return count;};
+    loading_screen(screen,ResourceStage::Integrity,0,100,0);CHECK(gold()==0);
+    loading_screen(screen,ResourceStage::Integrity,50,100,0);CHECK(gold()==120);
+    loading_screen(screen,ResourceStage::Integrity,50,100,24);CHECK(gold()==120);
+    loading_screen(screen,ResourceStage::Integrity,UINT32_MAX,UINT32_MAX,0);CHECK(gold()==240);
+    loading_screen(screen,ResourceStage::Images,101,100,0);CHECK(gold()==240);
+    loading_screen(screen,ResourceStage::Images,0,0,0);CHECK(gold()==0);
+    loading_screen(screen,static_cast<ResourceStage>(255),0,0,0);
+    CHECK(frame.front()==0x55aa&&frame.back()==0x55aa);
+    loading_screen(nullptr,ResourceStage::Header,0,1,0);
+}
+int main(){bounds();cache();repeated_text_working_set();failures();memory_and_hash();buffered_integrity_progress();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}

@@ -249,8 +249,10 @@ static void tile_put32(uint8_t* out,uint32_t value){
 // a permanent per-descriptor allocation is needed.
 static bool validate_tile_catalog(const Content* owner,const ResourceReader& reader,
     const uint8_t* h,uint32_t header_offset,const uint8_t* images,unsigned image_count,
-    uint8_t* workspace,unsigned capacity){
+    uint8_t* workspace,unsigned capacity,uint8_t* frame_pages=nullptr){
     const unsigned descriptors=u32(h+28),indexes=u32(h+24),tile_count=u32(h+20);
+    const unsigned progress_total=tile_count+indexes;
+    reader.progress(ResourceStage::TileIndex,0,progress_total);
     const unsigned required=4*(2*descriptors+indexes);
     bool grouped=capacity>=required;
     uint8_t* shapes=workspace;
@@ -281,6 +283,7 @@ static bool validate_tile_catalog(const Content* owner,const ResourceReader& rea
         if(id<tile_count){
             const uint8_t* lookup=h+64+id*8;uint8_t row[32];
             if(!reader.read(u32(lookup),row,sizeof row)||!valid_tile_group_header(h,id,row,u32(lookup+4)))return false;
+            if((id&31u)==31u)reader.progress(ResourceStage::TileIndex,id+1,progress_total);
             continue;
         }
         TileFrame pin;pin.pinned=load_tile_group(owner,reader,h,id);if(!pin.pinned)return false;
@@ -291,16 +294,20 @@ static bool validate_tile_catalog(const Content* owner,const ResourceReader& rea
             const uint8_t* record=tile_record_at(*pin.pinned,u32(row+8),u32(row+12));if(!record)return false;
             const unsigned shape=u32(shapes+descriptor*4);
             if(shape&&!valid_tile_shape(record,shape&65535u,shape>>16))return false;
+            if(frame_pages)frame_pages[descriptor]=uint8_t((u32(record)+4095u)/4096u);
         }
+        if(id+1<progress_total)reader.progress(ResourceStage::TileIndex,id+1,progress_total);
     }
-    if(grouped)return true;
+    if(grouped){reader.progress(ResourceStage::TileIndex,progress_total,progress_total);return true;}
     // A legal directory may consume the entire 2 MiB workspace. Preserve
     // acceptance and bounded memory with sequential checks in that case;
     // eviction can cause additional index decoding, but no tile pixel reads.
     for(unsigned i=0;i<descriptors;++i){
         uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+i*16,row))return false;
         TileGroup* group=load_tile_group(owner,reader,h,tile_count+u32(row+4));
-        if(!group||!tile_record_at(*group,u32(row+8),u32(row+12)))return false;
+        if(!group)return false;
+        const uint8_t* record=tile_record_at(*group,u32(row+8),u32(row+12));if(!record)return false;
+        if(frame_pages)frame_pages[i]=uint8_t((u32(record)+4095u)/4096u);
     }
     for(unsigned i=0;i<image_count;++i){
         const uint8_t* image=images+i*16;if(u32(image+8)!=6)continue;
@@ -308,7 +315,7 @@ static bool validate_tile_catalog(const Content* owner,const ResourceReader& rea
         if(!frame.open(owner,reader,h,header_offset,u32(image),u16(image+4),u16(image+6))||
            !valid_tile_geometry(frame.geometry,frame.geometry_size,frame.output_size,u16(image+4),u16(image+6)))return false;
     }
-    return true;
+    reader.progress(ResourceStage::TileIndex,progress_total,progress_total);return true;
 }
 
 static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader,

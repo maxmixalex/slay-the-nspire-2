@@ -177,7 +177,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     // NActBanner uses ActModel.Title: acts/<region>.title. Keep the compact
     // map header on that same localized title, with its key as the fallback.
     const char*region_name=a.content.world_title("acts",colors.region);if(!*region_name)region_name=colors.region;
-    char title[80]{};TextBuffer heading{title,sizeof title,0};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region_name);
+    char title[80]{};TextBuffer heading{title,sizeof title,0,&parent.a.content};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region_name);
     c.centered(title,4,25,258,12,colors.ink);c.text("图例 I",268,26,10,colors.ink);c.action(262,22,58,22,UiAction::ToggleMapLegend);
     c.text("↑",304,47,12,colors.ink);c.hit(297,44,23,24,HitKind::Scroll,-1,!a.map_legend&&a.map_can_scroll()&&view.origin<view.maximum);
     c.text("↓",304,182,12,colors.ink);c.hit(297,178,23,27,HitKind::Scroll,1,!a.map_legend&&a.map_can_scroll()&&view.origin>view.minimum);

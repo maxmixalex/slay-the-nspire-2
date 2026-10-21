@@ -16,7 +16,7 @@ static void native_reward_screen(Canvas&c){
  }
  UiAction actions[6];int count=ui_reward_actions(s,actions);a.cursor=mn(mx(0,a.cursor),count-1);
  c.ui(U_RewardPanel,50,32,220,202);c.ui(U_RewardBanner,38,30,244,48);c.centered("战利品",60,42,200,20,Gold);
- for(int i=0;i<count-1;i++){int y=81+i*26;UiAction action=actions[i];bool claimed=false,available=true;int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0};
+ for(int i=0;i<count-1;i++){int y=81+i*26;UiAction action=actions[i];bool claimed=false,available=true;int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0,&c.a.content};
   switch(action){
    case UiAction::RewardGold:claimed=s.reward_claimed&1;image=a.content.ui_image(U_RewardGold);t.number(s.last_gold);t.text(" 金币");break;
    case UiAction::RewardCards:claimed=s.reward_claimed&2;available=s.world.reward_count!=0;image=a.content.ui_image(U_RewardCard);t.text("选择一张牌");break;

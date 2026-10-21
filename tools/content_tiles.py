@@ -198,7 +198,7 @@ class PackView:
         require(self.base_end <= min(len(data), DIRECTORY_LIMIT), 'Directory outside limit')
         self.images = [IMAGE.unpack_from(data, 40 + i * 16) for i in range(ni)]
         for offset, w, h, fmt, length in self.images:
-            require(0 < w <= 320 and 0 < h <= 240 and 0 <= fmt <= (6 if self.version in (15, 16) else 5),
+            require(0 < w <= 320 and 0 < h <= 240 and 0 <= fmt <= (6 if self.version in (15, 16, 17) else 5),
                     'Invalid image dimensions or format')
             require(offset % 2 == 0 and 0 < length <= ENCODED_LIMIT, 'Invalid image range')
             self.block(offset, length)
@@ -647,7 +647,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16), 'Tiled reader requires version 15 or 16')
+        require(pack.version in (15, 16, 17), 'Tiled reader requires version 15, 16 or 17')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

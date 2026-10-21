@@ -11,11 +11,13 @@ struct UiCoreObserver {
  explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation})),was_combat(combat_phase(a.game.phase)),
   room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open){app.sync_enemy_feedback();}
  ~UiCoreObserver(){
-  set_core_observer(previous);app.sync_enemy_feedback();app.sync_treasure_presentation();
+  set_core_observer(previous);app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();
   if(app.game.enemy_world.active&&combat_phase(app.game.phase)&&int32_t(app.enemy_visual_clock-app.animation)>app.busy)app.busy=int(app.enemy_visual_clock-app.animation);
   if(was_combat&&app.game.enemy_world.active&&!combat_phase(app.game.phase)&&app.game.phase!=Phase::Dead){
    bool living=false;for(int i=0;i<app.game.enemy_count;i++)living|=app.game.enemies[i].hp>0;
-   if(!living)for(int i=0;i<app.game.enemy_count;i++){const auto&m=app.enemy_presentation[i];if(m.dead&&!m.loop&&int32_t(m.until-app.combat_linger_until)>0)app.combat_linger_until=m.until;}
+   if(!living)for(int i=0;i<app.game.enemy_count;i++){const auto&m=app.enemy_presentation[i];
+    const uint32_t end=m.removing?m.hide_at:m.until;
+    if(m.dead&&(m.removing||!m.loop)&&int32_t(end-app.combat_linger_until)>0)app.combat_linger_until=end;}
   }
   // Explicit ordinary Proceed keeps the same room, marked 2 by the
   // controller. Merely enabling travel (e.g. completing a rest option) does

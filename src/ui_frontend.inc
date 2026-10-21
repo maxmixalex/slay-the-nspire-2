@@ -19,7 +19,7 @@ static void title_screen(Canvas&c){
         c.ui(character_portrait(a.saved_character),180,101,27,40);
         const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
         c.text(*name?name:ch.name,214,99,12,Gold,92);
-        char row[96]{};TextBuffer b{row,sizeof row,0};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text(row,214,119,10,White,92);
+        char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text(row,214,119,10,White,92);
         row[0]=0;b.n=0;b.text("进阶 ");b.number(a.saved_ascension);c.text(row,214,133,10,White,92);
         row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,184,145,11,12);c.text(row,201,145,10,White,105);
     }
@@ -57,20 +57,25 @@ static void frontend_confirm_screen(Canvas&c){
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;
+    int hover=a.pointer.visible?-2:-1;
+    if(a.pointer.visible&&!a.run_settings&&a.pointer.y>=159&&a.pointer.y<207)
+        for(int i=0;i<CharacterKinds;++i)if(a.pointer.x>=157+i*31&&a.pointer.x<188+i*31)hover=i;
+    auto&motion=a.character_select_presentation;motion.observe(true,unsigned(a.selected_character),hover,a.map_clock_ms);
+    const int panel_x=motion.panel_offset(a.map_clock_ms);
     const auto& definition=character_definitions[(unsigned)a.selected_character];
     c.ui(character_background(a.selected_character),0,0);
-    int information=a.content.world_image("character","INFO_PANEL");if(information>=0)c.picture(information,0,0,155,209);else c.dim(0,0,150,208,140);
-    const char*title=a.content.world_title("characters",definition.key);c.text(*title?title:definition.name,13,15,20,Gold);
-    c.picture(A_Heart,14,49,13,14);char hp[32]={};TextBuffer h{hp,sizeof hp,0};h.number(definition.starting_hp);h.ch('/');h.number(definition.starting_hp);c.text(hp,31,48,10,White);
+    int information=a.content.world_image("character","INFO_PANEL");if(information>=0)c.picture(information,panel_x,0,155,209);else c.dim(panel_x,0,150,208,140);
+    const char*title=a.content.world_title("characters",definition.key);c.text_fitted(*title?title:definition.name,panel_x+13,15,134,20,Gold,12);
+    c.picture(A_Heart,panel_x+14,49,13,14);char hp[32]={};TextBuffer h{hp,sizeof hp,0,&a.content};h.number(definition.starting_hp);h.ch('/');h.number(definition.starting_hp);c.text(hp,panel_x+31,48,10,White);
     // All five pinned single-player models begin with 99 gold.
-    c.picture(A_Coin,101,50,12,12);c.num(99,116,48,10,Gold);
-    char description_key[96]{},description[1024]{};TextBuffer key{description_key,sizeof description_key,0};key.text(definition.key);key.text(".description");a.localized_text("characters",description_key,description,sizeof description);
-    c.paragraph(*description?description:character_summary(a.selected_character),14,73,132,5,0,10,White);
+    c.picture(A_Coin,panel_x+101,50,12,12);c.num(99,panel_x+116,48,10,Gold);
+    char description_key[96]{},description[1024]{};TextBuffer key{description_key,sizeof description_key,0,&a.content};key.text(definition.key);key.text(".description");a.localized_text("characters",description_key,description,sizeof description);
+    c.paragraph_fitted(*description?description:character_summary(a.selected_character),panel_x+14,73,132,65,10,White);
     if(const auto*relic=relic_definition(definition.starting_relic)){
         RelicId id=RelicId(relic-relic_definitions);char text[1024]{};a.relic_description(id,text,sizeof text);
-        c.picture(a.relic_face_image(id),14,141,25,25);
-        c.text(a.relic_title(id),46,145,12,Gold,99);
-        c.paragraph(text,14,172,132,3,0,10,White);
+        c.picture(a.relic_face_image(id),panel_x+14,141,25,25);
+        c.text_fitted(a.relic_title(id),panel_x+46,145,99,12,Gold);
+        c.paragraph_fitted(text,panel_x+14,172,132,34,10,White);
     }
     c.dim(0,209,320,31,130);
     native_back(c,2,212,84,28,"返回");c.action(1,209,86,31,UiAction::Back);
@@ -78,9 +83,11 @@ static void character_screen(Canvas&c){
     for(int i=0;i<CharacterKinds;i++){
         int x=159+i*31;bool selected=i==(int)a.selected_character;
         int outline=a.content.world_image("character","OUTLINE");
-        if(selected&&outline<0){c.rect(x-2,161,31,46,rgb(87,68,38));c.box(x-2,161,31,46,Gold);}
-        if(selected&&outline>=0)c.picture(outline,x-3,160,33,47);
-        c.ui(character_portrait((Character)i),x,164,27,40,selected?255:145);
+        const int scale=int(motion.portrait_scale(unsigned(i),a.map_clock_ms));
+        const int pw=(27*scale+512)/1024,ph=(40*scale+512)/1024,ow=(33*scale+512)/1024,oh=(47*scale+512)/1024;
+        if(selected&&outline<0){c.rect(x+(27-ow)/2,184-oh/2,ow,oh,rgb(87,68,38));c.box(x+(27-ow)/2,184-oh/2,ow,oh,Gold);}
+        if(selected&&outline>=0)c.picture(outline,x+(27-ow)/2,184-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms));
+        c.ui(character_portrait((Character)i),x+(27-pw)/2,184-ph/2,pw,ph,selected||hover==i?255:145);
         c.action(x-2,159,31,48,actions[i]);
     }
     native_proceed(c,215,212,103,28,a.practice_entry?"练习":"启程");c.action(213,207,107,33,UiAction::StartCharacter);
@@ -88,7 +95,7 @@ static void character_screen(Canvas&c){
     if(a.run_settings){a.hit_count=0;c.dim(0,0,320,240,218);c.ui(U_RewardPanel,17,17,286,213);c.centered("远征设置",0,26,320,20,Gold);
         c.text("进阶等级",39,69,12,White);c.button("−",174,63,36,false,26);c.action(172,62,40,29,UiAction::RunAscensionDown,a.selected_ascension>0);c.num(a.selected_ascension,222,67,16,Gold);c.button("+",252,63,36,false,26);c.action(250,62,40,29,UiAction::RunAscensionUp,a.selected_ascension<10);
         c.text("第一幕",39,105,12,White);c.button(a.content.world_title("acts",a.selected_region==reference::ActKind::Overgrowth?"OVERGROWTH":"UNDERDOCKS"),156,98,132,false,26);c.action(154,97,136,29,UiAction::RunRegion);
-        c.text("种子",39,141,12,White);c.text(*a.selected_seed?a.selected_seed:"自动生成",87,141,196,10,Gold);c.action(84,134,202,31,UiAction::RunSeed);
+        c.text("种子",39,141,12,White);c.text_fitted(*a.selected_seed?a.selected_seed:"自动生成",87,141,196,10,Gold);c.action(84,134,202,31,UiAction::RunSeed);
         c.button("编辑种子",38,170,113,false,24);c.action(36,168,117,28,UiAction::RunSeed);c.button("清除",171,170,113,false,24);c.action(169,168,117,28,UiAction::RunSeedClear,*a.selected_seed);
         c.button("返回",100,202,120,true,24);c.action(98,200,124,28,UiAction::RunSettings);
     }
@@ -99,7 +106,7 @@ static void library_screen(Canvas&c){
     const char* tabs[]={"卡牌","遗物","药水"};
     const int totals[]={(int)a.library_items(),WorldRelicKinds,PotionKinds};
     for(int i=0;i<3;i++){
-        int x=5+i*104;char label[32]={};TextBuffer b{label,sizeof label,0};b.text(tabs[i]);b.ch(' ');b.number(i==0?CardKinds:totals[i]);
+        int x=5+i*104;char label[32]={};TextBuffer b{label,sizeof label,0,&a.content};b.text(tabs[i]);b.ch(' ');b.number(i==0?CardKinds:totals[i]);
         c.ui(U_LibraryCards+i,x+6,24,18,18);c.text(label,x+29,25,10,i==a.library_tab?Gold:Muted);
         if(i==a.library_tab)c.rect(x+6,43,91,1,Gold);
         c.action(x,22,104,23,(UiAction)((int)UiAction::LibraryCards+i));
@@ -121,7 +128,7 @@ static void library_screen(Canvas&c){
         c.action(108,211,116,29,UiAction::ToggleUpgrades);c.centered(a.library_upgraded?"升级版本 +":"基础版本",108,215,116,12,Green);
         c.text("‹",12,214,16,Gold);c.action(1,211,43,29,UiAction::PreviousPage,a.library_page>0);
         c.text("›",296,214,16,Gold);c.action(277,211,43,29,UiAction::NextPage,a.library_page<last);
-        char page[32]={};TextBuffer b{page,sizeof page,0};b.number(a.library_page+1);b.text(" / ");b.number(last+1);c.text(page,51,218,10,Muted);
+        char page[32]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);c.text(page,51,218,10,Muted);
     }else{
         const int count=totals[a.library_tab];
         const int last=(count-1)/18;a.library_page=mn(mx(0,a.library_page),last);int first=a.library_page*18;
@@ -133,11 +140,11 @@ static void library_screen(Canvas&c){
         }
         int index=mn(count-1,mx(0,a.library_selected));const char*name;const char*desc;char description[2048]{};
         if(a.library_tab==1){name=a.relic_title(RelicId(index));a.relic_description(RelicId(index),description,sizeof description);desc=description;}
-        else{name=potion_definitions[index].name;desc=potion_definitions[index].description;}
+        else{name=potion_name(index+1,&a.content);ui_potion_description(a,index+1,description,sizeof description);desc=description;}
         c.centered(name,10,163,300,16,Gold);c.paragraph(desc,20,189,282,2,0,12,White);
         c.text("‹",12,215,16,Gold);c.action(0,211,44,29,UiAction::PreviousPage,a.library_page>0);
         c.text("›",296,215,16,Gold);c.action(277,211,43,29,UiAction::NextPage,a.library_page<last);
-        char page[64]={};TextBuffer b{page,sizeof page,0};b.number(a.library_page+1);b.text(" / ");b.number(last+1);b.text(" · 点击查看完整详情");c.centered(page,40,222,236,10,Muted);
+        char page[64]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);b.text(" · 点击查看完整详情");c.centered(page,40,222,236,10,Muted);
     }
 }
 
@@ -145,13 +152,14 @@ static void item_detail_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,190);c.ui(U_RewardPanel,43,26,234,206);
     bool relic=a.detail_item<WorldRelicKinds;int index=relic?a.detail_item:a.detail_item-WorldRelicKinds;
     if(index<0||index>=(relic?WorldRelicKinds:PotionKinds)){a.detail_item=-1;return;}
-    const char*name=relic?a.relic_title(RelicId(index),a.detail_owned):potion_definitions[index].name;
+    const char*name=relic?a.relic_title(RelicId(index),a.detail_owned):potion_name(index+1,&a.content);
     char description[4096]{};if(relic)a.relic_description(RelicId(index),description,sizeof description,a.detail_owned);
-    const char*desc=relic?description:potion_definitions[index].description;
+    if(!relic)ui_potion_description(a,index+1,description,sizeof description);
+    const char*desc=description;
     int image=relic?a.relic_face_image(index):a.content.potion_image((Potion)(index+1));
     c.picture(image,140,40,40,46);c.centered(name,58,91,204,16,Gold);
     bool owned=relic&&a.detail_owned>=0&&a.detail_owned<int(ui_owned_relic_count(a.game))&&ui_owned_relic_id(a.game,a.detail_owned)==index;
-    char progress[128]{};if(owned)ui_relic_progress(a.game,a.detail_owned,progress,sizeof progress);int top=*progress?136:119;
+    char progress[128]{};if(owned)ui_relic_progress(a.game,a.detail_owned,progress,sizeof progress,&a.content);int top=*progress?136:119;
     if(*progress)c.centered(progress,57,116,206,10,Green);
     int visible=top==136?4:5;
     int lines=c.paragraph(desc,67,top,188,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-visible));

@@ -1,6 +1,74 @@
 # Work state — 2026-10-21
 
-## Current: source27 UI/runtime and final-v16 device gates completed — 2026-10-21
+## Current: calculator feedback, bilingual UI and cold preparation — source31 pending validation
+
+The owner reports approximately 70% UI fidelity on a physical calculator and
+specifically identifies missing card framing, character focus motion, death
+removal, visible power stacks, turn banners, repeated startup seeds and long
+cold/entry stalls. These reports supersede earlier aspirational percentages.
+UI fidelity remains priority one; measured performance remains priority two.
+The reference stays v0.111.0 / 41cef1ea. Main and remote CI are unchanged.
+
+This coherent source stage is being checkpointed **before** long compilation,
+resource conversion or emulator work. No new runtime/pack pair is accepted
+until its frozen-source checks complete. The prior accepted pair and its
+measurement limits remain recorded below.
+
+Implemented source changes awaiting those checks:
+
+- A common card face follows the original 300 × 422 scene's portrait, frame,
+  border, type plaque and description rectangles. Energy/star costs do not
+  push the portrait downward. Readable 8px text and final-line ellipsis are
+  explicit calculator adaptations. Hand, rewards, merchant, detail and deck
+  confirmation use the same renderer. Original top-bar portrait, backdrop and
+  potion-slot assets extend the v17 auxiliary catalog to 1,236 entries.
+- Character focus restores the original 1.1 scale and 500ms ExpoOut release,
+  with the 500ms information-panel slide. Pointer focus changes the preview;
+  beginning a run still requires the separate confirmation.
+- Every collected creature power receives its own visible icon/amount and
+  hover/click target, with compact wrapped rows. Amounts are no longer capped
+  at 99+ or folded into a +N icon. Dense arrangements on a 320 × 240 screen
+  still require visual checks. Original power descriptions replace old
+  paraphrases through the locale bindings.
+- Removed enemies finish their death track and leave the renderer; downed or
+  reviving actors retain their body. The constrained renderer uses a bounded
+  opacity fade in place of the original death noise shader/particles, and
+  does not claim pixel-equivalent death VFX. Dedicated checks distinguish
+  permanent removal, restored corpses, Test Subject revival and detached
+  Decimillipede segments.
+- Player/enemy turn text comes from original gameplay_ui keys. Presentation
+  uses the original banner tween durations, label motion and enemy 2→1 zoom,
+  and queues the next player label behind the observed enemy animation clock.
+- Platform-provided new-run entropy fixes the process-local seed counter.
+  The auto-generated displayed seed can be entered manually to reproduce
+  both legacy and named streams; explicit seeds and loaded saves do not draw
+  fresh entropy. A missing/zero host source keeps deterministic test replay.
+- Separate Chinese/English v17 packs reuse all existing animation/tile
+  payloads and rebuild localization/glyph directories, with original keys for
+  cards, powers, potion and world text. Regent's resource uses STAR_COUNT's
+  original title, 辉星. Public source contains bindings and keys; original
+  localized payloads, images and fonts remain private.
+- Cold startup exposes real per-phase work progress using a tiny built-in
+  display before pack fonts/images are trusted. Integrity hashing uses
+  bounded 64 KiB reads; repeated descriptors avoid duplicate validation.
+  Decoded-image entries increase from 256 to 320 within the same 748-page
+  pixel pool. Planning APIs do not perform I/O or alter cache ages.
+- Combat preparation selects only current/next-idle tracks within 288 entries
+  and 640 pages, removes exact aliases, reads in stored frame order, and yields
+  after each cold image. The animation clock freezes until preparation ends.
+  Diagnostic reports separate preparation from visible combat. Progress alone
+  is not a speed claim: the new benchmark includes preparation, first visible
+  frame and subsequent windows, and verifies the save remains unchanged.
+
+Next gates: remote tree/content read-back; frozen native affected regressions;
+strict original-locale template audit and both v17 conversions; actual-pack
+Chinese/English captures; same-pack source27/current cold preparation A/B;
+ARM allocation/build and bounded Firebird execution of the new pair. Retain
+all failed journals. Native agreement, modeled cache savings and Firebird
+update rates remain distinct from physical-device speed and original-engine
+visual acceptance. The 30–40 MB storage target remains unachieved.
+
+## Previous: source27 UI/runtime and final-v16 device gates completed — 2026-10-21
 
 The built runtime remains **source27**,
 `9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69`. Source28 is remotely preserved at

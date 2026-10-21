@@ -37,12 +37,21 @@ int main(){
     check(p.scenes[(unsigned)RuntimeScene::Map].interval.total==10);
     p.frame(static_cast<RuntimeScene>(255),2000,0,0,0,p.resources);
     check(p.scenes[(unsigned)RuntimeScene::Other].interval.maximum==2000);
+    static_assert((unsigned)RuntimeScene::Other==7&&unsigned(RuntimeScene::CombatPreparation)==8,
+                  "Existing diagnostic scene indexes remain compatible");
+    p.frame(RuntimeScene::CombatPreparation,3000,2800,100,100,p.resources);
+    check(p.scenes[(unsigned)RuntimeScene::CombatPreparation].interval.total==3000);
+    check(p.scenes[(unsigned)RuntimeScene::Combat].interval.total==803);
     RuntimeTiming t;t.add(0);t.add(UINT32_MAX);
     check(t.count==2&&t.minimum==0&&t.maximum==UINT32_MAX&&t.total==UINT32_MAX);
     t.count=UINT32_MAX;t.total=123;t.add(99);check(t.total==123&&t.count==UINT32_MAX);
+    p.startup_phases[(unsigned)ResourceStage::Integrity].add(1234);
     Sink output;check(p.write(sink,&output));
     check(output.text.find("\"format\":\"nspire-runtime-perf-1\"")!=std::string::npos);
     check(output.text.find("\"over_50ms\":5,\"over_100ms\":3,\"over_250ms\":1")!=std::string::npos);
+    check(output.text.find("\"startup_phases\":{")!=std::string::npos);
+    check(output.text.find("\"integrity\":{\"count\":1,\"total\":1234,\"min\":1234,\"max\":1234}")!=std::string::npos);
+    check(output.text.find("\"scene\":\"combat_preparation\"")!=std::string::npos);
     check(output.text.front()=='{'&&output.text.substr(output.text.size()-3)=="]}\n");
     check(output.text.size()<8192&&output.calls<33);
     Sink failed;failed.reject=true;check(!p.write(sink,&failed));check(failed.calls==1&&failed.text.empty());

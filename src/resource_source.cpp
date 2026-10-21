@@ -67,13 +67,24 @@ bool ResourceReader::u32(uint32_t offset,uint32_t& out)const{
     out=uint32_t(b[0])|(uint32_t(b[1])<<8)|(uint32_t(b[2])<<16)|(uint32_t(b[3])<<24);return true;
 }
 bool ResourceReader::fnv1a(uint32_t offset,uint32_t count,uint32_t& out,uint32_t seed)const{
-    if(!contains(offset,count))return false;
-    uint8_t bytes[PageSize];uint32_t value=seed;
+    uint8_t bytes[PageSize];return fnv1a_buffered(offset,count,out,bytes,sizeof bytes,seed);
+}
+bool ResourceReader::fnv1a_buffered(uint32_t offset,uint32_t count,uint32_t& out,
+                                  uint8_t* scratch,uint32_t capacity,uint32_t seed)const{
+    if(!contains(offset,count)||(!source_.direct&&count&&(!scratch||!capacity)))return false;
+    const uint32_t total=count;uint32_t value=seed;
+    progress(ResourceStage::Integrity,0,total);
     while(count){
-        const uint32_t n=count<PageSize?count:PageSize;
-        if(!read(offset,bytes,n))return false;
+        // Limit direct-memory reports too, so the same progress contract can
+        // be used without copying the entire pack through temporary pages.
+        const uint32_t block=source_.direct?65536u:capacity;
+        const uint32_t n=count<block?count:block;
+        const uint8_t* bytes=source_.direct?source_.direct+offset:scratch;
+        if(source_.direct)++stats_.direct_reads;
+        else if(!read(offset,scratch,n))return false;
         for(uint32_t i=0;i<n;++i){value^=bytes[i];value*=16777619u;}
         offset+=n;count-=n;
+        progress(ResourceStage::Integrity,total-count,total);
     }
     out=value;return true;
 }

@@ -7,6 +7,8 @@ __attribute__((import_module("env"),import_name("resource_read"))) int host_reso
 }
 static spire::App app;
 static spire::SaveData buffer;
+static uint32_t browser_entropy=0;
+static uint32_t seed_entropy(){return browser_entropy;}
 static bool read_resource(void*,uint32_t offset,void* output,uint32_t count){return host_resource_read(offset,(uint8_t*)output,count)!=0;}
 static bool save_game(const spire::State&s){return spire::save(s,buffer)&&host_save(buffer.bytes,(unsigned)buffer.size)!=0;}
 static bool load_game(spire::State&s){int n=host_load(buffer.bytes,sizeof buffer.bytes);return n>0&&spire::load(s,buffer.bytes,(unsigned)n);}
@@ -14,7 +16,10 @@ static bool load_game(spire::State&s){int n=host_load(buffer.bytes,sizeof buffer
 // saves always contain the validated NSP save header and are nonempty.
 static bool clear_save(){return host_save(nullptr,0)!=0;}
 extern "C" {
-int start(unsigned n){return app.init({nullptr,n,read_resource,nullptr},{save_game,load_game,clear_save})?1:0;}
+// Optional host hook preserves the existing imports for deterministic replay.
+// Interactive browsers set this from crypto before dispatching user input.
+void set_seed_entropy(uint32_t value){browser_entropy=value;}
+int start(unsigned n){return app.init({nullptr,n,read_resource,nullptr},{save_game,load_game,clear_save,seed_entropy})?1:0;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}
 void input(int key){if(key>=0&&key<=(int)spire::Key::Statuses)app.input((spire::Key)key);}
 void frame(){app.tick();app.render();}

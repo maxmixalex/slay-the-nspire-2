@@ -93,7 +93,9 @@ static void enemy_visual_fight(EncounterId encounter){
  new_run(a.game,0x41cef1ea,false);a.game.phase=Phase::Combat;a.game.current_node=1;a.game.floor=a.game.turn=1;a.game.hp=a.game.max_hp=999;
  CHECK(encounter_setup(a.game,encounter));
  for(unsigned i=0;i<a.game.deck_count;i++){int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,a.game.deck[i].kind,1);resolve_pending(a.game);CHECK(a.game.card_count==id+1);a.game.cards[id].upgraded=a.game.deck[i].upgraded;notify_deck_card_created(a.game,id,i);}
- draw_cards(a.game,5);a.title=a.library=a.paused=a.help=a.character_select=false;a.reset_presentation();snapshot();a.render();unchanged();
+ draw_cards(a.game,5);a.title=a.library=a.paused=a.help=a.character_select=false;a.reset_presentation();snapshot();a.render();
+ for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+ CHECK(!a.combat_preparation.active);unchanged();
 }
 static void original_enemy_presentation(){
  CHECK(world_enemy_fact_count()<=MaxEnemyVisualFacts);enemy_visual_fight(EncounterId::NibbitsWeak);
@@ -103,6 +105,11 @@ static void original_enemy_presentation(){
  for(unsigned i=0;i<32;i++){a.advance(250);a.render();}unchanged();CHECK(a.enemy_frame(0,clip,elapsed,loop)&&loop);CHECK(!a.enemy_presentation[0].overflow);
  {UiCoreObserver observer(a);damage_unpowered(a.game,0,9999);resolve_pending(a.game);}
  CHECK(a.enemy_presentation[0].dead);CHECK(a.enemy_frame(0,clip,elapsed,loop)&&!loop);CHECK(a.combat_linger_until>a.animation);snapshot();a.render();capture("combat-nibbit-death");unchanged();
+ CHECK(a.enemy_presentation[0].removing&&a.enemy_presentation[0].hide_at>a.animation);
+ a.animation=a.enemy_presentation[0].fade_start+1;CHECK(a.enemy_opacity(0)<255&&a.enemy_opacity(0)>0);
+ a.animation=a.enemy_presentation[0].hide_at;a.render();CHECK(!a.enemy_opacity(0)&&!a.enemy_frame(0,clip,elapsed,loop));unchanged();
+ // A restored removed actor does not replay a corpse's disappearance.
+ a.reset_presentation();a.sync_enemy_feedback();CHECK(!a.enemy_opacity(0)&&!a.enemy_frame(0,clip,elapsed,loop));unchanged();
  // Actual shared-scene clips replace both arm placeholders. Rendering and
  // idle advancement cannot draw new game RNG or change a saved boss phase.
  enemy_visual_fight(EncounterId::KaiserCrabBoss);CHECK(a.game.enemy_count==2);
@@ -113,7 +120,10 @@ static const WorldEnemyVisualClip* visual_clip(int slot){
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(slot,clip,elapsed,loop));const auto*row=world_enemy_clip_directory(unsigned(clip));CHECK(row);return row;
 }
 static void settle_enemy_visuals(){
- snapshot();for(unsigned frame=0;frame<80;frame++){a.advance(250);for(int slot=0;slot<a.game.enemy_count;slot++)visual_clip(slot);}a.render();unchanged();
+ snapshot();for(unsigned frame=0;frame<80;frame++){a.advance(250);for(int slot=0;slot<a.game.enemy_count;slot++){
+  if(a.enemy_opacity(slot))visual_clip(slot);
+  else CHECK(a.game.enemies[slot].hp<=0&&(a.game.enemy_world.models[slot].flags&EnemyRemoved));
+ }}a.render();unchanged();
 }
 static void observed_enemy_kill(int slot){
  UiCoreObserver observer(a);a.game.enemies[slot].block=0;damage_unpowered(a.game,slot,9999);resolve_pending(a.game);CHECK(a.game.phase!=Phase::Error);
@@ -123,7 +133,7 @@ static void original_enemy_transformations(){
  for(int form=0;form<2;form++){
   observed_enemy_kill(0);CHECK(a.game.phase==Phase::Combat&&(a.game.enemy_world.models[0].flags&EnemyDown));
   CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"knockout2":"knockout1"));CHECK(a.enemy_presentation[0].dead);
-  settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"knocked_out_loop2":"knocked_out_loop1"));
+  settle_enemy_visuals();CHECK(a.enemy_opacity(0)==255&&!a.enemy_presentation[0].removing);CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"knocked_out_loop2":"knocked_out_loop1"));
   if(!form)capture("combat-test-subject-down");
   a.input(Key::EndTurn);CHECK(a.game.enemy_world.models[0].data[0]==form+1&&a.game.enemies[0].hp>0);
   CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"regenerate2":"regenerate1"));CHECK(!a.enemy_presentation[0].dead);
@@ -135,7 +145,7 @@ static void original_enemy_transformations(){
  CHECK(enemy_power_value(a.game,0,EnemyPower::Intangible)==1);
  const int third_hp=a.game.enemies[0].hp;observed_enemy_kill(0);CHECK(a.game.enemies[0].hp==third_hp-1);
  settle_enemy_visuals();a.input(Key::EndTurn);settle_enemy_visuals();CHECK(!enemy_power_value(a.game,0,EnemyPower::Intangible));
- observed_enemy_kill(0);CHECK(!std::strcmp(visual_clip(0)->native_clip,"die"));settle_enemy_visuals();CHECK(a.enemy_presentation[0].dead&&!a.enemy_presentation[0].loop);
+ observed_enemy_kill(0);CHECK(!std::strcmp(visual_clip(0)->native_clip,"die"));settle_enemy_visuals();CHECK(a.enemy_presentation[0].dead&&!a.enemy_presentation[0].loop&&!a.enemy_opacity(0));
 
  enemy_visual_fight(EncounterId::DecimillipedeElite);observed_enemy_kill(0);settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,"dead_loop"));
  // One real segment action shakes every segment, including a detached one.

@@ -20,6 +20,39 @@ static uint32_t ui_enemy_ticks(const App&a,int clip){
  const auto*row=clip>=0?world_enemy_clip_directory(unsigned(clip)):nullptr;auto c=a.content.clip(clip);
  unsigned ms=row?row->duration_ms:uint32_t(c.count)*c.frame_ms;return (ms+32)/33? (ms+32)/33:1;
 }
+static bool ui_enemy_death_fades(const State&s,int slot){
+ const auto&m=s.enemy_world.models[slot];
+ switch(m.kind){
+  case EnemyId::DecimillipedeSegmentBack:case EnemyId::DecimillipedeSegmentFront:case EnemyId::DecimillipedeSegmentMiddle:
+  case EnemyId::SoulNexus:case EnemyId::CeremonialBeast:case EnemyId::Rocket:case EnemyId::Fabricator:
+  case EnemyId::Crusher:case EnemyId::LivingFog:case EnemyId::PhantasmalGardener:case EnemyId::GasBomb:return false;
+  case EnemyId::WaterfallGiant:return m.data[2]==0;
+  default:return true;
+ }
+}
+static void ui_enemy_removal(App&a,int slot,bool restored=false){
+ auto&m=a.enemy_presentation[slot];const auto&source=a.game.enemy_world.models[slot];
+ // Downed/reviving actors remain in the battle. Removed actors finish their
+ // death track, wait the original half second, then leave the scene.
+ if(!(source.flags&EnemyRemoved)||a.game.enemies[slot].hp>0){m.removing=false;return;}
+ if(m.removing)return;m.removing=true;
+ if(restored){m.fade_start=m.hide_at=a.animation;return;}
+ uint32_t wait=m.clip>=0?uint32_t(int32_t(m.until-a.animation)>0?m.until-a.animation:0)+16u:0u;
+ if(wait>607u)wait=607u; // AnimDie caps its animation wait at twenty seconds.
+ if(m.clip<0&&(source.kind==EnemyId::Rocket||source.kind==EnemyId::Crusher))wait=76u;
+ m.fade_start=a.animation+wait;
+ // Original death dissolve is capped at 2.5 seconds. This bounded opacity
+ // adapter removes the retained corpse without a second skeleton or shader.
+ m.hide_at=m.fade_start+(ui_enemy_death_fades(a.game,slot)?76u:0u);
+}
+unsigned App::enemy_opacity(int slot)const{
+ if(slot<0||slot>=game.enemy_count)return 0;
+ const auto&m=enemy_presentation[slot];if(!m.removing)return 255;
+ if(int32_t(animation-m.hide_at)>=0)return 0;
+ if(int32_t(animation-m.fade_start)<=0)return 255;
+ const uint32_t duration=m.hide_at-m.fade_start;
+ return duration?unsigned(((m.hide_at-animation)*255u)/duration):0u;
+}
 static bool ui_enemy_set_clip(App&a,int slot,int clip,const EnemyVisualFacts&facts,uint32_t start,bool loop){
  if(clip<0)return false;auto&m=a.enemy_presentation[slot];m.clip=clip;m.facts=facts;m.loop=loop;m.start=start;m.until=start+ui_enemy_ticks(a,clip);return true;
 }
@@ -83,16 +116,21 @@ void App::sync_enemy_feedback(){
    m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.hp=game.enemies[i].hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
    int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
    ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
+   ui_enemy_removal(*this,i,m.dead);
   }else{
    int hp=game.enemies[i].hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");}
    else if(hp>0&&m.hp<=0){m.dead=false;enemy_trigger(i,"Revive");}
    m.hp=hp;
   }
   ui_enemy_advance(*this,i);
+  ui_enemy_removal(*this,i);
  }
 }
 void App::observe_core(const State&s,Log log){
- if(&s!=&game||!s.enemy_world.active)return;
+ if(&s!=&game)return;
+ if(log.kind==LogKind::Enemy){sync_turn_banner();turn_banner.begin_enemy(animation);}
+ if(log.kind==LogKind::Turn)sync_turn_banner();
+ if(!s.enemy_world.active)return;
  if(log.kind==LogKind::Enemy&&log.a>=0&&log.a<s.enemy_count){int slot=log.a;auto facts=ui_enemy_facts(s,slot);const auto*move=world_enemy_move(unsigned(s.enemy_world.models[slot].kind),log.b);
   const auto kind=s.enemy_world.models[slot].kind;
   // Respawns increments inside the original action, before its trigger.
@@ -137,7 +175,7 @@ void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
  if(clip>=0)enemy_visual_clock=when+ui_enemy_ticks(*this,clip);
 }
 bool App::enemy_frame(int slot,int&clip,uint32_t&elapsed,bool&loop){
- if(slot<0||slot>=game.enemy_count||!game.enemy_world.active)return false;ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];
+ if(slot<0||slot>=game.enemy_count||!game.enemy_world.active||!enemy_opacity(slot))return false;ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];
  clip=m.clip;elapsed=int32_t(animation-m.start)>=0?(animation-m.start)*33:0;loop=m.loop;return clip>=0;
 }
 int App::combat_background()const{

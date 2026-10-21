@@ -11,8 +11,15 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <random>
 
 static spire::App app;
+static uint32_t seed_entropy(){
+    static std::random_device device;
+    const uint64_t now=uint64_t(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    const uint32_t value=uint32_t(device())^uint32_t(now)^uint32_t(now>>32);
+    return value?value:1u;
+}
 struct ResourceFile {FILE* file;~ResourceFile(){if(file)fclose(file);}};
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
     FILE*file=(FILE*)context;return fseek(file,(long)offset,SEEK_SET)==0&&fread(output,1,count,file)==count;
@@ -50,7 +57,7 @@ int main(int argc,char**argv){
         else {fprintf(stderr,"Usage: %s [--pack FILE] [--save FILE] [--headless] [--actions enter,right,…] [--capture FILE.ppm]\n",argv[0]);return 2;}}
     ResourceFile resource{fopen(packpath.c_str(),"rb")};if(!resource.file){perror(packpath.c_str());return 2;}
     if(fseek(resource.file,0,SEEK_END)!=0)return 2;long length=ftell(resource.file);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({resource.file,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({resource.file,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save,headless?nullptr:seed_entropy})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
     if(!actions.empty()){
         size_t start=0;while(start<actions.size()){
             size_t end=actions.find(',',start);if(end==std::string::npos)end=actions.size();std::string a=actions.substr(start,end-start);

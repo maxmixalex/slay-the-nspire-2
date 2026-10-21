@@ -52,7 +52,7 @@ static void card_choice_screen(Canvas&c){
     const bool optional=choice_min(s)==0;
     a.cursor=mn(mx(0,a.cursor),mx(0,source.count-1));const int first=offer?0:a.cursor/10*10;
     c.dim(0,0,320,240,215);c.centered(choice_title(s),0,8,320,16,Gold);
-    char label[96]={};TextBuffer text{label,sizeof label,0};
+    char label[96]={};TextBuffer text{label,sizeof label,0,&c.a.content};
     if(offer&&choice_free_energy(s))text.text("本回合减免固定费用 · ");
     text.text("已选择 ");text.number(a.choice_selected_count);text.text(optional?" / 最多 ":" / ");text.number(limit);
     c.centered(label,0,31,320,10,White);
@@ -74,7 +74,7 @@ static void card_choice_screen(Canvas&c){
     if(!offer&&source.count>10){
         c.text("‹",12,191,16,Gold);c.action(0,187,42,21,UiAction::PreviousChoicePage,first>0);
         c.text("›",295,191,16,Gold);c.action(278,187,42,21,UiAction::NextChoicePage,first+10<source.count);
-        char page[32]={};TextBuffer text{page,sizeof page,0};text.number(first/10+1);text.text(" / ");text.number((source.count+9)/10);c.centered(page,43,194,234,10,Muted);
+        char page[32]={};TextBuffer text{page,sizeof page,0,&c.a.content};text.number(first/10+1);text.text(" / ");text.number((source.count+9)/10);c.centered(page,43,194,234,10,Muted);
     }else c.centered(optional?"可不选 · Enter 选择 · 空格确认":"Enter 选择 · 空格确认 · I 详情",0,192,320,10,Muted);
     c.button("清除",4,213,77,false,24);c.action(1,209,83,31,UiAction::ClearChoice,a.choice_selected_count!=0);
     c.button("详情",85,213,77,false,24);c.hit(82,209,83,31,HitKind::Command,(int)Key::Detail,source.count>0);

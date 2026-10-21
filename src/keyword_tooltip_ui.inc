@@ -171,7 +171,7 @@ static LocalizedValue hover_text_value(const void*opaque,const char*name){
 void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTip&tip,char*title,size_t title_cap,char*body,size_t body_cap){
     if(title_cap)title[0]=0;if(body_cap)body[0]=0;
     if(tip.kind==HoverTipKind::Card){
-        TextBuffer name{title,title_cap,0};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
+        TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
         const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,-1,-1,&canonical);return;
     }
     const char*table=tip.kind==HoverTipKind::Keyword?"card_keywords":tip.kind==HoverTipKind::Power?"powers":
@@ -179,7 +179,7 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
     int model=-1;if(tip.kind==HoverTipKind::Power)for(unsigned i=0;i<EnemyPowerCount;++i)if(wt_equal(tip.key,world_enemy_power_keys[i])){model=int(i);break;}
     HoverTextContext context{{&a,table,{},model,tip.actor,tip.amount,owner.card,owner.instance,owner.deck,owner.facts},&tip};
     auto format=[&](const char*suffix,char*out,size_t cap){if(!cap)return;char key[160]{},raw[4096]{};TextBuffer k{key,sizeof key,0};k.text(tip.key);k.text(suffix);
-        wt_model_key(context.world,key);TextBuffer source{raw,sizeof raw,0};source.text(a.content.world_string(table,key));LocalizedTemplate(out,cap,hover_text_value,&context).format(raw);};
+        wt_model_key(context.world,key);TextBuffer source{raw,sizeof raw,0};source.text(a.content.world_string(table,key));LocalizedTemplate(out,cap,hover_text_value,&context,a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).format(raw);};
     format(".title",title,title_cap);format(tip.smart?".smartDescription":".description",body,body_cap);
     if(body_cap&&!*body&&tip.smart)format(".description",body,body_cap);
 }
@@ -237,7 +237,7 @@ static void keyword_tooltips(Canvas&c){
     if(a.keyword_hover.page>=page.pages){a.keyword_hover.page=page.pages-1;page=hover_page(c,owner,tips,a.keyword_hover.page);}
     for(unsigned i=0;i<page.count;++i)draw_hover_piece(c,owner,tips,page.pieces[i]);
     if(!page.count)return;
-    char footer[96]{};TextBuffer text{footer,sizeof footer,0};text.number(a.keyword_hover.page+1);text.ch('/');text.number(page.pages);
+    char footer[96]{};TextBuffer text{footer,sizeof footer,0,&c.a.content};text.number(a.keyword_hover.page+1);text.ch('/');text.number(page.pages);
     if(detail){text.text("  ↑↓ 翻页 · V 返回卡牌");c.centered(footer,12,192,296,10,Gold);
         // Existing command dispatch keeps these controls modal and cancels a
         // captured release correctly; hover panels themselves remain passive.

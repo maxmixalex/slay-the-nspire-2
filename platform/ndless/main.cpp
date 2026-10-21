@@ -3,6 +3,7 @@
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
 #include "touchpad.hpp"
+#include "loading_screen.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
 unsigned nd_read(void*,unsigned,unsigned,void*);
@@ -24,7 +25,34 @@ static spire::SaveData scratch;
 static spire::RuntimePerformance performance;
 static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512];
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
-struct ResourceFile {void*file;spire::ResourceFileCursor cursor;};
+static uint32_t entropy_start=0;
+static uint32_t seed_entropy(){
+    // Same read-only RTC used by the official Ndless _gettimeofday. Mix the
+    // current input-time subsecond counter and pre-init timing; never reset
+    // the OS clock or consume/replace a seeded run's simulation RNG stream.
+    const uint32_t rtc=*(volatile uint32_t*)0x90090000u,ticks=timer_ticks();
+    entropy_start+=0x9e3779b9u;
+    uint32_t value=rtc^entropy_start^((ticks<<11)|(ticks>>21));
+    value^=value>>16;value*=0x7feb352du;value^=value>>15;value*=0x846ca68bu;value^=value>>16;
+    return value?value:0xa341316cu;
+}
+struct ResourceFile {
+    void*file;spire::ResourceFileCursor cursor;
+    void(*blit)(void*)=nullptr;
+    uint32_t drawn=0,phase_start=0;
+    spire::ResourceStage phase=spire::ResourceStage::Count;
+};
+static void resource_progress(void*context,spire::ResourceStage stage,uint32_t completed,uint32_t total){
+    auto&s=*static_cast<ResourceFile*>(context);const uint32_t now=timer_ticks();
+    const bool changed=stage!=s.phase;
+    if(changed){
+        if(performance.enabled&&s.phase!=spire::ResourceStage::Count)
+            performance.startup_phases[(unsigned)s.phase].add(s.phase_start-now);
+        s.phase=stage;s.phase_start=now;
+    }
+    if(!s.blit||(!changed&&completed!=total&&s.drawn-now<3277u))return;
+    s.drawn=now;spire::loading_screen(app.pixels,stage,completed,total,now>>10);s.blit(app.pixels);
+}
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
     auto&source=*static_cast<ResourceFile*>(context);bool seek=false;
     uint32_t started=performance.enabled?timer_ticks():0;
@@ -70,6 +98,11 @@ struct Clock {
     void restore(){if(!active)return;auto*t=(volatile uint32_t*)0x900D0000u;t[2]=0;t[0]=load;t[2]=control;active=false;}
     ~Clock(){restore();}
 };
+struct Display {
+    bool active=false;
+    void restore(){if(active){nd_lcd_init(-1);active=false;}}
+    ~Display(){restore();}
+};
 static spire::RuntimeScene performance_scene(){
     return spire::runtime_scene(app);
 }
@@ -110,15 +143,20 @@ extern "C" int main(int argc,char**argv){
     // With no marker and no CTRL diagnostics stay disabled. One bounded report
     // is written on normal exit, with no per-frame filesystem logging.
     performance.hardware=nd_hwtype();performance.ndless_revision=nd_revision();
-    Clock clock{};clock.init();uint32_t startup_start=performance.enabled?timer_ticks():0;
+    entropy_start=*(volatile uint32_t*)0x90090000u^timer_ticks()^*(volatile uint32_t*)0x900C0004u;
+    Clock clock{};clock.init();
+    Display display;if(!nd_lcd_init(0))return 6;display.active=true;
+    auto blit=nd_blitter(0);if(!blit)return 7;
+    spire::loading_screen(app.pixels,spire::ResourceStage::Header,0,1,timer_ticks()>>10);blit(app.pixels);
+    uint32_t startup_start=performance.enabled?timer_ticks():0;
     void*f=nd_open(pack_path,"rb");if(!f)return 4;
-    ResourceFile source{f,{}};
+    ResourceFile source{f,{}};source.blit=blit;
     if(nd_seek(f,0,2)!=0){nd_close(f);return 5;}long length=nd_tell(f);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({&source,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save})){nd_close(f);return 5;}
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({&source,(uint32_t)length,read_resource,nullptr,resource_progress},{save_game,load_game,clear_save,seed_entropy})){nd_close(f);return 5;}
     performance.pack_bytes=(uint32_t)length;
-    if(performance.enabled)performance.startup.add(startup_start-timer_ticks());
-    if(!nd_lcd_init(0)){nd_close(f);return 6;}
-    auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);nd_close(f);return 7;}
+    if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);
+        if(source.phase!=spire::ResourceStage::Count)performance.startup_phases[(unsigned)source.phase].add(source.phase_start-now);}
+    source.blit=nullptr; // Startup progress cannot repaint over the live game.
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
     clock.last=timer_ticks();uint32_t input_clock=0;
@@ -128,17 +166,23 @@ extern "C" int main(int argc,char**argv){
     app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
     uint32_t last_present=performance.enabled?timer_ticks():0;
     if(performance.enabled){performance.first_render.add(first_start-first_present);performance.first_present.add(first_present-last_present);}
-    auto render_frame=[&](uint32_t update_start,const spire::RuntimeResourceTiming&before){
+    auto render_frame=[&](uint32_t update_start,const spire::RuntimeResourceTiming&before,spire::RuntimeScene update_scene){
         uint32_t render_start=performance.enabled?timer_ticks():0;
         auto scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         app.render();uint32_t present_start=performance.enabled?timer_ticks():0;blit(app.pixels);
         if(performance.enabled){uint32_t done=timer_ticks();
+            // The last preparation update may finish before render starts;
+            // the first preparation screen may become active inside render.
+            // Keep either transition's indivisible interval out of Combat.
+            if(update_scene==spire::RuntimeScene::CombatPreparation||
+               performance_scene()==spire::RuntimeScene::CombatPreparation)scene=spire::RuntimeScene::CombatPreparation;
             performance.frame(scene,last_present-done,update_start-render_start,render_start-present_start,present_start-done,before);
             last_present=done;}
     };
     while(!app.quit){
         unsigned elapsed=clock.frame();if(!elapsed)continue;
         uint32_t update_start=performance.enabled?timer_ticks():0;
+        const auto update_scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
         const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};
         app.advance(elapsed);
         input_clock+=elapsed;
@@ -171,12 +215,12 @@ extern "C" int main(int argc,char**argv){
             // stable release so opening the program cannot also start a run.
             quiet_ms=(p==0&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
             if(quiet_ms>=100)input_ready=true;
-            previous=p;pad_cursor.reset();render_frame(update_start,resources_before);continue;
+            previous=p;pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
         }
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
         for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
-        render_frame(update_start,resources_before);
+        render_frame(update_start,resources_before,update_scene);
     }
-    nd_lcd_init(-1);nd_close(f);performance_report();return 0;
+    display.restore();nd_close(f);performance_report();return 0;
 }

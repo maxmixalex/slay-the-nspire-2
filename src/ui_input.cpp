@@ -5,6 +5,17 @@
 #include "ui_core_observer.hpp"
 namespace spire {
 #include "world_choice_input.inc"
+uint32_t App::next_run_seed(bool* randomized){
+    const uint32_t serial=run_number++;
+    const uint32_t entropy=callbacks.seed_entropy?callbacks.seed_entropy():0;
+    if(randomized)*randomized=entropy!=0;
+    if(!entropy)return 0x20261003u+serial*7919u;
+    // Host entropy separates process launches; the counter also separates
+    // two starts that receive the same coarse hardware-clock sample.
+    uint32_t value=entropy^(serial*0x9e3779b9u)^map_clock_ms^0xa341316cu;
+    value^=value>>16;value*=0x7feb352du;value^=value>>15;
+    value*=0x846ca68bu;value^=value>>16;return value?value:1u;
+}
 unsigned App::library_items(CardKind* out)const{
     unsigned count=0;CardKind ids[CardKinds];
     const CardColor filters[]={CardColor::Token,CardColor::Ironclad,CardColor::Silent,CardColor::Colorless,
@@ -117,9 +128,27 @@ void App::ui_action(UiAction action){
     case UiAction::CloseEventReader:event_reader=false;break;
     case UiAction::StartCharacter:
         if(character_select){
+            uint32_t seed=0;char canonical[65]{};
+            if(!practice_entry&&*selected_seed){
+                if(!reference::canonicalize_ascii(selected_seed,canonical,sizeof canonical)){message("种子无效");break;}
+                ++run_number;
+            }else{
+                bool randomized=false;seed=next_run_seed(&randomized);
+                if(randomized&&!practice_entry){
+                    static const char digits[]="0123456789ABCDEF";
+                    for(unsigned i=0;i<8;++i)canonical[i]=digits[(seed>>((7-i)*4))&15];
+                }
+            }
+            // An automatically displayed seed is also a valid manual replay
+            // seed. Fold the same canonical hash into legacy presentation
+            // streams before world_set_seed initializes the named streams.
+            if(*canonical){unsigned length=0;while(canonical[length])++length;
+                const uint64_t hash=reference::hash64(canonical,length);
+                seed=uint32_t(hash)^uint32_t(hash>>32);if(!seed)seed=1;
+            }
             forget_run_checkpoint();
-            new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);
-            if(!practice_entry){if(*selected_seed&&!world_set_seed(game,selected_seed)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
+            new_run(game,seed,practice_entry,selected_character);
+            if(!practice_entry){if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
             character_select=run_settings=false;title=false;reset_presentation();
             if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*m=world_current_map(game))map_visuals.initial_marker(m->root,map_clock_ms);}
         }break;
@@ -324,6 +353,12 @@ void App::open_statuses(int actor){
     if(title||paused||help||panel||library||character_select||detail_card>=0||detail_item>=0||map_preview.open||!combat_phase(game.phase))return;
     if(actor<0||actor>game.enemy_count)return;
     status_actor=actor;status_selected=status_scroll=status_scroll_limit=0;pointer_cancel();
+}
+void App::open_status_icon(int encoded){
+    if(encoded<0)return;const int actor=encoded/StatusKinds,id=encoded%StatusKinds;
+    open_statuses(actor);if(status_actor!=actor)return;
+    int ids[StatusKinds],count=collect_statuses(game,actor,ids);
+    for(int i=0;i<count;i++)if(ids[i]==id){status_selected=i;return;}
 }
 bool App::status_input(Key key){
     if(status_actor<0){if(key!=Key::Statuses)return false;open_statuses(0);return true;}

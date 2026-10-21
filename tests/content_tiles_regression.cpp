@@ -12,7 +12,7 @@ namespace {
 using Bytes=std::vector<uint8_t>;
 constexpr unsigned TileSide=16,TileBytes=770,GroupBound=524288,EncodedBound=617323;
 constexpr unsigned ImageBound=614880,DirectoryBound=2u*1024u*1024u;
-constexpr unsigned ImageEntryCapacity=256,TilePoolBytes=5u*1024u*1024u;
+constexpr unsigned ImageEntryCapacity=Content::image_capacity_entries(),TilePoolBytes=5u*1024u*1024u;
 unsigned checks=0;
 std::string label;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL [%s] line %d: %s\n",label.c_str(),__LINE__,#x);std::exit(1);}}while(0)
@@ -200,9 +200,11 @@ Package basic(unsigned per_group=85,unsigned salt=0){
     p.collect();p.make_groups({{0,1,2,3}});p.encode();return p;
 }
 struct Provider {
+    struct Progress {ResourceStage stage;uint32_t completed,total;};
     const Bytes* bytes=nullptr;
     unsigned calls=0,max_read=0,fail_first=0,fail_last=0,failed=0;
     bool corrupt=false,bad_range=false;
+    std::vector<Progress> progress;
     static bool read(void*context,uint32_t offset,void*dst,uint32_t count){
         auto&p=*static_cast<Provider*>(context);++p.calls;p.max_read=std::max(p.max_read,count);
         if(!p.bytes||offset>p.bytes->size()||count>p.bytes->size()-offset){p.bad_range=true;return false;}
@@ -213,7 +215,10 @@ struct Provider {
             }else{if(count)std::memset(dst,0xa5,count/2+1);return false;}}
         return true;
     }
-    ResourceSource source(){return {this,uint32_t(bytes->size()),read,nullptr};}
+    static void report(void*context,ResourceStage stage,uint32_t completed,uint32_t total){
+        static_cast<Provider*>(context)->progress.push_back({stage,completed,total});
+    }
+    ResourceSource source(bool reporting=false){return {this,uint32_t(bytes->size()),read,nullptr,reporting?report:nullptr};}
 };
 void picture(const Content&c,unsigned id,const Frame&f){
     const Picture p=c.image(int(id));CHECK(p.pixels&&p.w==f.w&&p.h==f.h&&p.format==4);
@@ -223,28 +228,47 @@ bool same_reads(ResourceReadStats a,ResourceReadStats b){
     return a.callbacks==b.callbacks&&a.cache_hits==b.cache_hits&&a.cache_misses==b.cache_misses&&
         a.bypasses==b.bypasses&&a.direct_reads==b.direct_reads&&a.callback_bytes==b.callback_bytes;
 }
+void progress_contract(){
+    label="startup reports completed phases and never reports failed data as ready";
+    const Package p=basic();Provider provider{&p.bytes};auto content=std::make_unique<Content>();
+    CHECK(content->open(provider.source(true))&&!provider.progress.empty());
+    ResourceStage previous=ResourceStage::Header;uint32_t completed=0,total=1;unsigned phases=1;
+    for(const auto& event:provider.progress){
+        CHECK(unsigned(event.stage)>=unsigned(previous)&&event.completed<=event.total);
+        if(event.stage==previous){CHECK(event.total==total&&event.completed>=completed);}
+        else {CHECK(completed==total);++phases;}
+        previous=event.stage;completed=event.completed;total=event.total;
+    }
+    CHECK(phases==unsigned(ResourceStage::Count)&&previous==ResourceStage::Ready&&completed==1&&total==1);
+    provider.progress.clear();provider.fail_first=p.group_offsets[0]+32;provider.fail_last=provider.fail_first+1;
+    CHECK(!content->open(provider.source(true))&&!content->healthy());
+    CHECK(provider.failed>0&&!provider.progress.empty());
+    CHECK(provider.progress.back().stage==ResourceStage::Integrity&&provider.progress.back().completed<provider.progress.back().total);
+    for(const auto& event:provider.progress)CHECK(event.stage!=ResourceStage::Ready);
+}
 void empty_image_pool(){
-    // Drive the real public API through more than 256 distinct one-page keys,
+    // Drive the real public API beyond the distinct one-page key capacity,
     // then clear that owner. This gives allocation tests a known empty pool
     // without exposing cache internals or relying on earlier test ordering.
     Package p;p.per_group=680;
-    std::vector<std::vector<unsigned>> plans(6);
-    for(unsigned i=0;i<300;++i){p.frames.push_back(frame(1,1,Pattern::Alpha,900+i));plans[i/50].push_back(i);}
+    const unsigned count=ImageEntryCapacity+44;
+    std::vector<std::vector<unsigned>> plans((count+49)/50);
+    for(unsigned i=0;i<count;++i){p.frames.push_back(frame(1,1,Pattern::Alpha,900+i));plans[i/50].push_back(i);}
     p.collect();p.make_groups(plans);p.encode();Provider provider{&p.bytes};auto content=std::make_unique<Content>();
     CHECK(content->open(provider.source()));
     for(unsigned i=0;i<p.frames.size();++i)picture(*content,p.image_id(i),p.frames[i]);
     CHECK(!content->open(nullptr,0));CHECK(!content->healthy());
 }
 void image_pool_cycles_and_fragmentation(){
-    label="256 small images share the pixel pool without premature key eviction";
-    empty_image_pool();Package small;small.per_group=680;std::vector<std::vector<unsigned>> small_plans(4);
+    label="small images share the pixel pool without premature key eviction";
+    empty_image_pool();Package small;small.per_group=680;std::vector<std::vector<unsigned>> small_plans((ImageEntryCapacity+63)/64);
     for(unsigned i=0;i<ImageEntryCapacity;++i){small.frames.push_back(frame(1,1,Pattern::Alpha,1200+i));small_plans[i/64].push_back(i);}
     small.collect();small.make_groups(small_plans);small.encode();
     auto small_content=std::make_unique<Content>();Provider small_source{&small.bytes};
     CHECK(small_content->open(small_source.source()));
     std::vector<Picture> small_kept;
-    // Structural opening also retains the shared legacy card image: 255
-    // tiny frames plus that card fill exactly 256 keys using only 258 pages.
+    // Structural opening also retains the shared legacy card image: one
+    // fewer tiny frame plus that card fills the key limit, below the page cap.
     for(unsigned i=0;i<ImageEntryCapacity-1;++i){picture(*small_content,small.image_id(i),small.frames[i]);small_kept.push_back(small_content->image(small.image_id(i)));}
     const auto small_warm=small_content->read_stats();
     for(unsigned i=0;i<small_kept.size();++i)CHECK(small_content->image(small.image_id(i)).pixels==small_kept[i].pixels);
@@ -252,9 +276,13 @@ void image_pool_cycles_and_fragmentation(){
     // Refresh the card and first frame. The next key must evict frame one,
     // preserve all other views, and still serve an exact-descriptor alias.
     CHECK(small_content->image(0).pixels);CHECK(small_content->image(small.image_id(0)).pixels==small_kept[0].pixels);
+    CHECK(small_content->image_cached(small.image_id(1)));
+    CHECK(small_content->image_cache_pages(small.image_id(1))==1);
+    CHECK(small_content->image_alias(small.image_id(1),small.image_id(1)));
+    // Planning queries must not refresh the oldest entry's LRU age.
     picture(*small_content,small.image_id(ImageEntryCapacity-1),small.frames.back());
     const auto small_survivors=small_content->read_stats();
-    for(unsigned i:{0u,2u,127u,254u}){
+    for(unsigned i:{0u,2u,127u,ImageEntryCapacity-2}){
         CHECK(small_content->image(small.image_id(i)).pixels==small_kept[i].pixels);
         CHECK(!std::memcmp(small_kept[i].pixels,small.frames[i].expected.data(),small.frames[i].expected.size()));
     }
@@ -333,6 +361,19 @@ void valid_packages(){
         label="valid group size "+std::to_string(per);Package p=basic(per);Provider provider{&p.bytes};
         CHECK(direct->open(p.bytes.data(),p.bytes.size()));CHECK(range->open(provider.source()));
         CHECK(direct->current_profile()&&range->current_profile());CHECK(direct->card_count()==CardKinds&&range->card_count()==CardKinds);
+        const auto before_direct=direct->read_stats(),before_range=range->read_stats();
+        CHECK(direct->image_cached(0)&&range->image_cached(0));
+        CHECK(!direct->image_cached(1)&&!range->image_cached(1));
+        CHECK(direct->image_cache_pages(0)==0&&range->image_cache_pages(0)==3);
+        for(unsigned i=0;i<p.frames.size();++i){
+            const unsigned pages=(unsigned(p.frames[i].expected.size())+4095)/4096;
+            CHECK(direct->image_cache_pages(p.image_id(i))==pages&&range->image_cache_pages(p.image_id(i))==pages);
+        }
+        CHECK(direct->image_alias(1,p.alias_id())&&range->image_alias(1,p.alias_id()));
+        CHECK(!direct->image_alias(1,2)&&!range->image_alias(-1,1));
+        CHECK(!range->image_cached(-1)&&range->image_cache_pages(p.images)==0);
+        CHECK(direct->image_cache_usage().entries==0&&range->image_cache_usage().entries==1);
+        CHECK(same_reads(before_direct,direct->read_stats())&&same_reads(before_range,range->read_stats()));
         CHECK(p.descriptors[1].offset%2==1); // Deliberately unaligned record fields.
         for(unsigned i=0;i<p.frames.size();++i){picture(*direct,p.image_id(i),p.frames[i]);picture(*range,p.image_id(i),p.frames[i]);}
         const Picture a=direct->image(1),b=range->image(1);const auto da=direct->read_stats(),ra=range->read_stats();
@@ -442,6 +483,40 @@ void native_ui_packages(){
         CHECK(!historical.bad_range);
     }
 }
+void locale_packages(){
+    label="v17 locale profile preserves exact image and tile behavior";
+    auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Rejector reject;
+    const auto marker=[](Package&p,const char*text,unsigned length){
+        const unsigned at=40+p.images*16+p.glyphs*16+LocaleMarkerString*8;
+        put(p.bytes,at,unsigned(p.bytes.size()));put(p.bytes,at+4,length);
+        p.bytes.insert(p.bytes.end(),text,text+length);p.bytes.push_back(0);seal(p.bytes);
+    };
+    for(const char*locale:{"zhs","eng"}){
+        Package p=basic();p.encode(false,LocaleAuxiliaryCount,LocaleContentVersion,LocaleStringCount);marker(p,locale,3);
+        Provider provider{&p.bytes};CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(provider.source()));
+        CHECK(direct->current_profile()&&range->current_profile()&&range->version()==LocaleContentVersion);
+        CHECK(direct->english()==(locale[0]=='e')&&range->english()==(locale[0]=='e'));
+        CHECK(!std::strcmp(range->string(LocaleMarkerString),locale));
+        CHECK(direct->world_image("common","HEALTH_BAR_BG")==0&&range->world_image("common","END_TURN")==0);
+        CHECK(range->ui_image(LocaleAuxiliaryCount-1)==0&&range->ui_image(LocaleAuxiliaryCount)==-1);
+        for(unsigned i=0;i<p.frames.size();++i){picture(*direct,p.image_id(i),p.frames[i]);picture(*range,p.image_id(i),p.frames[i]);}
+        CHECK(!provider.bad_range);
+    }
+    for(const char*bad:{"","en","engx","zxx","ENG"}){
+        Package p=basic();p.encode(false,LocaleAuxiliaryCount,LocaleContentVersion,LocaleStringCount);marker(p,bad,unsigned(std::strlen(bad)));
+        reject("v17 rejects absent, partial, unsupported or oversized marker",std::move(p.bytes));
+    }
+    {Package p=basic();p.encode(false,LocaleAuxiliaryCount,LocaleContentVersion,LocaleStringCount);
+        const char embedded[]={'e',0,'g'};marker(p,embedded,3);reject("v17 rejects embedded NUL locale marker",std::move(p.bytes));}
+    for(unsigned count:{LocaleStringCount-1,LocaleStringCount+1}){
+        Package p=basic();p.encode(false,LocaleAuxiliaryCount,LocaleContentVersion,count);marker(p,"eng",3);
+        reject("v17 rejects noncanonical locale string directory",std::move(p.bytes));
+    }
+    for(unsigned count:{unsigned(NativeUiAuxiliaryCount),LocaleAuxiliaryCount-1,LocaleAuxiliaryCount+1}){
+        Package p=basic();p.encode(false,count,LocaleContentVersion,LocaleStringCount);marker(p,"eng",3);
+        reject("v17 rejects noncanonical HUD directory",std::move(p.bytes));
+    }
+}
 struct ImageRejector {
     std::unique_ptr<Content> direct=std::make_unique<Content>(),range=std::make_unique<Content>();
     void operator()(const char*name,Bytes bytes,unsigned image=1,int first=-1){
@@ -463,7 +538,7 @@ struct ImageRejector {
 void malformed_container(){
     label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
-    field("v14 cannot carry tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,17);
+    field("v14 cannot carry tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,18);
     struct Mutation {unsigned offset,value;const char*name;};
     const Mutation header[]={
         {0,0,"codec magic"},{4,2,"codec version"},{8,8,"tile side"},{12,16,"dictionary property"},
@@ -596,7 +671,7 @@ void maximum_frame_and_unused_tile(){
 }
 Package pressure(bool tiny){
     Package p;p.per_group=680;p.alignment=4096;
-    const unsigned count=tiny?300:16;
+    const unsigned count=tiny?ImageEntryCapacity+44:16;
     for(unsigned i=0;i<count;++i)p.frames.push_back(frame(tiny?1:80,tiny?1:200,tiny?Pattern::Alpha:Pattern::ManySpans,31+i));
     p.collect();p.scatter(12);std::vector<std::vector<unsigned>> plans;
     if(tiny){for(unsigned begin=0;begin<count;begin+=35){std::vector<unsigned> ids;for(unsigned i=begin;i<std::min(count,begin+35);++i)ids.push_back(i);plans.push_back(std::move(ids));}}
@@ -649,11 +724,12 @@ void failures_and_inactive_rebuild(const Package&pressure_tiny){
         label=corrupt?"storage corruption invalidates decoded views":"partial read failure invalidates decoded views";
         Package p=basic();Provider source{&p.bytes},evict{&pressure_tiny.bytes};
         CHECK(target->open(source.source()));CHECK(target->glyph('?',10).pixels);picture(*target,1,p.frames[0]);
-        // More than 256 unique images and more than 5 MiB of groups evict both
+        // More than the image key capacity and 5 MiB of groups evict both
         // caches, without resetting the target's ResourceReader page cache.
         fill_pressure(*other,evict,pressure_tiny);
-        // After 300 frames and the frame-zero alias, frames 45..299 and zero
-        // fill the 256 entries. Refresh the oldest hit; frame 46 is now the
+        // After capacity+44 frames and the frame-zero alias, the last
+        // capacity-1 frames plus zero fill the keys. Refresh the oldest hit;
+        // the following frame is now the
         // next victim. A hit must update recency without any resource reads.
         const unsigned oldest=unsigned(pressure_tiny.frames.size())-ImageEntryCapacity+1;
         const auto before_hit=other->read_stats();const Picture kept=other->image(pressure_tiny.image_id(oldest));
@@ -804,9 +880,9 @@ void validation_workspace_fallbacks(const Package&pressure_tiny){
 }
 } // namespace
 int main(int argc,char**argv){
-    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();std::printf("native UI content: %u checks passed\n",checks);return 0;}
-    valid_packages();malformed_container();malformed_geometry();maximum_frame_and_unused_tile();
-    native_ui_packages();
+    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
+    progress_contract();valid_packages();malformed_container();malformed_geometry();maximum_frame_and_unused_tile();
+    native_ui_packages();locale_packages();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);

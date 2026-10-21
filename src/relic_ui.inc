@@ -1,6 +1,6 @@
 // Original-derived relic art and panels, adapted to the calculator's resolution.
-static void relic_progress(const State&s,RelicMask id,char*out,size_t size){
-    if(!size)return;out[0]=0;TextBuffer b{out,size,0};unsigned limit=relic_counter_limit(id);
+static void relic_progress(const State&s,RelicMask id,char*out,size_t size,const Content*locale=nullptr){
+    if(!size)return;out[0]=0;TextBuffer b{out,size,0,locale};unsigned limit=relic_counter_limit(id);
     if(!limit)return;
     if(id==CentennialPuzzle){b.text(relic_counter(s,id)?"本场已触发":"本场尚未触发");return;}
     b.text(relic_counter_is_turn_scoped(id)?"本回合 ":"累计 ");b.number(relic_counter(s,id));b.text(" / ");b.number(limit);
@@ -23,10 +23,10 @@ static void ui_relic_badge(Canvas&c,unsigned position,int x,int y){
  int value=0;if(!world_relic_display(s,position,value))return;
  c.rect(x,y,18,13,Panel);if(value<100)c.num(value,x+1,y-1,10,ui_relic_flash(c.a,id)?Green:Gold);else c.text("99+",x,y-1,10,Gold);
 }
-static void ui_relic_progress(const State&s,unsigned position,char*out,size_t size){
+static void ui_relic_progress(const State&s,unsigned position,char*out,size_t size,const Content*locale=nullptr){
  if(!size)return;out[0]=0;RelicId id=ui_owned_relic_id(s,position);if(id==NoWorldRelic)return;
- if(!s.world_relics.active){if(id<RelicKinds)relic_progress(s,relic_definitions[id].id,out,size);return;}
- const auto&r=s.world_relics.entries[position];TextBuffer b{out,size,0};
+ if(!s.world_relics.active){if(id<RelicKinds)relic_progress(s,relic_definitions[id].id,out,size,locale);return;}
+ const auto&r=s.world_relics.entries[position];TextBuffer b{out,size,0,locale};
  if(r.flags&WorldRelicMelted){b.text("已融化");return;}if(world_relic_disabled(s,position))b.text("已用尽");
  int value=0;if(world_relic_display(s,position,value)){if(b.n)b.text(" · ");b.text("计数：");b.number(value);}if(r.flags&WorldRelicWax)b.text(" · 蜡制遗物");
 }
@@ -46,17 +46,17 @@ static void owned_relic_panel(Canvas&c){
   c.picture(a.relic_face_image(id),x,y,25,25,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+20,y+16);c.hit(x-5,y-3,46,34,HitKind::Relic,i);
  }
  if(count){RelicId id=ui_owned_relic_id(s,a.scroll);c.centered(a.relic_title(id,a.scroll),15,161,290,12,Gold);
-  char progress[128]{},description[2048]{};ui_relic_progress(s,a.scroll,progress,sizeof progress);a.relic_description(id,description,sizeof description,a.scroll);
+  char progress[128]{},description[2048]{};ui_relic_progress(s,a.scroll,progress,sizeof progress,&a.content);a.relic_description(id,description,sizeof description,a.scroll);
   if(*progress)c.centered(progress,15,180,290,10,Green);c.paragraph(description,20,*progress?197:182,280,*progress?1:2,0,10,White);
  }else c.centered("没有遗物",0,106,320,12,Muted);
  c.text("‹",15,216,16,Gold);c.hit(7,211,35,24,HitKind::Scroll,-18,first>0);c.text("›",292,216,16,Gold);c.hit(278,211,35,24,HitKind::Scroll,18,first+18<count);
- char page[64]{};TextBuffer b{page,sizeof page,0};b.number(first/18+1);b.text(" / ");b.number(mx(1,(count+17)/18));b.text(" · 点击 / I 查看详情");c.centered(page,41,219,236,10,Muted);
+ char page[64]{};TextBuffer b{page,sizeof page,0,&a.content};b.number(first/18+1);b.text(" / ");b.number(mx(1,(count+17)/18));b.text(" · 点击 / I 查看详情");c.centered(page,41,219,236,10,Muted);
 }
 static void owned_relic_tooltip(Canvas&c){
  auto&a=c.a;if(a.event_reader||!a.pointer.visible||a.pointer.held||a.title||a.paused||a.help||a.panel||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
  const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return;
  RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,a.pointer.x-66),150),y=47;c.rect(x,y,166,87,Panel);c.box(x,y,166,87,Gold);c.text(a.relic_title(id,hit->value),x+8,y+5,12,Gold,150);
- char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress);a.relic_description(id,description,sizeof description,hit->value);
+ char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress,&a.content);a.relic_description(id,description,sizeof description,hit->value);
  if(*progress)c.text(progress,x+8,y+24,10,Green,150);c.paragraph(description,x+8,y+(*progress?40:25),150,3,0,10,White);
 }
 #include "world_treasure_ui.inc"

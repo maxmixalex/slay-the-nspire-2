@@ -1,0 +1,4115 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "note": "Existing port literals map to original private keys; eng entries are port-specific text authored for calculator controls or compatibility UI.",
+  "bindings": [
+    {
+      "source": "\n[gold]作用于所有敌人。[/gold]",
+      "eng": "\n[gold]Affects all enemies.[/gold]"
+    },
+    {
+      "source": "\n[gold]保留。[/gold]",
+      "eng": "\n[gold]Retain.[/gold]"
+    },
+    {
+      "source": "\n[gold]墨影[/gold]：该牌的目标额外获得 [blue]1[/blue] 层虚弱。",
+      "eng": "\n[gold]Inky[/gold]: Also apply [blue]1[/blue] Weak to this card's target."
+    },
+    {
+      "source": "\n[gold]奇巧。[/gold]",
+      "eng": "\n[gold]Sly.[/gold]"
+    },
+    {
+      "source": "\n[gold]虚无。[/gold]",
+      "eng": "\n[gold]Ethereal.[/gold]"
+    },
+    {
+      "source": "\n[gold]重放 ",
+      "eng": "\n[gold]Replay "
+    },
+    {
+      "source": "\n剑圣：额外打出 [gold]",
+      "eng": "\nSword Sage: Play [gold]"
+    },
+    {
+      "source": "\n召唤可增加生命；倒下后能被重新召唤。",
+      "eng": "\nSummon increases HP and can revive Osty."
+    },
+    {
+      "source": "\n最大生命：",
+      "eng": "\nMax HP: "
+    },
+    {
+      "source": "\n本回合临时力量：",
+      "eng": "\nTemporary Strength this turn: "
+    },
+    {
+      "source": "\n本回合剩余免费次数：",
+      "eng": "\nFree plays left this turn: "
+    },
+    {
+      "source": "\n本回合剩余：",
+      "eng": "\nRemaining this turn: "
+    },
+    {
+      "source": "\n本回合已打出：",
+      "eng": "\nPlayed this turn: "
+    },
+    {
+      "source": "\n本回合已抽牌：",
+      "eng": "\nDrawn this turn: "
+    },
+    {
+      "source": "\n本回合已触发：",
+      "eng": "\nTriggered this turn: "
+    },
+    {
+      "source": "\n本回合打出：",
+      "eng": "\nPlayed this turn: "
+    },
+    {
+      "source": "\n本回合攻击：",
+      "eng": "\nAttacks this turn: "
+    },
+    {
+      "source": "\n本场已打出虚无牌：",
+      "eng": "\nEthereal cards played this combat: "
+    },
+    {
+      "source": "\n独立进度（已花费 / 4）：",
+      "eng": "\nSeparate progress (spent / 4): "
+    },
+    {
+      "source": "\n获得 [blue]",
+      "eng": "\nGain [blue]"
+    },
+    {
+      "source": "\n辉星跨回合保留。\n本回合获得：",
+      "eng": "\nStars persist between turns.\nGained this turn: "
+    },
+    {
+      "source": "  ↑↓ 翻页 · V 返回卡牌",
+      "eng": "  ↑↓ Page · V Back to card"
+    },
+    {
+      "source": " / 事件 ",
+      "eng": " / Events "
+    },
+    {
+      "source": " / 商店 ",
+      "eng": " / Merchants "
+    },
+    {
+      "source": " / 最多 ",
+      "eng": " / Up to "
+    },
+    {
+      "source": " / 精英 ",
+      "eng": " / Elites "
+    },
+    {
+      "source": " · 可跳过",
+      "eng": " · Optional"
+    },
+    {
+      "source": " · 已达成",
+      "eng": " · Complete"
+    },
+    {
+      "source": " · 点击 / I 查看详情",
+      "eng": " · Click / I Details"
+    },
+    {
+      "source": " · 点击查看完整详情",
+      "eng": " · Click for full details"
+    },
+    {
+      "source": " · 蜡制遗物",
+      "eng": " · Wax relic"
+    },
+    {
+      "source": " · 被动/激发",
+      "eng": " · Passive/Evoke"
+    },
+    {
+      "source": " · 选择替换位置",
+      "eng": " · Choose a slot to replace"
+    },
+    {
+      "source": " 伤害\n",
+      "eng": " Damage\n"
+    },
+    {
+      "source": " 回合 / ",
+      "eng": " turns / "
+    },
+    {
+      "source": " 层",
+      "eng": " floors"
+    },
+    {
+      "source": " 层  ",
+      "eng": " floors  "
+    },
+    {
+      "source": " 幕 · ",
+      "eng": " · "
+    },
+    {
+      "source": " 张  ·  ",
+      "eng": " cards · "
+    },
+    {
+      "source": " 张 · 确认前不会扣除卡牌",
+      "eng": " cards · No cards removed before confirmation"
+    },
+    {
+      "source": " 次 · I 详情 · Enter 确认 · 空格放弃一次",
+      "eng": " times · I Details · Enter Confirm · Space Skip one"
+    },
+    {
+      "source": " 滚轮 / I→V",
+      "eng": " Wheel / I→V"
+    },
+    {
+      "source": " 点",
+      "eng": " "
+    },
+    {
+      "source": " 点伤害（含格挡）",
+      "eng": " damage (including Block)"
+    },
+    {
+      "source": " 点生命（包含皇家枕头）",
+      "eng": " HP (including Regal Pillow)"
+    },
+    {
+      "source": " 点生命（最大生命的 30%）",
+      "eng": " HP (30% of max HP)"
+    },
+    {
+      "source": " 能量",
+      "reference": "static_hover_tips.ENERGY.title",
+      "prefix": " ",
+      "suffix": ""
+    },
+    {
+      "source": " 造成 ",
+      "eng": " deals "
+    },
+    {
+      "source": " 金币",
+      "eng": " Gold"
+    },
+    {
+      "source": "50 金币",
+      "eng": "50 Gold"
+    },
+    {
+      "source": "Enter / 5：出牌、选路或确认",
+      "eng": "Enter / 5: Play, choose route or confirm"
+    },
+    {
+      "source": "Enter / Esc 返回",
+      "eng": "Enter / Esc Back"
+    },
+    {
+      "source": "Enter 交谈",
+      "eng": "Enter Talk"
+    },
+    {
+      "source": "Enter 购买 · I 详情",
+      "eng": "Enter Buy · I Details"
+    },
+    {
+      "source": "Enter 返回标题",
+      "eng": "Enter Return to title"
+    },
+    {
+      "source": "Enter 选择 · 空格确认 · I 详情",
+      "eng": "Enter Select · Space Confirm · I Details"
+    },
+    {
+      "source": "Enter 领取 · I 详情",
+      "eng": "Enter Take · I Details"
+    },
+    {
+      "source": "Esc：返回或打开菜单",
+      "eng": "Esc: Back or open menu"
+    },
+    {
+      "source": "I 详情",
+      "eng": "I Details"
+    },
+    {
+      "source": "M：地图  P：药水  R：遗物  I：详情",
+      "eng": "M: Map  P: Potions  R: Relics  I: Details"
+    },
+    {
+      "source": "S：保存  O：载入  C：图鉴  V：状态",
+      "eng": "S: Save  O: Load  C: Compendium  V: Statuses"
+    },
+    {
+      "source": "Tab：牌组与牌堆    L：记录",
+      "eng": "Tab: Deck and piles    L: Log"
+    },
+    {
+      "source": "V 词条",
+      "eng": "V Keywords"
+    },
+    {
+      "source": "V 返回卡牌",
+      "eng": "V Back to card"
+    },
+    {
+      "source": "[/blue] 点格挡。",
+      "eng": "[/blue] Block."
+    },
+    {
+      "source": "[/gold] 次。",
+      "eng": "[/gold] additional times."
+    },
+    {
+      "source": "[gold]保留[/gold]你的[gold]手牌[/gold][blue]2[/blue]回合。",
+      "reference": "potions.STABLE_SERUM.description"
+    },
+    {
+      "source": "[gold]召唤[/gold][blue]15[/blue]。",
+      "reference": "potions.BONE_BREW.description"
+    },
+    {
+      "source": "[gold]消耗[/gold]你[gold]手牌[/gold]中的任意张牌。",
+      "reference": "potions.ASHWATER.description"
+    },
+    {
+      "source": "[gold]消耗[/gold]你的[gold]手牌[/gold]。抽[blue]10[/blue]张牌。",
+      "reference": "potions.GLOWWATER_POTION.description"
+    },
+    {
+      "source": "[gold]生成[/gold]你[gold]充能球栏位[/gold]数量个[gold]黑暗[/gold]充能球。",
+      "reference": "potions.ESSENCE_OF_DARKNESS.description"
+    },
+    {
+      "source": "[gold]铸造[/gold][blue]15[/blue]。",
+      "reference": "potions.KINGS_COURAGE.description"
+    },
+    {
+      "source": "‹ 前五个",
+      "eng": "‹ Previous five"
+    },
+    {
+      "source": "← → 选择 · I 全文",
+      "eng": "← → Choose · I Full text"
+    },
+    {
+      "source": "←→ 切换 · ↑↓ 状态 · Enter 翻说明 · V 返回",
+      "eng": "←→ Actor · ↑↓ Status · Enter Page · V Back"
+    },
+    {
+      "source": "←→ 选路   Enter 进入   ↑↓ 查看远方",
+      "eng": "←→ Route   Enter Travel   ↑↓ Scroll"
+    },
+    {
+      "source": "←→ 选路 · Enter 进入 · ↑↓ 浏览",
+      "eng": "←→ Route · Enter Travel · ↑↓ Scroll"
+    },
+    {
+      "source": "↑↓ 浏览路线 · I 图例 · M / Esc 返回",
+      "eng": "↑↓ Scroll · I Legend · M / Esc Back"
+    },
+    {
+      "source": "↑↓ 滚动 · Esc 返回",
+      "eng": "↑↓ Scroll · Esc Back"
+    },
+    {
+      "source": "↑↓ 选择图例 · I / Esc 返回路线",
+      "eng": "↑↓ Legend · I / Esc Back to route"
+    },
+    {
+      "source": "一回合打出至少五张牌后，下回合额外抽 [blue]{n}[/blue] 张牌。每回合触发一次。",
+      "reference": "powers.PALE_BLUE_DOT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "三幕路线，含首领、古代之民与事件。",
+      "eng": "Three acts with bosses, Ancients and events."
+    },
+    {
+      "source": "下一张攻击的每次命中额外造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.VIGOR_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下个回合开始时召唤 [green]{n}[/green]。",
+      "reference": "powers.SUMMON_NEXT_TURN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下个回合开始时获得 [gold]{n}[/gold] 颗星星。",
+      "reference": "powers.STAR_NEXT_TURN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下个回合开始时额外获得 [gold]{n}[/gold] 点能量。",
+      "reference": "powers.ENERGY_NEXT_TURN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下回合从抽牌堆选择 [blue]{n}[/blue] 张牌加入手牌。",
+      "reference": "powers.FOREGONE_CONCLUSION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下回合召唤",
+      "reference": "powers.SUMMON_NEXT_TURN_POWER.title"
+    },
+    {
+      "source": "下回合开始时额外获得 [gold]{n}[/gold] 点能量。",
+      "reference": "powers.ENERGY_NEXT_TURN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下回合抽牌",
+      "reference": "powers.DRAW_CARDS_NEXT_TURN_POWER.title"
+    },
+    {
+      "source": "下回合格挡",
+      "reference": "powers.BLOCK_NEXT_TURN_POWER.title"
+    },
+    {
+      "source": "下回合清除格挡后，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.BLOCK_NEXT_TURN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "下回合的攻击伤害翻倍。",
+      "reference": "powers.SHADOW_STEP_POWER.smartDescription"
+    },
+    {
+      "source": "下回合能量",
+      "reference": "powers.ENERGY_NEXT_TURN_POWER.title"
+    },
+    {
+      "source": "下回合辉星",
+      "reference": "powers.STAR_NEXT_TURN_POWER.title"
+    },
+    {
+      "source": "下回合额外抽 [blue]{n}[/blue] 张牌。",
+      "reference": "powers.DRAW_CARDS_NEXT_TURN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "不动",
+      "reference": "powers.UNMOVABLE_POWER.title"
+    },
+    {
+      "source": "不可升级",
+      "eng": "Cannot upgrade"
+    },
+    {
+      "source": "不可抽牌",
+      "reference": "powers.NO_DRAW_POWER.title"
+    },
+    {
+      "source": "不可格挡",
+      "reference": "powers.NO_BLOCK_POWER.title"
+    },
+    {
+      "source": "与亡灵结契的施法者。召唤奥斯提，操控灵魂、虚无与灾厄。",
+      "reference": "characters.NECROBINDER.description"
+    },
+    {
+      "source": "丢弃",
+      "reference": "gameplay_ui.POTION_POPUP.discard"
+    },
+    {
+      "source": "丢弃 ",
+      "reference": "gameplay_ui.POTION_POPUP.discard",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "丢弃任意张牌，然后抽相同数量的牌。",
+      "reference": "potions.GAMBLERS_BREW.description"
+    },
+    {
+      "source": "丢弃并重新抽牌",
+      "eng": "Discard and draw again"
+    },
+    {
+      "source": "中毒",
+      "reference": "powers.POISON_POWER.title"
+    },
+    {
+      "source": "中毒伤害 ",
+      "eng": "Poison damage "
+    },
+    {
+      "source": "临时力量",
+      "reference": "cards.SETUP_STRIKE.title"
+    },
+    {
+      "source": "主菜单",
+      "reference": "game_over_screen.BUTTON.mainMenu"
+    },
+    {
+      "source": "书页风暴",
+      "reference": "powers.PAGESTORM_POWER.title"
+    },
+    {
+      "source": "乱战",
+      "reference": "powers.MAYHEM_POWER.title"
+    },
+    {
+      "source": "事件",
+      "reference": "gameplay_ui.CARD_RARITY.EVENT"
+    },
+    {
+      "source": "事件中：↑↓ 阅读，←→ 选项",
+      "eng": "Events: ↑↓ Read, ←→ Choose"
+    },
+    {
+      "source": "事件移除 · 不消耗金币",
+      "eng": "Event removal · No Gold cost"
+    },
+    {
+      "source": "事件选择已结算",
+      "eng": "Event choice resolved"
+    },
+    {
+      "source": "亡灵",
+      "reference": "characters.NECROBINDER.title"
+    },
+    {
+      "source": "亡灵契约师",
+      "reference": "characters.NECROBINDER.title"
+    },
+    {
+      "source": "亡灵精通",
+      "reference": "powers.NECRO_MASTERY_POWER.title"
+    },
+    {
+      "source": "人工制品",
+      "reference": "powers.ARTIFACT_POWER.title"
+    },
+    {
+      "source": "从[blue]3[/blue]张随机技能牌中选择[blue]1[/blue]张加入你的[gold]手牌[/gold]。这张牌在本回合可以免费打出。",
+      "reference": "potions.SKILL_POTION.description"
+    },
+    {
+      "source": "从[blue]3[/blue]张随机攻击牌中选择[blue]1[/blue]张加入你的[gold]手牌[/gold]。这张牌在本回合可以免费打出。",
+      "reference": "potions.ATTACK_POTION.description"
+    },
+    {
+      "source": "从[blue]3[/blue]张随机无色牌中选择[blue]1[/blue]张加入你的[gold]手牌[/gold]。这张牌在本回合可以免费打出。",
+      "reference": "potions.COLORLESS_POTION.description"
+    },
+    {
+      "source": "从[blue]3[/blue]张随机能力牌中选择[blue]1[/blue]张加入你的[gold]手牌[/gold]。这张牌在本回合可以免费打出。",
+      "reference": "potions.POWER_POTION.description"
+    },
+    {
+      "source": "从卡牌获得的格挡增加 [blue]{n}[/blue]。",
+      "reference": "powers.DEXTERITY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "从名字带有“防御”的牌中额外获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.FASTEN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "从弃牌堆选择",
+      "eng": "Choose from discard pile"
+    },
+    {
+      "source": "从弃牌堆选择一张牌",
+      "eng": "Choose a card from the discard pile"
+    },
+    {
+      "source": "从抽牌堆选择",
+      "eng": "Choose from draw pile"
+    },
+    {
+      "source": "从抽牌堆选择加入手牌",
+      "eng": "Choose from the draw pile to add to hand"
+    },
+    {
+      "source": "从最右侧依次查看",
+      "eng": "View from the rightmost slot"
+    },
+    {
+      "source": "仪式",
+      "reference": "powers.RITUAL_POWER.title"
+    },
+    {
+      "source": "任务",
+      "reference": "gameplay_ui.CARD_RARITY.QUEST"
+    },
+    {
+      "source": "休息",
+      "reference": "map.LEGEND_REST.title"
+    },
+    {
+      "source": "休息 ",
+      "reference": "map.LEGEND_REST.title",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "休息处",
+      "reference": "static_hover_tips.ROOM_REST.title"
+    },
+    {
+      "source": "休息片刻……",
+      "eng": "Resting…"
+    },
+    {
+      "source": "余像",
+      "reference": "powers.AFTERIMAGE_POWER.title"
+    },
+    {
+      "source": "你打出的下一张攻击牌将会造成三倍伤害。",
+      "reference": "potions.GIGANTIFICATION_POTION.description"
+    },
+    {
+      "source": "你确定吗？",
+      "reference": "main_menu_ui.ABANDON_RUN_CONFIRMATION.header"
+    },
+    {
+      "source": "你确定要退出吗？",
+      "reference": "main_menu_ui.QUIT_CONFIRM_POPUP.body"
+    },
+    {
+      "source": "使用",
+      "reference": "gameplay_ui.POTION_POPUP.drink"
+    },
+    {
+      "source": "使用药水",
+      "eng": "Use potion"
+    },
+    {
+      "source": "保存失败",
+      "eng": "Save failed"
+    },
+    {
+      "source": "保存失败，请重试",
+      "eng": "Save failed. Please retry."
+    },
+    {
+      "source": "保存并返回主菜单",
+      "eng": "Save and return to main menu"
+    },
+    {
+      "source": "保留已获得的最大生命",
+      "eng": "Keep the max HP already gained"
+    },
+    {
+      "source": "保留手牌",
+      "reference": "powers.RETAIN_HAND_POWER.title"
+    },
+    {
+      "source": "信号增强",
+      "reference": "powers.SIGNAL_BOOST_POWER.title"
+    },
+    {
+      "source": "倒在了高塔下",
+      "eng": "Fell beneath the Spire"
+    },
+    {
+      "source": "倒数计时",
+      "reference": "powers.COUNTDOWN_POWER.title"
+    },
+    {
+      "source": "倒映",
+      "reference": "powers.REFLECT_POWER.title"
+    },
+    {
+      "source": "偏差认知",
+      "reference": "powers.BIASED_COGNITION_POWER.title"
+    },
+    {
+      "source": "储君",
+      "reference": "characters.REGENT.title"
+    },
+    {
+      "source": "充能球",
+      "eng": "Orbs"
+    },
+    {
+      "source": "先古之民",
+      "reference": "static_hover_tips.ROOM_ANCIENT.title"
+    },
+    {
+      "source": "光谱偏移",
+      "reference": "powers.SPECTRUM_SHIFT_POWER.title"
+    },
+    {
+      "source": "免费技能",
+      "reference": "powers.FREE_SKILL_POWER.title"
+    },
+    {
+      "source": "免费攻击",
+      "reference": "powers.FREE_ATTACK_POWER.title"
+    },
+    {
+      "source": "免费能力",
+      "reference": "powers.FREE_POWER_POWER.title"
+    },
+    {
+      "source": "全文 I",
+      "eng": "Full text I"
+    },
+    {
+      "source": "全部",
+      "reference": "main_menu_ui.CARD_LIBRARY_RARITY_ALL"
+    },
+    {
+      "source": "再生",
+      "reference": "powers.REGEN_POWER.title"
+    },
+    {
+      "source": "再生药水",
+      "reference": "potions.REGEN_POTION.title"
+    },
+    {
+      "source": "冰雹风暴",
+      "reference": "powers.HAILSTORM_POWER.title"
+    },
+    {
+      "source": "冰霜",
+      "reference": "orbs.FROST_ORB.title"
+    },
+    {
+      "source": "冷却剂",
+      "reference": "powers.COOLANT_POWER.title"
+    },
+    {
+      "source": "准备时间",
+      "reference": "powers.PREP_TIME_POWER.title"
+    },
+    {
+      "source": "准备背包",
+      "reference": "relics.BAG_OF_PREPARATION.title"
+    },
+    {
+      "source": "凶恶",
+      "reference": "powers.VICIOUS_POWER.title"
+    },
+    {
+      "source": "刀扇",
+      "reference": "powers.FAN_OF_KNIVES_POWER.title"
+    },
+    {
+      "source": "创世之柱",
+      "reference": "powers.PILLAR_OF_CREATION_POWER.title"
+    },
+    {
+      "source": "创世纪",
+      "reference": "powers.GENESIS_POWER.title"
+    },
+    {
+      "source": "创造性 AI",
+      "reference": "powers.CREATIVE_AI_POWER.title"
+    },
+    {
+      "source": "删",
+      "eng": "Del"
+    },
+    {
+      "source": "刺破帷幕",
+      "reference": "powers.VEILPIERCER_POWER.title"
+    },
+    {
+      "source": "前进",
+      "reference": "gameplay_ui.PROCEED_BUTTON"
+    },
+    {
+      "source": "前进 ›",
+      "reference": "gameplay_ui.PROCEED_BUTTON",
+      "prefix": "",
+      "suffix": " ›"
+    },
+    {
+      "source": "剑圣",
+      "reference": "powers.SWORD_SAGE_POWER.title"
+    },
+    {
+      "source": "剩余 ",
+      "eng": "Remaining "
+    },
+    {
+      "source": "剩余占卜：",
+      "eng": "Divinations left: "
+    },
+    {
+      "source": "力量",
+      "reference": "powers.STRENGTH_POWER.title"
+    },
+    {
+      "source": "力量药水",
+      "reference": "potions.STRENGTH_POTION.title"
+    },
+    {
+      "source": "加入弃牌堆",
+      "eng": "Add to discard pile"
+    },
+    {
+      "source": "加入手牌",
+      "eng": "Add to hand"
+    },
+    {
+      "source": "加速模式",
+      "reference": "settings_ui.FASTMODE"
+    },
+    {
+      "source": "劫难",
+      "reference": "powers.CALAMITY_POWER.title"
+    },
+    {
+      "source": "势不可当",
+      "reference": "powers.JUGGERNAUT_POWER.title"
+    },
+    {
+      "source": "勒紧",
+      "reference": "powers.FASTEN_POWER.title"
+    },
+    {
+      "source": "化废为宝",
+      "reference": "powers.TRASH_TO_TREASURE_POWER.title"
+    },
+    {
+      "source": "升级",
+      "eng": "Upgrade"
+    },
+    {
+      "source": "升级 ",
+      "eng": "Upgrade "
+    },
+    {
+      "source": "升级版本 +",
+      "reference": "card_selection.VIEW_UPGRADES"
+    },
+    {
+      "source": "升级牌组中的一张牌。",
+      "eng": "Upgrade a card in your deck."
+    },
+    {
+      "source": "单人游戏",
+      "reference": "run_history.PLAYER_COUNT.singleplayer"
+    },
+    {
+      "source": "卡牌",
+      "eng": "Cards"
+    },
+    {
+      "source": "卡牌已加入手牌",
+      "eng": "Card added to hand"
+    },
+    {
+      "source": "卡牌已满",
+      "eng": "Card capacity reached"
+    },
+    {
+      "source": "卡牌攻击造成未被格挡的伤害后，给予目标 [green]{n}[/green] 层中毒。",
+      "reference": "powers.ENVENOM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "厄运之衣",
+      "reference": "powers.SHROUD_POWER.title"
+    },
+    {
+      "source": "原型路线结束，并非完整原版通关。",
+      "eng": "Prototype route complete; this is not a full original run."
+    },
+    {
+      "source": "参考地图",
+      "eng": "Reference map"
+    },
+    {
+      "source": "友谊",
+      "reference": "powers.FRIENDSHIP_POWER.title"
+    },
+    {
+      "source": "双倍伤害",
+      "reference": "powers.DOUBLE_DAMAGE_POWER.title"
+    },
+    {
+      "source": "双截棍",
+      "reference": "relics.NUNCHAKU.title"
+    },
+    {
+      "source": "发光水",
+      "reference": "potions.GLOWWATER_POTION.title"
+    },
+    {
+      "source": "发现宝藏",
+      "eng": "Treasure found"
+    },
+    {
+      "source": "取消",
+      "reference": "gameplay_ui.UNDO_END_TURN_BUTTON"
+    },
+    {
+      "source": "受到攻击时反击 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.THORNS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "受到未被格挡的攻击伤害时立刻死亡。",
+      "reference": "powers.THE_GAMBIT_POWER.smartDescription"
+    },
+    {
+      "source": "受到的伤害和生命损失降低至 1；剩余 [gold]{n}[/gold] 个敌方回合。",
+      "reference": "powers.INTANGIBLE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "受到的攻击伤害增加 [blue]50%[/blue]，剩余 [gold]{n}[/gold] 回合。",
+      "reference": "powers.VULNERABLE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "变化 ",
+      "eng": "Transform "
+    },
+    {
+      "source": "古钱币",
+      "reference": "relics.OLD_COIN.title"
+    },
+    {
+      "source": "可不选 · Enter 选择 · 空格确认",
+      "eng": "Optional · Enter Select · Space Confirm"
+    },
+    {
+      "source": "吊杀",
+      "reference": "powers.HANG_POWER.title"
+    },
+    {
+      "source": "吊杀对这名敌人的伤害变为 [gold]{n}[/gold] 倍。",
+      "reference": "powers.HANG_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "同一回合每打出五张牌，对所有敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.PANACHE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "同步",
+      "reference": "cards.SYNCHRONIZE.title"
+    },
+    {
+      "source": "后五个 ›",
+      "eng": "Next five ›"
+    },
+    {
+      "source": "君王之剑对这名敌人造成双倍伤害；剩余 [gold]{n}[/gold] 个敌方回合。",
+      "reference": "powers.CONQUEROR_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "君王之剑攻击所有敌人。当前 [gold]{n}[/gold] 层。",
+      "reference": "powers.SEEKING_EDGE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "君王之剑现在提供基础 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.PARRY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "君王之剑额外打出 [gold]{n}[/gold] 次。",
+      "reference": "powers.SWORD_SAGE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "吞噬暗影",
+      "reference": "powers.CONSUMING_SHADOW_POWER.title"
+    },
+    {
+      "source": "吞噬生命",
+      "reference": "powers.DEVOUR_LIFE_POWER.title"
+    },
+    {
+      "source": "启程",
+      "reference": "main_menu_ui.STANDARD.title"
+    },
+    {
+      "source": "哨卫模式",
+      "reference": "powers.SENTRY_MODE_POWER.title"
+    },
+    {
+      "source": "售罄",
+      "eng": "Sold out"
+    },
+    {
+      "source": "商人",
+      "reference": "map.LEGEND_MERCHANT.title"
+    },
+    {
+      "source": "商店",
+      "reference": "static_hover_tips.ROOM_MERCHANT.title"
+    },
+    {
+      "source": "噩梦",
+      "reference": "powers.NIGHTMARE_POWER.title"
+    },
+    {
+      "source": "回到开头",
+      "eng": "Back to start"
+    },
+    {
+      "source": "回合 ",
+      "eng": "Turn "
+    },
+    {
+      "source": "回合开始时保留格挡。",
+      "reference": "powers.BARRICADE_POWER.smartDescription"
+    },
+    {
+      "source": "回合开始时保留格挡；剩余 [gold]{n}[/gold] 回合。",
+      "reference": "powers.BLUR_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时变化 [gold]{n}[/gold] 张手牌。",
+      "reference": "powers.ENTROPY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时对所有敌人造成 [gold]{n}[/gold] 点伤害；每份效果随后增加五点。",
+      "reference": "powers.ROLLING_BOULDER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时生成 [gold]{n}[/gold] 张随机能力牌。",
+      "reference": "powers.CREATIVE_AI_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时自动打出抽牌堆顶部的 [gold]{n}[/gold] 张牌。",
+      "reference": "powers.MAYHEM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时获得 [gold]{n}[/gold] 点活力。",
+      "reference": "powers.PREP_TIME_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时，每种不同的充能球提供 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.COOLANT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时，给予所有敌人 [green]{n}[/green] 层中毒。",
+      "reference": "powers.NOXIOUS_FUMES_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时，获得 [gold]{n}[/gold] 点力量。",
+      "reference": "powers.DEMON_FORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合开始时，触发最右侧充能球的被动效果 [gold]{n}[/gold] 次。",
+      "reference": "powers.LOOP_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合结束时恢复 [green]{n}[/green] 点生命，然后层数减一。",
+      "reference": "powers.REGEN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合结束时获得 [gold]{n}[/gold] 点力量。",
+      "reference": "powers.RITUAL_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合结束时，自动打出手牌中 [gold]{n}[/gold] 张随机攻击。",
+      "reference": "powers.STAMPEDE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合结束时，若有冰霜球，对所有敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.HAILSTORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回合结束获得 [blue]{n}[/blue] 点格挡；下回合开始时层数减一。",
+      "reference": "powers.PLATING_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "回响形态",
+      "reference": "powers.ECHO_FORM_POWER.title"
+    },
+    {
+      "source": "回复 ",
+      "eng": "Heal "
+    },
+    {
+      "source": "回复你最大生命值的[green]50%[/green]。在战斗中使用时，额外进行一个回合。",
+      "reference": "potions.AMBERGRIS.description"
+    },
+    {
+      "source": "回复最大生命值的 [green]20%[/green]。",
+      "reference": "potions.BLOOD_POTION.description"
+    },
+    {
+      "source": "固化药水",
+      "reference": "potions.FORTIFIER.title"
+    },
+    {
+      "source": "图例",
+      "reference": "map.LEGEND_HEADER"
+    },
+    {
+      "source": "图例 I",
+      "eng": "Legend I"
+    },
+    {
+      "source": "图鉴",
+      "reference": "main_menu_ui.COMPENDIUM"
+    },
+    {
+      "source": "在休息处休息时，额外回复 [green]15[/green] 点生命。",
+      "reference": "relics.REGAL_PILLOW.description"
+    },
+    {
+      "source": "在所有空药水栏位中获得随机药水。",
+      "reference": "potions.ENTROPIC_BREW.description"
+    },
+    {
+      "source": "在接下来的 [gold]{n}[/gold] 个回合结束时保留手牌。",
+      "reference": "powers.RETAIN_HAND_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "在本场战斗中 [green]升级[/green] 手牌中的所有牌。",
+      "reference": "potions.BLESSING_OF_THE_FORGE.description"
+    },
+    {
+      "source": "在本场战斗中，所有名字中有“[gold]打击[/gold]”的牌获得[gold]重放[/gold]：[blue]1[/blue]。",
+      "reference": "potions.SOLDIERS_STEW.description"
+    },
+    {
+      "source": "地图尚未生成",
+      "eng": "Map not generated"
+    },
+    {
+      "source": "地狱狂徒",
+      "reference": "powers.HELLRAISER_POWER.title"
+    },
+    {
+      "source": "基础",
+      "reference": "gameplay_ui.CARD_RARITY.BASIC"
+    },
+    {
+      "source": "基础版本",
+      "eng": "Base version"
+    },
+    {
+      "source": "壁垒",
+      "reference": "powers.BARRICADE_POWER.title"
+    },
+    {
+      "source": "士兵炖汤",
+      "reference": "potions.SOLDIERS_STEW.title"
+    },
+    {
+      "source": "复制",
+      "reference": "powers.DUPLICATION_POWER.title"
+    },
+    {
+      "source": "复制药水",
+      "reference": "potions.DUPLICATOR.title"
+    },
+    {
+      "source": "天赋君权",
+      "reference": "relics.DIVINE_RIGHT.title"
+    },
+    {
+      "source": "失去生命 ",
+      "eng": "HP lost "
+    },
+    {
+      "source": "奥利哈钢",
+      "reference": "relics.ORICHALCUM.title"
+    },
+    {
+      "source": "奥斯提",
+      "reference": "monsters.OSTY.name"
+    },
+    {
+      "source": "奥斯提失去生命时，所有敌人失去其 [gold]{n}[/gold] 倍的生命。",
+      "reference": "powers.NECRO_MASTERY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "奥斯提的攻击额外造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.CALCIFY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "好勇斗狠",
+      "reference": "powers.AGGRESSION_POWER.title"
+    },
+    {
+      "source": "子程序",
+      "reference": "powers.SUBROUTINE_POWER.title"
+    },
+    {
+      "source": "存档已变更，请重新确认",
+      "eng": "Save changed. Please confirm again."
+    },
+    {
+      "source": "孙子兵法",
+      "reference": "relics.ART_OF_WAR.title"
+    },
+    {
+      "source": "孤注一掷",
+      "reference": "powers.THE_GAMBIT_POWER.title"
+    },
+    {
+      "source": "宇宙药剂",
+      "reference": "potions.COSMIC_CONCOCTION.title"
+    },
+    {
+      "source": "宝藏",
+      "reference": "static_hover_tips.ROOM_TREASURE.title"
+    },
+    {
+      "source": "容量上限：本局已安全停止",
+      "eng": "Capacity limit: run stopped safely"
+    },
+    {
+      "source": "对一个敌人造成 [blue]20[/blue] 点伤害。",
+      "reference": "potions.FIRE_POTION.description"
+    },
+    {
+      "source": "对所有敌人造成 [blue]10[/blue] 点伤害。",
+      "reference": "potions.EXPLOSIVE_AMPOULE.description"
+    },
+    {
+      "source": "对所有玩家和敌人造成[blue]12[/blue]点伤害。\n也可以投掷给[gold]商人[/gold]换取[blue]100[/blue][gold]金币[/gold]。",
+      "reference": "potions.FOUL_POTION.description"
+    },
+    {
+      "source": "对敌人 ",
+      "eng": "To enemy "
+    },
+    {
+      "source": "对虚弱敌人的攻击伤害提高 [gold]{n}[/gold]%。",
+      "reference": "powers.TRACKING_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "封印王座",
+      "reference": "powers.THE_SEALED_THRONE_POWER.title"
+    },
+    {
+      "source": "将[blue]2[/blue]张[gold]灵魂[/gold]加入你的[gold]手牌[/gold]。",
+      "reference": "potions.POT_OF_GHOULS.description"
+    },
+    {
+      "source": "将[blue]3[/blue]张[gold]升级[/gold]的无色牌加入你的[gold]手牌[/gold]。",
+      "reference": "potions.COSMIC_CONCOCTION.description"
+    },
+    {
+      "source": "将[blue]3[/blue]张[gold]小刀+[/gold]加入你的[gold]手牌[/gold]。",
+      "reference": "potions.CUNNING_POTION.description"
+    },
+    {
+      "source": "将一张弃牌放回抽牌堆顶",
+      "eng": "Place a discarded card on top of the draw pile"
+    },
+    {
+      "source": "将一张手牌变为仆从打击",
+      "eng": "Transform a card in hand into Minion Strike"
+    },
+    {
+      "source": "将一张抽牌变化为灵魂",
+      "eng": "Transform a draw-pile card into Soul"
+    },
+    {
+      "source": "将任意手牌变为仆从捐躯",
+      "eng": "Transform cards in hand into Minion Sacrifice"
+    },
+    {
+      "source": "将你[gold]弃牌堆[/gold]中的一张牌放入你的[gold]手牌[/gold]。这张牌在本回合可以免费打出。",
+      "reference": "potions.LIQUID_MEMORIES.description"
+    },
+    {
+      "source": "将你的所有牌洗入你的[gold]抽牌堆[/gold]。抽[blue]5[/blue]张牌。",
+      "reference": "potions.BOTTLED_POTENTIAL.description"
+    },
+    {
+      "source": "将弃牌堆的牌放回手牌",
+      "eng": "Return cards from the discard pile to hand"
+    },
+    {
+      "source": "将当前的 [blue]格挡[/blue] 变为三倍。",
+      "reference": "potions.FORTIFIER.description"
+    },
+    {
+      "source": "将挡住的攻击伤害反弹给攻击者；剩余 [gold]{n}[/gold] 个回合。",
+      "reference": "powers.REFLECT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "小刀保留；每回合第一张小刀额外造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.PHANTOM_BLADES_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "小刀改为攻击所有敌人。",
+      "reference": "powers.FAN_OF_KNIVES_POWER.description"
+    },
+    {
+      "source": "小刀的攻击伤害修正 [gold]{n}[/gold]。",
+      "reference": "powers.ACCURACY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "小血瓶",
+      "reference": "relics.BLOOD_VIAL.title"
+    },
+    {
+      "source": "尚不支持 old 旧版种子",
+      "eng": "Legacy old seeds are not supported"
+    },
+    {
+      "source": "尸鬼瓮",
+      "reference": "potions.POT_OF_GHOULS.title"
+    },
+    {
+      "source": "巨像",
+      "reference": "powers.COLOSSUS_POWER.title"
+    },
+    {
+      "source": "已丢弃药水",
+      "eng": "Potion discarded"
+    },
+    {
+      "source": "已保存远征",
+      "eng": "Run saved"
+    },
+    {
+      "source": "已击败",
+      "eng": "Defeated"
+    },
+    {
+      "source": "已攀登楼层",
+      "eng": "Floors climbed"
+    },
+    {
+      "source": "已用尽",
+      "eng": "Used up"
+    },
+    {
+      "source": "已移除所选卡牌",
+      "eng": "Selected card removed"
+    },
+    {
+      "source": "已获得临时集中 [gold]{n}[/gold]，本回合结束时移除。",
+      "reference": "powers.TEMPORARY_FOCUS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "已获得全部可用遗物，改为获得 [gold]50[/gold] 金币。",
+      "eng": "All available relics owned. Gain [gold]50[/gold] Gold instead."
+    },
+    {
+      "source": "已获得药水",
+      "eng": "Potion obtained"
+    },
+    {
+      "source": "已融化",
+      "eng": "Melted"
+    },
+    {
+      "source": "已载入",
+      "eng": "Loaded"
+    },
+    {
+      "source": "已返回可选楼层，再次确认进入",
+      "eng": "Returned to reachable floor. Confirm to travel."
+    },
+    {
+      "source": "已选择 ",
+      "eng": "Selected "
+    },
+    {
+      "source": "已领取",
+      "eng": "Collected"
+    },
+    {
+      "source": "常规抽牌前，在手牌中生成 [gold]{n}[/gold] 张小刀。",
+      "reference": "powers.INFINITE_BLADES_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "幸运补剂",
+      "reference": "potions.LUCKY_TONIC.title"
+    },
+    {
+      "source": "幻影之刃",
+      "reference": "powers.PHANTOM_BLADES_POWER.title"
+    },
+    {
+      "source": "幽魂形态",
+      "reference": "powers.WRAITH_FORM_POWER.title"
+    },
+    {
+      "source": "应用种子",
+      "eng": "Apply seed"
+    },
+    {
+      "source": "开信刀",
+      "reference": "relics.LETTER_OPENER.title"
+    },
+    {
+      "source": "开心小花",
+      "reference": "relics.HAPPY_FLOWER.title"
+    },
+    {
+      "source": "异蛇之油",
+      "reference": "potions.SNECKO_OIL.title"
+    },
+    {
+      "source": "异鱼之油",
+      "reference": "potions.FYSH_OIL.title"
+    },
+    {
+      "source": "弃牌堆",
+      "reference": "gameplay_ui.DISCARD_PILE"
+    },
+    {
+      "source": "弃牌堆洗回抽牌堆",
+      "eng": "Shuffle discard pile into draw pile"
+    },
+    {
+      "source": "引雷针",
+      "reference": "powers.LIGHTNING_ROD_POWER.title"
+    },
+    {
+      "source": "弹珠袋",
+      "reference": "relics.BAG_OF_MARBLES.title"
+    },
+    {
+      "source": "强化",
+      "reference": "intents.BUFF.title"
+    },
+    {
+      "source": "当你的生命值将被减少至[blue]0[/blue]或以下时，改为丢弃这瓶药水，然后将你回复到你最大生命值的[blue]30%[/blue]。",
+      "reference": "potions.FAIRY_IN_A_BOTTLE.description"
+    },
+    {
+      "source": "当前拥有 [gold]{n}[/gold] 个充能球。最早生成的球位于最右侧；槽位已满时生成新球会先激发它。",
+      "eng": "[gold]{n}[/gold] Orbs. The oldest Orb is on the right. Channeling with full slots Evokes it first."
+    },
+    {
+      "source": "当前无法选择",
+      "eng": "Cannot choose this now"
+    },
+    {
+      "source": "当前没有能力或状态",
+      "eng": "No active powers or statuses"
+    },
+    {
+      "source": "往你的[gold]手牌[/gold]中加入一张随机攻击牌、一张随机技能牌和一张随机能力牌。这些牌在本回合免费。",
+      "reference": "potions.OROBIC_ACID.description"
+    },
+    {
+      "source": "征服者",
+      "reference": "powers.CONQUEROR_POWER.title"
+    },
+    {
+      "source": "循环",
+      "reference": "powers.LOOP_POWER.title"
+    },
+    {
+      "source": "必备工具",
+      "reference": "powers.TOOLS_OF_THE_TRADE_POWER.title"
+    },
+    {
+      "source": "怀旧",
+      "reference": "powers.NOSTALGIA_POWER.title"
+    },
+    {
+      "source": "恢复生命 ",
+      "eng": "Restore HP "
+    },
+    {
+      "source": "恶魔形态",
+      "reference": "powers.DEMON_FORM_POWER.title"
+    },
+    {
+      "source": "惊逃",
+      "reference": "powers.STAMPEDE_POWER.title"
+    },
+    {
+      "source": "意外光滑的石头",
+      "reference": "relics.ODDLY_SMOOTH_STONE.title"
+    },
+    {
+      "source": "我方",
+      "eng": "Player"
+    },
+    {
+      "source": "战利品",
+      "reference": "cards.SPOILS_OF_BATTLE.title"
+    },
+    {
+      "source": "战斗",
+      "reference": "ancients.TANX.talk.DEFECT.2-0.next"
+    },
+    {
+      "source": "战斗动画和转场加快。",
+      "eng": "Faster combat animations and transitions."
+    },
+    {
+      "source": "战斗开始时生成 [blue]1[/blue] 个闪电充能球。",
+      "reference": "relics.CRACKED_CORE.description"
+    },
+    {
+      "source": "战斗开始时获得 [blue]10[/blue] 点格挡。",
+      "reference": "relics.ANCHOR.description"
+    },
+    {
+      "source": "战斗开始时获得 [blue]1[/blue] 点敏捷。",
+      "reference": "relics.ODDLY_SMOOTH_STONE.description"
+    },
+    {
+      "source": "战斗开始时获得 [gold]1[/gold] 点力量。",
+      "reference": "relics.VAJRA.description"
+    },
+    {
+      "source": "战斗开始时获得 [gold]3[/gold] 颗星星。",
+      "reference": "relics.DIVINE_RIGHT.description"
+    },
+    {
+      "source": "战斗胜利后回复 [green]6[/green] 点生命。",
+      "reference": "relics.BURNING_BLOOD.description"
+    },
+    {
+      "source": "战斗胜利后获得 [gold]{n}[/gold] 金币。",
+      "reference": "powers.ROYALTIES_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "战斗胜利后额外获得 [gold]{n}[/gold] 组卡牌奖励。",
+      "reference": "powers.THE_HUNT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "战斗胜利后，获得 [gold]{n}[/gold] 次可选择放弃的永久移牌机会。",
+      "reference": "powers.FORBIDDEN_GRIMOIRE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "战！",
+      "reference": "events.DENSE_VEGETATION.pages.REST.options.FIGHT.title"
+    },
+    {
+      "source": "所有敌人在这个回合失去[blue]7[/blue]点[gold]力量[/gold]。",
+      "reference": "potions.SHACKLING_POTION.description"
+    },
+    {
+      "source": "手牌已满，卡牌已加入弃牌堆",
+      "eng": "Hand full. Card added to discard pile."
+    },
+    {
+      "source": "手里剑",
+      "reference": "relics.SHURIKEN.title"
+    },
+    {
+      "source": "打出 ",
+      "eng": "Play "
+    },
+    {
+      "source": "打出你[gold]抽牌堆[/gold]顶部的[blue]3[/blue]张牌。",
+      "reference": "potions.DISTILLED_CHAOS.description"
+    },
+    {
+      "source": "打出当前费用至少为二的卡牌时，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.DANSE_MACABRE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "打出的技能在本场战斗中获得 Sly：主动弃掉时自动打出。",
+      "reference": "powers.MASTER_PLANNER_POWER.description"
+    },
+    {
+      "source": "打开 Enter",
+      "eng": "Open Enter"
+    },
+    {
+      "source": "打开宝箱",
+      "reference": "events.WAR_HISTORIAN_REPY.pages.INITIAL.options.UNLOCK_CHEST.title"
+    },
+    {
+      "source": "扩容药水",
+      "reference": "potions.POTION_OF_CAPACITY.title"
+    },
+    {
+      "source": "技能",
+      "reference": "gameplay_ui.CARD_TYPE.SKILL"
+    },
+    {
+      "source": "技能牌费用变为零，并在打出后消耗；X 费用仍消耗当前能量。",
+      "reference": "powers.CORRUPTION_POWER.description"
+    },
+    {
+      "source": "技能药水",
+      "reference": "potions.SKILL_POTION.title"
+    },
+    {
+      "source": "抵挡接下来的 [blue]{n}[/blue] 次生命损失。",
+      "reference": "powers.BUFFER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "抵消接下来的 [gold]{n}[/gold] 次负面状态施加。",
+      "reference": "powers.ARTIFACT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "抽 [blue]3[/blue] 张牌。",
+      "reference": "potions.SWIFT_POTION.description"
+    },
+    {
+      "source": "抽[blue]1[/blue]张牌。在你的下[blue]3[/blue]个回合开始时，额外抽[blue]1[/blue]张牌。",
+      "reference": "potions.CLARITY.description"
+    },
+    {
+      "source": "抽[blue]7[/blue]张牌。在本回合随机化你[gold]手牌[/gold]中所有牌的耗能。",
+      "reference": "potions.SNECKO_OIL.description"
+    },
+    {
+      "source": "抽到带打击标签的牌时，自动打出它。",
+      "reference": "powers.HELLRAISER_POWER.smartDescription"
+    },
+    {
+      "source": "抽牌 ",
+      "eng": "Draw "
+    },
+    {
+      "source": "抽牌前，从弃牌堆将 [gold]{n}[/gold] 张随机攻击移入手牌并升级。",
+      "reference": "powers.AGGRESSION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "抽牌堆",
+      "reference": "gameplay_ui.DRAW_PILE"
+    },
+    {
+      "source": "抽牌堆重新洗牌时，选择 [gold]{n}[/gold] 张牌加入手牌。",
+      "reference": "powers.STRATAGEM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "招架",
+      "reference": "powers.PARRY_POWER.title"
+    },
+    {
+      "source": "拾取时获得 [gold]300[/gold] 金币。",
+      "reference": "relics.OLD_COIN.description"
+    },
+    {
+      "source": "拾取时获得 [green]10[/green] 点最大生命值。",
+      "reference": "relics.PEAR.description"
+    },
+    {
+      "source": "拾取时获得 [green]14[/green] 点最大生命值。",
+      "reference": "relics.MANGO.description"
+    },
+    {
+      "source": "拾取时获得 [green]7[/green] 点最大生命值。",
+      "reference": "relics.STRAWBERRY.description"
+    },
+    {
+      "source": "按类型",
+      "eng": "By type"
+    },
+    {
+      "source": "按费用",
+      "eng": "By cost"
+    },
+    {
+      "source": "接下来 [blue]{n}[/blue] 个回合开始时额外抽一张牌。",
+      "reference": "powers.CLARITY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来 [gold]{n}[/gold] 个回合开始时额外获得一点能量。",
+      "reference": "powers.RADIANCE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来 [gold]{n}[/gold] 个回合开始时，各生成一个闪电球。",
+      "reference": "powers.LIGHTNING_ROD_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来的 [gold]{n}[/gold] 张技能费用为零；X 费用仍消耗当前能量。",
+      "reference": "powers.FREE_SKILL_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来的 [gold]{n}[/gold] 张攻击牌造成三倍伤害。",
+      "reference": "powers.GIGANTIFICATION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来的 [gold]{n}[/gold] 张攻击费用为零；X 费用仍消耗当前能量。",
+      "reference": "powers.FREE_ATTACK_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来的 [gold]{n}[/gold] 张能力牌能量费用为零。",
+      "reference": "powers.FREE_POWER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来的 [gold]{n}[/gold] 张能力牌额外打出一次。",
+      "reference": "powers.SIGNAL_BOOST_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "接下来的 [gold]{n}[/gold] 张虚无牌能量费用为零。",
+      "reference": "powers.VEILPIERCER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "摧残",
+      "reference": "powers.DEBILITATE_POWER.title"
+    },
+    {
+      "source": "撕裂",
+      "reference": "powers.RUPTURE_POWER.title"
+    },
+    {
+      "source": "操作说明",
+      "eng": "Controls"
+    },
+    {
+      "source": "攻击",
+      "reference": "gameplay_ui.CARD_TYPE.ATTACK"
+    },
+    {
+      "source": "攻击伤害修正 [gold]{n}[/gold]。",
+      "reference": "powers.STRENGTH_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "攻击伤害减少 30%，剩余 [gold]{n}[/gold] 回合。",
+      "reference": "powers.SHRINK_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "攻击伤害翻倍；剩余 {n} 个自己的回合。",
+      "reference": "powers.DOUBLE_DAMAGE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "攻击伤害降低 [blue]25%[/blue]，剩余 [gold]{n}[/gold] 回合。",
+      "reference": "powers.WEAK_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "攻击命中时，给予伤害值 [gold]{n}[/gold] 倍的灾厄。",
+      "reference": "powers.REAPER_FORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "攻击药水",
+      "reference": "potions.ATTACK_POTION.title"
+    },
+    {
+      "source": "放回抽牌堆顶",
+      "eng": "Place on top of draw pile"
+    },
+    {
+      "source": "放弃一次",
+      "eng": "Skip one"
+    },
+    {
+      "source": "放弃游戏",
+      "reference": "main_menu_ui.ABANDON_RUN"
+    },
+    {
+      "source": "放弃游戏会被视为本局失败。",
+      "reference": "main_menu_ui.ABANDON_RUN_CONFIRMATION.body"
+    },
+    {
+      "source": "故障",
+      "reference": "characters.DEFECT.title"
+    },
+    {
+      "source": "故障机器人",
+      "reference": "characters.DEFECT.title"
+    },
+    {
+      "source": "敌人 ",
+      "eng": "Enemy "
+    },
+    {
+      "source": "敌人在自身的每个回合结束时，失去[blue]9[/blue]点生命。",
+      "reference": "potions.POWDERED_DEMISE.description"
+    },
+    {
+      "source": "敌人的攻击在下[blue]4[/blue]个回合中造成的伤害减少[blue]30%[/blue]。",
+      "reference": "potions.BEETLE_JUICE.description"
+    },
+    {
+      "source": "敌方回合结束时恢复 [gold]{n}[/gold] 点力量。",
+      "reference": "powers.TEMPORARY_STRENGTH_DOWN.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "敏捷",
+      "reference": "powers.DEXTERITY_POWER.title"
+    },
+    {
+      "source": "敏捷药水",
+      "reference": "potions.DEXTERITY_POTION.title"
+    },
+    {
+      "source": "方向键 / 4、6、8、2：导航",
+      "eng": "Arrows / 4, 6, 8, 2: Navigate"
+    },
+    {
+      "source": "方向键定位 · Enter 占卜 · 空格切换工具",
+      "eng": "Arrows Move · Enter Divine · Space Tool"
+    },
+    {
+      "source": "方向键选牌 · I 详情 · Enter 预览并确认",
+      "eng": "Arrows Choose · I Details · Enter Preview/confirm"
+    },
+    {
+      "source": "旋转工艺",
+      "reference": "powers.SPINNER_POWER.title"
+    },
+    {
+      "source": "无实体",
+      "reference": "powers.INTANGIBLE_POWER.title"
+    },
+    {
+      "source": "无尽刀刃",
+      "reference": "powers.INFINITE_BLADES_POWER.title"
+    },
+    {
+      "source": "无序查看 · 点击卡牌看详情",
+      "eng": "Unordered view · Click a card for details"
+    },
+    {
+      "source": "无惧疼痛",
+      "reference": "powers.FEEL_NO_PAIN_POWER.title"
+    },
+    {
+      "source": "无惧疼痛 ",
+      "reference": "powers.FEEL_NO_PAIN_POWER.title",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "无法从卡牌获得格挡，剩余 [gold]{n}[/gold] 个敌方回合。遗物、药水及能力触发仍可获得格挡。",
+      "reference": "powers.NO_BLOCK_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "无法使用",
+      "eng": "Cannot use"
+    },
+    {
+      "source": "无法保存终局，请重试",
+      "eng": "Could not save the ending. Please retry."
+    },
+    {
+      "source": "无法删除存档，请重试",
+      "eng": "Could not delete save. Please retry."
+    },
+    {
+      "source": "无法开始远征",
+      "eng": "Could not start run"
+    },
+    {
+      "source": "无法读取存档，请重试",
+      "eng": "Could not read save. Please retry."
+    },
+    {
+      "source": "无法进入这条路线，请重新选择",
+      "eng": "Cannot enter this route. Choose again."
+    },
+    {
+      "source": "无色",
+      "eng": "Colorless"
+    },
+    {
+      "source": "无色药水",
+      "reference": "potions.COLORLESS_POTION.title"
+    },
+    {
+      "source": "既定事项",
+      "reference": "powers.FOREGONE_CONCLUSION_POWER.title"
+    },
+    {
+      "source": "明晰",
+      "reference": "powers.CLARITY_POWER.title"
+    },
+    {
+      "source": "明晰提取物",
+      "reference": "potions.CLARITY.title"
+    },
+    {
+      "source": "明耀",
+      "reference": "powers.RADIANCE_POWER.title"
+    },
+    {
+      "source": "明耀酊剂",
+      "reference": "potions.RADIANT_TINCTURE.title"
+    },
+    {
+      "source": "易伤",
+      "reference": "powers.VULNERABLE_POWER.title"
+    },
+    {
+      "source": "易伤的攻击伤害增幅额外提高 [gold]{n}[/gold] 个百分点。",
+      "reference": "powers.CRUELTY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "易伤药水",
+      "reference": "potions.VULNERABLE_POTION.title"
+    },
+    {
+      "source": "星星",
+      "reference": "static_hover_tips.STAR_COUNT.title"
+    },
+    {
+      "source": "星星药水",
+      "reference": "potions.STAR_POTION.title"
+    },
+    {
+      "source": "暂停",
+      "eng": "Paused"
+    },
+    {
+      "source": "暂时失去力量",
+      "reference": "powers.MOCK_TEMPORARY_STRENGTH_LOSS.title"
+    },
+    {
+      "source": "暂时失去集中 [gold]{n}[/gold]，本回合结束时恢复。",
+      "reference": "powers.TEMPORARY_FOCUS_DOWN.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "暗影步",
+      "reference": "powers.SHADOW_STEP_POWER.title"
+    },
+    {
+      "source": "暗淡蓝点",
+      "reference": "powers.PALE_BLUE_DOT_POWER.title"
+    },
+    {
+      "source": "暴政",
+      "reference": "powers.TYRANNY_POWER.title"
+    },
+    {
+      "source": "暴政：选择要消耗的手牌",
+      "eng": "Tyranny: Choose cards in hand to Exhaust"
+    },
+    {
+      "source": "更多说明 ›",
+      "eng": "More details ›"
+    },
+    {
+      "source": "替换为本职业牌池中的另一张牌",
+      "eng": "Replace with another card from this character's pool"
+    },
+    {
+      "source": "最后的战斗",
+      "eng": "Final battle"
+    },
+    {
+      "source": "有 [gold]{n}[/gold] 个卡牌快照等待下回合；每个快照生成三张复制。",
+      "reference": "powers.NIGHTMARE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "未分配",
+      "eng": "Unassigned"
+    },
+    {
+      "source": "未知",
+      "reference": "main_menu_ui.COMPENDIUM_RELIC_COLLECTION.unknown.title"
+    },
+    {
+      "source": "未知事件",
+      "eng": "Unknown event"
+    },
+    {
+      "source": "本回合 ",
+      "eng": "This turn "
+    },
+    {
+      "source": "本回合不能抽牌",
+      "eng": "Cannot draw this turn"
+    },
+    {
+      "source": "本回合减免固定费用 · ",
+      "eng": "Fixed costs reduced this turn · "
+    },
+    {
+      "source": "本回合卡牌能量费用增加 [gold]{n}[/gold]。",
+      "reference": "powers.BORROWED_TIME_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合奥斯提每命中这名敌人，召唤 [green]{n}[/green]。",
+      "reference": "powers.SIC_EM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合接下来的 [gold]{n}[/gold] 张技能额外打出一次。",
+      "reference": "powers.BURST_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合接下来的 [gold]{n}[/gold] 张攻击额外打出一次。",
+      "reference": "powers.ONE_TWO_PUNCH_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合接下来的 [gold]{n}[/gold] 张牌额外打出一次。",
+      "reference": "powers.DUPLICATION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合无法再抽牌。生成卡牌不属于抽牌。",
+      "reference": "powers.NO_DRAW_POWER.smartDescription"
+    },
+    {
+      "source": "本回合每打出一张攻击后，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.RAGE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合每打出一张牌，临时获得 [gold]{n}[/gold] 点力量。",
+      "reference": "powers.MONOLOGUE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合每打出一张牌，给予这名敌人 [gold]{n}[/gold] 层灾厄。",
+      "reference": "powers.OBLIVION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合每抽一张牌，给予所有敌人 [green]{n}[/green] 层中毒。",
+      "reference": "powers.CORROSIVE_WAVE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合每次受到攻击后，反击 [gold]{n}[/gold] 点伤害；敌方回合结束时移除。",
+      "reference": "powers.FLAME_BARRIER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合玩家每打出一张牌后，失去 [gold]{n}[/gold] 点生命。",
+      "reference": "powers.STRANGLE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合获得的格挡翻倍；当前 [gold]{n}[/gold] 层。",
+      "reference": "powers.SHADOWMELD_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "本回合，你打出的下一张牌会额外打出一次。",
+      "reference": "potions.DUPLICATOR.description"
+    },
+    {
+      "source": "本场尚未触发",
+      "eng": "Not triggered this combat"
+    },
+    {
+      "source": "本场已触发",
+      "eng": "Triggered this combat"
+    },
+    {
+      "source": "本场战斗中保留全部手牌。",
+      "reference": "powers.WELL_LAID_PLANS_POWER.smartDescription"
+    },
+    {
+      "source": "本局记录（最近 24 条）",
+      "eng": "Run log (last 24 entries)"
+    },
+    {
+      "source": "本次运行生效 · Esc 返回",
+      "eng": "Applies this session · Esc Back"
+    },
+    {
+      "source": "机器学习",
+      "reference": "powers.MACHINE_LEARNING_POWER.title"
+    },
+    {
+      "source": "杂耍",
+      "reference": "powers.JUGGLING_POWER.title"
+    },
+    {
+      "source": "来自尖塔之外的猎手。用小刀、中毒与灵活的弃牌击败敌人。",
+      "reference": "characters.SILENT.description"
+    },
+    {
+      "source": "来自易伤敌人的攻击伤害减半；剩余 [gold]{n}[/gold] 个敌方回合。",
+      "reference": "powers.COLOSSUS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "果汁",
+      "reference": "potions.FRUIT_JUICE.title"
+    },
+    {
+      "source": "查看商品",
+      "eng": "Browse wares"
+    },
+    {
+      "source": "查看基础",
+      "eng": "View base"
+    },
+    {
+      "source": "格挡药水",
+      "reference": "potions.BLOCK_POTION.title"
+    },
+    {
+      "source": "梨",
+      "reference": "relics.PEAR.title"
+    },
+    {
+      "source": "楼层",
+      "reference": "main_menu_ui.CONTINUE_RUN_INFO.floor"
+    },
+    {
+      "source": "槽位 ",
+      "eng": "Slot "
+    },
+    {
+      "source": "欧洛巴斯之酸",
+      "reference": "potions.OROBIC_ACID.title"
+    },
+    {
+      "source": "此时无法使用，或药水槽为空",
+      "eng": "Cannot use now, or potion slot is empty"
+    },
+    {
+      "source": "此时无法完成这项操作",
+      "eng": "Cannot perform this action now"
+    },
+    {
+      "source": "此时无法移除这张牌",
+      "eng": "Cannot remove this card now"
+    },
+    {
+      "source": "此选项当前不可用",
+      "eng": "This option is currently unavailable"
+    },
+    {
+      "source": "武器库",
+      "reference": "powers.ARSENAL_POWER.title"
+    },
+    {
+      "source": "死亡之舞",
+      "reference": "powers.DANSE_MACABRE_POWER.title"
+    },
+    {
+      "source": "死神形态",
+      "reference": "powers.REAPER_FORM_POWER.title"
+    },
+    {
+      "source": "残影",
+      "reference": "powers.BLUR_POWER.title"
+    },
+    {
+      "source": "残酷",
+      "reference": "powers.CRUELTY_POWER.title"
+    },
+    {
+      "source": "每个回合开始时召唤 [blue]1[/blue]。",
+      "reference": "relics.BOUND_PHYLACTERY.description"
+    },
+    {
+      "source": "每个回合开始时失去 [gold]{n}[/gold] 点集中。",
+      "reference": "powers.BIASED_COGNITION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每个回合开始时，对所有敌人造成 [blue]3[/blue] 点伤害。",
+      "reference": "relics.MERCURY_HOURGLASS.description"
+    },
+    {
+      "source": "每回合主动打出的前 [gold]{n}[/gold] 张牌免除能量和固定星费；X 费用仍按当前资源。获得的当回合不生效。",
+      "reference": "powers.VOID_FORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合其他出牌获得格挡的次数少于 [gold]{n}[/gold] 时，本次出牌的格挡翻倍；同次出牌的多次格挡一起翻倍。",
+      "reference": "powers.UNMOVABLE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合前 [gold]{n}[/gold] 张费用为零的攻击在打出后返回手牌。",
+      "reference": "powers.FERAL_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合前 [gold]{n}[/gold] 次打出的攻击或技能置于抽牌堆顶部；消耗效果优先。",
+      "reference": "powers.NOSTALGIA_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合多抽 [blue]{n}[/blue] 张牌，然后从手牌消耗相同张数。",
+      "reference": "powers.TYRANNY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合常规抽牌额外抽 [blue]{n}[/blue] 张。",
+      "reference": "powers.MACHINE_LEARNING_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时失去 [blue]{n}[/blue] 点敏捷。无实体的剩余回合另行显示。",
+      "reference": "powers.WRAITH_FORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时失去生命，然后获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.CRIMSON_MANTLE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时失去生命；自己的回合每次失去生命后，对所有敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.INFERNO_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时生成 [gold]{n}[/gold] 个玻璃球。",
+      "reference": "powers.SPINNER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时生成 [gold]{n}[/gold] 张扫荡凝视。",
+      "reference": "powers.SENTRY_MODE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时生成 [gold]{n}[/gold] 张随机无色牌。",
+      "reference": "powers.SPECTRUM_SHIFT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时生成 [gold]{n}[/gold] 张随机职业牌，并赋予虚无。",
+      "reference": "powers.CALL_OF_THE_VOID_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时获得 [gold]{n}[/gold] 颗星星。",
+      "reference": "powers.GENESIS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时铸造 [gold]{n}[/gold]，提高君王之剑的伤害。",
+      "reference": "powers.FURNACE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时额外获得 [gold]{n}[/gold] 点能量。",
+      "reference": "powers.PYRE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时，给予随机敌人 [gold]{n}[/gold] 层灾厄。",
+      "reference": "powers.COUNTDOWN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合开始时，给自己施加 [gold]{n}[/gold] 层灾厄。",
+      "reference": "powers.NEUROSURGE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合打出的第三张攻击在手牌中生成 [gold]{n}[/gold] 份复制。",
+      "reference": "powers.JUGGLING_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合最先打出的 [gold]{n}[/gold] 张牌额外打出一次。",
+      "reference": "powers.ECHO_FORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合的第一张攻击伤害增加 [gold]{n}[/gold]%。",
+      "reference": "powers.LETHALITY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合第一次抽到状态牌时，再抽 [blue]{n}[/blue] 张牌。",
+      "reference": "powers.ITERATION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合结束时，从最左侧开始激发 [gold]{n}[/gold] 个充能球。",
+      "reference": "powers.CONSUMING_SHADOW_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合能量增加 [gold]{n}[/gold]。",
+      "reference": "powers.FRIENDSHIP_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合能量增加 [gold]{n}[/gold]，常规抽牌增加 [blue]{n}[/blue] 张。",
+      "reference": "powers.DEMESNE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每回合额外抽 [blue]{n}[/blue] 张牌，然后弃 [gold]{n}[/gold] 张牌。",
+      "reference": "powers.TOOLS_OF_THE_TRADE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每在同一回合打出 [gold]3[/gold] 张技能牌，对所有敌人造成 [blue]5[/blue] 点伤害。",
+      "reference": "relics.LETTER_OPENER.description"
+    },
+    {
+      "source": "每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [blue]1[/blue] 点敏捷。",
+      "reference": "relics.KUNAI.description"
+    },
+    {
+      "source": "每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [blue]4[/blue] 点格挡。",
+      "reference": "relics.ORNAMENTAL_FAN.description"
+    },
+    {
+      "source": "每在同一回合打出 [gold]3[/gold] 张攻击牌，获得 [gold]1[/gold] 点力量。",
+      "reference": "relics.SHURIKEN.description"
+    },
+    {
+      "source": "每场战斗中，第一次失去生命时抽 [blue]3[/blue] 张牌。",
+      "reference": "relics.CENTENNIAL_PUZZLE.description"
+    },
+    {
+      "source": "每场战斗开始时给予所有敌人 [blue]1[/blue] 层易伤。",
+      "reference": "relics.BAG_OF_MARBLES.description"
+    },
+    {
+      "source": "每场战斗的第一张攻击额外造成 [gold]8[/gold] 点伤害。",
+      "reference": "relics.AKABEKO.description"
+    },
+    {
+      "source": "每场战斗的第三回合开始时，获得 [blue]18[/blue] 点格挡。",
+      "reference": "relics.CAPTAINS_WHEEL.description"
+    },
+    {
+      "source": "每场战斗的第二回合开始时，获得 [blue]14[/blue] 点格挡。",
+      "reference": "relics.HORN_CLEAT.description"
+    },
+    {
+      "source": "每场战斗的首回合回复 [green]2[/green] 点生命。",
+      "reference": "relics.BLOOD_VIAL.description"
+    },
+    {
+      "source": "每场战斗的首回合获得 [gold]1[/gold] 点能量。",
+      "reference": "relics.LANTERN.description"
+    },
+    {
+      "source": "每场战斗的首回合额外抽 [gold]2[/gold] 张牌。",
+      "reference": "relics.RING_OF_THE_SNAKE.description"
+    },
+    {
+      "source": "每场战斗获得 [gold]3[/gold] 点荆棘。",
+      "reference": "relics.BRONZE_SCALES.description"
+    },
+    {
+      "source": "每实际花费一颗星星，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.CHILD_OF_THE_STARS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出 [gold]10[/gold] 张攻击牌，第十张造成双倍伤害。计数跨战斗保留。",
+      "reference": "relics.PEN_NIB.description"
+    },
+    {
+      "source": "每打出 [gold]10[/gold] 张攻击牌，获得 [gold]1[/gold] 点能量。计数跨战斗保留。",
+      "reference": "relics.NUNCHAKU.description"
+    },
+    {
+      "source": "每打出一张攻击牌，在手牌中生成 [gold]{n}[/gold] 张随机攻击牌。",
+      "reference": "powers.CALAMITY_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张灵魂，使随机敌人失去 [gold]{n}[/gold] 点生命。",
+      "reference": "powers.HAUNT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张灵魂，召唤 [green]{n}[/green]。",
+      "reference": "powers.DEVOUR_LIFE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张牌后，对随机敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.SERPENT_FORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张牌后，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.AFTERIMAGE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张能力牌，生成 [gold]{n}[/gold] 个闪电球。",
+      "reference": "powers.STORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张能力牌，获得 [gold]{n}[/gold] 点能量。",
+      "reference": "powers.SUBROUTINE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每打出一张虚无牌，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.SPIRIT_OF_ASH_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每抽到一张虚无牌，再抽 [blue]{n}[/blue] 张牌。",
+      "reference": "powers.PAGESTORM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每抽十张牌获得 [gold]{n}[/gold] 点能量。多份效果独立计数。",
+      "reference": "powers.AUTOMATION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次中毒结算额外触发 [green]{n}[/green] 次；每次存活的结算后层数减一。",
+      "reference": "powers.ACCELERANT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次对敌人施加负面状态，对其造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.SLEIGHT_OF_FLESH_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次开始打出卡牌，获得 [gold]{n}[/gold] 颗星星。",
+      "reference": "powers.THE_SEALED_THRONE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次攻击命中敌人，使其在本回合暂时失去 [gold]{n}[/gold] 点力量。",
+      "reference": "powers.MONARCHS_GAZE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次施加灾厄，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.SHROUD_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次给予易伤后，抽 [blue]{n}[/blue] 张牌。",
+      "reference": "powers.VICIOUS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次获得或花费星星，对所有敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.BLACK_HOLE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每次获得格挡后，对一个随机敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.JUGGERNAUT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每消耗一张牌，抽 [blue]{n}[/blue] 张牌。",
+      "reference": "powers.DARK_EMBRACE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每消耗一张牌，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.FEEL_NO_PAIN_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每生成一张牌，获得 [blue]{n}[/blue] 点格挡。",
+      "reference": "powers.PILLAR_OF_CREATION_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每生成一张牌，获得 [gold]{n}[/gold] 点力量。",
+      "reference": "powers.ARSENAL_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每生成一张状态牌，对所有敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.SMOKESTACK_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每生成一张状态牌，随机生成 [gold]{n}[/gold] 个充能球。",
+      "reference": "powers.TRASH_TO_TREASURE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "每经过 [gold]3[/gold] 个回合获得 [gold]1[/gold] 点能量。计数跨战斗保留。",
+      "reference": "relics.HAPPY_FLOWER.description"
+    },
+    {
+      "source": "每花费四点能量，获得 [gold]{n}[/gold] 点能量。每次获得的效果分别累计。",
+      "reference": "powers.ORBIT_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "毒药水",
+      "reference": "potions.POISON_POTION.title"
+    },
+    {
+      "source": "毒雾",
+      "reference": "powers.NOXIOUS_FUMES_POWER.title"
+    },
+    {
+      "source": "毒雾 ",
+      "reference": "powers.NOXIOUS_FUMES_POWER.title",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "水银沙漏",
+      "reference": "relics.MERCURY_HOURGLASS.title"
+    },
+    {
+      "source": "永久移除 · 花费 ",
+      "eng": "Permanently remove · Cost "
+    },
+    {
+      "source": "污浊药水",
+      "reference": "potions.FOUL_POTION.title"
+    },
+    {
+      "source": "沉溺",
+      "reference": "events.ABYSSAL_BATHS.pages.ALL.options.LINGER.title"
+    },
+    {
+      "source": "没有剩余的已实现遗物。",
+      "eng": "No implemented relics remain."
+    },
+    {
+      "source": "没有可以升级的牌",
+      "eng": "No cards can be upgraded"
+    },
+    {
+      "source": "没有手牌",
+      "eng": "Hand empty"
+    },
+    {
+      "source": "没有有效的存档",
+      "eng": "No valid save"
+    },
+    {
+      "source": "没有药水掉落",
+      "eng": "No potion dropped"
+    },
+    {
+      "source": "没有遗物",
+      "eng": "No relics"
+    },
+    {
+      "source": "活力",
+      "reference": "powers.VIGOR_POWER.title"
+    },
+    {
+      "source": "流动铜液",
+      "reference": "potions.LIQUID_BRONZE.title"
+    },
+    {
+      "source": "涂毒",
+      "reference": "powers.ENVENOM_POWER.title"
+    },
+    {
+      "source": "消亡",
+      "reference": "powers.DEMISE_POWER.title"
+    },
+    {
+      "source": "消亡粉末",
+      "reference": "potions.POWDERED_DEMISE.title"
+    },
+    {
+      "source": "消耗 ",
+      "eng": "Exhaust "
+    },
+    {
+      "source": "消耗堆",
+      "reference": "static_hover_tips.EXHAUST_PILE.title"
+    },
+    {
+      "source": "液态记忆",
+      "reference": "potions.LIQUID_MEMORIES.title"
+    },
+    {
+      "source": "混沌药水",
+      "reference": "potions.ENTROPIC_BREW.title"
+    },
+    {
+      "source": "清",
+      "eng": "Clear"
+    },
+    {
+      "source": "清除",
+      "eng": "Clear"
+    },
+    {
+      "source": "湮灭",
+      "reference": "powers.OBLIVION_POWER.title"
+    },
+    {
+      "source": "滚石",
+      "reference": "powers.ROLLING_BOULDER_POWER.title"
+    },
+    {
+      "source": "火焰屏障",
+      "reference": "powers.FLAME_BARRIER_POWER.title"
+    },
+    {
+      "source": "火焰药水",
+      "reference": "potions.FIRE_POTION.title"
+    },
+    {
+      "source": "灯笼",
+      "reference": "relics.LANTERN.title"
+    },
+    {
+      "source": "灰水",
+      "reference": "potions.ASHWATER.title"
+    },
+    {
+      "source": "灰烬之灵",
+      "reference": "powers.SPIRIT_OF_ASH_POWER.title"
+    },
+    {
+      "source": "灾厄",
+      "reference": "powers.DOOM_POWER.title"
+    },
+    {
+      "source": "灾厄药水",
+      "reference": "potions.POTION_OF_DOOM.title"
+    },
+    {
+      "source": "炸弹",
+      "reference": "powers.THE_BOMB_POWER.title"
+    },
+    {
+      "source": "点击卡牌看详情 · ←→ 切换牌堆",
+      "eng": "Click a card for details · ←→ Change pile"
+    },
+    {
+      "source": "点种子编辑 · ↑↓ 浏览 · 尚未接入战斗",
+      "eng": "Click seed to edit · ↑↓ Scroll · Preview only"
+    },
+    {
+      "source": "烟囱",
+      "reference": "powers.SMOKESTACK_POWER.title"
+    },
+    {
+      "source": "热修复",
+      "reference": "cards.HOTFIX.title"
+    },
+    {
+      "source": "熔炉",
+      "reference": "powers.FURNACE_POWER.title"
+    },
+    {
+      "source": "熔炉的祝福",
+      "reference": "potions.BLESSING_OF_THE_FORGE.title"
+    },
+    {
+      "source": "熵",
+      "reference": "powers.ENTROPY_POWER.title"
+    },
+    {
+      "source": "燃烧之血",
+      "reference": "relics.BURNING_BLOOD.title"
+    },
+    {
+      "source": "爆发",
+      "reference": "powers.BURST_POWER.title"
+    },
+    {
+      "source": "爆炸安瓿",
+      "reference": "potions.EXPLOSIVE_AMPOULE.title"
+    },
+    {
+      "source": "牌组",
+      "reference": "static_hover_tips.DECK.title"
+    },
+    {
+      "source": "牌组 Tab",
+      "eng": "Deck Tab"
+    },
+    {
+      "source": "状态",
+      "reference": "gameplay_ui.CARD_RARITY.STATUS"
+    },
+    {
+      "source": "狂怒",
+      "reference": "powers.RAGE_POWER.title"
+    },
+    {
+      "source": "狡诈药水",
+      "reference": "potions.CUNNING_POTION.title"
+    },
+    {
+      "source": "独白",
+      "reference": "powers.MONOLOGUE_POWER.title"
+    },
+    {
+      "source": "狱火",
+      "reference": "powers.INFERNO_POWER.title"
+    },
+    {
+      "source": "猎手",
+      "reference": "characters.SILENT.title"
+    },
+    {
+      "source": "献祭牌奖励",
+      "eng": "Sacrificed card reward"
+    },
+    {
+      "source": "王之凝视",
+      "reference": "powers.MONARCHS_GAZE_POWER.title"
+    },
+    {
+      "source": "王之勇气",
+      "reference": "potions.KINGS_COURAGE.title"
+    },
+    {
+      "source": "王国资产",
+      "reference": "powers.ROYALTIES_POWER.title"
+    },
+    {
+      "source": "玩家回合结束时移除 [gold]{n}[/gold] 点由 SetupStrike 获得的力量。",
+      "reference": "powers.TEMPORARY_STRENGTH_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "环绕轨道",
+      "reference": "powers.ORBIT_POWER.title"
+    },
+    {
+      "source": "现有 [green]{n}[/green] 点生命。玩家的格挡用尽后，奥斯提承受剩余攻击伤害。",
+      "reference": "static_hover_tips.SUMMON_STATIC.description",
+      "amount_placeholder": true
+    },
+    {
+      "source": "玻璃",
+      "reference": "orbs.GLASS_ORB.title"
+    },
+    {
+      "source": "瓶中精灵",
+      "reference": "potions.FAIRY_IN_A_BOTTLE.title"
+    },
+    {
+      "source": "瓶中船",
+      "reference": "potions.SHIP_IN_A_BOTTLE.title"
+    },
+    {
+      "source": "瓶装潜能",
+      "reference": "potions.BOTTLED_POTENTIAL.title"
+    },
+    {
+      "source": "生成 ",
+      "eng": "Create "
+    },
+    {
+      "source": "生成地图",
+      "eng": "Generate map"
+    },
+    {
+      "source": "生成失败，未使用替代地图",
+      "eng": "Generation failed; no replacement map used"
+    },
+    {
+      "source": "甲虫汁",
+      "reference": "potions.BEETLE_JUICE.title"
+    },
+    {
+      "source": "留空使用新种子；I / O 自动转为 1 / 0",
+      "eng": "Leave blank for a new seed; I/O become 1/0"
+    },
+    {
+      "source": "痊愈药水",
+      "reference": "potions.CURE_ALL.title"
+    },
+    {
+      "source": "癫狂之触",
+      "reference": "potions.TOUCH_OF_INSANITY.title"
+    },
+    {
+      "source": "百年积木",
+      "reference": "relics.CENTENNIAL_PUZZLE.title"
+    },
+    {
+      "source": "皇家枕头",
+      "reference": "relics.REGAL_PILLOW.title"
+    },
+    {
+      "source": "目前拥有 [gold]{n}[/gold] 颗星星。",
+      "reference": "static_hover_tips.STAR_COUNT.description",
+      "amount_placeholder": true
+    },
+    {
+      "source": "破损核心",
+      "reference": "relics.CRACKED_CORE.title"
+    },
+    {
+      "source": "确认",
+      "reference": "settings_ui.INPUT_SETTINGS.INPUT_TITLE.confirm"
+    },
+    {
+      "source": "确认升级",
+      "eng": "Confirm upgrade"
+    },
+    {
+      "source": "确认变化",
+      "eng": "Confirm transform"
+    },
+    {
+      "source": "确认永久移除",
+      "eng": "Confirm permanent removal"
+    },
+    {
+      "source": "确认移除",
+      "eng": "Confirm removal"
+    },
+    {
+      "source": "神气制胜",
+      "reference": "powers.PANACHE_POWER.title"
+    },
+    {
+      "source": "禁忌魔典",
+      "reference": "powers.FORBIDDEN_GRIMOIRE_POWER.title"
+    },
+    {
+      "source": "禁忌魔典 · 不消耗金币",
+      "eng": "Forbidden Grimoire · No Gold cost"
+    },
+    {
+      "source": "禁忌魔典：永久移除一张牌",
+      "eng": "Forbidden Grimoire: Permanently remove a card"
+    },
+    {
+      "source": "离开",
+      "reference": "events.ENDLESS_CONVEYOR.pages.GRAB_SOMETHING_OFF_THE_BELT.options.LEAVE.title"
+    },
+    {
+      "source": "离开浴场",
+      "reference": "events.ABYSSAL_BATHS.pages.ALL.options.EXIT_BATHS.title"
+    },
+    {
+      "source": "种子",
+      "reference": "epochs.CUSTOM_AND_SEEDS_EPOCH.title"
+    },
+    {
+      "source": "种子 ",
+      "reference": "epochs.CUSTOM_AND_SEEDS_EPOCH.title",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "种子无效",
+      "eng": "Invalid seed"
+    },
+    {
+      "source": "种子须为 1–64 个 ASCII 字符",
+      "eng": "Seed must contain 1–64 ASCII characters"
+    },
+    {
+      "source": "移除 ",
+      "eng": "Remove "
+    },
+    {
+      "source": "移除一张牌",
+      "reference": "card_selection.TO_REMOVE"
+    },
+    {
+      "source": "稳定血清",
+      "reference": "potions.STABLE_SERUM.title"
+    },
+    {
+      "source": "空",
+      "eng": "Empty"
+    },
+    {
+      "source": "空格：结束回合",
+      "eng": "Space: End turn"
+    },
+    {
+      "source": "空槽位",
+      "eng": "Empty slot"
+    },
+    {
+      "source": "空的……",
+      "eng": "Empty…"
+    },
+    {
+      "source": "空药水槽",
+      "eng": "Empty potion slot"
+    },
+    {
+      "source": "第 ",
+      "eng": "Act "
+    },
+    {
+      "source": "第 {actNumber} 幕",
+      "eng": "Act {actNumber}"
+    },
+    {
+      "source": "第一幕",
+      "eng": "Act 1"
+    },
+    {
+      "source": "等待引爆的炸弹数量：[gold]{n}[/gold]。",
+      "reference": "powers.THE_BOMB_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "等离子",
+      "reference": "orbs.PLASMA_ORB.title"
+    },
+    {
+      "source": "精准",
+      "reference": "powers.ACCURACY_POWER.title"
+    },
+    {
+      "source": "精准 ",
+      "reference": "powers.ACCURACY_POWER.title",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "精炼混沌",
+      "reference": "potions.DISTILLED_CHAOS.title"
+    },
+    {
+      "source": "精神过载",
+      "reference": "powers.NEUROSURGE_POWER.title"
+    },
+    {
+      "source": "精致折扇",
+      "reference": "relics.ORNAMENTAL_FAN.title"
+    },
+    {
+      "source": "精英",
+      "reference": "static_hover_tips.ROOM_ELITE.title"
+    },
+    {
+      "source": "精英配额 5",
+      "eng": "Elite quota 5"
+    },
+    {
+      "source": "精英配额 8",
+      "eng": "Elite quota 8"
+    },
+    {
+      "source": "紧勒",
+      "reference": "powers.STRANGLE_POWER.title"
+    },
+    {
+      "source": "紧追不放",
+      "reference": "powers.SIC_EM_POWER.title"
+    },
+    {
+      "source": "累计 ",
+      "eng": "Total "
+    },
+    {
+      "source": "纠缠",
+      "reference": "powers.HAUNT_POWER.title"
+    },
+    {
+      "source": "练习",
+      "eng": "Practice"
+    },
+    {
+      "source": "组合练习",
+      "eng": "Combo practice"
+    },
+    {
+      "source": "组合练习没有远征路线",
+      "eng": "Combo practice has no run map"
+    },
+    {
+      "source": "结束回合",
+      "reference": "settings_ui.INPUT_SETTINGS.INPUT_TITLE.endTurn"
+    },
+    {
+      "source": "结束回合时若没有格挡，获得 [blue]6[/blue] 点格挡。",
+      "reference": "relics.ORICHALCUM.description"
+    },
+    {
+      "source": "给予[blue]33[/blue]层[gold]灾厄[/gold]。",
+      "reference": "potions.POTION_OF_DOOM.description"
+    },
+    {
+      "source": "给予[blue]6[/blue]层[gold]中毒[/gold]。",
+      "reference": "potions.POISON_POTION.description"
+    },
+    {
+      "source": "给予一个敌人 [blue]3[/blue] 层易伤。",
+      "reference": "potions.VULNERABLE_POTION.description"
+    },
+    {
+      "source": "给予一个敌人 [blue]3[/blue] 层虚弱。",
+      "reference": "potions.WEAK_POTION.description"
+    },
+    {
+      "source": "给予中毒 ",
+      "eng": "Apply Poison "
+    },
+    {
+      "source": "给予所有敌人[blue]1[/blue]层[gold]虚弱[/gold]和[blue]1[/blue]层[gold]易伤[/gold]。",
+      "reference": "potions.POTION_OF_BINDING.description"
+    },
+    {
+      "source": "给予虚弱 ",
+      "eng": "Apply Weak "
+    },
+    {
+      "source": "继续",
+      "reference": "gameplay_ui.PAUSE_MENU.RESUME"
+    },
+    {
+      "source": "继续前进",
+      "reference": "gameplay_ui.PROCEED_BUTTON"
+    },
+    {
+      "source": "继续前进 ›",
+      "reference": "gameplay_ui.PROCEED_BUTTON",
+      "prefix": "",
+      "suffix": " ›"
+    },
+    {
+      "source": "继续游戏",
+      "reference": "main_menu_ui.CONTINUE"
+    },
+    {
+      "source": "绯红披风",
+      "reference": "powers.CRIMSON_MANTLE_POWER.title"
+    },
+    {
+      "source": "缓冲",
+      "reference": "powers.BUFFER_POWER.title"
+    },
+    {
+      "source": "编辑种子",
+      "eng": "Edit seed"
+    },
+    {
+      "source": "缚魂命匣",
+      "reference": "relics.BOUND_PHYLACTERY.title"
+    },
+    {
+      "source": "缚魂药水",
+      "reference": "potions.POTION_OF_BINDING.title"
+    },
+    {
+      "source": "缩小",
+      "reference": "powers.SHRINK_POWER.title"
+    },
+    {
+      "source": "罐装幽灵",
+      "reference": "potions.GHOST_IN_A_JAR.title"
+    },
+    {
+      "source": "群星之子",
+      "reference": "powers.CHILD_OF_THE_STARS_POWER.title"
+    },
+    {
+      "source": "群星王位的继承人。积攒星星、号令仆从，铸造君王之剑。",
+      "reference": "characters.REGENT.description"
+    },
+    {
+      "source": "群蛇形态",
+      "reference": "powers.SERPENT_FORM_POWER.title"
+    },
+    {
+      "source": "肌肉药水",
+      "reference": "potions.FLEX_POTION.title"
+    },
+    {
+      "source": "能力",
+      "reference": "gameplay_ui.CARD_TYPE.POWER"
+    },
+    {
+      "source": "能力与状态",
+      "eng": "Powers and statuses"
+    },
+    {
+      "source": "能力药水",
+      "reference": "potions.POWER_POTION.title"
+    },
+    {
+      "source": "能量",
+      "reference": "static_hover_tips.ENERGY.title"
+    },
+    {
+      "source": "能量药水",
+      "reference": "potions.ENERGY_POTION.title"
+    },
+    {
+      "source": "腐化",
+      "reference": "powers.CORRUPTION_POWER.title"
+    },
+    {
+      "source": "腐蚀波",
+      "reference": "powers.CORROSIVE_WAVE_POWER.title"
+    },
+    {
+      "source": "自动化",
+      "reference": "powers.AUTOMATION_POWER.title"
+    },
+    {
+      "source": "自动生成",
+      "reference": "main_menu_ui.CUSTOM_RUN_SCREEN.SEED_RANDOM_PLACEHOLDER"
+    },
+    {
+      "source": "自动触发",
+      "eng": "Automatic"
+    },
+    {
+      "source": "自己的回合每抽一张牌，对所有敌人造成 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.SPEEDSTER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "自己的回合每次失去生命后，获得 [gold]{n}[/gold] 点力量；卡牌造成的失血等该牌结算后触发。",
+      "reference": "powers.RUPTURE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "自身回合开始时失去 [green]{n}[/green] 点生命，无视格挡；随后层数减一。",
+      "reference": "powers.POISON_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "自身回合结束时失去 [gold]{n}[/gold] 点生命。",
+      "reference": "powers.DEMISE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "自身回合结束时，若生命不高于 [gold]{n}[/gold]，立刻死亡。",
+      "reference": "powers.DOOM_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "至少保留一张牌",
+      "eng": "Keep at least one card"
+    },
+    {
+      "source": "致死性",
+      "reference": "powers.LETHALITY_POWER.title"
+    },
+    {
+      "source": "舍入临界值：停止生成，未替换结果",
+      "eng": "Rounding boundary: generation stopped without substitution"
+    },
+    {
+      "source": "舵盘",
+      "reference": "relics.CAPTAINS_WHEEL.title"
+    },
+    {
+      "source": "船夹板",
+      "reference": "relics.HORN_CLEAT.title"
+    },
+    {
+      "source": "芒果",
+      "reference": "relics.MANGO.title"
+    },
+    {
+      "source": "若上一回合没有打出攻击牌，在本回合开始时获得 [gold]1[/gold] 点能量。",
+      "reference": "relics.ART_OF_WAR.description"
+    },
+    {
+      "source": "苦无",
+      "reference": "relics.KUNAI.title"
+    },
+    {
+      "source": "荆棘",
+      "reference": "powers.THORNS_POWER.title"
+    },
+    {
+      "source": "草莓",
+      "reference": "relics.STRAWBERRY.title"
+    },
+    {
+      "source": "药水",
+      "eng": "Potions"
+    },
+    {
+      "source": "药水已使用",
+      "eng": "Potion used"
+    },
+    {
+      "source": "药水形状的石头",
+      "reference": "potions.POTION_SHAPED_ROCK.title"
+    },
+    {
+      "source": "药水栏为空。可在商店购买或领取战斗掉落。",
+      "eng": "No potions. Buy them from merchants or collect combat drops."
+    },
+    {
+      "source": "药水栏已满",
+      "eng": "Potion slots full"
+    },
+    {
+      "source": "药水栏已满，可先打开药水栏丢弃一瓶",
+      "eng": "Potion slots full. Discard a potion first."
+    },
+    {
+      "source": "获得 ",
+      "eng": "Gain "
+    },
+    {
+      "source": "获得 [blue]12[/blue] 点格挡。",
+      "reference": "potions.BLOCK_POTION.description"
+    },
+    {
+      "source": "获得 [blue]2[/blue] 点敏捷。",
+      "reference": "potions.DEXTERITY_POTION.description"
+    },
+    {
+      "source": "获得 [blue]5[/blue] 点敏捷。在本回合结束时失去这部分敏捷。",
+      "reference": "potions.SPEED_POTION.description"
+    },
+    {
+      "source": "获得 [gold]2[/gold] 点力量。",
+      "reference": "potions.STRENGTH_POTION.description"
+    },
+    {
+      "source": "获得 [gold]2[/gold] 点能量。",
+      "reference": "potions.ENERGY_POTION.description"
+    },
+    {
+      "source": "获得 [gold]3[/gold] 点荆棘。受到攻击时对攻击者造成荆棘伤害。",
+      "reference": "potions.LIQUID_BRONZE.description"
+    },
+    {
+      "source": "获得 [gold]5[/gold] 点力量。在本回合结束时失去这部分力量。",
+      "reference": "potions.FLEX_POTION.description"
+    },
+    {
+      "source": "获得 [green]5[/green] 点最大生命值。",
+      "reference": "potions.FRUIT_JUICE.description"
+    },
+    {
+      "source": "获得1 点能量。在你的下[blue]3[/blue]个回合开始时，额外获得1 点能量。",
+      "reference": "potions.RADIANT_TINCTURE.description"
+    },
+    {
+      "source": "获得1 点能量。抽[blue]2[/blue]张牌。",
+      "reference": "potions.CURE_ALL.description"
+    },
+    {
+      "source": "获得3 颗星星。",
+      "reference": "potions.STAR_POTION.description"
+    },
+    {
+      "source": "获得[blue]10[/blue]点[gold]格挡[/gold]。在下个回合开始时获得[blue]10[/blue]点[gold]格挡[/gold]。",
+      "reference": "potions.SHIP_IN_A_BOTTLE.description"
+    },
+    {
+      "source": "获得[blue]1[/blue]层[gold]仪式[/gold]。",
+      "reference": "potions.MAZALETHS_GIFT.description"
+    },
+    {
+      "source": "获得[blue]1[/blue]层[gold]无实体[/gold]。",
+      "reference": "potions.GHOST_IN_A_JAR.description"
+    },
+    {
+      "source": "获得[blue]1[/blue]层[gold]缓冲[/gold]。",
+      "reference": "potions.LUCKY_TONIC.description"
+    },
+    {
+      "source": "获得[blue]1[/blue]点[gold]力量[/gold]和[blue]1[/blue]点[gold]敏捷[/gold]。",
+      "reference": "potions.FYSH_OIL.description"
+    },
+    {
+      "source": "获得[blue]2[/blue]个[gold]充能球栏位[/gold]。",
+      "reference": "potions.POTION_OF_CAPACITY.description"
+    },
+    {
+      "source": "获得[blue]2[/blue]点[gold]集中[/gold]。",
+      "reference": "potions.FOCUS_POTION.description"
+    },
+    {
+      "source": "获得[blue]7[/blue]层[gold]覆甲[/gold]。",
+      "reference": "potions.HEART_OF_IRON.description"
+    },
+    {
+      "source": "获得[green]5[/green]层[gold]再生[/gold]。",
+      "reference": "potions.REGEN_POTION.description"
+    },
+    {
+      "source": "获得力量 ",
+      "eng": "Gain Strength "
+    },
+    {
+      "source": "获得敏捷 ",
+      "eng": "Gain Dexterity "
+    },
+    {
+      "source": "获得格挡 ",
+      "eng": "Gain Block "
+    },
+    {
+      "source": "获得能量 ",
+      "eng": "Gain Energy "
+    },
+    {
+      "source": "获得药水",
+      "eng": "Obtain potion"
+    },
+    {
+      "source": "获得遗物：",
+      "eng": "Relic obtained: "
+    },
+    {
+      "source": "获得金币 ",
+      "eng": "Gain Gold "
+    },
+    {
+      "source": "蔓生之地 · 远征路线",
+      "eng": "Overgrowth · Run map"
+    },
+    {
+      "source": "薪火之源",
+      "reference": "powers.PYRE_POWER.title"
+    },
+    {
+      "source": "虚弱",
+      "reference": "powers.WEAK_POWER.title"
+    },
+    {
+      "source": "虚弱药水",
+      "reference": "potions.WEAK_POTION.title"
+    },
+    {
+      "source": "虚空之唤",
+      "reference": "powers.CALL_OF_THE_VOID_POWER.title"
+    },
+    {
+      "source": "虚空形态",
+      "reference": "powers.VOID_FORM_POWER.title"
+    },
+    {
+      "source": "蛇之戒",
+      "reference": "relics.RING_OF_THE_SNAKE.title"
+    },
+    {
+      "source": "融入暗影",
+      "reference": "powers.SHADOWMELD_POWER.title"
+    },
+    {
+      "source": "血肉戏法",
+      "reference": "powers.SLEIGHT_OF_FLESH_POWER.title"
+    },
+    {
+      "source": "覆甲",
+      "reference": "powers.PLATING_POWER.title"
+    },
+    {
+      "source": "觉醒的机械造物。生成并激发充能球，用集中强化它们。",
+      "reference": "characters.DEFECT.description"
+    },
+    {
+      "source": "触媒",
+      "reference": "powers.ACCELERANT_POWER.title"
+    },
+    {
+      "source": "触摸板：轻触/按下点击，按住可拖牌。",
+      "eng": "Touchpad: Tap/click; hold to drag cards."
+    },
+    {
+      "source": "计划妥当",
+      "reference": "powers.WELL_LAID_PLANS_POWER.title"
+    },
+    {
+      "source": "计数：",
+      "eng": "Count: "
+    },
+    {
+      "source": "计策",
+      "reference": "powers.STRATAGEM_POWER.title"
+    },
+    {
+      "source": "设置",
+      "reference": "gameplay_ui.PAUSE_MENU.SETTINGS"
+    },
+    {
+      "source": "诅咒",
+      "reference": "gameplay_ui.CARD_RARITY.CURSE"
+    },
+    {
+      "source": "详情",
+      "eng": "Details"
+    },
+    {
+      "source": "详情 I",
+      "eng": "Details I"
+    },
+    {
+      "source": "请选择另一张可变化的牌",
+      "eng": "Choose another transformable card"
+    },
+    {
+      "source": "请选择另一张尚未变化的牌",
+      "eng": "Choose another card that has not transformed"
+    },
+    {
+      "source": "谋划专家",
+      "reference": "powers.MASTER_PLANNER_POWER.title"
+    },
+    {
+      "source": "购买 ",
+      "eng": "Buy "
+    },
+    {
+      "source": "购买成功",
+      "eng": "Purchased"
+    },
+    {
+      "source": "资源不足，或尚未满足出牌条件",
+      "eng": "Insufficient resources or play requirements not met"
+    },
+    {
+      "source": "赌徒特酿",
+      "reference": "potions.GAMBLERS_BREW.title"
+    },
+    {
+      "source": "赤牛",
+      "reference": "relics.AKABEKO.title"
+    },
+    {
+      "source": "起点",
+      "eng": "Start"
+    },
+    {
+      "source": "超巨化",
+      "reference": "powers.GIGANTIFICATION_POWER.title"
+    },
+    {
+      "source": "超巨化药水",
+      "reference": "potions.GIGANTIFICATION_POTION.title"
+    },
+    {
+      "source": "超能光束",
+      "reference": "cards.HYPERBEAM.title"
+    },
+    {
+      "source": "跟踪",
+      "reference": "powers.TRACKING_POWER.title"
+    },
+    {
+      "source": "路线预览 · ↑↓ 滚动 · M / Esc 返回",
+      "eng": "Route preview · ↑↓ Scroll · M / Esc Back"
+    },
+    {
+      "source": "跳过",
+      "reference": "gameplay_ui.CHOOSE_CARD_SKIP_BUTTON"
+    },
+    {
+      "source": "跳过 ›",
+      "reference": "gameplay_ui.CHOOSE_CARD_SKIP_BUTTON",
+      "prefix": "",
+      "suffix": " ›"
+    },
+    {
+      "source": "跳过剩余",
+      "eng": "Skip remaining"
+    },
+    {
+      "source": "较新的左侧充能球",
+      "eng": "Newer Orbs on the left"
+    },
+    {
+      "source": "辉星",
+      "reference": "static_hover_tips.STAR_COUNT.title"
+    },
+    {
+      "source": "输入后选择生成；I / O 自动转为 1 / 0",
+      "eng": "Enter a seed, then Generate; I/O become 1/0"
+    },
+    {
+      "source": "输入种子",
+      "eng": "Enter seed"
+    },
+    {
+      "source": "达到安全容量上限",
+      "eng": "Safety capacity limit reached"
+    },
+    {
+      "source": "迅捷药水",
+      "reference": "potions.SWIFT_POTION.title"
+    },
+    {
+      "source": "返回",
+      "reference": "main_menu_ui.MULTIPLAYER_WARNING_POPUP.back"
+    },
+    {
+      "source": "返回事件",
+      "eng": "Back to event"
+    },
+    {
+      "source": "返回商人",
+      "eng": "Back to merchant"
+    },
+    {
+      "source": "返回奖励",
+      "eng": "Back to rewards"
+    },
+    {
+      "source": "还需变化 ",
+      "eng": "Transforms remaining "
+    },
+    {
+      "source": "这名敌人的虚弱和易伤效果翻倍；剩余 [gold]{n}[/gold] 个回合。",
+      "reference": "powers.DEBILITATE_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "这张牌不能移除",
+      "eng": "This card cannot be removed"
+    },
+    {
+      "source": "这张牌不能继续升级",
+      "eng": "This card cannot be upgraded further"
+    },
+    {
+      "source": "这张牌已经升级",
+      "eng": "This card is already upgraded"
+    },
+    {
+      "source": "这张牌没有关联词条。",
+      "eng": "No associated keywords for this card."
+    },
+    {
+      "source": "这条路线不相连，请选择亮起的节点",
+      "eng": "Route not connected. Choose a lit node."
+    },
+    {
+      "source": "进入商店时，回复 [green]15[/green] 点生命。",
+      "reference": "relics.MEAL_TICKET.description"
+    },
+    {
+      "source": "进阶 ",
+      "eng": "Ascension "
+    },
+    {
+      "source": "进阶等级",
+      "reference": "gameplay_ui.ASCENSION_LEVEL"
+    },
+    {
+      "source": "远征完成",
+      "eng": "Run complete"
+    },
+    {
+      "source": "远征设置",
+      "eng": "Run settings"
+    },
+    {
+      "source": "连环拳",
+      "reference": "powers.ONE_TWO_PUNCH_POWER.title"
+    },
+    {
+      "source": "迭代",
+      "reference": "powers.ITERATION_POWER.title"
+    },
+    {
+      "source": "追踪之刃",
+      "reference": "powers.SEEKING_EDGE_POWER.title"
+    },
+    {
+      "source": "退出游戏",
+      "reference": "main_menu_ui.QUIT_CONFIRM_POPUP.header"
+    },
+    {
+      "source": "选择一张技能免费打出三次",
+      "eng": "Choose a Skill to play three times for free"
+    },
+    {
+      "source": "选择一张无色牌复制",
+      "eng": "Choose a Colorless card to copy"
+    },
+    {
+      "source": "选择一张牌",
+      "reference": "gameplay_ui.CHOOSE_CARD_HEADER"
+    },
+    {
+      "source": "选择一张牌加入手牌",
+      "eng": "Choose a card to add to hand"
+    },
+    {
+      "source": "选择一张牌升级",
+      "reference": "card_selection.TO_UPGRADE"
+    },
+    {
+      "source": "选择一张牌变化",
+      "reference": "card_selection.TO_TRANSFORM"
+    },
+    {
+      "source": "选择一组卡牌",
+      "eng": "Choose a set of cards"
+    },
+    {
+      "source": "选择下回合复制的牌",
+      "eng": "Choose a card to copy next turn"
+    },
+    {
+      "source": "选择你[gold]手牌[/gold]中的一张牌，使其在本场战斗可以免费打出。",
+      "reference": "potions.TOUCH_OF_INSANITY.description"
+    },
+    {
+      "source": "选择你[gold]抽牌堆[/gold]中的一张牌加入你的[gold]手牌[/gold]。",
+      "reference": "potions.DROPLET_OF_PRECOGNITION.description"
+    },
+    {
+      "source": "选择升级的牌",
+      "reference": "card_selection.TO_UPGRADE"
+    },
+    {
+      "source": "选择卡牌",
+      "eng": "Choose cards"
+    },
+    {
+      "source": "选择变为仆从俯冲的抽牌",
+      "eng": "Choose a draw-pile card to become Minion Dive Bomb"
+    },
+    {
+      "source": "选择变化的牌",
+      "reference": "card_selection.TO_TRANSFORM"
+    },
+    {
+      "source": "选择增费并赋予重放的牌",
+      "eng": "Choose a card to increase its cost and Replay"
+    },
+    {
+      "source": "选择复制的牌",
+      "eng": "Choose a card to copy"
+    },
+    {
+      "source": "选择已有药水会替换它 · 不选可跳过",
+      "eng": "Select an occupied slot to replace it · Optional"
+    },
+    {
+      "source": "选择本场固定费用归零的牌",
+      "eng": "Choose a card to cost zero this combat"
+    },
+    {
+      "source": "选择相连的节点",
+      "eng": "Choose a connected node"
+    },
+    {
+      "source": "选择知识的代价",
+      "eng": "Choose the cost of knowledge"
+    },
+    {
+      "source": "选择移除的牌",
+      "reference": "card_selection.TO_REMOVE"
+    },
+    {
+      "source": "选择药水槽",
+      "eng": "Choose a potion slot"
+    },
+    {
+      "source": "选择要丢弃的牌",
+      "reference": "card_selection.TO_DISCARD"
+    },
+    {
+      "source": "选择要升级的牌",
+      "reference": "card_selection.TO_UPGRADE"
+    },
+    {
+      "source": "选择要变化的牌",
+      "reference": "card_selection.TO_TRANSFORM"
+    },
+    {
+      "source": "选择要复制的牌",
+      "eng": "Choose a card to copy"
+    },
+    {
+      "source": "选择要消耗的手牌",
+      "reference": "card_selection.TO_EXHAUST"
+    },
+    {
+      "source": "选择要消耗的抽牌堆卡牌",
+      "reference": "card_selection.TO_EXHAUST"
+    },
+    {
+      "source": "选择要消耗的牌",
+      "reference": "card_selection.TO_EXHAUST"
+    },
+    {
+      "source": "选择赋予保留的手牌",
+      "eng": "Choose a card in hand to gain Retain"
+    },
+    {
+      "source": "选择赋予奇巧的技能牌",
+      "eng": "Choose a Skill to gain Sly"
+    },
+    {
+      "source": "选择赋予虚无的手牌",
+      "eng": "Choose a card in hand to gain Ethereal"
+    },
+    {
+      "source": "选择遗物",
+      "eng": "Choose a relic"
+    },
+    {
+      "source": "选择附魔的牌",
+      "reference": "card_selection.TO_ENCHANT"
+    },
+    {
+      "source": "选择领取的奖励",
+      "eng": "Choose a reward"
+    },
+    {
+      "source": "速度药水",
+      "reference": "potions.SPEED_POTION.title"
+    },
+    {
+      "source": "速行者",
+      "reference": "powers.SPEEDSTER_POWER.title"
+    },
+    {
+      "source": "造成[blue]15[/blue]点伤害。",
+      "reference": "potions.POTION_SHAPED_ROCK.description"
+    },
+    {
+      "source": "遗物",
+      "reference": "gameplay_ui.RELIC_RARITY.NONE"
+    },
+    {
+      "source": "遗物 R",
+      "eng": "Relics R"
+    },
+    {
+      "source": "遗物：",
+      "eng": "Relic: "
+    },
+    {
+      "source": "配额已按种子生成",
+      "eng": "Quotas generated from seed"
+    },
+    {
+      "source": "重掷",
+      "reference": "card_reward_ui.OPTION_REROLL.name"
+    },
+    {
+      "source": "野性",
+      "reference": "powers.FERAL_POWER.title"
+    },
+    {
+      "source": "金刚杵",
+      "reference": "relics.VAJRA.title"
+    },
+    {
+      "source": "金币不足、已售出，或物品槽已满",
+      "eng": "Not enough Gold, sold out, or slots full"
+    },
+    {
+      "source": "钙化",
+      "reference": "powers.CALCIFY_POWER.title"
+    },
+    {
+      "source": "钢笔尖",
+      "reference": "relics.PEN_NIB.title"
+    },
+    {
+      "source": "铁心药水",
+      "reference": "potions.HEART_OF_IRON.title"
+    },
+    {
+      "source": "铁甲",
+      "reference": "characters.IRONCLAD.title"
+    },
+    {
+      "source": "铁甲军团的幸存者。以力量、格挡与消耗卡牌驾驭战斗。",
+      "reference": "characters.IRONCLAD.description"
+    },
+    {
+      "source": "铁甲战士",
+      "reference": "characters.IRONCLAD.title"
+    },
+    {
+      "source": "铜制鳞片",
+      "reference": "relics.BRONZE_SCALES.title"
+    },
+    {
+      "source": "锚",
+      "reference": "relics.ANCHOR.title"
+    },
+    {
+      "source": "锻造",
+      "reference": "rest_site_ui.OPTION_SMITH.name"
+    },
+    {
+      "source": "镣铐药水",
+      "reference": "potions.SHACKLING_POTION.title"
+    },
+    {
+      "source": "闪电",
+      "reference": "orbs.LIGHTNING_ORB.title"
+    },
+    {
+      "source": "闪电、冰霜与玻璃球的效果修正 [gold]{n}[/gold]；黑暗球的蓄能增量同样修正。等离子球不受集中影响。",
+      "reference": "powers.FOCUS_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "闪电球激发后，对命中且仍存活的敌人追加 [gold]{n}[/gold] 点伤害。",
+      "reference": "powers.THUNDER_POWER.smartDescription",
+      "amount_placeholder": true
+    },
+    {
+      "source": "集中",
+      "reference": "powers.FOCUS_POWER.title"
+    },
+    {
+      "source": "集中打击",
+      "reference": "cards.FOCUSED_STRIKE.title"
+    },
+    {
+      "source": "集中药水",
+      "reference": "potions.FOCUS_POTION.title"
+    },
+    {
+      "source": "雷暴",
+      "reference": "powers.STORM_POWER.title"
+    },
+    {
+      "source": "雷霆",
+      "reference": "powers.THUNDER_POWER.title"
+    },
+    {
+      "source": "静默猎手",
+      "reference": "characters.SILENT.title"
+    },
+    {
+      "source": "预借时间",
+      "reference": "powers.BORROWED_TIME_POWER.title"
+    },
+    {
+      "source": "预知之滴",
+      "reference": "potions.DROPLET_OF_PRECOGNITION.title"
+    },
+    {
+      "source": "预览升级",
+      "eng": "Preview upgrade"
+    },
+    {
+      "source": "领取",
+      "eng": "Take"
+    },
+    {
+      "source": "领取 Enter",
+      "eng": "Take Enter"
+    },
+    {
+      "source": "领域",
+      "reference": "powers.DEMESNE_POWER.title"
+    },
+    {
+      "source": "额外卡牌奖励",
+      "reference": "powers.THE_HUNT_POWER.title"
+    },
+    {
+      "source": "餐券",
+      "reference": "relics.MEAL_TICKET.title"
+    },
+    {
+      "source": "首回合额外抽 [gold]2[/gold] 张牌。",
+      "reference": "relics.BAG_OF_PREPARATION.description"
+    },
+    {
+      "source": "首领",
+      "reference": "static_hover_tips.ROOM_BOSS.title"
+    },
+    {
+      "source": "马萨雷斯的赠礼",
+      "reference": "potions.MAZALETHS_GIFT.title"
+    },
+    {
+      "source": "骨头酿",
+      "reference": "potions.BONE_BREW.title"
+    },
+    {
+      "source": "魔典移牌 × ",
+      "eng": "Grimoire removals × "
+    },
+    {
+      "source": "鲜血药水",
+      "reference": "potions.BLOOD_POTION.title"
+    },
+    {
+      "source": "黑暗",
+      "reference": "orbs.DARK_ORB.title"
+    },
+    {
+      "source": "黑暗之拥",
+      "reference": "powers.DARK_EMBRACE_POWER.title"
+    },
+    {
+      "source": "黑暗之拥 ",
+      "reference": "powers.DARK_EMBRACE_POWER.title",
+      "prefix": "",
+      "suffix": " "
+    },
+    {
+      "source": "黑暗精华",
+      "reference": "potions.ESSENCE_OF_DARKNESS.title"
+    },
+    {
+      "source": "黑洞",
+      "reference": "powers.BLACK_HOLE_POWER.title"
+    },
+    {
+      "source": "默认排序",
+      "eng": "Default order"
+    },
+    {
+      "source": "龙涎香",
+      "reference": "potions.AMBERGRIS.title"
+    },
+    {
+      "source": "：切击 + 格挡",
+      "eng": ": Slash + Block"
+    },
+    {
+      "source": "：嘶鸣 + 力量",
+      "eng": ": Hiss + Strength"
+    },
+    {
+      "source": "：撞击",
+      "eng": ": Tackle"
+    },
+    {
+      "source": "资源读取失败",
+      "eng": "Resource read failed"
+    },
+    {
+      "source": "准备战斗",
+      "eng": "Preparing combat"
+    }
+  ],
+  "extra_keys": [
+    "potions.AMBERGRIS.description",
+    "potions.AMBERGRIS.title",
+    "potions.ASHWATER.description",
+    "potions.ASHWATER.title",
+    "potions.ATTACK_POTION.description",
+    "potions.ATTACK_POTION.title",
+    "potions.BEETLE_JUICE.description",
+    "potions.BEETLE_JUICE.title",
+    "potions.BLESSING_OF_THE_FORGE.description",
+    "potions.BLESSING_OF_THE_FORGE.title",
+    "potions.BLOCK_POTION.description",
+    "potions.BLOCK_POTION.title",
+    "potions.BLOOD_POTION.description",
+    "potions.BLOOD_POTION.title",
+    "potions.BONE_BREW.description",
+    "potions.BONE_BREW.title",
+    "potions.BOTTLED_POTENTIAL.description",
+    "potions.BOTTLED_POTENTIAL.title",
+    "potions.CLARITY.description",
+    "potions.CLARITY.title",
+    "potions.COLORLESS_POTION.description",
+    "potions.COLORLESS_POTION.title",
+    "potions.COSMIC_CONCOCTION.description",
+    "potions.COSMIC_CONCOCTION.title",
+    "potions.CUNNING_POTION.description",
+    "potions.CUNNING_POTION.title",
+    "potions.CURE_ALL.description",
+    "potions.CURE_ALL.title",
+    "potions.DEXTERITY_POTION.description",
+    "potions.DEXTERITY_POTION.title",
+    "potions.DISTILLED_CHAOS.description",
+    "potions.DISTILLED_CHAOS.title",
+    "potions.DROPLET_OF_PRECOGNITION.description",
+    "potions.DROPLET_OF_PRECOGNITION.title",
+    "potions.DUPLICATOR.description",
+    "potions.DUPLICATOR.title",
+    "potions.ENERGY_POTION.description",
+    "potions.ENERGY_POTION.title",
+    "potions.ENTROPIC_BREW.description",
+    "potions.ENTROPIC_BREW.title",
+    "potions.ESSENCE_OF_DARKNESS.description",
+    "potions.ESSENCE_OF_DARKNESS.title",
+    "potions.EXPLOSIVE_AMPOULE.description",
+    "potions.EXPLOSIVE_AMPOULE.title",
+    "potions.FAIRY_IN_A_BOTTLE.description",
+    "potions.FAIRY_IN_A_BOTTLE.title",
+    "potions.FIRE_POTION.description",
+    "potions.FIRE_POTION.title",
+    "potions.FLEX_POTION.description",
+    "potions.FLEX_POTION.title",
+    "potions.FOCUS_POTION.description",
+    "potions.FOCUS_POTION.title",
+    "potions.FORTIFIER.description",
+    "potions.FORTIFIER.title",
+    "potions.FOUL_POTION.description",
+    "potions.FOUL_POTION.title",
+    "potions.FRUIT_JUICE.description",
+    "potions.FRUIT_JUICE.title",
+    "potions.FYSH_OIL.description",
+    "potions.FYSH_OIL.title",
+    "potions.GAMBLERS_BREW.description",
+    "potions.GAMBLERS_BREW.title",
+    "potions.GHOST_IN_A_JAR.description",
+    "potions.GHOST_IN_A_JAR.title",
+    "potions.GIGANTIFICATION_POTION.description",
+    "potions.GIGANTIFICATION_POTION.title",
+    "potions.GLOWWATER_POTION.description",
+    "potions.GLOWWATER_POTION.title",
+    "potions.HEART_OF_IRON.description",
+    "potions.HEART_OF_IRON.title",
+    "potions.KINGS_COURAGE.description",
+    "potions.KINGS_COURAGE.title",
+    "potions.LIQUID_BRONZE.description",
+    "potions.LIQUID_BRONZE.title",
+    "potions.LIQUID_MEMORIES.description",
+    "potions.LIQUID_MEMORIES.title",
+    "potions.LUCKY_TONIC.description",
+    "potions.LUCKY_TONIC.title",
+    "potions.MAZALETHS_GIFT.description",
+    "potions.MAZALETHS_GIFT.title",
+    "potions.OROBIC_ACID.description",
+    "potions.OROBIC_ACID.title",
+    "potions.POISON_POTION.description",
+    "potions.POISON_POTION.title",
+    "potions.POTION_OF_BINDING.description",
+    "potions.POTION_OF_BINDING.title",
+    "potions.POTION_OF_CAPACITY.description",
+    "potions.POTION_OF_CAPACITY.title",
+    "potions.POTION_OF_DOOM.description",
+    "potions.POTION_OF_DOOM.title",
+    "potions.POTION_SHAPED_ROCK.description",
+    "potions.POTION_SHAPED_ROCK.title",
+    "potions.POT_OF_GHOULS.description",
+    "potions.POT_OF_GHOULS.title",
+    "potions.POWDERED_DEMISE.description",
+    "potions.POWDERED_DEMISE.title",
+    "potions.POWER_POTION.description",
+    "potions.POWER_POTION.title",
+    "potions.RADIANT_TINCTURE.description",
+    "potions.RADIANT_TINCTURE.title",
+    "potions.REGEN_POTION.description",
+    "potions.REGEN_POTION.title",
+    "potions.SHACKLING_POTION.description",
+    "potions.SHACKLING_POTION.title",
+    "potions.SHIP_IN_A_BOTTLE.description",
+    "potions.SHIP_IN_A_BOTTLE.title",
+    "potions.SKILL_POTION.description",
+    "potions.SKILL_POTION.title",
+    "potions.SNECKO_OIL.description",
+    "potions.SNECKO_OIL.title",
+    "potions.SOLDIERS_STEW.description",
+    "potions.SOLDIERS_STEW.title",
+    "potions.SPEED_POTION.description",
+    "potions.SPEED_POTION.title",
+    "potions.STABLE_SERUM.description",
+    "potions.STABLE_SERUM.title",
+    "potions.STAR_POTION.description",
+    "potions.STAR_POTION.title",
+    "potions.STRENGTH_POTION.description",
+    "potions.STRENGTH_POTION.title",
+    "potions.SWIFT_POTION.description",
+    "potions.SWIFT_POTION.title",
+    "potions.TOUCH_OF_INSANITY.description",
+    "potions.TOUCH_OF_INSANITY.title",
+    "potions.VULNERABLE_POTION.description",
+    "potions.VULNERABLE_POTION.title",
+    "potions.WEAK_POTION.description",
+    "potions.WEAK_POTION.title",
+    "relics.AKABEKO.description",
+    "relics.AKABEKO.title",
+    "relics.ANCHOR.description",
+    "relics.ANCHOR.title",
+    "relics.ART_OF_WAR.description",
+    "relics.ART_OF_WAR.title",
+    "relics.BAG_OF_MARBLES.description",
+    "relics.BAG_OF_MARBLES.title",
+    "relics.BAG_OF_PREPARATION.description",
+    "relics.BAG_OF_PREPARATION.title",
+    "relics.BLOOD_VIAL.description",
+    "relics.BLOOD_VIAL.title",
+    "relics.BOUND_PHYLACTERY.description",
+    "relics.BOUND_PHYLACTERY.title",
+    "relics.BRONZE_SCALES.description",
+    "relics.BRONZE_SCALES.title",
+    "relics.BURNING_BLOOD.description",
+    "relics.BURNING_BLOOD.title",
+    "relics.CAPTAINS_WHEEL.description",
+    "relics.CAPTAINS_WHEEL.title",
+    "relics.CENTENNIAL_PUZZLE.description",
+    "relics.CENTENNIAL_PUZZLE.title",
+    "relics.CRACKED_CORE.description",
+    "relics.CRACKED_CORE.title",
+    "relics.DIVINE_RIGHT.description",
+    "relics.DIVINE_RIGHT.title",
+    "relics.HAPPY_FLOWER.description",
+    "relics.HAPPY_FLOWER.title",
+    "relics.HORN_CLEAT.description",
+    "relics.HORN_CLEAT.title",
+    "relics.KUNAI.description",
+    "relics.KUNAI.title",
+    "relics.LANTERN.description",
+    "relics.LANTERN.title",
+    "relics.LETTER_OPENER.description",
+    "relics.LETTER_OPENER.title",
+    "relics.MANGO.description",
+    "relics.MANGO.title",
+    "relics.MEAL_TICKET.description",
+    "relics.MEAL_TICKET.title",
+    "relics.MERCURY_HOURGLASS.description",
+    "relics.MERCURY_HOURGLASS.title",
+    "relics.NUNCHAKU.description",
+    "relics.NUNCHAKU.title",
+    "relics.ODDLY_SMOOTH_STONE.description",
+    "relics.ODDLY_SMOOTH_STONE.title",
+    "relics.OLD_COIN.description",
+    "relics.OLD_COIN.title",
+    "relics.ORICHALCUM.description",
+    "relics.ORICHALCUM.title",
+    "relics.ORNAMENTAL_FAN.description",
+    "relics.ORNAMENTAL_FAN.title",
+    "relics.PEAR.description",
+    "relics.PEAR.title",
+    "relics.PEN_NIB.description",
+    "relics.PEN_NIB.title",
+    "relics.REGAL_PILLOW.description",
+    "relics.REGAL_PILLOW.title",
+    "relics.RING_OF_THE_SNAKE.description",
+    "relics.RING_OF_THE_SNAKE.title",
+    "relics.SHURIKEN.description",
+    "relics.SHURIKEN.title",
+    "relics.STRAWBERRY.description",
+    "relics.STRAWBERRY.title",
+    "relics.VAJRA.description",
+    "relics.VAJRA.title"
+  ]
+}

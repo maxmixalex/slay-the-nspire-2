@@ -9,6 +9,7 @@ struct LocalizedValue {bool known=false;int64_t number=0;uint32_t scale=1;const 
 using LocalizedResolver=LocalizedValue(*)(const void*,const char*);
 class LocalizedTemplate {
  char*out_;size_t capacity_,used_=0;LocalizedResolver resolve_;const void*context_;
+ char energy_[64]{},star_[64]{};bool english_=false;
  static bool same(const char*a,size_t n,const char*b){size_t i=0;while(b[i]){if(i>=n||a[i]!=b[i])return false;++i;}return i==n;}
  static size_t length(const char*p){size_t n=0;while(p&&p[n])++n;return n;}
  void ch(char c){if(capacity_&&used_+1<capacity_){out_[used_++]=c;out_[used_]=0;}}
@@ -38,7 +39,15 @@ class LocalizedTemplate {
  }
  LocalizedValue named(const char*p,size_t n,LocalizedValue context){
   if(!n)return context;char key[96];if(n>=sizeof key)return {};for(size_t i=0;i<n;i++)key[i]=p[i];key[n]=0;
-  return resolve_?resolve_(context_,key):LocalizedValue{};
+  // v17 card templates carry their audited catalog fallback beside the key.
+  // Live resolution still receives the original key; unknown live/static
+  // variables never receive an invented zero.
+  size_t end=0;while(end<n&&key[end]!='=')++end;
+  bool fallback=end<n,negative=false,valid=false;int64_t number=0;
+  if(fallback){key[end]=0;size_t at=end+1;if(at<n&&p[at]=='-'){negative=true;++at;}valid=at<n;
+   for(;at<n;at++){if(p[at]<'0'||p[at]>'9'||number>999999){valid=false;break;}number=number*10+p[at]-'0';}}
+  auto value=resolve_?resolve_(context_,key):LocalizedValue{};
+  return value.known?value:fallback&&valid?LocalizedValue{true,negative?-number:number,1,nullptr}:LocalizedValue{};
  }
  // The pinned locale compares Amount with integer thresholds (including the
  // chained ==1 / >1 Shrink branches). Compare the rational value without
@@ -93,16 +102,17 @@ class LocalizedTemplate {
     if(uint64_t(rem)*2>scale||(uint64_t(rem)*2==scale&&(rounded&1)))++rounded;if(negative&&rounded)ch('-');unsigned_integer(rounded);}return;
   }
   if(same(fmt,fn,"energyIcons()")||same(fmt,fn,"starIcons()")){
-   if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}text(same(fmt,fn,"starIcons()")?" 点[gold]星星[/gold]":" 点能量");return;
+   if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}unit(same(fmt,fn,"starIcons()"));return;
   }
   if(fn>13&&same(fmt,12,"energyIcons(")&&fmt[fn-1]==')'){
    bool preceding=used_&&((out_[used_-1]>='0'&&out_[used_-1]<='9')||out_[used_-1]=='X');
-   if(!preceding)text(fmt+12,fn-13);text(" 点能量");return;
+   if(!preceding)text(fmt+12,fn-13);unit(false);return;
   }
   // Boolean expressions omit the formatter name in the original locale.
   if(second==fn&&v.known){branch(fmt,fn,v.text?(*v.text?0:1):(v.number?0:1),v,depth);return;}
   ch('{');text(p,n);ch('}');
  }
+ void unit(bool star){text(english_?" ":" 点");if(star)text("[gold]");text(star?star_:energy_);if(star)text("[/gold]");}
  void render(const char*p,size_t n,LocalizedValue context,unsigned depth){
   if(depth>12){text("{format-depth}");return;}
   for(size_t at=0;at<n;){if(p[at]!='{'){ch(p[at++]);continue;}size_t end=at+1;unsigned nested=1;
@@ -111,7 +121,8 @@ class LocalizedTemplate {
   }
  }
 public:
- LocalizedTemplate(char*out,size_t capacity,LocalizedResolver resolver,const void*context):out_(out),capacity_(capacity),resolve_(resolver),context_(context){if(capacity_)out_[0]=0;}
+ LocalizedTemplate(char*out,size_t capacity,LocalizedResolver resolver,const void*context,const char*energy="能量",const char*star="辉星",bool english=false):out_(out),capacity_(capacity),resolve_(resolver),context_(context),english_(english){if(capacity_)out_[0]=0;
+  size_t i=0;for(;energy&&energy[i]&&i+1<sizeof energy_;i++)energy_[i]=energy[i];energy_[i]=0;i=0;for(;star&&star[i]&&i+1<sizeof star_;i++)star_[i]=star[i];star_[i]=0;}
  void format(const char*source){render(source,length(source),{},0);}
 };
 } // namespace spire

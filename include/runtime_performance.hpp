@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include "resource_source.hpp"
 
 namespace spire {
 
@@ -18,7 +19,7 @@ struct RuntimeTiming {
     }
 };
 enum class RuntimeScene : uint8_t {
-    Title,Character,Collection,Map,Combat,Room,Overlay,Other,Count
+    Title,Character,Collection,Map,Combat,Room,Overlay,Other,CombatPreparation,Count
 };
 struct RuntimeFrameTiming {
     RuntimeTiming interval,update,render,present,resource;
@@ -30,6 +31,7 @@ struct RuntimePerformance {
     bool enabled=false;
     uint32_t clock_hz=32768,pack_bytes=0,hardware=0,ndless_revision=0;
     RuntimeTiming startup,first_render,first_present;
+    RuntimeTiming startup_phases[(unsigned)ResourceStage::Count]{};
     RuntimeResourceTiming resources{};
     RuntimeFrameTiming scenes[(unsigned)RuntimeScene::Count]{};
 
@@ -72,8 +74,12 @@ struct RuntimePerformance {
         w.text("{\"format\":\"nspire-runtime-perf-1\",\"units\":\"timer_ticks\",\"clock\":\"foreground_SP804\",\"startup_scope\":\"file_open_and_app_init\",");
         w.field("clock_hz",clock_hz);w.ch(',');w.field("hardware",hardware);w.ch(',');w.field("ndless_revision",ndless_revision);w.ch(',');w.field("pack_bytes",pack_bytes);w.ch(',');
         w.timing("startup",startup);w.ch(',');w.timing("first_render",first_render);w.ch(',');w.timing("first_present",first_present);
+        w.text(",\"startup_phases\":{");
+        static const char*const phase_names[]={"header","integrity","directory","images","tile_index","glyphs","strings","ready"};
+        for(unsigned i=0;i<(unsigned)ResourceStage::Count;++i){if(i)w.ch(',');w.timing(phase_names[i],startup_phases[i]);}
+        w.ch('}');
         w.text(",\"resource_total\":{");w.field("ticks",resources.ticks);w.ch(',');w.field("calls",resources.calls);w.ch(',');w.field("bytes_requested",resources.bytes);w.ch(',');w.field("failures",resources.failures);w.ch(',');w.field("seeks",resources.seeks);w.text("},\"scenes\":[");
-        static const char*const names[]={"title","character","collection","map","combat","room","overlay","other"};
+        static const char*const names[]={"title","character","collection","map","combat","room","overlay","other","combat_preparation"};
         for(unsigned i=0;i<(unsigned)RuntimeScene::Count;++i){
             if(i)w.ch(',');const auto&s=scenes[i];w.text("{\"scene\":\"");w.text(names[i]);w.text("\",");
             w.timing("interval",s.interval);w.ch(',');w.timing("update",s.update);w.ch(',');w.timing("render",s.render);w.ch(',');w.timing("present",s.present);w.ch(',');w.timing("resource",s.resource);

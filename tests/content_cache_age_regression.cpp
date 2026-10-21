@@ -20,7 +20,7 @@ void image_wrap(const std::vector<unsigned>& indexes){
     for(unsigned index:indexes){
         CHECK(index<ImageEntries);
         auto& entry=image_cache[index];entry.owner=&owner;entry.image=index;
-        entry.age=1000000u+((index*73u)%256u)*37u;
+        entry.age=1000000u+((index*73u)%ImageEntries)*37u;
         expected.push_back({entry.age,index});
     }
     // Independent numeric sorting supplies the expected old-to-new order.
@@ -37,14 +37,14 @@ void image_wrap(const std::vector<unsigned>& indexes){
 }
 }
 int main(){
-    // All byte indexes, including 255, participate in one wrap. The count
-    // and returned age must represent 256/257 without truncation.
-    CHECK(ImageEntries==256);
+    // Include indexes on both sides of the former byte boundary. The count,
+    // permutation and returned age must survive entries 256 through 319.
+    CHECK(ImageEntries==320);
     std::vector<unsigned> all;
-    for(unsigned i=0;i<256;++i)all.push_back(i);
+    for(unsigned i=0;i<ImageEntries;++i)all.push_back(i);
     image_wrap(all);
-    image_wrap({0,7,63,127,128,191,254,255});
-    image_wrap({255});
+    image_wrap({0,7,63,127,128,191,254,255,256,287,319});
+    image_wrap({319});
     image_wrap({});
-    std::printf("content cache ages: %u checks passed; 256-entry wrap, sparse entries, index 255 and empty cache\n",checks);
+    std::printf("content cache ages: %u checks passed; 320-entry wrap, sparse entries, indexes 255/256/319 and empty cache\n",checks);
 }

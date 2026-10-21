@@ -5,6 +5,7 @@
 #include "assets.hpp"
 #include "ui_assets.hpp"
 #include "native_ui_assets.hpp"
+#include "locale.hpp"
 #include "button_presentation.hpp"
 #include "ui_actions.hpp"
 #include "pointer.hpp"
@@ -17,6 +18,9 @@
 #include "world_map_window.hpp"
 #include "world_map_act_intro.hpp"
 #include "health_bar.hpp"
+#include "character_select_presentation.hpp"
+#include "turn_banner_presentation.hpp"
+#include "combat_preparation.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -30,6 +34,7 @@ constexpr unsigned ContentVersion=14,TileContentVersion=15,NativeUiContentVersio
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
+struct ImageCacheUsage {unsigned entries=0,pages=0;};
 class Content {
     const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
     static constexpr uint32_t DirectoryCapacity=2u*1024u*1024u;
@@ -42,6 +47,9 @@ class Content {
     // borrows the unused directory tail; without space, every miss does that
     // full check. Structural startup validation never sets these bits.
     uint8_t* tile_validated_{};
+    // Exact page costs collected by the existing startup validation. This
+    // optional table borrows the resident-directory tail, never another pool.
+    uint8_t* image_pages_{};
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
 public:
     bool open(const uint8_t*,size_t);
@@ -49,11 +57,22 @@ public:
     bool healthy()const{return metadata_&&io_good_;}
     ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
+    // These planning queries never read the source, decode or change LRU.
+    // A cost is exact when collected at open; constrained legacy directories
+    // fall back to a safe upper bound until an image has been decoded.
+    bool image_cached(int id)const;
+    bool image_alias(int first,int second)const;
+    unsigned image_cache_pages(int id)const;
+    ImageCacheUsage image_cache_usage()const;
+    static constexpr unsigned image_page_bytes(){return 4096;}
+    static constexpr unsigned image_capacity_pages(){return 748;}
+    static constexpr unsigned image_capacity_entries(){return 320;}
     Glyph glyph(uint32_t cp,int size)const;
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion||version_==NativeUiContentVersion)&&cards_==CardKinds&&ui_count_==(version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count))&&(strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount))&&clips_==AnimationKinds;}
+    unsigned version()const{return version_;}
+    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion||version_==NativeUiContentVersion||version_==LocaleContentVersion)&&cards_==CardKinds&&ui_count_==(version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count))&&(version_==LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount))&&clips_==AnimationKinds;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -64,6 +83,9 @@ public:
     // Keys and directory indexes are public metadata; localized reference
     // strings and image payloads remain in the owner's private resource pack.
     const char* world_string(const char* table,const char* key)const;
+    const char* locale_string(const char* table,const char* key)const;
+    const char* ui_text(const char* legacy_utf8)const;
+    bool english()const;
     const char* world_title(const char* table,const char* key)const;
     int world_image(const char* group,const char* key)const;
     int world_clip(const char* model,const char* action)const;
@@ -84,7 +106,12 @@ inline bool choice_free_energy(const State&s){
     return s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::Free||
         (s.expansion.choice_free&&(s.expansion.choice==XChoice::Offer||s.expansion.choice==XChoice::Discard)));
 }
-struct Callbacks { bool(*save)(const State&);bool(*load)(State&);bool(*clear_save)()=nullptr; };
+struct Callbacks {
+    bool(*save)(const State&);bool(*load)(State&);bool(*clear_save)()=nullptr;
+    // Production hosts supply fresh entropy for automatic new runs. A null
+    // callback (or zero sample) keeps deterministic offline replay fixtures.
+    uint32_t(*seed_entropy)()=nullptr;
+};
 // Session-local evidence of a complete canonical checkpoint, not a run UUID
 // or a compare-and-swap token supplied by the storage host.
 struct SaveCheckpoint {uint64_t hash=0;uint32_t size=0;};
@@ -111,6 +138,8 @@ struct EnemyPresentation {
     uint32_t start=0,until=0;
     const char* next_clip=nullptr;
     bool loop=true,dead=false,overflow=false,direct=false;
+    bool removing=false;
+    uint32_t fade_start=0,hide_at=0;
     EnemyVisualFacts facts{};
     EnemyVisualCommand queue[MaxEnemyVisualCommands]{};uint8_t count=0;
 };
@@ -118,6 +147,14 @@ struct App {
     State game{};Content content{};Callbacks callbacks{};
     ButtonMotion button_motions[MaxButtonMotions]{};
     EndTurnGlowMotion end_turn_glow{};
+    CharacterSelectPresentation character_select_presentation{};
+    TurnBannerPresentation turn_banner{};
+    uint32_t turn_banner_seed=0;
+    int turn_banner_floor=-1,turn_banner_combat=-1,turn_banner_encounter=-1,turn_banner_number=0;
+    void sync_turn_banner();
+    CombatPreparation combat_preparation{};
+    void sync_combat_preparation();
+    void step_combat_preparation();
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;
@@ -250,6 +287,7 @@ struct App {
     unsigned map_reticle_scale(unsigned point)const;
     bool map_input(Key);
     uint32_t animation=0,run_number=0;const char* notice="";
+    uint32_t next_run_seed(bool* randomized=nullptr);
     Motion motion[MaxEnemies+1]{};
     EnemyPresentation enemy_presentation[MaxEnemies]{};
     uint32_t enemy_visual_clock=0,combat_linger_until=0;
@@ -259,6 +297,7 @@ struct App {
     void observe_enemy_animation(const State&,int slot,const char* trigger);
     void enemy_trigger(int,const char*,int move=-1,bool direct=false,const EnemyVisualFacts* facts=nullptr,uint32_t earliest=0);
     bool enemy_frame(int,int& clip,uint32_t& elapsed,bool& loop);
+    unsigned enemy_opacity(int slot)const;
     int combat_background()const;
     Motion osty_motion{};int last_osty_hp=0,last_osty_attacks=0;
     void sync_character_feedback();
@@ -267,6 +306,7 @@ struct App {
     HitRegion hits[MaxHits]{}; int hit_count = 0;
     int status_actor=-1, status_selected=0,status_scroll=0,status_scroll_limit=0;
     void open_statuses(int actor);
+    void open_status_icon(int encoded);
     bool status_input(Key);
     int deck_candidate=-1;uint32_t deck_choice_revision=0;Phase deck_choice_phase=Phase::Map;
     bool deck_input(Key);

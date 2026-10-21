@@ -51,7 +51,7 @@ static void native_game_over_screen(Canvas&c){
  c.centered(game_over_text(a,s.phase==Phase::Complete?"BANNER.falseWin":"BANNER.lose0",s.phase==Phase::Complete?"远征完成":"倒在了高塔下"),31,39,258,16,Gold);
  if(!a.game_over_summary){
   c.ui(character_portrait(s.character),142,83,36,53);c.centered(game_over_character(a),20,141,280,16,White);
-  char progress[256]{};TextBuffer b{progress,sizeof progress,0};b.text(game_over_region(a));b.text(" · ");b.number(s.world.total_floor);b.text(" 层");
+  char progress[256]{};TextBuffer b{progress,sizeof progress,0,&c.a.content};b.text(game_over_region(a));b.text(" · ");b.number(s.world.total_floor);b.text(" 层");
   c.centered(progress,17,165,286,12,Muted);game_over_primary(c);return;
  }
  c.text(game_over_character(a),22,78,16,Gold,217);
@@ -59,14 +59,14 @@ static void native_game_over_screen(Canvas&c){
  game_over_line(c,"SCORE_LINE.floorsClimbed",119,"已攀登楼层");
  if(s.world.ascension)game_over_line(c,"SCORE_LINE.ascension",142,"进阶等级");
  const int merchant=a.content.world_image("gameover","RUN_SUMMARY_MERCHANT");if(merchant>=0)c.picture(merchant,246,91,60,60);
- const int y=165;c.picture(A_Heart,22,y+1,12,13);char hp[32]{};TextBuffer h{hp,sizeof hp,0};h.number(s.hp);h.ch('/');h.number(s.max_hp);c.text(hp,38,y,10,White,62);
+ const int y=165;c.picture(A_Heart,22,y+1,12,13);char hp[32]{};TextBuffer h{hp,sizeof hp,0,&c.a.content};h.number(s.hp);h.ch('/');h.number(s.max_hp);c.text(hp,38,y,10,White,62);
  c.picture(A_Coin,102,y+2,11,11);c.num(s.gold,118,y,10,Gold);
  c.ui(U_TopDeck,181,y,14,15);c.num(s.deck_count,198,y,10,White);
  c.ui(U_LibraryRelics,248,y,14,15);c.num(ui_owned_relic_count(s),265,y,10,White);
  // Balance is shown beside a coin, never under SCORE_LINE.goldGained. That
  // cumulative statistic, score, badges, unlocks and elapsed time need history
  // that this save does not contain, so this summary does not fabricate them.
- char seed[96]{};TextBuffer b{seed,sizeof seed,0};b.text("种子 ");b.text(s.world.seed_text);
+ char seed[96]{};TextBuffer b{seed,sizeof seed,0,&c.a.content};b.text("种子 ");b.text(s.world.seed_text);
  c.paragraph(seed,17,183,286,2,0,8,Muted);
  c.text("牌组 Tab",9,217,10,White);c.hit(3,207,81,32,HitKind::Command,int(Key::Inspect));
  c.text("遗物 R",248,217,10,White);c.hit(237,207,80,32,HitKind::Command,int(Key::Relics));

@@ -21,7 +21,7 @@ def compile_runtime():
     output=directory/'nSpire2.wasm'
     # Fixed sixteen-MiB WASM memory contains bounded directories, caches and stack.
     # Pack payloads remain in the host ArrayBuffer and enter through range reads.
-    subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input','performance_scene']],*objects,'-o',str(output)],check=True)
+    subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input','performance_scene','set_seed_entropy']],*objects,'-o',str(output)],check=True)
     print(f'Built WebAssembly runtime; {output.stat().st_size:,} bytes')
     return output
 

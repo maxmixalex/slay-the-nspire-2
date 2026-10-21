@@ -25,7 +25,7 @@ static void map_screen(Canvas&c,bool inspect=false){
     c.text("↑",299,45,12,Ink);c.hit(294,41,26,25,HitKind::Scroll,-1);
     c.text("↓",299,180,12,Ink);c.hit(294,179,26,25,HitKind::Scroll,1);
     if(inspect)c.centered("路线预览 · ↑↓ 滚动 · M / Esc 返回",0,214,320,12,Gold);
-    else{char b[64]={};TextBuffer t{b,sizeof b,0};t.text("第 ");t.number(s.next_row+1);t.text(" 层  ");t.text(room_name(s.map[s.next_row*3+a.cursor].room));c.centered(b,0,207,320,12,Gold);c.centered("←→ 选路   Enter 进入   ↑↓ 查看远方",0,225,320,10,Muted);}
+    else{char b[64]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.text("第 ");t.number(s.next_row+1);t.text(" 层  ");t.text(room_name(s.map[s.next_row*3+a.cursor].room));c.centered(b,0,207,320,12,Gold);c.centered("←→ 选路   Enter 进入   ↑↓ 查看远方",0,225,320,10,Muted);}
 }
 #include "events_ui.inc"
 #include "merchant_ui.inc"
@@ -42,13 +42,13 @@ static void deck_select(Canvas&c){
         small_card(c,card,x,y,a.cursor==i,allowed,0,-2,-2,-1,i);
         c.hit(x-3,y-2,53,71,HitKind::Choice,i,allowed);
     }
-    if(grimoire){char text[96]={};TextBuffer b{text,sizeof text,0};b.text("剩余 ");b.number(s.necro.grimoire_pending);b.text(" 次 · I 详情 · Enter 确认 · 空格放弃一次");c.centered(text,0,196,320,10,Muted);}
-    else if(s.phase==Phase::Transform){char text[64]={};TextBuffer b{text,sizeof text,0};b.text("还需变化 ");b.number(s.event_remaining);b.text(" 张 · 确认前不会扣除卡牌");c.centered(text,0,196,320,10,Muted);}
+    if(grimoire){char text[96]={};TextBuffer b{text,sizeof text,0,&c.a.content};b.text("剩余 ");b.number(s.necro.grimoire_pending);b.text(" 次 · I 详情 · Enter 确认 · 空格放弃一次");c.centered(text,0,196,320,10,Muted);}
+    else if(s.phase==Phase::Transform){char text[64]={};TextBuffer b{text,sizeof text,0,&c.a.content};b.text("还需变化 ");b.number(s.event_remaining);b.text(" 张 · 确认前不会扣除卡牌");c.centered(text,0,196,320,10,Muted);}
     else c.centered("方向键选牌 · I 详情 · Enter 预览并确认",0,196,320,10,Muted);
     int page=first/10,last=(s.deck_count-1)/10;
     c.text("‹",12,214,16,Gold);c.action(0,210,43,30,UiAction::PreviousDeckPage,page>0);
     c.text("›",296,214,16,Gold);c.action(277,210,43,30,UiAction::NextDeckPage,page<last);
-    char label[24]={};TextBuffer b{label,sizeof label,0};b.number(page+1);b.text(" / ");b.number(last+1);c.centered(label,grimoire?129:112,218,grimoire?61:96,10,Muted);
+    char label[24]={};TextBuffer b{label,sizeof label,0,&c.a.content};b.number(page+1);b.text(" / ");b.number(last+1);c.centered(label,grimoire?129:112,218,grimoire?61:96,10,Muted);
     if(grimoire){c.button("返回",44,213,78,false,24);c.action(42,210,82,30,UiAction::Back);
         c.button("放弃一次",194,213,81,false,24);c.action(192,210,83,30,UiAction::SkipGrimoire);}
 }

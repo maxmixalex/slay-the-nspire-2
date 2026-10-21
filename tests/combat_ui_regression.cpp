@@ -11,11 +11,16 @@ static unsigned checks;
 #define CHECK(x) do {++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}} while(0)
 static SaveData snap(){SaveData b{};CHECK(save(a.game,b));return b;}
 static void same(const SaveData&b){auto c=snap();CHECK(c.size==b.size&&!std::memcmp(c.bytes,b.bytes,b.size));}
+static void await_combat(){
+    a.render();unsigned steps=0;
+    while(a.combat_preparation.active&&steps++<1024){a.advance(33);a.render();}
+    CHECK(!a.combat_preparation.active);
+}
 static void setup(int count){
     new_run(a.game,73,false);auto&s=a.game;s.phase=Phase::Combat;s.current_node=0;s.floor=s.turn=s.enemy_count=1;
     s.energy=99;s.deck_count=s.card_count=s.hand.count=0;s.enemies[0]={46,46,0,0,0,0};
     for(int i=0;i<count;i++){s.deck[s.deck_count++]={i%2?Defend:Strike,0};s.cards[s.card_count]=s.deck[i];s.zones[s.card_count]=Zone::Hand;s.hand.ids[s.hand.count++]=s.card_count++;}
-    a.title=a.library=a.paused=a.help=a.character_select=a.map_preview.open=false;a.reset_presentation();CHECK(validate(s));a.render();
+    a.title=a.library=a.paused=a.help=a.character_select=a.map_preview.open=false;a.reset_presentation();CHECK(validate(s));await_combat();
 }
 static HitRegion rail(int index){
     for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==HitKind::Hand&&h.value==a.game.hand.ids[index]&&h.y+h.h==240)return h;}
@@ -111,7 +116,7 @@ int main(int argc,char**argv){
     if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
     layouts();input_safety();focus_transitions();rendering(data);
     if(argc>2&&!data.empty()){
-        new_run(a.game,7,true);a.reset_presentation();a.title=false;a.pointer.visible=false;a.animation=0;a.render();capture(argv[2],false);
+        new_run(a.game,7,true);a.reset_presentation();a.title=false;a.pointer.visible=false;a.animation=0;await_combat();capture(argv[2],false);
         a.input(Key::Right);a.render();capture(argv[2],true);
     }std::printf("combat UI: %u checks passed\n",checks);
 }

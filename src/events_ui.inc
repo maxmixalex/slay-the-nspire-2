@@ -9,7 +9,7 @@ static int event_body_text(const State&s){
 }
 static const char* event_title(Canvas&c){return c.a.game.original_events.active?native_event_title(c.a):c.a.content.string(EventTextBase+(int)c.a.game.event_id*EventTextStride);}
 static void event_option_text(Canvas&c,int option,char*out,size_t size){
-    auto&s=c.a.game;TextBuffer b{out,size,0};out[0]=0;
+    auto&s=c.a.game;TextBuffer b{out,size,0,&c.a.content};out[0]=0;
     if(s.event_id==EventId::Baths&&s.event_page==1&&option==1){b.text("保留已获得的最大生命");return;}
     const char*p=c.a.content.string(EventTextBase+(int)s.event_id*EventTextStride+5+option*2);
     while(*p){
@@ -32,14 +32,14 @@ static void event_reader_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,235);
     c.ui(U_RewardPanel,4,5,312,230);c.centered(event_title(c),18,18,278,16,Gold);c.close_button(289,10);
     char full[12288]{};const char*text=a.content.string(event_body_text(a.game));
-    if(a.game.original_events.active){a.original_event_text(-1,true,full,sizeof full);TextBuffer b{full,sizeof full,0};while(full[b.n])++b.n;
+    if(a.game.original_events.active){a.original_event_text(-1,true,full,sizeof full);TextBuffer b{full,sizeof full,0,&c.a.content};while(full[b.n])++b.n;
         for(unsigned i=0;i<original_event_option_count(a.game);i++){char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);b.text("\n\n[gold]");b.text(label);b.text("[/gold]\n");b.text(description);}text=full;}
     int lines=c.paragraph(text,20,49,277,0,0,12);
     a.event_reader_scroll=mn(mx(0,a.event_reader_scroll),mx(0,lines-10));
     c.paragraph(text,20,49,277,10,a.event_reader_scroll,12);
     c.text("‹",15,211,16,Gold);c.hit(8,205,34,31,HitKind::Scroll,-10,a.event_reader_scroll>0);
     c.text("›",294,211,16,Gold);c.hit(279,205,34,31,HitKind::Scroll,10,a.event_reader_scroll+10<lines);
-    char page[64]{};TextBuffer t{page,sizeof page,0};t.number(a.event_reader_scroll+1);t.text("–");t.number(mn(lines,a.event_reader_scroll+10));t.text(" / ");t.number(lines);
+    char page[64]{};TextBuffer t{page,sizeof page,0,&c.a.content};t.number(a.event_reader_scroll+1);t.text("–");t.number(mn(lines,a.event_reader_scroll+10));t.text(" / ");t.number(lines);
     c.centered(page,40,211,78,10,Muted);c.button("返回事件",130,207,144,true,26);c.action(124,204,153,32,UiAction::CloseEventReader);
 }
 static void event_screen(Canvas&c){
@@ -66,7 +66,7 @@ static void event_screen(Canvas&c){
         const char*name=s.event_id==EventId::Baths&&s.event_page==1?(i?"离开浴场":"沉溺"):a.content.string(base+4+i*2);
         c.text(name,147,y+2,12,enabled?Gold:Muted,154);
         char description[256]{};event_option_text(c,i,description,sizeof description);
-        if(!enabled){TextBuffer t{description,sizeof description,0};t.text(s.event_id==EventId::DoorsOfLightAndDark?"至少保留一张牌":"当前无法选择");}
+        if(!enabled){TextBuffer t{description,sizeof description,0,&c.a.content};t.text(s.event_id==EventId::DoorsOfLightAndDark?"至少保留一张牌":"当前无法选择");}
         c.paragraph(description,147,y+17,154,1,0,10,enabled?White:Muted);
         // Full rule text is shown when an option is focused, away from the art's focal point.
         c.hit(136,y,178,39,HitKind::Choice,i,enabled);

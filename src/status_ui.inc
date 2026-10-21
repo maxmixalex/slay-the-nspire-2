@@ -3,19 +3,52 @@
 static void status_strip(Canvas&c,int actor,int x,int y,int width){
     int ids[StatusKinds],count=collect_statuses(c.a.game,actor,ids);
     if(!count)return;
-    int slots=mx(1,width/30),visible=mn(count,slots);
-    if(count>slots)--visible;
-    for(int i=0;i<visible;i++){
-        int xx=x+i*30,value=ui_status_amount(c.a.game,actor,ids[i]);
-        c.picture(ui_status_image(c.a,ids[i]),xx,y,13,13);
-        if(value<100)c.num(value,xx+14,y-1,10,White);else c.text("99+",xx+13,y-1,10,White);
+    // NPowerContainer keeps every icon visible. Wrap at the creature's
+    // display width; the amount overlaps the icon's lower-right corner.
+    // Measure actual amounts, including negative and three-digit stacks.
+    int widths[StatusKinds],rows=1,used=0;
+    for(int i=0;i<count;i++){
+        char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(ui_status_amount(c.a.game,actor,ids[i]));
+        widths[i]=mx(18,11+c.width(amount,8));
+        if(used&&used+widths[i]>width){++rows;used=0;}used+=widths[i];
     }
-    if(count>visible){char b[16]={};TextBuffer t{b,sizeof b,0};t.ch('+');t.number(count-visible);c.text(b,x+visible*30,y-1,10,Gold);}
-    c.hit(x-2,y-2,width+4,19,HitKind::StatusActor,actor);
+    // Grow toward the actors when extra rows would enter the resting hand.
+    const int top=mx(24,mn(y,174-rows*12));
+    c.hit(x-2,top-2,width+4,rows*12+3,HitKind::StatusActor,actor);
+    used=0;int row=0;
+    for(int i=0;i<count;i++){
+        if(used&&used+widths[i]>width){++row;used=0;}
+        const int xx=x+used,yy=top+row*12,value=ui_status_amount(c.a.game,actor,ids[i]);
+        c.picture(ui_status_image(c.a,ids[i]),xx,yy,11,11);
+        char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(value);
+        for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.text(amount,xx+9+dx,yy+3+dy,8,Ink);
+        c.text(amount,xx+9,yy+3,8,value<0?rgb(255,102,102):White);
+        c.hit(xx-1,yy-1,widths[i],12,HitKind::BattleStatus,actor*StatusKinds+ids[i]);
+        used+=widths[i];
+    }
+}
+static void battle_status_tooltip(Canvas&c){
+    auto&a=c.a;
+    if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||
+       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||!combat_phase(a.game.phase))return;
+    const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::BattleStatus)return;
+    const int actor=hit->value/StatusKinds,id=hit->value%StatusKinds;
+    if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds)return;
+    char body[2048]{};ui_status_description(a,actor,id,body,sizeof body);
+    const int lines=c.paragraph(body,0,0,158,0,0,10),shown=mn(lines,9),height=29+shown*13;
+    const int x=a.pointer.x>=160?7:143,y=mx(25,mn(218-height,hit->y-height-5));
+    const int skin=a.content.world_image("common","HOVER_TIP");
+    if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,y+2,170,height,28,22,46,16,64);c.nine_image(skin,x,y,170,height,28,22,46,16);}
+    else{c.rect(x,y,170,height,Panel);c.box(x,y,170,height,Gold);}
+    c.picture(ui_status_image(a,id),x+6,y+5,13,13);
+    c.text(ui_status_title(a,id),x+23,y+4,10,Gold,122);
+    c.num(ui_status_amount(a.game,actor,id),x+145,y+4,8,White);
+    c.paragraph(body,x+6,y+23,158,shown,0,10,White);
+    if(lines>shown)c.text("…",x+151,y+height-13,10,Gold);
 }
 static void orb_status_detail(Canvas&c){
     const auto&s=c.a.game;
-    char heading[64]={};TextBuffer t{heading,sizeof heading,0};t.text("槽位 ");t.number(s.expansion.orb_count);t.ch('/');t.number(s.expansion.orb_slots);t.text(" · 被动/激发");
+    char heading[64]={};TextBuffer t{heading,sizeof heading,0,&c.a.content};t.text("槽位 ");t.number(s.expansion.orb_count);t.ch('/');t.number(s.expansion.orb_slots);t.text(" · 被动/激发");
     c.text(heading,145,115,10,White,155);
     c.a.status_scroll_limit=s.expansion.orb_slots>5?5:0;
     c.a.status_scroll=c.a.status_scroll>=5&&c.a.status_scroll_limit?5:0;
@@ -26,7 +59,7 @@ static void orb_status_detail(Canvas&c){
             int passive,evoke;orb_values(s,i,passive,evoke);
             c.ui(orb_image(s.defect.orb_kind[i]),145,y,11,11);
             c.text(orb_name(s.defect.orb_kind[i]),160,y-1,10,Muted,52);
-            char values[32]={};TextBuffer b{values,sizeof values,0};b.number(passive);b.ch('/');b.number(evoke);c.text(values,215,y-1,10,White,88);
+            char values[32]={};TextBuffer b{values,sizeof values,0,&c.a.content};b.number(passive);b.ch('/');b.number(evoke);c.text(values,215,y-1,10,White,88);
         }else{c.box(146,y+2,8,8,Muted);c.text("空槽位",160,y-1,10,Muted,142);}
     }
     c.text(first?"较新的左侧充能球":"从最右侧依次查看",145,207,10,Muted,155);
@@ -35,12 +68,12 @@ static void orb_status_detail(Canvas&c){
 static void status_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.hit_count=0;
     c.dim(0,0,320,240,215);c.ui(U_RewardPanel,4,5,312,233);
-    char heading[160]{};TextBuffer hb{heading,sizeof heading,0};
+    char heading[160]{};TextBuffer hb{heading,sizeof heading,0,&c.a.content};
     if(a.status_actor>0){hb.text(ui_enemy_name(a,a.status_actor-1));hb.text(" · ");hb.number(s.enemies[a.status_actor-1].hp);hb.ch('/');hb.number(s.enemies[a.status_actor-1].max_hp);}else hb.text("能力与状态");
     c.centered(heading,7,9,282,12,Gold);c.close_button(289,10);
     for(int actor=0;actor<=s.enemy_count;actor++){
         int width=300/(s.enemy_count+1),x=10+actor*width;
-        char label[48]={};TextBuffer t{label,sizeof label,0};
+        char label[48]={};TextBuffer t{label,sizeof label,0,&c.a.content};
         if(actor){if(s.enemy_count<=4)t.text("敌人 ");t.number(actor);if(!s.enemies[actor-1].hp)t.text(" ×");}
         else t.text(s.enemy_count>4?"我方":character_definitions[(int)s.character].name);
         if(a.status_actor==actor)c.rect(x,54,width-5,1,Gold);
@@ -62,11 +95,11 @@ static void status_screen(Canvas&c){
         int id=ids[a.status_selected];
         c.picture(ui_status_image(a,id),145,65,25,25);c.num(ui_status_amount(s,a.status_actor,id),181,66,16,Gold);
         c.text(ui_status_title(a,id),145,95,12,Gold,155);
-        char description[2048]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0};while(description[t.n])++t.n;
+        char description[2048]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0,&c.a.content};while(description[t.n])++t.n;
         if(id==43){
             t.text("\n");for(int i=0;i<MaxBombs;i++)if(s.expansion.bomb_turns[i]){t.number(s.expansion.bomb_turns[i]);t.text(" 回合 / ");t.number(s.expansion.bomb_damage[i]);t.text(" 伤害\n");}
         }else if(id==44){
-            t.text("\n星星跨回合保留。\n本回合获得：");t.number(s.regent.stars_gained_turn);
+            t.text("\n辉星跨回合保留。\n本回合获得：");t.number(s.regent.stars_gained_turn);
         }else if(id==45){
             t.text("\n最大生命：");t.number(s.expansion.osty_max_hp);
             t.text("\n本回合攻击：");t.number(s.necro.osty_attacks_turn);
@@ -96,7 +129,7 @@ static void status_screen(Canvas&c){
             c.paragraph(description,145,118,156,6,a.status_scroll,12,White);
             if(a.status_scroll_limit){c.text(a.status_scroll>=a.status_scroll_limit?"回到开头":"更多说明 ›",225,207,10,Gold,79);c.action(222,204,84,17,UiAction::MoreStatus);}
         }
-        if(count>6){char label[24]={};TextBuffer t{label,sizeof label,0};t.number(first/6+1);t.text(" / ");t.number((count+5)/6);c.centered(label,37,208,66,10,Muted);
+        if(count>6){char label[24]={};TextBuffer t{label,sizeof label,0,&c.a.content};t.number(first/6+1);t.text(" / ");t.number((count+5)/6);c.centered(label,37,208,66,10,Muted);
             c.text("‹",15,205,12,Gold);c.hit(11,204,25,18,HitKind::Scroll,-6,first>0);
             c.text("›",111,205,12,Gold);c.hit(105,204,25,18,HitKind::Scroll,6,first+6<count);}
     }

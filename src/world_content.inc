@@ -43,7 +43,8 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
 }
 }
 const char* Content::world_string(const char*table,const char*key)const{
- if(version_==NativeUiContentVersion){int id=wc_find(native_ui_text_index,table,key);if(id>=0)return string(id);}
+ if(version_>=LocaleContentVersion){const char*text=locale_string(table,key);if(*text)return text;}
+ if(version_>=NativeUiContentVersion){int id=wc_find(native_ui_text_index,table,key);if(id>=0)return string(id);}
  return version_>=14?string(wc_find(world_text_index,table,key)):"";
 }
 const char* Content::world_title(const char*table,const char*key)const{
@@ -53,7 +54,7 @@ const char* Content::world_title(const char*table,const char*key)const{
  return world_string(table,joined);
 }
 int Content::world_image(const char*group,const char*key)const{
- if(version_==NativeUiContentVersion){int id=wc_find(native_ui_index,group,key);if(id>=0)return ui_image(id);}
+ if(version_>=NativeUiContentVersion){int id=wc_find(native_ui_index,group,key);if(id>=0)return ui_image(id);}
  return version_>=14?ui_image(wc_find(world_image_index,group,key)):-1;
 }
 int Content::world_clip(const char*model,const char*action)const{

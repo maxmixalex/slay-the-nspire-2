@@ -62,6 +62,12 @@ void App::pointer_move(int x,int y){
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
     switch(h->kind){
     case HitKind::UiAction:
+        if(!pointer.held&&character_select&&!run_settings){
+            // NCharacterSelectButton selects on focus entry, not release.
+            // This changes only the preview; StartCharacter remains explicit.
+            const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
+            for(unsigned i=0;i<CharacterKinds;++i)if(h->value==int(actions[i])){selected_character=Character(i);break;}
+        }
         if(!pointer.held&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
             UiAction actions[6];unsigned count=ui_reward_actions(game,actions);for(unsigned i=0;i<count;i++)if(actions[i]==(UiAction)h->value)cursor=i;
         }break;
@@ -213,6 +219,7 @@ void App::pointer_button(bool down){
     case HitKind::LibraryItem:select_library_item(hit.value);break;
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
     case HitKind::StatusActor:open_statuses(hit.value);break;
+    case HitKind::BattleStatus:open_status_icon(hit.value);break;
     case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;
     }
