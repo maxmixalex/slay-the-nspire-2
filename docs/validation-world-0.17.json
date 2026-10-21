@@ -1694,5 +1694,465 @@
       "boundary": "Synthetic targeted actor/material/cache tests, not actual complete private rendering or GPU comparison."
     },
     "release_ready": false
+  },
+  "source11_formal_validation": {
+    "checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+    "tree": "3c3cf590656ccbdf91030bb85214ce44bc85a34e",
+    "source_sha256": "246a413b8ff48e3900115088a4335ccf209404c0d5ace85b9d86670007d94e4e",
+    "remote_readback": {
+      "at": "2026-10-21T03:32:24.031Z",
+      "paths_verified": 441,
+      "changed_contents_verified": 7,
+      "receipt_sha256": "89745a0f57766452b644a6f3092eed8b6e0e6d0d4474be74a45470a202a6b9a0"
+    },
+    "arm": {
+      "schema": 1,
+      "checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+      "source_sha256": "246a413b8ff48e3900115088a4335ccf209404c0d5ace85b9d86670007d94e4e",
+      "records": [
+        {
+          "checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+          "command": [
+            "python3",
+            "tools/build_ndless.py"
+          ],
+          "cwd": "/tmp/nspire-stage-713ab3be",
+          "ended_at": "2026-10-21T03:36:45.499014+00:00",
+          "log": "source11-arm-e8e48c6e139d.log",
+          "log_sha256": "dd487e9fd94522e54df49a87d1c111e889d8faa49286e5677dba40bea7b6b61c",
+          "pid": 3,
+          "returncode": 0,
+          "schema": 1,
+          "source_changed": false,
+          "source_sha256": "246a413b8ff48e3900115088a4335ccf209404c0d5ace85b9d86670007d94e4e",
+          "started_at": "2026-10-21T03:34:12.103103+00:00",
+          "status": "passed",
+          "journal": "/tmp/nspire-stage-713ab3be/build/journal/source11-arm-e8e48c6e139d.json",
+          "journal_sha256": "4b1f64c6188839d2f4112a5b9a6409eb98586621056fdac1f3574398b376419a",
+          "elapsed_seconds": 153.395911
+        },
+        {
+          "checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+          "command": [
+            "python3",
+            "tests/arm_division_regression.py",
+            "build/ndless/nSpire2.elf"
+          ],
+          "cwd": "/tmp/nspire-stage-713ab3be",
+          "ended_at": "2026-10-21T03:40:02.856705+00:00",
+          "log": "source11-production-arm-division-580325e0011a.log",
+          "log_sha256": "c5d2b03215f5446b1e673399365bc0e9d1f6c9e6bbb898cb218d7c5ac880babc",
+          "pid": 3,
+          "returncode": 0,
+          "schema": 1,
+          "source_changed": false,
+          "source_sha256": "246a413b8ff48e3900115088a4335ccf209404c0d5ace85b9d86670007d94e4e",
+          "started_at": "2026-10-21T03:40:00.124903+00:00",
+          "status": "passed",
+          "journal": "/tmp/nspire-stage-713ab3be/build/journal/source11-production-arm-division-580325e0011a.json",
+          "journal_sha256": "ae6ba51d967456e4b929f4b966ca4a5f2bd31cdf00da9213bba2ec9cbd91e193",
+          "elapsed_seconds": 2.731802
+        }
+      ],
+      "artifacts": {
+        "dist/nSpire2.tns": {
+          "bytes": 839822,
+          "sha256": "1423d1f1250ce36f0c256bc482372f2c7678a201a9155cafdcb48863d3484b10"
+        },
+        "build/ndless/nSpire2.elf": {
+          "bytes": 5148380,
+          "sha256": "251ef2b21d3244598ec7d432cae5016de57dd7086d0a4ced9891cfe3bf35ed2d"
+        }
+      },
+      "arm_allocation_bytes": 10417060,
+      "absolute_relocations": 28471,
+      "production_helper": {
+        "elf": "build/ndless/nSpire2.elf",
+        "elf_sha256": "251ef2b21d3244598ec7d432cae5016de57dd7086d0a4ced9891cfe3bf35ed2d",
+        "helper_address": 1098304,
+        "helper_bytes": 140,
+        "vectors": 5249,
+        "cpu": "ARM926",
+        "quotient_and_remainder": "exact Python integer oracle",
+        "callee_saved_registers": "r4-r11 preserved",
+        "stack": "restored",
+        "limitation": "Instruction-level ABI validation, not calculator execution or performance"
+      },
+      "limitation": "Complete cross-compiled ARM runtime plus instruction-level helper ABI validation; not Firebird/calculator execution or performance."
+    },
+    "arm_receipt_sha256": "cb1cf32b7d9cd0a1369a246496b2a736c73c2ca4c9040628ccaa2a6465030776",
+    "python": {
+      "schema": 1,
+      "checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+      "frozen_root": "/tmp/nspire-stage-713ab3be",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "246a413b8ff48e3900115088a4335ccf209404c0d5ace85b9d86670007d94e4e",
+      "distinct_tests": 81,
+      "groups": [
+        {
+          "journal": "/workspace/scratch/4b16fc0ccb5c/source11-assets-python-20261021/journal/source11-profile-plan-05a84e79dd18.json",
+          "journal_sha256": "8f7516f64f5567cc527bf56ff17c2c5852e9c90f81a66b86fb4c43cbf4e6d1d1",
+          "log": "/workspace/scratch/4b16fc0ccb5c/source11-assets-python-20261021/journal/source11-profile-plan-05a84e79dd18.log",
+          "log_sha256": "2de631156255b6db363f1b36b0c8978a20bd0960821702d43341c7964734241d",
+          "started_at": "2026-10-21T03:34:36.927785+00:00",
+          "ended_at": "2026-10-21T03:34:40.527377+00:00",
+          "source_changed": false,
+          "status": "passed",
+          "returncode": 0,
+          "profile": {
+            "cards": 558,
+            "strings": 6100,
+            "images": 1170,
+            "clips": 1695
+          },
+          "plan": {
+            "cards": 558,
+            "strings": 6100,
+            "auxiliary_images": 1170,
+            "clips": 1695,
+            "original_used_enemy_clips": 732,
+            "enemy_variants": 1600,
+            "enemy_frames": 33210,
+            "map_clips": 3,
+            "map_frames": 540,
+            "room_clips": 6,
+            "room_frames": 99,
+            "rest_actor_clips": 48,
+            "rest_actor_frames": 8340,
+            "expected_images": 45719,
+            "maximum_directory_bytes": 1345360,
+            "directory_limit": 2097152,
+            "file_limit": 268435456,
+            "payload_size": "Unknown until all original frames are losslessly encoded"
+          }
+        },
+        {
+          "journal": "/workspace/scratch/4b16fc0ccb5c/source11-assets-python-20261021/journal/source11-python-pack21-b59df0c83858.json",
+          "journal_sha256": "c74b2a17197b48209416fa1118d2d2ea729a25615010e2980e8a7943c34cfc34",
+          "log": "/workspace/scratch/4b16fc0ccb5c/source11-assets-python-20261021/journal/source11-python-pack21-b59df0c83858.log",
+          "log_sha256": "2e4e9ee40f3aed275c4f1c3cd25a3077f7bc4673b4dd6515b5040feec218612d",
+          "started_at": "2026-10-21T03:34:37.674697+00:00",
+          "ended_at": "2026-10-21T03:34:40.714019+00:00",
+          "source_changed": false,
+          "status": "passed",
+          "returncode": 0,
+          "tests": 21,
+          "test_seconds": 1.363,
+          "test_names": [
+            "__main__.WorldPack.test_batched_sampling_restores_reference_binding_after_failure.test_batched_sampling_restores_reference_binding_after_failure",
+            "__main__.WorldPack.test_batched_scope_does_not_remeasure_geometry_or_reuse_changed_batch_code.test_batched_scope_does_not_remeasure_geometry_or_reuse_changed_batch_code",
+            "__main__.WorldPack.test_cache_resumes_only_complete_matching_hashed_jobs.test_cache_resumes_only_complete_matching_hashed_jobs",
+            "__main__.WorldPack.test_common_layout_contains_all_clips_without_pivot_or_scale_change.test_common_layout_contains_all_clips_without_pivot_or_scale_change",
+            "__main__.WorldPack.test_common_text_append_preserves_all_original_world_ids.test_common_text_append_preserves_all_original_world_ids",
+            "__main__.WorldPack.test_every_used_clip_has_full_period_and_own_native_name.test_every_used_clip_has_full_period_and_own_native_name",
+            "__main__.WorldPack.test_frame_cache_rejects_truncation_and_extra_bytes.test_frame_cache_rejects_truncation_and_extra_bytes",
+            "__main__.WorldPack.test_localized_templates_keep_nested_branches_and_real_newlines.test_localized_templates_keep_nested_branches_and_real_newlines",
+            "__main__.WorldPack.test_map_catalog_changes_do_not_invalidate_identical_enemy_jobs.test_map_catalog_changes_do_not_invalidate_identical_enemy_jobs",
+            "__main__.WorldPack.test_map_clip_preserves_mask_channels_anchor_and_full_period.test_map_clip_preserves_mask_channels_anchor_and_full_period",
+            "__main__.WorldPack.test_map_clips_append_without_reordering_enemy_directory.test_map_clips_append_without_reordering_enemy_directory",
+            "__main__.WorldPack.test_nonfinite_bounds_fail_instead_of_producing_placeholder_art.test_nonfinite_bounds_fail_instead_of_producing_placeholder_art",
+            "__main__.WorldPack.test_original_skin_multiplicity_and_named_slot_choices_survive.test_original_skin_multiplicity_and_named_slot_choices_survive",
+            "__main__.WorldPack.test_partial_cache_payload_is_not_a_completed_receipt.test_partial_cache_payload_is_not_a_completed_receipt",
+            "__main__.WorldPack.test_private_outputs_and_directory_budgets.test_private_outputs_and_directory_budgets",
+            "__main__.WorldPack.test_reference_pixel_reuse_checks_all_inputs_and_payload.test_reference_pixel_reuse_checks_all_inputs_and_payload",
+            "__main__.WorldPack.test_rest_actor_planes_append_after_every_prior_animation.test_rest_actor_planes_append_after_every_prior_animation",
+            "__main__.WorldPack.test_room_shader_and_actor_cache_closures_do_not_discard_enemy_frames.test_room_shader_and_actor_cache_closures_do_not_discard_enemy_frames",
+            "__main__.WorldPack.test_shared_other_arm_keeps_terminal_death_track.test_shared_other_arm_keeps_terminal_death_track",
+            "__main__.WorldPack.test_v1_migration_pins_producer_code_settings_and_full_payload_hash.test_v1_migration_pins_producer_code_settings_and_full_payload_hash",
+            "__main__.WorldPack.test_vantom_body_followup_preserves_complete_tail_extension.test_vantom_body_followup_preserves_complete_tail_extension"
+          ]
+        },
+        {
+          "journal": "/workspace/scratch/4b16fc0ccb5c/source11-assets-python-20261021/journal/source11-python-world60-0a0c000c1fce.json",
+          "journal_sha256": "9bbf9524bee9a97b2f83bced560edefb00fdbd1b6ffb0e291c82c93af4b9bf88",
+          "log": "/workspace/scratch/4b16fc0ccb5c/source11-assets-python-20261021/journal/source11-python-world60-0a0c000c1fce.log",
+          "log_sha256": "fa2a3edcd22ae1dfe3ae00466b906cabe6f0c67467a43e30d0cc4b8b0cd05e4f",
+          "started_at": "2026-10-21T03:34:36.535871+00:00",
+          "ended_at": "2026-10-21T03:34:48.628753+00:00",
+          "source_changed": false,
+          "status": "passed",
+          "returncode": 0,
+          "tests": 60,
+          "test_seconds": 7.872,
+          "test_names": [
+            "test_world_prefetch.PrefetchProtocol.test_atomic_file_is_one_complete_producer.test_atomic_file_is_one_complete_producer",
+            "test_world_prefetch.PrefetchProtocol.test_serial_and_prefetch_protocols_match.test_serial_and_prefetch_protocols_match",
+            "test_world_raster.RasterBatchTests.test_all_blends_and_ordered_overlap.test_all_blends_and_ordered_overlap",
+            "test_world_raster.RasterBatchTests.test_clipped_degenerate_and_shared_pixel_centers.test_clipped_degenerate_and_shared_pixel_centers",
+            "test_world_raster.RasterBatchTests.test_multiple_bounded_batches.test_multiple_bounded_batches",
+            "test_world_rest_actors.OriginalRestActors.test_actor_selection_is_by_act_not_first_act_region.test_actor_selection_is_by_act_not_first_act_region",
+            "test_world_rest_actors.OriginalRestActors.test_additive_emission_plane_matches_direct_draws_over_different_backgrounds.test_additive_emission_plane_matches_direct_draws_over_different_backgrounds",
+            "test_world_rest_actors.OriginalRestActors.test_all_six_actor_material_chains_inherit_rgb_without_changing_alpha.test_all_six_actor_material_chains_inherit_rgb_without_changing_alpha",
+            "test_world_rest_actors.OriginalRestActors.test_authored_parent_modulate_drift_is_rejected_for_both_lighting_states.test_authored_parent_modulate_drift_is_rejected_for_both_lighting_states",
+            "test_world_rest_actors.OriginalRestActors.test_changed_authored_root_or_companion_order_is_rejected.test_changed_authored_root_or_companion_order_is_rejected",
+            "test_world_rest_actors.OriginalRestActors.test_dark_gray_is_the_exact_godot_byte_to_binary32_color.test_dark_gray_is_the_exact_godot_byte_to_binary32_color",
+            "test_world_rest_actors.OriginalRestActors.test_dark_gray_renderer_change_invalidates_actor_cache_without_discarding_enemy_or_room_clips.test_dark_gray_renderer_change_invalidates_actor_cache_without_discarding_enemy_or_room_clips",
+            "test_world_rest_actors.OriginalRestActors.test_defect_tints_each_emission_before_additive_plane_saturation.test_defect_tints_each_emission_before_additive_plane_saturation",
+            "test_world_rest_actors.OriginalRestActors.test_missing_dark_glows_do_not_merge_the_front_and_back_planes.test_missing_dark_glows_do_not_merge_the_front_and_back_planes",
+            "test_world_rest_actors.OriginalRestActors.test_necro_and_osty_attached_fire_replace_color_after_parent_tint.test_necro_and_osty_attached_fire_replace_color_after_parent_tint",
+            "test_world_rest_actors.OriginalRestActors.test_necrobinder_keeps_authored_osty_position_and_separate_child.test_necrobinder_keeps_authored_osty_position_and_separate_child",
+            "test_world_rest_actors.OriginalRestActors.test_plan_is_lightweight_and_covers_whole_independent_periods.test_plan_is_lightweight_and_covers_whole_independent_periods",
+            "test_world_rest_actors.OriginalRestActors.test_regent_material_override_replaces_the_source_multiply_slot.test_regent_material_override_replaces_the_source_multiply_slot",
+            "test_world_rest_actors.OriginalRestActors.test_scene_zeroes_authored_root_and_excludes_ui_then_replays_dark_track_one.test_scene_zeroes_authored_root_and_excludes_ui_then_replays_dark_track_one",
+            "test_world_rest_actors.OriginalRestActors.test_unreviewed_multiply_is_rejected_and_normal_groups_keep_transparency.test_unreviewed_multiply_is_rejected_and_normal_groups_keep_transparency",
+            "test_world_room_assets.OriginalRooms.test_final_open_pose_preserves_queue_and_outline_registration.test_final_open_pose_preserves_queue_and_outline_registration",
+            "test_world_room_assets.OriginalRooms.test_original_clip_duration_or_events_cannot_silently_drift.test_original_clip_duration_or_events_cannot_silently_drift",
+            "test_world_room_assets.OriginalRooms.test_rest_uses_real_parent_and_zero_size_background_anchors.test_rest_uses_real_parent_and_zero_size_background_anchors",
+            "test_world_room_assets.OriginalRooms.test_room_catalog_appends_after_every_existing_enemy_and_map_clip.test_room_catalog_appends_after_every_existing_enemy_and_map_clip",
+            "test_world_room_assets.OriginalRooms.test_shine_replays_the_opening_on_the_same_skeleton.test_shine_replays_the_opening_on_the_same_skeleton",
+            "test_world_room_shaders.RoomShaderIntegration.test_required_textures_and_curve_divisors_do_not_silently_fall_back.test_required_textures_and_curve_divisors_do_not_silently_fall_back",
+            "test_world_room_shaders.RoomShaderIntegration.test_reviewed_shader_source_drift_fails_instead_of_drawing_mask.test_reviewed_shader_source_drift_fails_instead_of_drawing_mask",
+            "test_world_room_shaders.RoomShaderIntegration.test_shader_hook_flips_uv_for_noise_and_does_not_apply_node_tint_again.test_shader_hook_flips_uv_for_noise_and_does_not_apply_node_tint_again",
+            "test_world_room_shaders.RoomShaderIntegration.test_unhandled_shader_and_default_scene_renderer_behavior_is_unchanged.test_unhandled_shader_and_default_scene_renderer_behavior_is_unchanged",
+            "test_world_room_shaders.RoomShaderMath.test_curve_uses_bake_cache_before_texture_sampling.test_curve_uses_bake_cache_before_texture_sampling",
+            "test_world_room_shaders.RoomShaderMath.test_curve_xyz_retains_values_above_one_and_samples_i_over_width.test_curve_xyz_retains_values_above_one_and_samples_i_over_width",
+            "test_world_room_shaders.RoomShaderMath.test_dark_fire_reverses_inner_threshold_and_multiplies_outer_color.test_dark_fire_reverses_inner_threshold_and_multiplies_outer_color",
+            "test_world_room_shaders.RoomShaderMath.test_fire_reads_blue_and_overwrites_alpha_with_its_own_coverage.test_fire_reads_blue_and_overwrites_alpha_with_its_own_coverage",
+            "test_world_room_shaders.RoomShaderMath.test_fire_time_and_global_offset_pan_original_repeating_noise.test_fire_time_and_global_offset_pan_original_repeating_noise",
+            "test_world_room_shaders.RoomShaderMath.test_gradient_includes_endpoint_and_truncates_ldr_bytes.test_gradient_includes_endpoint_and_truncates_ldr_bytes",
+            "test_world_room_shaders.RoomShaderMath.test_light_uses_model_scale_and_each_alpha_once_ignoring_ramp_alpha.test_light_uses_model_scale_and_each_alpha_once_ignoring_ramp_alpha",
+            "test_world_room_shaders.RoomShaderMath.test_quad_uv_keeps_camera_and_negative_model_geometry.test_quad_uv_keeps_camera_and_negative_model_geometry",
+            "test_world_room_shaders.RoomShaderMath.test_sampler_uses_half_texel_wrap_and_clamp_not_pixel_endpoints.test_sampler_uses_half_texel_wrap_and_clamp_not_pixel_endpoints",
+            "test_world_scene_assets.SceneGeometry.test_bone_follows_ancestor_global_transform_but_slot_requires_direct_parent.test_bone_follows_ancestor_global_transform_but_slot_requires_direct_parent",
+            "test_world_scene_assets.SceneGeometry.test_drive_nodes_require_runtime_state_instead_of_preview_position.test_drive_nodes_require_runtime_state_instead_of_preview_position",
+            "test_world_scene_assets.SceneGeometry.test_full_path_atlas_resource_preserves_transparent_margin.test_full_path_atlas_resource_preserves_transparent_margin",
+            "test_world_scene_assets.SceneGeometry.test_global_z_and_inherited_alpha.test_global_z_and_inherited_alpha",
+            "test_world_scene_assets.SceneGeometry.test_godot_follow_matrix_overrides_sheared_bone_and_slot_preview.test_godot_follow_matrix_overrides_sheared_bone_and_slot_preview",
+            "test_world_scene_assets.SceneGeometry.test_inline_shader_scope_multiline_and_explicit_static_policy.test_inline_shader_scope_multiline_and_explicit_static_policy",
+            "test_world_scene_assets.SceneGeometry.test_instance_child_override_retains_resource_scope_and_anchor_size.test_instance_child_override_retains_resource_scope_and_anchor_size",
+            "test_world_scene_assets.SceneGeometry.test_nested_rotation_scale_and_sprite_origin.test_nested_rotation_scale_and_sprite_origin",
+            "test_world_scene_assets.SceneGeometry.test_resource_expressions_do_not_execute_code.test_resource_expressions_do_not_execute_code",
+            "test_world_scene_assets.SceneGeometry.test_runtime_layer_selection_ignores_editor_hint_and_instantiates_hidden_root.test_runtime_layer_selection_ignores_editor_hint_and_instantiates_hidden_root",
+            "test_world_scene_assets.SceneGeometry.test_sampled_spine_bone_follows_behind_child.test_sampled_spine_bone_follows_behind_child",
+            "test_world_scene_assets.SceneGeometry.test_shader_mask_is_not_drawn_as_plain_texture.test_shader_mask_is_not_drawn_as_plain_texture",
+            "test_world_scene_assets.SceneGeometry.test_shared_background_preserves_foreground_occlusion.test_shared_background_preserves_foreground_occlusion",
+            "test_world_scene_assets.SceneGeometry.test_spine_shared_slot_uses_fixed_mesh_index_and_explicit_child_index.test_spine_shared_slot_uses_fixed_mesh_index_and_explicit_child_index",
+            "test_world_scene_assets.SceneGeometry.test_spine_slot_children_follow_full_draw_order_even_for_empty_inactive_slots.test_spine_slot_children_follow_full_draw_order_even_for_empty_inactive_slots",
+            "test_world_scene_assets.SceneGeometry.test_transform2d_clip_mask_and_show_behind.test_transform2d_clip_mask_and_show_behind",
+            "test_world_scene_assets.SceneGeometry.test_visual_shader_inherits_shader_code_and_keeps_mask_out_of_static_art.test_visual_shader_inherits_shader_code_and_keeps_mask_out_of_static_art",
+            "test_world_scene_assets.SceneGeometry.test_wind_shear_uses_quad_uv_without_moving_centered_sprite_origin.test_wind_shear_uses_quad_uv_without_moving_centered_sprite_origin",
+            "test_world_ui_assets.Components.test_authored_black_panel_changes_rgb_and_alpha.test_authored_black_panel_changes_rgb_and_alpha",
+            "test_world_ui_assets.Components.test_nine_patch_keeps_corners_and_extends_original_center.test_nine_patch_keeps_corners_and_extends_original_center",
+            "test_world_ui_assets.Components.test_non_patch_preserves_empty_atlas_margin.test_non_patch_preserves_empty_atlas_margin",
+            "test_world_ui_assets.Components.test_source_drift_and_unrepresentable_borders_are_errors.test_source_drift_and_unrepresentable_borders_are_errors"
+          ]
+        }
+      ],
+      "limitations": [
+        "Asset-free Python and public directory/profile checks only",
+        "Not a completed original asset conversion, full resource pack or visual fidelity result"
+      ]
+    },
+    "python_receipt_sha256": "d67aff8fc76e9a6eb2ddbf2f939480d40f3ee1f64150d70aa3c0ece00d028b0d",
+    "native_wasm_identity": {
+      "compared_inputs": 298,
+      "identical": true,
+      "receipt_sha256": "5020c163c976ab861519c0abdadfc98c35172f5288d170d407c02d965a7fdb75",
+      "boundary": "Source10 to source11 only; source12 changes frontend and requires rebuilding."
+    },
+    "world_pack": {
+      "journal": "source11-full-world-pack-b9eb4555f6aa.json",
+      "status_at_source12_stage": "running",
+      "source_checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+      "result": "unfinished; actual complete payload size and publication remain unknown"
+    },
+    "source_archive": {
+      "file": "slay-the-nspire-2-source11-recovery-20261021.zip",
+      "bytes": 1571863,
+      "sha256": "9f7d16a708eb14562457723c63ff8d69717cc75a29c407987679a54628694add",
+      "paths_verified": 441,
+      "private_assets": false
+    },
+    "release_ready": false
+  },
+  "source12_short_diagnostics": {
+    "treasure": {
+      "scope": "Uncommitted source12 short diagnostics, not a frozen runtime or full room/engine suite",
+      "base_checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+      "started_utc": "2026-10-21T03:45:15.001579+00:00",
+      "cwd": "/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2",
+      "sources_before": {
+        "include/app.hpp": "2e9121694b08daca4dd535597eabbd545bb109395e9ed8f7ed3b49c8ef0b7cee",
+        "include/presentation_blend.hpp": "cbcf2ca5fc17f5c06e17fab557af8f9e57bae41f826fea1223aa8be789b47017",
+        "src/canvas.inc": "122dab7a8470983c2a0d065a7488de4d95fcc72eda1f14174f3f15bcd01116d5",
+        "src/world_treasure_ui.inc": "21128a93ab846919dfbc8ac9e46a7d566d3b600d18961d0b0e531d72f89fc2c1",
+        "tests/presentation_blend_regression.cpp": "6b883a960b8fa3de6c6bb99586f1391dce3634e3989ed1afae7607fd2f211c21",
+        "tests/world_room_ui_regression.cpp": "7783d0e28ed493fb38df2e4162aa2ea16903aea425d3e7e73c7197c59d8463fc"
+      },
+      "source_scope": [
+        "include/app.hpp",
+        "include/presentation_blend.hpp",
+        "src/canvas.inc",
+        "src/world_treasure_ui.inc",
+        "tests/presentation_blend_regression.cpp",
+        "tests/world_room_ui_regression.cpp"
+      ],
+      "commands": [
+        {
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-Iinclude",
+            "-fsyntax-only",
+            "src/app.cpp",
+            "tests/world_room_ui_regression.cpp",
+            "tests/presentation_blend_regression.cpp"
+          ],
+          "started_utc": "2026-10-21T03:45:15.010073+00:00",
+          "finished_utc": "2026-10-21T03:45:37.672485+00:00",
+          "elapsed_seconds": 22.661910793998686,
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-O1",
+            "-Iinclude",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=undefined",
+            "tests/presentation_blend_regression.cpp",
+            "-o",
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/presentation_blend_regression"
+          ],
+          "started_utc": "2026-10-21T03:45:37.686095+00:00",
+          "finished_utc": "2026-10-21T03:45:39.729878+00:00",
+          "elapsed_seconds": 2.0435172919969773,
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "command": [
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/presentation_blend_regression"
+          ],
+          "started_utc": "2026-10-21T03:45:39.730817+00:00",
+          "finished_utc": "2026-10-21T03:45:39.819026+00:00",
+          "elapsed_seconds": 0.08775510400300846,
+          "exit_code": 0,
+          "stdout": "2773149 presentation RGB565 checks passed\n"
+        },
+        {
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-O1",
+            "-Iinclude",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=undefined",
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/treasure_holder_helper.cpp",
+            "-o",
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/treasure_holder_helper"
+          ],
+          "started_utc": "2026-10-21T03:45:39.820118+00:00",
+          "finished_utc": "2026-10-21T03:45:43.778050+00:00",
+          "elapsed_seconds": 3.957841407995147,
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "command": [
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/treasure_holder_helper"
+          ],
+          "started_utc": "2026-10-21T03:45:43.778748+00:00",
+          "finished_utc": "2026-10-21T03:45:43.802057+00:00",
+          "elapsed_seconds": 0.023225559998536482,
+          "exit_code": 0,
+          "stdout": "Treasure extracted production helper: 28331 checks; timing/range/one-draw/restored/wrap passed; Q12 vs float rounded-position differences 14 (max 1 px); no engine/content linked\n"
+        },
+        {
+          "command": [
+            "g++",
+            "-std=c++17",
+            "-O1",
+            "-Iinclude",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=undefined",
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/canvas_brightness_helper.cpp",
+            "-o",
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/canvas_brightness_helper"
+          ],
+          "started_utc": "2026-10-21T03:45:43.802916+00:00",
+          "finished_utc": "2026-10-21T03:45:46.898299+00:00",
+          "elapsed_seconds": 3.095246381999459,
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "command": [
+            "/workspace/scratch/4b16fc0ccb5c/source12-treasure-short-20261021/canvas_brightness_helper"
+          ],
+          "started_utc": "2026-10-21T03:45:46.899393+00:00",
+          "finished_utc": "2026-10-21T03:45:47.133448+00:00",
+          "elapsed_seconds": 0.23301373700087424,
+          "exit_code": 0,
+          "stdout": "Canvas extracted production picture/paint: 6209280 checks; Normal/Add, source modulation before coverage, transparent holes, sparse/scaled/opaque/dense/palette and source11 default byte equality passed; no engine/content linked\n"
+        },
+        {
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "started_utc": "2026-10-21T03:45:47.135168+00:00",
+          "finished_utc": "2026-10-21T03:45:47.223897+00:00",
+          "elapsed_seconds": 0.08743901600246318,
+          "exit_code": 0,
+          "stdout": ""
+        }
+      ],
+      "status": "completed",
+      "baseline_canvas_sha256": "22a358ee55867324daed9df6984829800cd10e39be0714fc63957a06262876cb",
+      "sources_after": {
+        "include/app.hpp": "2e9121694b08daca4dd535597eabbd545bb109395e9ed8f7ed3b49c8ef0b7cee",
+        "include/presentation_blend.hpp": "cbcf2ca5fc17f5c06e17fab557af8f9e57bae41f826fea1223aa8be789b47017",
+        "src/canvas.inc": "122dab7a8470983c2a0d065a7488de4d95fcc72eda1f14174f3f15bcd01116d5",
+        "src/world_treasure_ui.inc": "21128a93ab846919dfbc8ac9e46a7d566d3b600d18961d0b0e531d72f89fc2c1",
+        "tests/presentation_blend_regression.cpp": "6b883a960b8fa3de6c6bb99586f1391dce3634e3989ed1afae7607fd2f211c21",
+        "tests/world_room_ui_regression.cpp": "7783d0e28ed493fb38df2e4162aa2ea16903aea425d3e7e73c7197c59d8463fc"
+      },
+      "source_changed": false,
+      "finished_utc": "2026-10-21T03:45:47.262344+00:00",
+      "passed": true,
+      "log_sha256": "53cfcaecdf40546aa62941cccf85b3e0ab1179729b05a447c2ef2102db996c48",
+      "artifacts": {
+        "treasure_holder_helper": {
+          "bytes": 2631064,
+          "sha256": "6d29c7992c19c134c66d3027a28aee22bea89fa563c80a89026a17a933af5610"
+        },
+        "presentation_blend_regression": {
+          "bytes": 26176,
+          "sha256": "7b8e63891532e424dd377fd377f4d36b00d5f7209709245bec28f018ef4cfb0b"
+        },
+        "treasure_holder_helper.cpp": {
+          "bytes": 14667,
+          "sha256": "9f4a6a935283a17f41584a6fa75a19faa58c7f1b719de9c8b76c39bf6626b811"
+        },
+        "canvas_brightness_helper": {
+          "bytes": 2610600,
+          "sha256": "73f95d4a290a076ca205f5b2d94d4f2b795d05e577cb67d750dc351bd0dbf03c"
+        },
+        "canvas_brightness_helper.cpp": {
+          "bytes": 19105,
+          "sha256": "46c9b0fec363762e2ea8b964cbbae5ca6b49846394291f912ed6f85bc32cdc70"
+        }
+      }
+    },
+    "receipt_sha256": "9ba41a702421a267ebf2db0a0d03bd82d8fd38fcf9414c5638666691e8308a2c",
+    "independent_review": "Treasure timing, cosmetic draw ownership, pointer/keyboard split, save purity and Dolly continuation reviewed without blocking findings.",
+    "backend_driver": {
+      "cases": 16,
+      "cpp_syntax": "passed",
+      "js_syntax": "passed",
+      "runtime_execution": "not yet run at this checkpoint"
+    },
+    "boundaries": [
+      "Short helpers and syntax, not the complete changed frontend or actual-pack flow.",
+      "Chaotic cosmetic stream adapted to App-only clock-seeded deterministic xorshift32.",
+      "33ms clock, RGB565 modulation and Q12 movement quantization; 14/8040 reference samples differ by one rounded pixel.",
+      "Original hover/press scale, rarity glow/particles, empty SPRING text movement, fly-to-inventory and first FTUE remain unfinished."
+    ],
+    "release_ready": false
   }
 }

@@ -11,6 +11,14 @@ enum Blend : unsigned { Normal=0, Add=1 };
 constexpr unsigned divide255(unsigned value){
     value+=128;return (value+(value>>8))>>8;
 }
+// Neutral RGB modulation precedes compositing and never changes coverage.
+// A white multiplier is exactly the existing RGB565 source, including when
+// that source will be added to a partially covered destination.
+constexpr uint16_t modulate_rgb(uint16_t source,unsigned brightness){
+    return uint16_t((divide255((source>>11)*brightness)<<11)|
+        (divide255(((source>>5)&63)*brightness)<<5)|
+        divide255((source&31)*brightness));
+}
 constexpr unsigned add_channel(unsigned destination,unsigned source,unsigned alpha,unsigned maximum){
     const unsigned result=destination+divide255(source*alpha);
     return result>maximum?maximum:result;

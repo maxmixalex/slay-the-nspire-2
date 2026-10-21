@@ -28,9 +28,11 @@ struct Canvas{
     // Local UI layers can modulate images and text together. Appending this
     // field preserves cached-card aggregate initializers and opaque drawing.
     uint8_t opacity=255;
+    uint8_t brightness=255;
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
         if(opacity!=255)alpha=div255(alpha*opacity);
         if(!alpha)return;
+        if(brightness!=255)color=presentation::modulate_rgb(color,brightness);
         if(mode==presentation::Add){
             if(!coverage||coverage[at]==255)pixels[at]=presentation::add_opaque(pixels[at],color,alpha);
             else{

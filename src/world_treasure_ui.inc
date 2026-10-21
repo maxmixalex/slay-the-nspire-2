@@ -15,6 +15,24 @@ static uint16_t treasure_linear(uint16_t from,uint16_t to,uint32_t ticks,uint32_
  return uint16_t((uint32_t(from)*(duration-elapsed)+uint32_t(to)*elapsed+duration/2)/duration);
 }
 static unsigned treasure_alpha8(uint16_t alpha){return (unsigned(alpha)+128)/257;}
+static uint32_t treasure_holder_delay(App&a){
+ // Rng.Chaotic is independent of the seeded run. This platform adapts it to
+ // a session-local xorshift32 stream seeded from the presentation clock on
+ // its first nonempty collection, not the original wall-clock/MegaRandom
+ // sequence. One draw per new holder, none for rendering or restored offers.
+ uint32_t x=a.treasure_random;
+ if(!x){x=a.animation^0xa511e9b3u;if(!x)x=0x6d2b79f5u;}
+ x^=x<<13;x^=x>>17;x^=x<<5;a.treasure_random=x;
+ return 200000u+uint32_t((uint64_t(x)*200000u)>>32);
+}
+static uint32_t treasure_holder_elapsed(const App&a){
+ // Every holder tween has finished by 1s. Clamp before converting the
+ // wrapping 33ms tick delta to microseconds, including a long-open room.
+ return treasure_elapsed(a.animation-a.treasure_open_tick,1000)*1000;
+}
+static unsigned treasure_fade_us(uint32_t elapsed,uint32_t duration){
+ return elapsed>=duration?255u:(elapsed*255u+duration/2)/duration;
+}
 static uint16_t treasure_expo_out(uint32_t ticks){
  // Godot EXPO_OUT: 1.001 * (1 - 2^(-10*t/d)), with an exact endpoint.
  // Samples of the original 400ms tween at this renderer's 33ms clock, in
@@ -55,11 +73,48 @@ static void treasure_begin_close(App&a,uint32_t when,uint16_t chest,uint16_t ban
 void App::reset_treasure_presentation(){
  treasure_presentation=0;treasure_open_tick=treasure_banner_tick=treasure_close_tick=0;
  treasure_chest_from=65535;treasure_banner_from=0;treasure_banner_y=0;
+ treasure_holder_delay_us=0;
  treasure_room_seed=0;treasure_room_act=255;treasure_room_point=0xffff;
 }
 unsigned App::treasure_chest_opacity()const{return treasure_alpha8(treasure_chest_alpha(*this,animation));}
 unsigned App::treasure_banner_opacity()const{return treasure_alpha8(treasure_banner_alpha(*this,animation));}
 int App::treasure_banner_offset()const{return treasure_banner_position(*this,animation);}
+unsigned App::treasure_holder_opacity()const{
+ if(treasure_presentation!=2)return treasure_presentation==1?0:255;
+ // NRelic itself fades from transparent black to white over 250ms.
+ return treasure_fade_us(treasure_holder_elapsed(*this),250000);
+}
+unsigned App::treasure_holder_brightness()const{
+ if(treasure_presentation!=2)return treasure_presentation==1?0:255;
+ const uint32_t elapsed=treasure_holder_elapsed(*this);
+ const unsigned holder=elapsed<=treasure_holder_delay_us?0:treasure_fade_us(elapsed-treasure_holder_delay_us,200000);
+ // The holder's black -> white tween has alpha 1. Its delayed RGB and the
+ // child relic's initial RGB fade multiply; neither can erase alpha holes.
+ return div255(holder*treasure_holder_opacity());
+}
+int App::treasure_holder_offset()const{
+ if(treasure_presentation!=2)return treasure_presentation==1?30:0;
+ const uint32_t elapsed=treasure_holder_elapsed(*this);
+ const uint32_t moving=elapsed<=treasure_holder_delay_us?0:elapsed-treasure_holder_delay_us;
+ if(moving>=600000)return 0;
+ // 150px single-player entry offset, projected 1080 -> 218. Evaluate Godot
+ // BACK_OUT (s=1.70158) in Q12; keep its negative overshoot before the
+ // final nearest-pixel projection. Unsigned time conversion and signed
+ // curve products both stay within their respective 32-bit bounds.
+ const int v=int(((600000-moving)*4096u+300000u)/600000u);
+ const int square=(v*v+2048)/4096;
+ const int coefficient=(11066*v+2048)/4096-6970;
+ const int curve=square*coefficient/4096;
+ const int numerator=curve*32700,denominator=4096*1080;
+ return numerator<0?-((-numerator+denominator/2)/denominator):(numerator+denominator/2)/denominator;
+}
+bool App::treasure_pointer_can_take()const{
+ if(!native_room_input_available(*this,Phase::Treasure)||game.treasure_state!=1||game.world.treasure_relic==NoWorldRelic)return false;
+ if(!treasure_presentation)return true;
+ // Original MouseFilter=IGNORE lasts through delay + the 600ms movement.
+ // Focused keyboard/controller select does not use this pointer-only gate.
+ return treasure_presentation==2&&treasure_holder_elapsed(*this)>=treasure_holder_delay_us+600000u;
+}
 unsigned App::treasure_collection_opacity()const{
  // AnimOut explicitly sets the collection to white. In single player the
  // awarded holder is already invisible, so its artwork must not fade out.
@@ -75,7 +130,10 @@ void App::sync_treasure_presentation(){
  }
  // Extra room rewards may temporarily open a selection before the chest's
  // own relic collection. Start its animation only after that selection ends.
- if(treasure_presentation==1&&game.world.active&&game.phase==Phase::Treasure&&game.treasure_state){treasure_presentation=2;treasure_open_tick=animation;}
+ if(treasure_presentation==1&&game.world.active&&game.phase==Phase::Treasure&&game.treasure_state){
+  treasure_presentation=2;treasure_open_tick=animation;
+  if(game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic)treasure_holder_delay_us=treasure_holder_delay(*this);
+ }
  if(treasure_presentation==2){
   uint32_t close=animation;bool completed=game.treasure_state==2;
   // The empty collection completes after 1s. This only closes its visuals;
@@ -155,11 +213,18 @@ static void native_treasure_screen(Canvas&c){
   c.text("打开 Enter",13,216,10,White);
  }else if(offering){
   Canvas collection=c;collection.opacity=uint8_t(div255(c.opacity*a.treasure_collection_opacity()));
-  collection.picture(a.relic_face_image(s.world.treasure_relic),138,88,44,44);c.action(119,77,82,77,UiAction::TreasureTake);
-  collection.centered(a.relic_title(s.world.treasure_relic),13,143,294,16,Gold);
-  char description[2048]{};a.relic_description(s.world.treasure_relic,description,sizeof description);collection.paragraph(description,31,165,258,2,0,12,White);
-  // The readable calculator controls remain usable while the collection
-  // fades. Chaotic holder delay/motion is a separate, unimplemented effect.
+  Canvas holder=collection;holder.opacity=uint8_t(div255(collection.opacity*a.treasure_holder_opacity()));
+  holder.brightness=uint8_t(div255(collection.brightness*a.treasure_holder_brightness()));
+  const int holder_y=a.treasure_holder_offset();holder.picture(a.relic_face_image(s.world.treasure_relic),138,84+holder_y,44,44);
+  // Omitting the hit while ignored also rejects a press begun before the
+  // gate that is released after it. No disabled capture can become enabled.
+  if(a.treasure_pointer_can_take())c.action(119,77+holder_y,82,77,UiAction::TreasureTake);
+  // Reserve the full +30px entry extent above the readable fixed labels.
+  // Two 12px description lines end before the Proceed hit region at y=205.
+  collection.centered(a.relic_title(s.world.treasure_relic),13,158,294,16,Gold);
+  char description[2048]{};a.relic_description(s.world.treasure_relic,description,sizeof description);collection.paragraph(description,31,178,258,2,0,12,White);
+  // The calculator's fixed readable labels and focused Confirm remain
+  // available during the original holder's entry motion.
   c.text("领取 Enter",8,216,10,White);c.button("详情 I",112,211,91,false,24);c.hit(109,207,96,31,HitKind::Command,int(Key::Detail));
  }else{
   if(s.treasure_state==1&&a.treasure_collection_opacity()){

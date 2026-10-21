@@ -15,6 +15,28 @@ static SaveData storage;
 static std::string directory,name;
 static unsigned saved,frames;
 static FILE*manifest;
+enum class SceneKind { Neow,Map,Combat,Kaiser,FakeMerchant,Crystal,Rest,TreasureKey,TreasurePointer,TreasureReload,TreasureDolly,TreasureEmpty };
+struct Scenario {
+ const char*name;SceneKind kind;
+ Character character=Character::Ironclad;
+ reference::ActKind region=reference::ActKind::Overgrowth;
+ unsigned act=0;
+};
+static const Scenario scenarios[]={
+ {"world-neow",SceneKind::Neow},{"world-map",SceneKind::Map},
+ {"world-native-combat",SceneKind::Combat},{"world-kaiser",SceneKind::Kaiser},
+ {"world-fake-merchant",SceneKind::FakeMerchant},{"world-crystal",SceneKind::Crystal},
+ {"world-rest-ironclad",SceneKind::Rest},
+ {"world-rest-silent",SceneKind::Rest,Character::Silent,reference::ActKind::Underdocks},
+ {"world-rest-defect",SceneKind::Rest,Character::Defect,reference::ActKind::Overgrowth,1},
+ {"world-rest-regent",SceneKind::Rest,Character::Regent,reference::ActKind::Overgrowth,2},
+ {"world-rest-necrobinder",SceneKind::Rest,Character::Necrobinder},
+ {"world-treasure-keyboard",SceneKind::TreasureKey},
+ {"world-treasure-pointer",SceneKind::TreasurePointer,Character::Ironclad,reference::ActKind::Overgrowth,1},
+ {"world-treasure-reload",SceneKind::TreasureReload,Character::Ironclad,reference::ActKind::Overgrowth,2},
+ {"world-treasure-dolly",SceneKind::TreasureDolly},
+ {"world-treasure-empty",SceneKind::TreasureEmpty}
+};
 static void require(bool value,const char*message){if(!value){std::fprintf(stderr,"%s frame %u: %s (phase %u)\n",name.c_str(),frames,message,unsigned(app.game.phase));std::exit(1);}}
 static void write(const std::string&path,const void*data,size_t count){FILE*f=std::fopen(path.c_str(),"wb");require(f,"open output");require(std::fwrite(data,1,count,f)==count,"write output");require(!std::fclose(f),"close output");}
 static bool save_cb(const State&s){if(!save(s,storage))return false;write(directory+"/"+name+"-save-"+std::to_string(saved++)+".bin",storage.bytes,storage.size);return true;}
@@ -26,6 +48,10 @@ static void capture(){
 }
 static void key(Key k){std::fprintf(manifest,"%s{\"key\":%u}",frames?",":"",unsigned(k));app.input(k);capture();}
 static void advance(unsigned ms){std::fprintf(manifest,"%s{\"advance\":%u}",frames?",":"",ms);app.advance(ms);capture();}
+static void pointer(int x,int y,bool pressed){
+ std::fprintf(manifest,"%s{\"pointer\":[%d,%d,%s]}",frames?",":"",x,y,pressed?"true":"false");
+ app.pointer_move(x,y);app.pointer_button(pressed);capture();
+}
 static void click(HitKind kind,int value){
  app.render();HitRegion chosen{};bool found=false;
  for(int i=0;i<app.hit_count;i++){const auto&h=app.hits[i];if(h.kind==kind&&h.value==value&&h.enabled){chosen=h;found=true;break;}}
@@ -36,50 +62,134 @@ static void click(HitKind kind,int value){
 }
 static void action(UiAction value){click(HitKind::UiAction,int(value));}
 static void scroll(int rows){std::fprintf(manifest,"%s{\"scroll\":%d}",frames?",":"",rows);app.pointer_scroll(rows);capture();}
-static void world_fixture(unsigned index){
- new_run(initial,0x41cef1ea,false,Character::Ironclad);
- require(world_set_seed(initial,"WORLD-BACKENDS-017"),"set native seed");
- require(world_begin_run(initial,reference::ActKind::Overgrowth,0),"begin native run");
- if(index==0)return;
+static void route_room(WorldRoom room,unsigned act){
+ // Only unrelated room outcomes are supplied. The tested room is entered
+ // through the generated map and its ordinary controller, as in room tests.
+ for(unsigned guard=0;guard<120;guard++){
+  if(initial.world.room_open&&initial.world.room_type==unsigned(room)&&initial.world.act_index==act)return;
+  require(initial.phase!=Phase::Dead&&initial.phase!=Phase::Complete&&initial.phase!=Phase::Error,"route remains live");
+  if(initial.phase==Phase::Map){
+   uint8_t points[reference::Columns]{};require(world_available_points(initial,points,sizeof points)>0,"room route frontier");
+   require(world_choose_point(initial,points[0]),"choose generated room route");
+  }else{
+   if(initial.original_events.active)initial.original_events=OriginalEventState{};
+   if(world_room_is_combat(initial))initial.phase=Phase::Reward;
+   require(world_finish_room(initial)&&world_valid_run(initial),"finish supplied unrelated room outcome");
+  }
+ }
+ require(false,"controlled route reaches requested room");
+}
+static void world_fixture(const Scenario&scenario){
+ const SceneKind kind=scenario.kind;const bool room=kind>=SceneKind::Rest;
+ new_run(initial,0x41cef1ea,false,scenario.character);
+ require(world_set_seed(initial,room?"NSPIRE-WORLD-017":"WORLD-BACKENDS-017"),"set native seed");
+ require(world_begin_run(initial,scenario.region,0),"begin native run");
+ if(room){
+  if(kind==SceneKind::TreasureEmpty)require(gain_world_relic(initial,WorldRelicSilverCrucible)&&!world_relic_pending(initial),"supply Silver Crucible for empty treasure");
+  route_room(kind==SceneKind::Rest?WorldRoom::Rest:WorldRoom::Treasure,scenario.act);
+  if(kind==SceneKind::Rest)initial.hp=30;
+  else if(kind==SceneKind::TreasureEmpty)require(initial.world.treasure_relic==NoWorldRelic,"Silver Crucible removes treasure offer");
+  else{
+   // Fixed model injection isolates acquisition and rendering. In
+   // particular Dolly's shop rarity is not asserted to be a chest drop.
+   initial.world.treasure_relic=kind==SceneKind::TreasureDolly?WorldRelicDollysMirror:WorldRelicVajra;
+  }
+  return;
+ }
+ if(kind==SceneKind::Neow)return;
  // Explicit supplied Neow outcome isolates the map and following room UI.
  // The Neow input/capture sequence is independently retained as case zero.
  initial.original_events=OriginalEventState{};
- if(index>=4){
+ if(kind==SceneKind::FakeMerchant||kind==SceneKind::Crystal){
   initial.gold=500;
-  require(original_event_begin(initial,index==4?OriginalEventId::FakeMerchant:OriginalEventId::CrystalSphere,17,0),"prepare native event");
+  require(original_event_begin(initial,kind==SceneKind::FakeMerchant?OriginalEventId::FakeMerchant:OriginalEventId::CrystalSphere,17,0),"prepare native event");
   return;
  }
  require(world_finish_room(initial),"close supplied ancient outcome");
- if(index==1)return;
+ if(kind==SceneKind::Map)return;
  uint8_t points[reference::Columns]{};require(world_available_points(initial,points,sizeof points)>0,"native map frontier");
  require(world_choose_point(initial,points[0])&&initial.phase==Phase::Combat,"enter native first combat");
- require(encounter_setup(initial,index==2?EncounterId::NibbitsWeak:EncounterId::KaiserCrabBoss,0),"supply controlled original encounter");
+ require(encounter_setup(initial,kind==SceneKind::Combat?EncounterId::NibbitsWeak:EncounterId::KaiserCrabBoss,0),"supply controlled original encounter");
  initial.hp=initial.max_hp=999;
+}
+static void rest_steps(){
+ require(app.game.phase==Phase::Camp&&!world_rest_can_proceed(app.game),"rest fixture starts lit");
+ for(unsigned i=0;i<3;i++)advance(250);
+ const int hp=app.game.hp;click(HitKind::Choice,0);
+ require(app.game.phase==Phase::Camp&&app.game.hp>hp&&world_rest_can_proceed(app.game),"healing extinguishes rest scene");
+ for(unsigned i=0;i<3;i++)advance(250);
+ key(Key::Save);key(Key::Load);advance(250);
+ require(app.game.phase==Phase::Camp&&!app.camp_options(nullptr,0),"rest completion survives reload");
+ key(Key::Confirm);require(app.game.phase==Phase::Map&&!app.game.world.room_open,"leave completed rest room");
+}
+static void treasure_steps(SceneKind kind){
+ require(app.game.phase==Phase::Treasure&&!app.game.treasure_state,"treasure fixture starts closed");
+ const unsigned relics=app.game.world_relics.count,deck=app.game.deck_count;
+ key(Key::Confirm);require(app.game.phase==Phase::Treasure&&app.game.treasure_state==1,"open original treasure controller");
+ if(kind==SceneKind::TreasureEmpty){
+  require(!app.treasure_random&&!app.treasure_holder_delay_us,"empty collection consumes no cosmetic random draw");
+  for(unsigned i=0;i<5;i++)advance(250);
+  require(app.treasure_presentation==3&&app.game.world_relics.count==relics,"empty collection closes without a grant");
+ }else{
+  require(app.treasure_random&&app.treasure_holder_delay_us>=200000&&app.treasure_holder_delay_us<400000,"fresh holder draws a bounded independent delay");
+  if(kind==SceneKind::TreasureKey){
+   advance(66);require(!app.treasure_pointer_can_take(),"mouse remains ignored during early keyboard claim");
+   key(Key::Confirm);
+  }else if(kind==SceneKind::TreasurePointer){
+   advance(66);require(!app.treasure_pointer_can_take(),"pointer is gated at press");pointer(160,110,true);
+   for(unsigned i=0;i<4;i++)advance(250);
+   require(app.treasure_pointer_can_take(),"pointer gate opens by one second");pointer(160,110,false);
+   require(app.game.treasure_state==1&&app.game.world_relics.count==relics,"press begun before gate cannot acquire on release");
+   action(UiAction::TreasureTake);
+  }else if(kind==SceneKind::TreasureReload){
+   advance(99);const uint32_t random=app.treasure_random;key(Key::Save);key(Key::Load);
+   require(!app.treasure_presentation&&app.treasure_pointer_can_take()&&app.treasure_random==random,"restored offer is terminal without a random draw");
+   action(UiAction::TreasureTake);
+  }else{
+   for(unsigned i=0;i<5;i++)advance(250);
+   action(UiAction::TreasureTake);
+  }
+  require(app.game.treasure_state==2&&app.game.world_relics.count==relics+1,"treasure grants exactly one relic");
+  if(kind==SceneKind::TreasureDolly){
+   require(app.game.phase==Phase::WorldRelicChoice&&world_relic_pending(app.game),"Dolly opens its real acquisition continuation");
+   key(Key::Save);key(Key::Load);advance(250);
+   require(app.game.phase==Phase::WorldRelicChoice&&world_relic_pending(app.game),"Dolly pending selection survives canonical reload");
+   click(HitKind::WorldChoice,0);action(UiAction::ConfirmWorldChoice);
+   require(app.game.phase==Phase::Treasure&&!world_relic_pending(app.game)&&app.game.deck_count==deck+1,"Dolly returns after exactly one duplicate");
+  }
+  for(unsigned i=0;i<2;i++)advance(250);
+ }
+ key(Key::Save);key(Key::Load);key(Key::Confirm);
+ require(app.game.phase==Phase::Map&&!app.game.world.room_open,"leave treasure after terminal collection");
 }
 int main(int argc,char**argv){
  if(argc!=3)return 2;directory=argv[2];FILE*f=std::fopen(argv[1],"rb");require(f,"open private content");
  std::vector<uint8_t>pack(spire_test::pack_size(f));require(std::fread(pack.data(),1,pack.size(),f)==pack.size(),"read complete private pack");require(!std::fclose(f),"close private content");
- const char*names[]={"world-neow","world-map","world-native-combat","world-kaiser","world-fake-merchant","world-crystal"};
  manifest=std::fopen((directory+"/scenarios.json").c_str(),"w");require(manifest,"open manifest");std::fputs("{\"cases\":[",manifest);
  unsigned total_frames=0,total_saves=0;
- for(unsigned index=0;index<6;index++){
-  name=names[index];saved=frames=0;app=App{};
-  world_fixture(index);require(save(initial,storage),"save controlled native room");require(app.init(pack.data(),pack.size(),{save_cb,load_cb}),"open actual world pack");write(directory+"/"+name+"-fixture.bin",storage.bytes,storage.size);
+ constexpr unsigned count=sizeof scenarios/sizeof scenarios[0];
+ for(unsigned index=0;index<count;index++){
+  const auto&scenario=scenarios[index];const SceneKind kind=scenario.kind;
+  // Each WASM scenario starts a fresh instance. Match its session-local
+  // animation clock and cosmetic random stream with a fresh native App.
+  name=scenario.name;saved=frames=0;app=App{};
+  world_fixture(scenario);require(save(initial,storage),"save controlled native room");require(app.init(pack.data(),pack.size(),{save_cb,load_cb}),"open actual world pack");write(directory+"/"+name+"-fixture.bin",storage.bytes,storage.size);
   std::fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",index?",":"",name.c_str());
   key(Key::Confirm);require(!app.title,"load native fixture from title");
-  if(index==0){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
-  else if(index==1){key(Key::Detail);key(Key::Down);key(Key::Back);key(Key::Right);key(Key::Save);key(Key::Load);}
-  else if(index==2||index==3){
+  if(kind==SceneKind::Neow){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
+  else if(kind==SceneKind::Map){key(Key::Detail);key(Key::Down);key(Key::Back);key(Key::Right);key(Key::Save);key(Key::Load);}
+  else if(kind==SceneKind::Combat||kind==SceneKind::Kaiser){
    const int turn=app.game.turn;key(Key::EndTurn);require(app.game.turn==turn+1,"original enemy move executes through normal End Turn");
    for(unsigned i=0;i<40;i++)advance(250);
    key(Key::Statuses);key(Key::Back);key(Key::Save);key(Key::Load);advance(250);
-  }else if(index==4){
+  }else if(kind==SceneKind::FakeMerchant){
    action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);click(HitKind::Choice,0);key(Key::Save);click(HitKind::Choice,6);key(Key::Save);
-  }else{
+  }else if(kind==SceneKind::Crystal){
    click(HitKind::Choice,1);require(app.game.phase==Phase::OriginalEventChoice,"Crystal enters its board choice");
    click(HitKind::CrystalCell,0);action(UiAction::CrystalLarge);click(HitKind::CrystalCell,60);key(Key::Save);key(Key::Load);
-  }
+  }else if(kind==SceneKind::Rest)rest_steps();
+  else treasure_steps(kind);
   require(saved>0,"case exercises production save callback");std::fprintf(manifest,"],\"saves\":%u}",saved);total_frames+=frames;total_saves+=saved;
  }
- std::fputs("]}\n",manifest);require(!std::fclose(manifest),"close manifest");std::printf("Original-world backend fixtures: 6 cases, %u frames, %u saves; no original-PC differential claim\n",total_frames,total_saves);
+ std::fputs("]}\n",manifest);require(!std::fclose(manifest),"close manifest");std::printf("Original-world backend fixtures: %u cases, %u frames, %u saves; no original-PC differential claim\n",count,total_frames,total_saves);
 }

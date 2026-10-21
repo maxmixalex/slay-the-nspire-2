@@ -39,6 +39,9 @@ const assert = require('node:assert/strict');
       else if (Object.hasOwn(key, 'scroll')) game.pointer_scroll(key.scroll);
       else if (Object.hasOwn(key, 'click')) {
         game.pointer_move(...key.click); game.pointer_button(1); game.pointer_button(0);
+      } else if (Object.hasOwn(key, 'pointer')) {
+        const [x, y, pressed] = key.pointer;
+        game.pointer_move(x, y); game.pointer_button(pressed ? 1 : 0);
       } else throw Error(`Unknown capture action ${JSON.stringify(key)}`);
       game.draw_frame();
       const actual = Buffer.from(new Uint8Array(memory.buffer, game.framebuffer(), 320 * 240 * 2));

@@ -119,6 +119,9 @@ struct App {
     uint32_t treasure_open_tick=0,treasure_banner_tick=0,treasure_close_tick=0;
     uint16_t treasure_chest_from=65535,treasure_banner_from=0;
     int8_t treasure_banner_y=0;
+    // An independent presentation stream survives room resets and reloads.
+    // Zero means not yet seeded; it never belongs to State or its save codec.
+    uint32_t treasure_random=0,treasure_holder_delay_us=0;
     uint64_t treasure_room_seed=0;
     uint16_t treasure_room_point=0xffff;
     uint8_t treasure_room_act=255;
@@ -128,6 +131,10 @@ struct App {
     unsigned treasure_collection_opacity()const;
     unsigned treasure_banner_opacity()const;
     int treasure_banner_offset()const;
+    unsigned treasure_holder_opacity()const;
+    unsigned treasure_holder_brightness()const;
+    int treasure_holder_offset()const;
+    bool treasure_pointer_can_take()const;
     bool treasure_can_proceed()const;
     bool treasure_input(Key);
     void treasure_action(UiAction);
