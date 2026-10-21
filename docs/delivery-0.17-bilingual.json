@@ -1,0 +1,304 @@
+{
+  "schema": "nspire-bilingual-delivery-public-receipt-1",
+  "updated_utc": "2026-10-21",
+  "version": "0.17 development",
+  "status": "packaged_and_verified",
+  "receipt_scope": "Public metadata for four private delivery files; no artifact payload is included.",
+  "reference": {
+    "version": "v0.111.0",
+    "revision": "41cef1ea",
+    "scope": "single-player",
+    "excluded": [
+      "audio",
+      "multiplayer",
+      "Timeline"
+    ]
+  },
+  "checkpoint_roles": {
+    "release_and_arm_runtime": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+    "web_and_native_actual_execution": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+    "resource_conversion": "2d5c6384cd6a5cab14877c1f0371a335760b00e0",
+    "validation_report": "27e762c00e3431cd8daf85d2020513b419390433"
+  },
+  "receipt_is_documentation_only": true,
+  "runtime_execution_relabelled": false,
+  "artifacts": [
+    {
+      "name": "Slay-the-Nspire-2-0.17-eng-calculator.zip",
+      "kind": "calculator",
+      "language": "eng",
+      "bytes": 79352063,
+      "sha256": "be3ea8f35ab7abd0abb41b4e4d4bb33855ee640d6bbfc95969628e07d51cb649"
+    },
+    {
+      "name": "Slay-the-Nspire-2-0.17-zhs-calculator.zip",
+      "kind": "calculator",
+      "language": "zhs",
+      "bytes": 82126673,
+      "sha256": "ae6a07e8657f16e1e0329481a95fdf9fcf0e8ca78dc438472a5a1a0c459efc47"
+    },
+    {
+      "name": "Slay-the-Nspire-2-0.17-eng-offline.html",
+      "kind": "offline_html",
+      "language": "eng",
+      "bytes": 111423361,
+      "sha256": "8a12b282496f721cc39661b507ef57f72c839aba900d9942ea425c210379466c"
+    },
+    {
+      "name": "Slay-the-Nspire-2-0.17-zhs-offline.html",
+      "kind": "offline_html",
+      "language": "zhs",
+      "bytes": 115124029,
+      "sha256": "80f3791fe7dc12e6ba3c664f21b644d14b78a01e7e0536c298da50f05f653943"
+    }
+  ],
+  "component_identity": {
+    "arm": {
+      "bytes": 939953,
+      "sha256": "0662043c138649a790e7e6047cc2dc9dd0cbcd3dd7a1648edc14741612c1f2fd",
+      "calculator_filename": "nSpire2.tns"
+    },
+    "wasm": {
+      "bytes": 5200648,
+      "sha256": "b4e6ccd0a9c9c4b8db49c90bb59a60e28198a3f1d50192067eb8eb7a35cafd4a"
+    },
+    "zhs": {
+      "bytes": 81124916,
+      "sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43",
+      "calculator_filename": "nSpire2.nsp.tns",
+      "resource_format": "NSP2/17"
+    },
+    "eng": {
+      "bytes": 78349238,
+      "sha256": "7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b",
+      "calculator_filename": "nSpire2.nsp.tns",
+      "resource_format": "NSP2/17"
+    }
+  },
+  "installation": {
+    "calculator_minimum_ndless_revision": 2022,
+    "calculator_files_in_same_directory": [
+      "nSpire2.tns",
+      "nSpire2.nsp.tns"
+    ],
+    "calculator_archive_member_count_per_language": 12,
+    "one_matched_language_pair_at_a_time": true,
+    "save_schema_written": 15,
+    "legacy_save_read_versions": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "save_or_profiling_marker_report_included": false,
+    "offline_html_embeds_matching_wasm_and_resource": true
+  },
+  "verification": {
+    "all_calculator_members_read_back_with_complete_byte_and_sha_checks": true,
+    "complete_embedded_wasm_and_resource_bytes_and_sha_verified": true,
+    "independent_final_manifest_zip_html_and_checksums_verification": "passed",
+    "inline_javascript": {
+      "status": "passed",
+      "method": "Extract the complete emitted inline script and invoke node --check for each language; parsing only.",
+      "languages": {
+        "eng": {
+          "status": "passed",
+          "returncode": 0,
+          "inline_javascript_bytes": 111409385,
+          "inline_javascript_sha256": "a6fe19cc4de21e1391946891ab82d5af47656d0a2ad6102e5ad869078514d481"
+        },
+        "zhs": {
+          "status": "passed",
+          "returncode": 0,
+          "inline_javascript_bytes": 115110268,
+          "inline_javascript_sha256": "803893c2dd398e56bbad840e1ff7b4afa22f917d3132b7f51f7375acd742b12d"
+        }
+      },
+      "all_manifest_artifact_hashes_reverified_after_check": true,
+      "browser_execution": false,
+      "dom_or_localstorage_test": false,
+      "wasm_executed_by_this_check": false
+    },
+    "no_compile_or_resource_conversion_during_packaging": true,
+    "source37_report_input_identity": {
+      "receipt": {
+        "basename": "source37-report-input-identity.json",
+        "bytes": 50970,
+        "sha256": "6d264e6c7f6b7fe270b5c42ac239500a6c8444f2e6de6925c3e3a4efe40aa9bd"
+      },
+      "from_checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+      "to_checkpoint": "27e762c00e3431cd8daf85d2020513b419390433",
+      "declared_input_count": 488,
+      "runtime_inputs_identical": true,
+      "resource_packs_unchanged": true
+    }
+  },
+  "formal_journals": [
+    {
+      "basename": "source36-private-bilingual-delivery-74a1deaf934e.json",
+      "bytes": 50919,
+      "sha256": "8687e0e9f550f383f623bf5f5981e938e476c566c6a250cec741b12ae254a69c",
+      "label": "source36-private-bilingual-delivery",
+      "checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "3428a10cbbc337200fbeff54f50e93a685f517a1dc972430c8e3340673a8ff87",
+      "scope": "Formal paired calculator ZIP and offline HTML packaging; exact input identity, member and embedded-payload read-back.",
+      "log": {
+        "basename": "source36-private-bilingual-delivery-74a1deaf934e.log",
+        "bytes": 3980,
+        "sha256": "fdfce9b54294488a78b60377924dc8976b6c7369938699e0c477814de75d4740"
+      }
+    },
+    {
+      "basename": "source35-web-zhs-html-for36-dc082d896bca.json",
+      "bytes": 51095,
+      "sha256": "6bd3d0afeee4c81ce6c25a42e5cbfde219f95cf8a87d902fb806a91762981d16",
+      "label": "source35-web-zhs-html-for36",
+      "checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fd9f6ead1d04672cfc0a881106df0f55c4c7a58379f27e2b557d4d2ac4a63a22",
+      "scope": "Chinese offline HTML packaging only, from the verified source35 WASM and source33 Chinese resource pack.",
+      "log": {
+        "basename": "source35-web-zhs-html-for36-dc082d896bca.log",
+        "bytes": 60,
+        "sha256": "231b1a0f9ea9cca8c9969c5b454dcea7fcaaa31e9953b54a383314d365d06e19"
+      }
+    },
+    {
+      "basename": "source35-web-eng-html-for36-7ef2b54c652e.json",
+      "bytes": 51095,
+      "sha256": "5276f2202519ccb95e4007f572a626de13f6767058170e5acf11a00839371346",
+      "label": "source35-web-eng-html-for36",
+      "checkpoint": "486fd83f6c7838cbab7590ac8619208d7aa86d09",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fd9f6ead1d04672cfc0a881106df0f55c4c7a58379f27e2b557d4d2ac4a63a22",
+      "scope": "English offline HTML packaging only, from the verified source35 WASM and source33 English resource pack.",
+      "log": {
+        "basename": "source35-web-eng-html-for36-7ef2b54c652e.log",
+        "bytes": 60,
+        "sha256": "530f7caa25c02691ce289ebe720632dfe26c404d77c0006a69e1981cebc60e4f"
+      }
+    },
+    {
+      "basename": "source36-offline-inline-js-syntax-7b81fbc8f654.json",
+      "bytes": 50784,
+      "sha256": "040d1726d09afbc8b28c2195ba2f94c5ea8a89f4641320c8137d332b89299d9c",
+      "label": "source36-offline-inline-js-syntax",
+      "checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "3428a10cbbc337200fbeff54f50e93a685f517a1dc972430c8e3340673a8ff87",
+      "scope": "Extract each complete emitted inline script and parse with node --check; no JavaScript evaluation or browser execution.",
+      "log": {
+        "basename": "source36-offline-inline-js-syntax-7b81fbc8f654.log",
+        "bytes": 1224,
+        "sha256": "f5de2a8e2127edce6b23dd36ae36509447e4610890d016cccc50af3c94e17f3c"
+      }
+    },
+    {
+      "basename": "source36-private-delivery-verify-6d7232d8865d.json",
+      "bytes": 50789,
+      "sha256": "323230806c7b2e6de927679baec2ea895eae96b66b87dd4cc2fb79e9baac7543",
+      "label": "source36-private-delivery-verify",
+      "checkpoint": "127605b7621c424e7990fc7bdde6bfb2a2fa7f5e",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "3428a10cbbc337200fbeff54f50e93a685f517a1dc972430c8e3340673a8ff87",
+      "scope": "Independent final read-only verification of manifest artifacts, ZIP members, embedded HTML inputs and SHA256SUMS.",
+      "log": {
+        "basename": "source36-private-delivery-verify-6d7232d8865d.log",
+        "bytes": 2373,
+        "sha256": "69c1ddb814dfff9a11855e5c16d71aee7370a11109609436b5c8bbd910bf005d"
+      }
+    }
+  ],
+  "evidence": {
+    "delivery_manifest": {
+      "basename": "delivery-manifest-0.17.json",
+      "bytes": 94200,
+      "sha256": "e345adb7549576d29538b12e585cb05300c69a8470a8d4cb00f0e05e0c54e6b5",
+      "status": "packaged_and_verified"
+    },
+    "packaging_completion": {
+      "basename": "packaging-completion.json",
+      "bytes": 7680,
+      "sha256": "a62236010c21cc7a28001c55d80046715f1be1cbdf24eb7a4701a63befd3bd96",
+      "status": "passed"
+    },
+    "inline_javascript_syntax": {
+      "basename": "inline-javascript-syntax.json",
+      "bytes": 2470,
+      "sha256": "c0035d1431442a65314a621aa7d7fdcc5f660c53c2d69e23d9c383e57cb9d33e",
+      "status": "passed"
+    },
+    "approved_gate": {
+      "basename": "gate-approval-final.json",
+      "bytes": 38983,
+      "sha256": "c9cced3adf1903939f1f01e58a53d3a88314a7d6dc6f8e8aa265f44439d5b47e"
+    },
+    "checksums": {
+      "basename": "SHA256SUMS",
+      "bytes": 1802,
+      "sha256": "d26aafcb80d1ee7bf7d8a9125b20d65d3126c29207dfb07f38007a3213616377"
+    },
+    "html_zhs_receipt": {
+      "basename": "html-zhs-receipt.json",
+      "bytes": 1491,
+      "sha256": "12f60a84652c78fbdf00d5699934a878034d40806aae722023201f345972a2f4"
+    },
+    "html_eng_receipt": {
+      "basename": "html-eng-receipt.json",
+      "bytes": 1491,
+      "sha256": "c4298d5f653fc02b741379bfa0b8ed1822793be0f73179322316739ef640d76c"
+    }
+  },
+  "earlier_runtime_evidence": {
+    "feedback_report": "calculator-feedback-0.17.md",
+    "validation_metadata": "validation-calculator-feedback-0.17.json",
+    "source35_scope": "18 affected sanitizer executions, scoped bilingual visual review and five sampled native/WASM frame comparisons per language.",
+    "source33_scope": "Chinese Firebird gameplay/startup observations and A/Continue/B seed validation, retaining its original ENTER exit incident.",
+    "source36_scope": "Targeted final Chinese Firebird startup, Continue B, save, same 80ms ENTER normal exit and normal USB exports.",
+    "packaging_reruns_runtime_tests": false
+  },
+  "limits": {
+    "cold_start_speedup_established": false,
+    "combat_io_reduction_scope": "Same v16 pack/save; preparation + first visible + 720 frames; 91.026%; not FPS",
+    "original_ui_95_percent_established": false,
+    "physical_calculator_fps_established": false,
+    "profiling_marker_in_zip": false,
+    "public_asset_upload": false,
+    "resource_30_to_40_mb_achieved": false,
+    "english_firebird_executed_this_round": false,
+    "actual_browser_dom_raf_measured_this_round": false,
+    "syntax_check_is_browser_execution": false
+  },
+  "distribution": {
+    "intended_for_private_delivery": true,
+    "artifacts_committed_to_public_repository": false,
+    "public_original_asset_upload": false,
+    "upload_completion_claimed": false,
+    "public_receipt_contains_only_metadata": true,
+    "private_absolute_paths_in_public_receipt": false
+  },
+  "next_work": [
+    "Continue original UI composition, animation and keyword coverage.",
+    "Measure remaining cold startup and combat-entry costs on physical hardware.",
+    "Investigate further bounded resource reads and storage reductions without presenting I/O reductions as FPS gains."
+  ]
+}

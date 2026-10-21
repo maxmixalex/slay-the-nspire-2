@@ -1,6 +1,64 @@
 # Work state — 2026-10-21
 
-## Current: source36 runtime gates completed; bilingual delivery packaging
+## Current: bilingual delivery generated and verified — source38 receipt
+
+The two calculator ZIPs and two offline HTMLs have been generated and read back.
+The private delivery manifest is `packaged_and_verified`; the final independent
+verification and inline-JavaScript syntax journals have both completed with
+`passed`, exit code 0 and unchanged frozen source. All five formal packaging and
+verification journals are closed. No compilation or resource conversion was
+performed while assembling this delivery.
+
+| Deliverable | Bytes |
+| --- | ---: |
+| `Slay-the-Nspire-2-0.17-zhs-calculator.zip` | 82,126,673 |
+| `Slay-the-Nspire-2-0.17-eng-calculator.zip` | 79,352,063 |
+| `Slay-the-Nspire-2-0.17-zhs-offline.html` | 115,124,029 |
+| `Slay-the-Nspire-2-0.17-eng-offline.html` | 111,423,361 |
+
+The [public delivery receipt](delivery-0.17-bilingual.json) records each filename,
+complete byte count and SHA-256, plus the five journal basenames, hashes, actual
+checkpoints and source-stability results. The delivery manifest SHA-256 is
+`e345adb7549576d29538b12e585cb05300c69a8470a8d4cb00f0e05e0c54e6b5`.
+Every member of each 12-member calculator archive was read back and checked;
+both HTMLs' complete embedded WASM and resource inputs match their bound files.
+The final independent verification also checked the manifest artifacts and
+SHA256SUMS. Both emitted inline scripts passed `node --check`; that operation
+only parses JavaScript and does not run a browser, DOM, localStorage or WASM.
+
+Execution identities remain distinct: source36
+`127605b7621c424e7990fc7bdde6bfb2a2fa7f5e` is the ARM release and final Chinese
+Firebird checkpoint; source35
+`486fd83f6c7838cbab7590ac8619208d7aa86d09` is the actual native/WASM execution;
+source33 `2d5c6384cd6a5cab14877c1f0371a335760b00e0` produced both resource packs.
+The remotely preserved source37 report checkpoint is
+`27e762c00e3431cd8daf85d2020513b419390433`; its identity proof confirms all 488
+declared runtime inputs and both resource packs are unchanged from source36.
+This source38 receipt changes only documentation and does not relabel previous
+tests or packaging as new runtime execution.
+
+The packages are prepared for private delivery and remain outside the public
+repository. This repository records metadata, not resource payloads, embedded
+HTML, screenshots or device images; this entry makes no upload-completion claim.
+Both calculator editions install `nSpire2.tns` and `nSpire2.nsp.tns` together
+with their exact names and require Ndless r2022 or newer. Saves still use v15;
+normal archives include neither saves nor profiling markers/reports.
+
+The [feedback report](calculator-feedback-0.17.md) and its
+[validation metadata](validation-calculator-feedback-0.17.json) retain the actual
+UI, gameplay, emulator and performance evidence, including failures. Packaging
+and syntax checks add no original-engine parity, browser-runtime or physical
+calculator FPS result. Original UI 95% acceptance, the 30–40 MB resource target
+and cold-start acceleration remain unestablished. English Firebird was not run
+in this round. Main and disabled remote CI remain unchanged.
+
+Next: continue the remaining original UI composition, animation and keyword
+coverage work, and measure cold startup and battle-entry costs on physical
+hardware. Preserve the current paired artifacts while investigating further
+bounded resource reads and storage reductions; do not treat fewer bytes read
+or visible progress as a measured FPS or cold-start speedup.
+
+## Previous checkpoint: source36 runtime gates completed; bilingual delivery packaging — source37
 
 The executed release is source36,
 `127605b7621c424e7990fc7bdde6bfb2a2fa7f5e`. All 572 source files and the two
