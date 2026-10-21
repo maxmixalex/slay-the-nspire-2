@@ -3,7 +3,7 @@
   "reference": "v0.111.0 / 41cef1ea",
   "date": "2026-10-21",
   "release_ready": false,
-  "scope": "Historical gates retained individually; source10/12 character-UI timeouts, completed source13 builds/Python and 10-pass/1-fail UI batch, and separate source14 short diagnostics. No cross-checkpoint full-pass aggregation.",
+  "scope": "Historical gates retained individually; source14 three native map suites, 112 Python cases, full200 rest comparison and completed enemy-cache scan; source15 bounded catalog navigation with all 860 acquisition variants still pending its own frozen full run. No cross-checkpoint full-pass aggregation.",
   "results": [
     {
       "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
@@ -2724,5 +2724,108 @@
       "seconds": 7.048463201004779,
       "source_changed": false
     }
+  },
+  "source14_formal_validation": {
+    "checkpoint": "a205a6bd566dd2f5d7f60a1d3c7a06f2e1da9430",
+    "tree": "52768260fbb4d8c312e2beea98addc813d8af450",
+    "source_sha256": "afd5338353c71ce885011cc5bd481adfd392e3eca8d725278d50cca63ebb51da",
+    "remote_readback": {
+      "path": "/workspace/scratch/4b16fc0ccb5c/source14-remote-readback-20261021.json",
+      "bytes": 1770,
+      "sha256": "c8bd2127b17611df58cfc9e9edbf21c5170591d5bb3de77538d6bd22a1838f47"
+    },
+    "remote_paths_verified": 453,
+    "remote_changed_contents_verified": 31,
+    "native_map_and_python": {
+      "path": "/workspace/scratch/4b16fc0ccb5c/source14-native-map-python-formal-20261021.json",
+      "bytes": 10637,
+      "sha256": "da9a631b5f5b61dcf0e7738ea0c43e8ba94690184cd356a447d065760fe22402"
+    },
+    "map_passed": 3,
+    "map_failed": 0,
+    "map_suites": [
+      {
+        "name": "world_map_ui_regression",
+        "seconds": 9.51212,
+        "output": "world map UI: 98402 checks passed; synthetic profile\n"
+      },
+      {
+        "name": "world_map_travel_ui_regression",
+        "seconds": 4.45955,
+        "output": "map travel UI: 1203 checks passed; synthetic current profile; canonical save/RNG oracle\n"
+      },
+      {
+        "name": "world_map_transition_regression",
+        "seconds": 0.0867948,
+        "output": "3452835 map transition checks passed; maximum alpha error=1, rounded differences=5\n"
+      }
+    ],
+    "python_distinct": 112,
+    "generated_plan_passed": true,
+    "initial_x11_configuration_failed_retained": {
+      "path": "/tmp/nspire-stage-a205a6bd/build/journal/source14-native-configure-808e1bb308ae.json",
+      "bytes": 41623,
+      "sha256": "7f6dac6e18b0be70b36c97ce9c5e7c5f06c7cff532bcb9e4762cb8acdebc6235"
+    },
+    "full_native_complete": false,
+    "rest_full200": {
+      "path": "/tmp/nspire-stage-a205a6bd/build/journal/rest-full200-ab/verification-receipt.json",
+      "bytes": 10644,
+      "sha256": "d941968933ad4e29cb855e0c822ffd5dc24c76011232fdf0f7cbc008101b77a2"
+    },
+    "rest_full200_equal_rgba_and_encoded_frames": 200,
+    "enemy_final_cache": {
+      "path": "/workspace/scratch/4b16fc0ccb5c/source9-enemy-prefetch-20261021/enemy-final-cache-receipt.json",
+      "bytes": 1487,
+      "sha256": "c7f35ddf1540e51e931e67fe7fb6d92d4541e172ec734d714d581d027c7bac04"
+    },
+    "enemy_clips_verified": 1600,
+    "enemy_frames_verified": 33210,
+    "enemy_render_closure_compatibility": "327 enemy closures identical from source9 through source14; does not imply a complete source14 pack",
+    "recovery_archive": {
+      "file": "/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2-source14-recovery-20261021.zip",
+      "bytes": 1538740,
+      "sha256": "a9c145b8ae24084de567e1411a7258a5c9d2a6195f660fd21db4965abfa1aa89",
+      "source_commit": "a205a6bd566dd2f5d7f60a1d3c7a06f2e1da9430",
+      "verified_files": 453,
+      "source_only": true,
+      "private_assets": false
+    },
+    "cross_target_status": "ARM has completed; WASM in progress at documentation cutoff; final receipts will be recorded in the next stage.",
+    "full_pack_complete": false,
+    "release_ready": false
+  },
+  "source15_short_diagnostics": {
+    "base_checkpoint": "a205a6bd566dd2f5d7f60a1d3c7a06f2e1da9430",
+    "production_source_changed": false,
+    "test_sha256": "6e1e6fbda53f131c48d6b459b79f3389e145b49350b3cb89ebb2b55312bb588c",
+    "old_timeout_diagnostic": {
+      "path": "/tmp/nspire-character-ui-probe-source13/diagnostic-receipt.json",
+      "bytes": 8294,
+      "sha256": "567ac1cc2273670ee5ddfd8fad71ee6012a828a10648a54ae351a37721153fa8"
+    },
+    "source_ready": {
+      "path": "/tmp/nspire-source15-character-ui/source-ready-receipt.json",
+      "bytes": 7797,
+      "sha256": "fed04d34212d4e85fbaa05a0393ee6349bb1de5f7d42f7edcb8ed2b1298c75da"
+    },
+    "independent_review": {
+      "path": "/tmp/nspire-source15-character-review/review-receipt.json",
+      "bytes": 1635,
+      "sha256": "f80c5a7ae354b00f57357970abf0bda2c2bbb5a67e13368b9d5f89948e2b4392"
+    },
+    "preserved_acquisitions": 860,
+    "original_assertion_expressions_retained": 88,
+    "assertion_call_sites_now": 112,
+    "navigation_pages": 70,
+    "forward_steps": 69,
+    "backward_steps": 69,
+    "disabled_edge_clicks": 3,
+    "short_probe_checks": 2070,
+    "short_probe_seconds": 8.486552,
+    "short_probe_variants": 8,
+    "short_probe_library_checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+    "full_new_suite_status": "Pending source15 push/readback/freeze; short diagnostic is not a source15 full pass",
+    "release_ready": false
   }
 }

@@ -9,9 +9,14 @@ using namespace spire;
 static App a;
 static SaveData stored;
 static unsigned checks,acquisitions;
-static bool real_profile;
+static bool real_profile,catalog_navigation_verified;
 static const char* screenshot_directory;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
+static void progress(const char* stage,unsigned character=CharacterKinds,unsigned model=CardKinds,unsigned upgraded=0){
+    std::printf("character UI progress: %s character=%u model=%u key=%s upgraded=%u page=%d acquisitions=%u checks=%u\n",
+        stage,character,model,model<CardKinds?definitions[model].key:"-",upgraded,a.library_page,acquisitions,checks);
+    std::fflush(stdout);
+}
 static bool save_cb(const State&s){return save(s,stored);}
 static bool load_cb(State&s){return load(s,stored.bytes,stored.size);}
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned width=4){for(unsigned i=0;i<width;i++)b[at+i]=(uint8_t)(value>>(8*i));}
@@ -60,15 +65,57 @@ static void start(Character character){
     CHECK(a.game.deck_count==(character==Character::Ironclad?138:139));
     CHECK(a.game.deck_count>128&&a.game.deck_count<=MaxDeck);CHECK(validate(a.game));
 }
+static void catalog_page_click(UiAction action,bool enabled,int expected_page){
+    CHECK(a.library&&a.library_tab==0&&a.detail_card<0);
+    CHECK(action==UiAction::NextPage||action==UiAction::PreviousPage);
+    const int previous_page=a.library_page;
+    CHECK(expected_page==previous_page+(enabled?(action==UiAction::NextPage?1:-1):0));
+    progress(action==UiAction::NextPage?"catalog-next":"catalog-previous");
+    a.render();int index=-1;
+    for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==(int)action){
+        CHECK(index<0);index=i;
+    }
+    CHECK(index>=0);const HitRegion h=a.hits[index];CHECK(h.w>0&&h.h>0&&h.enabled==enabled);
+    const int x=h.x+h.w/2,y=h.y+h.h/2;
+    CHECK(a.hit_at(x,y)==&a.hits[index]); // Unique action is also the topmost real pointer target.
+    a.pointer_move(x,y);a.pointer_button(true);
+    CHECK(a.pointer.held&&!a.pointer.dragging);
+    CHECK(a.pointer.captured.kind==HitKind::UiAction&&a.pointer.captured.value==(int)action&&a.pointer.captured.enabled==enabled);
+    CHECK(a.library_page==previous_page); // A press alone must not turn the page.
+    a.pointer_button(false);CHECK(!a.pointer.held);
+    CHECK(a.library_page==expected_page&&a.library_selected==expected_page*8);
+}
+static void catalog_navigation(){
+    CHECK(!catalog_navigation_verified);progress("catalog-navigation-start");
+    const uint32_t run_number=a.run_number;
+    start(Character::Ironclad);auto before=snapshot();
+    a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
+    CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
+    const int last=(CardKinds-1)/8;CHECK(a.library_page==0&&last>0);
+    catalog_page_click(UiAction::PreviousPage,false,0);unchanged(before);
+    for(int page=1;page<=last;++page)catalog_page_click(UiAction::NextPage,true,page);
+    catalog_page_click(UiAction::NextPage,false,last);unchanged(before);
+    for(int page=last-1;page>=0;--page)catalog_page_click(UiAction::PreviousPage,true,page);
+    catalog_page_click(UiAction::PreviousPage,false,0);unchanged(before);
+    a.input(Key::Back);CHECK(!a.library);unchanged(before);
+    // This independent navigation run must not shift the existing acquisition
+    // fixtures' deterministic practice seeds.
+    CHECK(a.run_number==run_number+1);a.run_number=run_number;
+    catalog_navigation_verified=true;progress("catalog-navigation-complete");
+}
 static void open_model(unsigned model,unsigned upgraded){
+    CHECK(catalog_navigation_verified);progress("open-model",(unsigned)a.game.character,model,upgraded);
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
     action(UiAction::FilterAll);CardKind ids[CardKinds];unsigned count=a.library_items(ids),index=0;
     CHECK(count==CardKinds);while(index<count&&ids[index]!=model)++index;CHECK(index<count);
-    while(a.library_page<(int)index/8)action(UiAction::NextPage);
-    while(a.library_page>(int)index/8)action(UiAction::PreviousPage);
+    // Every real page-button transition was checked before any model fixture.
+    // Position this isolated fixture without replaying all preceding pages;
+    // the model itself is still opened, upgraded and acquired by real clicks.
+    a.library_page=(int)index/8;a.library_selected=a.library_page*8;
     tap(HitKind::LibraryItem,(int)index);CHECK(card_from_token(a.detail_card).kind==model);
     if(card_from_token(a.detail_card).upgraded!=(int)upgraded)action(UiAction::ToggleCardUpgrade);
     CHECK(a.detail_card==card_token({(CardKind)model,(uint8_t)upgraded}));
+    progress("model-detail",(unsigned)a.game.character,model,upgraded);
 }
 static void description(Card card,int instance=-1){
     char text[1024]={};auto before=snapshot();a.card_description(card,0,text,sizeof text,instance);
@@ -87,11 +134,13 @@ static void capture(const char* name){
     CHECK(std::fclose(f)==0);
 }
 static void all_models(){
+    CHECK(catalog_navigation_verified);progress("all-models-start");
     for(unsigned character=0;character<CharacterKinds;character++){
         unsigned count=0;
         for(unsigned model=0;model<CardKinds;model++)if(card_in_pool(model,(Character)character)){
             ++count;
             for(unsigned upgraded=0;upgraded<2;upgraded++){
+                progress("variant-start",character,model,upgraded);
                 start((Character)character);auto before=snapshot();open_model(model,upgraded);
                 Card card{(CardKind)model,(uint8_t)upgraded};description(card);unchanged(before);
                 if(real_profile){CHECK(a.content.image(a.content.card_image(model)).pixels);CHECK(a.content.image(a.content.frame_image(card)).pixels);}
@@ -101,17 +150,23 @@ static void all_models(){
                 CHECK(a.game.zones[old_count]==Zone::Hand);description(card,(int)old_count);
                 auto saved=snapshot();State loaded{};CHECK(load(loaded,saved.bytes,saved.size));
                 CHECK(loaded.card_count==a.game.card_count&&loaded.cards[old_count].kind==model&&loaded.cards[old_count].upgraded==upgraded);
-                ++acquisitions;
+                ++acquisitions;progress("variant-complete",character,model,upgraded);
             }
         }
         CHECK(count==(character==0?85u:86u));
     }
     for(unsigned upgraded=0;upgraded<2;upgraded++){
-        start(Character::Ironclad);open_model(GiantRock,upgraded);description({GiantRock,(uint8_t)upgraded});
+        progress("variant-start",(unsigned)Character::Ironclad,GiantRock,upgraded);
+        start(Character::Ironclad);auto before=snapshot();open_model(GiantRock,upgraded);description({GiantRock,(uint8_t)upgraded});unchanged(before);
         unsigned id=a.game.card_count;action(UiAction::LabCard);CHECK(a.game.cards[id].kind==GiantRock&&a.game.cards[id].upgraded==upgraded);
-        description({GiantRock,(uint8_t)upgraded},(int)id);++acquisitions;
+        CHECK(!a.library&&a.detail_card<0&&a.game.card_count==id+1&&a.game.zones[id]==Zone::Hand);
+        description({GiantRock,(uint8_t)upgraded},(int)id);
+        auto saved=snapshot();State loaded{};CHECK(load(loaded,saved.bytes,saved.size));
+        CHECK(loaded.card_count==a.game.card_count&&loaded.cards[id].kind==GiantRock&&loaded.cards[id].upgraded==upgraded);
+        ++acquisitions;progress("variant-complete",(unsigned)Character::Ironclad,GiantRock,upgraded);
     }
     CHECK(acquisitions==2*(IroncladCards+SilentCards+DefectCards+RegentCards+NecroCards)+2);
+    CHECK(acquisitions==860);progress("all-models-complete");
 }
 static void overflow_and_catalog(){
     for(Character character:{Character::Ironclad,Character::Silent}){
@@ -121,7 +176,10 @@ static void overflow_and_catalog(){
         CHECK(s.card_count==id+1&&s.zones[id]==Zone::Discard&&s.cards[id].kind==GiantRock&&s.cards[id].upgraded);
         CHECK(std::strstr(a.notice,"弃牌堆"));CHECK(validate(s));
         a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
-        while(a.library_page<(CardKinds-1)/8)action(UiAction::NextPage);
+        while(a.library_page<(CardKinds-1)/8){
+            const int page=a.library_page;progress("overflow-catalog-next",(unsigned)character);
+            action(UiAction::NextPage);CHECK(a.library_page==page+1);
+        }
         CHECK(a.library_page==(CardKinds-1)/8);CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
         CHECK(ids[CardKinds-1]==EventCardWrithe);auto before=snapshot();
         auto next=hit(HitKind::UiAction,(int)UiAction::NextPage);CHECK(!next.enabled);
@@ -214,6 +272,11 @@ int main(int argc,char**argv){
     else bytes=synthetic_profile();
     if(argc>2)screenshot_directory=argv[2];
     CHECK(a.init(bytes.data(),bytes.size(),{save_cb,load_cb}));CHECK(a.content.current_profile());
-    all_models();overflow_and_catalog();named_value_and_screens();playability_and_instance_cost();inky_and_dynamic_targets();
+    catalog_navigation();all_models();
+    progress("overflow-and-catalog");overflow_and_catalog();
+    progress("named-value-and-screens");named_value_and_screens();
+    progress("playability-and-instance-cost");playability_and_instance_cost();
+    progress("inky-and-dynamic-targets");inky_and_dynamic_targets();
     std::printf("character UI: %u checks passed, %u acquired variants, %s content\n",checks,acquisitions,real_profile?"actual":"synthetic");
+    std::fflush(stdout);
 }
