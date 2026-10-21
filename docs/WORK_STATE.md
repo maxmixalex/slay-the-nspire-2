@@ -1,6 +1,31 @@
 # Work state — 2026-10-21
 
-## Current: source25 calculator stack and native UI correction checkpoint — 2026-10-21
+## Current: source26 reliable calculator profiler activation — 2026-10-21
+
+Source25 is preserved at `fc769a017d83051e34592e661d02c92aa0836b20`, with all
+539 remote tree entries and 34 changed contents verified. Its ARM/WASM builds
+passed. ARM own-frame sizes are now new-run 80 B, save 56 B and load 64 B,
+plus their called helpers; the 198,112-byte codec workspace is in BSS. The
+full 64-suite sanitizer run is still active and cannot yet be marked passed.
+
+The corrected private v16 conversion passed: 80,879,519 bytes, SHA-256
+`89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342`.
+Actual keyword/text/new-image gates passed. Native world capture produced
+23 cases / 480 frames / 30 saves: all fixtures/saves match source24 exactly,
+474 frames match exactly, and the six changed frames contain only the scoped
+Crystal Count correction. The actual WASM replay also passed all 480 frames
+and 30 canonical saves against that new native capture.
+
+Actual source25 loading exposed an instrumentation issue: while CTRL was held,
+the PC remained in Ndless before `main`; after release it entered this binary's
+`ResourceReader::fnv1a`, with profiling disabled. Source26 therefore adds a
+read-only sibling marker (`nSpire2.profile.tns`) to opt into startup/per-scene
+diagnostics without relying on loader key retention. The source25 common game,
+UI, resource conversion and web runtime sources are unchanged. Preserve this
+minimal source stage before the next ARM build and profiled Firebird run.
+The existing source25 session is an unprofiled execution, not a diagnostic pass.
+
+## Previous: source25 calculator stack and native UI correction checkpoint — 2026-10-21
 
 Actual Firebird execution of the historical source22 calculator package exposed
 a blocking ARM stack fault when confirming a new expedition. The compiled

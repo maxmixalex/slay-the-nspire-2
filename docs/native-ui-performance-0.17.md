@@ -91,8 +91,16 @@ not substitute the standard HSV color-space rotation.
 
 ## Measurement paths
 
-The calculator's optional foreground profiler is activated by holding **Ctrl
-while launching nSpire2**. It stores bounded aggregate counters only, and on
+The calculator's optional foreground profiler is activated by placing a small
+file named **`nSpire2.profile.tns`** next to the launcher before opening it.
+Its contents are unused; remove that marker to disable profiling. Source26
+adds this deterministic opt-in after actual Firebird execution showed Ndless
+waiting for launch keys to be released before reaching `main`, making the
+source24/25 Ctrl-only instruction unreliable. The held-Ctrl fallback remains
+for launch environments that preserve it. The marker is opened read-only and
+closed immediately; the game never creates or removes it. Timing begins after
+this opt-in probe: startup covers resource open and `App::init`, excluding the
+Ndless loader and marker probe. The profiler stores bounded aggregate counters only, and on
 normal exit writes `nSpire2.perf.tns` once. The JSON reports startup, first
 render, first present, scene intervals, update/render/blit time and resource
 read costs. Frame intervals preserve stalls above 50, 100 and 250 ms before

@@ -22,7 +22,7 @@ int nd_touch_write(unsigned,unsigned,const void*);
 static spire::App app;
 static spire::SaveData scratch;
 static spire::RuntimePerformance performance;
-static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512];
+static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512];
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 struct ResourceFile {void*file;spire::ResourceFileCursor cursor;};
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
@@ -100,11 +100,15 @@ struct Touchpad {
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
-    if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns"))return 3;
-    // Hold CTRL while opening the document to measure this session. The normal
-    // launch path leaves diagnostics disabled. One bounded report is written
-    // on normal exit; no per-frame logging or filesystem traffic is added.
+    if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns"))return 3;
+    // Ndless may wait for all launch keys to be released before entering main,
+    // so a held CTRL alone cannot reliably opt in. An owner-created sibling
+    // marker enables startup timing without a loader/key timing dependency.
+    // Open read-only and close immediately; never create/remove this marker.
     performance.enabled=pressed(0x1E,0x200);
+    if(void*marker=nd_open(profile_path,"rb")){performance.enabled=true;nd_close(marker);}
+    // With no marker and no CTRL diagnostics stay disabled. One bounded report
+    // is written on normal exit, with no per-frame filesystem logging.
     performance.hardware=nd_hwtype();performance.ndless_revision=nd_revision();
     Clock clock{};clock.init();uint32_t startup_start=performance.enabled?timer_ticks():0;
     void*f=nd_open(pack_path,"rb");if(!f)return 4;
