@@ -173,8 +173,11 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
         const int dy=map_source_offset(marker.source_y),width=int((16*marker.scale_x+2048)/4096),height=int((16*marker.scale_y+2048)/4096);
         map_picture(c,character_map_image(a.content,s.character),layout.points[id].x,layout.points[id].y+view.origin-offset+dy,width,height);
     }
-    c.rect(0,22,320,22,colors.paper);const char*regions[]={"蔓生之地","沉没码头","虫巢","荣光之城"};
-    char title[80]{};TextBuffer heading{title,sizeof title,0};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region<4?regions[region]:"");
+    c.rect(0,22,320,22,colors.paper);
+    // NActBanner uses ActModel.Title: acts/<region>.title. Keep the compact
+    // map header on that same localized title, with its key as the fallback.
+    const char*region_name=a.content.world_title("acts",colors.region);if(!*region_name)region_name=colors.region;
+    char title[80]{};TextBuffer heading{title,sizeof title,0};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region_name);
     c.centered(title,4,25,258,12,colors.ink);c.text("图例 I",268,26,10,colors.ink);c.action(262,22,58,22,UiAction::ToggleMapLegend);
     c.text("↑",304,47,12,colors.ink);c.hit(297,44,23,24,HitKind::Scroll,-1,!a.map_legend&&a.map_can_scroll()&&view.origin<view.maximum);
     c.text("↓",304,182,12,colors.ink);c.hit(297,178,23,27,HitKind::Scroll,1,!a.map_legend&&a.map_can_scroll()&&view.origin>view.minimum);

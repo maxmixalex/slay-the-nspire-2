@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.16 (2026-10-19).
+nSpire II experimental native runtime, version 0.17 development (2026-10-21).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -20,11 +20,23 @@ stable syscall ABI, LCD function-pointer API and key protocol.
 This distribution does not bundle the Ndless SDK or a Firebird binary.
 Historical 0.12 reports describe Firebird execution on the supplied CX II CAS
 working-image copy with Ndless r2022. Later ARM build receipts are recorded in
-the versioned validation documents; 0.16 has no new Firebird or physical-device
-execution result.
+the versioned validation documents; 0.16 and the current 0.17 development have
+no new Firebird or physical-device execution result.
 
 https://github.com/ndless-nspire/Ndless/tree/r2022
 https://github.com/nspire-emus/firebird
+
+## Bounded resource decompression
+
+The seven unchanged decoder source/header files under `third_party/lzma2` come
+from Igor Pavlov's official LZMA SDK in 7-Zip 26.04, commit
+`9128b80e3a471108678e2b3ec3c985861c8d7b0f`. The SDK is in the public domain.
+Verified original file hashes and the narrow decoder integration are documented
+in that directory. The runtime uses neither the archive parser nor SDK heap or
+filesystem support.
+
+https://github.com/ip7z/7zip/tree/9128b80e3a471108678e2b3ec3c985861c8d7b0f/C
+https://www.7-zip.org/sdk.html
 
 ## Game data and animations
 

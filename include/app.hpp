@@ -20,7 +20,9 @@ constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 constexpr uint32_t MaxContentFile=256u*1024u*1024u;
 // Each appended character/token model adds a title and two descriptions after
 // the complete, immutable 0.14 string directory.
-constexpr unsigned ContentVersion=14,ContentStrings=WorldStringCount;
+// The two storage versions share one catalog. Keep the original v14 constant
+// for legacy payloads/fixtures; v15 adds the bounded sparse-tile codec.
+constexpr unsigned ContentVersion=14,TileContentVersion=15,ContentStrings=WorldStringCount;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
@@ -29,8 +31,12 @@ class Content {
     static constexpr uint32_t DirectoryCapacity=2u*1024u*1024u;
     uint8_t directory_[DirectoryCapacity]{};
     const uint8_t* metadata_{};
+    const uint8_t* tile_metadata_{};uint32_t directory_bytes_{};
     ResourceReader reader_{};
     mutable bool io_good_=true;
+    // Opening validates every referenced tile before immutable runtime reads
+    // may omit tiles with no stored format-4 spans.
+    bool validating_=false;
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
 public:
     bool open(const uint8_t*,size_t);
@@ -42,7 +48,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return version_==ContentVersion&&cards_==CardKinds&&ui_count_==U_Count&&strings_==ContentStrings&&clips_==AnimationKinds;}
+    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion)&&cards_==CardKinds&&ui_count_==U_Count&&strings_==ContentStrings&&clips_==AnimationKinds;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;

@@ -53,7 +53,7 @@ def build(source:Path,target:Path)->None:
                 relocs.add(addr)
             elif kind not in (0,3,10,28,29,30,42):
                 raise ValueError(f'Unsupported relocation type {kind} at {addr:x}')
-    extra=b'nSpire II\0zyf722\0Native adaptation 0.16; five single-player pools and adapted run.\0'
+    extra=b'nSpire II\0zyf722\0Native adaptation 0.17 development; original single-player world.\0'
     extra+=bytes((-len(extra))%4)
     flag_pairs=[(0,31),(2,2022),(4,1),(5,0),(6,1),(7,0),(8,0),(9,10),(10,13),(11,17),(12,1),(13,1)]
     reloc_data=struct.pack('<I',3)+b''.join(struct.pack('<I',r<<8) for r in sorted(relocs))

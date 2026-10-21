@@ -2,7 +2,7 @@
 
 Reference remains the owner's hash-pinned v0.111.0 / 41cef1ea. Do not silently mix other releases or Slay the Spire 1 rules into this build. Audio, multiplayer and Timeline progression are excluded, not deferred; animation remains in scope.
 
-Reflow, larger targets, scrolling, detail overlays, offline visual sampling and keyboard/touchpad adaptation are allowed for 320x240. Card effects, pools, enemy behavior and random probabilities must not be changed merely to make a demo work. Unsupported content and substitutions remain explicit gaps. Portraits and extracted text alone do not constitute supported gameplay.
+Reflow, larger targets, scrolling, detail overlays and keyboard/touchpad adaptation are allowed for readable use at 320x240. Temporal visual sampling has a separate performance/fidelity boundary below; it is not a readability adjustment. Card effects, pools, enemy behavior and random probabilities must not be changed merely to make a demo work. Unsupported content and substitutions remain explicit gaps. Portraits and extracted text alone do not constitute supported gameplay.
 
 ## Current coverage and evidence
 
@@ -20,7 +20,7 @@ results from different source revisions must not be combined into a full pass.
 | Five characters, colorless and potions | Five single-player pools, their generated/status cards, 53 colorless models and 64 potions; event/curse additions bring the card registry to 558 | The source17 full suite retains character, colorless, potion, migration and UI tests; 860 character/Giant Rock variants execute acquisitions. Registry counts are not an original-reference interaction proof. |
 | Original world | Seven-column maps, four regional templates across three act positions, original room queues, unknown-room odds, ancients, events and the final Architect continuation | World/map/lifecycle regressions exercise real routing and canonical save continuation. The old adapted expedition remains a separate compatibility path. |
 | Enemies | Bounded eight-slot runtime with moves, intents, powers, summons, identities, revivals and exit/reward continuations | 109 IDs include compatibility/display models. The test driver executes all 87 non-display encounter definitions at A0 and A9, producing 174 variants, plus targeted boundary scenarios. Further audits can still identify rule bugs. |
-| Original resources | Complete private NSP2/14 directory with 45,724 images, 1,695 clips, 11,915 glyph records and 6,100 strings | Canonical decoding, preserved historical payloads, resource bounds and actual UI loading passed. The 231,312,495-byte pack is too large for the target's documented storage; compression is an unresolved delivery gate. |
+| Original resources | Complete private directory with 45,724 images, 1,695 clips, 11,915 glyph records and 6,100 strings; source20 accepts NSP2/14 and lossless tiled NSP2/15 | Actual v14 resource loading passed, but its 231,312,495 bytes exceed device storage. A complete sparse-tile diagnostic measured 80,846,058 bytes with all original sparse bytes preserved. The production v15 file, runtime equivalence and startup/read costs remain new gates. |
 | UI and presentation | Original assets and scene relationships for title/run setup, combat, events/ancients, regional rooms, rewards, map windows and travel | Actual resource renders and cross-backend tests validate the port. They do not substitute for original-application captures and visual acceptance. |
 
 ## Adaptations versus remaining fidelity work
@@ -33,8 +33,8 @@ still needs visual review; a small screen does not justify changing gameplay.
 Separate implementation differences remain outside that allowance:
 
 - Original scene transitions and effects must be compared across their full
-  lifecycle. The source19 act-entry camera/banner work has its own new tests
-  and checkpoint; it cannot inherit source17's completed results.
+  lifecycle. Source19's act-entry camera/banner passed its own frozen tests
+  and actual-resource checks; it does not establish full original-PC parity.
 - Parameterized rainbow text now follows the pinned engine's OkHSV function,
   but its shared presentation-clock origin does not recreate each original
   label's elapsed-time origin. See [rich-rainbow-0.17.md](rich-rainbow-0.17.md).
@@ -58,7 +58,9 @@ test counts or a weighted checklist.
 Distinguish discovery, inspected semantics, implementation, original-reference
 trace agreement and target testing. Source17's 52 native suites and 357 exact
 native/WASM frames / 25 saves are recorded at their immutable source above.
-They establish regression and backend agreement within the tested cases, not
+Source19 separately passed 31 affected suites and 480 exact frames / 30 saves
+across 23 scenarios; see [validation-source19-0.17.json](validation-source19-0.17.json).
+These establish regression and backend agreement within the tested cases, not
 complete original-game parity. The older fifteen-target results in
 `combat-ui-0.12.md` remain historical. No new Firebird, physical-handheld,
 browser DOM/persistent-storage, sustained frame-rate or peak-RAM certification

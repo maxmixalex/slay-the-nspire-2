@@ -20,7 +20,7 @@ from unicorn.arm_const import (UC_CPU_ARM_926, UC_ARM_REG_R0, UC_ARM_REG_R1,
     UC_ARM_REG_LR, UC_ARM_REG_PC, UC_ARM_REG_CPSR)
 
 
-def linked_helper(data):
+def linked_helper(data, symbol=b'__aeabi_uldivmod'):
     if data[:7] != b'\x7fELF\x01\x01\x01':
         raise ValueError('Expected a little-endian ELF32 image')
     fields = struct.unpack_from('<HHIIIIIHHHHHH', data, 16)
@@ -45,7 +45,7 @@ def linked_helper(data):
             raise ValueError('Unexpected ELF symbol width')
         for offset in range(section[4], section[4] + section[5], 16):
             name, address, size, info, _, owner = struct.unpack_from('<IIIBBH', data, offset)
-            if names[name:].split(b'\0', 1)[0] == b'__aeabi_uldivmod' and owner:
+            if names[name:].split(b'\0', 1)[0] == symbol and owner:
                 if info & 15 != 2 or not size or address & 3:
                     raise ValueError('Division helper is not a sized ARM function')
                 matches.append((address, size))

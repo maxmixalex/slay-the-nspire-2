@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "lz4_block.hpp"
+#include "lzma2_block.hpp"
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
@@ -11,6 +12,7 @@ constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 static uint8_t tiny_pixels[64][4096],small_pixels[16][32768],medium_pixels[8][131072],large_pixels[2][MaxImageBytes];
 static uint8_t encoded_pixels[MaxEncodedImage];
+#include "content_tiles.inc"
 // Keep a directory index in the existing key word. The immutable, resident
 // descriptor supplies offset, geometry, stored format and encoded length
 // without enlarging the cache or adding range reads during lookup.
@@ -28,6 +30,7 @@ static GlyphCache glyph_cache[64];static unsigned glyph_cursor=0;
 struct StringCache {const Content* owner{};uint32_t offset{};char bytes[MaxStringBytes]{};};
 static StringCache string_cache[8];static unsigned string_cursor=0;
 static void clear_caches(const Content* owner){
+    clear_tile_cache(owner);
     for(auto&v:image_cache)if(v.owner==owner)v={};
     for(auto&v:glyph_cache)if(v.owner==owner)v.owner=nullptr;
     for(auto&v:string_cache)if(v.owner==owner)v.owner=nullptr;
@@ -54,32 +57,46 @@ const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,
 }
 bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(p,n));}
 bool Content::open(ResourceSource source){
-    data_=metadata_=nullptr;version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
+    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;validating_=false;
+    version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>14||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version==14&&cards!=CardKinds))return false;
+    if(version<3||version>TileContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
-    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||(version==14&&ns!=ContentStrings))return false;
+    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||(version>=14&&ns!=ContentStrings))return false;
     const unsigned auxiliary=version>=14?U_Count:version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
-    const uint32_t start=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
-    if(start>n||start>DirectoryCapacity)return false;
+    const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
+    if(base>n||base>DirectoryCapacity)return false;
     uint32_t hash=0;if(!reader_.fnv1a(40,n-40,hash)||hash!=u32(h+36))return false;
+    uint32_t start=base;
+    if(version==TileContentVersion){
+        uint8_t header[64];
+        if(!reader_.read(base,header,sizeof header)||
+           !tile_header_bounds(header,base,n,ni,DirectoryCapacity,start))return false;
+    }
     if(source.direct){data_=source.direct;metadata_=source.direct;}
     else {if(!reader_.read(0,directory_,start))return false;metadata_=directory_;}
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
-    auto reject=[&](){data_=metadata_=nullptr;version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
+    directory_bytes_=start;tile_metadata_=version==TileContentVersion?p+base:nullptr;
+    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;validating_=false;
+        version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
+    if(tile_metadata_&&!valid_tile_directory(tile_metadata_,n))return reject();
+    const uint32_t payload_start=tile_metadata_?u32(tile_metadata_+32)+16*u32(tile_metadata_+28):start;
+    validating_=tile_metadata_!=nullptr;
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),height=u16(r+6),fmt=u32(r+8),len=u32(r+12);
-        if(!w||w>320||!height||height>240||fmt>5||(fmt==5&&version<5)||off<start||off%2||off>n||len>n-off||len>MaxEncodedImage)return reject();
+        if(!w||w>320||!height||height>240||fmt>6||(fmt==5&&version<5)||
+           (fmt==6&&(!tile_metadata_||len!=16))||off<(fmt==6?start:payload_start)||
+           off%2||off>n||len>n-off||len>MaxEncodedImage)return reject();
         if(!image((int)i).pixels)return reject();
     }
     uint32_t last=0;
     for(unsigned i=0;i<ng;i++){
         const uint8_t*r=p+40+ni*16+i*16;uint32_t cp=u32(r),off=u32(r+4),size=u16(r+8),w=r[10],height=r[11],key=(size<<24)|cp,encoded=u16(r+14);
-        if(cp>0x10FFFF||!w||w>40||!height||height>40||size>32||u16(r+12)>40||off<start||off>n||(encoded?encoded:w*height)>n-off||(i&&key<=last)||(version<5&&encoded))return reject();
+        if(cp>0x10FFFF||!w||w>40||!height||height>40||size>32||u16(r+12)>40||off<payload_start||off>n||(encoded?encoded:w*height)>n-off||(i&&key<=last)||(version<5&&encoded))return reject();
         if(encoded){
             if(encoded%2||encoded>2*w*height)return reject();
             const uint8_t*bytes=payload(off,encoded,encoded_pixels,sizeof encoded_pixels);if(!bytes)return reject();
@@ -89,7 +106,7 @@ bool Content::open(ResourceSource source){
     }
     for(unsigned i=0;i<ns;i++){
         const uint8_t*r=p+40+ni*16+ng*16+i*8;uint32_t off=u32(r),len=u32(r+4);uint8_t zero=1;
-        if(off<start||off>=n||len>=MaxStringBytes||len>n-off-1||!reader_.u8(off+len,zero)||zero)return reject();
+        if(off<payload_start||off>=n||len>=MaxStringBytes||len>n-off-1||!reader_.u8(off+len,zero)||zero)return reject();
     }
     for(unsigned i=0;i<nc;i++){
         const uint8_t*r=p+40+ni*16+ng*16+ns*8+i*16;uint32_t first=u32(r),count=u16(r+4),ms=u16(r+6);
@@ -107,7 +124,7 @@ bool Content::open(ResourceSource source){
         for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni)return reject();
         if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return reject();
     }
-    cards_=version>=4?cards:14;return true;
+    cards_=version>=4?cards:14;validating_=false;return true;
 }
 Picture Content::image(int id)const{
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
@@ -121,15 +138,27 @@ Picture Content::image(int id)const{
         if(u32(key)==off&&u32(key+4)==shape&&u32(key+8)==stored_format&&u32(key+12)==length){p=image_buffer(i);fmt=image_cache[i].format;break;}
     }
     if(!p){
-        if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5)){io_good_=false;return empty;}fmt=header[0];size=u32(header+1);}
-        if(fmt>4||!size||size>MaxImageBytes){io_good_=false;return empty;}
-        const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return empty;
-        if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}}
-        else {
-            const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t*output=image_buffer(slot);
-            if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size)){io_good_=false;return empty;}}
-            else for(unsigned i=0;i<size;i++)output[i]=source[i];
-            p=output;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}cache={this,(uint32_t)id,fmt};
+        if(fmt==6){
+            TileFrame frame;
+            if(!tile_metadata_||length!=16||!frame.open(this,reader_,tile_metadata_,
+                    uint32_t(tile_metadata_-metadata_),off,w,h)){io_good_=false;return empty;}
+            size=frame.output_size;fmt=4;
+            const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t* output=image_buffer(slot);
+            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,validating_,output)){
+                io_good_=false;return empty;
+            }
+            p=output;cache={this,(uint32_t)id,fmt};
+        }else{
+            if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5)){io_good_=false;return empty;}fmt=header[0];size=u32(header+1);}
+            if(fmt>4||!size||size>MaxImageBytes){io_good_=false;return empty;}
+            const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return empty;
+            if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}}
+            else {
+                const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t*output=image_buffer(slot);
+                if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size)){io_good_=false;return empty;}}
+                else for(unsigned i=0;i<size;i++)output[i]=source[i];
+                p=output;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}cache={this,(uint32_t)id,fmt};
+            }
         }
     }
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
