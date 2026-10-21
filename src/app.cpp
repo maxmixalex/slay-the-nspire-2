@@ -94,7 +94,7 @@ static void hud(Canvas&c){
     if(slots>3){c.rect(196,13,19,9,Panel);c.text("+",196,11,8,Gold);c.num(slots-3,202,11,8,Gold);}
     if(s.practice)c.text("图鉴",219,3,10,Gold);
     else c.ui(U_TopMap,224,2,18,18);
-    c.hit(216,0,33,22,HitKind::Command,(int)(s.practice?Key::Collection:Key::Map));
+    c.hit(216,0,33,22,HitKind::Command,(int)(s.practice?Key::Collection:Key::Map),!s.world.active||s.phase!=Phase::Map);
     c.ui(U_TopDeck,257,2,18,18);c.hit(249,0,34,22,HitKind::Command,(int)Key::Inspect);
     c.ui(U_TopSettings,291,2,18,18);c.hit(283,0,37,22,HitKind::Command,(int)Key::Back);
     if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp))owned_relic_strip(c);
@@ -342,7 +342,7 @@ void App::render(){
         if(map_window.is_open){cursor=map_room_cursor;scroll=map_room_scroll;}
         const bool combat_linger=int32_t(combat_linger_until-animation)>0;
         if(combat_linger)combat_screen(c);else switch(game.phase){
-        case Phase::Map:map_screen(c);break;
+        case Phase::Map:if(!game.world.active||!map_window.visible)map_screen(c);break;
         case Phase::Shop:shop_screen(c);break;
         case Phase::Event:event_screen(c);break;
         case Phase::Camp:camp_screen(c);break;

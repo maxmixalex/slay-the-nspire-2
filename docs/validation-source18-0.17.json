@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+  "source_tree": "6c99b391545ecd1da2004e92ca93cd1f211a5dec",
+  "remote_verification": {
+    "files": 471,
+    "changed_files": 12,
+    "verified_ref": true,
+    "all_tree_blob_hashes_match": true,
+    "all_changed_contents_read_back_and_equal": true,
+    "read_back_utc": "2026-10-21T07:35:03.733Z",
+    "archive_sha256": "10bb7f4ac1ff7a6073579f7d3c4eddb5ca368e620c541e624011bdcf8e7d1968"
+  },
+  "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+  "native_build_steps": 134,
+  "affected_suites": {
+    "passed": [
+      "localized_template_regression",
+      "world_text_regression",
+      "events_ui_regression",
+      "world_ui_regression",
+      "presentation_blend_regression",
+      "world_event_ui_regression"
+    ],
+    "checks_by_suite": {
+      "localized_template_regression": 1012,
+      "world_text_regression": 5592,
+      "events_ui_regression": 373,
+      "world_ui_regression": 3087,
+      "presentation_blend_regression": 2921053,
+      "world_event_ui_regression": 4921
+    },
+    "wall_seconds": 33.22,
+    "full_52_suite_rerun": false,
+    "full_baseline": "26a9097521a971b69a4b58494985c6062a24017e"
+  },
+  "build_artifacts": [
+    {
+      "kind": "ARM launcher",
+      "filename": "nSpire2.tns",
+      "bytes": 863848,
+      "sha256": "3f13de09a4b16113dd3f82f6906cdf51ec69f31e2dfcc5c28a7413d7d09a2fe3"
+    },
+    {
+      "kind": "WASM runtime",
+      "filename": "nSpire2.wasm",
+      "bytes": 4840209,
+      "sha256": "b45c6fb1663deb41ab83a492c6cf30bbaa703cde638eec0e83d683957baeeca1"
+    }
+  ],
+  "arm_allocation_bytes": 10456808,
+  "arm_relocations": 28566,
+  "linked_arm_division_vectors": 5249,
+  "actual_world_text_checks": 1759,
+  "backend_regression": {
+    "wasm_checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+    "native_capture_checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+    "scenarios": 18,
+    "exact_rgb565_frames": 357,
+    "exact_saves": 25,
+    "scope": "New production WASM remains byte-exact against the already verified source17 native capture set; those older 18 cases do not include Colossal Flower. New native/WASM Colossal and act-entry scenarios are source19 work."
+  },
+  "colossal_actual_captures": {
+    "checks": 231051,
+    "wrapper_sha256": "258c7d99aebd589f0c2c1914c206d36529718f1e741e1dfd909e147ffaba5eda",
+    "times_ms": [
+      0,
+      1000,
+      10000
+    ],
+    "images": [
+      {
+        "filename": "colossal-00000.ppm",
+        "bytes": 230415,
+        "sha256": "7b154aec45f47139eebee4affa2ea14afc7d26d59ac91b1aacd41fa655f05f51"
+      },
+      {
+        "filename": "colossal-01000.ppm",
+        "bytes": 230415,
+        "sha256": "aca242db4df43da48e078d063b015e6c56ca70882bd9e514d0186cf377fc52c2"
+      },
+      {
+        "filename": "colossal-10000.ppm",
+        "bytes": 230415,
+        "sha256": "7b154aec45f47139eebee4affa2ea14afc7d26d59ac91b1aacd41fa655f05f51"
+      }
+    ],
+    "scope": "Private actual resource rendering; original PC application not captured. Sine/jitter animation frame is fixed to isolate rainbow elapsed time."
+  },
+  "private_pack": {
+    "bytes": 231312495,
+    "sha256": "d9adddc61c4f4f61b2ce50ee90960b112d752a694595ffa5f0feb2a6d9b204fb",
+    "format": "NSP2/14",
+    "physical_storage_fit": false
+  },
+  "runs": [
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:35:58.135154+00:00",
+      "ended_at": "2026-10-21T07:37:22.765512+00:00",
+      "returncode": 0,
+      "log_sha256": "2302cfd873c2dd8bce2dc5f24ea9d32542941d9ebc63f880ddf78834f7fbf4e4",
+      "source_changed": false,
+      "journal": "source18-arm-7dd344b55132.json",
+      "journal_sha256": "1ed5a9c2388b918a98c3dbc30db3d17d7fa7fa14daa18ea1a4a8cb3005413e3d",
+      "seconds": 84.630358
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:41:50.890742+00:00",
+      "ended_at": "2026-10-21T07:42:07.841923+00:00",
+      "returncode": 0,
+      "log_sha256": "e016d2fd03c29b68e40880096fffb44c1ba09863d4b48c9140377b4648bc3c94",
+      "source_changed": false,
+      "journal": "source18-colossal-capture-4e708b5bb9e5.json",
+      "journal_sha256": "7302c4ed98bb8cbe8ff203a9ff9453eff4d4db23e9ff338919d7c7532f48178c",
+      "seconds": 16.951181
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:41:28.693044+00:00",
+      "ended_at": "2026-10-21T07:41:40.478581+00:00",
+      "returncode": 0,
+      "log_sha256": "4bb7a0be45a685c73b9efd8a81076b27e18c016b10505f492bfc830b9d0ecd93",
+      "source_changed": false,
+      "journal": "source18-colossal-capture-build-a9923ded8d4b.json",
+      "journal_sha256": "534b094972a053646eb8e564223a011d610f9b32e10d29650f29aa7717e81c26",
+      "seconds": 11.785537
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:40:07.468559+00:00",
+      "ended_at": "2026-10-21T07:40:09.209797+00:00",
+      "returncode": 0,
+      "log_sha256": "e74852fe196d005e637f95ceb06d3e8e1c561f944b46b31501df593c7fd4be21",
+      "source_changed": false,
+      "journal": "source18-linked-arm-division-d7cab31718c6.json",
+      "journal_sha256": "a436fc23c0c05a20c427d4463002a7c3da5e2fb7c53ade90243a7e6ef1422681",
+      "seconds": 1.741238
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:36:05.163586+00:00",
+      "ended_at": "2026-10-21T07:41:14.751477+00:00",
+      "returncode": 0,
+      "log_sha256": "a1310c3343c1c9ec4f102f57baf4cc90f4cc8cd9ee78d51fa12e485f41859f4e",
+      "source_changed": false,
+      "journal": "source18-native-all-build-6640039956b0.json",
+      "journal_sha256": "99b28774f662cb72a833ace16ea7d9b009fd3556be0d38a422e29bce02d1c24b",
+      "seconds": 309.587891
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:35:58.408928+00:00",
+      "ended_at": "2026-10-21T07:36:02.283553+00:00",
+      "returncode": 0,
+      "log_sha256": "1547793dc29807db1054898a930417537d6446206b7e822dc5593268df4b324a",
+      "source_changed": false,
+      "journal": "source18-native-configure-851320ec4530.json",
+      "journal_sha256": "3a9173d15cf66333f8e1bce18c91867f88b99392da52fa2b5347a216ede7c339",
+      "seconds": 3.874625
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:41:28.162068+00:00",
+      "ended_at": "2026-10-21T07:42:01.496358+00:00",
+      "returncode": 0,
+      "log_sha256": "054a3f45ef63faa56e5fb77a8f9f386f4841e146da62239f38c468e6c0dc73b1",
+      "source_changed": false,
+      "journal": "source18-text-ui-focused-275dc8272b53.json",
+      "journal_sha256": "32bb9a8403e564052fccdbb51b668af386b8a81d0b53abdb6d115b63d0ad5cd0",
+      "seconds": 33.33429
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:35:58.366080+00:00",
+      "ended_at": "2026-10-21T07:37:19.025422+00:00",
+      "returncode": 0,
+      "log_sha256": "fe01ba8f7c954f2d640aa572ee0bd1ce60da5e1340d6a3765c6c67b844071053",
+      "source_changed": false,
+      "journal": "source18-wasm-854da3d270ff.json",
+      "journal_sha256": "56e34526b39f1fa9eb9d11c4fcdebd87ab662577d89ef225dad1b6ee69fe7b5d",
+      "seconds": 80.659342
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:40:07.529066+00:00",
+      "ended_at": "2026-10-21T07:42:55.030991+00:00",
+      "returncode": 0,
+      "log_sha256": "3d1de9f5925898625abb874b8ca7afe43c66273512ba2319ce14ac684f8ffe18",
+      "source_changed": false,
+      "journal": "source18-world-18-wasm-correct-node-01d5577b562e.json",
+      "journal_sha256": "397824a5041e996dff66a81167a90b0c9f207ccf2addb87e774c3c06ff630b0b",
+      "seconds": 167.501925
+    },
+    {
+      "status": "launch_error",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:39:56.733201+00:00",
+      "ended_at": "2026-10-21T07:39:56.742423+00:00",
+      "returncode": 127,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_changed": false,
+      "journal": "source18-world-18-wasm-d4f669f5d776.json",
+      "journal_sha256": "0feed011016e88826e85d1bea5361bff8a5db0cae770dd648855aaf53b3bf0fb",
+      "seconds": 0.009222,
+      "reason": "The explicit cross-build PATH lacked Node; no WASM comparison executed. A separate corrected-environment journal passed."
+    },
+    {
+      "status": "passed",
+      "checkpoint": "5147ca97b377f662f363c61124e5022fd0277143",
+      "source_sha256": "39711020aa45d8439d84912feae79e5e9cfc7355d81aaa4e823e46d36534c9d1",
+      "started_at": "2026-10-21T07:41:28.137152+00:00",
+      "ended_at": "2026-10-21T07:41:58.984669+00:00",
+      "returncode": 0,
+      "log_sha256": "ce047e5c17c65a9406cca9e07607136156e490a9e166b697c3f9fdd38d0352e6",
+      "source_changed": false,
+      "journal": "source18-world-text-actual-1d1b1e3f9742.json",
+      "journal_sha256": "d06892cf9add2d253a76d69a80b8daefc8031787a5fa363246c9f8374690bc83",
+      "seconds": 30.847517
+    }
+  ],
+  "limits": [
+    "No complete 52-suite rerun is claimed for source18.",
+    "No original-application screenshot comparison or 95% visual acceptance is claimed.",
+    "Rainbow ItemFX label-local clock origin remains unresolved.",
+    "ARM compilation and linked helper validation are not calculator execution/performance.",
+    "The retained WASM launch error is not retroactively passed."
+  ]
+}

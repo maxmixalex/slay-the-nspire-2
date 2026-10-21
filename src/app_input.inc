@@ -2,12 +2,13 @@
 static void invalidate_hand_tiles();
 #include "frontend_input.inc"
 #include "world_map_travel.inc"
+#include "world_map_act_intro.inc"
 #include "world_map_window.inc"
-bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();reset_map_window();callbacks=cb;if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
-bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();reset_map_window();callbacks=cb;if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
+bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();callbacks=cb;if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
+bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();callbacks=cb;if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies|| (actor&&game.enemy_world.active))return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(bool keep_map_visuals){reset_map_window();if(!keep_map_visuals){map_travel={};map_visuals.reset();}else if(map_travel.pending)cancel_map_travel();map_visuals.bind(game,map_clock_ms);reset_treasure_presentation();reset_map_reticles();for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(bool keep_map_visuals){reset_map_window();if(!keep_map_visuals){map_travel={};map_visuals.reset();reset_map_act_intro();}else if(map_travel.pending)cancel_map_travel();map_visuals.bind(game,map_clock_ms);reset_treasure_presentation();reset_map_reticles();for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=game.expansion.osty_hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -101,11 +102,12 @@ void App::input(Key k){
     if(k==Key::Inspect){panel=panel==1?0:1;scroll=inspect_cursor=0;return;}
     if(k==Key::Map){
         if(game.practice){message("组合练习没有远征路线");return;}
+        if(game.world.active&&game.phase==Phase::Map)return; // MapRoom disables TopBar.Map.
         if(game.world.active&&game.phase!=Phase::Map){
             // The original top bar toggles Visible, which remains true during
             // the close tail; repeated clicks cannot restart or reopen it.
-            if(panel&&panel!=3){panel=0;scroll=0;if(map_window.is_open)panel=3;else if(!map_window.visible)open_map_window();}
-            else if(map_window.visible)close_map_window();else open_map_window();
+            if(panel&&panel!=3){panel=0;scroll=0;if(map_window.is_open)panel=3;else if(!map_window.visible)open_map_window(true);}
+            else if(map_window.visible)close_map_window();else open_map_window(true);
         }else{panel=panel==3?0:3;map_scroll=0;}
         return;
     }
@@ -188,5 +190,8 @@ void App::input(Key k){
         for(int i=0;i<=game.enemy_count;i++){int hp=i?game.enemies[i-1].hp:game.hp;int hit=hp_before[i]-hp;if(hit>0){last_hit[i]=hit;hit_start[i]=(int)animation+6;if(i)animate(i,AnimEnemyHurt,6);}}
         if(game.phase!=before){shop_open=false;event_reader=false;reward_cards=false;cursor=0;scroll=map_scroll=0;if(game.phase==Phase::Map){for(int i=0;i<(game.world.active?reference::Columns:3);i++)if(game.world.active?([&](){uint8_t ids[reference::Columns];unsigned n=world_available_points(game,ids,reference::Columns);for(unsigned j=0;j<n;j++)if(game.world.maps[game.world.act_index].points[ids[j]].col==i)return true;return false;})():reachable(game,game.next_row*3+i)){cursor=i;break;}}}
         cursor=mn(cursor,mx(0,choice_count(*this)-1));if(target>=game.enemy_count||game.enemies[target].hp==0){target=0;for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+        // Finish clamping the retained event cursor before Open chooses the
+        // map's reachable column. Repeated Proceed has no new 1->2 edge.
+        if(before==Phase::Event&&game.world.active&&game.world.room_open==2&&world_can_travel(game))proceed_map_window();
     }
 }

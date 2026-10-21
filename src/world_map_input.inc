@@ -71,8 +71,11 @@ bool App::map_input(Key key){
         if(key==Key::Up||key==Key::Left){map_legend_item=uint8_t((map_legend_item+5)%6);return true;}
         if(key==Key::Down||key==Key::Right){map_legend_item=uint8_t((map_legend_item+1)%6);return true;}
     }else{
-        if(key==Key::Up||key==Key::Down){map_scroll=mx(-reference::MaxRows,mn(reference::MaxRows,map_scroll+(key==Key::Up?1:-1)));return true;}
+        if(key==Key::Up||key==Key::Down){scroll_map(key==Key::Up?1:-1);return true;}
         if(key==Key::Left||key==Key::Right){
+            // These source controller actions change the target even while
+            // CanScroll is false. They never cancel the act camera tween.
+            map_scroll=map_act_scroll=0;map_act_intro.target_q12=map_camera_target_q12();
             if(map_routes_active()){uint8_t ids[reference::Columns];const unsigned count=world_available_points(game,ids,reference::Columns);const auto*m=world_current_map(game);
                 if(m&&count){int found=-1;for(unsigned i=0;i<count;++i)if(m->points[ids[i]].col==cursor)found=int(i);
                     const unsigned selected=found<0?0:unsigned((found+int(count)+(key==Key::Left?-1:1))%int(count));cursor=m->points[ids[selected]].col;}
@@ -80,7 +83,7 @@ bool App::map_input(Key key){
         }
     }
     if(key==Key::Confirm&&map_routes_active()){
-        if(map_scroll){map_scroll=0;message("已返回可选楼层，再次确认进入");}
+        if(map_scroll){map_scroll=map_act_scroll=0;map_act_intro.target_q12=map_camera_target_q12();message("已返回可选楼层，再次确认进入");}
         else if(!begin_map_column(cursor))message("这条路线不相连，请选择亮起的节点");
         return true;
     }

@@ -1,10 +1,24 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. **0.16 completes all five single-player character card pools** on `work/0.16-five-characters`. The verified runtime is [`8c6977d3`](https://github.com/zyf722/slay-the-nspire-2/commit/8c6977d3cc1dc9f17926a480127bc1067abd0286), with **31/31 native suites, 30/30 Python tests, actual-resource UI and ARM/WASM/X11 builds passing**. Later work-branch commits update documentation only. Exact scope, artifact hashes and journal receipts are in [validation-0.16.json](docs/validation-0.16.json).
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Active development is **0.17** on [`work/0.17-world-parity`](https://github.com/zyf722/slay-the-nspire-2/tree/work/0.17-world-parity). The verified **0.16** calculator pair remains the last delivery baseline.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
-## Current content
+## Active 0.17 development
+
+The original three-act route now drives the playable world: Overgrowth or Underdocks, then Hive and Glory, with original regional room queues, encounters, events, ancients and saved map history. The five character/card/potion foundation is retained. There are **558 card models**, including the 61 appended event/curse dependencies, **64 potions**, a **297-model world relic registry** and **109 enemy IDs** including compatibility/display entries. Those are model counts, not a claim that every interaction has original-game differential coverage.
+
+The source17 checkpoint [`26a90975`](https://github.com/zyf722/slay-the-nspire-2/commit/26a9097521a971b69a4b58494985c6062a24017e) passed **all 52 registered native suites** from one frozen source. This includes all **860 character/Giant Rock acquisition variants** and **174 encounter/ascension variants** through the actual turn driver. ARM and WASM builds passed; the actual resource backend comparison matched **357 frames and 25 saves across 18 scenarios**. The exact evidence is in [validation-source17-0.17.json](docs/validation-source17-0.17.json). Later stages and their separate gates are recorded in [WORK_STATE.md](docs/WORK_STATE.md).
+
+Original scene work includes the retained room below the map window, map travel and fade layers, regional rest/treasure scenes, native enemy animation states, event/ancient text and option styling. The requested **95%+ original UI fidelity has not been established**. See the [fidelity contract](docs/parity.md) for the distinction between screen adaptations, remaining implementation gaps and original-application visual acceptance.
+
+**The full development resource pack is not yet an installable calculator release.** The validated NSP2/14 pack is **231,312,495 bytes**, which exceeds the target's documented storage. Bounded runtime memory does not solve that on-disk limit. Pixel-preserving compression work is ongoing; do not pair this development launcher with the smaller NSP2/13 pack or replace the verified 0.16 delivery with an oversized pair.
+
+Current source uses **NSP2/14** resources and **v15** saves, retaining historical v3–v14 readers. The browser uses a separate v15 key. Build the current native/ARM sources with the logged build commands below; the current world resource conversion and its private-input requirements are described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md). Generated original-derived packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+
+## Verified 0.16 baseline — historical content
+
+**0.16 completed all five single-player character card pools** on `work/0.16-five-characters`. Its verified runtime is [`8c6977d3`](https://github.com/zyf722/slay-the-nspire-2/commit/8c6977d3cc1dc9f17926a480127bc1067abd0286), with **31/31 native suites, 30/30 Python tests, actual-resource UI and ARM/WASM/X11 builds passing**. The subsequent commits on that older branch updated documentation only. Exact scope, artifact hashes and journal receipts are in [validation-0.16.json](docs/validation-0.16.json).
 
 497 card models: **85 single-player Ironclad**, **86 each for Silent, Defect, Regent and Necrobinder**, **53 single-player colorless** and 15 generated/status models. There are **64 active potion models**, 33 relics and five adapted events. The five character pools include executable base and upgraded rules and numerical regression coverage. Defect has five orb types and Focus; Regent has independent star payments and Forge; Necrobinder has Osty, Soul and Doom. Ancient-rarity cards are available in the compendium/practice pool and excluded from ordinary rewards and generation. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
 
@@ -14,7 +28,7 @@ Ordinary potion pools follow all five current characters and the pinned rarity w
 
 Read [current work state](docs/WORK_STATE.md) before resuming development and the [Ironclad](docs/ironclad-completion-0.15.md), [Silent](docs/silent-completion-0.15.md), [Defect](docs/defect-completion-0.16.md), [Regent](docs/regent-completion-0.16.md), [Necrobinder](docs/necro-completion-0.16.md), [colorless](docs/colorless-completion-0.14.md) and [potion](docs/potions-completion-0.14.md) audits for implementation scope and original-rule evidence. Registry counts alone are not a passing test or a claim that the entire original game is complete.
 
-## Build
+## Source builds and historical 0.16 conversion
 
 Remote CI is disabled by request. Its definition stays in `.github/disabled-workflows/ci.yml`.
 
@@ -41,7 +55,7 @@ New saves use **v14** and retain readers for project v3–v13. The appended v14 
 
 The native suite includes all character, colorless, potion, historical migration and UI regressions. `expansion_ui_regression`, `character_ui_regression` and `five_character_ui_regression` optionally accept a real NSP2/13 file and an existing private screenshot directory. They cover all 860 character/Giant Rock variants, retained colorless/potion flows, generated/status cards and five-character mechanics. The optional native/WASM oracle adds five controlled combat sequences to the four retained room sequences.
 
-## Persistence and validation
+## Historical 0.16 persistence and validation
 
 At the verified **0.16** runtime source, **31/31 C++ suites and 30/30 Python tests passed**, with ASan/UBSan on native regressions. The native suites report **929,474 checks/assertions**. The new completion suites pass Defect **16,190 checks / 172 variants**, Regent **9,892 / 181**, and Necrobinder **19,494 / 174**; the latter variant counts include their required generated cards where stated in the audits. Checks include repeated assertions and are not counts of unique scenarios. Earlier [0.15](docs/validation-0.15.json) and [0.14](docs/validation-0.14.json) reports remain historical.
 

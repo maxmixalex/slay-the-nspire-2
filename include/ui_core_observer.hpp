@@ -24,6 +24,7 @@ struct UiCoreObserver {
   if(window_generation==app.map_window_generation&&room_open==1&&app.game.world.room_open==2&&room_seed==app.game.world.run_seed&&
      room_act==app.game.world.act_index&&room_point==app.game.world.current_point)
    app.open_map_window();
+  app.sync_map_window();
  }
  UiCoreObserver(const UiCoreObserver&)=delete;
  UiCoreObserver& operator=(const UiCoreObserver&)=delete;

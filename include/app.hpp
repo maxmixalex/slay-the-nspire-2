@@ -12,6 +12,7 @@
 #include "world_map_presentation.hpp"
 #include "world_map_transition.hpp"
 #include "world_map_window.hpp"
+#include "world_map_act_intro.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -182,20 +183,39 @@ struct App {
     MapPresentationState map_visuals{};
     MapTravel map_travel{};
     MapWindowState map_window{};
+    MapActIntroState map_act_intro{};
+    uint64_t map_act_seed=0;
+    uint32_t map_act_clock_ms=0;
+    uint8_t map_act_index=255,map_act_variant=255;
+    bool map_act_room_entered=false,map_act_restore_pending=false,map_dragging=false;
+    int map_drag_y=0,map_act_scroll=0;
     uint64_t map_window_seed=0;
     uint8_t map_window_act=255;
     uint8_t map_window_point=reference::NoPoint;
     uint32_t map_window_step_ms=0;
     uint32_t map_window_generation=0;
     int32_t map_window_y_q12=0;
+    int32_t map_window_camera_base_q12=0;
     int map_room_cursor=0,map_room_scroll=0;
     bool map_window_y_tween_finished=false;
     void reset_map_window();
-    void open_map_window();
+    void open_map_window(bool from_top_bar=false);
     void close_map_window(bool animate=true);
     void sync_map_window();
     bool map_routes_active()const;
     void proceed_map_window();
+    void reset_map_act_intro(bool restored=false);
+    void sync_map_act_intro();
+    bool map_intro_at_entry()const;
+    bool map_can_scroll()const;
+    bool cancel_map_act_intro();
+    void scroll_map(int rows);
+    void snap_map_camera();
+    void drag_map(int pixels);
+    int32_t map_camera_reference_q12()const;
+    int32_t map_camera_target_q12()const;
+    WorldMapView map_view(const WorldMapLayout&)const;
+    bool map_node_on_screen(unsigned point)const;
     bool begin_map_travel(unsigned point);
     bool begin_map_column(int column);
     void update_map_travel();

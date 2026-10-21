@@ -17,6 +17,7 @@ bool App::begin_map_travel(unsigned point){
     // pointer may select another route after an immediately completed room
     // while Fast fade-in still blocks keyboard/controller hotkeys.
     if(map_travel.pending||map_transition_blocks_pointer()||!map_travel_scene(*this)||
+       (map_directional&&!pointer.dispatching&&!map_node_on_screen(point))||
        !world_reachable(game,point))return false;
     SaveCheckpoint checkpoint{};if(!checkpoint_of(game,checkpoint))return false;
     const auto*m=world_current_map(game);if(!m||point>=m->count)return false;

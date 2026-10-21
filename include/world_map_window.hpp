@@ -85,9 +85,9 @@ struct MapWindowState {
         start=now;is_open=visible=true;mode_=Opening;
         return true;
     }
-    bool close(uint32_t now,bool animate=true){
+    bool close(uint32_t now,bool animate=true,int32_t map_y_q12=0){
         if(!is_open)return false;
-        from_=sample(now);start=now;is_open=false;visible=animate;
+        from_=sample(now);from_.map_y_q12=map_y_q12;start=now;is_open=false;visible=animate;
         mode_=animate?Closing:Hidden;from_.visible=animate;
         return true;
     }

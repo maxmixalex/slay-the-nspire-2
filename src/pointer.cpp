@@ -21,7 +21,7 @@ uint32_t App::input_context()const{
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
-void App::pointer_cancel(){hand_focus=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
+void App::pointer_cancel(){hand_focus=false;map_dragging=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
@@ -52,6 +52,10 @@ void App::pointer_move(int x,int y){
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
+    if(pointer.held&&map_dragging){
+        const int dy=pointer.y-map_drag_y;map_drag_y=pointer.y;
+        if(dy){pointer.dragging=true;drag_map(dy);}return;
+    }
     const auto*h=hit_at(pointer.x,pointer.y);
     if(!pointer.held)hand_focus=hand_can_focus()&&h&&h->kind==HitKind::Hand;
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
@@ -82,6 +86,7 @@ void App::pointer_move(int x,int y){
 }
 void App::pointer_scroll(int rows){
     if(!rows||map_transition_blocks_pointer())return;
+    sync_map_window();
     map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
@@ -108,7 +113,7 @@ void App::pointer_scroll(int rows){
     }
     else if(panel==4)scroll=clamp(scroll+(rows>0?8:-8),0,int(potion_slot_count(game))-1);
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
-    else if(panel==3||game.phase==Phase::Map)map_scroll=clamp(map_scroll-rows,-reference::MaxRows,reference::MaxRows);
+    else if(panel==3||game.phase==Phase::Map)scroll_map(-rows);
     else if(panel==5)scroll=clamp(scroll+rows,0,ui_owned_relic_count(game)?int(ui_owned_relic_count(game))-1:0);
     else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
     else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)
@@ -125,11 +130,21 @@ void App::pointer_button(bool down){
     const auto*found=hit_at(pointer.x,pointer.y);HitRegion hit=found?*found:HitRegion{};
     if(down){
         if(pointer.held)return;
+        const bool map_background=game.world.active&&map_window.is_open&&
+            (panel==3||(!panel&&game.phase==Phase::Map))&&!map_legend&&!paused&&!help&&!library&&!settings_open&&!frontend_confirm&&
+            detail_card<0&&detail_item<0&&status_actor<0&&!event_reader&&
+            hit.kind==HitKind::None&&pointer.y>WorldMapTop&&pointer.y<WorldMapBottom&&pointer.x<297;
+        if(map_background){
+            if(!map_can_scroll())return;
+            if(cancel_map_act_intro())return;
+            map_dragging=true;map_drag_y=pointer.y;map_act_intro.target_q12=map_act_intro.y_q12;
+        }
         pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
         pointer.captured=hit;pointer.context=input_context();pointer.revision=game.revision;
         return;
     }
     if(!pointer.held)return;
+    if(map_dragging){pointer_cancel();return;}
     pointer.held=false;
     HitRegion captured=pointer.captured;pointer.captured={};
     if(pointer.context!=input_context()||pointer.revision!=game.revision){pointer_cancel();return;}

@@ -103,11 +103,15 @@ map/travel/room/reward fixtures are updated to the retained-room contract.
 The follow-up treasure cases check 999/1,000 and 2,499/2,500 real-millisecond
 boundaries in Normal and Fast, clocks wrapping through zero, stale pointer
 presses, read-only map routes before selection, and exact save bytes before
-and after a mid-delay load. These follow-up tests require their own preserved
-source and full execution; source16 results do not validate later source edits.
-Full native/ARM/WASM results must be recorded only after the new source has
-been pushed, read back, frozen, built and executed.
+and after a mid-delay load. These follow-up tests subsequently passed on frozen
+[source17](validation-source17-0.17.json), together with the complete 52-suite
+native set, ARM/WASM builds and actual-pack window execution (**83,208 checks**).
+Source16 results remain separate; they are not relabeled as validation of the
+later edits.
 
-This stage does not establish the requested 95% visual acceptance. The initial
-act's separate camera introduction/banner, original-PC image comparisons and
-physical-calculator execution/performance remain independent work.
+Source19 adds the [separate act camera and banner](world-map-act-intro-0.17.md),
+including its interaction with this closing tail and the fully hidden pause.
+That new source still requires its own pushed/read-back/frozen App, actual-pack
+and cross-target gates. Neither stage establishes the requested 95% visual
+acceptance. Original-PC image comparison and physical-calculator execution /
+performance remain independent unfinished evidence.

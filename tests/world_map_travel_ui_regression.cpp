@@ -77,7 +77,9 @@ static void finish_routing_fixture(){
     if(world_room_is_combat(app.game))app.game.phase=Phase::Reward;
     if(app.game.phase==Phase::Treasure)app.game.treasure_state=2;
     CHECK(world_finish_room(app.game));CHECK(validate(app.game));
-    CHECK(world_can_travel(app.game));app.reset_presentation();app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
+    CHECK(world_can_travel(app.game));app.reset_presentation();
+    // This isolated route fixture starts after act presentation has settled.
+    app.reset_map_act_intro(true);app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
 }
 static void new_map(reference::ActKind region){
     new_run(app.game,0x175c3,false,Character::Silent);
@@ -88,7 +90,7 @@ static void fresh(bool fast=false,uint32_t clock=1000){
     app.game=departure;app.title=app.paused=app.quit=app.help=app.library=app.character_select=false;
     app.settings_open=app.run_settings=app.run_seed_editing=false;app.frontend_confirm=app.frontend_choice=0;
     app.map_preview.open=false;app.fast_mode=fast;app.map_directional=false;
-    app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.reset_presentation();app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
+    app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.reset_presentation();app.reset_map_act_intro(true);app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
     app.pointer.visible=false;app.pointer.dispatching=false;app.notice="";app.notice_ticks=0;
     app.forget_run_checkpoint();app.has_save=false;app.saved_checkpoint={};
     disk_exists=false;read_ok=write_ok=true;reads=writes=0;
@@ -180,6 +182,7 @@ static void invalid_and_scrolled_input(){
     CHECK(!app.begin_map_column(-1)&&!app.begin_map_column(reference::Columns));same_state(before);
     app.cursor=world_current_map(app.game)->points[destination].col;app.map_scroll=2;
     app.input(Key::Confirm);CHECK(!app.map_travel.pending&&app.map_scroll==0);same_state(before);
+    app.advance(67); // Select changes the target; the source camera lerps back.
     app.input(Key::Confirm);CHECK(app.map_travel.pending);app.cancel_map_travel();assert_cancelled();same_state(before);
     // A different canonical revision between real press and release rejects
     // the stale click without inventing a pending destination.

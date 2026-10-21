@@ -280,6 +280,26 @@ static void last_primary_death_cascade(){
  kill(s,0);CHECK(s.phase==Phase::Combat&&s.enemies[eye].hp==eye_hp&&enemy_allow_target(s,eye));persist(s);
  kill(s,other);CHECK(s.phase==Phase::Reward&&s.enemies[eye].hp==0);persist(s);
 }
+static void death_cascade_suspended_draw(){
+ scenario="a minion's death draw suspends the cascade before the remaining minions die";
+ auto s=fight(EncounterId::OvicopterNormal);move(s,0,0);const int melancholy=add_card(s,NecroMelancholy);
+ CHECK(gain_world_relic(s,WorldRelicGremlinHorn));resolve_pending(s);gain_power(s,XPower::Stratagem,1);s.energy=0;
+ // The leader's Horn draw uses the final draw-pile card. The first minion's
+ // Horn must then shuffle and suspend for Stratagem with two deaths queued.
+ while(s.draw.count>1){int id=s.draw.ids[--s.draw.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}
+ const unsigned deaths=s.necro.creature_deaths;
+ damage_unpowered(s,0,9999);resolve_pending(s);
+ CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::Draw);
+ CHECK(s.necro.creature_deaths==deaths+2&&s.energy==2&&s.necro.cost_delta[melancholy]==-2);
+ unsigned pending_alive=0,pending_dead=0;
+ for(int t=0;t<s.enemy_count;++t)if(s.enemy_world.models[t].flags&EnemyDying){if(s.enemies[t].hp>0)++pending_alive;else ++pending_dead;}
+ CHECK(pending_alive==2&&pending_dead==1&&enemy_keeps_combat_alive(s));persist(s);
+ State continued=s;untouched=s;uint16_t invalid=MaxCards+2;
+ CHECK(!choose_extended(s,&invalid,1));CHECK(!std::memcmp(&s,&untouched,sizeof s));
+ choose_pending(s);choose_pending(continued);same(s,continued);
+ CHECK(s.phase==Phase::Reward&&s.necro.creature_deaths==deaths+4&&s.energy==4&&s.necro.cost_delta[melancholy]==-4);
+ for(int t=0;t<s.enemy_count;++t)CHECK(!s.enemies[t].hp&&!(s.enemy_world.models[t].flags&EnemyDying));persist(s);
+}
 static void stolen_assets_and_timeout(){
  State s{};
  for(unsigned ascension:{0u,8u}){
@@ -323,6 +343,70 @@ static void stolen_assets_and_timeout(){
  scenario="Battleworn Dummy ends after three enemy turns";s=fight(EncounterId::BattlewornDummyEventV3Encounter);
  quiet_turn(s);CHECK(!enemy_encounter_timed_out(s));quiet_turn(s);CHECK(!enemy_encounter_timed_out(s));quiet_turn(s);
  CHECK(s.phase==Phase::Reward&&enemy_encounter_timed_out(s)&&encounter_escaped_enemies(s)==1);persist(s);
+}
+static void escape_and_real_death_edges(){
+ for(unsigned ascension:{0u,9u}){
+  scenario="Hopper's complete five-move escape is not an AfterDeath";
+  auto s=fight(EncounterId::ThievingHopperWeak,ascension);const int melancholy=add_card(s,NecroMelancholy);
+  const unsigned deaths=s.necro.creature_deaths,deck=s.deck_count;
+  for(unsigned turn=0;turn<4;++turn)quiet_turn(s);
+  CHECK(s.phase==Phase::Combat&&enemy_intent(s,0).flags==EnemyIntentEscape);
+  CHECK(s.deck_count==deck-1&&s.enemy_world.models[0].captured_card);
+  State continued=s;quiet_turn(s);quiet_turn(continued);same(s,continued);
+  CHECK(s.phase==Phase::Reward&&encounter_escaped_enemies(s)==1);
+  CHECK(s.necro.creature_deaths==deaths&&s.necro.cost_delta[melancholy]==0);
+  CHECK(s.deck_count==deck-1&&!s.enemy_world.models[0].captured_card&&encounter_combat_reward_count(s)==0);
+  CHECK(encounter_gold_proportion_bits(s)==0);persist(s);
+
+  scenario="Dummy's real three-turn timeout is not an AfterDeath";
+  s=fight(EncounterId::BattlewornDummyEventV3Encounter,ascension);const int dummy_melancholy=add_card(s,NecroMelancholy);
+  const unsigned dummy_deaths=s.necro.creature_deaths;
+  quiet_turn(s);quiet_turn(s);continued=s;quiet_turn(s);quiet_turn(continued);same(s,continued);
+  CHECK(s.phase==Phase::Reward&&enemy_encounter_timed_out(s)&&encounter_escaped_enemies(s)==1);
+  CHECK(s.necro.creature_deaths==dummy_deaths&&s.necro.cost_delta[dummy_melancholy]==0);persist(s);
+
+  scenario="Fat Gremlin's saved flee preserves the living teammate and death listeners";
+  s=fight(EncounterId::GremlinMercNormal,ascension);const int fat_melancholy=add_card(s,NecroMelancholy);
+  CHECK(gain_world_relic(s,WorldRelicGremlinHorn));resolve_pending(s);s.gold=99;
+  move(s,0,0);kill(s,0);quiet_turn(s);
+  const int fat=alive(s,EnemyId::FatGremlin),sneaky=alive(s,EnemyId::SneakyGremlin);CHECK(fat>=0&&sneaky>=0);
+  CHECK(enemy_intent(s,fat).flags==EnemyIntentEscape);
+  const unsigned fat_deaths=s.necro.creature_deaths;const int old_delta=s.necro.cost_delta[fat_melancholy],old_energy=s.energy;
+  const unsigned old_identity=s.enemy_world.models[fat].combat_id,slot=s.enemy_world.models[fat].slot;
+  queue_extension(s,XOp::EnemyMove,fat,1);queue_extension(s,XOp::EnemyMoveFinish,fat,1);
+  persist(s);continued=s;resolve_pending(s);resolve_pending(continued);same(s,continued);
+  CHECK(s.phase==Phase::Combat&&enemy_allow_target(s,sneaky)&&!enemy_allow_target(s,fat));
+  CHECK(encounter_escaped_enemies(s)==1&&s.necro.creature_deaths==fat_deaths);
+  CHECK(s.necro.cost_delta[fat_melancholy]==old_delta&&s.energy==old_energy);
+  CHECK(s.gold==79&&encounter_returned_gold_count(s)==0&&encounter_gold_proportion_bits(s)==0);persist(s);
+  continued=s;effect(s,XOp::EnemyEscape,fat);same(s,continued);
+
+  // Exercise the generic bounded-slot reuse contract after the real flee.
+  // This extra spawn is a controlled fixture, not Gremlin Merc's original AI.
+  scenario="reusing an escaped slot does not suppress the new actor's real death";
+  effect(s,XOp::EnemySpawn,int(EnemyId::Nibbit),int(slot));
+  CHECK(alive(s,EnemyId::Nibbit)==fat&&s.enemy_world.models[fat].combat_id>old_identity);
+  CHECK(s.necro.creature_deaths==fat_deaths&&s.necro.cost_delta[fat_melancholy]==old_delta);persist(s);
+  damage_unpowered(s,fat,9999);persist(s);continued=s;resolve_pending(s);resolve_pending(continued);same(s,continued);
+  CHECK(s.phase==Phase::Combat&&s.necro.creature_deaths==fat_deaths+1&&s.energy==old_energy+1);
+  CHECK(s.necro.cost_delta[fat_melancholy]==old_delta-1&&encounter_escaped_enemies(s)==1);persist(s);
+  continued=s;effect(s,XOp::EnemyDie,fat);same(s,continued);
+ }
+
+ scenario="Escape cannot cancel an already pending real death or its stolen-gold reward";
+ auto s=fight(EncounterId::GremlinMercNormal);const int melancholy=add_card(s,NecroMelancholy);
+ CHECK(gain_world_relic(s,WorldRelicGremlinHorn));resolve_pending(s);s.gold=99;move(s,0,0);kill(s,0);
+ const int fat=alive(s,EnemyId::FatGremlin);CHECK(fat>=0);const unsigned deaths=s.necro.creature_deaths;const int delta=s.necro.cost_delta[melancholy],energy=s.energy;
+ damage_unpowered(s,fat,9999);CHECK(s.enemies[fat].hp==0&&(s.enemy_world.models[fat].flags&EnemyDying));
+ queue_extension(s,XOp::EnemyEscape,fat,0,true);persist(s);State continued=s;resolve_pending(s);resolve_pending(continued);same(s,continued);
+ CHECK(s.phase==Phase::Combat&&!encounter_escaped_enemies(s));
+ CHECK(s.necro.creature_deaths==deaths+1&&s.necro.cost_delta[melancholy]==delta-1&&s.energy==energy+1);
+ CHECK(encounter_returned_gold_count(s)==1&&encounter_returned_gold(s,0)==20);persist(s);
+
+ scenario="Escape cannot remove a dead Test Subject awaiting revival";
+ s=fight(EncounterId::TestSubjectBoss);kill(s,0);CHECK(s.phase==Phase::Combat&&!enemy_allow_target(s,0));
+ continued=s;effect(s,XOp::EnemyEscape,0);same(s,continued);
+ CHECK(!encounter_escaped_enemies(s)&&enemy_keeps_combat_alive(s));move(s,0,0);CHECK(s.enemies[0].hp==200);persist(s);
 }
 static void choices_statuses_and_eight_slots(){
  scenario="Knowledge choices suspend, reject invalid input atomically, and resume";auto s=fight(EncounterId::KnowledgeDemonBoss);
@@ -424,6 +508,8 @@ int main(){
  zero_weight_branch_and_gold_bits();
  death_power_cleanup();
  last_primary_death_cascade();
+ death_cascade_suspended_draw();
+ escape_and_real_death_edges();
  visual_predicates_and_unpowered_death_block();
  metadata_and_all_encounters();caps_and_waking();death_replacement_and_revival();stolen_assets_and_timeout();choices_statuses_and_eight_slots();
  std::printf("original enemy checks: %u; executed encounter/ascension variants: %u\n",checks,encounters);return 0;

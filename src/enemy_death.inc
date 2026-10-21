@@ -48,10 +48,14 @@ static void enemy_applier_died(State&s,int t){
  }
 }
 static void enemy_escape(State&s,int t){
- if(!enemy_slot_exists(s,t))return;auto&m=s.enemy_world.models[t];
+ if(!enemy_slot_alive(s,t))return;auto&m=s.enemy_world.models[t];
  enemy_release_captured_instance(s,t,false);
  if(m.kind==EnemyId::ThievingHopper)m.data[8]=0;
  m.flags|=EnemyRemoved|EnemyEscaped;m.flags&=(uint8_t)~(EnemyDown|EnemyDying);s.enemies[t].hp=0;
+ // Zero HP is the compact removed-slot sentinel, not an original AfterDeath.
+ // Consume this observation edge without firing Melancholy; slot creation
+ // resets the mask before a replacement actor can suffer a real death.
+ s.necro.enemy_dead_mask|=(uint8_t)(1u<<t);
  if(s.enemy_world.escaped_count<65534)++s.enemy_world.escaped_count;
  enemy_face_remaining(s);
 }

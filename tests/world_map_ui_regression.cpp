@@ -74,6 +74,9 @@ static void finish_routing_fixture(){
     if(world_room_is_combat(app.game))app.game.phase=Phase::Reward;
     if(app.game.phase==Phase::Treasure)app.game.treasure_state=2;
     CHECK(world_finish_room(app.game));CHECK(validate(app.game));app.reset_presentation();
+    // Routing/reticle fixtures represent a settled map. Actual first-entry
+    // camera and banner interaction has its own App-linked regression.
+    app.reset_map_act_intro(true);
     app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
 }
 static unsigned world_hits(){unsigned count=0;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::WorldNode)++count;return count;}
@@ -139,7 +142,7 @@ static void reticle_timing(){
     app.input(Key::Right);CHECK(app.map_directional);CHECK(load(app.game,before.bytes,before.size));app.reset_presentation();
     CHECK(app.map_directional&&app.map_reticle_act==255&&app.map_reticle_current==reference::NoPoint);
     for(const auto&r:app.map_reticles)CHECK(!r.mode);
-    app.open_map_window();app.map_window.settle();app.render();CHECK(app.map_reticle_seed==app.game.world.run_seed&&app.map_reticle_act==app.game.world.act_index);unchanged();
+    app.reset_map_act_intro(true);app.open_map_window();app.map_window.settle();app.render();CHECK(app.map_reticle_seed==app.game.world.run_seed&&app.map_reticle_act==app.game.world.act_index);unchanged();
     // A stale presentation identity can share all low 32 seed bits. Leave the
     // valid run untouched and make only the remembered App identity differ.
     const unsigned stale=(app.map_reticle_current+1)%reference::MaxPoints;
@@ -369,7 +372,8 @@ static void layout_and_input(){
     app.render();const auto*h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);const int x=h->x+h->w/2,y=h->y+h->h/2;
     app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.map_legend=true;app.pointer_button(false);CHECK(world_can_travel(app.game)&&!app.pointer.held);app.map_legend=false;
     for(int i=0;i<40;++i){app.input(Key::Up);app.render();}const auto top=world_map_view(app.game,a,app.map_scroll);CHECK(top.origin==top.maximum);CHECK(!world_hits());capture("map-boss-distant");
-    app.input(Key::Confirm);CHECK(world_can_travel(app.game)&&app.map_scroll==0);app.render();CHECK(world_hits()==n);unchanged();
+    app.input(Key::Confirm);CHECK(world_can_travel(app.game)&&app.map_scroll==0);
+    app.advance(67);app.render();CHECK(world_hits()==n);unchanged();
     // A real click keeps the route visible until the original travel fade
     // completes, then enters exactly that node. No State changes on press.
     h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);app.pointer_move(h->x+h->w/2,h->y+h->h/2);app.pointer_button(true);app.pointer_button(false);

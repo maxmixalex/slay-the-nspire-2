@@ -17,7 +17,7 @@ static SaveData map_before,map_expected,map_actual;
 static std::string directory,name;
 static unsigned saved,frames;
 static FILE*manifest;
-enum class SceneKind { Neow,Map,MapPointer,MapFast,Combat,Kaiser,FakeMerchant,Crystal,Rest,TreasureKey,TreasurePointer,TreasureReload,TreasureDolly,TreasureEmpty };
+enum class SceneKind { Neow,Map,MapPointer,MapFast,Combat,Kaiser,FakeMerchant,Crystal,Colossal,IntroNormal,IntroInterrupted,IntroTopBar,IntroFast,Rest,TreasureKey,TreasurePointer,TreasureReload,TreasureDolly,TreasureEmpty };
 struct Scenario {
  const char*name;SceneKind kind;
  Character character=Character::Ironclad;
@@ -29,6 +29,9 @@ static const Scenario scenarios[]={
  {"world-map-pointer",SceneKind::MapPointer},{"world-map-fast",SceneKind::MapFast},
  {"world-native-combat",SceneKind::Combat},{"world-kaiser",SceneKind::Kaiser},
  {"world-fake-merchant",SceneKind::FakeMerchant},{"world-crystal",SceneKind::Crystal},
+ {"world-colossal",SceneKind::Colossal},
+ {"world-intro-normal",SceneKind::IntroNormal},{"world-intro-interrupted",SceneKind::IntroInterrupted},
+ {"world-intro-top-bar",SceneKind::IntroTopBar},{"world-intro-fast",SceneKind::IntroFast},
  {"world-rest-ironclad",SceneKind::Rest},
  {"world-rest-silent",SceneKind::Rest,Character::Silent,reference::ActKind::Underdocks},
  {"world-rest-defect",SceneKind::Rest,Character::Defect,reference::ActKind::Overgrowth,1},
@@ -76,6 +79,7 @@ static void crystal_click_available(){
  click(HitKind::CrystalCell,cell);
 }
 static void scroll(int rows){std::fprintf(manifest,"%s{\"scroll\":%d}",frames?",":"",rows);app.pointer_scroll(rows);capture();}
+static bool intro_scene(SceneKind kind){return kind>=SceneKind::IntroNormal&&kind<=SceneKind::IntroFast;}
 static void route_room(WorldRoom room,unsigned act){
  // Only unrelated room outcomes are supplied. The tested room is entered
  // through the generated map and its ordinary controller, as in room tests.
@@ -110,13 +114,14 @@ static void world_fixture(const Scenario&scenario){
   }
   return;
  }
- if(kind==SceneKind::Neow)return;
+ if(kind==SceneKind::Neow||intro_scene(kind))return;
  // Explicit supplied Neow outcome isolates the map and following room UI.
  // The Neow input/capture sequence is independently retained as case zero.
  initial.original_events=OriginalEventState{};
- if(kind==SceneKind::FakeMerchant||kind==SceneKind::Crystal){
+ if(kind==SceneKind::FakeMerchant||kind==SceneKind::Crystal||kind==SceneKind::Colossal){
   initial.gold=500;
-  require(original_event_begin(initial,kind==SceneKind::FakeMerchant?OriginalEventId::FakeMerchant:OriginalEventId::CrystalSphere,17,0),"prepare native event");
+  const auto event=kind==SceneKind::FakeMerchant?OriginalEventId::FakeMerchant:kind==SceneKind::Crystal?OriginalEventId::CrystalSphere:OriginalEventId::ColossalFlower;
+  require(original_event_begin(initial,event,17,0),"prepare native event");
   return;
  }
  require(world_finish_room(initial),"close supplied ancient outcome");
@@ -130,6 +135,65 @@ static void same_map_state(const SaveData&expected){
  require(save(app.game,map_actual),"encode map state after presentation");
  require(map_actual.size==expected.size&&!std::memcmp(map_actual.bytes,expected.bytes,expected.size),
          "map presentation preserves the complete canonical controller result");
+}
+static void advance_for(unsigned remaining){while(remaining){const unsigned step=remaining>250?250:remaining;advance(step);remaining-=step;}}
+static void intro_steps(SceneKind kind){
+ // An empty fixture gives both production hosts a fresh title. Start the
+ // actual deterministic default run through its UI; loading Neow would
+ // intentionally restore settled presentation and skip this introduction.
+ require(app.title&&!app.has_save,"intro starts without a saved run");
+ if(kind==SceneKind::IntroFast){
+  click(HitKind::Menu,2);action(UiAction::SettingsFastMode);action(UiAction::SettingsBack);
+  require(app.fast_mode&&!app.settings_open,"fresh run uses real Fast settings");
+ }
+ click(HitKind::Menu,0);require(app.character_select,"new run opens character selection");action(UiAction::StartCharacter);
+ require(!app.title&&app.game.original_events.id==OriginalEventId::Neow&&!app.map_act_intro.played,"fresh Neow retains first-open eligibility");
+ if(kind==SceneKind::IntroTopBar){
+  require(save(app.game,map_before),"save unfinished Neow before top-bar inspection");key(Key::Map);
+  require(app.map_act_intro.played&&!app.map_act_intro.camera_running&&app.map_act_intro.banner_count==1,"top-bar first-open skips the sweep but shows its banner");
+  advance_for(1250);same_map_state(map_before);key(Key::Map);advance_for(350);
+  require(!app.map_window.visible,"top-bar map closes after its tail");same_map_state(map_before);
+ }
+ require(app.game.original_events.offers[0]==WorldRelicFishingRod,"default run selects the known nonmodal Neow offer");
+ click(HitKind::Choice,0);require(app.game.original_events.finished&&!world_relic_pending(app.game),"actual Neow acquisition finishes without fixture writes");
+ click(HitKind::Choice,0);require(app.game.world.room_open==2&&app.map_window.is_open,"real Neow Proceed opens the retained-room map");
+ require(save(app.game,map_before),"save canonical departure before act presentation");
+ if(kind==SceneKind::IntroNormal){
+  require(app.map_act_intro.camera_running&&app.map_act_intro.banner_count==1,"ordinary first Proceed starts camera and banner");
+  unsigned previous=0;
+  for(unsigned time:{125u,1000u,1749u,1750u,2500u,3999u,4000u,4750u}){
+   advance_for(time-previous);previous=time;same_map_state(map_before);
+   if(time==1749)require(!app.map_act_intro.interruptible,"normal sweep cannot interrupt early");
+   if(time==1750)require(app.map_act_intro.interruptible,"normal sweep opens authored interrupt window");
+   if(time==4000)require(!app.map_act_intro.camera_running&&!app.map_act_intro.y_q12,"camera reaches its original endpoint");
+  }
+  require(!app.map_act_intro.banner_count,"normal banner completes its independent 4750 ms lifetime");
+ }else if(kind==SceneKind::IntroInterrupted){
+  advance_for(1250);key(Key::Map);advance_for(350);
+  require(!app.map_window.visible&&app.map_act_intro.camera_running,"closing keeps an unfinished camera for reopening");
+  const unsigned elapsed=app.map_act_intro.camera_elapsed,banner=app.map_act_intro.banners[0].elapsed;
+  advance_for(750);require(app.map_act_intro.camera_elapsed==elapsed&&app.map_act_intro.banners[0].elapsed==banner,"fully hidden map pauses camera and banner");
+  key(Key::Map);require(app.map_act_intro.camera_elapsed==elapsed,"reopening does not consume hidden elapsed time");
+  require(elapsed<1750,"close-tail sample precedes first interrupt");advance_for(1750-elapsed);
+  key(Key::Up);require(!app.map_act_intro.camera_running&&app.map_act_intro.input_guard,"real scroll interrupts and starts the separate input guard");
+  advance_for(199);key(Key::Up);require(app.map_act_intro.input_guard&&!app.map_scroll,"guard prevents early scrolling");
+  advance(1);require(!app.map_act_intro.input_guard,"input guard releases at 200 ms");advance(67);
+  require(!app.map_act_intro.y_q12,"interrupted camera settles through its lerp");same_map_state(map_before);
+ }else{
+  require(app.map_act_intro.played&&!app.map_act_intro.camera_running,"Fast or prior top-bar open does not replay the sweep");
+  advance_for(kind==SceneKind::IntroFast?3250:4750);require(!app.map_act_intro.banner_count,"skipped sweep retains the independent banner lifetime");same_map_state(map_before);
+ }
+ key(Key::Save);key(Key::Load);same_map_state(map_before);
+ require(app.map_act_intro.played&&!app.map_act_intro.camera_running&&!app.map_act_intro.banner_count,"canonical load restores settled act presentation");
+}
+static void colossal_steps(){
+ require(app.game.original_events.id==OriginalEventId::ColossalFlower,"actual Colossal Flower page is active");
+ require(save(app.game,map_before),"snapshot original Colossal Flower state");
+ // Three rows expose the pinned parameterized rainbow word in the actual
+ // 320x240 layout. Replays use the ordinary scroll and elapsed-time exports.
+ scroll(3);for(unsigned i=0;i<4;++i)advance(250);same_map_state(map_before);
+ action(UiAction::ReadEvent);scroll(3);for(unsigned i=0;i<4;++i)advance(250);
+ action(UiAction::CloseEventReader);same_map_state(map_before);key(Key::Save);key(Key::Load);same_map_state(map_before);
 }
 static void map_steps(SceneKind kind){
  const bool fast=kind==SceneKind::MapFast;
@@ -252,8 +316,11 @@ int main(int argc,char**argv){
   // Each WASM scenario starts a fresh instance. Match its session-local
   // animation clock and cosmetic random stream with a fresh native App.
   name=scenario.name;saved=frames=0;app=App{};
-  world_fixture(scenario);require(save(initial,storage),"save controlled native room");require(app.init(pack.data(),pack.size(),{save_cb,load_cb}),"open actual world pack");write(directory+"/"+name+"-fixture.bin",storage.bytes,storage.size);
+  world_fixture(scenario);require(save(initial,storage),"save controlled native room");if(intro_scene(kind))storage.size=0;
+  require(app.init(pack.data(),pack.size(),{save_cb,load_cb}),"open actual world pack");write(directory+"/"+name+"-fixture.bin",storage.bytes,storage.size);
   std::fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",index?",":"",name.c_str());
+  if(intro_scene(kind))intro_steps(kind);
+  else{
   key(Key::Confirm);require(!app.title,"load native fixture from title");
   if(kind==SceneKind::Neow){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
   else if(kind==SceneKind::Map||kind==SceneKind::MapPointer||kind==SceneKind::MapFast){
@@ -278,8 +345,10 @@ int main(int argc,char**argv){
   }else if(kind==SceneKind::Crystal){
    click(HitKind::Choice,1);require(app.game.phase==Phase::OriginalEventChoice,"Crystal enters its board choice");
    crystal_click_available();action(UiAction::CrystalLarge);crystal_click_available();key(Key::Save);key(Key::Load);
-  }else if(kind==SceneKind::Rest)rest_steps();
+  }else if(kind==SceneKind::Colossal)colossal_steps();
+  else if(kind==SceneKind::Rest)rest_steps();
   else treasure_steps(kind);
+  }
   require(saved>0,"case exercises production save callback");std::fprintf(manifest,"],\"saves\":%u}",saved);total_frames+=frames;total_saves+=saved;
  }
  std::fputs("]}\n",manifest);require(!std::fclose(manifest),"close manifest");std::printf("Original-world backend fixtures: %u cases, %u frames, %u saves; no original-PC differential claim\n",count,total_frames,total_saves);

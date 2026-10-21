@@ -225,7 +225,7 @@ bool App::screen_input(Key key){
     if(library){
         int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds,columns=library_tab==0?4:6;
         if(key==Key::Back){library=false;return true;}
-        if(key==Key::Map&&game.world.active&&!title&&!paused){library=false;if(!map_window.visible)open_map_window();return true;}
+        if(key==Key::Map&&game.world.active&&!title&&!paused){library=false;if(!map_window.visible)open_map_window(true);return true;}
         if(key==Key::Quit){cancel_map_travel();quit=true;return true;}
         if(key==Key::Inspect){library_tab=(library_tab+1)%3;library_page=library_selected=0;return true;}
         if(key==Key::Up)library_selected-=columns;

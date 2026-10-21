@@ -11,7 +11,10 @@ constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 static uint8_t tiny_pixels[64][4096],small_pixels[16][32768],medium_pixels[8][131072],large_pixels[2][MaxImageBytes];
 static uint8_t encoded_pixels[MaxEncodedImage];
-struct ImageCache {const Content* owner{};uint32_t offset{};unsigned format{};};
+// Keep a directory index in the existing key word. The immutable, resident
+// descriptor supplies offset, geometry, stored format and encoded length
+// without enlarging the cache or adding range reads during lookup.
+struct ImageCache {const Content* owner{};uint32_t image{};unsigned format{};};
 static ImageCache image_cache[90];static unsigned image_cursor[4]{};
 static uint8_t* image_buffer(unsigned slot){return slot<64?tiny_pixels[slot]:slot<80?small_pixels[slot-64]:slot<88?medium_pixels[slot-80]:large_pixels[slot-88];}
 static unsigned image_slot(unsigned size){
@@ -20,7 +23,7 @@ static unsigned image_slot(unsigned size){
     if(size<=131072)return 80+image_cursor[2]++%8;
     return 88+image_cursor[3]++%2;
 }
-struct GlyphCache {const Content* owner{};uint32_t offset{};uint8_t bytes[MaxGlyphBytes]{};};
+struct GlyphCache {const Content* owner{};uint32_t glyph{};uint8_t bytes[MaxGlyphBytes]{};};
 static GlyphCache glyph_cache[64];static unsigned glyph_cursor=0;
 struct StringCache {const Content* owner{};uint32_t offset{};char bytes[MaxStringBytes]{};};
 static StringCache string_cache[8];static unsigned string_cursor=0;
@@ -110,19 +113,23 @@ Picture Content::image(int id)const{
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
     if(!metadata_||!io_good_||id<0||(unsigned)id>=images_)return empty;
     const uint8_t*r=metadata_+40+16*id;const uint32_t off=u32(r),length=u32(r+12);
-    uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=u32(r+8),size=length;
+    const uint32_t shape=u32(r+4),stored_format=u32(r+8);
+    uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=stored_format,size=length;
     const uint8_t*p=nullptr;
-    for(unsigned i=0;i<90;i++)if(image_cache[i].owner==this&&image_cache[i].offset==off){p=image_buffer(i);fmt=image_cache[i].format;break;}
+    for(unsigned i=0;i<90;i++)if(image_cache[i].owner==this){
+        const uint8_t*key=metadata_+40+16*image_cache[i].image;
+        if(u32(key)==off&&u32(key+4)==shape&&u32(key+8)==stored_format&&u32(key+12)==length){p=image_buffer(i);fmt=image_cache[i].format;break;}
+    }
     if(!p){
         if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5)){io_good_=false;return empty;}fmt=header[0];size=u32(header+1);}
         if(fmt>4||!size||size>MaxImageBytes){io_good_=false;return empty;}
         const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return empty;
-        if(u32(r+8)!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}}
+        if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}}
         else {
             const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t*output=image_buffer(slot);
-            if(u32(r+8)==5){if(!decode_lz4(source+5,length-5,output,size)){io_good_=false;return empty;}}
+            if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size)){io_good_=false;return empty;}}
             else for(unsigned i=0;i<size;i++)output[i]=source[i];
-            p=output;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}cache={this,off,fmt};
+            p=output;if(!valid_image(p,size,w,h,fmt)){io_good_=false;return empty;}cache={this,(uint32_t)id,fmt};
         }
     }
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
@@ -135,8 +142,14 @@ Glyph Content::glyph(uint32_t cp,int size)const{
     if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
         const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;
         if(data_)bytes=data_+off;
-        else {for(const auto&v:glyph_cache)if(v.owner==this&&v.offset==off){bytes=v.bytes;break;}
-            if(!bytes){auto&v=glyph_cache[glyph_cursor++%64];v.owner=nullptr;bytes=payload(off,len,v.bytes,sizeof v.bytes);if(bytes){v.owner=this;v.offset=off;}}}
+        else {for(const auto&v:glyph_cache)if(v.owner==this){
+                const uint8_t*cached=metadata_+40+images_*16+v.glyph*16;
+                const uint32_t count=u16(cached+14)?u16(cached+14):unsigned(cached[10])*cached[11];
+                // Raw/RLE bytes may be shared by different code points or
+                // layouts, but a shorter read cannot supply a longer view.
+                if(u32(cached+4)==off&&count==len){bytes=v.bytes;break;}
+            }
+            if(!bytes){auto&v=glyph_cache[glyph_cursor++%64];v.owner=nullptr;bytes=payload(off,len,v.bytes,sizeof v.bytes);if(bytes){v.owner=this;v.glyph=(uint32_t)lo;}}}
         if(!bytes)return {nullptr,0,0,0};return {bytes,r[10],r[11],u16(r+12),u16(r+14)};
     }}
     if(cp!='?')return glyph('?',size);return {nullptr,0,0,(uint16_t)(size/2)};

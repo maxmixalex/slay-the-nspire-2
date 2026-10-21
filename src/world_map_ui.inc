@@ -131,12 +131,11 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     auto&a=c.a;const auto&s=a.game;const auto*m=world_current_map(s);WorldMapLayout layout;
     if(!m||!world_map_layout(s,layout)){c.centered("地图尚未生成",0,105,320,12,Red);return;}
     a.map_visuals.update(s,a.map_clock_ms);
-    WorldMapView view=world_map_view(s,layout,a.map_scroll);a.map_scroll=view.scroll;
-    if(window)view.origin+=map_source_offset(window->map_y_q12);
+    WorldMapView view=a.map_view(layout);a.map_scroll=view.scroll;
     const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);
     // A HUD window uses the authored BG alpha over the retained live room;
     // the standalone Phase::Map path retains its existing paper fallback.
-    map_background(c,view,colors,window==nullptr);
+    map_background(c,view,colors,window==nullptr||s.phase==Phase::Map);
     map_paths(c,*m,layout,view,colors);
     uint8_t available[reference::Columns];const unsigned available_count=world_available_points(s,available,reference::Columns);
     if(!inspect&&!a.map_legend&&available_count){bool valid=false;for(unsigned i=0;i<available_count;++i)if(m->points[available[i]].col==a.cursor)valid=true;if(!valid)a.cursor=m->points[available[0]].col;}
@@ -177,8 +176,8 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     c.rect(0,22,320,22,colors.paper);const char*regions[]={"蔓生之地","沉没码头","虫巢","荣光之城"};
     char title[80]{};TextBuffer heading{title,sizeof title,0};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region<4?regions[region]:"");
     c.centered(title,4,25,258,12,colors.ink);c.text("图例 I",268,26,10,colors.ink);c.action(262,22,58,22,UiAction::ToggleMapLegend);
-    c.text("↑",304,47,12,colors.ink);c.hit(297,44,23,24,HitKind::Scroll,-1,!a.map_legend&&view.origin<view.maximum);
-    c.text("↓",304,182,12,colors.ink);c.hit(297,178,23,27,HitKind::Scroll,1,!a.map_legend&&view.origin>view.minimum);
+    c.text("↑",304,47,12,colors.ink);c.hit(297,44,23,24,HitKind::Scroll,-1,!a.map_legend&&a.map_can_scroll()&&view.origin<view.maximum);
+    c.text("↓",304,182,12,colors.ink);c.hit(297,178,23,27,HitKind::Scroll,1,!a.map_legend&&a.map_can_scroll()&&view.origin>view.minimum);
     c.rect(0,207,320,33,Panel);
     if(a.map_legend){
         c.centered("↑↓ 选择图例 · I / Esc 返回路线",0,215,320,10,Gold);
@@ -193,6 +192,34 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     else{c.centered(map_point_title(a,*m,selected),0,207,320,12,Gold);c.centered("←→ 选路 · Enter 进入 · ↑↓ 浏览",0,225,320,10,Muted);}
 }
 
+static LocalizedValue map_act_number_value(const void*context,const char*key){
+    const char expected[]="actNumber";unsigned i=0;
+    while(expected[i]&&key[i]==expected[i])++i;
+    return !expected[i]&&!key[i]?LocalizedValue{true,int64_t(*static_cast<const uint8_t*>(context))+1,1,nullptr}:LocalizedValue{};
+}
+static void world_map_act_banner_screen(Canvas&parent){
+    auto&a=parent.a;
+    for(unsigned i=0;i<a.map_act_intro.banner_count;++i){
+        const auto&banner=a.map_act_intro.banners[i];const auto sample=banner.sample();
+        // NActBanner is a MapScreen child, a sibling of TheMap. Each original
+        // instance composites independently, including NMapRoom's duplicate.
+        Canvas band=parent;band.opacity=map_window_product(band.opacity,sample.background_alpha);
+        band.rect(0,96,ScreenW,44,0);
+        char number[80]{};const char*format=a.content.world_string("gameplay_ui","ACT_NUMBER");
+        LocalizedTemplate(number,sizeof number,map_act_number_value,&banner.act).format(*format?format:"第 {actNumber} 幕");
+        const char*key=map_colors(banner.region).region;
+        const char*name=a.content.world_title("acts",key);if(!*name)name=key;
+        const int number_y=94+map_source_offset(sample.number_y_q12);
+        Canvas label=parent;label.opacity=map_window_product(label.opacity,sample.number_alpha);
+        Canvas shadow=label;shadow.opacity=uint8_t((unsigned(shadow.opacity)*13+127)/255);
+        shadow.centered(number,1,number_y+1,ScreenW,12,0);
+        label.centered(number,0,number_y,ScreenW,12,rgb(135,206,235));
+        Canvas title=parent;title.opacity=map_window_product(title.opacity,sample.name_alpha);
+        Canvas title_shadow=title;title_shadow.opacity=uint8_t((unsigned(title_shadow.opacity)*13+127)/255);
+        title_shadow.centered(name,1,110,ScreenW,20,0);
+        title.centered(name,0,109,ScreenW,20,rgb(239,200,81));
+    }
+}
 static void world_map_window_screen(Canvas&c){
     auto&a=c.a;auto sample=a.map_window.sample(a.map_clock_ms);
     if(!sample.visible)return;
@@ -206,7 +233,8 @@ static void world_map_window_screen(Canvas&c){
         if(alpha)for(int y=0;y<ScreenH;++y)for(int x=0;x<ScreenW;++x)c.paint(y*c.pitch+x,0,alpha);
     }
     world_map_screen(c,!a.map_routes_active(),&sample);
-    if(a.map_window.is_open&&a.panel==3)c.close_button();
+    world_map_act_banner_screen(c);
+    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map)c.close_button();
     // Closed immediately restores room input; only the visual tail remains.
     if(!a.map_window.is_open)a.hit_count=old_hits;
 }

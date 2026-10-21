@@ -52,7 +52,7 @@ bool App::refresh_save(){SaveCheckpoint checkpoint{};return read_saved(*this,che
 bool App::load_saved_run(){
  SaveCheckpoint checkpoint{};
  if(!read_saved(*this,checkpoint)||!has_save)return false;
- game=frontend_saved_probe;run_checkpoint=checkpoint;reset_presentation();return true;
+ game=frontend_saved_probe;run_checkpoint=checkpoint;reset_presentation();reset_map_act_intro(true);return true;
 }
 bool App::save_current_run(){
  SaveCheckpoint checkpoint{};
