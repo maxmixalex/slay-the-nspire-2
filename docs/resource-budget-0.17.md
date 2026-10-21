@@ -8,11 +8,12 @@ the existing rendered-frame bytes, dimensions, sparse geometry,
 timing entries and pivots. This storage result does not settle the separate
 original-UI fidelity or calculator performance requirements.
 
-The owner's new goal is approximately **30–40 MB on the calculator**. Source22's
-885,386-byte launcher and resource file total **81,731,444 bytes** before saves.
-A 40,000,000-byte combined target leaves 39,114,614 bytes for resources, requiring
-another **51.62%** reduction of this resource file. Interpreting 40 M as 40 MiB
-still requires **49.22%**. Neither target has been achieved or promised.
+The owner's goal is approximately **30–40 MB on the calculator**. Source27's
+911,249-byte launcher and the complete v16 resource total **81,790,768 bytes**
+before saves. A 40,000,000-byte combined target leaves 39,088,751 bytes for
+resources, requiring another **51.67%** reduction of the current resource file.
+Interpreting 40 M as 40 MiB still requires **49.27%**. Neither target has been
+achieved or promised.
 
 ## What occupies the tiled v15 baseline
 
@@ -208,9 +209,22 @@ The selected source27 layout preserves all 748 decoded-picture pages, expands
 their key table from 90 to 256 entries, changes the tile pool from 4 to 5 MiB,
 and changes the small-read cache from 8 to 64 pages. The actual slow battle's
 256 observed keys fit in 680 picture pages; the previous key-count bound made
-the larger pixel pool ineffective. The total linked ARM allocation and fixed
-16 MiB WASM memory still require a successful target build. This choice changes
-runtime RAM and read behavior only; the 80,879,519-byte v16 resource is unchanged.
+the larger pixel pool ineffective. The source27 target builds have now passed:
+the ARM allocation is **16,245,852 bytes**, within the existing 16 MiB bound,
+and WASM retains its fixed 16 MiB memory. Linked allocation is not a measured
+whole-process peak-memory figure. This choice changes runtime RAM and read
+behavior only; the 80,879,519-byte v16 resource is unchanged.
+
+Actual source27 WASM execution, using the same v15 pack and first-battle save
+as source25, reduces the second 180-frame window from 20,064,764 to 662,603
+provider bytes (96.70%). A subsequent 360-frame window has zero callbacks.
+The same three-scene, 720-frame-per-scene probe with the final v16 file
+produces the same window read counts and bytes, including zero callbacks in
+each final 360-frame window. This explicitly checks the extra UI art instead
+of assuming that a cache sized from v15 also handles the final file. These
+are observed resource callbacks, not browser or physical-device frame rates;
+other encounters and input sequences may have different working sets. See
+[the source27 execution receipt](validation-source27-ui-performance.json).
 
 The concrete next storage change is a bounded grouped retained-image/glyph
 format and reader, preserving exact output, owner/error behavior and existing

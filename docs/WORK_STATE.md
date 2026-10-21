@@ -1,6 +1,75 @@
 # Work state — 2026-10-21
 
-## Current: source28 cache-pressure fixture correction — 2026-10-21
+## Current: source27 UI/runtime evidence consolidated — 2026-10-21
+
+The built runtime remains **source27**,
+`9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69`. Source28 is remotely preserved at
+`c92b1733f1b54bff820583d8f6ab2d62fb56e824`; its 540 tree files and two changed
+contents matched the read-back, and its source archive SHA-256 is
+`94fd5a90eb00c94f7743bc85ea71a395440c8a39a42fd58d27411199e280a747`.
+It changes a pressure-test fixture and documentation only, with 274 runtime
+input files byte-identical to source27. Later report commits do not identify
+new runtime binaries. See the consolidated
+[execution report](source27-ui-performance-20261021.md) and
+[machine-readable receipt](validation-source27-ui-performance.json).
+
+The source25 native completion chain is now closed: all **64 registered tests**
+have a completed passing run from the same frozen sanitizer build. The initial
+full invocation passed 60 and timed out four at 300 seconds; only those four
+were rerun with longer budgets. The initial failure remains retained, and this
+is not a single green full CTest invocation or a full source27 rerun. Source28's
+four affected ASan/UBSan tests and corrected Release fixture also passed. The
+original source27 fixture assertion failure remains preserved, with no
+sanitizer diagnostic. Runtime source did not change to fix that test.
+
+Source27 ARM and WASM built successfully. The launcher is **911,249 bytes**,
+SHA-256 `79a095948a2297ea9a3ae4e2dba6c11a6c4743c63ec5a7993b792c17e0a66789`;
+linked allocation is **16,245,852 bytes**, within the existing 16 MiB bound.
+WASM is **5,145,486 bytes**, SHA-256
+`8688714c7d6c23dbec25e9729e14596242c0a84ff5a3dc869d5a660f270136bd`.
+The fresh native 23-scenario capture preserves all **480 frames, 30 saves and
+23 fixtures** from source25 exactly. Fresh WASM replay matches the native
+frames and saves with the complete v16 file. The selected original clip oracle
+and repeated-cycle cache check passed; they do not represent all 45,737 images.
+
+The same-pack v15 WASM comparison reduces the real three-enemy save's second
+180-frame window from **20,064,764 to 662,603 bytes** (96.70%). Neow's matching
+window falls from **46,448,640 bytes to zero**. An additional source27-only
+360-frame window makes zero callbacks in each of three declared scenes. A
+separate final-v16 run of 720 frames per scene has the same window read counts,
+explicitly checking that the new UI images do not defeat the cache in these
+scenarios. These are resource callbacks, not browser or calculator FPS.
+
+The actual source27/v15 Firebird comparison has completed with unchanged source
+and a normal exit. The same saved battle crosses the authored idle-duration
+threshold after 50 simulated seconds, versus 60 for source26. The following
+matched ten-second window observes **13.6 update starts/s**, versus **1.2**;
+maximum gaps are still **1,350 / 1,300 ms**, so cold stalls remain. Two later
+current-only ten-second windows reach **28.4 and 30.0 starts/s**, with maximum
+gaps **320 and 40 ms**; the last has zero reads, bytes and seeks. These are not
+matched 25-fold FPS results. App startup remains **44.09 simulated seconds**,
+effectively unchanged from 44.08. The source25, source26 and source27 retrieved
+saves are byte-identical: 230,356 bytes, SHA-256
+`c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca`.
+
+UI fidelity remains priority one; measured performance is priority two. The
+full v16 resource is still **80,879,519 bytes**, and its pair with the launcher
+occupies **81,790,768 bytes** before saves. Neither 30–40 MB storage nor a
+95% original-engine UI acceptance percentage has been achieved. Firebird is
+not cycle accurate, no physical handheld was available, and cloud-browser
+private-content testing remains blocked by the recorded automatic approval
+review. Local Node/VM host logic and actual WASM execution have their own
+completed evidence; no browser compositor FPS is claimed.
+
+Next: close the current source27 fresh new-run → Neow → map five-second
+observations, then verify the final v16 pair through normal new run, battle,
+health/buttons, keyword detail and save/exit. Those two device gates remain
+explicitly pending. The matching source27 delivery has been prepared but is
+not yet packaged; only completed device receipts may close that packaging
+guard. Preserve private art, ROM/OS, captures and embedded HTML outside Git;
+main and disabled remote CI remain unchanged.
+
+## Previous: source28 cache-pressure fixture correction — 2026-10-21
 
 Source27 is remotely preserved at `9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69`;
 all 540 tree files and 14 changed contents matched the read-back. The source

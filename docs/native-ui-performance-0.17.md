@@ -1,8 +1,16 @@
-# Native components and runtime measurements — source24 through source27
+# Native components and runtime measurements — source24 through source28
 
 The reference remains **v0.111.0 / 41cef1ea**. This stage follows the owner's
 priority: original UI fidelity first, then actual slow-path measurements and
 performance improvements. A source checkpoint is not a completed validation.
+
+The sections below retain the sequence of measured faults, source changes and
+their then-pending gates. For the consolidated executed results and explicit
+runtime/test checkpoint identities, use
+[source27-ui-performance-20261021.md](source27-ui-performance-20261021.md) and
+[validation-source27-ui-performance.json](validation-source27-ui-performance.json).
+The source28 change corrects a test fixture only; the shipped runtime remains
+source27. Historical pending statements here do not override that receipt.
 
 ## Actual calculator entry fault and corrective checkpoint
 

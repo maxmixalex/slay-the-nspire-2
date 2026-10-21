@@ -1,0 +1,2298 @@
+{
+  "schema": 1,
+  "prepared_at_utc": "2026-10-21T12:12:59.154758+00:00",
+  "status": "completed_host_linked_and_same_save_firebird_evidence_fresh_route_and_final_v16_pair_pending",
+  "reference": {
+    "version": "v0.111.0",
+    "lock": "41cef1ea"
+  },
+  "report_scope": "Evidence consolidation only; this document preparation starts no builds or runtime tests. Validation outcomes retain the checkpoint where they executed.",
+  "checkpoints": {
+    "source25": {
+      "sha": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "role": "UI corrections, bounded reset/codec stack repair and complete native64 completion chain",
+      "validation_source_fingerprint_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972"
+    },
+    "source26": {
+      "sha": "8536cadf8f8e3d88b6856c53e3970170cfd95d63",
+      "role": "Read-only marker for startup profiler; historical actual Firebird baseline with v15 pack",
+      "validation_source_fingerprint_sha256": "32783325831819a39d4effc6a5fafeb91abc2c353eb824cd3b83677a9cfde553"
+    },
+    "source27": {
+      "sha": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "role": "Current built runtime: reader/image/tile cache changes and exact unrotated map fast path",
+      "validation_source_fingerprint_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66"
+    },
+    "source28": {
+      "sha": "c92b1733f1b54bff820583d8f6ab2d62fb56e824",
+      "role": "Corrected cache-pressure test fixture and documentation; runtime inputs identical to source27",
+      "validation_source_fingerprint_sha256": "f6203849351c25ab7c4ca073a181ff77bd7ee8fdfa5b0f4e5efcf713bd7fe850"
+    }
+  },
+  "runtime_artifacts": {
+    "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "arm": {
+      "path": "nSpire2.tns",
+      "bytes": 911249,
+      "sha256": "79a095948a2297ea9a3ae4e2dba6c11a6c4743c63ec5a7993b792c17e0a66789",
+      "allocation_bytes": 16245852,
+      "absolute_relocations": 29180,
+      "journal": "source27-arm-build-e905c3005773",
+      "allocation_scope": "Linked allocation, not measured peak working set or total OS process memory"
+    },
+    "wasm": {
+      "path": "nSpire2.wasm",
+      "bytes": 5145486,
+      "sha256": "8688714c7d6c23dbec25e9729e14596242c0a84ff5a3dc869d5a660f270136bd",
+      "initial_memory_bytes": 16777216,
+      "maximum_memory_bytes": 16777216,
+      "journal": "source27-wasm-build-af30568df3c9",
+      "link_flags_evidence": "source27_wasm_link_source"
+    },
+    "final_v16_pack": {
+      "path": "nSpire2-0.17.nsp.tns",
+      "bytes": 80879519,
+      "sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
+      "version": 16,
+      "evidence": "source25_ui_pack"
+    },
+    "baseline_v15_pack": {
+      "path": "nSpire2-0.17.nsp.tns",
+      "bytes": 80846058,
+      "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd",
+      "version": 15
+    },
+    "current_arm_final_v16_pair_execution": "pending"
+  },
+  "source25_ui": {
+    "evidence": "source25_ui_review",
+    "journal_ids": [
+      "source25-ui-release-clang-configure-10a725d82bd8",
+      "source25-ui-release-clang-targets-fe2afed362b5",
+      "source25-ui-keyword-actual-v16-3f0faeb55e52",
+      "source25-ui-health-synthetic-9e9be163614b",
+      "source25-ui-world-text-actual-v16-c1398d1163dc",
+      "source25-ui-oracle-selected13-v16-298806a9e440",
+      "source25-ui-world-actual-v16-e500e7f95a60",
+      "source25-ui-glow-probe-compile-058955a1bce5",
+      "source25-ui-glow-actual-v16-6ef173e1b559"
+    ],
+    "scope": "Independent native Clang Release 320x240 UI acceptance. Actual private v16 pack for keyword/text/oracle/world/glow; health regression uses synthetic art. No source edits, no browser, no physical calculator, no Firebird run by this reviewer, no original-engine pixel differential or percentage fidelity score.",
+    "pack_append": {
+      "input_version": 15,
+      "output_version": 16,
+      "input_bytes": 80846058,
+      "output_bytes": 80879519,
+      "added_bytes": 33461,
+      "appended_images": 13,
+      "appended_strings": 10,
+      "unchanged_compressed_payload": true,
+      "unchanged_existing_catalog": true,
+      "verified_all_relocated_offsets": true,
+      "verified_all_new_skin_bytes": true,
+      "verified_all_new_text_bytes": true
+    },
+    "gates": {
+      "keyword_actual": {
+        "status": "passed",
+        "checks": 246626,
+        "captures": 3,
+        "scope": "Complete catalog title/body/layout and pointer/keyboard tests, then actual-pack hand/detail/library captures. Visible detail page shows lightning/frost; other orb strings are covered by the catalog assertions."
+      },
+      "world_text_actual": {
+        "status": "passed",
+        "checks": 1841,
+        "scope": "Actual localized text bindings, including Crystal remaining charges and scoped Count resolution."
+      },
+      "health_synthetic": {
+        "status": "passed",
+        "checks": 467441,
+        "captures": 5,
+        "checks_include_capture_writes": true,
+        "scope": "Production health renderer, masks, forecasts, block/infinity/eight enemies and repeated-render/load/lifecycle invariants with deliberately synthetic image/text payloads. Not original-art visual acceptance."
+      },
+      "resource_selected13_actual": {
+        "status": "passed",
+        "checks": 59062,
+        "selected_first": 45724,
+        "selected_images": 13,
+        "catalog_images": 45737,
+        "decoded_bytes_matched": 183816,
+        "glyphs": 11915,
+        "strings": 6110,
+        "clips": 1695,
+        "memory_range_equal_ui_frames": 40,
+        "scope": "Selected 13 appended images and all tested metadata/text/glyphs/clip/card mappings plus historical auxiliary prefix. Bounded range callbacks. Not a complete 45737-image decoded oracle or old-v14 catalog equality claim."
+      },
+      "world_actual": {
+        "status": "passed",
+        "cases": 23,
+        "frames": 480,
+        "saves": 30
+      },
+      "glow_actual": {
+        "status": "passed",
+        "completed_checks": 226,
+        "manifest_pre_close_checks": 225,
+        "pairs": 7,
+        "captures": 14,
+        "scope": "controlled valid energy=0 fixture; actual pack; frozen production App/Canvas; not Firebird player flow or original-game capture",
+        "same_time_repeat_pixels_identical": true,
+        "same_time_repeat_glow_does_not_advance": true,
+        "render_and_advance_preserve_canonical_saves": true,
+        "restore_energy_restores_control_save_exactly": true,
+        "fade500_full_frame_equals_control": true,
+        "sample_clock_ms": [
+          0,
+          400,
+          800,
+          1500,
+          1500,
+          1750,
+          2000
+        ],
+        "label_mask_limit": "Full-cream glyph mask has no samples because of antialiasing; not an occlusion oracle. Manual readable-label review is separate."
+      }
+    },
+    "source24_comparison": {
+      "checkpoint": "59b678675ecddd1472a337c3407d38cb2f3c8dd4",
+      "report": {
+        "path": "review.json",
+        "bytes": 62379,
+        "sha256": "8d2b31c2f004351334e86083b4721ed3075b27bd2ed58b48476bc12c2e2ad187"
+      },
+      "comparison": {
+        "scenarios_bytes_equal": true,
+        "save_comparison": {
+          "old_count": 30,
+          "new_count": 30,
+          "names_equal": true,
+          "changed": [],
+          "byte_identical": 30
+        },
+        "fixture_comparison": {
+          "old_count": 23,
+          "new_count": 23,
+          "names_equal": true,
+          "changed": [],
+          "byte_identical": 23
+        },
+        "frame_comparison": {
+          "old_count": 480,
+          "new_count": 480,
+          "names_equal": true,
+          "byte_identical": 474,
+          "changed_count": 6,
+          "changed": [
+            {
+              "name": "world-crystal-frame-1.rgb",
+              "pixels": 398,
+              "bbox_xyxy": [
+                222,
+                41,
+                295,
+                51
+              ]
+            },
+            {
+              "name": "world-crystal-frame-2.rgb",
+              "pixels": 399,
+              "bbox_xyxy": [
+                222,
+                41,
+                295,
+                51
+              ]
+            },
+            {
+              "name": "world-crystal-frame-3.rgb",
+              "pixels": 399,
+              "bbox_xyxy": [
+                222,
+                41,
+                295,
+                51
+              ]
+            },
+            {
+              "name": "world-crystal-frame-4.rgb",
+              "pixels": 398,
+              "bbox_xyxy": [
+                222,
+                41,
+                295,
+                51
+              ]
+            },
+            {
+              "name": "world-crystal-frame-5.rgb",
+              "pixels": 398,
+              "bbox_xyxy": [
+                222,
+                41,
+                295,
+                51
+              ]
+            },
+            {
+              "name": "world-crystal-frame-6.rgb",
+              "pixels": 398,
+              "bbox_xyxy": [
+                222,
+                41,
+                295,
+                51
+              ]
+            }
+          ]
+        }
+      },
+      "comparison_artifact": {
+        "path": "source24-comparison.json",
+        "bytes": 1538,
+        "sha256": "42f9c622feaa8612c0ac6bb3fa0842bd3dec371ed79a691435818a2676dbe76d"
+      }
+    },
+    "findings": [
+      {
+        "id": "orb_titles_and_bodies",
+        "status": "closed",
+        "evidence": "Former source24 actual keyword gate failed on an empty LIGHTNING_ORB. Source25 complete private-profile gate passes and actual detail tooltip now shows original orb headings and descriptions. No blank tooltip, unresolved dynamic placeholder, or clipped body was observed in the three captured surfaces."
+      },
+      {
+        "id": "crystal_count",
+        "status": "closed",
+        "evidence": "Native Crystal screenshot shows the actual remaining count. Only its six board frames differ from source24, by 398 or 399 pixels in [222,41,295,51], consistent with the scoped text repair."
+      },
+      {
+        "id": "end_turn_glow",
+        "status": "closed for controlled native fixture",
+        "evidence": "Actual production texture/Canvas captures show the cyan cue at 400/800/1500ms and the 1.5s pulse restart. Restoring energy causes the 0.5s fade; at 500ms the entire raw framebuffer equals the playable control. The external harness uses a valid energy=0 fixture, not a player-input sequence in Firebird."
+      },
+      {
+        "id": "button_glow_clipping_and_label",
+        "status": "manual visual pass for inspected samples",
+        "evidence": "Expanding halo reaches and is cropped at the 320px viewport right edge. The authored button plaque and all four End Turn label glyphs remain visible and readable in every sample. Label is painted after the glow; no label occlusion or missing rightmost glyph was observed. A full-cream pixel mask was inconclusive due antialiased text and was not used as a passing assertion."
+      },
+      {
+        "id": "health_and_controls",
+        "status": "manual visual pass for inspected actual normal-health scenes",
+        "evidence": "One/two-enemy actual combat captures retain centered readable health numbers and original endcap/fill appearance. Confirm/back/settings controls remain readable. Synthetic masks/eight-enemy/block/infinite captures provide state/layout invariants only. 999HP fixtures are controlled test data."
+      },
+      {
+        "id": "fastpaths_and_save_changes",
+        "status": "no unexpected difference in fixed replay",
+        "evidence": "All 23 fixture files, 30 saved games and scenario instructions are byte-identical to source24; 474/480 framebuffers are also byte-identical. Six intentional Crystal text differences account for every changed frame. This is sampled UI/save regression evidence, not exhaustive semantic equivalence."
+      },
+      {
+        "id": "original_ui_percentage",
+        "status": "not established",
+        "evidence": "Pinned original source/scene parameters and original private textures were used, but no matching unmodified original-engine scene capture set was compared. No 95% fidelity claim is supported by this review."
+      },
+      {
+        "id": "remaining_visual_scope",
+        "status": "still outside this acceptance",
+        "evidence": "Original Doom animated shader, block gain/break particles and per-hit asynchronous visual timeline remain prior explicitly stated fidelity gaps. This review does not claim physical calculator speed or that the browser is responsive."
+      }
+    ]
+  },
+  "source25_native64": {
+    "evidence": "source25_native64",
+    "journal_ids": [
+      "source25-native-asan-configure-c464f5ce93ff",
+      "source25-native-asan-build-ee00a2cce482",
+      "source25-native-asan-ctest-ab7c419c31f7",
+      "source25-native-asan-core-long-16f2a9e1b8cb",
+      "source25-native-asan-remaining3-long-f5a5782b3297"
+    ],
+    "configuration": "GCC13.3 O1 ASan+UBSan g1; X11 OFF; ASAN_OPTIONS=detect_leaks=0 (/proc restriction), UBSAN halt_on_error, CTest parallel2; initial pertest timeout300s, targetedcore1200s",
+    "initial_full_ctest": {
+      "registered": 64,
+      "passed": 60,
+      "failed": 4,
+      "status": "failed",
+      "journal": "source25-native-asan-ctest-ab7c419c31f7",
+      "passed_tests": [
+        "state_codec_regression",
+        "inplace_reset_regression",
+        "input_regression",
+        "content_regression",
+        "content_tiles_regression",
+        "keyword_tooltip_regression",
+        "health_bar_ui_regression",
+        "canvas_fast_path_regression",
+        "health_bar_regression",
+        "button_presentation_regression",
+        "runtime_performance_regression",
+        "resource_source_regression",
+        "expansion_regression",
+        "ui_flow_regression",
+        "compression_regression",
+        "lzma2_block_regression",
+        "silent_regression",
+        "silent_ui_regression",
+        "shared_regression",
+        "shared_ui_regression",
+        "tactics_regression",
+        "tactics_ui_regression",
+        "relic_ui_regression",
+        "combat_ui_regression",
+        "events_ui_regression",
+        "colorless_potions_regression",
+        "colorless_completion_regression",
+        "potions_completion_regression",
+        "expansion_ui_regression",
+        "ironclad_completion_regression",
+        "silent_completion_regression",
+        "defect_completion_regression",
+        "regent_completion_regression",
+        "necro_completion_regression",
+        "characters_integration_regression",
+        "five_character_integration_regression",
+        "five_character_ui_regression",
+        "autoplay_status_regression",
+        "enemies_regression",
+        "original_events_regression",
+        "world_map_regression",
+        "world_relics_regression",
+        "localized_template_regression",
+        "world_text_regression",
+        "world_ui_regression",
+        "world_event_ui_regression",
+        "world_map_ui_regression",
+        "world_map_travel_ui_regression",
+        "world_map_window_ui_regression",
+        "world_map_act_intro_ui_regression",
+        "world_room_lifecycle_regression",
+        "world_map_window_regression",
+        "world_map_act_intro_regression",
+        "world_map_transition_regression",
+        "world_reward_ui_regression",
+        "world_game_over_ui_regression",
+        "world_room_ui_regression",
+        "presentation_blend_regression",
+        "card_result_regression",
+        "world_frontend_ui_regression"
+      ],
+      "timeouts": [
+        {
+          "name": "core_regression",
+          "seconds": 300.049,
+          "passed": false,
+          "failure": {
+            "attributes": {
+              "message": "Timeout"
+            },
+            "text": ""
+          }
+        },
+        {
+          "name": "relic_combo_regression",
+          "seconds": 300.104,
+          "passed": false,
+          "failure": {
+            "attributes": {
+              "message": "Timeout"
+            },
+            "text": ""
+          }
+        },
+        {
+          "name": "events_regression",
+          "seconds": 300.063,
+          "passed": false,
+          "failure": {
+            "attributes": {
+              "message": "Timeout"
+            },
+            "text": ""
+          }
+        },
+        {
+          "name": "character_ui_regression",
+          "seconds": 300.008,
+          "passed": false,
+          "failure": {
+            "attributes": {
+              "message": "Timeout"
+            },
+            "text": ""
+          }
+        }
+      ],
+      "junit_sha256": "b6e63485f954d45b3e1982adc504a54c5bb72b7b8f478af7202783dec7c9f0a5",
+      "emitted_sanitizer_error_markers": 0
+    },
+    "core_retry": {
+      "status": "passed",
+      "result": "core: 103307 checks, 9885 generated transitions passed",
+      "supersedes_test_completion_only": "Original300s timeout retained as failure evidence; target retry completed394s, no whole-suite reclassification.",
+      "journal": "source25-native-asan-core-long-16f2a9e1b8cb",
+      "journal_seconds": 394.285676
+    },
+    "remaining_three_retry": {
+      "status": "passed",
+      "per_test_timeout_seconds": 900,
+      "outer_timeout_seconds": 1950,
+      "ctest_parallel": 2,
+      "exact_regex": "^(relic_combo_regression|events_regression|character_ui_regression)$",
+      "rebuild_performed": false,
+      "tests": [
+        {
+          "name": "relic_combo_regression",
+          "seconds": 777.644,
+          "passed": true,
+          "failure": null
+        },
+        {
+          "name": "events_regression",
+          "seconds": 759.221,
+          "passed": true,
+          "failure": null
+        },
+        {
+          "name": "character_ui_regression",
+          "seconds": 535.321,
+          "passed": true,
+          "failure": null
+        }
+      ],
+      "result_lines": [
+        "27: events: 244163 checks passed",
+        "24: relic combos: 186609 checks, 2776 transitions passed",
+        "38: character UI: 38001 checks passed, 860 acquired variants, synthetic content"
+      ],
+      "junit": "source25-native-asan-remaining3.xml",
+      "junit_sha256": "ac15756121bb48dda69afbe73a8a7f3e1848119736877ca9608ddf77e5102806",
+      "executable_identity_receipt": "source25-native-asan-remaining3-binaries.json",
+      "executable_identity_sha256": "4b27fe25dd69451bf3c113afb7ff5d019fa44889ece28d5655c11472c3145d44",
+      "executables_unchanged_from_before_retry": true,
+      "emitted_sanitizer_error_markers": 0,
+      "journal": "source25-native-asan-remaining3-long-f5a5782b3297"
+    },
+    "aggregate_completion": {
+      "registered_tests": 64,
+      "passed_unique_tests": 64,
+      "still_incomplete_tests": [],
+      "all_registered_tests_have_a_completed_passing_run": true,
+      "complete_in_one_full_ctest_invocation": false,
+      "initial_full_ctest_status": "failed",
+      "initial_full_ctest_passed": 60,
+      "initial_full_ctest_timeouts": 4,
+      "passed_tests_replayed": false,
+      "note": "Initial4 timeouts and failed full-suite journal remain unchanged. Only core and then the remaining3 previously incomplete tests were retried under explicit authorization. All64 registered tests now have completed passing runs from the same frozen source25 build. No ASan/UBSan diagnostics were emitted. Leak checking disabled for /proc restriction; this is native hosted execution, not hardware or original-game parity."
+    },
+    "scope_boundary": "The 64 unique passing completions belong to source25. No new full64 suite is claimed for source27 or source28."
+  },
+  "source25_p0_stack": {
+    "evidence": "source25_arm_audit",
+    "journal_ids": [
+      "source25-arm-layout-audit-778fddab34c3",
+      "source25-arm-frame-inventory-60080bc710df",
+      "source25-arm-division-41452ef15d5a",
+      "source25-arm-lzma2-672c172dd247",
+      "source25-arm-codec-compare-92ac89b952d8"
+    ],
+    "scope": "Linked ARM source22/source25 fixed stack frames, memory layout and ABI/codec checks; not OS or physical-device performance",
+    "frames": [
+      {
+        "function": "new_run",
+        "source22_local_and_saved_register_bytes": 198344,
+        "source25_local_and_saved_register_bytes": 80,
+        "source25_value_constructor_additional_frame_bytes": 160
+      },
+      {
+        "function": "save",
+        "source22_local_and_saved_register_bytes": 198168,
+        "source25_local_and_saved_register_bytes": 56,
+        "source25_value_constructor_additional_frame_bytes": 160
+      },
+      {
+        "function": "load",
+        "source22_local_and_saved_register_bytes": 198312,
+        "source25_local_and_saved_register_bytes": 64,
+        "source25_value_constructor_additional_frame_bytes": 160
+      },
+      {
+        "function": "enter_combat",
+        "source22_local_and_saved_register_bytes": 9336,
+        "source25_local_and_saved_register_bytes": 504,
+        "source25_value_constructor_additional_frame_bytes": null
+      },
+      {
+        "function": "original_event_begin",
+        "source22_local_and_saved_register_bytes": 39792,
+        "source25_local_and_saved_register_bytes": 104,
+        "source25_value_constructor_additional_frame_bytes": 56
+      },
+      {
+        "function": "original_event_new_run",
+        "source22_local_and_saved_register_bytes": 39752,
+        "source25_local_and_saved_register_bytes": 16,
+        "source25_value_constructor_additional_frame_bytes": 56
+      }
+    ],
+    "enemy_reset": {
+      "source22_frame_bytes": 11688,
+      "source25": "inlined or tail-call wrapper; actual EnemyWorldState value constructor has 44-byte frame"
+    },
+    "codec_workspace": [
+      {
+        "name": "_ZN5spireL20codec_workspace_busyE",
+        "address": 4764900,
+        "size": 1,
+        "type": 1,
+        "owner": 4,
+        "demangled": "spire::codec_workspace_busy",
+        "section": ".bss"
+      },
+      {
+        "name": "_ZN5spireL21codec_workspace_stateE",
+        "address": 4764904,
+        "size": 4,
+        "type": 1,
+        "owner": 4,
+        "demangled": "spire::codec_workspace_state",
+        "section": ".bss"
+      },
+      {
+        "name": "_ZN5spireL21codec_workspace_bytesE",
+        "address": 4764912,
+        "size": 198112,
+        "type": 1,
+        "owner": 4,
+        "demangled": "spire::codec_workspace_bytes",
+        "section": ".bss"
+      }
+    ],
+    "semantics": {
+      "evidence": [
+        "source25_codec_source",
+        "source25_reset_source"
+      ],
+      "save_input_immutable": true,
+      "load_failure_atomic": true,
+      "default_member_initializers_preserved": true,
+      "live_state_const_cast_used": false,
+      "storage": "One bounded shared codec workspace; single-thread event-loop contract; busy lease rejects reentry",
+      "dynamic_reentrant_call_tested": false
+    },
+    "entry_frame_inventory": {
+      "function_count": 1100,
+      "method": "ELF32 ARM symbols; direct push and immediate sub-sp allocations before first call/epilogue, up to 128 instructions",
+      "limitation": "Static fixed entry-frame inventory only; not complete CFG, recursion or total call-chain peak memory",
+      "over_64_kib": [],
+      "unresolved": [],
+      "conditional": [],
+      "largest": [
+        {
+          "name": "spire::App::render()",
+          "entry_frame_bytes": 17000
+        },
+        {
+          "name": "spire::event_screen(spire::Canvas&)",
+          "entry_frame_bytes": 12856
+        },
+        {
+          "name": "spire::App::original_event_text(int, bool, char*, unsigned int) const",
+          "entry_frame_bytes": 10840
+        },
+        {
+          "name": "spire::App::relic_description(unsigned short, char*, unsigned int, int) const",
+          "entry_frame_bytes": 10712
+        },
+        {
+          "name": "spire::App::world_card_description(spire::Card, int, char*, unsigned int, int, int, spire::EventCardFacts const*) const",
+          "entry_frame_bytes": 10616
+        },
+        {
+          "name": "spire::App::localized_text(char const*, char const*, char*, unsigned int, int, int, int) const",
+          "entry_frame_bytes": 10584
+        },
+        {
+          "name": "spire::wt_nested(spire::WorldTextContext const&, char const*, char const*, int)",
+          "entry_frame_bytes": 10576
+        },
+        {
+          "name": "spire::App::card_modifier_text(spire::Card, char*, unsigned int, int, int, spire::EventCardFacts const*) const::$_0::operator()(char const*, char const*, int) const",
+          "entry_frame_bytes": 8704
+        }
+      ]
+    },
+    "layout": {
+      ".text": {
+        "source22": 1155520,
+        "source25": 1190908,
+        "delta_bytes": 35388
+      },
+      ".rodata": {
+        "source22": 539968,
+        "source25": 550864,
+        "delta_bytes": 10896
+      },
+      ".data": {
+        "source22": 3020312,
+        "source25": 3023104,
+        "delta_bytes": 2792
+      },
+      ".bss": {
+        "source22": 9883764,
+        "source25": 10082404,
+        "delta_bytes": 198640
+      }
+    },
+    "launchers": [
+      {
+        "path": "nSpire2.tns",
+        "sha256": "dc66ed51d08dd22ec3311c4bc9b89d11085c522dcf133f4f23527c45c0253ea9",
+        "bytes": 885386,
+        "allocation_bytes": 14714112,
+        "absolute_relocations": 28595
+      },
+      {
+        "path": "dist/nSpire2.tns",
+        "sha256": "ddfd7b8f124960bb14f1f2ec67b0dc398b92f38a410e8fa22a250fa03d223995",
+        "bytes": 910932,
+        "allocation_bytes": 14964164,
+        "absolute_relocations": 29178
+      }
+    ],
+    "division": {
+      "vectors": 5249,
+      "cpu": "ARM926",
+      "quotient_and_remainder": "exact Python integer oracle",
+      "callee_saved_registers": "r4-r11 preserved",
+      "stack": "restored",
+      "limitation": "Instruction-level ABI validation, not calculator execution or performance"
+    },
+    "lzma2": {
+      "vectors": 28,
+      "cpu": "ARM926",
+      "output": "exact original synthetic bytes",
+      "guards": "preserved",
+      "callee_saved_registers": "r4-r11 preserved",
+      "stack": "restored",
+      "limitation": "Linked instruction/ABI validation, not calculator execution or performance"
+    },
+    "codec_compare": {
+      "old_elf_sha256": "be91ca941847cb05d04da39a8134e9530bd7a280259c1e7169beed0ebcaaa376",
+      "new_elf_sha256": "d3083bb9bf786c1627cffec64e3ac01b2239c82b8aa06da9873332b137cbac32",
+      "state_bytes": 198112,
+      "old_stack_mapping": 524288,
+      "new_stack_mapping": 65536,
+      "limitation": "Linked ARM926 instruction tests in Unicorn, not calculator OS execution or performance",
+      "result": "passed",
+      "case_count": 20,
+      "old_arm_calls": 40,
+      "new_arm_calls": 100,
+      "save_input_unchanged": true,
+      "load_failure_atomic": true,
+      "guarded_state_and_save_buffers": true,
+      "callee_saved_registers": "r4-r11 preserved",
+      "stack": "restored; new calls bounded by unmapped pages outside 64 KiB stack"
+    },
+    "codec_case_names": [
+      "character-0-practice-0",
+      "character-0-practice-1",
+      "character-1-practice-0",
+      "character-1-practice-1",
+      "character-2-practice-0",
+      "character-2-practice-1",
+      "character-3-practice-0",
+      "character-3-practice-1",
+      "character-4-practice-0",
+      "character-4-practice-1",
+      "v11-entropy-boulder.hex",
+      "v12-entropy-choice.hex",
+      "v13-nightmare-havoc-choice.hex",
+      "v3-suspended.hex",
+      "v4-shop.hex",
+      "v5-practice.hex",
+      "v6-silent-choice.hex",
+      "v7-silent-choice.hex",
+      "v8-relic-choice.hex",
+      "v9-grove-choice.hex"
+    ],
+    "reentrancy": "Busy-lease rejection code reviewed; dynamic nested-call coverage not claimed."
+  },
+  "source26_firebird_baseline": {
+    "evidence": "source26_firebird_baseline",
+    "journal": "source26-v15-profile-4ec0a1945866",
+    "checkpoint": "8536cadf8f8e3d88b6856c53e3970170cfd95d63",
+    "role": "historical_baseline",
+    "hardware_measurement": false,
+    "environment": {
+      "emulator": "Firebird headless controller v4",
+      "images": "user-supplied CX II ROM/OS",
+      "turbo": true,
+      "nominal_cpu_hz": 396000000,
+      "nominal_ahb_hz": 198000000,
+      "nominal_apb_hz": 99000000,
+      "sampling_ms": 10,
+      "clock": "foreground_SP804",
+      "clock_hz": 32768
+    },
+    "pack": {
+      "path": "nSpire2-0.17.nsp.tns",
+      "bytes": 80846058,
+      "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd"
+    },
+    "launcher": {
+      "path": "nSpire2.tns",
+      "bytes": 910911,
+      "sha256": "047e37b29c22dbf69ba5d48151cef87c3f852cfe8f5012e82ada473d536867aa"
+    },
+    "internal_profiler": {
+      "status": "enabled_by_read_only_sibling_marker",
+      "report": {
+        "path": "runtime.perf.json",
+        "bytes": 3545,
+        "sha256": "3a8b4384f96c6d44b2476a4e577dc74780a179d9b825b1a003b7ae7e852d8f2e"
+      },
+      "bounded_storage_bytes": 1416,
+      "marker": {
+        "path": "nSpire2.profile.tns",
+        "bytes": 23,
+        "sha256": "695944a572b4dc189b111d6112b05a57a6e77871a3e8b889b049d25477c3e0ad"
+      }
+    },
+    "startup": {
+      "scope": "file_open_and_app_init",
+      "ticks": 1444523,
+      "milliseconds": 44083.343505859375,
+      "first_render_ms": 535.2783203125,
+      "first_present_ms": 0.213623046875,
+      "enter_tick": 1629,
+      "enter_release_tick": 1644,
+      "first_observed_update_tick_approx": 6143,
+      "watch_sampling_ms": 10
+    },
+    "combat_aggregate": {
+      "scene": "combat",
+      "completed_frames": 59,
+      "timings": {
+        "interval": {
+          "count": 59,
+          "total_ticks": 2540242,
+          "total_ms": 77522.03369140625,
+          "minimum_ms": 133.514404296875,
+          "maximum_ms": 3507.6904296875,
+          "mean_ms": 1313.9327744306145
+        },
+        "update": {
+          "count": 59,
+          "total_ticks": 12202,
+          "total_ms": 372.37548828125,
+          "minimum_ms": 0.091552734375,
+          "maximum_ms": 222.47314453125,
+          "mean_ms": 6.311448953919491
+        },
+        "render": {
+          "count": 59,
+          "total_ticks": 2526841,
+          "total_ms": 77113.06762695312,
+          "minimum_ms": 133.148193359375,
+          "maximum_ms": 3340.911865234375,
+          "mean_ms": 1307.0011462195446
+        },
+        "present": {
+          "count": 59,
+          "total_ticks": 431,
+          "total_ms": 13.153076171875,
+          "minimum_ms": 0.213623046875,
+          "maximum_ms": 0.244140625,
+          "mean_ms": 0.2229334944385593
+        },
+        "resource": {
+          "count": 59,
+          "total_ticks": 1415036,
+          "total_ms": 43183.4716796875,
+          "minimum_ms": 67.3828125,
+          "maximum_ms": 2573.30322265625,
+          "mean_ms": 731.9232488082627
+        }
+      },
+      "over_50ms": 59,
+      "over_100ms": 59,
+      "over_250ms": 58,
+      "read_calls": 837,
+      "read_bytes_requested": 42621686,
+      "read_seeks": 770,
+      "resource_fraction_of_render": 0.5600019945853341
+    },
+    "windows": [
+      {
+        "scene": "title",
+        "scope": "stable_title",
+        "simulated_ms": 5000,
+        "updates": 150,
+        "updates_per_simulated_second": 30.0,
+        "maximum_observed_gap_ms": 40
+      },
+      {
+        "scene": "combat",
+        "scope": "initial_animation_cycle",
+        "simulated_ms": 10000,
+        "updates": 6,
+        "updates_per_simulated_second": 0.6,
+        "maximum_observed_gap_ms": 1630
+      },
+      {
+        "scene": "combat",
+        "scope": "initial_animation_cycle",
+        "simulated_ms": 10000,
+        "updates": 7,
+        "updates_per_simulated_second": 0.7,
+        "maximum_observed_gap_ms": 1660
+      },
+      {
+        "scene": "combat",
+        "scope": "initial_animation_cycle",
+        "simulated_ms": 10000,
+        "updates": 7,
+        "updates_per_simulated_second": 0.7,
+        "maximum_observed_gap_ms": 1880
+      },
+      {
+        "scene": "combat",
+        "scope": "initial_animation_cycle",
+        "simulated_ms": 10000,
+        "updates": 7,
+        "updates_per_simulated_second": 0.7,
+        "maximum_observed_gap_ms": 1730
+      },
+      {
+        "scene": "combat",
+        "scope": "initial_animation_cycle",
+        "simulated_ms": 10000,
+        "updates": 7,
+        "updates_per_simulated_second": 0.7,
+        "maximum_observed_gap_ms": 1680
+      },
+      {
+        "scene": "combat",
+        "scope": "initial_animation_cycle",
+        "simulated_ms": 10000,
+        "updates": 9,
+        "updates_per_simulated_second": 0.9,
+        "maximum_observed_gap_ms": 1760
+      },
+      {
+        "scene": "combat",
+        "scope": "post_complete_authored_duration",
+        "simulated_ms": 10000,
+        "updates": 12,
+        "updates_per_simulated_second": 1.2,
+        "maximum_observed_gap_ms": 1300
+      }
+    ],
+    "animation_duration_gate": {
+      "observed_tick": 12964,
+      "App_animation": 510,
+      "enemy_visual_clock": 188,
+      "tick_remainder": 26,
+      "fast_mode": false,
+      "animation_step_ms": 33,
+      "elapsed_animation_ms": 10626,
+      "longest_enemy_idle_ms": 9963,
+      "period_exceeded": true,
+      "continuation_map_clock": 6223,
+      "observed_map_clock": 16856,
+      "map_clock_elapsed_ms": 10633,
+      "post_cycle_window_ticks": [
+        12964,
+        13964
+      ],
+      "does_not_prove_every_source_frame_visited": true
+    },
+    "save_roundtrip": {
+      "reference": {
+        "path": "first.sav.tns",
+        "bytes": 230356,
+        "sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca"
+      },
+      "retrieved": {
+        "path": "second.sav.tns",
+        "bytes": 230356,
+        "sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca"
+      },
+      "byte_identical": true,
+      "canonical_encounter": "SLIMES_WEAK",
+      "enemies": [
+        {
+          "type": "TwigSlimeS",
+          "hp": 8
+        },
+        {
+          "type": "LeafSlimeM",
+          "hp": 35
+        },
+        {
+          "type": "LeafSlimeS",
+          "hp": 14
+        }
+      ],
+      "hero": "Ironclad",
+      "hero_hp": 80,
+      "energy": 3,
+      "hand_count": 5,
+      "floor": 2
+    },
+    "gameplay_gates": {
+      "marker_startup_profiling": true,
+      "restart_continue_actual_source25_save": true,
+      "first_battle_three_enemies": true,
+      "authored_idle_duration_crossed": true,
+      "post_cycle_10s_observed": true,
+      "save_key": true,
+      "save_return_to_title": true,
+      "normal_exit_to_os": true,
+      "usb_perf_retrieval": true,
+      "usb_save_retrieval": true,
+      "canonical_roundtrip": true,
+      "fresh_new_run_neow_map": "previous source25 actual execution, not repeated in this Continue-only run"
+    },
+    "measurement_limits": [
+      "All timer and update rates are emulated measurements, not physical calculator FPS.",
+      "App::map_clock_ms watch observes update starts, not completed presentation events.",
+      "The complete 59-frame combat aggregate includes initial Continue/loading, idle animation and save input; it is not a pure steady-state frame distribution.",
+      "Resource time is measured within provider reads, and the scene resource total includes resource calls made during both update and render.",
+      "PC samples cover 256-byte buckets that may span adjacent functions.",
+      "Firebird SP804 polling adds emulated cycles; host wall time, emulated ticks and physical calculator performance are not interchangeable.",
+      "The clamped dt and low rendering rate can skip source animation frames; crossing a complete authored duration does not prove every source frame is cached.",
+      "Startup excludes program loader time. The separate startup-plus-first-render read residual must not be confused with all-run resource totals.",
+      "No browser compositor FPS or physical USB-connected calculator was measured."
+    ]
+  },
+  "source27_native_runtime": {
+    "evidence": "source27_native",
+    "status": "passed_for_this_scope",
+    "journal_ids": [
+      "source27-native-release-configure-0891c45d46a3",
+      "source27-native-release-build-2e9baeb0b988",
+      "source27-native-release-affected3-df035954e210",
+      "source27-native-world-v16-a0c1e11e08ba",
+      "source27-native-world-golden-compare-c1e934145fa2",
+      "source27-native-clip967-oracle-d1e1a82e0903",
+      "source27-native-clip967-warm2-37fe1a70377b",
+      "source28-content-tiles-release-26b6955fb850"
+    ],
+    "scope": "Bounded cache change and native cache/map regressions, selected original-resource oracle, full existing native scene replay. Does not claim a complete CTest/catalog rerun, browser or calculator FPS, or native-original UI parity. ARM/WASM/emulator evidence is owned by the parent validation.",
+    "journal_count_is_not_test_count": true,
+    "native_regressions": {
+      "content_cache_age_checks": 1563,
+      "resource_source_checks": 8572,
+      "canvas_cases": 159808,
+      "canvas_checks": 319758,
+      "corrected_content_tiles_checks": 10735059
+    },
+    "runtime_cache_budget": {
+      "tile_pool_bytes": 5242880,
+      "tile_page_bytes": 131072,
+      "tile_pages": 40,
+      "tile_entries": 64,
+      "image_pool_bytes": 3063808,
+      "image_pages": 748,
+      "image_entries": 256,
+      "arm_cache_increment_bytes": 1051232,
+      "resource_reader_increment_bytes": 229824,
+      "storage_pack_unchanged": true,
+      "arm_linked_allocation_checked_here": false
+    },
+    "reader_page_change": {
+      "old_pages": 8,
+      "new_pages": 64,
+      "page_bytes": 4096,
+      "evidence": "source27_reader_source"
+    },
+    "map_change": {
+      "evidence": "source27_map_source",
+      "description": "Unrotated inverse coordinates are computed once per column and row with the original pixel-center rounding, clipping, palette, alpha and paint rules. Rotated pictures retain the general path.",
+      "speedup_or_device_fps_claimed": false
+    },
+    "world_golden": {
+      "path": "world-source25-byte-comparison.json",
+      "sha256": "554adfc22237fbcefc194604b93b73e88a85a301c9d2766f39f3c1655fca5e80",
+      "cases": 23,
+      "frames": 480,
+      "saves": 30,
+      "fixtures": 23,
+      "different": [],
+      "status": "passed"
+    },
+    "clip967_oracle": {
+      "pack_version": 15,
+      "reference_version": 14,
+      "first_image": 22954,
+      "images_per_backend": 23,
+      "decoded_bytes_per_backend": 1557577,
+      "backends": [
+        "memory",
+        "range"
+      ],
+      "glyphs": 11915,
+      "strings": 6100,
+      "clips": 1695,
+      "ui_frames": 40,
+      "checks": 253981,
+      "full_catalog_rerun": false
+    },
+    "clip967_cycles": [
+      {
+        "cycle": 1,
+        "images": 23,
+        "callbacks": 224,
+        "callback_bytes": 12948986,
+        "reader_page_hits": 22,
+        "reader_page_misses": 1,
+        "range_bypasses": 223,
+        "zero_reader_activity_images": 0
+      },
+      {
+        "cycle": 2,
+        "images": 23,
+        "callbacks": 0,
+        "callback_bytes": 0,
+        "reader_page_hits": 0,
+        "reader_page_misses": 0,
+        "range_bypasses": 0,
+        "zero_reader_activity_images": 23
+      }
+    ],
+    "selection_model": {
+      "path": "source25-title-tile-cache-model.json",
+      "sha256": "5d480d604d217a2c6abb2ff225fa270eb3f53361352da754080b9360b19e1101",
+      "image_calls": 13022,
+      "models": [
+        {
+          "tile_bytes": 4194304,
+          "image_entries": 90,
+          "image_misses": 597,
+          "first180_group_encoded_bytes": 35990926,
+          "next180_group_encoded_bytes": 19349212,
+          "last58_group_loads": 10
+        },
+        {
+          "tile_bytes": 4194304,
+          "image_entries": 256,
+          "image_misses": 259,
+          "first180_group_encoded_bytes": 29825643,
+          "next180_group_encoded_bytes": 6198522,
+          "last58_group_loads": 0
+        },
+        {
+          "tile_bytes": 5242880,
+          "image_entries": 256,
+          "image_misses": 259,
+          "first180_group_encoded_bytes": 22198334,
+          "next180_group_encoded_bytes": 665963,
+          "last58_group_loads": 0
+        }
+      ],
+      "interpretation": "Alternative cache rows are an offline model over a full native image access trace, including startup cache population, title, Continue and 360 frames. The old model matches every actual >4 KiB group-read sequence per frame; small index group 907 uses reader pages. Encoded-group demand is not identical to provider transport bytes."
+    }
+  },
+  "source27_wasm_world": {
+    "journal": "source27-world-wasm-replay-49d9ee428986",
+    "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "pack_version": 16,
+    "scenarios": 23,
+    "byte_identical_rgb565_frames": 480,
+    "byte_identical_saves": 30,
+    "scope": "Fresh actual WASM compared with native source27 using a storage adapter; no browser DOM, persistent localStorage or compositor measurement."
+  },
+  "source27_wasm_resource_reads": {
+    "evidence": "source27_runtime_io",
+    "journal": "source27-actual-resource-hotspots-a83f02d496dd",
+    "comparison_runtime_checkpoints": [
+      "fc769a017d83051e34592e661d02c92aa0836b20",
+      "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69"
+    ],
+    "pack_version": 15,
+    "pack_sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd",
+    "input_trace_receipts": [
+      {
+        "path": "source25-resource-hotspots.json",
+        "bytes": 1420616,
+        "sha256": "3563cbf633d5d55f3d99cdd9b6c8cb46eab4429f0925969ca7e3d319c4227cf5"
+      },
+      {
+        "path": "source27-resource-hotspots.json",
+        "bytes": 998997,
+        "sha256": "f20af349500327271594e69c6e3ac9f88b32d075f72dce85b2cffadb5950e8d9"
+      }
+    ],
+    "method": "Continue the same fixtures, including the actual Firebird first-battle save, without selecting Neow options or ending the battle turn. Compare first180 and next180 frames at advance_ms=33; source27 then executes a further360 frames.",
+    "scenarios": [
+      {
+        "name": "world-neow",
+        "compared_frame_hashes": 3,
+        "save_unchanged": true,
+        "windows": {
+          "first180": {
+            "old_calls": 11340,
+            "new_calls": 3,
+            "old_bytes": 46448640,
+            "new_bytes": 12288,
+            "byte_reduction_percent": 99.97354497354497
+          },
+          "next180": {
+            "old_calls": 11340,
+            "new_calls": 0,
+            "old_bytes": 46448640,
+            "new_bytes": 0,
+            "byte_reduction_percent": 100.0
+          }
+        },
+        "additional_steady_window": {
+          "frames": 360,
+          "advance_ms": 33,
+          "callbacks": 0,
+          "bytes": 0
+        }
+      },
+      {
+        "name": "world-native-combat",
+        "compared_frame_hashes": 3,
+        "save_unchanged": true,
+        "windows": {
+          "first180": {
+            "old_calls": 49,
+            "new_calls": 45,
+            "old_bytes": 273445,
+            "new_bytes": 257061,
+            "byte_reduction_percent": 5.991698513412203
+          },
+          "next180": {
+            "old_calls": 0,
+            "new_calls": 0,
+            "old_bytes": 0,
+            "new_bytes": 0,
+            "byte_reduction_percent": null
+          }
+        },
+        "additional_steady_window": {
+          "frames": 360,
+          "advance_ms": 33,
+          "callbacks": 0,
+          "bytes": 0
+        }
+      },
+      {
+        "name": "firebird-first-combat",
+        "compared_frame_hashes": 3,
+        "save_unchanged": true,
+        "windows": {
+          "first180": {
+            "old_calls": 790,
+            "new_calls": 399,
+            "old_bytes": 36747150,
+            "new_bytes": 22296766,
+            "byte_reduction_percent": 39.32382239166847
+          },
+          "next180": {
+            "old_calls": 501,
+            "new_calls": 11,
+            "old_bytes": 20064764,
+            "new_bytes": 662603,
+            "byte_reduction_percent": 96.6976785772312
+          }
+        },
+        "additional_steady_window": {
+          "frames": 360,
+          "advance_ms": 33,
+          "callbacks": 0,
+          "bytes": 0
+        }
+      }
+    ],
+    "limits": [
+      "Actual Node/WASM resource callbacks, not browser compositor or calculator FPS.",
+      "Three declared frame hashes per scene; separate world gate compares all 480 captured frames.",
+      "The additional 360-frame no-read window is source27 execution, not a source25 warm-window comparison.",
+      "Source28 changes only the failed pressure fixture plus documentation; runtime remains source27."
+    ]
+  },
+  "source28_fixture_correction": {
+    "checkpoint": "c92b1733f1b54bff820583d8f6ab2d62fb56e824",
+    "runtime_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "evidence": [
+      "source27_native",
+      "source28_corrected_fixture",
+      "source27_runtime_io"
+    ],
+    "original_failure": "Source27 ASan content_tiles stopped at the no-bitmap fallback injected-provider-failure assertion. 300 adjacent 806-byte blocks fit the new 64-page reader; correct cache hits prevented the injection from reaching the provider. Source28 aligns only those 300 referenced blocks, asserts page pressure, and preserves the original failure assertion; runtime source is unchanged.",
+    "original_failed_journal": "source27-resource-map-asan-18eef84a4b7c",
+    "identical_runtime_input_count": 274,
+    "source27_to_source28_changed_inventory_paths": [
+      "tests/content_tiles_regression.cpp"
+    ],
+    "runtime_input_bytes_unchanged": true,
+    "source28_runtime_rebuild_claimed": false,
+    "runtime_equivalence_journal": "source28-runtime-equivalence-and-io-9bebc0c3cbd2",
+    "affected_sanitizer_journal": "source28-resource-map-asan-b1c4e7f38439",
+    "affected_sanitizer_result_lines": [
+      "resource source: 8572 checks passed",
+      "content tiles: 10735059 checks passed; synthetic NSP2/15 structure, first-touch validation, aliases, owners, failures, workspace fallback and fragmented group reuse",
+      "content cache ages: 1563 checks passed; 256-entry wrap, sparse entries, index 255 and empty cache",
+      "canvas fast path: 159808 cases, 319758 checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, sparse and palette guards"
+    ],
+    "affected_sanitizer_scope": "Four affected tests built from independent new source28 objects with ASan+UBSan. No reused runtime objects in that sanitizer run; corrected Release fixture also passed against the preserved source27 library. Not a complete CTest rerun.",
+    "corrected_release_library": {
+      "path": "libspire_core.a",
+      "sha256": "fd9a49bfae75d7a34046bcf793d63c7c4e35a801d02a599d2cd62c6621939025"
+    }
+  },
+  "preserved_failures": [
+    {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "journal": "source25-native-asan-ctest-ab7c419c31f7",
+      "status": "failed",
+      "returncode": 8,
+      "reason": "Four tests reached the initial 300-second timeout; 60 completed.",
+      "resolution": "All four incomplete tests subsequently completed passing from the same build, through core-only and exact remaining-three retries. The initial failed run remains failed.",
+      "emitted_sanitizer_error_markers": 0
+    },
+    {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "journal": "source27-resource-map-asan-18eef84a4b7c",
+      "status": "failed",
+      "returncode": 1,
+      "reason": "The no-bitmap fallback injection expected a provider read, but valid data remained in the expanded reader cache.",
+      "assertion": "!range->image(1).pixels&&fallback.failed>0",
+      "resolution": "Source28 test fixture spreads its 300 referenced 806-byte blocks across distinct 4 KiB pages, asserts reader pressure, and retains the original failure assertion. Runtime input bytes are unchanged.",
+      "emitted_sanitizer_error_markers": 0
+    }
+  ],
+  "pending_gates": {
+    "source27_fresh_new_run_neow_map": {
+      "status": "pending",
+      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "report": null
+    },
+    "source27_final_v16_device_pairing": {
+      "status": "pending",
+      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "required_pack_sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
+      "report": null
+    }
+  },
+  "acceptance_boundaries": {
+    "original_engine_ui_percentage": "Not established; matching original-engine captures have not been compared.",
+    "remaining_visual_gaps": [
+      "Doom animated shader",
+      "Block gain/break particles",
+      "Per-hit asynchronous visual timeline"
+    ],
+    "physical_handheld_fps": "Not measured",
+    "browser_compositor_fps": "Not measured",
+    "thirty_to_forty_mb_installation": "Not achieved by the recorded artifacts; the final resource file alone is 80879519 bytes.",
+    "model_versus_measurement": "Cache models, actual Node/WASM callback counts, linked memory, Firebird timer readings and physical performance are distinct evidence classes.",
+    "check_counts": "Assertion/check totals include fixture checks; they are not independent gameplay scenarios or a completeness percentage.",
+    "private_inputs": "Original resource bytes, ROM/OS, captures and save fixtures are retained separately and are not included in this source receipt."
+  },
+  "evidence_catalog": {
+    "source25_ui_review": {
+      "artifact": "asset-validation/ui-visual-source25/review.json",
+      "bytes": 171332,
+      "sha256": "3bee59116dc5e947f878b663c25f8e6a409ad38b25820372463b347aa807dbee",
+      "kind": "retained_private_validation_report"
+    },
+    "source25_ui_pack": {
+      "artifact": "asset-validation/source25-ui-output/ui-pack-receipt.json",
+      "bytes": 6840,
+      "sha256": "a8679cacfc2e36834e83e89fad3c3f57f3ed4a2c1d2a695fad42a3d545e1e5ef",
+      "kind": "retained_private_validation_report"
+    },
+    "source25_native64": {
+      "artifact": "nspire-stage-fc769a01/build/source25-native-validation-final.json",
+      "bytes": 15924,
+      "sha256": "ae714b91b82d2d2f91d09dd98e5af012ecce33e9400b942eeccd24b3080f650e",
+      "kind": "retained_private_validation_report"
+    },
+    "source25_arm_audit": {
+      "artifact": "nspire-stage-fc769a01/build/source25-arm-summary.json",
+      "bytes": 12430,
+      "sha256": "fd90039792494517ca1d21f38688744bda1401347c239392523d7c838a06a503",
+      "kind": "retained_private_validation_report"
+    },
+    "source26_firebird_baseline": {
+      "artifact": "device25-work/source26-v15-profile/performance-summary.json",
+      "bytes": 43963,
+      "sha256": "eba36601b4c5d7ea81f66876d7ec42d31abb42af19665001e40531b1430dcf5e",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_native": {
+      "artifact": "asset-validation/source27-native-runtime/cache-native-results.json",
+      "bytes": 13993,
+      "sha256": "34dc2e4c3fc9f9564ff8bce411da7958ffeab78a082f492aea5c235620307c0c",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_runtime_io": {
+      "artifact": "asset-validation/source27-runtime-evidence.json",
+      "bytes": 3870,
+      "sha256": "f1acd763d6f9d669e9f604bcef6d18c83c3270f8c557001a8dfa97f59eb70c99",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_world_golden": {
+      "artifact": "asset-validation/source27-native-runtime/world-source25-byte-comparison.json",
+      "bytes": 139784,
+      "sha256": "554adfc22237fbcefc194604b93b73e88a85a301c9d2766f39f3c1655fca5e80",
+      "kind": "retained_private_validation_report"
+    },
+    "source28_corrected_fixture": {
+      "artifact": "build/content-tiles-release/results.json",
+      "bytes": 29096,
+      "sha256": "3fc2363aeb034fd850a5ce79dcc331dfa218530df170d2871893ee0bd4419c69",
+      "kind": "retained_private_validation_report"
+    },
+    "source25_cache_model": {
+      "artifact": "asset-validation/source25-title-tile-cache-model.json",
+      "bytes": 12666,
+      "sha256": "5d480d604d217a2c6abb2ff225fa270eb3f53361352da754080b9360b19e1101",
+      "kind": "retained_private_validation_report"
+    },
+    "source25_codec_source": {
+      "artifact": "src/state_codec.inc",
+      "bytes": 18537,
+      "sha256": "a85455ea9c6d420e00b81630cae8e4d7effbbc0143d7a70f994044b82a46d9f2",
+      "kind": "frozen_source",
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20"
+    },
+    "source25_reset_source": {
+      "artifact": "include/inplace_reset.hpp",
+      "bytes": 1290,
+      "sha256": "5202b6eda80c5805ddd8ec6e54b7e0d8994ccf6d719009ebb89a18a3f820bd1c",
+      "kind": "frozen_source",
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20"
+    },
+    "source27_map_source": {
+      "artifact": "src/world_map_draw.inc",
+      "bytes": 8615,
+      "sha256": "ab0125b7363c220133b48374131cda0f0688681e5f2dbadd3cd39c4a70eb5dfd",
+      "kind": "frozen_source",
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69"
+    },
+    "source27_reader_source": {
+      "artifact": "include/resource_source.hpp",
+      "bytes": 2624,
+      "sha256": "1913d5e43e655d61bcb4fc9aef5472cfb2bfb32f6953a5b1a021e5bc6f60f56f",
+      "kind": "frozen_source",
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69"
+    },
+    "source27_wasm_link_source": {
+      "artifact": "tools/build_web.py",
+      "bytes": 3878,
+      "sha256": "9a2b2b4526d142e9dba54f7c4fdbc778bc0982c54ef17e83ee9a524d971d53ed",
+      "kind": "frozen_source",
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69"
+    },
+    "source27_v16_resource_trace": {
+      "artifact": "asset-validation/source27-v16-resource-hotspots.json",
+      "bytes": 996537,
+      "sha256": "b652bfb6657fc9ed3238b95c04ec81d2a6bbb4590bb5eb0be724b4ffde1cbfa7",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_firebird_v15": {
+      "artifact": "device25-work/source27-v15-profile/performance-summary.json",
+      "bytes": 58242,
+      "sha256": "ec7d53adb2d010e24c04a3f2cc7dc2e0790ddaed817e3ecf8a32948eaa62925b",
+      "kind": "retained_private_validation_report"
+    }
+  },
+  "journal_catalog": {
+    "source25-ui-release-clang-configure-10a725d82bd8": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:15:25.861724+00:00",
+      "ended_at": "2026-10-21T11:15:34.100714+00:00",
+      "journal": "source25-ui-release-clang-configure-10a725d82bd8.json",
+      "journal_bytes": 48000,
+      "journal_sha256": "88e2eab86c7cb605934487fd8a7659d24afc6743f3b1b7ab1af99c6d0ad6550f",
+      "log": "source25-ui-release-clang-configure-10a725d82bd8.log",
+      "log_sha256": "477dc2f63ec49a8dd8a01bc6b5be4313450cbacb8c2a6de3d6c4ccdd6c8b6767",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-release-clang-targets-fe2afed362b5": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:15:41.967631+00:00",
+      "ended_at": "2026-10-21T11:16:50.057579+00:00",
+      "journal": "source25-ui-release-clang-targets-fe2afed362b5.json",
+      "journal_bytes": 47804,
+      "journal_sha256": "0963c73bc27aa287634d360f0bbfe99a468af0ba6fd87ba7e20d7ec1e1265577",
+      "log": "source25-ui-release-clang-targets-fe2afed362b5.log",
+      "log_sha256": "9aed8d51fdf5b6df4471a0fca1c65fcdc1114ca85b5675d6cebdfd7c2c03fac7",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-keyword-actual-v16-3f0faeb55e52": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:42.913733+00:00",
+      "ended_at": "2026-10-21T11:19:04.162447+00:00",
+      "journal": "source25-ui-keyword-actual-v16-3f0faeb55e52.json",
+      "journal_bytes": 47663,
+      "journal_sha256": "942b20b7450f6dbc3644a1e0f7f29335e0aedebd0df20fd2978d5dd0116c12c1",
+      "log": "source25-ui-keyword-actual-v16-3f0faeb55e52.log",
+      "log_sha256": "4623a4e95dafa8e21d6543df0c90089639f62041300f19e4d15796ef342304ce",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-health-synthetic-9e9be163614b": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:43.028496+00:00",
+      "ended_at": "2026-10-21T11:18:43.116726+00:00",
+      "journal": "source25-ui-health-synthetic-9e9be163614b.json",
+      "journal_bytes": 47572,
+      "journal_sha256": "ffacdaa111972bc6fab5c29d221df627c5fe514c116d9ab3ac738be782da84f6",
+      "log": "source25-ui-health-synthetic-9e9be163614b.log",
+      "log_sha256": "4d4da3cb598665376fdd701fafd13d48c69102cac4b52783c46d9323c6cc9746",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-world-text-actual-v16-c1398d1163dc": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:43.104503+00:00",
+      "ended_at": "2026-10-21T11:19:07.865737+00:00",
+      "journal": "source25-ui-world-text-actual-v16-c1398d1163dc.json",
+      "journal_bytes": 47578,
+      "journal_sha256": "3507764d9a26df768bd983282389cb1af820debabdd09db74137d4279347a5c3",
+      "log": "source25-ui-world-text-actual-v16-c1398d1163dc.log",
+      "log_sha256": "0defbfada25f8a01e0cdc94d8244604a8fad8a19e8c1c5335deef9668da2ab21",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-oracle-selected13-v16-298806a9e440": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:43.114611+00:00",
+      "ended_at": "2026-10-21T11:19:18.611207+00:00",
+      "journal": "source25-ui-oracle-selected13-v16-298806a9e440.json",
+      "journal_bytes": 47623,
+      "journal_sha256": "7e029b61d5818bcc086a0ebd79c856d0c12a363eb2c6c35565778bab541709e5",
+      "log": "source25-ui-oracle-selected13-v16-298806a9e440.log",
+      "log_sha256": "7abc5f54690d78d524bfccb61e2c67856993689d8568496b7902667f66a5af7e",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-world-actual-v16-e500e7f95a60": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:19:11.645488+00:00",
+      "ended_at": "2026-10-21T11:20:48.069552+00:00",
+      "journal": "source25-ui-world-actual-v16-e500e7f95a60.json",
+      "journal_bytes": 47653,
+      "journal_sha256": "7a8b5905cba98a9c9e2a03a18020a38cf85cf0776d4ced5d7101fcb4b62cac1f",
+      "log": "source25-ui-world-actual-v16-e500e7f95a60.log",
+      "log_sha256": "6acce8240a7c35a6325aa03b2933afc86baf02312a423f022951fb5295a39954",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-glow-probe-compile-058955a1bce5": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:20:09.970636+00:00",
+      "ended_at": "2026-10-21T11:20:12.429440+00:00",
+      "journal": "source25-ui-glow-probe-compile-058955a1bce5.json",
+      "journal_bytes": 47885,
+      "journal_sha256": "b4c98f54b3f6719e3ef0b4dfae8e11ab5083d31b82e6cbb67358dd74e2c198c6",
+      "log": "source25-ui-glow-probe-compile-058955a1bce5.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-ui-glow-actual-v16-6ef173e1b559": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:20:29.474752+00:00",
+      "ended_at": "2026-10-21T11:20:45.870002+00:00",
+      "journal": "source25-ui-glow-actual-v16-6ef173e1b559.json",
+      "journal_bytes": 47802,
+      "journal_sha256": "889ab9e6e6ffa89644e6694ff7894a6fc85a276d0707a14739cd19febb8eda41",
+      "log": "source25-ui-glow-actual-v16-6ef173e1b559.log",
+      "log_sha256": "e542fe5f580ae0964e2cfe8abcdf86da706e31eb3650855e7a9fd545fbeef832",
+      "role": "source25_ui_acceptance"
+    },
+    "source25-native-asan-configure-c464f5ce93ff": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:15:37.215163+00:00",
+      "ended_at": "2026-10-21T11:15:41.877470+00:00",
+      "journal": "source25-native-asan-configure-c464f5ce93ff.json",
+      "journal_bytes": 48131,
+      "journal_sha256": "2226e91e3ac676225a1ac69106beb32b364c762caf67dc7598a996129a2e9253",
+      "log": "source25-native-asan-configure-c464f5ce93ff.log",
+      "log_sha256": "5630606f3b1aba9b670ab510a8faff3eb7d36eb22caccc419a3eed47083cb564",
+      "role": "source25_native64_completion_chain"
+    },
+    "source25-native-asan-build-ee00a2cce482": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:15:44.884593+00:00",
+      "ended_at": "2026-10-21T11:19:37.078007+00:00",
+      "journal": "source25-native-asan-build-ee00a2cce482.json",
+      "journal_bytes": 47545,
+      "journal_sha256": "ecc09625413851e4ec09c356bdc74cdd68ca1784470c96bf9746a5785234d281",
+      "log": "source25-native-asan-build-ee00a2cce482.log",
+      "log_sha256": "183a155eef6f0885875e351c9ac3b06d79535a688551adda4574bbefca3bfc7c",
+      "role": "source25_native64_completion_chain"
+    },
+    "source25-native-asan-ctest-ab7c419c31f7": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:20:07.040045+00:00",
+      "ended_at": "2026-10-21T11:39:59.544714+00:00",
+      "journal": "source25-native-asan-ctest-ab7c419c31f7.json",
+      "journal_bytes": 47798,
+      "journal_sha256": "95867d684b5a8e46b5468823cc6a142b7a65f921b7276420ef51f987f0c3c6b4",
+      "log": "source25-native-asan-ctest-ab7c419c31f7.log",
+      "log_sha256": "caf40842ac72a9efbeef2586f79d850351bb1bf1466372096084ed9603973c37",
+      "role": "source25_native64_completion_chain"
+    },
+    "source25-native-asan-core-long-16f2a9e1b8cb": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:26:06.859450+00:00",
+      "ended_at": "2026-10-21T11:32:41.145126+00:00",
+      "journal": "source25-native-asan-core-long-16f2a9e1b8cb.json",
+      "journal_bytes": 47612,
+      "journal_sha256": "843a66a4b159e0e7603885efe6c7ac7a89f1a177e06abcd86dfe3112ab704429",
+      "log": "source25-native-asan-core-long-16f2a9e1b8cb.log",
+      "log_sha256": "e948d2a8c0ea18e76fd7e93e73185cdaa8ffe3da350c39fef012ab73f7aeb5b9",
+      "role": "source25_native64_completion_chain"
+    },
+    "source25-native-asan-remaining3-long-f5a5782b3297": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:42:07.051844+00:00",
+      "ended_at": "2026-10-21T12:03:41.863883+00:00",
+      "journal": "source25-native-asan-remaining3-long-f5a5782b3297.json",
+      "journal_bytes": 47916,
+      "journal_sha256": "f835f46acc8c17f3d28f70f8457fd1b601724ab5980ffd068a673ac03341cdb8",
+      "log": "source25-native-asan-remaining3-long-f5a5782b3297.log",
+      "log_sha256": "1cd5a657af6e7bab2a4300fd25ecddc82a4ba455a562b99fb1c505e725db7f61",
+      "role": "source25_native64_completion_chain"
+    },
+    "source25-arm-layout-audit-778fddab34c3": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:14.929467+00:00",
+      "ended_at": "2026-10-21T11:18:15.354373+00:00",
+      "journal": "source25-arm-layout-audit-778fddab34c3.json",
+      "journal_bytes": 47684,
+      "journal_sha256": "6a460e2f64a3a2f9cdec031b13e50367f25311079ede011be13669d62f3f5d39",
+      "log": "source25-arm-layout-audit-778fddab34c3.log",
+      "log_sha256": "bfbe995b89314002e9f017494aaa53a6b5ace71fb2e5aacc4d3c80d032f0204d",
+      "role": "source25_linked_arm_audit"
+    },
+    "source25-arm-frame-inventory-60080bc710df": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:19:46.037437+00:00",
+      "ended_at": "2026-10-21T11:19:46.625480+00:00",
+      "journal": "source25-arm-frame-inventory-60080bc710df.json",
+      "journal_bytes": 47558,
+      "journal_sha256": "e34bdb59eec83248785d1f46630c0fc7528a9f7025ed69847c668ebe024fba6c",
+      "log": "source25-arm-frame-inventory-60080bc710df.log",
+      "log_sha256": "9353b4a000b58cc3b536325668f2922d95ee813d2527d3b3e0dd5ef118fd4548",
+      "role": "source25_linked_arm_audit"
+    },
+    "source25-arm-division-41452ef15d5a": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:23.746370+00:00",
+      "ended_at": "2026-10-21T11:18:24.598502+00:00",
+      "journal": "source25-arm-division-41452ef15d5a.json",
+      "journal_bytes": 47569,
+      "journal_sha256": "b34355a677b17672a4f0ef061970960b91d9afdb60e97dea7cc340a7e2e482f6",
+      "log": "source25-arm-division-41452ef15d5a.log",
+      "log_sha256": "8bdcf7ac9699aff850214bd34a7d87067ac055785032c037ebaa798dbcf5f1ec",
+      "role": "source25_linked_arm_audit"
+    },
+    "source25-arm-lzma2-672c172dd247": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:18:23.332015+00:00",
+      "ended_at": "2026-10-21T11:18:27.367836+00:00",
+      "journal": "source25-arm-lzma2-672c172dd247.json",
+      "journal_bytes": 47563,
+      "journal_sha256": "e12eb1fe32578b818d27917c8ba9236b9bd384877d6a080f453a72ad9dc3e35e",
+      "log": "source25-arm-lzma2-672c172dd247.log",
+      "log_sha256": "c697ca4105239c98daa8f36bb783b6b556e836753d0f8d7f27c3cc551f853cd5",
+      "role": "source25_linked_arm_audit"
+    },
+    "source25-arm-codec-compare-92ac89b952d8": {
+      "checkpoint": "fc769a017d83051e34592e661d02c92aa0836b20",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "1f31d19541bfaf693949cb96032be1679f38366d560c69734fa1f893a320e972",
+      "started_at": "2026-10-21T11:21:30.938568+00:00",
+      "ended_at": "2026-10-21T11:21:39.628131+00:00",
+      "journal": "source25-arm-codec-compare-92ac89b952d8.json",
+      "journal_bytes": 47694,
+      "journal_sha256": "9bc8139d66d53290f26d0c6fd97434dccbb6eea5474f17ffba1108d97039c3d7",
+      "log": "source25-arm-codec-compare-92ac89b952d8.log",
+      "log_sha256": "a8431e6856814081608ee4b319b1b7824e21b56a5e9b1967915d38a0ea1997ea",
+      "role": "source25_linked_arm_audit"
+    },
+    "source26-v15-profile-4ec0a1945866": {
+      "checkpoint": "8536cadf8f8e3d88b6856c53e3970170cfd95d63",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "32783325831819a39d4effc6a5fafeb91abc2c353eb824cd3b83677a9cfde553",
+      "started_at": "2026-10-21T11:34:02.680710+00:00",
+      "ended_at": "2026-10-21T11:50:09.242489+00:00",
+      "journal": "source26-v15-profile-4ec0a1945866.json",
+      "journal_bytes": 47821,
+      "journal_sha256": "9edcc2e55cedb0bac6780e5f970e21fb28939782940abb35eed03c484bc7ed1c",
+      "log": "source26-v15-profile-4ec0a1945866.log",
+      "log_sha256": "85b0887932744c85157192473ec8b94d0e28b1e1b684cf2b87c772bb63ebf4e5",
+      "role": "historical_source26_firebird_baseline"
+    },
+    "source27-native-release-configure-0891c45d46a3": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:52:55.111669+00:00",
+      "ended_at": "2026-10-21T11:52:58.222227+00:00",
+      "journal": "source27-native-release-configure-0891c45d46a3.json",
+      "journal_bytes": 48036,
+      "journal_sha256": "04bb920761092d8cb7cbe113d35cf3f318d929f7b6d6781cf18768a8e4cd3ace",
+      "log": "source27-native-release-configure-0891c45d46a3.log",
+      "log_sha256": "7a357dc7444a2fd24d7c4c5db04cfd42d07f49e8fb36b348734f7d4fe884cb82",
+      "role": "source27_native_runtime"
+    },
+    "source27-native-release-build-2e9baeb0b988": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:53:07.833996+00:00",
+      "ended_at": "2026-10-21T11:55:08.562830+00:00",
+      "journal": "source27-native-release-build-2e9baeb0b988.json",
+      "journal_bytes": 47911,
+      "journal_sha256": "d64c7dad38092511676da8669f4652b0cd2ebc51bb5aacb552b84b79c0559e82",
+      "log": "source27-native-release-build-2e9baeb0b988.log",
+      "log_sha256": "d743cbe3cdd404fbf3a2d586d78ee93da31e571446aa0255d7f75b65276a54ce",
+      "role": "source27_native_runtime"
+    },
+    "source27-native-release-affected3-df035954e210": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:56:21.547361+00:00",
+      "ended_at": "2026-10-21T11:56:25.692459+00:00",
+      "journal": "source27-native-release-affected3-df035954e210.json",
+      "journal_bytes": 47948,
+      "journal_sha256": "bd306b26e8e0c2b40854e7886b283f9432ae56b7ab7e39eadb57dd951cf6c10b",
+      "log": "source27-native-release-affected3-df035954e210.log",
+      "log_sha256": "436dd32d6815e42864312a2bccafc88f2a153c942db4f03c1bfd309fd40c7121",
+      "role": "source27_native_runtime"
+    },
+    "source27-native-world-v16-a0c1e11e08ba": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:56:22.556855+00:00",
+      "ended_at": "2026-10-21T11:59:34.278360+00:00",
+      "journal": "source27-native-world-v16-a0c1e11e08ba.json",
+      "journal_bytes": 47764,
+      "journal_sha256": "9ae46a1d21d8c1c7513c5fab96144a869e940f35a4a36c0d6c8aaf6fdc0b12d1",
+      "log": "source27-native-world-v16-a0c1e11e08ba.log",
+      "log_sha256": "6acce8240a7c35a6325aa03b2933afc86baf02312a423f022951fb5295a39954",
+      "role": "source27_native_runtime"
+    },
+    "source27-native-world-golden-compare-c1e934145fa2": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T12:00:13.399399+00:00",
+      "ended_at": "2026-10-21T12:00:16.871445+00:00",
+      "journal": "source27-native-world-golden-compare-c1e934145fa2.json",
+      "journal_bytes": 47647,
+      "journal_sha256": "ad60307696a3c0a55a110e8c7bc7101a964c72494529fee5afe6dde61c8dfb40",
+      "log": "source27-native-world-golden-compare-c1e934145fa2.log",
+      "log_sha256": "0ea39a133b848b2de56d3c3e542e4ea8e690a6a616cf1268e65484cef12e276c",
+      "role": "source27_native_runtime"
+    },
+    "source27-native-clip967-oracle-d1e1a82e0903": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:56:48.381489+00:00",
+      "ended_at": "2026-10-21T11:58:14.508308+00:00",
+      "journal": "source27-native-clip967-oracle-d1e1a82e0903.json",
+      "journal_bytes": 47836,
+      "journal_sha256": "582c44d8e57f23f338caf311b237d4c1715c8717a76c76ba6f3d0eadca9b247a",
+      "log": "source27-native-clip967-oracle-d1e1a82e0903.log",
+      "log_sha256": "0f3b2588e8535c9b499cc334b6835d5faeabaaee6566b39212cefb446983fa73",
+      "role": "source27_native_runtime"
+    },
+    "source27-native-clip967-warm2-37fe1a70377b": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:56:48.377792+00:00",
+      "ended_at": "2026-10-21T11:56:57.778047+00:00",
+      "journal": "source27-native-clip967-warm2-37fe1a70377b.json",
+      "journal_bytes": 48291,
+      "journal_sha256": "6c6e97c1243675905d212cf0a6d0c16c1499bfa6c0c08db1d393dd9c0b6833a3",
+      "log": "source27-native-clip967-warm2-37fe1a70377b.log",
+      "log_sha256": "700d54e56361a8aae12efc4790177de86afa075ad18093628488ae1ebaf1f649",
+      "role": "source27_native_runtime"
+    },
+    "source28-content-tiles-release-26b6955fb850": {
+      "checkpoint": "c92b1733f1b54bff820583d8f6ab2d62fb56e824",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "f6203849351c25ab7c4ca073a181ff77bd7ee8fdfa5b0f4e5efcf713bd7fe850",
+      "started_at": "2026-10-21T11:59:08.109778+00:00",
+      "ended_at": "2026-10-21T11:59:54.134393+00:00",
+      "journal": "source28-content-tiles-release-26b6955fb850.json",
+      "journal_bytes": 47649,
+      "journal_sha256": "ed7d1da18532b25d1e878cdfe1ba47473b442c4dd76ea5570b707470e5cc5819",
+      "log": "source28-content-tiles-release-26b6955fb850.log",
+      "log_sha256": "0a3339c46a92e18ae394b3bfedd114c1f34ea47aaefa6ec8d9f16163180b402d",
+      "role": "source28_equivalent_runtime_test"
+    },
+    "source27-arm-build-e905c3005773": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:52:59.079673+00:00",
+      "ended_at": "2026-10-21T11:54:59.254612+00:00",
+      "journal": "source27-arm-build-e905c3005773.json",
+      "journal_bytes": 47720,
+      "journal_sha256": "2596ad785c7aeb14cff0bd7a10213cee07d7b17117c9947b143f1390b97d0661",
+      "log": "source27-arm-build-e905c3005773.log",
+      "log_sha256": "5d2311538913aad10d9cd2765eb0d17a149f3bd3103a83cec04e4c18366cbbf3",
+      "role": "source27_runtime"
+    },
+    "source27-wasm-build-af30568df3c9": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:52:59.127864+00:00",
+      "ended_at": "2026-10-21T11:55:38.040289+00:00",
+      "journal": "source27-wasm-build-af30568df3c9.json",
+      "journal_bytes": 47740,
+      "journal_sha256": "b71d54014cff4823a2cbf68964288f153d2fb9ee25abfa775ac727009695cea4",
+      "log": "source27-wasm-build-af30568df3c9.log",
+      "log_sha256": "5f2608ec565faed74fba9aa16735069396abff145e44645be2fccb234fea9aed",
+      "role": "source27_runtime"
+    },
+    "source27-world-wasm-replay-49d9ee428986": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T12:01:03.683538+00:00",
+      "ended_at": "2026-10-21T12:02:33.581442+00:00",
+      "journal": "source27-world-wasm-replay-49d9ee428986.json",
+      "journal_bytes": 47859,
+      "journal_sha256": "dff88a0c0c1311b9396d8ff590714edffbf6fc9b1896a8c355c35533609ebd4c",
+      "log": "source27-world-wasm-replay-49d9ee428986.log",
+      "log_sha256": "3882477cb6d8dd984d6570bfb4497dab0793817fb92b0bccf50d3f84eb5761a2",
+      "role": "source27_runtime"
+    },
+    "source27-actual-resource-hotspots-a83f02d496dd": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:58:16.535715+00:00",
+      "ended_at": "2026-10-21T11:58:51.451097+00:00",
+      "journal": "source27-actual-resource-hotspots-a83f02d496dd.json",
+      "journal_bytes": 48139,
+      "journal_sha256": "808c7de3fa6732aa9011c655fb5e33909aca6813052b78089fb7b0cf1d9b848c",
+      "log": "source27-actual-resource-hotspots-a83f02d496dd.log",
+      "log_sha256": "4d9d0b8c60921b24e579f118556a7b0f96490a56b754d52614e1b97e3e324382",
+      "role": "source27_runtime"
+    },
+    "source27-resource-map-asan-18eef84a4b7c": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:52:58.789049+00:00",
+      "ended_at": "2026-10-21T11:54:17.428969+00:00",
+      "journal": "source27-resource-map-asan-18eef84a4b7c.json",
+      "journal_bytes": 47643,
+      "journal_sha256": "f5b3bcba04201d0bb70fe4fcab86b4597a2e4ff93ca9807517c337f6bf1bd6d0",
+      "log": "source27-resource-map-asan-18eef84a4b7c.log",
+      "log_sha256": "c9d049fc46ca6d5b0c43a60cd14e01ca3e35b6edf9d01e9d94178da0beddb884",
+      "role": "preserved_failed_attempt"
+    },
+    "source28-resource-map-asan-b1c4e7f38439": {
+      "checkpoint": "c92b1733f1b54bff820583d8f6ab2d62fb56e824",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "f6203849351c25ab7c4ca073a181ff77bd7ee8fdfa5b0f4e5efcf713bd7fe850",
+      "started_at": "2026-10-21T11:58:16.902635+00:00",
+      "ended_at": "2026-10-21T12:02:01.949168+00:00",
+      "journal": "source28-resource-map-asan-b1c4e7f38439.json",
+      "journal_bytes": 47643,
+      "journal_sha256": "8cfeaf2dd9cb4b14b4d9ebffaf8b905cde0da7f157e2e42951a36afc16031832",
+      "log": "source28-resource-map-asan-b1c4e7f38439.log",
+      "log_sha256": "4004f7c52ab62ba29a3888187039664cb0c02a264a2c17bf6b3faedd2d2dded7",
+      "role": "source28_equivalent_runtime_test"
+    },
+    "source28-runtime-equivalence-and-io-9bebc0c3cbd2": {
+      "checkpoint": "c92b1733f1b54bff820583d8f6ab2d62fb56e824",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "f6203849351c25ab7c4ca073a181ff77bd7ee8fdfa5b0f4e5efcf713bd7fe850",
+      "started_at": "2026-10-21T12:01:03.678371+00:00",
+      "ended_at": "2026-10-21T12:01:04.310483+00:00",
+      "journal": "source28-runtime-equivalence-and-io-9bebc0c3cbd2.json",
+      "journal_bytes": 47655,
+      "journal_sha256": "7b1c3f59c0a9da7103d036962f00bb545d8e3e44020d37a2b825f98bdbec372b",
+      "log": "source28-runtime-equivalence-and-io-9bebc0c3cbd2.log",
+      "log_sha256": "f1acd763d6f9d669e9f604bcef6d18c83c3270f8c557001a8dfa97f59eb70c99",
+      "role": "source28_equivalent_runtime_test"
+    },
+    "source27-v16-resource-hotspots-0d3942538073": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T12:11:35.027009+00:00",
+      "ended_at": "2026-10-21T12:11:59.396980+00:00",
+      "journal": "source27-v16-resource-hotspots-0d3942538073.json",
+      "journal_bytes": 48137,
+      "journal_sha256": "20fe8f0526d2f5092455e7edaf6b44daa8fb9b8a2614725b8b432d555471d915",
+      "log": "source27-v16-resource-hotspots-0d3942538073.log",
+      "log_sha256": "2b75aa5d2666e7b36071c4d99cfc7e79be0c893c7623401fd5c52e7fec2cfe5f",
+      "role": "source27_runtime_with_final_v16_pack"
+    },
+    "source27-v15-profile-77fc358822c2": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T11:58:28.476465+00:00",
+      "ended_at": "2026-10-21T12:13:46.732064+00:00",
+      "journal": "source27-v15-profile-77fc358822c2.json",
+      "journal_bytes": 47935,
+      "journal_sha256": "0375ea2515464ea8a2d2cd19060c2dab2fcb859a29acb22d229aeae557b51ea1",
+      "log": "source27-v15-profile-77fc358822c2.log",
+      "log_sha256": "577555b3917d2e7ce49ea49909318c0d7a169b277f7aef2eed060266aa6c7173",
+      "role": "current_runtime_same_save_v15_firebird_comparison"
+    }
+  },
+  "source27_final_pack_wasm_reads": {
+    "status": "passed",
+    "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "evidence": "source27_v16_resource_trace",
+    "journal": "source27-v16-resource-hotspots-0d3942538073",
+    "measurement": "Node WebAssembly ResourceSource callbacks, no host timing claims, not browser or calculator FPS",
+    "method": "One Continue key (4), draw, then exactly 720 iterations of advance(33)+draw_frame; first180, next180, then steady360 separate. Only the first360 match the historical comparison window. Runtime, resources, and saves unmodified. Large reads bypass bounded ResourceReader page cache (64x4096 bytes in source27). Category bytes are interval intersections; page reads may contain unrequested neighboring glyphs/strings.",
+    "wasm_sha256": "8688714c7d6c23dbec25e9729e14596242c0a84ff5a3dc869d5a660f270136bd",
+    "pack_sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
+    "pack_version": 16,
+    "frames_per_scene": 720,
+    "advance_ms": 33,
+    "scenarios": [
+      {
+        "name": "world-neow",
+        "fixture_sha256": "1b629f8f09c460d2657f9f6e25cbf97d9331d310bfb9879b0dd555e764cd17f7",
+        "scene_after_continue": "room",
+        "scene_after": "room",
+        "scene_counts": {
+          "room": 720
+        },
+        "windows": {
+          "first180": {
+            "calls": 3,
+            "bytes": 12288
+          },
+          "next180": {
+            "calls": 0,
+            "bytes": 0
+          },
+          "steady360": {
+            "calls": 0,
+            "bytes": 0
+          }
+        },
+        "same_window_counts_as_source27_v15": true,
+        "final_storage_sha256": "1b629f8f09c460d2657f9f6e25cbf97d9331d310bfb9879b0dd555e764cd17f7"
+      },
+      {
+        "name": "world-native-combat",
+        "fixture_sha256": "6abdc238e5b875dbfac7d45551f6f320e8123d267e10bff1f974436937104d4b",
+        "scene_after_continue": "combat",
+        "scene_after": "combat",
+        "scene_counts": {
+          "combat": 720
+        },
+        "windows": {
+          "first180": {
+            "calls": 45,
+            "bytes": 257061
+          },
+          "next180": {
+            "calls": 0,
+            "bytes": 0
+          },
+          "steady360": {
+            "calls": 0,
+            "bytes": 0
+          }
+        },
+        "same_window_counts_as_source27_v15": true,
+        "final_storage_sha256": "6abdc238e5b875dbfac7d45551f6f320e8123d267e10bff1f974436937104d4b"
+      },
+      {
+        "name": "firebird-first-combat",
+        "fixture_sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca",
+        "scene_after_continue": "combat",
+        "scene_after": "combat",
+        "scene_counts": {
+          "combat": 720
+        },
+        "windows": {
+          "first180": {
+            "calls": 399,
+            "bytes": 22296766
+          },
+          "next180": {
+            "calls": 11,
+            "bytes": 662603
+          },
+          "steady360": {
+            "calls": 0,
+            "bytes": 0
+          }
+        },
+        "same_window_counts_as_source27_v15": true,
+        "final_storage_sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca"
+      }
+    ],
+    "scope": "Final v16 images do not reintroduce repeated reads in these three declared windows. This is current-runtime v16 execution; the 96.70% old/new comparison remains attributed exclusively to the separate v15 runs. No browser or calculator FPS is established."
+  },
+  "fingerprint_scope": "run_logged source fingerprints include source, configuration and test inputs. Source28 changes a test, so its fingerprint differs; the separate 274-file runtime-input comparison establishes equality with source27.",
+  "source27_firebird_v15": {
+    "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "hardware_measurement": false,
+    "environment": "Firebird headless v4, user CX II images, turbo, CPU396MHz/AHB198MHz/APB99MHz; not physical device FPS",
+    "clock": {
+      "source": "foreground_SP804",
+      "ticks_per_second": 32768,
+      "watch_sampling_ms": 10
+    },
+    "pack": {
+      "path": "nSpire2-0.17.nsp.tns",
+      "bytes": 80846058,
+      "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd"
+    },
+    "launcher": {
+      "path": "nSpire2.tns",
+      "bytes": 911249,
+      "sha256": "79a095948a2297ea9a3ae4e2dba6c11a6c4743c63ec5a7993b792c17e0a66789"
+    },
+    "startup_ms": 44088.897705078125,
+    "first_render_ms": 533.447265625,
+    "animation_gate": {
+      "tick": 11964,
+      "animation": 511,
+      "enemy_visual_clock": 187,
+      "step_ms": 33,
+      "elapsed_ms": 10692,
+      "required_ms": 9963,
+      "virtual_ms_from_first_battle_sample_origin": 50000,
+      "does_not_prove_every_source_frame_visited": true
+    },
+    "gameplay_gates": {
+      "restarted_continue": true,
+      "complete_idle_duration_crossed": true,
+      "three_bounded_post_cycle_windows": true,
+      "save_key": true,
+      "save_return_to_title": true,
+      "normal_exit_to_os": true,
+      "usb_perf_retrieval": true,
+      "usb_save_retrieval": true,
+      "canonical_roundtrip": true
+    },
+    "measurement_limits": [
+      "Emulator rates are not physical calculator FPS, and host seconds are not simulated seconds.",
+      "Watch counts update starts; per-scene totals count completed frames.",
+      "A completed-frame delta includes work from a frame that may have started before its observation window; global provider deltas measure requests between paused observations.",
+      "The final 815-frame combat aggregate includes cold loading, stable idle and save input; it cannot be directly compared as an equal-duration average to the source26 59-frame aggregate.",
+      "Animation dt clamps and source-frame skipping mean an elapsed authored idle period does not guarantee every frame is cached.",
+      "The 30.0 starts/s and zero-read window is specifically v15, this saved battle and this later warmed interval.",
+      "v16 resource cache was separately checked by root in WASM; actual v16 UI/save/exit is a distinct pending session.",
+      "PC samples are 256-byte buckets; exact PC/symbol mapping is needed to distinguish nearby functions."
+    ],
+    "evidence": "source27_firebird_v15",
+    "journal": "source27-v15-profile-77fc358822c2",
+    "status": "passed",
+    "windows": [
+      {
+        "from_tick": 6244,
+        "to_tick": 6744,
+        "simulated_ms": 5000,
+        "updates": 150,
+        "maximum_observed_gap_ms": 40,
+        "updates_per_simulated_second": 30.0
+      },
+      {
+        "from_tick": 6964,
+        "to_tick": 7964,
+        "simulated_ms": 10000,
+        "updates": 7,
+        "maximum_observed_gap_ms": 1500,
+        "updates_per_simulated_second": 0.7
+      },
+      {
+        "from_tick": 7964,
+        "to_tick": 8964,
+        "simulated_ms": 10000,
+        "updates": 8,
+        "maximum_observed_gap_ms": 1530,
+        "updates_per_simulated_second": 0.8
+      },
+      {
+        "from_tick": 8964,
+        "to_tick": 9964,
+        "simulated_ms": 10000,
+        "updates": 7,
+        "maximum_observed_gap_ms": 1700,
+        "updates_per_simulated_second": 0.7
+      },
+      {
+        "from_tick": 9964,
+        "to_tick": 10964,
+        "simulated_ms": 10000,
+        "updates": 14,
+        "maximum_observed_gap_ms": 1680,
+        "updates_per_simulated_second": 1.4
+      },
+      {
+        "from_tick": 10964,
+        "to_tick": 11964,
+        "simulated_ms": 10000,
+        "updates": 15,
+        "maximum_observed_gap_ms": 1690,
+        "updates_per_simulated_second": 1.5
+      },
+      {
+        "from_tick": 11964,
+        "to_tick": 12964,
+        "simulated_ms": 10000,
+        "updates": 136,
+        "maximum_observed_gap_ms": 1350,
+        "updates_per_simulated_second": 13.6
+      },
+      {
+        "from_tick": 12964,
+        "to_tick": 13964,
+        "simulated_ms": 10000,
+        "updates": 284,
+        "maximum_observed_gap_ms": 320,
+        "updates_per_simulated_second": 28.4
+      },
+      {
+        "from_tick": 13964,
+        "to_tick": 14964,
+        "simulated_ms": 10000,
+        "updates": 300,
+        "maximum_observed_gap_ms": 40,
+        "updates_per_simulated_second": 30.0
+      }
+    ],
+    "comparison_to_source26": {
+      "baseline_summary": {
+        "path": "device25-work/source26-v15-profile/performance-summary.json",
+        "bytes": 43963,
+        "sha256": "eba36601b4c5d7ea81f66876d7ec42d31abb42af19665001e40531b1430dcf5e"
+      },
+      "startup_baseline_ms": 44083.343505859375,
+      "startup_current_ms": 44088.897705078125,
+      "startup_conclusion": "no material improvement",
+      "primary_window_ms": 10000,
+      "baseline_animation_start_ms": 10626,
+      "current_animation_start_ms": 10692,
+      "baseline_update_starts": 12,
+      "current_update_starts": 136,
+      "observed_start_rate_ratio": 11.333333333333334,
+      "baseline_max_observed_gap_ms": 1300,
+      "current_max_observed_gap_ms": 1350,
+      "interpretation": "primary comparison improved throughput but still includes cold decoding stalls; warm30/s is a separate later current-only window",
+      "final_current_only_window": {
+        "update_starts": 300,
+        "simulated_ms": 10000,
+        "max_observed_gap_ms": 40,
+        "provider_calls": 0,
+        "provider_bytes": 0,
+        "provider_seeks": 0
+      }
+    },
+    "primary_post_cycle_window": {
+      "from_tick": 11964,
+      "to_tick": 12964,
+      "provider_inside_interval": {
+        "ticks": 96993,
+        "calls": 59,
+        "bytes": 3375106,
+        "failures": 0,
+        "seeks": 57
+      },
+      "completed_frames_inside_interval": {
+        "frame_count": 136,
+        "interval_ticks": 319812,
+        "update_ticks": 419,
+        "render_ticks": 312239,
+        "present_ticks": 982,
+        "resource_ticks": 93691,
+        "read_calls": 57,
+        "read_bytes": 3170027,
+        "read_seeks": 55
+      }
+    },
+    "extra_warm_windows": [
+      {
+        "from_tick": 12964,
+        "to_tick": 13964,
+        "provider_inside_interval": {
+          "ticks": 8039,
+          "calls": 8,
+          "bytes": 326482,
+          "failures": 0,
+          "seeks": 8
+        },
+        "completed_frames_inside_interval": {
+          "frame_count": 284,
+          "interval_ticks": 334992,
+          "update_ticks": 855,
+          "render_ticks": 316855,
+          "present_ticks": 2064,
+          "resource_ticks": 11341,
+          "read_calls": 10,
+          "read_bytes": 531561,
+          "read_seeks": 10
+        }
+      },
+      {
+        "from_tick": 13964,
+        "to_tick": 14964,
+        "provider_inside_interval": {
+          "ticks": 0,
+          "calls": 0,
+          "bytes": 0,
+          "failures": 0,
+          "seeks": 0
+        },
+        "completed_frames_inside_interval": {
+          "frame_count": 300,
+          "interval_ticks": 327608,
+          "update_ticks": 900,
+          "render_ticks": 307755,
+          "present_ticks": 2168,
+          "resource_ticks": 0,
+          "read_calls": 0,
+          "read_bytes": 0,
+          "read_seeks": 0
+        }
+      }
+    ],
+    "save_roundtrip": {
+      "byte_identical": true,
+      "bytes": 230356,
+      "sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca"
+    },
+    "raw_report": {
+      "path": "device25-work/source27-v15-profile/runtime.perf.json",
+      "bytes": 3536,
+      "sha256": "25daf9ce778edd930a8d561d5a4006c25bdb4f90e972c1211e1f328ff4b38548"
+    },
+    "initial_flash_unchanged": true,
+    "saveflash_called": false
+  },
+  "completed_device_gates": {
+    "source27_same_save_firebird_comparison": {
+      "status": "passed",
+      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "required_pack_version": 15,
+      "report": "source27_firebird_v15",
+      "journal": "source27-v15-profile-77fc358822c2"
+    }
+  }
+}
