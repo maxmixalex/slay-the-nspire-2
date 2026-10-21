@@ -6,11 +6,11 @@ unsigned 32-bit values, matching the existing NSP2 directory. A platform owns
 the file handle or memory buffer and keeps it alive until the reader is reset.
 The source does not allocate or open files itself.
 
-`ResourceReader` copies data into the caller's output. Its fixed cache contains
-eight 4096-byte pages and uses round-robin replacement. Requests of at least
+`ResourceReader` copies data into the caller's output. Source27's fixed cache
+contains 64 4096-byte pages and uses round-robin replacement. Requests of at least
 4096 bytes bypass that cache, so a picture decode does not displace recently
 read metadata. Direct memory sources also bypass it. The complete reader is
-statically limited to 33 KiB; FNV checksum calculation uses one additional
+statically limited to 257 KiB; FNV checksum calculation uses one additional
 4096-byte stack buffer. There is no resource-sized resident allocation.
 
 Range validation subtracts from the declared length before comparing the
@@ -27,10 +27,18 @@ NSP2 file. Its full FNV checksum is streamed once at open. The
 256 MiB on-disk policy is separate from this API's unsigned 32-bit address
 range and from the bounded runtime memory budget.
 
-`Content` now reads and validates the complete directory into a fixed 2 MiB
-buffer when a direct memory source is absent. Image payloads use four bounded
-cache classes: 64 × 4096 bytes, 16 × 32768 bytes, 8 × 131072 bytes and two
-buffers large enough for the maximum 320 × 240 sparse image. Glyphs and
+The previous eight-page reader repeatedly read 63 pages per Neow frame, with
+44 different pages in the measured miss stream. The additional bounded cache
+space targets that observed pressure; changed-code execution is still required.
+It changes no on-disk bytes. The reader is part of the global App on ARM, not a
+new quarter-MiB temporary on the calculator stack.
+
+`Content` reads and validates the complete directory into a fixed 2 MiB
+buffer when a direct memory source is absent. Source22 replaced the former
+four image-cache tiers with 748 × 4096 bytes and 90 LRU entries. Source27 keeps
+the pixel pool and raises the entry ceiling to 256 with a separately bounded
+metadata increase. The tile/index pool is 40 × 128 KiB (5 MiB), and remains
+independent of the reader's small-page cache. Glyphs and
 strings have separate bounded caches. Views remain valid until their cache
 slot is reused. Cache entries include the owning Content object and are
 invalidated on every open, including failed opens. A failed payload read

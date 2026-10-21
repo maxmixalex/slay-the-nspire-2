@@ -13,7 +13,10 @@ constexpr unsigned MaxImageBytes=320u*240u*8u+2u*240u;
 constexpr unsigned MaxEncodedImage=MaxImageBytes+MaxImageBytes/255u+32u;
 constexpr unsigned MaxGlyphBytes=40u*40u*2u,MaxStringBytes=16384;
 constexpr unsigned ImageBufferBudget=64u*4096u+16u*32768u+8u*131072u+2u*MaxImageBytes;
-constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=90;
+// Keep the historical four-tier pixel budget. Small animation frames need
+// more keys than the former 90 entries even when their complete decoded
+// working set fits these pages; only the bounded metadata grows here.
+constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=256;
 alignas(4) static uint8_t image_pixels[ImagePages*ImagePageBytes];
 static uint8_t encoded_pixels[MaxEncodedImage];
 #include "content_tiles.inc"
@@ -28,9 +31,11 @@ static ImageCache image_cache[ImageEntries];
 static uint32_t image_used[(ImagePages+31)/32]{},image_age=0;
 static_assert(ImagePages==748&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
-static_assert(sizeof image_pixels+sizeof image_cache+sizeof image_used+sizeof image_age<=
-              ImageBufferBudget+ImageEntries*(sizeof(const Content*)+2*sizeof(unsigned))+4*sizeof(unsigned),
-              "Image pixels and bookkeeping must not exceed the previous four-tier cache");
+static_assert(ImageEntries<=256,"Age-wrap entry indexes must fit one byte");
+static_assert(sizeof image_pixels<=ImageBufferBudget,
+              "Image pixels must not exceed the previous four-tier cache");
+static_assert(sizeof image_cache+sizeof image_used+sizeof image_age<=8u*1024u,
+              "Image-cache bookkeeping must remain below 8 KiB");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
 static void discard_image(ImageCache& cache){
     for(unsigned i=cache.first;i<unsigned(cache.first)+cache.pages;++i)image_used[i/32]&=~(uint32_t(1)<<(i%32));
@@ -54,7 +59,7 @@ static uint32_t next_image_age(){
 static ImageCache* reserve_image(unsigned size){
     if(!size||size>MaxImageBytes)return nullptr;
     const unsigned pages=(size+ImagePageBytes-1)/ImagePageBytes;
-    // At most all 90 published entries can be evicted. No compaction or
+    // At most all published entries can be evicted. No compaction or
     // allocation moves another entry while a caller still holds its view.
     for(unsigned attempt=0;attempt<=ImageEntries;++attempt){
         unsigned run=0,first=ImagePages;

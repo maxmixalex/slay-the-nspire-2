@@ -45,24 +45,37 @@ static void bounds(){
     CHECK(reader.read(0xffffffffu,nullptr,0));
 }
 static void cache(){
-    File file;file.readable=12*ResourceReader::PageSize+37;
+    constexpr unsigned pages=ResourceReader::PageCount;
+    File file;file.readable=(pages+4)*ResourceReader::PageSize+37;
     ResourceReader reader(file.source());uint8_t one=0;uint16_t two=0;uint32_t four=0;
     CHECK(reader.u8(17,one));CHECK(one==File::byte(17,0));CHECK(file.calls==1);
     CHECK(reader.u16(21,two));CHECK(file.calls==1);CHECK(reader.stats().cache_hits==1);
     CHECK(reader.u32(4094,four));CHECK(file.calls==2);
     CHECK(four==(uint32_t(File::byte(4094,0))|(uint32_t(File::byte(4095,0))<<8)|(uint32_t(File::byte(4096,0))<<16)|(uint32_t(File::byte(4097,0))<<24)));
-    for(uint32_t page=2;page<8;++page)CHECK(reader.u8(page*4096+3,one));
-    CHECK(file.calls==8);CHECK(reader.u8(0,one));CHECK(file.calls==8);
-    CHECK(reader.u8(8*4096,one));CHECK(file.calls==9);
-    CHECK(reader.u8(0,one));CHECK(file.calls==10); // The ninth page evicted page zero.
+    for(uint32_t page=2;page<pages;++page)CHECK(reader.u8(page*4096+3,one));
+    CHECK(file.calls==pages);CHECK(reader.u8(0,one));CHECK(file.calls==pages);
+    CHECK(reader.u8(pages*4096,one));CHECK(file.calls==pages+1);
+    CHECK(reader.u8(0,one));CHECK(file.calls==pages+2); // Capacity+1 evicts page zero.
     std::vector<uint8_t> bulk(4096);const unsigned before=file.calls;
-    CHECK(reader.read(10*4096+11,bulk.data(),4096));check_bytes(bulk.data(),10*4096+11,4096);
+    CHECK(reader.read((pages+2)*4096+11,bulk.data(),4096));check_bytes(bulk.data(),(pages+2)*4096+11,4096);
     CHECK(file.calls==before+1);CHECK(file.last_count==4096);CHECK(reader.stats().bypasses==1);
     CHECK(reader.u8(0,one));CHECK(file.calls==before+1); // Bulk read did not evict a small-read page.
     reader.clear_stats();CHECK(reader.stats().callbacks==0&&reader.stats().cache_hits==0);
     CHECK(reader.u8(0,one));CHECK(reader.stats().cache_hits==1);
     File next;next.readable=file.readable;next.salt=83;
     CHECK(reader.reset(next.source()));CHECK(reader.u8(0,one));CHECK(one==83);CHECK(next.calls==1);
+}
+static void repeated_text_working_set(){
+    // A generated 44-page text working set reproduces the observed capacity
+    // pressure without storing private locale text or resource bytes.
+    File file;file.readable=101*ResourceReader::PageSize;ResourceReader reader(file.source());
+    for(unsigned cycle=0;cycle<4;++cycle){
+        for(unsigned i=0;i<44;++i){
+            const unsigned offset=((17*i)%101)*ResourceReader::PageSize+31;
+            uint8_t bytes[23]{};CHECK(reader.read(offset,bytes,sizeof bytes));check_bytes(bytes,offset,sizeof bytes);
+        }
+        CHECK(file.calls==44); // All later passes stay in the bounded page cache.
+    }
 }
 static void failures(){
     File file;file.readable=4096+2;ResourceReader reader(file.source(8192));
@@ -100,4 +113,4 @@ static void memory_and_hash(){
     ResourceReader preferred(direct);uint8_t byte=0;const unsigned calls=file.calls;
     CHECK(preferred.u8(0,byte));CHECK(file.calls==calls);
 }
-int main(){bounds();cache();failures();memory_and_hash();std::printf("resource source: %u checks passed\n",checks);}
+int main(){bounds();cache();repeated_text_working_set();failures();memory_and_hash();std::printf("resource source: %u checks passed\n",checks);}

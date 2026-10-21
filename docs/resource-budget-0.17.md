@@ -1,7 +1,10 @@
 # Resource storage and access budget — 2026-10-21
 
-The current complete file is **80,846,058 bytes = 80.85 MB = 77.100809 MiB**.
-It preserves the existing rendered-frame bytes, dimensions, sparse geometry,
+The complete tiled v15 baseline is **80,846,058 bytes = 80.85 MB = 77.100809 MiB**.
+The corrected source25 v16 file adds 13 native UI skins and ten missing orb
+strings, bringing the current complete file to **80,879,519 bytes**. All old
+payload bytes and IDs are preserved; the append adds 33,461 bytes. It preserves
+the existing rendered-frame bytes, dimensions, sparse geometry,
 timing entries and pivots. This storage result does not settle the separate
 original-UI fidelity or calculator performance requirements.
 
@@ -11,9 +14,10 @@ A 40,000,000-byte combined target leaves 39,114,614 bytes for resources, requiri
 another **51.62%** reduction of this resource file. Interpreting 40 M as 40 MiB
 still requires **49.22%**. Neither target has been achieved or promised.
 
-## What occupies the existing file
+## What occupies the tiled v15 baseline
 
-The actual production conversion manifest accounts for every byte:
+The actual v15 production conversion manifest accounts for every baseline byte;
+the source25 UI append is listed separately above:
 
 | Component | Bytes |
 | --- | ---: |
@@ -190,6 +194,23 @@ other components remain unchanged, before the missing new global metadata.
 That arithmetic is not a delivered pack size or a guaranteed compression bound.
 
 ## Next implementation and architectural work
+
+The owner's later UI/performance request gives measured runtime stalls priority
+over another pack-format change. Source25/26 Firebird runs expose persistent
+small-page text misses, map software division, and real multi-enemy tile-cache
+eviction. Source27 targets those costs with unchanged pack bytes and exact
+rendering. Increasing bounded cache space is a RAM tradeoff, not disk savings;
+the ARM allocation limit must be checked before choosing a tile pool. See
+[native-ui-performance-0.17.md](native-ui-performance-0.17.md) for the actual
+observations and their emulator/animation-window limits.
+
+The selected source27 layout preserves all 748 decoded-picture pages, expands
+their key table from 90 to 256 entries, changes the tile pool from 4 to 5 MiB,
+and changes the small-read cache from 8 to 64 pages. The actual slow battle's
+256 observed keys fit in 680 picture pages; the previous key-count bound made
+the larger pixel pool ineffective. The total linked ARM allocation and fixed
+16 MiB WASM memory still require a successful target build. This choice changes
+runtime RAM and read behavior only; the 80,879,519-byte v16 resource is unchanged.
 
 The concrete next storage change is a bounded grouped retained-image/glyph
 format and reader, preserving exact output, owner/error behavior and existing

@@ -21,13 +21,15 @@ struct ResourceReadStats {
     uint64_t callback_bytes{};
 };
 
-// Fixed storage: eight 4 KiB pages, no allocation, no retained caller buffers.
+// Fixed storage: sixty-four 4 KiB pages, no allocation or retained caller buffers.
+// Observed Neow text misses span 44 pages: the former eight-page reader
+// refetched glyph/string pages each frame even with no animation group reads.
 // Small reads use a round-robin page cache. Reads of at least one full page
 // bypass it, so decoding a large picture does not evict directory/string data.
 // Source reset invalidates every page. No API returns a pointer into the cache.
 class ResourceReader {
 public:
-    static constexpr uint32_t PageSize=4096,PageCount=8;
+    static constexpr uint32_t PageSize=4096,PageCount=64;
     ResourceReader()=default;
     explicit ResourceReader(ResourceSource source){reset(source);}
     bool reset(ResourceSource);
@@ -54,5 +56,5 @@ private:
     bool fetch(uint32_t offset,void* dst,uint32_t count)const;
     const Page* page(uint32_t offset)const;
 };
-static_assert(sizeof(ResourceReader)<=33*1024,"Resource reader must stay within its fixed 33 KiB budget");
+static_assert(sizeof(ResourceReader)<=257*1024,"Resource reader must stay within its fixed 257 KiB budget");
 } // namespace spire

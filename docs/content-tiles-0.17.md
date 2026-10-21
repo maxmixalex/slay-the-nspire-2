@@ -256,7 +256,7 @@ conversion's complete original-byte comparison provide the required gates.
 
 ## Runtime memory and access phases
 
-The compressed-group cache has 64 pages of 64 KiB, or **4 MiB of raw storage**,
+Source27's compressed-group cache has 40 pages of 128 KiB, or **5 MiB of raw storage**,
 and at most 64 entries. The decoder needs one continuous output/dictionary
 range, so allocation uses contiguous first fit. If no run is available, it
 evicts the oldest eligible unpinned entry until a continuous run exists. Total
@@ -265,16 +265,27 @@ second full-group output buffer. The current frame's index group remains
 pinned while tile groups are consumed; cached groups needed for the frame are
 consumed before missing groups.
 
-The separate decoded-picture cache uses **748 pages of 4 KiB and 90 entries**
-from source22 onward. All image sizes share these pages. Contiguous first-fit
+The separate decoded-picture cache keeps **748 pages of 4 KiB** from source22,
+with its entry capacity raised from 90 to **256** in source27. The real first
+battle's 256 observed keys occupy 680 pages; the previous entry bound forced
+evictions while adequate pixel storage remained. All image sizes share these
+pages. Contiguous first-fit
 allocation evicts least-recently-used entries as necessary; hits update recency.
-It does not compact or move surviving entries. Pixel buffers plus bookkeeping
-fit within the previous four-tier cache budget, enforced by a compile-time
-assertion on both native and 32-bit targets. A view survives until its own entry
+It does not compact or move surviving entries. Pixel storage remains within
+the previous four-tier buffer budget; the extra metadata has its own explicit
+compile-time bound on native and 32-bit targets. A view survives until its own entry
 is evicted or its owner is reset/failed; callers consume it synchronously before
 requesting an unbounded sequence of further pictures. Unpublished reservations
 are reclaimed on every failure, and exact descriptor/shape/format/length identity
 is still necessary for alias hits.
+
+The tile cache retains its 64-bit occupancy map and low-six-bit page index;
+40 pages need no wider representation. The picture age-wrap sort uses byte
+entry indices through 255 and an unsigned count, with an explicit capacity
+assertion and a regression for full/holey recency ordering. The 16 MiB target
+limits are unchanged; actual ARM and WASM linking must verify this selection.
+All source27 cache behavior, exact reconstruction and device speed remain
+separate post-checkpoint execution gates.
 
 Source20 initially reconstructed every image during opening. Its full-pack
 access model, including the existing 90 image-cache slots, still decoded about

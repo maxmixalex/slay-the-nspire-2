@@ -12,6 +12,7 @@ namespace {
 using Bytes=std::vector<uint8_t>;
 constexpr unsigned TileSide=16,TileBytes=770,GroupBound=524288,EncodedBound=617323;
 constexpr unsigned ImageBound=614880,DirectoryBound=2u*1024u*1024u;
+constexpr unsigned ImageEntryCapacity=256,TilePoolBytes=5u*1024u*1024u;
 unsigned checks=0;
 std::string label;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL [%s] line %d: %s\n",label.c_str(),__LINE__,#x);std::exit(1);}}while(0)
@@ -223,18 +224,45 @@ bool same_reads(ResourceReadStats a,ResourceReadStats b){
         a.bypasses==b.bypasses&&a.direct_reads==b.direct_reads&&a.callback_bytes==b.callback_bytes;
 }
 void empty_image_pool(){
-    // Drive the real public API through more than 90 distinct one-page keys,
+    // Drive the real public API through more than 256 distinct one-page keys,
     // then clear that owner. This gives allocation tests a known empty pool
     // without exposing cache internals or relying on earlier test ordering.
     Package p;p.per_group=680;
-    std::vector<std::vector<unsigned>> plans(2);
-    for(unsigned i=0;i<100;++i){p.frames.push_back(frame(1,1,Pattern::Alpha,900+i));plans[i/50].push_back(i);}
+    std::vector<std::vector<unsigned>> plans(6);
+    for(unsigned i=0;i<300;++i){p.frames.push_back(frame(1,1,Pattern::Alpha,900+i));plans[i/50].push_back(i);}
     p.collect();p.make_groups(plans);p.encode();Provider provider{&p.bytes};auto content=std::make_unique<Content>();
     CHECK(content->open(provider.source()));
     for(unsigned i=0;i<p.frames.size();++i)picture(*content,p.image_id(i),p.frames[i]);
     CHECK(!content->open(nullptr,0));CHECK(!content->healthy());
 }
 void image_pool_cycles_and_fragmentation(){
+    label="256 small images share the pixel pool without premature key eviction";
+    empty_image_pool();Package small;small.per_group=680;std::vector<std::vector<unsigned>> small_plans(4);
+    for(unsigned i=0;i<ImageEntryCapacity;++i){small.frames.push_back(frame(1,1,Pattern::Alpha,1200+i));small_plans[i/64].push_back(i);}
+    small.collect();small.make_groups(small_plans);small.encode();
+    auto small_content=std::make_unique<Content>();Provider small_source{&small.bytes};
+    CHECK(small_content->open(small_source.source()));
+    std::vector<Picture> small_kept;
+    // Structural opening also retains the shared legacy card image: 255
+    // tiny frames plus that card fill exactly 256 keys using only 258 pages.
+    for(unsigned i=0;i<ImageEntryCapacity-1;++i){picture(*small_content,small.image_id(i),small.frames[i]);small_kept.push_back(small_content->image(small.image_id(i)));}
+    const auto small_warm=small_content->read_stats();
+    for(unsigned i=0;i<small_kept.size();++i)CHECK(small_content->image(small.image_id(i)).pixels==small_kept[i].pixels);
+    CHECK(same_reads(small_warm,small_content->read_stats()));
+    // Refresh the card and first frame. The next key must evict frame one,
+    // preserve all other views, and still serve an exact-descriptor alias.
+    CHECK(small_content->image(0).pixels);CHECK(small_content->image(small.image_id(0)).pixels==small_kept[0].pixels);
+    picture(*small_content,small.image_id(ImageEntryCapacity-1),small.frames.back());
+    const auto small_survivors=small_content->read_stats();
+    for(unsigned i:{0u,2u,127u,254u}){
+        CHECK(small_content->image(small.image_id(i)).pixels==small_kept[i].pixels);
+        CHECK(!std::memcmp(small_kept[i].pixels,small.frames[i].expected.data(),small.frames[i].expected.size()));
+    }
+    CHECK(small_content->image(small.alias_id()).pixels==small_kept[0].pixels);
+    CHECK(same_reads(small_survivors,small_content->read_stats()));
+    picture(*small_content,small.image_id(1),small.frames[1]);
+    CHECK(!same_reads(small_survivors,small_content->read_stats()));CHECK(!small_source.bad_range);
+
     label="23 medium frames retain a complete loop";
     Package cycle;cycle.per_group=680;std::vector<unsigned> all;
     for(unsigned i=0;i<23;++i){cycle.frames.push_back(frame(320,218,Pattern::Mixed,100+i));all.push_back(i);}
@@ -568,9 +596,9 @@ void maximum_frame_and_unused_tile(){
 }
 Package pressure(bool tiny){
     Package p;p.per_group=680;p.alignment=4096;
-    const unsigned count=tiny?100:16;
+    const unsigned count=tiny?300:16;
     for(unsigned i=0;i<count;++i)p.frames.push_back(frame(tiny?1:80,tiny?1:200,tiny?Pattern::Alpha:Pattern::ManySpans,31+i));
-    p.collect();p.scatter(10);std::vector<std::vector<unsigned>> plans;
+    p.collect();p.scatter(12);std::vector<std::vector<unsigned>> plans;
     if(tiny){for(unsigned begin=0;begin<count;begin+=35){std::vector<unsigned> ids;for(unsigned i=begin;i<std::min(count,begin+35);++i)ids.push_back(i);plans.push_back(std::move(ids));}}
     else for(unsigned i=0;i<count;++i)plans.push_back(std::vector<unsigned>(1+i%6,i));
     p.make_groups(plans);p.encode();return p;
@@ -587,20 +615,21 @@ void owners_lifetime_and_fragmentation(const Package&pressure_medium){
     CHECK(first->open(pa.source()));CHECK(second->open(pb.source()));
     std::vector<Picture> kept;
     for(unsigned i=0;i<a.frames.size();++i){picture(*first,a.image_id(i),a.frames[i]);picture(*second,b.image_id(i),b.frames[i]);kept.push_back(first->image(int(a.image_id(i))));}
-    // Ten full tile groups exceed the 4 MiB pool. Index groups require 2--8
+    // Twelve full tile groups exceed the 5 MiB pool. Index groups require 1--4
     // pages, deliberately mixing allocation lengths and forcing evictions.
-    // Each medium frame references all ten tile groups while its index group
+    // Each medium frame references all twelve tile groups while its index group
     // must remain pinned. The 16 decoded medium frames occupy 480 image pages;
     // the fresh tiny views fit beside them and must retain their addresses.
     // This asserts surviving-view stability, not permanent size-tier isolation.
     CHECK(pressure_medium.groups[0].raw.size()==523600);
+    CHECK(pressure_medium.tile_groups()*pressure_medium.groups[0].raw.size()>TilePoolBytes);
     CHECK(evictor->open(pe.source()));
     const uint64_t before_reconstruction=evictor->read_stats().callback_bytes;
     for(unsigned pass=0;pass<3;++pass)for(unsigned at=0;at<pressure_medium.frames.size();++at){
         const unsigned i=(at*7+pass*5)%unsigned(pressure_medium.frames.size());
         picture(*evictor,pressure_medium.image_id(i),pressure_medium.frames[i]);
     }
-    CHECK(evictor->read_stats().callback_bytes-before_reconstruction>4u*1024u*1024u);CHECK(pe.max_read<=EncodedBound&&!pe.bad_range);
+    CHECK(evictor->read_stats().callback_bytes-before_reconstruction>TilePoolBytes);CHECK(pe.max_read<=EncodedBound&&!pe.bad_range);
     for(unsigned i=0;i<kept.size();++i){
         CHECK(!std::memcmp(kept[i].pixels,a.frames[i].expected.data(),a.frames[i].expected.size()));
         picture(*first,a.image_id(i),a.frames[i]);picture(*second,b.image_id(i),b.frames[i]);
@@ -620,13 +649,13 @@ void failures_and_inactive_rebuild(const Package&pressure_tiny){
         label=corrupt?"storage corruption invalidates decoded views":"partial read failure invalidates decoded views";
         Package p=basic();Provider source{&p.bytes},evict{&pressure_tiny.bytes};
         CHECK(target->open(source.source()));CHECK(target->glyph('?',10).pixels);picture(*target,1,p.frames[0]);
-        // More than 90 unique images and more than 4 MiB of groups evict both
+        // More than 256 unique images and more than 5 MiB of groups evict both
         // caches, without resetting the target's ResourceReader page cache.
         fill_pressure(*other,evict,pressure_tiny);
-        // After 100 frames and the frame-zero alias, frames 11..99 and zero
-        // fill the 90 entries. Refresh the oldest hit; frame 12 is now the
+        // After 300 frames and the frame-zero alias, frames 45..299 and zero
+        // fill the 256 entries. Refresh the oldest hit; frame 46 is now the
         // next victim. A hit must update recency without any resource reads.
-        const unsigned oldest=unsigned(pressure_tiny.frames.size())-90+1;
+        const unsigned oldest=unsigned(pressure_tiny.frames.size())-ImageEntryCapacity+1;
         const auto before_hit=other->read_stats();const Picture kept=other->image(pressure_tiny.image_id(oldest));
         CHECK(kept.pixels&&same_reads(before_hit,other->read_stats()));
         source.fail_first=p.group_offsets[0]+32+3+2;source.fail_last=source.fail_first+1;source.corrupt=corrupt;

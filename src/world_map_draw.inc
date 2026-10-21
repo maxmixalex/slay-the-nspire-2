@@ -54,6 +54,31 @@ static void map_picture(Canvas&c,int id,int cx,int cy,int width,int height,MapSh
     const int sine=map_sin(angle),cosine=map_sin(angle+90),as=sine<0?-sine:sine,ac=cosine<0?-cosine:cosine;
     const int half_w=(width*ac+height*as+2047)/2048,half_h=(height*ac+width*as+2047)/2048;
     const int left=mx(0,cx-half_w),right=mn(320,cx+half_w),top=mx(clip_top,cy-half_h),bottom=mn(clip_bottom,cy+half_h);
+    if(left>=right||top>=bottom)return;
+    if(sine==0&&cosine==1024){
+        // The original inverse transform separates by axis when unrotated.
+        // Preserve its pixel-center rounding and clipping exactly, but perform
+        // each software division once per column/row instead of per pixel.
+        // This includes the full-screen paper layers on ARM without hardware
+        // integer division. Rotated icons retain the general path below.
+        uint16_t source_x[320];
+        for(int xx=left;xx<right;++xx){
+            const int u=(2*(xx-cx)+1)*1024+width*1024;
+            source_x[xx-left]=u<0||u>=width*2048?uint16_t(0xffff):uint16_t(u*p.w/(width*2048));
+        }
+        for(int yy=top;yy<bottom;++yy){
+            const int v=(2*(yy-cy)+1)*1024+height*1024;
+            if(v<0||v>=height*2048)continue;
+            const unsigned row=unsigned(v*p.h/(height*2048))*p.w;
+            for(int xx=left;xx<right;++xx){
+                const unsigned sx=source_x[xx-left];if(sx==0xffff)continue;
+                const unsigned at=row+sx;unsigned alpha=p.alpha?p.alpha[at]:255;alpha=div255(alpha*opacity);if(!alpha)continue;
+                const uint8_t*src=p.palette?p.palette+p.pixels[at]*2:p.pixels+at*2;
+                const uint16_t color=map_shade(uint16_t(src[0]|uint16_t(src[1])<<8),shader,ink,paper);c.paint(yy*c.pitch+xx,color,alpha);
+            }
+        }
+        return;
+    }
     for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx){
         const int dx=2*(xx-cx)+1,dy=2*(yy-cy)+1;
         const int u=dx*cosine+dy*sine+width*1024,v=dy*cosine-dx*sine+height*1024;

@@ -146,6 +146,37 @@ static void pictures(){
  }
  Pair missing({13,9,19},{});missing.got.picture(-1,0,0);missing.compare();
 }
+static void map_pictures(){
+ // A separate direct inverse-transform oracle retains the pre-optimization
+ // pixel-center arithmetic. Test all shaders, odd sizes, angles, clipping,
+ // palette/alpha and Canvas modulation on the production map renderer.
+ const Placement placements[]={{160,120,320,238},{5,25,7,5},{319,208,8,6},{160,120,3,2},
+  {-4,48,7,5},{-20,-30,28,19},{320,210,14,10},{4,23,1,1},{160,120,0,5}};
+ struct MapStyle{Style layer;MapShader shader;unsigned opacity;};
+ const MapStyle map_styles[]={{styles[0],MapShader::Original,255},{styles[1],MapShader::Tint,255},
+  {styles[4],MapShader::Normal,123},{styles[16],MapShader::Boss,255},{styles[0],MapShader::Tint,123},
+  {styles[0],MapShader::Normal,255},{styles[0],MapShader::Boss,123},{styles[0],MapShader::Original,0}};
+ for(unsigned id:{0u,2u,3u,4u,6u,7u})for(auto placement:placements)for(auto settings:map_styles)
+ for(int angle:{0,360,-360,17,90}){
+  const auto style=settings.layer;const auto shader=settings.shader;const auto opacity=settings.opacity;
+  Pair pair({320,240,327},style);const int cx=placement.x,cy=placement.y,w=placement.w,h=placement.h;
+  const uint16_t ink=0x2945,paper=0xfeb6;const int clip_top=(id&1)?55:22,clip_bottom=(id&1)?170:207;
+  map_picture(pair.got,int(id),cx,cy,w,h,shader,ink,paper,opacity,angle,clip_top,clip_bottom);
+  const auto&im=images[id];
+  if(w>0&&h>0&&opacity){
+   const int sine=map_sin(angle),cosine=map_sin(angle+90),as=sine<0?-sine:sine,ac=cosine<0?-cosine:cosine;
+   const int half_w=(w*ac+h*as+2047)/2048,half_h=(h*ac+w*as+2047)/2048;
+   for(int y=std::max(clip_top,cy-half_h);y<std::min(clip_bottom,cy+half_h);++y)
+   for(int x=std::max(0,cx-half_w);x<std::min(320,cx+half_w);++x){
+    const int dx=2*(x-cx)+1,dy=2*(y-cy)+1,u=dx*cosine+dy*sine+w*1024,v=dy*cosine-dx*sine+h*1024;
+    if(u<0||v<0||u>=w*2048||v>=h*2048)continue;
+    const unsigned at=unsigned(v*int(im.h)/(h*2048))*im.w+unsigned(u*int(im.w)/(w*2048));
+    pair.oracle.paint(y*pair.oracle.pitch+x,map_shade(im.colors[at],shader,ink,paper),rounded_alpha(im.alpha[at],opacity));
+   }
+  }
+  pair.compare();
+ }
+}
 }
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
@@ -154,6 +185,6 @@ int main(){
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- pictures();CHECK(app.content.healthy());
+ pictures();map_pictures();CHECK(app.content.healthy());
  std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, sparse and palette guards\n",cases,checks);
 }

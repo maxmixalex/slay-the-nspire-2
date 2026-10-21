@@ -1,4 +1,4 @@
-# Native components and runtime measurements — source24 / source25
+# Native components and runtime measurements — source24 through source27
 
 The reference remains **v0.111.0 / 41cef1ea**. This stage follows the owner's
 priority: original UI fidelity first, then actual slow-path measurements and
@@ -138,6 +138,96 @@ automatic approval review. No browser FPS or screenshot acceptance is claimed
 from that blocked attempt. Further cloud testing of that artifact requires
 explicit authorization for its private contents; local WASM and Firebird work
 continue without changing that boundary.
+
+## Executed source25 results and source27 selection
+
+The complete v16 pack is now **80,879,519 bytes**, SHA-256
+`89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342`.
+It contains the 13 skins and all ten orb strings. Actual all-card keyword
+validation passed 246,626 checks; actual world text passed 1,841. The 13 new
+images matched the independent decode oracle with all metadata and 40
+memory/range UI frames checked. Synthetic production health validation passed
+467,441 checks. The native world capture produced 23 cases / 480 frames /
+30 saves; the actual WASM replay matched all frames and saves. Relative to
+source24, 474 frames are identical and the other six change only the resolved
+Crystal Count text. No paired original-engine capture establishes 95% parity.
+
+Actual source25 ARM execution completed new run, Neow, map, first battle,
+save, title return and normal exit. Source26 then actually loaded that saved
+80-HP / 3-energy / 5-card battle, with enemy HP 8 / 35 / 14. This verifies the
+entry/codec correction beyond the compiled frame audit. Source26's marker
+enables the internal profiler. It exits normally, retrieves a diagnostic JSON,
+and re-saves the battle to bytes identical to the source25 save. Its startup
+counter is 1,444,523 / 32,768 = 44.0833 simulated seconds. Over 59 completed
+battle frames, rendering totals 2,526,841 ticks and resource calls 1,415,036
+ticks (56.0% of render time), reading 42,621,686 bytes in 837 calls with 770
+actual seeks. No resource failure is recorded. In the final ten-second
+window, after the animation clock crosses the 9,963 ms idle duration, the
+loop still updates only 12 times. Duration coverage alone does not prove
+all 81 source frames were visited at that low rate.
+
+| Source25 scene | Observed loop updates per simulated second | Window |
+| --- | ---: | --- |
+| Title | 30.0 | 10 seconds |
+| Character | 30.0 | 5 seconds |
+| Neow | 10.2 | 5 seconds after initial rendering |
+| Map | 6.6 | 5 seconds |
+| Three-enemy first battle | 0.6 | 5 seconds, full animation warmness unproven |
+
+The 10 ms watch counts `map_clock_ms` changes, not completed presentations.
+Firebird is not cycle accurate; none of these values is a physical-calculator
+FPS claim. About 61.8% of the sampled map PCs fall in the ARM software-division
+bucket. Source27 therefore separates the unrotated inverse transform into
+320 bounded column entries and one row calculation, leaving rotated sampling,
+rounding, alpha, shaders and Canvas composition unchanged. A comparison against
+the pre-change direct transform covers clipped/odd sizes and all paint guards.
+
+Actual source25 WASM resource traces use the same v15 file and saved state,
+with 360 advances of 33 ms and no gameplay actions. Neow repeats **11,340
+callbacks / 46,448,640 bytes in each 180-frame window**. These are glyph and
+text pages, with 44 distinct pages in the observed miss sequence; tile/index
+traffic is zero. Replaying that miss sequence through 64 pages predicts 44
+initial fills and no later misses. This omits the old cache's internal hits;
+it is a selection model, not execution of the expanded cache. Source27 sets
+the fixed page count to 64 and requires a fresh real trace to verify the result.
+
+The real first-battle save identifies TwigSlimeS, LeafSlimeM and LeafSlimeS.
+Its second 180-frame window still transfers **20,064,764 bytes**; tile/index
+groups account for **96.51%**. Three repeatedly used half-MiB raw groups are
+loaded 31, 32 and 26 times respectively. The full idle-cycle reference set is
+11,927,552 page-rounded bytes; that is not a requirement to keep it all resident.
+The cache choice uses active tile access and actual image-cache hits, not just
+this union. Leaf idle takes 9,963 animation milliseconds, so the 11,880 ms
+trace spans only about 1.19 complete cycles. A separate controlled Nibbits
+fixture becomes read-free and is explicitly not the slow encounter's baseline.
+
+A full production `Content::image` call trace exposes a second limit: 256
+different decoded keys need only 680 of the existing 748 picture pages, but
+the 90-entry ceiling forces 594 image misses in 360 frames. The selected
+source27 layout keeps those pixel pages and raises only the metadata capacity
+to 256 entries; its tile pool becomes 40 × 128 KiB (5 MiB). The exact access
+model predicts 256 image misses, with each observed key decoded once, and
+second-window encoded group demand falling from 19,349,212 to 665,963 bytes.
+The last 58 modeled frames request no groups. This is group demand, including
+small index blocks that may be served by reader pages, not measured provider
+bytes or frame rate. The model reproduces the old runtime's directly observed
+group-read order; fresh source27 native/WASM and ARM execution remain required.
+
+Larger 6/8 MiB tile-only pools would exceed the existing ARM allocation bound
+when combined with the expanded reader. A proposed smaller decoded-pixel pool
+was not adopted after the entry-count bottleneck was identified. Source27
+keeps the 16 MiB linker/memory limits and all original frames, timings and
+pixels. Actual linked allocation and same-save scene measurements are gates.
+
+Root receives the private raw trace and corrected group analysis separately.
+The raw trace's optional `images.names` used an aux index as an image ID and
+must not be cited; the corrected analysis resolves the actual aux directory.
+Provider offsets, lengths, byte classes and histogram counts were unaffected.
+
+The complete source25 sanitizer run closed with 60 passes and four 300-second
+timeouts. Core passed its isolated longer rerun; the remaining three are still
+being closed with explicit longer budgets. Initial failures are preserved and
+no incomplete suite is counted as passed.
 
 ## Verification status at preparation
 

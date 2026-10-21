@@ -1,6 +1,67 @@
 # Work state — 2026-10-21
 
-## Current: source26 reliable calculator profiler activation — 2026-10-21
+## Current: source27 measured rendering bottlenecks — 2026-10-21
+
+Source26 is remotely preserved at `8536cadf8f8e3d88b6856c53e3970170cfd95d63`:
+539 tree files and all three changed contents matched the read-back. Its ARM
+build passed; the fresh WASM is byte-identical to source25, with an explicit
+common-source inventory comparison. Actual Firebird execution confirms the
+marker enables profiling and that Continue loads the source25 first-battle
+save. Normal exit produced the diagnostic JSON; the re-saved file matches the
+source25 save byte-for-byte. Startup inside the app is 44.0833 simulated
+seconds. Across 59 completed battle frames, rendering takes 77.113 simulated
+seconds, with 43.184 seconds (56.0%) inside resource calls and 42,621,686 bytes
+read. No resource failures were recorded. The final ten-second battle window,
+after the animation clock crossed a complete idle duration, still reaches
+only 1.2 observed updates/s. This is not a guarantee that every source frame
+was accessed: the slow renderer advances animations in clamped steps.
+
+Source25 actually completed new run → Neow → map → first battle → save →
+return to title → normal exit → USB save retrieval. In declared simulated
+windows title and character each reached 30 updates/s, Neow 10.2 and map 6.6.
+Initial three-enemy battle windows reached only 0.6–0.7 updates/s. These count
+observed loop updates, not physical handheld FPS. Slow render clamps also mean
+ten simulated seconds do not warm ten seconds of animation. Do not label the
+initial battle windows fully warmed. The UI remains priority one; this measured
+rendering problem is priority two, following the corrected entry/save fault.
+
+Source25 deterministic resource traces explain two distinct cache problems.
+Neow repeats 63 small page reads / 258,048 bytes on every observed frame, with
+44 distinct pages in the miss stream and no tile/index reads. The actual
+three-enemy first-battle save reads 20,064,764 bytes in its second 180-frame
+window; tile/index groups account for 96.51%. Constantly used groups are
+repeatedly evicted. A separate controlled Nibbits fixture becomes read-free,
+so it must not stand in for this real slow encounter. The map PC sample instead
+places 61.8% of its samples in the ARM division bucket. See
+[native-ui-performance-0.17.md](native-ui-performance-0.17.md).
+
+The next coherent source stage expands the fixed small-read cache from 8 to
+64 pages and computes unrotated map inverse coordinates once per row/column,
+preserving the old pixel-center arithmetic and all painting rules. The selected
+tile pool is 40 × 128 KiB (5 MiB), while decoded pictures retain their existing
+748 × 4 KiB pool with the entry ceiling raised from 90 to 256. The actual
+access trace has 256 different picture keys occupying only 680 pages; the old
+entry ceiling defeats the available pixel capacity. The choice stays within
+the existing 16 MiB target bounds, subject to actual ARM/WASM linking. These
+changed-code results remain pending until
+this stage is pushed, read back and frozen. No asset, frame, timing, color or
+save-format reduction is part of these performance changes.
+
+The source25 complete ASan/UBSan run has now closed: 60/64 passed and four
+timed out at 300 seconds. The isolated core rerun passed in 394.29 seconds
+(103,307 checks / 9,885 generated transitions). Only relic-combo, events and
+character-UI are being rerun with longer limits. The original failed journal
+is retained; this is not yet a completed 64-suite pass. All actual source25
+UI/world/WASM gates below remain attributed to their original checkpoint.
+
+Next: preserve source27, build ARM/WASM and
+affected native targets, verify exact map pixels and existing 480 world frames /
+30 saves, repeat the actual resource traces, then compare the same saved
+encounter in Firebird. Preserve the source26 diagnostic baseline and close the
+three incomplete sanitizer tests. Cloud-browser private-content approval is
+still blocked; browser compositor FPS and physical-device FPS remain unknown.
+
+## Previous: source26 reliable calculator profiler activation — 2026-10-21
 
 Source25 is preserved at `fc769a017d83051e34592e661d02c92aa0836b20`, with all
 539 remote tree entries and 34 changed contents verified. Its ARM/WASM builds

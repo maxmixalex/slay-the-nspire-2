@@ -1,6 +1,9 @@
 // NSP2/15 sparse tiles. Included in content.cpp's private namespace so the
 // existing encoded scratch and image tiers remain the only picture buffers.
-constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=65536,TilePages=64;
+// A bounded 5 MiB pool reduces cross-actor group reloads while keeping the
+// complete ARM allocation below its 16 MiB address limit. A 128 KiB page
+// holds common full-size groups in four pages without enlarging the bitmap.
+constexpr unsigned TileSide=16,TileBytes=770,TilePageBytes=131072,TilePages=40;
 constexpr unsigned MaxFrameTiles=300,MaxTileGroups=64;
 // The offline access model uses the same contiguous first-fit allocation and
 // oldest-unpinned LRU eviction. A frame's index group stays pinned throughout.
@@ -15,6 +18,8 @@ static TileGroup tile_groups[MaxTileGroups];
 alignas(4) static uint8_t tile_pages[TilePages*TilePageBytes];
 static uint64_t tile_used=0;
 static uint32_t tile_age=0;
+static_assert(TilePages<=64&&Lzma2BlockRawLimit/TilePageBytes<64,
+              "Tile pages must fit the bitmap and packed first-page index");
 static_assert(sizeof tile_groups+sizeof tile_used+sizeof tile_age<=2048,
               "Tile-cache bookkeeping must remain below 2 KiB");
 static_assert(MaxEncodedImage==Lzma2BlockEncodedLimit+32,
