@@ -8,7 +8,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import content_tiles as tiles
 from append_native_ui import append_skins
 from locale_cards import bind_template,model_rows
-from localize_content import repack,format_catalog
+from localize_content import repack,format_catalog,legacy_single_player
 from locale_profile import validate_generated,bindings_and_keys
 from test_content_tiles import fixture
 
@@ -61,6 +61,12 @@ class LocalePack(unittest.TestCase):
         validate_generated();rows,keys=bindings_and_keys()
         self.assertLessEqual(len(rows),1024);self.assertLessEqual(len(keys),1057)
         self.assertTrue(any(row.get('reference')=='static_hover_tips.STAR_COUNT.title' for row in rows))
+
+    def test_legacy_events_keep_numeric_tokens_in_single_player(self):
+        source='A {IsMultiplayer:shared|individual} {Gold} {AromaPrinciple}'
+        self.assertEqual(legacy_single_player(source,'principle'),'A individual {Gold} principle')
+        self.assertEqual(legacy_single_player('{IsMultiplayer:shared|}{MaxHp}',''),'{MaxHp}')
+        with self.assertRaises(ValueError):legacy_single_player('{Unbound}','')
 
 
 if __name__=='__main__':unittest.main()

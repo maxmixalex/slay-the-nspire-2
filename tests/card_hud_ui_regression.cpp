@@ -37,12 +37,12 @@ static Bytes fixture(){
         if(b.size()%2)b.push_back(0);const unsigned at=unsigned(b.size());b.resize(at+w*h*3);
         put(b,40+id*16,at);put(b,44+id*16,w,2);put(b,46+id*16,h,2);put(b,48+id*16,1);put(b,52+id*16,w*h*3);
         for(unsigned y=0;y<h;++y)for(unsigned x=0;x<w;++x){unsigned p=y*w+x;put(b,at+p*2,color,2);
-            b[at+w*h*2+p]=shape==1?0:shape==2&&x>=7&&x<74&&y>=11&&y<61?0:shape==3&&x>2&&x+3<w&&y>2&&y+3<h?0:255;}
+            b[at+w*h*2+p]=shape==1?0:shape==2&&x>=7&&x<74&&y>=11&&y<61?0:shape==3&&x>2&&x+3<w&&y>2&&y+3<h?0:shape==4&&(x<4||x>=31)?0:255;}
     };
     picture(0,82,60,0,1);for(unsigned i=1;i<images;++i)for(unsigned k=0;k<16;++k)b[40+i*16+k]=b[40+k];
     picture(1,82,60,0x07e0);picture(2,80,112,0x001f,2);picture(3,110,28,0x2104);
     picture(4,320,22,0x2104);picture(5,30,28,0x39c7);picture(6,24,24,0xf800);picture(7,20,20,0xffff,3);
-    picture(8,18,18,0xffe0);picture(9,18,18,0xf81f);picture(10,92,70,0x7bef,3);picture(11,32,16,0x7bef);picture(12,27,40,0xf800);
+    picture(8,18,18,0xffe0);picture(9,18,18,0xf81f);picture(10,92,70,0x7bef,3);picture(11,32,16,0x7bef);picture(12,36,40,0xf800,4);
     unsigned index=0;
     for(unsigned size:{8u,10u,12u,16u,20u})for(unsigned n=0;n<96;++n,++index){
         const unsigned cp=n<95?32+n:0x2026,w=cp==0x2026?size:(size+1)/2,h=size+2,at=glyph_at+index*16,off=unsigned(b.size());
@@ -91,6 +91,20 @@ static void synthetic_pixels(){
     bool potion=false,map=false,deck=false,pause=false;
     for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];if(h.kind!=HitKind::Command)continue;potion|=h.value==int(Key::Potions);map|=h.value==int(Key::Collection)||h.value==int(Key::Map);deck|=h.value==int(Key::Inspect);pause|=h.value==int(Key::Back);}
     CHECK(potion&&map&&deck&&pause);
+    // Production portraits were contained inside 36x40 canvases. Their
+    // visible 27x40 shape must retain that aspect during focus and release.
+    auto portrait_bounds=[&](int width,int height){
+        int left=320,right=-1,top=240,bottom=-1;
+        for(int y=155;y<209;++y)for(int x=150;x<189;++x)if(app.pixels[y*320+x]==0xf800){
+            left=mn(left,x);right=mx(right,x);top=mn(top,y);bottom=mx(bottom,y);
+        }
+        CHECK(right-left+1==width&&bottom-top+1==height);
+    };
+    app.selected_character=Character::Ironclad;app.run_settings=false;app.pointer.visible=true;app.pointer.x=app.pointer.y=0;
+    app.map_clock_ms=100;app.character_select_presentation.reset();clear();character_screen(c);portrait_bounds(27,40);
+    app.pointer.x=172;app.pointer.y=184;app.map_clock_ms=200;clear();character_screen(c);portrait_bounds(30,44);
+    app.pointer.x=app.pointer.y=0;app.map_clock_ms=201;clear();character_screen(c);
+    app.map_clock_ms=701;clear();character_screen(c);portrait_bounds(27,40);app.pointer.visible=false;
 }
 static void character_hover(){
     static SaveData before,after;CHECK(save(app.game,before));const unsigned run=app.run_number;
@@ -107,13 +121,22 @@ static void samples(){
     Canvas c{app};new_run(app.game,781,true,Character::Regent);app.title=false;app.character_select=false;app.panel=0;app.pointer.visible=false;app.reset_presentation();
     app.render();unsigned loading_steps=0;
     while(app.combat_preparation.active&&loading_steps++<1024){app.advance(33);app.render();}
-    CHECK(!app.combat_preparation.active);app.advance(2000);app.render();capture("combat-settled");
+    CHECK(!app.combat_preparation.active);
+    // advance() caps one host update at 250ms; use real updates to pass the
+    // 2200ms player-turn banner before inspecting the settled hand layout.
+    for(int i=0;i<10;++i)app.advance(250);app.render();capture("combat-settled");
     app.input(Key::Right);app.render();capture("combat-focused");
     clear();c.rect(0,0,320,240,Panel);hud(c);
     large_card(c,{Strike,0},21,47,false);large_card(c,{RegentComet,0},121,47,false);large_card(c,{RegentDyingStar,1},221,47,false);
     c.text_fitted("Card frame / star cost / overflow",8,209,304,12,White);capture("cards-and-hud");
     clear();c.rect(0,0,320,240,Panel);comparison_card(c,{RegentDyingStar,0},18,32);comparison_card(c,{RegentDyingStar,1},184,32);capture("card-upgrade-comparison");
     app.detail_card=card_token({RegentDyingStar,0});app.detail_instance=app.detail_deck_index=-1;clear();detail_screen(c);capture("card-detail");
+    app.detail_card=-1;app.library=true;app.library_tab=app.library_filter=app.library_page=app.library_selected=app.library_sort=0;
+    clear();library_screen(c);capture("card-library");
+    app.pointer.visible=true;app.pointer.x=185;app.pointer.y=52;clear();library_screen(c);capture("card-library-filter-hover");
+    CHECK(app.library_filter==0);app.pointer.visible=false;app.library=false;
+    app.has_save=true;app.saved_character=Character::Necrobinder;app.saved_hp=54;app.saved_max_hp=66;app.saved_floor=14;app.saved_ascension=3;app.menu=0;
+    clear();title_screen(c);capture("title-continue");
     for(unsigned character=0;character<CharacterKinds;++character){
         app.character_select=true;app.selected_character=Character(character);app.map_clock_ms=1000+character*2000;app.character_select_presentation.reset();clear();character_screen(c);
         CHECK(app.character_select_presentation.panel_offset(app.map_clock_ms)==-50);

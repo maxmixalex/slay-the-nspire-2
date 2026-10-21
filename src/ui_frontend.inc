@@ -16,9 +16,9 @@ static void title_screen(Canvas&c){
     }
     if(a.has_save&&front_item(a,a.menu)==FrontContinue){
         int panel=a.content.world_image("menu","CONTINUE_PANEL");if(panel>=0)c.picture(panel,174,91,138,66);else c.dim(174,91,138,66,160);
-        c.ui(character_portrait(a.saved_character),180,101,27,40);
+        c.ui(character_portrait(a.saved_character),176,101,36,40);
         const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
-        c.text(*name?name:ch.name,214,99,12,Gold,92);
+        c.text_fitted(*name?name:ch.name,214,99,92,12,Gold);
         char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text(row,214,119,10,White,92);
         row[0]=0;b.n=0;b.text("进阶 ");b.number(a.saved_ascension);c.text(row,214,133,10,White,92);
         row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,184,145,11,12);c.text(row,201,145,10,White,105);
@@ -84,7 +84,7 @@ static void character_screen(Canvas&c){
         int x=159+i*31;bool selected=i==(int)a.selected_character;
         int outline=a.content.world_image("character","OUTLINE");
         const int scale=int(motion.portrait_scale(unsigned(i),a.map_clock_ms));
-        const int pw=(27*scale+512)/1024,ph=(40*scale+512)/1024,ow=(33*scale+512)/1024,oh=(47*scale+512)/1024;
+        const int pw=(36*scale+512)/1024,ph=(40*scale+512)/1024,ow=(33*scale+512)/1024,oh=(47*scale+512)/1024;
         if(selected&&outline<0){c.rect(x+(27-ow)/2,184-oh/2,ow,oh,rgb(87,68,38));c.box(x+(27-ow)/2,184-oh/2,ow,oh,Gold);}
         if(selected&&outline>=0)c.picture(outline,x+(27-ow)/2,184-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms));
         c.ui(character_portrait((Character)i),x+(27-pw)/2,184-ph/2,pw,ph,selected||hover==i?255:145);
@@ -115,8 +115,16 @@ static void library_screen(Canvas&c){
         const char* filters[]={"全部","铁甲","猎手","故障","储君","亡灵","无色"};
         const int filter_ids[]={0,1,2,4,5,6,3};
         const UiAction filter_actions[]={UiAction::FilterAll,UiAction::FilterIronclad,UiAction::FilterSilent,UiAction::FilterDefect,UiAction::FilterRegent,UiAction::FilterNecrobinder,UiAction::FilterColorless};
+        int filter_hover=-1;
         for(int i=0;i<7;i++){int x=4+i*33;bool selected=a.library_filter==filter_ids[i];if(selected)c.rect(x,46,32,18,rgb(67,54,38));
-            c.centered(filters[i],x,46,32,10,selected?Gold:Muted);c.action(x,45,33,19,filter_actions[i]);}
+            const bool hovered=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+33&&a.pointer.y>=45&&a.pointer.y<64;
+            if(hovered)filter_hover=i;
+            // card_library.tscn uses the same top-panel portraits as the HUD.
+            // Icons leave the full original localized name to its hover tip.
+            const int image=i?a.content.ui_image(i==6?U_ColorlessEnergy:U_TopBarIronclad+i-1):-1;
+            if(image>=0){const int size=hovered?20:18;c.picture(image,x+(32-size)/2,46+(18-size)/2,size,size,selected||hovered?255:150);}
+            else c.text_fitted(filters[i],x+1,48,30,10,selected?Gold:Muted,8,true);
+            c.action(x,45,33,19,filter_actions[i]);}
         const char* sorts[]={"默认排序","按费用","按类型"};c.centered(sorts[a.library_sort],238,46,79,10,Gold);c.action(237,45,83,19,UiAction::CycleSort);
         CardKind ids[CardKinds];const int count=(int)a.library_items(ids),last=mx(0,(count-1)/8);
         a.library_page=mn(mx(0,a.library_page),last);a.library_selected=mn(mx(0,a.library_selected),count-1);
@@ -129,6 +137,15 @@ static void library_screen(Canvas&c){
         c.text("‹",12,214,16,Gold);c.action(1,211,43,29,UiAction::PreviousPage,a.library_page>0);
         c.text("›",296,214,16,Gold);c.action(277,211,43,29,UiAction::NextPage,a.library_page<last);
         char page[32]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);c.text(page,51,218,10,Muted);
+        if(filter_hover>=0){
+            const char*name=filter_hover>0&&filter_hover<6?a.content.world_title("characters",character_definitions[filter_hover-1].key):a.content.ui_text(filters[filter_hover]);
+            if(!*name)name=a.content.ui_text(filters[filter_hover]);
+            const int width=mn(184,mx(92,c.width(name,10)+18)),x=mn(318-width,mx(2,20+filter_hover*33-width/2));
+            const int skin=a.content.world_image("common","HOVER_TIP");
+            if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,70,width,28,28,22,46,16,64);c.nine_image(skin,x,68,width,28,28,22,46,16);}
+            else{c.rect(x,68,width,28,Panel);c.box(x,68,width,28,Muted);}
+            c.text_fitted(name,x+8,75,width-16,10,Gold,8,true);
+        }
     }else{
         const int count=totals[a.library_tab];
         const int last=(count-1)/18;a.library_page=mn(mx(0,a.library_page),last);int first=a.library_page*18;

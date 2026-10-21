@@ -37,6 +37,7 @@ static std::vector<uint8_t> synthetic_profile(){
   if(key=="ancients.PAEL.talk.firstVisitEver.0-0.ancient")text="[thinky_dots]READABLE\n[aqua]PAEL[/aqua][/thinky_dots]";
   if(key=="events.COLOSSAL_FLOWER.pages.INITIAL.description")text="TEXT[green]TEXT[/green]TEXT[red][jitter]TEXT[/jitter][/red]TEXT\n\nTEXT[sine][rainbow freq=0.3 sat=0.8 val=1]COLOR[/rainbow][/sine]TEXT[aqua]TEXT[/aqua]TEXT[red]TEXT[/red]TEXT\n\nTEXT[gold]TEXT[/gold]TEXT\n";
   if(key=="powers.SHRINK_POWER.smartDescription")text="{ApplierName.StringValue:cond:{} ACTIVE|{OwnerName}} {Amount:cond:==1?TURN|>1?[blue]{}[/blue] TURNS|}";
+  if(key=="powers.NIGHTMARE_POWER.smartDescription")text="{Amount} COPIES OF {Card}";
   if(key=="events.CRYSTAL_SPHERE.minigame.divinationsRemain")text="REMAINING {Count}";
   if(key=="events.CRYSTAL_SPHERE.pages.INITIAL.description")text="UNRELATED {Count}";
   if(key=="relics.FAKE_ANCHOR.description")text="{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}";
@@ -89,6 +90,21 @@ static void other_original_forms(){
  RichReader reader(text);RichChar ch{};unsigned count=0;while(reader.next(ch)){CHECK(ch.codepoint!='['&&ch.style.thinky_dots);++count;}CHECK(count>0);unchanged();
  if(!actual_pack){a.relic_description(WorldRelicFakeAnchor,text,sizeof text);CHECK(!std::strcmp(text,"{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}"));unchanged();}
 }
+static void nightmare_snapshot_names(){
+ reset(1);auto&silent=a.game.silent;
+ for(unsigned slot:{2u,5u}){
+  silent.nightmare_active[slot]=1;silent.power_order[silent.power_count++]=uint8_t(SPowerCount+slot);
+  silent.nightmares[slot].card={slot==2?Strike:Bash,uint8_t(slot==5)};
+ }
+ snapshot();char text[1024]{};
+ for(unsigned slot:{2u,5u}){
+  a.localized_text("powers","NIGHTMARE_POWER.smartDescription",text,sizeof text,int(slot),0,3);resolved(text);
+  const Card card=silent.nightmares[slot].card;std::string title=a.content.card_string(card.kind);if(card.upgraded)title+='+';
+  CHECK(std::strstr(text,title.c_str())&&std::strstr(text,"3"));unchanged();
+ }
+ a.localized_text("powers","NIGHTMARE_POWER.smartDescription",text,sizeof text,0,0,3);
+ CHECK(std::strstr(text,"{Card}"));unchanged();
+}
 static void crystal_board_count(){
  reset(0);CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,0x71ef23,0));
  CHECK(original_event_choose(a.game,1));CHECK(a.game.phase==Phase::OriginalEventChoice);
@@ -134,5 +150,5 @@ static void colossal_flower(){
  }
 }
 int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual_pack=true;}else data=synthetic_profile();
- CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();crystal_board_count();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
+ CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();nightmare_snapshot_names();crystal_board_count();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
 }

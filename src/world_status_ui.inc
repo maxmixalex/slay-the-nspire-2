@@ -16,9 +16,11 @@ static int ui_status_amount(const State&s,int actor,int id){
  }return status_amount(s,actor,id);
 }
 static const char* ui_status_title(const App&a,int id){
- if(id==44)return a.content.world_title("static_hover_tips","STAR_COUNT");
- if(id==45)return a.content.world_string("monsters","OSTY.name");
- if(id==CharacterExtraStatusStart+3)return a.content.world_string("powers","MOCK_TEMPORARY_STRENGTH_LOSS.title");
+ const char*special=nullptr;
+ if(id==44)special=a.content.world_title("static_hover_tips","STAR_COUNT");
+ if(id==45)special=a.content.world_string("monsters","OSTY.name");
+ if(id==CharacterExtraStatusStart+3)special=a.content.world_string("powers","MOCK_TEMPORARY_STRENGTH_LOSS.title");
+ if(special&&*special)return special;
  const char*card=nullptr;
  if(id==CharacterExtraStatusStart+4)card="SETUP_STRIKE.title";
  if(id==DefectStatusStart+(int)DPower::FocusedStrikeFocus)card="FOCUSED_STRIKE.title";
@@ -31,8 +33,15 @@ static const char* ui_status_title(const App&a,int id){
 }
 static void ui_status_description(const App&a,int actor,int id,char*out,size_t size){
  if(!size)return;out[0]=0;const char*key=ui_status_key(id);int amount=status_amount(a.game,actor,id);
- if(id==44){a.localized_text("static_hover_tips","STAR_COUNT.description",out,size,-1,actor,amount);return;}
- if(id==45){a.localized_text("static_hover_tips","SUMMON_STATIC.description",out,size,-1,actor,amount);return;}
+ if(id==44&&*a.content.world_string("static_hover_tips","STAR_COUNT.description")){a.localized_text("static_hover_tips","STAR_COUNT.description",out,size,-1,actor,amount);return;}
+ if(id==45&&*a.content.world_string("static_hover_tips","SUMMON_STATIC.description")){a.localized_text("static_hover_tips","SUMMON_STATIC.description",out,size,-1,actor,amount);return;}
+ if(id==CharacterExtraStatusStart&&actor<=0&&*a.content.world_string("powers","NIGHTMARE_POWER.smartDescription")){
+  TextBuffer b{out,size,0};for(int slot=0;slot<MaxNightmares;slot++)if(a.game.silent.nightmare_active[slot]){char line[1024]{};
+   // Each original Nightmare power owns one snapshot and makes three copies;
+   // the compact status icon's layer count is the number of active snapshots.
+   a.localized_text("powers","NIGHTMARE_POWER.smartDescription",line,sizeof line,slot,actor,3);if(b.n)b.ch('\n');b.text(line);
+  }return;
+ }
  if(key){char full[128]{};TextBuffer b{full,sizeof full,0};b.text(key);b.text(".smartDescription");
   if(!*a.content.world_string("powers",full)){b.n=0;full[0]=0;b.text(key);b.text(".description");}
   if(*a.content.world_string("powers",full)){a.localized_text("powers",full,out,size,id>=EnemyStatusStart&&id<EventCardStatusStart?id-EnemyStatusStart:-1,actor,amount);return;}

@@ -21,10 +21,29 @@ struct WorldTextContext {
  const char*full_key=nullptr;
 };
 static LocalizedValue wt_resolve(const void*,const char*);
+static LocalizedValue wt_catalog_value(const void*opaque,const char*name,LocalizedValue catalog){
+ const auto&x=*static_cast<const WorldTextContext*>(opaque);const auto&a=*x.app;const auto&s=a.game;
+ if(wt_equal(x.table,"cards")){
+  const bool permanent=!a.library&&x.deck>=0&&x.deck<s.deck_count&&s.deck[x.deck].kind==x.card.kind;
+  const bool live=!a.library&&!permanent&&!(x.facts&&x.instance<0)&&combat_phase(s.phase);
+  if(!live){int value=int(catalog.number);
+   if(permanent)character_deck_description_value(s,x.card,x.deck,name,value);
+   else if(!a.library&&x.facts){
+    if(a.detail_has_facts&&a.detail_card==card_token(x.card)&&x.facts==&a.detail_facts){
+     if(x.card.kind==DefectGeneticAlgorithm&&(wt_equal(name,"Block")||wt_equal(name,"CalculatedBlock")))value=mn(9999,1+a.detail_genetic);
+     if(x.card.kind==NecroTheScythe&&wt_equal(name,"Damage"))value=mn(9999,13+a.detail_scythe);
+    }
+    event_card_offer_description_value(s,x.card,*x.facts,name,value);
+   }
+   catalog.number=value;return catalog;
+  }
+ }
+ const auto value=wt_resolve(opaque,name);return value.known?value:catalog;
+}
 static LocalizedTemplate wt_formatter(char*out,size_t cap,const WorldTextContext*x){
  const auto&c=x->app->content;
  const char*energy=c.world_title("static_hover_tips","ENERGY_COUNT");const char*star=c.world_title("static_hover_tips","STAR_COUNT");bool english=c.english();
- return LocalizedTemplate(out,cap,wt_resolve,x,*energy?energy:english?"Energy":"能量",*star?star:english?"Stars":"辉星",english);
+ return LocalizedTemplate(out,cap,wt_resolve,x,*energy?energy:english?"Energy":"能量",*star?star:english?"Stars":"辉星",english,wt_catalog_value);
 }
 static void wt_model_key(WorldTextContext&,const char*);
 static LocalizedValue wt_nested(const WorldTextContext&x,const char*table,const char*key,int model=-1){
@@ -39,7 +58,7 @@ static LocalizedValue wt_reference(const WorldTextContext&x,const OriginalTextRe
   // Tome deliberately binds the base card and adds its own '+' in the locale.
   TextBuffer b{x.nested,sizeof x.nested,0};b.text(title);b.ch('+');return wt_string(x.nested);}
  case OriginalTextReferenceKind::Relic:return wt_string(x.app->relic_title(RelicId(r.model)));
- case OriginalTextReferenceKind::Potion:{const auto*d=potion_definition(Potion(r.model));return d?wt_string(x.app->content.world_title("potions",d->key)):LocalizedValue{};}
+ case OriginalTextReferenceKind::Potion:{const auto*d=potion_definition(Potion(r.model));if(!d)return {};const char*title=x.app->content.world_title("potions",d->key);return wt_string(*title?title:x.app->content.ui_text(d->name));}
  case OriginalTextReferenceKind::Enchantment:return wt_string(x.app->content.world_title("enchantments",event_enchantment_key(EventEnchantment(r.model))));
  case OriginalTextReferenceKind::EnchantmentDescription:{WorldTextContext nested=x;nested.amount=r.facts.enchantment_amount;auto v=wt_nested(nested,r.table,r.key,r.model);TextBuffer b{x.nested,sizeof x.nested,0};b.text(v.text);return wt_string(x.nested);}
  case OriginalTextReferenceKind::RelicDescription:case OriginalTextReferenceKind::Localized:return wt_nested(x,r.table,r.key,r.model);
@@ -60,7 +79,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){
   if(x.actor>0&&x.actor<=s.enemy_count){const auto*d=enemy_definition(s.enemy_world.models[x.actor-1].kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
-  return wt_string(a.content.world_title("characters",character_definitions[(unsigned)s.character].key));
+  const auto&character=character_definitions[(unsigned)s.character];const char*title=a.content.world_title("characters",character.key);return wt_string(*title?title:a.content.ui_text(character.name));
  }
  if(wt_equal(x.table,"cards")){
   if(wt_equal(name,"IfUpgraded"))return wt_number(x.card.upgraded!=0);
@@ -104,6 +123,9 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  }
  if(wt_equal(x.table,"powers")){
   if(wt_equal(name,"Amount"))return wt_number(x.amount);
+  if(wt_equal(name,"Card")&&wt_equal(x.model_key,"powers.NIGHTMARE_POWER")&&x.actor<=0&&x.model>=0&&x.model<MaxNightmares&&s.silent.nightmare_active[x.model]){
+   const Card card=s.silent.nightmares[x.model].card;TextBuffer b{x.nested,sizeof x.nested,0};b.text(a.content.card_string(card.kind));if(card.upgraded)b.ch('+');return wt_string(x.nested);
+  }
   if(wt_equal(name,"AfflictionTitle")&&x.model==int(EnemyPower::Galvanic))return wt_string(a.content.world_title("afflictions","GALVANIZED"));
   if((wt_equal(name,"DisplayAmount")||wt_equal(name,"SlowAmount"))&&x.model==int(EnemyPower::Slow)){int n=x.actor>0?s.enemy_world.models[x.actor-1].power_aux[x.model]:s.enemy_world.player_aux[x.model];return wt_number(n*(wt_equal(name,"DisplayAmount")?10:1));}
   if(wt_equal(name,"Applier")||wt_equal(name,"ApplierName")||wt_equal(name,"Applier.StringValue")||wt_equal(name,"ApplierName.StringValue")){

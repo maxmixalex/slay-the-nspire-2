@@ -209,6 +209,20 @@ def format_catalog(source, values, tables, language):
     return render(source)
 
 
+def legacy_single_player(source, aroma):
+    """Keep the historical event reader's numeric tokens, fold only its mode.
+
+    The original English and Chinese text share this conditional grammar;
+    selecting its single-player branch needs no translated replacement prose.
+    """
+    source=source.replace('{AromaPrinciple}',aroma)
+    source=re.sub(r'\{IsMultiplayer:([^{}|]*)\|([^{}]*)\}',lambda m:m[2],source)
+    allowed={'MaxHp','Damage','Heal','Gold','HpLoss','Cards'}
+    unknown=set(re.findall(r'\{([^{}]*)\}',source))-allowed
+    tiles.require(not unknown,'Unbound legacy event variables: '+str(sorted(unknown)))
+    return source
+
+
 def localized_strings(source, tables, language, bindings, extra_keys):
     from locale_cards import card_strings
     from world_ui_profile import TEXT_KEYS,TEXT_BASE
@@ -225,15 +239,17 @@ def localized_strings(source, tables, language, bindings, extra_keys):
     for record,variants in zip(source.cards,card_strings(tables,language)):
         for index,value in zip(record[1:],variants):texts[index]=value
     texts[42]=original('monsters.NIBBIT.name');texts[43]=original('characters.IRONCLAD.title')
-    for index,key in enumerate(EVENT_STRINGS,44):texts[index]=original('events.'+key)
+    def old_event(key,character='IRONCLAD'):
+        return legacy_single_player(original('events.'+key),original('characters.'+character+'.aromaPrinciple'))
+    for index,key in enumerate(EVENT_STRINGS,44):texts[index]=old_event(key)
     index=228
     for key,finish_a,finish_b,option_a,option_b in EVENTS:
         suffixes=['title','pages.INITIAL.description','pages.'+finish_a+'.description','pages.'+finish_b+'.description']
         for option in (option_a,option_b):suffixes.extend(['pages.INITIAL.options.'+option+'.title','pages.INITIAL.options.'+option+'.description'])
         for suffix in suffixes:
-            texts[index]=original('events.'+key+'.'+suffix).replace('{AromaPrinciple}',original('characters.IRONCLAD.aromaPrinciple'))
+            texts[index]=old_event(key+'.'+suffix)
             index+=1
-    texts[268]=original('events.AROMA_OF_CHAOS.pages.MAINTAIN_CONTROL.description').replace('{AromaPrinciple}',original('characters.SILENT.aromaPrinciple'))
+    texts[268]=old_event('AROMA_OF_CHAOS.pages.MAINTAIN_CONTROL.description','SILENT')
     for index,key in enumerate(TEXT_KEYS,TEXT_BASE):texts[index]=original(key)
     for index,(table,key) in enumerate(TEXTS,6100):texts[index]=original(table+'.'+key)
     texts[MARKER]=language

@@ -1,6 +1,28 @@
 # Work state — 2026-10-21
 
-## Current: calculator feedback, bilingual UI and cold preparation — source31 pending validation
+## Current: focused bilingual and layout corrections — source32 pending validation
+
+Source31 is remotely preserved at
+`62d310779e796a60d3b247589218a7a9cd76f9ca`: all 571 tree files and all 83
+changed text contents matched the read-back. Its frozen source archive SHA-256
+is `510264cf5543d1768d96b9254050abd5da20cf255a4af3017dfe70fb9cd38d71`.
+Native affected-path and ARM/performance work has begun from that snapshot;
+no result is accepted merely because the work was launched.
+
+The next small source checkpoint corrects confirmed review findings before
+the final bilingual conversion: preserve the portrait's 36 x 40 transparent
+canvas instead of compressing its visible 27 x 40 area again; use original
+character-pool icons in the library with full-name hover labels; render card
+references in keyword tooltips through the same scene-based card face.
+Original Nightmare text now binds each stored card and its three copies;
+canonical card defaults retain detached growth/enchantment snapshots.
+Missing v17 text keeps v16 title fallbacks, and legacy event text folds the
+single-player conditional before packing. Short syntax, 1,020 standalone
+template checks and five synthetic localization checks passed. Runtime and
+actual Chinese/English rendering checks remain outstanding. Startup and
+combat measurements must include preparation and any imposed frame waits.
+
+## Previous implementation: calculator feedback, bilingual UI and cold preparation — source31
 
 The owner reports approximately 70% UI fidelity on a physical calculator and
 specifically identifies missing card framing, character focus motion, death

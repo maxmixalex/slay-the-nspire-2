@@ -218,8 +218,7 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
     c.text(title,r.x+7,r.y+5,10,title_color,r.w-16);
     int body_x=r.x+7;
     if(tip.kind==HoverTipKind::Card){
-        c.picture(c.a.card_face_frame(tip.card),r.x+5,r.y+20,45,63);c.picture(c.a.content.card_image(tip.card.kind),r.x+8,r.y+34,39,29);
-        c.picture(c.a.content.energy_image(tip.card),r.x+3,r.y+19,17,17);c.energy_label(cost(tip.card),r.x+8,r.y+20,10);body_x=r.x+54;
+        draw_card_face(c,tip.card,r.x+5,r.y+20,45,63);body_x=r.x+54;
     }else if(tip.kind==HoverTipKind::Enchantment){int icon=c.a.content.world_image("enchantments",tip.key);if(icon>=0)c.picture(icon,r.x+r.w-20,r.y+3,13,13);}
     else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))c.picture(c.a.content.energy_image(owner.card),r.x+r.w-20,r.y+3,13,13);
     c.paragraph(body,body_x,r.y+20,hover_body_width(tip,r.w),piece.lines,piece.skip,10,body_color);

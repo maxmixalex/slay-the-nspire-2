@@ -18,6 +18,17 @@ static LocalizedValue resolve(const void*p,const char*k){const auto&x=*static_ca
  if(!std::strcmp(k,"WideRatio"))return {true,6442450942LL,UINT32_MAX};if(!std::strcmp(k,"Empty"))return {true,0,1,""};return {};
 }
 static void expect(Context&x,const char*source,const char*expected){char b[512];LocalizedTemplate(b,sizeof b,resolve,&x).format(source);CHECK(!std::strcmp(b,expected));}
+static LocalizedValue catalog_snapshot(const void*p,const char*key,LocalizedValue value){
+ if(!std::strcmp(key,"Snapshot")){value.number+=static_cast<const Context*>(p)->value;return value;}
+ auto live=resolve(p,key);return live.known?live:value;
+}
+static void catalog_context(){
+ Context x;char text[256]{};
+ LocalizedTemplate(text,sizeof text,resolve,&x,"Energy","Stars",true,catalog_snapshot).format("{Snapshot=13:diff()} / {N=99:diff()} / {Other=4:plural:item|items}");
+ CHECK(!std::strcmp(text,"16 / 3 / items"));
+ LocalizedTemplate(text,sizeof text,resolve,&x,"Energy","Stars",true,catalog_snapshot).format("{Snapshot:diff()} / {Snapshot=broken:diff()}");
+ CHECK(!std::strcmp(text,"{Snapshot:diff()} / {Snapshot=broken:diff()}"));
+}
 struct CorpusContext{int amount=2;bool flag=true;const char*text="REF";};
 static LocalizedValue corpus_resolve(const void*p,const char*k){const auto&x=*static_cast<const CorpusContext*>(p);
  if(!std::strcmp(k,"GainsBlock")||!std::strcmp(k,"displayCount"))return {true,x.flag};
@@ -142,5 +153,5 @@ int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N
  expect(x,"{WideScale}","0.9999");expect(x,"{WideRatio:percentMore()}","50");expect(x,"{WideMin:choose(-9223372036854775808|0):minimum|zero|other}","minimum");
  expect(x,"x{Empty}y","xy");expect(x,"{Missing:show:bad|also bad}","{Missing:show:bad|also bad}");expect(x,"{Missing}","{Missing}");expect(x,"{unclosed","{unclosed");
  for(unsigned size=0;size<16;size++){char b[24];std::memset(b,0x5a,sizeof b);LocalizedTemplate(b,size,resolve,&x).format("prefix{N:abs()}long suffix");CHECK((unsigned char)b[size]==0x5a);if(size)CHECK(std::memchr(b,0,size));}
- conditional_corpus();thinky_dots();rainbow();std::printf("localized templates: %u checks passed\n",checks);
+ catalog_context();conditional_corpus();thinky_dots();rainbow();std::printf("localized templates: %u checks passed\n",checks);
 }
