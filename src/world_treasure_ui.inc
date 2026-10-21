@@ -159,7 +159,7 @@ void App::treasure_action(UiAction action){
   // subsequent deck choice (for example Dolly's Mirror).
   const uint16_t chest=treasure_chest_alpha(*this,animation),banner=treasure_banner_alpha(*this,animation);const int y=treasure_banner_position(*this,animation);
   if(game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic&&take_treasure(game)){treasure_begin_close(*this,animation,chest,banner,y);cursor=1;choice_selected_count=0;choice_revision=game.revision;pointer_cancel();}
- }else if(action==UiAction::TreasureLeave&&treasure_can_proceed()&&leave_treasure(game))reset_presentation();
+ }else if(action==UiAction::TreasureLeave&&treasure_can_proceed()&&leave_treasure(game))reset_presentation(true);
 }
 bool App::treasure_input(Key key){
  if(!native_room_input_available(*this,Phase::Treasure))return false;sync_treasure_presentation();

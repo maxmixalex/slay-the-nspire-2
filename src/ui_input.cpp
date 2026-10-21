@@ -71,6 +71,7 @@ void App::select_library_item(int index){
     else{detail_owned=-1;detail_item=library_tab==1?index:WorldRelicKinds+index;detail_scroll=0;pointer_cancel();}
 }
 void App::ui_action(UiAction action){
+    if(map_transition_blocks_pointer())return;
     UiCoreObserver observer(*this);
     pointer_cancel();
     // Opaque frontend modals own all actions until explicitly dismissed.
@@ -100,7 +101,7 @@ void App::ui_action(UiAction action){
     case UiAction::CloseShop:
         if(game.phase==Phase::Shop){shop_open=false;cursor=0;}break;
     case UiAction::LeaveShop:
-        if(!shop_open&&game.phase==Phase::Shop){leave_shop(game);reset_presentation();}break;
+        if(!shop_open&&game.phase==Phase::Shop){leave_shop(game);reset_presentation(true);}break;
     case UiAction::GameOverSummary:
         if(game_over_available()&&!game_over_summary){game_over_summary=true;pointer_cancel();}break;
     case UiAction::GameOverMainMenu:
@@ -120,6 +121,7 @@ void App::ui_action(UiAction action){
             new_run(game,0x20261003u+run_number++*7919u,practice_entry,selected_character);
             if(!practice_entry){if(*selected_seed&&!world_set_seed(game,selected_seed)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
             character_select=run_settings=false;title=false;reset_presentation();
+            if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*m=world_current_map(game))map_visuals.initial_marker(m->root,map_clock_ms);}
         }break;
     case UiAction::RunSettings:if(character_select&&!practice_entry)run_settings=!run_settings;break;
     case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
@@ -192,7 +194,7 @@ void App::ui_action(UiAction action){
         choice_selected_count=0;confirm_world_choice();
         // A terminal combat set's Skip is the room's Proceed action. Nested
         // event/relic sets resume their parent and are never closed here.
-        if(terminal&&game.phase==Phase::Reward&&!world_relic_pending(game)&&ui_reward_actions(game,nullptr)==1){leave_rewards(game);reset_presentation();}
+        if(terminal&&game.phase==Phase::Reward&&!world_relic_pending(game)&&ui_reward_actions(game,nullptr)==1){leave_rewards(game);reset_presentation(true);}
         break;}
     case UiAction::ClearWorldChoice:choice_selected_count=0;break;
     case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:{
@@ -223,7 +225,7 @@ bool App::screen_input(Key key){
     if(library){
         int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds,columns=library_tab==0?4:6;
         if(key==Key::Back){library=false;return true;}
-        if(key==Key::Quit){quit=true;return true;}
+        if(key==Key::Quit){cancel_map_travel();quit=true;return true;}
         if(key==Key::Inspect){library_tab=(library_tab+1)%3;library_page=library_selected=0;return true;}
         if(key==Key::Up)library_selected-=columns;
         if(key==Key::Down)library_selected+=columns;
@@ -248,7 +250,7 @@ bool App::screen_input(Key key){
         else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)
             selected_character=(Character)(((int)selected_character+(key==Key::Left||key==Key::Up?CharacterKinds-1:1))%CharacterKinds);
         else if(key==Key::Back)character_select=false;
-        else if(key==Key::Quit)quit=true;
+        else if(key==Key::Quit){cancel_map_travel();quit=true;}
         return true;
     }
     if(!title&&!paused&&!help&&!panel&&game.phase==Phase::Reward&&!reward_cards&&!grimoire_select){
@@ -280,7 +282,7 @@ void App::confirm_deck_choice(){
         else message("此时无法移除这张牌");return;
     }
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
-    if(ok){reset_presentation();if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
+    if(ok){reset_presentation(true);if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
     else message("此时无法完成这项操作");
 }
 bool App::deck_input(Key key){
@@ -297,7 +299,7 @@ bool App::deck_input(Key key){
     if(grimoire_select&&key==Key::Back){grimoire_select=false;cursor=3;return true;}
     if(grimoire_select&&key==Key::EndTurn){ui_action(UiAction::SkipGrimoire);return true;}
     if(key==Key::Back&&game.event_deck_action!=EventDeckAction::None){
-        cancel_event_selection(game);reset_presentation();return true;
+        cancel_event_selection(game);reset_presentation(true);return true;
     }
     int count=game.deck_count;if(!count)return true;
     if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
@@ -325,7 +327,7 @@ void App::open_statuses(int actor){
 bool App::status_input(Key key){
     if(status_actor<0){if(key!=Key::Statuses)return false;open_statuses(0);return true;}
     if(key==Key::Back||key==Key::Statuses){status_actor=-1;return true;}
-    if(key==Key::Quit){quit=true;return true;}
+    if(key==Key::Quit){cancel_map_travel();quit=true;return true;}
     if(key==Key::Left||key==Key::Right){
         int count=game.enemy_count+1;
         status_actor=(status_actor+(key==Key::Left?count-1:1))%count;status_selected=status_scroll=status_scroll_limit=0;
@@ -357,7 +359,7 @@ bool App::room_input(Key key){
         if(key==Key::Back||key==Key::Detail||key==Key::Confirm){event_reader=false;pointer_cancel();}
         else if(key==Key::Up||key==Key::Left){event_reader_scroll-=key==Key::Left?10:1;if(event_reader_scroll<0)event_reader_scroll=0;}
         else if(key==Key::Down||key==Key::Right){event_reader_scroll+=key==Key::Right?10:1;if(event_reader_scroll>2048)event_reader_scroll=2048;}
-        else if(key==Key::Quit)quit=true;
+        else if(key==Key::Quit){cancel_map_travel();quit=true;}
         return true;
     }
     if(title||paused||help||panel||library||character_select||map_preview.open||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;

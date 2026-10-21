@@ -84,7 +84,7 @@ void App::accept_frontend_confirm(){
  const unsigned action=frontend_confirm;if(!action)return;
  const SaveCheckpoint confirmed=confirmed_checkpoint;
  frontend_confirm=frontend_choice=0;confirmed_checkpoint={};pointer_cancel();
- if(action==3){quit=true;return;}
+ if(action==3){cancel_map_travel();quit=true;return;}
  if(action==1){
   if(!title||!confirmed.size)return;
   SaveCheckpoint checkpoint{};

@@ -39,8 +39,22 @@ class WorldPack(unittest.TestCase):
         self.assertNotIn('modulate', added)
         self.assertNotIn('nine_patch', added)
         self.assertEqual(added['fit'], 'stretch')
-        self.assertEqual(plan_summary()['expected_images'], 45720)
+        self.assertEqual(plan_summary()['expected_images'], 45724)
         self.assertEqual(plan_summary()['clips'], 1695)
+
+    def test_map_circle_entry_appends_without_moving_terminal_frame_or_reticle(self):
+        rows = {row['key']:(BASE_AUXILIARY + i, row) for i, row in enumerate(AUXILIARY_ROWS)}
+        self.assertEqual(rows['map.CIRCLE'][0], 1134)
+        self.assertEqual(rows['map.SELECTION_RETICLE'][0], 1170)
+        self.assertEqual(rows['map.CIRCLE'][1]['path'],
+                         'images/atlases/compressed.sprites/map/map_circle_4.tres')
+        for frame in range(4):
+            index, row = rows[f'map.CIRCLE_{frame}']
+            self.assertEqual(index, 1171 + frame)
+            self.assertEqual(row, dict(key=f'map.CIRCLE_{frame}', kind='atlas',
+                path=f'images/atlases/compressed.sprites/map/map_circle_{frame}.tres',
+                size=[48,48], fit='contain'))
+        self.assertEqual(BASE_AUXILIARY + len(AUXILIARY_ROWS), 1175)
 
     def test_room_shader_and_actor_cache_closures_do_not_discard_enemy_frames(self):
         source = source_fingerprint()

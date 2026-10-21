@@ -54,6 +54,12 @@ AUXILIARY_ROWS.extend(dict(row) for row in ROOM_PROFILE['images'])
 LATE_AUXILIARY_ROWS = [dict(key='map.SELECTION_RETICLE', kind='component',
     path='images/ui/combat/combat_reticle.png', source_size=[48,48],
     size=[48,48], fit='stretch', source_scene='scenes/ui/selection_reticle.tscn')]
+# Map-circle entry reuses the established terminal frame and appends only
+# its four earlier AtlasTextures. Their authored margins retain a 192x192
+# logical canvas before the shared 48x48 fitting step.
+LATE_AUXILIARY_ROWS.extend(dict(key=f'map.CIRCLE_{frame}', kind='atlas',
+    path=f'images/atlases/compressed.sprites/map/map_circle_{frame}.tres',
+    size=[48,48], fit='contain') for frame in range(4))
 AUXILIARY_ROWS.extend(dict(row) for row in LATE_AUXILIARY_ROWS)
 ENEMY_CLIP_ROWS = enemy_plan()['jobs']
 MAP_CLIP_ROWS = []

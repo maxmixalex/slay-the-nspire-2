@@ -2,7 +2,7 @@
 """Prefill private original rest-actor caches without assembling a world pack.
 
 The serial converter's complete jobs, renderer, dependency scopes, encoding and
-cache protocol remain unchanged. Only one or two worker processes are allowed.
+checked reference-cache migration are shared. Only one or two worker processes are allowed.
 Run from a frozen, verified source checkpoint; final pack validation still
 belongs to build_world. No original inputs or generated art belong in Git.
 """
@@ -24,8 +24,11 @@ import numpy as np
 from PIL import Image
 
 from build_content import texture
-from build_world import (CACHE_SCHEMA, canonical, decoded_frames, encode_image,
-    encoded_frames, private_path, render_scope, sample_rest_actor, source_fingerprint)
+from build_world import (CACHE_SCHEMA, canonical, encode_image,
+    encoded_frames, private_path, render_scope, source_fingerprint,
+    sample_rest_actor_batched as sample_rest_actor,
+    REST_ACTOR_PROFILE_FIELDS as PROFILE_FIELDS,
+    validate_rest_actor_record as validate_record, cached_rest_actor_clip)
 from pck import Pack
 from prefetch_world_clips import open_cache
 from reference_inventory import sha256, verify_release
@@ -33,34 +36,17 @@ from world_enemy_assets import RUNTIME_SHA256, SpineSampler
 from world_ui_profile import REST_ACTOR_CLIP_ROWS, validate_headers
 
 
-# Includes the serial converter's seven profile checks, plus the source/job
-# identity fields already emitted by the unchanged rest sampler.
-PROFILE_FIELDS = ('frames', 'duration_ms', 'frame_ms', 'size', 'pivot', 'blend',
-    'plane_encoding', 'resource', 'actor', 'node', 'clip', 'act_index', 'dark',
-    'plane', 'viewport', 'screen_origin', 'background', 'loop', 'shader_time', 'phase')
-
-
 def unchanged_sources(sources):
     if source_fingerprint() != sources:
         raise ValueError('Public source changed during rest prefetch; success was not published')
 
 
-def validate_record(job, record):
-    metadata, payload = record
-    if (any(metadata.get(key) != job[key] for key in PROFILE_FIELDS) or
-            metadata.get('source_duration_seconds') != job['duration'] or
-            metadata.get('actor_scene') != job['path'] or
-            metadata.get('runtime_sha256') != RUNTIME_SHA256):
-        raise ValueError('Cached rest actor plane differs from its original profile: ' + job['key'])
-    frames = decoded_frames(payload, job['frames'])
-    if any((width, height) != tuple(job['size']) for width, height, _fmt, _raw in frames):
-        raise ValueError('Cached rest actor frame dimensions differ from its profile: ' + job['key'])
-    return metadata, payload
-
-
 def cached_rest_clip(cache, job, scope):
-    record = cache.get('clip', job, scope=scope)
-    return None if record is None else validate_record(job, record)
+    # A reference-only caller remains a strict reader of that scope. Only
+    # the current batched pipeline can import the exact reference renderer.
+    reference = (render_scope('rest-actor-clip-reference', cache.source_files)
+                 if scope.get('pipeline') == 'rest-actor-plane-batched-rgba-1' else None)
+    return cached_rest_actor_clip(cache, job, scope, reference_scope=reference)
 
 
 def record_signature(record):

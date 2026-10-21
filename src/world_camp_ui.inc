@@ -11,9 +11,9 @@ bool App::camp_input(Key key){
  uint8_t options[MaxWorldRestOptions];const unsigned count=camp_options(options,MaxWorldRestOptions);unsigned selected=camp_selected(*this,options,count);
  if(key==Key::Left||key==Key::Up){if(count)cursor=options[(selected+count-1)%count];return true;}
  if(key==Key::Right||key==Key::Down){if(count)cursor=options[(selected+1)%count];return true;}
- if(key==Key::EndTurn){if(world_rest_proceed(game))reset_presentation();return true;}
+ if(key==Key::EndTurn){if(world_rest_proceed(game))reset_presentation(true);return true;}
  if(key==Key::Confirm){
-  if(!count){if(world_rest_proceed(game))reset_presentation();return true;}cursor=options[selected];if(world_rest_choose(game,unsigned(cursor))){
+  if(!count){if(world_rest_proceed(game))reset_presentation(true);return true;}cursor=options[selected];if(world_rest_choose(game,unsigned(cursor))){
    choice_selected_count=0;choice_revision=game.revision;scroll=0;pointer_cancel();
    uint8_t remaining[MaxWorldRestOptions];if(game.phase==Phase::Camp){const unsigned n=camp_options(remaining,MaxWorldRestOptions);cursor=n?remaining[0]:0;}else cursor=0;
   }else message("此选项当前不可用");return true;

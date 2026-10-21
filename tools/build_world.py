@@ -63,6 +63,9 @@ LEGACY_FUNCTIONS = {
 TEXTURE_SOURCES = ('tools/build_content.py', 'tools/setup_pose.py', 'tools/animation.py', 'tools/pck.py')
 GEOMETRY_SOURCES = TEXTURE_SOURCES + ('tools/world_enemy_assets.py', 'tools/SpineSampleAdapter.cs')
 ENCODER_SOURCES = ('tools/build_tactics.py', 'tools/lz4_block.py', 'tools/sparse_image.py')
+REST_ACTOR_PROFILE_FIELDS = ('frames', 'duration_ms', 'frame_ms', 'size', 'pivot', 'blend',
+    'plane_encoding', 'resource', 'actor', 'node', 'clip', 'act_index', 'dark',
+    'plane', 'viewport', 'screen_origin', 'background', 'loop', 'shader_time', 'phase')
 # These pinned cards consist solely of their original keyword text. Their
 # localization table intentionally has no .description entry.
 KEYWORD_ONLY_CARDS = frozenset(('CLUMSY', 'GREED', 'INJURY', 'POOR_SLEEP',
@@ -279,6 +282,22 @@ def sample_enemy_batched(pack, model, job, sampler, *, layout=None):
         enemy_renderer.raster = previous
 
 
+def sample_rest_actor_batched(pack, job, sampler):
+    """Opt only rest-actor jobs into the checked bounded triangle rasterizer.
+
+    Serial conversion and each independent prefetch process sample one job at
+    a time. Scene/treasure callers retain the reference binding, including
+    after a failed rest job. This wrapper is not safe for concurrent threads.
+    """
+    import animation as scene_raster
+    previous = scene_raster.raster
+    try:
+        scene_raster.raster = raster
+        return sample_rest_actor(pack, job, sampler)
+    finally:
+        scene_raster.raster = previous
+
+
 def sample_map_clip(pack, job, sampler):
     """Preserve the original boss-map RGB mask and the declared scene anchor.
 
@@ -344,14 +363,18 @@ def render_scope(kind: str, source_files: dict, *, model=None) -> dict:
     elif kind == 'map-clip':
         paths = GEOMETRY_SOURCES + ENCODER_SOURCES + ('tools/world_raster.py',)
         functions, pipeline = [sample_map_clip, encode_image], 'map-boss-batched-rgba-1'
-    elif kind in ('room-image', 'room-clip', 'rest-actor-clip'):
+    elif kind in ('room-image', 'room-clip', 'rest-actor-clip', 'rest-actor-clip-reference'):
         paths = GEOMETRY_SOURCES + ENCODER_SOURCES + (
             'tools/world_scene_assets.py', 'tools/world_room_assets.py',
             'tools/world_room_profile.py', 'config/world-room-ui-0.17.json')
-        if kind == 'rest-actor-clip':
+        if kind in ('rest-actor-clip', 'rest-actor-clip-reference'):
             paths += ('tools/world_rest_actors.py', 'tools/world_rest_actor_assets.py',
                       'tools/world_room_shaders.py')
             functions, pipeline = [sample_rest_actor, encode_image], 'rest-actor-plane-rgba-1'
+            if kind == 'rest-actor-clip':
+                paths += ('tools/world_raster.py',)
+                functions += [sample_rest_actor_batched]
+                pipeline = 'rest-actor-plane-batched-rgba-1'
         else:
             if kind == 'room-image':
                 paths += ('tools/world_room_shaders.py',)
@@ -396,6 +419,65 @@ def cached_enemy_clip(cache, settings, source_files, model):
             reused_from=dict(pipeline=reference['pipeline'],
                              key=cache.key('clip', settings, reference)))
     return None
+
+
+def validate_rest_actor_record(job, record):
+    """Check complete original job identity and every encoded frame boundary."""
+    metadata, payload = record
+    if (any(metadata.get(key) != job[key] for key in REST_ACTOR_PROFILE_FIELDS) or
+            metadata.get('source_duration_seconds') != job['duration'] or
+            metadata.get('actor_scene') != job['path'] or
+            metadata.get('runtime_sha256') != RUNTIME_SHA256):
+        raise ValueError('Cached rest actor plane differs from its original profile: ' + job['key'])
+    frames = decoded_frames(payload, job['frames'])
+    if any((width, height) != tuple(job['size']) for width, height, _fmt, _raw in frames):
+        raise ValueError('Cached rest actor frame dimensions differ from its profile: ' + job['key'])
+    return metadata, payload
+
+
+def _checked_rest_actor_record(cache, job, scope):
+    record = cache.get('clip', job, scope=scope)
+    if record is None:
+        return None
+    key = cache.key('clip', job, scope)
+    receipt = json.loads((cache.directory / 'clip' / (key + '.json')).read_bytes())
+    if (receipt.get('scope') != scope or receipt.get('metadata') != record[0] or
+            receipt.get('sha256') != hashlib.sha256(record[1]).hexdigest() or
+            receipt.get('bytes') != len(record[1])):
+        raise ValueError('Rest-frame cache scope or receipt changed during read: ' + job['key'])
+    return validate_rest_actor_record(job, record)
+
+
+def cached_rest_actor_clip(cache, job, scope, *, reference_scope=None):
+    """Import only an exact checked reference job, never another batched version.
+
+    The old sampler and its dependency scope remain unchanged. Reference
+    migration is explicit, so callers can also use this as a strict current-
+    scope reader. As in the prefetch protocol, observed concurrent producers
+    must agree; this is not a transaction against noncooperating writers.
+    """
+    cached = _checked_rest_actor_record(cache, job, scope)
+    if cached is not None or reference_scope is None:
+        return cached
+    if (scope != render_scope('rest-actor-clip', cache.source_files) or
+            reference_scope != render_scope('rest-actor-clip-reference', cache.source_files)):
+        raise ValueError('Rest reference migration requires exact renderer dependency scopes')
+    reference = _checked_rest_actor_record(cache, job, reference_scope)
+    if reference is None:
+        return None
+    other = _checked_rest_actor_record(cache, job, scope)
+    if other is not None:
+        if canonical(other[0]) != canonical(reference[0]) or other[1] != reference[1]:
+            raise ValueError('Concurrent rest-frame producers disagree: ' + job['key'])
+    else:
+        cache.put('clip', job, reference[0], reference[1], scope=scope,
+            reused_from=dict(pipeline=reference_scope['pipeline'],
+                             key=cache.key('clip', job, reference_scope)))
+    written = _checked_rest_actor_record(cache, job, scope)
+    if (written is None or canonical(written[0]) != canonical(reference[0]) or
+            written[1] != reference[1]):
+        raise ValueError('Rest-frame cache changed during migration: ' + job['key'])
+    return written
 
 
 def card_models() -> list[dict]:
@@ -593,6 +675,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
             room_image_scope = render_scope('room-image', source_files)
             room_clip_scope = render_scope('room-clip', source_files)
             rest_actor_scope = render_scope('rest-actor-clip', source_files)
+            rest_actor_reference = render_scope('rest-actor-clip-reference', source_files)
             for row in rows:
                 key, path = row['key'], row['portrait']
                 if key + '.title' not in card_text or (key + '.description' not in card_text and key not in KEYWORD_ONLY_CARDS):
@@ -746,15 +829,25 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
                 animation_meta.append(dict(id=directory, key=job['key'], first_image=first, **metadata))
             for number, job in enumerate(REST_ACTOR_CLIP_ROWS):
                 print(f'Rest actor clip {number + 1}/{len(REST_ACTOR_CLIP_ROWS)} {job["key"]}', flush=True)
-                cached = cache.get('clip', job, scope=rest_actor_scope)
+                cached = cached_rest_actor_clip(cache, job, rest_actor_scope,
+                    reference_scope=rest_actor_reference)
                 if cached is None:
-                    images, metadata = sample_rest_actor(pck, job, sampler)
-                    cached = cache.put('clip', job, metadata,
-                        encoded_frames([encode_image(image, animation=True) for image in images]), scope=rest_actor_scope)
+                    images, metadata = sample_rest_actor_batched(pck, job, sampler)
+                    payload = encoded_frames([encode_image(image, animation=True) for image in images])
+                    validate_rest_actor_record(job, (metadata, payload))
+                    other = cached_rest_actor_clip(cache, job, rest_actor_scope,
+                        reference_scope=rest_actor_reference)
+                    if other is not None:
+                        if canonical(other[0]) != canonical(metadata) or other[1] != payload:
+                            raise ValueError('Concurrent rest-frame producers disagree: ' + job['key'])
+                    else:
+                        cache.put('clip', job, metadata, payload, scope=rest_actor_scope)
+                    cached = cached_rest_actor_clip(cache, job, rest_actor_scope)
+                    if cached is None or canonical(cached[0]) != canonical(metadata) or cached[1] != payload:
+                        raise ValueError('Rest-frame cache changed during publication: ' + job['key'])
                 metadata, payload = cached
                 frames = decoded_frames(payload, job['frames'])
-                if any(metadata[key] != job[key] for key in ('frames', 'duration_ms', 'frame_ms', 'size', 'pivot', 'blend', 'plane_encoding')):
-                    raise ValueError('Cached rest actor plane differs from its original profile')
+                validate_rest_actor_record(job, cached)
                 directory = BASE_CLIPS + len(ENEMY_CLIP_ROWS) + len(MAP_CLIP_ROWS) + len(ROOM_CLIP_ROWS) + number
                 if job['id'] != directory or len(pack.clips) // 16 != directory:
                     raise ValueError('Generated rest actor animation directory order drift')

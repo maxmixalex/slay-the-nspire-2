@@ -81,7 +81,7 @@ void App::pointer_move(int x,int y){
     }
 }
 void App::pointer_scroll(int rows){
-    if(!rows)return;
+    if(!rows||map_transition_blocks_pointer())return;
     map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
@@ -118,6 +118,7 @@ void App::pointer_button(bool down){
     UiCoreObserver observer(*this);
     struct ReticleSync {App&a;~ReticleSync(){a.sync_map_reticles();}} reticle_sync{*this};
     map_directional=false;sync_map_reticles();
+    if(map_transition_blocks_pointer()){pointer_cancel();return;}
     // Input can arrive between timed frames. Hit geometry is rebuilt from the
     // current screen rather than trusting regions from a previous overlay.
     render();pointer_move(pointer.x,pointer.y);
@@ -179,7 +180,7 @@ void App::pointer_button(bool down){
     case HitKind::DetailClose:detail_card=-1;break;
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
     case HitKind::WorldNode:
-        if(!map_legend&&!panel&&game.phase==Phase::Map&&world_choose_point(game,unsigned(hit.value)))reset_presentation();break;
+        if(!map_legend&&!panel&&game.phase==Phase::Map)begin_map_travel(unsigned(hit.value));break;
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
     case HitKind::CrystalCell:

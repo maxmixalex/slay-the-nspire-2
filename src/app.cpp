@@ -23,6 +23,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "native_controls.inc"
 #include "world_text.inc"
 #include "world_enemy_ui.inc"
+#include "world_map_motion.inc"
 #include "app_input.inc"
 static const char* card_type_label(CardType type){
     switch(type){case CardType::Attack:return "攻击";case CardType::Skill:return "技能";
@@ -301,7 +302,17 @@ static void detail_screen(Canvas&c){
 #include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
 static void pointer_overlay(Canvas&c){
-    auto&a=c.a;auto&p=a.pointer;if(!p.visible)return;
+    auto&a=c.a;
+    // The two authored black transition layers composite before the host
+    // pointer. Per-row coverage preserves the original moving gradient.
+    if(a.map_travel.pending||a.map_travel.fading_in){
+        for(int y=0;y<ScreenH;++y){const unsigned alpha=a.map_transition_alpha(y);
+            if(alpha==255)c.rect(0,y,ScreenW,1,0);
+            else if(alpha)for(int x=0;x<ScreenW;++x)c.paint(y*c.pitch+x,0,alpha);
+        }
+        if(a.map_transition_blocks_pointer())a.hit_count=0;
+    }
+    auto&p=a.pointer;if(!p.visible)return;
     if(p.armed_card>=0&&p.armed_card<a.game.card_count){
         if(a.game.zones[p.armed_card]!=Zone::Hand||a.game.phase!=Phase::Combat)p.armed_card=-1;
         else{c.line(160,180,p.x,p.y,Blue,true);c.box(p.x-5,p.y-5,11,11,Gold);}
@@ -311,6 +322,11 @@ static void pointer_overlay(Canvas&c){
     c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
 }
 void App::render(){
+    map_visuals.update(game,map_clock_ms);
+    // A capstone overlay hides the map without closing it. Its marker
+    // lifecycle must not replay when the deck or compendium is dismissed.
+    map_visuals.set_open(game,game.world.active&&!title&&!character_select&&!map_preview.open&&
+        (game.phase==Phase::Map||panel==3),map_clock_ms);
     Canvas c{*this};sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}

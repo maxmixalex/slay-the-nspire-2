@@ -24,6 +24,10 @@ static unsigned map_sqrt(unsigned value){
     unsigned bit=1u<<30,result=0;while(bit>value)bit>>=2;
     while(bit){if(value>=result+bit){value-=result+bit;result=(result>>1)+bit;}else result>>=1;bit>>=2;}return result;
 }
+static int map_source_offset(int source_q12){
+    const int scaled=source_q12*22;
+    return scaled<0?-((-scaled+204800)/409600):(scaled+204800)/409600;
+}
 static void map_picture(Canvas&c,int id,int cx,int cy,int width,int height,MapShader shader=MapShader::Original,
                         uint16_t ink=0,uint16_t paper=0,unsigned opacity=255,int angle=0,int clip_top=WorldMapTop,int clip_bottom=WorldMapBottom){
     if(width<=0||height<=0||!opacity)return;const auto p=c.a.content.image(id);if(!p.pixels)return;

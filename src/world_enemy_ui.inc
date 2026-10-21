@@ -118,7 +118,11 @@ void App::observe_core(const State&s,Log log){
    }
    enemy_visual_clock=when;
   }
- }else if(log.kind==LogKind::Damage&&log.b>=0&&log.b<s.enemy_count&&s.enemies[log.b].hp>0)enemy_trigger(log.b,"Hit");
+ }else if(log.kind==LogKind::Damage&&log.b>=0&&log.b<s.enemy_count&&s.enemies[log.b].hp>0){
+  // Room-entry relics can damage an enemy created after the observer was
+  // bound. Establish its current identity before dispatching the hurt cue.
+  sync_enemy_feedback();enemy_trigger(log.b,"Hit");
+ }
 }
 void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
  if(&s!=&game||!s.enemy_world.active||slot<0||slot>=s.enemy_count||!trigger)return;

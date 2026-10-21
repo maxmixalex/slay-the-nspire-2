@@ -6,16 +6,18 @@
 #include "world_run.hpp"
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 using namespace spire;
 static App app;
 static State initial;
 static SaveData storage;
+static SaveData map_before,map_expected,map_actual;
 static std::string directory,name;
 static unsigned saved,frames;
 static FILE*manifest;
-enum class SceneKind { Neow,Map,Combat,Kaiser,FakeMerchant,Crystal,Rest,TreasureKey,TreasurePointer,TreasureReload,TreasureDolly,TreasureEmpty };
+enum class SceneKind { Neow,Map,MapPointer,MapFast,Combat,Kaiser,FakeMerchant,Crystal,Rest,TreasureKey,TreasurePointer,TreasureReload,TreasureDolly,TreasureEmpty };
 struct Scenario {
  const char*name;SceneKind kind;
  Character character=Character::Ironclad;
@@ -24,6 +26,7 @@ struct Scenario {
 };
 static const Scenario scenarios[]={
  {"world-neow",SceneKind::Neow},{"world-map",SceneKind::Map},
+ {"world-map-pointer",SceneKind::MapPointer},{"world-map-fast",SceneKind::MapFast},
  {"world-native-combat",SceneKind::Combat},{"world-kaiser",SceneKind::Kaiser},
  {"world-fake-merchant",SceneKind::FakeMerchant},{"world-crystal",SceneKind::Crystal},
  {"world-rest-ironclad",SceneKind::Rest},
@@ -109,11 +112,68 @@ static void world_fixture(const Scenario&scenario){
   return;
  }
  require(world_finish_room(initial),"close supplied ancient outcome");
- if(kind==SceneKind::Map)return;
+ if(kind==SceneKind::Map||kind==SceneKind::MapPointer||kind==SceneKind::MapFast)return;
  uint8_t points[reference::Columns]{};require(world_available_points(initial,points,sizeof points)>0,"native map frontier");
  require(world_choose_point(initial,points[0])&&initial.phase==Phase::Combat,"enter native first combat");
  require(encounter_setup(initial,kind==SceneKind::Combat?EncounterId::NibbitsWeak:EncounterId::KaiserCrabBoss,0),"supply controlled original encounter");
  initial.hp=initial.max_hp=999;
+}
+static void same_map_state(const SaveData&expected){
+ require(save(app.game,map_actual),"encode map state after presentation");
+ require(map_actual.size==expected.size&&!std::memcmp(map_actual.bytes,expected.bytes,expected.size),
+         "map presentation preserves the complete canonical controller result");
+}
+static void map_steps(SceneKind kind){
+ const bool fast=kind==SceneKind::MapFast;
+ if(fast){
+  // Change speed through the same visible controls the WASM replay uses.
+  key(Key::Back);key(Key::Down);key(Key::Confirm);key(Key::Confirm);
+  require(app.settings_open&&app.fast_mode,"real settings enable fast mode");
+  key(Key::Back);key(Key::Back);require(!app.paused&&!app.settings_open,"resume map");
+ }
+ uint8_t points[reference::Columns]{};
+ require(world_available_points(app.game,points,sizeof points)>0,"travel has a reachable point");
+ const unsigned destination=points[0];const auto*map=world_current_map(app.game);
+ require(map&&destination<map->count,"reachable destination belongs to current map");
+ require(save(app.game,map_before),"encode pending departure");
+ initial=app.game;require(world_choose_point(initial,destination)&&save(initial,map_expected),
+                         "independent controller supplies entry result");
+ if(kind==SceneKind::MapPointer)click(HitKind::WorldNode,int(destination));
+ else{
+  key(Key::Right);
+  for(unsigned i=0;i<reference::Columns&&app.cursor!=map->points[destination].col;++i)key(Key::Right);
+  require(app.cursor==map->points[destination].col,"keyboard selects destination");key(Key::Confirm);
+ }
+ require(app.map_travel.pending&&app.map_travel.to==destination,"selection begins delayed travel");
+ const uint32_t start=app.map_clock_ms;const unsigned duration=fast?600:1100;
+ key(Key::Confirm);key(Key::EndTurn);same_map_state(map_before);
+ // Capture authored circle frame changes, path dots, marker and both fade
+ // layers, rather than testing only the terminal room frame.
+ advance(33);advance(51);advance(83);
+ if(kind==SceneKind::MapPointer){
+  click(HitKind::Command,int(Key::Inspect));
+  require(app.panel==1&&app.map_travel.pending,"pointer deck overlay retains pending route");
+ }
+ while(uint32_t(app.map_clock_ms-start)<duration-1){
+  const unsigned remaining=duration-1-uint32_t(app.map_clock_ms-start);
+  advance(remaining>200?200:remaining);
+ }
+ require(app.map_travel.pending&&app.game.phase==Phase::Map,"no early room entry");
+ same_map_state(map_before);key(Key::Save);advance(1);
+ require(!app.map_travel.pending&&app.map_travel.fading_in&&!app.panel&&!app.paused,
+         "completed fade enters once and closes old overlays");
+ same_map_state(map_expected);key(Key::EndTurn);same_map_state(map_expected);
+ if(fast){
+  click(HitKind::Command,int(Key::Map));require(app.panel==3,"fast fade-in releases pointer immediately");
+  key(Key::Map);require(app.panel==3,"fast fade-in retains keyboard lock");
+  click(HitKind::Command,int(Key::Map));require(!app.panel,"pointer can dismiss map during fast keyboard lock");
+ }
+ advance(fast?250:199);key(Key::EndTurn);same_map_state(map_expected);
+ advance(fast?50:1);key(Key::Map);require(app.panel==3,"keyboard releases at authored fade-in callback");
+ key(Key::Map);require(!app.panel,"dismiss map after callback");
+ advance(250);advance(250);advance(100);same_map_state(map_expected);
+ require(!app.map_travel.fading_in,"fade-in completes independently of input release");
+ key(Key::Save);key(Key::Load);same_map_state(map_expected);
 }
 static void rest_steps(){
  require(app.game.phase==Phase::Camp&&!world_rest_can_proceed(app.game),"rest fixture starts lit");
@@ -180,14 +240,17 @@ int main(int argc,char**argv){
   std::fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",index?",":"",name.c_str());
   key(Key::Confirm);require(!app.title,"load native fixture from title");
   if(kind==SceneKind::Neow){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
-  else if(kind==SceneKind::Map){
-   key(Key::Detail);key(Key::Down);key(Key::Back);
-   // Original directional reticles retain independently fading old focus.
-   // Mouse mode cancels them; a later direction and load reestablish focus
-   // through the real App input/lifecycle paths, without fixture writes.
-   key(Key::Right);advance(33);key(Key::Left);advance(99);
-   move_pointer(10,210);advance(231);key(Key::Right);advance(66);
-   key(Key::Save);key(Key::Load);
+  else if(kind==SceneKind::Map||kind==SceneKind::MapPointer||kind==SceneKind::MapFast){
+   if(kind==SceneKind::Map){
+    key(Key::Detail);key(Key::Down);key(Key::Back);
+    // Original directional reticles retain independently fading old focus.
+    // Mouse mode cancels them; a later direction and load reestablish focus
+    // through the real App input/lifecycle paths, without fixture writes.
+    key(Key::Right);advance(33);key(Key::Left);advance(99);
+    move_pointer(10,210);advance(231);key(Key::Right);advance(66);
+    key(Key::Save);key(Key::Load);
+   }
+   map_steps(kind);
   }
   else if(kind==SceneKind::Combat||kind==SceneKind::Kaiser){
    const int turn=app.game.turn;key(Key::EndTurn);require(app.game.turn==turn+1,"original enemy move executes through normal End Turn");

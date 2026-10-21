@@ -43,19 +43,23 @@ static int map_direction(int dx,int dy){
     int best=0,score=-2147483647;for(int angle=0;angle<360;angle+=5){int v=dx*map_sin(angle+90)+dy*map_sin(angle);if(v>score){score=v;best=angle;}}return best;
 }
 static void map_paths(Canvas&c,const reference::ReferenceMap&m,const WorldMapLayout&layout,const WorldMapView&view,const MapColors&colors){
-    const auto&s=c.a.game;const auto*visited=s.world.visited[s.world.act_index];const int dot=c.a.content.world_image("map","DOT");
+    const auto&s=c.a.game;const int dot=c.a.content.world_image("map","DOT");
     for(unsigned i=0;i<m.count;++i){const auto&p=m.points[i];if(!p.active)continue;
         for(unsigned j=0;j<p.children.used;++j){const unsigned next=p.children.slots[j];if(next==reference::NoPoint||next>=m.count)continue;
             const auto&a=layout.points[i];const auto&b=layout.points[next];const int y0=a.y+view.origin,y1=b.y+view.origin;
             if(mx(y0,y1)<WorldMapTop-6||mn(y0,y1)>WorldMapBottom+6)continue;
             const int dx=b.x-a.x,dy=b.y-a.y;const unsigned distance=map_sqrt(unsigned(dx*dx+dy*dy));
-            const unsigned count=distance*100/484+1;const bool traveled=visited[i]&&visited[next];
+            const unsigned count=distance*100/484+1;
             reference::Random noise;noise.reset(s.world.run_seed+uint64_t(s.world.act_index)*reference::MaxPoints*reference::MaxPoints+i*reference::MaxPoints+next);
             const int angle=map_direction(dx,dy)+90;
             for(unsigned at=1;at<count;++at){
                 int x=a.x+dx*int(at)/int(count)+noise.range(-1,2),y=y0+dy*int(at)/int(count)+noise.range(-1,2);
-                const int size=traveled?5:4,rotation=angle+noise.range(-6,7)+(noise.below(2)?180:0);
-                map_picture(c,dot,x,y,size,size,MapShader::Tint,traveled?colors.ink:colors.faint,0,255,rotation);
+                const auto sample=c.a.map_visuals.path_dot(s,i,next,at-1,count-1,c.a.map_clock_ms);
+                const int size=map_reticle_project(16,sample.scale,false),rotation=angle+noise.range(-6,7)+(noise.below(2)?180:0);
+                // Newly traversed dots use the original fixed ink. A rebuilt
+                // saved map uses its act's traveled color instead.
+                const uint16_t ink=sample.fresh?rgb(36,31,26):sample.traveled?colors.ink:colors.faint;
+                map_picture(c,dot,x,y,size,size,MapShader::Tint,ink,0,255,rotation);
             }
         }
     }
@@ -70,7 +74,7 @@ static const char* map_point_title(const App&a,const reference::ReferenceMap&m,u
     return world_point_name(world_map_visible_type(a.game,point));
 }
 static void map_normal_node(Canvas&c,const reference::ReferenceMap&m,unsigned id,int x,int y,int angle,bool allowed,bool focused,const MapColors&colors){
-    const auto&s=c.a.game;const auto&type=m.points[id].type;const bool visited=s.world.visited[s.world.act_index][id];
+    const auto&s=c.a.game;const auto&type=m.points[id].type;const bool visited=c.a.map_visuals.traveled(s,id);
     const auto visible=world_map_visible_type(s,id);int image=world_point_image(type);
     if(visited&&type==reference::PointType::Unknown&&visible!=type)image=map_named_picture(c.a.content,"UNKNOWN_",map_normal_key(visible));
     const bool highlighted=c.a.map_legend&&type==map_legend_type(c.a.map_legend_item);
@@ -78,14 +82,17 @@ static void map_normal_node(Canvas&c,const reference::ReferenceMap&m,unsigned id
     const int size=focused||highlighted?29:pulse;const uint16_t outline=focused?rgb(255,255,255):colors.paper;
     map_picture(c,map_named_picture(c.a.content,"OUTLINE_",map_normal_key(visible)),x,y,size,size,MapShader::Tint,outline,0,focused?191:255,angle);
     map_picture(c,image,x,y,size,size,MapShader::Normal,0,colors.paper,visited||allowed||highlighted?255:128,angle);
-    if(visited){reference::Random circle;circle.reset(s.world.run_seed+uint64_t(m.points[id].row)*132u);
+    const auto sample=c.a.map_visuals.circle(id,c.a.map_clock_ms);
+    if(sample.alpha){reference::Random circle;circle.reset(s.world.run_seed+uint64_t(m.points[id].row)*132u);
         const int rotation=world_float_truncate(world_random_float(circle,0,360));
-        const int circle_size=world_map_round(world_float_round(reference::math::Real::integer(44)*world_map_random_float(circle,world_float(0x3f59999aU),world_float(0x3f666666U))));
-        map_picture(c,c.a.content.world_image("map","CIRCLE"),x,y,circle_size,circle_size,MapShader::Tint,rgb(36,31,26),0,242,rotation);
+        const auto final_size=world_float_round(reference::math::Real::integer(44)*world_map_random_float(circle,world_float(0x3f59999aU),world_float(0x3f666666U)));
+        const int circle_size=world_map_round(world_float_round(final_size*reference::math::Real::integer(sample.scale)/reference::math::Real::integer(4096)));
+        const char*frames[]={"CIRCLE_0","CIRCLE_1","CIRCLE_2","CIRCLE_3","CIRCLE"};
+        map_picture(c,c.a.content.world_image("map",frames[sample.frame]),x,y,circle_size,circle_size,MapShader::Tint,rgb(36,31,26),0,sample.alpha,rotation);
     }
 }
 static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned id,int x,int y,bool allowed,bool focused,const MapColors&colors){
-    const auto&s=c.a.game;const bool traveled=s.world.visited[s.world.act_index][id];
+    const auto&s=c.a.game;const bool traveled=c.a.map_visuals.traveled(s,id);
     if(m.points[id].type==reference::PointType::Start){
         const char*key=original_event_key(OriginalEventId(s.world.rooms[s.world.act_index].ancient));const int size=focused?51:46;
         map_picture(c,map_named_picture(c.a.content,"ANCIENT_",key,"_OUTLINE"),x,y,size,size,MapShader::Tint,focused?rgb(255,255,255):colors.paper,0,focused?191:255);
@@ -115,6 +122,7 @@ static void map_legend_screen(Canvas&c,const MapColors&colors){
 static void world_map_screen(Canvas&c,bool inspect){
     auto&a=c.a;const auto&s=a.game;const auto*m=world_current_map(s);WorldMapLayout layout;
     if(!m||!world_map_layout(s,layout)){c.centered("地图尚未生成",0,105,320,12,Red);return;}
+    a.map_visuals.update(s,a.map_clock_ms);
     const WorldMapView view=world_map_view(s,layout,a.map_scroll);a.map_scroll=view.scroll;
     const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);map_background(c,view,colors);
     map_paths(c,*m,layout,view,colors);
@@ -124,13 +132,18 @@ static void world_map_screen(Canvas&c,bool inspect){
     if(event_card_spoils_act(s)==s.world.act_index)for(unsigned col=0;col<reference::Columns&&quest==reference::NoPoint;++col)for(unsigned row=0;row<m->config.rows;++row){unsigned id=m->grid[col][row];if(id<m->count&&m->points[id].type==reference::PointType::Treasure){quest=id;break;}}
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
-        const bool allowed=world_reachable(s,i),focused=allowed&&p.col==a.cursor&&!inspect&&!a.map_legend;if(focused)selected=i;
+        const bool traveling=a.map_visuals.traveling(),target=a.map_visuals.target()==i;
+        const bool allowed=!traveling&&world_reachable(s,i),focused=target||(allowed&&p.col==a.cursor&&!inspect&&!a.map_legend);if(focused)selected=i;
         const int half=world_map_half_size(*m,i);
         const int reticle_height=p.type==reference::PointType::Boss?306:p.type==reference::PointType::Start?208:84;
-        const int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;
+        int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;
+        const auto circle=a.map_visuals.circle(i,a.map_clock_ms);
+        if(circle.alpha)visible_half=mx(visible_half,int(((40*circle.scale+4095)/4096*181+255)/256));
         if(y+visible_half<WorldMapTop||y-visible_half>WorldMapBottom)continue;
-        if(p.type==reference::PointType::Start||p.type==reference::PointType::Boss)map_special_node(c,*m,i,x,y,allowed,focused,colors);
-        else map_normal_node(c,*m,i,x,y,layout.points[i].angle,allowed,focused,colors);
+        // OnSelected changes the destination to Traveled. Its circle and
+        // full icon color identify it while the hover/reticle releases.
+        if(p.type==reference::PointType::Start||p.type==reference::PointType::Boss)map_special_node(c,*m,i,x,y,allowed,focused&&!traveling,colors);
+        else map_normal_node(c,*m,i,x,y,layout.points[i].angle,allowed,focused&&!traveling,colors);
         if(i==quest)map_picture(c,a.content.world_image("map","QUEST"),x+15,y-13,15,15);
         // The scene's SelectionReticle follows the complete icon/quest tree.
         map_reticle(c,i,x,y,p.type==reference::PointType::Boss?374:p.type==reference::PointType::Start?240:84,
@@ -138,11 +151,13 @@ static void world_map_screen(Canvas&c,bool inspect){
         if(allowed&&!inspect&&!a.map_legend){const int size=p.type==reference::PointType::Boss?mn(82,2*half):p.type==reference::PointType::Start?48:30;
             const int top=mx(WorldMapTop,y-size/2),bottom=mn(WorldMapBottom,y+size/2);if(bottom-top>=15)c.hit(x-size/2,top,size,bottom-top,HitKind::WorldNode,int(i));}
     }
-    if(s.world.current_point<m->count){const unsigned id=s.world.current_point;const auto&p=m->points[id];
+    const auto marker=a.map_visuals.marker(a.map_clock_ms);
+    if(marker.point<m->count){const unsigned id=marker.point;const auto&p=m->points[id];
         // A 16-pixel character marker is the readability adaptation of the
         // original 40-unit marker; it sits above, never replaces a node.
         const int offset=p.type==reference::PointType::Boss?(m->config.second_boss?37:46):p.type==reference::PointType::Start?36:23;
-        map_picture(c,character_map_image(a.content,s.character),layout.points[id].x,layout.points[id].y+view.origin-offset,16,16);
+        const int dy=map_source_offset(marker.source_y),width=int((16*marker.scale_x+2048)/4096),height=int((16*marker.scale_y+2048)/4096);
+        map_picture(c,character_map_image(a.content,s.character),layout.points[id].x,layout.points[id].y+view.origin-offset+dy,width,height);
     }
     c.rect(0,22,320,22,colors.paper);const char*regions[]={"蔓生之地","沉没码头","虫巢","荣光之城"};
     char title[80]{};TextBuffer heading{title,sizeof title,0};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region<4?regions[region]:"");

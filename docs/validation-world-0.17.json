@@ -3,7 +3,7 @@
   "reference": "v0.111.0 / 41cef1ea",
   "date": "2026-10-21",
   "release_ready": false,
-  "scope": "Historical source gates retained individually; source10 full-batch timeouts and same-source reruns, completed source11/12 builds, and separate source13 short diagnostics. No cross-checkpoint full-pass aggregation.",
+  "scope": "Historical gates retained individually; source10/12 character-UI timeouts, completed source13 builds/Python and 10-pass/1-fail UI batch, and separate source14 short diagnostics. No cross-checkpoint full-pass aggregation.",
   "results": [
     {
       "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
@@ -575,8 +575,9 @@
   "limits": [
     "No completed private NSP2/14 pack yet.",
     "No original-game differential run or measured 95% UI fidelity.",
-    "No successful new ARM link, emulator run, or physical calculator timing.",
-    "Native/WASM agreement must be checked with the completed private pack.",
+    "Frozen source13 native/ARM/WASM builds passed; changed source14 awaits its own remote preservation and formal gates.",
+    "No emulator run or physical calculator timing.",
+    "Native/WASM agreement must be checked with the matching completed private pack.",
     "Historical 0.16 delivery remains unchanged."
   ],
   "interrupted_runs": [
@@ -1638,7 +1639,27 @@
       "sha256": "97a40b6f5111ac9b4fbb429eceb752e2bf584f3867cb095fbf57321990f966d1",
       "packaged": false
     },
-    "arm_failure": "Undefined __aeabi_uldivmod from full-period rest/treasure frame normalization; all compilation reached linker. Source11 supplies ARM EABI helper without changing C++."
+    "arm_failure": "Undefined __aeabi_uldivmod from full-period rest/treasure frame normalization; all compilation reached linker. Source11 supplies ARM EABI helper without changing C++.",
+    "final_coverage_at_source14": {
+      "receipt": {
+        "file": "source10-native-final-coverage-receipt.json",
+        "sha256": "c359e4368a65dd6ec727ea0825a17a65e91982add679a12ab5f2d6107be170b4"
+      },
+      "distinct_passed": 45,
+      "unresolved": [
+        "character_ui_regression"
+      ],
+      "initial_passed": 44,
+      "initial_timeouts": 2,
+      "recheck": {
+        "events": "passed",
+        "events_checks": 244163,
+        "events_seconds": 1071.96,
+        "character_ui": "timeout",
+        "character_ui_seconds": 2400.1
+      },
+      "original_failed_journals_retained": true
+    }
   },
   "source11_short_diagnostics": {
     "arm_helper": {
@@ -2300,7 +2321,22 @@
       "paths_verified": 442,
       "private_assets": false
     },
-    "release_ready": false
+    "release_ready": false,
+    "affected_ui_final_at_source14": {
+      "receipt": {
+        "file": "source12-native-ui20-receipt.json",
+        "sha256": "18092f6717d40d3165d04430bff2d73cb99e84509e62fd04caebdf0f949200ce"
+      },
+      "passed": 19,
+      "total": 20,
+      "failed_assertions": 0,
+      "timeouts": [
+        "character_ui_regression"
+      ],
+      "timeout_seconds": 2400.15,
+      "batch_seconds": 2550.78,
+      "source_changed": false
+    }
   },
   "source13_short_diagnostics": {
     "base_checkpoint": "6ec81e3b6b6aac1198d168623ae557b4fe01deb0",
@@ -2457,5 +2493,236 @@
       "Original GPU and physical calculator validation remain outstanding."
     ],
     "release_ready": false
+  },
+  "source13_formal_validation": {
+    "checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+    "tree": "36dbdcce1d3e21c49016584fc3dcf54db607fc0b",
+    "remote_readback": {
+      "file": "source13-remote-readback-20261021.json",
+      "sha256": "c65e0c13d107b3f074feb0802728a425d70d0e6f38f3cf4e34730d4b23069c7b"
+    },
+    "remote_paths_verified": 445,
+    "remote_changed_contents_verified": 20,
+    "source_sha256": "cfb43dfad9222b39becd73dadff85039a33ec8948446beb2199ad3270e218e77",
+    "build_and_ui": {
+      "schema": 1,
+      "recorded_at": "2026-10-21T04:48:41.064347+00:00",
+      "checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+      "records": [
+        {
+          "journal": "/tmp/nspire-stage-a21fd47e/build/journal/source13-native-build-ce5ba144c796.json",
+          "journal_sha256": "fc60bb9d3dd58ba58d53ab2e410e98ecf8c57962b485756844f696593f15931c",
+          "log_sha256": "dd106aaa730be49d891e95b58098f9cfb33503445d3ea58d63892e5cd29a3da6",
+          "checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+          "source_sha256": "cfb43dfad9222b39becd73dadff85039a33ec8948446beb2199ad3270e218e77",
+          "source_changed": false,
+          "status": "passed",
+          "returncode": 0,
+          "started_at": "2026-10-21T04:23:36.742067+00:00",
+          "ended_at": "2026-10-21T04:32:42.425645+00:00"
+        },
+        {
+          "journal": "/tmp/nspire-stage-a21fd47e/build/journal/source13-arm-329fa43ba4ff.json",
+          "journal_sha256": "a92fdabcdc424d4ee1307436b29c2149fcd58ae3da1fa5f4844bb21412bc249e",
+          "log_sha256": "10a16fefc0ed47b66be800f9a862ca387315701d1826f71531cfc35fcdbe7b62",
+          "checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+          "source_sha256": "cfb43dfad9222b39becd73dadff85039a33ec8948446beb2199ad3270e218e77",
+          "source_changed": false,
+          "status": "passed",
+          "returncode": 0,
+          "started_at": "2026-10-21T04:33:06.410767+00:00",
+          "ended_at": "2026-10-21T04:37:08.570756+00:00"
+        },
+        {
+          "journal": "/tmp/nspire-stage-a21fd47e/build/journal/source13-wasm-593e45858255.json",
+          "journal_sha256": "c0db8d9582df27fd6aacd5ad21792f8b27d1fd61abcc65ca2c1b7a8fce0fded4",
+          "log_sha256": "501ab2132ca2d651657063be4ee18daba1721a813fd81b5ffd1d9c5322bd6818",
+          "checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+          "source_sha256": "cfb43dfad9222b39becd73dadff85039a33ec8948446beb2199ad3270e218e77",
+          "source_changed": false,
+          "status": "passed",
+          "returncode": 0,
+          "started_at": "2026-10-21T04:33:06.468717+00:00",
+          "ended_at": "2026-10-21T04:37:09.614043+00:00"
+        },
+        {
+          "journal": "/tmp/nspire-stage-a21fd47e/build/journal/source13-native-ui11-76b319d773d6.json",
+          "journal_sha256": "7e713e460ab8b96c7a23bbe6888b37f911d3e6bacaaac7f25ffc692b181210f5",
+          "log_sha256": "c90fff8e22312a562d229285024f971e4147ec7ef30c2a39fda0987c2a729e45",
+          "checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+          "source_sha256": "cfb43dfad9222b39becd73dadff85039a33ec8948446beb2199ad3270e218e77",
+          "source_changed": false,
+          "status": "failed",
+          "returncode": 8,
+          "started_at": "2026-10-21T04:34:48.907503+00:00",
+          "ended_at": "2026-10-21T04:38:21.380684+00:00"
+        }
+      ],
+      "outputs": [
+        {
+          "path": "/tmp/nspire-stage-a21fd47e/dist/nSpire2.tns",
+          "bytes": 841732,
+          "sha256": "edcfe6b1911044524cac59e8a80ea38fa4421b5eb784b95c692367e03eaf6835"
+        },
+        {
+          "path": "/tmp/nspire-stage-a21fd47e/build/web/nSpire2.wasm",
+          "bytes": 4799333,
+          "sha256": "5ad289e10fb53bd700477b14867f7cf1e76345a647b922d07314f2707a7e442c"
+        }
+      ],
+      "native_build_steps": 122,
+      "arm_allocation": 10421136,
+      "arm_relocations": 28478,
+      "ui": {
+        "total": 11,
+        "passed": 10,
+        "failed": [
+          "world_map_ui_regression"
+        ],
+        "failure": "tests/world_map_ui_regression.cpp:165 app.pixels[i]==expected[i]",
+        "timeouts": 0
+      },
+      "boundaries": [
+        "No source14 result",
+        "No physical device or original PC execution",
+        "Complete private world pack and matching delivery still pending",
+        "Initial failed UI journal retained; diagnosis and corrected source are separate evidence"
+      ]
+    },
+    "build_and_ui_receipt": {
+      "file": "source13-build-ui-formal-20261021.json",
+      "sha256": "f7a438177df8a3e7cd46dac703a462889052e06acbe14a6de73ad4166cb99204"
+    },
+    "python": {
+      "distinct_passed": 95,
+      "discovery": 73,
+      "world_pack": 22,
+      "generated_headers": "passed",
+      "plan": "passed",
+      "initial_plan_cli_failure_retained": true,
+      "receipt": {
+        "file": "source13-assets-python-formal-20261021.json",
+        "sha256": "107dac8918c62cac1b12c0015ed0ff58ac7d57b0b1ebff710e4883c0bc67698d"
+      }
+    },
+    "recovery_archive": {
+      "file": "slay-the-nspire-2-source13-recovery-20261021.zip",
+      "bytes": 1549007,
+      "sha256": "ca6c01fd4b62448ce1521f8cfc3b73bd7d896dbb2afd85ccf0c8529d88fd2e08"
+    },
+    "reticle_fixture_diagnosis": {
+      "cause": "Animation clock was rewound after presentation reset, leaving combat_linger_until in the apparent future and rendering combat instead of map.",
+      "frozen_library": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+      "original_differing_pixels": 178,
+      "fixed_full_frame_pixels_equal": 76800,
+      "short_probe_checks": 77203,
+      "receipt": {
+        "file": "reticle13-probe-fixed.json",
+        "sha256": "1b9ce8ab530becf33540cd5b946d4ed356f63ca47f79fc8469eb481107cf1b9e"
+      },
+      "original_failed_batch_retained": true
+    }
+  },
+  "source14_short_diagnostics": {
+    "base_checkpoint": "a21fd47e38af598ab14cfc8aeac398dfb9abbfb2",
+    "formal_runtime_gates": "Pending this source commit/ref readback and frozen builds",
+    "motion": {
+      "receipt": {
+        "file": "final-receipt.json",
+        "sha256": "4df8aeea0483174f97762cc120923759236b3ee3068f5bf66ab68e53fc2a9bb4"
+      },
+      "checks": 28170973,
+      "synthetic_complete_frames": 360,
+      "max_circle_scale_error_q12": 1,
+      "max_marker_position_error_q12": 66,
+      "max_path_scale_error_q12": 1,
+      "max_alpha_error": 1
+    },
+    "transition": {
+      "reference_review": {
+        "file": "final-review-receipt.json",
+        "sha256": "e11b5144857118d831e1b9c15128e89fc46faa6d4d9a99c8c4d5b781637c2c97"
+      },
+      "diagnostic": {
+        "file": "attempt3-receipt.json",
+        "sha256": "d9870da4b047ea22ed58f731ad300f716515fbff344c994f4a57b838afbd5fb1"
+      },
+      "checks": 3452835,
+      "max_final_alpha_error": 1,
+      "rounding_boundary_cases": 5,
+      "hud_review": {
+        "file": "hud-pointer-review-receipt.json",
+        "sha256": "34d219c0f10753a99055bc5f571cd3fb52503deae379879680eb7a108e6b0949"
+      },
+      "due_overlay_review": {
+        "file": "hud-pointer-due-review-receipt.json",
+        "sha256": "fbdb40f0a1dd1115e290f59e78a615cd0b60bd178590fdc47484d4c798796608"
+      }
+    },
+    "travel_ui_source": {
+      "receipt": {
+        "file": "source14-map-travel-ui-syntax-reviewed-20261021.json",
+        "sha256": "787652b0948e5945240d85bf2284033dfa8fc2d28bf9a8bbee05df9a7219c103"
+      },
+      "full_app_executed": false
+    },
+    "assets": {
+      "five_actual_atlas_frames": {
+        "file": "receipt.json",
+        "sha256": "9750ed58863560bc067139de08e73a81048e65228c877f09cc4b19818f0cb2d8"
+      },
+      "targeted_tests_and_plan": {
+        "file": "targeted-receipt.json",
+        "sha256": "fff13fd83a9330badcf737d18363d051428bf8e7d7f0022873541b58301b97d1"
+      },
+      "expected_images": 45724,
+      "auxiliary_images": 1175,
+      "clips": 1695,
+      "maximum_directory_bytes": 1345460
+    },
+    "rest_batch": {
+      "ready": {
+        "file": "source-ready-receipt.json",
+        "sha256": "d7603ed9f3faa8c4b92d94fd5693b97f50df59aacf7534843148fdcaa2c17074"
+      },
+      "scope_review": {
+        "file": "scope-after-receipt.json",
+        "sha256": "223169c8b9958753d65fcfbc62cdd743cca00cb1a67d7ce165d96a4f526ee43e"
+      },
+      "short_tests_passed": 31,
+      "old_scopes_checked": 335,
+      "unchanged_scopes": 334,
+      "unchanged_enemy_scopes": 327,
+      "old_reference_scope_identical": true,
+      "actual_single_frame": {
+        "file": "comparison-receipt.json",
+        "sha256": "7018f2a04bf9cc35e48b6f532c763c9bfd88360bd1e597a1bd0e1ab377f2c49b"
+      },
+      "rgba_bytes_equal": 279040,
+      "full_200_frame_gate": "Pending frozen source14; new bulk path not started"
+    },
+    "backend_driver": {
+      "scenarios": 18,
+      "actual_pack_run": "Pending matching complete payload",
+      "claim": "Internal native/WASM frames and saves only, not original-PC parity"
+    },
+    "resource_observation": {
+      "at_asia_shanghai": "2026-10-21 13:00:36 +0800",
+      "enemy_clips_strict_lower_bound": 1478,
+      "enemy_clips_planned": 1600,
+      "rest_clips_completed": 6,
+      "rest_clips_planned": 48,
+      "rest_frames_completed": 1200,
+      "old_frozen_producers_running": true
+    },
+    "release_ready": false,
+    "root_syntax": {
+      "file": "source14-root-syntax-20261021.json",
+      "sha256": "80e8242e2f5644d01c5615f07744bfb7bc5af87409baf636e2b6f2c1eed9addd",
+      "translation_units": 6,
+      "returncode": 0,
+      "seconds": 7.048463201004779,
+      "source_changed": false
+    }
   }
 }

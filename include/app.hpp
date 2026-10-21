@@ -9,6 +9,8 @@
 #include "resource_source.hpp"
 #include "world_enemy_assets.hpp"
 #include "world_map_layout.hpp"
+#include "world_map_presentation.hpp"
+#include "world_map_transition.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -73,6 +75,16 @@ struct Callbacks { bool(*save)(const State&);bool(*load)(State&);bool(*clear_sav
 // Session-local evidence of a complete canonical checkpoint, not a run UUID
 // or a compare-and-swap token supplied by the storage host.
 struct SaveCheckpoint {uint64_t hash=0;uint32_t size=0;};
+// Only presentation owns delayed map travel. The canonical run remains at
+// the departure point until the original transition finishes and is rechecked.
+struct MapTravel {
+    SaveCheckpoint checkpoint{};
+    uint64_t seed=0;
+    uint32_t start=0,revision=0,fade_start=0;
+    uint8_t act=255,from=reference::NoPoint,to=reference::NoPoint;
+    world_map_transition::Speed speed=world_map_transition::Speed::Normal;
+    bool pending=false,fading_in=false;
+};
 struct Motion {int clip=-1;uint32_t start=0;};
 // One retained fade per map node lets rapid focus changes finish independently.
 // Q12 scale and byte alpha are presentation samples, never saved run state.
@@ -162,6 +174,16 @@ struct App {
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[MaxEnemies+1]={},hit_start[MaxEnemies+1]={};
     bool map_legend=false;uint8_t map_legend_item=0;
     bool map_directional=false;
+    uint32_t map_clock_ms=0;
+    MapPresentationState map_visuals{};
+    MapTravel map_travel{};
+    bool begin_map_travel(unsigned point);
+    bool begin_map_column(int column);
+    void update_map_travel();
+    void cancel_map_travel();
+    bool map_transition_blocks_keyboard()const;
+    bool map_transition_blocks_pointer()const;
+    unsigned map_transition_alpha(int y)const;
     uint64_t map_reticle_seed=0;uint8_t map_reticle_act=255,map_reticle_current=reference::NoPoint;
     MapReticleMotion map_reticles[reference::MaxPoints]{};
     void reset_map_reticles();
@@ -257,6 +279,6 @@ struct App {
     int detail_stars()const;
     void message(const char*);
     void animate(int actor,int clip,int delay=0);
-    void reset_presentation();
+    void reset_presentation(bool keep_map_visuals=false);
 };
 } // namespace spire
