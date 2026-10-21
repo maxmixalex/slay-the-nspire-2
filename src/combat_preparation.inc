@@ -50,15 +50,18 @@ void App::sync_combat_preparation(){
 }
 void App::step_combat_preparation(){
     auto&p=combat_preparation;if(!p.active||!p.shown||paused)return;
-    ++p.updates;
+    ++p.updates;unsigned decoded_count=0;
     while(p.cursor<p.count){
-        const int image=int(p.images[p.cursor++]);if(content.image_cached(image))continue;
+        const int image=int(p.images[p.cursor]);
+        if(content.image_cached(image)){++p.cursor;continue;}
+        if(decoded_count>=CombatPreparation::ImagesPerUpdate)return;
+        ++p.cursor;
         const auto before=content.read_stats();const auto decoded=content.image(image);const auto after=content.read_stats();
-        p.read_calls+=after.callbacks-before.callbacks;p.read_bytes+=after.callback_bytes-before.callback_bytes;++p.cold_images;
+        p.read_calls+=after.callbacks-before.callbacks;p.read_bytes+=after.callback_bytes-before.callback_bytes;++p.cold_images;++decoded_count;
         if(!decoded.pixels){p.active=false;message("资源读取失败");return;}
-        // One decoder operation is the indivisible work unit. Yield to the
-        // host after it, even when more frames share its decoded tile group.
-        if(p.cursor<p.count)return;
+        // Consecutive images commonly share a resident tile group. Process
+        // a small bounded batch before yielding, instead of imposing one
+        // complete 33 ms host interval on every cheap cache assembly.
     }
     // Touch already resident initial poses last. This cannot issue new I/O;
     // it protects them while the first visible frame loads its HUD images.

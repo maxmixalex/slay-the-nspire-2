@@ -124,11 +124,17 @@ def repack(data, auxiliary_count, texts, glyphs, skins=(), *, profile=None):
         appended_static_images=len(skins),discarded_obsolete_text_and_glyph_payload=True)
 
 
-def glyph_subset(texts, font_path, language, legacy_literals=()):
+def glyph_alphabet(texts, legacy_literals=()):
+    from locale_profile import runtime_symbols
     alphabet = set(''.join(texts)) | set(''.join(legacy_literals)) | set(chr(i) for i in range(32,127))
     # Runtime punctuation and input hints are independent of private locale text.
     alphabet.update('←→↑↓‹›×…−·')
-    alphabet = sorted((ch for ch in alphabet if ord(ch)>=32 and (not ch.isspace() or ch==' ')),key=ord)
+    alphabet.update(runtime_symbols())
+    return sorted((ch for ch in alphabet if ord(ch)>=32 and (not ch.isspace() or ch==' ')),key=ord)
+
+
+def glyph_subset(texts, font_path, language, legacy_literals=()):
+    alphabet = glyph_alphabet(texts,legacy_literals)
     glyphs=[]
     for px in FONT_SIZES:
         font=ImageFont.truetype(str(font_path),px)

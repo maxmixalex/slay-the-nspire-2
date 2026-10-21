@@ -8,8 +8,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import content_tiles as tiles
 from append_native_ui import append_skins
 from locale_cards import bind_template,model_rows
-from localize_content import repack,format_catalog,legacy_single_player
-from locale_profile import validate_generated,bindings_and_keys
+from localize_content import repack,format_catalog,legacy_single_player,glyph_alphabet
+from locale_profile import validate_generated,bindings_and_keys,runtime_symbols
 from test_content_tiles import fixture
 
 
@@ -67,6 +67,12 @@ class LocalePack(unittest.TestCase):
         self.assertEqual(legacy_single_player(source,'principle'),'A individual {Gold} principle')
         self.assertEqual(legacy_single_player('{IsMultiplayer:shared|}{MaxHp}',''),'{MaxHp}')
         with self.assertRaises(ValueError):legacy_single_player('{Unbound}','')
+
+    def test_language_subsets_keep_runtime_symbols(self):
+        symbols=runtime_symbols()
+        self.assertTrue(set('✓▼–←→↑↓‹›×…−·').issubset(set(glyph_alphabet(['Synthetic English']))))
+        self.assertTrue(symbols.issubset(set(glyph_alphabet(['Synthetic alternative']))))
+        self.assertNotIn('\n',glyph_alphabet(['Synthetic\ntext']))
 
 
 if __name__=='__main__':unittest.main()

@@ -70,13 +70,26 @@ int main(int argc,char**argv){
     opened.add(started,source);started=mark(source);app.render();title.add(started,source);
     started=mark(source);app.input(Key::Confirm);input.add(started,source);
     if(app.title||app.game.phase!=Phase::Combat||!save(app.game,canonical_before)){std::fclose(file);return 6;}
-    const unsigned start_animation=app.animation;unsigned preparation_updates=0;
+    const unsigned start_animation=app.animation;unsigned preparation_updates=0,maximum_batch=0;
+#ifdef SPIRE_PREPARATION_BASELINE
+    constexpr unsigned preparation_batch_limit=0;
+#else
+    constexpr unsigned preparation_batch_limit=CombatPreparation::ImagesPerUpdate;
+#endif
     started=mark(source);app.render();
     if(preparing()){
         preparation.add(started,source);
         while(preparing()){
             if(++preparation_updates>1024){std::fclose(file);return 7;}
+#ifndef SPIRE_PREPARATION_BASELINE
+            const unsigned before_cold=app.combat_preparation.cold_images;
+#endif
             started=mark(source);app.advance(33);preparation.add(started,source);
+#ifndef SPIRE_PREPARATION_BASELINE
+            const unsigned batch=app.combat_preparation.cold_images-before_cold;
+            if(batch>preparation_batch_limit||app.combat_preparation.updates!=preparation_updates){std::fclose(file);return 12;}
+            if(batch>maximum_batch)maximum_batch=batch;
+#endif
             if(app.animation!=start_animation||!app.content.healthy()){std::fclose(file);return 8;}
             if(preparing()){started=mark(source);app.render();preparation.add(started,source);}
         }
@@ -84,9 +97,9 @@ int main(int argc,char**argv){
     }else first.add(started,source);
     if(!app.content.healthy()){std::fclose(file);return 9;}
     std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"save_bytes\":%zu,\"frames\":%u,\"elapsed_ms_per_frame\":33,"
-                "\"preparation_updates\":%u,\"preparation_pacing_floor_ms\":%u,\"seed\":%u,\"enemy_count\":%d,"
+                "\"preparation_updates\":%u,\"preparation_pacing_floor_ms\":%u,\"preparation_batch_limit\":%u,\"maximum_batch\":%u,\"seed\":%u,\"enemy_count\":%d,"
                 "\"method\":\"Host steady-clock CPU intervals, no frame pacing or compositor; source is ranged FILE with cursor. Includes preparation plus first visible and all declared windows.\"}\n",
-        source.length,original.size,frames,preparation_updates,preparation_updates*33,app.game.seed,app.game.enemy_count);
+        source.length,original.size,frames,preparation_updates,preparation_updates*33,preparation_batch_limit,maximum_batch,app.game.seed,app.game.enemy_count);
 #ifndef SPIRE_PREPARATION_BASELINE
     const auto&p=app.combat_preparation;unsigned resident=0;
     for(unsigned i=0;i<p.count;++i)resident+=app.content.image_cached(int(p.images[i]));

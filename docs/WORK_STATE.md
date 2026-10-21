@@ -1,6 +1,38 @@
 # Work state — 2026-10-21
 
-## Current: focused bilingual and layout corrections — source32 pending validation
+## Current: bounded preparation batching and bilingual delivery — source33 pending validation
+
+Source32 is remotely preserved at
+`26e5407a6e497ef8db76a22881ef853621f249e1`, with all 571 tree files and
+11 changed text contents read back exactly. Its source archive SHA-256 is
+`7e81f764644b65d519b6441a5d0ba5dbe0102c826a7f6aa230a84828deede324`.
+
+The source31 same-v16-pack, same-save ABBA benchmark completed with canonical
+save state unchanged in all four processes and no save attempts. Including
+preparation, first visible render and 720 subsequent frames, read traffic fell
+from 24,097,642 to 2,162,452 bytes (91.026%). This is native I/O evidence,
+not calculator FPS. One-image-per-update preparation also imposed 236 updates,
+or a 7,788ms minimum at 33ms/update. The next source stage therefore batches
+at most four cold images per update and asserts that bound in the benchmark;
+the new waiting cost must be measured again. Startup read calls fell from
+25,830 to 7,290, while bytes remained approximately 117MB. Shared-host timing
+was noisy and does not establish a startup speed improvement.
+
+Source31 ARM compilation passed: 937,765-byte launcher and 16,307,296-byte
+Zehn allocation, 469,920 bytes below the 16MiB limit. This is not execution
+evidence. A new isolated Firebird validation is being prepared for the final
+runtime/resource pair, including actual progress-screen captures.
+
+Source33 also preserves every runtime-only Unicode symbol in both language
+font subsets (including checkmarks and arrows); isolates canonical/detached
+card text from live Parry, Sword Sage and targeting modifiers; and shares that
+same canonical text with reference-card miniatures. Browser packaging now
+accepts explicit language, pack and destination arguments, with an English
+control/help/error shell as well as the original Chinese shell. Both templates
+passed JavaScript syntax checks. The final packs, UI captures, native affected
+tests, ARM/WASM builds and device measurements remain pending.
+
+## Previous corrections: bilingual and layout — source32
 
 Source31 is remotely preserved at
 `62d310779e796a60d3b247589218a7a9cd76f9ca`: all 571 tree files and all 83

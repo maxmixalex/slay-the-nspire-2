@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 BASE,UI_BASE,LIMIT=6111,7168,8192
 
 
-def legacy_literals():
+def source_literals():
     rows={}
     token=re.compile(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"',re.S)
     for folder in ('src','include'):
@@ -20,9 +20,21 @@ def legacy_literals():
                 if not match[0].startswith('"'):continue
                 try:text=json.loads(match[0])
                 except ValueError:continue
-                if re.search('[\u3400-\u9fff]',text):
+                if any(ord(char)>127 for char in text):
                     rows.setdefault(text,[]).append(str(path.relative_to(ROOT)))
     return rows
+
+
+def legacy_literals():
+    return {text:paths for text,paths in source_literals().items() if re.search('[\u3400-\u9fff]',text)}
+
+
+def runtime_symbols():
+    # Standalone arrows, checks and punctuation have no Chinese word to map.
+    # Their glyphs must survive the language subset even when no locale uses
+    # them. Chinese prose continues through the reviewed binding catalog.
+    return {char for text in source_literals() if not re.search('[\u3400-\u9fff]',text)
+            for char in text if ord(char)>127 and not char.isspace()}
 
 
 def bindings_and_keys():

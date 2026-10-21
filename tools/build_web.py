@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compile the same C++ game to a self-contained offline browser host."""
 from pathlib import Path
-import subprocess,shutil,base64,argparse
+import subprocess,shutil,base64,argparse,json,re
 ROOT=Path(__file__).resolve().parents[1]
 def compile_runtime():
     clang=shutil.which('clang++');link=shutil.which('wasm-ld')
@@ -25,21 +25,39 @@ def compile_runtime():
     print(f'Built WebAssembly runtime; {output.stat().st_size:,} bytes')
     return output
 
-def package_runtime():
+def player_template(language='zhs'):
+    text=(ROOT/'platform/web/player.html').read_text(encoding='utf-8')
+    if language=='eng':
+        bindings=json.loads((ROOT/'config/web-locale-eng.json').read_text(encoding='utf-8'))
+        # Replace full help paragraphs before their shorter button labels.
+        for source in sorted(bindings,key=len,reverse=True):
+            if source not in text:raise ValueError(f'English browser label no longer matches: {source}')
+            text=text.replace(source,bindings[source])
+        text=text.replace('lang="zh-CN"','lang="en"').replace('｜','|')
+        if re.search('[\u3400-\u9fff]',text):raise ValueError('Untranslated browser text in English template')
+    elif language!='zhs':raise ValueError(f'Unsupported browser language: {language}')
+    return text
+
+def package_runtime(content_path=None,destination=None,language='zhs'):
     output=ROOT/'build'/'web'/'nSpire2.wasm'
     if not output.is_file():raise SystemExit('Compile the matching WebAssembly runtime before packaging.')
-    content=(ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
-    text=(ROOT/'platform/web/player.html').read_text(encoding='utf-8').replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__CONTENT__',base64.b64encode(content).decode())
+    content=(content_path or ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
+    text=player_template(language).replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__CONTENT__',base64.b64encode(content).decode())
     notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()+'\n'+(ROOT/'licenses/OkHSV-Godot-MIT.txt').read_text()
     text+='\n<!-- '+notices.replace('--','—')+' -->\n'
-    (ROOT/'dist'/'nSpire2-desktop.html').write_text(text,encoding='utf-8');print(f'Built offline desktop host; WebAssembly {output.stat().st_size:,} bytes')
+    destination=destination or ROOT/'dist'/'nSpire2-desktop.html'
+    destination.parent.mkdir(parents=True,exist_ok=True)
+    destination.write_text(text,encoding='utf-8');print(f'Built {language} offline desktop host; WebAssembly {output.stat().st_size:,} bytes')
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     mode=parser.add_mutually_exclusive_group()
     mode.add_argument('--compile-only',action='store_true',help='Build the runtime while private content conversion runs separately')
     mode.add_argument('--package-only',action='store_true',help='Package the already built runtime and the matching private pack')
+    parser.add_argument('--language',choices=('zhs','eng'),default='zhs',help='Browser controls and help language; use the matching localized content pack')
+    parser.add_argument('--content',type=Path,help='Private content pack to embed')
+    parser.add_argument('--output',type=Path,help='Generated offline HTML destination')
     args=parser.parse_args()
     if not args.package_only:compile_runtime()
-    if not args.compile_only:package_runtime()
+    if not args.compile_only:package_runtime(args.content,args.output,args.language)
 if __name__=='__main__':main()

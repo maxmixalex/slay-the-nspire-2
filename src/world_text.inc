@@ -20,12 +20,17 @@ struct WorldTextContext {
  int option=-1;bool description=true;unsigned depth=0;int relic_position=-1;
  const char*full_key=nullptr;
 };
+static bool wt_live_card(const WorldTextContext&x){
+ const auto&a=*x.app;const auto&s=a.game;
+ const bool permanent=!a.library&&x.deck>=0&&x.deck<s.deck_count&&s.deck[x.deck].kind==x.card.kind;
+ return !a.library&&!permanent&&!(x.facts&&x.instance<0)&&combat_phase(s.phase);
+}
 static LocalizedValue wt_resolve(const void*,const char*);
 static LocalizedValue wt_catalog_value(const void*opaque,const char*name,LocalizedValue catalog){
  const auto&x=*static_cast<const WorldTextContext*>(opaque);const auto&a=*x.app;const auto&s=a.game;
  if(wt_equal(x.table,"cards")){
   const bool permanent=!a.library&&x.deck>=0&&x.deck<s.deck_count&&s.deck[x.deck].kind==x.card.kind;
-  const bool live=!a.library&&!permanent&&!(x.facts&&x.instance<0)&&combat_phase(s.phase);
+  const bool live=wt_live_card(x);
   if(!live){int value=int(catalog.number);
    if(permanent)character_deck_description_value(s,x.card,x.deck,name,value);
    else if(!a.library&&x.facts){
@@ -69,7 +74,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  const auto&x=*static_cast<const WorldTextContext*>(opaque);const auto&a=*x.app;const auto&s=a.game;
  if(wt_suffix(name,".StringValue")){char base[96]{};unsigned n=0;while(name[n])++n;if(n>=sizeof base)return {};for(unsigned i=0;i+12<n;i++)base[i]=name[i];return wt_resolve(opaque,base);}
  if(wt_equal(name,"IsMultiplayer"))return wt_number(0);
- if(wt_equal(name,"InCombat"))return wt_number(!a.library&&combat_phase(s.phase));
+ if(wt_equal(name,"InCombat"))return wt_number(wt_equal(x.table,"cards")?wt_live_card(x):!a.library&&combat_phase(s.phase));
  if(wt_equal(name,"OnPlayer"))return wt_number(x.actor<=0);
  if(wt_equal(x.table,"game_over_screen")&&s.world.active){
   if(wt_equal(name,"FloorCount"))return wt_number(s.world.total_floor);
@@ -82,10 +87,11 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   const auto&character=character_definitions[(unsigned)s.character];const char*title=a.content.world_title("characters",character.key);return wt_string(*title?title:a.content.ui_text(character.name));
  }
  if(wt_equal(x.table,"cards")){
+  const bool live=wt_live_card(x);
   if(wt_equal(name,"IfUpgraded"))return wt_number(x.card.upgraded!=0);
-  if(wt_equal(name,"IsOstyAlive"))return wt_number(s.expansion.osty_hp>0);
-  if(wt_equal(name,"TargetType"))return wt_string(!a.library&&combat_phase(s.phase)?(card_targets_enemy(s,x.card)?"AnyEnemy":"AllEnemies"):(definitions[x.card.kind].targeted?"AnyEnemy":"AllEnemies"));
-  if(wt_equal(name,"IsTargeting"))return wt_number(x.actor>=0&&x.actor<s.enemy_count&&s.enemies[x.actor].hp>0);
+  if(wt_equal(name,"IsOstyAlive"))return wt_number(live&&s.expansion.osty_hp>0);
+  if(wt_equal(name,"TargetType"))return wt_string(live?(card_targets_enemy(s,x.card)?"AnyEnemy":"AllEnemies"):(definitions[x.card.kind].targeted?"AnyEnemy":"AllEnemies"));
+  if(wt_equal(name,"IsTargeting"))return wt_number(live&&x.actor>=0&&x.actor<s.enemy_count&&s.enemies[x.actor].hp>0);
   if(x.card.kind==EventCardMadScience){
    unsigned type=x.facts?x.facts->science_type:0,rider=x.facts?x.facts->rider:0;
    const char*types[]={"Attack","Skill","Power"};
@@ -95,14 +101,14 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
    for(unsigned i=1;i<10;i++)if(wt_equal(name,names[i]))return wt_number(rider==i);
   }
   int value=0;
-  if(!a.library&&x.card.kind==SovereignBlade&&combat_phase(s.phase)){
+  if(live&&x.card.kind==SovereignBlade){
    if(wt_equal(name,"GainsBlock"))return wt_number(s.regent.powers[(int)RPower::Parry]>0);
    if(wt_equal(name,"CalculatedBlock")&&character_description_value(s,x.card,x.actor,x.instance,"Block",value))return wt_number(value);
   }
   if(!a.library&&x.deck>=0&&character_deck_description_value(s,x.card,x.deck,name,value))return wt_number(value);
-  if(!a.library&&x.instance>=0&&character_description_value(s,x.card,x.actor,x.instance,name,value))return wt_number(value);
-  if(!a.library&&combat_phase(s.phase)&&x.deck<0&&!x.facts&&character_description_value(s,x.card,x.actor,x.instance,name,value))return wt_number(value);
-  if(!a.library&&combat_phase(s.phase)&&x.deck<0&&!(x.facts&&x.instance<0)){
+  if(live&&x.instance>=0&&character_description_value(s,x.card,x.actor,x.instance,name,value))return wt_number(value);
+  if(live&&x.deck<0&&!x.facts&&character_description_value(s,x.card,x.actor,x.instance,name,value))return wt_number(value);
+  if(live&&x.deck<0){
    if(wt_equal(name,"Damage")&&definitions[x.card.kind].type==CardType::Attack)return wt_number(damage(s,x.card,x.actor,x.instance));
    if(wt_equal(name,"Block"))return wt_number(card_block(s,x.card,x.instance));
   }
@@ -217,7 +223,7 @@ void App::world_card_description(Card card,int target,char*out,size_t cap,int in
  if(!x.facts&&deck>=0&&deck<game.deck_count)x.facts=&game.event_cards.deck[deck];
  wt_model_key(x,definitions[card.kind].key);char source[8192]{};TextBuffer b{source,sizeof source,0};b.text(content.card_string(card.kind,card.upgraded?2:1));
  wt_formatter(out,cap,&x).format(source);
- if(content.version()>=LocaleContentVersion&&!library&&combat_phase(game.phase)){
+ if(content.version()>=LocaleContentVersion&&wt_live_card(x)){
   size_t n=0;while(n+1<cap&&out[n])++n;TextBuffer suffix{out,cap,n,&content};
   auto keyword=[&](const char*key){suffix.text("\n[gold]");suffix.text(content.world_title("card_keywords",key));suffix.text(content.english()?".[/gold]":"。[/gold]");};
   unsigned replay=card.kind==SovereignBlade?game.regent.powers[(int)RPower::SwordSage]:0;
