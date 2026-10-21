@@ -74,8 +74,9 @@ static void finish_fixture(){
     if(app.game.phase==Phase::Treasure)app.game.treasure_state=2;
     CHECK(world_finish_room(app.game));CHECK(validate(app.game));
 }
-static void begin_room(WorldRoom wanted){
+static void begin_room(WorldRoom wanted,RelicId relic=NoWorldRelic){
     new_run(app.game,0x7195c3,false,Character::Ironclad);CHECK(world_set_seed(app.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(app.game));
+    if(relic!=NoWorldRelic){CHECK(gain_world_relic(app.game,relic));CHECK(!world_relic_pending(app.game));}
     const auto type=wanted==WorldRoom::Shop?reference::PointType::Shop:wanted==WorldRoom::Rest?reference::PointType::Rest:
         wanted==WorldRoom::Treasure?reference::PointType::Treasure:reference::PointType::Monster;
     for(unsigned guard=0;guard<100;++guard){
@@ -167,6 +168,61 @@ static void retained_claimed_treasure(){
     snapshot();close_window();unchanged();CHECK(app.treasure_open_tick==opening&&app.treasure_close_tick==closing);
     app.ui_action(UiAction::TreasureTake);unchanged();CHECK(app.game.world_relics.count==count+1);
 }
+static void empty_chest_gate(bool fast,uint32_t clock){
+    begin_room(WorldRoom::Treasure,WorldRelicSilverCrucible);app.fast_mode=fast;app.map_clock_ms=clock;
+    CHECK(app.game.world.treasure_relic==NoWorldRelic);click(HitKind::UiAction,int(UiAction::TreasureOpen));
+    CHECK(app.treasure_collection_started&&app.treasure_collection_start_ms==clock&&app.treasure_empty_waiting());
+    CHECK(world_can_travel(app.game)&&!app.treasure_can_proceed());snapshot();
+    app.ui_action(UiAction::TreasureLeave);app.input(Key::EndTurn);unchanged();CHECK(app.game.world.room_open==1);
+    app.input(Key::Map);CHECK(app.map_window.is_open&&!app.map_routes_active());app.render();CHECK(!nodes());
+    uint8_t ids[reference::Columns];const unsigned count=world_available_points(app.game,ids,reference::Columns);CHECK(count);
+    CHECK(!app.begin_map_travel(ids[0]));unchanged();
+    // The callback advances under an open map, with no room render or input.
+    // Both Normal and Fast still reject travel at exactly 999 real ms.
+    advance_ms(999);CHECK(uint32_t(app.map_clock_ms-clock)==999&&app.treasure_empty_waiting());
+    CHECK(app.treasure_presentation==2&&!app.map_routes_active());app.render();CHECK(!nodes());
+    app.input(Key::Confirm);CHECK(!app.map_travel.pending);unchanged();
+    // A press begun before the eligible node exists cannot select it merely
+    // because the one-second callback completes before release.
+    WorldMapLayout layout;CHECK(world_map_layout(app.game,layout));const auto view=world_map_view(app.game,layout,app.map_scroll);
+    app.pointer_move(layout.points[ids[0]].x,layout.points[ids[0]].y+view.origin);app.pointer_button(true);
+    CHECK(app.pointer.captured.kind!=HitKind::WorldNode);app.advance(1);
+    CHECK(!app.treasure_empty_waiting()&&app.treasure_presentation==3&&app.map_routes_active());
+    app.pointer_button(false);CHECK(!app.map_travel.pending);app.render();CHECK(nodes()==count);unchanged();
+    const unsigned completed=app.game.world.rooms_completed;app.input(Key::Back);
+    CHECK(!app.panel&&app.treasure_can_proceed());app.ui_action(UiAction::TreasureLeave);
+    CHECK(app.game.world.room_open==2&&app.game.world.rooms_completed==completed+1&&app.map_window.is_open);
+    // Once the callback has completed, even an eventual millisecond wrap
+    // cannot reintroduce its gate; only fresh collection entry starts it.
+    app.map_clock_ms=clock;app.render();CHECK(!app.treasure_empty_waiting()&&app.map_routes_active());
+}
+static void empty_chest_restore(){
+    begin_room(WorldRoom::Treasure,WorldRelicSilverCrucible);click(HitKind::UiAction,int(UiAction::TreasureOpen));
+    advance_ms(250);CHECK(app.treasure_empty_waiting());snapshot();CHECK(app.save_current_run());
+    // Mid-room suspension is this port's existing extension. Loading keeps
+    // the exact opened empty chest, settles cosmetic timing and never grants
+    // its reward or consumes RNG again. No UI millisecond field is serialized.
+    app.input(Key::Load);CHECK(!app.treasure_presentation&&!app.treasure_collection_started&&!app.treasure_collection_start_ms&&!app.treasure_skip_ready);
+    CHECK(!app.treasure_empty_waiting()&&app.treasure_can_proceed()&&!app.map_window.visible);unchanged();
+    app.input(Key::Map);app.render();CHECK(app.map_routes_active()&&nodes());unchanged();
+    begin_room(WorldRoom::Treasure,WorldRelicSilverCrucible);click(HitKind::UiAction,int(UiAction::TreasureOpen));
+    CHECK(app.treasure_empty_waiting());snapshot();app.reset_presentation();
+    CHECK(!app.treasure_collection_started&&!app.treasure_collection_start_ms&&!app.treasure_skip_ready&&!app.treasure_empty_waiting());unchanged();
+}
+static void nonempty_skip_gate(bool fast,uint32_t clock){
+    begin_room(WorldRoom::Treasure);app.game.world.treasure_relic=WorldRelicVajra;app.fast_mode=fast;app.map_clock_ms=clock;
+    click(HitKind::UiAction,int(UiAction::TreasureOpen));const unsigned relics=app.game.world_relics.count;
+    CHECK(app.treasure_collection_started&&app.treasure_collection_start_ms==clock&&!app.treasure_empty_waiting());
+    snapshot();advance_ms(2499);CHECK(uint32_t(app.map_clock_ms-clock)==2499&&!app.treasure_can_proceed()&&!app.treasure_skip_ready);
+    app.ui_action(UiAction::TreasureLeave);app.input(Key::EndTurn);CHECK(app.game.world.room_open==1);unchanged();
+    app.advance(1);CHECK(app.treasure_can_proceed()&&app.treasure_skip_ready&&!world_can_travel(app.game));
+    // Enabling the Skip button does not itself resolve the relic. A top-bar
+    // map remains read-only until the player explicitly skips or claims it.
+    app.input(Key::Map);app.render();CHECK(!app.map_routes_active()&&!nodes());unchanged();app.input(Key::Back);
+    CHECK(app.treasure_can_proceed());app.map_clock_ms=clock;app.render();CHECK(app.treasure_can_proceed());
+    app.ui_action(UiAction::TreasureLeave);CHECK(app.game.treasure_state==2&&app.game.world.room_open==2&&app.map_routes_active());
+    CHECK(app.game.world_relics.count==relics);snapshot();app.input(Key::Back);app.ui_action(UiAction::TreasureTake);unchanged();
+}
 static void reset_and_wrap(){
     begin_room(WorldRoom::Monster);app.map_clock_ms=0xffffff80u;snapshot();app.input(Key::Map);advance_ms(450);
     CHECK(app.map_window.is_open&&app.map_window.sample(app.map_clock_ms).map.alpha==4096);close_window();unchanged();
@@ -178,6 +234,8 @@ int main(int argc,char**argv){
     if(actual_profile){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());CHECK(!std::fclose(f));}
     else bytes=synthetic_profile();
     if(argc>2)screenshots=argv[2];CHECK(app.init(bytes.data(),bytes.size(),{store,restore}));
-    hud_window(false);hud_window(true);retained_shop();retained_rest_and_travel();retained_claimed_treasure();reset_and_wrap();
+    hud_window(false);hud_window(true);retained_shop();retained_rest_and_travel();retained_claimed_treasure();
+    empty_chest_gate(false,0);empty_chest_gate(true,1000);empty_chest_gate(true,0xffffff00u);empty_chest_restore();
+    nonempty_skip_gate(false,0);nonempty_skip_gate(true,1000);nonempty_skip_gate(true,0xfffffa00u);reset_and_wrap();
     std::printf("world map window UI: %u checks passed; %s content; live room/route/save lifecycle\n",checks,actual_profile?"actual":"synthetic");
 }

@@ -148,7 +148,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
         const bool traveling=a.map_visuals.traveling(),target=a.map_visuals.target()==i;
-        const bool allowed=!traveling&&world_reachable(s,i),focused=target||(allowed&&p.col==a.cursor&&!inspect&&!a.map_legend);if(focused)selected=i;
+        const bool allowed=!traveling&&!a.treasure_empty_waiting()&&world_reachable(s,i),focused=target||(allowed&&p.col==a.cursor&&!inspect&&!a.map_legend);if(focused)selected=i;
         const int half=world_map_half_size(*m,i);
         const int reticle_height=p.type==reference::PointType::Boss?306:p.type==reference::PointType::Start?208:84;
         int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;

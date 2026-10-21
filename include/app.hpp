@@ -133,8 +133,8 @@ struct App {
     // a restored chest (which must not replay its Spine opening sequence).
     uint8_t treasure_presentation=0;
     uint32_t treasure_open_tick=0,treasure_banner_tick=0,treasure_close_tick=0;
-    uint32_t treasure_empty_start_ms=0;
-    bool treasure_empty_started=false;
+    uint32_t treasure_collection_start_ms=0;
+    bool treasure_collection_started=false,treasure_skip_ready=false;
     uint16_t treasure_chest_from=65535,treasure_banner_from=0;
     int8_t treasure_banner_y=0;
     // An independent presentation stream survives room resets and reloads.
@@ -154,6 +154,7 @@ struct App {
     int treasure_holder_offset()const;
     bool treasure_pointer_can_take()const;
     bool treasure_can_proceed()const;
+    bool treasure_empty_waiting()const;
     bool treasure_input(Key);
     void treasure_action(UiAction);
     unsigned camp_options(uint8_t*,unsigned)const;

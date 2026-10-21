@@ -169,6 +169,7 @@ struct Canvas{
         while(reader.next(ch)){auto g=a.content.glyph(ch.codepoint,size);int advance=g.advance+(ch.style.bold?1:0);
             if(ch.codepoint=='\n'||(at>x&&at+advance>x+w)){at=x;row++;if(ch.codepoint=='\n')continue;}
             if(row>=skip&&row<skip+lines){int dy=ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
+                if(ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
                 int dx=ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;
                 static const uint8_t rainbow[]={2,6,1,4,7,3,5};
                 auto ink=colors[ch.style.rainbow?rainbow[(a.animation/5+ch.index/2)%7]:ch.style.color];int yy=y+(row-skip)*(size+3)+dy;

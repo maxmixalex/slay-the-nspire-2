@@ -11,7 +11,7 @@ struct UiCoreObserver {
  explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation})),was_combat(combat_phase(a.game.phase)),
   room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open){app.sync_enemy_feedback();}
  ~UiCoreObserver(){
-  set_core_observer(previous);app.sync_enemy_feedback();
+  set_core_observer(previous);app.sync_enemy_feedback();app.sync_treasure_presentation();
   if(app.game.enemy_world.active&&combat_phase(app.game.phase)&&int32_t(app.enemy_visual_clock-app.animation)>app.busy)app.busy=int(app.enemy_visual_clock-app.animation);
   if(was_combat&&app.game.enemy_world.active&&!combat_phase(app.game.phase)&&app.game.phase!=Phase::Dead){
    bool living=false;for(int i=0;i<app.game.enemy_count;i++)living|=app.game.enemies[i].hp>0;

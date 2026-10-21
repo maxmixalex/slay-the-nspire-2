@@ -177,7 +177,15 @@ static void map_steps(SceneKind kind){
   click(HitKind::Command,int(Key::Map));require(!app.panel,"pointer can dismiss map during fast keyboard lock");
  }
  advance(fast?250:199);key(Key::EndTurn);same_map_state(map_expected);
- advance(fast?50:1);key(Key::Map);require(app.panel==3,"keyboard releases at authored fade-in callback");
+ advance(fast?50:1);require(!app.map_transition_blocks_keyboard(),"keyboard releases at authored fade-in callback");
+ key(Key::Map);
+ if(fast){
+  // The pointer opened and closed the independent map at fade-in start.
+  // Its original 350 ms close tail outlasts the 300 ms keyboard lock.
+  require(!app.panel&&app.map_window.closing(),"released keyboard cannot reopen the still-closing map");
+  advance(50);key(Key::Map);
+ }
+ require(app.panel==3,"map can reopen once its separate close tail has finished");
  key(Key::Map);require(!app.panel,"dismiss map after callback");
  advance(250);advance(250);advance(100);same_map_state(map_expected);
  require(!app.map_travel.fading_in,"fade-in completes independently of input release");

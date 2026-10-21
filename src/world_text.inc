@@ -27,7 +27,10 @@ static LocalizedValue wt_nested(const WorldTextContext&x,const char*table,const 
 }
 static LocalizedValue wt_reference(const WorldTextContext&x,const OriginalTextReference&r){
  switch(r.kind){
- case OriginalTextReferenceKind::Card:return wt_string(x.app->content.card_string(card_from_token(r.model).kind));
+ case OriginalTextReferenceKind::Card:{Card card=card_from_token(r.model);const char*title=x.app->content.card_string(card.kind);if(!card.upgraded)return wt_string(title);
+  // StringVar receives CardModel.Title, including the upgrade suffix. Dusty
+  // Tome deliberately binds the base card and adds its own '+' in the locale.
+  TextBuffer b{x.nested,sizeof x.nested,0};b.text(title);b.ch('+');return wt_string(x.nested);}
  case OriginalTextReferenceKind::Relic:return wt_string(x.app->relic_title(RelicId(r.model)));
  case OriginalTextReferenceKind::Potion:{const auto*d=potion_definition(Potion(r.model));return d?wt_string(d->name):LocalizedValue{};}
  case OriginalTextReferenceKind::Enchantment:return wt_string(x.app->content.world_title("enchantments",event_enchantment_key(EventEnchantment(r.model))));
@@ -115,6 +118,13 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
    TextBuffer out{x.nested,sizeof x.nested,0};out.text(list);return wt_string(x.nested);
   }
   if(world_relic_description_reference(s,id,name,ref,x.relic_position))return wt_reference(x,ref);
+  // These canonical StringVars default to an empty string before SetupForPlayer
+  // or acquisition. Their documented generic cond branch is valid in the
+  // library too; unrelated missing bindings must remain visibly unresolved.
+  if((id==WorldRelicDustyTome&&wt_equal(name,"AncientCard"))||
+     (id==WorldRelicArchaicTooth&&(wt_equal(name,"StarterCard")||wt_equal(name,"AncientCard")))||
+     (id==WorldRelicTouchOfOrobas&&(wt_equal(name,"StarterRelic")||wt_equal(name,"UpgradedRelic")))||
+     (id==WorldRelicSeaGlass&&wt_equal(name,"Character")))return wt_string("");
  }
  for(const auto&v:world_text_numbers)if(wt_equal(x.model_key,v.model)&&wt_equal(name,v.name)){int value=wt_equal(x.table,"cards")&&x.card.upgraded?v.upgraded:v.base;if(wt_equal(x.table,"cards")&&x.facts&&x.instance<0&&x.deck<0&&v.scale==1)event_card_offer_description_value(s,x.card,*x.facts,name,value);return wt_number(value,v.scale);}
  // Typed PowerVar names have a Power suffix while the independent mechanics

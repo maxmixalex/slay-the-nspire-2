@@ -33,6 +33,32 @@ load, replacement run, room replacement or title exit discards stale window
 presentation. Loaded saves restore the retained room; opening state and tween
 clocks are not serialized.
 
+## Treasure permission timers
+
+A fresh empty collection permits Proceed and map travel only after 1,000 raw
+milliseconds. A nonempty collection reveals its Skip permission after 2,500 raw
+milliseconds; reaching that deadline alone does not resolve or abandon the
+relic. Both timers start when the chest's own collection appears, after any
+extra room rewards. They continue under a map or covering panel and do not
+accelerate in Fast mode. The callback/permission completion is latched, so a
+later millisecond wrap cannot disable an already available action. This change
+does not retime the existing chest, banner or holder visuals.
+
+The private source evidence is `NTreasureRoomRelicCollection.AnimIn`'s 1.0-second
+empty callback, `NTreasureRoom.OpenChest`'s travel enable after
+`RelicPickingFinished`, and `EnableSkipAfterDelay`'s `Cmd.Wait(2.5, token)`.
+`Cmd.Wait` uses the same ordinary scene-tree timer in Normal and Fast; only the
+separate Instant setting bypasses it. The port exposes Normal/Fast only.
+
+Loading the port's mid-room save keeps the exact canonical opened chest and
+settles presentation, including these timers; it does not replay rewards or
+RNG. This is the existing calculator save compatibility choice, not a claim
+that the original resumes the same mid-animation save. Original
+`RunManager.ToSave` contains no chest animation clocks, its load path re-enters
+the latest map coordinate, and `TreasureRoom.EnterInternal` rejects room-stack
+reconstruction. Reset/load clear every collection timer field. Fresh openings
+still receive their full delay, including after a previous chest was loaded.
+
 ## Original ordinary window timing and composition
 
 The map and its black backstop open over 250 ms. The Points and Legend have
@@ -74,6 +100,11 @@ bytes during presentation, covering capstones, reset/load, and one delayed
 route commit compared with a separate controller State. It accepts either its
 explicit synthetic profile or the complete private content pack. The existing
 map/travel/room/reward fixtures are updated to the retained-room contract.
+The follow-up treasure cases check 999/1,000 and 2,499/2,500 real-millisecond
+boundaries in Normal and Fast, clocks wrapping through zero, stale pointer
+presses, read-only map routes before selection, and exact save bytes before
+and after a mid-delay load. These follow-up tests require their own preserved
+source and full execution; source16 results do not validate later source edits.
 Full native/ARM/WASM results must be recorded only after the new source has
 been pushed, read back, frozen, built and executed.
 

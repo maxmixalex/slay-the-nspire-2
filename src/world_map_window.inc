@@ -8,7 +8,7 @@ void App::reset_map_window(){
     map_room_cursor=map_room_scroll=0;
 }
 bool App::map_routes_active()const{
-    return world_can_travel(game)&&((game.phase==Phase::Map&&!panel)||
+    return world_can_travel(game)&&!treasure_empty_waiting()&&((game.phase==Phase::Map&&!panel)||
         (map_window.is_open&&panel==3));
 }
 void App::proceed_map_window(){

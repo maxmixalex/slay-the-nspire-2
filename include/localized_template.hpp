@@ -40,6 +40,31 @@ class LocalizedTemplate {
   if(!n)return context;char key[96];if(n>=sizeof key)return {};for(size_t i=0;i<n;i++)key[i]=p[i];key[n]=0;
   return resolve_?resolve_(context_,key):LocalizedValue{};
  }
+ // The pinned locale compares Amount with integer thresholds (including the
+ // chained ==1 / >1 Shrink branches). Compare the rational value without
+ // multiplying either signed operand, even at the int64/uint32 limits.
+ static bool condition(const char*p,size_t n,LocalizedValue v,bool&pass){
+  if(!n||v.text)return false;char op=*p++;--n;if(op!='<'&&op!='>'&&op!='='&&op!='!')return false;
+  bool equal=n&&*p=='=';if(equal){++p;--n;}bool negative=n&&*p=='-';if(negative){++p;--n;}if(!n)return false;
+  uint64_t threshold=0;constexpr uint64_t bound=uint64_t(INT64_MAX)/10;
+  for(size_t i=0;i<n;i++){if(p[i]<'0'||p[i]>'9')return false;unsigned digit=unsigned(p[i]-'0');if(threshold>bound||(threshold==bound&&digit>(negative?8u:7u)))return false;threshold=threshold*10+digit;}
+  if(!threshold)negative=false;bool value_negative=v.number<0;int comparison;
+  if(value_negative!=negative)comparison=value_negative?-1:1;
+  else{uint32_t rem;uint64_t whole=divide(magnitude(v.number),v.scale?v.scale:1,rem);comparison=whole<threshold?-1:whole>threshold?1:rem?1:0;if(value_negative)comparison=-comparison;}
+  pass=op=='<'?(equal?comparison<=0:comparison<0):op=='>'?(equal?comparison>=0:comparison>0):op=='='?comparison==0:comparison!=0;return true;
+ }
+ bool conditional(const char*p,size_t n,LocalizedValue v,unsigned depth){
+  size_t first=split(p,n,'|');if(first==n)return false;
+  // StringVar is empty until its owning offer/instance has been prepared.
+  // The remaining non-comparison forms in this locale are boolean values.
+  if(v.text||split(p,first,'?')==first){branch(p,n,v.text?(*v.text?0:1):(v.number?0:1),v,depth);return true;}
+  while(true){size_t end=split(p,n,'|'),q=split(p,end,'?');
+   if(q==end){render(p,end,v,depth+1);return true;}
+   bool pass=false;if(!condition(p,q,v,pass))return false;
+   if(pass){render(p+q+1,end-q-1,v,depth+1);return true;}
+   if(end==n)return true;p+=end+1;n-=end+1;
+  }
+ }
  void expression(const char*p,size_t n,LocalizedValue context,unsigned depth){
   size_t colon=split(p,n,':'),name_len=colon;LocalizedValue v=named(p,name_len,context);
   if(colon==n){if(v.known)value(v);else{ch('{');text(p,n);ch('}');}return;}
@@ -55,13 +80,7 @@ class LocalizedTemplate {
     if(matched||end==cn){if(!matched)++selected;break;}++selected;choices+=end+1;cn-=end+1;
    }branch(body,bn,selected,v,depth);return;
   }
-  if(same(fmt,second,"cond")&&body){
-   size_t q=split(body,bn,'?');bool pass=false;if(q<bn){
-    if(same(body,q,"<0"))pass=v.number<0;else if(same(body,q,">0"))pass=v.number>0;
-    else if(same(body,q,"=0")||same(body,q,"==0"))pass=v.number==0;
-    else if(same(body,q,"<=0"))pass=v.number<=0;else if(same(body,q,">=0"))pass=v.number>=0;
-    branch(body+q+1,bn-q-1,pass?0:1,v,depth);return;}
-  }
+  if(same(fmt,second,"cond")&&body&&conditional(body,bn,v,depth))return;
   if(same(fmt,fn,"diff()")||same(fmt,fn,"inverseDiff()")){if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}return;}
   if(same(fmt,fn,"abs()")){if(v.known)value(v,true);return;}
   if(same(fmt,fn,"percentMore()")||same(fmt,fn,"percentLess()")){

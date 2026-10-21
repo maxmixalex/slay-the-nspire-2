@@ -126,6 +126,7 @@ static void cleared_treasure(){
  CHECK(!a.treasure_presentation&&!a.treasure_open_tick&&!a.treasure_banner_tick&&!a.treasure_close_tick);
  CHECK(a.treasure_chest_from==65535&&!a.treasure_banner_from&&!a.treasure_banner_y);
  CHECK(!a.treasure_holder_delay_us);
+ CHECK(!a.treasure_collection_started&&!a.treasure_collection_start_ms&&!a.treasure_skip_ready);
  CHECK(!a.treasure_room_seed&&a.treasure_room_act==255&&a.treasure_room_point==0xffff);
 }
 static void add(RelicId relic){CHECK(gain_world_relic(a.game,relic));CHECK(!world_relic_pending(a.game));}
@@ -355,8 +356,8 @@ static void restored_claim(){
 static void empty_chest(){
  const RelicId relics[]={WorldRelicSilverCrucible};begin_room(WorldRoom::Treasure,reference::ActKind::Overgrowth,0,relics,1);CHECK(a.game.world.treasure_relic==NoWorldRelic);
  const uint32_t presentation_random=a.treasure_random;const int gold=a.game.gold;const unsigned count=a.game.world_relics.count,calls=world_rng(a.game,WorldRng::Rewards).calls;click(UiAction::TreasureOpen);CHECK(a.treasure_random==presentation_random&&!a.treasure_holder_delay_us);
- CHECK(a.game.phase==Phase::Treasure&&a.game.treasure_state==1&&a.game.gold==gold&&a.game.world_relics.count==count&&!a.game.world.treasure_gold_claimed&&world_rng(a.game,WorldRng::Rewards).calls==calls);a.render();CHECK(!exists(HitKind::UiAction,int(UiAction::TreasureTake),false)&&a.treasure_can_proceed()&&a.cursor==1);treasure_alpha(255,0,0,10);
- const unsigned start=a.treasure_open_tick;snapshot();a.ui_action(UiAction::TreasureTake);unchanged();advance_to(start+13);treasure_alpha(128,255,255);capture("treasure-empty");advance_to(start+30);CHECK(a.treasure_presentation==2);advance_to(start+31);CHECK(a.treasure_presentation==3&&a.treasure_close_tick==start+31&&a.treasure_open_tick==start);treasure_alpha(128,255,255);
+ CHECK(a.game.phase==Phase::Treasure&&a.game.treasure_state==1&&a.game.gold==gold&&a.game.world_relics.count==count&&!a.game.world.treasure_gold_claimed&&world_rng(a.game,WorldRng::Rewards).calls==calls);a.render();CHECK(!exists(HitKind::UiAction,int(UiAction::TreasureTake),false)&&!a.treasure_can_proceed()&&a.treasure_empty_waiting()&&a.cursor==1);treasure_alpha(255,0,0,10);
+ const unsigned start=a.treasure_open_tick;snapshot();a.ui_action(UiAction::TreasureTake);a.ui_action(UiAction::TreasureLeave);a.input(Key::EndTurn);unchanged();advance_to(start+13);treasure_alpha(128,255,255);capture("treasure-empty");advance_to(start+30);CHECK(a.treasure_presentation==2&&a.treasure_empty_waiting());advance_to(start+31);CHECK(a.treasure_presentation==3&&!a.treasure_empty_waiting()&&a.treasure_close_tick==start+31&&a.treasure_open_tick==start);treasure_alpha(128,255,255);
  advance_to(start+40);CHECK(a.treasure_collection_opacity()==3);advance_to(start+41);CHECK(a.treasure_collection_opacity()==0&&a.treasure_chest_opacity()==255);advance_to(start+44);treasure_alpha(255,0,0);unchanged();CHECK(a.treasure_can_proceed());
  CHECK(a.save_current_run());CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(255,0,0);CHECK(a.treasure_random==presentation_random);unchanged();a.input(Key::Confirm);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open);
 }
@@ -366,7 +367,10 @@ static void treasure_clock_wrap(){
  for(unsigned i=0;i<6;i++)a.advance(33);a.render();CHECK(a.animation==1&&a.treasure_open_tick==start);treasure_alpha(192,126,247,-1);CHECK(a.treasure_holder_opacity()==202&&!a.treasure_holder_brightness()&&a.treasure_holder_offset()==30&&!a.treasure_pointer_can_take());unchanged();
  // Large elapsed values are clamped before converting ticks to ms. This
  // delta used to wrap multiplication by 33 back into the opening frames.
- a.animation=start+130150525u;a.render();treasure_alpha(128,255,255);CHECK(a.treasure_can_proceed()&&a.treasure_pointer_can_take());CHECK(a.treasure_holder_opacity()==255&&a.treasure_holder_brightness()==255&&!a.treasure_holder_offset()&&a.treasure_random==presentation_random);const uint16_t finished=scene_pixel();unchanged();
+ a.animation=start+130150525u;a.render();treasure_alpha(128,255,255);CHECK(!a.treasure_can_proceed()&&a.treasure_pointer_can_take());CHECK(a.treasure_holder_opacity()==255&&a.treasure_holder_brightness()==255&&!a.treasure_holder_offset()&&a.treasure_random==presentation_random);const uint16_t finished=scene_pixel();unchanged();
+ // Advancing only the legacy visual clock cannot enable Skip. Its raw-ms
+ // timer is independent and completes without replaying the opening art.
+ a.map_clock_ms+=2500;a.advance(0);CHECK(a.treasure_can_proceed()&&a.treasure_skip_ready);CHECK(scene_pixel()==finished);unchanged();
  a.reset_presentation();cleared_treasure();treasure_alpha(128,255,255);CHECK(scene_pixel()==finished);unchanged();
 }
 static void region_captures(){

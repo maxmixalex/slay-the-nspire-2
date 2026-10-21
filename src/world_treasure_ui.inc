@@ -74,6 +74,7 @@ void App::reset_treasure_presentation(){
  treasure_presentation=0;treasure_open_tick=treasure_banner_tick=treasure_close_tick=0;
  treasure_chest_from=65535;treasure_banner_from=0;treasure_banner_y=0;
  treasure_holder_delay_us=0;
+ treasure_collection_start_ms=0;treasure_collection_started=treasure_skip_ready=false;
  treasure_room_seed=0;treasure_room_act=255;treasure_room_point=0xffff;
 }
 unsigned App::treasure_chest_opacity()const{return treasure_alpha8(treasure_chest_alpha(*this,animation));}
@@ -123,6 +124,15 @@ unsigned App::treasure_collection_opacity()const{
  if(treasure_presentation==1)return 0;
  return game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic?255:0;
 }
+bool App::treasure_empty_waiting()const{
+ if(!game.world.active||!game.world.room_open||game.world.room_type!=unsigned(WorldRoom::Treasure)||
+    game.treasure_state!=1||game.world.treasure_relic!=NoWorldRelic||
+    treasure_room_seed!=world_run_seed(game)||treasure_room_act!=game.world.act_index||treasure_room_point!=game.world.current_point)return false;
+ // Extra rewards must return before the fresh empty collection starts its
+ // own timer. Restored saves have presentation=0 and intentionally settle.
+ if(treasure_presentation==1)return true;
+ return treasure_presentation==2&&treasure_collection_started&&uint32_t(map_clock_ms-treasure_collection_start_ms)<1000;
+}
 void App::sync_treasure_presentation(){
  if(treasure_presentation&&(!game.world.active||!game.world.room_open||game.world.room_type!=unsigned(WorldRoom::Treasure)||
     treasure_room_seed!=world_run_seed(game)||treasure_room_act!=game.world.act_index||treasure_room_point!=game.world.current_point)){
@@ -132,24 +142,32 @@ void App::sync_treasure_presentation(){
  // own relic collection. Start its animation only after that selection ends.
  if(treasure_presentation==1&&game.world.active&&game.phase==Phase::Treasure&&game.treasure_state){
   treasure_presentation=2;treasure_open_tick=animation;
+  treasure_collection_started=true;treasure_collection_start_ms=map_clock_ms;
   if(game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic)treasure_holder_delay_us=treasure_holder_delay(*this);
  }
  if(treasure_presentation==2){
   uint32_t close=animation;bool completed=game.treasure_state==2;
-  // The empty collection completes after 1s. This only closes its visuals;
-  // the controller still owns the empty chest and its available Proceed.
-  if(!completed&&game.world.treasure_relic==NoWorldRelic&&uint32_t(animation-treasure_open_tick)>=31){completed=true;close=treasure_open_tick+31;}
+  // EnableSkipAfterDelay uses Cmd.Wait(2.5), whose Normal and Fast paths
+  // share the same ordinary SceneTreeTimer. Latch completion across wraps.
+  if(treasure_collection_started&&uint32_t(map_clock_ms-treasure_collection_start_ms)>=2500)treasure_skip_ready=true;
+  // NTreasureRoomRelicCollection's Godot callback completes after 1s of real
+  // time, then NTreasureRoom enables both Proceed and map travel. Fast does
+  // not shorten that wait. Only presentation changes; the controller's empty
+  // chest, saved rewards and RNG remain untouched.
+  if(!completed&&game.world.treasure_relic==NoWorldRelic&&treasure_collection_started&&
+     uint32_t(map_clock_ms-treasure_collection_start_ms)>=1000)completed=true;
   if(completed)treasure_begin_close(*this,close,treasure_chest_alpha(*this,close),treasure_banner_alpha(*this,close),treasure_banner_position(*this,close));
  }
 }
 bool App::treasure_can_proceed()const{
  if(!native_room_input_available(*this,Phase::Treasure))return false;
- if(!game.treasure_state)return false;
+ if(!game.treasure_state||treasure_empty_waiting())return false;
  if(game.treasure_state==2||!treasure_presentation)return true;
- if(game.world.treasure_relic==NoWorldRelic)return treasure_presentation>=3;
- // NTreasureRoom enables Skip 2.5 seconds after opening the relic selection.
- // This delay never enters the save or prevents access to its pending choice.
- return treasure_presentation==2&&uint32_t(animation-treasure_open_tick)>=76;
+ if(game.world.treasure_relic==NoWorldRelic)return true;
+ // The 2.5s permission uses unscaled real milliseconds; chest/banner/holder
+ // visuals retain their existing animation clock. Restores settle above.
+ return treasure_presentation==2&&(treasure_skip_ready||
+  (treasure_collection_started&&uint32_t(map_clock_ms-treasure_collection_start_ms)>=2500));
 }
 void App::treasure_action(UiAction action){
  if(!native_room_input_available(*this,Phase::Treasure))return;sync_treasure_presentation();

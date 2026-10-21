@@ -18,7 +18,7 @@ void App::sync_character_feedback(){
     }
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
-void App::advance(uint32_t ms){if(ms>250)ms=250;map_clock_ms+=ms;tick_remainder+=ms*(fast_mode?2:1);while(tick_remainder>=33){tick_remainder-=33;tick();}update_map_travel();sync_map_window();}
+void App::advance(uint32_t ms){if(ms>250)ms=250;sync_treasure_presentation();map_clock_ms+=ms;tick_remainder+=ms*(fast_mode?2:1);while(tick_remainder>=33){tick_remainder-=33;tick();}sync_treasure_presentation();update_map_travel();sync_map_window();}
 void App::draw_frame(){render();}
 void App::tick(){animation++;sync_map_reticles();if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"

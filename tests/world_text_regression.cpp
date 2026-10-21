@@ -1,0 +1,91 @@
+#include "app.hpp"
+#include "content_fixture.hpp"
+#include "original_events.hpp"
+#include "rich_text.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <vector>
+using namespace spire;
+static App a;
+static SaveData before,after;
+static unsigned checks;
+static bool actual_pack;
+#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"world text: %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
+struct TextIndex{const char*key;uint16_t index;};
+static const TextIndex indexes[]={
+#include "../src/world_text_index.inc"
+};
+static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=uint8_t(value>>(i*8));}
+static std::vector<uint8_t> synthetic_profile(){
+ // Binding fixtures use the exact format selectors, with neutral prose and
+ // synthetic art. The optional private pack exercises the original locale.
+ constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count;
+ constexpr unsigned stringdir=40+images*16,clipdir=stringdir+ContentStrings*8;
+ constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
+ std::vector<uint8_t>b(payload+82*60*2);put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);put(b,24,ContentStrings);put(b,28,AnimationKinds);put(b,32,CardKinds);
+ for(unsigned i=0;i<images;i++){put(b,40+i*16,payload);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,82*60*2);}
+ std::vector<std::string>strings(ContentStrings,"SYNTHETIC");
+ for(unsigned i=0;i<CardKinds;i++){strings[i*3]=definitions[i].key;strings[i*3+1]=strings[i*3+2]="CARD";}
+ for(const auto&entry:indexes){std::string key=entry.key;std::string text=key;
+  if(key=="relics.DUSTY_TOME.description"||key=="relics.DUSTY_TOME.eventDescription")text="GAIN {AncientCard.StringValue:cond:[gold]{}+[/gold]|GENERIC}";
+  if(key=="relics.ARCHAIC_TOOTH.description"||key=="relics.ARCHAIC_TOOTH.eventDescription")text="CHANGE {StarterCard.StringValue:cond:[gold]{StarterCard}[/gold] TO [gold]{AncientCard}[/gold]|GENERIC}";
+  if(key=="relics.TOUCH_OF_OROBAS.description"||key=="relics.TOUCH_OF_OROBAS.eventDescription")text="REPLACE {StarterRelic.StringValue:cond:[gold]{StarterRelic}[/gold] TO [gold]{UpgradedRelic}[/gold]|GENERIC}";
+  if(key=="relics.SEA_GLASS.description")text="CHOOSE {Cards} {Character.StringValue:cond:[gold]{}[/gold]|GENERIC}";
+  if(key=="relics.PAELS_TOOTH.description")text="REMOVE {Cards}{CardTitles.StringValue:cond:\n\nLIST\n{}|}";
+  if(key=="ancients.PAEL.talk.firstVisitEver.0-0.ancient")text="[thinky_dots]READABLE\n[aqua]PAEL[/aqua][/thinky_dots]";
+  if(key=="powers.SHRINK_POWER.smartDescription")text="{ApplierName.StringValue:cond:{} ACTIVE|{OwnerName}} {Amount:cond:==1?TURN|>1?[blue]{}[/blue] TURNS|}";
+  if(key=="relics.FAKE_ANCHOR.description")text="{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}";
+  CHECK(entry.index<strings.size());strings[entry.index]=text;
+ }
+ for(unsigned i=0;i<ContentStrings;i++){put(b,stringdir+i*8,unsigned(b.size()));put(b,stringdir+i*8+4,unsigned(strings[i].size()));b.insert(b.end(),strings[i].begin(),strings[i].end());b.push_back(0);}
+ for(unsigned i=0;i<AnimationKinds;i++){put(b,clipdir+i*16+4,1,2);put(b,clipdir+i*16+6,33,2);}
+ for(unsigned i=0;i<CardKinds;i++)for(unsigned j=0;j<4;j++)put(b,carddir+i*16+j*4,j?i*3+j-1:i);
+ for(unsigned i=0;i<U_Count;i++)put(b,uidir+i*4,i==U_CampFlames?A_Count:i);
+ put(b,12,unsigned(b.size()));uint32_t hash=2166136261u;for(unsigned i=40;i<b.size();i++){hash^=b[i];hash*=16777619u;}put(b,36,hash);return b;
+}
+static void reset(unsigned character){new_run(a.game,0x6d328,false,Character(character));init_world_relics(a.game);a.game.phase=Phase::Map;a.title=a.library=false;CHECK(validate(a.game));}
+static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
+static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
+static void resolved(const char*text){CHECK(text&&*text);if(std::strchr(text,'{'))std::fprintf(stderr,"unresolved: %s\n",text);CHECK(!std::strchr(text,'{')&&!std::strchr(text,'}'));}
+static std::string description(RelicId id,bool event=false,int position=-1){char text[4096]{};
+ if(event){char key[128]{};std::snprintf(key,sizeof key,"%s.eventDescription",world_relic_key(id));a.localized_text("relics",key,text,sizeof text,id);}
+ else a.relic_description(id,text,sizeof text,position);
+ resolved(text);return text;
+}
+static std::string bound_title(RelicId id,const char*name,int position=-1){OriginalTextReference ref;CHECK(world_relic_description_reference(a.game,id,name,ref,position));
+ if(ref.kind==OriginalTextReferenceKind::Card){Card card=card_from_token(ref.model);std::string title=a.content.card_string(card.kind);if(card.upgraded)title+='+';return title;}
+ if(ref.kind==OriginalTextReferenceKind::Relic)return a.relic_title(RelicId(ref.model));
+ CHECK(ref.kind==OriginalTextReferenceKind::Localized);return a.content.world_string(ref.table,ref.key);
+}
+static int owned(RelicId id){for(unsigned i=0;i<a.game.world_relics.count;i++)if(a.game.world_relics.entries[i].id==id)return int(i);CHECK(false);return -1;}
+static void prepared_and_owned(){
+ struct Sample{RelicId relic;const char*first,*second;};
+ const Sample samples[]={{WorldRelicDustyTome,"AncientCard",nullptr},{WorldRelicArchaicTooth,"StarterCard","AncientCard"},{WorldRelicTouchOfOrobas,"StarterRelic","UpgradedRelic"},{WorldRelicSeaGlass,"Character",nullptr}};
+ const CardKind starters[]={Bash,Neutralize,DefectDualcast,RegentFallingStar,NecroUnleash};
+ for(unsigned character=0;character<5;character++)for(const auto&sample:samples)for(unsigned upgraded=0;upgraded<(sample.relic==WorldRelicArchaicTooth?2u:1u);upgraded++){
+  reset(character);snapshot();std::string generic=description(sample.relic);if(!actual_pack)CHECK(generic.find("GENERIC")!=std::string::npos);unchanged();
+  if(upgraded){bool found=false;for(unsigned i=0;i<a.game.deck_count;i++)if(a.game.deck[i].kind==starters[character]){a.game.deck[i].upgraded=1;found=true;}CHECK(found);}
+  CHECK(world_relic_setup_offer(a.game,sample.relic,sample.relic==WorldRelicSeaGlass?int((character+1)%5):-1));
+  const std::string first=bound_title(sample.relic,sample.first),second=sample.second?bound_title(sample.relic,sample.second):"";CHECK(!first.empty());
+  snapshot();std::string shown=description(sample.relic);CHECK(shown.find(first)!=std::string::npos);if(sample.second)CHECK(shown.find(second)!=std::string::npos);
+  if(sample.relic==WorldRelicDustyTome)CHECK(shown.find(first+"+")!=std::string::npos);
+  if(sample.relic!=WorldRelicSeaGlass){std::string event=description(sample.relic,true);CHECK(event.find(first)!=std::string::npos);if(sample.second)CHECK(event.find(second)!=std::string::npos);}
+  unchanged();CHECK(load(a.game,before.bytes,before.size));CHECK(description(sample.relic)==shown);unchanged();
+  if(sample.relic==WorldRelicSeaGlass)continue; // Its acquisition opens card rewards.
+  CHECK(gain_world_relic(a.game,sample.relic));resolve_pending(a.game);CHECK(!world_relic_pending(a.game)&&a.game.phase!=Phase::Error);
+  int position=owned(sample.relic);snapshot();CHECK(bound_title(sample.relic,sample.first,position)==first);if(sample.second)CHECK(bound_title(sample.relic,sample.second,position)==second);
+  CHECK(description(sample.relic,false,position)==shown);unchanged();CHECK(load(a.game,before.bytes,before.size));CHECK(description(sample.relic,false,position)==shown);unchanged();
+ }
+}
+static void other_original_forms(){
+ reset(0);snapshot();description(WorldRelicPaelsTooth);unchanged();char text[4096]{};
+ for(int amount:{0,1,2,-1}){a.localized_text("powers","SHRINK_POWER.smartDescription",text,sizeof text,int(EnemyPower::Shrink),0,amount);resolved(text);CHECK(!std::strstr(text,">1?")&&!std::strstr(text,"==1?"));unchanged();}
+ a.localized_text("ancients","PAEL.talk.firstVisitEver.0-0.ancient",text,sizeof text);resolved(text);CHECK(std::strstr(text,"[thinky_dots]"));
+ RichReader reader(text);RichChar ch{};unsigned count=0;while(reader.next(ch)){CHECK(ch.codepoint!='['&&ch.style.thinky_dots);++count;}CHECK(count>0);unchanged();
+ if(!actual_pack){a.relic_description(WorldRelicFakeAnchor,text,sizeof text);CHECK(!std::strcmp(text,"{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}"));unchanged();}
+}
+int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual_pack=true;}else data=synthetic_profile();
+ CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
+}
