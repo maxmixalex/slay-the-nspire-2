@@ -171,8 +171,9 @@ struct Canvas{
             if(row>=skip&&row<skip+lines){int dy=ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
                 if(ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
                 int dx=ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;
-                static const uint8_t rainbow[]={2,6,1,4,7,3,5};
-                auto ink=colors[ch.style.rainbow?rainbow[(a.animation/5+ch.index/2)%7]:ch.style.color];int yy=y+(row-skip)*(size+3)+dy;
+                // Original event body text is 26px. Normalize native glyph
+                // advances to that scale, retaining label-local x after wrap.
+                auto ink=ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(at-x)*26000/mx(1,size)):colors[ch.style.color];int yy=y+(row-skip)*(size+3)+dy;
                 glyph(g,at+dx,yy,ink);if(ch.style.bold)glyph(g,at+dx+1,yy,ink);}
             at+=advance;
         }return row+1;

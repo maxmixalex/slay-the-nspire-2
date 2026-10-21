@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <climits>
+#include <string>
 using namespace spire;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %d %s\n",__LINE__,#x);std::exit(1);}}while(0)
@@ -81,6 +82,54 @@ static void thinky_dots(){
  CHECK(rich_thinky_offset(400,0)==0&&rich_thinky_offset(4400,0)==0&&rich_thinky_offset(4600,0)==-1);
  CHECK(rich_thinky_offset(300,1)==-1&&rich_thinky_offset(500,1)==0);
 }
+static std::string rich_plain(const char*text){RichReader reader(text);RichChar ch{};std::string out;while(reader.next(ch)){CHECK(ch.codepoint<128);out+=char(ch.codepoint);}return out;}
+static void rainbow(){
+ RichReader reader("x[sine][rainbow freq=0.3 sat=0.8 val=1]a[gold]b[/gold][rainbow speed=-1 sat=0]c[/rainbow]d[/rainbow][/sine]z");RichChar ch{};
+ CHECK(reader.next(ch)&&ch.codepoint=='x'&&!ch.style.rainbow);
+ CHECK(reader.next(ch)&&ch.codepoint=='a'&&ch.style.rainbow&&ch.style.wave);
+ CHECK(ch.style.rainbow_parameters.frequency==300&&ch.style.rainbow_parameters.saturation==800&&ch.style.rainbow_parameters.value==1000&&ch.style.rainbow_parameters.speed==1000);
+ CHECK(reader.next(ch)&&ch.codepoint=='b'&&ch.style.rainbow&&ch.style.color==1&&ch.style.rainbow_parameters.frequency==300);
+ CHECK(reader.next(ch)&&ch.codepoint=='c'&&ch.style.rainbow_parameters.frequency==1000&&ch.style.rainbow_parameters.saturation==0&&ch.style.rainbow_parameters.value==800&&ch.style.rainbow_parameters.speed==-1000);
+ CHECK(reader.next(ch)&&ch.codepoint=='d'&&ch.style.rainbow_parameters.frequency==300&&ch.style.rainbow_parameters.saturation==800&&ch.style.rainbow_parameters.value==1000);
+ CHECK(reader.next(ch)&&ch.codepoint=='z'&&!ch.style.rainbow&&!ch.style.wave);CHECK(!reader.next(ch));
+ RichReader defaults("[rainbow]x[/rainbow]");CHECK(defaults.next(ch)&&ch.style.rainbow&&ch.style.rainbow_parameters.frequency==1000&&ch.style.rainbow_parameters.saturation==800&&ch.style.rainbow_parameters.value==800&&ch.style.rainbow_parameters.speed==1000);
+ RichReader spaced("[rainbow\tval=1.000   freq=+.300 sat=.800 speed=-10 ]x[/rainbow]");CHECK(spaced.next(ch)&&ch.codepoint=='x'&&ch.style.rainbow&&ch.style.rainbow_parameters.frequency==300&&ch.style.rainbow_parameters.speed==-10000);CHECK(!spaced.next(ch));
+ const char*invalid[]={"[rainbow unknown=1]x[/rainbow]","[rainbow freq=0.3 unknown=1]x[/rainbow]","[rainbow freq=1 freq=2]x[/rainbow]","[rainbow freq=]x[/rainbow]","[rainbow freq=1e2]x[/rainbow]","[rainbow freq=nan]x[/rainbow]","[rainbow freq=10.001]x[/rainbow]","[rainbow sat=-0.001]x[/rainbow]","[rainbow val=1.001]x[/rainbow]","[rainbow val=0.1234]x[/rainbow]","[rainbow freq=1.2.3]x[/rainbow]","[rainbow speed=99999999999999999999]x[/rainbow]","[rainbow freq=0.3","[/rainbow]"};
+ for(const char*text:invalid)CHECK(rich_plain(text)==text);
+ const char*nested="[rainbow freq=.3]a[rainbow future=1]b[/rainbow]c[/rainbow]z";
+ CHECK(rich_plain(nested)=="a[rainbow future=1]b[/rainbow]cz");RichReader rejected(nested);while(rejected.next(ch))if(ch.codepoint=='b'||ch.codepoint=='c')CHECK(ch.style.rainbow&&ch.style.rainbow_parameters.frequency==300);else if(ch.codepoint=='z')CHECK(!ch.style.rainbow);
+ std::string deep;for(unsigned i=0;i<17;i++)deep+="[rainbow]";deep+='x';for(unsigned i=0;i<17;i++)deep+="[/rainbow]";deep+='z';CHECK(rich_plain(deep.c_str())=="[rainbow]x[/rainbow]z");
+ std::string too_long="[rainbow "+std::string(128,'x')+"]a[/rainbow]";CHECK(rich_plain(too_long.c_str())==too_long);
+ std::string long_nested="[rainbow freq=.3]a"+too_long+"c[/rainbow]z";CHECK(rich_plain(long_nested.c_str())=="a"+too_long+"cz");RichReader long_scope(long_nested.c_str());while(long_scope.next(ch)){if(ch.codepoint=='c')CHECK(ch.style.rainbow&&ch.style.rainbow_parameters.frequency==300);if(ch.codepoint=='z')CHECK(!ch.style.rainbow);}
+ RichRainbow parameters;CHECK(rich_rainbow_hue(parameters,500,0)==32768);CHECK(rich_rainbow_hue(parameters,0,25000)==32768);
+ parameters.frequency=300;CHECK(rich_rainbow_hue(parameters,500,0)==9830);CHECK(rich_rainbow_hue(parameters,10000,0)==0);
+ CHECK(rich_rainbow_hue(parameters,500,25000)==19660);parameters.speed=-1000;CHECK(rich_rainbow_hue(parameters,1000,50000)==0);CHECK(rich_rainbow_hue(parameters,3000,50000)==39321);
+ parameters.frequency=-1000;CHECK(!rich_rainbow_hue(parameters,UINT32_MAX,INT32_MIN));parameters.frequency=0;CHECK(!rich_rainbow_hue(parameters,UINT32_MAX,INT32_MAX));
+ parameters.frequency=10000;parameters.speed=-10000;CHECK(rich_rainbow_hue(parameters,UINT32_MAX,INT32_MIN)==15047);CHECK(rich_rainbow_hue(parameters,UINT32_MAX,INT32_MAX)==50502);
+ // Independent Godot 4.5.1 okhsv_to_srgb results, rounded to RGB888.
+ // This includes both original palette values; native math may differ by
+ // one byte before the existing RGB565 output quantization.
+ struct ColorOracle{unsigned hue,value,red,green,blue;};
+ const ColorOracle colors[]={
+  {0,800,201,66,119},{0,1000,255,86,152},{1,800,201,66,119},{1,1000,255,86,152},
+  {4096,800,201,66,71},{4096,1000,255,86,92},{8192,800,201,101,52},{8192,1000,255,130,69},
+  {11000,800,200,124,52},{11000,1000,255,159,68},{16384,800,199,163,53},{16384,1000,255,209,70},
+  {20000,800,198,199,57},{20000,1000,254,255,75},{24576,800,119,199,63},{24576,1000,154,255,83},
+  {28672,800,64,199,133},{28672,1000,84,255,171},{32768,800,59,199,177},{32768,1000,77,255,227},
+  {36864,800,57,189,199},{36864,1000,75,242,255},{40000,800,56,169,200},{40000,1000,74,217,255},
+  {44000,800,55,143,201},{44000,1000,73,182,255},{45000,800,55,134,201},{45000,1000,72,172,255},
+  {45500,800,54,130,201},{45500,1000,71,166,255},{46000,800,54,125,201},{46000,1000,71,159,255},
+  {47000,800,52,113,202},{47000,1000,68,144,255},{48000,800,43,91,203},{48000,1000,57,116,255},
+  {49152,800,55,76,203},{49152,1000,72,98,255},{52000,800,96,73,203},{52000,1000,123,94,255},
+  {54000,800,121,72,202},{54000,1000,154,92,255},{57344,800,165,72,201},{57344,1000,209,93,255},
+  {61440,800,201,70,172},{61440,1000,255,91,219},{65535,800,201,66,119},{65535,1000,255,86,152},
+  {5343,800,201,67,53},{5343,1000,255,87,70},{25928,800,72,199,65},{25928,1000,94,255,86},
+  {48013,800,43,90,203},{48013,1000,57,116,255},{48068,800,41,88,203},{48068,1000,55,113,255},
+  {48069,800,41,88,203},{48069,1000,55,113,255},{48070,800,30,78,203},{48070,1000,41,100,255},
+  {59647,800,200,74,201},{59647,1000,255,96,255}};
+ for(const auto&c:colors){auto got=rich_rainbow_sample(c.hue,800,c.value);CHECK(std::abs(int(got.red)-int(c.red))<=1&&std::abs(int(got.green)-int(c.green))<=1&&std::abs(int(got.blue)-int(c.blue))<=1);}
+ for(unsigned h:{0u,48069u,65535u}){auto black=rich_rainbow_sample(h,1000,0),white=rich_rainbow_sample(h,0,1000),gray=rich_rainbow_sample(h,0,500);CHECK(!black.red&&!black.green&&!black.blue);CHECK(white.red==255&&white.green==255&&white.blue==255);CHECK(gray.red==gray.green&&gray.green==gray.blue&&gray.red>0&&gray.red<255);}
+}
 int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N}|base}","base");x.upgraded=true;expect(x,"{IfUpgraded:show:up {N}|base}","up 3");
  expect(x,"{N:plural:one|{N} many}","3 many");x.value=1;expect(x,"{N:plural:one|{N} many}","one");
  expect(x,"{Type:choose(Attack|Skill|Power):A {N}|S|P|?}","A 1");x.type="Skill";expect(x,"{Type:choose(Attack|Skill|Power):A|S|P|?}","S");x.type="Quest";expect(x,"{Type:choose(Attack|Skill|Power):A|S|P|?}","?");
@@ -90,5 +139,5 @@ int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N
  expect(x,"{WideScale}","0.9999");expect(x,"{WideRatio:percentMore()}","50");expect(x,"{WideMin:choose(-9223372036854775808|0):minimum|zero|other}","minimum");
  expect(x,"x{Empty}y","xy");expect(x,"{Missing:show:bad|also bad}","{Missing:show:bad|also bad}");expect(x,"{Missing}","{Missing}");expect(x,"{unclosed","{unclosed");
  for(unsigned size=0;size<16;size++){char b[24];std::memset(b,0x5a,sizeof b);LocalizedTemplate(b,size,resolve,&x).format("prefix{N:abs()}long suffix");CHECK((unsigned char)b[size]==0x5a);if(size)CHECK(std::memchr(b,0,size));}
- conditional_corpus();thinky_dots();std::printf("localized templates: %u checks passed\n",checks);
+ conditional_corpus();thinky_dots();rainbow();std::printf("localized templates: %u checks passed\n",checks);
 }

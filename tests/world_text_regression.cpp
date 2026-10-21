@@ -35,6 +35,7 @@ static std::vector<uint8_t> synthetic_profile(){
   if(key=="relics.SEA_GLASS.description")text="CHOOSE {Cards} {Character.StringValue:cond:[gold]{}[/gold]|GENERIC}";
   if(key=="relics.PAELS_TOOTH.description")text="REMOVE {Cards}{CardTitles.StringValue:cond:\n\nLIST\n{}|}";
   if(key=="ancients.PAEL.talk.firstVisitEver.0-0.ancient")text="[thinky_dots]READABLE\n[aqua]PAEL[/aqua][/thinky_dots]";
+  if(key=="events.COLOSSAL_FLOWER.pages.INITIAL.description")text="TEXT[green]TEXT[/green]TEXT[red][jitter]TEXT[/jitter][/red]TEXT\n\nTEXT[sine][rainbow freq=0.3 sat=0.8 val=1]COLOR[/rainbow][/sine]TEXT[aqua]TEXT[/aqua]TEXT[red]TEXT[/red]TEXT\n\nTEXT[gold]TEXT[/gold]TEXT\n";
   if(key=="powers.SHRINK_POWER.smartDescription")text="{ApplierName.StringValue:cond:{} ACTIVE|{OwnerName}} {Amount:cond:==1?TURN|>1?[blue]{}[/blue] TURNS|}";
   if(key=="relics.FAKE_ANCHOR.description")text="{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}";
   CHECK(entry.index<strings.size());strings[entry.index]=text;
@@ -86,6 +87,31 @@ static void other_original_forms(){
  RichReader reader(text);RichChar ch{};unsigned count=0;while(reader.next(ch)){CHECK(ch.codepoint!='['&&ch.style.thinky_dots);++count;}CHECK(count>0);unchanged();
  if(!actual_pack){a.relic_description(WorldRelicFakeAnchor,text,sizeof text);CHECK(!std::strcmp(text,"{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}"));unchanged();}
 }
+static void colossal_flower(){
+ reset(0);CHECK(original_event_begin(a.game,OriginalEventId::ColossalFlower,0x71ef23,0));a.reset_presentation();a.pointer.visible=false;
+ snapshot();char text[8192]{};a.original_event_text(-1,true,text,sizeof text);resolved(text);
+ CHECK(!std::strcmp(text,a.content.world_string("events","COLOSSAL_FLOWER.pages.INITIAL.description")));
+ CHECK(std::strstr(text,"[sine][rainbow freq=0.3 sat=0.8 val=1]")&&std::strstr(text,"[/rainbow][/sine]"));
+ RichReader reader(text);RichChar ch{};unsigned colored=0,row=0,x=0,first_row=0;bool finished=false;
+ while(reader.next(ch)){
+  CHECK(ch.codepoint!='['&&ch.codepoint!=']');auto glyph=a.content.glyph(ch.codepoint,10);unsigned advance=glyph.advance+(ch.style.bold?1:0);
+  if(ch.codepoint=='\n'||(x&&x+advance>164)){x=0;++row;if(ch.codepoint=='\n')continue;}
+  if(ch.style.rainbow){CHECK(!finished&&ch.style.wave);CHECK(ch.style.rainbow_parameters.frequency==300&&ch.style.rainbow_parameters.saturation==800&&ch.style.rainbow_parameters.value==1000&&ch.style.rainbow_parameters.speed==1000);if(!colored)first_row=row;++colored;}
+  else if(colored)finished=true;
+  x+=advance;
+ }
+ CHECK(colored>0&&finished);unchanged();CHECK(load(a.game,before.bytes,before.size));char restored[8192]{};a.original_event_text(-1,true,restored,sizeof restored);CHECK(!std::strcmp(text,restored));unchanged();
+ if(actual_pack){
+  // Hold the unrelated sine/jitter frame constant: only elapsed rainbow
+  // time changes. The actual original word must change on the screen, and
+  // freq=.3 returns to the same colors after precisely three turns / 10s.
+  a.animation=0;a.map_clock_ms=0;a.scroll=int(first_row);a.render();unchanged();
+  std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);
+  a.map_clock_ms=1000;a.render();unsigned changes=0;
+  for(unsigned i=0;i<first.size();i++)if(first[i]!=a.pixels[i]){CHECK(i%ScreenW>=140&&i%ScreenW<304&&i/ScreenW>=49&&i/ScreenW<119);++changes;}
+  CHECK(changes>0);unchanged();a.map_clock_ms=10000;a.render();CHECK(!std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
+ }
+}
 int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual_pack=true;}else data=synthetic_profile();
- CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
+ CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
 }

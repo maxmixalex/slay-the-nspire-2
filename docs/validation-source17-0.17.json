@@ -1,0 +1,310 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+  "source_tree": "89308a50cbbef0c964e1849f1a226ad29e1e8489",
+  "remote_verification": {
+    "files": 466,
+    "changed_files": 21,
+    "verified_ref": true,
+    "all_tree_blob_hashes_match": true,
+    "all_changed_contents_read_back_and_equal": true,
+    "read_back_utc": "2026-10-21T06:26:45.366Z",
+    "archive_sha256": "9c39b91ad589d2f8d4c71f1aa1335ea6836d8cb59af90bcce096d2fdd7b07297"
+  },
+  "native_suites": {
+    "registered": 52,
+    "distinct_passed": 52,
+    "source_relation": "one frozen source; fifty-suite batch plus two separately logged suites",
+    "passed": [
+      "autoplay_status_regression",
+      "card_result_regression",
+      "character_ui_regression",
+      "characters_integration_regression",
+      "colorless_completion_regression",
+      "colorless_potions_regression",
+      "combat_ui_regression",
+      "compression_regression",
+      "content_regression",
+      "core_regression",
+      "defect_completion_regression",
+      "enemies_regression",
+      "events_regression",
+      "events_ui_regression",
+      "expansion_regression",
+      "expansion_ui_regression",
+      "five_character_integration_regression",
+      "five_character_ui_regression",
+      "input_regression",
+      "ironclad_completion_regression",
+      "localized_template_regression",
+      "necro_completion_regression",
+      "original_events_regression",
+      "potions_completion_regression",
+      "presentation_blend_regression",
+      "regent_completion_regression",
+      "relic_combo_regression",
+      "relic_ui_regression",
+      "resource_source_regression",
+      "shared_regression",
+      "shared_ui_regression",
+      "silent_completion_regression",
+      "silent_regression",
+      "silent_ui_regression",
+      "tactics_regression",
+      "tactics_ui_regression",
+      "ui_flow_regression",
+      "world_event_ui_regression",
+      "world_frontend_ui_regression",
+      "world_game_over_ui_regression",
+      "world_map_regression",
+      "world_map_transition_regression",
+      "world_map_travel_ui_regression",
+      "world_map_ui_regression",
+      "world_map_window_regression",
+      "world_map_window_ui_regression",
+      "world_relics_regression",
+      "world_reward_ui_regression",
+      "world_room_lifecycle_regression",
+      "world_room_ui_regression",
+      "world_text_regression",
+      "world_ui_regression"
+    ],
+    "fifty_suite_wall_seconds": 1668.31
+  },
+  "build_artifacts": [
+    {
+      "kind": "ARM launcher",
+      "filename": "nSpire2.tns",
+      "bytes": 857290,
+      "sha256": "1a3432580416650b8ab4fc3eccfe99367d945afdac438a588cefe6e7d9af91ff"
+    },
+    {
+      "kind": "WASM runtime",
+      "filename": "nSpire2.wasm",
+      "bytes": 4829363,
+      "sha256": "7b7acfe28a354372cbbed5cbf8482556ead04a7457f03e92144677d886c4c631"
+    }
+  ],
+  "arm_allocation_bytes": 10446400,
+  "arm_relocations": 28566,
+  "linked_arm_division_vectors": 5249,
+  "synthetic_character_ui": {
+    "checks": 38001,
+    "acquired_variants": 860
+  },
+  "enemy_execution": {
+    "checks": 47428,
+    "encounter_ascension_variants": 174
+  },
+  "world_routing_checks": 1070,
+  "old_v15_lifecycle_checks": 287,
+  "backend_agreement": {
+    "scenarios": 18,
+    "exact_rgb565_frames": 357,
+    "exact_saves": 25,
+    "scope": "native/WASM resource storage adapters; not original-game parity or browser DOM/persistent storage"
+  },
+  "actual_resource_ui": {
+    "ancient_event_checks": 3656,
+    "room_checks": 8607,
+    "map_window_checks": 83208,
+    "actual_text_checks": 1128
+  },
+  "private_pack": {
+    "bytes": 231312495,
+    "sha256": "d9adddc61c4f4f61b2ce50ee90960b112d752a694595ffa5f0feb2a6d9b204fb",
+    "images": 45724,
+    "clips": 1695,
+    "glyphs": 11915,
+    "strings": 6100,
+    "cards": 558,
+    "auxiliary": 1175,
+    "compatible_with_source17": true,
+    "physical_storage_fit": false
+  },
+  "runs": [
+    {
+      "journal": "source17-native-configure-07294469863c.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:27:14.598383+00:00",
+      "ended_at": "2026-10-21T06:27:19.814922+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "d9c7b9309130dbe8b6e0c5ec54745f70d35e8a98ae47df8b015ba209c7c37408"
+    },
+    {
+      "journal": "source17-native-all-build-3be28acf83e3.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:27:45.427680+00:00",
+      "ended_at": "2026-10-21T06:31:46.552766+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "892eda893e3441774fca3882de9b42139f864fefb20288420d648e5cf15a2186"
+    },
+    {
+      "journal": "source17-arm-90a36dfcdb69.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:27:14.678387+00:00",
+      "ended_at": "2026-10-21T06:28:29.453036+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "9a8ab62c9262f730904aa960b36cd695d4b76ffdc14f2145ba4c2e7c4c25caa9"
+    },
+    {
+      "journal": "source17-wasm-30b0e82c67e5.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:27:14.610746+00:00",
+      "ended_at": "2026-10-21T06:28:39.259780+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "0d15c3a8c8332a4ee6b0cf43a9f1c5e765999836bb49c1ade7b24da3256ba875"
+    },
+    {
+      "journal": "source17-native-complete-other50-a38720c05e31.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:33:01.296817+00:00",
+      "ended_at": "2026-10-21T07:00:49.759524+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "c4396ea96d883c8413f5e96e8b2668e8b1e5d6ba803eec3df2148770563b77e6"
+    },
+    {
+      "journal": "source17-original-events-cf1cbc8064c2.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:34:05.398038+00:00",
+      "ended_at": "2026-10-21T06:34:09.957933+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "5194a07d466dfba35941aa95ff1fd6a764325196af93a39fab6785464c54ebee"
+    },
+    {
+      "journal": "source17-world-text-synthetic-10f0dd56ddcb.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:34:05.369633+00:00",
+      "ended_at": "2026-10-21T06:34:07.205305+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "20154a31b757832dbf8367515d966db2855c946591dfbc1e2ea6faedc5d42793"
+    },
+    {
+      "journal": "source17-world-text-actual-ec4d1b25e707.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:34:05.354377+00:00",
+      "ended_at": "2026-10-21T06:34:20.146775+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "888da14f4a9470735a2173a76eba288d779aeb3c1d529675a5b5bd5aa42bfbf1"
+    },
+    {
+      "journal": "source17-world-18-native-b644d9a4ea3e.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:33:01.403994+00:00",
+      "ended_at": "2026-10-21T06:38:43.735519+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "173184d89b5099e745e7b30a681618d37d066ee2c3c86ea805e0ffc1b2a9b051"
+    },
+    {
+      "journal": "source17-world-18-wasm-d424f93d857a.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:41:43.163944+00:00",
+      "ended_at": "2026-10-21T06:45:34.752207+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "3d1de9f5925898625abb874b8ca7afe43c66273512ba2319ce14ac684f8ffe18"
+    },
+    {
+      "journal": "source17-old-v15-roundtrip-1831ced7fd95.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:33:01.341578+00:00",
+      "ended_at": "2026-10-21T06:33:04.297859+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "a077dcce7d6e5e19e8a8e936c00f8003cd6d4a7617479d9349f2e8457026ee8e"
+    },
+    {
+      "journal": "source17-linked-arm-division-eff9757b8cf1.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:44:40.478812+00:00",
+      "ended_at": "2026-10-21T06:44:46.133602+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "cdc74f255e7d69364e12b5780ac24a1a1167c5257d27587278727c0536f0fe1a"
+    },
+    {
+      "journal": "source17-pack-input-compatibility-132c79e6a67a.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:27:33.828251+00:00",
+      "ended_at": "2026-10-21T06:27:40.440344+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "592104661caa3bf04e51be1273afeb8b205734c2fcea1dac0059c69ffb871f06"
+    },
+    {
+      "journal": "source17-actual-ancient-events-9d2f4bf8447f.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:33:05.727315+00:00",
+      "ended_at": "2026-10-21T06:33:31.863575+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "9887694976f4b51a692fb78a7b1b4ae71ed25a3ad456b67dd4378969f61b97af"
+    },
+    {
+      "journal": "source17-actual-native-rooms-9a41281a5ee4.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:33:05.747617+00:00",
+      "ended_at": "2026-10-21T06:34:12.126631+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "720e5037d8fd019fed646b7ff08e575c942dc4efaf5c89cc0fa8ca3331939fb3"
+    },
+    {
+      "journal": "source17-actual-map-window-cf47d60327c6.json",
+      "status": "passed",
+      "checkpoint": "26a9097521a971b69a4b58494985c6062a24017e",
+      "started_at": "2026-10-21T06:33:05.620088+00:00",
+      "ended_at": "2026-10-21T06:33:37.796619+00:00",
+      "returncode": 0,
+      "source_sha256": "c1cf44c680e7aaf41afcd610479a6f55e977532971cbdf012d11c7742a3b9ba0",
+      "source_changed": false,
+      "log_sha256": "c0ff38903f977c6b39761be2485d1db2c45777c5839ac98d344c9bd2175c256f"
+    }
+  ],
+  "limits": [
+    "The full resource pack exceeds the TI-Nspire CX II documented 90+ MB storage.",
+    "No new calculator installation or physical-device performance result.",
+    "No 95% original UI-fidelity acceptance result.",
+    "Act-entry camera/banner and remaining dynamic original scene effects are pending."
+  ]
+}

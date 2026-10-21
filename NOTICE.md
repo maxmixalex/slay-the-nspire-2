@@ -120,3 +120,14 @@ Treasure presentation adapts inspected original room/relic-holder scene structur
 using existing original-derived panels and banners. Prototype acquisition odds,
 prices and the exhausted-pool fallback are not original-game parity claims.
 No original assembly bodies, assets, font files or calculator images are published.
+
+## Original rich-text color math added in 0.17
+
+`include/rich_rainbow.hpp` adapts the rainbow phase calculation from Godot
+4.5.1 and samples Björn Ottosson's OkHSV color mathematics. The fixed-point
+adaptation and numerical table retain the MIT notices in that header and in
+`licenses/OkHSV-Godot-MIT.txt`; the latter must accompany binary redistributions.
+The offline HTML packager includes it with the existing notices.
+The pinned public sources, table reconstruction procedure and measured error
+limits are documented in `docs/rich-rainbow-0.17.md`. These mathematical tables
+contain no original game image, font or localization payload.

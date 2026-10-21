@@ -23,7 +23,7 @@ def package_runtime():
     if not output.is_file():raise SystemExit('Compile the matching WebAssembly runtime before packaging.')
     content=(ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
     text=(ROOT/'platform/web/player.html').read_text(encoding='utf-8').replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__CONTENT__',base64.b64encode(content).decode())
-    notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()
+    notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()+'\n'+(ROOT/'licenses/OkHSV-Godot-MIT.txt').read_text()
     text+='\n<!-- '+notices.replace('--','—')+' -->\n'
     (ROOT/'dist'/'nSpire2-desktop.html').write_text(text,encoding='utf-8');print(f'Built offline desktop host; WebAssembly {output.stat().st_size:,} bytes')
 
