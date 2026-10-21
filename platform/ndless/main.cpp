@@ -87,6 +87,25 @@ static bool clear_save(){
     }return true;
 }
 static bool pressed(unsigned offset,unsigned mask){return (*(volatile uint16_t*)(0x900E0000u+offset)&mask)!=0;}
+template<class Ticks,class Held>
+static bool exit_input_release(Ticks ticks,Held held){
+    // Keep the confirming press in this foreground program until input has
+    // stayed released for 100ms, just like the entry gate. Ndless r2022 also
+    // checks release after main, but accepts the first clear hardware sample.
+    // This bounded exit-only poll uses our existing countdown timer; it does
+    // not reconfigure IRQs, sleep on the OS's timer, or alter keyboard state.
+    const uint32_t started=ticks();uint32_t sampled=started,quiet_since=started;
+    bool first=true,quiet=false;
+    for(;;){
+        const uint32_t now=ticks();
+        if(started-now>=65536u)return false; // At most two foreground seconds.
+        if(!first&&sampled-now<328u)continue; // Sample input at most every 10ms.
+        first=false;sampled=now;
+        if(held())quiet=false;
+        else if(!quiet){quiet=true;quiet_since=now;}
+        else if(quiet_since-now>=3277u)return true;
+    }
+}
 struct Clock {
     uint32_t load, control, last;bool active=false;
     // SP804 timer 2 is dedicated to this foreground runtime. Do not reset
@@ -222,5 +241,9 @@ extern "C" int main(int argc,char**argv){
         for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
         render_frame(update_start,resources_before,update_scene);
     }
+    exit_input_release(timer_ticks,[&](){
+        for(unsigned offset=0x10;offset<0x20;offset+=2)if(pressed(offset,0xffffu))return true;
+        const auto sample=pad.read();return sample.contact||sample.pressed;
+    });
     display.restore();nd_close(f);performance_report();return 0;
 }

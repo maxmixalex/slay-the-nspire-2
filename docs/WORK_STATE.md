@@ -1,6 +1,59 @@
 # Work state — 2026-10-21
 
-## Current: dense status overlap and English word wrapping — source35 pending validation
+## Current: final bilingual UI passed; bounded Ndless exit handoff pending — source36
+
+Source35 is remotely preserved at
+`486fd83f6c7838cbab7590ac8619208d7aa86d09`, with all 572 files and four
+changed text contents read back. Its source archive SHA-256 is
+`b7f843e81f002f74f987b98b405b56bcf15f5055f23e493082465fba27720268`.
+The ten affected fallback ASan/UBSan regressions and eight actual-pack
+Chinese/English world-text, world-UI, keyword and device-feedback executions
+all passed. LeakSanitizer remains disabled for the documented sandbox limit.
+Both languages also passed 18 card/HUD/selector captures; all 36 frames and
+12 separate keyword/status/banner images were visually reviewed. The dense
+status label no longer covers or intercepts a power, English keyword paragraphs
+wrap whole words, and the unrelated invalid-seed fixture notice is gone.
+This establishes the inspected behavior, not a numerical original-UI fidelity.
+
+Source35 ARM and WASM builds passed. The ARM launcher is 939,389 bytes,
+SHA-256 `493e5fb8df0524fb90bafb714009f875ef4cbb3a620b753faa2e136a975e8778`;
+allocation is 16,311,248 bytes, leaving 465,968 bytes below 16 MiB. WASM is
+5,200,648 bytes, SHA-256
+`b4e6ccd0a9c9c4b8db49c90bb59a60e28198a3f1d50192067eb8eb7a35cafd4a`.
+Verified object reuse includes dependency/tool hashes and byte-identical
+re-linking of the preceding ARM/WASM artifacts. An initial WASM proof failed
+because its temporary output basename changed only the name section; retain
+that journal. Repeating in an independent directory with the original basename
+passed the full-file comparison without weakening the check.
+
+Source35 actual Chinese and English native/WASM replays passed all five sampled
+RGB565 frames, all stage read counts/bytes, unchanged canonical saves, zero save
+callbacks and fixed 16 MiB WASM memory. A single same-v16 control observation
+also matches source33's stage I/O exactly; the historical ABBA 91.026% read
+reduction remains applicable to this one controlled replay, not to FPS.
+Both private language packs remain the unchanged source33 v17 artifacts.
+
+Source33's real Firebird sequence confirmed a killed enemy disappears while
+other enemies remain, Block keyword hover/detail and the player-turn banner.
+After an actual process re-entry, Continue preserved seed text E80C6A8B,
+run_seed 2855106481599043927, turn 2, player HP 76 and the killed enemy's state.
+The first profile was recovered byte-for-byte from the frozen snapshot, matched
+to startup/first-render/first-present counters and cross-checked against NAND
+data-page bytes. This is snapshot recovery, not a USB export. Cold startup is
+52.352966 simulated seconds; no physical-device speed is claimed.
+
+One 80ms ENTER Quit confirmation was followed by an unintended new invocation.
+The r2022 loader already has an instantaneous no-key check, so a missing local
+check alone is not a proven root cause. The next platform-only source stage
+adds a bounded foreground handoff: sample all matrix rows and touchpad contact/
+press at most every 10ms, require 100ms continuous release, and stop after two
+seconds before the existing loader handles return. It changes neither the OS
+input queue nor interrupt/timer configuration. ARM syntax and six extracted
+helper probes passed, including held input, bounce and counter wrap. The same
+80ms Firebird exit must still be repeated before claiming this fixes re-entry.
+New-run seed and final launcher execution/packaging remain in progress.
+
+## Previous checkpoint: dense status overlap and English word wrapping — source35
 
 Source34 is remotely preserved at
 `c466cbb46b65cf3805997c6bc05c67991c3ee45d`, with all 572 files and five
