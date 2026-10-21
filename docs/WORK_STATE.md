@@ -1,6 +1,40 @@
 # Work state — 2026-10-21
 
-## Current: source27 measured rendering bottlenecks — 2026-10-21
+## Current: source28 cache-pressure fixture correction — 2026-10-21
+
+Source27 is remotely preserved at `9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69`;
+all 540 tree files and 14 changed contents matched the read-back. The source
+archive is 10,004,480 bytes, SHA-256
+`adb77cf4b17f9d0134dac0db4729755e6729ee358d5a06429cd43e1c843a7c22`.
+ARM/WASM builds and exact scene checks are in progress from that frozen tree.
+
+The affected ASan/UBSan run passed the reader's 8,572 checks, then correctly
+exposed an obsolete assumption in the no-bitmap failure-injection fixture:
+its 300 × 806-byte tile blocks fit in approximately 60 reader pages. Evicting
+the decoded group cache no longer forces provider reads with a 64-page reader,
+so the injected I/O failure remains hidden by valid resident data. This is
+expected runtime behavior for an immutable source, not a decoder fault.
+The original failed journal `source27-resource-map-asan-18eef84a4b7c.json`
+is retained. No sanitizer diagnostic accompanied the failed test assertion.
+
+Source28 aligns only the 300 referenced fixture groups to separate 4 KiB
+pages and asserts that this working set exceeds the reader capacity. It keeps
+the failure and invalidation assertions intact; unrelated groups remain
+compact. The runtime, pack, compiler limits and source27 ARM/WASM inputs are
+unchanged. Preserve this test correction before rerunning the affected gate.
+
+The longer source25 events and relic-combo tests have now passed (759.22 and
+777.64 seconds). Together with the earlier core rerun, 63/64 suites have
+completed pass evidence; character-UI is the only still-running item. Its
+original 300-second timeout remains documented with the initial full-suite
+failure. No completed earlier check is being rerun unnecessarily.
+
+Next: freeze the fixture correction, complete the four affected sanitizer
+tests and the source27 native/ARM/WASM scene/device gates, then publish a
+coherent validation receipt and matching development package. Runtime
+executions remain attributed to source27; the corrected test is source28.
+
+## Previous: source27 measured rendering bottlenecks — 2026-10-21
 
 Source26 is remotely preserved at `8536cadf8f8e3d88b6856c53e3970170cfd95d63`:
 539 tree files and all three changed contents matched the read-back. Its ARM

@@ -738,7 +738,9 @@ FullDirectory no_bitmap_package(){
     const unsigned count=(DirectoryBound-p.table)/8-1,prefix=p.table+(count+1)*8;
     CHECK(count>=300&&prefix<=DirectoryBound&&DirectoryBound-prefix<8);
     CHECK(prefix+(p.images+7)/8>DirectoryBound);
-    Bytes bytes(prefix+16,0);bytes.reserve(prefix+16+9842+count*806+8192);
+    const unsigned referenced=unsigned(p.frames[0].ids.size());
+    CHECK(referenced>ResourceReader::PageCount);
+    Bytes bytes(prefix+16,0);bytes.reserve(prefix+16+9842+count*806+referenced*4096+8192);
     std::copy(p.bytes.begin(),p.bytes.begin()+p.base+64,bytes.begin());
     std::copy(p.bytes.begin()+p.descriptor_base,p.bytes.begin()+p.descriptor_base+16,bytes.begin()+prefix);
     put(bytes,p.base+16,count);put(bytes,p.base+20,count);put(bytes,p.base+32,prefix);
@@ -761,7 +763,15 @@ FullDirectory no_bitmap_package(){
         const unsigned off=unsigned(bytes.size());bytes.insert(bytes.end(),block.begin(),block.end());
         put(bytes,off+8,id);put(bytes,p.table+id*8,off);put(bytes,p.table+id*8+4,unsigned(block.size()));
     };
-    for(unsigned i=0;i<count;++i)add_group(i,tile);
+    // These small blocks must also exceed the ranged reader's page cache.
+    // Packed together, 300 x 806 B fit in 60 pages and a provider fault could
+    // be hidden by valid cached bytes even after the tile pool is evicted.
+    // Align only the referenced blocks; the other 54k header-only blocks stay
+    // compact so the fixture does not grow into hundreds of megabytes.
+    for(unsigned i=0;i<count;++i){
+        if(i<referenced)bytes.resize((bytes.size()+4095)&~size_t(4095));
+        add_group(i,tile);
+    }
     const unsigned last=unsigned(bytes.size());bytes.resize((bytes.size()+4095)&~size_t(4095));
     add_group(count,group_block(2,1,p.groups[p.tile_groups()].raw));seal(bytes);
     return {std::move(bytes),std::move(p.frames[0]),prefix,first,last};
