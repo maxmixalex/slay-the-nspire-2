@@ -63,7 +63,7 @@ static void statuses(){
     auto&s=a.game;s.strength=-3;s.dexterity=123;s.vigor=7;s.thorns=2;s.pain=3;s.embrace=4;s.no_draw=1;s.no_block=1;
     s.noxious_fumes=1;s.accuracy=2;s.demon_form=3;s.infinite_blades=1;s.flame_barrier=6;s.block_next_turn=9;s.draw_next_turn=2;
     s.enemies[0].strength=-2;s.enemies[0].weak=4;s.enemies[0].vulnerable=5;s.enemies[0].poison=123;
-    a.reset_presentation();a.pointer.visible=false;a.render();snapshot();
+    a.notice="";a.notice_ticks=0;a.reset_presentation();a.pointer.visible=false;a.render();snapshot();
     unsigned loading_steps=0;const unsigned frozen_animation=a.animation;
     while(a.combat_preparation.active&&loading_steps++<1024){a.advance(33);a.render();CHECK(a.animation==frozen_animation);}
     CHECK(!a.combat_preparation.active);unchanged();
@@ -73,11 +73,14 @@ static void statuses(){
     for(unsigned i=0;i<10;++i)a.advance(250);a.render();capture("dense-statuses");unchanged();
     for(int actor=0;actor<=s.enemy_count;++actor){
         int ids[StatusKinds],count=collect_statuses(s,actor,ids),found=0;
+        if(actor==0)CHECK(count>=15);
         for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::BattleStatus&&a.hits[i].value/StatusKinds==actor)++found;
         CHECK(found==count);
         for(int i=0;i<count;++i){const int encoded=actor*StatusKinds+ids[i];const HitRegion*hit=nullptr;
             for(int h=0;h<a.hit_count;++h)if(a.hits[h].kind==HitKind::BattleStatus&&a.hits[h].value==encoded)hit=&a.hits[h];
             CHECK(hit&&hit->enabled&&hit->x>=0&&hit->y>=24&&hit->x+hit->w<=320&&hit->y+hit->h<=190);
+            const auto*active=a.hit_at(hit->x+hit->w/2,hit->y+hit->h/2);
+            CHECK(active&&active->kind==HitKind::BattleStatus&&active->value==encoded);
         }
     }
     CHECK(status_amount(s,0,0)==-3&&status_amount(s,0,1)==123&&status_amount(s,1,6)==123);

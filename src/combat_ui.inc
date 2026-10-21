@@ -153,6 +153,17 @@ static void combat_screen(Canvas&c){
     combat_pile(c,A_DrawPile,s.draw.count,8,215,1);
     combat_pile(c,A_DiscardPile,s.discard.count,291,215,2);
     if(s.exhaust.count)combat_pile(c,A_ExhaustPile,s.exhaust.count,293,106,3);
-    c.text("I 详情",stars?268:3,160,10,Muted,44);c.hit(stars?265:0,157,49,17,HitKind::Command,(int)Key::Detail,s.hand.count>0);
+    // Dense power rows own both their pixels and pointer targets. Prefer the
+    // usual side, then the opposite gutter; omit this redundant shortcut
+    // label if neither fits. Keyboard Detail and card clicks still work.
+    for(int side=0;side<2;++side){
+        const int left=(stars!=bool(side))?265:0;bool blocked=false;
+        for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
+            if(h.enabled&&h.kind==HitKind::BattleStatus&&
+               left<h.x+h.w&&h.x<left+49&&157<h.y+h.h&&h.y<174){blocked=true;break;}
+        }
+        if(blocked)continue;
+        c.text("I 详情",left+3,160,10,Muted,44);c.hit(left,157,49,17,HitKind::Command,(int)Key::Detail,s.hand.count>0);break;
+    }
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}
 }

@@ -223,10 +223,21 @@ struct Canvas{
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
         p=a.content.ui_text(p);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
-        RichReader reader(p);RichChar ch{};int at=x,row=0;
+        RichReader reader(p);RichChar ch{};int at=x,row=0;bool boundary=true;
+        const bool words=a.content.english();
+        auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph(value.codepoint,px);const int advance=g.advance+(value.style.bold?1:0);return fitted_text::Metric{advance,advance};};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
-        while(reader.next(ch)){auto g=a.content.glyph(ch.codepoint,size);int advance=g.advance+(ch.style.bold?1:0);
-            if(ch.codepoint=='\n'||(at>x&&at+advance>x+w)){at=x;row++;if(ch.codepoint=='\n')continue;}
+        while(reader.next(ch)){
+            // Only English paragraphs reserve the next complete word. The
+            // copied rich reader preserves styles across tags and the live
+            // reader's character indices. Oversized words retain glyph wrap.
+            const int word=words&&boundary&&at>x&&fitted_text::word_character(ch.codepoint)?fitted_text::word_width(reader,ch,size,metrics):0;
+            // Fetch after look-ahead: glyph pixels belong to Content's cache.
+            auto g=a.content.glyph(ch.codepoint,size);int advance=g.advance+(ch.style.bold?1:0);
+            const bool space=ch.codepoint==' '||ch.codepoint=='\t';
+            if(words&&space&&(at==x||at+advance>x+w)){boundary=true;continue;}
+            if(ch.codepoint=='\n'||(at>x&&(at+advance>x+w||(word&&word<=w&&at+word>x+w)))){at=x;row++;if(ch.codepoint=='\n'){boundary=true;continue;}}
+            if(words){boundary=space;if(at==x&&space)continue;}
             if(row>=skip&&row<skip+lines){int dy=ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
                 if(ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
                 int dx=ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;

@@ -1,6 +1,42 @@
 # Work state — 2026-10-21
 
-## Current: source33 built; actual-pack fixture corrections pending source34
+## Current: dense status overlap and English word wrapping — source35 pending validation
+
+Source34 is remotely preserved at
+`c466cbb46b65cf3805997c6bc05c67991c3ee45d`, with all 572 files and five
+changed text contents read back. Its archive SHA-256 is
+`bea336668a5fcbdfe1c2632cddf45c855f5e31657444161a21f7e2bd0f5471a6`.
+All 325 declared runtime/build inputs remain byte-identical to source33.
+The three corrected/extended fixtures passed all nine fallback/Chinese/English
+executions under ASan/UBSan. The public WASM profiler also passed its actual
+three-enemy save: 59 preparation updates, first visible render recorded
+separately, then 360 combat frames with 20,480 bytes of subsequent reads.
+
+Actual dense-status images exposed a production issue that hit-count tests
+alone missed: the fixed `I Detail` label and its later command hit rectangle
+overlapped the third power row. The next source stage checks actual rectangle
+intersections, tries the opposite gutter and omits this redundant label/hit
+when both gutters are occupied. Every power remains directly visible and
+interactive; the keyboard shortcut is unchanged. The dense fixture now checks
+the effective `hit_at` result for every status center and clears the unrelated
+invalid-seed notice from its previous fixture before making screenshots.
+English rich paragraphs also gain whole-word wrapping, retaining explicit
+newlines, long-word fallback and rich styles. Chinese paragraph layout and
+both private resource packages remain unchanged.
+
+Source33's exact final Chinese pair has reached the title and a new run in
+Firebird. Observed resource-open/App.init time is 52.352966 simulated seconds;
+first render is 0.456818 seconds. This excludes Ndless/Zehn loading. Real
+progress captures and all eight completed stages are available. Its first
+new-run battle prepared 209 images/638 pages in 53 updates, and the observed
+preparation scene occupied 54 complete frames/6.524841 simulated seconds,
+including the visible transition. The player-turn banner appeared. These are
+current-only emulator observations, not a same-pack startup A/B or physical
+FPS. Seed/restart verification is still running. The next renderer must be
+built and rechecked on the installed final pack before final packaging; do
+not relabel source33 execution as source35 execution.
+
+## Previous checkpoint: source33 runtime and source34 fixture validation
 
 Source33 runtime is remotely preserved at
 `2d5c6384cd6a5cab14877c1f0371a335760b00e0`: all 572 tree files and all
