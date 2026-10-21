@@ -1,6 +1,62 @@
 # Work state — 2026-10-21
 
-## Current: final bilingual UI passed; bounded Ndless exit handoff pending — source36
+## Current: source36 runtime gates completed; bilingual delivery packaging
+
+The executed release is source36,
+`127605b7621c424e7990fc7bdde6bfb2a2fa7f5e`. All 572 source files and the two
+changed contents were read back from the remote branch before its ARM build.
+The source-only archive SHA-256 is
+`837d04f86808f2e7c3c85d5c75a877bb9f2433e1712f4b85d9d7dfb78dc1022e`.
+The final launcher is 939,953 bytes, SHA-256
+`0662043c138649a790e7e6047cc2dc9dd0cbcd3dd7a1648edc14741612c1f2fd`.
+Its Zehn allocation is 16,311,912 bytes, leaving 465,304 bytes below 16 MiB.
+Source35 remains the actual native/WASM execution checkpoint; source33 remains
+the resource-conversion checkpoint. The target-specific proof verifies all
+488 declared inputs and identifies only the Ndless main change, with native
+and web dependency/tool/object identities unchanged. Do not relabel those
+earlier executions as new source36 tests.
+
+The exact final launcher was installed in an isolated Firebird CX II CAS
+session and downloaded back over emulated USB with identical complete bytes.
+It completed all eight startup stages, continued the saved B run with all
+three seed fields intact, and re-saved its 230,088-byte v15 save byte-for-byte.
+The same 80ms ENTER Quit that caused the earlier re-entry now passed: while
+the key was held, app.quit was true and the program retained the foreground;
+five simulated seconds after release the OS document browser was visible,
+without automatic reopening. No shorter press, alternate confirm key or
+forced emulator exit was used for this final regression. The underlying
+Ndless/OS queue mechanism is not established by that one passing case.
+
+The normal 4,393-byte performance report was exported through USB; startup,
+first-render and first-present totals exactly match paused read-only counters,
+and resource failures are zero. The final session journal completed with
+status passed and unchanged frozen source. Its summary SHA-256 is
+`18af0a4854b8964fdebe60db7501dcac79e09fb675bc17efb327a5a32ebe312e`.
+Its 41.741-second startup inherits the previous OS/filesystem cache snapshot,
+so it is not evidence of acceleration from source33's 52.353-second cold run.
+All emulator sessions ended normally. No physical-calculator FPS is claimed.
+
+The broader source33 session separately verified visible startup and combat
+preparation, a killed enemy disappearing, a power amount, keyword hover/detail,
+player-turn banners and process-restart seed behavior. Run A and Continue used
+E80C6A8B; a normal new run B used 0651E28D. Preserve that actual execution
+version and the first-profile snapshot-recovery provenance. English, dense
+statuses and rich paragraph wrapping have source35 actual-pack native/WASM
+evidence, not an English Firebird run.
+
+The consolidated [feedback report](calculator-feedback-0.17.md) and
+[validation metadata](validation-calculator-feedback-0.17.json) cover the
+nine user reports, the 18 affected sanitizer executions, 48 reviewed frames,
+both language packs, controlled I/O measurements and retained failures.
+Original UI 95% acceptance and the 30–40 MB target remain unachieved. Main and
+disabled remote CI are unchanged; private resources remain outside Git.
+
+Next: freeze this documentation-only checkpoint, verify its unchanged runtime
+inputs, create the exact paired bilingual calculator ZIPs and offline HTMLs,
+read all members and embedded inputs back, and record final delivery hashes.
+No further compilation or resource conversion is needed for this pair.
+
+## Previous checkpoint: final bilingual UI and bounded Ndless exit handoff — source36
 
 Source35 is remotely preserved at
 `486fd83f6c7838cbab7590ac8619208d7aa86d09`, with all 572 files and four
