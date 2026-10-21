@@ -6,6 +6,21 @@ static const WorldContentIndex world_text_index[]={
 static const WorldContentIndex world_image_index[]={
 #include "world_image_index.inc"
 };
+static const WorldContentIndex native_ui_index[]={
+ {"common.END_TURN",U_EndTurnNative},
+ {"common.END_TURN_GLOW",U_EndTurnGlow},
+ {"common.END_TURN_HOVER",U_EndTurnHover},
+ {"common.HEALTH_BAR_BG",U_HealthBarBackground},
+ {"common.HEALTH_BAR_BLOCK",U_HealthBarBlock},
+ {"common.HEALTH_BAR_FILL",U_HealthBarFill},
+ {"common.HEALTH_BAR_INFINITY",U_HealthBarInfinity},
+ {"common.HEALTH_BAR_MASK",U_HealthBarMask},
+ {"common.HEALTH_BAR_STROKE",U_HealthBarStroke},
+ {"common.HOVER_TIP",U_HoverTip},
+ {"common.HOVER_TIP_DEBUFF",U_HoverTipDebuff},
+ {"common.PAUSE_BUTTON",U_PauseButton},
+ {"common.PAUSE_BUTTON_HOVER",U_PauseButtonHover}
+};
 static const WorldContentIndex world_clip_index[]={
 #include "world_clip_index.inc"
  {"~",0} // A terminal sentinel also permits resource-only metadata checkpoints.
@@ -34,6 +49,7 @@ const char* Content::world_title(const char*table,const char*key)const{
  return world_string(table,joined);
 }
 int Content::world_image(const char*group,const char*key)const{
+ if(version_==NativeUiContentVersion){int id=wc_find(native_ui_index,group,key);if(id>=0)return ui_image(id);}
  return version_>=14?ui_image(wc_find(world_image_index,group,key)):-1;
 }
 int Content::world_clip(const char*model,const char*action)const{

@@ -1,6 +1,30 @@
 # Work state — 2026-10-21
 
-## Current: source22 verified and packaged; source23 records results — 2026-10-21
+## Current: source24 native UI and performance checkpoint preparation — 2026-10-21
+
+The owner identified inaccurate health bars, keyword hover tips and buttons,
+and reported a slow browser build. Three agents implement health components,
+keyword interactions and actual Firebird/device measurements; integration adds
+an append-only NSP2/16 UI directory and host profiling. Source24 is being
+preserved **before** formal builds, private conversion and changed-code emulator
+runs. No source24 delivery, browser FPS or completed fidelity acceptance is
+claimed yet. See [native-ui-performance-0.17.md](native-ui-performance-0.17.md)
+for component scope, exact resource compatibility and measurement boundaries.
+
+The original uploaded CX II CAS flash, injected boot image, Firebird and Ndless
+were recovered; working-copy boot, installation and source22 USB transfer have
+actually run. Native physical-device FPS remains unknown. Cloud-browser use of
+the private embedded resource HTML was denied by automatic approval review;
+that route needs explicit authorization, and no alternate browser workaround
+is being used. Local WASM execution and the actual emulator remain available.
+
+Next: verify the remote source24 tree and contents, archive/freeze it, then run
+component tests, old/new pack compatibility, actual private UI conversion,
+matching ARM/WASM builds, native/WASM scene replay and real emulator timing.
+Use failures to choose a measured second-priority performance fix. Preserve the
+source22 deliverables until a coherent replacement passes these gates.
+
+## Previous: source22 verified and packaged; source23 records results — 2026-10-21
 
 Runtime checkpoint **`5d177be78c507c9cd4b3c9d38a4600e84a44c02e`** is preserved
 remotely on `work/0.17-world-parity`: all **509 files / 12 changed contents**

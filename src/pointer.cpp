@@ -25,6 +25,7 @@ void App::pointer_cancel(){hand_focus=false;map_dragging=false;pointer.held=poin
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
+    keyword_hover={};
     detail_card=card_token(card);detail_scroll=0;detail_instance=-1;detail_cost_override=-2;detail_has_facts=false;detail_genetic=detail_scythe=0;
     detail_deck_index=deck_index>=0&&deck_index<game.deck_count&&game.deck[deck_index].kind==card.kind?deck_index:-1;pointer_cancel();
 }
@@ -86,6 +87,7 @@ void App::pointer_move(int x,int y){
 }
 void App::pointer_scroll(int rows){
     if(!rows||map_transition_blocks_pointer())return;
+    if(keyword_hover_scroll(*this,rows))return;
     sync_map_window();
     map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.

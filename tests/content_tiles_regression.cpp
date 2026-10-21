@@ -142,11 +142,11 @@ struct Package {
         }
         for(const Descriptor&d:descriptors)CHECK(d.group<plans.size());
     }
-    void encode(bool legacy=false){
+    void encode(bool legacy=false,unsigned auxiliary=U_Count,unsigned version=0){
         CHECK(legacy||(!groups.empty()&&groups.size()>tile_groups()));
         images=std::max(images,unsigned(frames.size())+2);
         const unsigned descriptor_count=std::max(unsigned(frames.size()),reserved_descriptors);
-        base=40+images*16+glyphs*16+ContentStrings*8+AnimationKinds*16+CardKinds*16+U_Count*4;
+        base=40+images*16+glyphs*16+ContentStrings*8+AnimationKinds*16+CardKinds*16+auxiliary*4;
         table=base+64;prefix=legacy?base:table+unsigned(groups.size())*8;
         descriptor_base=prefix;bytes.assign(prefix+(legacy?0:descriptor_count*16),0);
         const unsigned card=unsigned(bytes.size());bytes.resize(bytes.size()+9840);
@@ -162,7 +162,7 @@ struct Package {
             put(bytes,off+16,unsigned(encoded.size()));put(bytes,off+20,crc32(g.raw));put(bytes,off+24,g.items);
             bytes.insert(bytes.end(),encoded.begin(),encoded.end());
         }
-        put(bytes,0,0x3250534e);put(bytes,4,legacy?14:15);put(bytes,8,0x41cef1ea);
+        put(bytes,0,0x3250534e);put(bytes,4,version?version:legacy?14:15);put(bytes,8,0x41cef1ea);
         put(bytes,16,images);put(bytes,20,glyphs);put(bytes,24,ContentStrings);put(bytes,28,AnimationKinds);put(bytes,32,CardKinds);
         for(unsigned id=0;id<images;++id){
             const unsigned which=id==alias_id()?0:id-1;const bool tiled=!legacy&&id&&which<frames.size();const size_t at=image_entry(id);
@@ -180,7 +180,7 @@ struct Package {
         for(unsigned i=0;i<AnimationKinds;++i){put(bytes,at+i*16+4,1,2);put(bytes,at+i*16+6,33,2);}at+=AnimationKinds*16;
         // All card records and auxiliary references use the shared historical
         // card image zero and empty string zero. Catalog counts remain exact.
-        CHECK(at+CardKinds*16+U_Count*4==base);
+        CHECK(at+CardKinds*16+auxiliary*4==base);
         if(!legacy){
             const unsigned fields[]={0x314c4954,1,16,14,unsigned(tiles.size()),tile_groups(),unsigned(groups.size())-tile_groups(),descriptor_count,descriptor_base,table,770,per_group,GroupBound,EncodedBound,0,0};
             for(unsigned i=0;i<16;++i)put(bytes,base+i*4,fields[i]);
@@ -344,6 +344,50 @@ struct Rejector {
         CHECK(!provider.bad_range);
     }
 };
+void native_ui_packages(){
+    label="native UI v16 preserves tile and historical catalog access";
+    Package p=basic();p.encode(false,NativeUiAuxiliaryCount,NativeUiContentVersion);
+    auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();Provider provider{&p.bytes};
+    CHECK(direct->open(p.bytes.data(),p.bytes.size())&&range->open(provider.source()));
+    CHECK(direct->current_profile()&&range->current_profile());
+    for(unsigned i=0;i<p.frames.size();++i){picture(*direct,p.image_id(i),p.frames[i]);picture(*range,p.image_id(i),p.frames[i]);}
+    for(int key:{int(U_HealthBarBackground),int(U_HealthBarStroke),int(U_HealthBarMask),int(U_HealthBarFill),
+        int(U_HealthBarInfinity),int(U_HealthBarBlock),int(U_HoverTip),int(U_HoverTipDebuff),
+        int(U_PauseButton),int(U_PauseButtonHover),int(U_EndTurnNative),int(U_EndTurnHover),int(U_EndTurnGlow)}){
+        CHECK(direct->ui_image(key)==0&&range->ui_image(key)==0);
+    }
+    for(const char*key:{"HEALTH_BAR_BG","HEALTH_BAR_STROKE","HEALTH_BAR_MASK","HEALTH_BAR_FILL",
+        "HEALTH_BAR_INFINITY","HEALTH_BAR_BLOCK","HOVER_TIP","HOVER_TIP_DEBUFF","PAUSE_BUTTON",
+        "PAUSE_BUTTON_HOVER","END_TURN","END_TURN_HOVER","END_TURN_GLOW"}){
+        CHECK(direct->world_image("common",key)==0&&range->world_image("common",key)==0);
+    }
+    CHECK(direct->ui_image(NativeUiAuxiliaryCount)==-1&&range->ui_image(NativeUiAuxiliaryCount)==-1);
+    CHECK(range->glyph('?',10).pixels&&range->glyph('?',10).pixels[0]==0xab);
+    CHECK(direct->card_image(0)==0&&range->card_image(0)==0&&!std::strcmp(range->string(0),""));
+    CHECK(!provider.bad_range&&provider.max_read<=EncodedBound);
+
+    Rejector reject;
+    for(unsigned count:{unsigned(U_Count),unsigned(NativeUiAuxiliaryCount)-1,unsigned(NativeUiAuxiliaryCount)+1}){
+        Package bad=basic();bad.encode(false,count,NativeUiContentVersion);
+        reject("v16 rejects a missing, short or long auxiliary suffix",std::move(bad.bytes));
+    }
+    Bytes bad=p.bytes;put(bad,p.base-4,p.images);reject("v16 rejects an out-of-range appended skin",std::move(bad));
+    bad=p.bytes;put(bad,p.descriptor(0),p.base-(NativeUiAuxiliaryCount-U_Count)*4);
+    reject("v16 descriptor must point at relocated global header",std::move(bad));
+
+    // Reusing the same Content instance must remove the optional skins when
+    // a historical owner pack is opened, with no stale v16 image binding.
+    for(bool legacy:{false,true}){
+        label=legacy?"v16 to v14 fallback":"v16 to v15 fallback";Package old=basic();old.encode(legacy);
+        Provider historical{&old.bytes};CHECK(direct->open(old.bytes.data(),old.bytes.size())&&range->open(historical.source()));
+        CHECK(direct->current_profile()&&range->current_profile());
+        CHECK(direct->world_image("common","HEALTH_BAR_BG")==-1&&range->world_image("common","HEALTH_BAR_FILL")==-1);
+        CHECK(direct->ui_image(U_HealthBarBackground)==-1&&range->ui_image(U_HealthBarBackground)==-1);
+        if(!legacy){picture(*direct,1,old.frames[0]);picture(*range,1,old.frames[0]);}
+        else CHECK(direct->image(1).format==0&&range->image(1).format==0);
+        CHECK(!historical.bad_range);
+    }
+}
 struct ImageRejector {
     std::unique_ptr<Content> direct=std::make_unique<Content>(),range=std::make_unique<Content>();
     void operator()(const char*name,Bytes bytes,unsigned image=1,int first=-1){
@@ -365,7 +409,7 @@ struct ImageRejector {
 void malformed_container(){
     label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
-    field("v14 cannot carry tile format",4,14);field("unsupported pack version",4,16);
+    field("v14 cannot carry tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,17);
     struct Mutation {unsigned offset,value;const char*name;};
     const Mutation header[]={
         {0,0,"codec magic"},{4,2,"codec version"},{8,8,"tile side"},{12,16,"dictionary property"},
@@ -694,8 +738,10 @@ void validation_workspace_fallbacks(const Package&pressure_tiny){
     CHECK(!source.bad_range&&!fallback.bad_range&&!evict.bad_range);
 }
 } // namespace
-int main(){
+int main(int argc,char**argv){
+    if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();std::printf("native UI content: %u checks passed\n",checks);return 0;}
     valid_packages();malformed_container();malformed_geometry();maximum_frame_and_unused_tile();
+    native_ui_packages();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);

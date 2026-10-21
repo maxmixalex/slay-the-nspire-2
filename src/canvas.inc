@@ -55,9 +55,49 @@ struct Canvas{
         pixels[at]=(uint16_t)((r<<11)|(g<<5)|b);coverage[at]=(uint8_t)total;
     }
     void ui(int id,int x,int y,int w=0,int h=0,unsigned alpha=255){picture(a.content.ui_image(id),x,y,w,h,alpha);}
+    bool nine_image(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255){
+        if(w<=0||h<=0||!alpha)return false;
+        const auto p=a.content.image(id);if(!p.pixels||p.format>3)return false;
+        const int left=mx(0,-x),right=mn(w,clip_w-x),top=mx(0,-y),bottom=mn(h,clip_h-y);
+        if(left>=right||top>=bottom)return true;
+        uint16_t columns[320];
+        for(int xx=left;xx<right;++xx)columns[xx-left]=uint16_t(nine_patch::coordinate(xx,w,p.w,l,r));
+        for(int yy=top;yy<bottom;++yy){
+            const int row=nine_patch::coordinate(yy,h,p.h,t,b)*p.w;
+            for(int xx=left;xx<right;++xx){
+                const int at=row+columns[xx-left];unsigned coverage=p.alpha?p.alpha[at]:255;
+                if(alpha!=255)coverage=div255(coverage*alpha);if(!coverage)continue;
+                const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
+                paint((y+yy)*pitch+x+xx,uint16_t(pixel[0]|unsigned(pixel[1])<<8),coverage);
+            }
+        }return true;
+    }
+    bool nine_ui(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255){
+        return nine_image(a.content.ui_image(id),x,y,w,h,l,t,r,b,alpha);
+    }
+    ButtonVisual control_visual(const char*label,int x,int y,int w,int h,ButtonFamily family,bool selected,bool enabled){
+        const auto&pointer=a.pointer;
+        const bool inside=pointer.visible&&pointer.x>=x&&pointer.x<x+w&&pointer.y>=y&&pointer.y<y+h;
+        const auto&captured=pointer.captured;
+        const bool pressed=inside&&pointer.held&&captured.enabled&&captured.kind!=HitKind::None&&
+            captured.x<=x+w/2&&captured.x+captured.w>x+w/2&&captured.y<=y+h/2&&captured.y+captured.h>y+h/2&&
+            pointer.context==a.input_context();
+        const ButtonState mode=!enabled?ButtonState::Disabled:pressed?ButtonState::Press:inside||selected?ButtonState::Focus:ButtonState::Rest;
+        uint32_t key=2166136261u;for(const char*p=label;*p;++p)key=(key^uint8_t(*p))*16777619u;
+        const int values[]={x,y,w,h,int(family),int(a.input_context())};for(int v:values)key=(key^uint32_t(v))*16777619u;if(!key)key=1;
+        ButtonMotion*motion=nullptr;ButtonMotion*oldest=&a.button_motions[0];
+        for(auto&candidate:a.button_motions){if(candidate.identity==key){motion=&candidate;break;}if(!candidate.identity)oldest=&candidate;else if(oldest->identity&&uint32_t(a.map_clock_ms-candidate.seen)>uint32_t(a.map_clock_ms-oldest->seen))oldest=&candidate;}
+        if(!motion)motion=oldest;return motion->observe(key,family,mode,a.map_clock_ms);
+    }
     void action(int x,int y,int w,int h,UiAction act,bool enabled=true){hit(x,y,w,h,HitKind::UiAction,(int)act,enabled);}
     void hit(int x,int y,int w,int h,HitKind k,int value=0,bool enabled=true){a.add_hit(x,y,w,h,k,value,enabled);}
-    void close_button(int x=292,int y=26){box(x,y,21,20,Gold);centered("×",x,y,21,12,Gold);hit(x,y,21,20,HitKind::Close);}
+    void close_button(int x=292,int y=26){
+        const auto visual=control_visual("BACK_CLOSE",x,y,21,20,ButtonFamily::Action,false,true);
+        const int back=a.content.world_image("common","BACK"),arrow=a.content.world_image("common","BACK_ARROW");
+        if(back>=0&&arrow>=0){Canvas layer=*this;layer.brightness=uint8_t(div255(unsigned(brightness)*visual.shade));
+            const int width=25*visual.scale/4096;layer.picture(back,x+(21-width)/2,y,width,20);layer.picture(arrow,x+4,y+4,12,12);
+        }else{box(x,y,21,20,Gold);centered("×",x,y,21,12,Gold);}hit(x,y,21,20,HitKind::Close);
+    }
 
     void rect(int x,int y,int w,int h,uint16_t color){for(int yy=mx(0,y);yy<mn(clip_h,y+h);yy++)for(int xx=mx(0,x);xx<mn(clip_w,x+w);xx++)paint(yy*pitch+xx,color);}
     void box(int x,int y,int w,int h,uint16_t c){rect(x,y,w,1,c);rect(x,y+h-1,w,1,c);rect(x,y,1,h,c);rect(x+w-1,y,1,h,c);}
@@ -192,17 +232,23 @@ struct Canvas{
         for(int i=-1;i<=1;i++)for(int j=-1;j<=1;j++)if(i||j)text(label,x+size+2+i,y+j,size,Ink);
         text(label,x+size+2,y,size,Gold);
     }
-    void hp(int value,int total,int x,int y,int w){
-        if(w<1)return;total=mx(1,total);value=mn(mx(0,value),total);int filled=0;
-        // Compare integer pixel thresholds without multiplying billion-HP
-        // bosses by a screen width in signed 32-bit arithmetic.
-        while(filled<w&&total/w*(filled+1)+(total%w*(filled+1)+w-1)/w<=value)++filled;
-        rect(x,y,w,5,Ink);rect(x,y,filled,5,Red);char b[32]={};TextBuffer t{b,sizeof b,0};
-        auto amount=[&](int v){if(v>=1000000){t.number(v/1000000);t.ch('M');}else if(v>=10000){t.number(v/1000);t.ch('k');}else t.number(v);};
-        amount(value);t.ch('/');amount(total);int size=width(b,10)>w?8:10;centered(b,x,y+3,w,size);
-    }
-    void button(const char*p,int x,int y,int w,bool selected,int h=25){
-        picture(A_WideButton,x,y,w,h,selected?255:195);
-        if(selected){rect(x+8,y+h-2,w-16,1,Gold);text("›",x+5,y+3,12,Gold);}centered(p,x+10,y+(h-18)/2,w-20,12,selected?Gold:White);
+    void hp(const HealthBarValues&,const HealthBarMotion&,int x,int y,int width);
+    void button(const char*p,int x,int y,int w,bool selected,int h=25,bool enabled=true){
+        const auto visual=control_visual(p,x,y,w,h,ButtonFamily::Pause,selected,enabled);
+        const int width=mx(1,w*visual.scale/4096),height=mx(1,h*visual.scale/4096);
+        const int left=x+(w-width)/2,top=y+(h-height)/2+(visual.y+2048)/4096;
+        Canvas skin=*this;skin.brightness=uint8_t(div255(unsigned(brightness)*visual.shade));
+        // Small auxiliary controls share the original pause/reward plaque.
+        // Preserve its corner artwork when a readable label needs more width.
+        const int normal=a.content.ui_image(U_PauseButton),hover=a.content.ui_image(U_PauseButtonHover);
+        if(normal>=0){skin.nine_image(normal,left,top,width,height,14,5,14,5);
+            if(visual.hover&&hover>=0)skin.nine_image(hover,left,top,width,height,14,5,14,5,unsigned(visual.hover)*255/4096);
+        }else skin.ui(U_RewardButton,left,top,width,height);
+        const uint16_t cream=rgb(255,246,226),gold=rgb(239,200,81);
+        const uint16_t color=enabled?blend(cream,gold,unsigned(visual.hover)*255/4096):Muted;
+        const int label_y=y+(h-12)/2+(visual.y+2048)/4096;
+        skin.centered(p,x+7,label_y+1,w-12,12,rgb(37,84,92));
+        skin.centered(p,x+6,label_y,w-12,12,color);
     }
 };
+#include "health_bar_ui.inc"

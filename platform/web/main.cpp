@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "runtime_scene.hpp"
 extern "C" {
 __attribute__((import_module("env"),import_name("save"))) int host_save(const uint8_t*,unsigned);
 __attribute__((import_module("env"),import_name("load"))) int host_load(uint8_t*,unsigned);
@@ -26,4 +27,8 @@ void pointer_scroll(int rows){app.pointer_scroll(rows);}
 int text_entry_active(){return app.map_preview.open&&app.map_preview.editing;}
 void text_input(int ch){app.reference_text(ch);}
 int closed(){return app.quit?1:0;}
+// Read-only scene classification for opt-in host timing; no gameplay mutation.
+int performance_scene(){
+    return int(spire::runtime_scene(app));
+}
 }

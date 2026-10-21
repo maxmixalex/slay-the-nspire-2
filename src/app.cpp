@@ -10,6 +10,8 @@
 #include "world_room_assets.hpp"
 #include "world_rest_actors.hpp"
 #include "presentation_blend.hpp"
+#include "world_card_factory.hpp"
+#include "nine_patch.hpp"
 namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"
@@ -293,7 +295,8 @@ static void detail_screen(Canvas&c){
         c.button(card.upgraded?"查看基础":upgrade_preview?"预览升级":"不可升级",166,204,132,upgrade_preview,25);c.action(163,202,139,28,UiAction::ToggleCardUpgrade,upgrade_preview);
     }
     c.close_button(290,26);c.hit(288,24,25,24,HitKind::DetailClose);
-    if(lines>8){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
+    if(lines>8&&!a.keyword_hover.details){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
+    if(!a.keyword_hover.details){c.centered("V 词条",19,190,92,10,Gold);c.hit(18,187,94,15,HitKind::Command,int(Key::Statuses));}
 }
 #include "reference_map_ui.inc"
 #include "ui_frontend.inc"
@@ -301,6 +304,7 @@ static void detail_screen(Canvas&c){
 #include "world_choice_ui.inc"
 #include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
+#include "keyword_tooltip_ui.inc"
 static void pointer_overlay(Canvas&c){
     auto&a=c.a;
     // The two authored black transition layers composite before the host
@@ -328,10 +332,10 @@ void App::render(){
     // lifecycle must not replay when the deck or compendium is dismissed.
     map_visuals.set_open(game,game.world.active&&!title&&!character_select&&!map_preview.open&&
         (game.phase==Phase::Map||map_window.is_open||panel==3),map_clock_ms);
-    Canvas c{*this};sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
+    Canvas c{*this};sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
-    if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);pointer_overlay(c);return;}
+    if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     if(title){title_screen(c);
     }else{
@@ -382,6 +386,7 @@ void App::render(){
     if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&game.phase!=Phase::Event&&game.phase!=Phase::Shop&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
     owned_relic_tooltip(c);
     enemy_intent_tooltip(c);
+    keyword_tooltips(c);
     pointer_overlay(c);
 }
 } // namespace spire

@@ -31,8 +31,7 @@ static void native_pause_screen(Canvas&c){
  const char*keys[]={"PAUSE_MENU.RESUME","PAUSE_MENU.SETTINGS","PAUSE_MENU.COMPENDIUM","PAUSE_MENU.GIVE_UP","PAUSE_MENU.SAVE_AND_QUIT"};
  const char*fallback[]={"继续游戏","设置","图鉴","放弃游戏","保存并返回主菜单"};
  for(int i=0;i<5;i++){const int y=54+i*32;const bool enabled=i!=3||resumable_run(a.game),selected=a.menu==i;
-  c.ui(U_RewardButton,61,y,198,28,enabled?255:110);if(selected)c.box(60,y-1,200,30,Gold);
-  c.centered(frontend_text(a,"gameplay_ui",keys[i],fallback[i]),65,y+5,190,12,!enabled?Muted:selected?Gold:White);c.hit(58,y-1,204,31,HitKind::Menu,i,enabled);
+  c.button(frontend_text(a,"gameplay_ui",keys[i],fallback[i]),61,y,198,selected,28,enabled);c.hit(58,y-1,204,31,HitKind::Menu,i,enabled);
  }
 }
 static void frontend_settings_screen(Canvas&c){
@@ -42,8 +41,7 @@ static void frontend_settings_screen(Canvas&c){
  const char*labels[]={frontend_text(a,"settings_ui","FASTMODE","加速模式"),"操作说明","组合练习","参考地图","返回"};
  const UiAction actions[]={UiAction::SettingsFastMode,UiAction::SettingsControls,UiAction::SettingsPractice,UiAction::SettingsReference,UiAction::SettingsBack};
  for(int i=0;i<count;i++){int index=!a.title&&i==2?4:i,y=55+i*29;
-  c.ui(U_RewardButton,54,y,212,26);if(a.settings_item==i)c.box(53,y-1,214,28,Gold);
-  c.centered(labels[index],58,y+4,204,12,a.settings_item==i?Gold:White);c.action(51,y-1,218,28,actions[index]);
+  c.button(labels[index],54,y,212,a.settings_item==i,26);c.action(51,y-1,218,28,actions[index]);
   if(!index){c.box(67,y+7,11,11,Gold);if(a.fast_mode){int tick=a.content.world_image("common","CONFIRM_TICK");if(tick>=0)c.picture(tick,65,y+4,15,15);else c.text("+",68,y+3,12,Gold);}}
  }
  if(!a.title)c.paragraph(frontend_text(a,"settings_ui","FASTMODE_DESCRIPTION","战斗动画和转场加快。"),44,153,234,3,0,10,White);

@@ -1,8 +1,11 @@
 #pragma once
 #include "core.hpp"
+#include "keyword_hover.hpp"
 #include "event_assets.hpp"
 #include "assets.hpp"
 #include "ui_assets.hpp"
+#include "native_ui_assets.hpp"
+#include "button_presentation.hpp"
 #include "ui_actions.hpp"
 #include "pointer.hpp"
 #include "map_preview.hpp"
@@ -13,6 +16,7 @@
 #include "world_map_transition.hpp"
 #include "world_map_window.hpp"
 #include "world_map_act_intro.hpp"
+#include "health_bar.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -22,7 +26,7 @@ constexpr uint32_t MaxContentFile=256u*1024u*1024u;
 // the complete, immutable 0.14 string directory.
 // The two storage versions share one catalog. Keep the original v14 constant
 // for legacy payloads/fixtures; v15 adds the bounded sparse-tile codec.
-constexpr unsigned ContentVersion=14,TileContentVersion=15,ContentStrings=WorldStringCount;
+constexpr unsigned ContentVersion=14,TileContentVersion=15,NativeUiContentVersion=16,ContentStrings=WorldStringCount;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
@@ -49,7 +53,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion)&&cards_==CardKinds&&ui_count_==U_Count&&strings_==ContentStrings&&clips_==AnimationKinds;}
+    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion||version_==NativeUiContentVersion)&&cards_==CardKinds&&ui_count_==(version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count))&&strings_==ContentStrings&&clips_==AnimationKinds;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -112,6 +116,7 @@ struct EnemyPresentation {
 };
 struct App {
     State game{};Content content{};Callbacks callbacks{};
+    ButtonMotion button_motions[MaxButtonMotions]{};
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;
@@ -184,6 +189,12 @@ struct App {
     int library_tab=0,library_page=0,library_selected=0;
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[MaxEnemies+1]={},hit_start[MaxEnemies+1]={};
+    HealthBarMotion health_bars[MaxEnemies+2]{};
+    uint32_t health_bar_seed=0;
+    uint16_t health_bar_combat=0,health_bar_encounter=0;
+    uint8_t health_bar_floor=0;
+    bool health_bars_active=false;
+    void sync_health_bars();
     bool map_legend=false;uint8_t map_legend_item=0;
     bool map_directional=false;
     uint32_t map_clock_ms=0;
@@ -271,6 +282,7 @@ struct App {
     uint16_t detail_genetic=0,detail_scythe=0;
     void open_choice_detail(int token);
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
+    KeywordHoverState keyword_hover{};
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
     const HitRegion* hit_at(int x,int y) const;
     uint32_t input_context() const;

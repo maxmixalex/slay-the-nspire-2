@@ -94,7 +94,7 @@ static void combat_actors(Canvas&c){
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
-    combat_actors(c);c.hp(s.hp,s.max_hp,29,129,62);
+    combat_actors(c);c.hp(ui_health_values(s,0),a.health_bars[0],29,129,62);
     if(s.expansion.orb_slots){
         const int count=s.expansion.orb_slots,left=mx(3,60-count*7);
         for(int i=0;i<count;i++){
@@ -106,9 +106,8 @@ static void combat_screen(Canvas&c){
     }
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
-        c.hp(s.expansion.osty_hp,s.expansion.osty_max_hp,99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
+        c.hp(ui_health_values(s,MaxEnemies+1),a.health_bars[MaxEnemies+1],99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
     }
-    if(s.block){c.picture(A_Block,8,128,14,14);c.num(s.block,10,139,10,Blue);}
     const bool stars=s.character==Character::Regent||s.expansion.stars>0;
     if(stars){c.star_label(s.expansion.stars,3,149,10);c.action(0,147,48,20,UiAction::ShowStars);}
     status_strip(c,0,stars?51:24,149,stars?69:96);
@@ -123,8 +122,7 @@ static void combat_screen(Canvas&c){
             c.text(label,x-pos.width/2+14,pos.intent,10,attacking?Gold:Green,pos.width-11);
             if(a.target==i)c.text("▼",x-5,pos.intent+14,8,Gold);
         }
-        c.hp(e.hp,e.max_hp,x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
-        if(e.block){c.picture(A_Block,x-pos.width/2-7,pos.hp-11,10,10);c.num(e.block,x-pos.width/2+4,pos.hp-12,8,Blue);}
+        c.hp(ui_health_values(s,i+1),a.health_bars[i+1],x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
 
     }
     for(int i=0;i<=s.enemy_count;i++){
@@ -157,9 +155,7 @@ static void combat_screen(Canvas&c){
     }else c.centered("没有手牌",80,197,160,12,Muted);
     c.picture(character_energy_image(a.content,s.character),6,174,42,42);
     c.num(s.energy,18,182,20,White);
-    c.picture(A_EndTurn,254,174,64,29);c.centered("结束回合",254,180,64,10,Gold);
-    if(a.busy)c.dim(254,174,64,29,80);
-    c.hit(254,173,66,31,HitKind::Command,(int)Key::EndTurn,s.phase==Phase::Combat&&!a.busy);
+    native_end_turn(c,s.phase==Phase::Combat&&!a.busy);
     combat_pile(c,A_DrawPile,s.draw.count,8,215,1);
     combat_pile(c,A_DiscardPile,s.discard.count,291,215,2);
     if(s.exhaust.count)combat_pile(c,A_ExhaustPile,s.exhaust.count,293,106,3);

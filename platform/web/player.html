@@ -6,43 +6,82 @@
 </style>
 <main>
 <h1>nSpire II 0.17 开发版 <small>｜原版三幕远征</small></h1>
+<p id="loading" role="status">正在载入离线资源…</p>
 <canvas id="screen" width="320" height="240" tabindex="0" aria-label="nSpire II 游戏画面"></canvas>
 <div id="actions"><button data-key="2">↑ 目标 / 上</button><button data-key="0">← 选牌</button><button data-key="1">选牌 →</button><button data-key="3">↓ 目标 / 下</button><button data-key="4">Enter 确认</button><button data-key="6">结束回合</button><button data-key="7">查看牌堆</button><button data-key="10">记录</button><button data-key="12">地图</button><button data-key="17">图鉴</button><button data-key="16">参考地图</button><button data-key="13">药水</button><button data-key="14">遗物</button><button data-key="18">能力状态 V</button><button data-key="5">Esc 菜单</button></div>
 <p><kbd>方向键 / 4、6、8、2</kbd> 导航，<kbd>Enter / 5</kbd> 确认，<kbd>空格</kbd> 结束回合（选牌窗口中为确认选择），<kbd>Tab</kbd> 牌堆，<kbd>L</kbd> 记录，<kbd>M</kbd> 地图，<kbd>P</kbd> 药水，<kbd>R</kbd> 遗物，<kbd>C</kbd> 图鉴，<kbd>I</kbd> 详情，<kbd>V</kbd> 状态，<kbd>S</kbd> 保存，<kbd>O</kbd> 载入。存档保存在当前浏览器。可用鼠标或触摸板指针：点选手牌后点敌人，或将牌拖到敌人；非指向牌放到战场。滚轮翻页，点卡组卡牌查看详情。</p>
-<p>基于固定参考 v0.111.0 / 41cef1ea，保留五职业单人卡池、53 种无色牌和 64 种药水，事件与诅咒牌扩展后共有 558 个卡牌模型。远征接入原版三幕地图、单人遭遇、事件与先古之民；练习模式可通过图鉴领取基础或升级卡牌与药水。原版界面与动画仍在完善，当前为开发版。原版美术与动画由玩家安装包离线转换。</p><div id="error" role="alert"></div>
+<p>基于固定参考 v0.111.0 / 41cef1ea，保留五职业单人卡池、53 种无色牌和 64 种药水，事件与诅咒牌扩展后共有 558 个卡牌模型。远征接入原版三幕地图、单人遭遇、事件与先古之民；练习模式可通过图鉴领取基础或升级卡牌与药水。原版界面与动画仍在完善，当前为开发版。原版美术与动画由玩家安装包离线转换。</p><details id="diagnostics"><summary>本机性能测量</summary><p>采样 10 秒，期间可照常切换界面和战斗。结果仅代表当前浏览器。</p><button id="measure" disabled>开始测量</button><pre id="performance-report" style="white-space:pre-wrap;max-height:280px;overflow:auto"></pre></details><div id="error" role="alert"></div>
 </main>
 <script>
 'use strict';
 (async()=>{
  const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
  const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,Tab:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,g:16,G:16,c:17,C:17,v:18,V:18};
- let memory,game;
- const decode=(s)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+ let memory,game,ram;
+ const loading=document.getElementById('loading'),measureButton=document.getElementById('measure'),reportView=document.getElementById('performance-report');
+ const clock=()=>performance.now(),boot=clock();
+ const decode=(s)=>{const binary=atob(s),bytes=new Uint8Array(binary.length);for(let i=0;i<bytes.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;};
+ async function decodeContent(s){
+  if(typeof Uint8Array.fromBase64==='function')return Uint8Array.fromBase64(s);
+  const padding=s.endsWith('==')?2:s.endsWith('=')?1:0,bytes=new Uint8Array(s.length/4*3-padding),chunk=1024*1024;
+  for(let at=0;at<s.length;at+=chunk){const binary=atob(s.slice(at,at+chunk)),offset=at/4*3;for(let i=0;i<binary.length;i++)bytes[offset+i]=binary.charCodeAt(i);
+   if(at%(4*chunk)===0){loading.textContent='正在载入离线资源… '+Math.floor(at/s.length*100)+'%';await new Promise(resolve=>setTimeout(resolve,0));}}
+  return bytes;
+ }
  const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};
- const content=decode('__CONTENT__');
+ let profiling=false,profileUntil=0,lastPresented=0,lastScene=-1,profile=null;
+ const blank=()=>({count:0,total_ms:0,max_ms:0,over_50ms:0,over_100ms:0,over_250ms:0});
+ function add(stat,ms){stat.count++;stat.total_ms+=ms;stat.max_ms=Math.max(stat.max_ms,ms);if(ms>50)stat.over_50ms++;if(ms>100)stat.over_100ms++;if(ms>250)stat.over_250ms++;}
+ function freshProfile(){return {scope:'Current browser CPU and Canvas2D submission intervals; excludes compositor/display FPS',startup_ms:startupMs,startup_scope:'base64_decode_wasm_instantiate_app_init_excludes_first_draw',pack_bytes:content.length,started_at:new Date().toISOString(),input:blank(),transition_interval:blank(),scenes:Array.from(['title','character','collection','map','combat','room','overlay','other'],scene=>({scene,interval:blank(),update:blank(),render:blank(),conversion:blank(),present:blank(),read_calls:0,read_bytes:0,resource_copy_ms:0}))};}
+ const content=await decodeContent('__CONTENT__');
+ loading.textContent='正在校验资源并启动…';await new Promise(resolve=>setTimeout(resolve,0));
+ let ioCalls=0,ioBytes=0,ioTime=0;
+ function memoryBytes(){if(!ram||ram.buffer!==memory.buffer)ram=new Uint8Array(memory.buffer);return ram;}
  const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{
-  resource_read:(offset,p,n)=>{try{if(offset<0||n<0||offset>content.length||n>content.length-offset)return 0;new Uint8Array(memory.buffer,p,n).set(content.subarray(offset,offset+n));return 1}catch(e){return 0}},
-  save:(p,n)=>{try{if(n===0){for(let version=3;version<=15;version++)localStorage.removeItem('nSpire2-save-v'+version);return 1}localStorage.setItem('nSpire2-save-v15',encode(new Uint8Array(memory.buffer,p,n)));return 1}catch(e){return 0}},
-  load:(p,max)=>{try{let s=null;for(let version=15;version>=3&&!s;version--)s=localStorage.getItem('nSpire2-save-v'+version);if(!s)return 0;const b=decode(s);if(b.length>max)return 0;new Uint8Array(memory.buffer,p,b.length).set(b);return b.length}catch(e){return 0}}
+  resource_read:(offset,p,n)=>{const t=profiling?clock():0;try{if(offset<0||n<0||offset>content.length||n>content.length-offset)return 0;memoryBytes().set(content.subarray(offset,offset+n),p);if(profiling){ioCalls++;ioBytes+=n;ioTime+=clock()-t;}return 1}catch(e){return 0}},
+  save:(p,n)=>{try{if(n===0){for(let version=3;version<=15;version++)localStorage.removeItem('nSpire2-save-v'+version);return 1}localStorage.setItem('nSpire2-save-v15',encode(memoryBytes().subarray(p,p+n)));return 1}catch(e){return 0}},
+  load:(p,max)=>{try{let s=null;for(let version=15;version>=3&&!s;version--)s=localStorage.getItem('nSpire2-save-v'+version);if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
  }});
  game=result.instance.exports;memory=game.memory;
  if(!game.start(content.length))throw Error('内容包校验失败。');
- const image=ctx.createImageData(320,240);
- function draw(){game.draw_frame();const pixels=new Uint16Array(memory.buffer,game.framebuffer(),320*240);for(let i=0;i<pixels.length;i++){const p=pixels[i];image.data[i*4]=(p>>11)*255/31;image.data[i*4+1]=((p>>5)&63)*255/63;image.data[i*4+2]=(p&31)*255/31;image.data[i*4+3]=255}ctx.putImageData(image,0,0)}
- function key(k){if(game.closed())return;game.input(k);draw();if(game.closed())document.getElementById('error').textContent='程序已退出。刷新页面可重新启动。'}
- document.addEventListener('keydown',e=>{if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();game.text_input(code);draw();return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key])}});
- document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus()}));
+ const startupMs=clock()-boot;
+ const image=ctx.createImageData(320,240),rgba=new Uint32Array(image.data.buffer),colors=new Uint32Array(65536);
+ const little=new Uint8Array(new Uint32Array([0x01020304]).buffer)[0]===4;
+ for(let p=0;p<65536;p++){const r=Math.round((p>>11)*255/31),g=Math.round(((p>>5)&63)*255/63),b=Math.round((p&31)*255/31);colors[p]=little?(255<<24)|(b<<16)|(g<<8)|r:(r<<24)|(g<<16)|(b<<8)|255;}
+ let pixels=new Uint16Array(memory.buffer,game.framebuffer(),320*240),dirty=true;
+ function scene(){return game.performance_scene?Math.min(7,game.performance_scene()):7;}
+ function recordIo(stats,calls,bytes,time){stats.read_calls+=ioCalls-calls;stats.read_bytes+=ioBytes-bytes;stats.resource_copy_ms+=ioTime-time;}
+ function draw(){
+  const active=profiling,index=active?scene():-1,stats=active?profile.scenes[index]:null,begin=active?clock():0,calls=ioCalls,bytes=ioBytes,io=ioTime;
+  game.draw_frame();const rendered=active?clock():0;
+  if(pixels.buffer!==memory.buffer)pixels=new Uint16Array(memory.buffer,game.framebuffer(),320*240);
+  for(let i=0;i<pixels.length;i++)rgba[i]=colors[pixels[i]];
+  const converted=active?clock():0;ctx.putImageData(image,0,0);dirty=false;
+  if(active){const end=clock();add(stats.render,rendered-begin);add(stats.conversion,converted-rendered);add(stats.present,end-converted);if(lastPresented)add(lastScene===index?stats.interval:profile.transition_interval,end-lastPresented);lastPresented=end;lastScene=index;recordIo(stats,calls,bytes,io);}
+ }
+ function input(action,repaint=true){if(game.closed())return;const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();if(active){add(profile.input,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent='程序已退出。刷新页面可重新启动。';}
+ function key(k){input(()=>game.input(k));}
+ document.addEventListener('keydown',e=>{if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();input(()=>game.text_input(code));return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}});
+ document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
- canvas.addEventListener('pointermove',e=>{const p=position(e);game.pointer_move(p.x,p.y);});
- canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(e.button===2){key(5);return;}if(e.button!==0)return;const p=position(e);game.pointer_move(p.x,p.y);canvas.setPointerCapture(e.pointerId);game.pointer_button(1);draw();});
- canvas.addEventListener('pointerup',e=>{if(e.button!==0)return;const p=position(e);if(p.inside){game.pointer_move(p.x,p.y);game.pointer_button(0);}else game.pointer_cancel();if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);draw();});
- canvas.addEventListener('pointercancel',()=>{game.pointer_cancel();draw();});
+ canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
+ canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(e.button===2){key(5);return;}if(e.button!==0)return;const p=position(e);canvas.setPointerCapture(e.pointerId);input(()=>{game.pointer_move(p.x,p.y);game.pointer_button(1);});});
+ canvas.addEventListener('pointerup',e=>{if(e.button!==0)return;const p=position(e);input(()=>{if(p.inside){game.pointer_move(p.x,p.y);game.pointer_button(0);}else game.pointer_cancel();});if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
+ canvas.addEventListener('pointercancel',()=>input(()=>game.pointer_cancel()));
  canvas.addEventListener('contextmenu',e=>e.preventDefault());
- canvas.addEventListener('wheel',e=>{e.preventDefault();game.pointer_scroll(Math.sign(e.deltaY));draw();},{passive:false});
- window.addEventListener('blur',()=>{game.pointer_cancel();});
- let previous=performance.now(),nextPaint=previous;
- function loop(now){let elapsed=now-previous;previous=now;if(!document.hidden&&!game.closed()){game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));if(now>=nextPaint){draw();nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}requestAnimationFrame(loop)}
- document.addEventListener('visibilitychange',()=>{previous=performance.now();nextPaint=previous;game.pointer_cancel();});
- draw();requestAnimationFrame(loop);canvas.focus();
+ canvas.addEventListener('wheel',e=>{e.preventDefault();input(()=>game.pointer_scroll(Math.sign(e.deltaY)));},{passive:false});
+ window.addEventListener('blur',()=>game.pointer_cancel());
+ function finishProfile(reason){profiling=false;measureButton.disabled=false;profile.resource_total={read_calls:ioCalls,read_bytes:ioBytes,copy_ms:ioTime};profile.finished_reason=reason;profile.finished_at=new Date().toISOString();reportView.textContent=JSON.stringify(profile,null,2);}
+ measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent='采样中，请照常操作游戏…';canvas.focus();});
+ let previous=clock(),nextPaint=previous+1000/30;
+ function loop(now){const elapsed=now-previous;previous=now;if(!document.hidden&&!game.closed()){
+  const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
+  // Inputs mark the next presentation dirty. Never render again synchronously
+  // in every pointer/key callback and then duplicate it in the same RAF.
+  if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}
+ }if(profiling&&(clock()>=profileUntil||game.closed()))finishProfile(game.closed()?'game_closed':'complete');requestAnimationFrame(loop);}
+ document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
+ draw();loading.hidden=true;measureButton.disabled=false;requestAnimationFrame(loop);canvas.focus();
+
 })().catch(e=>document.getElementById('error').textContent=e.stack||String(e));
 </script></html>

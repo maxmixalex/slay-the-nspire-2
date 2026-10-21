@@ -1,4 +1,7 @@
 #include "app.hpp"
+#include "resource_file_cursor.hpp"
+#include "runtime_performance.hpp"
+#include "runtime_scene.hpp"
 #include "touchpad.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
@@ -18,9 +21,16 @@ int nd_touch_write(unsigned,unsigned,const void*);
 }
 static spire::App app;
 static spire::SaveData scratch;
-static char pack_path[512],save_path[512],temp_path[512],backup_path[512];
-static bool read_resource(void* file,uint32_t offset,void* output,uint32_t count){
-    return nd_seek(file,(long)offset,0)==0&&nd_read(output,1,count,file)==count;
+static spire::RuntimePerformance performance;
+static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512];
+static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
+struct ResourceFile {void*file;spire::ResourceFileCursor cursor;};
+static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
+    auto&source=*static_cast<ResourceFile*>(context);bool seek=false;
+    uint32_t started=performance.enabled?timer_ticks():0;
+    bool good=source.cursor.read(source.file,offset,output,count,nd_seek,nd_read,seek);
+    if(performance.enabled)performance.read(started-timer_ticks(),count,good,seek);
+    return good;
 }
 static bool sibling(char*out,const char*launcher,const char*filename){
     int slash=-1,n=0;while(launcher&&launcher[n]){if(n>=420)return false;if(launcher[n]=='/')slash=n;n++;}
@@ -50,15 +60,26 @@ static bool clear_save(){
 }
 static bool pressed(unsigned offset,unsigned mask){return (*(volatile uint16_t*)(0x900E0000u+offset)&mask)!=0;}
 struct Clock {
-    uint32_t load, control, last;
+    uint32_t load, control, last;bool active=false;
     // SP804 timer 2 is dedicated to this foreground runtime. Do not reset
     // the OS's 0x900C timer: restoring its registers cannot restore elapsed time.
     void init(){auto*t=(volatile uint32_t*)0x900D0000u;
-        load=t[0];control=t[2];t[2]=0;t[0]=0xffffffffu;t[2]=0x82;last=t[1];}
+        load=t[0];control=t[2];t[2]=0;t[0]=0xffffffffu;t[2]=0x82;last=t[1];active=true;}
     unsigned frame(){uint32_t now=*(volatile uint32_t*)0x900D0004u,dt=last-now;
         if(dt<1092)return 0;last=now;return dt>32768?1000:(dt*1000)>>15;}
-    void restore(){auto*t=(volatile uint32_t*)0x900D0000u;t[2]=0;t[0]=load;t[2]=control;}
+    void restore(){if(!active)return;auto*t=(volatile uint32_t*)0x900D0000u;t[2]=0;t[0]=load;t[2]=control;active=false;}
+    ~Clock(){restore();}
 };
+static spire::RuntimeScene performance_scene(){
+    return spire::runtime_scene(app);
+}
+static bool performance_write(void*file,const char*bytes,size_t count){return nd_write(bytes,1,(unsigned)count,file)==count;}
+static void performance_report(){
+    if(!performance.enabled)return;
+    void*f=nd_open(performance_path,"wb");if(!f)return;
+    bool good=performance.write(performance_write,f);good=(nd_close(f)==0)&&good;
+    if(!good)nd_unlink(performance_path); // Do not leave a truncated result looking valid.
+}
 struct Touchpad {
     unsigned w,h;
     void init(){
@@ -79,19 +100,43 @@ struct Touchpad {
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
-    if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns"))return 3;
+    if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns"))return 3;
+    // Hold CTRL while opening the document to measure this session. The normal
+    // launch path leaves diagnostics disabled. One bounded report is written
+    // on normal exit; no per-frame logging or filesystem traffic is added.
+    performance.enabled=pressed(0x1E,0x200);
+    performance.hardware=nd_hwtype();performance.ndless_revision=nd_revision();
+    Clock clock{};clock.init();uint32_t startup_start=performance.enabled?timer_ticks():0;
     void*f=nd_open(pack_path,"rb");if(!f)return 4;
+    ResourceFile source{f,{}};
     if(nd_seek(f,0,2)!=0){nd_close(f);return 5;}long length=nd_tell(f);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({f,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save})){nd_close(f);return 5;}
+    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({&source,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save})){nd_close(f);return 5;}
+    performance.pack_bytes=(uint32_t)length;
+    if(performance.enabled)performance.startup.add(startup_start-timer_ticks());
     if(!nd_lcd_init(0)){nd_close(f);return 6;}
     auto blit=nd_blitter(0);if(!blit){nd_lcd_init(-1);nd_close(f);return 7;}
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
-    Clock clock{};clock.init();uint32_t input_clock=0;
+    clock.last=timer_ticks();uint32_t input_clock=0;
     const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail,spire::Key::ReferenceMap,spire::Key::Collection,spire::Key::Statuses};
-    uint32_t previous=0xffff;unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;app.render();blit(app.pixels);
+    uint32_t previous=0xffff;unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;
+    uint32_t first_start=performance.enabled?timer_ticks():0;
+    app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
+    uint32_t last_present=performance.enabled?timer_ticks():0;
+    if(performance.enabled){performance.first_render.add(first_start-first_present);performance.first_present.add(first_present-last_present);}
+    auto render_frame=[&](uint32_t update_start,const spire::RuntimeResourceTiming&before){
+        uint32_t render_start=performance.enabled?timer_ticks():0;
+        auto scene=performance.enabled?performance_scene():spire::RuntimeScene::Other;
+        app.render();uint32_t present_start=performance.enabled?timer_ticks():0;blit(app.pixels);
+        if(performance.enabled){uint32_t done=timer_ticks();
+            performance.frame(scene,last_present-done,update_start-render_start,render_start-present_start,present_start-done,before);
+            last_present=done;}
+    };
     while(!app.quit){
-        unsigned elapsed=clock.frame();if(!elapsed)continue;app.advance(elapsed);
+        unsigned elapsed=clock.frame();if(!elapsed)continue;
+        uint32_t update_start=performance.enabled?timer_ticks():0;
+        const auto resources_before=performance.enabled?performance.resources:spire::RuntimeResourceTiming{};
+        app.advance(elapsed);
         input_clock+=elapsed;
         auto sample=pad.read();auto pointer=pad_cursor.sample(sample,input_clock);
         if(input_ready&&pointer.cancelled)app.pointer_cancel();
@@ -122,12 +167,12 @@ extern "C" int main(int argc,char**argv){
             // stable release so opening the program cannot also start a run.
             quiet_ms=(p==0&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
             if(quiet_ms>=100)input_ready=true;
-            previous=p;pad_cursor.reset();app.render();blit(app.pixels);continue;
+            previous=p;pad_cursor.reset();render_frame(update_start,resources_before);continue;
         }
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
         for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
-        app.render();blit(app.pixels);
+        render_frame(update_start,resources_before);
     }
-    clock.restore();nd_lcd_init(-1);nd_close(f);return 0;
+    nd_lcd_init(-1);nd_close(f);performance_report();return 0;
 }
