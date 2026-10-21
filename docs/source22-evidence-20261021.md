@@ -5,6 +5,71 @@ This stage keeps the actual NSP2/15 pack and all gameplay, map and save formats.
 It addresses measured animation cache churn and adds reproducible size probes
 for the owner's new **30–40 MB** storage objective.
 
+## Executed after source22 preservation
+
+Source22 `5d177be78c507c9cd4b3c9d38a4600e84a44c02e` was pushed/read back
+at **2026-10-21 09:35:26 UTC**: all **509 paths/modes/blob IDs** and all **12
+changed file contents** matched. Its source-only archive SHA-256 is
+`9e4039d3788ccf4a2a4bea798934d43202bab2cef79562976d7793994565301a`.
+The immutable runtime fingerprint is
+`1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c`.
+
+| Gate | Executed source22 result |
+| --- | --- |
+| Native sanitizer build | All 147 steps passed |
+| ARM launcher | 885,386 bytes; 14,714,112-byte linked allocation; 28,595 relocations |
+| WASM | 4,881,267 bytes; fixed 16 MiB memory limit |
+| Linked ARM vectors | 5,249 division/ABI and 28 LZMA2/ABI vectors passed |
+| Affected registered suites | Ten ASan/UBSan suites passed in 37.53 seconds |
+| Final synthetic tiled-content suite | 10,426,953 checks, including fixture assertions |
+| Fresh actual native/WASM comparison | 23 scenarios / 480 exact frames / 30 exact saves |
+| Selected actual retained images | 3,535 images / 44,195,808 decoded bytes per new backend matched v14 |
+| Selected actual clip 967 | 23 images / 1,557,577 decoded bytes per new backend matched v14 |
+| Actual clip second cycle | 23/23 accesses without callbacks or reader-page activity |
+
+Each selected oracle also checks complete metadata, 11,915 glyphs, 6,100 strings,
+1,695 clips and the same 40 three-owner UI frames. They do not constitute a new
+full 45,724-image source22 traversal. Source21's complete two-backend catalog
+oracle has since finished successfully, including all metadata, 40 UI frames
+and failure/reopen boundaries; its 1,551.05-second result belongs to that
+previous frozen runtime and is recorded separately.
+
+All 14 source22 build/runtime journals passed with unchanged source. The two
+size-research journals also passed, with explicitly limited scopes. Ten affected
+sanitizer suites out of 56 registered were executed, not a new complete run;
+the last complete registered-suite baseline is source17's 52 suites. Exact
+receipts are in [validation-source22-0.17.json](validation-source22-0.17.json),
+[validation-source21-0.17.json](validation-source21-0.17.json), and
+[validation-resource-research-source22.json](validation-resource-research-source22.json).
+
+For the real 23-frame animation, source21's second cycle issued **216 calls /
+11,671,220 callback bytes**; source22's second cycle issued **zero** callbacks,
+page hits, page misses or bypasses. First-cycle access remains **265 callbacks /
+15,471,204 bytes** in both versions. The test uses one uninterrupted clip;
+other actors and UI compete for the shared cache in a complete scene. Host
+timings have uncontrolled OS cache and concurrent load, so they establish
+neither a hardware speedup ratio nor an achievable device frame rate.
+
+The resource file remains **80,846,058 bytes** and the calculator pair totals
+**81,731,444 bytes** before saves. Cold opening still scans the whole file and
+validates all indices; first-use decoding or eviction misses can still stall.
+The new shared cache preserves the old total cache budget; the ARM32 cache
+model is 516 bytes smaller, while the complete linked allocation rises by
+204 bytes because the implementation also changes code size. Linked allocation
+is not a measured peak device working set.
+
+The retained-image/glyph models suggest about **8.43 MB** of further component
+savings, but have no production reader and exclude new global metadata. The
+eight-group tile sample found no improved eligible representation. These are
+research results, not a 30–40 MB package. The original-PC 95% visual target,
+remaining shader/particle layers, label clocks, existing temporal sampling
+and physical-device performance remain separate unfinished gates.
+
+## Historical preparation record
+
+The sections below preserve what was known before the source22 checkpoint.
+Their then-pending gates are resolved by the executed section above.
+
 ## Executed source21 evidence available before this checkpoint
 
 Source21 `d5738010f2d7ebc6139a2fa181ff87820d344bbb` was pushed and read back:
@@ -104,7 +169,7 @@ exact-bounding-box sample grew by 1.986%. Further tile predictors, exact palette
 retained-image and glyph grouping require actual measurements. A 30–40 MB
 complete calculator installation has not yet been produced.
 
-## Required checks after source preservation
+## Planned checks after source preservation — historical
 
 1. Push and read back this coherent source, retain the source-only archive and
    freeze the exact stage before long build/experiment execution.

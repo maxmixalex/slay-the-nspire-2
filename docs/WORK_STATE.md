@@ -1,5 +1,85 @@
 # Work state — 2026-10-21
 
+## Current: source22 verified and packaged; source23 records results — 2026-10-21
+
+Runtime checkpoint **`5d177be78c507c9cd4b3c9d38a4600e84a44c02e`** is preserved
+remotely on `work/0.17-world-parity`: all **509 files / 12 changed contents**
+matched the read-back at **09:35:26 UTC**. Its source-only archive is 9,625,600
+bytes, SHA-256 `9e4039d3788ccf4a2a4bea798934d43202bab2cef79562976d7793994565301a`.
+The frozen runtime fingerprint is
+`1742987f36dc2f9cb37ddf7209922de4d8d692ad2aa315f2205c8f2c65ec893c`.
+This next source23 checkpoint changes documentation/evidence only. The binaries
+remain source22; no source23 rebuild or new runtime test is claimed.
+
+The shared **748 × 4 KiB / 90-entry LRU image pool** is implemented and
+validated within the old total cache budget. Actual clip 967's 23 distinct
+medium frames previously thrashed eight slots despite needing only 1,557,577
+decoded bytes. Its second source22 cycle now has **23/23 accesses with zero
+resource callbacks and zero reader-page activity**, versus source21's 216
+calls / 11,671,220 callback bytes. First-cycle traffic is unchanged at 265
+calls / 15,471,204 bytes. Cold startup still scans the full file and indices;
+cache misses can still stall. Other scene actors compete for the pool, and
+these host access statistics do not establish calculator FPS.
+
+Source22 passed all **147 native build steps**, ARM (**885,386 bytes;
+14,714,112-byte linked allocation; 28,595 relocations**), WASM (**4,881,267
+bytes**), **5,249 linked division/ABI + 28 decoder vectors**, and **ten
+affected ASan/UBSan suites in 37.53 seconds**. Final tiled-content tests report
+**10,426,953 checks**, including fixture assertions. Fresh native/WASM captures
+match **23 scenarios / 480 frames / 30 saves**. Selected actual-file checks
+compare all **3,535 retained images** and the **23 clip-967 images**, each
+through both new backends against original v14 bytes; each command also checks
+all metadata and the same 40 three-owner UI frames. This is not a complete
+source22 catalog rerun. The last complete registered-suite baseline remains
+source17's 52 suites; ten of the current 56 were rerun. All 14 source22 runtime
+journals passed with unchanged source. See
+[validation-source22-0.17.json](validation-source22-0.17.json).
+
+Source21's long **complete** oracle has also finished: both new backends
+matched **45,724 images / 994,105,847 decoded bytes each**, full metadata, 40
+UI frames and failure/reopen boundaries in **1,551.05 seconds**. Its
+182,923,958 checks include fixture assertions. There are 21 passed journals
+and two retained failed build attempts, followed by the corrected Clang
+Release build. This historical full proof remains attributed to source21;
+see [validation-source21-0.17.json](validation-source21-0.17.json).
+
+The actual resource file is unchanged at **80,846,058 bytes (77.100809 MiB)**.
+A matching private **0.17 development ZIP** and **offline HTML** are now
+packaged and independently checked: all 12 ZIP members, HTML's complete
+embedded resource/WASM payloads, manifest and checksums match. The additional
+HTML packaging journal passed, giving 15 gates in the delivery manifest.
+Calculator files total **81,731,444 bytes before saves**; ZIP is 81,791,483
+bytes and HTML is 114,320,767 bytes. Binary/source/resource digests are in
+the public source22 validation JSON; original-derived deliverables remain
+outside public git. The previous accepted 0.16 pair is retained.
+
+**30–40 MB is not achieved.** Investigation covered pinned Sprite Dicing,
+complete tile transparency/bounds census, an exact-crop sample, eight
+reversible representations on 8 real groups / 5,024 tiles, and all retained
+images/glyphs. Every transform reconstructed exact bytes; none improved the
+8-group tile baseline, and two native-channel layouts exceeded the current
+raw group bound. Grouped retained/glyph models suggest roughly **8.43 MB**
+of savings, still around **69.1 MiB** if the rest is unchanged. New global
+metadata, runtime format and read costs are not implemented or included.
+See [resource-budget-0.17.md](resource-budget-0.17.md) and
+[validation-resource-research-source22.json](validation-resource-research-source22.json).
+
+Next actionable work: implement and verify bounded grouped retained-image/glyph
+loading without increasing the memory limit, then measure actual cold/random/warm
+access rather than assuming modeled size is sufficient. Research animation
+representation changes only with exact visual and CPU-budget evidence. Continue
+the original UI's remaining dynamic layers, label clocks and temporal-sampling
+acceptance; **95% original fidelity is still unestablished**. Firebird or real
+hardware startup, peak memory and frame pacing remain unmeasured. The native
+map/enemy and five-character/card/potion implementation remain in the same
+verified runtime; this cache change adds no lossy sampling or pixel conversion.
+Main and disabled remote CI remain unchanged.
+
+## Historical checkpoint preparation records
+
+The entries below retain each stage's state at preparation time. Then-pending
+source21/source22 gates are resolved by the current record above.
+
 ## Source21 integrated gates; source22 shared image pool and 30–40 MB research — 2026-10-21
 
 Source21 `d5738010f2d7ebc6139a2fa181ff87820d344bbb` was pushed/read back with **505 files / 13 changed contents** matching. Its frozen stage passed all **147 native build steps**, ARM (**885,145 bytes; 14,713,908-byte allocation**), WASM (**4,879,462 bytes**), **5,249 linked ARM division/ABI + 28 decoder vectors**, and **ten affected ASan/UBSan suites in 50.61 seconds**. The final tiled-content suite reports **5,455,291 checks**, including fixture assertions. Actual native/WASM agreed on **23 scenarios / 480 frames / 30 saves**; actual act-entry UI passed **43,364 checks** and four captures. The optimized actual-file oracle's complete new-memory traversal matched **45,724 images / 994,105,847 decoded bytes** against the old v14 pack. Its complete range traversal and subsequent metadata/40-frame checks remain running at source22 preparation; do not mark that command passed until its own final journal completes. GCC 13 Release hit an internal compiler error in unchanged relic code; the first Clang configuration had an invalid C compiler alias. Both failures remain; corrected Clang 18.1.3 `-O2` targets passed. These optimized host runs have no sanitizer instrumentation.
@@ -274,7 +354,7 @@ Shared integration now appends eight enemy slots, 32-bit enemy HP for the Waterf
 
 The requested **Defect, Regent and Necrobinder single-player card pools and their character mechanisms are implemented and verified**, retaining the completed Ironclad, Silent, colorless and potion content. Three implementation/resource agents worked in parallel; root integrated shared behavior, reviewed the final scenes and packaged the matching outputs. Reference remains **v0.111.0 / 41cef1ea**, with audio, multiplayer and Timeline excluded.
 
-The exact tested runtime is **`8c6977d3cc1dc9f17926a480127bc1067abd0286`**, tree **`db96da21a4f39ae8612857fab5c2ea1b4e1295a3`**, pushed and read back on **`work/0.16-five-characters`** before validation. Later commits update documentation and receipts only. The frozen build root and source-only archive are `/tmp/nspire-stage-8c6977d3` and `/tmp/nspire-recovery/source-8c6977d3.tar`. Main and disabled remote CI remain unchanged.
+The exact tested runtime is **`8c6977d3cc1dc9f17926a480127bc1067abd0286`**, tree **`db96da21a4f39ae8612857fab5c2ea1b4e1295a3`**, pushed and read back on **`work/0.16-five-characters`** before validation. Later commits update documentation and receipts only. The frozen build root and source-only archive are `nspire-stage-8c6977d3` and `source-8c6977d3.tar`. Main and disabled remote CI remain unchanged.
 
 | Final verification | Executed result |
 | --- | --- |
@@ -319,7 +399,7 @@ The Defect agent owns the isolated `defect_*` state, operations, choices, rules,
 
 Mechanisms include Defect's actual five orb types and Focus; Regent's stars, independent star costs, Forge and existing Sovereign Blade; Necrobinder's Osty, Soul and Doom. Reuse the existing potion/colorless state where those mechanics already exist. Inspect the actual original triggers and targets: for example, the pinned Defect commonly evokes the rightmost orb, unlike assumptions imported from earlier games. New source must preserve bounded queues, choices, nested effects and explicit serialization; new output will use save v14 and the NSP2/13 resource profile. The completed 0.15 calculator ZIP and offline HTML remain the downloadable pair until a fully verified matching replacement is ready.
 
-Private inputs are `/workspace/scratch/5af9d4bf40b9/reference-inputs/extracted/{sts2.dll,SlayTheSpire2.pck,release_info.json,nSpire2-0.15.nsp.tns}`. Private audit tools and dependencies are `/tmp/nspire-il.py` and `/tmp/nspire-python-deps`. The recovered installation has unrelated mod PCKs; only the hash-locked root game PCK is a reference. Never publish those inputs, extracted original text/art, private IL or generated packs/HTML in Git. No image generation is authorized. Audio, multiplayer and Timeline remain excluded, and remote CI remains disabled.
+Private inputs are `{sts2.dll,SlayTheSpire2.pck,release_info.json,nSpire2-0.15.nsp.tns}`. Private audit tools and dependencies are `nspire-il.py` and `nspire-python-deps`. The recovered installation has unrelated mod PCKs; only the hash-locked root game PCK is a reference. Never publish those inputs, extracted original text/art, private IL or generated packs/HTML in Git. No image generation is authorized. Audio, multiplayer and Timeline remain excluded, and remote CI remains disabled.
 
 Next: finish the three audited modules and shared infrastructure, push the coherent source stage, then build and validate all five characters plus the retained content. Create a genuine v13 continuation fixture from the unchanged restored 0.15 writer before testing migration. Record actual failures and push repairs before rerunning changed source.
 
@@ -386,7 +466,7 @@ The exact tested runtime is **`4df76b04e2a07e6be9a898793f03fd0ab8df4aae`**, tree
 | ARM / WASM / X11 | All three built; ARM **195,304 bytes**, allocation **10,659,088 bytes**, **3,192 relocations** |
 | Visual review | Root reviewed all **18 final scenes** in the two contact sheets; no blocking findings |
 
-All **13 final journals** ended as passed, with `source_changed: false` and common source fingerprint `ba9286b978111d5eb38b0639b7497d1026d6115d46d9a4d5e3a8f145253a93ba`. The native journal is `native-final-c5b65fe7bbf4`. Full public source/artifact hashes, journal log hashes, exact scopes and limitations are in [validation-0.15.json](validation-0.15.json). The local complete receipt is `/workspace/scratch/5af9d4bf40b9/nspire-validation-4df76b04-receipt.json`; the immutable test root is `/tmp/nspire-stage-4df76b04`, with source-only backup `/tmp/nspire-recovery/source-4df76b04.tar`.
+All **13 final journals** ended as passed, with `source_changed: false` and common source fingerprint `ba9286b978111d5eb38b0639b7497d1026d6115d46d9a4d5e3a8f145253a93ba`. The native journal is `native-final-c5b65fe7bbf4`. Full public source/artifact hashes, journal log hashes, exact scopes and limitations are in [validation-0.15.json](validation-0.15.json). The local complete receipt is `nspire-validation-4df76b04-receipt.json`; the immutable test root is `nspire-stage-4df76b04`, with source-only backup `source-4df76b04.tar`.
 
 The final **NSP2/12** pack is **7,511,131 bytes**, SHA-256 `2699415023cb3b825a84e0f3645800c6690ea258854583a02bbb28cadf318f66`. It contains 228 card records, 749 strings, 233 auxiliary entries, 1,622 images, 6,265 glyphs and 17 clips. All 1,460 prior image payloads were retained; 877,477 bytes remain below the 8 MiB resident resource limit. Sidestep uses the actual original beta portrait because the pinned installation has no final portrait. The older expansion UI success-line text still says NSP2/11; the supplied pack, parser and actual UI profile were verified as **NSP2/12**. That stale log label does not change the test or loaded content version.
 
@@ -422,7 +502,7 @@ Next: push this source batch and verify the remote ref/tree, then run all suites
 
 ### First execution results and follow-up repair
 
-Checkpoint `575b3fce9e12aaa455efc9156b3f904f08780b85` was pushed and read back with exact tree `d382ada89332aa99012d8233b5cb7e3ee41107b4`. Its source-only archive and frozen `/tmp/nspire-stage-575b3fce` are retained. Native, ARM and X11 compilation all stopped at the same missing comma between the historical and appended status arrays; no C++ suite ran. The converter stopped on the first previously unsupported localization form, `Cards:plural:牌|牌`. All 16 Python tests passed. Every completed journal reports unchanged frozen source. These failures are preserved under `native-final-206dfc24ab7d`, `arm-final-3ec729f66d7e`, `x11-build-ea1756267bda` and `pack-final-f524a467284f`.
+Checkpoint `575b3fce9e12aaa455efc9156b3f904f08780b85` was pushed and read back with exact tree `d382ada89332aa99012d8233b5cb7e3ee41107b4`. Its source-only archive and frozen `nspire-stage-575b3fce` are retained. Native, ARM and X11 compilation all stopped at the same missing comma between the historical and appended status arrays; no C++ suite ran. The converter stopped on the first previously unsupported localization form, `Cards:plural:牌|牌`. All 16 Python tests passed. Every completed journal reports unchanged frozen source. These failures are preserved under `native-final-206dfc24ab7d`, `arm-final-3ec729f66d7e`, `x11-build-ea1756267bda` and `pack-final-f524a467284f`.
 
 The follow-up source repairs that separator, supports the three additional expression forms found by enumerating all appended card descriptions (17 Python tests are now registered), and makes Unmovable block previews distinguish the current suspended CardPlay from another card instance. The latter has a numerical regression paused in Armaments' upgrade choice. Character audit documents are now present. Push these repairs before rerunning; no successful 0.15 runtime result is established yet.
 
@@ -432,7 +512,7 @@ Checkpoint `433dc2c6920914d67e751417fdee7b93a441cf7f` was pushed/read back with 
 
 The second source passed **17 Python tests**, NSP2/12 conversion, X11 and WASM compilation, the real parser (**1,667 checks**), 84 exact native/WASM room frames and eight exact saves. Fresh X11 processes reopened/re-saved v13 ordinary **44,632-byte** and 384-instance **48,820-byte** saves. The first capacity test reached **61,868 bytes**, with conservative bound **61,920 / 65,536**. Actual-pack UI reached all 344 character variants and all 106 colorless variants/64 potions before its known later fixture assertions failed; those partial runs are not full UI passes. The ARM link failed on the new signed 64-bit division helper. The repair keeps the exact combined multiplier and performs bounded unsigned shift/subtract division, with 864 host-reference cases. No target ABI helper is assumed.
 
-The converted pack has **228 cards, 749 strings, 233 auxiliary entries, 1,622 images and 6,265 glyphs**: 7,511,131 bytes, with all 1,460 historical image payloads retained and 877,477 bytes below the resident 8 MiB limit. All second-stage journals report unchanged frozen source. The source-only archive and `/tmp/nspire-stage-433dc2c6` remain available; the native journal is `native-final-99adca70f281`.
+The converted pack has **228 cards, 749 strings, 233 auxiliary entries, 1,622 images and 6,265 glyphs**: 7,511,131 bytes, with all 1,460 historical image payloads retained and 877,477 bytes below the resident 8 MiB limit. All second-stage journals report unchanged frozen source. The source-only archive and `nspire-stage-433dc2c6` remain available; the native journal is `native-final-99adca70f281`.
 
 Original listener enumeration also exposed a normal character/colorless interaction: earlier Panache must resolve before later Rage/Juggernaut or Serpent Form. The next source adds a bounded 22-entry player-power acquisition order and serializes each AfterCardPlayed listener in the existing queue. Player powers run in acquisition order, then relics and card-model hooks, then enemy powers. Before-play captures remain separate, and each listener's nested actions finish before the next. Save v13 appends this order; historical saves retain their old Panache-index-before-Calamity policy because they did not record the true acquisition order. Both acquisition directions have numerical and save/resume regressions. New source must be pushed before testing these repairs.
 
@@ -444,11 +524,11 @@ Runtime source **`b4b67e714ca76e7afb72f3a170789ad90047e6f4`**, tree `5c97f84b835
 
 The completed 0.14 branch is `work/0.14-colorless-potions`; new development uses the 0.15 branch above. The user prioritizes GitHub persistence before long validation and parallel agents. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0` (historically tested 0.13). CI remains disabled. Reference remains **v0.111.0 / 41cef1ea**. Audio, multiplayer and Timeline are excluded.
 
-The accessible scratch workspaces did not contain the earlier checkout. All 163 source files were restored from work-branch commit `50a58c9b876c3038e549b97e7e7d245224d717d8`. Every Git blob and the complete tree `2fb04a1bb26b50d96d6741cbe2cba17f4a9366cc` were verified, and the exact shallow Git commit was reconstructed. The current working directory is `/workspace/scratch/5af9d4bf40b9/slay-the-nspire-2`.
+The accessible scratch workspaces did not contain the earlier checkout. All 163 source files were restored from work-branch commit `50a58c9b876c3038e549b97e7e7d245224d717d8`. Every Git blob and the complete tree `2fb04a1bb26b50d96d6741cbe2cba17f4a9366cc` were verified, and the exact shallow Git commit was reconstructed. The current working directory is `slay-the-nspire-2`.
 
 Recovery checkpoint `0215379bff2dbb5478def539dd8aa670d35e4e93` and completion checkpoint `b0945483e4f50ca065c0b7c3a0d9f917a2b375e6` were pushed and the work-branch ref read back. The latter's remote tree `554cde3772af4b602c11b9d65abd8d758687211f` exactly matches the staged local source. Source-only archives and isolated test copies are retained locally. Always repeat this verified checkpoint cycle before testing changed source.
 
-Original-rule checkpoint `8adeaeebe4a0380b92ceceff154e30ab5069696c` was subsequently pushed and read back; tree `9c5d5f0f3c5e96c6f96457dc604518b882c7bf28` matched the complete staged source. Its frozen test/build root is `/tmp/nspire-stage-8adeaeeb`. Follow-up checkpoint `afe33815cfc9f9ab24bbf457cdaeed0cd0e3f2df` was pushed and read back; its complete remote tree `67a0b819cee92d14fec31bd5a8045ec8993cb38d` matched local source. It adds batch auto-play reservations, full-hand pile selection, Touch eligibility and Doom/Demise ordering. Frozen validation root: `/tmp/nspire-stage-afe33815`. The final tested `b4b67e71` stage records turn-start acquisition order explicitly in save v12 and fixes temporary costs before enemy-side choices.
+Original-rule checkpoint `8adeaeebe4a0380b92ceceff154e30ab5069696c` was subsequently pushed and read back; tree `9c5d5f0f3c5e96c6f96457dc604518b882c7bf28` matched the complete staged source. Its frozen test/build root is `nspire-stage-8adeaeeb`. Follow-up checkpoint `afe33815cfc9f9ab24bbf457cdaeed0cd0e3f2df` was pushed and read back; its complete remote tree `67a0b819cee92d14fec31bd5a8045ec8993cb38d` matched local source. It adds batch auto-play reservations, full-hand pile selection, Touch eligibility and Doom/Demise ordering. Frozen validation root: `nspire-stage-afe33815`. The final tested `b4b67e71` stage records turn-start acquisition order explicitly in save v12 and fixes temporary costs before enemy-side choices.
 
 ## Completed 0.14 implementation scope
 
@@ -484,7 +564,7 @@ All native commands run through `tools/run_logged.py` against a verified frozen 
 | **`b4b67e71`, final platforms and content** | ARM, WASM, X11, NSP2/11, Python 10/10, parser 863, real UI 7,374 all passed. | 106 variants and 64 potions exercised through actual UI. Nine final raw screenshots exactly match the visually reviewed outlined-cost screens. |
 | **`b4b67e71`, final persistence** | 84 native/WASM frames and eight saves exactly match; X11 v12 saves of 14,344 and 19,428 bytes reopen in fresh processes. | The large save contains 384 instances and re-saves byte-for-byte. Original-game runtime parity and browser DOM/localStorage remain separate, untested claims. |
 
-The completed baseline, `b0945483`, `8adeaeeb`, `afe33815` and `b4b67e71` validation/build journals report `source_changed: false`. The latest native journal is `/tmp/nspire-stage-b4b67e71/build/journal/native-final-6173a9899340.json`; the reviewed local summary is `/workspace/scratch/5af9d4bf40b9/nspire-validation-b4b67e71.json`. The final v12 stage passed at `b4b67e71`. A genuine v11 fixture was produced by the unchanged `afe33815` writer under journal `v11-frozen-fixture-3c145f292253`: 12,580 binary bytes, SHA-256 `39469ff1e754da978689eab2e849f85f32fbab61138b2bdfc10bee5664c68a4f`. The passing migration regression reads it instead of regenerating historical data with the new codec. Test source alone does not establish a passing result, and agreeing native/WASM outputs would not establish original-game parity.
+The completed baseline, `b0945483`, `8adeaeeb`, `afe33815` and `b4b67e71` validation/build journals report `source_changed: false`. The latest native journal is `native-final-6173a9899340.json`; the reviewed local summary is `nspire-validation-b4b67e71.json`. The final v12 stage passed at `b4b67e71`. A genuine v11 fixture was produced by the unchanged `afe33815` writer under journal `v11-frozen-fixture-3c145f292253`: 12,580 binary bytes, SHA-256 `39469ff1e754da978689eab2e849f85f32fbab61138b2bdfc10bee5664c68a4f`. The passing migration regression reads it instead of regenerating historical data with the new codec. Test source alone does not establish a passing result, and agreeing native/WASM outputs would not establish original-game parity.
 
 ## Recovered original inputs and build work
 
@@ -496,11 +576,11 @@ The old missing-volume blocker is resolved. Four complete split ZIP volumes were
 | `SlayTheSpire2.pck` | 1,990,705,700 | `c60f672ee7804e6aefa1e19a582fa1c80b126a7b0eef4d084d3abf110df2eab7` |
 | Existing NSP2/10 base pack | 6,057,527 | `e157ee346a4eb1fc2849bc2d18e5dc1f4ccf364b85386d92dc7306a1430908a5` |
 
-These private inputs are outside the Git checkout under `/workspace/scratch/5af9d4bf40b9/reference-inputs`. Do not upload original archives, PCK data, assemblies, fonts, game-derived packs or generated HTML with embedded original art to the source repository. The old NSP2/10 pack is only a conversion input, not a compatible resource pack for the new launcher.
+These private inputs are outside the Git checkout under `reference-inputs`. Do not upload original archives, PCK data, assemblies, fonts, game-derived packs or generated HTML with embedded original art to the source repository. The old NSP2/10 pack is only a conversion input, not a compatible resource pack for the new launcher.
 
 The real NSP2/11 conversion passed at frozen `b0945483` without changing conversion source. The new pack is **6,584,524 bytes**, SHA-256 `7add6827c5a8a271f0f411f1797a2a75cb6b9db36f450a7402f667ff789a12b4`: 114 cards, 407 strings, 185 auxiliary images, 1,460 images, 5,770 glyphs and 17 clips. All 1,334 earlier image payloads are preserved; 1,804,084 bytes remain below the resident 8 MiB pack limit. The conversion journal `real-content-pack-19a1867ba47b` and actual-pack native Content/App rendering journal `real-content-runtime-a2781fd4f4c7` passed with unchanged source. Synthetic packs remain parser/UI test fixtures only.
 
-LLVM 21.1.8 was obtained from official Noble packages, with signed-index and per-package SHA verification, and unpacked privately under `/tmp/nspire-toolchain`. At final `b4b67e71`, ARM compiled to a 152,721-byte launcher with 10,564,912-byte allocation and 2,124 absolute relocations. WASM compiled to 493,402 bytes and the X11 host to 498,800 bytes. The self-contained offline HTML is 9,452,257 bytes. The content conversion repeated with the same NSP2/11 hash.
+LLVM 21.1.8 was obtained from official Noble packages, with signed-index and per-package SHA verification, and unpacked privately under `nspire-toolchain`. At final `b4b67e71`, ARM compiled to a 152,721-byte launcher with 10,564,912-byte allocation and 2,124 absolute relocations. WASM compiled to 493,402 bytes and the X11 host to 498,800 bytes. The self-contained offline HTML is 9,452,257 bytes. The content conversion repeated with the same NSP2/11 hash.
 
 Four existing room scenarios produced 84 exact native/WASM RGB565 frame matches and eight exact save matches. This checks the shared engine/storage adapter, not browser DOM/localStorage or the original game. At `afe33815`, X11 fresh-process save/reopen passed with both a 14,340-byte ordinary save and a 19,424-byte / 384-instance expanded v11 save. Both checks passed again at `b4b67e71` with the actual v12 writer: ordinary 14,344 bytes and expanded 19,428 bytes, including exact re-saved bytes in a fresh process. No new Firebird execution or physical-device performance result has been established.
 

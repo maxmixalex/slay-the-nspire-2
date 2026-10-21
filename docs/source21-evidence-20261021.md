@@ -107,7 +107,7 @@ tile pool by alternating owners on every image. All metadata checks remain,
 and 40 actual UI frames still alternate all three owners. Progress flushes
 every 1,000 images so a long proof remains observable.
 
-## Post-checkpoint gates
+## Planned post-checkpoint gates — historical preparation
 
 1. Push/read back the complete source21 tree and changed contents, retain a
    source-only archive, and freeze the exact source before long execution.
@@ -127,3 +127,28 @@ remaining shader/particle layers and temporal animation sampling are explicit
 implementation differences, outside the calculator-readability allowance.
 No new Firebird or physical-device run exists. Main, disabled CI and the
 verified 0.16 pair remain unchanged.
+
+
+## Executed after the source21 checkpoint
+
+The frozen source21 commit is `d5738010f2d7ebc6139a2fa181ff87820d344bbb`.
+All planned host/cross-target gates completed. The complete byte oracle passed
+in **1,551.050913 seconds** with **182,923,958 checks**, including fixture
+assertions. Each of the new memory and range backends matched all **45,724
+images / 994,105,847 decoded bytes** against v14. All metadata, glyphs, strings,
+clips, 40 three-owner UI frames and failure/reopen boundaries also passed.
+The pack and reference SHA-256 digests remained unchanged.
+
+The frozen stage also passed all 147 native build steps, ARM/WASM linking,
+5,249 division/ABI and 28 LZMA2 linked ARM vectors, ten affected ASan/UBSan
+suites in 50.61 seconds, fresh 23-scenario / 480-frame / 30-save native/WASM
+comparison, and the actual act-entry UI checks. There are **21 passed journals
+and two retained failed build attempts**: the GCC 13 internal compiler error
+in unchanged relic code, and the first missing Clang C-compiler alias. The
+corrected Clang Release build passed; failures were not relabeled as successes.
+
+Exact artifact, journal and log hashes and the distinction between optimized
+actual-file and synthetic sanitizer coverage are recorded in
+[validation-source21-0.17.json](validation-source21-0.17.json). This complete
+catalog evidence belongs to source21; source22's changed-cache checks are
+reported separately. No device or original-PC differential run was performed.

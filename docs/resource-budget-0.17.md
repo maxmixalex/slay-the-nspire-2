@@ -5,11 +5,11 @@ It preserves the existing rendered-frame bytes, dimensions, sparse geometry,
 timing entries and pivots. This storage result does not settle the separate
 original-UI fidelity or calculator performance requirements.
 
-The owner's new goal is approximately **30–40 MB on the calculator**. Source21's
-885,145-byte launcher and resource file total **81,731,203 bytes** before saves.
-A 40,000,000-byte combined target leaves 39,114,855 bytes for resources, requiring
+The owner's new goal is approximately **30–40 MB on the calculator**. Source22's
+885,386-byte launcher and resource file total **81,731,444 bytes** before saves.
+A 40,000,000-byte combined target leaves 39,114,614 bytes for resources, requiring
 another **51.62%** reduction of this resource file. Interpreting 40 M as 40 MiB
-still requires **49.21%**. Neither target has been achieved or promised.
+still requires **49.22%**. Neither target has been achieved or promised.
 
 ## What occupies the existing file
 
@@ -90,7 +90,7 @@ state was not controlled and other jobs were running; these are host timings,
 not calculator startup predictions. Construction and App initialization are
 outside this benchmark interval.
 
-A concrete cache problem remains in source21. Clip 967 has 23 distinct images
+A concrete cache problem was measured in source21. Clip 967 has 23 distinct images
 of 66,749–76,294 decoded bytes, totaling 1,557,577 bytes. All enter the old
 eight-slot medium tier even though the total pixel-cache budget is 3,064,768
 bytes. Two actual cycles therefore had zero no-read image accesses. They spent
@@ -105,13 +105,18 @@ evicts the least recently used entries until a contiguous extent and an entry
 are available. Failed decoding publishes no cache key. Owner resets and exact
 descriptor/shape/format identity remain required.
 
-A metadata-only model fits all 23 images in **395 pages / 1,617,920 bytes**,
-including 60,343 bytes of internal padding. It predicts 23 second-cycle hits
-with no evictions, including after modeling the retained-image startup requests.
-This is a model motivating the implementation. The new actual runtime benchmark,
-sanitizer regressions and ARM/WASM builds must pass after the source checkpoint.
+The metadata model fits all 23 images in **395 pages / 1,617,920 bytes**,
+including 60,343 bytes of internal padding. Actual frozen source22 execution
+now confirms that all 23 images in the second cycle have **zero callbacks,
+callback bytes, reader-page hits, reader-page misses and range bypasses**.
+The first cycle retains exactly 265 callbacks / 15,471,204 bytes, matching
+source21. This fixes the demonstrated repeated-decoding pattern within the
+old cache budget. Other actors and UI still compete for the pool; it does not
+establish a whole-scene or calculator frame rate. Native/ARM/WASM builds,
+linked ARM vectors, ten affected sanitizer suites and the fresh 23-scenario
+backend comparison passed. See [validation-source22-0.17.json](validation-source22-0.17.json).
 
-## Next lossless experiments
+## Executed lossless experiments
 
 Two source-controlled diagnostics support reproducible measurements without
 changing a production file:
@@ -127,6 +132,71 @@ changing a production file:
   Group descriptors and headers are included in the model; an unimplemented
   global lookup/header and changed random-access costs remain explicit limits.
 
+Both source22 diagnostic commands passed with the frozen runtime fingerprint
+unchanged. Full receipts and bounds are in
+[validation-resource-research-source22.json](validation-resource-research-source22.json).
+
+### Eight declared real tile groups
+
+The 5,024 tiles in groups 0, 104, 208, 313, 417, 522, 626 and 731 were tested
+with eight reversible representations: 64 group/candidate inverse comparisons
+all reproduced the original 770-byte records exactly.
+
+| Representation | Compressed payload bytes | Groups above 512 KiB raw bound |
+| --- | ---: | ---: |
+| Existing identity | **532,265** | 0 |
+| Byte planes | 582,055 | 0 |
+| Byte row delta | 675,947 | 0 |
+| Native channel planes | 626,922 | 7 |
+| Native channel row delta | 717,744 | 7 |
+| Exact bounding box | 543,878 | 0 |
+| Exact bounding box with solid regions | 546,485 | 0 |
+| Exact palette | 675,704 | 0 |
+
+Every eligible candidate in every sampled group was at least as large as
+identity, so adaptive selection also gives 532,265 bytes. This is a negative
+result for this exact sample, not a proof that all lossless methods fail or a
+whole-file size projection.
+
+### All retained images and glyphs
+
+The other experiment covers all **3,535 retained entries / 3,466 unique
+payloads / 42,096,071 decoded unique bytes** and **11,915 glyphs**. Every
+candidate was inversely checked. Maximum retained raw image size is 230,400
+bytes; none exceeds 512 KiB.
+
+| Component model | Modeled bytes |
+| --- | ---: |
+| Current retained images, including existing per-payload alignment | 15,736,038 |
+| Retained images, individually compressed only where smaller | 11,960,100 |
+| Retained images in 128 KiB groups | 9,868,442 |
+| Retained images in 512 KiB groups | **8,467,226** |
+| Current glyph payloads | 2,649,180 |
+| Glyphs in 32 KiB groups | 1,520,556 |
+| Glyphs in 128 KiB groups | **1,489,858** |
+
+The 128 KiB retained model leaves 124 oversized images in their existing form.
+The 512 KiB model uses 89 groups and has no oversized images. The 128 KiB glyph
+model uses 21 groups. Models include 32-byte group headers, 16-byte item
+descriptors and alignment, but **exclude a new global lookup/header**. No new
+production format, runtime decoder, random-access measurement or complete pack
+was made from these models.
+
+The retained aligned baseline contains **1,758 bytes** already counted in the
+production manifest's 2,352-byte alignment row. They must not be double-counted
+as new payload or extra savings. The best component models suggest roughly
+**8.43 MB** of savings, leaving roughly **69.1 MiB** of resource storage if
+other components remain unchanged, before the missing new global metadata.
+That arithmetic is not a delivered pack size or a guaranteed compression bound.
+
+## Next implementation and architectural work
+
+The concrete next storage change is a bounded grouped retained-image/glyph
+format and reader, preserving exact output, owner/error behavior and existing
+memory limits. It needs full inverse validation and actual cold/random/warm
+access measurements; smaller stored payloads can increase read amplification
+and decompression latency. The tested 69 MiB model is still well above 40 MB.
+
 Reversible prediction is a standard compression technique: the
 [W3C PNG filtering specification](https://www.w3.org/TR/png-3/#9Filters)
 defines reconstruction from neighboring samples. A useful technique still needs
@@ -134,8 +204,8 @@ measurement on these actual tiles; reordering can destroy repetitions that the
 existing compressor exploits. Earlier complete-frame prediction and temporal-XOR
 samples did not improve this pack's corresponding baseline.
 
-If those measurements leave the result far above 40 MB, a more substantial
-representation change would need investigation. Keeping texture regions and
+The current measurements leave the result far above 40 MB, so a more
+substantial representation change would need investigation. Keeping texture regions and
 animation transforms instead of pre-rendering every frame is one possible
 direction; the [Spine runtime architecture](https://esotericsoftware.com/spine-runtimes-guide)
 documents that representation. It introduces runtime pose/mesh rasterization,

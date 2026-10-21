@@ -1,0 +1,1047 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+  "source_tree": "bf709e0afc083e0e8bface7d8e351a8207024fff",
+  "remote_verification": {
+    "files": 505,
+    "changed_files": 13,
+    "verified_ref": true,
+    "all_tree_blob_hashes_match": true,
+    "all_changed_contents_read_back_and_equal": true,
+    "read_back_utc": "2026-10-21T09:04:23.008Z",
+    "archive_bytes": 9564160,
+    "archive_sha256": "e1d4a718aab154927955ec3fd674215ad63d7c97cf5c8050e688ea51d05a21f5"
+  },
+  "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+  "native_build_steps": 147,
+  "affected_suites": {
+    "passed": [
+      "compression_regression",
+      "content_regression",
+      "content_tiles_regression",
+      "lzma2_block_regression",
+      "resource_source_regression",
+      "world_map_act_intro_ui_regression",
+      "world_map_travel_ui_regression",
+      "world_map_ui_regression",
+      "world_map_window_ui_regression",
+      "world_text_regression"
+    ],
+    "registered_total": 56,
+    "full_registered_rerun": false,
+    "full_baseline": "26a9097521a971b69a4b58494985c6062a24017e",
+    "baseline_registered_suites": 52,
+    "sanitizers": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer"
+    ],
+    "asan_options": "detect_leaks=0",
+    "counts": {
+      "content_tiles_checks": 5455291,
+      "content_checks": 1584,
+      "resource_source_checks": 4288,
+      "compression_checks": 320058,
+      "lzma2_block_checks": 6400,
+      "world_text_checks": 5592,
+      "world_map_ui_checks": 98402,
+      "map_travel_ui_checks": 1221,
+      "map_window_ui_checks": 82479,
+      "act_intro_ui_checks": 47174
+    }
+  },
+  "build_artifacts": [
+    {
+      "kind": "ARM launcher",
+      "filename": "nSpire2.tns",
+      "bytes": 885145,
+      "sha256": "1ee4c2a9a895c2b777009d1854deb4ae25f1fce76635669985e88f1bb47786c5"
+    },
+    {
+      "kind": "WASM runtime",
+      "filename": "nSpire2.wasm",
+      "bytes": 4879462,
+      "sha256": "796ff897608b0764783591161ca03192ba9eb59ec93744a053299409c98ef4b7"
+    }
+  ],
+  "arm_allocation_bytes": 14713908,
+  "arm_relocations": 28595,
+  "linked_arm_division_vectors": 5249,
+  "linked_arm_decoder_vectors": 28,
+  "arm_elf_sha256": "e06fd8b7b44e53f10820867372c65ce06a5e9414ffbbac8a5614cd3f29a8d9c0",
+  "linked_arm_scope": "ARM926 instruction-level helper/decoder, exact outputs, callee-saved registers, stack and output guards; no calculator or Firebird execution",
+  "private_pack": {
+    "bytes": 80846058,
+    "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd",
+    "format": "NSP2/15",
+    "production_conversion_complete": true,
+    "images": 45724,
+    "clips": 1695,
+    "glyphs": 11915,
+    "strings": 6100,
+    "cards": 558,
+    "auxiliary_entries": 1175,
+    "canonical_frames": 28910,
+    "original_sparse_bytes": 443359210,
+    "timing_entries": 42189,
+    "retained_images": 3535,
+    "tile_groups": 732,
+    "index_groups": 452,
+    "full_inverse_validation": {
+      "all_groups_crc_and_bounds_verified": true,
+      "all_original_fmt4_bytes_equal": true,
+      "all_tile_padding_and_edges_verified": true,
+      "animation_entries_verified": 42189,
+      "canonical_frames_verified": 28910,
+      "glyphs_verified": 11915,
+      "host_reference_cache_upper_bytes": 67108864,
+      "host_reference_decoded_bytes": 1019082486,
+      "host_reference_group_reads": 2622,
+      "physical_device_performance_established": false,
+      "retained_images_verified": 3535,
+      "strings_verified": 6100
+    },
+    "manifest_sha256": "f076004a4625cf2ce520beca14ab865f620179d697b668dacf6199b4e07f73cd",
+    "preferred_pack_budget_bytes": 83886080,
+    "within_preferred_pack_budget": true,
+    "physical_device_performance_established": false,
+    "production_encoder_checkpoint": "3f66da839e056fe291c27ca5e93260b3833bd7de",
+    "reused_without_reencoding_in_source21": true,
+    "complete_native_resource_equivalence_passed": true,
+    "native_wasm_equivalence_scope": "23 scenarios, 480 rendered frames and 30 saves; not every catalog image separately executed in WASM",
+    "all_catalog_images_executed_in_wasm": false
+  },
+  "staged_validation": {
+    "whole_file_fnv_and_directory_group_descriptor_index_geometry_checks_at_open": true,
+    "tile_crc_padding_edges_and_opaque_alpha_checked_before_first_successful_image_publication": true,
+    "validation_bitmap_max_bytes": 8192,
+    "bitmap_uses_existing_directory_tail": true,
+    "additional_resident_array_allocation": false,
+    "insufficient_bitmap_space_falls_back_to_full_tile_validation_on_each_image_cache_miss": true,
+    "index_groups_decoded_once_on_normal_startup": 452,
+    "index_group_decoded_bytes_on_normal_startup": 60089163,
+    "index_group_encoded_bytes_on_normal_startup": 6478949
+  },
+  "actual_resource_equivalence": {
+    "status": "passed",
+    "journal": "source21-resource-content-three-way-68489e2584eb.json",
+    "toolchain": "Clang 18.1.3, Release -O2 -DNDEBUG, no sanitizers",
+    "seconds": 1551.050913,
+    "checks": 182923958,
+    "image_passes": [
+      {
+        "backend": "new memory / original",
+        "images": 45724,
+        "decoded_bytes": 994105847
+      },
+      {
+        "backend": "new range / original",
+        "images": 45724,
+        "decoded_bytes": 994105847
+      }
+    ],
+    "images_per_backend": 45724,
+    "decoded_image_bytes_per_backend": 994105847,
+    "glyphs": 11915,
+    "strings": 6100,
+    "clips": 1695,
+    "cards": 558,
+    "all_compiled_ui_mappings_compared": true,
+    "identical_three_way_ui_frames": 40,
+    "comparison": "Every decoded image and glyph byte vector, every string and clip/card/UI mapping, plus RGB565 frame-buffer byte comparison; complete byte equality was not replaced by hashes",
+    "backends": [
+      "new NSP2/15 memory",
+      "new NSP2/15 bounded range callbacks",
+      "independent NSP2/14 memory reference"
+    ],
+    "pass_order": [
+      "new memory versus original for all images",
+      "new range versus original for all images"
+    ],
+    "owner_eviction_coverage": "Synthetic lifetime/pressure suites plus alternating owners during all 40 UI frames",
+    "fault_reopen_checks_passed": true,
+    "input_pack_sha256_rechecked_after_run": true,
+    "reference_pack": {
+      "bytes": 231312495,
+      "sha256": "d9adddc61c4f4f61b2ce50ee90960b112d752a694595ffa5f0feb2a6d9b204fb",
+      "nsp_version": 14,
+      "catalog": {
+        "images": 45724,
+        "glyphs": 11915,
+        "strings": 6100,
+        "clips": 1695,
+        "cards": 558
+      }
+    }
+  },
+  "actual_native_wasm_backend": {
+    "status": "passed",
+    "scenarios": 23,
+    "rgb565_frames": 480,
+    "save_matches": 30,
+    "frame_width": 320,
+    "frame_height": 240,
+    "frame_format": "RGB565",
+    "capture_manifest_sha256": "8dffa05f891f185300a3ef457d2f46405f5580c6a61ddd55a25290d89f26f012",
+    "scenario_counts": [
+      {
+        "name": "world-neow",
+        "rgb565_frames": 5,
+        "save_matches": 1
+      },
+      {
+        "name": "world-map",
+        "rgb565_frames": 46,
+        "save_matches": 3
+      },
+      {
+        "name": "world-map-pointer",
+        "rgb565_frames": 29,
+        "save_matches": 2
+      },
+      {
+        "name": "world-map-fast",
+        "rgb565_frames": 45,
+        "save_matches": 2
+      },
+      {
+        "name": "world-native-combat",
+        "rgb565_frames": 47,
+        "save_matches": 1
+      },
+      {
+        "name": "world-kaiser",
+        "rgb565_frames": 47,
+        "save_matches": 1
+      },
+      {
+        "name": "world-fake-merchant",
+        "rgb565_frames": 8,
+        "save_matches": 2
+      },
+      {
+        "name": "world-crystal",
+        "rgb565_frames": 7,
+        "save_matches": 1
+      },
+      {
+        "name": "world-colossal",
+        "rgb565_frames": 15,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-normal",
+        "rgb565_frames": 28,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-interrupted",
+        "rgb565_frames": 24,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-top-bar",
+        "rgb565_frames": 34,
+        "save_matches": 1
+      },
+      {
+        "name": "world-intro-fast",
+        "rgb565_frames": 22,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-ironclad",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-silent",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-defect",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-regent",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-rest-necrobinder",
+        "rgb565_frames": 12,
+        "save_matches": 1
+      },
+      {
+        "name": "world-treasure-keyboard",
+        "rgb565_frames": 9,
+        "save_matches": 1
+      },
+      {
+        "name": "world-treasure-pointer",
+        "rgb565_frames": 15,
+        "save_matches": 1
+      },
+      {
+        "name": "world-treasure-reload",
+        "rgb565_frames": 11,
+        "save_matches": 2
+      },
+      {
+        "name": "world-treasure-dolly",
+        "rgb565_frames": 18,
+        "save_matches": 2
+      },
+      {
+        "name": "world-treasure-empty",
+        "rgb565_frames": 10,
+        "save_matches": 1
+      }
+    ],
+    "adapter_scope": "native direct-content App vs compiled WASM bounded resource callbacks; browser DOM/localStorage not exercised",
+    "browser_dom_exercised": false,
+    "persistent_localstorage_exercised": false,
+    "original_pc_differential": false
+  },
+  "actual_act_intro": {
+    "status": "passed",
+    "checks": 43364,
+    "journal": "source21-map-act-intro-actual-ea7651089320.json",
+    "scope": "Actual new-run input, pause, interruption, load, next-act entry and supplied private content",
+    "all_four_captures_visually_reviewed": true,
+    "no_title_clipping_observed": true,
+    "reference_pc_pixel_differential": false
+  },
+  "host_benchmarks": {
+    "toolchain": "Clang 18.1.3, Release -O2 -DNDEBUG, no sanitizers",
+    "process_scope": "A fresh Content/process for each of six cases; image ID repeated immediately to measure cache hit",
+    "timing_scope": "Content open and each image call; file opening, Content construction, App initialization, rendering and pacing excluded",
+    "operating_system_page_cache": "uncontrolled",
+    "host_concurrent_load": "uncontrolled; the continuous clip diagnostic ran while the full resource oracle remained active",
+    "callback_bytes_are_logical_provider_traffic_not_physical_disk_bytes": true,
+    "cases": [
+      {
+        "label": "source21-open-v15-first",
+        "journal": "source21-open-v15-first-155ec6775611.json",
+        "profile": "NSP2/15",
+        "operations": [
+          {
+            "operation": "open",
+            "pack_bytes": 80846058,
+            "success": true,
+            "milliseconds": 2229.832,
+            "callbacks": 26068,
+            "callback_bytes": 118308847,
+            "reader_page_hits": 72826,
+            "reader_page_misses": 4497,
+            "range_bypasses": 21571
+          },
+          {
+            "operation": "image",
+            "id": 3535,
+            "success": true,
+            "width": 254,
+            "height": 137,
+            "format": 4,
+            "milliseconds": 13.888,
+            "callbacks": 3,
+            "callback_bytes": 108965,
+            "reader_page_hits": 0,
+            "reader_page_misses": 1,
+            "range_bypasses": 2
+          },
+          {
+            "operation": "image",
+            "id": 3535,
+            "success": true,
+            "width": 254,
+            "height": 137,
+            "format": 4,
+            "milliseconds": 0.001,
+            "callbacks": 0,
+            "callback_bytes": 0,
+            "reader_page_hits": 0,
+            "reader_page_misses": 0,
+            "range_bypasses": 0
+          }
+        ]
+      },
+      {
+        "label": "source21-open-v14-first",
+        "journal": "source21-open-v14-first-45f47f155dc6.json",
+        "profile": "NSP2/14",
+        "operations": [
+          {
+            "operation": "open",
+            "pack_bytes": 231312495,
+            "success": true,
+            "milliseconds": 8089.246,
+            "callbacks": 116002,
+            "callback_bytes": 733325569,
+            "reader_page_hits": 43716,
+            "reader_page_misses": 34271,
+            "range_bypasses": 81731
+          },
+          {
+            "operation": "image",
+            "id": 3535,
+            "success": true,
+            "width": 254,
+            "height": 137,
+            "format": 4,
+            "milliseconds": 0.066,
+            "callbacks": 2,
+            "callback_bytes": 14448,
+            "reader_page_hits": 0,
+            "reader_page_misses": 1,
+            "range_bypasses": 1
+          },
+          {
+            "operation": "image",
+            "id": 3535,
+            "success": true,
+            "width": 254,
+            "height": 137,
+            "format": 4,
+            "milliseconds": 0.0,
+            "callbacks": 0,
+            "callback_bytes": 0,
+            "reader_page_hits": 0,
+            "reader_page_misses": 0,
+            "range_bypasses": 0
+          }
+        ]
+      },
+      {
+        "label": "source21-open-v15-max-area",
+        "journal": "source21-open-v15-max-area-c52248c051ae.json",
+        "profile": "NSP2/15",
+        "operations": [
+          {
+            "operation": "open",
+            "pack_bytes": 80846058,
+            "success": true,
+            "milliseconds": 1990.752,
+            "callbacks": 26068,
+            "callback_bytes": 118308847,
+            "reader_page_hits": 72826,
+            "reader_page_misses": 4497,
+            "range_bypasses": 21571
+          },
+          {
+            "operation": "image",
+            "id": 6040,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 40.715,
+            "callbacks": 5,
+            "callback_bytes": 259442,
+            "reader_page_hits": 0,
+            "reader_page_misses": 1,
+            "range_bypasses": 4
+          },
+          {
+            "operation": "image",
+            "id": 6040,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 0.002,
+            "callbacks": 0,
+            "callback_bytes": 0,
+            "reader_page_hits": 0,
+            "reader_page_misses": 0,
+            "range_bypasses": 0
+          }
+        ]
+      },
+      {
+        "label": "source21-open-v14-max-area",
+        "journal": "source21-open-v14-max-area-461e9f2d48d2.json",
+        "profile": "NSP2/14",
+        "operations": [
+          {
+            "operation": "open",
+            "pack_bytes": 231312495,
+            "success": true,
+            "milliseconds": 4287.048,
+            "callbacks": 116002,
+            "callback_bytes": 733325569,
+            "reader_page_hits": 43716,
+            "reader_page_misses": 34271,
+            "range_bypasses": 81731
+          },
+          {
+            "operation": "image",
+            "id": 6040,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 0.329,
+            "callbacks": 2,
+            "callback_bytes": 34960,
+            "reader_page_hits": 0,
+            "reader_page_misses": 1,
+            "range_bypasses": 1
+          },
+          {
+            "operation": "image",
+            "id": 6040,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 0.0,
+            "callbacks": 0,
+            "callback_bytes": 0,
+            "reader_page_hits": 0,
+            "reader_page_misses": 0,
+            "range_bypasses": 0
+          }
+        ]
+      },
+      {
+        "label": "source21-open-v15-max-cold-groups",
+        "journal": "source21-open-v15-max-cold-groups-f0d7af34c017.json",
+        "profile": "NSP2/15",
+        "operations": [
+          {
+            "operation": "open",
+            "pack_bytes": 80846058,
+            "success": true,
+            "milliseconds": 1561.771,
+            "callbacks": 26068,
+            "callback_bytes": 118308847,
+            "reader_page_hits": 72826,
+            "reader_page_misses": 4497,
+            "range_bypasses": 21571
+          },
+          {
+            "operation": "image",
+            "id": 22964,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 167.72,
+            "callbacks": 24,
+            "callback_bytes": 1296929,
+            "reader_page_hits": 0,
+            "reader_page_misses": 1,
+            "range_bypasses": 23
+          },
+          {
+            "operation": "image",
+            "id": 22964,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 0.002,
+            "callbacks": 0,
+            "callback_bytes": 0,
+            "reader_page_hits": 0,
+            "reader_page_misses": 0,
+            "range_bypasses": 0
+          }
+        ]
+      },
+      {
+        "label": "source21-open-v14-max-cold-groups",
+        "journal": "source21-open-v14-max-cold-groups-fdd306436ebf.json",
+        "profile": "NSP2/14",
+        "operations": [
+          {
+            "operation": "open",
+            "pack_bytes": 231312495,
+            "success": true,
+            "milliseconds": 5720.847,
+            "callbacks": 116002,
+            "callback_bytes": 733325569,
+            "reader_page_hits": 43716,
+            "reader_page_misses": 34271,
+            "range_bypasses": 81731
+          },
+          {
+            "operation": "image",
+            "id": 22964,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 0.152,
+            "callbacks": 2,
+            "callback_bytes": 24760,
+            "reader_page_hits": 0,
+            "reader_page_misses": 1,
+            "range_bypasses": 1
+          },
+          {
+            "operation": "image",
+            "id": 22964,
+            "success": true,
+            "width": 320,
+            "height": 218,
+            "format": 4,
+            "milliseconds": 0.0,
+            "callbacks": 0,
+            "callback_bytes": 0,
+            "reader_page_hits": 0,
+            "reader_page_misses": 0,
+            "range_bypasses": 0
+          }
+        ]
+      }
+    ],
+    "device_performance_established": false
+  },
+  "continuous_clip_cache_risk": {
+    "status": "measured_host_risk",
+    "journal": "source21-clip967-two-cycles-7177ba7983d9.json",
+    "clip_id": 967,
+    "first_image": 22954,
+    "last_image": 22976,
+    "frames": 23,
+    "frame_ms": 80,
+    "nominal_cycle_ms": 1840,
+    "cycles": [
+      {
+        "cycle": 1,
+        "frames": 23,
+        "sum_image_ms": 4747.611,
+        "mean_image_ms": 206.4178695652174,
+        "median_image_ms": 196.145,
+        "p95_nearest_rank_image_ms": 323.411,
+        "max_image_ms": 557.218,
+        "callback_bytes": 15471204,
+        "callbacks": 265,
+        "zero_read_images": 0,
+        "images_exceeding_nominal_frame_ms": 23
+      },
+      {
+        "cycle": 2,
+        "frames": 23,
+        "sum_image_ms": 5113.978,
+        "mean_image_ms": 222.3468695652174,
+        "median_image_ms": 141.175,
+        "p95_nearest_rank_image_ms": 428.502,
+        "max_image_ms": 1173.266,
+        "callback_bytes": 11671220,
+        "callbacks": 216,
+        "zero_read_images": 0,
+        "images_exceeding_nominal_frame_ms": 22
+      }
+    ],
+    "p95_method": "nearest rank",
+    "open": {
+      "operation": "open",
+      "pack_bytes": 80846058,
+      "success": true,
+      "milliseconds": 4318.883,
+      "callbacks": 26068,
+      "callback_bytes": 118308847,
+      "reader_page_hits": 72826,
+      "reader_page_misses": 4497,
+      "range_bypasses": 21571
+    },
+    "distinct_image_descriptors": 23,
+    "raw_fmt4_bytes_min": 66749,
+    "raw_fmt4_bytes_max": 76294,
+    "total_decoded_image_bytes": 1557577,
+    "all_frames_in_original_medium_cache_tier": true,
+    "original_medium_image_cache_slots": 8,
+    "first_cycle_zero_read_images": 0,
+    "second_cycle_zero_read_images": 0,
+    "risk": "Both sequential cycles exceed their nominal duration on this concurrently loaded host; fixed eight medium image slots cannot retain 23 distinct frames. Steady animation and device performance remain unverified.",
+    "no_source22_cache_result_claimed": true
+  },
+  "failed_attempts": [
+    {
+      "journal": "source21-release-targets-af24d4dbac69.json",
+      "status": "failed",
+      "reason": "GCC 13 -O2 internal compiler error in gimple_add_tmp_var at unchanged src/world_relics.cpp:459",
+      "resolution": "Same frozen source built successfully with Clang 18.1.3 -O2; runtime checks and source were not weakened",
+      "corrected_passed_journal": "source21-release-clang-targets-056978261b04.json"
+    },
+    {
+      "journal": "source21-release-clang-configure-8a40f482e5da.json",
+      "status": "failed",
+      "reason": "Initial configured Clang C compiler path did not identify an existing compiler tool",
+      "resolution": "Corrected the C compiler path to the installed Clang 18.1.3 compiler without a source change",
+      "corrected_passed_journal": "source21-release-clang-configure-fixed-290342835bf9.json"
+    }
+  ],
+  "private_evidence_digests": {
+    "remote_receipt_sha256": "780157c5928f54bcaa2922f9add78e436a6edda6996eac7ec2a3aa8c0f4c2014",
+    "runtime_validation_summary_sha256": "4b3e52f173b61a4aab824c77e0e8da0e610a0e87ae9b2e12056d959a9b7ad9fe",
+    "backend_validation_summary_sha256": "f4996a236928b0f07cc0c39f0899ee2c6d68fc7fdfcbc0f667dbb4937fd11557"
+  },
+  "run_totals": {
+    "recorded": 23,
+    "passed": 21,
+    "failed_attempts_retained": 2,
+    "all_source_changed_false": true
+  },
+  "runs": [
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:05:25.205082+00:00",
+      "ended_at": "2026-10-21T09:06:42.037223+00:00",
+      "returncode": 0,
+      "log_sha256": "d5a8248e57059c127914e4b55b86e82041878b33705196e72d9ebfba1c2e74d2",
+      "source_changed": false,
+      "journal": "source21-arm-6abd188c0d78.json",
+      "journal_sha256": "842b88fc9246de335712824b69572e25a7eef7b41766e94ef1e1d10725ca2647",
+      "log": "source21-arm-6abd188c0d78.log",
+      "seconds": 76.832141,
+      "command_summary": "python3 tools/build_ndless.py with the configured ARM toolchain"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:13:42.970047+00:00",
+      "ended_at": "2026-10-21T09:13:57.954958+00:00",
+      "returncode": 0,
+      "log_sha256": "f58bb63553bd399c912292c7ad20cd9c019012436d169fb338cd63a68e0702a1",
+      "source_changed": false,
+      "journal": "source21-clip967-two-cycles-7177ba7983d9.json",
+      "journal_sha256": "06f67c28d978c30055ac7f711d03d231075738e0f05398e1ce79c4d1bf942f42",
+      "log": "source21-clip967-two-cycles-7177ba7983d9.log",
+      "seconds": 14.984911,
+      "command_summary": "resource_open_benchmark <private-v15-pack> followed by image IDs 22954 through 22976, repeated twice in the same process"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:38.908892+00:00",
+      "ended_at": "2026-10-21T09:11:29.627975+00:00",
+      "returncode": 0,
+      "log_sha256": "79c858000094e4e90f75292cb71fd56c39e6195e57aae8814079646b0a99babb",
+      "source_changed": false,
+      "journal": "source21-codecs-map-asan-b96bf087a83f.json",
+      "journal_sha256": "2192e8c20e78e7beb5f7de51c3852b5a47471573fc62e6cf52d548feeed7131a",
+      "log": "source21-codecs-map-asan-b96bf087a83f.log",
+      "seconds": 50.719083,
+      "command_summary": "ctest --test-dir build/native --output-on-failure -j2 restricted to the ten affected suites listed here; ASAN_OPTIONS=detect_leaks=0"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:08:00.262460+00:00",
+      "ended_at": "2026-10-21T09:08:01.541622+00:00",
+      "returncode": 0,
+      "log_sha256": "ea1d70795188bf586ecedb447a6a7d3b4a970bb26d21a7c1992d89e30e10bfde",
+      "source_changed": false,
+      "journal": "source21-linked-arm-division-9d7d47f69d35.json",
+      "journal_sha256": "d135d6209cd83f892398f3f287f6f61be302a0c60df98ff2668cbfe0a696b9c5",
+      "log": "source21-linked-arm-division-9d7d47f69d35.log",
+      "seconds": 1.279162,
+      "command_summary": "python3 tests/arm_division_regression.py build/ndless/nSpire2.elf"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:08:00.214538+00:00",
+      "ended_at": "2026-10-21T09:08:01.400384+00:00",
+      "returncode": 0,
+      "log_sha256": "5f44f2bcf984a63d56e8e686d277b2fae01bcf974947ac38784f4c498b578308",
+      "source_changed": false,
+      "journal": "source21-linked-arm-lzma2-4833c26de4ae.json",
+      "journal_sha256": "0d67b6b766f4097da05ed945e1b73cb011fc464fe93b85428c676b15370a66f8",
+      "log": "source21-linked-arm-lzma2-4833c26de4ae.log",
+      "seconds": 1.185846,
+      "command_summary": "python3 tests/arm_lzma2_regression.py build/ndless/nSpire2.elf"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:18.275247+00:00",
+      "ended_at": "2026-10-21T09:10:29.566417+00:00",
+      "returncode": 0,
+      "log_sha256": "0daa02a1778fb6235e4f4e7f2f510eacc90452490eadc45fceb23821eb79157f",
+      "source_changed": false,
+      "journal": "source21-map-act-intro-actual-ea7651089320.json",
+      "journal_sha256": "13ab896a498e5b0af4456df7dfe9c55b5927ec690e53fd7a9efc927778a45023",
+      "log": "source21-map-act-intro-actual-ea7651089320.log",
+      "seconds": 11.29117,
+      "command_summary": "world_map_act_intro_ui_regression <private-v15-pack> <private-capture-output>"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:05:24.484649+00:00",
+      "ended_at": "2026-10-21T09:09:47.345879+00:00",
+      "returncode": 0,
+      "log_sha256": "dde8d38955fc3ebf5eda1da5d6082b77d396058a898436e5a24bf726f7349e51",
+      "source_changed": false,
+      "journal": "source21-native-all-build-edfa62c8dc45.json",
+      "journal_sha256": "e4b59668990e17d58b048d127eab344d04474a30afd1ff675f0c4c969b130585",
+      "log": "source21-native-all-build-edfa62c8dc45.log",
+      "seconds": 262.86123,
+      "command_summary": "cmake --build build/native -j2; all 147 build steps"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:04:54.377951+00:00",
+      "ended_at": "2026-10-21T09:04:57.123059+00:00",
+      "returncode": 0,
+      "log_sha256": "ce69a1ffe50a6412b69288d75773b776a53fbeb97b73b3c223fff1aa3055f3b0",
+      "source_changed": false,
+      "journal": "source21-native-configure-f5a6a3f7c983.json",
+      "journal_sha256": "8ec99496d5b8fa6f63bb389e9aa57cba39f7e7d96c2d250ac25d227223acf18e",
+      "log": "source21-native-configure-f5a6a3f7c983.log",
+      "seconds": 2.745108,
+      "command_summary": "Configure build/native: GCC 13 Debug, -O1 -g, AddressSanitizer and UndefinedBehaviorSanitizer, non-PIE"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:02.229089+00:00",
+      "ended_at": "2026-10-21T09:10:10.339814+00:00",
+      "returncode": 0,
+      "log_sha256": "cc5c6decff045631e5ae34b4bbec1e948f1681ef4e94034fed231231248a2520",
+      "source_changed": false,
+      "journal": "source21-open-v14-first-45f47f155dc6.json",
+      "journal_sha256": "f4e1b377a81fa2954be8dbc21a3efc6434b99f7747ad59d639f532fcac2d264e",
+      "log": "source21-open-v14-first-45f47f155dc6.log",
+      "seconds": 8.110725,
+      "command_summary": "resource_open_benchmark <private-v14-pack> 3535 3535; fresh Content/process followed by an immediate repeated image access"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:12.869410+00:00",
+      "ended_at": "2026-10-21T09:10:17.201375+00:00",
+      "returncode": 0,
+      "log_sha256": "de4f1ce095387ceda8bf7886887bb017c7569ea45c8eb53f5b5347b79c11a6aa",
+      "source_changed": false,
+      "journal": "source21-open-v14-max-area-461e9f2d48d2.json",
+      "journal_sha256": "eb17c899a74fc75f9ce728ce84693314838c7017209aab0e52382911d18c5951",
+      "log": "source21-open-v14-max-area-461e9f2d48d2.log",
+      "seconds": 4.331965,
+      "command_summary": "resource_open_benchmark <private-v14-pack> 6040 6040; fresh Content/process followed by an immediate repeated image access"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:19.420885+00:00",
+      "ended_at": "2026-10-21T09:10:25.171763+00:00",
+      "returncode": 0,
+      "log_sha256": "bc6f20395e10564e287efcd64e7f033ac5368cf33b7381b11cd81ed25134d12c",
+      "source_changed": false,
+      "journal": "source21-open-v14-max-cold-groups-fdd306436ebf.json",
+      "journal_sha256": "460c3d0863c1505fc3a66fb4bccea3a49a011a0d870de2b24c9c61966367c74f",
+      "log": "source21-open-v14-max-cold-groups-fdd306436ebf.log",
+      "seconds": 5.750878,
+      "command_summary": "resource_open_benchmark <private-v14-pack> 22964 22964; fresh Content/process followed by an immediate repeated image access"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:09:59.678818+00:00",
+      "ended_at": "2026-10-21T09:10:01.980054+00:00",
+      "returncode": 0,
+      "log_sha256": "7e6cf5fdfbbef3e46eb3d99e7773f49ec3bbbab1496ee862dd9718a7b0ebc973",
+      "source_changed": false,
+      "journal": "source21-open-v15-first-155ec6775611.json",
+      "journal_sha256": "906b984a68d30fee0719aacfd139bc4496128c52a4b8d79e7d1cdeb65abd3751",
+      "log": "source21-open-v15-first-155ec6775611.log",
+      "seconds": 2.301236,
+      "command_summary": "resource_open_benchmark <private-v15-pack> 3535 3535; fresh Content/process followed by an immediate repeated image access"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:10.535857+00:00",
+      "ended_at": "2026-10-21T09:10:12.597573+00:00",
+      "returncode": 0,
+      "log_sha256": "923db6b1ac0fddd9e1119e1e7effedce6f00ce90977baf32df0b192381c71e92",
+      "source_changed": false,
+      "journal": "source21-open-v15-max-area-c52248c051ae.json",
+      "journal_sha256": "4b54bc7974d8be6e16063e52190bddd434758924ce6f63af136b8fb0639c073a",
+      "log": "source21-open-v15-max-area-c52248c051ae.log",
+      "seconds": 2.061716,
+      "command_summary": "resource_open_benchmark <private-v15-pack> 6040 6040; fresh Content/process followed by an immediate repeated image access"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:17.454365+00:00",
+      "ended_at": "2026-10-21T09:10:19.201884+00:00",
+      "returncode": 0,
+      "log_sha256": "382dbf94dca3d798d4817d93291cc5720da4c6b52755b9cb0b4bca5a78172ce4",
+      "source_changed": false,
+      "journal": "source21-open-v15-max-cold-groups-f0d7af34c017.json",
+      "journal_sha256": "c89bd08ca310e5bd743bd3d68d4a5afa56639ac9069d78d34bf85664fe14a612",
+      "log": "source21-open-v15-max-cold-groups-f0d7af34c017.log",
+      "seconds": 1.747519,
+      "command_summary": "resource_open_benchmark <private-v15-pack> 22964 22964; fresh Content/process followed by an immediate repeated image access"
+    },
+    {
+      "status": "failed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:07:27.324905+00:00",
+      "ended_at": "2026-10-21T09:07:28.467295+00:00",
+      "returncode": 1,
+      "log_sha256": "00b6a705b881bb96c493bd0e253bb7a7d350f6fb8ff922adec7a7c78752b0b9d",
+      "source_changed": false,
+      "journal": "source21-release-clang-configure-8a40f482e5da.json",
+      "journal_sha256": "c38bbcbdd46145cd8a2de934bb672545c4628e6d46d7c9e79e09651d8cec0913",
+      "log": "source21-release-clang-configure-8a40f482e5da.log",
+      "seconds": 1.14239,
+      "command_summary": "Configure build/release-clang: Clang 18.1.3, -O2 -DNDEBUG; initial C compiler path was missing"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:08:12.941040+00:00",
+      "ended_at": "2026-10-21T09:08:13.774599+00:00",
+      "returncode": 0,
+      "log_sha256": "67ed85c6eae49da17127a3af872bca24272a602b67ecb4fb40caafec3bc0d68e",
+      "source_changed": false,
+      "journal": "source21-release-clang-configure-fixed-290342835bf9.json",
+      "journal_sha256": "793fa37754945bff7f51667c3fe195d8c1f9324a0d681289646d359629b9b4d2",
+      "log": "source21-release-clang-configure-fixed-290342835bf9.log",
+      "seconds": 0.833559,
+      "command_summary": "Configure build/release-clang: corrected existing Clang 18.1.3 C compiler, -O2 -DNDEBUG"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:08:33.668008+00:00",
+      "ended_at": "2026-10-21T09:09:14.051668+00:00",
+      "returncode": 0,
+      "log_sha256": "09d9c2f0b2863dc83373bb5de2404ab3eaf7752dd0b38ec0ddcde3754836c620",
+      "source_changed": false,
+      "journal": "source21-release-clang-targets-056978261b04.json",
+      "journal_sha256": "1dc499d1158bd291ae55e9a7d8b2474ca6bae12fea5a9ad9a10a501912da54dd",
+      "log": "source21-release-clang-targets-056978261b04.log",
+      "seconds": 40.38366,
+      "command_summary": "cmake --build build/release-clang -j2 --target resource_content_regression resource_open_benchmark world_backend_driver world_map_act_intro_ui_regression"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:04:54.371956+00:00",
+      "ended_at": "2026-10-21T09:04:55.412621+00:00",
+      "returncode": 0,
+      "log_sha256": "e1afec3c89508288572d39adcea325b7f7d90bef68ba70608d5379f952adc68d",
+      "source_changed": false,
+      "journal": "source21-release-configure-3fdefe468349.json",
+      "journal_sha256": "358c5fb58f34a1b4757e1e0aaa43185a512f1e6192db12d349367f1926bbcd34",
+      "log": "source21-release-configure-3fdefe468349.log",
+      "seconds": 1.040665,
+      "command_summary": "Configure build/release: GCC 13, Release -O2 -DNDEBUG, no sanitizers"
+    },
+    {
+      "status": "failed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:05:24.918902+00:00",
+      "ended_at": "2026-10-21T09:05:58.999666+00:00",
+      "returncode": 1,
+      "log_sha256": "660054e8906acb245704bc9f6449f9b452120fa0ffe6d19ff372e501dcf08a40",
+      "source_changed": false,
+      "journal": "source21-release-targets-af24d4dbac69.json",
+      "journal_sha256": "778608a626adc9fe9866b31307ec98d1b20ff1964df15a42e9300a801c0d0b66",
+      "log": "source21-release-targets-af24d4dbac69.log",
+      "seconds": 34.080764,
+      "command_summary": "Build the four Release resource/backend targets with GCC 13; retained failed attempt"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:45.591164+00:00",
+      "ended_at": "2026-10-21T09:36:36.642077+00:00",
+      "returncode": 0,
+      "log_sha256": "05ef0a5813a740056b4859524c2a33352fd6b2ba7ac576982ecead6ff3c5662d",
+      "source_changed": false,
+      "journal": "source21-resource-content-three-way-68489e2584eb.json",
+      "journal_sha256": "dc9169610ffc9bf3095049f0396a2b646695aa5bf671754d7b8fd45d9ffa0227",
+      "log": "source21-resource-content-three-way-68489e2584eb.log",
+      "seconds": 1551.050913,
+      "command_summary": "resource_content_regression <private-v15-pack> <private-v14-reference-pack>; two sequential complete image passes and catalog/UI/failure checks"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:05:24.753434+00:00",
+      "ended_at": "2026-10-21T09:06:40.676536+00:00",
+      "returncode": 0,
+      "log_sha256": "19ce03749eee967bd2bb7e42d076b2ba9b22175908760c4b400e2c2800f8247e",
+      "source_changed": false,
+      "journal": "source21-wasm-bfc63231ba80.json",
+      "journal_sha256": "0a941ff12bfd0ef333caefcf28cbf1fcfff38d7827528257ef0ddabcf5d36a87",
+      "log": "source21-wasm-bfc63231ba80.log",
+      "seconds": 75.923102,
+      "command_summary": "python3 tools/build_web.py --compile-only with the configured WASM toolchain"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:10:18.228576+00:00",
+      "ended_at": "2026-10-21T09:11:24.288800+00:00",
+      "returncode": 0,
+      "log_sha256": "6acce8240a7c35a6325aa03b2933afc86baf02312a423f022951fb5295a39954",
+      "source_changed": false,
+      "journal": "source21-world-23-native-d2cc5e89c015.json",
+      "journal_sha256": "f2618539bd38e3965245ed4688a9b73ca9b30baf9a198701e7b9fdac9d372789",
+      "log": "source21-world-23-native-d2cc5e89c015.log",
+      "seconds": 66.060224,
+      "command_summary": "world_backend_driver <private-v15-pack> <private-fixture-output>; generate the 23 native scenarios"
+    },
+    {
+      "status": "passed",
+      "checkpoint": "d5738010f2d7ebc6139a2fa181ff87820d344bbb",
+      "source_sha256": "10b99c0cd8f61dd46cbf1f0a9b4adff9d0cdf604e291e17bc630d38bb92d6c8c",
+      "started_at": "2026-10-21T09:11:40.991736+00:00",
+      "ended_at": "2026-10-21T09:12:50.597544+00:00",
+      "returncode": 0,
+      "log_sha256": "3882477cb6d8dd984d6570bfb4497dab0793817fb92b0bccf50d3f84eb5761a2",
+      "source_changed": false,
+      "journal": "source21-world-23-wasm-2d1503108539.json",
+      "journal_sha256": "b017086b06d74bf1f42bf493dd6c5c232321b4d782469dd5356a30456188a3a7",
+      "log": "source21-world-23-wasm-2d1503108539.log",
+      "seconds": 69.605808,
+      "command_summary": "node tools/check_room_backends.js build/web/nSpire2.wasm <private-v15-pack> <private-fixture-output>"
+    }
+  ],
+  "limits": [
+    "Only the ten named registered suites were rerun here; no claim of rerunning all 56 registered suites.",
+    "The complete image/catalog oracle compares two NSP2/15 native backends against the unchanged NSP2/14 resource reference. It is not an original-PC gameplay or pixel differential.",
+    "The 23 native/WASM scenarios cover 480 frame buffers and 30 save payloads through the storage adapter. Browser DOM, persistent localStorage and every standalone catalog image in WASM were not tested here.",
+    "Compiled ARM output, allocation and linked instruction tests do not establish Firebird execution, physical-device frame rate or peak RAM.",
+    "Host opening and image timings include uncontrolled OS caching and concurrent load. The measured clip967 cache/decode risk remains open in this source21 receipt.",
+    "Original UI 95% fidelity is not established; label-clock phases, dynamic layers and temporal sampling require separate acceptance.",
+    "No original PCK, assembly, font, derived pack, captured frame or embedded-content HTML is included in this public JSON."
+  ]
+}
