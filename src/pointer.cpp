@@ -116,7 +116,7 @@ void App::pointer_scroll(int rows){
 }
 void App::pointer_button(bool down){
     UiCoreObserver observer(*this);
-    struct ReticleSync {App&a;~ReticleSync(){a.sync_map_reticles();}} reticle_sync{*this};
+    struct ReticleSync {App&a;~ReticleSync(){a.sync_map_window();a.sync_map_reticles();}} reticle_sync{*this};
     map_directional=false;sync_map_reticles();
     if(map_transition_blocks_pointer()){pointer_cancel();return;}
     // Input can arrive between timed frames. Hit geometry is rebuilt from the
@@ -180,7 +180,7 @@ void App::pointer_button(bool down){
     case HitKind::DetailClose:detail_card=-1;break;
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
     case HitKind::WorldNode:
-        if(!map_legend&&!panel&&game.phase==Phase::Map)begin_map_travel(unsigned(hit.value));break;
+        if(!map_legend&&map_routes_active())begin_map_travel(unsigned(hit.value));break;
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
     case HitKind::CrystalCell:

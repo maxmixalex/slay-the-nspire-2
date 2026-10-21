@@ -237,6 +237,10 @@ void original_event_resume(State&s){auto&e=s.original_events;
  }
  if(e.step_cursor==e.step_count&&!e.combat_pending&&e.selection==OriginalEventSelection::None&&!world_relic_pending(s)){
   for(auto&step:e.steps)step={};e.step_count=e.step_cursor=0;
+  // An ancient can replace the map. Its finished page already enables the
+  // top-bar route chooser, before the separate Proceed button is pressed.
+  if(e.finished&&s.world.active&&s.world.current_point==s.world.maps[s.world.act_index].root)
+   world_refresh_map_modifiers(s);
  }
 }
 unsigned original_event_eligible(const State&s,uint16_t*out,unsigned capacity){const auto&e=s.original_events;unsigned n=0;
@@ -301,6 +305,7 @@ bool original_event_reroll_reward(State&s){if(!original_event_can_reroll_reward(
 }
 bool original_event_leave(State&s){auto&e=s.original_events;
  if(!e.active||!e.finished||e.combat_pending||e.selection!=OriginalEventSelection::None||e.step_cursor<e.step_count||world_relic_pending(s)||s.phase!=Phase::Event)return false;
+ if(s.world.active)return world_finish_room(s);
  e.active=0;finish_room(s);++s.revision;return true;
 }
 void original_event_after_combat(State&s,bool won){auto&e=s.original_events;

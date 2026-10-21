@@ -1,15 +1,15 @@
 // Original map travel is asynchronous presentation followed by exactly one
 // controller operation. No pending destination or UI clock enters State/save.
 static bool map_travel_scene(const App&a){
-    return a.game.world.active&&a.game.phase==Phase::Map&&!a.title&&!a.paused&&
-        !a.help&&!a.library&&!a.character_select&&!a.map_preview.open&&!a.panel&&
+    return a.map_routes_active()&&!a.title&&!a.paused&&
+        !a.help&&!a.library&&!a.character_select&&!a.map_preview.open&&
         !a.map_legend&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&
         a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;
 }
 static bool map_travel_run(const App&a){
     // Original RoomFadeOut leaves the top bar's pointer controls enabled.
     // Opening a deck, pause or settings overlay does not leave this run.
-    return a.game.world.active&&a.game.phase==Phase::Map&&!a.title&&!a.quit&&
+    return world_can_travel(a.game)&&!a.title&&!a.quit&&
         !a.character_select&&!a.map_preview.open;
 }
 bool App::begin_map_travel(unsigned point){

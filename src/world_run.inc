@@ -78,7 +78,7 @@ static void world_reset_unknown_odds(State&s){
 }
 static bool world_enter_act(State&s,unsigned act){
     if(act>=WorldActCount||!s.world.rooms[act].ready)return world_fail(s);
-    auto&w=s.world;w.act_index=uint8_t(act);w.current_point=NoPoint;w.room_open=0;w.point_had_shop=0;
+    auto&w=s.world;w.act_index=uint8_t(act);w.current_point=NoPoint;w.room_open=0;w.point_had_shop=0;w.finish_pending=0;
     w.map_column=3;w.map_row=0;world_reset_unknown_odds(s);
     reference::ActSettings settings;settings.act=reference::ActKind(w.rooms[act].region);
     settings.increased_elites=w.ascension>=1;settings.second_boss=w.rooms[act].boss_count==2;
@@ -132,9 +132,34 @@ bool world_begin_run(State&s,reference::ActKind first_region,unsigned ascension)
 }
 const char* world_region_key(const State&s){return s.world.active&&s.world.act_index<WorldActCount&&s.world.rooms[s.world.act_index].region<4?WorldRegionPools[s.world.rooms[s.world.act_index].region].key:"";}
 bool world_room_is_combat(const State&s){return s.world.active&&s.world.room_type>=uint8_t(WorldRoom::Monster)&&s.world.room_type<=uint8_t(WorldRoom::Boss);}
+bool world_can_travel(const State&s){
+    const auto&w=s.world;
+    if(!w.active||w.finished||w.final_event||s.hp<=0||w.finish_pending||w.rest_pending||
+       w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255||world_relic_pending(s))return false;
+    if(s.phase==Phase::Map)return !w.room_open;
+    if(!w.room_open||w.room_open>2)return false;
+    // NMapScreen's travel permission is enabled by the room, not by the
+    // Proceed button. Top-bar map travel therefore works before that button
+    // is pressed in an already eligible merchant/treasure/reward room.
+    switch(s.phase){
+    case Phase::Shop:return w.room_type==uint8_t(WorldRoom::Shop)&&!s.original_events.active;
+    case Phase::Treasure:return w.room_type==uint8_t(WorldRoom::Treasure)&&!s.original_events.active&&
+        (w.room_open==2||s.treasure_state==2||(s.treasure_state==1&&w.treasure_relic==NoWorldRelic));
+    case Phase::Camp:return w.room_type==uint8_t(WorldRoom::Rest)&&!s.original_events.active&&
+        (w.room_open==2||world_rest_can_proceed(s));
+    case Phase::Reward:return !s.original_events.active&&!w.event_combat_parent;
+    case Phase::Event:{
+        const auto&e=s.original_events;
+        return w.room_type==uint8_t(WorldRoom::Event)&&!w.event_combat_parent&&
+            (!e.active||(e.finished&&!e.combat_pending&&e.selection==OriginalEventSelection::None&&
+                e.step_cursor==e.step_count&&!e.reward_active));
+    }
+    default:return false;
+    }
+}
 bool world_reachable(const State&s,unsigned point){
     const auto*map=world_current_map(s);const auto&w=s.world;
-    if(!map||s.phase!=Phase::Map||w.room_open||w.finished||w.final_event||point>=map->count||!map->points[point].active||w.visited[w.act_index][point])return false;
+    if(!map||!world_can_travel(s)||point>=map->count||!map->points[point].active||w.visited[w.act_index][point])return false;
     if(w.current_point>=map->count)return point==map->root;
     if(map->points[w.current_point].children.contains(uint8_t(point)))return true;
     return world_free_travel(s)&&map->points[point].row==map->points[w.current_point].row+1;
@@ -149,7 +174,11 @@ bool world_choose_column(State&s,int col){
 }
 bool world_choose_point(State&s,unsigned point){
     if(!world_reachable(s,point))return false;
-    auto&w=s.world;const auto&p=w.maps[w.act_index].points[point];
+    auto&w=s.world;
+    // Opening/closing the UI never exits a room. A direct top-bar selection
+    // performs the same one-time completion as Proceed, at this boundary.
+    if(w.room_open==1&&!world_finish_room(s))return false;
+    const auto&p=w.maps[w.act_index].points[point];
     WorldRoom room=WorldRoom::None;
     switch(p.type){
     case PointType::Monster:room=WorldRoom::Monster;break;case PointType::Elite:room=WorldRoom::Elite;break;
@@ -160,6 +189,10 @@ bool world_choose_point(State&s,unsigned point){
     if(p.type==PointType::Unknown)room=world_roll_unknown(s,point);
     if(room==WorldRoom::None)return world_fail(s);
     if(w.current_point<w.maps[w.act_index].count&&!w.maps[w.act_index].points[w.current_point].children.contains(uint8_t(point)))world_use_free_travel(s);
+    // Retain all old room offers until now, including unopened chest relics,
+    // optional rest actions and finished event text. No UI-only action can
+    // clear these or replay their acquisition hooks.
+    s.original_events.active=0;w.finish_pending=0;s.necro.grimoire_pending=0;
     w.current_point=uint8_t(point);w.map_column=p.col;w.map_row=p.row;w.room_type=uint8_t(room);w.room_open=1;w.point_had_shop=room==WorldRoom::Shop;
     w.visited[w.act_index][point]=1;w.visited_rooms[w.act_index][point]=uint8_t(room);
     ++w.total_floor;s.floor=uint8_t(w.total_floor);s.treasure_state=0;s.treasure_relic=0;
@@ -236,22 +269,28 @@ bool world_finish_room(State&s){
         original_event_after_combat(s,true);
         if(s.original_events.active||s.phase==Phase::Dead||s.phase==Phase::Error)return s.phase!=Phase::Error;
     }
-    if(s.original_events.active)return false;
+    if(s.original_events.active&&(!s.original_events.finished||s.original_events.combat_pending||
+       s.original_events.selection!=OriginalEventSelection::None||s.original_events.step_cursor<s.original_events.step_count))return false;
     const auto*map=world_current_map(s);
     if(!map||!w.room_open||w.current_point>=map->count)return false;
     if(w.current_point==map->root&&!world_refresh_map_modifiers(s))return false;
-    s.treasure_state=0;s.treasure_relic=0;w.treasure_relic=NoWorldRelic;w.treasure_gold=0;w.treasure_gold_claimed=0;
-    s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;s.necro.grimoire_pending=0;
-    w.room_open=0;
-    if(w.final_event){w.finished=1;s.phase=Phase::Complete;original_event_finish_run(s);++s.revision;return true;}
+    if(w.room_open==2)return true;
+    if(w.final_event){w.room_open=0;s.original_events.active=0;w.finished=1;s.phase=Phase::Complete;original_event_finish_run(s);++s.revision;return true;}
     ++w.rooms_completed;
     const unsigned end=map->second_boss!=NoPoint?map->second_boss:map->boss;
     if(w.current_point==end){
+        w.room_open=0;s.original_events.active=0;
+        s.treasure_state=0;s.treasure_relic=0;w.treasure_relic=NoWorldRelic;w.treasure_gold=0;w.treasure_gold_claimed=0;
+        s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;s.necro.grimoire_pending=0;
         if(w.act_index+1<WorldActCount)return world_enter_act(s,w.act_index+1);
         w.final_event=1;w.room_open=1;w.room_type=uint8_t(WorldRoom::Event);s.phase=Phase::Event;
         // Architect is another room at the final map coordinate, not a floor.
         if(!world_enter_event(s,OriginalEventId::TheArchitect))return false;
-    }else{s.phase=Phase::Map;w.room_type=uint8_t(WorldRoom::Map);}
+    }else{
+        // Complete the room once while retaining its real phase, contents and
+        // callbacks. Proceed only asks the frontend to open its map window.
+        w.room_open=2;
+    }
     ++s.revision;return true;
 }
 void world_resume_room(State&s){

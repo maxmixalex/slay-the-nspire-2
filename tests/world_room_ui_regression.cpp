@@ -142,7 +142,7 @@ static void begin_room(WorldRoom room,reference::ActKind region=reference::ActKi
  for(unsigned guard=0;guard<120;guard++){
   if(a.game.world.room_open&&a.game.world.room_type==unsigned(room)&&a.game.world.act_index==act){present();CHECK(validate(a.game));return;}
   CHECK(a.game.phase!=Phase::Dead&&a.game.phase!=Phase::Complete&&a.game.phase!=Phase::Error);
-  if(a.game.phase==Phase::Map){uint8_t ids[reference::Columns];unsigned n=world_available_points(a.game,ids,reference::Columns);CHECK(n);CHECK(world_choose_point(a.game,ids[0]));}
+  if(world_can_travel(a.game)){uint8_t ids[reference::Columns];unsigned n=world_available_points(a.game,ids,reference::Columns);CHECK(n);CHECK(world_choose_point(a.game,ids[0]));}
   else finish_routing_fixture();
  }
  CHECK(false);
@@ -167,7 +167,7 @@ static void ordinary_rest(){
  CHECK(a.game.phase==Phase::Camp&&a.game.hp>heal_before&&a.game.world.room_open&&world_rest_can_proceed(a.game));CHECK(!a.camp_options(nullptr,0));a.render();CHECK(!choices()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
  if(!actual_profile)CHECK(scene_pixel()!=lit);rest_scene_pixel("OVERGROWTH_DARK");capture("rest-overgrowth-completed");blocked_actions(UiAction::LeaveCamp);
  snapshot();CHECK(a.save_current_run());a.advance(250);CHECK(a.load_saved_run());CHECK(a.game.phase==Phase::Camp&&!a.camp_options(nullptr,0));a.render();unchanged();
- const int hp=a.game.hp;const unsigned rooms=a.game.world.rooms_completed;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Map&&!a.game.world.room_open&&a.game.hp==hp&&a.game.world.rooms_completed==rooms+1);snapshot();a.ui_action(UiAction::LeaveCamp);unchanged();
+ const int hp=a.game.hp;const unsigned rooms=a.game.world.rooms_completed;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Camp&&a.game.world.room_open==2&&a.map_window.is_open&&a.game.hp==hp&&a.game.world.rooms_completed==rooms+1);snapshot();a.ui_action(UiAction::LeaveCamp);unchanged();
 }
 static void rest_actor_layers(){
  begin_room(WorldRoom::Rest,reference::ActKind::Overgrowth,0,nullptr,0,Character::Defect);
@@ -216,15 +216,21 @@ static void paged_tent(){
  while(a.game.deck_count>1)CHECK(event_remove_deck_card(a.game,a.game.deck_count-1));a.game.deck[0].upgraded=1;
  CHECK(!world_rest_option_enabled(a.game,1)&&!world_rest_option_enabled(a.game,5));a.cursor=5;a.render();CHECK(choices()==1&&!hit(HitKind::Choice,5).enabled);snapshot();click(HitKind::Choice,5);a.input(Key::Confirm);unchanged();
  click(UiAction::PreviousCampPage);a.cursor=1;a.render();CHECK(!hit(HitKind::Choice,1).enabled);snapshot();click(HitKind::Choice,1);a.input(Key::Confirm);unchanged();capture("rest-disabled-smith");
- click(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Map&&!a.game.world.room_open);snapshot();
+ click(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Camp&&a.game.world.room_open==2&&a.map_window.is_open);snapshot();
 }
 static void closed_chest(){
- begin_room(WorldRoom::Treasure);CHECK(!a.game.treasure_state&&a.game.world.treasure_relic!=NoWorldRelic);a.render();CHECK(exists(HitKind::UiAction,int(UiAction::TreasureOpen))&&exists(HitKind::UiAction,int(UiAction::TreasureLeave)));blocked_actions(UiAction::TreasureLeave);
- snapshot();a.input(Key::Right);CHECK(a.cursor==1);a.render();unchanged();const int gold=a.game.gold;const unsigned relics=a.game.world_relics.count;
- reference::Random streams[WorldRngCount];for(unsigned i=0;i<WorldRngCount;i++)streams[i]=a.game.world.rng[i];capture("treasure-unopened");a.input(Key::Confirm);
- CHECK(a.game.phase==Phase::Map&&!a.game.world.room_open&&a.game.gold==gold&&a.game.world_relics.count==relics&&!a.treasure_presentation);
- for(unsigned i=0;i<WorldRngCount;i++){CHECK(streams[i].calls==a.game.world.rng[i].calls&&streams[i].good==a.game.world.rng[i].good);for(unsigned j=0;j<4;j++)CHECK(streams[i].words[j]==a.game.world.rng[i].words[j]);}snapshot();a.ui_action(UiAction::TreasureOpen);a.ui_action(UiAction::TreasureTake);unchanged();
+ begin_room(WorldRoom::Treasure);CHECK(!a.game.treasure_state&&a.game.world.treasure_relic!=NoWorldRelic);a.render();
+ CHECK(exists(HitKind::UiAction,int(UiAction::TreasureOpen))&&!a.treasure_can_proceed()&&!world_can_travel(a.game));
+ snapshot();a.ui_action(UiAction::TreasureLeave);a.input(Key::EndTurn);unchanged();
+ const int gold=a.game.gold;const unsigned relics=a.game.world_relics.count;
+ capture("treasure-unopened");a.input(Key::Map);a.advance(250);a.advance(200);a.render();
+ CHECK(a.map_window.is_open&&a.panel==3&&!a.map_routes_active());
+ for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::WorldNode||!a.hits[i].enabled);
+ a.input(Key::Confirm);CHECK(!a.map_travel.pending&&a.game.phase==Phase::Treasure);unchanged();
+ a.input(Key::Map);a.advance(250);a.advance(100);CHECK(!a.map_window.visible&&a.game.gold==gold&&a.game.world_relics.count==relics);unchanged();
+ CHECK(!a.game.treasure_state&&a.game.world.room_open==1);a.render();CHECK(exists(HitKind::UiAction,int(UiAction::TreasureOpen)));
 }
+
 static void opening_and_reload(){
  begin_room(WorldRoom::Treasure);const int gold=a.game.gold;const unsigned relics=a.game.world_relics.count;click(UiAction::TreasureOpen);
  const uint32_t presentation_random=a.treasure_random;CHECK(presentation_random&&a.treasure_holder_delay_us>=200000&&a.treasure_holder_delay_us<400000);
@@ -252,7 +258,7 @@ static void opening_and_reload(){
  a.sync_treasure_presentation();cleared_treasure();CHECK(a.treasure_can_proceed());unchanged();
  CHECK(a.save_current_run());a.treasure_presentation=1;a.treasure_open_tick=a.treasure_banner_tick=a.treasure_close_tick=a.animation;a.treasure_chest_from=123;a.treasure_banner_from=456;a.treasure_banner_y=7;
  CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(128,255,255);CHECK(a.treasure_can_proceed()&&a.treasure_pointer_can_take());CHECK(a.treasure_holder_opacity()==255&&a.treasure_holder_brightness()==255&&!a.treasure_holder_offset());CHECK(a.treasure_random==presentation_random);CHECK(scene_pixel()==finished);unchanged();
- const int opened_gold=a.game.gold;a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Map&&a.game.gold==opened_gold&&a.game.world_relics.count==relics);cleared_treasure();snapshot();
+ const int opened_gold=a.game.gold;a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open&&a.game.gold==opened_gold&&a.game.world_relics.count==relics);cleared_treasure();snapshot();
 }
 static uint16_t expected_mix(uint16_t back,uint16_t front,unsigned alpha){
  const unsigned r=((back>>11)*(255-alpha)+(front>>11)*alpha+127)/255;
@@ -334,17 +340,17 @@ static void actual_claim(){
  // Closing only changes opacity: opening -> shine -> final still uses the
  // original open_tick, even after a very early focused keyboard claim.
  advance_to(start+34);const uint16_t last_open=scene_pixel();advance_to(start+35);const uint16_t first_shine=scene_pixel();advance_to(start+50);const uint16_t finished=scene_pixel();
- if(!actual_profile)CHECK(last_open!=first_shine&&first_shine!=finished);CHECK(a.treasure_open_tick==start);unchanged();capture("treasure-claimed");a.input(Key::Confirm);CHECK(a.game.phase==Phase::Map);cleared_treasure();
+ if(!actual_profile)CHECK(last_open!=first_shine&&first_shine!=finished);CHECK(a.treasure_open_tick==start);unchanged();capture("treasure-claimed");a.input(Key::Confirm);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open);
  begin_room(WorldRoom::Treasure);a.game.world.treasure_relic=WorldRelicDollysMirror;click(UiAction::TreasureOpen);advance_to(a.treasure_open_tick+31);const unsigned deck=a.game.deck_count;CHECK(a.treasure_pointer_can_take());click(UiAction::TreasureTake);
  CHECK(a.game.treasure_state==2&&a.game.phase==Phase::WorldRelicChoice&&world_relic_pending(a.game)&&a.treasure_presentation==3);const unsigned close=a.treasure_close_tick;treasure_alpha(128,255,255);snapshot();a.ui_action(UiAction::TreasureLeave);a.ui_action(UiAction::TreasureTake);unchanged();
  advance_to(close+10);CHECK(a.treasure_chest_opacity()==255&&a.treasure_collection_opacity()==0&&a.treasure_banner_opacity()==1);advance_to(close+13);treasure_alpha(255,0,0);CHECK(a.treasure_close_tick==close);unchanged();
- click(HitKind::WorldChoice,0);a.ui_action(UiAction::ConfirmWorldChoice);CHECK(a.game.phase==Phase::Treasure&&a.game.treasure_state==2&&a.game.deck_count==deck+1&&!world_relic_pending(a.game));a.render();CHECK(a.cursor==1&&a.treasure_can_proceed()&&a.treasure_close_tick==close);treasure_alpha(255,0,0);snapshot();a.input(Key::Confirm);CHECK(a.game.phase==Phase::Map);cleared_treasure();
+ click(HitKind::WorldChoice,0);a.ui_action(UiAction::ConfirmWorldChoice);CHECK(a.game.phase==Phase::Treasure&&a.game.treasure_state==2&&a.game.deck_count==deck+1&&!world_relic_pending(a.game));a.render();CHECK(a.cursor==1&&a.treasure_can_proceed()&&a.treasure_close_tick==close);treasure_alpha(255,0,0);snapshot();a.input(Key::Confirm);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open);
 }
 static void restored_claim(){
  begin_room(WorldRoom::Treasure);a.game.world.treasure_relic=WorldRelicVajra;click(UiAction::TreasureOpen);CHECK(a.save_current_run());snapshot();CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(128,255,255);unchanged();
  const uint16_t opened=scene_pixel();click(UiAction::TreasureTake);CHECK(a.treasure_presentation==4&&!a.treasure_open_tick);treasure_alpha(128,255,255);CHECK(scene_pixel()==opened);const unsigned close=a.treasure_close_tick;snapshot();
  advance_to(close+10);CHECK(a.treasure_chest_opacity()==255&&a.treasure_collection_opacity()==0);const uint16_t finished=scene_pixel();advance_to(close+13);treasure_alpha(255,0,0);advance_to(close+35);CHECK(scene_pixel()==finished);unchanged();
- CHECK(a.save_current_run());CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(255,0,0);CHECK(scene_pixel()==finished);unchanged();a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Map);cleared_treasure();
+ CHECK(a.save_current_run());CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(255,0,0);CHECK(scene_pixel()==finished);unchanged();a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open);
 }
 static void empty_chest(){
  const RelicId relics[]={WorldRelicSilverCrucible};begin_room(WorldRoom::Treasure,reference::ActKind::Overgrowth,0,relics,1);CHECK(a.game.world.treasure_relic==NoWorldRelic);
@@ -352,7 +358,7 @@ static void empty_chest(){
  CHECK(a.game.phase==Phase::Treasure&&a.game.treasure_state==1&&a.game.gold==gold&&a.game.world_relics.count==count&&!a.game.world.treasure_gold_claimed&&world_rng(a.game,WorldRng::Rewards).calls==calls);a.render();CHECK(!exists(HitKind::UiAction,int(UiAction::TreasureTake),false)&&a.treasure_can_proceed()&&a.cursor==1);treasure_alpha(255,0,0,10);
  const unsigned start=a.treasure_open_tick;snapshot();a.ui_action(UiAction::TreasureTake);unchanged();advance_to(start+13);treasure_alpha(128,255,255);capture("treasure-empty");advance_to(start+30);CHECK(a.treasure_presentation==2);advance_to(start+31);CHECK(a.treasure_presentation==3&&a.treasure_close_tick==start+31&&a.treasure_open_tick==start);treasure_alpha(128,255,255);
  advance_to(start+40);CHECK(a.treasure_collection_opacity()==3);advance_to(start+41);CHECK(a.treasure_collection_opacity()==0&&a.treasure_chest_opacity()==255);advance_to(start+44);treasure_alpha(255,0,0);unchanged();CHECK(a.treasure_can_proceed());
- CHECK(a.save_current_run());CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(255,0,0);CHECK(a.treasure_random==presentation_random);unchanged();a.input(Key::Confirm);CHECK(a.game.phase==Phase::Map);cleared_treasure();
+ CHECK(a.save_current_run());CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(255,0,0);CHECK(a.treasure_random==presentation_random);unchanged();a.input(Key::Confirm);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open);
 }
 static void treasure_clock_wrap(){
  begin_room(WorldRoom::Treasure);a.animation=0xfffffffbu;a.reset_presentation();click(UiAction::TreasureOpen);const uint32_t start=a.treasure_open_tick;CHECK(start==0xfffffffbu);snapshot();

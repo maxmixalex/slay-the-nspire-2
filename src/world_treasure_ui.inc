@@ -144,7 +144,9 @@ void App::sync_treasure_presentation(){
 }
 bool App::treasure_can_proceed()const{
  if(!native_room_input_available(*this,Phase::Treasure))return false;
- if(game.treasure_state!=1||game.world.treasure_relic==NoWorldRelic||!treasure_presentation)return true;
+ if(!game.treasure_state)return false;
+ if(game.treasure_state==2||!treasure_presentation)return true;
+ if(game.world.treasure_relic==NoWorldRelic)return treasure_presentation>=3;
  // NTreasureRoom enables Skip 2.5 seconds after opening the relic selection.
  // This delay never enters the save or prevents access to its pending choice.
  return treasure_presentation==2&&uint32_t(animation-treasure_open_tick)>=76;
@@ -159,7 +161,7 @@ void App::treasure_action(UiAction action){
   // subsequent deck choice (for example Dolly's Mirror).
   const uint16_t chest=treasure_chest_alpha(*this,animation),banner=treasure_banner_alpha(*this,animation);const int y=treasure_banner_position(*this,animation);
   if(game.treasure_state==1&&game.world.treasure_relic!=NoWorldRelic&&take_treasure(game)){treasure_begin_close(*this,animation,chest,banner,y);cursor=1;choice_selected_count=0;choice_revision=game.revision;pointer_cancel();}
- }else if(action==UiAction::TreasureLeave&&treasure_can_proceed()&&leave_treasure(game))reset_presentation(true);
+ }else if(action==UiAction::TreasureLeave&&treasure_can_proceed()&&leave_treasure(game))proceed_map_window();
 }
 bool App::treasure_input(Key key){
  if(!native_room_input_available(*this,Phase::Treasure))return false;sync_treasure_presentation();

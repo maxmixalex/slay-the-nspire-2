@@ -101,7 +101,7 @@ void App::ui_action(UiAction action){
     case UiAction::CloseShop:
         if(game.phase==Phase::Shop){shop_open=false;cursor=0;}break;
     case UiAction::LeaveShop:
-        if(!shop_open&&game.phase==Phase::Shop){leave_shop(game);reset_presentation(true);}break;
+        if(!shop_open&&game.phase==Phase::Shop&&leave_shop(game))proceed_map_window();break;
     case UiAction::GameOverSummary:
         if(game_over_available()&&!game_over_summary){game_over_summary=true;pointer_cancel();}break;
     case UiAction::GameOverMainMenu:
@@ -157,7 +157,7 @@ void App::ui_action(UiAction action){
     case UiAction::RewardPotion:
         if(game.phase==Phase::Reward&&!claim_reward_potion(game))message("药水栏已满，可先打开药水栏丢弃一瓶");break;
     case UiAction::LeaveRewards:
-        if(game.phase==Phase::Reward){leave_rewards(game);reward_cards=grimoire_select=false;cursor=0;}break;
+        if(game.phase==Phase::Reward){const bool left=leave_rewards(game);reward_cards=grimoire_select=false;cursor=0;if(left)proceed_map_window();}break;
     case UiAction::RewardGrimoire:
         if(!title&&!paused&&!help&&!panel&&game.phase==Phase::Reward&&game.necro.grimoire_pending){grimoire_select=true;reward_cards=false;cursor=0;}break;
     case UiAction::SkipGrimoire:
@@ -194,7 +194,7 @@ void App::ui_action(UiAction action){
         choice_selected_count=0;confirm_world_choice();
         // A terminal combat set's Skip is the room's Proceed action. Nested
         // event/relic sets resume their parent and are never closed here.
-        if(terminal&&game.phase==Phase::Reward&&!world_relic_pending(game)&&ui_reward_actions(game,nullptr)==1){leave_rewards(game);reset_presentation(true);}
+        if(terminal&&game.phase==Phase::Reward&&!world_relic_pending(game)&&ui_reward_actions(game,nullptr)==1&&leave_rewards(game))proceed_map_window();
         break;}
     case UiAction::ClearWorldChoice:choice_selected_count=0;break;
     case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:{
@@ -225,6 +225,7 @@ bool App::screen_input(Key key){
     if(library){
         int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds,columns=library_tab==0?4:6;
         if(key==Key::Back){library=false;return true;}
+        if(key==Key::Map&&game.world.active&&!title&&!paused){library=false;if(!map_window.visible)open_map_window();return true;}
         if(key==Key::Quit){cancel_map_travel();quit=true;return true;}
         if(key==Key::Inspect){library_tab=(library_tab+1)%3;library_page=library_selected=0;return true;}
         if(key==Key::Up)library_selected-=columns;

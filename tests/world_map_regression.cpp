@@ -110,7 +110,7 @@ static void combat_extra_reward_group(){
  require(main_cards==1&&hunt_cards==1&&removals==1&&royalties==1,"main CardReward, Hunt, Grimoire and Royalties all survive the original reward handoff");
  require(!game.silent.extra_rewards&&!game.necro.grimoire_pending,"transferred native rewards cannot also reopen through historical counters");persisted();
  require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Reward,"all optional extras can be skipped together");
- require(leave_rewards(game)&&game.phase==Phase::Map,"closing the complete group returns to the next native map frontier");persisted();
+ require(leave_rewards(game)&&game.phase==Phase::Reward&&world_can_travel(game),"closing the complete group exposes the map without replacing its room");persisted();
 }
 static void visited_room_history(){
  start();require(game.world.visited_rooms[0][game.world.current_point]==unsigned(WorldRoom::Event),"first ancient records its original room type");
@@ -147,8 +147,8 @@ static void room_proceed_boundaries(){
  require(!world_rest_option_visible(game,0)&&!world_rest_option_visible(game,1)&&!world_rest_option_enabled(game,0)&&!world_rest_choose(game,0),"ordinary completion removes every remaining option");persisted();
  require(game.phase==Phase::Camp&&world_rest_can_proceed(game)&&!world_rest_option_visible(game,1),"ordinary completed rest resumes with Proceed and its removed options intact");
  const unsigned rooms_before=game.world.rooms_completed;
- require(world_rest_proceed(game)&&game.phase==Phase::Map&&!game.world.room_open&&game.world.rooms_completed==rooms_before+1,"ordinary rest travels exactly once through Proceed");
- require(!world_rest_proceed(game),"completed rest cannot proceed twice");persisted();
+ require(world_rest_proceed(game)&&game.phase==Phase::Camp&&game.world.room_open==2&&game.world.rooms_completed==rooms_before+1&&world_can_travel(game),"ordinary Proceed retains the completed rest room and enables its route");
+ require(world_rest_proceed(game)&&game.world.rooms_completed==rooms_before+1,"reopening the map cannot complete the same rest room twice");persisted();
 
  // AfterRest can pause in a real reward group. That group must complete before
  // the room removes its options, and Proceed must not repeat its heal or RNG.
@@ -160,23 +160,25 @@ static void room_proceed_boundaries(){
  require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Camp&&!game.world.rest_pending&&!world_relic_pending(game),"finishing a rest reward resumes its original Camp continuation");
  require(world_rest_can_proceed(game)&&!world_rest_option_visible(game,0)&&!world_rest_option_visible(game,1),"awaited ordinary rest clears its options before exposing Proceed");persisted();
  const int healed_hp=game.hp;const unsigned reward_calls=world_rng(game,WorldRng::Rewards).calls;
- require(world_rest_proceed(game)&&game.phase==Phase::Map&&game.hp==healed_hp&&world_rng(game,WorldRng::Rewards).calls==reward_calls,"Proceed does not repeat the completed heal or card reward draw");persisted();
+ require(world_rest_proceed(game)&&game.phase==Phase::Camp&&world_can_travel(game)&&game.hp==healed_hp&&world_rng(game,WorldRng::Rewards).calls==reward_calls,"Proceed does not repeat the completed heal or card reward draw");persisted();
 
  // Reach an actual map-generated treasure room. Its relic has already been
- // prepared on room entry, but an unopened chest may be left without any of
- // the chest's gold, relic-acquisition callbacks or opening RNG being run.
+ // prepared on room entry. Its unopened state cannot be skipped or selected
+ // as a departure by looking at the map; opening is a separate real action.
  start();finish_routing_fixture();
  for(unsigned guard=0;guard<20&&game.phase!=Phase::Treasure;++guard){choose_first();if(game.phase!=Phase::Treasure)finish_routing_fixture();}
  require(game.phase==Phase::Treasure&&game.world.room_open&&!game.treasure_state&&game.world.treasure_relic!=NoWorldRelic,"original map enters a closed chest with its prepared relic");persisted();
  const int gold=game.gold;const unsigned relics=game.world_relics.count;
  reference::Random streams[WorldRngCount];for(unsigned i=0;i<WorldRngCount;++i)streams[i]=game.world.rng[i];
- require(leave_treasure(game)&&game.phase==Phase::Map&&!game.world.room_open,"native unopened treasure accepts Proceed");
- require(game.gold==gold&&game.world_relics.count==relics&&!game.world.treasure_gold_claimed,"leaving a closed chest gives no opening gold or relic");
+ require(!leave_treasure(game)&&game.phase==Phase::Treasure&&game.world.room_open==1&&!world_can_travel(game),"native unopened treasure rejects premature Proceed and route selection");
+ require(game.gold==gold&&game.world_relics.count==relics&&!game.world.treasure_gold_claimed,"rejected closed-chest travel gives no opening gold or relic");
  for(unsigned i=0;i<WorldRngCount;++i){const auto&before=streams[i];const auto&after=game.world.rng[i];
-  require(before.calls==after.calls&&before.good==after.good,"skipping a closed chest consumes no named RNG draw");
+  require(before.calls==after.calls&&before.good==after.good,"rejected closed-chest travel consumes no named RNG draw");
   for(unsigned j=0;j<4;++j)require(before.words[j]==after.words[j],"closed-chest travel preserves every named generator word");
  }
- require(!leave_treasure(game)&&!open_treasure(game)&&!take_treasure(game),"a skipped chest cannot be opened or claimed after travel");persisted();
+ require(open_treasure(game),"read-only map viewing preserves the closed chest for opening");persisted();
+ const unsigned before_skip=game.world_relics.count;require(leave_treasure(game)&&game.treasure_state==2&&game.world.room_open==2&&world_can_travel(game),"explicit Skip resolves the opened offer while retaining the room");
+ require(game.world_relics.count==before_skip&&!take_treasure(game)&&!open_treasure(game),"returning from the map cannot acquire a declined relic");persisted();
 }
 static void treasure_acquisition_continuation(){
  start();finish_routing_fixture();
@@ -219,7 +221,7 @@ static void treasure_acquisition_continuation(){
  require(game.deck_count==deck+1&&game.deck[deck].kind==selected.kind&&game.deck[deck].upgraded==selected.upgraded&&
          game.world_relics.count==relics+1&&!in_bags(game),"resumed pickup duplicates exactly one card and never reacquires Dolly");persisted();
  require(!take_treasure(game)&&!open_treasure(game),"completed pickup cannot be claimed or opened again");
- require(leave_treasure(game)&&game.phase==Phase::Map&&!game.world.room_open&&!game.treasure_state&&game.world.treasure_relic==NoWorldRelic,"completed pickup leaves through the native room controller and clears the chest");persisted();
+ require(leave_treasure(game)&&game.phase==Phase::Treasure&&game.world.room_open==2&&game.treasure_state==2&&game.world.treasure_relic==WorldRelicDollysMirror&&world_can_travel(game),"completed pickup retains its claimed chest until an actual destination is entered");persisted();
  for(unsigned i=0;i<WorldRngCount;++i){const auto&before=streams[i];const auto&after=game.world.rng[i];
   require(before.calls==after.calls&&before.good==after.good,"Dolly continuation save and resume consume no named RNG draw");
   for(unsigned j=0;j<4;++j)require(before.words[j]==after.words[j],"Dolly continuation preserves every named RNG word");
@@ -239,7 +241,7 @@ int main(){
  game.world.potion_drop_bits=0xbdcccccdU;persisted();
  require(game.world.potion_drop_bits==0xbdcccccdU,"negative potion odds survive saves without clamping");
  finish_routing_fixture();
- require(game.phase==Phase::Map&&game.world.rooms[0].event_cursor==1,"ancient consumes event-room visit cursor");
+ require(game.phase==Phase::Event&&world_can_travel(game)&&game.world.rooms[0].event_cursor==1,"ancient consumes event-room visit cursor while its scene remains present");
  unsigned visited=1,previous_act=0,act_changes=0,bosses=0;
  while(!game.world.final_event&&visited<64){
   unsigned point=choose_first();++visited;const auto& map=game.world.maps[game.world.act_index];
@@ -282,7 +284,7 @@ int main(){
  require(!world_rest_selection_allowed(game,1),"cook refuses a one-card partial operation");
  require(world_relic_select(game,eligible,2),"cook accepts exactly two instances");
  require(game.deck_count==deck-2&&game.max_hp==maxhp+5&&game.phase==Phase::Camp,"cook removes two then gains five maximum HP");
- require(world_rest_proceed(game)&&game.phase==Phase::Map&&!game.world.room_open,"tent can leave through the ordinary room controller after optional actions");persisted();
+ require(world_rest_proceed(game)&&game.phase==Phase::Camp&&game.world.room_open==2&&world_can_travel(game),"tent can open the map while keeping its remaining options");persisted();
 
  // Exercise the shared engine through a real first combat, including its
  // complete first draw, enemy side and native reward handoff. The final damage
@@ -345,7 +347,7 @@ int main(){
  other=game;require(!world_take_card_reward_alternative(game,1)&&!std::memcmp(&game,&other,sizeof game),"already consumed reward cannot be sacrificed twice");persisted();
  require(world_relic_select(game,nullptr,0)&&game.phase==Phase::Reward&&!game.world_relics.group_active[combat_group-1],"proceed closes the entire combat group");
  other=game;require(!claim_reward_gold(game)&&!claim_reward_potion(game)&&!world_claim_reward_relic(game)&&!world_claim_reward_card(game,0)&&!std::memcmp(&game,&other,sizeof game),"transferred main rewards cannot be claimed a second time through historical APIs");
- require(leave_rewards(game)&&game.phase==Phase::Map,"shared reward completion returns through native room controller");persisted();
+ require(leave_rewards(game)&&game.phase==Phase::Reward&&world_can_travel(game),"shared reward completion retains the original reward room under its map");persisted();
 
  // Death prevention is an awaited part of damage, and automatic potion use
  // must keep the original DamageResult separate from the later healing.

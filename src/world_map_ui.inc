@@ -33,8 +33,8 @@ static MapColors map_colors(unsigned region){
     default:return {rgb(40,35,29),rgb(135,114,86),rgb(167,138,103),"OVERGROWTH"};
     }
 }
-static void map_background(Canvas&c,const WorldMapView&view,const MapColors&colors){
-    c.rect(0,22,320,185,colors.paper);const char*parts[]={"_TOP","_MIDDLE","_BOTTOM"};
+static void map_background(Canvas&c,const WorldMapView&view,const MapColors&colors,bool fill_paper=true){
+    if(fill_paper)c.rect(0,22,320,185,colors.paper);const char*parts[]={"_TOP","_MIDDLE","_BOTTOM"};
     // The original 4:3 top offset is relative to the screen center. Adjacent
     // 1080-high layers scroll together at the map's uniform calculator scale.
     for(int i=0;i<3;++i){int y=view.origin-458+i*238;map_picture(c,map_named_picture(c.a.content,"BG_",colors.region,parts[i]),160,y+119,320,238,MapShader::Original,0,0,255,0,22,207);}
@@ -109,8 +109,8 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
         map_picture(c,map_named_picture(c.a.content,"BOSS_",d->key),x,y,static_size,static_size,MapShader::Tint,ink);
     }
 }
-static void map_legend_screen(Canvas&c,const MapColors&colors){
-    auto&a=c.a;const int x=186,y=35;
+static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
+    auto&a=c.a;const int x=186+offset_x,y=35;
     map_picture(c,a.content.world_image("map","LEGEND"),x+66,y+88,132,176,MapShader::Original,0,0,255,0,22,235);
     c.centered("图例",x+9,y+6,106,12,colors.ink);c.text("×",x+110,y+4,12,colors.ink);c.action(x+103,y,27,25,UiAction::ToggleMapLegend);
     for(unsigned i=0;i<6;++i){const int row=y+29+int(i)*23;const auto type=map_legend_type(i);const bool selected=a.map_legend_item==i;
@@ -119,17 +119,32 @@ static void map_legend_screen(Canvas&c,const MapColors&colors){
         c.text(world_point_name(type),x+43,row+2,12,colors.ink,75);c.action(x+9,row-3,114,25,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
     }
 }
-static void world_map_screen(Canvas&c,bool inspect){
+static uint8_t map_window_product(unsigned byte,unsigned q12){
+    return uint8_t((byte*q12+2048)/4096);
+}
+static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*window=nullptr){
+    Canvas c=parent;
+    if(window){
+        c.opacity=map_window_product(c.opacity,window->map.alpha);
+        c.brightness=map_window_product(c.brightness,window->map.rgb);
+    }
     auto&a=c.a;const auto&s=a.game;const auto*m=world_current_map(s);WorldMapLayout layout;
     if(!m||!world_map_layout(s,layout)){c.centered("地图尚未生成",0,105,320,12,Red);return;}
     a.map_visuals.update(s,a.map_clock_ms);
-    const WorldMapView view=world_map_view(s,layout,a.map_scroll);a.map_scroll=view.scroll;
-    const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);map_background(c,view,colors);
+    WorldMapView view=world_map_view(s,layout,a.map_scroll);a.map_scroll=view.scroll;
+    if(window)view.origin+=map_source_offset(window->map_y_q12);
+    const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);
+    // A HUD window uses the authored BG alpha over the retained live room;
+    // the standalone Phase::Map path retains its existing paper fallback.
+    map_background(c,view,colors,window==nullptr);
     map_paths(c,*m,layout,view,colors);
     uint8_t available[reference::Columns];const unsigned available_count=world_available_points(s,available,reference::Columns);
     if(!inspect&&!a.map_legend&&available_count){bool valid=false;for(unsigned i=0;i<available_count;++i)if(m->points[available[i]].col==a.cursor)valid=true;if(!valid)a.cursor=m->points[available[0]].col;}
     unsigned selected=reference::NoPoint,quest=reference::NoPoint;
     if(event_card_spoils_act(s)==s.world.act_index)for(unsigned col=0;col<reference::Columns&&quest==reference::NoPoint;++col)for(unsigned row=0;row<m->config.rows;++row){unsigned id=m->grid[col][row];if(id<m->count&&m->points[id].type==reference::PointType::Treasure){quest=id;break;}}
+    // Points inherit TheMap's modulation, then their own delayed alpha.
+    // Paths and Marker are siblings of Points and do not share that delay.
+    Canvas points=c;if(window)points.opacity=map_window_product(points.opacity,window->points_alpha);
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
         const bool traveling=a.map_visuals.traveling(),target=a.map_visuals.target()==i;
@@ -142,14 +157,14 @@ static void world_map_screen(Canvas&c,bool inspect){
         if(y+visible_half<WorldMapTop||y-visible_half>WorldMapBottom)continue;
         // OnSelected changes the destination to Traveled. Its circle and
         // full icon color identify it while the hover/reticle releases.
-        if(p.type==reference::PointType::Start||p.type==reference::PointType::Boss)map_special_node(c,*m,i,x,y,allowed,focused&&!traveling,colors);
-        else map_normal_node(c,*m,i,x,y,layout.points[i].angle,allowed,focused&&!traveling,colors);
-        if(i==quest)map_picture(c,a.content.world_image("map","QUEST"),x+15,y-13,15,15);
+        if(p.type==reference::PointType::Start||p.type==reference::PointType::Boss)map_special_node(points,*m,i,x,y,allowed,focused&&!traveling,colors);
+        else map_normal_node(points,*m,i,x,y,layout.points[i].angle,allowed,focused&&!traveling,colors);
+        if(i==quest)map_picture(points,a.content.world_image("map","QUEST"),x+15,y-13,15,15);
         // The scene's SelectionReticle follows the complete icon/quest tree.
-        map_reticle(c,i,x,y,p.type==reference::PointType::Boss?374:p.type==reference::PointType::Start?240:84,
+        map_reticle(points,i,x,y,p.type==reference::PointType::Boss?374:p.type==reference::PointType::Start?240:84,
                     reticle_height,p.type==reference::PointType::Boss&&m->config.second_boss);
         if(allowed&&!inspect&&!a.map_legend){const int size=p.type==reference::PointType::Boss?mn(82,2*half):p.type==reference::PointType::Start?48:30;
-            const int top=mx(WorldMapTop,y-size/2),bottom=mn(WorldMapBottom,y+size/2);if(bottom-top>=15)c.hit(x-size/2,top,size,bottom-top,HitKind::WorldNode,int(i));}
+            const int top=mx(WorldMapTop,y-size/2),bottom=mn(WorldMapBottom,y+size/2);if(bottom-top>=15)points.hit(x-size/2,top,size,bottom-top,HitKind::WorldNode,int(i));}
     }
     const auto marker=a.map_visuals.marker(a.map_clock_ms);
     if(marker.point<m->count){const unsigned id=marker.point;const auto&p=m->points[id];
@@ -165,7 +180,33 @@ static void world_map_screen(Canvas&c,bool inspect){
     c.text("↑",304,47,12,colors.ink);c.hit(297,44,23,24,HitKind::Scroll,-1,!a.map_legend&&view.origin<view.maximum);
     c.text("↓",304,182,12,colors.ink);c.hit(297,178,23,27,HitKind::Scroll,1,!a.map_legend&&view.origin>view.minimum);
     c.rect(0,207,320,33,Panel);
-    if(a.map_legend){c.centered("↑↓ 选择图例 · I / Esc 返回路线",0,215,320,10,Gold);map_legend_screen(c,colors);}
+    if(a.map_legend){
+        c.centered("↑↓ 选择图例 · I / Esc 返回路线",0,215,320,10,Gold);
+        // Legend is a sibling of TheMap, not a child of its fade/slide.
+        Canvas legend=parent;int offset=0;
+        if(window){legend.opacity=map_window_product(legend.opacity,window->legend.alpha);
+            legend.brightness=map_window_product(legend.brightness,window->legend.rgb);
+            offset=map_source_offset(window->legend_x_q12);}
+        map_legend_screen(legend,colors,offset);
+    }
     else if(inspect)c.centered("↑↓ 浏览路线 · I 图例 · M / Esc 返回",0,215,320,10,Gold);
     else{c.centered(map_point_title(a,*m,selected),0,207,320,12,Gold);c.centered("←→ 选路 · Enter 进入 · ↑↓ 浏览",0,225,320,10,Muted);}
+}
+
+static void world_map_window_screen(Canvas&c){
+    auto&a=c.a;auto sample=a.map_window.sample(a.map_clock_ms);
+    if(!sample.visible)return;
+    if(a.map_window.closing())sample.map_y_q12=a.map_window_y_q12;
+    const int old_hits=a.hit_count;
+    if(a.map_window.is_open)a.hit_count=0;
+    // Original capstones cover the map but hide its black Backstop. TopBar
+    // is drawn afterwards and remains independent of all these modulations.
+    if(!a.panel||a.panel==3){
+        const unsigned alpha=world_map_window::backstop_coverage(sample.backstop_alpha);
+        if(alpha)for(int y=0;y<ScreenH;++y)for(int x=0;x<ScreenW;++x)c.paint(y*c.pitch+x,0,alpha);
+    }
+    world_map_screen(c,!a.map_routes_active(),&sample);
+    if(a.map_window.is_open&&a.panel==3)c.close_button();
+    // Closed immediately restores room input; only the visual tail remains.
+    if(!a.map_window.is_open)a.hit_count=old_hits;
 }

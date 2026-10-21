@@ -39,6 +39,33 @@ class Components(unittest.TestCase):
             fit='stretch', modulate=[0,0,0,.5]))
         self.assertEqual(result.getpixel((0,0)), (0,0,0,64))
 
+    def test_ancient_rows_keep_original_patch_parameters(self):
+        body = next(row for row in AUXILIARY_ROWS if row['key'] == 'events.ANCIENT_OPTION')
+        outline = next(row for row in AUXILIARY_ROWS if row['key'] == 'events.ANCIENT_OPTION_OUTLINE')
+        self.assertEqual(body['kind'], 'component')
+        self.assertEqual(body['source_size'], [100, 100])
+        self.assertEqual(body['nine_patch']['margins'], [34] * 4)
+        self.assertEqual(body['size'], [292, 40])
+        self.assertEqual(outline['source_size'], [120, 120])
+        self.assertEqual(outline['nine_patch']['margins'], [44] * 4)
+        self.assertEqual(outline['size'], [301, 52])
+        # The original white source is a mask. A model-specific runtime
+        # modulation must not be baked into a shared ancient's texture.
+        self.assertNotIn('modulate', body)
+        self.assertNotIn('modulate', outline)
+
+    def test_nonuniform_target_scale_preserves_separate_border_widths(self):
+        image = Image.new('RGBA', (12, 12), (0, 0, 200, 255))
+        image.paste((200, 0, 0, 255), (0, 0, 4, 4))
+        image.paste((0, 200, 0, 255), (4, 4, 8, 8))
+        result = component(image, dict(key='two-axis', source_size=[12,12], size=[40,20],
+            nine_patch=dict(margins=[4]*4, scale=[.5, 1.])))
+        self.assertEqual(result.getpixel((1, 3)), (200, 0, 0, 255))
+        self.assertEqual(result.getpixel((2, 3)), (0, 0, 200, 255))
+        self.assertEqual(result.getpixel((2, 4)), (0, 200, 0, 255))
+        self.assertEqual(result.getpixel((37, 15)), (0, 200, 0, 255))
+        self.assertEqual(result.getpixel((38, 15)), (0, 0, 200, 255))
+
     def test_non_patch_preserves_empty_atlas_margin(self):
         image = Image.new('RGBA', (6,4))
         image.paste((255,0,0,255), (2,1,4,3))
@@ -55,6 +82,10 @@ class Components(unittest.TestCase):
         with self.assertRaises(ValueError):
             component(image, dict(key='invalid', source_size=[4,4], size=[8,8],
                 nine_patch=dict(margins=[2,1,2,1], scale=1)))
+        for scale in ([1], [1, 0], [1, 2], [1, float('nan')], [1, 'invalid']):
+            with self.subTest(scale=scale), self.assertRaises(ValueError):
+                component(image, dict(key='bad-scale', source_size=[4,4], size=[8,8],
+                    nine_patch=dict(margins=[1]*4, scale=scale)))
 
 
 if __name__ == '__main__':

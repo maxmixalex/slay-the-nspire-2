@@ -322,11 +322,12 @@ static void pointer_overlay(Canvas&c){
     c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
 }
 void App::render(){
+    sync_map_window();
     map_visuals.update(game,map_clock_ms);
     // A capstone overlay hides the map without closing it. Its marker
     // lifecycle must not replay when the deck or compendium is dismissed.
     map_visuals.set_open(game,game.world.active&&!title&&!character_select&&!map_preview.open&&
-        (game.phase==Phase::Map||panel==3),map_clock_ms);
+        (game.phase==Phase::Map||map_window.is_open||panel==3),map_clock_ms);
     Canvas c{*this};sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
@@ -337,6 +338,8 @@ void App::render(){
         // The room beneath a modal can clamp its own text scroll. It must not
         // replace the active potion/deck/log/relic panel's independent cursor.
         const int panel_scroll=scroll;
+        const int map_cursor=cursor;
+        if(map_window.is_open){cursor=map_room_cursor;scroll=map_room_scroll;}
         const bool combat_linger=int32_t(combat_linger_until-animation)>0;
         if(combat_linger)combat_screen(c);else switch(game.phase){
         case Phase::Map:map_screen(c);break;
@@ -350,7 +353,12 @@ void App::render(){
         case Phase::WorldRelicChoice:case Phase::OriginalEventChoice:c.picture(A_Title,0,0);break;
         default:if(game.world.active&&(game.phase==Phase::Complete||game.phase==Phase::Dead)){native_game_over_screen(c);break;}c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);if(!game.world.active)c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
-        if(panel){scroll=panel_scroll;panels(c);}hud(c);
+        // The underlying live room may clamp its own navigation while it is
+        // hidden. Never let that overwrite the selected map column or a
+        // covering capstone's scroll position.
+        if(map_window.is_open){map_room_cursor=cursor;map_room_scroll=scroll;cursor=map_cursor;scroll=panel_scroll;}
+        if(map_window.visible)world_map_window_screen(c);
+        if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger&&!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
         else if(!combat_linger&&!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
         if(paused)native_pause_screen(c);

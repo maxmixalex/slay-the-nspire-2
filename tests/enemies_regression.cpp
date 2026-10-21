@@ -194,6 +194,92 @@ static void death_replacement_and_revival(){
  move(s,0,6);CHECK(!enemy_power_value(s,0,EnemyPower::SteamEruption)&&s.enemy_world.models[0].data[1]==12);persist(s);
  move(s,0,7);CHECK(s.phase==Phase::Reward);
 }
+static void death_power_cleanup(){
+ // The original Illusion policy removes non-temporary debuffs regardless of
+ // which subsystem stores them. Native buffs and temporary Strength wrappers
+ // survive; Adaptable/Reattach/SteamEruption preserve only their own powers.
+ const NDebuff cleared[]={NDebuff::Weak,NDebuff::Vulnerable,NDebuff::Poison,
+  NDebuff::Beetle,NDebuff::Demise,NDebuff::Doom,NDebuff::Strangle,
+  NDebuff::Debilitate,NDebuff::Hang,NDebuff::Oblivion,NDebuff::SicEm,NDebuff::Conqueror};
+ const auto mark=[&](State&s,int t){
+  for(auto p:cleared)effect(s,XOp::NApplyCopiedDebuff,int(p)*MaxEnemies+t,1);
+  power(s,t,EnemyPower::Strength,9);
+  effect(s,XOp::NTempStrength,int(NTempStrength::DarkShackles)*MaxEnemies+t,3);
+  effect(s,XOp::NTempStrength,int(NTempStrength::PiercingWail)*MaxEnemies+t,2);
+  power(s,t,EnemyPower::TemporaryStrength,2);
+  power(s,t,EnemyPower::Artifact,2);power(s,t,EnemyPower::Thorns,2);
+  CHECK(s.enemies[t].strength==6&&s.expansion.restore_strength[t]==5);
+  persist(s);
+ };
+ const auto cleaned=[&](const State&s,int t){
+  CHECK(!s.enemies[t].weak&&!s.enemies[t].vulnerable&&!s.enemies[t].poison);
+  CHECK(!s.expansion.beetle[t]&&!s.expansion.demise[t]&&!s.expansion.doom[t]);
+  CHECK(!s.silent.strangle[t]&&!s.regent.conqueror[t]);
+  CHECK(!s.necro.debilitate[t]&&!s.necro.hang[t]&&!s.necro.oblivion[t]&&!s.necro.sic_em[t]);
+  for(unsigned f=0;f<=MaxAutoFrames;++f){CHECK(!s.silent.strangle_before[f][t]);CHECK(!s.necro.oblivion_before[f][t]);}
+  for(unsigned i=0;i<s.necro.debuff_count[t];++i){const auto p=NDebuff(s.necro.debuff_order[t][i]-1);
+   CHECK(p==NDebuff::Strength||p>=NDebuff::DarkShackles);
+  }
+ };
+ for(auto encounter:{EncounterId::FogmogNormal,EncounterId::TheObscuraNormal}){
+  scenario=encounter==EncounterId::FogmogNormal?"EyeWithTeeth death clears all shared debuffs":"Parafright death clears all shared debuffs";
+  auto s=fight(encounter);move(s,0,0);
+  const auto kind=encounter==EncounterId::FogmogNormal?EnemyId::EyeWithTeeth:EnemyId::Parafright;
+  const int t=alive(s,kind);CHECK(t>=0);mark(s,t);
+  const uint16_t identity=s.enemy_world.models[t].combat_id;
+  reference::Random streams[WorldRngCount];std::memcpy(streams,s.world.rng,sizeof streams);
+  const uint32_t cards_rng=s.rng_cards,legacy_world_rng=s.rng_world;
+  s.enemies[t].block=0;damage_unpowered(s,t,9999);
+  CHECK(s.enemy_world.models[t].flags&EnemyDying);
+  // A save made between lethal damage and its queued death resumes the same
+  // cleanup, without consuming gameplay randomness or replacing the actor.
+  persist(s);State continued=s;resolve_pending(s);resolve_pending(continued);same(s,continued);
+  CHECK(s.phase==Phase::Combat&&(s.enemy_world.models[t].flags&EnemyDown));cleaned(s,t);
+  CHECK(s.enemy_world.models[t].combat_id==identity&&s.enemies[t].strength==6);
+  CHECK(s.expansion.restore_strength[t]==5&&s.necro.temp_strength[t][int(NTempStrength::DarkShackles)]==3&&s.necro.temp_strength[t][int(NTempStrength::PiercingWail)]==2);
+  CHECK(enemy_power_value(s,t,EnemyPower::TemporaryStrength)==2);
+  CHECK(enemy_power_value(s,t,EnemyPower::Artifact)==2&&enemy_power_value(s,t,EnemyPower::Thorns)==2);
+  CHECK(enemy_power_value(s,t,EnemyPower::Illusion)==1&&enemy_power_value(s,t,EnemyPower::Minion)==1);
+  CHECK(s.rng_cards==cards_rng&&s.rng_world==legacy_world_rng&&!std::memcmp(streams,s.world.rng,sizeof streams));persist(s);
+  move(s,t,30);CHECK(enemy_allow_target(s,t)&&s.enemies[t].hp==s.enemies[t].max_hp);cleaned(s,t);
+  CHECK(s.enemy_world.models[t].combat_id==identity&&s.enemies[t].strength==6);persist(s);
+ }
+ for(auto encounter:{EncounterId::TestSubjectBoss,EncounterId::DecimillipedeElite,EncounterId::WaterfallGiantBoss}){
+  scenario=encounter==EncounterId::TestSubjectBoss?"Adaptable clears temporary Strength on death":
+   encounter==EncounterId::DecimillipedeElite?"Reattach clears temporary Strength on death":"SteamEruption clears temporary Strength on death";
+  auto s=fight(encounter);const int t=0;
+  if(encounter==EncounterId::WaterfallGiantBoss)power(s,t,EnemyPower::SteamEruption,12,t);
+  mark(s,t);kill(s,t);CHECK(s.phase==Phase::Combat);cleaned(s,t);
+  CHECK(!s.enemies[t].strength&&!s.expansion.restore_strength[t]);
+  for(auto amount:s.necro.temp_strength[t])CHECK(!amount);
+  CHECK(!enemy_power_value(s,t,EnemyPower::TemporaryStrength));
+  CHECK(!enemy_power_value(s,t,EnemyPower::Artifact)&&!enemy_power_value(s,t,EnemyPower::Thorns));persist(s);
+  quiet_turn(s);CHECK(!s.enemies[t].strength&&!s.expansion.restore_strength[t]);cleaned(s,t);persist(s);
+ }
+}
+static void last_primary_death_cascade(){
+ for(auto encounter:{EncounterId::FogmogNormal,EncounterId::TheObscuraNormal,EncounterId::FabricatorNormal,EncounterId::OvicopterNormal}){
+  scenario="last primary death resolves every minion death before rewards";
+  auto s=fight(encounter);move(s,0,0);const int melancholy=add_card(s,NecroMelancholy);
+  CHECK(gain_world_relic(s,WorldRelicGremlinHorn));resolve_pending(s);s.energy=0;
+  unsigned minions=0;for(int t=0;t<s.enemy_count;++t)if(s.enemies[t].hp>0&&enemy_power_value(s,t,EnemyPower::Minion))++minions;
+  CHECK(minions==(encounter==EncounterId::FabricatorNormal?2u:encounter==EncounterId::OvicopterNormal?3u:1u));
+  const unsigned deaths=s.necro.creature_deaths;
+  s.enemies[0].block=0;damage_unpowered(s,0,9999);CHECK(s.enemy_world.models[0].flags&EnemyDying);
+  persist(s);State continued=s;resolve_pending(s);resolve_pending(continued);same(s,continued);
+  CHECK(s.phase==Phase::Reward&&s.necro.creature_deaths==deaths+1+minions);
+  CHECK(s.energy==int(1+minions)&&s.necro.cost_delta[melancholy]==-int(1+minions));
+  for(int t=0;t<s.enemy_count;++t){CHECK(s.enemies[t].hp==0);CHECK(!(s.enemy_world.models[t].flags&EnemyDying));
+   if(t)CHECK(enemy_power_value(s,t,EnemyPower::Minion)==1);
+  }persist(s);
+ }
+ scenario="a second living primary prevents the minion death cascade";
+ auto s=fight(EncounterId::FogmogNormal);move(s,0,0);const int eye=alive(s,EnemyId::EyeWithTeeth);CHECK(eye>=0);
+ s.enemy_world.slot_limit=MaxEnemies;effect(s,XOp::EnemySpawn,int(EnemyId::Nibbit),2);
+ const int other=alive(s,EnemyId::Nibbit);CHECK(other>=0);const int eye_hp=s.enemies[eye].hp;
+ kill(s,0);CHECK(s.phase==Phase::Combat&&s.enemies[eye].hp==eye_hp&&enemy_allow_target(s,eye));persist(s);
+ kill(s,other);CHECK(s.phase==Phase::Reward&&s.enemies[eye].hp==0);persist(s);
+}
 static void stolen_assets_and_timeout(){
  State s{};
  for(unsigned ascension:{0u,8u}){
@@ -336,6 +422,8 @@ static void visual_predicates_and_unpowered_death_block(){
 
 int main(){
  zero_weight_branch_and_gold_bits();
+ death_power_cleanup();
+ last_primary_death_cascade();
  visual_predicates_and_unpowered_death_block();
  metadata_and_all_encounters();caps_and_waking();death_replacement_and_revival();stolen_assets_and_timeout();choices_statuses_and_eight_slots();
  std::printf("original enemy checks: %u; executed encounter/ascension variants: %u\n",checks,encounters);return 0;

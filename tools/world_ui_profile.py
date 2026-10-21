@@ -30,9 +30,16 @@ for _level in range(2, 6):
     AUXILIARY_ROWS.append(dict(key=f'intents.ATTACK_{_level}', kind='texture',
         path=f'images/packed/intents/attack/intent_attack_{_level}.png', size=[24,24], fit='contain'))
 for _suffix in ('', '_OUTLINE'):
-    AUXILIARY_ROWS.append(dict(key='events.ANCIENT_OPTION' + _suffix, kind='texture',
+    _outline = bool(_suffix)
+    # ancient_event_option_button.tscn: retain authored NinePatch corners.
+    # The calculator row enlarges its height independently for readable type;
+    # runtime applies each ancient's ButtonColor and the additive focus tint.
+    AUXILIARY_ROWS.append(dict(key='events.ANCIENT_OPTION' + _suffix, kind='component',
         path='images/packed/common_ui/ancient_event_option_button' + _suffix.lower() + '.png',
-        size=[292,40], fit='stretch'))
+        source_size=[120,120] if _outline else [100,100],
+        size=[301,52] if _outline else [292,40],
+        nine_patch=dict(margins=[44]*4 if _outline else [34]*4,
+            scale=[.292*1.005,.4*1.05] if _outline else [.292,.4])))
 MAP_PROFILE = json.loads((ROOT / 'config/world-map-ui-0.17.json').read_text())
 if MAP_PROFILE.get('schema') != 1 or MAP_PROFILE.get('reference') != 'v0.111.0 / 41cef1ea':
     raise ValueError('Original map resource reference/schema drift')

@@ -72,7 +72,9 @@ static void finish_routing_fixture(){
         app.game.original_events=OriginalEventState{};app.game.phase=Phase::Event;
     }
     if(world_room_is_combat(app.game))app.game.phase=Phase::Reward;
+    if(app.game.phase==Phase::Treasure)app.game.treasure_state=2;
     CHECK(world_finish_room(app.game));CHECK(validate(app.game));app.reset_presentation();
+    app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
 }
 static unsigned world_hits(){unsigned count=0;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::WorldNode)++count;return count;}
 static const HitRegion* find_hit(HitKind kind,int value){for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==kind&&app.hits[i].value==value)return &app.hits[i];return nullptr;}
@@ -127,8 +129,8 @@ static void reticle_timing(){
     app.input(Key::Right);const unsigned active=app.map_reticle_current;CHECK(active<reference::MaxPoints);
     app.input(Key::Detail);CHECK(app.map_legend&&app.map_reticle_current==reference::NoPoint);
     app.input(Key::Back);CHECK(!app.map_legend&&app.map_reticle_opacity(app.map_reticle_current)==255);
-    app.input(Key::Map);CHECK(app.panel==3&&app.map_reticle_current==reference::NoPoint);
-    app.input(Key::Back);CHECK(!app.panel&&app.map_reticle_current<reference::MaxPoints);unchanged();
+    app.input(Key::Inspect);CHECK(app.panel==1&&app.map_reticle_current==reference::NoPoint);
+    app.input(Key::Back);CHECK(app.panel==3&&app.map_reticle_current<reference::MaxPoints);unchanged();
     // A wrapped presentation clock continues the same selected/dismissed tween.
     app.map_clock_ms=0xffffff9du;app.reset_map_reticles();app.render();const unsigned wrapped=app.map_reticle_current;
     CHECK(wrapped<reference::MaxPoints&&app.map_reticles[wrapped].start==0xffffff9du);ticks(3);
@@ -137,7 +139,7 @@ static void reticle_timing(){
     app.input(Key::Right);CHECK(app.map_directional);CHECK(load(app.game,before.bytes,before.size));app.reset_presentation();
     CHECK(app.map_directional&&app.map_reticle_act==255&&app.map_reticle_current==reference::NoPoint);
     for(const auto&r:app.map_reticles)CHECK(!r.mode);
-    app.render();CHECK(app.map_reticle_seed==app.game.world.run_seed&&app.map_reticle_act==app.game.world.act_index);unchanged();
+    app.open_map_window();app.map_window.settle();app.render();CHECK(app.map_reticle_seed==app.game.world.run_seed&&app.map_reticle_act==app.game.world.act_index);unchanged();
     // A stale presentation identity can share all low 32 seed bits. Leave the
     // valid run untouched and make only the remembered App identity differ.
     const unsigned stale=(app.map_reticle_current+1)%reference::MaxPoints;
@@ -361,17 +363,17 @@ static void layout_and_input(){
     app.input(Key::Detail);CHECK(app.map_legend);const uint32_t legend_context=app.input_context();app.render();CHECK(!world_hits());
     for(unsigned i=0;i<6;++i)CHECK(find_hit(HitKind::UiAction,int(UiAction::MapLegendUnknown)+int(i)));
     app.ui_action(UiAction::MapLegendElite);CHECK(app.map_legend_item==5);app.pointer_scroll(-2);CHECK(app.map_legend_item==3);capture("map-legend");
-    app.input(Key::Confirm);CHECK(!app.map_legend&&app.game.phase==Phase::Map&&app.input_context()!=legend_context);
+    app.input(Key::Confirm);CHECK(!app.map_legend&&world_can_travel(app.game)&&app.input_context()!=legend_context);
     // A press begun on a real map node cannot turn into a room entry after a
     // modal opens. The ordinary release path must discard the stale gesture.
     app.render();const auto*h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);const int x=h->x+h->w/2,y=h->y+h->h/2;
-    app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.map_legend=true;app.pointer_button(false);CHECK(app.game.phase==Phase::Map&&!app.pointer.held);app.map_legend=false;
+    app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.map_legend=true;app.pointer_button(false);CHECK(world_can_travel(app.game)&&!app.pointer.held);app.map_legend=false;
     for(int i=0;i<40;++i){app.input(Key::Up);app.render();}const auto top=world_map_view(app.game,a,app.map_scroll);CHECK(top.origin==top.maximum);CHECK(!world_hits());capture("map-boss-distant");
-    app.input(Key::Confirm);CHECK(app.game.phase==Phase::Map&&app.map_scroll==0);app.render();CHECK(world_hits()==n);unchanged();
+    app.input(Key::Confirm);CHECK(world_can_travel(app.game)&&app.map_scroll==0);app.render();CHECK(world_hits()==n);unchanged();
     // A real click keeps the route visible until the original travel fade
     // completes, then enters exactly that node. No State changes on press.
     h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);app.pointer_move(h->x+h->w/2,h->y+h->h/2);app.pointer_button(true);app.pointer_button(false);
-    CHECK(app.map_travel.pending&&app.game.phase==Phase::Map&&app.game.world.current_point==m.root);unchanged();
+    CHECK(app.map_travel.pending&&world_can_travel(app.game)&&app.game.world.current_point==m.root);unchanged();
     for(unsigned i=0;i<10;++i)app.advance(250);CHECK(!app.map_travel.pending&&!app.map_travel.fading_in);
     CHECK(app.game.world.current_point==ids[0]&&app.game.world.total_floor==2&&app.game.phase==Phase::Combat);
     CHECK(app.game.world.visited_rooms[0][ids[0]]==unsigned(WorldRoom::Monster));snapshot();app.input(Key::Map);app.render();CHECK(!world_hits());capture("map-current-combat");unchanged();app.input(Key::Back);

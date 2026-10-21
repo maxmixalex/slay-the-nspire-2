@@ -19,6 +19,13 @@ constexpr uint16_t modulate_rgb(uint16_t source,unsigned brightness){
         (divide255(((source>>5)&63)*brightness)<<5)|
         divide255((source&31)*brightness));
 }
+// CanvasItem.Modulate may tint each source channel independently. Keep
+// alpha separate; transparent texels and additive outlines retain coverage.
+constexpr uint16_t tint_rgb(uint16_t source,unsigned red,unsigned green,unsigned blue){
+    return uint16_t((divide255((source>>11)*red)<<11)|
+        (divide255(((source>>5)&63)*green)<<5)|
+        divide255((source&31)*blue));
+}
 constexpr unsigned add_channel(unsigned destination,unsigned source,unsigned alpha,unsigned maximum){
     const unsigned result=destination+divide255(source*alpha);
     return result>maximum?maximum:result;

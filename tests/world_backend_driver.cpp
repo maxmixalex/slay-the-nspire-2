@@ -67,6 +67,14 @@ static void click(HitKind kind,int value){
  app.pointer_move(x,y);app.pointer_button(true);app.pointer_button(false);capture();
 }
 static void action(UiAction value){click(HitKind::UiAction,int(value));}
+static void crystal_click_available(){
+ app.render();int cell=-1;
+ for(int i=0;i<app.hit_count;i++){const auto&h=app.hits[i];if(h.kind==HitKind::CrystalCell&&h.enabled){cell=h.value;break;}}
+ require(cell>=0,"original sphere has a still-covered clickable cell");
+ // Its outer mask is already clear. Pick an actual enabled cell, then emit
+ // the same real pointer event used by every other captured control.
+ click(HitKind::CrystalCell,cell);
+}
 static void scroll(int rows){std::fprintf(manifest,"%s{\"scroll\":%d}",frames?",":"",rows);app.pointer_scroll(rows);capture();}
 static void route_room(WorldRoom room,unsigned act){
  // Only unrelated room outcomes are supplied. The tested room is entered
@@ -74,7 +82,7 @@ static void route_room(WorldRoom room,unsigned act){
  for(unsigned guard=0;guard<120;guard++){
   if(initial.world.room_open&&initial.world.room_type==unsigned(room)&&initial.world.act_index==act)return;
   require(initial.phase!=Phase::Dead&&initial.phase!=Phase::Complete&&initial.phase!=Phase::Error,"route remains live");
-  if(initial.phase==Phase::Map){
+  if(world_can_travel(initial)){
    uint8_t points[reference::Columns]{};require(world_available_points(initial,points,sizeof points)>0,"room route frontier");
    require(world_choose_point(initial,points[0]),"choose generated room route");
   }else{
@@ -127,9 +135,9 @@ static void map_steps(SceneKind kind){
  const bool fast=kind==SceneKind::MapFast;
  if(fast){
   // Change speed through the same visible controls the WASM replay uses.
-  key(Key::Back);key(Key::Down);key(Key::Confirm);key(Key::Confirm);
+  key(Key::Map);advance(250);advance(100);key(Key::Back);key(Key::Down);key(Key::Confirm);key(Key::Confirm);
   require(app.settings_open&&app.fast_mode,"real settings enable fast mode");
-  key(Key::Back);key(Key::Back);require(!app.paused&&!app.settings_open,"resume map");
+  key(Key::Back);key(Key::Back);require(!app.paused&&!app.settings_open,"resume room");key(Key::Map);advance(250);advance(200);
  }
  uint8_t points[reference::Columns]{};
  require(world_available_points(app.game,points,sizeof points)>0,"travel has a reachable point");
@@ -158,7 +166,7 @@ static void map_steps(SceneKind kind){
   const unsigned remaining=duration-1-uint32_t(app.map_clock_ms-start);
   advance(remaining>200?200:remaining);
  }
- require(app.map_travel.pending&&app.game.phase==Phase::Map,"no early room entry");
+ require(app.map_travel.pending&&world_can_travel(app.game),"no early room entry");
  same_map_state(map_before);key(Key::Save);advance(1);
  require(!app.map_travel.pending&&app.map_travel.fading_in&&!app.panel&&!app.paused,
          "completed fade enters once and closes old overlays");
@@ -183,7 +191,7 @@ static void rest_steps(){
  for(unsigned i=0;i<3;i++)advance(250);
  key(Key::Save);key(Key::Load);advance(250);
  require(app.game.phase==Phase::Camp&&!app.camp_options(nullptr,0),"rest completion survives reload");
- key(Key::Confirm);require(app.game.phase==Phase::Map&&!app.game.world.room_open,"leave completed rest room");
+ key(Key::Confirm);require(app.game.phase==Phase::Camp&&app.game.world.room_open==2&&app.map_window.is_open,"completed rest stays beneath the opened map");
 }
 static void treasure_steps(SceneKind kind){
  require(app.game.phase==Phase::Treasure&&!app.game.treasure_state,"treasure fixture starts closed");
@@ -223,7 +231,7 @@ static void treasure_steps(SceneKind kind){
   for(unsigned i=0;i<2;i++)advance(250);
  }
  key(Key::Save);key(Key::Load);key(Key::Confirm);
- require(app.game.phase==Phase::Map&&!app.game.world.room_open,"leave treasure after terminal collection");
+ require(app.game.phase==Phase::Treasure&&app.game.world.room_open==2&&app.map_window.is_open,"terminal treasure stays beneath the opened map");
 }
 int main(int argc,char**argv){
  if(argc!=3)return 2;directory=argv[2];FILE*f=std::fopen(argv[1],"rb");require(f,"open private content");
@@ -241,6 +249,7 @@ int main(int argc,char**argv){
   key(Key::Confirm);require(!app.title,"load native fixture from title");
   if(kind==SceneKind::Neow){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
   else if(kind==SceneKind::Map||kind==SceneKind::MapPointer||kind==SceneKind::MapFast){
+   key(Key::Map);advance(250);advance(200);
    if(kind==SceneKind::Map){
     key(Key::Detail);key(Key::Down);key(Key::Back);
     // Original directional reticles retain independently fading old focus.
@@ -248,7 +257,7 @@ int main(int argc,char**argv){
     // through the real App input/lifecycle paths, without fixture writes.
     key(Key::Right);advance(33);key(Key::Left);advance(99);
     move_pointer(10,210);advance(231);key(Key::Right);advance(66);
-    key(Key::Save);key(Key::Load);
+    key(Key::Save);key(Key::Load);key(Key::Map);advance(250);advance(200);
    }
    map_steps(kind);
   }
@@ -260,7 +269,7 @@ int main(int argc,char**argv){
    action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);click(HitKind::Choice,0);key(Key::Save);click(HitKind::Choice,6);key(Key::Save);
   }else if(kind==SceneKind::Crystal){
    click(HitKind::Choice,1);require(app.game.phase==Phase::OriginalEventChoice,"Crystal enters its board choice");
-   click(HitKind::CrystalCell,0);action(UiAction::CrystalLarge);click(HitKind::CrystalCell,60);key(Key::Save);key(Key::Load);
+   crystal_click_available();action(UiAction::CrystalLarge);crystal_click_available();key(Key::Save);key(Key::Load);
   }else if(kind==SceneKind::Rest)rest_steps();
   else treasure_steps(kind);
   require(saved>0,"case exercises production save callback");std::fprintf(manifest,"],\"saves\":%u}",saved);total_frames+=frames;total_saves+=saved;

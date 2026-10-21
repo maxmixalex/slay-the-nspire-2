@@ -43,7 +43,7 @@ void App::sync_map_reticles(){
         else if(r.mode==2&&uint32_t(map_clock_ms-r.start)>=200)r.mode=0;
     }
     unsigned next=reference::NoPoint;
-    if(map_directional&&!map_travel.pending&&game.phase==Phase::Map&&!panel&&!title&&!paused&&!help&&!library&&!character_select&&
+    if(map_directional&&!map_travel.pending&&map_routes_active()&&!title&&!paused&&!help&&!library&&!character_select&&
        !map_preview.open&&!map_legend&&!event_reader&&!frontend_confirm&&!settings_open&&
        detail_card<0&&detail_item<0&&status_actor<0&&deck_candidate<0){
         uint8_t ids[reference::Columns];const unsigned count=world_available_points(game,ids,reference::Columns);
@@ -59,7 +59,7 @@ void App::sync_map_reticles(){
     map_reticle_current=uint8_t(next);
     if(next<reference::MaxPoints){auto&r=map_reticles[next];r.start=map_clock_ms;r.from_scale=4096;r.from_alpha=255;r.mode=1;}
 }
-struct MapReticleInputSync {App&a;~MapReticleInputSync(){a.sync_map_reticles();}};
+struct MapReticleInputSync {App&a;~MapReticleInputSync(){a.sync_map_window();a.sync_map_reticles();}};
 
 bool App::map_input(Key key){
     if(title||paused||help||library||character_select||map_preview.open||status_actor>=0||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;
@@ -73,11 +73,16 @@ bool App::map_input(Key key){
     }else{
         if(key==Key::Up||key==Key::Down){map_scroll=mx(-reference::MaxRows,mn(reference::MaxRows,map_scroll+(key==Key::Up?1:-1)));return true;}
         if(key==Key::Left||key==Key::Right){
-            if(!panel){uint8_t ids[reference::Columns];const unsigned count=world_available_points(game,ids,reference::Columns);const auto*m=world_current_map(game);
+            if(map_routes_active()){uint8_t ids[reference::Columns];const unsigned count=world_available_points(game,ids,reference::Columns);const auto*m=world_current_map(game);
                 if(m&&count){int found=-1;for(unsigned i=0;i<count;++i)if(m->points[ids[i]].col==cursor)found=int(i);
                     const unsigned selected=found<0?0:unsigned((found+int(count)+(key==Key::Left?-1:1))%int(count));cursor=m->points[ids[selected]].col;}
             }return true;
         }
+    }
+    if(key==Key::Confirm&&map_routes_active()){
+        if(map_scroll){map_scroll=0;message("已返回可选楼层，再次确认进入");}
+        else if(!begin_map_column(cursor))message("这条路线不相连，请选择亮起的节点");
+        return true;
     }
     if(key==Key::Map||key==Key::Inspect||key==Key::Log||key==Key::Potions||key==Key::Relics||key==Key::Collection)map_legend=false;
     return false;

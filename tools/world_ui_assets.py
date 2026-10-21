@@ -22,13 +22,15 @@ def component(image: Image.Image, row: dict) -> Image.Image:
     if patch:
         margins = patch['margins']
         scale = patch['scale']
+        scales = scale if isinstance(scale, (list, tuple)) else [scale, scale]
         if (len(margins) != 4 or any(type(n) is not int or n < 0 for n in margins) or
-                not math.isfinite(scale) or not 0 < scale <= 1):
+                len(scales) != 2 or any(not isinstance(v, (int, float)) or
+                    not math.isfinite(v) or not 0 < v <= 1 for v in scales)):
             raise ValueError('Invalid original nine-patch margins or scale')
         left, top, right, bottom = margins
         if left + right >= image.width or top + bottom >= image.height:
             raise ValueError('Nine-patch has no original center region')
-        dl, dt, dr, db = [round(n * scale) for n in margins]
+        dl, dt, dr, db = [round(n * scales[i % 2]) for i, n in enumerate(margins)]
         if dl + dr >= size[0] or dt + db >= size[1]:
             raise ValueError('Nine-patch cannot retain its borders at this size')
         sx, sy = [0, left, image.width-right, image.width], [0, top, image.height-bottom, image.height]

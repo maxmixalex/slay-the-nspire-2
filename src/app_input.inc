@@ -2,11 +2,12 @@
 static void invalidate_hand_tiles();
 #include "frontend_input.inc"
 #include "world_map_travel.inc"
-bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();callbacks=cb;if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
-bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();callbacks=cb;if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
+#include "world_map_window.inc"
+bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();reset_map_window();callbacks=cb;if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
+bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();reset_treasure_presentation();reset_map_reticles();map_travel={};map_visuals.reset();reset_map_window();callbacks=cb;if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies|| (actor&&game.enemy_world.active))return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(bool keep_map_visuals){if(!keep_map_visuals){map_travel={};map_visuals.reset();}else if(map_travel.pending)cancel_map_travel();map_visuals.bind(game,map_clock_ms);reset_treasure_presentation();reset_map_reticles();for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(bool keep_map_visuals){reset_map_window();if(!keep_map_visuals){map_travel={};map_visuals.reset();}else if(map_travel.pending)cancel_map_travel();map_visuals.bind(game,map_clock_ms);reset_treasure_presentation();reset_map_reticles();for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=game.expansion.osty_hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -17,7 +18,7 @@ void App::sync_character_feedback(){
     }
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
-void App::advance(uint32_t ms){if(ms>250)ms=250;map_clock_ms+=ms;tick_remainder+=ms*(fast_mode?2:1);while(tick_remainder>=33){tick_remainder-=33;tick();}update_map_travel();}
+void App::advance(uint32_t ms){if(ms>250)ms=250;map_clock_ms+=ms;tick_remainder+=ms*(fast_mode?2:1);while(tick_remainder>=33){tick_remainder-=33;tick();}update_map_travel();sync_map_window();}
 void App::draw_frame(){render();}
 void App::tick(){animation++;sync_map_reticles();if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"
@@ -31,6 +32,7 @@ static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.t
 void App::input(Key k){
     UiCoreObserver observer(*this);
     MapReticleInputSync map_focus{*this};
+    sync_map_window();
     // Persistence/host exit remain available during presentation. Ordinary
     // hotkeys follow NInputManager; pointer dispatch follows MouseFilter.
     if((pointer.dispatching?map_transition_blocks_pointer():map_transition_blocks_keyboard())&&
@@ -87,7 +89,8 @@ void App::input(Key k){
     if(k==Key::Quit){cancel_map_travel();quit=true;return;}
     if(k==Key::Back){
         if(reward_cards&&!panel){reward_cards=false;cursor=1;return;}
-        if(panel){panel=0;scroll=map_scroll=0;}
+        if(panel==3&&map_window.is_open)close_map_window();
+        else if(panel){panel=0;scroll=0;if(!map_window.is_open)map_scroll=0;}
         else if(game.phase==Phase::Remove){game.phase=Phase::Shop;shop_open=true;cursor=ShopRemove;}
         else if(game.phase==Phase::Upgrade){if(game.world.active)world_rest_cancel(game);else game.phase=Phase::Camp;cursor=1;}
         else{paused=true;menu=0;}return;
@@ -96,7 +99,16 @@ void App::input(Key k){
     if(k==Key::Load){if(load_saved_run())message("已载入");else message("没有有效的存档");return;}
     if(k==Key::Log){panel=panel==2?0:2;scroll=0;return;}
     if(k==Key::Inspect){panel=panel==1?0:1;scroll=inspect_cursor=0;return;}
-    if(k==Key::Map){if(game.practice){message("组合练习没有远征路线");return;}panel=panel==3?0:3;map_scroll=0;return;}
+    if(k==Key::Map){
+        if(game.practice){message("组合练习没有远征路线");return;}
+        if(game.world.active&&game.phase!=Phase::Map){
+            // The original top bar toggles Visible, which remains true during
+            // the close tail; repeated clicks cannot restart or reopen it.
+            if(panel&&panel!=3){panel=0;scroll=0;if(map_window.is_open)panel=3;else if(!map_window.visible)open_map_window();}
+            else if(map_window.visible)close_map_window();else open_map_window();
+        }else{panel=panel==3?0:3;map_scroll=0;}
+        return;
+    }
     if(k==Key::Relics){panel=panel==5?0:5;scroll=0;return;}
     if(k==Key::Potions){panel=panel==4?0:4;scroll=0;return;}
     if(panel){
@@ -157,7 +169,7 @@ void App::input(Key k){
             if(!acted)message("资源不足，或尚未满足出牌条件");else{animate(0,card.kind==Shiv&&game.character==Character::Silent?AnimSilentShiv:definitions[card.kind].type==CardType::Attack?AnimHeroAttack:AnimHeroCast);fly_card=card.kind;card_fly=12;busy=12;feedback=8;}break;}
         case Phase::ExhaustChoice:acted=choose_exhaust(game,cursor);break;
         case Phase::Map:if(map_scroll){map_scroll=0;message("已返回可选楼层，再次确认进入");}else{acted=game.world.active?begin_map_column(cursor):choose_node(game,cursor);if(!acted)message("这条路线不相连，请选择亮起的节点");}break;
-        case Phase::Shop:acted=cursor==ShopLeave?leave_shop(game):buy(game,cursor);if(!acted)message("金币不足、已售出，或物品槽已满");else if(game.phase==Phase::Shop)message("购买成功");break;
+        case Phase::Shop:{const bool leaving=cursor==ShopLeave;acted=leaving?leave_shop(game):buy(game,cursor);if(!acted)message("金币不足、已售出，或物品槽已满");else if(leaving)proceed_map_window();else if(game.phase==Phase::Shop)message("购买成功");break;}
         case Phase::Remove:acted=remove_card(game,cursor);if(acted)message("已移除所选卡牌");break;
         case Phase::Event:acted=event_choice(game,cursor);scroll=0;break;
         case Phase::Transform:acted=transform_card(game,cursor);if(!acted)message("请选择另一张尚未变化的牌");break;

@@ -19,6 +19,10 @@ struct TextIndex {const char* key;uint16_t index;};
 static const TextIndex world_text[]={
 #include "../src/world_text_index.inc"
 };
+static const TextIndex world_images[]={
+#include "../src/world_image_index.inc"
+};
+static unsigned image_slot(const char*key){for(const auto&row:world_images)if(!std::strcmp(row.key,key))return row.index;CHECK(false);return 0;}
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=uint8_t(value>>(8*i));}
 static bool ends(const std::string&s,const char*tail){size_t n=std::strlen(tail);return s.size()>=n&&s.compare(s.size()-n,n,tail)==0;}
 static std::vector<uint8_t> synthetic_profile(){
@@ -30,10 +34,12 @@ static std::vector<uint8_t> synthetic_profile(){
  constexpr unsigned uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
  std::vector<uint8_t>b(payload);
  put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);put(b,20,glyphs);put(b,24,ContentStrings);put(b,28,AnimationKinds);put(b,32,CardKinds);
+ const unsigned ancient_body=image_slot("events.ANCIENT_OPTION");
  for(unsigned i=0;i<images;i++){
   unsigned w=i?2:82,h=i?2:60,offset=unsigned(b.size()),length=w*h*2;
   put(b,40+i*16,offset);put(b,44+i*16,w,2);put(b,46+i*16,h,2);put(b,52+i*16,length);b.resize(offset+length);
-  for(unsigned pixel=0;pixel<w*h;pixel++)put(b,offset+pixel*2,((i*13+pixel*5)&31)<<11|((i*29+pixel*7)&63)<<5|((i*7+pixel*3)&31),2);
+  for(unsigned pixel=0;pixel<w*h;pixel++)put(b,offset+pixel*2,i==ancient_body?0xffff:
+      ((i*13+pixel*5)&31)<<11|((i*29+pixel*7)&63)<<5|((i*7+pixel*3)&31),2);
  }
  const unsigned sizes[]={8,10,12,16};unsigned glyph=0;
  for(unsigned size:sizes)for(unsigned cp=32;cp<127;cp++,glyph++){
@@ -115,7 +121,34 @@ static void merchant(){
  CHECK(a.game.phase==Phase::Event&&!a.game.original_events.finished);CHECK(a.game.original_events.offers[0]==NoWorldRelic&&has_world_relic(a.game,bought));
  CHECK(a.game.gold==gold-price&&a.game.world_relics.count==count+1);CHECK(validate(a.game));a.advance(1000);a.render();CHECK(choice_count()==7&&!choice(0).enabled);capture("fake-merchant-sold");
  snapshot();press_choice(0);unchanged();press_choice(6);CHECK(a.game.original_events.finished);a.advance(1000);a.render();finished_offer_hidden();capture("fake-merchant-complete");
- count=a.game.world_relics.count;gold=a.game.gold;press_choice(0);CHECK(!a.game.original_events.active&&a.game.phase==Phase::Map&&a.game.world_relics.count==count&&a.game.gold==gold);CHECK(validate(a.game));
+ count=a.game.world_relics.count;gold=a.game.gold;press_choice(0);
+ CHECK(a.game.original_events.active&&a.game.original_events.finished&&a.game.phase==Phase::Event);
+ CHECK(world_can_travel(a.game)&&a.map_window.visible&&a.game.world_relics.count==count&&a.game.gold==gold);CHECK(validate(a.game));
+}
+static void ancient_original_modulation(){
+ // A white source fixture exposes the missing original CanvasItem.Modulate
+ // that made real ancient buttons opaque white. Compare an untitled,
+ // unfocused third-row pixel with the original per-model RGBA constants,
+ // independently quantized and composited over the scene background.
+ struct Original{OriginalEventId id;unsigned act;double r,g,b,a;};
+ const Original originals[]={
+  {OriginalEventId::Neow,0,0,.1,.2,.5},{OriginalEventId::Darv,1,.06,0,.08,.5},
+  {OriginalEventId::Nonupeipe,2,0,.1,.16,.75},{OriginalEventId::Tanx,2,.05,.02,0,.5},
+  {OriginalEventId::Orobas,1,.05,0,.1,.35},{OriginalEventId::Pael,1,.03,.08,0,.75},
+  {OriginalEventId::Tezcatara,1,.08,.04,0,.75},{OriginalEventId::Vakuu,2,.05,.06,.12,.8}};
+ for(const auto&entry:originals){
+  begin(entry.id,0x71ef23,entry.act);a.cursor=0;snapshot();a.render();unchanged();
+  Picture background=a.content.image(a.content.world_image("events",original_event_key(entry.id)));
+  CHECK(background.pixels&&!background.alpha&&!background.palette&&background.w==2&&background.h==2);
+  const unsigned at=3*2;const uint16_t back=uint16_t(background.pixels[at]|unsigned(background.pixels[at+1])<<8);
+  const unsigned alpha=unsigned(entry.a*255.+.5);
+  const unsigned r=(31*unsigned(entry.r*255.+.5)+127)/255;
+  const unsigned g=(63*unsigned(entry.g*255.+.5)+127)/255;
+  const unsigned b=(31*unsigned(entry.b*255.+.5)+127)/255;
+  const uint16_t expected=uint16_t((((back>>11)*(255-alpha)+r*alpha+127)/255<<11)|
+      ((((back>>5)&63)*(255-alpha)+g*alpha+127)/255<<5)|((back&31)*(255-alpha)+b*alpha+127)/255);
+  CHECK(a.pixels[234*ScreenW+300]==expected);
+ }
 }
 static void ancients(){
  struct Entry{OriginalEventId id;unsigned act;const char*file;};
@@ -143,5 +176,5 @@ int main(int argc,char**argv){
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  // Only an explicit caller-selected private directory receives captures.
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- merchant();ancients();std::printf("world event UI: %u checks passed; %s profile; six stock slots and eight ancient layouts\n",checks,argc>1?"actual":"synthetic");
+ if(argc==1)ancient_original_modulation();merchant();ancients();std::printf("world event UI: %u checks passed; %s profile; six stock slots and eight ancient layouts\n",checks,argc>1?"actual":"synthetic");
 }

@@ -155,7 +155,7 @@ static void camp_proceed(bool keyboard){
  auto&w=a.game.world;w.rest_count=2;w.rest_options[0]=uint8_t(WorldRestOption::Heal);w.rest_options[1]=uint8_t(WorldRestOption::Smith);add(WorldRelicMiniatureTent);a.game.hp=30;present();a.render();
  CHECK(!world_rest_can_proceed(a.game)&&!has_action(UiAction::LeaveCamp));snapshot();a.input(Key::EndTurn);unchanged();
  press(HitKind::Choice,0);CHECK(a.game.phase==Phase::Camp&&world_rest_can_proceed(a.game)&&world_rest_option_enabled(a.game,1));a.render();CHECK(has_action(UiAction::LeaveCamp));const int hp=a.game.hp;capture(keyboard?"rest-tent-keyboard":"rest-tent-proceed");
- if(keyboard)a.input(Key::EndTurn);else press_action(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Map&&!w.room_open&&a.game.hp==hp);snapshot();
+ if(keyboard)a.input(Key::EndTurn);else press_action(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Camp&&w.room_open==2&&a.map_window.is_open&&a.game.hp==hp);snapshot();
 }
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();

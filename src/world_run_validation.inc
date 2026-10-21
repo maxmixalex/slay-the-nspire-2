@@ -1,7 +1,7 @@
 bool world_valid_run(const State&s){
     const auto&w=s.world;
     if(w.active>1||w.rng_ready>1||w.act_index>=WorldActCount||w.ascension>10||w.room_type>uint8_t(WorldRoom::Map)||
-       w.room_open>1||w.event_combat_parent>1||w.parent_room_type>uint8_t(WorldRoom::Map)||w.final_event>1||w.finished>1||w.point_had_shop>1||w.finish_pending>1||
+       w.room_open>2||w.event_combat_parent>1||w.parent_room_type>uint8_t(WorldRoom::Map)||w.final_event>1||w.finished>1||w.point_had_shop>1||w.finish_pending>1||
        w.combat_ending>1||w.reward_rerolled>1||w.reward_can_reroll>1||(w.reward_rerolled&&w.reward_can_reroll)||w.combat_bonus_gold>9999)return false;
     if(w.rng_ready){for(const auto&r:w.rng)if(!r.good||!(r.words[0]|r.words[1]|r.words[2]|r.words[3]))return false;}
     if(!w.active)return true;
@@ -60,6 +60,9 @@ bool world_valid_run(const State&s){
         if(w.map_column!=m.points[w.current_point].col||w.map_row!=m.points[w.current_point].row)return false;
     }
     if(s.phase==Phase::Map&&(w.room_open||w.final_event))return false;
+    if(w.room_open==2&&(w.current_point==NoPoint||!w.rooms_completed||w.final_event||
+       w.room_type==uint8_t(WorldRoom::None)||w.room_type==uint8_t(WorldRoom::Map)||
+       combat_phase(s.phase)||w.event_combat_parent))return false;
     if(w.event_combat_parent&&(!s.original_events.combat_pending||!s.original_events.active||w.parent_room_type==0))return false;
     if(w.reward_count>MaxWorldRewardCards||w.reward_relic_claimed>1||(w.shop_sale>=5&&w.shop_sale!=255)||w.treasure_gold_claimed>1||w.treasure_gold<0||w.treasure_gold>9999)return false;
     if(w.reward_relic!=NoWorldRelic&&w.reward_relic>=WorldRelicKinds)return false;

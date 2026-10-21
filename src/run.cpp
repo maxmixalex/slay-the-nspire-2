@@ -256,7 +256,14 @@ bool take_treasure(State&s){
 }
 bool leave_treasure(State&s){
     if(s.phase!=Phase::Treasure)return false;
-    if(s.world.active)return s.world.room_open&&s.world.room_type==uint8_t(WorldRoom::Treasure)&&world_finish_room(s);
+    if(s.world.active){
+        if(!s.world.room_open||s.world.room_type!=uint8_t(WorldRoom::Treasure)||!s.treasure_state||world_relic_pending(s))return false;
+        // An explicit Skip resolves the offered relic without acquiring it.
+        // The room stays visible, but closing its map must not resurrect the
+        // declined offer. The frontend owns the original 2.5-second gate.
+        if(s.treasure_state==1){s.treasure_state=2;++s.revision;}
+        return world_finish_room(s);
+    }
     if(!s.treasure_state)return false;
     finish_room(s);return true;
 }

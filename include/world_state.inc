@@ -25,6 +25,10 @@ struct WorldState {
     WorldActRooms rooms[WorldActCount]{};
     uint8_t visited[WorldActCount][reference::MaxPoints]{};
     uint8_t visited_events[67]{};
+    // 0: no current room; 1: current room; 2: Proceed requested, with the
+    // completed room still present beneath the independent map window.
+    // This extends the unpublished v15 byte's domain without moving its
+    // historical 0/1 values or changing any serialized field width.
     uint8_t room_open=0,event_combat_parent=0,parent_room_type=0,final_event=0,finished=0;
     uint8_t point_had_shop=0,finish_pending=0;
     // IEEE binary32 probabilities are serialized without target float ABI.

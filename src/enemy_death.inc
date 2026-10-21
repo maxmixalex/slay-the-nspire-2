@@ -66,6 +66,7 @@ static void enemy_die(State&s,int t){
  const bool adaptable=enemy_power_value(s,t,EnemyPower::Adaptable)!=0;
  const bool reattach=enemy_power_value(s,t,EnemyPower::Reattach)!=0;
  const bool steam=enemy_power_value(s,t,EnemyPower::SteamEruption)!=0;
+ const bool primary=enemy_power_value(s,t,EnemyPower::Minion)==0;
  enemy_applier_died(s,t);
  // Death observers run even when the defeated creature will revive.
  int ordered[MaxEnemies];unsigned n=enemy_ordered_slots(s,ordered);
@@ -89,10 +90,22 @@ static void enemy_die(State&s,int t){
  // their explicitly persistent powers, as the original death hooks require.
  for(unsigned p=0;p<EnemyPowerCount;++p){EnemyPower power=(EnemyPower)p;bool keep=false;
   if(illusion)keep=!enemy_power_meta[p].debuff||power==EnemyPower::TemporaryStrength;
-  else keep=power==EnemyPower::Adaptable||power==EnemyPower::PainfulStabs||power==EnemyPower::Reattach||power==EnemyPower::SteamEruption;
+  else keep=power==EnemyPower::Adaptable||power==EnemyPower::PainfulStabs||power==EnemyPower::Reattach||power==EnemyPower::SteamEruption||power==EnemyPower::Minion;
   if(!keep)enemy_clear_power(s,t,power);
  }
- if(!illusion){s.enemies[t].poison=0;s.expansion.doom[t]=0;s.expansion.demise[t]=0;s.silent.strangle[t]=0;s.necro.hang[t]=s.necro.oblivion[t]=s.necro.sic_em[t]=0;}
+ // Character/potion powers also live in the frozen shared-state fields.
+ // Illusion keeps buffs and ITemporaryPower wrappers, but still removes all
+ // ordinary debuffs. Other revivers remove the temporary wrappers as well;
+ // retaining their restore totals would grant phantom Strength after revival.
+ s.enemies[t].poison=0;
+ s.expansion.doom[t]=s.expansion.demise[t]=s.expansion.beetle[t]=0;
+ s.silent.strangle[t]=0;s.regent.conqueror[t]=0;
+ s.necro.hang[t]=s.necro.oblivion[t]=s.necro.sic_em[t]=0;
+ for(unsigned f=0;f<=MaxAutoFrames;++f){s.silent.strangle_before[f][t]=0;s.necro.oblivion_before[f][t]=0;}
+ if(!illusion){
+  s.expansion.restore_strength[t]=0;
+  for(auto&amount:s.necro.temp_strength[t])amount=0;
+ }
  m.flags&=(uint8_t)~EnemyDying;
  if(!retained)m.flags|=EnemyRemoved;
  // Replacement actors receive new creature identities. The turn snapshot
@@ -112,6 +125,23 @@ static void enemy_die(State&s,int t){
   enemy_spawn(s,EnemyId::SneakyGremlin,0,t,fat);
   if(fat>=0){if(w.side)w.models[fat].data[11]=1;else{enemy_set_move(s,fat,enemy_initial_node(s,fat));w.models[fat].previous=w.models[fat].node;}
    world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,fat);}
+ }
+ // Killing the last primary creature kills its surviving secondary teammates
+ // through the same saved death commands before victory. Ignoring them would
+ // skip AfterDeath listeners, including Gremlin Horn and Melancholy.
+ // Snapshot after death-triggered replacements, as the original command does.
+ if(primary){
+  int remaining[MaxEnemies];unsigned count=0;bool another_primary=false;
+  int order[MaxEnemies];const unsigned total=enemy_ordered_slots(s,order);
+  for(unsigned i=0;i<total;++i){int other=order[i];if(!enemy_slot_alive(s,other))continue;
+   if(!enemy_power_value(s,other,EnemyPower::Minion)){another_primary=true;break;}
+   remaining[count++]=other;
+  }
+  if(!another_primary)for(unsigned i=count;i>0;--i){int other=remaining[i-1];
+   // Mark the pending cascade so a suspended death listener cannot declare
+   // victory before the remaining death commands have been observed.
+   w.models[other].flags|=EnemyDying;queue_extension(s,XOp::EnemyDie,other,1,true);
+  }
  }
  enemy_face_remaining(s);
 }

@@ -75,8 +75,9 @@ static void finish_routing_fixture(){
         app.game.original_events=OriginalEventState{};app.game.phase=Phase::Event;
     }
     if(world_room_is_combat(app.game))app.game.phase=Phase::Reward;
+    if(app.game.phase==Phase::Treasure)app.game.treasure_state=2;
     CHECK(world_finish_room(app.game));CHECK(validate(app.game));
-    CHECK(app.game.phase==Phase::Map);app.reset_presentation();
+    CHECK(world_can_travel(app.game));app.reset_presentation();app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
 }
 static void new_map(reference::ActKind region){
     new_run(app.game,0x175c3,false,Character::Silent);
@@ -87,11 +88,11 @@ static void fresh(bool fast=false,uint32_t clock=1000){
     app.game=departure;app.title=app.paused=app.quit=app.help=app.library=app.character_select=false;
     app.settings_open=app.run_settings=app.run_seed_editing=false;app.frontend_confirm=app.frontend_choice=0;
     app.map_preview.open=false;app.fast_mode=fast;app.map_directional=false;
-    app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.reset_presentation();
+    app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.reset_presentation();app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
     app.pointer.visible=false;app.pointer.dispatching=false;app.notice="";app.notice_ticks=0;
     app.forget_run_checkpoint();app.has_save=false;app.saved_checkpoint={};
     disk_exists=false;read_ok=write_ok=true;reads=writes=0;
-    CHECK(app.game.phase==Phase::Map&&validate(app.game));
+    CHECK(world_can_travel(app.game)&&app.map_routes_active()&&validate(app.game));
 }
 static unsigned first_point(){
     uint8_t ids[reference::Columns]{};
@@ -151,13 +152,14 @@ static void delayed_commit(bool fast,bool pointer,bool toggle,uint32_t start){
     // real Settings control through the HUD during the already begun fade.
     app.advance(100000);CHECK(uint32_t(app.map_clock_ms-start)==250&&app.map_travel.pending);
     if(toggle){
+        click(hit(HitKind::Command,int(Key::Back)));CHECK(!app.map_window.is_open);
         click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused);
         click(hit(HitKind::Menu,1));CHECK(app.settings_open);
         click(hit(HitKind::UiAction,int(UiAction::SettingsFastMode)));
         CHECK(app.fast_mode!=fast&&app.map_travel.pending);
     }
     advance_ms(duration-251);CHECK(uint32_t(app.map_clock_ms-start)==duration-1);
-    CHECK(app.map_travel.pending&&app.game.world.current_point==from&&!app.game.world.room_open);
+    CHECK(app.map_travel.pending&&app.game.world.current_point==from&&app.game.world.room_open==2);
     CHECK(app.map_travel.speed==speed);app.render();same_state(before);
     app.advance(1);
     CHECK(!app.map_travel.pending&&app.map_travel.fading_in&&app.map_travel.speed==speed);
@@ -239,16 +241,14 @@ static void pending_hud_pointer_remains_available(){
         CHECK(app.map_transition_blocks_keyboard()&&!app.map_transition_blocks_pointer());
         click(hit(HitKind::Command,int(commands[kind])));
         if(kind==0)CHECK(app.panel==1);
-        else if(kind==1)CHECK(app.paused);
-        else CHECK(app.panel==3);
+        else CHECK(!app.map_window.is_open&&!app.panel&&!app.paused);
         app.update_map_travel();CHECK(app.map_travel.pending);same_state(before);
         // The original HUD retains MouseFilter=Ignore during map selection.
         // Its ordinary pointer panels do not abandon the controller's route;
         // keyboard/controller Back still waits for RoomFadeIn's callback.
         app.input(Key::Back);
         if(kind==0)CHECK(app.panel==1);
-        else if(kind==1)CHECK(app.paused);
-        else CHECK(app.panel==3);
+        else CHECK(!app.map_window.is_open&&!app.panel&&!app.paused);
         advance_ms(699);CHECK(app.map_travel.pending);same_state(before);
         app.advance(1);CHECK(!app.map_travel.pending&&app.map_travel.fading_in);
         CHECK(!app.paused&&!app.panel&&!app.settings_open&&!app.library);
@@ -259,6 +259,7 @@ static void pending_exit_confirmation(){
     for(unsigned accept=0;accept<2;++accept){
         fresh();const unsigned destination=first_point();snapshot();make_oracle(destination);
         keyboard_begin(destination);advance_ms(250);
+        click(hit(HitKind::Command,int(Key::Back)));CHECK(!app.map_window.is_open);
         click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused);
         app.input(Key::Quit);CHECK(app.frontend_confirm==3&&app.map_travel.pending&&!app.quit);
         click(hit(HitKind::UiAction,int(accept?UiAction::FrontendAccept:UiAction::FrontendCancel)));
@@ -272,6 +273,7 @@ static void pending_exit_confirmation(){
 }
 static void pending_compendium_quit_cancels_immediately(){
     fresh();snapshot();keyboard_begin(first_point());advance_ms(250);
+    click(hit(HitKind::Command,int(Key::Back)));CHECK(!app.map_window.is_open);
     click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused&&app.map_travel.pending);
     click(hit(HitKind::Menu,2));CHECK(app.library&&app.map_travel.pending);
     const uint32_t clock=app.map_clock_ms;
@@ -299,7 +301,7 @@ static void fast_rest_can_immediately_start_pointer_travel(){
     click(hit(HitKind::Choice,int(heal)));
     CHECK(app.game.phase==Phase::Camp&&app.game.hp>hp&&world_rest_can_proceed(app.game));
     click(hit(HitKind::UiAction,int(UiAction::LeaveCamp)));
-    CHECK(app.game.phase==Phase::Map&&app.game.world.current_point==rest&&app.map_clock_ms==clock);
+    CHECK(app.game.phase==Phase::Camp&&app.game.world.room_open==2&&app.map_window.is_open&&app.game.world.current_point==rest&&app.map_clock_ms==clock);
     CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)==255);
     CHECK(app.map_transition_blocks_keyboard()&&!app.map_transition_blocks_pointer());
     const unsigned next=first_point();snapshot();
@@ -333,6 +335,7 @@ static void fade_in_input_channels(bool fast){
         CHECK(!app.map_transition_blocks_keyboard()&&!app.map_transition_blocks_pointer());
         CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)>0);
     }
+    if(fast){CHECK(app.map_window.visible&&!app.map_window.is_open);app.input(Key::Map);CHECK(!app.panel);advance_ms(50);CHECK(!app.map_window.visible);}
     app.input(Key::Map);CHECK(app.panel==3);click(map_button);CHECK(app.panel==0);same_state(expected);
     if(!fast){advance_ms(600);CHECK(!app.map_travel.fading_in&&!app.map_transition_alpha(100));same_state(expected);}
 }

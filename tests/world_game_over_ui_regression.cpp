@@ -92,7 +92,7 @@ static void victory(){
  // Supply room outcomes to the existing controller, as in the routing test.
  // This isolates the end-screen contract without claiming combat victories.
  for(unsigned step=0;step<192&&a.game.phase!=Phase::Complete;step++){
-  if(a.game.phase==Phase::Map){uint8_t candidates[reference::Columns];unsigned count=world_available_points(a.game,candidates,reference::Columns);CHECK(count);CHECK(world_choose_point(a.game,candidates[0]));}
+  if(world_can_travel(a.game)){uint8_t candidates[reference::Columns];unsigned count=world_available_points(a.game,candidates,reference::Columns);CHECK(count);CHECK(world_choose_point(a.game,candidates[0]));}
   else if(a.game.original_events.active&&a.game.original_events.id==OriginalEventId::TheArchitect){CHECK(original_event_choose(a.game,0));}
   else{if(a.game.original_events.active)a.game.original_events=OriginalEventState{};if(world_room_is_combat(a.game))a.game.phase=Phase::Reward;CHECK(world_finish_room(a.game));}
  }

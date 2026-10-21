@@ -15,6 +15,9 @@ enum class WorldRestOption : uint8_t { Heal,Smith,Hatch,Dig,Lift,Kindle,Cook,Clo
 // outside the supported single-player scope, so all pinned solo pools are open.
 bool world_begin_run(State&, reference::ActKind first_region=reference::ActKind::Overgrowth,
                      unsigned ascension=0);
+// Route availability is independent of opening the map. An eligible current
+// room remains active until an actual destination is submitted.
+bool world_can_travel(const State&);
 bool world_reachable(const State&, unsigned point);
 bool world_choose_point(State&, unsigned point);
 bool world_choose_column(State&, int column);

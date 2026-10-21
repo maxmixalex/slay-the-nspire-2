@@ -19,6 +19,8 @@ int main(){
     for(unsigned source=0;source<=65535;++source){
         check(modulate_rgb(uint16_t(source),255)==source);
         check(modulate_rgb(uint16_t(source),0)==0);
+        check(tint_rgb(uint16_t(source),255,255,255)==source);
+        check(tint_rgb(uint16_t(source),0,0,0)==0);
     }
     for(unsigned level=0;level<=255;++level)for(unsigned value=0;value<=63;++value){
         const unsigned r=value&31,g=value,b=(value*7)&31;
@@ -26,7 +28,19 @@ int main(){
         const uint16_t expected=uint16_t((rounded(r*double(level)/255.,31)<<11)|
             (rounded(g*double(level)/255.,63)<<5)|rounded(b*double(level)/255.,31));
         check(modulate_rgb(source,level)==expected);
+        check(tint_rgb(source,level,level,level)==expected);
     }
+    // Independent per-channel oracle, including the original dark ancient
+    // button tints and the non-gray additive focus outline. This detects
+    // accidental channel swaps and applying one brightness to all channels.
+    for(unsigned source:{0u,1u,0x39e7u,0xf800u,0x07e0u,0x001fu,0xffffu})
+        for(unsigned red:{0u,13u,120u,255u})for(unsigned green:{0u,26u,191u,255u})
+            for(unsigned blue:{0u,51u,254u,255u}){
+                uint16_t expected=uint16_t((rounded((source>>11)*double(red)/255.,31)<<11)|
+                    (rounded(((source>>5)&63)*double(green)/255.,63)<<5)|
+                    rounded((source&31)*double(blue)/255.,31));
+                check(tint_rgb(uint16_t(source),red,green,blue)==expected);
+            }
     for(unsigned level:{0u,1u,127u,128u,254u,255u})for(unsigned source:{0u,0x39e7u,0xf81fu,0xffffu})
         for(unsigned destination:{0u,0x18c3u,0xffffu})for(unsigned alpha:{0u,1u,63u,128u,254u,255u}){
             const uint16_t color=modulate_rgb(uint16_t(source),level);

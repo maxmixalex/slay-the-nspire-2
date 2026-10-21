@@ -1,4 +1,20 @@
 static bool ui_ancient_event(OriginalEventId id){switch(id){case OriginalEventId::Neow:case OriginalEventId::Darv:case OriginalEventId::Nonupeipe:case OriginalEventId::Tanx:case OriginalEventId::Orobas:case OriginalEventId::Pael:case OriginalEventId::Tezcatara:case OriginalEventId::Vakuu:return true;default:return false;}}
+struct AncientButtonColor {uint8_t red,green,blue,alpha;};
+static AncientButtonColor native_ancient_button_color(OriginalEventId id){
+ // v0.111.0 EventModel.ButtonColor overrides, rounded to the RGB565
+ // canvas's 8-bit multipliers. The source NinePatch is white plus alpha.
+ switch(id){
+  case OriginalEventId::Neow:return {0,26,51,128};
+  case OriginalEventId::Darv:return {15,0,20,128};
+  case OriginalEventId::Nonupeipe:return {0,26,41,191};
+  case OriginalEventId::Tanx:return {13,5,0,128};
+  case OriginalEventId::Orobas:return {13,0,26,89};
+  case OriginalEventId::Pael:return {8,20,0,191};
+  case OriginalEventId::Tezcatara:return {20,10,0,191};
+  case OriginalEventId::Vakuu:return {13,15,31,204};
+  default:return {0,0,0,89};
+ }
+}
 static const char* native_event_title(const App&a){const char*text=a.content.world_title(ui_ancient_event(a.game.original_events.id)?"ancients":"events",original_event_key(a.game.original_events.id));return *text?text:original_event_key(a.game.original_events.id);}
 static void native_event_option(const App&a,int option,bool description,char*out,size_t size){
  const auto&e=a.game.original_events;if(!size)return;out[0]=0;
@@ -49,16 +65,28 @@ static void native_ancient_screen(Canvas&c){
  for(int i=0;i<count&&i<3;i++){
   const int y=e.finished?196:110+i*43;bool enabled=original_event_option_enabled(s,i),selected=a.cursor==i;
   int image=a.content.world_image("events","ANCIENT_OPTION");if(image<0)image=a.content.ui_image(U_EventButton);
-  c.picture(image,14,y,292,40,enabled?255:115);
-  if(selected){image=a.content.world_image("events","ANCIENT_OPTION_OUTLINE");if(image<0)image=a.content.ui_image(U_EventOutline);c.picture(image,14,y,292,40,190);}
+  const auto color=native_ancient_button_color(e.id);Canvas button=c;
+  button.tint_red=uint8_t(div255(button.tint_red*color.red));
+  button.tint_green=uint8_t(div255(button.tint_green*color.green));
+  button.tint_blue=uint8_t(div255(button.tint_blue*color.blue));
+  button.picture(image,14,y,292,40,color.alpha);
+  if(selected&&enabled){
+   image=a.content.world_image("events","ANCIENT_OPTION_OUTLINE");if(image<0)image=a.content.ui_image(U_EventOutline);
+   Canvas outline=c;outline.tint_red=uint8_t(div255(outline.tint_red*120));
+   outline.tint_blue=uint8_t(div255(outline.tint_blue*254));
+   // Original BlueGlow and additive material; its 1024x124 rect, scale
+   // and pivot normalize to this independent 301x52 outline.
+   outline.picture(image,10,y-6,301,52,192,presentation::Add);
+  }
   bool icon=!e.finished&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
-  if(icon)c.picture(a.relic_face_image(e.offers[i]),22,y+6,28,28,enabled?255:110);
+  if(icon)c.picture(a.relic_face_image(e.offers[i]),22,y+6,28,28);
   char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
   int tx=icon?60:26,tw=icon?234:268;
-  if(e.finished)c.centered(label,26,y+12,268,12,enabled?Gold:Muted);
+  Canvas label_canvas=c;if(!enabled)label_canvas.opacity=uint8_t(div255(label_canvas.opacity*179));
+  if(e.finished)label_canvas.centered(label,26,y+12,268,12,enabled?Gold:Red);
   else{
-   c.text(label,tx,y+2,10,enabled?Gold:Muted,tw);
-   int rows=c.paragraph(description,tx,y+14,tw,2,0,10,enabled?White:Muted);
+   label_canvas.text(label,tx,y+2,10,enabled?Gold:Red,tw);
+   int rows=label_canvas.paragraph(description,tx,y+14,tw,2,0,10,White);
    if(rows>2){c.dim(283,y+26,14,12,180);c.text("…",285,y+26,10,enabled?Gold:Muted,12);}
   }
   c.hit(14,y,292,40,HitKind::Choice,i,enabled);
