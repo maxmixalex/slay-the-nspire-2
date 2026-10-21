@@ -1,6 +1,6 @@
 # Work state — 2026-10-21
 
-## Current: source27 UI/runtime evidence consolidated — 2026-10-21
+## Current: source27 UI/runtime and final-v16 device gates completed — 2026-10-21
 
 The built runtime remains **source27**,
 `9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69`. Source28 is remotely preserved at
@@ -52,6 +52,38 @@ effectively unchanged from 44.08. The source25, source26 and source27 retrieved
 saves are byte-identical: 230,356 bytes, SHA-256
 `c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca`.
 
+The independent fresh source27/v15 new-run route also completed Neow, Fishing
+Rod, map, save, title and normal OS exit. Its initial Neow five-second window
+observes **3.4 starts/s** and the next **28.2 starts/s**; the map entrance/display
+window observes **13.4 starts/s**. Production save loading verifies the same
+seed, generated first-act map and all 143 current-act layout slots as the
+source25 run. The other two stored map records are still ungenerated; this
+does not verify three generated acts. Different map-camera phases, entry
+delays and profiler activation prevent a strict steady-map twofold A/B claim.
+The corrected current report retains its earlier wording as a historical v1;
+the executed journal, logs, saves and raw profiler output remain unchanged.
+
+The final source27 launcher and full v16 file also completed a normal fresh
+run through Neow, first-act map and three-enemy battle. Actual 320 × 240 images
+show health bars, native buttons and a Defend card with nonempty Block hover
+and V keyword details, operated by ordinary emulated keys/touchpad. The final
+USB save remains the same 230,356-byte canonical file above. The completed
+journal is passed / exit 0 / source unchanged; the backing flash file is
+unchanged. This closes the final runtime/resource-pair execution gate.
+
+The final-v16 reinstallation starts in **59.006317 simulated seconds**, with a
+separate 0.836823-second first render; it is not the retained-v15 startup A/B.
+An overlong automation confirmation key appears to have caused the OS to reopen
+the launcher after its first normal exit. The complete first profiler record is recovered
+from the preserved snapshot, with independent two-page NAND content matching
+and earlier counter agreement. There is no full FTL/directory-path proof and
+it is not called a first-run USB export. The second, title-only invocation's
+USB profile is separate. Its shorter key confirmation returned normally to OS,
+and final USB save retrieval completed. Keep the incident, both report
+identities and recovery limits intact. The mixed first-run overlay sequence
+records 236 frames / 497 reads / 20,514,241 requested bytes; it is not a steady
+overlay FPS measurement or a continuation of the v15 30.0/s warm window.
+
 UI fidelity remains priority one; measured performance is priority two. The
 full v16 resource is still **80,879,519 bytes**, and its pair with the launcher
 occupies **81,790,768 bytes** before saves. Neither 30–40 MB storage nor a
@@ -61,13 +93,15 @@ private-content testing remains blocked by the recorded automatic approval
 review. Local Node/VM host logic and actual WASM execution have their own
 completed evidence; no browser compositor FPS is claimed.
 
-Next: close the current source27 fresh new-run → Neow → map five-second
-observations, then verify the final v16 pair through normal new run, battle,
-health/buttons, keyword detail and save/exit. Those two device gates remain
-explicitly pending. The matching source27 delivery has been prepared but is
-not yet packaged; only completed device receipts may close that packaging
-guard. Preserve private art, ROM/OS, captures and embedded HTML outside Git;
-main and disabled remote CI remain unchanged.
+Next: continue original UI effects/timing and matched original-engine visual
+acceptance first; optimize cold startup, first-use and overlay work second,
+with a controlled map-camera comparison before further map-speed claims.
+The final source27 delivery must bind the exact launcher/WASM and v16 pack
+above, retain completed device receipts and exclude diagnostic markers/saves
+from the normal installation ZIP. A separate bounded measurement archive may
+contain JSON reports and logs, never ROM/flash/snapshots or resource payloads.
+Preserve private art, ROM/OS, captures and embedded HTML outside Git; main and
+disabled remote CI remain unchanged.
 
 ## Previous: source28 cache-pressure fixture correction — 2026-10-21
 

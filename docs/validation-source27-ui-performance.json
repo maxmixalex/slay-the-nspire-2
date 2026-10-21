@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "prepared_at_utc": "2026-10-21T12:12:59.154758+00:00",
-  "status": "completed_host_linked_and_same_save_firebird_evidence_fresh_route_and_final_v16_pair_pending",
+  "prepared_at_utc": "2026-10-21T13:12:02.622106+00:00",
+  "status": "completed_declared_host_and_firebird_gates_with_retained_limits",
   "reference": {
     "version": "v0.111.0",
     "lock": "41cef1ea"
@@ -62,7 +62,7 @@
       "sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd",
       "version": 15
     },
-    "current_arm_final_v16_pair_execution": "pending"
+    "current_arm_final_v16_pair_execution": "passed_with_recorded_input_incident"
   },
   "source25_ui": {
     "evidence": "source25_ui_review",
@@ -1264,19 +1264,7 @@
       "emitted_sanitizer_error_markers": 0
     }
   ],
-  "pending_gates": {
-    "source27_fresh_new_run_neow_map": {
-      "status": "pending",
-      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
-      "report": null
-    },
-    "source27_final_v16_device_pairing": {
-      "status": "pending",
-      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
-      "required_pack_sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
-      "report": null
-    }
-  },
+  "pending_gates": {},
   "acceptance_boundaries": {
     "original_engine_ui_percentage": "Not established; matching original-engine captures have not been compared.",
     "remaining_visual_gaps": [
@@ -1289,7 +1277,14 @@
     "thirty_to_forty_mb_installation": "Not achieved by the recorded artifacts; the final resource file alone is 80879519 bytes.",
     "model_versus_measurement": "Cache models, actual Node/WASM callback counts, linked memory, Firebird timer readings and physical performance are distinct evidence classes.",
     "check_counts": "Assertion/check totals include fixture checks; they are not independent gameplay scenarios or a completeness percentage.",
-    "private_inputs": "Original resource bytes, ROM/OS, captures and save fixtures are retained separately and are not included in this source receipt."
+    "private_inputs": "Original resource bytes, ROM/OS, captures and save fixtures are retained separately and are not included in this source receipt.",
+    "remaining_performance_work": [
+      "Cold startup and first-use decoding stalls",
+      "Separate cold/warm card-detail and keyword/pause overlay measurements; final v16 mixed overlay activity is not a steady FPS result",
+      "Controlled stable-camera map comparison",
+      "Physical handheld and actual-browser CPU/compositor measurements remain unmeasured"
+    ],
+    "browser_test_limitation": "Automatic approval review rejected transferring the private embedded-content HTML to the cloud browser. Local Node/VM host checks and actual WASM execution completed; no alternate-browser bypass or compositor FPS claim."
   },
   "evidence_catalog": {
     "source25_ui_review": {
@@ -1397,6 +1392,54 @@
       "artifact": "device25-work/source27-v15-profile/performance-summary.json",
       "bytes": 58242,
       "sha256": "ec7d53adb2d010e24c04a3f2cc7dc2e0790ddaed817e3ecf8a32948eaa62925b",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_firebird_newrun_v15": {
+      "artifact": "device25-work/source27-v15-newrun/performance-summary.json",
+      "bytes": 23529,
+      "sha256": "a3bb7bfaf94b30a08aab33a0ac31f49d8b50e98c252864f67dc081a06a772e27",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_newrun_seed_map": {
+      "artifact": "device25-work/source27-newrun-seed-map-comparison.json",
+      "bytes": 6852,
+      "sha256": "f523d90a5da8109b0566a36d8fbe02d76c1c05dd6a1d5e291845346df18ffb9d",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_final_v16_firebird": {
+      "artifact": "device25-work/source27-v16-final/validation-summary.json",
+      "bytes": 31676,
+      "sha256": "a07cc168567f93edf95bf2663ddd0f4bda9fe2883f5e19ad9fcdaac74736cba3",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_v16_first_profile": {
+      "artifact": "device25-work/source27-v16-final/recovery/first-invocation-perf.recovered.tns",
+      "bytes": 3714,
+      "sha256": "069dcdca566844e09d335ac0185a29374c8192469ded58a48d04be3366332aed",
+      "kind": "snapshot_recovered_profile_content_not_usb_export"
+    },
+    "source27_v16_second_profile": {
+      "artifact": "device25-work/source27-v16-final/runtime.perf.json",
+      "bytes": 3442,
+      "sha256": "110eeb83c8430f125839c5e267f4b41dabe730398665f8dbb20e821ccf5a6cbe",
+      "kind": "usb_exported_second_title_only_profile"
+    },
+    "source27_v16_nand_crosscheck": {
+      "artifact": "device25-work/source27-v16-final/extraction/nand-profile-crosscheck.json",
+      "bytes": 5154,
+      "sha256": "e5c41816fc85aaf1b75e2cc3ed547547b67230d74c0152093b14218ab7011157",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_v16_recovery_receipt": {
+      "artifact": "device25-work/source27-v16-final/recovery/recovery-receipt.json",
+      "bytes": 3224,
+      "sha256": "a64296a99c4d2bf55a74f2071046548ab927fa5d56b9e16895b1bcd950a34f9c",
+      "kind": "retained_private_validation_report"
+    },
+    "source27_v16_startup_observation": {
+      "artifact": "device25-work/source27-v16-final/startup-check-65s-counters.json",
+      "bytes": 2413,
+      "sha256": "5b2de965802ab2ad5adf43f741ee32e8a83460790567dcf785b67c1df6503a36",
       "kind": "retained_private_validation_report"
     }
   },
@@ -1955,6 +1998,36 @@
       "log": "source27-v15-profile-77fc358822c2.log",
       "log_sha256": "577555b3917d2e7ce49ea49909318c0d7a169b277f7aef2eed060266aa6c7173",
       "role": "current_runtime_same_save_v15_firebird_comparison"
+    },
+    "source27-v15-newrun-f23c00cc0581": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T12:14:13.415030+00:00",
+      "ended_at": "2026-10-21T12:25:13.077869+00:00",
+      "journal": "source27-v15-newrun-f23c00cc0581.json",
+      "journal_bytes": 47941,
+      "journal_sha256": "6b5adbbfa974f1bf954e0cd583aec37bfed36a1d3ff22d70f220ef38e1bdd117",
+      "log": "source27-v15-newrun-f23c00cc0581.log",
+      "log_sha256": "2680f33569c9b9473d3fb6752e43a3d7dae579da8e486f8857d84e547ed42bff",
+      "role": "current_runtime_fresh_newrun_neow_map_v15_firebird"
+    },
+    "source27-v16-final-70720be96b12": {
+      "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "95e3e6643724750436aac1be6a33bfbb5e27aa1da4cc984a223fddc879c7ad66",
+      "started_at": "2026-10-21T12:25:39.121092+00:00",
+      "ended_at": "2026-10-21T13:08:53.928498+00:00",
+      "journal": "source27-v16-final-70720be96b12.json",
+      "journal_bytes": 47938,
+      "journal_sha256": "233044875591b0c000d965bedc87e006542b26176f29acf6c746fda4ddde31d0",
+      "log": "source27-v16-final-70720be96b12.log",
+      "log_sha256": "a80789cb19b2a835854ccadd3bbd6b15beca9e9fe1004b19947701d177941c36",
+      "role": "current_runtime_final_v16_ui_save_exit_with_recorded_input_incident"
     }
   },
   "source27_final_pack_wasm_reads": {
@@ -2098,7 +2171,7 @@
       "The final 815-frame combat aggregate includes cold loading, stable idle and save input; it cannot be directly compared as an equal-duration average to the source26 59-frame aggregate.",
       "Animation dt clamps and source-frame skipping mean an elapsed authored idle period does not guarantee every frame is cached.",
       "The 30.0 starts/s and zero-read window is specifically v15, this saved battle and this later warmed interval.",
-      "v16 resource cache was separately checked by root in WASM; actual v16 UI/save/exit is a distinct pending session.",
+      "At the time of this v15 report, v16 resource cache was separately checked by root in WASM; actual v16 UI/save/exit is a distinct pending session. The completed final-v16 session is separately recorded under source27_firebird_final_v16.",
       "PC samples are 256-byte buckets; exact PC/symbol mapping is needed to distinguish nearby functions."
     ],
     "evidence": "source27_firebird_v15",
@@ -2293,6 +2366,709 @@
       "required_pack_version": 15,
       "report": "source27_firebird_v15",
       "journal": "source27-v15-profile-77fc358822c2"
+    },
+    "source27_fresh_new_run_neow_map": {
+      "status": "passed",
+      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "report": "source27_firebird_newrun_v15",
+      "journal": "source27-v15-newrun-f23c00cc0581"
+    },
+    "source27_final_v16_device_pairing": {
+      "status": "passed_with_recorded_input_incident",
+      "required_checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+      "required_pack_sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
+      "report": "source27_final_v16_firebird",
+      "journal": "source27-v16-final-70720be96b12"
     }
+  },
+  "source27_firebird_newrun_v15": {
+    "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "status": "passed",
+    "evidence": "source27_firebird_newrun_v15",
+    "journal": "source27-v15-newrun-f23c00cc0581",
+    "hardware_measurement": false,
+    "measurement": "Actual ARM runtime in Firebird CX II; no physical handheld measurement; App update-start watch is not presentation FPS",
+    "pack_version": 15,
+    "pack_sha256": "407589a297a6e1bf935b6f2a5024ad532efd84423b0374db13c080e6671ba7dd",
+    "normal_path": [
+      "Restore source27 prior normal-exit snapshot",
+      "USB reset to reconnect controller",
+      "Launch; title",
+      "Abandon private working save via normal title confirmation",
+      "Fresh Ironclad new run",
+      "Neow; choose Fishing Rod",
+      "Map entrance/display",
+      "S save",
+      "Close map; pause Save and Exit",
+      "Title Quit confirmation",
+      "Normal Ndless return to OS",
+      "USB retrieve save and profiler report"
+    ],
+    "sample_windows": [
+      {
+        "end_tick": 6261,
+        "start_tick": 5761,
+        "virtual_ms": 5000,
+        "update_starts": 17,
+        "starts_per_simulated_second": 3.4,
+        "maximum_observed_gap_ms": 4270,
+        "scene_window": "Neow initial/cold"
+      },
+      {
+        "end_tick": 6761,
+        "start_tick": 6261,
+        "virtual_ms": 5000,
+        "update_starts": 141,
+        "starts_per_simulated_second": 28.2,
+        "maximum_observed_gap_ms": 40,
+        "scene_window": "Neow following window"
+      },
+      {
+        "end_tick": 7597,
+        "start_tick": 7097,
+        "virtual_ms": 5000,
+        "update_starts": 67,
+        "starts_per_simulated_second": 13.4,
+        "maximum_observed_gap_ms": 140,
+        "scene_window": "Map entrance/display window"
+      }
+    ],
+    "startup_seconds": 44.030914306640625,
+    "resource_failures": 0,
+    "save": {
+      "path": "newrun.sav.tns",
+      "bytes": 230112,
+      "sha256": "ad1e3d1624fa43090c173b2ff763fc9a533be41d04b342b21db0d277d568a828"
+    },
+    "profile": {
+      "path": "runtime.perf.json",
+      "bytes": 3630,
+      "sha256": "c49a2aa2bea6cf66fe78003609a82672845a1f5bd661ec19d55779a8759a2345"
+    },
+    "limitations": [
+      "Not cycle-accurate physical performance. Host elapsed time is separately recorded.",
+      "Source25 comparison is the same seed and generated first-act map and geometry, verified by production save load. Three stored map records are equal but only act 0 is generated. Map entry-camera timing and profiling state differ, so not a fully controlled stable-camera A/B.",
+      "One initial observer read used a stale code base, was recognized and excluded; corrected live signature is 0x1249d258. See observer-corrections.json.",
+      "Command-helper wait expirations do not terminate the emulator; all dependent work waited for actual completed RUN_DONE/STATUS.",
+      "No final v16 claim from this v15 session."
+    ],
+    "same_seed_and_layout": {
+      "evidence": "source27_newrun_seed_map",
+      "scope": "Read-only inspection of two actual retrieved ARM saves via frozen source27 production load and world_map_layout. No emulator execution or game-state mutation by this inspector.",
+      "seed": {
+        "legacy_seed_decimal": 539365379,
+        "run_seed_hex": "0000000020261003",
+        "seed_text": "",
+        "character": 0,
+        "act_index": 0,
+        "ascension": 0
+      },
+      "maps_sha256": "609b2836cb161b62364e6ba998121764cf9c081d8081c4007b1dd139f364d943",
+      "layout_sha256": "bc4416cf04338b6952bc1c753af9364725548fc83b802f9f37d6c603617640b8",
+      "qualification": "Same seed and currently generated Act0 layout; future-act records are still ungenerated. Map entrance-camera phase and profiler activation differ, so these are entrance/display-window observations, not a fully controlled stable-camera A/B.",
+      "all_three_map_state_records_equal": true,
+      "generated_map_act_indexes": [
+        0
+      ],
+      "current_act_all_143_layout_points_equal": true
+    }
+  },
+  "source27_firebird_final_v16": {
+    "status": "passed_with_recorded_input_incident",
+    "checkpoint": "9d1e2a90ef5e942bd93fe304cd47eda0d88d3f69",
+    "measurement_environment": {
+      "actual_arm_execution": true,
+      "emulator": "Firebird CX II",
+      "physical_handheld_measurement": false,
+      "emulated_cpu_hz": 396000000,
+      "emulated_tick_ms": 10,
+      "timer_hz": 32768,
+      "warning": "Firebird is not cycle accurate. Raw hardware=1 is the emulated Ndless hardware type, not physical-device testing."
+    },
+    "first_invocation_timing": {
+      "startup_ticks": 1933519,
+      "startup_simulated_seconds": 59.006317138671875,
+      "first_render_ticks": 27421,
+      "first_render_simulated_seconds": 0.836822509765625,
+      "resource_failures": 0,
+      "comparison_scope": "Separately installed full NSP2/16 pack. Old emulator pack was deleted and the exact final pack transferred by ordinary USB before launch. This is separate from the same-file v15 matched performance comparison. No additional warmed performance window was sampled."
+    },
+    "overlay_mixed_operation_aggregate": {
+      "completed_frames": 236,
+      "read_calls": 497,
+      "read_bytes_requested": 20514241,
+      "scope": "Mixed card-detail, hover, keyword and confirmation operations with cold and warmer states. No isolated steady overlay FPS or comparison with the final warmed v15 combat window is claimed."
+    },
+    "completed_path": [
+      "Normal USB replacement; final pack directory size 80,879,519 B",
+      "Frozen source27 launch and completed app initialization",
+      "Normal title Abandon old working save confirmation",
+      "Fresh Ironclad character selection and new run",
+      "Neow Fishing Rod reward",
+      "First-act map and first reachable battle",
+      "Actual combat health bars and end-turn button",
+      "Defend card detail; touchpad hover Block tooltip; V keyword details",
+      "Save; pause Save and Exit; title Quit; first normal return to OS",
+      "Recover first report from preserved snapshot after unintended relaunch",
+      "Second title/confirmation-only invocation normal Quit; final USB save and separate second report retrieval"
+    ],
+    "input_incident": {
+      "first_normal_exit_confirmed": true,
+      "first_normal_exit_tick": 26373,
+      "cause_scope": "Final Enter confirmation was held for 2 simulated seconds. After normal return to OS, the selected launcher reopened; the OS key-dispatch explanation is inferred from timing and subsequent reset startup counters.",
+      "evidence": [
+        "normal-exit-os.png",
+        "exit-readiness-counters.json",
+        "relaunch-title-check.png",
+        "commands.jsonl"
+      ],
+      "first_report_preserved": true,
+      "second_invocation_gameplay": false,
+      "resolution": "Release after an 80ms final confirm, return normally to OS, reset stale USB queue and retrieve files. The cancelled stale USB requests and successful fresh transfers remain in the raw journal."
+    },
+    "verified_ui_scope": {
+      "pixels": "320 x 240 native framebuffer captures",
+      "controls": "Ordinary emulator key and touchpad input; no target-memory writes",
+      "coverage": "Selected first-battle health/buttons and nonempty Defend/Block tooltip and detail. Does not establish a 95% original-engine UI similarity score or all-scene coverage."
+    },
+    "limitations": [
+      "No physical calculator or browser compositor FPS is claimed.",
+      "V15 matched battle and fresh-run observations remain separate receipts.",
+      "Only the first act was generated and visited in this final path.",
+      "Command-helper wait expirations do not terminate emulator work; RUN_DONE/STATUS and completed journal determine completion.",
+      "Early prospective ready/fresh/keyword captures are retained and excluded where their actual state did not meet their filename label.",
+      "First recovered report and second USB report retain distinct provenance."
+    ],
+    "evidence": "source27_final_v16_firebird",
+    "journal": "source27-v16-final-70720be96b12",
+    "hardware_measurement": false,
+    "launcher": {
+      "bytes": 911249,
+      "sha256": "79a095948a2297ea9a3ae4e2dba6c11a6c4743c63ec5a7993b792c17e0a66789"
+    },
+    "pack": {
+      "bytes": 80879519,
+      "sha256": "89367cefcf3103d9bd834c47f1eb33e90119d3ab7cbb13b56e952501d2afc342",
+      "version": 16
+    },
+    "save": {
+      "artifact": "device25-work/source27-v16-final/final.sav.tns",
+      "bytes": 230356,
+      "sha256": "c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca",
+      "transport": "normal USB export",
+      "byte_identical_to_source25_source26_and_source27_v15": true
+    },
+    "first_invocation_profile": {
+      "evidence": "source27_v16_first_profile",
+      "provenance": {
+        "method": "Exact serialized-memory extraction including observed LF, independently corroborated by modified-NAND two-page reconstruction.",
+        "scope": "First UI invocation, recovered from the immutable snapshot taken during the unintended second startup. Not a USB-exported first invocation file.",
+        "directory_binding_limit": "No full filesystem/FTL directory parsing: the NAND reconstruction does not prove the active pathname at snapshot time. Multiple same-tag pages exist; content matching selects these exact report pages.",
+        "support": "First startup/first-render/first-present observations match. Independent extractor also reproduces the prior v15 USB-exported JSON from old NAND pages."
+      },
+      "recovery_evidence": "source27_v16_recovery_receipt",
+      "independent_nand_evidence": "source27_v16_nand_crosscheck",
+      "startup_observation": "source27_v16_startup_observation",
+      "raw_counters": {
+        "format": "nspire-runtime-perf-1",
+        "units": "timer_ticks",
+        "clock": "foreground_SP804",
+        "startup_scope": "file_open_and_app_init",
+        "clock_hz": 32768,
+        "hardware": 1,
+        "ndless_revision": 2022,
+        "pack_bytes": 80879519,
+        "startup": {
+          "count": 1,
+          "total": 1933519,
+          "min": 1933519,
+          "max": 1933519
+        },
+        "first_render": {
+          "count": 1,
+          "total": 27421,
+          "min": 27421,
+          "max": 27421
+        },
+        "first_present": {
+          "count": 1,
+          "total": 7,
+          "min": 7,
+          "max": 7
+        },
+        "resource_total": {
+          "ticks": 3014895,
+          "calls": 26842,
+          "bytes_requested": 152085451,
+          "failures": 0,
+          "seeks": 4943
+        },
+        "scenes": [
+          {
+            "scene": "title",
+            "interval": {
+              "count": 345,
+              "total": 406402,
+              "min": 207,
+              "max": 25338
+            },
+            "update": {
+              "count": 345,
+              "total": 16296,
+              "min": 2,
+              "max": 7739
+            },
+            "render": {
+              "count": 345,
+              "total": 119807,
+              "min": 197,
+              "max": 17628
+            },
+            "present": {
+              "count": 345,
+              "total": 2518,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 345,
+              "total": 19041,
+              "min": 0,
+              "max": 16981
+            },
+            "over_50ms": 2,
+            "over_100ms": 2,
+            "over_250ms": 2,
+            "read_calls": 35,
+            "read_bytes_requested": 179461,
+            "read_seeks": 32
+          },
+          {
+            "scene": "character",
+            "interval": {
+              "count": 27,
+              "total": 55823,
+              "min": 738,
+              "max": 27786
+            },
+            "update": {
+              "count": 27,
+              "total": 95,
+              "min": 2,
+              "max": 42
+            },
+            "render": {
+              "count": 27,
+              "total": 45762,
+              "min": 727,
+              "max": 26852
+            },
+            "present": {
+              "count": 27,
+              "total": 207,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 27,
+              "total": 25917,
+              "min": 0,
+              "max": 25917
+            },
+            "over_50ms": 1,
+            "over_100ms": 1,
+            "over_250ms": 1,
+            "read_calls": 61,
+            "read_bytes_requested": 308374,
+            "read_seeks": 55
+          },
+          {
+            "scene": "collection",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "map",
+            "interval": {
+              "count": 98,
+              "total": 242781,
+              "min": 1982,
+              "max": 13517
+            },
+            "update": {
+              "count": 98,
+              "total": 1645,
+              "min": 3,
+              "max": 802
+            },
+            "render": {
+              "count": 98,
+              "total": 240046,
+              "min": 1969,
+              "max": 13063
+            },
+            "present": {
+              "count": 98,
+              "total": 717,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 98,
+              "total": 13346,
+              "min": 0,
+              "max": 11291
+            },
+            "over_50ms": 98,
+            "over_100ms": 2,
+            "over_250ms": 1,
+            "read_calls": 39,
+            "read_bytes_requested": 203548,
+            "read_seeks": 34
+          },
+          {
+            "scene": "combat",
+            "interval": {
+              "count": 153,
+              "total": 1025687,
+              "min": 1093,
+              "max": 87025
+            },
+            "update": {
+              "count": 153,
+              "total": 8088,
+              "min": 3,
+              "max": 6853
+            },
+            "render": {
+              "count": 153,
+              "total": 1016464,
+              "min": 1083,
+              "max": 86288
+            },
+            "present": {
+              "count": 153,
+              "total": 1110,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 153,
+              "total": 521822,
+              "min": 0,
+              "max": 61109
+            },
+            "over_50ms": 28,
+            "over_100ms": 24,
+            "over_250ms": 20,
+            "read_calls": 282,
+            "read_bytes_requested": 13170341,
+            "read_seeks": 267
+          },
+          {
+            "scene": "room",
+            "interval": {
+              "count": 130,
+              "total": 392680,
+              "min": 817,
+              "max": 242213
+            },
+            "update": {
+              "count": 130,
+              "total": 217476,
+              "min": 3,
+              "max": 217041
+            },
+            "render": {
+              "count": 130,
+              "total": 156473,
+              "min": 732,
+              "max": 24809
+            },
+            "present": {
+              "count": 130,
+              "total": 939,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 130,
+              "total": 27834,
+              "min": 0,
+              "max": 23445
+            },
+            "over_50ms": 2,
+            "over_100ms": 2,
+            "over_250ms": 1,
+            "read_calls": 62,
+            "read_bytes_requested": 301608,
+            "read_seeks": 58
+          },
+          {
+            "scene": "overlay",
+            "interval": {
+              "count": 236,
+              "total": 1701984,
+              "min": 1266,
+              "max": 62464
+            },
+            "update": {
+              "count": 236,
+              "total": 5420,
+              "min": 2,
+              "max": 4599
+            },
+            "render": {
+              "count": 236,
+              "total": 1693070,
+              "min": 1256,
+              "max": 62452
+            },
+            "present": {
+              "count": 236,
+              "total": 1712,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 236,
+              "total": 801820,
+              "min": 0,
+              "max": 35990
+            },
+            "over_50ms": 158,
+            "over_100ms": 42,
+            "over_250ms": 34,
+            "read_calls": 497,
+            "read_bytes_requested": 20514241,
+            "read_seeks": 468
+          },
+          {
+            "scene": "other",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          }
+        ]
+      }
+    },
+    "second_invocation_profile": {
+      "evidence": "source27_v16_second_profile",
+      "provenance": "Normal USB export after the unintended relaunch and title Quit. Contains title and Quit confirmation only; not used for first-invocation timing or UI validation.",
+      "scene_completed_frames": {
+        "title": 605,
+        "character": 0,
+        "collection": 0,
+        "map": 0,
+        "combat": 0,
+        "room": 0,
+        "overlay": 38,
+        "other": 0
+      },
+      "not_used_as_first_invocation_timing_or_gameplay": true
+    },
+    "screenshots": {
+      "startup-check-65s": {
+        "artifact": "device25-work/source27-v16-final/startup-check-65s.png",
+        "bytes": 51810,
+        "sha256": "56d45d23c46287e5771b9aa040e7aa5ab2d3e80595b90361776cc4266547e22b"
+      },
+      "game-fresh-title-confirmed": {
+        "artifact": "device25-work/source27-v16-final/game-fresh-title-confirmed.png",
+        "bytes": 45756,
+        "sha256": "f70f1a9451cc26fd185b8bf42a17221d234aa2c3f1bf8c471e2f41a080feb06a"
+      },
+      "character-selection": {
+        "artifact": "device25-work/source27-v16-final/character-selection.png",
+        "bytes": 69584,
+        "sha256": "edac4623a4c14bf8d0ee405b8f319564a7aec98e2ac0e380d7636ccad4cf9db4"
+      },
+      "neow-game": {
+        "artifact": "device25-work/source27-v16-final/neow-game.png",
+        "bytes": 61665,
+        "sha256": "e84ab86db497175edf6e8f6f9874a1c273f5c8147418ad9abc0d001b2d43922b"
+      },
+      "map-game": {
+        "artifact": "device25-work/source27-v16-final/map-game.png",
+        "bytes": 28009,
+        "sha256": "da548336a42161d9392092f54197e78d8f0ceae2629feb31298950460bb66cb8"
+      },
+      "combat-health-buttons": {
+        "artifact": "device25-work/source27-v16-final/combat-health-buttons.png",
+        "bytes": 54314,
+        "sha256": "82a94e19f4deded0f1d502c9513561736d677bb029f67436ef6134f0cd998288"
+      },
+      "verified-block-card-detail": {
+        "artifact": "device25-work/source27-v16-final/verified-block-card-detail.png",
+        "bytes": 26082,
+        "sha256": "8cf820cb3628112cb43a3506ce2fc82a9dec914ea5fab00e79823639957e311e"
+      },
+      "verified-block-hover-tooltip": {
+        "artifact": "device25-work/source27-v16-final/verified-block-hover-tooltip.png",
+        "bytes": 27510,
+        "sha256": "a4cf50de4a36f6f593e48371f75e2abcb156d834ef1a618a1a2d95bd5b7b2b25"
+      },
+      "verified-block-keyword-details": {
+        "artifact": "device25-work/source27-v16-final/verified-block-keyword-details.png",
+        "bytes": 18642,
+        "sha256": "6fe915393b085ee780a45be2d7b082c6189d866226082ddc4016650373a389c5"
+      },
+      "combat-health-buttons-settled": {
+        "artifact": "device25-work/source27-v16-final/combat-health-buttons-settled.png",
+        "bytes": 67092,
+        "sha256": "af89027150c0f30554b627bab2c3bcc405c7e3b1f1b8cadac2fdca61013843af"
+      },
+      "abandon-accept-selected": {
+        "artifact": "device25-work/source27-v16-final/abandon-accept-selected.png",
+        "bytes": 29610,
+        "sha256": "4d0927efab6e1c8c9b6ad4502063fcb19d52b555701f950fe10bae2af3e71693"
+      },
+      "normal-exit-os": {
+        "artifact": "device25-work/source27-v16-final/normal-exit-os.png",
+        "bytes": 6959,
+        "sha256": "82816d22ea22035040c9674642b58d9463f4368bb3b25d4b801a523e2db09071"
+      },
+      "final-normal-exit-os": {
+        "artifact": "device25-work/source27-v16-final/final-normal-exit-os.png",
+        "bytes": 7072,
+        "sha256": "4cc85b8724bffabe810e741eb47f83e2c1955a55c9d2c5ad5794c800265cf84e"
+      }
+    },
+    "root_visual_review": {
+      "method": "Visual inspection of actual 320x240 framebuffer PNGs",
+      "captures": [
+        "startup-check-65s",
+        "combat-health-buttons-settled",
+        "abandon-accept-selected",
+        "verified-block-card-detail",
+        "verified-block-hover-tooltip",
+        "verified-block-keyword-details"
+      ],
+      "observed": "80/80 player and 8/8,35/35,14/14 enemy health labels; readable end-turn/confirmation controls; Defend card and nonempty Block hover and 1/1 keyword page. No original-engine percentage comparison."
+    },
+    "capture_label_corrections": {
+      "observations": [
+        {
+          "controller_capture": "title-ready.ppm",
+          "derived_png": "title-ready.png",
+          "counter_snapshot": "title-ready-counters.json",
+          "accepted_as_title": false,
+          "actual_state": "OS document list retained while app.init is still running; startup_count=0 and first_render_count=0, enabled=1, failures=0",
+          "codebase": "0x1248d248",
+          "tick": 13481,
+          "scope": "This was a prospective readiness check after 50 simulated seconds, not a passed game-title capture."
+        },
+        {
+          "controller_capture": "game-fresh-title.ppm",
+          "derived_png": "game-fresh-title.png",
+          "accepted_as_fresh_title": false,
+          "actual_state": "Abandon confirmation dialog; first short confirmation sequence had not accepted it. A later ordinary 200ms direction and confirmation succeeded.",
+          "successful_capture": "game-fresh-title-confirmed.png"
+        },
+        {
+          "controller_captures": [
+            "defend-selected.ppm",
+            "defend-card-detail.ppm",
+            "block-card-detail.ppm",
+            "block-hover-tooltip.ppm",
+            "block-keyword-details.ppm"
+          ],
+          "accepted_as_nonempty_keyword": false,
+          "actual_state": "Strike was selected. The short Left did not change the hand cursor. The normal Strike empty-keyword view is retained and excluded from successful keyword evidence.",
+          "successful_captures": [
+            "verified-block-card-detail.png",
+            "verified-block-hover-tooltip.png",
+            "verified-block-keyword-details.png"
+          ],
+          "verified_read_only_state": "Fresh frozen-ARM offsetof gate; cursor=2, hand.ids[2]=7, cards[7].kind=Defend(1), detail_card=1; no memory writes."
+        },
+        {
+          "controller_capture": "combat-health-buttons.ppm",
+          "accepted_as_stable_battle_preview": false,
+          "actual_state": "First actual combat capture; entrance fade still darkens the scene. Retained as early capture.",
+          "stable_preview_capture": "combat-health-buttons-settled.png"
+        },
+        {
+          "controller_capture": "normal-exit-os.ppm",
+          "accepted_as_first_normal_exit": true,
+          "tick": 26373,
+          "actual_state": "The first UI invocation returned normally to the OS document list. The final Enter confirmation had been held for 2 simulated seconds; the still-held key subsequently reopened the OS-selected launcher.",
+          "snapshot": "normal-exit.snapshot",
+          "snapshot_scope": "Preserved immutable snapshot captured during the unintended second startup. It contains the first invocation report; it is not a final idle-OS snapshot.",
+          "first_invocation_report": "recovery/first-invocation-perf.recovered.tns",
+          "first_report_provenance": "Exact snapshot recovery including observed LF, with separate NAND page matches. It is not represented as a USB-exported first invocation file.",
+          "second_invocation_scope": "Automatic relaunch, title and normal Quit only; no additional gameplay/performance scenario. Its later USB profiler export is distinct from the first report.",
+          "observed_second_startup_counter": "exit-readiness-counters.json shows startup_count=0 at tick 27273; fresh signature matches source27 again at tick 32773."
+        }
+      ]
+    },
+    "backing_flash_unchanged": true
   }
 }

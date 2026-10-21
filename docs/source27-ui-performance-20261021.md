@@ -4,12 +4,13 @@ The current built runtime is **source27**, `9d1e2a90ef5e942bd93fe304cd47eda0d88d
 Its native and WASM scene checks preserve the source25 output, and actual WASM
 resource traces show substantially fewer repeated reads. Source25's complete
 native test set has also finished through its recorded retry chain. The same-save
-source27 Firebird comparison and save/exit roundtrip have completed. **The
-fresh new-run route and final v16 calculator pairing remain pending in this
-receipt.**
+source27 Firebird comparison, fresh new-run route and their save/exit roundtrips
+have completed. **The final v16 calculator pairing also completed its normal
+new-run, actual UI, save and OS-exit path**, with an automation input incident
+and the two profiler records' distinct provenance retained below.
 
 The reference remains **v0.111.0 / 41cef1ea**. Exact report hashes, frozen source
-inventories, journal statuses and pending fields are in
+inventories, journal statuses and completion fields are in
 [validation-source27-ui-performance.json](validation-source27-ui-performance.json).
 Evidence IDs below refer to that file's `evidence_catalog` and `journal_catalog`.
 This is an evidence consolidation; preparing it ran no new builds or game tests.
@@ -168,8 +169,8 @@ at 80 HP, three energy and five cards, with enemy HP 8/35/14. Continue, save key
 save-and-return, normal OS exit and USB retrieval completed. The retrieved
 230,356-byte save exactly matches the source25 save, SHA-256
 `c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca`.
-This completed baseline belongs to source26 with v15; it cannot satisfy the
-pending current-runtime device gates. Evidence: `source26_firebird_baseline`.
+This completed baseline belongs to source26 with v15; current-runtime device
+execution has its own separate receipts. Evidence: `source26_firebird_baseline`.
 
 ## Source27 cache/map changes and executed results
 
@@ -207,6 +208,34 @@ and save input; it must not be compared as an equal-duration mean against the
 59-frame historical aggregate. The ten-millisecond watch observes update
 starts, while the internal scene totals count completed frames. Evidence:
 `source27_firebird_v15`.
+
+### Completed fresh new-run observation
+
+An independent fresh source27/v15 run also completed title → new Ironclad run
+→ Neow → Fishing Rod → map → save → title → normal OS exit. Both the save and
+profiler JSON were retrieved. Its startup was 44.03091 simulated seconds and
+the run reported no resource failures. Evidence: `source27_firebird_newrun_v15`
+and `source27-v15-newrun-f23c00cc0581`.
+
+| Fresh-run window | Simulated seconds | Update starts | Starts/s | Maximum observed gap, ms |
+| --- | ---: | ---: | ---: | ---: |
+| Neow, initial/cold | 5 | 17 | 3.4 | 4,270 |
+| Neow, following window | 5 | 141 | 28.2 | 40 |
+| Map, entrance/display | 5 | 67 | 13.4 | 140 |
+
+A read-only production-loader comparison proves the source25 and source27
+runs use seed `0x20261003`, the same Fishing Rod choice and identical map-state
+records. Only Act0 is generated at this point; its 143-slot drawing layout
+also matches exactly. The two later-act records are still ungenerated, so this
+is not an executed comparison of three generated acts. The newer saved route
+is the expected prefix `[1]` of the old first-battle route `[1,17]`.
+However, the map samples start approximately 4.20 versus 2.08 seconds after
+the entry input, with different camera positions and profiler activation.
+The old 33 starts and new 67 starts in five seconds therefore remain
+**same-map entrance/display observations**, not a controlled stable-camera
+twofold comparison. One stale-base observer read was identified, retained
+and excluded; corrected discovery was read-only. Evidence:
+`source27_newrun_seed_map` and `source27_firebird_newrun_v15`.
 
 ### Changes and native/WASM verification
 
@@ -273,10 +302,69 @@ window counts match the corresponding source27/v15 execution:
 
 The final pack does not reintroduce repeated reads in these declared scenes
 and windows. This is a current-runtime/final-pack check; **96.70% remains the
-separate old/new comparison using v15 on both sides**. The completed v16 WASM
-run does not close the pending final-v16 ARM/Firebird pairing. Evidence:
+separate old/new comparison using v15 on both sides**. Actual ARM/Firebird
+execution is established by the separate session below, not by this WASM run. Evidence:
 `source27_v16_resource_trace` and
 `source27-v16-resource-hotspots-0d3942538073`.
+
+### Completed final v16 ARM UI and save path
+
+The final 80,879,519-byte resource has now been installed in the CX II CAS
+Firebird environment and opened by the exact source27 launcher. Normal UI
+navigation reached a fresh Ironclad run, Neow, the first map node and the
+three-enemy battle. Actual 320 × 240 captures show the native health bars,
+end-turn control, pause plaques and red/gold confirmation controls. The initial
+battle capture is retained separately from the later settled frame.
+
+The selected card was verified to be **Defend**, with its actual five-Block
+description. A real emulated touchpad pointer produces a nonempty **Block**
+hover tooltip, and the **V** detail path shows that same keyword and its
+description with a 1/1 page indicator. Early misselected Strike captures are
+retained as failed navigation observations, not counted as keyword acceptance.
+The parent independently inspected the final battle, confirmation, card-detail,
+hover and keyword-page images. These are this port's actual device-environment
+captures, without a paired original-engine visual comparison.
+
+Startup on this complete-v16 installation took **59.006317 simulated seconds**;
+the separately timed first render took **0.836823 seconds**. This session
+deleted the old resource and transferred the complete replacement over USB.
+The v15 comparison used its retained installation. Therefore these are distinct
+installation observations, not a controlled attribution of the difference to
+the UI additions or an individual validation stage. The matched v15 startup
+comparison above remains 44.083344 versus 44.088898 seconds.
+
+Normal save, return to title, OS exit and final USB save retrieval completed.
+The retrieved **230,356-byte** save is byte-identical to the source25,
+source26 and source27/v15 canonical battle save, SHA-256
+`c60baca9345faec5f106dad220c9249d5c414c427c697af789dc0d1af131c5ca`.
+The final journal is **passed / returncode 0 / source unchanged**, and the
+backing flash file remains unchanged. Evidence: `source27_final_v16_firebird`
+and `source27-v16-final-70720be96b12`.
+
+The first normal exit was followed by an unintended launcher reopening after
+the automation held its confirmation key for two simulated seconds. That key
+dispatch explanation is inferred from the timing and reset startup counters.
+The original captures and queue-cancellation records remain preserved. A short
+confirmation then completed the second normal exit; the second invocation
+contained only title and Quit-confirmation activity, without gameplay.
+
+The first **3,714-byte** profiler record was recovered exactly from the preserved
+snapshot and independently reconstructed from two modified-NAND data pages.
+Its startup, first-render and first-present counters match the earlier read-only
+runtime observation; the same page-extraction method reproduces the older v15
+USB report. **This is recovered profile content, not a first-invocation USB
+export or proof of the active filesystem path.** No complete filesystem/FTL
+directory mapping was performed. The separate **3,442-byte** second-invocation
+USB report contains 605 title frames and 38 Quit-overlay frames; it is not used
+as the first UI run's timing or gameplay evidence. Evidence:
+`source27_v16_first_profile`, `source27_v16_nand_crosscheck`,
+`source27_v16_startup_observation` and `source27_v16_second_profile`.
+
+The first UI sequence also records **236 overlay frames, 497 reads and
+20,514,241 requested bytes**. Those combine card detail, hover, keyword and
+confirmation operations in cold and warmer states. They identify another
+bounded performance workload to investigate; they do not establish steady
+overlay FPS or inherit the v15 battle's later 30.0 starts/s result.
 
 ## Preserved source27 failure and source28 fixture correction
 
@@ -298,13 +386,13 @@ independent game scenarios. Evidence: `source28_corrected_fixture`,
 `source28-resource-map-asan-b1c4e7f38439` and
 `source28-runtime-equivalence-and-io-9bebc0c3cbd2`.
 
-## Explicit remaining gates
+## Completed gates and remaining acceptance boundaries
 
 | Gate | Status in this receipt |
 | --- | --- |
 | Source27 same-save Firebird comparison against source26/v15 | Passed; matched save/normal exit, bounded cold and warm windows |
-| Source27 fresh new run → Neow → map route | Pending completed report |
-| Source27 launcher paired with final v16 in the device environment | Pending completed report |
+| Source27 fresh new run → Neow → map route | Passed; normal save/exit and retrieved profiler; map-window qualification retained |
+| Source27 launcher paired with final v16 in the device environment | Passed; actual nonempty hover/V UI, identical retrieved save, normal exit; input incident and report-recovery limits retained |
 | Physical handheld FPS and browser compositor FPS | Not measured |
 | Original-engine UI similarity percentage | Not established; no matched original-engine capture set |
 | Complete 30–40 MB calculator installation | Not achieved; final resource file alone is 80,879,519 bytes |
@@ -312,6 +400,35 @@ independent game scenarios. Evidence: `source28_corrected_fixture`,
 The remaining visual scope includes the original Doom animated shader,
 block gain/break particles and the per-hit asynchronous visual timeline.
 The completed source25 UI review, historical source26 profiler baseline,
-actual WASM callback traces and current-runtime pending fields retain their
+actual WASM callback traces and current-runtime completed device gates retain their
 separate scopes. Evidence: `source25_ui_review`, `source26_firebird_baseline`,
-`source27_runtime_io` and the JSON receipt's `pending_gates`.
+`source27_runtime_io`, `source27_final_v16_firebird` and the JSON receipt's
+`completed_device_gates`. No declared execution gate remains pending in this
+receipt; the acceptance boundaries above remain open.
+
+## Next development priorities
+
+1. **Original UI fidelity:** close the remaining Doom shader, block gain/break
+   particles and per-hit visual timeline, then build a matched original-engine
+   capture set at declared scenes and times. The present regression captures
+   preserve this port's output; they cannot supply a 95% similarity score.
+2. **Measured responsiveness:** address cold startup and first-use stalls before
+   treating the warmed battle result as representative. `Content::open` currently
+   scans the complete file for FNV integrity and then validates retained images,
+   encoded glyphs and directory data; the runtime cache changes do not remove
+   that startup work. Separate sequential transport, hash, validation/decode and
+   first-scene costs before choosing a larger read batch or a different loading
+   schedule, while retaining corrupt-input rejection and the memory bound.
+   Card-detail, keyword and pause overlays need separate cold/warm measurements;
+   the mixed final-v16 activity above must not be treated as a warm battle test.
+   Map entry also needs a controlled camera/animation comparison before another
+   speedup claim. Physical handheld and local-browser measurements remain separate
+   targets from the completed Firebird and Node/WASM observations.
+3. **Stored size:** implement and measure the bounded retained-image/glyph
+   grouping experiment only with exact decode and cold/random/warm access checks.
+   Its earlier component model still exceeds 40 MB; the current cache increase
+   spends bounded RAM and provides no reduction in the delivered resource file.
+
+Startup-path source: [Content::open](../src/content.cpp) and
+[ResourceReader::fnv1a](../src/resource_source.cpp). The grouping measurements and
+their unimplemented-format limits remain in [resource-budget-0.17.md](resource-budget-0.17.md).
