@@ -1,6 +1,74 @@
 # Work state — 2026-10-21
 
-## Current: bounded preparation batching and bilingual delivery — source33 pending validation
+## Current: source33 built; actual-pack fixture corrections pending source34
+
+Source33 runtime is remotely preserved at
+`2d5c6384cd6a5cab14877c1f0371a335760b00e0`: all 572 tree files and all
+12 changed contents matched the read-back. Its source archive SHA-256 is
+`cbb41b17d5b0eb319f07772f39731a069981c6767543391e34e4098299869964`.
+The final ARM launcher is 939,160 bytes, SHA-256
+`e0c4778626f5838b769343597d0267f7c81625feb38d325ab0517f6e1410b46b`.
+Zehn allocation is 16,310,280 bytes, leaving 466,936 bytes below 16 MiB.
+The final WASM is 5,199,273 bytes, SHA-256
+`12f58985a1180b623e9860de3e63f86fd8fe06d628e76783ecc1c070c47ce577`.
+
+The actual v17 Chinese and English packs are respectively 81,124,916 and
+78,349,238 bytes. Their SHA-256 values are
+`470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43`
+and `7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b`.
+Both contain 45,785 images, 1,695 clips, 558 cards, 8,192 strings and 1,236
+auxiliary entries. Original graphics payloads match the preceding pack;
+Chinese has 11,900 glyphs and English 570, with all text/runtime codepoints
+present at all five sizes. English resource strings contain no CJK characters.
+Of 935 UI literal bindings, 620 map directly to original localization keys;
+315 are port controls, diagnostics or legacy fallback prose, not original text.
+
+Source33's ten affected ASan/UBSan regressions passed. Source31's fifteen
+related regressions also passed after disabling only LeakSanitizer: its initial
+invocation aborted because this sandbox cannot enumerate `/proc/.../task`.
+Retain that failed invocation; do not claim leak checking or a single green
+full-suite run. The source33 actual packs separately passed world UI checks
+(5,820 each), all localized glyph/string metadata, the selected 48 appended
+image decodes and 40 identical memory/range UI frames. They also produced
+18 card/HUD/selector captures per language. Screenshots require visual review;
+their existence alone is not original-engine parity.
+
+Actual-pack keyword and world-text regressions exposed fixture assumptions
+that synthetic content did not exercise. Keyword setup must finish the new
+preparation scene before querying hand hit targets. Dusty Tome's original
+English description does not append the Chinese template's `+`; retain correct
+card-reference and save-stability assertions without inventing punctuation.
+The Chinese world-text canonical-blade fixture also forced Combat while turn
+was still zero; establish combat through the runtime entry point instead.
+Keep these failed journals and rerun only affected paths after the next remotely
+verified checkpoint. An actual runtime text-buffer observation confirms the
+STAR_COUNT title and Divine Right description use 辉星. A small screenshot
+was initially misread; no production string or pack change is warranted.
+
+The final same-v16-pack source27/source33 ABBA run confirms 24,097,642 to
+2,162,452 bytes across preparation, first visible render and 720 subsequent
+frames (91.026% less), with all canonical saves unchanged. Preparation is
+59 updates, maximum four cold images per update, versus source31's 236.
+At the harness's 33ms schedule that is a 1,947ms waiting floor versus 7,788ms;
+it is not observed device elapsed time or browser RAF timing. Actual Chinese
+and English v17 observations read 2,224,072 and 2,113,480 bytes respectively.
+Native/WASM match all five sampled RGB565 frames and all stage I/O counts in
+both languages, with fixed 16 MiB WASM memory and no save callbacks.
+
+Cold-start read callbacks decrease from 25,830 to 7,290, while bytes remain
+approximately 117 MB. No startup speed improvement is established. Stage
+timing identifies full animation-index decoding/validation as the remaining
+hotspot; integrity and malformed-data rejection remain enabled. The public
+WASM profiler is being updated to drain and separately report preparation so
+that diagnostic input replay and visible-window timing respect the new scene.
+
+Firebird execution of the exact final launcher/Chinese pack is in progress,
+including real startup progress, new run, combat entry and seed persistence
+across process restart. It is not yet accepted, not a physical calculator FPS
+measurement, and should not be inferred from ARM compilation. Final packaging
+and delivery remain pending. Main and CI are unchanged; 30–40 MB is unachieved.
+
+## Previous checkpoint: bounded preparation batching and bilingual delivery
 
 Source32 is remotely preserved at
 `26e5407a6e497ef8db76a22881ef853621f249e1`, with all 571 tree files and

@@ -4,18 +4,32 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include <vector>
 
 using namespace spire;
 static App a;
 static SaveData before,after,disk;
 static uint32_t entropy_value=0;
 static unsigned entropy_calls=0,checks=0;
+static const char* screenshot_directory;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"device feedback:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static uint32_t entropy(){++entropy_calls;return entropy_value;}
 static bool store(const State&s){return save(s,disk);}
 static bool restore(State&s){return load(s,disk.bytes,disk.size);}
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
+static void capture(const char* name){
+    if(!screenshot_directory)return;
+    const std::string path=std::string(screenshot_directory)+"/"+name+".ppm";
+    FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");
+    unsigned char row[ScreenW*3];
+    for(int y=0;y<ScreenH;++y){
+        for(int x=0;x<ScreenW;++x){const unsigned p=a.pixels[y*ScreenW+x];row[x*3]=(p>>11)*255/31;row[x*3+1]=((p>>5)&63)*255/63;row[x*3+2]=(p&31)*255/31;}
+        CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);
+    }
+    CHECK(!std::fclose(f));
+}
 static void fresh(uint32_t sample,const char*seed=""){
     a.game=State{};a.callbacks={store,restore,nullptr,entropy};a.run_number=a.map_clock_ms=0;entropy_value=sample;
     a.title=a.character_select=true;a.paused=a.help=a.library=a.settings_open=a.practice_entry=false;
@@ -49,7 +63,14 @@ static void statuses(){
     auto&s=a.game;s.strength=-3;s.dexterity=123;s.vigor=7;s.thorns=2;s.pain=3;s.embrace=4;s.no_draw=1;s.no_block=1;
     s.noxious_fumes=1;s.accuracy=2;s.demon_form=3;s.infinite_blades=1;s.flame_barrier=6;s.block_next_turn=9;s.draw_next_turn=2;
     s.enemies[0].strength=-2;s.enemies[0].weak=4;s.enemies[0].vulnerable=5;s.enemies[0].poison=123;
-    a.reset_presentation();a.render();snapshot();
+    a.reset_presentation();a.pointer.visible=false;a.render();snapshot();
+    unsigned loading_steps=0;const unsigned frozen_animation=a.animation;
+    while(a.combat_preparation.active&&loading_steps++<1024){a.advance(33);a.render();CHECK(a.animation==frozen_animation);}
+    CHECK(!a.combat_preparation.active);unchanged();
+    // Inspect actual localized glyph widths and dense icon wrapping, as well
+    // as the existing synthetic/no-content layout and canonical state checks.
+    a.advance(250);a.render();capture("player-turn-banner");unchanged();
+    for(unsigned i=0;i<10;++i)a.advance(250);a.render();capture("dense-statuses");unchanged();
     for(int actor=0;actor<=s.enemy_count;++actor){
         int ids[StatusKinds],count=collect_statuses(s,actor,ids),found=0;
         for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::BattleStatus&&a.hits[i].value/StatusKinds==actor)++found;
@@ -64,7 +85,16 @@ static void statuses(){
     int ids[StatusKinds];collect_statuses(s,1,ids);CHECK(ids[a.status_selected]==6);unchanged();
     a.input(Key::Back);CHECK(a.status_actor<0);a.render();unchanged();
     for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::BattleStatus){
-        const HitRegion h=a.hits[i];a.pointer_move(h.x+1,h.y+1);a.render();unchanged();break;
+        const HitRegion h=a.hits[i];a.pointer_move(h.x+1,h.y+1);a.render();capture("status-tooltip");unchanged();break;
     }
 }
-int main(){seeds();statuses();std::printf("device feedback: %u checks passed\n",checks);}
+int main(int argc,char**argv){
+    CHECK(argc<=3);seeds();std::vector<uint8_t>data;
+    if(argc>1){
+        FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);
+        CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));data.resize(size);
+        CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));CHECK(a.init(data.data(),data.size(),{}));
+    }
+    if(argc>2)screenshot_directory=argv[2];statuses();
+    std::printf("device feedback: %u checks passed; %s content\n",checks,argc>1?"actual localized":"fallback");
+}

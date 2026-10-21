@@ -21,7 +21,8 @@ function distribution(values) {
  const wasm=fs.readFileSync(wasmPath),pack=fs.readFileSync(packPath);
  const cases=JSON.parse(fs.readFileSync(path.join(fixtureRoot,'scenarios.json'),'utf8')).cases.filter(x=>!filter||x.name.includes(filter));
  assert.ok(cases.length,'No matching scenarios');
- const report={schema:1,measurement:'Node WebAssembly execution, excluding browser canvas/compositor and device CPU',
+ const report={schema:2,measurement:'Node WebAssembly execution, excluding browser canvas/compositor and device CPU',
+  preparation_policy:'Finish bounded combat preparation before the next fixture input; report its work separately from visible animation windows. No wall-clock frame sleeps are performed.',
   node:process.version,cpu:os.cpus()[0]?.model,pack_bytes:pack.length,wasm_bytes:wasm.length,scenarios:[]};
  for(const scenario of cases){
   let memory,game,reads=0,readBytes=0,readMs=0;
@@ -33,9 +34,29 @@ function distribution(values) {
    load:(p,max)=>{assert.ok(storage.length<=max);new Uint8Array(memory.buffer,p,storage.length).set(storage);return storage.length;}
   }});
   game=instance.exports;memory=game.memory;
-  const scene=()=>game.performance_scene?['title','character','collection','map','combat','room','overlay','other'][game.performance_scene()]:'unavailable_in_baseline';
+  const scene=()=>game.performance_scene?(['title','character','collection','map','combat','room','overlay','other','combat_preparation'][game.performance_scene()]||'unknown'):'unavailable_in_baseline';
   const instantiateMs=performance.now()-begin,start=performance.now();assert.equal(game.start(pack.length),1);
-  const result={name:scenario.name,instantiate_ms:instantiateMs,startup_ms:performance.now()-start,startup_read_calls:reads,startup_read_bytes:readBytes,steps:[]};
+  const result={name:scenario.name,instantiate_ms:instantiateMs,startup_ms:performance.now()-start,startup_read_calls:reads,startup_read_bytes:readBytes,steps:[],preparations:[]};
+  function finishPreparation(afterStep){
+   if(scene()!=='combat_preparation')return;
+   const row={after_step:afterStep,updates:0,read_calls:0,read_bytes:0,resource_copy_ms:0,
+    progress_read_calls:0,progress_read_bytes:0,first_visible:null},updateTimes=[],progressTimes=[];
+   while(scene()==='combat_preparation'){
+    assert.ok(row.updates<8192,'Combat preparation did not finish');
+    let calls=reads,bytes=readBytes,io=readMs,started=performance.now();game.advance(33);
+    updateTimes.push(performance.now()-started);row.updates++;
+    row.read_calls+=reads-calls;row.read_bytes+=readBytes-bytes;row.resource_copy_ms+=readMs-io;
+    const preparing=scene()==='combat_preparation';
+    calls=reads;bytes=readBytes;io=readMs;started=performance.now();game.draw_frame();
+    const elapsed=performance.now()-started;
+    if(preparing){progressTimes.push(elapsed);row.progress_read_calls+=reads-calls;row.progress_read_bytes+=readBytes-bytes;row.resource_copy_ms+=readMs-io;}
+    else row.first_visible={scene:scene(),render_ms:elapsed,read_calls:reads-calls,read_bytes:readBytes-bytes,resource_copy_ms:readMs-io};
+   }
+   row.update=distribution(updateTimes);row.progress_render=distribution(progressTimes);
+   row.scheduled_ms_at_33ms=row.updates*33;
+   row.scheduled_ms_scope='Simulation update schedule only; this process does not sleep and this value is not device elapsed time.';
+   result.preparations.push(row);
+  }
   for(const [index,step] of scenario.steps.entries()){
    const calls=reads,bytes=readBytes,io=readMs,beforeScene=scene(),input=performance.now();
    if(typeof step==='number'){if(step<0)game.advance(99);else game.input(step);}
@@ -48,7 +69,9 @@ function distribution(values) {
    else throw Error('Unknown action');
    const inputMs=performance.now()-input,render=performance.now();game.draw_frame();
    result.steps.push({index,step,scene_before:beforeScene,scene_after:scene(),input_ms:inputMs,render_ms:performance.now()-render,read_calls:reads-calls,read_bytes:readBytes-bytes,resource_copy_ms:readMs-io});
+   finishPreparation(index);
   }
+  assert.notEqual(scene(),'combat_preparation','Preparation must be excluded from visible animation windows');
   const cold=[],warm=[],sceneBefore=scene(),sceneCounts={};let before=reads,byteStart=readBytes;
   // Two equal six-second animation windows show recurrent cache pressure.
   for(let frame=0;frame<360;frame++){const t=performance.now();game.advance(33);game.draw_frame();(frame<180?cold:warm).push(performance.now()-t);const current=scene();sceneCounts[current]=(sceneCounts[current]||0)+1;}

@@ -66,7 +66,14 @@ static void setup(){
     const CardKind cards[]={Bash,Defend,BladeDance,DefectRainbow,RegentBigBang};
     for(auto kind:cards){int id=s.card_count++;s.deck[s.deck_count++]={kind,0};s.cards[id]={kind,0};s.zones[id]=Zone::Hand;s.hand.ids[s.hand.count++]=uint16_t(id);}
     a.title=a.library=a.paused=a.help=a.character_select=a.settings_open=a.map_preview.open=false;a.frontend_confirm=0;a.reset_presentation();a.pointer.visible=false;
-    CHECK(validate(s));a.render();
+    CHECK(validate(s));CHECK(save(s,before));const unsigned start_animation=a.animation;
+    a.render();unsigned loading_steps=0;
+    // Real compressed actor frames enter the bounded preparation screen;
+    // direct synthetic images are already cached. Test the same settled
+    // hand in both cases before looking up pointer/keyboard hit regions.
+    while(a.combat_preparation.active&&loading_steps++<1024){a.advance(33);a.render();CHECK(a.animation==start_animation);}
+    CHECK(!a.combat_preparation.active&&a.content.healthy());
+    CHECK(save(s,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
 static void snapshot(){CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}

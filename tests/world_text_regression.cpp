@@ -74,7 +74,9 @@ static void prepared_and_owned(){
   CHECK(world_relic_setup_offer(a.game,sample.relic,sample.relic==WorldRelicSeaGlass?int((character+1)%5):-1));
   const std::string first=bound_title(sample.relic,sample.first),second=sample.second?bound_title(sample.relic,sample.second):"";CHECK(!first.empty());
   snapshot();std::string shown=description(sample.relic);CHECK(shown.find(first)!=std::string::npos);if(sample.second)CHECK(shown.find(second)!=std::string::npos);
-  if(sample.relic==WorldRelicDustyTome)CHECK(shown.find(first+"+")!=std::string::npos);
+  // The synthetic Chinese-shaped template explicitly appends '+'. Original
+  // languages own that punctuation; English does not append the same suffix.
+  if(sample.relic==WorldRelicDustyTome&&!actual_pack)CHECK(shown.find(first+"+")!=std::string::npos);
   if(sample.relic!=WorldRelicSeaGlass){std::string event=description(sample.relic,true);CHECK(event.find(first)!=std::string::npos);if(sample.second)CHECK(event.find(second)!=std::string::npos);}
   unchanged();CHECK(load(a.game,before.bytes,before.size));CHECK(description(sample.relic)==shown);unchanged();
   if(sample.relic==WorldRelicSeaGlass)continue; // Its acquisition opens card rewards.
@@ -107,7 +109,7 @@ static void nightmare_snapshot_names(){
 }
 static void canonical_blade_context(){
  if(a.content.version()<LocaleContentVersion)return;
- reset(3);a.game.phase=Phase::Combat;CHECK(encounter_setup(a.game,EncounterId::NibbitsWeak));
+ reset(3);enter_combat(a.game);CHECK(encounter_setup(a.game,EncounterId::NibbitsWeak));
  auto&r=a.game.regent;const RPower powers[]={RPower::Parry,RPower::SeekingEdge,RPower::SwordSage};const int amounts[]={17,1,2};
  for(unsigned i=0;i<3;i++){r.powers[unsigned(powers[i])]=amounts[i];r.power_order[r.power_count++]=uint8_t(powers[i]);}
  snapshot();char catalog[4096]{},detached[4096]{},live[4096]{};const Card card{SovereignBlade,0};const EventCardFacts canonical{};
@@ -115,6 +117,20 @@ static void canonical_blade_context(){
  a.library=false;a.card_description(card,0,detached,sizeof detached,-1,-1,&canonical);resolved(detached);CHECK(!std::strcmp(catalog,detached));unchanged();
  a.card_description(card,0,live,sizeof live);resolved(live);CHECK(std::strcmp(catalog,live));
  CHECK(std::strstr(live,a.content.world_title("static_hover_tips","REPLAY_DYNAMIC")));unchanged();
+}
+static void original_resource_labels(){
+ if(a.content.version()<LocaleContentVersion)return;
+ reset(3);snapshot();
+ // Read the actual locale labels rather than inferring tiny rendered glyphs.
+ // Both resource formatters and the standalone star-icon binding must use
+ // the same original key in each language, including relic and potion text.
+ const std::string star=a.content.world_title("static_hover_tips","STAR_COUNT");
+ const std::string energy=a.content.world_title("static_hover_tips","ENERGY_COUNT");
+ CHECK(!star.empty()&&!energy.empty());
+ CHECK(description(WorldRelicDivineRight).find(star)!=std::string::npos);unchanged();
+ struct Sample{const char*table,*key;const std::string*label;};
+ const Sample samples[]={{"potions","STAR_POTION.description",&star},{"potions","ENERGY_POTION.description",&energy},{"static_hover_tips","STAR_COUNT.description",&star}};
+ for(const auto&sample:samples){char text[2048]{};a.localized_text(sample.table,sample.key,text,sizeof text);resolved(text);CHECK(std::strstr(text,sample.label->c_str()));unchanged();}
 }
 static void crystal_board_count(){
  reset(0);CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,0x71ef23,0));
@@ -161,5 +177,5 @@ static void colossal_flower(){
  }
 }
 int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual_pack=true;}else data=synthetic_profile();
- CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();nightmare_snapshot_names();canonical_blade_context();crystal_board_count();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
+ CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();nightmare_snapshot_names();canonical_blade_context();original_resource_labels();crystal_board_count();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
 }
