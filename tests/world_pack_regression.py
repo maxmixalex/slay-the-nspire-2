@@ -17,11 +17,31 @@ from build_world import (ConversionCache, card_description, choose_layout,
     cached_enemy_clip, render_scope, source_fingerprint, sample_enemy_batched)
 from world_enemy_assets import manifest
 from world_enemy_profile import plan, skins
-from world_ui_profile import (BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
+from world_ui_profile import (BASE_AUXILIARY, BASE_CLIPS, ENEMY_CLIP_ROWS, MAP_CLIP_ROWS,
     ROOM_CLIP_ROWS, REST_ACTOR_CLIP_ROWS, CLIP_ROWS, AUXILIARY_ROWS, TEXT_KEYS, TEXT_BASE, validate_headers)
 
 
 class WorldPack(unittest.TestCase):
+    def test_reticle_appends_after_all_existing_map_common_and_room_images(self):
+        # Pinned public key/index pairs from verified source12, before this
+        # addition. An insertion into the earlier map catalog must fail even
+        # when all regenerated tables happen to agree with that insertion.
+        prior = [(row['key'], BASE_AUXILIARY + i)
+                 for i, row in enumerate(AUXILIARY_ROWS[:831])]
+        digest = hashlib.sha256(json.dumps(prior, separators=(',', ':')).encode()).hexdigest()
+        self.assertEqual(digest, '7a2c7313947e81306646a10d4584faf3a3ca3a57f90de6e7a04731d107f9c546')
+        added = AUXILIARY_ROWS[831]
+        self.assertEqual(added['key'], 'map.SELECTION_RETICLE')
+        self.assertEqual(BASE_AUXILIARY + 831, 1170)
+        self.assertEqual(added['path'], 'images/ui/combat/combat_reticle.png')
+        self.assertEqual(added['source_size'], [48, 48])
+        self.assertEqual(added['size'], [48, 48])
+        self.assertNotIn('modulate', added)
+        self.assertNotIn('nine_patch', added)
+        self.assertEqual(added['fit'], 'stretch')
+        self.assertEqual(plan_summary()['expected_images'], 45720)
+        self.assertEqual(plan_summary()['clips'], 1695)
+
     def test_room_shader_and_actor_cache_closures_do_not_discard_enemy_frames(self):
         source = source_fingerprint()
         model = manifest()['models'][0]

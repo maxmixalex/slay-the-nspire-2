@@ -48,6 +48,9 @@ static void capture(){
 }
 static void key(Key k){std::fprintf(manifest,"%s{\"key\":%u}",frames?",":"",unsigned(k));app.input(k);capture();}
 static void advance(unsigned ms){std::fprintf(manifest,"%s{\"advance\":%u}",frames?",":"",ms);app.advance(ms);capture();}
+static void move_pointer(int x,int y){
+ std::fprintf(manifest,"%s{\"move\":[%d,%d]}",frames?",":"",x,y);app.pointer_move(x,y);capture();
+}
 static void pointer(int x,int y,bool pressed){
  std::fprintf(manifest,"%s{\"pointer\":[%d,%d,%s]}",frames?",":"",x,y,pressed?"true":"false");
  app.pointer_move(x,y);app.pointer_button(pressed);capture();
@@ -177,7 +180,15 @@ int main(int argc,char**argv){
   std::fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",index?",":"",name.c_str());
   key(Key::Confirm);require(!app.title,"load native fixture from title");
   if(kind==SceneKind::Neow){action(UiAction::ReadEvent);scroll(1);action(UiAction::CloseEventReader);key(Key::Save);}
-  else if(kind==SceneKind::Map){key(Key::Detail);key(Key::Down);key(Key::Back);key(Key::Right);key(Key::Save);key(Key::Load);}
+  else if(kind==SceneKind::Map){
+   key(Key::Detail);key(Key::Down);key(Key::Back);
+   // Original directional reticles retain independently fading old focus.
+   // Mouse mode cancels them; a later direction and load reestablish focus
+   // through the real App input/lifecycle paths, without fixture writes.
+   key(Key::Right);advance(33);key(Key::Left);advance(99);
+   move_pointer(10,210);advance(231);key(Key::Right);advance(66);
+   key(Key::Save);key(Key::Load);
+  }
   else if(kind==SceneKind::Combat||kind==SceneKind::Kaiser){
    const int turn=app.game.turn;key(Key::EndTurn);require(app.game.turn==turn+1,"original enemy move executes through normal End Turn");
    for(unsigned i=0;i<40;i++)advance(250);

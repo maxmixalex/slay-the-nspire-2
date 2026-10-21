@@ -3,7 +3,7 @@
   "reference": "v0.111.0 / 41cef1ea",
   "date": "2026-10-21",
   "release_ready": false,
-  "scope": "Frozen source validation receipts through 4b9dad96, including retained failures/interrupted runs and the completed remaining-suite run on 0f750373. Source8/source9 short diagnostics are recorded separately, not as a rebuilt runtime.",
+  "scope": "Historical source gates retained individually; source10 full-batch timeouts and same-source reruns, completed source11/12 builds, and separate source13 short diagnostics. No cross-checkpoint full-pass aggregation.",
   "results": [
     {
       "checkpoint": "c6895eeae34c2f28d761454c3b603809e57b6f89",
@@ -1380,10 +1380,28 @@
     "native_build_steps": 122,
     "native_full_46": {
       "journal": "source10-native-all46-b73aa6efa60d.json",
-      "status_at_source11_stage": "running",
-      "result": "unfinished; do not count as passed",
-      "per_test_timeout": 1200,
-      "stage_timeout": 7200
+      "status": "failed",
+      "passed": 44,
+      "timed_out": [
+        "events_regression",
+        "character_ui_regression"
+      ],
+      "seconds": 1773.99,
+      "returncode": 8,
+      "source_changed": false,
+      "initial_receipt_sha256": "39e38ef742a4e8eec6cac3b5619578d26892fd1aa227e8417f68af763daa7e8f",
+      "same_source_recheck": {
+        "journal": "source10-native-timeout-recheck-0ec962b8dcf6.json",
+        "status_at_source13": "running",
+        "events_regression": {
+          "status": "passed",
+          "seconds": 1071.96
+        },
+        "character_ui_regression": "running",
+        "distinct_passed_suites_at_cutoff": 45,
+        "timeout_per_suite_seconds": 2400,
+        "original_failures_retained": true
+      }
     },
     "python_summary": {
       "schema": 1,
@@ -1955,7 +1973,12 @@
       "journal": "source11-full-world-pack-b9eb4555f6aa.json",
       "status_at_source12_stage": "running",
       "source_checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
-      "result": "unfinished; actual complete payload size and publication remain unknown"
+      "result": "unfinished; actual complete payload size and publication remain unknown",
+      "status_at_source13": "interrupted and resumed from checked cache; final pack still unfinished",
+      "interrupted_journal_sha256": "3a776d840f4c38a0c16b4ed9f4f19c25633aec001b921eb5507335686220cbf6",
+      "resumed_journal": "source11-full-world-pack-blas1-36a0e3b5ba05.json",
+      "resumed_status": "running",
+      "restart_receipt_sha256": "7e17aa3ee9f2daa77dcbe053ff22c7f03cbc227fbc54b4cfc532495e606e04cf"
     },
     "source_archive": {
       "file": "slay-the-nspire-2-source11-recovery-20261021.zip",
@@ -2152,6 +2175,286 @@
       "Chaotic cosmetic stream adapted to App-only clock-seeded deterministic xorshift32.",
       "33ms clock, RGB565 modulation and Q12 movement quantization; 14/8040 reference samples differ by one rounded pixel.",
       "Original hover/press scale, rarity glow/particles, empty SPRING text movement, fly-to-inventory and first FTUE remain unfinished."
+    ],
+    "release_ready": false
+  },
+  "source12_formal_validation": {
+    "checkpoint": "6ec81e3b6b6aac1198d168623ae557b4fe01deb0",
+    "tree": "172c6d9ad227fed0339f9d96a99e1921cd6ff6ea",
+    "remote_readback": {
+      "at": "2026-10-21T03:49:58Z",
+      "paths_verified": 442,
+      "changed_contents_verified": 11,
+      "receipt_sha256": "840481bc79efba3ab576331fd609bd6d2bc50394afcea14494a2d6b82a5f4b2d"
+    },
+    "native_build": {
+      "checkpoint": "6ec81e3b6b6aac1198d168623ae557b4fe01deb0",
+      "command": [
+        "env",
+        "ASAN_OPTIONS=detect_leaks=0",
+        "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1",
+        "/tmp/nspire-python-deps/cmake/data/bin/cmake",
+        "--build",
+        "build/native",
+        "-j2"
+      ],
+      "cwd": "/tmp/nspire-stage-6ec81e3b",
+      "ended_at": "2026-10-21T04:04:43.561513+00:00",
+      "log": "source12-native-build-247ff11eadb4.log",
+      "log_sha256": "1a167b2a731f96a054d95c20ff3271b5d06defa4b83f7bd1247d41452cbfa5fd",
+      "pid": 3,
+      "returncode": 0,
+      "schema": 1,
+      "source_changed": false,
+      "source_sha256": "b1b446b4dd79829256e8dde821c2f59a9dad296ad9a8b8c8d943700bfda2c78e",
+      "started_at": "2026-10-21T03:57:14.275782+00:00",
+      "status": "passed",
+      "journal": "source12-native-build-247ff11eadb4.json",
+      "journal_sha256": "4a7f89695d68372b317dc5fec343c3cb91cc2927bd00e574faa2b17e628875f2"
+    },
+    "native_build_steps": 122,
+    "cross_target": {
+      "schema": 1,
+      "scope": "Frozen source12 ARM and WASM builds only; no calculator/emulator performance or actual-pack backend execution claimed",
+      "checkpoint": "6ec81e3b6b6aac1198d168623ae557b4fe01deb0",
+      "recorded_utc": "2026-10-21T04:14:13.520393+00:00",
+      "stages": [
+        {
+          "label": "arm",
+          "journal": "/tmp/nspire-stage-6ec81e3b/build/journal/source12-arm-c10c5f4a9308.json",
+          "journal_sha256": "bbce4a2c3cd273e717e639a31a07f73dbcee9f09ed320fb946dba1a7f89dd8db",
+          "log_sha256": "c5e5c1fe51d75cc9cbdda9cd0d0e71096887857183a342cb78e56c674f95b7a6",
+          "source_sha256": "b1b446b4dd79829256e8dde821c2f59a9dad296ad9a8b8c8d943700bfda2c78e",
+          "status": "passed",
+          "source_changed": false,
+          "started_utc": "2026-10-21T04:05:06.547793+00:00",
+          "finished_utc": "2026-10-21T04:07:36.368717+00:00",
+          "elapsed_seconds": 149.820924,
+          "command": [
+            "python3",
+            "tools/build_ndless.py"
+          ]
+        },
+        {
+          "label": "wasm",
+          "journal": "/tmp/nspire-stage-6ec81e3b/build/journal/source12-wasm-0bbc29fb90c4.json",
+          "journal_sha256": "39b62d848daa0cb020efbc84c84bc3c918854b6d6a221bb804c2c739e658f5de",
+          "log_sha256": "3fddf7595a9af58633a279b4663131fcfd693325ed80057cca5dc49e1762c1f9",
+          "source_sha256": "b1b446b4dd79829256e8dde821c2f59a9dad296ad9a8b8c8d943700bfda2c78e",
+          "status": "passed",
+          "source_changed": false,
+          "started_utc": "2026-10-21T04:05:08.459979+00:00",
+          "finished_utc": "2026-10-21T04:07:35.372338+00:00",
+          "elapsed_seconds": 146.912359,
+          "command": [
+            "python3",
+            "tools/build_web.py",
+            "--compile-only"
+          ]
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "/tmp/nspire-stage-6ec81e3b/dist/nSpire2.tns",
+          "bytes": 840339,
+          "sha256": "1a682c645ec3ca4990c0c1b7309f9b33bc399e3cfdff141e283e0f2c7391995b"
+        },
+        {
+          "path": "/tmp/nspire-stage-6ec81e3b/build/web/nSpire2.wasm",
+          "bytes": 4796029,
+          "sha256": "47ea3d01cf728375be957f868bb5c017d3d4af832bad14ce36ae478600b225e0"
+        }
+      ],
+      "arm_allocation_bytes": 10417972,
+      "arm_absolute_relocations": 28471
+    },
+    "cross_target_receipt_sha256": "a44e1d78402f34e7f24c47e6c5967fa00c6259de6c803fc4992a59539bbd7b4f",
+    "affected_ui": {
+      "journal": "source12-native-ui20-5b1715096452.json",
+      "status_at_source13": "running",
+      "passed_suites_at_cutoff": 19,
+      "total": 20,
+      "unfinished": [
+        "character_ui_regression"
+      ],
+      "world_room_ui": {
+        "status": "passed",
+        "checks": 7637,
+        "seconds": 64.24
+      },
+      "blend": {
+        "status": "passed",
+        "checks": 2773149,
+        "seconds": 0.2
+      },
+      "world_frontend_ui": {
+        "status": "passed",
+        "seconds": 97.38
+      },
+      "checks_source": "actual complete CTest stdout; final JUnit is pending"
+    },
+    "source_archive": {
+      "file": "slay-the-nspire-2-source12-recovery-20261021.zip",
+      "bytes": 1515616,
+      "sha256": "8a7c6b04ad89ba535c3934a17fa3576a1a3e09fe6d98a21c106a0edd5734e85d",
+      "paths_verified": 442,
+      "private_assets": false
+    },
+    "release_ready": false
+  },
+  "source13_short_diagnostics": {
+    "base_checkpoint": "6ec81e3b6b6aac1198d168623ae557b4fe01deb0",
+    "reticle": {
+      "receipt_sha256": "ee6791b45233d8002aeba70d369c5f83b1510845d358902dc008317a40ba6562",
+      "status": "passed",
+      "translation_units": 3,
+      "helper_assertions": 29556899,
+      "independent_full_synthetic_frames": 384,
+      "source_changed": false,
+      "scope": "Extracted production helpers under UBSan, fake map/content adapter; full App/core/save suite still requires frozen execution",
+      "independent_review": "No blocking findings"
+    },
+    "assets": {
+      "receipt_sha256": "215a91a3a93d368561070c393254d5da007d7cbc336c59ae66e4dfced47d42fc",
+      "status": "passed",
+      "new_tests": 2,
+      "generated_profile": "passed",
+      "plan": "passed",
+      "image_count": 45720,
+      "auxiliary_count": 1171,
+      "clip_count": 1695,
+      "directory_bound_bytes": 1345380,
+      "original_texture_probe_receipt_sha256": "43a5e72358010ea9e665bc87df302e9cf6cc81dc349f320cfe59b33ed9341a1b",
+      "rgba_preserved": true,
+      "initial_probe_harness_failure_retained": true
+    },
+    "cache_closure": {
+      "scope": "Source13 reticle catalog append compared with frozen source11 asset closures; no source12/13 runtime parity claim",
+      "roots": [
+        "/tmp/nspire-stage-713ab3be",
+        "/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2"
+      ],
+      "seconds": [
+        2.948352145998797,
+        7.040266435993544
+      ],
+      "scopes_checked": 335,
+      "all_scopes_identical": true,
+      "enemy_scopes_checked": 327,
+      "all_831_old_image_rows_identical": true,
+      "new_auxiliary_count": 1171,
+      "scope_hashes_sha256": "894f97d0938257ec61be409cfcbbb6c836b4ed97a89a448c61352d3bd17f197b",
+      "all_1657_appended_clip_rows_identity": "1b25cbc6d4d8e148368c23617ee9c91055b912c1965702ed4c9df0149b92416e",
+      "unchanged_legacy_clip_count": 38,
+      "note": "The hashed list covers the 1657 appended clips; the 38 legacy clips are represented by the unchanged BASE_CLIPS constant, not by rows in that list."
+    },
+    "cache_closure_receipt_sha256": "0b3674dfdd063370a67f51e62f24c5b10f610bce2bfe7bde42af68b9b5b13506",
+    "rest_prefetch": {
+      "schema": 1,
+      "verified_at": "2026-10-21T04:13:38.204473+00:00",
+      "files": {
+        "tools/prefetch_world_rest.py": {
+          "bytes": 9309,
+          "sha256": "704a4328d84d47731d267fca473f6ae1af0c29e62d83f12035ca28c0e07c8d2f",
+          "git_blob": "eb13e1ff0fdd1e35c58126f2c6eee456a9e1bb12"
+        },
+        "tests/test_world_rest_prefetch.py": {
+          "bytes": 9640,
+          "sha256": "9be78b4dce18ccb5138baef01ea50f69a6c848569db8677042b70f90d6c84be3",
+          "git_blob": "5b9cccd7e96ed0274cd3dbd487406f4f51f18d57"
+        }
+      },
+      "source_status": "source-only, not yet checkpointed or formally executed",
+      "test": {
+        "kind": "small synthetic asset-free mock suite",
+        "command": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_world_rest_prefetch.py",
+          "-v"
+        ],
+        "environment": {
+          "PYTHONPATH": "/tmp/nspire-python-deps:tools"
+        },
+        "cwd": "/workspace/scratch/4b16fc0ccb5c/slay-the-nspire-2",
+        "returncode": 0,
+        "tests": 12,
+        "seconds": 0.638,
+        "names": [
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_complete_job_and_scope_are_cache_identity.test_complete_job_and_scope_are_cache_identity",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_concurrent_identical_serial_producer_matches.test_concurrent_identical_serial_producer_matches",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_corrupt_payload_cannot_be_reused.test_corrupt_payload_cannot_be_reused",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_final_scan_detects_replacement_after_worker_completed.test_final_scan_detects_replacement_after_worker_completed",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_final_scan_rejects_missing_records_or_changed_source.test_final_scan_rejects_missing_records_or_changed_source",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_invalid_render_is_not_published.test_invalid_render_is_not_published",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_observed_concurrent_disagreement_is_preserved_and_rejected.test_observed_concurrent_disagreement_is_preserved_and_rejected",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_post_publication_read_detects_another_writer.test_post_publication_read_detects_another_writer",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_prefetch_workers_share_one_completed_record.test_prefetch_workers_share_one_completed_record",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_profile_and_encoded_frame_validation.test_profile_and_encoded_frame_validation",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_serial_protocol_and_strict_reuse.test_serial_protocol_and_strict_reuse",
+          "test_world_rest_prefetch.RestPrefetchProtocol.test_source_change_before_work_or_during_render_prevents_publication.test_source_change_before_work_or_during_render_prevents_publication"
+        ],
+        "log": "/workspace/scratch/4b16fc0ccb5c/source13-rest-prefetch-short-final-20261021.log",
+        "log_sha256": "1e6cdcff313baf92463ffbd0fe966d14b5e39c6eb80d698ddf997d17dcbc8272"
+      },
+      "closure_comparison": {
+        "frozen_checkpoint": "713ab3be32c5e1331da132581d6ecad3c9d31e0e",
+        "artifacts": [
+          {
+            "path": "/workspace/scratch/4b16fc0ccb5c/source13-rest-prefetch-closures-frozen713-20261021.json",
+            "bytes": 420813,
+            "sha256": "45c9ba0a27268f83237e60c3603f88093b293229e1dcae855f4bbc4924a158cb"
+          },
+          {
+            "path": "/workspace/scratch/4b16fc0ccb5c/source13-rest-prefetch-closures-source13-20261021.json",
+            "bytes": 420813,
+            "sha256": "45c9ba0a27268f83237e60c3603f88093b293229e1dcae855f4bbc4924a158cb"
+          }
+        ],
+        "exact_equal": true,
+        "rest_scope_unchanged": true,
+        "rest_complete_jobs_unchanged": 48,
+        "rest_frames": 8340,
+        "enemy_closures_unchanged": 327
+      },
+      "runtime_policy": {
+        "default_workers": 1,
+        "max_workers": 2,
+        "scope": "rest-actor-clip",
+        "cache_schema": 2,
+        "uses_existing_sampler_encoder_cache": true,
+        "reverse_jobs": true,
+        "source_guard": "initializer, every job before reuse and after render/publication, final scan",
+        "concurrent_observations": "compare all canonical metadata and exact payload bytes before/after publish; retain metadata/payload SHA256 for every hit or worker result and compare in final scan",
+        "outputs": "cache only, no pack or HTML"
+      },
+      "limits": [
+        "No original PCK/runtime was opened and no real rest frame was converted by these tests.",
+        "The serial writer does not participate in the new per-key prefetch lock; check/put is not a cross-producer transaction. Observed divergences are rejected, but arbitrary noncooperating writes after checks cannot be prevented.",
+        "Actual conversion must wait for the source13 push/readback/freeze and will initially use one worker with BLAS/OMP limited to one thread."
+      ]
+    },
+    "rest_prefetch_receipt_sha256": "caece659bbbbcc3cb61ff301bb3fe841646220eca65ee1cfbfb9182dad900ce5",
+    "backend_driver": {
+      "cases": 16,
+      "new_map_steps": "directional focus, elapsed fades, real pointer_move, save/load",
+      "cpp_syntax": "passed",
+      "js_syntax": "passed",
+      "actual_execution": "pending matching complete original pack"
+    },
+    "limits": [
+      "33ms presentation clock and Q12/pixel/RGB565 quantization are explicit adapters.",
+      "Pointer coordinate change replaces unavailable Godot velocity; arrow navigation does not require the original PC preference.",
+      "State, save codec and gameplay RNG unchanged.",
+      "Rest prefetch mocks do not represent completed actual actor clips.",
+      "Serial converter does not acquire prefetch job locks; observed disagreement checks are not a cross-producer transaction.",
+      "Circle, marker, travel and map-opening effects remain unfinished.",
+      "Original GPU and physical calculator validation remain outstanding."
     ],
     "release_ready": false
   }

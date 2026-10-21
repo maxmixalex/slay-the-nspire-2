@@ -60,12 +60,46 @@ static void map_picture(Canvas&c,int id,int cx,int cy,int width,int height,MapSh
         const uint16_t color=map_shade(uint16_t(src[0]|uint16_t(src[1])<<8),shader,ink,paper);c.paint(yy*c.pitch+xx,color,alpha);
     }
 }
-static void map_reticle(Canvas&c,int x,int y,int width,int height,uint16_t ink){
-    const int left=x-width/2,right=left+width-1,top=y-height/2,bottom=top+height-1;
-    for(int i=0;i<6;++i){
-        if(top>=WorldMapTop&&top<WorldMapBottom){c.rect(left+i,top,1,1,ink);c.rect(right-i,top,1,1,ink);}
-        if(bottom>=WorldMapTop&&bottom<WorldMapBottom){c.rect(left+i,bottom,1,1,ink);c.rect(right-i,bottom,1,1,ink);}
-        if(top+i>=WorldMapTop&&top+i<WorldMapBottom){c.rect(left,top+i,1,1,ink);c.rect(right,top+i,1,1,ink);}
-        if(bottom-i>=WorldMapTop&&bottom-i<WorldMapBottom){c.rect(left,bottom-i,1,1,ink);c.rect(right,bottom-i,1,1,ink);}
+static int map_reticle_project(int coordinate,unsigned scale,bool smaller){
+    // Authored source coordinates at the map's 0.22 scale. A10's Boss root
+    // adds a 0.75 parent scale; the reticle does not inherit icon hover scale.
+    const int denominator=409600*(smaller?4:1),value=coordinate*int(scale)*22*(smaller?3:1);
+    return value<0?-((-value+denominator/2)/denominator):(value+denominator/2)/denominator;
+}
+static void map_reticle_tile(Canvas&c,const Picture&p,int left,int top,int right,int bottom,
+                             bool flip_x,bool flip_y,unsigned opacity,bool shadow){
+    if(right<=left||bottom<=top)return;
+    for(int y=mx(WorldMapTop,top);y<mn(WorldMapBottom,bottom);++y){
+        unsigned sy=unsigned((2*(y-top)+1)*p.h/(2*(bottom-top)));if(flip_y)sy=p.h-1-sy;
+        for(int x=mx(0,left);x<mn(320,right);++x){
+            unsigned sx=unsigned((2*(x-left)+1)*p.w/(2*(right-left)));if(flip_x)sx=p.w-1-sx;
+            const unsigned at=sy*p.w+sx,source_alpha=p.alpha?p.alpha[at]:255;
+            // Map instances override the shared reticle's shadow to 0.35.
+            // Keep the texture alpha hole and round the full product once.
+            const unsigned alpha=shadow?(source_alpha*opacity*35u+12750u)/25500u:div255(source_alpha*opacity);
+            if(!alpha)continue;
+            const uint8_t*source=p.palette?p.palette+p.pixels[at]*2:p.pixels+at*2;
+            const uint16_t color=shadow?0:uint16_t(source[0]|uint16_t(source[1])<<8);
+            c.paint(y*c.pitch+x,color,alpha);
+        }
+    }
+}
+static void map_reticle(Canvas&c,unsigned point,int x,int y,int width,int height,bool smaller=false){
+    const unsigned opacity=c.a.map_reticle_opacity(point);if(!opacity)return;
+    const auto p=c.a.content.image(c.a.content.world_image("map","SELECTION_RETICLE"));
+    // This profile entry is a static original texture: the texture encoder
+    // produces dense or palette pixels, never the sparse animation format.
+    if(!p.pixels||!p.w||!p.h||p.format==4)return;
+    const unsigned scale=c.a.map_reticle_scale(point);
+    for(unsigned corner=0;corner<4;++corner){
+        const bool flip_x=corner&2,flip_y=corner&1;
+        const int left=flip_x?width/2-20:-width/2-10,top=flip_y?height/2-20:-height/2-10;
+        // Each shadow is behind its own corner. The authored negative child
+        // offsets cancel the corner mirror, leaving a (+3,+2) world offset.
+        for(unsigned pass=0;pass<2;++pass){const bool shadow=pass==0;const int dx=shadow?3:0,dy=shadow?2:0;
+            map_reticle_tile(c,p,x+map_reticle_project(left+dx,scale,smaller),y+map_reticle_project(top+dy,scale,smaller),
+                x+map_reticle_project(left+30+dx,scale,smaller),y+map_reticle_project(top+30+dy,scale,smaller),
+                flip_x,flip_y,opacity,shadow);
+        }
     }
 }

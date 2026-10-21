@@ -74,6 +74,9 @@ struct Callbacks { bool(*save)(const State&);bool(*load)(State&);bool(*clear_sav
 // or a compare-and-swap token supplied by the storage host.
 struct SaveCheckpoint {uint64_t hash=0;uint32_t size=0;};
 struct Motion {int clip=-1;uint32_t start=0;};
+// One retained fade per map node lets rapid focus changes finish independently.
+// Q12 scale and byte alpha are presentation samples, never saved run state.
+struct MapReticleMotion {uint32_t start=0;uint16_t from_scale=4096;uint8_t from_alpha=0,mode=0;};
 constexpr unsigned MaxEnemyVisualFacts=64,MaxEnemyVisualCommands=24;
 struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
 struct EnemyVisualCommand {const char* action=nullptr;EnemyVisualFacts facts{};int16_t move=-1;uint8_t direct=0;uint32_t earliest=0;};
@@ -158,6 +161,13 @@ struct App {
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[MaxEnemies+1]={},hit_start[MaxEnemies+1]={};
     bool map_legend=false;uint8_t map_legend_item=0;
+    bool map_directional=false;
+    uint64_t map_reticle_seed=0;uint8_t map_reticle_act=255,map_reticle_current=reference::NoPoint;
+    MapReticleMotion map_reticles[reference::MaxPoints]{};
+    void reset_map_reticles();
+    void sync_map_reticles();
+    unsigned map_reticle_opacity(unsigned point)const;
+    unsigned map_reticle_scale(unsigned point)const;
     bool map_input(Key);
     uint32_t animation=0,run_number=0;const char* notice="";
     Motion motion[MaxEnemies+1]{};

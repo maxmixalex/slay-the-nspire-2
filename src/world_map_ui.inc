@@ -83,7 +83,6 @@ static void map_normal_node(Canvas&c,const reference::ReferenceMap&m,unsigned id
         const int circle_size=world_map_round(world_float_round(reference::math::Real::integer(44)*world_map_random_float(circle,world_float(0x3f59999aU),world_float(0x3f666666U))));
         map_picture(c,c.a.content.world_image("map","CIRCLE"),x,y,circle_size,circle_size,MapShader::Tint,rgb(36,31,26),0,242,rotation);
     }
-    if(focused)map_reticle(c,x,y,33,33,colors.ink);
 }
 static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned id,int x,int y,bool allowed,bool focused,const MapColors&colors){
     const auto&s=c.a.game;const bool traveled=s.world.visited[s.world.act_index][id];
@@ -91,7 +90,7 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
         const char*key=original_event_key(OriginalEventId(s.world.rooms[s.world.act_index].ancient));const int size=focused?51:46;
         map_picture(c,map_named_picture(c.a.content,"ANCIENT_",key,"_OUTLINE"),x,y,size,size,MapShader::Tint,focused?rgb(255,255,255):colors.paper,0,focused?191:255);
         map_picture(c,map_named_picture(c.a.content,"ANCIENT_",key),x,y,size,size,MapShader::Tint,traveled||allowed?rgb(36,31,26):rgb(125,106,85),0,traveled||allowed?255:216);
-        if(focused)map_reticle(c,x,y,54,50,colors.ink);return;
+        return;
     }
     const EncounterId boss=map_boss(s,m,id);const auto*d=encounter_definition(boss);if(!d)return;
     const unsigned duration=world_map_clip_duration(boss);const int size=m.config.second_boss?75:100;const uint16_t ink=traveled||allowed?colors.ink:colors.faint;
@@ -102,7 +101,6 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
         map_picture(c,map_named_picture(c.a.content,"BOSS_",d->key,"_OUTLINE"),x,y,static_size,static_size,MapShader::Tint,colors.paper);
         map_picture(c,map_named_picture(c.a.content,"BOSS_",d->key),x,y,static_size,static_size,MapShader::Tint,ink);
     }
-    if(focused)map_reticle(c,x,y,size*82/100,size*68/100,colors.ink);
 }
 static void map_legend_screen(Canvas&c,const MapColors&colors){
     auto&a=c.a;const int x=186,y=35;
@@ -127,10 +125,16 @@ static void world_map_screen(Canvas&c,bool inspect){
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
         const bool allowed=world_reachable(s,i),focused=allowed&&p.col==a.cursor&&!inspect&&!a.map_legend;if(focused)selected=i;
-        const int half=world_map_half_size(*m,i);if(y+half<WorldMapTop||y-half>WorldMapBottom)continue;
+        const int half=world_map_half_size(*m,i);
+        const int reticle_height=p.type==reference::PointType::Boss?306:p.type==reference::PointType::Start?208:84;
+        const int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;
+        if(y+visible_half<WorldMapTop||y-visible_half>WorldMapBottom)continue;
         if(p.type==reference::PointType::Start||p.type==reference::PointType::Boss)map_special_node(c,*m,i,x,y,allowed,focused,colors);
         else map_normal_node(c,*m,i,x,y,layout.points[i].angle,allowed,focused,colors);
         if(i==quest)map_picture(c,a.content.world_image("map","QUEST"),x+15,y-13,15,15);
+        // The scene's SelectionReticle follows the complete icon/quest tree.
+        map_reticle(c,i,x,y,p.type==reference::PointType::Boss?374:p.type==reference::PointType::Start?240:84,
+                    reticle_height,p.type==reference::PointType::Boss&&m->config.second_boss);
         if(allowed&&!inspect&&!a.map_legend){const int size=p.type==reference::PointType::Boss?mn(82,2*half):p.type==reference::PointType::Start?48:30;
             const int top=mx(WorldMapTop,y-size/2),bottom=mn(WorldMapBottom,y+size/2);if(bottom-top>=15)c.hit(x-size/2,top,size,bottom-top,HitKind::WorldNode,int(i));}
     }

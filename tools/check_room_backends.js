@@ -37,6 +37,7 @@ const assert = require('node:assert/strict');
       } else if (Object.hasOwn(key, 'key')) game.input(key.key);
       else if (Object.hasOwn(key, 'advance')) game.advance(key.advance);
       else if (Object.hasOwn(key, 'scroll')) game.pointer_scroll(key.scroll);
+      else if (Object.hasOwn(key, 'move')) game.pointer_move(...key.move);
       else if (Object.hasOwn(key, 'click')) {
         game.pointer_move(...key.click); game.pointer_button(1); game.pointer_button(0);
       } else if (Object.hasOwn(key, 'pointer')) {

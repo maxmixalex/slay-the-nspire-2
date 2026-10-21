@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <string>
 #include <vector>
 using namespace spire;
@@ -10,7 +11,13 @@ static App app;
 static SaveData before,after;
 static unsigned checks;
 static const char* screenshots;
+static bool actual_profile;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"map UI: %s:%d %s\n",__FILE__,__LINE__,#x);std::exit(1);}}while(0)
+static const struct ImageKey {const char*key;unsigned index;} image_keys[]={
+#include "../src/world_image_index.inc"
+};
+static uint16_t reticle_color(unsigned x,unsigned y){const uint16_t colors[]={0xf800,0x07e0,0x001f,0xffff};return colors[(x>=24)+2*(y>=24)];}
+static uint8_t reticle_alpha(unsigned x,unsigned y){return x>=12&&x<36&&y>=12&&y<36?0:x<24?255:128;}
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned value,unsigned count=4){for(unsigned i=0;i<count;++i)b[at+i]=uint8_t(value>>(i*8));}
 static std::vector<uint8_t> synthetic_profile(){
     constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,strings=ContentStrings;
@@ -24,6 +31,10 @@ static std::vector<uint8_t> synthetic_profile(){
     for(unsigned i=0;i<AnimationKinds;++i){put(b,clipdir+i*16+4,1,2);put(b,clipdir+i*16+6,50,2);}
     for(unsigned i=0;i<CardKinds;++i)for(unsigned j=0;j<4;++j)put(b,carddir+i*16+j*4,j?i*3+j-1:i);
     for(unsigned i=0;i<U_Count;++i)put(b,uidir+i*4,i==U_CampFlames?A_Count:i);
+    unsigned reticle=images;for(const auto&row:image_keys)if(!std::strcmp(row.key,"map.SELECTION_RETICLE"))reticle=row.index;CHECK(reticle<images);
+    const unsigned pixels=48*48,offset=unsigned(b.size());b.resize(offset+pixels*3);
+    put(b,40+reticle*16,offset);put(b,44+reticle*16,48,2);put(b,46+reticle*16,48,2);put(b,48+reticle*16,1);put(b,52+reticle*16,pixels*3);
+    for(unsigned y=0;y<48;++y)for(unsigned x=0;x<48;++x){const unsigned i=y*48+x;put(b,offset+i*2,reticle_color(x,y),2);b[offset+pixels*2+i]=reticle_alpha(x,y);}
     put(b,12,unsigned(b.size()));uint32_t hash=2166136261u;for(unsigned i=40;i<b.size();++i){hash^=b[i];hash*=16777619u;}put(b,36,hash);return b;
 }
 static void snapshot(){CHECK(validate(app.game));CHECK(save(app.game,before));}
@@ -52,6 +63,109 @@ static void finish_routing_fixture(){
 }
 static unsigned world_hits(){unsigned count=0;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::WorldNode)++count;return count;}
 static const HitRegion* find_hit(HitKind kind,int value){for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==kind&&app.hits[i].value==value)return &app.hits[i];return nullptr;}
+static void ticks(unsigned count){while(count--)app.advance(33);}
+static void mouse_mode(){app.pointer_move(app.pointer.x?0:1,app.pointer.y?0:1);app.pointer.visible=false;}
+static void reticle_timing(){
+    start();finish_routing_fixture();app.fast_mode=false;app.map_directional=false;app.render();snapshot();
+    CHECK(app.map_reticle_current==reference::NoPoint);
+    for(unsigned i=0;i<reference::MaxPoints;++i)CHECK(!app.map_reticle_opacity(i));
+    // Ordinary keyboard commands do not acquire directional-navigation focus.
+    app.input(Key::Detail);CHECK(app.map_legend&&!app.map_directional);app.input(Key::Back);CHECK(!app.map_legend);
+    app.input(Key::Right);app.render();const unsigned first=app.map_reticle_current;
+    CHECK(app.map_directional&&first<world_current_map(app.game)->count&&world_reachable(app.game,first));
+    CHECK(app.map_reticle_opacity(first)==255&&app.map_reticle_scale(first)==4096);
+    const uint32_t began=app.map_reticles[first].start;
+    for(unsigned t=1;t<=16;++t){ticks(1);app.render();
+        const double elapsed=t*33.0;
+        const double progress=elapsed>=500?1:1.001*(1-std::pow(2.0,-10*elapsed/500));
+        const int expected=int(std::lround((.9+.1*progress)*4096));
+        CHECK(std::abs(int(app.map_reticle_scale(first))-expected)<=1&&app.map_reticle_opacity(first)==255);
+        CHECK(app.map_reticles[first].start==began);
+    }
+    for(unsigned i=0;i<5;++i)app.render();CHECK(app.map_reticles[first].start==began);unchanged();
+    capture("map-original-selected-reticle");
+    // Mouse motion relinquishes focus. Keep all original alpha holes while
+    // fading from the actual current scale, rather than dropping the old box.
+    mouse_mode();CHECK(!app.map_directional&&app.map_reticle_current==reference::NoPoint);
+    CHECK(app.map_reticle_opacity(first)==255&&app.map_reticle_scale(first)==4096);
+    const uint32_t dismissed=app.map_reticles[first].start;
+    for(unsigned t=1;t<=7;++t){ticks(1);app.render();
+        const double progress=t*33>=200?1:std::sin(t*33.0/200*std::acos(-1.0)/2);
+        CHECK(std::abs(int(app.map_reticle_opacity(first))-int(std::lround(255*(1-progress))))<=1);
+        if(t<7)CHECK(std::abs(int(app.map_reticle_scale(first))-int(std::lround((1+.05*progress)*4096)))<=1);
+        CHECK(app.map_reticles[first].start==dismissed);
+    }
+    CHECK(!app.map_reticle_opacity(first));unchanged();
+    // A second focus switch does not replace another node's independent fade.
+    uint8_t ids[reference::Columns];const unsigned count=world_available_points(app.game,ids,reference::Columns);CHECK(count);
+    app.input(Key::Right);const unsigned a=app.map_reticle_current;ticks(2);const unsigned from=app.map_reticle_scale(a);
+    if(count>1){
+        app.input(Key::Right);const unsigned b=app.map_reticle_current;CHECK(a!=b);
+        CHECK(app.map_reticle_opacity(a)==255&&app.map_reticle_scale(a)==from);
+        CHECK(app.map_reticle_opacity(b)==255&&app.map_reticle_scale(b)==4096);ticks(1);
+        app.input(Key::Right);const unsigned c=app.map_reticle_current;CHECK(c!=b);
+        CHECK(app.map_reticle_opacity(b)==255&&app.map_reticle_opacity(c)==255);
+        if(count>2)CHECK(c!=a&&app.map_reticle_opacity(a)>0&&app.map_reticle_opacity(a)<255);
+        else CHECK(c==a&&app.map_reticle_scale(a)==4096); // interrupted fade is killed on reselection
+    }
+    // Pointer buttons also switch modes when no coordinate motion occurs.
+    app.pointer_move(5,5);app.pointer.visible=false;app.input(Key::Right);CHECK(app.map_directional);
+    app.pointer_button(true);CHECK(!app.map_directional&&app.map_reticle_current==reference::NoPoint);app.pointer_button(false);
+    app.input(Key::Right);const unsigned active=app.map_reticle_current;CHECK(active<reference::MaxPoints);
+    app.input(Key::Detail);CHECK(app.map_legend&&app.map_reticle_current==reference::NoPoint);
+    app.input(Key::Back);CHECK(!app.map_legend&&app.map_reticle_opacity(app.map_reticle_current)==255);
+    app.input(Key::Map);CHECK(app.panel==3&&app.map_reticle_current==reference::NoPoint);
+    app.input(Key::Back);CHECK(!app.panel&&app.map_reticle_current<reference::MaxPoints);unchanged();
+    // A wrapped presentation clock continues the same selected/dismissed tween.
+    app.animation=0xfffffffdu;app.reset_map_reticles();app.render();const unsigned wrapped=app.map_reticle_current;
+    CHECK(wrapped<reference::MaxPoints&&app.map_reticles[wrapped].start==0xfffffffdu);ticks(3);
+    CHECK(app.animation==0&&app.map_reticle_scale(wrapped)==3992);mouse_mode();ticks(7);
+    CHECK(!app.map_reticle_opacity(wrapped));app.animation+=0x70000000u;app.render();CHECK(!app.map_reticle_opacity(wrapped));unchanged();
+    app.input(Key::Right);CHECK(app.map_directional);CHECK(load(app.game,before.bytes,before.size));app.reset_presentation();
+    CHECK(app.map_directional&&app.map_reticle_act==255&&app.map_reticle_current==reference::NoPoint);
+    for(const auto&r:app.map_reticles)CHECK(!r.mode);
+    app.render();CHECK(app.map_reticle_seed==app.game.world.run_seed&&app.map_reticle_act==app.game.world.act_index);unchanged();
+    // A stale presentation identity can share all low 32 seed bits. Leave the
+    // valid run untouched and make only the remembered App identity differ.
+    const unsigned stale=(app.map_reticle_current+1)%reference::MaxPoints;
+    app.map_reticles[stale]={app.animation,3900,200,2};app.map_reticle_seed^=uint64_t(1)<<32;
+    CHECK(uint32_t(app.map_reticle_seed)==uint32_t(app.game.world.run_seed)&&app.map_reticle_seed!=app.game.world.run_seed);
+    app.sync_map_reticles();CHECK(app.map_reticle_seed==app.game.world.run_seed&&!app.map_reticle_opacity(stale));unchanged();
+}
+static uint16_t reticle_mix(uint16_t back,uint16_t front,unsigned alpha){
+    const unsigned r=((back>>11)*(255-alpha)+(front>>11)*alpha+127)/255;
+    const unsigned g=(((back>>5)&63)*(255-alpha)+((front>>5)&63)*alpha+127)/255;
+    const unsigned b=((back&31)*(255-alpha)+(front&31)*alpha+127)/255;
+    return uint16_t(r<<11|g<<5|b);
+}
+static void reticle_pixel_oracle(std::vector<uint16_t>&frame,int cx,int cy,int width,int height,double scale,unsigned opacity){
+    // Independent scene-space oracle: each 30x30 corner flips about its own
+    // origin, and the child shadow remains (+3,+2) in unflipped world space.
+    for(unsigned corner=0;corner<4;++corner){const bool fx=corner&2,fy=corner&1;
+        const double x=fx?width*.5-20:-width*.5-10,y=fy?height*.5-20:-height*.5-10;
+        for(unsigned pass=0;pass<2;++pass){const bool shadow=!pass;const double xx=x+(shadow?3:0),yy=y+(shadow?2:0);
+            const int left=cx+int(std::lround(xx*scale)),top=cy+int(std::lround(yy*scale));
+            const int right=cx+int(std::lround((xx+30)*scale)),bottom=cy+int(std::lround((yy+30)*scale));
+            for(int py=top;py<bottom;++py)for(int px=left;px<right;++px){if(px<0||px>=320||py<WorldMapTop||py>=WorldMapBottom)continue;
+                unsigned tx=unsigned((px-left+.5)*48/(right-left)),ty=unsigned((py-top+.5)*48/(bottom-top));if(fx)tx=47-tx;if(fy)ty=47-ty;
+                const unsigned alpha=unsigned(std::lround(reticle_alpha(tx,ty)*(opacity/255.0)*(shadow?.35:1.0)));
+                frame[py*320+px]=reticle_mix(frame[py*320+px],shadow?0:reticle_color(tx,ty),alpha);
+            }
+        }
+    }
+}
+static void reticle_pixels(){
+    if(actual_profile)return;
+    start();finish_routing_fixture();app.fast_mode=false;app.animation=4000;app.pointer.visible=false;app.map_directional=false;app.reset_map_reticles();
+    app.render();std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+    WorldMapLayout layout;CHECK(world_map_layout(app.game,layout));const auto view=world_map_view(app.game,layout,app.map_scroll);
+    app.map_directional=true;app.sync_map_reticles();const unsigned selected=app.map_reticle_current;CHECK(selected<reference::MaxPoints);
+    CHECK(world_current_map(app.game)->points[selected].type!=reference::PointType::Boss&&world_current_map(app.game)->points[selected].type!=reference::PointType::Start);
+    reticle_pixel_oracle(expected,layout.points[selected].x,layout.points[selected].y+view.origin,84,84,.22,255);
+    app.render();for(unsigned i=0;i<expected.size();++i)CHECK(app.pixels[i]==expected[i]);
+    // Full-frame comparison covers texture colors, four mirror directions,
+    // transparent/half-alpha texels, shadow order and the map clipping region.
+}
 static void layout_and_input(){
     start();CHECK(app.game.world.visited_rooms[0][app.game.world.current_point]==unsigned(WorldRoom::Event));
     app.input(Key::Map);CHECK(app.panel==3);snapshot();app.render();CHECK(!world_hits());capture("map-neow-inspection");
@@ -102,7 +216,8 @@ static void boss_cycles_and_regions(){
     }
 }
 int main(int argc,char**argv){
+    actual_profile=argc>1;
     std::vector<uint8_t>pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));pack.resize(size);CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());CHECK(!std::fclose(f));}else pack=synthetic_profile();
-    if(argc>2)screenshots=argv[2];CHECK(app.init(pack.data(),pack.size(),{}));layout_and_input();boss_cycles_and_regions();
+    if(argc>2)screenshots=argv[2];CHECK(app.init(pack.data(),pack.size(),{}));reticle_timing();reticle_pixels();layout_and_input();boss_cycles_and_regions();
     std::printf("world map UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");
 }

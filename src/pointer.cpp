@@ -45,6 +45,10 @@ void App::open_choice_detail(int token){
     if(choice_free_energy(game)&&cost(choice_card(game,token))>=0)detail_cost_override=card_free_preview_cost(game,choice_card(game,token));
 }
 void App::pointer_move(int x,int y){
+    // The platform pointer API has no Godot motion velocity. An actual
+    // coordinate change is the bounded adapter for its mouse-mode switch;
+    // repeated stationary samples do not cancel directional focus.
+    if(clamp(x,0,319)!=pointer.x||clamp(y,0,239)!=pointer.y){map_directional=false;sync_map_reticles();}
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
@@ -78,6 +82,7 @@ void App::pointer_move(int x,int y){
 }
 void App::pointer_scroll(int rows){
     if(!rows)return;
+    map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
     if(event_reader){event_reader_scroll=clamp(event_reader_scroll+rows,0,2048);return;}
@@ -111,6 +116,8 @@ void App::pointer_scroll(int rows){
 }
 void App::pointer_button(bool down){
     UiCoreObserver observer(*this);
+    struct ReticleSync {App&a;~ReticleSync(){a.sync_map_reticles();}} reticle_sync{*this};
+    map_directional=false;sync_map_reticles();
     // Input can arrive between timed frames. Hit geometry is rebuilt from the
     // current screen rather than trusting regions from a previous overlay.
     render();pointer_move(pointer.x,pointer.y);

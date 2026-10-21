@@ -47,6 +47,14 @@ AUXILIARY_ROWS.extend(dict(row) for row in COMMON_PROFILE['images'])
 TEXT_KEYS.extend(COMMON_PROFILE.get('text_keys', []))
 ROOM_PROFILE = room_plan()
 AUXILIARY_ROWS.extend(dict(row) for row in ROOM_PROFILE['images'])
+# Later UI additions must follow the complete established map/common/room
+# directory. Inserting into MAP_PROFILE would remap every later old image.
+# Keep the original corner at native resolution: mirror, scale and shadow
+# belong to the runtime reticle instances, not to a pre-tinted bitmap.
+LATE_AUXILIARY_ROWS = [dict(key='map.SELECTION_RETICLE', kind='component',
+    path='images/ui/combat/combat_reticle.png', source_size=[48,48],
+    size=[48,48], fit='stretch', source_scene='scenes/ui/selection_reticle.tscn')]
+AUXILIARY_ROWS.extend(dict(row) for row in LATE_AUXILIARY_ROWS)
 ENEMY_CLIP_ROWS = enemy_plan()['jobs']
 MAP_CLIP_ROWS = []
 for _row in MAP_PROFILE['clips']:
