@@ -57,7 +57,7 @@ const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,
 }
 bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(p,n));}
 bool Content::open(ResourceSource source){
-    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;validating_=false;
+    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=nullptr;
     version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
@@ -81,17 +81,26 @@ bool Content::open(ResourceSource source){
     else {if(!reader_.read(0,directory_,start))return false;metadata_=directory_;}
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
     directory_bytes_=start;tile_metadata_=version==TileContentVersion?p+base:nullptr;
-    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;validating_=false;
+    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=nullptr;
         version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
     if(tile_metadata_&&!valid_tile_directory(tile_metadata_,n))return reject();
     const uint32_t payload_start=tile_metadata_?u32(tile_metadata_+32)+16*u32(tile_metadata_+28):start;
-    validating_=tile_metadata_!=nullptr;
     for(unsigned i=0;i<ni;i++){
         const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),height=u16(r+6),fmt=u32(r+8),len=u32(r+12);
         if(!w||w>320||!height||height>240||fmt>6||(fmt==5&&version<5)||
            (fmt==6&&(!tile_metadata_||len!=16))||off<(fmt==6?start:payload_start)||
            off%2||off>n||len>n-off||len>MaxEncodedImage)return reject();
-        if(!image((int)i).pixels)return reject();
+        if(fmt==6){unsigned slot=0;if(!tile_descriptor_slot(tile_metadata_,off,slot))return reject();}
+        else if(!image((int)i).pixels)return reject();
+    }
+    if(tile_metadata_){
+        const unsigned bytes=(images_+7)/8;unsigned available=DirectoryCapacity-directory_bytes_;
+        if(bytes<=available){
+            tile_validated_=directory_+DirectoryCapacity-bytes;available-=bytes;
+            for(unsigned i=0;i<bytes;++i)tile_validated_[i]=0;
+        }
+        if(!validate_tile_catalog(this,reader_,tile_metadata_,base,p+40,images_,
+                directory_+directory_bytes_,available))return reject();
     }
     uint32_t last=0;
     for(unsigned i=0;i<ng;i++){
@@ -124,7 +133,7 @@ bool Content::open(ResourceSource source){
         for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni)return reject();
         if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return reject();
     }
-    cards_=version>=4?cards:14;validating_=false;return true;
+    cards_=version>=4?cards:14;return true;
 }
 Picture Content::image(int id)const{
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
@@ -135,7 +144,13 @@ Picture Content::image(int id)const{
     const uint8_t*p=nullptr;
     for(unsigned i=0;i<90;i++)if(image_cache[i].owner==this){
         const uint8_t*key=metadata_+40+16*image_cache[i].image;
-        if(u32(key)==off&&u32(key+4)==shape&&u32(key+8)==stored_format&&u32(key+12)==length){p=image_buffer(i);fmt=image_cache[i].format;break;}
+        if(u32(key)==off&&u32(key+4)==shape&&u32(key+8)==stored_format&&u32(key+12)==length){
+            p=image_buffer(i);fmt=image_cache[i].format;
+            // A byte-identical descriptor and shape can inherit a successful
+            // picture's validation; merely sharing a payload offset cannot.
+            if(stored_format==6&&tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
+            break;
+        }
     }
     if(!p){
         if(fmt==6){
@@ -144,10 +159,12 @@ Picture Content::image(int id)const{
                     uint32_t(tile_metadata_-metadata_),off,w,h)){io_good_=false;return empty;}
             size=frame.output_size;fmt=4;
             const unsigned slot=image_slot(size);auto&cache=image_cache[slot];cache={};uint8_t* output=image_buffer(slot);
-            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,validating_,output)){
+            const bool all=!tile_validated_||!(tile_validated_[unsigned(id)/8]&(1u<<(unsigned(id)%8)));
+            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,all,output)){
                 io_good_=false;return empty;
             }
             p=output;cache={this,(uint32_t)id,fmt};
+            if(tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
         }else{
             if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5)){io_good_=false;return empty;}fmt=header[0];size=u32(header+1);}
             if(fmt>4||!size||size>MaxImageBytes){io_good_=false;return empty;}

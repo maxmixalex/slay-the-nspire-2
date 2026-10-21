@@ -62,12 +62,30 @@ int main(int argc,char**argv){
         for(unsigned at=16;at<=32;at+=4)CHECK(word(b.data()+at)==word(reference_bytes.data()+at));
     }
     uint64_t decoded_image_bytes=0;
-    for(unsigned id=0;id<images;id++){
-        Picture a=memory->image(id);auto expected=picture_bytes(a);Picture c=ranged->image(id);auto actual=picture_bytes(c);
-        CHECK(a.w==c.w&&a.h==c.h&&a.format==c.format);CHECK(expected==actual);
-        decoded_image_bytes+=expected.size();
-        if(reference){Picture r=reference->image(id);auto original=picture_bytes(r);CHECK(a.w==r.w&&a.h==r.h&&a.format==r.format);CHECK(expected==original);}
-    }
+    auto compare_images=[&](Content& actual,Content& expected,const char* label){
+        uint64_t total=0;
+        std::printf("%s: checking %u complete decoded images\n",label,images);std::fflush(stdout);
+        for(unsigned id=0;id<images;id++){
+            Picture a=actual.image(id);auto bytes=picture_bytes(a);
+            Picture e=expected.image(id);auto original=picture_bytes(e);
+            CHECK(a.w==e.w&&a.h==e.h&&a.format==e.format);CHECK(bytes==original);
+            CHECK(actual.healthy()&&expected.healthy());total+=bytes.size();
+            if((id+1)%1000==0||id+1==images){
+                std::printf("%s: %u/%u images; %llu decoded bytes matched\n",label,id+1,images,(unsigned long long)total);
+                std::fflush(stdout);
+            }
+        }
+        return total;
+    };
+    if(reference){
+        // Traverse each new backend against the independent old pack in full.
+        // Alternating tiled owners for every image would deliberately thrash
+        // the shared 4 MiB group pool. Transitive byte equality preserves the
+        // three-way proof; synthetic pressure tests and the UI below still
+        // alternate owners and exercise eviction/identity boundaries.
+        decoded_image_bytes=compare_images(*memory,*reference,"new memory / original");
+        CHECK(compare_images(*ranged,*reference,"new range / original")==decoded_image_bytes);
+    }else decoded_image_bytes=compare_images(*memory,*ranged,"memory / range");
     for(unsigned id=0;id<glyphs;id++){
         const uint8_t*r=b.data()+40+images*16+id*16;const unsigned cp=word(r),size=half(r+8);
         Glyph a=memory->glyph(cp,size);auto expected=glyph_bytes(a);Glyph c=ranged->glyph(cp,size);auto actual=glyph_bytes(c);

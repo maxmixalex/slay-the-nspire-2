@@ -11,7 +11,7 @@ using namespace spire;
 namespace {
 using Bytes=std::vector<uint8_t>;
 constexpr unsigned TileSide=16,TileBytes=770,GroupBound=524288,EncodedBound=617323;
-constexpr unsigned ImageBound=614880;
+constexpr unsigned ImageBound=614880,DirectoryBound=2u*1024u*1024u;
 unsigned checks=0;
 std::string label;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL [%s] line %d: %s\n",label.c_str(),__LINE__,#x);std::exit(1);}}while(0)
@@ -100,7 +100,8 @@ Bytes blank_tile(){Bytes b(TileBytes);b[0]=b[1]=16;return b;}
 struct Group {unsigned type,items;Bytes raw,encoded;bool custom=false;};
 struct Descriptor {unsigned group=~0u,offset=0,length=0;};
 struct Package {
-    unsigned per_group=85,alignment=2,images=160,base=0,prefix=0,descriptor_base=0,table=0;
+    unsigned per_group=85,alignment=2,images=160,glyphs=1,reserved_descriptors=0;
+    unsigned base=0,prefix=0,descriptor_base=0,table=0;
     std::vector<Frame> frames;
     std::vector<Bytes> tiles;
     std::vector<Group> groups;
@@ -142,11 +143,11 @@ struct Package {
     }
     void encode(bool legacy=false){
         CHECK(legacy||(!groups.empty()&&groups.size()>tile_groups()));
-        images=std::max(160u,unsigned(frames.size())+2);
-        constexpr unsigned glyphs=1;
+        images=std::max(images,unsigned(frames.size())+2);
+        const unsigned descriptor_count=std::max(unsigned(frames.size()),reserved_descriptors);
         base=40+images*16+glyphs*16+ContentStrings*8+AnimationKinds*16+CardKinds*16+U_Count*4;
         table=base+64;prefix=legacy?base:table+unsigned(groups.size())*8;
-        descriptor_base=prefix;bytes.assign(prefix+(legacy?0:unsigned(frames.size())*16),0);
+        descriptor_base=prefix;bytes.assign(prefix+(legacy?0:descriptor_count*16),0);
         const unsigned card=unsigned(bytes.size());bytes.resize(bytes.size()+9840);
         const unsigned glyph=unsigned(bytes.size());bytes.push_back(0xab);
         const unsigned empty=unsigned(bytes.size());bytes.push_back(0);
@@ -167,8 +168,12 @@ struct Package {
             put(bytes,at,tiled?unsigned(descriptor(which)):card);put(bytes,at+4,tiled?frames[which].w:82,2);put(bytes,at+6,tiled?frames[which].h:60,2);
             put(bytes,at+8,tiled?6:0);put(bytes,at+12,tiled?16:9840);
         }
-        unsigned at=40+images*16;put(bytes,at,'?');put(bytes,at+4,glyph);put(bytes,at+8,10,2);
-        put(bytes,at+10,1,1);put(bytes,at+11,1,1);put(bytes,at+12,1,2);at+=16;
+        unsigned at=40+images*16;
+        for(unsigned i=0;i<glyphs;++i){
+            const unsigned row=at+i*16;put(bytes,row,'?'+i);put(bytes,row+4,glyph);put(bytes,row+8,10,2);
+            put(bytes,row+10,1,1);put(bytes,row+11,1,1);put(bytes,row+12,1,2);
+        }
+        at+=glyphs*16;
         for(unsigned i=0;i<ContentStrings;++i)put(bytes,at+i*8,empty);
         at+=ContentStrings*8;
         for(unsigned i=0;i<AnimationKinds;++i){put(bytes,at+i*16+4,1,2);put(bytes,at+i*16+6,33,2);}at+=AnimationKinds*16;
@@ -176,10 +181,10 @@ struct Package {
         // card image zero and empty string zero. Catalog counts remain exact.
         CHECK(at+CardKinds*16+U_Count*4==base);
         if(!legacy){
-            const unsigned fields[]={0x314c4954,1,16,14,unsigned(tiles.size()),tile_groups(),unsigned(groups.size())-tile_groups(),unsigned(frames.size()),descriptor_base,table,770,per_group,GroupBound,EncodedBound,0,0};
+            const unsigned fields[]={0x314c4954,1,16,14,unsigned(tiles.size()),tile_groups(),unsigned(groups.size())-tile_groups(),descriptor_count,descriptor_base,table,770,per_group,GroupBound,EncodedBound,0,0};
             for(unsigned i=0;i<16;++i)put(bytes,base+i*4,fields[i]);
             for(unsigned i=0;i<groups.size();++i){put(bytes,table+i*8,group_offsets[i]);put(bytes,table+i*8+4,group_lengths[i]);}
-            for(unsigned i=0;i<descriptors.size();++i){const Descriptor&d=descriptors[i];const size_t p=descriptor(i);
+            for(unsigned i=0;i<descriptor_count;++i){const Descriptor&d=descriptors[i<descriptors.size()?i:0];const size_t p=descriptor(i);
                 put(bytes,p,base);put(bytes,p+4,d.group);put(bytes,p+8,d.offset);put(bytes,p+12,d.length);
             }
         }
@@ -257,8 +262,26 @@ struct Rejector {
         CHECK(!provider.bad_range);
     }
 };
+struct ImageRejector {
+    std::unique_ptr<Content> direct=std::make_unique<Content>(),range=std::make_unique<Content>();
+    void operator()(const char*name,Bytes bytes,unsigned image=1,int first=-1){
+        label=name;seal(bytes);Provider provider{&bytes};
+        // FNV and every structural field are sound. Pixel payload validation
+        // belongs to the first real image request, for either source backend.
+        CHECK(direct->open(bytes.data(),bytes.size()));CHECK(range->open(provider.source()));
+        CHECK(direct->healthy()&&range->healthy());CHECK(direct->current_profile()&&range->current_profile());
+        CHECK(direct->image(0).pixels&&range->image(0).pixels);
+        CHECK(direct->glyph('?',10).pixels&&range->glyph('?',10).pixels);
+        if(first>=0){CHECK(direct->image(first).pixels&&range->image(first).pixels);CHECK(direct->healthy()&&range->healthy());}
+        CHECK(!direct->image(int(image)).pixels&&!range->image(int(image)).pixels);
+        CHECK(!direct->healthy()&&!range->healthy());
+        CHECK(!direct->image(0).pixels&&!range->image(0).pixels);
+        CHECK(!direct->glyph('?',10).pixels&&!range->glyph('?',10).pixels);
+        CHECK(!*direct->string(0)&&!*range->string(0));CHECK(!provider.bad_range);
+    }
+};
 void malformed_container(){
-    label="container setup";const Package p=basic();Rejector reject;
+    label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
     field("v14 cannot carry tile format",4,14);field("unsupported pack version",4,16);
     struct Mutation {unsigned offset,value;const char*name;};
@@ -296,28 +319,41 @@ void malformed_container(){
     const Mutation group[]={
         {0,0,"group magic"},{4,2,"tile group wrong type"},{8,1,"group identity"},{12,0,"group empty raw"},
         {12,GroupBound+1,"group raw overflow"},{12,unsigned(p.groups[0].raw.size())-1,"tile raw record size"},
-        {16,p.group_lengths[0]-33,"encoded length disagrees with lookup"},{20,crc32(p.groups[0].raw)^1,"group CRC"},
+        {16,p.group_lengths[0]-33,"encoded length disagrees with lookup"},
         {24,p.groups[0].items+1,"tile item count"},{28,1,"group reserved"}
     };
     for(const auto&m:group)field(m.name,g+m.offset,m.value);
+    Bytes bad_crc=p.bytes;put(bad_crc,g+20,crc32(p.groups[0].raw)^1);
+    reject_image("tile CRC rejected on first image",std::move(bad_crc));
+    field("index CRC rejected during open",index+20,crc32(p.groups[p.tile_groups()].raw)^1);
     field("index group wrong type",index+4,1);field("index zero items",index+24,0);
     field("index excessive items",index+24,65);field("index incomplete record count",index+24,3);
     field("index extra record count",index+24,5);
+    label="whole-file FNV still covers deferred tile payload bytes";
+    Bytes unsealed=p.bytes;unsealed[g+32+3+2]^=1;Provider checksum{&unsealed};
+    CHECK(!reject.direct->open(unsealed.data(),unsealed.size()));CHECK(!reject.range->open(checksum.source()));
+    CHECK(!reject.direct->healthy()&&!reject.range->healthy());
+    Package unused=basic(1);unused.tiles.push_back(blank_tile());unused.make_groups({{0,1,2,3}});unused.encode();
+    put(unused.bytes,unused.group_offsets[unused.tile_groups()-1]+4,2);
+    reject("unreferenced tile group header is checked during open",std::move(unused.bytes));
     // Corrupt a resident-directory alias in each enumeration order: a valid
     // decoded frame cannot authorize another shape or descriptor length.
     for(bool reverse:{false,true}){
         Bytes b=p.bytes;const unsigned bad=reverse?1:p.alias_id();
-        put(b,p.image_entry(bad)+4,34,2);reject(reverse?"bad alias before good":"bad alias after good",std::move(b));
+        const unsigned good=reverse?p.alias_id():1;
+        put(b,p.image_entry(bad)+4,34,2);
+        reject_image(reverse?"bad edge alias first in directory":"bad edge alias last in directory",b,bad);
+        reject_image(reverse?"cached good alias cannot authorize earlier bad shape":"cached good alias cannot authorize later bad shape",std::move(b),bad,int(good));
         b=p.bytes;put(b,p.image_entry(bad)+12,15);reject(reverse?"short alias before good":"short alias after good",std::move(b));
     }
     for(bool trailing:{false,true}){
         Package q=p;q.groups[0].custom=true;q.groups[0].encoded=stored_lzma2(q.groups[0].raw);
         if(trailing)q.groups[0].encoded.push_back(0);else q.groups[0].encoded.pop_back();q.encode();
-        reject(trailing?"container rejects unused LZMA2 input":"container requires LZMA2 end marker",std::move(q.bytes));
+        reject_image(trailing?"first image rejects unused LZMA2 input":"first image requires LZMA2 end marker",std::move(q.bytes));
     }
 }
 void malformed_geometry(){
-    label="geometry setup";const Package p=basic();Rejector reject;const unsigned index=p.tile_groups();
+    label="geometry setup";const Package p=basic();Rejector reject;ImageRejector reject_image;const unsigned index=p.tile_groups();
     const auto raw_field=[&](const char*name,unsigned group,size_t at,uint32_t value,unsigned width=4){
         Package q=p;put(q.groups[group].raw,at,value,width);q.encode();reject(name,std::move(q.bytes));
     };
@@ -338,18 +374,22 @@ void malformed_geometry(){
     Package hidden=p;Bytes hidden_record=p.frames[1].record();hidden_record[4]^=4;
     hidden.groups[index].raw.insert(hidden.groups[index].raw.end(),hidden_record.begin(),hidden_record.end());++hidden.groups[index].items;hidden.encode();
     reject("unrequested index record structure",std::move(hidden.bytes));
+    Package unused_id=p;Bytes out_of_range=p.frames[3].record();put(out_of_range,12,unsigned(p.tiles.size()));
+    unused_id.groups[index].raw.insert(unused_id.groups[index].raw.end(),out_of_range.begin(),out_of_range.end());
+    ++unused_id.groups[index].items;unused_id.encode();reject("unrequested index record tile ID",std::move(unused_id.bytes));
 
-    const auto tile_field=[&](const char*name,unsigned tile,unsigned at,unsigned value,unsigned width=1){
-        raw_field(name,tile/p.per_group,(tile%p.per_group)*TileBytes+at,value,width);
+    const auto tile_field=[&](const char*name,unsigned tile,unsigned at,unsigned value,unsigned width=1,unsigned image=1){
+        Package q=p;put(q.groups[tile/p.per_group].raw,(tile%p.per_group)*TileBytes+at,value,width);
+        q.encode();reject_image(name,std::move(q.bytes),image);
     };
     tile_field("zero tile width",f.ids[0],0,0);tile_field("oversized tile height",f.ids[0],1,17);
     tile_field("partial right edge width",f.ids[2],0,2);tile_field("partial bottom edge height",f.ids[3],1,2);
     tile_field("nonzero RGB right padding",f.ids[2],2+2,1);tile_field("nonzero alpha right padding",f.ids[2],514+1,1);
     tile_field("nonzero RGB bottom padding",f.ids[3],2+16*2,1);tile_field("nonzero alpha bottom padding",f.ids[3],514+16,1);
-    tile_field("opaque span must have alpha 255",p.frames[2].ids[0],514,254);
-    // The empty geometry has no stored pixels, but opening a pack must still
-    // validate all referenced tile edges before later active-only rebuilding.
-    tile_field("inactive tile edge rejected during open",p.frames[3].ids[0],1,3);
+    tile_field("opaque span must have alpha 255 on first image",p.frames[2].ids[0],514,254,1,p.image_id(2));
+    // Structural scanning must not mark an image as pixel-verified. Even an
+    // empty canvas validates every referenced tile on its first real request.
+    tile_field("inactive tile edge rejected on first image",p.frames[3].ids[0],1,3,1,p.image_id(3));
     const unsigned inactive_start=p.descriptors[3].offset;
     raw_field("inactive tile id range",index,inactive_start+12,unsigned(p.tiles.size()));
 }
@@ -372,7 +412,7 @@ void maximum_frame_and_unused_tile(){
     // reject its nonzero padding when another tile loads the shared group.
     const unsigned tile=unsigned(unused.tiles.size())-1;
     put(unused.groups[tile/unused.per_group].raw,(tile%unused.per_group)*TileBytes+2+15*2,1,1);
-    unused.encode();Rejector reject;reject("unreferenced tile padding in a loaded group",std::move(unused.bytes));
+    unused.encode();ImageRejector reject;reject("unreferenced tile padding in a loaded group",std::move(unused.bytes));
 }
 Package pressure(bool tiny){
     Package p;p.per_group=680;p.alignment=4096;
@@ -382,6 +422,11 @@ Package pressure(bool tiny){
     if(tiny){for(unsigned begin=0;begin<count;begin+=35){std::vector<unsigned> ids;for(unsigned i=begin;i<std::min(count,begin+35);++i)ids.push_back(i);plans.push_back(std::move(ids));}}
     else for(unsigned i=0;i<count;++i)plans.push_back(std::vector<unsigned>(1+i%6,i));
     p.make_groups(plans);p.encode();return p;
+}
+void fill_pressure(Content&content,Provider&source,const Package&p){
+    CHECK(content.open(source.source()));
+    for(unsigned i=0;i<p.frames.size();++i)picture(content,p.image_id(i),p.frames[i]);
+    picture(content,p.alias_id(),p.frames[0]);
 }
 void owners_lifetime_and_fragmentation(const Package&pressure_medium){
     label="owners and cache lifetime";Package a=basic(85,1),b=basic(85,123);
@@ -423,7 +468,7 @@ void failures_and_inactive_rebuild(const Package&pressure_tiny){
         CHECK(target->open(source.source()));CHECK(target->glyph('?',10).pixels);picture(*target,1,p.frames[0]);
         // More than 64 tiny images and more than 4 MiB of groups evict both
         // caches, without resetting the target's ResourceReader page cache.
-        CHECK(other->open(evict.source()));
+        fill_pressure(*other,evict,pressure_tiny);
         source.fail_first=p.group_offsets[0]+32+3+2;source.fail_last=source.fail_first+1;source.corrupt=corrupt;
         CHECK(!target->image(1).pixels);CHECK(source.failed>0);CHECK(!target->healthy());
         CHECK(!target->image(int(p.alias_id())).pixels&&!target->glyph('?',10).pixels);CHECK(!*target->string(0));
@@ -441,12 +486,122 @@ void failures_and_inactive_rebuild(const Package&pressure_tiny){
     label="inactive tiles are validated once and not cold-read for reconstruction";
     Package empty;empty.per_group=85;empty.alignment=4096;empty.frames.push_back(frame(320,240,Pattern::Empty));
     empty.collect();empty.make_groups({{0}});empty.encode();Provider source{&empty.bytes},evict{&pressure_tiny.bytes};
-    CHECK(target->open(source.source()));picture(*target,1,empty.frames[0]);CHECK(other->open(evict.source()));
+    CHECK(target->open(source.source()));picture(*target,1,empty.frames[0]);fill_pressure(*other,evict,pressure_tiny);
     source.fail_first=empty.group_offsets[0];const unsigned last=empty.tile_groups()-1;
     source.fail_last=empty.group_offsets[last]+empty.group_lengths[last];
     // Directory and index-group page reads are separated from tile payloads
     // by fixture alignment. All 300 IDs remain present in the index record.
     picture(*target,1,empty.frames[0]);CHECK(source.failed==0);CHECK(!source.bad_range);
+}
+Package empty_canvas(){
+    Package p;p.alignment=4096;p.frames.push_back(frame(320,240,Pattern::Empty));
+    p.collect();p.make_groups({{0}});p.encode();return p;
+}
+void block_tiles(Provider&source,const Package&p){
+    source.fail_first=p.group_offsets[0];const unsigned last=p.tile_groups()-1;
+    source.fail_last=p.group_offsets[last]+p.group_lengths[last];
+}
+void first_touch_and_validation_bits(const Package&pressure_tiny){
+    Package empty=empty_canvas();Provider source{&empty.bytes},independent{&empty.bytes},evict{&pressure_tiny.bytes};
+    auto target=std::make_unique<Content>(),other=std::make_unique<Content>(),evictor=std::make_unique<Content>();
+    label="structural opening must not mark an inactive image verified";
+    CHECK(target->open(source.source()));CHECK(target->healthy());block_tiles(source,empty);
+    CHECK(!target->image(1).pixels&&source.failed>0);CHECK(!target->healthy());
+
+    label="exact cache-hit alias inherits completed first-touch validation";
+    source.fail_first=source.fail_last=0;CHECK(target->open(source.source()));
+    picture(*target,1,empty.frames[0]);const Picture original=target->image(1);
+    const auto reads=target->read_stats();const Picture alias=target->image(int(empty.alias_id()));
+    CHECK(alias.pixels==original.pixels);CHECK(target->read_stats().callbacks==reads.callbacks);
+    fill_pressure(*evictor,evict,pressure_tiny);block_tiles(source,empty);const unsigned failures=source.failed;
+    picture(*target,empty.alias_id(),empty.frames[0]);CHECK(source.failed==failures);
+
+    label="same descriptor in another owner has no inherited verification bit";
+    CHECK(other->open(independent.source()));block_tiles(independent,empty);
+    CHECK(!other->image(int(empty.alias_id())).pixels&&independent.failed>0);CHECK(!other->healthy());
+    CHECK(target->healthy());picture(*target,empty.alias_id(),empty.frames[0]);
+
+    for(bool failed_open:{false,true}){
+        label=failed_open?"failed open then reopen clears validation bits":"successful reopen clears validation bits";
+        source.fail_first=source.fail_last=0;CHECK(target->open(source.source()));
+        picture(*target,1,empty.frames[0]);picture(*target,empty.alias_id(),empty.frames[0]);
+        Bytes bad;
+        if(failed_open){
+            bad=empty.bytes;put(bad,empty.base,0);seal(bad);source.bytes=&bad;
+            CHECK(!target->open(source.source())&&!target->healthy());source.bytes=&empty.bytes;
+        }
+        CHECK(target->open(source.source()));block_tiles(source,empty);const unsigned before=source.failed;
+        CHECK(!target->image(int(empty.alias_id())).pixels&&source.failed>before);CHECK(!target->healthy());
+    }
+    CHECK(!source.bad_range&&!independent.bad_range&&!evict.bad_range);
+}
+struct FullDirectory {
+    Bytes bytes;Frame expected;unsigned prefix,first_tile,last_tile;
+};
+FullDirectory no_bitmap_package(){
+    // Maximal legal image/glyph directories plus a real, ordered lookup use
+    // the fixed resident allocation to within seven bytes. Repeated stored
+    // LZMA2 tile groups keep this fixture independent of any host compressor.
+    // Only the first 300 tiles are referenced; the others still have checked
+    // group headers. A single template avoids 54k duplicate raw/CRC buffers.
+    Package p;p.images=65535;p.glyphs=32768;p.per_group=1;
+    p.frames.push_back(frame(320,240,Pattern::Empty));p.collect();p.make_groups({{0}});p.encode();
+    const unsigned count=(DirectoryBound-p.table)/8-1,prefix=p.table+(count+1)*8;
+    CHECK(count>=300&&prefix<=DirectoryBound&&DirectoryBound-prefix<8);
+    CHECK(prefix+(p.images+7)/8>DirectoryBound);
+    Bytes bytes(prefix+16,0);bytes.reserve(prefix+16+9842+count*806+8192);
+    std::copy(p.bytes.begin(),p.bytes.begin()+p.base+64,bytes.begin());
+    std::copy(p.bytes.begin()+p.descriptor_base,p.bytes.begin()+p.descriptor_base+16,bytes.begin()+prefix);
+    put(bytes,p.base+16,count);put(bytes,p.base+20,count);put(bytes,p.base+32,prefix);
+    const unsigned card=unsigned(bytes.size());bytes.resize(bytes.size()+9840);
+    const unsigned glyph=unsigned(bytes.size());bytes.push_back(0xab);
+    const unsigned empty=unsigned(bytes.size());bytes.push_back(0);
+    for(unsigned id=0;id<p.images;++id)put(bytes,p.image_entry(id),(id==1||id==p.alias_id())?prefix:card);
+    unsigned at=40+p.images*16;
+    for(unsigned i=0;i<p.glyphs;++i)put(bytes,at+i*16+4,glyph);
+    at+=p.glyphs*16;for(unsigned i=0;i<ContentStrings;++i)put(bytes,at+i*8,empty);
+    const auto group_block=[](unsigned kind,unsigned items,const Bytes&raw){
+        Bytes b(32);const Bytes encoded=stored_lzma2(raw);
+        put(b,0,0x31524754);put(b,4,kind);put(b,12,unsigned(raw.size()));put(b,16,unsigned(encoded.size()));
+        put(b,20,crc32(raw));put(b,24,items);b.insert(b.end(),encoded.begin(),encoded.end());return b;
+    };
+    const Bytes tile=group_block(1,1,p.groups[0].raw);
+    CHECK(tile.size()==806);bytes.resize((bytes.size()+4095)&~size_t(4095));
+    const unsigned first=unsigned(bytes.size());
+    const auto add_group=[&](unsigned id,const Bytes&block){
+        const unsigned off=unsigned(bytes.size());bytes.insert(bytes.end(),block.begin(),block.end());
+        put(bytes,off+8,id);put(bytes,p.table+id*8,off);put(bytes,p.table+id*8+4,unsigned(block.size()));
+    };
+    for(unsigned i=0;i<count;++i)add_group(i,tile);
+    const unsigned last=unsigned(bytes.size());bytes.resize((bytes.size()+4095)&~size_t(4095));
+    add_group(count,group_block(2,1,p.groups[p.tile_groups()].raw));seal(bytes);
+    return {std::move(bytes),std::move(p.frames[0]),prefix,first,last};
+}
+void validation_workspace_fallbacks(const Package&pressure_tiny){
+    auto direct=std::make_unique<Content>(),range=std::make_unique<Content>(),evictor=std::make_unique<Content>();
+    Provider evict{&pressure_tiny.bytes};
+    label="descriptor-chain workspace fallback preserves the image bitmap";
+    Package chain=empty_canvas();chain.images=65535;chain.glyphs=32768;chain.reserved_descriptors=65530;chain.encode();
+    const unsigned bitmap=(chain.images+7)/8,available=DirectoryBound-chain.prefix-bitmap;
+    CHECK(chain.prefix+bitmap<=DirectoryBound);
+    CHECK(4u*(2u*chain.reserved_descriptors+1u)>available);
+    Provider source{&chain.bytes};CHECK(direct->open(chain.bytes.data(),chain.bytes.size()));CHECK(range->open(source.source()));
+    picture(*direct,1,chain.frames[0]);picture(*range,1,chain.frames[0]);
+    fill_pressure(*evictor,evict,pressure_tiny);block_tiles(source,chain);
+    picture(*direct,1,chain.frames[0]);picture(*range,1,chain.frames[0]);CHECK(source.failed==0);
+    Bytes bad=chain.bytes;put(bad,chain.image_entry(1)+6,239,2);
+    Rejector reject;reject("workspace fallback still validates each image geometry",std::move(bad));
+
+    label="no bitmap space falls back to full verification on each image miss";
+    FullDirectory full=no_bitmap_package();Provider fallback{&full.bytes};
+    CHECK(direct->open(full.bytes.data(),full.bytes.size()));CHECK(range->open(fallback.source()));
+    picture(*direct,1,full.expected);picture(*range,1,full.expected);
+    fill_pressure(*evictor,evict,pressure_tiny);
+    const auto reads=direct->read_stats();picture(*direct,1,full.expected);
+    CHECK(direct->read_stats().direct_reads-reads.direct_reads>=300);
+    fallback.fail_first=full.first_tile;fallback.fail_last=full.last_tile;
+    CHECK(!range->image(1).pixels&&fallback.failed>0);CHECK(!range->healthy());CHECK(direct->healthy());
+    CHECK(!source.bad_range&&!fallback.bad_range&&!evict.bad_range);
 }
 } // namespace
 int main(){
@@ -454,5 +609,6 @@ int main(){
     label="bounded group pressure fixtures";
     const Package medium=pressure(false),tiny=pressure(true);
     owners_lifetime_and_fragmentation(medium);failures_and_inactive_rebuild(tiny);
-    std::printf("content tiles: %u checks passed; synthetic NSP2/15 container, geometry, aliases, owners, failures and fragmented group reuse\n",checks);
+    first_touch_and_validation_bits(tiny);validation_workspace_fallbacks(tiny);
+    std::printf("content tiles: %u checks passed; synthetic NSP2/15 structure, first-touch validation, aliases, owners, failures, workspace fallback and fragmented group reuse\n",checks);
 }

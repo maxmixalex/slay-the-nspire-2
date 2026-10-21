@@ -261,12 +261,42 @@ second full-group output buffer. The current frame's index group remains
 pinned while tile groups are consumed; cached groups needed for the frame are
 consumed before missing groups.
 
-Opening performs full integrity and structure validation, including every
-referenced tile ID, edge dimensions and every loaded tile's padding. After a
-successful open of the immutable source, ordinary image reconstruction can
-derive an active-tile mask from the validated span geometry and avoid loading
-tiles outside all spans. All tile IDs still receive range checks. Failed open,
-reset and reopen clear this validation state.
+Source20 initially reconstructed every image during opening. Its full-pack
+access model, including the existing 90 image-cache slots, still decoded about
+30.8 GB of group data before use. That startup cost is separate from the
+77.10 MiB storage result. Source21 divides validation into two phases without
+ever exposing an unchecked decoded image.
+
+Opening checks the whole-file FNV, all resident directories, all group ranges
+and headers, and every index stream's decompression/CRC/record structure. It
+checks every descriptor, tile ID and sparse geometry, including dimensions for
+each referring image. It does **not** decode tile pixel streams at this stage.
+The unused part of the 2 MiB directory allocation supplies temporary descriptor
+lists, allowing each index group to be decoded once. If this workspace is too
+small, or one descriptor has conflicting referring image shapes, a bounded
+sequential fallback performs the same structural checks. The fallback can
+repeat index reads, but still does not decode tile pixels during startup.
+
+The first actual access to each tiled image validates **all** of that image's
+tiles, including inactive edge tiles. Every loaded group must pass exact LZMA2
+consumption/end-marker and CRC checks; all its tile records must have valid
+dimensions and zero padding. The image's exact tile edges, sparse geometry and
+mode-0 alpha are checked before a decoded cache entry is published. Failure
+returns an empty image and makes `healthy()` false, without publishing partial
+pixels or marking the image validated. Consequently successful `open()` means
+the structure and current I/O are valid; a previously unvisited tile-payload
+error is reported at first image access.
+
+A bitmap of at most **8,192 bytes**, also borrowed from the unused directory
+tail, remembers successful images. A later cache miss may use the geometry's
+active-tile mask to omit entirely unused tiles; all IDs still receive bounds
+checks, and loaded streams still undergo CRC/padding/edge checks. Only a cache
+hit with the complete identical image descriptor and shape may transfer that
+successful validation to another timing alias. Index-only startup validation
+cannot set a bit. If even the bitmap does not fit, every image cache miss
+performs full tile validation. Failed open, reset and reopen discard these
+bits and the owner's cache entries. The resource provider must remain immutable
+throughout its Content lifetime, as required for every existing format.
 
 Startup validation and normal active-mask reconstruction must be reported
 separately. Access models also need to state whether the existing decoded image

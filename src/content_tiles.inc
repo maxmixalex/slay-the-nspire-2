@@ -114,16 +114,50 @@ static bool valid_tile_records(const uint8_t* bytes,unsigned items){
     }
     return true;
 }
-static bool valid_tile_indexes(const uint8_t* bytes,unsigned size,unsigned items){
+static bool valid_tile_geometry(const uint8_t* geometry,unsigned length,unsigned output,
+    unsigned width=320,unsigned height=0){
+    unsigned at=0,out=0,rows=0;
+    while(at<length){
+        if(rows>=240||(height&&rows>=height)||length-at<2||output-out<2)return false;
+        const unsigned spans=u16(geometry+at);at+=2;out+=2;++rows;
+        if(spans>width)return false;
+        unsigned last=0;
+        for(unsigned i=0;i<spans;++i){
+            if(length-at<5||output-out<5)return false;
+            const unsigned x=u16(geometry+at),count=u16(geometry+at+2),mode=geometry[at+4];
+            if(!count||mode>1||x<last||x+count>width)return false;
+            last=x+count;at+=5;out+=5;
+            const unsigned bytes=count*(mode?3u:2u);if(bytes>output-out)return false;
+            out+=bytes;
+        }
+    }
+    return rows&&(!height||rows==height)&&out==output;
+}
+static bool valid_tile_indexes(const uint8_t* bytes,unsigned size,unsigned items,unsigned tiles){
     unsigned at=0;
     for(unsigned i=0;i<items;++i){
         if(size-at<12)return false;
         const unsigned output=u32(bytes+at),index=u32(bytes+at+4),geometry=u32(bytes+at+8);
         if(!output||output>MaxImageBytes||!index||index>MaxFrameTiles*4||
            index%4||geometry<2||index>size-at-12||geometry>size-at-12-index)return false;
+        for(unsigned j=0;j<index;j+=4)if(u32(bytes+at+12+j)>=tiles)return false;
+        if(!valid_tile_geometry(bytes+at+12+index,geometry,output))return false;
         at+=12+index+geometry;
     }
     return at==size;
+}
+static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* p,unsigned length){
+    const uint32_t tiles=u32(h+16),groups=u32(h+20);
+    const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
+    const bool is_tile=id<groups;
+    if(u32(p)!=0x31524754u||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
+       !size||size>Lzma2BlockRawLimit||encoded!=length-32||u32(p+28))return false;
+    if(is_tile){
+        const unsigned per_group=u32(h+44),left=tiles-id*per_group;
+        const unsigned expected=left<per_group?left:per_group;
+        return items==expected&&size==items*TileBytes;
+    }
+    return items&&items<=64;
 }
 static TileGroup* load_tile_group(const Content* owner,const ResourceReader& reader,
     const uint8_t* h,uint32_t id){
@@ -131,7 +165,7 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
         if(TileCacheLru)hit->age=next_tile_age();
         return hit;
     }
-    const uint32_t tile_count=u32(h+16),tile_group_count=u32(h+20);
+    const uint32_t tile_group_count=u32(h+20);
     if(id>=tile_group_count+u32(h+24))return nullptr;
     const uint8_t* row=h+64+id*8;
     const uint32_t offset=u32(row),length=u32(row+4);
@@ -139,22 +173,41 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     const bool is_tile=id<tile_group_count;
-    if(u32(p)!=0x31524754u||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
-       !size||size>Lzma2BlockRawLimit||encoded!=length-32||u32(p+28))return nullptr;
-    if(is_tile){
-        const unsigned per_group=u32(h+44),left=tile_count-id*per_group;
-        const unsigned expected=left<per_group?left:per_group;
-        if(items!=expected||size!=items*TileBytes)return nullptr;
-    }else if(!items||items>64)return nullptr;
+    if(!valid_tile_group_header(h,id,p,length))return nullptr;
     TileGroup* group=reserve_tile_group(size);if(!group)return nullptr;
     uint8_t* output=tile_bytes(*group);
     if(!decode_lzma2_block(output,group->pages*TilePageBytes,size,p+32,encoded,
             u32(h+12),u32(p+20))||
-       !(is_tile?valid_tile_records(output,items):valid_tile_indexes(output,size,items))){
+       !(is_tile?valid_tile_records(output,items):valid_tile_indexes(output,size,items,u32(h+16)))){
         tile_discard(*group);return nullptr;
     }
     group->id=id;group->size=size;group->items=uint16_t(items);group->age=next_tile_age();
     group->owner=owner;return group;
+}
+
+static const uint8_t* tile_record_at(const TileGroup& group,unsigned offset,unsigned length){
+    if(offset>group.size||length>group.size-offset)return nullptr;
+    const uint8_t* bytes=tile_bytes(group);unsigned at=0;
+    for(unsigned i=0;i<group.items&&at<offset;++i)
+        at+=12+u32(bytes+at+4)+u32(bytes+at+8);
+    if(at!=offset||group.size-at<12||length!=12+u32(bytes+at+4)+u32(bytes+at+8))return nullptr;
+    return bytes+at;
+}
+static bool tile_descriptor_slot(const uint8_t* h,uint32_t descriptor,unsigned& slot){
+    const uint32_t first=u32(h+32),frames=u32(h+28);
+    if(descriptor<first||descriptor-first>=frames*16||(descriptor-first)%16)return false;
+    slot=(descriptor-first)/16;return true;
+}
+static bool read_tile_descriptor(const ResourceReader& reader,const uint8_t* h,
+    uint32_t header_offset,uint32_t descriptor,uint8_t* row){
+    if(!reader.read(descriptor,row,16)||u32(row)!=header_offset||u32(row+4)>=u32(h+24))return false;
+    const unsigned offset=u32(row+8),length=u32(row+12);
+    return offset<=Lzma2BlockRawLimit&&length>=18&&length<=Lzma2BlockRawLimit-offset;
+}
+static bool valid_tile_shape(const uint8_t* record,unsigned width,unsigned height){
+    const unsigned index=u32(record+4);
+    return index==4*((width+TileSide-1)/TileSide)*((height+TileSide-1)/TileSide)&&
+        valid_tile_geometry(record+12+index,u32(record+8),u32(record),width,height);
 }
 
 struct TileFrame {
@@ -168,20 +221,11 @@ struct TileFrame {
     ~TileFrame(){if(pinned)pinned->first&=63u;}
     bool open(const Content* owner,const ResourceReader& reader,const uint8_t* h,
         uint32_t header_offset,uint32_t descriptor,unsigned w,unsigned height){
-        const uint32_t first=u32(h+32),frames=u32(h+28);
-        if(descriptor<first||descriptor-first>=frames*16||(descriptor-first)%16)return false;
-        uint8_t row[16];if(!reader.read(descriptor,row,sizeof row))return false;
-        if(u32(row)!=header_offset||u32(row+4)>=u32(h+24))return false;
+        unsigned slot=0;if(!tile_descriptor_slot(h,descriptor,slot))return false;
+        uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,descriptor,row))return false;
         pinned=load_tile_group(owner,reader,h,u32(h+20)+u32(row+4));if(!pinned)return false;
         pinned->first|=128u;
-        const unsigned offset=u32(row+8),length=u32(row+12);
-        if(offset>pinned->size||length>pinned->size-offset)return false;
-        const uint8_t* bytes=tile_bytes(*pinned);unsigned at=0;
-        for(unsigned i=0;i<pinned->items&&at<offset;++i)
-            at+=12+u32(bytes+at+4)+u32(bytes+at+8);
-        if(at!=offset||pinned->size-at<12||
-           length!=12+u32(bytes+at+4)+u32(bytes+at+8))return false;
-        const uint8_t* record=bytes+at;
+        const uint8_t* record=tile_record_at(*pinned,u32(row+8),u32(row+12));if(!record)return false;
         columns=(w+TileSide-1)/TileSide;count=columns*((height+TileSide-1)/TileSide);
         if(u32(record+4)!=count*4)return false;
         output_size=u32(record);geometry_size=u32(record+8);
@@ -190,6 +234,77 @@ struct TileFrame {
         return true;
     }
 };
+
+static void tile_put32(uint8_t* out,uint32_t value){
+    for(unsigned i=0;i<4;++i)out[i]=uint8_t(value>>(8*i));
+}
+// Startup validates every index stream and descriptor, but leaves expensive
+// tile pixel streams for the first image that uses them. Borrow the unused
+// resident-directory tail for group lists; neither a second index cache nor
+// a permanent per-descriptor allocation is needed.
+static bool validate_tile_catalog(const Content* owner,const ResourceReader& reader,
+    const uint8_t* h,uint32_t header_offset,const uint8_t* images,unsigned image_count,
+    uint8_t* workspace,unsigned capacity){
+    const unsigned descriptors=u32(h+28),indexes=u32(h+24),tile_count=u32(h+20);
+    const unsigned required=4*(2*descriptors+indexes);
+    bool grouped=capacity>=required;
+    uint8_t* shapes=workspace;
+    uint8_t* next=grouped?shapes+descriptors*4:nullptr;
+    uint8_t* heads=grouped?next+descriptors*4:nullptr;
+    if(grouped){
+        for(unsigned i=0;i<descriptors*4;++i)shapes[i]=0;
+        for(unsigned i=0;i<indexes;++i)tile_put32(heads+i*4,0xffffffffu);
+    }
+    for(unsigned i=0;i<image_count;++i){
+        const uint8_t* image=images+i*16;if(u32(image+8)!=6)continue;
+        unsigned slot=0;if(!tile_descriptor_slot(h,u32(image),slot))return false;
+        if(grouped){
+            const unsigned shape=u32(image+4),old=u32(shapes+slot*4);
+            // Conflicting image shapes require independent structural checks;
+            // do not let one alias authorize another image's later tile edges.
+            if(old&&old!=shape)grouped=false;
+            else tile_put32(shapes+slot*4,shape);
+        }
+    }
+    for(unsigned i=0;i<descriptors;++i){
+        uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+i*16,row))return false;
+        if(grouped){
+            const unsigned group=u32(row+4);tile_put32(next+i*4,u32(heads+group*4));tile_put32(heads+group*4,i);
+        }
+    }
+    for(unsigned id=0;id<tile_count+indexes;++id){
+        if(id<tile_count){
+            const uint8_t* lookup=h+64+id*8;uint8_t row[32];
+            if(!reader.read(u32(lookup),row,sizeof row)||!valid_tile_group_header(h,id,row,u32(lookup+4)))return false;
+            continue;
+        }
+        TileFrame pin;pin.pinned=load_tile_group(owner,reader,h,id);if(!pin.pinned)return false;
+        pin.pinned->first|=128u;
+        if(grouped)for(unsigned descriptor=u32(heads+(id-tile_count)*4);descriptor!=0xffffffffu;descriptor=u32(next+descriptor*4)){
+            uint8_t row[16];
+            if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+descriptor*16,row))return false;
+            const uint8_t* record=tile_record_at(*pin.pinned,u32(row+8),u32(row+12));if(!record)return false;
+            const unsigned shape=u32(shapes+descriptor*4);
+            if(shape&&!valid_tile_shape(record,shape&65535u,shape>>16))return false;
+        }
+    }
+    if(grouped)return true;
+    // A legal directory may consume the entire 2 MiB workspace. Preserve
+    // acceptance and bounded memory with sequential checks in that case;
+    // eviction can cause additional index decoding, but no tile pixel reads.
+    for(unsigned i=0;i<descriptors;++i){
+        uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+i*16,row))return false;
+        TileGroup* group=load_tile_group(owner,reader,h,tile_count+u32(row+4));
+        if(!group||!tile_record_at(*group,u32(row+8),u32(row+12)))return false;
+    }
+    for(unsigned i=0;i<image_count;++i){
+        const uint8_t* image=images+i*16;if(u32(image+8)!=6)continue;
+        TileFrame frame;
+        if(!frame.open(owner,reader,h,header_offset,u32(image),u16(image+4),u16(image+6))||
+           !valid_tile_geometry(frame.geometry,frame.geometry_size,frame.output_size,u16(image+4),u16(image+6)))return false;
+    }
+    return true;
+}
 
 static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader,
     const uint8_t* h,const TileFrame& frame,unsigned w,unsigned height,

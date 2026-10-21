@@ -29,14 +29,15 @@ struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
 class Content {
     const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
     static constexpr uint32_t DirectoryCapacity=2u*1024u*1024u;
-    uint8_t directory_[DirectoryCapacity]{};
+    mutable uint8_t directory_[DirectoryCapacity]{};
     const uint8_t* metadata_{};
     const uint8_t* tile_metadata_{};uint32_t directory_bytes_{};
     ResourceReader reader_{};
     mutable bool io_good_=true;
-    // Opening validates every referenced tile before immutable runtime reads
-    // may omit tiles with no stored format-4 spans.
-    bool validating_=false;
+    // A successful first picture validates all its tiles. The optional bitmap
+    // borrows the unused directory tail; without space, every miss does that
+    // full check. Structural startup validation never sets these bits.
+    uint8_t* tile_validated_{};
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
 public:
     bool open(const uint8_t*,size_t);
