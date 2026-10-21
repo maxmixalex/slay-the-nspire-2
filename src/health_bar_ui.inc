@@ -158,7 +158,7 @@ void Canvas::hp(const HealthBarValues&v,const HealthBarMotion&motion,int x,int y
   int size=this->width(label,10)<=width-2?10:8;
   if(v.hp>0&&this->width(label,size)>width-2){b.n=0;label[0]=0;health_amount(b,v.hp);b.ch('/');health_amount(b,v.max_hp);}
   const auto color=layers.poison_lethal?rgb(118,255,64):layers.doom_lethal?rgb(251,141,255):cream;
-  const auto outline=layers.poison_lethal?rgb(7,71,0):layers.doom_lethal?rgb(45,18,99):layers.blocked?rgb(27,48,69):rgb(144,0,0);
+  const auto outline=v.hp<=0?rgb(144,0,0):layers.poison_lethal?rgb(7,71,0):layers.doom_lethal?rgb(45,18,99):layers.blocked?rgb(27,48,69):rgb(144,0,0);
   health_label(*this,label,x,y+(health_bar::Height-size)/2,width,size,color,outline);
  }
  if(v.block>0){const int block=a.content.world_image("common","HEALTH_BAR_BLOCK"),bx=x-10,by=y-5;

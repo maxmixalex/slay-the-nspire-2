@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "inplace_reset.hpp"
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"

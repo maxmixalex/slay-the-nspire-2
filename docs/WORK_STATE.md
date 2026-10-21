@@ -1,6 +1,73 @@
 # Work state — 2026-10-21
 
-## Current: source24 native UI and performance checkpoint preparation — 2026-10-21
+## Current: source25 calculator stack and native UI correction checkpoint — 2026-10-21
+
+Actual Firebird execution of the historical source22 calculator package exposed
+a blocking ARM stack fault when confirming a new expedition. The compiled
+`new_run`, `save` and `load` functions reserve **198,344 / 198,168 / 198,312
+bytes** respectively, including saved registers. A full `State` temporary in
+each path exceeds the calculator's available stack. The emulator captured an
+unmapped stack page at the new-run fault; this is an executed failure, not an
+inference from a host build. **Do not treat the old source22 calculator ZIP as
+having passed new-run, map or battle execution.** Existing host/codec results
+remain valid within their documented scope.
+
+Source25 removes the three full-State stack temporaries while preserving
+default member values, immutable save inputs, historical save bytes and load
+failure atomicity. Related event/combat aggregate resets use the same bounded
+mechanism. A separate agent prepared the emulator route from
+the retained installed snapshot. All changed-code builds and execution remain
+pending until this source stage is pushed, read back and frozen.
+
+The baseline actually reached the title and character pages. In separate
+10-second and 5-second simulated windows they produced **30.0 and 26.8 loop
+updates per simulated second**. ENTER-to-first-observed-loop took about
+**44.81 simulated seconds**. These are Firebird observations, not handheld FPS;
+the emulator is not cycle accurate. No baseline map/combat rate was obtained.
+Original UI fidelity remains first priority; performance is the second priority,
+with the crashing entry/save paths a prerequisite to any useful battle test.
+
+Source24 **`59b678675ecddd1472a337c3407d38cb2f3c8dd4`** is now remotely
+preserved: **534 files / 40 changed contents** matched the read-back. The
+source-only archive is 9,922,560 bytes, SHA-256
+`531b9ebb52c2573a98c0fae4258529a4621d6e270e577d66a1f7109166a10733`.
+Its logged private UI append passed: **13 original UI images**, **33,060 added
+bytes**, output **80,879,118 bytes**, SHA-256
+`092d58ac18c57873de6491945c7ed3527eec52174b1ccb0450d338b9dcf14570`.
+All historical compressed payloads/catalogs and relocated offsets were checked.
+The frozen source24 native UI baseline then captured **23 scenarios / 480
+frames / 30 saves** and passed the synthetic production health test (467,441
+checks including capture writes). The actual all-card keyword gate **failed**:
+the old text catalog has no `orbs.*` table. A complete readonly formatter scan
+found 52 empty results among 1,247 generated hover outputs, all belonging to
+the five missing orb title/description pairs. Source25 appends those ten exact
+private locale strings after the historical 6,100 entries; no text is invented
+or copied into public source. The old v14/v15 profile and early v16 profile
+remain readable. This failed gate must be rerun on the corrected pack.
+
+Independent image review also found a literal `{Count}` on the crystal board.
+Source25 binds only `CRYSTAL_SPHERE.minigame.divinationsRemain` to the saved
+crystal charge count. The unchanged source24 frames and canonical saves form
+the comparison baseline for the direct RGB565 clear/background fast paths;
+the deliberate crystal text and no-playable-card glow changes are separate
+visual corrections. No physical-device or browser performance result exists.
+
+The end-turn control now uses the existing original glow texture when no card
+is playable, including its authored center, additive draw order, 0.8-second
+BackOut activation, 1.5-second pulse and 0.5-second ExpoOut fade. Its state is
+presentation-only and reset per combat. Short sanitizer/formula comparisons
+passed; production captures and calculator execution remain formal gates.
+New bounded-stack/codec tests cover all five characters, historical saves and
+a 64 KiB thread stack; their full checkpoint runs are still pending.
+
+Next: preserve source25; compile native/ARM/WASM; verify bounded stack frames,
+codec atomicity/defaults, v14/v15/v16 compatibility, health/keyword/button UI,
+actual native/WASM scenes, then CTRL-launch the corrected ARM binary in
+Firebird and run new game → map → battle → save → restart → continue. Record
+complete per-scene diagnostics before selecting further performance changes.
+Cloud-browser private-HTML approval remains blocked as described below.
+
+## Previous: source24 native UI and performance checkpoint preparation — 2026-10-21
 
 The owner identified inaccurate health bars, keyword hover tips and buttons,
 and reported a slow browser build. Three agents implement health components,

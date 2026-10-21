@@ -18,14 +18,25 @@ struct TextIndex{const char*key;uint16_t index;};
 static const TextIndex indexes[]={
 #include "../src/world_text_index.inc"
 };
+static const TextIndex native_indexes[]={
+#include "../src/native_ui_text_index.inc"
+};
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned n,unsigned bytes=4){for(unsigned i=0;i<bytes;++i)b[at+i]=uint8_t(n>>(8*i));}
+static uint32_t crc(const std::vector<uint8_t>&b){uint32_t c=~0u;for(uint8_t v:b){c^=v;for(int i=0;i<8;++i)c=(c>>1)^(0xedb88320u&uint32_t(-int32_t(c&1)));}return ~c;}
+static unsigned group(std::vector<uint8_t>&b,const std::vector<uint8_t>&raw,unsigned type,unsigned id){
+    if(b.size()%2)b.push_back(0);const unsigned at=unsigned(b.size());b.resize(at+32);
+    const unsigned fields[]={0x31524754,type,id,unsigned(raw.size()),unsigned(raw.size())+4,crc(raw),1,0};
+    for(unsigned i=0;i<8;++i)put(b,at+i*4,fields[i]);
+    b.push_back(1);b.push_back(uint8_t((raw.size()-1)>>8));b.push_back(uint8_t(raw.size()-1));
+    b.insert(b.end(),raw.begin(),raw.end());b.push_back(0);return at;
+}
 static std::vector<uint8_t> fixture(){
-    constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,stringdir=40+images*16,clipdir=stringdir+ContentStrings*8;
-    constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
-    std::vector<uint8_t>b(payload+82*60*2);put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);
-    put(b,16,images);put(b,24,ContentStrings);put(b,28,AnimationKinds);put(b,32,CardKinds);
+    constexpr unsigned images=NativeUiAuxiliaryCount,stringdir=40+images*16,clipdir=stringdir+NativeUiStringCount*8;
+    constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16,base=uidir+NativeUiAuxiliaryCount*4,payload=base+96;
+    std::vector<uint8_t>b(payload+82*60*2);put(b,0,0x3250534e);put(b,4,NativeUiContentVersion);put(b,8,0x41cef1ea);
+    put(b,16,images);put(b,24,NativeUiStringCount);put(b,28,AnimationKinds);put(b,32,CardKinds);
     for(unsigned i=0;i<images;++i){put(b,40+i*16,payload);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,82*60*2);}
-    std::vector<std::string> strings(ContentStrings,"SYNTHETIC");
+    std::vector<std::string> strings(NativeUiStringCount,"SYNTHETIC");
     for(unsigned i=0;i<CardKinds;++i){strings[i*3]=definitions[i].key;strings[i*3+1]=strings[i*3+2]="Card [gold]Keyword[/gold].\nA readable preview.";}
     for(const auto&e:indexes){std::string key=e.key;strings[e.index]=key.find(".title")!=std::string::npos?key.substr(key.find('.')+1):"Synthetic explanation.\nEvery line remains accessible.\nNo rule is inferred from a colored word.";
         if(key=="static_hover_tips.SUMMON_DYNAMIC.title")strings[e.index]="Summon {Summon}";
@@ -33,10 +44,20 @@ static std::vector<uint8_t> fixture(){
         if(key=="static_hover_tips.REPLAY_DYNAMIC.description")strings[e.index]="Replay [blue]{Times}[/blue] times.";
         if(key=="card_keywords.EXHAUST.description")strings[e.index]="One\nTwo\nThree\nFour\nFive\nSix\nSeven\nEight\nNine\nTen\nEleven\nTwelve\nThirteen\nFourteen\nFifteen\nSixteen\nSeventeen";
     }
-    for(unsigned i=0;i<ContentStrings;++i){put(b,stringdir+i*8,unsigned(b.size()));put(b,stringdir+i*8+4,unsigned(strings[i].size()));b.insert(b.end(),strings[i].begin(),strings[i].end());b.push_back(0);}
+    for(const auto&e:native_indexes){std::string key=e.key;strings[e.index]=key.find(".title")!=std::string::npos?key:"Synthetic orb explanation.";}
+    for(unsigned i=0;i<NativeUiStringCount;++i){put(b,stringdir+i*8,unsigned(b.size()));put(b,stringdir+i*8+4,unsigned(strings[i].size()));b.insert(b.end(),strings[i].begin(),strings[i].end());b.push_back(0);}
     for(unsigned i=0;i<AnimationKinds;++i){put(b,clipdir+i*16+4,1,2);put(b,clipdir+i*16+6,33,2);}
     for(unsigned i=0;i<CardKinds;++i)for(unsigned j=0;j<4;++j)put(b,carddir+i*16+j*4,j?i*3+j-1:i);
-    for(unsigned i=0;i<U_Count;++i)put(b,uidir+i*4,i==U_CampFlames?A_Count:i);
+    for(unsigned i=0;i<NativeUiAuxiliaryCount;++i)put(b,uidir+i*4,i==U_CampFlames?A_Count:i);
+    // One unused auxiliary image exercises a valid v16 tile directory. Card
+    // pictures remain 82x60; the appended text IDs never alias a card string.
+    const unsigned fields[]={0x314c4954,1,16,14,1,1,1,1,base+80,base+64,770,85,524288,617323,0,0};
+    for(unsigned i=0;i<16;++i)put(b,base+i*4,fields[i]);
+    std::vector<uint8_t>tile(770),record(18);tile[0]=tile[1]=1;put(record,0,2);put(record,4,4);put(record,8,2);
+    const unsigned tiles=group(b,tile,1,0),indexes_at=group(b,record,2,1);
+    put(b,base+64,tiles);put(b,base+68,32+unsigned(tile.size())+4);put(b,base+72,indexes_at);put(b,base+76,32+unsigned(record.size())+4);
+    put(b,base+80,base);put(b,base+92,unsigned(record.size()));const unsigned image_at=40+(images-1)*16;
+    put(b,image_at,base+80);put(b,image_at+4,1,2);put(b,image_at+6,1,2);put(b,image_at+8,6);put(b,image_at+12,16);
     put(b,12,unsigned(b.size()));uint32_t hash=2166136261u;for(unsigned i=40;i<b.size();++i){hash^=b[i];hash*=16777619u;}put(b,36,hash);return b;
 }
 static void setup(){
@@ -62,6 +83,7 @@ static void associations(){
     b=tips({Dazed,0});CHECK(b.count==3&&b.find(HoverTipKind::Keyword,"ETHEREAL")==0&&b.find(HoverTipKind::Keyword,"EXHAUST")==1&&b.find(HoverTipKind::Keyword,"UNPLAYABLE")==2);
     b=tips({StormOfSteel,1});CHECK(b.items[0].kind==HoverTipKind::Card&&b.items[0].card.kind==Shiv&&b.items[0].card.upgraded);
     b=tips({DefectDualcast,0});CHECK(b.find(HoverTipKind::Static,"EVOKE")>=0);
+    for(const auto&row:native_indexes){const char*key=std::strchr(row.key,'.');CHECK(key);CHECK(*a.content.world_string("orbs",key+1));}
     b=tips({RegentBigBang,0});CHECK(b.find(HoverTipKind::Static,"ENERGY")>=0&&b.find(HoverTipKind::Static,"FORGE")>=0&&b.find(HoverTipKind::Card,"SOVEREIGN_BLADE")>=0&&b.find(HoverTipKind::Keyword,"RETAIN")>=0);
     b=tips({Purity,0});CHECK(b.find(HoverTipKind::Keyword,"RETAIN")>=0);b=tips({Backstab,0});CHECK(b.find(HoverTipKind::Keyword,"INNATE")>=0);
     b=tips({NecroNecroMastery,1});int index=b.find(HoverTipKind::Static,"SUMMON_DYNAMIC");CHECK(index>=0&&b.items[index].amount==8);

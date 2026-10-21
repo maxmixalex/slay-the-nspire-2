@@ -1,8 +1,8 @@
 void enter_combat(State&s){
     const EncounterId pending_encounter=s.enemy_world.encounter;
     s.world.combat_ending=0;s.world.combat_bonus_gold=0;
-    s.expansion=ExpansionState{};
-    s.ironclad=IroncladState{};silent_combat_start(s);defect_combat_start(s);s.regent=RegentState{};necro_combat_start(s);
+    reset_in_place(s.expansion);
+    reset_in_place(s.ironclad);silent_combat_start(s);defect_combat_start(s);reset_in_place(s.regent);necro_combat_start(s);
     s.relic_flash=0;relic_reset_turn_counters(s);
     s.phase=Phase::Combat;s.block=s.strength=s.pain=s.embrace=s.dexterity=0;s.double_attack=0;s.power_count=0;s.no_draw=0;s.temporary_strength=s.temporary_dexterity=s.vigor=s.attack_vigor=s.thorns=0;
     s.noxious_fumes=s.accuracy=s.discard_required=0;
@@ -46,7 +46,7 @@ void enter_combat(State&s){
 }
 void new_run(State&s,uint32_t seed,bool practice,Character character){
     const EventRunFacts previous_facts=s.event_run;
-    s=State{};
+    reset_in_place(s);
     s.event_run=previous_facts;
     if((unsigned)character>=CharacterKinds){s.phase=Phase::Error;return;}
     s.character=character;s.seed=seed?seed:1;

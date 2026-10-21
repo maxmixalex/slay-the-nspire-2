@@ -53,7 +53,7 @@ static void defect_deck_copied(State&s,int to,int from){
 }
 static void defect_combat_start(State&s){
  uint16_t permanent[MaxDeck];for(int i=0;i<MaxDeck;i++)permanent[i]=s.defect.genetic_deck[i];
- s.defect=DefectState{};for(int i=0;i<MaxDeck;i++)s.defect.genetic_deck[i]=permanent[i];
+ reset_in_place(s.defect);for(int i=0;i<MaxDeck;i++)s.defect.genetic_deck[i]=permanent[i];
  if(s.character==Character::Defect)s.expansion.orb_slots=3;
 }
 static void defect_temporary_cost_set(State&s,int id){

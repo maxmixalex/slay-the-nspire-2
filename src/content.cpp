@@ -126,7 +126,7 @@ bool Content::open(ResourceSource source){
     if(version<3||version>NativeUiContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
-    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||(version>=14&&ns!=ContentStrings))return false;
+    if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||(version>=14&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount)))return false;
     const unsigned auxiliary=version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(base>n||base>DirectoryCapacity)return false;

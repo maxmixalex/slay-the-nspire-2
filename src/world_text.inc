@@ -17,6 +17,7 @@ struct WorldTextContext {
  Card card{};int instance=-1,deck=-1;const EventCardFacts*facts=nullptr;
  mutable char nested[2048]{};
  int option=-1;bool description=true;unsigned depth=0;int relic_position=-1;
+ const char*full_key=nullptr;
 };
 static LocalizedValue wt_resolve(const void*,const char*);
 static void wt_model_key(WorldTextContext&,const char*);
@@ -76,6 +77,11 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"CardCount"))return wt_number(intent.status_cards);
  }
  if(wt_equal(x.table,"events")||wt_equal(x.table,"ancients")){
+  // The original crystal board binds this screen-local Count to its saved
+  // divination charges. Do not make unrelated event Count tokens resolve.
+  if(wt_equal(x.table,"events")&&wt_equal(x.full_key,"CRYSTAL_SPHERE.minigame.divinationsRemain")&&
+     s.original_events.id==OriginalEventId::CrystalSphere&&wt_equal(name,"Count"))
+   return wt_number(s.original_events.crystal_charges);
   int value=0;if(original_event_description_value(s,name,value))return wt_number(value);
   OriginalTextReference ref;if(original_event_description_reference(s,name,x.option,x.description,ref))return wt_reference(x,ref);
   if(wt_equal(name,"event"))return wt_string(a.content.world_title("events",original_event_key(s.original_events.id)));
@@ -135,6 +141,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  return {};
 }
 static void wt_model_key(WorldTextContext&x,const char*key){
+ x.full_key=key;
  TextBuffer b{x.model_key,sizeof x.model_key,0};b.text(x.table);b.ch('.');for(const char*p=key;*p&&*p!='.';p++)b.ch(*p);
 }
 void App::localized_text(const char*table,const char*key,char*out,size_t cap,int model,int actor,int amount)const{

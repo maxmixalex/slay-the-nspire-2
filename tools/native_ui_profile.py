@@ -5,7 +5,13 @@ their native pixels; the tooltip's original nine-patch margins are scaled
 along with its image. HSV triples use the reference YIQ shader, not colorsys.
 """
 BASE_AUXILIARY_COUNT = 1175
+BASE_STRING_COUNT = 6100
 REFERENCE = 0x41cef1ea
+# Append-only text IDs; keep src/native_ui_text_index.inc in this exact order.
+TEXTS = tuple(('orbs', kind + suffix)
+              for kind in ('DARK_ORB', 'FROST_ORB', 'GLASS_ORB', 'LIGHTNING_ORB', 'PLASMA_ORB')
+              for suffix in ('.description', '.title'))
+STRING_COUNT = BASE_STRING_COUNT + len(TEXTS)
 SKINS = (
     ('HEALTH_BAR_BG', 'images/ui/combat/health_bar_bg.png', (20, 16), None),
     ('HEALTH_BAR_STROKE', 'images/ui/combat/health_bar_stroke.png', (22, 16), None),

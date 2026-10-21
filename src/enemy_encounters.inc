@@ -32,7 +32,7 @@ static int encounter_gold(EncounterId id,unsigned ascension,bool high){
 int encounter_min_gold(EncounterId id,unsigned ascension){return encounter_gold(id,ascension,false);}
 int encounter_max_gold(EncounterId id,unsigned ascension){return encounter_gold(id,ascension,true);}
 unsigned encounter_pool(unsigned region,EncounterClass type,EncounterId*out,unsigned capacity){unsigned n=0;for(const auto&e:encounter_pool_entries)if(e.region==region&&encounter_definitions[unsigned(e.id)].type==type){if(out&&n<capacity)out[n]=e.id;++n;}return n;}
-static void enemy_reset_combat(State&s){s.enemy_world=EnemyWorldState{};}
+static void enemy_reset_combat(State&s){reset_in_place(s.enemy_world);}
 static int enemy_unique_hp(State&s,EnemyId kind,int except=-1,int bonus=0,int pending_add=-1){
  const auto&d=enemy_definitions[unsigned(kind)];int low=(s.enemy_world.ascension>=8?d.min_hp_8:d.min_hp)+bonus,high=(s.enemy_world.ascension>=8?d.max_hp_8:d.max_hp)+bonus;
  // A created actor can already own an identity without belonging to the

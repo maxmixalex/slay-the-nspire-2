@@ -142,11 +142,11 @@ struct Package {
         }
         for(const Descriptor&d:descriptors)CHECK(d.group<plans.size());
     }
-    void encode(bool legacy=false,unsigned auxiliary=U_Count,unsigned version=0){
+    void encode(bool legacy=false,unsigned auxiliary=U_Count,unsigned version=0,unsigned strings=ContentStrings){
         CHECK(legacy||(!groups.empty()&&groups.size()>tile_groups()));
         images=std::max(images,unsigned(frames.size())+2);
         const unsigned descriptor_count=std::max(unsigned(frames.size()),reserved_descriptors);
-        base=40+images*16+glyphs*16+ContentStrings*8+AnimationKinds*16+CardKinds*16+auxiliary*4;
+        base=40+images*16+glyphs*16+strings*8+AnimationKinds*16+CardKinds*16+auxiliary*4;
         table=base+64;prefix=legacy?base:table+unsigned(groups.size())*8;
         descriptor_base=prefix;bytes.assign(prefix+(legacy?0:descriptor_count*16),0);
         const unsigned card=unsigned(bytes.size());bytes.resize(bytes.size()+9840);
@@ -163,7 +163,7 @@ struct Package {
             bytes.insert(bytes.end(),encoded.begin(),encoded.end());
         }
         put(bytes,0,0x3250534e);put(bytes,4,version?version:legacy?14:15);put(bytes,8,0x41cef1ea);
-        put(bytes,16,images);put(bytes,20,glyphs);put(bytes,24,ContentStrings);put(bytes,28,AnimationKinds);put(bytes,32,CardKinds);
+        put(bytes,16,images);put(bytes,20,glyphs);put(bytes,24,strings);put(bytes,28,AnimationKinds);put(bytes,32,CardKinds);
         for(unsigned id=0;id<images;++id){
             const unsigned which=id==alias_id()?0:id-1;const bool tiled=!legacy&&id&&which<frames.size();const size_t at=image_entry(id);
             put(bytes,at,tiled?unsigned(descriptor(which)):card);put(bytes,at+4,tiled?frames[which].w:82,2);put(bytes,at+6,tiled?frames[which].h:60,2);
@@ -175,8 +175,8 @@ struct Package {
             put(bytes,row+10,1,1);put(bytes,row+11,1,1);put(bytes,row+12,1,2);
         }
         at+=glyphs*16;
-        for(unsigned i=0;i<ContentStrings;++i)put(bytes,at+i*8,empty);
-        at+=ContentStrings*8;
+        for(unsigned i=0;i<strings;++i)put(bytes,at+i*8,empty);
+        at+=strings*8;
         for(unsigned i=0;i<AnimationKinds;++i){put(bytes,at+i*16+4,1,2);put(bytes,at+i*16+6,33,2);}at+=AnimationKinds*16;
         // All card records and auxiliary references use the shared historical
         // card image zero and empty string zero. Catalog counts remain exact.
@@ -367,6 +367,31 @@ void native_ui_packages(){
     CHECK(!provider.bad_range&&provider.max_read<=EncodedBound);
 
     Rejector reject;
+    Package complete=basic();complete.encode(false,NativeUiAuxiliaryCount,NativeUiContentVersion,NativeUiStringCount);
+    const unsigned textdir=40+complete.images*16+complete.glyphs*16;
+    for(unsigned i=0;i<NativeUiStringCount-WorldStringCount;++i){
+        put(complete.bytes,textdir+(WorldStringCount+i)*8,unsigned(complete.bytes.size()));
+        put(complete.bytes,textdir+(WorldStringCount+i)*8+4,1);
+        complete.bytes.push_back(uint8_t('A'+i));complete.bytes.push_back(0);
+    }
+    seal(complete.bytes);Provider with_text{&complete.bytes};
+    CHECK(direct->open(complete.bytes.data(),complete.bytes.size())&&range->open(with_text.source()));
+    CHECK(direct->current_profile()&&range->current_profile());
+    const char*orb_keys[]={"DARK_ORB.description","DARK_ORB.title","FROST_ORB.description","FROST_ORB.title",
+        "GLASS_ORB.description","GLASS_ORB.title","LIGHTNING_ORB.description","LIGHTNING_ORB.title",
+        "PLASMA_ORB.description","PLASMA_ORB.title"};
+    for(unsigned i=0;i<10;++i){const char expected[]={char('A'+i),0};
+        CHECK(!std::strcmp(direct->world_string("orbs",orb_keys[i]),expected));
+        CHECK(!std::strcmp(range->world_string("orbs",orb_keys[i]),expected));
+    }
+    picture(*direct,1,complete.frames[0]);picture(*range,1,complete.frames[0]);
+    CHECK(!with_text.bad_range);
+    for(unsigned count:{unsigned(NativeUiStringCount)-1,unsigned(NativeUiStringCount)+1}){
+        Package bad=basic();bad.encode(false,NativeUiAuxiliaryCount,NativeUiContentVersion,count);
+        reject("v16 rejects a partial or oversized text suffix",std::move(bad.bytes));
+    }
+    {Package bad=basic();bad.encode(false,U_Count,TileContentVersion,NativeUiStringCount);
+        reject("v15 does not accept the optional v16 text suffix",std::move(bad.bytes));}
     for(unsigned count:{unsigned(U_Count),unsigned(NativeUiAuxiliaryCount)-1,unsigned(NativeUiAuxiliaryCount)+1}){
         Package bad=basic();bad.encode(false,count,NativeUiContentVersion);
         reject("v16 rejects a missing, short or long auxiliary suffix",std::move(bad.bytes));
@@ -381,6 +406,7 @@ void native_ui_packages(){
         label=legacy?"v16 to v14 fallback":"v16 to v15 fallback";Package old=basic();old.encode(legacy);
         Provider historical{&old.bytes};CHECK(direct->open(old.bytes.data(),old.bytes.size())&&range->open(historical.source()));
         CHECK(direct->current_profile()&&range->current_profile());
+        CHECK(!*direct->world_string("orbs","LIGHTNING_ORB.title")&&!*range->world_string("orbs","LIGHTNING_ORB.title"));
         CHECK(direct->world_image("common","HEALTH_BAR_BG")==-1&&range->world_image("common","HEALTH_BAR_FILL")==-1);
         CHECK(direct->ui_image(U_HealthBarBackground)==-1&&range->ui_image(U_HealthBarBackground)==-1);
         if(!legacy){picture(*direct,1,old.frames[0]);picture(*range,1,old.frames[0]);}

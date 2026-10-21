@@ -53,7 +53,7 @@ public:
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
-    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion||version_==NativeUiContentVersion)&&cards_==CardKinds&&ui_count_==(version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count))&&strings_==ContentStrings&&clips_==AnimationKinds;}
+    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion||version_==NativeUiContentVersion)&&cards_==CardKinds&&ui_count_==(version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count))&&(strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount))&&clips_==AnimationKinds;}
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -117,6 +117,7 @@ struct EnemyPresentation {
 struct App {
     State game{};Content content{};Callbacks callbacks{};
     ButtonMotion button_motions[MaxButtonMotions]{};
+    EndTurnGlowMotion end_turn_glow{};
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;

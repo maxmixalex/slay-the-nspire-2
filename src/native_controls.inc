@@ -24,11 +24,25 @@ static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,boo
 static void native_end_turn(Canvas&c,bool enabled){
  auto&a=c.a;const auto visual=c.control_visual("END_TURN",254,173,66,31,ButtonFamily::EndTurn,false,enabled);
  const int shift=(visual.y+2048)/4096,normal=a.content.ui_image(U_EndTurnNative),hover=a.content.ui_image(U_EndTurnHover);
+ bool playable=false;for(unsigned i=0;i<a.game.hand.count;i++)if(can_play_card(a.game,a.game.hand.ids[i])){playable=true;break;}
+ const uint16_t encounter=a.game.enemy_world.active?uint16_t(256+unsigned(a.game.enemy_world.encounter)):a.game.encounter;
+ const auto glow=a.end_turn_glow.observe({a.game.seed,a.game.floor,a.game.world.combat_count,encounter},enabled&&!playable,a.map_clock_ms);
+ const int glow_image=a.content.ui_image(U_EndTurnGlow);
+ const auto draw_glow=[&](int alpha,int scale,unsigned red,unsigned green){
+  if(!alpha||glow_image<0)return;
+  // All three original TextureRects have the same 512x256 bounds and
+  // (256,128) pivot. Keep their shared center through the 320px adaptation.
+  const int w=(78*scale+2048)/4096,h=(39*scale+2048)/4096;
+  Canvas light=c;light.tint_red=uint8_t(div255(unsigned(c.tint_red)*red));
+  light.tint_green=uint8_t(div255(unsigned(c.tint_green)*green));
+  light.picture(glow_image,247+(78-w)/2,169+shift+(39-h)/2,w,h,unsigned(alpha)*255/4096,presentation::Add);
+ };
+ draw_glow(glow.pulse_alpha,glow.pulse_scale,64,223);
  Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
  if(normal>=0){layer.picture(normal,247,169+shift,78,39);
   if(visual.hover&&hover>=0)layer.picture(hover,247,169+shift,78,39,unsigned(visual.hover)*255/4096);
  }else layer.picture(A_EndTurn,254,174+shift,64,29);
- bool playable=false;for(unsigned i=0;i<a.game.hand.count;i++)if(can_play_card(a.game,a.game.hand.ids[i])){playable=true;break;}
+ draw_glow(glow.base_alpha,glow.base_scale,0,212);
  const uint16_t cream=rgb(255,246,226),focus=playable?rgb(255,79,67):rgb(0,255,255);
  uint16_t color=enabled?blend(cream,focus,unsigned(visual.hover)*255/4096):Muted;
  layer.centered("结束回合",255,183+shift,64,10,rgb(19,31,46));layer.centered("结束回合",254,182+shift,64,10,color);

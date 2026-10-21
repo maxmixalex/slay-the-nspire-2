@@ -17,7 +17,7 @@ static void necro_gain_power(State&s,NPower p,int amount){
 }
 static void necro_combat_start(State&s){
  uint16_t saved[MaxDeck];for(int i=0;i<MaxDeck;i++)saved[i]=s.necro.scythe_deck[i];
- s.necro=NecroState{};for(int i=0;i<MaxDeck;i++)s.necro.scythe_deck[i]=saved[i];
+ reset_in_place(s.necro);for(int i=0;i<MaxDeck;i++)s.necro.scythe_deck[i]=saved[i];
 }
 static void necro_card_reset(State&s,int id){
  if(id<0||id>=MaxCards)return;auto&v=s.necro;

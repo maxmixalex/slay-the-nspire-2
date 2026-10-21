@@ -99,7 +99,16 @@ struct Canvas{
         }else{box(x,y,21,20,Gold);centered("×",x,y,21,12,Gold);}hit(x,y,21,20,HitKind::Close);
     }
 
-    void rect(int x,int y,int w,int h,uint16_t color){for(int yy=mx(0,y);yy<mn(clip_h,y+h);yy++)for(int xx=mx(0,x);xx<mn(clip_w,x+w);xx++)paint(yy*pitch+xx,color);}
+    void rect(int x,int y,int w,int h,uint16_t color){
+        const int left=mx(0,x),right=mn(clip_w,x+w),top=mx(0,y),bottom=mn(clip_h,y+h);
+        // Main-surface clears and opaque plaques need no per-pixel blending
+        // state. Cached coverage and every layer modulation keep paint().
+        if(!coverage&&opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255){
+            for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx)pixels[yy*pitch+xx]=color;
+            return;
+        }
+        for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx)paint(yy*pitch+xx,color);
+    }
     void box(int x,int y,int w,int h,uint16_t c){rect(x,y,w,1,c);rect(x,y+h-1,w,1,c);rect(x,y,1,h,c);rect(x+w-1,y,1,h,c);}
     void dim(int x,int y,int w,int h,unsigned alpha){for(int yy=mx(0,y);yy<mn(clip_h,y+h);yy++)for(int xx=mx(0,x);xx<mn(clip_w,x+w);xx++){paint(yy*pitch+xx,Ink,alpha);}}
     void line(int x,int y,int xx,int yy,uint16_t color,bool dots=false){
@@ -147,6 +156,13 @@ struct Canvas{
             return;
         }
         if(width==p.w&&height==p.h&&!p.alpha&&!p.palette&&opacity==255){
+            if(!coverage&&this->opacity==255&&brightness==255&&tint_red==255&&tint_green==255&&tint_blue==255&&blend_mode==presentation::Normal){
+                // Decoded RGB565 bytes may be unaligned. Preserve the explicit
+                // little-endian load instead of casting the resource pointer.
+                for(int yy=top;yy<bottom;++yy){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;
+                    for(int xx=left;xx<right;++xx,++at,src+=2)pixels[at]=uint16_t(src[0]|(uint16_t(src[1])<<8));}
+                return;
+            }
             for(int yy=top;yy<bottom;yy++){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,at++,src+=2)paint(at,src[0]|(uint16_t)src[1]<<8,255,blend_mode);}
             return;
         }

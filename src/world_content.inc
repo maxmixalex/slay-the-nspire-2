@@ -3,6 +3,9 @@ struct WorldContentIndex {const char* key;uint16_t index;};
 static const WorldContentIndex world_text_index[]={
 #include "world_text_index.inc"
 };
+static const WorldContentIndex native_ui_text_index[]={
+#include "native_ui_text_index.inc"
+};
 static const WorldContentIndex world_image_index[]={
 #include "world_image_index.inc"
 };
@@ -40,6 +43,7 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
 }
 }
 const char* Content::world_string(const char*table,const char*key)const{
+ if(version_==NativeUiContentVersion){int id=wc_find(native_ui_text_index,table,key);if(id>=0)return string(id);}
  return version_>=14?string(wc_find(world_text_index,table,key)):"";
 }
 const char* Content::world_title(const char*table,const char*key)const{

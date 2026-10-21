@@ -37,6 +37,8 @@ static std::vector<uint8_t> synthetic_profile(){
   if(key=="ancients.PAEL.talk.firstVisitEver.0-0.ancient")text="[thinky_dots]READABLE\n[aqua]PAEL[/aqua][/thinky_dots]";
   if(key=="events.COLOSSAL_FLOWER.pages.INITIAL.description")text="TEXT[green]TEXT[/green]TEXT[red][jitter]TEXT[/jitter][/red]TEXT\n\nTEXT[sine][rainbow freq=0.3 sat=0.8 val=1]COLOR[/rainbow][/sine]TEXT[aqua]TEXT[/aqua]TEXT[red]TEXT[/red]TEXT\n\nTEXT[gold]TEXT[/gold]TEXT\n";
   if(key=="powers.SHRINK_POWER.smartDescription")text="{ApplierName.StringValue:cond:{} ACTIVE|{OwnerName}} {Amount:cond:==1?TURN|>1?[blue]{}[/blue] TURNS|}";
+  if(key=="events.CRYSTAL_SPHERE.minigame.divinationsRemain")text="REMAINING {Count}";
+  if(key=="events.CRYSTAL_SPHERE.pages.INITIAL.description")text="UNRELATED {Count}";
   if(key=="relics.FAKE_ANCHOR.description")text="{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}";
   CHECK(entry.index<strings.size());strings[entry.index]=text;
  }
@@ -87,6 +89,25 @@ static void other_original_forms(){
  RichReader reader(text);RichChar ch{};unsigned count=0;while(reader.next(ch)){CHECK(ch.codepoint!='['&&ch.style.thinky_dots);++count;}CHECK(count>0);unchanged();
  if(!actual_pack){a.relic_description(WorldRelicFakeAnchor,text,sizeof text);CHECK(!std::strcmp(text,"{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}"));unchanged();}
 }
+static void crystal_board_count(){
+ reset(0);CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,0x71ef23,0));
+ CHECK(original_event_choose(a.game,1));CHECK(a.game.phase==Phase::OriginalEventChoice);
+ const auto remaining=a.game.original_events.crystal_charges;CHECK(remaining>0);char text[256]{};
+ for(unsigned charges=0;charges<=remaining;++charges){
+  a.game.original_events.crystal_charges=uint8_t(charges);snapshot();
+  a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",text,sizeof text);
+  resolved(text);char number[16]{};std::snprintf(number,sizeof number,"%u",charges);CHECK(std::strstr(text,number));
+  unchanged();CHECK(load(a.game,before.bytes,before.size));
+  char restored[256]{};a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",restored,sizeof restored);
+  CHECK(!std::strcmp(text,restored));unchanged();
+ }
+ if(!actual_pack){
+  a.localized_text("events","CRYSTAL_SPHERE.pages.INITIAL.description",text,sizeof text);
+  CHECK(std::strstr(text,"{Count}"));
+  reset(0);a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",text,sizeof text);
+  CHECK(std::strstr(text,"{Count}"));
+ }
+}
 static void colossal_flower(){
  reset(0);CHECK(original_event_begin(a.game,OriginalEventId::ColossalFlower,0x71ef23,0));a.reset_presentation();a.pointer.visible=false;
  snapshot();char text[8192]{};a.original_event_text(-1,true,text,sizeof text);resolved(text);
@@ -113,5 +134,5 @@ static void colossal_flower(){
  }
 }
 int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual_pack=true;}else data=synthetic_profile();
- CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
+ CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();crystal_board_count();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
 }

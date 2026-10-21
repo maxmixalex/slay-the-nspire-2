@@ -48,22 +48,24 @@ static std::vector<uint8_t> glyph_bytes(Glyph p){
     return {p.pixels,p.pixels+n};
 }
 int main(int argc,char**argv){
-    if(argc!=2&&argc!=3&&argc!=6){
-        std::fprintf(stderr,"Usage: resource_content_regression REAL_PACK [EQUIVALENT_REFERENCE_PACK [--images FIRST COUNT]]\n");return 2;
+    if(argc!=2&&argc!=3&&argc!=5&&argc!=6){
+        std::fprintf(stderr,"Usage: resource_content_regression REAL_PACK [EQUIVALENT_REFERENCE_PACK] [--images FIRST COUNT]\n");return 2;
     }
+    const bool has_reference=argc==3||argc==6;
     unsigned first_image=0,requested_images=0;
-    if(argc==6){
-        if(std::strcmp(argv[3],"--images")){std::fprintf(stderr,"Expected --images FIRST COUNT\n");return 2;}
+    if(argc==5||argc==6){
+        const unsigned at=has_reference?3:2;
+        if(std::strcmp(argv[at],"--images")){std::fprintf(stderr,"Expected --images FIRST COUNT\n");return 2;}
         char* end=nullptr;
-        const unsigned long first=std::strtoul(argv[4],&end,10);
-        if(!argv[4][0]||*end||first>65534){std::fprintf(stderr,"Invalid first image\n");return 2;}
-        const unsigned long count=std::strtoul(argv[5],&end,10);
-        if(!argv[5][0]||*end||!count||count>65535){std::fprintf(stderr,"Invalid image count\n");return 2;}
+        const unsigned long first=std::strtoul(argv[at+1],&end,10);
+        if(!argv[at+1][0]||*end||first>65534){std::fprintf(stderr,"Invalid first image\n");return 2;}
+        const unsigned long count=std::strtoul(argv[at+2],&end,10);
+        if(!argv[at+2][0]||*end||!count||count>65535){std::fprintf(stderr,"Invalid image count\n");return 2;}
         first_image=unsigned(first);requested_images=unsigned(count);
     }
     const auto b=read_file(argv[1]);std::vector<uint8_t> reference_bytes;
     std::unique_ptr<Content> reference;
-    if(argc>=3){reference_bytes=read_file(argv[2]);reference=std::make_unique<Content>();CHECK(reference->open(reference_bytes.data(),reference_bytes.size()));}
+    if(has_reference){reference_bytes=read_file(argv[2]);reference=std::make_unique<Content>();CHECK(reference->open(reference_bytes.data(),reference_bytes.size()));}
     auto memory=std::make_unique<Content>(),ranged=std::make_unique<Content>();Provider source{&b};
     CHECK(memory->open(b.data(),b.size()));CHECK(ranged->open({&source,(uint32_t)b.size(),read_at,nullptr}));
     const unsigned images=word(b.data()+16),glyphs=word(b.data()+20),strings=word(b.data()+24),clips=word(b.data()+28);

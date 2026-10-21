@@ -43,4 +43,54 @@ struct ButtonMotion {
     }
 };
 constexpr unsigned MaxButtonMotions=32;
+
+// NEndTurnButton + end_turn_button.tscn, pinned v0.111.0. Scales are
+// relative to the authored half-scale Image; alpha and scale use Q12.
+struct EndTurnGlowVisual {
+    int base_alpha=0,base_scale=4096,pulse_alpha=0,pulse_scale=4096;
+};
+struct EndTurnGlowIdentity {
+    uint32_t seed=0;
+    uint16_t floor=0,combat=0,encounter=0;
+    bool operator==(const EndTurnGlowIdentity&v)const{
+        return seed==v.seed&&floor==v.floor&&combat==v.combat&&encounter==v.encounter;
+    }
+};
+struct EndTurnGlowMotion {
+    EndTurnGlowIdentity identity{};
+    EndTurnGlowVisual from{};
+    uint32_t start=0;
+    bool bound=false,shining=false;
+    EndTurnGlowVisual sample(uint32_t now)const{
+        const uint32_t elapsed=now-start;
+        if(!shining){
+            auto v=from;
+            const int q=elapsed>=500?4096:int(health_bar::expo_out(elapsed*2));
+            v.base_alpha=from.base_alpha*(4096-q)/4096;
+            v.pulse_alpha=from.pulse_alpha*(4096-q)/4096;
+            return v;
+        }
+        // Godot Back::out uses s=1.70158. Preserve its small overshoot;
+        // clamping the easing coefficient would change the source tween.
+        int q=4096;
+        if(elapsed<800){const int u=int(elapsed*4096/800)-4096;
+            q=4096+(u*u/4096)*((11066*u/4096)+6970)/4096;}
+        EndTurnGlowVisual v;
+        v.base_alpha=from.base_alpha+(3072-from.base_alpha)*q/4096;
+        v.base_scale=3686+410*q/4096;
+        const uint32_t pulse=elapsed%1500;
+        const int inverse=4096-int(pulse*4096/1500),square=inverse*inverse/4096;
+        const int quart=4096-square*square/4096;
+        v.pulse_scale=4096+1638*quart/4096;
+        v.pulse_alpha=int((1500-pulse)*1638/1500);
+        return v;
+    }
+    EndTurnGlowVisual observe(EndTurnGlowIdentity key,bool active,uint32_t now){
+        if(!bound||!(identity==key)){
+            identity=key;from={};start=now;bound=true;shining=false;
+        }
+        if(shining!=active){from=sample(now);start=now;shining=active;}
+        return sample(now);
+    }
+};
 }

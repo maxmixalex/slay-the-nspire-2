@@ -1,4 +1,5 @@
 #include "original_events.hpp"
+#include "inplace_reset.hpp"
 #include "world_card_factory.hpp"
 #include "world_run.hpp"
 #include "reference_sort.hpp"
@@ -207,7 +208,7 @@ bool original_event_allowed(const State&s,OriginalEventId id,unsigned act,unsign
 }
 bool original_event_begin(State&s,OriginalEventId id,uint64_t run_seed,unsigned act){
  if(!rules_implemented(id)||act>=3||s.original_events.active||s.hp<=0||world_relic_pending(s)||combat_phase(s.phase)||choice_phase(s.phase))return false;
- s.original_events=OriginalEventState{};auto&e=s.original_events;e.id=id;e.active=1;e.act_index=uint8_t(act);
+ reset_in_place(s.original_events);auto&e=s.original_events;e.id=id;e.active=1;e.act_index=uint8_t(act);
  reference::Random rng;rng.named(run_seed,original_event_key(id));keep_random(s,rng);
  s.phase=Phase::Event;if(!rules_begin(s)){fail(s);return false;}
  original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
@@ -359,7 +360,7 @@ bool original_event_description_value(const State&s,const char*key,int&value){
 #include "original_event_values.inc"
  };for(auto&var:vars)if(var.id==e.id&&same(key,var.key)){value=var.value;return true;}return false;
 }
-void original_event_new_run(State&s){s.original_events=OriginalEventState{};s.event_run.wongo_earned=0;s.event_run.freed_repy=s.event_run.completion_recorded=0;}
+void original_event_new_run(State&s){reset_in_place(s.original_events);s.event_run.wongo_earned=0;s.event_run.freed_repy=s.event_run.completion_recorded=0;}
 void original_event_finish_run(State&s){auto&f=s.event_run;if(f.completion_recorded)return;f.completion_recorded=1;
  if(UINT32_MAX-f.wongo_total>=f.wongo_earned)f.wongo_total+=f.wongo_earned;else f.wongo_total=UINT32_MAX;
  if(s.phase==Phase::Complete){if(f.wins<UINT32_MAX)++f.wins;if(f.character_wins[unsigned(s.character)]<UINT32_MAX)++f.character_wins[unsigned(s.character)];}

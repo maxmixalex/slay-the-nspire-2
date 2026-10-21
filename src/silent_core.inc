@@ -17,7 +17,7 @@ static void silent_gain_power(State&s,SPower p,int amount){
  unsigned actor=p==SPower::Afterimage?(unsigned)PostPlayActor::Afterimage:p==SPower::SerpentForm?(unsigned)PostPlayActor::SerpentForm:p==SPower::MasterPlanner?(unsigned)PostPlayActor::MasterPlanner:p==SPower::Envenom?(unsigned)PostPlayActor::SilentEnvenom:0;
  if(actor){if(!old&&n)after_play_register(s,actor);else if(old&&!n)after_play_unregister(s,actor);}
 }
-static void silent_combat_start(State&s){s.silent=SilentState{};}
+static void silent_combat_start(State&s){reset_in_place(s.silent);}
 static void silent_card_reset(State&s,int id){
  if(id<0||id>=MaxCards)return;auto&v=s.silent;
  v.sly[id]=v.retain[id]=v.inky[id]=v.bullet_free[id]=0;

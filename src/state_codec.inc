@@ -250,9 +250,36 @@ if(version>=4){F(s.no_draw);for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].weak)
  }
 #undef F
 }
+// State is too large for the calculator stack (about 198 KB in the v15
+// runtime). The event-loop core uses one bounded, process-local codec scratch
+// object instead. Keep its storage in BSS: a static State{} would also embed
+// the full nonzero-default object in the launcher. Construction/reset still
+// honors every default member; zero-filled storage alone is not a State.
+//
+// This is not a cross-thread lock. Core actions and serialization share the
+// existing single-thread contract. A migration error can notify a CoreObserver;
+// reject a nested save/load rather than let it overwrite the active workspace.
+static_assert(sizeof(State)<=262144,"Reassess the calculator codec workspace budget");
+alignas(State) static unsigned char codec_workspace_bytes[sizeof(State)];
+static State* codec_workspace_state=nullptr;
+static bool codec_workspace_busy=false;
+struct CodecWorkspaceLease {
+    State* state=nullptr;
+    CodecWorkspaceLease() noexcept {
+        if(codec_workspace_busy)return;
+        codec_workspace_busy=true;
+        if(!codec_workspace_state)codec_workspace_state=value_construct_at<State>(codec_workspace_bytes);
+        state=codec_workspace_state;
+    }
+    ~CodecWorkspaceLease(){if(state)codec_workspace_busy=false;}
+    CodecWorkspaceLease(const CodecWorkspaceLease&)=delete;
+    CodecWorkspaceLease&operator=(const CodecWorkspaceLease&)=delete;
+};
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
-    State copy=s;Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
+    CodecWorkspaceLease workspace;if(!workspace.state)return false;
+    State&copy=*workspace.state;copy=s;
+    Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
     uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
@@ -260,7 +287,9 @@ bool load(State&s,const uint8_t*data,size_t len){
     Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
     const unsigned version=c.field(0);
     if((version<3||version>SaveVersion)||c.field(0)!=0x41CEF1EA)return false;
-    State tmp{};code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
+    CodecWorkspaceLease workspace;if(!workspace.state)return false;
+    State&tmp=*workspace.state;reset_in_place(tmp);
+    code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
     s=tmp;return true;
 }
