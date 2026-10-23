@@ -52,13 +52,19 @@ def resource_package(content_path=None,language='zhs',common_path=None,eng_path=
     if not languages:raise ValueError('At least one of --eng and --zhs is required')
     return {'mode':'split','common':encode(common),'languages':languages}
 
-def package_runtime(content_path=None,destination=None,language='zhs',common_path=None,eng_path=None,zhs_path=None):
-    output=ROOT/'build'/'web'/'nSpire2.wasm'
+def package_runtime(content_path=None,destination=None,language='zhs',common_path=None,eng_path=None,zhs_path=None,wasm_path=None,source_checkpoint=None):
+    output=wasm_path or ROOT/'build'/'web'/'nSpire2.wasm'
     if not output.is_file():raise SystemExit('Compile the matching WebAssembly runtime before packaging.')
     resources=resource_package(content_path,language,common_path,eng_path,zhs_path)
     text=player_template(language).replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__RESOURCE_PACKAGE__',json.dumps(resources,separators=(',',':')))
-    notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()+'\n'+(ROOT/'licenses/OkHSV-Godot-MIT.txt').read_text()+'\n'+(ROOT/'licenses/Noto-Boot-OFL.txt').read_text()
-    text+='\n<!-- '+notices.replace('--','—')+' -->\n'
+    notices='\n\n'.join((ROOT/name).read_text(encoding='utf-8') for name in
+        ('NOTICE.md','COPYING','licenses/Go-BSD-3-Clause.txt','licenses/OkHSV-Godot-MIT.txt','licenses/Noto-Boot-OFL.txt'))
+    if source_checkpoint:
+        if not re.fullmatch('[0-9a-f]{40}',source_checkpoint):raise ValueError('Source checkpoint must be a full Git commit ID')
+        notices+='\n\nCorresponding runtime source:\nhttps://github.com/maxmixalex/slay-the-nspire-2/tree/'+source_checkpoint+'\n'
+    # A non-executable raw-text element preserves the complete license text,
+    # including double hyphens that are invalid inside an HTML comment.
+    text+='\n<script type="text/plain" id="distribution-notices">'+notices.replace('</script','<\\/script')+'</script>\n'
     destination=destination or ROOT/'dist'/'nSpire2-desktop.html'
     destination.parent.mkdir(parents=True,exist_ok=True)
     destination.write_text(text,encoding='utf-8');print(f'Built {resources["mode"]} offline desktop host; WebAssembly {output.stat().st_size:,} bytes')

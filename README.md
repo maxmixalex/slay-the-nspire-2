@@ -1,6 +1,6 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Active development is **0.17** on [`work/0.17-world-parity`](https://github.com/zyf722/slay-the-nspire-2/tree/work/0.17-world-parity). Current work integrates the bilingual UI feedback, shared-resource installation and measured card-rendering improvements. Exact executed checkpoints and delivery status are in [WORK_STATE.md](docs/WORK_STATE.md); earlier results below retain their historical identities.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. Active development is **0.17** on [`work/0.17-world-parity`](https://github.com/maxmixalex/slay-the-nspire-2/tree/work/0.17-world-parity). Current work integrates the original title and bilingual UI, on-demand loading, shared-resource installation and measured card-rendering improvements. Exact executed checkpoints and delivery status are in [WORK_STATE.md](docs/WORK_STATE.md); earlier results below retain their historical identities.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
@@ -10,7 +10,7 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current feedback work
 
-The current resource extension is **NSP2/19**. One launcher can use one shared
+The current resource extension is **NSP2/20**. One launcher can use one shared
 art/animation file and either or both language files:
 
 | File | Purpose |
@@ -39,14 +39,18 @@ move it off the calculator, then transfer all required new files before launch.
 Otherwise, after confirming the split installation works,
 the old complete `nSpire2.nsp.tns` resource file can be moved out to reclaim its
 space; it is not needed alongside the common and locale files.
-Full integrity and startup structural checks run on every launch, while the
-existing first-use tile-pixel checks remain enabled.
+Startup reads the format header, resident directories and language marker.
+Image, glyph and string payloads are decoded when used. Whole-pack integrity
+hashing, integrity-only CRC and eager resource-wide validation are removed;
+the actual ranges and format rules required for decoding remain.
 
-The actual shared resources total **93,783,363 bytes**, versus 181,188,230 bytes
-for two complete NSP2/19 packs: **48.24% less when both languages are installed**.
-This is deduplication, not achievement of the 30–40 MB target. Complete integrity,
-directory and payload checks remain enabled; startup measurements distinguish
-host cache conditions from calculator-emulator execution.
+The measured b400 hybrid resources total **81,085,101 bytes**, compared with
+93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
+keep their fast individual encoding; other retained animation images use bounded
+compressed groups. This preserves image pixels and timing while saving
+12,698,262 bytes. The separate 30–40 MB target remains unmet. See
+[the retained storage measurements](docs/retained-storage-0.17.md) for the
+all-group comparison, cold-page tradeoffs and host-only timing limits.
 
 Current fixes include explicit event-option tooltips, contextual rich-text and
 template substitution, scaled card focus geometry, original energy/intent/banner
@@ -119,7 +123,7 @@ python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label content --
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label web -- python3 tools/build_web.py
 ```
 
-For a full conversion from the pinned installation, `build_content.py` now chains through the same final character conversion. The conversion checks the original release metadata, assembly and PCK hashes. The historical 0.16 launcher requires **NSP2/13** (497 cards, 339 auxiliary images and 1,556 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
+For a full conversion from the pinned installation, `build_content.py` chains through the character conversion. The converter checks the release version and commit metadata; content identities serve conversion cache reuse rather than an integrity allow-list. The historical 0.16 launcher requires **NSP2/13** (497 cards, 339 auxiliary images and 1,556 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory for that historical format; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
 
 Historical 0.16 saves use **v14** and retain readers for project v3–v13. The appended v14 payload records all three new character modules, wide card/relic identifiers, independent star prices, persistent deck growth, expanded acquisition order and cross-character Nightmare modifiers. Earlier writers did not record the new histories; migration preserves encoded facts and seeds only observable pending play/death baselines. The genuine frozen v13 continuation fixture and earlier historical fixtures exercise those boundaries. Older Entropy/Boulder and Panache/Calamity acquisition orders retain their documented historical migration policies. The browser writes to a separate v14 storage key and can import earlier keys. Old launchers cannot read the new save.
 

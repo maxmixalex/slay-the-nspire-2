@@ -9,6 +9,13 @@ dimensions, change RGB565 pixels, discard alpha, simplify palettes, omit
 frames or change timing. The title restoration may deliberately replace image
 4 with an original-derived atlas; that replacement is recorded separately.
 
+The measured hybrid candidate was regenerated after workspace pruning using
+the saved v18 baseline, the original owner PCK and converter checkpoint
+`b400ab88186ddb618167a8b7c2a8c141d41629e0`. All three split output identities match
+the earlier measured candidate exactly. The [recovery receipt](validation-ui3-resource-recovery-0.17.json)
+records the four completed conversions. This is a reproduction of those
+resources, not a new performance measurement of the later runtime.
+
 ## Image format 7
 
 The ordinary 16-byte image-directory row still stores offset, width, height,

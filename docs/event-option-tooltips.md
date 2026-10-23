@@ -45,6 +45,26 @@ Private disassembly is inspection input only and is not checked in.
 
 ## Executed validation
 
+### NSP2/20 hybrid
+
+At `b400ab88186ddb618167a8b7c2a8c141d41629e0`, the regenerated hybrid packs passed
+the existing complete keyword-tooltip regression: **402,632 English and
+402,524 Chinese checks**, including five captures per language. Both journals
+closed with exit code 0 and unchanged source. The actual event option and V
+detail captures were reviewed at 320×240: associated card names and complete
+mechanic prose are present, and the detail view keeps its paging and return
+controls. This verifies the implemented event surfaces, not whole-game visual
+parity with the original.
+
+The [NSP2/20 localization receipt](validation-ui3-localization-0.17.json) records
+the resource, binary, log and screenshot identities alongside the full UI
+binding and world-text checks. The resource conversion changes storage without
+changing association metadata, model context, pointer/keyboard ownership or
+save/RNG bytes. No new tooltip association or formatting fix was required by
+this actual-pack audit.
+
+### Earlier NSP2/18 execution
+
 The frozen, remotely verified checkpoint
 `14a20900035b5e554e076263fc22fe7611d2e410` passes the keyword-tooltip suite:
 

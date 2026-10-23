@@ -137,6 +137,10 @@ static void same_map_state(const SaveData&expected){
          "map presentation preserves the complete canonical controller result");
 }
 static void advance_for(unsigned remaining){while(remaining){const unsigned step=remaining>250?250:remaining;advance(step);remaining-=step;}}
+static void settle_preparation(){
+ for(unsigned step=0;app.combat_preparation.active&&step<1024;++step)advance(33);
+ require(!app.combat_preparation.active,"actual battle resources finish their bounded preparation");
+}
 static void intro_steps(SceneKind kind){
  // An empty fixture gives both production hosts a fresh title. Start the
  // actual deterministic default run through its UI; loading Neow would
@@ -235,6 +239,17 @@ static void map_steps(SceneKind kind){
  require(!app.map_travel.pending&&app.map_travel.fading_in&&!app.panel&&!app.paused,
          "completed fade enters once and closes old overlays");
  same_map_state(map_expected);key(Key::EndTurn);same_map_state(map_expected);
+ if(app.combat_preparation.active){
+  // Real packs can still be loading when the map's independent input timer
+  // expires. Replay that visible loading path without forcing its cache or
+  // flags. Exact fade callback boundaries are covered by the native map suite.
+  key(Key::Map);require(!app.panel,"loading screen holds ordinary map input");
+  settle_preparation();same_map_state(map_expected);advance_for(fast?350:800);
+  key(Key::Map);require(app.panel==3,"map opens after the actual battle is ready");
+  key(Key::Map);require(!app.panel,"ready battle map dismisses normally");
+  advance_for(350);same_map_state(map_expected);key(Key::Save);key(Key::Load);same_map_state(map_expected);
+  return;
+ }
  if(fast){
   click(HitKind::Command,int(Key::Map));require(app.panel==3,"fast fade-in releases pointer immediately");
   key(Key::Map);require(app.panel==3,"fast fade-in retains keyboard lock");
@@ -337,6 +352,7 @@ int main(int argc,char**argv){
    map_steps(kind);
   }
   else if(kind==SceneKind::Combat||kind==SceneKind::Kaiser){
+   settle_preparation();
    const int turn=app.game.turn;key(Key::EndTurn);require(app.game.turn==turn+1,"original enemy move executes through normal End Turn");
    for(unsigned i=0;i<40;i++)advance(250);
    key(Key::Statuses);key(Key::Back);key(Key::Save);key(Key::Load);advance(250);

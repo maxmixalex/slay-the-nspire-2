@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+  "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+  "reason": "Workspace pruning removed local artifacts; restored the authorized original archive and v18 baseline, then deterministically regenerated the already measured candidate",
+  "journals": [
+    {
+      "journal": "ui3-recovery-hybrid-010888745578.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-recovery-hybrid-010888745578.log",
+      "log_sha256": "41e317a95625f0902d20e70f9f7d7ef6552b790f76dbcf9936d880fc0975e150",
+      "started_at": "2026-10-23T14:46:45.946824+00:00",
+      "ended_at": "2026-10-23T14:46:57.053733+00:00"
+    },
+    {
+      "journal": "ui3-recovery-merchant-fd7ef56ab54e.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-recovery-merchant-fd7ef56ab54e.log",
+      "log_sha256": "89700be244ea1b4aab1a0c3985f58c074c4ab906ddd0b726f1c76c3abcff400a",
+      "started_at": "2026-10-23T14:46:05.888478+00:00",
+      "ended_at": "2026-10-23T14:46:30.505266+00:00"
+    },
+    {
+      "journal": "ui3-recovery-split-06c74e0a222e.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-recovery-split-06c74e0a222e.log",
+      "log_sha256": "ec2c10e97d9943b1a23e3c3b44db1ca364728aea78bac19d6a9fbac12e9cc48d",
+      "started_at": "2026-10-23T14:47:15.529943+00:00",
+      "ended_at": "2026-10-23T14:47:16.951116+00:00"
+    },
+    {
+      "journal": "ui3-recovery-title-9972028c1bea.json",
+      "checkpoint": "b400ab88186ddb618167a8b7c2a8c141d41629e0",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "51e58806a65853d559d02e0313426d1764e7c5af4ea092368095c9fe0bb0b3e2",
+      "log": "ui3-recovery-title-9972028c1bea.log",
+      "log_sha256": "269cbaf556155b0e5140bea31aaccc227a0c1009808f494bfa9212c055157003",
+      "started_at": "2026-10-23T14:46:05.879041+00:00",
+      "ended_at": "2026-10-23T14:46:07.925241+00:00"
+    }
+  ],
+  "resource_bytes": 81085101,
+  "baseline_split_receipt": "validation-retained-storage-0.17.json",
+  "reproduced_split_outputs_match_prior_identities": true,
+  "new_performance_measurement": false
+}

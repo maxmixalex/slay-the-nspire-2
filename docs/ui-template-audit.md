@@ -3,11 +3,35 @@
 ## Scope and current verification status
 
 The inventory reads every one of the **935 UI binding slots** in both private
-NSP2/17 locale packs and their NSP2/18 and NSP2/19 replacements. Each pack has **200 dynamic
+NSP2/17 locale packs and their NSP2/18, NSP2/19 and NSP2/20 replacements. Each pack has **200 dynamic
 bindings, 735 static bindings and 35 distinct named fields**. All dynamic bindings
 have a known display route. The Chinese UI string table is byte-identical between
 17 and 18; the English UI string table is also byte-identical between 17 and 18.
 The new graphics profile does not implicitly repair template binding.
+
+The NSP2/20 hybrid was exercised with the actual bilingual packs and the native
+Clang 18 Release runtime from `b400ab88186ddb618167a8b7c2a8c141d41629e0`.
+Both languages passed all **935 bindings, 200 dynamic routes, 230 model/UI
+invocations and 34,723 assertions**, with zero unresolved fields, unclassified
+dynamic slots or unsupported final-UI fields. The UI string tables remain
+byte-identical to their prior language tables. The existing regression checks
+the actual blue pixels for `[blue]{Amount}[/blue]`, both `Hotkey` and `HotKey`,
+selection limits and live per-model numeric values; it does not substitute a
+generic zero to hide missing model context.
+
+A separate direct-key check compared the 22 original labels used by title,
+pause and settings with their PCK values in both languages. Every label matched
+and none contained a parameter. In particular, Continue's floor and ascension
+keys are labels followed by saved numbers. The English ascension label already
+ends with a visible space; the title helper retains it instead of adding a
+second separator. The 935 UI bindings contain only the supported `blue`,
+`gold`, `green` and `purple` color tags.
+
+The same actual NSP2/20 packs passed `world_text_regression` with **6,963 English
+and 6,746 Chinese checks**. The [current localization receipt](validation-ui3-localization-0.17.json)
+records the five closed journals, runtime binary identities, full route counts
+and event-tooltip coverage. This execution used the 164×106 title atlas with
+original text and ten flame frames; a later additive glow is outside its scope.
 
 The v19 merchant extension was formally checked at
 `06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d` through both actual language packs.
