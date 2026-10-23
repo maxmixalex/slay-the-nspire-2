@@ -1,0 +1,769 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "decision": "Deliver fast_images=ui hybrid; all-grouped candidate retained as measured comparison only",
+  "source_checkpoint": "b4f7ba06164734028af2c673f38fa918120d1341",
+  "runtime_checkpoint": "b4f7ba06164734028af2c673f38fa918120d1341",
+  "runtime_binary_sha256": "87e5903ac3b7d10118dda6c6e959377d389d79af563d9b98ed74fa414d08218f",
+  "journals": [
+    {
+      "checkpoint": "b4f7ba06164734028af2c673f38fa918120d1341",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "log_sha256": "41e317a95625f0902d20e70f9f7d7ef6552b790f76dbcf9936d880fc0975e150",
+      "source_sha256": "e75ffc5866e796390c5c5e00e6a50f7ab37bfc88def8e62bb76c6f7479aedff4",
+      "started_at": "2026-10-23T12:17:20.363594+00:00",
+      "ended_at": "2026-10-23T12:17:32.353197+00:00",
+      "id": "ui3-hybrid-retained-28658d9b9786"
+    },
+    {
+      "checkpoint": "b4f7ba06164734028af2c673f38fa918120d1341",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "log_sha256": "ec2c10e97d9943b1a23e3c3b44db1ca364728aea78bac19d6a9fbac12e9cc48d",
+      "source_sha256": "e75ffc5866e796390c5c5e00e6a50f7ab37bfc88def8e62bb76c6f7479aedff4",
+      "started_at": "2026-10-23T12:17:44.013383+00:00",
+      "ended_at": "2026-10-23T12:17:45.341556+00:00",
+      "id": "ui3-hybrid-split-9c17d8a92d6d"
+    },
+    {
+      "checkpoint": "b4f7ba06164734028af2c673f38fa918120d1341",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "log_sha256": "bc9b1ea3530f91a8f20fa0724a6bdd2519bc8e2c018ed94895af574e1bd1bcd5",
+      "source_sha256": "e75ffc5866e796390c5c5e00e6a50f7ab37bfc88def8e62bb76c6f7479aedff4",
+      "started_at": "2026-10-23T12:18:06.725040+00:00",
+      "ended_at": "2026-10-23T12:18:14.122490+00:00",
+      "id": "ui3-hybrid-grid-paired-bda2e0f0ee60"
+    }
+  ],
+  "conversion": {
+    "schema": 1,
+    "elapsed_seconds": 11.750417158997152,
+    "languages": {
+      "eng": {
+        "schema": 1,
+        "reference": "v0.111.0 / 41cef1ea",
+        "input_version": 19,
+        "output_version": 20,
+        "input_bytes": 89206276,
+        "output_bytes": 76521355,
+        "saved_bytes": 12684921,
+        "group_target_bytes": 131072,
+        "codec_raw_bound_bytes": 524288,
+        "fast_image_policy": "ui",
+        "resident_group_cache_bytes": 5242880,
+        "new_resident_pixel_bytes": 0,
+        "startup_payload_scans": 0,
+        "retained_groups": 200,
+        "grouped_image_entries": 3567,
+        "grouped_raw_bytes": 25134014,
+        "retained_stored_bytes": 14059190,
+        "retained_unique_images": 5368,
+        "maximum_group_raw_bytes": 131063,
+        "tile_groups_copied": 1184,
+        "fast_image_entries": 1872,
+        "fast_unique_images": 1844,
+        "fast_stored_bytes": 9388628,
+        "verification": {
+          "unique_retained_images_verified": 5370,
+          "tile_images_verified": 42189,
+          "animation_groups_verified": 1184,
+          "glyphs_verified": 570,
+          "strings_verified": 8192,
+          "replaced_image_ids": [
+            4
+          ],
+          "catalog_and_timing_unchanged": true,
+          "exact_raw_byte_comparison": true
+        }
+      },
+      "zhs": {
+        "schema": 1,
+        "reference": "v0.111.0 / 41cef1ea",
+        "input_version": 19,
+        "output_version": 20,
+        "input_bytes": 91981954,
+        "output_bytes": 79304054,
+        "saved_bytes": 12677900,
+        "group_target_bytes": 131072,
+        "codec_raw_bound_bytes": 524288,
+        "fast_image_policy": "ui",
+        "resident_group_cache_bytes": 5242880,
+        "new_resident_pixel_bytes": 0,
+        "startup_payload_scans": 0,
+        "retained_groups": 200,
+        "grouped_image_entries": 3567,
+        "grouped_raw_bytes": 25134014,
+        "retained_stored_bytes": 14059190,
+        "retained_unique_images": 5368,
+        "maximum_group_raw_bytes": 131063,
+        "tile_groups_copied": 1184,
+        "fast_image_entries": 1872,
+        "fast_unique_images": 1844,
+        "fast_stored_bytes": 9388628,
+        "verification": {
+          "unique_retained_images_verified": 5370,
+          "tile_images_verified": 42189,
+          "animation_groups_verified": 1184,
+          "glyphs_verified": 11900,
+          "strings_verified": 8192,
+          "replaced_image_ids": [
+            4
+          ],
+          "catalog_and_timing_unchanged": true,
+          "exact_raw_byte_comparison": true
+        }
+      }
+    }
+  },
+  "split": {
+    "byte_identical_roundtrip": true,
+    "runtime_integrity_checks": false,
+    "v19_resource_bytes": 93783363,
+    "resource_bytes": 81085101,
+    "saved_from_v19_bytes": 12698262,
+    "common": {
+      "file": "nSpire2.common.tns",
+      "bytes": 74740628,
+      "sha256": "6c85504dabf9c9617563fe999830894154582dbcf828baec0d5226b53356a8b3",
+      "artwork_bytes": 74740564,
+      "artwork_sha256": "465e8e0416c27289c6732876cac66f7262f316f6888436714c2df2b1499adf64"
+    },
+    "languages": {
+      "eng": {
+        "file": "nSpire2.eng.tns",
+        "bytes": 1780887,
+        "sha256": "3ebe8a39647d2688da541205a72380892c654b2c2ec017d000f6ff4d00e97b8c"
+      },
+      "zhs": {
+        "file": "nSpire2.zhs.tns",
+        "bytes": 4563586,
+        "sha256": "9b5e8ae7c4392e0c1498de1605edd9bf87f53d1a2273ae6a7d110e1ff22af8a9"
+      }
+    }
+  },
+  "card_grid": {
+    "trials": 3,
+    "frames_per_scene": 180,
+    "order": [
+      "v19,grouped,hybrid",
+      "hybrid,grouped,v19",
+      "v19,grouped,hybrid"
+    ],
+    "method": "One existing b4f7ba0 Clang18 Release binary; production ranged FILE callback; unpaced host CPU, not calculator/browser display FPS or storage-device cold-cache evidence.",
+    "results": [
+      {
+        "scene": "library_8",
+        "candidate": "v19",
+        "preparation": {
+          "median_ms": 0.0,
+          "range_ms": [
+            0.0,
+            0.0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "first_visible": {
+          "median_ms": 2.334,
+          "range_ms": [
+            1.806,
+            2.359
+          ],
+          "source_bytes": [
+            263546,
+            263546,
+            263546
+          ],
+          "source_calls": [
+            53,
+            53,
+            53
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 1.01,
+          "range_ms": [
+            0.86,
+            1.082
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          0
+        ],
+        "first_frame_signatures": [
+          1414711941
+        ],
+        "last_frame_signatures": [
+          1414711941
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "library_8",
+        "candidate": "grouped",
+        "preparation": {
+          "median_ms": 0.0,
+          "range_ms": [
+            0.0,
+            0.0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "first_visible": {
+          "median_ms": 15.063,
+          "range_ms": [
+            13.166,
+            15.096
+          ],
+          "source_bytes": [
+            302366,
+            302366,
+            302366
+          ],
+          "source_calls": [
+            31,
+            31,
+            31
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 0.817,
+          "range_ms": [
+            0.632,
+            1.025
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          0
+        ],
+        "first_frame_signatures": [
+          1414711941
+        ],
+        "last_frame_signatures": [
+          1414711941
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "library_8",
+        "candidate": "hybrid",
+        "preparation": {
+          "median_ms": 0.0,
+          "range_ms": [
+            0.0,
+            0.0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "first_visible": {
+          "median_ms": 2.022,
+          "range_ms": [
+            1.842,
+            2.35
+          ],
+          "source_bytes": [
+            239361,
+            239361,
+            239361
+          ],
+          "source_calls": [
+            47,
+            47,
+            47
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 0.65,
+          "range_ms": [
+            0.638,
+            0.676
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          0
+        ],
+        "first_frame_signatures": [
+          1414711941
+        ],
+        "last_frame_signatures": [
+          1414711941
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "remove_10",
+        "candidate": "v19",
+        "preparation": {
+          "median_ms": 0.0,
+          "range_ms": [
+            0.0,
+            0.0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "first_visible": {
+          "median_ms": 2.617,
+          "range_ms": [
+            1.609,
+            2.65
+          ],
+          "source_bytes": [
+            266505,
+            266505,
+            266505
+          ],
+          "source_calls": [
+            54,
+            54,
+            54
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 1.186,
+          "range_ms": [
+            0.934,
+            1.19
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          0
+        ],
+        "first_frame_signatures": [
+          1397370541
+        ],
+        "last_frame_signatures": [
+          1397370541
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "remove_10",
+        "candidate": "grouped",
+        "preparation": {
+          "median_ms": 0.0,
+          "range_ms": [
+            0.0,
+            0.0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "first_visible": {
+          "median_ms": 13.419,
+          "range_ms": [
+            12.743,
+            13.479
+          ],
+          "source_bytes": [
+            284443,
+            284443,
+            284443
+          ],
+          "source_calls": [
+            28,
+            28,
+            28
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 1.106,
+          "range_ms": [
+            1.051,
+            1.191
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          0
+        ],
+        "first_frame_signatures": [
+          1397370541
+        ],
+        "last_frame_signatures": [
+          1397370541
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "remove_10",
+        "candidate": "hybrid",
+        "preparation": {
+          "median_ms": 0.0,
+          "range_ms": [
+            0.0,
+            0.0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "first_visible": {
+          "median_ms": 2.801,
+          "range_ms": [
+            1.938,
+            3.09
+          ],
+          "source_bytes": [
+            250121,
+            250121,
+            250121
+          ],
+          "source_calls": [
+            50,
+            50,
+            50
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 0.905,
+          "range_ms": [
+            0.687,
+            1.217
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          0
+        ],
+        "first_frame_signatures": [
+          1397370541
+        ],
+        "last_frame_signatures": [
+          1397370541
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "draw_choice_10",
+        "candidate": "v19",
+        "preparation": {
+          "median_ms": 1.24,
+          "range_ms": [
+            1.065,
+            1.323
+          ],
+          "source_bytes": [
+            270219,
+            270219,
+            270219
+          ],
+          "source_calls": [
+            59,
+            59,
+            59
+          ]
+        },
+        "first_visible": {
+          "median_ms": 5.28,
+          "range_ms": [
+            5.151,
+            6.171
+          ],
+          "source_bytes": [
+            403094,
+            403094,
+            403094
+          ],
+          "source_calls": [
+            92,
+            92,
+            92
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 2.497,
+          "range_ms": [
+            2.158,
+            2.714
+          ],
+          "source_bytes": [
+            163840,
+            163840,
+            163840
+          ],
+          "source_calls": [
+            40,
+            40,
+            40
+          ]
+        },
+        "preparation_updates": [
+          14
+        ],
+        "first_frame_signatures": [
+          2528131629
+        ],
+        "last_frame_signatures": [
+          2932438362
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "draw_choice_10",
+        "candidate": "grouped",
+        "preparation": {
+          "median_ms": 8.066,
+          "range_ms": [
+            8.046,
+            8.152
+          ],
+          "source_bytes": [
+            167727,
+            167727,
+            167727
+          ],
+          "source_calls": [
+            15,
+            15,
+            15
+          ]
+        },
+        "first_visible": {
+          "median_ms": 37.07,
+          "range_ms": [
+            34.42,
+            39.652
+          ],
+          "source_bytes": [
+            775235,
+            775235,
+            775235
+          ],
+          "source_calls": [
+            56,
+            56,
+            56
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 2.134,
+          "range_ms": [
+            1.897,
+            2.476
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          23
+        ],
+        "first_frame_signatures": [
+          3890615503
+        ],
+        "last_frame_signatures": [
+          433180286
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      },
+      {
+        "scene": "draw_choice_10",
+        "candidate": "hybrid",
+        "preparation": {
+          "median_ms": 6.281,
+          "range_ms": [
+            5.67,
+            7.204
+          ],
+          "source_bytes": [
+            174255,
+            174255,
+            174255
+          ],
+          "source_calls": [
+            14,
+            14,
+            14
+          ]
+        },
+        "first_visible": {
+          "median_ms": 3.68,
+          "range_ms": [
+            3.408,
+            5.363
+          ],
+          "source_bytes": [
+            394785,
+            394785,
+            394785
+          ],
+          "source_calls": [
+            90,
+            90,
+            90
+          ]
+        },
+        "warm_animation_window": {
+          "median_ms": 2.095,
+          "range_ms": [
+            1.651,
+            2.191
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ],
+          "source_calls": [
+            0,
+            0,
+            0
+          ]
+        },
+        "preparation_updates": [
+          23
+        ],
+        "first_frame_signatures": [
+          3890615503
+        ],
+        "last_frame_signatures": [
+          433180286
+        ],
+        "state_unchanged": true,
+        "save_callbacks": 0
+      }
+    ]
+  },
+  "limits": [
+    "The hybrid draw-choice preparation median remains 6.281 ms, compared with 1.240 ms for v19; prepare+first-visible medians must not be reported as uniformly faster.",
+    "v20 prepares 23 update steps vs v19 14 in this fixture because its resident decoded-cost table budgets more complete frames; animated frame signatures between those versions therefore have different phases.",
+    "All-grouped and hybrid v20 have identical frame signatures in all three measured scenes; library/removal also match v19.",
+    "No physical calculator timing or 30\u201340 MB installation target achieved. Resource totals exclude the launcher binary."
+  ],
+  "binary_provenance": {
+    "build_started_utc": "2026-10-23T12:17:18Z",
+    "build_ended_utc": "2026-10-23T12:17:58Z",
+    "binary_mtime_utc": "2026-10-23T12:17:36Z",
+    "comparison_started_utc": "2026-10-23T12:18:06Z",
+    "comparison_ended_utc": "2026-10-23T12:18:14Z",
+    "note": "Root verified the benchmark had been rebuilt at b4f7ba0 before this comparison and remained stable throughout execution; the earlier assumption of an a40 binary is superseded."
+  }
+}

@@ -19,7 +19,6 @@ bool App::begin_map_travel(unsigned point){
     if(map_travel.pending||map_transition_blocks_pointer()||!map_travel_scene(*this)||
        (map_directional&&!pointer.dispatching&&!map_node_on_screen(point))||
        !world_reachable(game,point))return false;
-    SaveCheckpoint checkpoint{};if(!checkpoint_of(game,checkpoint))return false;
     const auto*m=world_current_map(game);if(!m||point>=m->count)return false;
     const unsigned from=game.world.current_point;
     const bool connected=from<m->count&&m->points[from].children.contains(uint8_t(point));
@@ -28,7 +27,7 @@ bool App::begin_map_travel(unsigned point){
     map_visuals.begin(game,from,point,map_clock_ms,
         connected&&world_map_path_dot_count(game,from,point)?(fast_mode?300u:800u):0u);
     if(!map_visuals.traveling()||map_visuals.target()!=point)return false;
-    map_travel={};map_travel.checkpoint=checkpoint;map_travel.seed=game.world.run_seed;
+    map_travel={};map_travel.seed=game.world.run_seed;
     map_travel.start=map_clock_ms;map_travel.revision=game.revision;
     map_travel.act=game.world.act_index;map_travel.from=uint8_t(from);map_travel.to=uint8_t(point);
     map_travel.speed=speed;map_travel.pending=true;
@@ -66,18 +65,14 @@ void App::update_map_travel(){
     if(map_travel.fading_in&&uint32_t(map_clock_ms-map_travel.fade_start)>=
        world_map_transition::fade_in_duration_ms(map_travel.speed))map_travel.fading_in=false;
     if(!map_travel.pending)return;
-    // Cheap identity checks on every update; the full canonical snapshot is
-    // compared only at submission, including mutations that omit revision.
+    // Travel depends on this run, departure and current route availability.
+    // Presentation does not serialize or hash unrelated saved fields.
     if(!map_travel_run(*this)||game.world.run_seed!=map_travel.seed||
        game.world.act_index!=map_travel.act||game.world.current_point!=map_travel.from||
        game.revision!=map_travel.revision||!world_reachable(game,map_travel.to)){
         cancel_map_travel();return;
     }
     if(uint32_t(map_clock_ms-map_travel.start)<world_map_transition::fade_out_duration_ms(map_travel.speed))return;
-    SaveCheckpoint current{};
-    if(!checkpoint_of(game,current)||!same_checkpoint(current,map_travel.checkpoint)){
-        cancel_map_travel();return;
-    }
     const unsigned destination=map_travel.to;const auto speed=map_travel.speed;
     // Clear first: callbacks, failure, death on entry and repeated updates
     // cannot submit the same route again or consume another travel charge.
@@ -86,7 +81,7 @@ void App::update_map_travel(){
     // discard newly emitted enemy animation commands and relic feedback.
     // RunManager.ClearScreens also closes overlays opened during the wait.
     paused=help=library=settings_open=false;frontend_confirm=frontend_choice=0;
-    confirmed_checkpoint={};
+    confirmed_run={};
     reset_presentation(true);
     {
         UiCoreObserver observer(*this);

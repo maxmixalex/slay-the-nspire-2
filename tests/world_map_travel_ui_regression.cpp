@@ -92,7 +92,7 @@ static void fresh(bool fast=false,uint32_t clock=1000){
     app.map_preview.open=false;app.fast_mode=fast;app.map_directional=false;
     app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.reset_presentation();app.reset_map_act_intro(true);app.open_map_window();if(app.map_window.is_open)app.map_window.settle();
     app.pointer.visible=false;app.pointer.dispatching=false;app.notice="";app.notice_ticks=0;
-    app.forget_run_checkpoint();app.has_save=false;app.saved_checkpoint={};
+    app.forget_run_checkpoint();app.has_save=false;
     disk_exists=false;read_ok=write_ok=true;reads=writes=0;
     CHECK(world_can_travel(app.game)&&app.map_routes_active()&&validate(app.game));
 }
@@ -227,13 +227,15 @@ static void stale_source_guards(){
         app.advance(1);assert_cancelled();advance_ms(1300);same_state(before);
     }
     for(unsigned kind=0;kind<2;++kind){
-        fresh();keyboard_begin(first_point());const uint32_t revision=app.game.revision;
-        // These are legal saved mutations and deliberately do not increment
-        // revision. Only the complete canonical checkpoint can detect them.
+        fresh();const unsigned destination=first_point();keyboard_begin(destination);const uint32_t revision=app.game.revision;
+        // Legal HP/gold progress does not change route availability. Travel
+        // observes its real source conditions without encoding the whole save.
         if(kind==0)--app.game.hp;else ++app.game.gold;
-        CHECK(app.game.revision==revision);snapshot();advance_ms(1099);
+        CHECK(app.game.revision==revision);snapshot();make_oracle(destination);advance_ms(1099);
         CHECK(app.map_travel.pending&&app.game.revision==revision);same_state(before);
-        app.advance(1);assert_cancelled();advance_ms(1200);same_state(before);
+        app.advance(1);CHECK(!app.map_travel.pending&&app.map_travel.fading_in);
+        CHECK(app.game.world.current_point==destination);same_state(expected);
+        advance_ms(1200);same_state(expected);
     }
 }
 static void pending_hud_pointer_remains_available(){

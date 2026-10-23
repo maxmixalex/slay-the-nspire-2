@@ -68,7 +68,7 @@ static void new_game(bool fast=false,uint32_t clock=1000){
     app.map_clock_ms=clock;app.animation=app.tick_remainder=0;app.run_number=0;
     app.selected_character=Character::Ironclad;app.selected_region=reference::ActKind::Overgrowth;app.selected_ascension=0;app.selected_seed[0]=0;
     app.return_to_title();app.forget_run_checkpoint();CHECK(app.title&&!app.has_save);
-    if(fast){click(HitKind::Menu,2);click(HitKind::UiAction,int(UiAction::SettingsFastMode));click(HitKind::UiAction,int(UiAction::SettingsBack));}
+    if(fast){click(HitKind::Menu,1);click(HitKind::UiAction,int(UiAction::SettingsFastMode));click(HitKind::UiAction,int(UiAction::SettingsBack));}
     click(HitKind::Menu,0);CHECK(app.character_select);click(HitKind::UiAction,int(UiAction::StartCharacter));
     CHECK(!app.title&&app.game.original_events.id==OriginalEventId::Neow&&app.game.world.total_floor==1);
     CHECK(app.fast_mode==fast&&app.map_act_intro.fast_at_construction==fast&&!app.map_act_intro.played);

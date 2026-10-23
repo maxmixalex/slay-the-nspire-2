@@ -125,13 +125,16 @@ struct Callbacks {
     // callback (or zero sample) keeps deterministic offline replay fixtures.
     uint32_t(*seed_entropy)()=nullptr;
 };
-// Session-local evidence of a complete canonical checkpoint, not a run UUID
-// or a compare-and-swap token supplied by the storage host.
-struct SaveCheckpoint {uint64_t hash=0;uint32_t size=0;};
+// Run parameters used by Continue/abandon, without re-encoding saved state.
+struct SavedRunIdentity {
+    uint64_t run_seed=0;uint32_t seed=0;
+    Character character=Character::Ironclad;
+    uint8_t ascension=0,region=0;
+    bool world=false,practice=false;
+};
 // Only presentation owns delayed map travel. The canonical run remains at
 // the departure point until the original transition finishes and is rechecked.
 struct MapTravel {
-    SaveCheckpoint checkpoint{};
     uint64_t seed=0;
     uint32_t start=0,revision=0,fade_start=0;
     uint8_t act=255,from=reference::NoPoint,to=reference::NoPoint;
@@ -178,10 +181,11 @@ struct App {
     bool settings_open=false,fast_mode=false;
     uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0;
     Character saved_character=Character::Ironclad;
-    uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0;
+    uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
     uint64_t saved_run_seed=0;
     uint8_t saved_ascension=0,saved_region=0;bool saved_world=false,saved_practice=false;
-    SaveCheckpoint saved_checkpoint{},run_checkpoint{},confirmed_checkpoint{};
+    bool run_save_linked=false;
+    SavedRunIdentity confirmed_run{};
     void forget_run_checkpoint();
     bool refresh_save();
     bool load_saved_run();

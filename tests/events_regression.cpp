@@ -45,7 +45,8 @@ static void doors(){
 static void boundaries(){
  auto s=event(EventId::AromaOfChaos);CHECK(event_choice(s,0));auto b=snapshot(s);State bad=s;bad.phase=Phase::Shop;CHECK(!validate(bad));bad=s;bad.event_remaining=2;CHECK(!validate(bad));bad=s;bad.event_deck_action=EventDeckAction::Remove;CHECK(!validate(bad));
  for(size_t n=0;n<b.size;n+=4){State copy=s;CHECK(!load(copy,b.bytes,n));same(copy,b);}
- auto corrupt=b;corrupt.bytes[b.size-8]=255;State copy=s;CHECK(!load(copy,corrupt.bytes,corrupt.size));same(copy,b);
+ // Use an invalid phase; trailing compatibility padding is not an integrity gate.
+ auto corrupt=b;corrupt.bytes[12]=255;State copy=s;CHECK(!load(copy,corrupt.bytes,corrupt.size));same(copy,b);
  // Event identities are materialized in new maps. Viewing old maps cannot reroll them.
  unsigned seen=0;for(unsigned seed=1;seed<100;seed++){new_run(s,seed);for(const auto&node:s.map)if(node.room==Room::Event)seen|=1u<<node.event;roundtrip(s);}
  CHECK(seen==(1u<<EventKinds)-1);

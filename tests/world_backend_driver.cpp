@@ -143,7 +143,7 @@ static void intro_steps(SceneKind kind){
  // intentionally restore settled presentation and skip this introduction.
  require(app.title&&!app.has_save,"intro starts without a saved run");
  if(kind==SceneKind::IntroFast){
-  click(HitKind::Menu,2);action(UiAction::SettingsFastMode);action(UiAction::SettingsBack);
+  click(HitKind::Menu,1);action(UiAction::SettingsFastMode);action(UiAction::SettingsBack);
   require(app.fast_mode&&!app.settings_open,"fresh run uses real Fast settings");
  }
  click(HitKind::Menu,0);require(app.character_select,"new run opens character selection");action(UiAction::StartCharacter);

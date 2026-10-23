@@ -26,8 +26,10 @@ cursor and text scroll are retained separately from map navigation, so drawing
 the underlying room cannot change the selected route each frame.
 
 The existing asynchronous travel controller accepts both the initial act's
-standalone map and a travel-enabled window. Its saved-state fingerprint,
-revision and full run/act/point identity guards remain in force. One actual
+standalone map and a travel-enabled window. It checks the run seed, act,
+departure point, revision and current route availability without encoding or
+hashing the saved simulation. Unrelated legal HP/gold changes do not cancel
+travel. One actual
 destination submission follows the existing Normal/Fast transition. A reset,
 load, replacement run, room replacement or title exit discards stale window
 presentation. Loaded saves restore the retained room; opening state and tween

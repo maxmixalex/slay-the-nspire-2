@@ -1,6 +1,75 @@
 # Work state — 2026-10-23
 
-## Current: transferred repository; UI, runtime and storage work resumed
+## Current: original title, on-demand loading and hybrid resource compression
+
+The active source is persisted on `work/0.17-world-parity`. The verified
+`b4f7ba06164734028af2c673f38fa918120d1341` checkpoint contains the new runtime,
+combat status playback, original title atlas conversion, converter cleanup and
+hybrid retained-image policy. The next integration adds the restored frontend
+and map changes plus their meaningful UI fixtures. Do not relabel partial
+validation below as final artifact or physical-device acceptance.
+
+Implemented runtime behavior: no whole-pack FNV, split header digest, LZMA2 CRC,
+or eager image/glyph/string/tile-catalog scans. Read only the directory and
+language marker at open; decode selected data with its actual bounds. Save
+version remains v15, with the unused footer written as zero and ignored on
+read. Old saves are readable; old launchers may reject new zero-footer saves.
+The frontend integration also removes repeated complete save encoding/FNV and
+its 256 KiB buffer, using ordinary save association and relevant run identity.
+
+The title now uses the pinned scene's gold text, teal II and ten fire drawings,
+packed into one 32,274-byte sparse atlas in image 4. No image/clip IDs are added.
+The separate glow and particles remain outside this implementation. Menu order,
+mirrored focus marks, Continue panel layout and click regions are being checked
+with real packs. Combat status icons, amounts and descriptions now follow the
+same presentation clock as actions, including retained enemy identity. This
+does not change canonical state or saved RNG.
+
+Actual resource conversion at `b4f7ba0` preserves all retained pixel bytes
+except the intentional Logo replacement, all 42,189 tile image descriptors,
+1,184 encoded animation groups, clip timing, glyphs and localized strings.
+The chosen `--fast-images ui` policy keeps common cards and UI in their existing
+single-image encoding and groups other retained animation pictures. Shared
+resources total **81,085,101 bytes**: common 74,740,628; English 1,780,887;
+Chinese 4,563,586. This is 12,698,262 bytes below v19, before the launcher.
+An all-group candidate saved 15,146,852 bytes but regressed first-visible card
+screens; it is retained as comparison evidence, not the delivery default.
+
+The paired 180-frame host benchmark used the completed b4f7ba0 binary. First
+visible medians for v19 / all-group / chosen hybrid were: encyclopedia
+2.334 / 15.063 / 2.022 ms; removal 2.617 / 13.419 / 2.801 ms; draw selection
+5.280 / 37.070 / 3.680 ms. Hybrid warm windows had zero resource reads. Draw
+selection preparation still cost 6.281 ms versus v19's 1.240 ms; these host CPU
+intervals are not calculator frame rates. The unchanged v18 English resource
+opened with 4 callbacks / 892,656 requested bytes, versus ed5caa1's 9,197 /
+137,046,669 bytes. The observed host times were 0.166 / 778.478 ms, without
+controlled host caches and excluding initialization and first rendering.
+
+The b4f7ba0 native build passed. Its complete 73-suite run passed 70; remaining
+failures were obsolete checksum/padding and covered-pixel fixture expectations,
+being corrected at the next source checkpoint. Actual v20 English/Chinese
+world UI passed 4,758 each, world text 6,963 / 6,746, and UI text 247 each with
+zero unresolved fields. Those runs remain b4f7ba0 evidence. New ARM/Web builds,
+final integrated regressions and Firebird acceptance follow the frontend merge.
+
+Repository maintenance: main was advanced to ff5ef027 with Actions enabled.
+The first main Actions run completed 70/72 native suites, portable ARM/WASM
+passed, and old conversion assertions failed; the updated fixtures are now in
+the work branch. ASan/UBSan remain enabled with -O1 to avoid the observed
+20-minute unoptimized test run. Five already-merged work branches were removed;
+the two branches with unique commits were renamed to
+`archive/bulk-checkpoint-20261015` and `archive/bulk-recovery-20261013`.
+Their history is preserved. Final verified source still needs synchronization
+to main after the integrated gates close.
+
+Original PCK/assembly, prior v18 bilingual resources and the user's Firebird,
+CXII, injected boot and Ndless r2022 inputs are restored. The original NAND
+must remain unchanged while a separate working copy is used for execution.
+Earlier unsaved ui2 deliverables were pruned; build a new matching ui3 ZIP and
+offline HTML, then save them with the user's explicit authorization. Never
+claim the recreated artifacts are the old byte-identical ui2 files.
+
+## Repository transfer and resumed work
 
 The user transferred the repository to `maxmixalex/slay-the-nspire-2`, explicitly
 authorized GitHub Actions and synchronization of verified progress to `main`,

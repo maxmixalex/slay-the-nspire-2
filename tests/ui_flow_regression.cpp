@@ -13,7 +13,7 @@ static bool findclick(HitKind kind,int value){a.render();for(int i=0;i<a.hit_cou
 static void action(UiAction x){CHECK(findclick(HitKind::UiAction,(int)x));}
 int main(){
     init();snapshot();a.title=true;a.menu=0;a.input(Key::Confirm);CHECK(a.character_select);unchanged();a.input(Key::Back);CHECK(!a.character_select);unchanged();
-    a.menu=1;a.input(Key::Confirm);CHECK(a.library);unchanged();
+    a.menu=2;a.input(Key::Confirm);CHECK(a.library);unchanged();
     for(int tab=0;tab<3;tab++){
         action((UiAction)((int)UiAction::LibraryCards+tab));CHECK(a.library_tab==tab);
         int total=tab==0?CardKinds:tab==1?RelicKinds:PotionKinds;

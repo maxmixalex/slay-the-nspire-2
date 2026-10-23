@@ -181,7 +181,11 @@ static void rest_actor_layers(){
     // Uncovered points in all four quadrants verify normal/add/normal order:
     // body + light, opaque front, body alone, then translucent front.
     CHECK(a.pixels[100*ScreenW+5]==0x5a2b);CHECK(a.pixels[100*ScreenW+315]==0x0849);
-    CHECK(a.pixels[200*ScreenW+5]==0x4184);CHECK(a.pixels[200*ScreenW+315]==0x32a8);
+    CHECK(a.pixels[200*ScreenW+5]==0x4184);
+    // The original Proceed arrow extends above its label and shadows the
+    // old (315,200) sample after resting. This point is still in the lower
+    // right actor quadrant, clear of both the description and button.
+    CHECK(a.pixels[150*ScreenW+315]==0x32a8);
    }
    unchanged();
   }

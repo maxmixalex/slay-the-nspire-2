@@ -35,7 +35,7 @@ static std::vector<uint8_t> synthetic_profile(){
  std::vector<uint8_t>b(payload);
  put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);put(b,20,glyphs);put(b,24,ContentStrings);put(b,28,AnimationKinds);put(b,32,CardKinds);
  for(unsigned i=0;i<images;i++){
-  unsigned w=i?2:82,h=i?2:60,offset=unsigned(b.size()),length=w*h*2;
+  unsigned w=i==A_Logo?title_scene::AtlasWidth:i?2:82,h=i==A_Logo?title_scene::AtlasHeight:i?2:60,offset=unsigned(b.size()),length=w*h*2;
   put(b,40+i*16,offset);put(b,44+i*16,w,2);put(b,46+i*16,h,2);put(b,52+i*16,length);b.resize(offset+length);
   for(unsigned pixel=0;pixel<w*h;pixel++)put(b,offset+pixel*2,((i*13+pixel*5)&31)<<11|((i*29+pixel*7)&63)<<5|((i*7+pixel*3)&31),2);
  }
@@ -61,7 +61,7 @@ static std::vector<uint8_t> synthetic_profile(){
  for(unsigned i=0;i<AnimationKinds;i++){put(b,clipdir+i*16+4,1,2);put(b,clipdir+i*16+6,33,2);}
  for(unsigned i=0;i<CardKinds;i++){put(b,carddir+i*16,0);for(unsigned j=1;j<4;j++)put(b,carddir+i*16+j*4,i*3+j-1);}
  for(unsigned i=0;i<U_Count;i++)put(b,uidir+i*4,i==U_CampFlames?A_Count:i);
- put(b,12,unsigned(b.size()));uint32_t hash=2166136261u;for(unsigned i=40;i<b.size();i++){hash^=b[i];hash*=16777619u;}put(b,36,hash);return b;
+ put(b,12,unsigned(b.size()));return b;
 }
 
 static bool store_run(const State&s){++writes;if(!write_ok)return false;if(!save(s,disk))return false;disk_exists=true;return true;}
@@ -78,7 +78,7 @@ static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,
  a.forget_run_checkpoint();new_run(a.game,seed,false,character);if(run_seed)CHECK(world_set_seed(a.game,run_seed));
  CHECK(world_begin_run(a.game,region,ascension));presentation();CHECK(validate(a.game));
 }
-static void empty_disk(){disk_exists=false;read_ok=write_ok=delete_ok=true;a.has_save=false;a.saved_checkpoint={};a.forget_run_checkpoint();a.callbacks={store_run,restore_run,erase_run};}
+static void empty_disk(){disk_exists=false;read_ok=write_ok=delete_ok=true;a.has_save=false;a.forget_run_checkpoint();a.callbacks={store_run,restore_run,erase_run};}
 static void put_disk(){CHECK(validate(a.game));CHECK(a.save_current_run());expected=disk;}
 static void disk_unchanged(){CHECK(disk_exists&&disk.size==expected.size&&!std::memcmp(disk.bytes,expected.bytes,disk.size));}
 static void external_run(Character character,uint32_t seed,const char*run_seed,unsigned ascension,reference::ActKind region){
@@ -101,34 +101,50 @@ static void menu_rows(unsigned count){
 }
 static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
 
+static void title_animation_is_a_local_atlas_region(){
+ empty_disk();start();snapshot();a.return_to_title();a.menu=0;a.map_clock_ms=50;a.render();
+ const auto logo=a.content.image(A_Logo);
+ if(logo.w!=title_scene::AtlasWidth||logo.h!=title_scene::AtlasHeight)return; // Historical packs retain their static logo.
+ std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);unsigned different_frames=0;
+ for(unsigned frame=1;frame<title_scene::FireFrames;++frame){
+  a.map_clock_ms=frame*title_scene::FireFrameMs+50;a.render();bool changed=false;
+  for(unsigned y=0;y<ScreenH;++y)for(unsigned x=0;x<ScreenW;++x)if(a.pixels[y*ScreenW+x]!=first[y*ScreenW+x]){
+   CHECK(x>=title_scene::FireX&&x<title_scene::FireX+title_scene::FireWidth&&y>=title_scene::FireY&&y<title_scene::FireY+title_scene::FireHeight);changed=true;
+  }
+  different_frames+=changed;
+ }
+ CHECK(different_frames>=2);a.map_clock_ms=title_scene::FireFrames*title_scene::FireFrameMs+50;a.render();
+ CHECK(!std::memcmp(first.data(),a.pixels,sizeof a.pixels));unchanged();
+}
 static void probe_is_read_only(){
- empty_disk();start(Character::Silent,1001);const uint32_t saved_seed=a.game.seed;const int hp=a.game.hp,max_hp=a.game.max_hp,floor=a.game.world.total_floor;put_disk();
+ empty_disk();start(Character::Silent,1001);const uint32_t saved_seed=a.game.seed;const int hp=a.game.hp,max_hp=a.game.max_hp,floor=a.game.world.total_floor,gold=a.game.gold;put_disk();
  start(Character::Regent,1002);snapshot();unsigned r=reads;
- CHECK(a.refresh_save()&&a.has_save&&reads==r+1);CHECK(a.saved_character==Character::Silent&&a.saved_seed==saved_seed&&a.saved_hp==hp&&a.saved_max_hp==max_hp&&a.saved_floor==floor&&a.saved_world&&!a.saved_practice&&a.saved_ascension==3);unchanged();
+ CHECK(a.refresh_save()&&a.has_save&&reads==r+1);CHECK(a.saved_character==Character::Silent&&a.saved_seed==saved_seed&&a.saved_hp==hp&&a.saved_max_hp==max_hp&&a.saved_floor==floor&&a.saved_gold==gold&&a.saved_world&&!a.saved_practice&&a.saved_ascension==3);unchanged();
  a.return_to_title();CHECK(a.title&&a.has_save&&a.title_menu_count()==5);unchanged();
  read_ok=false;CHECK(!a.refresh_save()&&!a.has_save);unchanged();read_ok=true;
- disk.bytes[disk.size-1]^=1;CHECK(!a.refresh_save()&&!a.has_save);unchanged();disk.bytes[disk.size-1]^=1;CHECK(a.refresh_save());unchanged();
+ disk.bytes[0]^=1;CHECK(!a.refresh_save()&&!a.has_save);unchanged();disk.bytes[0]^=1;CHECK(a.refresh_save());unchanged();
 }
 static void main_menu_and_continue(){
  empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==4);menu_rows(4);capture("frontend-title-new");
  a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
- press(HitKind::Menu,1);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
- press(HitKind::Menu,2);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
  press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
- start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);capture("frontend-title-continue");
+ start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);
+ a.pointer_move(213,183);CHECK(a.menu==0);a.pointer.visible=false;capture("frontend-title-continue");
  a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
- press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library);unchanged();
- press(HitKind::Menu,3);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,2);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
+ press(HitKind::Menu,3);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library);unchanged();
  press(HitKind::Menu,4);CHECK(a.frontend_confirm==3);a.input(Key::Back);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,0);CHECK(!a.title&&!a.character_select&&a.game.character==Character::Silent);same_saved(expected);
  // A decodable terminal save is not resumable. The shortcut must not replace
  // the visible run before this admission check has succeeded.
  player_kill(a.game,true);resolve_pending(a.game);CHECK(a.game.phase==Phase::Dead);put_disk();
  start(Character::Regent,2003);snapshot();a.return_to_title();CHECK(!a.has_save);a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();
- disk.bytes[disk.size-1]^=1;a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();disk.bytes[disk.size-1]^=1;
+ disk.bytes[0]^=1;a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();disk.bytes[0]^=1;
 }
 static void pause_save_failure_and_success(){
  empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);capture("frontend-pause");
@@ -170,7 +186,7 @@ static void protected_saved_expeditions(){
  empty_disk();new_run(a.game,6201,false,Character::Ironclad);presentation();put_disk();new_run(a.game,6201,true,Character::Ironclad);presentation();player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
  CHECK(a.game.practice&&!a.game.world.active&&a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();
 }
-static void canonical_identity_and_checkpoint_ownership(){
+static void canonical_identity_and_save_association(){
  // A fresh App starts with the same bootstrap seed. Native seed text changes
  // the independent 64-bit original run seed, not that bootstrap identity.
  empty_disk();start(Character::Ironclad,6301,"SAVED_NATIVE_SEED");const uint64_t native_seed=a.game.world.run_seed;put_disk();
@@ -188,17 +204,17 @@ static void canonical_identity_and_checkpoint_ownership(){
  // Identical parameters across hosts are not a global run ID. Without a
  // successful Continue/save association, cleanup must preserve the old run.
  empty_disk();start(Character::Silent,6304,"SAME_PARAMETERS");put_disk();start(Character::Silent,6304,"SAME_PARAMETERS");
- CHECK(!a.run_checkpoint.size);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
- CHECK(!a.finish_saved_run()&&deletes==d);disk_unchanged();unchanged();
- CHECK(a.load_saved_run()&&a.run_checkpoint.size);same_saved(expected);
+ CHECK(!a.run_save_linked);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;unsigned r=reads;
+ CHECK(a.finish_saved_run()&&deletes==d&&reads==r);disk_unchanged();unchanged();
+ CHECK(a.load_saved_run()&&a.run_save_linked);same_saved(expected);
  player_kill(a.game,true);resolve_pending(a.game);CHECK(a.finish_saved_run()&&!disk_exists&&deletes==d+1);
 
- // Association is with an exact checkpoint, not merely its run tuple. An
- // external write that advances only its gold still invalidates cleanup.
- empty_disk();start(Character::Silent,6305,"SAME_PROGRESS_PARAMETERS");put_disk();const SaveCheckpoint linked=a.run_checkpoint;
+ // Progress does not change the associated run. Cleanup has no content
+ // fingerprint and accepts a normal save with changed gold or HP.
+ empty_disk();start(Character::Silent,6305,"SAME_PROGRESS_PARAMETERS");put_disk();CHECK(a.run_save_linked);
  CHECK(load(candidate,disk.bytes,disk.size));candidate.gold+=7;CHECK(validate(candidate));CHECK(store_run(candidate));expected=disk;
  a.game.gold+=11;player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
- CHECK(!a.finish_saved_run()&&deletes==d&&a.run_checkpoint.hash==linked.hash&&a.saved_checkpoint.hash!=linked.hash);disk_unchanged();unchanged();
+ CHECK(a.finish_saved_run()&&deletes==d+1&&!disk_exists&&!a.run_save_linked);unchanged();
 }
 static void refreshed_continue_metadata(){
  empty_disk();start(Character::Silent,6401,"OLD_CACHED_SAVE",3);put_disk();start(Character::Defect,6402);snapshot();a.return_to_title();
@@ -207,29 +223,29 @@ static void refreshed_continue_metadata(){
  const uint64_t actual_seed=candidate.world.run_seed;const int actual_hp=candidate.hp,actual_max_hp=candidate.max_hp;
  press(HitKind::Menu,0);CHECK(!a.title&&a.game.character==Character::Regent);same_saved(expected);
  CHECK(a.saved_character==Character::Regent&&a.saved_seed==6403&&a.saved_run_seed==actual_seed&&a.saved_ascension==7&&a.saved_region==unsigned(reference::ActKind::Underdocks));
- CHECK(a.saved_hp==actual_hp&&a.saved_max_hp==actual_max_hp&&a.saved_floor==a.game.world.total_floor&&a.saved_world&&!a.saved_practice);
- CHECK(a.run_checkpoint.size==a.saved_checkpoint.size&&a.run_checkpoint.hash==a.saved_checkpoint.hash);
+ CHECK(a.saved_hp==actual_hp&&a.saved_max_hp==actual_max_hp&&a.saved_gold==a.game.gold&&a.saved_floor==a.game.world.total_floor&&a.saved_world&&!a.saved_practice);
+ CHECK(a.run_save_linked);
  player_kill(a.game,true);resolve_pending(a.game);unsigned d=deletes;CHECK(a.finish_saved_run()&&!disk_exists&&deletes==d+1);
 }
-static void title_confirmation_rechecks_complete_save(){
+static void title_confirmation_tracks_run_identity(){
  empty_disk();start(Character::Ironclad,6501,"TITLE_SAVED_SEED");put_disk();start(Character::Defect,6502);snapshot();a.return_to_title();unsigned d=deletes;
  // Even opening the dialog requires a successful fresh read.
  read_ok=false;press(HitKind::Menu,1);CHECK(!a.frontend_confirm&&!a.has_save&&a.notice_ticks&&deletes==d);disk_unchanged();unchanged();
  read_ok=true;CHECK(a.refresh_save());press(HitKind::Menu,1);CHECK(a.frontend_confirm==1);
  external_run(Character::Regent,6503,"TITLE_REPLACEMENT",6,reference::ActKind::Underdocks);expected=disk;
  confirm_accept();CHECK(a.title&&a.has_save&&deletes==d&&a.saved_character==Character::Regent&&a.saved_seed==6503);disk_unchanged();unchanged();
- // Replacing only progress under exactly the same native parameters must
- // also require a new confirmation; comparing the identity tuple is unsafe.
- press(HitKind::Menu,1);CHECK(a.frontend_confirm==1);candidate.gold+=13;CHECK(store_run(candidate));expected=disk;
- confirm_accept();CHECK(a.title&&a.has_save&&deletes==d&&a.notice_ticks);disk_unchanged();unchanged();
  press(HitKind::Menu,1);read_ok=false;confirm_accept();CHECK(a.title&&deletes==d&&a.notice_ticks);disk_unchanged();unchanged();
- read_ok=true;CHECK(a.refresh_save());press(HitKind::Menu,1);confirm_accept();CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+1);unchanged();
+ // The same run remains selected after ordinary progress changes. A content
+ // hash must not add another dialog or a redundant post-deletion read.
+ read_ok=true;CHECK(a.refresh_save());press(HitKind::Menu,1);CHECK(a.frontend_confirm==1);
+ candidate.gold+=13;CHECK(store_run(candidate));expected=disk;unsigned r=reads;
+ confirm_accept();CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+1&&reads==r+1);unchanged();
 }
-static void unreadable_checkpoint_does_not_abandon(){
+static void unreadable_save_does_not_abandon(){
  empty_disk();start(Character::Necrobinder,6601,"READ_FAILURE");put_disk();snapshot();unsigned d=deletes;
  a.input(Key::Back);CHECK(a.paused);press(HitKind::Menu,3);read_ok=false;
  // A previous failed menu probe must not erase the known association.
- CHECK(!a.refresh_save()&&!a.has_save&&a.run_checkpoint.size&&a.saved_checkpoint.size);
+ CHECK(!a.refresh_save()&&!a.has_save&&a.run_save_linked);
  confirm_accept();CHECK(a.paused&&a.game.hp>0&&a.game.phase!=Phase::Dead&&deletes==d&&a.notice_ticks);disk_unchanged();unchanged();
  read_ok=true;press(HitKind::Menu,3);confirm_accept();CHECK(!a.paused&&a.game.phase==Phase::Dead&&!disk_exists&&deletes==d+1);
 }
@@ -268,7 +284,7 @@ static void modal_isolation_and_fast_mode(){
  a.input(Key::Load);a.input(Key::Save);a.input(Key::EndTurn);CHECK(a.frontend_confirm==3&&!a.quit);unchanged();
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind==HitKind::UiAction&&(a.hits[i].value==int(UiAction::FrontendAccept)||a.hits[i].value==int(UiAction::FrontendCancel)));
  action(UiAction::FrontendCancel);CHECK(!a.frontend_confirm);unchanged();
- press(HitKind::Menu,2);CHECK(a.settings_open);a.character_select=true;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;unchanged();
+ press(HitKind::Menu,1);CHECK(a.settings_open);a.character_select=true;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;unchanged();
  action(UiAction::SettingsControls);CHECK(a.help&&a.settings_open);bool fast=a.fast_mode;a.input(Key::Confirm);CHECK(!a.help&&a.settings_open&&a.fast_mode==fast);unchanged();
  action(UiAction::SettingsFastMode);CHECK(a.fast_mode!=fast);action(UiAction::SettingsFastMode);CHECK(a.fast_mode==fast);unchanged();
  // Fast changes command waits, not the animation clock. No rules, draws,
@@ -281,8 +297,8 @@ static void modal_isolation_and_fast_mode(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
- probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
- canonical_identity_and_checkpoint_ownership();refreshed_continue_metadata();title_confirmation_rechecks_complete_save();unreadable_checkpoint_does_not_abandon();optional_clear_uses_successful_terminal_probe();
+ title_animation_is_a_local_atlas_region();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
+ canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
  ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");
 }

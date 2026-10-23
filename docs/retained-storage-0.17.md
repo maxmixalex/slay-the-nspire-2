@@ -102,11 +102,55 @@ largest group, comparison counts and any deliberate image replacements.
 `--group-kib 512` is available for a measured storage/decode tradeoff, not the
 default. A smaller file by itself is not evidence of faster cold scene access.
 
-## Recovery checkpoint status
+## Actual resource and host comparison
 
-The source and synthetic tests were restored after temporary workspace
-maintenance. The new resources and platform binaries must be rebuilt and
-measured after this source checkpoint. Historical quick checks from the lost
-workspace are not relabelled as executions of the restored source. No new
-installation size, physical calculator timing or finished delivery is claimed
-by this format specification.
+The hybrid converter and split execution at source checkpoint
+`b4f7ba06164734028af2c673f38fa918120d1341` both completed. The rebuilt
+Clang 18 Release `card_grid_benchmark` from runtime
+`b4f7ba06164734028af2c673f38fa918120d1341` compared v19, all-grouped v20 and
+hybrid v20 in three interleaved trials, with 180 advancing frames per scene.
+The closed journals, actual binary/log identities, byte comparisons and full
+measurements are in [validation-retained-storage-0.17.json](validation-retained-storage-0.17.json).
+
+| Resource | Bytes |
+| --- | ---: |
+| v19 shared artwork + both locales | 93,783,363 |
+| Hybrid shared artwork | 74,740,628 |
+| Hybrid English metadata/text/glyphs | 1,780,887 |
+| Hybrid Chinese metadata/text/glyphs | 4,563,586 |
+| **Hybrid bilingual resources** | **81,085,101** |
+| **Saved relative to v19** | **12,698,262** |
+
+The hybrid uses 2,448,590 more bytes than the all-grouped candidate. That
+tradeoff restores fast first-use access to 1,872 card/UI entries. The remaining
+3,567 entries occupy 200 groups, with a largest decoded group of 131,063 bytes.
+All 1,184 existing animation groups retain their compressed payloads. Every
+distinct retained raw image, all glyphs and strings, and the unchanged catalogs
+and timing were compared. The two full hybrid packs reconstruct exactly from
+the common file and the corresponding locale. These resource totals exclude
+the launcher executable; the 30–40 MB installation target remains unmet.
+
+Median host CPU time for the first visible frame:
+
+| Scene | v19 | All-grouped v20 | Hybrid v20 |
+| --- | ---: | ---: | ---: |
+| Eight-card library | 2.334 ms | 15.063 ms | 2.022 ms |
+| Ten-card removal | 2.617 ms | 13.419 ms | 2.801 ms |
+| Ten-card draw choice | 5.280 ms | 37.070 ms | 3.680 ms |
+
+Hybrid first-visible callback reads were 239,361 / 250,121 / 394,785 bytes
+respectively. Every hybrid warm animation window made zero resource callbacks.
+Library/removal frame signatures match v19; all three hybrid scene signatures
+match the all-grouped v20 candidate. Canonical saves remained unchanged and
+no save callback was invoked.
+
+Draw-choice preparation still costs more: hybrid's median preparation CPU is
+6.281 ms versus v19's 1.240 ms. The v20 exact decoded-cost table prepares more
+frames, taking 23 update steps instead of 14 in this fixture, so its animation
+phase differs from v19. Preparation plus first-visible time therefore is not
+uniformly improved. Warm CPU ranges overlap and other work shared the host;
+these runs establish the large all-grouped cold regression and its removal,
+not physical calculator FPS or a controlled storage-device cold-start speedup.
+
+The default remains `--fast-images ui`. Device acceptance, executable delivery
+size and broader scene first-use behavior are separate follow-up gates.

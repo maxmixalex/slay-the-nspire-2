@@ -193,6 +193,28 @@ static void pictures(){
  }
  Pair missing({13,9,19},{});missing.got.picture(-1,0,0);missing.compare();
 }
+static void picture_regions(){
+ // The title packs one text layer and ten flame crops into a single image;
+ // its right selection reticle mirrors the left image. Exercise both paths
+ // against an independent destination-to-source mapping for every encoding.
+ const Surface surface{13,9,19};
+ const Placement crops[]={{0,0,7,5},{1,1,4,3},{-2,-1,6,5},{5,4,7,5}};
+ const Placement positions[]={{2,1,0,0},{-2,-1,0,0},{10,7,0,0}};
+ for(unsigned id:{0u,2u,3u,4u,5u,6u})for(auto crop:crops)for(auto position:positions)
+ for(bool mirror:{false,true})for(auto style:{styles[0],styles[1],styles[16]})
+ for(unsigned opacity:{123u,255u})for(unsigned mode:{unsigned(presentation::Normal),unsigned(presentation::Add)}){
+  Pair pair(surface,style);const auto&image=images[id];
+  pair.got.picture_region(app.content.image(int(id)),position.x,position.y,crop.x,crop.y,crop.w,crop.h,mirror,opacity,mode);
+  for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x){
+   const int dx=x-position.x,dy=y-position.y;if(dx<0||dy<0||dx>=crop.w||dy>=crop.h)continue;
+   const int sx=crop.x+(mirror?crop.w-1-dx:dx),sy=crop.y+dy;
+   if(sx<0||sy<0||sx>=int(image.w)||sy>=int(image.h))continue;
+   const unsigned at=unsigned(sy)*image.w+unsigned(sx);
+   pair.oracle.paint(y*surface.pitch+x,image.colors[at],rounded_alpha(image.alpha[at],opacity),mode);
+  }
+  pair.compare();
+ }
+}
 static void map_pictures(){
  // A separate direct inverse-transform oracle retains the pre-optimization
  // pixel-center arithmetic. Test all shaders, odd sizes, angles, clipping,
@@ -228,10 +250,10 @@ static void map_pictures(){
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();CHECK(app.content.healthy());
+ rectangles();pictures();picture_regions();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- pictures();map_pictures();CHECK(app.content.healthy());glyphs();
- std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, sparse, palette and glyph decode bounds\n",cases,checks);
+ pictures();picture_regions();map_pictures();CHECK(app.content.healthy());glyphs();
+ std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, atlas regions, sparse, palette and glyph decode bounds\n",cases,checks);
 }
