@@ -81,6 +81,17 @@ separate background GPU stars and fog are also not implemented.
 Original UI fidelity is the first priority; neither overall 95% acceptance nor
 physical calculator FPS has been established.
 
+The UI3 delivery contains a **76,697,282-byte calculator ZIP** and a
+**115,479,696-byte self-contained bilingual HTML**. Their exact contents and
+installation rules are in [the delivery record](docs/delivery-ui3-0.17.json).
+[GitHub Actions run 39977430306](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39977430306)
+passed all 73 ASan/UBSan suites, 185 conversion/packaging tests and both portable
+builds. Ordinary Firebird battle/save/exit and real browser language/save flows
+also passed. First entry into the Chinese card collection still produced a
+1,646.8 ms render in the emulator; that cold-page cost is not hidden by the
+faster desktop-browser warm-cache measurements. See [Firebird acceptance](docs/validation-ui3-firebird-0.17.json)
+and [browser acceptance](docs/validation-ui3-browser-0.17.json).
+
 ### Earlier 0.17 execution evidence
 
 The source17 checkpoint [`26a90975`](https://github.com/maxmixalex/slay-the-nspire-2/commit/26a9097521a971b69a4b58494985c6062a24017e) passed **all 52 registered native suites** from one frozen source. This includes all **860 character/Giant Rock acquisition variants** and **174 encounter/ascension variants** through the actual turn driver. ARM and WASM builds passed; the actual resource backend comparison matched **357 frames and 25 saves across 18 scenarios**. The exact evidence is in [validation-source17-0.17.json](docs/validation-source17-0.17.json). Later stages and their separate gates are recorded in [WORK_STATE.md](docs/WORK_STATE.md).

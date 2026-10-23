@@ -1,0 +1,290 @@
+{
+  "schema": 1,
+  "scope": "Targeted ASan/UBSan potion completion regression at the default host stack limit; no claim of a full local sanitizer-suite run.",
+  "source_checkpoint": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+  "initial_ci_report": {
+    "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+    "run": 39975569097,
+    "job": 120489404909,
+    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39975569097/job/120489404909",
+    "diagnostic": "AddressSanitizer stack-overflow at timed_and_automatic() entry, called by main.",
+    "source": "The parent agent inspected the CI job log; the local target reproduces its compiler and sanitizer flags."
+  },
+  "fixture_change": {
+    "file": "tests/potions_completion_regression.cpp",
+    "factory": "fight(State&, Character) resets the destination in place instead of returning a complete State temporary for each reset.",
+    "fresh_state_semantics": "reset_in_place precedes new_run, because new_run deliberately preserves event_run history.",
+    "roundtrip_workspace": "The serial, nonrecursive restore helper reuses its own two SaveData buffers and independent State copy in static storage.",
+    "check_expression_text_and_order_unchanged": true,
+    "production_source_changed": false,
+    "stack_limit_increased": false,
+    "sanitizer_disabled": false
+  },
+  "configuration": {
+    "compiler": "Ubuntu Clang 18.1.3 (1ubuntu1)",
+    "build_type": "Debug",
+    "c_and_cxx_flags": "-O1 -fsanitize=address,undefined -fno-omit-frame-pointer",
+    "debug_flags": "-g",
+    "linker_flags": "-fsanitize=address,undefined",
+    "stack_soft_limit_bytes": 8388608,
+    "stack_hard_limit": "unlimited",
+    "sanitizer_option_overrides": []
+  },
+  "result": {
+    "status": "passed",
+    "checks": 34202,
+    "potion_model_policies": 64,
+    "address_undefined_leak_diagnostics": 0,
+    "binary": {
+      "file": "potions_completion_regression",
+      "bytes": 9905968,
+      "sha256": "a6a6ab4ccbe2ee59081b1ad78e364cd8e000c355d7409cedaf6f7981eca79be1"
+    },
+    "sandbox_retry": "The first local run failed because LeakSanitizer cannot operate under the sandbox ptrace monitor. The unchanged binary passed outside that monitor with every sanitizer still enabled and the same default 8 MiB stack."
+  },
+  "supplemental_stack_usage": {
+    "method": "Compile the original ead test translation unit and the fixed test with Clang 18.1.3, the same O1/debug/sanitizer flags and -fstack-usage; compile only, no changed runtime flags.",
+    "header_equivalence": "include/ and src/ are unchanged between ead747d and d6b3d31.",
+    "limit": "Compiler-estimated static frames, not measured runtime peak stack or the exact frame sizes of a different CI compiler build.",
+    "before": [
+      {
+        "function": "main",
+        "bytes": 15473976,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL19timed_and_automaticv",
+        "bytes": 3174072,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL5fightN5spire9CharacterE",
+        "bytes": 232,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL9unchangedRKN5spire5StateES2_",
+        "bytes": 24,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL7restoreRN5spire5StateE",
+        "bytes": 723384,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL5drinkRN5spire5StateENS_6PotionEi",
+        "bytes": 56,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL10quiet_turnRN5spire5StateE",
+        "bytes": 40,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL6appendRN5spire5StateENS_4CardENS_4ZoneE",
+        "bytes": 56,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL6selectRN5spire5StateESt16initializer_listItE",
+        "bytes": 40,
+        "classification": "static"
+      },
+      {
+        "function": "asan.module_ctor",
+        "bytes": 8,
+        "classification": "static"
+      },
+      {
+        "function": "asan.module_dtor",
+        "bytes": 8,
+        "classification": "static"
+      }
+    ],
+    "after": [
+      {
+        "function": "main",
+        "bytes": 2183032,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL20scopes_and_inventoryv",
+        "bytes": 1587320,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL20choices_and_creationv",
+        "bytes": 597208,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL19timed_and_automaticv",
+        "bytes": 198616,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL21pinned_cost_lifetimesv",
+        "bytes": 595480,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL17pinned_generationv",
+        "bytes": 795896,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL5fightRN5spire5StateENS_9CharacterE",
+        "bytes": 40,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL9unchangedRKN5spire5StateES2_",
+        "bytes": 24,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL7restoreRN5spire5StateE",
+        "bytes": 24,
+        "classification": "static"
+      },
+      {
+        "function": "_ZN5spire18value_construct_atINS_5StateEEEPT_Pv",
+        "bytes": 120,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL5drinkRN5spire5StateENS_6PotionEi",
+        "bytes": 56,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL10quiet_turnRN5spire5StateE",
+        "bytes": 40,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL6appendRN5spire5StateENS_4CardENS_4ZoneE",
+        "bytes": 56,
+        "classification": "static"
+      },
+      {
+        "function": "_ZL6selectRN5spire5StateESt16initializer_listItE",
+        "bytes": 40,
+        "classification": "static"
+      },
+      {
+        "function": "asan.module_ctor",
+        "bytes": 8,
+        "classification": "static"
+      },
+      {
+        "function": "asan.module_dtor",
+        "bytes": 8,
+        "classification": "static"
+      }
+    ]
+  },
+  "production_distinction": [
+    "Ndless and Web own the App/State and SaveData buffers in static storage.",
+    "The production state codec uses its existing bounded BSS State workspace.",
+    "No corresponding whole-State or whole-SaveData automatic copy was found in the exercised potion/core implementation paths."
+  ],
+  "completed_journals": [
+    {
+      "checkpoint": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+      "started_at": "2026-10-23T15:21:23.285346+00:00",
+      "ended_at": "2026-10-23T15:21:24.662873+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "76a5d2484309e49f95cc5fbff7d42e1b43e632c5738cf3ce45a28504187f5204",
+      "log_sha256": "15265bdc93df7d3e4b8be9756149fec054c006647f09f58fac9ede7852437707",
+      "journal": "ui3-potion-asan-config-782ed2dd7fbd.json",
+      "log": "ui3-potion-asan-config-782ed2dd7fbd.log",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "build/ci-target",
+        "-G",
+        "Ninja",
+        "-DSPIRE_X11=OFF",
+        "-DCMAKE_CXX_COMPILER=clang++-18",
+        "-DCMAKE_C_COMPILER=clang-18",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DCMAKE_CXX_FLAGS=-O1 -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "-DCMAKE_C_FLAGS=-O1 -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined"
+      ]
+    },
+    {
+      "checkpoint": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+      "started_at": "2026-10-23T15:21:54.489366+00:00",
+      "ended_at": "2026-10-23T15:22:49.707253+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "76a5d2484309e49f95cc5fbff7d42e1b43e632c5738cf3ce45a28504187f5204",
+      "log_sha256": "edc61977d499c152e33bfdd4ae8aadc000fa6376ec62b5158627cbc30e8cc75d",
+      "journal": "ui3-potion-asan-build-7886df14d4fd.json",
+      "log": "ui3-potion-asan-build-7886df14d4fd.log",
+      "command": [
+        "cmake",
+        "--build",
+        "build/ci-target",
+        "--target",
+        "potions_completion_regression",
+        "--parallel",
+        "2"
+      ]
+    },
+    {
+      "checkpoint": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+      "started_at": "2026-10-23T15:23:23.175656+00:00",
+      "ended_at": "2026-10-23T15:23:24.204357+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "76a5d2484309e49f95cc5fbff7d42e1b43e632c5738cf3ce45a28504187f5204",
+      "log_sha256": "da67771e0ff0d53cb8fe5323adb466c286fe5fd1d5506abc048c013c896d6f91",
+      "journal": "ui3-potion-asan-test-57ae7b740b1c.json",
+      "log": "ui3-potion-asan-test-57ae7b740b1c.log",
+      "command": [
+        "python",
+        "-c",
+        "import resource,subprocess; print(\"stack_limit_bytes\",resource.getrlimit(resource.RLIMIT_STACK),flush=True); raise SystemExit(subprocess.call([\"build/ci-target/potions_completion_regression\"]))"
+      ],
+      "output": "stack_limit_bytes (8388608, -1)\n==6==LeakSanitizer has encountered a fatal error.\n==6==HINT: For debugging, try setting environment variable LSAN_OPTIONS=verbosity=1:log_threads=1\n==6==HINT: LeakSanitizer does not work under ptrace (strace, gdb, etc)"
+    },
+    {
+      "checkpoint": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+      "started_at": "2026-10-23T15:24:07.329122+00:00",
+      "ended_at": "2026-10-23T15:24:08.300361+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "76a5d2484309e49f95cc5fbff7d42e1b43e632c5738cf3ce45a28504187f5204",
+      "log_sha256": "ebb843cec3712b9c2efb5b1b203f20c29e9fa1cf301250a2aa56b3f53550f8a7",
+      "journal": "ui3-potion-asan-unsandboxed-4be1cc57f586.json",
+      "log": "ui3-potion-asan-unsandboxed-4be1cc57f586.log",
+      "command": [
+        "python",
+        "-c",
+        "import resource,subprocess; print(\"stack_limit_bytes\",resource.getrlimit(resource.RLIMIT_STACK),flush=True); raise SystemExit(subprocess.call([\"build/ci-target/potions_completion_regression\"]))"
+      ],
+      "output": "stack_limit_bytes (8388608, -1)\npotion completion: 34202 checks; 64 model policies"
+    }
+  ],
+  "local_patch_commit": "f48cf61",
+  "persisted_fix_commit": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+  "full_ci_follow_up": {
+    "run": 39977430306,
+    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39977430306",
+    "native_suites_passed": 73,
+    "native_suites_failed": 0,
+    "configuration": "Clang 18.1.3 Debug/O1, ASan and UBSan, unchanged stack limits and assertions"
+  }
+}

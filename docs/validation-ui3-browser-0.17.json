@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "script_and_packaging_source": "d6b3d31b9f00ecd144ab1b4a1748fa1c2e731c5a",
+  "runtime_source": "ead747dcdffded08d641445a811af48a4fafd1de",
+  "resource_conversion_source": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+  "artifact": {
+    "name": "Slay-the-Nspire-2-0.17-ui3-bilingual-offline.html",
+    "bytes": 115479696,
+    "access": "local file URL; unchanged release artifact"
+  },
+  "execution": {
+    "journal": "agent-browser-final/build/journal/ui3-final-offline-browser-0bc12b3e6553.json",
+    "status": "passed",
+    "returncode": 0,
+    "source_changed": false,
+    "started_at": "2026-10-23T15:22:37.052208+00:00",
+    "ended_at": "2026-10-23T15:22:58.791768+00:00",
+    "browser": "Chrome for Testing 151.0.7922.34",
+    "context": "Fresh isolated headless Linux browser; no user browser profile; service workers disabled"
+  },
+  "dom_checks": [
+    "fresh English startup, localized DOM and ready Canvas",
+    "DOM Confirm starts a run; S stores a nonempty v15 browser save",
+    "O load returns through the real keyboard handler without changing stored save bytes",
+    "reload offers Continue and resumed run saves the same canonical bytes",
+    "Chinese language selection, confirmation, Continue and S/O share the original save",
+    "reload remembers Chinese and the same save",
+    "cancelling the language confirmation preserves the selected language and save",
+    "visible 10-second performance control completes while rendering the card collection",
+    "no page errors or external resource requests"
+  ],
+  "save": {
+    "bytes": 230088,
+    "storage_key": "nSpire2-save-v15",
+    "same_canonical_bytes_after_continue_and_language_change": true,
+    "export_scope": "The test copied the locally stored bytes only as private evidence. The product supports S save and O load; it has no save-download control."
+  },
+  "page_errors": [],
+  "external_requests": [],
+  "visual_review": {
+    "automated_canvas_images": [
+      "browser-title-eng.png",
+      "browser-character-eng.png",
+      "browser-run-eng.png",
+      "browser-loaded-eng.png",
+      "browser-continue-eng.png",
+      "browser-continue-zhs.png",
+      "browser-run-zhs.png",
+      "browser-reloaded-zhs.png",
+      "browser-compendium-eng.png"
+    ],
+    "additional_images": [
+      "browser-character-eng-settled.png",
+      "browser-layout-eng.png",
+      "browser-layout-zhs.png"
+    ],
+    "result": "Title, Continue facts, started and loaded Ancient event, card collection, and both localized HTML layouts reviewed. The character information panel is complete after its authored 500 ms entry.",
+    "environment_note": "The initial minimal browser environment showed missing CJK fallback in surrounding HTML. A public Noto CJK host fallback completed Chinese DOM review without changing the HTML, packs or their byte counts. Game Canvas uses the retained game glyphs and was unaffected."
+  },
+  "timing": {
+    "scope": "This desktop browser CPU and Canvas2D submission timing only; not compositor/display FPS, original-game speed parity or physical-calculator performance.",
+    "first_navigation_to_ready_wall_ms": 1968,
+    "first_ready_scope": "File navigation through ready first game Canvas; excludes browser process launch.",
+    "last_english_reload_internal_startup_ms": 106.4,
+    "internal_startup_scope": "Includes resource decoding, WASM initialization and game startup; excludes the first draw.",
+    "collection": "Existing visible 10-second measurement control on a previously rendered eight-card collection page; warm resources.",
+    "collection_render": {
+      "samples": 300,
+      "mean_ms": 1.049,
+      "max_ms": 6.5,
+      "over_50ms": 0,
+      "over_100ms": 0
+    },
+    "collection_rgb_conversion": {
+      "samples": 300,
+      "mean_ms": 0.3253,
+      "max_ms": 2.1,
+      "over_50ms": 0,
+      "over_100ms": 0
+    },
+    "collection_canvas_submission": {
+      "samples": 300,
+      "mean_ms": 0.0657,
+      "max_ms": 1.1,
+      "over_50ms": 0,
+      "over_100ms": 0
+    },
+    "collection_submission_interval": {
+      "samples": 299,
+      "mean_ms": 33.3849,
+      "max_ms": 79.8,
+      "over_50ms": 10,
+      "over_100ms": 0
+    },
+    "collection_resource_read_calls": 0,
+    "collection_resource_read_bytes": 0
+  },
+  "privacy": "Only this metadata is committed. HTML, screenshots, save bytes and original asset packs remain private artifacts."
+}

@@ -92,11 +92,16 @@ release, independent resource owners and old save migration. The five-character
 UI fixture advances and renders the actual clock until input is available;
 it no longer clears `busy` to attempt a card action during a presentation tail.
 
-At restoration of this source stage, the changed C++ files passed syntax-only
-compilation and the patch passed whitespace checks. This document does not claim
-that the new native suite, ARM/WASM binaries or calculator execution has passed.
-The integration checkpoint and closed execution journals must establish those
-results. Earlier measured startup data was lost with the previous scratch
-checkout and must be rerun against recovered v18 resources for a durable A/B.
-Host file callback counts measure requested reads, and host timings do not
-establish physical-calculator startup time.
+The initial restoration stage had only syntax and whitespace checks. That
+historical limitation is superseded by the frozen UI3 execution reports: all
+73 native Release suites, all 73 GitHub ASan/UBSan suites, ARM/WASM builds and
+actual bilingual backend comparisons passed. Ordinary Firebird title, battle,
+collection, save/continue and normal-exit flows also passed. See
+[runtime acceptance](validation-ui3-runtime-0.17.json) and
+[Firebird acceptance](validation-ui3-firebird-0.17.json).
+The recovered same-v18 host comparison and later resource measurements retain
+their own source identities in [retained storage](retained-storage-0.17.md).
+No obsolete hash or eager-validation work remains in the measured UI3 startup.
+Host file callback counts measure requested reads; host or emulator timings do
+not establish physical-calculator startup time. Cold multi-card rendering still
+has a measured pause, explicitly retained in the final Firebird report.

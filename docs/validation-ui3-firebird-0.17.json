@@ -1,0 +1,1277 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "source_checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+  "reference_release": "v0.111.0 / 41cef1ea",
+  "scope": "Actual ARM UI3 execution in unchanged upstream Firebird: hand presentation, ordinary combat and reward completion, bilingual save/Continue/compendium/detail/normal OS exit",
+  "report": "firebird-ui3-final.md",
+  "environment": {
+    "emulator": "upstream Firebird",
+    "compiler": "Clang 18",
+    "device": "CX II CAS",
+    "os": "6.4.0.74",
+    "ndless_revision": 2022,
+    "core_modified": false,
+    "original_nand_modified": false,
+    "game_or_emulator_ram_injection": false,
+    "control": "ordinary keypad/touch and USB frontend",
+    "control_tick_ms": 10,
+    "physical_device_measurement": false
+  },
+  "installed": {
+    "launcher_bytes": 983682,
+    "common_bytes": 74756230,
+    "eng_bytes": 1780887,
+    "zhs_bytes": 4563586,
+    "resource_policy": "NSP2 v20 hybrid, fast-images ui, original title atlas plus authored glow",
+    "resources_directory": "ui3-assets/v20-hybrid-glow-split"
+  },
+  "journal_receipts": [
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:11:44.306772+00:00",
+      "ended_at": "2026-10-23T15:11:53.459425+00:00",
+      "file": "ui3-firebird-final-hand-55acaa93c2f9.json",
+      "events_file": "final-hand-events.jsonl",
+      "events_records": 47,
+      "commands": 16,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 8050,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:09:38.591560+00:00",
+      "ended_at": "2026-10-23T15:11:02.029888+00:00",
+      "file": "ui3-firebird-final-install-44bad28ecde8.json",
+      "events_file": "final-install-events.jsonl",
+      "events_records": 91,
+      "commands": 13,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 78620,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:11:14.861426+00:00",
+      "ended_at": "2026-10-23T15:11:22.164000+00:00",
+      "file": "ui3-firebird-final-launch-5ad8db10582c.json",
+      "events_file": "final-launch-events.jsonl",
+      "events_records": 22,
+      "commands": 6,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 3690,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:18:06.090902+00:00",
+      "ended_at": "2026-10-23T15:18:16.291854+00:00",
+      "file": "ui3-firebird-final-battle5-b7c49ca7f9d0.json",
+      "events_file": "final-battle5-events.jsonl",
+      "events_records": 36,
+      "commands": 12,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 8290,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:19:49.490173+00:00",
+      "ended_at": "2026-10-23T15:19:59.291089+00:00",
+      "file": "ui3-firebird-final-battle6-01e241067776.json",
+      "events_file": "final-battle6-events.jsonl",
+      "events_records": 42,
+      "commands": 15,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 9130,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:21:24.321984+00:00",
+      "ended_at": "2026-10-23T15:21:33.875452+00:00",
+      "file": "ui3-firebird-final-battle7-2384e23f220f.json",
+      "events_file": "final-battle7-events.jsonl",
+      "events_records": 38,
+      "commands": 13,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 8090,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:26:17.960260+00:00",
+      "ended_at": "2026-10-23T15:26:33.027823+00:00",
+      "file": "ui3-firebird-final-bilingual-134ab78552af.json",
+      "events_file": "final-bilingual-events.jsonl",
+      "events_records": 173,
+      "commands": 59,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 43320,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:13:26.137808+00:00",
+      "ended_at": "2026-10-23T15:13:35.485986+00:00",
+      "file": "ui3-firebird-final-combat-9005f0a7d349.json",
+      "events_file": "final-combat-events.jsonl",
+      "events_records": 36,
+      "commands": 12,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 7350,
+        "success": true
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:22:38.440461+00:00",
+      "ended_at": "2026-10-23T15:22:39.167947+00:00",
+      "file": "ui3-firebird-final-reward-ec06791f4683.json",
+      "events_file": "final-reward-events.jsonl",
+      "events_records": 5,
+      "commands": 0,
+      "last_event": {
+        "operation": "error",
+        "simulated_ms": 0,
+        "message": "emulator start failed"
+      }
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:29:43.335239+00:00",
+      "ended_at": "2026-10-23T15:32:19.794089+00:00",
+      "file": "ui3-firebird-final-zhs-confirm-e6c01511ae2f.json",
+      "events_file": "final-zhs-confirm-events.jsonl",
+      "events_records": 120,
+      "commands": 41,
+      "last_event": {
+        "operation": "stopped",
+        "simulated_ms": 76630,
+        "success": true
+      }
+    }
+  ],
+  "functional_observations": [
+    {
+      "behavior": "Original title lettering, fire and authored glow",
+      "images": [
+        "final-title-eng.ppm",
+        "final-title-eng-glow.ppm",
+        "final-zhs-title-confirm.ppm"
+      ]
+    },
+    {
+      "behavior": "Discarded hand stays absent during enemy presentation; Crocodile action overlaps the Enemy Turn banner; new hand appears at next player boundary",
+      "images": [
+        "final-enemy-eng-0180.ppm",
+        "final-enemy-eng-0580.ppm",
+        "final-enemy-eng-0980.ppm",
+        "final-enemy-eng-1580.ppm",
+        "final-player-eng-next.ppm"
+      ],
+      "qualification": "The captured Crocodile action is a buff, not an attack. This ARM deck has no Retain card."
+    },
+    {
+      "behavior": "Ordinary combat victory, 19 gold, Bloodletting reward, save and normal exit",
+      "images": [
+        "final-loot-eng.ppm",
+        "final-reward-eng-cards.ppm",
+        "final-reward-eng-picked.ppm",
+        "final-title-eng-reward-saved.ppm",
+        "final-os-eng-exit.ppm"
+      ],
+      "final_run": {
+        "floor": 2,
+        "hp": 61,
+        "max_hp": 80,
+        "gold": 118
+      }
+    },
+    {
+      "behavior": "Explicit Chinese title Continue restores the same saved reward screen",
+      "images": [
+        "final-zhs-title-confirm.ppm",
+        "final-zhs-continue-confirm.ppm"
+      ]
+    },
+    {
+      "behavior": "Eight-card Chinese compendium, focused Defend with Block tooltip, correct detail, Save/Quit and OS return",
+      "images": [
+        "final-zhs-collection-confirm.ppm",
+        "final-zhs-collection-focus-confirm.ppm",
+        "final-zhs-card-detail-confirm.ppm",
+        "final-zhs-saved-confirm.ppm",
+        "final-zhs-os-exit-confirm.ppm"
+      ]
+    }
+  ],
+  "save_compatibility": {
+    "files": [
+      "save-eng-final.tns",
+      "save-zhs-final.tns",
+      "save-zhs-confirm.tns"
+    ],
+    "bytes_each": [
+      230520,
+      230520,
+      230520
+    ],
+    "direct_byte_equality": true,
+    "preference_file": "lang-zhs-confirm.tns",
+    "preference_bytes_text": "NSL1zhs\n"
+  },
+  "native_hand_coverage": {
+    "checks_per_locale": 16229,
+    "locales": [
+      "eng",
+      "zhs"
+    ],
+    "journals": [
+      "ui3-hand-world-ui-eng-c94f4412148a.json",
+      "ui3-hand-world-ui-zhs-fca9f39aae52.json"
+    ],
+    "coverage": [
+      "actual End Turn with and without retained Purity",
+      "Normal and Fast speeds",
+      "discard and player draw cue boundaries",
+      "focus, hit region, detail and keyword tooltip share shown IDs",
+      "bounded cue overflow converges",
+      "direct-core and UI save equality, reset/load"
+    ],
+    "qualification": "Native Retain evidence is separate from the executed ARM empty-hand case."
+  },
+  "performance_scope": {
+    "clock": "emulated foreground SP804",
+    "clock_hz": 32768,
+    "startup": "Selected resource open plus App initialization; excludes OS/Ndless boot, USB, language selection and first render",
+    "render": "Time inside App::render; includes resource I/O and any decoding/preparation done inside rendering",
+    "update": "Input processing and preparation performed there have a separate timer",
+    "interval": "Between presentations, including update, render, present and game frame gate",
+    "operator_wait": "Frontend pauses stop simulated time; operator wall-clock waiting is not included",
+    "aggregation": "Fixed count/sum/min/max; no per-frame image, glyph or preparation breakdown",
+    "legacy_json_label": "selected_resource_validation_and_app_init is historical wording, not a claim that an integrity pass runs"
+  },
+  "profiles": {
+    "english_final": {
+      "file": "perf-eng-final.json",
+      "converted_summary": {
+        "startup_ms": 503.021240234375,
+        "first_render_ms": 445.159912109375,
+        "render_scenes": {
+          "title": {
+            "count": 46,
+            "mean_ms": 41.57091223675272,
+            "min_ms": 8.7890625,
+            "max_ms": 247.711181640625
+          },
+          "combat": {
+            "count": 929,
+            "mean_ms": 19.124009509132804,
+            "min_ms": 0.030517578125,
+            "max_ms": 198.2421875
+          },
+          "room": {
+            "count": 230,
+            "mean_ms": 26.70845363451087,
+            "min_ms": 13.48876953125,
+            "max_ms": 362.457275390625
+          },
+          "overlay": {
+            "count": 32,
+            "mean_ms": 62.206268310546875,
+            "min_ms": 43.914794921875,
+            "max_ms": 179.595947265625
+          },
+          "combat_preparation": {
+            "count": 17,
+            "mean_ms": 46.6147030101103,
+            "min_ms": 1.495361328125,
+            "max_ms": 766.29638671875
+          }
+        }
+      },
+      "raw": {
+        "format": "nspire-runtime-perf-1",
+        "units": "timer_ticks",
+        "clock": "foreground_SP804",
+        "startup_scope": "selected_resource_validation_and_app_init",
+        "clock_hz": 32768,
+        "hardware": 1,
+        "ndless_revision": 2022,
+        "pack_bytes": 76536957,
+        "startup": {
+          "count": 1,
+          "total": 16483,
+          "min": 16483,
+          "max": 16483
+        },
+        "first_render": {
+          "count": 1,
+          "total": 14587,
+          "min": 14587,
+          "max": 14587
+        },
+        "first_present": {
+          "count": 1,
+          "total": 7,
+          "min": 7,
+          "max": 7
+        },
+        "startup_phases": {
+          "header": {
+            "count": 1,
+            "total": 167,
+            "min": 167,
+            "max": 167
+          },
+          "integrity": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "directory": {
+            "count": 1,
+            "total": 6347,
+            "min": 6347,
+            "max": 6347
+          },
+          "images": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "tile_index": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "glyphs": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "strings": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "ready": {
+            "count": 1,
+            "total": 3964,
+            "min": 3964,
+            "max": 3964
+          }
+        },
+        "resource_total": {
+          "ticks": 125405,
+          "calls": 157,
+          "bytes_requested": 2283628,
+          "failures": 0,
+          "seeks": 137
+        },
+        "scenes": [
+          {
+            "scene": "title",
+            "interval": {
+              "count": 46,
+              "total": 71039,
+              "min": 291,
+              "max": 16038
+            },
+            "update": {
+              "count": 46,
+              "total": 8053,
+              "min": 2,
+              "max": 7914
+            },
+            "render": {
+              "count": 46,
+              "total": 62661,
+              "min": 288,
+              "max": 8117
+            },
+            "present": {
+              "count": 46,
+              "total": 319,
+              "min": 0,
+              "max": 8
+            },
+            "resource": {
+              "count": 46,
+              "total": 6678,
+              "min": 0,
+              "max": 6678
+            },
+            "over_50ms": 1,
+            "over_100ms": 1,
+            "over_250ms": 1,
+            "read_calls": 6,
+            "read_bytes_requested": 102089,
+            "read_seeks": 5
+          },
+          {
+            "scene": "character",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "collection",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "map",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "combat",
+            "interval": {
+              "count": 929,
+              "total": 1059730,
+              "min": 493,
+              "max": 11083
+            },
+            "update": {
+              "count": 929,
+              "total": 20814,
+              "min": 3,
+              "max": 7985
+            },
+            "render": {
+              "count": 929,
+              "total": 582163,
+              "min": 1,
+              "max": 6496
+            },
+            "present": {
+              "count": 929,
+              "total": 6734,
+              "min": 0,
+              "max": 8
+            },
+            "resource": {
+              "count": 929,
+              "total": 26219,
+              "min": 0,
+              "max": 4489
+            },
+            "over_50ms": 22,
+            "over_100ms": 12,
+            "over_250ms": 1,
+            "read_calls": 33,
+            "read_bytes_requested": 328076,
+            "read_seeks": 30
+          },
+          {
+            "scene": "room",
+            "interval": {
+              "count": 230,
+              "total": 287897,
+              "min": 489,
+              "max": 11888
+            },
+            "update": {
+              "count": 230,
+              "total": 7512,
+              "min": 3,
+              "max": 6792
+            },
+            "render": {
+              "count": 230,
+              "total": 201292,
+              "min": 442,
+              "max": 11877
+            },
+            "present": {
+              "count": 230,
+              "total": 1686,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 230,
+              "total": 19128,
+              "min": 0,
+              "max": 10366
+            },
+            "over_50ms": 5,
+            "over_100ms": 3,
+            "over_250ms": 2,
+            "read_calls": 29,
+            "read_bytes_requested": 167560,
+            "read_seeks": 25
+          },
+          {
+            "scene": "overlay",
+            "interval": {
+              "count": 32,
+              "total": 66619,
+              "min": 1450,
+              "max": 6307
+            },
+            "update": {
+              "count": 32,
+              "total": 106,
+              "min": 3,
+              "max": 4
+            },
+            "render": {
+              "count": 32,
+              "total": 65228,
+              "min": 1439,
+              "max": 5885
+            },
+            "present": {
+              "count": 32,
+              "total": 232,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 32,
+              "total": 10426,
+              "min": 0,
+              "max": 4291
+            },
+            "over_50ms": 17,
+            "over_100ms": 3,
+            "over_250ms": 0,
+            "read_calls": 16,
+            "read_bytes_requested": 61864,
+            "read_seeks": 15
+          },
+          {
+            "scene": "other",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "combat_preparation",
+            "interval": {
+              "count": 17,
+              "total": 65473,
+              "min": 180,
+              "max": 26123
+            },
+            "update": {
+              "count": 17,
+              "total": 25928,
+              "min": 13,
+              "max": 20000
+            },
+            "render": {
+              "count": 17,
+              "total": 25967,
+              "min": 49,
+              "max": 25110
+            },
+            "present": {
+              "count": 17,
+              "total": 121,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 17,
+              "total": 37438,
+              "min": 0,
+              "max": 22825
+            },
+            "over_50ms": 4,
+            "over_100ms": 3,
+            "over_250ms": 2,
+            "read_calls": 43,
+            "read_bytes_requested": 516942,
+            "read_seeks": 34
+          }
+        ]
+      }
+    },
+    "chinese_confirmation": {
+      "file": "perf-zhs-confirm.json",
+      "converted_summary": {
+        "startup_ms": 778.86962890625,
+        "first_render_ms": 884.765625,
+        "render_scenes": {
+          "title": {
+            "count": 136,
+            "mean_ms": 33.11673332663143,
+            "min_ms": 22.125244140625,
+            "max_ms": 244.842529296875
+          },
+          "collection": {
+            "count": 67,
+            "mean_ms": 52.90882623017724,
+            "min_ms": 22.88818359375,
+            "max_ms": 1646.820068359375
+          },
+          "room": {
+            "count": 70,
+            "mean_ms": 37.669590541294646,
+            "min_ms": 30.2734375,
+            "max_ms": 516.937255859375
+          },
+          "overlay": {
+            "count": 25,
+            "mean_ms": 83.62548828125,
+            "min_ms": 46.81396484375,
+            "max_ms": 387.603759765625
+          }
+        }
+      },
+      "raw": {
+        "format": "nspire-runtime-perf-1",
+        "units": "timer_ticks",
+        "clock": "foreground_SP804",
+        "startup_scope": "selected_resource_validation_and_app_init",
+        "clock_hz": 32768,
+        "hardware": 1,
+        "ndless_revision": 2022,
+        "pack_bytes": 79319656,
+        "startup": {
+          "count": 1,
+          "total": 25522,
+          "min": 25522,
+          "max": 25522
+        },
+        "first_render": {
+          "count": 1,
+          "total": 28992,
+          "min": 28992,
+          "max": 28992
+        },
+        "first_present": {
+          "count": 1,
+          "total": 7,
+          "min": 7,
+          "max": 7
+        },
+        "startup_phases": {
+          "header": {
+            "count": 1,
+            "total": 2151,
+            "min": 2151,
+            "max": 2151
+          },
+          "integrity": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "directory": {
+            "count": 1,
+            "total": 11502,
+            "min": 11502,
+            "max": 11502
+          },
+          "images": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "tile_index": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "glyphs": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "strings": {
+            "count": 0,
+            "total": 0,
+            "min": 0,
+            "max": 0
+          },
+          "ready": {
+            "count": 1,
+            "total": 3925,
+            "min": 3925,
+            "max": 3925
+          }
+        },
+        "resource_total": {
+          "ticks": 159384,
+          "calls": 319,
+          "bytes_requested": 2548915,
+          "failures": 0,
+          "seeks": 289
+        },
+        "scenes": [
+          {
+            "scene": "title",
+            "interval": {
+              "count": 136,
+              "total": 167700,
+              "min": 742,
+              "max": 20441
+            },
+            "update": {
+              "count": 136,
+              "total": 12704,
+              "min": 2,
+              "max": 12411
+            },
+            "render": {
+              "count": 136,
+              "total": 147583,
+              "min": 725,
+              "max": 8023
+            },
+            "present": {
+              "count": 136,
+              "total": 979,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 136,
+              "total": 6945,
+              "min": 0,
+              "max": 6945
+            },
+            "over_50ms": 1,
+            "over_100ms": 1,
+            "over_250ms": 1,
+            "read_calls": 24,
+            "read_bytes_requested": 94208,
+            "read_seeks": 22
+          },
+          {
+            "scene": "character",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "collection",
+            "interval": {
+              "count": 67,
+              "total": 133935,
+              "min": 761,
+              "max": 54061
+            },
+            "update": {
+              "count": 67,
+              "total": 207,
+              "min": 3,
+              "max": 5
+            },
+            "render": {
+              "count": 67,
+              "total": 116159,
+              "min": 750,
+              "max": 53963
+            },
+            "present": {
+              "count": 67,
+              "total": 471,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 67,
+              "total": 61263,
+              "min": 0,
+              "max": 52435
+            },
+            "over_50ms": 3,
+            "over_100ms": 3,
+            "over_250ms": 1,
+            "read_calls": 151,
+            "read_bytes_requested": 620673,
+            "read_seeks": 135
+          },
+          {
+            "scene": "map",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "combat",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "room",
+            "interval": {
+              "count": 70,
+              "total": 96998,
+              "min": 1002,
+              "max": 20937
+            },
+            "update": {
+              "count": 70,
+              "total": 4184,
+              "min": 3,
+              "max": 3974
+            },
+            "render": {
+              "count": 70,
+              "total": 86405,
+              "min": 992,
+              "max": 16939
+            },
+            "present": {
+              "count": 70,
+              "total": 497,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 70,
+              "total": 15627,
+              "min": 0,
+              "max": 15167
+            },
+            "over_50ms": 1,
+            "over_100ms": 1,
+            "over_250ms": 1,
+            "read_calls": 30,
+            "read_bytes_requested": 208451,
+            "read_seeks": 29
+          },
+          {
+            "scene": "overlay",
+            "interval": {
+              "count": 25,
+              "total": 69192,
+              "min": 1544,
+              "max": 12897
+            },
+            "update": {
+              "count": 25,
+              "total": 89,
+              "min": 3,
+              "max": 10
+            },
+            "render": {
+              "count": 25,
+              "total": 68506,
+              "min": 1534,
+              "max": 12701
+            },
+            "present": {
+              "count": 25,
+              "total": 180,
+              "min": 7,
+              "max": 8
+            },
+            "resource": {
+              "count": 25,
+              "total": 26364,
+              "min": 0,
+              "max": 11137
+            },
+            "over_50ms": 12,
+            "over_100ms": 4,
+            "over_250ms": 3,
+            "read_calls": 67,
+            "read_bytes_requested": 267574,
+            "read_seeks": 60
+          },
+          {
+            "scene": "other",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          },
+          {
+            "scene": "combat_preparation",
+            "interval": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "update": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "render": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "present": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "resource": {
+              "count": 0,
+              "total": 0,
+              "min": 0,
+              "max": 0
+            },
+            "over_50ms": 0,
+            "over_100ms": 0,
+            "over_250ms": 0,
+            "read_calls": 0,
+            "read_bytes_requested": 0,
+            "read_seeks": 0
+          }
+        ]
+      }
+    }
+  },
+  "initial_chinese_batch_profile": {
+    "file": "perf-zhs-final.json",
+    "collection_render_samples": 2,
+    "collection_mean_ms": 967.8497314453125,
+    "collection_max_ms": 1888.153076171875,
+    "qualification": "Only two renders and early screenshot names were out of phase with OS launch; not a sustained-render figure or explicit Continue evidence."
+  },
+  "independent_visual_review": {
+    "reviewer": "title UI agent",
+    "native_hand_images": 12,
+    "english_arm_hand_images": 4,
+    "final_chinese_images": 6,
+    "result": "No additional visible blocker in the reviewed hand, original title, Chinese Continue/compendium focus/Block tooltip/detail/OS images",
+    "qualification": "Static visual review is not itself input, timing or physical-device proof."
+  },
+  "remaining_limits": [
+    "Chinese collection has a substantial cold entry delay: all 67 render samples mean 52.9 ms, min 22.9 ms and max 1646.8 ms. This includes cold entry, focus and tooltip changes, not a warm-only mean.",
+    "The aggregated profiler cannot separate the slowest render into image decode, glyph decode and page preparation.",
+    "One intermediate after7 emulator snapshot could not be restored; the exact cause is unconfirmed. Failed reward resume ec06791f4683 remains failed. The accepted ending normally replayed the winning turn from the working after6 snapshot.",
+    "final-enemy-eng-attack-1580.ppm shows an already defeated enemy; it is excluded as enemy-action evidence.",
+    "Early Chinese loading/Continue screenshot names were mistimed. The final explicit Continue/detail batch provides the named coverage instead.",
+    "The b400 long event log was incomplete; its historical report keeps this limitation separate from complete final batch logs.",
+    "One ordinary Ironclad fight and the named bilingual screens do not cover every encounter, character or event.",
+    "Original title background GPU stars and fog remain outside this implementation.",
+    "Emulated ARM timings do not establish physical-calculator performance or complete original-game framebuffer parity."
+  ]
+}
