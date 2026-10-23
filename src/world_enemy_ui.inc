@@ -47,7 +47,7 @@ static void ui_enemy_removal(App&a,int slot,bool restored=false){
  auto&m=a.enemy_presentation[slot];const auto&source=a.game.enemy_world.models[slot];
  // Downed/reviving actors remain in the battle. Removed actors finish their
  // death track, wait the original half second, then leave the scene.
- if(!(source.flags&EnemyRemoved)||a.game.enemies[slot].hp>0){m.removing=false;return;}
+ if(!(source.flags&EnemyRemoved)||a.combat_health(slot+1).hp>0){m.removing=false;return;}
  if(m.removing)return;m.removing=true;
  if(restored){m.fade_start=m.hide_at=a.animation;return;}
  uint32_t wait=m.clip>=0?uint32_t(int32_t(m.until-a.animation)>0?m.until-a.animation:0)+16u:0u;
@@ -60,6 +60,7 @@ static void ui_enemy_removal(App&a,int slot,bool restored=false){
 }
 unsigned App::enemy_opacity(int slot)const{
  if(slot<0||slot>=game.enemy_count)return 0;
+ if(ui_feedback_bound(*this)&&combat_feedback.identity[slot+1]!=ui_feedback_identity(game,unsigned(slot+1))&&combat_feedback.shown[slot+1].hp<=0)return 0;
  const auto&m=enemy_presentation[slot];if(!m.removing)return 255;
  if(int32_t(animation-m.hide_at)>=0)return 0;
  if(int32_t(animation-m.fade_start)<=0)return 255;
@@ -120,7 +121,7 @@ static void ui_enemy_advance(App&a,int slot){
 void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const EnemyVisualFacts*facts,uint32_t earliest){
  if(slot<0||slot>=game.enemy_count||!game.enemy_world.active)return;auto&m=enemy_presentation[slot];if(!m.identity)return;
  const bool terminal=ui_visual_equal(trigger,"Dead")||ui_visual_equal(trigger,"Revive")||ui_visual_equal(trigger,"DeadTrigger");
- if(!direct&&(terminal||ui_visual_equal(trigger,"Hit"))){auto snapshot=facts?*facts:ui_enemy_facts(game,slot);
+ if(!direct&&(terminal||ui_visual_equal(trigger,"Hit"))&&(!earliest||int32_t(animation-earliest)>=0)){auto snapshot=facts?*facts:ui_enemy_facts(game,slot);
   int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&snapshot);if(state>=0){if(terminal)m.count=0;m.move=move;ui_enemy_set_state(*this,slot,state,snapshot,animation);return;}
   if(terminal)return;
   // Repeated simultaneous damage notifications need no duplicate hurt queue.
@@ -130,24 +131,29 @@ void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const E
  auto&command=m.queue[m.count++];command={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),earliest?earliest:animation};ui_enemy_advance(*this,slot);
 }
 void App::sync_enemy_feedback(){
+ sync_combat_feedback();
  if(!game.enemy_world.active){for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=animation;enemy_visual_encounter=-1;return;}
  if(enemy_visual_seed!=game.seed||enemy_visual_floor!=game.floor||enemy_visual_combat!=game.world.combat_count||enemy_visual_encounter!=int(game.enemy_world.encounter)){
   for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;
   enemy_visual_seed=game.seed;enemy_visual_floor=game.floor;enemy_visual_combat=game.world.combat_count;enemy_visual_encounter=int(game.enemy_world.encounter);
  }
  for(int i=0;i<game.enemy_count;i++){auto&m=enemy_presentation[i];const auto&source=game.enemy_world.models[i];
+  if(ui_feedback_bound(*this)&&combat_feedback.identity[i+1]!=ui_feedback_identity(game,unsigned(i+1)))continue;
   if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){
-   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.hp=game.enemies[i].hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
+   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.hp=combat_health(i+1).hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
    int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
    ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
    ui_enemy_removal(*this,i,m.dead);
   }else{
-   int hp=game.enemies[i].hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");}
+   int hp=combat_health(i+1).hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");}
    else if(hp>0&&m.hp<=0){m.dead=false;enemy_trigger(i,"Revive");}
    m.hp=hp;
   }
   ui_enemy_advance(*this,i);
   ui_enemy_removal(*this,i);
+  if(!combat_phase(game.phase)&&game.phase!=Phase::Dead&&m.dead&&(m.removing||!m.loop)){
+   const uint32_t end=m.removing?m.hide_at:m.until;if(int32_t(end-combat_linger_until)>0)combat_linger_until=end;
+  }
  }
 }
 void App::observe_core(const State&s,Log log){
@@ -165,7 +171,7 @@ void App::observe_core(const State&s,Log log){
   const auto kind=s.enemy_world.models[slot].kind;
   // Respawns increments inside the original action, before its trigger.
   // That exact boundary reports through observe_enemy_animation instead.
-  if(kind==EnemyId::TestSubject&&log.b==0)return;
+  if(kind==EnemyId::TestSubject&&log.b==0){const uint32_t when=ui_feedback_later(enemy_visual_clock,animation);combat_feedback_move(slot,log.b,when-TurnBannerPresentation::intent_lead_ticks(fast_mode),when,when);return;}
   if(kind>=EnemyId::DecimillipedeSegmentBack&&kind<=EnemyId::DecimillipedeSegmentMiddle&&log.b>=0&&log.b<=2){
    sync_enemy_feedback();uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation,end=when;
    for(int i=0;i<s.enemy_count;i++){const auto other=s.enemy_world.models[i].kind;
@@ -174,9 +180,10 @@ void App::observe_core(const State&s,Log log){
     int clip=world_enemy_resolve_clip(m.model,action,m.skin,log.b,ui_enemy_fact,&snapshot);
     enemy_trigger(i,action,log.b,true,&snapshot,when);if(clip>=0&&int32_t(when+ui_enemy_ticks(*this,clip)-end)>0)end=when+ui_enemy_ticks(*this,clip);
    }
-   enemy_visual_clock=end;return;
+   combat_feedback_move(slot,log.b,when-TurnBannerPresentation::intent_lead_ticks(fast_mode),when,end);enemy_visual_clock=end;return;
   }
-  if(move){sync_enemy_feedback();auto&m=enemy_presentation[slot];uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;int projected=m.state;
+  if(move){sync_enemy_feedback();auto&m=enemy_presentation[slot];uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
+   const uint32_t first=when;uint32_t action_at=when;int projected=m.state;
    const uint32_t command_wait=ui_enemy_move_wait(*this,kind,log.b);
    for(unsigned i=0;i<move->action_count;i++)if(const auto*action=world_enemy_action(*move,i)){
     int clip=-1;
@@ -188,13 +195,15 @@ void App::observe_core(const State&s,Log log){
     // uncurled Web/Pounce must not reserve an absent 900ms animation.
     if(uncurl&&clip<0)continue;
     enemy_trigger(slot,action->name,log.b,action->direct!=0,&facts,when);
-    if(uncurl)when+=TurnBannerPresentation::wait_ticks(900,250,fast_mode);
+    if(uncurl){when+=TurnBannerPresentation::wait_ticks(900,250,fast_mode);action_at=when;}
     else if(command_wait)when+=command_wait;
     else if(clip>=0)when+=ui_enemy_ticks(*this,clip);
    }
-   enemy_visual_clock=when;
+   combat_feedback_move(slot,log.b,first-TurnBannerPresentation::intent_lead_ticks(fast_mode),action_at,when);enemy_visual_clock=when;
+  }else{
+   const uint32_t when=ui_feedback_later(enemy_visual_clock,animation);combat_feedback_move(slot,log.b,when-TurnBannerPresentation::intent_lead_ticks(fast_mode),when,when);
   }
- }else if(log.kind==LogKind::Damage&&log.b>=0&&log.b<s.enemy_count&&s.enemies[log.b].hp>0){
+ }else if(log.kind==LogKind::Damage&&!combat_feedback.active&&log.b>=0&&log.b<s.enemy_count&&s.enemies[log.b].hp>0){
   // Room-entry relics can damage an enemy created after the observer was
   // bound. Establish its current identity before dispatching the hurt cue.
   sync_enemy_feedback();enemy_trigger(log.b,"Hit");
@@ -213,7 +222,8 @@ void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
  if(clip>=0)enemy_visual_clock=when+ui_enemy_ticks(*this,clip);
 }
 bool App::enemy_frame(int slot,int&clip,uint32_t&elapsed,bool&loop){
- if(slot<0||slot>=game.enemy_count||!game.enemy_world.active||!enemy_opacity(slot))return false;ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];
+ if(slot<0||slot>=game.enemy_count||!game.enemy_world.active||!enemy_opacity(slot))return false;
+ if(!ui_feedback_bound(*this)||combat_feedback.identity[slot+1]==ui_feedback_identity(game,unsigned(slot+1)))ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];
  clip=m.clip;elapsed=int32_t(animation-m.start)>=0?(animation-m.start)*33:0;loop=m.loop;return clip>=0;
 }
 int App::combat_background()const{

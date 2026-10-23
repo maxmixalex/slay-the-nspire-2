@@ -42,12 +42,14 @@ static void ui_status_description(const App&a,int actor,int id,char*out,size_t s
    a.localized_text("powers","NIGHTMARE_POWER.smartDescription",line,sizeof line,slot,actor,3);if(b.n)b.ch('\n');b.text(line);
   }return;
  }
- if(actor<=0&&key&&(id==32||id==43||id==RegentStatusStart+int(RPower::Monologue))){
+ const bool rolling_boulder=id==18+int(XPower::RollingBoulder);
+ if(actor<=0&&key&&(id==32||id==43||rolling_boulder||id==RegentStatusStart+int(RPower::Monologue))){
   char full[128]{};TextBuffer name{full,sizeof full,0};name.text(key);name.text(".smartDescription");
   if(*a.content.world_string("powers",full)){
    TextBuffer text{out,size,0};const auto&s=a.game;const int slots=id==43?MaxBombs:MaxPowerInstances;
    for(int slot=0;slot<slots;++slot){
-    const int value=id==32?s.expansion.panache[slot]:id==43?s.expansion.bomb_turns[slot]:s.regent.monologue[slot];
+    const int value=id==32?s.expansion.panache[slot]:id==43?s.expansion.bomb_turns[slot]:
+        rolling_boulder?s.expansion.boulder[slot]:s.regent.monologue[slot];
     if(!value)continue;char line[1024]{};a.localized_text("powers",full,line,sizeof line,slot,actor,value);
     if(text.n)text.ch('\n');text.text(line);
    }

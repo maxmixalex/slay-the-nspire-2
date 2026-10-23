@@ -9,7 +9,7 @@ static const PotionHoverSpec potion_hover_specs[]={
  {Potion::Dexterity,HoverTipKind::Power,"DEXTERITY_POWER",0,0},
  {Potion::Energy,HoverTipKind::Static,"ENERGY",0,0},
  {Potion::EssenceOfDarkness,HoverTipKind::Static,"CHANNELING",0,0},
- {Potion::EssenceOfDarkness,HoverTipKind::Orb,"DARK",0,0},
+ {Potion::EssenceOfDarkness,HoverTipKind::Orb,"DARK_ORB",0,0},
  {Potion::Flex,HoverTipKind::Power,"STRENGTH_POWER",0,0},
  {Potion::FocusPotion,HoverTipKind::Power,"FOCUS_POWER",0,0},
  {Potion::Fortifier,HoverTipKind::Static,"BLOCK",0,0},

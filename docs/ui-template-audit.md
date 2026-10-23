@@ -25,9 +25,12 @@ diagnostic, **not the formal gate for the newly added test source**.
 
 Checking for remaining braces also exposed five models with incorrect numeric
 values despite successful substitution. Their source fixes and exact regression
-cases are now part of the next coherent stage. The next verified checkpoint
-must run the new regression and this complete four-pack audit before those fixes
-are described as formally verified.
+cases were subsequently saved and formally verified at checkpoint
+`6d2b78ac0984b8d814b9761c8d44c8dc408614e7`. The standalone CTest and all four
+actual-pack audits passed, each with 34,708 assertions. The fifth source stage
+adds the separate Rolling Boulder case described below; that addition is not
+part of the stage4 execution. The [validation metadata](validation-ui-templates-0.17.json)
+records the execution identities and closed journal receipts.
 
 ## Resource identities
 
@@ -148,6 +151,13 @@ not passed as a single model's timer, damage or independent progress. Panache,
 Monologue and Bomb descriptions emit one original localized description per
 active slot, matching the existing Nightmare snapshot handling.
 
+A sixth instance issue was identified after that checkpoint was frozen:
+`ROLLING_BOULDER_POWER` combined two instances' damage while retaining the
+single-instance +5 growth. The next source stage displays each instance
+separately; its test expects 7 damage / +5 and 12 damage / +5, rather than one
+19 damage / +5 description. This follow-up requires its own saved-checkpoint
+gate and is not included in the five-model verification above.
+
 The regression also calls the canonical/detached model path with `model=-1`
 and an inactive slot. Those calls retain the canonical defaults and never pick
 an arbitrary first active instance. Enemy actor calls do not read player-only
@@ -173,6 +183,8 @@ DLL SHA-256: `0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`.
 | `PanachePower.AfterCardPlayed` async body | `0x06009fa5` | Decrements CardsLeft on eligible subsequent plays and resets at the threshold |
 | `TheBombPower.SetDamage` | `0x06002991` | Stores the particular bomb's damage |
 | `TheBombPower.BeforeSideTurnEnd` async body | `0x0600a0a8` | Decrements Amount while greater than 1; explodes using that instance's Damage |
+| `RollingBoulderPower.get_InstanceType` / `.get_CanonicalVars` | `0x06002810` / `0x06002811` | Independent instances, each with growth Damage 5 |
+| `RollingBoulderPower.AfterPlayerTurnStart` async body | `0x06009ff8` | Increases that instance's Amount by its Damage growth |
 
 ## Regression boundaries
 
@@ -201,19 +213,35 @@ and one-byte-too-small cases check `LocalizedTemplate::truncated()` directly.
 Mixed known and unknown fields preserve the unknown field visibly. An unrelated
 model `{n}` or owner field is never fabricated at the UI boundary.
 
-## Residual inventory and next gate
+## Residual inventory and formal receipts
 
-The four-pack diagnostic has **zero unclassified dynamic slots, zero unsupported
-final-UI field names and zero remaining braces after the owning display route**.
-Its complete per-slot JSON is reproducible with the audit tool. The five numeric
-model defects above were found separately and have new exact regression cases;
-formal verification of their source fixes is pending the next saved checkpoint.
-This inventory is limited to the 935 reviewed UI bindings and the model routes
-that they reach. It is not a claim that every original localization key in every
-event/card/potion has been numerically exhaustively tested.
+The four-pack formal audit has **zero unclassified dynamic slots, zero
+unsupported final-UI field names and zero remaining braces after the owning
+display route**. Every one of its five exact numeric model fixes passed in both
+languages and both resource versions. The complete per-slot report contains
+metadata only: 471,492 bytes, SHA-256
+`7ef69e1fa69129e86b44390127a394144608d94a554a8dc8e6786baa52f4bc26`.
 
-After the next checkpoint is pushed and read back, build `ui_text_regression`,
-run its standalone mode, then run the audit for both versions and both languages:
+| Formal stage4 gate | Result | Journal |
+| --- | --- | --- |
+| Clang Release configuration | Passed | `template-configure-2854a2457cec.json` |
+| Native regression build | Passed | `template-build-4f4d9c170cb6.json` |
+| Standalone CTest | Passed | `template-standalone-fee4d9e4a018.json` |
+| All four original packs + complete catalog | Passed; 34,708 checks per pack | `template-four-packs-02f3d1e3a596.json` |
+
+Every journal was read back with `status=passed`, `returncode=0` and
+`source_changed=false`. Their source digest is
+`c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf`.
+The public validation JSON includes the individual journal/log hashes and actual
+runner/source-input identities.
+
+The remaining prepared numeric follow-up is Rolling Boulder, whose two-instance
+description needs its stage5 gate. This inventory is limited to the 935 reviewed
+UI bindings and the model routes that they reach. It is not a claim that every
+original localization key in every event/card/potion has been numerically
+exhaustively tested.
+
+The complete audit is reproducible after building `ui_text_regression`:
 
 ```sh
 python3 tools/audit_ui_templates.py \
@@ -221,10 +249,10 @@ python3 tools/audit_ui_templates.py \
   --pack eng17=/private/eng17.nsp \
   --pack zhs18=/private/zhs18.nsp \
   --pack eng18=/private/eng18.nsp \
-  --runner build/ui-audit/ui_text_regression \
-  --output build/ui-template-audit.json
+  --runner build/template-verify/ui_text_regression \
+  --output build/template-verify/ui-template-audit.json
 ```
 
-Use `tools/run_logged.py` with that verified checkpoint for the formal build and
-runs. Update this report with the closed journal receipts and remaining numeric
-failures, rather than promoting the earlier diagnostic to a newer test result.
+Use `tools/run_logged.py` with the actual verified checkpoint for subsequent
+formal builds and runs. A later source or test change does not inherit an older
+execution result.

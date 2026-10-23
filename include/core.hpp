@@ -241,6 +241,7 @@ struct CoreObserver {
     void* context=nullptr;
     void(*on_log)(void*,const State&,Log)=nullptr;
     void(*on_enemy_animation)(void*,const State&,int,const char*)=nullptr;
+    void(*on_effect)(void*,const State&,Effect)=nullptr;
 };
 CoreObserver set_core_observer(CoreObserver);
 void notify_enemy_animation(const State&,int slot,const char* trigger);

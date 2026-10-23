@@ -20,6 +20,7 @@
 namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"
+#include "combat_feedback_ui.inc"
 #include "canvas.inc"
 static void world_region_image_key(const State&s,char*out,size_t size){
  // Run models retain names such as Overgrowth; both original-image families
@@ -97,7 +98,8 @@ static void hud(Canvas&c){
     if(const unsigned ascension=world_ascension(s)){
         c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
     }
-    c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(s.hp);t.ch('/');t.number(s.max_hp);
+    const auto health=c.a.combat_health(0);
+    c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
     c.text_fitted(b,41,5,43,8,rgb(255,85,85));
     c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(s.gold);c.text_fitted(b,100,5,25,8,Gold);
     c.nine_ui(U_TopBarBackdrop,127,1,53,20,7,6,7,6);
@@ -340,7 +342,7 @@ void App::render(){
     // lifecycle must not replay when the deck or compendium is dismissed.
     map_visuals.set_open(game,game.world.active&&!title&&!character_select&&!map_preview.open&&
         (game.phase==Phase::Map||map_window.is_open||panel==3),map_clock_ms);
-    Canvas c{*this};sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
+    Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer_overlay(c);return;}
@@ -371,7 +373,7 @@ void App::render(){
         if(map_window.is_open){map_room_cursor=cursor;map_room_scroll=scroll;cursor=map_cursor;scroll=panel_scroll;}
         if(map_window.visible)world_map_window_screen(c);
         if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
-        if(!combat_linger)turn_banner_screen(c);
+        if(!combat_linger||combat_feedback.active)turn_banner_screen(c);
         if(!combat_linger&&!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
         else if(!combat_linger&&!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
         if(paused)native_pause_screen(c);

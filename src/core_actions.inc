@@ -312,6 +312,11 @@ static void resolve(State&s){
         case EffectKind::Finish:finish_extended_card(s);break;
         }
         enemy_check_deaths(s);necro_observe_deaths(s);
+        // Observe settled values, including commands which produce no log
+        // (enemy block, pet interception, side-start block/energy reset).
+        // This callback is read-only and neither adds a saved effect nor RNG.
+        const CoreObserver observer=core_observer;
+        if(observer.on_effect)observer.on_effect(observer.context,s,e);
         if(s.phase!=Phase::Combat&&wr_automatic_choice(s))continue;
     }
 }

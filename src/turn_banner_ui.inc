@@ -48,7 +48,7 @@ static void turn_banner_frame(Canvas&c,TurnBannerPresentation::Frame frame){
     }
 }
 static void turn_banner_screen(Canvas&c){
-    auto&a=c.a;if(!combat_phase(a.game.phase)||a.paused||a.help||a.panel||a.settings_open||a.frontend_confirm||a.map_window.visible||
+    auto&a=c.a;if((!combat_phase(a.game.phase)&&!a.combat_feedback.active)||a.paused||a.help||a.panel||a.settings_open||a.frontend_confirm||a.map_window.visible||
        a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||choice_phase(a.game.phase))return;
     turn_banner_frame(c,a.turn_banner.sample_enemy(a.animation));
     turn_banner_frame(c,a.turn_banner.sample_player(a.animation));

@@ -192,6 +192,12 @@ static void live_power_values(){
     exact_power_line(panache,0,10,{10,"CardsLeft",4});exact_power_line(panache,1,14,{14,"CardsLeft",1});
     if(actual_pack)exact_status(32,expected_power(panache,{10,"CardsLeft",4})+"\n"+expected_power(panache,{14,"CardsLeft",1}));unchanged();
 
+    reset(Character::Ironclad,true);queue_extension(a.game,XOp::Power,int(XPower::RollingBoulder),7);queue_extension(a.game,XOp::Power,int(XPower::RollingBoulder),12);resolve_pending(a.game);snapshot();
+    const char*boulder="ROLLING_BOULDER_POWER.smartDescription";CHECK(status_amount(a.game,0,35)==19);
+    CHECK(a.game.expansion.boulder[0]==7&&a.game.expansion.boulder[1]==12&&model_value(boulder,-1,"Damage")==5);
+    exact_power_line(boulder,0,7,{7,"Damage",5});exact_power_line(boulder,1,12,{12,"Damage",5});
+    if(actual_pack)exact_status(35,expected_power(boulder,{7,"Damage",5})+"\n"+expected_power(boulder,{12,"Damage",5}));unchanged();
+
     reset(Character::Ironclad,true);queue_extension(a.game,XOp::Bomb,50,2);queue_extension(a.game,XOp::Bomb,40,1);resolve_pending(a.game);snapshot();
     const char*bomb="THE_BOMB_POWER.smartDescription";CHECK(status_amount(a.game,0,43)==2&&model_value(bomb,0,"Damage")==50&&model_value(bomb,1,"Damage")==40);
     CHECK(model_value(bomb,-1,"Damage")==40&&model_value(bomb,2,"Damage")==40);
@@ -206,7 +212,7 @@ static void live_power_values(){
     CHECK(model_value(monologue,-1,"StrengthApplied")==0&&model_value(monologue,2,"StrengthApplied")==0);
     exact_power_line(monologue,0,1,{1,"StrengthPower",1,"StrengthApplied",5});exact_power_line(monologue,1,1,{1,"StrengthPower",1,"StrengthApplied",2});
     if(actual_pack)exact_status(RegentStatusStart+int(RPower::Monologue),expected_power(monologue,{1,"StrengthPower",1,"StrengthApplied",5})+"\n"+expected_power(monologue,{1,"StrengthPower",1,"StrengthApplied",2}));unchanged();
-    std::puts("{\"operation\":\"live_power_values\",\"power_models\":5,\"independent_instance_pairs\":3,\"canonical_fallback_checked\":true,\"state_bytes_unchanged\":true}");
+    std::puts("{\"operation\":\"live_power_values\",\"power_models\":6,\"independent_instance_pairs\":4,\"canonical_fallback_checked\":true,\"state_bytes_unchanged\":true}");
 }
 static std::set<std::string> fields(const char*text){
     std::set<std::string>out;for(const char*p=text;*p;++p)if(*p=='{'){

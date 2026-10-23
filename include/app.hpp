@@ -19,6 +19,7 @@
 #include "world_map_window.hpp"
 #include "world_map_act_intro.hpp"
 #include "health_bar.hpp"
+#include "combat_feedback.hpp"
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
@@ -308,6 +309,15 @@ struct App {
     uint32_t next_run_seed(bool* randomized=nullptr);
     Motion motion[MaxEnemies+1]{};
     EnemyPresentation enemy_presentation[MaxEnemies]{};
+    CombatFeedback combat_feedback{};
+    void begin_combat_feedback();
+    void finish_combat_feedback();
+    void sync_combat_feedback();
+    void observe_combat_effect(const State&,Effect);
+    void combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,uint32_t end);
+    HealthBarValues combat_health(int actor)const;
+    EnemyIntent combat_intent(int slot)const;
+    int combat_energy(bool maximum=false)const;
     uint32_t enemy_visual_clock=0,combat_linger_until=0;
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();

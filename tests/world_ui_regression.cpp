@@ -231,6 +231,101 @@ static void original_enemy_command_waits(){
  }
  a.fast_mode=false;
 }
+static void deferred_enemy_values(){
+ static State direct;static SaveData expected;
+ CHECK(sizeof(CombatFeedback)<=8192);
+ for(unsigned fast=0;fast<2;++fast){
+  enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;
+  a.game.enemy_world.models[0].node=0;a.game.enemy_world.models[1].node=1;
+  a.game.energy=0;a.game.block=3;
+  const int hp=a.game.hp;const auto first_intent=enemy_intent(a.game,0),second_intent=enemy_intent(a.game,1);
+  snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(end_turn(direct));CHECK(save(direct,expected));
+  a.input(Key::EndTurn);CHECK(a.combat_feedback.active&&a.combat_feedback.finished&&!a.combat_feedback.overflow);
+  CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  CHECK(a.game.hp<hp&&a.game.energy>0&&a.game.enemies[1].block>0);
+  CHECK(a.combat_health(0).hp==hp&&a.combat_health(0).block==3&&a.combat_energy()==0);
+  CHECK(a.combat_health(2).block==0&&a.combat_intent(0).damage==first_intent.damage&&a.combat_intent(1).damage==second_intent.damage);
+  const uint32_t first=a.enemy_presentation[0].queue[0].earliest,second=a.enemy_presentation[1].queue[0].earliest;
+  const uint32_t lead=TurnBannerPresentation::intent_lead_ticks(fast!=0),impact=TurnBannerPresentation::wait_ticks(150,75,fast!=0);
+  const uint32_t block=second+TurnBannerPresentation::wait_ticks(350,175,fast!=0),done=a.combat_feedback.end_at;
+  snapshot();a.input(Key::Confirm);a.input(Key::EndTurn);unchanged();
+  a.animation=first-lead-1;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent(1).flags);
+  a.animation=first-lead;a.render();CHECK(!a.combat_intent(0).flags&&a.combat_intent(1).flags);
+  a.animation=first+impact-1;a.render();CHECK(a.combat_health(0).hp==hp&&a.combat_health(0).block==3);
+  a.animation=first+impact;a.render();CHECK(a.combat_health(0).hp==hp-(first_intent.damage-3)&&a.combat_health(0).block==0);
+  CHECK(a.hit_start[0]==int(first+impact)&&a.combat_energy()==0);capture(fast?"enemy-values-first-fast":"enemy-values-first");
+  a.animation=second+impact-1;a.render();CHECK(a.combat_health(0).hp==hp-(first_intent.damage-3)&&!a.combat_intent(1).flags);
+  a.animation=second+impact;a.render();CHECK(a.combat_health(0).hp==a.game.hp&&a.combat_health(2).block==0);
+  a.animation=block-1;a.render();CHECK(a.combat_health(2).block==0);
+  a.animation=block;a.render();CHECK(a.combat_health(2).block==a.game.enemies[1].block&&a.combat_energy()==0);
+  a.animation=done;a.render();CHECK(!a.combat_feedback.active&&a.combat_energy()==a.game.energy);
+  CHECK(a.combat_intent(0).flags==enemy_intent(a.game,0).flags&&a.combat_intent(1).damage==enemy_intent(a.game,1).damage);unchanged();
+
+  // The pet absorbs at the same visible impact; its life is not read from
+  // the synchronously advanced canonical turn before that boundary.
+  enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);a.fast_mode=fast!=0;
+  a.game.enemy_world.models[0].node=0;a.game.block=0;a.game.expansion.osty_hp=a.game.expansion.osty_max_hp=5;
+  const int player=a.game.hp;a.last_osty_hp=5;a.input(Key::EndTurn);CHECK(a.combat_feedback.active);
+  const uint32_t pet_hit=a.enemy_presentation[0].queue[0].earliest+impact;
+  CHECK(a.combat_health(MaxEnemies+1).hp==5&&a.combat_health(0).hp==player);
+  a.animation=pet_hit-1;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==5);
+  a.animation=pet_hit;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==0&&a.combat_health(0).hp<player);
+  snapshot();a.reset_presentation();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);unchanged();
+
+  for(int lethal=0;lethal<2;++lethal){
+   enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;
+   for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=0;
+   a.game.block=0;a.game.hp=lethal?enemy_intent(a.game,0).damage+1:1;a.input(Key::EndTurn);
+   CHECK(a.game.phase==Phase::Dead&&a.combat_feedback.active);
+   const uint32_t hit=a.enemy_presentation[lethal].queue[0].earliest+impact,finish=a.combat_feedback.end_at;
+   snapshot();a.animation=hit-1;a.render();CHECK(a.combat_health(0).hp>0&&has(HitKind::Battlefield,0));
+   CHECK(a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy);
+   a.animation=hit;a.render();CHECK(a.combat_health(0).hp==0&&has(HitKind::Battlefield,0));
+   a.animation=finish+1;a.render();CHECK(!a.combat_feedback.active&&!has(HitKind::Battlefield,0));unchanged();
+  }
+
+  enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;
+  for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=0;
+  a.game.enemies[0].hp=1;a.game.thorns=3;a.input(Key::EndTurn);
+  CHECK(a.game.enemies[0].hp==0&&(a.game.enemy_world.models[0].flags&EnemyRemoved));
+  CHECK(a.combat_health(1).hp==1&&!a.enemy_presentation[0].dead&&!a.enemy_presentation[0].removing&&a.enemy_opacity(0)==255);
+  const uint32_t reflected=a.enemy_presentation[0].queue[0].earliest+impact;
+  snapshot();a.animation=reflected-1;a.render();CHECK(a.combat_health(1).hp==1&&!a.enemy_presentation[0].removing);
+  a.animation=reflected;a.render();CHECK(a.combat_health(1).hp==0&&a.enemy_presentation[0].dead&&a.enemy_presentation[0].removing);
+  CHECK(a.hit_start[1]==int(reflected));unchanged();
+ }
+ a.fast_mode=false;
+
+ enemy_visual_fight(EncounterId::FogmogNormal);a.game.enemy_world.models[0].node=0;a.input(Key::EndTurn);
+ CHECK(a.game.enemy_count==2&&a.game.enemies[1].hp>0&&a.combat_health(2).hp==0&&a.enemy_opacity(1)==0);
+ const uint32_t summon=a.enemy_presentation[0].queue[0].earliest;
+ snapshot();a.animation=summon-1;a.render();CHECK(a.combat_health(2).hp==0&&a.enemy_opacity(1)==0);
+ a.animation=summon;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_opacity(1)==255);
+ CHECK(a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id);unchanged();
+ a.animation=a.combat_feedback.end_at;a.render();
+ const uint32_t old_identity=a.enemy_presentation[1].identity,replace=a.animation+10;
+ const int old_hp=a.game.enemies[1].hp;
+ {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback_move(0,0,replace,replace,replace+10);
+  queue_extension(a.game,XOp::EnemyEscape,1);queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::Nibbit),0);resolve_pending(a.game);}
+ CHECK(a.game.enemy_world.models[1].combat_id!=old_identity&&a.combat_health(2).hp==old_hp&&a.enemy_presentation[1].identity==old_identity);
+ snapshot();a.animation=replace-1;a.render();CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255);
+ a.animation=replace;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id);unchanged();
+
+ enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));a.input(Key::EndTurn);
+ CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished);
+ a.animation=a.combat_feedback.end_at;a.render();CHECK(a.combat_feedback.active);
+ {UiCoreObserver observer(a);uint16_t selected=a.game.world_relics.offers[0];CHECK(world_relic_select(a.game,&selected,1));}
+ a.render();CHECK(a.game.phase==Phase::Combat&&!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);
+
+ // A bounded queue may drop intermediate samples, but must retain the
+ // complete canonical result until its scheduled convergence boundary.
+ enemy_visual_fight(EncounterId::NibbitsWeak);a.begin_combat_feedback();auto&f=a.combat_feedback;
+ const uint32_t base=a.animation;auto v=a.combat_health(0);
+ for(unsigned i=0;i<CombatFeedback::Capacity+20;++i){v.block=int(i+1);f.append(0,v,f.identity[0],base+i+1);}
+ CHECK(f.overflow);f.end_at=base+CombatFeedback::Capacity+30;
+ a.finish_combat_feedback();snapshot();a.animation=f.end_at-1;a.sync_combat_feedback();CHECK(a.combat_feedback.active);
+ a.animation=f.end_at;a.sync_combat_feedback();CHECK(!a.combat_feedback.active&&a.combat_health(0).block==a.game.block);unchanged();
+}
 static void feedback_hud_and_merchant(){
  const char*names[]={"ironclad","silent","defect","regent","necrobinder"};
  for(unsigned character=0;character<5;character++){
@@ -250,4 +345,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();deferred_enemy_values();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

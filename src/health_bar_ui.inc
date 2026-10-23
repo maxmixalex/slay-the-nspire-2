@@ -1,16 +1,6 @@
 // Pinned sources: scenes/combat/health_bar.tscn and NHealthBar.cs, v0.111.0.
 // Raw original pixels live only in the owner's optional native UI directory.
 // This adapter preserves those textures' end caps, masks and modulation.
-static HealthBarValues ui_health_values(const State&s,int actor){
- HealthBarValues v;
- if(actor==0){v.hp=s.hp;v.max_hp=s.max_hp;v.block=s.block;v.doom=s.necro.player_doom;}
- else if(actor==MaxEnemies+1){v.hp=s.expansion.osty_hp;v.max_hp=s.expansion.osty_max_hp;v.tracked_block=s.block;}
- else if(actor>0&&actor<=s.enemy_count){const int slot=actor-1;const auto&e=s.enemies[slot];
-  v.hp=e.hp;v.max_hp=e.max_hp;v.block=e.block;v.doom=s.expansion.doom[slot];
-  v.poison_damage=health_bar::poison_next_damage(e.poison,s.silent.powers[unsigned(SPower::Accelerant)]);
-  v.infinite=enemy_infinite_hp(s,slot);
- }return v;
-}
 void App::sync_health_bars(){
  const bool visible=!title&&(combat_phase(game.phase)||int32_t(combat_linger_until-animation)>0);
  if(!visible){if(health_bars_active)for(auto&bar:health_bars)bar.reset();health_bars_active=false;return;}
@@ -21,7 +11,7 @@ void App::sync_health_bars(){
   health_bar_floor=game.floor;health_bar_combat=game.world.combat_count;health_bar_encounter=encounter;
  }
  const uint32_t now=animation*33;
- const auto observe=[&](int slot,uint32_t identity,int width){const auto v=ui_health_values(game,slot);
+ const auto observe=[&](int slot,uint32_t identity,int width){const auto v=combat_health(slot);
   health_bars[slot].observe(identity,v.hp,v.max_hp,health_bar::inner_width(width),now);};
  observe(0,1+unsigned(game.character),62);
  const bool pet=game.character==Character::Necrobinder||game.expansion.osty_max_hp>0;

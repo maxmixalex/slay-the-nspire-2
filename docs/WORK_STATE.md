@@ -1,54 +1,84 @@
 # Work state — 2026-10-23
 
-## Current: feedback integration checkpoint; final delivery still pending
+## Current: feedback fixes integrated; final execution and delivery pending
 
-The first feedback stage was pushed to `work/0.17-world-parity` at
-`069f6d51f37aef3f31d11a6282bd02a61d7afdef`; branch, tree and all 584 file
-hashes/modes were read back. It descended from restored `e8444322`.
-The original reference remains v0.111.0 / 41cef1ea. Main and disabled CI are unchanged.
+Work remains on `work/0.17-world-parity`, restored from `e8444322` and pushed
+through `069f6d51`, `573cb816` and
+`6d2b78ac0984b8d814b9761c8d44c8dc408614e7`. Each checkpoint has an actual
+branch-update receipt, ref readback and exact changed-file/tree hash verification.
+Reference: v0.111.0 / 41cef1ea. Main and disabled remote CI are unchanged.
 
-The frozen first stage has real bilingual v18 resources, original layered energy
-HUD, merchant scene/relaxed character loops and Proceed texture. Both languages
-passed world UI checks. The card-grid A/B and startup phase evidence are in
-`rendering-performance-0.17.md` and `validation-rendering-0.17.json`. These are
-host timings under warm OS conditions, not physical-calculator performance.
-Library frames remained pixel-identical; selection-title fixes intentionally
-change formerly literal tags/templates. Source state/save format stays v15.
+### Completed execution evidence
 
-The current follow-up integrates the split source in Ndless, Web and X11; one
-common art package plus separate English/Chinese files, one bilingual offline
-host, language preference and all boot/preparation/error text. Its bootstrap
-Chinese subset derives from open-licensed Noto, never the game's font. Existing
-monolithic resource files remain readable. v18 validates the same full-file FNV,
-directory, geometry and per-payload checks as v17.
+- `069f6d51`: original energy/merchant/Proceed assets, exact-background small-card
+  cache and glyph-metrics path; actual bilingual UI and controlled card-grid A/B
+  passed. Library full frames have zero pixel differences. Host warm-OS startup
+  profiles attribute about 15–16% to integrity and 75–77% to tile-index checks.
+  All integrity, geometry and payload checks remain enabled. See
+  `rendering-performance-0.17.md` and its machine-readable receipts.
+- `573cb816`: ARM 966,399 bytes, Zehn allocation 16,489,300 bytes (287,916 bytes
+  below 16 MiB); WASM 5,364,750 bytes with fixed 16 MiB memory. Both actual v18
+  locales passed world UI (10,100), event/shop UI (1,462), world event UI (3,656)
+  checks, plus 20 banner checks. Original Nibbit/Louse Normal/Fast command waits
+  and overlapping banners passed. These builds predate the display trace below.
+- The same 573 host stage actually ran split/full/old-v17 language paths through
+  WASM, Chromium offline HTML and X11. Split/full captured frames match; corrupt
+  common/locale payloads and mismatched language are rejected. Browser switching,
+  preference persistence and collection input work. No physical-device claim.
+- `6d2b78ac`: standalone UI-text test and all four 17/18 English/Chinese binding
+  audits passed. Every pack has 935 bindings, 200 dynamic bindings, 230 actual
+  model/UI route calls and 34,708 assertions, with zero unresolved fields.
+  Exact live values for Crimson Mantle, Inferno, Panache, Bomb and Monologue
+  passed, including independent instances and unchanged save bytes. See
+  `ui-template-audit.md` / `validation-ui-templates-0.17.json`.
 
-Event-option hover is now wired into pointer and keyboard ownership, expandable
-pages, explicit original option associations and prepared dynamic relic/card
-values. Its new regression checks are present but have not yet been formally
-run against this follow-up checkpoint. Hover does not prepare offers or consume
-RNG. The final UI template boundary resolves known UI fields, preserves rich
-styles and refuses to silently truncate long model prose. A full binding audit
-is still in progress; do not claim all templates verified until its receipt.
+### Current coherent source stage, awaiting saved-checkpoint execution
 
-Enemy banner/action overlap and cue interruption are implemented. This stage
-adds audited Normal/Fast waits for Nibbit and Louse, independent banner fades
-and real-time merchant loops. Remaining enemies still use the existing clip
-span fallback. Core HP/block/intent settle synchronously: this is not a complete
-original asynchronous effect replay. Merchant GPU candle particles and the
-Necrobinder head flame remain unimplemented. No 95% visual-fidelity claim.
+A small App-only CombatFeedback projection (bounded to 8 KiB) records actual
+settled HP/block/Osty/energy values and shows them at action cues, retaining old
+intents until their owner acts. Nibbit/Louse use audited impact times; other
+models retain the existing move-start timing fallback. Read-only observer data
+never enters State/SaveData and performs no RNG. Added regressions cover both
+speeds, sequential hits, lethal hits, retaliation, slot reuse/summons, choice
+continuation and final convergence. It is not a complete replay of every status,
+card-zone or particle effect. Full regression and ARM memory checks are next.
 
-The real v18 three-file resource total is 93,233,887 bytes vs 180,103,614 for two
-full packs (48.23% saved with both languages). Original payloads round-trip
-byte-for-byte. This does not reach the 30–40 MB resource goal or establish a
-startup speedup. Startup evidence attributes approximately 15–16% to the full
-FNV scan and 75–77% to tile-index validation on the tested host. Keep all checks;
-the user's request was to evaluate the cost, not to silently disable them.
+Event-option hover now has 57 static option rows, 147 relic rows and 39 potion
+extra rows, prepared model references, keyboard/pointer ownership and readable
+pages. The first 573 test exposed an invalid enchantment fixture, now corrected;
+the 6d2 full potion catalog exposed `DARK` instead of `DARK_ORB`, now corrected.
+Both failures remain recorded. Do not label the new event hover gate passed until
+the corrected synthetic/actual-language runs finish. Dusty Tome now previews its
+upgraded reward while retaining base-card extras, matching its original setter.
 
-Next: push/read back this coherent stage before formal builds; run event hover,
-locale, host split, ARM/WASM memory, original UI and integration checks in frozen
-source directories, then persist the final source and private deliverables.
-Original PCK/DLL/device images, generated packs, screenshots and embedded HTML
-must remain outside the public source repository.
+The UI template boundary resolves known UI fields, both Hotkey spellings,
+contextual selection amounts and nested choice/plural expressions; it preserves
+rich styles and long unknown model text. The follow-up adds independent Rolling
+Boulder descriptions and removes duplicate manual Bomb/Monologue summaries.
+Status readers have room for all 16 independent descriptions.
+
+### Resource and delivery boundaries
+
+The actual v18 split resources total 93,233,887 bytes (86,870,047 common,
+1,794,081 English, 4,569,759 Chinese), versus 180,103,614 for two full packs:
+48.23% saved when both languages are installed. Original encoded payloads
+round-trip exactly. This does not reach the earlier 30–40 MB goal or establish
+faster cold startup. The small split header check does not replace Content's
+complete integrity/structure pass. Startup metrics now explicitly cover selected
+resource validation and app initialization, excluding language-choice waiting,
+pre-selection file opening and the Ndless/Zehn loader.
+
+All eight boot stages, preparation, errors, language controls and web shell have
+English/Chinese coverage. The boot font is the open-licensed Noto subset, whose
+OFL must accompany calculator and HTML delivery. Legacy monolithic packs and v15
+saves remain supported. Merchant candle particles, Necrobinder flame and focus
+outline skin remain outstanding; no overall 95% fidelity claim.
+
+Next: persist/read back this stage before long validation, run its event/UI/text
+regressions and ARM/WASM gates in frozen trees, execute the final launcher in the
+restored isolated Firebird environment, then package and verify the bilingual
+calculator bundle and one offline HTML. Original PCK/DLL/device images, generated
+packs, screenshots, private IL and embedded HTML stay outside the public repo.
 
 # Work state — 2026-10-21
 

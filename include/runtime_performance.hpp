@@ -71,7 +71,7 @@ struct RuntimePerformance {
             void timing(const char*key,const RuntimeTiming&t){ch('"');text(key);text("\":{");field("count",t.count);ch(',');field("total",t.total);ch(',');field("min",t.minimum);ch(',');field("max",t.maximum);ch('}');}
         } w{sink,context};
         if(!sink)return false;
-        w.text("{\"format\":\"nspire-runtime-perf-1\",\"units\":\"timer_ticks\",\"clock\":\"foreground_SP804\",\"startup_scope\":\"file_open_and_app_init\",");
+        w.text("{\"format\":\"nspire-runtime-perf-1\",\"units\":\"timer_ticks\",\"clock\":\"foreground_SP804\",\"startup_scope\":\"selected_resource_validation_and_app_init\",");
         w.field("clock_hz",clock_hz);w.ch(',');w.field("hardware",hardware);w.ch(',');w.field("ndless_revision",ndless_revision);w.ch(',');w.field("pack_bytes",pack_bytes);w.ch(',');
         w.timing("startup",startup);w.ch(',');w.timing("first_render",first_render);w.ch(',');w.timing("first_present",first_present);
         w.text(",\"startup_phases\":{");

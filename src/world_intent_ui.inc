@@ -13,7 +13,7 @@ static int ui_intent_image(const App&a,const UiIntentPart&part,const EnemyIntent
  return a.content.world_image("intents",part.image);
 }
 static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
- auto intent=enemy_intent(c.a.game,slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
+ auto intent=c.a.combat_intent(slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
  if(!count)return;int size=mn(14,mx(9,pos.width/int(count))),left=pos.x-int(count)*size/2;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){c.picture(ui_intent_image(c.a,part,intent),left,pos.intent,size,size);left+=size;}
  if(intent.flags&EnemyIntentAttack){
@@ -30,7 +30,11 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
 static void enemy_intent_tooltip(Canvas&c){
  auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||!combat_phase(a.game.phase)||!a.game.enemy_world.active)return;
  const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::EnemyIntent&&hit->kind!=HitKind::Enemy))return;
- int slot=hit->value;if(slot<0||slot>=a.game.enemy_count||a.game.enemies[slot].hp<=0)return;auto intent=enemy_intent(a.game,slot);
+ int slot=hit->value;if(slot<0||slot>=a.game.enemy_count||a.combat_health(slot+1).hp<=0)return;auto intent=a.combat_intent(slot);if(!intent.flags)return;
+ // Localization resolves live combat parameters. During a deferred enemy
+ // side its canonical values already belong to the next turn; do not open
+ // a contradictory tooltip over the retained old intent.
+ if(a.combat_feedback.active)return;
  char body[2048]{};TextBuffer text{body,sizeof body,0};
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){char key[96]{},line[512]{};TextBuffer b{key,sizeof key,0};b.text(part.locale);b.text(".description");a.localized_text("intents",key,line,sizeof line,slot,slot+1);
   if(text.n)text.ch('\n');text.text(*line?line:a.content.world_title("intents",part.locale));}

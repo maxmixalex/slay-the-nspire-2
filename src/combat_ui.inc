@@ -78,13 +78,13 @@ static void combat_actors(Canvas&c){
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
         if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,112,123,elapsed,true,false);
-        else if(s.expansion.osty_hp>0)c.clip(AnimOstyIdle,112,123,a.animation*33);
+        else if(a.combat_health(MaxEnemies+1).hp>0)c.clip(AnimOstyIdle,112,123,a.animation*33);
         else c.ui(U_OstyPortrait,103,109,18,18,100);
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
         if(s.enemy_world.active&&!a.enemy_opacity(i))continue;
-        const auto*v=s.enemy_world.active?world_enemy_visual(unsigned(s.enemy_world.models[i].kind)):nullptr;
+        const auto*v=s.enemy_world.active?world_enemy_visual(a.enemy_presentation[i].model):nullptr;
         if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
         if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s.enemy_count,i);Canvas actor=c;
@@ -123,7 +123,7 @@ static void combat_energy_layer(Canvas&c,int image,int angle,bool empty){
     }
 }
 static void combat_energy(Canvas&c){
-    auto&a=c.a;const auto&s=a.game;const bool empty=s.energy==0;
+    auto&a=c.a;const auto&s=a.game;const int energy=a.combat_energy();const bool empty=energy==0;
     const uint32_t delta=a.map_clock_ms-a.energy_rotation_tick;
     a.energy_rotation_mdeg=(a.energy_rotation_mdeg+(delta%72000u)*(a.energy_rotation_zero?5u:30u))%360000u;
     a.energy_rotation_tick=a.map_clock_ms;a.energy_rotation_zero=empty;
@@ -134,7 +134,7 @@ static void combat_energy(Canvas&c){
             combat_energy_layer(c,a.content.ui_image(first+i),rotates?int((a.energy_rotation_mdeg*unsigned(i)/1000)%360):0,empty);}
     }else c.picture(character_energy_image(a.content,s.character),6,174,42,42);
     const uint16_t outline[]={rgb(77,19,13),rgb(0,79,4),rgb(22,62,100),rgb(120,64,0),rgb(112,45,111)};
-    char label[24]{};TextBuffer b{label,sizeof label,0};b.number(s.energy);b.ch('/');b.number(max_energy(s));
+    char label[24]{};TextBuffer b{label,sizeof label,0};b.number(energy);b.ch('/');b.number(a.combat_energy(true));
     const int size=c.width(label,12)<=37?12:10;const uint16_t edge=empty?rgb(55,24,26):outline[unsigned(s.character)];
     for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy)c.centered(label,6+dx,187+dy,42,size,edge);
     c.centered(label,6,187,42,size,empty?rgb(255,79,67):rgb(255,246,226));
@@ -142,7 +142,7 @@ static void combat_energy(Canvas&c){
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
-    combat_actors(c);c.hp(ui_health_values(s,0),a.health_bars[0],29,129,62);
+    combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],29,129,62);
     if(s.expansion.orb_slots){
         const int count=s.expansion.orb_slots,left=mx(3,60-count*7);
         for(int i=0;i<count;i++){
@@ -154,14 +154,14 @@ static void combat_screen(Canvas&c){
     }
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
-        c.hp(ui_health_values(s,MaxEnemies+1),a.health_bars[MaxEnemies+1],99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
+        c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
     }
     const bool stars=s.character==Character::Regent||s.expansion.stars>0;
     if(stars){c.star_label(s.expansion.stars,3,149,10);c.action(0,147,48,20,UiAction::ShowStars);}
     status_strip(c,0,stars?51:24,149,stars?69:96);
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];const auto pos=enemy_pose(s.enemy_count,i);int x=pos.x;
-        if(!e.hp){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
+        if(a.combat_health(i+1).hp<=0){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);
         if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
         else{
@@ -170,7 +170,7 @@ static void combat_screen(Canvas&c){
             c.text(label,x-pos.width/2+14,pos.intent,10,attacking?Gold:Green,pos.width-11);
             if(a.target==i)c.text("▼",x-5,pos.intent+14,8,Gold);
         }
-        c.hp(ui_health_values(s,i+1),a.health_bars[i+1],x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
+        c.hp(a.combat_health(i+1),a.health_bars[i+1],x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
 
     }
     for(int i=0;i<=s.enemy_count;i++){

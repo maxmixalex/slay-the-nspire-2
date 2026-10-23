@@ -116,11 +116,49 @@ bone/attachment transformations and positive scene X scale.
 Later source changes must be rerun after their own verified checkpoint. Source
 review and resource metadata alone do not establish visual completion.
 
-Remaining limitations are explicit: merchant candle GPU particles and the
-Necrobinder flame shaders are not prebaked. The simulation resolves enemy
-damage, HP, block and next intents synchronously before the visual queue
-plays, so those HUD values can change before the visible hit. The delayed
-hero hurt pose does not fix that missing effect replay. Unreviewed models
-still use clip duration for action occupancy. Fast mode retains the existing
-presentation-clock acceleration for enemy animation/banners. Device frame
-rate requires actual calculator/emulator measurement rather than host timing.
+## Deferred enemy HUD values (next checkpoint; formal verification pending)
+
+The authoritative simulation remains synchronous. An App-only bounded
+`CombatFeedback` projection now observes the settled values after each core
+effect and displays them at the existing enemy animation cues. It stores
+player, Osty and eight enemy health-bar values, energy, the previous intent
+summaries and at most 128 changed-actor samples. A compile-time 8 KiB ceiling
+prevents an accidental full-State copy. None of these fields are serialized,
+and the read-only observer adds neither gameplay effects nor RNG draws.
+
+Nibbit's attacks release HP/block at its original 150 ms animation delay
+(75 ms Fast); Louse Web/Pounce use 200/100 ms after any conditional Uncurl.
+Nibbit Slice gains block after its 350/175 ms attack command. Louse Curl gains
+block after its 250/125 ms trigger delay. Power/block command tails keep the
+already audited cumulative waits, rounded once onto the 33 ms clock. These
+times come from the pinned attack/monster/Block/Power command methods listed
+above; other models use the existing move-start fallback and do not claim
+audited hit or multi-hit timing.
+
+Old intents remain until that enemy's PerformIntent lead-in, then hide until
+the next player-side boundary. Energy resets at that boundary. Health-bar
+tweens, top-bar HP, player hurt, damage numbers and Osty's HP all consume the
+same projection. Canonical enemy removal cannot hide an actor before its
+displayed lethal hit. New/reused slots switch identity with their queued
+values. A lethal player hit retains the battle scene through the effect cue
+before showing the canonical game-over screen.
+
+Loading/resetting presentation discards the trace and reads canonical state.
+Suspended card/relic choices keep the trace open for their continuation. If
+the fixed queue fills, it retains the final captured values and converges at
+the scheduled side boundary. Existing input busy locks cover the scheduled
+feedback endpoint. Added regressions exercise Normal/Fast two-enemy damage,
+block/energy/intent stages, byte-identical saves against observer-free core
+resolution, pet interception, lethal first/second hits, reflected lethal
+damage, summon/reused identity, suspended relic choice and overflow. Only
+Clang syntax checks have run on this new stage before its source checkpoint.
+
+Remaining limitations are explicit: status/power strips and card/pile state
+still read canonical values; this is not a complete replay of every effect.
+Intent tooltips are suppressed during the short deferred side because their
+formatter still binds canonical parameters. Merchant candle GPU particles
+and Necrobinder flame shaders are not prebaked. Unreviewed models still use
+clip duration for action occupancy and the move-start hit fallback. Fast
+mode retains the existing presentation-clock acceleration for enemy
+animation/banners. Device frame rate requires actual calculator/emulator
+measurement rather than host timing.
