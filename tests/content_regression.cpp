@@ -40,8 +40,9 @@ struct AliasGlyph {unsigned cp,size,w,h,advance,encoded;};
 // A minimal valid v5 profile: one shared card image, synthetic aliased images,
 // empty strings and single-frame clips. No original payload is embedded.
 static std::vector<uint8_t> alias_pack(AliasImage first,AliasImage second,const std::vector<uint8_t>&pixels,
-                                     const std::vector<AliasGlyph>&glyphs={},const std::vector<uint8_t>&glyph_bytes={}){
-    constexpr unsigned images=160,strings=66,clips=11,cards=26,ui=56;
+                                     const std::vector<AliasGlyph>&glyphs={},const std::vector<uint8_t>&glyph_bytes={},
+                                     unsigned images=160){
+    constexpr unsigned strings=66,clips=11,cards=26,ui=56;
     const unsigned dir=40+images*16+(unsigned)glyphs.size()*16+strings*8+clips*16+cards*16+ui*4,at=dir+9840;
     std::vector<uint8_t>b(at+pixels.size()+glyph_bytes.size()+1);
     put(b,0,0x3250534e);put(b,4,5);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
@@ -73,11 +74,12 @@ struct AliasProvider {
     ResourceSource source(){return {this,(uint32_t)bytes->size(),read,nullptr};}
 };
 static std::vector<uint8_t> image_pressure_pack(){
-    const AliasImage tiny{1,1,0,2};auto bytes=alias_pack(tiny,tiny,{0x34,0x12});
-    // Distinct payload offsets make 159 real image keys, exceeding the shared
-    // 90-entry limit. Reopening one two-key owner is not cache pressure.
+    const unsigned images=Content::image_capacity_entries()+32;
+    const AliasImage tiny{1,1,0,2};auto bytes=alias_pack(tiny,tiny,{0x34,0x12},{},{},images);
+    // Distinct payload offsets exceed the current public cache capacity.
+    // Reopening one two-key owner is not cache pressure.
     if(bytes.size()%2)bytes.push_back(0);
-    for(unsigned i=1;i<160;++i){
+    for(unsigned i=1;i<images;++i){
         put(bytes,40+i*16,(unsigned)bytes.size());bytes.push_back(uint8_t(i));bytes.push_back(uint8_t(i*31));
     }
     put(bytes,12,(unsigned)bytes.size());hash(bytes);return bytes;
@@ -154,6 +156,7 @@ static void image_cache_aliases(){
     // the tiny alias again before failing the evicted card's real read.
     const auto pressure=image_pressure_pack();auto evictor=std::make_unique<Content>();AliasProvider other{&pressure};
     CHECK(evictor->open(other.source()));CHECK(ranged->image(1).pixels);
+    CHECK(!ranged->image_cached(0)&&ranged->image_cached(1));
     source.fail=true;CHECK(ranged->image(1).pixels);CHECK(!ranged->image(0).pixels);
     CHECK(!ranged->healthy()&&!ranged->image(1).pixels&&!ranged->image(3).pixels);
     CHECK(memory->healthy()&&memory->image(1).pixels); // Other owners stay usable.

@@ -242,7 +242,7 @@ ordinary gameplay stays locked. Private action frames and all five classes'
 merchant/current-energy/zero-energy frames were visually reviewed again.
 Original resources and screenshots remain outside Git.
 
-Remaining limitations are explicit: status/power strips, card/pile state and
+At the `61970600` execution, remaining limitations were: status/power strips, card/pile state and
 pending-choice overlays still follow canonical state. A real choice can
 appear before all queued enemy presentation finishes and can be continued
 immediately; this projection is not a complete phase/effect replay. Intent
@@ -253,12 +253,12 @@ clip duration for action occupancy and the move-start hit fallback.
 Device frame rate requires actual calculator/emulator
 measurement rather than host timing.
 
-## Combat choice barriers — next implementation slice
+## Combat choice barriers — verified native slice
 
 This section describes source following the accepted `61970600` runtime and
-`3bda3cf5` documentation baseline. Formal execution of this slice is pending
-its own verified checkpoint; the historical receipts above retain their
-actual source identities.
+`3bda3cf5` documentation baseline. It was formally executed at verified
+checkpoint `06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d`; the historical receipts
+above retain their actual source identities.
 
 A synchronously prepared combat choice now has a small presentation barrier.
 The existing `CombatFeedback` observer captures the current effect cue when
@@ -301,9 +301,32 @@ copy, new RNG call or SaveData field. Status/power strips and card/pile state
 still follow canonical state; this slice gates choice visibility and
 interaction, and does not claim full command-by-command combat replay.
 
-The added regression source covers Normal/Fast cue boundaries, a mouse press
+The executed regressions cover Normal/Fast cue boundaries, a mouse press
 that crosses overlay appearance, raw stale-token actions, insufficient and
 rejected choices, late answers, Knowledge-to-Toasty consecutive choices,
 unchanged canonical saves/RNG, and loading a suspended choice. It also keeps
-the v18 merchant assertions enabled for append-only v19 resources. These
-are planned execution gates until a closed checkpoint-bound run is recorded.
+the v18 merchant assertions enabled for append-only v19 resources.
+
+| World UI profile | Checks passed | Executed source |
+| --- | ---: | --- |
+| Synthetic | 4,497 | `06c7fd16` |
+| Actual English v18 | 13,951 | `06c7fd16` |
+| Actual Chinese v18 | 13,951 | `06c7fd16` |
+| Actual English v19 | 13,951 | `06c7fd16` |
+| Actual Chinese v19 | 13,951 | `06c7fd16` |
+
+All five journals are closed passed, exit zero, with unchanged frozen source
+and the same source inventory as the shared Clang 18 build. The suite retains
+the earlier lethal-hit, retaliation, summoned/reused-slot, potion input,
+overflow, HUD, merchant and real-time clock checks. Canonical save bytes
+match observer-free core resolution after both ordinary and late answers.
+
+Sixteen private captures were visually inspected across both languages,
+Normal/Fast, Toasty-before/ready, Knowledge-ready and the following Toasty
+choice. The corresponding 16 independently generated v19 choice captures
+are byte-identical to v18. Before the barrier the battle and banner remain
+visible; at the barrier the selection is rendered and receives input. The
+exact journal/log, binary, resource and capture hashes are recorded in
+`validation-choice-barriers-0.17.json`. No original art is published there.
+These native gates are not target-device execution or an overall visual
+parity percentage.
