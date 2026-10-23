@@ -3,11 +3,20 @@
 ## Scope and current verification status
 
 The inventory reads every one of the **935 UI binding slots** in both private
-NSP2/17 locale packs and their NSP2/18 replacements. Each pack has **200 dynamic
+NSP2/17 locale packs and their NSP2/18 and NSP2/19 replacements. Each pack has **200 dynamic
 bindings, 735 static bindings and 35 distinct named fields**. All dynamic bindings
 have a known display route. The Chinese UI string table is byte-identical between
 17 and 18; the English UI string table is also byte-identical between 17 and 18.
 The new graphics profile does not implicitly repair template binding.
+
+The v19 merchant extension was formally checked at
+`06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d` through both actual language packs.
+Each passed all 935 bindings, 200 dynamic bindings and **34,723 assertions**,
+with zero unresolved fields; both UI-table digests remain unchanged. Journal
+`merchant-template-v19-909beab2d1d8` is closed passed with unchanged frozen
+source and a verified log hash. The current platform receipt records this
+separate execution identity; later intent-slot changes are not relabelled as
+a new execution of the complete binding audit.
 
 `tools/audit_ui_templates.py` validates the public binding/index catalog, reads
 the complete string directory, classifies every dynamic entry, and optionally
@@ -43,6 +52,8 @@ both execution identities, the closed journals and the recovered launch error.
 | eng17 | 78,349,238 | `7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b` |
 | zhs18 | 91,439,646 | `74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b` |
 | eng18 | 88,663,968 | `716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697` |
+| zhs19 | 91,981,954 | `d5ca11af7fb0a2cf95dd6f2aa534ea58e881eb446d9ba006582a1ee90e6dd850` |
+| eng19 | 89,206,276 | `7d5b124d8af605bae9766019bbf6c7a5f14c9ecac464c464244833f08e31f10f` |
 
 The UI-table digest includes each slot number, its UTF-8 length and its exact
 text bytes in slot order:

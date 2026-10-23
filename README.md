@@ -10,7 +10,7 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current feedback work
 
-The current resource extension is **NSP2/18**. One launcher can use one shared
+The current resource extension is **NSP2/19**. One launcher can use one shared
 art/animation file and either or both language files:
 
 | File | Purpose |
@@ -28,14 +28,22 @@ resource errors have Chinese and English text. See
 [platform-languages.md](docs/platform-languages.md) for browser and native hosts,
 legacy full-pack loading and exact filename rules.
 
-Keep `nSpire2.sav.tns` when upgrading. After confirming the split installation
-works, the old complete `nSpire2.nsp.tns` resource file can be moved out to
-reclaim its space; it is not needed alongside the common and locale files.
+Exit the game normally and keep a backup of `nSpire2.sav.tns` when upgrading.
+TI OS can require temporary space for both copies while replacing the large
+common file. If it rejects the transfer for insufficient space, remove only
+the old `nSpire2.common.tns` before transferring the new common file, then
+finish updating the launcher and both installed locale files. Keep the save
+and language preference files. When migrating from a complete pack with too
+little free space, first back up the old `nSpire2.nsp.tns` to a computer and
+move it off the calculator, then transfer all required new files before launch.
+Otherwise, after confirming the split installation works,
+the old complete `nSpire2.nsp.tns` resource file can be moved out to reclaim its
+space; it is not needed alongside the common and locale files.
 Full integrity and startup structural checks run on every launch, while the
 existing first-use tile-pixel checks remain enabled.
 
-The actual shared resources total **93,233,887 bytes**, versus 180,103,614 bytes
-for two complete NSP2/18 packs: **48.23% less when both languages are installed**.
+The actual shared resources total **93,783,363 bytes**, versus 181,188,230 bytes
+for two complete NSP2/19 packs: **48.24% less when both languages are installed**.
 This is deduplication, not achievement of the 30–40 MB target. Complete integrity,
 directory and payload checks remain enabled; startup measurements distinguish
 host cache conditions from calculator-emulator execution.
@@ -43,13 +51,20 @@ host cache conditions from calculator-emulator execution.
 Current fixes include explicit event-option tooltips, contextual rich-text and
 template substitution, scaled card focus geometry, original energy/intent/banner
 composition, merchant body interaction and shop animations, and the original
-Proceed artwork. Enemy HP, block, energy and intent display use a small read-only
-presentation trace instead of jumping immediately to the simulation's final
-values. Exact coverage and remaining gaps are recorded in
+Proceed artwork. Combat selections now wait for their effect cue, and intent
+tooltips follow the visible actor, including slot replacement. Merchant focus
+uses the original outline skin and sampled candle layers. Startup reuses
+validated metadata without reducing any integrity or structural checks.
+Enemy HP, block, energy and intent display use a small read-only presentation
+trace instead of jumping immediately to the simulation's final values.
+Status/power strips and card/pile state still need equivalent presentation work.
+Exact coverage and remaining gaps are recorded in
 [feedback-ui-0.17.md](docs/feedback-ui-0.17.md),
 [event-option-tooltips.md](docs/event-option-tooltips.md),
 [ui-template-audit.md](docs/ui-template-audit.md) and
 [rendering-performance-0.17.md](docs/rendering-performance-0.17.md).
+The merchant's finite six-second flame samples and remaining GPU particles are
+described in [merchant-effects-0.17.md](docs/merchant-effects-0.17.md).
 Original UI fidelity is the first priority; neither overall 95% acceptance nor
 physical calculator FPS has been established.
 
@@ -69,7 +84,7 @@ Source22 [`5d177be7`](https://github.com/zyf722/slay-the-nspire-2/commit/5d177be
 
 The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current source accepts the full NSP2/18 extension and retains old complete-pack readers, including the verified bilingual NSP2/17 packs. Saves remain **v15**, with historical v3–v14 readers; resource-storage and save versions are independent. The browser preserves the existing v15 save key. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extension in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current source accepts the full NSP2/19 extension and retains old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Saves remain **v15**, with historical v3–v14 readers; resource-storage and save versions are independent. The browser preserves the existing v15 save key. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extensions in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 

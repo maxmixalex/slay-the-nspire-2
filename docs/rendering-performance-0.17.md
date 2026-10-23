@@ -1,5 +1,200 @@
 # Card rendering and startup measurements — 2026-10-23
 
+## Startup metadata reuse: implemented and measured at `06c7fd16`
+
+The next startup optimization is implemented without disabling any validation
+or enlarging resident allocations. It reuses spare directory memory for
+descriptor rows and validated index-record summaries. A same-input v18 split
+resource comparison observes fewer file requests in both languages. Warm-host
+complete-open medians fell by **3.95% for Chinese and 3.40% for English**;
+the timing ranges overlap substantially, so these modest host observations do
+not establish a calculator cold-start improvement.
+
+### Exact execution and measurement boundary
+
+The baseline core is `61970600a8d3f7fb2833af13f82f09c86105ebec`; the saved,
+executed candidate core is `06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d`.
+One identical `resource_open_benchmark` object was compiled with Clang 18.1.3,
+C++17 and Release `-O3 -DNDEBUG`, then linked separately to the two frozen core
+libraries. Both use the same receipt-bound v18 common and Chinese/English
+locale files. The newer v19 merchant resources are not part of this A/B.
+
+After one excluded warmup per binary and language, seven rounds alternate
+binary and language order. All **28 measured opens and four warmups** run in
+fresh processes, with other team builds, browser work and emulator work paused.
+Hashing the input files before timing intentionally warms host filesystem
+caches. The accepted report also verifies unchanged input and binary hashes
+afterward, complete phase counters, zero read failures and identical FNV-phase
+file requests between versions.
+
+The interval covers `SplitResourceSource::open` and `Content::open`. It excludes
+file opening/length discovery, allocation of the `Content` object, progress
+drawing, `App::init`, language preference writes and first render. This is
+steady-clock host wall time, not a CPU profile. File callbacks, requested bytes
+and seeks describe the production ranged FILE adapter; they are not physical
+disk transfers. These boundaries differ from the earlier Firebird sample's
+selected-resource validation and App-initialization interval.
+
+### Observed time and deterministic read reduction
+
+Times are milliseconds. Ranges show the minimum and maximum of seven measured
+opens, not confidence intervals.
+
+| Language / scope | Baseline median | Candidate median | Median reduction | Baseline range | Candidate range |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Chinese complete open | 796.041 | 764.588 | 3.95% | 743.189–838.358 | 746.011–821.701 |
+| English complete open | 769.710 | 743.533 | 3.40% | 716.220–830.187 | 727.590–827.891 |
+| Chinese tile-index phase | 566.783 | 554.114 | 2.24% | 546.247–624.050 | 520.954–604.872 |
+| English tile-index phase | 554.148 | 529.195 | 4.50% | 523.602–605.111 | 525.263–608.077 |
+
+The deterministic request changes are a stronger result than attributing all
+of the wall-time difference to the new code. Per-phase request counters are
+identical across each version's seven runs:
+
+| Scope | Baseline file callbacks | Candidate file callbacks | Baseline requested bytes | Candidate requested bytes | Baseline → candidate seeks |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Chinese tile-index phase | 1,382 | 1,155 | 10,476,206 | 10,008,974 | 939 → 937 |
+| English tile-index phase | 1,382 | 1,155 | 10,476,206 | 10,008,974 | 942 → 937 |
+| Chinese complete open | 10,091 | 9,864 | 142,988,701 | 142,521,469 | 6,248 → 6,246 |
+| English complete open | 9,433 | 9,206 | 137,514,113 | 137,046,881 | 6,239 → 6,234 |
+
+Each language eliminates **227 tile-index file requests (16.43%) and 467,232
+requested bytes (4.46%)**. The complete-open totals include the split adapter's
+five unphased requests, 212 bytes and four seeks. The FNV phase still completes
+all 91,439,606 Chinese / 88,663,928 English body bytes. Its FILE counters and
+the retained-image phase's FILE counters are unchanged. Unmodified phases also
+show timing variation, including a 7.72% lower English FNV median, which must
+not be presented as a hash optimization. No statistical confidence or target
+speed ratio is claimed from these seven-round host observations.
+
+### Reuse and validation coverage
+
+The implementation borrows the unused tail of the existing 2 MiB directory
+buffer during startup. It optionally copies the complete 16-byte descriptor
+table once and derives up to 64 per-group summaries, each containing an exact
+record offset, exact record length, minimum acceptable width and row count.
+The summary occupies 768 bytes and is replaced for each index group.
+Binary search replaces repeated scans from a group's first variable-length
+record. The already required generic geometry traversal produces the summary;
+it still checks every record, including records not referenced by an image.
+
+After that traversal, each image must still satisfy its exact row count,
+minimum width and exact tile-grid byte count. Every descriptor is checked for
+the correct shared header, group, bounds and exact record boundary/length.
+Aliases with conflicting image shapes retain the original independent-check
+path. The first-use tile checks still validate actual tile dimensions, edge
+padding, alpha requirements and reconstructed output size. Summary reuse does
+not mark pixel payloads as already decoded or validated.
+
+For the actual v18 Chinese directory, the available tail is 953,513 bytes.
+The existing grouped lists use 233,088, the summary uses 768 and the descriptor
+copy uses 462,560, leaving 257,097 bytes unused. Other legal directories can
+omit the descriptor copy, then the summary, or fall back to the original
+sequential path when space is insufficient. No persistent validation cache,
+new global buffer, larger `Content` allocation or larger image/group pool is
+introduced. Reopen and failure continue to clear owner state.
+
+The integrated `06c7fd16` ARM link separately reports **16,513,264 bytes** of
+Zehn allocation, leaving **263,952 bytes** below 16 MiB. This total includes
+the concurrent UI/resource-version work; it is not a measurement of the
+summary's temporary workspace. The ARM build is a passed compile/allocation
+gate, not a target startup measurement.
+The later intent-slot correction at `4f50193b` links at **16,513,432 bytes**,
+leaving **263,784 bytes**. Its `content.cpp`, `content_tiles.inc` and
+`resource_source.cpp` are byte-identical to `06c7fd16`; it does not replace
+the A/B's actual execution identity.
+
+### Separate same-v18 Firebird observation
+
+The candidate `06c7fd16` also completed a Chinese Firebird invocation with the
+same 91,439,646-byte v18 virtual resource, exported through ordinary emulated
+USB. Its profile has one sample for startup and each phase, a 32,768 Hz SP804
+clock, and zero resource-read failures:
+
+| Observed scope | Timer ticks | Simulated seconds |
+| --- | ---: | ---: |
+| Selected-resource validation and App initialization | 1,618,575 | 49.394989 |
+| Full-body integrity | 755,499 | 23.056000 |
+| Retained image validation | 408,394 | 12.463196 |
+| Tile-index validation | 398,390 | 12.157898 |
+
+This invocation started from a fresh OS boot and Ndless installation, using a
+copy of the earlier closed flash image, without an initial RAM snapshot. The
+resource files already existed, and host caches were not flushed. It is a
+**separate target observation, not a controlled cold-start A/B** against the
+earlier `61970600` sample of 50.472626 seconds. The two invocations differ in
+cache history and integrated runtime. Their numerical difference is not
+reported as a causal or repeatable startup speedup.
+
+As in the earlier target profile, the interval begins after language selection
+and includes validation, progress drawing and App initialization. It excludes
+language-selection waiting, Ndless/Zehn loading and first render. The latter
+is separately 24,171 ticks / 0.737640 seconds here. The invocation-wide
+resource totals include work after initialization; they do not supply a
+target per-phase I/O/CPU breakdown. The same-input host request reductions
+above must not be substituted for measurements of target storage traffic.
+
+The exported `v18-control.perf.json` is 4,323 bytes, SHA-256
+`b3a5277aaed46a4c498b71c723b70e61538953fa1511fba8c26978e9ce307cf3`.
+Its execution journal, `merchant-firebird-v18-control-63403a59129e`, is closed
+passed with unchanged frozen source and an independently matching log hash.
+The final `4f50193b` runtime with v19 resources has a separate platform receipt;
+it is not substituted into either this same-v18 observation or the host A/B.
+
+### Verification and retained failures
+
+At `06c7fd16`, the tiled-content suite passes **13,941,796 checks**. Its new
+cases cover the descriptor table larger than the reader cache, reversed
+record lookup order, unreferenced invalid descriptors, wrong record boundaries
+and lengths, too-narrow shapes, wrong row counts, different tile grids,
+conflicting-shape aliases, first-use invalid edge tiles, metadata read failure
+after FNV, successful reopen and all workspace fallback levels. The large
+fixture bounds descriptor-phase reads without imposing a fragile timing
+threshold. Resource-source and split-source suites pass 8,606 and 1,014 checks.
+
+Actual v18 Chinese/English memory-versus-file validation passes 352,068 and
+306,748 checks. Each compares 128 selected images (8 retained and 120 tiled;
+2,206,189 decoded bytes), the full glyph/string/clip catalogs and 40 UI frames.
+These selected image comparisons are not an all-47,183-image pixel traversal.
+Both opens still validate the entire startup directory and index catalog.
+
+The first aggregate synthetic run is retained as failed: its cache-pressure
+fixture still assumed 90 entries while the real cache holds 320. The unchanged
+fixture fails at the same assertion when linked to the saved `61970600` core.
+The correction uses `Content::image_capacity_entries() + 32` distinct images
+and explicitly checks eviction before injecting the read failure; it preserves
+the failure, other-owner-health and reopen assertions. That test-only change
+was saved in `89dc0f80fc48a78bd8bae49041343442d2764aea`; its corrected execution
+passes **1,554 checks** at the later frozen runtime
+`4f50193b212bb5d27e4a7e82deaa7622a5d4757d`, with a closed journal, unchanged
+source and matching log hash. That execution is not retroactively assigned
+to `06c7fd16`.
+
+The cache-age executable initially could not launch because its mode was
+0644. A logged permission-only repair to 0755 preserved the executable SHA-256;
+the subsequent independent run passes 1,953 checks. The original failed CTest
+journal remains failed.
+
+The first A/B command's outer journal says passed, but independent readback
+found only 27 measured samples, a still-running inner report and a log hash
+that did not match the outer journal. No surviving benchmark child or temporary
+report was found. That attempt is **not accepted** and its files are preserved;
+the cause is unproven. The accepted repeat uses a different output, checks
+28 + 4 successful child results and final report status inside the command,
+flushes the final report, and independently verifies its report and log hashes.
+It does not combine samples from the incomplete attempt.
+
+The metadata-only receipt [validation-startup-reuse-0.17.json](validation-startup-reuse-0.17.json)
+records execution identities, all accepted timing samples and request counts,
+resource/artifact hashes, closed journals and these rejected/failed attempts.
+The earlier rendering and target observations below retain their original
+identities and values. **Full-body FNV, startup structure/alias checks and
+first-use payload checks remain enabled.** Combining the FNV stream with
+later encoded-record validation remains a separate, unimplemented optimization;
+this metadata slice does not remove their repeated payload reads.
+
+## Earlier card-rendering slice at `069f6d51`
+
 The rendering changes remove repeated small-card composition and glyph-pixel
 reads during text measurement. The two static Chinese grid scenes made **zero
 resource-source callbacks over their 180-frame warm windows**; both languages
@@ -113,15 +308,17 @@ largest single target stage. The different resource versions, execution
 environments and cache histories do not form a startup A/B comparison. No
 validation policy was changed in either measurement.
 
-## Target startup observation and validation decision
+## Earlier target startup observation and validation decision at `61970600`
 
-**Decision for the current resource format: retain the full-body FNV check,
+**Decision for the current resource format, retained by `06c7fd16`: retain the full-body FNV check,
 all startup structure checks, and the existing first-use decoder checks.
 Prioritize removing repeated reads and repeated traversal while keeping their
 coverage.** This is an evaluated decision, not an assumption that validation
 is free or that it has already been disabled. The observed approximately
 50-second selected-resource initialization remains a performance problem;
 visible progress and this assessment do not constitute a startup speedup.
+The bounded-metadata follow-up is now implemented and measured separately
+above; the rest of this section preserves the earlier target assessment.
 
 ### Final target sample and its limits
 

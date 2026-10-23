@@ -1,11 +1,11 @@
 # Work state — 2026-10-23
 
-## Current: second UI implementation validated; final slot-identity fix pending execution
+## Current: final v19 bilingual runtime and target flow verified; delivery in progress
 
 The second implementation stage is saved and executed at
 `06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d`. Test/report checkpoint
-`89dc0f80fc48a78bd8bae49041343442d2764aea` is also pushed, read back and
-verified against all three changed file blobs/modes. Main and disabled CI
+`5c884a2f1108c1c42e2114716f3a5a3192431fdf` is also pushed, read back and
+verified against all changed file blobs/modes. Main and disabled CI
 remain unchanged. Continue parallel work; original UI fidelity remains first.
 
 Implemented at `06c7fd16`:
@@ -30,8 +30,9 @@ Closed execution at `06c7fd16`: world UI passes 4,497 synthetic checks and
 passes 498. v19 UI template routes pass 34,723 checks per language, covering
 935 bindings and 200 dynamic bindings with zero unresolved values. Actual
 WASM v19 split/full frames match in ten pairs; both v17/v18 languages load,
-and wrong-language plus common/locale corruption are rejected. The v19 HTML
-has been packaged but has not yet completed this stage's browser acceptance.
+and wrong-language plus common/locale corruption are rejected. These results
+retain their original execution identity. Final runtime `4f50193b` subsequently
+passed actual offline Chromium acceptance with its own v19 HTML.
 
 Merchant conversion, preservation/split and actual-asset rendering gates are
 closed. The independent original shader-graph comparison measures at most
@@ -44,20 +45,67 @@ The v19 split is 87,405,187 bytes common, 1,801,249 English and 4,576,927 Chines
 93,783,363 bytes total. Both reconstructed full streams are byte-identical to
 the converted packs. Conversion remains `06c7fd16`; save format remains v15.
 
-An independent review found one remaining visible slot-reuse defect: at a
-replacement cue the new enemy identity could inherit the old occupant's
-projected intent. A minimal correction clears only that stale slot intent,
-preserving normal final convergence; the real Fogmog/Eye replacement fixture
-is being extended for Normal/Fast. Persist this correction before its native,
-ARM and WASM validation. Do not relabel earlier `06c7fd16` executions as the
-corrected runtime. Final v19 bilingual Firebird Continue/save/80 ms Enter exit
-and new deliverables wait for that corrected launcher.
+An independent review found and fixed the visible slot-reuse defect: a new
+enemy identity could inherit the old occupant's projected intent. Runtime
+`4f50193b212bb5d27e4a7e82deaa7622a5d4757d` clears only that stale slot intent,
+preserving final convergence and adding no fields. Its native/ARM/WASM builds
+and final bilingual world-text, WASM compatibility/corruption and actual
+Chromium language/collection flows are closed passed. ARM is 978,599 bytes,
+SHA-256 `878fee0120b0c6e2edb4c652021911403f58bf476055370a9e1552d5b0bd3a74`,
+with allocation 16,513,432 bytes and 263,784 bytes of margin below 16 MiB.
+WASM is 5,388,416 bytes, SHA-256
+`2e025eddd673e2b2d28f72bd567cecb4285e4969e1e12e774eea76cb76da0072`.
+
+The real Fogmog/Eye slot fixture passes Normal/Fast intent, hit-region,
+Tooltip-title and unchanged-save checks in both v19 languages. Its initial
+synthetic rename-pixel assertion failed because the synthetic profile has no
+glyphs. Test-only checkpoint `5c884a2f1108c1c42e2114716f3a5a3192431fdf`
+requires rendered title change with actual packs and explicitly checks the
+synthetic absence of glyphs, retaining every other assertion. It links the
+unchanged 4f core after verifying all 512 other recorded source inputs. Final
+synthetic/English/Chinese runs pass 4,598 / 4,614 / 4,614 checks. No screenshots
+were requested in those runs, so counts omit capture I/O checks and cannot be
+compared directly with the earlier capture-enabled totals. Keep the initial
+failed journal and the independently passed pre-fix actual-pack runs.
+
+Final v19 bilingual Firebird Continue/save/80 ms Enter exit is closed passed
+with the exact 4f launcher on CX II CAS / OS 6.4.0.74 / Ndless r2022. Both
+languages continued the original Neow save, saved normally, used Save and Quit,
+then held Enter for 80 ms at the title Quit confirmation. Both remained in the
+OS document browser seven simulated seconds after release. All four installed
+files were completely read back over USB and matched their source bytes.
+The original save and both final 230,088-byte v15 exports are byte-identical,
+SHA-256 `9965d829dd1231146cdc7ee75c1d0e6a0ce07556dc1819b4f9d3ed0c46911d4c`;
+the exact 4f core also loaded, validated and re-encoded all three identically.
+Language preferences are exactly `NSL1zhs\n` and `NSL1eng\n`.
+
+An ordinary USB replacement of the large common resource was rejected by
+TI OS for temporary storage space before transfer. The failed attempt is
+preserved. Removing the old resources in the isolated working image before
+upload allowed the complete update; existing save/preferences were retained.
+Installation instructions explain this observed upgrade case. A first save
+validator build failed to launch because unversioned `clang++` was absent;
+the separate Clang 18 retry and all three save roundtrips passed. The original
+baseline NAND image is unchanged. None of these emulator results is physical
+calculator acceptance.
+
+Final v19 initialization observed 49.774567 simulated seconds in Chinese and
+48.061584 seconds in English, with zero resource-read failures. Chinese full
+FNV validation alone took 23.175323 seconds. USB readback had warmed host
+caches, English followed Chinese, and neither cache state was controlled.
+The timer covers selected-resource validation and App initialization only;
+it excludes OS boot, Ndless installation, initial file opening, language
+selection waiting and the first frame. These observations are not a cold A/B
+or evidence of physical-device acceleration. Full execution identities,
+closed journals and retained failures are in
+`validation-platform-ui2-0.17.json`. Final artifact packaging remains in progress.
 
 The old content cache-pressure fixture failed at `06c7fd16` and reproduced at
 baseline `61970600`: it created 159 keys against today's 320-entry cache. The
 `89dc0f80` test-only correction uses public capacity plus 32 and asserts actual
-eviction before testing failed reads. It awaits execution with the next
-runtime build; neither earlier failed journal is changed to passed. The
+eviction before testing failed reads. Its 4f runtime execution is closed passed
+with 1,554 checks (`startup-content-fixture-fixed-82aa9247e26c`); neither earlier
+failed journal is changed to passed. The
 cache-age test's initial non-executable output was separately repaired by a
 mode-only change, preserving its binary SHA, and its retry passed.
 
@@ -76,6 +124,13 @@ incomplete and supplies no accepted speed result; preserve it unchanged. The
 historical Firebird target timings below are not updated from host medians.
 No validation bypass, physical-device cold-start result or whole-game fidelity
 percentage is claimed.
+
+A separate fresh-OS 06c7 + unchanged-v18 Firebird observation is closed passed,
+with zero resource-read failures and normal 80 ms Enter exit. It observes
+49.394989 simulated startup seconds: FNV 23.056000, retained images 12.463196,
+tile indices 12.157898. The host caches were not made cold; it is one emulator
+observation, not a strict cold A/B or a causal speedup against the old 619 run.
+See `validation-startup-reuse-0.17.json` for both exact identities.
 
 The first feedback calculator ZIP and offline HTML were already saved and
 provided to the user from report checkpoint `3bda3cf5`. Their exact identities
@@ -174,7 +229,7 @@ HTML must prove exact equality outside that EOF documentation footer and retain
 
 ### Performance, validation policy and resource size
 
-The controlled warm-host A/B remains the `069f6d51` execution against `e8444322`,
+The controlled warm-host card-rendering A/B remains the `069f6d51` execution against `e8444322`,
 using identical v17 packs, 180 advancing frames per window and unchanged save
 bytes. Mean update+render time fell from 1.047/1.275/2.056 ms to
 0.549/0.639/1.585 ms for Chinese library/removal/choice, and from

@@ -331,7 +331,7 @@ exact journal/log, binary, resource and capture hashes are recorded in
 These native gates are not target-device execution or an overall visual
 parity percentage.
 
-### Reused-slot intents — follow-up source, execution pending
+### Reused-slot intents — verified native follow-up
 
 Independent review after `06c7fd16` found a narrower identity defect: the
 displayed creature and HP changed at a replacement cue, but its retained
@@ -354,6 +354,38 @@ It checks the old icon hit region, values, tooltip title and text before the
 cue; absence of the inherited icon/tooltip at the cue and through the tail;
 and the replacement's intent and title at convergence. Canonical save bytes
 must remain unchanged during presentation. This is a scheduling fixture,
-not a claim that Fogmog normally summons Nibbits. Formal results require the
-next verified runtime checkpoint; the `06c7fd16` results above do not include
-this follow-up.
+not a claim that Fogmog normally summons Nibbits.
+
+Runtime checkpoint `4f50193b212bb5d27e4a7e82deaa7622a5d4757d` passed the
+actual English and Chinese v19 suites, **4,614 checks each**, including the
+new title transition. Its initial synthetic run stopped at the final
+`renamed` pixel assertion: that fixture contains zero glyph records, so both
+names draw a blank title. This failure remains in the record. The test-only
+checkpoint `5c884a2f1108c1c42e2114716f3a5a3192431fdf` restricts that title-pixel
+assertion to actual resource packs and explicitly verifies missing glyphs
+for the synthetic fixture. All identity, intent, hit-region, panel and
+save-byte assertions remain active for every profile.
+
+The corrected test was compiled with the same Clang 18 Release flags and
+linked against the **unchanged `4f50193b` `libspire_core.a`**. The source
+inventory differs only in `tests/world_ui_regression.cpp`; all other 512
+recorded inputs match. No runtime was rebuilt for this fixture correction.
+The final three runs completed:
+
+| Profile | Checks passed | Runtime source | Test source |
+| --- | ---: | --- | --- |
+| Synthetic | 4,598 | `4f50193b` | `5c884a2f` |
+| Actual English v19 | 4,614 | `4f50193b` | `5c884a2f` |
+| Actual Chinese v19 | 4,614 | `4f50193b` | `5c884a2f` |
+
+All final journals are closed passed with unchanged source. The build,
+library, executable, resource, source-inventory and log hashes, together
+with the initial failed synthetic run and initial passed actual-pack runs,
+are recorded in `validation-intent-slot-0.17.json`. These runs omit the
+optional screenshot directory: `capture()` file and per-row I/O assertions
+therefore do not contribute to their counts. Their raw totals cannot be
+compared with the capture-enabled `06c7fd16` totals as a measure of coverage.
+No new transition screenshots were produced; the title checks compare
+actual rendered framebuffer pixels. The earlier choice captures and
+execution above retain their `06c7fd16` identity. This follow-up is native
+validation and does not claim new target-device execution.
