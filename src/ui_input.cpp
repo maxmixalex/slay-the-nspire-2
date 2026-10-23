@@ -206,7 +206,7 @@ void App::ui_action(UiAction action){
     case UiAction::ShowStars:case UiAction::ShowOrbs:case UiAction::ShowOsty:{
         open_statuses(0);if(status_actor<0)break;
         const int wanted=action==UiAction::ShowStars?44:action==UiAction::ShowOsty?45:46;
-        int ids[StatusKinds],n=collect_statuses(game,0,ids);for(int i=0;i<n;i++)if(ids[i]==wanted){status_selected=i;break;}
+        int ids[StatusKinds],n=combat_statuses(0,ids);for(int i=0;i<n;i++)if(ids[i]==wanted){status_selected=i;break;}
         break;}
     case UiAction::MoreStatus:
         if(status_actor>=0)status_scroll=status_scroll>=status_scroll_limit?0:status_scroll+5;break;
@@ -367,7 +367,7 @@ void App::open_statuses(int actor){
 void App::open_status_icon(int encoded){
     if(encoded<0)return;const int actor=encoded/StatusKinds,id=encoded%StatusKinds;
     open_statuses(actor);if(status_actor!=actor)return;
-    int ids[StatusKinds],count=collect_statuses(game,actor,ids);
+    int ids[StatusKinds],count=combat_statuses(actor,ids);
     for(int i=0;i<count;i++)if(ids[i]==id){status_selected=i;return;}
 }
 bool App::status_input(Key key){
@@ -378,7 +378,7 @@ bool App::status_input(Key key){
         int count=game.enemy_count+1;
         status_actor=(status_actor+(key==Key::Left?count-1:1))%count;status_selected=status_scroll=status_scroll_limit=0;
     }
-    int count=collect_statuses(game,status_actor,nullptr);
+    int count=combat_statuses(status_actor,nullptr);
     if(key==Key::Up&&status_selected>0){--status_selected;status_scroll=0;}
     if(key==Key::Down&&status_selected+1<count){++status_selected;status_scroll=0;}
     if(key==Key::Confirm)ui_action(UiAction::MoreStatus);

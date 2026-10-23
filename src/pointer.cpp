@@ -102,7 +102,7 @@ void App::pointer_scroll(int rows){
     pointer_cancel();
     if(event_reader){event_reader_scroll=clamp(event_reader_scroll+rows,0,2048);return;}
     if(status_actor>=0){
-        int count=collect_statuses(game,status_actor,nullptr);
+        int count=combat_statuses(status_actor,nullptr);
         status_selected=clamp(status_selected+rows,0,count?count-1:0);status_scroll=0;return;
     }
     if(map_preview.open&&map_preview.editing)return;

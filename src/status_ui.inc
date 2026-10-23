@@ -1,14 +1,14 @@
 // Original power icons and textured panels, reflowed for a 320x240 display.
 #include "world_status_ui.inc"
 static void status_strip(Canvas&c,int actor,int x,int y,int width){
-    int ids[StatusKinds],count=collect_statuses(c.a.game,actor,ids);
+    int ids[StatusKinds],count=c.a.combat_statuses(actor,ids);
     if(!count)return;
     // NPowerContainer keeps every icon visible. Wrap at the creature's
     // display width; the amount overlaps the icon's lower-right corner.
     // Measure actual amounts, including negative and three-digit stacks.
     int widths[StatusKinds],rows=1,used=0;
     for(int i=0;i<count;i++){
-        char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(ui_status_amount(c.a.game,actor,ids[i]));
+        char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(c.a.combat_status_amount(actor,ids[i],true));
         widths[i]=mx(18,11+c.width(amount,8));
         if(used&&used+widths[i]>width){++rows;used=0;}used+=widths[i];
     }
@@ -18,7 +18,7 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
     used=0;int row=0;
     for(int i=0;i<count;i++){
         if(used&&used+widths[i]>width){++row;used=0;}
-        const int xx=x+used,yy=top+row*12,value=ui_status_amount(c.a.game,actor,ids[i]);
+        const int xx=x+used,yy=top+row*12,value=c.a.combat_status_amount(actor,ids[i],true);
         c.picture(ui_status_image(c.a,ids[i]),xx,yy,11,11);
         char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(value);
         for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.text(amount,xx+9+dx,yy+3+dy,8,Ink);
@@ -30,7 +30,7 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
 static void battle_status_tooltip(Canvas&c){
     auto&a=c.a;
     if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||
-       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||!combat_phase(a.game.phase))return;
+       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.combat_feedback.active))return;
     const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::BattleStatus)return;
     const int actor=hit->value/StatusKinds,id=hit->value%StatusKinds;
     if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds)return;
@@ -42,23 +42,23 @@ static void battle_status_tooltip(Canvas&c){
     else{c.rect(x,y,170,height,Panel);c.box(x,y,170,height,Gold);}
     c.picture(ui_status_image(a,id),x+6,y+5,13,13);
     c.text(ui_status_title(a,id),x+23,y+4,10,Gold,122);
-    c.num(ui_status_amount(a.game,actor,id),x+145,y+4,8,White);
+    c.num(a.combat_status_amount(actor,id,true),x+145,y+4,8,White);
     c.paragraph(body,x+6,y+23,158,shown,0,10,White);
     if(lines>shown)c.text("…",x+151,y+height-13,10,Gold);
 }
 static void orb_status_detail(Canvas&c){
-    const auto&s=c.a.game;
-    char heading[64]={};TextBuffer t{heading,sizeof heading,0,&c.a.content};t.text("槽位 ");t.number(s.expansion.orb_count);t.ch('/');t.number(s.expansion.orb_slots);t.text(" · 被动/激发");
+    const auto&a=c.a;
+    char heading[64]={};TextBuffer t{heading,sizeof heading,0,&c.a.content};t.text("槽位 ");t.number(a.combat_status_fact(CombatStatus::OrbCount));t.ch('/');t.number(a.combat_status_fact(CombatStatus::OrbSlots));t.text(" · 被动/激发");
     c.text(heading,145,115,10,White,155);
-    c.a.status_scroll_limit=s.expansion.orb_slots>5?5:0;
+    c.a.status_scroll_limit=a.combat_status_fact(CombatStatus::OrbSlots)>5?5:0;
     c.a.status_scroll=c.a.status_scroll>=5&&c.a.status_scroll_limit?5:0;
     const int first=c.a.status_scroll;
-    for(int i=first;i<mn(s.expansion.orb_slots,first+5);i++){
+    for(int i=first;i<mn(a.combat_status_fact(CombatStatus::OrbSlots),first+5);i++){
         const int y=135+(i-first)*14;
-        if(i<s.expansion.orb_count){
-            int passive,evoke;orb_values(s,i,passive,evoke);
-            c.ui(orb_image(s.defect.orb_kind[i]),145,y,11,11);
-            c.text(orb_name(s.defect.orb_kind[i]),160,y-1,10,Muted,52);
+        if(i<a.combat_status_fact(CombatStatus::OrbCount)){
+            const int passive=a.combat_status_fact(CombatStatus::OrbPassive,i),evoke=a.combat_status_fact(CombatStatus::OrbEvoke,i);
+            c.ui(orb_image(a.combat_status_fact(CombatStatus::OrbKind,i)),145,y,11,11);
+            c.text(orb_name(a.combat_status_fact(CombatStatus::OrbKind,i)),160,y-1,10,Muted,52);
             char values[32]={};TextBuffer b{values,sizeof values,0,&c.a.content};b.number(passive);b.ch('/');b.number(evoke);c.text(values,215,y-1,10,White,88);
         }else{c.box(146,y+2,8,8,Muted);c.text("空槽位",160,y-1,10,Muted,142);}
     }
@@ -69,18 +69,18 @@ static void status_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.hit_count=0;
     c.dim(0,0,320,240,215);c.ui(U_RewardPanel,4,5,312,233);
     char heading[160]{};TextBuffer hb{heading,sizeof heading,0,&c.a.content};
-    if(a.status_actor>0){hb.text(ui_enemy_name(a,a.status_actor-1));hb.text(" · ");hb.number(s.enemies[a.status_actor-1].hp);hb.ch('/');hb.number(s.enemies[a.status_actor-1].max_hp);}else hb.text("能力与状态");
+    if(a.status_actor>0){hb.text(ui_enemy_name(a,a.status_actor-1));hb.text(" · ");const auto health=a.combat_health(a.status_actor);hb.number(health.hp);hb.ch('/');hb.number(health.max_hp);}else hb.text("能力与状态");
     c.centered(heading,7,9,282,12,Gold);c.close_button(289,10);
     for(int actor=0;actor<=s.enemy_count;actor++){
         int width=300/(s.enemy_count+1),x=10+actor*width;
         char label[48]={};TextBuffer t{label,sizeof label,0,&c.a.content};
-        if(actor){if(s.enemy_count<=4)t.text("敌人 ");t.number(actor);if(!s.enemies[actor-1].hp)t.text(" ×");}
+        if(actor){if(s.enemy_count<=4)t.text("敌人 ");t.number(actor);if(!a.combat_health(actor).hp)t.text(" ×");}
         else t.text(s.enemy_count>4?"我方":character_definitions[(int)s.character].name);
         if(a.status_actor==actor)c.rect(x,54,width-5,1,Gold);
         c.centered(label,x,35,width-5,10,a.status_actor==actor?Gold:Muted);
         c.hit(x,33,width-5,25,HitKind::StatusActor,actor);
     }
-    int ids[StatusKinds],count=collect_statuses(s,a.status_actor,ids);
+    int ids[StatusKinds],count=a.combat_statuses(a.status_actor,ids);
     a.status_selected=mn(mx(0,a.status_selected),mx(0,count-1));
     if(!count){c.centered("当前没有能力或状态",0,113,320,12,Muted);}
     else{
@@ -93,30 +93,30 @@ static void status_screen(Canvas&c){
             c.hit(12,y,116,22,HitKind::StatusItem,i);
         }
         int id=ids[a.status_selected];
-        c.picture(ui_status_image(a,id),145,65,25,25);c.num(ui_status_amount(s,a.status_actor,id),181,66,16,Gold);
+        c.picture(ui_status_image(a,id),145,65,25,25);c.num(a.combat_status_amount(a.status_actor,id,true),181,66,16,Gold);
         c.text(ui_status_title(a,id),145,95,12,Gold,155);
         char description[8192]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0,&c.a.content};while(description[t.n])++t.n;
         if(id==44){
-            t.text("\n辉星跨回合保留。\n本回合获得：");t.number(s.regent.stars_gained_turn);
+            t.text("\n辉星跨回合保留。\n本回合获得：");t.number(a.combat_status_fact(CombatStatus::StarsGained));
         }else if(id==45){
-            t.text("\n最大生命：");t.number(s.expansion.osty_max_hp);
-            t.text("\n本回合攻击：");t.number(s.necro.osty_attacks_turn);
+            t.text("\n最大生命：");t.number(a.combat_status_fact(CombatStatus::OstyMax));
+            t.text("\n本回合攻击：");t.number(a.combat_status_fact(CombatStatus::OstyAttacks));
             t.text("\n召唤可增加生命；倒下后能被重新召唤。");
         }else if(id==DefectStatusStart+(int)DPower::EchoForm){
-            t.text("\n本回合已打出：");t.number(s.defect.physical_started);
+            t.text("\n本回合已打出：");t.number(a.combat_status_fact(CombatStatus::PhysicalStarted));
         }else if(id==DefectStatusStart+(int)DPower::Feral){
-            t.text("\n本回合已触发：");t.number(s.defect.feral_used);
-            t.text("\n本回合剩余：");t.number(mx(0,s.defect.powers[(int)DPower::Feral]-(int)s.defect.feral_used));
+            t.text("\n本回合已触发：");t.number(a.combat_status_fact(CombatStatus::FeralUsed));
+            t.text("\n本回合剩余：");t.number(mx(0,a.combat_status_amount(0,DefectStatusStart+(int)DPower::Feral)-(int)a.combat_status_fact(CombatStatus::FeralUsed)));
         }else if(id==RegentStatusStart+(int)RPower::PaleBlueDot){
-            t.text("\n本回合打出：");t.number(s.regent.cards_finished_turn);t.text(s.regent.pale_activated?" · 已达成":" / 5");
+            t.text("\n本回合打出：");t.number(a.combat_status_fact(CombatStatus::RegentCards));t.text(a.combat_status_fact(CombatStatus::PaleActivated)?" · 已达成":" / 5");
         }else if(id==RegentStatusStart+(int)RPower::VoidForm){
-            t.text("\n本回合剩余免费次数：");t.number(mx(0,s.regent.powers[(int)RPower::VoidForm]-(int)s.regent.void_played_turn));
+            t.text("\n本回合剩余免费次数：");t.number(mx(0,a.combat_status_amount(0,RegentStatusStart+(int)RPower::VoidForm)-(int)a.combat_status_fact(CombatStatus::VoidPlayed)));
         }else if(id==RegentStatusStart+(int)RPower::Orbit){
             t.text("\n独立进度（已花费 / 4）：");
-            for(int i=0;i<MaxPowerInstances;i++)if(s.regent.orbit[i]){t.text("\n");t.number(s.regent.orbit_remainder[i]);t.text(" / 4 → ");t.number(s.regent.orbit[i]);t.text(" 能量");}
+            for(int i=0;i<MaxPowerInstances;i++)if(a.combat_status_fact(CombatStatus::Orbit,i)){t.text("\n");t.number(a.combat_status_fact(CombatStatus::OrbitRemainder,i));t.text(" / 4 → ");t.number(a.combat_status_fact(CombatStatus::Orbit,i));t.text(" 能量");}
         }else if(id==NecroStatusStart+(int)NPower::SpiritOfAsh||id==NecroStatusStart+(int)NPower::Pagestorm){
-            t.text("\n本场已打出虚无牌：");t.number(s.necro.ethereal_played);
-            t.text("\n本回合已抽牌：");t.number(s.necro.drawn_turn);
+            t.text("\n本场已打出虚无牌：");t.number(a.combat_status_fact(CombatStatus::EtherealPlayed));
+            t.text("\n本回合已抽牌：");t.number(a.combat_status_fact(CombatStatus::Drawn));
         }
         if(id==46&&a.status_actor==0)orb_status_detail(c);
         else{

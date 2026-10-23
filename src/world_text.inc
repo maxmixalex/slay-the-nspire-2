@@ -93,7 +93,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(name,"singleStarIcon"))return wt_string(a.content.world_title("static_hover_tips","STAR_COUNT"));
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){
-  if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=wt_equal(x.table,"intents")?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;const auto*d=enemy_definition(kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
+  if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=(wt_equal(x.table,"intents")||wt_equal(x.table,"powers"))?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;const auto*d=enemy_definition(kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
   const auto&character=character_definitions[(unsigned)s.character];const char*title=a.content.world_title("characters",character.key);return wt_string(*title?title:a.content.ui_text(character.name));
  }
  if(wt_equal(x.table,"cards")){
@@ -141,35 +141,35 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"Amount"))return wt_number(x.amount);
   if(x.actor<=0){
    if(wt_equal(name,"SelfDamage")){
-    if(wt_equal(x.model_key,"powers.CRIMSON_MANTLE_POWER"))return wt_number(s.ironclad.crimson_self_damage);
-    if(wt_equal(x.model_key,"powers.INFERNO_POWER"))return wt_number(s.ironclad.inferno_self_damage);
+    if(wt_equal(x.model_key,"powers.CRIMSON_MANTLE_POWER"))return wt_number(a.combat_status_fact(CombatStatus::CrimsonDamage));
+    if(wt_equal(x.model_key,"powers.INFERNO_POWER"))return wt_number(a.combat_status_fact(CombatStatus::InfernoDamage));
    }
    // A compact status icon can represent several independent power models.
    // Its readable description supplies the original instance slot; never
    // use the icon's aggregate count as a model's damage/turn/progress value.
    if(x.model>=0&&x.model<MaxPowerInstances){
-    if(wt_equal(x.model_key,"powers.PANACHE_POWER")&&wt_equal(name,"CardsLeft")&&s.expansion.panache[x.model])
-     return wt_number(5-s.expansion.panache_count[x.model]);
-    if(wt_equal(x.model_key,"powers.MONOLOGUE_POWER")&&s.regent.monologue[x.model]){
-     if(wt_equal(name,"StrengthPower"))return wt_number(s.regent.monologue[x.model]);
-     if(wt_equal(name,"StrengthApplied"))return wt_number(s.regent.monologue_applied[x.model]);
+    if(wt_equal(x.model_key,"powers.PANACHE_POWER")&&wt_equal(name,"CardsLeft")&&a.combat_status_fact(CombatStatus::Panache,x.model))
+     return wt_number(5-a.combat_status_fact(CombatStatus::PanacheCards,x.model));
+    if(wt_equal(x.model_key,"powers.MONOLOGUE_POWER")&&a.combat_status_fact(CombatStatus::Monologue,x.model)){
+     if(wt_equal(name,"StrengthPower"))return wt_number(a.combat_status_fact(CombatStatus::Monologue,x.model));
+     if(wt_equal(name,"StrengthApplied"))return wt_number(a.combat_status_fact(CombatStatus::MonologueApplied,x.model));
     }
    }
    if(x.model>=0&&x.model<MaxBombs&&wt_equal(x.model_key,"powers.THE_BOMB_POWER")&&
-      wt_equal(name,"Damage")&&s.expansion.bomb_turns[x.model])return wt_number(s.expansion.bomb_damage[x.model]);
+      wt_equal(name,"Damage")&&a.combat_status_fact(CombatStatus::BombTurns,x.model))return wt_number(a.combat_status_fact(CombatStatus::BombDamage,x.model));
   }
-  if(wt_equal(name,"Card")&&wt_equal(x.model_key,"powers.NIGHTMARE_POWER")&&x.actor<=0&&x.model>=0&&x.model<MaxNightmares&&s.silent.nightmare_active[x.model]){
-   const Card card=s.silent.nightmares[x.model].card;TextBuffer b{x.nested,sizeof x.nested,0};b.text(a.content.card_string(card.kind));if(card.upgraded)b.ch('+');return wt_string(x.nested);
+  if(wt_equal(name,"Card")&&wt_equal(x.model_key,"powers.NIGHTMARE_POWER")&&x.actor<=0&&x.model>=0&&x.model<MaxNightmares&&a.combat_status_fact(CombatStatus::NightmareActive,x.model)){
+   const Card card=card_from_token(a.combat_status_fact(CombatStatus::NightmareCard,x.model));TextBuffer b{x.nested,sizeof x.nested,0};b.text(a.content.card_string(card.kind));if(card.upgraded)b.ch('+');return wt_string(x.nested);
   }
   if(wt_equal(name,"AfflictionTitle")&&x.model==int(EnemyPower::Galvanic))return wt_string(a.content.world_title("afflictions","GALVANIZED"));
-  if((wt_equal(name,"DisplayAmount")||wt_equal(name,"SlowAmount"))&&x.model==int(EnemyPower::Slow)){int n=x.actor>0?s.enemy_world.models[x.actor-1].power_aux[x.model]:s.enemy_world.player_aux[x.model];return wt_number(n*(wt_equal(name,"DisplayAmount")?10:1));}
+  if((wt_equal(name,"DisplayAmount")||wt_equal(name,"SlowAmount"))&&x.model==int(EnemyPower::Slow)){int n=a.combat_status_auxiliary(x.actor>0?x.actor:0,x.model);return wt_number(n*(wt_equal(name,"DisplayAmount")?10:1));}
   if(wt_equal(name,"Applier")||wt_equal(name,"ApplierName")||wt_equal(name,"Applier.StringValue")||wt_equal(name,"ApplierName.StringValue")){
-   unsigned source=255;if(x.model>=0&&x.model<EnemyPowerCount){source=x.actor>0?s.enemy_world.models[x.actor-1].source[x.model]:s.enemy_world.player_source[x.model];}
-   if(source<s.enemy_count){const auto*d=enemy_definition(s.enemy_world.models[source].kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
+   const auto*d=enemy_definition(a.combat_status_source(x.actor>0?x.actor:0,x.model));
+   if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}
    return wt_string(a.content.world_title("characters",character_definitions[(unsigned)s.character].key));
   }
-  if(wt_equal(name,"Card")&&x.actor>0&&x.actor<=s.enemy_count){const auto&m=s.enemy_world.models[x.actor-1];if(m.captured_card&&m.captured_card<=s.card_count)return wt_string(a.content.card_string(s.cards[m.captured_card-1].kind));}
-  if(wt_equal(name,"CardsLeft")&&x.model==int(EnemyPower::WitheringPresence))return wt_number(x.actor>0?s.enemy_world.models[x.actor-1].power_aux[x.model]:s.enemy_world.player_aux[x.model]);
+  if(wt_equal(name,"Card")&&x.actor>0&&x.actor<=s.enemy_count){const int token=a.combat_status_fact(CombatStatus::CapturedCard,x.actor-1);if(token>=0)return wt_string(a.content.card_string(card_from_token(token).kind));}
+  if(wt_equal(name,"CardsLeft")&&x.model==int(EnemyPower::WitheringPresence))return wt_number(a.combat_status_auxiliary(x.actor>0?x.actor:0,x.model));
  }
  if(wt_equal(x.table,"enchantments")||wt_equal(x.table,"afflictions")){
   if(wt_equal(name,"Amount")||wt_equal(name,"Block")||wt_equal(name,"Damage")||wt_equal(name,"WeakPower"))return wt_number(x.amount);

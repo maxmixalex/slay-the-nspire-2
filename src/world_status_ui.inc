@@ -9,12 +9,6 @@ static const char* ui_status_key(int id){
  if(id>=EnemyStatusStart&&id<EventCardStatusStart)return world_enemy_power_keys[id-EnemyStatusStart];return nullptr;
 }
 static int ui_status_image(const App&a,int id){const char*key=ui_status_key(id);int image=key?a.content.world_image("powers",key):-1;return image>=0?image:id<LegacyStatusKinds?a.content.ui_image(status_definitions[id].image):-1;}
-static int ui_status_amount(const State&s,int actor,int id){
- if(id==EnemyStatusStart+int(EnemyPower::Slow)||id==EnemyStatusStart+int(EnemyPower::WitheringPresence)){
-  unsigned power=unsigned(id-EnemyStatusStart);int aux=actor>0?s.enemy_world.models[actor-1].power_aux[power]:s.enemy_world.player_aux[power];
-  return id==EnemyStatusStart+int(EnemyPower::Slow)?aux*10:aux;
- }return status_amount(s,actor,id);
-}
 static const char* ui_status_title(const App&a,int id){
  const char*special=nullptr;
  if(id==44)special=a.content.world_title("static_hover_tips","STAR_COUNT");
@@ -32,11 +26,11 @@ static const char* ui_status_title(const App&a,int id){
  const char*title=a.content.world_title("powers",key);return *title?title:id<LegacyStatusKinds?a.content.ui_text(status_definitions[id].name):key;
 }
 static void ui_status_description(const App&a,int actor,int id,char*out,size_t size){
- if(!size)return;out[0]=0;const char*key=ui_status_key(id);int amount=status_amount(a.game,actor,id);
+ if(!size)return;out[0]=0;const char*key=ui_status_key(id);int amount=a.combat_status_amount(actor,id);
  if(id==44&&*a.content.world_string("static_hover_tips","STAR_COUNT.description")){a.localized_text("static_hover_tips","STAR_COUNT.description",out,size,-1,actor,amount);return;}
  if(id==45&&*a.content.world_string("static_hover_tips","SUMMON_STATIC.description")){a.localized_text("static_hover_tips","SUMMON_STATIC.description",out,size,-1,actor,amount);return;}
  if(id==CharacterExtraStatusStart&&actor<=0&&*a.content.world_string("powers","NIGHTMARE_POWER.smartDescription")){
-  TextBuffer b{out,size,0};for(int slot=0;slot<MaxNightmares;slot++)if(a.game.silent.nightmare_active[slot]){char line[1024]{};
+  TextBuffer b{out,size,0};for(int slot=0;slot<MaxNightmares;slot++)if(a.combat_status_fact(CombatStatus::NightmareActive,slot)){char line[1024]{};
    // Each original Nightmare power owns one snapshot and makes three copies;
    // the compact status icon's layer count is the number of active snapshots.
    a.localized_text("powers","NIGHTMARE_POWER.smartDescription",line,sizeof line,slot,actor,3);if(b.n)b.ch('\n');b.text(line);
@@ -46,10 +40,10 @@ static void ui_status_description(const App&a,int actor,int id,char*out,size_t s
  if(actor<=0&&key&&(id==32||id==43||rolling_boulder||id==RegentStatusStart+int(RPower::Monologue))){
   char full[128]{};TextBuffer name{full,sizeof full,0};name.text(key);name.text(".smartDescription");
   if(*a.content.world_string("powers",full)){
-   TextBuffer text{out,size,0};const auto&s=a.game;const int slots=id==43?MaxBombs:MaxPowerInstances;
+   TextBuffer text{out,size,0};const int slots=id==43?MaxBombs:MaxPowerInstances;
    for(int slot=0;slot<slots;++slot){
-    const int value=id==32?s.expansion.panache[slot]:id==43?s.expansion.bomb_turns[slot]:
-        rolling_boulder?s.expansion.boulder[slot]:s.regent.monologue[slot];
+    const int value=id==32?a.combat_status_fact(CombatStatus::Panache,slot):id==43?a.combat_status_fact(CombatStatus::BombTurns,slot):
+        rolling_boulder?a.combat_status_fact(CombatStatus::Boulder,slot):a.combat_status_fact(CombatStatus::Monologue,slot);
     if(!value)continue;char line[1024]{};a.localized_text("powers",full,line,sizeof line,slot,actor,value);
     if(text.n)text.ch('\n');text.text(line);
    }
@@ -64,6 +58,6 @@ static void ui_status_description(const App&a,int actor,int id,char*out,size_t s
  TextBuffer b{out,size,0};for(const char*p=a.content.ui_text(status_definitions[id].description);*p;){if(p[0]=='{'&&p[1]=='n'&&p[2]=='}'){b.number(amount);p+=3;}else b.ch(*p++);}
 }
 static const char* ui_enemy_name(const App&a,int enemy){
- if(enemy<0||enemy>=a.game.enemy_count)return "";const auto*d=enemy_definition(a.game.enemy_world.models[enemy].kind);if(!d)return "";
+ if(enemy<0||enemy>=a.game.enemy_count)return "";const auto*d=enemy_definition(ui_intent_enemy_kind(a,enemy));if(!d)return "";
  char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");const char*name=a.content.world_string("monsters",key);return *name?name:d->key;
 }

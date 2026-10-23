@@ -20,6 +20,7 @@
 #include "world_map_act_intro.hpp"
 #include "health_bar.hpp"
 #include "combat_feedback.hpp"
+#include "combat_status.hpp"
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
@@ -310,6 +311,7 @@ struct App {
     Motion motion[MaxEnemies+1]{};
     EnemyPresentation enemy_presentation[MaxEnemies]{};
     CombatFeedback combat_feedback{};
+    CombatStatus combat_status{};
     void begin_combat_feedback();
     void finish_combat_feedback();
     void sync_combat_feedback();
@@ -318,6 +320,11 @@ struct App {
     HealthBarValues combat_health(int actor)const;
     EnemyIntent combat_intent(int slot)const;
     int combat_energy(bool maximum=false)const;
+    int combat_status_amount(int actor,int id,bool label=false)const;
+    int combat_status_auxiliary(int actor,int power)const;
+    EnemyId combat_status_source(int actor,int power)const;
+    int combat_status_fact(int fact,int slot=0)const;
+    int combat_statuses(int actor,int*out)const;
     bool combat_actions_locked()const;
     bool combat_choice_ready()const;
     void continue_combat_choice();

@@ -298,8 +298,10 @@ static void deferred_enemy_values(){
   const int player=a.game.hp;a.last_osty_hp=5;a.input(Key::EndTurn);CHECK(a.combat_feedback.active);
   const uint32_t pet_hit=a.enemy_presentation[0].queue[0].earliest+impact;
   CHECK(a.combat_health(MaxEnemies+1).hp==5&&a.combat_health(0).hp==player);
+  CHECK(a.combat_status_amount(0,45)==5);
   a.animation=pet_hit-1;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==5);
   a.animation=pet_hit;a.render();CHECK(a.combat_health(MaxEnemies+1).hp==0&&a.combat_health(0).hp<player);
+  CHECK(a.combat_status_amount(0,45)==0);
   snapshot();a.reset_presentation();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);unchanged();
 
   for(int lethal=0;lethal<2;++lethal){
@@ -410,6 +412,53 @@ static void deferred_enemy_values(){
  CHECK(f.overflow);f.end_at=base+CombatFeedback::Capacity+30;
  a.finish_combat_feedback();snapshot();a.animation=f.end_at-1;a.sync_combat_feedback();CHECK(a.combat_feedback.active);
  a.animation=f.end_at;a.sync_combat_feedback();CHECK(!a.combat_feedback.active&&a.combat_health(0).block==a.game.block);unchanged();
+}
+static void deferred_enemy_statuses(){
+ static State direct;static SaveData expected;
+ CHECK(sizeof(CombatStatus)<=64*1024);
+ for(unsigned fast=0;fast<2;++fast){
+  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.game.enemy_world.models[0].node=2;
+  CHECK(a.combat_status_amount(1,0)==0);snapshot();CHECK(load(direct,before.bytes,before.size));
+  CHECK(end_turn(direct));CHECK(save(direct,expected));a.input(Key::EndTurn);
+  CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  CHECK(a.game.enemies[0].strength>0&&a.combat_status_amount(1,0)==0);
+  const uint32_t start=a.enemy_presentation[0].queue[0].earliest;
+  const uint32_t power=start+TurnBannerPresentation::wait_ticks(600,250,fast!=0),done=a.combat_feedback.end_at;
+  snapshot();a.animation=power-1;a.render();CHECK(a.combat_status_amount(1,0)==0&&!has(HitKind::BattleStatus,StatusKinds));
+  a.animation=power;a.render();CHECK(a.combat_status_amount(1,0)==a.game.enemies[0].strength&&has(HitKind::BattleStatus,StatusKinds));
+  a.open_status_icon(StatusKinds);CHECK(a.status_actor==1);int ids[StatusKinds];
+  CHECK(a.combat_statuses(1,ids)>0&&ids[a.status_selected]==0);a.render();unchanged();a.input(Key::Statuses);
+  a.animation=done;a.render();CHECK(!a.combat_feedback.active&&a.combat_status_amount(1,0)==a.game.enemies[0].strength);
+
+  enemy_visual_fight(EncounterId::LouseProgenitorNormal);a.fast_mode=fast!=0;a.game.enemy_world.models[0].node=0;
+  const int frail=EnemyStatusStart+int(EnemyPower::Frail);a.input(Key::EndTurn);
+  CHECK(status_amount(a.game,0,frail)>0&&a.combat_status_amount(0,frail)==0);
+  const uint32_t web=a.enemy_presentation[0].queue[0].earliest+TurnBannerPresentation::wait_ticks(400,200,fast!=0);
+  snapshot();a.animation=web-1;a.render();CHECK(a.combat_status_amount(0,frail)==0&&!has(HitKind::BattleStatus,frail));
+  a.animation=web;a.render();CHECK(a.combat_status_amount(0,frail)==status_amount(a.game,0,frail)&&has(HitKind::BattleStatus,frail));
+  CHECK(a.combat_status_source(0,int(EnemyPower::Frail))==EnemyId::LouseProgenitor);unchanged();
+ }
+ a.fast_mode=false;
+ // Auxiliary counts and per-instance details follow the same presentation
+ // boundary; changing canonical state must not leak a later tooltip value.
+ enemy_visual_fight(EncounterId::NibbitsWeak);const int slow=EnemyStatusStart+int(EnemyPower::Slow);
+ auto&m=a.game.enemy_world.models[0];m.power[int(EnemyPower::Slow)]=1;m.power_aux[int(EnemyPower::Slow)]=2;
+ a.game.expansion.bomb_turns[0]=2;a.game.expansion.bomb_damage[0]=17;
+ a.begin_combat_feedback();const uint32_t cue=a.animation+10;
+ a.combat_feedback.effect_at=cue;m.power_aux[int(EnemyPower::Slow)]=5;
+ a.game.expansion.bomb_turns[0]=1;a.game.expansion.bomb_damage[0]=23;
+ a.observe_combat_effect(a.game,{});a.combat_feedback.end_at=cue+10;a.finish_combat_feedback();
+ CHECK(a.combat_status_amount(1,slow,true)==20&&a.combat_status_auxiliary(1,int(EnemyPower::Slow))==2);
+ CHECK(a.combat_status_fact(CombatStatus::BombTurns,0)==2&&a.combat_status_fact(CombatStatus::BombDamage,0)==17);
+ a.animation=cue;a.sync_combat_feedback();CHECK(a.combat_status_amount(1,slow,true)==50);
+ CHECK(a.combat_status_fact(CombatStatus::BombTurns,0)==1&&a.combat_status_fact(CombatStatus::BombDamage,0)==23);
+ a.reset_presentation();CHECK(a.combat_status_amount(1,slow,true)==50);
+ // Bounded playback retains the final values even if a long chain exceeds
+ // the intermediate cue capacity, without widening any game/save fields.
+ a.begin_combat_feedback();auto&view=a.combat_status;
+ for(unsigned i=0;i<CombatStatus::Capacity+20;++i)view.append(0,{int(i+1),0,0,1},a.animation+i+1);
+ CHECK(view.overflow);view.sync(a.animation+CombatStatus::Capacity+30);view.finish();
+ CHECK(view.shown[0].amount==int(CombatStatus::Capacity+20));a.reset_presentation();
 }
 static void hidden_choice_input(int token){
  CHECK(!a.combat_choice_ready());a.render();CHECK(has(HitKind::Battlefield,0));
@@ -534,4 +583,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();deferred_combat_choices();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();deferred_enemy_statuses();deferred_combat_choices();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

@@ -20,6 +20,7 @@ static bool ui_feedback_bound(const App&a){const auto&f=a.combat_feedback;const 
  return f.active&&s.enemy_world.active&&f.seed==s.seed&&f.floor==s.floor&&f.combat==s.world.combat_count&&f.encounter==int(s.enemy_world.encounter);
 }
 static uint32_t ui_feedback_later(uint32_t a,uint32_t b){return int32_t(a-b)>0?a:b;}
+#include "combat_status_ui.inc"
 HealthBarValues App::combat_health(int actor)const{
  if(actor<0||actor>=int(CombatFeedback::Actors))return {};
  if(!ui_feedback_bound(*this))return ui_health_values(game,actor);
@@ -66,6 +67,7 @@ void App::begin_combat_feedback(){
  f.effect_at=f.move_at=f.move_end=f.end_at=animation;
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor){f.shown[actor]=f.observed[actor]=ui_health_values(game,int(actor));f.identity[actor]=f.observed_identity[actor]=ui_feedback_identity(game,actor);}
  for(int i=0;i<MaxEnemies;++i){f.intents[i]=i<game.enemy_count?enemy_intent(game,i):EnemyIntent{};f.hide_at[i]=animation;}
+ ui_capture_combat_status(*this,animation,true);
 }
 void App::combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,uint32_t end){
  if(!ui_feedback_bound(*this)||slot<0||slot>=game.enemy_count)return;auto&f=combat_feedback;
@@ -105,6 +107,7 @@ void App::observe_combat_effect(const State&s,Effect effect){
  // Unreviewed models use their existing move-start cue. This deliberately
  // makes no claim about uninspected attack delays or multi-hit intervals.
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(s,int(actor)),ui_feedback_identity(s,actor),f.effect_at);
+ ui_capture_combat_status(*this,f.effect_at);
  // Round cumulative command time once, rather than adding rounded waits.
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.
  if(after)f.effect_at=ui_feedback_later(f.effect_at,after);
@@ -129,6 +132,7 @@ void App::finish_combat_feedback(){
  if(game.effect_count||game.playing>=0)return;
  f.end_at=ui_feedback_later(f.end_at,enemy_visual_clock);f.effect_at=f.end_at;
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(game,int(actor)),ui_feedback_identity(game,actor),f.end_at);
+ ui_capture_combat_status(*this,f.end_at);
  f.finished=true;
  if(!combat_phase(game.phase))combat_linger_until=ui_feedback_later(combat_linger_until,f.end_at+1);
 }
@@ -150,10 +154,12 @@ void App::sync_combat_feedback(){
  if(title||!ui_feedback_bound(*this)||game.phase==Phase::Error){f.reset();return;}
  while(f.head<f.count&&int32_t(animation-f.cues[f.head].at)>=0){const auto cue=f.cues[f.head++];ui_feedback_apply(*this,cue.actor,cue.value,cue.identity,cue.at);}
  if(f.head==f.count)f.head=f.count=0;
+ combat_status.sync(animation);
  if(f.finished&&int32_t(animation-f.end_at)>=0){
   // Overflow only drops intermediate presentation entries. At the scheduled
   // side boundary every displayed value converges to the captured result.
   for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)ui_feedback_apply(*this,actor,f.observed[actor],f.observed_identity[actor],f.end_at);
+  combat_status.finish();
   f.reset();
  }
 }
