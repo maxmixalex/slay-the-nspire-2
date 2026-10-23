@@ -5,8 +5,9 @@
 This source stage targets the existing pinned **v0.111.0 / 41cef1ea** owner
 reference. It appends a merchant focus skin and the visible flat candle flames
 to private NSP2/18 resources. It does not replace the previously executed v18
-delivery or its validation records. Full conversion, native visual review and
-target execution are subsequent gates; a syntax check is not those gates.
+delivery or its validation records. Conversion and native execution results
+are recorded below; target execution has a separate receipt. A syntax check
+is not any of those execution gates.
 
 The reference assembly SHA-256 is
 `0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`.
@@ -121,3 +122,57 @@ historical payload preservation and new-image decoding; the paired split gate
 must reconstruct both original full packs byte for byte. Native screenshots,
 integrated Web and target ARM results must retain their own execution identity.
 Existing v18 Firebird startup samples do not measure v19 resource loading.
+
+## Executed conversion and native validation
+
+Execution uses the pushed and read-back checkpoint
+`06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d`. The metadata-only companion
+`validation-merchant-effects-0.17.json` records source identities, complete
+conversion/split hashes and thirteen closed journals. Twelve passed; the
+initial shader run failed before Chromium startup because local process IPC
+was denied by the sandbox. A standard approved local retry ran the same
+offline helper successfully. That failed attempt remains in the record.
+
+Both language conversions passed all 445 new-image decode roundtrips and
+historical payload, clip, card, auxiliary, glyph and text relocation checks.
+The real native merchant suite passed **1,402 checks per language**, including
+five characters, pointer and keyboard focus, phase continuity, unknown/bad
+profiles, v18 fallback and canonical save preservation. The Python suites
+passed three skin/material tests, five existing animation geometry tests,
+twenty-four tile conversion tests and three split conversion/rejection tests.
+
+| Measured new resource | Encoded bytes, with alignment | Crop |
+| --- | ---: | --- |
+| Focused merchant, 145 frames | 470,994 | 58×71 |
+| Left flame, 150 frames | 9,048 | 11×9 |
+| Front flames, 150 frames | 55,098 | 58×130 |
+| Total new common art | **535,140** | — |
+
+Maximum new decoded image size is **4,732 bytes**. Directory growth is exactly
+7,168 bytes per language; neither resident directory nor image-cache capacity
+changed. The v19 common file is 87,405,187 bytes, the English language file
+1,801,249 and Chinese 4,576,927. All three total **93,783,363 bytes**, which is
+549,476 bytes above the delivered v18 three-file set. The split converter and
+the C++ streamed reader both reproduced each full input byte for byte.
+
+The independent shader check compiled the pinned generated fragment graph as
+WebGL2 under Chromium 151.0.7922.34 / ANGLE SwiftShader, with the authored
+uniforms and textures. At 0, 1.24, 5.96 and 6 seconds, each 128×128 UV grid
+agreed with the offline evaluator to a maximum **0.500093 of an 8-bit channel**;
+mean error per channel was below 0.0234. This is consistent with conversion to
+an 8-bit render target. It checks the material graph, not an original Godot
+frame, color/HDR pipeline, particle simulation or complete scene transform.
+
+Loop-boundary differences were measured after decoding the actual RGB565 and
+alpha frames, using summed absolute premultiplied RGBA changes. The focus
+last-to-first change is 0.563 times the largest ordinary adjacent-frame
+change; the rear flame is 0.467 times and the front flames 0.998 times. The
+front-flame seam is about 1.55 times its average adjacent-frame change. At
+this resolution the boundary is within the observed normal step range; this
+does not make the finite six-second noise loop equivalent to unrestricted
+shader `TIME`. Native 320×240 focus/unfocus and candle screenshots were
+visually inspected; private animation previews preserve the sampled cycle.
+
+Integrated ARM/WASM allocation, browser behavior and Firebird startup,
+Continue/save/exit tests belong to their platform records. In particular, the
+earlier 61970600 v18 target measurements cannot be relabelled as v19 evidence.

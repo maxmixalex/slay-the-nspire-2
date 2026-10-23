@@ -330,3 +330,30 @@ exact journal/log, binary, resource and capture hashes are recorded in
 `validation-choice-barriers-0.17.json`. No original art is published there.
 These native gates are not target-device execution or an overall visual
 parity percentage.
+
+### Reused-slot intents — follow-up source, execution pending
+
+Independent review after `06c7fd16` found a narrower identity defect: the
+displayed creature and HP changed at a replacement cue, but its retained
+intent still belonged to the previous occupant of that array slot. If that
+occupant had not reached an intent-hide cue, the replacement could inherit
+its icon, values and tooltip until the trace ended. The earlier identity
+regression checked HP and sprites but did not check this intent transition.
+
+The follow-up clears the retained intent when an enemy's displayed identity
+changes. The previous creature keeps its own intent and tooltip before the
+cue; the replacement has no inherited intent during the remaining trace.
+The existing endpoint then reveals its canonical intent. This changes no
+State, SaveData, RNG or resident structure size. It preserves the current
+endpoint-based reveal; it does not claim an additional audited summon-intent
+animation or per-monster reveal time.
+
+The expanded Normal/Fast fixture first lets Fogmog actually summon its Eye,
+then uses core `EnemyEscape` / `EnemySpawn` commands to force slot reuse.
+It checks the old icon hit region, values, tooltip title and text before the
+cue; absence of the inherited icon/tooltip at the cue and through the tail;
+and the replacement's intent and title at convergence. Canonical save bytes
+must remain unchanged during presentation. This is a scheduling fixture,
+not a claim that Fogmog normally summons Nibbits. Formal results require the
+next verified runtime checkpoint; the `06c7fd16` results above do not include
+this follow-up.

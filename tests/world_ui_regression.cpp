@@ -325,20 +325,60 @@ static void deferred_enemy_values(){
  }
  a.fast_mode=false;
 
- enemy_visual_fight(EncounterId::FogmogNormal);a.game.enemy_world.models[0].node=0;a.input(Key::EndTurn);
- CHECK(a.game.enemy_count==2&&a.game.enemies[1].hp>0&&a.combat_health(2).hp==0&&a.enemy_opacity(1)==0);
- const uint32_t summon=a.enemy_presentation[0].queue[0].earliest;
- snapshot();a.animation=summon-1;a.render();CHECK(a.combat_health(2).hp==0&&a.enemy_opacity(1)==0);
- a.animation=summon;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_opacity(1)==255);
- CHECK(a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id);unchanged();
- a.animation=a.combat_feedback.end_at;a.render();
- const uint32_t old_identity=a.enemy_presentation[1].identity,old_bar_identity=a.health_bars[2].identity,replace=a.animation+10;
- const int old_hp=a.game.enemies[1].hp;
- {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback_move(0,0,replace,replace,replace+10);
-  queue_extension(a.game,XOp::EnemyEscape,1);queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::Nibbit),0);resolve_pending(a.game);}
- CHECK(a.game.enemy_world.models[1].combat_id!=old_identity&&a.combat_health(2).hp==old_hp&&a.enemy_presentation[1].identity==old_identity);
- snapshot();a.animation=replace-1;a.render();CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255&&a.health_bars[2].identity==old_bar_identity);
- a.animation=replace;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);unchanged();
+ for(unsigned fast=0;fast<2;++fast){
+  enemy_visual_fight(EncounterId::FogmogNormal);a.fast_mode=fast!=0;a.game.enemy_world.models[0].node=0;a.input(Key::EndTurn);
+  CHECK(a.game.enemy_count==2&&a.game.enemies[1].hp>0&&a.combat_health(2).hp==0&&a.enemy_opacity(1)==0);
+  const uint32_t summon=a.enemy_presentation[0].queue[0].earliest;
+  snapshot();a.animation=summon-1;a.render();CHECK(a.combat_health(2).hp==0&&a.enemy_opacity(1)==0);
+  a.animation=summon;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_opacity(1)==255);
+  CHECK(a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id);unchanged();
+  a.animation=a.combat_feedback.end_at;a.render();CHECK(!a.combat_feedback.active);
+  CHECK(a.game.enemy_world.models[1].kind==EnemyId::EyeWithTeeth);
+  const auto old_intent=a.combat_intent(1);CHECK(old_intent.flags==EnemyIntentStatus&&old_intent.status_cards==3);
+  bool found=false;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==1){
+   a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+1;found=true;break;
+  }
+  CHECK(found);a.pointer.visible=true;a.render();
+  const int panel_x=a.pointer.x>=170?8:134,title_x=panel_x+6;
+  const auto intent_panel=[&](){
+   const uint16_t gold=uint16_t((223>>3)<<11|(186>>2)<<5|(112>>3));
+   for(int dx=0;dx<178;++dx)if(a.pixels[48*ScreenW+panel_x+dx]!=gold)return false;
+   for(int dy=0;dy<20;++dy)if(a.pixels[(48+dy)*ScreenW+panel_x]!=gold)return false;
+   return true;
+  };
+  CHECK(intent_panel());std::vector<uint16_t> old_title;
+  for(int y=53;y<67;++y)old_title.insert(old_title.end(),a.pixels+y*ScreenW+title_x,a.pixels+y*ScreenW+title_x+166);
+  char old_text[1024]{},retained_text[1024]{};
+  a.localized_text("intents","STATUS.description",old_text,sizeof old_text,1,2);
+  const uint32_t old_identity=a.enemy_presentation[1].identity,old_bar_identity=a.health_bars[2].identity,replace=a.animation+10;
+  const int old_hp=a.game.enemies[1].hp;
+  // Real escape/spawn commands force reuse of Fogmog's summoned Eye slot.
+  // The Eye has not reached an intent-hide cue; reusing its slot must not
+  // give the Nibbit its retained status-card icon or tooltip.
+  {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback_move(0,0,replace,replace,replace+10);
+   queue_extension(a.game,XOp::EnemyEscape,1);queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::Nibbit),0);resolve_pending(a.game);}
+  CHECK(a.game.enemy_world.models[1].combat_id!=old_identity&&a.combat_health(2).hp==old_hp&&a.enemy_presentation[1].identity==old_identity);
+  CHECK(a.combat_feedback.finished&&!(a.combat_feedback.hidden&(1u<<1))&&a.combat_feedback.end_at>replace);
+  const auto new_intent=enemy_intent(a.game,1);CHECK(new_intent.flags&&new_intent.flags!=old_intent.flags);
+  const uint32_t done=a.combat_feedback.end_at;
+  snapshot();a.animation=replace-1;a.render();
+  CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255&&a.health_bars[2].identity==old_bar_identity);
+  CHECK(a.combat_intent(1).flags==old_intent.flags&&a.combat_intent(1).status_cards==old_intent.status_cards);
+  CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());
+  a.localized_text("intents","STATUS.description",retained_text,sizeof retained_text,1,2);CHECK(!std::strcmp(old_text,retained_text));
+  for(int y=53;y<67;++y)CHECK(!std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t)));
+  unchanged();
+  a.animation=replace;a.render();
+  CHECK(a.combat_feedback.active&&a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);
+  CHECK(!a.combat_intent(1).flags&&!has(HitKind::EnemyIntent,1)&&!intent_panel());unchanged();
+  a.animation=done-1;a.render();CHECK(a.combat_feedback.active&&!a.combat_intent(1).flags&&!has(HitKind::EnemyIntent,1)&&!intent_panel());unchanged();
+  a.animation=done;a.render();const auto revealed=a.combat_intent(1);
+  CHECK(!a.combat_feedback.active&&revealed.flags==new_intent.flags&&revealed.damage==new_intent.damage&&revealed.hits==new_intent.hits&&revealed.status_cards==new_intent.status_cards&&!std::strcmp(revealed.move_key,new_intent.move_key));
+  CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());bool renamed=false;
+  for(int y=53;y<67;++y)renamed|=std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t))!=0;
+  CHECK(renamed);unchanged();a.pointer.visible=false;
+ }
+ a.fast_mode=false;
 
  enemy_visual_fight(EncounterId::NibbitsNormal);CHECK(potion_set(a.game,0,Potion::Strength));a.input(Key::EndTurn);
  a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();

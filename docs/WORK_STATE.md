@@ -1,48 +1,86 @@
 # Work state — 2026-10-23
 
-## Current: delivered baseline; next UI and startup implementation stage
+## Current: second UI implementation validated; final slot-identity fix pending execution
 
-The user explicitly requested continued implementation with parallel agents
-after the first feedback integration. The verified baseline was packaged from
-documentation checkpoint `3bda3cf54256e2d7e2bc13d69c2094c6c086e474` and both
-private files were successfully saved, with individual completion receipts:
+The second implementation stage is saved and executed at
+`06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d`. Test/report checkpoint
+`89dc0f80fc48a78bd8bae49041343442d2764aea` is also pushed, read back and
+verified against all three changed file blobs/modes. Main and disabled CI
+remain unchanged. Continue parallel work; original UI fidelity remains first.
 
-| Deliverable | Bytes | SHA-256 |
-| --- | ---: | --- |
-| Bilingual calculator ZIP | 81,150,884 | `c599e1807ca520bf09418740e4576ea97964d8bcdf625bd3a774237904400286` |
-| Bilingual offline HTML | 131,561,979 | `8c3a6d1b544a30a2608dc7ab373ab2ad21f0f5cfae2312a2bb6a227b0e20195e` |
+Implemented at `06c7fd16`:
 
-All twelve ZIP entries were read back and verified; no save, language
-preference or profiling probe is included. The HTML changes only the exact EOF
-attribution footer of the executed `14a20900` HTML. All other bytes, including
-its inline script and embedded WASM/common/locale data, are identical. It adds
-complete license text and exact corresponding-source links. ARM execution
-remains `61970600`; Web execution remains `14a20900`. The packaging journal
-`baseline-feedback-delivery-885a8fa68b81` and final save journal
-`baseline-delivery-save-network-cd4006a82004` are closed passed, unchanged
-source. The first save attempt failed at the network tools-list request before
-any file was created; that failed journal remains failed.
+- Combat selections wait for their own effect-stream cue before rendering or
+  accepting keyboard, pointer or direct UI actions. Late answers delay only
+  unexecuted continuation. Original Knowledge Demon selection waits are
+  1,000 ms Normal / 250 ms Fast. Save and gameplay RNG behavior are unchanged.
+- Intent tooltips use the same displayed damage, repeat count and actor identity
+  as the projected icon, including the battle visible before a pending choice.
+- Append-only v19 resources add the original merchant outline skin and sampled
+  behind/front candle layers. Old indices and payloads remain unchanged; v18
+  fallback is retained. New encoded artwork is 535,140 bytes, with a 4,732-byte
+  largest decoded new frame and no larger resident caches.
+- Startup reuses spare directory space for descriptors and bounded geometry
+  summaries. Full FNV, startup structure/alias checks and first-use pixel
+  validation remain enabled. No new Content allocation is introduced.
 
-The next coherent source stage is being persisted **before** long validation:
+Closed execution at `06c7fd16`: world UI passes 4,497 synthetic checks and
+13,951 for each of English/Chinese v18/v19. World text passes 10,541 synthetic,
+6,963 English and 6,746 Chinese checks for both resource versions. Boot locale
+passes 498. v19 UI template routes pass 34,723 checks per language, covering
+935 bindings and 200 dynamic bindings with zero unresolved values. Actual
+WASM v19 split/full frames match in ten pairs; both v17/v18 languages load,
+and wrong-language plus common/locale corruption are rejected. The v19 HTML
+has been packaged but has not yet completed this stage's browser acceptance.
 
-- UI agent: a bounded display barrier for choices suspended during enemy/start
-  turn effects, with common render/input gating and late-choice continuation.
-- Resource agent: append-only NSP2/19 merchant outline skin and sampled candle
-  effects, preserving the original behind/front layer order and all v18 indices.
-  Ordinary focus uses the original outline skin; v18 retains its fallback.
-- Performance agent: reuse spare directory space for startup descriptor and
-  per-group geometry summaries, without reducing FNV, structural, alias or
-  first-use pixel validation and without enlarging resident allocations.
-- Root: restore intent hover during deferred combat by binding text, values and
-  actor identity to the same displayed intent. This includes reused slots.
+Merchant conversion, preservation/split and actual-asset rendering gates are
+closed. The independent original shader-graph comparison measures at most
+0.500093/255 per-channel error including output quantization; it is not a
+Godot framebuffer/HDR or complete particle-system comparison. The finite
+six-second sampled loop is explicitly not equivalent to unbounded shader
+TIME. Cinder/additive particles and the Necrobinder-specific flame are open.
 
-These source changes are not yet new execution, conversion or speed results.
-Next gates are targeted bilingual UI/choice/text tests, malformed-catalog and
-workspace fallback tests, same-v18-input old/new startup measurements, then
-strict v19 conversion/index/size checks and integrated ARM/Web verification.
-The earlier device timings and resource sizes below remain the delivered
-baseline observations until those gates finish. Status/power strips and
-unreviewed monster-effect timings remain separate unfinished work.
+The v19 split is 87,405,187 bytes common, 1,801,249 English and 4,576,927 Chinese,
+93,783,363 bytes total. Both reconstructed full streams are byte-identical to
+the converted packs. Conversion remains `06c7fd16`; save format remains v15.
+
+An independent review found one remaining visible slot-reuse defect: at a
+replacement cue the new enemy identity could inherit the old occupant's
+projected intent. A minimal correction clears only that stale slot intent,
+preserving normal final convergence; the real Fogmog/Eye replacement fixture
+is being extended for Normal/Fast. Persist this correction before its native,
+ARM and WASM validation. Do not relabel earlier `06c7fd16` executions as the
+corrected runtime. Final v19 bilingual Firebird Continue/save/80 ms Enter exit
+and new deliverables wait for that corrected launcher.
+
+The old content cache-pressure fixture failed at `06c7fd16` and reproduced at
+baseline `61970600`: it created 159 keys against today's 320-entry cache. The
+`89dc0f80` test-only correction uses public capacity plus 32 and asserts actual
+eviction before testing failed reads. It awaits execution with the next
+runtime build; neither earlier failed journal is changed to passed. The
+cache-age test's initial non-executable output was separately repaired by a
+mode-only change, preserving its binary SHA, and its retry passed.
+
+Controlled same-v18 startup A/B now has a closed, independently verified
+retry: `startup-v18-ab-complete-47743de9d363` contains all 28 measured runs and
+four excluded warmups, complete inner status and matching outer log SHA. Warm
+host open medians were 796.041 to 764.588 ms Chinese and 769.710 to 743.533 ms
+English (3.95% and 3.40% lower); overlapping ranges limit timing conclusions.
+Tile-index FILE requests fall deterministically from 1,382 to 1,155 and
+10,476,206 to 10,008,974 bytes per language. FNV/retained-image requests are
+unchanged. These are requested FILE I/O counts, not physical storage traffic.
+
+The earlier outer journal reported success while its inner report contained
+only 27 of 28 measured runs and its log hash did not match. That attempt is
+incomplete and supplies no accepted speed result; preserve it unchanged. The
+historical Firebird target timings below are not updated from host medians.
+No validation bypass, physical-device cold-start result or whole-game fidelity
+percentage is claimed.
+
+The first feedback calculator ZIP and offline HTML were already saved and
+provided to the user from report checkpoint `3bda3cf5`. Their exact identities
+remain in the historical delivery reports; the next version must preserve
+actual build/conversion/execution identities and verify all packaged members.
 
 ## Delivered baseline: final runtime and bilingual target flow verified
 

@@ -135,6 +135,10 @@ void App::finish_combat_feedback(){
 static void ui_feedback_apply(App&a,unsigned actor,const HealthBarValues&value,uint32_t identity,uint32_t at){
  auto&f=a.combat_feedback;const auto old=f.shown[actor];const bool same=f.identity[actor]==identity;
  f.shown[actor]=value;f.identity[actor]=identity;
+ // An intent belongs to the retained creature, not its reusable array slot.
+ // At the replacement cue, stop showing that creature's old intent. The
+ // ordinary trace endpoint still reveals the new occupant's canonical one.
+ if(!same&&actor>0&&actor<=MaxEnemies)f.intents[actor-1]={};
  if(same&&old.hp>value.hp&&actor<=MaxEnemies){
   a.last_hit[actor]=old.hp-value.hp;a.hit_start[actor]=int(at);
   if(actor==0)a.motion[0]={AnimHeroHurt,at};
