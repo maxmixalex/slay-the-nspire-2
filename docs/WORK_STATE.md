@@ -3,8 +3,8 @@
 ## Current: follow-up clock and input fixes; final execution and delivery pending
 
 Work remains on `work/0.17-world-parity`, restored from `e8444322` and pushed
-through `069f6d51`, `573cb816`, `6d2b78ac` and
-`9d8cb1fd58d2ea73900449415c925592776a5584`. Every checkpoint has an actual
+through `069f6d51`, `573cb816`, `6d2b78ac`, `9d8cb1fd` and
+`14a20900035b5e554e076263fc22fe7611d2e410`. Every checkpoint has an actual
 branch update, ref readback and exact changed-file/tree hash verification.
 Reference remains v0.111.0 / 41cef1ea. Main and disabled remote CI are unchanged.
 
@@ -40,6 +40,23 @@ Reference remains v0.111.0 / 41cef1ea. Main and disabled remote CI are unchanged
   pass. The deferred HUD native stage passes 20 banner, 1,462 event/shop and
   484 world-event checks per actual locale. World UI stops at the Fast second
   lethal-hit banner assertion; it is not a complete passing run.
+- `14a20900`: event tooltip synthetic/Chinese/English runs pass again; four
+  event captures are byte-identical to the reviewed stage5 captures. Banner
+  (21), frontend (567 per locale), event/shop (1,462 per locale) and world-event
+  (484 per locale) gates pass. World UI now passes the real-time Fast/banners,
+  Hiss tail, HP hold, sequential/lethal/reflected hits and summon/slot cases,
+  then stops at a Toasty fixture with an unresolved acquisition continuation.
+  The separate map fixture omitted render entirely, so its real resource
+  preparation correctly waited for the loading screen to be displayed. These
+  two tests are not counted as passing suites. The follow-up resolves the
+  acquisition and drives actual render/update preparation, retaining the
+  original state, fade and pending-choice assertions. No production map timing
+  change is needed. One world-event launch lacked executable permission; its
+  failed launch and successful permission-only retry remain separately recorded.
+- `14a20900`: WASM build, split/full/legacy actual-resource loading and rejection
+  checks, bilingual HTML packaging, and actual Chromium language/collection
+  interactions pass. Later Ndless-only source changes must retain this actual
+  Web execution identity and prove their Web inputs unchanged.
 
 ### Current source follow-up, awaiting verified-checkpoint execution
 
@@ -59,8 +76,9 @@ command waits, not Engine.TimeScale or every Spine clip. The current source
 removes the old global 2x App animation clock and selects independent Fast wait
 values on one real 33 ms clock. The original lethal-banner assertion is retained.
 New wall-time tests cover the 2.3-second banner, full Hiss tail, HP tween hold,
-Fast cues and existing map/frontend clock behavior. See `fast-mode-clock-0.17.md`.
-Source syntax checks pass; formal execution is still pending persistence.
+Fast cues and existing map/frontend clock behavior. These specific cases ran
+before the unrelated fixture failures above; the complete corrected suites
+still require a new persisted-checkpoint run. See `fast-mode-clock-0.17.md`.
 
 ### Resource and target boundaries
 
@@ -80,7 +98,11 @@ It does not establish physical-device cold-start performance or an improvement.
 An 80 ms Enter confirmation at Quit reopened the launcher; a 5-key confirmation
 returned to the OS and allowed normal USB report export. The Enter case is an
 active integration defect; it must be retested with the original trigger after
-its source fix, not counted as passed because the alternate key works.
+its source fix, not counted as passed because the alternate key works. The
+prepared Ndless fix skips the discarded post-Quit render and explicitly closes
+resources/writes the report between two bounded key-release gates. It adds no
+event-drain syscall or hardware write. The reviewed event API can block on an
+empty queue and was rejected for this purpose. See `ndless-exit-handoff-0.17.md`.
 
 Remaining visual scope includes per-effect status/pile presentation, precise
 unreviewed monster action timings, merchant GPU particles/focus skin and

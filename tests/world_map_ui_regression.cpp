@@ -378,8 +378,23 @@ static void layout_and_input(){
     // completes, then enters exactly that node. No State changes on press.
     h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);app.pointer_move(h->x+h->w/2,h->y+h->h/2);app.pointer_button(true);app.pointer_button(false);
     CHECK(app.map_travel.pending&&world_can_travel(app.game)&&app.game.world.current_point==m.root);unchanged();
-    for(unsigned i=0;i<10;++i)app.advance(250);CHECK(!app.map_travel.pending&&!app.map_travel.fading_in);
+    for(unsigned i=0;i<10;++i)app.advance(250);
+    CHECK(!app.map_travel.pending);
     CHECK(app.game.world.current_point==ids[0]&&app.game.world.total_floor==2&&app.game.phase==Phase::Combat);
+    if(app.combat_preparation.active){
+        // Actual art needs a visible preparation frame before bounded image
+        // batches can run. A headless advance-only loop cannot display it.
+        CHECK(!app.combat_preparation.shown&&!app.combat_preparation.cursor);
+        CHECK(app.map_travel.speed==world_map_transition::Speed::Normal&&app.map_clock_ms-app.map_travel.fade_start>=800);
+        snapshot();app.render();CHECK(app.combat_preparation.shown);
+        constexpr unsigned limit=(CombatPreparation::Capacity+CombatPreparation::ImagesPerUpdate-1)/CombatPreparation::ImagesPerUpdate+1;
+        unsigned updates=0;while(app.combat_preparation.active&&updates<limit){++updates;app.advance(33);app.render();}
+        CHECK(!app.combat_preparation.active&&app.combat_preparation.cursor==app.combat_preparation.count);
+        // Preparation pauses ordinary presentation updates. On resuming,
+        // the already elapsed fade must clear without another room entry.
+        app.advance(0);unchanged();
+    }
+    CHECK(!app.map_travel.pending&&!app.map_travel.fading_in);
     CHECK(app.game.world.visited_rooms[0][ids[0]]==unsigned(WorldRoom::Monster));snapshot();app.input(Key::Map);app.render();CHECK(!world_hits());capture("map-current-combat");unchanged();app.input(Key::Back);
 }
 static void boss_cycles_and_regions(){

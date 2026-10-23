@@ -191,6 +191,22 @@ suspended-choice, overflow and the new potion-input guards still await the
 follow-up saved-checkpoint run. Clang syntax checks passed on these follow-up
 changes. All formal journals report unchanged source.
 
+Checkpoint `14a20900035b5e554e076263fc22fe7611d2e410` passed its native build
+and 21 banner checks. Both actual-language world-UI runs then passed the new
+real-time clock/clip/health-trail checks, sequential values, both lethal-hit
+orders, reflected lethal damage, summons and reused-slot identities. They
+stopped at the Toasty fixture: in-combat relic acquisition still had its
+queued continuation, so `end_turn` correctly refused to start. The fixture
+now resolves that acquisition and asserts a ready combat before EndTurn.
+The actual choice/input/overflow checks remain pending its next checkpoint.
+Both actual-language frontend suites passed 567 checks. The English map
+suite exposed an older real-pack fixture which advanced without rendering
+the mandatory battle-preparation frame; its image cursor correctly stayed
+at zero. The follow-up displays that frame, bounds preparation by the declared
+image capacity/batch size and checks that the elapsed fade clears without
+changing canonical state or submitting another room entry. Production map
+durations and preparation code are unchanged.
+
 Remaining limitations are explicit: status/power strips and card/pile state
 still read canonical values; this is not a complete replay of every effect.
 Intent tooltips are suppressed during the short deferred side because their

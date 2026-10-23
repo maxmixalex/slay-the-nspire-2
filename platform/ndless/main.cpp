@@ -42,7 +42,8 @@ struct ResourceFile {
     uint32_t drawn=0,phase_start=0;
     spire::ResourceStage phase=spire::ResourceStage::Count;
     spire::BootLanguage language=spire::BootLanguage::Unknown;
-    ~ResourceFile(){if(file)nd_close(file);}
+    void close(){if(file){nd_close(file);file=nullptr;}}
+    ~ResourceFile(){close();}
 };
 static void resource_progress(void*context,spire::ResourceStage stage,uint32_t completed,uint32_t total){
     auto&s=*static_cast<ResourceFile*>(context);const uint32_t now=timer_ticks();
@@ -303,11 +304,19 @@ extern "C" int main(int argc,char**argv){
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
         for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
-        render_frame(update_start,resources_before,update_scene);
+        // Quit is already committed. A discarded final frame can perform
+        // resource syscalls while ENTER is still held and expose that press
+        // to the document browser when Ndless restores the foreground.
+        if(!app.quit)render_frame(update_start,resources_before,update_scene);
     }
-    exit_input_release(timer_ticks,[&](){
+    auto held=[&](){
         for(unsigned offset=0x10;offset<0x20;offset+=2)if(pressed(offset,0xffffu))return true;
         const auto sample=pad.read();return sample.contact||sample.pressed;
-    });
-    display.restore();performance_report();return 0;
+    };
+    exit_input_release(timer_ticks,held);
+    // Finish filesystem work before the final release gate. In particular,
+    // two split-resource destructors must not issue OS calls after it.
+    source.close();common.close();performance_report();
+    exit_input_release(timer_ticks,held);
+    display.restore();return 0;
 }

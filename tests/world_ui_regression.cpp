@@ -341,7 +341,10 @@ static void deferred_enemy_values(){
  a.animation=replace;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);unchanged();
 
  for(int delayed=0;delayed<2;++delayed){
-  enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));CHECK(potion_set(a.game,0,Potion::Strength));a.input(Key::EndTurn);
+  enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));CHECK(potion_set(a.game,0,Potion::Strength));
+  // Obtaining a relic during combat queues its acquisition continuation.
+  // Settle that actual operation before requesting a new end-turn action.
+  resolve_pending(a.game);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count&&a.game.playing<0&&!a.combat_actions_locked());a.input(Key::EndTurn);
   CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished);
   if(delayed){a.animation=a.combat_feedback.end_at+30;a.busy=0;a.render();}
   CHECK(a.combat_actions_locked());

@@ -46,7 +46,7 @@ Private disassembly is inspection input only and is not checked in.
 ## Executed validation
 
 The frozen, remotely verified checkpoint
-`9d8cb1fd58d2ea73900449415c925592776a5584` passes the keyword-tooltip suite:
+`14a20900035b5e554e076263fc22fe7611d2e410` passes the keyword-tooltip suite:
 
 | Resource profile | Checks | Result |
 | --- | ---: | --- |
@@ -57,12 +57,15 @@ The frozen, remotely verified checkpoint
 The regression covers explicit associated and empty options, prepared dynamic
 cards, every potion/relic hover-text route, enchantments, pointer and keyboard
 ownership, modal suppression, paging and unchanged save bytes. Both languages'
-compact event hover and readable detail screenshots were inspected at 320×240.
+compact event hover and readable detail screenshots are byte-identical to the
+stage5 captures inspected at 320×240.
 The screenshots demonstrate the implemented event surfaces, not whole-game
 visual parity. Source, pack, binary, journal and private screenshot hashes are
 recorded in [validation-event-tooltips-0.17.json](validation-event-tooltips-0.17.json).
 All five configure/build/test journals closed with exit code 0 and unchanged
-source.
+source. The earlier successful stage5 execution is retained as historical
+evidence; stage6 exercises the same interaction paths after the action-lock
+and real-time presentation-clock changes.
 
 The earlier failures remain in that receipt. At `573cb816`, the synthetic
 Slippery Bridge fixture had an energy offset without its required Tezcatara's
