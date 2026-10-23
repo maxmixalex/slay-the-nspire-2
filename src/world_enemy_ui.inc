@@ -20,6 +20,19 @@ static uint32_t ui_enemy_ticks(const App&a,int clip){
  const auto*row=clip>=0?world_enemy_clip_directory(unsigned(clip)):nullptr;auto c=a.content.clip(clip);
  unsigned ms=row?row->duration_ms:uint32_t(c.count)*c.frame_ms;return (ms+32)/33? (ms+32)/33:1;
 }
+static uint32_t ui_enemy_move_wait(const App&a,EnemyId kind,int move){
+ // Audited command waits, not skeleton durations. AttackCommand waits for
+ // its anim delay and Damage; Block/Power add their own waits. Keep this
+ // deliberately scoped to the two models whose complete solo moves were
+ // inspected in the pinned DLL. Other models retain their clip fallback.
+ unsigned normal=0,fast=0;
+ if(kind==EnemyId::Nibbit){
+  switch(move){case 0:normal=350;fast=175;break;case 1:normal=600;fast=275;break;case 2:normal=850;fast=350;break;}
+ }else if(kind==EnemyId::LouseProgenitor){
+  switch(move){case 0:normal=650;fast=300;break;case 1:normal=400;fast=200;break;case 2:normal=750;fast=325;break;}
+ }
+ return normal?TurnBannerPresentation::wait_ticks(normal,fast,a.fast_mode):0;
+}
 static bool ui_enemy_death_fades(const State&s,int slot){
  const auto&m=s.enemy_world.models[slot];
  switch(m.kind){
@@ -95,9 +108,11 @@ static void ui_enemy_advance(App&a,int slot){
    // changed saved idle predicate, e.g. egg hatch or a resurrected stage.
    if(!m.dead){auto facts=ui_enemy_facts(a.game,slot);int next=world_enemy_resume(m.model,ui_enemy_fact,&facts);m.move=-1;if(next>=0&&next!=m.state&&ui_enemy_set_state(a,slot,next,facts,a.animation))continue;}
   }
-  if(m.loop&&!m.count&&!m.dead){auto facts=ui_enemy_facts(a.game,slot);int resume=world_enemy_resume(m.model,ui_enemy_fact,&facts);const auto*state=world_enemy_state(m.model,resume);
+  if(m.loop&&!m.count&&!m.dead&&m.model!=unsigned(EnemyId::LouseProgenitor)){auto facts=ui_enemy_facts(a.game,slot);int resume=world_enemy_resume(m.model,ui_enemy_fact,&facts);const auto*state=world_enemy_state(m.model,resume);
    // Only settled loops are refreshed. Initial spawn clips must not replay
    // whenever a saved phase predicate or shared arm changes.
+   // Louse has no resume predicate: its curled_loop is an animator state,
+   // and must persist until the explicit Uncurl trigger (not initial Idle).
    if(state&&state->loop){int clip=world_enemy_resolve_clip(m.model,state->clip,m.skin,-1,ui_enemy_fact,&facts);if(clip>=0&&clip!=m.clip){m.move=-1;ui_enemy_set_state(a,slot,resume,facts,a.animation);}}
   }return;
  }
@@ -137,9 +152,13 @@ void App::sync_enemy_feedback(){
 }
 void App::observe_core(const State&s,Log log){
  if(&s!=&game)return;
- if(log.kind==LogKind::Enemy){sync_turn_banner();const bool first=!turn_banner.in_enemy;turn_banner.begin_enemy(animation);
-  if(first){const uint32_t cue=animation+TurnBannerPresentation::EnemyLeadTicks;if(int32_t(cue-enemy_visual_clock)>0)enemy_visual_clock=cue;}
-  if(s.enemy_world.active)enemy_visual_clock=(int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation)+TurnBannerPresentation::IntentLeadTicks;}
+ if(log.kind==LogKind::Enemy){
+  // Bind a newly entered encounter before reserving its lead-in; the first
+  // identity sync resets the presentation clock to the current frame.
+  if(s.enemy_world.active)sync_enemy_feedback();
+  sync_turn_banner();const bool first=!turn_banner.in_enemy;turn_banner.begin_enemy(animation);
+  if(first){const uint32_t cue=animation+TurnBannerPresentation::enemy_lead_ticks(fast_mode);if(int32_t(cue-enemy_visual_clock)>0)enemy_visual_clock=cue;}
+  if(s.enemy_world.active)enemy_visual_clock=(int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation)+TurnBannerPresentation::intent_lead_ticks(fast_mode);}
  if(log.kind==LogKind::Turn)sync_turn_banner();
  if(!s.enemy_world.active)return;
  if(log.kind==LogKind::Enemy&&log.a>=0&&log.a<s.enemy_count){int slot=log.a;auto facts=ui_enemy_facts(s,slot);const auto*move=world_enemy_move(unsigned(s.enemy_world.models[slot].kind),log.b);
@@ -158,12 +177,20 @@ void App::observe_core(const State&s,Log log){
    enemy_visual_clock=end;return;
   }
   if(move){sync_enemy_feedback();auto&m=enemy_presentation[slot];uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;int projected=m.state;
+   const uint32_t command_wait=ui_enemy_move_wait(*this,kind,log.b);
    for(unsigned i=0;i<move->action_count;i++)if(const auto*action=world_enemy_action(*move,i)){
     int clip=-1;
     if(action->direct)clip=world_enemy_resolve_clip(m.model,action->name,m.skin,log.b,ui_enemy_fact,&facts);
     else{const auto*before=world_enemy_state(m.model,projected);if(before&&!before->loop&&before->next>=0)projected=before->next;
      int state=world_enemy_transition(m.model,projected,action->name,ui_enemy_fact,&facts);if(const auto*node=world_enemy_state(m.model,state)){projected=state;clip=world_enemy_resolve_clip(m.model,node->clip,m.skin,log.b,ui_enemy_fact,&facts);}}
-    enemy_trigger(slot,action->name,log.b,action->direct!=0,&facts,when);if(clip>=0)when+=ui_enemy_ticks(*this,clip);
+    const bool uncurl=kind==EnemyId::LouseProgenitor&&ui_visual_equal(action->name,"Uncurl");
+    // Louse only executes this prefix when its animator is curled. An
+    // uncurled Web/Pounce must not reserve an absent 900ms animation.
+    if(uncurl&&clip<0)continue;
+    enemy_trigger(slot,action->name,log.b,action->direct!=0,&facts,when);
+    if(uncurl)when+=TurnBannerPresentation::wait_ticks(900,250,fast_mode);
+    else if(command_wait)when+=command_wait;
+    else if(clip>=0)when+=ui_enemy_ticks(*this,clip);
    }
    enemy_visual_clock=when;
   }

@@ -1,0 +1,1089 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23T06:17:58.518864+00:00",
+  "baseline_runtime_commit": "e8444322b494db67d905e4772ff95373d7bfd34a",
+  "candidate_runtime_commit": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+  "baseline_library_sha256": "6a0855bd00e36336d3e8c219a16e3b1c2bddea6de6e584a31fd6b420383e97d6",
+  "candidate_library_sha256": "a0ef318ce324577b3d7a1629a7ca71faa06b5c36e25555c39314dcc1d1ec310a",
+  "benchmark_driver_sha256": "1ef2d1823cb633acc4ea445964592fbcf6c15802b764c92683cfa6694211a847",
+  "compiler": "Ubuntu clang version 18.1.3 (1ubuntu1), x86_64-pc-linux-gnu, C++17, CMake Release (-O3 -DNDEBUG)",
+  "method": "Same unchanged public-API driver linked separately against baseline and candidate. Three production render scenes, seeded practice fixtures, 180 frames per scene, advance(33) on every measured frame. Canonical saves unchanged and zero save callback attempts. Single sequential observation per binary/language; unpaced host elapsed intervals with OS file pages already warmed, not physical-device cold-start/FPS. Existing resource_open_benchmark uses ranged FILE and reports Content open stages.",
+  "resource_profile": 17,
+  "resource_identities": {
+    "zhs": {
+      "bytes": 81124916,
+      "sha256": "470a8e2a79338a3bd92d7cf9904b5aa1818f5b6a1ce23b849499e951cbab8f43"
+    },
+    "eng": {
+      "bytes": 78349238,
+      "sha256": "7cdf55f9a909a6070b968aa8fbaafaebdad12f46e241a5db8451b4aef934ca7b"
+    }
+  },
+  "cache": {
+    "slots": 8,
+    "width": 56,
+    "height": 70,
+    "host_array_bytes": 130944,
+    "host_frame_counter_bytes": 4,
+    "compile_time_limit_bytes": 133120,
+    "arm_total_allocation_gate": "Pending final integrated ARM link; do not infer from host symbols."
+  },
+  "pixel_checks": {
+    "synthetic_checks": 385178,
+    "chinese_actual_pack_checks": 329691,
+    "english_actual_pack_checks": 318361,
+    "existing_canvas_cases": 159808,
+    "existing_canvas_checks": 319758,
+    "cache_oracle": "Complete RGB565 surfaces match uncached production card drawing, including ten cards, changed backdrops, costs/stars, rich animations, clipping and tint. Shared title-layout output matches repeated prior outline passes. Focus geometry checked at scale 512, 672, 1024 and 90-degree rotation. Glyph measurement of the full catalog changes no read/cache statistics and does not evict 64 glyphs.",
+    "captured_baseline_candidate_changed_pixels": {
+      "zhs": {
+        "library_8": 0,
+        "remove_10": 2825,
+        "draw_choice_10": 226
+      },
+      "eng": {
+        "library_8": 0,
+        "remove_10": 1961,
+        "draw_choice_10": 226
+      }
+    },
+    "capture_scope": "Remove-screen differences include corrected localization markup/Amount, choice differences include the current HUD. Private captures are not committed."
+  },
+  "benchmarks": {
+    "zhs": {
+      "baseline": [
+        {
+          "operation": "scope",
+          "pack_bytes": 81124916,
+          "frames_per_scene": 180,
+          "elapsed_ms_per_update": 33,
+          "method": "Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame."
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 711.836,
+          "mean_ms": 711.836,
+          "maximum_ms": 711.836,
+          "source_calls": 7348,
+          "source_bytes": 117346301,
+          "source_seeks": 3967
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.652,
+          "mean_ms": 1.652,
+          "maximum_ms": 1.652,
+          "source_calls": 91,
+          "source_bytes": 419702,
+          "source_seeks": 82
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 188.462,
+          "mean_ms": 1.047,
+          "maximum_ms": 2.254,
+          "source_calls": 12060,
+          "source_bytes": 49314960,
+          "source_seeks": 11340
+        },
+        {
+          "operation": "observation",
+          "scene": "library_8",
+          "visible_cards": 8,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 620366049,
+          "last_rgb565_fnv1a": 620366049,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 776.261,
+          "mean_ms": 776.261,
+          "maximum_ms": 776.261,
+          "source_calls": 7348,
+          "source_bytes": 117346301,
+          "source_seeks": 3967
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.794,
+          "mean_ms": 2.794,
+          "maximum_ms": 2.794,
+          "source_calls": 108,
+          "source_bytes": 487684,
+          "source_seeks": 98
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 229.581,
+          "mean_ms": 1.275,
+          "maximum_ms": 2.281,
+          "source_calls": 14040,
+          "source_bytes": 57507840,
+          "source_seeks": 12780
+        },
+        {
+          "operation": "observation",
+          "scene": "remove_10",
+          "visible_cards": 10,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 3862072361,
+          "last_rgb565_fnv1a": 3862072361,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 703.934,
+          "mean_ms": 703.934,
+          "maximum_ms": 703.934,
+          "source_calls": 7348,
+          "source_bytes": 117346301,
+          "source_seeks": 3967
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 1.282,
+          "mean_ms": 0.053,
+          "maximum_ms": 0.171,
+          "source_calls": 88,
+          "source_bytes": 389003,
+          "source_seeks": 8
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.868,
+          "mean_ms": 2.868,
+          "maximum_ms": 2.868,
+          "source_calls": 212,
+          "source_bytes": 890850,
+          "source_seeks": 202
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 370.149,
+          "mean_ms": 2.056,
+          "maximum_ms": 3.751,
+          "source_calls": 22830,
+          "source_bytes": 93428880,
+          "source_seeks": 21990
+        },
+        {
+          "operation": "observation",
+          "scene": "draw_choice_10",
+          "visible_cards": 10,
+          "preparation_updates": 23,
+          "first_rgb565_fnv1a": 1114449082,
+          "last_rgb565_fnv1a": 3222487842,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        }
+      ],
+      "candidate": [
+        {
+          "operation": "scope",
+          "pack_bytes": 81124916,
+          "frames_per_scene": 180,
+          "elapsed_ms_per_update": 33,
+          "method": "Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame."
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 722.132,
+          "mean_ms": 722.132,
+          "maximum_ms": 722.132,
+          "source_calls": 7348,
+          "source_bytes": 117346301,
+          "source_seeks": 3967
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.853,
+          "mean_ms": 1.853,
+          "maximum_ms": 1.853,
+          "source_calls": 76,
+          "source_bytes": 358262,
+          "source_seeks": 70
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 98.888,
+          "mean_ms": 0.549,
+          "maximum_ms": 0.773,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "library_8",
+          "visible_cards": 8,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 620366049,
+          "last_rgb565_fnv1a": 620366049,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 693.941,
+          "mean_ms": 693.941,
+          "maximum_ms": 693.941,
+          "source_calls": 7348,
+          "source_bytes": 117346301,
+          "source_seeks": 3967
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.672,
+          "mean_ms": 1.672,
+          "maximum_ms": 1.672,
+          "source_calls": 87,
+          "source_bytes": 401668,
+          "source_seeks": 80
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 115.055,
+          "mean_ms": 0.639,
+          "maximum_ms": 1.378,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "remove_10",
+          "visible_cards": 10,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 2797451991,
+          "last_rgb565_fnv1a": 2797451991,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 689.002,
+          "mean_ms": 689.002,
+          "maximum_ms": 689.002,
+          "source_calls": 7348,
+          "source_bytes": 117346301,
+          "source_seeks": 3967
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 1.28,
+          "mean_ms": 0.053,
+          "maximum_ms": 0.176,
+          "source_calls": 88,
+          "source_bytes": 389003,
+          "source_seeks": 8
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.925,
+          "mean_ms": 2.925,
+          "maximum_ms": 2.925,
+          "source_calls": 175,
+          "source_bytes": 739298,
+          "source_seeks": 162
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 285.377,
+          "mean_ms": 1.585,
+          "maximum_ms": 7.453,
+          "source_calls": 15996,
+          "source_bytes": 65436816,
+          "source_seeks": 14933
+        },
+        {
+          "operation": "observation",
+          "scene": "draw_choice_10",
+          "visible_cards": 10,
+          "preparation_updates": 23,
+          "first_rgb565_fnv1a": 2514316888,
+          "last_rgb565_fnv1a": 1509170688,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        }
+      ]
+    },
+    "eng": {
+      "baseline": [
+        {
+          "operation": "scope",
+          "pack_bytes": 78349238,
+          "frames_per_scene": 180,
+          "elapsed_ms_per_update": 33,
+          "method": "Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame."
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 810.144,
+          "mean_ms": 810.144,
+          "maximum_ms": 810.144,
+          "source_calls": 6693,
+          "source_bytes": 111875809,
+          "source_seeks": 3952
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.672,
+          "mean_ms": 2.672,
+          "maximum_ms": 2.672,
+          "source_calls": 36,
+          "source_bytes": 194422,
+          "source_seeks": 29
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 340.99,
+          "mean_ms": 1.894,
+          "maximum_ms": 6.522,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "library_8",
+          "visible_cards": 8,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 1414711941,
+          "last_rgb565_fnv1a": 1414711941,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 847.15,
+          "mean_ms": 847.15,
+          "maximum_ms": 847.15,
+          "source_calls": 6693,
+          "source_bytes": 111875809,
+          "source_seeks": 3952
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 3.304,
+          "mean_ms": 3.304,
+          "maximum_ms": 3.304,
+          "source_calls": 40,
+          "source_bytes": 209156,
+          "source_seeks": 35
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 373.463,
+          "mean_ms": 2.075,
+          "maximum_ms": 3.119,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "remove_10",
+          "visible_cards": 10,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 4065742856,
+          "last_rgb565_fnv1a": 4065742856,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 740.469,
+          "mean_ms": 740.469,
+          "maximum_ms": 740.469,
+          "source_calls": 6693,
+          "source_bytes": 111875809,
+          "source_seeks": 3952
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 1.834,
+          "mean_ms": 0.076,
+          "maximum_ms": 0.218,
+          "source_calls": 86,
+          "source_bytes": 380811,
+          "source_seeks": 5
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 5.376,
+          "mean_ms": 5.376,
+          "maximum_ms": 5.376,
+          "source_calls": 71,
+          "source_bytes": 314234,
+          "source_seeks": 65
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 548.177,
+          "mean_ms": 3.045,
+          "maximum_ms": 6.125,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "draw_choice_10",
+          "visible_cards": 10,
+          "preparation_updates": 23,
+          "first_rgb565_fnv1a": 3201331819,
+          "last_rgb565_fnv1a": 3978055143,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        }
+      ],
+      "candidate": [
+        {
+          "operation": "scope",
+          "pack_bytes": 78349238,
+          "frames_per_scene": 180,
+          "elapsed_ms_per_update": 33,
+          "method": "Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame."
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 735.679,
+          "mean_ms": 735.679,
+          "maximum_ms": 735.679,
+          "source_calls": 6693,
+          "source_bytes": 111875809,
+          "source_seeks": 3952
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.074,
+          "mean_ms": 2.074,
+          "maximum_ms": 2.074,
+          "source_calls": 36,
+          "source_bytes": 194422,
+          "source_seeks": 29
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 110.676,
+          "mean_ms": 0.615,
+          "maximum_ms": 3.442,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "library_8",
+          "visible_cards": 8,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 1414711941,
+          "last_rgb565_fnv1a": 1414711941,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 689.102,
+          "mean_ms": 689.102,
+          "maximum_ms": 689.102,
+          "source_calls": 6693,
+          "source_bytes": 111875809,
+          "source_seeks": 3952
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.706,
+          "mean_ms": 1.706,
+          "maximum_ms": 1.706,
+          "source_calls": 40,
+          "source_bytes": 209156,
+          "source_seeks": 35
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 117.959,
+          "mean_ms": 0.655,
+          "maximum_ms": 0.922,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "remove_10",
+          "visible_cards": 10,
+          "preparation_updates": 0,
+          "first_rgb565_fnv1a": 1397370541,
+          "last_rgb565_fnv1a": 1397370541,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 680.874,
+          "mean_ms": 680.874,
+          "maximum_ms": 680.874,
+          "source_calls": 6693,
+          "source_bytes": 111875809,
+          "source_seeks": 3952
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 1.56,
+          "mean_ms": 0.065,
+          "maximum_ms": 0.248,
+          "source_calls": 86,
+          "source_bytes": 380811,
+          "source_seeks": 5
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.957,
+          "mean_ms": 2.957,
+          "maximum_ms": 2.957,
+          "source_calls": 70,
+          "source_bytes": 310138,
+          "source_seeks": 64
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 287.778,
+          "mean_ms": 1.599,
+          "maximum_ms": 2.183,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "observation",
+          "scene": "draw_choice_10",
+          "visible_cards": 10,
+          "preparation_updates": 23,
+          "first_rgb565_fnv1a": 1416274765,
+          "last_rgb565_fnv1a": 3173125897,
+          "canonical_state_unchanged": true,
+          "save_callback_attempts": 0
+        }
+      ]
+    }
+  },
+  "startup": {
+    "zhs": [
+      {
+        "operation": "open",
+        "pack_bytes": 81124916,
+        "success": true,
+        "milliseconds": 766.178,
+        "callbacks": 7348,
+        "callback_bytes": 117346301,
+        "reader_page_hits": 75195,
+        "reader_page_misses": 4322,
+        "range_bypasses": 3026
+      },
+      {
+        "operation": "open_phase",
+        "phase": "header",
+        "milliseconds": 0.007,
+        "reports": 2,
+        "completed": 1,
+        "total": 1
+      },
+      {
+        "operation": "open_phase",
+        "phase": "integrity",
+        "milliseconds": 123.852,
+        "reports": 1239,
+        "completed": 81124876,
+        "total": 81124876
+      },
+      {
+        "operation": "open_phase",
+        "phase": "directory",
+        "milliseconds": 0.507,
+        "reports": 2,
+        "completed": 1039064,
+        "total": 1039064
+      },
+      {
+        "operation": "open_phase",
+        "phase": "images",
+        "milliseconds": 62.986,
+        "reports": 2863,
+        "completed": 45785,
+        "total": 45785
+      },
+      {
+        "operation": "open_phase",
+        "phase": "tile_index",
+        "milliseconds": 577.504,
+        "reports": 475,
+        "completed": 1184,
+        "total": 1184
+      },
+      {
+        "operation": "open_phase",
+        "phase": "glyphs",
+        "milliseconds": 0.99,
+        "reports": 187,
+        "completed": 11900,
+        "total": 11900
+      },
+      {
+        "operation": "open_phase",
+        "phase": "strings",
+        "milliseconds": 0.266,
+        "reports": 129,
+        "completed": 8192,
+        "total": 8192
+      },
+      {
+        "operation": "open_phase",
+        "phase": "ready",
+        "milliseconds": 0.0,
+        "reports": 1,
+        "completed": 1,
+        "total": 1
+      }
+    ],
+    "eng": [
+      {
+        "operation": "open",
+        "pack_bytes": 78349238,
+        "success": true,
+        "milliseconds": 722.788,
+        "callbacks": 6693,
+        "callback_bytes": 111875809,
+        "reader_page_hits": 70690,
+        "reader_page_misses": 3709,
+        "range_bypasses": 2984
+      },
+      {
+        "operation": "open_phase",
+        "phase": "header",
+        "milliseconds": 0.006,
+        "reports": 2,
+        "completed": 1,
+        "total": 1
+      },
+      {
+        "operation": "open_phase",
+        "phase": "integrity",
+        "milliseconds": 106.007,
+        "reports": 1197,
+        "completed": 78349198,
+        "total": 78349198
+      },
+      {
+        "operation": "open_phase",
+        "phase": "directory",
+        "milliseconds": 0.226,
+        "reports": 2,
+        "completed": 857784,
+        "total": 857784
+      },
+      {
+        "operation": "open_phase",
+        "phase": "images",
+        "milliseconds": 59.566,
+        "reports": 2863,
+        "completed": 45785,
+        "total": 45785
+      },
+      {
+        "operation": "open_phase",
+        "phase": "tile_index",
+        "milliseconds": 556.592,
+        "reports": 475,
+        "completed": 1184,
+        "total": 1184
+      },
+      {
+        "operation": "open_phase",
+        "phase": "glyphs",
+        "milliseconds": 0.04,
+        "reports": 10,
+        "completed": 570,
+        "total": 570
+      },
+      {
+        "operation": "open_phase",
+        "phase": "strings",
+        "milliseconds": 0.316,
+        "reports": 129,
+        "completed": 8192,
+        "total": 8192
+      },
+      {
+        "operation": "open_phase",
+        "phase": "ready",
+        "milliseconds": 0.0,
+        "reports": 1,
+        "completed": 1,
+        "total": 1
+      }
+    ]
+  },
+  "receipts": [
+    {
+      "journal": "perf-candidate-config-3a9419c920ba.json",
+      "journal_sha256": "be543485136b3a6736bc392091997eef40df6d0f60e9d6c0a6df79b4e0018a38",
+      "log": "perf-candidate-config-3a9419c920ba.log",
+      "log_sha256": "a2656af58d6c29b48d6162ad82556071b0ad74b8fa518127d9c3e628777b76b7",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-candidate-build-d7c98ae29c20.json",
+      "journal_sha256": "4af11e74281472f7b17e6895bc31e0b2060c223a121763f3c6b4efc0b7d9f03f",
+      "log": "perf-candidate-build-d7c98ae29c20.log",
+      "log_sha256": "6606b80529071a6af8296437a79cb3e767f954db7190c0fd38d7a26796d924c2",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-baseline-grid-driver-540e0c77186c.json",
+      "journal_sha256": "526dc97324a0b7b10d40c08aa1d3c7b6b5c246144df811168183a24c339db543",
+      "log": "perf-baseline-grid-driver-540e0c77186c.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-card-pixel-final-b44e32276ac9.json",
+      "journal_sha256": "28ddef4fe1eca9d2b4d37192c6c6d7090640bac8b0b6082bf597d84166d31c35",
+      "log": "perf-card-pixel-final-b44e32276ac9.log",
+      "log_sha256": "aeb45a5e01327481a049633f299f8e3a56cb8865e32c8135a97db9e6d50dd33a",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-canvas-regression-83ee8dfe22d2.json",
+      "journal_sha256": "32b6c06fb2d2321fc92226579c9e25a088022f4c4f385bc1010ad706c5517b83",
+      "log": "perf-canvas-regression-83ee8dfe22d2.log",
+      "log_sha256": "1e70d2ee66c4f6a39781847b37aaaf9b2659c606cf9c89cdcd64cdbdfac3b0b2",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-card-pixels-zhs-e3e00a73b51a.json",
+      "journal_sha256": "ad53a04e7ffeac8e88e03db613ac95d0ad9e41df1a48be6d7804e5aaa49730cd",
+      "log": "perf-card-pixels-zhs-e3e00a73b51a.log",
+      "log_sha256": "6596af5d28742ea6adf94a786f84399b0a39d08a1fb00af60054e6eaee53a91a",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-card-pixels-eng-80d23191a60a.json",
+      "journal_sha256": "1385f3b8134d7db9e7dea8061b80e013da9a42c9d22a81d71957bc2863fe5103",
+      "log": "perf-card-pixels-eng-80d23191a60a.log",
+      "log_sha256": "86fb792ddde932c935d2f5319bf37ed277803f898a53d3cd66d6bc4d30713f31",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-baseline-grid-zhs-004357243643.json",
+      "journal_sha256": "4c355b28c8fed9b6af495fadfd8a621b65382843d738920b0594c18c52c9a261",
+      "log": "perf-baseline-grid-zhs-004357243643.log",
+      "log_sha256": "2b449a810f24c1f8c94cd7390c94af400ea14d1fc997c62fa05e4c3320b627a5",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-candidate-grid-zhs-f6317b570c99.json",
+      "journal_sha256": "c6f4986a5071e0b9d890d1fe0ed127c02aacb583d00d553927b73ed27cd11787",
+      "log": "perf-candidate-grid-zhs-f6317b570c99.log",
+      "log_sha256": "87af32156e64b86a2aa0b5991bbfd5ed0446d420c3986f9bbb9d8d7110fdebb3",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-baseline-grid-eng-ff73d13d4872.json",
+      "journal_sha256": "7e8f0f487804cfe52bd9a30844ab3bab7c16e46a10a9a7c40cd9d7e0647c9803",
+      "log": "perf-baseline-grid-eng-ff73d13d4872.log",
+      "log_sha256": "5d74dbbe5dcf1e7d3b0954f996c7a6f1ae096e9c76c689bcffeda509222656a9",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-candidate-grid-eng-9ccc55d2d2fa.json",
+      "journal_sha256": "11ccf1822bba6a3993dd1cf6fde5ce4ad6c07c682f7a05435a0cf0ef13a61aa2",
+      "log": "perf-candidate-grid-eng-9ccc55d2d2fa.log",
+      "log_sha256": "676de29b2ddbd56eb9e9cfa7b86d106afe38473644a16487cb00120ff0aa9379",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-startup-zhs-e53abbde80ef.json",
+      "journal_sha256": "05d0a72005dac899e059b560763cc90f2e6af048d3766f8227f1cb1d5347d066",
+      "log": "perf-startup-zhs-e53abbde80ef.log",
+      "log_sha256": "27261c5d26c7cd27c28828b001d0387dfdfe6e3d6ea284cf43a231484f4b6db1",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    },
+    {
+      "journal": "perf-startup-eng-ae330d5a5571.json",
+      "journal_sha256": "a76fabcd82855fb20973d258095528473dfa923bad5f6e3ee1d4d7650d5ce156",
+      "log": "perf-startup-eng-ae330d5a5571.log",
+      "log_sha256": "6977c2321a1d3c92263b08897be2c6c5adf5fc3540c39f1a5c01d669070dea4b",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "source_changed": false,
+      "source_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042"
+    }
+  ],
+  "superseded_observation": {
+    "journal": "perf-card-pixel-regression-44273fde52b2.json",
+    "state_at_readback": "running",
+    "explanation": "An initial parallel invocation printed passed and produced the expected check log, but its journal readback remained running. It is not counted as accepted evidence. The identical command was rerun sequentially; perf-card-pixel-final-b44e32276ac9.json is closed passed with unchanged source."
+  },
+  "limitations": [
+    "No Firebird or physical-calculator timing from this work item.",
+    "No disabled-integrity counterfactual was run; full FNV, structural validation and per-payload checks remain enabled.",
+    "NSP2/17 input held identical for code A/B; later feedback resources and split containers require their own integration gates.",
+    "English event-reader test helper needed a separate follow-up for word wrapping; candidate validation here does not relabel that next-stage change."
+  ]
+}

@@ -13,10 +13,10 @@ using LocalizedDefaultResolver=LocalizedValue(*)(const void*,const char*,Localiz
 class LocalizedTemplate {
  char*out_;size_t capacity_,used_=0;LocalizedResolver resolve_;const void*context_;
  LocalizedDefaultResolver default_resolver_=nullptr;
- char energy_[64]{},star_[64]{};bool english_=false;
+ char energy_[64]{},star_[64]{};bool english_=false,truncated_=false;
  static bool same(const char*a,size_t n,const char*b){size_t i=0;while(b[i]){if(i>=n||a[i]!=b[i])return false;++i;}return i==n;}
  static size_t length(const char*p){size_t n=0;while(p&&p[n])++n;return n;}
- void ch(char c){if(capacity_&&used_+1<capacity_){out_[used_++]=c;out_[used_]=0;}}
+ void ch(char c){if(capacity_&&used_+1<capacity_){out_[used_++]=c;out_[used_]=0;}else truncated_=true;}
  void text(const char*p,size_t n){for(size_t i=0;i<n;i++)ch(p[i]);}
  void text(const char*p){text(p,length(p));}
  // Ndless has no 64-bit division runtime. Bounded bit division also handles
@@ -128,6 +128,7 @@ class LocalizedTemplate {
 public:
  LocalizedTemplate(char*out,size_t capacity,LocalizedResolver resolver,const void*context,const char*energy="能量",const char*star="辉星",bool english=false,LocalizedDefaultResolver default_resolver=nullptr):out_(out),capacity_(capacity),resolve_(resolver),context_(context),default_resolver_(default_resolver),english_(english){if(capacity_)out_[0]=0;
   size_t i=0;for(;energy&&energy[i]&&i+1<sizeof energy_;i++)energy_[i]=energy[i];energy_[i]=0;i=0;for(;star&&star[i]&&i+1<sizeof star_;i++)star_[i]=star[i];star_[i]=0;}
+ bool truncated()const{return truncated_;}
  void format(const char*source){render(source,length(source),{},0);}
 };
 } // namespace spire

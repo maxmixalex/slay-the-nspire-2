@@ -1,44 +1,83 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>nSpire II 0.17 开发版 · 原版三幕远征</title>
+<title>nSpire II 0.17</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#151a19;color:#ece6d6;font:14px/1.7 system-ui,sans-serif;min-height:100vh;display:grid;place-content:center;padding:20px}main{width:min(960px,calc(100vw - 40px))}h1{font-size:18px;font-weight:500;margin:0 0 12px}small{color:#b5b8ac}canvas{display:block;width:100%;aspect-ratio:4/3;background:#111;image-rendering:pixelated;touch-action:none;cursor:none;box-shadow:0 12px 55px #0008;border:1px solid #5b5542;outline:none}p{margin:12px 0 0;color:#b5b8ac}kbd{font:inherit;color:#e2c992}button{background:#343c35;border:1px solid #6c725f;color:#eee9d9;border-radius:4px;padding:5px 10px;cursor:pointer}#error{white-space:pre-wrap;color:#ffb7a6}#actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}a{color:inherit}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#151a19;color:#ece6d6;font:14px/1.7 system-ui,sans-serif;min-height:100vh;display:grid;place-content:center;padding:20px}main{width:min(960px,calc(100vw - 40px))}h1{font-size:18px;font-weight:500;margin:0 0 12px}small{color:#b5b8ac}canvas{display:block;width:100%;aspect-ratio:4/3;background:#111;image-rendering:pixelated;touch-action:none;cursor:none;box-shadow:0 12px 55px #0008;border:1px solid #5b5542;outline:none}p{margin:12px 0 0;color:#b5b8ac}kbd{font:inherit;color:#e2c992}select,button{background:#343c35;border:1px solid #6c725f;color:#eee9d9;border-radius:4px;padding:5px 10px;cursor:pointer}#error{white-space:pre-wrap;color:#ffb7a6}#actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}a{color:inherit}
 </style>
 <main>
-<h1>nSpire II 0.17 开发版 <small>｜原版三幕远征</small></h1>
-<p id="loading" role="status">正在载入离线资源…</p>
-<canvas id="screen" width="320" height="240" tabindex="0" aria-label="nSpire II 游戏画面"></canvas>
-<div id="actions"><button data-key="2">↑ 目标 / 上</button><button data-key="0">← 选牌</button><button data-key="1">选牌 →</button><button data-key="3">↓ 目标 / 下</button><button data-key="4">Enter 确认</button><button data-key="6">结束回合</button><button data-key="7">查看牌堆</button><button data-key="10">记录</button><button data-key="12">地图</button><button data-key="17">图鉴</button><button data-key="16">参考地图</button><button data-key="13">药水</button><button data-key="14">遗物</button><button data-key="18">能力状态 V</button><button data-key="5">Esc 菜单</button></div>
-<p><kbd>方向键 / 4、6、8、2</kbd> 导航，<kbd>Enter / 5</kbd> 确认，<kbd>空格</kbd> 结束回合（选牌窗口中为确认选择），<kbd>Tab</kbd> 牌堆，<kbd>L</kbd> 记录，<kbd>M</kbd> 地图，<kbd>P</kbd> 药水，<kbd>R</kbd> 遗物，<kbd>C</kbd> 图鉴，<kbd>I</kbd> 详情，<kbd>V</kbd> 状态，<kbd>S</kbd> 保存，<kbd>O</kbd> 载入。存档保存在当前浏览器。可用鼠标或触摸板指针：点选手牌后点敌人，或将牌拖到敌人；非指向牌放到战场。滚轮翻页，点卡组卡牌查看详情。</p>
-<p>基于固定参考 v0.111.0 / 41cef1ea，保留五职业单人卡池、53 种无色牌和 64 种药水，事件与诅咒牌扩展后共有 558 个卡牌模型。远征接入原版三幕地图、单人遭遇、事件与先古之民；练习模式可通过图鉴领取基础或升级卡牌与药水。原版界面与动画仍在完善，当前为开发版。原版美术与动画由玩家安装包离线转换。</p><details id="diagnostics"><summary>本机性能测量</summary><p>采样 10 秒，期间可照常切换界面和战斗。结果仅代表当前浏览器。</p><button id="measure" disabled>开始测量</button><pre id="performance-report" style="white-space:pre-wrap;max-height:280px;overflow:auto"></pre></details><div id="error" role="alert"></div>
+<h1>nSpire II 0.17 <span data-i18n="development">Development build</span> <small data-i18n="campaign">Original three-act expeditions</small></h1>
+<div id="locale-controls"><label for="language" data-i18n="language">语言 / Language</label> <select id="language" disabled><option value="zhs">中文</option><option value="eng">English</option></select></div>
+<p id="loading" role="status">正在载入 / Loading…</p>
+<canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
+<div id="actions">
+<button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Enter</button><button data-key="6" data-i18n="end_turn">Space</button><button data-key="7" data-i18n="piles">Tab</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="16" data-i18n="reference_map">G</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
+</div>
+<p data-i18n="help"></p><p data-i18n="about"></p>
+<details id="diagnostics"><summary data-i18n="performance"></summary><p data-i18n="performance_help"></p><button id="measure" data-i18n="measure" disabled></button><pre id="performance-report" style="white-space:pre-wrap;max-height:280px;overflow:auto"></pre></details><div id="error" role="alert"></div>
 </main>
 <script>
 'use strict';
+const translations=__LOCALES__;
+let language=null;
+const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+translations.eng[key];
 (async()=>{
  const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
  const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,Tab:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,g:16,G:16,c:17,C:17,v:18,V:18};
  let memory,game,ram;
- const loading=document.getElementById('loading'),measureButton=document.getElementById('measure'),reportView=document.getElementById('performance-report');
+ const loading=document.getElementById('loading'),measureButton=document.getElementById('measure'),reportView=document.getElementById('performance-report'),languageSelect=document.getElementById('language');
+ // The shared artwork occurs once in this object and once in decoded memory.
+ // Only the selected small locale is decoded. Language changes reuse this one
+ // HTML installation and preserve the same save format/key.
+ const packages=__RESOURCE_PACKAGE__;
+ const isSplit=packages.mode==='split',available=isSplit?Object.keys(packages.languages):[packages.language];
+ let preferred=null;try{preferred=localStorage.getItem('nSpire2-language')}catch(e){}
+ const requested=new URLSearchParams(location.hash.slice(1)).get('language');if(available.includes(requested))preferred=requested;
+ const browserLanguage=(navigator.language||'').toLowerCase().startsWith('zh')?'zhs':'eng';
+ language=available.includes(preferred)?preferred:available.includes(browserLanguage)?browserLanguage:available[0];
+ if(!language)throw Error(t('missing_resources'));
+ function applyLocale(){
+  document.documentElement.lang=language==='eng'?'en':'zh-CN';document.title='nSpire II 0.17 '+t('development');
+  document.querySelectorAll('[data-i18n]').forEach(node=>node.innerHTML=t(node.dataset.i18n));
+  document.querySelectorAll('[data-i18n-aria]').forEach(node=>node.setAttribute('aria-label',t(node.dataset.i18nAria)));
+  for(const option of languageSelect.options)option.disabled=!available.includes(option.value);
+  languageSelect.value=language;loading.textContent=t('loading_offline');
+ }
+ applyLocale();
+ languageSelect.addEventListener('change',()=>{const next=languageSelect.value;if(next===language)return;
+  if(!confirm(t('switch_language'))){languageSelect.value=language;return;}
+  try{localStorage.setItem('nSpire2-language',next)}catch(e){location.hash='language='+next;location.reload();return;}
+  location.hash='language='+next;location.reload();
+ });
  const clock=()=>performance.now(),boot=clock();
  const decode=(s)=>{const binary=atob(s),bytes=new Uint8Array(binary.length);for(let i=0;i<bytes.length;i++)bytes[i]=binary.charCodeAt(i);return bytes;};
  async function decodeContent(s){
   if(typeof Uint8Array.fromBase64==='function')return Uint8Array.fromBase64(s);
   const padding=s.endsWith('==')?2:s.endsWith('=')?1:0,bytes=new Uint8Array(s.length/4*3-padding),chunk=1024*1024;
   for(let at=0;at<s.length;at+=chunk){const binary=atob(s.slice(at,at+chunk)),offset=at/4*3;for(let i=0;i<binary.length;i++)bytes[offset+i]=binary.charCodeAt(i);
-   if(at%(4*chunk)===0){loading.textContent='正在载入离线资源… '+Math.floor(at/s.length*100)+'%';await new Promise(resolve=>setTimeout(resolve,0));}}
+   if(at%(4*chunk)===0){loading.textContent=t('loading_offline')+' '+Math.floor(at/s.length*100)+'%';await new Promise(resolve=>setTimeout(resolve,0));}}
   return bytes;
  }
  const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};
  let profiling=false,profileUntil=0,lastPresented=0,lastScene=-1,profile=null;
  const blank=()=>({count:0,total_ms:0,max_ms:0,over_50ms:0,over_100ms:0,over_250ms:0});
  function add(stat,ms){stat.count++;stat.total_ms+=ms;stat.max_ms=Math.max(stat.max_ms,ms);if(ms>50)stat.over_50ms++;if(ms>100)stat.over_100ms++;if(ms>250)stat.over_250ms++;}
- function freshProfile(){return {scope:'Current browser CPU and Canvas2D submission intervals; excludes compositor/display FPS',startup_ms:startupMs,startup_scope:'base64_decode_wasm_instantiate_app_init_excludes_first_draw',pack_bytes:content.length,started_at:new Date().toISOString(),input:blank(),transition_interval:blank(),scenes:Array.from(['title','character','collection','map','combat','room','overlay','other','combat_preparation'],scene=>({scene,interval:blank(),update:blank(),render:blank(),conversion:blank(),present:blank(),read_calls:0,read_bytes:0,resource_copy_ms:0}))};}
- const content=await decodeContent('__CONTENT__');
- loading.textContent='正在校验资源并启动…';await new Promise(resolve=>setTimeout(resolve,0));
+ function freshProfile(){return {scope:t('profile_scope'),startup_ms:startupMs,startup_scope:t('profile_startup_scope'),pack_bytes:virtualBytes,resource_storage_bytes:storedBytes,language,started_at:new Date().toISOString(),input:blank(),transition_interval:blank(),scenes:Array.from(['title','character','collection','map','combat','room','overlay','other','combat_preparation'],scene=>({scene,interval:blank(),update:blank(),render:blank(),conversion:blank(),present:blank(),read_calls:0,read_bytes:0,resource_copy_ms:0}))};}
+ const content=isSplit?null:await decodeContent(packages.content);
+ const common=isSplit?await decodeContent(packages.common):null;
+ const localized=isSplit?await decodeContent(packages.languages[language]):null;
+ const storedBytes=isSplit?common.length+localized.length:content.length;
+ const virtualBytes=isSplit&&localized.length>=24?new DataView(localized.buffer,localized.byteOffset,localized.byteLength).getUint32(20,true):storedBytes;
+ loading.textContent=t('verifying_resources');await new Promise(resolve=>setTimeout(resolve,0));
  let ioCalls=0,ioBytes=0,ioTime=0;
  function memoryBytes(){if(!ram||ram.buffer!==memory.buffer)ram=new Uint8Array(memory.buffer);return ram;}
  const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{
-  resource_read:(offset,p,n)=>{const t=profiling?clock():0;try{if(offset<0||n<0||offset>content.length||n>content.length-offset)return 0;memoryBytes().set(content.subarray(offset,offset+n),p);if(profiling){ioCalls++;ioBytes+=n;ioTime+=clock()-t;}return 1}catch(e){return 0}},
+  resource_read:(offset,p,n)=>{const start=profiling?clock():0;try{
+   let bytes=content;
+   if(isSplit){if(offset>=0x20000000&&offset<0x30000000){bytes=localized;offset-=0x20000000;}
+    else if(offset>=0x10000000&&offset<0x20000000){bytes=common;offset-=0x10000000;}else return 0;}
+   const target=memoryBytes();if(!bytes||offset<0||n<0||offset>bytes.length||n>bytes.length-offset||p<0||p>target.length||n>target.length-p)return 0;
+   target.set(bytes.subarray(offset,offset+n),p);if(profiling){ioCalls++;ioBytes+=n;ioTime+=clock()-start;}return 1
+  }catch(e){return 0}},
   save:(p,n)=>{try{if(n===0){for(let version=3;version<=15;version++)localStorage.removeItem('nSpire2-save-v'+version);return 1}localStorage.setItem('nSpire2-save-v15',encode(memoryBytes().subarray(p,p+n)));return 1}catch(e){return 0}},
   load:(p,max)=>{try{let s=null;for(let version=15;version>=3&&!s;version--)s=localStorage.getItem('nSpire2-save-v'+version);if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
  }});
@@ -51,7 +90,9 @@
   game.set_seed_entropy(entropyWord[0]);
  }
  refreshEntropy();
- if(!game.start(content.length))throw Error('内容包校验失败。');
+ if(!(isSplit?game.start_split(common.length,localized.length,language==='eng'?1:2):game.start(content.length)))throw Error(t('invalid_content'));
+ if(game.resource_language&&game.resource_language()!==(language==='eng'?1:2))throw Error(t('invalid_content'));
+ try{localStorage.setItem('nSpire2-language',language)}catch(e){}
  const startupMs=clock()-boot;
  const image=ctx.createImageData(320,240),rgba=new Uint32Array(image.data.buffer),colors=new Uint32Array(65536);
  const little=new Uint8Array(new Uint32Array([0x01020304]).buffer)[0]===4;
@@ -68,9 +109,9 @@
   const converted=active?clock():0;ctx.putImageData(image,0,0);dirty=false;
   if(active){const end=clock();add(stats.render,rendered-begin);add(stats.conversion,converted-rendered);add(stats.present,end-converted);if(lastPresented)add(lastScene===index?stats.interval:profile.transition_interval,end-lastPresented);lastPresented=end;lastScene=index;recordIo(stats,calls,bytes,io);}
  }
- function input(action,repaint=true){if(game.closed())return;refreshEntropy();const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();if(active){add(profile.input,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent='程序已退出。刷新页面可重新启动。';}
+ function input(action,repaint=true){if(game.closed())return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');}
  function key(k){input(()=>game.input(k));}
- document.addEventListener('keydown',e=>{if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();input(()=>game.text_input(code));return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}});
+ document.addEventListener('keydown',e=>{if(e.target===languageSelect)return;if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();input(()=>game.text_input(code));return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}});
  document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
  canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
@@ -81,7 +122,7 @@
  canvas.addEventListener('wheel',e=>{e.preventDefault();input(()=>game.pointer_scroll(Math.sign(e.deltaY)));},{passive:false});
  window.addEventListener('blur',()=>game.pointer_cancel());
  function finishProfile(reason){profiling=false;measureButton.disabled=false;profile.resource_total={read_calls:ioCalls,read_bytes:ioBytes,copy_ms:ioTime};profile.finished_reason=reason;profile.finished_at=new Date().toISOString();reportView.textContent=JSON.stringify(profile,null,2);}
- measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent='采样中，请照常操作游戏…';canvas.focus();});
+ measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent=t('measuring');canvas.focus();});
  let previous=clock(),nextPaint=previous+1000/30;
  function loop(now){const elapsed=now-previous;previous=now;if(!document.hidden&&!game.closed()){
   const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
@@ -90,7 +131,7 @@
   if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}
  }if(profiling&&(clock()>=profileUntil||game.closed()))finishProfile(game.closed()?'game_closed':'complete');requestAnimationFrame(loop);}
  document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
- draw();loading.hidden=true;measureButton.disabled=false;requestAnimationFrame(loop);canvas.focus();
+ draw();loading.hidden=true;measureButton.disabled=false;languageSelect.disabled=available.length<2;requestAnimationFrame(loop);canvas.focus();
 
-})().catch(e=>document.getElementById('error').textContent=e.stack||String(e));
+})().catch(e=>{document.getElementById('error').textContent=t('startup_failed')+'\n'+e.message;console.error(e);});
 </script></html>

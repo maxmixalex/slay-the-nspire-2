@@ -164,7 +164,7 @@ void App::input(Key k){
     if(k==Key::EndTurn&&game.phase==Phase::Camp&&world_rest_can_proceed(game))acted=world_rest_proceed(game);
     if(k==Key::EndTurn&&game.phase==Phase::Combat){
         uint8_t moves[MaxEnemies]{};for(int i=0;i<game.enemy_count;i++)moves[i]=game.enemies[i].move;acted=end_turn(game);
-        if(acted){if(!game.enemy_world.active){for(int i=0;i<game.enemy_count;i++)if(hp_before[i+1])animate(i+1,moves[i]==2?AnimEnemyBuff:AnimEnemyAttack,i*12);animate(0,AnimHeroHurt,7);busy=18+10*(game.enemy_count-1);}else if(game.hp<hp_before[0])animate(0,AnimHeroHurt,TurnBannerPresentation::EnemyLeadTicks+TurnBannerPresentation::IntentLeadTicks+7);feedback=10;}
+        if(acted){if(!game.enemy_world.active){for(int i=0;i<game.enemy_count;i++)if(hp_before[i+1])animate(i+1,moves[i]==2?AnimEnemyBuff:AnimEnemyAttack,i*12);animate(0,AnimHeroHurt,7);busy=18+10*(game.enemy_count-1);}else if(game.hp<hp_before[0])animate(0,AnimHeroHurt,TurnBannerPresentation::enemy_lead_ticks(fast_mode)+TurnBannerPresentation::intent_lead_ticks(fast_mode)+7);feedback=10;}
     }
     if(k==Key::Confirm){
         switch(game.phase){

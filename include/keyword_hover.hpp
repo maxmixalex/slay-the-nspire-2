@@ -5,13 +5,15 @@
 namespace spire {
 struct App;
 enum class Key;
-enum class HoverTipKind:uint8_t { Keyword,Static,Power,Orb,Card,Enchantment,Affliction,Special };
+enum class HoverTipKind:uint8_t { Keyword,Static,Power,Orb,Card,Enchantment,Affliction,Special,Relic,Potion };
 struct HoverTip {
     HoverTipKind kind=HoverTipKind::Keyword;
     const char* key="";
     Card card{};
     int16_t amount=0,actor=-1;
     bool smart=false,debuff=false,instanced=false;
+    bool has_facts=false;
+    EventCardFacts facts{};
 };
 constexpr unsigned MaxCardHoverTips=32;
 inline bool hover_key_equal(const char*a,const char*b){
@@ -49,6 +51,7 @@ struct CardHoverTarget {
     HoverRect owner{};
     uint32_t identity=0;
     bool detail=false;
+    int event_option=-1;
 };
 struct HoverPiece {unsigned tip=0;int skip=0,lines=0;HoverRect box{};};
 struct HoverPage {HoverPiece pieces[MaxCardHoverTips]{};unsigned count=0;int pages=1;};
@@ -71,6 +74,8 @@ inline HoverRect card_hover_column(HoverRect owner){
 }
 void collect_card_hover_tips(const App&,Card,HoverTipList&,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr);
 bool card_hover_target(const App&,CardHoverTarget&);
+bool event_hover_target(const App&,CardHoverTarget&);
+void collect_event_hover_tips(const App&,int option,HoverTipList&);
 void format_card_hover_tip(const App&,const CardHoverTarget&,const HoverTip&,char*title,size_t title_cap,char*body,size_t body_cap);
 HoverPage card_hover_page(App&,const CardHoverTarget&,const HoverTipList&,int page=0);
 bool keyword_hover_scroll(App&,int rows);

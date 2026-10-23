@@ -1,31 +1,54 @@
 # Work state — 2026-10-23
 
-## Current: original UI feedback implementation in progress
+## Current: feedback integration checkpoint; final delivery still pending
 
-Resumed from exact remote `e8444322b494db67d905e4772ff95373d7bfd34a`
-(tree `9ed19bf94fe241595a5ef614ee420b25dbf7aba8`); all 575 original Git blobs
-were restored and verified. The previous source36/38 package identities remain
-historical. No newer runtime verification or delivered build is claimed yet.
+The first feedback stage was pushed to `work/0.17-world-parity` at
+`069f6d51f37aef3f31d11a6282bd02a61d7afdef`; branch, tree and all 584 file
+hashes/modes were read back. It descended from restored `e8444322`.
+The original reference remains v0.111.0 / 41cef1ea. Main and disabled CI are unchanged.
 
-The user prioritizes original UI fidelity, then rendering performance. Parallel
-implementation covers battle HUD/banner/merchant/Proceed composition; glyph
-metrics, card layout/cache and focus geometry; and shared graphics with separate
-Chinese/English resources. Root owns event-option hover tips, UI template binding,
-bilingual startup and integration. The original v0.111.0 / 41cef1ea PCK and DLL
-were privately recovered with their pinned hashes, as were both NSP2/17 packs.
+The frozen first stage has real bilingual v18 resources, original layered energy
+HUD, merchant scene/relaxed character loops and Proceed texture. Both languages
+passed world UI checks. The card-grid A/B and startup phase evidence are in
+`rendering-performance-0.17.md` and `validation-rendering-0.17.json`. These are
+host timings under warm OS conditions, not physical-calculator performance.
+Library frames remained pixel-identical; selection-title fixes intentionally
+change formerly literal tags/templates. Source state/save format stays v15.
 
-This first source checkpoint adds the final UI formatting boundary for selection
-amounts and actual keyboard bindings, rich label rendering, non-reading glyph
-metrics and shared card-title layout. The split-resource reader/tool may be
-present as an unintegrated implementation stage. Follow-up checkpoints will
-complete its host integration and original-art feedback profile. Do not describe
-this checkpoint alone as resolution of every user report or as a measured speedup.
+The current follow-up integrates the split source in Ndless, Web and X11; one
+common art package plus separate English/Chinese files, one bilingual offline
+host, language preference and all boot/preparation/error text. Its bootstrap
+Chinese subset derives from open-licensed Noto, never the game's font. Existing
+monolithic resource files remain readable. v18 validates the same full-file FNV,
+directory, geometry and per-payload checks as v17.
 
-Full-file integrity validation is retained. Its necessity and measured cost are
-being evaluated separately from structural validation and per-payload checks;
-the user's question did not authorize silently disabling checks. Remote CI
-remains disabled; main is unchanged. Original assets and generated builds stay
-outside the source repository. Save format remains v15.
+Event-option hover is now wired into pointer and keyboard ownership, expandable
+pages, explicit original option associations and prepared dynamic relic/card
+values. Its new regression checks are present but have not yet been formally
+run against this follow-up checkpoint. Hover does not prepare offers or consume
+RNG. The final UI template boundary resolves known UI fields, preserves rich
+styles and refuses to silently truncate long model prose. A full binding audit
+is still in progress; do not claim all templates verified until its receipt.
+
+Enemy banner/action overlap and cue interruption are implemented. This stage
+adds audited Normal/Fast waits for Nibbit and Louse, independent banner fades
+and real-time merchant loops. Remaining enemies still use the existing clip
+span fallback. Core HP/block/intent settle synchronously: this is not a complete
+original asynchronous effect replay. Merchant GPU candle particles and the
+Necrobinder head flame remain unimplemented. No 95% visual-fidelity claim.
+
+The real v18 three-file resource total is 93,233,887 bytes vs 180,103,614 for two
+full packs (48.23% saved with both languages). Original payloads round-trip
+byte-for-byte. This does not reach the 30–40 MB resource goal or establish a
+startup speedup. Startup evidence attributes approximately 15–16% to the full
+FNV scan and 75–77% to tile-index validation on the tested host. Keep all checks;
+the user's request was to evaluate the cost, not to silently disable them.
+
+Next: push/read back this coherent stage before formal builds; run event hover,
+locale, host split, ARM/WASM memory, original UI and integration checks in frozen
+source directories, then persist the final source and private deliverables.
+Original PCK/DLL/device images, generated packs, screenshots and embedded HTML
+must remain outside the public source repository.
 
 # Work state — 2026-10-21
 

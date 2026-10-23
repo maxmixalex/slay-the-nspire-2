@@ -18,15 +18,25 @@ static LocalizedValue ui_text_value(const void* opaque,const char* name){
     return {};
 }
 const char* App::ui_text(const char* source,char* buffer,size_t capacity)const{
-    const char* raw=content.ui_text(source);bool has_template=false;
-    for(const char* p=raw;*p;++p)if(*p=='{'){has_template=true;break;}
-    if(!has_template||!buffer||!capacity)return raw;
+    const char* raw=content.ui_text(source);
+    if(!buffer||!capacity)return raw;
     // Inspect is Tab on both real hosts. The exhaust pile is opened through
     // the pile UI and has no independent keyboard action; None deliberately
     // selects the original optional-hint branch instead of inventing a key.
     const char* hotkey="None";
     if(wt_equal(source,"牌组")||wt_equal(raw,content.ui_text("牌组")))hotkey="Tab";
     UiTextContext context{this,hotkey};
-    LocalizedTemplate(buffer,capacity,ui_text_value,&context,content.english()?"Energy":"能量",content.english()?"Stars":"辉星",content.english()).format(raw);
-    return buffer;
+    // The final drawing boundary owns only UI variables. Model prose has
+    // already used its event/card/relic resolver; an unrelated brace must not
+    // copy a long article into this small label buffer or truncate the reader.
+    bool resolved=false;
+    for(const char*p=raw;*p&&!resolved;++p)if(*p=='{'){
+        char name[96]{};unsigned n=0;const char*q=p+1;
+        while(*q&&*q!='}'&&*q!=':'&&*q!='='&&*q!='{'&&n+1<sizeof name)name[n++]=*q++;
+        if(n&&(*q=='}'||*q==':'||*q=='='))resolved=ui_text_value(&context,name).known;
+    }
+    if(!resolved)return raw;
+    LocalizedTemplate formatter(buffer,capacity,ui_text_value,&context,content.english()?"Energy":"能量",content.english()?"Stars":"辉星",content.english());
+    formatter.format(raw);
+    return formatter.truncated()?raw:buffer;
 }

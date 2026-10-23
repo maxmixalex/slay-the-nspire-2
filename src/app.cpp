@@ -331,7 +331,7 @@ void App::render(){
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
     sync_combat_preparation();
     if(combat_preparation.active){
-        hit_count=0;loading_screen(pixels,ResourceStage::Images,combat_preparation.cursor,combat_preparation.count,map_clock_ms/33,"PREPARING BATTLE",true);
+        hit_count=0;loading_screen(pixels,ResourceStage::Images,combat_preparation.cursor,combat_preparation.count,map_clock_ms/33,boot_text(BootText::PreparingBattle,boot_language(content.english())),true,boot_language(content.english()));
         combat_preparation.shown=true;Canvas c{*this};c.rect(35,146,250,15,0x10c3);c.centered("准备战斗",35,147,250,10,White);
         if(paused)native_pause_screen(c);if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;
     }

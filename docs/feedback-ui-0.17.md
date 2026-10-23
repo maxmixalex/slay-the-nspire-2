@@ -8,18 +8,49 @@ inspection, generated animation frames and screenshots stay outside Git.
 | Concern | Pinned source | Change |
 | --- | --- | --- |
 | Merchant placement | `scenes/rooms/merchant_room.tscn`, `merchant_button.tscn` | One 1920×1080 camera covers the 320×218 room. The bottom skeleton has origin (−10,20), scale .505; top has origin (83.3,71.32), scale .470095. Independent sprite bounding-box fitting is removed for NSP2/18. |
-| Player in shop | `scenes/merchant/characters/*_merchant.tscn`, `NMerchantCharacter._Ready` | Dedicated `*_shop.atlas` with `relaxed_loop`, original positive scale .47 (.23 for Defect), at CharacterContainer (564,766). |
+| Player in shop | `scenes/merchant/characters/*_merchant.tscn`, `NMerchantCharacter._Ready` | Dedicated `*_shop.atlas` with `relaxed_loop`, original positive scale .47 (.23 for Defect), at CharacterContainer (564,766). Shop loops use real time independently of the combat Fast setting. |
 | Opening shop | `NMerchantButton.OnRelease`, MerchantButton bounds (1206,468,270,330) | Click the merchant's body. The extra goods button and name caption are removed. The shared original corner reticle indicates focus; Enter still opens the shop. |
 | Proceed | `scenes/ui/proceed_button.tscn` | Shop uses the existing original `common.PROCEED` atlas arrow rather than a reward-skip skin. Preserve aspect ratio and transparent margins; keep the whole image within the small viewport. |
 | Energy | `scenes/combat/energy_counters/*`, `NEnergyCounter.RefreshLabel` / `_Process` | Five actual orb layers per class (three for Necrobinder); rotating layers 30/60 degrees/s, 5/10 at zero. Counter shows Energy/MaxEnergy. Cream/class outline normally, red/dark orb at zero. |
 | Attack intent | `scenes/combat/intent.tscn`, `AttackIntent.GetTexture` | Retain the original total-damage icon thresholds. Damage is cream with a dark outline; the repeated-hit `xN` suffix uses the smaller 18/22 size relationship. |
 | Turn banners | `player_turn_banner.tscn`, `enemy_turn_banner.tscn`, corresponding Display methods | Gold title, blue turn counter, original opposite title/counter motion and independent fade/zoom clocks. First turn does not create the player banner. An enemy banner can still be fading when the next player banner begins. |
-| Enemy cue | `CombatManager.StartTurn`, `ExecuteEnemyTurn`, `NCreature.PerformIntent` | Normal-speed banner lead-in is .8 seconds, then intent lead-in .4 seconds. The first move begins during the 2.3-second banner. Enemies retain sequential order. A scheduled command is no longer stalled by an unrelated previous non-loop clip; elapsed time is measured from its recorded cue. |
+| Enemy cue | `CombatManager.StartTurn`, `ExecuteEnemyTurn`, `NCreature.PerformIntent` | Banner lead-in is .8 seconds Normal / .5 Fast, then intent lead-in .4 Normal / .25 Fast. The first move begins during the banner. Enemies retain sequential order. A scheduled command is no longer stalled by an unrelated previous non-loop clip; elapsed time is measured from its recorded cue. |
 
 The camera, sprite scale and orientation are from original scene transforms.
 The 42-pixel energy orb, 14-pixel maximum intent icon and bitmap text sizes
 remain calculator readability adaptations. They are not pixel-for-pixel
 claims about the desktop viewport.
+
+### Audited command occupancy
+
+Animation duration is not action occupancy. `AttackCommand.Execute` awaits
+its animation delay and `CreatureCmd.Damage`; block and power commands add
+their own waits. It does not wait for the whole skeleton animation to end.
+The following complete solo move bodies were inspected in the pinned DLL:
+
+| Move | Normal wait | Fast wait |
+| --- | ---: | ---: |
+| Nibbit Butt | 350 ms | 175 ms |
+| Nibbit Slice | 600 ms | 275 ms |
+| Nibbit Hiss | 850 ms | 350 ms |
+| Louse Web Cannon, uncurled | 650 ms | 300 ms |
+| Louse Pounce, uncurled | 400 ms | 200 ms |
+| Louse Curl and Grow | 750 ms | 325 ms |
+| Conditional Louse Uncurl prefix | +900 ms | +250 ms |
+
+These waits advance the next actor's cue without shortening the current
+actor's clip. For example, Nibbit Hiss keeps its 1,633 ms animation tail while
+the next enemy begins its intent/move. Uncurled Louse skips the conditional
+prefix. The `curled_loop` animator state persists until Uncurl; the default
+initial idle state no longer overwrites it during rendering.
+
+Waits are rounded up to presentation ticks. Fast waits are independently
+converted to the existing accelerated clock. The original animator's
+conditional triggers remain conditional: a Fast Attack that arrives while
+Uncurl is still active is not turned into a fabricated any-state transition.
+No occupancy table was extrapolated to other monster models. Power/death
+hooks and effects beyond these base move bodies still need a full replay
+timeline before all combat effects can claim original timing.
 
 ## Resource extension
 
@@ -46,13 +77,28 @@ source checkpoint.
 
 ## Verification boundary
 
-The source stage passes C++ syntax checking. Targeted turn-banner and actual
-pack UI regressions must be rerun after the source checkpoint; source review
-and resource metadata alone do not establish visual completion.
+Verified source checkpoint `069f6d51f37aef3f31d11a6282bd02a61d7afdef`:
+
+- v18 conversion completed for both actual language packs. All 1,398 appended
+  images decode/hash roundtrip, old payload/index equality and pointer
+  relocations passed. New common art is identical in both languages.
+- Targeted native UI build passed. Both actual-pack world UI runs passed
+  9,672 checks each, including all five energy orbs and merchant characters.
+- Chinese event/shop UI passed 1,462 checks. The English run exposed an old
+  reader-line test helper that omitted English word wrapping; its corrected
+  helper and the later command-occupancy tests require the next checkpoint.
+- Private actual-pack screenshots were inspected for merchant placement,
+  original Proceed art, Energy/MaxEnergy and action/banner overlap. These
+  screenshots and converted packs remain outside the source repository.
+
+Later source changes must be rerun after their own verified checkpoint;
+source review and resource metadata alone do not establish visual completion.
 
 Remaining limitations are explicit: merchant candle GPU particles and the
-Necrobinder flame shaders are not prebaked; per-monster command-to-hit timing
-still uses the existing clip metadata and synchronous simulation, so this is
-not a complete action/effect replay system. Fast mode retains the existing
+Necrobinder flame shaders are not prebaked. The simulation resolves enemy
+damage, HP, block and next intents synchronously before the visual queue
+plays, so those HUD values can change before the visible hit. The delayed
+hero hurt pose does not fix that missing effect replay. Unreviewed models
+still use clip duration for action occupancy. Fast mode retains the existing
 presentation-clock acceleration for enemy animation/banners. Device frame
 rate requires actual calculator/emulator measurement rather than host timing.

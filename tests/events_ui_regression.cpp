@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "content_fixture.hpp"
 #include "rich_text.hpp"
+#include "fitted_text.hpp"
 #include "feedback_assets.hpp"
 #include "combat_layout.hpp"
 #include <cstdio>
@@ -17,8 +18,13 @@ static HitRegion hit(HitKind kind,int value){a.render();for(int i=0;i<a.hit_coun
 static void click(HitRegion h){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.render();}
 static void action(UiAction cmd){click(hit(HitKind::UiAction,(int)cmd));}
 static int reader_lines(unsigned e){
- RichReader reader(a.content.string(EventTextBase+e*EventTextStride+1));RichChar ch{};int lines=1,width=0;
- while(reader.next(ch)){int advance=a.content.glyph(ch.codepoint,12).advance+(ch.style.bold?1:0);
+ char localized[1024];const char*text=a.ui_text(a.content.string(EventTextBase+e*EventTextStride+1),localized,sizeof localized);
+ auto metrics=[](const RichChar&ch,int size){int advance=a.content.glyph_metrics(ch.codepoint,size).advance+(ch.style.bold?1:0);return fitted_text::Metric{advance,advance};};
+ // The reader reserves complete English words. Counting glyph wrap alone
+ // undercounts Baths (12 instead of 13 lines in the real English pack).
+ if(a.content.english()){int lines=fitted_text::line_count(text,277,12,metrics);return lines?lines:1;}
+ RichReader reader(text);RichChar ch{};int lines=1,width=0;
+ while(reader.next(ch)){int advance=metrics(ch,12).advance;
   if(ch.codepoint=='\n'||(width>0&&width+advance>277)){++lines;width=0;if(ch.codepoint=='\n')continue;}
   width+=advance;
  }return lines;

@@ -23,7 +23,7 @@ int nd_touch_write(unsigned,unsigned,const void*);
 static spire::App app;
 static spire::SaveData scratch;
 static spire::RuntimePerformance performance;
-static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512];
+static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512],language_path[512];
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 static uint32_t entropy_start=0;
 static uint32_t seed_entropy(){
@@ -37,10 +37,12 @@ static uint32_t seed_entropy(){
     return value?value:0xa341316cu;
 }
 struct ResourceFile {
-    void*file;spire::ResourceFileCursor cursor;
+    void*file=nullptr;spire::ResourceFileCursor cursor;
     void(*blit)(void*)=nullptr;
     uint32_t drawn=0,phase_start=0;
     spire::ResourceStage phase=spire::ResourceStage::Count;
+    spire::BootLanguage language=spire::BootLanguage::Unknown;
+    ~ResourceFile(){if(file)nd_close(file);}
 };
 static void resource_progress(void*context,spire::ResourceStage stage,uint32_t completed,uint32_t total){
     auto&s=*static_cast<ResourceFile*>(context);const uint32_t now=timer_ticks();
@@ -51,7 +53,7 @@ static void resource_progress(void*context,spire::ResourceStage stage,uint32_t c
         s.phase=stage;s.phase_start=now;
     }
     if(!s.blit||(!changed&&completed!=total&&s.drawn-now<3277u))return;
-    s.drawn=now;spire::loading_screen(app.pixels,stage,completed,total,now>>10);s.blit(app.pixels);
+    s.drawn=now;spire::loading_screen(app.pixels,stage,completed,total,now>>10,nullptr,false,s.language);s.blit(app.pixels);
 }
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
     auto&source=*static_cast<ResourceFile*>(context);bool seek=false;
@@ -63,6 +65,13 @@ static bool read_resource(void* context,uint32_t offset,void* output,uint32_t co
 static bool sibling(char*out,const char*launcher,const char*filename){
     int slash=-1,n=0;while(launcher&&launcher[n]){if(n>=420)return false;if(launcher[n]=='/')slash=n;n++;}
     int at=0;while(at<=slash){out[at]=launcher[at];at++;}while(*filename&&at<510)out[at++]=*filename++;out[at]=0;return !*filename;
+}
+static void* open_sibling(const char*launcher,const char*name){return sibling(pack_path,launcher,name)?nd_open(pack_path,"rb"):nullptr;}
+static spire::ResourceSource file_source(ResourceFile&file){
+    if(!file.file||nd_seek(file.file,0,2)!=0)return {};
+    const long length=nd_tell(file.file);
+    if(length<=0||(unsigned long)length>spire::MaxContentFile)return {};
+    return {&file,(uint32_t)length,read_resource,nullptr,resource_progress};
 }
 static bool save_game(const spire::State&s){
     if(!spire::save(s,scratch))return false;
@@ -104,6 +113,42 @@ static bool exit_input_release(Ticks ticks,Held held){
         if(held())quiet=false;
         else if(!quiet){quiet=true;quiet_since=now;}
         else if(quiet_since-now>=3277u)return true;
+    }
+}
+static bool boot_keys_held(){for(unsigned offset=0x10;offset<0x20;offset+=2)if(pressed(offset,0xffffu))return true;return false;}
+static void boot_error(void(*blit)(void*),spire::BootText message,spire::BootLanguage language){
+    spire::boot_error_screen(app.pixels,message,language);blit(app.pixels);
+    exit_input_release(timer_ticks,boot_keys_held);
+    while(!pressed(0x1C,0x80)&&!pressed(0x10,2)&&!pressed(0x1A,0x40)){}
+    exit_input_release(timer_ticks,boot_keys_held);
+}
+static spire::BootLanguage language_preference(){
+    void*f=nd_open(language_path,"rb");if(!f)return spire::BootLanguage::Unknown;
+    uint8_t bytes[9];const unsigned count=nd_read(bytes,1,sizeof bytes,f);nd_close(f);
+    return spire::boot_preference(bytes,count);
+}
+static void store_language(spire::BootLanguage language){
+    void*f=nd_open(language_path,"wb");if(!f)return;
+    bool good=nd_write(spire::boot_preference_bytes(language),1,8,f)==8;
+    good=(nd_close(f)==0)&&good;if(!good)nd_unlink(language_path);
+}
+static spire::BootLanguage choose_language(void(*blit)(void*),bool english,bool chinese,spire::BootLanguage preferred){
+    using spire::BootLanguage;
+    if(!english)return chinese?BootLanguage::Chinese:BootLanguage::Unknown;
+    if(!chinese)return BootLanguage::English;
+    BootLanguage selected=preferred==BootLanguage::English?BootLanguage::English:BootLanguage::Chinese;
+    bool automatic=preferred!=BootLanguage::Unknown;
+    spire::boot_language_screen(app.pixels,selected,automatic);blit(app.pixels);
+    exit_input_release(timer_ticks,boot_keys_held);
+    const uint32_t began=timer_ticks();unsigned previous=0;
+    for(;;){
+        unsigned keys=(pressed(0x14,0x80)?1u:0u)|(pressed(0x14,8)?2u:0u)|
+            ((pressed(0x10,2)||pressed(0x1A,0x40))?4u:0u)|(pressed(0x1C,0x80)?8u:0u);
+        const unsigned edge=keys&~previous;previous=keys;
+        if(edge&8)return BootLanguage::Unknown;
+        if(edge&3){selected=(edge&2)?BootLanguage::English:BootLanguage::Chinese;automatic=false;
+            spire::boot_language_screen(app.pixels,selected,false);blit(app.pixels);}
+        if((edge&4)||(automatic&&began-timer_ticks()>=32768u))return selected;
     }
 }
 struct Clock {
@@ -152,7 +197,7 @@ struct Touchpad {
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
-    if(!sibling(pack_path,launcher,"nSpire2.nsp.tns")||!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns"))return 3;
+    if(!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns"))return 3;
     // Ndless may wait for all launch keys to be released before entering main,
     // so a held CTRL alone cannot reliably opt in. An owner-created sibling
     // marker enables startup timing without a loader/key timing dependency.
@@ -166,13 +211,32 @@ extern "C" int main(int argc,char**argv){
     Clock clock{};clock.init();
     Display display;if(!nd_lcd_init(0))return 6;display.active=true;
     auto blit=nd_blitter(0);if(!blit)return 7;
-    spire::loading_screen(app.pixels,spire::ResourceStage::Header,0,1,timer_ticks()>>10);blit(app.pixels);
-    uint32_t startup_start=performance.enabled?timer_ticks():0;
-    void*f=nd_open(pack_path,"rb");if(!f)return 4;
-    ResourceFile source{f,{}};source.blit=blit;
-    if(nd_seek(f,0,2)!=0){nd_close(f);return 5;}long length=nd_tell(f);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({&source,(uint32_t)length,read_resource,nullptr,resource_progress},{save_game,load_game,clear_save,seed_entropy})){nd_close(f);return 5;}
-    performance.pack_bytes=(uint32_t)length;
+    spire::loading_screen(app.pixels,spire::ResourceStage::Header,0,1,timer_ticks()>>10,nullptr,false,spire::BootLanguage::Unknown);blit(app.pixels);
+    ResourceFile common{},source{};spire::SplitResourceSource split;
+    const auto preferred=language_preference();bool selected_language=false;
+    common.file=open_sibling(launcher,"nSpire2.common.tns");
+    if(common.file){
+        void*english=open_sibling(launcher,"nSpire2.eng.tns");void*chinese=open_sibling(launcher,"nSpire2.zhs.tns");
+        if(!english&&!chinese){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::Unknown);return 4;}
+        source.language=choose_language(blit,english!=nullptr,chinese!=nullptr,preferred);
+        if(source.language==spire::BootLanguage::English){source.file=english;if(chinese)nd_close(chinese);}
+        else if(source.language==spire::BootLanguage::Chinese){source.file=chinese;if(english)nd_close(english);}
+        else {if(english)nd_close(english);if(chinese)nd_close(chinese);exit_input_release(timer_ticks,boot_keys_held);return 0;}
+        selected_language=true;
+    }else source.file=open_sibling(launcher,"nSpire2.nsp.tns");
+    if(!source.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
+    // User time on the language selector is outside the startup work metric.
+    const uint32_t startup_start=performance.enabled?timer_ticks():0;
+    source.blit=blit;auto resource=file_source(source);bool valid=resource.length!=0;
+    if(common.file){
+        valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
+        if(valid)resource=split.source();
+    }else source.language=spire::boot_probe_language(resource);
+    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy})){
+        boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
+    }
+    if(selected_language&&source.language!=preferred)store_language(source.language);
+    performance.pack_bytes=resource.length;
     if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);
         if(source.phase!=spire::ResourceStage::Count)performance.startup_phases[(unsigned)source.phase].add(source.phase_start-now);}
     source.blit=nullptr; // Startup progress cannot repaint over the live game.
@@ -245,5 +309,5 @@ extern "C" int main(int argc,char**argv){
         for(unsigned offset=0x10;offset<0x20;offset+=2)if(pressed(offset,0xffffu))return true;
         const auto sample=pad.read();return sample.contact||sample.pressed;
     });
-    display.restore();nd_close(f);performance_report();return 0;
+    display.restore();performance_report();return 0;
 }

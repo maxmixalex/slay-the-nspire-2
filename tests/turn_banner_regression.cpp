@@ -17,8 +17,11 @@ int main(){
     f=b.sample_player(221);CHECK(f.kind==b.Player&&f.number==2); // Independent original scene instances overlap.
     CHECK(b.sample_enemy(221).kind==b.Enemy);
     CHECK(TurnBannerPresentation::EnemyLeadTicks+TurnBannerPresentation::IntentLeadTicks<TurnBannerPresentation::EnemyTicks);
+    CHECK(TurnBannerPresentation::enemy_lead_ticks(false)==25&&TurnBannerPresentation::intent_lead_ticks(false)==13);
+    CHECK(TurnBannerPresentation::enemy_lead_ticks(true)==31&&TurnBannerPresentation::intent_lead_ticks(true)==16);
     b.begin_enemy(400);b.begin_player(3,550);CHECK(b.sample(475).kind==b.None&&b.sample(551).kind==b.Player);
     b.begin_player(4,700,true);CHECK(b.sample(710).extra);
+    b.begin_enemy(715);CHECK(b.sample_player(720).kind==b.Player&&b.sample_enemy(720).kind==b.Enemy);
     // Unsigned clocks may wrap once during a long foreground session.
     b.reset();b.begin_enemy(0xfffffff0u);b.begin_player(9,10);CHECK(b.player_start==10);
     CHECK(b.sample_enemy(9).kind==b.Enemy&&b.sample_player(11).kind==b.Player);

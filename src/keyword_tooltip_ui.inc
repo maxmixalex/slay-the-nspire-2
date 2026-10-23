@@ -162,6 +162,8 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     target.identity^=uint32_t(card_token(target.card))<<1;return target.card.kind<CardKinds;
 }
 
+#include "event_hover_ui.inc"
+
 struct HoverTextContext {WorldTextContext world;const HoverTip*tip;};
 static LocalizedValue hover_text_value(const void*opaque,const char*name){
     const auto&x=*static_cast<const HoverTextContext*>(opaque);
@@ -172,7 +174,13 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
     if(title_cap)title[0]=0;if(body_cap)body[0]=0;
     if(tip.kind==HoverTipKind::Card){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
-        const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,-1,-1,&canonical);return;
+        const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,-1,-1,tip.has_facts?&tip.facts:&canonical);return;
+    }
+    if(tip.kind==HoverTipKind::Relic){
+        const RelicId id=world_relic_id(tip.key);TextBuffer name{title,title_cap,0};name.text(a.relic_title(id));a.relic_description(id,body,body_cap);return;
+    }
+    if(tip.kind==HoverTipKind::Potion){
+        TextBuffer name{title,title_cap,0};name.text(potion_name(tip.amount,&a.content));ui_potion_description(a,tip.amount,body,body_cap);return;
     }
     const char*table=tip.kind==HoverTipKind::Keyword?"card_keywords":tip.kind==HoverTipKind::Power?"powers":
         tip.kind==HoverTipKind::Orb?"orbs":tip.kind==HoverTipKind::Enchantment?"enchantments":tip.kind==HoverTipKind::Affliction?"afflictions":"static_hover_tips";
@@ -184,14 +192,15 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
     if(body_cap&&!*body&&tip.smart)format(".description",body,body_cap);
 }
 
-static int hover_body_width(const HoverTip&tip,int width){return mx(16,width-(tip.kind==HoverTipKind::Card?61:17));}
+static bool hover_compact_event(const CardHoverTarget&owner){return owner.event_option>=0&&owner.owner.w>240&&!owner.detail;}
+static int hover_body_width(const HoverTip&tip,int width,bool compact=false){return mx(16,width-(tip.kind==HoverTipKind::Card&&!compact?61:17));}
 static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,int selected){
     const bool details=owner.detail&&c.a.keyword_hover.details;
-    const HoverRect column=details?HoverRect{13,52,145,139}:card_hover_column(owner.owner);
+    const HoverRect column=details?HoverRect{13,52,145,139}:keyword_hover_column(owner);
     const int columns=details?2:1;int page=0,lane=0,y=0;HoverPage result{};
     for(unsigned i=0;i<tips.count;++i){char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
         if(!*title||!*body)continue;
-        const int count=c.paragraph(body,0,0,hover_body_width(tips.items[i],column.w),0,0,10),minimum=tips.items[i].kind==HoverTipKind::Card?83:42;
+        const int count=c.paragraph(body,0,0,hover_body_width(tips.items[i],column.w,hover_compact_event(owner)),0,0,10),minimum=tips.items[i].kind==HoverTipKind::Card&&!hover_compact_event(owner)?83:42;
         int skip=0;while(skip<count){
             int needed=mx(minimum,28+(count-skip)*13),room=column.h-y;
             if(room<minimum||(needed<=column.h&&needed>room)){y=0;if(++lane>=columns){lane=0;++page;}room=column.h;}
@@ -203,7 +212,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     }
     result.pages=page+1;
     if(!details&&result.count){int height=result.pieces[result.count-1].box.y+result.pieces[result.count-1].box.h-column.y;
-        int top=mn(mx(24,owner.owner.y),218-height),shift=top-column.y;for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=shift;}
+        int top=mn(mx(column.y,owner.owner.y),column.y+column.h-height),shift=top-column.y;for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=shift;}
     return result;
 }
 HoverPage card_hover_page(App&a,const CardHoverTarget&owner,const HoverTipList&tips,int page){Canvas c{a};return hover_page(c,owner,tips,page);}
@@ -217,47 +226,50 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
     const uint16_t title_color=rgb(239,200,81),body_color=rgb(255,246,226);
     c.text(title,r.x+7,r.y+5,10,title_color,r.w-16);
     int body_x=r.x+7;
-    if(tip.kind==HoverTipKind::Card){
+    if(tip.kind==HoverTipKind::Card&&!hover_compact_event(owner)){
         const EventCardFacts canonical{};
-        draw_card_face(c,tip.card,r.x+5,r.y+20,45,63,cost(tip.card),-2,-1,-1,&canonical,body);body_x=r.x+54;
-    }else if(tip.kind==HoverTipKind::Enchantment){int icon=c.a.content.world_image("enchantments",tip.key);if(icon>=0)c.picture(icon,r.x+r.w-20,r.y+3,13,13);}
+        draw_card_face(c,tip.card,r.x+5,r.y+20,45,63,cost(tip.card),-2,-1,-1,tip.has_facts?&tip.facts:&canonical,body);body_x=r.x+54;
+    }else if(tip.kind==HoverTipKind::Relic){int icon=c.a.relic_face_image(world_relic_id(tip.key));if(icon>=0)c.picture(icon,r.x+r.w-21,r.y+3,14,14);}
+    else if(tip.kind==HoverTipKind::Potion){c.picture(c.a.content.potion_image(Potion(tip.amount)),r.x+r.w-19,r.y+3,12,15);}
+    else if(tip.kind==HoverTipKind::Enchantment){int icon=c.a.content.world_image("enchantments",tip.key);if(icon>=0)c.picture(icon,r.x+r.w-20,r.y+3,13,13);}
     else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))c.picture(c.a.content.energy_image(owner.card),r.x+r.w-20,r.y+3,13,13);
-    c.paragraph(body,body_x,r.y+20,hover_body_width(tip,r.w),piece.lines,piece.skip,10,body_color);
+    c.paragraph(body,body_x,r.y+20,hover_body_width(tip,r.w,hover_compact_event(owner)),piece.lines,piece.skip,10,body_color);
 }
 static void keyword_tooltips(Canvas&c){
     auto&a=c.a;CardHoverTarget owner{};
-    if(!card_hover_target(a,owner)){a.keyword_hover.owner=0;a.keyword_hover.page=0;if(a.detail_card<0)a.keyword_hover.details=false;return;}
+    if(!keyword_hover_target(a,owner)){a.keyword_hover.owner=0;a.keyword_hover.page=0;if(a.detail_card<0)a.keyword_hover.details=false;return;}
     if(a.keyword_hover.owner!=owner.identity){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
-    HoverTipList tips{};collect_card_hover_tips(a,owner.card,tips,owner.instance,owner.deck,owner.facts);
+    HoverTipList tips{};collect_keyword_hover_tips(a,owner,tips);
     const bool detail=owner.detail&&a.keyword_hover.details;
     if(detail){c.dim(11,47,298,155,250);}
     if(!tips.count){if(detail){c.centered("这张牌没有关联词条。",18,102,284,12,Muted);
-        c.centered("V 返回卡牌",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}
+        c.centered(owner.event_option>=0?"返回事件":"V 返回卡牌",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}
     HoverPage page=hover_page(c,owner,tips,a.keyword_hover.page);
     if(a.keyword_hover.page>=page.pages){a.keyword_hover.page=page.pages-1;page=hover_page(c,owner,tips,a.keyword_hover.page);}
     for(unsigned i=0;i<page.count;++i)draw_hover_piece(c,owner,tips,page.pieces[i]);
     if(!page.count)return;
     char footer[96]{};TextBuffer text{footer,sizeof footer,0,&c.a.content};text.number(a.keyword_hover.page+1);text.ch('/');text.number(page.pages);
-    if(detail){text.text("  ↑↓ 翻页 · V 返回卡牌");c.centered(footer,12,192,296,10,Gold);
+    if(detail){if(owner.event_option>=0){text.text("  ↑↓ · V ");text.text("返回事件");}else text.text("  ↑↓ 翻页 · V 返回卡牌");c.centered(footer,12,192,296,10,Gold);
         // Existing command dispatch keeps these controls modal and cancels a
         // captured release correctly; hover panels themselves remain passive.
         c.hit(12,190,65,13,HitKind::Command,int(Key::Up),a.keyword_hover.page>0);
         c.hit(243,190,65,13,HitKind::Command,int(Key::Down),a.keyword_hover.page+1<page.pages);
         c.hit(78,190,164,13,HitKind::Command,int(Key::Statuses));
-    }else if(page.pages>1){
-        text.text(" 滚轮 / I→V");const auto column=card_hover_column(owner.owner);c.rect(column.x,219,column.w,14,Panel);c.centered(footer,column.x,220,column.w,10,Gold);
+    }else if(page.pages>1||owner.event_option>=0){
+        text.text(owner.event_option>=0?" · V":" 滚轮 / I→V");const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,14,Panel);c.centered(footer,column.x,foot_y+1,column.w,10,Gold);
     }
 }
 bool keyword_hover_scroll(App&a,int rows){
-    if(!rows)return false;CardHoverTarget owner{};if(!card_hover_target(a,owner))return false;
-    HoverTipList tips{};collect_card_hover_tips(a,owner.card,tips,owner.instance,owner.deck,owner.facts);if(!tips.count)return false;
+    if(!rows)return false;CardHoverTarget owner{};if(!keyword_hover_target(a,owner))return false;
+    HoverTipList tips{};collect_keyword_hover_tips(a,owner,tips);if(!tips.count)return false;
     Canvas c{a};auto page=hover_page(c,owner,tips,0);if(page.pages<2&&!a.keyword_hover.details)return false;
     if(a.keyword_hover.owner!=owner.identity){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
     a.keyword_hover.page=mn(mx(0,a.keyword_hover.page+rows),page.pages-1);return true;
 }
 bool keyword_detail_input(App&a,Key k){
-    if(a.detail_card<0||a.status_actor>=0||a.event_reader||a.map_preview.open||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
-    if(k==Key::Statuses){a.keyword_hover.details=!a.keyword_hover.details;a.keyword_hover.page=0;return true;}
+    CardHoverTarget event{};const bool is_event=event_hover_target(a,event);
+    if((a.detail_card<0&&!is_event)||a.status_actor>=0||a.event_reader||a.map_preview.open||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
+    if(k==Key::Statuses){if(is_event){HoverTipList tips{};collect_event_hover_tips(a,event.event_option,tips);if(!tips.count)return false;}a.keyword_hover.details=!a.keyword_hover.details;a.keyword_hover.page=0;return true;}
     if(!a.keyword_hover.details)return false;
     if(k==Key::Back||k==Key::Detail){a.keyword_hover.details=false;a.keyword_hover.page=0;return true;}
     if(k==Key::Up||k==Key::Down){keyword_hover_scroll(a,k==Key::Up?-1:1);return true;}

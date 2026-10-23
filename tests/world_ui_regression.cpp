@@ -128,7 +128,7 @@ static const WorldEnemyVisualClip* visual_clip(int slot){
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(slot,clip,elapsed,loop));const auto*row=world_enemy_clip_directory(unsigned(clip));CHECK(row);return row;
 }
 static void first_enemy_cue(){
- const uint32_t cue=a.turn_banner.enemy_start+TurnBannerPresentation::EnemyLeadTicks+TurnBannerPresentation::IntentLeadTicks;
+ const uint32_t cue=a.turn_banner.enemy_start+TurnBannerPresentation::enemy_lead_ticks(a.fast_mode)+TurnBannerPresentation::intent_lead_ticks(a.fast_mode);
  if(int32_t(cue-a.animation)>0)a.animation=cue;
  a.sync_enemy_feedback();
 }
@@ -183,6 +183,54 @@ static void original_enemy_transformations(){
  CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_start"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_loop"));
  a.input(Key::EndTurn);first_enemy_cue();CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_end"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"idle_loop"));
 }
+static void original_enemy_command_waits(){
+ // Source command waits are shorter than some skeleton tails. Two genuine
+ // enemy turns must hand off at the command boundary in both speed modes.
+ const unsigned nibbit_ticks[2][3]={{11,19,26},{11,17,22}};
+ const unsigned louse_ticks[2][3]={{20,13,23},{19,13,20}};
+ for(unsigned fast=0;fast<2;++fast){
+  for(int move=0;move<3;++move){
+   enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;
+   CHECK(a.game.enemy_count==2);a.game.enemy_world.models[0].node=uint8_t(move);a.game.enemy_world.models[1].node=0;
+   if(move==0)a.enemy_visual_encounter=-1; // First observer sync cannot erase the lead-in.
+   const uint32_t start=a.animation;a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat);
+   auto&first=a.enemy_presentation[0];auto&second=a.enemy_presentation[1];
+   CHECK(first.count==1&&second.count==1&&first.queue[0].move==move&&second.queue[0].move==0);
+   const uint32_t first_cue=first.queue[0].earliest,second_cue=second.queue[0].earliest;
+   CHECK(first_cue==start+(fast?47u:38u));
+   CHECK(second_cue==first_cue+nibbit_ticks[fast][move]+(fast?16u:13u));
+   CHECK(a.enemy_visual_clock==second_cue+nibbit_ticks[fast][0]);
+   snapshot();a.animation=first_cue;CHECK(!std::strcmp(visual_clip(0)->native_clip,move==2?"hiss":"attack"));
+   const uint32_t tail=first.until;CHECK(tail>first.start);
+   a.animation=second_cue;CHECK(!std::strcmp(visual_clip(1)->native_clip,"attack")&&second.start==second_cue);
+   if(move==2){CHECK(first.until==tail&&int32_t(tail-a.animation)>0);CHECK(!std::strcmp(visual_clip(0)->native_clip,"hiss")&&!first.loop);}
+   unchanged();
+  }
+  for(int move=0;move<3;++move){
+   enemy_visual_fight(EncounterId::LouseProgenitorNormal);a.fast_mode=fast!=0;a.game.enemy_world.models[0].node=uint8_t(move);
+   const uint32_t start=a.animation;a.input(Key::EndTurn);auto&louse=a.enemy_presentation[0];
+   // Uncurled Web/Pounce skip the conditional Uncurl prefix entirely.
+   CHECK(louse.count==1&&louse.queue[0].move==move);const uint32_t cue=louse.queue[0].earliest;
+   CHECK(cue==start+(fast?47u:38u)&&a.enemy_visual_clock==cue+louse_ticks[fast][move]);
+   snapshot();a.animation=cue;const char*name=move==0?"attack_web":move==1?"attack":"curl";
+   CHECK(!std::strcmp(visual_clip(0)->native_clip,name)&&!louse.loop&&louse.start==cue);
+   CHECK(louse.until==cue+(move==2?33u:26u));
+   if(move==2){a.animation=louse.until+1;a.sync_enemy_feedback();CHECK(!std::strcmp(visual_clip(0)->native_clip,"curled_loop")&&louse.loop&&louse.state==3);}
+   unchanged();
+  }
+  enemy_visual_fight(EncounterId::LouseProgenitorNormal);a.fast_mode=fast!=0;a.game.enemy_world.models[0].node=1;
+  auto&louse=a.enemy_presentation[0];louse.state=3;louse.loop=true;louse.clip=world_enemy_resolve_clip(louse.model,"curled_loop",louse.skin);
+  a.input(Key::EndTurn);CHECK(louse.count==2);const uint32_t first=louse.queue[0].earliest,attack=louse.queue[1].earliest;
+  CHECK(!std::strcmp(louse.queue[0].action,"Uncurl")&&!std::strcmp(louse.queue[1].action,"Attack"));
+  CHECK(attack==first+(fast?16u:28u)&&a.enemy_visual_clock==attack+louse_ticks[fast][1]);
+  snapshot();a.animation=first;CHECK(!std::strcmp(visual_clip(0)->native_clip,"uncurl"));
+  CHECK(louse.until==first+28u);a.animation=attack;
+  // Animator triggers remain conditional. Fast's 250ms command wait does
+  // not invent an Attack branch from an unfinished Uncurl state.
+  CHECK(!std::strcmp(visual_clip(0)->native_clip,fast?"uncurl":"attack")&&!louse.count);unchanged();
+ }
+ a.fast_mode=false;
+}
 static void feedback_hud_and_merchant(){
  const char*names[]={"ironclad","silent","defect","regent","necrobinder"};
  for(unsigned character=0;character<5;character++){
@@ -202,4 +250,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

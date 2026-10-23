@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess,shutil,base64,argparse,json,re
 ROOT=Path(__file__).resolve().parents[1]
 def compile_runtime():
-    clang=shutil.which('clang++');link=shutil.which('wasm-ld')
+    clang=shutil.which('clang++') or shutil.which('clang++-18');link=shutil.which('wasm-ld') or shutil.which('wasm-ld-18')
     if not clang or not link:raise SystemExit('LLVM clang++ and wasm-ld are required.')
     directory=ROOT/'build'/'web';directory.mkdir(parents=True,exist_ok=True)
     flags=['--target=wasm32','-std=c++17','-O2','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-stack-protector','-I'+str(ROOT/'include')]
@@ -21,43 +21,60 @@ def compile_runtime():
     output=directory/'nSpire2.wasm'
     # Fixed sixteen-MiB WASM memory contains bounded directories, caches and stack.
     # Pack payloads remain in the host ArrayBuffer and enter through range reads.
-    subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input','performance_scene','set_seed_entropy']],*objects,'-o',str(output)],check=True)
+    subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','start_split','resource_language','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input','performance_scene','set_seed_entropy']],*objects,'-o',str(output)],check=True)
     print(f'Built WebAssembly runtime; {output.stat().st_size:,} bytes')
     return output
 
 def player_template(language='zhs'):
     text=(ROOT/'platform/web/player.html').read_text(encoding='utf-8')
-    if language=='eng':
-        bindings=json.loads((ROOT/'config/web-locale-eng.json').read_text(encoding='utf-8'))
-        # Replace full help paragraphs before their shorter button labels.
-        for source in sorted(bindings,key=len,reverse=True):
-            if source not in text:raise ValueError(f'English browser label no longer matches: {source}')
-            text=text.replace(source,bindings[source])
-        text=text.replace('lang="zh-CN"','lang="en"').replace('｜','|')
-        if re.search('[\u3400-\u9fff]',text):raise ValueError('Untranslated browser text in English template')
-    elif language!='zhs':raise ValueError(f'Unsupported browser language: {language}')
-    return text
+    if language not in ('zhs','eng'):raise ValueError(f'Unsupported browser language: {language}')
+    bindings={locale:json.loads((ROOT/f'config/web-locale-{locale}.json').read_text(encoding='utf-8')) for locale in ('zhs','eng')}
+    if set(bindings['zhs'])!=set(bindings['eng']):raise ValueError('Browser locale keys differ')
+    used=set(re.findall(r'data-i18n(?:-aria)?="([a-z_]+)"',text))|set(re.findall(r"\bt\('([a-z_]+)'\)",text))
+    if used!=set(bindings['zhs']):raise ValueError(f'Browser locale coverage differs: {used ^ set(bindings["zhs"])}')
+    if any(not value for table in bindings.values() for value in table.values()):raise ValueError('Empty browser translation')
+    return text.replace('__LOCALES__',json.dumps(bindings,ensure_ascii=False,separators=(',',':')).replace('</','<\\/'))
 
-def package_runtime(content_path=None,destination=None,language='zhs'):
+def resource_package(content_path=None,language='zhs',common_path=None,eng_path=None,zhs_path=None):
+    encode=lambda data:base64.b64encode(data).decode('ascii')
+    if common_path is None:
+        if eng_path or zhs_path:raise ValueError('Locale files require --common')
+        content=(content_path or ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
+        return {'mode':'legacy','language':language,'content':encode(content)}
+    if content_path:raise ValueError('Choose --content or --common with locale files')
+    from split_content import reconstruct
+    common=common_path.read_bytes();languages={}
+    for locale,path in (('eng',eng_path),('zhs',zhs_path)):
+        if path:
+            data=path.read_bytes()
+            reconstruct(common,data,locale) # Full original checksum and common binding.
+            languages[locale]=encode(data)
+    if not languages:raise ValueError('At least one of --eng and --zhs is required')
+    return {'mode':'split','common':encode(common),'languages':languages}
+
+def package_runtime(content_path=None,destination=None,language='zhs',common_path=None,eng_path=None,zhs_path=None):
     output=ROOT/'build'/'web'/'nSpire2.wasm'
     if not output.is_file():raise SystemExit('Compile the matching WebAssembly runtime before packaging.')
-    content=(content_path or ROOT/'dist'/'nSpire2.nsp.tns').read_bytes()
-    text=player_template(language).replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__CONTENT__',base64.b64encode(content).decode())
-    notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()+'\n'+(ROOT/'licenses/OkHSV-Godot-MIT.txt').read_text()
+    resources=resource_package(content_path,language,common_path,eng_path,zhs_path)
+    text=player_template(language).replace('__WASM__',base64.b64encode(output.read_bytes()).decode()).replace('__RESOURCE_PACKAGE__',json.dumps(resources,separators=(',',':')))
+    notices=(ROOT/'NOTICE.md').read_text()+'\n'+(ROOT/'licenses/Go-BSD-3-Clause.txt').read_text()+'\n'+(ROOT/'licenses/OkHSV-Godot-MIT.txt').read_text()+'\n'+(ROOT/'licenses/Noto-Boot-OFL.txt').read_text()
     text+='\n<!-- '+notices.replace('--','—')+' -->\n'
     destination=destination or ROOT/'dist'/'nSpire2-desktop.html'
     destination.parent.mkdir(parents=True,exist_ok=True)
-    destination.write_text(text,encoding='utf-8');print(f'Built {language} offline desktop host; WebAssembly {output.stat().st_size:,} bytes')
+    destination.write_text(text,encoding='utf-8');print(f'Built {resources["mode"]} offline desktop host; WebAssembly {output.stat().st_size:,} bytes')
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     mode=parser.add_mutually_exclusive_group()
     mode.add_argument('--compile-only',action='store_true',help='Build the runtime while private content conversion runs separately')
     mode.add_argument('--package-only',action='store_true',help='Package the already built runtime and the matching private pack')
-    parser.add_argument('--language',choices=('zhs','eng'),default='zhs',help='Browser controls and help language; use the matching localized content pack')
+    parser.add_argument('--language',choices=('zhs','eng'),default='zhs',help='Language of a legacy --content pack; split installations select either language in the browser')
     parser.add_argument('--content',type=Path,help='Private content pack to embed')
+    parser.add_argument('--common',type=Path,help='Common artwork NSC1 file; encoded only once in the HTML')
+    parser.add_argument('--eng',type=Path,help='English NSL1 language file')
+    parser.add_argument('--zhs',type=Path,help='Chinese NSL1 language file')
     parser.add_argument('--output',type=Path,help='Generated offline HTML destination')
     args=parser.parse_args()
     if not args.package_only:compile_runtime()
-    if not args.compile_only:package_runtime(args.content,args.output,args.language)
+    if not args.compile_only:package_runtime(args.content,args.output,args.language,args.common,args.eng,args.zhs)
 if __name__=='__main__':main()

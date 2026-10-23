@@ -2,6 +2,8 @@
 #include "content_fixture.hpp"
 #include "combat_layout.hpp"
 #include "world_card_factory.hpp"
+#include "original_events.hpp"
+#include "world_run.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -155,8 +157,65 @@ static void pointer_and_keyboard(){
     setup();rail=hand_rail(a.game.hand.count,0);a.pointer_move(rail.x+rail.w/2,224);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.enemies[0].hp==38&&a.game.energy==97);CHECK(validate(a.game));
 }
+static void event_begin(OriginalEventId id,unsigned seed=77){
+    new_run(a.game,seed,false);CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
+    if(id!=OriginalEventId::Neow){a.game.original_events={};CHECK(original_event_begin(a.game,id,seed,1));}
+    a.game.gold=1000;a.title=a.library=a.paused=a.help=a.character_select=a.settings_open=false;
+    a.run_settings=false;a.map_preview.open=false;a.frontend_confirm=0;a.reset_presentation();a.pointer.visible=false;
+    CHECK(validate(a.game));
+}
+static HoverTipList event_tips(int option){HoverTipList out{};collect_event_hover_tips(a,option,out);CHECK(!out.overflow);return out;}
+static void event_associations(){
+    event_begin(OriginalEventId::Amalgamator);snapshot();
+    auto t=event_tips(0);CHECK(t.find(HoverTipKind::Card,"ULTIMATE_STRIKE")>=0);
+    t=event_tips(1);CHECK(t.find(HoverTipKind::Card,"ULTIMATE_DEFEND")>=0&&t.find(HoverTipKind::Static,"BLOCK")>=0);unchanged();
+    event_begin(OriginalEventId::AromaOfChaos);snapshot();t=event_tips(0);CHECK(t.count==1&&t.find(HoverTipKind::Static,"TRANSFORM")==0);CHECK(event_tips(1).count==0);unchanged();
+    event_begin(OriginalEventId::GraveOfTheForgotten);snapshot();t=event_tips(0);
+    CHECK(t.find(HoverTipKind::Enchantment,"SOULS_POWER")>=0&&t.find(HoverTipKind::Card,"DECAY")>=0&&t.find(HoverTipKind::Keyword,"EXHAUST")>=0);unchanged();
+    event_begin(OriginalEventId::SelfHelpBook);snapshot();t=event_tips(0);
+    CHECK(t.count&&t.items[0].kind==HoverTipKind::Enchantment&&t.items[0].amount==2);unchanged();
+    event_begin(OriginalEventId::DrowningBeacon);snapshot();t=event_tips(0);CHECK(t.find(HoverTipKind::Potion,"GLOWWATER_POTION")>=0);
+    t=event_tips(1);CHECK(t.find(HoverTipKind::Relic,"FRESNEL_LENS")>=0&&t.find(HoverTipKind::Enchantment,"NIMBLE")>=0);unchanged();
+    event_begin(OriginalEventId::TeaMaster);snapshot();t=event_tips(1);
+    CHECK(t.find(HoverTipKind::Relic,"EMBER_TEA")<0&&t.find(HoverTipKind::Power,"STRENGTH_POWER")>=0);unchanged();
+    event_begin(OriginalEventId::SlipperyBridge);auto&e=a.game.original_events;CHECK(e.values[1]>=0);
+    a.game.event_cards.deck[e.values[1]].energy_offset=-1;snapshot();t=event_tips(0);CHECK(t.count==1&&t.items[0].kind==HoverTipKind::Card);
+    CHECK(t.items[0].card.kind==a.game.deck[e.values[1]].kind&&t.items[0].has_facts&&t.items[0].facts.energy_offset==-1);unchanged();
+    // Ancient offers expose associated mechanics without duplicating their
+    // own description. Reading a prepared transformation must not reroll it.
+    event_begin(OriginalEventId::Neow);a.game.original_events.offers[0]=WorldRelicArchaicTooth;
+    CHECK(world_relic_prepare(a.game,WorldRelicArchaicTooth));snapshot();t=event_tips(0);
+    CHECK(t.find(HoverTipKind::Relic,"ARCHAIC_TOOTH")<0);unsigned cards=0;for(unsigned i=0;i<t.count;++i)if(t.items[i].kind==HoverTipKind::Card)++cards;CHECK(cards==2);unchanged();
+    // Same event, different live pages: the merchant's Guilty and the noble's
+    // Innocent are separate associations, not a keyword scan of their prose.
+    event_begin(OriginalEventId::Trial);CHECK(original_event_choose(a.game,0));snapshot();
+    t=event_tips(1);const auto page=a.game.original_events.page;
+    CHECK(t.find(HoverTipKind::Card,page==2?"SHAME":page==3?"REGRET":"DOUBT")>=0);unchanged();
+}
+static void event_pointer_keyboard_and_text(){
+    const OriginalEventId ids[]={OriginalEventId::Amalgamator,OriginalEventId::AromaOfChaos,OriginalEventId::Bugslayer,
+      OriginalEventId::DrowningBeacon,OriginalEventId::FieldOfManSizedHoles,OriginalEventId::GraveOfTheForgotten,
+      OriginalEventId::TeaMaster,OriginalEventId::SelfHelpBook,OriginalEventId::WaterloggedScriptorium,OriginalEventId::WoodCarvings};
+    for(auto id:ids){event_begin(id);snapshot();a.render();
+        for(unsigned option=0;option<original_event_option_count(a.game);++option){
+            a.cursor=int(option);a.pointer.visible=false;a.render();CardHoverTarget owner{};CHECK(event_hover_target(a,owner));CHECK(owner.event_option==int(option));
+            auto t=event_tips(int(option));for(unsigned i=0;i<t.count;++i){char title[160]{},body[2048]{};
+                format_card_hover_tip(a,owner,t.items[i],title,sizeof title,body,sizeof body);
+                if(!*title||!*body||std::strchr(body,'{'))std::fprintf(stderr,"event hover unresolved %s / %s: %s\n",original_event_key(id),t.items[i].key,body);
+                CHECK(*title&&*body&&!std::strchr(body,'{')&&!std::strchr(title,'{'));
+            }
+            auto h=hit(HitKind::Choice,int(option));a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();CHECK(event_hover_target(a,owner)&&owner.event_option==int(option));
+            if(t.count){a.pointer.visible=false;CHECK(keyword_detail_input(a,Key::Statuses));a.render();CHECK(a.keyword_hover.details);CHECK(event_hover_target(a,owner));
+                const auto pages=card_hover_page(a,owner,t,0);CHECK(pages.pages>0);keyword_hover_scroll(a,1000);a.render();CHECK(a.keyword_hover.page<pages.pages);
+                CHECK(keyword_detail_input(a,Key::Back));CHECK(!a.keyword_hover.details);a.render();}
+        }unchanged();
+    }
+    event_begin(OriginalEventId::Bugslayer);a.render();capture("event-option-tooltip");snapshot();
+    CHECK(keyword_detail_input(a,Key::Statuses));a.render();capture("event-option-tooltip-details");unchanged();
+    CHECK(keyword_detail_input(a,Key::Back));a.input(Key::Detail);a.render();CardHoverTarget owner{};CHECK(!event_hover_target(a,owner));
+}
 int main(int argc,char**argv){
     std::vector<uint8_t>data;actual=argc>1;if(actual){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_pointer_keyboard_and_text();
     std::printf("keyword tooltip: %u checks passed (%s profile)\n",checks,actual?"private":"synthetic");
 }

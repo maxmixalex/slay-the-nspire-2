@@ -24,9 +24,9 @@ static void shop_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
     if(registered){
         c.ui(U_MerchantBackdrop,0,22,320,218);
-        c.clip(AnimMerchantRoomBottom,0,22,a.animation*33);
-        c.clip(AnimMerchantIronclad+int(s.character),0,22,a.animation*33);
-        c.clip(AnimMerchantRoomTop,0,22,a.animation*33);
+        c.clip(AnimMerchantRoomBottom,0,22,a.map_clock_ms);
+        c.clip(AnimMerchantIronclad+int(s.character),0,22,a.map_clock_ms);
+        c.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     if(!a.shop_open){
         const int x=registered?MerchantLayout::BodyX:181,y=registered?MerchantLayout::BodyY:62,w=registered?MerchantLayout::BodyW:105,h=registered?MerchantLayout::BodyH:109;

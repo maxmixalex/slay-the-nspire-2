@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "locale_boot.hpp"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
@@ -23,6 +24,17 @@ static uint32_t seed_entropy(){
 struct ResourceFile {FILE* file;~ResourceFile(){if(file)fclose(file);}};
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
     FILE*file=(FILE*)context;return fseek(file,(long)offset,SEEK_SET)==0&&fread(output,1,count,file)==count;
+}
+static spire::ResourceSource file_source(FILE*file){
+    if(!file||fseek(file,0,SEEK_END)!=0)return {};
+    long length=ftell(file);if(length<=0||(unsigned long)length>spire::MaxContentFile)return {};
+    return {file,(uint32_t)length,read_resource,nullptr};
+}
+static std::string directory(const std::string&path){auto slash=path.find_last_of('/');return slash==std::string::npos?".":path.substr(0,slash);}
+static spire::BootLanguage read_preference(const std::string&path){
+    FILE*f=fopen(path.c_str(),"rb");if(!f)return spire::BootLanguage::Unknown;
+    uint8_t bytes[9];size_t count=fread(bytes,1,sizeof bytes,f);fclose(f);
+    return spire::boot_preference(bytes,(uint32_t)count);
 }
 static std::string save_path;
 static bool save_game(const spire::State&s){
@@ -49,15 +61,53 @@ static bool key(KeySym sym,spire::Key&k){
     case XK_s:case XK_S:k=Key::Save;break;case XK_o:case XK_O:k=Key::Load;break;default:return false;}return true;
 }
 int main(int argc,char**argv){
-    std::string dir=argv[0],actions,packpath;auto slash=dir.find_last_of('/');dir=slash==std::string::npos?".":dir.substr(0,slash);
-    packpath=dir+"/nSpire2.nsp.tns";save_path=dir+"/nSpire2.sav";bool headless=false;const char*shot=nullptr;
+    std::string dir=directory(argv[0]),actions,packpath,commonpath,localepath;
+    save_path=dir+"/nSpire2.sav";bool headless=false;const char*shot=nullptr;
+    auto language=spire::BootLanguage::Unknown;
     for(int i=1;i<argc;i++){
         std::string a=argv[i];if(a=="--headless")headless=true;
-        else if((a=="--pack"||a=="--save"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];if(a=="--pack")packpath=v;else if(a=="--save")save_path=v;else if(a=="--capture")shot=v;else actions=v;}
-        else {fprintf(stderr,"Usage: %s [--pack FILE] [--save FILE] [--headless] [--actions enter,right,…] [--capture FILE.ppm]\n",argv[0]);return 2;}}
-    ResourceFile resource{fopen(packpath.c_str(),"rb")};if(!resource.file){perror(packpath.c_str());return 2;}
-    if(fseek(resource.file,0,SEEK_END)!=0)return 2;long length=ftell(resource.file);
-    if(length<=0||(unsigned long)length>spire::MaxContentFile||!app.init({resource.file,(uint32_t)length,read_resource,nullptr},{save_game,load_game,clear_save,headless?nullptr:seed_entropy})){fprintf(stderr,"Invalid or incompatible content pack\n");return 2;}
+        else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
+            if(a=="--pack")packpath=v;else if(a=="--common")commonpath=v;else if(a=="--locale")localepath=v;else if(a=="--resources")dir=v;
+            else if(a=="--language"){if(!strcmp(v,"eng"))language=spire::BootLanguage::English;else if(!strcmp(v,"zhs"))language=spire::BootLanguage::Chinese;else{fprintf(stderr,"--language eng|zhs\n");return 2;}}
+            else if(a=="--save")save_path=v;else if(a=="--capture")shot=v;else actions=v;}
+        else {fprintf(stderr,"Usage: %s [--pack FILE | --resources DIR | --common FILE --locale FILE] [--language eng|zhs] [--save FILE] [--headless] [--actions enter,right,...] [--capture FILE.ppm]\n",argv[0]);return 2;}}
+    if(!packpath.empty()&&(!commonpath.empty()||!localepath.empty())){fprintf(stderr,"Choose --pack or --common/--locale\n");return 2;}
+    const bool explicit_split=!commonpath.empty()||!localepath.empty();
+    if(commonpath.empty())commonpath=dir+"/nSpire2.common.tns";
+    ResourceFile common{packpath.empty()?fopen(commonpath.c_str(),"rb"):nullptr},resource{nullptr};
+    spire::SplitResourceSource split;spire::ResourceSource source{};
+    auto error=[&](spire::BootText message){fprintf(stderr,"%s\n",spire::boot_text(message,language));return 2;};
+    const std::string preference=directory(commonpath)+"/nSpire2.lang.tns";
+    if(common.file){
+        if(localepath.empty()){
+            const std::string root=directory(commonpath);
+            FILE*english=fopen((root+"/nSpire2.eng.tns").c_str(),"rb"),*chinese=fopen((root+"/nSpire2.zhs.tns").c_str(),"rb");
+            if(language==spire::BootLanguage::Unknown){
+                language=read_preference(preference);
+                if(!english)language=spire::BootLanguage::Chinese;else if(!chinese)language=spire::BootLanguage::English;
+                else if(language==spire::BootLanguage::Unknown){const char*system=getenv("LANG");language=system&&system[0]=='e'&&system[1]=='n'?spire::BootLanguage::English:spire::BootLanguage::Chinese;}
+            }
+            resource.file=language==spire::BootLanguage::English?english:chinese;
+            FILE*unused=language==spire::BootLanguage::English?chinese:english;if(unused)fclose(unused);
+        }else{
+            resource.file=fopen(localepath.c_str(),"rb");
+            if(resource.file&&language==spire::BootLanguage::Unknown){uint8_t value[4]{};
+                if(read_resource(resource.file,36,value,4)&&!value[1]&&!value[2]&&!value[3]&&(value[0]==1||value[0]==2))language=static_cast<spire::BootLanguage>(value[0]);}
+        }
+        if(!resource.file)return error(spire::BootText::MissingLanguage);
+        if(language==spire::BootLanguage::Unknown||!split.open(file_source(common.file),file_source(resource.file),
+            language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese))return error(spire::BootText::InvalidResources);
+        source=split.source();
+    }else{
+        if(explicit_split)return error(spire::BootText::MissingResources);
+        if(packpath.empty())packpath=dir+"/nSpire2.nsp.tns";
+        resource.file=fopen(packpath.c_str(),"rb");if(!resource.file)return error(spire::BootText::MissingResources);
+        source=file_source(resource.file);language=spire::boot_probe_language(source);
+    }
+    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy}))return error(spire::BootText::InvalidResources);
+    if(common.file&&!headless&&read_preference(preference)!=language){
+        FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}
+    }
     if(!actions.empty()){
         size_t start=0;while(start<actions.size()){
             size_t end=actions.find(',',start);if(end==std::string::npos)end=actions.size();std::string a=actions.substr(start,end-start);
