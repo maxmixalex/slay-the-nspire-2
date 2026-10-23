@@ -46,9 +46,9 @@ Tab 牌堆，I 详情，C 百科，V 状态，M 地图，P 药水，R 遗物，S
 Directions navigate; Enter confirms; Space ends a turn/confirms a selection;
 Esc returns/pauses; Tab piles; I details; C compendium; V statuses; M map;
 P potions; R relics; S saves; O loads. Touchpad clicking/dragging is supported.
-离线 HTML 可以直接用浏览器打开，并在页面选择语言及保存/导出存档。
-Open the companion offline HTML in a browser; language and save controls are
-available on the page. It needs no downloaded game assets or server connection.
+离线 HTML 可直接用浏览器打开，在页面选择语言；S 保存、O 读取，存档保留在该浏览器中。
+Open the companion offline HTML in a browser and choose a language on the page.
+S saves and O loads; saves stay in that browser. No asset download or server connection is needed.
 
 版本 / Build
 参考游戏 / game reference: v0.111.0 / 41cef1ea

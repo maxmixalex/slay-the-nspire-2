@@ -1,6 +1,18 @@
 # Card rendering and startup measurements — 2026-10-23
 
-## Startup metadata reuse: implemented and measured at `06c7fd16`
+## Current startup policy
+
+The user's later instruction removes integrity-only work. Current source no
+longer performs whole-file FNV, split-header digest verification, LZMA2 CRC or
+eager image, tile-index, glyph and string scans. It reads the necessary
+resident directory and decodes requested payloads with functional bounds.
+The historical measurements below deliberately preserve the earlier policy
+and execution identity; they do not describe the current startup path.
+See [retained storage](retained-storage-0.17.md) for the same-input read-count
+comparison and [b400 Firebird execution](firebird-ui3-b400.md) for the actual
+emulated open/init interval and zero integrity/eager-scan counters.
+
+## Historical startup metadata reuse at `06c7fd16`
 
 The next startup optimization is implemented without disabling any validation
 or enlarging resident allocations. It reuses spare directory memory for

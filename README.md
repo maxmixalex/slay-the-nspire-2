@@ -1,6 +1,6 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. Active development is **0.17** on [`work/0.17-world-parity`](https://github.com/maxmixalex/slay-the-nspire-2/tree/work/0.17-world-parity). Current work integrates the original title and bilingual UI, on-demand loading, shared-resource installation and measured card-rendering improvements. Exact executed checkpoints and delivery status are in [WORK_STATE.md](docs/WORK_STATE.md); earlier results below retain their historical identities.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's **v0.111.0 / 41cef1ea** installation. Current development is **0.17**; verified progress is synchronized to [`main`](https://github.com/maxmixalex/slay-the-nspire-2/tree/main) from the integration branch. Current work integrates the original title and bilingual UI, on-demand loading, shared-resource installation and measured card-rendering improvements. Exact executed checkpoints and delivery status are in [WORK_STATE.md](docs/WORK_STATE.md); earlier results below retain their historical identities.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
@@ -44,11 +44,15 @@ Image, glyph and string payloads are decoded when used. Whole-pack integrity
 hashing, integrity-only CRC and eager resource-wide validation are removed;
 the actual ranges and format rules required for decoding remain.
 
-The measured b400 hybrid resources total **81,085,101 bytes**, compared with
+The final title-glow hybrid resources total **81,100,703 bytes**, compared with
 93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
 keep their fast individual encoding; other retained animation images use bounded
 compressed groups. This preserves image pixels and timing while saving
-12,698,262 bytes. The separate 30–40 MB target remains unmet. See
+12,682,660 bytes. Including the 983,682-byte launcher, a bilingual installation
+uses **82,084,385 bytes before saves**. English-only and Chinese-only installs
+use 77,520,799 and 80,303,498 bytes respectively. The paired host performance
+measurements used the earlier b4f7ba0 candidate; the final title glow adds only
+15,602 shared bytes. The separate 30–40 MB target remains unmet. See
 [the retained storage measurements](docs/retained-storage-0.17.md) for the
 all-group comparison, cold-page tradeoffs and host-only timing limits.
 
@@ -57,42 +61,47 @@ template substitution, scaled card focus geometry, original energy/intent/banner
 composition, merchant body interaction and shop animations, and the original
 Proceed artwork. Combat selections now wait for their effect cue, and intent
 tooltips follow the visible actor, including slot replacement. Merchant focus
-uses the original outline skin and sampled candle layers. Startup reuses
-validated metadata without reducing any integrity or structural checks.
+uses the original outline skin and sampled candle layers in both v19 and v20.
+The title uses the original lettering, ten fire frames and a single additive
+light mask with its authored scale and brightness curve.
 Enemy HP, block, energy and intent display use a small read-only presentation
 trace instead of jumping immediately to the simulation's final values.
-Status/power strips and card/pile state still need equivalent presentation work.
+Status/power strips and the displayed hand share that clock. Discarded cards
+leave at their cue, Retain cards remain inspectable during enemy actions, and
+the next player's draw appears at the player boundary. Full pile/card-effect
+animation and unaudited enemy command delays remain separate fidelity work.
 Exact coverage and remaining gaps are recorded in
 [feedback-ui-0.17.md](docs/feedback-ui-0.17.md),
 [event-option-tooltips.md](docs/event-option-tooltips.md),
 [ui-template-audit.md](docs/ui-template-audit.md) and
 [rendering-performance-0.17.md](docs/rendering-performance-0.17.md).
 The merchant's finite six-second flame samples and remaining GPU particles are
-described in [merchant-effects-0.17.md](docs/merchant-effects-0.17.md).
+described in [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). The title's
+separate background GPU stars and fog are also not implemented.
 Original UI fidelity is the first priority; neither overall 95% acceptance nor
 physical calculator FPS has been established.
 
 ### Earlier 0.17 execution evidence
 
-The source17 checkpoint [`26a90975`](https://github.com/zyf722/slay-the-nspire-2/commit/26a9097521a971b69a4b58494985c6062a24017e) passed **all 52 registered native suites** from one frozen source. This includes all **860 character/Giant Rock acquisition variants** and **174 encounter/ascension variants** through the actual turn driver. ARM and WASM builds passed; the actual resource backend comparison matched **357 frames and 25 saves across 18 scenarios**. The exact evidence is in [validation-source17-0.17.json](docs/validation-source17-0.17.json). Later stages and their separate gates are recorded in [WORK_STATE.md](docs/WORK_STATE.md).
+The source17 checkpoint [`26a90975`](https://github.com/maxmixalex/slay-the-nspire-2/commit/26a9097521a971b69a4b58494985c6062a24017e) passed **all 52 registered native suites** from one frozen source. This includes all **860 character/Giant Rock acquisition variants** and **174 encounter/ascension variants** through the actual turn driver. ARM and WASM builds passed; the actual resource backend comparison matched **357 frames and 25 saves across 18 scenarios**. The exact evidence is in [validation-source17-0.17.json](docs/validation-source17-0.17.json). Later stages and their separate gates are recorded in [WORK_STATE.md](docs/WORK_STATE.md).
 
 Original scene work includes the retained room below the map window, map travel and fade layers, regional rest/treasure scenes, native enemy animation states, event/ancient text and option styling. The requested **95%+ original UI fidelity has not been established**. See the [fidelity contract](docs/parity.md) for the distinction between screen adaptations, remaining implementation gaps and original-application visual acceptance.
 
-Source19 [`00c6b9dd`](https://github.com/zyf722/slay-the-nspire-2/commit/00c6b9dda80333c3aa260d82e650b079f9fe76a3) subsequently passed **31 affected suites**, native/ARM/WASM builds, **48,111 enemy checks / 174 encounter-ascension variants**, and the expanded actual-resource backend comparison: **480 exact frames / 30 saves across 23 scenarios**. Its first-open map camera/banner and escape/cache repairs are covered in [validation-source19-0.17.json](docs/validation-source19-0.17.json). This focused run does not replace the earlier full 52-suite baseline with a claimed full 54-suite run.
+Source19 [`00c6b9dd`](https://github.com/maxmixalex/slay-the-nspire-2/commit/00c6b9dda80333c3aa260d82e650b079f9fe76a3) subsequently passed **31 affected suites**, native/ARM/WASM builds, **48,111 enemy checks / 174 encounter-ascension variants**, and the expanded actual-resource backend comparison: **480 exact frames / 30 saves across 23 scenarios**. Its first-open map camera/banner and escape/cache repairs are covered in [validation-source19-0.17.json](docs/validation-source19-0.17.json). This focused run does not replace the earlier full 52-suite baseline with a claimed full 54-suite run.
 
-**The historical complete lossless NSP2/15 resource pack was built and verified:** **80,846,058 bytes (77.10 MiB)**, preserving every original sparse-frame byte and all timing aliases. Source20 [`3f66da83`](https://github.com/zyf722/slay-the-nspire-2/commit/3f66da839e056fe291c27ca5e93260b3833bd7de) passed native/ARM/WASM builds, ten affected sanitizer suites, 24 encoder tests and linked ARM decoder/ABI checks; its ARM allocation is **14,710,272 bytes**, below the project's 16 MiB bound. See [validation-source20-0.17.json](docs/validation-source20-0.17.json).
+**The historical complete lossless NSP2/15 resource pack was built and verified:** **80,846,058 bytes (77.10 MiB)**, preserving every original sparse-frame byte and all timing aliases. Source20 [`3f66da83`](https://github.com/maxmixalex/slay-the-nspire-2/commit/3f66da839e056fe291c27ca5e93260b3833bd7de) passed native/ARM/WASM builds, ten affected sanitizer suites, 24 encoder tests and linked ARM decoder/ABI checks; its ARM allocation is **14,710,272 bytes**, below the project's 16 MiB bound. See [validation-source20-0.17.json](docs/validation-source20-0.17.json).
 
-Source21 [`d5738010`](https://github.com/zyf722/slay-the-nspire-2/commit/d5738010f2d7ebc6139a2fa181ff87820d344bbb) removes eager decoding of every tiled image from startup. Opening still checks the complete file, directories and index geometry; each image receives complete pixel validation before its first successful use. Its frozen native/ARM/WASM builds, ten affected sanitizer suites and fresh actual-resource backend comparison (**23 scenarios / 480 frames / 30 saves**) passed. The complete C++ oracle passed both new-memory and new-range traversals against the original v14 bytes: **45,724 images / 994,105,847 decoded bytes per backend**, all metadata and 40 three-owner UI frames. It completed in 1,551.05 seconds; the two failed build attempts remain recorded separately. See [validation-source21-0.17.json](docs/validation-source21-0.17.json).
+Source21 [`d5738010`](https://github.com/maxmixalex/slay-the-nspire-2/commit/d5738010f2d7ebc6139a2fa181ff87820d344bbb) removes eager decoding of every tiled image from startup. Opening still checks the complete file, directories and index geometry; each image receives complete pixel validation before its first successful use. Its frozen native/ARM/WASM builds, ten affected sanitizer suites and fresh actual-resource backend comparison (**23 scenarios / 480 frames / 30 saves**) passed. The complete C++ oracle passed both new-memory and new-range traversals against the original v14 bytes: **45,724 images / 994,105,847 decoded bytes per backend**, all metadata and 40 three-owner UI frames. It completed in 1,551.05 seconds; the two failed build attempts remain recorded separately. See [validation-source21-0.17.json](docs/validation-source21-0.17.json).
 
-Source22 [`5d177be7`](https://github.com/zyf722/slay-the-nspire-2/commit/5d177be78c507c9cd4b3c9d38a4600e84a44c02e) replaces rigid image-size tiers with a **748-page / 90-entry shared LRU cache** within the previous total cache budget. Its 147-step native build, ARM/WASM builds, ten affected ASan/UBSan suites, linked ARM vectors and fresh **23-scenario / 480-frame / 30-save** comparison passed. Selected actual-resource checks compare all 3,535 retained images and a 23-frame animation through both new backends against v14; these selected checks are distinct from source21's complete catalog proof. The animation's second cycle now has **zero resource callbacks for all 23 frames**, versus 216 calls / 11,671,220 bytes on source21. Cold first-cycle reads are unchanged; device speed is unmeasured. See [validation-source22-0.17.json](docs/validation-source22-0.17.json).
+Source22 [`5d177be7`](https://github.com/maxmixalex/slay-the-nspire-2/commit/5d177be78c507c9cd4b3c9d38a4600e84a44c02e) replaces rigid image-size tiers with a **748-page / 90-entry shared LRU cache** within the previous total cache budget. Its 147-step native build, ARM/WASM builds, ten affected ASan/UBSan suites, linked ARM vectors and fresh **23-scenario / 480-frame / 30-save** comparison passed. Selected actual-resource checks compare all 3,535 retained images and a 23-frame animation through both new backends against v14; these selected checks are distinct from source21's complete catalog proof. The animation's second cycle now has **zero resource callbacks for all 23 frames**, versus 216 calls / 11,671,220 bytes on source21. Cold first-cycle reads are unchanged; device speed is unmeasured. See [validation-source22-0.17.json](docs/validation-source22-0.17.json).
 
 The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current source accepts the full NSP2/19 extension and retains old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Saves remain **v15**, with historical v3–v14 readers; resource-storage and save versions are independent. The browser preserves the existing v15 save key. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extensions in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current source accepts the full NSP2/20 extension and retains old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Saves remain **v15**, with historical v3–v14 readers; resource-storage and save versions are independent. The browser preserves the existing v15 save key. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extensions in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 
-**0.16 completed all five single-player character card pools** on `work/0.16-five-characters`. Its verified runtime is [`8c6977d3`](https://github.com/zyf722/slay-the-nspire-2/commit/8c6977d3cc1dc9f17926a480127bc1067abd0286), with **31/31 native suites, 30/30 Python tests, actual-resource UI and ARM/WASM/X11 builds passing**. The subsequent commits on that older branch updated documentation only. Exact scope, artifact hashes and journal receipts are in [validation-0.16.json](docs/validation-0.16.json).
+**0.16 completed all five single-player character card pools** on `work/0.16-five-characters`. Its verified runtime is [`8c6977d3`](https://github.com/maxmixalex/slay-the-nspire-2/commit/8c6977d3cc1dc9f17926a480127bc1067abd0286), with **31/31 native suites, 30/30 Python tests, actual-resource UI and ARM/WASM/X11 builds passing**. The subsequent commits on that older branch updated documentation only. Exact scope, artifact hashes and journal receipts are in [validation-0.16.json](docs/validation-0.16.json).
 
 497 card models: **85 single-player Ironclad**, **86 each for Silent, Defect, Regent and Necrobinder**, **53 single-player colorless** and 15 generated/status models. There are **64 active potion models**, 33 relics and five adapted events. The five character pools include executable base and upgraded rules and numerical regression coverage. Defect has five orb types and Focus; Regent has independent star payments and Forge; Necrobinder has Osty, Soul and Doom. Ancient-rarity cards are available in the compendium/practice pool and excluded from ordinary rewards and generation. The twelve-floor playable route and Nibbit encounters remain adapted; the reference regional map is still separate from a complete original run.
 
@@ -104,7 +113,10 @@ Read [current work state](docs/WORK_STATE.md) before resuming development and th
 
 ## Source builds and historical 0.16 conversion
 
-Remote CI is disabled by request. Its definition stays in `.github/disabled-workflows/ci.yml`.
+GitHub Actions is enabled in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+It runs native ASan/UBSan regressions, converter tests and ARM/WASM builds without
+private original assets. See the [workflow runs](https://github.com/maxmixalex/slay-the-nspire-2/actions)
+for each exact source checkpoint's status.
 
 ```sh
 # Set this to the full commit whose remote branch and source tree were verified.

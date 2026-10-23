@@ -32,5 +32,5 @@
   "startup_failed": "Startup failed. Please check the resource files.",
   "missing_resources": "Resources for the selected language were not found.",
   "profile_scope": "Current browser CPU and Canvas2D submission intervals; excludes compositor/display FPS.",
-  "profile_startup_scope": "Includes resource decoding, WASM initialization and full validation; excludes first draw."
+  "profile_startup_scope": "Includes resource decoding, WASM initialization and game startup; excludes the first draw."
 }

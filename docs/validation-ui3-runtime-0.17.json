@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "runtime_checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+  "resource_checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+  "reference": "v0.111.0 / 41cef1ea",
+  "scope": "Integrated native, ARM and WASM source; actual bilingual resources and timed hand presentation. Separate reports cover Firebird, browser DOM and delivery.",
+  "runtime_artifacts": {
+    "ndless": {
+      "path": "dist/nSpire2.tns",
+      "bytes": 983682,
+      "sha256": "38e0eb2a00d9eb662d52509d9ed95acf6814d7427e2dce9ae5ceb40d9ab86a56",
+      "allocation_bytes": 16305200,
+      "allocation_limit_bytes": 16777216,
+      "remaining_allocation_bytes": 472016,
+      "absolute_relocations": 30926
+    },
+    "wasm": {
+      "path": "build/web/nSpire2.wasm",
+      "bytes": 5456024,
+      "sha256": "a9895c508b3d354b595a437178c5f8c224e2ab761c0d80033f73ad299d2a8746",
+      "fixed_memory_bytes": 16777216
+    }
+  },
+  "native_release": {
+    "compiler": "Clang 18",
+    "build_steps": 119,
+    "ctest_suites": 73,
+    "passed": 73,
+    "failed": 0,
+    "elapsed_seconds": 67.7
+  },
+  "actual_hand_ui": {
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "checks_per_language": 16229,
+    "counts_include_repeated_and_capture_assertions": true,
+    "coverage": [
+      "Real EndTurn at Normal and Fast speed, without Retain and with a real Retain card",
+      "Hand drawing, keyboard focus, hover tooltip, detail and hit regions show only arrived instance IDs",
+      "Discarded cards leave before enemy impact; Retain remains inspectable; new draw appears at player boundary",
+      "Observer-enabled save bytes match direct canonical-core settlement",
+      "Load/reset and bounded 32-cue overflow converge to the final hand without revealing it early"
+    ],
+    "capture_directories": [
+      "ui3-hand-native-eng",
+      "ui3-hand-native-zhs"
+    ],
+    "visual_review": "Root and independent title reviewer inspected empty/retained/enemy/player samples in both languages; title reviewer also checked both speeds."
+  },
+  "actual_backend_agreement": {
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "scenarios_per_language": 23,
+    "rgb565_frames_per_language": 649,
+    "save_matches_per_language": 30,
+    "native_and_wasm_equal": true,
+    "browser_dom_or_localstorage_claim": false
+  },
+  "journal_receipts": [
+    {
+      "file": "ui3-integrated-native-build-152e42baa74c.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:08:23.851500+00:00",
+      "ended_at": "2026-10-23T15:09:11.973011+00:00"
+    },
+    {
+      "file": "ui3-integrated-ndless-d96c9a226b0d.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:08:23.836619+00:00",
+      "ended_at": "2026-10-23T15:08:50.869502+00:00"
+    },
+    {
+      "file": "ui3-integrated-wasm-237bafc08ccb.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:08:23.846188+00:00",
+      "ended_at": "2026-10-23T15:08:53.835791+00:00"
+    },
+    {
+      "file": "ui3-integrated-native-ctest-bd9ab641dd8b.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:10:07.311757+00:00",
+      "ended_at": "2026-10-23T15:11:15.058920+00:00"
+    },
+    {
+      "file": "ui3-hand-world-ui-eng-c94f4412148a.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:09:38.605948+00:00",
+      "ended_at": "2026-10-23T15:09:40.178203+00:00"
+    },
+    {
+      "file": "ui3-hand-world-ui-zhs-fca9f39aae52.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:09:38.610657+00:00",
+      "ended_at": "2026-10-23T15:09:40.134542+00:00"
+    },
+    {
+      "file": "ui3-integrated-backend-ready-eng-4ee253ac75a0.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:10:30.658740+00:00",
+      "ended_at": "2026-10-23T15:10:43.941475+00:00"
+    },
+    {
+      "file": "ui3-integrated-backend-ready-zhs-b96ab63371cb.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:10:30.654693+00:00",
+      "ended_at": "2026-10-23T15:10:43.649281+00:00"
+    },
+    {
+      "file": "ui3-integrated-wasm-compare-eng-7277d7f82582.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:11:13.453832+00:00",
+      "ended_at": "2026-10-23T15:11:17.599496+00:00"
+    },
+    {
+      "file": "ui3-integrated-wasm-compare-zhs-b0e1bcc96025.json",
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T15:11:13.442710+00:00",
+      "ended_at": "2026-10-23T15:11:17.584213+00:00"
+    }
+  ],
+  "retained_failures": [
+    {
+      "journals": [
+        "ui3-integrated-backend-eng-32c36d0ff0b1",
+        "ui3-integrated-backend-zhs-2a1f368a8c23"
+      ],
+      "failure": "Output capture directories had not been created; both drivers stopped at frame zero before running any scenario.",
+      "resolution": "Created the requested directories and reran unchanged binaries/resources; both complete native replays then passed."
+    },
+    {
+      "github_run": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39975569097",
+      "job_id": 120489404909,
+      "result": "72 of 73 ASan/UBSan suites passed; portable and converter jobs passed.",
+      "failure": "AddressSanitizer stack overflow in potions_completion_regression timed_and_automatic fixture, line 184.",
+      "resolution": "Test-only correction initializes fixtures in place and reuses independent serial round-trip workspaces. All 292 CHECK expressions and order are unchanged; product code, sanitizer flags and stack limits are unchanged. Its sanitizer execution is pending in a later checkpoint."
+    }
+  ],
+  "related_reports": [
+    "validation-ui3-title-0.17.json",
+    "validation-ui3-glow-resources-0.17.json",
+    "validation-ui3-merchant-0.17.json",
+    "validation-ui3-localization-0.17.json"
+  ],
+  "limits": [
+    "Original PC framebuffer differential and overall 95 percent UI acceptance are not established.",
+    "Physical calculator frame rate is unmeasured.",
+    "Title background GPU stars/fog and unaudited enemy command delays remain fidelity work.",
+    "The 30 to 40 MB installation target remains unmet."
+  ]
+}

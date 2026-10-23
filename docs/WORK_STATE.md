@@ -1,60 +1,70 @@
 # Work state — 2026-10-23
 
-## Current integration: hand timing, v20 merchant effects and final UI3 acceptance
+## Current: integrated UI3 runtime passed; delivery and sanitizer follow-up
 
-The source through `2b1e0c70c7722089b60ceb2f76bfcebb69af4b03` was pushed to
-`work/0.17-world-parity`, read back, and checked against the local changed
-blobs. This integration adds a small timed hand view and fixes a real v20
-merchant compatibility omission. Final ARM/WASM, native and Firebird checks
-must run on this integrated source before updating main or delivering files.
+Runtime source **`ead747dcdffded08d641445a811af48a4fafd1de`** is pushed and
+read back on `work/0.17-world-parity`. The complete native Release build and
+**73/73 CTest suites passed**. Its ARM launcher is **983,682 bytes**, with
+16,305,200 bytes of allocation (472,016 below the 16 MiB ceiling); WASM is
+5,456,024 bytes with fixed 16 MiB memory. Actual final English and Chinese
+resources each passed **23 scenarios / 649 exact native-WASM frames / 30 exact
+save matches**. These are executed runtime checks, not original-PC fidelity or
+physical-device FPS. See [runtime acceptance](validation-ui3-runtime-0.17.json).
 
-Ordinary Firebird execution at b400 found the next player's hand appearing
-during the enemy banner. The new hand view stores only up to ten instance IDs
-per cue, shares the existing effect clock, keeps Retain cards visible and
-updates drawing, focus, detail and hit regions together. Core state, RNG and
-save data are unchanged. New meaningful tests cover Normal/Fast, empty and
-retained hands, the player draw boundary, load/reset and bounded overflow.
-This is implemented source awaiting execution, not a passed device claim.
+Ordinary Firebird execution at b400 found next-player cards appearing during
+the enemy banner. The ead hand view records only ten instance IDs per cue on
+the existing effect clock. Retain cards remain inspectable; drawing, focus,
+detail, keyword tips and hit regions agree. Actual English/Chinese world-UI
+runs passed 16,229 checks each, including Normal/Fast, discard/Retain/draw,
+load/reset, overflow and exact saves against direct core settlement. Short
+final Firebird batches confirmed empty hands throughout the enemy phase and
+new cards only at the player boundary. Final bilingual room/save/exit flows
+are still being completed in a separate frozen ead worktree.
 
-Actual final-pack merchant checks found a second real defect: a version-equals-19
-condition disabled the original focused skin and candle layers for v20.
-The renderer now accepts the supported v19-and-later profile. Both failed
-actual-language runs are retained; the corrected runs are still pending.
+Actual final-pack merchant checks found and fixed the version-equals-19
+condition that disabled the original focused skin and candle layers for v20.
+Corrected English/Chinese runs passed the unchanged five-character, six-second
+phase, body-click, state-preservation and v18 fallback assertions. Two failed
+pre-fix runs remain recorded. Root and a second UI reviewer inspected the
+representative merchant images. See [merchant acceptance](validation-ui3-merchant-0.17.json).
 
-The original title letters, ten fire frames and single authored glow are now
-implemented. The glow expands image 4 by only **15,602 shared bytes**, with
-the original 32,274 bytes preserved exactly. Native Canvas/frontend and both
-old/new actual bilingual atlases passed at 3843. Its ARM build found an
-unavailable C++ library header; 2b1e0c7 replaces it with `stdint.h`.
-The separate background GPU stars and fog are still absent. See
+The original title lettering, ten fire frames and one authored additive glow
+are implemented. Image 4 grows by **15,602 shared bytes**, preserving the old
+32,274 bytes exactly. Old/new bilingual atlas and original curve checks passed;
+final ARM title screenshots were also reviewed. The separate background GPU
+stars and fog remain absent. The earlier ARM `cstdint` build failure was fixed
+with `stdint.h` and the ead ARM/WASM builds passed. See
 [title acceptance](validation-ui3-title-0.17.json).
 
-The matching final split set totals **81,100,703 bytes**: common 74,756,230,
-English 1,780,887, Chinese 4,563,586. It saves **12,682,660 bytes** against
-v19; conversion preserves all other retained artwork, animation payloads,
-glyphs, strings, catalogs and timing. Both complete packs reconstruct exactly.
-See [final resource receipt](validation-ui3-glow-resources-0.17.json). The
-older host performance measurements below remain associated with their actual
-source/resource versions and are not relabeled as final-device results.
+The final split resources total **81,100,703 bytes**: common 74,756,230,
+English 1,780,887, Chinese 4,563,586. With the launcher the bilingual install
+is **82,084,385 bytes before saves**, 12,682,660 resource bytes below v19.
+Both complete packs reconstruct exactly; other pixels, animation payloads,
+glyphs, strings, catalogs and timing are preserved. Old host measurements
+remain explicitly tied to their earlier source/resources. The 30–40 MB target
+is not reached. See [resource receipt](validation-ui3-glow-resources-0.17.json).
 
-[The b400 Firebird record](firebird-ui3-b400.md) documents ordinary installation,
-English UI, save/load, overlapping enemy animation/banner and a return to OS.
-Measured resource open plus App initialization was 447.1 ms and first render
-349.9 ms on the emulator timer. All integrity/eager-scan counters were zero.
-The long command log was incomplete, and the hand defect remained visible;
-final corrected execution therefore uses shorter logged batches.
+All unnecessary runtime integrity/eager scans are removed. The b400 Firebird
+open/init interval was 447.1 ms and first render 349.9 ms on the emulator timer,
+with zero integrity/image/tile-index/glyph/string pre-scan samples. Its long
+command log was incomplete, so later execution uses short closed batches;
+see [the historical b400 record](firebird-ui3-b400.md). Actual bilingual UI
+text checks covered 935 bindings/200 dynamic routes/230 model calls and 34,723
+assertions each, with zero unresolved fields.
 
-Actual b400 bilingual template checks passed 34,723 each with zero unresolved
-fields; actual event tooltip and world text checks also passed. Native/WASM
-actual-resource replay passed 23 scenarios / 649 frames / 30 saves per language
-after the driver waited for real combat preparation. These precede the hand
-and glow integration and must not stand in for its final replay.
+Actions run 39975569097 passed portable builds and converter tests, and passed
+72/73 ASan/UBSan suites. The remaining potion fixture overflowed the host stack
+because it returned many full State temporaries and nested large round-trip
+workspaces. This source stage initializes fixtures in place and reuses its
+independent serial save workspaces. All 292 CHECK expressions and their order
+are unchanged; product code, sanitizer settings and stack limits are unchanged.
+The corrected sanitizer execution is the next gate, not yet claimed passed.
 
-Next: close integrated native/portable/actual-resource checks, run corrected
-Firebird hand and Chinese flows, package matching calculator ZIP and offline
-HTML, save the finished files using the user's authorization, then synchronize
-the verified source and green Actions result to main. Original assets remain
-private; the public repository contains source and reviewed metadata only.
+Next: close sanitizer CI and remaining Firebird/browser flows; package matching
+calculator ZIP and offline HTML, save the finished files with the user's
+existing authorization, then synchronize verified source to main. Browser
+packaging text now correctly describes S/O local saves and the actual startup
+timing scope. Public source contains no original assets or embedded packs.
 
 ## Historical b4f7ba0 stage: original title, on-demand loading and hybrid compression
 

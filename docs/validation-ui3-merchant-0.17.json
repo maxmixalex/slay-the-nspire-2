@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "scope": "Actual bilingual final NSP2/20 merchant rendering and interaction, with each language's NSP2/18 fallback; records the initial failed run and the functional fix.",
+  "initial_runtime_checkpoint": "2b1e0c70c7722089b60ceb2f76bfcebb69af4b03",
+  "final_runtime_checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+  "resource_checkpoint": "3843e8e626317da0c1508fab02a2ed4a627f9fdd",
+  "resource_record": "validation-ui3-glow-resources-0.17.json",
+  "defect": {
+    "source": "src/merchant_ui.inc: shop_screen effects selection",
+    "before": "registered && content.version() == MerchantEffectsContentVersion",
+    "after": "registered && content.version() >= MerchantEffectsContentVersion",
+    "effect": "Version 20 had the original focus skin and two flame layers but selected the older visual fallback. The new focus frame was therefore never rendered or cached.",
+    "local_fix_commit": "85c8359",
+    "test_assertions_weakened": false,
+    "added_resource_bytes": 0,
+    "added_buffers": 0
+  },
+  "final_binary": {
+    "name": "merchant_visual_regression",
+    "bytes": 6243064,
+    "sha256": "4bafcfe910add360b45306224a79f147c78b511f33d4f709776df69e8bc57f97",
+    "build_journal": "ui3-integrated-native-build-152e42baa74c.json",
+    "compiler": "Clang 18.1.3",
+    "configuration": "Release"
+  },
+  "input_resources": {
+    "eng": {
+      "file": "ui3-assets/v20-hybrid-glow/retained-eng.nsp",
+      "bytes": 76536957,
+      "sha256": "18826a9777fc2aca55cbbcee43e9b34aafede0597d4ee576e6e87f16199b0dd3",
+      "fallback": "recovered-assets/v18-eng.nsp"
+    },
+    "zhs": {
+      "file": "ui3-assets/v20-hybrid-glow/retained-zhs.nsp",
+      "bytes": 79319656,
+      "sha256": "45f4cb3f0e59348a672c8074a7250837a047214ac22615ecf6ab1b05c6351691",
+      "fallback": "recovered-assets/v18-zhs.nsp"
+    }
+  },
+  "coverage": {
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "characters": [
+      "Ironclad",
+      "Silent",
+      "Defect",
+      "Regent",
+      "Necrobinder"
+    ],
+    "checks_per_language": 1402,
+    "capture_io_checks_per_language": 1210,
+    "checks": [
+      "Exact 145-frame base/focused merchant clips and two 150-frame flame clips with their original directory timings.",
+      "Five characters: same-clock keyboard and pointer focus, visible focus pixel change, pointer departure, one merchant-body open action, body click, Back close and a non-body click.",
+      "Canonical save bytes remain unchanged by presentation, hover and modal open/close.",
+      "Visible animation between 0 and 2475 ms, final samples at 5999 ms, loop wrap at 6000 ms and unchanged fast-mode clock progression.",
+      "Healthy content and existing 748-page / 320-entry image cache bounds.",
+      "Unsupported version 21 and wrong animation/card counts are rejected; the original v20 header values are restored exactly.",
+      "The corresponding v18 pack retains its older focus fallback and still opens/closes the shop."
+    ],
+    "non_capture_checks_per_language": 192
+  },
+  "visual_review": {
+    "resolution": [
+      320,
+      240
+    ],
+    "files_per_language": 5,
+    "screenshots_character": "Ironclad; all five characters are exercised by the interaction/pixel loop.",
+    "all_ten_images_inspected": true,
+    "observations": [
+      "The seated merchant faces the player and keeps the same scene position and size between focused and unfocused views.",
+      "The original white outline appears in the focused views; ordinary views do not show it.",
+      "The sampled flame views differ while the merchant scene remains correctly layered.",
+      "Both the English Proceed label and Chinese label fit the original arrow; there is no extra view-goods button.",
+      "The separate v18 screenshot retains the older corner-reticle presentation."
+    ],
+    "ppm_sha256": {
+      "eng": {
+        "merchant-outline-keyboard": "2e0c2f52de1d0658482706a41ee67d4a6bde02463e3bbcc8d008dcb486b27367",
+        "merchant-unfocused": "6b7b4cee47e1fb9a4b368f2231e2f75f4a656b75da4a43f215b29256b986dc3c",
+        "merchant-flames-zero": "9a7961f29979d55a4c7e27b10140697f526b74fad6ea3ba7af7610a438a7dd3d",
+        "merchant-flames-2475ms": "085f55bb3039df75285331d4f108ace352449e98a5a72eeeaa7c49c4c1828e09",
+        "merchant-v18-fallback": "14e1f4d6d0f849fa3172ae56249ccd06bd7761efa7cafe7315b495152e215292"
+      },
+      "zhs": {
+        "merchant-outline-keyboard": "dbe64a0642d2606be24a61d37d1c478df98864728e54ab5f2c2f81ffcc0b7971",
+        "merchant-unfocused": "fefe1edf390ab0e4e15617a46dc5f296fa7c877d02c584d626cc5828e7595271",
+        "merchant-flames-zero": "fba5ff0f4c198aa840a331cc009731e3362d2b4f784e7f84f57fc4e5b26a6b15",
+        "merchant-flames-2475ms": "6184846675717918af3190398c4455c77a5aae319081e82b5cfb854ed4d6b4e4",
+        "merchant-v18-fallback": "798802846a5aaeaa1ec8fdf2b47dcc689946d8889d3224e0c798ed947f4e800d"
+      }
+    }
+  },
+  "initial_failed_runs": [
+    {
+      "checkpoint": "2b1e0c70c7722089b60ceb2f76bfcebb69af4b03",
+      "started_at": "2026-10-23T15:04:52.567473+00:00",
+      "ended_at": "2026-10-23T15:04:52.635005+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "5a83a89c3224fd86f360b2f848937037e4a781a6031b4d08d7c5289cf90f2e41",
+      "log_sha256": "d55dd468f409d2a38cf9bba61940aa03a9220bbecdc2c5cd728c1052df15ca99",
+      "journal": "ui3-final-merchant-eng-4f20b2aa2888.json",
+      "log": "ui3-final-merchant-eng-4f20b2aa2888.log",
+      "command": [
+        "build/ui3/merchant_visual_regression",
+        "<workspace>/ui3-assets/v20-hybrid-glow/retained-eng.nsp",
+        "<workspace>/recovered-assets/v18-eng.nsp",
+        "<workspace>/ui3-assets/v20-hybrid-glow/merchant-review-eng"
+      ],
+      "output": "merchant line 52: app.map_clock_ms==clock&&app.content.image_cached(focused.first+(1375*focused.count)/6000)"
+    },
+    {
+      "checkpoint": "2b1e0c70c7722089b60ceb2f76bfcebb69af4b03",
+      "started_at": "2026-10-23T15:04:52.567679+00:00",
+      "ended_at": "2026-10-23T15:04:52.634886+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "5a83a89c3224fd86f360b2f848937037e4a781a6031b4d08d7c5289cf90f2e41",
+      "log_sha256": "d55dd468f409d2a38cf9bba61940aa03a9220bbecdc2c5cd728c1052df15ca99",
+      "journal": "ui3-final-merchant-zhs-52551dfded25.json",
+      "log": "ui3-final-merchant-zhs-52551dfded25.log",
+      "command": [
+        "build/ui3/merchant_visual_regression",
+        "<workspace>/ui3-assets/v20-hybrid-glow/retained-zhs.nsp",
+        "<workspace>/recovered-assets/v18-zhs.nsp",
+        "<workspace>/ui3-assets/v20-hybrid-glow/merchant-review-zhs"
+      ],
+      "output": "merchant line 52: app.map_clock_ms==clock&&app.content.image_cached(focused.first+(1375*focused.count)/6000)"
+    }
+  ],
+  "final_passed_runs": [
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "started_at": "2026-10-23T15:10:00.735525+00:00",
+      "ended_at": "2026-10-23T15:10:00.954242+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "bf034f00f0d96be34e281aa95f09483e0ec6e64a017b2a850606d563ac09ef37",
+      "log_sha256": "08c936f23682ab907837629221e016e1e3f7832a11c0ca30b21ad297401c99d0",
+      "journal": "ui3-final-merchant-fixed-eng-438d824f0e62.json",
+      "log": "ui3-final-merchant-fixed-eng-438d824f0e62.log",
+      "command": [
+        "build/ui3/merchant_visual_regression",
+        "<workspace>/ui3-assets/v20-hybrid-glow/retained-eng.nsp",
+        "<workspace>/recovered-assets/v18-eng.nsp",
+        "<workspace>/ui3-assets/v20-hybrid-glow/merchant-review-eng"
+      ],
+      "output": "merchant visual: 1402 checks passed; exact v20 profile, phase/focus, five classes, v18 fallback"
+    },
+    {
+      "checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+      "started_at": "2026-10-23T15:10:00.667405+00:00",
+      "ended_at": "2026-10-23T15:10:00.935927+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "bf034f00f0d96be34e281aa95f09483e0ec6e64a017b2a850606d563ac09ef37",
+      "log_sha256": "08c936f23682ab907837629221e016e1e3f7832a11c0ca30b21ad297401c99d0",
+      "journal": "ui3-final-merchant-fixed-zhs-04a7a4ab0cf4.json",
+      "log": "ui3-final-merchant-fixed-zhs-04a7a4ab0cf4.log",
+      "command": [
+        "build/ui3/merchant_visual_regression",
+        "<workspace>/ui3-assets/v20-hybrid-glow/retained-zhs.nsp",
+        "<workspace>/recovered-assets/v18-zhs.nsp",
+        "<workspace>/ui3-assets/v20-hybrid-glow/merchant-review-zhs"
+      ],
+      "output": "merchant visual: 1402 checks passed; exact v20 profile, phase/focus, five classes, v18 fallback"
+    }
+  ],
+  "limits": [
+    "This native in-memory resource test is not a calculator frame-rate or USB/storage timing measurement.",
+    "The screenshots are port captures, not pixel-equality comparisons with an original Godot render.",
+    "The initial failing binary digest was not captured before its subsequent rebuild; its source/build/run journals identify that earlier execution."
+  ],
+  "initial_build_journal": "ui3-final-merchant-build-452fe6759925.json"
+}

@@ -32,5 +32,5 @@
   "startup_failed": "启动失败。请检查资源文件。",
   "missing_resources": "未找到所选语言的资源。",
   "profile_scope": "当前浏览器 CPU 与 Canvas2D 提交间隔，不包含合成器或屏幕刷新率。",
-  "profile_startup_scope": "包含资源解码、WASM 初始化和资源校验，不含首次绘制。"
+  "profile_startup_scope": "包含资源解码、WASM 初始化和游戏启动，不含首次绘制。"
 }

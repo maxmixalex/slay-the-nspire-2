@@ -109,7 +109,7 @@ append-only feedback v17→v18 and merchant v18→v19 stages.
 
 `tests/test_merchant_conversion.py` provides small public skin/deform and
 material sampling tests without original data. `merchant_visual_regression`
-is a CMake target invoked with an actual v19 pack, its v18 predecessor and an
+is a CMake target invoked with an actual v19 or v20 pack, its v18 predecessor and an
 optional private screenshot directory. It checks the exact clip profile,
 five-character room interactions, stable focus phase, pointer departure,
 keyboard/pointer skin agreement, visible animation, six-second sample bounds,
@@ -176,3 +176,30 @@ visually inspected; private animation previews preserve the sampled cycle.
 Integrated ARM/WASM allocation, browser behavior and Firebird startup,
 Continue/save/exit tests belong to their platform records. In particular, the
 earlier 61970600 v18 target measurements cannot be relabelled as v19 evidence.
+
+## UI3 retained-format validation
+
+The final bilingual NSP2/20 glow resources exposed a real rendering regression
+at checkpoint `2b1e0c70c7722089b60ceb2f76bfcebb69af4b03`: the shop selected the
+original focus skin, flame layers and six-second phase only when the resource
+version was exactly 19. Version 20 preserved every merchant frame but entered
+the older presentation path. Both language runs failed the existing focused
+frame assertion before capturing a screenshot.
+
+Checkpoint `ead747dcdffded08d641445a811af48a4fafd1de` keeps those original effects
+for all supported versions from 19 onward. The real regression retains its
+five-character pixel, focus, animation, merchant-body click, unique open-action,
+save-preservation, malformed-profile and v18-fallback assertions. It now accepts
+actual v19/v20 inputs, rejects version 21, and restores the input header's own
+version and counts after each rejection check.
+
+Both final language runs passed **1,402 checks each**, including 1,210 capture
+I/O checks and 192 other assertions covering state, pixels, profiles and input
+loading. All ten native 320×240
+screenshots were inspected: focused/unfocused merchant, two animation phases
+and v18 fallback for each language. These screenshots show Ironclad; the
+interaction and pixel loop separately exercises all five characters. The
+[UI3 execution record](validation-ui3-merchant-0.17.json) retains the two
+initial failed journals, two passing journals, actual final binary identity
+and private screenshot identities. This is presentation/interaction evidence,
+not a calculator frame-rate measurement or an original-render pixel oracle.
