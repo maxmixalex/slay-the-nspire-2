@@ -130,11 +130,12 @@ static void image_cache_aliases(){
     const auto rejected=[&](AliasImage good,AliasImage bad,const std::vector<uint8_t>&payload){
         for(bool reverse:{false,true}){
             auto b=alias_pack(reverse?bad:good,reverse?good:bad,payload);source.bytes=&b;
-            CHECK(!memory->open(b.data(),b.size()));CHECK(!ranged->open(source.source()));
+            CHECK(memory->open(b.data(),b.size()));CHECK(ranged->open(source.source()));
+            const unsigned good_id=reverse?2:1,bad_id=reverse?1:2;
+            CHECK(memory->image(good_id).pixels&&ranged->image(good_id).pixels);
+            CHECK(!memory->image(bad_id).pixels&&!ranged->image(bad_id).pixels);
             CHECK(!memory->healthy()&&!ranged->healthy());
-            CHECK(!memory->image(1).pixels&&!ranged->image(1).pixels);
-            CHECK(!memory->image(3).pixels&&!ranged->image(3).pixels);
-            CHECK(!memory->card_count()&&!ranged->card_count());
+            CHECK(!memory->image(good_id).pixels&&!ranged->image(good_id).pixels);
             // Reopening the same Content owners discards both a failed key
             // and any previously cached good aliases from that source.
             source.bytes=&recovery;CHECK(memory->open(recovery.data(),recovery.size()));CHECK(ranged->open(source.source()));
@@ -155,7 +156,9 @@ static void image_cache_aliases(){
     // Populate another owner past the entry limit, then explicitly retain
     // the tiny alias again before failing the evicted card's real read.
     const auto pressure=image_pressure_pack();auto evictor=std::make_unique<Content>();AliasProvider other{&pressure};
-    CHECK(evictor->open(other.source()));CHECK(ranged->image(1).pixels);
+    CHECK(evictor->open(other.source()));
+    for(unsigned i=0;i<Content::image_capacity_entries()+32;++i)CHECK(evictor->image(i).pixels);
+    CHECK(ranged->image(1).pixels);
     CHECK(!ranged->image_cached(0)&&ranged->image_cached(1));
     source.fail=true;CHECK(ranged->image(1).pixels);CHECK(!ranged->image(0).pixels);
     CHECK(!ranged->healthy()&&!ranged->image(1).pixels&&!ranged->image(3).pixels);
@@ -205,6 +208,7 @@ static void glyph_cache_aliases(){
     // A later failed image read invalidates cached glyph views as well.
     const auto pressure=image_pressure_pack();auto evictor=std::make_unique<Content>();AliasProvider other{&pressure};
     CHECK(evictor->open(other.source()));
+    for(unsigned i=0;i<Content::image_capacity_entries()+32;++i)CHECK(evictor->image(i).pixels);
     source.fail=true;CHECK(!ranged->image(0).pixels);CHECK(!ranged->healthy());
     CHECK(!ranged->glyph('A',10).pixels&&!ranged->glyph('B',10).pixels);
     CHECK(memory->healthy()&&!std::memcmp(memory->glyph('B',10).pixels,old_bytes.data(),old_bytes.size()));
@@ -220,10 +224,10 @@ int main(int argc,char**argv){
     for(int i=0;i<CardKinds;i++){CHECK(c.card_image(i)==i);CHECK(!std::strcmp(c.card_string(i),"X"));}
     CHECK(c.card_image(-1)==-1&&c.card_image(CardKinds)==-1);CHECK(!*c.card_string(CardKinds));
     constexpr unsigned carddir=40+fixture_images*16+ContentStrings*8+AnimationKinds*16;
-    auto b=original;put(b,carddir+23*16,9999);hash(b);CHECK(!c.open(b.data(),b.size()));
-    b=original;put(b,carddir+3*4,ContentStrings);hash(b);CHECK(!c.open(b.data(),b.size()));
+    auto b=original;put(b,carddir+23*16,9999);hash(b);CHECK(c.open(b.data(),b.size()));CHECK(c.card_image(23)==-1);
+    b=original;put(b,carddir+3*4,ContentStrings);hash(b);CHECK(c.open(b.data(),b.size()));CHECK(!*c.card_string(0,2));
     b=original;put(b,32,25);hash(b);CHECK(!c.open(b.data(),b.size()));
-    b=original;b.back()^=1;CHECK(!c.open(b.data(),b.size()));
+    b=original;b.back()^=1;CHECK(c.open(b.data(),b.size()));CHECK(c.image(0).pixels);CHECK(!*c.string(ContentStrings-1)&&!c.healthy());
     CHECK(!c.open(nullptr,0));CHECK(c.card_count()==0);
     for(unsigned n=0;n<40;n++)CHECK(!c.open(original.data(),n));
     // Card count alone cannot identify the new relic-art directory. A valid

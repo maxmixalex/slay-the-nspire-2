@@ -11,7 +11,6 @@ import json
 import lzma
 from pathlib import Path
 import struct
-import zlib
 
 from arm_division_regression import linked_helper
 from unicorn import Uc, UC_ARCH_ARM, UC_MODE_ARM, UC_MODE_LITTLE_ENDIAN
@@ -47,7 +46,7 @@ def main():
     args = parser.parse_args()
     data = args.elf.read_bytes()
     segments, (address, size) = linked_helper(data,
-        b'_ZN5spire18decode_lzma2_blockEPhjjPKhjjj')
+        b'_ZN5spire18decode_lzma2_blockEPhjjPKhjj')
     emulator = Uc(UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_LITTLE_ENDIAN)
     emulator.ctl_set_cpu_model(UC_CPU_ARM_926)
     low = min(a for a, _, _ in segments) & ~4095
@@ -69,12 +68,12 @@ def main():
     count = 0
     records = []
 
-    def decode(raw, packed, expected, capacity, property, crc, success):
+    def decode(raw, packed, expected, capacity, property, success):
         nonlocal count
         guard = b'\xcd' * (len(raw) + 64)
         emulator.mem_write(destination, guard)
         emulator.mem_write(source, packed)
-        emulator.mem_write(sp, struct.pack('<III', len(packed), property, crc))
+        emulator.mem_write(sp, struct.pack('<II', len(packed), property))
         emulator.reg_write(UC_ARM_REG_CPSR, 0x10)
         for reg, value in saved.items():
             emulator.reg_write(reg, value)
@@ -100,15 +99,13 @@ def main():
         count += 1
 
     for name, raw, packed in fixtures():
-        crc = zlib.crc32(raw)
-        decode(raw, packed, len(raw), len(raw), 14, crc, True)
-        decode(raw, packed[:-1], len(raw), len(raw), 14, crc, False)
-        decode(raw, packed + b'\0', len(raw), len(raw), 14, crc, False)
-        decode(raw, packed, len(raw), len(raw), 14, crc ^ 1, False)
-        decode(raw, packed, len(raw), len(raw), 16, crc, False)
-        decode(raw, packed, len(raw), len(raw) - 1, 14, crc, False)
+        decode(raw, packed, len(raw), len(raw), 14, True)
+        decode(raw, packed[:-1], len(raw), len(raw), 14, False)
+        decode(raw, packed + b'\0', len(raw), len(raw), 14, False)
+        decode(raw, packed, len(raw), len(raw), 16, False)
+        decode(raw, packed, len(raw), len(raw) - 1, 14, False)
         # A failed stream must not leave the shared fixed arena occupied.
-        decode(raw, packed, len(raw), len(raw), 14, crc, True)
+        decode(raw, packed, len(raw), len(raw), 14, True)
         records.append(dict(name=name, raw_bytes=len(raw), encoded_bytes=len(packed),
             raw_sha256=hashlib.sha256(raw).hexdigest()))
     print(json.dumps(dict(elf=str(args.elf), elf_sha256=hashlib.sha256(data).hexdigest(),

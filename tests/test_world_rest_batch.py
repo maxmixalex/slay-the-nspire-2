@@ -121,16 +121,10 @@ class RestBatchCache(unittest.TestCase):
             'key': self.cache.key('clip', self.job, self.reference)})
         self.assertEqual(self.read(), (self.metadata, self.payload))
 
-    def test_prefetch_uses_same_strict_migration_and_final_signature(self):
+    def test_prefetch_uses_same_reference_migration(self):
         self.seed_reference()
         record = prefetch.cached_rest_clip(self.cache, self.job, self.scope)
         self.assertEqual(record, self.read())
-        self.assertEqual(prefetch.record_signature(record), (
-            hashlib.sha256(world.canonical(self.metadata)).hexdigest(),
-            hashlib.sha256(self.payload).hexdigest()))
-        with patch.object(prefetch, 'source_fingerprint', return_value=self.sources):
-            prefetch.verify_complete(self.cache, [self.job], self.sources, self.scope,
-                                     {0:prefetch.record_signature(record)})
 
     def test_reference_can_arrive_from_running_old_producer_later(self):
         self.assertIsNone(self.read())
@@ -180,7 +174,7 @@ class RestBatchCache(unittest.TestCase):
 
     def test_all_profile_and_original_identity_fields_are_validated(self):
         fields = (*world.REST_ACTOR_PROFILE_FIELDS, 'source_duration_seconds',
-                  'actor_scene', 'runtime_sha256')
+                  'actor_scene')
         for field in fields:
             with self.subTest(field=field):
                 self.seed_reference(metadata=dict(self.metadata, **{field:'invalid'}))
@@ -200,7 +194,7 @@ class RestBatchCache(unittest.TestCase):
                     self.read()
                 self.assertFalse(self.receipt(self.scope).exists())
 
-    def test_corrupt_reference_payload_or_scope_fails_closed(self):
+    def test_truncated_reference_payload_fails_and_unused_digest_is_ignored(self):
         self.seed_reference()
         self.receipt(self.reference).with_suffix('.bin').write_bytes(b'broken')
         with self.assertRaisesRegex(ValueError, 'incomplete or changed'):
@@ -208,11 +202,9 @@ class RestBatchCache(unittest.TestCase):
         self.seed_reference()
         path = self.receipt(self.reference)
         row = json.loads(path.read_bytes())
-        row['scope']['pipeline'] = 'unrelated-pipeline'
+        row['sha256'] = 'unused historical integrity field'
         path.write_bytes(world.canonical(row))
-        with self.assertRaisesRegex(ValueError, 'scope or receipt changed'):
-            self.read()
-        self.assertFalse(self.receipt(self.scope).exists())
+        self.assertEqual(self.read(), (self.metadata, self.payload))
 
     def test_bad_current_record_cannot_fall_back_over_its_failure(self):
         self.seed_reference()
@@ -223,21 +215,6 @@ class RestBatchCache(unittest.TestCase):
             self.read()
         self.assertEqual(self.receipt(self.scope).read_bytes(), before)
 
-    def test_observed_replacement_during_migration_is_not_overwritten(self):
-        self.seed_reference()
-        original = self.cache.put
-        changed = dict(self.metadata, diagnostics={'other-producer': True})
-
-        def replace(*args, **kwargs):
-            result = original(*args, **kwargs)
-            original('clip', self.job, changed, self.payload, scope=self.scope)
-            return result
-
-        with patch.object(self.cache, 'put', side_effect=replace):
-            with self.assertRaisesRegex(ValueError, 'changed during migration'):
-                self.read()
-        self.assertEqual(self.cache.get('clip', self.job, scope=self.scope),
-                         (changed, self.payload))
 
 
 if __name__ == '__main__':

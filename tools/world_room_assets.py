@@ -143,7 +143,7 @@ def sample_treasure(pack, row, sampler):
         animation_queue=queue, times=times, frames=len(images), size=row['size'],
         screen_origin=row['screen_origin'], pivot=row['pivot'], loop=False,
         transform=matrix[:2].ravel().tolist(), bounds=[low.tolist(), high.tolist()],
-        clipping='authored_room_viewport', runtime_sha256=RUNTIME_SHA256,
+        clipping='authored_room_viewport', runtime_sha256=getattr(sampler, 'runtime_identity', None),
         physics_step=1/60, clear_color=profile['treasure']['room_clear_color'])
     if row['kind'] == 'treasure-clip':
         result.update(clip=row['clip'], duration_ms=row['duration_ms'], frame_ms=row['frame_ms'])

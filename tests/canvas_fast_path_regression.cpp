@@ -120,6 +120,53 @@ static void picture_case(Surface surface,Style style,unsigned id,Placement p,uns
  }
  pair.compare();
 }
+static Bytes glyph_fixture(const Bytes&encoded){
+ constexpr unsigned count=66,strings=66,clips=11,cards=26,ui=56;
+ constexpr unsigned glyph_at=40+count*16,string_at=glyph_at+16,clip_at=string_at+strings*8;
+ constexpr unsigned card_at=clip_at+clips*16,payload=card_at+cards*16+ui*4;
+ Bytes b(payload+3);put(b,0,0x3250534e);put(b,4,5);put(b,8,0x41cef1ea);
+ put(b,16,count);put(b,20,1);put(b,24,strings);put(b,28,clips);put(b,32,cards);
+ for(unsigned i=0;i<count;++i){put(b,40+i*16,payload);put(b,44+i*16,1,2);put(b,46+i*16,1,2);put(b,52+i*16,2);}
+ for(unsigned i=0;i<strings;++i)put(b,string_at+i*8,payload+2);
+ for(unsigned i=0;i<clips;++i){put(b,clip_at+i*16+4,1,2);put(b,clip_at+i*16+6,33,2);}
+ put(b,glyph_at,'?');put(b,glyph_at+4,unsigned(b.size()));put(b,glyph_at+8,10,2);
+ put(b,glyph_at+10,7,1);put(b,glyph_at+11,5,1);put(b,glyph_at+12,8,2);put(b,glyph_at+14,unsigned(encoded.size()),2);
+ b.insert(b.end(),encoded.begin(),encoded.end());put(b,12,unsigned(b.size()));return b;
+}
+static void glyphs(){
+ struct Case {Bytes encoded,alpha;};
+ const Case samples[]={
+  {{35,179},Bytes(35,179)},{{255,179},Bytes(35,179)},
+  {{0,255,35,179},Bytes(35,179)},{{3,100},Bytes(35,0)},
+  {{3,100,255,200},Bytes(35,200)}
+ };
+ for(unsigned i=0;i<sizeof samples/sizeof samples[0];++i){
+  const auto&sample=samples[i];Bytes expected=sample.alpha;
+  if(i>=3)std::fill(expected.begin(),expected.begin()+3,100);
+  for(Surface surface:{Surface{13,9,19},Surface{1,1,7}})for(auto style:{styles[0],styles[16]})for(Placement p:{Placement{2,2,0,0},Placement{-3,-2,0,0}}){
+   Pair pair(surface,style);const Glyph glyph{sample.encoded.data(),7,5,8,uint16_t(sample.encoded.size())};
+   pair.got.glyph(glyph,p.x,p.y,0xffff);
+   for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x){
+    const int sx=x-p.x,sy=y-p.y;if(sx>=0&&sx<7&&sy>=0&&sy<5)pair.oracle.paint(y*surface.pitch+x,0xffff,expected[sy*7+sx]);
+   }
+   pair.compare();
+  }
+  const auto data=glyph_fixture(sample.encoded);CHECK(app.content.open(data.data(),data.size()));
+  for(unsigned scale:{2048u,4096u,8192u}){
+   Pair pair({20,15,23},{});turn_banner_text(pair.got,"?",10,2,scale,10,0xffff);
+   const int left=10-int(8*scale/4096)/2;
+   for(unsigned sy=0;sy<5;++sy)for(unsigned sx=0;sx<7;++sx)
+    for(int y=2+int(sy*scale/4096);y<2+int((sy+1)*scale/4096);++y)
+    for(int x=left+int(sx*scale/4096);x<left+int((sx+1)*scale/4096);++x)
+     if(x>=0&&x<20&&y>=0&&y<15)pair.oracle.paint(y*23+x,0xffff,expected[sy*7+sx]);
+   pair.compare();CHECK(app.content.healthy());
+  }
+ }
+ // A caller-provided partial pair and empty logical extent draw nothing.
+ const uint8_t partial[]={35};for(Glyph glyph:{Glyph{partial,7,5,8,1},Glyph{partial,0,5,8,1},Glyph{partial,7,0,8,1}}){
+  Pair pair({13,9,19},{});pair.got.glyph(glyph,0,0,0xffff);pair.compare();
+ }
+}
 static void rectangles(){
  const Surface surfaces[]={{13,9,13},{13,9,19},{1,1,7}};
  const Placement shapes[]={{0,0,13,9},{3,2,5,4},{-3,-2,8,6},{10,7,9,8},{-5,-4,24,19},
@@ -185,6 +232,6 @@ int main(){
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- pictures();map_pictures();CHECK(app.content.healthy());
- std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, sparse and palette guards\n",cases,checks);
+ pictures();map_pictures();CHECK(app.content.healthy());glyphs();
+ std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, sparse, palette and glyph decode bounds\n",cases,checks);
 }

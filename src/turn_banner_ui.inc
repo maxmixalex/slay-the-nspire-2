@@ -18,12 +18,12 @@ static void turn_banner_text(Canvas&c,const char*text,int center_x,int y,unsigne
     // original 2 -> 1 enemy label zoom without another font atlas or surface.
     while(*text){const auto g=c.a.content.glyph(utf8(text),size);
         auto pixel=[&](unsigned position,unsigned alpha){
-            if(!alpha||!g.w)return;const unsigned sx=position%g.w,sy=position/g.w;
+            if(!alpha||!g.w||position>=unsigned(g.w)*g.h)return;const unsigned sx=position%g.w,sy=position/g.w;
             const int left=x+int(sx*scale/4096),right=x+int((sx+1)*scale/4096);
             const int top=y+int(sy*scale/4096),bottom=y+int((sy+1)*scale/4096);
             for(int yy=mx(0,top);yy<mn(c.clip_h,bottom);++yy)for(int xx=mx(0,left);xx<mn(c.clip_w,right);++xx)c.paint(yy*c.pitch+xx,color,alpha);
         };
-        if(g.pixels&&g.encoded_size){unsigned position=0;for(unsigned i=0;i<g.encoded_size;i+=2){const unsigned count=g.pixels[i];for(unsigned j=0;j<count;++j)pixel(position+j,g.pixels[i+1]);position+=count;}}
+        if(g.pixels&&g.encoded_size){unsigned position=0;const unsigned pixels=unsigned(g.w)*g.h;for(unsigned i=0;i+1<g.encoded_size&&position<pixels;i+=2){const unsigned count=mn(unsigned(g.pixels[i]),pixels-position);for(unsigned j=0;j<count;++j)pixel(position+j,g.pixels[i+1]);position+=count;}}
         else if(g.pixels)for(unsigned i=0;i<unsigned(g.w)*g.h;++i)pixel(i,g.pixels[i]);
         x+=int(g.advance*scale/4096);
     }

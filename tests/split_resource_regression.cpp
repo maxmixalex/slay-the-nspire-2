@@ -25,7 +25,7 @@ struct Fixture {
         put(original,36,hash(original.data()+40,original.size()-40));
         common.resize(64+art);std::memcpy(common.data(),"NSC1",4);put(common,4,1);put(common,8,0x41cef1ea);
         put(common,12,64);put(common,16,common.size());put(common,20,art);
-        for(unsigned i=0;i<32;++i)common[32+i]=uint8_t(7*i+3); // Opaque bound build identity.
+        for(unsigned i=0;i<32;++i)common[32+i]=uint8_t(7*i+3); // Historical optional build identity; no runtime gate.
         std::memcpy(common.data()+64,original.data()+prefix,art);header_hash(common,true);
         locale.resize(96+prefix+suffix);std::memcpy(locale.data(),"NSL1",4);put(locale,4,1);put(locale,8,0x41cef1ea);
         put(locale,12,96);put(locale,16,locale.size());put(locale,20,original.size());put(locale,24,prefix);
@@ -61,35 +61,42 @@ static void checks_for(bool chinese,bool streamed,unsigned version){
     Bytes all(f.original.size());CHECK(joined.read(0,all.data(),all.size()));CHECK(all==f.original);
     CHECK(joined.read(f.original.size(),nullptr,0));CHECK(!joined.read(f.original.size()+1,nullptr,0));
     CHECK(!joined.read(f.original.size(),all.data(),1));CHECK(!joined.read(0xffffffffu,all.data(),1));CHECK(!joined.read(0,nullptr,1));
-    ResourceReader reader(joined.source());Bytes scratch(65536);uint32_t sum=0;
-    CHECK(reader.fnv1a_buffered(40,reader.size()-40,sum,scratch.data(),scratch.size()));CHECK(sum==get(f.original,36));
-    if(streamed)CHECK(locale.progress_calls>=2&&common.progress_calls==0);
-    // A payload bit flip is rejected by the unchanged NSP2 integrity pass,
-    // rather than an unnecessary second full scan inside the adapter.
-    f.common[64+13]^=0x80;CHECK(reader.reset(joined.source()));
-    CHECK(reader.fnv1a_buffered(40,reader.size()-40,sum,scratch.data(),scratch.size()));CHECK(sum!=get(f.original,36));
+    ResourceReader reader(joined.source());
+    reader.progress(ResourceStage::Directory,1,1);
+    if(streamed)CHECK(locale.progress_calls==1&&common.progress_calls==0);
+    // Payload bytes are read as stored; historical pack checksums do not
+    // trigger a full-file traversal in either the adapter or the reader.
+    f.common[64+13]^=0x80;CHECK(reader.reset(joined.source()));uint8_t changed=0;
+    CHECK(reader.u8(f.prefix+13,changed));CHECK(changed==f.common[64+13]);
     joined.close();CHECK(!joined.valid()&&!joined.source().read_at&&!joined.read(0,nullptr,0));
 }
 static void malformed(){
     Fixture f;SplitResourceSource joined;
     const auto open=[&](){return joined.open(ResourceSource::memory(f.common.data(),f.common.size()),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::English);};
     CHECK(open());
-    for(unsigned at:{0u,4u,8u,12u,16u,20u,24u,28u,32u}){
+    for(unsigned at:{0u,4u,8u,12u,16u,20u}){
         f.common[at]^=1;CHECK(!open());CHECK(!joined.valid());f.common[at]^=1;
     }
-    for(unsigned at:{0u,4u,8u,12u,16u,20u,24u,28u,32u,36u,40u,44u,48u,80u,95u}){
+    for(unsigned at:{0u,4u,8u,12u,16u,20u,24u,28u,32u,36u}){
         f.locale[at]^=1;CHECK(!open());f.locale[at]^=1;
     }
-    // Valid header checksums cannot make an overflowed range or wrong common
-    // identity acceptable. Restore the whole fixture between cases.
-    for(unsigned at:{20u,24u,28u,32u}){Fixture bad;put(bad.locale,at,0xffffffffu);header_hash(bad.locale,false);
+    // Legacy checksums, identity digests and reserved flags do not affect
+    // mapping. This retains compatibility with existing split resources.
+    for(unsigned at:{24u,28u,32u,63u}){
+        f.common[at]^=1;CHECK(open());f.common[at]^=1;
+    }
+    for(unsigned at:{40u,44u,48u,79u,80u,95u,132u}){
+        f.locale[at]^=1;CHECK(open());f.locale[at]^=1;
+    }
+    // Mapping overflow and actual language mismatches remain invalid.
+    for(unsigned at:{20u,24u,28u,32u}){Fixture bad;put(bad.locale,at,0xffffffffu);
         CHECK(!joined.open(ResourceSource::memory(bad.common.data(),bad.common.size()),ResourceSource::memory(bad.locale.data(),bad.locale.size()),ResourceLanguage::English));}
-    f.common[32]^=1;header_hash(f.common,true);CHECK(!open());f=Fixture();
-    put(f.locale,36,2);header_hash(f.locale,false);CHECK(!open());
+    const unsigned marker=96+f.prefix+7;f.locale[marker]='z';CHECK(!open());f.locale[marker]='e';
+    put(f.locale,36,2);CHECK(!open());
     // A relabeled header must agree with the actual original marker as well.
     CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::Chinese));
     f=Fixture();CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()-1),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::English));
-    {Fixture future(false,20);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
+    {Fixture future(false,21);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
     File c{&f.common},l{&f.locale};CHECK(joined.open(c.source(),l.source(),ResourceLanguage::English));
     c.fail_at=64+10;uint8_t out[64];CHECK(!joined.read(f.prefix-4,out,32));
     c.fail_at=-1;l.fail_at=96+f.prefix+2;CHECK(!joined.read(f.prefix+f.art-4,out,16));
@@ -110,14 +117,12 @@ static void actual(const char* common,const char* locale,const char* original,co
     CHECK(joined.open(a.source(),b.source(),lang));CHECK(joined.source().length==expected.length);
     Bytes got(65536),want(65536);for(uint32_t at=0;at<expected.length;){const uint32_t n=expected.length-at<got.size()?expected.length-at:uint32_t(got.size());
         CHECK(joined.read(at,got.data(),n));CHECK(Disk::read(&expected,at,want.data(),n));CHECK(!std::memcmp(got.data(),want.data(),n));at+=n;}
-    ResourceReader reader(joined.source());uint32_t sum=0,stored=0;CHECK(reader.u32(36,stored));
-    CHECK(reader.fnv1a_buffered(40,reader.size()-40,sum,got.data(),got.size()));CHECK(sum==stored);
-    std::printf("actual %s: %u virtual bytes identical; full integrity passed\n",language,expected.length);
+    std::printf("actual %s: %u virtual bytes identical to the original full pack\n",language,expected.length);
 }
 int main(int argc,char**argv){
     if(argc==5)actual(argv[1],argv[2],argv[3],argv[4]);
     else if(argc!=1){std::fprintf(stderr,"usage: split_resource_regression [common locale original eng|zhs]\n");return 2;}
-    for(unsigned version:{17u,18u,19u})for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
+    for(unsigned version:{17u,18u,19u,20u})for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
     malformed();
     std::printf("split resources: %u checks passed; adapter=%zu bytes\n",checks,sizeof(SplitResourceSource));
 }

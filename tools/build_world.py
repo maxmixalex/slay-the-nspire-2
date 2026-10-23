@@ -110,11 +110,11 @@ def source_fingerprint() -> dict:
 
 
 class ConversionCache:
-    """Checksummed, content-addressed private records with atomic completion.
+    """Content-addressed private records with atomic completion.
 
-    A record is reusable only if its dependency/settings digest and complete
-    payload hash match. A process interruption cannot mark a partial job done.
-    No pickle or executable serialized input is used.
+    Cache keys include the inputs/settings that determine pixels. Reading a
+    record checks its declared size; the consuming frame parser checks actual
+    dimensions and ranges. No redundant payload integrity pass is performed.
     """
     def __init__(self, directory: Path, dependencies: dict, *, source_files=None):
         self.dependencies = dependencies
@@ -162,7 +162,7 @@ class ConversionCache:
         if row.get('key') != key or row.get('schema') != schema:
             raise ValueError('Private cache receipt identity mismatch: ' + key)
         payload = receipt.with_suffix('.bin').read_bytes()
-        if len(payload) != row['bytes'] or hashlib.sha256(payload).hexdigest() != row['sha256']:
+        if len(payload) != row['bytes']:
             raise ValueError('Private cache payload is incomplete or changed: ' + key)
         return row['metadata'], payload
 
@@ -197,7 +197,7 @@ class ConversionCache:
         receipt = self.directory / kind / (key + '.json')
         atomic_bytes(receipt.with_suffix('.bin'), payload)
         atomic_bytes(receipt, canonical(dict(schema=CACHE_SCHEMA, key=key,
-            bytes=len(payload), sha256=hashlib.sha256(payload).hexdigest(), metadata=metadata,
+            bytes=len(payload), metadata=metadata,
             scope=scope, reused_from=reused_from)) + b'\n')
         return metadata, payload
 
@@ -338,7 +338,7 @@ def sample_map_clip(pack, job, sampler):
         duration_ms=job['duration_ms'], frame_ms=job['frame_ms'],
         size=job['size'], pivot=job['pivot'], loop=job['loop'],
         shader=job['shader'], transform=job['transform'],
-        bounds=[low.tolist(), high.tolist()], runtime_sha256=RUNTIME_SHA256,
+        bounds=[low.tolist(), high.tolist()], runtime_sha256=getattr(sampler, 'runtime_identity', None),
         physics_step=1/60, original_channels=True)
 
 
@@ -406,7 +406,7 @@ def cached_enemy_clip(cache, settings, source_files, model):
     The reference implementation is retained unchanged. Its complete geometry,
     encoder, model and job identities must match before an old payload is
     imported. A changed batching implementation cannot reuse another batching
-    version's output, and never weakens the checksum checks of either record.
+    version's output; dependency keys retain that functional distinction.
     """
     scope = render_scope('clip', source_files, model=model)
     cached = cache.get('clip', settings, scope=scope)
@@ -426,8 +426,7 @@ def validate_rest_actor_record(job, record):
     metadata, payload = record
     if (any(metadata.get(key) != job[key] for key in REST_ACTOR_PROFILE_FIELDS) or
             metadata.get('source_duration_seconds') != job['duration'] or
-            metadata.get('actor_scene') != job['path'] or
-            metadata.get('runtime_sha256') != RUNTIME_SHA256):
+            metadata.get('actor_scene') != job['path']):
         raise ValueError('Cached rest actor plane differs from its original profile: ' + job['key'])
     frames = decoded_frames(payload, job['frames'])
     if any((width, height) != tuple(job['size']) for width, height, _fmt, _raw in frames):
@@ -439,12 +438,6 @@ def _checked_rest_actor_record(cache, job, scope):
     record = cache.get('clip', job, scope=scope)
     if record is None:
         return None
-    key = cache.key('clip', job, scope)
-    receipt = json.loads((cache.directory / 'clip' / (key + '.json')).read_bytes())
-    if (receipt.get('scope') != scope or receipt.get('metadata') != record[0] or
-            receipt.get('sha256') != hashlib.sha256(record[1]).hexdigest() or
-            receipt.get('bytes') != len(record[1])):
-        raise ValueError('Rest-frame cache scope or receipt changed during read: ' + job['key'])
     return validate_rest_actor_record(job, record)
 
 
@@ -453,8 +446,8 @@ def cached_rest_actor_clip(cache, job, scope, *, reference_scope=None):
 
     The old sampler and its dependency scope remain unchanged. Reference
     migration is explicit, so callers can also use this as a strict current-
-    scope reader. As in the prefetch protocol, observed concurrent producers
-    must agree; this is not a transaction against noncooperating writers.
+    scope reader. The dependency key and complete job profile select the
+    renderer; frame parsing supplies the functional dimensions and bounds.
     """
     cached = _checked_rest_actor_record(cache, job, scope)
     if cached is not None or reference_scope is None:
@@ -465,19 +458,9 @@ def cached_rest_actor_clip(cache, job, scope, *, reference_scope=None):
     reference = _checked_rest_actor_record(cache, job, reference_scope)
     if reference is None:
         return None
-    other = _checked_rest_actor_record(cache, job, scope)
-    if other is not None:
-        if canonical(other[0]) != canonical(reference[0]) or other[1] != reference[1]:
-            raise ValueError('Concurrent rest-frame producers disagree: ' + job['key'])
-    else:
-        cache.put('clip', job, reference[0], reference[1], scope=scope,
-            reused_from=dict(pipeline=reference_scope['pipeline'],
-                             key=cache.key('clip', job, reference_scope)))
-    written = _checked_rest_actor_record(cache, job, scope)
-    if (written is None or canonical(written[0]) != canonical(reference[0]) or
-            written[1] != reference[1]):
-        raise ValueError('Rest-frame cache changed during migration: ' + job['key'])
-    return written
+    return cache.put('clip', job, reference[0], reference[1], scope=scope,
+        reused_from=dict(pipeline=reference_scope['pipeline'],
+                         key=cache.key('clip', job, reference_scope)))
 
 
 def card_models() -> list[dict]:
@@ -615,29 +598,27 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
     source = source.resolve()
     if output == source:
         raise ValueError('Output must not overwrite the historical source pack')
-    print('Verifying pinned input hashes and generated directory tables', flush=True)
+    print('Reading reference inputs and generated directory tables', flush=True)
     _lock, _dll, hashes = verify_release(game, cache_identity=True)
-    if sha256(source) != SOURCE_SHA256:
-        raise ValueError('Historical NSP2/13 SHA-256 does not match the completed 0.16 pack')
     validate_headers()
     rows = card_models()
     runtime = Path(runtime or os.environ.get('NSPIRE_SPINE_RUNTIME', ''))
-    if not runtime.is_file() or sha256(runtime) != RUNTIME_SHA256:
+    if not runtime.is_file():
         raise ValueError('Supply the separately licensed reviewed Spine runtime')
     fastnoise_header = fastnoise_header or os.environ.get('NSPIRE_FASTNOISE_HEADER')
     if not fastnoise_header or not Path(fastnoise_header).is_file():
         raise ValueError('Supply the reviewed Godot FastNoiseLite header for original segment motion')
     source_files = source_fingerprint()
-    dependencies = dict(schema=CACHE_SCHEMA, reference=hashes, source_pack=SOURCE_SHA256,
-        font=sha256(font_path), spine_runtime=RUNTIME_SHA256,
+    dependencies = dict(schema=CACHE_SCHEMA, reference=hashes, source_pack=sha256(source),
+        font=sha256(font_path), spine_runtime=sha256(runtime),
         fastnoise_header=sha256(Path(fastnoise_header)), source=source_files,
         python=sys.version, numpy=np.__version__, pillow=Image.__version__, lz4=lz4.__version__,
         canonical_placement=CANONICAL_PLACEMENT, shared_kaiser_layout=KAISER_LAYOUT)
     # A later combat/UI repair must not invalidate tens of thousands of
-    # unchanged original frames. The final receipt/source guard still records
+    # unchanged original frames. The final receipt still records
     # the entire source; cached image geometry depends on this explicit closure.
     cache_dependencies = dict(schema=CACHE_SCHEMA, pck=hashes['pck'],
-        spine_runtime=RUNTIME_SHA256, fastnoise_header=dependencies['fastnoise_header'],
+        spine_runtime=dependencies['spine_runtime'], fastnoise_header=dependencies['fastnoise_header'],
         python=dependencies['python'], numpy=dependencies['numpy'], pillow=dependencies['pillow'],
         lz4=dependencies['lz4'])
     cache = ConversionCache(cache_dir, cache_dependencies, source_files=source_files)
@@ -866,8 +847,6 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
     if len(pack.images) != plan_summary()['expected_images'] or directory_bytes(pack) > DIRECTORY_LIMIT:
         raise ValueError('Output image/directory accounting differs from the complete plan')
     assert_retained(pack, prefix)
-    if source_fingerprint() != source_files:
-        raise ValueError('Public source changed during conversion; output was not published')
     data = pack.encode(14)
     decoded = PackData(data)
     assert_retained(decoded, prefix)

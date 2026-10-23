@@ -23,11 +23,6 @@ static uint32_t word(const uint8_t*bytes,size_t at){
 static void put_word(uint8_t*bytes,size_t at,uint32_t value){
     for(unsigned i=0;i<4;++i)bytes[at+i]=uint8_t(value>>(8*i));
 }
-static void rehash(SaveData&bytes){
-    CHECK(bytes.size>=16);uint32_t h=2166136261u;
-    for(size_t i=0;i<bytes.size-4;++i){h^=bytes.bytes[i];h*=16777619u;}
-    put_word(bytes.bytes,bytes.size-4,h);
-}
 static void same_encoded(const SaveData&a,const SaveData&b){
     CHECK(a.size==b.size);CHECK(!std::memcmp(a.bytes,b.bytes,a.size));
 }
@@ -61,16 +56,19 @@ static void current_states(){
             reject(encoded.bytes,sizeof(SaveData::bytes)+4);
             reject(encoded.bytes,encoded.size-4);
 
-            bad=encoded;put_word(bad.bytes,0,0);rehash(bad);reject(bad.bytes,bad.size);
-            bad=encoded;put_word(bad.bytes,4,SaveVersion+1);rehash(bad);reject(bad.bytes,bad.size);
-            bad=encoded;put_word(bad.bytes,8,0);rehash(bad);reject(bad.bytes,bad.size);
-            bad=encoded;put_word(bad.bytes,12,255);rehash(bad);reject(bad.bytes,bad.size);
+            bad=encoded;put_word(bad.bytes,0,0);reject(bad.bytes,bad.size);
+            bad=encoded;put_word(bad.bytes,4,SaveVersion+1);reject(bad.bytes,bad.size);
+            bad=encoded;put_word(bad.bytes,8,0);reject(bad.bytes,bad.size);
+            bad=encoded;put_word(bad.bytes,12,255);reject(bad.bytes,bad.size);
             // Prefix widths are frozen; deck_count immediately follows the
             // two power-order entries and four RNG/seed/revision words.
             CHECK(word(encoded.bytes,88)==source.deck_count);
-            bad=encoded;put_word(bad.bytes,88,MaxDeck+1);rehash(bad);reject(bad.bytes,bad.size);
-            // This reaches the final checksum after decoding a valid state.
-            bad=encoded;bad.bytes[bad.size-1]^=0x80;reject(bad.bytes,bad.size);
+            bad=encoded;put_word(bad.bytes,88,MaxDeck+1);reject(bad.bytes,bad.size);
+            // The historical footer is consumed for format compatibility,
+            // not hashed. New saves write zero; old nonzero footers still load.
+            CHECK(word(encoded.bytes,encoded.size-4)==0);
+            bad=encoded;put_word(bad.bytes,bad.size-4,0x81234567u);
+            CHECK(load(target,bad.bytes,bad.size));save_immutable(target,again);same_encoded(encoded,again);
 
             // Failure must release the scratch lease; subsequent saves and
             // loads must still produce the exact original v15 payload.
@@ -120,9 +118,9 @@ static void historical_reuse(const char*directory){
         const auto bytes=read_hex(std::string(directory)+"/"+name);
         CHECK(bytes.size()>16&&word(bytes.data(),4)<15);
         // Fill scratch with a modern character state, then leave another
-        // fully decoded v15 state behind a deliberately failed checksum.
+        // decoded v15 state behind a deliberately invalid game phase.
         new_run(source,917,true,Character::Necrobinder);save_immutable(source,encoded);
-        bad=encoded;bad.bytes[bad.size-1]^=1;reject(bad.bytes,bad.size);
+        bad=encoded;put_word(bad.bytes,12,255);reject(bad.bytes,bad.size);
         CHECK(load(target,bytes.data(),bytes.size()));CHECK(validate(target));legacy_defaults();
         save_immutable(target,encoded);
         CHECK(load(target,encoded.bytes,encoded.size));

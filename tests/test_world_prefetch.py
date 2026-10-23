@@ -4,13 +4,26 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from build_world import ConversionCache
 from prefetch_world_clips import PrefetchCache, unique_atomic_bytes
+from world_enemy_assets import SpineSampler
 
 
 class PrefetchProtocol(unittest.TestCase):
+    def test_supplied_runtime_selects_its_own_adapter_and_pixel_cache(self):
+        with TemporaryDirectory() as root, patch.object(SpineSampler, '_prepare'):
+            runtime = Path(root) / 'sampler.dll'
+            identities = []
+            for binary in (b'synthetic runtime A', b'synthetic runtime B'):
+                runtime.write_bytes(binary)
+                sampler = SpineSampler(object(), runtime=runtime, work_dir=Path(root)/'adapter')
+                identities.append(sampler.runtime_identity)
+                sampler.close()
+            self.assertNotEqual(*identities)
+
     def test_serial_and_prefetch_protocols_match(self):
         with TemporaryDirectory() as root:
             cache = PrefetchCache(Path(root), {'schema': 2, 'input': 'fixed'})

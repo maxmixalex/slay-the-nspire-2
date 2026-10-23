@@ -94,10 +94,10 @@ static void failures(){
     uint8_t bytes[8]{};CHECK(!reader.read(4093,bytes,8));
     CHECK(reader.u32(7,value)); // An unrelated successful cached page remains usable.
     file.fail_offset=~0u;CHECK(reader.u32(4096,value)); // Provider failure is retryable.
-    file.fail_offset=8192;uint32_t sum=17;CHECK(!reader.fnv1a(0,3*4096,sum));CHECK(sum==17);
+    file.fail_offset=8192;std::vector<uint8_t> bulk(4096);CHECK(!reader.read(8192,bulk.data(),bulk.size()));
     CHECK(!reader.reset({}));CHECK(!reader.u8(0,bytes[0]));
 }
-static void memory_and_hash(){
+static void memory_and_ranges(){
     std::vector<uint8_t> bytes(5*4096+29);
     for(uint32_t i=0;i<bytes.size();++i)bytes[i]=File::byte(i,0);
     ResourceReader memory(ResourceSource::memory(bytes.data(),bytes.size()));
@@ -106,12 +106,8 @@ static void memory_and_hash(){
         if(count>bytes.size()-start)continue;
         std::vector<uint8_t> got(count);CHECK(paged.read(start,got.data(),count));
         CHECK(!count||std::memcmp(got.data(),bytes.data()+start,count)==0);
-        uint32_t expected=2166136261u;for(uint32_t i=0;i<count;++i){expected^=bytes[start+i];expected*=16777619u;}
-        uint32_t a=0,b=0;CHECK(memory.fnv1a(start,count,a));CHECK(paged.fnv1a(start,count,b));CHECK(a==expected&&b==expected);
+        std::vector<uint8_t> direct(count);CHECK(memory.read(start,direct.data(),count));CHECK(direct==got);
     }
-    uint32_t first=0,combined=0,whole=0;CHECK(paged.fnv1a(0,4097,first));
-    CHECK(paged.fnv1a(4097,(uint32_t)bytes.size()-4097,combined,first));
-    CHECK(memory.fnv1a(0,(uint32_t)bytes.size(),whole));CHECK(combined==whole);
     CHECK(memory.stats().callbacks==0);CHECK(memory.stats().direct_reads>0);
     CHECK(!ResourceReader(ResourceSource::memory(nullptr,1)).valid());
     if(sizeof(size_t)>4)CHECK(!ResourceReader(ResourceSource::memory(bytes.data(),size_t(0xffffffffu)+1u)).valid());
@@ -119,51 +115,18 @@ static void memory_and_hash(){
     ResourceReader preferred(direct);uint8_t byte=0;const unsigned calls=file.calls;
     CHECK(preferred.u8(0,byte));CHECK(file.calls==calls);
 }
-static void buffered_integrity_progress(){
-    constexpr unsigned count=2*65536+17;
-    File file;file.readable=count;file.salt=97;
-    ResourceSource source=file.source();source.progress=File::report;ResourceReader reader(source);
-    std::vector<uint8_t> scratch(65536,0xa5),bytes(count);
-    uint32_t expected=2166136261u;
-    for(unsigned i=0;i<count;++i){bytes[i]=File::byte(i,file.salt);expected^=bytes[i];expected*=16777619u;}
-    uint32_t hash=19;CHECK(reader.fnv1a_buffered(0,count,hash,scratch.data(),unsigned(scratch.size())));
-    CHECK(hash==expected&&file.calls==3&&file.progress.size()==4);
-    const unsigned completed[]={0,65536,131072,count};
-    for(unsigned i=0;i<4;++i){CHECK(file.progress[i].stage==ResourceStage::Integrity);
-        CHECK(file.progress[i].completed==completed[i]&&file.progress[i].total==count);}
-    // A source failure never reports the failed chunk as complete or changes
-    // the caller's checksum, even though the scratch buffer is disposable.
-    file.progress.clear();file.fail_offset=65536;CHECK(reader.reset(source));hash=19;
-    CHECK(!reader.fnv1a_buffered(0,count,hash,scratch.data(),unsigned(scratch.size())));
-    CHECK(hash==19&&file.progress.size()==2&&file.progress.back().completed==65536);
-    file.progress.clear();const unsigned calls=file.calls;
-    CHECK(!reader.fnv1a_buffered(0,count,hash,nullptr,65536));
-    CHECK(!reader.fnv1a_buffered(0,count,hash,scratch.data(),0));
-    CHECK(!reader.fnv1a_buffered(count,1,hash,scratch.data(),65536));
-    CHECK(hash==19&&file.calls==calls&&file.progress.empty());
-    CHECK(reader.fnv1a_buffered(count,0,hash,nullptr,0,71));CHECK(hash==71);
-    CHECK(file.progress.size()==1&&file.progress[0].completed==0&&file.progress[0].total==0);
-    // A direct immutable source needs no copy or usable scratch. The same
-    // independently computed checksum and completed-byte boundaries apply.
-    file.progress.clear();source.direct=bytes.data();CHECK(reader.reset(source));
-    CHECK(reader.fnv1a_buffered(0,count,hash,nullptr,0));CHECK(hash==expected&&file.calls==calls);
-    CHECK(file.progress.size()==4&&reader.stats().direct_reads==3);
-    uint32_t first=0,joined=0;
-    CHECK(reader.fnv1a_buffered(0,65536,first,nullptr,0));
-    CHECK(reader.fnv1a_buffered(65536,count-65536,joined,nullptr,0,first));CHECK(joined==expected);
-}
 static void boot_display_progress(){
     constexpr unsigned pixels=320*240;
     std::vector<uint16_t> frame(pixels+2,0x55aa);auto* screen=frame.data()+1;
     const auto gold=[&](){unsigned count=0;for(unsigned x=40;x<280;++x)if(screen[170*320+x]==0xc568)++count;return count;};
-    loading_screen(screen,ResourceStage::Integrity,0,100,0);CHECK(gold()==0);
-    loading_screen(screen,ResourceStage::Integrity,50,100,0);CHECK(gold()==120);
-    loading_screen(screen,ResourceStage::Integrity,50,100,24);CHECK(gold()==120);
-    loading_screen(screen,ResourceStage::Integrity,UINT32_MAX,UINT32_MAX,0);CHECK(gold()==240);
+    loading_screen(screen,ResourceStage::Directory,0,100,0);CHECK(gold()==0);
+    loading_screen(screen,ResourceStage::Directory,50,100,0);CHECK(gold()==120);
+    loading_screen(screen,ResourceStage::Directory,50,100,24);CHECK(gold()==120);
+    loading_screen(screen,ResourceStage::Directory,UINT32_MAX,UINT32_MAX,0);CHECK(gold()==240);
     loading_screen(screen,ResourceStage::Images,101,100,0);CHECK(gold()==240);
     loading_screen(screen,ResourceStage::Images,0,0,0);CHECK(gold()==0);
     loading_screen(screen,static_cast<ResourceStage>(255),0,0,0);
     CHECK(frame.front()==0x55aa&&frame.back()==0x55aa);
     loading_screen(nullptr,ResourceStage::Header,0,1,0);
 }
-int main(){bounds();cache();repeated_text_working_set();failures();memory_and_hash();buffered_integrity_progress();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}
+int main(){bounds();cache();repeated_text_working_set();failures();memory_and_ranges();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}

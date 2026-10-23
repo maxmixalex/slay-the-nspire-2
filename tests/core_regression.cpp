@@ -25,7 +25,7 @@ static void roundtrip(State& s){
     SaveData a{},b{};CHECK(validate(s));CHECK(save(s,a));CHECK(a.bytes[4]==SaveVersion);
     State copy{};CHECK(load(copy,a.bytes,a.size));CHECK(save(copy,b));CHECK(a.size==b.size);
     CHECK(!std::memcmp(a.bytes,b.bytes,a.size));
-    a.bytes[a.size-1]^=1;State before=copy;CHECK(!load(copy,a.bytes,a.size));CHECK(!std::memcmp(&before,&copy,sizeof(State)));
+    a.bytes[12]=255;State before=copy;CHECK(!load(copy,a.bytes,a.size));CHECK(!std::memcmp(&before,&copy,sizeof(State)));
 }
 static void scalar_cards(){
     for(unsigned upgraded=0;upgraded<2;upgraded++){

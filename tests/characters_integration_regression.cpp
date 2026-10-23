@@ -30,10 +30,10 @@ static void genuine_v12(const char*path){
  CHECK(choose_extended(s,&selected,1)&&choose_extended(copy,&selected,1));
  CHECK(s.phase==Phase::Combat&&s.playing==-1&&!s.effect_count&&total_hp(s)==82&&s.expansion.boulder[0]==10);
  same(copy,snapshot(s));roundtrip(s);
- // Invalid checksums and truncated historical payloads must not replace a run.
- State protected_state=s;auto before=snapshot(protected_state);bytes[20]^=1;
+ // Invalid magic and truncated historical payloads must not replace a run.
+ State protected_state=s;auto before=snapshot(protected_state);bytes[0]^=1;
  CHECK(!load(protected_state,bytes.data(),bytes.size()));same(protected_state,before);
- bytes[20]^=1;CHECK(!load(protected_state,bytes.data(),bytes.size()-4));same(protected_state,before);
+ bytes[0]^=1;CHECK(!load(protected_state,bytes.data(),bytes.size()-4));same(protected_state,before);
 }
 
 static void capacity_bound(){

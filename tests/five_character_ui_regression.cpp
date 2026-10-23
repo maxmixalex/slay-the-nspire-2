@@ -42,7 +42,17 @@ static HitRegion hit(HitKind kind,int value){
     std::fprintf(stderr,"missing hit %d/%d phase=%d detail=%d\n",(int)kind,value,(int)a.game.phase,a.detail_card);CHECK(false);return {};
 }
 static void tap(HitKind kind,int value){auto h=hit(kind,value);CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);}
-static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
+// Advance the same clock and render synchronization used by the player.
+// In particular, clearing busy cannot end a queued combat presentation tail.
+static void wait_action_ready(){
+    for(unsigned frame=0;a.combat_actions_locked()&&frame<1800;++frame){a.advance(33);a.render();}
+    CHECK(!a.combat_actions_locked());
+}
+static void wait_choice_ready(){
+    for(unsigned frame=0;!a.combat_choice_ready()&&frame<1800;++frame){a.advance(33);a.render();}
+    CHECK(a.combat_choice_ready());
+}
+static void action(UiAction action){if(action==UiAction::LabCard)wait_action_ready();tap(HitKind::UiAction,(int)action);}
 static SaveData snapshot(){SaveData s{};CHECK(validate(a.game));CHECK(save(a.game,s));return s;}
 static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void capture(const char*name){
@@ -63,14 +73,14 @@ static void start(Character character){
 }
 static void clear_hand(){auto&s=a.game;while(s.hand.count){unsigned id=s.hand.ids[--s.hand.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}CHECK(validate(s));}
 static int add(Card card){
-    if(a.game.hand.count==MaxHand)clear_hand();unsigned id=a.game.card_count;
+    wait_action_ready();if(a.game.hand.count==MaxHand)clear_hand();unsigned id=a.game.card_count;
     a.library=true;a.open_card_detail(card);action(UiAction::LabCard);
     CHECK(!a.library&&a.detail_card<0&&a.game.card_count==id+1);CHECK(a.game.cards[id].kind==card.kind&&a.game.cards[id].upgraded==card.upgraded);
     CHECK(!a.game.effect_count&&a.game.playing<0&&validate(a.game));return (int)id;
 }
 static void play_ui(int id){
     int index=-1;for(int i=0;i<a.game.hand.count;i++)if(a.game.hand.ids[i]==id)index=i;CHECK(index>=0);
-    a.cursor=index;a.busy=0;a.input(Key::Confirm);a.render();
+    wait_action_ready();a.cursor=index;a.input(Key::Confirm);a.render();
 }
 static int deck_index(CardKind kind){for(int i=0;i<a.game.deck_count;i++)if(a.game.deck[i].kind==kind)return i;CHECK(false);return -1;}
 static int selected_status(){int ids[StatusKinds];int n=collect_statuses(a.game,a.status_actor,ids);CHECK(a.status_selected>=0&&a.status_selected<n);return ids[a.status_selected];}
@@ -110,17 +120,17 @@ static void stars_and_upgraded_transform(){
     start(Character::Regent);clear_hand();a.game.energy=10;int target=add({RegentKinglyKick,0}),begone=add({RegentBegone,1});play_ui(begone);
     CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::RTransformHand&&a.game.expansion.choice_free==1);
     a.open_choice_detail(target);CHECK(a.detail_energy()==cost(a.game,target)&&a.detail_energy()>0);a.input(Key::Back);
-    tap(HitKind::CombatChoice,target);capture("regent-minion-choice");action(UiAction::ConfirmChoice);
+    wait_choice_ready();tap(HitKind::CombatChoice,target);capture("regent-minion-choice");action(UiAction::ConfirmChoice);
     CHECK(a.game.cards[target].kind==MinionStrike&&a.game.cards[target].upgraded);CHECK(validate(a.game));
     // A local zero Set still passes through BorrowedTime. Full-resource free
     // selections must preview the resulting energy and the independent stars.
     start(Character::Regent);clear_hand();a.game.energy=10;target=add({RegentReflect,0});
     play_ui(add({NecroBorrowedTime,0}));a.game.potions[0]=Potion::TouchOfInsanity;
-    a.input(Key::Potions);a.input(Key::Confirm);
+    wait_action_ready();a.input(Key::Potions);a.input(Key::Confirm);
     CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Free);
     a.open_choice_detail(target);CHECK(a.detail_energy()==1&&a.detail_stars()==0);
     before=snapshot();capture("regent-free-resource-choice");unchanged(before);a.input(Key::Back);
-    tap(HitKind::CombatChoice,target);action(UiAction::ConfirmChoice);
+    wait_choice_ready();tap(HitKind::CombatChoice,target);action(UiAction::ConfirmChoice);
     CHECK(cost(a.game,target)==1&&card_star_cost(a.game,a.game.cards[target],target)==0);
     CHECK(a.game.expansion.star_combat_free[target]&&validate(a.game));
 }

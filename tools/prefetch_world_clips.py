@@ -61,7 +61,7 @@ class PrefetchCache(ConversionCache):
         receipt = self.directory / kind / (key + '.json')
         unique_atomic_bytes(receipt.with_suffix('.bin'), payload)
         unique_atomic_bytes(receipt, canonical(dict(schema=CACHE_SCHEMA,
-            key=key, bytes=len(payload), sha256=hashlib.sha256(payload).hexdigest(),
+            key=key, bytes=len(payload),
             metadata=metadata, scope=scope, reused_from=reused_from)) + b'\n')
         return metadata, payload
 
@@ -150,13 +150,11 @@ def main():
     game = private_path(args.game, 'Original game')
     runtime = private_path(args.runtime, 'Spine runtime')
     fastnoise = args.fastnoise_header.resolve(strict=True)
-    if sha256(runtime) != RUNTIME_SHA256:
-        raise ValueError('Unexpected separately supplied Spine runtime')
     validate_headers()
     _lock, _dll, hashes = verify_release(game, cache_identity=True)
     sources = source_fingerprint()
     dependencies = dict(schema=CACHE_SCHEMA, pck=hashes['pck'],
-        spine_runtime=RUNTIME_SHA256, fastnoise_header=sha256(fastnoise),
+        spine_runtime=sha256(runtime), fastnoise_header=sha256(fastnoise),
         python=sys.version, numpy=np.__version__, pillow=Image.__version__, lz4=lz4.__version__)
     cache = open_cache(args.cache, dependencies, sources)
     models = {row['model']: row for row in manifest()['models']}

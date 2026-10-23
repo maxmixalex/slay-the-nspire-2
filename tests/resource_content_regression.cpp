@@ -98,7 +98,7 @@ int main(int argc,char**argv){
         // Traverse each new backend against the independent old pack. The
         // default checks every image; --images labels an explicit selection.
         // Alternating tiled owners for every image would deliberately thrash
-        // the shared 4 MiB group pool. Transitive byte equality preserves the
+        // the shared 5 MiB group pool. Transitive byte equality preserves the
         // three-way proof; synthetic pressure tests and the UI below still
         // alternate owners and exercise eviction/identity boundaries.
         decoded_image_bytes=compare_images(*memory,*reference,"new memory / original");
@@ -124,7 +124,7 @@ int main(int argc,char**argv){
         for(int variant=0;variant<3;variant++){const std::string expected=memory->card_string(id,variant);CHECK(expected==ranged->card_string(id,variant));if(reference)CHECK(expected==reference->card_string(id,variant));}
     }
     for(unsigned id=0;id<U_Count;id++){const int image=memory->ui_image(id);CHECK(image==ranged->ui_image(id));if(reference)CHECK(image==reference->ui_image(id));}
-    CHECK(memory->healthy()&&ranged->healthy());CHECK(ranged->read_stats().callback_bytes>b.size());
+    CHECK(memory->healthy()&&ranged->healthy());CHECK(ranged->read_stats().callback_bytes>0);
     // Alternate two independently backed Content objects through identical UI
     // inputs. Shared bounded picture caches must not leak a different source.
     auto a=std::make_unique<App>(),c=std::make_unique<App>();CHECK(a->init(b.data(),b.size(),{}));CHECK(c->init({&source,(uint32_t)b.size(),read_at,nullptr},{}));
@@ -136,7 +136,7 @@ int main(int argc,char**argv){
     compare();for(Key k:keys){a->input(k);c->input(k);if(original)original->input(k);for(int t=0;t<3;t++){a->tick();c->tick();if(original)original->tick();compare();}}
     // A callback refusing an advertised range must reject opening the file;
     // reopening after the provider is restored must discard stale cache data.
-    source.fault=(uint32_t)b.size()-1;CHECK(!ranged->open({&source,(uint32_t)b.size(),read_at,nullptr}));CHECK(!ranged->healthy());
+    source.fault=0;CHECK(!ranged->open({&source,(uint32_t)b.size(),read_at,nullptr}));CHECK(!ranged->healthy());
     source.fault=UINT32_MAX;CHECK(ranged->open({&source,(uint32_t)b.size(),read_at,nullptr}));
     CHECK(!ranged->open({&source,(uint32_t)b.size()+1,read_at,nullptr}));CHECK(!ranged->healthy());
     if(reference)CHECK(reference->healthy());

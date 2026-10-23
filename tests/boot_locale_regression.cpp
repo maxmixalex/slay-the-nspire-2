@@ -33,11 +33,11 @@ int main(){
     std::vector<uint8_t> pack(40+16+16+6111*8+4);std::memcpy(pack.data(),"NSP2",4);
     put(pack,4,18);put(pack,8,0x41cef1ea);put(pack,12,pack.size());put(pack,16,1);put(pack,20,1);put(pack,24,6111);
     const unsigned row=40+16+16+6110*8;put(pack,row,pack.size()-4);put(pack,row+4,3);
-    for(unsigned version:{17u,18u,19u}){put(pack,4,version);
+    for(unsigned version:{17u,18u,19u,20u}){put(pack,4,version);
         std::memcpy(pack.data()+pack.size()-4,"eng",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::English);
         std::memcpy(pack.data()+pack.size()-4,"zhs",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Chinese);
     }
-    put(pack,4,20);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);put(pack,4,19);
+    put(pack,4,21);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);put(pack,4,19);
     put(pack,row,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     put(pack,16,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     CHECK(boot_probe_language({})==BootLanguage::Unknown);

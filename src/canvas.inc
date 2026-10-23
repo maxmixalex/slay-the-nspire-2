@@ -239,9 +239,9 @@ struct Canvas{
     }
     void glyph(Glyph g,int x,int y,uint16_t color){
         if(g.pixels&&g.encoded_size){
-            unsigned position=0;
-            for(unsigned at=0;at<g.encoded_size;at+=2){
-                unsigned count=g.pixels[at],alpha=g.pixels[at+1];
+            unsigned position=0;const unsigned pixels=unsigned(g.w)*g.h;
+            for(unsigned at=0;at+1<g.encoded_size&&position<pixels;at+=2){
+                const unsigned count=mn(unsigned(g.pixels[at]),pixels-position),alpha=g.pixels[at+1];
                 if(alpha)for(unsigned j=0;j<count;j++){
                     int xx=x+(int)((position+j)%g.w),yy=y+(int)((position+j)/g.w);
                     if(xx>=0&&xx<clip_w&&yy>=0&&yy<clip_h){paint(yy*pitch+xx,color,alpha);}

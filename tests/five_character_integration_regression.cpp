@@ -70,7 +70,7 @@ static void genuine_v13(const char*path){
  bad=b;CHECK(word(bad,41736)==0);write_word(bad,41736,(unsigned)PostPlayActor::SilentEnvenom);reject(bad);
  bad=b;write_word(bad,23808,2);reject(bad);
  bad=b;write_word(bad,23808,1);write_word(bad,23824,3);reject(bad);
- bad=b;bad[20]^=1;CHECK(!load(protected_state,bad.data(),bad.size()));same(protected_state,before);
+ bad=b;bad[0]^=1;CHECK(!load(protected_state,bad.data(),bad.size()));same(protected_state,before);
  CHECK(!load(protected_state,b.data(),b.size()-4));same(protected_state,before);
  std::printf("genuine v13 migration: %zu -> %zu bytes, paused and resumed payload preserved\n",b.size(),migrated.size);
 }

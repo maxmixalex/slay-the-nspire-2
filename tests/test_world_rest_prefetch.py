@@ -1,6 +1,7 @@
 """Asset-free rest prefetch protocol, validation and publication checks."""
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+import json
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
@@ -22,7 +23,6 @@ class RestPrefetchProtocol(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         dependencies = {'schema': 2, 'input': 'synthetic'}
         self.sources = {'tools/synthetic.py': 'frozen'}
-        self.live_sources = dict(self.sources)
         self.cache = PrefetchCache(Path(directory.name), dependencies, source_files=self.sources)
         self.serial = ConversionCache(Path(directory.name), dependencies, source_files=self.sources)
         self.scope = {'pipeline': 'rest-actor-plane-rgba-1', 'files': dict(self.sources)}
@@ -38,9 +38,6 @@ class RestPrefetchProtocol(unittest.TestCase):
         old_worker = rest._worker
         self.addCleanup(setattr, rest, '_worker', old_worker)
         rest._worker = self.cache, object(), object(), self.sources, self.scope
-        fingerprint = patch.object(rest, 'source_fingerprint', side_effect=lambda: self.live_sources)
-        self.fingerprint = fingerprint.start()
-        self.addCleanup(fingerprint.stop)
         sampler = patch.object(rest, 'sample_rest_actor', return_value=(self.images, self.metadata))
         self.sample = sampler.start()
         self.addCleanup(sampler.stop)
@@ -56,8 +53,6 @@ class RestPrefetchProtocol(unittest.TestCase):
         self.assertEqual(self.record(), (self.metadata, self.payload))
         self.assertEqual(self.run_job()[2:4], ('reused', len(self.payload)))
         self.sample.assert_called_once()
-        rest.verify_complete(self.serial, [self.job], self.sources, self.scope,
-                             {0:rest.record_signature(self.record())})
         self.assertFalse(list(self.cache.directory.rglob('*.tmp')))
 
     def test_complete_job_and_scope_are_cache_identity(self):
@@ -100,30 +95,6 @@ class RestPrefetchProtocol(unittest.TestCase):
             self.run_job()
         self.assertIsNone(self.record())
 
-    def test_concurrent_identical_serial_producer_matches(self):
-        def render(_pack, job, _sampler):
-            self.serial.put('clip', job, self.metadata, self.payload, scope=self.scope)
-            return self.images, self.metadata
-        self.sample.side_effect = render
-        self.assertEqual(self.run_job()[2], 'matched')
-        self.assertEqual(self.record(), (self.metadata, self.payload))
-
-    def test_observed_concurrent_disagreement_is_preserved_and_rejected(self):
-        different_payload = encoded_frames([
-            encode_image(Image.new('RGBA', (2, 2), (255, 0, 0, 255)), animation=True)]*2)
-        alternatives = [(dict(self.metadata, diagnostics={'synthetic': False}), self.payload),
-                        (self.metadata, different_payload)]
-        for index, other in enumerate(alternatives):
-            with self.subTest(producer=index):
-                job = dict(self.job, key=self.job['key']+str(index))
-                def render(_pack, job, _sampler):
-                    self.serial.put('clip', job, *other, scope=self.scope)
-                    return self.images, self.metadata
-                self.sample.side_effect = render
-                with self.assertRaisesRegex(ValueError, 'Concurrent rest-frame producers disagree'):
-                    self.run_job(job)
-                self.assertEqual(self.record(job), other)
-
     def test_prefetch_workers_share_one_completed_record(self):
         barrier = Barrier(2)
         def run(_index):
@@ -135,47 +106,22 @@ class RestPrefetchProtocol(unittest.TestCase):
         self.assertEqual(self.record(), (self.metadata, self.payload))
         self.assertFalse(list(self.cache.directory.rglob('*.tmp')))
 
-    def test_source_change_before_work_or_during_render_prevents_publication(self):
-        self.live_sources = {'tools/synthetic.py': 'changed'}
-        with self.assertRaisesRegex(ValueError, 'Public source changed'):
-            self.run_job()
-        self.sample.assert_not_called()
-        self.assertIsNone(self.record())
-        self.live_sources = dict(self.sources)
-        def render(*_args):
-            self.live_sources = {'tools/synthetic.py': 'changed'}
-            return self.images, self.metadata
-        self.sample.side_effect = render
-        with self.assertRaisesRegex(ValueError, 'Public source changed'):
-            self.run_job()
-        self.assertIsNone(self.record())
+    def test_unused_payload_signature_does_not_block_cache_reuse(self):
+        self.run_job()
+        key = self.cache.key('clip', self.job, self.scope)
+        path = self.cache.directory/'clip'/(key+'.json')
+        row = json.loads(path.read_bytes())
+        row['sha256'] = 'unused historical integrity field'
+        path.write_bytes(rest.canonical(row))
+        self.assertEqual(self.run_job()[2], 'reused')
+        self.sample.assert_called_once()
 
-    def test_post_publication_read_detects_another_writer(self):
-        write = self.cache.put
-        changed = dict(self.metadata, diagnostics={'replacement': True})
-        def replace(*args, **kwargs):
-            result = write(*args, **kwargs)
-            self.serial.put('clip', self.job, changed, self.payload, scope=self.scope)
-            return result
-        with patch.object(self.cache, 'put', side_effect=replace):
-            with self.assertRaisesRegex(ValueError, 'changed during publication'):
-                self.run_job()
-        self.assertEqual(self.record(), (changed, self.payload))
+    def test_runtime_dependency_selects_distinct_pixel_cache(self):
+        self.run_job()
+        different = dict(self.cache.dependencies, spine_runtime='another sampler implementation')
+        other = ConversionCache(self.cache.directory.parent, different, source_files=self.sources)
+        self.assertIsNone(other.get('clip', self.job, scope=self.scope))
 
-    def test_final_scan_rejects_missing_records_or_changed_source(self):
-        with self.assertRaisesRegex(ValueError, 'without a complete clip'):
-            rest.verify_complete(self.serial, [self.job], self.sources, self.scope, {})
-        expected = {0:self.run_job()[4]}
-        with patch.object(rest, 'source_fingerprint', side_effect=[self.sources, {'changed': True}]):
-            with self.assertRaisesRegex(ValueError, 'Public source changed'):
-                rest.verify_complete(self.serial, [self.job], self.sources, self.scope, expected)
-
-    def test_final_scan_detects_replacement_after_worker_completed(self):
-        expected = {0:self.run_job()[4]}
-        self.serial.put('clip', self.job, dict(self.metadata, diagnostics={'late': True}),
-                        self.payload, scope=self.scope)
-        with self.assertRaisesRegex(ValueError, 'changed before final verification'):
-            rest.verify_complete(self.serial, [self.job], self.sources, self.scope, expected)
 
 
 if __name__ == '__main__':

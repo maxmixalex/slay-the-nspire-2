@@ -343,7 +343,7 @@ def sample_rest_actor(pack, row, sampler, *, texture_loader=None):
         source_duration_seconds=row['duration'], times=times, loop=True, track=0,
         extra_tracks=[dict(LIGHT_OFF_TRACK)] if row['dark'] else [],
         clipping='authored_room_viewport', camera='complete_common_room_uniform_cover',
-        runtime_sha256=RUNTIME_SHA256, physics_step=1/60, diagnostics=first_diagnostics,
+        runtime_sha256=getattr(sampler, 'runtime_identity', None), physics_step=1/60, diagnostics=first_diagnostics,
         shader_time=row['shader_time'], phase=row['phase'],
         phase_policy='sample_origin_zero_runtime_presentation_clock_no_run_rng',
         sampling_policy=dict(nominal_fps=20, frame_limit=256,
