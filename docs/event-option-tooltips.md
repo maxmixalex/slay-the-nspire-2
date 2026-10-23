@@ -13,6 +13,10 @@ Trader, potions, Tinker Time, Endless Conveyor and Wongo. Ancient FromRelic
 options exclude their own relic description while retaining ExtraHoverTips.
 147 relic association rows include canonical mechanic keys. Archaic Tooth,
 Dusty Tome and Touch of Orobas read already prepared or owned models.
+Potion options distinguish the single FromPotion tip from full get_HoverTips;
+39 extra association rows cover the latter, including upgraded Shiv, summon,
+orb and power details. Dusty Tome collects base-card extras before its upgraded
+card preview; its localized StringVar remains the base title as in the original.
 
 Pointer hover and the keyboard-selected option share an owner. `V` opens the
 readable paged view; Up/Down or wheel changes pages; Back or V returns. Event
@@ -31,6 +35,8 @@ No hover path writes State, prepares an offer, draws RNG or serializes new field
 - `Trial.Accept`: 0x06003705 has distinct page/choice card associations.
 - `ArchaicTooth.UpdateHoverTips`: 0x06001c29 uses stored source/result cards.
 - `DustyTome.set_AncientCard`: 0x06001da1; TouchOfOrobas setters 0x060022de/0x060022e0.
+- `HoverTipFactory.FromCard`: 0x06004c58 upgrades the preview when its second argument is true.
+- `PotionModel.get_HoverTips`: 0x06001b2b includes ExtraHoverTips; `FromPotion` 0x06004c50 returns only the potion tip.
 - StaticHoverTip.Transform is enum value 4; it must not be confused with Upgrade.
 
 The fixed reference assembly SHA-256 is
@@ -42,5 +48,9 @@ Private disassembly is inspection input only and is not checked in.
 New keyword tooltip regression cases cover explicit associated/empty options,
 dynamic prepared cards, potion/relic/enchantment text, pointer and keyboard
 ownership, modal suppression, paging, state/save-byte stability and real-pack
-screenshots. Short syntax validation passed. Formal runtime receipts belong in
-the final work-state update after the joint checkpoint is persisted.
+screenshots. The first formal pass at 573cb816 stopped on an invalid synthetic
+Slippery Bridge fixture: an energy offset requires the Tezcatara’s Ember
+enchantment. The fixture now uses the valid persisted enchantment, preserving
+the save-byte assertion. GCC also required explicit HoverTipList assignment.
+The corrected stage additionally checks every potion and relic hover-text path.
+Formal rerun receipts belong in the final work-state update after persistence.

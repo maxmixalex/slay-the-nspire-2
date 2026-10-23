@@ -129,6 +129,25 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  }
  if(wt_equal(x.table,"powers")){
   if(wt_equal(name,"Amount"))return wt_number(x.amount);
+  if(x.actor<=0){
+   if(wt_equal(name,"SelfDamage")){
+    if(wt_equal(x.model_key,"powers.CRIMSON_MANTLE_POWER"))return wt_number(s.ironclad.crimson_self_damage);
+    if(wt_equal(x.model_key,"powers.INFERNO_POWER"))return wt_number(s.ironclad.inferno_self_damage);
+   }
+   // A compact status icon can represent several independent power models.
+   // Its readable description supplies the original instance slot; never
+   // use the icon's aggregate count as a model's damage/turn/progress value.
+   if(x.model>=0&&x.model<MaxPowerInstances){
+    if(wt_equal(x.model_key,"powers.PANACHE_POWER")&&wt_equal(name,"CardsLeft")&&s.expansion.panache[x.model])
+     return wt_number(5-s.expansion.panache_count[x.model]);
+    if(wt_equal(x.model_key,"powers.MONOLOGUE_POWER")&&s.regent.monologue[x.model]){
+     if(wt_equal(name,"StrengthPower"))return wt_number(s.regent.monologue[x.model]);
+     if(wt_equal(name,"StrengthApplied"))return wt_number(s.regent.monologue_applied[x.model]);
+    }
+   }
+   if(x.model>=0&&x.model<MaxBombs&&wt_equal(x.model_key,"powers.THE_BOMB_POWER")&&
+      wt_equal(name,"Damage")&&s.expansion.bomb_turns[x.model])return wt_number(s.expansion.bomb_damage[x.model]);
+  }
   if(wt_equal(name,"Card")&&wt_equal(x.model_key,"powers.NIGHTMARE_POWER")&&x.actor<=0&&x.model>=0&&x.model<MaxNightmares&&s.silent.nightmare_active[x.model]){
    const Card card=s.silent.nightmares[x.model].card;TextBuffer b{x.nested,sizeof x.nested,0};b.text(a.content.card_string(card.kind));if(card.upgraded)b.ch('+');return wt_string(x.nested);
   }

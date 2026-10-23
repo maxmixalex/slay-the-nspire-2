@@ -175,22 +175,55 @@ static void event_associations(){
     event_begin(OriginalEventId::SelfHelpBook);snapshot();t=event_tips(0);
     CHECK(t.count&&t.items[0].kind==HoverTipKind::Enchantment&&t.items[0].amount==2);unchanged();
     event_begin(OriginalEventId::DrowningBeacon);snapshot();t=event_tips(0);CHECK(t.find(HoverTipKind::Potion,"GLOWWATER_POTION")>=0);
+    CHECK(t.count==1); // FromPotion is deliberately narrower than get_HoverTips.
     t=event_tips(1);CHECK(t.find(HoverTipKind::Relic,"FRESNEL_LENS")>=0&&t.find(HoverTipKind::Enchantment,"NIMBLE")>=0);unchanged();
     event_begin(OriginalEventId::TeaMaster);snapshot();t=event_tips(1);
     CHECK(t.find(HoverTipKind::Relic,"EMBER_TEA")<0&&t.find(HoverTipKind::Power,"STRENGTH_POWER")>=0);unchanged();
     event_begin(OriginalEventId::SlipperyBridge);auto&e=a.game.original_events;CHECK(e.values[1]>=0);
-    a.game.event_cards.deck[e.values[1]].energy_offset=-1;snapshot();t=event_tips(0);CHECK(t.count==1&&t.items[0].kind==HoverTipKind::Card);
+    auto&bridge_facts=a.game.event_cards.deck[e.values[1]];bridge_facts.enchantment=EventEnchantment::TezcatarasEmber;
+    bridge_facts.enchantment_amount=1;bridge_facts.energy_offset=-1;snapshot();t=event_tips(0);CHECK(t.count==1&&t.items[0].kind==HoverTipKind::Card);
     CHECK(t.items[0].card.kind==a.game.deck[e.values[1]].kind&&t.items[0].has_facts&&t.items[0].facts.energy_offset==-1);unchanged();
     // Ancient offers expose associated mechanics without duplicating their
     // own description. Reading a prepared transformation must not reroll it.
     event_begin(OriginalEventId::Neow);a.game.original_events.offers[0]=WorldRelicArchaicTooth;
     CHECK(world_relic_prepare(a.game,WorldRelicArchaicTooth));snapshot();t=event_tips(0);
     CHECK(t.find(HoverTipKind::Relic,"ARCHAIC_TOOTH")<0);unsigned cards=0;for(unsigned i=0;i<t.count;++i)if(t.items[i].kind==HoverTipKind::Card)++cards;CHECK(cards==2);unchanged();
+    event_begin(OriginalEventId::Neow);a.game.original_events.offers[0]=WorldRelicDustyTome;
+    CHECK(world_relic_prepare(a.game,WorldRelicDustyTome));snapshot();t=event_tips(0);cards=0;
+    const CardKind ancient=CardKind(world_relic_prepared_value(a.game,WorldRelicDustyTome));
+    const int preview=t.find(HoverTipKind::Card,definitions[ancient].key);CHECK(preview>=0&&t.items[preview].card.upgraded);unchanged();
     // Same event, different live pages: the merchant's Guilty and the noble's
     // Innocent are separate associations, not a keyword scan of their prose.
     event_begin(OriginalEventId::Trial);CHECK(original_event_choose(a.game,0));snapshot();
     t=event_tips(1);const auto page=a.game.original_events.page;
     CHECK(t.find(HoverTipKind::Card,page==2?"SHAME":page==3?"REGRET":"DOUBT")>=0);unchanged();
+}
+static void event_potion_and_relic_catalog(){
+    // Dynamic potion options use PotionModel.HoverTips, including the exact
+    // extra associations. Every model's actual text path must remain usable.
+    event_begin(OriginalEventId::RanwidTheElder);
+    a.game.original_events.values[0]=0;
+    for(unsigned potion=1;potion<=PotionKinds;++potion){
+        a.game.potions[0]=Potion(potion);a.game.original_events.values[2]=int16_t(potion);snapshot();auto t=event_tips(0);
+        CHECK(t.count&&t.items[0].kind==HoverTipKind::Potion);
+        if(Potion(potion)==Potion::CunningPotion){const int shiv=t.find(HoverTipKind::Card,"SHIV");CHECK(shiv>=0&&t.items[shiv].card.upgraded);CHECK(t.find(HoverTipKind::Keyword,"EXHAUST")<0);}
+        if(Potion(potion)==Potion::BoneBrew){const int summon=t.find(HoverTipKind::Static,"SUMMON_DYNAMIC");CHECK(summon>=0&&t.items[summon].amount==15);}
+        if(Potion(potion)==Potion::KingsCourage)CHECK(t.find(HoverTipKind::Static,"FORGE")>=0&&t.find(HoverTipKind::Card,"SOVEREIGN_BLADE")>=0);
+        for(unsigned i=0;i<t.count;++i){CardHoverTarget owner{};char title[160]{},body[2048]{};
+            format_card_hover_tip(a,owner,t.items[i],title,sizeof title,body,sizeof body);
+            if(!*title||!*body||std::strchr(body,'{'))std::fprintf(stderr,"potion hover unresolved %u / %s: %s\n",potion,t.items[i].key,body);
+            CHECK(*title&&*body&&!std::strchr(title,'{')&&!std::strchr(body,'{'));
+        }unchanged();
+    }
+    event_begin(OriginalEventId::Neow);
+    for(unsigned relic=0;relic<WorldRelicKinds;++relic){
+        a.game.original_events.offers[0]=uint16_t(relic);snapshot();auto t=event_tips(0);
+        for(unsigned i=0;i<t.count;++i){CardHoverTarget owner{};char title[160]{},body[2048]{};
+            format_card_hover_tip(a,owner,t.items[i],title,sizeof title,body,sizeof body);
+            if(!*title||!*body||std::strchr(body,'{'))std::fprintf(stderr,"relic hover unresolved %u / %s: %s\n",relic,t.items[i].key,body);
+            CHECK(*title&&*body&&!std::strchr(title,'{')&&!std::strchr(body,'{'));
+        }unchanged();
+    }
 }
 static void event_pointer_keyboard_and_text(){
     const OriginalEventId ids[]={OriginalEventId::Amalgamator,OriginalEventId::AromaOfChaos,OriginalEventId::Bugslayer,
@@ -216,6 +249,6 @@ static void event_pointer_keyboard_and_text(){
 }
 int main(int argc,char**argv){
     std::vector<uint8_t>data;actual=argc>1;if(actual){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_pointer_keyboard_and_text();
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_potion_and_relic_catalog();event_pointer_keyboard_and_text();
     std::printf("keyword tooltip: %u checks passed (%s profile)\n",checks,actual?"private":"synthetic");
 }

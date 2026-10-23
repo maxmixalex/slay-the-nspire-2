@@ -91,8 +91,30 @@ Verified source checkpoint `069f6d51f37aef3f31d11a6282bd02a61d7afdef`:
   original Proceed art, Energy/MaxEnergy and action/banner overlap. These
   screenshots and converted packs remain outside the source repository.
 
-Later source changes must be rerun after their own verified checkpoint;
-source review and resource metadata alone do not establish visual completion.
+Follow-up source checkpoint `573cb816bbf6b57c8d677239060414c9fc124f72`
+also completed its logged native build and actual-pack validation:
+
+| Regression | English v18 | Chinese v18 |
+| --- | ---: | ---: |
+| World UI, including Normal/Fast command occupancy, two-enemy handoff, retained Hiss tail, conditional Uncurl, five energy/merchant profiles | 10,100 checks | 10,100 checks |
+| Event reader and merchant body/purchase/back/proceed interactions | 1,462 checks | 1,462 checks |
+| World event UI, six shop slots and eight ancient layouts | 3,656 checks | 3,656 checks |
+
+The independent banner regression passed 20 checks, including both directions
+of player/enemy fade overlap and the distinct Fast lead-in values. The corrected
+English word-wrap helper passed without removing its scroll assertions. New
+screenshots were inspected again after these changes. No original running-game
+capture or calculator-device measurement was available to turn these results
+into an overall UI parity percentage.
+
+Merchant direction was checked against both original scene transforms and
+`NMerchantButton._Ready`'s nested callback: it starts `idle_loop` and switches
+default/outline skins on focus, with no flip/scale operation. `NSpineAutoPlayer`
+also starts the authored loop without a mirror. The converter preserves the
+bone/attachment transformations and positive scene X scale.
+
+Later source changes must be rerun after their own verified checkpoint. Source
+review and resource metadata alone do not establish visual completion.
 
 Remaining limitations are explicit: merchant candle GPU particles and the
 Necrobinder flame shaders are not prebaked. The simulation resolves enemy

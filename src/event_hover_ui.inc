@@ -2,8 +2,10 @@
 // models only; it never generates an offer, advances RNG, or changes a save.
 struct EventHoverSpec {OriginalEventId event;const char*option;HoverTipKind kind;const char*key;int16_t amount;uint8_t flags;};
 struct RelicHoverSpec {const char*relic;HoverTipKind kind;const char*key;int16_t amount;uint8_t flags;const char*value;};
+struct PotionHoverSpec {Potion potion;HoverTipKind kind;const char*key;int16_t amount;uint8_t flags;};
 #include "event_hover_catalog.inc"
 #include "relic_hover_catalog.inc"
+#include "potion_hover_catalog.inc"
 
 static void event_hover_card(const App&a,HoverTipList&out,Card card,bool associated,const EventCardFacts*facts=nullptr){
     if(card.kind>=CardKinds)return;
@@ -11,17 +13,20 @@ static void event_hover_card(const App&a,HoverTipList&out,Card card,bool associa
     if(facts){tip.facts=*facts;tip.has_facts=true;}out.add(tip);
     if(associated){const EventCardFacts canonical{};hover_collect(a,card,out,-1,-1,facts?facts:&canonical,0);}
 }
-static void event_hover_potion(HoverTipList&out,Potion potion){
-    if(const auto*d=potion_definition(potion))hover_add(out,HoverTipKind::Potion,d->key,int(potion));
-}
+static void event_hover_potion(const App&,HoverTipList&,Potion,bool=false);
 static void event_hover_relic(const App&,HoverTipList&,RelicId,bool,unsigned=0);
 static void event_hover_spec(const App&a,HoverTipList&out,HoverTipKind kind,const char*key,int amount,unsigned flags,unsigned depth=0){
-    if(kind==HoverTipKind::Card)event_hover_card(a,out,{world_card_id(key),0},(flags&2)!=0);
+    if(kind==HoverTipKind::Card)event_hover_card(a,out,{world_card_id(key),uint8_t((flags&4)!=0)},(flags&2)!=0);
     else if(kind==HoverTipKind::Relic)event_hover_relic(a,out,world_relic_id(key),(flags&1)==0,depth+1);
     else if(kind==HoverTipKind::Enchantment)hover_enchantment(out,key,amount);
     else if(kind==HoverTipKind::Potion){
-        for(unsigned i=1;i<PotionKinds;++i){const auto*d=potion_definition(Potion(i));if(d&&wt_equal(d->key,key)){event_hover_potion(out,Potion(i));break;}}
+        for(unsigned i=1;i<=PotionKinds;++i){const auto*d=potion_definition(Potion(i));if(d&&wt_equal(d->key,key)){event_hover_potion(a,out,Potion(i));break;}}
     }else hover_add(out,kind,key,amount);
+}
+static void event_hover_potion(const App&a,HoverTipList&out,Potion potion,bool associated){
+    if(const auto*d=potion_definition(potion))hover_add(out,HoverTipKind::Potion,d->key,int(potion));
+    if(associated)for(const auto&spec:potion_hover_specs)if(spec.potion==potion)
+        event_hover_spec(a,out,spec.kind,spec.key,spec.amount,spec.flags);
 }
 static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool include_self,unsigned depth){
     if(id>=WorldRelicKinds||depth>2)return;const char*key=world_relic_key(id);
@@ -40,12 +45,20 @@ static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool inclu
     else if(id==WorldRelicTouchOfOrobas){names[count++]="StarterRelic";names[count++]="UpgradedRelic";}
     for(unsigned i=0;i<count;++i){OriginalTextReference reference{};
         if(!world_relic_description_reference(a.game,id,names[i],reference))continue;
-        if(reference.kind==OriginalTextReferenceKind::Card)event_hover_card(a,out,card_from_token(reference.model),true,&reference.facts);
+        if(reference.kind==OriginalTextReferenceKind::Card){
+            Card card=card_from_token(reference.model);
+            // These relic setters append the stored card's own hover tips
+            // before its preview. Dusty Tome previews the upgraded result,
+            // while its StringVar and associated tips retain the base model.
+            hover_collect(a,card,out,-1,-1,&reference.facts,0);
+            if(id==WorldRelicDustyTome)card.upgraded=1;
+            event_hover_card(a,out,card,false,&reference.facts);
+        }
         else if(reference.kind==OriginalTextReferenceKind::Relic)event_hover_relic(a,out,RelicId(reference.model),true,depth+1);
     }
 }
 void collect_event_hover_tips(const App&a,int option,HoverTipList&out){
-    out={};const auto&s=a.game;const auto&e=s.original_events;
+    out=HoverTipList{};const auto&s=a.game;const auto&e=s.original_events;
     if(!e.active||s.phase!=Phase::Event||e.finished||option<0||unsigned(option)>=original_event_option_count(s))return;
     if(ui_ancient_event(e.id)){
         // FromRelic deliberately excludes the relic itself: its acquisition
@@ -57,17 +70,17 @@ void collect_event_hover_tips(const App&a,int option,HoverTipList&out){
         event_hover_spec(a,out,spec.kind,spec.key,spec.amount,spec.flags);
     // Dynamic associations use the same saved values as the event prose.
     switch(e.id){
-    case OriginalEventId::DrowningBeacon:if(option==0)event_hover_potion(out,Potion::GlowwaterPotion);break;
+    case OriginalEventId::DrowningBeacon:if(option==0)event_hover_potion(a,out,Potion::GlowwaterPotion);break;
     case OriginalEventId::DollRoom:if(e.page&&unsigned(option)<e.offer_count)event_hover_relic(a,out,RelicId(e.offers[option]),true);break;
     case OriginalEventId::FakeMerchant:if(option<6&&unsigned(option)<e.offer_count)event_hover_relic(a,out,RelicId(e.offers[option]),true);break;
     case OriginalEventId::RanwidTheElder:
-        if(option==0&&original_event_option_enabled(s,option))event_hover_potion(out,Potion(e.values[2]));
+        if(option==0&&original_event_option_enabled(s,option))event_hover_potion(a,out,Potion(e.values[2]),true);
         else if(option==2&&original_event_option_enabled(s,option))event_hover_relic(a,out,RelicId(e.values[1]),true);break;
     case OriginalEventId::RelicTrader:if(option<3){event_hover_relic(a,out,RelicId(e.values[option]),true);event_hover_relic(a,out,RelicId(e.values[option+3]),true);}break;
     case OriginalEventId::SlipperyBridge:if(option==0&&e.values[1]>=0&&e.values[1]<s.deck_count)
         event_hover_card(a,out,s.deck[e.values[1]],false,&s.event_cards.deck[e.values[1]]);break;
-    case OriginalEventId::StoneOfAllTime:if(option==0&&original_event_option_enabled(s,option))event_hover_potion(out,Potion(e.values[2]));break;
-    case OriginalEventId::TheFutureOfPotions:if(option<3&&e.values[option]>=0)event_hover_potion(out,potion_at(s,unsigned(e.values[option])));break;
+    case OriginalEventId::StoneOfAllTime:if(option==0&&original_event_option_enabled(s,option))event_hover_potion(a,out,Potion(e.values[2]));break;
+    case OriginalEventId::TheFutureOfPotions:if(option<3&&e.values[option]>=0)event_hover_potion(a,out,potion_at(s,unsigned(e.values[option])),true);break;
     case OriginalEventId::WelcomeToWongos:if(option==1&&original_event_option_enabled(s,option))event_hover_relic(a,out,RelicId(e.values[0]),true);break;
     case OriginalEventId::EndlessConveyor:if(option==0){
         if(e.values[1]==7)event_hover_card(a,out,{EventCardFeedingFrenzy,0},true);

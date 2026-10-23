@@ -34,7 +34,7 @@ static void battle_status_tooltip(Canvas&c){
     const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::BattleStatus)return;
     const int actor=hit->value/StatusKinds,id=hit->value%StatusKinds;
     if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds)return;
-    char body[2048]{};ui_status_description(a,actor,id,body,sizeof body);
+    char body[8192]{};ui_status_description(a,actor,id,body,sizeof body);
     const int lines=c.paragraph(body,0,0,158,0,0,10),shown=mn(lines,9),height=29+shown*13;
     const int x=a.pointer.x>=160?7:143,y=mx(25,mn(218-height,hit->y-height-5));
     const int skin=a.content.world_image("common","HOVER_TIP");
@@ -95,10 +95,8 @@ static void status_screen(Canvas&c){
         int id=ids[a.status_selected];
         c.picture(ui_status_image(a,id),145,65,25,25);c.num(ui_status_amount(s,a.status_actor,id),181,66,16,Gold);
         c.text(ui_status_title(a,id),145,95,12,Gold,155);
-        char description[2048]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0,&c.a.content};while(description[t.n])++t.n;
-        if(id==43){
-            t.text("\n");for(int i=0;i<MaxBombs;i++)if(s.expansion.bomb_turns[i]){t.number(s.expansion.bomb_turns[i]);t.text(" 回合 / ");t.number(s.expansion.bomb_damage[i]);t.text(" 伤害\n");}
-        }else if(id==44){
+        char description[8192]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0,&c.a.content};while(description[t.n])++t.n;
+        if(id==44){
             t.text("\n辉星跨回合保留。\n本回合获得：");t.number(s.regent.stars_gained_turn);
         }else if(id==45){
             t.text("\n最大生命：");t.number(s.expansion.osty_max_hp);
@@ -116,8 +114,6 @@ static void status_screen(Canvas&c){
         }else if(id==RegentStatusStart+(int)RPower::Orbit){
             t.text("\n独立进度（已花费 / 4）：");
             for(int i=0;i<MaxPowerInstances;i++)if(s.regent.orbit[i]){t.text("\n");t.number(s.regent.orbit_remainder[i]);t.text(" / 4 → ");t.number(s.regent.orbit[i]);t.text(" 能量");}
-        }else if(id==RegentStatusStart+(int)RPower::Monologue){
-            int strength=0;for(auto n:s.regent.monologue_applied)strength+=n;t.text("\n本回合临时力量：");t.number(strength);
         }else if(id==NecroStatusStart+(int)NPower::SpiritOfAsh||id==NecroStatusStart+(int)NPower::Pagestorm){
             t.text("\n本场已打出虚无牌：");t.number(s.necro.ethereal_played);
             t.text("\n本回合已抽牌：");t.number(s.necro.drawn_turn);
