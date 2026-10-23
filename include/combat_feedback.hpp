@@ -3,6 +3,41 @@
 #include "health_bar.hpp"
 
 namespace spire {
+// Only the ten displayed instance IDs travel with a hand change. Cards keep
+// their ordinary combat ownership; this never copies the canonical State or
+// allocates another MaxCards pile. Same-clock draws share one final sample.
+struct CombatHand {
+ static constexpr unsigned Capacity=32;
+ struct Cards {uint16_t ids[MaxHand]{};uint16_t count=0;};
+ struct Cue {Cards cards{};uint32_t at=0;};
+ Cards shown{},observed{};
+ Cue cues[Capacity]{};
+ uint8_t head=0,count=0;
+ bool overflow=false;
+ static Cards capture(const Pile&p){
+  Cards cards;cards.count=p.count<MaxHand?p.count:MaxHand;
+  for(unsigned i=0;i<cards.count;++i)cards.ids[i]=p.ids[i];return cards;
+ }
+ static bool same(const Cards&a,const Cards&b){
+  if(a.count!=b.count)return false;
+  for(unsigned i=0;i<a.count;++i)if(a.ids[i]!=b.ids[i])return false;return true;
+ }
+ void begin(const Pile&p){shown=observed=capture(p);head=count=0;overflow=false;}
+ void append(const Pile&p,uint32_t at){
+  const Cards cards=capture(p);if(same(observed,cards))return;observed=cards;
+  if(overflow)return;
+  if(count>head&&cues[count-1].at==at){cues[count-1].cards=cards;return;}
+  if(count==Capacity&&head){for(unsigned i=head;i<count;++i)cues[i-head]=cues[i];count-=head;head=0;}
+  if(count==Capacity){overflow=true;return;}
+  cues[count++]={cards,at};
+ }
+ void sync(uint32_t now){
+  while(head<count&&int32_t(now-cues[head].at)>=0)shown=cues[head++].cards;
+  if(head==count)head=count=0;
+ }
+ void finish(){shown=observed;head=count=0;}
+};
+static_assert(sizeof(CombatHand)<=1024,"Hand playback stores instance IDs, not full card piles");
 // This bounded projection belongs to App, never State/SaveData. The final
 // canonical values remain available even when an unusually long chain fills
 // the queue; playback then converges at the end of that side's presentation.
@@ -14,6 +49,7 @@ struct CombatFeedback {
  EnemyIntent intents[MaxEnemies]{};
  uint32_t hide_at[MaxEnemies]{};
  Cue cues[Capacity]{};
+ CombatHand hand{};
  uint32_t seed=0,effect_at=0,move_at=0,move_end=0,end_at=0,choice_at=0;
  int floor=-1,combat=-1,encounter=-1,move_slot=-1,move=-1;
  uint16_t head=0,count=0;

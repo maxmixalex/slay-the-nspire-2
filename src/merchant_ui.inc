@@ -35,7 +35,7 @@ static void shop_screen(Canvas&c){
         a.detail_card<0&&a.detail_item<0&&a.status_actor<0;
     const bool focused=active&&(a.pointer.visible?
         a.pointer.x>=body_x-2&&a.pointer.x<body_x+body_w+2&&a.pointer.y>=body_y-2&&a.pointer.y<body_y+body_h+2:a.cursor==0);
-    const bool effects=registered&&a.content.version()==MerchantEffectsContentVersion;
+    const bool effects=registered&&a.content.version()>=MerchantEffectsContentVersion;
     if(registered){
         c.ui(U_MerchantBackdrop,0,22,320,218);
         if(effects){

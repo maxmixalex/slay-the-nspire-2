@@ -322,6 +322,7 @@ struct App {
     HealthBarValues combat_health(int actor)const;
     EnemyIntent combat_intent(int slot)const;
     int combat_energy(bool maximum=false)const;
+    CombatHand::Cards combat_hand()const;
     int combat_status_amount(int actor,int id,bool label=false)const;
     int combat_status_auxiliary(int actor,int power)const;
     EnemyId combat_status_source(int actor,int power)const;

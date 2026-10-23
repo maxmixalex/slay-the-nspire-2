@@ -1,6 +1,62 @@
 # Work state — 2026-10-23
 
-## Current: original title, on-demand loading and hybrid resource compression
+## Current integration: hand timing, v20 merchant effects and final UI3 acceptance
+
+The source through `2b1e0c70c7722089b60ceb2f76bfcebb69af4b03` was pushed to
+`work/0.17-world-parity`, read back, and checked against the local changed
+blobs. This integration adds a small timed hand view and fixes a real v20
+merchant compatibility omission. Final ARM/WASM, native and Firebird checks
+must run on this integrated source before updating main or delivering files.
+
+Ordinary Firebird execution at b400 found the next player's hand appearing
+during the enemy banner. The new hand view stores only up to ten instance IDs
+per cue, shares the existing effect clock, keeps Retain cards visible and
+updates drawing, focus, detail and hit regions together. Core state, RNG and
+save data are unchanged. New meaningful tests cover Normal/Fast, empty and
+retained hands, the player draw boundary, load/reset and bounded overflow.
+This is implemented source awaiting execution, not a passed device claim.
+
+Actual final-pack merchant checks found a second real defect: a version-equals-19
+condition disabled the original focused skin and candle layers for v20.
+The renderer now accepts the supported v19-and-later profile. Both failed
+actual-language runs are retained; the corrected runs are still pending.
+
+The original title letters, ten fire frames and single authored glow are now
+implemented. The glow expands image 4 by only **15,602 shared bytes**, with
+the original 32,274 bytes preserved exactly. Native Canvas/frontend and both
+old/new actual bilingual atlases passed at 3843. Its ARM build found an
+unavailable C++ library header; 2b1e0c7 replaces it with `stdint.h`.
+The separate background GPU stars and fog are still absent. See
+[title acceptance](validation-ui3-title-0.17.json).
+
+The matching final split set totals **81,100,703 bytes**: common 74,756,230,
+English 1,780,887, Chinese 4,563,586. It saves **12,682,660 bytes** against
+v19; conversion preserves all other retained artwork, animation payloads,
+glyphs, strings, catalogs and timing. Both complete packs reconstruct exactly.
+See [final resource receipt](validation-ui3-glow-resources-0.17.json). The
+older host performance measurements below remain associated with their actual
+source/resource versions and are not relabeled as final-device results.
+
+[The b400 Firebird record](firebird-ui3-b400.md) documents ordinary installation,
+English UI, save/load, overlapping enemy animation/banner and a return to OS.
+Measured resource open plus App initialization was 447.1 ms and first render
+349.9 ms on the emulator timer. All integrity/eager-scan counters were zero.
+The long command log was incomplete, and the hand defect remained visible;
+final corrected execution therefore uses shorter logged batches.
+
+Actual b400 bilingual template checks passed 34,723 each with zero unresolved
+fields; actual event tooltip and world text checks also passed. Native/WASM
+actual-resource replay passed 23 scenarios / 649 frames / 30 saves per language
+after the driver waited for real combat preparation. These precede the hand
+and glow integration and must not stand in for its final replay.
+
+Next: close integrated native/portable/actual-resource checks, run corrected
+Firebird hand and Chinese flows, package matching calculator ZIP and offline
+HTML, save the finished files using the user's authorization, then synchronize
+the verified source and green Actions result to main. Original assets remain
+private; the public repository contains source and reviewed metadata only.
+
+## Historical b4f7ba0 stage: original title, on-demand loading and hybrid compression
 
 The active source is persisted on `work/0.17-world-parity`. The verified
 `b4f7ba06164734028af2c673f38fa918120d1341` checkpoint contains the new runtime,

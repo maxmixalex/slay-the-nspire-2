@@ -34,7 +34,7 @@ void App::tick(){if(combat_preparation.active){step_combat_preparation();return;
 static int choice_count(const App&a){
     switch(a.game.phase){case Phase::Map:return a.game.world.active?reference::Columns:3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.original_events.active?original_event_option_count(a.game):a.game.event_page>=2?1:2;
     case Phase::Reward:return a.game.world.active?int(a.game.world.reward_count)+1:4;case Phase::Camp:return world_rest_option_count(a.game);case Phase::Upgrade:case Phase::Remove:case Phase::Transform:return a.game.deck_count;
-    case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.game.hand.count;}
+    case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.combat_hand().count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
 #include "world_map_input.inc"
@@ -99,8 +99,9 @@ void App::input(Key k){
             return;
         }
     }
-    if(k==Key::Detail&&!title&&!paused&&!help&&!panel&&combat_phase(game.phase)&&game.hand.count){
-        open_choice_detail(game.hand.ids[mn(mx(0,cursor),game.hand.count-1)]);return;
+    if(k==Key::Detail&&!title&&!paused&&!help&&!panel&&combat_phase(game.phase)){
+        const auto hand=combat_hand();
+        if(hand.count)open_choice_detail(hand.ids[mn(mx(0,cursor),hand.count-1)]);return;
     }
 
     if(k==Key::Quit){cancel_map_travel();quit=true;return;}

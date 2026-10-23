@@ -413,6 +413,84 @@ static void deferred_enemy_values(){
  a.finish_combat_feedback();snapshot();a.animation=f.end_at-1;a.sync_combat_feedback();CHECK(a.combat_feedback.active);
  a.animation=f.end_at;a.sync_combat_feedback();CHECK(!a.combat_feedback.active&&a.combat_health(0).block==a.game.block);unchanged();
 }
+static void deferred_combat_hand(){
+ static State direct;static SaveData expected;
+ CHECK(sizeof(CombatHand)<=1024&&sizeof(CombatFeedback)<=8192);
+ const auto shown_only=[&](const CombatHand::Cards&expected_hand){
+  const auto shown=a.combat_hand();CHECK(CombatHand::same(shown,expected_hand));
+  for(unsigned i=0;i<shown.count;++i)CHECK(has(HitKind::Hand,shown.ids[i]));
+  for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::Hand){
+   bool arrived=false;for(unsigned j=0;j<shown.count;++j)arrived|=a.hits[i].value==shown.ids[j];
+   CHECK(arrived);if(a.combat_actions_locked())CHECK(!a.hits[i].enabled);
+  }
+ };
+ for(unsigned fast=0;fast<2;++fast)for(unsigned retain=0;retain<2;++retain){
+  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;
+  a.game.enemy_world.models[0].node=0;
+  int retained=-1;
+  if(retain){
+   retained=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,Purity,1+1024);resolve_pending(a.game);
+   CHECK(a.game.cards[retained].kind==Purity&&card_retains(a.game,a.game.cards[retained],retained));
+  }
+  const auto old=CombatHand::capture(a.game.hand);CHECK(old.count==5+retain);
+  a.cursor=old.count-1;a.hand_focus=true;a.render();shown_only(old);
+  snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(end_turn(direct));CHECK(save(direct,expected));
+  a.input(Key::EndTurn);CHECK(a.combat_feedback.active&&a.combat_feedback.finished&&!a.combat_feedback.hand.overflow);
+  CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  const auto next=CombatHand::capture(a.game.hand);CHECK(next.count==5+retain);
+  CombatHand::Cards kept;if(retain){kept.count=1;kept.ids[0]=uint16_t(retained);}
+  for(unsigned i=0;i<old.count;++i)if(old.ids[i]!=retained){
+   CHECK(a.game.zones[old.ids[i]]==Zone::Discard);
+   for(unsigned j=0;j<next.count;++j)CHECK(next.ids[j]!=old.ids[i]);
+  }
+  const uint32_t first=a.enemy_presentation[0].queue[0].earliest;
+  const uint32_t impact=first+TurnBannerPresentation::wait_ticks(150,75,fast!=0);
+  const uint32_t player=a.turn_banner.player_start;CHECK(player>impact&&player==a.combat_feedback.end_at);
+  snapshot();a.render();shown_only(kept);CHECK(a.hand_can_focus()==bool(retain));
+  a.input(Key::Right);CHECK(a.cursor==0);a.input(Key::Detail);
+  if(retain){CHECK(a.detail_instance==retained);a.input(Key::Back);}
+  else CHECK(a.detail_card<0);
+  // No future card can be focused, inspected or played through its old slot.
+  a.input(Key::Confirm);a.input(Key::EndTurn);unchanged();a.render();shown_only(kept);
+  advance_combat_ms((first-a.animation-1)*33);a.render();shown_only(kept);
+  CHECK(a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy);
+  advance_combat_ms((impact-a.animation)*33);a.render();shown_only(kept);
+  if(retain){
+   a.input(Key::Right);a.render();CardHoverTarget target;CHECK(card_hover_target(a,target)&&target.instance==retained);
+   capture(fast?"hand-retain-enemy-fast":"hand-retain-enemy");
+  }else capture(fast?"hand-empty-enemy-fast":"hand-empty-enemy");
+  advance_combat_ms((player-a.animation-1)*33);a.render();shown_only(kept);
+  CHECK(a.turn_banner.sample_player(a.animation).kind==TurnBannerPresentation::None);
+  advance_combat_ms(33);a.render();shown_only(next);
+  CHECK(!a.combat_feedback.active&&!a.combat_actions_locked());
+  CHECK(a.turn_banner.sample_player(a.animation).kind==TurnBannerPresentation::Player);
+  if(retain)capture(fast?"hand-player-draw-fast":"hand-player-draw");unchanged();
+ }
+ // A load restores the saved hand directly, without replaying discarded UI
+ // samples. This is the same reset used by the ordinary Continue/Load path.
+ enemy_visual_fight(EncounterId::NibbitsWeak);a.input(Key::EndTurn);CHECK(a.combat_feedback.active);
+ snapshot();CHECK(load(a.game,before.bytes,before.size));a.reset_presentation();a.render();
+ CHECK(!a.combat_feedback.active);shown_only(CombatHand::capture(a.game.hand));unchanged();
+
+ // Real generated-card/discard commands at distinct cue times exercise the
+ // bounded queue. An unusually long chain must never reveal its final hand
+ // early and still converges at the existing side endpoint.
+ enemy_visual_fight(EncounterId::NibbitsWeak);
+ const uint32_t start=a.animation;
+ {UiCoreObserver observer(a);a.begin_combat_feedback();
+  for(unsigned i=0;i<=CombatHand::Capacity;++i){
+   a.combat_feedback.effect_at=start+i+1;
+   if(i%2)queue_extension(a.game,XOp::SDiscardHand);
+   else queue_extension(a.game,XOp::EnemyGenerateCard,Wound,1+1024);
+   resolve_pending(a.game);
+  }
+ }
+ CHECK(a.combat_feedback.hand.overflow&&a.game.hand.count==1);
+ const auto final_hand=CombatHand::capture(a.game.hand);const uint32_t end=a.combat_feedback.end_at;
+ snapshot();advance_combat_ms((end-a.animation-1)*33);a.render();shown_only({});
+ advance_combat_ms(33);a.render();shown_only(final_hand);CHECK(!a.combat_feedback.active);unchanged();
+ a.fast_mode=false;
+}
 static void deferred_enemy_statuses(){
  static State direct;static SaveData expected;
  CHECK(sizeof(CombatStatus)<=64*1024);
@@ -583,4 +661,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();deferred_enemy_statuses();deferred_combat_choices();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();deferred_combat_choices();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

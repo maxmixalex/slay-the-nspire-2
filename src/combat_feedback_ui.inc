@@ -29,6 +29,9 @@ HealthBarValues App::combat_health(int actor)const{
  return combat_feedback.shown[actor];
 }
 int App::combat_energy(bool maximum)const{const auto v=combat_health(CombatFeedback::Energy);return maximum?v.max_hp:v.hp;}
+CombatHand::Cards App::combat_hand()const{
+ return ui_feedback_bound(*this)?combat_feedback.hand.shown:CombatHand::capture(game.hand);
+}
 bool App::combat_actions_locked()const{
  return busy>0||(ui_feedback_bound(*this)&&(!combat_feedback.finished||int32_t(combat_feedback.end_at-animation)>0))||int32_t(combat_linger_until-animation)>0;
 }
@@ -65,6 +68,7 @@ void App::begin_combat_feedback(){
  combat_feedback.reset();if(!game.enemy_world.active||game.phase!=Phase::Combat)return;
  sync_enemy_feedback();auto&f=combat_feedback;f.active=true;f.seed=game.seed;f.floor=game.floor;f.combat=game.world.combat_count;f.encounter=int(game.enemy_world.encounter);
  f.effect_at=f.move_at=f.move_end=f.end_at=animation;
+ f.hand.begin(game.hand);
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor){f.shown[actor]=f.observed[actor]=ui_health_values(game,int(actor));f.identity[actor]=f.observed_identity[actor]=ui_feedback_identity(game,actor);}
  for(int i=0;i<MaxEnemies;++i){f.intents[i]=i<game.enemy_count?enemy_intent(game,i):EnemyIntent{};f.hide_at[i]=animation;}
  ui_capture_combat_status(*this,animation,true);
@@ -108,6 +112,9 @@ void App::observe_combat_effect(const State&s,Effect effect){
  // makes no claim about uninspected attack delays or multi-hit intervals.
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(s,int(actor)),ui_feedback_identity(s,actor),f.effect_at);
  ui_capture_combat_status(*this,f.effect_at);
+ // Observe all settled commands: retain/flush, returned cards and enemy
+ // card effects can change the hand without going through ordinary Draw.
+ f.hand.append(s.hand,f.effect_at);
  // Round cumulative command time once, rather than adding rounded waits.
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.
  if(after)f.effect_at=ui_feedback_later(f.effect_at,after);
@@ -133,6 +140,9 @@ void App::finish_combat_feedback(){
  f.end_at=ui_feedback_later(f.end_at,enemy_visual_clock);f.effect_at=f.end_at;
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(game,int(actor)),ui_feedback_identity(game,actor),f.end_at);
  ui_capture_combat_status(*this,f.end_at);
+ // Some selections move their card before resuming the effect stream.
+ // Capture that final result at its queued endpoint, never immediately.
+ f.hand.append(game.hand,f.end_at);
  f.finished=true;
  if(!combat_phase(game.phase))combat_linger_until=ui_feedback_later(combat_linger_until,f.end_at+1);
 }
@@ -155,11 +165,13 @@ void App::sync_combat_feedback(){
  while(f.head<f.count&&int32_t(animation-f.cues[f.head].at)>=0){const auto cue=f.cues[f.head++];ui_feedback_apply(*this,cue.actor,cue.value,cue.identity,cue.at);}
  if(f.head==f.count)f.head=f.count=0;
  combat_status.sync(animation);
+ f.hand.sync(animation);
  if(f.finished&&int32_t(animation-f.end_at)>=0){
   // Overflow only drops intermediate presentation entries. At the scheduled
   // side boundary every displayed value converges to the captured result.
   for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)ui_feedback_apply(*this,actor,f.observed[actor],f.observed_identity[actor],f.end_at);
   combat_status.finish();
+  f.hand.finish();
   f.reset();
  }
 }

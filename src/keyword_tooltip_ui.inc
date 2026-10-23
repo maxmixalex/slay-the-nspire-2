@@ -135,9 +135,10 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     }
     if((a.title&&!a.library)||a.deck_candidate>=0||a.game_over_summary||(a.panel&&a.panel!=1)||a.map_window.is_open)return false;
     const HitRegion*h=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):hover_keyboard_hit(a);
-    if(!a.library&&!a.panel&&a.hand_can_focus()&&a.hand_focus&&a.cursor>=0&&a.cursor<a.game.hand.count&&
+    const auto hand=a.combat_hand();
+    if(!a.library&&!a.panel&&a.hand_can_focus()&&a.hand_focus&&a.cursor>=0&&a.cursor<hand.count&&
        (!a.pointer.visible||(h&&h->kind==HitKind::Hand))){
-        target.instance=a.game.hand.ids[a.cursor];target.card=a.game.cards[target.instance];auto pose=hand_pose(a.game.hand.count,a.cursor,true);
+        target.instance=hand.ids[a.cursor];target.card=a.game.cards[target.instance];auto pose=hand_pose(hand.count,a.cursor,true);
         target.owner={pose.cx-HandTileW/2,pose.cy-HandTileH/2,HandTileW,HandTileH};target.identity=0x10000u|unsigned(target.instance);return true;
     }
     if(!h)return false;target.owner={h->x,h->y,h->w,h->h};target.identity=0x100000u|(unsigned(h->kind)<<16)|unsigned(uint16_t(h->value));

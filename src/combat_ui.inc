@@ -18,10 +18,10 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
 }
-static const HandTile& hand_tile(Canvas&c,int index){
-    auto&a=c.a;Card card=a.game.cards[a.game.hand.ids[index]];
-    const int instance=a.game.hand.ids[index];int energy=cost(a.game,instance),stars=card_star_cost(a.game,card,instance);bool playable=can_play_card(a.game,instance);
-    char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.game.hand.ids[index]);
+static const HandTile& hand_tile(Canvas&c,int index,int instance){
+    auto&a=c.a;Card card=a.game.cards[instance];
+    int energy=cost(a.game,instance),stars=card_star_cost(a.game,card,instance);bool playable=can_play_card(a.game,instance);
+    char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,instance);
     int portrait=a.card_face_image(card,instance),frame=a.card_face_frame(card,instance);
     auto&t=hand_tiles[index];
     if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
@@ -177,28 +177,29 @@ static void combat_screen(Canvas&c){
         int age=(int)a.animation-a.hit_start[i];
         if(a.last_hit[i]&&age>=0&&age<24){auto p=enemy_pose(s.enemy_count,i?i-1:0);int x=i?p.x-12:48;c.num(a.last_hit[i],x,(i?p.feet-30:91)-age/2,s.enemy_count>4?10:16,i?Gold:Red);}
     }
-    int selected=mn(mx(a.cursor,0),mx(0,s.hand.count-1));
+    const auto hand=a.combat_hand();
+    int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
     // At rest every card remains on the arc. Focus is earned by hover or keys,
     // not by the cursor index merely existing. The battlefield stays visible.
-    for(int i=0;i<s.hand.count;i++){
-        auto p=hand_pose(s.hand.count,i,false);
-        if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i),p,false);
-        auto r=hand_rail(s.hand.count,i);
+    for(int i=0;i<hand.count;i++){
+        auto p=hand_pose(hand.count,i,false);
+        if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i,hand.ids[i]),p,false);
+        auto r=hand_rail(hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
-        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,s.hand.ids[i]));
+        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
     }
-    if(s.hand.count){
+    if(hand.count){
         if(focused){
-            draw_hand_tile(c,hand_tile(c,selected),hand_pose(s.hand.count,selected,true),true);
-            auto p=hand_pose(s.hand.count,selected,true);
-            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,s.hand.ids[selected]));
+            draw_hand_tile(c,hand_tile(c,selected,hand.ids[selected]),hand_pose(hand.count,selected,true),true);
+            auto p=hand_pose(hand.count,selected,true);
+            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
         }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
-        for(int i=0;i<s.hand.count;i++){
-            auto r=hand_rail(s.hand.count,i);
-            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,s.hand.ids[i]));
+        for(int i=0;i<hand.count;i++){
+            auto r=hand_rail(hand.count,i);
+            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
     combat_energy(c);
@@ -216,7 +217,7 @@ static void combat_screen(Canvas&c){
                left<h.x+h.w&&h.x<left+49&&157<h.y+h.h&&h.y<174){blocked=true;break;}
         }
         if(blocked)continue;
-        c.text("I 详情",left+3,160,10,Muted,44);c.hit(left,157,49,17,HitKind::Command,(int)Key::Detail,s.hand.count>0);break;
+        c.text("I 详情",left+3,160,10,Muted,44);c.hit(left,157,49,17,HitKind::Command,(int)Key::Detail,hand.count>0);break;
     }
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}
 }

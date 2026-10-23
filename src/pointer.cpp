@@ -77,9 +77,10 @@ void App::pointer_move(int x,int y){
     case HitKind::Choice:if(!pointer.held)cursor=h->value;break;
     case HitKind::LibraryItem:if(!pointer.held)library_selected=h->value;break;
     case HitKind::Relic:if(!pointer.held){scroll=h->value;detail_scroll=0;}break;
-    case HitKind::Hand:
-        if(!pointer.held)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==h->value){cursor=i;break;}
-        break;
+    case HitKind::Hand:{
+        const auto hand=combat_hand();
+        if(!pointer.held)for(int i=0;i<hand.count;i++)if(hand.ids[i]==h->value){cursor=i;break;}
+        break;}
     case HitKind::CombatChoice:
         if(!pointer.held){const auto& source=choice_pile(game);
             for(int i=0;i<source.count;i++)if(source.ids[i]==h->value){cursor=i;break;}}
