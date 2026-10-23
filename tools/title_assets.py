@@ -32,13 +32,13 @@ def _control_rect(node, parent_size):
     return (left, top), (right-left, bottom-top)
 
 
-def _logo_transform(pack, supersample):
+def _scene_transform(pack, path, supersample):
     """Follow the actual Godot parent anchors and CanvasItem transforms."""
     root = SceneLoader(pack).instantiate(PROFILE['source_scene'])
     size = PROFILE['viewport']
     matrix = np.eye(3)
     node = root
-    for name in PROFILE['source_node'].split('/'):
+    for name in path.split('/'):
         node = next(child for child in node.children if child.name == name)
         if node.kind == 'Control':
             origin, size = _control_rect(node, size)
@@ -51,6 +51,59 @@ def _logo_transform(pack, supersample):
     screen = _translate((width*supersample-vw*scale)/2,
                         (height*supersample-vh*scale)/2) @ _scale(scale)
     return screen @ matrix
+
+
+def _logo_transform(pack, supersample):
+    return _scene_transform(pack, PROFILE['source_node'], supersample)
+
+
+def _scene_layer(pack, texture_loader, skeleton, path):
+    """Keep each original Spine plane separate so particles sit between them."""
+    supersample = 2
+    sk = Skeleton(pack.read(pack.imported(skeleton+'.skel', '.spskel')))
+    textures = load_textures(pack, skeleton, texture_loader)
+    draw = geometry(sk, *pose(sk, PROFILE['animation'], 0), textures)
+    transform = _scene_transform(pack, path, supersample)
+    screen_draw = []
+    for vertices, uv, triangles, image, tint, blend in draw:
+        points = np.column_stack((vertices[:, 0], -vertices[:, 1], np.ones(len(vertices))))
+        points = (transform @ points.T).T[:, :2]
+        points[:, 1] *= -1
+        screen_draw.append((points, uv, triangles, image, tint, blend))
+    width, height = PROFILE['screen']
+    return raster(screen_draw, 1., np.zeros(2), (width*supersample, height*supersample)).resize(
+        (width, height), Image.Resampling.LANCZOS)
+
+
+def build_particle_atlas(pack, texture_loader):
+    """Seven authored fog drawings and the tiny original star, without a clip."""
+    background = PROFILE['background']
+    fog, stars = background['fog'], background['stars']
+    source = texture_loader(pack, fog['texture']).convert('RGBA')
+    fw, fh = fog['source_frame_size']
+    if source.size != (fw, fh*fog['frames']):
+        raise ValueError('The original fog texture no longer has seven vertical frames')
+    atlas = Image.new('RGBA', tuple(fog['atlas_size']))
+    width, height = fog['frame_size']
+    for frame in range(fog['frames']):
+        image = source.crop((0, frame*fh, fw, (frame+1)*fh)).resize(
+            (width, height), Image.Resampling.LANCZOS)
+        atlas.alpha_composite(image, ((frame % fog['columns'])*width,
+                                     (frame // fog['columns'])*height))
+    x, y, width, height = stars['atlas_rect']
+    star = texture_loader(pack, stars['texture']).convert('RGBA').resize(
+        (width, height), Image.Resampling.LANCZOS)
+    atlas.alpha_composite(star, (x, y))
+    return atlas
+
+
+def build_title_background(pack, texture_loader):
+    profile = PROFILE['background']
+    return {
+        'backdrop': _scene_layer(pack, texture_loader, profile['back_skeleton'], profile['back_node']),
+        'foreground': _scene_layer(pack, texture_loader, profile['front_skeleton'], profile['front_node']),
+        'particles': build_particle_atlas(pack, texture_loader),
+    }
 
 
 def build_title_atlas(pack, texture_loader):
@@ -100,6 +153,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--pck', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--background', action='store_true',
+                        help='Also export the original background/foreground and particle atlas for NSP2/21')
     args = parser.parse_args()
     from build_content import texture
     from pck import Pack
@@ -111,6 +166,7 @@ def main():
     pack = Pack(args.pck)
     try:
         atlas = build_title_atlas(pack, texture)
+        background = build_title_background(pack, texture) if args.background else None
     finally:
         pack.close()
     raw = encode(atlas)
@@ -121,6 +177,20 @@ def main():
                     source='original main_menu_logo Spine attachments and light_large light texture',
                     replaces_image=4, added_images=0, added_clips=0)
     (output/'title-logo.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    if background is not None:
+        rows = {}
+        for key, image in background.items():
+            raw = encode(image)
+            image.save(output/('title-'+key+'.png'))
+            (output/('title-'+key+'.raw')).write_bytes(raw)
+            rows[key] = dict(width=image.width, height=image.height, format=4,
+                             raw_file='title-'+key+'.raw', png_file='title-'+key+'.png', bytes=len(raw))
+        scene_manifest = dict(reference=PROFILE['reference'], source_scene=PROFILE['source_scene'],
+                              background=PROFILE['background'], images=rows,
+                              replaces_auxiliary=0, added_auxiliary=['TitleForeground', 'TitleParticles'],
+                              added_images=2, added_clips=0, output_version=21,
+                              adaptations=PROFILE['background_adaptations'])
+        (output/'title-background.json').write_text(json.dumps(scene_manifest, indent=2)+'\n')
     print(json.dumps({key: manifest[key] for key in ('width', 'height', 'format', 'bytes',
                                                   'replaces_image', 'added_images', 'added_clips')}))
 

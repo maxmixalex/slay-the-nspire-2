@@ -6,13 +6,24 @@ import argparse
 import json
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 from build_web import ROOT, package_runtime
+from split_content import LANGUAGE_HEADER
+
+
+def resource_version(path):
+    with path.open('rb') as stream:
+        prefix = stream.read(LANGUAGE_HEADER + 8)
+    if (len(prefix) != LANGUAGE_HEADER + 8 or prefix[:4] != b'NSL1' or
+            prefix[LANGUAGE_HEADER:LANGUAGE_HEADER + 4] != b'NSP2'):
+        raise ValueError('Expected a split language resource: ' + str(path))
+    return struct.unpack_from('<I', prefix, LANGUAGE_HEADER + 4)[0]
 
 
 def readme(info):
-    return f'''Slay the Nspire 2 — 0.17 ui3 / 中文与 English
+    return f'''Slay the Nspire 2 — 0.17 {info['stage']} / 中文与 English
 
 安装 / Installation
 把下面四个文件放到计算器的同一文件夹，打开 nSpire2.tns：
@@ -52,7 +63,7 @@ S saves and O loads; saves stay in that browser. No asset download or server con
 
 版本 / Build
 参考游戏 / game reference: v0.111.0 / 41cef1ea
-Resource format: NSP2/20; save format: v15
+Resource format: NSP2/{info['resource_format']}; save format: v15
 Installed files: {sum(info['files'].values()):,} bytes before saves
 Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}
 Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}
@@ -69,7 +80,10 @@ def main():
         p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
+    p.add_argument('--stage', default='ui4', help='Release suffix, for example ui4')
     args = p.parse_args()
+    if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
+        p.error('Stage must contain only letters, digits, underscores or hyphens')
     for value in (args.runtime_checkpoint, args.resource_checkpoint):
         if not re.fullmatch('[0-9a-f]{40}', value):
             p.error('Checkpoints must be full Git commit IDs')
@@ -79,11 +93,15 @@ def main():
         if not path.is_file():
             p.error('Input file is missing: ' + str(path))
     args.output.mkdir(parents=True, exist_ok=True)
-    info = dict(reference='v0.111.0 / 41cef1ea', resource_format=20, save_version=15,
+    version = resource_version(args.eng)
+    if resource_version(args.zhs) != version:
+        p.error('English and Chinese resources must use the same format version')
+    info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=15,
+                stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
                 files={name: path.stat().st_size for name, path in paths.items()})
-    stem = 'Slay-the-Nspire-2-0.17-ui3-bilingual'
+    stem = f'Slay-the-Nspire-2-0.17-{args.stage}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
     offline = args.output / (stem + '-offline.html')
     texts = {'README.txt': readme(info).encode('utf-8'),

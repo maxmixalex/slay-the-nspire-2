@@ -36,6 +36,58 @@
     "The original single light_large particle is drawn behind the logo with its additive material, authored scale Curve and color Gradient.",
     "Only one original light texture is stored; runtime scales and tints its atlas rows without a new persistent bitmap or duplicated glow frames.",
     "The port starts this cosmetic three-second cycle at phase zero instead of the original script's random integer preprocess time.",
-    "The independent GPU background stars and fog particles are not included."
+    "Background particles use the separate title-background extension; old title-logo manifests remain valid."
+  ],
+  "background": {
+    "back_node": "BgContainer/Bg",
+    "front_node": "BgContainer/Fg",
+    "back_skeleton": "main_menu_bottom",
+    "front_skeleton": "main_menu_top",
+    "scene_origin": [0, 24],
+    "stars": {
+      "source_node": "BgContainer/stars",
+      "texture": "images/vfx/dot.png",
+      "amount": 200,
+      "period_ms": 5000,
+      "preprocess_ms": 5000,
+      "position": [926, 600],
+      "box_extents": [1500, 300],
+      "scale_range": [0.01, 0.04],
+      "color_rgba8": [71, 214, 224, 255],
+      "gradient_offsets": [0, 0.258845, 1],
+      "gradient_rgba8": [[216, 205, 77, 0], [255, 255, 255, 255], [199, 166, 103, 0]],
+      "atlas_rect": [135, 162, 3, 3]
+    },
+    "fog": {
+      "texture": "images/vfx/fog_sheet_2.png",
+      "source_frame_size": [252, 100],
+      "atlas_size": [270, 216],
+      "frame_size": [135, 54],
+      "frames": 7,
+      "columns": 2,
+      "amount_per_layer": 40,
+      "period_ms": 400000,
+      "preprocess_ms": 400000,
+      "emission_sphere_radius": 5,
+      "gravity": [0.1, 0],
+      "damping_range": [0, 0.001],
+      "damping_curve_points": [[0, 1], [1, 100]],
+      "damping_curve_tangents": [[0, 0], [130.445, 0]],
+      "animation_speed": 0,
+      "animation_offset_range": [0, 1],
+      "blend": "add",
+      "layers": [
+        {"source_node": "BgContainer/clouds2", "position": [-1000, 800], "scale_range": [2, 2.4], "color_rgba8": [74, 90, 99, 112]},
+        {"source_node": "BgContainer/clouds", "position": [-1000, 850], "scale_range": [1.8, 2], "color_rgba8": [74, 90, 99, 255]}
+      ]
+    }
+  },
+  "background_adaptations": [
+    "Retain the established 1920x1080 cover crop; NMainMenuBg's optional window-resize zoom is outside this extension.",
+    "Spine background and foreground use their authored scene transforms at time zero, as before; this extension adds the intervening stars and fog rather than a full background Spine clip.",
+    "Preserve all 200 stars and both groups of 40 fog particles, with screen clipping before drawing.",
+    "Use the original 7 fog drawings as random per-particle choices, not a moving seven-frame flipbook: the authored animation speed is zero.",
+    "Cosmetic sample seeds and continuous analytic fog integration are calculator adaptations; no gameplay State or RNG is used.",
+    "Store only one 270x216 particle atlas and one 320x240 foreground; use existing image-cache storage and no new pixel pool."
   ]
 }
