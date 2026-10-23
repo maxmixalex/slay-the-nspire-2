@@ -383,13 +383,18 @@ class ContentTiles(unittest.TestCase):
         shifted = tiles.TileReader(tiles.PackView(seal(changed), 1, versions=(15,)))
         self.assertEqual(shifted.image_raw(1), reader.image_raw(1))
 
-    def test_reader_rejects_global_reserved_group_ranges_and_descriptor_interior(self):
+    def test_reader_ignores_legacy_reserved_and_rejects_ranges_and_descriptor_interior(self):
         output, _ = self.convert()
         data = output.read_bytes()
         pack = tiles.PackView(data, 1, versions=(15,))
         reader = tiles.TileReader(pack)
+        # The v15 trailing header word is unused, so it must not block the
+        # selected frame. Actual group and index slice bounds still apply.
+        changed = bytearray(data)
+        struct.pack_into('<I', changed, pack.base_end + 60, 1)
+        accepted = tiles.TileReader(tiles.PackView(seal(changed), 1, versions=(15,)))
+        self.assertEqual(accepted.image_raw(1), reader.image_raw(1))
         mutations = [
-            (pack.base_end + 60, 1, 'codec header'),
             (pack.base_end + 44, 681, 'tile counts'),
             (pack.base_end + 64, reader.prefix_end - 2, 'group range'),
         ]

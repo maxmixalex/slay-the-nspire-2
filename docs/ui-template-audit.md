@@ -18,12 +18,14 @@ source and a verified log hash. The current platform receipt records this
 separate execution identity; later intent-slot changes are not relabelled as
 a new execution of the complete binding audit.
 
-`tools/audit_ui_templates.py` validates the public binding/index catalog, reads
+`tools/audit_ui_templates.py` supports NSP2/17 through NSP2/20. It validates the public binding/index catalog, reads
 the complete string directory, classifies every dynamic entry, and optionally
 runs `ui_text_regression` through the real display routes. Its JSON output records
 slot IDs, public keys, field names, byte counts and hashes only. It never exports
-original localized prose, assets or disassembly. The tool's directory checks do
-not replace the runtime's complete integrity and structural validation.
+original localized prose, assets or disassembly. Its directory checks and report
+identities run only in this offline audit. The game opens the resident catalog
+and checks the bounds of resource slices when they are actually requested; it
+does not scan whole payloads or compare integrity hashes at startup.
 
 The first diagnostic used runtime checkpoint
 `573cb816bbf6b57c8d677239060414c9fc124f72`, its frozen native library and a separately

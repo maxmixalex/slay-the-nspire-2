@@ -46,7 +46,7 @@ static void title_screen(Canvas&c){
         const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
         c.text_fitted(*name?name:ch.name,234,147,78,12,White);
         char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);c.text_fitted(row,213,169,98,10,White);
-        row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶"),a.saved_ascension);c.text_fitted(row,213,183,98,10,White);
+        row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶 "),a.saved_ascension);c.text_fitted(row,213,183,98,10,White);
         row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,212,201,10,11);c.text_fitted(row,224,201,41,10,White);
         row[0]=0;b.n=0;b.number(a.saved_gold);c.picture(A_Coin,267,201,10,11);c.text_fitted(row,280,201,32,10,White);
     }

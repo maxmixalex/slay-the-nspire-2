@@ -145,7 +145,7 @@ static void delayed_commit(bool fast,bool pointer,bool toggle,uint32_t start){
     CHECK(app.map_travel.start==start&&app.map_travel.speed==speed);
     CHECK(app.map_visuals.traveling()&&app.map_visuals.target()==destination);
     CHECK(app.map_travel.from==from&&app.map_travel.seed==app.game.world.run_seed);
-    CHECK(app.map_travel.checkpoint.size==before.size);same_state(before);
+    CHECK(app.map_travel.act==app.game.world.act_index&&app.map_travel.revision==app.game.revision);same_state(before);
     for(unsigned i=0;i<3;++i){app.input(Key::Confirm);click(stale_node);}
     app.input(Key::Back);
     CHECK(!app.paused&&app.map_scroll==0&&app.map_travel.start==start&&app.map_travel.to==destination);

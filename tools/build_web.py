@@ -47,7 +47,7 @@ def resource_package(content_path=None,language='zhs',common_path=None,eng_path=
     for locale,path in (('eng',eng_path),('zhs',zhs_path)):
         if path:
             data=path.read_bytes()
-            reconstruct(common,data,locale) # Full original checksum and common binding.
+            reconstruct(common,data,locale) # Resolve segments and the requested language mapping.
             languages[locale]=encode(data)
     if not languages:raise ValueError('At least one of --eng and --zhs is required')
     return {'mode':'split','common':encode(common),'languages':languages}
