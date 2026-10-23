@@ -7,7 +7,8 @@ static CombatStatus::Value ui_combat_status_value(const State&s,int actor,int id
  if(id>=EnemyStatusStart&&id<EventCardStatusStart){const unsigned power=id-EnemyStatusStart;
   value.auxiliary=actor?s.enemy_world.models[actor-1].power_aux[power]:s.enemy_world.player_aux[power];
   const unsigned source=actor?s.enemy_world.models[actor-1].source[power]:s.enemy_world.player_source[power];
-  if(source<s.enemy_count)value.source=1+unsigned(s.enemy_world.models[source].kind);
+  // Core uses zero for the player and slot+1 for an enemy applier.
+  if(source&&source<=s.enemy_count)value.source=1+unsigned(s.enemy_world.models[source-1].kind);
  }
  return value;
 }

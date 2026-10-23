@@ -11,6 +11,8 @@ as health. It includes signed amounts, Slow and Withering Presence counters,
 the original applier's model, captured cards, per-instance powers, character
 counters and orb values. Keyboard and pointer selection use that displayed
 list. Enemy names and health in the status panel use the retained actor.
+Applier lookup also honors the core's zero/player, slot-plus-one encoding;
+the former tooltip lookup treated that saved value as a zero-based slot.
 
 This is fixed-size App presentation storage, capped at 64 KiB, with 256 change
 cues. It does not copy State, encode a save, invoke gameplay or draw randomness.
