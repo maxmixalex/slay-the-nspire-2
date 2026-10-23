@@ -235,6 +235,39 @@ static void picture_row_views(){
   pair.compare();
  }
 }
+static void title_particles(){
+ // One shared two-column atlas must not bleed a neighboring fog frame or
+ // star into its cropped destination. Destination sampling is independent
+ // of the production full-width-band trick, for dense and sparse storage.
+ constexpr unsigned width=270,height=216;
+ Bytes rgb,alpha(width*height),sparse;
+ for(unsigned y=0;y<height;++y){
+  append(sparse,1,2);append(sparse,0,2);append(sparse,width,2);sparse.push_back(1);
+  for(unsigned x=0;x<width;++x){
+   const unsigned at=y*width+x;const auto pixel=color(at+37);
+   alpha[at]=uint8_t((x*53+y*97)&255);append(rgb,pixel,2);append(sparse,pixel,2);sparse.push_back(alpha[at]);
+  }
+ }
+ const Picture atlases[]={{rgb.data(),alpha.data(),nullptr,width,height,1},{sparse.data(),nullptr,nullptr,width,height,4}};
+ struct Crop {int x,y,w,h;};
+ const Crop crops[]={{0,0,135,54},{135,0,135,54},{0,54,135,54},{135,108,135,54},{0,162,135,54},{135,162,3,3}};
+ const Surface surface{173,97,181};
+ for(const auto atlas:atlases)for(auto crop:crops)
+ for(Placement target:{Placement{11,5,101,40},Placement{-37,-11,134,53},Placement{149,75,112,44},Placement{8,9,1,1},Placement{-1,10,2,2}})
+ for(auto style:{styles[0],styles[16]})for(unsigned mode:{unsigned(presentation::Normal),unsigned(presentation::Add)}){
+  Pair pair(surface,style);const title_scene::ParticleSample sample{target.x,target.y,target.w,target.h,74,90,99,112,0};
+  title_particle(pair.got,Canvas::picture_rows(atlas,crop.y,crop.h),sample,crop.x,crop.w,mode);
+  pair.oracle.tint_red=uint8_t(rounded_alpha(style.red,sample.red));
+  pair.oracle.tint_green=uint8_t(rounded_alpha(style.green,sample.green));
+  pair.oracle.tint_blue=uint8_t(rounded_alpha(style.blue,sample.blue));
+  for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x){
+   const int dx=x-target.x,dy=y-target.y;if(dx<0||dy<0||dx>=target.w||dy>=target.h)continue;
+   const unsigned sx=unsigned(crop.x+dx*crop.w/target.w),sy=unsigned(crop.y+dy*crop.h/target.h),at=sy*width+sx;
+   pair.oracle.paint(y*surface.pitch+x,color(at+37),rounded_alpha(alpha[at],sample.opacity),mode);
+  }
+  pair.compare();
+ }
+}
 static void map_pictures(){
  // A separate direct inverse-transform oracle retains the pre-optimization
  // pixel-center arithmetic. Test all shaders, odd sizes, angles, clipping,
@@ -270,7 +303,7 @@ static void map_pictures(){
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();picture_regions();picture_row_views();CHECK(app.content.healthy());
+ rectangles();pictures();picture_regions();picture_row_views();title_particles();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);

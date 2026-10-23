@@ -1,0 +1,2067 @@
+{
+  "schema": 1,
+  "stage": "UI4 text cache and single LZ4 range; before optional cold glyph batching",
+  "reference": "v0.111.0 / 41cef1ea",
+  "baseline_core_checkpoint": "ead747dcdffded08d641445a811af48a4fafd1de",
+  "baseline_production_source_identical_to": "2385ff81d1c08f2fcec9213fb3101996f6f36de8",
+  "driver_checkpoint": "f2c474ef566e0f47123251bc4c3c868c310f0587",
+  "candidate_checkpoint": "48712e0a4c08e0115b31b51223794df30bf3cfc8",
+  "resources": {
+    "format": 20,
+    "policy": "UI3 final hybrid plus title glow; unchanged resources",
+    "eng_bytes": 76536957,
+    "zhs_bytes": 79319656,
+    "receipt": "validation-ui3-glow-resources-0.17.json"
+  },
+  "method": {
+    "compiler": "Clang 18.1.3",
+    "build": "Release -O3 -DNDEBUG",
+    "trials": 3,
+    "warm_frames_per_trial": 180,
+    "order": "baseline/candidate alternates by trial; languages zhs then eng",
+    "trace_enabled_during_timing": false,
+    "provider": "production ResourceFileCursor over a read-only complete NSP2 FILE source",
+    "qualification": "Unpaced host CPU and requested file ranges; not Firebird or physical-calculator time. Split-file physical reads may differ at a segment boundary."
+  },
+  "binaries": {
+    "baseline": {
+      "path": "build/ui4-baseline/card_grid_benchmark",
+      "bytes": 6234672,
+      "sha256": "bbbf3881623d770c315d6bb90c8e0f8c8ebaa513dfc206bf6e3afabc0467906c"
+    },
+    "candidate": {
+      "path": "build/ui4/card_grid_benchmark",
+      "bytes": 6238640,
+      "sha256": "6d5cfa75ab299440d8070ee10baae8ec789c9bf5a35131d25e2c8fe35cb6101c"
+    }
+  },
+  "mechanism": {
+    "old_fixed_glyph_keys": 64,
+    "old_fixed_string_keys": 8,
+    "new_glyph_keys": 512,
+    "new_string_keys": 256,
+    "new_allocation_granularity_bytes": 128,
+    "new_payload_cache_arenas_bytes": {
+      "glyph": 192512,
+      "string": 122880
+    },
+    "native64_structs_with_index_and_allocation_metadata_bytes": {
+      "old_glyph": 205824,
+      "old_string": 131200,
+      "old_cursors": 8,
+      "new_glyph": 205128,
+      "new_string": 129280
+    },
+    "runtime_payload_hashes_added": false,
+    "resource_bytes_changed": false,
+    "pictures_or_text_removed": false,
+    "trace_warm_draw_choice_10_frames": {
+      "image_reads": 0,
+      "glyph8_reads": 206,
+      "glyph10_reads": 330,
+      "glyph12_reads": 60,
+      "glyph16_reads": 80,
+      "glyph20_reads": 10,
+      "string_reads": 182
+    }
+  },
+  "verification": {
+    "targeted_suites": "5/5 passed",
+    "actual_eng": {
+      "checks": 28255,
+      "glyphs": 570,
+      "strings": 8192,
+      "selected_images": 8,
+      "memory_range_exact_ui_frames": 40
+    },
+    "actual_zhs": {
+      "checks": 73575,
+      "glyphs": 11900,
+      "strings": 8192,
+      "selected_images": 8,
+      "memory_range_exact_ui_frames": 40
+    },
+    "capture_comparisons": [
+      {
+        "operation": "capture_compare",
+        "language": "eng",
+        "scene": "library_8",
+        "byte_identical": true,
+        "bytes": 230415
+      },
+      {
+        "operation": "capture_compare",
+        "language": "eng",
+        "scene": "remove_10",
+        "byte_identical": true,
+        "bytes": 230415
+      },
+      {
+        "operation": "capture_compare",
+        "language": "eng",
+        "scene": "draw_choice_10",
+        "byte_identical": true,
+        "bytes": 230415
+      },
+      {
+        "operation": "capture_compare",
+        "language": "zhs",
+        "scene": "library_8",
+        "byte_identical": true,
+        "bytes": 230415
+      },
+      {
+        "operation": "capture_compare",
+        "language": "zhs",
+        "scene": "remove_10",
+        "byte_identical": true,
+        "bytes": 230415
+      },
+      {
+        "operation": "capture_compare",
+        "language": "zhs",
+        "scene": "draw_choice_10",
+        "byte_identical": true,
+        "bytes": 230415
+      }
+    ],
+    "all_trial_saves_unchanged": true
+  },
+  "journals": [
+    "ui4-card-trace-driver-50b34d97e9d1",
+    "ui4-card-trace-zhs-0ef2e6071776",
+    "ui4-text-cache-configure-19095bacce9a",
+    "ui4-text-cache-build-756509501bfc",
+    "ui4-text-cache-regressions-88ec784c0bea",
+    "ui4-text-bytes-zhs-0538d0f451d6",
+    "ui4-text-bytes-eng-3ab2ec5c8a73",
+    "ui4-card-cache-paired-24f42ba3a4d7"
+  ],
+  "stages": [
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "open_and_fixture",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.068,
+          "median": 1.18,
+          "max": 1.261
+        },
+        "mean_ms": {
+          "min": 1.068,
+          "median": 1.18,
+          "max": 1.261
+        },
+        "maximum_ms": {
+          "min": 1.068,
+          "median": 1.18,
+          "max": 1.261
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 1128732,
+          "median": 1128732,
+          "max": 1128732
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "preparation",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "first_visible",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 2.078,
+          "median": 2.124,
+          "max": 2.168
+        },
+        "mean_ms": {
+          "min": 2.078,
+          "median": 2.124,
+          "max": 2.168
+        },
+        "maximum_ms": {
+          "min": 2.078,
+          "median": 2.124,
+          "max": 2.168
+        },
+        "source_calls": {
+          "min": 95,
+          "median": 95,
+          "max": 95
+        },
+        "source_bytes": {
+          "min": 432606,
+          "median": 432606,
+          "max": 432606
+        },
+        "source_seeks": {
+          "min": 82,
+          "median": 82,
+          "max": 82
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "warm_animation_window",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 103.435,
+          "median": 113.546,
+          "max": 129.172
+        },
+        "mean_ms": {
+          "min": 0.575,
+          "median": 0.631,
+          "max": 0.718
+        },
+        "maximum_ms": {
+          "min": 0.863,
+          "median": 2.502,
+          "max": 3.777
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "open_and_fixture",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.194,
+          "median": 0.195,
+          "max": 0.238
+        },
+        "mean_ms": {
+          "min": 0.194,
+          "median": 0.195,
+          "max": 0.238
+        },
+        "maximum_ms": {
+          "min": 0.194,
+          "median": 0.195,
+          "max": 0.238
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 1128732,
+          "median": 1128732,
+          "max": 1128732
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "preparation",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "first_visible",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.671,
+          "median": 1.838,
+          "max": 3.793
+        },
+        "mean_ms": {
+          "min": 1.671,
+          "median": 1.838,
+          "max": 3.793
+        },
+        "maximum_ms": {
+          "min": 1.671,
+          "median": 1.838,
+          "max": 3.793
+        },
+        "source_calls": {
+          "min": 99,
+          "median": 99,
+          "max": 99
+        },
+        "source_bytes": {
+          "min": 450825,
+          "median": 450825,
+          "max": 450825
+        },
+        "source_seeks": {
+          "min": 88,
+          "median": 88,
+          "max": 88
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "warm_animation_window",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 120.668,
+          "median": 131.443,
+          "max": 138.835
+        },
+        "mean_ms": {
+          "min": 0.67,
+          "median": 0.73,
+          "max": 0.771
+        },
+        "maximum_ms": {
+          "min": 1.073,
+          "median": 1.981,
+          "max": 2.137
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "open_and_fixture",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.201,
+          "median": 0.205,
+          "max": 0.26
+        },
+        "mean_ms": {
+          "min": 0.201,
+          "median": 0.205,
+          "max": 0.26
+        },
+        "maximum_ms": {
+          "min": 0.201,
+          "median": 0.205,
+          "max": 0.26
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 1128732,
+          "median": 1128732,
+          "max": 1128732
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "preparation",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 24,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 5.998,
+          "median": 6.299,
+          "max": 6.416
+        },
+        "mean_ms": {
+          "min": 0.25,
+          "median": 0.262,
+          "max": 0.267
+        },
+        "maximum_ms": {
+          "min": 1.459,
+          "median": 1.561,
+          "max": 1.776
+        },
+        "source_calls": {
+          "min": 16,
+          "median": 16,
+          "max": 16
+        },
+        "source_bytes": {
+          "min": 182447,
+          "median": 182447,
+          "max": 182447
+        },
+        "source_seeks": {
+          "min": 16,
+          "median": 16,
+          "max": 16
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "first_visible",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 3.302,
+          "median": 3.493,
+          "max": 3.716
+        },
+        "mean_ms": {
+          "min": 3.302,
+          "median": 3.493,
+          "max": 3.716
+        },
+        "maximum_ms": {
+          "min": 3.302,
+          "median": 3.493,
+          "max": 3.716
+        },
+        "source_calls": {
+          "min": 192,
+          "median": 192,
+          "max": 192
+        },
+        "source_bytes": {
+          "min": 812694,
+          "median": 812694,
+          "max": 812694
+        },
+        "source_seeks": {
+          "min": 179,
+          "median": 179,
+          "max": 179
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "warm_animation_window",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 293.436,
+          "median": 306.685,
+          "max": 316.605
+        },
+        "mean_ms": {
+          "min": 1.63,
+          "median": 1.704,
+          "max": 1.759
+        },
+        "maximum_ms": {
+          "min": 2.737,
+          "median": 3.533,
+          "max": 3.618
+        },
+        "source_calls": {
+          "min": 15448,
+          "median": 15448,
+          "max": 15448
+        },
+        "source_bytes": {
+          "min": 63275008,
+          "median": 63275008,
+          "max": 63275008
+        },
+        "source_seeks": {
+          "min": 14995,
+          "median": 14995,
+          "max": 14995
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "open_and_fixture",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.159,
+          "median": 1.203,
+          "max": 1.25
+        },
+        "mean_ms": {
+          "min": 1.159,
+          "median": 1.203,
+          "max": 1.25
+        },
+        "maximum_ms": {
+          "min": 1.159,
+          "median": 1.203,
+          "max": 1.25
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 1128732,
+          "median": 1128732,
+          "max": 1128732
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "preparation",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "first_visible",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.99,
+          "median": 2.128,
+          "max": 3.505
+        },
+        "mean_ms": {
+          "min": 1.99,
+          "median": 2.128,
+          "max": 3.505
+        },
+        "maximum_ms": {
+          "min": 1.99,
+          "median": 2.128,
+          "max": 3.505
+        },
+        "source_calls": {
+          "min": 84,
+          "median": 84,
+          "max": 84
+        },
+        "source_bytes": {
+          "min": 387550,
+          "median": 387550,
+          "max": 387550
+        },
+        "source_seeks": {
+          "min": 70,
+          "median": 70,
+          "max": 70
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "warm_animation_window",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 103.658,
+          "median": 110.656,
+          "max": 117.314
+        },
+        "mean_ms": {
+          "min": 0.576,
+          "median": 0.615,
+          "max": 0.652
+        },
+        "maximum_ms": {
+          "min": 1.099,
+          "median": 1.271,
+          "max": 6.716
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "open_and_fixture",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.195,
+          "median": 0.204,
+          "max": 0.206
+        },
+        "mean_ms": {
+          "min": 0.195,
+          "median": 0.204,
+          "max": 0.206
+        },
+        "maximum_ms": {
+          "min": 0.195,
+          "median": 0.204,
+          "max": 0.206
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 1128732,
+          "median": 1128732,
+          "max": 1128732
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "preparation",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "first_visible",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.664,
+          "median": 1.687,
+          "max": 2.006
+        },
+        "mean_ms": {
+          "min": 1.664,
+          "median": 1.687,
+          "max": 2.006
+        },
+        "maximum_ms": {
+          "min": 1.664,
+          "median": 1.687,
+          "max": 2.006
+        },
+        "source_calls": {
+          "min": 88,
+          "median": 88,
+          "max": 88
+        },
+        "source_bytes": {
+          "min": 405769,
+          "median": 405769,
+          "max": 405769
+        },
+        "source_seeks": {
+          "min": 76,
+          "median": 76,
+          "max": 76
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "warm_animation_window",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 115.009,
+          "median": 130.476,
+          "max": 172.532
+        },
+        "mean_ms": {
+          "min": 0.639,
+          "median": 0.725,
+          "max": 0.959
+        },
+        "maximum_ms": {
+          "min": 0.956,
+          "median": 1.266,
+          "max": 4.951
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "open_and_fixture",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.209,
+          "median": 0.258,
+          "max": 0.359
+        },
+        "mean_ms": {
+          "min": 0.209,
+          "median": 0.258,
+          "max": 0.359
+        },
+        "maximum_ms": {
+          "min": 0.209,
+          "median": 0.258,
+          "max": 0.359
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 1128732,
+          "median": 1128732,
+          "max": 1128732
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "preparation",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 24,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 5.825,
+          "median": 6.434,
+          "max": 10.438
+        },
+        "mean_ms": {
+          "min": 0.243,
+          "median": 0.268,
+          "max": 0.435
+        },
+        "maximum_ms": {
+          "min": 1.396,
+          "median": 1.519,
+          "max": 4.438
+        },
+        "source_calls": {
+          "min": 15,
+          "median": 15,
+          "max": 15
+        },
+        "source_bytes": {
+          "min": 178351,
+          "median": 178351,
+          "max": 178351
+        },
+        "source_seeks": {
+          "min": 15,
+          "median": 15,
+          "max": 15
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "first_visible",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 3.246,
+          "median": 3.601,
+          "max": 3.606
+        },
+        "mean_ms": {
+          "min": 3.246,
+          "median": 3.601,
+          "max": 3.606
+        },
+        "maximum_ms": {
+          "min": 3.246,
+          "median": 3.601,
+          "max": 3.606
+        },
+        "source_calls": {
+          "min": 158,
+          "median": 158,
+          "max": 158
+        },
+        "source_bytes": {
+          "min": 673430,
+          "median": 673430,
+          "max": 673430
+        },
+        "source_seeks": {
+          "min": 145,
+          "median": 145,
+          "max": 145
+        }
+      }
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "warm_animation_window",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 265.248,
+          "median": 291.428,
+          "max": 340.202
+        },
+        "mean_ms": {
+          "min": 1.474,
+          "median": 1.619,
+          "max": 1.89
+        },
+        "maximum_ms": {
+          "min": 2.166,
+          "median": 2.432,
+          "max": 2.899
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "open_and_fixture",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.769,
+          "median": 0.835,
+          "max": 0.919
+        },
+        "mean_ms": {
+          "min": 0.769,
+          "median": 0.835,
+          "max": 0.919
+        },
+        "maximum_ms": {
+          "min": 0.769,
+          "median": 0.835,
+          "max": 0.919
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 947452,
+          "median": 947452,
+          "max": 947452
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "preparation",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "first_visible",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.885,
+          "median": 2.029,
+          "max": 2.033
+        },
+        "mean_ms": {
+          "min": 1.885,
+          "median": 2.029,
+          "max": 2.033
+        },
+        "maximum_ms": {
+          "min": 1.885,
+          "median": 2.029,
+          "max": 2.033
+        },
+        "source_calls": {
+          "min": 49,
+          "median": 49,
+          "max": 49
+        },
+        "source_bytes": {
+          "min": 246771,
+          "median": 246771,
+          "max": 246771
+        },
+        "source_seeks": {
+          "min": 39,
+          "median": 39,
+          "max": 39
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "warm_animation_window",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 103.669,
+          "median": 110.207,
+          "max": 110.867
+        },
+        "mean_ms": {
+          "min": 0.576,
+          "median": 0.612,
+          "max": 0.616
+        },
+        "maximum_ms": {
+          "min": 0.968,
+          "median": 1.031,
+          "max": 1.824
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "open_and_fixture",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.177,
+          "median": 0.18,
+          "max": 0.195
+        },
+        "mean_ms": {
+          "min": 0.177,
+          "median": 0.18,
+          "max": 0.195
+        },
+        "maximum_ms": {
+          "min": 0.177,
+          "median": 0.18,
+          "max": 0.195
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 947452,
+          "median": 947452,
+          "max": 947452
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "preparation",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "first_visible",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.606,
+          "median": 1.885,
+          "max": 1.992
+        },
+        "mean_ms": {
+          "min": 1.606,
+          "median": 1.885,
+          "max": 1.992
+        },
+        "maximum_ms": {
+          "min": 1.606,
+          "median": 1.885,
+          "max": 1.992
+        },
+        "source_calls": {
+          "min": 55,
+          "median": 55,
+          "max": 55
+        },
+        "source_bytes": {
+          "min": 270601,
+          "median": 270601,
+          "max": 270601
+        },
+        "source_seeks": {
+          "min": 45,
+          "median": 45,
+          "max": 45
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "warm_animation_window",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 124.316,
+          "median": 133.997,
+          "max": 168.938
+        },
+        "mean_ms": {
+          "min": 0.691,
+          "median": 0.744,
+          "max": 0.939
+        },
+        "maximum_ms": {
+          "min": 1.566,
+          "median": 2.063,
+          "max": 6.766
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "open_and_fixture",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.191,
+          "median": 0.204,
+          "max": 0.214
+        },
+        "mean_ms": {
+          "min": 0.191,
+          "median": 0.204,
+          "max": 0.214
+        },
+        "maximum_ms": {
+          "min": 0.191,
+          "median": 0.204,
+          "max": 0.214
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 947452,
+          "median": 947452,
+          "max": 947452
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "preparation",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 24,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 5.799,
+          "median": 6.776,
+          "max": 6.925
+        },
+        "mean_ms": {
+          "min": 0.242,
+          "median": 0.282,
+          "max": 0.289
+        },
+        "maximum_ms": {
+          "min": 1.468,
+          "median": 1.691,
+          "max": 1.882
+        },
+        "source_calls": {
+          "min": 14,
+          "median": 14,
+          "max": 14
+        },
+        "source_bytes": {
+          "min": 174255,
+          "median": 174255,
+          "max": 174255
+        },
+        "source_seeks": {
+          "min": 14,
+          "median": 14,
+          "max": 14
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "first_visible",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 3.618,
+          "median": 3.911,
+          "max": 5.208
+        },
+        "mean_ms": {
+          "min": 3.618,
+          "median": 3.911,
+          "max": 5.208
+        },
+        "maximum_ms": {
+          "min": 3.618,
+          "median": 3.911,
+          "max": 5.208
+        },
+        "source_calls": {
+          "min": 95,
+          "median": 95,
+          "max": 95
+        },
+        "source_bytes": {
+          "min": 414483,
+          "median": 414483,
+          "max": 414483
+        },
+        "source_seeks": {
+          "min": 81,
+          "median": 81,
+          "max": 81
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "warm_animation_window",
+      "variant": "baseline",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 295.873,
+          "median": 316.591,
+          "max": 321.312
+        },
+        "mean_ms": {
+          "min": 1.644,
+          "median": 1.759,
+          "max": 1.785
+        },
+        "maximum_ms": {
+          "min": 2.324,
+          "median": 2.664,
+          "max": 5.695
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "open_and_fixture",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.72,
+          "median": 0.788,
+          "max": 0.966
+        },
+        "mean_ms": {
+          "min": 0.72,
+          "median": 0.788,
+          "max": 0.966
+        },
+        "maximum_ms": {
+          "min": 0.72,
+          "median": 0.788,
+          "max": 0.966
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 947452,
+          "median": 947452,
+          "max": 947452
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "preparation",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "first_visible",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.847,
+          "median": 1.968,
+          "max": 2.469
+        },
+        "mean_ms": {
+          "min": 1.847,
+          "median": 1.968,
+          "max": 2.469
+        },
+        "maximum_ms": {
+          "min": 1.847,
+          "median": 1.968,
+          "max": 2.469
+        },
+        "source_calls": {
+          "min": 42,
+          "median": 42,
+          "max": 42
+        },
+        "source_bytes": {
+          "min": 218099,
+          "median": 218099,
+          "max": 218099
+        },
+        "source_seeks": {
+          "min": 29,
+          "median": 29,
+          "max": 29
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "warm_animation_window",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 96.787,
+          "median": 104.205,
+          "max": 118.218
+        },
+        "mean_ms": {
+          "min": 0.538,
+          "median": 0.579,
+          "max": 0.657
+        },
+        "maximum_ms": {
+          "min": 0.715,
+          "median": 1.104,
+          "max": 1.199
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "open_and_fixture",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.191,
+          "median": 0.202,
+          "max": 0.21
+        },
+        "mean_ms": {
+          "min": 0.191,
+          "median": 0.202,
+          "max": 0.21
+        },
+        "maximum_ms": {
+          "min": 0.191,
+          "median": 0.202,
+          "max": 0.21
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 947452,
+          "median": 947452,
+          "max": 947452
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "preparation",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 0,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "mean_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "maximum_ms": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "first_visible",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 1.629,
+          "median": 1.655,
+          "max": 1.708
+        },
+        "mean_ms": {
+          "min": 1.629,
+          "median": 1.655,
+          "max": 1.708
+        },
+        "maximum_ms": {
+          "min": 1.629,
+          "median": 1.655,
+          "max": 1.708
+        },
+        "source_calls": {
+          "min": 45,
+          "median": 45,
+          "max": 45
+        },
+        "source_bytes": {
+          "min": 229641,
+          "median": 229641,
+          "max": 229641
+        },
+        "source_seeks": {
+          "min": 31,
+          "median": 31,
+          "max": 31
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "warm_animation_window",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 113.495,
+          "median": 117.678,
+          "max": 133.582
+        },
+        "mean_ms": {
+          "min": 0.631,
+          "median": 0.654,
+          "max": 0.742
+        },
+        "maximum_ms": {
+          "min": 0.972,
+          "median": 1.275,
+          "max": 1.58
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "open_and_fixture",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 0.194,
+          "median": 0.209,
+          "max": 0.213
+        },
+        "mean_ms": {
+          "min": 0.194,
+          "median": 0.209,
+          "max": 0.213
+        },
+        "maximum_ms": {
+          "min": 0.194,
+          "median": 0.209,
+          "max": 0.213
+        },
+        "source_calls": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        },
+        "source_bytes": {
+          "min": 947452,
+          "median": 947452,
+          "max": 947452
+        },
+        "source_seeks": {
+          "min": 4,
+          "median": 4,
+          "max": 4
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "preparation",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 24,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 5.686,
+          "median": 5.9,
+          "max": 6.21
+        },
+        "mean_ms": {
+          "min": 0.237,
+          "median": 0.246,
+          "max": 0.259
+        },
+        "maximum_ms": {
+          "min": 1.385,
+          "median": 1.477,
+          "max": 1.484
+        },
+        "source_calls": {
+          "min": 13,
+          "median": 13,
+          "max": 13
+        },
+        "source_bytes": {
+          "min": 170159,
+          "median": 170159,
+          "max": 170159
+        },
+        "source_seeks": {
+          "min": 13,
+          "median": 13,
+          "max": 13
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "first_visible",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 1,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 3.479,
+          "median": 3.767,
+          "max": 4.421
+        },
+        "mean_ms": {
+          "min": 3.479,
+          "median": 3.767,
+          "max": 4.421
+        },
+        "maximum_ms": {
+          "min": 3.479,
+          "median": 3.767,
+          "max": 4.421
+        },
+        "source_calls": {
+          "min": 73,
+          "median": 73,
+          "max": 73
+        },
+        "source_bytes": {
+          "min": 324371,
+          "median": 324371,
+          "max": 324371
+        },
+        "source_seeks": {
+          "min": 57,
+          "median": 57,
+          "max": 57
+        }
+      }
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "warm_animation_window",
+      "variant": "candidate",
+      "trials": 3,
+      "samples_per_trial": 180,
+      "stats": {
+        "cpu_elapsed_ms": {
+          "min": 293.907,
+          "median": 302.558,
+          "max": 320.503
+        },
+        "mean_ms": {
+          "min": 1.633,
+          "median": 1.681,
+          "max": 1.781
+        },
+        "maximum_ms": {
+          "min": 3.594,
+          "median": 3.757,
+          "max": 5.946
+        },
+        "source_calls": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_bytes": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "source_seeks": {
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    }
+  ],
+  "remaining": [
+    "Cold scattered glyph reads remain; further bounded coalescing is being evaluated separately.",
+    "The current UI3 Firebird baseline remains 1646.8 ms; this host test does not establish a calculator speedup.",
+    "Targeted sanitizer and integrated portable budgets still need the final candidate check."
+  ]
+}

@@ -5,12 +5,14 @@ struct HandTile {
     bool valid=false,playable=false;
     const Content* owner=nullptr;
     Card card{};
+    uint32_t used=0;
     int energy=0,stars=0,portrait=-1,frame=-1;
     char description[512]{};
     uint16_t pixels[HandTileW*HandTileH]{};
     uint8_t alpha[HandTileW*HandTileH]{};
 };
 static HandTile hand_tiles[MaxHand];
+static uint32_t hand_tile_clock=0;
 static bool same_text(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 }
 static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;invalidate_card_face_cache();}
@@ -18,14 +20,22 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
 }
-static const HandTile& hand_tile(Canvas&c,int index,int instance){
-    auto&a=c.a;Card card=a.game.cards[instance];
-    int energy=cost(a.game,instance),stars=card_star_cost(a.game,card,instance);bool playable=can_play_card(a.game,instance);
+static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr){
+    auto&a=c.a;Card card=visual?visual->card:a.game.cards[instance];
+    int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
+    bool playable=visual||can_play_card(a.game,instance);
     char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,instance);
     int portrait=a.card_face_image(card,instance),frame=a.card_face_frame(card,instance);
-    auto&t=hand_tiles[index];
-    if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
-       t.playable==playable&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description))return t;
+    ++hand_tile_clock;HandTile*slot=nullptr;
+    // A holder index changes when a neighbour leaves the hand. Reuse the
+    // visual key across hand, play and flight instead of repainting every
+    // shifted slot, while keeping the same ten 80 x 112 cache allocations.
+    for(auto&t:hand_tiles){
+        if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
+           t.playable==playable&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;return t;}
+        if(!slot||(!t.valid&&slot->valid)||(t.valid==slot->valid&&int32_t(t.used-slot->used)<0))slot=&t;
+    }
+    auto&t=*slot;t.used=hand_tile_clock;
     t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
     for(int i=0;i<HandTileW*HandTileH;i++){t.pixels[i]=0;t.alpha[i]=0;}
@@ -36,10 +46,11 @@ static const HandTile& hand_tile(Canvas&c,int index,int instance){
     if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
     t.valid=true;return t;
 }
-static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused){
-    int sn=p.sine<0?-p.sine:p.sine;
-    int half_w=((p.cosine*HandTileW+sn*HandTileH)*p.scale)/(2*1024*1024)+2;
-    int half_h=((sn*HandTileW+p.cosine*HandTileH)*p.scale)/(2*1024*1024)+2;
+static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255){
+    if(p.scale<=0)return;
+    int sn=p.sine<0?-p.sine:p.sine,cs=p.cosine<0?-p.cosine:p.cosine;
+    int half_w=((cs*HandTileW+sn*HandTileH)*p.scale)/(2*1024*1024)+2;
+    int half_h=((sn*HandTileW+cs*HandTileH)*p.scale)/(2*1024*1024)+2;
     int left=mx(0,p.cx-half_w),right=mn(320,p.cx+half_w);
     int top=mx(0,p.cy-half_h),bottom=mn(240,p.cy+half_h);
     // Inverse affine sampling: only integer additions in the inner loop.
@@ -63,7 +74,9 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused){
         for(int x=left;x<right;x++,u+=du,v+=dv){
             if(u<0||v<0||u>=HandTileW*1024||v>=HandTileH*1024)continue;
             int at=(v/1024)*HandTileW+u/1024;
-            c.paint(y*c.pitch+x,t.pixels[at],t.alpha[at]);
+            uint16_t color=t.pixels[at];
+            if(brightness<255)color=uint16_t((((color&0xf81fu)*brightness/255u)&0xf81fu)|(((color&0x07e0u)*brightness/255u)&0x07e0u));
+            c.paint(y*c.pitch+x,color,t.alpha[at]);
         }
     }
 }
@@ -180,33 +193,46 @@ static void combat_screen(Canvas&c){
     const auto hand=a.combat_hand();
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
+    if(ui_cards_bound(a))a.combat_cards.set_focus(focused&&hand.count?hand.ids[selected]:-1);
     // At rest every card remains on the arc. Focus is earned by hover or keys,
     // not by the cursor index merely existing. The battlefield stays visible.
     for(int i=0;i<hand.count;i++){
-        auto p=hand_pose(hand.count,i,false);
-        if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i,hand.ids[i]),p,false);
+        auto p=a.combat_hand_pose(unsigned(i),focused&&i==selected);
+        if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,hand.ids[i]),p,false);
         auto r=hand_rail(hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
-        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
+        if(a.combat_hand_settled(unsigned(i),focused&&i==selected))
+            c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
+        else{
+            const int sn=CombatCardMotion::magnitude(p.sine),cs=CombatCardMotion::magnitude(p.cosine);
+            const int w=(cs*HandTileW+sn*HandTileH)*p.scale/(1024*1024),h=(sn*HandTileW+cs*HandTileH)*p.scale/(1024*1024);
+            c.hit(p.cx-w/2,p.cy-h/2,w,h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
+        }
     }
     if(hand.count){
         if(focused){
-            draw_hand_tile(c,hand_tile(c,selected,hand.ids[selected]),hand_pose(hand.count,selected,true),true);
-            auto p=hand_pose(hand.count,selected,true);
+            auto p=a.combat_hand_pose(unsigned(selected),true);
+            draw_hand_tile(c,hand_tile(c,hand.ids[selected]),p,true);
             c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
         }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
         for(int i=0;i<hand.count;i++){
+            if(!a.combat_hand_settled(unsigned(i),focused&&i==selected))continue;
             auto r=hand_rail(hand.count,i);
             c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
+    if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites){
+        if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.id>=s.card_count)continue;
+        draw_hand_tile(c,hand_tile(c,v.id,&v),CombatCardMotion::pose(v),false,a.combat_cards.brightness(v));
+    }
     combat_energy(c);
     native_end_turn(c,s.phase==Phase::Combat&&!a.combat_actions_locked());
-    combat_pile(c,A_DrawPile,s.draw.count,8,215,1);
-    combat_pile(c,A_DiscardPile,s.discard.count,291,215,2);
-    if(s.exhaust.count)combat_pile(c,A_ExhaustPile,s.exhaust.count,293,106,3);
+    const auto piles=a.combat_pile_counts();
+    combat_pile(c,A_DrawPile,piles.draw,8,215,1);
+    combat_pile(c,A_DiscardPile,piles.discard,291,215,2);
+    if(piles.exhaust)combat_pile(c,A_ExhaustPile,piles.exhaust,293,106,3);
     // Dense power rows own both their pixels and pointer targets. Prefer the
     // usual side, then the opposite gutter; omit this redundant shortcut
     // label if neither fits. Keyboard Detail and card clicks still work.

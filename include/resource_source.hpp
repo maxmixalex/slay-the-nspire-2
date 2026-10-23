@@ -58,6 +58,8 @@ struct ResourceReadStats {
 // refetched glyph/string pages each frame even with no animation group reads.
 // Small reads use a round-robin page cache. Reads of at least one full page
 // bypass it, so decoding a large picture does not evict directory/string data.
+// A small range crossing two cold pages fills both with one source call. The
+// same sixty-four pages are contiguous; this adds no read-ahead or pixel pool.
 // Source reset invalidates every page. No API returns a pointer into the cache.
 class ResourceReader {
 public:
@@ -80,14 +82,16 @@ public:
         if(source_.progress)source_.progress(source_.context,stage,completed,total);
     }
 private:
-    struct Page {uint32_t offset{};uint16_t used{};bool valid{};uint8_t data[PageSize]{};};
+    struct Page {uint32_t offset{};uint16_t used{};bool valid{};};
     ResourceSource source_{};
     bool valid_{};
     mutable Page pages_[PageCount]{};
+    mutable uint8_t page_bytes_[PageCount*PageSize]{};
     mutable uint32_t next_page_{};
     mutable ResourceReadStats stats_{};
     bool fetch(uint32_t offset,void* dst,uint32_t count)const;
     const Page* page(uint32_t offset)const;
+    bool read_cold_pair(uint32_t offset,void* dst,uint32_t count)const;
 };
 static_assert(sizeof(ResourceReader)<=257*1024,"Resource reader must stay within its fixed 257 KiB budget");
 } // namespace spire

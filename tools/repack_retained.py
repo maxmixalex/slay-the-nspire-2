@@ -3,7 +3,8 @@
 
 The existing animation groups are copied. Image pixels, palette entries, alpha,
 scanline geometry, frame order and timing are preserved byte for byte. English
-and Chinese reuse one grouping plan so their artwork remains shareable.
+and Chinese reuse one grouping plan so their artwork remains shareable. The
+optional title scene appends three common images and selects NSP2/21.
 """
 from __future__ import annotations
 
@@ -18,6 +19,10 @@ import time
 import content_tiles as tiles
 
 VERSION = 20
+TITLE_VERSION = 21
+TITLE_AUXILIARY = 1262
+TITLE_CLIPS = 1705
+TITLE_IMAGES = ('backdrop', 'foreground', 'particles')
 DESCRIPTOR = struct.Struct('<iIII')
 DEFAULT_GROUP_BYTES = 128 * 1024
 BASE_IMAGE_COUNT = 66  # Stable A_Count prefix in include/assets.hpp.
@@ -129,7 +134,7 @@ def plan_images(source, group_bytes=DEFAULT_GROUP_BYTES, replacements=None, fast
     return batches
 
 
-def write_pack(source, batches, replacements=None):
+def write_pack(source, batches, replacements=None, output_version=VERSION):
     replacements = replacements or {}
     tiled = tiles.TileReader(source)
     ni, _ng, _ns, _nc, _nk, _nu = source.counts
@@ -212,7 +217,7 @@ def write_pack(source, batches, replacements=None):
             strings[payload] = append(payload)
         struct.pack_into('<II', out, source.string_at + i * 8, strings[payload], length)
     tiles.require(len(out) <= tiles.FILE_LIMIT, 'Repacked file exceeds runtime bound')
-    struct.pack_into('<I', out, 4, VERSION)
+    struct.pack_into('<I', out, 4, output_version)
     struct.pack_into('<I', out, 12, len(out))
     struct.pack_into('<I', out, 36, 0)
     return bytes(out), dict(retained_groups=group_count, grouped_image_entries=grouped_images,
@@ -222,9 +227,9 @@ def write_pack(source, batches, replacements=None):
         fast_image_entries=fast_images, fast_unique_images=fast_unique, fast_stored_bytes=fast_bytes)
 
 
-def verify(source, result, replacements=None):
+def verify(source, result, replacements=None, output_version=VERSION):
     replacements = replacements or {}
-    target = tiles.PackView(result, source.counts[-1], versions=(VERSION,))
+    target = tiles.PackView(result, source.counts[-1], versions=(output_version,))
     old, new = tiles.TileReader(source), tiles.TileReader(target)
     tiles.require(source.counts == target.counts and source.clips == target.clips and
                   source.cards == target.cards and source.aux == target.aux, 'Catalog or timing changed')
@@ -262,8 +267,13 @@ def verify(source, result, replacements=None):
                 catalog_and_timing_unchanged=True, exact_raw_byte_comparison=True)
 
 
-def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=None, fast_images='ui'):
+def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=None, fast_images='ui',
+           output_version=VERSION):
+    tiles.require(output_version in (VERSION, TITLE_VERSION), 'Unsupported retained output version')
     source = view(data)
+    if output_version == TITLE_VERSION:
+        tiles.require(source.counts[2:] == (8192, TITLE_CLIPS, 558, TITLE_AUXILIARY + 3),
+                      'NSP2/21 needs the complete three-image title extension')
     replacements = replacements or {}
     for image_id, (width, height, fmt, raw) in replacements.items():
         tiles.require(0 <= image_id < len(source.images) and source.images[image_id][3] != 6 and
@@ -279,15 +289,44 @@ def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=Non
                     _w, _h, fmt, raw = replacements.get(image_id) or source.image_raw(image_id)
                     tiles.require(fmt == record.fmt and raw == record.raw,
                                   'Language retained artwork differs; rebuild both languages together')
-    result, statistics = write_pack(source, batches, replacements)
-    proof = verify(source, result, replacements)
-    receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=19, output_version=VERSION,
+    result, statistics = write_pack(source, batches, replacements, output_version)
+    proof = verify(source, result, replacements, output_version)
+    receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=19, output_version=output_version,
         input_bytes=len(data), output_bytes=len(result), saved_bytes=len(data) - len(result),
         group_target_bytes=group_bytes, codec_raw_bound_bytes=tiles.GROUP_LIMIT,
         fast_image_policy=fast_images,
         resident_group_cache_bytes=5 * 1024 * 1024, new_resident_pixel_bytes=0,
         startup_payload_scans=0, **statistics, verification=proof)
     return result, receipt, batches
+
+
+def append_title_art(data, manifest_path):
+    """Append the title planes without replacing the compendium's old image.
+
+    Relocation happens while the input still has the v19 tile directory. The
+    following retained repack adds its v20 cost table and writes version 21.
+    No runtime consumes the intermediate append-only v19 byte array.
+    """
+    from patch_feedback_assets import patch_pack
+    manifest_path = Path(manifest_path)
+    manifest = json.loads(manifest_path.read_text())
+    tiles.require(manifest.get('output_version') == TITLE_VERSION and
+                  manifest.get('added_auxiliary') == ['TitleBackdrop', 'TitleForeground', 'TitleParticles'] and
+                  manifest.get('added_images') == 3 and manifest.get('added_clips') == 0,
+                  'Expected the three-image original title scene')
+    rows = []
+    for key, dimensions in zip(TITLE_IMAGES, ((320, 240), (320, 240), (270, 216))):
+        row = manifest['images'][key]
+        tiles.require((row['width'], row['height']) == dimensions, 'Unexpected title image geometry: ' + key)
+        rows.append(dict(width=row['width'], height=row['height'], format=row.get('stored_format', row['format']),
+                         file=row.get('stored_file', row['raw_file']), bytes=row.get('stored_bytes', row['bytes'])))
+    result, receipt = patch_pack(data, dict(images=rows, clips=[]), manifest_path.parent,
+        base_aux=TITLE_AUXILIARY, base_clips=TITLE_CLIPS, added_aux=3, expected_added_clips=0,
+        input_version=19, output_version=19)
+    receipt.update(preserved_title_background_auxiliary=0, first_added_auxiliary=TITLE_AUXILIARY,
+                   image_names=list(TITLE_IMAGES), final_output_version=TITLE_VERSION,
+                   resident_pixel_pool_added_bytes=0)
+    return result, receipt
 
 
 def main():
@@ -299,6 +338,8 @@ def main():
     parser.add_argument('--fast-images', choices=('ui', 'cards', 'none'), default='ui',
                         help='Keep card/base/auxiliary UI images in their existing fast single-image encoding')
     parser.add_argument('--logo-atlas', type=Path)
+    parser.add_argument('--title-background', type=Path,
+                        help='Append private original background, foreground and particles; output NSP2/21')
     args = parser.parse_args()
     sources = {language: tiles.private_path(getattr(args, language), 'Input pack') for language in ('eng', 'zhs')}
     output = tiles.private_path(args.output, 'Private output directory')
@@ -313,7 +354,14 @@ def main():
         replacements[4] = (logo['width'], logo['height'], logo['format'], raw)
     started, batches, receipts = time.monotonic(), None, {}
     for language, path in sources.items():
-        result, receipt, batches = repack(path.read_bytes(), args.group_kib * 1024, batches, replacements, args.fast_images)
+        data = path.read_bytes()
+        title_receipt = None
+        if args.title_background:
+            data, title_receipt = append_title_art(data, tiles.private_path(args.title_background, 'Private title scene'))
+        result, receipt, batches = repack(data, args.group_kib * 1024, batches, replacements, args.fast_images,
+                                         TITLE_VERSION if title_receipt else VERSION)
+        if title_receipt:
+            receipt['title_scene'] = title_receipt
         tiles.atomic_bytes(output / ('retained-' + language + '.nsp'), result)
         receipts[language] = receipt
         print(json.dumps(dict(language=language, **receipt), sort_keys=True), flush=True)

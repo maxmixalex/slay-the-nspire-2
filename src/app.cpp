@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "enemy_command_timing.hpp"
 #include "rich_text.hpp"
 #include "status.hpp"
 #include "combat_layout.hpp"

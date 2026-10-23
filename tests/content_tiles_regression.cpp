@@ -558,7 +558,7 @@ void malformed_container(){
     label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
     const auto image_field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject_image(name,std::move(b));};
-    image_field("v14 cannot decode tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,21);
+    image_field("v14 cannot decode tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,22);
     struct Mutation {unsigned offset,value;const char*name;};
     const Mutation header[]={
         {0,0,"codec magic"},{4,2,"codec version"},{8,8,"tile side"},{12,16,"dictionary property"},

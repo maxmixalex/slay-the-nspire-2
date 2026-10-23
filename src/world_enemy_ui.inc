@@ -21,10 +21,12 @@ static uint32_t ui_enemy_ticks(const App&a,int clip){
  unsigned ms=row?row->duration_ms:uint32_t(c.count)*c.frame_ms;return (ms+32)/33? (ms+32)/33:1;
 }
 static uint32_t ui_enemy_move_wait(const App&a,EnemyId kind,int move){
+ const auto audited=enemy_command_timing(kind,move,a.fast_mode);
+ if(audited.effect!=EnemyCommandTiming::None)return (audited.total_ms+32u)/33u;
  // Audited command waits, not skeleton durations. AttackCommand waits for
  // its anim delay and Damage; Block/Power add their own waits. Keep this
- // deliberately scoped to the two models whose complete solo moves were
- // inspected in the pinned DLL. Other models retain their clip fallback.
+ // deliberately scoped to the inspected solo moves. The shared table above
+ // adds Leaf Slimes and Damp Cultist; other models retain their clip fallback.
  unsigned normal=0,fast=0;
  if(kind==EnemyId::Nibbit){
   switch(move){case 0:normal=350;fast=175;break;case 1:normal=600;fast=275;break;case 2:normal=850;fast=350;break;}

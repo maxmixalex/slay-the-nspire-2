@@ -88,6 +88,7 @@
     "Preserve all 200 stars and both groups of 40 fog particles, with screen clipping before drawing.",
     "Use the original 7 fog drawings as random per-particle choices, not a moving seven-frame flipbook: the authored animation speed is zero.",
     "Cosmetic sample seeds and continuous analytic fog integration are calculator adaptations; no gameplay State or RNG is used.",
-    "Store only one 270x216 particle atlas and one 320x240 foreground; use existing image-cache storage and no new pixel pool."
+    "Store one 270x216 particle atlas and separate 320x240 backdrop/foreground in existing image-cache storage; no new pixel pool.",
+    "Keep the old flattened U_TitleBackground unchanged for the collection so opening a card page does not read or draw extra title layers."
   ]
 }

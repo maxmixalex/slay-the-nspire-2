@@ -119,8 +119,73 @@ static void title_glow_curve(){
  const auto first=title_scene::glow_sample(0),peak=title_scene::glow_sample(1508);
  CHECK(first.width==135&&first.height==86&&first.brightness==89&&peak.width==164&&peak.height==104);
 }
+static void title_particle_curves(){
+ // Numerical integration of the original Hermite damping/constant gravity
+ // is independent of the runtime's fixed-point closed-form antiderivative.
+ for(unsigned age:{0u,1000u,100000u,200000u,399999u,400000u})for(unsigned damping:{0u,32768u,65535u}){
+  const double seconds=age/1000.,dt=seconds/8000.;double distance=0;
+  for(unsigned i=0;i<8000;++i){const double t=(i+.5)*dt,u=t/400.,u2=u*u,u3=u2*u;
+   const double curve=(2*u3-3*u2+1)+(-2*u3+3*u2)*100+(u3-u2)*130.445;
+   const double acceleration=.1-double(damping)/65535.*.001*curve;
+   distance+=(seconds-t)*acceleration*dt;
+  }
+  CHECK(std::abs(double(title_scene::fog_displacement(age,damping))/65536.-distance)<.5);
+ }
+ for(unsigned time:{0u,1u,1294u,4999u,5000u,100001u,399999u,400000u,0xffffffffu}){
+  for(unsigned i=0;i<title_scene::StarCount;++i){const auto p=title_scene::star_sample(i,time);
+   CHECK(p.width>=1&&p.width<=2&&p.width==p.height&&p.opacity<=255);
+   CHECK(p.x>=-182&&p.x<=486&&p.y>=71&&p.y<=206);
+   CHECK(p.red<=71&&p.green<=214&&p.blue<=224);
+  }
+  for(unsigned layer=0;layer<2;++layer)for(unsigned i=0;i<title_scene::FogCount;++i){const auto p=title_scene::fog_sample(layer,i,time);
+   CHECK(p.width>=101&&p.width<=135&&p.height>=40&&p.height<=54&&p.frame<7);
+   CHECK(p.y>=155&&p.y+p.height<=219&&p.red==74&&p.green==90&&p.blue==99);
+   CHECK(p.opacity==(layer?255u:112u));
+  }
+ }
+ // Animation speed is zero: one birth chooses a shape, not a flipbook.
+ for(unsigned layer=0;layer<2;++layer)for(unsigned i=0;i<title_scene::FogCount;++i){
+  const auto first=title_scene::fog_sample(layer,i,1),later=title_scene::fog_sample(layer,i,1001);
+  CHECK(first.frame==later.frame&&first.width==later.width&&first.height==later.height);
+ }
+}
+static void title_background_layers(){
+ CHECK(a.content.version()==TitleEffectsContentVersion);
+ const auto backdrop=a.content.image(a.content.ui_image(U_TitleBackdrop));CHECK(backdrop.pixels&&backdrop.w==320&&backdrop.h==240);
+ const auto particles=a.content.image(a.content.ui_image(U_TitleParticles));CHECK(particles.pixels&&particles.w==270&&particles.h==216);
+ const auto foreground=a.content.image(a.content.ui_image(U_TitleForeground));CHECK(foreground.pixels&&foreground.w==320&&foreground.h==240);
+ std::vector<uint16_t>colors(ScreenW*ScreenH);std::vector<uint8_t>opaque(colors.size());
+ if(foreground.format==4){
+  const uint8_t*run=foreground.pixels;
+  for(unsigned y=0;y<240;++y){const unsigned spans=run[0]|unsigned(run[1])<<8;run+=2;
+   for(unsigned s=0;s<spans;++s){const unsigned x=run[0]|unsigned(run[1])<<8,n=run[2]|unsigned(run[3])<<8,stride=run[4]?3u:2u;run+=5;
+    for(unsigned j=0;j<n;++j,run+=stride){const unsigned at=y*320+x+j;colors[at]=uint16_t(run[0]|unsigned(run[1])<<8);opaque[at]=stride==2||run[2]==255;}
+   }
+  }
+ }else for(unsigned at=0;at<colors.size();++at){
+  const uint8_t*pixel=foreground.palette?foreground.palette+2*foreground.pixels[at]:foreground.pixels+2*at;
+  colors[at]=uint16_t(pixel[0]|unsigned(pixel[1])<<8);opaque[at]=!foreground.alpha||foreground.alpha[at]==255;
+ }
+ a.map_clock_ms=50;a.render();std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);capture("frontend-title-particles-50ms");
+ unsigned visible_changes=0,covered=0;
+ for(unsigned time:{1250u,25050u,100050u}){
+  a.map_clock_ms=time;a.render();
+  for(unsigned y=0;y<ScreenH;++y)for(unsigned x=0;x<ScreenW;++x){const unsigned at=y*ScreenW+x;
+   const bool logo=x>=33&&x<204&&y>=27&&y<132;
+   if(a.pixels[at]!=first[at]){CHECK(logo||(y>=70&&y<219));visible_changes+=!logo;}
+   // No menu, logo or footer occupies this right-hand foreground region.
+   // Fully opaque buildings must remain above both particle emitters.
+   if(x>=224&&y>=70&&y<225&&opaque[at]){CHECK(a.pixels[at]==colors[at]);++covered;}
+  }
+  if(time==1250)capture("frontend-title-glow-bright");
+  if(time==25050)capture("frontend-title-particles-25s");
+  if(time==100050)capture("frontend-title-particles-100s");
+ }
+ CHECK(visible_changes>0&&covered>0);CHECK(a.content.healthy());unchanged();
+}
 static void title_animation_is_bounded_and_repeats(){
  empty_disk();start();snapshot();a.return_to_title();a.menu=0;a.map_clock_ms=50;a.render();
+ if(a.content.version()>=TitleEffectsContentVersion){title_background_layers();return;}
  const auto logo=a.content.image(A_Logo);
  const bool glow=logo.h==title_scene::AtlasHeight;
  if(logo.w!=title_scene::AtlasWidth||(!glow&&logo.h!=title_scene::LegacyAtlasHeight))return; // Historical static logo.
@@ -159,7 +224,7 @@ static void main_menu_and_continue(){
  press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
- press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
+ press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
  start(Character::Silent,2001);put_disk();start(Character::Defect,2002);snapshot();a.return_to_title();CHECK(a.title_menu_count()==5);menu_rows(5);
@@ -253,6 +318,7 @@ static void refreshed_continue_metadata(){
  press(HitKind::Menu,0);CHECK(!a.title&&a.game.character==Character::Regent);same_saved(expected);
  CHECK(a.saved_character==Character::Regent&&a.saved_seed==6403&&a.saved_run_seed==actual_seed&&a.saved_ascension==7&&a.saved_region==unsigned(reference::ActKind::Underdocks));
  CHECK(a.saved_hp==actual_hp&&a.saved_max_hp==actual_max_hp&&a.saved_gold==a.game.gold&&a.saved_floor==a.game.world.total_floor&&a.saved_world&&!a.saved_practice);
+ CHECK(a.saved_current_region==unsigned(reference::ActKind::Underdocks));
  CHECK(a.run_save_linked);
  player_kill(a.game,true);resolve_pending(a.game);unsigned d=deletes;CHECK(a.finish_saved_run()&&!disk_exists&&deletes==d+1);
 }
@@ -326,7 +392,7 @@ static void modal_isolation_and_fast_mode(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
- title_glow_curve();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
+ title_glow_curve();title_particle_curves();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
  canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
  ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");

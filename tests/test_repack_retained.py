@@ -1,14 +1,17 @@
-"""Public synthetic coverage for lossless NSP2/20 retained groups."""
+"""Public synthetic coverage for lossless NSP2/20 groups and the v21 title extension."""
 from pathlib import Path
+import json
 import random
 import struct
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import content_tiles as tiles
 import repack_retained as retained
 import split_content as split
+from lz4_block import encode as lz4_encode
 
 
 def stored(raw):
@@ -20,8 +23,10 @@ def stored(raw):
     return bytes(result) + b'\0'
 
 
-def fixture(language='eng', glyphs=1, incompressible=False, tail_image=False):
+def fixture(language='eng', glyphs=1, incompressible=False, tail_image=False, world_profile=False):
     ni, ng, ns, nc, nk, nu = 67 if tail_image else 6, glyphs, 6111, 1, 1, 1
+    if world_profile:
+        ns, nc, nk, nu = 8192, 1705, 558, 1262
     base = 40 + ni * 16 + ng * 16 + ns * 8 + nc * 16 + nk * 16 + nu * 4
     table, descriptors = base + 64, base + 80
     out = bytearray(descriptors + 16)
@@ -63,7 +68,8 @@ def fixture(language='eng', glyphs=1, incompressible=False, tail_image=False):
     offset = append(language.encode() + b'\0')
     for i in range(ns):
         struct.pack_into('<II', out, string_at + i * 8, offset, 3)
-    tiles.CLIP.pack_into(out, string_at + ns * 8, 5, 1, 100, 0, 0, 0)
+    for i in range(nc):
+        tiles.CLIP.pack_into(out, string_at + ns * 8 + i * 16, 5, 1, 100, 0, 0, 0)
     tiles.GLOBAL.pack_into(out, base, b'TIL1', 1, 16, 14, 1, 1, 1, 1,
         descriptors, table, 770, 1, tiles.GROUP_LIMIT, tiles.ENCODED_LIMIT, 0, 0)
     tiles.DESCRIPTOR.pack_into(out, descriptors, base, 0, 0, len(index))
@@ -140,6 +146,53 @@ class RetainedPackTest(unittest.TestCase):
         self.assertEqual(receipt['fast_image_policy'], 'ui')
         self.assertGreater(receipt['fast_stored_bytes'], 0)
         self.assertEqual(receipt['retained_groups'], 1)
+
+    def test_title_extension_preserves_compendium_logo_clips_and_shared_art(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary)
+            rows, expected = {}, {}
+            for key, width, height in (('backdrop', 320, 240), ('foreground', 320, 240), ('particles', 270, 216)):
+                # Empty scanlines exercise format 5 while remaining generated
+                # test data, independent of every private source texture.
+                raw = bytes(height * 2)
+                encoded = struct.pack('<BI', 4, len(raw)) + lz4_encode(raw)
+                (path / (key + '.bin')).write_bytes(encoded)
+                rows[key] = dict(width=width, height=height, format=4, raw_file=key + '.raw', bytes=len(raw),
+                    stored_file=key + '.bin', stored_format=5, stored_bytes=len(encoded))
+                expected[key] = (width, height, 4, raw)
+            manifest = dict(images=rows, output_version=21, added_images=3, added_clips=0,
+                            added_auxiliary=['TitleBackdrop', 'TitleForeground', 'TitleParticles'])
+            manifest_path = path / 'title-background.json'
+            manifest_path.write_text(json.dumps(manifest))
+            outputs, batches = {}, None
+            for language, glyphs in (('eng', 1), ('zhs', 3)):
+                old = fixture(language, glyphs=glyphs, world_profile=True)
+                extended, receipt = retained.append_title_art(old, manifest_path)
+                self.assertTrue(receipt['unchanged_old_payload'])
+                self.assertEqual(receipt['appended_images'], 3)
+                self.assertEqual(receipt['appended_clips'], 0)
+                output, report, batches = retained.repack(extended, batches=batches, output_version=21)
+                source = retained.view(old)
+                target = tiles.PackView(output, 1265, versions=(21,), profile=(558, 8192, 1705, 1265))
+                self.assertEqual(target.aux[:1262], source.aux)
+                self.assertEqual(target.aux[1262:], [6, 7, 8])
+                self.assertEqual(target.clips, source.clips)
+                self.assertEqual(target.cards, source.cards)
+                for i in range(5):
+                    self.assertEqual(target.image_raw(i), source.image_raw(i))
+                for i, key in enumerate(retained.TITLE_IMAGES):
+                    self.assertEqual(target.image_raw(6 + i), expected[key])
+                    self.assertEqual(target.images[6 + i][3], 5)
+                self.assertEqual(tiles.TileReader(target).image_raw(5), tiles.TileReader(source).image_raw(5))
+                self.assertEqual(report['output_version'], 21)
+                outputs[language] = output
+            common, locales, _ = split.split(outputs)
+            for language in outputs:
+                self.assertEqual(split.reconstruct(common, locales[language], language), outputs[language])
+            manifest['added_auxiliary'] = ['TitleForeground', 'TitleParticles']
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaises(ValueError):
+                retained.append_title_art(fixture(world_profile=True), manifest_path)
 
 
 if __name__ == '__main__':

@@ -20,11 +20,14 @@
 #include "world_map_act_intro.hpp"
 #include "health_bar.hpp"
 #include "combat_feedback.hpp"
+#include "combat_card_motion.hpp"
 #include "combat_status.hpp"
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
 #include "title_scene.hpp"
+#include "title_assets.hpp"
+#include "title_particles.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -80,8 +83,8 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>RetainedContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        if(version_<ContentVersion||version_>TitleEffectsContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
@@ -183,7 +186,7 @@ struct App {
     Character saved_character=Character::Ironclad;
     uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
     uint64_t saved_run_seed=0;
-    uint8_t saved_ascension=0,saved_region=0;bool saved_world=false,saved_practice=false;
+    uint8_t saved_ascension=0,saved_region=0,saved_current_region=0;bool saved_world=false,saved_practice=false;
     bool run_save_linked=false;
     SavedRunIdentity confirmed_run{};
     void forget_run_checkpoint();
@@ -314,7 +317,8 @@ struct App {
     EnemyPresentation enemy_presentation[MaxEnemies]{};
     CombatFeedback combat_feedback{};
     CombatStatus combat_status{};
-    void begin_combat_feedback();
+    CombatCardMotion combat_cards{};
+    void begin_combat_feedback(int manual_card=-1);
     void finish_combat_feedback();
     void sync_combat_feedback();
     void observe_combat_effect(const State&,Effect);
@@ -323,6 +327,10 @@ struct App {
     EnemyIntent combat_intent(int slot)const;
     int combat_energy(bool maximum=false)const;
     CombatHand::Cards combat_hand()const;
+    HandPose combat_hand_pose(unsigned index,bool focused=false)const;
+    bool combat_hand_settled(unsigned index,bool focused=false)const;
+    CombatCardMotion::Counts combat_pile_counts()const;
+    void sync_combat_cards();
     int combat_status_amount(int actor,int id,bool label=false)const;
     int combat_status_auxiliary(int actor,int power)const;
     EnemyId combat_status_source(int actor,int power)const;

@@ -23,8 +23,9 @@ struct CombatHand {
   for(unsigned i=0;i<a.count;++i)if(a.ids[i]!=b.ids[i])return false;return true;
  }
  void begin(const Pile&p){shown=observed=capture(p);head=count=0;overflow=false;}
- void append(const Pile&p,uint32_t at){
-  const Cards cards=capture(p);if(same(observed,cards))return;observed=cards;
+ void append(const Pile&p,uint32_t at){append(capture(p),at);}
+ void append(const Cards&cards,uint32_t at){
+  if(same(observed,cards))return;observed=cards;
   if(overflow)return;
   if(count>head&&cues[count-1].at==at){cues[count-1].cards=cards;return;}
   if(count==Capacity&&head){for(unsigned i=head;i<count;++i)cues[i-head]=cues[i];count-=head;head=0;}

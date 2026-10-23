@@ -96,7 +96,7 @@ static void malformed(){
     // A relabeled header must agree with the actual original marker as well.
     CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::Chinese));
     f=Fixture();CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()-1),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::English));
-    {Fixture future(false,21);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
+    {Fixture future(false,22);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
     File c{&f.common},l{&f.locale};CHECK(joined.open(c.source(),l.source(),ResourceLanguage::English));
     c.fail_at=64+10;uint8_t out[64];CHECK(!joined.read(f.prefix-4,out,32));
     c.fail_at=-1;l.fail_at=96+f.prefix+2;CHECK(!joined.read(f.prefix+f.art-4,out,16));
@@ -122,7 +122,7 @@ static void actual(const char* common,const char* locale,const char* original,co
 int main(int argc,char**argv){
     if(argc==5)actual(argv[1],argv[2],argv[3],argv[4]);
     else if(argc!=1){std::fprintf(stderr,"usage: split_resource_regression [common locale original eng|zhs]\n");return 2;}
-    for(unsigned version:{17u,18u,19u,20u})for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
+    for(unsigned version:{17u,18u,19u,20u,21u})for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
     malformed();
     std::printf("split resources: %u checks passed; adapter=%zu bytes\n",checks,sizeof(SplitResourceSource));
 }

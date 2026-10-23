@@ -11,11 +11,13 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import struct
 
 import numpy as np
 from PIL import Image
 
 from animation import Skeleton, geometry, load_textures, pose, raster
+from lz4_block import encode as lz4_encode
 from world_scene_assets import SceneLoader, _node_matrix, _property, _scale, _translate
 
 
@@ -181,14 +183,18 @@ def main():
         rows = {}
         for key, image in background.items():
             raw = encode(image)
+            compressed = struct.pack('<BI', 4, len(raw)) + lz4_encode(raw)
+            stored, stored_format = (compressed, 5) if len(compressed) < len(raw) else (raw, 4)
             image.save(output/('title-'+key+'.png'))
             (output/('title-'+key+'.raw')).write_bytes(raw)
+            (output/('title-'+key+'.bin')).write_bytes(stored)
             rows[key] = dict(width=image.width, height=image.height, format=4,
-                             raw_file='title-'+key+'.raw', png_file='title-'+key+'.png', bytes=len(raw))
+                             raw_file='title-'+key+'.raw', png_file='title-'+key+'.png', bytes=len(raw),
+                             stored_file='title-'+key+'.bin', stored_format=stored_format, stored_bytes=len(stored))
         scene_manifest = dict(reference=PROFILE['reference'], source_scene=PROFILE['source_scene'],
                               background=PROFILE['background'], images=rows,
-                              replaces_auxiliary=0, added_auxiliary=['TitleForeground', 'TitleParticles'],
-                              added_images=2, added_clips=0, output_version=21,
+                              preserved_auxiliary=0, added_auxiliary=['TitleBackdrop', 'TitleForeground', 'TitleParticles'],
+                              added_images=3, added_clips=0, output_version=21,
                               adaptations=PROFILE['background_adaptations'])
         (output/'title-background.json').write_text(json.dumps(scene_manifest, indent=2)+'\n')
     print(json.dumps({key: manifest[key] for key in ('width', 'height', 'format', 'bytes',

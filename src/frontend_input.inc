@@ -24,10 +24,11 @@ static void remember_saved(App&a,const State&s){
  a.saved_floor=s.world.active?s.world.total_floor:s.floor;a.saved_hp=s.hp;a.saved_max_hp=s.max_hp;a.saved_gold=s.gold;
  a.saved_run_seed=s.world.active?s.world.run_seed:0;a.saved_ascension=s.world.active?s.world.ascension:0;
  a.saved_region=s.world.active?s.world.rooms[0].region:0;
+ a.saved_current_region=s.world.active?s.world.rooms[s.world.act_index].region:0;
 }
 static void forget_saved(App&a){
  a.has_save=false;a.saved_character=Character::Ironclad;a.saved_seed=0;
- a.saved_floor=a.saved_hp=a.saved_max_hp=a.saved_gold=0;a.saved_run_seed=0;a.saved_ascension=a.saved_region=0;
+ a.saved_floor=a.saved_hp=a.saved_max_hp=a.saved_gold=0;a.saved_run_seed=0;a.saved_ascension=a.saved_region=a.saved_current_region=0;
  a.saved_world=a.saved_practice=false;
 }
 static bool read_saved(App&a){

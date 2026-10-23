@@ -35,14 +35,14 @@ struct Fixture {
     std::vector<Bytes> raw;
     unsigned base=0,costs=0,group=0,group_size=0;
     std::vector<unsigned> descriptors;
-    Fixture(){
+    explicit Fixture(unsigned version=20){
         const unsigned strings=LocaleStringCount,clips=MerchantEffectsAnimationKinds;
-        const unsigned aux=MerchantEffectsAuxiliaryCount;
+        const unsigned aux=version>=21?unsigned(TitleEffectsAuxiliaryCount):unsigned(MerchantEffectsAuxiliaryCount);
         base=40+Images*16+16+strings*8+clips*16+CardKinds*16+aux*4;
         const unsigned table=base+64;costs=table+16;
         const unsigned tile_descriptor=costs+((Images+1)&~1u);
         bytes.resize(tile_descriptor+16);
-        put(bytes,0,0x3250534e);put(bytes,4,20);put(bytes,8,0x41cef1ea);
+        put(bytes,0,0x3250534e);put(bytes,4,version);put(bytes,8,0x41cef1ea);
         put(bytes,16,Images);put(bytes,20,1);put(bytes,24,strings);put(bytes,28,clips);put(bytes,32,CardKinds);
         const unsigned fields[]={0x314c4954,1,16,14,1,1,1,1,tile_descriptor,table,770,1,524288,617323,costs,Images};
         for(unsigned i=0;i<16;++i)put(bytes,base+i*4,fields[i]);
@@ -87,6 +87,11 @@ struct Fixture {
         for(unsigned i=0;i<strings;++i){put(bytes,at+i*8,text);put(bytes,at+i*8+4,3);}
         at+=strings*8;
         for(unsigned i=0;i<clips;++i){put(bytes,at+i*16+4,1,2);put(bytes,at+i*16+6,100,2);}
+        if(version>=21){
+            const unsigned aux_at=at+clips*16+CardKinds*16;
+            put(bytes,aux_at+U_TitleBackdrop*4,2);put(bytes,aux_at+U_TitleForeground*4,3);
+            put(bytes,aux_at+U_TitleParticles*4,4);
+        }
         put(bytes,12,unsigned(bytes.size()));
     }
 };
@@ -105,10 +110,13 @@ Picture picture(const Content&content,unsigned image,const Fixture&fixture,unsig
     const uint8_t*data=which==2||which==3?p.palette:p.pixels;
     CHECK(data&&!std::memcmp(data,fixture.raw[which].data(),fixture.raw[which].size()));CHECK(content.healthy());return p;
 }
-void roundtrip(bool streamed){
-    Fixture f;Provider source{&f.bytes};auto content=std::make_unique<Content>();
+void roundtrip(bool streamed,unsigned version){
+    Fixture f(version);Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(streamed?content->open(source.source()):content->open(f.bytes.data(),f.bytes.size()));
     CHECK(content->current_profile());const auto initial=source.read_bytes;
+    CHECK(content->version()==version);
+    CHECK(content->ui_image(U_TitleBackground)==0);
+    for(unsigned i=0;i<3;++i)CHECK(content->ui_image(U_TitleBackdrop+i)==(version>=21?int(i+2):-1));
     CHECK(content->image_cache_pages(4)==1);CHECK(source.read_bytes==initial);
     const Picture first=picture(*content,0,f,0);const auto after_first=source.read_bytes;
     for(unsigned i=1;i<5;++i)picture(*content,i,f,i);
@@ -119,6 +127,12 @@ void roundtrip(bool streamed){
     const Picture tile=content->image(Fixture::Images-1);CHECK(tile.pixels&&tile.w==1&&tile.h==1&&tile.format==4);
     CHECK(tile.pixels[0]==0&&tile.pixels[1]==0);picture(*content,0,f,0);
     CHECK(content->open(source.source()));picture(*content,3,f,3);
+    if(version>=21){
+        Fixture historical;Provider old{&historical.bytes};CHECK(content->open(old.source())&&content->current_profile());
+        CHECK(content->version()==20&&content->ui_image(U_TitleBackground)==0);
+        for(unsigned i=0;i<3;++i)CHECK(content->ui_image(U_TitleBackdrop+i)==-1);
+        picture(*content,0,historical,0);
+    }
 }
 void requested_bounds(){
     Fixture f;auto content=std::make_unique<Content>();Bytes changed=f.bytes;
@@ -138,4 +152,4 @@ void requested_bounds(){
     changed=f.bytes;put(changed,f.base+56,0xffffffff);CHECK(!content->open(changed.data(),changed.size()));
 }
 }
-int main(){roundtrip(false);roundtrip(true);requested_bounds();std::printf("%u retained-content checks passed\n",checks);}
+int main(){for(unsigned version:{20u,21u})for(bool streamed:{false,true})roundtrip(streamed,version);requested_bounds();std::printf("%u retained-content checks passed\n",checks);}

@@ -11,6 +11,40 @@ static void frontend_number(TextBuffer&b,const char*label,int value){
  if(last&&last!=' '&&last!='\t'&&last!='\n')b.ch(' ');
  b.number(value);
 }
+// A clipped view of a full-width atlas band scales one authored sprite. The
+// view shares decoded storage; no per-particle image request or bitmap exists.
+static void title_particle(Canvas&c,Picture band,const title_scene::ParticleSample&p,int source_x,int source_width,unsigned mode){
+ const int left=mx(0,p.x),right=mn(c.clip_w,p.x+p.width),top=mx(0,p.y),bottom=mn(c.clip_h,p.y+p.height);
+ if(!p.opacity||left>=right||top>=bottom||!band.pixels)return;
+ Canvas layer=c;layer.pixels+=top*c.pitch+left;
+ if(layer.coverage)layer.coverage+=top*c.pitch+left;
+ layer.clip_w=right-left;layer.clip_h=bottom-top;
+ layer.tint_red=uint8_t(div255(unsigned(c.tint_red)*p.red));
+ layer.tint_green=uint8_t(div255(unsigned(c.tint_green)*p.green));
+ layer.tint_blue=uint8_t(div255(unsigned(c.tint_blue)*p.blue));
+ layer.picture(band,p.x-left-source_x*p.width/source_width,p.y-top,
+     int(band.w)*p.width/source_width,p.height,p.opacity,mode);
+}
+static void title_background(Canvas&c,bool particles=true){
+ auto&a=c.a;
+ if(!particles||a.content.version()<TitleEffectsContentVersion){c.ui(U_TitleBackground,0,0);return;}
+ c.ui(U_TitleBackdrop,0,0);
+ if(particles){
+  const auto atlas=a.content.image(a.content.ui_image(U_TitleParticles));
+  if(atlas.w==title_scene::ParticleAtlasWidth&&atlas.h==title_scene::ParticleAtlasHeight){
+   const auto dot=Canvas::picture_rows(atlas,title_scene::DotAtlasY,title_scene::DotSize);
+   for(unsigned i=0;i<title_scene::StarCount;++i)
+    title_particle(c,dot,title_scene::star_sample(i,a.map_clock_ms),title_scene::DotAtlasX,title_scene::DotSize,presentation::Normal);
+   Picture fog[4];for(unsigned row=0;row<4;++row)fog[row]=Canvas::picture_rows(atlas,int(row)*title_scene::FogFrameHeight,title_scene::FogFrameHeight);
+   for(unsigned layer=0;layer<2;++layer)for(unsigned i=0;i<title_scene::FogCount;++i){
+    const auto particle=title_scene::fog_sample(layer,i,a.map_clock_ms);
+    title_particle(c,fog[particle.frame/2],particle,int(particle.frame%2)*title_scene::FogFrameWidth,
+        title_scene::FogFrameWidth,presentation::Add);
+   }
+  }
+ }
+ c.ui(U_TitleForeground,0,0);
+}
 static void title_logo(Canvas&c){
  const auto logo=c.a.content.image(A_Logo);
  if(logo.w!=title_scene::AtlasWidth||(logo.h!=title_scene::LegacyAtlasHeight&&logo.h!=title_scene::AtlasHeight)){c.picture(A_Logo,3,5);return;}
@@ -28,7 +62,7 @@ static void title_logo(Canvas&c){
      title_scene::FireWidth,title_scene::FireHeight);
 }
 static void title_screen(Canvas&c){
-    auto&a=c.a;c.ui(U_TitleBackground,0,0);title_logo(c);
+    auto&a=c.a;title_background(c);title_logo(c);
     const int count=a.title_menu_count();
     for(int i=0;i<count;i++){
         const int y=title_scene::menu_top(count)+i*title_scene::MenuRowHeight;
@@ -53,10 +87,13 @@ static void title_screen(Canvas&c){
         c.picture(portrait,212,145,18,18);
         const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
         c.text_fitted(*name?name:ch.name,234,147,78,12,White);
-        char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);c.text_fitted(row,213,169,98,10,White);
-        row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶 "),a.saved_ascension);c.text_fitted(row,213,183,98,10,White);
-        row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,212,201,10,11);c.text_fitted(row,224,201,41,10,White);
-        row[0]=0;b.n=0;b.number(a.saved_gold);c.picture(A_Coin,267,201,10,11);c.text_fitted(row,280,201,32,10,White);
+        char row[160]{};TextBuffer b{row,sizeof row,0,&a.content};
+        if(a.saved_world){const char*act=a.content.world_title("acts",map_colors(a.saved_current_region).region);if(*act){b.text(act);b.text(" [blue]- ");}else b.text("[blue]");}
+        else b.text("[blue]");
+        frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);b.text("[/blue]");c.text_fitted(row,213,169,98,10,White);
+        if(a.saved_ascension){row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶 "),a.saved_ascension);c.text_fitted(row,213,183,98,10,White);}
+        row[0]=0;b.n=0;b.text("[red]");b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);b.text("[/red]");c.picture(A_Heart,212,201,10,11);c.text_fitted(row,224,201,41,10,White);
+        row[0]=0;b.n=0;b.text("[gold]");b.number(a.saved_gold);b.text("[/gold]");c.picture(A_Coin,267,201,10,11);c.text_fitted(row,280,201,32,10,White);
     }
     c.text("nSpire II 0.17",235,229,8,White,83);
 }
@@ -136,7 +173,7 @@ static void character_screen(Canvas&c){
     }
 }
 static void library_screen(Canvas&c){
-    auto&a=c.a;a.hit_count=0;c.ui(U_TitleBackground,0,0);c.dim(0,0,320,240,225);
+    auto&a=c.a;a.hit_count=0;title_background(c,false);c.dim(0,0,320,240,225);
     c.centered("图鉴",0,1,320,16,Gold);c.close_button(294,3);
     const char* tabs[]={"卡牌","遗物","药水"};
     const int totals[]={(int)a.library_items(),WorldRelicKinds,PotionKinds};
