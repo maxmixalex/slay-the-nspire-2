@@ -5,6 +5,12 @@ static const char* frontend_label(const App&a,FrontMenu item){
  static const char*fallback[]={"单人游戏","继续游戏","放弃游戏","图鉴","设置","退出游戏"};
  return frontend_text(a,"main_menu_ui",keys[item],fallback[item]);
 }
+static void frontend_number(TextBuffer&b,const char*label,int value){
+ b.text(label);RichReader reader(label);RichChar character{};uint32_t last=0;
+ while(reader.next(character))last=character.codepoint;
+ if(last&&last!=' '&&last!='\t'&&last!='\n')b.ch(' ');
+ b.number(value);
+}
 static void title_logo(Canvas&c){
  const auto logo=c.a.content.image(A_Logo);
  if(logo.w!=title_scene::AtlasWidth||logo.h!=title_scene::AtlasHeight){c.picture(A_Logo,3,5);return;}
@@ -39,8 +45,8 @@ static void title_screen(Canvas&c){
         c.picture(portrait,212,145,18,18);
         const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
         c.text_fitted(*name?name:ch.name,234,147,78,12,White);
-        char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text_fitted(row,213,169,98,10,White);
-        row[0]=0;b.n=0;b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶"));b.ch(' ');b.number(a.saved_ascension);c.text_fitted(row,213,183,98,10,White);
+        char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"),a.saved_floor);c.text_fitted(row,213,169,98,10,White);
+        row[0]=0;b.n=0;frontend_number(b,frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶"),a.saved_ascension);c.text_fitted(row,213,183,98,10,White);
         row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,212,201,10,11);c.text_fitted(row,224,201,41,10,White);
         row[0]=0;b.n=0;b.number(a.saved_gold);c.picture(A_Coin,267,201,10,11);c.text_fitted(row,280,201,32,10,White);
     }
