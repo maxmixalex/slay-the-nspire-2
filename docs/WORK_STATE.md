@@ -1,6 +1,20 @@
-# Work state — 2026-10-23
+# Work state — 2026-10-24
 
-## Current: UI3 delivered; native, sanitizer, browser and emulator acceptance closed
+## Current: UI4 cold-card and original presentation follow-up
+
+The user requested continued original UI comparison and fixes, alongside runtime
+performance. UI3 remains the verified delivery on main at 2385ff81; it is retained
+unchanged while this next source stage develops on work/0.17-world-parity.
+Three parallel worktrees address cold multi-card I/O/cache efficiency, original
+title particle/layer composition, and original card movement/combat timing.
+The first checkpoint adds an optional offset-only trace to the existing real-pack
+card benchmark so the measured 1,646.8 ms Chinese cold page can be attributed to
+selected image/glyph/string requests. It changes no production behavior and is
+not counted as a performance fix. The next gate is an actual bounded-cache or
+access improvement with matching pixels, saves and comparable target timing.
+Original assets remain private, and integrity-only startup work remains removed.
+
+## Verified UI3 delivery: native, sanitizer, browser and emulator acceptance closed
 
 The delivered runtime is **`ead747dcdffded08d641445a811af48a4fafd1de`**;
 final resources use converter **`3843e8e626317da0c1508fab02a2ed4a627f9fdd`**;
