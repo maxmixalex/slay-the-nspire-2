@@ -1,40 +1,92 @@
 # Work state — 2026-10-24
 
-## Current: UI4 cold-card and original presentation follow-up
+## Current: UI4 final ARM review found a title input regression; delivery paused
 
-The user requested continued original UI comparison and fixes, alongside runtime
-performance. UI3 remains the verified delivery on main at 2385ff81; it is retained
-unchanged while this next source stage develops on work/0.17-world-parity.
-Three parallel worktrees address cold multi-card I/O/cache efficiency, original
-title particle/layer composition, and original card movement/combat timing.
-The isolated performance source is now pushed/read back at
-`ebf1212e71eb39f85e7fe282851b5ac05fc510f8`, branch
-`checkpoint/ui4-cache-isolated`. Its bounded text cache removes the Chinese
-selection page's 15,448 reads / 63,275,008 bytes over 180 stable frames. Both
-languages and all three card scenes now have zero stable-window I/O. Cold
-image reads avoid a repeated compressed header fetch; adjacent cold pages
-coalesce only when the original cache replacement order already permits it.
-No cache pool, font pre-read or integrity scan was added. Exact six-scene pixels,
-canonical saves, actual font/string data and targeted sanitizer checks passed.
-See `validation-ui4-card-cache-0.17.json` and
-`validation-ui4-cold-ranges-0.17.json`; fluctuating desktop CPU measurements
-are not treated as physical-calculator speed evidence. The isolated ARM
-launcher builds at 984,515 bytes / 16,302,240-byte allocation. Its controlled
-Firebird comparison is still in progress; a route which stayed in the OS and
-retrieved an old report is explicitly excluded.
+The user requested continued original UI comparison and implementation, runtime
+speed and smaller storage, using parallel agents. The current UI4 candidate is
+**`9a554fe04e63b35546be708a81c85f41864a307f`**. The v21 private resources were
+converted at **`65baee5b44c11e1fa1aad4f603024aa8189a7e1a`**. Later report edits
+do not change either input. UI3 remains on main at 2385ff81 until the title
+regression below is corrected and the final emulator flow closes. Original assets remain private; integrity-only
+startup scans remain removed.
 
-The combined f1dea1e source adds original title background/foreground/particle
-layers, bounded original card motion, and audited Leaf Slime/Damp Cultist waits.
-The actual v21 bilingual frontend passes and the resources add 138,222 shared
-installation bytes while retaining all pre-existing artwork/text/timing.
-The f1dea1e Actions run passed conversion and 72/74 sanitizer suites, but exposed
-two combat UI assertions and an ARM title signed-division link failure. The
-next source corrects duplicate focused-card hit regions, accounts for the
-original awaited draws before Toasty Mittens' choice, and keeps title integer
-division within the supported calculator ABI. These fixes still require their
-own frozen execution; f1dea1e is not a successful release. Final native/WASM,
-ordinary emulator flow and matching artifact packaging remain open.
-Original assets remain private, and integrity-only startup work remains removed.
+Three independent worktrees implemented bounded text caching/cold range reads,
+original title composition, and original card movement/combat waits. The text
+cache removes the Chinese selection page's 15,448 reads / 63,275,008 bytes over
+180 stable frames. Both languages and all three card scenes now have zero
+stable-window I/O. Compressed images avoid a repeated header read, and adjacent
+cold pages coalesce only when the unchanged replacement order permits it.
+No cache pool, font pre-read or integrity scan was added. Six scene pairs have
+exact pixels and canonical saves. See `validation-ui4-card-cache-0.17.json` and
+`validation-ui4-cold-ranges-0.17.json`.
+
+The isolated cache checkpoint **`ebf1212e71eb39f85e7fe282851b5ac05fc510f8`**
+is preserved on `checkpoint/ui4-cache-isolated`. Its accepted Firebird route
+reduced the collection's largest render sample from **1,646.820 to 1,508.392 ms**
+(8.4%). Four collection/focus/detail captures and the save are byte-identical.
+Collection aggregate reads fell from 151 to 76; these are the entire scene's
+reads, not the single cold frame's. The baseline used its prepared pre-app OS
+snapshot, while the candidate cold-booted and installed Ndless normally.
+Inputs and durations match, but identical OS cache histories and repeated
+device trials are not established. Failed USB/OS-only routes are excluded.
+The approximately 1.5-second first-entry pause is still unresolved. See
+`validation-ui4-cache-firebird-0.17.json`.
+
+The title now layers original background, 200 stars, two groups of 40 fog
+particles, foreground, Logo and menu. Existing artwork, Logo and animation
+payloads remain unchanged; three new shared images add 138,222 installation
+bytes. Native-size opaque sparse copying and bounded integer math preserve
+the rendered pixels while reducing the new title's median warm host render
+means by about 26% in the measured interleaved runs. This was insufficient on
+ARM: fresh ordinary 9a/v21 Firebird title rendering took 146 samples at
+**226.867 ms mean / 205.444 ms minimum / 243.652 ms maximum**, with **zero
+resource reads**. Baseline 80 ms key taps remained on the title; 300 ms presses
+responded. First render was 1,227.203 ms. This is a real usability regression,
+not a successful calculator acceptance. Title CPU optimization is now the
+immediate blocker; retain particle count, artwork, layers and pixel output.
+The observed 26% host reduction is not handheld FPS or evidence that this
+regression was resolved. Title background Spine remains a sampled static
+pose. See `validation-ui4-title-0.17.json`.
+
+Actual draws now enter sequentially; manual play, return and discard follow
+their visible flight/tween. Focus, hit regions, details and pile counts follow
+the displayed card position/time. Toasty Mittens' selection waits for the
+original awaited draw commands. Audited Leaf Slime S/M and Damp Cultist moves
+use original Normal/Fast command boundaries while animation tails can continue.
+Opening deal, exhaust/shuffle/generated-card entrance, autoplay choreography
+and other model-specific waits remain separate work. See
+`validation-ui4-combat-motion-0.17.json` and `enemy-timing-ui4-0.17.md`.
+
+[Actions run 39994866228](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39994866228)
+passed **74/74 ASan/UBSan suites**, **135 + 53 Python tests**, and ARM/WASM builds.
+Final ARM is **997,144 bytes**, allocation **16,328,520 bytes**, leaving 448,696
+below 16 MiB. WASM is 5,488,962 bytes with fixed 16 MiB memory. Both actual
+languages pass 19,016 world-UI checks and **23 scenarios / 649 exact native-WASM
+frames / 30 exact saves** each. The linked ARM division helper passes 5,249
+instruction-level ABI vectors. Earlier ARM link, duplicate-focus and fixture
+failures remain documented; they are not successful releases. See
+`validation-ui4-runtime-0.17.json`.
+
+The final offline HTML passed ordinary file-URL start, S/O, reload Continue,
+cross-language continuation and language cancellation with zero page errors
+or external requests. Its visible warm collection measurement took 301 render
+samples at 1.0083 ms mean / 3.3 ms max with zero resource reads. The initial
+Chromium launch was blocked before page load; the same artifact and script
+passed outside that restrictive process sandbox. See
+`validation-ui4-browser-0.17.json`.
+
+Matching candidate artifacts are a **76,816,629-byte ZIP** and **115,707,908-byte
+offline HTML**. All archive members and embedded WASM/common/locale bytes match
+the selected inputs; complete notices and licenses are included. Bilingual
+installation is **82,236,069 bytes before saves**, 151,684 above UI3. Do not
+deliver these candidate files as accepted. Final ordinary bilingual Firebird
+execution, file saving and main fast-forward are still open. The new fresh
+performance file was successfully retrieved, but a later USB save read timed
+out; its containing journal ended failed and must not be relabeled passed.
+See `delivery-ui4-0.17.json` for the current delivery status.
+The 30–40 MB installation target, physical-device FPS and overall 95% original
+UI acceptance remain unestablished. Continue with concrete original HUD gaps
+and the measured cold multi-card pause after this stage closes.
 
 ## Verified UI3 delivery: native, sanitizer, browser and emulator acceptance closed
 

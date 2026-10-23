@@ -1,0 +1,210 @@
+{
+  "schema": 1,
+  "stage": "UI4 combat card motion targeted native acceptance",
+  "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "reference": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea",
+    "private_inputs": [
+      "owner-supplied assembly",
+      "owner-supplied scenes"
+    ],
+    "published_original_payloads": false
+  },
+  "platform": {
+    "compiler": "Clang 18",
+    "build_type": "Release",
+    "x11": false,
+    "runtime": "native",
+    "emulator_acceptance_in_this_receipt": false,
+    "physical_calculator_measurement": false
+  },
+  "bounded_presentation": {
+    "native_size_bytes": 4312,
+    "compile_time_limit_bytes": 6144,
+    "motion_cue_capacity": 64,
+    "sprite_capacity": 30,
+    "pile_count_cue_capacity": 32,
+    "additional_card_pixel_buffers": 0,
+    "core_state_or_save_format_changes": false,
+    "gameplay_rng_changes": false
+  },
+  "final_results": [
+    {
+      "name": "card_motion_regression",
+      "profile": "synthetic numerical oracle",
+      "checks": 1079,
+      "passed": true
+    },
+    {
+      "name": "combat_ui_regression",
+      "profile": "existing synthetic input/focus",
+      "checks": 1228,
+      "passed": true
+    },
+    {
+      "name": "world_ui_regression",
+      "profile": "synthetic",
+      "checks": 6658,
+      "passed": true
+    },
+    {
+      "name": "world_ui_regression",
+      "profile": "v21 title resources",
+      "locale": "eng",
+      "checks": 19016,
+      "passed": true,
+      "capture_directory": "ui4-motion-v21-eng"
+    },
+    {
+      "name": "world_ui_regression",
+      "profile": "v21 title resources",
+      "locale": "zhs",
+      "checks": 19016,
+      "passed": true,
+      "capture_directory": "ui4-motion-v21-zhs"
+    }
+  ],
+  "exercised_behavior": [
+    "normal/fast manual Defend leaves the actual hand, moves to play, then begins an independent discard flight",
+    "discard counter excludes the in-flight arrival until its actual destination boundary",
+    "Battle Trance reveals three real draw/Add transitions at separate cumulative 250/100 ms boundaries",
+    "a full ten-card hand produces neither a phantom card nor an invented draw wait",
+    "Inflame applies after the 250 ms play tween and respects the original 300/150 ms minimum effect-section interval",
+    "Prepared and Toasty selections remain unavailable until preceding actual draw/Add waits complete",
+    "Knowledge then Toasty suspend and resume the same command timeline without restarting the turn banner",
+    "Retain, load/reset, bounded overflow, future-hand hit exclusion, and direct-core serialized result equivalence",
+    "focused moving card has one actual hit region; upper and lower face hover stay on the same visible card",
+    "audited Leaf Slime S/M and Damp Cultist effect/end boundaries, including one/two Slimed discard increments",
+    "independent floating-point curve/response oracles, skipped-frame equivalence and RGB565 per-channel modulation"
+  ],
+  "movement_capture_names": [
+    "card-play.ppm",
+    "card-play-fast.ppm",
+    "card-discard-flight.ppm",
+    "card-discard-flight-fast.ppm",
+    "card-draw-second.ppm",
+    "card-draw-second-fast.ppm"
+  ],
+  "final_journals": [
+    {
+      "journal": "ui4-motion-final-build-67e0e2033ea0.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "started_at": "2026-10-23T17:25:42.460305+00:00",
+      "ended_at": "2026-10-23T17:26:10.630724+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-motion-final-targets-a9265e17d663.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "started_at": "2026-10-23T17:26:24.773203+00:00",
+      "ended_at": "2026-10-23T17:26:25.643678+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-world-v21-eng-9dbe402facf4.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "started_at": "2026-10-23T17:26:35.565929+00:00",
+      "ended_at": "2026-10-23T17:26:37.588654+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-world-v21-zhs-9026b778719a.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "started_at": "2026-10-23T17:26:35.563347+00:00",
+      "ended_at": "2026-10-23T17:26:37.637340+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    }
+  ],
+  "prior_failed_journals": [
+    {
+      "journal": "ui4-motion-build-55368faa2014.json",
+      "checkpoint": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+      "started_at": "2026-10-23T17:08:48.376491+00:00",
+      "ended_at": "2026-10-23T17:09:05.569651+00:00",
+      "status": "failed",
+      "returncode": 2,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-motion-world-synthetic-6ddca6754851.json",
+      "checkpoint": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+      "started_at": "2026-10-23T17:11:17.484380+00:00",
+      "ended_at": "2026-10-23T17:11:18.261541+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-motion-existing-regressions-d2ada1894c81.json",
+      "checkpoint": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+      "started_at": "2026-10-23T17:11:22.837362+00:00",
+      "ended_at": "2026-10-23T17:11:33.114628+00:00",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-motion-fixed-targets-2bb6207723e7.json",
+      "checkpoint": "1ac8a17aa30b94536b06d83404484a2eda97ea36",
+      "started_at": "2026-10-23T17:23:11.453331+00:00",
+      "ended_at": "2026-10-23T17:23:12.224247+00:00",
+      "status": "failed",
+      "returncode": 8,
+      "source_changed": false
+    }
+  ],
+  "failure_resolutions": [
+    {
+      "issue": "GCC 13 internal compiler error in unchanged world_relics.cpp, gimple_add_tmp_var",
+      "resolution": "same source built and exercised with Clang 18; no core workaround"
+    },
+    {
+      "issue": "duplicate focused-card hit region in new motion rendering",
+      "resolution_commit": "02b773833c9c1c1e0574a42768999efa13acb2d1",
+      "resolution": "one topmost actual face region; preserve lower moving face until stable rail; existing combat UI assertions unchanged"
+    },
+    {
+      "issue": "Toasty fixture assumed instantaneous five-card draw",
+      "resolution_commit": "02b773833c9c1c1e0574a42768999efa13acb2d1",
+      "resolution": "original SetupPlayerTurn awaits Draw before AfterPlayerTurnStart; exact five-Add delay asserted"
+    },
+    {
+      "issue": "new manual-play fixture started with zero energy after enemy-only setup",
+      "resolution": "local manual-motion setup supplies max_energy; production behavior and existing enemy fixtures unchanged",
+      "resolution_commit_prefix": "56aa9de"
+    }
+  ],
+  "limitations": [
+    "check totals include assertions and screenshot I/O checks, not distinct gameplay features",
+    "native screenshots and fixed-clock tests do not establish handheld frame rate",
+    "exhaust erosion/sparks, power-removal VFX, character trails, shuffle backs, generated-card entrances and complete autoplay choreography remain outside this stage",
+    "individual card-command waits and complete dynamic card-property history are not exhaustively projected",
+    "first-combat deal remains on the existing preparation boundary",
+    "private screenshots and execution logs remain private; no original assets are included in this receipt"
+  ],
+  "visual_review": {
+    "independent_reviewer": "title_ui agent",
+    "frames": 12,
+    "locales": [
+      "eng",
+      "zhs"
+    ],
+    "observations": [
+      "no visible RGB channel spill in the dimmed flying card",
+      "single-card play/discard position and rotation follow the exercised stage",
+      "Battle Trance remains in the play area during awaited draw commands; second arriving hand card starts at the draw pile",
+      "no full future hand appears early",
+      "bilingual card names, short descriptions and energy remain readable"
+    ],
+    "scope": "the listed still frames only; interaction and timing evidence comes from the executed regressions"
+  }
+}

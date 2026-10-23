@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "resource_checkpoint": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
+  "packaging_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "delivery": {
+    "calculator_zip": {
+      "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-calculator.zip",
+      "bytes": 76816629,
+      "members": [
+        {
+          "path": "nSpire2.tns",
+          "bytes": 997144
+        },
+        {
+          "path": "nSpire2.common.tns",
+          "bytes": 74894324
+        },
+        {
+          "path": "nSpire2.eng.tns",
+          "bytes": 1780951
+        },
+        {
+          "path": "nSpire2.zhs.tns",
+          "bytes": 4563650
+        },
+        {
+          "path": "COPYING",
+          "bytes": 35149
+        },
+        {
+          "path": "NOTICE.md",
+          "bytes": 8099
+        },
+        {
+          "path": "licenses/Go-BSD-3-Clause.txt",
+          "bytes": 1479
+        },
+        {
+          "path": "licenses/OkHSV-Godot-MIT.txt",
+          "bytes": 1406
+        },
+        {
+          "path": "licenses/Noto-Boot-OFL.txt",
+          "bytes": 4330
+        },
+        {
+          "path": "README.txt",
+          "bytes": 3240
+        },
+        {
+          "path": "BUILD-INFO.json",
+          "bytes": 387
+        }
+      ]
+    },
+    "offline_html": {
+      "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-offline.html",
+      "bytes": 115707908,
+      "self_contained": true,
+      "shared_artwork_copies": 1,
+      "locales": [
+        "eng",
+        "zhs"
+      ]
+    },
+    "both_user_files_saved": false,
+    "delivery_status": "Candidate rejected for final calculator delivery: fresh ARM title mean 226.867 ms and missed 80 ms key taps. Title CPU fix and complete ordinary emulator acceptance required before saving or main sync."
+  },
+  "installed_bytes": {
+    "launcher": 997144,
+    "common": 74894324,
+    "eng": 1780951,
+    "zhs": 4563650,
+    "both_locales_before_saves": 82236069,
+    "english_only_before_saves": 77672419,
+    "chinese_only_before_saves": 80455118,
+    "resource_reduction_from_v19": 12544438,
+    "increase_over_ui3_resources": 138222,
+    "increase_over_ui3_install": 151684
+  },
+  "verification": {
+    "packaging_journal": {
+      "file": "ui4-package-a0f372ce8f97.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:30:34.883263+00:00",
+      "ended_at": "2026-10-23T17:30:39.618950+00:00"
+    },
+    "zip_members_match_selected_inputs": true,
+    "embedded_input_checks": {
+      "mode": true,
+      "wasm_bytes_match": true,
+      "common_bytes_match": true,
+      "two_locales": true,
+      "eng_bytes_match": true,
+      "zhs_bytes_match": true,
+      "NOTICE.md_complete": true,
+      "COPYING_complete": true,
+      "licenses/Go-BSD-3-Clause.txt_complete": true,
+      "licenses/OkHSV-Godot-MIT.txt_complete": true,
+      "licenses/Noto-Boot-OFL.txt_complete": true
+    },
+    "browser_report": "validation-ui4-browser-0.17.json",
+    "firebird_report": "validation-ui4-firebird-0.17.json",
+    "ci_report": "validation-ui4-runtime-0.17.json"
+  },
+  "installation": [
+    "Keep the launcher, common pack and installed locale packs from this release together.",
+    "Either or both locale files use the same gameplay save.",
+    "Keep nSpire2.sav.tns and language preferences when updating. Old launchers may reject new saves.",
+    "If TI OS needs replacement space, remove only the old common pack before installing the new matching set.",
+    "The previous complete nSpire2.nsp.tns is unnecessary alongside the split resources."
+  ],
+  "limits": [
+    "No overall original-PC framebuffer differential or 95 percent UI acceptance.",
+    "Physical-calculator frame rate is unmeasured.",
+    "Opening deal, exhaust/shuffle/generated-card entrance, autoplay choreography, full title Spine motion and other enemy command offsets remain separate fidelity work.",
+    "Cold Chinese collection entry remains around 1.5 seconds in the isolated emulator comparison.",
+    "The 30 to 40 MB installation target is not reached."
+  ],
+  "public_repository_scope": "Source and reviewed metadata only; original assets, embedded HTML, screenshots and saves are excluded."
+}

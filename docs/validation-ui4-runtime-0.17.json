@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "runtime_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "resource_checkpoint": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
+  "reference": "v0.111.0 / 41cef1ea",
+  "scope": "Integrated UI4 ARM/WASM builds, original card motion/enemy waits, actual bilingual packs and cross-backend replay. Separate reports cover title, cache, browser, Firebird and delivery.",
+  "runtime_artifacts": {
+    "ndless": {
+      "path": "dist/nSpire2.tns",
+      "bytes": 997144,
+      "sha256": "ae99f4f966e553ee6bd1b66c4adecc68e7af5283c10b3c4071443928724845ee",
+      "allocation_bytes": 16328520,
+      "allocation_limit_bytes": 16777216,
+      "remaining_allocation_bytes": 448696,
+      "absolute_relocations": 30935
+    },
+    "wasm": {
+      "path": "build/web/nSpire2.wasm",
+      "bytes": 5488962,
+      "sha256": "0944ae6039d1c1eda57618f448fb29560caba0d6cc9a45696cf67714474f600a",
+      "fixed_memory_bytes": 16777216
+    }
+  },
+  "local_targeted_native": {
+    "compiler": "Clang 18",
+    "card_motion_checks": 1079,
+    "combat_ui_checks": 1228,
+    "synthetic_world_ui_checks": 6658,
+    "status": "passed",
+    "full_native_suite_evidence": "GitHub ASan/UBSan job below; do not relabel targeted local runs as a complete Release suite."
+  },
+  "actual_world_ui": {
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "checks_per_language": 19016,
+    "status": "passed",
+    "counts_include_repeated_and_capture_assertions": true,
+    "report": "validation-ui4-combat-motion-0.17.json"
+  },
+  "actual_native_wasm": {
+    "languages": [
+      "eng",
+      "zhs"
+    ],
+    "scenarios_per_language": 23,
+    "frame_matches_per_language": 649,
+    "save_matches_per_language": 30,
+    "native_and_wasm_equal": true,
+    "original_game_framebuffer_claim": false
+  },
+  "linked_arm_division": {
+    "vectors": 5249,
+    "cpu": "ARM926",
+    "quotient_remainder": "exact Python integer oracle",
+    "preserved": "r4-r11 and stack",
+    "elf_sha256": "b159c5738806a8107584acff5866ea071612437f99783349b4a2f24a1d885c72",
+    "limitation": "Instruction-level linked ABI validation, not calculator runtime/performance."
+  },
+  "journal_receipts": [
+    {
+      "file": "ui4-final-arm-accepted-03e1432c07ef.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:25:14.969757+00:00",
+      "ended_at": "2026-10-23T17:25:47.637260+00:00"
+    },
+    {
+      "file": "ui4-final-wasm-accepted-6690e91e64bc.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:25:16.293388+00:00",
+      "ended_at": "2026-10-23T17:25:50.509283+00:00"
+    },
+    {
+      "file": "ui4-backend-native-eng-d8b15abf95f3.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:27:54.044943+00:00",
+      "ended_at": "2026-10-23T17:28:04.593687+00:00"
+    },
+    {
+      "file": "ui4-backend-native-zhs-0e9167f8f014.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:27:54.036035+00:00",
+      "ended_at": "2026-10-23T17:28:04.336839+00:00"
+    },
+    {
+      "file": "ui4-backend-wasm-eng-c5fc56ef6e5e.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:29:32.151611+00:00",
+      "ended_at": "2026-10-23T17:29:36.134578+00:00"
+    },
+    {
+      "file": "ui4-backend-wasm-zhs-7f3333523dc8.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:29:32.145029+00:00",
+      "ended_at": "2026-10-23T17:29:36.090429+00:00"
+    },
+    {
+      "file": "ui4-linked-arm-division-ready-4cb1ccd1bf2f.json",
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-23T17:30:52.868429+00:00",
+      "ended_at": "2026-10-23T17:30:53.238651+00:00"
+    }
+  ],
+  "github_actions": {
+    "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39994866228",
+    "status": "completed",
+    "conclusion": "success",
+    "native": {
+      "job_id": 120555997397,
+      "configuration": "Debug O1, ASan and UBSan, frame pointers retained",
+      "passed_suites": 74,
+      "failed_suites": 0,
+      "elapsed_seconds": 306.85
+    },
+    "conversion": {
+      "job_id": 120555997267,
+      "discovered_python_tests": 135,
+      "named_python_tests": 53,
+      "result": "passed"
+    },
+    "portable": {
+      "job_id": 120555996819,
+      "ndless_arm": "passed",
+      "wasm_without_private_assets": "passed"
+    }
+  },
+  "retained_failures": [
+    {
+      "source": "f1dea1e",
+      "actions_run": 39992525090,
+      "result": "72/74 native sanitizer suites; conversion passed; portable ARM link failed.",
+      "resolution": "Removed duplicate focused-card hit region; retained focus rail after settling. Toasty Mittens fixture now waits the original awaited draw commands. Title bounded signed coordinates avoid unsupported signed-64 division. Final unchanged assertions and complete suites passed at the checkpoint above."
+    },
+    {
+      "source": "2612c555",
+      "failure": "Manual play fixture inherited enemy-only setup with zero energy.",
+      "resolution": "Test-only setup uses normal max energy; no production affordability rule or assertion was weakened."
+    },
+    {
+      "journal": "ui4-linked-arm-division-b59ad5d34383",
+      "failure": "Missing optional Unicorn package stopped the test before execution.",
+      "resolution": "Pinned Unicorn 2.1.2 was installed in a private dependency directory; unchanged linked test passed 5,249 vectors."
+    },
+    {
+      "failure": "GCC 13 compiler internal error in the unchanged world_relics translation unit.",
+      "resolution": "Final native execution uses Clang 18; no claim that the GCC issue is fixed."
+    },
+    {
+      "source": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "failure": "Final ordinary Firebird title: 146 render samples mean 226.867 ms, min 205.444 ms, max 243.652 ms, no resource I/O; 80 ms baseline key taps missed, 300 ms keypress responded.",
+      "resolution": "Pending exact-pixel scaled sparse/particle CPU optimization. No final calculator acceptance or delivery claimed.",
+      "journal_note": "Fresh performance file was retrieved successfully; a later USB save read timed out, so the overall install/flow journal ended failed."
+    }
+  ],
+  "related_reports": [
+    "validation-ui4-title-0.17.json",
+    "validation-ui4-combat-motion-0.17.json",
+    "validation-ui4-card-cache-0.17.json",
+    "validation-ui4-cold-ranges-0.17.json",
+    "validation-ui4-cache-firebird-0.17.json",
+    "validation-ui4-browser-0.17.json",
+    "validation-ui4-firebird-0.17.json",
+    "delivery-ui4-0.17.json"
+  ],
+  "limits": [
+    "No overall original-PC framebuffer differential or 95 percent UI acceptance.",
+    "Physical-calculator frame rate is unmeasured.",
+    "Opening deal, exhaust/shuffle/generated-card entrance, autoplay choreography, full title Spine motion and other enemy command offsets remain separate fidelity work.",
+    "Cold Chinese collection entry remains around 1.5 seconds in the isolated emulator comparison.",
+    "The 30 to 40 MB installation target is not reached."
+  ],
+  "public_repository_scope": "Source and reviewed metadata only; original assets, embedded HTML, screenshots and saves are excluded.",
+  "calculator_acceptance_status": "Blocked by title CPU/short-key regression; native/browser/portable results above remain their stated scope."
+}

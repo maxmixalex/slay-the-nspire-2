@@ -36,10 +36,12 @@ Neither canonical enemy settlement nor State, saved RNGs or save format changes.
 
 The actual UI regression covers both speed modes, all three models and both
 moves, including impact boundaries, next-enemy scheduling, retained animation
-tails and exact saves against direct core settlement. This section passed
-inside the first combined run, which later failed at the separately recorded
-Toasty Mittens fixture. Only the subsequent closed whole-suite result can be
-called a complete UI acceptance pass.
+tails and exact saves against direct core settlement. The first combined run
+later failed at the separately recorded Toasty Mittens fixture. Final frozen
+9a554fe runs passed the complete actual-resource world-UI suite in both
+languages (19,016 checks each), and Actions 39994866228 passed all 74 native
+ASan/UBSan suites. See `validation-ui4-runtime-0.17.json` and
+`validation-ui4-combat-motion-0.17.json`; the earlier failure is retained.
 
 Other enemy models retain their previous scheduling. Multi-hit intervals,
 hook-dependent waits and individual card VFX need their own original-command

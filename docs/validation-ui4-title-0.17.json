@@ -5,9 +5,10 @@
   "scope": "Original title background stars/fog and layer order, Continue facts/colors, NSP2/21 compatibility and bounded native cost",
   "source": {
     "assets": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
-    "native_runtime": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
-    "arm_division_fix_local": "f7a0eb7",
-    "arm_fix_validation": "Pending root persistence and the subsequent ARM/numeric-oracle receipt; f1 native results do not close the ARM link failure."
+    "native_runtime": "9a554fe04e63b35546be708a81c85f41864a307f",
+    "arm_fix_validation": "46,266 exact numeric comparisons against the previous host implementation pass at 9a, including all particle fields at 137 timestamps and bounded signed coordinates. The root final ARM build receipt remains separate.",
+    "baseline_native_runtime": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+    "arm_division_fix": "f7a0eb7, persisted within 1ac8a17aa30b94536b06d83404484a2eda97ea36"
   },
   "reference_basis": {
     "scene": "scenes/backgrounds/main_menu_bg.tscn",
@@ -169,7 +170,7 @@
         "content_retained_regression",
         "canvas_fast_path_regression",
         "split_resource_regression",
-        "locale_boot_regression",
+        "boot_locale_regression",
         "world_frontend_ui_regression"
       ]
     },
@@ -189,8 +190,9 @@
         "Opaque foreground occludes particles",
         "Menu, Continue and quit/abandon overlays",
         "Presentation leaves canonical gameplay state unchanged",
-        "Synthetic v20 fallback"
-      ]
+        "Actual English/Chinese v20 fallback, 27,246 checks each"
+      ],
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f"
     },
     "working_set": {
       "four_title_images_repeated": {
@@ -237,16 +239,85 @@
       "warm_resource_bytes": 0,
       "canonical_state_unchanged": true,
       "save_callback_attempts": 0,
-      "interpretation": "The missing original layers are now drawn, with a measured host CPU cost increase. This is a fidelity change, not a title-speed improvement. ARM/emulator observation remains necessary before claiming calculator usability or frame rate.",
-      "private_receipt": "ui4-assets/v21-title/native-title-cpu.json"
+      "interpretation": "This pre-optimization baseline draws the missing original layers at a measured host CPU cost increase. Keep this baseline alongside the final measurements below; neither establishes calculator frame rate.",
+      "private_receipt": "ui4-assets/v21-title/native-title-cpu.json",
+      "checkpoint": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3"
+    },
+    "final_canvas": {
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "cases": 187338,
+      "checks": 376683,
+      "result": "passed",
+      "coverage": "Independent destination-to-source/paint oracle, 320 by 240 opaque sparse rows and mixed-alpha spans, odd addresses, clipping, padded rows, modulation, coverage, additive and scaled fallbacks"
+    },
+    "integer_compatibility": {
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "comparisons": 46266,
+      "result": "exact",
+      "basis": "Previous f1 implementation versus f7 bounded/sign-separated operations; all nine sample fields at 137 timestamps including uint32 wrap edges, plus a bounded signed coordinate grid"
+    },
+    "exact_capture_compatibility": {
+      "previous_runtime": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+      "current_runtime": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "frames_per_language": 9,
+      "total_frames": 18,
+      "method": "Direct PPM byte equality, no tolerance",
+      "result": "exact",
+      "private_receipt": "ui4-assets/v21-title/title-9a-pixels.json"
+    },
+    "cpu_after_opaque_span_fast_path": {
+      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "change": "Unscaled opaque sparse spans copy explicit little-endian RGB565 only when Canvas and call opacity are 255, brightness/tint are neutral, coverage is absent and blend is Normal. Other paths retain paint. Particle counts, resource bytes and cache allocation are unchanged.",
+      "sampling": "Same three interleaved v20/v21 pairs per language, 360 warm 33ms updates after 2500ms settling; same private driver source and final Release library.",
+      "samples_per_language_and_version": 1080,
+      "median_first_visible_ms": {
+        "eng": {
+          "v20": 0.708,
+          "v21": 2.082
+        },
+        "zhs": {
+          "v20": 0.816,
+          "v21": 2.39
+        }
+      },
+      "median_warm_mean_ms": {
+        "eng": {
+          "v20": 0.316,
+          "v21": 1.401
+        },
+        "zhs": {
+          "v20": 0.308,
+          "v21": 1.325
+        }
+      },
+      "v21_observed_warm_mean_reduction_percent": {
+        "eng": 26.1,
+        "zhs": 26.4
+      },
+      "largest_observed_warm_sample_ms": {
+        "eng": {
+          "v20": 0.599,
+          "v21": 2.808
+        },
+        "zhs": {
+          "v20": 2.385,
+          "v21": 17.666
+        }
+      },
+      "warm_resource_calls": 0,
+      "warm_resource_bytes": 0,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0,
+      "interpretation": "Measured improvement across the narrow integer-ABI/opaque-span stage, not an isolated single-variable attribution to Canvas. The old-v20 control also varies with source/host conditions. The v21 title still costs more CPU than the old flattened title; the largest Chinese sample is retained rather than hidden by the mean. These unpaced host intervals are not physical-calculator or display FPS.",
+      "private_receipt": "ui4-assets/v21-title/native-title-cpu-9a.json"
     }
   },
   "visual_review": {
     "capture_directories": [
-      "ui4-assets/v21-title/final-frontend-eng",
-      "ui4-assets/v21-title/final-frontend-zhs"
+      "ui4-assets/v21-title/final9a-frontend-eng",
+      "ui4-assets/v21-title/final9a-frontend-zhs"
     ],
-    "actual_review_basis": "65ba actual-pack captures; the final f1 frontend checks cover the same title source and resources",
+    "actual_review_basis": "65ba actual-pack captures visually reviewed; all 18 final 9a frontend captures are byte-identical to the f1 captures of the same title source/resources.",
     "files": [
       "frontend-title-particles-50ms.ppm",
       "frontend-title-particles-25s.ppm",
@@ -323,6 +394,72 @@
       "checkpoint": "f1dea1e",
       "result": "passed",
       "operation": "12 interleaved title CPU windows"
+    },
+    {
+      "file": "ui4-motion-final-build-67e0e2033ea0.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Shared frozen Clang18 library and frontend/Canvas binaries, built by the combat agent"
+    },
+    {
+      "file": "ui4-title-9a-eng-331b9b1e2603.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Final v21 English frontend"
+    },
+    {
+      "file": "ui4-title-9a-zhs-94c49ff2584d.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Final v21 Chinese frontend"
+    },
+    {
+      "file": "ui4-title-9a-legacy-eng-e5c00a81ca3a.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Actual old v20 English fallback"
+    },
+    {
+      "file": "ui4-title-9a-legacy-zhs-a676c15921ec.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Actual old v20 Chinese fallback"
+    },
+    {
+      "file": "ui4-title-9a-canvas-c9c554c2398d.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Independent Canvas pixel oracle, including full opaque sparse rows"
+    },
+    {
+      "file": "ui4-title-9a-integer-compat-build-09b6b295eb3c.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Private old/new exact-value oracle compilation"
+    },
+    {
+      "file": "ui4-title-9a-integer-compat-25493c1cd1f7.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "46,266 exact old/new particle/coordinate values"
+    },
+    {
+      "file": "ui4-title-9a-pixel-compat-d1a978024721.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "All 18 final frontend captures equal f1 bytes"
+    },
+    {
+      "file": "ui4-title-9a-cpu-build-2d78db7580ca.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "Final title timing driver compilation"
+    },
+    {
+      "file": "ui4-title-9a-cpu-paired-868c087f8c17.json",
+      "checkpoint": "9a554fe",
+      "result": "passed",
+      "operation": "12 final interleaved title CPU windows"
     }
   ],
   "failures_and_followup": [
@@ -342,7 +479,7 @@
       "file": "ui4-final-arm-58b5d8aa25fc.json",
       "result": "failed",
       "cause": "Title coordinates and sphere jitter emitted signed 64-bit division, requiring absent __aeabi_ldivmod",
-      "fix": "Local f7a0eb7 narrows bounded coordinates to signed 32-bit and separates sphere-jitter signs before supported unsigned 64-bit division; formal post-persistence ARM and numeric-oracle results are pending"
+      "fix": "f7a0eb7, persisted in 1ac8a17, narrows bounded coordinates to signed 32-bit and separates sphere-jitter signs before supported unsigned 64-bit division. At 9a, 46,266 old/new values and 18 final captures match exactly; the root final ARM build receipt is separate."
     }
   ],
   "limits": [
