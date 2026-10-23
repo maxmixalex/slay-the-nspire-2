@@ -1,3 +1,32 @@
+# Work state — 2026-10-23
+
+## Current: original UI feedback implementation in progress
+
+Resumed from exact remote `e8444322b494db67d905e4772ff95373d7bfd34a`
+(tree `9ed19bf94fe241595a5ef614ee420b25dbf7aba8`); all 575 original Git blobs
+were restored and verified. The previous source36/38 package identities remain
+historical. No newer runtime verification or delivered build is claimed yet.
+
+The user prioritizes original UI fidelity, then rendering performance. Parallel
+implementation covers battle HUD/banner/merchant/Proceed composition; glyph
+metrics, card layout/cache and focus geometry; and shared graphics with separate
+Chinese/English resources. Root owns event-option hover tips, UI template binding,
+bilingual startup and integration. The original v0.111.0 / 41cef1ea PCK and DLL
+were privately recovered with their pinned hashes, as were both NSP2/17 packs.
+
+This first source checkpoint adds the final UI formatting boundary for selection
+amounts and actual keyboard bindings, rich label rendering, non-reading glyph
+metrics and shared card-title layout. The split-resource reader/tool may be
+present as an unintegrated implementation stage. Follow-up checkpoints will
+complete its host integration and original-art feedback profile. Do not describe
+this checkpoint alone as resolution of every user report or as a measured speedup.
+
+Full-file integrity validation is retained. Its necessity and measured cost are
+being evaluated separately from structural validation and per-payload checks;
+the user's question did not authorize silently disabling checks. Remote CI
+remains disabled; main is unchanged. Original assets and generated builds stay
+outside the source repository. Save format remains v15.
+
 # Work state — 2026-10-21
 
 ## Current: bilingual delivery generated and verified — source38 receipt

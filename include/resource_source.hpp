@@ -22,6 +22,32 @@ struct ResourceSource {
     static ResourceSource memory(const uint8_t*,size_t);
 };
 
+enum class ResourceLanguage : uint32_t { English=1,Chinese=2 };
+
+// An NSC1 artwork file plus an NSL1 language file presents the exact original
+// NSP2 byte stream. Only the directory and glyph/text sections are localized;
+// compressed animation groups and image pixels live once in the common file.
+// Both inputs and this adapter must outlive the returned source. Opening checks
+// the container bounds, bound common identity and actual NSP2 locale marker.
+// Content::open still performs its normal full-stream integrity/structure pass.
+class SplitResourceSource {
+public:
+    bool open(ResourceSource common,ResourceSource language,ResourceLanguage expected);
+    void close();
+    bool valid()const{return valid_;}
+    ResourceLanguage language()const{return language_id_;}
+    ResourceSource source();
+    bool read(uint32_t offset,void* dst,uint32_t count)const;
+private:
+    ResourceSource common_{},localized_{};
+    uint32_t prefix_{},artwork_{},length_{};
+    ResourceLanguage language_id_{ResourceLanguage::English};
+    bool valid_{};
+    static bool read_at(void*,uint32_t,void*,uint32_t);
+    static void progress_at(void*,ResourceStage,uint32_t,uint32_t);
+};
+static_assert(sizeof(SplitResourceSource)<=256,"Split resources must not require a resident pack or mapping table");
+
 struct ResourceReadStats {
     uint32_t callbacks{},cache_hits{},cache_misses{},bypasses{},direct_reads{};
     uint64_t callback_bytes{};

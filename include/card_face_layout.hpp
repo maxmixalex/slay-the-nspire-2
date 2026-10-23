@@ -6,6 +6,9 @@ namespace spire { namespace card_face {
 // cannot drift into the title or body when a card also has a star cost.
 struct Rect {int x=0,y=0,w=0,h=0;};
 struct Layout {Rect frame,portrait,border,banner,title,type,description,energy,star;};
+inline Rect focus_bounds(int x,int y,int w,int h,int inset=2){
+    return {x-inset,y-inset,w+inset*2,h+inset*2};
+}
 inline int scaled(int value,int scale,int base){
     return value<0?-((-value*scale+base/2)/base):(value*scale+base/2)/base;
 }

@@ -18,7 +18,21 @@ static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,cons
  layer.centered(label,label_x+1,y+(h-12)/2+1,label_w,12,Ink);
  layer.centered(label,label_x,y+(h-12)/2,label_w,12,enabled?rgb(255,246,226):Muted);
 }
-static void native_proceed(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"PROCEED",x,y,w,h,label,enabled,selected);}
+static void native_proceed(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){
+ const auto visual=c.control_visual(label,x,y,w,h,ButtonFamily::Action,selected,enabled);
+ const int normal=c.a.content.world_image("common","PROCEED"),outline=c.a.content.world_image("common","PROCEED_OUTLINE");
+ if(normal<0){native_control(c,"PROCEED",x,y,w,h,label,enabled,selected);return;}
+ const int width=mx(1,w*visual.scale/4096),height=mx(1,width*192/393),left=x+(w-width)/2,top=mn(y+(h-height)/2,c.clip_h-height);
+ Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
+ Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(normal,left+2,top+2,width,height,64);
+ // This is the original atlas arrow, with its authored transparent margins.
+ // The outlined skin already contains the scene's yellow self_modulate.
+ if(outline>=0&&visual.hover&&enabled)layer.picture(outline,left,top,width,height,unsigned(visual.hover)*255/4096,presentation::Add);
+ layer.picture(normal,left,top,width,height);
+ const int text_y=top+(height-12)/2;
+ layer.centered(label,left+1,text_y+1,width,12,rgb(87,16,8));
+ layer.centered(label,left,text_y,width,12,enabled?rgb(255,246,226):Muted);
+}
 static void native_back(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"BACK",x,y,w,h,label,enabled,selected);}
 static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"CONFIRM",x,y,w,h,label,enabled,selected);}
 static void native_end_turn(Canvas&c,bool enabled){

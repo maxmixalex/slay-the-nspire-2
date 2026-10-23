@@ -1,6 +1,6 @@
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr){
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
@@ -18,9 +18,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(a.content.card_string(card.kind));if(card.upgraded)name.ch('+');
     const int title_size=w>=100?12:w>=70?10:8;
     const int title_y=l.title.y+mx(0,(l.title.h-title_size-2)/2);
-    for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)
-        c.text_fitted(title,l.title.x+dx,title_y+dy,l.title.w,title_size,Ink,8,true);
-    c.text_fitted(title,l.title.x,title_y,l.title.w,title_size,card.upgraded?Green:White,8,true);
+    c.text_fitted(title,l.title.x,title_y,l.title.w,title_size,card.upgraded?Green:White,8,true,true);
 
     const char*type_text=card_type_label(type,&a.content);
     const int type_size=8,plaque_h=mx(11,l.type.h);
@@ -56,4 +54,114 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
         for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text(label,px+dx,py+dy,8,Ink);
         c.text(label,px,py,8,White);
     }
+}
+
+namespace {
+// Small-card grids repaint the same eight/ten faces at 30Hz. Store the exact
+// destination before and after composition, rather than flattening translucent
+// layers and changing RGB565 rounding. A cache hit compares every background
+// pixel, so moving actors, selection highlights and overlapping cards remain
+// exact. Eight protected slots cover a full library page and eight of ten
+// selector cards without a cyclic LRU miss storm.
+constexpr int SmallCardCacheW=56,SmallCardCacheH=70,SmallCardCacheCount=8;
+struct SmallCardFaceCache {
+    const Content* owner=nullptr;
+    uint32_t generation=0,seen=0;
+    Card card{};
+    int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
+    CardType type=CardType::Attack;
+    bool star_visible=false,valid=false;
+    char title[128]{},description[512]{};
+    uint16_t background[SmallCardCacheW*SmallCardCacheH]{};
+    uint16_t pixels[SmallCardCacheW*SmallCardCacheH]{};
+};
+static SmallCardFaceCache small_card_faces[SmallCardCacheCount];
+static uint32_t small_card_frame=0;
+static_assert(sizeof small_card_faces+sizeof small_card_frame<=130u*1024u,
+    "Small-card cache must fit its bounded 130KiB ARM allowance");
+static bool card_cache_text_equal(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
+static bool card_cache_text_fits(const char*s,unsigned capacity){unsigned n=0;while(s[n])if(++n>=capacity)return false;return true;}
+static void card_cache_text_copy(char*out,const char*in){while((*out++=*in++)){};}
+static bool card_cache_static_text(const char*s){
+    RichReader reader(s);RichChar ch{};
+    while(reader.next(ch))if(ch.style.wave||ch.style.jitter||ch.style.rainbow||ch.style.thinky_dots)return false;
+    return true;
+}
+static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool star,int left,int top){
+    if(!star&&value==-2)return true;
+    char label[16]{};TextBuffer text{label,sizeof label,0};if(star?value<0:value==-1)text.ch('X');else text.number(value);
+    int x=icon.x+(icon.w-c.width(label,8))/2,y=icon.y+(icon.h-10)/2;
+    for(const char*p=label;*p;){const auto g=c.a.content.glyph_metrics(utf8(p),8);
+        if(g.w&&g.h&&(x-1<left||y-1<top||x+int(g.w)+1>left+SmallCardCacheW||y+int(g.h)+1>top+SmallCardCacheH))return false;
+        x+=g.advance;}
+    return true;
+}
+}
+static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
+static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
+static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr){
+    // The 8px energy label has a 1px outline above the energy artwork.
+    const int left=x-6,top=y-4;
+    const bool candidate=c.a.content.healthy()&&w==47&&h==66&&!c.coverage&&c.opacity==255&&c.brightness==255&&
+        c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
+        left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;
+    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
+    auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
+    char body[1024]{},localized[1024]{};
+    if(!description){
+        if(facts)a.world_card_description(card,-1,body,sizeof body,instance,deck,facts);
+        else a.card_description(card,-1,body,sizeof body,instance,deck);
+        description=body;
+    }
+    description=a.ui_text(description,localized,sizeof localized);
+    char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(a.content.card_string(card.kind));if(card.upgraded)name.ch('+');
+    if(!card_cache_text_fits(title,sizeof small_card_faces[0].title)||
+       !card_cache_text_fits(description,sizeof small_card_faces[0].description)||
+       !card_cache_static_text(title)||!card_cache_static_text(description)){
+        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;
+    }
+    const int portrait=a.card_face_image(card,instance,deck,facts),frame=a.card_face_frame(card,instance,deck,facts);
+    const auto type=a.card_face_type(card,instance,deck,facts);
+    const int energy_image=a.content.energy_image(card),energy=fee==-2?a.card_offer_cost(card,facts):fee;
+    const int base_stars=card_star_cost(a.game,card),star_count=stars==-2?base_stars:stars;
+    const bool star_visible=base_stars||(stars!=-2&&stars);
+    const auto geometry=card_face::layout(x,y,w,h);
+    // Large dynamic costs can extend beyond the fixed cache, just as their
+    // uncached labels do. Keep those exact without increasing the ARM pool.
+    if(!a.content.healthy()||!card_cache_label_fits(c,geometry.energy,energy,false,left,top)||
+       (star_visible&&!card_cache_label_fits(c,geometry.star,star_count,true,left,top))){
+        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
+    SmallCardFaceCache* entry=nullptr;
+    for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&
+        slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
+        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&
+        card_cache_text_equal(slot.title,title)&&card_cache_text_equal(slot.description,description)){
+        bool matches=true;
+        for(int yy=0;yy<SmallCardCacheH&&matches;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
+            if(slot.background[yy*SmallCardCacheW+xx]!=c.pixels[(top+yy)*c.pitch+left+xx]){matches=false;break;}
+        if(matches){
+            slot.seen=small_card_frame;
+            for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
+                c.pixels[(top+yy)*c.pitch+left+xx]=slot.pixels[yy*SmallCardCacheW+xx];
+            return;
+        }
+        // A matching face with a changed backdrop may be rebuilt unless
+        // another occurrence has already used its slot in this same frame.
+        if(slot.seen!=small_card_frame)entry=&slot;
+    }
+    if(!entry)for(auto&slot:small_card_faces)if(!slot.valid||slot.seen!=small_card_frame){
+        if(!entry||!slot.valid||slot.seen<entry->seen)entry=&slot;
+        if(!slot.valid)break;
+    }
+    if(!entry){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
+    entry->valid=false;entry->owner=&a.content;entry->generation=a.content.generation();entry->seen=small_card_frame;
+    entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;
+    entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;
+    card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
+    for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
+        entry->background[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
+    render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);
+    for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
+        entry->pixels[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
+    entry->valid=a.content.healthy();
 }

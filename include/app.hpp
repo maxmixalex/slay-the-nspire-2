@@ -6,6 +6,7 @@
 #include "ui_assets.hpp"
 #include "native_ui_assets.hpp"
 #include "locale.hpp"
+#include "feedback_assets.hpp"
 #include "button_presentation.hpp"
 #include "ui_actions.hpp"
 #include "pointer.hpp"
@@ -43,6 +44,7 @@ class Content {
     const uint8_t* tile_metadata_{};uint32_t directory_bytes_{};
     ResourceReader reader_{};
     mutable bool io_good_=true;
+    uint32_t generation_=0;
     // A successful first picture validates all its tiles. The optional bitmap
     // borrows the unused directory tail; without space, every miss does that
     // full check. Structural startup validation never sets these bits.
@@ -51,10 +53,12 @@ class Content {
     // optional table borrows the resident-directory tail, never another pool.
     uint8_t* image_pages_{};
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
+    const uint8_t* glyph_record(uint32_t cp,int size)const;
 public:
     bool open(const uint8_t*,size_t);
     bool open(ResourceSource);
     bool healthy()const{return metadata_&&io_good_;}
+    uint32_t generation()const{return generation_;}
     ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
     // These planning queries never read the source, decode or change LRU.
@@ -68,11 +72,20 @@ public:
     static constexpr unsigned image_capacity_pages(){return 748;}
     static constexpr unsigned image_capacity_entries(){return 320;}
     Glyph glyph(uint32_t cp,int size)const;
+    // Layout uses the resident descriptor only. Measuring a label must not
+    // decode/read glyph pixels or evict the glyphs about to be painted.
+    Glyph glyph_metrics(uint32_t cp,int size)const;
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
-    bool current_profile()const{return (version_==ContentVersion||version_==TileContentVersion||version_==NativeUiContentVersion||version_==LocaleContentVersion)&&cards_==CardKinds&&ui_count_==(version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count))&&(version_==LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount))&&clips_==AnimationKinds;}
+    bool current_profile()const{
+        if(version_<ContentVersion||version_>FeedbackContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        const unsigned animations=version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
+        return ui_count_==auxiliary&&text&&clips_==animations;
+    }
     int card_image(int kind)const;
     int ui_image(int key)const;
     int relic_image(int index)const;
@@ -144,11 +157,16 @@ struct EnemyPresentation {
     EnemyVisualCommand queue[MaxEnemyVisualCommands]{};uint8_t count=0;
 };
 struct App {
+    // Bind UI-only template values at the final display boundary. A plain
+    // string takes the original pointer fast path; rich tags remain intact.
+    const char* ui_text(const char* source,char* buffer,size_t capacity)const;
     State game{};Content content{};Callbacks callbacks{};
     ButtonMotion button_motions[MaxButtonMotions]{};
     EndTurnGlowMotion end_turn_glow{};
     CharacterSelectPresentation character_select_presentation{};
     TurnBannerPresentation turn_banner{};
+    uint32_t energy_rotation_tick=0,energy_rotation_mdeg=0;
+    bool energy_rotation_zero=false;
     uint32_t turn_banner_seed=0;
     int turn_banner_floor=-1,turn_banner_combat=-1,turn_banner_encounter=-1,turn_banner_number=0;
     void sync_turn_banner();

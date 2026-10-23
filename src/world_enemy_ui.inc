@@ -65,11 +65,20 @@ static void ui_enemy_advance(App&a,int slot){
  auto&m=a.enemy_presentation[slot];if(!m.identity)return;
  for(unsigned pass=0;pass<MaxEnemyVisualCommands+2;pass++){
   bool finished=m.clip<0||(!m.loop&&int32_t(a.animation-m.until)>=0);
-  if(m.count&&(m.loop||finished)&&int32_t(a.animation-m.queue[0].earliest)>=0){
+  if(finished&&m.count&&!m.direct&&int32_t(a.animation-m.queue[0].earliest)>=0&&int32_t(m.queue[0].earliest-m.until)>=0){
+   // CreatureAnimator.OnAnimationCompleted changes logical state before a
+   // later trigger. In particular Louse's Uncurl -> Idle must settle before
+   // its queued Attack (which is intentionally not an any-state trigger).
+   const auto*state=world_enemy_state(m.model,m.state);
+   if(state&&state->next>=0&&ui_enemy_set_state(a,slot,state->next,m.facts,m.until))continue;
+  }
+  if(m.count&&int32_t(a.animation-m.queue[0].earliest)>=0){
    EnemyVisualCommand command=m.queue[0];for(unsigned i=1;i<m.count;i++)m.queue[i-1]=m.queue[i];--m.count;m.move=command.move;
    int state=command.direct?-1:world_enemy_transition(m.model,m.state,command.action,ui_enemy_fact,&command.facts);
-   if(state>=0&&ui_enemy_set_state(a,slot,state,command.facts,a.animation))return;
-   if(command.direct){int clip=world_enemy_resolve_clip(m.model,command.action,m.skin,command.move,ui_enemy_fact,&command.facts);if(ui_enemy_set_clip(a,slot,clip,command.facts,a.animation,false)){const auto*move=world_enemy_move(m.model,command.move);m.next_clip=move?move->next_clip:nullptr;m.direct=true;return;}}
+   // Original animator triggers interrupt an earlier hurt/spawn track. The
+   // command's cue owns the clock, including when a render catches up later.
+   if(state>=0&&ui_enemy_set_state(a,slot,state,command.facts,command.earliest))continue;
+   if(command.direct){int clip=world_enemy_resolve_clip(m.model,command.action,m.skin,command.move,ui_enemy_fact,&command.facts);if(ui_enemy_set_clip(a,slot,clip,command.facts,command.earliest,false)){const auto*move=world_enemy_move(m.model,command.move);m.next_clip=move?move->next_clip:nullptr;m.direct=true;continue;}}
    continue; // Unregistered original trigger holds the current animation.
   }
   if(finished){
@@ -128,7 +137,9 @@ void App::sync_enemy_feedback(){
 }
 void App::observe_core(const State&s,Log log){
  if(&s!=&game)return;
- if(log.kind==LogKind::Enemy){sync_turn_banner();turn_banner.begin_enemy(animation);}
+ if(log.kind==LogKind::Enemy){sync_turn_banner();const bool first=!turn_banner.in_enemy;turn_banner.begin_enemy(animation);
+  if(first){const uint32_t cue=animation+TurnBannerPresentation::EnemyLeadTicks;if(int32_t(cue-enemy_visual_clock)>0)enemy_visual_clock=cue;}
+  if(s.enemy_world.active)enemy_visual_clock=(int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation)+TurnBannerPresentation::IntentLeadTicks;}
  if(log.kind==LogKind::Turn)sync_turn_banner();
  if(!s.enemy_world.active)return;
  if(log.kind==LogKind::Enemy&&log.a>=0&&log.a<s.enemy_count){int slot=log.a;auto facts=ui_enemy_facts(s,slot);const auto*move=world_enemy_move(unsigned(s.enemy_world.models[slot].kind),log.b);

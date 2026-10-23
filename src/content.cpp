@@ -140,6 +140,7 @@ const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,
 }
 bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(p,n));}
 bool Content::open(ResourceSource source){
+    ++generation_;
     data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=image_pages_=nullptr;
     version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
@@ -147,13 +148,13 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>LocaleContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>FeedbackContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
-    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
+    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
        (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
-       (version==LocaleContentVersion&&ns!=LocaleStringCount))return false;
-    const unsigned auxiliary=version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+       (version>=LocaleContentVersion&&ns!=LocaleStringCount))return false;
+    const unsigned auxiliary=version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(base>n||base>DirectoryCapacity)return false;
     reader_.progress(ResourceStage::Header,1,1);
@@ -251,7 +252,7 @@ bool Content::open(ResourceSource source){
         if(off<payload_start||off>=n||len>=MaxStringBytes||len>n-off-1||!reader_.u8(off+len,zero)||zero)return reject();
         if((i&63u)==63u||i+1==ns)reader_.progress(ResourceStage::Strings,i+1,ns);
     }
-    if(version==LocaleContentVersion){
+    if(version>=LocaleContentVersion){
         const uint8_t* row=p+40+ni*16+ng*16+LocaleMarkerString*8;uint8_t marker[3];
         if(u32(row+4)!=3||!reader_.read(u32(row),marker,3)||
            !((marker[0]=='z'&&marker[1]=='h'&&marker[2]=='s')||
@@ -341,10 +342,22 @@ Picture Content::image(int id)const{
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
 }
-Glyph Content::glyph(uint32_t cp,int size)const{
-    if(!metadata_||!io_good_)return {nullptr,0,0,0};uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;
+const uint8_t* Content::glyph_record(uint32_t cp,int size)const{
+    if(!metadata_||!io_good_)return nullptr;uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;
     while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=metadata_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
     if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
+        return r;
+    }}
+    return cp!='?'?glyph_record('?',size):nullptr;
+}
+Glyph Content::glyph_metrics(uint32_t cp,int size)const{
+    if(!metadata_||!io_good_)return {nullptr,0,0,0};
+    const uint8_t*r=glyph_record(cp,size);
+    return r?Glyph{nullptr,r[10],r[11],u16(r+12),u16(r+14)}:Glyph{nullptr,0,0,uint16_t(size/2)};
+}
+Glyph Content::glyph(uint32_t cp,int size)const{
+    if(!metadata_||!io_good_)return {nullptr,0,0,0};
+    if(const uint8_t*r=glyph_record(cp,size)){
         const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;
         if(data_)bytes=data_+off;
         else {for(const auto&v:glyph_cache)if(v.owner==this){
@@ -354,10 +367,10 @@ Glyph Content::glyph(uint32_t cp,int size)const{
                 // layouts, but a shorter read cannot supply a longer view.
                 if(u32(cached+4)==off&&count==len){bytes=v.bytes;break;}
             }
-            if(!bytes){auto&v=glyph_cache[glyph_cursor++%64];v.owner=nullptr;bytes=payload(off,len,v.bytes,sizeof v.bytes);if(bytes){v.owner=this;v.glyph=(uint32_t)lo;}}}
+            if(!bytes){auto&v=glyph_cache[glyph_cursor++%64];v.owner=nullptr;bytes=payload(off,len,v.bytes,sizeof v.bytes);if(bytes){v.owner=this;v.glyph=uint32_t((r-(metadata_+40+images_*16))/16);}}}
         if(!bytes)return {nullptr,0,0,0};return {bytes,r[10],r[11],u16(r+12),u16(r+14)};
-    }}
-    if(cp!='?')return glyph('?',size);return {nullptr,0,0,(uint16_t)(size/2)};
+    }
+    return {nullptr,0,0,(uint16_t)(size/2)};
 }
 const char* Content::string(int id)const{
     if(!metadata_||!io_good_||id<0||(unsigned)id>=strings_)return "";

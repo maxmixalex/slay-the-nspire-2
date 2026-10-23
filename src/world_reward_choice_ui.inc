@@ -45,8 +45,7 @@ static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count)
  if(count<=per)c.centered("Enter 领取 · I 详情",54,199,212,10,Muted);
  c.button("详情 I",8,213,91,false,24);c.hit(5,210,97,29,HitKind::Command,int(Key::Detail),count>0);
  const bool can_leave=a.world_choice_min()==0;
- c.ui(U_RewardSkip,209,211,103,27,can_leave?255:100);
- c.centered(native_reward_text(a,"gameplay_ui",count?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON",count?"跳过剩余":"前进"),210,215,101,12,can_leave?Gold:Muted);
+ native_proceed(c,209,211,103,27,native_reward_text(a,"gameplay_ui",count?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON",count?"跳过剩余":"前进"),can_leave);
  c.action(205,208,111,32,UiAction::LeaveWorldRewards,can_leave);
 }
 static void native_card_reward_screen(Canvas&c,const uint16_t*ids,unsigned count){

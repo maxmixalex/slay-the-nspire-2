@@ -2,6 +2,7 @@
 #include "world_run.hpp"
 #include "original_events.hpp"
 #include "ui_core_observer.hpp"
+#include "feedback_assets.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -89,8 +90,8 @@ static void offer_facts(){
  a.open_card_offer({Strike,0},facts);CHECK(a.detail_energy()==0);a.input(Key::Back);
  CHECK(gain_world_relic(a.game,WorldRelicPaelsWing));CHECK(original_event_begin(a.game,OriginalEventId::ColorfulPhilosophers,5,0));CHECK(original_event_choose(a.game,0));CHECK(original_event_reward(a.game,0));CHECK(world_card_reward_alternatives(a.game)&1);a.reset_presentation();a.render();CHECK(has(HitKind::UiAction,int(UiAction::SacrificeReward)));snapshot();a.world_choice_detail(0);a.render();unchanged();a.input(Key::Back);
 }
-static void enemy_visual_fight(EncounterId encounter){
- new_run(a.game,0x41cef1ea,false);a.game.phase=Phase::Combat;a.game.current_node=1;a.game.floor=a.game.turn=1;a.game.hp=a.game.max_hp=999;
+static void enemy_visual_fight(EncounterId encounter,Character character=Character::Ironclad){
+ new_run(a.game,0x41cef1ea,false,character);a.game.phase=Phase::Combat;a.game.current_node=1;a.game.floor=a.game.turn=1;a.game.hp=a.game.max_hp=999;
  CHECK(encounter_setup(a.game,encounter));
  for(unsigned i=0;i<a.game.deck_count;i++){int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,a.game.deck[i].kind,1);resolve_pending(a.game);CHECK(a.game.card_count==id+1);a.game.cards[id].upgraded=a.game.deck[i].upgraded;notify_deck_card_created(a.game,id,i);}
  draw_cards(a.game,5);a.title=a.library=a.paused=a.help=a.character_select=false;a.reset_presentation();snapshot();a.render();
@@ -101,7 +102,14 @@ static void original_enemy_presentation(){
  CHECK(world_enemy_fact_count()<=MaxEnemyVisualFacts);enemy_visual_fight(EncounterId::NibbitsWeak);
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip>=38&&clip<AnimationKinds&&loop);
  CHECK(has(HitKind::EnemyIntent,0));capture("combat-nibbit-idle");const int idle=clip;const unsigned turn=a.game.turn;
- a.input(Key::EndTurn);CHECK(a.game.turn==turn+1);CHECK(a.enemy_visual_clock>a.animation);CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip!=idle&&!loop);snapshot();capture("combat-nibbit-action");
+ a.input(Key::EndTurn);CHECK(a.game.turn==turn+1);CHECK(a.enemy_visual_clock>a.animation);CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip==idle&&loop);
+ snapshot();const unsigned first_action=a.animation+TurnBannerPresentation::EnemyLeadTicks+TurnBannerPresentation::IntentLeadTicks;
+ // A long prior non-loop track cannot postpone an already scheduled trigger
+ // until after the enemy banner disappears.
+ a.enemy_presentation[0].loop=false;a.enemy_presentation[0].until=first_action+200;
+ a.animation=first_action;a.render();CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip!=idle&&!loop);
+ CHECK(a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy&&a.turn_banner.sample_enemy(a.animation).alpha>0);
+ capture("combat-nibbit-action");unchanged();
  for(unsigned i=0;i<32;i++){a.advance(250);a.render();}unchanged();CHECK(a.enemy_frame(0,clip,elapsed,loop)&&loop);CHECK(!a.enemy_presentation[0].overflow);
  {UiCoreObserver observer(a);damage_unpowered(a.game,0,9999);resolve_pending(a.game);}
  CHECK(a.enemy_presentation[0].dead);CHECK(a.enemy_frame(0,clip,elapsed,loop)&&!loop);CHECK(a.combat_linger_until>a.animation);snapshot();a.render();capture("combat-nibbit-death");unchanged();
@@ -119,6 +127,11 @@ static void original_enemy_presentation(){
 static const WorldEnemyVisualClip* visual_clip(int slot){
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(slot,clip,elapsed,loop));const auto*row=world_enemy_clip_directory(unsigned(clip));CHECK(row);return row;
 }
+static void first_enemy_cue(){
+ const uint32_t cue=a.turn_banner.enemy_start+TurnBannerPresentation::EnemyLeadTicks+TurnBannerPresentation::IntentLeadTicks;
+ if(int32_t(cue-a.animation)>0)a.animation=cue;
+ a.sync_enemy_feedback();
+}
 static void settle_enemy_visuals(){
  snapshot();for(unsigned frame=0;frame<80;frame++){a.advance(250);for(int slot=0;slot<a.game.enemy_count;slot++){
   if(a.enemy_opacity(slot))visual_clip(slot);
@@ -129,6 +142,14 @@ static void observed_enemy_kill(int slot){
  UiCoreObserver observer(a);a.game.enemies[slot].block=0;damage_unpowered(a.game,slot,9999);resolve_pending(a.game);CHECK(a.game.phase!=Phase::Error);
 }
 static void original_enemy_transformations(){
+ // Louse's Attack is allowed only from Idle. Its real two-action move
+ // finishes Uncurl at the next cue; completion must precede that trigger.
+ enemy_visual_fight(EncounterId::LouseProgenitorNormal);
+ auto&louse=a.enemy_presentation[0];louse.state=3;louse.loop=true;louse.clip=world_enemy_resolve_clip(louse.model,"curled_loop",louse.skin);
+ a.enemy_trigger(0,"Uncurl",1);CHECK(louse.state==2&&!louse.loop);const uint32_t attack_cue=louse.until;
+ a.enemy_trigger(0,"Attack",1,false,nullptr,attack_cue);a.animation=attack_cue;
+ CHECK(!std::strcmp(visual_clip(0)->native_clip,"attack")&&louse.state==4&&!louse.count&&louse.start==attack_cue);
+
  enemy_visual_fight(EncounterId::TestSubjectBoss);
  for(int form=0;form<2;form++){
   observed_enemy_kill(0);CHECK(a.game.phase==Phase::Combat&&(a.game.enemy_world.models[0].flags&EnemyDown));
@@ -136,6 +157,7 @@ static void original_enemy_transformations(){
   settle_enemy_visuals();CHECK(a.enemy_opacity(0)==255&&!a.enemy_presentation[0].removing);CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"knocked_out_loop2":"knocked_out_loop1"));
   if(!form)capture("combat-test-subject-down");
   a.input(Key::EndTurn);CHECK(a.game.enemy_world.models[0].data[0]==form+1&&a.game.enemies[0].hp>0);
+  first_enemy_cue();
   CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"regenerate2":"regenerate1"));CHECK(!a.enemy_presentation[0].dead);
   if(!form)capture("combat-test-subject-regenerate");
   settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(0)->native_clip,form?"idle_loop3":"idle_loop2"));
@@ -152,14 +174,32 @@ static void original_enemy_transformations(){
  // The dead segment must return to dead_loop and the other two to idle_loop.
  a.game.enemy_world.models[1].node=0;
  {UiCoreObserver observer(a);record(a.game,LogKind::Enemy,1,0);queue_extension(a.game,XOp::EnemyMove,1,0);queue_extension(a.game,XOp::EnemyMoveFinish,1,0);resolve_pending(a.game);}
+ first_enemy_cue();
  CHECK(a.game.phase==Phase::Combat);for(int i=0;i<3;i++){CHECK(visual_clip(i)->move==0);CHECK(a.enemy_presentation[i].direct&&!a.enemy_presentation[i].loop);}
  capture("combat-decimillipede-shared-strike");settle_enemy_visuals();
  for(int i=0;i<3;i++){CHECK(!std::strcmp(visual_clip(i)->native_clip,i?"idle_loop":"dead_loop"));CHECK(a.enemy_presentation[i].loop&&!a.enemy_presentation[i].direct&&!a.enemy_presentation[i].count&&!a.enemy_presentation[i].overflow);}
 
  enemy_visual_fight(EncounterId::CorpseSlugsWeak);observed_enemy_kill(0);
  CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_start"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_loop"));
- a.input(Key::EndTurn);CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_end"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"idle_loop"));
+ a.input(Key::EndTurn);first_enemy_cue();CHECK(!std::strcmp(visual_clip(1)->native_clip,"devour_end"));settle_enemy_visuals();CHECK(!std::strcmp(visual_clip(1)->native_clip,"idle_loop"));
+}
+static void feedback_hud_and_merchant(){
+ const char*names[]={"ironclad","silent","defect","regent","necrobinder"};
+ for(unsigned character=0;character<5;character++){
+  enemy_visual_fight(EncounterId::NibbitsWeak,Character(character));CHECK(max_energy(a.game)==3);
+  init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicEctoplasm));CHECK(max_energy(a.game)==4);
+  a.game.energy=2;snapshot();a.render();capture((std::string("energy-")+names[character]).c_str());unchanged();
+  a.game.energy=0;snapshot();a.advance(250);a.render();capture((std::string("energy-zero-")+names[character]).c_str());unchanged();
+  new_run(a.game,73,false,Character(character));a.game.map[0].room=Room::Shop;CHECK(choose_node(a.game,0));a.reset_presentation();snapshot();a.render();
+  CHECK(!a.shop_open&&has(HitKind::UiAction,int(UiAction::OpenShop)));
+  if(a.content.version()==FeedbackContentVersion){
+   CHECK(a.content.clip(AnimMerchantIronclad+character).count>1);
+   const auto*outside=a.hit_at(166,190);CHECK(!outside||outside->kind!=HitKind::UiAction||outside->value!=int(UiAction::OpenShop));
+  }
+  capture((std::string("merchant-")+names[character]).c_str());a.advance(250);a.render();unchanged();
+  a.ui_action(UiAction::OpenShop);CHECK(a.shop_open);a.input(Key::Back);CHECK(!a.shop_open);unchanged();
+ }
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

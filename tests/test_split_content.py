@@ -1,0 +1,73 @@
+"""Public synthetic split-pack conversion and corruption regressions."""
+import importlib.util
+from pathlib import Path
+import struct
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("split_content", ROOT / "tools/split_content.py")
+split = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(split)
+
+
+def fixture(language, version=17):
+    ni, ng, ns, nc, nk, aux = 2, 1, 6111, 1, 1, 1
+    base = 40 + ni*16 + ng*16 + ns*8 + nc*16 + nk*16 + aux*4
+    table, descriptors = base + 64, base + 72
+    prefix = descriptors + 16
+    image = b"\x00\x00\x01\x00"
+    group = struct.pack("<4s7I", b"TGR1", 0, 0, 4, 4, 0, 1, 0) + b"tile"
+    art = group + image
+    glyph = b"\xff"
+    text = language.encode() + b"\0"
+    out = bytearray(prefix) + art + glyph + text
+    struct.pack_into("<4s9I",out,0,b"NSP2",version,split.REFERENCE,len(out),ni,ng,ns,nc,nk,0)
+    struct.pack_into("<IHHII",out,40,prefix+len(group),2,1,0,len(image))
+    struct.pack_into("<IHHII",out,56,descriptors,2,1,6,16)
+    struct.pack_into("<IIHBBHH",out,72,65,prefix+len(art),8,1,1,1,0)
+    for i in range(ns):struct.pack_into("<II",out,88+i*8,prefix+len(art)+len(glyph),3)
+    struct.pack_into("<4s15I",out,base,b"TIL1",1,16,14,1,1,0,1,descriptors,table,770,1,512*1024,620000,0,0)
+    struct.pack_into("<II",out,table,prefix,len(group))
+    struct.pack_into("<4I",out,descriptors,base,0,0,4)
+    struct.pack_into("<I",out,36,split.fnv(memoryview(out)[40:]))
+    return bytes(out)
+
+
+class SplitContentTest(unittest.TestCase):
+    def test_lossless_both_versions(self):
+        for version in (17,18):
+            original={lang:fixture(lang,version) for lang in ("eng","zhs")}
+            common,locales,receipt=split.split(original)
+            self.assertEqual(receipt["common"]["artwork_bytes"],40)
+            self.assertEqual(receipt["stored_bytes"],sum(map(len,original.values()))-40+256)
+            for language,local in locales.items():
+                self.assertEqual(split.reconstruct(common,local,language),original[language])
+                with self.assertRaises(ValueError):split.reconstruct(common,local,"eng" if language=="zhs" else "zhs")
+
+    def test_corrupt_and_mismatched(self):
+        packs={lang:fixture(lang) for lang in ("eng","zhs")}
+        common,locales,_=split.split(packs)
+        for at in (0,4,16,20,28,32,64):
+            damaged=bytearray(common);damaged[at]^=1
+            with self.assertRaises(ValueError):split.reconstruct(damaged,locales["eng"],"eng")
+        for at in (0,4,16,24,28,36,44,48,80,len(locales["eng"])-1):
+            damaged=bytearray(locales["eng"]);damaged[at]^=1
+            with self.assertRaises(ValueError):split.reconstruct(common,damaged,"eng")
+        damaged=bytearray(packs["zhs"]);row=split.layout(damaged,"zhs");damaged[row["prefix"]+39]^=1
+        struct.pack_into("<I",damaged,36,split.fnv(memoryview(damaged)[40:]))
+        with self.assertRaises(ValueError):split.split(dict(packs,zhs=damaged))
+
+    def test_locale_and_ranges(self):
+        data=fixture("eng")
+        with self.assertRaises(ValueError):split.layout(data,"zhs")
+        for at,value in ((12,len(data)+1),(16,65536),(20,32769),(24,6110)):
+            bad=bytearray(data);struct.pack_into("<I",bad,at,value)
+            with self.assertRaises(ValueError):split.layout(bad,"eng")
+        # A glyph inside the shared art would violate the architecture even
+        # when the old pack checksum is intentionally made self-consistent.
+        bad=bytearray(data);row=split.layout(data,"eng");struct.pack_into("<I",bad,76,row["prefix"])
+        struct.pack_into("<I",bad,36,split.fnv(memoryview(bad)[40:]))
+        with self.assertRaises(ValueError):split.layout(bad,"eng")
+
+
+if __name__=="__main__":unittest.main()

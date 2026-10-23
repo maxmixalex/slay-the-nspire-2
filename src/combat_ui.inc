@@ -13,7 +13,7 @@ struct HandTile {
 static HandTile hand_tiles[MaxHand];
 static bool same_text(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 }
-static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;}
+static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;invalidate_card_face_cache();}
 static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t ink){
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
@@ -44,7 +44,19 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused){
     int top=mx(0,p.cy-half_h),bottom=mn(240,p.cy+half_h);
     // Inverse affine sampling: only integer additions in the inner loop.
     int du=p.cosine*1024/p.scale,dv=-p.sine*1024/p.scale;
-    if(focused){c.box(p.cx-HandTileW/2+1,p.cy-HandTileH/2+3,78,107,t.playable?Gold:Muted);}
+    if(focused){
+        // The outline belongs to the card face, not to its transparent cache
+        // allocation. Transform the same 69 x 97 face and its 2px inset with
+        // the hand pose so focus remains aligned after scale/rotation changes.
+        const auto bounds=card_face::focus_bounds(8,6,69,97);
+        const int xs[]={bounds.x,bounds.x+bounds.w-1,bounds.x+bounds.w-1,bounds.x};
+        const int ys[]={bounds.y,bounds.y,bounds.y+bounds.h-1,bounds.y+bounds.h-1};
+        int px[4],py[4];
+        for(int i=0;i<4;++i){const int dx=xs[i]-HandTileW/2,dy=ys[i]-HandTileH/2;
+            px[i]=p.cx+(dx*p.cosine-dy*p.sine)*p.scale/(1024*1024);
+            py[i]=p.cy+(dx*p.sine+dy*p.cosine)*p.scale/(1024*1024);}
+        for(int i=0;i<4;++i)c.line(px[i],py[i],px[(i+1)%4],py[(i+1)%4],t.playable?Gold:Muted);
+    }
     for(int y=top;y<bottom;y++){
         int u=HandTileW*512+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
         int v=HandTileH*512+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
@@ -84,6 +96,48 @@ static void combat_actors(Canvas&c){
         if(a.enemy_frame(shared,clip,elapsed,loop)){Canvas actor=c;actor.opacity=uint8_t(a.enemy_opacity(shared));actor.clip(clip,0,22,elapsed,false,loop);}
         c.picture(a.content.world_image("background_front","KAISER_CRAB_BOSS"),0,22,320,218);
     }
+}
+static int energy_sine(int angle){
+    static const int16_t quarter[]={0,100,200,297,392,483,569,650,724,792,851,903,946,980,1004,1019,1024};
+    unsigned phase=unsigned(angle%360)*256/360;const int sign=phase>=128?-1:1;phase%=128;if(phase>64)phase=128-phase;
+    const unsigned i=phase/4,j=phase%4;return sign*(i==16?quarter[i]:(quarter[i]*(4-j)+quarter[i+1]*j)/4);
+}
+static void combat_energy_layer(Canvas&c,int image,int angle,bool empty){
+    // TextureRects share the 128px scene pivot. Resampling the two rotating
+    // layers needs neither an intermediate framebuffer nor baked rotations.
+    if(!angle&&!empty){c.picture(image,6,174,42,42);return;}
+    const auto p=c.a.content.image(image);if(!p.pixels||p.format>3)return;
+    const int sn=energy_sine(angle),cs=energy_sine((angle+90)%360),half=(21*((sn<0?-sn:sn)+(cs<0?-cs:cs))+1023)/1024;
+    for(int y=mx(0,195-half);y<mn(c.clip_h,195+half);++y)for(int x=mx(0,27-half);x<mn(c.clip_w,27+half);++x){
+        const int dx=x-27,dy=y-195,u=(dx*cs+dy*sn)+21*1024,v=(dy*cs-dx*sn)+21*1024;
+        if(u<0||v<0||u>=42*1024||v>=42*1024)continue;
+        const unsigned at=(v*p.h/(42*1024))*p.w+u*p.w/(42*1024),alpha=p.alpha?p.alpha[at]:255;if(!alpha)continue;
+        const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;uint16_t color=uint16_t(pixel[0]|unsigned(pixel[1])<<8);
+        if(empty){
+            // energy_orb_dark.tres: YIQ chroma x0.5/value x0.85, then
+            // NEnergyCounter.RefreshLabel's DarkGray (169/255) modulation.
+            const unsigned r=(color>>11)*255/31,g=((color>>5)&63)*255/63,b=(color&31)*255/31,gray=(299*r+587*g+114*b)/1000;
+            color=rgb(int((r+gray)*563/2000),int((g+gray)*563/2000),int((b+gray)*563/2000));
+        }
+        c.paint(y*c.pitch+x,color,alpha);
+    }
+}
+static void combat_energy(Canvas&c){
+    auto&a=c.a;const auto&s=a.game;const bool empty=s.energy==0;
+    const uint32_t delta=a.map_clock_ms-a.energy_rotation_tick;
+    a.energy_rotation_mdeg=(a.energy_rotation_mdeg+(delta%72000u)*(a.energy_rotation_zero?5u:30u))%360000u;
+    a.energy_rotation_tick=a.map_clock_ms;a.energy_rotation_zero=empty;
+    const int first=U_EnergyLayers+int(s.character)*5;
+    if(a.content.ui_image(first)>=0){
+        const int layers=s.character==Character::Necrobinder?3:5;
+        for(int i=0;i<layers;i++){const bool rotates=i==1||(i==2&&s.character!=Character::Necrobinder);
+            combat_energy_layer(c,a.content.ui_image(first+i),rotates?int((a.energy_rotation_mdeg*unsigned(i)/1000)%360):0,empty);}
+    }else c.picture(character_energy_image(a.content,s.character),6,174,42,42);
+    const uint16_t outline[]={rgb(77,19,13),rgb(0,79,4),rgb(22,62,100),rgb(120,64,0),rgb(112,45,111)};
+    char label[24]{};TextBuffer b{label,sizeof label,0};b.number(s.energy);b.ch('/');b.number(max_energy(s));
+    const int size=c.width(label,12)<=37?12:10;const uint16_t edge=empty?rgb(55,24,26):outline[unsigned(s.character)];
+    for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy)c.centered(label,6+dx,187+dy,42,size,edge);
+    c.centered(label,6,187,42,size,empty?rgb(255,79,67):rgb(255,246,226));
 }
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
@@ -147,8 +201,7 @@ static void combat_screen(Canvas&c){
             c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&can_play_card(s,s.hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
-    c.picture(character_energy_image(a.content,s.character),6,174,42,42);
-    c.num(s.energy,18,182,20,White);
+    combat_energy(c);
     native_end_turn(c,s.phase==Phase::Combat&&!a.busy);
     combat_pile(c,A_DrawPile,s.draw.count,8,215,1);
     combat_pile(c,A_DiscardPile,s.discard.count,291,215,2);

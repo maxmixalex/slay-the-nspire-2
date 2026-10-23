@@ -22,6 +22,12 @@ inline HandRail hand_rail(int count,int index){
     return {left,190,right-left,50};
 }
 constexpr int HandTileW=80,HandTileH=112;
+// Original merchant_room.tscn uses one scene transform for background,
+// merchant and the relaxed player. 1920x1080 is uniformly covered by the
+// 320x218 room below the top bar, never fitted separately per skeleton.
+struct MerchantLayout {
+ static constexpr int BodyX=209,BodyY=116,BodyW=55,BodyH=67;
+};
 struct CreaturePose {int x,feet,width,scale,intent,hp,status;};
 inline CreaturePose enemy_pose(int count,int index){
  if(count<1)count=1;if(count>MaxEnemies)count=MaxEnemies;

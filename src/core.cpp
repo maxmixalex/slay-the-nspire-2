@@ -45,6 +45,7 @@ namespace spire {
 #include "extension_effect_validation.inc"
 #include "state_validation.inc"
 #include "state_codec.inc"
+int max_energy(const State&s){return wr_max_energy(s,3+ironclad_max_energy(s)+necro_max_energy(s));}
 void before_potion_use(State&s,Potion potion,int target){
     const auto* definition=potion_definition(potion);
     // Callers may retain a selected enemy for self/all-enemy bottles. Only a

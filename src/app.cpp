@@ -14,6 +14,7 @@
 #include "nine_patch.hpp"
 #include "loading_screen.hpp"
 #include "card_hud_assets.hpp"
+#include "feedback_assets.hpp"
 #include "card_face_layout.hpp"
 #include "fitted_text.hpp"
 namespace spire {
@@ -28,6 +29,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 }
 #include "native_controls.inc"
 #include "world_text.inc"
+#include "ui_text.inc"
 #include "world_enemy_ui.inc"
 #include "turn_banner_ui.inc"
 #include "combat_preparation.inc"
@@ -164,7 +166,7 @@ static void reward_screen(Canvas&c){
         char label[80]={};TextBuffer t{label,sizeof label,0,&c.a.content};t.text("魔典移牌 × ");t.number(s.necro.grimoire_pending);
         c.text(label,107,178,12,White,137);c.action(68,171,184,31,UiAction::RewardGrimoire);
     }
-    c.ui(U_RewardSkip,213,211,99,25);c.centered("前进 ›",213,214,99,12,a.cursor==(grimoire?4:3)?Gold:White);c.action(209,208,107,30,UiAction::LeaveRewards);
+    native_proceed(c,213,211,99,25,"前进",true,a.cursor==(grimoire?4:3));c.action(209,208,107,30,UiAction::LeaveRewards);
 }
 
 #include "world_camp_ui.inc"
@@ -324,6 +326,7 @@ static void pointer_overlay(Canvas&c){
     c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
 }
 void App::render(){
+    begin_card_face_frame();
     sync_map_window();
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
     sync_combat_preparation();

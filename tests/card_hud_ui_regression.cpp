@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -81,6 +82,94 @@ static void bounded_canvas(){
         unsigned changed=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(app.pixels[y*320+x]!=0x0321){++changed;CHECK(x>=27&&x<27+w&&y>=41&&y<41+h);}CHECK(changed);
     }
 }
+static void glyph_measurement(const Bytes&data){
+    struct Provider {const Bytes*data;unsigned calls=0;};Provider provider{&data};
+    auto read=[](void*context,uint32_t offset,void*out,uint32_t count){auto&p=*static_cast<Provider*>(context);++p.calls;
+        if(offset>p.data->size()||count>p.data->size()-offset)return false;std::memcpy(out,p.data->data()+offset,count);return true;};
+    auto content=std::make_unique<Content>();CHECK(content->open({&provider,uint32_t(data.size()),read,nullptr}));
+    auto word=[&](unsigned at){return uint32_t(data[at])|uint32_t(data[at+1])<<8|uint32_t(data[at+2])<<16|uint32_t(data[at+3])<<24;};
+    const unsigned count=word(20),first=40+word(16)*16;
+    CHECK(count>=64);
+    for(unsigned i=0;i<64;++i){const unsigned at=first+i*16;CHECK(content->glyph(word(at),data[at+8]|unsigned(data[at+9])<<8).pixels);}
+    const auto stats=content->read_stats();const unsigned calls=provider.calls;
+    // Measuring the complete catalog must neither read pixels nor evict the
+    // 64 glyphs just prepared for painting. This catches layout-cache churn.
+    for(unsigned i=0;i<count;++i){const unsigned at=first+i*16;const int size=data[at+8]|unsigned(data[at+9])<<8;
+        const auto g=content->glyph_metrics(word(at),size);CHECK(!g.pixels&&g.w==data[at+10]&&g.h==data[at+11]&&g.advance==(data[at+12]|unsigned(data[at+13])<<8));}
+    const auto measured=content->read_stats();
+    CHECK(provider.calls==calls&&measured.callback_bytes==stats.callback_bytes&&measured.callbacks==stats.callbacks&&
+        measured.cache_hits==stats.cache_hits&&measured.cache_misses==stats.cache_misses&&measured.bypasses==stats.bypasses&&measured.direct_reads==stats.direct_reads);
+    for(unsigned i=0;i<64;++i){const unsigned at=first+i*16;CHECK(content->glyph(word(at),data[at+8]|unsigned(data[at+9])<<8).pixels);}
+    CHECK(provider.calls==calls&&content->read_stats().cache_hits==measured.cache_hits);
+    const auto missing=content->glyph_metrics(0x10ffff,8),fallback=content->glyph_metrics('?',8);
+    CHECK(missing.w==fallback.w&&missing.h==fallback.h&&missing.advance==fallback.advance&&content->healthy());
+}
+static void pattern(unsigned salt=0){
+    for(unsigned i=0;i<320*240;++i)app.pixels[i]=uint16_t((i*4793u+0x185fu+salt*961u)^(i*17u));
+}
+static void title_layout(){
+    Canvas c{app};
+    for(const char*text:{"Short title","A substantially longer card title that needs an ellipsis","[b]Bold title[/b]","A\nsecond line"})
+    for(int width:{23,47,96})for(int size:{8,10,12}){
+        pattern();for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text_fitted(text,40+dx,45+dy,width,size,Ink,8,true);
+        c.text_fitted(text,40,45,width,size,Green,8,true);const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        pattern();c.text_fitted(text,40,45,width,size,Green,8,true,true);CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
+    }
+}
+static void card_cache_pixels(){
+    Canvas c{app};invalidate_card_face_cache();
+    // Compare full destination surfaces against uncached production drawing,
+    // including translucent overlap, changed costs, stars and descriptions.
+    for(unsigned salt:{0u,1u})for(unsigned variant=0;variant<9;++variant){
+        const Card card{variant&1?RegentFallingStar:Strike,uint8_t(variant/2&1)};
+        const int fee=variant<6?int(variant)-2:100,stars=variant<6?int(variant%4):variant==6?10:variant==7?99:9999;
+        const char*text=variant&1?"[gold]Gain 3 Stars.[/gold] Deal 123 damage.":"Deal damage. [b]Exhaust.[/b]";
+        pattern(salt);render_card_face(c,card,29,68,47,66,fee,stars,-1,-1,nullptr,text);
+        const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        for(int repeat=0;repeat<2;++repeat){pattern(salt);begin_card_face_frame();draw_card_face(c,card,29,68,47,66,fee,stars,-1,-1,nullptr,text);
+            CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));}
+    }
+    const char*animated="[sine]Moving text[/sine] [rainbow]colors[/rainbow]";
+    const auto clock=app.map_clock_ms;const auto animation=app.animation;
+    for(unsigned frame:{0u,7u,18u}){
+        app.animation=frame;app.map_clock_ms=frame*33;pattern();render_card_face(c,{Strike,0},29,68,47,66,1,0,-1,-1,nullptr,animated);
+        const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);pattern();begin_card_face_frame();draw_card_face(c,{Strike,0},29,68,47,66,1,0,-1,-1,nullptr,animated);
+        CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
+    }
+    app.map_clock_ms=clock;app.animation=animation;
+    for(int mode=0;mode<4;++mode){
+        Canvas altered=c;const int x=mode==0?0:29,y=mode==1?215:68;
+        if(mode==2)altered.opacity=143;if(mode==3){altered.brightness=171;altered.tint_red=91;}
+        pattern();render_card_face(altered,{Strike,0},x,y,47,66,1,0,-1,-1,nullptr,"Clipped or tinted.");
+        const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);pattern();begin_card_face_frame();draw_card_face(altered,{Strike,0},x,y,47,66,1,0,-1,-1,nullptr,"Clipped or tinted.");
+        CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
+    }
+    // Ten distinct faces exceed the eight-slot budget. The same eight faces
+    // must stay admitted on successive frames, with exact full-grid output.
+    invalidate_card_face_cache();CardKind retained[SmallCardCacheCount]{};
+    for(unsigned frame=0;frame<3;++frame){
+        pattern();for(int i=0;i<10;++i)render_card_face(c,{CardKind(i),0},24+(i%5)*55,54+(i/5)*73,47,66,i%4,0,-1,-1,nullptr,"Card grid.");
+        const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);pattern();begin_card_face_frame();
+        for(int i=0;i<10;++i)draw_card_face(c,{CardKind(i),0},24+(i%5)*55,54+(i/5)*73,47,66,i%4,0,-1,-1,nullptr,"Card grid.");
+        CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
+        for(unsigned i=0;i<SmallCardCacheCount;++i){const auto&slot=small_card_faces[i];CHECK(slot.valid&&slot.seen==small_card_frame);
+            if(frame)CHECK(slot.card.kind==retained[i]);else retained[i]=slot.card.kind;}
+    }
+    CHECK(app.content.healthy());invalidate_card_face_cache();
+}
+static void focused_card_scale(){
+    Canvas c{app};static HandTile transparent;transparent.playable=true;
+    struct Example {HandPose pose;int left,top,right,bottom;};
+    const Example examples[]={{{160,120,512,0,1024},143,94,179,144},{{160,120,672,0,1024},138,86,184,151},
+        {{160,120,1024,0,1024},126,68,198,168},{{160,120,1024,1024,0},112,86,212,158}};
+    for(const auto&example:examples){
+        clear();draw_hand_tile(c,transparent,example.pose,true);int left=320,top=240,right=-1,bottom=-1;unsigned count=0;
+        for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(app.pixels[y*320+x]!=0x0321){CHECK(app.pixels[y*320+x]==Gold);++count;left=mn(left,x);right=mx(right,x);top=mn(top,y);bottom=mx(bottom,y);}
+        CHECK(left==example.left&&top==example.top&&right==example.right&&bottom==example.bottom);
+        CHECK(count==unsigned(2*(right-left+bottom-top)));
+        clear();draw_hand_tile(c,transparent,example.pose,false);for(auto pixel:app.pixels)CHECK(pixel==0x0321);
+    }
+}
 static void synthetic_pixels(){
     Canvas c{app};clear();draw_card_face(c,{Strike,0},30,50,80,112,1,0,-1,-1,nullptr,"Simple description.");
     CHECK(app.pixels[85*320+60]==0x07e0);CHECK(app.pixels[130*320+60]!=0x07e0);
@@ -149,5 +238,5 @@ static void samples(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    bounded_canvas();if(argc==1)synthetic_pixels();character_hover();samples();std::printf("card/HUD UI: %u checks passed; %s profile, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

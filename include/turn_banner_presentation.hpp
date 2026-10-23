@@ -12,16 +12,18 @@ struct TurnBannerPresentation {
     int number=0;
     bool player_active=false,enemy_active=false,in_enemy=false,extra=false;
     static constexpr uint32_t PlayerMs=2200,EnemyMs=2300,EnemyTicks=(EnemyMs+32)/33;
+    // CombatManager.StartTurn waits 0.8s after creating the banner, then
+    // NCreature.PerformIntent waits 0.4s before TakeTurn in normal speed.
+    static constexpr uint32_t EnemyLeadTicks=(800+32)/33,IntentLeadTicks=(400+32)/33;
     void reset(){*this=TurnBannerPresentation{};}
     static unsigned ease(uint32_t elapsed,uint32_t duration){return health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);}
     void begin_enemy(uint32_t now){
         if(in_enemy)return;enemy_start=now;enemy_active=in_enemy=true;player_active=false;
     }
     void begin_player(int turn,uint32_t earliest,bool extra_turn=false){
-        if(enemy_active&&int32_t(enemy_start+EnemyTicks-earliest)>0)earliest=enemy_start+EnemyTicks;
         player_start=earliest;number=turn;extra=extra_turn;player_active=true;in_enemy=false;
     }
-    Frame sample(uint32_t now)const{
+    Frame sample_enemy(uint32_t now)const{
         Frame f;
         if(enemy_active&&int32_t(now-enemy_start)>=0&&now-enemy_start<EnemyTicks){
             const uint32_t ms=(now-enemy_start)*33;f.kind=Enemy;
@@ -32,10 +34,15 @@ struct TurnBannerPresentation {
                 f.alpha=(((left*left)>>10)*left*255)>>20;
             }return f;
         }
+        return f;
+    }
+    Frame sample_player(uint32_t now)const{
+        Frame f;
         if(!player_active||int32_t(now-player_start)<0||now-player_start>=(PlayerMs+32)/33)return f;
         const uint32_t ms=(now-player_start)*33;f.kind=Player;f.number=number;f.extra=extra;
         f.alpha=ms<1900?ease(ms,1000)*255/4096:(ms>=PlayerMs?0:(PlayerMs-ms)*255/300);
         f.offset=int((ease(ms,1500)*8+2048)/4096);return f;
     }
+    Frame sample(uint32_t now)const{const auto enemy=sample_enemy(now);return enemy.kind!=None?enemy:sample_player(now);}
 };
 }

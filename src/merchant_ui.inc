@@ -21,13 +21,25 @@ static void merchant_card(Canvas&c,Card card,int x,int y,bool selected,bool sold
     if(sold)c.dim(x,y,45,63,170);
 }
 static void shop_screen(Canvas&c){
-    auto&a=c.a;auto&s=a.game;c.picture(A_ShopBackground,0,22,320,218);
+    auto&a=c.a;auto&s=a.game;const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
+    if(registered){
+        c.ui(U_MerchantBackdrop,0,22,320,218);
+        c.clip(AnimMerchantRoomBottom,0,22,a.animation*33);
+        c.clip(AnimMerchantIronclad+int(s.character),0,22,a.animation*33);
+        c.clip(AnimMerchantRoomTop,0,22,a.animation*33);
+    }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     if(!a.shop_open){
-        c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);
-        c.centered("商人",169,45,139,16,Gold);
-        c.button("查看商品",160,178,146,a.cursor==0,28);c.action(151,48,166,158,UiAction::OpenShop);
-        c.ui(U_RewardSkip,211,210,105,27);c.centered("前进 ›",211,214,105,12,a.cursor==1?Gold:White);c.action(206,207,112,31,UiAction::LeaveShop);
-        c.text("Enter 交谈",8,219,10,Muted);return;
+        const int x=registered?MerchantLayout::BodyX:181,y=registered?MerchantLayout::BodyY:62,w=registered?MerchantLayout::BodyW:105,h=registered?MerchantLayout::BodyH:109;
+        // The original MerchantButton is the merchant's own body. Its shared
+        // selection reticle supplies focus without adding a second button.
+        if(a.cursor==0){const auto p=a.content.image(a.content.world_image("map","SELECTION_RETICLE"));
+            if(p.pixels&&p.format<4)for(unsigned corner=0;corner<4;++corner){bool right=corner&2,bottom=corner&1;int left=right?x+w-4:x-2,top=bottom?y+h-4:y-2;
+                map_reticle_tile(c,p,left+1,top+1,left+7,top+7,right,bottom,255,true);
+                map_reticle_tile(c,p,left,top,left+6,top+6,right,bottom,255,false);}}
+        c.action(x-2,y-2,w+4,h+4,UiAction::OpenShop);
+        const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+        native_proceed(c,211,210,105,27,*label?label:"前进",true,a.cursor==1);c.action(206,207,112,31,UiAction::LeaveShop);
+        return;
     }
     c.dim(0,22,320,218,150);c.ui(U_MerchantRug,0,41,320,180);
     a.cursor=mn(mx(a.cursor,0),ShopLeave);

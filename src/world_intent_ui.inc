@@ -14,9 +14,16 @@ static int ui_intent_image(const App&a,const UiIntentPart&part,const EnemyIntent
 }
 static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
  auto intent=enemy_intent(c.a.game,slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
- if(!count)return;int size=mn(13,mx(7,pos.width/int(count))),left=pos.x-int(count)*size/2;
+ if(!count)return;int size=mn(14,mx(9,pos.width/int(count))),left=pos.x-int(count)*size/2;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){c.picture(ui_intent_image(c.a,part,intent),left,pos.intent,size,size);left+=size;}
- if(intent.flags&EnemyIntentAttack){char label[32]{};TextBuffer b{label,sizeof label,0};b.number(intent.damage);if(intent.hits>1){b.text("×");b.number(intent.hits);}c.centered(label,pos.x-pos.width/2,pos.intent+size-1,pos.width,10,Gold);}
+ if(intent.flags&EnemyIntentAttack){
+  // intent.tscn keeps the damage in cream and the repeated-hit suffix at
+  // 18/22 of its size, with a black outline; it is not a gold HUD caption.
+  char damage[16]{},hits[16]{};TextBuffer b{damage,sizeof damage,0},h{hits,sizeof hits,0};b.number(intent.damage);if(intent.hits>1){h.ch('x');h.number(intent.hits);}
+  const int dw=c.width(damage,10),hw=c.width(hits,8),x=pos.x-(dw+hw)/2,y=pos.intent+size-2;
+  for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){c.text(damage,x+dx,y+dy,10,Ink);c.text(hits,x+dw+dx,y+2+dy,8,Ink);}
+  c.text(damage,x,y,10,rgb(255,246,226));c.text(hits,x+dw,y+2,8,rgb(255,246,226));
+ }
  else if((intent.flags&EnemyIntentStatus)&&intent.status_cards>0)c.num(intent.status_cards,pos.x-3,pos.intent+size-1,10,White);
  c.hit(pos.x-pos.width/2-2,pos.intent-2,pos.width+4,size+14,HitKind::EnemyIntent,slot);
 }
