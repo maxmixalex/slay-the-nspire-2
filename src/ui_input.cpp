@@ -37,6 +37,7 @@ void App::sync_selection(){
     if(choice_revision!=game.revision){choice_selected_count=0;choice_revision=game.revision;}
 }
 void App::toggle_choice(int id){
+    if(!combat_choice_ready())return;
     sync_selection();if(!choice_phase(game.phase)||id<0||id>=MaxCards+3)return;
     const auto& source=choice_pile(game);
     bool in_hand=false;for(unsigned i=0;i<source.count;i++)if(source.ids[i]==id)in_hand=true;
@@ -49,9 +50,11 @@ void App::toggle_choice(int id){
     if(choice_selected_count<needed)choice_selected[choice_selected_count++]=(uint16_t)id;
 }
 void App::confirm_choice(){
+    if(!combat_choice_ready())return;
     sync_selection();if(!choice_phase(game.phase))return;
     unsigned needed=choice_max(game);
     if(choice_selected_count<choice_min(game)||choice_selected_count>needed)return;
+    continue_combat_choice();
     bool done=false;
     if(game.phase==Phase::ExtendedChoice)done=choose_extended(game,choice_selected,choice_selected_count);
     else if(game.phase==Phase::ReturnChoice)done=choose_return_to_draw(game,choice_selected[0]);
@@ -61,7 +64,7 @@ void App::confirm_choice(){
     if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}
 }
 bool App::selection_input(Key key){
-    if(title||paused||help||panel||!choice_phase(game.phase))return false;
+    if(title||paused||help||panel||!choice_phase(game.phase)||!combat_choice_ready())return false;
     sync_selection();const auto& source=choice_pile(game);int count=source.count;if(!count)return false;
     if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
     if(key==Key::Left)cursor=(cursor+count-1)%count;
@@ -88,6 +91,13 @@ void App::ui_action(UiAction action){
     // Opaque frontend modals own all actions until explicitly dismissed.
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
     if(settings_open&&action!=UiAction::SettingsFastMode&&action!=UiAction::SettingsControls&&action!=UiAction::SettingsPractice&&action!=UiAction::SettingsReference&&action!=UiAction::SettingsBack&&action!=UiAction::Back)return;
+    if(!combat_choice_ready())switch(action){
+    case UiAction::ConfirmChoice:case UiAction::ClearChoice:case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
+    case UiAction::ConfirmWorldChoice:case UiAction::ClearWorldChoice:case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:
+    case UiAction::LeaveWorldRewards:case UiAction::SacrificeReward:case UiAction::RerollReward:
+    case UiAction::CrystalSmall:case UiAction::CrystalLarge:return;
+    default:break;
+    }
     switch(action){
     case UiAction::FrontendAccept:accept_frontend_confirm();break;
     case UiAction::FrontendCancel:frontend_confirm=frontend_choice=0;break;

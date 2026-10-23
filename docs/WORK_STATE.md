@@ -1,6 +1,50 @@
 # Work state — 2026-10-23
 
-## Current: final runtime and bilingual target flow verified; private delivery preparing
+## Current: delivered baseline; next UI and startup implementation stage
+
+The user explicitly requested continued implementation with parallel agents
+after the first feedback integration. The verified baseline was packaged from
+documentation checkpoint `3bda3cf54256e2d7e2bc13d69c2094c6c086e474` and both
+private files were successfully saved, with individual completion receipts:
+
+| Deliverable | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Bilingual calculator ZIP | 81,150,884 | `c599e1807ca520bf09418740e4576ea97964d8bcdf625bd3a774237904400286` |
+| Bilingual offline HTML | 131,561,979 | `8c3a6d1b544a30a2608dc7ab373ab2ad21f0f5cfae2312a2bb6a227b0e20195e` |
+
+All twelve ZIP entries were read back and verified; no save, language
+preference or profiling probe is included. The HTML changes only the exact EOF
+attribution footer of the executed `14a20900` HTML. All other bytes, including
+its inline script and embedded WASM/common/locale data, are identical. It adds
+complete license text and exact corresponding-source links. ARM execution
+remains `61970600`; Web execution remains `14a20900`. The packaging journal
+`baseline-feedback-delivery-885a8fa68b81` and final save journal
+`baseline-delivery-save-network-cd4006a82004` are closed passed, unchanged
+source. The first save attempt failed at the network tools-list request before
+any file was created; that failed journal remains failed.
+
+The next coherent source stage is being persisted **before** long validation:
+
+- UI agent: a bounded display barrier for choices suspended during enemy/start
+  turn effects, with common render/input gating and late-choice continuation.
+- Resource agent: append-only NSP2/19 merchant outline skin and sampled candle
+  effects, preserving the original behind/front layer order and all v18 indices.
+  Ordinary focus uses the original outline skin; v18 retains its fallback.
+- Performance agent: reuse spare directory space for startup descriptor and
+  per-group geometry summaries, without reducing FNV, structural, alias or
+  first-use pixel validation and without enlarging resident allocations.
+- Root: restore intent hover during deferred combat by binding text, values and
+  actor identity to the same displayed intent. This includes reused slots.
+
+These source changes are not yet new execution, conversion or speed results.
+Next gates are targeted bilingual UI/choice/text tests, malformed-catalog and
+workspace fallback tests, same-v18-input old/new startup measurements, then
+strict v19 conversion/index/size checks and integrated ARM/Web verification.
+The earlier device timings and resource sizes below remain the delivered
+baseline observations until those gates finish. Status/power strips and
+unreviewed monster-effect timings remain separate unfinished work.
+
+## Delivered baseline: final runtime and bilingual target flow verified
 
 The integrated runtime is **`61970600a8d3f7fb2833af13f82f09c86105ebec`** on
 `work/0.17-world-parity`. Each coherent stage was actually pushed, its branch

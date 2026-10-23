@@ -355,7 +355,7 @@ void App::render(){
         const int map_cursor=cursor;
         if(map_window.is_open){cursor=map_room_cursor;scroll=map_room_scroll;}
         const bool combat_linger=int32_t(combat_linger_until-animation)>0;
-        if(combat_linger)combat_screen(c);else switch(game.phase){
+        if(combat_linger||(combat_feedback.active&&choice_phase(game.phase)))combat_screen(c);else switch(game.phase){
         case Phase::Map:if(!game.world.active||!map_window.visible)map_screen(c);break;
         case Phase::Shop:shop_screen(c);break;
         case Phase::Event:event_screen(c);break;
@@ -374,8 +374,8 @@ void App::render(){
         if(map_window.visible)world_map_window_screen(c);
         if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger||combat_feedback.active)turn_banner_screen(c);
-        if(!combat_linger&&!panel&&!library&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
-        else if(!combat_linger&&!panel&&!library&&choice_phase(game.phase))card_choice_screen(c);
+        if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
+        else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase))card_choice_screen(c);
         if(paused)native_pause_screen(c);
 
     }

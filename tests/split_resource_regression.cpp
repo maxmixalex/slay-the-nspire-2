@@ -15,10 +15,10 @@ static void header_hash(Bytes& b,bool common){const unsigned at=common?28:44,end
 struct Fixture {
     unsigned prefix=40+16+16+6111*8,art=137,suffix=41;
     Bytes original,common,locale;
-    explicit Fixture(bool chinese=false){
+    explicit Fixture(bool chinese=false,unsigned version=17){
         original.resize(prefix+art+suffix);
         for(unsigned i=40;i<original.size();++i)original[i]=uint8_t(i*71u+(i>>5));
-        std::memcpy(original.data(),"NSP2",4);put(original,4,17);put(original,8,0x41cef1ea);put(original,12,original.size());
+        std::memcpy(original.data(),"NSP2",4);put(original,4,version);put(original,8,0x41cef1ea);put(original,12,original.size());
         put(original,16,1);put(original,20,1);put(original,24,6111);put(original,28,1);put(original,32,1);
         const unsigned marker=prefix+art+7,row=40+16+16+6110*8;
         put(original,row,marker);put(original,row+4,3);std::memcpy(original.data()+marker,chinese?"zhs":"eng",4);
@@ -45,8 +45,8 @@ struct File {
     static void progress(void*c,ResourceStage,uint32_t,uint32_t){++static_cast<File*>(c)->progress_calls;}
     ResourceSource source(){return {this,uint32_t(bytes->size()),read,nullptr,progress};}
 };
-static void checks_for(bool chinese,bool streamed){
-    Fixture f(chinese);File common{&f.common},locale{&f.locale};SplitResourceSource joined;
+static void checks_for(bool chinese,bool streamed,unsigned version){
+    Fixture f(chinese,version);File common{&f.common},locale{&f.locale};SplitResourceSource joined;
     const auto lang=chinese?ResourceLanguage::Chinese:ResourceLanguage::English;
     CHECK(joined.open(streamed?common.source():ResourceSource::memory(f.common.data(),f.common.size()),
                       streamed?locale.source():ResourceSource::memory(f.locale.data(),f.locale.size()),lang));
@@ -89,6 +89,7 @@ static void malformed(){
     // A relabeled header must agree with the actual original marker as well.
     CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::Chinese));
     f=Fixture();CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()-1),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::English));
+    {Fixture future(false,20);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
     File c{&f.common},l{&f.locale};CHECK(joined.open(c.source(),l.source(),ResourceLanguage::English));
     c.fail_at=64+10;uint8_t out[64];CHECK(!joined.read(f.prefix-4,out,32));
     c.fail_at=-1;l.fail_at=96+f.prefix+2;CHECK(!joined.read(f.prefix+f.art-4,out,16));
@@ -116,6 +117,7 @@ static void actual(const char* common,const char* locale,const char* original,co
 int main(int argc,char**argv){
     if(argc==5)actual(argv[1],argv[2],argv[3],argv[4]);
     else if(argc!=1){std::fprintf(stderr,"usage: split_resource_regression [common locale original eng|zhs]\n");return 2;}
-    checks_for(false,false);checks_for(true,false);checks_for(false,true);checks_for(true,true);malformed();
+    for(unsigned version:{17u,18u,19u})for(bool chinese:{false,true})for(bool streamed:{false,true})checks_for(chinese,streamed,version);
+    malformed();
     std::printf("split resources: %u checks passed; adapter=%zu bytes\n",checks,sizeof(SplitResourceSource));
 }

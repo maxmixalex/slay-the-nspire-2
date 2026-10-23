@@ -13,6 +13,16 @@ static bool wt_equal(const char*a,const char*b){if(!a||!b)return false;while(*a&
 static bool wt_suffix(const char*a,const char*b){unsigned n=0,m=0;while(a[n])++n;while(b[m])++m;return n>=m&&wt_equal(a+n-m,b);}
 static LocalizedValue wt_number(int n,unsigned scale=1){return {true,n,scale,nullptr};}
 static LocalizedValue wt_string(const char*s){return {s!=nullptr,0,1,s};}
+static EnemyId ui_intent_enemy_kind(const App&a,int slot){
+ if(slot<0||slot>=a.game.enemy_count)return EnemyId::Count;
+ // The intent and its owner belong to the same displayed actor. A summon
+ // may have already reused the canonical slot before its appearance cue.
+ if(ui_feedback_bound(a)){
+  unsigned kind=a.combat_feedback.identity[slot+1]&0xffffu;
+  return kind&&kind<=EnemyKinds?EnemyId(kind-1):EnemyId::Count;
+ }
+ return a.game.enemy_world.models[slot].kind;
+}
 struct WorldTextContext {
  const App* app;const char*table;char model_key[192]{};int model=-1,actor=-1,amount=0;
  Card card{};int instance=-1,deck=-1;const EventCardFacts*facts=nullptr;
@@ -83,7 +93,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(name,"singleStarIcon"))return wt_string(a.content.world_title("static_hover_tips","STAR_COUNT"));
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){
-  if(x.actor>0&&x.actor<=s.enemy_count){const auto*d=enemy_definition(s.enemy_world.models[x.actor-1].kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
+  if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=wt_equal(x.table,"intents")?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;const auto*d=enemy_definition(kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
   const auto&character=character_definitions[(unsigned)s.character];const char*title=a.content.world_title("characters",character.key);return wt_string(*title?title:a.content.ui_text(character.name));
  }
  if(wt_equal(x.table,"cards")){
@@ -113,7 +123,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
    if(wt_equal(name,"Block"))return wt_number(card_block(s,x.card,x.instance));
   }
  }
- if(wt_equal(x.table,"intents")&&x.model>=0&&x.model<s.enemy_count){auto intent=enemy_intent(s,x.model);
+ if(wt_equal(x.table,"intents")&&x.model>=0&&x.model<s.enemy_count){auto intent=a.combat_intent(x.model);
   if(wt_equal(name,"Damage"))return wt_number(intent.damage);if(wt_equal(name,"Repeat"))return wt_number(intent.hits);
   if(wt_equal(name,"CardCount"))return wt_number(intent.status_cards);
  }

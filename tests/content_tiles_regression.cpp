@@ -205,10 +205,19 @@ struct Provider {
     unsigned calls=0,max_read=0,fail_first=0,fail_last=0,failed=0;
     bool corrupt=false,bad_range=false;
     std::vector<Progress> progress;
+    ResourceStage fail_stage=ResourceStage::Count;
+    unsigned tracked_first=0,tracked_last=0,tracked_calls=0;
+    uint64_t tracked_bytes=0;
     static bool read(void*context,uint32_t offset,void*dst,uint32_t count){
         auto&p=*static_cast<Provider*>(context);++p.calls;p.max_read=std::max(p.max_read,count);
         if(!p.bytes||offset>p.bytes->size()||count>p.bytes->size()-offset){p.bad_range=true;return false;}
-        const bool fault=p.fail_last>p.fail_first&&offset<p.fail_last&&count>p.fail_first-std::min(offset,p.fail_first);
+        const ResourceStage stage=p.progress.empty()?ResourceStage::Count:p.progress.back().stage;
+        if(stage==ResourceStage::TileIndex&&p.tracked_last>p.tracked_first&&
+           offset<p.tracked_last&&offset+count>p.tracked_first){
+            ++p.tracked_calls;p.tracked_bytes+=std::min(offset+count,p.tracked_last)-std::max(offset,p.tracked_first);
+        }
+        const bool fault=(p.fail_stage==ResourceStage::Count||stage==p.fail_stage)&&
+            p.fail_last>p.fail_first&&offset<p.fail_last&&count>p.fail_first-std::min(offset,p.fail_first);
         std::memcpy(dst,p.bytes->data()+offset,count);
         if(fault){++p.failed;if(p.corrupt){
                 const unsigned at=p.fail_first>offset?p.fail_first-offset:0;static_cast<uint8_t*>(dst)[at]^=0x80;
@@ -538,7 +547,7 @@ struct ImageRejector {
 void malformed_container(){
     label="container setup";const Package p=basic();Rejector reject;ImageRejector reject_image;
     const auto field=[&](const char*name,size_t at,uint32_t value,unsigned width=4){Bytes b=p.bytes;put(b,at,value,width);reject(name,std::move(b));};
-    field("v14 cannot carry tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,18);
+    field("v14 cannot carry tile format",4,14);field("v16 requires its extended auxiliary directory",4,16);field("unsupported pack version",4,20);
     struct Mutation {unsigned offset,value;const char*name;};
     const Mutation header[]={
         {0,0,"codec magic"},{4,2,"codec version"},{8,8,"tile side"},{12,16,"dictionary property"},
@@ -647,6 +656,57 @@ void malformed_geometry(){
     tile_field("inactive tile edge rejected on first image",p.frames[3].ids[0],1,3,1,p.image_id(3));
     const unsigned inactive_start=p.descriptors[3].offset;
     raw_field("inactive tile id range",index,inactive_start+12,unsigned(p.tiles.size()));
+}
+void catalog_metadata_reuse(){
+    label="large descriptor catalog, reversed records and complete index group";
+    Package p;p.images=20000;p.reserved_descriptors=19000;
+    std::vector<unsigned> reversed;
+    for(unsigned i=0;i<64;++i){p.frames.push_back(frame(20+i%13,4+i%8,Pattern::AlphaSpans,i));reversed.push_back(63-i);}
+    p.collect();p.make_groups({reversed});p.encode();
+    Provider source{&p.bytes};source.tracked_first=p.descriptor_base;
+    source.tracked_last=p.descriptor_base+p.reserved_descriptors*16;
+    auto direct=std::make_unique<Content>(),range=std::make_unique<Content>();
+    CHECK(direct->open(p.bytes.data(),p.bytes.size()));CHECK(range->open(source.source(true)));
+    // Opening must not reread this larger-than-reader-cache table for each
+    // group/descriptor. Allow page-edge slack rather than a particular call
+    // size or exact implementation; FNV's independent scan is excluded.
+    CHECK(source.tracked_bytes<=uint64_t(p.reserved_descriptors)*16+2*ResourceReader::PageSize);
+    CHECK(source.tracked_calls>0);
+    for(unsigned i=0;i<p.frames.size();++i){picture(*direct,p.image_id(i),p.frames[i]);picture(*range,p.image_id(i),p.frames[i]);}
+    CHECK(!source.bad_range);
+
+    Rejector reject;const unsigned unused=p.reserved_descriptors-1;
+    Bytes bad=p.bytes;put(bad,p.descriptor(unused)+8,p.descriptors[0].offset+1);
+    reject("unreferenced cached descriptor must begin at a complete record",std::move(bad));
+    bad=p.bytes;put(bad,p.descriptor(unused)+12,p.descriptors[0].length-1);
+    reject("unreferenced cached descriptor must have the exact record length",std::move(bad));
+    bad=p.bytes;put(bad,p.descriptor(unused),p.base+2);
+    reject("every cached descriptor retains its shared-header check",std::move(bad));
+
+    const unsigned alias=p.alias_id()+1;
+    const auto alias_shape=[&](unsigned descriptor,unsigned width,unsigned height){
+        Bytes bytes=p.bytes;const size_t at=p.image_entry(alias);
+        put(bytes,at,unsigned(p.descriptor(descriptor)));put(bytes,at+4,width,2);put(bytes,at+6,height,2);
+        put(bytes,at+8,6);put(bytes,at+12,16);return bytes;
+    };
+    // Separate descriptors can address the same decoded record with different
+    // dimensions without disabling grouping. Its generic summary must not
+    // authorize narrower geometry, fewer rows or a different tile-grid size.
+    reject("record summary keeps per-descriptor width rejection",alias_shape(unused,19,4));
+    reject("record summary keeps per-descriptor height rejection",alias_shape(unused,20,3));
+    reject("record summary keeps per-descriptor tile-grid rejection",alias_shape(unused,33,4));
+    // A shared descriptor with conflicting shapes takes the constrained path.
+    reject("conflicting image aliases keep independent geometry checks",alias_shape(0,19,4));
+    ImageRejector pixels;
+    pixels("record summary cannot authorize another shape's first-use edges",alias_shape(unused,21,4),alias,1);
+
+    label="failed metadata read cannot publish summaries or survive reopening";
+    Provider fault{&p.bytes};fault.fail_stage=ResourceStage::TileIndex;
+    fault.fail_first=p.descriptor_base;fault.fail_last=p.descriptor_base+p.reserved_descriptors*16;
+    CHECK(!range->open(fault.source(true))&&!range->healthy());CHECK(fault.failed>0);
+    CHECK(!range->image(1).pixels&&!range->glyph('?',10).pixels);
+    fault.fail_last=0;fault.progress.clear();CHECK(range->open(fault.source(true)));
+    picture(*range,1,p.frames[0]);CHECK(!fault.bad_range);
 }
 void maximum_frame_and_unused_tile(){
     label="full 320 by 240 sparse frame and six-page index";
@@ -867,6 +927,27 @@ void validation_workspace_fallbacks(const Package&pressure_tiny){
     Bytes bad=chain.bytes;put(bad,chain.image_entry(1)+6,239,2);
     Rejector reject;reject("workspace fallback still validates each image geometry",std::move(bad));
 
+    // Two intermediate capacities exercise optional metadata independently:
+    // group chains plus record summaries fit without the descriptor table;
+    // then even the small per-group summary must fall back to checked scans.
+    for(bool summaries:{true,false}){
+        label=summaries?"record summaries without a full descriptor copy":"group chains without summary workspace";
+        Package limited=empty_canvas();limited.images=65535;limited.glyphs=32768;limited.encode();
+        const unsigned fixed=DirectoryBound-limited.prefix-limited.images-(limited.images+7)/8;
+        limited.reserved_descriptors=summaries?18000:(fixed-4)/9;
+        limited.encode();
+        const unsigned spare=fixed-limited.reserved_descriptors-(8*limited.reserved_descriptors+4);
+        CHECK(8*limited.reserved_descriptors+4<=fixed-limited.reserved_descriptors);
+        CHECK(summaries?(spare>=64*12&&limited.reserved_descriptors*16>spare-64*12):spare<64*12);
+        Provider provider{&limited.bytes};
+        CHECK(direct->open(limited.bytes.data(),limited.bytes.size()));CHECK(range->open(provider.source()));
+        picture(*direct,1,limited.frames[0]);picture(*range,1,limited.frames[0]);CHECK(!provider.bad_range);
+        Bytes invalid=limited.bytes;put(invalid,limited.image_entry(1)+6,239,2);
+        reject(summaries?"summary-only workspace preserves geometry rejection":"chain-only workspace preserves geometry rejection",std::move(invalid));
+        invalid=limited.bytes;put(invalid,limited.descriptor(limited.reserved_descriptors-1)+8,1);
+        reject(summaries?"summary-only workspace validates unused boundaries":"chain-only workspace validates unused boundaries",std::move(invalid));
+    }
+
     label="no bitmap space falls back to full verification on each image miss";
     FullDirectory full=no_bitmap_package();Provider fallback{&full.bytes};
     CHECK(direct->open(full.bytes.data(),full.bytes.size()));CHECK(range->open(fallback.source()));
@@ -881,7 +962,7 @@ void validation_workspace_fallbacks(const Package&pressure_tiny){
 } // namespace
 int main(int argc,char**argv){
     if(argc==2&&!std::strcmp(argv[1],"--native-ui")){native_ui_packages();locale_packages();std::printf("native UI and locale content: %u checks passed\n",checks);return 0;}
-    progress_contract();valid_packages();malformed_container();malformed_geometry();maximum_frame_and_unused_tile();
+    progress_contract();valid_packages();malformed_container();malformed_geometry();catalog_metadata_reuse();maximum_frame_and_unused_tile();
     native_ui_packages();locale_packages();
     image_pool_cycles_and_fragmentation();
     label="bounded group pressure fixtures";

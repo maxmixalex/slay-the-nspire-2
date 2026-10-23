@@ -76,6 +76,11 @@ void App::input(Key k){
     if(game_over_input(k))return;
     if(treasure_input(k)||camp_input(k))return;
     if(screen_input(k))return;
+    // A canonical pending choice may be ahead of its visible command cue.
+    // Keep inspection panels and persistence available; choice navigation,
+    // details and confirmation become active together with the overlay.
+    if(!panel&&!combat_choice_ready()&&(k==Key::Left||k==Key::Right||k==Key::Up||k==Key::Down||
+       k==Key::Confirm||k==Key::EndTurn||k==Key::Detail))return;
     if(world_choice_input(k))return;
     if(selection_input(k))return;
     if(deck_input(k))return;

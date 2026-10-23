@@ -170,14 +170,20 @@ def build_art(pck_path, cache, jobs):
     return manifest
 
 
-def patch_pack(data, manifest, cache):
-    source = tiles.PackView(data, BASE_AUX, versions=(17,), profile=(558, 8192, BASE_CLIPS, BASE_AUX))
+def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, base_clips=BASE_CLIPS,
+               added_aux=ADDED_AUX, expected_added_clips=7, input_version=17, output_version=18):
+    """Append ordinary images/clips without changing any old payload or id.
+
+    Defaults retain the fixed v17 -> v18 energy/merchant conversion. The v19
+    merchant converter supplies another exact, known source/target profile.
+    """
+    source = tiles.PackView(data, base_aux, versions=(input_version,), profile=(558, 8192, base_clips, base_aux))
     old_tiles = tiles.TileReader(source)
     ni, ng, ns, nc, nk, nu = source.counts
     rows, clips = manifest['images'], manifest['clips']
     count, clip_count = len(rows), len(clips)
-    tiles.require(count + ni <= 65535 and clip_count == 7, 'Feedback profile outside bounds')
-    # Original v17 localization places every glyph/string after all art.
+    tiles.require(count + ni <= 65535 and clip_count == expected_added_clips, 'Feedback profile outside bounds')
+    # The source localization places every glyph/string after all art.
     art_end = min([row[1] for row in source.glyphs] + [row[0] for row in source.strings])
     tiles.require(art_end % 2 == 0, 'Locale segment must begin on an even boundary')
     tiles.require(all(off + length <= art_end for off, _w, _h, _fmt, length in source.images),
@@ -191,7 +197,7 @@ def patch_pack(data, manifest, cache):
         tiles.require(tiles.sha256(raw) == row['sha256'], 'Feedback image changed during relocation')
         payload.extend(raw)
     payload.extend(bytes(len(payload) % 2))
-    delta = count * tiles.IMAGE.size + clip_count * tiles.CLIP.size + ADDED_AUX * 4
+    delta = count * tiles.IMAGE.size + clip_count * tiles.CLIP.size + added_aux * 4
     def shifted(off):
         return off + delta + (len(payload) if off >= art_end else 0)
     out = bytearray(data[:source.glyph_at])
@@ -199,7 +205,7 @@ def patch_pack(data, manifest, cache):
     out.extend(data[source.glyph_at:source.card_at])
     out.extend(bytes(clip_count * tiles.CLIP.size))
     out.extend(data[source.card_at:source.base_end])
-    out.extend(struct.pack('<' + 'I' * ADDED_AUX, *range(ni, ni + ADDED_AUX)))
+    out.extend(struct.pack('<' + 'I' * added_aux, *range(ni, ni + added_aux)))
     out.extend(data[source.base_end:art_end])
     out.extend(payload)
     out.extend(data[art_end:])
@@ -231,9 +237,9 @@ def patch_pack(data, manifest, cache):
         global_at, group, offset, length = tiles.DESCRIPTOR.unpack_from(data, at)
         tiles.require(global_at == source.base_end, 'Invalid historical tile descriptor')
         tiles.DESCRIPTOR.pack_into(out, at + delta, global_at + delta, group, offset, length)
-    tiles.HEADER.pack_into(out, 0, b'NSP2', 18, tiles.REFERENCE, len(out), ni + count, ng, ns, nc + clip_count, nk,
+    tiles.HEADER.pack_into(out, 0, b'NSP2', output_version, tiles.REFERENCE, len(out), ni + count, ng, ns, nc + clip_count, nk,
                           tiles.fnv(memoryview(out)[40:]))
-    target = tiles.PackView(out, nu + ADDED_AUX, versions=(18,), profile=(nk, ns, nc + clip_count, nu + ADDED_AUX))
+    target = tiles.PackView(out, nu + added_aux, versions=(output_version,), profile=(nk, ns, nc + clip_count, nu + added_aux))
     tiles.TileReader(target)
     tiles.require(target.clips[:nc] == source.clips and target.cards == source.cards and
                   target.aux[:nu] == source.aux, 'Historical catalog changed')
@@ -249,10 +255,10 @@ def patch_pack(data, manifest, cache):
         tiles.require(new == (old[0], shifted(old[1]), *old[2:]), 'Glyph relocation mismatch')
     for old, new in zip(source.strings, target.strings):
         tiles.require(new == (shifted(old[0]), old[1]), 'String relocation mismatch')
-    receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=17, output_version=18,
+    receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=input_version, output_version=output_version,
                    input_sha256=tiles.sha256(data), output_sha256=tiles.sha256(out),
                    input_bytes=len(data), output_bytes=len(out), appended_images=count,
-                   appended_clips=clip_count, auxiliary_count=nu + ADDED_AUX,
+                   appended_clips=clip_count, auxiliary_count=nu + added_aux,
                    unchanged_old_payload=True, unchanged_old_directory_indices=True,
                    common_art_insertion=art_end, added_common_art_bytes=len(payload),
                    common_art_sha256=tiles.sha256(payload), verified_new_images=count,

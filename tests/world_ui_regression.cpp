@@ -340,21 +340,6 @@ static void deferred_enemy_values(){
  snapshot();a.animation=replace-1;a.render();CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255&&a.health_bars[2].identity==old_bar_identity);
  a.animation=replace;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);unchanged();
 
- for(int delayed=0;delayed<2;++delayed){
-  enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));CHECK(potion_set(a.game,0,Potion::Strength));
-  // Obtaining a relic during combat queues its acquisition continuation.
-  // Settle that actual operation before requesting a new end-turn action.
-  resolve_pending(a.game);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count&&a.game.playing<0&&!a.combat_actions_locked());a.input(Key::EndTurn);
-  CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished);
-  if(delayed){a.animation=a.combat_feedback.end_at+30;a.busy=0;a.render();}
-  CHECK(a.combat_actions_locked());
-  a.input(Key::Potions);CHECK(a.panel==4);snapshot();a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();a.input(Key::Potions);CHECK(!a.panel);
-  a.input(Key::Confirm);CHECK(a.choice_selected_count==1);a.input(Key::EndTurn);
-  CHECK(a.game.phase==Phase::Combat);if(!delayed)CHECK(a.combat_feedback.active&&a.combat_feedback.finished);
-  if(int32_t(a.combat_feedback.end_at-a.animation)>0)a.animation=a.combat_feedback.end_at;
-  a.render();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);
- }
-
  enemy_visual_fight(EncounterId::NibbitsNormal);CHECK(potion_set(a.game,0,Potion::Strength));a.input(Key::EndTurn);
  a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
  a.input(Key::Confirm);CHECK(a.panel==4&&potion_at(a.game,0)==Potion::Strength);unchanged();
@@ -380,6 +365,110 @@ static void deferred_enemy_values(){
  a.finish_combat_feedback();snapshot();a.animation=f.end_at-1;a.sync_combat_feedback();CHECK(a.combat_feedback.active);
  a.animation=f.end_at;a.sync_combat_feedback();CHECK(!a.combat_feedback.active&&a.combat_health(0).block==a.game.block);unchanged();
 }
+static void hidden_choice_input(int token){
+ CHECK(!a.combat_choice_ready());a.render();CHECK(has(HitKind::Battlefield,0));
+ CHECK(!has(HitKind::WorldChoice,token)&&!has(HitKind::CombatChoice,token));
+ CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice))&&!has(HitKind::UiAction,int(UiAction::ConfirmWorldChoice)));
+ const int cursor=a.cursor;const auto effects=a.game.effect_count;snapshot();
+ for(Key key:{Key::Left,Key::Right,Key::Up,Key::Down,Key::Confirm,Key::EndTurn,Key::Detail})a.input(key);
+ a.toggle_choice(token);a.toggle_world_choice(token);a.world_choice_detail(token);a.pointer_scroll(1);
+ CHECK(a.cursor==cursor&&!a.choice_selected_count&&a.detail_card<0&&a.detail_item<0);
+ // A stale/preselected token must not let a raw confirmation bypass the
+ // display gate. Clearing/paging actions share the same barrier as keys.
+ a.choice_revision=a.game.revision;a.choice_selected[0]=uint16_t(token);a.choice_selected_count=1;
+ a.confirm_choice();a.confirm_world_choice();
+ for(UiAction action:{UiAction::ConfirmChoice,UiAction::ConfirmWorldChoice,UiAction::ClearChoice,UiAction::ClearWorldChoice,
+     UiAction::PreviousChoicePage,UiAction::NextChoicePage,UiAction::PreviousWorldPage,UiAction::NextWorldPage})a.ui_action(action);
+ CHECK(a.cursor==cursor&&a.choice_selected_count==1&&a.game.effect_count==effects);unchanged();a.choice_selected_count=0;
+}
+static void deferred_combat_choices(){
+ static State direct;static SaveData expected;
+ for(unsigned fast=0;fast<2;++fast)for(unsigned delayed=0;delayed<2;++delayed){
+  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;a.game.enemy_world.models[0].node=0;
+  init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));CHECK(potion_set(a.game,0,Potion::Strength));
+  // Obtaining a relic during combat has its own canonical continuation.
+  resolve_pending(a.game);CHECK(!a.game.effect_count&&a.game.playing<0&&!a.combat_actions_locked());
+  snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(end_turn(direct));CHECK(save(direct,expected));
+  const uint32_t start=a.animation;a.input(Key::EndTurn);
+  CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished);
+  CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  uint16_t ids[MaxWorldUiChoices];CHECK(a.world_choice_options(ids,MaxWorldUiChoices)>0);
+  // Nibbit's audited 800/500ms lead, 400/250ms intent and 350/175ms
+  // action are separately quantized by the existing real-time scheduler.
+  const uint32_t barrier=start+(fast?30u:49u);CHECK(a.combat_feedback.choice_at==barrier);
+  const uint32_t original_end=a.combat_feedback.end_at;
+  hidden_choice_input(ids[0]);
+  a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
+  a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();a.input(Key::Potions);CHECK(!a.panel);
+  advance_combat_ms((barrier-a.animation-1)*33);a.render();hidden_choice_input(ids[0]);
+  CHECK(a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy);
+  if(!delayed)capture(fast?"choice-toasty-before-fast":"choice-toasty-before");
+  // Pressing the background before a new overlay appears cannot select its
+  // card on release. A fresh click after the same boundary can select it.
+  a.pointer_move(49,80);a.pointer_button(true);advance_combat_ms(33);a.render();
+  CHECK(a.animation==barrier&&a.combat_choice_ready()&&has(HitKind::WorldChoice,ids[0]));
+  CHECK(!has(HitKind::Battlefield,0));a.pointer_button(false);CHECK(!a.choice_selected_count);
+  CHECK(a.turn_banner.player_start==barrier);snapshot();
+  a.ui_action(UiAction::ConfirmWorldChoice);CHECK(a.combat_feedback.choice_at==barrier&&!a.choice_selected_count);unchanged();
+  if(delayed){
+   advance_combat_ms(3300);a.render();CHECK(a.combat_choice_ready()&&a.combat_feedback.active&&a.combat_actions_locked());
+   // A rejected core selection leaves the barrier answerable. Waiting
+   // between retries advances the continuation once, not twice.
+   a.choice_revision=a.game.revision;a.choice_selected[0]=MaxCards-1;a.choice_selected_count=1;
+   a.ui_action(UiAction::ConfirmWorldChoice);CHECK(a.combat_feedback.choice_pending&&a.combat_choice_ready());unchanged();
+   CHECK(a.combat_feedback.end_at==original_end+(a.animation-barrier));
+   a.ui_action(UiAction::ClearWorldChoice);CHECK(!a.choice_selected_count);advance_combat_ms(99);a.render();
+  }
+  if(!delayed)capture(fast?"choice-toasty-ready-fast":"choice-toasty-ready");
+  a.busy=300;a.pointer_move(49,80);a.pointer_button(true);a.pointer_button(false);
+  CHECK(a.choice_selected_count==1&&a.choice_selected[0]==ids[0]);
+  CHECK(world_relic_select(direct,ids,1));CHECK(save(direct,expected));
+  a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count);
+  CHECK(a.turn_banner.player_start==barrier); // A late answer must not restart it.
+  CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  if(a.combat_feedback.active&&int32_t(a.combat_feedback.end_at-a.animation)>0)advance_combat_ms((a.combat_feedback.end_at-a.animation)*33);
+  a.render();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);
+ }
+ for(unsigned fast=0;fast<2;++fast){
+  // A real enemy choice followed by Toasty's turn-start choice exercises two
+  // barriers in one end-turn queue. Knowledge's selection cue is audited;
+  // the unreviewed remainder of that move retains its existing fallback.
+  enemy_visual_fight(EncounterId::KnowledgeDemonBoss);a.fast_mode=fast!=0;a.tick_remainder=0;
+  init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));resolve_pending(a.game);
+  snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(end_turn(direct));const uint32_t start=a.animation;a.input(Key::EndTurn);
+  CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::EnemyKnowledge);
+  const uint32_t first=a.combat_feedback.choice_at,old_end=a.combat_feedback.end_at;
+  // Independently rounded 800/500 + 400/250 + 1000/250ms waits.
+  CHECK(first==start+(fast?32u:69u)&&old_end>first);hidden_choice_input(MaxCards+1);
+  advance_combat_ms((first-a.animation-1)*33);a.render();CHECK(!a.combat_choice_ready());
+  advance_combat_ms(33);a.render();CHECK(a.combat_choice_ready()&&has(HitKind::CombatChoice,MaxCards+1));
+  capture(fast?"choice-knowledge-ready-fast":"choice-knowledge-ready");
+  advance_combat_ms((old_end-a.animation+60)*33);a.render();CHECK(a.combat_choice_ready()&&has(HitKind::CombatChoice,MaxCards+1));
+  snapshot();a.choice_revision=a.game.revision;a.choice_selected[0]=MaxCards+2;a.choice_selected_count=1;
+  a.confirm_choice();CHECK(a.combat_feedback.choice_pending&&a.combat_choice_ready());unchanged();
+  a.ui_action(UiAction::ClearChoice);advance_combat_ms(99);
+  const uint32_t answer=a.animation;a.busy=300;a.toggle_choice(MaxCards+1);CHECK(a.choice_selected_count==1);
+  uint16_t knowledge=MaxCards+1;CHECK(choose_extended(direct,&knowledge,1));a.ui_action(UiAction::ConfirmChoice);
+  CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&a.combat_feedback.choice_pending);
+  const uint32_t second=a.combat_feedback.choice_at;CHECK(second==old_end+(answer-first)&&second>answer);
+  CHECK(save(direct,expected));CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  uint16_t ids[MaxWorldUiChoices];CHECK(a.world_choice_options(ids,MaxWorldUiChoices)>0);hidden_choice_input(ids[0]);
+  advance_combat_ms((second-a.animation-1)*33);a.render();CHECK(!a.combat_choice_ready());
+  advance_combat_ms(33);a.render();CHECK(a.combat_choice_ready()&&has(HitKind::WorldChoice,ids[0]));
+  capture(fast?"choice-consecutive-fast":"choice-consecutive");advance_combat_ms(3300);a.busy=300;
+  CHECK(world_relic_select(direct,ids,1));CHECK(save(direct,expected));
+  a.input(Key::Confirm);CHECK(a.choice_selected_count==1);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat);
+  CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
+  if(a.combat_feedback.active&&int32_t(a.combat_feedback.end_at-a.animation)>0)advance_combat_ms((a.combat_feedback.end_at-a.animation)*33);
+  a.render();CHECK(!a.combat_feedback.active&&!a.combat_actions_locked());
+ }
+ // Loading a canonical suspended choice does not resurrect a display-only
+ // delay. The same selected instance and saved continuation remain usable.
+ enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));resolve_pending(a.game);
+ a.input(Key::EndTurn);CHECK(!a.combat_choice_ready());snapshot();CHECK(load(a.game,before.bytes,before.size));a.reset_presentation();a.render();
+ CHECK(a.combat_choice_ready()&&!a.combat_feedback.active);unchanged();a.input(Key::Confirm);CHECK(a.choice_selected_count==1);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count);
+ a.fast_mode=false;
+}
 static void feedback_hud_and_merchant(){
  const char*names[]={"ironclad","silent","defect","regent","necrobinder"};
  for(unsigned character=0;character<5;character++){
@@ -389,7 +478,7 @@ static void feedback_hud_and_merchant(){
   a.game.energy=0;snapshot();a.advance(250);a.render();capture((std::string("energy-zero-")+names[character]).c_str());unchanged();
   new_run(a.game,73,false,Character(character));a.game.map[0].room=Room::Shop;CHECK(choose_node(a.game,0));a.reset_presentation();snapshot();a.render();
   CHECK(!a.shop_open&&has(HitKind::UiAction,int(UiAction::OpenShop)));
-  if(a.content.version()==FeedbackContentVersion){
+  if(a.content.version()>=FeedbackContentVersion){
    CHECK(a.content.clip(AnimMerchantIronclad+character).count>1);
    const auto*outside=a.hit_at(166,190);CHECK(!outside||outside->kind!=HitKind::UiAction||outside->value!=int(UiAction::OpenShop));
   }
@@ -399,4 +488,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();deferred_combat_choices();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

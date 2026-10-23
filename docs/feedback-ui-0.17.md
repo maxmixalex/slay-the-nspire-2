@@ -252,3 +252,58 @@ and Necrobinder flame shaders are not prebaked. Unreviewed models still use
 clip duration for action occupancy and the move-start hit fallback.
 Device frame rate requires actual calculator/emulator
 measurement rather than host timing.
+
+## Combat choice barriers — next implementation slice
+
+This section describes source following the accepted `61970600` runtime and
+`3bda3cf5` documentation baseline. Formal execution of this slice is pending
+its own verified checkpoint; the historical receipts above retain their
+actual source identities.
+
+A synchronously prepared combat choice now has a small presentation barrier.
+The existing `CombatFeedback` observer captures the current effect cue when
+core resolution suspends. The battle remains visible before that cue, and
+card/relic choice overlays and their keyboard, pointer and raw UI action
+entry points become available together. Navigation, preselected-token
+confirmation and paging cannot consume the pending continuation early.
+Inspection panels and saving remain available; ordinary card/potion/EndTurn
+actions continue to use the existing unfinished-feedback lock.
+
+The pinned original provides the following ordering evidence:
+
+- `ToastyMittens.AfterPlayerTurnStart`, async `0x06009dd0`, awaits
+  `CardSelectCmd.FromHand` before exhausting the answer and applying Strength.
+  `FromHand`, async `0x0600b2c6`, signals choice begin, awaits the hand selector,
+  then signals choice end. This requires selection to follow the preceding
+  commands and later effects to follow the answer.
+- `CombatManager.StartTurn`, async `0x0600b3d4`, creates the player banner at
+  IL `0359`, before setup/turn-start selection hooks. A late Toasty answer
+  therefore does not restart an already scheduled player banner.
+- `KnowledgeDemon.CurseOfKnowledgeMove`, async `0x0600a324`, awaits
+  `TriggerAnim(MindRotTrigger, 1.0)` before starting `ChooseCurse`; the latter,
+  async `0x0600a322`, awaits `FromChooseACardScreen`. `CreatureCmd.TriggerAnim`,
+  async `0x0600b31b`, selects the supplied Normal wait or
+  `min(wait * .5, .25)` in Fast. Its choice cue is consequently **1,000 ms
+  Normal / 250 ms Fast after the trigger**, independently of the skeleton
+  tail. Other Knowledge move waits retain the existing fallback; this is
+  not a complete audit of that monster's action occupancy.
+
+Waiting for an answer rebases only the unexecuted continuation clock. Already
+playing animation tails continue. Rejected selections keep the barrier
+armed, and a later retry adds only the time since the preceding attempt.
+A following choice records its own cue instead of inheriting an elapsed
+one. Loading a saved pending choice resets presentation and makes that
+canonical continuation immediately answerable.
+
+The projection is now **6,040 bytes**, eight bytes above the preceding
+6,032-byte structure (Clang static layout assertion). There is no full-State
+copy, new RNG call or SaveData field. Status/power strips and card/pile state
+still follow canonical state; this slice gates choice visibility and
+interaction, and does not claim full command-by-command combat replay.
+
+The added regression source covers Normal/Fast cue boundaries, a mouse press
+that crosses overlay appearance, raw stale-token actions, insufficient and
+rejected choices, late answers, Knowledge-to-Toasty consecutive choices,
+unchanged canonical saves/RNG, and loading a suspended choice. It also keeps
+the v18 merchant assertions enabled for append-only v19 resources. These
+are planned execution gates until a closed checkpoint-bound run is recorded.

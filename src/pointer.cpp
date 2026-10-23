@@ -60,6 +60,8 @@ void App::pointer_move(int x,int y){
     const auto*h=hit_at(pointer.x,pointer.y);
     if(!pointer.held)hand_focus=hand_can_focus()&&h&&h->kind==HitKind::Hand;
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
+    if(!combat_choice_ready()&&(h->kind==HitKind::Hand||h->kind==HitKind::Choice||
+       h->kind==HitKind::CombatChoice||h->kind==HitKind::WorldChoice||h->kind==HitKind::CrystalCell))return;
     switch(h->kind){
     case HitKind::UiAction:
         if(!pointer.held&&character_select&&!run_settings){

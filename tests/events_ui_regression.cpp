@@ -55,7 +55,7 @@ static void choices(){
 }
 static void shop(){
  setup(EventId::Baths);auto&s=a.game;s.phase=Phase::Map;s.current_node=1;s.next_row=1;s.hp=40;CHECK(gain_relic(s,MealTicket));CHECK(choose_node(s,1));a.reset_presentation();a.render();CHECK(s.hp==55&&!a.shop_open);auto before=snap();
- if(a.content.version()==FeedbackContentVersion){
+ if(a.content.version()>=FeedbackContentVersion){
   const auto body=hit(HitKind::UiAction,int(UiAction::OpenShop));
   CHECK(body.x==MerchantLayout::BodyX-2&&body.y==MerchantLayout::BodyY-2&&body.w==MerchantLayout::BodyW+4&&body.h==MerchantLayout::BodyH+4);
   a.pointer_move(166,190);a.pointer_button(true);a.pointer_button(false);CHECK(!a.shop_open);same(before);

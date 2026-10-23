@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Audit every locale UI binding without exporting private localized prose.
 
-Read one or more private NSP2/17 or NSP2/18 packs. The optional native runner
+Read one or more private NSP2/17, NSP2/18 or NSP2/19 packs. The optional native runner
 checks actual display routes and emits only slot IDs, field names and counts.
 This inventory does not replace Content::open's integrity/structural checks.
 """
@@ -64,7 +64,7 @@ def pack_inventory(path, rows, statuses):
         if len(data) < 40:
             raise ValueError(f"Short pack: {path.name}")
         magic, version, reference, length, images, glyphs, strings, clips, cards, _ = struct.unpack_from("<10I", data)
-        if (magic != 0x3250534E or version not in (17, 18) or reference != 0x41CEF1EA
+        if (magic != 0x3250534E or version not in (17, 18, 19) or reference != 0x41CEF1EA
                 or length != len(data) or strings < UI_BASE + len(rows)):
             raise ValueError(f"Unsupported/truncated locale pack: {path.name}")
         directory = 40 + 16 * (images + glyphs)

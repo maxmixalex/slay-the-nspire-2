@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..18 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..19 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This
@@ -50,8 +50,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18) and reference == REFERENCE,
-            "Expected pinned NSP2/17 or NSP2/18")
+    require(magic == b"NSP2" and version in (17, 18, 19) and reference == REFERENCE,
+            "Expected pinned NSP2/17, NSP2/18 or NSP2/19")
     require(length == len(data) and fnv(memoryview(data)[40:]) == checksum,
             "Input length or integrity checksum differs")
     require(0 < ni <= 65535 and 0 < ng <= 32768 and MARKER < ns <= 16384 and

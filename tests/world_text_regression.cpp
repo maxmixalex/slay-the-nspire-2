@@ -38,6 +38,8 @@ static std::vector<uint8_t> synthetic_profile(){
   if(key=="events.COLOSSAL_FLOWER.pages.INITIAL.description")text="TEXT[green]TEXT[/green]TEXT[red][jitter]TEXT[/jitter][/red]TEXT\n\nTEXT[sine][rainbow freq=0.3 sat=0.8 val=1]COLOR[/rainbow][/sine]TEXT[aqua]TEXT[/aqua]TEXT[red]TEXT[/red]TEXT\n\nTEXT[gold]TEXT[/gold]TEXT\n";
   if(key=="powers.SHRINK_POWER.smartDescription")text="{ApplierName.StringValue:cond:{} ACTIVE|{OwnerName}} {Amount:cond:==1?TURN|>1?[blue]{}[/blue] TURNS|}";
   if(key=="powers.NIGHTMARE_POWER.smartDescription")text="{Amount} COPIES OF {Card}";
+  if(key=="intents.ATTACK.description")text="{OwnerName}: [red]{Damage}[/red] x {Repeat}";
+  if(key=="intents.STATUS.description")text="CARDS {CardCount}";
   if(key=="events.CRYSTAL_SPHERE.minigame.divinationsRemain")text="REMAINING {Count}";
   if(key=="events.CRYSTAL_SPHERE.pages.INITIAL.description")text="UNRELATED {Count}";
   if(key=="relics.FAKE_ANCHOR.description")text="{Unbound.StringValue:cond:MUST NOT|DISAPPEAR}";
@@ -176,6 +178,73 @@ static void colossal_flower(){
   CHECK(changes>0);unchanged();a.map_clock_ms=10000;a.render();CHECK(!std::memcmp(first.data(),a.pixels,first.size()*sizeof(uint16_t)));unchanged();
  }
 }
+static std::string attack_description(int slot){
+ char text[1024]{};a.localized_text("intents","ATTACK.description",text,sizeof text,slot,slot+1);resolved(text);return text;
+}
+static bool intent_panel(){
+ const int x=a.pointer.x>=170?8:134,y=48;
+ const uint16_t gold=uint16_t((223>>3)<<11|(186>>2)<<5|(112>>3));
+ for(int dx=0;dx<178;++dx)if(a.pixels[y*ScreenW+x+dx]!=gold)return false;
+ for(int dy=0;dy<20;++dy)if(a.pixels[(y+dy)*ScreenW+x]!=gold)return false;
+ return true;
+}
+static void deferred_intent_bindings(){
+ struct Sample{EnemyId kind;const char*key;};
+ for(const Sample sample: {Sample{EnemyId::Noisebot,"STATUS.description"},Sample{EnemyId::Byrdonis,"ATTACK.description"}}){
+  reset(0);enter_combat(a.game);CHECK(encounter_setup(a.game,EncounterId::NibbitsWeak));
+  auto&model=a.game.enemy_world.models[0];model.kind=sample.kind;model.node=0;
+  a.reset_presentation();a.begin_combat_feedback();CHECK(a.combat_feedback.active);
+  const auto shown=a.combat_intent(0);CHECK(sample.kind==EnemyId::Noisebot?shown.status_cards==2:shown.hits==3);
+  char original[1024]{},retained[1024]{},current[1024]{};snapshot();
+  a.localized_text("intents",sample.key,original,sizeof original,0,1);resolved(original);unchanged();
+  // Use real model intents to distinguish both status-card count and hit
+  // repetition from their already advanced canonical values.
+  model.kind=EnemyId::Nibbit;model.node=0;snapshot();
+  a.localized_text("intents",sample.key,retained,sizeof retained,0,1);resolved(retained);
+  CHECK(!std::strcmp(original,retained));unchanged();
+  a.combat_feedback.reset();a.localized_text("intents",sample.key,current,sizeof current,0,1);resolved(current);
+  CHECK(std::strcmp(original,current));unchanged();
+ }
+}
+static void deferred_intent_text(){
+ for(unsigned fast=0;fast<2;++fast)for(unsigned pending=0;pending<2;++pending){
+  reset(0);enter_combat(a.game);CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal));
+  a.game.hp=a.game.max_hp=999;a.game.enemy_world.models[0].node=0;a.game.enemy_world.models[1].node=1;
+  if(pending){init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));resolve_pending(a.game);}
+  a.fast_mode=fast!=0;a.reset_presentation();a.pointer.visible=false;a.render();
+  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+  CHECK(!a.combat_preparation.active);const auto first=attack_description(0),second=attack_description(1);
+  a.input(Key::EndTurn);CHECK(a.combat_feedback.active&&a.combat_feedback.finished==!pending);
+  CHECK(a.game.phase==(pending?Phase::WorldRelicChoice:Phase::Combat));
+  snapshot();CHECK(attack_description(0)==first&&attack_description(1)==second);unchanged();
+  // The real EndTurn has advanced both moves. A hover must remain usable
+  // during the banner, retaining the same text as the still-visible icon.
+  a.render();bool found=false;
+  for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==0){
+   a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+1;found=true;break;
+  }
+  CHECK(found);a.pointer.visible=true;a.render();CHECK(intent_panel());unchanged();
+  const auto hide=a.combat_feedback.hide_at[0],done=a.combat_feedback.end_at;
+  CHECK(hide>a.animation);a.animation=hide-1;a.render();CHECK(intent_panel()&&attack_description(0)==first);unchanged();
+  if(pending){
+   // The canonical relic-choice phase must not suppress a tooltip while
+   // the display still shows the preceding battle and its original intent.
+   CHECK(!a.combat_choice_ready());a.animation=a.combat_feedback.choice_at;a.render();
+   CHECK(a.combat_choice_ready()&&!intent_panel());unchanged();a.pointer.visible=false;continue;
+  }
+  const int title_x=(a.pointer.x>=170?8:134)+6;std::vector<uint16_t> title;
+  for(int y=53;y<67;++y)for(int x=title_x;x<title_x+166;++x)title.push_back(a.pixels[y*ScreenW+x]);
+  // Reusing a canonical slot cannot rename the retained actor. This fixture
+  // changes no displayed cue and keeps the complete saved state valid.
+  a.game.enemy_world.models[0].kind=EnemyId::LouseProgenitor;
+  a.game.enemy_world.models[0].combat_id=a.game.enemy_world.next_creature_id++;
+  snapshot();CHECK(attack_description(0)==first);a.render();CHECK(intent_panel());unchanged();
+  size_t title_at=0;for(int y=53;y<67;++y)for(int x=title_x;x<title_x+166;++x)CHECK(a.pixels[y*ScreenW+x]==title[title_at++]);
+  a.animation=hide;a.render();CHECK(!a.combat_intent(0).flags&&!intent_panel());unchanged();
+  a.animation=done;a.render();CHECK(!a.combat_feedback.active);CHECK(attack_description(0)!=first);unchanged();
+  a.pointer.visible=false;
+ }
+}
 int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));actual_pack=true;}else data=synthetic_profile();
- CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();nightmare_snapshot_names();canonical_blade_context();original_resource_labels();crystal_board_count();colossal_flower();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
+ CHECK(a.init(data.data(),data.size(),{}));prepared_and_owned();other_original_forms();nightmare_snapshot_names();canonical_blade_context();original_resource_labels();crystal_board_count();colossal_flower();deferred_intent_bindings();deferred_intent_text();std::printf("world text: %u checks passed (%s)\n",checks,actual_pack?"private original pack":"synthetic bindings");
 }

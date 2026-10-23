@@ -19,11 +19,11 @@ unsigned App::world_choice_page_size()const{
  return 10;
 }
 void App::toggle_world_choice(int id){
- if(!world_choice_phase(game.phase)||id<0)return;sync_selection();
+ if(!world_choice_phase(game.phase)||id<0||!combat_choice_ready())return;sync_selection();
  uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
  for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
  const bool reward=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
- if(reward||world_choice_is_card_reward()){uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
+ if(reward||world_choice_is_card_reward()){continue_combat_choice();uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
   if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}return;
  }
  for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
@@ -33,14 +33,15 @@ void App::toggle_world_choice(int id){
  if(choice_selected_count<maximum&&choice_selected_count<MaxDeck)choice_selected[choice_selected_count++]=uint16_t(id);
 }
 void App::confirm_world_choice(){
- if(!world_choice_phase(game.phase))return;sync_selection();
+ if(!world_choice_phase(game.phase)||!combat_choice_ready())return;sync_selection();
  if(choice_selected_count<world_choice_min()||choice_selected_count>world_choice_max())return;
+ continue_combat_choice();
  bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,choice_selected,choice_selected_count):
   original_event_select(game,choice_selected,choice_selected_count);
  if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}
 }
 void App::world_choice_detail(int id){
- if(id<0)return;
+ if(id<0||!combat_choice_ready())return;
  if(game.phase==Phase::WorldRelicChoice){
   const auto&w=game.world_relics;
   if((w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer)&&id<w.offer_count)open_card_offer(card_from_token(w.offers[id]),w.offer_facts[id]);
@@ -59,7 +60,7 @@ void App::world_choice_detail(int id){
  }
 }
 bool App::world_choice_input(Key key){
- if(title||paused||help||panel||!world_choice_phase(game.phase))return false;
+ if(title||paused||help||panel||!world_choice_phase(game.phase)||!combat_choice_ready())return false;
  sync_selection();
  if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal){
   cursor=cursor<0?0:cursor>=CrystalCells?CrystalCells-1:cursor;

@@ -18,6 +18,12 @@ static TileGroup tile_groups[MaxTileGroups];
 alignas(4) static uint8_t tile_pages[TilePages*TilePageBytes];
 static uint64_t tile_used=0;
 static uint32_t tile_age=0;
+static void tile_put32(uint8_t* out,uint32_t value){
+    for(unsigned i=0;i<4;++i)out[i]=uint8_t(value>>(8*i));
+}
+// Temporary startup summaries live in the unused resident-directory tail.
+// An index group has at most 64 records: offset, length, minimum width/rows.
+constexpr unsigned TileRecordSummaryBytes=12,TileRecordSummaryCapacity=64;
 static_assert(TilePages<=64&&Lzma2BlockRawLimit/TilePageBytes<64,
               "Tile pages must fit the bitmap and packed first-page index");
 static_assert(sizeof tile_groups+sizeof tile_used+sizeof tile_age<=2048,
@@ -120,8 +126,8 @@ static bool valid_tile_records(const uint8_t* bytes,unsigned items){
     return true;
 }
 static bool valid_tile_geometry(const uint8_t* geometry,unsigned length,unsigned output,
-    unsigned width=320,unsigned height=0){
-    unsigned at=0,out=0,rows=0;
+    unsigned width=320,unsigned height=0,uint32_t* shape=nullptr){
+    unsigned at=0,out=0,rows=0,minimum_width=0;
     while(at<length){
         if(rows>=240||(height&&rows>=height)||length-at<2||output-out<2)return false;
         const unsigned spans=u16(geometry+at);at+=2;out+=2;++rows;
@@ -135,10 +141,17 @@ static bool valid_tile_geometry(const uint8_t* geometry,unsigned length,unsigned
             const unsigned bytes=count*(mode?3u:2u);if(bytes>output-out)return false;
             out+=bytes;
         }
+        if(shape){
+            if(last>minimum_width)minimum_width=last;
+            if(spans>minimum_width)minimum_width=spans;
+        }
     }
-    return rows&&(!height||rows==height)&&out==output;
+    if(!rows||(height&&rows!=height)||out!=output)return false;
+    if(shape)*shape=minimum_width|(rows<<16);
+    return true;
 }
-static bool valid_tile_indexes(const uint8_t* bytes,unsigned size,unsigned items,unsigned tiles){
+static bool valid_tile_indexes(const uint8_t* bytes,unsigned size,unsigned items,unsigned tiles,
+    uint8_t* summaries=nullptr){
     unsigned at=0;
     for(unsigned i=0;i<items;++i){
         if(size-at<12)return false;
@@ -146,7 +159,12 @@ static bool valid_tile_indexes(const uint8_t* bytes,unsigned size,unsigned items
         if(!output||output>MaxImageBytes||!index||index>MaxFrameTiles*4||
            index%4||geometry<2||index>size-at-12||geometry>size-at-12-index)return false;
         for(unsigned j=0;j<index;j+=4)if(u32(bytes+at+12+j)>=tiles)return false;
-        if(!valid_tile_geometry(bytes+at+12+index,geometry,output))return false;
+        uint32_t shape=0;
+        if(!valid_tile_geometry(bytes+at+12+index,geometry,output,320,0,summaries?&shape:nullptr))return false;
+        if(summaries){
+            uint8_t* row=summaries+i*TileRecordSummaryBytes;
+            tile_put32(row,at);tile_put32(row+4,12+index+geometry);tile_put32(row+8,shape);
+        }
         at+=12+index+geometry;
     }
     return at==size;
@@ -165,8 +183,12 @@ static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* 
     return items&&items<=64;
 }
 static TileGroup* load_tile_group(const Content* owner,const ResourceReader& reader,
-    const uint8_t* h,uint32_t id){
+    const uint8_t* h,uint32_t id,uint8_t* summaries=nullptr){
     if(TileGroup* hit=find_tile_group(owner,id)){
+        // Usually startup loads a group for the first time. A cache hit still
+        // derives summaries from this exact owner's validated decoded bytes.
+        if(summaries&&(id<u32(h+20)||
+            !valid_tile_indexes(tile_bytes(*hit),hit->size,hit->items,u32(h+16),summaries)))return nullptr;
         if(TileCacheLru)hit->age=next_tile_age();
         return hit;
     }
@@ -183,7 +205,7 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     uint8_t* output=tile_bytes(*group);
     if(!decode_lzma2_block(output,group->pages*TilePageBytes,size,p+32,encoded,
             u32(h+12),u32(p+20))||
-       !(is_tile?valid_tile_records(output,items):valid_tile_indexes(output,size,items,u32(h+16)))){
+       !(is_tile?valid_tile_records(output,items):valid_tile_indexes(output,size,items,u32(h+16),summaries))){
         tile_discard(*group);return nullptr;
     }
     group->id=id;group->size=size;group->items=uint16_t(items);group->age=next_tile_age();
@@ -203,11 +225,14 @@ static bool tile_descriptor_slot(const uint8_t* h,uint32_t descriptor,unsigned& 
     if(descriptor<first||descriptor-first>=frames*16||(descriptor-first)%16)return false;
     slot=(descriptor-first)/16;return true;
 }
-static bool read_tile_descriptor(const ResourceReader& reader,const uint8_t* h,
-    uint32_t header_offset,uint32_t descriptor,uint8_t* row){
-    if(!reader.read(descriptor,row,16)||u32(row)!=header_offset||u32(row+4)>=u32(h+24))return false;
+static bool valid_tile_descriptor(const uint8_t* h,uint32_t header_offset,const uint8_t* row){
+    if(u32(row)!=header_offset||u32(row+4)>=u32(h+24))return false;
     const unsigned offset=u32(row+8),length=u32(row+12);
     return offset<=Lzma2BlockRawLimit&&length>=18&&length<=Lzma2BlockRawLimit-offset;
+}
+static bool read_tile_descriptor(const ResourceReader& reader,const uint8_t* h,
+    uint32_t header_offset,uint32_t descriptor,uint8_t* row){
+    return reader.read(descriptor,row,16)&&valid_tile_descriptor(h,header_offset,row);
 }
 static bool valid_tile_shape(const uint8_t* record,unsigned width,unsigned height){
     const unsigned index=u32(record+4);
@@ -240,13 +265,22 @@ struct TileFrame {
     }
 };
 
-static void tile_put32(uint8_t* out,uint32_t value){
-    for(unsigned i=0;i<4;++i)out[i]=uint8_t(value>>(8*i));
+static const uint8_t* tile_record_summary_at(const uint8_t* summaries,unsigned items,
+    unsigned offset,unsigned length){
+    unsigned first=0,last=items;
+    while(first<last){
+        const unsigned middle=first+(last-first)/2;
+        if(u32(summaries+middle*TileRecordSummaryBytes)<offset)first=middle+1;
+        else last=middle;
+    }
+    if(first==items)return nullptr;
+    const uint8_t* row=summaries+first*TileRecordSummaryBytes;
+    return u32(row)==offset&&u32(row+4)==length?row:nullptr;
 }
 // Startup validates every index stream and descriptor, but leaves expensive
 // tile pixel streams for the first image that uses them. Borrow the unused
-// resident-directory tail for group lists; neither a second index cache nor
-// a permanent per-descriptor allocation is needed.
+// resident-directory tail for group lists and optional metadata summaries.
+// None survive startup or enlarge the directory, image or group allocations.
 static bool validate_tile_catalog(const Content* owner,const ResourceReader& reader,
     const uint8_t* h,uint32_t header_offset,const uint8_t* images,unsigned image_count,
     uint8_t* workspace,unsigned capacity,uint8_t* frame_pages=nullptr){
@@ -273,8 +307,22 @@ static bool validate_tile_catalog(const Content* owner,const ResourceReader& rea
             else tile_put32(shapes+slot*4,shape);
         }
     }
+    uint8_t* summaries=nullptr;uint8_t* cached_descriptors=nullptr;
+    if(grouped){
+        unsigned spare=capacity-required;uint8_t* tail=workspace+required;
+        if(spare>=TileRecordSummaryBytes*TileRecordSummaryCapacity){
+            summaries=tail;tail+=TileRecordSummaryBytes*TileRecordSummaryCapacity;
+            spare-=TileRecordSummaryBytes*TileRecordSummaryCapacity;
+        }
+        if(descriptors<=spare/16){
+            cached_descriptors=tail;
+            if(!reader.read(u32(h+32),cached_descriptors,descriptors*16))return false;
+        }
+    }
     for(unsigned i=0;i<descriptors;++i){
-        uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+i*16,row))return false;
+        uint8_t temporary[16];const uint8_t* row=cached_descriptors?cached_descriptors+i*16:temporary;
+        if(cached_descriptors){if(!valid_tile_descriptor(h,header_offset,row))return false;}
+        else if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+i*16,temporary))return false;
         if(grouped){
             const unsigned group=u32(row+4);tile_put32(next+i*4,u32(heads+group*4));tile_put32(heads+group*4,i);
         }
@@ -286,14 +334,28 @@ static bool validate_tile_catalog(const Content* owner,const ResourceReader& rea
             if((id&31u)==31u)reader.progress(ResourceStage::TileIndex,id+1,progress_total);
             continue;
         }
-        TileFrame pin;pin.pinned=load_tile_group(owner,reader,h,id);if(!pin.pinned)return false;
+        TileFrame pin;pin.pinned=load_tile_group(owner,reader,h,id,summaries);if(!pin.pinned)return false;
         pin.pinned->first|=128u;
         if(grouped)for(unsigned descriptor=u32(heads+(id-tile_count)*4);descriptor!=0xffffffffu;descriptor=u32(next+descriptor*4)){
-            uint8_t row[16];
-            if(!read_tile_descriptor(reader,h,header_offset,u32(h+32)+descriptor*16,row))return false;
-            const uint8_t* record=tile_record_at(*pin.pinned,u32(row+8),u32(row+12));if(!record)return false;
+            uint8_t temporary[16];const uint8_t* row=cached_descriptors?cached_descriptors+descriptor*16:temporary;
+            if(!cached_descriptors&&!read_tile_descriptor(reader,h,header_offset,u32(h+32)+descriptor*16,temporary))return false;
+            const uint8_t* summary=summaries?tile_record_summary_at(summaries,pin.pinned->items,u32(row+8),u32(row+12)):nullptr;
+            if(summaries&&!summary)return false;
+            const uint8_t* record=summary?tile_bytes(*pin.pinned)+u32(summary):
+                tile_record_at(*pin.pinned,u32(row+8),u32(row+12));
+            if(!record)return false;
             const unsigned shape=u32(shapes+descriptor*4);
-            if(shape&&!valid_tile_shape(record,shape&65535u,shape>>16))return false;
+            if(shape){
+                const unsigned width=shape&65535u,height=shape>>16;
+                if(summary){
+                    // Generic validation above checked every span, output
+                    // byte, tile ID and unused record. Only these three
+                    // conditions depend on an individual image's dimensions.
+                    const unsigned minimum=u32(summary+8);
+                    if((minimum&65535u)>width||(minimum>>16)!=height||
+                       u32(record+4)!=4*((width+TileSide-1)/TileSide)*((height+TileSide-1)/TileSide))return false;
+                }else if(!valid_tile_shape(record,width,height))return false;
+            }
             if(frame_pages)frame_pages[descriptor]=uint8_t((u32(record)+4095u)/4096u);
         }
         if(id+1<progress_total)reader.progress(ResourceStage::TileIndex,id+1,progress_total);

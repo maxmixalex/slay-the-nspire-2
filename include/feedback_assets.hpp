@@ -23,4 +23,15 @@ enum FeedbackAnimation {
 };
 static_assert(FeedbackAuxiliaryCount==1262,"Feedback image directory must match patch_feedback_assets.py");
 static_assert(FeedbackAnimationKinds==1702,"Feedback clip directory must match patch_feedback_assets.py");
+// NSP2/19 is append-only. Keep the exact v18 counts above for old installs.
+constexpr unsigned MerchantEffectsContentVersion=19;
+constexpr unsigned MerchantEffectsAuxiliaryCount=FeedbackAuxiliaryCount;
+enum MerchantEffectsAnimation {
+    AnimMerchantRoomFocused=FeedbackAnimationKinds,
+    AnimMerchantFlamesBehind,
+    AnimMerchantFlamesFront,
+    MerchantEffectsAnimationKinds
+};
+constexpr unsigned MerchantIdleDurationMs=6000;
+static_assert(MerchantEffectsAnimationKinds==1705,"Merchant effects catalog must match patch_merchant_effects.py");
 }

@@ -1,7 +1,7 @@
 # Shared artwork and language storage
 
-`tools/split_content.py` separates a paired, private Chinese/English NSP2/17 or
-NSP2/18 build into `nSpire2.common.tns`, `nSpire2.eng.tns` and
+`tools/split_content.py` separates a paired, private Chinese/English NSP2/17,
+NSP2/18 or NSP2/19 build into `nSpire2.common.tns`, `nSpire2.eng.tns` and
 `nSpire2.zhs.tns`. Both source packs must have byte-identical contiguous artwork.
 The converter checks the complete original checksums, actual language markers,
 all image/group ranges and font/text boundaries. It reconstructs and compares
@@ -65,3 +65,12 @@ payloads and use the same order in both language builds. The split converter
 rejects mixed or differing artwork instead of silently duplicating it or
 dropping pixels/frames. Runtime consumers should retain the two handles for
 one selected language; changing language requires reopening the content.
+
+The v19 merchant extension preserves the NSC1/NSL1 container layout. Runtime
+content validation accepts exactly its known 1,705 clips and 1,262 auxiliary
+entries; v18 retains its separate 1,702-clip profile. Accepting v19 does not
+permit unknown future versions. `build_web.py` uses this same split reader.
+`localize_content.py` intentionally remains a v16-to-v17 converter: apply the
+append-only v17-to-v18 feedback patch and v18-to-v19 merchant patch afterward,
+then split the paired language outputs. No locale UI binding or old index is
+inserted or reordered by either art patch.

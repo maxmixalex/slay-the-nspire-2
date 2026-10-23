@@ -81,9 +81,9 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>FeedbackContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
-        const unsigned animations=version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        if(version_<ContentVersion||version_>MerchantEffectsContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_==MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        const unsigned animations=version_==MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
     }
@@ -319,6 +319,8 @@ struct App {
     EnemyIntent combat_intent(int slot)const;
     int combat_energy(bool maximum=false)const;
     bool combat_actions_locked()const;
+    bool combat_choice_ready()const;
+    void continue_combat_choice();
     uint32_t enemy_visual_clock=0,combat_linger_until=0;
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();

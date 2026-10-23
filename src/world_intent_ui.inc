@@ -28,17 +28,18 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
  c.hit(pos.x-pos.width/2-2,pos.intent-2,pos.width+4,size+14,HitKind::EnemyIntent,slot);
 }
 static void enemy_intent_tooltip(Canvas&c){
- auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||!combat_phase(a.game.phase)||!a.game.enemy_world.active)return;
+ auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||(!combat_phase(a.game.phase)&&!ui_feedback_bound(a))||!a.game.enemy_world.active)return;
  const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::EnemyIntent&&hit->kind!=HitKind::Enemy))return;
  int slot=hit->value;if(slot<0||slot>=a.game.enemy_count||a.combat_health(slot+1).hp<=0)return;auto intent=a.combat_intent(slot);if(!intent.flags)return;
- // Localization resolves live combat parameters. During a deferred enemy
- // side its canonical values already belong to the next turn; do not open
- // a contradictory tooltip over the retained old intent.
- if(a.combat_feedback.active)return;
+ // The formatter reads the same retained intent as the icon and damage.
+ // Keep its name on that actor as well, until any slot replacement cue.
  char body[2048]{};TextBuffer text{body,sizeof body,0};
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){char key[96]{},line[512]{};TextBuffer b{key,sizeof key,0};b.text(part.locale);b.text(".description");a.localized_text("intents",key,line,sizeof line,slot,slot+1);
   if(text.n)text.ch('\n');text.text(*line?line:a.content.world_title("intents",part.locale));}
  int lines=mn(8,c.paragraph(body,0,0,168,0,0,10)),height=31+lines*13,x=a.pointer.x>=170?8:134,y=48;
- c.rect(x,y,178,height,Panel);c.box(x,y,178,height,Gold);c.text(ui_enemy_name(a,slot),x+6,y+5,12,Gold,166);
+ char name_key[128]{};const auto*owner=enemy_definition(ui_intent_enemy_kind(a,slot));
+ if(owner){TextBuffer name{name_key,sizeof name_key,0};name.text(owner->key);name.text(".name");}
+ const char*name=a.content.world_string("monsters",name_key);
+ c.rect(x,y,178,height,Panel);c.box(x,y,178,height,Gold);c.text(*name?name:owner?owner->key:"",x+6,y+5,12,Gold,166);
  c.paragraph(body,x+6,y+25,166,8,0,10,White);
 }

@@ -31,6 +31,28 @@ int App::combat_energy(bool maximum)const{const auto v=combat_health(CombatFeedb
 bool App::combat_actions_locked()const{
  return busy>0||(ui_feedback_bound(*this)&&(!combat_feedback.finished||int32_t(combat_feedback.end_at-animation)>0))||int32_t(combat_linger_until-animation)>0;
 }
+bool App::combat_choice_ready()const{
+ if(!choice_phase(game.phase))return true;
+ if(int32_t(combat_linger_until-animation)>0)return false;
+ const auto&f=combat_feedback;
+ return !ui_feedback_bound(*this)||!f.choice_pending||int32_t(animation-f.choice_at)>=0;
+}
+void App::continue_combat_choice(){
+ if(!ui_feedback_bound(*this)||!combat_feedback.choice_pending||!combat_choice_ready())return;
+ auto&f=combat_feedback;
+ // Original selection commands await the player's answer. Already playing
+ // animation tails keep running, but the unexecuted command continuation
+ // starts from that answer, not from its old, now elapsed presentation time.
+ const uint32_t waited=int32_t(animation-f.choice_at)>0?animation-f.choice_at:0;
+ f.effect_at=ui_feedback_later(f.effect_at,f.choice_at)+waited;
+ f.end_at=ui_feedback_later(f.end_at,f.choice_at)+waited;
+ enemy_visual_clock=ui_feedback_later(enemy_visual_clock,f.choice_at)+waited;
+ if(f.move_slot>=0){f.move_at+=waited;f.move_end=ui_feedback_later(f.move_end,f.choice_at)+waited;}
+ // Keep the barrier armed until an observed effect leaves this choice.
+ // A rejected core selection is still answerable; another attempt only
+ // accounts for time since this attempt, never the entire wait twice.
+ f.choice_at=animation;
+}
 EnemyIntent App::combat_intent(int slot)const{
  if(slot<0||slot>=game.enemy_count)return {};
  if(!ui_feedback_bound(*this))return enemy_intent(game,slot);
@@ -73,6 +95,12 @@ void App::observe_combat_effect(const State&s,Effect effect){
   if(nibbit&&f.move==2){f.effect_at=ui_feedback_later(f.effect_at,f.move_at+wait(600,250));after=f.move_at+wait(850,350);}
   else if(louse&&f.move==2){f.effect_at=ui_feedback_later(f.effect_at,f.move_at+wait(500,225));after=f.move_at+wait(750,325);}
   else if(louse&&f.move==0){f.effect_at=ui_feedback_later(f.effect_at,f.move_at+wait(400,200));after=f.move_at+wait(650,300);}
+ }else if(op==XOp::EnemyKnowledgeChoice&&effect.value==f.move_slot&&kind==EnemyId::KnowledgeDemon){
+  // CurseOfKnowledgeMove (0x0600a324) awaits TriggerAnim(...,1.0)
+  // before ChooseCurse. TriggerAnim (0x0600b31b) selects 1.0s Normal
+  // or min(wait*.5,.25)=.25s Fast. Other Knowledge move waits retain
+  // their existing fallback; this is the audited selection boundary only.
+  f.effect_at=ui_feedback_later(f.effect_at,f.move_at+wait(1000,250));
  }
  // Unreviewed models use their existing move-start cue. This deliberately
  // makes no claim about uninspected attack delays or multi-hit intervals.
@@ -81,6 +109,11 @@ void App::observe_combat_effect(const State&s,Effect effect){
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.
  if(after)f.effect_at=ui_feedback_later(f.effect_at,after);
  f.end_at=ui_feedback_later(f.end_at,f.effect_at);
+ // A choice is a barrier in this same command stream, not a request to
+ // display the synchronously advanced phase before its preceding effects.
+ // Re-observing also handles automatic choices which never reach the UI.
+ f.choice_pending=choice_phase(s.phase);
+ if(f.choice_pending){f.choice_at=ui_feedback_later(f.effect_at,animation);f.finished=false;}
 }
 void App::finish_combat_feedback(){
  if(!combat_feedback.active)return;
@@ -88,7 +121,12 @@ void App::finish_combat_feedback(){
  auto&f=combat_feedback;
  // A saved choice may suspend a hook in the middle of the same side. Keep
  // observing its continuation when the player completes that choice.
- if(choice_phase(game.phase)||game.effect_count||game.playing>=0)return;
+ if(choice_phase(game.phase)){
+  if(!f.choice_pending){f.choice_pending=true;f.choice_at=ui_feedback_later(f.effect_at,animation);}
+  return;
+ }
+ f.choice_pending=false;
+ if(game.effect_count||game.playing>=0)return;
  f.end_at=ui_feedback_later(f.end_at,enemy_visual_clock);f.effect_at=f.end_at;
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(game,int(actor)),ui_feedback_identity(game,actor),f.end_at);
  f.finished=true;

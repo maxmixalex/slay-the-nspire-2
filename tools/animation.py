@@ -495,13 +495,17 @@ def attachment_vertices(attachment,world,bone,deformation=None):
     return np.array(result)
 
 
-def geometry(sk,world,slots,deforms,order,textures,exclude_regions=()):
-    draw=[];atts=sk.skins[0][1];clipping=None;clip_end=-1
+def geometry(sk,world,slots,deforms,order,textures,exclude_regions=(),skin=0):
+    # Spine resolves each attachment in the selected skin first, then the
+    # default skin. Keep the owning skin for its deform timeline as well.
+    if not 0 <= skin < len(sk.skins):raise ValueError('Invalid skin index')
+    draw=[];atts=sk.skins[0][1];selected=sk.skins[skin][1];clipping=None;clip_end=-1
     for si in order:
-        s=slots[si];name=s['attachment'];o=atts.get((si,name))
+        s=slots[si];name=s['attachment'];key=(si,name)
+        owner=skin if key in selected else 0;o=selected.get(key,atts.get(key))
         if o and o['kind']==6:
             if clipping is None:
-                clipping=attachment_vertices(o,world,s['bone'],deforms.get((0,si,name)))
+                clipping=attachment_vertices(o,world,s['bone'],deforms.get((owner,si,name)))
                 clip_end=o['end_slot']
         elif o and o['kind'] in (0,2) and s['color'][3]>0 and o['path'] not in exclude_regions:
             tex=textures.get(o['path'])
@@ -510,7 +514,7 @@ def geometry(sk,world,slots,deforms,order,textures,exclude_regions=()):
                 w,h=o['w'],o['h'];local=matrix([o['rotation'],o['x'],o['y'],o['sx'],o['sy'],0,0]);vs=np.array([[-w/2,-h/2,1],[-w/2,h/2,1],[w/2,h/2,1],[w/2,-h/2,1]])
                 vs=(world[s['bone']]@local@vs.T).T[:,:2];uv=np.array([[0,1],[0,0],[1,0],[1,1.]]);tris=np.array([[0,1,2],[2,3,0]])
             else:
-                deformation=deforms.get((0,si,o.get('deform_parent',name)))
+                deformation=deforms.get((owner,si,o.get('deform_parent',name)))
                 vs=attachment_vertices(o,world,s['bone'],deformation);uv=o['uv'];tris=o['triangles']
             if clipping is not None:vs,uv,tris=clip_mesh(vs,uv,tris,clipping)
             if len(tris):draw.append((vs,uv,tris,tex,s['color']*rgba(o['color']),s['blend']))
