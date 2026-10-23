@@ -9,6 +9,7 @@ committed; the original assembly, decompilation and scenes remain private.
 | Original method | Behavior used by this stage |
 | --- | --- |
 | `CardPileCmd.DrawInternal` | Each actual draw awaits `Add` before drawing the next card; a full hand produces no transfer. |
+| `CombatManager.SetupPlayerTurn` and `ToastyMittens.AfterPlayerTurnStart` | The turn setup awaits the complete hand draw before invoking turn-start hooks. Toasty's selection is therefore after the actual Add waits, while the player banner starts at the turn boundary. |
 | `CardPileCmd.AppendPileLerpTween` | Pile movement lasts 250 ms normally and 100 ms in Fast. The play-pile scale tween always lasts 250 ms and targets 0.8 scale. |
 | `CardPileCmd.AddDuringManualCardPlay` | Ordinary manual movement runs alongside effects; powers await the play-pile tween. |
 | `CardModel.OnPlayWrapper` | The effect section has a minimum elapsed presentation of 300 ms normally or 150 ms in Fast before its result-pile transition. This is a minimum, not a new delay after every effect. |

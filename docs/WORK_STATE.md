@@ -7,11 +7,33 @@ performance. UI3 remains the verified delivery on main at 2385ff81; it is retain
 unchanged while this next source stage develops on work/0.17-world-parity.
 Three parallel worktrees address cold multi-card I/O/cache efficiency, original
 title particle/layer composition, and original card movement/combat timing.
-The first checkpoint adds an optional offset-only trace to the existing real-pack
-card benchmark so the measured 1,646.8 ms Chinese cold page can be attributed to
-selected image/glyph/string requests. It changes no production behavior and is
-not counted as a performance fix. The next gate is an actual bounded-cache or
-access improvement with matching pixels, saves and comparable target timing.
+The isolated performance source is now pushed/read back at
+`ebf1212e71eb39f85e7fe282851b5ac05fc510f8`, branch
+`checkpoint/ui4-cache-isolated`. Its bounded text cache removes the Chinese
+selection page's 15,448 reads / 63,275,008 bytes over 180 stable frames. Both
+languages and all three card scenes now have zero stable-window I/O. Cold
+image reads avoid a repeated compressed header fetch; adjacent cold pages
+coalesce only when the original cache replacement order already permits it.
+No cache pool, font pre-read or integrity scan was added. Exact six-scene pixels,
+canonical saves, actual font/string data and targeted sanitizer checks passed.
+See `validation-ui4-card-cache-0.17.json` and
+`validation-ui4-cold-ranges-0.17.json`; fluctuating desktop CPU measurements
+are not treated as physical-calculator speed evidence. The isolated ARM
+launcher builds at 984,515 bytes / 16,302,240-byte allocation. Its controlled
+Firebird comparison is still in progress; a route which stayed in the OS and
+retrieved an old report is explicitly excluded.
+
+The combined f1dea1e source adds original title background/foreground/particle
+layers, bounded original card motion, and audited Leaf Slime/Damp Cultist waits.
+The actual v21 bilingual frontend passes and the resources add 138,222 shared
+installation bytes while retaining all pre-existing artwork/text/timing.
+The f1dea1e Actions run passed conversion and 72/74 sanitizer suites, but exposed
+two combat UI assertions and an ARM title signed-division link failure. The
+next source corrects duplicate focused-card hit regions, accounts for the
+original awaited draws before Toasty Mittens' choice, and keeps title integer
+division within the supported calculator ABI. These fixes still require their
+own frozen execution; f1dea1e is not a successful release. Final native/WASM,
+ordinary emulator flow and matching artifact packaging remain open.
 Original assets remain private, and integrity-only startup work remains removed.
 
 ## Verified UI3 delivery: native, sanitizer, browser and emulator acceptance closed

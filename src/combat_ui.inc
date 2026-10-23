@@ -197,8 +197,12 @@ static void combat_screen(Canvas&c){
     // At rest every card remains on the arc. Focus is earned by hover or keys,
     // not by the cursor index merely existing. The battlefield stays visible.
     for(int i=0;i<hand.count;i++){
+        // The focused face has its own topmost region below. Registering its
+        // raised pose here as well leaves a duplicate (and sometimes wider)
+        // hit column behind the visible face.
+        if(focused&&i==selected)continue;
         auto p=a.combat_hand_pose(unsigned(i),focused&&i==selected);
-        if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,hand.ids[i]),p,false);
+        draw_hand_tile(c,hand_tile(c,hand.ids[i]),p,false);
         auto r=hand_rail(hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
         if(a.combat_hand_settled(unsigned(i),focused&&i==selected))
@@ -213,7 +217,10 @@ static void combat_screen(Canvas&c){
         if(focused){
             auto p=a.combat_hand_pose(unsigned(selected),true);
             draw_hand_tile(c,hand_tile(c,hand.ids[selected]),p,true);
-            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
+            // While X is still approaching the focused position there is no
+            // settled bottom rail. Keep its actual lower face hoverable too.
+            const int height=a.combat_hand_settled(unsigned(selected),true)?68:HandTileH;
+            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,height,HitKind::Hand,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
         }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.

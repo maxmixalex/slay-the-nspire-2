@@ -258,11 +258,17 @@ static void audited_leaf_and_cultist_timing(){
   else CHECK(a.enemy_visual_clock==end);
   snapshot();a.animation=start;a.render();CHECK(!a.combat_intent(slot).flags);
   const int hp_before=a.combat_health(0).hp,ritual=EnemyStatusStart+int(EnemyPower::Ritual);
+  const auto piles_before=a.combat_pile_counts();
   a.animation=impact-1;a.render();CHECK(a.combat_health(0).hp==hp_before);
   if(model==2&&move==0)CHECK(a.combat_status_amount(slot+1,ritual)==0);
+  if(model<2&&move==1)CHECK(a.combat_pile_counts().discard==piles_before.discard);
   a.animation=impact;a.render();
   if(attack){CHECK(intent.damage>0&&a.combat_health(0).hp==hp_before-intent.damage);CHECK(a.hit_start[0]==int(impact));}
   else if(model==2)CHECK(a.combat_status_amount(slot+1,ritual)==enemy_power_value(a.game,slot,EnemyPower::Ritual));
+  else{
+   const auto piles=a.combat_pile_counts();CHECK(piles.discard==piles_before.discard+(model==0?1:2));
+   CHECK(piles.draw==piles_before.draw&&piles.exhaust==piles_before.exhaust);
+  }
   if(attack){a.animation=end;a.render();CHECK(actor.until>end&&!actor.loop);}
   unchanged();
  }
@@ -617,20 +623,25 @@ static void deferred_combat_choices(){
   uint16_t ids[MaxWorldUiChoices];CHECK(a.world_choice_options(ids,MaxWorldUiChoices)>0);
   // Nibbit's audited 800/500ms lead, 400/250ms intent and 350/175ms
   // action are separately quantized by the existing real-time scheduler.
-  const uint32_t barrier=start+(fast?30u:49u);CHECK(a.combat_feedback.choice_at==barrier);
+  // SetupPlayerTurn awaits Draw before AfterPlayerTurnStart; Toasty chooses
+  // there, after all five awaited 250/100 ms Add commands have completed.
+  const uint32_t player=start+(fast?30u:49u);
+  const uint32_t barrier=player+TurnBannerPresentation::wait_ticks(1250,500,fast!=0);
+  CHECK(a.combat_feedback.choice_at==barrier);
   const uint32_t original_end=a.combat_feedback.end_at;
   hidden_choice_input(ids[0]);
   a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
   a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();a.input(Key::Potions);CHECK(!a.panel);
   advance_combat_ms((barrier-a.animation-1)*33);a.render();hidden_choice_input(ids[0]);
-  CHECK(a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy);
+  CHECK(a.turn_banner.player_start==player&&a.turn_banner.sample_player(a.animation).kind==TurnBannerPresentation::Player);
+  CHECK(a.combat_hand().count==5);
   if(!delayed)capture(fast?"choice-toasty-before-fast":"choice-toasty-before");
   // Pressing the background before a new overlay appears cannot select its
   // card on release. A fresh click after the same boundary can select it.
   a.pointer_move(49,80);a.pointer_button(true);advance_combat_ms(33);a.render();
   CHECK(a.animation==barrier&&a.combat_choice_ready()&&has(HitKind::WorldChoice,ids[0]));
   CHECK(!has(HitKind::Battlefield,0));a.pointer_button(false);CHECK(!a.choice_selected_count);
-  CHECK(a.turn_banner.player_start==barrier);snapshot();
+  CHECK(a.turn_banner.player_start==player);snapshot();
   a.ui_action(UiAction::ConfirmWorldChoice);CHECK(a.combat_feedback.choice_at==barrier&&!a.choice_selected_count);unchanged();
   if(delayed){
    advance_combat_ms(3300);a.render();CHECK(a.combat_choice_ready()&&a.combat_feedback.active&&a.combat_actions_locked());
@@ -646,7 +657,7 @@ static void deferred_combat_choices(){
   CHECK(a.choice_selected_count==1&&a.choice_selected[0]==ids[0]);
   CHECK(world_relic_select(direct,ids,1));CHECK(save(direct,expected));
   a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count);
-  CHECK(a.turn_banner.player_start==barrier); // A late answer must not restart it.
+  CHECK(a.turn_banner.player_start==player); // A late answer must not restart it.
   CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
   if(a.combat_feedback.active&&int32_t(a.combat_feedback.end_at-a.animation)>0)advance_combat_ms((a.combat_feedback.end_at-a.animation)*33);
   a.render();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);
@@ -672,7 +683,8 @@ static void deferred_combat_choices(){
   const uint32_t answer=a.animation;a.busy=300;a.toggle_choice(MaxCards+1);CHECK(a.choice_selected_count==1);
   uint16_t knowledge=MaxCards+1;CHECK(choose_extended(direct,&knowledge,1));a.ui_action(UiAction::ConfirmChoice);
   CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&a.combat_feedback.choice_pending);
-  const uint32_t second=a.combat_feedback.choice_at;CHECK(second==old_end+(answer-first)&&second>answer);
+  const uint32_t second=a.combat_feedback.choice_at;
+  CHECK(second==old_end+(answer-first)+TurnBannerPresentation::wait_ticks(1250,500,fast!=0)&&second>answer);
   CHECK(save(direct,expected));CHECK(save(a.game,after));CHECK(expected.size==after.size&&!std::memcmp(expected.bytes,after.bytes,after.size));
   uint16_t ids[MaxWorldUiChoices];CHECK(a.world_choice_options(ids,MaxWorldUiChoices)>0);hidden_choice_input(ids[0]);
   advance_combat_ms((second-a.animation-1)*33);a.render();CHECK(!a.combat_choice_ready());
@@ -704,6 +716,12 @@ static void original_card_movement(){
   enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;
   const int played=add(Defend);a.cursor=a.game.hand.count-1;a.hand_focus=true;a.render();
   const auto start_pose=a.combat_hand_pose(unsigned(a.cursor),true);const auto old=a.combat_hand();const auto old_piles=a.combat_pile_counts();
+  CHECK(!a.combat_hand_settled(unsigned(a.cursor),true));
+  int focus_regions=0;for(int h=0;h<a.hit_count;++h)if(a.hits[h].kind==HitKind::Hand&&a.hits[h].value==played)++focus_regions;
+  CHECK(focus_regions==1);
+  const auto*upper=a.hit_at(start_pose.cx,start_pose.cy-HandTileH/2+8);CHECK(upper&&upper->kind==HitKind::Hand&&upper->value==played);
+  // The lower face must keep focus while X lerps; it has no settled rail yet.
+  a.pointer_move(start_pose.cx,224);a.render();CHECK(a.hand_focus&&a.cursor==old.count-1);
   snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,a.target));CHECK(save(direct,expected));
   const uint32_t start=a.animation;a.input(Key::Confirm);equivalent();
   const uint32_t end=start+TurnBannerPresentation::wait_ticks(300,150,fast!=0);

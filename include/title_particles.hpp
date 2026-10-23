@@ -19,9 +19,12 @@ inline unsigned particle_age(uint32_t time,unsigned index,unsigned count,unsigne
     unsigned phase=time%period+index*(period/count);cycle=time/period;
     if(phase>=period){phase-=period;++cycle;}return phase;
 }
-inline int particle_round(int64_t fixed){return int((fixed+(fixed<0?-32768:32768))/65536);}
-inline int particle_screen_x(int64_t world){return particle_round((world-int64_t(240)*65536)*2/9);}
-inline int particle_screen_y(int64_t world){return particle_round((world+int64_t(24)*65536)*2/9);}
+inline int particle_round(int32_t fixed){return (fixed+(fixed<0?-32768:32768))/65536;}
+// Authored world positions stay within -1005..7005 pixels in Q16. Even
+// after the cover offset and multiplication by two they fit signed 32-bit.
+// Keep those divisions in the calculator's existing 32-bit integer ABI.
+inline int particle_screen_x(int64_t world){return particle_round((int32_t(world)-240*65536)*2/9);}
+inline int particle_screen_y(int64_t world){return particle_round((int32_t(world)+24*65536)*2/9);}
 inline unsigned particle_lerp(unsigned a,unsigned b,unsigned phase,unsigned span){
     return unsigned(int(a)+(int(b)-int(a))*int(phase)/int(span));
 }
@@ -65,6 +68,11 @@ inline int particle_sine(unsigned phase){
     const unsigned p=phase&63u,index=(p&16u)?16u-(p&15u):p&15u;
     return p&32u?-quarter[index]:quarter[index];
 }
+inline int32_t particle_sphere_axis(unsigned radius,int sine){
+    const unsigned magnitude=unsigned(sine<0?-sine:sine);
+    const int32_t result=int32_t(uint64_t(radius)*magnitude/32767u);
+    return sine<0?-result:result;
+}
 inline ParticleSample fog_sample(unsigned layer,unsigned index,uint32_t time){
     unsigned cycle;const unsigned age=particle_age(time,index,FogCount,FogPeriodMs,cycle);
     uint32_t random=0x19c364bdu^((1u+index+layer*FogCount+cycle*2u*FogCount)*0x9e3779b9u);
@@ -74,9 +82,9 @@ inline ParticleSample fog_sample(unsigned layer,unsigned index,uint32_t time){
     const int s=int(particle_unit(random))*2-65535;
     const unsigned angle=particle_unit(random)>>10,p=particle_unit(random);
     const unsigned radius=particle_sqrt(unsigned(uint64_t(65535)*65535-int64_t(s)*s));
-    const int64_t radius_fixed=uint64_t(radius)*p*5u/65535u;
-    const int64_t jitter_x=radius_fixed*particle_sine(angle+16u)/32767;
-    const int64_t jitter_y=radius_fixed*particle_sine(angle)/32767;
+    const unsigned radius_fixed=unsigned(uint64_t(radius)*p*5u/65535u);
+    const int32_t jitter_x=particle_sphere_axis(radius_fixed,particle_sine(angle+16u));
+    const int32_t jitter_y=particle_sphere_axis(radius_fixed,particle_sine(angle));
     const unsigned scale=layer?117965u+scale_random*13107u/65535u:131072u+scale_random*26214u/65535u;
     const int width=int((252u*scale*2u+9u*32768u)/(9u*65536u));
     const int height=int((100u*scale*2u+9u*32768u)/(9u*65536u));
