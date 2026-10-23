@@ -1,6 +1,31 @@
 # Work state — 2026-10-23
 
-## Current: final v19 bilingual runtime and target flow verified; delivery in progress
+## Current: final v19 bilingual runtime verified and packaged; artifact storage awaits authorization
+
+Final report and packaging checkpoint
+`46f7ab9ed5292e07212a5b423c43e951f7d97a23` is pushed, read back and verified
+against all nine changed blobs/modes. Packaging journal
+`ui2-delivery-package-d6a9e9dfa878` is closed passed with unchanged source and
+an independently matched log hash. All 12 ZIP members were read back; all
+embedded HTML inputs match their executed runtime/resource files. The HTML
+repack changes only the EOF license comment and preserves every inline script
+and all other bytes. Conservative ARM/Web inputs at the report checkpoint are
+byte-and-mode identical to actual runtime 4f50193b (396 / 395 files).
+
+| Verified local artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `Slay-the-Nspire-2-0.17-ui2-bilingual-calculator.zip` | 81,484,351 | `a322d31e641794be211839981eb4eeec20d0413f3aa6e3f6a687a7579c03e7a1` |
+| `Slay-the-Nspire-2-0.17-ui2-bilingual-offline.html` | 132,299,895 | `d9c325a77b53ac6546f2fa40e532d7c4a679f2d581ba733f3634be37421123c9` |
+
+Persistent artifact storage is **not completed**. Automatic approval review
+rejected the upload before the process started because these artifacts contain
+private original game assets and require explicit user authorization for the
+ChatGPT Library destination. No upload retry or alternate route was attempted.
+The next delivery action is to obtain authorization for these exact two files
+and that destination, then save them and verify both ordered results. See
+`delivery-ui2-0.17.json`; keep runtime 4f, conversion 06c7 and packaging 46f7
+identities separate. Source-only archive `feedback-stage13.tar` is 11,591,680
+bytes, SHA-256 `0678b49cabb5d2cf3aa04b9c09ce2bcd8f406498bc9b576f262ee1b17d61ba6b`.
 
 The second implementation stage is saved and executed at
 `06c7fd16e6d4d47dc25b628913ecdeef3a4fe76d`. Test/report checkpoint
@@ -98,7 +123,8 @@ it excludes OS boot, Ndless installation, initial file opening, language
 selection waiting and the first frame. These observations are not a cold A/B
 or evidence of physical-device acceleration. Full execution identities,
 closed journals and retained failures are in
-`validation-platform-ui2-0.17.json`. Final artifact packaging remains in progress.
+`validation-platform-ui2-0.17.json`. Final artifact packaging passed as recorded
+above; persistent storage alone awaits authorization.
 
 The old content cache-pressure fixture failed at `06c7fd16` and reproduced at
 baseline `61970600`: it created 159 keys against today's 320-entry cache. The
