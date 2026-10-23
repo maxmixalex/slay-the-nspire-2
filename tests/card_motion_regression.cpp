@@ -17,6 +17,24 @@ static CombatCardMotion::Cue transfer(unsigned id,Zone from,Zone to,bool fast=fa
  CombatCardMotion::Cue cue;cue.id=uint16_t(id);cue.from=uint8_t(from);cue.to=uint8_t(to);cue.card={Strike,0};cue.fast=fast;cue.at=at;return cue;
 }
 static bool same_pose(HandPose a,HandPose b){return a.cx==b.cx&&a.cy==b.cy&&a.scale==b.scale&&a.sine==b.sine&&a.cosine==b.cosine;}
+static void body_modulation(){
+ // Colors.White.Lerp(Colors.Black,t) must not introduce another channel.
+ // In particular packed red/blue division once produced blue=28 for red.
+ CHECK(CombatCardMotion::modulate(0xf800,128)==0x7800);
+ CHECK(CombatCardMotion::modulate(0x07e0,128)==0x03e0);
+ CHECK(CombatCardMotion::modulate(0x001f,128)==0x000f);
+ CHECK(CombatCardMotion::modulate(0xffff,128)==0x7bef);
+ CHECK(CombatCardMotion::modulate(0xffd5,128)==0x7bea);
+ for(unsigned level=0;level<256;++level){
+  CHECK(!(CombatCardMotion::modulate(0xf800,level)&0x07ff));
+  CHECK(!(CombatCardMotion::modulate(0x07e0,level)&0xf81f));
+  CHECK(!(CombatCardMotion::modulate(0x001f,level)&0xffe0));
+ }
+ for(unsigned pixel:{0u,0xf800u,0x07e0u,0x001fu,0xffffu,0xffd5u}){
+  CHECK(CombatCardMotion::modulate(uint16_t(pixel),255)==pixel);
+  CHECK(CombatCardMotion::modulate(uint16_t(pixel),0)==0);
+ }
+}
 static void holder_responses(){
  hand(3);CombatCardMotion m;m.begin(state,0);
  const auto old=hand_pose(3,1,false);CombatHand::Cards next;next.count=2;next.ids[0]=1;next.ids[1]=2;
@@ -89,6 +107,6 @@ static void skipped_frames_and_bounds(){
  serial.apply(transfer(0,Zone::Discard,Zone::Draw));CHECK(!serial.find(0));
 }
 int main(){
- CHECK(sizeof(CombatCardMotion)<=6*1024);holder_responses();draw_and_play();discard_curve();skipped_frames_and_bounds();
+ CHECK(sizeof(CombatCardMotion)<=6*1024);body_modulation();holder_responses();draw_and_play();discard_curve();skipped_frames_and_bounds();
  std::printf("card movement: %u checks passed; %zu bytes of bounded metadata\n",checks,sizeof(CombatCardMotion));
 }

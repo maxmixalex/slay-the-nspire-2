@@ -75,7 +75,7 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
             if(u<0||v<0||u>=HandTileW*1024||v>=HandTileH*1024)continue;
             int at=(v/1024)*HandTileW+u/1024;
             uint16_t color=t.pixels[at];
-            if(brightness<255)color=uint16_t((((color&0xf81fu)*brightness/255u)&0xf81fu)|(((color&0x07e0u)*brightness/255u)&0x07e0u));
+            if(brightness<255)color=CombatCardMotion::modulate(color,brightness);
             c.paint(y*c.pitch+x,color,t.alpha[at]);
         }
     }

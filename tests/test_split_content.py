@@ -68,7 +68,7 @@ class SplitContentTest(unittest.TestCase):
     def test_locale_and_ranges(self):
         data=fixture("eng")
         with self.assertRaises(ValueError):split.layout(data,"zhs")
-        with self.assertRaises(ValueError):split.layout(fixture("eng",21),"eng")
+        with self.assertRaises(ValueError):split.layout(fixture("eng",22),"eng")
         for at,value in ((12,len(data)+1),(16,65536),(20,32769),(24,6110)):
             bad=bytearray(data);struct.pack_into("<I",bad,at,value)
             with self.assertRaises(ValueError):split.layout(bad,"eng")

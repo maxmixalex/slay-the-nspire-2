@@ -91,7 +91,7 @@ private:
     mutable ResourceReadStats stats_{};
     bool fetch(uint32_t offset,void* dst,uint32_t count)const;
     const Page* page(uint32_t offset)const;
-    bool read_cold_pair(uint32_t offset,void* dst,uint32_t count)const;
+    bool read_cold_pair(uint32_t slot,uint32_t offset,void* dst,uint32_t count)const;
 };
 static_assert(sizeof(ResourceReader)<=257*1024,"Resource reader must stay within its fixed 257 KiB budget");
 } // namespace spire

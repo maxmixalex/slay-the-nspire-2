@@ -106,8 +106,8 @@ static void paired_cold_pages(){
     for(unsigned i=0;i<pages-1;++i)CHECK(reader.u8(i*page,one));
     const unsigned before=file.calls;
     CHECK(reader.read((pages+1)*page-17,bytes,sizeof bytes));check_bytes(bytes,(pages+1)*page-17,sizeof bytes);
-    CHECK(file.calls==before+1); // The next slot is the end of the fixed pool.
-    CHECK(reader.u8((pages-2)*page,one));CHECK(file.calls==before+1);
+    CHECK(file.calls==before+2); // Wrapped victims preserve the old two-read order.
+    CHECK(reader.u8((pages-2)*page,one));CHECK(file.calls==before+2);
 
     // A failed combined read publishes neither overwritten page; unrelated
     // resident pages survive, and a later actual request can retry normally.
@@ -132,7 +132,7 @@ static void failures(){
     CHECK(file.last_count==2);
     file.readable=3*4096;file.fail_offset=4096;CHECK(reader.reset(file.source()));
     uint8_t bytes[8]{};CHECK(!reader.read(4093,bytes,8));
-    CHECK(reader.u32(7,value)); // An unrelated successful cached page remains usable.
+    CHECK(reader.u32(7,value)); // An unrelated page remains readable after a failed range.
     file.fail_offset=~0u;CHECK(reader.u32(4096,value)); // Provider failure is retryable.
     file.fail_offset=8192;std::vector<uint8_t> bulk(4096);CHECK(!reader.read(8192,bulk.data(),bulk.size()));
     CHECK(!reader.reset({}));CHECK(!reader.u8(0,bytes[0]));

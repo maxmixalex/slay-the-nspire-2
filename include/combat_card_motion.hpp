@@ -41,6 +41,11 @@ struct CombatCardMotion {
  static Counts capture_counts(const State&s){return {s.draw.count,s.discard.count,s.exhaust.count};}
  static bool same(Counts a,Counts b){return a.draw==b.draw&&a.discard==b.discard&&a.exhaust==b.exhaust;}
  static int magnitude(int n){return n<0?-n:n;}
+ static uint16_t modulate(uint16_t pixel,unsigned brightness){
+  if(brightness>=255)return pixel;
+  const unsigned r=(pixel>>11)*brightness/255u,g=((pixel>>5)&63u)*brightness/255u,b=(pixel&31u)*brightness/255u;
+  return uint16_t((r<<11)|(g<<5)|b);
+ }
  static int angle_delta(int from,int to){int n=(to-from)&4095;return n>2048?n-4096:n;}
  static int sine(int angle){
   static const int16_t quarter[]={0,100,200,297,392,483,569,650,724,792,851,903,946,980,1004,1019,1024};
