@@ -15,13 +15,19 @@ static App app;
 static SaveData before,after;
 static unsigned save_attempts;
 struct Io {uint64_t calls=0,bytes=0,seeks=0;};
-struct Source {FILE* file;uint32_t length;ResourceFileCursor cursor{};Io io{};};
+struct Source {
+    FILE* file;uint32_t length;ResourceFileCursor cursor{};Io io{};
+    FILE* trace=nullptr;const char* scene="",*phase="";
+};
 static int seek_file(void*file,long offset,int origin){return std::fseek(static_cast<FILE*>(file),offset,origin);}
 static unsigned read_file(void*out,unsigned size,unsigned count,void*file){return unsigned(std::fread(out,size,count,static_cast<FILE*>(file)));}
 static bool read_resource(void*context,uint32_t offset,void*out,uint32_t count){
     auto&s=*static_cast<Source*>(context);bool sought=false;
     const bool good=offset<=s.length&&count<=s.length-offset&&s.cursor.read(s.file,offset,out,count,seek_file,read_file,sought);
-    ++s.io.calls;s.io.bytes+=count;s.io.seeks+=sought;return good;
+    ++s.io.calls;s.io.bytes+=count;s.io.seeks+=sought;
+    if(s.trace)std::fprintf(s.trace,"{\"scene\":\"%s\",\"phase\":\"%s\",\"offset\":%u,\"bytes\":%u,\"seek\":%s,\"ok\":%s}\n",
+        s.scene,s.phase,offset,count,sought?"true":"false",good?"true":"false");
+    return good;
 }
 static bool save_game(const State&){++save_attempts;return false;}
 static double milliseconds(Clock::time_point begin){return std::chrono::duration<double,std::milli>(Clock::now()-begin).count();}
@@ -71,25 +77,33 @@ int main(int argc,char**argv){
     FILE*file=std::fopen(argv[1],"rb");if(!file)return 3;if(std::fseek(file,0,SEEK_END)){std::fclose(file);return 3;}
     const long length=std::ftell(file);if(length<40||uint64_t(length)>MaxContentFile){std::fclose(file);return 3;}
     Source source{file,uint32_t(length)};
+    // Optional offset-only trace lets the same real-pack driver distinguish
+    // card artwork, glyph and string I/O without logging private payloads or
+    // changing production cache behavior. Keep tracing off for CPU timing.
+    if(const char* path=std::getenv("NSPIRE_RESOURCE_TRACE")){
+        source.trace=std::fopen(path,"wb");if(!source.trace){std::fclose(file);return 3;}
+    }
     std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"frames_per_scene\":%u,\"elapsed_ms_per_update\":33,\"method\":\"Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame.\"}\n",source.length,frames);
     const char*names[]={"library_8","remove_10","draw_choice_10"};
     for(unsigned scene=0;scene<3;++scene){
+        source.scene=names[scene];source.phase="open_and_fixture";
         Cost opened,preparation,first,warm;auto started=mark(source);
         if(!app.init({&source,source.length,read_resource,nullptr},{save_game,nullptr})||!setup(scene)){std::fclose(file);return 4;}
-        opened.add(started,source);unsigned preparation_updates=0;started=mark(source);app.render();
+        opened.add(started,source);unsigned preparation_updates=0;source.phase="initial_render";started=mark(source);app.render();
         if(app.combat_preparation.active){
+            source.phase="preparation";
             preparation.add(started,source);
             while(app.combat_preparation.active){if(++preparation_updates>1024){std::fclose(file);return 5;}
                 started=mark(source);app.advance(33);if(app.combat_preparation.active)app.render();preparation.add(started,source);}
-            started=mark(source);app.render();
+            source.phase="first_visible";started=mark(source);app.render();
         }
         first.add(started,source);
         // Establish the settled UI before the window; these updates are
         // explicitly excluded from the measured first-visible and warm costs.
-        for(unsigned i=0;i<10;++i){app.advance(250);app.render();}
+        source.phase="settle";for(unsigned i=0;i<10;++i){app.advance(250);app.render();}
         if(!app.content.healthy()||!save(app.game,before)||!capture(argc==4?argv[3]:nullptr,names[scene])){std::fclose(file);return 6;}
         const auto phase=app.game.phase;const uint32_t initial_hash=framebuffer_hash();
-        for(unsigned frame=0;frame<frames;++frame){started=mark(source);app.advance(33);app.render();warm.add(started,source);
+        source.phase="warm";for(unsigned frame=0;frame<frames;++frame){started=mark(source);app.advance(33);app.render();warm.add(started,source);
             if(!app.content.healthy()||app.combat_preparation.active||app.game.phase!=phase){std::fclose(file);return 7;}}
         const bool unchanged=save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size)&&!save_attempts;
         opened.write(names[scene],"open_and_fixture");preparation.write(names[scene],"preparation");first.write(names[scene],"first_visible");warm.write(names[scene],"warm_animation_window");
@@ -97,5 +111,6 @@ int main(int argc,char**argv){
             names[scene],scene?10u:8u,preparation_updates,initial_hash,framebuffer_hash(),unchanged?"true":"false",save_attempts);
         std::fflush(stdout);if(!unchanged){std::fclose(file);return 8;}
     }
-    return std::fclose(file)==0?0:9;
+    const bool trace_good=!source.trace||std::fclose(source.trace)==0;
+    return std::fclose(file)==0&&trace_good?0:9;
 }

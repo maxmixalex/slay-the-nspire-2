@@ -217,9 +217,80 @@ static void glyph_cache_aliases(){
     CHECK(!std::memcmp(ranged->glyph('B',10).pixels,new_bytes.data(),new_bytes.size()));
     CHECK(!std::memcmp(memory->glyph('B',10).pixels,old_bytes.data(),old_bytes.size()));
 }
+static void compressed_picture_reads_once(){
+    // A selected LZ4 picture larger than the reader page is one physical
+    // range, including its header. A second 4 KiB header fetch wastes both
+    // I/O and a text-cache page on the calculator.
+    std::vector<uint8_t> raw(82*60*2);for(unsigned i=0;i<raw.size();++i)raw[i]=uint8_t(i*37);
+    std::vector<uint8_t> encoded={0,uint8_t(raw.size()),uint8_t(raw.size()>>8),0,0,0xf0};
+    unsigned extension=unsigned(raw.size())-15;
+    while(extension>=255){encoded.push_back(255);extension-=255;}encoded.push_back(uint8_t(extension));
+    encoded.insert(encoded.end(),raw.begin(),raw.end());
+    const AliasImage image{82,60,5,unsigned(encoded.size())};const auto bytes=alias_pack(image,image,encoded);
+    AliasProvider provider{&bytes};auto content=std::make_unique<Content>();CHECK(content->open(provider.source()));
+    const auto before=content->read_stats();const auto picture=content->image(1);const auto after=content->read_stats();
+    CHECK(picture.pixels&&picture.w==82&&picture.h==60&&picture.format==0);
+    CHECK(!std::memcmp(picture.pixels,raw.data(),raw.size()));
+    CHECK(after.callbacks-before.callbacks==1&&after.callback_bytes-before.callback_bytes==encoded.size());
+    CHECK(content->image(1).pixels==picture.pixels&&content->read_stats().callbacks==after.callbacks);
+}
+static void text_cache_working_set(){
+    // Real Chinese grids exceed the old 64-glyph / eight-string key limits.
+    // Scatter these small synthetic records across more reader pages than
+    // fit, so the lower page cache cannot conceal text-cache churn.
+    constexpr unsigned glyph_count=600,working_glyphs=192,working_strings=40;
+    std::vector<AliasGlyph> specs;
+    for(unsigned i=0;i<glyph_count;++i)specs.push_back({0x4e00+i,8,8,13,8,0});
+    specs.push_back({0x4e00+glyph_count,20,40,40,40,3200});
+    const AliasImage image{1,1,0,2};auto bytes=alias_pack(image,image,{0x34,0x12},specs);
+    const auto append=[&](unsigned length,unsigned value,bool rle){
+        bytes.resize((bytes.size()+4095)&~size_t(4095));const unsigned at=unsigned(bytes.size());
+        for(unsigned i=0;i<length;++i)bytes.push_back(rle&&i%2==0?1:uint8_t(value+i));
+        return at;
+    };
+    const unsigned glyph_dir=40+160*16,string_dir=glyph_dir+unsigned(specs.size())*16;
+    for(unsigned i=0;i<specs.size();++i)put(bytes,glyph_dir+i*16+4,append(i==glyph_count?3200:104,i,i==glyph_count));
+    for(unsigned i=0;i<66;++i){
+        const unsigned length=i==65?16383:80;
+        const unsigned at=append(length+1,65+i,false);
+        for(unsigned j=0;j<length;++j)bytes[at+j]=uint8_t('A'+(i+j)%26);bytes[at+length]=0;
+        put(bytes,string_dir+i*8,at);put(bytes,string_dir+i*8+4,length);
+    }
+    put(bytes,12,unsigned(bytes.size()));
+    AliasProvider provider{&bytes};auto content=std::make_unique<Content>();CHECK(content->open(provider.source()));
+    const auto check_glyph=[&](unsigned i){
+        const auto glyph=content->glyph(0x4e00+i,i==glyph_count?20:8);
+        CHECK(glyph.pixels);const unsigned length=i==glyph_count?3200:104;
+        const unsigned off=unsigned(bytes[glyph_dir+i*16+4])|unsigned(bytes[glyph_dir+i*16+5])<<8|
+            unsigned(bytes[glyph_dir+i*16+6])<<16|unsigned(bytes[glyph_dir+i*16+7])<<24;
+        CHECK(!std::memcmp(glyph.pixels,bytes.data()+off,length));
+        if(i==glyph_count)CHECK(glyph.w==40&&glyph.h==40&&glyph.encoded_size==3200);
+        return glyph.pixels;
+    };
+    const uint8_t*first=check_glyph(0);
+    for(unsigned i=1;i<working_glyphs;++i)check_glyph(i);
+    for(unsigned i=0;i<working_strings;++i){const char*text=content->string(i);CHECK(std::strlen(text)==80&&text[0]=='A'+i%26);}
+    provider.fail=true;const auto before=content->read_stats();
+    for(unsigned cycle=0;cycle<3;++cycle){
+        for(unsigned i=0;i<working_glyphs;++i)check_glyph(i);
+        for(unsigned i=0;i<working_strings;++i){const char*text=content->string(i);CHECK(std::strlen(text)==80&&text[79]=='A'+(i+79)%26);}
+    }
+    CHECK(content->healthy()&&content->read_stats().callbacks==before.callbacks);
+    CHECK(check_glyph(0)==first); // Unrelated retained records do not move a view.
+    provider.fail=false;check_glyph(glyph_count);CHECK(std::strlen(content->string(65))==16383);
+
+    // A second owner really exceeds the key capacity. Eviction must lead to
+    // a normal requested read, and a refused read must not reveal stale data.
+    AliasProvider other_provider{&bytes};auto other=std::make_unique<Content>();CHECK(other->open(other_provider.source()));
+    for(unsigned i=0;i<glyph_count;++i)CHECK(other->glyph(0x4e00+i,8).pixels);
+    provider.fail=true;CHECK(!content->glyph(0x4e00,8).pixels&&!content->healthy());
+    CHECK(other->healthy()&&other->glyph(0x4e00+glyph_count-1,8).pixels);
+}
 int main(int argc,char**argv){
     image_cache_aliases();
     glyph_cache_aliases();
+    compressed_picture_reads_once();
+    text_cache_working_set();
     auto original=pack();Content c;CHECK(c.open(original.data(),original.size()));CHECK(c.card_count()==CardKinds);CHECK(c.current_profile());
     for(int i=0;i<CardKinds;i++){CHECK(c.card_image(i)==i);CHECK(!std::strcmp(c.card_string(i),"X"));}
     CHECK(c.card_image(-1)==-1&&c.card_image(CardKinds)==-1);CHECK(!*c.card_string(CardKinds));

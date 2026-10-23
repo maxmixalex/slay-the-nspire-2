@@ -16,7 +16,8 @@ struct File {
     static uint8_t byte(uint32_t p,uint8_t salt){return (uint8_t)((p*17u)^(p>>8)^salt);}
     static bool read(void* context,uint32_t offset,void* dst,uint32_t count){
         auto& f=*static_cast<File*>(context);++f.calls;f.last_offset=offset;f.last_count=count;
-        if(offset>f.readable||count>f.readable-offset||offset==f.fail_offset)return false;
+        if(offset>f.readable||count>f.readable-offset||
+           (offset<=f.fail_offset&&count>f.fail_offset-offset))return false;
         auto* out=static_cast<uint8_t*>(dst);
         for(uint32_t i=0;i<count;++i)out[i]=byte(offset+i,f.salt);
         return true;
@@ -83,6 +84,45 @@ static void repeated_text_working_set(){
         CHECK(file.calls==44); // All later passes stay in the bounded page cache.
     }
 }
+static void paired_cold_pages(){
+    constexpr unsigned page=ResourceReader::PageSize,pages=ResourceReader::PageCount;
+    File file;file.readable=(pages+6)*page+19;ResourceReader reader(file.source());uint8_t bytes[33]{};
+    CHECK(reader.read(2*page-17,bytes,sizeof bytes));check_bytes(bytes,2*page-17,sizeof bytes);
+    CHECK(file.calls==1&&file.last_offset==page&&file.last_count==2*page);
+    CHECK(reader.stats().cache_misses==2&&reader.stats().callback_bytes==2*page);
+    uint8_t one=0;CHECK(reader.u8(page,one));CHECK(reader.u8(3*page-1,one));CHECK(file.calls==1);
+    // A cached first or second half needs just its missing neighbour, not a
+    // new two-page fetch. This also exercises partial copies across slots.
+    CHECK(reader.read(3*page-17,bytes,sizeof bytes));check_bytes(bytes,3*page-17,sizeof bytes);
+    CHECK(file.calls==2&&file.last_offset==3*page&&file.last_count==page);
+    CHECK(reader.read(page-17,bytes,sizeof bytes));check_bytes(bytes,page-17,sizeof bytes);
+    CHECK(file.calls==3&&file.last_offset==0&&file.last_count==page);
+    const unsigned tail=(pages+6)*page;
+    CHECK(reader.read(tail-17,bytes,sizeof bytes));check_bytes(bytes,tail-17,sizeof bytes);
+    CHECK(file.calls==4&&file.last_offset==tail-page&&file.last_count==page+19);
+    CHECK(reader.u8(file.readable-1,one));CHECK(one==File::byte(file.readable-1,0)&&file.calls==4);
+
+    CHECK(reader.reset(file.source()));file.calls=0;
+    for(unsigned i=0;i<pages-1;++i)CHECK(reader.u8(i*page,one));
+    const unsigned before=file.calls;
+    CHECK(reader.read((pages+1)*page-17,bytes,sizeof bytes));check_bytes(bytes,(pages+1)*page-17,sizeof bytes);
+    CHECK(file.calls==before+2); // Wrapped victims preserve the old two-read order.
+    CHECK(reader.u8((pages-2)*page,one));CHECK(file.calls==before+2);
+
+    // A failed combined read publishes neither overwritten page; unrelated
+    // resident pages survive, and a later actual request can retry normally.
+    const unsigned fail=(pages+3)*page;file.fail_offset=fail;
+    CHECK(!reader.read(fail+page-17,bytes,sizeof bytes));
+    const unsigned failed=file.calls;
+    CHECK(reader.u8((pages-2)*page,one));CHECK(file.calls==failed);
+    file.fail_offset=~0u;
+    CHECK(reader.read(fail+page-17,bytes,sizeof bytes));check_bytes(bytes,fail+page-17,sizeof bytes);
+    CHECK(file.calls==failed+1&&file.last_offset==fail&&file.last_count==2*page);
+    File replacement;replacement.readable=file.readable;replacement.salt=119;
+    CHECK(reader.reset(replacement.source()));
+    CHECK(reader.read(fail+page-17,bytes,sizeof bytes));check_bytes(bytes,fail+page-17,sizeof bytes,119);
+    CHECK(replacement.calls==1);
+}
 static void failures(){
     File file;file.readable=4096+2;ResourceReader reader(file.source(8192));
     uint32_t value=0x12345678;CHECK(!reader.u32(4096,value));CHECK(value==0x12345678);
@@ -92,7 +132,7 @@ static void failures(){
     CHECK(file.last_count==2);
     file.readable=3*4096;file.fail_offset=4096;CHECK(reader.reset(file.source()));
     uint8_t bytes[8]{};CHECK(!reader.read(4093,bytes,8));
-    CHECK(reader.u32(7,value)); // An unrelated successful cached page remains usable.
+    CHECK(reader.u32(7,value)); // An unrelated page remains readable after a failed range.
     file.fail_offset=~0u;CHECK(reader.u32(4096,value)); // Provider failure is retryable.
     file.fail_offset=8192;std::vector<uint8_t> bulk(4096);CHECK(!reader.read(8192,bulk.data(),bulk.size()));
     CHECK(!reader.reset({}));CHECK(!reader.u8(0,bytes[0]));
@@ -129,4 +169,4 @@ static void boot_display_progress(){
     CHECK(frame.front()==0x55aa&&frame.back()==0x55aa);
     loading_screen(nullptr,ResourceStage::Header,0,1,0);
 }
-int main(){bounds();cache();repeated_text_working_set();failures();memory_and_ranges();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}
+int main(){bounds();cache();repeated_text_working_set();paired_cold_pages();failures();memory_and_ranges();boot_display_progress();std::printf("resource source: %u checks passed\n",checks);}
