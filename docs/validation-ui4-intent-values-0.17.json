@@ -1,0 +1,277 @@
+{
+  "schema": 1,
+  "stage": "UI4 independent values for compound enemy intents",
+  "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+  "production_checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+  "production_unchanged_between_checkpoints": true,
+  "reference": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea",
+    "private_sources": [
+      "sts2.dll: NCreature.UpdateIntent, NIntent.UpdateVisuals, StatusIntent.GetIntentLabel, MechaKnight.GenerateMoveStateMachine",
+      "scenes/combat/intent.tscn"
+    ],
+    "published_original_payloads": false
+  },
+  "platform": {
+    "compiler": "Clang 18",
+    "build_type": "Release",
+    "x11": false,
+    "runtime": "native",
+    "emulator_acceptance_in_this_receipt": false,
+    "physical_calculator_measurement": false
+  },
+  "implementation": {
+    "source": "src/world_intent_ui.inc",
+    "test_source": "tests/world_ui_regression.cpp",
+    "change": "Give each intent icon its own damage or status-card value instead of one group-centered Attack/else-if label; size the cell and hit area to the visible value.",
+    "preserved": [
+      "retained combat_intent presentation values",
+      "attack-strength art thresholds",
+      "smaller repeated-hit suffix",
+      "canonical State, save format and gameplay RNG",
+      "resource formats and intent visibility timing"
+    ],
+    "new_persistent_pixel_buffers": 0
+  },
+  "actual_resources": [
+    {
+      "file": "ui4-assets/v21-title/retained-eng.nsp",
+      "locale": "eng",
+      "version": 21,
+      "bytes": 76675115
+    },
+    {
+      "file": "ui4-assets/v21-title/retained-zhs.nsp",
+      "locale": "zhs",
+      "version": 21,
+      "bytes": 79457814
+    }
+  ],
+  "final_results": [
+    {
+      "test": "world_ui_regression",
+      "profile": "synthetic numeric stencil font",
+      "checks": 6885,
+      "passed": true
+    },
+    {
+      "test": "world_ui_regression",
+      "profile": "actual v21",
+      "locale": "eng",
+      "checks": 20695,
+      "passed": true,
+      "capture_directory": "ui4-intent-acceptance/screens-alpha-eng"
+    },
+    {
+      "test": "world_ui_regression",
+      "profile": "actual v21",
+      "locale": "zhs",
+      "checks": 20695,
+      "passed": true,
+      "capture_directory": "ui4-intent-acceptance/screens-alpha-zhs"
+    }
+  ],
+  "real_move_cases": [
+    {
+      "encounter": "MechaKnightElite",
+      "move": "FLAMETHROWER_MOVE",
+      "node": 1,
+      "ascension": 0,
+      "damage": 8,
+      "hits": 1,
+      "status_cards": 4,
+      "capture": "intent-mecha-flamethrower.ppm"
+    },
+    {
+      "encounter": "MechaKnightElite",
+      "move": "FLAMETHROWER_MOVE",
+      "node": 1,
+      "ascension": 9,
+      "damage": 12,
+      "hits": 1,
+      "status_cards": 4,
+      "capture": "intent-mecha-flamethrower-a9.ppm"
+    },
+    {
+      "encounter": "SoulFyshBoss",
+      "move": "Gaze",
+      "node": 2,
+      "damage": 7,
+      "hits": 1,
+      "status_cards": 1,
+      "capture": "intent-soul-fysh-gaze.ppm"
+    },
+    {
+      "encounter": "VantomBoss",
+      "move": "Dismember",
+      "node": 2,
+      "damage": 26,
+      "hits": 1,
+      "status_cards": 3,
+      "capture": "intent-vantom-dismember.ppm"
+    },
+    {
+      "encounter": "NibbitsNormal",
+      "move": "Slice",
+      "node": 1,
+      "actors": 2,
+      "damage_each": 6,
+      "flags": [
+        "Attack",
+        "Block"
+      ],
+      "capture": "intent-two-nibbits-slice.ppm"
+    },
+    {
+      "encounter": "ByrdonisElite",
+      "move": "Peck",
+      "node": 0,
+      "damage": 3,
+      "hits": 3,
+      "capture": "intent-byrdonis-three-hits.ppm"
+    }
+  ],
+  "exercised_behavior": [
+    "the actual encounter data supplies each original damage/status pair",
+    "independent RGB565 alpha composition searches actual glyph numerals over the same-clock room background and requires visible ink",
+    "the comparison includes glyph holes and outlines below the overlapping icon rows, without using the production label layout",
+    "zeroing only the displayed status count removes its numeral pixels while preserving attack damage",
+    "both displayed numeric values map to their actual enemy intent hit target",
+    "two neighboring Attack/Block actors retain separate damage ownership and hit targets",
+    "the original three-hit damage retains its smaller multiplier suffix",
+    "canonical Mecha Windup does not replace retained visible Flamethrower damage/status before the cue",
+    "display rendering and projected-count changes preserve exact canonical save bytes"
+  ],
+  "final_journals": [
+    {
+      "journal": "ui4-intent-fixture-build-18c662ff2d46.json",
+      "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+      "started_at": "2026-10-23T17:56:08.704563+00:00",
+      "ended_at": "2026-10-23T17:56:11.786230+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-intent-alpha-synthetic-6fc46d80cba3.json",
+      "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+      "started_at": "2026-10-23T17:56:51.219966+00:00",
+      "ended_at": "2026-10-23T17:56:52.195348+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-intent-alpha-v21-eng-20bc5ed95fe7.json",
+      "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+      "started_at": "2026-10-23T17:56:51.215527+00:00",
+      "ended_at": "2026-10-23T17:56:53.744819+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-intent-alpha-v21-zhs-f6ead2fc63b4.json",
+      "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+      "started_at": "2026-10-23T17:56:51.217810+00:00",
+      "ended_at": "2026-10-23T17:56:53.650126+00:00",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false
+    }
+  ],
+  "negative_control": {
+    "journal": "ui4-intent-alpha-negative-old9a-7bae940e608d.json",
+    "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+    "started_at": "2026-10-23T17:56:26.131034+00:00",
+    "ended_at": "2026-10-23T17:56:28.814548+00:00",
+    "status": "failed",
+    "returncode": 1,
+    "source_changed": false,
+    "expected_result": "failure at the first Mecha independent damage/status numeral check",
+    "observed_failure": "tests/world_ui_regression.cpp:175 damage_x>=0&&status_x>damage_x phase=0",
+    "test_source": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+    "runtime_and_headers": "9a554fe04e63b35546be708a81c85f41864a307f",
+    "runtime_library_bytes": 4292046,
+    "is_current_runtime_failure": false,
+    "method": "compile the new regression against preserved old headers and static runtime library in a separate output directory"
+  },
+  "prior_failed_fixture_journals": [
+    {
+      "journal": "ui4-intent-synthetic-915b89bd66f4.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "started_at": "2026-10-23T17:49:39.148066+00:00",
+      "ended_at": "2026-10-23T17:49:39.617441+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-intent-v21-eng-96e97e501ada.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "started_at": "2026-10-23T17:49:39.123323+00:00",
+      "ended_at": "2026-10-23T17:49:39.696566+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false
+    },
+    {
+      "journal": "ui4-intent-v21-zhs-411dd0e31b80.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "started_at": "2026-10-23T17:49:39.144297+00:00",
+      "ended_at": "2026-10-23T17:49:39.612746+00:00",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false
+    }
+  ],
+  "fixture_resolutions": [
+    {
+      "issue": "Byrdonis initial encounter move is not necessarily Peck",
+      "resolution_commit_prefix": "0c68543",
+      "resolution": "explicitly set the existing original node0 Peck before checking damage3/hits3"
+    },
+    {
+      "issue": "small actual resource glyphs do not require any alpha255 pixels",
+      "resolution_commit_prefix": "0c68543",
+      "resolution": "independently compose actual nonzero glyph alpha over the captured room and compare exact pixels; require nonempty visible ink, without loosening tolerance"
+    }
+  ],
+  "earlier_negative_control": {
+    "journal": "ui4-intent-negative-old9a-a1f7bb64777e.json",
+    "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+    "started_at": "2026-10-23T17:48:35.603221+00:00",
+    "ended_at": "2026-10-23T17:48:38.329566+00:00",
+    "status": "failed",
+    "returncode": 1,
+    "source_changed": false
+  },
+  "visual_review": {
+    "author_reviewed_frames": 12,
+    "independent_reviewer": "title_ui agent",
+    "independent_reviewed_frames": 4,
+    "locales": [
+      "eng",
+      "zhs"
+    ],
+    "independent_cases": [
+      "Mecha normal8/status4",
+      "Mecha ascension9 damage12/status4"
+    ],
+    "observations": [
+      "attack and status values are individually readable below their corresponding icons",
+      "two-digit attack and status labels keep a visible gap",
+      "no observed actor, health-bar or target-marker overlap in the four independently reviewed Mecha frames"
+    ],
+    "scope": "320x240 native still frames; hit ownership and retained-time behavior are established separately by executed assertions"
+  },
+  "limitations": [
+    "check totals include existing world-UI assertions and screenshot I/O, not distinct intent cases",
+    "no ordinary ARM Mecha encounter or physical-calculator performance is claimed by this receipt",
+    "all 5-8-enemy layouts and all bright-background combinations are not exhaustively inspected",
+    "original intent animation, bob/perform particles, delayed fade, energy hover/gain/entry feedback and banner font hierarchy remain separate unimplemented audit items",
+    "private actual resources, captures and complete execution logs are not included in this public receipt",
+    "the audit is not an overall original-UI percentage or a claim of original-PC pixel equivalence"
+  ]
+}

@@ -1,24 +1,24 @@
 {
   "schema": 1,
   "recorded_at_utc": "2026-10-23",
-  "runtime_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "runtime_checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
   "resource_checkpoint": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
   "reference": "v0.111.0 / 41cef1ea",
-  "scope": "Integrated UI4 ARM/WASM builds, original card motion/enemy waits, actual bilingual packs and cross-backend replay. Separate reports cover title, cache, browser, Firebird and delivery.",
+  "scope": "Integrated UI4 ARM/WASM builds, title sparse-scaling performance fix, original card motion/enemy waits, independent composite-intent values, actual bilingual packs and cross-backend replay. Separate reports cover title, cache, browser, ordinary Firebird and delivery.",
   "runtime_artifacts": {
     "ndless": {
       "path": "dist/nSpire2.tns",
-      "bytes": 997144,
-      "sha256": "ae99f4f966e553ee6bd1b66c4adecc68e7af5283c10b3c4071443928724845ee",
-      "allocation_bytes": 16328520,
+      "bytes": 997748,
+      "sha256": "b03d5a0c4c7d05e4a386a1d2f9dcef0f50bc9ffd98987e32099abaa066d2b647",
+      "allocation_bytes": 16328960,
       "allocation_limit_bytes": 16777216,
-      "remaining_allocation_bytes": 448696,
+      "remaining_allocation_bytes": 448256,
       "absolute_relocations": 30935
     },
     "wasm": {
       "path": "build/web/nSpire2.wasm",
-      "bytes": 5488962,
-      "sha256": "0944ae6039d1c1eda57618f448fb29560caba0d6cc9a45696cf67714474f600a",
+      "bytes": 5489541,
+      "sha256": "ac8688090cfa4d4519ba25e85a191d2cae3263cfd08e09426bb3229f0d60c08f",
       "fixed_memory_bytes": 16777216
     }
   },
@@ -26,19 +26,23 @@
     "compiler": "Clang 18",
     "card_motion_checks": 1079,
     "combat_ui_checks": 1228,
-    "synthetic_world_ui_checks": 6658,
+    "synthetic_world_ui_checks": 6885,
     "status": "passed",
-    "full_native_suite_evidence": "GitHub ASan/UBSan job below; do not relabel targeted local runs as a complete Release suite."
+    "full_native_suite_evidence": "GitHub ASan/UBSan job below; do not relabel targeted local runs as a complete Release suite.",
+    "card_motion_and_combat_ui_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+    "card_motion_and_combat_ui_note": "Historical targeted receipts; the same production motion/timing code is covered again by the final actual-resource suite and final CI.",
+    "synthetic_world_ui_checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79"
   },
   "actual_world_ui": {
     "languages": [
       "eng",
       "zhs"
     ],
-    "checks_per_language": 19016,
+    "checks_per_language": 20695,
     "status": "passed",
     "counts_include_repeated_and_capture_assertions": true,
-    "report": "validation-ui4-combat-motion-0.17.json"
+    "report": "validation-ui4-intent-values-0.17.json",
+    "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79"
   },
   "actual_native_wasm": {
     "languages": [
@@ -49,7 +53,8 @@
     "frame_matches_per_language": 649,
     "save_matches_per_language": 30,
     "native_and_wasm_equal": true,
-    "original_game_framebuffer_claim": false
+    "original_game_framebuffer_claim": false,
+    "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3"
   },
   "linked_arm_division": {
     "vectors": 5249,
@@ -57,93 +62,86 @@
     "quotient_remainder": "exact Python integer oracle",
     "preserved": "r4-r11 and stack",
     "elf_sha256": "b159c5738806a8107584acff5866ea071612437f99783349b4a2f24a1d885c72",
-    "limitation": "Instruction-level linked ABI validation, not calculator runtime/performance."
+    "limitation": "Historical instruction-level linked ABI validation at 9a, not a new execution of the final 76f ELF and not calculator runtime/performance. The helper source is unchanged.",
+    "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f"
   },
   "journal_receipts": [
     {
-      "file": "ui4-final-arm-accepted-03e1432c07ef.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-arm-77dad504effd.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:25:14.969757+00:00",
-      "ended_at": "2026-10-23T17:25:47.637260+00:00"
+      "started_at": "2026-10-23T17:47:48.213651+00:00",
+      "ended_at": "2026-10-23T17:48:15.431624+00:00"
     },
     {
-      "file": "ui4-final-wasm-accepted-6690e91e64bc.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-wasm-33bd7dcb7e0f.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:25:16.293388+00:00",
-      "ended_at": "2026-10-23T17:25:50.509283+00:00"
+      "started_at": "2026-10-23T17:47:48.227382+00:00",
+      "ended_at": "2026-10-23T17:48:16.712429+00:00"
     },
     {
-      "file": "ui4-backend-native-eng-d8b15abf95f3.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-backend-native-eng-74073df542fd.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:27:54.044943+00:00",
-      "ended_at": "2026-10-23T17:28:04.593687+00:00"
+      "started_at": "2026-10-23T17:49:42.181127+00:00",
+      "ended_at": "2026-10-23T17:49:52.883056+00:00"
     },
     {
-      "file": "ui4-backend-native-zhs-0e9167f8f014.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-backend-native-zhs-ccbf60630933.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:27:54.036035+00:00",
-      "ended_at": "2026-10-23T17:28:04.336839+00:00"
+      "started_at": "2026-10-23T17:49:42.199596+00:00",
+      "ended_at": "2026-10-23T17:49:52.956000+00:00"
     },
     {
-      "file": "ui4-backend-wasm-eng-c5fc56ef6e5e.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-backend-wasm-eng-4e3ba3d9abf4.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:29:32.151611+00:00",
-      "ended_at": "2026-10-23T17:29:36.134578+00:00"
+      "started_at": "2026-10-23T17:51:31.449827+00:00",
+      "ended_at": "2026-10-23T17:51:35.530185+00:00"
     },
     {
-      "file": "ui4-backend-wasm-zhs-7f3333523dc8.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-backend-wasm-zhs-2ad7908a7b7d.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:29:32.145029+00:00",
-      "ended_at": "2026-10-23T17:29:36.090429+00:00"
-    },
-    {
-      "file": "ui4-linked-arm-division-ready-4cb1ccd1bf2f.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
-      "status": "passed",
-      "returncode": 0,
-      "source_changed": false,
-      "started_at": "2026-10-23T17:30:52.868429+00:00",
-      "ended_at": "2026-10-23T17:30:53.238651+00:00"
+      "started_at": "2026-10-23T17:51:31.438137+00:00",
+      "ended_at": "2026-10-23T17:51:35.524196+00:00"
     }
   ],
   "github_actions": {
-    "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
-    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39994866228",
+    "checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/39999119491",
     "status": "completed",
     "conclusion": "success",
     "native": {
-      "job_id": 120555997397,
+      "job_id": 120570288131,
       "configuration": "Debug O1, ASan and UBSan, frame pointers retained",
+      "status": "completed",
       "passed_suites": 74,
       "failed_suites": 0,
-      "elapsed_seconds": 306.85
+      "elapsed_seconds": 241.94
     },
     "conversion": {
-      "job_id": 120555997267,
+      "job_id": 120570287591,
       "discovered_python_tests": 135,
       "named_python_tests": 53,
       "result": "passed"
     },
     "portable": {
-      "job_id": 120555996819,
+      "job_id": 120570288094,
       "ndless_arm": "passed",
       "wasm_without_private_assets": "passed"
     }
@@ -153,7 +151,7 @@
       "source": "f1dea1e",
       "actions_run": 39992525090,
       "result": "72/74 native sanitizer suites; conversion passed; portable ARM link failed.",
-      "resolution": "Removed duplicate focused-card hit region; retained focus rail after settling. Toasty Mittens fixture now waits the original awaited draw commands. Title bounded signed coordinates avoid unsupported signed-64 division. Final unchanged assertions and complete suites passed at the checkpoint above."
+      "resolution": "Removed duplicate focused-card hit region; retained focus rail after settling. Toasty Mittens fixture now waits the original awaited draw commands. Title bounded signed coordinates avoid unsupported signed-64 division. Complete suites passed historically at 9a; the final 6b CI also passed all 74 suites, as recorded above."
     },
     {
       "source": "2612c555",
@@ -172,13 +170,20 @@
     {
       "source": "9a554fe04e63b35546be708a81c85f41864a307f",
       "failure": "Final ordinary Firebird title: 146 render samples mean 226.867 ms, min 205.444 ms, max 243.652 ms, no resource I/O; 80 ms baseline key taps missed, 300 ms keypress responded.",
-      "resolution": "Pending exact-pixel scaled sparse/particle CPU optimization. No final calculator acceptance or delivery claimed.",
+      "resolution": "76f replaces per-source-pixel scaled sparse traversal with clipped destination-column inverse nearest sampling and incremental quotients/remainders. All particle/layer counts and exact pixels are retained. The accepted ordinary Chinese route records 350 title samples at 42.236 ms mean, 38.605 ms minimum, 42.999 ms maximum, zero resource I/O; the original 80 ms keys complete Continue, collection, focus, detail and save/quit. See the final Firebird report for coverage and remaining limits.",
       "journal_note": "Fresh performance file was retrieved successfully; a later USB save read timed out, so the overall install/flow journal ended failed."
+    },
+    {
+      "source": "76f0a01cb506fde7ac8b427e857462a35933ade3",
+      "actions_run": 39997970300,
+      "result": "73/74 native sanitizer suites; conversion and portable builds passed. The new Byrdonis fixture assumed an opening Peck move. Initial actual-resource fixture runs also incorrectly assumed small digit glyphs contain an alpha=255 pixel.",
+      "resolution": "6b explicitly selects the real Peck node and independently composites the actual glyph alpha over the same room background before exact comparison. No production rules or pixel tolerances changed. Synthetic 6,885 and bilingual 20,695-check runs pass; the corrected fixture linked to the old 9a library still fails at the first independent Mecha number as expected. Final CI status is recorded separately above."
     }
   ],
   "related_reports": [
     "validation-ui4-title-0.17.json",
     "validation-ui4-combat-motion-0.17.json",
+    "validation-ui4-intent-values-0.17.json",
     "validation-ui4-card-cache-0.17.json",
     "validation-ui4-cold-ranges-0.17.json",
     "validation-ui4-cache-firebird-0.17.json",
@@ -190,9 +195,12 @@
     "No overall original-PC framebuffer differential or 95 percent UI acceptance.",
     "Physical-calculator frame rate is unmeasured.",
     "Opening deal, exhaust/shuffle/generated-card entrance, autoplay choreography, full title Spine motion and other enemy command offsets remain separate fidelity work.",
-    "Cold Chinese collection entry remains around 1.5 seconds in the isolated emulator comparison.",
+    "Energy hover, original intent fade/bob and execution particles, banner font/outline and energy gain/entry effects remain explicit HUD work.",
+    "The final Chinese collection maximum render sample is 1,273.224 ms; cold entry remains visibly slow. This is not a matched causal comparison with the earlier isolated 1,508.392 ms result.",
     "The 30 to 40 MB installation target is not reached."
   ],
   "public_repository_scope": "Source and reviewed metadata only; original assets, embedded HTML, screenshots and saves are excluded.",
-  "calculator_acceptance_status": "Blocked by title CPU/short-key regression; native/browser/portable results above remain their stated scope."
+  "calculator_acceptance_status": "Final ordinary Chinese collection/focus/detail/save/quit and English continue/map/combat/next-draw/save/quit routes both closed passed at 76f, with unchanged source and zero event errors. The final report records scope, timings and untested boundaries.",
+  "acceptance_test_checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79",
+  "production_unchanged_between_checkpoints": true
 }

@@ -40,7 +40,10 @@ tails and exact saves against direct core settlement. The first combined run
 later failed at the separately recorded Toasty Mittens fixture. Final frozen
 9a554fe runs passed the complete actual-resource world-UI suite in both
 languages (19,016 checks each), and Actions 39994866228 passed all 74 native
-ASan/UBSan suites. See `validation-ui4-runtime-0.17.json` and
+ASan/UBSan suites. The final 6b7ca24 actual-resource suite also passes both
+languages (20,695 checks each), with unchanged production timing code; Actions
+39999119491 passes all 74 native sanitizer suites. See
+`validation-ui4-runtime-0.17.json` and
 `validation-ui4-combat-motion-0.17.json`; the earlier failure is retained.
 
 Other enemy models retain their previous scheduling. Multi-hit intervals,

@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "recorded_at_utc": "2026-10-23",
-  "script_and_runtime_source": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "script_and_runtime_source": "76f0a01cb506fde7ac8b427e857462a35933ade3",
   "resource_conversion_source": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
   "artifact": {
     "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-offline.html",
-    "bytes": 115707908,
+    "bytes": 115708680,
     "access": "Local file URL; unchanged release artifact"
   },
   "execution": {
-    "file": "ui4-offline-browser-unrestricted-c35e154bc774.json",
-    "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+    "file": "ui4-sparse-offline-browser-29acda155b30.json",
+    "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
     "status": "passed",
     "returncode": 0,
     "source_changed": false,
-    "started_at": "2026-10-23T17:34:32.715316+00:00",
-    "ended_at": "2026-10-23T17:34:55.526357+00:00",
+    "started_at": "2026-10-23T17:51:37.086571+00:00",
+    "ended_at": "2026-10-23T17:51:59.336181+00:00",
     "browser": "151.0.7922.34",
     "context": "Fresh isolated headless Linux Chromium profile; service workers disabled; external requests blocked."
   },
@@ -53,40 +53,41 @@
       "browser-title-eng.png",
       "browser-continue-zhs.png"
     ],
-    "result": "Original gold/teal logo, foreground/fog ordering and bilingual menu/Continue facts are legible at 320 by 240. These are port screenshots, not original-game pixel-differential evidence."
+    "result": "Original gold/teal logo, foreground/fog ordering and bilingual menu/Continue facts are legible at 320 by 240. These are port screenshots, not original-game pixel-differential evidence.",
+    "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3"
   },
   "timing": {
     "scope": "Current browser CPU and Canvas2D submission intervals; excludes compositor/display FPS.",
-    "first_navigation_to_ready_wall_ms": 2158,
-    "last_english_reload_internal_startup_ms": 109.60000000149012,
+    "first_navigation_to_ready_wall_ms": 2116,
+    "last_english_reload_internal_startup_ms": 123.80000000447035,
     "internal_startup_scope": "Includes resource decoding, WASM initialization and game startup; excludes the first draw.",
     "collection": "Visible 10-second control on a previously rendered eight-card collection; warm resources.",
     "collection_render": {
-      "samples": 301,
-      "mean_ms": 1.0083056479395427,
-      "max_ms": 3.3000000044703484,
+      "samples": 300,
+      "mean_ms": 0.8313333331545194,
+      "max_ms": 2.2999999970197678,
       "over_50ms": 0,
       "over_100ms": 0
     },
     "collection_rgb_conversion": {
-      "samples": 301,
-      "mean_ms": 0.2930232559971239,
-      "max_ms": 2.5,
+      "samples": 300,
+      "mean_ms": 0.2723333335171143,
+      "max_ms": 0.7999999970197678,
       "over_50ms": 0,
       "over_100ms": 0
     },
     "collection_canvas_submission": {
-      "samples": 301,
-      "mean_ms": 0.07109634543574134,
-      "max_ms": 2.399999998509884,
+      "samples": 300,
+      "mean_ms": 0.08366666667163372,
+      "max_ms": 7.800000004470348,
       "over_50ms": 0,
       "over_100ms": 0
     },
     "collection_submission_interval": {
-      "samples": 300,
-      "mean_ms": 33.33133333332837,
-      "max_ms": 61,
-      "over_50ms": 1,
+      "samples": 299,
+      "mean_ms": 33.33177257523589,
+      "max_ms": 42.80000000447035,
+      "over_50ms": 0,
       "over_100ms": 0
     },
     "collection_resource_read_calls": 0,
@@ -96,7 +97,8 @@
     "journal": "ui4-offline-browser-24422ad09ef1",
     "phase": "Chromium process startup, before any game page loaded",
     "message": "sandbox_host_linux shutdown: Operation not permitted (1)",
-    "resolution": "The same script, browser and artifact passed when the isolated browser process was allowed to start outside the restrictive sandbox; no application or test changes."
+    "resolution": "At 9a the same script, browser and artifact passed outside the restrictive process sandbox. The final 76f browser execution used the permitted process environment and passed; no application or test changes were made for the sandbox issue.",
+    "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f"
   },
   "privacy": "Only metadata is committed. Screenshots, HTML, saves and original assets remain private."
 }

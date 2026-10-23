@@ -8,8 +8,10 @@ required by original gameplay or functional parsing/decoding. This supersedes
 the earlier retention policy below; necessary range and format handling remain.
 
 The owner subsequently requested investigation of Sprite Dicing, streaming and a
-**30–40 MB calculator installation**. The actual complete lossless pack is
-77.10 MiB; this newer target is not yet reached. Storage and access evidence,
+**30–40 MB calculator installation**. The UI4 split resources total
+81,238,925 bytes (77.48 MiB), with 82,236,673 bytes installed before saves when
+both languages and the launcher are included; this newer target is not yet
+reached. Storage and access evidence,
 the shared decoded-image cache and bounded compression experiments are tracked
 in [resource-budget-0.17.md](resource-budget-0.17.md). Pixel/frame changes must
 not be disguised as the allowed screen-readability adaptation.

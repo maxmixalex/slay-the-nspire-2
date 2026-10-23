@@ -2,17 +2,17 @@
   "schema": 1,
   "recorded_at_utc": "2026-10-23",
   "reference": "v0.111.0 / 41cef1ea",
-  "runtime_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "runtime_checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
   "resource_checkpoint": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
-  "packaging_checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+  "packaging_checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
   "delivery": {
     "calculator_zip": {
       "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-calculator.zip",
-      "bytes": 76816629,
+      "bytes": 76817608,
       "members": [
         {
           "path": "nSpire2.tns",
-          "bytes": 997144
+          "bytes": 997748
         },
         {
           "path": "nSpire2.common.tns",
@@ -58,7 +58,7 @@
     },
     "offline_html": {
       "name": "Slay-the-Nspire-2-0.17-ui4-bilingual-offline.html",
-      "bytes": 115707908,
+      "bytes": 115708680,
       "self_contained": true,
       "shared_artwork_copies": 1,
       "locales": [
@@ -66,48 +66,86 @@
         "zhs"
       ]
     },
-    "both_user_files_saved": false,
-    "delivery_status": "Candidate rejected for final calculator delivery: fresh ARM title mean 226.867 ms and missed 80 ms key taps. Title CPU fix and complete ordinary emulator acceptance required before saving or main sync."
+    "both_user_files_saved": true,
+    "delivery_status": "Final 76f calculator ZIP and offline HTML saved successfully to the user-authorized destination after final 6b CI, bilingual ordinary emulator execution, cross-backend checks and input/license preservation passed."
   },
   "installed_bytes": {
-    "launcher": 997144,
+    "launcher": 997748,
     "common": 74894324,
     "eng": 1780951,
     "zhs": 4563650,
-    "both_locales_before_saves": 82236069,
-    "english_only_before_saves": 77672419,
-    "chinese_only_before_saves": 80455118,
+    "both_locales_before_saves": 82236673,
+    "english_only_before_saves": 77673023,
+    "chinese_only_before_saves": 80455722,
     "resource_reduction_from_v19": 12544438,
     "increase_over_ui3_resources": 138222,
-    "increase_over_ui3_install": 151684
+    "increase_over_ui3_install": 152288
   },
   "verification": {
     "packaging_journal": {
-      "file": "ui4-package-a0f372ce8f97.json",
-      "checkpoint": "9a554fe04e63b35546be708a81c85f41864a307f",
+      "file": "ui4-sparse-package-8412248471aa.json",
+      "checkpoint": "76f0a01cb506fde7ac8b427e857462a35933ade3",
       "status": "passed",
       "returncode": 0,
       "source_changed": false,
-      "started_at": "2026-10-23T17:30:34.883263+00:00",
-      "ended_at": "2026-10-23T17:30:39.618950+00:00"
+      "started_at": "2026-10-23T17:49:42.199422+00:00",
+      "ended_at": "2026-10-23T17:49:46.229678+00:00"
     },
     "zip_members_match_selected_inputs": true,
     "embedded_input_checks": {
-      "mode": true,
-      "wasm_bytes_match": true,
-      "common_bytes_match": true,
-      "two_locales": true,
-      "eng_bytes_match": true,
-      "zhs_bytes_match": true,
-      "NOTICE.md_complete": true,
-      "COPYING_complete": true,
-      "licenses/Go-BSD-3-Clause.txt_complete": true,
-      "licenses/OkHSV-Godot-MIT.txt_complete": true,
-      "licenses/Noto-Boot-OFL.txt_complete": true
+      "status": "passed",
+      "mode": "split",
+      "shared_artwork_copies": 1,
+      "wasm_copies": 1,
+      "two_locales": [
+        "eng",
+        "zhs"
+      ],
+      "inputs": [
+        {
+          "name": "WebAssembly",
+          "decoded_bytes": 5489541,
+          "byte_equal": true
+        },
+        {
+          "name": "common",
+          "decoded_bytes": 74894324,
+          "byte_equal": true
+        },
+        {
+          "name": "eng",
+          "decoded_bytes": 1780951,
+          "byte_equal": true
+        },
+        {
+          "name": "zhs",
+          "decoded_bytes": 4563650,
+          "byte_equal": true
+        }
+      ],
+      "complete_notice_and_license_block": true,
+      "notice_and_license_bytes": 50597,
+      "complete_files": [
+        "NOTICE.md",
+        "COPYING",
+        "licenses/Go-BSD-3-Clause.txt",
+        "licenses/OkHSV-Godot-MIT.txt",
+        "licenses/Noto-Boot-OFL.txt"
+      ],
+      "browser_locale_bindings_equal_to_config": true,
+      "unresolved_placeholders": 0,
+      "checked_at_utc": "2026-10-23T18:01:48.578949+00:00"
     },
     "browser_report": "validation-ui4-browser-0.17.json",
     "firebird_report": "validation-ui4-firebird-0.17.json",
-    "ci_report": "validation-ui4-runtime-0.17.json"
+    "ci_report": "validation-ui4-runtime-0.17.json",
+    "file_save": {
+      "both_results": "succeeded",
+      "ordered_batch": true,
+      "local_metadata_applied_to_both": true,
+      "destination": "User-authorized private file destination",
+      "private_receipt_retained": true
+    }
   },
   "installation": [
     "Keep the launcher, common pack and installed locale packs from this release together.",
@@ -120,8 +158,10 @@
     "No overall original-PC framebuffer differential or 95 percent UI acceptance.",
     "Physical-calculator frame rate is unmeasured.",
     "Opening deal, exhaust/shuffle/generated-card entrance, autoplay choreography, full title Spine motion and other enemy command offsets remain separate fidelity work.",
-    "Cold Chinese collection entry remains around 1.5 seconds in the isolated emulator comparison.",
+    "Energy hover, original intent fade/bob and execution particles, banner font/outline and energy gain/entry effects remain explicit HUD work.",
+    "The final Chinese collection maximum render sample is 1,273.224 ms; cold entry remains visibly slow. This is not a matched causal comparison with the earlier isolated 1,508.392 ms result.",
     "The 30 to 40 MB installation target is not reached."
   ],
-  "public_repository_scope": "Source and reviewed metadata only; original assets, embedded HTML, screenshots and saves are excluded."
+  "public_repository_scope": "Source and reviewed metadata only; original assets, embedded HTML, screenshots and saves are excluded.",
+  "acceptance_test_checkpoint": "6b7ca242f5938b5008cd3fc47b92c2ab90f98a79"
 }

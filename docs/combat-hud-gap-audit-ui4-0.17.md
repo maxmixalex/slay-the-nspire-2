@@ -227,7 +227,7 @@ original-UI percentage, original-PC pixel equivalence or physical-calculator
 frame rate is claimed. The five entries above remain **unimplemented** at the
 audited runtime and must be described that way in the current delivery.
 
-## Follow-up: compound value source correction
+## Follow-up: compound value correction and executed acceptance
 
 After this audit was committed, final ARM title input acceptance required a
 further production correction, so delivery was held for another source stage.
@@ -247,7 +247,56 @@ verify that removing only a display count changes its visible pixels, preserve
 the attack value and inspect real hit targets. Retained old intent values and
 unchanged canonical save bytes are checked separately.
 
-This section records **prepared source and tests**, not an executed acceptance
-result. Execution must use the next remotely preserved combined checkpoint.
-Items 2–5 remain unimplemented, and the 9a audit findings above remain an
-accurate account of that earlier frozen runtime.
+The correction is now exercised at
+`6b7ca242f5938b5008cd3fc47b92c2ab90f98a79`. Its production source is unchanged
+from `76f0a01cb506fde7ac8b427e857462a35933ade3`; the later checkpoint corrects
+only the test fixture. The public synthetic run passed **6,885 checks** and
+the actual v21 English and Chinese runs each passed **20,695 checks**. These
+totals include existing world-UI assertions and capture I/O, not that many
+distinct intent scenarios. All three journals closed passed with unchanged
+source. [The execution receipt](validation-ui4-intent-values-0.17.json)
+records the exact journals, inputs and negative control.
+
+| Exercised original move | Visible values in both actual locales |
+| --- | --- |
+| Mecha Knight Flamethrower, normal | Attack 8 and status cards 4 |
+| Mecha Knight Flamethrower, ascension 9 | Attack 12 and status cards 4 |
+| Soul Fysh Gaze | Attack 7 and status cards 1 |
+| Vantom Dismember | Attack 26 and status cards 3 |
+| Two Nibbit Slices | Attack 6 beneath each attack icon, beside its block icon |
+| Byrdonis Peck | Damage 3 with the smaller x3 suffix |
+
+The pixel oracle uses each resource's actual glyph alpha and independently
+composites it over the same-clock room background. It compares the outlined
+number, including holes, below the icon's overlapping rows and requires
+nonempty visible ink. It does not use the production label-layout helper or
+accept empty text as a match. Removing a projected status count erases its
+pixels while preserving the damage; both label locations retain the intended
+enemy hit target. Changing the settled Mecha move to Windup does not reveal
+future values before the retained Flamethrower cue. Canonical save bytes stay
+unchanged throughout these display operations.
+
+The same corrected test was separately compiled against preserved **9a**
+headers and its static runtime library. It failed, as expected, at the first
+Mecha independent damage/status-pixel assertion. This establishes that the new
+regression detects the old omission rather than merely agreeing with the new
+implementation. The negative-control journal is recorded as failed, not as a
+successful runtime run.
+
+Two initial fixture assumptions failed and remain recorded: the synthetic
+Byrdonis setup had not selected Peck, and the real small font contains no
+fully opaque pixel in several numerals. The fixture now explicitly selects the
+real Peck move and uses the real antialias values. Production code did not
+change to satisfy either correction.
+
+All twelve new full-frame captures were inspected. An independent reviewer
+also inspected the four English/Chinese Mecha normal/ascension-9 captures:
+damage and status counts remain individually readable beneath their icons,
+including the two-digit damage, with a visible gap and no observed actor,
+health-bar or target-marker overlap in these examples. The still frames do
+not prove hit regions or timing; those claims rely on the executed assertions.
+
+**Item 1 is implemented and verified for the cases above. Items 2–5 remain
+unimplemented.** The 9a findings remain an accurate historical audit. This
+stage does not establish all crowded enemy layouts, original-PC pixel
+equivalence, ordinary ARM Mecha gameplay or physical-calculator performance.
