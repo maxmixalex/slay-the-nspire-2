@@ -361,8 +361,14 @@ static void empty_chest(){
  const RelicId relics[]={WorldRelicSilverCrucible};begin_room(WorldRoom::Treasure,reference::ActKind::Overgrowth,0,relics,1);CHECK(a.game.world.treasure_relic==NoWorldRelic);
  const uint32_t presentation_random=a.treasure_random;const int gold=a.game.gold;const unsigned count=a.game.world_relics.count,calls=world_rng(a.game,WorldRng::Rewards).calls;click(UiAction::TreasureOpen);CHECK(a.treasure_random==presentation_random&&!a.treasure_holder_delay_us);
  CHECK(a.game.phase==Phase::Treasure&&a.game.treasure_state==1&&a.game.gold==gold&&a.game.world_relics.count==count&&!a.game.world.treasure_gold_claimed&&world_rng(a.game,WorldRng::Rewards).calls==calls);a.render();CHECK(!exists(HitKind::UiAction,int(UiAction::TreasureTake),false)&&!a.treasure_can_proceed()&&a.treasure_empty_waiting()&&a.cursor==1);treasure_alpha(255,0,0,10);
- const unsigned start=a.treasure_open_tick;snapshot();a.ui_action(UiAction::TreasureTake);a.ui_action(UiAction::TreasureLeave);a.input(Key::EndTurn);unchanged();advance_to(start+13);treasure_alpha(128,255,255);capture("treasure-empty");advance_to(start+30);CHECK(a.treasure_presentation==2&&a.treasure_empty_waiting());advance_to(start+31);CHECK(a.treasure_presentation==3&&!a.treasure_empty_waiting()&&a.treasure_close_tick==start+31&&a.treasure_open_tick==start);treasure_alpha(128,255,255);
- advance_to(start+40);CHECK(a.treasure_collection_opacity()==3);advance_to(start+41);CHECK(a.treasure_collection_opacity()==0&&a.treasure_chest_opacity()==255);advance_to(start+44);treasure_alpha(255,0,0);unchanged();CHECK(a.treasure_can_proceed());
+ const unsigned start=a.treasure_open_tick;const uint32_t collection_start=a.treasure_collection_start_ms;
+ snapshot();a.ui_action(UiAction::TreasureTake);a.ui_action(UiAction::TreasureLeave);a.input(Key::EndTurn);unchanged();advance_to(start+13);treasure_alpha(128,255,255);capture("treasure-empty");advance_to(start+30);CHECK(a.treasure_presentation==2&&a.treasure_empty_waiting());
+ // Empty collection completion is a real 1s timer, independent of the
+ // renderer's 33ms ticks. Assert both sides before another visual tick.
+ a.advance(9);a.render();CHECK(a.animation==start+30&&uint32_t(a.map_clock_ms-collection_start)==999&&a.treasure_presentation==2&&a.treasure_empty_waiting());unchanged();
+ a.advance(1);a.render();CHECK(a.animation==start+30&&uint32_t(a.map_clock_ms-collection_start)==1000&&a.treasure_presentation==3&&!a.treasure_empty_waiting()&&a.treasure_close_tick==a.animation&&a.treasure_open_tick==start);treasure_alpha(128,255,255);
+ const unsigned close=a.treasure_close_tick;
+ advance_to(close+9);CHECK(a.treasure_collection_opacity()==3);advance_to(close+10);CHECK(a.treasure_collection_opacity()==0&&a.treasure_chest_opacity()==255);advance_to(close+13);treasure_alpha(255,0,0);unchanged();CHECK(a.treasure_can_proceed());
  CHECK(a.save_current_run());CHECK(a.load_saved_run());cleared_treasure();treasure_alpha(255,0,0);CHECK(a.treasure_random==presentation_random);unchanged();a.input(Key::Confirm);CHECK(a.game.phase==Phase::Treasure&&a.game.world.room_open==2&&a.map_window.is_open);
 }
 static void treasure_clock_wrap(){

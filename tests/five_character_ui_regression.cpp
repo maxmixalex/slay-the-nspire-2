@@ -65,7 +65,7 @@ static void start(Character character){
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
     // The native title's save-dependent menu no longer exposes practice as
     // a fixed row. Enter the retained lab through Settings in either layout.
-    a.menu=a.has_save?3:2;a.input(Key::Confirm);CHECK(a.settings_open&&!a.character_select);
+    a.menu=a.has_save?2:1;a.input(Key::Confirm);CHECK(a.settings_open&&!a.character_select);
     action(UiAction::SettingsPractice);CHECK(a.character_select&&a.practice_entry&&!a.settings_open);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
     action(actions[(int)character]);CHECK(a.selected_character==character);action(UiAction::StartCharacter);
