@@ -109,15 +109,11 @@ struct ImageReservation {
         cache->image=image;cache->format=uint8_t(format);cache->age=next_image_age();cache->owner=owner;
     }
 };
-struct GlyphCache {const Content* owner{};uint32_t glyph{};uint8_t bytes[MaxGlyphBytes]{};};
-static GlyphCache glyph_cache[64];static unsigned glyph_cursor=0;
-struct StringCache {const Content* owner{};uint32_t offset{},size{};char bytes[MaxStringBytes]{};};
-static StringCache string_cache[8];static unsigned string_cursor=0;
+#include "content_text_cache.inc"
 static void clear_caches(const Content* owner){
     clear_tile_cache(owner);
     for(auto&v:image_cache)if(v.owner==owner)discard_image(v);
-    for(auto&v:glyph_cache)if(v.owner==owner)v.owner=nullptr;
-    for(auto&v:string_cache)if(v.owner==owner)v.owner=nullptr;
+    glyph_cache.clear(owner);string_cache.clear(owner);
 }
 bool valid_image(const uint8_t* p,unsigned len,unsigned w,unsigned h,unsigned fmt){
     if(fmt<4){unsigned expected=fmt<2?w*h*(fmt?3:2):512+w*h*(fmt==3?2:1);return len==expected;}
@@ -258,9 +254,13 @@ Picture Content::image(int id)const{
             if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,output))return fail();
             p=output;reservation.publish(this,uint32_t(id),fmt);
         }else{
-            if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5))return fail();fmt=header[0];size=u32(header+1);}
-            if(fmt>4||!size||size>MaxImageBytes)return fail();
+            if(fmt==5&&length<6)return fail();
             const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return fail();
+            // The descriptor already gives the stored byte count. Read it
+            // once and parse its five-byte LZ4 header in the same buffer; a
+            // separate header read used to fetch an extra 4 KiB cache page.
+            if(fmt==5){fmt=source[0];size=u32(source+1);}
+            if(fmt>4||!size||size>MaxImageBytes)return fail();
             if(stored_format!=5&&data_){p=source;if(!valid_image(p,size,w,h,fmt))return fail();}
             else {
                 ImageReservation reservation(size);uint8_t*output=reservation.bytes();if(!output)return fail();
@@ -297,14 +297,7 @@ Glyph Content::glyph(uint32_t cp,int size)const{
         const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;
         if(!reader_.contains(off,len)){io_good_=false;return {nullptr,0,0,0};}
         if(data_)bytes=data_+off;
-        else {for(const auto&v:glyph_cache)if(v.owner==this){
-                const uint8_t*cached=metadata_+40+images_*16+v.glyph*16;
-                const uint32_t count=u16(cached+14)?u16(cached+14):unsigned(cached[10])*cached[11];
-                // Raw/RLE bytes may be shared by different code points or
-                // layouts, but a shorter read cannot supply a longer view.
-                if(u32(cached+4)==off&&count==len){bytes=v.bytes;break;}
-            }
-            if(!bytes){auto&v=glyph_cache[glyph_cursor++%64];v.owner=nullptr;bytes=payload(off,len,v.bytes,sizeof v.bytes);if(bytes){v.owner=this;v.glyph=uint32_t((r-(metadata_+40+images_*16))/16);}}}
+        else {bytes=glyph_cache.read(this,off,len,reader_);if(!bytes)io_good_=false;}
         if(!bytes)return {nullptr,0,0,0};return {bytes,r[10],r[11],u16(r+12),u16(r+14)};
     }
     return {nullptr,0,0,(uint16_t)(size/2)};
@@ -314,10 +307,9 @@ const char* Content::string(int id)const{
     const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;const uint32_t off=u32(r),size=u32(r+4);
     if(size>=MaxStringBytes||!reader_.contains(off,size+1)){io_good_=false;return "";}
     if(data_){if(data_[off+size]){io_good_=false;return "";}return (const char*)(data_+off);}
-    for(const auto&v:string_cache)if(v.owner==this&&v.offset==off&&v.size==size)return v.bytes;
-    auto&v=string_cache[string_cursor++%8];v.owner=nullptr;
-    if(!payload(off,size+1,(uint8_t*)v.bytes,sizeof v.bytes)||v.bytes[size]){io_good_=false;return "";}
-    v.owner=this;v.offset=off;v.size=size;return v.bytes;
+    const auto*bytes=string_cache.read(this,off,size+1,reader_);
+    if(!bytes||bytes[size]){io_good_=false;return "";}
+    return reinterpret_cast<const char*>(bytes);
 }
 Clip Content::clip(int id)const{
     if(!metadata_||id<0||(unsigned)id>=clips_)return {0,0,1,0,0};
