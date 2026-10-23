@@ -27,9 +27,10 @@ static Bytes fixture(){
  constexpr unsigned string_at=40+count*16,clip_at=string_at+strings*8;
  Bytes b(clip_at+clips*16);put(b,0,0x3250534e);put(b,4,3);put(b,8,0x41cef1ea);
  put(b,16,count);put(b,24,strings);put(b,28,clips);
- const unsigned formats[]={0,0,1,2,3,4,1,0};
- for(unsigned id=0;id<8;++id){
-  const unsigned w=id==7?320:7,h=id==7?240:5,format=formats[id];
+ const unsigned formats[]={0,0,1,2,3,4,1,0,4};
+ constexpr unsigned generated=sizeof formats/sizeof formats[0];
+ for(unsigned id=0;id<generated;++id){
+  const unsigned w=id>=7?320:7,h=id>=7?240:5,format=formats[id];
   Image image{w,h,format,std::vector<uint16_t>(w*h),Bytes(w*h,255)};
   for(unsigned i=0;i<w*h;++i){image.colors[i]=color(i%256);if(format==1||format==3)image.alpha[i]=uint8_t((i*67)%256);}
   if(id==6)std::fill(image.alpha.begin(),image.alpha.end(),0);
@@ -44,6 +45,13 @@ static Bytes fixture(){
    for(unsigned i=0;i<256;++i)append(b,color(i),2);
    for(unsigned i=0;i<w*h;++i)b.push_back(uint8_t(i));
    if(format==3)b.insert(b.end(),image.alpha.begin(),image.alpha.end());
+  }else if(id==8){
+   // Full opaque sparse rows model the original separate title backdrop.
+   // Every seven-byte row prefix also exercises unaligned RGB565 loads.
+   for(unsigned y=0;y<h;++y){
+    append(b,1,2);append(b,0,2);append(b,w,2);b.push_back(0);
+    for(unsigned x=0;x<w;++x)append(b,image.colors[y*w+x],2);
+   }
   }else{
    std::fill(image.alpha.begin(),image.alpha.end(),0);
    for(unsigned y=0;y<h;++y){
@@ -61,7 +69,7 @@ static Bytes fixture(){
   put(b,40+id*16,off);put(b,44+id*16,w,2);put(b,46+id*16,h,2);
   put(b,48+id*16,format);put(b,52+id*16,unsigned(b.size())-off);images.push_back(image);
  }
- for(unsigned id=8;id<count;++id)for(unsigned i=0;i<16;++i)b[40+id*16+i]=b[40+i];
+ for(unsigned id=generated;id<count;++id)for(unsigned i=0;i<16;++i)b[40+id*16+i]=b[40+i];
  const unsigned empty=unsigned(b.size());b.push_back(0);
  for(unsigned i=0;i<strings;++i)put(b,string_at+i*8,empty);
  for(unsigned i=0;i<clips;++i){put(b,clip_at+i*16+4,1,2);put(b,clip_at+i*16+6,33,2);}
@@ -185,11 +193,11 @@ static void pictures(){
  for(auto surface:surfaces)for(auto style:styles)for(unsigned id=0;id<images.size();++id)for(auto shape:shapes)
   for(unsigned opacity:{0u,1u,128u,254u,255u})for(unsigned mode:{unsigned(presentation::Normal),unsigned(presentation::Add),2u})
    picture_case(surface,style,id,shape,opacity,mode);
- for(Surface surface:{Surface{320,240,320},Surface{320,240,327}}){
-  picture_case(surface,{},7,{0,0,0,0},255,presentation::Normal);
-  picture_case(surface,{},7,{-4,-3,0,0},255,presentation::Normal);
-  picture_case(surface,{true},7,{0,0,0,0},255,presentation::Normal);
-  picture_case(surface,{},7,{0,0,0,0},255,presentation::Add);
+ for(Surface surface:{Surface{320,240,320},Surface{320,240,327}})for(unsigned id:{7u,8u}){
+  picture_case(surface,{},id,{0,0,0,0},255,presentation::Normal);
+  picture_case(surface,{},id,{-4,-3,0,0},255,presentation::Normal);
+  picture_case(surface,{true},id,{0,0,0,0},255,presentation::Normal);
+  picture_case(surface,{},id,{0,0,0,0},255,presentation::Add);
  }
  Pair missing({13,9,19},{});missing.got.picture(-1,0,0);missing.compare();
 }

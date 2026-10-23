@@ -165,6 +165,8 @@ struct Canvas{
                 return;
             }
             // Animation frames are prebaked at native size. Skip transparent runs entirely.
+            const bool direct=!coverage&&this->opacity==255&&opacity==255&&brightness==255&&
+                tint_red==255&&tint_green==255&&tint_blue==255&&blend_mode==presentation::Normal;
             const uint8_t* run=p.pixels;
             for(int yy=0;yy<p.h;yy++){
                 unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
@@ -174,7 +176,11 @@ struct Canvas{
                     if(yy>=top&&yy<bottom){int l=mx(left,(int)sx),h=mn(right,(int)(sx+n));
                         if(l>=h){run+=n*stride;continue;}
                         int at=(y+yy)*pitch+x+l;const uint8_t*src=run+(l-(int)sx)*stride;
-                        for(int xx=l;xx<h;xx++,at++,src+=stride){unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);uint16_t v=src[0]|(uint16_t)src[1]<<8;paint(at,v,alpha,blend_mode);}}
+                        // Opaque native-size spans need no per-pixel paint
+                        // modulation. Keep explicit loads: sparse row headers
+                        // can place RGB565 bytes at an odd address.
+                        if(direct&&!mode){for(int xx=l;xx<h;++xx,++at,src+=2)pixels[at]=uint16_t(src[0]|(uint16_t(src[1])<<8));}
+                        else for(int xx=l;xx<h;xx++,at++,src+=stride){unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);uint16_t v=src[0]|(uint16_t)src[1]<<8;paint(at,v,alpha,blend_mode);}}
                     run+=n*stride;
                 }
             }

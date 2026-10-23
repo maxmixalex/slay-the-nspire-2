@@ -1,0 +1,356 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-23",
+  "reference_release": "v0.111.0 / 41cef1ea",
+  "scope": "Original title background stars/fog and layer order, Continue facts/colors, NSP2/21 compatibility and bounded native cost",
+  "source": {
+    "assets": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
+    "native_runtime": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+    "arm_division_fix_local": "f7a0eb7",
+    "arm_fix_validation": "Pending root persistence and the subsequent ARM/numeric-oracle receipt; f1 native results do not close the ARM link failure."
+  },
+  "reference_basis": {
+    "scene": "scenes/backgrounds/main_menu_bg.tscn",
+    "script": "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMainMenuBg",
+    "layers": [
+      "original Bg Spine pose",
+      "200 stars",
+      "40 clouds2",
+      "40 clouds",
+      "original Fg Spine pose",
+      "existing original logo/fire/light",
+      "menu and overlays"
+    ],
+    "stars": {
+      "texture": "images/vfx/dot.png",
+      "count": 200,
+      "lifetime_seconds": 5,
+      "preprocess_seconds": 5,
+      "source_scale": [
+        0.01,
+        0.04
+      ],
+      "blend": "normal"
+    },
+    "fog": {
+      "texture": "images/vfx/fog_sheet_2.png",
+      "frames": 7,
+      "particles_per_emitter": 40,
+      "emitters": 2,
+      "lifetime_seconds": 400,
+      "preprocess_seconds": 400,
+      "gravity_x": 0.1,
+      "damping_range": [
+        0,
+        0.001
+      ],
+      "blend": "add",
+      "frame_rule": "Original random starting frame with default zero animation speed; each particle keeps its selected frame"
+    },
+    "transform": "Existing 320 by 240 cover: screen x=(world x-240)*2/9, screen y=(world y+24)*2/9",
+    "continuation": "Continue shows the current act, blue floor, red current/max HP and gold currency; zero ascension is hidden. Save association still uses initial-run identity."
+  },
+  "resources": {
+    "version": 21,
+    "retained_codec_threshold": 20,
+    "auxiliary_count": 1265,
+    "appended_auxiliaries": {
+      "TitleBackdrop": 1262,
+      "TitleForeground": 1263,
+      "TitleParticles": 1264
+    },
+    "appended_image_ids": [
+      47628,
+      47629,
+      47630
+    ],
+    "appended_clips": 0,
+    "images": [
+      {
+        "name": "backdrop",
+        "dimensions": [
+          320,
+          240
+        ],
+        "raw_bytes": 155280,
+        "stored_bytes": 44519,
+        "stored_format": 5
+      },
+      {
+        "name": "foreground",
+        "dimensions": [
+          320,
+          240
+        ],
+        "raw_bytes": 98420,
+        "stored_bytes": 56275,
+        "stored_format": 5
+      },
+      {
+        "name": "particles",
+        "dimensions": [
+          270,
+          216
+        ],
+        "raw_bytes": 77296,
+        "stored_bytes": 37297,
+        "stored_format": 5
+      }
+    ],
+    "old_flat_background": {
+      "auxiliary": 0,
+      "image": 784,
+      "unchanged": true,
+      "used_by": "Compendium and legacy resources; the compendium does not read the new foreground"
+    },
+    "logo": {
+      "image": 4,
+      "dimensions": [
+        164,
+        210
+      ],
+      "raw_bytes": 47876,
+      "unchanged_from_ui3": true
+    },
+    "full_packs": {
+      "eng": 76675115,
+      "zhs": 79457814,
+      "added_bytes_per_language": 138158
+    },
+    "split": {
+      "common": 74894324,
+      "eng": 1780951,
+      "zhs": 4563650,
+      "total": 81238925,
+      "delta_from_ui3": {
+        "common": 138094,
+        "eng": 64,
+        "zhs": 64,
+        "total": 138222
+      },
+      "roundtrip_exact": true
+    },
+    "memory": {
+      "new_persistent_pixel_pool_bytes": 0,
+      "new_per_particle_heap_allocations": 0,
+      "title_decoded_pages": 94,
+      "page_bytes": 4096,
+      "title_decoded_bytes": 385024,
+      "old_title_decoded_pages": 50,
+      "old_title_decoded_bytes": 204800,
+      "working_set_increase_bytes": 180224,
+      "three_new_image_pages": 82,
+      "cache_pool_allocation_unchanged": true
+    },
+    "preservation": {
+      "method": "Direct byte comparisons of old v20 and new v21, allowing only the required 60-byte global header relocation in stored group descriptors. Converter separately decodes all selected retained/tile images and checks catalogs, animation timing, glyphs and strings.",
+      "old_unique_retained_payloads": 5368,
+      "unchanged_encoded_tile_groups": 1184,
+      "converter_verified_tile_image_entries": 42189,
+      "direct_comparison_unique_tile_frames": 28910,
+      "strings_per_language": 8192,
+      "glyphs": {
+        "eng": 570,
+        "zhs": 11900
+      },
+      "old_catalog_pixels_and_timing_unchanged": true,
+      "private_receipt": "ui4-assets/v21-title/ui3-prefix-comparison.json"
+    }
+  },
+  "native_verification": {
+    "platform": "Linux x86_64, Release Clang 18; real ranged FILE resource callbacks",
+    "targeted": {
+      "checkpoint": "65baee5b44c11e1fa1aad4f603024aa8189a7e1a",
+      "suites": 6,
+      "failed": 0,
+      "ctest_seconds": 5.47,
+      "tests": [
+        "content_tiles_regression",
+        "content_retained_regression",
+        "canvas_fast_path_regression",
+        "split_resource_regression",
+        "locale_boot_regression",
+        "world_frontend_ui_regression"
+      ]
+    },
+    "final_converter_tests": {
+      "checkpoint": "f1dea1e73bf494bdbb1d592d8047ad22442cd4f3",
+      "tests": 12,
+      "failed": 0
+    },
+    "final_actual_frontend": {
+      "eng_checks": 62730,
+      "zhs_checks": 63248,
+      "pack_version": 21,
+      "scope": [
+        "Independent fixed-point gravity/damping oracle",
+        "Sparse/dense atlas sampling and clipping, including adjacent-cell isolation",
+        "Stars/fog ranges and fixed per-particle fog frame",
+        "Opaque foreground occludes particles",
+        "Menu, Continue and quit/abandon overlays",
+        "Presentation leaves canonical gameplay state unchanged",
+        "Synthetic v20 fallback"
+      ]
+    },
+    "working_set": {
+      "four_title_images_repeated": {
+        "source_calls": 0,
+        "source_bytes": 0
+      },
+      "new_open_integrity_or_payload_prescan_samples": 0
+    },
+    "cpu": {
+      "driver": "Private adaptation of tests/card_grid_benchmark.cpp: title=true/library=false, one title scenario, linked against the frozen f1 Release spire_core; no product hook",
+      "method": "Three interleaved v20/v21 pairs per language; 360 consecutive 33ms updates after 2500ms settling. Unpaced host steady-clock CPU wall intervals, not physical-calculator or display FPS.",
+      "samples_per_language_and_version": 1080,
+      "median_first_visible_ms": {
+        "eng": {
+          "v20": 0.963,
+          "v21": 2.548
+        },
+        "zhs": {
+          "v20": 0.801,
+          "v21": 2.549
+        }
+      },
+      "median_warm_mean_ms": {
+        "eng": {
+          "v20": 0.341,
+          "v21": 1.897
+        },
+        "zhs": {
+          "v20": 0.339,
+          "v21": 1.801
+        }
+      },
+      "largest_observed_warm_sample_ms": {
+        "eng": {
+          "v20": 0.92,
+          "v21": 7.577
+        },
+        "zhs": {
+          "v20": 3.979,
+          "v21": 5.543
+        }
+      },
+      "warm_resource_calls": 0,
+      "warm_resource_bytes": 0,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0,
+      "interpretation": "The missing original layers are now drawn, with a measured host CPU cost increase. This is a fidelity change, not a title-speed improvement. ARM/emulator observation remains necessary before claiming calculator usability or frame rate.",
+      "private_receipt": "ui4-assets/v21-title/native-title-cpu.json"
+    }
+  },
+  "visual_review": {
+    "capture_directories": [
+      "ui4-assets/v21-title/final-frontend-eng",
+      "ui4-assets/v21-title/final-frontend-zhs"
+    ],
+    "actual_review_basis": "65ba actual-pack captures; the final f1 frontend checks cover the same title source and resources",
+    "files": [
+      "frontend-title-particles-50ms.ppm",
+      "frontend-title-particles-25s.ppm",
+      "frontend-title-particles-100s.ppm",
+      "frontend-title-continue.ppm",
+      "frontend-quit-confirm.ppm"
+    ],
+    "result": "Original cyan stars and additive horizon fog appear behind the original foreground buildings. Logo, menu focus, Continue information and confirmation panels remain above these layers. Both languages fit the 320 by 240 layout.",
+    "privacy": "Original assets, packs, captures and gameplay saves remain private local artifacts; this committed file contains metadata only."
+  },
+  "journal_receipts": [
+    {
+      "file": "ui4-title-original-assets-851a8e24b533.json",
+      "checkpoint": "65baee5",
+      "result": "passed",
+      "operation": "Original title/three-plane extraction"
+    },
+    {
+      "file": "ui4-title-bilingual-v21-cf772349325f.json",
+      "checkpoint": "65baee5",
+      "result": "passed",
+      "operation": "Both v21 packs and full converter preservation"
+    },
+    {
+      "file": "ui4-title-v21-split-build-30a86aea6a92.json",
+      "checkpoint": "65baee5",
+      "result": "passed",
+      "operation": "Common/locale split and exact roundtrip"
+    },
+    {
+      "file": "ui4-title-native-targeted-a72ef38892aa.json",
+      "checkpoint": "65baee5",
+      "result": "passed",
+      "operation": "Six native suites"
+    },
+    {
+      "file": "ui4-title-cache-working-set-933ca10d9dc6.json",
+      "checkpoint": "65baee5",
+      "result": "passed",
+      "operation": "Actual decoded cache pages and zero-read repeat"
+    },
+    {
+      "file": "ui4-title-ui3-relocated-preservation-53d49b1380fa.json",
+      "checkpoint": "65baee5",
+      "result": "passed",
+      "operation": "Direct old-v20/new-v21 preservation"
+    },
+    {
+      "file": "ui4-title-final-eng-f4431fc86774.json",
+      "checkpoint": "f1dea1e",
+      "result": "passed",
+      "operation": "Final native actual English frontend"
+    },
+    {
+      "file": "ui4-title-final-zhs-0932345ecaa5.json",
+      "checkpoint": "f1dea1e",
+      "result": "passed",
+      "operation": "Final native actual Chinese frontend"
+    },
+    {
+      "file": "ui4-title-final-converter-tests-778a1874f160.json",
+      "checkpoint": "f1dea1e",
+      "result": "passed",
+      "operation": "12 converter tests"
+    },
+    {
+      "file": "ui4-title-cpu-driver-build-571f3987136d.json",
+      "checkpoint": "f1dea1e",
+      "result": "passed",
+      "operation": "Private native title timing driver"
+    },
+    {
+      "file": "ui4-title-cpu-paired-7de61bd0c874.json",
+      "checkpoint": "f1dea1e",
+      "result": "passed",
+      "operation": "12 interleaved title CPU windows"
+    }
+  ],
+  "failures_and_followup": [
+    {
+      "file": "ui4-title-conversion-tests-339bc0f0c4d8.json",
+      "result": "failed",
+      "cause": "Old unknown-format test still used newly supported v21",
+      "fix": "35fb0c0 moves the fixture to v22; all 12 tests pass at f1"
+    },
+    {
+      "file": "ui4-title-ui3-byte-preservation-3672d6b366bc.json",
+      "result": "failed",
+      "cause": "The diagnostic initially compared relocated group pointer fields without allowing the required 60-byte directory growth",
+      "fix": "Corrected direct comparison checks relocation and all other fields/payloads exactly; subsequent preservation journal passes"
+    },
+    {
+      "file": "ui4-final-arm-58b5d8aa25fc.json",
+      "result": "failed",
+      "cause": "Title coordinates and sphere jitter emitted signed 64-bit division, requiring absent __aeabi_ldivmod",
+      "fix": "Local f7a0eb7 narrows bounded coordinates to signed 32-bit and separates sphere-jitter signs before supported unsigned 64-bit division; formal post-persistence ARM and numeric-oracle results are pending"
+    }
+  ],
+  "limits": [
+    "Bg/Fg use the established original Spine pose sampled at idle_loop time zero; full animated background Spine and optional window-resize zoom are outside this stage.",
+    "Particle initialization uses stable cosmetic index/cycle samples and phases, not the original GPU random stream.",
+    "Fog uses bounded fixed-point continuous integration of the original curve and 64 direction samples for its approximately 1.11-screen-pixel emitter radius. Discrete GPU integration/CurveTexture interpolation need not match frame by frame.",
+    "Nearest texture scaling, one/two-pixel stars and RGB565 are calculator adaptations; this is not an original-PC framebuffer or full GPU reproduction claim.",
+    "No physical-calculator FPS, overall UI-completeness percentage or final ARM acceptance is established by these native receipts.",
+    "Do not infer that the added layers are free: native title CPU and decoded-cache working-set increases are explicitly recorded."
+  ]
+}
