@@ -19,7 +19,15 @@ void App::sync_character_feedback(){
     }
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
-void App::advance(uint32_t ms){if(ms>250)ms=250;sync_combat_preparation();map_clock_ms+=ms;if(combat_preparation.active){step_combat_preparation();return;}sync_treasure_presentation();tick_remainder+=ms*(fast_mode?2:1);while(tick_remainder>=33){tick_remainder-=33;tick();}sync_treasure_presentation();update_map_travel();sync_map_window();}
+void App::advance(uint32_t ms){
+    if(ms>250)ms=250;sync_combat_preparation();map_clock_ms+=ms;
+    if(combat_preparation.active){step_combat_preparation();return;}
+    // Original Fast selects shorter command waits; it does not accelerate
+    // banners, creature animations or health-bar tweens through Engine time.
+    sync_treasure_presentation();tick_remainder+=ms;
+    while(tick_remainder>=33){tick_remainder-=33;tick();}
+    sync_treasure_presentation();update_map_travel();sync_map_window();
+}
 void App::draw_frame(){render();}
 void App::tick(){if(combat_preparation.active){step_combat_preparation();return;}animation++;sync_map_reticles();if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"
@@ -127,7 +135,7 @@ void App::input(Key k){
         }
         if(panel==4){
             if(k==Key::Left||k==Key::Right)scroll=(scroll+int(potion_slot_count(game))+(k==Key::Left?-1:1))%int(potion_slot_count(game));if(k==Key::Up||k==Key::Down)next_target(*this);
-            if(k==Key::Confirm){if(use_potion(game,scroll,target)){panel=0;busy=choice_phase(game.phase)?0:8;next_target(*this);cursor=0;choice_selected_count=0;choice_revision=game.revision;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
+            if(k==Key::Confirm&&!combat_actions_locked()){if(use_potion(game,scroll,target)){panel=0;busy=choice_phase(game.phase)?0:8;next_target(*this);cursor=0;choice_selected_count=0;choice_revision=game.revision;message("药水已使用");}else message("此时无法使用，或药水槽为空");}return;
         }
         if(panel==3){if(k==Key::Up)map_scroll=mn(reference::MaxRows,map_scroll+1);if(k==Key::Down)map_scroll=mx(-reference::MaxRows,map_scroll-1);return;}
         if(panel==1){
@@ -158,7 +166,9 @@ void App::input(Key k){
         else if(game.phase==Phase::Camp)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
         else if(!library&&combat_phase(game.phase))next_target(*this);
     }
-    if(busy&&(k==Key::Confirm||k==Key::EndTurn))return;
+    // Pending card/relic choices were handled above and may continue their
+    // suspended effect. Ordinary gameplay waits for the visible side to end.
+    if(combat_actions_locked()&&(k==Key::Confirm||k==Key::EndTurn))return;
     Phase before=game.phase;bool acted=false;int hp_before[MaxEnemies+1]={game.hp};
     for(int i=0;i<game.enemy_count;i++)hp_before[i+1]=game.enemies[i].hp;
     if(k==Key::EndTurn&&game.phase==Phase::Camp&&world_rest_can_proceed(game))acted=world_rest_proceed(game);

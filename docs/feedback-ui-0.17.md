@@ -44,13 +44,32 @@ the next enemy begins its intent/move. Uncurled Louse skips the conditional
 prefix. The `curled_loop` animator state persists until Uncurl; the default
 initial idle state no longer overwrites it during rendering.
 
-Waits are rounded up to presentation ticks. Fast waits are independently
-converted to the existing accelerated clock. The original animator's
+Waits are rounded up to real-time 33 ms presentation ticks. Fast selects
+the separately audited command durations, without a global clock multiplier.
+The original animator's
 conditional triggers remain conditional: a Fast Attack that arrives while
 Uncurl is still active is not turned into a fabricated any-state transition.
 No occupancy table was extrapolated to other monster models. Power/death
 hooks and effects beyond these base move bodies still need a full replay
 timeline before all combat effects can claim original timing.
+
+### Fast clock correction
+
+The pinned `NEnemyTurnBanner.Display` and `NPlayerTurnBanner.Display` use
+ordinary tweens lasting 2.3 and 2.2 seconds. Neither has a Fast branch or a
+speed override. `PrefsSave.FastMode` only stores the preference;
+`Cmd.CustomScaledWait` selects the short wait explicitly, while `Cmd.Wait`
+uses its supplied seconds. `CreatureAnimator.SetNextState` also has no Fast
+speed change. A DLL call-site audit found global Engine time changes only
+in debug time control and hit-stop, not in the Fast preference path.
+
+The previous App clock multiplied all presentation time by two in Fast.
+That shortened banners, skeleton clips and health-bar trails despite the
+correct independent command waits. The follow-up removes that multiplier
+and its compensating factor in command-wait conversion. The same single
+33 ms clock now drives cues, busy gates, clips, damage values and health
+tweens. Map transitions retain their already explicit Normal/Fast durations;
+merchant, energy-orb and map animation clocks remain in real milliseconds.
 
 ## Resource extension
 
@@ -116,13 +135,14 @@ bone/attachment transformations and positive scene X scale.
 Later source changes must be rerun after their own verified checkpoint. Source
 review and resource metadata alone do not establish visual completion.
 
-## Deferred enemy HUD values (next checkpoint; formal verification pending)
+## Deferred enemy HUD values (partial formal verification; follow-up pending)
 
 The authoritative simulation remains synchronous. An App-only bounded
 `CombatFeedback` projection now observes the settled values after each core
 effect and displays them at the existing enemy animation cues. It stores
 player, Osty and eight enemy health-bar values, energy, the previous intent
-summaries and at most 128 changed-actor samples. A compile-time 8 KiB ceiling
+summaries and at most 128 changed-actor samples. It occupies 6,032 bytes on the
+64-bit host; a compile-time 8 KiB ceiling
 prevents an accidental full-State copy. None of these fields are serialized,
 and the read-only observer adds neither gameplay effects nor RNG draws.
 
@@ -146,19 +166,36 @@ before showing the canonical game-over screen.
 Loading/resetting presentation discards the trace and reads canonical state.
 Suspended card/relic choices keep the trace open for their continuation. If
 the fixed queue fills, it retains the final captured values and converges at
-the scheduled side boundary. Existing input busy locks cover the scheduled
-feedback endpoint. Added regressions exercise Normal/Fast two-enemy damage,
+the scheduled side boundary. One shared gameplay-action guard covers the
+scheduled feedback endpoint, suspended choices and the generic busy counter.
+Potion use/discard, card release and EndTurn cannot bypass it through keyboard
+or pointer actions. Browsing remains available. Actual pending choices are
+handled before this guard and can resume their suspended effect, even after
+their old presentation deadline has elapsed. Added regressions exercise
+Normal/Fast two-enemy damage,
 block/energy/intent stages, byte-identical saves against observer-free core
 resolution, pet interception, lethal first/second hits, reflected lethal
-damage, summon/reused identity, suspended relic choice and overflow. Only
-Clang syntax checks have run on this new stage before its source checkpoint.
+damage, summon/reused identity, suspended relic choice and overflow.
+
+Checkpoint `9d8cb1fd58d2ea73900449415c925592776a5584` completed its logged native
+build, 20 banner checks, 1,462 event/shop checks per language and 484 world-event
+checks per language. Its two world-UI runs passed the sequential HP/block,
+energy, intent and save-byte comparisons before stopping at the Fast second
+lethal-hit banner assertion. Initial inspection considered relaxing that
+assertion, but the independent original-clock audit above identified a real
+global 2x clock defect instead. The assertion is retained. The follow-up fixes
+the clock and adds actual `App.advance` checks for fixed banner lifetime,
+retained Hiss frames and the one-second health-trail hold in both modes.
+Retaliation, reused slots,
+suspended-choice, overflow and the new potion-input guards still await the
+follow-up saved-checkpoint run. Clang syntax checks passed on these follow-up
+changes. All formal journals report unchanged source.
 
 Remaining limitations are explicit: status/power strips and card/pile state
 still read canonical values; this is not a complete replay of every effect.
 Intent tooltips are suppressed during the short deferred side because their
 formatter still binds canonical parameters. Merchant candle GPU particles
 and Necrobinder flame shaders are not prebaked. Unreviewed models still use
-clip duration for action occupancy and the move-start hit fallback. Fast
-mode retains the existing presentation-clock acceleration for enemy
-animation/banners. Device frame rate requires actual calculator/emulator
+clip duration for action occupancy and the move-start hit fallback.
+Device frame rate requires actual calculator/emulator
 measurement rather than host timing.

@@ -28,6 +28,9 @@ HealthBarValues App::combat_health(int actor)const{
  return combat_feedback.shown[actor];
 }
 int App::combat_energy(bool maximum)const{const auto v=combat_health(CombatFeedback::Energy);return maximum?v.max_hp:v.hp;}
+bool App::combat_actions_locked()const{
+ return busy>0||(ui_feedback_bound(*this)&&(!combat_feedback.finished||int32_t(combat_feedback.end_at-animation)>0))||int32_t(combat_linger_until-animation)>0;
+}
 EnemyIntent App::combat_intent(int slot)const{
  if(slot<0||slot>=game.enemy_count)return {};
  if(!ui_feedback_bound(*this))return enemy_intent(game,slot);

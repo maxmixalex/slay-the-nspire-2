@@ -1,84 +1,97 @@
 # Work state — 2026-10-23
 
-## Current: feedback fixes integrated; final execution and delivery pending
+## Current: follow-up clock and input fixes; final execution and delivery pending
 
 Work remains on `work/0.17-world-parity`, restored from `e8444322` and pushed
-through `069f6d51`, `573cb816` and
-`6d2b78ac0984b8d814b9761c8d44c8dc408614e7`. Each checkpoint has an actual
-branch-update receipt, ref readback and exact changed-file/tree hash verification.
-Reference: v0.111.0 / 41cef1ea. Main and disabled remote CI are unchanged.
+through `069f6d51`, `573cb816`, `6d2b78ac` and
+`9d8cb1fd58d2ea73900449415c925592776a5584`. Every checkpoint has an actual
+branch update, ref readback and exact changed-file/tree hash verification.
+Reference remains v0.111.0 / 41cef1ea. Main and disabled remote CI are unchanged.
 
 ### Completed execution evidence
 
 - `069f6d51`: original energy/merchant/Proceed assets, exact-background small-card
-  cache and glyph-metrics path; actual bilingual UI and controlled card-grid A/B
-  passed. Library full frames have zero pixel differences. Host warm-OS startup
-  profiles attribute about 15–16% to integrity and 75–77% to tile-index checks.
-  All integrity, geometry and payload checks remain enabled. See
+  cache and glyph-metrics path; bilingual UI and controlled card-grid A/B passed.
+  Full library frames have zero pixel differences. Host warm-OS open profiles
+  attribute 15–16% to integrity and 75–77% to tile-index checks. This is a host
+  observation, not a device cost estimate. All checks remain enabled. See
   `rendering-performance-0.17.md` and its machine-readable receipts.
-- `573cb816`: ARM 966,399 bytes, Zehn allocation 16,489,300 bytes (287,916 bytes
-  below 16 MiB); WASM 5,364,750 bytes with fixed 16 MiB memory. Both actual v18
-  locales passed world UI (10,100), event/shop UI (1,462), world event UI (3,656)
-  checks, plus 20 banner checks. Original Nibbit/Louse Normal/Fast command waits
-  and overlapping banners passed. These builds predate the display trace below.
-- The same 573 host stage actually ran split/full/old-v17 language paths through
-  WASM, Chromium offline HTML and X11. Split/full captured frames match; corrupt
-  common/locale payloads and mismatched language are rejected. Browser switching,
+- `573cb816`: ARM 966,399 bytes, allocation 16,489,300 bytes; WASM 5,364,750 bytes
+  with fixed 16 MiB memory. Both actual v18 locales passed world UI (10,100),
+  event/shop UI (1,462), world event UI (3,656), plus 20 banner checks. These
+  builds predate the deferred HUD trace and the Fast clock correction below.
+- That 573 host stage also executed split/full/old-v17 loading through WASM,
+  Chromium offline HTML and X11. Paired frames match; corrupt common/locale
+  payloads and mismatched language are rejected. Browser language switching,
   preference persistence and collection input work. No physical-device claim.
-- `6d2b78ac`: standalone UI-text test and all four 17/18 English/Chinese binding
-  audits passed. Every pack has 935 bindings, 200 dynamic bindings, 230 actual
-  model/UI route calls and 34,708 assertions, with zero unresolved fields.
-  Exact live values for Crimson Mantle, Inferno, Panache, Bomb and Monologue
-  passed, including independent instances and unchanged save bytes. See
-  `ui-template-audit.md` / `validation-ui-templates-0.17.json`.
+- `9d8cb1fd`: every one of the four 17/18 English/Chinese template audits passes
+  935 bindings, 200 dynamic bindings, 230 actual route calls and 34,723 assertions
+  with zero unresolved fields. Six exact live-value models include independent
+  Rolling Boulder instances. Standalone text (167), codec (1,261) and map-travel
+  observer/save (1,221) checks pass. One initial codec binary lacked execute
+  permission and did not run; only its mode changed before its passing retry.
+  See `ui-template-audit.md` / `validation-ui-templates-0.17.json`.
+- `9d8cb1fd`: event tooltip synthetic 21,734, Chinese v18 402,524 and English v18
+  402,632 checks pass. Compact hover and paged detail screenshots were inspected
+  in both languages. Earlier invalid fixture and DARK/DARK_ORB failures remain
+  recorded. See `event-option-tooltips.md` / `validation-event-tooltips-0.17.json`.
+- `9d8cb1fd`: ARM 973,956 bytes, allocation 16,506,068 bytes (271,148 below
+  16 MiB); WASM 5,382,865 bytes. Split/full WASM frames and rejection checks
+  pass. The deferred HUD native stage passes 20 banner, 1,462 event/shop and
+  484 world-event checks per actual locale. World UI stops at the Fast second
+  lethal-hit banner assertion; it is not a complete passing run.
 
-### Current coherent source stage, awaiting saved-checkpoint execution
+### Current source follow-up, awaiting verified-checkpoint execution
 
-A small App-only CombatFeedback projection (bounded to 8 KiB) records actual
-settled HP/block/Osty/energy values and shows them at action cues, retaining old
-intents until their owner acts. Nibbit/Louse use audited impact times; other
-models retain the existing move-start timing fallback. Read-only observer data
-never enters State/SaveData and performs no RNG. Added regressions cover both
-speeds, sequential hits, lethal hits, retaliation, slot reuse/summons, choice
-continuation and final convergence. It is not a complete replay of every status,
-card-zone or particle effect. Full regression and ARM memory checks are next.
+The App-only 6,032-byte CombatFeedback projection records settled HP/block/Osty/
+energy values and shows them at enemy cues while retaining old intents until
+that enemy acts. It does not serialize or draw RNG. Audited Nibbit/Louse impact
+and action waits have direct original-method evidence; other monsters retain
+existing timing fallbacks. A shared guard now blocks potion use/discard, card
+release and EndTurn until the visible side completes. Real pending card/relic
+choices remain operable, including a choice held past its initial display
+endpoint. These input changes and the remaining retaliation/summon/overflow
+cases require the next formal run.
 
-Event-option hover now has 57 static option rows, 147 relic rows and 39 potion
-extra rows, prepared model references, keyboard/pointer ownership and readable
-pages. The first 573 test exposed an invalid enchantment fixture, now corrected;
-the 6d2 full potion catalog exposed `DARK` instead of `DARK_ORB`, now corrected.
-Both failures remain recorded. Do not label the new event hover gate passed until
-the corrected synthetic/actual-language runs finish. Dusty Tome now previews its
-upgraded reward while retaining base-card extras, matching its original setter.
+The failed Fast banner assertion triggered a reference audit, not a weakened
+acceptance condition. Original banners use normal Tweens; Fast changes explicit
+command waits, not Engine.TimeScale or every Spine clip. The current source
+removes the old global 2x App animation clock and selects independent Fast wait
+values on one real 33 ms clock. The original lethal-banner assertion is retained.
+New wall-time tests cover the 2.3-second banner, full Hiss tail, HP tween hold,
+Fast cues and existing map/frontend clock behavior. See `fast-mode-clock-0.17.md`.
+Source syntax checks pass; formal execution is still pending persistence.
 
-The UI template boundary resolves known UI fields, both Hotkey spellings,
-contextual selection amounts and nested choice/plural expressions; it preserves
-rich styles and long unknown model text. The follow-up adds independent Rolling
-Boulder descriptions and removes duplicate manual Bomb/Monologue summaries.
-Status readers have room for all 16 independent descriptions.
+### Resource and target boundaries
 
-### Resource and delivery boundaries
+Actual v18 split resources total 93,233,887 bytes (86,870,047 common, 1,794,081
+English, 4,569,759 Chinese), versus 180,103,614 for two full packs: 48.23% saved
+with both languages. Original encoded payloads round-trip exactly. This does
+not reach 30–40 MB. The 212-byte adapter check does not replace Content's full
+integrity/structure checks. All eight startup stages, preparation, errors,
+language controls and browser shell have Chinese/English coverage. The open
+Noto boot subset's OFL accompanies private delivery. Saves remain v15.
 
-The actual v18 split resources total 93,233,887 bytes (86,870,047 common,
-1,794,081 English, 4,569,759 Chinese), versus 180,103,614 for two full packs:
-48.23% saved when both languages are installed. Original encoded payloads
-round-trip exactly. This does not reach the earlier 30–40 MB goal or establish
-faster cold startup. The small split header check does not replace Content's
-complete integrity/structure pass. Startup metrics now explicitly cover selected
-resource validation and app initialization, excluding language-choice waiting,
-pre-selection file opening and the Ndless/Zehn loader.
+The isolated restored Firebird candidate `9d8cb1fd` reached the Chinese title,
+opened the compendium and produced an actual startup profile: 50.4733 simulated
+seconds, including 23.0561 integrity, 12.4632 retained-image and 13.3767 tile-index.
+This candidate profile differs materially from the host cache measurement.
+It does not establish physical-device cold-start performance or an improvement.
+An 80 ms Enter confirmation at Quit reopened the launcher; a 5-key confirmation
+returned to the OS and allowed normal USB report export. The Enter case is an
+active integration defect; it must be retested with the original trigger after
+its source fix, not counted as passed because the alternate key works.
 
-All eight boot stages, preparation, errors, language controls and web shell have
-English/Chinese coverage. The boot font is the open-licensed Noto subset, whose
-OFL must accompany calculator and HTML delivery. Legacy monolithic packs and v15
-saves remain supported. Merchant candle particles, Necrobinder flame and focus
-outline skin remain outstanding; no overall 95% fidelity claim.
+Remaining visual scope includes per-effect status/pile presentation, precise
+unreviewed monster action timings, merchant GPU particles/focus skin and
+Necrobinder flame shaders. No whole-game 95% fidelity claim.
 
-Next: persist/read back this stage before long validation, run its event/UI/text
-regressions and ARM/WASM gates in frozen trees, execute the final launcher in the
-restored isolated Firebird environment, then package and verify the bilingual
-calculator bundle and one offline HTML. Original PCK/DLL/device images, generated
-packs, screenshots, private IL and embedded HTML stay outside the public repo.
+Next: persist/read back the coherent Fast/input/exit stage before builds; run
+its affected native UI and clock gates, ARM allocation and actual WASM/browser
+loading, then final Chinese/English Firebird save/continue/normal-exit checks.
+Package and read back the bilingual calculator ZIP and one offline HTML only
+against their exact executed runtime. Original data, private IL, device images,
+generated packs/screenshots and embedded HTML stay outside the public repo.
 
 # Work state — 2026-10-21
 

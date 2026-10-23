@@ -18,7 +18,8 @@ int main(){
     CHECK(b.sample_enemy(221).kind==b.Enemy);
     CHECK(TurnBannerPresentation::EnemyLeadTicks+TurnBannerPresentation::IntentLeadTicks<TurnBannerPresentation::EnemyTicks);
     CHECK(TurnBannerPresentation::enemy_lead_ticks(false)==25&&TurnBannerPresentation::intent_lead_ticks(false)==13);
-    CHECK(TurnBannerPresentation::enemy_lead_ticks(true)==31&&TurnBannerPresentation::intent_lead_ticks(true)==16);
+    CHECK(TurnBannerPresentation::enemy_lead_ticks(true)==16&&TurnBannerPresentation::intent_lead_ticks(true)==8);
+    CHECK(TurnBannerPresentation::wait_ticks(350,175,true)==6&&TurnBannerPresentation::wait_ticks(600,275,true)==9);
     b.begin_enemy(400);b.begin_player(3,550);CHECK(b.sample(475).kind==b.None&&b.sample(551).kind==b.Player);
     b.begin_player(4,700,true);CHECK(b.sample(710).extra);
     b.begin_enemy(715);CHECK(b.sample_player(720).kind==b.Player&&b.sample_enemy(720).kind==b.Enemy);

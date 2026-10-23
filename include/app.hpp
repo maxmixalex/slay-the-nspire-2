@@ -318,6 +318,7 @@ struct App {
     HealthBarValues combat_health(int actor)const;
     EnemyIntent combat_intent(int slot)const;
     int combat_energy(bool maximum=false)const;
+    bool combat_actions_locked()const;
     uint32_t enemy_visual_clock=0,combat_linger_until=0;
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();

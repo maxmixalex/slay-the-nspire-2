@@ -98,12 +98,12 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsBack:settings_open=false;break;
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
-        if(library&&!title&&!paused&&!help&&!panel&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
+        if(library&&!title&&!paused&&!help&&!panel&&!combat_actions_locked()&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
             detail_card=-1;library=false;reset_presentation();
             message(overflow?"手牌已满，卡牌已加入弃牌堆":"卡牌已加入手牌");
         }break;}
     case UiAction::LabPotion:
-        if(library&&!title&&!paused&&!help&&!panel&&detail_item>=WorldRelicKinds&&lab_potion(game,(Potion)(detail_item-WorldRelicKinds+1))){
+        if(library&&!title&&!paused&&!help&&!panel&&!combat_actions_locked()&&detail_item>=WorldRelicKinds&&lab_potion(game,(Potion)(detail_item-WorldRelicKinds+1))){
             detail_item=-1;library=false;reset_presentation();
             message("已获得药水");
         }break;
@@ -176,7 +176,7 @@ void App::ui_action(UiAction action){
     case UiAction::ToggleCardUpgrade:
         if(detail_card>=0){Card c=card_from_token(detail_card);if(c.upgraded||card_upgradeable(c)){c.upgraded=!c.upgraded;detail_card=card_token(c);}}break;
     case UiAction::DiscardPotion:
-        if(panel==4&&!original_event_blocks_potions(game)&&discard_potion(game,scroll))message("已丢弃药水");break;
+        if(panel==4&&!combat_actions_locked()&&!original_event_blocks_potions(game)&&discard_potion(game,scroll))message("已丢弃药水");break;
     case UiAction::TargetFirst:if(panel==4&&game.enemy_count&&game.enemies[0].hp>0)target=0;break;
     case UiAction::TargetSecond:if(panel==4&&game.enemy_count>1&&game.enemies[1].hp>0)target=1;break;
     case UiAction::RewardCards:

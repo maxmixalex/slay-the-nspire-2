@@ -186,8 +186,8 @@ static void original_enemy_transformations(){
 static void original_enemy_command_waits(){
  // Source command waits are shorter than some skeleton tails. Two genuine
  // enemy turns must hand off at the command boundary in both speed modes.
- const unsigned nibbit_ticks[2][3]={{11,19,26},{11,17,22}};
- const unsigned louse_ticks[2][3]={{20,13,23},{19,13,20}};
+ const unsigned nibbit_ticks[2][3]={{11,19,26},{6,9,11}};
+ const unsigned louse_ticks[2][3]={{20,13,23},{10,7,10}};
  for(unsigned fast=0;fast<2;++fast){
   for(int move=0;move<3;++move){
    enemy_visual_fight(EncounterId::NibbitsNormal);a.fast_mode=fast!=0;
@@ -197,8 +197,8 @@ static void original_enemy_command_waits(){
    auto&first=a.enemy_presentation[0];auto&second=a.enemy_presentation[1];
    CHECK(first.count==1&&second.count==1&&first.queue[0].move==move&&second.queue[0].move==0);
    const uint32_t first_cue=first.queue[0].earliest,second_cue=second.queue[0].earliest;
-   CHECK(first_cue==start+(fast?47u:38u));
-   CHECK(second_cue==first_cue+nibbit_ticks[fast][move]+(fast?16u:13u));
+   CHECK(first_cue==start+(fast?24u:38u));
+   CHECK(second_cue==first_cue+nibbit_ticks[fast][move]+(fast?8u:13u));
    CHECK(a.enemy_visual_clock==second_cue+nibbit_ticks[fast][0]);
    snapshot();a.animation=first_cue;CHECK(!std::strcmp(visual_clip(0)->native_clip,move==2?"hiss":"attack"));
    const uint32_t tail=first.until;CHECK(tail>first.start);
@@ -211,7 +211,7 @@ static void original_enemy_command_waits(){
    const uint32_t start=a.animation;a.input(Key::EndTurn);auto&louse=a.enemy_presentation[0];
    // Uncurled Web/Pounce skip the conditional Uncurl prefix entirely.
    CHECK(louse.count==1&&louse.queue[0].move==move);const uint32_t cue=louse.queue[0].earliest;
-   CHECK(cue==start+(fast?47u:38u)&&a.enemy_visual_clock==cue+louse_ticks[fast][move]);
+   CHECK(cue==start+(fast?24u:38u)&&a.enemy_visual_clock==cue+louse_ticks[fast][move]);
    snapshot();a.animation=cue;const char*name=move==0?"attack_web":move==1?"attack":"curl";
    CHECK(!std::strcmp(visual_clip(0)->native_clip,name)&&!louse.loop&&louse.start==cue);
    CHECK(louse.until==cue+(move==2?33u:26u));
@@ -222,12 +222,41 @@ static void original_enemy_command_waits(){
   auto&louse=a.enemy_presentation[0];louse.state=3;louse.loop=true;louse.clip=world_enemy_resolve_clip(louse.model,"curled_loop",louse.skin);
   a.input(Key::EndTurn);CHECK(louse.count==2);const uint32_t first=louse.queue[0].earliest,attack=louse.queue[1].earliest;
   CHECK(!std::strcmp(louse.queue[0].action,"Uncurl")&&!std::strcmp(louse.queue[1].action,"Attack"));
-  CHECK(attack==first+(fast?16u:28u)&&a.enemy_visual_clock==attack+louse_ticks[fast][1]);
+  CHECK(attack==first+(fast?8u:28u)&&a.enemy_visual_clock==attack+louse_ticks[fast][1]);
   snapshot();a.animation=first;CHECK(!std::strcmp(visual_clip(0)->native_clip,"uncurl"));
   CHECK(louse.until==first+28u);a.animation=attack;
   // Animator triggers remain conditional. Fast's 250ms command wait does
   // not invent an Attack branch from an unfinished Uncurl state.
   CHECK(!std::strcmp(visual_clip(0)->native_clip,fast?"uncurl":"attack")&&!louse.count);unchanged();
+ }
+ a.fast_mode=false;
+}
+static void advance_combat_ms(unsigned ms){while(ms){const unsigned step=ms>250?250:ms;a.advance(step);ms-=step;}}
+static void original_combat_clock(){
+ // Exercise the host update path, not only direct tick assignments. Original
+ // Fast shortens waits while banners, Spine clips and HP trails use real time.
+ for(unsigned fast=0;fast<2;++fast){
+  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;a.game.enemy_world.models[0].node=2;
+  const uint32_t start=a.animation;a.input(Key::EndTurn);const uint32_t cue=a.enemy_presentation[0].queue[0].earliest;
+  snapshot();advance_combat_ms((cue-start)*33);a.render();int clip=-1;uint32_t elapsed=0;bool loop=true;
+  CHECK(a.animation==cue&&a.enemy_frame(0,clip,elapsed,loop)&&elapsed==0&&!loop);
+  CHECK(!std::strcmp(world_enemy_clip_directory(unsigned(clip))->native_clip,"hiss"));
+  advance_combat_ms(198);a.render();int next_clip=-1;CHECK(a.animation==cue+6&&a.enemy_frame(0,next_clip,elapsed,loop)&&next_clip==clip&&elapsed==198&&!loop);
+  CHECK(a.enemy_presentation[0].until==cue+50); // Original 1,633 ms skeleton tail.
+  capture(fast?"combat-real-clock-fast":"combat-real-clock");
+  advance_combat_ms((start+69-a.animation)*33);a.render();CHECK(a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy);
+  advance_combat_ms(33);a.render();CHECK(a.animation==start+70&&a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::None);
+  CHECK(a.enemy_frame(0,next_clip,elapsed,loop)&&next_clip==clip&&elapsed==(70-(cue-start))*33&&!loop);unchanged();
+
+  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;a.game.enemy_world.models[0].node=0;a.game.block=0;a.render();
+  const uint32_t hit_start=a.animation;a.input(Key::EndTurn);
+  const uint32_t hit=a.enemy_presentation[0].queue[0].earliest+TurnBannerPresentation::wait_ticks(150,75,fast!=0);
+  snapshot();advance_combat_ms((hit-hit_start)*33);a.render();const auto&bar=a.health_bars[0];
+  CHECK(a.animation==hit&&bar.start_ms==hit*33&&bar.delayed&&bar.from_q8>bar.to_q8);
+  const int held=bar.sample_q8(a.animation*33);
+  advance_combat_ms(990);a.render();CHECK(a.animation==hit+30&&bar.sample_q8(a.animation*33)==held);
+  advance_combat_ms(33);a.render();CHECK(a.animation==hit+31&&bar.sample_q8(a.animation*33)<held);
+  unchanged();
  }
  a.fast_mode=false;
 }
@@ -303,19 +332,41 @@ static void deferred_enemy_values(){
  a.animation=summon;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_opacity(1)==255);
  CHECK(a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id);unchanged();
  a.animation=a.combat_feedback.end_at;a.render();
- const uint32_t old_identity=a.enemy_presentation[1].identity,replace=a.animation+10;
+ const uint32_t old_identity=a.enemy_presentation[1].identity,old_bar_identity=a.health_bars[2].identity,replace=a.animation+10;
  const int old_hp=a.game.enemies[1].hp;
  {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback_move(0,0,replace,replace,replace+10);
   queue_extension(a.game,XOp::EnemyEscape,1);queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::Nibbit),0);resolve_pending(a.game);}
  CHECK(a.game.enemy_world.models[1].combat_id!=old_identity&&a.combat_health(2).hp==old_hp&&a.enemy_presentation[1].identity==old_identity);
- snapshot();a.animation=replace-1;a.render();CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255);
- a.animation=replace;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id);unchanged();
+ snapshot();a.animation=replace-1;a.render();CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255&&a.health_bars[2].identity==old_bar_identity);
+ a.animation=replace;a.render();CHECK(a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);unchanged();
 
- enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));a.input(Key::EndTurn);
- CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished);
- a.animation=a.combat_feedback.end_at;a.render();CHECK(a.combat_feedback.active);
- {UiCoreObserver observer(a);uint16_t selected=a.game.world_relics.offers[0];CHECK(world_relic_select(a.game,&selected,1));}
- a.render();CHECK(a.game.phase==Phase::Combat&&!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);
+ for(int delayed=0;delayed<2;++delayed){
+  enemy_visual_fight(EncounterId::NibbitsWeak);init_world_relics(a.game);CHECK(gain_world_relic(a.game,WorldRelicToastyMittens));CHECK(potion_set(a.game,0,Potion::Strength));a.input(Key::EndTurn);
+  CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished);
+  if(delayed){a.animation=a.combat_feedback.end_at+30;a.busy=0;a.render();}
+  CHECK(a.combat_actions_locked());
+  a.input(Key::Potions);CHECK(a.panel==4);snapshot();a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();a.input(Key::Potions);CHECK(!a.panel);
+  a.input(Key::Confirm);CHECK(a.choice_selected_count==1);a.input(Key::EndTurn);
+  CHECK(a.game.phase==Phase::Combat);if(!delayed)CHECK(a.combat_feedback.active&&a.combat_feedback.finished);
+  if(int32_t(a.combat_feedback.end_at-a.animation)>0)a.animation=a.combat_feedback.end_at;
+  a.render();CHECK(!a.combat_feedback.active&&a.combat_health(0).hp==a.game.hp);
+ }
+
+ enemy_visual_fight(EncounterId::NibbitsNormal);CHECK(potion_set(a.game,0,Potion::Strength));a.input(Key::EndTurn);
+ a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
+ a.input(Key::Confirm);CHECK(a.panel==4&&potion_at(a.game,0)==Potion::Strength);unchanged();
+ // Browser '5' and the calculator's numeric confirmation normalize to the
+ // same Key::Confirm value (4); neither can bypass the panel's action guard.
+ a.input(static_cast<Key>(4));unchanged();a.ui_action(UiAction::DiscardPotion);unchanged();
+ a.render();const auto*use=a.hit_at(230,216);const auto*discard=a.hit_at(75,216);
+ CHECK(!use||!use->enabled);CHECK(!discard||!discard->enabled);
+ a.pointer_move(230,216);a.pointer_button(true);a.pointer_button(false);unchanged();
+ a.pointer_move(75,216);a.pointer_button(true);a.pointer_button(false);unchanged();
+ // A path which clears the generic busy counter still cannot consume the
+ // already calculated next turn before the feedback endpoint.
+ a.busy=0;CHECK(a.combat_actions_locked());a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();
+ a.animation=a.combat_feedback.end_at;a.busy=0;a.render();CHECK(!a.combat_actions_locked());
+ a.input(Key::Confirm);CHECK(potion_at(a.game,0)==Potion::Empty&&a.panel==0);
 
  // A bounded queue may drop intermediate samples, but must retain the
  // complete canonical result until its scheduled convergence boundary.
@@ -345,4 +396,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();deferred_enemy_values();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

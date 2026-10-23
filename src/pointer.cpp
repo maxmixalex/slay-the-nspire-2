@@ -160,7 +160,7 @@ void App::pointer_button(bool down){
     if(captured.kind==HitKind::Hand&&game.phase==Phase::Combat&&captured.enabled){
         int id=captured.value,index=-1;
         for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==id)index=i;
-        if(index<0||busy){pointer_cancel();return;}
+        if(index<0||combat_actions_locked()){pointer_cancel();return;}
         Card card=game.cards[id];bool targeted=card_targets_enemy(game,card);
         bool dropping=pointer.dragging&&(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||(!targeted&&hit.kind==HitKind::Battlefield));
         if(dropping&&hit.enabled){cursor=index;if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent)target=hit.value;
@@ -174,7 +174,7 @@ void App::pointer_button(bool down){
     }
     if(!same||!hit.enabled){if(pointer.dragging)pointer.armed_card=-1;return;}
     if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||hit.kind==HitKind::Battlefield){
-        if(pointer.armed_card<0||busy||game.phase!=Phase::Combat)return;
+        if(pointer.armed_card<0||combat_actions_locked()||game.phase!=Phase::Combat)return;
         int index=-1;for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==pointer.armed_card)index=i;
         if(index<0){pointer.armed_card=-1;return;}
         bool targeted=card_targets_enemy(game,game.cards[pointer.armed_card]);

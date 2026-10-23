@@ -15,10 +15,9 @@ struct TurnBannerPresentation {
     // CombatManager.StartTurn waits 0.8s after creating the banner, then
     // NCreature.PerformIntent waits 0.4s before TakeTurn in normal speed.
     static constexpr uint32_t EnemyLeadTicks=(800+32)/33,IntentLeadTicks=(400+32)/33;
-    // Presentation currently runs at 2x in Fast mode. Convert the source's
-    // independent wall-clock waits into that clock; do not simply halve the
-    // normal waits (StartTurn .5/.8s, PerformIntent .25/.4s).
-    static constexpr uint32_t wait_ticks(unsigned normal_ms,unsigned fast_ms,bool fast){return ((fast?fast_ms*2u:normal_ms)+32u)/33u;}
+    // Cmd.CustomScaledWait selects independent real-time durations. Fast
+    // changes these waits, not Engine time or the banner/animation clock.
+    static constexpr uint32_t wait_ticks(unsigned normal_ms,unsigned fast_ms,bool fast){return ((fast?fast_ms:normal_ms)+32u)/33u;}
     static constexpr uint32_t enemy_lead_ticks(bool fast){return wait_ticks(800,500,fast);}
     static constexpr uint32_t intent_lead_ticks(bool fast){return wait_ticks(400,250,fast);}
     void reset(){*this=TurnBannerPresentation{};}

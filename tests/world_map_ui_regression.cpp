@@ -149,15 +149,15 @@ static void reticle_timing(){
     app.map_reticles[stale]={app.map_clock_ms,3900,200,2};app.map_reticle_seed^=uint64_t(1)<<32;
     CHECK(uint32_t(app.map_reticle_seed)==uint32_t(app.game.world.run_seed)&&app.map_reticle_seed!=app.game.world.run_seed);
     app.sync_map_reticles();CHECK(app.map_reticle_seed==app.game.world.run_seed&&!app.map_reticle_opacity(stale));unchanged();
-    // Fast mode doubles the older animation tick, but not the original
-    // selection/deselection tweens on the real map millisecond clock.
+    // Original Fast changes command waits. Both presentation clocks and
+    // selection/deselection tweens retain their real-time durations.
     unsigned selected_scale[2]{},dismissed_scale[2]{},dismissed_alpha[2]{};
     for(unsigned fast=0;fast<2;++fast){
         app.fast_mode=fast;app.map_clock_ms=10000;app.tick_remainder=0;app.map_directional=true;
         app.reset_map_reticles();app.render();const unsigned point=app.map_reticle_current;
         CHECK(point<reference::MaxPoints&&app.map_reticles[point].start==10000);
         const uint32_t animation=app.animation;app.advance(99);app.render();
-        CHECK(app.map_clock_ms==10099&&uint32_t(app.animation-animation)==(fast?6u:3u));
+        CHECK(app.map_clock_ms==10099&&uint32_t(app.animation-animation)==3u);
         selected_scale[fast]=app.map_reticle_scale(point);mouse_mode();app.advance(99);app.render();
         dismissed_scale[fast]=app.map_reticle_scale(point);dismissed_alpha[fast]=app.map_reticle_opacity(point);
         CHECK(app.map_clock_ms==10198&&dismissed_alpha[fast]>0&&dismissed_alpha[fast]<255);

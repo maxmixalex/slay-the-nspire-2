@@ -271,11 +271,11 @@ static void modal_isolation_and_fast_mode(){
  press(HitKind::Menu,2);CHECK(a.settings_open);a.character_select=true;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;unchanged();
  action(UiAction::SettingsControls);CHECK(a.help&&a.settings_open);bool fast=a.fast_mode;a.input(Key::Confirm);CHECK(!a.help&&a.settings_open&&a.fast_mode==fast);unchanged();
  action(UiAction::SettingsFastMode);CHECK(a.fast_mode!=fast);action(UiAction::SettingsFastMode);CHECK(a.fast_mode==fast);unchanged();
- // Only wall-clock presentation advances faster. No rules, draws, event
- // offers, gameplay RNG stream or encoded field changes during these ticks.
+ // Fast changes command waits, not the animation clock. No rules, draws,
+ // event offers, RNG stream or encoded field changes during these ticks.
  a.animation=1000;a.tick_remainder=0;a.busy=a.card_fly=a.feedback=a.notice_ticks=12;a.fast_mode=false;
  a.advance(66);CHECK(a.animation==1002&&a.busy==10&&a.card_fly==10);unchanged();
- action(UiAction::SettingsFastMode);CHECK(a.fast_mode);a.advance(66);CHECK(a.animation==1006&&a.busy==6&&a.card_fly==6);a.render();unchanged();
+ action(UiAction::SettingsFastMode);CHECK(a.fast_mode);a.advance(66);CHECK(a.animation==1004&&a.busy==8&&a.card_fly==8);a.render();unchanged();
  action(UiAction::SettingsBack);CHECK(!a.settings_open);a.fast_mode=false;
 }
 int main(int argc,char**argv){

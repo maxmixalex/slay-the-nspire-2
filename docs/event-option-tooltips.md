@@ -43,14 +43,29 @@ The fixed reference assembly SHA-256 is
 `0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9`.
 Private disassembly is inspection input only and is not checked in.
 
-## Validation status
+## Executed validation
 
-New keyword tooltip regression cases cover explicit associated/empty options,
-dynamic prepared cards, potion/relic/enchantment text, pointer and keyboard
-ownership, modal suppression, paging, state/save-byte stability and real-pack
-screenshots. The first formal pass at 573cb816 stopped on an invalid synthetic
-Slippery Bridge fixture: an energy offset requires the Tezcatara’s Ember
-enchantment. The fixture now uses the valid persisted enchantment, preserving
-the save-byte assertion. GCC also required explicit HoverTipList assignment.
-The corrected stage additionally checks every potion and relic hover-text path.
-Formal rerun receipts belong in the final work-state update after persistence.
+The frozen, remotely verified checkpoint
+`9d8cb1fd58d2ea73900449415c925592776a5584` passes the keyword-tooltip suite:
+
+| Resource profile | Checks | Result |
+| --- | ---: | --- |
+| Synthetic | 21,734 | Passed |
+| Chinese NSP2/18 | 402,524 | Passed |
+| English NSP2/18 | 402,632 | Passed |
+
+The regression covers explicit associated and empty options, prepared dynamic
+cards, every potion/relic hover-text route, enchantments, pointer and keyboard
+ownership, modal suppression, paging and unchanged save bytes. Both languages'
+compact event hover and readable detail screenshots were inspected at 320×240.
+The screenshots demonstrate the implemented event surfaces, not whole-game
+visual parity. Source, pack, binary, journal and private screenshot hashes are
+recorded in [validation-event-tooltips-0.17.json](validation-event-tooltips-0.17.json).
+All five configure/build/test journals closed with exit code 0 and unchanged
+source.
+
+The earlier failures remain in that receipt. At `573cb816`, the synthetic
+Slippery Bridge fixture had an energy offset without its required Tezcatara's
+Ember enchantment. The corrected fixture retains the save-byte assertion.
+At `6d2b78ac`, the full potion catalog exposed `DARK` instead of `DARK_ORB`.
+The canonical key was corrected; unresolved-title/body assertions were kept.

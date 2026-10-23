@@ -27,10 +27,13 @@ Checking for remaining braces also exposed five models with incorrect numeric
 values despite successful substitution. Their source fixes and exact regression
 cases were subsequently saved and formally verified at checkpoint
 `6d2b78ac0984b8d814b9761c8d44c8dc408614e7`. The standalone CTest and all four
-actual-pack audits passed, each with 34,708 assertions. The fifth source stage
-adds the separate Rolling Boulder case described below; that addition is not
-part of the stage4 execution. The [validation metadata](validation-ui-templates-0.17.json)
-records the execution identities and closed journal receipts.
+actual-pack audits passed, each with 34,708 assertions. The separate Rolling
+Boulder follow-up was then saved and formally verified at checkpoint
+`9d8cb1fd58d2ea73900449415c925592776a5584`: all four packs passed **34,723
+assertions each**, covering six exact numeric models and four independent
+instance pairs. The stage5 standalone, state codec and map travel observer tests
+also passed. The [validation metadata](validation-ui-templates-0.17.json) records
+both execution identities, the closed journals and the recovered launch error.
 
 ## Resource identities
 
@@ -145,18 +148,18 @@ RNG stream or save format changes are required.
 | `PANACHE_POWER.CardsLeft` | Catalog `5` at progress counter `2` | `5 - counter`; two independent instances show 4 cards / 10 damage and 1 card / 14 damage |
 | `MONOLOGUE_POWER.StrengthApplied` | Catalog `0` after an actual strength grant of `5` | Per-instance saved strength; two instances show `5` and `2`, each granting 1 Strength per subsequent card |
 | `THE_BOMB_POWER.Amount`, `.Damage` | Aggregate bomb count and catalog damage `40` | Per-instance remaining turns and damage; 2 turns / 50 damage and 1 turn / 40 damage |
+| `ROLLING_BOULDER_POWER.Amount`, `.Damage` | Combined damage `19` with only one instance's `+5` growth | Two independent descriptions: 7 damage / +5 and 12 damage / +5 |
 
 The icon's compact aggregate count remains an icon presentation choice; it is
 not passed as a single model's timer, damage or independent progress. Panache,
-Monologue and Bomb descriptions emit one original localized description per
-active slot, matching the existing Nightmare snapshot handling.
+Monologue, Bomb and Rolling Boulder descriptions emit one original localized
+description per active slot, matching the existing Nightmare snapshot handling.
 
-A sixth instance issue was identified after that checkpoint was frozen:
-`ROLLING_BOULDER_POWER` combined two instances' damage while retaining the
-single-instance +5 growth. The next source stage displays each instance
-separately; its test expects 7 damage / +5 and 12 damage / +5, rather than one
-19 damage / +5 description. This follow-up requires its own saved-checkpoint
-gate and is not included in the five-model verification above.
+The Rolling Boulder issue was identified after the stage4 checkpoint was frozen.
+Its separate stage5 gate verifies the complete localized description of both
+instances, in both languages and resource versions. The original stage4 result
+continues to cover only its five-model implementation; its recorded result has
+not been relabeled as a test of the later source.
 
 The regression also calls the canonical/detached model path with `model=-1`
 and an inactive slot. Those calls retain the canonical defaults and never pick
@@ -217,10 +220,39 @@ model `{n}` or owner field is never fabricated at the UI boundary.
 
 The four-pack formal audit has **zero unclassified dynamic slots, zero
 unsupported final-UI field names and zero remaining braces after the owning
-display route**. Every one of its five exact numeric model fixes passed in both
+display route**. Every one of its six exact numeric model fixes passed in both
 languages and both resource versions. The complete per-slot report contains
 metadata only: 471,492 bytes, SHA-256
-`7ef69e1fa69129e86b44390127a394144608d94a554a8dc8e6786baa52f4bc26`.
+`bff83a6efafc6c81edeb261b269b347cf6fe4c6288b57c406098900c43a36ed6`.
+
+| Formal stage5 gate | Result | Journal |
+| --- | --- | --- |
+| Clang Release configuration | Passed | `template-stage5-configure-a694c6aa6476.json` |
+| Native regression build | Passed | `template-stage5-build-d19417f9e4fb.json` |
+| All four original packs + complete catalog | Passed; 34,723 checks per pack | `template-stage5-four-packs-e362b76d8606.json` |
+| Standalone + observer + codec CTest attempt | UI text 167 and map travel 1,221 checks passed; codec did not launch | `template-stage5-readonly-ctest-e834e1e9ee39.json` |
+| Codec-only recovery | Passed; 1,261 checks | `template-stage5-codec-retry-27becc1ad444.json` |
+
+All five stage5 journals are closed and have `source_changed=false`. Four have
+`status=passed` and `returncode=0`. The initial CTest journal retains
+`status=failed`, `returncode=8`: its `state_codec_regression` build product had
+mode 0644, so CTest reported permission denied without starting that test. Adding
+only the owner execute bit (mode 0744) kept the binary's SHA-256 unchanged at
+`84c7752aa6952cc1147e1e8244d932179d6531829178bb69e8ca81038c1776c7`.
+Only that unexecuted test was retried; it passed. No source or test assertion was
+changed for the recovery, and the failed journal is retained.
+
+The stage5 source digest is
+`fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c`;
+the template runner SHA-256 is
+`cadf6c5088708712dec17818eb62ccdb1c0a63cd28d7b6248d9ccc425a10d02e`.
+The map travel gate compares complete canonical save/RNG bytes across delayed
+room entry, observer reset and new-enemy entry damage feedback. The state codec
+gate verifies immutable save input, reusable workspace, historical save fixtures
+and atomic failure behavior. These are targeted checks of the affected observer
+and persistence boundaries; combat presentation timing has its separate gate.
+
+The earlier five-model formal result is preserved as historical execution:
 
 | Formal stage4 gate | Result | Journal |
 | --- | --- | --- |
@@ -229,17 +261,18 @@ metadata only: 471,492 bytes, SHA-256
 | Standalone CTest | Passed | `template-standalone-fee4d9e4a018.json` |
 | All four original packs + complete catalog | Passed; 34,708 checks per pack | `template-four-packs-02f3d1e3a596.json` |
 
-Every journal was read back with `status=passed`, `returncode=0` and
-`source_changed=false`. Their source digest is
+Every stage4 journal was read back with `status=passed`, `returncode=0` and
+`source_changed=false`. Its source digest is
 `c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf`.
+Its per-slot metadata report SHA-256 is
+`7ef69e1fa69129e86b44390127a394144608d94a554a8dc8e6786baa52f4bc26`.
 The public validation JSON includes the individual journal/log hashes and actual
-runner/source-input identities.
+runner/source-input identities for both stages.
 
-The remaining prepared numeric follow-up is Rolling Boulder, whose two-instance
-description needs its stage5 gate. This inventory is limited to the 935 reviewed
-UI bindings and the model routes that they reach. It is not a claim that every
-original localization key in every event/card/potion has been numerically
-exhaustively tested.
+There are no remaining unresolved bindings or pending numeric fixes in this
+inventory. Its scope is the 935 reviewed UI bindings and the model routes that
+they reach. It is not a claim that every original localization key in every
+event/card/potion has been numerically exhaustively tested.
 
 The complete audit is reproducible after building `ui_text_regression`:
 

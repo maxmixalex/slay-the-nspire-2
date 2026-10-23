@@ -242,8 +242,8 @@ static void panels(Canvas&c){
                 c.button(label,x,y,70,a.target==i,19);c.hit(x,y,70,19,HitKind::EnemySelect,i,s.enemies[i].hp>0);
             }
         }
-        c.button("丢弃",28,205,113,false,25);c.action(25,204,119,28,UiAction::DiscardPotion,d!=nullptr&&!original_event_blocks_potions(s));
-        bool usable=can_use_potion(s,a.scroll,a.target);c.button(d&&d->automatic?"自动触发":usable?"使用":"无法使用",176,205,113,usable,25);
+        c.button("丢弃",28,205,113,false,25);c.action(25,204,119,28,UiAction::DiscardPotion,d!=nullptr&&!a.combat_actions_locked()&&!original_event_blocks_potions(s));
+        bool usable=!a.combat_actions_locked()&&can_use_potion(s,a.scroll,a.target);c.button(d&&d->automatic?"自动触发":usable?"使用":"无法使用",176,205,113,usable,25);
         c.hit(174,204,117,28,HitKind::Command,(int)Key::Confirm,usable);
     }
     c.close_button();

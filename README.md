@@ -1,6 +1,6 @@
 # Slay the Nspire 2
 
-Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Active development is **0.17** on [`work/0.17-world-parity`](https://github.com/zyf722/slay-the-nspire-2/tree/work/0.17-world-parity). A matching **0.17 development pair** is now privately packaged from the verified source22 runtime; **0.16** remains the earlier accepted baseline.
+Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's hash-pinned **v0.111.0 / 41cef1ea** installation. Active development is **0.17** on [`work/0.17-world-parity`](https://github.com/zyf722/slay-the-nspire-2/tree/work/0.17-world-parity). Current work integrates the bilingual UI feedback, shared-resource installation and measured card-rendering improvements. Exact executed checkpoints and delivery status are in [WORK_STATE.md](docs/WORK_STATE.md); earlier results below retain their historical identities.
 
 **Audio, multiplayer and Timeline are excluded.** Original UI fidelity, animation and single-player content breadth remain in scope. Original game data, fonts and calculator images are not included in public source.
 
@@ -8,21 +8,62 @@ Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's h
 
 The original three-act route now drives the playable world: Overgrowth or Underdocks, then Hive and Glory, with original regional room queues, encounters, events, ancients and saved map history. The five character/card/potion foundation is retained. There are **558 card models**, including the 61 appended event/curse dependencies, **64 potions**, a **297-model world relic registry** and **109 enemy IDs** including compatibility/display entries. Those are model counts, not a claim that every interaction has original-game differential coverage.
 
+### Current feedback work
+
+The current resource extension is **NSP2/18**. One launcher can use one shared
+art/animation file and either or both language files:
+
+| File | Purpose |
+| --- | --- |
+| `nSpire2.tns` | Ndless launcher |
+| `nSpire2.common.tns` | Shared artwork and animations |
+| `nSpire2.eng.tns` | English text, glyphs and directories |
+| `nSpire2.zhs.tns` | Chinese text, glyphs and directories |
+
+Install these files together in one calculator directory. With both languages
+installed, **4** selects Chinese, **6** selects English and **Enter / 5** confirms.
+Later launches remember the choice and allow it to be changed before loading.
+Both languages share the same **v15** gameplay save. All startup stages and
+resource errors have Chinese and English text. See
+[platform-languages.md](docs/platform-languages.md) for browser and native hosts,
+legacy full-pack loading and exact filename rules.
+
+The actual shared resources total **93,233,887 bytes**, versus 180,103,614 bytes
+for two complete NSP2/18 packs: **48.23% less when both languages are installed**.
+This is deduplication, not achievement of the 30–40 MB target. Complete integrity,
+directory and payload checks remain enabled; startup measurements distinguish
+host cache conditions from calculator-emulator execution.
+
+Current fixes include explicit event-option tooltips, contextual rich-text and
+template substitution, scaled card focus geometry, original energy/intent/banner
+composition, merchant body interaction and shop animations, and the original
+Proceed artwork. Enemy HP, block, energy and intent display use a small read-only
+presentation trace instead of jumping immediately to the simulation's final
+values. Exact coverage and remaining gaps are recorded in
+[feedback-ui-0.17.md](docs/feedback-ui-0.17.md),
+[event-option-tooltips.md](docs/event-option-tooltips.md),
+[ui-template-audit.md](docs/ui-template-audit.md) and
+[rendering-performance-0.17.md](docs/rendering-performance-0.17.md).
+Original UI fidelity is the first priority; neither overall 95% acceptance nor
+physical calculator FPS has been established.
+
+### Earlier 0.17 execution evidence
+
 The source17 checkpoint [`26a90975`](https://github.com/zyf722/slay-the-nspire-2/commit/26a9097521a971b69a4b58494985c6062a24017e) passed **all 52 registered native suites** from one frozen source. This includes all **860 character/Giant Rock acquisition variants** and **174 encounter/ascension variants** through the actual turn driver. ARM and WASM builds passed; the actual resource backend comparison matched **357 frames and 25 saves across 18 scenarios**. The exact evidence is in [validation-source17-0.17.json](docs/validation-source17-0.17.json). Later stages and their separate gates are recorded in [WORK_STATE.md](docs/WORK_STATE.md).
 
 Original scene work includes the retained room below the map window, map travel and fade layers, regional rest/treasure scenes, native enemy animation states, event/ancient text and option styling. The requested **95%+ original UI fidelity has not been established**. See the [fidelity contract](docs/parity.md) for the distinction between screen adaptations, remaining implementation gaps and original-application visual acceptance.
 
 Source19 [`00c6b9dd`](https://github.com/zyf722/slay-the-nspire-2/commit/00c6b9dda80333c3aa260d82e650b079f9fe76a3) subsequently passed **31 affected suites**, native/ARM/WASM builds, **48,111 enemy checks / 174 encounter-ascension variants**, and the expanded actual-resource backend comparison: **480 exact frames / 30 saves across 23 scenarios**. Its first-open map camera/banner and escape/cache repairs are covered in [validation-source19-0.17.json](docs/validation-source19-0.17.json). This focused run does not replace the earlier full 52-suite baseline with a claimed full 54-suite run.
 
-**The complete lossless NSP2/15 resource pack has now been built and verified:** **80,846,058 bytes (77.10 MiB)**, preserving every original sparse-frame byte and all timing aliases. Source20 [`3f66da83`](https://github.com/zyf722/slay-the-nspire-2/commit/3f66da839e056fe291c27ca5e93260b3833bd7de) passed native/ARM/WASM builds, ten affected sanitizer suites, 24 encoder tests and linked ARM decoder/ABI checks; its ARM allocation is **14,710,272 bytes**, below the project's 16 MiB bound. See [validation-source20-0.17.json](docs/validation-source20-0.17.json).
+**The historical complete lossless NSP2/15 resource pack was built and verified:** **80,846,058 bytes (77.10 MiB)**, preserving every original sparse-frame byte and all timing aliases. Source20 [`3f66da83`](https://github.com/zyf722/slay-the-nspire-2/commit/3f66da839e056fe291c27ca5e93260b3833bd7de) passed native/ARM/WASM builds, ten affected sanitizer suites, 24 encoder tests and linked ARM decoder/ABI checks; its ARM allocation is **14,710,272 bytes**, below the project's 16 MiB bound. See [validation-source20-0.17.json](docs/validation-source20-0.17.json).
 
 Source21 [`d5738010`](https://github.com/zyf722/slay-the-nspire-2/commit/d5738010f2d7ebc6139a2fa181ff87820d344bbb) removes eager decoding of every tiled image from startup. Opening still checks the complete file, directories and index geometry; each image receives complete pixel validation before its first successful use. Its frozen native/ARM/WASM builds, ten affected sanitizer suites and fresh actual-resource backend comparison (**23 scenarios / 480 frames / 30 saves**) passed. The complete C++ oracle passed both new-memory and new-range traversals against the original v14 bytes: **45,724 images / 994,105,847 decoded bytes per backend**, all metadata and 40 three-owner UI frames. It completed in 1,551.05 seconds; the two failed build attempts remain recorded separately. See [validation-source21-0.17.json](docs/validation-source21-0.17.json).
 
 Source22 [`5d177be7`](https://github.com/zyf722/slay-the-nspire-2/commit/5d177be78c507c9cd4b3c9d38a4600e84a44c02e) replaces rigid image-size tiers with a **748-page / 90-entry shared LRU cache** within the previous total cache budget. Its 147-step native build, ARM/WASM builds, ten affected ASan/UBSan suites, linked ARM vectors and fresh **23-scenario / 480-frame / 30-save** comparison passed. Selected actual-resource checks compare all 3,535 retained images and a 23-frame animation through both new backends against v14; these selected checks are distinct from source21's complete catalog proof. The animation's second cycle now has **zero resource callbacks for all 23 frames**, versus 216 calls / 11,671,220 bytes on source21. Cold first-cycle reads are unchanged; device speed is unmeasured. See [validation-source22-0.17.json](docs/validation-source22-0.17.json).
 
-The matching source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. Install the matching launcher and NSP2/15 resource together; the smaller NSP2/13 pack is incompatible.
+The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Current source accepts the complete **NSP2/14 or NSP2/15** resource catalog and uses **v15** saves, retaining historical v3–v14 save readers. Resource-storage version and save version are independent. The browser uses a separate v15 save key. Build the current native/ARM sources with the logged build commands below; the current world resource conversion and its private-input requirements are described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md). Generated original-derived packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current source accepts the full NSP2/18 extension and retains old complete-pack readers, including the verified bilingual NSP2/17 packs. Saves remain **v15**, with historical v3–v14 readers; resource-storage and save versions are independent. The browser preserves the existing v15 save key. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extension in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 
@@ -57,9 +98,9 @@ python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label content --
 python3 tools/run_logged.py --checkpoint "$NSPIRE_CHECKPOINT" --label web -- python3 tools/build_web.py
 ```
 
-For a full conversion from the pinned installation, `build_content.py` now chains through the same final character conversion. The conversion checks the original release metadata, assembly and PCK hashes. New launchers require **NSP2/13** (497 cards, 339 auxiliary images and 1,556 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
+For a full conversion from the pinned installation, `build_content.py` now chains through the same final character conversion. The conversion checks the original release metadata, assembly and PCK hashes. The historical 0.16 launcher requires **NSP2/13** (497 cards, 339 auxiliary images and 1,556 strings). Put `nSpire2.tns` and `nSpire2.nsp.tns` in the same calculator directory; `nSpire2-desktop.html` is the self-contained offline browser build. Replace the launcher and pack together.
 
-New saves use **v14** and retain readers for project v3–v13. The appended v14 payload records all three new character modules, wide card/relic identifiers, independent star prices, persistent deck growth, expanded acquisition order and cross-character Nightmare modifiers. Earlier writers did not record the new histories; migration preserves encoded facts and seeds only observable pending play/death baselines. The genuine frozen v13 continuation fixture and earlier historical fixtures exercise those boundaries. Older Entropy/Boulder and Panache/Calamity acquisition orders retain their documented historical migration policies. The browser writes to a separate v14 storage key and can import earlier keys. Old launchers cannot read the new save.
+Historical 0.16 saves use **v14** and retain readers for project v3–v13. The appended v14 payload records all three new character modules, wide card/relic identifiers, independent star prices, persistent deck growth, expanded acquisition order and cross-character Nightmare modifiers. Earlier writers did not record the new histories; migration preserves encoded facts and seeds only observable pending play/death baselines. The genuine frozen v13 continuation fixture and earlier historical fixtures exercise those boundaries. Older Entropy/Boulder and Panache/Calamity acquisition orders retain their documented historical migration policies. The browser writes to a separate v14 storage key and can import earlier keys. Old launchers cannot read the new save.
 
 The native suite includes all character, colorless, potion, historical migration and UI regressions. `expansion_ui_regression`, `character_ui_regression` and `five_character_ui_regression` optionally accept a real NSP2/13 file and an existing private screenshot directory. They cover all 860 character/Giant Rock variants, retained colorless/potion flows, generated/status cards and five-character mechanics. The optional native/WASM oracle adds five controlled combat sequences to the four retained room sequences.
 

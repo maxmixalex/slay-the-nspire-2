@@ -186,23 +186,23 @@ static void combat_screen(Canvas&c){
         if(!focused||i!=selected)draw_hand_tile(c,hand_tile(c,i),p,false);
         auto r=hand_rail(s.hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
-        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.busy&&can_play_card(s,s.hand.ids[i]));
+        c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,s.hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,s.hand.ids[i]));
     }
     if(s.hand.count){
         if(focused){
             draw_hand_tile(c,hand_tile(c,selected),hand_pose(s.hand.count,selected,true),true);
             auto p=hand_pose(s.hand.count,selected,true);
-            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.busy&&can_play_card(s,s.hand.ids[selected]));
+            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,68,HitKind::Hand,s.hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,s.hand.ids[selected]));
         }
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
         for(int i=0;i<s.hand.count;i++){
             auto r=hand_rail(s.hand.count,i);
-            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.busy&&can_play_card(s,s.hand.ids[i]));
+            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,s.hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,s.hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
     combat_energy(c);
-    native_end_turn(c,s.phase==Phase::Combat&&!a.busy);
+    native_end_turn(c,s.phase==Phase::Combat&&!a.combat_actions_locked());
     combat_pile(c,A_DrawPile,s.draw.count,8,215,1);
     combat_pile(c,A_DiscardPile,s.discard.count,291,215,2);
     if(s.exhaust.count)combat_pile(c,A_ExhaustPile,s.exhaust.count,293,106,3);

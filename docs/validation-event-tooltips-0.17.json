@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+  "reference": "v0.111.0 / 41cef1ea",
+  "scope": "Explicit EventOption associations, model descriptions, input ownership, modal paging and read-only rendering; metadata only, no original prose or art",
+  "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release",
+  "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+  "runner_sha256": "5f52298b5a15e27a44a90767122096a3987f479c37ecd9282f6aa911959dd678",
+  "source_inputs": {
+    "tests/keyword_tooltip_regression.cpp": "d82e62f099341d92cc93c57bbf6776f7cd20f7a6c850b9b08ec1b59ea761b022",
+    "include/keyword_hover.hpp": "d835035b2e604079ffdac9bad6502c551d9e373faadd44738af9b3538eb7a1ae",
+    "src/event_hover_ui.inc": "961ec2229090d0f2696645a1b17b356c8c3450f46dbbf7667a64e1c3ce7a35a1",
+    "src/event_hover_catalog.inc": "75c38bd75d178240e935bc2624e5a7a4543a48ae8eaf7d63059282ac20a30e73",
+    "src/relic_hover_catalog.inc": "51ab763472e957496bd778210694fd217fe45dcf0afa4ffe47a9b784e88352de",
+    "src/potion_hover_catalog.inc": "edde51cc62ffe3e449753ed4bc4e3e0d06c8ba6ae8821257c54f0a9b6f9ffcfc",
+    "src/keyword_tooltip_ui.inc": "3f1b676ffd220f095fcaecf827e0021077a38bcaff234929d46f02170a9234ae",
+    "src/ui_text.inc": "fe01c4383144be0f3b599130dfb0de2ae5044299db9318b533437b2bb2bffe45",
+    "src/world_text.inc": "5d5d3cb02b3fcf6663860260f1a366c6e67898b26ebc01db3a04f52f222608c3",
+    "src/app_input.inc": "2df69e5afee72d1e0e0528f69695814e61dfa62f809ae908635e7b08c8fa3fb4"
+  },
+  "association_rows": {
+    "event": 57,
+    "relic": 147,
+    "potion_extras": 39
+  },
+  "synthetic": {
+    "checks": 21734,
+    "passed": true
+  },
+  "packs": {
+    "zhs": {
+      "file": "feedback-zhs.nsp",
+      "bytes": 91439646,
+      "sha256": "74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b",
+      "checks": 402524,
+      "passed": true
+    },
+    "eng": {
+      "file": "feedback-eng.nsp",
+      "bytes": 88663968,
+      "sha256": "716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697",
+      "checks": 402632,
+      "passed": true
+    }
+  },
+  "binary": {
+    "file": "keyword_tooltip_regression",
+    "sha256": "b61ef7d3a5b01d3ebbd9b404813eeec03937f1bacff45edc9cef96ab1d3cb48b"
+  },
+  "journals": [
+    {
+      "journal": "event-hover-config-d78a4417e162.json",
+      "journal_sha256": "e5e5a07d31d92a06e553db80e41632fb1613e466c80de4276c56156c26801d8d",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "event-hover-config-d78a4417e162.log",
+      "log_sha256": "aff7f46d008a3cec41022774e7409cb99fa8fbaef362f6b07c29ba2ded9bada0"
+    },
+    {
+      "journal": "event-hover-build-83956995b01d.json",
+      "journal_sha256": "96fc2e6e14f4ba954ec988bfd3b4f1e49af6330163f78420cf2e4ada7e044ee9",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "event-hover-build-83956995b01d.log",
+      "log_sha256": "cf669068d2d467573e2839662cadcd3b1ed0c0e51208cf2df3d3e455edbb3277"
+    },
+    {
+      "journal": "keyword-synthetic-8f37ee86d54e.json",
+      "journal_sha256": "3c2dc7398c4d94cc8e2b7622599e479c70e194eea0189dc674934ab1673ebd08",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "keyword-synthetic-8f37ee86d54e.log",
+      "log_sha256": "8895d435c4eafa37bc60a9656ce33250d724a3c62edd4cc42468f7986b6fe4ac"
+    },
+    {
+      "journal": "keyword-zhs-0aefc9c964be.json",
+      "journal_sha256": "20e9abae75589ea39d56de1582c9a36ef62a6c12b85ca6d2d21d7c60c528acc1",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "keyword-zhs-0aefc9c964be.log",
+      "log_sha256": "ed50965ce88882c3fcefd27f5203ad86c6a6e3251af3878ebf25ed9b81ef3b4b"
+    },
+    {
+      "journal": "keyword-eng-bb1b73e63196.json",
+      "journal_sha256": "539f10c70f1f22485e9f280979796e40de442dba95252d5c73cfa77cfc4562e2",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "log": "keyword-eng-bb1b73e63196.log",
+      "log_sha256": "8495cea2df2e60eee85c84d19379fb86f388c9b83f2791f973df96b410a02a83"
+    }
+  ],
+  "historical_failures": [
+    {
+      "journal": "keyword-eng-6ff7927eaa41.json",
+      "journal_sha256": "ef277be36c0b7c281ce855e72324c3b9fa9ff077ca39159ad90efd6d93999cdc",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "log": "keyword-eng-6ff7927eaa41.log",
+      "log_sha256": "96d43434a75b090ae376de1ffb1d698f906f2f17e61a16c32a4ccf3c9df9e9c4",
+      "reason": "Invalid synthetic Slippery Bridge fixture: energy offset without required persisted enchantment; corrected fixture preserves save-byte assertion."
+    },
+    {
+      "journal": "keyword-synthetic-9186e17bbea0.json",
+      "journal_sha256": "02937c4a5d1c230dbfa254be22b6c2f9a25624ad0fac16876b8ea73f24eb8ad9",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "log": "keyword-synthetic-9186e17bbea0.log",
+      "log_sha256": "96d43434a75b090ae376de1ffb1d698f906f2f17e61a16c32a4ccf3c9df9e9c4",
+      "reason": "Invalid synthetic Slippery Bridge fixture: energy offset without required persisted enchantment; corrected fixture preserves save-byte assertion."
+    },
+    {
+      "journal": "keyword-zhs-1eb573f16838.json",
+      "journal_sha256": "ff6ff51688f70f663c2c8331cbdfe1eae879f7713cbaadedbed488ffd86f2b1d",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "log": "keyword-zhs-1eb573f16838.log",
+      "log_sha256": "96d43434a75b090ae376de1ffb1d698f906f2f17e61a16c32a4ccf3c9df9e9c4",
+      "reason": "Invalid synthetic Slippery Bridge fixture: energy offset without required persisted enchantment; corrected fixture preserves save-byte assertion."
+    },
+    {
+      "journal": "keyword-eng-4fbdff08c8ef.json",
+      "journal_sha256": "2e26e7ec8ef5812788c0d21fc5fe6ea8a2b3922b303a460b98be3c511ec0f30e",
+      "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+      "log": "keyword-eng-4fbdff08c8ef.log",
+      "log_sha256": "7d531c150622f4db491cfd1bb58d40f8dbb0e73116b8d70f2d6b91136ef97a03",
+      "reason": "Full potion catalog exposed DARK key instead of canonical DARK_ORB; corrected association without suppressing unresolved-text check."
+    },
+    {
+      "journal": "keyword-synthetic-e77acd815102.json",
+      "journal_sha256": "403cbfa9ec5fe2c9bf32204c5d13d1de6da0bf85b45b7158d44f65a56a3bf7d0",
+      "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+      "log": "keyword-synthetic-e77acd815102.log",
+      "log_sha256": "7d531c150622f4db491cfd1bb58d40f8dbb0e73116b8d70f2d6b91136ef97a03",
+      "reason": "Full potion catalog exposed DARK key instead of canonical DARK_ORB; corrected association without suppressing unresolved-text check."
+    },
+    {
+      "journal": "keyword-zhs-0c4fee8cc25c.json",
+      "journal_sha256": "db12db9c932dd22959f5642968d07f482f48fc9cf213e6d3d4e8351174131d09",
+      "checkpoint": "6d2b78ac0984b8d814b9761c8d44c8dc408614e7",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_sha256": "c21a11c21b1f623ceca8443f5130a68978fd3c10668dbe0cc9be70fb395630cf",
+      "log": "keyword-zhs-0c4fee8cc25c.log",
+      "log_sha256": "7d531c150622f4db491cfd1bb58d40f8dbb0e73116b8d70f2d6b91136ef97a03",
+      "reason": "Full potion catalog exposed DARK key instead of canonical DARK_ORB; corrected association without suppressing unresolved-text check."
+    }
+  ],
+  "private_screenshot_metadata": {
+    "eng/event-option-tooltip-details.ppm": {
+      "bytes": 230415,
+      "sha256": "c624f7e70799d3f6e6b21eea84ba0394046a56dd34e49f9144183ef60c82672a"
+    },
+    "eng/event-option-tooltip.ppm": {
+      "bytes": 230415,
+      "sha256": "51f59a6c813e91dda6de2058717c1b29d90415063a93fb6105c3dae7c94f5d3e"
+    },
+    "event-tooltip-comparison.png": {
+      "bytes": 100315,
+      "sha256": "949f1fde25f6eeef30e6fd192366bc98f723f89a6c37a5c714088b842b1fd57f"
+    },
+    "zhs/event-option-tooltip-details.ppm": {
+      "bytes": 230415,
+      "sha256": "520b69282de21d0de5d271f4baeb535d8c8f847b61937f49804326ccde203f12"
+    },
+    "zhs/event-option-tooltip.ppm": {
+      "bytes": 230415,
+      "sha256": "9b138b80b6166e641c766d790af5c61611532dddddeaffb7bf78440f2d88e525"
+    }
+  },
+  "visual_review": "English and Chinese event compact hover and paged detail inspected at 320x240; owner placement, readable text and card preview confirmed. Does not establish whole-game visual parity.",
+  "state_contract": "Actual save bytes remain unchanged before/after tooltip, paging and render checks; hover does not prepare offers or draw RNG."
+}
