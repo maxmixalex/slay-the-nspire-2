@@ -1,0 +1,966 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "scope": "Targeted native UI execution and independent wall-clock/source review; preserves each frozen execution identity and every failed attempt.",
+  "latest_targeted_native_checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+  "status": "targeted_native_gates_complete_with_historical_failures_retained",
+  "independent_review": {
+    "reviewer": "render_performance",
+    "executors": [
+      "ui_fidelity",
+      "root"
+    ],
+    "method": "Read frozen source and existing journals; recompute all recorded log hashes, source inventories and journal hashes. No test was rerun by this reviewer.",
+    "journal_closure_verified": true,
+    "all_source_changed_flags_false": true,
+    "full_source_inventory_matches_every_selected_journal": true,
+    "assertion_count_note": "Counts are per invocation. Optional screenshot output adds file open/write/close assertions; counts from different capture modes are not equivalent coverage measures."
+  },
+  "packs": {
+    "eng": {
+      "file": "feedback-eng.nsp",
+      "bytes": 88663968,
+      "sha256": "716860f9a494bb0128148e9958a6e7ac45df02087269834ce27d4d866fbda697",
+      "version": 18
+    },
+    "zhs": {
+      "file": "feedback-zhs.nsp",
+      "bytes": 91439646,
+      "sha256": "74279728406d3362993ef82e92c5ee9196bb3d4a84d3ede7bfc9bb081914997b",
+      "version": 18
+    }
+  },
+  "execution_sets": [
+    {
+      "stage": "stage5",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "frozen_source": "feedback-checkpoint-9d8cb1fd",
+      "source_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "source_input_count": 508,
+      "runner_sha256": "5f52298b5a15e27a44a90767122096a3987f479c37ecd9282f6aa911959dd678",
+      "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release (-O3 -DNDEBUG)",
+      "source_inputs": {
+        "CMakeLists.txt": "8e1c2396d819b0bfadfa3f508abd40b5348c95a89a2bbb1bdb8246cc7e075c07",
+        "include/app.hpp": "f3e39dd73bdef3743a69c19bcb0298890942a2187a586ddad8cb2e7de531189a",
+        "include/combat_feedback.hpp": "5588c04990b2878e6851665d45961fba9ef5064aca40d70804c55e637f1cb41b",
+        "include/turn_banner_presentation.hpp": "a07c172af26d86bdc7711e6cf439896b8cc712574f196476da35f04bb7955d52",
+        "include/ui_core_observer.hpp": "501744d0a44564ba97b314351b9c52857be88653eee5cc31d05baba37be8b827",
+        "include/combat_preparation.hpp": "cfa2b8d59e737042b870bd152f2f7fcbf003615ed91eff513240e08758ddc6ac",
+        "include/world_map_transition.hpp": "e842ba596e43063d74101fd467c25bc2519d078cc31b34015ca3c991fa34410a",
+        "src/app.cpp": "b9d452092c9e99dfd5806672f4a1c57c1bf413e13f6e9484a91d203e9d3296c5",
+        "src/app_input.inc": "2df69e5afee72d1e0e0528f69695814e61dfa62f809ae908635e7b08c8fa3fb4",
+        "src/pointer.cpp": "429d484fa513d5d7bceeadb5b1cdc6431228aae808262d95caa902a1293c9a48",
+        "src/combat_feedback_ui.inc": "751309e250917760e5c3909c222451f03b6a4884d60b991792130e3dc39a11f0",
+        "src/combat_preparation.inc": "18d2767ca9155dbef6d9aa9707e9dec52061686ba8793b95654093af3c5d3446",
+        "src/world_enemy_ui.inc": "8f66bc713fb1f15cf9be1fc5098a2cdc2de3a1232537a89a2dde67c74d2ab580",
+        "src/world_map_travel.inc": "5e08ef09ffc810c5f004a31cc663e43cf1e2c86899224188d0101151a1716349",
+        "src/turn_banner_ui.inc": "0b54cc497cc00863f94e413f72b86f21b319602718aa2eb2cfdd788083517a93",
+        "src/keyword_tooltip_ui.inc": "3f1b676ffd220f095fcaecf827e0021077a38bcaff234929d46f02170a9234ae",
+        "tests/world_ui_regression.cpp": "fbd3b3b0cc56c5a6ae7c5fbcfff2073698a8e21c0d065c9e82a9989952feeb96",
+        "tests/world_frontend_ui_regression.cpp": "06d76ffcd3480d599c0542b651b1db51568992479e39495b6a26abc9cffdb60a",
+        "tests/world_map_ui_regression.cpp": "212398e05e79876595b6c1a3ce731ceba427c645cf6fcf641abcdd028813ef48",
+        "tests/turn_banner_regression.cpp": "bf770a4a42eb9cd26ed56a3aeb7467defccd200148bc3f1eb3a2b7f5d8e8432d",
+        "tests/keyword_tooltip_regression.cpp": "d82e62f099341d92cc93c57bbf6776f7cd20f7a6c850b9b08ec1b59ea761b022",
+        "tests/events_ui_regression.cpp": "3e48b57bc99b63e09a13516c0db8f371bcb094a426d026d770bf58b702d85b72",
+        "tests/world_event_ui_regression.cpp": "4abf4a12f250cad12a46cf212053643a26709c8cf6d552cc37b6f69ca06189c8"
+      },
+      "receipt_summary": {
+        "journals": 2,
+        "by_status": {
+          "failed": 2
+        },
+        "passed_test_executions": 0
+      },
+      "binaries": {
+        "world_ui_regression": {
+          "build_path": "build/ui-verify/world_ui_regression",
+          "bytes_after_execution": 6232448,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "c20251af7843e174266071997a721e1ab8c1aca8924b5e5a83a7f5d3bc820979"
+        }
+      },
+      "journals": [
+        {
+          "journal": "ui5-world-eng-f5fc187ca884.json",
+          "journal_sha256": "1ea80a2b3f8540ee9b27f22823218dd4cb9b8a18a164b5e97cdcc727a8cb0036",
+          "log": "ui5-world-eng-f5fc187ca884.log",
+          "log_sha256": "4d7a6d1905782577d0aefce2666ebeab36c4a093b5a67665888454509b610899",
+          "status": "failed",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-23T06:43:44.790872+00:00",
+          "ended_at": "2026-10-23T06:43:47.855015+00:00",
+          "command": [
+            "build/ui-verify/world_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-ui-screenshots-stage5/eng"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": true,
+          "result": "FAIL /workspace/scratch/47a2ee0e8d03/feedback-checkpoint-9d8cb1fd/tests/world_ui_regression.cpp:282 a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy phase=6"
+        },
+        {
+          "journal": "ui5-world-zhs-1357cc5d23e6.json",
+          "journal_sha256": "32651036d20d9de9a7af7910a4e18df0ac2b45ee88c7df00026cb0f1b297bf1e",
+          "log": "ui5-world-zhs-1357cc5d23e6.log",
+          "log_sha256": "4d7a6d1905782577d0aefce2666ebeab36c4a093b5a67665888454509b610899",
+          "status": "failed",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-23T06:43:44.773522+00:00",
+          "ended_at": "2026-10-23T06:43:47.874579+00:00",
+          "command": [
+            "build/ui-verify/world_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-ui-screenshots-stage5/zhs"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": true,
+          "result": "FAIL /workspace/scratch/47a2ee0e8d03/feedback-checkpoint-9d8cb1fd/tests/world_ui_regression.cpp:282 a.turn_banner.sample_enemy(a.animation).kind==TurnBannerPresentation::Enemy phase=6"
+        }
+      ]
+    },
+    {
+      "stage": "stage6",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "frozen_source": "feedback-checkpoint-14a20900",
+      "source_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "source_input_count": 508,
+      "runner_sha256": "5f52298b5a15e27a44a90767122096a3987f479c37ecd9282f6aa911959dd678",
+      "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release (-O3 -DNDEBUG)",
+      "source_inputs": {
+        "CMakeLists.txt": "8e1c2396d819b0bfadfa3f508abd40b5348c95a89a2bbb1bdb8246cc7e075c07",
+        "include/app.hpp": "3084b1de92b9f738e88dd9d1ce86c54b2221758a3bbfaa654f23f8b8818ab1bd",
+        "include/combat_feedback.hpp": "5588c04990b2878e6851665d45961fba9ef5064aca40d70804c55e637f1cb41b",
+        "include/turn_banner_presentation.hpp": "4ceea32a27a1dd34fd379f283ecad0796bcc589443036226fa45b2304b372c8f",
+        "include/ui_core_observer.hpp": "501744d0a44564ba97b314351b9c52857be88653eee5cc31d05baba37be8b827",
+        "include/combat_preparation.hpp": "cfa2b8d59e737042b870bd152f2f7fcbf003615ed91eff513240e08758ddc6ac",
+        "include/world_map_transition.hpp": "e842ba596e43063d74101fd467c25bc2519d078cc31b34015ca3c991fa34410a",
+        "src/app.cpp": "cbfe9d9bf5a858ce46ec7dbb9aa6d0b65b111aa245da9670c34485e24c7047bd",
+        "src/app_input.inc": "72770f0c85deffa4fff171c5109c94eb8fa1d3068551bf2d75243aeff71c4913",
+        "src/pointer.cpp": "5114a08f527ef4eebc346b421461fbad52dace8a746fd76493f39276096881df",
+        "src/combat_feedback_ui.inc": "89235f97f328d1c614c9e2610f4028de095a205390f81164f74c5beea5d7c43b",
+        "src/combat_preparation.inc": "18d2767ca9155dbef6d9aa9707e9dec52061686ba8793b95654093af3c5d3446",
+        "src/world_enemy_ui.inc": "8f66bc713fb1f15cf9be1fc5098a2cdc2de3a1232537a89a2dde67c74d2ab580",
+        "src/world_map_travel.inc": "5e08ef09ffc810c5f004a31cc663e43cf1e2c86899224188d0101151a1716349",
+        "src/turn_banner_ui.inc": "0b54cc497cc00863f94e413f72b86f21b319602718aa2eb2cfdd788083517a93",
+        "src/keyword_tooltip_ui.inc": "3f1b676ffd220f095fcaecf827e0021077a38bcaff234929d46f02170a9234ae",
+        "tests/world_ui_regression.cpp": "0c6a1d8bec5367e86fbf16048556695669827a985849d1e65b894135e424d694",
+        "tests/world_frontend_ui_regression.cpp": "012ae1fbdc70dbfebb0b301f2b95593ddb4a2274a70c9ca7fbbd615e7c12d3b6",
+        "tests/world_map_ui_regression.cpp": "d32d2cb7099f3ce4d0c84d84a716b7d017995ea38e79cef2b39e6f4ce5975675",
+        "tests/turn_banner_regression.cpp": "8507244858d8f02c347322af58c23cbb606866c232fe92a2b9b43654a9cb45dc",
+        "tests/keyword_tooltip_regression.cpp": "d82e62f099341d92cc93c57bbf6776f7cd20f7a6c850b9b08ec1b59ea761b022",
+        "tests/events_ui_regression.cpp": "3e48b57bc99b63e09a13516c0db8f371bcb094a426d026d770bf58b702d85b72",
+        "tests/world_event_ui_regression.cpp": "4abf4a12f250cad12a46cf212053643a26709c8cf6d552cc37b6f69ca06189c8"
+      },
+      "receipt_summary": {
+        "journals": 19,
+        "by_status": {
+          "passed": 15,
+          "failed": 3,
+          "launch_error": 1
+        },
+        "passed_test_executions": 10
+      },
+      "binaries": {
+        "keyword_tooltip_regression": {
+          "build_path": "build/root-hover/keyword_tooltip_regression",
+          "bytes_after_execution": 6400880,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "a6d5da824036f101e8a22946be6552eb24398292e44424f0b2175d50d8e338f2"
+        },
+        "turn_banner_regression": {
+          "build_path": "build/ui-verify/turn_banner_regression",
+          "bytes_after_execution": 20424,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "07a4f6382f88f57c849ac277b4ee9f50d73529cb3d1122c53a0405a7f92d6b0f"
+        },
+        "events_ui_regression": {
+          "build_path": "build/ui-verify/events_ui_regression",
+          "bytes_after_execution": 6185968,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "46835b05bd80261e8898ff7a2c036383d3357842dfbfa4ddf3a94ff35272e29e"
+        },
+        "world_frontend_ui_regression": {
+          "build_path": "build/ui-verify/world_frontend_ui_regression",
+          "bytes_after_execution": 6401512,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "15a0430dc2d9eaee9bd17d2d6964f982e774761d69bb3341ed6bec8881c24610"
+        },
+        "world_map_ui_regression": {
+          "build_path": "build/ui-verify/world_map_ui_regression",
+          "bytes_after_execution": 6256496,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "3abd47853a0c390725da4bb18fcf2d039273279f6019318d12fd9e1594ed4582"
+        },
+        "world_ui_regression": {
+          "build_path": "build/ui-verify/world_ui_regression",
+          "bytes_after_execution": 6240776,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "679bda0dae5700f59244f3a02d86a9e8bb99911250238fc7f5e0cc747a60525f"
+        },
+        "world_event_ui_regression": {
+          "build_path": "build/ui-verify/world_event_ui_regression",
+          "bytes_after_execution": 6404688,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "d078fda4d9dc4731c7741d080aa6fb97a462b4c2fc26d432e8db1485371bb95b"
+        }
+      },
+      "journals": [
+        {
+          "journal": "event-hover-build-0b09151318fd.json",
+          "journal_sha256": "3bc85a402d45cbb93c818e3429ba6cf690cf211eb204d21081f159330a033048",
+          "log": "event-hover-build-0b09151318fd.log",
+          "log_sha256": "e6227b8b85d97cec990c955a9a8ad412c10737ae9f9c721a04fe760761b964f3",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:01:37.562705+00:00",
+          "ended_at": "2026-10-23T07:01:58.213538+00:00",
+          "command": [
+            "cmake",
+            "--build",
+            "build/root-hover",
+            "--target",
+            "keyword_tooltip_regression",
+            "runtime_performance_regression",
+            "-j2"
+          ],
+          "execution_owner": "root",
+          "test_execution": false
+        },
+        {
+          "journal": "event-hover-config-ab6526fd2a87.json",
+          "journal_sha256": "df2b24af626221642ce806a5415e9923429e01d38791a954bdaa38e4f38d41d2",
+          "log": "event-hover-config-ab6526fd2a87.log",
+          "log_sha256": "1132594a181ba52bcc11e00212c6f28aceb2316efce7c15af48fd19b9d145ff7",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:01:26.899179+00:00",
+          "ended_at": "2026-10-23T07:01:28.855318+00:00",
+          "command": [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "build/root-hover",
+            "-DCMAKE_CXX_COMPILER=clang++-18",
+            "-DCMAKE_C_COMPILER=clang-18",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_TESTING=ON"
+          ],
+          "execution_owner": "root",
+          "test_execution": false
+        },
+        {
+          "journal": "keyword-eng-44b4b91b61e7.json",
+          "journal_sha256": "67e07326bd2cdae4ee1aa6fda41a82b74772d42d23e8a6ab46870d83ebcd2e04",
+          "log": "keyword-eng-44b4b91b61e7.log",
+          "log_sha256": "8495cea2df2e60eee85c84d19379fb86f388c9b83f2791f973df96b410a02a83",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:13.031708+00:00",
+          "ended_at": "2026-10-23T07:02:16.712924+00:00",
+          "command": [
+            "build/root-hover/keyword_tooltip_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/event-hover-screenshots-stage6/eng"
+          ],
+          "execution_owner": "root",
+          "test_execution": true,
+          "target": "keyword_tooltip_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": true,
+          "checks": 402632,
+          "result": "keyword tooltip: 402632 checks passed (private profile)"
+        },
+        {
+          "journal": "keyword-synthetic-aeaa7ef56569.json",
+          "journal_sha256": "063c578431a664650fa821c4781a0759884ea82759f602a34865e489c6db3c62",
+          "log": "keyword-synthetic-aeaa7ef56569.log",
+          "log_sha256": "8895d435c4eafa37bc60a9656ce33250d724a3c62edd4cc42468f7986b6fe4ac",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:13.044856+00:00",
+          "ended_at": "2026-10-23T07:02:16.032082+00:00",
+          "command": [
+            "build/root-hover/keyword_tooltip_regression"
+          ],
+          "execution_owner": "root",
+          "test_execution": true,
+          "target": "keyword_tooltip_regression",
+          "resource": "synthetic_or_component",
+          "screenshots_enabled": false,
+          "checks": 21734,
+          "result": "keyword tooltip: 21734 checks passed (synthetic profile)"
+        },
+        {
+          "journal": "keyword-zhs-683a275f71bb.json",
+          "journal_sha256": "aebd1a5be2b2713a018a8586cc84957f2de97b2b9299167f788e5a94737be963",
+          "log": "keyword-zhs-683a275f71bb.log",
+          "log_sha256": "ed50965ce88882c3fcefd27f5203ad86c6a6e3251af3878ebf25ed9b81ef3b4b",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:13.033885+00:00",
+          "ended_at": "2026-10-23T07:02:16.763628+00:00",
+          "command": [
+            "build/root-hover/keyword_tooltip_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/event-hover-screenshots-stage6/zhs"
+          ],
+          "execution_owner": "root",
+          "test_execution": true,
+          "target": "keyword_tooltip_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": true,
+          "checks": 402524,
+          "result": "keyword tooltip: 402524 checks passed (private profile)"
+        },
+        {
+          "journal": "ui6-banner-378e8c913415.json",
+          "journal_sha256": "e11aef9dea46d647dd63f7ecf02dafbd78b3b1e1680a09f7a34a8aba2a39bc60",
+          "log": "ui6-banner-378e8c913415.log",
+          "log_sha256": "12a2acb146958d981d5970cf275b17e255a485d4f84a8c64f3535cdb16688008",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:03.913709+00:00",
+          "ended_at": "2026-10-23T07:02:03.921124+00:00",
+          "command": [
+            "build/ui-verify/turn_banner_regression"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "turn_banner_regression",
+          "resource": "synthetic_or_component",
+          "screenshots_enabled": false,
+          "checks": 21,
+          "result": "turn banner: 21 checks passed"
+        },
+        {
+          "journal": "ui6-build-1ab8ff1be159.json",
+          "journal_sha256": "9f6b9fa4551daed20229849c5df364b2fef026a25733ea33c55d83fb83a6ec11",
+          "log": "ui6-build-1ab8ff1be159.log",
+          "log_sha256": "f3f09e9f8c99c3c2af6bda187a348e49caff330db603d5e8396b12e906e8482c",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:01:15.660589+00:00",
+          "ended_at": "2026-10-23T07:01:36.136344+00:00",
+          "command": [
+            "cmake",
+            "--build",
+            "build/ui-verify",
+            "--target",
+            "world_ui_regression",
+            "world_frontend_ui_regression",
+            "world_map_ui_regression",
+            "events_ui_regression",
+            "world_event_ui_regression",
+            "turn_banner_regression",
+            "-j2"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": false
+        },
+        {
+          "journal": "ui6-configure-13f7b7d3f8b6.json",
+          "journal_sha256": "bbb6cc28554e468a49b7d14da27e6654fd364dac0fac9a916b09e0ffc5a42612",
+          "log": "ui6-configure-13f7b7d3f8b6.log",
+          "log_sha256": "0a926743838ef020723aa97394198aa1be84129ce16e1588bec651db7b7f4492",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:01:12.116988+00:00",
+          "ended_at": "2026-10-23T07:01:12.888283+00:00",
+          "command": [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "build/ui-verify",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DSPIRE_X11=OFF",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/clang++-18",
+            "-DCMAKE_C_COMPILER=/usr/bin/clang-18"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": false
+        },
+        {
+          "journal": "ui6-events-eng-ee2956d35a2d.json",
+          "journal_sha256": "b4e50ab58c65ec224f7fac3ce957e58c83b32da0ddb689a463abd4e5814af237",
+          "log": "ui6-events-eng-ee2956d35a2d.log",
+          "log_sha256": "72590f905b812b136a2bff621b30fbe441a0244a07b52c6f65ec10349610eb16",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:03:47.906864+00:00",
+          "ended_at": "2026-10-23T07:03:48.987263+00:00",
+          "command": [
+            "build/ui-verify/events_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "events_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": false,
+          "checks": 1462,
+          "result": "event/shop UI: 1462 checks passed"
+        },
+        {
+          "journal": "ui6-events-zhs-dc7210880163.json",
+          "journal_sha256": "69fb9a1681eb9da7bbaa8c53232e2aee10865db9b32f22e136057be2f404e6e1",
+          "log": "ui6-events-zhs-dc7210880163.log",
+          "log_sha256": "72590f905b812b136a2bff621b30fbe441a0244a07b52c6f65ec10349610eb16",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:04:44.922836+00:00",
+          "ended_at": "2026-10-23T07:04:45.943478+00:00",
+          "command": [
+            "build/ui-verify/events_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "events_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": false,
+          "checks": 1462,
+          "result": "event/shop UI: 1462 checks passed"
+        },
+        {
+          "journal": "ui6-frontend-eng-e82fba80c294.json",
+          "journal_sha256": "b163f35481ed5c46ad1d2c6d774a9309ed7f4671309241c718c425b63f73bf73",
+          "log": "ui6-frontend-eng-e82fba80c294.log",
+          "log_sha256": "3f66aaa35c580d7ab9e31e8b4c065f156fba1cc54dc104143e15dfdb5a9de74e",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:28.494360+00:00",
+          "ended_at": "2026-10-23T07:02:34.133582+00:00",
+          "command": [
+            "build/ui-verify/world_frontend_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_frontend_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": false,
+          "checks": 567,
+          "result": "world frontend UI: 567 checks passed; actual profile; guarded save lifecycle and presentation-only settings"
+        },
+        {
+          "journal": "ui6-frontend-zhs-22f69a9383d1.json",
+          "journal_sha256": "061ece4c5df3ac4bd3a2efd6c41ddfe051ac5984d444ea06fff07d1530de7957",
+          "log": "ui6-frontend-zhs-22f69a9383d1.log",
+          "log_sha256": "3f66aaa35c580d7ab9e31e8b4c065f156fba1cc54dc104143e15dfdb5a9de74e",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:03:47.917899+00:00",
+          "ended_at": "2026-10-23T07:03:52.919371+00:00",
+          "command": [
+            "build/ui-verify/world_frontend_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_frontend_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": false,
+          "checks": 567,
+          "result": "world frontend UI: 567 checks passed; actual profile; guarded save lifecycle and presentation-only settings"
+        },
+        {
+          "journal": "ui6-map-eng-e561d08e561f.json",
+          "journal_sha256": "99f650e524947c3b383bd6f00dc529d7708ed11dc7de2301833c6d209682b98a",
+          "log": "ui6-map-eng-e561d08e561f.log",
+          "log_sha256": "915dc9695d9917c6ff1e8a6faab1988ba728a1d4aa75105f38a2d13c7f25fa26",
+          "status": "failed",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:28.487157+00:00",
+          "ended_at": "2026-10-23T07:02:29.808366+00:00",
+          "command": [
+            "build/ui-verify/world_map_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_map_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": false,
+          "result": "map UI: /workspace/scratch/47a2ee0e8d03/feedback-checkpoint-14a20900/tests/world_map_ui_regression.cpp:381 !app.map_travel.pending&&!app.map_travel.fading_in"
+        },
+        {
+          "journal": "ui6-world-eng-8594a1d05484.json",
+          "journal_sha256": "55409ac330567616023ddf7e565f66d605fab086617adb5be1173f08a835cd74",
+          "log": "ui6-world-eng-8594a1d05484.log",
+          "log_sha256": "852403ea4a50fda4a5fedb80e54b6635341f4f2ceb927c3cb5541f88671309d0",
+          "status": "failed",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:03.943474+00:00",
+          "ended_at": "2026-10-23T07:02:06.720405+00:00",
+          "command": [
+            "build/ui-verify/world_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-ui-screenshots-stage6/eng"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": true,
+          "result": "FAIL /workspace/scratch/47a2ee0e8d03/feedback-checkpoint-14a20900/tests/world_ui_regression.cpp:345 a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished phase=0"
+        },
+        {
+          "journal": "ui6-world-event-eng-2a683468849f.json",
+          "journal_sha256": "c3237761ed9ec9cff9035e44f23968b2c460b6636b99916eb4456bb15be1553e",
+          "log": "ui6-world-event-eng-2a683468849f.log",
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "status": "launch_error",
+          "returncode": 127,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:04:44.913024+00:00",
+          "ended_at": "2026-10-23T07:04:44.915860+00:00",
+          "command": [
+            "build/ui-verify/world_event_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_event_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": false,
+          "error": "[Errno 13] Permission denied: 'build/ui-verify/world_event_ui_regression'"
+        },
+        {
+          "journal": "ui6-world-event-eng-retry-1d5ef9910fcb.json",
+          "journal_sha256": "a75490aeec05fe74d59b16e385b4d6f4e6f1e14ddc54cac840596736a7dfdf1a",
+          "log": "ui6-world-event-eng-retry-1d5ef9910fcb.log",
+          "log_sha256": "4ed98355a2f27f228ce10a9602662d1df71acda02ac40950c2524d62e0d84e3d",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:05:07.234137+00:00",
+          "ended_at": "2026-10-23T07:05:09.060632+00:00",
+          "command": [
+            "build/ui-verify/world_event_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_event_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": false,
+          "checks": 484,
+          "result": "world event UI: 484 checks passed; actual profile; six stock slots and eight ancient layouts"
+        },
+        {
+          "journal": "ui6-world-event-exec-bit-a680ee93efa8.json",
+          "journal_sha256": "8aa6da4ff6eee2c23feea77ff31d6f1faef3e0c1a533a0969061e4da7e798770",
+          "log": "ui6-world-event-exec-bit-a680ee93efa8.log",
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:05:06.988467+00:00",
+          "ended_at": "2026-10-23T07:05:06.993164+00:00",
+          "command": [
+            "chmod",
+            "755",
+            "build/ui-verify/world_event_ui_regression"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": false
+        },
+        {
+          "journal": "ui6-world-event-zhs-8817c59695bc.json",
+          "journal_sha256": "5f3c8dfc296ebd4aba4cd213bdb11c618882ec45e80e7bc6b15607efe4f501da",
+          "log": "ui6-world-event-zhs-8817c59695bc.log",
+          "log_sha256": "4ed98355a2f27f228ce10a9602662d1df71acda02ac40950c2524d62e0d84e3d",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:05:07.240022+00:00",
+          "ended_at": "2026-10-23T07:05:09.113149+00:00",
+          "command": [
+            "build/ui-verify/world_event_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_event_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": false,
+          "checks": 484,
+          "result": "world event UI: 484 checks passed; actual profile; six stock slots and eight ancient layouts"
+        },
+        {
+          "journal": "ui6-world-zhs-d50e207ca58e.json",
+          "journal_sha256": "19297871135f54a9f3743631dec22b723b5abf54d42fac6302fd2ac3dde2a12c",
+          "log": "ui6-world-zhs-d50e207ca58e.log",
+          "log_sha256": "852403ea4a50fda4a5fedb80e54b6635341f4f2ceb927c3cb5541f88671309d0",
+          "status": "failed",
+          "returncode": 1,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:02:03.964077+00:00",
+          "ended_at": "2026-10-23T07:02:06.698479+00:00",
+          "command": [
+            "build/ui-verify/world_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-ui-screenshots-stage6/zhs"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": true,
+          "result": "FAIL /workspace/scratch/47a2ee0e8d03/feedback-checkpoint-14a20900/tests/world_ui_regression.cpp:345 a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&!a.combat_feedback.finished phase=0"
+        }
+      ]
+    },
+    {
+      "stage": "stage7",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "frozen_source": "feedback-checkpoint-61970600",
+      "source_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "source_input_count": 508,
+      "runner_sha256": "5f52298b5a15e27a44a90767122096a3987f479c37ecd9282f6aa911959dd678",
+      "compiler": "Ubuntu Clang 18.1.3, x86_64, CMake Release (-O3 -DNDEBUG)",
+      "source_inputs": {
+        "CMakeLists.txt": "8e1c2396d819b0bfadfa3f508abd40b5348c95a89a2bbb1bdb8246cc7e075c07",
+        "include/app.hpp": "3084b1de92b9f738e88dd9d1ce86c54b2221758a3bbfaa654f23f8b8818ab1bd",
+        "include/combat_feedback.hpp": "5588c04990b2878e6851665d45961fba9ef5064aca40d70804c55e637f1cb41b",
+        "include/turn_banner_presentation.hpp": "4ceea32a27a1dd34fd379f283ecad0796bcc589443036226fa45b2304b372c8f",
+        "include/ui_core_observer.hpp": "501744d0a44564ba97b314351b9c52857be88653eee5cc31d05baba37be8b827",
+        "include/combat_preparation.hpp": "cfa2b8d59e737042b870bd152f2f7fcbf003615ed91eff513240e08758ddc6ac",
+        "include/world_map_transition.hpp": "e842ba596e43063d74101fd467c25bc2519d078cc31b34015ca3c991fa34410a",
+        "src/app.cpp": "cbfe9d9bf5a858ce46ec7dbb9aa6d0b65b111aa245da9670c34485e24c7047bd",
+        "src/app_input.inc": "72770f0c85deffa4fff171c5109c94eb8fa1d3068551bf2d75243aeff71c4913",
+        "src/pointer.cpp": "5114a08f527ef4eebc346b421461fbad52dace8a746fd76493f39276096881df",
+        "src/combat_feedback_ui.inc": "89235f97f328d1c614c9e2610f4028de095a205390f81164f74c5beea5d7c43b",
+        "src/combat_preparation.inc": "18d2767ca9155dbef6d9aa9707e9dec52061686ba8793b95654093af3c5d3446",
+        "src/world_enemy_ui.inc": "8f66bc713fb1f15cf9be1fc5098a2cdc2de3a1232537a89a2dde67c74d2ab580",
+        "src/world_map_travel.inc": "5e08ef09ffc810c5f004a31cc663e43cf1e2c86899224188d0101151a1716349",
+        "src/turn_banner_ui.inc": "0b54cc497cc00863f94e413f72b86f21b319602718aa2eb2cfdd788083517a93",
+        "src/keyword_tooltip_ui.inc": "3f1b676ffd220f095fcaecf827e0021077a38bcaff234929d46f02170a9234ae",
+        "tests/world_ui_regression.cpp": "9cd31db16bbc4df31c48ffd0903745ab3aa7d6e4aa16ebe0c9e9045fa7a92c3a",
+        "tests/world_frontend_ui_regression.cpp": "012ae1fbdc70dbfebb0b301f2b95593ddb4a2274a70c9ca7fbbd615e7c12d3b6",
+        "tests/world_map_ui_regression.cpp": "ffa00be916172b663fe1f1e72dbb1bdfaa0a89df0fc198cfbcd25f29843f20f1",
+        "tests/turn_banner_regression.cpp": "8507244858d8f02c347322af58c23cbb606866c232fe92a2b9b43654a9cb45dc",
+        "tests/keyword_tooltip_regression.cpp": "d82e62f099341d92cc93c57bbf6776f7cd20f7a6c850b9b08ec1b59ea761b022",
+        "tests/events_ui_regression.cpp": "3e48b57bc99b63e09a13516c0db8f371bcb094a426d026d770bf58b702d85b72",
+        "tests/world_event_ui_regression.cpp": "4abf4a12f250cad12a46cf212053643a26709c8cf6d552cc37b6f69ca06189c8"
+      },
+      "receipt_summary": {
+        "journals": 6,
+        "by_status": {
+          "passed": 6
+        },
+        "passed_test_executions": 4
+      },
+      "binaries": {
+        "world_map_ui_regression": {
+          "build_path": "build/ui-verify/world_map_ui_regression",
+          "bytes_after_execution": 6256496,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "f28a30b078af07f926d97aebb87613810eac6079913e079df87f21f98245a72c"
+        },
+        "world_ui_regression": {
+          "build_path": "build/ui-verify/world_ui_regression",
+          "bytes_after_execution": 6244872,
+          "mode_after_execution": "0o755",
+          "sha256_after_execution": "dd0a939f626cce41104dbe23e34119154008035d93ffd8024b91f0ca043205d4"
+        }
+      },
+      "journals": [
+        {
+          "journal": "ui7-build-3ea5cdfb8262.json",
+          "journal_sha256": "2714b3a0d8413df2a5ffb63192414cafcf5916c11b6be0f4526346e6ef0df010",
+          "log": "ui7-build-3ea5cdfb8262.log",
+          "log_sha256": "2d1e86dae4645d2e938637130bd23cb94b5445119e1562ace3e5b87d066deb00",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:09:46.678069+00:00",
+          "ended_at": "2026-10-23T07:10:05.488923+00:00",
+          "command": [
+            "cmake",
+            "--build",
+            "build/ui-verify",
+            "--target",
+            "world_ui_regression",
+            "world_map_ui_regression",
+            "-j2"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": false
+        },
+        {
+          "journal": "ui7-configure-9a68ab3a47c1.json",
+          "journal_sha256": "95a62077dc03a3ce91a2baf18d1acc4e0c4eed4db164721774492cceac8997c0",
+          "log": "ui7-configure-9a68ab3a47c1.log",
+          "log_sha256": "739579b2f3a81872fc5fd859d95362d6fe5c92d566cca9ef67bcb154dad73451",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:09:45.512700+00:00",
+          "ended_at": "2026-10-23T07:09:46.434237+00:00",
+          "command": [
+            "cmake",
+            "-S",
+            ".",
+            "-B",
+            "build/ui-verify",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DSPIRE_X11=OFF",
+            "-DCMAKE_CXX_COMPILER=/usr/bin/clang++-18",
+            "-DCMAKE_C_COMPILER=/usr/bin/clang-18"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": false
+        },
+        {
+          "journal": "ui7-map-eng-9aec15242564.json",
+          "journal_sha256": "66bba228ab0579a1b1786f1918a4db63526fa12d97933e7b604bf6ad2f8db7a2",
+          "log": "ui7-map-eng-9aec15242564.log",
+          "log_sha256": "d344e383fcb74cd673371160d35c2d07fbb6b2d0648fb3a69952a56211d3ac57",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:11:26.996481+00:00",
+          "ended_at": "2026-10-23T07:11:29.023011+00:00",
+          "command": [
+            "build/ui-verify/world_map_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_map_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": false,
+          "checks": 8598,
+          "result": "world map UI: 8598 checks passed; actual profile"
+        },
+        {
+          "journal": "ui7-map-zhs-183d24f481a3.json",
+          "journal_sha256": "a54c6d9ec78660ddb6b2c25ac5a56284ad56522d832d896568f78d17760c3c94",
+          "log": "ui7-map-zhs-183d24f481a3.log",
+          "log_sha256": "d344e383fcb74cd673371160d35c2d07fbb6b2d0648fb3a69952a56211d3ac57",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:11:27.034177+00:00",
+          "ended_at": "2026-10-23T07:11:29.113320+00:00",
+          "command": [
+            "build/ui-verify/world_map_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_map_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": false,
+          "checks": 8598,
+          "result": "world map UI: 8598 checks passed; actual profile"
+        },
+        {
+          "journal": "ui7-world-eng-1421027750ac.json",
+          "journal_sha256": "08b72ac587c42d3fd20c933170ce244c49f367592be2a5107e9eb5757ea824be",
+          "log": "ui7-world-eng-1421027750ac.log",
+          "log_sha256": "42b04b292946ac4c44f1755f55194361b9683529daa2229c31455b4325a9e884",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:11:01.940793+00:00",
+          "ended_at": "2026-10-23T07:11:04.922487+00:00",
+          "command": [
+            "build/ui-verify/world_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-eng.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-ui-screenshots-stage7/eng"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_ui_regression",
+          "resource": "feedback-eng.nsp",
+          "screenshots_enabled": true,
+          "checks": 11610,
+          "result": "world UI: 11610 checks passed; actual profile"
+        },
+        {
+          "journal": "ui7-world-zhs-a3fa2033ed7b.json",
+          "journal_sha256": "f34d71fcbd4924a452ba67e4b65d9fee28f71164f3867fedc92e8f5301e1a208",
+          "log": "ui7-world-zhs-a3fa2033ed7b.log",
+          "log_sha256": "42b04b292946ac4c44f1755f55194361b9683529daa2229c31455b4325a9e884",
+          "status": "passed",
+          "returncode": 0,
+          "source_changed": false,
+          "started_at": "2026-10-23T07:11:01.941524+00:00",
+          "ended_at": "2026-10-23T07:11:04.722535+00:00",
+          "command": [
+            "build/ui-verify/world_ui_regression",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-v18/feedback-zhs.nsp",
+            "/workspace/scratch/47a2ee0e8d03/recovered-assets/feedback-ui-screenshots-stage7/zhs"
+          ],
+          "execution_owner": "ui_fidelity",
+          "test_execution": true,
+          "target": "world_ui_regression",
+          "resource": "feedback-zhs.nsp",
+          "screenshots_enabled": true,
+          "checks": 11610,
+          "result": "world UI: 11610 checks passed; actual profile"
+        }
+      ]
+    }
+  ],
+  "stage6_to_stage7_changed_inputs": [
+    {
+      "path": "platform/ndless/main.cpp",
+      "stage6_sha256": "15b286e54ad085645ccbc47d35b39542523b2605ac7fd888375d6c7f17b3101c",
+      "stage7_sha256": "dfdcac19ef9d8ff3684ea0016053426dc1344c4fc5e6218e07407d5aef586500"
+    },
+    {
+      "path": "tests/world_map_ui_regression.cpp",
+      "stage6_sha256": "d32d2cb7099f3ce4d0c84d84a716b7d017995ea38e79cef2b39e6f4ce5975675",
+      "stage7_sha256": "ffa00be916172b663fe1f1e72dbb1bdfaa0a89df0fc198cfbcd25f29843f20f1"
+    },
+    {
+      "path": "tests/world_ui_regression.cpp",
+      "stage6_sha256": "0c6a1d8bec5367e86fbf16048556695669827a985849d1e65b894135e424d694",
+      "stage7_sha256": "9cd31db16bbc4df31c48ffd0903745ab3aa7d6e4aa16ebe0c9e9045fa7a92c3a"
+    }
+  ],
+  "retained_gate_identity": {
+    "stage6": "Banner component, actual bilingual frontend, event/shop, world-event, and synthetic/actual bilingual keyword-tooltip tests executed at 14a20900 only. They are not labeled as rerun at 61970600.",
+    "stage7": "Only corrected world UI and map UI tests were rebuilt and rerun in both actual locales. All src/, include/, third_party/, CMakeLists.txt and the other native test inputs are byte-identical to stage6; only Ndless platform main and these two fixture files differ in the inventoried inputs."
+  },
+  "failure_history": [
+    {
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "journals": [
+        "ui5-world-eng-f5fc187ca884.json",
+        "ui5-world-zhs-1357cc5d23e6.json"
+      ],
+      "cause": "The old global Fast 2× animation clock ended the Enemy banner before the second lethal hit. The assertion was retained; production clock and Fast wait conversion were corrected as a pair in stage6."
+    },
+    {
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "journals": [
+        "ui6-world-eng-8594a1d05484.json",
+        "ui6-world-zhs-d50e207ca58e.json"
+      ],
+      "cause": "New Toasty Mittens fixture requested EndTurn before resolving the actual relic-acquisition continuation. Earlier Fast, command, HP trail, lethal/reflected-hit and summon/slot assertions executed before this failure. It remained a failed suite.",
+      "correction": "Resolve the queued acquisition, assert a settled valid Combat state, then request EndTurn and retain pending-choice/potion-lock assertions; executed at stage7."
+    },
+    {
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "journals": [
+        "ui6-map-eng-e561d08e561f.json"
+      ],
+      "cause": "Advance-only fixture never rendered the actual battle preparation page. Preparation waits for shown=true, so no additional number of advance-only calls could finish the cold-image loading or reach fade cleanup. start() explicitly uses Normal; the preparation and map runtime paths predate this task.",
+      "correction": "Retain the no-render shown=false/cursor=0 checks; render once and drive bounded normal render/advance updates, using Capacity / ImagesPerUpdate + 1 as the bound, then advance(0) clears the already elapsed 800 ms fade. Assert unchanged SaveData and one room entry. Runtime map durations were not changed."
+    },
+    {
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "journals": [
+        "ui6-world-event-eng-2a683468849f.json",
+        "ui6-world-event-exec-bit-a680ee93efa8.json",
+        "ui6-world-event-eng-retry-1d5ef9910fcb.json"
+      ],
+      "cause": "Executable mode was 0644; first launch returned 127 and did not run the test.",
+      "correction": "Recorded chmod 755 operation followed by successful retry, without source edit or relink.",
+      "observed_before_chmod": {
+        "mode": "0644",
+        "bytes": 6404688
+      },
+      "pre_chmod_sha256_available": false,
+      "note": "No before/after binary-hash equality is claimed because no pre-chmod hash was captured."
+    }
+  ],
+  "wall_time_review": {
+    "reference_evidence": "fast-mode-clock-0.17.md",
+    "production_fix": "One real 33ms animation clock; Fast selects explicit command milliseconds. The old global clock multiplier and the compensating fast_ms*2 conversion were removed together.",
+    "complete_world_gate_checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+    "checks": [
+      {
+        "contract": "Shared real clock",
+        "evidence": "Frontend toggles Fast between 66 ms advances: animation 1002→1004, busy/card_fly 10→8 at stage6. Map checks equal 99 ms→3 ticks in both modes at stage7; actual map milliseconds and reticle samples agree."
+      },
+      {
+        "contract": "Enemy banner lifetime",
+        "evidence": "Both modes use chunked App::advance with initial remainder 0. Banner sample kind is Enemy at tick 69 (2277 ms) and None at tick 70 (2310 ms), matching the declared 33 ms quantization of original 2300 ms. This checks scene lifetime; the terminal fade can already quantize to zero visible alpha."
+      },
+      {
+        "contract": "Player banner lifetime",
+        "evidence": "Stage6 component test covers player disappearance at tick 67 (2211ms), overlap with independent enemy instance and clock wrap. Source uses the same real clock with no Fast branch.",
+        "limit": "No separate Normal/Fast equal-time full-player-banner framebuffer comparison or unmodified-engine recording was performed."
+      },
+      {
+        "contract": "First enemy cue",
+        "evidence": "Independent hardcoded command expectations are 38 ticks/1254 ms Normal and 24 ticks/792 ms Fast; source waits are 800+400 and 500+250 ms. Each wait is independently rounded upward by less than 33 ms. App::advance then reaches the scheduled cue without clock multiplication."
+      },
+      {
+        "contract": "Nibbit and Louse waits",
+        "evidence": "Hardcoded occupancy ticks: Nibbit Normal 11/19/26 and Fast 6/9/11; Louse Normal 20/13/23 and Fast 10/7/10; conditional Uncurl Normal 28/Fast 8. Queue handoffs preserve skeleton tail and original conditional animator behavior.",
+        "limit": "Fine command-order assertions sample explicit ticks; the companion App::advance cases establish the shared wall-clock mapping."
+      },
+      {
+        "contract": "Hiss skeleton time",
+        "evidence": "Both modes show the same nonlooping Hiss clip at elapsed 0 and 198 ms after its cue. The 1633 ms authored tail has a 50 tick / 1650 ms deadline. At enemy-banner tick 70 the same clip remains, at 1056 ms Normal and 1518 ms Fast.",
+        "limit": "These are sampled production-frame and deadline checks, not an all-frame original-engine animation comparison."
+      },
+      {
+        "contract": "HP trail hold",
+        "evidence": "Actual scheduled hit starts the health transition. Chunked App::advance holds the trail unchanged at 990 ms and begins decrease at 1023 ms in both modes. Presentation-only advancement retains exact canonical SaveData bytes."
+      },
+      {
+        "contract": "Deferred HUD and input",
+        "evidence": "Complete stage7 checks cover sequential hits, block gain, energy refresh, Osty absorption, lethal/reflected hits, summon/slot replacement, immediate and delayed Toasty choices, potion use/discard guards through keyboard/pointer/action routes, bounded overflow and canonical save convergence."
+      }
+    ]
+  },
+  "limits": [
+    "Only targeted native tests listed here were executed. This report is not a full repository test-suite pass.",
+    "CombatFeedback delays selected HP/block/Osty/energy/intent and enemy-identity display fields. The choice layer, status list, card piles and canonical phase still use current State; this is not a complete phase or full combat replay.",
+    "Original command timing was independently audited for Nibbit/Louse. Other monster actions still use existing clip-duration occupancy fallbacks.",
+    "Native fixture captures are not original-engine pixel-equivalence proof, physical-calculator performance evidence or a percentage fidelity score.",
+    "ARM, WASM, browser, Firebird and startup measurements have separate execution receipts and are not inferred from these native passes."
+  ],
+  "related_validation": [
+    {
+      "file": "validation-event-tooltips-0.17.json",
+      "executed_checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "scope": "Detailed event association and actual bilingual keyword tooltip gate; later report also records four event capture bytes equal to the earlier inspected captures."
+    },
+    {
+      "file": "validation-ui-templates-0.17.json",
+      "executed_checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "scope": "Historical four 17/18 pack binding audits and codec/map-travel observer checks; not relabeled as stage7 execution."
+    },
+    {
+      "file": "validation-rendering-0.17.json",
+      "executed_checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "scope": "Historical actual-card performance A/B and pixel checks; not relabeled as stage7 execution."
+    }
+  ]
+}

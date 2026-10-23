@@ -1,0 +1,1150 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-23T07:40:21.809997+00:00",
+  "reference": "v0.111.0 / 41cef1ea",
+  "integration_checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+  "scope": "Actual platform builds, split/full/legacy Web and historical X11 loading, final Firebird bilingual Continue/save/80-ms Enter exit, and read-only evidence audit. Source snapshots were pushed/read back before long execution.",
+  "artifacts": {
+    "arm": {
+      "file": "nSpire2.tns",
+      "bytes": 974608,
+      "sha256": "6037aaac82d9a70daaad107008079e2bc2ff083624a77ff332f007b6f64c0cab",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec"
+    },
+    "wasm": {
+      "file": "nSpire2.wasm",
+      "bytes": 5384458,
+      "sha256": "6de70bc1842f3f24a80662d401bf3ba0af7bffde41aae9266ad612f37fbfe9d0",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410"
+    },
+    "html": {
+      "file": "nSpire2-bilingual-14a20900.html",
+      "bytes": 131526112,
+      "sha256": "0aceb2da5a4791da4fd82ad6865077465a86e455961694a26dbc812b350b6057",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410"
+    }
+  },
+  "packaging_identity_note": "The executed HTML identity is before the later NOTICE-only footer repack. A delivery receipt must separately identify that packaging checkpoint and prove byte equality outside the attribution footer. Web execution remains 14a20900.",
+  "arm_allocation_bytes": 16507640,
+  "arm_16mib_margin_bytes": 269576,
+  "wasm_memory_bytes": 16777216,
+  "web_input_equivalence": {
+    "file": "web-input-equivalence-61970600.json",
+    "bytes": 53317,
+    "sha256": "7e9ff90fe88d8b21ec5ed67afade3e027cd5e908c60a53e4905decbf0eb8721e",
+    "execution_checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+    "integration_checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+    "compared_inputs": 305,
+    "byte_and_mode_identical": true,
+    "embedded_wasm_common_and_both_locales_exact": true,
+    "scope": "All src/include/third_party/platform Web compilation inputs plus build/split tools, locale tables, NOTICE and licenses; conservative superset at the two stated checkpoints."
+  },
+  "resources": {
+    "conversion_checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+    "format": "NSP2/18 through NSC1/NSL1 bounded virtual ranges",
+    "common": {
+      "file": "nSpire2.common.tns",
+      "bytes": 86870047,
+      "sha256": "1b4770fbf968ae27ff1316cb6422e541da05bd70569bdfd55a4ddb3fcddd746f"
+    },
+    "english": {
+      "file": "nSpire2.eng.tns",
+      "bytes": 1794081,
+      "sha256": "ba561a000e0ca7719735100ab9583702da4d25ae8fde115a81bef50a4c65f4e3"
+    },
+    "chinese": {
+      "file": "nSpire2.zhs.tns",
+      "bytes": 4569759,
+      "sha256": "177a613b1e8961d62740fa5887f7a8fa8b9c6079c889df84b40cd93dcb279b82"
+    },
+    "total_bytes": 93233887,
+    "two_full_packs_bytes": 180103614,
+    "saved_bytes": 86869727,
+    "saved_percent": 48.2331948097388,
+    "virtual_full_streams_byte_identical": true,
+    "artwork_reencoded_for_split": false,
+    "full_integrity_and_structural_startup_validation_retained": true,
+    "metadata_open_bytes": 212,
+    "metadata_check_is_not_payload_validation": true,
+    "receipt": {
+      "file": "split-receipt.json",
+      "bytes": 1631,
+      "sha256": "27f68c0a00dc6c24c90e611929df5e616c59ae534eba36fd3160521f50a2b517"
+    }
+  },
+  "wasm_execution": {
+    "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+    "report": {
+      "file": "wasm-split-14a20900.json",
+      "bytes": 4140,
+      "sha256": "7dd8d07118f29c49691803b7a89f625ef52ab9e38e617c8860dfc88d9a210e2f"
+    },
+    "exact_split_full_frame_pairs": 10,
+    "pairs_per_language": 5,
+    "legacy_v17_languages_opened": [
+      "eng",
+      "zhs"
+    ],
+    "rejection_cases": [
+      {
+        "kind": "wrong_requested_language",
+        "rejected": true,
+        "reads": {
+          "calls": 2,
+          "bytes": 160,
+          "common_bytes": 64,
+          "locale_bytes": 96
+        }
+      },
+      {
+        "kind": "corrupt_common_payload",
+        "rejected": true,
+        "reads": {
+          "calls": 1361,
+          "bytes": 88668236,
+          "common_bytes": 86870047,
+          "locale_bytes": 1798189
+        }
+      },
+      {
+        "kind": "corrupt_locale_payload",
+        "rejected": true,
+        "reads": {
+          "calls": 1361,
+          "bytes": 88668236,
+          "common_bytes": 86870047,
+          "locale_bytes": 1798189
+        }
+      }
+    ],
+    "timing_limit": "Node/host samples are not physical-device or cold-start performance."
+  },
+  "browser_execution": {
+    "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+    "browser": "Chromium 151.0.7922.34",
+    "report": {
+      "file": "browser-14a20900.json",
+      "bytes": 9882,
+      "sha256": "965e9d75c0f93c0e373290e061d5c8144d6fa413eb1fd3182253c16be24bce6f"
+    },
+    "steps": [
+      "fresh_english_start",
+      "switch_to_chinese",
+      "remembered_chinese_after_reload",
+      "compendium_canvas_input",
+      "cancel_language_restart"
+    ],
+    "page_errors": 0,
+    "canvas_size": [
+      320,
+      240
+    ],
+    "screenshots": [
+      {
+        "file": "browser-14a20900-eng.png",
+        "bytes": 68462,
+        "sha256": "146806ddd70443b70fbb616788056ade372b40d3ccc3ebf0581bb671976f5b8e"
+      },
+      {
+        "file": "browser-14a20900-zhs.png",
+        "bytes": 67674,
+        "sha256": "eebf2844e222a0b27d4a380453b1a5ca9941d40dfcc8048f7d4fccef6c74d54b"
+      },
+      {
+        "file": "browser-14a20900-collection.png",
+        "bytes": 68456,
+        "sha256": "feae9ba859fb28fafe73258647fb0578102dda73a03d1495743826109ac99cb5"
+      }
+    ]
+  },
+  "historical_x11_execution": {
+    "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+    "compiler": "Clang 18",
+    "mode": "Actual X11 executable with headless FILE callbacks and App::init/render",
+    "exact_split_full_frame_pairs": 6,
+    "legacy_v17_languages_opened": [
+      "eng",
+      "zhs"
+    ],
+    "wrong_language_rejected": true,
+    "single_language_auto_selection": true,
+    "headless_preference_writes": 0,
+    "report": {
+      "file": "x11-split-feedback-checkpoint-573cb816.json",
+      "bytes": 5800,
+      "sha256": "26f4ee0ed35072d32c3240b6f4691b9f2195800e54332b4bb91de83e1c728d8f"
+    },
+    "related_regressions": {
+      "boot_locale_checks": 493,
+      "resource_source_checks": 8606,
+      "split_reader_checks": 369
+    },
+    "qualification": "Historical actual execution, not a rebuild or final-source equivalence proof for X11."
+  },
+  "firebird": {
+    "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+    "upstream_commit": "b10f3b51a9ab8e27d2703444b5e6bd278d4c5e6e",
+    "gif_h_commit": "8cb648fb02d3f18fb7f325cbe71bbb0a56a0bbe7",
+    "core_source_files_compared_unchanged": 78,
+    "private_controller": {
+      "file": "firebird-control.cpp",
+      "bytes": 7621,
+      "sha256": "98e45e2171f097eb87914570702f4af920755df4977f5c8dc4ffbe3ac183ad02"
+    },
+    "controller_binary": {
+      "file": "firebird-control",
+      "bytes": 1936736,
+      "sha256": "bac47ad315a4ebe1fbd6a4c1de44261e7ef48461b5683966cd44d2ed27d8c32b"
+    },
+    "platform": "CX II CAS",
+    "product": "0x1c0",
+    "os_version": "6.4.0.74",
+    "ndless_revision": 2022,
+    "environment": "Freshly rebooted isolated work flash, visibly installed Ndless r2022, matching newly created RAM snapshot. Final launcher uploaded over emulated USB. Original user images were read only.",
+    "immutable_original_inputs": [
+      {
+        "file": "CXII",
+        "bytes": 138412032,
+        "sha256": "44eb9c5e3f8bb4bdd67b869e03de8dc0cc1f25162014d0666ca2cb4ee0dec3e7",
+        "unchanged_after_final_execution": true
+      },
+      {
+        "file": "injected_btrom.img.tns",
+        "bytes": 524288,
+        "sha256": "74227e458bb5c17f9028ac3d54e1d1726f3148601fb2fb24eacc2c294d5c9838",
+        "unchanged_after_final_execution": true
+      }
+    ],
+    "launcher_complete_usb_readback": {
+      "file": "launcher-usb-readback.tns",
+      "bytes": 974608,
+      "sha256": "6037aaac82d9a70daaad107008079e2bc2ff083624a77ff332f007b6f64c0cab",
+      "byte_identical_to_built_arm": true
+    },
+    "physical_calculator_test": false,
+    "first_unknown_language_selector": {
+      "file": "first-language-choice.png",
+      "bytes": 2149,
+      "sha256": "41519191d7b65e9a7f6d69664ccf967bed3fc68c86aeb944583b80121412eb5d",
+      "observation": "Bilingual selector before choosing the first language."
+    },
+    "loading_and_language_evidence": [
+      {
+        "file": "zhs-loading-2s.png",
+        "bytes": 1763,
+        "sha256": "2aa2f2625cb167a74982c36c439b762c59908a70af02e0152e332aba34c8ae1a",
+        "observation": "Chinese verification message during first final-runtime loading."
+      },
+      {
+        "file": "zhs-loading-47s.png",
+        "bytes": 1717,
+        "sha256": "42d05ca5131332cab6936316666092bfbca68f677018213dc8cb9e71fff097a3",
+        "observation": "Chinese animation-index loading message."
+      },
+      {
+        "file": "zhs-loading-67s.png",
+        "bytes": 45690,
+        "sha256": "115d34689bf40c8c8b105580ad22d57264e25885c0dc077a324c14255e0c9648",
+        "observation": "Chinese title after successful resource validation."
+      },
+      {
+        "file": "eng-switch-selected.png",
+        "bytes": 2136,
+        "sha256": "e0e233cfd296a1cc63e1c05df3e3be0fce286fa9f91f66b2d5c3339560c73cdc",
+        "observation": "English explicitly selected; automatic start cancelled until confirmation."
+      },
+      {
+        "file": "eng-confirmed-loading-2s.png",
+        "bytes": 1523,
+        "sha256": "86a9892439a0d576306ea72861befc657a22a72b65c2040d341510902d84284b",
+        "observation": "English VERIFYING DATA, stage 2/8."
+      },
+      {
+        "file": "eng-confirmed-loading-47s.png",
+        "bytes": 1541,
+        "sha256": "7f72484e77e72a9c1f5b6836cefd9676bad8ad2d1dd6af762dcf5b142733c4aa",
+        "observation": "English ANIMATION INDEX, stage 5/8."
+      },
+      {
+        "file": "eng-confirmed-loading-67s.png",
+        "bytes": 49000,
+        "sha256": "e0d6a5ca0cc8a95b7608b2c6ee91282a80f85338d133db675614af2ff14b3015",
+        "observation": "English title with Continue and the existing Ironclad floor-1 save."
+      }
+    ],
+    "first_enter_regression": {
+      "confirm_key": "ENTER",
+      "held_ms": 80,
+      "release_observation_ms": [
+        2000,
+        7000
+      ],
+      "reopened": false,
+      "alternate_key_substitution": false,
+      "held": {
+        "file": "enter-exit-held-80ms.png",
+        "bytes": 27676,
+        "sha256": "c2b7bdd6cba30d851d9413a4aeb5d31ab70691eb1068905c06f39df30df945c2",
+        "observation": "Quit dialog still owns foreground while ENTER is held."
+      },
+      "released": {
+        "file": "enter-exit-release-7s.png",
+        "bytes": 6915,
+        "sha256": "b1fdaad9f82721b5912bf6ba7d46693264db3316ca2bcc404095a552db19daa3",
+        "observation": "Stable OS document browser seven simulated seconds after release."
+      },
+      "journal_status": "failed",
+      "journal": "final-firebird-runtime-d1c7b32eed5d.json",
+      "qualification": "The first two USB reads after the first final-runtime exit stalled and were explicitly cancelled. A subsequent reset and directory read enabled successful normal USB exports. This journal stays failed although its Enter regression and exported startup sample are valid observations."
+    },
+    "bilingual_continue": {
+      "journal": "final-firebird-save-continue-0158306e39a1.json",
+      "journal_status": "passed",
+      "normal_usb_readback": true,
+      "forced_process_termination": false,
+      "canonical_save_audit_journal": "final-bilingual-usb-save-audit-25da23a14cb3.json",
+      "save_audit": {
+        "file": "save-roundtrip-61970600.json",
+        "bytes": 2282,
+        "sha256": "97b148906fc2b7e379d4a026146c89ea9cc20d1943285aa5a3d87319e422bd31"
+      },
+      "save_files": [
+        {
+          "file": "new-run-zhs.sav.tns",
+          "bytes": 230088,
+          "sha256": "9965d829dd1231146cdc7ee75c1d0e6a0ce07556dc1819b4f9d3ed0c46911d4c",
+          "exact_to_first_save": true,
+          "decoded_state": {
+            "bytes": 230088,
+            "save_version": 15,
+            "canonical_exact": true,
+            "valid": true,
+            "character": 0,
+            "seed": 3050204398,
+            "seed_text": "EE262525",
+            "run_seed": "16363057467654614780",
+            "phase": 10,
+            "hp": 80,
+            "max_hp": 80,
+            "gold": 99,
+            "floor": 1,
+            "deck_count": 10,
+            "event": 26,
+            "page": 0
+          }
+        },
+        {
+          "file": "clean-continued-zhs.sav.tns",
+          "bytes": 230088,
+          "sha256": "9965d829dd1231146cdc7ee75c1d0e6a0ce07556dc1819b4f9d3ed0c46911d4c",
+          "exact_to_first_save": true,
+          "decoded_state": {
+            "bytes": 230088,
+            "save_version": 15,
+            "canonical_exact": true,
+            "valid": true,
+            "character": 0,
+            "seed": 3050204398,
+            "seed_text": "EE262525",
+            "run_seed": "16363057467654614780",
+            "phase": 10,
+            "hp": 80,
+            "max_hp": 80,
+            "gold": 99,
+            "floor": 1,
+            "deck_count": 10,
+            "event": 26,
+            "page": 0
+          }
+        },
+        {
+          "file": "clean-continued-eng.sav.tns",
+          "bytes": 230088,
+          "sha256": "9965d829dd1231146cdc7ee75c1d0e6a0ce07556dc1819b4f9d3ed0c46911d4c",
+          "exact_to_first_save": true,
+          "decoded_state": {
+            "bytes": 230088,
+            "save_version": 15,
+            "canonical_exact": true,
+            "valid": true,
+            "character": 0,
+            "seed": 3050204398,
+            "seed_text": "EE262525",
+            "run_seed": "16363057467654614780",
+            "phase": 10,
+            "hp": 80,
+            "max_hp": 80,
+            "gold": 99,
+            "floor": 1,
+            "deck_count": 10,
+            "event": 26,
+            "page": 0
+          }
+        }
+      ],
+      "exact_save_identity_across_languages": true,
+      "preference_exports": [
+        {
+          "file": "first-language.tns",
+          "bytes": 8,
+          "sha256": "6bf6b7b55c4e63329a43ea905c403e3cc06ce0e57c0945356d87d91a89885022"
+        },
+        {
+          "file": "final-language.tns",
+          "bytes": 8,
+          "sha256": "92548d7c08d72ad8d5f89897b1f1dcf172a86fde51a0caf9335ad469ae8ddafa"
+        }
+      ],
+      "preference_contents": {
+        "first": "NSL1zhs\n",
+        "last": "NSL1eng\n"
+      },
+      "clean_chinese": {
+        "route": "Continue -> same Neow event -> S save -> pause Save and Quit -> title Quit/Yes -> ENTER 80 ms -> OS -> normal USB export",
+        "checkpoint_reload_O_used": false,
+        "external_save_edit_used": false,
+        "release_observation_ms": 7000,
+        "screenshots": [
+          {
+            "file": "zhs-clean-continued-event.png",
+            "bytes": 62984,
+            "sha256": "d38c14231f18534b4fa08b2399cc70286021ee214557c2259523b9b1ecdd538e",
+            "observation": "Same three initial Neow choices; Ironclad 80/80 HP and 99 gold."
+          },
+          {
+            "file": "zhs-clean-save-selected.png",
+            "bytes": 38545,
+            "sha256": "0d9207dfca5cd6f6db9ee82e1def72b78a9d7fb1ee0069265e48a88794193f72",
+            "observation": "Save and Quit selected."
+          },
+          {
+            "file": "zhs-clean-confirm-yes.png",
+            "bytes": 28006,
+            "sha256": "e08559a7de193ab737a9030299475870a2664e48baed5e99e452d3f81911bebd",
+            "observation": "Yes selected before 80-ms ENTER."
+          },
+          {
+            "file": "zhs-clean-exit-os.png",
+            "bytes": 6965,
+            "sha256": "b3d16dfd840400ef9b7e3030e2f45b08d318d8444f72928d956c43ef0d2d57ae",
+            "observation": "OS document browser seven simulated seconds after ENTER release."
+          }
+        ]
+      },
+      "clean_english": {
+        "route": "Explicit English selection -> Continue -> same Neow event -> S save -> pause Save and Quit -> title Quit/Yes -> ENTER 80 ms -> OS -> normal USB export",
+        "checkpoint_reload_O_used": false,
+        "external_save_edit_used": false,
+        "release_observation_ms": 7000,
+        "screenshots": [
+          {
+            "file": "eng-continued-event.png",
+            "bytes": 61352,
+            "sha256": "bc4a8fdd51fa4e06cb28592b82ca63d8ed21f53a6f1423ea789e0ea76c17d044",
+            "observation": "Same Neow choices in English; Ironclad 80/80 HP and 99 gold."
+          },
+          {
+            "file": "eng-save-exit-focus-confirmed.png",
+            "bytes": 37973,
+            "sha256": "026a25778bed6f58a922ffbe012ab2a02e86c3da16277529ffb30144126979dc",
+            "observation": "Save and Quit visibly selected."
+          },
+          {
+            "file": "eng-confirm-yes.png",
+            "bytes": 26777,
+            "sha256": "be9a7a2253e73fb2f679de87c12e5c7ecc598bf88228b2c33908295faacb6e3a",
+            "observation": "Yes selected before final confirmation."
+          },
+          {
+            "file": "eng-exit-held80.png",
+            "bytes": 26777,
+            "sha256": "be9a7a2253e73fb2f679de87c12e5c7ecc598bf88228b2c33908295faacb6e3a",
+            "observation": "Foreground remains owned by game while ENTER is held 80 ms."
+          },
+          {
+            "file": "eng-exit-os.png",
+            "bytes": 6965,
+            "sha256": "b3d16dfd840400ef9b7e3030e2f45b08d318d8444f72928d956c43ef0d2d57ae",
+            "observation": "OS document browser seven simulated seconds after release; PC a40011f4."
+          }
+        ]
+      }
+    },
+    "excluded_attempts": [
+      "An earlier Chinese Continue route used ambiguous 150-ms menu input, selected an event option and reached the map. The file named zhs-continue-exit-os is that map, not an exit. O loaded the existing checkpoint before a later successful save/export. This recovery route is kept separate from both clean direct routes.",
+      "An early 6 press during the initial released-key gate did not select English. Files named eng-loading-* from that invocation are Chinese and are excluded from English proof; eng-confirmed-loading-* are the explicitly selected English invocation.",
+      "Menu navigation was checked visually. A long Up hold in the final English pause menu repeated to Compendium; two observed 180-ms Down steps selected Save and Quit before confirmation. The final Quit trigger remained ENTER 80 ms.",
+      "Missed or repeated navigation observations do not identify an OS input-queue root cause. No save bytes were edited to satisfy the acceptance gate."
+    ]
+  },
+  "startup_observation": {
+    "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+    "profile": {
+      "file": "first-zhs-usb.perf.json",
+      "bytes": 4326,
+      "sha256": "23a9d61091dc3ec4c3b28a815bbbd69480ec6a7d5b972e92cc9644612dd15ad1"
+    },
+    "independent_flash_check": {
+      "file": "first-zhs-flash-check.perf.json",
+      "bytes": 4325,
+      "sha256": "1d49b90a6aeee30f90aac71aecaee43585a07ae91cb753b5baaaa3943394b4bb",
+      "parsed_json_identical": true,
+      "raw_file_identical": false,
+      "raw_difference": "USB export has one extra trailing newline"
+    },
+    "scope": "selected_resource_validation_and_app_init",
+    "clock": "foreground_SP804",
+    "clock_hz": 32768,
+    "startup_ticks": 1653887,
+    "startup_seconds": 50.472625732421875,
+    "stage_metrics": {
+      "header": {
+        "ticks": 121,
+        "seconds": 0.003692626953125,
+        "share_of_startup_percent": 0.007316098379151659
+      },
+      "integrity": {
+        "ticks": 755492,
+        "seconds": 23.0557861328125,
+        "share_of_startup_percent": 45.67978344348798
+      },
+      "directory": {
+        "ticks": 7215,
+        "seconds": 0.220184326171875,
+        "share_of_startup_percent": 0.43624503971553075
+      },
+      "images": {
+        "ticks": 408393,
+        "seconds": 12.463165283203125,
+        "share_of_startup_percent": 24.692920374850278
+      },
+      "tile_index": {
+        "ticks": 438325,
+        "seconds": 13.376617431640625,
+        "share_of_startup_percent": 26.502717537534306
+      },
+      "glyphs": {
+        "ticks": 28527,
+        "seconds": 0.870574951171875,
+        "share_of_startup_percent": 1.7248457724137138
+      },
+      "strings": {
+        "ticks": 3749,
+        "seconds": 0.114410400390625,
+        "share_of_startup_percent": 0.22667812250776503
+      },
+      "ready": {
+        "ticks": 6080,
+        "seconds": 0.185546875,
+        "share_of_startup_percent": 0.36761882764662884
+      }
+    },
+    "first_render_ticks_excluded_from_startup": 13494,
+    "first_present_ticks_excluded_from_startup": 7,
+    "whole_invocation_file_callback_totals": {
+      "ticks": 1281778,
+      "calls": 10133,
+      "bytes_requested": 143205501,
+      "failures": 0,
+      "seeks": 6283
+    },
+    "per_stage_read_counts_or_bytes_measured": false,
+    "boundary": "Starts after selected-language file opens and selector input wait, before file_source length lookup and split.open; ends after App::init and the changed-language preference write. Phase intervals include progress rendering. It excludes Ndless/Zehn loading, pre-selection opens, user wait and first game render/present.",
+    "cache_boundary": "First final-launcher invocation in the fresh OS/installer state. Resources were already transferred over emulated USB; host and OS caches were not flushed. This is not physical cold boot.",
+    "later_warm_invocations": [
+      {
+        "file": "new-run-zhs.perf.json",
+        "bytes": 4462,
+        "sha256": "4b03cad1b5b77c78fc71e25718c6881739b5b9ceafe846025c78bbbbfb3aa1ef",
+        "startup_ticks": 1651759,
+        "startup_seconds": 50.407684326171875,
+        "resource_failures": 0,
+        "first_invocation": false
+      },
+      {
+        "file": "continued-zhs.perf.json",
+        "bytes": 4483,
+        "sha256": "72cd86ace865b2db61e06ec82df200756faa3495fd2d8f58d2daa40d9759af84",
+        "startup_ticks": 1656434,
+        "startup_seconds": 50.55035400390625,
+        "resource_failures": 0,
+        "first_invocation": false
+      },
+      {
+        "file": "clean-continued-zhs.perf.json",
+        "bytes": 4426,
+        "sha256": "1951a4c395af95f96319e84bc7f311f9e3238129deb296abd025d7a57c2251a6",
+        "startup_ticks": 1656431,
+        "startup_seconds": 50.550262451171875,
+        "resource_failures": 0,
+        "first_invocation": false
+      },
+      {
+        "file": "clean-continued-eng.perf.json",
+        "bytes": 4399,
+        "sha256": "68c34bbd652ae64e4ece54b5e5a1543301590c09dbbdc44b79cecc768b9d0a53",
+        "startup_ticks": 1602647,
+        "startup_seconds": 48.908905029296875,
+        "resource_failures": 0,
+        "first_invocation": false
+      }
+    ],
+    "policy": "Full FNV and startup structural validation remain enabled. Common SHA labels alone are metadata comparisons. Existing lazy checks do not independently cover all retained LZ4, text and glyph bytes. Sequential-read reuse is evaluated follow-up work, not an implemented speedup or a disabled-validation decision.",
+    "evaluation_document": "rendering-performance-0.17.md"
+  },
+  "journal_audit": {
+    "count": 39,
+    "statuses": {
+      "passed": 31,
+      "failed": 7,
+      "timed_out": 1
+    },
+    "every_log_sha256_verified": true,
+    "all_source_inventories_unchanged": true,
+    "scope": "All platform, split, emulator preparation and private exit investigation journals from this agent at the listed frozen checkpoints, including historical failures. Native UI/template journals have separate receipts."
+  },
+  "journals": [
+    {
+      "file": "feedback-v18-split-baa15515e4f4.json",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042",
+      "journal_sha256": "9de85925d7e85cbce041530663ec72168ca9d428629d1a872e209aa7f16de126",
+      "log": "feedback-v18-split-baa15515e4f4.log",
+      "log_sha256": "8db89df6932756c9ad22b55490c0327d3a363991a9ac1fa7c9b2a79e36c62344",
+      "started_at": "2026-10-23T06:12:48.601661+00:00",
+      "ended_at": "2026-10-23T06:13:26.421547+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "split-v18-byte-readback-82157bc8a9a4.json",
+      "checkpoint": "069f6d51f37aef3f31d11a6282bd02a61d7afdef",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "3570ce1a075ffe39be0c3948ef9ae660a3a7f3bd29a6c2ab3ea983dad6f25042",
+      "journal_sha256": "51a73c114bfc7bcd551a5d8b1ddb9778b40d3967ecfab405442c540969aa3055",
+      "log": "split-v18-byte-readback-82157bc8a9a4.log",
+      "log_sha256": "2d79349bba4877e1f0385e7925fd6d22116545c8cc705c24105643b0f10dfd20",
+      "started_at": "2026-10-23T06:21:18.521858+00:00",
+      "ended_at": "2026-10-23T06:21:19.442368+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "firebird-control-build-88f97b0ea7cd.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "b75fd19da82e42d79a672c5358c68639d5c08fef3a931860ffd1575b9d2a2eb8",
+      "log": "firebird-control-build-88f97b0ea7cd.log",
+      "log_sha256": "1cb71b11757fcb18e8cf05e951ae590ad3a05b806b141b0a2b336c1060993179",
+      "started_at": "2026-10-23T06:36:32.251401+00:00",
+      "ended_at": "2026-10-23T06:36:32.871562+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "firebird-control-build-90e93bb8b4f9.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "bb3bb564b02543cd1fbf53b29c32b1aab64d7d5fd5691df69173131954b39d4c",
+      "log": "firebird-control-build-90e93bb8b4f9.log",
+      "log_sha256": "a2fe20760c0fbede56e04872239ca0f615b925eae5c4d6041642b1fa6fe813cb",
+      "started_at": "2026-10-23T06:34:18.594474+00:00",
+      "ended_at": "2026-10-23T06:34:18.866532+00:00",
+      "qualification": "Private controller referred to an unavailable lcd object; corrected to the public lcd_read_word API before the successful controller build."
+    },
+    {
+      "file": "firebird-control-usb-reset-build-c907b34ac905.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "2f4dd780f2480d39778f60a9a1dfc6835a7ae8f8cb25c42b73806f4c3ffcd9fd",
+      "log": "firebird-control-usb-reset-build-c907b34ac905.log",
+      "log_sha256": "1cb71b11757fcb18e8cf05e951ae590ad3a05b806b141b0a2b336c1060993179",
+      "started_at": "2026-10-23T06:38:18.826293+00:00",
+      "ended_at": "2026-10-23T06:38:19.498603+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "firebird-environment-ready-04b81bbda362.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "d5e6aa0a17945bc092b83d57a6fca10cbf5bd942497acacd6ffba3f976fe6724",
+      "log": "firebird-environment-ready-04b81bbda362.log",
+      "log_sha256": "53727cee3ae57ee81078a4ec0d6cd568f861c8b9cefbe37313421a772fbb9cd8",
+      "started_at": "2026-10-23T06:36:45.263388+00:00",
+      "ended_at": "2026-10-23T06:38:18.381345+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "firebird-upstream-build-33430f73efd0.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "763465b00bc12c373462900379c9a6d72c13b564f33b32a9ebfc65985c6e99d4",
+      "log": "firebird-upstream-build-33430f73efd0.log",
+      "log_sha256": "028272b156c80b6bb2f326505575765193789c3717a6075cbd34732f8b5145c9",
+      "started_at": "2026-10-23T06:31:22.271953+00:00",
+      "ended_at": "2026-10-23T06:31:25.357190+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "firebird-usb-staging-10ceb6b6ff37.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "0505f97dcc78b7f9bba105d5ea8ae6989adc94220ac9eac83305e5fd7c142fa9",
+      "log": "firebird-usb-staging-10ceb6b6ff37.log",
+      "log_sha256": "1767f2e83e53c0a414aeb08d34c439cd77080af4f524fe079dd8124ef4c59c03",
+      "started_at": "2026-10-23T06:38:34.017806+00:00",
+      "ended_at": "2026-10-23T06:41:26.643700+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-arm-build-f03586bf892e.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "02e6bcf36cd569124e3528d336889648a43fdc08c05203f9b8dbbce33bae833c",
+      "log": "platform-arm-build-f03586bf892e.log",
+      "log_sha256": "12cecf66d77628222ca114121eff5ee776fcf17d81b82d84f010da85e4b97ba9",
+      "started_at": "2026-10-23T06:23:50.320052+00:00",
+      "ended_at": "2026-10-23T06:24:20.137706+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-bilingual-html-f1d77d71f199.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "d94975faf79e7464e9b5b69330a58999713090d5439f5dadb5fbc3cec6cc1f27",
+      "log": "platform-bilingual-html-f1d77d71f199.log",
+      "log_sha256": "dca8b92e6a3adfb369b06994b163d82ba093e38d331bff57d89220a994336611",
+      "started_at": "2026-10-23T06:26:02.511646+00:00",
+      "ended_at": "2026-10-23T06:26:20.398963+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-offline-browser-e3dd5ab1a762.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "2c9e7a706859ee404c2bd9239dbd0dac5c4c46fa2a46243253c222e6df965da3",
+      "log": "platform-offline-browser-e3dd5ab1a762.log",
+      "log_sha256": "2b1af452e47f3a8b72d8474a4e57036caa132caea369f676b2438e70d8af8ddb",
+      "started_at": "2026-10-23T06:27:22.311501+00:00",
+      "ended_at": "2026-10-23T06:27:35.244047+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-wasm-build-9361fb0aa446.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "bd2eeaeaf4ff390148bf97fd634e2127521f0b48c1899e9c01a810b9f30f63ac",
+      "log": "platform-wasm-build-9361fb0aa446.log",
+      "log_sha256": "f543cf22c2f2f03f2054b1d2672f99c52ba5906b48899914a90584bcc210968f",
+      "started_at": "2026-10-23T06:23:50.334165+00:00",
+      "ended_at": "2026-10-23T06:24:21.543305+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-wasm-split-runtime-5be7f182f3b3.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "ecdf91979a93db261ccc08b8389ffdbac2a6f5510d72bf02da3aba60d1771b89",
+      "log": "platform-wasm-split-runtime-5be7f182f3b3.log",
+      "log_sha256": "b77ac2906eb74690f190de18a1ee965a92d772292a3026b2bac79e242f2eea5d",
+      "started_at": "2026-10-23T06:25:38.394848+00:00",
+      "ended_at": "2026-10-23T06:25:44.443541+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-x11-build-0eacc605ddea.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "4fdd30bf3bea74d51fdccb30bfd4fc59438ba202280bba49bb00b1100c35bd63",
+      "log": "platform-x11-build-0eacc605ddea.log",
+      "log_sha256": "99acb2ee11bb4dacacaf747e6d34cade19b8640253ec79eb452373d2cf0270af",
+      "started_at": "2026-10-23T06:23:50.316508+00:00",
+      "ended_at": "2026-10-23T06:24:08.431890+00:00",
+      "qualification": "GCC rejected the HoverTipList brace assignment; historical Clang X11 passed. Explicit initialization was fixed before the later source checkpoint."
+    },
+    {
+      "file": "platform-x11-clang-build-2155a893826b.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "40522ebc501d27b6511c856cfac687ffcc3e77002ea3cfa2e092993dcbc19e1e",
+      "log": "platform-x11-clang-build-2155a893826b.log",
+      "log_sha256": "822d849f18b568e227aa033b1a4b7ff98aad5a0c267f024fe67b95903e6ede3b",
+      "started_at": "2026-10-23T06:27:56.658676+00:00",
+      "ended_at": "2026-10-23T06:28:15.759811+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "platform-x11-split-runtime-3dcf29b170ad.json",
+      "checkpoint": "573cb816bbf6b57c8d677239060414c9fc124f72",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "780c4e6101fb40a0123265299731376a685abcefdb190420bae4d2ae0f520a35",
+      "journal_sha256": "ce357517f3e707116520a5d5b0958363c880e84b5bef523c988d4a9716d542ce",
+      "log": "platform-x11-split-runtime-3dcf29b170ad.log",
+      "log_sha256": "b70c95dd48764085b900de1e2edde07fd53cc6615b09b5823b51feef44fd0b52",
+      "started_at": "2026-10-23T06:28:47.507670+00:00",
+      "ended_at": "2026-10-23T06:28:59.125839+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "final-bilingual-html-334a1d303f5b.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "88a9aba7743faf2e5cc8027c9f5261cdf069a7f3d8ff182a5dc8d92d10c3c69d",
+      "log": "final-bilingual-html-334a1d303f5b.log",
+      "log_sha256": "f515ceafaba3ca9e7acb5d2438e4e2ba773a8cd4767f0673ecc4d4aed8039a0c",
+      "started_at": "2026-10-23T06:44:22.786209+00:00",
+      "ended_at": "2026-10-23T06:44:43.654644+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "final-firebird-runtime-f09a23c5176d.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "timed_out",
+      "returncode": 124,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "a32201071554415cf1ede1d009a1d4154aafb1be3c18a1ff569e0178daf0227a",
+      "log": "final-firebird-runtime-f09a23c5176d.log",
+      "log_sha256": "c8a3629401b3a562f87dbb09c6a2dd290c7e64704265efb4c0e8916233c5e6ef",
+      "started_at": "2026-10-23T06:43:43.499902+00:00",
+      "ended_at": "2026-10-23T06:53:43.536202+00:00",
+      "qualification": "Candidate interactive controller exceeded its 600-second wall-clock journal timeout. Candidate Enter-80-ms relaunch observation remains a failed regression; key-5 exit was only a control."
+    },
+    {
+      "file": "final-platform-arm-build-b140b4ebd6e1.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "143786d042e0539d632ec9ff8bd9fd22790111c8df3779ffc85ad2603168867f",
+      "log": "final-platform-arm-build-b140b4ebd6e1.log",
+      "log_sha256": "7efc2765babd15bd40cf93b179f1f7c8eab81ad90eb88e256f1cfdb3b8f83f7e",
+      "started_at": "2026-10-23T06:42:57.357161+00:00",
+      "ended_at": "2026-10-23T06:43:27.627005+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "final-platform-wasm-build-85afc24cad31.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "1a4b4e3a5eb62436a20a2d6d68da709d70779ae72686f8e8015ce972b80d45a3",
+      "log": "final-platform-wasm-build-85afc24cad31.log",
+      "log_sha256": "f126f5c5c060accc61d78260cf3090abe0d5cf7474f88c299ec68b62a84115ec",
+      "started_at": "2026-10-23T06:43:42.072283+00:00",
+      "ended_at": "2026-10-23T06:44:12.077903+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "final-wasm-split-runtime-faebf9048a74.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "54f86994eb9da1f6d3ccd1579f5673e0da4c1e721a8a00af11730d9fe733ec2f",
+      "log": "final-wasm-split-runtime-faebf9048a74.log",
+      "log_sha256": "3fc9fff85cf60fc7fb456c813216249813b0dd7c9a9f27faebbc398e6705b402",
+      "started_at": "2026-10-23T06:44:36.513794+00:00",
+      "ended_at": "2026-10-23T06:44:43.475903+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "private-firebird-event-readback-4ba834e10050.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "failed",
+      "returncode": 4,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "d374b873a71a8db64f38422de032b8ff61fdc67ace43f4f8b41379d5ba3dafb9",
+      "log": "private-firebird-event-readback-4ba834e10050.log",
+      "log_sha256": "9f1f774581530a71423c82eda879a7dad186d3e44f2f84bb5416c39cd168d820",
+      "started_at": "2026-10-23T06:59:52.657316+00:00",
+      "ended_at": "2026-10-23T07:06:10.722387+00:00",
+      "qualification": "A further private probe-output request was cancelled. No successful get_event nonblocking-drain claim is made and that syscall is absent from the product fix."
+    },
+    {
+      "file": "private-firebird-exit-api-1882447cacb6.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "failed",
+      "returncode": 4,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "8630cf651ba5dcd1003ba5db465db81ec20cf5fd06392ed545459fa4990800bf",
+      "log": "private-firebird-exit-api-1882447cacb6.log",
+      "log_sha256": "54949c26887e2b9f5daa6ee83eee859bfc7cc3f2010b2c5254ffc52921a65c8d",
+      "started_at": "2026-10-23T06:57:01.171943+00:00",
+      "ended_at": "2026-10-23T06:59:52.363083+00:00",
+      "qualification": "Missing private probe output caused a pending USB request to be explicitly cancelled. Visible OS display did not establish normal probe return."
+    },
+    {
+      "file": "private-ndless-event-api-check-d94ef67b8e0d.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "failed",
+      "returncode": 1,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "cc2bf14a440719f8ff92ecab8c8b325313bd55f9baa7a164fd8367503b9ec0c0",
+      "log": "private-ndless-event-api-check-d94ef67b8e0d.log",
+      "log_sha256": "b1daa3e2e67e92b7d6b7c95dd2cec0a9d0e4832121171d3ce6679939379b9c5c",
+      "started_at": "2026-10-23T06:56:03.651712+00:00",
+      "ended_at": "2026-10-23T06:56:03.869686+00:00",
+      "qualification": "Private API probe entry retained unused memcpy/memmove/memset references; trimmed before its successful build. This is not a product binary."
+    },
+    {
+      "file": "private-ndless-event-api-check-fa75d35eecdf.json",
+      "checkpoint": "9d8cb1fd58d2ea73900449415c925592776a5584",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "fb894dc3249168f39d51a99870c4496ebca9dd875af20784dd5ccf5095c7852c",
+      "journal_sha256": "b3d93f981a64f3037d030dab574c14d30ffb1754d438de807aa82719ff0fb6a2",
+      "log": "private-ndless-event-api-check-fa75d35eecdf.log",
+      "log_sha256": "bcbd61bd084775cb2956f47bed823e2ad19c245cc3d5ae82cedb797732342bf8",
+      "started_at": "2026-10-23T06:56:34.461060+00:00",
+      "ended_at": "2026-10-23T06:56:34.684301+00:00",
+      "qualification": "Historical platform or resource/tool preparation; not relabelled as final runtime execution."
+    },
+    {
+      "file": "stage6-bilingual-html-cc1e36a7bc62.json",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "journal_sha256": "b3a72f9b05555580d91a26816df1a6a50650ee486f5406632acf2290ee0a8836",
+      "log": "stage6-bilingual-html-cc1e36a7bc62.log",
+      "log_sha256": "07b4402d90ca6026f0284ea33139cfff12924fa2f7221df416be60f98dba1f01",
+      "started_at": "2026-10-23T07:06:09.475862+00:00",
+      "ended_at": "2026-10-23T07:06:27.115240+00:00"
+    },
+    {
+      "file": "stage6-firebird-preparation-b1f735421893.json",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "status": "failed",
+      "returncode": 3,
+      "source_changed": false,
+      "source_inventory_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "journal_sha256": "f8f86d7cecfda6d17d6a3885cea3915d34c18d49bd81e6dc5b0d0e376fa500b0",
+      "log": "stage6-firebird-preparation-b1f735421893.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "started_at": "2026-10-23T07:06:49.923275+00:00",
+      "ended_at": "2026-10-23T07:06:49.928327+00:00",
+      "qualification": "A nonexistent snapshot was supplied. The next preparation booted fresh and created a matching post-installation snapshot."
+    },
+    {
+      "file": "stage6-firebird-preparation-f1fc3268f224.json",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "journal_sha256": "89ec114edd120cb6098632008f013f5336f4a6962df7a7e1bd05e58970049bc3",
+      "log": "stage6-firebird-preparation-f1fc3268f224.log",
+      "log_sha256": "a761681cd02f904334d2e1a394d92c4d75c0b64177557694512b4c120365a97b",
+      "started_at": "2026-10-23T07:06:59.692001+00:00",
+      "ended_at": "2026-10-23T07:08:00.400412+00:00"
+    },
+    {
+      "file": "stage6-offline-browser-6e0952be2e91.json",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "journal_sha256": "79162d86c642909b213abd4882943bfdbfc78e9a69744a0b093d32602dd02795",
+      "log": "stage6-offline-browser-6e0952be2e91.log",
+      "log_sha256": "09fdd8e959dc621c54c8447da6eb3347a115b109df66de20e60b03b9e673ad01",
+      "started_at": "2026-10-23T07:06:31.406770+00:00",
+      "ended_at": "2026-10-23T07:06:43.132053+00:00"
+    },
+    {
+      "file": "stage6-platform-wasm-build-47b6ad27d12a.json",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "journal_sha256": "dd29c2196a49a86265d409b16ce96a115190f2adcc742ed24efc56f7e224c5c8",
+      "log": "stage6-platform-wasm-build-47b6ad27d12a.log",
+      "log_sha256": "5876c66dc55442d24d5022d30759a06e68d66db2f764ab73bcf1c49868a66ffa",
+      "started_at": "2026-10-23T07:04:24.011434+00:00",
+      "ended_at": "2026-10-23T07:04:48.956485+00:00"
+    },
+    {
+      "file": "stage6-wasm-split-runtime-5ba544e3c3a4.json",
+      "checkpoint": "14a20900035b5e554e076263fc22fe7611d2e410",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677",
+      "journal_sha256": "cbb0fc911b6bfb46b3fddca9e535479ff9a02372e1f57f8367b21c877fc4523e",
+      "log": "stage6-wasm-split-runtime-5ba544e3c3a4.log",
+      "log_sha256": "f9048aa84c093088ab817fb8fc3e8e550968d00bc299e0a5e0236bff1bedd503",
+      "started_at": "2026-10-23T07:06:09.475856+00:00",
+      "ended_at": "2026-10-23T07:06:15.930695+00:00"
+    },
+    {
+      "file": "final-arm-build-98ce691f3841.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "5c8f84d96c8e9abaed3541e6b3fb711c4c92c84faad6f9b10580372becb72703",
+      "log": "final-arm-build-98ce691f3841.log",
+      "log_sha256": "1251cfb482a66dd37adf6f6c766424a73b5cab1ca31a14ed66a8ff873f765ed0",
+      "started_at": "2026-10-23T07:09:52.011591+00:00",
+      "ended_at": "2026-10-23T07:10:18.187859+00:00"
+    },
+    {
+      "file": "final-bilingual-usb-save-audit-25da23a14cb3.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "1bb5304ea7ac151d3b150fc48eea73e13084c8a10a9727e6b16b9495caed84fd",
+      "log": "final-bilingual-usb-save-audit-25da23a14cb3.log",
+      "log_sha256": "97b148906fc2b7e379d4a026146c89ea9cc20d1943285aa5a3d87319e422bd31",
+      "started_at": "2026-10-23T07:38:09.807927+00:00",
+      "ended_at": "2026-10-23T07:38:09.875665+00:00"
+    },
+    {
+      "file": "final-chinese-continued-save-audit-87a93b29f770.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "80b2bb17327e46a0777b540a6f7aacca793b417f9b4751cdf6f2197d2f73da5b",
+      "log": "final-chinese-continued-save-audit-87a93b29f770.log",
+      "log_sha256": "c836d6c88176f3f8fa28f809342ddca6c882606ac68964d2ef130cc300b95c10",
+      "started_at": "2026-10-23T07:27:57.113278+00:00",
+      "ended_at": "2026-10-23T07:27:57.119942+00:00"
+    },
+    {
+      "file": "final-device-save-inspector-build-7e168ae1ca6d.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "7a4e4a66d61698a3ff6e7c934dd494b754b64bfa96f6f1fb40dcdd17da41f762",
+      "log": "final-device-save-inspector-build-7e168ae1ca6d.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "started_at": "2026-10-23T07:18:56.142509+00:00",
+      "ended_at": "2026-10-23T07:18:56.510829+00:00"
+    },
+    {
+      "file": "final-firebird-runtime-d1c7b32eed5d.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "failed",
+      "returncode": 4,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "b561dc480e4f5c400a3e80bd974ae7678b39604edc751d1449875d981a282d83",
+      "log": "final-firebird-runtime-d1c7b32eed5d.log",
+      "log_sha256": "58f19514ea9ac585fc626440cf36c41488af5e29ecc2bbd56ebdf609d38ab082",
+      "started_at": "2026-10-23T07:09:53.551963+00:00",
+      "ended_at": "2026-10-23T07:15:02.769572+00:00",
+      "qualification": "The first two USB reads after the first final-runtime exit stalled and were explicitly cancelled. A subsequent reset and directory read enabled successful normal USB exports. This journal stays failed although its Enter regression and exported startup sample are valid observations."
+    },
+    {
+      "file": "final-firebird-save-continue-0158306e39a1.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "4d721b666e3ee985bf05bf08edb703703c6f9150d1071e78845ee1f820cb40c4",
+      "log": "final-firebird-save-continue-0158306e39a1.log",
+      "log_sha256": "ccadd7a7b310085832a87daba38c387607fa61fc737f1dd49c437eada5d628aa",
+      "started_at": "2026-10-23T07:15:11.100342+00:00",
+      "ended_at": "2026-10-23T07:37:24.633930+00:00"
+    },
+    {
+      "file": "final-new-device-save-audit-7081cedea41a.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "6d3a245c1039313cad95a5fdcf30e85017f61c65fddc75adaaf6b7fe21b4e52e",
+      "log": "final-new-device-save-audit-7081cedea41a.log",
+      "log_sha256": "c836d6c88176f3f8fa28f809342ddca6c882606ac68964d2ef130cc300b95c10",
+      "started_at": "2026-10-23T07:19:23.566928+00:00",
+      "ended_at": "2026-10-23T07:19:23.573907+00:00"
+    },
+    {
+      "file": "final-web-input-equivalence-a65a71763cd6.json",
+      "checkpoint": "61970600a8d3f7fb2833af13f82f09c86105ebec",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "source_inventory_sha256": "575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529",
+      "journal_sha256": "88fe43d0b6e5eabd80ebc9b9f97cc6c7705dc209959552cbe7c4e3da7b0cdd07",
+      "log": "final-web-input-equivalence-a65a71763cd6.log",
+      "log_sha256": "695a6777ae914e2f1af714d575222854b35c427eb7b20701fe6a1ac1994e5d3e",
+      "started_at": "2026-10-23T07:09:51.993302+00:00",
+      "ended_at": "2026-10-23T07:09:54.328544+00:00"
+    }
+  ],
+  "limits": [
+    "No physical-device performance or overall 95-percent original-UI parity claim.",
+    "Actual captured boot stages, title, Neow Continue and exit are distinct from source/unit coverage of every localized loading/error message.",
+    "No steady-state calculator compendium or multi-card FPS benchmark was run in this target session.",
+    "The first final-runtime journal remains failed for USB cancellations; the subsequent bilingual Continue/save/exit journal is independently closed passed.",
+    "The English startup sample follows several Chinese invocations and is warm. It must not be presented as a second cold-start measurement.",
+    "Private packs, images, ROM/flash, screenshots, API probe and OS disassembly remain outside the public repository."
+  ]
+}

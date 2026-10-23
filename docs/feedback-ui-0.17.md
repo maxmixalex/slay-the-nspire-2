@@ -135,7 +135,7 @@ bone/attachment transformations and positive scene X scale.
 Later source changes must be rerun after their own verified checkpoint. Source
 review and resource metadata alone do not establish visual completion.
 
-## Deferred enemy HUD values (partial formal verification; follow-up pending)
+## Deferred enemy HUD values
 
 The authoritative simulation remains synchronous. An App-only bounded
 `CombatFeedback` projection now observes the settled values after each core
@@ -186,10 +186,9 @@ assertion, but the independent original-clock audit above identified a real
 global 2x clock defect instead. The assertion is retained. The follow-up fixes
 the clock and adds actual `App.advance` checks for fixed banner lifetime,
 retained Hiss frames and the one-second health-trail hold in both modes.
-Retaliation, reused slots,
-suspended-choice, overflow and the new potion-input guards still await the
-follow-up saved-checkpoint run. Clang syntax checks passed on these follow-up
-changes. All formal journals report unchanged source.
+At that checkpoint, retaliation, reused slots, suspended choices, overflow
+and the new potion-input guards remained unexecuted. Clang syntax checks
+passed on the follow-up changes. All formal journals report unchanged source.
 
 Checkpoint `14a20900035b5e554e076263fc22fe7611d2e410` passed its native build
 and 21 banner checks. Both actual-language world-UI runs then passed the new
@@ -198,7 +197,7 @@ orders, reflected lethal damage, summons and reused-slot identities. They
 stopped at the Toasty fixture: in-combat relic acquisition still had its
 queued continuation, so `end_turn` correctly refused to start. The fixture
 now resolves that acquisition and asserts a ready combat before EndTurn.
-The actual choice/input/overflow checks remain pending its next checkpoint.
+The actual choice/input/overflow checks remained pending the next checkpoint.
 Both actual-language frontend suites passed 567 checks. The English map
 suite exposed an older real-pack fixture which advanced without rendering
 the mandatory battle-preparation frame; its image cursor correctly stayed
@@ -207,9 +206,47 @@ image capacity/batch size and checks that the elapsed fade clears without
 changing canonical state or submitting another room entry. Production map
 durations and preparation code are unchanged.
 
-Remaining limitations are explicit: status/power strips and card/pile state
-still read canonical values; this is not a complete replay of every effect.
-Intent tooltips are suppressed during the short deferred side because their
+### Completed follow-up execution
+
+Checkpoint `61970600a8d3f7fb2833af13f82f09c86105ebec` completed its logged
+native build and both corrected targets against both actual v18 packs:
+
+| Regression | English | Chinese | Executed source |
+| --- | ---: | ---: | --- |
+| World UI, including real-time Fast clock, values, fatal hits, retaliation, summoned/reused identity, immediate/delayed Toasty choice, potion input guards, overflow, five energy/merchant profiles | 11,610 checks | 11,610 checks | `61970600` |
+| Map UI, including fixed clock and rendered bounded battle preparation before fade completion | 8,598 checks | 8,598 checks | `61970600` |
+| Frontend settings and save lifecycle | 567 checks | 567 checks | `14a20900` |
+| Event reader and merchant interactions | 1,462 checks | 1,462 checks | `14a20900` |
+| World event layouts | 484 checks | 484 checks | `14a20900` |
+
+The 21 banner checks passed at `14a20900`. That checkpoint's world-event
+English target initially failed to launch because the built executable lacked
+its execute bit. A logged mode restoration and retry passed; that launch
+failure is retained separately from test failures. No source changed during
+any of these formal commands. The later checkpoint changed the two fixtures
+and the calculator exit path, not the native runtime behind the earlier passed
+targets; those earlier executions retain their actual checkpoint identity.
+
+The real-time combat checks advance through the host API in batches of at
+most 250 ms. Normal/Fast Hiss clips both advance 198 ms over the same elapsed
+time and retain the authored 1,633 ms tail. The enemy banner remains active
+at tick 69 and ends at tick 70; HP trailing fill holds through 990 ms and
+starts easing by 1,023 ms in both modes. Separately fixed command-wait
+expectations protect the two-enemy handoff. These are quantized adapter
+checks, not a claim that all original frames were compared.
+
+Both language suites reached and passed the complete deferred-value tests,
+including save bytes compared with observer-free core resolution. The
+immediate and delayed Toasty cases complete through real App input while
+ordinary gameplay stays locked. Private action frames and all five classes'
+merchant/current-energy/zero-energy frames were visually reviewed again.
+Original resources and screenshots remain outside Git.
+
+Remaining limitations are explicit: status/power strips, card/pile state and
+pending-choice overlays still follow canonical state. A real choice can
+appear before all queued enemy presentation finishes and can be continued
+immediately; this projection is not a complete phase/effect replay. Intent
+tooltips are suppressed while the deferred trace is active because their
 formatter still binds canonical parameters. Merchant candle GPU particles
 and Necrobinder flame shaders are not prebaked. Unreviewed models still use
 clip duration for action occupancy and the move-start hit fallback.

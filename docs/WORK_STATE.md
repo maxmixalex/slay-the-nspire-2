@@ -1,119 +1,171 @@
 # Work state — 2026-10-23
 
-## Current: follow-up clock and input fixes; final execution and delivery pending
+## Current: final runtime and bilingual target flow verified; private delivery preparing
 
-Work remains on `work/0.17-world-parity`, restored from `e8444322` and pushed
-through `069f6d51`, `573cb816`, `6d2b78ac`, `9d8cb1fd` and
-`14a20900035b5e554e076263fc22fe7611d2e410`. Every checkpoint has an actual
-branch update, ref readback and exact changed-file/tree hash verification.
-Reference remains v0.111.0 / 41cef1ea. Main and disabled remote CI are unchanged.
+The integrated runtime is **`61970600a8d3f7fb2833af13f82f09c86105ebec`** on
+`work/0.17-world-parity`. Each coherent stage was actually pushed, its branch
+read back and changed blobs/modes verified before long builds or execution.
+Its source-only archive SHA-256 is
+`89d30cd066189065f2842f3c1377e178d20fa73e3c90f7ceace8fe3ed444aa91`.
+The pinned reference remains **v0.111.0 / 41cef1ea**. Original UI fidelity stays
+first, performance second. Main remains `efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0`;
+remote CI remains disabled. Audio, multiplayer and Timeline remain excluded.
 
-### Completed execution evidence
+### Implemented feedback corrections
 
-- `069f6d51`: original energy/merchant/Proceed assets, exact-background small-card
-  cache and glyph-metrics path; bilingual UI and controlled card-grid A/B passed.
-  Full library frames have zero pixel differences. Host warm-OS open profiles
-  attribute 15–16% to integrity and 75–77% to tile-index checks. This is a host
-  observation, not a device cost estimate. All checks remain enabled. See
-  `rendering-performance-0.17.md` and its machine-readable receipts.
-- `573cb816`: ARM 966,399 bytes, allocation 16,489,300 bytes; WASM 5,364,750 bytes
-  with fixed 16 MiB memory. Both actual v18 locales passed world UI (10,100),
-  event/shop UI (1,462), world event UI (3,656), plus 20 banner checks. These
-  builds predate the deferred HUD trace and the Fast clock correction below.
-- That 573 host stage also executed split/full/old-v17 loading through WASM,
-  Chromium offline HTML and X11. Paired frames match; corrupt common/locale
-  payloads and mismatched language are rejected. Browser language switching,
-  preference persistence and collection input work. No physical-device claim.
-- `9d8cb1fd`: every one of the four 17/18 English/Chinese template audits passes
-  935 bindings, 200 dynamic bindings, 230 actual route calls and 34,723 assertions
-  with zero unresolved fields. Six exact live-value models include independent
-  Rolling Boulder instances. Standalone text (167), codec (1,261) and map-travel
-  observer/save (1,221) checks pass. One initial codec binary lacked execute
-  permission and did not run; only its mode changed before its passing retry.
-  See `ui-template-audit.md` / `validation-ui-templates-0.17.json`.
-- `9d8cb1fd`: event tooltip synthetic 21,734, Chinese v18 402,524 and English v18
-  402,632 checks pass. Compact hover and paged detail screenshots were inspected
-  in both languages. Earlier invalid fixture and DARK/DARK_ORB failures remain
-  recorded. See `event-option-tooltips.md` / `validation-event-tooltips-0.17.json`.
-- `9d8cb1fd`: ARM 973,956 bytes, allocation 16,506,068 bytes (271,148 below
-  16 MiB); WASM 5,382,865 bytes. Split/full WASM frames and rejection checks
-  pass. The deferred HUD native stage passes 20 banner, 1,462 event/shop and
-  484 world-event checks per actual locale. World UI stops at the Fast second
-  lethal-hit banner assertion; it is not a complete passing run.
-- `14a20900`: event tooltip synthetic/Chinese/English runs pass again; four
-  event captures are byte-identical to the reviewed stage5 captures. Banner
-  (21), frontend (567 per locale), event/shop (1,462 per locale) and world-event
-  (484 per locale) gates pass. World UI now passes the real-time Fast/banners,
-  Hiss tail, HP hold, sequential/lethal/reflected hits and summon/slot cases,
-  then stops at a Toasty fixture with an unresolved acquisition continuation.
-  The separate map fixture omitted render entirely, so its real resource
-  preparation correctly waited for the loading screen to be displayed. These
-  two tests are not counted as passing suites. The follow-up resolves the
-  acquisition and drives actual render/update preparation, retaining the
-  original state, fade and pending-choice assertions. No production map timing
-  change is needed. One world-event launch lacked executable permission; its
-  failed launch and successful permission-only retry remain separately recorded.
-- `14a20900`: WASM build, split/full/legacy actual-resource loading and rejection
-  checks, bilingual HTML packaging, and actual Chromium language/collection
-  interactions pass. Later Ndless-only source changes must retain this actual
-  Web execution identity and prove their Web inputs unchanged.
+- Event options now expose original-derived keyword/card/relic/potion hover
+  associations, keyboard/pointer focus and paged V details. Dynamic choices
+  use already prepared offer/state data without generating new RNG outcomes.
+  The audited rows cover 57 event models, 147 relic rows and 39 extra potion
+  rows. The DARK_ORB identifier and upgrade-preview title semantics are fixed.
+- Selection/removal headings use the central localized rich-text formatter.
+  Amount, HotKey/Hotkey and other known fields are bound through their real UI
+  routes; unknown fields are preserved rather than silently fabricated as zero.
+  Six live-value models and independent Rolling Boulder instances are covered.
+- Scaled card focus outlines follow the real face geometry, scale and rotation.
+  Small-card exact-background caching and resident glyph metrics reduce dense
+  grid cost without freezing animation or changing cached-render output.
+- Five original class energy counters show current/max energy and zero-energy
+  appearance. Intent icons use original thresholds with outlined damage and
+  smaller repeated-hit counts. Banner motion, colors and independent fades
+  follow the pinned scenes. The original Proceed art is used in the shop.
+- Merchant placement, positive scene scale and class shop animation loops are
+  preserved. Clicking the merchant body opens the shop; the extra goods button
+  is removed. Original GPU particles, focus skin and flame shaders remain open.
+- Enemy actions begin during the enemy banner. Audited Nibbit/Louse command
+  waits advance the next actor while prior animation tails continue. Fast now
+  chooses explicit short command waits on one real 33 ms display clock; it
+  no longer doubles every banner, skeleton and health-bar clock.
+- A bounded App-only 6,032-byte CombatFeedback projection displays HP, block,
+  Osty HP, energy, old intents, damage and lethal/removal/reused-slot feedback
+  at action cues. It neither copies the full State nor changes saves or RNG.
+  A shared input guard blocks cards, potions and EndTurn while effects are
+  visibly unfinished; actual suspended choices remain operable.
+- Shared image/animation data is stored once in a common resource, with separate
+  Chinese/English text and glyph files. All boot phases, errors, preparation,
+  language controls and the browser shell have bilingual bindings. The small
+  Noto boot glyph subset has its separate OFL attribution.
+- Ndless shutdown finishes resource close/report I/O before releasing the
+  foreground and skips a discarded post-Quit render. The original 80 ms Enter
+  trigger now returns to the OS instead of re-entering the launcher.
 
-### Current source follow-up, awaiting verified-checkpoint execution
+These are implemented behaviors, not an overall 95% visual-parity claim.
+The authoritative simulation is still synchronous. Status/power strips,
+card/pile state and actual choice layers still read canonical state, so a
+choice can appear before the enemy presentation finishes. Intent tooltips are
+suppressed during the active projection to avoid showing next-turn values.
+Unreviewed monster effects retain the existing move-start/timing fallbacks.
 
-The App-only 6,032-byte CombatFeedback projection records settled HP/block/Osty/
-energy values and shows them at enemy cues while retaining old intents until
-that enemy acts. It does not serialize or draw RNG. Audited Nibbit/Louse impact
-and action waits have direct original-method evidence; other monsters retain
-existing timing fallbacks. A shared guard now blocks potion use/discard, card
-release and EndTurn until the visible side completes. Real pending card/relic
-choices remain operable, including a choice held past its initial display
-endpoint. These input changes and the remaining retaliation/summon/overflow
-cases require the next formal run.
+### Closed native and Web execution
 
-The failed Fast banner assertion triggered a reference audit, not a weakened
-acceptance condition. Original banners use normal Tweens; Fast changes explicit
-command waits, not Engine.TimeScale or every Spine clip. The current source
-removes the old global 2x App animation clock and selects independent Fast wait
-values on one real 33 ms clock. The original lethal-banner assertion is retained.
-New wall-time tests cover the 2.3-second banner, full Hiss tail, HP tween hold,
-Fast cues and existing map/frontend clock behavior. These specific cases ran
-before the unrelated fixture failures above; the complete corrected suites
-still require a new persisted-checkpoint run. See `fast-mode-clock-0.17.md`.
+| Gate | English | Chinese | Actual execution checkpoint |
+| --- | ---: | ---: | --- |
+| World UI, complete clock/feedback/input/HUD/merchant suite | 11,610 | 11,610 | `61970600` |
+| Map UI, actual preparation/render/fade lifecycle | 8,598 | 8,598 | `61970600` |
+| Frontend settings/save lifecycle | 567 | 567 | `14a20900` |
+| Event reader/shop interactions | 1,462 | 1,462 | `14a20900` |
+| World event layout | 484 | 484 | `14a20900` |
+| Event tooltip actual v18 pack | 402,632 | 402,524 | `14a20900` |
 
-### Resource and target boundaries
+The standalone banner suite passes 21 checks and synthetic event hovers pass
+21,734 at `14a20900`. At `9d8cb1fd`, all four v17/v18 Chinese/English template
+audits pass 935 bindings, 200 dynamic bindings, 230 real UI routes and 34,723
+assertions per pack, with zero unresolved fields. Standalone text (167), codec
+(1,261) and map-travel/save observer (1,221) also pass there. Keep these actual
+identities; later documentation or platform-only commits are not new executions.
 
-Actual v18 split resources total 93,233,887 bytes (86,870,047 common, 1,794,081
-English, 4,569,759 Chinese), versus 180,103,614 for two full packs: 48.23% saved
-with both languages. Original encoded payloads round-trip exactly. This does
-not reach 30–40 MB. The 212-byte adapter check does not replace Content's full
-integrity/structure checks. All eight startup stages, preparation, errors,
-language controls and browser shell have Chinese/English coverage. The open
-Noto boot subset's OFL accompanies private delivery. Saves remain v15.
+The latest six native journals are closed passed with unchanged frozen source.
+The independent native receipt audits 27 journals, including retained failures,
+with log and source-inventory hashes. See `validation-feedback-native-0.17.json`,
+`feedback-ui-0.17.md`, `fast-mode-clock-0.17.md`, `event-option-tooltips.md` and
+`ui-template-audit.md` for coverage and limits. Private screenshots were visually
+inspected for the five class HUD/shop styles, both languages, and effect timing.
 
-The isolated restored Firebird candidate `9d8cb1fd` reached the Chinese title,
-opened the compendium and produced an actual startup profile: 50.4733 simulated
-seconds, including 23.0561 integrity, 12.4632 retained-image and 13.3767 tile-index.
-This candidate profile differs materially from the host cache measurement.
-It does not establish physical-device cold-start performance or an improvement.
-An 80 ms Enter confirmation at Quit reopened the launcher; a 5-key confirmation
-returned to the OS and allowed normal USB report export. The Enter case is an
-active integration defect; it must be retested with the original trigger after
-its source fix, not counted as passed because the alternate key works. The
-prepared Ndless fix skips the discarded post-Quit render and explicitly closes
-resources/writes the report between two bounded key-release gates. It adds no
-event-drain syscall or hardware write. The reviewed event API can block on an
-empty queue and was rejected for this purpose. See `ndless-exit-handoff-0.17.md`.
+Actual WASM split/full/legacy loading, corrupt-input rejection, bilingual HTML
+and Chromium language/collection interaction pass at
+`14a20900035b5e554e076263fc22fe7611d2e410`. A later closed equivalence gate proves
+all 305 conservative Web compilation/packaging inputs byte- and mode-identical
+at runtime integration `61970600`; all embedded WASM/common/locale inputs match.
+The final attribution update intentionally changes NOTICE only, so a delivered
+HTML must prove exact equality outside that EOF documentation footer and retain
+`14a20900` as its actual Web execution identity.
 
-Remaining visual scope includes per-effect status/pile presentation, precise
-unreviewed monster action timings, merchant GPU particles/focus skin and
-Necrobinder flame shaders. No whole-game 95% fidelity claim.
+### Performance, validation policy and resource size
 
-Next: persist/read back the coherent Fast/input/exit stage before builds; run
-its affected native UI and clock gates, ARM allocation and actual WASM/browser
-loading, then final Chinese/English Firebird save/continue/normal-exit checks.
-Package and read back the bilingual calculator ZIP and one offline HTML only
-against their exact executed runtime. Original data, private IL, device images,
-generated packs/screenshots and embedded HTML stay outside the public repo.
+The controlled warm-host A/B remains the `069f6d51` execution against `e8444322`,
+using identical v17 packs, 180 advancing frames per window and unchanged save
+bytes. Mean update+render time fell from 1.047/1.275/2.056 ms to
+0.549/0.639/1.585 ms for Chinese library/removal/choice, and from
+1.894/2.075/3.045 ms to 0.615/0.655/1.599 ms for English. Static Chinese library
+and removal windows made zero resource callbacks. These are host measurements,
+not physical calculator FPS or a claim that every scene is equally accelerated.
+
+Actual v18 split resources are 86,870,047 bytes common, 1,794,081 English and
+4,569,759 Chinese: **93,233,887 bytes** together. The equivalent two full packs
+would total 180,103,614 bytes, so sharing saves **48.23%**. Payload reconstruction
+and stable old indices are verified. This does not reach the 30–40 MB goal.
+The resource conversion checkpoint remains `069f6d51`; save version remains 15.
+
+The final `61970600` Firebird Chinese startup profile observes 50.472626
+simulated seconds: full integrity 23.055786 (45.68%), retained images 12.463165
+(24.69%), tile indices 13.376617 (26.50%). This replaces the old candidate as the
+current target observation, without relabelling it as physical-device cold
+performance. It excludes language-selection waiting and pre-selection opening;
+USB transfer and host caches were not made cold. No per-stage I/O/CPU split was
+captured. The first device journal failed on stalled USB export, but its later
+normally exported profile was independently matched against the fresh flash
+record; the failed journal remains failed.
+
+**Full-file integrity and startup structural checks run on every startup;
+the existing first-use payload checks remain enabled.** FNV is a substantial target cost, and it is not
+covered by all downstream paths: retained LZ4 images and text/glyph payloads
+have no equivalent independent CRC. Comparing split SHA labels does not rehash
+the common file. Next implementation should reuse a sequential encoded-byte
+stream for the existing hash and validators, removing repeated reads while
+requiring every existing startup check before publishing Content. This is evaluated
+follow-up work, not an implemented speedup or permission to disable validation.
+See `rendering-performance-0.17.md` for the concrete alternatives and bounds.
+
+### Target identity, failures and delivery state
+
+The final ARM launcher is **974,608 bytes**, SHA-256
+`6037aaac82d9a70daaad107008079e2bc2ff083624a77ff332f007b6f64c0cab`.
+Its Zehn allocation is **16,507,640 bytes**, leaving **269,576 bytes** below
+16 MiB. WASM is 5,384,458 bytes, SHA-256
+`6de70bc1842f3f24a80662d401bf3ba0af7bffde41aae9266ad612f37fbfe9d0`,
+with its actual runtime identity `14a20900`. Build and execution are separate.
+
+The final ARM ran on a freshly rebooted isolated CX II CAS/Firebird image with
+Ndless r2022 and a matching new snapshot, not an older RAM snapshot. Two actual
+80 ms Enter Quit confirmations retained the foreground while held and returned
+to a stable OS document browser after release; an alternate key was not used
+to substitute for this trigger. A new Chinese run produced an actual 230,088-byte
+v15 save exported over emulated USB; original-core decode, validation and
+canonical re-encoding are byte-identical. Direct Chinese and English Continue
+then each reached the same Neow event with 80/80 HP, 99 gold and the same options.
+Each used normal save, Save and Quit, and the original 80 ms Enter Quit trigger.
+After seven seconds the OS document browser remained visible without re-entry.
+The new-run, clean Chinese-continued and English-continued saves are byte-identical,
+SHA-256 `9965d829dd1231146cdc7ee75c1d0e6a0ce07556dc1819b4f9d3ed0c46911d4c`.
+The English language preference was normally exported as `NSL1eng` plus newline.
+The bilingual device journal `final-firebird-save-continue-0158306e39a1` is
+closed passed, exit 0; the earlier cancelled-USB journal remains failed.
+
+Earlier failures remain visible: `9d8cb1fd`'s Fast second-hit banner assertion
+found the real global-clock bug; `14a20900`'s Toasty fixture had not resolved an
+acquisition continuation; its map fixture had not rendered the mandatory
+loading page. The final fixtures exercise the real lifecycle without weakening
+assertions or changing production map timing. Permission-only launch failures,
+stalled USB exports and an ambiguous short-key menu sequence are also recorded
+separately from their successful retries. See `ndless-exit-handoff-0.17.md` and
+the platform validation receipt for exact target acceptance boundaries.
+
+Next: persist the final reports and attribution checkpoint. Package one bilingual
+calculator ZIP and one offline HTML from the exact executed ARM/WASM/resource
+inputs. Read every ZIP member and embedded HTML input back; keep actual runtime
+identities separate from the packaging/documentation commit. Save both private
+deliverables before presenting links. Original packs, assembly/IL, calculator
+images, captures and embedded HTML remain outside the public Git repository.
 
 # Work state — 2026-10-21
 

@@ -28,6 +28,12 @@ resource errors have Chinese and English text. See
 [platform-languages.md](docs/platform-languages.md) for browser and native hosts,
 legacy full-pack loading and exact filename rules.
 
+Keep `nSpire2.sav.tns` when upgrading. After confirming the split installation
+works, the old complete `nSpire2.nsp.tns` resource file can be moved out to
+reclaim its space; it is not needed alongside the common and locale files.
+Full integrity and startup structural checks run on every launch, while the
+existing first-use tile-pixel checks remain enabled.
+
 The actual shared resources total **93,233,887 bytes**, versus 180,103,614 bytes
 for two complete NSP2/18 packs: **48.23% less when both languages are installed**.
 This is deduplication, not achievement of the 30–40 MB target. Complete integrity,

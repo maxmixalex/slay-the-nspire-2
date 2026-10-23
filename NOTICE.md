@@ -2,7 +2,7 @@
 
 ## Project source
 
-nSpire II experimental native runtime, version 0.17 development (2026-10-21).
+nSpire II experimental native runtime, version 0.17 development (2026-10-23).
 SPDX-License-Identifier: GPL-3.0-or-later.
 
 This project uses the offline-content / native-runtime approach explored by
@@ -18,10 +18,11 @@ Ndless r2022's `zehn.h`, `genzehn.cpp`, `syscall-list.h`, `keys.h`,
 `lcd_blit.cpp` and touchpad declarations were consulted for the Zehn loader,
 stable syscall ABI, LCD function-pointer API and key protocol.
 This distribution does not bundle the Ndless SDK or a Firebird binary.
-Historical 0.12 reports describe Firebird execution on the supplied CX II CAS
-working-image copy with Ndless r2022. Later ARM build receipts are recorded in
-the versioned validation documents; 0.16 and the current 0.17 development have
-no new Firebird or physical-device execution result.
+Versioned validation documents record the exact source and binary identities
+used for each platform result, including Firebird execution on an isolated copy
+of the supplied CX II CAS working image with Ndless r2022. Compilation,
+emulator execution and physical-device measurements are separate evidence;
+one must not be presented as another.
 
 https://github.com/ndless-nspire/Ndless/tree/r2022
 https://github.com/nspire-emus/firebird
@@ -62,8 +63,17 @@ Only pre-rendered images and their animation-directory records are read on the
 calculator. Some room layout, encounter substitutions, finite card pools,
 selection highlights and presentation effects are specific to this prototype.
 
-Fonts are read locally by the converter. No installable font file is included;
-only rasterized glyphs needed by the selected interface enter the content pack.
+Game fonts are read locally by the converter. No installable font file is
+included; only rasterized glyphs needed by the selected interface enter the
+content pack.
+
+The small Chinese bitmap subset used before a content pack is available is
+derived from Noto Sans CJK SC, independently of the original game fonts.
+Copyright 2014-2021 Adobe and 2010-2012 Google Corporation. This boot subset
+retains the SIL Open Font License 1.1 in `licenses/Noto-Boot-OFL.txt`, which
+must accompany binary redistributions and is embedded in the offline HTML.
+
+https://github.com/notofonts/noto-cjk
 
 ## Software math added in 0.6
 

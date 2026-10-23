@@ -10,12 +10,15 @@ clock, but its banners and skeleton tracks do not. Consequently the command
 cues retain approximately the intended Fast wall time while the banner and
 animation finish too early relative to those cues.
 
-The minimal correction is a real-time 33 ms presentation clock, with Fast
-selecting the explicit Fast duration in `wait_ticks` without a compensating
-multiplier. The UI owner has prepared this paired change for stage6. **This
-document records completed reference inspection and a source review; the
-stage6 wall-time execution gate is still pending.** No build, test or original
-game capture is claimed here as evidence that the prepared correction ran.
+The correction is a real-time 33 ms presentation clock, with Fast selecting
+the explicit Fast duration in `wait_ticks` without a compensating multiplier.
+The UI owner applied this paired change at saved stage6, `14a20900`. **The
+targeted native wall-time and integration gate is now complete.** After two
+fixture corrections, the complete world UI suite passes 11,610 checks in each
+actual locale at saved stage7, `61970600`; map UI passes 8,598 per locale.
+The independent review below distinguishes actual host-time assertions,
+component checks and source inspection. It does not claim an unmodified
+original-game recording or full animation pixel equivalence.
 
 The reviewed incorrect implementation is frozen checkpoint
 `9d8cb1fd58d2ea73900449415c925592776a5584`. Earlier passing command tests establish
@@ -194,26 +197,63 @@ Production calculator, X11 and offline-browser loops supply elapsed time to
 `App::advance`. The exported legacy `frame()` and scripted direct `tick()` calls
 still mean one presentation tick; they do not establish wall-clock timing.
 
-## Required independent wall-time gate — pending
+## Independent wall-time gate — executed
 
-Run the prepared tests only after stage6 has an actual push/readback receipt.
-Use real `App::advance` calls in chunks no larger than 250 ms, with a known
-initial tick remainder. Do not prove speed behavior solely by assigning
-`animation` directly or by computing every expected value with the production
-`wait_ticks` helper.
+The world-clock cases use real `App::advance` calls in chunks no larger than
+250 ms, with an initial tick remainder of zero. Separate command-order cases
+retain hardcoded tick expectations instead of computing every expected value
+with the production `wait_ticks` helper. The reviewer read the frozen source
+and already completed journals; the reviewer did not rerun the UI owner's
+tests or substitute a new probe for the actual feature gate.
 
-| Contract to check | Independent expected observation |
+| Contract | Executed observation and scope |
 | --- | --- |
-| Clock | Equal real 99 ms advances produce three ticks in Normal and Fast |
-| Enemy banner | Both modes retain it at 1,500 ms and through tick 69; it ends at tick 70 / 2,310 ms, the declared 33 ms quantization of 2,300 ms |
-| Player banner | Same alpha/motion for equal elapsed time in both modes; ends at tick 67 / 2,211 ms |
-| First enemy cue | At or after 1,200 ms Normal / 750 ms Fast, within the sum of the two per-wait rounding errors; the single-clock design computes 38 / 24 ticks |
-| Nibbit/Louse occupancy | Preserve the explicit wall-time table above, allowing less than 33 ms rounding per independently scheduled wait |
-| Skeleton tail | The same uninterrupted clip has the same elapsed milliseconds in both modes; Hiss retains its 1,633 ms tail while later commands may overlap |
-| Health display | Its fixed trail/hold durations do not halve when Fast is enabled; snapshots still converge to the canonical result |
-| Input/state | Pending effects keep actions locked; display advancement changes no canonical save bytes or RNG state |
+| Clock | Actual map tests give three ticks for equal 99 ms advances in Normal and Fast. Actual frontend tests toggle Fast between 66 ms advances and observe animation 1,002 → 1,004 and busy/card-flight counters 10 → 8. |
+| Enemy banner | In both modes, the host update path yields `Enemy` at tick 69 / 2,277 ms and `None` at tick 70 / 2,310 ms, the declared sampling of the original 2,300 ms lifetime. This checks the scene lifetime; the terminal fade can already quantize to zero visible alpha. The original second-lethal-hit banner assertion is also retained and passes. |
+| Player banner | The component gate checks disappearance at tick 67 / 2,211 ms, independent player/enemy overlap and clock wrap. Source uses the same real clock without a Fast branch. A separate equal-time Normal/Fast player-banner framebuffer comparison was not performed. |
+| First enemy cue | Hardcoded expectations are 38 ticks / 1,254 ms Normal and 24 ticks / 792 ms Fast, within the two independent upward-rounding errors relative to 1,200 / 750 ms. The companion `App::advance` cases reach the scheduled cues on the real clock. |
+| Nibbit/Louse occupancy | Hardcoded Nibbit ticks are 11/19/26 Normal and 6/9/11 Fast; Louse ticks are 20/13/23 and 10/7/10. Conditional Uncurl is 28/8. These correspond to the inspected table above, with less than 33 ms rounding per wait. Fine command-order assertions sample explicit ticks; the companion host update tests establish the wall-clock mapping. |
+| Skeleton tail | Both modes retain the same nonlooping Hiss clip at elapsed 0 and 198 ms. Its authored 1,633 ms tail has a 50-tick / 1,650 ms deadline. At enemy-banner tick 70, Hiss remains at 1,056 ms Normal and 1,518 ms Fast. These are sampled frame/deadline checks, not an all-frame comparison. |
+| Health display | At a genuine scheduled hit, the HP trail holds unchanged after 990 real ms and starts decreasing after 1,023 ms in both modes. Save bytes remain unchanged while presentation advances. |
+| Input/state | Complete world tests cover sequential and lethal/reflected hits, Osty, summon/slot replacement, immediate and delayed Toasty choices, keyboard/pointer/action potion guards, bounded overflow and canonical save convergence. |
 
 Rounding each wait independently can accumulate a bounded error across the
-sequence. This audit does not label the proposed 38/24-tick cues or any pending
-test as an executed result. Record the saved stage6 SHA, runner/source identities,
-closed journals and actual results before replacing this pending status.
+sequence. The native gate validates these explicit timing contracts; it does
+not infer a new command table for unaudited monster models.
+
+### Saved execution identities and retained failures
+
+The complete receipt inventory, source and binary hashes, log hashes,
+per-command statuses and capture-mode flags are in
+[validation-feedback-native-0.17.json](validation-feedback-native-0.17.json).
+
+| Saved checkpoint | Execution evidence |
+| --- | --- |
+| `9d8cb1fd58d2ea73900449415c925592776a5584` | Both original stage5 world runs fail the second Fast lethal-hit banner assertion. Those failures are retained; the assertion was not weakened. |
+| `14a20900035b5e554e076263fc22fe7611d2e410` | Banner component (21), frontend (567 per locale), event/shop (1,462 per locale), world-event (484 per locale) and keyword-tooltip gates pass. The world runs execute the clock and earlier display cases, then fail an unresolved Toasty-acquisition fixture; map fails because its advance-only fixture never renders the preparation page. Neither is reported as a passed suite. |
+| `61970600a8d3f7fb2833af13f82f09c86105ebec` | Corrected full world runs pass 11,610 checks per actual locale with captures enabled; corrected map runs pass 8,598 per actual locale without captures. All six configure/build/run journals are closed, exit 0 and report unchanged source. Only these two suites were rerun. |
+
+The stage7 source inventory is
+`575955810f28f5c6112d497f8b377cd06507941bb0264b441ac0476c509a8529`;
+stage6 is
+`c40baa5cd271147ee237d6b6b3e982eed849acd7591fde516b8c7895563f1677`.
+Independent recomputation confirms each journal's complete 508-file inventory
+and log hash. Between these two checkpoints, the only inventoried changes are
+the two fixture files and the separate Ndless exit implementation. Common
+runtime sources, headers, third-party code, CMake and the previously passing
+native test inputs are byte-identical. Their earlier passes retain their
+stage6 execution identity.
+
+The Toasty fixture now resolves the real queued relic-acquisition continuation
+before asking for EndTurn. The map fixture now renders the loading page and
+drives its bounded preparation batches; it retains the no-render gate,
+already-elapsed fade, one-room-entry and save-byte assertions. Neither repair
+changes production combat or map timing. A separate stage6 world-event launch
+failed because the executable lacked execute permission; its failed launch,
+recorded permission change and successful retry are all retained.
+
+CombatFeedback projects selected HP/block/Osty/energy/intent and enemy-identity
+fields for presentation. The choice layer, status list, card piles and
+canonical phase still use current State. These tests do not establish a full
+phase or full combat replay. Native execution also does not establish ARM,
+browser, Firebird or physical-calculator behavior; those have separate gates.
