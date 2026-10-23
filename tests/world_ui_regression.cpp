@@ -112,26 +112,49 @@ static void enemy_visual_fight(EncounterId encounter,Character character=Charact
  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
  CHECK(!a.combat_preparation.active);unchanged();
 }
-static int rendered_number(const char*text,int size,int left,int top,int right,int bottom){
- // Match the supplied numeral's opaque glyph pixels in a broad screen area,
- // without calling the intent renderer or reproducing its layout arithmetic.
- // The synthetic fixture has full opaque stencils; actual fonts also retain
- // opaque interiors. Antialias values do not depend on the room underneath.
- struct Point {int x,y;};std::vector<Point> ink,clear;int width=0,height=0;
- for(const char*p=text;*p;++p){const auto g=a.content.glyph(unsigned(*p),size);CHECK(g.pixels&&g.w&&g.h);
-  std::vector<uint8_t> alpha(unsigned(g.w)*g.h,0);
-  if(g.encoded_size){unsigned pos=0;for(unsigned i=0;i+1<g.encoded_size&&pos<alpha.size();i+=2)
-   for(unsigned n=0;n<g.pixels[i]&&pos<alpha.size();++n)alpha[pos++]=g.pixels[i+1];
-  }else std::memcpy(alpha.data(),g.pixels,alpha.size());
-  for(unsigned y=0;y<g.h;++y)for(unsigned x=0;x<g.w;++x){if(alpha[y*g.w+x]==255)ink.push_back({width+int(x),int(y)});
-   else if(!alpha[y*g.w+x])clear.push_back({width+int(x),int(y)});}
-  if(int(g.h)>height)height=g.h;width+=g.advance;
- }
- CHECK(!ink.empty());constexpr uint16_t cream=uint16_t((31u<<11)|(61u<<5)|28u);
- for(int y=top;y+height<=bottom;++y)for(int x=left;x+width<=right;++x){bool match=true;
-  for(const auto&p:ink)if(a.pixels[(y+p.y)*ScreenW+x+p.x]!=cream){match=false;break;}
-  if(match)for(const auto&p:clear)if(a.pixels[(y+p.y)*ScreenW+x+p.x]==cream){match=false;break;}
-  if(match)return x;
+static std::vector<uint16_t> intent_background;
+static void capture_intent_background(){
+ // Remove only display intents at this same clock. The actual room/actor
+ // pixels beneath the numeric labels are the independent blend background.
+ uint16_t flags[MaxEnemies]{};for(int i=0;i<MaxEnemies;++i){flags[i]=a.combat_feedback.intents[i].flags;a.combat_feedback.intents[i].flags=0;}
+ a.render();intent_background.assign(a.pixels,a.pixels+ScreenW*ScreenH);
+ for(int i=0;i<MaxEnemies;++i)a.combat_feedback.intents[i].flags=flags[i];a.render();
+}
+static int rendered_number(const char*text,int size,int left,int top,int right,int bottom,const char*repeat=""){
+ // Search for the requested number's independently composed pixels. Small
+ // real font strokes need not contain alpha=255, so use their actual alpha
+ // over the captured room, not a predicate that can vacuously match no ink.
+ struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0;
+ const auto append=[&](const char*string,int px,int offset_y){
+  for(const char*p=string;*p;++p){const auto g=a.content.glyph(unsigned(*p),px);CHECK(g.pixels&&g.w&&g.h);
+   std::vector<uint8_t> alpha(unsigned(g.w)*g.h,0);
+   if(g.encoded_size){unsigned pos=0;for(unsigned i=0;i+1<g.encoded_size&&pos<alpha.size();i+=2)
+    for(unsigned n=0;n<g.pixels[i]&&pos<alpha.size();++n)alpha[pos++]=g.pixels[i+1];
+   }else std::memcpy(alpha.data(),g.pixels,alpha.size());
+   for(unsigned y=0;y<g.h;++y)for(unsigned x=0;x<g.w;++x)if(alpha[y*g.w+x])ink.push_back({width+int(x),offset_y+int(y),alpha[y*g.w+x]});
+   if(offset_y+int(g.h)>height)height=offset_y+g.h;width+=g.advance;
+  }
+ };
+ append(text,size,0);append(repeat,8,2);CHECK(!ink.empty()&&intent_background.size()==ScreenW*ScreenH);
+ constexpr uint16_t cream=uint16_t((31u<<11)|(61u<<5)|28u),outline=uint16_t((2u<<11)|(5u<<5)|2u);
+ const auto mix=[](uint16_t back,uint16_t fore,unsigned alpha){
+  const unsigned r=((back>>11)*(255-alpha)+(fore>>11)*alpha+127)/255;
+  const unsigned g=(((back>>5)&63)*(255-alpha)+((fore>>5)&63)*alpha+127)/255;
+  const unsigned b=((back&31)*(255-alpha)+(fore&31)*alpha+127)/255;return uint16_t((r<<11)|(g<<5)|b);
+ };
+ const int stride=width+2,rows=height+2;std::vector<uint16_t> expected(unsigned(stride*rows));
+ for(int y=top;y+height<bottom;++y)for(int x=left;x+width<right;++x){
+  for(int yy=0;yy<rows;++yy)for(int xx=0;xx<stride;++xx)expected[yy*stride+xx]=intent_background[(y+yy-1)*ScreenW+x+xx-1];
+  for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)for(const auto&p:ink){const int at=(p.y+dy+1)*stride+p.x+dx+1;expected[at]=mix(expected[at],outline,p.alpha);}
+  for(const auto&p:ink){const int at=(p.y+1)*stride+p.x+1;expected[at]=mix(expected[at],cream,p.alpha);}
+  bool match=true;unsigned visible=0;
+  for(int yy=0;yy<rows&&match;++yy)for(int xx=0;xx<stride;++xx){
+   // The icon occupies the first 14 rows; its last two rows may overlap a
+   // synthetic font's top. Compare all remaining pixels, including holes.
+   if(y+yy-1<top+4)continue;const int at=(y+yy-1)*ScreenW+x+xx-1;
+   visible+=expected[yy*stride+xx]!=intent_background[at];if(a.pixels[at]!=expected[yy*stride+xx]){match=false;break;}
+  }
+  if(match&&visible)return x;
  }return -1;
 }
 static void compound_intent_values(){
@@ -145,7 +168,7 @@ static void compound_intent_values(){
   enemy_visual_fight(test.encounter);a.game.enemy_world.ascension=uint8_t(test.ascension);a.game.enemy_world.models[0].node=uint8_t(test.move);
   a.pointer.visible=false;a.reset_presentation();a.render();const auto intent=enemy_intent(a.game,0);
   CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentStatus)&&intent.damage==test.damage&&intent.hits==1&&intent.status_cards==test.status);
-  snapshot();a.begin_combat_feedback();a.render();const auto pos=enemy_pose(a.game.enemy_count,0);
+  snapshot();a.begin_combat_feedback();capture_intent_background();const auto pos=enemy_pose(a.game.enemy_count,0);
   char damage[16]{},status[16]{};std::snprintf(damage,sizeof damage,"%d",test.damage);std::snprintf(status,sizeof status,"%d",test.status);
   const int damage_x=rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34);
   const int status_x=rendered_number(status,10,pos.x,pos.intent+10,pos.x+32,pos.intent+34);
@@ -162,7 +185,7 @@ static void compound_intent_values(){
   if(test.encounter==EncounterId::MechaKnightElite){
    // Canonical settlement can already point at Windup; the retained labels
    // must still describe the visible Flamethrower until its display cue.
-   a.game.enemy_world.models[0].node=2;snapshot();a.render();CHECK(!(enemy_intent(a.game,0).flags&EnemyIntentAttack));
+   a.game.enemy_world.models[0].node=2;snapshot();capture_intent_background();CHECK(!(enemy_intent(a.game,0).flags&EnemyIntentAttack));
    CHECK(rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34)>=0);
    CHECK(rendered_number("4",10,pos.x,pos.intent+10,pos.x+32,pos.intent+34)>=0);unchanged();
   }
@@ -170,17 +193,16 @@ static void compound_intent_values(){
  // Two neighboring real compound attacks retain separate hit targets and
  // put each damage value under its attack, rather than between both icons.
  enemy_visual_fight(EncounterId::NibbitsNormal);for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=1;
- a.reset_presentation();snapshot();a.render();for(int i=0;i<2;++i){const auto pos=enemy_pose(2,i);const auto intent=enemy_intent(a.game,i);
+ a.reset_presentation();snapshot();a.begin_combat_feedback();capture_intent_background();for(int i=0;i<2;++i){const auto pos=enemy_pose(2,i);const auto intent=enemy_intent(a.game,i);
   CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentBlock)&&intent.damage==6);
   const int x=rendered_number("6",10,pos.x-32,pos.intent+10,pos.x,pos.intent+34);CHECK(x>=0);
   const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==i);
  }capture("intent-two-nibbits-slice");unchanged();
  // Keep the original three-hit display and its smaller suffix, using actual
  // Byrdonis intent data instead of synthesizing a new unsupported flag set.
- enemy_visual_fight(EncounterId::ByrdonisElite);snapshot();a.render();const auto intent=enemy_intent(a.game,0);const auto pos=enemy_pose(1,0);
+ enemy_visual_fight(EncounterId::ByrdonisElite);a.game.enemy_world.models[0].node=0;snapshot();a.begin_combat_feedback();capture_intent_background();const auto intent=enemy_intent(a.game,0);const auto pos=enemy_pose(1,0);
  CHECK(intent.damage==3&&intent.hits==3&&intent.flags==EnemyIntentAttack);
- CHECK(rendered_number("3",10,pos.x-25,pos.intent+10,pos.x,pos.intent+34)>=0);
- CHECK(rendered_number("x3",8,pos.x-5,pos.intent+10,pos.x+25,pos.intent+34)>=0);
+ const int repeat_x=rendered_number("3",10,pos.x-25,pos.intent+10,pos.x+25,pos.intent+34,"x3");CHECK(repeat_x>=0&&repeat_x<pos.x);
  capture("intent-byrdonis-three-hits");unchanged();
 }
 static void original_enemy_presentation(){
