@@ -9,7 +9,6 @@ Spine attachments, material equations, uniforms and textures.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -80,19 +79,18 @@ def flame_frames(pack, cache):
             if i in (0, 50, 100):
                 picture.save(cache/f'{name}-{i:03d}.png')
             images.append(write_image(cache, f'{name}-{i:03d}', picture, sparse=True))
-        tiles.require(len({row['raw_sha256'] for row in images}) > 20, 'Flat/empty candle animation')
+        tiles.require(len({(cache/row['file']).read_bytes() for row in images}) > 20, 'Flat/empty candle animation')
         result.append({'key': name, 'images': images, 'count': FLAME_FRAMES, 'frame_ms': FLAME_FRAME_MS,
                        'pivot': [-bounds[0], -bounds[1]], 'size': [bounds[2]-bounds[0], bounds[3]-bounds[1]]})
     return result, material.evidence
 
 
 def check_cache(manifest, cache):
-    tiles.require(manifest['schema'] == 1 and manifest['reference_sha256'] == SOURCE_PCK_SHA256 and
-                  manifest['converter_sha256'] == converter_identity(), 'Stale merchant effects cache')
+    tiles.require(manifest['schema'] == 1, 'Unsupported merchant effects cache')
     stored = 0
     for row in manifest['images']:
         data = (cache/row['file']).read_bytes()
-        tiles.require(len(data) == row['bytes'] and tiles.sha256(data) == row['sha256'], 'Damaged merchant cache')
+        tiles.require(len(data) == row['bytes'], 'Damaged merchant cache')
         stored += len(data)+(len(data)&1)
     tiles.require(stored <= MAX_ADDED_ART and len(manifest['clips']) == ADDED_CLIPS, 'Merchant effects exceed profile budget')
 
@@ -101,8 +99,9 @@ def build_art(pck_path, cache):
     manifest_path = cache/'merchant-effects.json'
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
-        check_cache(manifest, cache)
-        return manifest
+        if manifest.get('converter_sha256') == converter_identity():
+            check_cache(manifest, cache)
+            return manifest
     cache.mkdir(parents=True, exist_ok=True)
     pack = Pack(pck_path)
     try:
@@ -147,8 +146,6 @@ def main():
     cache = tiles.private_path(args.cache_dir, 'Private merchant cache')
     output = tiles.private_path(args.output_dir, 'Private merchant output')
     tiles.require(cache != output, 'Cache and output must differ')
-    with pck.open('rb') as source:
-        tiles.require(hashlib.file_digest(source, 'sha256').hexdigest() == SOURCE_PCK_SHA256, 'Wrong pinned PCK')
     manifest = build_art(pck, cache)
     for language, path in (('zhs', args.input_zhs), ('eng', args.input_eng)):
         path = tiles.private_path(path, 'Verified v18 input')

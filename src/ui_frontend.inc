@@ -5,25 +5,45 @@ static const char* frontend_label(const App&a,FrontMenu item){
  static const char*fallback[]={"单人游戏","继续游戏","放弃游戏","图鉴","设置","退出游戏"};
  return frontend_text(a,"main_menu_ui",keys[item],fallback[item]);
 }
+static void title_logo(Canvas&c){
+ const auto logo=c.a.content.image(A_Logo);
+ if(logo.w!=title_scene::AtlasWidth||logo.h!=title_scene::AtlasHeight){c.picture(A_Logo,3,5);return;}
+ c.picture_region(logo,title_scene::TextX,title_scene::TextY,0,0,title_scene::TextWidth,title_scene::TextHeight);
+ const unsigned frame=c.a.map_clock_ms/title_scene::FireFrameMs%title_scene::FireFrames;
+ c.picture_region(logo,title_scene::FireX,title_scene::FireY,int(frame)*title_scene::FireWidth,title_scene::FireAtlasY,
+     title_scene::FireWidth,title_scene::FireHeight);
+}
 static void title_screen(Canvas&c){
-    auto&a=c.a;c.ui(U_TitleBackground,0,0);c.picture(A_Logo,3,5);
+    auto&a=c.a;c.ui(U_TitleBackground,0,0);title_logo(c);
     const int count=a.title_menu_count();
     for(int i=0;i<count;i++){
-        int y=90+i*27;bool selected=a.menu==i;const char*label=frontend_label(a,front_item(a,i));
-        if(selected){int mark=a.content.world_image("menu","HIGHLIGHT");if(mark>=0)c.picture(mark,12,y,20,20);else c.text("›",17,y,16,Gold);}
-        c.text(label,40,y+1,16,Ink,129);c.text(label,39,y,16,selected?Gold:White,129);
-        c.hit(7,y-3,155,27,HitKind::Menu,i);
+        const int y=title_scene::menu_top(count)+i*title_scene::MenuRowHeight;
+        const bool selected=a.menu==i;const char*label=frontend_label(a,front_item(a,i));
+        const auto fit=c.fitted(label,title_scene::MenuCenter-title_scene::MenuLabelWidth/2,y,
+            title_scene::MenuLabelWidth,19,16,12,selected?Gold:White,true,true,true);
+        if(selected){
+            const int width=mn(title_scene::MenuLabelWidth,c.width(label,fit.size));
+            const int left=title_scene::MenuCenter-width/2-22,right=title_scene::MenuCenter+(width+1)/2+2;
+            const int mark=a.content.world_image("menu","HIGHLIGHT");
+            if(mark>=0){const auto reticle=a.content.image(mark);
+                c.picture_region(reticle,left,y-2,0,0,20,20);
+                c.picture_region(reticle,right,y-2,0,0,20,20,true);
+            }else{c.text("›",left+5,y,16,Gold);c.text("‹",right+5,y,16,Gold);}
+        }
+        c.hit(title_scene::MenuCenter-title_scene::MenuHitWidth/2,y-2,title_scene::MenuHitWidth,title_scene::MenuRowHeight,HitKind::Menu,i);
     }
     if(a.has_save&&front_item(a,a.menu)==FrontContinue){
-        int panel=a.content.world_image("menu","CONTINUE_PANEL");if(panel>=0)c.picture(panel,174,91,138,66);else c.dim(174,91,138,66,160);
-        c.ui(character_portrait(a.saved_character),176,101,36,40);
+        int panel=a.content.world_image("menu","CONTINUE_PANEL");if(panel>=0)c.picture(panel,207,137,110,81);else c.dim(207,137,110,81,160);
+        int portrait=a.content.ui_image(U_TopBarIronclad+int(a.saved_character));
+        if(portrait<0)portrait=a.content.ui_image(character_portrait(a.saved_character));
+        c.picture(portrait,212,145,18,18);
         const auto&ch=character_definitions[unsigned(a.saved_character)];const char*name=a.content.world_title("characters",ch.key);
-        c.text_fitted(*name?name:ch.name,214,99,92,12,Gold);
-        char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text(row,214,119,10,White,92);
-        row[0]=0;b.n=0;b.text("进阶 ");b.number(a.saved_ascension);c.text(row,214,133,10,White,92);
-        row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,184,145,11,12);c.text(row,201,145,10,White,105);
+        c.text_fitted(*name?name:ch.name,234,147,78,12,White);
+        char row[96]{};TextBuffer b{row,sizeof row,0,&a.content};b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.floor","楼层"));b.ch(' ');b.number(a.saved_floor);c.text_fitted(row,213,169,98,10,White);
+        row[0]=0;b.n=0;b.text(frontend_text(a,"main_menu_ui","CONTINUE_RUN_INFO.ascension","进阶"));b.ch(' ');b.number(a.saved_ascension);c.text_fitted(row,213,183,98,10,White);
+        row[0]=0;b.n=0;b.number(a.saved_hp);b.ch('/');b.number(a.saved_max_hp);c.picture(A_Heart,212,201,10,11);c.text_fitted(row,224,201,87,10,White);
     }
-    c.text("nSpire II 0.17",215,222,10,White,102);
+    c.text("nSpire II 0.17",235,229,8,White,83);
 }
 static void native_pause_screen(Canvas&c){
  auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,185);

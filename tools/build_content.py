@@ -22,6 +22,7 @@ from setup_pose import decode_texture
 from animation import Skeleton, bake, load_textures
 from sparse_image import encode as encode_sparse
 from asset_profile import ASSETS, CLIPS, EVENT_STRINGS
+from title_assets import build_title_atlas
 
 CARDS = ['STRIKE_IRONCLAD','DEFEND_IRONCLAD','BASH','ANGER','POMMEL_STRIKE','SHRUG_IT_OFF',
          'BURNING_PACT','TRUE_GRIT','TWIN_STRIKE','INFLAME','IRON_WAVE','WHIRLWIND','FEEL_NO_PAIN','DARK_EMBRACE']
@@ -146,7 +147,7 @@ def main()->None:
     title=ImageOps.fit(background,(320,240),Image.Resampling.LANCZOS)
     hero,_=bake(pack,'ironclad','idle_loop',texture,frames=1,height=86,max_width=160,cache=skeleton_cache)
     enemy,_=bake(pack,'nibbit','idle_loop',texture,frames=1,height=40,max_width=110,cache=skeleton_cache)
-    logo=prepared(texture(pack,'sts2_logo_static.png'),(230,67),'contain')
+    logo=build_title_atlas(pack,texture)
     blood=prepared(texture(pack,'burning_blood.png'),(16,16),'contain')
     pictures=[(battle,False,False),(title,False,False),(hero[0],True,True),(enemy[0],True,True),(logo,True,True),(blood,True,False)]
     for key in CARDS:pictures.append((prepared(texture(pack,key.lower()+'.png'),(41,30),'cover'),False,False))
@@ -196,7 +197,7 @@ def main()->None:
         b=s.encode('utf-8');off=add(b+b'\0');text_dir.extend(struct.pack('<II',off,len(b)))
     anim_dir=b''.join(struct.pack('<IHHhhI',*r) for r in animation_records)
     body=bytes(images_dir+glyph_dir+text_dir+anim_dir+payload)
-    result=struct.pack('<4s9I',b'NSP2',3,0x41CEF1EA,40+len(body),len(pictures),len(glyphs),len(strings),len(animation_records),0,fnv(body))+body
+    result=struct.pack('<4s9I',b'NSP2',3,0x41CEF1EA,40+len(body),len(pictures),len(glyphs),len(strings),len(animation_records),0,0)+body
     if len(result)>32*1024*1024:raise ValueError(f'Intermediate content exceeds 32 MiB: {len(result)}')
     args.output.mkdir(parents=True,exist_ok=True)
     # Never replace a valid output with one of the larger conversion intermediates.

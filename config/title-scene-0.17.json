@@ -1,0 +1,22 @@
+{
+  "reference": "v0.111.0 / 41cef1ea",
+  "source_scene": "scenes/backgrounds/main_menu_bg.tscn",
+  "source_node": "BgContainer/Control/Logo",
+  "skeleton": "main_menu_logo",
+  "animation": "animation",
+  "viewport": [1920, 1080],
+  "screen": [320, 240],
+  "image_id": 4,
+  "atlas_size": [164, 106],
+  "text_screen_rect": [40, 48, 164, 84],
+  "fire_screen_rect": [106, 66, 16, 22],
+  "fire_atlas_y": 84,
+  "fire_frames": 10,
+  "fire_frame_ms": 100,
+  "notes": [
+    "Use the original Spine text and ten fire attachments; sts2_logo_static.png is the white outline variant, not the title-scene logo.",
+    "The 160-second attachment timeline repeats these ten drawings every second.",
+    "Match the source Control anchors and Logo transform before applying the 320x240 cover crop.",
+    "The separate light_large glow and background particles are not included in this atlas."
+  ]
+}

@@ -177,6 +177,41 @@ struct Canvas{
             }
         }
     }
+    // Atlas regions stay at their prebaked size. A mirrored region shares its
+    // original image/cache entry; no second resource or scratch bitmap is needed.
+    void picture_region(Picture p,int x,int y,int source_x,int source_y,int width,int height,bool mirror=false,unsigned opacity=255,unsigned mode=0){
+        if(!p.pixels||!opacity||width<=0||height<=0)return;
+        const int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);
+        if(left>=right||top>=bottom)return;
+        const int sx0=mx(0,source_x+(mirror?width-right:left)),sx1=mn(p.w,source_x+(mirror?width-left:right));
+        const int sy0=mx(0,source_y+top),sy1=mn(p.h,source_y+bottom);
+        if(sx0>=sx1||sy0>=sy1)return;
+        if(p.format==4){
+            const uint8_t*run=p.pixels;
+            for(int sy=0;sy<sy1;++sy){
+                unsigned spans=run[0]|unsigned(run[1])<<8;run+=2;
+                for(unsigned span=0;span<spans;++span){
+                    const int sx=run[0]|unsigned(run[1])<<8,n=run[2]|unsigned(run[3])<<8;
+                    const unsigned stride=run[4]?3u:2u;run+=5;
+                    if(sy>=sy0)for(int col=mx(sx,sx0),end=mn(sx+n,sx1);col<end;++col){
+                        const uint8_t*pixel=run+(col-sx)*stride;
+                        const unsigned alpha=div255((stride==3?pixel[2]:255)*opacity);
+                        const int dx=mirror?width-1-(col-source_x):col-source_x;
+                        paint((y+sy-source_y)*pitch+x+dx,uint16_t(pixel[0]|unsigned(pixel[1])<<8),alpha,mode);
+                    }
+                    run+=n*stride;
+                }
+            }
+            return;
+        }
+        for(int sy=sy0;sy<sy1;++sy)for(int sx=sx0;sx<sx1;++sx){
+            const unsigned at=unsigned(sy)*p.w+unsigned(sx),alpha=div255((p.alpha?p.alpha[at]:255)*opacity);
+            if(!alpha)continue;
+            const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
+            const int dx=mirror?width-1-(sx-source_x):sx-source_x;
+            paint((y+sy-source_y)*pitch+x+dx,uint16_t(pixel[0]|unsigned(pixel[1])<<8),alpha,mode);
+        }
+    }
     void clip(int id,int x,int y,uint32_t milliseconds,bool anchored=true,bool loop=true){
         auto c=a.content.clip(id);if(!c.count)return;unsigned index=milliseconds/c.frame_ms;
         index=loop?index%c.count:(unsigned)mn((int)index,c.count-1);

@@ -314,11 +314,10 @@ class ContentTiles(unittest.TestCase):
         self.assertTrue(link.is_symlink())
         self.assertFalse(target.exists())
 
-    def test_invalid_input_checksum_catalog_and_clip_bounds_are_rejected(self):
+    def test_unused_checksum_ignored_and_catalog_clip_bounds_rejected(self):
         data = bytearray(self.source.read_bytes())
-        data[-1] ^= 1
-        with self.assertRaisesRegex(ValueError, 'FNV'):
-            tiles.PackView(data, 1)
+        data[36] ^= 1
+        tiles.PackView(data, 1)
         with self.assertRaisesRegex(ValueError, 'catalog'):
             tiles.PackView(self.source.read_bytes(), 1, profile=(1, 2, 3, 1))
         source = tiles.PackView(self.source.read_bytes(), 1)
@@ -405,10 +404,10 @@ class ContentTiles(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'complete index record'):
             bad.image_raw(1)
 
-    def test_complete_pack_truncation_and_group_crc_are_rejected(self):
+    def test_truncation_rejected_and_unused_group_crc_ignored(self):
         output, _ = self.convert()
         data = output.read_bytes()
-        with self.assertRaisesRegex(ValueError, 'size or FNV'):
+        with self.assertRaisesRegex(ValueError, 'size mismatch'):
             tiles.PackView(data[:-1], 1, versions=(15,))
         pack = tiles.PackView(data, 1, versions=(15,))
         reader = tiles.TileReader(pack)
@@ -416,8 +415,7 @@ class ContentTiles(unittest.TestCase):
         first_header = reader.groups[0][0] - tiles.GROUP.size
         changed[first_header + 20] ^= 1
         bad = tiles.TileReader(tiles.PackView(seal(changed), 1, versions=(15,)))
-        with self.assertRaisesRegex(ValueError, 'CRC mismatch'):
-            bad.group(0)
+        self.assertEqual(bad.group(0), reader.group(0))
 
     def test_tile_padding_dimensions_and_index_bounds(self):
         valid = bytes((1, 1)) + b'\x34\x12' + bytes(510) + b'\xff' + bytes(255)

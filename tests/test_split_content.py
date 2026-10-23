@@ -13,7 +13,7 @@ spec.loader.exec_module(split)
 def fixture(language, version=17):
     ni, ng, ns, nc, nk, aux = 2, 1, 6111, 1, 1, 1
     base = 40 + ni*16 + ng*16 + ns*8 + nc*16 + nk*16 + aux*4
-    table, descriptors = base + 64, base + 72
+    table, descriptors = base + 64, base + 72 + (2 if version >= 20 else 0)
     prefix = descriptors + 16
     image = b"\x00\x00\x01\x00"
     group = struct.pack("<4s7I", b"TGR1", 0, 0, 4, 4, 0, 1, 0) + b"tile"
@@ -26,7 +26,7 @@ def fixture(language, version=17):
     struct.pack_into("<IHHII",out,56,descriptors,2,1,6,16)
     struct.pack_into("<IIHBBHH",out,72,65,prefix+len(art),8,1,1,1,0)
     for i in range(ns):struct.pack_into("<II",out,88+i*8,prefix+len(art)+len(glyph),3)
-    struct.pack_into("<4s15I",out,base,b"TIL1",1,16,14,1,1,0,1,descriptors,table,770,1,512*1024,620000,0,0)
+    struct.pack_into("<4s15I",out,base,b"TIL1",1,16,14,1,1,0,1,descriptors,table,770,1,512*1024,620000,table+8 if version >= 20 else 0,ni if version >= 20 else 0)
     struct.pack_into("<II",out,table,prefix,len(group))
     struct.pack_into("<4I",out,descriptors,base,0,0,4)
     struct.pack_into("<I",out,36,split.fnv(memoryview(out)[40:]))
@@ -35,7 +35,7 @@ def fixture(language, version=17):
 
 class SplitContentTest(unittest.TestCase):
     def test_lossless_known_versions(self):
-        for version in (17,18,19):
+        for version in (17,18,19,20):
             original={lang:fixture(lang,version) for lang in ("eng","zhs")}
             common,locales,receipt=split.split(original)
             self.assertEqual(receipt["common"]["artwork_bytes"],40)
@@ -47,12 +47,20 @@ class SplitContentTest(unittest.TestCase):
     def test_corrupt_and_mismatched(self):
         packs={lang:fixture(lang) for lang in ("eng","zhs")}
         common,locales,_=split.split(packs)
-        for at in (0,4,16,20,28,32,64):
+        for at in (0,4,16,20):
             damaged=bytearray(common);damaged[at]^=1
             with self.assertRaises(ValueError):split.reconstruct(damaged,locales["eng"],"eng")
-        for at in (0,4,16,24,28,36,44,48,80,len(locales["eng"])-1):
+        for at in (0,4,16,24,28,36,len(locales["eng"])-1):
             damaged=bytearray(locales["eng"]);damaged[at]^=1
             with self.assertRaises(ValueError):split.reconstruct(common,damaged,"eng")
+        for at in (24,28,32,63):
+            damaged=bytearray(common);damaged[at]^=1
+            self.assertEqual(split.reconstruct(damaged,locales["eng"],"eng"),packs["eng"])
+        for at in (40,44,48,80,95):
+            damaged=bytearray(locales["eng"]);damaged[at]^=1
+            self.assertEqual(split.reconstruct(common,damaged,"eng"),packs["eng"])
+        damaged=bytearray(common);damaged[64]^=1
+        self.assertNotEqual(split.reconstruct(damaged,locales["eng"],"eng"),packs["eng"])
         damaged=bytearray(packs["zhs"]);row=split.layout(damaged,"zhs");damaged[row["prefix"]+39]^=1
         struct.pack_into("<I",damaged,36,split.fnv(memoryview(damaged)[40:]))
         with self.assertRaises(ValueError):split.split(dict(packs,zhs=damaged))
@@ -60,7 +68,7 @@ class SplitContentTest(unittest.TestCase):
     def test_locale_and_ranges(self):
         data=fixture("eng")
         with self.assertRaises(ValueError):split.layout(data,"zhs")
-        with self.assertRaises(ValueError):split.layout(fixture("eng",20),"eng")
+        with self.assertRaises(ValueError):split.layout(fixture("eng",21),"eng")
         for at,value in ((12,len(data)+1),(16,65536),(20,32769),(24,6110)):
             bad=bytearray(data);struct.pack_into("<I",bad,at,value)
             with self.assertRaises(ValueError):split.layout(bad,"eng")

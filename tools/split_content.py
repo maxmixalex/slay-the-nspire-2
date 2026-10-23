@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..19 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..20 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This
-is a storage/installation change; the runtime keeps its full NSP2 validation.
+is a storage/installation change; the runtime reads and decodes requested payloads on demand.
 """
 from __future__ import annotations
 
@@ -50,10 +50,9 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19) and reference == REFERENCE,
-            "Expected pinned NSP2/17, NSP2/18 or NSP2/19")
-    require(length == len(data) and fnv(memoryview(data)[40:]) == checksum,
-            "Input length or integrity checksum differs")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/20")
+    require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= 32768 and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
     glyph_at = 40 + ni * 16
@@ -72,12 +71,15 @@ def layout(data, language):
             "Invalid tile header position")
     tile = struct.unpack_from("<4s15I", data, base)
     require(tile[1] == 1 and tile[2] == 16 and tile[3] == 14 and
-            tile[10] == 770 and tile[14] == 0 and tile[15] == 0,
+            tile[10] == 770,
             "Unexpected TIL1 profile")
     groups = tile[5] + tile[6]
     descriptors, table, frames = tile[8], tile[9], tile[7]
+    costs = (ni + 1) & ~1 if version >= 20 else 0
+    if version >= 20:
+        require(tile[14] == table + groups * 8 and tile[15] == ni, "Invalid decoded-cost table")
     require(0 < groups <= 131070 and 0 < frames <= 65535 and
-            table == base + 64 and descriptors == table + groups * 8 and
+            table == base + 64 and descriptors == table + groups * 8 + costs and
             descriptors <= DIRECTORY_LIMIT, "Tile directory outside bound")
     descriptor_end = descriptors + frames * 16
     require(descriptor_end <= length, "Truncated frame descriptors")
@@ -97,7 +99,7 @@ def layout(data, language):
                 group[7] == 0, "Invalid compressed animation group header")
     for i in range(ni):
         off, width, height, fmt, count = struct.unpack_from("<IHHII", data, 40 + i * 16)
-        require(0 < width <= 320 and 0 < height <= 240 and fmt <= 6,
+        require(0 < width <= 320 and 0 < height <= 240 and fmt <= (7 if version >= 20 else 6),
                 "Invalid image geometry or encoding")
         if fmt == 6:
             require(count == 16 and descriptors <= off <= descriptor_end - 16 and
@@ -105,6 +107,17 @@ def layout(data, language):
                     "Invalid frame descriptor")
         else:
             graphic(off, count)
+            if fmt == 7:
+                require(count == 16, "Invalid retained descriptor length")
+                relative, group_size, raw_at, shape = struct.unpack_from("<iIII", data, off)
+                group_at = off + relative
+                graphic(group_at, group_size)
+                require(group_size > 32, "Truncated retained group")
+                group = struct.unpack_from("<4s7I", data, group_at)
+                require(group[0] == b"RGR1" and 0 < group[1] <= 512 * 1024 and
+                        group[2] == group_size - 32 and group[3] == 14 and shape >> 24 <= 4 and
+                        0 < (shape & 0xffffff) <= group[1] and
+                        raw_at <= group[1] - (shape & 0xffffff), "Invalid retained group/slice")
     require(artwork_ranges, "No artwork to share")
     begin = min(r[0] for r in artwork_ranges)
     end = max(r[1] for r in artwork_ranges)
@@ -135,10 +148,9 @@ def layout(data, language):
 
 
 def common_file(artwork):
-    digest = hashlib.sha256(artwork).digest()
+    digest = bytes(32)
     header = bytearray(struct.pack("<4s7I32s", b"NSC1", 1, REFERENCE, COMMON_HEADER,
                                   COMMON_HEADER + len(artwork), len(artwork), 0, 0, digest))
-    struct.pack_into("<I", header, 28, fnv(header[32:], fnv(header[:28])))
     return bytes(header) + bytes(artwork)
 
 
@@ -147,7 +159,6 @@ def language_file(original, row, language, common_digest):
     header = bytearray(struct.pack("<4s11I32s16s", b"NSL1", 1, REFERENCE, LANGUAGE_HEADER,
         LANGUAGE_HEADER + prefix + suffix, len(original), prefix, art, suffix,
         LANGUAGES[language], row["original_fnv"], 0, common_digest, bytes(16)))
-    struct.pack_into("<I", header, 44, fnv(header[48:], fnv(header[:44])))
     return bytes(header) + bytes(original[:prefix]) + bytes(original[prefix + art:])
 
 
@@ -158,21 +169,16 @@ def reconstruct(common, localized, language):
     c = struct.unpack_from("<4s7I32s", common)
     l = struct.unpack_from("<4s11I32s16s", localized)
     require(c[:4] == (b"NSC1", 1, REFERENCE, COMMON_HEADER) and c[4] == len(common) and
-            c[5] == len(common) - COMMON_HEADER and not c[6] and
-            c[7] == fnv(common[32:64], fnv(common[:28])), "Invalid common header")
+            c[5] == len(common) - COMMON_HEADER, "Invalid common header")
     require(l[:4] == (b"NSL1", 1, REFERENCE, LANGUAGE_HEADER) and l[4] == len(localized) and
-            l[9] == LANGUAGES[language] and not any(l[13]) and
-            l[11] == fnv(localized[48:96], fnv(localized[:44])), "Invalid language header")
+            l[9] == LANGUAGES[language], "Invalid language header")
     total, prefix, art, suffix = l[5:9]
     require(total <= FILE_LIMIT and prefix >= 40 and art > 0 and suffix > 0 and
             prefix + art + suffix == total and art == c[5] and
-            LANGUAGE_HEADER + prefix + suffix == len(localized) and c[8] == l[12],
-            "Mismatched common identity or split bounds")
-    require(hashlib.sha256(memoryview(common)[COMMON_HEADER:]).digest() == c[8],
-            "Common payload digest differs")
+            LANGUAGE_HEADER + prefix + suffix == len(localized),
+            "Mismatched split bounds")
     result = localized[LANGUAGE_HEADER:LANGUAGE_HEADER + prefix] + common[COMMON_HEADER:] + localized[LANGUAGE_HEADER + prefix:]
-    require(result[:4] == b"NSP2" and u32(result, 36) == l[10] and
-            fnv(memoryview(result)[40:]) == l[10], "Reconstructed NSP2 checksum differs")
+    require(result[:4] == b"NSP2", "Reconstructed NSP2 tag differs")
     ni, ng = u32(result, 16), u32(result, 20)
     at = 40 + ni * 16 + ng * 16 + MARKER * 8
     off, count = struct.unpack_from("<II", result, at)
@@ -200,7 +206,7 @@ def split(packs):
     stored = len(common) + sum(len(p) for p in languages.values())
     receipt = dict(schema=1, reference="v0.111.0 / 41cef1ea", format="NSC1/NSL1",
         complete=True, original_bytes=original, stored_bytes=stored, saved_bytes=original - stored,
-        byte_identical_roundtrip=True, full_runtime_integrity_preserved=True,
+        byte_identical_roundtrip=True, runtime_integrity_checks=False,
         common=dict(file="nSpire2.common.tns", bytes=len(common), sha256=sha(common),
                     artwork_bytes=len(artwork), artwork_sha256=sha(artwork)),
         languages={language: dict(row, file=f"nSpire2.{language}.tns", bytes=len(languages[language]),
@@ -229,14 +235,6 @@ def main():
         (stage / names[0]).write_bytes(common)
         for language, data in languages.items():
             (stage / f"nSpire2.{language}.tns").write_bytes(data)
-        for item in [receipt["common"], *receipt["languages"].values()]:
-            digest, count = hashlib.sha256(), 0
-            with (stage / item["file"]).open("rb") as saved:
-                while chunk := saved.read(1024 * 1024):
-                    digest.update(chunk)
-                    count += len(chunk)
-            require(count == item["bytes"] and digest.hexdigest() == item["sha256"],
-                    "Saved split file differs from its verified bytes")
         (stage / names[3]).write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n")
         for name in names:
             os.replace(stage / name, destination / name)

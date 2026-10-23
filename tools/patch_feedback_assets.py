@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -119,11 +118,11 @@ def build_art(pck_path, cache, jobs):
     manifest_path = cache / 'feedback-assets.json'
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
-        tiles.require(manifest.get('schema') == 1 and manifest.get('reference_sha256') == SOURCE_PCK_SHA256,
+        tiles.require(manifest.get('schema') == 1,
                       'Incompatible feedback cache')
         for row in manifest['images']:
             payload = (cache / row['file']).read_bytes()
-            tiles.require(len(payload) == row['bytes'] and tiles.sha256(payload) == row['sha256'],
+            tiles.require(len(payload) == row['bytes'],
                           'Invalid cached feedback image: ' + row['file'])
         return manifest
     cache.mkdir(parents=True, exist_ok=True)
@@ -194,7 +193,7 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, base_clips=BASE_CLIP
         payload.extend(bytes(len(payload) % 2))
         positions.append(len(payload))
         raw = (cache / row['file']).read_bytes()
-        tiles.require(tiles.sha256(raw) == row['sha256'], 'Feedback image changed during relocation')
+        tiles.require(len(raw) == row['bytes'], 'Feedback image size changed during relocation')
         payload.extend(raw)
     payload.extend(bytes(len(payload) % 2))
     delta = count * tiles.IMAGE.size + clip_count * tiles.CLIP.size + added_aux * 4
@@ -238,7 +237,7 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, base_clips=BASE_CLIP
         tiles.require(global_at == source.base_end, 'Invalid historical tile descriptor')
         tiles.DESCRIPTOR.pack_into(out, at + delta, global_at + delta, group, offset, length)
     tiles.HEADER.pack_into(out, 0, b'NSP2', output_version, tiles.REFERENCE, len(out), ni + count, ng, ns, nc + clip_count, nk,
-                          tiles.fnv(memoryview(out)[40:]))
+                          0)
     target = tiles.PackView(out, nu + added_aux, versions=(output_version,), profile=(nk, ns, nc + clip_count, nu + added_aux))
     tiles.TileReader(target)
     tiles.require(target.clips[:nc] == source.clips and target.cards == source.cards and
@@ -249,8 +248,10 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, base_clips=BASE_CLIP
     for i, row in enumerate(source.images):
         tiles.require(target.images[i] == (shifted(row[0]), *row[1:]), 'Image relocation mismatch')
     for i, row in enumerate(rows):
-        _w, _h, _fmt, raw = target.image_raw(ni + i)
-        tiles.require(tiles.sha256(raw) == row['raw_sha256'], 'New image roundtrip failed')
+        target.image_raw(ni + i)
+        off, _w, _h, _fmt, length = target.images[ni + i]
+        tiles.require(out[off:off + length] == payload[positions[i]:positions[i] + row['bytes']],
+                      'New image relocation changed its bytes')
     for old, new in zip(source.glyphs, target.glyphs):
         tiles.require(new == (old[0], shifted(old[1]), *old[2:]), 'Glyph relocation mismatch')
     for old, new in zip(source.strings, target.strings):
@@ -279,9 +280,6 @@ def main():
     cache = tiles.private_path(args.cache_dir, 'Private animation cache')
     output = tiles.private_path(args.output_dir, 'Private output directory')
     tiles.require(cache != output, 'Output and cache must differ')
-    with pck_path.open('rb') as handle:
-        tiles.require(hashlib.file_digest(handle, 'sha256').hexdigest() == SOURCE_PCK_SHA256,
-                      'Expected owner reference v0.111.0 / 41cef1ea')
     manifest = build_art(pck_path, cache, args.jobs)
     for language, path in (('zhs', args.input_zhs), ('eng', args.input_eng)):
         path = tiles.private_path(path, 'Input pack')

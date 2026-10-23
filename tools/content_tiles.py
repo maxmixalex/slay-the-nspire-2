@@ -21,7 +21,6 @@ import shutil
 import struct
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 import time
-import zlib
 
 import numpy as np
 
@@ -180,8 +179,7 @@ class PackView:
         magic, self.version, reference, size, ni, ng, ns, nc, nk, checksum = fields
         require(magic == b'NSP2' and self.version in versions and reference == REFERENCE,
                 'Expected pinned NSP2 pack version')
-        require(size == len(data) and checksum == fnv(memoryview(data)[40:]),
-                'Pack size or FNV mismatch')
+        require(size == len(data), 'Pack size mismatch')
         require(0 < ni <= 65535 and 0 < ng <= 32768 and 0 < ns <= 65535 and
                 0 < nc <= 65535 and 0 < nk <= 65535 and 0 < auxiliary_count <= 65535,
                 'Invalid directory counts')
@@ -198,7 +196,7 @@ class PackView:
         require(self.base_end <= min(len(data), DIRECTORY_LIMIT), 'Directory outside limit')
         self.images = [IMAGE.unpack_from(data, 40 + i * 16) for i in range(ni)]
         for offset, w, h, fmt, length in self.images:
-            require(0 < w <= 320 and 0 < h <= 240 and 0 <= fmt <= (6 if self.version in (15, 16, 17, 18, 19) else 5),
+            require(0 < w <= 320 and 0 < h <= 240 and 0 <= fmt <= (7 if self.version >= 20 else 6 if self.version >= 15 else 5),
                     'Invalid image dimensions or format')
             require(offset % 2 == 0 and 0 < length <= ENCODED_LIMIT, 'Invalid image range')
             self.block(offset, length)
@@ -229,6 +227,7 @@ class PackView:
         self.aux = list(struct.unpack_from('<' + 'I' * auxiliary_count, data, self.aux_at))
         require(all(row[0] < ni and all(value < ns for value in row[1:]) for row in self.cards)
                 and all(image < ni for image in self.aux), 'Invalid directory reference')
+        self.retained_cache = OrderedDict()
 
     def block(self, offset, size):
         require(offset >= self.base_end and 0 <= size <= len(self.data) - offset,
@@ -238,6 +237,27 @@ class PackView:
     def image_raw(self, image_id):
         offset, width, height, fmt, length = self.images[image_id]
         payload = self.block(offset, length)
+        if fmt == 7:
+            require(self.version >= 20 and length == 16, 'Invalid retained descriptor')
+            relative, group_size, raw_at, shape = struct.unpack('<iIII', payload)
+            group_at, fmt, size = offset + relative, shape >> 24, shape & 0xffffff
+            require(fmt <= 4 and 0 < size <= IMAGE_LIMIT, 'Invalid retained image shape')
+            if group_at in self.retained_cache:
+                self.retained_cache.move_to_end(group_at)
+                raw = self.retained_cache[group_at]
+            else:
+                require(GROUP.size < group_size <= ENCODED_LIMIT, 'Invalid retained group size')
+                group = self.block(group_at, group_size)
+                tag, raw_size, encoded_size, prop, _items, _a, _b, _c = GROUP.unpack_from(group)
+                require(tag == b'RGR1' and 0 < raw_size <= GROUP_LIMIT and
+                        encoded_size == group_size - GROUP.size and prop == 14,
+                        'Invalid retained group header')
+                raw = decode_lzma2(group[GROUP.size:], raw_size)
+                if len(self.retained_cache) == HOST_CACHE_GROUPS:
+                    self.retained_cache.popitem(last=False)
+                self.retained_cache[group_at] = raw
+            require(raw_at <= len(raw) and size <= len(raw) - raw_at, 'Retained slice outside group')
+            payload = raw[raw_at:raw_at + size]
         if fmt == 5:
             require(len(payload) >= 6, 'Truncated LZ4 image wrapper')
             fmt, size = struct.unpack_from('<BI', payload)
@@ -446,7 +466,7 @@ class EncodedCache:
                     continue
                 row = json.loads(metadata.read_bytes())
                 if not isinstance(row, dict) or not all(key in row for key in
-                    ('raw_sha256', 'raw_bytes', 'encoded_bytes', 'encoded_sha256', 'raw_crc32', 'identity')):
+                    ('raw_sha256', 'raw_bytes', 'encoded_bytes', 'identity')):
                     continue
                 identity = row['identity']
                 require(isinstance(identity, dict), 'Invalid cache identity')
@@ -473,8 +493,7 @@ class EncodedCache:
         if payload is None:
             for imported_path, row in self.imported.get((len(raw), digest), ()):
                 candidate = imported_path.read_bytes()
-                require(len(candidate) == row['encoded_bytes'] and sha256(candidate) == row['encoded_sha256']
-                        and zlib.crc32(raw) == row['raw_crc32'], 'Changed imported cache payload')
+                require(len(candidate) == row['encoded_bytes'], 'Changed imported cache payload size')
                 require(decode_lzma2(candidate, len(raw)) == raw, 'Imported cache raw bytes differ')
                 payload, reused = candidate, True
                 break
@@ -483,7 +502,7 @@ class EncodedCache:
                 filters=[dict(id=lzma.FILTER_LZMA2, preset=6, dict_size=GROUP_LIMIT)])
         require(decode_lzma2(payload, len(raw)) == raw, 'Cached or compressed group byte mismatch')
         row = dict(path=str(path.resolve()), raw_bytes=len(raw), raw_sha256=digest,
-                   raw_crc32=zlib.crc32(raw), encoded_bytes=len(payload), encoded_sha256=sha256(payload),
+                   raw_crc32=0, encoded_bytes=len(payload), encoded_sha256=sha256(payload),
                    identity=identity, cache_hit=reused)
         if not path.exists():
             atomic_bytes(path, payload)
@@ -526,7 +545,7 @@ def compress_plan(plan, cache, *, workers=4, progress=None):
 
 
 def write_pack(source, plan, groups, per_group, destination, maximum):
-    """Write a real NSP2 file, including all metadata, padding, CRCs and FNV."""
+    """Write a real NSP2 file, including metadata and padding; legacy integrity words are unused."""
     table = source.base_end + GLOBAL.size
     prefix_end = table + len(groups) * 8
     require(prefix_end <= DIRECTORY_LIMIT, 'Extended directory exceeds resident cache')
@@ -584,10 +603,9 @@ def write_pack(source, plan, groups, per_group, destination, maximum):
                 cursor += 1
                 byte_counts['alignment_bytes'] += 1
             payload = Path(row['path']).read_bytes()
-            require(len(payload) == row['encoded_bytes'] and sha256(payload) == row['encoded_sha256'],
-                    'Encoded group changed before pack write')
+            require(len(payload) == row['encoded_bytes'], 'Encoded group size changed before pack write')
             header = GROUP.pack(b'TGR1', row['type'], group_id, row['raw_bytes'], len(payload),
-                                row['raw_crc32'], row['item_count'], 0)
+                                0, row['item_count'], 0)
             struct.pack_into('<II', directory, table + group_id * 8, cursor, len(header) + len(payload))
             out.write(header)
             out.write(payload)
@@ -605,11 +623,6 @@ def write_pack(source, plan, groups, per_group, destination, maximum):
         HEADER.pack_into(directory, 0, b'NSP2', 15, REFERENCE, cursor, ni, ng, ns, nc, nk, 0)
         out.seek(0)
         out.write(directory)
-        out.flush()
-        with mmap.mmap(out.fileno(), 0, access=mmap.ACCESS_READ) as data:
-            checksum = fnv(memoryview(data)[40:])
-        out.seek(36)
-        out.write(struct.pack('<I', checksum))
         out.flush()
         os.fsync(out.fileno())
     return byte_counts
@@ -647,20 +660,23 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19), 'Tiled reader requires version 15 through 19')
+        require(pack.version in (15, 16, 17, 18, 19, 20), 'Tiled reader requires version 15 through 20')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)
         (magic, version, side, prop, self.tile_count, self.tile_groups, self.index_groups,
          self.frame_count, self.descriptors, table, tile_bytes, self.per_group,
          raw_bound, encoded_bound, flags, reserved) = fields
-        require((magic, version, side, prop, tile_bytes, raw_bound, encoded_bound, flags, reserved) ==
-                (b'TIL1', 1, SIDE, 14, TILE_BYTES, GROUP_LIMIT, ENCODED_LIMIT, 0, 0), 'Invalid tile codec header')
+        require((magic, version, side, prop, tile_bytes, raw_bound, encoded_bound) ==
+                (b'TIL1', 1, SIDE, 14, TILE_BYTES, GROUP_LIMIT, ENCODED_LIMIT), 'Invalid tile codec header')
         require(1 <= self.per_group <= MAX_TILES_PER_GROUP and 0 < self.tile_count <= MAX_TILES and
                 self.tile_groups == (self.tile_count + self.per_group - 1) // self.per_group and
                 0 < self.index_groups <= self.frame_count <= len(pack.images), 'Invalid tile counts')
         group_count = self.tile_groups + self.index_groups
         self.prefix_end = table + group_count * 8
+        if pack.version >= 20:
+            require(flags == self.prefix_end and reserved == len(pack.images), 'Invalid decoded-cost table')
+            self.prefix_end += (len(pack.images) + 1) & ~1
         require(table == pack.base_end + GLOBAL.size and self.prefix_end <= min(len(pack.data), DIRECTORY_LIMIT)
                 and self.descriptors >= self.prefix_end and self.descriptors % 2 == 0,
                 'Invalid extended directory placement')
@@ -706,7 +722,6 @@ class TileReader:
             return self.cache[group_id]
         off, encoded_size, raw_size, crc, kind, count = self.groups[group_id]
         raw = decode_lzma2(self.pack.data[off:off + encoded_size], raw_size)
-        require(zlib.crc32(raw) == crc, 'Group CRC mismatch')
         if kind == 1:
             validate_tiles(raw)
             starts = None
@@ -855,7 +870,6 @@ def repack(input_path, output_path, work_directory, *, auxiliary_count, first_cl
                 with candidate.open('rb') as output, mmap.mmap(output.fileno(), 0, access=mmap.ACCESS_READ) as encoded:
                     verified = verify_pack(source, encoded, plan, progress=progress)
                     output_hash, output_bytes = sha256(encoded), len(encoded)
-                require(sha256(data) == source_hash, 'Input changed during conversion')
                 current_stat = input_path.stat()
                 require((current_stat.st_dev, current_stat.st_ino, current_stat.st_size) ==
                         (input_stat.st_dev, input_stat.st_ino, input_stat.st_size),
