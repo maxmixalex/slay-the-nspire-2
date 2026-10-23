@@ -1,6 +1,6 @@
 # Development continuity
 
-Read `docs/WORK_STATE.md` before doing work. The active 0.17 task is all original single-player events and enemies, followed by playable original maps, followed by original UI fidelity targeting at least 95%, with calculator-screen scaling and layout adjustments permitted. Continue on `work/0.17-world-parity` from completed 0.16 head `4abacfa4`. Preserve the verified five-character/card/potion foundation. Read `docs/world-parity-0.17.md` for scope and integration boundaries. Preserve source persistence BEFORE long validation. The user requests parallel sub-agents.
+Read `docs/WORK_STATE.md` before doing work. The active 0.17 task is original UI fidelity and calculator usability first, followed by runtime performance and resource storage size. Preserve the verified single-player content, five-character/card/potion foundation and world/map behavior. The repository moved to `maxmixalex/slay-the-nspire-2` on 2026-10-23. Continue coherent changes on `work/0.17-world-parity`, then synchronize verified progress to `main` as the user requested. Read `docs/world-parity-0.17.md` for scope and integration boundaries. Preserve source persistence BEFORE long validation. The user requests parallel sub-agents with smaller independent goals.
 
 ## Required checkpoint cycle
 
@@ -14,7 +14,11 @@ Do not rely on an uninterrupted conversation, hidden working context, or an unsa
 
 ## Scope and evidence
 
-Keep the reference locked to v0.111.0 / 41cef1ea. Audio, multiplayer, and Timeline are excluded. Keep remote CI disabled; `.github/disabled-workflows/ci.yml` must not be moved back into workflows without explicit permission.
+Keep the reference locked to v0.111.0 / 41cef1ea. Audio, multiplayer, and Timeline are excluded. The user explicitly authorized GitHub Actions in the transferred repository and synchronization of current progress to `main`. Keep active workflows in `.github/workflows/`; run native regressions and portable builds without private assets. Clean up branches only after their history is reachable from main or preserved by an archive tag; do not discard unique history.
+
+The user explicitly requested removal of runtime integrity/hash checks that are neither original-game requirements nor functional prerequisites. Do not retain full-file FNV scans, integrity-only CRC verification, or eager resource-wide validation passes as a default policy. Keep the bounds, format identification, exact decoding and indexing needed to render/play correctly. Functional RNG/lookup/cache hashes are separate. Developer build/test comparisons do not add work to game startup; report executed performance and compatibility rather than silently changing this policy.
+
+The user authorized saving the completed calculator ZIP and offline HTML to their ChatGPT Library. This permission also resolves the earlier upload approval block; verify that files still exist or reconstruct them accurately before saving. Original assets remain private and must never be pushed to this public repository.
 
 Never publish original PCK/assembly data, fonts, calculator images, private disassembly, game-derived packs or embedded-content HTML in this public source repository. Runtime source HTML templates are allowed; generated HTML containing private assets is not.
 

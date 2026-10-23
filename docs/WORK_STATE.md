@@ -1,6 +1,35 @@
 # Work state — 2026-10-23
 
-## Current: final v19 bilingual runtime verified and packaged; artifact storage awaits authorization
+## Current: transferred repository; UI, runtime and storage work resumed
+
+The user transferred the repository to `maxmixalex/slay-the-nspire-2`, explicitly
+authorized GitHub Actions and synchronization of verified progress to `main`,
+and requested branch cleanup without discarding unique work. The recovered
+development head is `a5391bbcfe42bfa656e63ec23c8daed4592c2011`; old main is
+`efc50bc0b0cc6ca8e83461a2ff394cc7a56895e0`. The old disabled-CI policy is superseded.
+
+The user also explicitly authorized saving the two completed ui2 artifacts to
+their ChatGPT Library. Environment maintenance removed the previous scratch
+checkout, private inputs and unsaved ui2 files before this turn. Source history
+is recovered intact from the transferred repository. Private asset recovery is
+in progress; the previous checksums remain historical identities and are not
+evidence that those old files are currently available. Do not claim a recreated
+artifact is byte-identical until actually established.
+
+New runtime policy: remove integrity/hash checks that are not original-game
+requirements or functional prerequisites. Full-file FNV, integrity-only CRC and
+eager catalog-wide validation are being removed. Preserve real parsing/indexing
+and decoder bounds, gameplay RNG and functional lookup/cache hashes. Previous
+documents explaining retention are historical evaluations, not current policy.
+
+Parallel work is split between startup/runtime checks, original title Logo and
+frontend behavior, private asset recovery and lossless storage improvements.
+The integration owner handles Actions, source/main persistence, branch history
+and combat status presentation. Native/portable CI runs without private data.
+Actual UI and resource checks follow recovered inputs; no new acceptance is
+claimed at this initial continuity checkpoint.
+
+## Earlier ui2: runtime verified and packaged; upload was blocked before authorization
 
 Final report and packaging checkpoint
 `46f7ab9ed5292e07212a5b423c43e951f7d97a23` is pushed, read back and verified

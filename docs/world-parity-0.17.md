@@ -1,6 +1,11 @@
 # Original world and UI — 0.17
 
-Reference remains the owner's pinned v0.111.0 / 41cef1ea installation. User order: all single-player events and enemies; playable original maps; original UI targeting 95%+ fidelity after justified adaptation to 320 × 240. Audio, multiplayer and Timeline remain excluded. Remote CI stays disabled. Original assembly/PCK data, disassembly, fonts and derived assets stay private.
+Reference remains the owner's pinned v0.111.0 / 41cef1ea installation. User order: all single-player events and enemies; playable original maps; original UI targeting 95%+ fidelity after justified adaptation to 320 × 240. Audio, multiplayer and Timeline remain excluded. On 2026-10-23 the user transferred the repository to `maxmixalex/slay-the-nspire-2`, authorized Actions and requested verified progress on main. Original assembly/PCK data, disassembly, fonts and derived assets stay private.
+
+Current priorities are original UI and calculator usability, runtime speed, and
+storage size. Remove integrity-only runtime hashing and validation that is not
+required by original gameplay or functional parsing/decoding. This supersedes
+the earlier retention policy below; necessary range and format handling remain.
 
 The owner subsequently requested investigation of Sprite Dicing, streaming and a
 **30–40 MB calculator installation**. The actual complete lossless pack is
