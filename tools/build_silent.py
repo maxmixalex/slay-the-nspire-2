@@ -65,7 +65,7 @@ def build(game: Path, source: Path, output: Path, font: Path) -> dict:
     verify_release(game); b=source.read_bytes()
     if len(b)<40:raise ValueError('Truncated pack')
     magic,version,commit,size,ni,ng,ns,nc,nk,digest=struct.unpack_from('<4s9I',b)
-    if magic!=b'NSP2' or version not in (5,6) or commit!=0x41CEF1EA or size!=len(b) or fnv(b[40:])!=digest:
+    if magic!=b'NSP2' or version not in (5,6) or commit!=0x41CEF1EA or size!=len(b):
         raise ValueError('Expected intact pinned NSP2/5 or NSP2/6')
     expected=(26,11,56) if version==5 else (51,17,74)
     if (nk,nc)!=expected[:2] or ni>8192 or ng>8192 or ns>2048:raise ValueError('Incompatible directories')
@@ -187,7 +187,7 @@ def build(game: Path, source: Path, output: Path, font: Path) -> dict:
     sdata=b''.join(struct.pack('<II',append(t.encode()+b'\0'),len(t.encode())) for t in strings)
     cdata=b''.join(struct.pack('<4I',*r) for r in records)
     body=idata+gdata+sdata+animations+cdata+struct.pack('<'+str(len(aux))+'I',*aux)+payload
-    data=struct.pack('<4s9I',b'NSP2',6,commit,40+len(body),ni,ng,ns,nc,nk,fnv(body))+body
+    data=struct.pack('<4s9I',b'NSP2',6,commit,40+len(body),ni,ng,ns,nc,nk,0)+body
     if len(data)>6*1024*1024:raise ValueError(f'Pack exceeds resident buffer: {len(data):,}')
     output.parent.mkdir(parents=True,exist_ok=True);temp=output.with_name(output.name+'.tmp');temp.write_bytes(data);temp.replace(output)
     manifest={'format':'NSP2/6','reference':'v0.111.0 / 41cef1ea','bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),

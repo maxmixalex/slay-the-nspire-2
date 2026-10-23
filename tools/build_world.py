@@ -616,7 +616,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path, *,
     if output == source:
         raise ValueError('Output must not overwrite the historical source pack')
     print('Verifying pinned input hashes and generated directory tables', flush=True)
-    _lock, _dll, hashes = verify_release(game)
+    _lock, _dll, hashes = verify_release(game, cache_identity=True)
     if sha256(source) != SOURCE_SHA256:
         raise ValueError('Historical NSP2/13 SHA-256 does not match the completed 0.16 pack')
     validate_headers()

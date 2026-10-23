@@ -127,7 +127,13 @@ def model_types(path: Path) -> dict[str, list[dict[str, object]]]:
     return result
 
 
-def verify_release(game: Path) -> tuple[dict, Path, dict]:
+def verify_release(game: Path, *, cache_identity: bool = False) -> tuple[dict, Path, dict]:
+    """Select the supported release from its metadata, without scanning assets.
+
+    Full conversion caches can request content identities to distinguish their
+    input files. Those hashes are cache keys, never an integrity acceptance gate.
+    Ordinary incremental converters do not need to read the whole PCK first.
+    """
     lock = json.loads((ROOT / 'config' / 'reference-release.json').read_text())
     info = json.loads((game / 'release_info.json').read_text(encoding='utf-8-sig'))
     dll = game / 'sts2.dll'
@@ -135,10 +141,10 @@ def verify_release(game: Path) -> tuple[dict, Path, dict]:
         dll = game / 'data_sts2_windows_x86_64' / 'sts2.dll'
     if info.get('commit') != lock['commit'] or info.get('version') != lock['version']:
         raise ValueError('The installation does not match the pinned reference release.')
-    hashes = {'assembly': sha256(dll), 'pck': sha256(game / 'SlayTheSpire2.pck')}
-    if hashes != lock['sha256']:
-        raise ValueError('Reference file hash mismatch; a different or modified build is not this baseline.')
-    return lock, dll, hashes
+    identity = {'version': info['version'], 'commit': info['commit']}
+    if cache_identity:
+        identity.update(assembly=sha256(dll), pck=sha256(game / 'SlayTheSpire2.pck'))
+    return lock, dll, identity
 
 
 def main() -> None:
@@ -146,12 +152,12 @@ def main() -> None:
     parser.add_argument('game', type=Path)
     parser.add_argument('--output', type=Path, default=ROOT / 'dist' / 'reference-inventory.json')
     args = parser.parse_args()
-    lock, dll, hashes = verify_release(args.game)
+    lock, dll, identity = verify_release(args.game)
     models = model_types(dll)
     counts = {k: len(v) for k, v in models.items()}
     if counts != lock['metadata_type_counts']:
         raise ValueError('Reference metadata counts differ from the audited baseline')
-    output = {'version': lock['version'], 'commit': lock['commit'], 'sha256': hashes,
+    output = {'version': lock['version'], 'commit': lock['commit'], 'reference': identity,
               'metadata_type_counts': counts, 'models': models,
               'count_semantics': 'Metadata definitions, not verified obtainable content or port coverage.'}
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -152,7 +152,7 @@ def main(argv=None):
     if sha256(runtime) != RUNTIME_SHA256:
         raise ValueError('Unexpected separately supplied Spine runtime')
     validate_headers()
-    _lock, _dll, hashes = verify_release(game)
+    _lock, _dll, hashes = verify_release(game, cache_identity=True)
     sources = source_fingerprint()
     dependencies = dict(schema=CACHE_SCHEMA, pck=hashes['pck'],
         spine_runtime=RUNTIME_SHA256, fastnoise_header=sha256(fastnoise),

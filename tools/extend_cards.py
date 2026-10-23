@@ -32,7 +32,7 @@ def upgrade(game: Path, source: Path, destination: Path, font_path: Path, *, int
         raise ValueError('Unsupported pack identity')
     if (version == 3 and nk != 0) or (version == 4 and nk != 24):
         raise ValueError('Unsupported card directory')
-    if ni > 1024 or ng > 8192 or ns > 2048 or nc != 11 or fnv(data[40:]) != digest:
+    if ni > 1024 or ng > 8192 or ns > 2048 or nc != 11:
         raise ValueError('Corrupt or incompatible pack')
     end = 40 + ni*16 + ng*16 + ns*8 + nc*16 + nk*16
     if end > len(data):
@@ -124,7 +124,7 @@ def upgrade(game: Path, source: Path, destination: Path, font_path: Path, *, int
         string_dir.extend(struct.pack('<II', append(raw+b'\0'), len(raw)))
     card_dir = b''.join(struct.pack('<4I', *r) for r in records)
     body = image_dir+glyph_dir+bytes(string_dir)+animations+card_dir+bytes(payload)
-    output = struct.pack('<4s9I', b'NSP2', 4, commit, 40+len(body), ni, ng, ns, nc, nk, fnv(body))+body
+    output = struct.pack('<4s9I', b'NSP2', 4, commit, 40+len(body), ni, ng, ns, nc, nk, 0)+body
     if len(output) > (32 if intermediate else 6)*1024*1024:
         raise ValueError(f'Content exceeds 6 MiB: {len(output)} bytes')
     destination.parent.mkdir(parents=True, exist_ok=True)

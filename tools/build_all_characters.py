@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Append complete Defect, Regent and Necrobinder art to private NSP2/12.
 
-Reads only the owner's hash-verified v0.111.0 installation. All earlier image
+Reads the owner's v0.111.0 installation. All earlier image
 payloads, card/text/auxiliary records, animation clips and glyphs survive byte
 for byte. Public source includes paths, audited numbers and converter logic;
 the generated pack, localized strings and rendered original art stay private.
@@ -237,6 +237,21 @@ def assert_retained(pack: PackData, prefix: tuple) -> None:
 
 
 def validate_headers(root: Path = ROOT) -> None:
+    def capacity(header: str, name: str) -> int:
+        # The five-character prefix is frozen; later world profiles append to
+        # it and resolve their total through world_assets.hpp.
+        match = re.search(r'\b' + name + r'\s*=\s*(\w+)', header)
+        if not match:
+            raise ValueError('Missing header capacity: ' + name)
+        value = match.group(1)
+        if not value.isdecimal():
+            world = (root / 'include/world_assets.hpp').read_text()
+            match = re.search(r'\b' + value + r'\s*=\s*(\d+)\b', world)
+            if not match:
+                raise ValueError('Unknown header capacity: ' + value)
+            value = match.group(1)
+        return int(value)
+
     header = (root / 'include/ui_assets.hpp').read_text()
     for index, (name, *_rest) in enumerate(ALL_CHARACTER_UI, BASE_AUXILIARY):
         if not re.search(r'\bU_' + name + r'\s*=\s*' + str(index) + r'\b', header):
@@ -244,12 +259,12 @@ def validate_headers(root: Path = ROOT) -> None:
     for name, index in POWER_STARTS.items():
         if not re.search(r'\bU_' + name + r'PowerStart\s*=\s*' + str(index) + r'\b', header):
             raise ValueError('Power range drift: ' + name)
-    if not re.search(r'\bU_Count\s*=\s*' + str(AUXILIARY) + r'\b', header): raise ValueError('Auxiliary count drift')
+    if capacity(header, 'U_Count') < AUXILIARY: raise ValueError('Truncated auxiliary prefix')
     header = (root / 'include/assets.hpp').read_text()
     for index, (name, *_rest) in enumerate(NEW_CLIPS, BASE_CLIPS):
         if not re.search(r'\bAnim' + name + r'\s*=\s*' + str(index) + r'\b', header):
             raise ValueError('Animation header/profile drift: ' + name)
-    if not re.search(r'\bAnimationKinds\s*=\s*' + str(CLIPS) + r'\b', header): raise ValueError('Animation count drift')
+    if capacity(header, 'AnimationKinds') < CLIPS: raise ValueError('Truncated animation prefix')
 
 
 def _layers(pck: Pack, names: list[str], material: str | None = None) -> Image.Image:

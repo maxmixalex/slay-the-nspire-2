@@ -29,21 +29,27 @@ class PackTests(unittest.TestCase):
         root=Path(__file__).resolve().parents[1]
         lock=json.loads((root/'config/reference-release.json').read_text())
         page=(root/'platform/web/player.html').read_text()
-        self.assertEqual(set(re.findall(r'v0\.\d+\.0',page)),{lock['version']})
-        self.assertIn("setItem('nSpire2-save-v14'",page)
-        for version in range(3,14):
+        for language in ('eng', 'zhs'):
+            locale=json.loads((root/f'config/web-locale-{language}.json').read_text())
+            self.assertEqual(set(re.findall(r'v0\.\d+\.0',locale['about'])),{lock['version']})
+            self.assertIn(lock['commit'],locale['about'])
+        self.assertIn("setItem('nSpire2-save-v15'",page)
+        self.assertIn("for(let version=15;version>=3&&!s;version--)",page)
+        self.assertIn("getItem('nSpire2-save-v'+version)",page)
+        for version in range(3,15):
             self.assertNotIn("setItem('nSpire2-save-v%d'"%version,page)
-            self.assertIn("getItem('nSpire2-save-v%d'"%version,page)
     def test_roundtrip_preserves_records(self):
         p=PackData(synthetic());legacy=(p.images[:],p.glyphs.copy(),p.clips,p.cards[:]);p.strings+=['new']*41;p.aux+=[0]*10
         output=p.encode();q=PackData(output)
         self.assertEqual(output,q.encode());self.assertEqual(legacy,(q.images,q.glyphs,q.clips,q.cards))
-    def test_rejects_corruption_and_truncation(self):
+    def test_rejects_truncation_without_payload_integrity_scans(self):
         base=synthetic()
         for size in (0,1,39,40,len(base)-1):
             with self.subTest(size=size),self.assertRaises(ValueError):PackData(base[:size])
         base[-2]^=1
-        with self.assertRaises(ValueError):PackData(base)
+        self.assertEqual(PackData(base).strings[0], '@')
+        struct.pack_into('<I',base,36,0)
+        self.assertEqual(PackData(base).strings[0], '@')
     def test_rejects_out_of_bounds_directories(self):
         for off,value in ((40,0),(44,321),(48,6),(16,8193),(24,229)):
             data=synthetic();struct.pack_into('<I',data,off,value)

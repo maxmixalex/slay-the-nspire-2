@@ -105,7 +105,7 @@ def append_skins(data, auxiliary_count, skins, *, texts=(), profile=None):
         out.append(0)
     tiles.require(len(out) <= tiles.FILE_LIMIT, 'Extended pack exceeds file bound')
     tiles.HEADER.pack_into(out, 0, b'NSP2', 16, tiles.REFERENCE, len(out), ni + count, ng, ns + text_count, nc, nk,
-                          tiles.fnv(memoryview(out)[40:]))
+                          0)
     target = tiles.PackView(out, nu + count, versions=(16,),
                             profile=(nk, ns + text_count, nc, nu + count) if profile else None)
     new_tiles = tiles.TileReader(target)

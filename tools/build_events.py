@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Append original event layouts/text and merchant art to the owner's NSP2/9 pack.
 
-Only the hash-pinned v0.111.0 installation is read. Old image, glyph and clip
+Only the supported v0.111.0 installation is read. Old image, glyph and clip
 payloads are retained; new original art is downsampled offline, never downloaded.
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ class PackData:
         data=bytes(data)
         magic,self.version,commit,n,ni,ng,ns,nc,nk,digest=struct.unpack_from('<4s9I',data)
         if (magic!=b'NSP2' or self.version not in (9,10) or commit!=0x41cef1ea or
-            n!=len(data) or digest!=fnv(data[40:])):raise ValueError('Expected intact NSP2/9 or NSP2/10')
+            n!=len(data)):raise ValueError('Expected NSP2/9 or NSP2/10')
         nu=95 if self.version==9 else 105
         if ni>8192 or ng>8192 or ns!=(228 if self.version==9 else 269) or nc!=17 or nk!=68:
             raise ValueError('Incompatible directory profile')
@@ -83,7 +83,7 @@ class PackData:
         glyphs=b''.join(struct.pack('<IIHBBHH',cp,add(raw),px,w,h,advance,enc) for (cp,px),(w,h,advance,enc,raw) in sorted(self.glyphs.items(),key=lambda p:(p[0][1],p[0][0])))
         strings=b''.join(struct.pack('<II',add(t.encode()+b'\0'),len(t.encode())) for t in self.strings)
         body=images+glyphs+strings+self.clips+b''.join(struct.pack('<4I',*r) for r in self.cards)+struct.pack('<'+'I'*nu,*self.aux)+payload
-        output=struct.pack('<4s9I',b'NSP2',10,0x41cef1ea,40+len(body),ni,ng,ns,17,nk,fnv(body))+body
+        output=struct.pack('<4s9I',b'NSP2',10,0x41cef1ea,40+len(body),ni,ng,ns,17,nk,0)+body
         if len(output)>LIMIT:raise ValueError(f'Pack exceeds resident buffer: {len(output)}')
         return output
 

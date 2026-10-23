@@ -1,8 +1,7 @@
-"""Strict, read-only Godot 4 PCK v3 reader for STS2 v0.111.0."""
+"""Bounded, read-only Godot 4 PCK v3 reader for STS2 v0.111.0."""
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-import hashlib
 import struct
 
 @dataclass(frozen=True)
@@ -55,8 +54,8 @@ class Pack:
         entry = self.entries[name.removeprefix('res://')]
         self.file.seek(entry.offset)
         data = self.file.read(entry.size)
-        if len(data) != entry.size or hashlib.md5(data).digest() != entry.md5:
-            raise ValueError(f'PCK integrity check failed: {entry.name}')
+        if len(data) != entry.size:
+            raise ValueError(f'Truncated PCK entry: {entry.name}')
         return data
 
     def imported(self, filename: str, extension: str) -> str:

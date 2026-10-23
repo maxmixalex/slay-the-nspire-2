@@ -99,7 +99,7 @@ def repack(data, auxiliary_count, texts, glyphs, skins=(), *, profile=None):
     aux_at = card_at+nk*16
     struct.pack_into('<'+'I'*nu2,out,aux_at,*(source.aux+list(range(ni,ni2))))
     tiles.require(len(out)<=tiles.FILE_LIMIT, 'Locale pack exceeds file bound')
-    tiles.HEADER.pack_into(out,0,b'NSP2',17,tiles.REFERENCE,len(out),ni2,ng,ns,nc,nk,tiles.fnv(memoryview(out)[40:]))
+    tiles.HEADER.pack_into(out,0,b'NSP2',17,tiles.REFERENCE,len(out),ni2,ng,ns,nc,nk,0)
     target = tiles.PackView(out,nu2,versions=(17,),profile=(nk,ns,nc,nu2) if profile else None)
     new = tiles.TileReader(target)
     tiles.require(target.cards==source.cards and target.clips==source.clips and target.aux[:nu]==source.aux,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Extend a private NSP2/6 pack with seven audited colorless cards and eight relics.
 
-The input installation remains hash-pinned. Existing image/animation payloads
+The input installation uses the pinned release metadata. Existing image/animation payloads
 and glyph coverage are retained; only the additional original art is converted.
 No original game files or installable fonts are copied into public source.
 """
@@ -42,7 +42,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
     if not 40 <= len(data) <= MAX_PACK:
         raise ValueError('Input pack is outside the resident size bound')
     magic, version, commit, size, ni, ng, ns, nc, nk, digest = struct.unpack_from('<4s9I', data)
-    if magic != b'NSP2' or version not in (6, 7) or commit != 0x41CEF1EA or size != len(data) or fnv(data[40:]) != digest:
+    if magic != b'NSP2' or version not in (6, 7) or commit != 0x41CEF1EA or size != len(data):
         raise ValueError('Expected an intact pinned NSP2/6 or NSP2/7 pack')
     nu = 74 if version == 6 else 83
     if nk != (51 if version == 6 else 58) or nc != 17 or ni > 8192 or ng > 8192 or ns > 2048:
@@ -134,7 +134,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
                        for (cp,px),(w,h,advance,encoded,raw) in sorted(glyphs.items(),key=lambda x:(x[0][1],x[0][0])))
     string_dir=b''.join(struct.pack('<II',append(text.encode('utf-8')+b'\0'),len(text.encode('utf-8'))) for text in strings)
     body=image_dir+glyph_dir+string_dir+animations+b''.join(struct.pack('<4I',*r) for r in records)+struct.pack('<'+'I'*nu,*aux)+payload
-    result=struct.pack('<4s9I',b'NSP2',7,commit,40+len(body),ni,ng,ns,nc,nk,fnv(body))+body
+    result=struct.pack('<4s9I',b'NSP2',7,commit,40+len(body),ni,ng,ns,nc,nk,0)+body
     if len(result)>MAX_PACK:
         raise ValueError(f'Output exceeds the six-MiB resident buffer: {len(result):,}')
     output.parent.mkdir(parents=True,exist_ok=True)

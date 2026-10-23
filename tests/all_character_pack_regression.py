@@ -42,7 +42,9 @@ class AllCharacterPackTests(unittest.TestCase):
         self.assertEqual(PROFILES[11], (114, 407, 185))
         self.assertEqual(PROFILES[12], (228, 749, 233))
         self.assertEqual(PROFILES[13], (497, 1556, 339))
-        self.assertEqual(CLIP_COUNTS, {10: 17, 11: 17, 12: 17, 13: 38})
+        self.assertEqual({version: CLIP_COUNTS[version] for version in range(10, 14)},
+                         {10: 17, 11: 17, 12: 17, 13: 38})
+        self.assertEqual(CLIP_COUNTS[14], 1695)
         self.assertEqual(LIMIT, 13 * 1024 * 1024)
         pack, prefix = expanded(); data = pack.encode(13); read = PackData(data)
         self.assertEqual(read.version, 13); self.assertEqual(read.encode(13), data)

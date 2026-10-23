@@ -70,7 +70,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
         raise ValueError('Input exceeds the resident pack bound')
     magic, version, commit, size, ni, ng, ns, nc, nk, digest = struct.unpack_from('<4s9I', data)
     if (magic != b'NSP2' or version not in (7,8) or commit != 0x41cef1ea
-            or size != len(data) or fnv(data[40:]) != digest):
+            or size != len(data)):
         raise ValueError('Expected an intact pinned NSP2/7 or NSP2/8 pack')
     nu = 83 if version == 7 else 90
     if nk != (58 if version == 7 else 68) or nc != 17 or ni > 8192 or ng > 8192 or ns > 2048:
@@ -183,7 +183,7 @@ def build(game: Path, source: Path, output: Path, font_path: Path) -> dict:
                         for (cp,px),(w,h,advance,encoded,raw) in sorted(glyphs.items(),key=lambda pair:(pair[0][1],pair[0][0])))
     string_dir=b''.join(struct.pack('<II',append(t.encode('utf-8')+b'\0'),len(t.encode('utf-8'))) for t in strings)
     body=image_dir+glyph_dir+string_dir+animations+b''.join(struct.pack('<4I',*rec) for rec in records)+struct.pack('<'+'I'*nu,*aux)+payload
-    result=struct.pack('<4s9I',b'NSP2',8,commit,40+len(body),ni,ng,ns,nc,nk,fnv(body))+body
+    result=struct.pack('<4s9I',b'NSP2',8,commit,40+len(body),ni,ng,ns,nc,nk,0)+body
     if len(result)>LIMIT:raise ValueError('Output exceeds six-MiB resident limit')
     manifest={'format':'NSP2/8','reference':'v0.111.0 / 41cef1ea','bytes':len(result),'sha256':hashlib.sha256(result).hexdigest(),
               'cards':BASE_CARDS+SHARED_CARDS+CARDS,'images':ni,'glyphs':ng,'strings':ns,'clips':nc,'auxiliary_count':nu,
