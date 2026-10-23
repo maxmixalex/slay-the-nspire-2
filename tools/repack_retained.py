@@ -20,6 +20,7 @@ import content_tiles as tiles
 VERSION = 20
 DESCRIPTOR = struct.Struct('<iIII')
 DEFAULT_GROUP_BYTES = 128 * 1024
+BASE_IMAGE_COUNT = 66  # Stable A_Count prefix in include/assets.hpp.
 
 
 def auxiliary_count(data):
@@ -58,11 +59,17 @@ class Batch:
     encoded: bytes | None
     raw_size: int
     previous_size: int
+    fast: bool = False
 
 
-def plan_images(source, group_bytes=DEFAULT_GROUP_BYTES, replacements=None):
+def plan_images(source, group_bytes=DEFAULT_GROUP_BYTES, replacements=None, fast_images='ui'):
     tiles.require(4096 <= group_bytes <= tiles.GROUP_LIMIT, 'Group target must be 4..512 KiB')
+    tiles.require(fast_images in ('none', 'cards', 'ui'), 'Unknown fast-image policy')
     replacements = replacements or {}
+    fast_ids = {row[0] for row in source.cards} if fast_images != 'none' else set()
+    if fast_images == 'ui':
+        fast_ids.update(range(min(BASE_IMAGE_COUNT, len(source.images))))
+        fast_ids.update(source.aux)
     by_descriptor, by_raw, records = {}, {}, []
     for image_id, entry in enumerate(source.images):
         offset, _width, _height, stored_format, length = entry
@@ -108,6 +115,10 @@ def plan_images(source, group_bytes=DEFAULT_GROUP_BYTES, replacements=None):
         pending, size = [], 0
 
     for record in records:
+        if any(image_id in fast_ids for image_id in record.ids):
+            finish()
+            batches.append(Batch([record], None, len(record.raw), aligned(len(record.payload)), True))
+            continue
         if pending and size + len(record.raw) > group_bytes:
             finish()
         pending.append(record)
@@ -151,12 +162,17 @@ def write_pack(source, batches, replacements=None):
             out[cost_at + image_id] = (len(record.raw) + 4095) // 4096
 
     group_count = grouped_images = grouped_raw = stored_bytes = maximum_raw = 0
+    fast_images = fast_unique = fast_bytes = 0
     for batch in batches:
         if batch.encoded is None:
             for record in batch.records:
                 offset = append(record.payload)
                 picture(record, offset, record.stored_format, len(record.payload))
                 stored_bytes += aligned(len(record.payload))
+                if batch.fast:
+                    fast_images += len(record.ids)
+                    fast_unique += 1
+                    fast_bytes += aligned(len(record.payload))
             continue
         group = tiles.GROUP.pack(b'RGR1', batch.raw_size, len(batch.encoded), 14,
                                  len(batch.records), 0, 0, 0) + batch.encoded
@@ -202,7 +218,8 @@ def write_pack(source, batches, replacements=None):
     return bytes(out), dict(retained_groups=group_count, grouped_image_entries=grouped_images,
         grouped_raw_bytes=grouped_raw, retained_stored_bytes=stored_bytes,
         retained_unique_images=sum(len(batch.records) for batch in batches),
-        maximum_group_raw_bytes=maximum_raw, tile_groups_copied=len(tiled.groups))
+        maximum_group_raw_bytes=maximum_raw, tile_groups_copied=len(tiled.groups),
+        fast_image_entries=fast_images, fast_unique_images=fast_unique, fast_stored_bytes=fast_bytes)
 
 
 def verify(source, result, replacements=None):
@@ -245,7 +262,7 @@ def verify(source, result, replacements=None):
                 catalog_and_timing_unchanged=True, exact_raw_byte_comparison=True)
 
 
-def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=None):
+def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=None, fast_images='ui'):
     source = view(data)
     replacements = replacements or {}
     for image_id, (width, height, fmt, raw) in replacements.items():
@@ -253,7 +270,7 @@ def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=Non
                       0 < width <= 320 and 0 < height <= 240, 'Invalid replacement image')
         tiles.validate_raw(raw, width, height, fmt)
     if batches is None:
-        batches = plan_images(source, group_bytes, replacements)
+        batches = plan_images(source, group_bytes, replacements, fast_images)
     else:
         # Reusing the same plan is what makes common artwork independent of locale offsets.
         for batch in batches:
@@ -267,6 +284,7 @@ def repack(data, group_bytes=DEFAULT_GROUP_BYTES, batches=None, replacements=Non
     receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=19, output_version=VERSION,
         input_bytes=len(data), output_bytes=len(result), saved_bytes=len(data) - len(result),
         group_target_bytes=group_bytes, codec_raw_bound_bytes=tiles.GROUP_LIMIT,
+        fast_image_policy=fast_images,
         resident_group_cache_bytes=5 * 1024 * 1024, new_resident_pixel_bytes=0,
         startup_payload_scans=0, **statistics, verification=proof)
     return result, receipt, batches
@@ -278,6 +296,8 @@ def main():
     parser.add_argument('--zhs', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--group-kib', type=int, default=DEFAULT_GROUP_BYTES // 1024)
+    parser.add_argument('--fast-images', choices=('ui', 'cards', 'none'), default='ui',
+                        help='Keep card/base/auxiliary UI images in their existing fast single-image encoding')
     parser.add_argument('--logo-atlas', type=Path)
     args = parser.parse_args()
     sources = {language: tiles.private_path(getattr(args, language), 'Input pack') for language in ('eng', 'zhs')}
@@ -293,7 +313,7 @@ def main():
         replacements[4] = (logo['width'], logo['height'], logo['format'], raw)
     started, batches, receipts = time.monotonic(), None, {}
     for language, path in sources.items():
-        result, receipt, batches = repack(path.read_bytes(), args.group_kib * 1024, batches, replacements)
+        result, receipt, batches = repack(path.read_bytes(), args.group_kib * 1024, batches, replacements, args.fast_images)
         tiles.atomic_bytes(output / ('retained-' + language + '.nsp'), result)
         receipts[language] = receipt
         print(json.dumps(dict(language=language, **receipt), sort_keys=True), flush=True)

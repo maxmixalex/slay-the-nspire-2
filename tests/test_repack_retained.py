@@ -20,8 +20,8 @@ def stored(raw):
     return bytes(result) + b'\0'
 
 
-def fixture(language='eng', glyphs=1, incompressible=False):
-    ni, ng, ns, nc, nk, nu = 6, glyphs, 6111, 1, 1, 1
+def fixture(language='eng', glyphs=1, incompressible=False, tail_image=False):
+    ni, ng, ns, nc, nk, nu = 67 if tail_image else 6, glyphs, 6111, 1, 1, 1
     base = 40 + ni * 16 + ng * 16 + ns * 8 + nc * 16 + nk * 16 + nu * 4
     table, descriptors = base + 64, base + 80
     out = bytearray(descriptors + 16)
@@ -41,6 +41,12 @@ def fixture(language='eng', glyphs=1, incompressible=False):
         offset = append(raw)
         tiles.IMAGE.pack_into(out, 40 + image_id * 16, offset, width, height, fmt, len(raw))
     out[56:72] = out[40:56]
+    if tail_image:
+        for image_id in range(6, 66):
+            out[40 + image_id * 16:56 + image_id * 16] = out[40:56]
+        raw = b'\x67\x89' * 1024
+        offset = append(raw)
+        tiles.IMAGE.pack_into(out, 40 + 66 * 16, offset, 32, 32, 0, len(raw))
     tiles.IMAGE.pack_into(out, 40 + 5 * 16, descriptors, 1, 1, 6, 16)
     tile = b'\x01\x01' + bytes(768)
     index = tiles.FRAME.pack(2, 4, 2) + bytes(6)
@@ -68,7 +74,7 @@ def fixture(language='eng', glyphs=1, incompressible=False):
 class RetainedPackTest(unittest.TestCase):
     def test_exact_payloads_and_page_costs(self):
         data = fixture()
-        output, receipt, _ = retained.repack(data)
+        output, receipt, _ = retained.repack(data, fast_images='none')
         source, target = retained.view(data), tiles.PackView(output, 1, versions=(20,))
         for image_id in range(5):
             self.assertEqual(source.image_raw(image_id), target.image_raw(image_id))
@@ -81,8 +87,8 @@ class RetainedPackTest(unittest.TestCase):
         self.assertEqual(receipt['new_resident_pixel_bytes'], 0)
 
     def test_bilingual_shared_artwork_with_different_directories(self):
-        eng, _, batches = retained.repack(fixture('eng', glyphs=1))
-        zhs, _, _ = retained.repack(fixture('zhs', glyphs=3), batches=batches)
+        eng, _, batches = retained.repack(fixture('eng', glyphs=1), fast_images='none')
+        zhs, _, _ = retained.repack(fixture('zhs', glyphs=3), batches=batches, fast_images='none')
         erow, zrow = split.layout(eng, 'eng'), split.layout(zhs, 'zhs')
         self.assertNotEqual(erow['prefix'], zrow['prefix'])
         self.assertEqual(eng[erow['prefix']:erow['prefix'] + erow['artwork']],
@@ -94,7 +100,7 @@ class RetainedPackTest(unittest.TestCase):
         self.assertEqual(split.reconstruct(common, locales['zhs'], 'zhs'), zhs)
 
     def test_nonbeneficial_group_keeps_original_encoding(self):
-        output, _, _ = retained.repack(fixture(incompressible=True), group_bytes=8192)
+        output, _, _ = retained.repack(fixture(incompressible=True), group_bytes=8192, fast_images='none')
         target = tiles.PackView(output, 1, versions=(20,))
         self.assertEqual(target.images[0][3], 0)
         self.assertEqual(target.image_raw(0), retained.view(fixture(incompressible=True)).image_raw(0))
@@ -108,7 +114,7 @@ class RetainedPackTest(unittest.TestCase):
         self.assertEqual(receipt['verification']['replaced_image_ids'], [4])
 
     def test_requested_slice_bounds_and_group_target(self):
-        output, _, _ = retained.repack(fixture())
+        output, _, _ = retained.repack(fixture(), fast_images='none')
         target = tiles.PackView(output, 1, versions=(20,))
         descriptor = target.images[0][0]
         for field, value in ((0, 0x80000000), (8, 0xffffffff), (12, (5 << 24) | 8192)):
@@ -121,6 +127,19 @@ class RetainedPackTest(unittest.TestCase):
             retained.repack(fixture(), group_bytes=1024)
         with self.assertRaises(ValueError):
             retained.repack(fixture(), replacements={4: (321, 1, 0, bytes(642))})
+
+    def test_fast_ui_policy_retains_original_encoding_and_groups_other_images(self):
+        source = fixture(tail_image=True)
+        output, receipt, _ = retained.repack(source)
+        old, new = retained.view(source), tiles.PackView(output, 1, versions=(20,))
+        for image_id in (0, 1, 2, 3, 4, 65):
+            self.assertEqual(new.images[image_id][3], old.images[image_id][3])
+            self.assertEqual(new.image_raw(image_id), old.image_raw(image_id))
+        self.assertEqual(new.images[66][3], 7)
+        self.assertEqual(new.image_raw(66), old.image_raw(66))
+        self.assertEqual(receipt['fast_image_policy'], 'ui')
+        self.assertGreater(receipt['fast_stored_bytes'], 0)
+        self.assertEqual(receipt['retained_groups'], 1)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,10 @@
 # Bounded retained-image storage — NSP2/20
 
 NSP2/20 keeps the NSP2/19 image, clip, card, auxiliary and localized-text
-catalogs. The change compresses ordinary retained images in small groups, in
-addition to the existing tiled animation storage. It does not reduce image
+catalogs. It keeps card art, the stable 66-image base and auxiliary UI images
+in their fast existing single-image encodings. Other retained pictures use
+small compressed groups in addition to the existing tiled animation storage.
+It does not reduce image
 dimensions, change RGB565 pixels, discard alpha, simplify palettes, omit
 frames or change timing. The title restoration may deliberately replace image
 4 with an original-derived atlas; that replacement is recorded separately.
@@ -36,6 +38,15 @@ their previous encoding. Groups also retain the previous encoding when the
 compressed group plus descriptors would take more space. The converter
 deduplicates exact original-format/raw-byte pairs and can retain the shorter
 existing representation of a duplicate.
+
+The default `--fast-images ui` policy gives card and UI first-use latency
+priority over maximum compression. `cards` retains only card artwork and
+`none` groups every beneficial retained image; these are explicit comparison
+options. The all-grouped candidate's actual eight-card library pages required
+2.47 times their own raw picture bytes on average, with 498,072 decoded bytes
+for a worst page containing 78,720 bytes of card art. The measured first-visible
+CPU regression motivated the hybrid policy; it does not change any picture
+pixels or add a runtime branch.
 
 ## Memory and I/O
 
