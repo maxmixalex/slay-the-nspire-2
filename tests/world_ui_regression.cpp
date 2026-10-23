@@ -17,13 +17,26 @@ static bool actual_pack;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s phase=%d\n",__FILE__,__LINE__,#x,int(a.game.phase));std::exit(1);}}while(0)
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned n,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=(uint8_t)(n>>(8*i));}
 static std::vector<uint8_t> synthetic_profile(){
-    constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,strings=ContentStrings;
-    constexpr unsigned stringdir=40+images*16,clipdir=stringdir+strings*8;
+    constexpr unsigned images=CardKinds>U_Count?CardKinds:U_Count,strings=ContentStrings,glyphs=22;
+    constexpr unsigned glyphdir=40+images*16,stringdir=glyphdir+glyphs*16,clipdir=stringdir+strings*8;
     constexpr unsigned carddir=clipdir+AnimationKinds*16,uidir=carddir+CardKinds*16,payload=uidir+U_Count*4;
     std::vector<uint8_t>b(payload+82*60*2);
     put(b,0,0x3250534e);put(b,4,ContentVersion);put(b,8,0x41cef1ea);put(b,16,images);
-    put(b,24,strings);put(b,28,AnimationKinds);put(b,32,CardKinds);
+    put(b,20,glyphs);put(b,24,strings);put(b,28,AnimationKinds);put(b,32,CardKinds);
     for(unsigned i=0;i<images;i++){put(b,40+i*16,payload);put(b,44+i*16,82,2);put(b,46+i*16,60,2);put(b,52+i*16,82*60*2);}
+    // Numeric labels must have real pixels in the public fixture too. The
+    // rest of the synthetic alphabet remains absent; no original font ships.
+    static const uint8_t digits[][7]={
+        {14,17,19,21,25,17,14},{4,12,4,4,4,4,14},{14,17,1,2,4,8,31},
+        {30,1,1,14,1,1,30},{2,6,10,18,31,2,2},{31,16,16,30,1,1,30},
+        {14,16,16,30,17,17,14},{31,1,2,4,8,8,8},{14,17,17,14,17,17,14},
+        {14,17,17,15,1,1,14},{0,0,17,10,4,10,17}};
+    for(unsigned size=0;size<2;++size)for(unsigned ch=0;ch<11;++ch){
+        const unsigned at=glyphdir+(size*11+ch)*16,height=size?7:5;
+        put(b,at,ch<10?'0'+ch:'x');put(b,at+4,unsigned(b.size()));put(b,at+8,size?10:8,2);
+        put(b,at+10,5,1);put(b,at+11,height,1);put(b,at+12,6,2);
+        for(unsigned y=0;y<height;++y)for(unsigned x=0;x<5;++x)b.push_back(digits[ch][y*7/height]&(16u>>x)?255:0);
+    }
     for(unsigned i=0;i<strings;i++){
         unsigned model=i/3;const char*text=i<CardKinds*3?(i%3?"Synthetic card description.":definitions[model].key):"Synthetic UI text.";
         if(model==DefectGeneticAlgorithm&&i%3)text="Block {Block=1}.";
@@ -99,7 +112,79 @@ static void enemy_visual_fight(EncounterId encounter,Character character=Charact
  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
  CHECK(!a.combat_preparation.active);unchanged();
 }
+static int rendered_number(const char*text,int size,int left,int top,int right,int bottom){
+ // Match the supplied numeral's opaque glyph pixels in a broad screen area,
+ // without calling the intent renderer or reproducing its layout arithmetic.
+ // The synthetic fixture has full opaque stencils; actual fonts also retain
+ // opaque interiors. Antialias values do not depend on the room underneath.
+ struct Point {int x,y;};std::vector<Point> ink,clear;int width=0,height=0;
+ for(const char*p=text;*p;++p){const auto g=a.content.glyph(unsigned(*p),size);CHECK(g.pixels&&g.w&&g.h);
+  std::vector<uint8_t> alpha(unsigned(g.w)*g.h,0);
+  if(g.encoded_size){unsigned pos=0;for(unsigned i=0;i+1<g.encoded_size&&pos<alpha.size();i+=2)
+   for(unsigned n=0;n<g.pixels[i]&&pos<alpha.size();++n)alpha[pos++]=g.pixels[i+1];
+  }else std::memcpy(alpha.data(),g.pixels,alpha.size());
+  for(unsigned y=0;y<g.h;++y)for(unsigned x=0;x<g.w;++x){if(alpha[y*g.w+x]==255)ink.push_back({width+int(x),int(y)});
+   else if(!alpha[y*g.w+x])clear.push_back({width+int(x),int(y)});}
+  if(int(g.h)>height)height=g.h;width+=g.advance;
+ }
+ CHECK(!ink.empty());constexpr uint16_t cream=uint16_t((31u<<11)|(61u<<5)|28u);
+ for(int y=top;y+height<=bottom;++y)for(int x=left;x+width<=right;++x){bool match=true;
+  for(const auto&p:ink)if(a.pixels[(y+p.y)*ScreenW+x+p.x]!=cream){match=false;break;}
+  if(match)for(const auto&p:clear)if(a.pixels[(y+p.y)*ScreenW+x+p.x]==cream){match=false;break;}
+  if(match)return x;
+ }return -1;
+}
+static void compound_intent_values(){
+ struct Case {EncounterId encounter;int move,ascension,damage,status;const char*name;};
+ const Case cases[]={
+  {EncounterId::MechaKnightElite,1,0,8,4,"intent-mecha-flamethrower"},
+  {EncounterId::MechaKnightElite,1,9,12,4,"intent-mecha-flamethrower-a9"},
+  {EncounterId::SoulFyshBoss,2,0,7,1,"intent-soul-fysh-gaze"},
+  {EncounterId::VantomBoss,2,0,26,3,"intent-vantom-dismember"}};
+ for(const auto&test:cases){
+  enemy_visual_fight(test.encounter);a.game.enemy_world.ascension=uint8_t(test.ascension);a.game.enemy_world.models[0].node=uint8_t(test.move);
+  a.pointer.visible=false;a.reset_presentation();a.render();const auto intent=enemy_intent(a.game,0);
+  CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentStatus)&&intent.damage==test.damage&&intent.hits==1&&intent.status_cards==test.status);
+  snapshot();a.begin_combat_feedback();a.render();const auto pos=enemy_pose(a.game.enemy_count,0);
+  char damage[16]{},status[16]{};std::snprintf(damage,sizeof damage,"%d",test.damage);std::snprintf(status,sizeof status,"%d",test.status);
+  const int damage_x=rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34);
+  const int status_x=rendered_number(status,10,pos.x,pos.intent+10,pos.x+32,pos.intent+34);
+  CHECK(damage_x>=0&&status_x>damage_x);CHECK(has(HitKind::EnemyIntent,0));
+  for(int x:{damage_x,status_x}){const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==0);}
+  const std::vector<uint16_t> shown(a.pixels,a.pixels+ScreenW*ScreenH);
+  // Removing only the display count must erase visible pixels, while keeping
+  // the attack value intact. The former Attack/else-if branch fails this.
+  a.combat_feedback.intents[0].status_cards=0;a.render();
+  CHECK(rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34)>=0);
+  CHECK(rendered_number(status,10,pos.x,pos.intent+10,pos.x+32,pos.intent+34)<0);
+  bool changed=false;for(int y=pos.intent+10;y<pos.intent+34;++y)for(int x=pos.x;x<pos.x+32;++x)changed|=shown[y*ScreenW+x]!=a.pixels[y*ScreenW+x];CHECK(changed);
+  a.combat_feedback.intents[0]=intent;a.render();unchanged();capture(test.name);
+  if(test.encounter==EncounterId::MechaKnightElite){
+   // Canonical settlement can already point at Windup; the retained labels
+   // must still describe the visible Flamethrower until its display cue.
+   a.game.enemy_world.models[0].node=2;snapshot();a.render();CHECK(!(enemy_intent(a.game,0).flags&EnemyIntentAttack));
+   CHECK(rendered_number(damage,10,pos.x-32,pos.intent+10,pos.x,pos.intent+34)>=0);
+   CHECK(rendered_number("4",10,pos.x,pos.intent+10,pos.x+32,pos.intent+34)>=0);unchanged();
+  }
+ }
+ // Two neighboring real compound attacks retain separate hit targets and
+ // put each damage value under its attack, rather than between both icons.
+ enemy_visual_fight(EncounterId::NibbitsNormal);for(int i=0;i<2;++i)a.game.enemy_world.models[i].node=1;
+ a.reset_presentation();snapshot();a.render();for(int i=0;i<2;++i){const auto pos=enemy_pose(2,i);const auto intent=enemy_intent(a.game,i);
+  CHECK(intent.flags==(EnemyIntentAttack|EnemyIntentBlock)&&intent.damage==6);
+  const int x=rendered_number("6",10,pos.x-32,pos.intent+10,pos.x,pos.intent+34);CHECK(x>=0);
+  const auto*hit=a.hit_at(x,pos.intent+16);CHECK(hit&&hit->kind==HitKind::EnemyIntent&&hit->value==i);
+ }capture("intent-two-nibbits-slice");unchanged();
+ // Keep the original three-hit display and its smaller suffix, using actual
+ // Byrdonis intent data instead of synthesizing a new unsupported flag set.
+ enemy_visual_fight(EncounterId::ByrdonisElite);snapshot();a.render();const auto intent=enemy_intent(a.game,0);const auto pos=enemy_pose(1,0);
+ CHECK(intent.damage==3&&intent.hits==3&&intent.flags==EnemyIntentAttack);
+ CHECK(rendered_number("3",10,pos.x-25,pos.intent+10,pos.x,pos.intent+34)>=0);
+ CHECK(rendered_number("x3",8,pos.x-5,pos.intent+10,pos.x+25,pos.intent+34)>=0);
+ capture("intent-byrdonis-three-hits");unchanged();
+}
 static void original_enemy_presentation(){
+ compound_intent_values();
  CHECK(world_enemy_fact_count()<=MaxEnemyVisualFacts);enemy_visual_fight(EncounterId::NibbitsWeak);
  int clip=-1;uint32_t elapsed=0;bool loop=false;CHECK(a.enemy_frame(0,clip,elapsed,loop));CHECK(clip>=38&&clip<AnimationKinds&&loop);
  CHECK(has(HitKind::EnemyIntent,0));capture("combat-nibbit-idle");const int idle=clip;const unsigned turn=a.game.turn;
@@ -421,7 +506,7 @@ static void deferred_enemy_values(){
   CHECK(!a.combat_feedback.active&&revealed.flags==new_intent.flags&&revealed.damage==new_intent.damage&&revealed.hits==new_intent.hits&&revealed.status_cards==new_intent.status_cards&&!std::strcmp(revealed.move_key,new_intent.move_key));
   CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());bool renamed=false;
   for(int y=53;y<67;++y)renamed|=std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t))!=0;
-  // synthetic_profile intentionally contains zero glyph records. Its blank
+  // synthetic_profile has numeric glyphs only. Its blank alphabetic
   // title cannot prove a name change; keep every state/intent/hit/panel check
   // there and require the rendered rename for every actual resource pack.
   if(actual_pack)CHECK(renamed);

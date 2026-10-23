@@ -145,22 +145,49 @@ struct Canvas{
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);if(left>=right||top>=bottom)return;
         if(p.format==4){
             if(width!=p.w||height!=p.h){
+                // Inverse nearest sampling visits only visible destination
+                // columns. Full-width atlas bands can hide most source
+                // pixels; do not divide twice for every discarded pixel.
+                uint16_t source[320];const int columns=right-left;
+                const unsigned divisor=unsigned(width),step=p.w/divisor,advance=p.w%divisor;
+                const unsigned first=unsigned(left)*p.w;
+                unsigned column=first/divisor,remainder=first%divisor;
+                for(int xx=0;xx<columns;++xx){
+                    source[xx]=uint16_t(column);column+=step;remainder+=advance;
+                    if(remainder>=divisor){remainder-=divisor;++column;}
+                }
+                const auto lower_column=[&](unsigned value){
+                    int lo=0,hi=columns;
+                    while(lo<hi){const int mid=lo+(hi-lo)/2;if(source[mid]<value)lo=mid+1;else hi=mid;}
+                    return lo;
+                };
+                // Start at ceil(0 * height / p.h). Adding the quotient and
+                // carrying the remainder preserves every original ceil edge.
+                const unsigned row_step=unsigned(height)/p.h,row_advance=unsigned(height)%p.h;
+                unsigned row_remainder=p.h-1;int y0=0;
                 const uint8_t*run=p.pixels;
                 for(unsigned sy=0;sy<p.h;sy++){
-                    int y0=(int(sy)*height+p.h-1)/p.h,y1=(int(sy+1)*height+p.h-1)/p.h;
+                    int y1=y0+int(row_step);row_remainder+=row_advance;
+                    if(row_remainder>=p.h){row_remainder-=p.h;++y1;}
+                    const int row_top=mx(top,y0),row_bottom=mn(bottom,y1);
                     unsigned spans=run[0]|(unsigned)run[1]<<8;run+=2;
                     for(unsigned s=0;s<spans;s++){
                         unsigned sx=run[0]|(unsigned)run[1]<<8,n=run[2]|(unsigned)run[3]<<8,mode=run[4];run+=5;
                         unsigned stride=mode?3:2;
-                        if(y1>top&&y0<bottom)for(unsigned j=0;j<n;j++){
-                            int x0=(int(sx+j)*width+p.w-1)/p.w,x1=(int(sx+j+1)*width+p.w-1)/p.w;
-                            if(x1<=left||x0>=right)continue;const uint8_t*src=run+j*stride;
-                            unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);
-                            uint16_t color=src[0]|uint16_t(src[1])<<8;
-                            for(int yy=mx(top,y0);yy<mn(bottom,y1);yy++)for(int xx=mx(left,x0);xx<mn(right,x1);xx++)paint((y+yy)*pitch+x+xx,color,alpha,blend_mode);
+                        if(row_top<row_bottom&&source[0]<sx+n&&source[columns-1]>=sx){
+                            const int begin=lower_column(sx),end=lower_column(sx+n);
+                            for(int yy=row_top;yy<row_bottom;++yy){
+                                int at=(y+yy)*pitch+x+left+begin;
+                                for(int xx=begin;xx<end;++xx,++at){
+                                    const uint8_t*src=run+(unsigned(source[xx])-sx)*stride;
+                                    unsigned alpha=mode?src[2]:255;if(opacity!=255)alpha=div255(alpha*opacity);
+                                    if(alpha)paint(at,uint16_t(src[0]|uint16_t(src[1])<<8),alpha,blend_mode);
+                                }
+                            }
                         }
                         run+=n*stride;
                     }
+                    y0=y1;
                 }
                 return;
             }

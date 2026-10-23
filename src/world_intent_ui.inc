@@ -12,20 +12,31 @@ static int ui_intent_image(const App&a,const UiIntentPart&part,const EnemyIntent
  if(part.flag==EnemyIntentAttack){int total=int(intent.damage)*intent.hits;const char*key=total<5?"ATTACK":total<10?"ATTACK_2":total<20?"ATTACK_3":total<40?"ATTACK_4":"ATTACK_5";int image=a.content.world_image("intents",key);if(image>=0)return image;}
  return a.content.world_image("intents",part.image);
 }
+struct UiIntentValue {char value[16]{},repeat[16]{};int width=0,value_width=0;};
+static UiIntentValue ui_intent_value(Canvas&c,const UiIntentPart&part,const EnemyIntent&intent){
+ UiIntentValue label;TextBuffer value{label.value,sizeof label.value,0},repeat{label.repeat,sizeof label.repeat,0};
+ if(part.flag==EnemyIntentAttack){value.number(intent.damage);if(intent.hits>1){repeat.ch('x');repeat.number(intent.hits);}}
+ else if(part.flag==EnemyIntentStatus&&intent.status_cards>0)value.number(intent.status_cards);
+ label.value_width=c.width(label.value,10);label.width=label.value_width+c.width(label.repeat,8);return label;
+}
 static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
- auto intent=c.a.combat_intent(slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
- if(!count)return;int size=mn(14,mx(9,pos.width/int(count))),left=pos.x-int(count)*size/2;
- for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){c.picture(ui_intent_image(c.a,part,intent),left,pos.intent,size,size);left+=size;}
- if(intent.flags&EnemyIntentAttack){
-  // intent.tscn keeps the damage in cream and the repeated-hit suffix at
-  // 18/22 of its size, with a black outline; it is not a gold HUD caption.
-  char damage[16]{},hits[16]{};TextBuffer b{damage,sizeof damage,0},h{hits,sizeof hits,0};b.number(intent.damage);if(intent.hits>1){h.ch('x');h.number(intent.hits);}
-  const int dw=c.width(damage,10),hw=c.width(hits,8),x=pos.x-(dw+hw)/2,y=pos.intent+size-2;
-  for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){c.text(damage,x+dx,y+dy,10,Ink);c.text(hits,x+dw+dx,y+2+dy,8,Ink);}
-  c.text(damage,x,y,10,rgb(255,246,226));c.text(hits,x+dw,y+2,8,rgb(255,246,226));
+ const auto intent=c.a.combat_intent(slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
+ if(!count)return;const int size=mn(14,mx(9,pos.width/int(count)));int width=0;
+ for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)width+=mx(size,ui_intent_value(c,part,intent).width+2);
+ const int left=mx(1,mn(c.clip_w-width-1,pos.x-width/2));int next=left;
+ for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){
+  const auto label=ui_intent_value(c,part,intent);const int cell=mx(size,label.width+2),center=next+cell/2;next+=cell;
+  c.picture(ui_intent_image(c.a,part,intent),center-size/2,pos.intent,size,size);
+  if(!*label.value)continue;
+  // Every original NIntent owns its own Value label, including StatusIntent
+  // beside AttackIntent. Reserve the text width so their values stay apart.
+  // Preserve cream, outline and the smaller 18/22 repeated-hit suffix.
+  const int x=center-label.width/2,y=pos.intent+size-2;
+  for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){c.text(label.value,x+dx,y+dy,10,Ink);c.text(label.repeat,x+label.value_width+dx,y+2+dy,8,Ink);}
+  c.text(label.value,x,y,10,rgb(255,246,226));c.text(label.repeat,x+label.value_width,y+2,8,rgb(255,246,226));
  }
- else if((intent.flags&EnemyIntentStatus)&&intent.status_cards>0)c.num(intent.status_cards,pos.x-3,pos.intent+size-1,10,White);
- c.hit(pos.x-pos.width/2-2,pos.intent-2,pos.width+4,size+14,HitKind::EnemyIntent,slot);
+ const int actor_left=pos.x-pos.width/2-2,hit_left=mn(actor_left,left),hit_right=mx(actor_left+pos.width+4,left+width);
+ c.hit(hit_left,pos.intent-2,hit_right-hit_left,size+14,HitKind::EnemyIntent,slot);
 }
 static void enemy_intent_tooltip(Canvas&c){
  auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||(!combat_phase(a.game.phase)&&!ui_feedback_bound(a))||!a.game.enemy_world.active)return;

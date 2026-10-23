@@ -276,6 +276,42 @@ static void title_particles(){
   pair.compare();
  }
 }
+static void scaled_sparse_clipping(){
+ // Fragmented 270-column atlas rows expose discarded source columns, empty
+ // downsampled rows, repeated upsampled columns and clips inside a span.
+ // The oracle samples the generated dense image directly at each destination.
+ constexpr unsigned width=270,height=54;
+ Bytes sparse,alpha(width*height,0);std::vector<uint16_t> pixels(width*height);
+ for(unsigned y=0;y<height;++y){
+  const auto count_at=sparse.size();append(sparse,0,2);unsigned spans=0;
+  for(unsigned x=0;x<width;++x)pixels[y*width+x]=color(y*width+x+103);
+  if(y%9)for(unsigned block=0;block<width;block+=19)for(unsigned mode=0;mode<2;++mode){
+   const unsigned x=block+(mode?11:1);if(x>=width)continue;
+   const unsigned n=std::min(mode?5u:6u,width-x);
+   append(sparse,x,2);append(sparse,n,2);sparse.push_back(uint8_t(mode));++spans;
+   for(unsigned j=0;j<n;++j){
+    const unsigned at=y*width+x+j;alpha[at]=mode?uint8_t((x+j+y*37)*71):255;
+    append(sparse,pixels[at],2);if(mode)sparse.push_back(alpha[at]);
+   }
+  }
+  put(sparse,count_at,spans,2);
+ }
+ const Picture picture{sparse.data(),nullptr,nullptr,width,height,4};
+ const Placement targets[]={{0,0,1,1},{-1,7,2,2},{6,-1,3,2},{-37,-11,133,53},
+  {11,5,134,53},{149,75,135,54},{-137,9,269,53},{-137,-1,270,55},
+  {-136,-2,271,55},{-267,-13,541,109},{169,-137,7,313}};
+ const Surface surface{173,97,181};
+ for(auto target:targets)for(auto style:{styles[0],styles[1],styles[16],styles[17]})
+ for(unsigned opacity:{1u,123u,255u})for(unsigned mode:{unsigned(presentation::Normal),unsigned(presentation::Add)}){
+  Pair pair(surface,style);pair.got.picture(picture,target.x,target.y,target.w,target.h,opacity,mode);
+  for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x){
+   const int dx=x-target.x,dy=y-target.y;if(dx<0||dy<0||dx>=target.w||dy>=target.h)continue;
+   const unsigned sx=unsigned(dx)*width/unsigned(target.w),sy=unsigned(dy)*height/unsigned(target.h),at=sy*width+sx;
+   pair.oracle.paint(y*surface.pitch+x,pixels[at],rounded_alpha(alpha[at],opacity),mode);
+  }
+  pair.compare();
+ }
+}
 static void map_pictures(){
  // A separate direct inverse-transform oracle retains the pre-optimization
  // pixel-center arithmetic. Test all shaders, odd sizes, angles, clipping,
@@ -311,7 +347,7 @@ static void map_pictures(){
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();picture_regions();picture_row_views();title_particles();CHECK(app.content.healthy());
+ rectangles();pictures();picture_regions();picture_row_views();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);

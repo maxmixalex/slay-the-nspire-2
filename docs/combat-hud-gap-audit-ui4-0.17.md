@@ -226,3 +226,28 @@ question, not a confirmed defect from this audit. Likewise no universal
 original-UI percentage, original-PC pixel equivalence or physical-calculator
 frame rate is claimed. The five entries above remain **unimplemented** at the
 audited runtime and must be described that way in the current delivery.
+
+## Follow-up: compound value source correction
+
+After this audit was committed, final ARM title input acceptance required a
+further production correction, so delivery was held for another source stage.
+That stage also addresses item 1 above. `native_enemy_intent` now gives every
+icon its own numeric label and reserves room for its value plus the smaller
+repeat suffix. Attack and status labels are independent; Flamethrower's 4 is
+no longer suppressed by the attack branch. Both labels use the scene's cream
+and outline treatment. Wide labels extend the corresponding intent hit area.
+No gameplay, save, RNG, resource-format or intent-hide timing changed.
+
+The regression source adds original MechaKnight normal/ascension-9
+Flamethrower, Soul Fysh Gaze, Vantom Dismember, two neighboring Nibbit Slices
+and Byrdonis's three-hit Peck. A public numeric stencil font makes missing
+digits fail the synthetic screen test as well as the actual-resource run.
+Pixel checks search for the specified numbers in independent screen regions,
+verify that removing only a display count changes its visible pixels, preserve
+the attack value and inspect real hit targets. Retained old intent values and
+unchanged canonical save bytes are checked separately.
+
+This section records **prepared source and tests**, not an executed acceptance
+result. Execution must use the next remotely preserved combined checkpoint.
+Items 2–5 remain unimplemented, and the 9a audit findings above remain an
+accurate account of that earlier frozen runtime.
