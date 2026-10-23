@@ -705,6 +705,12 @@ static void deferred_combat_choices(){
 }
 static void original_card_movement(){
  static State direct;static SaveData expected;
+ const auto setup=[](Character character=Character::Ironclad){
+  enemy_visual_fight(EncounterId::NibbitsWeak,character);
+  // The enemy-only fixture does not enter a player turn. Manual-play cases
+  // start with the same available energy as an ordinary first combat turn.
+  a.game.energy=int16_t(max_energy(a.game));
+ };
  const auto add=[&](CardKind kind,unsigned upgraded=0){
   const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,kind,1025);resolve_pending(a.game);
   CHECK(a.game.card_count==id+1&&a.game.zones[id]==Zone::Hand);a.game.cards[id].upgraded=uint8_t(upgraded);
@@ -713,7 +719,7 @@ static void original_card_movement(){
  };
  const auto equivalent=[&](){CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));};
  for(unsigned fast=0;fast<2;++fast){
-  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;
+  setup();a.fast_mode=fast!=0;a.tick_remainder=0;
   const int played=add(Defend);a.cursor=a.game.hand.count-1;a.hand_focus=true;a.render();
   const auto start_pose=a.combat_hand_pose(unsigned(a.cursor),true);const auto old=a.combat_hand();const auto old_piles=a.combat_pile_counts();
   CHECK(!a.combat_hand_settled(unsigned(a.cursor),true));
@@ -745,7 +751,7 @@ static void original_card_movement(){
   // A real three-card draw supplies three distinct Add boundaries. Its
   // canonical result already exists, but later cards cannot be selected or
   // inspected through a future hit region while the first one is arriving.
-  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;
+  setup();a.fast_mode=fast!=0;a.tick_remainder=0;
   const int trance=add(BattleTrance);a.cursor=a.game.hand.count-1;const auto hand_before=a.combat_hand();
   snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,a.target));CHECK(save(direct,expected));
   const uint32_t draw_start=a.animation;a.input(Key::Confirm);a.render();equivalent();
@@ -765,7 +771,7 @@ static void original_card_movement(){
   advance_combat_ms((draw_end-a.animation)*33);a.render();CHECK(!a.combat_actions_locked()&&CombatHand::same(a.combat_hand(),final_hand));equivalent();
 
   // A full ten-card hand does not create a phantom Add, animation or wait.
-  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;
+  setup();a.fast_mode=fast!=0;a.tick_remainder=0;
   while(a.game.hand.count<MaxHand)add(Wound);
   snapshot();CHECK(load(direct,before.bytes,before.size));queue_extension(direct,XOp::Draw,3);resolve_pending(direct);CHECK(save(direct,expected));
   const uint32_t full=a.animation;{UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::Draw,3);resolve_pending(a.game);}
@@ -773,7 +779,7 @@ static void original_card_movement(){
 
   // Power waits for its play-pile tween before applying its effect. The
   // physical card leaves the hand at time zero rather than duplicating there.
-  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.tick_remainder=0;
+  setup();a.fast_mode=fast!=0;a.tick_remainder=0;
   const int inflame=add(Inflame);a.cursor=a.game.hand.count-1;
   snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,a.target));CHECK(save(direct,expected));
   const uint32_t power_start=a.animation;a.input(Key::Confirm);a.render();
@@ -786,7 +792,7 @@ static void original_card_movement(){
 
   // Prepared's real card-choice continuation must wait for both awaited
   // draws. Its future canonical selection cannot appear at the first draw.
-  enemy_visual_fight(EncounterId::NibbitsWeak,Character::Silent);a.fast_mode=fast!=0;a.tick_remainder=0;
+  setup(Character::Silent);a.fast_mode=fast!=0;a.tick_remainder=0;
   add(Prepared,1);a.cursor=a.game.hand.count-1;const uint32_t selection_start=a.animation;a.input(Key::Confirm);a.render();
   CHECK(a.game.phase==Phase::DiscardChoice&&a.combat_feedback.choice_pending);
   const uint32_t ready=selection_start+TurnBannerPresentation::wait_ticks(500,200,fast!=0);CHECK(a.combat_feedback.choice_at==ready);
