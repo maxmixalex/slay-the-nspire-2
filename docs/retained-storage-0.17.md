@@ -16,6 +16,20 @@ the earlier measured candidate exactly. The [recovery receipt](validation-ui3-re
 records the four completed conversions. This is a reproduction of those
 resources, not a new performance measurement of the later runtime.
 
+The final title-glow extension was generated separately at checkpoint
+`3843e8e626317da0c1508fab02a2ed4a627f9fdd`. It keeps image ID 4 and expands that
+atlas from 164×106 to 164×210 with one original 104×104 light mask. This adds
+15,602 bytes to the shared artwork file and no images or clips. The final
+common file is **74,756,230 bytes**, English is **1,780,887 bytes**, and Chinese
+is **4,563,586 bytes**: **81,100,703 bytes** combined, saving **12,682,660 bytes**
+against v19. Both full packs reconstruct exactly from this final split set.
+All other retained pictures, animation payloads, glyphs, strings, catalogs and
+timing passed the converter's direct byte comparisons. The [final resource
+receipt](validation-ui3-glow-resources-0.17.json) records those completed runs.
+The performance table below retains the earlier measured candidate's exact
+identity and sizes; this title-only resource change does not relabel those
+measurements as a new device or frame-rate test.
+
 ## Image format 7
 
 The ordinary 16-byte image-directory row still stores offset, width, height,
@@ -94,7 +108,8 @@ python tools/split_content.py \
 `--logo-atlas /private/title/title-logo.json` replaces fixed image 4 without
 adding images or clips. The manifest supplies width, height, original format
 and a `raw_file` relative to the manifest. Its intended content is the title
-agent's original Spine-derived static lettering plus ten small flame frames.
+agent's original Spine-derived static lettering, ten small flame frames and
+one light-mask band for the original additive glow.
 
 English is planned once. Chinese uses the same groups after direct comparison
 of every retained input's original format/raw bytes. The converter compares

@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 
 // Original main-menu logo pose, cropped from the 1920x1080 scene to 320x240.
 namespace spire::title_scene {

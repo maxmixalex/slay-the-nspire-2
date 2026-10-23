@@ -18,6 +18,7 @@ static Bytes read(const char*path){
  CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());CHECK(!std::fclose(f));return bytes;
 }
 static void put(Bytes&b,unsigned at,uint32_t value){for(unsigned i=0;i<4;++i)b[at+i]=uint8_t(value>>(8*i));}
+static uint32_t get(const Bytes&b,unsigned at){uint32_t value=0;for(unsigned i=0;i<4;++i)value|=uint32_t(b[at+i])<<(8*i);return value;}
 static void capture(const char*name){
  if(!screenshots)return;const std::string path=std::string(screenshots)+"/"+name+".ppm";
  FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");
@@ -75,17 +76,19 @@ static void phase_and_focus(){
  CHECK(app.content.healthy()&&app.content.image_cache_usage().pages<=748&&app.content.image_cache_usage().entries<=320);
 }
 static void rejected_profiles(Bytes&data){
- const uint32_t fields[][3]={{4,20,19},{28,1702,1705},{28,1704,1705},{32,557,558}};
- for(const auto&field:fields){put(data,field[0],field[1]);CHECK(!app.content.open(data.data(),data.size()));put(data,field[0],field[2]);}
- CHECK(app.content.open(data.data(),data.size())&&app.content.current_profile());
+ const auto version=get(data,4);
+ const uint32_t fields[][2]={{4,RetainedContentVersion+1},{28,FeedbackAnimationKinds},{28,MerchantEffectsAnimationKinds-1},{32,CardKinds-1}};
+ for(const auto&field:fields){const auto original=get(data,field[0]);put(data,field[0],field[1]);CHECK(!app.content.open(data.data(),data.size()));put(data,field[0],original);}
+ CHECK(app.content.open(data.data(),data.size())&&app.content.version()==version&&app.content.current_profile());
 }
 int main(int argc,char**argv){
- if(argc<3||argc>4){std::fprintf(stderr,"usage: merchant_visual_regression v19.nsp v18.nsp [private-screenshot-dir]\n");return 2;}
+ if(argc<3||argc>4){std::fprintf(stderr,"usage: merchant_visual_regression (v19|v20).nsp v18.nsp [private-screenshot-dir]\n");return 2;}
  if(argc==4)screenshots=argv[3];auto candidate=read(argv[1]);CHECK(app.init(candidate.data(),candidate.size(),{}));
- CHECK(app.content.version()==MerchantEffectsContentVersion&&app.content.current_profile());phase_and_focus();rejected_profiles(candidate);
+ const auto version=app.content.version();
+ CHECK((version==MerchantEffectsContentVersion||version==RetainedContentVersion)&&app.content.current_profile());phase_and_focus();rejected_profiles(candidate);
  auto legacy=read(argv[2]);CHECK(app.init(legacy.data(),legacy.size(),{}));CHECK(app.content.version()==FeedbackContentVersion&&app.content.current_profile());
  CHECK(!app.content.clip(AnimMerchantRoomFocused).count&&!app.content.clip(AnimMerchantFlamesBehind).count);
  shop(Character::Ironclad);app.input(Key::Left);app.render();capture("merchant-v18-fallback");unchanged();
  app.input(Key::Confirm);CHECK(app.shop_open);app.input(Key::Back);CHECK(!app.shop_open);unchanged();
- CHECK(app.content.healthy());std::printf("merchant visual: %u checks passed; exact v19 profile, phase/focus, five classes, v18 fallback\n",checks);
+ CHECK(app.content.healthy());std::printf("merchant visual: %u checks passed; exact v%u profile, phase/focus, five classes, v18 fallback\n",checks,version);
 }
