@@ -117,7 +117,31 @@ struct Canvas{
         for(;;){if(!dots||(step/3)%2==0)rect(x,y,1,1,color);if(x==xx&&y==yy)break;int e=err*2;if(e>=dy){err+=dy;x+=sx;}if(e<=dx){err+=dx;y+=sy;}step++;}
     }
     void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
-        auto p=a.content.image(id);if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
+        picture(a.content.image(id),x,y,width,height,opacity,blend_mode);
+    }
+    // A full-width atlas band shares its owner's decoded storage, including
+    // sparse rows. It can use the existing scaled/additive picture path.
+    static Picture picture_rows(Picture p,int first,int count){
+        if(!p.pixels||first<0||count<=0||first>=p.h)return {};
+        count=mn(count,int(p.h)-first);
+        if(p.format==4){
+            const uint8_t*run=p.pixels;
+            for(int y=0;y<first;++y){
+                unsigned spans=run[0]|unsigned(run[1])<<8;run+=2;
+                for(unsigned span=0;span<spans;++span){
+                    const unsigned n=run[2]|unsigned(run[3])<<8,stride=run[4]?3u:2u;
+                    run+=5+n*stride;
+                }
+            }
+            p.pixels=run;
+        }else{
+            const unsigned offset=unsigned(first)*p.w;
+            p.pixels+=offset*(p.palette?1u:2u);if(p.alpha)p.alpha+=offset;
+        }
+        p.h=uint16_t(count);return p;
+    }
+    void picture(Picture p,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
+        if(!p.pixels||!opacity)return;if(!width)width=p.w;if(!height)height=p.h;
         if(width<=0||height<=0)return;int left=mx(0,-x),right=mn(width,clip_w-x),top=mx(0,-y),bottom=mn(height,clip_h-y);if(left>=right||top>=bottom)return;
         if(p.format==4){
             if(width!=p.w||height!=p.h){

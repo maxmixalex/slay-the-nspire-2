@@ -215,6 +215,26 @@ static void picture_regions(){
   pair.compare();
  }
 }
+static void picture_row_views(){
+ // Full-width bands must preserve their source pitch, palette, alpha and
+ // sparse row coordinates when the existing renderer scales them.
+ const Surface surface{13,9,19};
+ for(unsigned id:{0u,2u,3u,4u,5u,6u})for(int first:{-1,0,1,4,5})for(int count:{0,1,3,9})
+ for(Placement target:{Placement{2,1,0,0},Placement{-2,-1,14,8},Placement{9,6,3,2}})
+ for(auto style:{styles[0],styles[1],styles[16]})for(unsigned mode:{unsigned(presentation::Normal),unsigned(presentation::Add)}){
+  Pair pair(surface,style);const auto&image=images[id];
+  pair.got.picture(Canvas::picture_rows(app.content.image(int(id)),first,count),target.x,target.y,target.w,target.h,123,mode);
+  if(first>=0&&first<int(image.h)&&count>0){
+   const int rows=std::min(count,int(image.h)-first),width=target.w?target.w:int(image.w),height=target.h?target.h:rows;
+   for(int y=0;y<surface.h;++y)for(int x=0;x<surface.w;++x){
+    const int dx=x-target.x,dy=y-target.y;if(dx<0||dx>=width||dy<0||dy>=height)continue;
+    const unsigned at=unsigned(first+dy*rows/height)*image.w+unsigned(dx)*image.w/unsigned(width);
+    pair.oracle.paint(y*surface.pitch+x,image.colors[at],rounded_alpha(image.alpha[at],123),mode);
+   }
+  }
+  pair.compare();
+ }
+}
 static void map_pictures(){
  // A separate direct inverse-transform oracle retains the pre-optimization
  // pixel-center arithmetic. Test all shaders, odd sizes, angles, clipping,
@@ -250,10 +270,10 @@ static void map_pictures(){
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();picture_regions();CHECK(app.content.healthy());
+ rectangles();pictures();picture_regions();picture_row_views();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);
- pictures();picture_regions();map_pictures();CHECK(app.content.healthy());glyphs();
+ pictures();picture_regions();picture_row_views();map_pictures();CHECK(app.content.healthy());glyphs();
  std::printf("canvas fast path: %u cases, %u checks; production paint oracle, RGB565 alignment, clipping, pitch, coverage, modulation, additive, scaled, atlas regions, sparse, palette and glyph decode bounds\n",cases,checks);
 }

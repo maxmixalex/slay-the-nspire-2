@@ -7,16 +7,35 @@
   "viewport": [1920, 1080],
   "screen": [320, 240],
   "image_id": 4,
-  "atlas_size": [164, 106],
+  "atlas_size": [164, 210],
   "text_screen_rect": [40, 48, 164, 84],
   "fire_screen_rect": [106, 66, 16, 22],
   "fire_atlas_y": 84,
   "fire_frames": 10,
   "fire_frame_ms": 100,
+  "glow": {
+    "source_node": "BgContainer/Control/Logo/light_large",
+    "texture": "images/vfx/light.png",
+    "atlas_y": 106,
+    "mask_size": [104, 104],
+    "mask_x": 30,
+    "screen_center": [115.022222, 78.533333],
+    "period_ms": 3000,
+    "color_rgba8": [64, 205, 215, 75],
+    "scale_points": [[0, 0.417635], [0.502521, 0.507939], [1, 0.423164]],
+    "scale_tangents": "zero",
+    "gradient_offsets": [0, 0.411546, 0.994413],
+    "gradient_gray8": [89, 255, 89],
+    "source_node_scale": 2,
+    "source_particle_scale": 4
+  },
   "notes": [
     "Use the original Spine text and ten fire attachments; sts2_logo_static.png is the white outline variant, not the title-scene logo.",
     "The 160-second attachment timeline repeats these ten drawings every second.",
     "Match the source Control anchors and Logo transform before applying the 320x240 cover crop.",
-    "The separate light_large glow and background particles are not included in this atlas."
+    "The original single light_large particle is drawn behind the logo with its additive material, authored scale Curve and color Gradient.",
+    "Only one original light texture is stored; runtime scales and tints its atlas rows without a new persistent bitmap or duplicated glow frames.",
+    "The port starts this cosmetic three-second cycle at phase zero instead of the original script's random integer preprocess time.",
+    "The independent GPU background stars and fog particles are not included."
   ]
 }

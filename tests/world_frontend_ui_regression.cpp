@@ -4,6 +4,7 @@
 #include "world_run.hpp"
 #include "world_relics.hpp"
 #include <cstdio>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -101,19 +102,47 @@ static void menu_rows(unsigned count){
 }
 static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
 
-static void title_animation_is_a_local_atlas_region(){
+static void title_glow_curve(){
+ // Independent floating-point evaluation of the source Curve/Gradient,
+ // allowing one output pixel/byte for the runtime's fixed-point rounding.
+ for(unsigned ms:{0u,99u,300u,600u,1235u,1508u,2000u,2984u,3000u,0xffffffffu}){
+  const double phase=double(ms%3000)/3000.;const bool rising=phase<.502521;
+  const double t=rising?phase/.502521:(phase-.502521)/(1.-.502521),weight=t*t*(3.-2.*t);
+  const double scale=rising?.417635+(.507939-.417635)*weight:.507939+(.423164-.507939)*weight;
+  const double gray=phase<=.411546?89.+166.*phase/.411546:
+      phase<.994413?255.-166.*(phase-.411546)/(.994413-.411546):89.;
+  const auto sample=title_scene::glow_sample(ms);
+  CHECK(std::abs(sample.width-int(std::lround(164.*scale/.507939)))<=1);
+  CHECK(std::abs(sample.height-int(std::lround(104.*scale/.507939)))<=1);
+  CHECK(std::abs(int(sample.brightness)-int(std::lround(gray)))<=1);
+ }
+ const auto first=title_scene::glow_sample(0),peak=title_scene::glow_sample(1508);
+ CHECK(first.width==135&&first.height==86&&first.brightness==89&&peak.width==164&&peak.height==104);
+}
+static void title_animation_is_bounded_and_repeats(){
  empty_disk();start();snapshot();a.return_to_title();a.menu=0;a.map_clock_ms=50;a.render();
  const auto logo=a.content.image(A_Logo);
- if(logo.w!=title_scene::AtlasWidth||logo.h!=title_scene::AtlasHeight)return; // Historical packs retain their static logo.
+ const bool glow=logo.h==title_scene::AtlasHeight;
+ if(logo.w!=title_scene::AtlasWidth||(!glow&&logo.h!=title_scene::LegacyAtlasHeight))return; // Historical static logo.
  std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);unsigned different_frames=0;
+ auto in_fire=[](unsigned x,unsigned y){return x>=title_scene::FireX&&x<title_scene::FireX+title_scene::FireWidth&&y>=title_scene::FireY&&y<title_scene::FireY+title_scene::FireHeight;};
+ auto in_glow=[](unsigned x,unsigned y){return x>=title_scene::GlowCenterX-title_scene::AtlasWidth/2&&x<title_scene::GlowCenterX+(title_scene::AtlasWidth+1)/2&&y>=title_scene::GlowCenterY-title_scene::GlowHeight/2&&y<title_scene::GlowCenterY+(title_scene::GlowHeight+1)/2;};
  for(unsigned frame=1;frame<title_scene::FireFrames;++frame){
   a.map_clock_ms=frame*title_scene::FireFrameMs+50;a.render();bool changed=false;
   for(unsigned y=0;y<ScreenH;++y)for(unsigned x=0;x<ScreenW;++x)if(a.pixels[y*ScreenW+x]!=first[y*ScreenW+x]){
-   CHECK(x>=title_scene::FireX&&x<title_scene::FireX+title_scene::FireWidth&&y>=title_scene::FireY&&y<title_scene::FireY+title_scene::FireHeight);changed=true;
+   CHECK(in_fire(x,y)||(glow&&in_glow(x,y)));changed=true;
   }
   different_frames+=changed;
  }
- CHECK(different_frames>=2);a.map_clock_ms=title_scene::FireFrames*title_scene::FireFrameMs+50;a.render();
+ CHECK(different_frames>=2);
+ if(glow){
+  // The flame has the same frame after 1s. A changed pixel outside its
+  // rectangle proves the independent light has actually been rendered.
+  a.map_clock_ms=1050;a.render();unsigned changed=0;
+  for(unsigned y=0;y<ScreenH;++y)for(unsigned x=0;x<ScreenW;++x)if(a.pixels[y*ScreenW+x]!=first[y*ScreenW+x]){CHECK(in_fire(x,y)||in_glow(x,y));changed+=!in_fire(x,y);}
+  CHECK(changed>0);capture("frontend-title-glow-bright");
+ }
+ a.map_clock_ms=(glow?title_scene::GlowPeriodMs:title_scene::FireFrames*title_scene::FireFrameMs)+50;a.render();
  CHECK(!std::memcmp(first.data(),a.pixels,sizeof a.pixels));unchanged();
 }
 static void probe_is_read_only(){
@@ -297,7 +326,7 @@ static void modal_isolation_and_fast_mode(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
- title_animation_is_a_local_atlas_region();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
+ title_glow_curve();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
  canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
  ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");

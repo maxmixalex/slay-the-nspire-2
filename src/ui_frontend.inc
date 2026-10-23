@@ -13,7 +13,15 @@ static void frontend_number(TextBuffer&b,const char*label,int value){
 }
 static void title_logo(Canvas&c){
  const auto logo=c.a.content.image(A_Logo);
- if(logo.w!=title_scene::AtlasWidth||logo.h!=title_scene::AtlasHeight){c.picture(A_Logo,3,5);return;}
+ if(logo.w!=title_scene::AtlasWidth||(logo.h!=title_scene::LegacyAtlasHeight&&logo.h!=title_scene::AtlasHeight)){c.picture(A_Logo,3,5);return;}
+ if(logo.h==title_scene::AtlasHeight){
+  const auto glow=title_scene::glow_sample(c.a.map_clock_ms);
+  Canvas light=c;light.brightness=uint8_t(div255(unsigned(light.brightness)*glow.brightness));
+  light.tint_red=64;light.tint_green=205;light.tint_blue=215;
+  light.picture(Canvas::picture_rows(logo,title_scene::GlowAtlasY,title_scene::GlowHeight),
+      title_scene::GlowCenterX-glow.width/2,title_scene::GlowCenterY-glow.height/2,
+      glow.width,glow.height,title_scene::GlowOpacity,presentation::Add);
+ }
  c.picture_region(logo,title_scene::TextX,title_scene::TextY,0,0,title_scene::TextWidth,title_scene::TextHeight);
  const unsigned frame=c.a.map_clock_ms/title_scene::FireFrameMs%title_scene::FireFrames;
  c.picture_region(logo,title_scene::FireX,title_scene::FireY,int(frame)*title_scene::FireWidth,title_scene::FireAtlasY,

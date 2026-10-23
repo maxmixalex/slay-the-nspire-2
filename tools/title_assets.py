@@ -3,7 +3,8 @@
 
 The title's Spine has a static text attachment and ten small flame drawings.
 Its 160-second attachment timeline repeats those drawings, so neither a long
-prebaked clip nor ten duplicates of the text are needed on the calculator.
+prebaked clip nor ten duplicates of the text are needed on the calculator. One
+original light mask also supplies the separate animated additive glow.
 """
 from __future__ import annotations
 
@@ -84,6 +85,14 @@ def build_title_atlas(pack, texture_loader):
         seconds = (frame+.5)*PROFILE['fire_frame_ms']/1000
         image = layer(seconds, fire_slot).crop((x, y, x+w, y+h))
         atlas.alpha_composite(image, (frame*w, PROFILE['fire_atlas_y']))
+    glow = PROFILE['glow']
+    mask = texture_loader(pack, glow['texture']).convert('RGBA').resize(
+        tuple(glow['mask_size']), Image.Resampling.LANCZOS)
+    pixels = np.asarray(mask).copy()
+    # Additive black contributes exactly zero, so transparent black spans
+    # need not occupy the sparse atlas or visit the framebuffer at runtime.
+    pixels[:, :, 3][np.all(pixels[:, :, :3] == 0, axis=2)] = 0
+    atlas.alpha_composite(Image.fromarray(pixels), (glow['mask_x'], glow['atlas_y']))
     return atlas
 
 
@@ -109,7 +118,7 @@ def main():
     (output/'title-logo.raw').write_bytes(raw)
     manifest = dict(PROFILE, width=atlas.width, height=atlas.height, format=4,
                     raw_file='title-logo.raw', png_file='title-logo.png', bytes=len(raw),
-                    source='original main_menu_logo Spine text and fire attachments',
+                    source='original main_menu_logo Spine attachments and light_large light texture',
                     replaces_image=4, added_images=0, added_clips=0)
     (output/'title-logo.json').write_text(json.dumps(manifest, indent=2)+'\n')
     print(json.dumps({key: manifest[key] for key in ('width', 'height', 'format', 'bytes',
