@@ -269,7 +269,6 @@ centered = false
                 sampler.slots = [dict(slot='body', node_matrix=[1., 0., 30., 0., 1., 0.])]
                 texture = lambda pack, path: Image.new('RGBA', (10, 10), (0, 0, 255, 255))
                 with patch('world_rest_actor_assets.room_profile', return_value=profile), \
-                        patch.object(RoomRenderer, '_verify_shader'), \
                         patch.object(RoomRenderer, '_shader_texture', return_value=np.ones((1, 1, 4), np.float32)):
                     lit, _ = sample_rest_actor(pack, row, sampler, texture_loader=texture)
                     dark, info = sample_rest_actor(pack, dict(row, dark=True), sampler, texture_loader=texture)

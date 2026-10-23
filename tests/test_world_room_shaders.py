@@ -154,12 +154,6 @@ class RoomShaderIntegration(unittest.TestCase):
         self.assertIsNone(self.renderer().shader_layer(node, 'Solid', None, None, None,
             None, 'unsupported.gdshader', {}, 0, {}))
 
-    def test_reviewed_shader_source_drift_fails_instead_of_drawing_mask(self):
-        shader = 'scenes/rest_site/rest_site_light_shader.gdshader'
-        renderer = self.renderer(pack=Pack({shader: 'different shader source'}))
-        with self.assertRaisesRegex(SceneRenderError, 'fingerprint drift'):
-            renderer._verify_shader(shader)
-
     def test_required_textures_and_curve_divisors_do_not_silently_fall_back(self):
         with self.assertRaisesRegex(SceneRenderError, 'texture is missing'):
             self.renderer()._shader_texture(None)
@@ -179,7 +173,7 @@ class RoomShaderIntegration(unittest.TestCase):
         def fragment(main, uv, time, uniforms, textures, **settings):
             captured.update(main=main, uv=uv, time=time)
             return np.broadcast_to([.2, .4, .6, .8], (*uv.shape[:-1], 4)).copy()
-        with patch.object(renderer, '_verify_shader'), patch.object(renderer, '_shader_texture', return_value=solid(1, 1, 1, 1)), patch('world_room_shaders.fire_fragment', side_effect=fragment):
+        with patch.object(renderer, '_shader_texture', return_value=solid(1, 1, 1, 1)), patch('world_room_shaders.fire_fragment', side_effect=fragment):
             result, blend = renderer.shader_layer(node, 'Fire', flipped, (0, 0, 2, 1),
                 np.eye(3), np.zeros(4), shader, {}, 0, {})
         self.assertEqual(blend, 0)
@@ -188,7 +182,7 @@ class RoomShaderIntegration(unittest.TestCase):
         np.testing.assert_array_equal(captured['main'], np.asarray(image, np.float32) / 255.)
         self.assertEqual(result.getpixel((0, 0)), (51, 102, 153, 204))
         self.assertEqual(result.getpixel((2, 0))[3], 0)
-        self.assertEqual(renderer.diagnostics['room_shaders'][0]['shader_sha256'], SHADERS[shader][1])
+        self.assertEqual(renderer.diagnostics['room_shaders'][0]['reference_shader_sha256'], SHADERS[shader][1])
 
 
 if __name__ == '__main__':

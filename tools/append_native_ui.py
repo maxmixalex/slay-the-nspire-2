@@ -178,8 +178,8 @@ def main():
     from build_content import texture, image_data
     pack, skins, rows, texts = Pack(pck_path), [], [], []
     try:
-        # The PCK reader verifies each entry's MD5; this private receipt also
-        # records the exact derived RGB565/alpha bytes of every appended skin.
+        # The receipt records the derived RGB565/alpha bytes of each skin.
+        # PCK entries are read directly without an integrity-only MD5 pass.
         for name, path, size, hsv in SKINS:
             image = texture(pack, path)
             original_size = image.size

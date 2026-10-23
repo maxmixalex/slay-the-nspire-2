@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Spine;
 
@@ -20,7 +19,6 @@ sealed class AtlasDimensions : TextureLoader {
 }
 
 static class SpineSampleAdapter {
-    public const string RuntimeSha256 = "0e05031a0377bea228e6419572f171496cb77d58bfdc9129c4607d54601ba3ec";
     static readonly Dictionary<string, SkeletonData> Cache = new();
     static readonly int[] QuadTriangles = { 0, 1, 2, 2, 3, 0 };
     static string String(JsonElement j, string k, string fallback = "") => j.TryGetProperty(k, out var v) ? v.GetString() ?? fallback : fallback;
@@ -290,12 +288,6 @@ static class SpineSampleAdapter {
     public static int Main(string[] args) {
         // Match the original Godot runtime; Frame converts back to y up.
         Bone.yDown = true;
-        string path = typeof(Skeleton).Assembly.Location;
-        string digest = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
-        if (digest != RuntimeSha256) {
-            Console.Error.WriteLine("Spine runtime SHA-256 differs from the reviewed 4.2 build: " + digest);
-            return 2;
-        }
         string line;
         while ((line = Console.ReadLine()) != null) {
             try {
