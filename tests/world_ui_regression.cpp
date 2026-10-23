@@ -13,6 +13,7 @@ static App a;
 static SaveData before,after;
 static unsigned checks;
 static const char* screenshot_directory;
+static bool actual_pack;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL %s:%d %s phase=%d\n",__FILE__,__LINE__,#x,int(a.game.phase));std::exit(1);}}while(0)
 static void put(std::vector<uint8_t>&b,unsigned at,unsigned n,unsigned bytes=4){for(unsigned i=0;i<bytes;i++)b[at+i]=(uint8_t)(n>>(8*i));}
 static std::vector<uint8_t> synthetic_profile(){
@@ -376,7 +377,12 @@ static void deferred_enemy_values(){
   CHECK(!a.combat_feedback.active&&revealed.flags==new_intent.flags&&revealed.damage==new_intent.damage&&revealed.hits==new_intent.hits&&revealed.status_cards==new_intent.status_cards&&!std::strcmp(revealed.move_key,new_intent.move_key));
   CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());bool renamed=false;
   for(int y=53;y<67;++y)renamed|=std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t))!=0;
-  CHECK(renamed);unchanged();a.pointer.visible=false;
+  // synthetic_profile intentionally contains zero glyph records. Its blank
+  // title cannot prove a name change; keep every state/intent/hit/panel check
+  // there and require the rendered rename for every actual resource pack.
+  if(actual_pack)CHECK(renamed);
+  else CHECK(!a.content.glyph('E',12).pixels&&!a.content.glyph('N',12).pixels);
+  unchanged();a.pointer.visible=false;
  }
  a.fast_mode=false;
 
@@ -527,5 +533,5 @@ static void feedback_hud_and_merchant(){
  }
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
- if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
+ if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
  if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();original_combat_clock();deferred_enemy_values();deferred_combat_choices();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
