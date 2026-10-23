@@ -2,7 +2,7 @@
   "development": "Development build",
   "campaign": "Original three-act expeditions",
   "loading_offline": "Loading offline resources…",
-  "verifying_resources": "Verifying resources and starting…",
+  "loading_resources": "Loading resources and starting…",
   "screen": "nSpire II game screen",
   "up": "↑ Target / Up",
   "left": "← Select card",

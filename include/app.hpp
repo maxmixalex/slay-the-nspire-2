@@ -35,6 +35,7 @@ constexpr uint32_t MaxContentFile=256u*1024u*1024u;
 // The two storage versions share one catalog. Keep the original v14 constant
 // for legacy payloads/fixtures; v15 adds the bounded sparse-tile codec.
 constexpr unsigned ContentVersion=14,TileContentVersion=15,NativeUiContentVersion=16,ContentStrings=WorldStringCount;
+constexpr unsigned RetainedContentVersion=20;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
 struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
@@ -48,12 +49,8 @@ class Content {
     ResourceReader reader_{};
     mutable bool io_good_=true;
     uint32_t generation_=0;
-    // A successful first picture validates all its tiles. The optional bitmap
-    // borrows the unused directory tail; without space, every miss does that
-    // full check. Structural startup validation never sets these bits.
-    uint8_t* tile_validated_{};
-    // Exact page costs collected by the existing startup validation. This
-    // optional table borrows the resident-directory tail, never another pool.
+    // Decoded page costs learned on demand or supplied by the v20 directory.
+    // The optional table uses the existing directory tail, never another pool.
     uint8_t* image_pages_{};
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
     const uint8_t* glyph_record(uint32_t cp,int size)const;
@@ -65,8 +62,8 @@ public:
     ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
     // These planning queries never read the source, decode or change LRU.
-    // A cost is exact when collected at open; constrained legacy directories
-    // fall back to a safe upper bound until an image has been decoded.
+    // NSP2/20 uses resident decoded costs; older packs use geometry bounds
+    // until first decode, without scanning unrelated image or animation groups.
     bool image_cached(int id)const;
     bool image_alias(int first,int second)const;
     unsigned image_cache_pages(int id)const;
@@ -83,9 +80,9 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>MerchantEffectsContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_==MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
-        const unsigned animations=version_==MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        if(version_<ContentVersion||version_>RetainedContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        const unsigned animations=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
     }

@@ -4,7 +4,6 @@ struct Codec{
     uint32_t field(uint32_t v){if(at+4>limit){good=false;return 0;}uint32_t r=0;for(int i=0;i<4;i++){if(out)out[at+i]=(uint8_t)(v>>(8*i));else r|=(uint32_t)in[at+i]<<(8*i);}at+=4;return out?v:r;}
     uint32_t compact(uint32_t v,unsigned count){if(at>limit||count>limit-at){good=false;return 0;}uint32_t r=0;for(unsigned i=0;i<count;++i){if(out)out[at+i]=(uint8_t)(v>>(8*i));else r|=(uint32_t)in[at+i]<<(8*i);}at+=count;return out?v:r;}
 };
-static uint32_t checksum(const uint8_t*p,size_t n){uint32_t h=2166136261u;for(size_t i=0;i<n;i++){h^=p[i];h*=16777619u;}return h;}
 template<class T> static void field(T& v,Codec&c){uint32_t raw=c.field((uint32_t)v);v=static_cast<T>(raw);if(c.in&&(uint32_t)v!=raw)c.good=false;}
 // All historical fields occupy four bytes, even after a C++ field widens.
 // Relic masks keep their low word at the old offset and append their high word
@@ -223,9 +222,8 @@ if(version>=4){F(s.no_draw);for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].weak)
 #include "enemy_codec.inc"
 #include "world_relic_codec.inc"
   F(s.world_factory.rarity_offset_bits);B(s.world_factory.initialized);
-  // New compact suffixes end on a canonical four-byte boundary, preserving
-  // the historical checksum envelope without altering any old field offset.
-  while(c.at%4&&c.good)if(c.compact(0,1)!=0&&c.in)c.good=false;
+  // Preserve the historical four-byte boundary and field offsets.
+  while(c.at%4&&c.good)c.compact(0,1);
 #undef H
 #undef B
  }else if(c.in){
@@ -280,7 +278,7 @@ bool save(const State&s,SaveData&out){
     CodecWorkspaceLease workspace;if(!workspace.state)return false;
     State&copy=*workspace.state;copy=s;
     Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
-    uint32_t h=checksum(out.bytes,c.at);c.field(h);out.size=c.at;return c.good;
+    c.field(0);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(!data||len<16||len>sizeof(SaveData::bytes)||len%4)return false;
@@ -290,6 +288,6 @@ bool load(State&s,const uint8_t*data,size_t len){
     CodecWorkspaceLease workspace;if(!workspace.state)return false;
     State&tmp=*workspace.state;reset_in_place(tmp);
     code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
-    uint32_t h=checksum(data,len-4),stored=0;for(int i=0;i<4;i++)stored|=(uint32_t)data[len-4+i]<<(8*i);if(h!=stored)return false;
+    // Older v3-v15 files carry a checksum here; it is intentionally ignored.
     s=tmp;return true;
 }

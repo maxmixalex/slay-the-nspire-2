@@ -14,9 +14,6 @@ constexpr uint32_t CommonHeader=64,LanguageHeader=96,SplitLimit=256u*1024u*1024u
 static uint32_t split_u32(const uint8_t* p){
     return uint32_t(p[0])|(uint32_t(p[1])<<8)|(uint32_t(p[2])<<16)|(uint32_t(p[3])<<24);
 }
-static uint32_t split_hash(const uint8_t* p,uint32_t count,uint32_t seed=2166136261u){
-    for(uint32_t i=0;i<count;++i){seed^=p[i];seed*=16777619u;}return seed;
-}
 static bool split_read(const ResourceSource& source,uint32_t offset,void* dst,uint32_t count){
     if(offset>source.length||count>source.length-offset||(count&&!dst))return false;
     if(!count)return true;
@@ -39,11 +36,7 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
        split_u32(c+8)!=0x41cef1eau||split_u32(l+8)!=0x41cef1eau||
        split_u32(c+12)!=CommonHeader||split_u32(l+12)!=LanguageHeader||
        split_u32(c+16)!=common.length||split_u32(l+16)!=localized.length||
-       split_u32(c+24)||split_u32(l+36)!=uint32_t(expected))return false;
-    if(split_hash(c+32,32,split_hash(c,28))!=split_u32(c+28)||
-       split_hash(l+48,48,split_hash(l,44))!=split_u32(l+44))return false;
-    for(unsigned i=0;i<32;++i)if(c[32+i]!=l[48+i])return false;
-    for(unsigned i=80;i<96;++i)if(l[i])return false;
+       split_u32(l+36)!=uint32_t(expected))return false;
     const uint32_t total=split_u32(l+20),prefix=split_u32(l+24),art=split_u32(l+28),suffix=split_u32(l+32);
     if(total>SplitLimit||prefix<40||prefix>total||!art||art>total-prefix||
        !suffix||suffix!=total-prefix-art||split_u32(c+20)!=art||
@@ -53,8 +46,8 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     language_id_=expected;valid_=true;
     uint8_t h[40],row[8],marker[4];
     if(!read(0,h,sizeof h)||split_u32(h)!=0x3250534Eu||
-       (split_u32(h+4)!=17&&split_u32(h+4)!=18&&split_u32(h+4)!=19)||split_u32(h+8)!=0x41cef1eau||
-       split_u32(h+12)!=total||split_u32(h+36)!=split_u32(l+40)){
+       (split_u32(h+4)<17||split_u32(h+4)>20)||split_u32(h+8)!=0x41cef1eau||
+       split_u32(h+12)!=total){
         close();return false;
     }
     const uint32_t ni=split_u32(h+16),ng=split_u32(h+20),ns=split_u32(h+24);
@@ -156,27 +149,5 @@ bool ResourceReader::u16(uint32_t offset,uint16_t& out)const{
 bool ResourceReader::u32(uint32_t offset,uint32_t& out)const{
     uint8_t b[4];if(!read(offset,b,4))return false;
     out=uint32_t(b[0])|(uint32_t(b[1])<<8)|(uint32_t(b[2])<<16)|(uint32_t(b[3])<<24);return true;
-}
-bool ResourceReader::fnv1a(uint32_t offset,uint32_t count,uint32_t& out,uint32_t seed)const{
-    uint8_t bytes[PageSize];return fnv1a_buffered(offset,count,out,bytes,sizeof bytes,seed);
-}
-bool ResourceReader::fnv1a_buffered(uint32_t offset,uint32_t count,uint32_t& out,
-                                  uint8_t* scratch,uint32_t capacity,uint32_t seed)const{
-    if(!contains(offset,count)||(!source_.direct&&count&&(!scratch||!capacity)))return false;
-    const uint32_t total=count;uint32_t value=seed;
-    progress(ResourceStage::Integrity,0,total);
-    while(count){
-        // Limit direct-memory reports too, so the same progress contract can
-        // be used without copying the entire pack through temporary pages.
-        const uint32_t block=source_.direct?65536u:capacity;
-        const uint32_t n=count<block?count:block;
-        const uint8_t* bytes=source_.direct?source_.direct+offset:scratch;
-        if(source_.direct)++stats_.direct_reads;
-        else if(!read(offset,scratch,n))return false;
-        for(uint32_t i=0;i<n;++i){value^=bytes[i];value*=16777619u;}
-        offset+=n;count-=n;
-        progress(ResourceStage::Integrity,total-count,total);
-    }
-    out=value;return true;
 }
 } // namespace spire

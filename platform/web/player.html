@@ -67,7 +67,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  const localized=isSplit?await decodeContent(packages.languages[language]):null;
  const storedBytes=isSplit?common.length+localized.length:content.length;
  const virtualBytes=isSplit&&localized.length>=24?new DataView(localized.buffer,localized.byteOffset,localized.byteLength).getUint32(20,true):storedBytes;
- loading.textContent=t('verifying_resources');await new Promise(resolve=>setTimeout(resolve,0));
+ loading.textContent=t('loading_resources');await new Promise(resolve=>setTimeout(resolve,0));
  let ioCalls=0,ioBytes=0,ioTime=0;
  function memoryBytes(){if(!ram||ram.buffer!==memory.buffer)ram=new Uint8Array(memory.buffer);return ram;}
  const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{

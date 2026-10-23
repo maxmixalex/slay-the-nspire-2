@@ -50,8 +50,9 @@ static ImageCache* find_image(const Content* owner,const uint8_t* metadata,unsig
     return nullptr;
 }
 static unsigned image_page_bound(const uint8_t* descriptor){
-    const unsigned format=u32(descriptor+8),pixels=unsigned(u16(descriptor+4))*u16(descriptor+6);
-    const unsigned spans=pixels*8u+2u*u16(descriptor+6),palette=512u+2u*pixels;
+    const unsigned format=u32(descriptor+8),w=u16(descriptor+4),h=u16(descriptor+6);
+    if(!w||w>320||!h||h>240||format>7||u32(descriptor+12)>MaxEncodedImage)return 0;
+    const unsigned pixels=w*h,spans=pixels*8u+2u*h,palette=512u+2u*pixels;
     const unsigned bytes=format<5?u32(descriptor+12):spans>palette?spans:palette;
     return (bytes+ImagePageBytes-1)/ImagePageBytes;
 }
@@ -110,7 +111,7 @@ struct ImageReservation {
 };
 struct GlyphCache {const Content* owner{};uint32_t glyph{};uint8_t bytes[MaxGlyphBytes]{};};
 static GlyphCache glyph_cache[64];static unsigned glyph_cursor=0;
-struct StringCache {const Content* owner{};uint32_t offset{};char bytes[MaxStringBytes]{};};
+struct StringCache {const Content* owner{};uint32_t offset{},size{};char bytes[MaxStringBytes]{};};
 static StringCache string_cache[8];static unsigned string_cursor=0;
 static void clear_caches(const Content* owner){
     clear_tile_cache(owner);
@@ -141,32 +142,28 @@ const uint8_t* Content::payload(uint32_t offset,uint32_t count,uint8_t* scratch,
 bool Content::open(const uint8_t*p,size_t n){return open(ResourceSource::memory(p,n));}
 bool Content::open(ResourceSource source){
     ++generation_;
-    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=image_pages_=nullptr;
+    data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;image_pages_=nullptr;
     version_=cards_=0;ui_offset_=ui_count_=0;io_good_=true;clear_caches(this);
     if(!reader_.reset(source)||source.length<40||source.length>MaxContentFile)return false;
     reader_.progress(ResourceStage::Header,0,1);
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>MerchantEffectsContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>RetainedContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
-    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version==MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
+    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
        (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
        (version>=LocaleContentVersion&&ns!=LocaleStringCount))return false;
-    const unsigned auxiliary=version==MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+    const unsigned auxiliary=version>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(base>n||base>DirectoryCapacity)return false;
     reader_.progress(ResourceStage::Header,1,1);
-    // The encoded-image scratch is idle before any image/group decode. A
-    // 64 KiB scan cuts filesystem/host crossings without growing memory or
-    // replacing the full-file integrity check with a partial checksum.
-    uint32_t hash=0;if(!reader_.fnv1a_buffered(40,n-40,hash,encoded_pixels,65536)||hash!=u32(h+36))return false;
     uint32_t start=base;
     if(version>=TileContentVersion){
         uint8_t header[64];
         if(!reader_.read(base,header,sizeof header)||
-           !tile_header_bounds(header,base,n,ni,DirectoryCapacity,start))return false;
+           !tile_header_bounds(header,base,n,ni,DirectoryCapacity,version>=RetainedContentVersion,start))return false;
     }
     reader_.progress(ResourceStage::Directory,0,start);
     if(source.direct){data_=source.direct;metadata_=source.direct;}
@@ -174,105 +171,24 @@ bool Content::open(ResourceSource source){
     reader_.progress(ResourceStage::Directory,start,start);
     const uint8_t*p=metadata_;length_=n;images_=ni;glyphs_=ng;strings_=ns;clips_=nc;version_=version;
     directory_bytes_=start;tile_metadata_=version>=TileContentVersion?p+base:nullptr;
-    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;tile_validated_=image_pages_=nullptr;
+    auto reject=[&](){data_=metadata_=tile_metadata_=nullptr;directory_bytes_=0;image_pages_=nullptr;
         version_=cards_=ui_offset_=ui_count_=0;clear_caches(this);return false;};
-    if(tile_metadata_&&!valid_tile_directory(tile_metadata_,n))return reject();
-    const uint32_t payload_start=tile_metadata_?u32(tile_metadata_+32)+16*u32(tile_metadata_+28):start;
-    unsigned available=DirectoryCapacity-start;
+    // Opening needs only the directory. Pixel groups, glyphs and strings are
+    // read on demand; legacy checksums and unrequested records are ignored.
+    const unsigned available=DirectoryCapacity-start;
     if(images_<=available){
-        available-=images_;image_pages_=directory_+start+available;
-        for(unsigned i=0;i<images_;++i)image_pages_[i]=0;
-    }
-    // Remember exact descriptors already validated in this open pass. Images
-    // sharing bytes but having a different shape/format still require their
-    // own check. The temporary table borrows the unused directory tail and is
-    // discarded before tile catalog validation reuses that same workspace.
-    unsigned retained=0;for(unsigned i=0;i<ni;++i)if(u32(p+40+16*i+8)!=6)++retained;
-    unsigned seen_slots=1;while(seen_slots<retained*2u)seen_slots<<=1;
-    uint8_t* seen=seen_slots<=available/2?directory_+start:nullptr;
-    if(seen)for(unsigned i=0;i<seen_slots*2;++i)seen[i]=255;
-    reader_.progress(ResourceStage::Images,0,ni);
-    for(unsigned i=0;i<ni;i++){
-        const uint8_t*r=p+40+16*i;uint32_t off=u32(r),w=u16(r+4),height=u16(r+6),fmt=u32(r+8),len=u32(r+12);
-        if(!w||w>320||!height||height>240||fmt>6||(fmt==5&&version<5)||
-           (fmt==6&&(!tile_metadata_||len!=16))||off<(fmt==6?start:payload_start)||
-           off%2||off>n||len>n-off||len>MaxEncodedImage)return reject();
-        if(fmt==6){unsigned slot=0;if(!tile_descriptor_slot(tile_metadata_,off,slot))return reject();}
-        else {
-            unsigned slot=0;bool checked=false;
-            if(seen){
-                slot=(off*2654435761u^u32(r+4)*2246822519u^fmt*3266489917u^len)&(seen_slots-1);
-                while(u16(seen+slot*2)!=65535u){
-                    const uint8_t* prior=p+40+16*u16(seen+slot*2);
-                    if(u32(prior)==off&&u32(prior+4)==u32(r+4)&&u32(prior+8)==fmt&&u32(prior+12)==len){
-                        checked=true;if(image_pages_)image_pages_[i]=image_pages_[u16(seen+slot*2)];break;
-                    }
-                    slot=(slot+1)&(seen_slots-1);
-                }
-            }
-            if(!checked){
-                if(!image((int)i).pixels)return reject();
-                if(seen){seen[slot*2]=uint8_t(i);seen[slot*2+1]=uint8_t(i>>8);}
-            }
-        }
-        if((i&15u)==15u||i+1==ni)reader_.progress(ResourceStage::Images,i+1,ni);
-    }
-    if(tile_metadata_){
-        const unsigned bytes=(images_+7)/8;
-        if(bytes<=available){
-            available-=bytes;tile_validated_=directory_+start+available;
-            for(unsigned i=0;i<bytes;++i)tile_validated_[i]=0;
-        }
-        const unsigned descriptors=u32(tile_metadata_+28);
-        uint8_t* frame_pages=nullptr;
-        if(image_pages_&&descriptors<=available){available-=descriptors;frame_pages=directory_+start+available;}
-        if(!validate_tile_catalog(this,reader_,tile_metadata_,base,p+40,images_,
-                directory_+directory_bytes_,available,frame_pages))return reject();
-        if(frame_pages)for(unsigned i=0;i<images_;++i)if(u32(p+40+16*i+8)==6){
-            unsigned slot=0;if(!tile_descriptor_slot(tile_metadata_,u32(p+40+16*i),slot))return reject();
-            image_pages_[i]=frame_pages[slot];
-        }
-    }
-    reader_.progress(ResourceStage::Glyphs,0,ng);
-    uint32_t last=0;
-    for(unsigned i=0;i<ng;i++){
-        const uint8_t*r=p+40+ni*16+i*16;uint32_t cp=u32(r),off=u32(r+4),size=u16(r+8),w=r[10],height=r[11],key=(size<<24)|cp,encoded=u16(r+14);
-        if(cp>0x10FFFF||!w||w>40||!height||height>40||size>32||u16(r+12)>40||off<payload_start||off>n||(encoded?encoded:w*height)>n-off||(i&&key<=last)||(version<5&&encoded))return reject();
-        if(encoded){
-            if(encoded%2||encoded>2*w*height)return reject();
-            const uint8_t*bytes=payload(off,encoded,encoded_pixels,sizeof encoded_pixels);if(!bytes)return reject();
-            unsigned total=0;for(unsigned j=0;j<encoded;j+=2){if(!bytes[j])return reject();total+=bytes[j];}
-            if(total!=w*height)return reject();
-        }last=key;
-        if((i&63u)==63u||i+1==ng)reader_.progress(ResourceStage::Glyphs,i+1,ng);
-    }
-    reader_.progress(ResourceStage::Strings,0,ns);
-    for(unsigned i=0;i<ns;i++){
-        const uint8_t*r=p+40+ni*16+ng*16+i*8;uint32_t off=u32(r),len=u32(r+4);uint8_t zero=1;
-        if(off<payload_start||off>=n||len>=MaxStringBytes||len>n-off-1||!reader_.u8(off+len,zero)||zero)return reject();
-        if((i&63u)==63u||i+1==ns)reader_.progress(ResourceStage::Strings,i+1,ns);
+        image_pages_=directory_+DirectoryCapacity-images_;
+        const uint8_t* costs=version>=RetainedContentVersion?p+u32(tile_metadata_+56):nullptr;
+        for(unsigned i=0;i<images_;++i)image_pages_[i]=costs?costs[i]:0;
     }
     if(version>=LocaleContentVersion){
-        const uint8_t* row=p+40+ni*16+ng*16+LocaleMarkerString*8;uint8_t marker[3];
-        if(u32(row+4)!=3||!reader_.read(u32(row),marker,3)||
+        const uint8_t* row=p+40+ni*16+ng*16+LocaleMarkerString*8;uint8_t marker[4];
+        if(u32(row+4)!=3||!reader_.read(u32(row),marker,4)||marker[3]||
            !((marker[0]=='z'&&marker[1]=='h'&&marker[2]=='s')||
              (marker[0]=='e'&&marker[1]=='n'&&marker[2]=='g')))return reject();
     }
-    for(unsigned i=0;i<nc;i++){
-        const uint8_t*r=p+40+ni*16+ng*16+ns*8+i*16;uint32_t first=u32(r),count=u16(r+4),ms=u16(r+6);
-        if(!count||count>256||first>=ni||count>ni-first||!ms||ms>1000||u32(r+12))return reject();
-        int px=(int16_t)u16(r+8),py=(int16_t)u16(r+10);if(px< -640||px>640||py< -480||py>480)return reject();
-    }
-    for(unsigned i=0;i<cards;i++){
-        const uint8_t*r=p+40+ni*16+ng*16+ns*8+nc*16+i*16;
-        if(u32(r)>=ni||u32(r+4)>=ns||u32(r+8)>=ns||u32(r+12)>=ns)return reject();
-        const uint8_t* im=p+40+u32(r)*16;
-        if(u16(im+4)!=(version>=5?82:41)||u16(im+6)!=(version>=5?60:30))return reject();
-    }
     if(version>=5){
         ui_count_=auxiliary;ui_offset_=40+ni*16+ng*16+ns*8+nc*16+cards*16;
-        for(unsigned i=0;i<ui_count_;i++)if(u32(p+ui_offset_+i*4)>=ni)return reject();
-        if(ni<160||u32(p+ui_offset_+U_CampFlames*4)>ni-160)return reject();
     }
     cards_=version>=4?cards:14;reader_.progress(ResourceStage::Ready,1,1);return true;
 }
@@ -292,6 +208,9 @@ unsigned Content::image_cache_pages(int id)const{
     if(data_&&u32(descriptor+8)<5)return 0;
     if(image_pages_&&image_pages_[id])return image_pages_[id];
     if(const auto* cache=find_image(this,metadata_,unsigned(id)))return cache->pages;
+    if(version_>=RetainedContentVersion){
+        const unsigned pages=metadata_[u32(tile_metadata_+56)+unsigned(id)];if(pages)return pages;
+    }
     return image_page_bound(descriptor);
 }
 ImageCacheUsage Content::image_cache_usage()const{
@@ -306,24 +225,38 @@ Picture Content::image(int id)const{
     const uint8_t*r=metadata_+40+16*id;const uint32_t off=u32(r),length=u32(r+12);
     const uint32_t stored_format=u32(r+8);
     uint16_t w=u16(r+4),h=u16(r+6);unsigned fmt=stored_format,size=length;
+    if(!w||w>320||!h||h>240||fmt>7||(fmt==5&&version_<5)||
+       (fmt==6&&(!tile_metadata_||length!=16))||length>MaxEncodedImage||
+       (fmt==7&&(version_<RetainedContentVersion||length!=16))||
+       !reader_.contains(off,length))return fail();
     const uint8_t*p=nullptr;
     if(auto* cache=find_image(this,metadata_,unsigned(id))){
         p=image_buffer(*cache);fmt=cache->format;size=unsigned(cache->pages)*ImagePageBytes;cache->age=next_image_age();
-        // A byte-identical descriptor and shape can inherit a successful
-        // picture's validation; merely sharing a payload offset cannot.
-        if(stored_format==6&&tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
     }
     if(!p){
-        if(fmt==6){
+        if(fmt==7){
+            uint8_t row[16];if(!reader_.read(off,row,sizeof row))return fail();
+            // Relative group positions keep common artwork identical across
+            // language files, whose resident directories have different sizes.
+            const int64_t position=int64_t(off)+int32_t(u32(row));
+            const uint32_t group_length=u32(row+4),raw_offset=u32(row+8),format_size=u32(row+12);
+            fmt=format_size>>24;size=format_size&0xffffffu;
+            if(position<0||position>MaxContentFile||fmt>4||!size||size>MaxImageBytes)return fail();
+            TileGroup* group=load_retained_group(this,reader_,uint32_t(position),group_length);
+            if(!group||raw_offset>group->size||size>group->size-raw_offset)return fail();
+            ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
+            const uint8_t* raw=tile_bytes(*group)+raw_offset;
+            for(unsigned i=0;i<size;++i)output[i]=raw[i];
+            p=output;if(!valid_image(p,size,w,h,fmt))return fail();
+            reservation.publish(this,uint32_t(id),fmt);
+        }else if(fmt==6){
             TileFrame frame;
             if(!tile_metadata_||length!=16||!frame.open(this,reader_,tile_metadata_,
                     uint32_t(tile_metadata_-metadata_),off,w,h))return fail();
             size=frame.output_size;fmt=4;
             ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
-            const bool all=!tile_validated_||!(tile_validated_[unsigned(id)/8]&(1u<<(unsigned(id)%8)));
-            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,all,output))return fail();
+            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,output))return fail();
             p=output;reservation.publish(this,uint32_t(id),fmt);
-            if(tile_validated_)tile_validated_[unsigned(id)/8]|=uint8_t(1u<<(unsigned(id)%8));
         }else{
             if(fmt==5){uint8_t header[5];if(length<6||!reader_.read(off,header,5))return fail();fmt=header[0];size=u32(header+1);}
             if(fmt>4||!size||size>MaxImageBytes)return fail();
@@ -346,6 +279,9 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size)const{
     if(!metadata_||!io_good_)return nullptr;uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;
     while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=metadata_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
     if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
+        const unsigned w=r[10],h=r[11],encoded=u16(r+14);
+        if(!w||w>40||!h||h>40||u16(r+8)>32||u16(r+12)>40||
+           (encoded&&(version_<5||encoded%2||encoded>2*w*h))){io_good_=false;return nullptr;}
         return r;
     }}
     return cp!='?'?glyph_record('?',size):nullptr;
@@ -359,6 +295,7 @@ Glyph Content::glyph(uint32_t cp,int size)const{
     if(!metadata_||!io_good_)return {nullptr,0,0,0};
     if(const uint8_t*r=glyph_record(cp,size)){
         const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;
+        if(!reader_.contains(off,len)){io_good_=false;return {nullptr,0,0,0};}
         if(data_)bytes=data_+off;
         else {for(const auto&v:glyph_cache)if(v.owner==this){
                 const uint8_t*cached=metadata_+40+images_*16+v.glyph*16;
@@ -374,21 +311,25 @@ Glyph Content::glyph(uint32_t cp,int size)const{
 }
 const char* Content::string(int id)const{
     if(!metadata_||!io_good_||id<0||(unsigned)id>=strings_)return "";
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;const uint32_t off=u32(r),len=u32(r+4)+1;
-    if(data_)return (const char*)(data_+off);
-    for(const auto&v:string_cache)if(v.owner==this&&v.offset==off)return v.bytes;
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;const uint32_t off=u32(r),size=u32(r+4);
+    if(size>=MaxStringBytes||!reader_.contains(off,size+1)){io_good_=false;return "";}
+    if(data_){if(data_[off+size]){io_good_=false;return "";}return (const char*)(data_+off);}
+    for(const auto&v:string_cache)if(v.owner==this&&v.offset==off&&v.size==size)return v.bytes;
     auto&v=string_cache[string_cursor++%8];v.owner=nullptr;
-    if(!payload(off,len,(uint8_t*)v.bytes,sizeof v.bytes))return "";v.owner=this;v.offset=off;return v.bytes;
+    if(!payload(off,size+1,(uint8_t*)v.bytes,sizeof v.bytes)||v.bytes[size]){io_good_=false;return "";}
+    v.owner=this;v.offset=off;v.size=size;return v.bytes;
 }
 Clip Content::clip(int id)const{
     if(!metadata_||id<0||(unsigned)id>=clips_)return {0,0,1,0,0};
     const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+id*16;
-    return {u32(r),u16(r+4),u16(r+6),(int16_t)u16(r+8),(int16_t)u16(r+10)};
+    const uint32_t first=u32(r);const uint16_t count=u16(r+4),ms=u16(r+6);
+    if(first>=images_||!count||count>images_-first||!ms)return {0,0,1,0,0};
+    return {first,count,ms,(int16_t)u16(r+8),(int16_t)u16(r+10)};
 }
 int Content::card_image(int kind)const{
     if(!metadata_||kind<0||(unsigned)kind>=cards_)return -1;
     if(version_==3)return A_Card0+kind;
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return (int)u32(r);
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return u32(r)<images_?(int)u32(r):-1;
 }
 const char* Content::card_string(int kind,int variant)const{
     if(!metadata_||kind<0||(unsigned)kind>=cards_||variant<0||variant>2)return "";
@@ -396,7 +337,8 @@ const char* Content::card_string(int kind,int variant)const{
     const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+clips_*16+kind*16;return string((int)u32(r+4+variant*4));
 }
 int Content::ui_image(int key)const{
-    if(!metadata_||!ui_offset_||key<0||(unsigned)key>=ui_count_)return -1;return (int)u32(metadata_+ui_offset_+key*4);
+    if(!metadata_||!ui_offset_||key<0||(unsigned)key>=ui_count_)return -1;
+    const uint32_t image=u32(metadata_+ui_offset_+key*4);return image<images_?(int)image:-1;
 }
 int Content::relic_image(int index)const{
     if(index<0||index>=WorldRelicKinds)return -1;

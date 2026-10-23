@@ -2,7 +2,7 @@
   "development": "开发版",
   "campaign": "原版三幕远征",
   "loading_offline": "正在载入离线资源…",
-  "verifying_resources": "正在校验资源并启动…",
+  "loading_resources": "正在加载资源并启动…",
   "screen": "nSpire II 游戏画面",
   "up": "↑ 目标 / 上",
   "left": "← 选牌",

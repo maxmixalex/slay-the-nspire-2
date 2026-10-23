@@ -24,27 +24,9 @@ void probability_free(ISzAllocPtr source,void* address){
     if(source!=&allocator||address!=arena.values||!arena.occupied){arena.fault=true;return;}
     arena.occupied=false;++arena.frees;
 }
-// A constant 1 KiB table avoids eight bit steps for every reconstructed byte.
-// Its C++17 constant initialization needs no startup constructor or RAM copy.
-struct CrcTable {
-    uint32_t values[256]{};
-    constexpr CrcTable(){
-        for(unsigned i=0;i<256;++i){
-            uint32_t value=i;
-            for(unsigned bit=0;bit<8;++bit)value=(value>>1)^(0xedb88320u&(0u-(value&1u)));
-            values[i]=value;
-        }
-    }
-};
-constexpr CrcTable crc_table{};
-}
-uint32_t resource_crc32(const uint8_t* bytes,uint32_t count){
-    uint32_t crc=0xffffffffu;
-    for(uint32_t i=0;i<count;++i)crc=(crc>>8)^crc_table.values[(crc^bytes[i])&255u];
-    return crc^0xffffffffu;
 }
 bool decode_lzma2_block(uint8_t* output,uint32_t capacity,uint32_t expected_size,
-    const uint8_t* input,uint32_t input_size,uint32_t property,uint32_t expected_crc){
+    const uint8_t* input,uint32_t input_size,uint32_t property){
     if(arena.occupied||!output||!input||!expected_size||expected_size>Lzma2BlockRawLimit||
        capacity<expected_size||!input_size||input_size>Lzma2BlockEncodedLimit||
        property!=Lzma2DictionaryProperty)return false;
@@ -57,6 +39,6 @@ bool decode_lzma2_block(uint8_t* output,uint32_t capacity,uint32_t expected_size
                                   LZMA_FINISH_END,&status,&allocator);
     if(arena.occupied||arena.fault||arena.allocations!=1||arena.frees!=1)return false;
     return result==SZ_OK&&status==LZMA_STATUS_FINISHED_WITH_MARK&&
-        consumed==input_size&&produced==expected_size&&resource_crc32(output,expected_size)==expected_crc;
+        consumed==input_size&&produced==expected_size;
 }
 }

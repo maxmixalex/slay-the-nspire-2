@@ -28,8 +28,8 @@ enum class ResourceLanguage : uint32_t { English=1,Chinese=2 };
 // NSP2 byte stream. Only the directory and glyph/text sections are localized;
 // compressed animation groups and image pixels live once in the common file.
 // Both inputs and this adapter must outlive the returned source. Opening checks
-// the container bounds, bound common identity and actual NSP2 locale marker.
-// Content::open still performs its normal full-stream integrity/structure pass.
+// the container mapping bounds and actual NSP2 locale marker. Historical
+// digest fields remain in the container layout but are not runtime gates.
 class SplitResourceSource {
 public:
     bool open(ResourceSource common,ResourceSource language,ResourceLanguage expected);
@@ -70,18 +70,12 @@ public:
     ResourceReadStats stats()const{return stats_;}
     void clear_stats()const{stats_={};}
     bool contains(uint32_t offset,uint32_t count)const;
-    // On failure a bulk-read destination is unspecified. Integer and checksum
+    // On failure a bulk-read destination is unspecified. Integer
     // outputs are changed only on success. Zero bytes at EOF is a valid read.
     bool read(uint32_t offset,void* dst,uint32_t count)const;
     bool u8(uint32_t offset,uint8_t&)const;
     bool u16(uint32_t offset,uint16_t&)const;
     bool u32(uint32_t offset,uint32_t&)const;
-    bool fnv1a(uint32_t offset,uint32_t count,uint32_t& out,
-               uint32_t seed=2166136261u)const;
-    // Caller-owned scratch lets Content reuse its encoded-image buffer during
-    // the integrity pass. No extra resident buffer or large stack is needed.
-    bool fnv1a_buffered(uint32_t offset,uint32_t count,uint32_t& out,
-                       uint8_t* scratch,uint32_t capacity,uint32_t seed=2166136261u)const;
     void progress(ResourceStage stage,uint32_t completed,uint32_t total)const{
         if(source_.progress)source_.progress(source_.context,stage,completed,total);
     }
