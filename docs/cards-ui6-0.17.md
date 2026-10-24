@@ -88,8 +88,9 @@ because it deliberately created the public numeric include while parallel source
 work continued. It is a generation receipt, **not an immutable test pass**. The
 generated table is part of the following source checkpoint before compilation.
 
-No native suite, final private-pack visual acceptance, WASM comparison, ARM build
-or physical-device performance result is claimed by this checkpoint document.
+At stage 2, no native suite, final private-pack visual acceptance, WASM comparison,
+ARM build or physical-device performance result had been claimed. The later
+sections below record the subsequent executed gates with their own checkpoints.
 
 ## Executed stage-3 validation and repairs
 
@@ -224,6 +225,40 @@ world/rooms native/WASM comparison at this same repair: **2,376 exact frames
 and 106 exact saves** across both languages. The ten previous deck-icon
 mismatches disappeared without weakening the checker or resetting motion in
 the driver. Earlier failed matrix runs remain recorded as failures.
+
+## Sanitizer arithmetic follow-up
+
+The full stage-6 ASan/UBSan run found one further overflow in the settings
+icon's open rotation: `6200 * 360000` was evaluated as signed 32-bit before
+division. The earlier wide-interpolation repair did not cover this separate
+clock-to-angle expression. The normal host passes above therefore did not
+establish sanitizer acceptance; the failed sanitizer journal is retained.
+
+The clock product now stays explicitly unsigned: its maximum
+`6282 * 360000 = 2261520000` fits uint32, and division returns an angle below
+360000. The pressed branch also checks its 250-ms endpoint before multiplying
+elapsed time, preventing an extended hold from overflowing. Phase conversion
+reduces whole turns before its Q12 multiply, preserving periodic output while
+bounding that product below signed 32-bit range. No 64-bit division was added.
+The existing 6200-ms expectation is retained and strengthened to its exact
+angle; new cases cover 6282/6283-ms wrap and a 600000-ms hold. The repaired
+checkpoint received a new targeted sanitizer run rather than inheriting the
+earlier ordinary-build acceptance.
+
+Frozen stage 8 `96f7b5c6914762fad998f03ab5da1b4c283ecaa0` passed the
+Clang 18 AddressSanitizer/UndefinedBehaviorSanitizer card/HUD target with
+`-O1`, a 32-MiB stack, leak detection disabled and sanitizer errors configured
+to stop execution. The synthetic profile completed **385,274 checks**;
+the final private English and Chinese resources completed **318,593** and
+**329,923 checks**, respectively. The retained 6200-ms angle expectation,
+6282/6283-ms period endpoints and extended hold all execute in each run.
+There were no sanitizer reports, and all three journals recorded unchanged
+source. Receipts are `ui6-asan8-cards-build-33d169515129`,
+`ui6-asan8-cards-synthetic-f926492e7833`,
+`ui6-asan8-cards-eng-74b85f054443` and
+`ui6-asan8-cards-zhs-c082ff03921d` under the frozen stage-8 journal directory.
+These are targeted sanitizer results; the parent report records final full
+native, portable and backend acceptance separately.
 
 ## Remaining fidelity boundaries to keep explicit
 

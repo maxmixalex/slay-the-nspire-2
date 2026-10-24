@@ -121,3 +121,22 @@ CTest `4ac1efcdabf6`, actual text ENG/ZHS `f8d113758d42`/`1b7ebea8a88a`, and
 actual menu ENG/ZHS `30b589b72541`/`462f7aec4e41`. All completed commands
 reported unchanged checkpoint source. The actual-run logs identify their
 input mode as `text input passed` or `menu-only input passed`.
+
+## Final calculator allocation check
+
+Stage 8 `96f7b5c6914762fad998f03ab5da1b4c283ecaa0` changes only the HUD's
+animation arithmetic; it leaves the verified debug commands and input-capability
+behavior unchanged. Its ordinary and debug ARM builds passed. An independent
+read-only check matched each Zehn header against its ELF allocation sections,
+decompressed image size and actual file length:
+
+| Stage 8 launcher | File bytes | Header allocation bytes | Remaining below 16 MiB |
+| --- | ---: | ---: | ---: |
+| Ordinary | 1,045,914 | 16,445,872 | 331,344 |
+| Debug | 1,057,244 | 16,662,860 | 114,356 |
+
+Both entry points are zero. The debug allocation remains within the format's
+limit, with approximately 111.7 KiB available before that limit; future static
+buffers must account for this small margin. Journals `ui6-arm8-build-bbb646400815`
+and `ui6-arm8-debug-32d14eca1c24` both passed with unchanged checkpoint source.
+Header validation is not a physical-calculator execution or performance result.

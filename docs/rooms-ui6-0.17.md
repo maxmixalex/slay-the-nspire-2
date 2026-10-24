@@ -251,3 +251,34 @@ UI receipts are `969731c071a6` / `7c6579bf6437`. Earlier failed journals remain
 preserved: an overly broad Python import pattern included two optional ARM
 CLI modules without Unicorn, and the first reward capture run lacked its
 output directory. Neither is represented as a completed validation run.
+
+### Final backend and performance follow-through
+
+The final ordinary runtime at `96f7b5c6914762fad998f03ab5da1b4c283ecaa0`
+replayed both language backend matrices: **64 language-scenarios, 2,376 exact
+RGB565 frames, and 106 exact serialized saves**. The two-stage keyboard card
+selection fixture and the static HUD-motion lifecycle fix are documented in
+[the complete backend record](validation-ui6-backends-0.17.json), including
+the earlier failed evidence and the final replay rather than inherited results.
+
+The same revised benchmark driver from
+`e9d4017629219a28f072fb54bcb0327fb538f121` was then linked against the accepted
+UI5 and final UI6 runtime libraries. The accepted 12-run comparison measures
+lower warm merchant host cost, mixed first-open cost, and higher warm merchant
+resource reads. [The performance report](ui6-card-performance-0.17.md) retains
+all values and scope limits. An earlier idle sample accidentally hovered the
+starter relic; its complete data remains preserved and excluded from the clean
+inventory comparison. No production code changed for that measurement fix.
+
+Further original merchant differences are now explicitly identified:
+`NMerchantInventory.Open` uses an opening tween, inventory-open and purchase
+attempt dialogue comes through `NMerchantDialogue`, and `NMerchantHand`
+tracks the focused slot with a delayed return. The current inventory changes
+immediately and does not yet present that speech/hand behavior. Correcting the
+atlas orientation and item geometry in this iteration does not establish
+complete parity for those additional merchant interactions.
+
+A further map comparison found that `NMapLegendItem.OnUnfocus` restores its
+1.25× focus scale to 1× over 500 ms. The current legend has the permanent
+original placement and hover behavior, but its icon-size return is immediate.
+That transition remains a specific follow-up rather than completed parity.

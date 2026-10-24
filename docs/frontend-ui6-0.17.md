@@ -3,6 +3,8 @@
 Reference remains the owner-provided **v0.111.0 / 41cef1ea** source and scenes.
 This describes implementation; acceptance belongs to the final runtime and
 resource receipts, not to a syntax check or an earlier UI5 test run.
+The final receipts and their distinct scopes are summarized below and in the
+[runtime acceptance record](validation-ui6-runtime-0.17.json).
 
 ## Original controls and readable dimensions
 
@@ -51,8 +53,11 @@ language chooser remain available. There are no new full-file integrity scans.
 
 Old practice and reference-map entry points are absent from production menus
 and hotkeys. Their historical core/save support is retained. A default-off
-`SPIRE_DEBUG_COMMANDS` flag enables a real command console on all three hosts;
-see [developer commands](debug-commands-0.17.md). Production binaries omit its
+`SPIRE_DEBUG_COMMANDS` flag enables developer commands on all three hosts.
+The calculator offers fourteen presets and left/right model enumeration;
+browser/Linux additionally support free-text commands. The calculator's
+`SPIRE_DEBUG_TEXT_INPUT=0` removes the unavailable I editor and its clickable
+region. See [developer commands](debug-commands-0.17.md). Production binaries omit its
 transaction storage, menu, handlers and mutation exports.
 
 ## Resource extension and compatibility
@@ -71,6 +76,68 @@ inserting new labels into that old table would silently mistranslate existing
 packs. Both generation and runtime fallback are checked. The final Chinese
 pack already contains every glyph needed by the new labels at 8/10/12/16 px.
 
-Remaining broader work includes event typewriter and option entry/press timing,
-special ancient/fake-merchant layouts, secondary GPU particles, original pickup
-trails and full input remapping. None is counted as completed by this document.
+## Final runtime receipts
+
+The accepted runtime is `96f7b5c6914762fad998f03ab5da1b4c283ecaa0`, tree
+`579718ea9f6c5c6aaf21dcffbedf802686760da1`. The final v23 resource conversion and
+lossless compaction remain tied to `20262f09eb1edab0035e632ca9ee4f065fb51fc4`;
+later runtime fixes do not require reconverting those packs. Final ENG/ZHS
+sizes, SHA-256 values, split-resource reconstruction, portable receipts and the
+three delivery files are recorded in the [runtime JSON](validation-ui6-runtime-0.17.json).
+The delivered files are the bilingual calculator ZIP, ordinary offline HTML and
+separate debug offline HTML. Their metadata comes from the final three-entry
+delivery manifest; private storage identifiers are not published.
+
+| Gate | Executed result and boundary |
+| --- | --- |
+| Final local Release | Clang 18, ordinary runtime: all **77/77** registered suites passed; journal `ui6-native8-ctest-f36d8c3c05a5`. |
+| Final GitHub Actions | [Run 40073427331](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40073427331), associated with the accepted runtime, has three successful jobs: native, conversion and portable. Native includes the complete **77-suite ASan/UBSan** gate and separate Release debug command/menu checks with text capability both on and off. CI uses public fixtures without private game assets. |
+| Local sanitizer follow-up | The earlier full stage-6 run remains **76/77**, failed on signed gear-angle overflow. Stage 8 passed the repaired HUD test with synthetic, actual ENG and actual ZHS resources. These three local profiles are not described as a complete local stage-8 sanitizer rerun; the complete final gate is the separate CI run above. |
+| Debug capabilities | Independent stage-7 Clang builds passed three text-capability CTest cases and the menu-only interaction case, plus actual ENG/ZHS UI flows in each mode. The final HUD arithmetic change leaves that core/menu code unchanged; final CI also reruns both capability configurations. |
+| Portable runtimes | Ordinary and debug ARM and WASM builds all passed at the final runtime. Independently checked ARM allocation headers are 16,445,872 bytes ordinary and 16,662,860 bytes debug, both below 16 MiB. This is build/allocation evidence. |
+| Real offline browser | Final isolated Chromium acceptance passed both languages, real settings persistence, Save/Load/Continue, language confirmation and cancellation, production debug-API exclusion and the separate debug F1 text/room/act flows. It reported no page errors or external requests; journal `ui6-browser8-16ff711d7d64`. |
+| Native/WASM agreement | Final runtime and packs passed **64 language scenarios, 2,376 exact RGB565 frames and 106 exact serialized saves**, documented in [the backend record](validation-ui6-backends-0.17.json). This is agreement between this project's implementations, not original-PC pixel equivalence or browser-storage validation. |
+| Firebird execution | The final ordinary runtime passed OS/Documents launch, Continue, restored Fast Mode, Save/Exit, return to the OS and exact save/preference readback. Final debug keyboard targeting, kill-to-loot, shop and reload were observed in a separate wrapper that later timed out; its complete exit is not claimed. [The dedicated receipt](validation-ui6-firebird-0.17.json) retains those scopes and the separate installer failure. |
+
+The final HUD correction retains the original gear period and angle while using
+bounded unsigned multiplication, a completed-hold branch before multiplication,
+and whole-turn reduction before the Q12 sine conversion. The earlier failed
+sanitizer journal is retained. The previous backend discrepancy is also retained:
+ten deck-button frames differed when an App reused an old address/generation.
+Both initialization paths now clear static HUD motion; the final backend suite
+reran every frame and save without a tolerance. Earlier geometry/reward-oracle
+failures and the debug test artifact's missing execution permission remain
+identified in the [combat report](combat-ui6-0.17.md), rather than being relabeled
+as passes.
+
+## Measured performance and next work
+
+The [quiet host comparison](ui6-card-performance-0.17.md) uses the same driver
+from `e9d4017629219a28f072fb54bcb0327fb538f121` against accepted UI5 and UI6
+runtimes with their corresponding packs. It repeats a complete serial 12-run
+matrix after excluding the earlier tooltip-contaminated idle fixture. The
+driver correction does not change production runtime or resources.
+
+Measured warm merchant inventory time is **18.8–19.6% lower**, and the hovered
+window is **23.8–27.8% lower**. The room-open/setup/first-render cost rises by
+about 12% in the idle fixture, while warm ranged resource reads rise from about
+4.0 KB to 5.1 KB per frame. Warmed details remain zero-I/O in both versions and
+show modest timing differences in either direction. These are whole-version,
+unpaced host measurements, without a claim of physical-calculator FPS or an
+isolated cache gain. Per-layer merchant resource grouping and retention are
+concrete follow-ups; the full values and limitations are in the linked report.
+
+Remaining UI work includes continuous grid scrolling and its draggable thumb,
+all-target/ally reticles, the deck-count gain pulse, event typewriter and option
+entry/press timing, special Ancient/fake-merchant layouts, original overkill and
+blocked-hit result presentation, secondary GPU particles and pickup trails,
+rare viewport-overflow formations, and full input remapping. Merchant opening
+tweens, dialogue and hand tracking remain unimplemented; the card-removal
+presentation bridge also does not cover every direct/forced removal path.
+The map legend item also still returns from its enlarged focus size immediately
+instead of following the original 500 ms unfocus tween. Settings persist
+the currently implemented Fast Mode preference; this is not completion of the
+original settings catalog. The [card](cards-ui6-0.17.md),
+[combat](combat-ui6-0.17.md) and [room](rooms-ui6-0.17.md) reports retain the
+specific source references and bounded 320×240 adaptations. These remaining
+differences are not counted as completed by the successful gates above.

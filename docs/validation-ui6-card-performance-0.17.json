@@ -1,0 +1,7077 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "status": "passed",
+  "scope": "Whole UI5 versus UI6 card/shop scene cost measured as unpaced host steady-clock intervals through production ranged FILE resource callbacks. These intervals are not process CPU time, displayed FPS, emulator speed, or physical-calculator timing.",
+  "runtime_baseline_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+  "runtime_candidate_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+  "shared_driver_checkpoint": "e9d4017629219a28f072fb54bcb0327fb538f121",
+  "shared_driver_sha256": "9e35386789b8f1beb1530a6b04d33ea9c95139f74971b12d4242486824797eed",
+  "build": {
+    "compiler": "Clang 18",
+    "flags": [
+      "-O3",
+      "-DNDEBUG",
+      "-DSPIRE_DEBUG_COMMANDS=0",
+      "-std=c++17"
+    ],
+    "instrumented": false,
+    "stack_bytes": 33554432,
+    "driver_build_receipts": [
+      "ui6-clean-driver-baseline-build-9fc2db4709b6.json",
+      "ui6-clean-driver-candidate-build-1cf28f27d552.json"
+    ],
+    "baseline_driver": {
+      "bytes": 6331032,
+      "sha256": "0dc8241a2df2277ff362a1639df98fb6623fa828bb09540fc110a363d7d3a856"
+    },
+    "candidate_driver": {
+      "bytes": 6401864,
+      "sha256": "4bf931e187c0b2733d2ed5e9f168d0842d6fdfb32d126013e99922e094249ea2"
+    },
+    "baseline_core": {
+      "bytes": 4351292,
+      "sha256": "2d93bc69294c181cfffdb8ae1334c6fab3c3422615007228b5c089ac34d404d2"
+    },
+    "candidate_core": {
+      "bytes": 4429376,
+      "sha256": "27e1e1bebeb0dd1d8231295305a8d7024ce1d95c56f859fa663a2ba145ee726e"
+    }
+  },
+  "resources": {
+    "eng": {
+      "baseline": {
+        "bytes": 76685257,
+        "sha256": "bb23c56f807db301fcb6c1014cd6a39f92a8cf69d66ffd3d84a9c0d0695a30ea"
+      },
+      "candidate": {
+        "bytes": 76978571,
+        "sha256": "5080df3876fd483b9502b1a3fc971b95561595b60e3e0650837297a2f4d39974"
+      }
+    },
+    "zhs": {
+      "baseline": {
+        "bytes": 79467968,
+        "sha256": "cb7ae529b4d61766ccd8cd5a88630ab44657130a442937bf9a36624d879205ac"
+      },
+      "candidate": {
+        "bytes": 79761285,
+        "sha256": "b9bc0a838ebe84de014ac95c732e5855e380a0cf4b42155fd0d088297f1ace06"
+      }
+    }
+  },
+  "method": {
+    "runs": 12,
+    "repetitions_per_language_variant": 3,
+    "warm_frames_per_window": 180,
+    "simulated_ms_per_update": 33,
+    "order": "ENG AB/BA/AB; ZHS BA/AB/BA, sequential interleaving by round",
+    "warm_statistic": "Median of three per-run 180-frame mean intervals; all per-run means, maxima and source counters are retained below.",
+    "cold_statistic": "Median of three first complete-frame observation intervals. Hover cold includes both the inventory-opening frame and the first hit-targeted hover frame.",
+    "idle_pointer": [
+      310,
+      35
+    ],
+    "idle_pointer_assertion": "After the closed-room frame and the inventory-opening frame, hit_at must have no enabled target in both runtime versions.",
+    "shop_room_cost": "Content open, deterministic room fixture, and first complete room render are recorded separately from opening inventory.",
+    "settle": "Ten 250 ms updates with render before each warm window; these updates are excluded from measured first-frame and warm costs.",
+    "ranged_io": "Source calls/bytes/seeks count production callbacks, including cache misses. Disk/controller latency and operating-system cold-cache history are not controlled.",
+    "trace_enabled": false,
+    "quiet_window": "Root confirmed all session builds, tests, browser checks and other agents idle; Firebird simulated time was paused. All 12 processes ran sequentially. This does not assert control over unrelated system activity.",
+    "causal_boundary": "Original layout, artwork, text, cursor and cache behavior all change together. This is an overall scene comparison, not a cache-only A/B experiment."
+  },
+  "acceptance": {
+    "aggregate_journal": "ui6-performance-clean-serial-matrix-2419e164180a.json",
+    "source_changed": false,
+    "canonical_full_state_checks": 132,
+    "canonical_state_unchanged": true,
+    "save_callback_attempts": 0,
+    "shop_observations": 24,
+    "shop_visible_card_hits": 7,
+    "shop_first_settled_last_hashes_distinct": true,
+    "captured_frames": 132,
+    "deterministic_capture_groups": 44,
+    "byte_identical_repeat_comparisons": 88,
+    "visual_review": "Final English hover and Chinese baseline/candidate idle captures show the seven-card inventory without the accidental starter-relic tooltip."
+  },
+  "runs": [
+    {
+      "order": 1,
+      "language": "eng",
+      "variant": "A",
+      "round": 1,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "journal": "ui6-perf-eng-r1-A-55e3cb9557b2.json",
+      "log_sha256": "9ccdd1b487c2a21318aa966b2bddabcc01037a6ba8e039e37aa39a0e05d206e9",
+      "started_at": "2026-10-24T07:28:31.673084+00:00",
+      "ended_at": "2026-10-24T07:28:34.757650+00:00"
+    },
+    {
+      "order": 2,
+      "language": "eng",
+      "variant": "B",
+      "round": 1,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-perf-eng-r1-B-9ce03913b419.json",
+      "log_sha256": "a6b6654598ec98acdf603e56ae84b0dfd1a744b12f5ce2a493465cc7f6c96155",
+      "started_at": "2026-10-24T07:28:34.758815+00:00",
+      "ended_at": "2026-10-24T07:28:37.577606+00:00"
+    },
+    {
+      "order": 3,
+      "language": "zhs",
+      "variant": "B",
+      "round": 1,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-perf-zhs-r1-B-bb94eb807d8f.json",
+      "log_sha256": "6097d458c412e646936337474091d244442f7320293c3cc58da543cfd4dba732",
+      "started_at": "2026-10-24T07:28:37.578858+00:00",
+      "ended_at": "2026-10-24T07:28:40.353303+00:00"
+    },
+    {
+      "order": 4,
+      "language": "zhs",
+      "variant": "A",
+      "round": 1,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "journal": "ui6-perf-zhs-r1-A-5d7d8ace29b1.json",
+      "log_sha256": "9e7ae3d592d5e6afb4e09ec8289e59e109bb724479a2b712f6abb48040b71e0b",
+      "started_at": "2026-10-24T07:28:40.354888+00:00",
+      "ended_at": "2026-10-24T07:28:43.221556+00:00"
+    },
+    {
+      "order": 5,
+      "language": "eng",
+      "variant": "B",
+      "round": 2,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-perf-eng-r2-B-55c6b6cce15f.json",
+      "log_sha256": "0b8a2c5b15c62621e7b8aa6ffbc0e7aa7f01e325019609be1d5b17dd678d2938",
+      "started_at": "2026-10-24T07:28:43.223011+00:00",
+      "ended_at": "2026-10-24T07:28:46.108489+00:00"
+    },
+    {
+      "order": 6,
+      "language": "eng",
+      "variant": "A",
+      "round": 2,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "journal": "ui6-perf-eng-r2-A-b17326df18e4.json",
+      "log_sha256": "dbdaf7f9ba0ff41000e0c89be457b145edeab382b660d636d907e1c3bee7821a",
+      "started_at": "2026-10-24T07:28:46.110100+00:00",
+      "ended_at": "2026-10-24T07:28:49.231659+00:00"
+    },
+    {
+      "order": 7,
+      "language": "zhs",
+      "variant": "A",
+      "round": 2,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "journal": "ui6-perf-zhs-r2-A-11293993eb4a.json",
+      "log_sha256": "4ff3b2769d2d7d5eeda96bbeab10aa6ac55d22702b619a5a43e340abddecca46",
+      "started_at": "2026-10-24T07:28:49.232988+00:00",
+      "ended_at": "2026-10-24T07:28:52.274869+00:00"
+    },
+    {
+      "order": 8,
+      "language": "zhs",
+      "variant": "B",
+      "round": 2,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-perf-zhs-r2-B-be3434f1d95e.json",
+      "log_sha256": "69e0d826714a9cfdd7f5b237d345ed499216a49a796705a645890deb0b3cbcc5",
+      "started_at": "2026-10-24T07:28:52.276281+00:00",
+      "ended_at": "2026-10-24T07:28:54.998203+00:00"
+    },
+    {
+      "order": 9,
+      "language": "eng",
+      "variant": "A",
+      "round": 3,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "journal": "ui6-perf-eng-r3-A-99c0b63be329.json",
+      "log_sha256": "7026037d1979b5bfffaede181e273232b1322fd7cac87c4f6fca1a519cbd75b8",
+      "started_at": "2026-10-24T07:28:54.999614+00:00",
+      "ended_at": "2026-10-24T07:28:58.033467+00:00"
+    },
+    {
+      "order": 10,
+      "language": "eng",
+      "variant": "B",
+      "round": 3,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-perf-eng-r3-B-1b41e66c6abe.json",
+      "log_sha256": "bef2cba97c4706dca44c8f8dfcb9fa2c9d4ade1710b854c92ca6c5c43b19bdf3",
+      "started_at": "2026-10-24T07:28:58.035417+00:00",
+      "ended_at": "2026-10-24T07:29:01.022314+00:00"
+    },
+    {
+      "order": 11,
+      "language": "zhs",
+      "variant": "B",
+      "round": 3,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "96f7b5c6914762fad998f03ab5da1b4c283ecaa0",
+      "journal": "ui6-perf-zhs-r3-B-703a2949d73a.json",
+      "log_sha256": "6e404d4a0a50f2204e12ef4cdb0f1150de8d06de44056166f5a214642da778dd",
+      "started_at": "2026-10-24T07:29:01.023813+00:00",
+      "ended_at": "2026-10-24T07:29:03.899923+00:00"
+    },
+    {
+      "order": 12,
+      "language": "zhs",
+      "variant": "A",
+      "round": 3,
+      "status": "passed",
+      "source_changed": false,
+      "runtime_checkpoint": "03a3ad36a3607899fabc1d92fa986bdbb16c51c9",
+      "journal": "ui6-perf-zhs-r3-A-4ad0d7fc2b9f.json",
+      "log_sha256": "7500b50797ba51a396dc94e5a2660f2ddacbe37305c2658491c3b2f13ecba78f",
+      "started_at": "2026-10-24T07:29:03.901450+00:00",
+      "ended_at": "2026-10-24T07:29:06.876243+00:00"
+    }
+  ],
+  "measurements": [
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          4.004,
+          5.049,
+          3.672
+        ],
+        "mean_ms": [
+          4.004,
+          5.049,
+          3.672
+        ],
+        "maximum_ms": [
+          4.004,
+          5.049,
+          3.672
+        ],
+        "source_calls": [
+          61,
+          61,
+          61
+        ],
+        "source_bytes": [
+          312927,
+          312927,
+          312927
+        ],
+        "source_seeks": [
+          57,
+          57,
+          57
+        ],
+        "median_mean_ms": 4.004,
+        "minimum_mean_ms": 3.672,
+        "maximum_mean_ms": 5.049,
+        "median_source_per_sample": {
+          "source_calls": 61.0,
+          "source_bytes": 312927.0,
+          "source_seeks": 57.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          3.816,
+          3.491,
+          3.877
+        ],
+        "mean_ms": [
+          3.816,
+          3.491,
+          3.877
+        ],
+        "maximum_ms": [
+          3.816,
+          3.491,
+          3.877
+        ],
+        "source_calls": [
+          69,
+          69,
+          69
+        ],
+        "source_bytes": [
+          327713,
+          327713,
+          327713
+        ],
+        "source_seeks": [
+          60,
+          60,
+          60
+        ],
+        "median_mean_ms": 3.816,
+        "minimum_mean_ms": 3.491,
+        "maximum_mean_ms": 3.877,
+        "median_source_per_sample": {
+          "source_calls": 69.0,
+          "source_bytes": 327713.0,
+          "source_seeks": 60.0
+        }
+      },
+      "median_mean_change_percent": -4.695304695304692
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.231,
+          0.248,
+          0.23
+        ],
+        "mean_ms": [
+          0.231,
+          0.248,
+          0.23
+        ],
+        "maximum_ms": [
+          0.231,
+          0.248,
+          0.23
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          947726,
+          947726,
+          947726
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.231,
+        "minimum_mean_ms": 0.23,
+        "maximum_mean_ms": 0.248,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 947726.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.269,
+          0.28,
+          0.309
+        ],
+        "mean_ms": [
+          0.269,
+          0.28,
+          0.309
+        ],
+        "maximum_ms": [
+          0.269,
+          0.28,
+          0.309
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          948670,
+          948670,
+          948670
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.28,
+        "minimum_mean_ms": 0.269,
+        "maximum_mean_ms": 0.309,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 948670.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 21.212121212121215
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          24,
+          24,
+          24
+        ],
+        "cpu_elapsed_ms": [
+          5.814,
+          6.974,
+          5.838
+        ],
+        "mean_ms": [
+          0.242,
+          0.291,
+          0.243
+        ],
+        "maximum_ms": [
+          1.378,
+          1.675,
+          1.483
+        ],
+        "source_calls": [
+          13,
+          13,
+          13
+        ],
+        "source_bytes": [
+          170159,
+          170159,
+          170159
+        ],
+        "source_seeks": [
+          13,
+          13,
+          13
+        ],
+        "median_mean_ms": 0.243,
+        "minimum_mean_ms": 0.242,
+        "maximum_mean_ms": 0.291,
+        "median_source_per_sample": {
+          "source_calls": 0.5416666666666666,
+          "source_bytes": 7089.958333333333,
+          "source_seeks": 0.5416666666666666
+        }
+      },
+      "candidate": {
+        "samples": [
+          24,
+          24,
+          24
+        ],
+        "cpu_elapsed_ms": [
+          5.908,
+          5.378,
+          5.9
+        ],
+        "mean_ms": [
+          0.246,
+          0.224,
+          0.246
+        ],
+        "maximum_ms": [
+          1.592,
+          1.366,
+          1.532
+        ],
+        "source_calls": [
+          9,
+          9,
+          9
+        ],
+        "source_bytes": [
+          153775,
+          153775,
+          153775
+        ],
+        "source_seeks": [
+          9,
+          9,
+          9
+        ],
+        "median_mean_ms": 0.246,
+        "minimum_mean_ms": 0.224,
+        "maximum_mean_ms": 0.246,
+        "median_source_per_sample": {
+          "source_calls": 0.375,
+          "source_bytes": 6407.291666666667,
+          "source_seeks": 0.375
+        }
+      },
+      "median_mean_change_percent": 1.2345679012345734
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          291.315,
+          330.398,
+          289.451
+        ],
+        "mean_ms": [
+          1.618,
+          1.836,
+          1.608
+        ],
+        "maximum_ms": [
+          3.995,
+          6.829,
+          2.343
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.618,
+        "minimum_mean_ms": 1.608,
+        "maximum_mean_ms": 1.836,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          294.997,
+          316.466,
+          298.147
+        ],
+        "mean_ms": [
+          1.639,
+          1.758,
+          1.656
+        ],
+        "maximum_ms": [
+          3.053,
+          4.097,
+          4.132
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.656,
+        "minimum_mean_ms": 1.639,
+        "maximum_mean_ms": 1.758,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 2.3485784919653696
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.892,
+          1.853,
+          1.829
+        ],
+        "mean_ms": [
+          1.892,
+          1.853,
+          1.829
+        ],
+        "maximum_ms": [
+          1.892,
+          1.853,
+          1.829
+        ],
+        "source_calls": [
+          2,
+          2,
+          2
+        ],
+        "source_bytes": [
+          12893,
+          12893,
+          12893
+        ],
+        "source_seeks": [
+          2,
+          2,
+          2
+        ],
+        "median_mean_ms": 1.853,
+        "minimum_mean_ms": 1.829,
+        "maximum_mean_ms": 1.892,
+        "median_source_per_sample": {
+          "source_calls": 2.0,
+          "source_bytes": 12893.0,
+          "source_seeks": 2.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.91,
+          2.327,
+          1.84
+        ],
+        "mean_ms": [
+          1.91,
+          2.327,
+          1.84
+        ],
+        "maximum_ms": [
+          1.91,
+          2.327,
+          1.84
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          21085,
+          21085,
+          21085
+        ],
+        "source_seeks": [
+          3,
+          3,
+          3
+        ],
+        "median_mean_ms": 1.91,
+        "minimum_mean_ms": 1.84,
+        "maximum_mean_ms": 2.327,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 21085.0,
+          "source_seeks": 3.0
+        }
+      },
+      "median_mean_change_percent": 3.0760928224500717
+    },
+    {
+      "language": "eng",
+      "scene": "draw_choice_10_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          352.562,
+          349.452,
+          373.732
+        ],
+        "mean_ms": [
+          1.959,
+          1.941,
+          2.076
+        ],
+        "maximum_ms": [
+          3.046,
+          3.457,
+          5.984
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.959,
+        "minimum_mean_ms": 1.941,
+        "maximum_mean_ms": 2.076,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          336.105,
+          369.155,
+          356.17
+        ],
+        "mean_ms": [
+          1.867,
+          2.051,
+          1.979
+        ],
+        "maximum_ms": [
+          2.668,
+          2.593,
+          2.476
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.979,
+        "minimum_mean_ms": 1.867,
+        "maximum_mean_ms": 2.051,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 1.0209290454313402
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.105,
+          1.902,
+          1.955
+        ],
+        "mean_ms": [
+          2.105,
+          1.902,
+          1.955
+        ],
+        "maximum_ms": [
+          2.105,
+          1.902,
+          1.955
+        ],
+        "source_calls": [
+          27,
+          27,
+          27
+        ],
+        "source_bytes": [
+          202337,
+          202337,
+          202337
+        ],
+        "source_seeks": [
+          24,
+          24,
+          24
+        ],
+        "median_mean_ms": 1.955,
+        "minimum_mean_ms": 1.902,
+        "maximum_mean_ms": 2.105,
+        "median_source_per_sample": {
+          "source_calls": 27.0,
+          "source_bytes": 202337.0,
+          "source_seeks": 24.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.319,
+          1.892,
+          1.901
+        ],
+        "mean_ms": [
+          2.319,
+          1.892,
+          1.901
+        ],
+        "maximum_ms": [
+          2.319,
+          1.892,
+          1.901
+        ],
+        "source_calls": [
+          33,
+          33,
+          33
+        ],
+        "source_bytes": [
+          241699,
+          241699,
+          241699
+        ],
+        "source_seeks": [
+          27,
+          27,
+          27
+        ],
+        "median_mean_ms": 1.901,
+        "minimum_mean_ms": 1.892,
+        "maximum_mean_ms": 2.319,
+        "median_source_per_sample": {
+          "source_calls": 33.0,
+          "source_bytes": 241699.0,
+          "source_seeks": 27.0
+        }
+      },
+      "median_mean_change_percent": -2.7621483375959155
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.605,
+          0.62,
+          0.603
+        ],
+        "mean_ms": [
+          0.605,
+          0.62,
+          0.603
+        ],
+        "maximum_ms": [
+          0.605,
+          0.62,
+          0.603
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          947726,
+          947726,
+          947726
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.605,
+        "minimum_mean_ms": 0.603,
+        "maximum_mean_ms": 0.62,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 947726.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.098,
+          0.602,
+          0.622
+        ],
+        "mean_ms": [
+          1.098,
+          0.602,
+          0.622
+        ],
+        "maximum_ms": [
+          1.098,
+          0.602,
+          0.622
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          948670,
+          948670,
+          948670
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.622,
+        "minimum_mean_ms": 0.602,
+        "maximum_mean_ms": 1.098,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 948670.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 2.809917355371905
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "candidate": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "median_mean_change_percent": null
+    },
+    {
+      "language": "eng",
+      "scene": "library_8",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          99.525,
+          102.429,
+          125.876
+        ],
+        "mean_ms": [
+          0.553,
+          0.569,
+          0.699
+        ],
+        "maximum_ms": [
+          0.854,
+          1.245,
+          1.206
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.569,
+        "minimum_mean_ms": 0.553,
+        "maximum_mean_ms": 0.699,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          110.122,
+          95.86,
+          136.121
+        ],
+        "mean_ms": [
+          0.612,
+          0.533,
+          0.756
+        ],
+        "maximum_ms": [
+          1.87,
+          0.642,
+          1.082
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.612,
+        "minimum_mean_ms": 0.533,
+        "maximum_mean_ms": 0.756,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 7.557117750439368
+    },
+    {
+      "language": "eng",
+      "scene": "library_8_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.419,
+          1.579,
+          1.3
+        ],
+        "mean_ms": [
+          1.419,
+          1.579,
+          1.3
+        ],
+        "maximum_ms": [
+          1.419,
+          1.579,
+          1.3
+        ],
+        "source_calls": [
+          3,
+          3,
+          3
+        ],
+        "source_bytes": [
+          13006,
+          13006,
+          13006
+        ],
+        "source_seeks": [
+          3,
+          3,
+          3
+        ],
+        "median_mean_ms": 1.419,
+        "minimum_mean_ms": 1.3,
+        "maximum_mean_ms": 1.579,
+        "median_source_per_sample": {
+          "source_calls": 3.0,
+          "source_bytes": 13006.0,
+          "source_seeks": 3.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.387,
+          1.278,
+          1.273
+        ],
+        "mean_ms": [
+          1.387,
+          1.278,
+          1.273
+        ],
+        "maximum_ms": [
+          1.387,
+          1.278,
+          1.273
+        ],
+        "source_calls": [
+          2,
+          2,
+          2
+        ],
+        "source_bytes": [
+          8910,
+          8910,
+          8910
+        ],
+        "source_seeks": [
+          2,
+          2,
+          2
+        ],
+        "median_mean_ms": 1.278,
+        "minimum_mean_ms": 1.273,
+        "maximum_mean_ms": 1.387,
+        "median_source_per_sample": {
+          "source_calls": 2.0,
+          "source_bytes": 8910.0,
+          "source_seeks": 2.0
+        }
+      },
+      "median_mean_change_percent": -9.936575052854124
+    },
+    {
+      "language": "eng",
+      "scene": "library_8_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          222.522,
+          231.52,
+          222.901
+        ],
+        "mean_ms": [
+          1.236,
+          1.286,
+          1.238
+        ],
+        "maximum_ms": [
+          1.643,
+          3.092,
+          2.193
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.238,
+        "minimum_mean_ms": 1.236,
+        "maximum_mean_ms": 1.286,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          233.889,
+          213.697,
+          235.476
+        ],
+        "mean_ms": [
+          1.299,
+          1.187,
+          1.308
+        ],
+        "maximum_ms": [
+          1.902,
+          1.573,
+          5.153
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.299,
+        "minimum_mean_ms": 1.187,
+        "maximum_mean_ms": 1.308,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 4.927302100161546
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.519,
+          2.312,
+          2.073
+        ],
+        "mean_ms": [
+          2.519,
+          2.312,
+          2.073
+        ],
+        "maximum_ms": [
+          2.519,
+          2.312,
+          2.073
+        ],
+        "source_calls": [
+          35,
+          35,
+          35
+        ],
+        "source_bytes": [
+          252965,
+          252965,
+          252965
+        ],
+        "source_seeks": [
+          31,
+          31,
+          31
+        ],
+        "median_mean_ms": 2.312,
+        "minimum_mean_ms": 2.073,
+        "maximum_mean_ms": 2.519,
+        "median_source_per_sample": {
+          "source_calls": 35.0,
+          "source_bytes": 252965.0,
+          "source_seeks": 31.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.057,
+          2.26,
+          2.123
+        ],
+        "mean_ms": [
+          2.057,
+          2.26,
+          2.123
+        ],
+        "maximum_ms": [
+          2.057,
+          2.26,
+          2.123
+        ],
+        "source_calls": [
+          39,
+          39,
+          39
+        ],
+        "source_bytes": [
+          271847,
+          271847,
+          271847
+        ],
+        "source_seeks": [
+          33,
+          33,
+          33
+        ],
+        "median_mean_ms": 2.123,
+        "minimum_mean_ms": 2.057,
+        "maximum_mean_ms": 2.26,
+        "median_source_per_sample": {
+          "source_calls": 39.0,
+          "source_bytes": 271847.0,
+          "source_seeks": 33.0
+        }
+      },
+      "median_mean_change_percent": -8.174740484429055
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.211,
+          0.213,
+          0.235
+        ],
+        "mean_ms": [
+          0.211,
+          0.213,
+          0.235
+        ],
+        "maximum_ms": [
+          0.211,
+          0.213,
+          0.235
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          947726,
+          947726,
+          947726
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.213,
+        "minimum_mean_ms": 0.211,
+        "maximum_mean_ms": 0.235,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 947726.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.23,
+          0.254,
+          0.232
+        ],
+        "mean_ms": [
+          0.23,
+          0.254,
+          0.232
+        ],
+        "maximum_ms": [
+          0.23,
+          0.254,
+          0.232
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          948670,
+          948670,
+          948670
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.232,
+        "minimum_mean_ms": 0.23,
+        "maximum_mean_ms": 0.254,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 948670.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 8.920187793427248
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "candidate": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "median_mean_change_percent": null
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          182.758,
+          176.848,
+          171.723
+        ],
+        "mean_ms": [
+          1.015,
+          0.982,
+          0.954
+        ],
+        "maximum_ms": [
+          1.585,
+          1.406,
+          1.159
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.982,
+        "minimum_mean_ms": 0.954,
+        "maximum_mean_ms": 1.015,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          168.576,
+          182.706,
+          179.26
+        ],
+        "mean_ms": [
+          0.937,
+          1.015,
+          0.996
+        ],
+        "maximum_ms": [
+          1.245,
+          2.026,
+          1.655
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.996,
+        "minimum_mean_ms": 0.937,
+        "maximum_mean_ms": 1.015,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 1.4256619144602967
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.597,
+          1.305,
+          1.391
+        ],
+        "mean_ms": [
+          1.597,
+          1.305,
+          1.391
+        ],
+        "maximum_ms": [
+          1.597,
+          1.305,
+          1.391
+        ],
+        "source_calls": [
+          2,
+          2,
+          2
+        ],
+        "source_bytes": [
+          8910,
+          8910,
+          8910
+        ],
+        "source_seeks": [
+          2,
+          2,
+          2
+        ],
+        "median_mean_ms": 1.391,
+        "minimum_mean_ms": 1.305,
+        "maximum_mean_ms": 1.597,
+        "median_source_per_sample": {
+          "source_calls": 2.0,
+          "source_bytes": 8910.0,
+          "source_seeks": 2.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.332,
+          1.493,
+          1.963
+        ],
+        "mean_ms": [
+          1.332,
+          1.493,
+          1.963
+        ],
+        "maximum_ms": [
+          1.332,
+          1.493,
+          1.963
+        ],
+        "source_calls": [
+          2,
+          2,
+          2
+        ],
+        "source_bytes": [
+          8910,
+          8910,
+          8910
+        ],
+        "source_seeks": [
+          2,
+          2,
+          2
+        ],
+        "median_mean_ms": 1.493,
+        "minimum_mean_ms": 1.332,
+        "maximum_mean_ms": 1.963,
+        "median_source_per_sample": {
+          "source_calls": 2.0,
+          "source_bytes": 8910.0,
+          "source_seeks": 2.0
+        }
+      },
+      "median_mean_change_percent": 7.332854061826022
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8_detail",
+      "phase": "pointer_scan_to_keyword_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.729,
+          2.776,
+          2.855
+        ],
+        "mean_ms": [
+          2.729,
+          2.776,
+          2.855
+        ],
+        "maximum_ms": [
+          2.729,
+          2.776,
+          2.855
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 2.776,
+        "minimum_mean_ms": 2.729,
+        "maximum_mean_ms": 2.855,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.854,
+          3.049,
+          3.057
+        ],
+        "mean_ms": [
+          2.854,
+          3.049,
+          3.057
+        ],
+        "maximum_ms": [
+          2.854,
+          3.049,
+          3.057
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 3.049,
+        "minimum_mean_ms": 2.854,
+        "maximum_mean_ms": 3.057,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 9.834293948126804
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          237.687,
+          228.303,
+          258.445
+        ],
+        "mean_ms": [
+          1.32,
+          1.268,
+          1.436
+        ],
+        "maximum_ms": [
+          1.707,
+          1.658,
+          3.5
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.32,
+        "minimum_mean_ms": 1.268,
+        "maximum_mean_ms": 1.436,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          218.217,
+          232.983,
+          238.508
+        ],
+        "mean_ms": [
+          1.212,
+          1.294,
+          1.325
+        ],
+        "maximum_ms": [
+          1.826,
+          2.076,
+          3.153
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.294,
+        "minimum_mean_ms": 1.212,
+        "maximum_mean_ms": 1.325,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -1.9696969696969768
+    },
+    {
+      "language": "eng",
+      "scene": "library_rainbow_8_detail",
+      "phase": "warm_keyword_pointer_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          331.038,
+          320.191,
+          276.301
+        ],
+        "mean_ms": [
+          1.839,
+          1.779,
+          1.535
+        ],
+        "maximum_ms": [
+          4.505,
+          3.626,
+          2.044
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.779,
+        "minimum_mean_ms": 1.535,
+        "maximum_mean_ms": 1.839,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          273.21,
+          297.405,
+          297.433
+        ],
+        "mean_ms": [
+          1.518,
+          1.652,
+          1.652
+        ],
+        "maximum_ms": [
+          1.957,
+          4.071,
+          2.801
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.652,
+        "minimum_mean_ms": 1.518,
+        "maximum_mean_ms": 1.652,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -7.138842046093307
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.67,
+          1.781,
+          2.013
+        ],
+        "mean_ms": [
+          1.67,
+          1.781,
+          2.013
+        ],
+        "maximum_ms": [
+          1.67,
+          1.781,
+          2.013
+        ],
+        "source_calls": [
+          27,
+          27,
+          27
+        ],
+        "source_bytes": [
+          208940,
+          208940,
+          208940
+        ],
+        "source_seeks": [
+          24,
+          24,
+          24
+        ],
+        "median_mean_ms": 1.781,
+        "minimum_mean_ms": 1.67,
+        "maximum_mean_ms": 2.013,
+        "median_source_per_sample": {
+          "source_calls": 27.0,
+          "source_bytes": 208940.0,
+          "source_seeks": 24.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.952,
+          1.758,
+          1.689
+        ],
+        "mean_ms": [
+          1.952,
+          1.758,
+          1.689
+        ],
+        "maximum_ms": [
+          1.952,
+          1.758,
+          1.689
+        ],
+        "source_calls": [
+          26,
+          26,
+          26
+        ],
+        "source_bytes": [
+          217132,
+          217132,
+          217132
+        ],
+        "source_seeks": [
+          22,
+          22,
+          22
+        ],
+        "median_mean_ms": 1.758,
+        "minimum_mean_ms": 1.689,
+        "maximum_mean_ms": 1.952,
+        "median_source_per_sample": {
+          "source_calls": 26.0,
+          "source_bytes": 217132.0,
+          "source_seeks": 22.0
+        }
+      },
+      "median_mean_change_percent": -1.291409320606396
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.209,
+          0.306,
+          0.24
+        ],
+        "mean_ms": [
+          0.209,
+          0.306,
+          0.24
+        ],
+        "maximum_ms": [
+          0.209,
+          0.306,
+          0.24
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          947726,
+          947726,
+          947726
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.24,
+        "minimum_mean_ms": 0.209,
+        "maximum_mean_ms": 0.306,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 947726.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.236,
+          0.253,
+          0.25
+        ],
+        "mean_ms": [
+          0.236,
+          0.253,
+          0.25
+        ],
+        "maximum_ms": [
+          0.236,
+          0.253,
+          0.25
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          948670,
+          948670,
+          948670
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.25,
+        "minimum_mean_ms": 0.236,
+        "maximum_mean_ms": 0.253,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 948670.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 4.166666666666674
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "candidate": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "median_mean_change_percent": null
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          123.922,
+          122.621,
+          118.75
+        ],
+        "mean_ms": [
+          0.688,
+          0.681,
+          0.66
+        ],
+        "maximum_ms": [
+          2.012,
+          3.613,
+          0.941
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.681,
+        "minimum_mean_ms": 0.66,
+        "maximum_mean_ms": 0.688,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          131.81,
+          113.462,
+          135.599
+        ],
+        "mean_ms": [
+          0.732,
+          0.63,
+          0.753
+        ],
+        "maximum_ms": [
+          3.05,
+          0.885,
+          3.212
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.732,
+        "minimum_mean_ms": 0.63,
+        "maximum_mean_ms": 0.753,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 7.488986784140961
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.48,
+          1.438,
+          1.462
+        ],
+        "mean_ms": [
+          1.48,
+          1.438,
+          1.462
+        ],
+        "maximum_ms": [
+          1.48,
+          1.438,
+          1.462
+        ],
+        "source_calls": [
+          7,
+          7,
+          7
+        ],
+        "source_bytes": [
+          33431,
+          33431,
+          33431
+        ],
+        "source_seeks": [
+          6,
+          6,
+          6
+        ],
+        "median_mean_ms": 1.462,
+        "minimum_mean_ms": 1.438,
+        "maximum_mean_ms": 1.48,
+        "median_source_per_sample": {
+          "source_calls": 7.0,
+          "source_bytes": 33431.0,
+          "source_seeks": 6.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.794,
+          1.441,
+          1.41
+        ],
+        "mean_ms": [
+          1.794,
+          1.441,
+          1.41
+        ],
+        "maximum_ms": [
+          1.794,
+          1.441,
+          1.41
+        ],
+        "source_calls": [
+          7,
+          7,
+          7
+        ],
+        "source_bytes": [
+          35929,
+          35929,
+          35929
+        ],
+        "source_seeks": [
+          6,
+          6,
+          6
+        ],
+        "median_mean_ms": 1.441,
+        "minimum_mean_ms": 1.41,
+        "maximum_mean_ms": 1.794,
+        "median_source_per_sample": {
+          "source_calls": 7.0,
+          "source_bytes": 35929.0,
+          "source_seeks": 6.0
+        }
+      },
+      "median_mean_change_percent": -1.436388508891917
+    },
+    {
+      "language": "eng",
+      "scene": "remove_10_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          242.102,
+          263.42,
+          236.832
+        ],
+        "mean_ms": [
+          1.345,
+          1.463,
+          1.316
+        ],
+        "maximum_ms": [
+          1.794,
+          2.231,
+          1.857
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.345,
+        "minimum_mean_ms": 1.316,
+        "maximum_mean_ms": 1.463,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          250.51,
+          239.675,
+          268.52
+        ],
+        "mean_ms": [
+          1.392,
+          1.332,
+          1.492
+        ],
+        "maximum_ms": [
+          1.794,
+          1.753,
+          2.961
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.392,
+        "minimum_mean_ms": 1.332,
+        "maximum_mean_ms": 1.492,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 3.494423791821566
+    },
+    {
+      "language": "eng",
+      "scene": "shop_inventory_hover_7",
+      "phase": "input_to_first_complete_hover_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.79,
+          6.523,
+          5.894
+        ],
+        "mean_ms": [
+          5.79,
+          6.523,
+          5.894
+        ],
+        "maximum_ms": [
+          5.79,
+          6.523,
+          5.894
+        ],
+        "source_calls": [
+          43,
+          43,
+          43
+        ],
+        "source_bytes": [
+          265193,
+          265193,
+          265193
+        ],
+        "source_seeks": [
+          42,
+          42,
+          42
+        ],
+        "median_mean_ms": 5.894,
+        "minimum_mean_ms": 5.79,
+        "maximum_mean_ms": 6.523,
+        "median_source_per_sample": {
+          "source_calls": 43.0,
+          "source_bytes": 265193.0,
+          "source_seeks": 42.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.543,
+          5.269,
+          5.423
+        ],
+        "mean_ms": [
+          5.543,
+          5.269,
+          5.423
+        ],
+        "maximum_ms": [
+          5.543,
+          5.269,
+          5.423
+        ],
+        "source_calls": [
+          38,
+          38,
+          38
+        ],
+        "source_bytes": [
+          249603,
+          249603,
+          249603
+        ],
+        "source_seeks": [
+          38,
+          38,
+          38
+        ],
+        "median_mean_ms": 5.423,
+        "minimum_mean_ms": 5.269,
+        "maximum_mean_ms": 5.543,
+        "median_source_per_sample": {
+          "source_calls": 38.0,
+          "source_bytes": 249603.0,
+          "source_seeks": 38.0
+        }
+      },
+      "median_mean_change_percent": -7.991177468612154
+    },
+    {
+      "language": "eng",
+      "scene": "shop_inventory_hover_7",
+      "phase": "room_open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.106,
+          6.635,
+          5.369
+        ],
+        "mean_ms": [
+          5.106,
+          6.635,
+          5.369
+        ],
+        "maximum_ms": [
+          5.106,
+          6.635,
+          5.369
+        ],
+        "source_calls": [
+          24,
+          24,
+          24
+        ],
+        "source_bytes": [
+          1157686,
+          1157686,
+          1157686
+        ],
+        "source_seeks": [
+          24,
+          24,
+          24
+        ],
+        "median_mean_ms": 5.369,
+        "minimum_mean_ms": 5.106,
+        "maximum_mean_ms": 6.635,
+        "median_source_per_sample": {
+          "source_calls": 24.0,
+          "source_bytes": 1157686.0,
+          "source_seeks": 24.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          6.173,
+          5.289,
+          5.317
+        ],
+        "mean_ms": [
+          6.173,
+          5.289,
+          5.317
+        ],
+        "maximum_ms": [
+          6.173,
+          5.289,
+          5.317
+        ],
+        "source_calls": [
+          25,
+          25,
+          25
+        ],
+        "source_bytes": [
+          1159617,
+          1159617,
+          1159617
+        ],
+        "source_seeks": [
+          25,
+          25,
+          25
+        ],
+        "median_mean_ms": 5.317,
+        "minimum_mean_ms": 5.289,
+        "maximum_mean_ms": 6.173,
+        "median_source_per_sample": {
+          "source_calls": 25.0,
+          "source_bytes": 1159617.0,
+          "source_seeks": 25.0
+        }
+      },
+      "median_mean_change_percent": -0.9685230024212954
+    },
+    {
+      "language": "eng",
+      "scene": "shop_inventory_hover_7",
+      "phase": "warm_inventory_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          336.857,
+          345.917,
+          316.17
+        ],
+        "mean_ms": [
+          1.871,
+          1.922,
+          1.757
+        ],
+        "maximum_ms": [
+          5.686,
+          4.039,
+          4.242
+        ],
+        "source_calls": [
+          61,
+          61,
+          61
+        ],
+        "source_bytes": [
+          723343,
+          723343,
+          723343
+        ],
+        "source_seeks": [
+          61,
+          61,
+          61
+        ],
+        "median_mean_ms": 1.871,
+        "minimum_mean_ms": 1.757,
+        "maximum_mean_ms": 1.922,
+        "median_source_per_sample": {
+          "source_calls": 0.3388888888888889,
+          "source_bytes": 4018.572222222222,
+          "source_seeks": 0.3388888888888889
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          251.358,
+          256.502,
+          262.205
+        ],
+        "mean_ms": [
+          1.396,
+          1.425,
+          1.457
+        ],
+        "maximum_ms": [
+          3.078,
+          3.366,
+          3.362
+        ],
+        "source_calls": [
+          76,
+          76,
+          76
+        ],
+        "source_bytes": [
+          918495,
+          918495,
+          918495
+        ],
+        "source_seeks": [
+          76,
+          76,
+          76
+        ],
+        "median_mean_ms": 1.425,
+        "minimum_mean_ms": 1.396,
+        "maximum_mean_ms": 1.457,
+        "median_source_per_sample": {
+          "source_calls": 0.4222222222222222,
+          "source_bytes": 5102.75,
+          "source_seeks": 0.4222222222222222
+        }
+      },
+      "median_mean_change_percent": -23.837520042757877
+    },
+    {
+      "language": "eng",
+      "scene": "shop_inventory_idle_7",
+      "phase": "input_to_first_complete_inventory_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          4.396,
+          4.849,
+          4.507
+        ],
+        "mean_ms": [
+          4.396,
+          4.849,
+          4.507
+        ],
+        "maximum_ms": [
+          4.396,
+          4.849,
+          4.507
+        ],
+        "source_calls": [
+          43,
+          43,
+          43
+        ],
+        "source_bytes": [
+          265193,
+          265193,
+          265193
+        ],
+        "source_seeks": [
+          42,
+          42,
+          42
+        ],
+        "median_mean_ms": 4.507,
+        "minimum_mean_ms": 4.396,
+        "maximum_mean_ms": 4.849,
+        "median_source_per_sample": {
+          "source_calls": 43.0,
+          "source_bytes": 265193.0,
+          "source_seeks": 42.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          4.527,
+          4.62,
+          4.57
+        ],
+        "mean_ms": [
+          4.527,
+          4.62,
+          4.57
+        ],
+        "maximum_ms": [
+          4.527,
+          4.62,
+          4.57
+        ],
+        "source_calls": [
+          38,
+          38,
+          38
+        ],
+        "source_bytes": [
+          249603,
+          249603,
+          249603
+        ],
+        "source_seeks": [
+          38,
+          38,
+          38
+        ],
+        "median_mean_ms": 4.57,
+        "minimum_mean_ms": 4.527,
+        "maximum_mean_ms": 4.62,
+        "median_source_per_sample": {
+          "source_calls": 38.0,
+          "source_bytes": 249603.0,
+          "source_seeks": 38.0
+        }
+      },
+      "median_mean_change_percent": 1.397825604615055
+    },
+    {
+      "language": "eng",
+      "scene": "shop_inventory_idle_7",
+      "phase": "room_open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.176,
+          5.731,
+          5.154
+        ],
+        "mean_ms": [
+          5.176,
+          5.731,
+          5.154
+        ],
+        "maximum_ms": [
+          5.176,
+          5.731,
+          5.154
+        ],
+        "source_calls": [
+          24,
+          24,
+          24
+        ],
+        "source_bytes": [
+          1157686,
+          1157686,
+          1157686
+        ],
+        "source_seeks": [
+          24,
+          24,
+          24
+        ],
+        "median_mean_ms": 5.176,
+        "minimum_mean_ms": 5.154,
+        "maximum_mean_ms": 5.731,
+        "median_source_per_sample": {
+          "source_calls": 24.0,
+          "source_bytes": 1157686.0,
+          "source_seeks": 24.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.4,
+          5.813,
+          6.372
+        ],
+        "mean_ms": [
+          5.4,
+          5.813,
+          6.372
+        ],
+        "maximum_ms": [
+          5.4,
+          5.813,
+          6.372
+        ],
+        "source_calls": [
+          25,
+          25,
+          25
+        ],
+        "source_bytes": [
+          1159617,
+          1159617,
+          1159617
+        ],
+        "source_seeks": [
+          25,
+          25,
+          25
+        ],
+        "median_mean_ms": 5.813,
+        "minimum_mean_ms": 5.4,
+        "maximum_mean_ms": 6.372,
+        "median_source_per_sample": {
+          "source_calls": 25.0,
+          "source_bytes": 1159617.0,
+          "source_seeks": 25.0
+        }
+      },
+      "median_mean_change_percent": 12.306800618238011
+    },
+    {
+      "language": "eng",
+      "scene": "shop_inventory_idle_7",
+      "phase": "warm_inventory_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          313.828,
+          335.361,
+          332.529
+        ],
+        "mean_ms": [
+          1.743,
+          1.863,
+          1.847
+        ],
+        "maximum_ms": [
+          4.077,
+          5.539,
+          11.887
+        ],
+        "source_calls": [
+          61,
+          61,
+          61
+        ],
+        "source_bytes": [
+          723343,
+          723343,
+          723343
+        ],
+        "source_seeks": [
+          61,
+          61,
+          61
+        ],
+        "median_mean_ms": 1.847,
+        "minimum_mean_ms": 1.743,
+        "maximum_mean_ms": 1.863,
+        "median_source_per_sample": {
+          "source_calls": 0.3388888888888889,
+          "source_bytes": 4018.572222222222,
+          "source_seeks": 0.3388888888888889
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          252.92,
+          267.298,
+          272.85
+        ],
+        "mean_ms": [
+          1.405,
+          1.485,
+          1.516
+        ],
+        "maximum_ms": [
+          3.28,
+          3.419,
+          3.533
+        ],
+        "source_calls": [
+          76,
+          76,
+          76
+        ],
+        "source_bytes": [
+          918495,
+          918495,
+          918495
+        ],
+        "source_seeks": [
+          76,
+          76,
+          76
+        ],
+        "median_mean_ms": 1.485,
+        "minimum_mean_ms": 1.405,
+        "maximum_mean_ms": 1.516,
+        "median_source_per_sample": {
+          "source_calls": 0.4222222222222222,
+          "source_bytes": 5102.75,
+          "source_seeks": 0.4222222222222222
+        }
+      },
+      "median_mean_change_percent": -19.599350297780184
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          3.32,
+          3.456,
+          3.697
+        ],
+        "mean_ms": [
+          3.32,
+          3.456,
+          3.697
+        ],
+        "maximum_ms": [
+          3.32,
+          3.456,
+          3.697
+        ],
+        "source_calls": [
+          121,
+          121,
+          121
+        ],
+        "source_bytes": [
+          554646,
+          554646,
+          554646
+        ],
+        "source_seeks": [
+          117,
+          117,
+          117
+        ],
+        "median_mean_ms": 3.456,
+        "minimum_mean_ms": 3.32,
+        "maximum_mean_ms": 3.697,
+        "median_source_per_sample": {
+          "source_calls": 121.0,
+          "source_bytes": 554646.0,
+          "source_seeks": 117.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          3.309,
+          3.34,
+          3.577
+        ],
+        "mean_ms": [
+          3.309,
+          3.34,
+          3.577
+        ],
+        "maximum_ms": [
+          3.309,
+          3.34,
+          3.577
+        ],
+        "source_calls": [
+          117,
+          117,
+          117
+        ],
+        "source_bytes": [
+          558619,
+          558619,
+          558619
+        ],
+        "source_seeks": [
+          111,
+          111,
+          111
+        ],
+        "median_mean_ms": 3.34,
+        "minimum_mean_ms": 3.309,
+        "maximum_mean_ms": 3.577,
+        "median_source_per_sample": {
+          "source_calls": 117.0,
+          "source_bytes": 558619.0,
+          "source_seeks": 111.0
+        }
+      },
+      "median_mean_change_percent": -3.356481481481488
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.248,
+          0.27,
+          0.211
+        ],
+        "mean_ms": [
+          0.248,
+          0.27,
+          0.211
+        ],
+        "maximum_ms": [
+          0.248,
+          0.27,
+          0.211
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129006,
+          1129006,
+          1129006
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.248,
+        "minimum_mean_ms": 0.211,
+        "maximum_mean_ms": 0.27,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129006.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.292,
+          0.398,
+          0.341
+        ],
+        "mean_ms": [
+          0.292,
+          0.398,
+          0.341
+        ],
+        "maximum_ms": [
+          0.292,
+          0.398,
+          0.341
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129950,
+          1129950,
+          1129950
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.341,
+        "minimum_mean_ms": 0.292,
+        "maximum_mean_ms": 0.398,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129950.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 37.50000000000002
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          24,
+          24,
+          24
+        ],
+        "cpu_elapsed_ms": [
+          5.996,
+          5.916,
+          5.874
+        ],
+        "mean_ms": [
+          0.25,
+          0.247,
+          0.245
+        ],
+        "maximum_ms": [
+          1.544,
+          1.556,
+          1.434
+        ],
+        "source_calls": [
+          15,
+          15,
+          15
+        ],
+        "source_bytes": [
+          178351,
+          178351,
+          178351
+        ],
+        "source_seeks": [
+          14,
+          14,
+          14
+        ],
+        "median_mean_ms": 0.247,
+        "minimum_mean_ms": 0.245,
+        "maximum_mean_ms": 0.25,
+        "median_source_per_sample": {
+          "source_calls": 0.625,
+          "source_bytes": 7431.291666666667,
+          "source_seeks": 0.5833333333333334
+        }
+      },
+      "candidate": {
+        "samples": [
+          24,
+          24,
+          24
+        ],
+        "cpu_elapsed_ms": [
+          5.416,
+          5.714,
+          5.436
+        ],
+        "mean_ms": [
+          0.226,
+          0.238,
+          0.227
+        ],
+        "maximum_ms": [
+          1.359,
+          1.449,
+          1.382
+        ],
+        "source_calls": [
+          9,
+          9,
+          9
+        ],
+        "source_bytes": [
+          153775,
+          153775,
+          153775
+        ],
+        "source_seeks": [
+          9,
+          9,
+          9
+        ],
+        "median_mean_ms": 0.227,
+        "minimum_mean_ms": 0.226,
+        "maximum_mean_ms": 0.238,
+        "median_source_per_sample": {
+          "source_calls": 0.375,
+          "source_bytes": 6407.291666666667,
+          "source_seeks": 0.375
+        }
+      },
+      "median_mean_change_percent": -8.097165991902832
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          263.367,
+          295.631,
+          307.928
+        ],
+        "mean_ms": [
+          1.463,
+          1.642,
+          1.711
+        ],
+        "maximum_ms": [
+          2.139,
+          4.983,
+          4.111
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.642,
+        "minimum_mean_ms": 1.463,
+        "maximum_mean_ms": 1.711,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          271.372,
+          268.528,
+          265.889
+        ],
+        "mean_ms": [
+          1.508,
+          1.492,
+          1.477
+        ],
+        "maximum_ms": [
+          2.222,
+          1.915,
+          1.86
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.492,
+        "minimum_mean_ms": 1.477,
+        "maximum_mean_ms": 1.508,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -9.135200974421432
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.861,
+          1.95,
+          1.875
+        ],
+        "mean_ms": [
+          1.861,
+          1.95,
+          1.875
+        ],
+        "maximum_ms": [
+          1.861,
+          1.95,
+          1.875
+        ],
+        "source_calls": [
+          23,
+          23,
+          23
+        ],
+        "source_bytes": [
+          96285,
+          96285,
+          96285
+        ],
+        "source_seeks": [
+          21,
+          21,
+          21
+        ],
+        "median_mean_ms": 1.875,
+        "minimum_mean_ms": 1.861,
+        "maximum_mean_ms": 1.95,
+        "median_source_per_sample": {
+          "source_calls": 23.0,
+          "source_bytes": 96285.0,
+          "source_seeks": 21.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.911,
+          1.837,
+          1.879
+        ],
+        "mean_ms": [
+          1.911,
+          1.837,
+          1.879
+        ],
+        "maximum_ms": [
+          1.911,
+          1.837,
+          1.879
+        ],
+        "source_calls": [
+          22,
+          22,
+          22
+        ],
+        "source_bytes": [
+          98909,
+          98909,
+          98909
+        ],
+        "source_seeks": [
+          18,
+          18,
+          18
+        ],
+        "median_mean_ms": 1.879,
+        "minimum_mean_ms": 1.837,
+        "maximum_mean_ms": 1.911,
+        "median_source_per_sample": {
+          "source_calls": 22.0,
+          "source_bytes": 98909.0,
+          "source_seeks": 18.0
+        }
+      },
+      "median_mean_change_percent": 0.21333333333333204
+    },
+    {
+      "language": "zhs",
+      "scene": "draw_choice_10_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          322.179,
+          354.36,
+          369.586
+        ],
+        "mean_ms": [
+          1.79,
+          1.969,
+          2.053
+        ],
+        "maximum_ms": [
+          2.43,
+          4.197,
+          4.764
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.969,
+        "minimum_mean_ms": 1.79,
+        "maximum_mean_ms": 2.053,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          336.852,
+          328.358,
+          331.819
+        ],
+        "mean_ms": [
+          1.871,
+          1.824,
+          1.843
+        ],
+        "maximum_ms": [
+          2.277,
+          2.174,
+          2.396
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.843,
+        "minimum_mean_ms": 1.824,
+        "maximum_mean_ms": 1.871,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -6.399187404773999
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.013,
+          1.975,
+          1.849
+        ],
+        "mean_ms": [
+          2.013,
+          1.975,
+          1.849
+        ],
+        "maximum_ms": [
+          2.013,
+          1.975,
+          1.849
+        ],
+        "source_calls": [
+          65,
+          65,
+          65
+        ],
+        "source_bytes": [
+          371800,
+          371800,
+          371800
+        ],
+        "source_seeks": [
+          61,
+          61,
+          61
+        ],
+        "median_mean_ms": 1.975,
+        "minimum_mean_ms": 1.849,
+        "maximum_mean_ms": 2.013,
+        "median_source_per_sample": {
+          "source_calls": 65.0,
+          "source_bytes": 371800.0,
+          "source_seeks": 61.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.083,
+          1.996,
+          2.791
+        ],
+        "mean_ms": [
+          2.083,
+          1.996,
+          2.791
+        ],
+        "maximum_ms": [
+          2.083,
+          1.996,
+          2.791
+        ],
+        "source_calls": [
+          63,
+          63,
+          63
+        ],
+        "source_bytes": [
+          362013,
+          362013,
+          362013
+        ],
+        "source_seeks": [
+          58,
+          58,
+          58
+        ],
+        "median_mean_ms": 2.083,
+        "minimum_mean_ms": 1.996,
+        "maximum_mean_ms": 2.791,
+        "median_source_per_sample": {
+          "source_calls": 63.0,
+          "source_bytes": 362013.0,
+          "source_seeks": 58.0
+        }
+      },
+      "median_mean_change_percent": 5.4683544303797404
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.688,
+          0.656,
+          0.646
+        ],
+        "mean_ms": [
+          0.688,
+          0.656,
+          0.646
+        ],
+        "maximum_ms": [
+          0.688,
+          0.656,
+          0.646
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129006,
+          1129006,
+          1129006
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.656,
+        "minimum_mean_ms": 0.646,
+        "maximum_mean_ms": 0.688,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129006.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.043,
+          0.659,
+          0.699
+        ],
+        "mean_ms": [
+          1.043,
+          0.659,
+          0.699
+        ],
+        "maximum_ms": [
+          1.043,
+          0.659,
+          0.699
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129950,
+          1129950,
+          1129950
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.699,
+        "minimum_mean_ms": 0.659,
+        "maximum_mean_ms": 1.043,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129950.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 6.554878048780477
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "candidate": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "median_mean_change_percent": null
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          101.196,
+          100.513,
+          105.64
+        ],
+        "mean_ms": [
+          0.562,
+          0.558,
+          0.587
+        ],
+        "maximum_ms": [
+          1.61,
+          0.83,
+          2.018
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.562,
+        "minimum_mean_ms": 0.558,
+        "maximum_mean_ms": 0.587,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          98.444,
+          104.953,
+          117.733
+        ],
+        "mean_ms": [
+          0.547,
+          0.583,
+          0.654
+        ],
+        "maximum_ms": [
+          0.939,
+          2.147,
+          1.692
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.583,
+        "minimum_mean_ms": 0.547,
+        "maximum_mean_ms": 0.654,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 3.736654804270456
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.369,
+          1.298,
+          2.634
+        ],
+        "mean_ms": [
+          1.369,
+          1.298,
+          2.634
+        ],
+        "maximum_ms": [
+          1.369,
+          1.298,
+          2.634
+        ],
+        "source_calls": [
+          16,
+          16,
+          16
+        ],
+        "source_bytes": [
+          66254,
+          66254,
+          66254
+        ],
+        "source_seeks": [
+          16,
+          16,
+          16
+        ],
+        "median_mean_ms": 1.369,
+        "minimum_mean_ms": 1.298,
+        "maximum_mean_ms": 2.634,
+        "median_source_per_sample": {
+          "source_calls": 16.0,
+          "source_bytes": 66254.0,
+          "source_seeks": 16.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.456,
+          1.342,
+          2.035
+        ],
+        "mean_ms": [
+          1.456,
+          1.342,
+          2.035
+        ],
+        "maximum_ms": [
+          1.456,
+          1.342,
+          2.035
+        ],
+        "source_calls": [
+          12,
+          12,
+          12
+        ],
+        "source_bytes": [
+          53966,
+          53966,
+          53966
+        ],
+        "source_seeks": [
+          12,
+          12,
+          12
+        ],
+        "median_mean_ms": 1.456,
+        "minimum_mean_ms": 1.342,
+        "maximum_mean_ms": 2.035,
+        "median_source_per_sample": {
+          "source_calls": 12.0,
+          "source_bytes": 53966.0,
+          "source_seeks": 12.0
+        }
+      },
+      "median_mean_change_percent": 6.35500365230095
+    },
+    {
+      "language": "zhs",
+      "scene": "library_8_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          213.448,
+          227.073,
+          242.999
+        ],
+        "mean_ms": [
+          1.186,
+          1.262,
+          1.35
+        ],
+        "maximum_ms": [
+          2.914,
+          2.133,
+          4.336
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.262,
+        "minimum_mean_ms": 1.186,
+        "maximum_mean_ms": 1.35,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          212.952,
+          219.462,
+          250.114
+        ],
+        "mean_ms": [
+          1.183,
+          1.219,
+          1.39
+        ],
+        "maximum_ms": [
+          1.451,
+          2.287,
+          1.964
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.219,
+        "minimum_mean_ms": 1.183,
+        "maximum_mean_ms": 1.39,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -3.4072900158478525
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.031,
+          2.013,
+          2.074
+        ],
+        "mean_ms": [
+          2.031,
+          2.013,
+          2.074
+        ],
+        "maximum_ms": [
+          2.031,
+          2.013,
+          2.074
+        ],
+        "source_calls": [
+          91,
+          91,
+          91
+        ],
+        "source_bytes": [
+          483868,
+          483868,
+          483868
+        ],
+        "source_seeks": [
+          84,
+          84,
+          84
+        ],
+        "median_mean_ms": 2.031,
+        "minimum_mean_ms": 2.013,
+        "maximum_mean_ms": 2.074,
+        "median_source_per_sample": {
+          "source_calls": 91.0,
+          "source_bytes": 483868.0,
+          "source_seeks": 84.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.046,
+          1.942,
+          2.417
+        ],
+        "mean_ms": [
+          2.046,
+          1.942,
+          2.417
+        ],
+        "maximum_ms": [
+          2.046,
+          1.942,
+          2.417
+        ],
+        "source_calls": [
+          85,
+          85,
+          85
+        ],
+        "source_bytes": [
+          461793,
+          461793,
+          461793
+        ],
+        "source_seeks": [
+          78,
+          78,
+          78
+        ],
+        "median_mean_ms": 2.046,
+        "minimum_mean_ms": 1.942,
+        "maximum_mean_ms": 2.417,
+        "median_source_per_sample": {
+          "source_calls": 85.0,
+          "source_bytes": 461793.0,
+          "source_seeks": 78.0
+        }
+      },
+      "median_mean_change_percent": 0.7385524372230279
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.22,
+          0.239,
+          0.213
+        ],
+        "mean_ms": [
+          0.22,
+          0.239,
+          0.213
+        ],
+        "maximum_ms": [
+          0.22,
+          0.239,
+          0.213
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129006,
+          1129006,
+          1129006
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.22,
+        "minimum_mean_ms": 0.213,
+        "maximum_mean_ms": 0.239,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129006.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.258,
+          0.253,
+          0.244
+        ],
+        "mean_ms": [
+          0.258,
+          0.253,
+          0.244
+        ],
+        "maximum_ms": [
+          0.258,
+          0.253,
+          0.244
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129950,
+          1129950,
+          1129950
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.253,
+        "minimum_mean_ms": 0.244,
+        "maximum_mean_ms": 0.258,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129950.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 14.999999999999991
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "candidate": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "median_mean_change_percent": null
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          158.73,
+          162.824,
+          183.152
+        ],
+        "mean_ms": [
+          0.882,
+          0.905,
+          1.018
+        ],
+        "maximum_ms": [
+          1.313,
+          1.516,
+          1.662
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.905,
+        "minimum_mean_ms": 0.882,
+        "maximum_mean_ms": 1.018,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          160.184,
+          159.867,
+          186.237
+        ],
+        "mean_ms": [
+          0.89,
+          0.888,
+          1.035
+        ],
+        "maximum_ms": [
+          1.323,
+          1.239,
+          4.912
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.89,
+        "minimum_mean_ms": 0.888,
+        "maximum_mean_ms": 1.035,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -1.6574585635359185
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.492,
+          1.417,
+          1.33
+        ],
+        "mean_ms": [
+          1.492,
+          1.417,
+          1.33
+        ],
+        "maximum_ms": [
+          1.492,
+          1.417,
+          1.33
+        ],
+        "source_calls": [
+          23,
+          23,
+          23
+        ],
+        "source_bytes": [
+          92302,
+          92302,
+          92302
+        ],
+        "source_seeks": [
+          22,
+          22,
+          22
+        ],
+        "median_mean_ms": 1.417,
+        "minimum_mean_ms": 1.33,
+        "maximum_mean_ms": 1.492,
+        "median_source_per_sample": {
+          "source_calls": 23.0,
+          "source_bytes": 92302.0,
+          "source_seeks": 22.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.305,
+          1.307,
+          1.31
+        ],
+        "mean_ms": [
+          1.305,
+          1.307,
+          1.31
+        ],
+        "maximum_ms": [
+          1.305,
+          1.307,
+          1.31
+        ],
+        "source_calls": [
+          23,
+          23,
+          23
+        ],
+        "source_bytes": [
+          98899,
+          98899,
+          98899
+        ],
+        "source_seeks": [
+          22,
+          22,
+          22
+        ],
+        "median_mean_ms": 1.307,
+        "minimum_mean_ms": 1.305,
+        "maximum_mean_ms": 1.31,
+        "median_source_per_sample": {
+          "source_calls": 23.0,
+          "source_bytes": 98899.0,
+          "source_seeks": 22.0
+        }
+      },
+      "median_mean_change_percent": -7.762879322512362
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8_detail",
+      "phase": "pointer_scan_to_keyword_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.675,
+          2.73,
+          2.57
+        ],
+        "mean_ms": [
+          2.675,
+          2.73,
+          2.57
+        ],
+        "maximum_ms": [
+          2.675,
+          2.73,
+          2.57
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 2.675,
+        "minimum_mean_ms": 2.57,
+        "maximum_mean_ms": 2.73,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          2.652,
+          2.937,
+          2.796
+        ],
+        "mean_ms": [
+          2.652,
+          2.937,
+          2.796
+        ],
+        "maximum_ms": [
+          2.652,
+          2.937,
+          2.796
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 2.796,
+        "minimum_mean_ms": 2.652,
+        "maximum_mean_ms": 2.937,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 4.523364485981318
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          215.838,
+          224.44,
+          213.849
+        ],
+        "mean_ms": [
+          1.199,
+          1.247,
+          1.188
+        ],
+        "maximum_ms": [
+          1.471,
+          2.165,
+          1.467
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.199,
+        "minimum_mean_ms": 1.188,
+        "maximum_mean_ms": 1.247,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          223.333,
+          219.59,
+          226.278
+        ],
+        "mean_ms": [
+          1.241,
+          1.22,
+          1.257
+        ],
+        "maximum_ms": [
+          1.561,
+          1.539,
+          2.056
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.241,
+        "minimum_mean_ms": 1.22,
+        "maximum_mean_ms": 1.257,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 3.5029190992493797
+    },
+    {
+      "language": "zhs",
+      "scene": "library_rainbow_8_detail",
+      "phase": "warm_keyword_pointer_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          286.59,
+          291.547,
+          272.841
+        ],
+        "mean_ms": [
+          1.592,
+          1.62,
+          1.516
+        ],
+        "maximum_ms": [
+          2.683,
+          4.595,
+          1.721
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.592,
+        "minimum_mean_ms": 1.516,
+        "maximum_mean_ms": 1.62,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          299.096,
+          280.306,
+          322.881
+        ],
+        "mean_ms": [
+          1.662,
+          1.557,
+          1.794
+        ],
+        "maximum_ms": [
+          3.772,
+          3.631,
+          4.619
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.662,
+        "minimum_mean_ms": 1.557,
+        "maximum_mean_ms": 1.794,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": 4.396984924623104
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "first_visible",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.694,
+          1.921,
+          1.77
+        ],
+        "mean_ms": [
+          1.694,
+          1.921,
+          1.77
+        ],
+        "maximum_ms": [
+          1.694,
+          1.921,
+          1.77
+        ],
+        "source_calls": [
+          63,
+          63,
+          63
+        ],
+        "source_bytes": [
+          364588,
+          364588,
+          364588
+        ],
+        "source_seeks": [
+          59,
+          59,
+          59
+        ],
+        "median_mean_ms": 1.77,
+        "minimum_mean_ms": 1.694,
+        "maximum_mean_ms": 1.921,
+        "median_source_per_sample": {
+          "source_calls": 63.0,
+          "source_bytes": 364588.0,
+          "source_seeks": 59.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.624,
+          1.714,
+          1.743
+        ],
+        "mean_ms": [
+          1.624,
+          1.714,
+          1.743
+        ],
+        "maximum_ms": [
+          1.624,
+          1.714,
+          1.743
+        ],
+        "source_calls": [
+          49,
+          49,
+          49
+        ],
+        "source_bytes": [
+          307244,
+          307244,
+          307244
+        ],
+        "source_seeks": [
+          47,
+          47,
+          47
+        ],
+        "median_mean_ms": 1.714,
+        "minimum_mean_ms": 1.624,
+        "maximum_mean_ms": 1.743,
+        "median_source_per_sample": {
+          "source_calls": 49.0,
+          "source_bytes": 307244.0,
+          "source_seeks": 47.0
+        }
+      },
+      "median_mean_change_percent": -3.1638418079096065
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.209,
+          0.227,
+          0.207
+        ],
+        "mean_ms": [
+          0.209,
+          0.227,
+          0.207
+        ],
+        "maximum_ms": [
+          0.209,
+          0.227,
+          0.207
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129006,
+          1129006,
+          1129006
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.209,
+        "minimum_mean_ms": 0.207,
+        "maximum_mean_ms": 0.227,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129006.0,
+          "source_seeks": 4.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          0.275,
+          0.256,
+          0.253
+        ],
+        "mean_ms": [
+          0.275,
+          0.256,
+          0.253
+        ],
+        "maximum_ms": [
+          0.275,
+          0.256,
+          0.253
+        ],
+        "source_calls": [
+          4,
+          4,
+          4
+        ],
+        "source_bytes": [
+          1129950,
+          1129950,
+          1129950
+        ],
+        "source_seeks": [
+          4,
+          4,
+          4
+        ],
+        "median_mean_ms": 0.256,
+        "minimum_mean_ms": 0.253,
+        "maximum_mean_ms": 0.275,
+        "median_source_per_sample": {
+          "source_calls": 4.0,
+          "source_bytes": 1129950.0,
+          "source_seeks": 4.0
+        }
+      },
+      "median_mean_change_percent": 22.48803827751198
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "preparation",
+      "baseline": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "candidate": {
+        "samples": [
+          0,
+          0,
+          0
+        ],
+        "cpu_elapsed_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "mean_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "maximum_ms": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.0,
+        "minimum_mean_ms": 0.0,
+        "maximum_mean_ms": 0.0
+      },
+      "median_mean_change_percent": null
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10",
+      "phase": "warm_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          120.688,
+          121.371,
+          118.037
+        ],
+        "mean_ms": [
+          0.67,
+          0.674,
+          0.656
+        ],
+        "maximum_ms": [
+          2.464,
+          1.013,
+          0.969
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.67,
+        "minimum_mean_ms": 0.656,
+        "maximum_mean_ms": 0.674,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          114.59,
+          118.452,
+          116.808
+        ],
+        "mean_ms": [
+          0.637,
+          0.658,
+          0.649
+        ],
+        "maximum_ms": [
+          1.038,
+          2.365,
+          1.173
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 0.649,
+        "minimum_mean_ms": 0.637,
+        "maximum_mean_ms": 0.658,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -3.13432835820896
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10_detail",
+      "phase": "input_to_first_complete_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.517,
+          1.565,
+          1.532
+        ],
+        "mean_ms": [
+          1.517,
+          1.565,
+          1.532
+        ],
+        "maximum_ms": [
+          1.517,
+          1.565,
+          1.532
+        ],
+        "source_calls": [
+          16,
+          16,
+          16
+        ],
+        "source_bytes": [
+          67726,
+          67726,
+          67726
+        ],
+        "source_seeks": [
+          16,
+          16,
+          16
+        ],
+        "median_mean_ms": 1.532,
+        "minimum_mean_ms": 1.517,
+        "maximum_mean_ms": 1.565,
+        "median_source_per_sample": {
+          "source_calls": 16.0,
+          "source_bytes": 67726.0,
+          "source_seeks": 16.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          1.474,
+          1.449,
+          1.39
+        ],
+        "mean_ms": [
+          1.474,
+          1.449,
+          1.39
+        ],
+        "maximum_ms": [
+          1.474,
+          1.449,
+          1.39
+        ],
+        "source_calls": [
+          14,
+          14,
+          14
+        ],
+        "source_bytes": [
+          66131,
+          66131,
+          66131
+        ],
+        "source_seeks": [
+          13,
+          13,
+          13
+        ],
+        "median_mean_ms": 1.449,
+        "minimum_mean_ms": 1.39,
+        "maximum_mean_ms": 1.474,
+        "median_source_per_sample": {
+          "source_calls": 14.0,
+          "source_bytes": 66131.0,
+          "source_seeks": 13.0
+        }
+      },
+      "median_mean_change_percent": -5.417754569190603
+    },
+    {
+      "language": "zhs",
+      "scene": "remove_10_detail",
+      "phase": "warm_detail_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          231.694,
+          243.582,
+          240.571
+        ],
+        "mean_ms": [
+          1.287,
+          1.353,
+          1.337
+        ],
+        "maximum_ms": [
+          2.888,
+          2.541,
+          4.342
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.337,
+        "minimum_mean_ms": 1.287,
+        "maximum_mean_ms": 1.353,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          233.263,
+          244.065,
+          236.515
+        ],
+        "mean_ms": [
+          1.296,
+          1.356,
+          1.314
+        ],
+        "maximum_ms": [
+          1.891,
+          6.294,
+          1.743
+        ],
+        "source_calls": [
+          0,
+          0,
+          0
+        ],
+        "source_bytes": [
+          0,
+          0,
+          0
+        ],
+        "source_seeks": [
+          0,
+          0,
+          0
+        ],
+        "median_mean_ms": 1.314,
+        "minimum_mean_ms": 1.296,
+        "maximum_mean_ms": 1.356,
+        "median_source_per_sample": {
+          "source_calls": 0.0,
+          "source_bytes": 0.0,
+          "source_seeks": 0.0
+        }
+      },
+      "median_mean_change_percent": -1.7202692595362667
+    },
+    {
+      "language": "zhs",
+      "scene": "shop_inventory_hover_7",
+      "phase": "input_to_first_complete_hover_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          6.519,
+          6.133,
+          5.785
+        ],
+        "mean_ms": [
+          6.519,
+          6.133,
+          5.785
+        ],
+        "maximum_ms": [
+          6.519,
+          6.133,
+          5.785
+        ],
+        "source_calls": [
+          67,
+          67,
+          67
+        ],
+        "source_bytes": [
+          363552,
+          363552,
+          363552
+        ],
+        "source_seeks": [
+          66,
+          66,
+          66
+        ],
+        "median_mean_ms": 6.133,
+        "minimum_mean_ms": 5.785,
+        "maximum_mean_ms": 6.519,
+        "median_source_per_sample": {
+          "source_calls": 67.0,
+          "source_bytes": 363552.0,
+          "source_seeks": 66.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.478,
+          5.375,
+          5.283
+        ],
+        "mean_ms": [
+          5.478,
+          5.375,
+          5.283
+        ],
+        "maximum_ms": [
+          5.478,
+          5.375,
+          5.283
+        ],
+        "source_calls": [
+          51,
+          51,
+          51
+        ],
+        "source_bytes": [
+          306947,
+          306947,
+          306947
+        ],
+        "source_seeks": [
+          49,
+          49,
+          49
+        ],
+        "median_mean_ms": 5.375,
+        "minimum_mean_ms": 5.283,
+        "maximum_mean_ms": 5.478,
+        "median_source_per_sample": {
+          "source_calls": 51.0,
+          "source_bytes": 306947.0,
+          "source_seeks": 49.0
+        }
+      },
+      "median_mean_change_percent": -12.359367356921569
+    },
+    {
+      "language": "zhs",
+      "scene": "shop_inventory_hover_7",
+      "phase": "room_open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.256,
+          5.051,
+          5.31
+        ],
+        "mean_ms": [
+          5.256,
+          5.051,
+          5.31
+        ],
+        "maximum_ms": [
+          5.256,
+          5.051,
+          5.31
+        ],
+        "source_calls": [
+          30,
+          30,
+          30
+        ],
+        "source_bytes": [
+          1359446,
+          1359446,
+          1359446
+        ],
+        "source_seeks": [
+          29,
+          29,
+          29
+        ],
+        "median_mean_ms": 5.256,
+        "minimum_mean_ms": 5.051,
+        "maximum_mean_ms": 5.31,
+        "median_source_per_sample": {
+          "source_calls": 30.0,
+          "source_bytes": 1359446.0,
+          "source_seeks": 29.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.376,
+          5.372,
+          5.285
+        ],
+        "mean_ms": [
+          5.376,
+          5.372,
+          5.285
+        ],
+        "maximum_ms": [
+          5.376,
+          5.372,
+          5.285
+        ],
+        "source_calls": [
+          30,
+          30,
+          30
+        ],
+        "source_bytes": [
+          1369569,
+          1369569,
+          1369569
+        ],
+        "source_seeks": [
+          29,
+          29,
+          29
+        ],
+        "median_mean_ms": 5.372,
+        "minimum_mean_ms": 5.285,
+        "maximum_mean_ms": 5.376,
+        "median_source_per_sample": {
+          "source_calls": 30.0,
+          "source_bytes": 1369569.0,
+          "source_seeks": 29.0
+        }
+      },
+      "median_mean_change_percent": 2.2070015220700068
+    },
+    {
+      "language": "zhs",
+      "scene": "shop_inventory_hover_7",
+      "phase": "warm_inventory_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          358.749,
+          372.075,
+          332.762
+        ],
+        "mean_ms": [
+          1.993,
+          2.067,
+          1.849
+        ],
+        "maximum_ms": [
+          3.85,
+          8.662,
+          7.444
+        ],
+        "source_calls": [
+          59,
+          59,
+          59
+        ],
+        "source_bytes": [
+          715151,
+          715151,
+          715151
+        ],
+        "source_seeks": [
+          59,
+          59,
+          59
+        ],
+        "median_mean_ms": 1.993,
+        "minimum_mean_ms": 1.849,
+        "maximum_mean_ms": 2.067,
+        "median_source_per_sample": {
+          "source_calls": 0.3277777777777778,
+          "source_bytes": 3973.061111111111,
+          "source_seeks": 0.3277777777777778
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          258.965,
+          253.753,
+          277.612
+        ],
+        "mean_ms": [
+          1.439,
+          1.41,
+          1.542
+        ],
+        "maximum_ms": [
+          5.405,
+          3.204,
+          4.914
+        ],
+        "source_calls": [
+          77,
+          77,
+          77
+        ],
+        "source_bytes": [
+          922591,
+          922591,
+          922591
+        ],
+        "source_seeks": [
+          77,
+          77,
+          77
+        ],
+        "median_mean_ms": 1.439,
+        "minimum_mean_ms": 1.41,
+        "maximum_mean_ms": 1.542,
+        "median_source_per_sample": {
+          "source_calls": 0.42777777777777776,
+          "source_bytes": 5125.5055555555555,
+          "source_seeks": 0.42777777777777776
+        }
+      },
+      "median_mean_change_percent": -27.797290516808836
+    },
+    {
+      "language": "zhs",
+      "scene": "shop_inventory_idle_7",
+      "phase": "input_to_first_complete_inventory_frame",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          4.43,
+          4.279,
+          4.199
+        ],
+        "mean_ms": [
+          4.43,
+          4.279,
+          4.199
+        ],
+        "maximum_ms": [
+          4.43,
+          4.279,
+          4.199
+        ],
+        "source_calls": [
+          67,
+          67,
+          67
+        ],
+        "source_bytes": [
+          363552,
+          363552,
+          363552
+        ],
+        "source_seeks": [
+          66,
+          66,
+          66
+        ],
+        "median_mean_ms": 4.279,
+        "minimum_mean_ms": 4.199,
+        "maximum_mean_ms": 4.43,
+        "median_source_per_sample": {
+          "source_calls": 67.0,
+          "source_bytes": 363552.0,
+          "source_seeks": 66.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          4.617,
+          4.006,
+          4.11
+        ],
+        "mean_ms": [
+          4.617,
+          4.006,
+          4.11
+        ],
+        "maximum_ms": [
+          4.617,
+          4.006,
+          4.11
+        ],
+        "source_calls": [
+          51,
+          51,
+          51
+        ],
+        "source_bytes": [
+          306947,
+          306947,
+          306947
+        ],
+        "source_seeks": [
+          49,
+          49,
+          49
+        ],
+        "median_mean_ms": 4.11,
+        "minimum_mean_ms": 4.006,
+        "maximum_mean_ms": 4.617,
+        "median_source_per_sample": {
+          "source_calls": 51.0,
+          "source_bytes": 306947.0,
+          "source_seeks": 49.0
+        }
+      },
+      "median_mean_change_percent": -3.9495209161018785
+    },
+    {
+      "language": "zhs",
+      "scene": "shop_inventory_idle_7",
+      "phase": "room_open_and_fixture",
+      "baseline": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.171,
+          5.091,
+          5.098
+        ],
+        "mean_ms": [
+          5.171,
+          5.091,
+          5.098
+        ],
+        "maximum_ms": [
+          5.171,
+          5.091,
+          5.098
+        ],
+        "source_calls": [
+          30,
+          30,
+          30
+        ],
+        "source_bytes": [
+          1359446,
+          1359446,
+          1359446
+        ],
+        "source_seeks": [
+          29,
+          29,
+          29
+        ],
+        "median_mean_ms": 5.098,
+        "minimum_mean_ms": 5.091,
+        "maximum_mean_ms": 5.171,
+        "median_source_per_sample": {
+          "source_calls": 30.0,
+          "source_bytes": 1359446.0,
+          "source_seeks": 29.0
+        }
+      },
+      "candidate": {
+        "samples": [
+          1,
+          1,
+          1
+        ],
+        "cpu_elapsed_ms": [
+          5.706,
+          5.293,
+          5.76
+        ],
+        "mean_ms": [
+          5.706,
+          5.293,
+          5.76
+        ],
+        "maximum_ms": [
+          5.706,
+          5.293,
+          5.76
+        ],
+        "source_calls": [
+          30,
+          30,
+          30
+        ],
+        "source_bytes": [
+          1369569,
+          1369569,
+          1369569
+        ],
+        "source_seeks": [
+          29,
+          29,
+          29
+        ],
+        "median_mean_ms": 5.706,
+        "minimum_mean_ms": 5.293,
+        "maximum_mean_ms": 5.76,
+        "median_source_per_sample": {
+          "source_calls": 30.0,
+          "source_bytes": 1369569.0,
+          "source_seeks": 29.0
+        }
+      },
+      "median_mean_change_percent": 11.926245586504525
+    },
+    {
+      "language": "zhs",
+      "scene": "shop_inventory_idle_7",
+      "phase": "warm_inventory_animation_window",
+      "baseline": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          321.083,
+          313.357,
+          311.38
+        ],
+        "mean_ms": [
+          1.784,
+          1.741,
+          1.73
+        ],
+        "maximum_ms": [
+          3.265,
+          4.741,
+          4.882
+        ],
+        "source_calls": [
+          59,
+          59,
+          59
+        ],
+        "source_bytes": [
+          715151,
+          715151,
+          715151
+        ],
+        "source_seeks": [
+          59,
+          59,
+          59
+        ],
+        "median_mean_ms": 1.741,
+        "minimum_mean_ms": 1.73,
+        "maximum_mean_ms": 1.784,
+        "median_source_per_sample": {
+          "source_calls": 0.3277777777777778,
+          "source_bytes": 3973.061111111111,
+          "source_seeks": 0.3277777777777778
+        }
+      },
+      "candidate": {
+        "samples": [
+          180,
+          180,
+          180
+        ],
+        "cpu_elapsed_ms": [
+          263.182,
+          252.475,
+          254.404
+        ],
+        "mean_ms": [
+          1.462,
+          1.403,
+          1.413
+        ],
+        "maximum_ms": [
+          4.31,
+          3.431,
+          3.127
+        ],
+        "source_calls": [
+          77,
+          77,
+          77
+        ],
+        "source_bytes": [
+          922591,
+          922591,
+          922591
+        ],
+        "source_seeks": [
+          77,
+          77,
+          77
+        ],
+        "median_mean_ms": 1.413,
+        "minimum_mean_ms": 1.403,
+        "maximum_mean_ms": 1.462,
+        "median_source_per_sample": {
+          "source_calls": 0.42777777777777776,
+          "source_bytes": 5125.5055555555555,
+          "source_seeks": 0.42777777777777776
+        }
+      },
+      "median_mean_change_percent": -18.83974727168294
+    }
+  ],
+  "shop_observations": [
+    {
+      "language": "eng",
+      "variant": "A",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 1209019879,
+      "settled_rgb565_fnv1a": 1788886400,
+      "last_rgb565_fnv1a": 1063524895,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 1654435419,
+      "settled_rgb565_fnv1a": 3334689532,
+      "last_rgb565_fnv1a": 1330763779,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 702784133,
+      "settled_rgb565_fnv1a": 2042035881,
+      "last_rgb565_fnv1a": 3122472359,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 1856264411,
+      "settled_rgb565_fnv1a": 2785772727,
+      "last_rgb565_fnv1a": 827661341,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 2103311923,
+      "settled_rgb565_fnv1a": 561844667,
+      "last_rgb565_fnv1a": 3295684569,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 3150533435,
+      "settled_rgb565_fnv1a": 136769647,
+      "last_rgb565_fnv1a": 2637591181,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 117349311,
+      "settled_rgb565_fnv1a": 3129412298,
+      "last_rgb565_fnv1a": 653839751,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "round": 1,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 3756632392,
+      "settled_rgb565_fnv1a": 4189470633,
+      "last_rgb565_fnv1a": 1770960312,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 702784133,
+      "settled_rgb565_fnv1a": 2042035881,
+      "last_rgb565_fnv1a": 3122472359,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 1856264411,
+      "settled_rgb565_fnv1a": 2785772727,
+      "last_rgb565_fnv1a": 827661341,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 1209019879,
+      "settled_rgb565_fnv1a": 1788886400,
+      "last_rgb565_fnv1a": 1063524895,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 1654435419,
+      "settled_rgb565_fnv1a": 3334689532,
+      "last_rgb565_fnv1a": 1330763779,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 117349311,
+      "settled_rgb565_fnv1a": 3129412298,
+      "last_rgb565_fnv1a": 653839751,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 3756632392,
+      "settled_rgb565_fnv1a": 4189470633,
+      "last_rgb565_fnv1a": 1770960312,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 2103311923,
+      "settled_rgb565_fnv1a": 561844667,
+      "last_rgb565_fnv1a": 3295684569,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "round": 2,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 3150533435,
+      "settled_rgb565_fnv1a": 136769647,
+      "last_rgb565_fnv1a": 2637591181,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 1209019879,
+      "settled_rgb565_fnv1a": 1788886400,
+      "last_rgb565_fnv1a": 1063524895,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 1654435419,
+      "settled_rgb565_fnv1a": 3334689532,
+      "last_rgb565_fnv1a": 1330763779,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 702784133,
+      "settled_rgb565_fnv1a": 2042035881,
+      "last_rgb565_fnv1a": 3122472359,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 1856264411,
+      "settled_rgb565_fnv1a": 2785772727,
+      "last_rgb565_fnv1a": 827661341,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 2103311923,
+      "settled_rgb565_fnv1a": 561844667,
+      "last_rgb565_fnv1a": 3295684569,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 3150533435,
+      "settled_rgb565_fnv1a": 136769647,
+      "last_rgb565_fnv1a": 2637591181,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_idle_7",
+      "visible_cards": 7,
+      "cold_render_calls": 1,
+      "hovered": false,
+      "first_rgb565_fnv1a": 117349311,
+      "settled_rgb565_fnv1a": 3129412298,
+      "last_rgb565_fnv1a": 653839751,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "round": 3,
+      "operation": "shop_observation",
+      "scene": "shop_inventory_hover_7",
+      "visible_cards": 7,
+      "cold_render_calls": 2,
+      "hovered": true,
+      "first_rgb565_fnv1a": 3756632392,
+      "settled_rgb565_fnv1a": 4189470633,
+      "last_rgb565_fnv1a": 1770960312,
+      "canonical_before_fnv1a": 1034258919,
+      "canonical_after_fnv1a": 1034258919,
+      "canonical_state_unchanged": true,
+      "save_callback_attempts": 0
+    }
+  ],
+  "capture_sha256": [
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "draw_choice_10.ppm",
+      "sha256": "1e0888940771862ba3308f5827ef383f90ef246e08885a8f6f4e22eddbefa641",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "draw_choice_10_detail.ppm",
+      "sha256": "d5a1256c38586e0969e30bcc8ef3f37c45bccfe5a91cdc5f98c5fabe01b7249a",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "library_8.ppm",
+      "sha256": "94b0c790bb7cbbd2f4792dda9fae9b7a61bd3ba4cf4683a7355d23383b7743b7",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "library_8_detail.ppm",
+      "sha256": "1ae13867e0eaf852baf714826806862d9576492fe52081b390ccea97547d6054",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "library_rainbow_8.ppm",
+      "sha256": "e6cf86715bc8b7769b37057e1e1c4a4a5a3f67543e8d8c8d274c8b14330b2dcb",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "library_rainbow_8_detail.ppm",
+      "sha256": "7a783e0166c5b6383f1a58bd29cdc3e64477a29de1e576b1c55de9e9192753f6",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "rainbow_detail_keyword.ppm",
+      "sha256": "2b361cefd596563794bb2aa999b5bdb59377649f1a5bcb5cad7e6e987c334623",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "remove_10.ppm",
+      "sha256": "66738d7aa204e69e102d593e85a8cf3718fa8b00962393bec62a1d63ea23df2e",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "remove_10_detail.ppm",
+      "sha256": "07069f20d58cbcf385220a4744129a9ab44537532ee2e0b0f168b90b76855aa1",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "shop_inventory_hover_7.ppm",
+      "sha256": "98e22e6d58fc6ce28295f48ebe1816648ff452aba54a62912d04f6c5bfded000",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "A",
+      "file": "shop_inventory_idle_7.ppm",
+      "sha256": "108d9a247a057b1db83277cb5f44a514e530396560a863f6ecde4b72126c55ba",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "draw_choice_10.ppm",
+      "sha256": "4f8c0ef179a9e942646b072ce783af876ec05d0b80696b454fe216cd20bd0919",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "draw_choice_10_detail.ppm",
+      "sha256": "e76290e18300f4e12485fb657d6db2ffb35ced191708c127707735eecd9a4ee4",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "library_8.ppm",
+      "sha256": "abd9c1944c2a96e3240731028da5820108ddd17f39755809e92aa899c0d0732f",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "library_8_detail.ppm",
+      "sha256": "3b783967270cd70e4b0ff813f006511c591bd6922639cded5e289a11347be171",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "library_rainbow_8.ppm",
+      "sha256": "46a6529d4c21216f4737857b2a3601f1cd391788c76566799cea4360bb1e4f6d",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "library_rainbow_8_detail.ppm",
+      "sha256": "8558f82d7f3803c0a69eccfcdc049a3d48012f6dc93a41c6a511cf81f9f7d958",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "rainbow_detail_keyword.ppm",
+      "sha256": "4174f58e7254804c985390c11d1c5bb04fc675e14f0455997718049bc9c4f63f",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "remove_10.ppm",
+      "sha256": "e50897b82687f94c96dbf3f17a212811538820409b79bdf54100743833c581ad",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "remove_10_detail.ppm",
+      "sha256": "1d35da261a1660c8ce9ae4d67dfe587b421e1b52c13fd6fc3ddb5785922c5682",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "shop_inventory_hover_7.ppm",
+      "sha256": "3fc899d2b0277a58488e785b7fbdf3b56f2d834ceca568c56cac2a7d860ae801",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "eng",
+      "variant": "B",
+      "file": "shop_inventory_idle_7.ppm",
+      "sha256": "5609214b4bd44bdd9e6833537b8304611f1efbdc27c5a3ea2f27d988c260fe6f",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "draw_choice_10.ppm",
+      "sha256": "9f6726ee03aab4ce55f4e608b561584d5897164ff7e2b54ccc059f4cd2201288",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "draw_choice_10_detail.ppm",
+      "sha256": "95f8af4e94421166cc3ed1aefaad10dbc91a39f34290b9bc77ac5c48edf05d8e",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "library_8.ppm",
+      "sha256": "5256c284852a6404078539f3399a8be25d4d9fba28835d60956418110b399668",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "library_8_detail.ppm",
+      "sha256": "7ef6d70fe10af629cd6a8974422fc5b573fa0546b80787d9263c124c28d879e6",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "library_rainbow_8.ppm",
+      "sha256": "2b35127634795889fc94ed36d97f34b88c6768a6076b1f50e777d78fc6c5cc41",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "library_rainbow_8_detail.ppm",
+      "sha256": "e1defe66377698bd97cf28b55a99cbbeb958d7bd1a64a1ae24a6baeff5acd4e1",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "rainbow_detail_keyword.ppm",
+      "sha256": "a85fe3ada1024bebaddfb6363290de952c0e6bd9146dc89d67f45fcd054ce50c",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "remove_10.ppm",
+      "sha256": "30ace5c6ea6aad5b1206c460ce8ea7edac01913b43368e118a2c6f2c5ed099d5",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "remove_10_detail.ppm",
+      "sha256": "ead0bd0d5422cc8c2b18e31d708f0aeebae751d3148c0b3be397b3964bad00b6",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "shop_inventory_hover_7.ppm",
+      "sha256": "13ee3dae868db70528a31adac65851614b70d933de2ea2a139d2b496b4deb7cd",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "A",
+      "file": "shop_inventory_idle_7.ppm",
+      "sha256": "d119967147f6d0f4b43643b63249be6e84c09c023d3fe03e3d8a366184e32804",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "draw_choice_10.ppm",
+      "sha256": "0032be6bdc13968fd2ce08899959f54c871d1edeb0e067b179c12c804be05bc8",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "draw_choice_10_detail.ppm",
+      "sha256": "ca2685c5ceaccdc36980a38027b205aa569e8f5214aaa2b605e64ddb8cad610c",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "library_8.ppm",
+      "sha256": "eb716fb2f421923d127f11e5b764a3ec3f6db85a0f08a753f3757156377e46a6",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "library_8_detail.ppm",
+      "sha256": "48801a3d9b71c3ca29be3fb5ac1289ca09b3cb0b0eca0a9dcd539eb75ee3f759",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "library_rainbow_8.ppm",
+      "sha256": "893c8f825eff02dd90b545c674c61d5a6c77e08068b35f7b84c92852297b2e0c",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "library_rainbow_8_detail.ppm",
+      "sha256": "d9a022b401cec27a90d830d8f732a1626e04c66170f15fce43aedd1b676dcc23",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "rainbow_detail_keyword.ppm",
+      "sha256": "5fd39c23b52cb3cbd1cf488eba9fc2bf0bb3acacb1e96cfecadf596e3db8b1a2",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "remove_10.ppm",
+      "sha256": "4286ae73a61d78d23dce6cbf3b98849d55e2aea74bba2a5b6ea577d22eff776b",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "remove_10_detail.ppm",
+      "sha256": "584517b2da05e692228393ad8938f45963d6016b1f0c38edfa1ff06b37ed549f",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "shop_inventory_hover_7.ppm",
+      "sha256": "87cfc305788cb0efc7d6b7524ed93fd8413e31f7e2522947a625429873b74ece",
+      "identical_repetitions": 3
+    },
+    {
+      "language": "zhs",
+      "variant": "B",
+      "file": "shop_inventory_idle_7.ppm",
+      "sha256": "bf78aeaee6159592f6e29cc0a78c445bfa7ce5257d02bfa6844466f5299db481",
+      "identical_repetitions": 3
+    }
+  ],
+  "excluded_prior_matrix": {
+    "aggregate_journal": "ui6-performance-serial-matrix-acfa5b72dcbd.json",
+    "command_status": "passed",
+    "accepted_for_clean_inventory_comparison": false,
+    "shared_driver_sha256": "990254e1fc8fa3f2ef7e7bc1071ebe869672c1af43b7b2d5f31e7d301823f438",
+    "reason": "The old idle point (10,35) hovered the starter Burning Blood relic and drew its tooltip over inventory. The hover-cold window also included this intermediate frame. The complete initial 12-run data and captures remain preserved; none of those merchant timings supply the accepted summary.",
+    "private_evidence": "private-builds/ui6-perf-stage8/measurement_acceptance.json"
+  },
+  "limitations": [
+    "Three repetitions provide a bounded comparison and do not establish statistical significance for small differences.",
+    "The different resource packs and layout prevent attribution of the results to any one cache or converter change.",
+    "First-open means application cache state within this fixture, not cold operating-system storage.",
+    "Per-frame maxima are retained but no percentile distribution is inferred from aggregate counters.",
+    "Warm detail scenes make no ranged reads in either version; timing differences alone do not establish another large detail-modal speedup.",
+    "Merchant warm ranged bytes increase in the final whole-version comparison. A future per-layer I/O profile can guide grouping or retention changes while preserving the exact corrected artwork."
+  ]
+}

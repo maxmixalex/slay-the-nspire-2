@@ -1,5 +1,80 @@
 # Work state — 2026-10-24
 
+## UI6 accepted runtime and current handoff
+
+**Accepted runtime:** `96f7b5c6914762fad998f03ab5da1b4c283ecaa0`.
+[GitHub Actions run 40073427331](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40073427331)
+passed all three jobs. The final local Release run passed **77/77 suites**;
+CI separately passed the complete **77-suite ASan/UBSan** gate using public
+fixtures. Local final-runtime sanitizer follow-up passed synthetic, actual ENG
+and actual ZHS HUD profiles; it is not a complete local sanitizer rerun.
+The [final native/WASM matrix](validation-ui6-backends-0.17.json) passed
+**64 language scenarios, 2,376 exact RGB565 frames and 106 exact saves**.
+The real offline Chromium flow also passed bilingual persistence,
+Save/Load/Continue and ordinary/debug separation, with no page errors or
+external requests. These gates establish the stated port behavior, not full
+original-PC UI equivalence. See the [runtime receipt](validation-ui6-runtime-0.17.json).
+
+Completed UI work uses the pinned original v0.111.0 / 41cef1ea references:
+
+- Original close/back/proceed controls, top-bar hover/tooltips and deck count,
+  revised pile screens, original cursor/targeting assets and keyboard targeting;
+  covered overlays own pointer focus. Fast Mode persists, old practice/reference
+  entries are removed, and default-off developer commands are implemented.
+- Map route motion and legend interaction, readiness-bound room fade-in,
+  corrected rest text, reward artwork and removal animation. Merchant atlas
+  rotation was repaired and the affected original clips rebaked; merchandise
+  now fits the rug. The repair uses source transforms, not an inferred mirror.
+- Combat presentation now includes separate hit/status feedback, expired-status
+  text, status-card entry, block motion and original reward timing. Source-based
+  enemy slots and stale-room presentation fixes address summons and room changes.
+
+The clean performance comparison is complete: identical driver
+`e9d4017629219a28f072fb54bcb0327fb538f121`, **12 quiet serial runs**, three
+repetitions per language/version and 180 measured warm frames per window.
+Warm merchant inventory time fell **18.8–19.6%**, and hovered-card time fell
+**23.8–27.8%**. Cold complete inventory changed **+1.4% ENG / about −4% ZHS**;
+room open/setup/first render rose about **12%**, and warm ranged resource reads
+rose from about **4.0 KB to 5.1 KB per frame**. Warmed details remain zero-I/O
+in both versions. These are whole-version host intervals, not calculator FPS
+or an isolated cache result. The earlier tooltip-contaminated 12-run fixture
+is retained and excluded. See [measurements and limits](ui6-card-performance-0.17.md).
+Lossless merchant compaction recovered **2,555,380 bytes**; final split resources
+are **294,271 bytes larger than UI5** after the new artwork and effects.
+
+The three saved deliveries retain that accepted runtime; their SHA-256 values
+are copied from the [delivery record](validation-ui6-runtime-0.17.json):
+
+| Delivery | SHA-256 |
+| --- | --- |
+| `Slay-the-Nspire-2-0.17-ui6-bilingual-calculator.zip` | `3e8233b307aeba99441a2df0e8cc828dedc3da51753dabf0f5064b690289d439` |
+| `Slay-the-Nspire-2-0.17-ui6-bilingual-offline.html` | `71868ee1a17ac1ab984bc813bf758205babc688717ff8784f904202d40dcf460` |
+| `Slay-the-Nspire-2-0.17-ui6-bilingual-debug-offline.html` | `50baaf7828b3c04e8f522de085c9936139560e1a850a058b46b5c7040721ada4` |
+
+The [dedicated Firebird receipt](validation-ui6-firebird-0.17.json) records a
+clean final ordinary launch/Continue/settings/Save-and-Exit route on a fresh
+disposable NAND copy, return to the OS, and exact save/preference USB readback.
+The separate final debug run demonstrated keyboard aim/play, kill-to-loot,
+shop and reload, but its wrapper later timed out before clean exit. That partial
+result and the separate failed Ndless-installer attempt remain explicit.
+Emulator execution does not establish physical-device performance.
+
+**Next work, with original UI fidelity first:** continuous grid scrolling and
+its draggable thumb; all-target/ally reticles and deck-count gain pulse;
+merchant opening motion, speech and focused-item hand tracking; event
+typewriter/option timing and special Ancient/fake-merchant layouts; the legend's
+500 ms unfocus recovery; direct/forced removal presentation, pickup trails and
+secondary particles; original overkill/blocked-hit feedback and broader settings
+and input remapping. The merchant correction does not rebake every historical
+rotated atlas region. After those features, profile merchant room initialization
+and warm resource reads by layer before changing retention/grouping. Specific
+reference differences remain in the [card](cards-ui6-0.17.md),
+[combat](combat-ui6-0.17.md), [room](rooms-ui6-0.17.md) and
+[shared UI](frontend-ui6-0.17.md) reports.
+
+**Checkpoint history follows.** Earlier pending actions below describe their
+checkpoint at the time; the accepted state and current follow-ups are above.
+
 ## UI6 benchmark fixture correction after accepted runtime
 
 Runtime `96f7b5c6914762fad998f03ab5da1b4c283ecaa0` has now passed all three
@@ -12,11 +87,12 @@ have been saved successfully; their runtime remains this accepted checkpoint.
 Reviewing the first serial benchmark's actual captures found that its nominal
 idle pointer at (10,35) hovered the starter relic, adding a tooltip over the
 shop. Those 12 samples are retained with this limitation and are excluded from
-pure idle/open performance claims. This test-only checkpoint moves the pointer
+pure idle/open performance claims. This test-only checkpoint moved the pointer
 to verified empty space at (310,35) and asserts no enabled hit after both real
-renders. Recompile the identical corrected driver against the accepted UI5 and
-UI6 cores and repeat the quiet serial comparison. No runtime or delivery file
-changes are part of this correction.
+renders. The identical corrected driver was recompiled against the accepted
+UI5 and UI6 cores and the complete quiet serial 12-run comparison passed;
+see [the accepted performance report](ui6-card-performance-0.17.md). No runtime
+or delivery file changes are part of this correction.
 
 ## UI6 stage 8: remove the remaining signed rotation overflow
 
