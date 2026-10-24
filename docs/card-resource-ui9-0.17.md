@@ -80,3 +80,9 @@ checks. The actual `card-resource-cross-both` and
 languages: the two authored cross positions are visible, and the identical
 finalized/preview upgraded cards retain cream/green resource labels respectively.
 No additional pixel cache or gameplay state was introduced.
+
+The same final v33 CardHUD acceptance was repeated against the complete final
+source `a0df79d8347b76dc86804b0ab8d17f948c600204`: English 359,342 and
+Chinese 383,522 checks again passed, alongside all 103 native suites. These are
+actual composed-card/cache/rule checks, not a claim of measured original-source
+coverage or calculator frame rate.

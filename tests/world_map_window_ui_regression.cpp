@@ -96,7 +96,13 @@ static void close_window(){
 }
 static void hud_window(bool fast){
     begin_room(WorldRoom::Monster);app.fast_mode=fast;CHECK(!world_can_travel(app.game));
-    snapshot();app.render();const std::vector<uint16_t> room(app.pixels,app.pixels+ScreenW*ScreenH);
+    snapshot();const unsigned animation=app.animation;app.render();unsigned preparation_steps=0;
+    // Real compressed actors prepare before room input is enabled. Finish
+    // only that explicit presentation phase; opening the map must not be
+    // tested against the loading screen or advance the canonical battle.
+    while(app.combat_preparation.active&&preparation_steps++<1024){app.advance(33);app.render();CHECK(app.animation==animation);}
+    CHECK(!app.combat_preparation.active&&app.content.healthy());unchanged();
+    const std::vector<uint16_t> room(app.pixels,app.pixels+ScreenW*ScreenH);
     const auto phase=app.game.phase;const unsigned point=app.game.world.current_point;
     app.input(Key::Map);CHECK(app.panel==3&&app.map_window.is_open&&!app.map_routes_active());
     const uint32_t opened=app.map_window.start;app.render();CHECK(!nodes());

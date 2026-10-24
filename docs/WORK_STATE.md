@@ -1,5 +1,54 @@
 # Work state — 2026-10-24
 
+## UI8 stage 8c2 — completed gates and final capacity/visual fixes
+
+Remotely verified runtime `a0df79d8347b76dc86804b0ab8d17f948c600204`
+passed all **103/103** Clang 18 native suites and **201/201** Python tests.
+The matching ARM launcher is 1,350,761 bytes, SHA-256
+`4e49fd48fad18fac98676fe0a0876e96a4d94d6e2f6b48f7994b7fbcea922ea3`,
+with 16,637,436-byte total allocation under the unchanged 16MiB gate.
+Matching WASM and linked division/LZMA2/tile-filter checks also pass.
+Actual final v33 English/Chinese card/HUD checks pass 359,342 / 383,522;
+Power and related-tooltip checks pass 635,832 per locale.
+
+The complete actual-resource scene pass ran 19 targets per language. Eighteen
+passed in each; the map-window fixture tried to open a combat map before its
+explicit resource-preparation phase completed. Its pending repair waits for
+that bounded phase while asserting unchanged canonical State and animation.
+All prior map-layout, alpha, route and hit assertions remain. The GameOver
+hover-boundary regression passed, but subsequent image review found missing
+banner/button layers in some character outcomes. That visible discrepancy is
+being investigated separately; passing input and tooltip assertions do not
+close a missing-pixel issue.
+
+The final three sidecars and launcher passed ordinary USB transfer and exact
+readback in a disposable Firebird OS clone. The OS shows 92.3 MB total and
+2.4 MB remaining after installation. This proves installation, but the
+uncompressed three-profile atomic-write budget is larger: full NSH7 history
+is 295,347 bytes; the conservatively bounded canonical v17 run is at most
+252,928 bytes. Existing backup semantics therefore require at most
+`4 * 295347 + 6 * 252928 + 340 = 2699296` bytes, before filesystem allocation.
+A validated populated fixture reaches 2,687,512 bytes. A lossless streaming
+run-file envelope is being implemented to close this gap; canonical NS17,
+NSH7 and retained run-backup semantics must remain unchanged. Ordinary
+save/load execution and the final post-fix build are still required.
+
+Final resources remain exactly common 84,719,566; English 2,153,050; Chinese
+5,149,970 bytes. Their source conversion checkpoint is
+`424c06c6d29f8230fcbac8969627fe20cea0a593`. An additional LZMA literal-context
+sample saved only 632 bytes across 24 groups and was rejected as insufficient;
+no additional production recompression or image reduction was performed.
+Superseded older packs/HTML were retired with file hashes while all receipts,
+captures, original inputs and v31/v32/final-v33 comparison resources remain.
+
+Next: finish the visible GameOver discrepancy and run-file storage path;
+checkpoint before final builds; rerun affected actual scenes, ordinary ARM
+save/Continue, quiet same-runtime resource comparisons and offline-browser
+flows; publish matched private artifacts and synchronize verified source to
+main. A path inventory, passing test count or successful emulator install is
+not an original-game restoration percentage.
+
+
 ## UI8 stage 8c — complete hover owners and lossless NSP2/33 candidate
 
 ### Integrated corrections before final acceptance

@@ -111,25 +111,7 @@ static bool save_progress(const spire::UiProgress&value){
     if(nd_rename(progress_temp,progress_path)!=0){if(old)nd_rename(progress_backup,progress_path);return false;}
     if(old)nd_unlink(progress_backup);return true;
 }
-static bool save_game(const spire::State&s){
-    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Save);if(!transfer)return false;
-    auto&scratch=*transfer.save();
-    if(!spire::save(s,scratch))return false;
-    void*f=nd_open(temp_path,"wb");if(!f)return false;
-    bool good=nd_write(scratch.bytes,1,(unsigned)scratch.size,f)==scratch.size;
-    good=(nd_close(f)==0)&&good;if(!good){nd_unlink(temp_path);return false;}
-    bool old=false;f=nd_open(save_path,"rb");if(f){old=true;nd_close(f);}
-    if(old){nd_unlink(backup_path);if(nd_rename(save_path,backup_path)!=0){nd_unlink(temp_path);return false;}}
-    if(nd_rename(temp_path,save_path)!=0){if(old)nd_rename(backup_path,save_path);return false;}
-    return true;
-}
-static bool load_game(spire::State&s){
-    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Save);if(!transfer)return false;
-    void*f=nd_open(save_path,"rb");if(!f)return false;
-    auto&scratch=*transfer.save();
-    unsigned n=nd_read(scratch.bytes,1,sizeof scratch.bytes,f);uint8_t extra=0;bool end=nd_read(&extra,1,1,f)==0;nd_close(f);
-    return end&&spire::load(s,scratch.bytes,n);
-}
+#include "run_storage.inc"
 static bool clear_save(){
     // A deliberate abandon also removes the preceding atomic-save backup.
     // Otherwise a later recovery could bring back an abandoned expedition.

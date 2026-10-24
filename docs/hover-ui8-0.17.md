@@ -118,5 +118,9 @@ amount and post-play listeners. Newly required Power icons explicitly finish
 the bounded combat preparation phase before pointer hit checks, with the
 canonical save and animation clock unchanged. A diagnostic run against the
 frozen UI runtime passed 635,828 checks in each language before the final
-Power-only horizontal-position correction; the final checkpoint rerun remains
-the acceptance gate for that correction.
+Power-only horizontal-position correction. The final immutable source
+`a0df79d8347b76dc86804b0ab8d17f948c600204` then passed all 103 native tests;
+matching final-v33 keyword runs passed 635,832 checks in each language,
+including both edge-adjacency assertions and reviewed live battle captures.
+The complete final GameOver UI also passed its source-hover pixel-bound cases
+in both languages (44,051 English and 43,334 Chinese checks).
