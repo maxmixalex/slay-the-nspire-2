@@ -50,7 +50,7 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22) and reference == REFERENCE,
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23) and reference == REFERENCE,
             "Expected pinned NSP2/17 through NSP2/22")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= 32768 and MARKER < ns <= 16384 and

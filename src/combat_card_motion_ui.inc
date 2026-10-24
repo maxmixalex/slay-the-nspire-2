@@ -15,7 +15,7 @@ CombatCardMotion::Counts App::combat_pile_counts()const{
 // return cards and hooks. The byte-per-live-instance history is not a second
 // pile or a full State snapshot; it also distinguishes generated cards from
 // actual draws instead of inventing a draw-pile origin for every new card.
-static bool ui_capture_card_changes(App&a,uint32_t at){
+static bool ui_capture_card_changes(App&a,uint32_t at,bool generated_preview=false){
  auto&m=a.combat_cards;const auto&s=a.game;bool awaited_hand_add=false;
  if(m.manual>=0&&m.manual<int(s.card_count)&&uint8_t(m.zones[m.manual]&127)==unsigned(Zone::Hand)&&s.zones[m.manual]!=Zone::Hand){
   // The observed physical play starts at AddDuringManualCardPlay. Its power
@@ -31,8 +31,8 @@ static bool ui_capture_card_changes(App&a,uint32_t at){
   const uint8_t to=uint8_t(s.zones[id]);const bool tracked=id<m.card_count&&(m.zones[id]&CombatCardMotion::Tracked);
   if(before!=to){
    if(to==unsigned(Zone::Hand)&&before!=CombatCardMotion::NewCard)awaited_hand_add=true;
-   if(tracked||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)){
-    CombatCardMotion::Cue cue;cue.at=at;cue.id=uint16_t(id);cue.from=before;cue.to=to;cue.card=s.cards[id];cue.fast=a.fast_mode;
+   if(tracked||before==unsigned(Zone::Hand)||to==unsigned(Zone::Hand)||(generated_preview&&before==CombatCardMotion::NewCard)){
+    CombatCardMotion::Cue cue;cue.at=at;cue.id=uint16_t(id);cue.from=before;cue.to=to;cue.card=s.cards[id];cue.fast=a.fast_mode;cue.preview=generated_preview;
     cue.energy=int16_t(cost(s,id));cue.stars=int16_t(card_star_cost(s,cue.card,id));
     // The manually played card keeps the resource labels seen before
     // payment; an X-cost card must not turn into zero midway through flight.
@@ -40,7 +40,7 @@ static bool ui_capture_card_changes(App&a,uint32_t at){
     m.append(cue);
    }
   }
-  m.zones[id]=uint8_t(to|((tracked||to==unsigned(Zone::Hand)||before==unsigned(Zone::Hand))?CombatCardMotion::Tracked:0));
+  m.zones[id]=uint8_t(to|((tracked||to==unsigned(Zone::Hand)||before==unsigned(Zone::Hand)||(generated_preview&&before==CombatCardMotion::NewCard))?CombatCardMotion::Tracked:0));
  }
  m.card_count=s.card_count;m.append_counts(CombatCardMotion::capture_counts(s),at);return awaited_hand_add;
 }

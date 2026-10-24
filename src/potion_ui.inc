@@ -3,7 +3,7 @@ static int potion_belt_x(const App&a,int slot){
     return 128+(slot-int(a.potion_page)*3)*width;
 }
 static void potion_tip(Canvas&c,int slot,int x,int y,int width){
-    const Potion bottle=potion_at(c.a.game,unsigned(slot));if(!potion_definition(bottle))return;
+    const Potion bottle=potion_at(c.a.game,unsigned(slot));if(bottle==Potion::Empty){hud_static_tip(c,"POTION_SLOT",x,y,width);return;}if(!potion_definition(bottle))return;
     char body[2048]{};ui_potion_description(c.a,int(bottle),body,sizeof body);
     const int lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(209-y,30+mn(lines,12)*13);
     if(!c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7)){c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Gold);}
@@ -54,7 +54,7 @@ static void potion_popup_screen(Canvas&c){
     if(tw>=95)potion_tip(layer,a.scroll,tx,28,tw);else potion_tip(layer,a.scroll,mx(4,x-124),28,120);
 }
 static void potion_hover_tip(Canvas&c){
-    auto&a=c.a;if(a.panel||a.title||a.paused||a.help||a.library||a.settings_open||a.frontend_confirm||!a.pointer.visible||a.detail_card>=0||a.detail_item>=0)return;
+    auto&a=c.a;if((a.panel&&a.panel!=1&&a.panel!=3)||a.title||a.paused||a.help||a.library||a.settings_open||a.frontend_confirm||!a.pointer.visible||a.detail_card>=0||a.detail_item>=0)return;
     const auto*h=a.hit_at(a.pointer.x,a.pointer.y);if(!h||h->kind!=HitKind::PotionSlot)return;
     potion_tip(c,h->value,170,27,145);
 }

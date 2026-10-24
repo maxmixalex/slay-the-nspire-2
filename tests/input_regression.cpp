@@ -40,5 +40,25 @@ int main(){
     CHECK(app.menu==0);app.pointer_button(false);CHECK(app.paused);unchanged(before);
     app.input(Key::Back);app.render();app.pointer_move(70,199);app.pointer_button(true);
     app.input(Key::Inspect);app.pointer_button(false);CHECK(app.panel==1);unchanged(before);
+    // A settings overlay must own hover as soon as it opens, including an
+    // event arriving before render replaces the covered pause hit regions.
+    app.panel=0;app.paused=true;app.menu=0;app.render();
+    const HitRegion* covered=nullptr;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::Menu&&app.hits[i].value==1)covered=&app.hits[i];
+    CHECK(covered);const int covered_x=covered->x+covered->w/2,covered_y=covered->y+covered->h/2;
+    app.settings_open=true;app.pointer_move(covered_x,covered_y);CHECK(app.menu==0);unchanged(before);
+    app.settings_open=app.paused=false;app.pointer_cancel();
+    // Original directional card play is a two-step transaction. Target
+    // navigation/cancel changes UI only; confirm commits exactly one card.
+    app.game.energy=99;app.game.enemy_count=3;
+    for(unsigned i=0;i<3;++i){app.game.enemies[i].hp=app.game.enemies[i].max_hp=100;}
+    app.cursor=-1;for(unsigned i=0;i<app.game.hand.count;++i)if(card_targets_enemy(app.game,app.game.cards[app.game.hand.ids[i]],app.game.hand.ids[i])&&can_play_card(app.game,app.game.hand.ids[i])){app.cursor=int(i);break;}
+    CHECK(app.cursor>=0);app.target=1;CHECK(save(app.game,before));const auto instance=app.game.hand.ids[app.cursor];
+    app.input(Key::Confirm);CHECK(app.keyboard_card==instance&&app.target==1);unchanged(before);
+    app.input(Key::Right);CHECK(app.target==2&&app.keyboard_card==instance);unchanged(before);
+    app.input(Key::Right);CHECK(app.target==0);app.input(Key::Left);CHECK(app.target==2);unchanged(before);
+    app.input(Key::Up);CHECK(app.target==1);app.input(Key::Down);CHECK(app.target==2);unchanged(before);
+    app.input(Key::Back);CHECK(app.keyboard_card<0&&!app.paused);unchanged(before);
+    app.input(Key::Confirm);CHECK(app.keyboard_card==instance);unchanged(before);
+    const auto revision=app.game.revision;app.input(Key::Confirm);CHECK(app.keyboard_card<0&&app.game.revision>revision);
     std::printf("input: %u checks passed\n",checks);
 }

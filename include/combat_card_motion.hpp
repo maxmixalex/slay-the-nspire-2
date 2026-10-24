@@ -10,11 +10,11 @@ namespace spire {
 struct CombatCardMotion {
  static constexpr unsigned Capacity=64,Visible=MaxHand*3,CountCapacity=32;
  static constexpr uint8_t NewCard=6,Tracked=128;
- enum Mode : uint8_t {Empty,Hand,Play,Fly,Tail};
+ enum Mode : uint8_t {Empty,Hand,Play,Fly,Tail,Preview};
  struct Counts {uint16_t draw=0,discard=0,exhaust=0;};
  struct Cue {
   uint32_t at=0;uint16_t id=0;uint8_t from=0,to=0;
-  Card card{};int16_t energy=0,stars=0;bool fast=false;
+  Card card{};int16_t energy=0,stars=0;bool fast=false,preview=false;
  };
  struct CountCue {Counts value{};uint32_t at=0;};
  struct Sprite {
@@ -132,6 +132,27 @@ struct CombatCardMotion {
   if(index>=hand.count)return true;const auto p=hand_pose_at(index,focused),target=hand_pose(hand.count,int(index),focused);
   return magnitude(p.cx-target.cx)<=1&&magnitude(p.cy-target.cy)<=1&&magnitude(p.scale-target.scale)<=2&&magnitude(p.sine-target.sine)<=3;
  }
+ void fly(Sprite&v,uint8_t to,uint32_t at){
+  v.origin=pose(v);v.mode=Fly;v.to=to;v.at=at;v.progress=0;
+  v.speed=72090u+random()%9831u;v.accel=131072u+random()%32769u;v.duration=65536u+random()%49153u;
+  v.arc=int16_t((600u+random()%301u)*218u/1080u);
+ }
+ void arrange_previews(uint32_t at){
+  unsigned total=0;for(const auto&v:sprites)if(v.mode==Preview&&v.at==at)++total;
+  unsigned index=0;
+  for(auto&v:sprites)if(v.mode==Preview&&v.at==at){
+   if(total<=5){v.x=(160+(2*int(index)-int(total)+1)*27)*1024;v.y=131*1024;}
+   else{
+    // The native Messy container samples 150-source-pixel spaced points.
+    // Bounded rejection keeps that separation in the smaller viewport.
+    int x=155,y=125;for(unsigned attempt=0;attempt<48;++attempt){
+     if(index){x=44+int(random()%226u);y=44+int(random()%159u);}bool close=false;
+     unsigned previous=0;for(const auto&p:sprites){if(&p==&v)break;if(p.mode==Preview&&p.at==at){++previous;const int dx=p.x/1024-x,dy=p.y/1024-y;close|=dx*dx+dy*dy<625;}}
+     if(!close||!previous)break;
+    }v.x=x*1024;v.y=y*1024;
+   }++index;
+  }
+ }
  void step(){
   ++clock;
   for(auto&v:sprites){
@@ -146,6 +167,10 @@ struct CombatCardMotion {
     v.x=(v.origin.cx*int(1024-p)+to.cx*int(p));v.y=(v.origin.cy*int(1024-p)+to.cy*int(p));
     v.scale=int16_t((v.origin.scale*int(1024-scale)+to.scale*int(scale))/1024);
     v.angle=int16_t(direction(v.origin.sine,v.origin.cosine)*int(1024-p)/1024);
+   }else if(v.mode==Preview){
+    const unsigned age=(clock-v.at)*33u;
+    v.scale=int16_t(640u*cubic(age,250u)/1024u);
+    if(age>=1450u)fly(v,v.to,clock);
    }else if(v.mode==Fly){
     v.progress+=v.speed*33u/1000u;v.speed+=v.accel*33u/1000u;
     if(v.progress>=v.duration){const auto end=pile(v.to);v.x=end.cx*1024;v.y=end.cy*1024;v.scale=int16_t(v.origin.scale/10);v.mode=Tail;v.progress=0;continue;}
@@ -163,12 +188,16 @@ struct CombatCardMotion {
  }
  void advance(uint32_t now){
   int32_t ticks=int32_t(now-clock);if(ticks<=0)return;
-  // All holder responses settle and all finite flights finish inside 96
+  // All holder responses settle and all finite flights/previews finish inside 128
   // ticks. Large skipped intervals do not create an unbounded catch-up loop.
-  const unsigned n=unsigned(ticks)>96?96:unsigned(ticks);for(unsigned i=0;i<n;++i)step();clock=now;
+  const unsigned n=unsigned(ticks)>128?128:unsigned(ticks);for(unsigned i=0;i<n;++i)step();clock=now;
  }
  void apply(const Cue&cue){
   auto*old=find(cue.id);
+  if(cue.preview&&cue.from==NewCard&&cue.to!=unsigned(Zone::Hand)){
+   auto&v=claim(cue.id);v.mode=Preview;v.at=cue.at;v.to=cue.to;v.scale=v.angle=0;v.fast=cue.fast;
+   v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;arrange_previews(cue.at);return;
+  }
   if(cue.to==unsigned(Zone::Hand)){
    auto&v=claim(cue.id);if(cue.from==NewCard){v.mode=Empty;v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;}
    if(v.mode==Empty)place(v,pile(cue.from));v.mode=Hand;
@@ -179,11 +208,7 @@ struct CombatCardMotion {
    v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
   }
   if((cue.to==unsigned(Zone::Draw)||cue.to==unsigned(Zone::Discard))&&old&&(cue.from==unsigned(Zone::Hand)||old->mode==Play)){
-   auto&v=*old;v.origin=pose(v);v.mode=Fly;v.to=cue.to;v.at=cue.at;v.progress=0;
-   // Rng.Chaotic parameters, held in an independent cosmetic stream. These
-   // values are never read by core settlement, saved RNGs or card selection.
-   v.speed=72090u+random()%9831u;v.accel=131072u+random()%32769u;v.duration=65536u+random()%49153u;
-   v.arc=int16_t((600u+random()%301u)*218u/1080u);v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
+   auto&v=*old;fly(v,cue.to,cue.at);v.card=cue.card;v.energy=cue.energy;v.stars=cue.stars;return;
   }
   // Exhaust/power/shuffle have their own original VFX. Do not mislabel a
   // generic discard flight as those effects; the logical view still changes.
@@ -195,7 +220,7 @@ struct CombatCardMotion {
  }
  Counts visible_counts()const{
   Counts result=counts;
-  for(const auto&v:sprites)if(v.mode==Fly){if(v.to==unsigned(Zone::Draw)&&result.draw)--result.draw;else if(v.to==unsigned(Zone::Discard)&&result.discard)--result.discard;}
+  for(const auto&v:sprites)if(v.mode==Fly||v.mode==Preview){if(v.to==unsigned(Zone::Draw)&&result.draw)--result.draw;else if(v.to==unsigned(Zone::Discard)&&result.discard)--result.discard;}
   return result;
  }
 };

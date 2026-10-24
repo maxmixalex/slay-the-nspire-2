@@ -18,6 +18,10 @@ bool Content::english()const{
  return p[0]=='e'&&p[1]=='n'&&p[2]=='g'&&!p[3];
 }
 const char* Content::locale_string(const char*table,const char*key)const{
+ if(version_>=Ui6ContentVersion){
+  static const WorldContentIndex ui6_text_index[]={{"vfx.POWER_WEARS_OFF",Ui6PowerWearsOffString}};
+  const int index=wc_find(ui6_text_index,table,key);if(index>=0)return string(index);
+ }
  if(version_>=FrontendContentVersion){const int index=wc_find(frontend_text_index,table,key);if(index>=0)return string(index);}
  return version_>=LocaleContentVersion?string(wc_find(locale_text_index,table,key)):"";
 }

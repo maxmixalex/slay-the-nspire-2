@@ -172,12 +172,14 @@ void App::before_combat_effect(const State&s,Effect effect){
  // boundary as its later HP/status sample (e.g. Asleep's Wake on damage).
  f.after_at=after;
 }
-void App::observe_combat_effect(const State&s,Effect){
+void App::observe_combat_effect(const State&s,Effect effect){
  if(&s!=&game||!ui_feedback_bound(*this))return;auto&f=combat_feedback;
  // The numeric attack profile covers per-hit animation and Damage waits.
  // Other pre/post commands retain the separately audited move timeline.
  ui_card_finish_wait(*this);
- const bool hand_add=ui_capture_card_changes(*this,f.effect_at);
+ const bool generated=effect.kind==EffectKind::Extended&&XOp(effect.target)==XOp::EnemyGenerateCard;
+ const unsigned old_card_count=combat_cards.card_count;
+ const bool hand_add=ui_capture_card_changes(*this,f.effect_at,generated);
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(s,int(actor)),ui_feedback_identity(s,actor),f.effect_at);
  ui_capture_combat_status(*this,f.effect_at);
  // Observe all settled commands: retain/flush, returned cards and enemy
@@ -187,6 +189,12 @@ void App::observe_combat_effect(const State&s,Effect){
  // no transfer and contributes no invented delay. Parallel return/add
  // commands share this one command boundary rather than serializing a batch.
  if(hand_add)f.effect_at=ui_card_add_wait(*this,f.effect_at);
+ if(generated&&game.card_count>old_card_count&&effect.aux%1024==1){
+  // AddToCombatAndPreview awaits once for the whole batch. Its 1s Wait is
+  // independent of Fast; the .25+1.2s preview and later flight continue.
+  const bool in_hand=game.zones[old_card_count]==Zone::Hand;
+  f.effect_at+=in_hand?4u:31u;
+ }
  // Round cumulative command time once, rather than adding rounded waits.
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.
  if(f.after_at)f.effect_at=ui_feedback_later(f.effect_at,f.after_at);
@@ -231,6 +239,7 @@ static void ui_feedback_apply(App&a,unsigned actor,const HealthBarValues&value,u
  if(!same&&actor>0&&actor<=MaxEnemies)f.intents[actor-1]={};
  if(same&&old.hp>value.hp&&actor<=MaxEnemies){
   a.last_hit[actor]=old.hp-value.hp;a.hit_start[actor]=int(at);
+  a.combat_status.damage(actor,old.hp-value.hp,identity,at,a.animation);
   if(actor==0)a.motion[0]={AnimHeroHurt,at};
   else if(value.hp>0&&int32_t(a.animation-at)<24)a.enemy_trigger(int(actor)-1,"Hit");
  }

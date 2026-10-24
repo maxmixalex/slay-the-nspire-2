@@ -10,15 +10,19 @@ static void ui_potion_description(const App&a,int p,char*out,size_t size){
 }
 static void merchant_price(Canvas&c,int item,int x,int y,int w){
     auto&s=c.a.game;bool sold=s.shop_sold&(1u<<item);int price=s.world.active?world_shop_price(s,item):item==ShopRemove?remove_price(s):s.shop_prices[item];
-    if(sold){c.centered("售罄",x,y,w,10,Muted);return;}
-    char value[24]{};TextBuffer t{value,sizeof value,0,&c.a.content};t.number(price);int textw=c.width(value,10),left=x+mx(0,(w-textw-13)/2);
+    if(sold)return;
+    char value[24]{};TextBuffer t{value,sizeof value,0,&c.a.content};t.number(price);int textw=c.width(value,8),left=x+mx(0,(w-textw-10)/2);
     const bool sale=s.world.active&&item<ShopCardCount&&s.world.shop_sale==item;
-    c.picture(A_Coin,left,y+2,10,10);c.text(value,left+12,y,10,s.gold>=price?(sale?Green:Gold):Red);
+    c.picture(A_Coin,left,y+2,7,7);c.text(value,left+9,y,8,s.gold>=price?(sale?Green:White):Red);
 }
-static void merchant_card(Canvas&c,Card card,int x,int y,bool selected,bool sold,const EventCardFacts*facts=nullptr){
-    if(selected)c.box(x-2,y-2,49,66,Gold);
-    draw_card_face(c,card,x,y,45,63,-2,-2,-1,-1,facts);
-    if(sold)c.dim(x,y,45,63,170);
+static bool merchant_hovered(const App&a,int item,int x,int y,int w,int h){
+    if(a.paused||a.help||a.panel||a.library||a.settings_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0)return false;
+    return a.pointer.visible?a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h:a.cursor==item;
+}
+static void merchant_card(Canvas&c,Card card,int cx,int cy,bool selected,bool sold,const EventCardFacts*facts=nullptr){
+    if(sold)return;
+    const int w=selected?MerchantInventoryLayout::FocusW:MerchantInventoryLayout::CardW,h=selected?MerchantInventoryLayout::FocusH:MerchantInventoryLayout::CardH;
+    draw_card_face(c,card,cx-w/2,cy-h/2,w,h,-2,-2,-1,-1,facts);
 }
 static void merchant_idle(Canvas&c,int clip){
     const auto sequence=c.a.content.clip(clip);if(!sequence.count)return;
@@ -61,42 +65,49 @@ static void shop_screen(Canvas&c){
         native_proceed(c,211,210,105,27,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);c.action(206,207,112,31,UiAction::LeaveShop);
         return;
     }
-    c.dim(0,22,320,218,150);c.ui(U_MerchantRug,0,41,320,180);
+    c.dim(0,22,320,218,204);c.ui(U_MerchantRug,MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH);
     a.cursor=mn(mx(a.cursor,0),ShopLeave);
+    // These seven portraits are all visible now. Decode their shared retained
+    // groups once through the existing bounded image pool on the cold frame.
+    int portraits[ShopCardCount];unsigned portrait_count=0;
+    for(int i=0;i<ShopCardCount;++i)if(!(s.shop_sold&(1u<<i))){const Card card=s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0};
+        portraits[portrait_count++]=a.card_face_image(card,-1,-1,s.world.active?&s.world.shop_facts[i]:nullptr);}
+    a.content.prepare_images(portraits,portrait_count);
     for(int i=0;i<ShopCardCount;i++){
-        int x=i<5?22+i*55:22+(i-5)*55,y=i<5?63:142;bool sold=s.shop_sold&(1u<<i);
-        merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},x,y,a.cursor==i,sold,s.world.active?&s.world.shop_facts[i]:nullptr);merchant_price(c,i,x-1,y+61,48);
-        if(s.world.active&&s.world.shop_sale==i&&!sold){int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,x+27,y-7,24,19);}
-        c.hit(x-2,y-3,49,78,HitKind::Choice,i,!sold);
+        const int cx=MerchantInventoryLayout::card_x(i),cy=MerchantInventoryLayout::card_y(i);const bool sold=s.shop_sold&(1u<<i);
+        const int hit_height=i<5?69:75;const bool selected=merchant_hovered(a,i,cx-22,cy-31,44,hit_height);
+        merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},cx,cy,selected,sold,s.world.active?&s.world.shop_facts[i]:nullptr);
+        merchant_price(c,i,cx-23,cy+(selected?32:27),46);
+        if(s.world.active&&s.world.shop_sale==i&&!sold){int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,cx+9,cy-(selected?30:25),18,14);}
+        c.hit(cx-22,cy-31,44,hit_height,HitKind::Choice,i,!sold);
     }
     for(int i=0;i<3;i++){
-        int x=141+i*37,item=ShopRelicStart+i,index=-1;bool sold=s.shop_sold&(1u<<item);
+        const int x=MerchantInventoryLayout::item_x(i);int item=ShopRelicStart+i,index=-1;bool sold=s.shop_sold&(1u<<item);
         if(s.world.active)index=s.world.shop_relics[i]==NoWorldRelic?-1:s.world.shop_relics[i];else for(int r=0;r<RelicKinds;r++)if(relic_definitions[r].id==s.shop_relics[i])index=r;
-        if(a.cursor==item)c.box(x-3,139,33,38,Gold);
-        if(index>=0)c.picture(a.relic_face_image(index),x,140,26,26,sold?70:255);
-        merchant_price(c,item,x-4,164,36);c.hit(x-4,137,36,41,HitKind::Choice,item,!sold);
-        item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);
-        if(a.cursor==item)c.box(x-3,179,33,38,Gold);
-        c.picture(a.content.potion_image((Potion)s.shop_potions[i]),x+3,179,21,27,sold?70:255);
-        merchant_price(c,item,x-4,203,36);c.hit(x-4,178,36,39,HitKind::Choice,item,!sold);
+        bool selected=merchant_hovered(a,item,x-13,137,26,33);int size=selected?20:16;
+        if(index>=0&&!sold)c.picture(a.relic_face_image(index),x-size/2,MerchantInventoryLayout::RelicY-size/2,size,size);
+        merchant_price(c,item,x-14,160,28);c.hit(x-13,137,26,33,HitKind::Choice,item,!sold);
+        item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);selected=merchant_hovered(a,item,x-13,171,26,29);
+        const int w=selected?14:11,h=selected?18:14;
+        if(!sold)c.picture(a.content.potion_image((Potion)s.shop_potions[i]),x-w/2,MerchantInventoryLayout::PotionY-h/2,w,h);
+        merchant_price(c,item,x-14,188,28);c.hit(x-13,171,26,29,HitKind::Choice,item,!sold);
     }
-    bool removed=s.shop_sold&(1u<<ShopRemove);
-    c.ui(removed?U_ShopRemoveUsed:U_ShopRemove,261,149,51,51,removed?140:255);
-    if(a.cursor==ShopRemove)c.box(259,146,55,68,Gold);
-    merchant_price(c,ShopRemove,259,201,55);c.hit(259,144,57,71,HitKind::Choice,ShopRemove,!removed);
-    const char*name=a.cursor<7?a.content.card_string(s.world.active?s.world.shop_cards[a.cursor].kind:s.shop_cards[a.cursor]):a.cursor<10?(s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7])):a.cursor<13?potion_name(s.shop_potions[a.cursor-10],&a.content):a.cursor==13?"移除一张牌":"返回商人";
-    c.dim(14,43,246,18,180);c.centered(name,16,43,240,10,Gold);
-    c.text("详情 I",265,44,10,Gold);c.hit(260,41,59,20,HitKind::Command,(int)Key::Detail,a.cursor<13);
-    c.button("返回",3,218,80,a.cursor==ShopLeave,22);c.hit(0,217,90,23,HitKind::Choice,ShopLeave);
-    c.centered("Enter 购买 · I 详情",96,223,214,10,Muted);
-    // Only an actually hovered icon can show a tooltip. Moving off it clears it.
-    if(a.pointer.visible&&!a.pointer.held&&a.cursor>=7&&a.cursor<13){
-        int x=141+(a.cursor>=10?a.cursor-10:a.cursor-7)*37,y=a.cursor>=10?178:137;
-        if(a.pointer.x>=x-4&&a.pointer.x<x+32&&a.pointer.y>=y&&a.pointer.y<y+39){
-            char description[2048]{};if(a.cursor<10&&s.world.active)a.relic_description(s.world.shop_relics[a.cursor-7],description,sizeof description);
-            if(a.cursor>=10)ui_potion_description(a,s.shop_potions[a.cursor-10],description,sizeof description);
-            const char*desc=a.cursor<10?(s.world.active?description:relic_desc(s.shop_relics[a.cursor-7])):description;
-            c.ui(U_RewardPanel,11,64,297,67);c.text(name,23,69,12,Gold,269);c.paragraph(desc,23,89,269,2,0,10);
-        }
+    const bool removed=s.shop_sold&(1u<<ShopRemove),remove_focus=merchant_hovered(a,ShopRemove,228,140,48,59);
+    const int remove_size=remove_focus?40:32;
+    c.ui(removed?U_ShopRemoveUsed:U_ShopRemove,MerchantInventoryLayout::RemoveX-remove_size/2,MerchantInventoryLayout::RemoveY-remove_size/2,remove_size,remove_size);
+    merchant_price(c,ShopRemove,228,188,46);c.hit(228,140,48,59,HitKind::Choice,ShopRemove,!removed);
+    native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,61,31,HitKind::Choice,ShopLeave);
+    // Original slots own hover tips; there is no duplicate title strip or
+    // permanent keyboard-instruction footer over the merchant's rug.
+    if(a.cursor>=7&&a.cursor<13&&merchant_hovered(a,a.cursor,MerchantInventoryLayout::item_x(unsigned((a.cursor-7)%3))-13,a.cursor<10?137:171,26,a.cursor<10?33:29)&&!a.pointer.held){
+        char description[2048]{};const char*name=nullptr;
+        if(a.cursor<10){name=s.world.active?a.relic_title(s.world.shop_relics[a.cursor-7]):relic_name(s.shop_relics[a.cursor-7]);
+            if(s.world.active)a.relic_description(s.world.shop_relics[a.cursor-7],description,sizeof description);
+            else{TextBuffer b{description,sizeof description,0,&a.content};b.text(relic_desc(s.shop_relics[a.cursor-7]));}}
+        else{name=potion_name(s.shop_potions[a.cursor-10],&a.content);ui_potion_description(a,s.shop_potions[a.cursor-10],description,sizeof description);}
+        const int width=174,lines=mn(5,c.paragraph(description,0,0,width-16,0,0,10)),height=27+lines*13,x=10,y=mn(135-height,55);
+        const int skin=a.content.world_image("common","HOVER_TIP");
+        if(skin>=0)c.nine_image(skin,x,y,width,height,28,22,46,16);else{c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Muted);}
+        c.text(name,x+8,y+5,12,Gold,width-16);c.paragraph(description,x+8,y+24,width-16,lines,0,10,rgb(255,246,226));
     }
 }

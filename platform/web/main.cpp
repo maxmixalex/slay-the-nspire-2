@@ -1,6 +1,5 @@
 #include "app.hpp"
 #include "runtime_scene.hpp"
-#include "loading_screen.hpp"
 extern "C" {
 __attribute__((import_module("env"),import_name("save"))) int host_save(const uint8_t*,unsigned);
 __attribute__((import_module("env"),import_name("load"))) int host_load(uint8_t*,unsigned);
@@ -11,6 +10,10 @@ static spire::SaveData buffer;
 static spire::SplitResourceSource split;
 static spire::BootLanguage boot_language=spire::BootLanguage::Unknown;
 static uint32_t browser_entropy=0;
+static spire::UiPreferences preferences{};
+static bool preferences_dirty=false;
+static bool load_preferences(spire::UiPreferences& out){out=preferences;return true;}
+static bool save_preferences(const spire::UiPreferences& value){preferences=value;preferences_dirty=true;return true;}
 static uint32_t seed_entropy(){return browser_entropy;}
 static bool read_resource(void*,uint32_t offset,void* output,uint32_t count){return host_resource_read(offset,(uint8_t*)output,count)!=0;}
 // Keep the original single resource_read import for existing replay hosts.
@@ -18,9 +21,6 @@ static bool read_resource(void*,uint32_t offset,void* output,uint32_t count){ret
 // require no combined ArrayBuffer and no additional calculator/WASM memory.
 static bool read_common(void*,uint32_t offset,void*output,uint32_t count){return host_resource_read(0x10000000u+offset,(uint8_t*)output,count)!=0;}
 static bool read_language(void*,uint32_t offset,void*output,uint32_t count){return host_resource_read(0x20000000u+offset,(uint8_t*)output,count)!=0;}
-static void progress(void*,spire::ResourceStage stage,uint32_t completed,uint32_t total){
-    spire::loading_screen(app.pixels,stage,completed,total,0,nullptr,false,boot_language);
-}
 static bool save_game(const spire::State&s){return spire::save(s,buffer)&&host_save(buffer.bytes,(unsigned)buffer.size)!=0;}
 static bool load_game(spire::State&s){int n=host_load(buffer.bytes,sizeof buffer.bytes);return n>0&&spire::load(s,buffer.bytes,(unsigned)n);}
 // The paired browser host treats an explicit empty save as deletion. Normal
@@ -30,17 +30,26 @@ extern "C" {
 // Optional host hook preserves the existing imports for deterministic replay.
 // Interactive browsers set this from crypto before dispatching user input.
 void set_seed_entropy(uint32_t value){browser_entropy=value;}
+// Optional exports retain the established three-import ABI. Preferences are
+// stored by the browser separately from the player's run, in either language.
+void set_preferences(unsigned flags){preferences.fast_mode=flags==1;preferences_dirty=false;}
+unsigned preferences_flags(){return preferences.fast_mode?1u:0u;}
+int preferences_pending(){return preferences_dirty?1:0;}
+void preferences_ack(int success){
+    preferences_dirty=false;
+    if(!success)app.message(app.content.english()?"Could not save settings.":"设置保存失败，请重试");
+}
 int start(unsigned n){
-    split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr,progress};
+    split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};
     boot_language=spire::boot_probe_language(resource);
-    return app.init(resource,{save_game,load_game,clear_save,seed_entropy})?1:0;
+    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences})?1:0;
 }
 int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
     split.close();if(language!=1&&language!=2)return 0;
     boot_language=language==1?spire::BootLanguage::English:spire::BootLanguage::Chinese;
     if(!split.open({nullptr,common_bytes,read_common,nullptr},
-        {nullptr,language_bytes,read_language,nullptr,progress},static_cast<spire::ResourceLanguage>(language)))return 0;
-    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy})?1:0;
+        {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
+    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences})?1:0;
 }
 int resource_language(){return app.content.english()?1:2;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}

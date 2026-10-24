@@ -7,7 +7,7 @@
 <main>
 <h1>nSpire II 0.17 <span data-i18n="development">Development build</span> <small data-i18n="campaign">Original three-act expeditions</small></h1>
 <div id="locale-controls"><label for="language" data-i18n="language">语言 / Language</label> <select id="language" disabled><option value="zhs">中文</option><option value="eng">English</option></select></div>
-<p id="loading" role="status">正在载入 / Loading…</p>
+<p id="loading" role="status" hidden>正在载入 / Loading…</p>
 <canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
 <div id="actions">
 <button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Enter</button><button data-key="6" data-i18n="end_turn">Space</button><button data-key="7" data-i18n="piles">Tab</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="16" data-i18n="reference_map">G</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
@@ -54,7 +54,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   if(typeof Uint8Array.fromBase64==='function')return Uint8Array.fromBase64(s);
   const padding=s.endsWith('==')?2:s.endsWith('=')?1:0,bytes=new Uint8Array(s.length/4*3-padding),chunk=1024*1024;
   for(let at=0;at<s.length;at+=chunk){const binary=atob(s.slice(at,at+chunk)),offset=at/4*3;for(let i=0;i<binary.length;i++)bytes[offset+i]=binary.charCodeAt(i);
-   if(at%(4*chunk)===0){loading.textContent=t('loading_offline')+' '+Math.floor(at/s.length*100)+'%';await new Promise(resolve=>setTimeout(resolve,0));}}
+   if(at%(4*chunk)===0){await new Promise(resolve=>setTimeout(resolve,0));}}
   return bytes;
  }
  const encode=(b)=>{let result='';for(let i=0;i<b.length;i+=4096)result+=String.fromCharCode(...b.subarray(i,i+4096));return btoa(result)};
@@ -90,6 +90,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   game.set_seed_entropy(entropyWord[0]);
  }
  refreshEntropy();
+ if(game.set_preferences){let flags=0;try{const saved=JSON.parse(localStorage.getItem('nSpire2-preferences-v1'));if(saved&&saved.version===1&&typeof saved.fastMode==='boolean')flags=saved.fastMode?1:0;}catch(e){}game.set_preferences(flags);}
  if(!(isSplit?game.start_split(common.length,localized.length,language==='eng'?1:2):game.start(content.length)))throw Error(t('invalid_content'));
  if(game.resource_language&&game.resource_language()!==(language==='eng'?1:2))throw Error(t('invalid_content'));
  try{localStorage.setItem('nSpire2-language',language)}catch(e){}
@@ -109,7 +110,12 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   const converted=active?clock():0;ctx.putImageData(image,0,0);dirty=false;
   if(active){const end=clock();add(stats.render,rendered-begin);add(stats.conversion,converted-rendered);add(stats.present,end-converted);if(lastPresented)add(lastScene===index?stats.interval:profile.transition_interval,end-lastPresented);lastPresented=end;lastScene=index;recordIo(stats,calls,bytes,io);}
  }
- function input(action,repaint=true){if(game.closed())return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');}
+ function flushPreferences(){
+  if(!game.preferences_pending||!game.preferences_pending())return;
+  let ok=1;try{localStorage.setItem('nSpire2-preferences-v1',JSON.stringify({version:1,fastMode:game.preferences_flags()===1}));}catch(e){ok=0;}
+  game.preferences_ack(ok);
+ }
+ function input(action,repaint=true){if(game.closed())return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');}
  function key(k){input(()=>game.input(k));}
  document.addEventListener('keydown',e=>{if(e.target===languageSelect)return;if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();input(()=>game.text_input(code));return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}});
  document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus();}));

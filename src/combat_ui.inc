@@ -2,7 +2,7 @@
 // The integer fan, tile dimensions and preview are small-screen adaptations.
 namespace {
 struct HandTile {
-    bool valid=false,playable=false;
+    bool valid=false,playable=false,description_truncated=false;
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0;
@@ -42,7 +42,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     // Left inset contains the original star cost below the energy icon;
     // neither resource adds a second title row or moves the card portrait.
-    draw_card_face(tile,card,8,6,69,97,energy,stars,instance,deck,nullptr,description);
+    draw_card_face(tile,card,8,6,69,97,energy,stars,instance,deck,nullptr,description,&t.description_truncated);
     if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
     t.valid=true;return t;
 }
@@ -100,7 +100,7 @@ static void combat_actors(Canvas&c){
         const auto*v=s.enemy_world.active?world_enemy_visual(a.enemy_presentation[i].model):nullptr;
         if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
-        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s.enemy_count,i);Canvas actor=c;
+        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s,i);Canvas actor=c;
             if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.x,p.feet,p.scale);}
     }
     if(shared>=0){int clip;uint32_t elapsed;bool loop;
@@ -207,28 +207,7 @@ static void combat_resource_tooltip(Canvas&c,bool stars){
     c.text(a.content.world_title("static_hover_tips",key),x+6,y+4,10,Gold,148);
     c.paragraph(body,x+6,y+22,148,7,0,10,White);
 }
-static void combat_power_popups(Canvas&c){
-    const auto&a=c.a;const auto&v=a.combat_status;
-    for(unsigned i=0;i<v.popup_count;++i){const auto&p=v.popups[i];const int ms=int32_t(a.animation-p.at)*33;
-        if(ms<0||ms>=1250||p.actor>unsigned(a.game.enemy_count))continue;
-        const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[p.actor]:ui_feedback_identity(a.game,p.actor);
-        if(identity!=p.identity)continue;
-        const auto pose=enemy_pose(a.game.enemy_count,p.actor?p.actor-1:0);const int x=p.actor?pose.x:60,cy=p.actor?pose.feet-32:91;
-        // Original 256px icon grows from 0.4 to 0.8 with Expo.Out; its
-        // half-alpha texture and echo peak at 0.25 effective opacity.
-        const unsigned growth=TurnBannerPresentation::ease(unsigned(ms),1250);const int size=17+int(growth*17/4096);
-        const unsigned icon_alpha=ms<250?unsigned(64*CombatCardMotion::sine(ms*1024/250)/1024):unsigned(64*CombatCardMotion::sine((1250-ms)*1024/1000)/1024);
-        c.picture(ui_status_image(a,p.id),x-size/2,cy-size/2,size,size,icon_alpha);
-        c.picture(ui_status_image(a,p.id),x-size*11/20,cy-size*11/20,size*11/10,size*11/10,icon_alpha/2);
-        if(ms>=1000)continue;
-        const unsigned alpha=ms<250?TurnBannerPresentation::ease(unsigned(ms),250):TurnBannerPresentation::ease(unsigned(1000-ms),750);
-        const unsigned moved=CombatCardMotion::cubic(unsigned(ms),1250);const int y=cy-33+(p.buff?-1:1)*int(moved*17/1024);
-        const char*title=ui_status_title(a,p.id);const int width=mn(130,c.width(title,10)),left=mx(2,mn(318-width,x-width/2));
-        Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/4096);
-        for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)text.text(title,left+dx,y+dy,10,Ink,width);
-        text.text(title,left,y,10,p.buff?rgb(127,255,0):rgb(255,85,85),width);
-    }
-}
+#include "combat_vfx_ui6.inc"
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
@@ -249,7 +228,7 @@ static void combat_screen(Canvas&c){
     const bool stars=combat_stars_visible(a);
     status_strip(c,0,24,149,96);
     for(int i=0;i<s.enemy_count;i++){
-        const auto&e=s.enemies[i];const auto pos=enemy_pose(s.enemy_count,i);int x=pos.x;
+        const auto&e=s.enemies[i];const auto pos=enemy_pose(s,i);int x=pos.x;
         if(a.combat_health(i+1).hp<=0){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);
         if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
@@ -262,14 +241,16 @@ static void combat_screen(Canvas&c){
         c.hp(a.combat_health(i+1),a.health_bars[i+1],x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
 
     }
-    for(int i=0;i<=s.enemy_count;i++){
-        int age=(int)a.animation-a.hit_start[i];
-        if(a.last_hit[i]&&age>=0&&age<24){auto p=enemy_pose(s.enemy_count,i?i-1:0);int x=i?p.x-12:48;c.num(a.last_hit[i],x,(i?p.feet-30:91)-age/2,s.enemy_count>4?10:16,i?Gold:Red);}
+    if(s.enemy_world.active)combat_damage_popups(c);
+    else for(int i=0;i<=s.enemy_count;i++){
+        const int age=int(a.animation)-a.hit_start[i];
+        if(a.last_hit[i]&&age>=0&&age<24){const auto p=enemy_pose(s,i?i-1:0);c.num(a.last_hit[i],i?p.x-12:48,(i?p.feet-30:91)-age/2,16,Red);}
     }
     combat_power_popups(c);
     const auto hand=a.combat_hand();
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
+    const int held_card=a.keyboard_card>=0?a.keyboard_card:a.pointer.armed_card;
     if(ui_cards_bound(a))a.combat_cards.set_focus(focused&&hand.count?hand.ids[selected]:-1);
     // At rest every card remains on the arc. Focus is earned by hover or keys,
     // not by the cursor index merely existing. The battlefield stays visible.
@@ -277,7 +258,7 @@ static void combat_screen(Canvas&c){
         // The focused face has its own topmost region below. Registering its
         // raised pose here as well leaves a duplicate (and sometimes wider)
         // hit column behind the visible face.
-        if(focused&&i==selected)continue;
+        if((focused&&i==selected)||hand.ids[i]==held_card)continue;
         auto p=a.combat_hand_pose(unsigned(i),focused&&i==selected);
         draw_hand_tile(c,hand_tile(c,hand.ids[i]),p,false);
         auto r=hand_rail(hand.count,i);
@@ -291,7 +272,7 @@ static void combat_screen(Canvas&c){
         }
     }
     if(hand.count){
-        if(focused){
+        if(focused&&hand.ids[selected]!=held_card){
             auto p=a.combat_hand_pose(unsigned(selected),true);
             draw_hand_tile(c,hand_tile(c,hand.ids[selected]),p,true);
             // While X is still approaching the focused position there is no
@@ -307,6 +288,8 @@ static void combat_screen(Canvas&c){
             c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
+    if(held_card>=0&&held_card<s.card_count&&s.zones[held_card]==Zone::Hand)
+        draw_hand_tile(c,hand_tile(c,held_card),{160,198,768,0,1024},false);
     if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites){
         if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.id>=s.card_count)continue;
         draw_hand_tile(c,hand_tile(c,v.id,&v),CombatCardMotion::pose(v),false,a.combat_cards.brightness(v));
@@ -317,18 +300,6 @@ static void combat_screen(Canvas&c){
     combat_pile(c,A_DrawPile,piles.draw,8,215,1);
     combat_pile(c,A_DiscardPile,piles.discard,291,215,2);
     if(piles.exhaust)combat_pile(c,A_ExhaustPile,piles.exhaust,293,106,3);
-    // Dense power rows own both their pixels and pointer targets. Prefer the
-    // usual side, then the opposite gutter; omit this redundant shortcut
-    // label if neither fits. Keyboard Detail and card clicks still work.
-    for(int side=0;side<2;++side){
-        const int left=(stars!=bool(side))?265:0;bool blocked=false;
-        for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
-            if(h.enabled&&h.kind==HitKind::BattleStatus&&
-               left<h.x+h.w&&h.x<left+49&&157<h.y+h.h&&h.y<174){blocked=true;break;}
-        }
-        if(blocked)continue;
-        c.text("I 详情",left+3,160,10,Muted,44);c.hit(left,157,49,17,HitKind::Command,(int)Key::Detail,hand.count>0);break;
-    }
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}
     combat_resource_tooltip(c,stars);
 }

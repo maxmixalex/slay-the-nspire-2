@@ -132,7 +132,7 @@ static void frontend_settings_screen(Canvas&c){
   c.action(x,y,112,39,i?UiAction::SettingsInputTab:UiAction::SettingsGeneralTab);
  }
  Canvas divider=c;divider.opacity=uint8_t(div255(divider.opacity*64));
- const int back_item=a.settings_tab?1:a.title?3:1;
+ const int back_item=1;
  if(!a.settings_tab){
   const bool focus=a.settings_item==0||a.pointer.visible&&a.pointer.x>=24&&a.pointer.x<296&&a.pointer.y>=61&&a.pointer.y<98;
   c.text_fitted(frontend_text(a,"settings_ui","FASTMODE",english?"Fast Mode":"加速模式"),29,68,210,12,focus?Gold:White);
@@ -141,14 +141,7 @@ static void frontend_settings_screen(Canvas&c){
   c.action(238,59,61,36,UiAction::SettingsFastMode);
   divider.rect(25,99,270,1,rgb(232,220,190));
   if(focus)c.paragraph_fitted(frontend_text(a,"settings_ui","FASTMODE_DESCRIPTION",english?"Combat actions and screen transitions happen more quickly.":"战斗动画和转场加快。"),29,108,262,44,10,White,10);
-  if(a.title){
-   const char*labels[]={"组合练习","参考地图"};
-   for(int i=0;i<2;++i){const int y=160+i*27;const bool selected=a.settings_item==i+1;
-    c.text_fitted(labels[i],29,y,220,10,selected?Gold:White);c.text("›",276,y-2,16,selected?Gold:Muted);
-    divider.rect(25,y+21,270,1,rgb(232,220,190));
-    c.action(24,y-4,272,26,i?UiAction::SettingsReference:UiAction::SettingsPractice);
-   }
-  }
+
  }else{
   char map_potions[128]{};TextBuffer labels_text{map_potions,sizeof map_potions,0,&a.content};
   labels_text.text(frontend_text(a,"static_hover_tips","MAP.title","Map"));labels_text.text(" / ");
@@ -191,7 +184,7 @@ static void character_screen(Canvas&c){
         c.text_fitted(a.relic_title(id),panel_x+46,145,99,12,Gold);
         c.paragraph_fitted(text,panel_x+14,172,132,34,10,White);
     }
-    native_back(c,2,212,84,28,"返回");c.action(1,209,86,31,UiAction::Back);
+    native_close(c,2,212,84,28);c.action(1,209,86,31,UiAction::Back);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
     for(int i=0;i<CharacterKinds;i++){
         int x=159+i*31;bool selected=i==(int)a.selected_character;

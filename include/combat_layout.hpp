@@ -38,4 +38,35 @@ inline CreaturePose enemy_pose(int count,int index){
  int columns=(count+1)/2,row=index/columns,col=index%columns,width=180/columns;
  int feet=row?145:86;return {137+width/2+col*width,feet,width-5,448,row?113:50,feet+3,feet+18};
 }
+struct EncounterPositions {EncounterId encounter;uint8_t count;uint16_t zoom;int16_t offset_x,offset_y;int16_t points[6][2];};
+inline const EncounterPositions* encounter_positions(EncounterId encounter){
+ static constexpr EncounterPositions layouts[]={
+#include "combat_encounter_positions.inc"
+ };
+ for(const auto&layout:layouts)if(layout.encounter==encounter)return &layout;return nullptr;
+}
+inline CreaturePose enemy_pose(const State&s,int index){
+ if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
+ const auto*layout=encounter_positions(s.enemy_world.encounter);const auto&model=s.enemy_world.models[index];
+ if(!layout||model.slot>=layout->count)return enemy_pose(s.enemy_count,index);
+ static constexpr uint16_t bounds[][2]={
+#include "combat_creature_bounds.inc"
+ };
+ static_assert(sizeof bounds/sizeof bounds[0]==EnemyKinds,"Every model needs a bounds entry");
+ const int raw_x=layout->points[model.slot][0],raw_y=layout->points[model.slot][1],z=layout->zoom;
+ // SceneContainer has a 960,540 pivot and camera offset. Retain the
+ // calculator's 122px ground rail while preserving authored slot spacing.
+ const int x=(960+(raw_x-960)*z/1000+layout->offset_x)/6;
+ const int feet=122+(540+(raw_y-540)*z/1000+layout->offset_y-740)/6;
+ const int body_width=bounds[unsigned(model.kind)][0],body_height=bounds[unsigned(model.kind)][1];
+ int width=body_width?body_width*z/6000:enemy_pose(layout->count,model.slot).width;
+ if(width<22)width=22;if(width>80)width=80;
+ // Existing sprites share an 84px normalized body; the original Bounds
+ // restores relative creature size (e.g. eggs versus their Ovicopter).
+ int scale=body_height?body_height*z*1024/(6000*84):enemy_pose(layout->count,model.slot).scale;
+ if(scale<160)scale=160;if(scale>1400)scale=1400;
+ const int height=84*scale/1024,intent=feet-height-15;
+ return {x,feet,width,scale,intent<25?25:intent,feet+7,feet+24};
+}
+
 }

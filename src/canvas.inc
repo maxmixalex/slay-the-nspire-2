@@ -94,9 +94,11 @@ struct Canvas{
     void hit(int x,int y,int w,int h,HitKind k,int value=0,bool enabled=true){a.add_hit(x,y,w,h,k,value,enabled);}
     void close_button(int x=292,int y=26){
         const auto visual=control_visual("BACK_CLOSE",x,y,21,20,ButtonFamily::Action,false,true);
-        const int back=a.content.world_image("common","BACK"),arrow=a.content.world_image("common","BACK_ARROW");
-        if(back>=0&&arrow>=0){Canvas layer=*this;layer.brightness=uint8_t(div255(unsigned(brightness)*visual.shade));
-            const int width=25*visual.scale/4096;layer.picture(back,x+(21-width)/2,y,width,20);layer.picture(arrow,x+4,y+4,12,12);
+        const int back=a.content.world_image("common","BACK"),cross=a.content.version()>=Ui6ContentVersion?a.content.ui_image(I6_CloseX):-1;
+        if(back>=0&&cross>=0){Canvas layer=*this;layer.brightness=uint8_t(div255(unsigned(brightness)*visual.shade));
+            const auto info=a.content.image(back);const int width=30*visual.scale/4096,height=info.w?width*info.h/info.w:18;
+            layer.picture(back,x+(21-width)/2,y+(20-height)/2,width,height);
+            const int size=10*visual.scale/4096;layer.tint_green=246;layer.tint_blue=226;layer.picture(cross,x+(21-size)/2,y+(20-size)/2,size,size);
         }else{box(x,y,21,20,Gold);centered("×",x,y,21,12,Gold);}hit(x,y,21,20,HitKind::Close);
     }
 

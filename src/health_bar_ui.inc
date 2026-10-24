@@ -12,7 +12,8 @@ void App::sync_health_bars(){
  }
  const uint32_t now=animation*33;
  const auto observe=[&](int slot,uint32_t identity,int width){const auto v=combat_health(slot);
-  health_bars[slot].observe(identity,v.hp,v.max_hp,health_bar::inner_width(width),now);};
+  auto&motion=health_bars[slot];const bool restored=!motion.valid||motion.identity!=identity;
+  motion.observe(identity,v.hp,v.max_hp,health_bar::inner_width(width),now);motion.observe_block(v.block,now,restored);};
  observe(0,1+unsigned(game.character),62);
  const bool pet=game.character==Character::Necrobinder||game.expansion.osty_max_hp>0;
  if(pet)observe(MaxEnemies+1,1,34);else health_bars[MaxEnemies+1].reset();
@@ -20,7 +21,7 @@ void App::sync_health_bars(){
   if(i>=game.enemy_count){health_bars[i+1].reset();continue;}
   const auto&model=game.enemy_world.models[i];
   const uint32_t identity=ui_feedback_bound(*this)?combat_feedback.identity[i+1]:game.enemy_world.active?(uint32_t(model.combat_id)<<16)|(1+unsigned(model.kind)):uint32_t(i+1);
-  observe(i+1,identity,enemy_pose(game.enemy_count,i).width);
+  observe(i+1,identity,enemy_pose(game,i).width);
  }
 }
 
@@ -151,9 +152,10 @@ void Canvas::hp(const HealthBarValues&v,const HealthBarMotion&motion,int x,int y
   const auto outline=v.hp<=0?rgb(144,0,0):layers.poison_lethal?rgb(7,71,0):layers.doom_lethal?rgb(45,18,99):layers.blocked?rgb(27,48,69):rgb(144,0,0);
   health_label(*this,label,x,y+(health_bar::Height-size)/2,width,size,color,outline);
  }
- if(v.block>0){const int block=a.content.world_image("common","HEALTH_BAR_BLOCK"),bx=x-10,by=y-5;
-  picture(block>=0?block:A_Block,bx,by,16,16);char label[16]{};TextBuffer b{label,sizeof label,0};b.number(v.block);
+ if(v.block>0){const int block=a.content.world_image("common","HEALTH_BAR_BLOCK"),bx=x-10,by=y-5+motion.block_y(a.animation*33);
+  Canvas shield=*this;shield.opacity=uint8_t(div255(unsigned(opacity)*motion.block_alpha(a.animation*33)));
+  shield.picture(block>=0?block:A_Block,bx,by,16,16);char label[16]{};TextBuffer b{label,sizeof label,0};b.number(v.block);
   if(this->width(label,8)>16){b.n=0;label[0]=0;health_amount(b,v.block);}
-  health_label(*this,label,bx,by+4,16,8,cream,rgb(11,85,107));
+  health_label(shield,label,bx,by+4,16,8,cream,rgb(11,85,107));
  }
 }

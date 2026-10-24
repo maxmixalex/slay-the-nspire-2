@@ -1,6 +1,19 @@
 static void reward_pickup_screen(Canvas&c){
  auto&a=c.a;auto&m=a.reward_presentation;
  if(a.title||a.library||a.character_select||a.map_preview.open)return;
+ const auto&removed=m.removed;
+ if(removed.alive(a.map_clock_ms)){
+  const uint32_t age=a.map_clock_ms-removed.start;
+  // CardPileCmd.RemoveFromDeck: 250ms CUBIC_OUT preview, 250ms hold,
+  // then NCardRemoveVfx; the old card node is freed 400ms later. Capture
+  // the old description/facts before deck compaction, never the next slot.
+  if(age<900){const unsigned scale=removed.scale(a.map_clock_ms);const int w=int(80*scale/4096),h=int(112*scale/4096);
+   if(w>0&&h>0)draw_card_face(c,removed.card,160-w/2,120-h/2,w,h,removed.energy,removed.stars,-1,-1,&removed.facts,removed.description);
+  }
+  if(age>=500&&a.content.version()>=Ui6ContentVersion){const unsigned frame=(age-500)/50;
+   if(frame<I6_CardRemoveCount)c.ui(I6_CardRemoveStart+int(frame),56,30,208,180);
+  }
+ }
  for(const auto&f:m.flights){
   if(f.kind==RewardPickupKind::None)continue;
   int tx=266,ty=11;

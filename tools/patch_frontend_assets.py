@@ -112,8 +112,9 @@ def build_art(pck_path, cache):
     return manifest
 
 
-def patch_pack(data, manifest, cache):
-    source = tiles.PackView(data, BASE_AUX, versions=(21,), profile=(558, 8192, CLIPS, BASE_AUX))
+def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
+               input_version=21, version=VERSION, texts=FRONTEND_TEXTS):
+    source = tiles.PackView(data, base_aux, versions=(input_version,), profile=(558, 8192, CLIPS, base_aux))
     old_tiles = tiles.TileReader(source)
     ni, ng, ns, nc, nk, nu = source.counts
     marker_at, marker_length = source.strings[6110]
@@ -121,7 +122,7 @@ def patch_pack(data, manifest, cache):
     localized = manifest.get('localized_text', {}).get(language)
     tiles.require(language in ('eng', 'zhs') and isinstance(localized, dict), 'Missing frontend locale')
     new_strings = {}
-    for slot, key in FRONTEND_TEXTS:
+    for slot, key in texts:
         off, length = source.strings[slot]
         tiles.require(length == 0 and data[off] == 0, 'Reserved frontend string slot is already occupied')
         value = localized.get(key)
@@ -131,7 +132,7 @@ def patch_pack(data, manifest, cache):
         new_strings[slot] = raw
     rows = manifest['images']
     count = len(rows)
-    tiles.require(count == AUXILIARY - BASE_AUX and ni + count <= 65535, 'Unexpected frontend extension')
+    tiles.require(count == auxiliary - base_aux and ni + count <= 65535, 'Unexpected frontend extension')
     art_end = min([row[1] for row in source.glyphs] + [row[0] for row in source.strings])
     descriptor_end = old_tiles.descriptors + old_tiles.frame_count * tiles.DESCRIPTOR.size
     tiles.require(art_end % 2 == 0 and descriptor_end <= art_end, 'Invalid art/locale boundary')
@@ -199,8 +200,8 @@ def patch_pack(data, manifest, cache):
         global_at, group, offset, length = tiles.DESCRIPTOR.unpack_from(data, at)
         tiles.require(global_at == source.base_end, 'Invalid historical tile descriptor')
         tiles.DESCRIPTOR.pack_into(out, shifted(at), shifted(global_at), group, offset, length)
-    tiles.HEADER.pack_into(out, 0, b'NSP2', VERSION, tiles.REFERENCE, len(out), ni + count, ng, ns, nc, nk, 0)
-    target = tiles.PackView(out, AUXILIARY, versions=(VERSION,), profile=(nk, ns, nc, AUXILIARY))
+    tiles.HEADER.pack_into(out, 0, b'NSP2', version, tiles.REFERENCE, len(out), ni + count, ng, ns, nc, nk, 0)
+    target = tiles.PackView(out, auxiliary, versions=(version,), profile=(nk, ns, nc, auxiliary))
     tiles.TileReader(target)
     tiles.require(target.clips == source.clips and target.cards == source.cards and target.aux[:nu] == source.aux,
                   'Historical catalog changed')
@@ -220,10 +221,10 @@ def patch_pack(data, manifest, cache):
     for i, row in enumerate(rows):
         decoded = target.image_raw(ni + i)
         tiles.require(tiles.sha256(decoded[3]) == row['raw_sha256'], 'New image roundtrip differs')
-    receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=21, output_version=VERSION,
+    receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=input_version, output_version=version,
                    input_sha256=tiles.sha256(data), output_sha256=tiles.sha256(out),
                    input_bytes=len(data), output_bytes=len(out), appended_images=count, appended_clips=0,
-                   auxiliary_count=AUXILIARY, unchanged_old_payload=True, unchanged_old_directory_indices=True,
+                   auxiliary_count=auxiliary, unchanged_old_payload=True, unchanged_old_directory_indices=True,
                    unchanged_old_decoded_costs=True, common_art_insertion=art_end,
                    added_common_art_bytes=len(payload), common_art_sha256=tiles.sha256(payload),
                    verified_new_images=count, verified_all_offset_relocations=True, runtime_integrity_scan=False,

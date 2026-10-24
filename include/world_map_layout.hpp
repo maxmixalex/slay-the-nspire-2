@@ -10,6 +10,10 @@ namespace spire {
 // extra strips for a duplicated act title or keyboard instructions.
 constexpr int WorldMapTop=22,WorldMapBottom=240;
 constexpr uint32_t WorldMapScaleBits=0x3e6147aeU; // binary32 0.22
+// Keep the original always-visible legend beside the graph on a 320px screen.
+// Only the graph's camera anchor moves; node spacing, jitter, travel and scroll
+// still use the authored uniform scale above.
+constexpr int WorldMapGraphCenter=126;
 struct WorldMapPosition {int16_t x=0,y=0;int8_t angle=0;};
 struct WorldMapLayout {
     WorldMapPosition points[reference::MaxPoints]{};
@@ -42,12 +46,12 @@ inline bool world_map_layout(const State&s,WorldMapLayout&out){
         const unsigned id=m->grid[col][row];if(id==reference::NoPoint||id>=m->count||!m->points[id].active)continue;
         const Real x=world_float_round(world_float_round(Real::integer(int(col)*150-500)+world_random_float(jitter,-21,21))+Real::integer(28));
         const Real y=world_float_round(world_float_round(world_float_round(world_float_round(Real::integer(row)*-dy)+Real::integer(740))+world_random_float(jitter,-25,25))+Real::integer(28));
-        auto&p=out.points[id];p.x=int16_t(166+world_map_round(world_float_round(x*scale)));p.y=int16_t(world_map_round(world_float_round(y*scale)));
+        auto&p=out.points[id];p.x=int16_t(WorldMapGraphCenter+world_map_round(world_float_round(x*scale)));p.y=int16_t(world_map_round(world_float_round(y*scale)));
         int noise=0;for(unsigned n=0;n<12;++n)noise+=int(angles.below(257))-128;
         p.angle=int8_t(noise/32); // twelve uniforms: approximately sigma 8 degrees
     }
     out.jitter_calls=jitter.calls;
-    auto place=[&](unsigned id,int x,Real y){if(id<m->count)out.points[id]={int16_t(166+world_map_round(world_float_round(Real::integer(x)*scale))),int16_t(world_map_round(world_float_round(y*scale))),0};};
+    auto place=[&](unsigned id,int x,Real y){if(id<m->count)out.points[id]={int16_t(WorldMapGraphCenter+world_map_round(world_float_round(Real::integer(x)*scale))),int16_t(world_map_round(world_float_round(y*scale))),0};};
     // Boss Control scales about its (187,153) pivot, so even A10's 0.75
     // scaling does not move the center used by markers, paths and selection.
     place(m->boss,-13,world_float_round(world_float_round(Real::integer(-1980)*factor)+Real::integer(153)));

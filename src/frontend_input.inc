@@ -102,14 +102,13 @@ bool App::frontend_input(Key key){
  }
  if(help){if(key==Key::Back||key==Key::Confirm)help=false;return true;}
  if(settings_open){
-  const int count=settings_tab?2:title?4:2;
+  const int count=2;
   if(key==Key::Back){settings_open=false;pointer_cancel();}
   else if(key==Key::Left||key==Key::Right){settings_tab^=1;settings_item=0;pointer_cancel();}
   else if(key==Key::Up)settings_item=uint8_t((settings_item+count-1)%count);
   else if(key==Key::Down)settings_item=uint8_t((settings_item+1)%count);
   else if(key==Key::Confirm){
-   const UiAction actions[]={UiAction::SettingsFastMode,UiAction::SettingsPractice,UiAction::SettingsReference,UiAction::SettingsBack};
-   ui_action(settings_tab?(settings_item?UiAction::SettingsBack:UiAction::SettingsControls):actions[!title&&settings_item==1?3:settings_item]);
+   ui_action(settings_item?UiAction::SettingsBack:settings_tab?UiAction::SettingsControls:UiAction::SettingsFastMode);
   }
   return true;
  }

@@ -56,7 +56,7 @@ def layout(data):
     """
     require(len(data) >= HEADER.size, 'Truncated pack header')
     magic, version, reference, size, ni, ng, ns, _nc, _nk, _checksum = HEADER.unpack_from(data)
-    require(magic == b'NSP2' and version in (20, 21, 22) and reference == REFERENCE,
+    require(magic == b'NSP2' and version in (20, 21, 22, 23) and reference == REFERENCE,
             'Expected a pinned retained NSP2/20, 21 or 22 pack')
     require(size == len(data) and 0 < ni <= 65535 and 0 < ng <= 32768 and 0 < ns <= 16384,
             'Invalid retained pack bounds')

@@ -26,6 +26,19 @@ struct RewardPresentation {
   Card card{};
  };
  Flight flights[MaxFlights]{};
+ struct RemovedCard {
+  Card card{};EventCardFacts facts{};
+  int16_t energy=0,stars=0;
+  uint32_t start=0;
+  bool active=false;
+  char description[1024]{};
+  bool alive(uint32_t now)const{return active&&uint32_t(now-start)<1700;}
+  unsigned scale(uint32_t now)const{
+   const uint32_t age=now-start;if(age>=250)return 4096;
+   const unsigned inverse=4096-age*4096/250;
+   return 4096-unsigned(uint64_t(inverse)*inverse*inverse/16777216);
+  }
+ } removed{};
  uint32_t serial=0,window_start=0,window_key=0,empty_start=0;
  unsigned window_from=0;
  uint8_t window_mode=0;

@@ -93,7 +93,8 @@ inline unsigned expo_out(uint32_t elapsed){
 // facts; sample is pure, so redraws never advance a tween. Replacement,
 // death/revival and changed geometry snap to the new creature's own health.
 struct HealthBarMotion {
- uint32_t identity=0,start_ms=0;
+ uint32_t identity=0,start_ms=0,block_start_ms=0;
+ int block=0;bool block_entering=false;
  int32_t hp=0,max_hp=0,from_q8=0,to_q8=0;
  uint16_t width=0;
  bool valid=false,delayed=false;
@@ -106,6 +107,24 @@ struct HealthBarMotion {
   return from_q8+(to_q8-from_q8)*progress/4096;
  }
  int sample(uint32_t now)const{return health_bar::bounded((sample_q8(now)+128)/256,0,width);}
+ // NHealthBar.AnimateInBlock only animates the first 0 -> positive gain.
+ // Position uses Back.Out from -20 authored px; opacity uses Sine.Out.
+ void observe_block(int value,uint32_t now,bool restored=false){
+  if(restored){block=value;block_entering=false;return;}
+  if(block<=0&&value>0){block_start_ms=now;block_entering=true;}
+  if(value<=0||now-block_start_ms>=500u)block_entering=false;block=value;
+ }
+ unsigned block_alpha(uint32_t now)const{
+  if(!block_entering||now-block_start_ms>=500u)return 255;
+  static constexpr uint16_t sine[]={0,100,200,297,392,483,569,650,724,792,851,903,946,980,1004,1019,1024};
+  const unsigned p=(now-block_start_ms)*16u,i=p/500u,r=p%500u;
+  return (unsigned(sine[i])*(500u-r)+unsigned(sine[i+1])*r)*255u/512000u;
+ }
+ int block_y(uint32_t now)const{
+  if(!block_entering||now-block_start_ms>=500u)return 0;
+  const int q=int((now-block_start_ms)*1024u/500u)-1024,q2=q*q/1024,q3=q2*q/1024;
+  return (2766*q3/1024+1742*q2/1024)*4/1024;
+ }
  void reset(){*this=HealthBarMotion{};}
  void observe(uint32_t owner,int current_hp,int maximum_hp,int available,uint32_t now){
   available=health_bar::bounded(available,0,320);

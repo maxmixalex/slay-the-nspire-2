@@ -264,9 +264,23 @@ static void samples(){
         std::snprintf(name,sizeof name,"selector-%u-settled",character);capture(name);
     }
 }
+static void long_hand_description(){
+    new_run(app.game,787,true,Character::Defect);app.title=false;app.character_select=app.library=false;app.reset_presentation();
+    app.game.card_count=app.game.hand.count=1;app.game.hand.ids[0]=0;app.game.cards[0]={DefectRainbow,0};app.game.zones[0]=Zone::Hand;
+    app.game.energy=99;app.cursor=0;app.hand_focus=true;app.pointer.visible=false;
+    Canvas c{app};const auto&tile=hand_tile(c,0);CHECK(tile.description_truncated);
+    CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.instance==0);
+    HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);CHECK(tips.count&&tips.items[0].kind==HoverTipKind::Description);
+    char title[256]{},body[2048]{},expected[2048]{};
+    format_card_hover_tip(app,owner,tips.items[0],title,sizeof title,body,sizeof body);
+    app.card_description(owner.card,-1,expected,sizeof expected,0);CHECK(!std::strcmp(body,expected));
+    CHECK(&hand_tile(c,0)==&tile&&hand_tile(c,0).description_truncated);
+    keyword_tooltips(c);capture("hand-automatic-description");
+    app.reset_presentation();
+}
 }
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();if(argc>1)character_confirm_art();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();if(argc>1)character_confirm_art();long_hand_description();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

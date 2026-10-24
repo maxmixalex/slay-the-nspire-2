@@ -52,21 +52,25 @@ static void native_camp_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;uint8_t options[MaxWorldRestOptions];const unsigned count=a.camp_options(options,MaxWorldRestOptions);
  const unsigned selected=camp_selected(a,options,count),first=selected/4*4,shown=mn(4,int(count-first));if(count)a.cursor=options[selected];camp_scene(c,count==0);
  if(count){
-  const char*prompt=a.content.world_string("rest_site_ui","PROMPT");c.centered(*prompt?prompt:"休息片刻……",9,46,302,16,Gold);
-  const int step=76,start=(320-int(shown)*58-int(shown-1)*18)/2;
+  // RestSiteRoom keeps Header, ChoicesContainer and Description on the same
+  // centered axis. Preserve that authored hierarchy at the room camera scale.
+  const char*prompt=a.content.world_string("rest_site_ui","PROMPT");c.centered(*prompt?prompt:"休息片刻……",59,52,202,12,White);
+  const int step=71,start=(320-int(shown)*50-int(shown-1)*21)/2;
   for(unsigned i=0;i<shown;++i){const unsigned slot=options[first+i];const char*key=world_rest_option_key(s,slot);const bool enabled=world_rest_option_enabled(s,slot);const int x=start+int(i)*step;
-   if(a.cursor==int(slot))c.ui(U_RestOutline,x-3,74,64,45,enabled?255:130);
-   c.picture(a.content.world_image("rest",key),x,77,58,41,enabled?255:95);
+   if(a.cursor==int(slot))c.ui(U_RestOutline,x-2,73,54,37,enabled?255:130);
+   c.picture(a.content.world_image("rest",key),x,76,50,33,enabled?255:95);
    char title[96]{};TextBuffer b{title,sizeof title,0,&c.a.content};b.text("OPTION_");b.text(key);b.text(".name");const char*name=a.content.world_string("rest_site_ui",title);
-   c.centered(*name?name:key,x-6,121,70,12,a.cursor==int(slot)?Gold:enabled?White:Muted);c.hit(x-5,72,68,67,HitKind::Choice,int(slot),enabled);
+   c.centered(*name?name:key,x-7,110,64,10,enabled?rgb(212,182,91):Muted);c.hit(x-6,71,62,52,HitKind::Choice,int(slot),enabled);
   }
   const unsigned slot=options[selected];const auto option=WorldRestOption(s.world.rest_options[slot]);const bool enabled=world_rest_option_enabled(s,slot);
   char key[128]{},description[1024]{};TextBuffer b{key,sizeof key,0,&c.a.content};b.text("OPTION_");b.text(world_rest_option_key(s,slot));
   b.text(!enabled&&(option==WorldRestOption::Smith||option==WorldRestOption::Cook)?".descriptionDisabled":".description");a.localized_text("rest_site_ui",key,description,sizeof description,int(option));
-  // Keep the description below the options and beside the original actors.
-  // Five readable lines in this calculator column retain almost the previous
-  // three wide lines' capacity without printing over the seated characters.
-  c.paragraph(description,144,143,164,5,0,10,Ink);c.paragraph(description,143,142,164,5,0,10,White);
+  // Rich spans select their own colors. Tint the whole shadow pass so gold
+  // words do not get a second displaced gold copy beneath the real label.
+  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
+  shadow.opacity=uint8_t(div255(shadow.opacity*128));
+  shadow.paragraph_fitted(description,78,127,166,78,12,White,10,true);
+  c.paragraph_fitted(description,77,126,166,78,12,rgb(255,246,226),10,true);
  }
  if(count>4){
   c.text("‹",12,212,16,Gold);c.action(2,204,36,34,UiAction::PreviousCampPage,first>0);c.text("›",117,212,16,Gold);c.action(105,204,36,34,UiAction::NextCampPage,first+shown<count);

@@ -1,5 +1,32 @@
 # Work state — 2026-10-24
 
+## UI6 source checkpoint — implementation in progress
+
+Continuing the user's original-UI-first feedback with three parallel scopes:
+card/HUD/pile interaction, combat presentation and enemy formations, and rooms/
+map/rewards. Root integrates pinned v23 assets, close/back controls, persistent
+preferences, production cleanup and compile-time debug commands. Private inputs
+were recovered and the pinned DLL/PCK hashes verified; source reference remains
+v0.111.0 / 41cef1ea. This checkpoint preserves real implementation before long
+conversion/build work. It is **not accepted or validated**, and main remains at
+the previously accepted UI5 revision until the complete story is verified.
+
+Implemented source so far includes original controller card targeting, deck and
+pile layouts/sorting, hover text and long-description tips, original arrow/cursor
+asset integration, stable original encounter slots, separate damage/expired-power
+VFX, block entrance motion, reward delay separated from corpse disappearance,
+map legend/focus/fade corrections, merchant/rest layout and card-removal motion.
+The new private-resource converter appends original UI images while retaining
+historical payloads, indices and selected Chinese glyph ordering. Settings now
+have a bounded separate eight-byte preference codec and platform persistence.
+Boot progress illustration is removed; actual resource preparation remains bounded.
+
+Next: verify v23 resource generation, finish flag-gated debug commands and remove
+remaining legacy production entry points, then checkpoint before native/WASM/ARM
+builds and dual-language flow validation. UI5 results below are historical and
+must not be represented as validation of this work-in-progress tree.
+
+
 ## UI5 accepted delivery: original controls, combat feedback and measured cold-read reductions
 
 Final runtime `1c774c0847ef8e47b2bd23fd3bc6a11635d8e219`, tree

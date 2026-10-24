@@ -21,7 +21,7 @@ uint32_t App::input_context()const{
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
-void App::pointer_cancel(){hand_focus=false;map_dragging=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
+void App::pointer_cancel(bool keep_keyboard_card){hand_focus=false;map_dragging=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
@@ -49,7 +49,7 @@ void App::pointer_move(int x,int y){
     // The platform pointer API has no Godot motion velocity. An actual
     // coordinate change is the bounded adapter for its mouse-mode switch;
     // repeated stationary samples do not cancel directional focus.
-    if(clamp(x,0,319)!=pointer.x||clamp(y,0,239)!=pointer.y){map_directional=false;sync_map_reticles();}
+    if(clamp(x,0,319)!=pointer.x||clamp(y,0,239)!=pointer.y){map_directional=false;keyboard_card=-1;sync_map_reticles();}
     pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
@@ -58,6 +58,10 @@ void App::pointer_move(int x,int y){
         if(dy){pointer.dragging=true;drag_map(dy);}return;
     }
     const auto*h=hit_at(pointer.x,pointer.y);
+    // Modal controls own pointer focus even before the next timed render has
+    // replaced stale hit geometry from the covered pause/title page. Their
+    // own hover rendering reads coordinates; no underlying selection changes.
+    if(settings_open||frontend_confirm){hand_focus=false;return;}
     if(!pointer.held)hand_focus=hand_can_focus()&&h&&h->kind==HitKind::Hand;
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
     if(!combat_choice_ready()&&(h->kind==HitKind::Hand||h->kind==HitKind::Choice||
@@ -116,7 +120,7 @@ void App::pointer_scroll(int rows){
     if(panel==1){
         // The renderer aligns to ten-card pages. Half-page increments were
         // rounded back to the same page on every wheel event.
-        scroll=clamp(scroll+(rows>0?10:-10),0,MaxCards);inspect_cursor=scroll;
+        scroll=clamp(scroll+(rows>0?10:-10),0,MaxCards);inspect_cursor=scroll;pile_control_focus=-1;
     }
     else if(panel==4){if(!potion_targeting)potion_input(rows>0?Key::Right:Key::Left);}
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
@@ -192,11 +196,13 @@ void App::pointer_button(bool down){
         if(game.phase==Phase::ExhaustChoice)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==hit.value){cursor=i;pointer_key(Key::Confirm);break;}
         break;
     case HitKind::Command:pointer_key((Key)hit.value);break;
-    case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;break;
+    case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;pile_control_focus=-1;break;
     case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::InstanceCard:open_choice_detail(hit.value);break;
     case HitKind::PileCard:open_card_detail(card_from_token(hit.value));break;
-    case HitKind::DeckCard:if(hit.value>=0&&hit.value<game.deck_count)open_card_detail(game.deck[hit.value],hit.value);break;
+    case HitKind::DeckCard:if(hit.value>=0&&hit.value<game.deck_count){auto card=game.deck[hit.value];if(panel==1&&!pile_tab&&pile_upgraded&&card_upgradeable(card))card.upgraded=1;open_card_detail(card,hit.value);}break;
+    case HitKind::PileSort:sort_pile(unsigned(hit.value));break;
+    case HitKind::PileUpgrades:if(panel==1&&!pile_tab)pile_upgraded=!pile_upgraded;break;
     case HitKind::Relic:scroll=hit.value;open_owned_relic(hit.value);break;
     case HitKind::OwnedRelic:open_owned_relic(hit.value);break;
     case HitKind::Potion:if(panel==4&&scroll==hit.value)start_potion_use();break;

@@ -18,12 +18,6 @@ struct UiCoreObserver {
   app.finish_reward_acquisition(acquisition);
   if(app.game.enemy_world.active&&combat_phase(app.game.phase)&&int32_t(app.enemy_visual_clock-app.animation)>app.busy)app.busy=int(app.enemy_visual_clock-app.animation);
   if(app.combat_feedback.active&&combat_phase(app.game.phase)&&int32_t(app.combat_feedback.end_at-app.animation)>app.busy)app.busy=int(app.combat_feedback.end_at-app.animation);
-  if(was_combat&&app.game.enemy_world.active&&!combat_phase(app.game.phase)&&app.game.phase!=Phase::Dead){
-   bool living=false;for(int i=0;i<app.game.enemy_count;i++)living|=app.game.enemies[i].hp>0;
-   if(!living)for(int i=0;i<app.game.enemy_count;i++){const auto&m=app.enemy_presentation[i];
-    const uint32_t end=m.removing?m.hide_at:m.until;
-    if(m.dead&&(m.removing||!m.loop)&&int32_t(end-app.combat_linger_until)>0)app.combat_linger_until=end;}
-  }
   // Explicit ordinary Proceed keeps the same room, marked 2 by the
   // controller. Merely enabling travel (e.g. completing a rest option) does
   // not open the map. New acts, replacement runs and loads use their own

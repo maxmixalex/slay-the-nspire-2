@@ -52,9 +52,16 @@ static int ui_combat_status_fact(const State&s,int fact){
 int App::combat_status_amount(int actor,int id,bool label)const{
  if(actor<0||actor>MaxEnemies||id<0||id>=StatusKinds)return 0;
  const auto value=ui_feedback_bound(*this)?combat_status.shown[actor*StatusKinds+id]:ui_combat_status_value(game,actor,id);
+ if(label&&id==RegentStatusStart+int(RPower::Monologue)){int applied=0;for(int i=0;i<MaxPowerInstances;++i)applied+=combat_status_fact(CombatStatus::MonologueApplied,i);return applied;}
  if(label&&id==EnemyStatusStart+int(EnemyPower::Slow))return value.auxiliary*10;
  if(label&&id==EnemyStatusStart+int(EnemyPower::WitheringPresence))return value.auxiliary;
  return value.amount;
+}
+bool App::combat_status_counter(int actor,int id)const{
+ if(id<0||id>=StatusKinds||(CombatStatus::PowerFlags[id]&8))return false;
+ if(id==41||id==EnemyStatusStart+int(EnemyPower::Shrink))return combat_status_amount(actor,id)>=0;
+ if(id==RegentStatusStart+int(RPower::Monologue))return combat_status_amount(actor,id,true)!=0;
+ return true;
 }
 int App::combat_status_auxiliary(int actor,int power)const{
  if(actor<0||actor>MaxEnemies||power<0||power>=EnemyPowerCount)return 0;
@@ -84,10 +91,6 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
    view.reset_visuals();view.visual_seed=s.seed;view.visual_floor=s.floor;view.visual_combat=s.world.combat_count;view.visual_encounter=int(s.enemy_world.encounter);view.star_tick=a.map_clock_ms;
   }
  }
- static constexpr uint8_t visual_flags[]={
-#include "combat_power_visuals.inc"
- };
- static_assert(sizeof visual_flags==StatusKinds,"Every displayed power needs its original VFX classification");
  // A combat never shrinks enemy_count: removed actors retain their slots,
  // and a summon either reuses one or extends it. Only the initial snapshot
  // must clear every absent slot; later effects scan actual actor slots.
@@ -97,9 +100,10 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
   const unsigned cell=actor*StatusKinds+id;const auto value=ui_combat_status_value(s,int(actor),id);
   if(initial)view.shown[cell]=view.observed[cell]=value;
   else{
-   const auto old=view.observed[cell];const unsigned flags=visual_flags[id];
+   const auto old=view.observed[cell];const unsigned flags=CombatStatus::PowerFlags[id];
    // NCreature.OnPowerIncreased creates title/icon VFX; duration ticks and
-   // removals do not. Negative-capable counters (Strength/Dexterity/Focus)
+   // amount decreases do not. NCreature.OnPowerRemoved has its own VFX.
+   // Negative-capable counters (Strength/Dexterity/Focus)
    // also report losses, using the power type at the resulting amount.
    const bool increased=value.amount>old.amount,negative=(flags&4)&&value.amount<old.amount;
    if((flags&1)&&value.amount&&value.visible&&(increased||negative)&&
@@ -107,6 +111,9 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
     const bool debuff=(flags&4)&&value.amount<0?true:(flags&2)!=0;
     view.popup(actor,unsigned(id),!debuff,ui_feedback_identity(s,actor),at,a.animation);
    }
+   if((flags&1)&&old.amount&&old.visible&&!value.amount&&
+      combat_phase(s.phase)&&(actor==0?s.hp>0:actor<=unsigned(s.enemy_count)&&s.enemies[actor-1].hp>0))
+    view.popup(actor,unsigned(id),false,ui_feedback_identity(s,actor),at,a.animation,true);
    view.append(cell,value,at);
   }
  }

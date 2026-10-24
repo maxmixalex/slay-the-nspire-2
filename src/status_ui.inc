@@ -9,7 +9,7 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
     int widths[StatusKinds],rows=1,used=0;
     for(int i=0;i<count;i++){
         char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(c.a.combat_status_amount(actor,ids[i],true));
-        widths[i]=mx(18,11+c.width(amount,8));
+        widths[i]=c.a.combat_status_counter(actor,ids[i])?mx(18,11+c.width(amount,8)):14;
         if(used&&used+widths[i]>width){++rows;used=0;}used+=widths[i];
     }
     // Grow toward the actors when extra rows would enter the resting hand.
@@ -20,9 +20,10 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
         if(used&&used+widths[i]>width){++row;used=0;}
         const int xx=x+used,yy=top+row*12,value=c.a.combat_status_amount(actor,ids[i],true);
         c.picture(ui_status_image(c.a,ids[i]),xx,yy,11,11);
+        if(c.a.combat_status_counter(actor,ids[i])){
         char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(value);
         for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.text(amount,xx+9+dx,yy+3+dy,8,Ink);
-        c.text(amount,xx+9,yy+3,8,value<0?rgb(255,102,102):White);
+        c.text(amount,xx+9,yy+3,8,value<0?rgb(255,102,102):White);}
         c.hit(xx-1,yy-1,widths[i],12,HitKind::BattleStatus,actor*StatusKinds+ids[i]);
         used+=widths[i];
     }
@@ -42,13 +43,13 @@ static void battle_status_tooltip(Canvas&c){
     else{c.rect(x,y,170,height,Panel);c.box(x,y,170,height,Gold);}
     c.picture(ui_status_image(a,id),x+6,y+5,13,13);
     c.text(ui_status_title(a,id),x+23,y+4,10,Gold,122);
-    c.num(a.combat_status_amount(actor,id,true),x+145,y+4,8,White);
+    if(a.combat_status_counter(actor,id))c.num(a.combat_status_amount(actor,id,true),x+145,y+4,8,White);
     c.paragraph(body,x+6,y+23,158,shown,0,10,White);
     if(lines>shown)c.text("…",x+151,y+height-13,10,Gold);
 }
 static void orb_status_detail(Canvas&c){
     const auto&a=c.a;
-    char heading[64]={};TextBuffer t{heading,sizeof heading,0,&c.a.content};t.text("槽位 ");t.number(a.combat_status_fact(CombatStatus::OrbCount));t.ch('/');t.number(a.combat_status_fact(CombatStatus::OrbSlots));t.text(" · 被动/激发");
+    char heading[64]={};TextBuffer t{heading,sizeof heading,0,&c.a.content};t.text("槽位 ");t.number(a.combat_status_fact(CombatStatus::OrbCount));t.ch('/');t.number(a.combat_status_fact(CombatStatus::OrbSlots));t.text("  被动/激发");
     c.text(heading,145,115,10,White,155);
     c.a.status_scroll_limit=a.combat_status_fact(CombatStatus::OrbSlots)>5?5:0;
     c.a.status_scroll=c.a.status_scroll>=5&&c.a.status_scroll_limit?5:0;
@@ -69,7 +70,7 @@ static void status_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;a.hit_count=0;
     c.dim(0,0,320,240,215);c.ui(U_RewardPanel,4,5,312,233);
     char heading[160]{};TextBuffer hb{heading,sizeof heading,0,&c.a.content};
-    if(a.status_actor>0){hb.text(ui_enemy_name(a,a.status_actor-1));hb.text(" · ");const auto health=a.combat_health(a.status_actor);hb.number(health.hp);hb.ch('/');hb.number(health.max_hp);}else hb.text("能力与状态");
+    if(a.status_actor>0){hb.text(ui_enemy_name(a,a.status_actor-1));hb.text("  ");const auto health=a.combat_health(a.status_actor);hb.number(health.hp);hb.ch('/');hb.number(health.max_hp);}else hb.text("能力与状态");
     c.centered(heading,7,9,282,12,Gold);c.close_button(289,10);
     for(int actor=0;actor<=s.enemy_count;actor++){
         int width=300/(s.enemy_count+1),x=10+actor*width;
@@ -93,7 +94,7 @@ static void status_screen(Canvas&c){
             c.hit(12,y,116,22,HitKind::StatusItem,i);
         }
         int id=ids[a.status_selected];
-        c.picture(ui_status_image(a,id),145,65,25,25);c.num(a.combat_status_amount(a.status_actor,id,true),181,66,16,Gold);
+        c.picture(ui_status_image(a,id),145,65,25,25);if(a.combat_status_counter(a.status_actor,id))c.num(a.combat_status_amount(a.status_actor,id,true),181,66,16,Gold);
         c.text(ui_status_title(a,id),145,95,12,Gold,155);
         char description[8192]={};ui_status_description(a,a.status_actor,id,description,sizeof description);TextBuffer t{description,sizeof description,0,&c.a.content};while(description[t.n])++t.n;
         if(id==44){
@@ -108,7 +109,7 @@ static void status_screen(Canvas&c){
             t.text("\n本回合已触发：");t.number(a.combat_status_fact(CombatStatus::FeralUsed));
             t.text("\n本回合剩余：");t.number(mx(0,a.combat_status_amount(0,DefectStatusStart+(int)DPower::Feral)-(int)a.combat_status_fact(CombatStatus::FeralUsed)));
         }else if(id==RegentStatusStart+(int)RPower::PaleBlueDot){
-            t.text("\n本回合打出：");t.number(a.combat_status_fact(CombatStatus::RegentCards));t.text(a.combat_status_fact(CombatStatus::PaleActivated)?" · 已达成":" / 5");
+            t.text("\n本回合打出：");t.number(a.combat_status_fact(CombatStatus::RegentCards));t.text(a.combat_status_fact(CombatStatus::PaleActivated)?"  已达成":" / 5");
         }else if(id==RegentStatusStart+(int)RPower::VoidForm){
             t.text("\n本回合剩余免费次数：");t.number(mx(0,a.combat_status_amount(0,RegentStatusStart+(int)RPower::VoidForm)-(int)a.combat_status_fact(CombatStatus::VoidPlayed)));
         }else if(id==RegentStatusStart+(int)RPower::Orbit){
@@ -129,5 +130,5 @@ static void status_screen(Canvas&c){
             c.text("‹",15,205,12,Gold);c.hit(11,204,25,18,HitKind::Scroll,-6,first>0);
             c.text("›",111,205,12,Gold);c.hit(105,204,25,18,HitKind::Scroll,6,first+6<count);}
     }
-    c.centered("←→ 切换 · ↑↓ 状态 · Enter 翻说明 · V 返回",4,220,312,10,Muted);
+
 }

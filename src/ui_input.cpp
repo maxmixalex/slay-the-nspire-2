@@ -5,6 +5,7 @@
 #include "ui_core_observer.hpp"
 namespace spire {
 #include "world_choice_input.inc"
+#include "pile_input.inc"
 uint32_t App::next_run_seed(bool* randomized){
     const uint32_t serial=run_number++;
     const uint32_t entropy=callbacks.seed_entropy?callbacks.seed_entropy():0;
@@ -101,7 +102,7 @@ void App::ui_action(UiAction action){
     switch(action){
     case UiAction::FrontendAccept:accept_frontend_confirm();break;
     case UiAction::FrontendCancel:frontend_confirm=frontend_choice=0;break;
-    case UiAction::SettingsFastMode:if(settings_open)fast_mode=!fast_mode;break;
+    case UiAction::SettingsFastMode:if(settings_open)set_fast_mode(!fast_mode);break;
     case UiAction::SettingsControls:if(settings_open)help=true;break;
     case UiAction::SettingsPractice:if(settings_open&&title){settings_open=false;practice_entry=true;character_select=true;}break;
     case UiAction::SettingsReference:if(settings_open&&title){settings_open=false;map_preview.open=true;if(!map_preview.generated)map_preview.generate();}break;
@@ -323,12 +324,19 @@ bool App::deck_candidate_valid()const{
 void App::confirm_deck_choice(){
     if(!deck_candidate_valid()){deck_candidate=-1;return;}
     int index=deck_candidate;Phase phase=game.phase;deck_candidate=-1;pointer_cancel();
+    RewardPresentation::RemovedCard removed;
+    if(phase==Phase::Remove||grimoire_select){
+        removed.card=game.deck[index];if(const auto*facts=event_card_facts(game,removed.card,-1,index))removed.facts=*facts;
+        removed.energy=int16_t(card_offer_cost(removed.card,&removed.facts));removed.stars=int16_t(card_star_cost(game,removed.card));
+        card_description(removed.card,-1,removed.description,sizeof removed.description,-1,index,&removed.facts);
+        removed.start=map_clock_ms;removed.active=true;
+    }
     if(grimoire_select&&phase==Phase::Reward){
-        if(necro_grimoire_choice(game,index)){cursor=index<game.deck_count?index:game.deck_count-1;if(!game.necro.grimoire_pending){grimoire_select=false;cursor=3;}}
+        if(necro_grimoire_choice(game,index)){reward_presentation.removed=removed;cursor=index<game.deck_count?index:game.deck_count-1;if(!game.necro.grimoire_pending){grimoire_select=false;cursor=3;}}
         else message("此时无法移除这张牌");return;
     }
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
-    if(ok){reset_presentation(true);if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
+    if(ok){reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
     else message("此时无法完成这项操作");
 }
 bool App::deck_input(Key key){

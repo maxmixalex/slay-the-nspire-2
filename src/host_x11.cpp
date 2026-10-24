@@ -37,6 +37,20 @@ static spire::BootLanguage read_preference(const std::string&path){
     return spire::boot_preference(bytes,(uint32_t)count);
 }
 static std::string save_path;
+static std::string settings_path;
+static bool load_preferences(spire::UiPreferences& value){
+    if(settings_path.empty())return false;
+    FILE*f=fopen(settings_path.c_str(),"rb");if(!f)return false;
+    uint8_t bytes[spire::UiPreferencesBytes+1];const size_t n=fread(bytes,1,sizeof bytes,f);
+    const bool ok=!ferror(f);fclose(f);return ok&&spire::decode_ui_preferences(bytes,n,value);
+}
+static bool save_preferences(const spire::UiPreferences& value){
+    if(settings_path.empty())return true;
+    uint8_t bytes[spire::UiPreferencesBytes];spire::encode_ui_preferences(value,bytes);
+    const std::string temp=settings_path+".tmp";FILE*f=fopen(temp.c_str(),"wb");if(!f)return false;
+    bool ok=fwrite(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(fclose(f)==0)&&ok;
+    if(ok)ok=rename(temp.c_str(),settings_path.c_str())==0;if(!ok)remove(temp.c_str());return ok;
+}
 static bool save_game(const spire::State&s){
     static spire::SaveData b{};if(!spire::save(s,b))return false;
     std::string temp=save_path+".tmp";FILE*f=fopen(temp.c_str(),"wb");if(!f)return false;
@@ -66,10 +80,10 @@ int main(int argc,char**argv){
     auto language=spire::BootLanguage::Unknown;
     for(int i=1;i<argc;i++){
         std::string a=argv[i];if(a=="--headless")headless=true;
-        else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
+        else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--settings"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
             if(a=="--pack")packpath=v;else if(a=="--common")commonpath=v;else if(a=="--locale")localepath=v;else if(a=="--resources")dir=v;
             else if(a=="--language"){if(!strcmp(v,"eng"))language=spire::BootLanguage::English;else if(!strcmp(v,"zhs"))language=spire::BootLanguage::Chinese;else{fprintf(stderr,"--language eng|zhs\n");return 2;}}
-            else if(a=="--save")save_path=v;else if(a=="--capture")shot=v;else actions=v;}
+            else if(a=="--save")save_path=v;else if(a=="--settings")settings_path=v;else if(a=="--capture")shot=v;else actions=v;}
         else {fprintf(stderr,"Usage: %s [--pack FILE | --resources DIR | --common FILE --locale FILE] [--language eng|zhs] [--save FILE] [--headless] [--actions enter,right,...] [--capture FILE.ppm]\n",argv[0]);return 2;}}
     if(!packpath.empty()&&(!commonpath.empty()||!localepath.empty())){fprintf(stderr,"Choose --pack or --common/--locale\n");return 2;}
     const bool explicit_split=!commonpath.empty()||!localepath.empty();
@@ -104,7 +118,8 @@ int main(int argc,char**argv){
         resource.file=fopen(packpath.c_str(),"rb");if(!resource.file)return error(spire::BootText::MissingResources);
         source=file_source(resource.file);language=spire::boot_probe_language(source);
     }
-    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy}))return error(spire::BootText::InvalidResources);
+    if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
+    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences}))return error(spire::BootText::InvalidResources);
     if(common.file&&!headless&&read_preference(preference)!=language){
         FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}
     }

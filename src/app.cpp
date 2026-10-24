@@ -90,50 +90,8 @@ static void log_line(App&a,Log l,char*b,size_t n){
     default:t.text("容量上限：本局已安全停止");break;}
 }
 #include "relic_ui.inc"
-static void hud(Canvas&c){
-    auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
-    // top_bar.tscn order: portrait, red HP, gold, recessed potion tray,
-    // room/floor information, then the right-aligned navigation controls.
-    c.nine_ui(U_TopBarBackdrop,1,0,24,22,7,6,7,6);
-    int portrait=c.a.content.ui_image(U_TopBarIronclad+int(s.character));
-    if(portrait<0)portrait=c.a.content.ui_image(character_portrait(s.character));
-    c.picture(portrait,3,1,20,20);
-    if(const unsigned ascension=world_ascension(s)){
-        c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
-    }
-    const auto health=c.a.combat_health(0);
-    c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
-    c.text_fitted(b,41,5,43,8,rgb(255,85,85));
-    c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,100,5,25,8,Gold);
-    c.nine_ui(U_TopBarBackdrop,127,1,53,20,7,6,7,6);
-    const int slots=potion_slot_count(s),width=slots>3?14:17;
-    c.a.potion_page=uint8_t(mn(int(c.a.potion_page),(slots-1)/3));
-    const int first=int(c.a.potion_page)*3,visible=mn(slots-first,3);
-    for(int i=0;i<visible;i++){
-        int x=128+i*width;const int slot=first+i;Potion potion=potion_at(s,slot);
-        const unsigned age=c.a.map_clock_ms-c.a.potion_removed_start;
-        const bool removing=c.a.potion_removed!=Potion::Empty&&c.a.potion_removed_slot==slot&&age<(c.a.potion_removed_discard?400u:200u);
-        if(potion!=Potion::Empty){if(!c.a.reward_pickup_hidden(RewardPickupKind::Potion,slot))c.picture(c.a.content.potion_image(potion),x+1,2,width-3,18);}
-        else if(c.a.content.ui_image(U_PotionPlaceholder)>=0){const unsigned alpha=age<200&&c.a.potion_removed_slot==slot?0:age<400&&c.a.potion_removed_slot==slot?(age-200)*255/200:255;c.ui(U_PotionPlaceholder,x+1,3,width-3,15,alpha);}
-        else{c.box(x+4,5,7,12,rgb(92,90,83));c.rect(x+5,2,5,3,Muted);}
-        if(removing){
-            const int duration=c.a.potion_removed_discard?400:200,t=int(age)*4096/duration;
-            const int back=int((int64_t(t)*t/4096)*(int64_t(11066)*t/4096-6970)/4096);
-            const int scale=c.a.potion_removed_discard?4096:4096-back,w=mx(1,(width-3)*scale/4096),h=mx(1,18*scale/4096);
-            c.picture(c.a.content.potion_image(c.a.potion_removed),x+width/2-w/2,11-h/2-(c.a.potion_removed_discard?back*20/4096:0),w,h);
-        }
-        c.hit(x,0,width,22,HitKind::PotionSlot,slot,potion!=Potion::Empty);
-    }
-    if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
-    c.ui(U_TopFloor,183,3,13,16);b[0]=0;t.n=0;t.number(s.floor);c.text_fitted(b,198,5,17,8,Gold);
-    if(s.practice)c.text_fitted("图鉴",217,5,31,10,Gold,8,true);
-    else c.ui(U_TopMap,224,2,18,18);
-    c.hit(216,0,33,22,HitKind::Command,(int)(s.practice?Key::Collection:Key::Map),!s.world.active||s.phase!=Phase::Map);
-    c.ui(U_TopDeck,257,2,18,18);c.hit(249,0,34,22,HitKind::Command,(int)Key::Inspect);
-    c.ui(U_TopSettings,291,2,18,18);c.hit(283,0,37,22,HitKind::Command,(int)Key::Back);
-    if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp||s.phase==Phase::Reward||s.phase==Phase::WorldRelicChoice||s.phase==Phase::OriginalEventChoice))owned_relic_strip(c);
-
-}
+#include "ui_picture_transform.inc"
+#include "hud_ui6.inc"
 
 #include "rooms_ui.inc"
 #include "status_ui.inc"
@@ -208,40 +166,11 @@ static void camp_screen(Canvas&c){
 }
 
 #include "potion_ui.inc"
+#include "pile_ui6.inc"
 static void panels(Canvas&c){
-    auto&a=c.a;auto&s=a.game;if(a.panel==4){potion_popup_screen(c);return;}a.hit_count=0;if(a.panel==3){map_screen(c,true);c.close_button();return;}
+    auto&a=c.a;auto&s=a.game;if(a.panel==4){potion_popup_screen(c);return;}if(a.panel==1){pile_screen(c);return;}a.hit_count=0;if(a.panel==3){map_screen(c,true);c.close_button();return;}
     c.rect(4,24,312,212,Panel);c.box(4,24,312,212,Gold);
-    if(a.panel==1){
-        const char*names[]={"牌组","抽牌堆","弃牌堆","消耗堆","能力"};
-        for(int tab=0;tab<5;tab++){int x=10+tab*54;
-            c.text(names[tab],x+3,28,10,tab==a.pile_tab?Gold:Muted,50);
-            if(tab==a.pile_tab)c.rect(x,45,48,1,Gold);c.hit(x,25,52,23,HitKind::PileTab,tab);}
-        int ids[MaxCards],n=0;
-        if(a.pile_tab==0){n=s.deck_count;for(int i=0;i<n;i++)ids[i]=i;}
-        else{const Pile&p=pile(s,a.pile_tab==1?Zone::Draw:a.pile_tab==2?Zone::Discard:a.pile_tab==3?Zone::Exhaust:Zone::Power);n=p.count;for(int i=0;i<n;i++)ids[i]=p.ids[i];
-            // Inspecting the draw pile must never disclose its actual shuffle order.
-            if(a.pile_tab==1)for(int i=1;i<n;i++){int id=ids[i],j=i;while(j&&s.cards[ids[j-1]].kind>s.cards[id].kind){ids[j]=ids[j-1];--j;}ids[j]=id;}}
-        a.inspect_cursor=mn(a.inspect_cursor,mx(0,n-1));a.scroll=mn((a.scroll/10)*10,mx(0,((n-1)/10)*10));
-        int portraits[10];unsigned portrait_count=0;
-        for(int i=a.scroll;i<mn(n,a.scroll+10);++i){
-            Card card=a.pile_tab==0?s.deck[ids[i]]:s.cards[ids[i]];
-            portraits[portrait_count++]=a.card_face_image(card,a.pile_tab==0?-1:ids[i],a.pile_tab==0?ids[i]:-1);
-        }
-        a.content.prepare_images(portraits,portrait_count);
-        for(int i=a.scroll;i<mn(n,a.scroll+10);i++){
-            Card card=a.pile_tab==0?s.deck[ids[i]]:s.cards[ids[i]];
-            int x=24+(i-a.scroll)%5*54,y=52+(i-a.scroll)/5*74;
-            bool hovered=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+50&&a.pointer.y>=y-2&&a.pointer.y<y+68;
-            small_card(c,card,x,y,hovered||(!a.pointer.visible&&i==a.inspect_cursor),true,0,a.pile_tab==0?cost(card):cost(s,ids[i]),card_star_cost(s,card,a.pile_tab==0?-1:ids[i]),a.pile_tab==0?-1:ids[i],a.pile_tab==0?ids[i]:-1);
-            c.hit(x-2,y-2,51,70,a.pile_tab==0?HitKind::DeckCard:HitKind::InstanceCard,ids[i]);
-        }
-        if(!n)c.centered("空",0,105,320,12,Muted);
-        c.text("‹",14,201,16,Gold);c.hit(7,198,37,27,HitKind::Scroll,-2,a.scroll>0);
-        c.text("›",296,201,16,Gold);c.hit(279,198,34,27,HitKind::Scroll,2,a.scroll+10<n);
-        char page[64]={};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(n);b.text(" 张  ·  ");b.number(a.scroll/10+1);b.text(" / ");b.number(mx(1,(n+9)/10));
-        c.centered(page,45,202,230,12,Gold);
-        c.centered(a.pile_tab==1?"无序查看 · 点击卡牌看详情":"点击卡牌看详情 · ←→ 切换牌堆",0,221,320,10,Muted);
-    }else if(a.panel==2){
+    if(a.panel==2){
         c.centered("本局记录（最近 24 条）",5,27,310,12,Gold);a.scroll=mn(a.scroll,mx(0,s.log_count-10));int first=mx(0,s.log_count-10-a.scroll);
         for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}c.text("↑↓ 滚动 · Esc 返回",15,216,10,Muted);
     }else if(a.panel==5){
@@ -300,7 +229,6 @@ static void detail_screen(Canvas&c){
     }
     c.close_button(290,26);c.hit(288,24,25,24,HitKind::DetailClose);
     if(lines>8&&!a.keyword_hover.details){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
-    if(!a.keyword_hover.details){c.centered("V 词条",19,190,92,10,Gold);c.hit(18,187,94,15,HitKind::Command,int(Key::Statuses));}
 }
 #include "reference_map_ui.inc"
 #include "ui_frontend.inc"
@@ -309,27 +237,8 @@ static void detail_screen(Canvas&c){
 #include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
 #include "keyword_tooltip_ui.inc"
-static void pointer_overlay(Canvas&c){
-    auto&a=c.a;
-    // The two authored black transition layers composite before the host
-    // pointer. Per-row coverage preserves the original moving gradient.
-    if(a.map_travel.pending||a.map_travel.fading_in){
-        for(int y=0;y<ScreenH;++y){const unsigned alpha=a.map_transition_alpha(y);
-            if(alpha==255)c.rect(0,y,ScreenW,1,0);
-            else if(alpha)for(int x=0;x<ScreenW;++x)c.paint(y*c.pitch+x,0,alpha);
-        }
-        if(a.map_transition_blocks_pointer())a.hit_count=0;
-    }
-    auto&p=a.pointer;if(!p.visible)return;
-    if(a.panel==4&&a.potion_targeting){const int x=128+(a.scroll%3)*(potion_slot_count(a.game)>3?14:17)+7;c.line(x,21,p.x,p.y,Blue,true);c.box(p.x-5,p.y-5,11,11,Gold);}
-    if(p.armed_card>=0&&p.armed_card<a.game.card_count){
-        if(a.game.zones[p.armed_card]!=Zone::Hand||a.game.phase!=Phase::Combat)p.armed_card=-1;
-        else{c.line(160,180,p.x,p.y,Blue,true);c.box(p.x-5,p.y-5,11,11,Gold);}
-    }
-    // Small high-contrast cursor, clipped by the same raster bounds as the UI.
-    for(int y=0;y<12;y++)for(int x=0;x<=y/2;x++)c.rect(p.x+x,p.y+y,1,1,x==0||x==y/2||y==11?Ink:White);
-    c.rect(p.x+4,p.y+10,2,5,Ink);c.rect(p.x+4,p.y+10,1,4,White);
-}
+#include "pointer_ui6.inc"
+
 void App::render(){
     begin_card_face_frame();
     sync_reward_presentation();
@@ -337,8 +246,10 @@ void App::render(){
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
     sync_combat_preparation();
     if(combat_preparation.active){
-        hit_count=0;loading_screen(pixels,ResourceStage::Images,combat_preparation.cursor,combat_preparation.count,map_clock_ms/33,boot_text(BootText::PreparingBattle,boot_language(content.english())),true,boot_language(content.english()));
-        combat_preparation.shown=true;Canvas c{*this};c.rect(35,146,250,15,0x10c3);c.centered("准备战斗",35,147,250,10,White);
+        // Keep the original room transition black while its required poses
+        // are prepared. A loading illustration/label is not part of the
+        // original room scene and must not interrupt its fade-out/fade-in.
+        hit_count=0;combat_preparation.shown=true;Canvas c{*this};c.rect(0,0,ScreenW,ScreenH,0);
         if(paused)native_pause_screen(c);if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;
     }
     map_visuals.update(game,map_clock_ms);
@@ -351,6 +262,8 @@ void App::render(){
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
+    const bool underlay_pointer_visible=pointer.visible;
+    if(settings_open||frontend_confirm)pointer.visible=false;
     if(title){title_screen(c);
     }else{
         // The room beneath a modal can clamp its own text scroll. It must not
@@ -384,6 +297,7 @@ void App::render(){
         if(paused)native_pause_screen(c);
 
     }
+    pointer.visible=underlay_pointer_visible;
     if(settings_open)frontend_settings_screen(c);
     if(frontend_confirm)frontend_confirm_screen(c);
     if(help){
@@ -400,6 +314,7 @@ void App::render(){
     if(event_reader)event_reader_screen(c);
     if(map_preview.open)reference_map_screen(c);
     if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&game.phase!=Phase::Event&&game.phase!=Phase::Shop&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    hud_hover_tip(c);
     potion_hover_tip(c);
     owned_relic_tooltip(c);
     enemy_intent_tooltip(c);

@@ -33,8 +33,10 @@ int main(){
     }
     CHECK(findclick(HitKind::Choice,ShopRemove));CHECK(a.game.phase==Phase::Remove);a.input(Key::Back);CHECK(a.cursor==ShopRemove&&a.game.phase==Phase::Shop);
     init();snapshot();a.input(Key::Inspect);a.render();
-    // Relic row must not draw/register over the pile tabs.
-    const auto*tab=a.hit_at(20,30);CHECK(tab&&tab->kind==HitKind::PileTab);unchanged();
+    // Deck sorting belongs to its own original bar; the relic strip must
+    // not steal the sorter hits and combat piles no longer have fake tabs.
+    const auto*tab=a.hit_at(33,36);CHECK(tab&&tab->kind==HitKind::PileSort);unchanged();
+    for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::PileTab);
     a.pointer_move(37,70);a.pointer_button(true);a.input(Key::Back);a.pointer_button(false);CHECK(a.detail_card<0);unchanged();
     printf("ui flow: %u checks passed\n",checks);
 }

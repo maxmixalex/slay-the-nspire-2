@@ -24,6 +24,7 @@ static spire::App app;
 static spire::SaveData scratch;
 static spire::RuntimePerformance performance;
 static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512],language_path[512];
+static char settings_path[512],settings_temp[512],settings_backup[512];
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 static uint32_t entropy_start=0;
 static uint32_t seed_entropy(){
@@ -53,8 +54,9 @@ static void resource_progress(void*context,spire::ResourceStage stage,uint32_t c
             performance.startup_phases[(unsigned)s.phase].add(s.phase_start-now);
         s.phase=stage;s.phase_start=now;
     }
-    if(!s.blit||(!changed&&completed!=total&&s.drawn-now<3277u))return;
-    s.drawn=now;spire::loading_screen(app.pixels,stage,completed,total,now>>10,nullptr,false,s.language);s.blit(app.pixels);
+    // Startup no longer presents a synthetic animation. Keep only opt-in
+    // phase accounting; the first actual UI frame follows the bounded open.
+    (void)completed;(void)total;
 }
 static bool read_resource(void* context,uint32_t offset,void* output,uint32_t count){
     auto&source=*static_cast<ResourceFile*>(context);bool seek=false;
@@ -73,6 +75,21 @@ static spire::ResourceSource file_source(ResourceFile&file){
     const long length=nd_tell(file.file);
     if(length<=0||(unsigned long)length>spire::MaxContentFile)return {};
     return {&file,(uint32_t)length,read_resource,nullptr,resource_progress};
+}
+static bool load_preferences(spire::UiPreferences& value){
+    void*f=nd_open(settings_path,"rb");if(!f)return false;
+    uint8_t bytes[spire::UiPreferencesBytes+1];const unsigned n=nd_read(bytes,1,sizeof bytes,f);
+    nd_close(f);return spire::decode_ui_preferences(bytes,n,value);
+}
+static bool save_preferences(const spire::UiPreferences& value){
+    uint8_t bytes[spire::UiPreferencesBytes];spire::encode_ui_preferences(value,bytes);
+    void*f=nd_open(settings_temp,"wb");if(!f)return false;
+    bool ok=nd_write(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(nd_close(f)==0)&&ok;
+    if(!ok){nd_unlink(settings_temp);return false;}
+    bool old=false;f=nd_open(settings_path,"rb");if(f){old=true;nd_close(f);}
+    if(old){nd_unlink(settings_backup);if(nd_rename(settings_path,settings_backup)!=0){nd_unlink(settings_temp);return false;}}
+    if(nd_rename(settings_temp,settings_path)!=0){if(old)nd_rename(settings_backup,settings_path);return false;}
+    if(old)nd_unlink(settings_backup);return true;
 }
 static bool save_game(const spire::State&s){
     if(!spire::save(s,scratch))return false;
@@ -198,7 +215,7 @@ struct Touchpad {
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
-    if(!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns"))return 3;
+    if(!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(settings_path,launcher,"nSpire2.settings.tns")||!sibling(settings_temp,launcher,"nSpire2.settings.tmp.tns")||!sibling(settings_backup,launcher,"nSpire2.settings.bak.tns"))return 3;
     // Ndless may wait for all launch keys to be released before entering main,
     // so a held CTRL alone cannot reliably opt in. An owner-created sibling
     // marker enables startup timing without a loader/key timing dependency.
@@ -212,7 +229,7 @@ extern "C" int main(int argc,char**argv){
     Clock clock{};clock.init();
     Display display;if(!nd_lcd_init(0))return 6;display.active=true;
     auto blit=nd_blitter(0);if(!blit)return 7;
-    spire::loading_screen(app.pixels,spire::ResourceStage::Header,0,1,timer_ticks()>>10,nullptr,false,spire::BootLanguage::Unknown);blit(app.pixels);
+    for(auto&pixel:app.pixels)pixel=0;blit(app.pixels);
     ResourceFile common{},source{};spire::SplitResourceSource split;
     const auto preferred=language_preference();bool selected_language=false;
     common.file=open_sibling(launcher,"nSpire2.common.tns");
@@ -233,7 +250,7 @@ extern "C" int main(int argc,char**argv){
         valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
         if(valid)resource=split.source();
     }else source.language=spire::boot_probe_language(resource);
-    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy})){
+    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
     if(selected_language&&source.language!=preferred)store_language(source.language);

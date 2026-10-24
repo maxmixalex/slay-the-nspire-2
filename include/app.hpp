@@ -1,4 +1,5 @@
 #pragma once
+#include "merchant_layout.hpp"
 #include "core.hpp"
 #include "keyword_hover.hpp"
 #include "event_assets.hpp"
@@ -28,8 +29,10 @@
 #include "title_scene.hpp"
 #include "title_assets.hpp"
 #include "frontend_assets.hpp"
+#include "ui6_assets.hpp"
 #include "reward_presentation.hpp"
 #include "title_particles.hpp"
+#include "ui_preferences.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -89,8 +92,8 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>FrontendContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        if(version_<ContentVersion||version_>Ui6ContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
@@ -134,6 +137,8 @@ struct Callbacks {
     // Production hosts supply fresh entropy for automatic new runs. A null
     // callback (or zero sample) keeps deterministic offline replay fixtures.
     uint32_t(*seed_entropy)()=nullptr;
+    bool(*load_preferences)(UiPreferences&)=nullptr;
+    bool(*save_preferences)(const UiPreferences&)=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -195,6 +200,8 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;
+    void restore_preferences();
+    void set_fast_mode(bool value);
     uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0,settings_tab=0;
     Character saved_character=Character::Ironclad;
     uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
@@ -264,6 +271,14 @@ struct App {
     bool grimoire_select=false;
     int library_tab=0,library_page=0,library_selected=0;
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
+    uint8_t pile_sort_priority[4]{0,1,2,3},pile_sort_descending=0;
+    bool pile_upgraded=false;
+    int pile_control_focus=-1;
+    unsigned pile_items(int*out=nullptr)const;
+    void sort_pile(unsigned column);
+    int keyboard_card=-1;
+    uint32_t keyboard_card_revision=0;
+    bool card_target_input(Key);
     uint8_t potion_menu_item=0,potion_page=0;
     bool potion_targeting=false,potion_removed_discard=false;
     int potion_popup_slot=-1,potion_removed_slot=-1;
@@ -361,6 +376,7 @@ struct App {
     CombatCardMotion::Counts combat_pile_counts()const;
     void sync_combat_cards();
     int combat_status_amount(int actor,int id,bool label=false)const;
+    bool combat_status_counter(int actor,int id)const;
     int combat_status_auxiliary(int actor,int power)const;
     EnemyId combat_status_source(int actor,int power)const;
     int combat_status_fact(int fact,int slot=0)const;
@@ -407,7 +423,7 @@ struct App {
     uint32_t input_context() const;
     void pointer_move(int x,int y);
     void pointer_button(bool pressed);
-    void pointer_cancel();
+    void pointer_cancel(bool keep_keyboard_card=false);
     void pointer_scroll(int rows);
     void pointer_key(Key);
     void open_card_detail(Card,int deck_index=-1);

@@ -5,7 +5,7 @@
 namespace spire {
 struct App;
 enum class Key;
-enum class HoverTipKind:uint8_t { Keyword,Static,Power,Orb,Card,Enchantment,Affliction,Special,Relic,Potion };
+enum class HoverTipKind:uint8_t { Keyword,Static,Power,Orb,Card,Enchantment,Affliction,Special,Relic,Potion,Description };
 struct HoverTip {
     HoverTipKind kind=HoverTipKind::Keyword;
     const char* key="";

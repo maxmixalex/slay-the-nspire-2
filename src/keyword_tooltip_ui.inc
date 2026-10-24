@@ -106,18 +106,25 @@ static bool hover_in(const HoverRect&r,int x,int y){return x>=r.x&&x<r.x+r.w&&y>
 static bool hover_detail_word(const App&a,Card card){
     if(!hover_in({123,66,177,120},a.pointer.x,a.pointer.y))return false;
     char text[2048]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,text,sizeof text,a.detail_instance,a.detail_deck_index);
-    RichReader reader(text);RichChar ch{};int x=123,row=0;
-    while(reader.next(ch)){auto glyph=a.content.glyph_metrics(ch.codepoint,12);int advance=glyph.advance+rich_bold_advance(ch);
-        if(ch.codepoint=='\n'||(x>123&&x+advance>300)){x=123;++row;if(ch.codepoint=='\n')continue;}
+    RichReader reader(text);RichChar ch{};int x=123,row=0;bool boundary=true;
+    const bool words=a.content.english();
+    auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px);const int advance=g.advance+rich_bold_advance(value);return fitted_text::Metric{advance,advance};};
+    while(reader.next(ch)){
+        const int word=words&&boundary&&x>123&&fitted_text::word_character(ch.codepoint)?fitted_text::word_width(reader,ch,12,metrics):0;
+        const auto glyph=a.content.glyph_metrics(ch.codepoint,12);const int advance=glyph.advance+rich_bold_advance(ch);
+        const bool space=ch.codepoint==' '||ch.codepoint=='\t';
+        if(words&&space&&(x==123||x+advance>300)){boundary=true;continue;}
+        if(ch.codepoint=='\n'||(x>123&&(x+advance>300||(word&&word<=177&&x+word>300)))){x=123;++row;if(ch.codepoint=='\n'){boundary=true;continue;}}
+        if(words){boundary=space;if(x==123&&space)continue;}
         if(row>=a.detail_scroll+8)return false;
-        if(row>=a.detail_scroll&&row<a.detail_scroll+8&&ch.style.color==1&&
+        if(row>=a.detail_scroll&&ch.style.color==1&&
            hover_in({x,66+(row-a.detail_scroll)*15,mx(1,advance),15},a.pointer.x,a.pointer.y))return true;
         x+=advance;
     }return false;
 }
 static const HitRegion* hover_keyboard_hit(const App&a){
     if(a.library&&a.library_tab==0){for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::LibraryItem&&a.hits[i].value==a.library_selected)return &a.hits[i];}
-    if(a.panel==1){int index=0;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::DeckCard||a.hits[i].kind==HitKind::InstanceCard){if(index++==a.inspect_cursor-a.scroll)return &a.hits[i];}}
+    if(a.panel==1&&a.pile_control_focus<0){int index=0;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::DeckCard||a.hits[i].kind==HitKind::InstanceCard){if(index++==a.inspect_cursor-a.scroll)return &a.hits[i];}}
     if(!a.panel&&!a.library){for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
         if(h.kind==HitKind::Choice&&h.value==a.cursor)return &h;
         if(h.kind==HitKind::CombatChoice){const auto&source=choice_pile(a.game);if(a.cursor>=0&&a.cursor<source.count&&h.value==source.ids[a.cursor])return &h;}
@@ -125,7 +132,7 @@ static const HitRegion* hover_keyboard_hit(const App&a){
 }
 bool card_hover_target(const App&a,CardHoverTarget&target){
     target={};if(a.paused||a.help||a.settings_open||a.frontend_confirm||a.character_select||a.map_preview.open||a.status_actor>=0||
-        a.detail_item>=0||a.event_reader||a.pointer.held||a.pointer.armed_card>=0||a.map_transition_blocks_pointer())return false;
+        a.detail_item>=0||a.event_reader||a.pointer.held||a.pointer.armed_card>=0||a.keyboard_card>=0||a.map_transition_blocks_pointer())return false;
     if(a.detail_card>=0){
         target.card=card_from_token(a.detail_card);target.instance=a.detail_instance;target.deck=a.detail_deck_index;
         target.facts=a.detail_has_facts?&a.detail_facts:nullptr;target.owner={18,61,94,132};target.detail=true;
@@ -148,7 +155,7 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     switch(h->kind){
     case HitKind::LibraryItem:{if(!a.library||a.library_tab!=0)return false;CardKind ids[CardKinds];unsigned n=a.library_items(ids);if(h->value<0||unsigned(h->value)>=n)return false;
         target.card={ids[h->value],uint8_t(a.library_upgraded&&card_upgradeable({ids[h->value],0}))};break;}
-    case HitKind::DeckCard:if(h->value<0||h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];break;
+    case HitKind::DeckCard:if(h->value<0||h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];if(a.panel==1&&!a.pile_tab&&a.pile_upgraded&&card_upgradeable(target.card))target.card.upgraded=1;break;
     case HitKind::InstanceCard:if(h->value<0||h->value>=s.card_count)return false;target.instance=h->value;target.card=s.cards[h->value];break;
     case HitKind::CombatChoice:if(h->value<0)return false;target.card=choice_card(s,h->value);target.instance=h->value<s.card_count?h->value:-1;break;
     case HitKind::Choice:
@@ -175,6 +182,10 @@ static LocalizedValue hover_text_value(const void*opaque,const char*name){
 }
 void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTip&tip,char*title,size_t title_cap,char*body,size_t body_cap){
     if(title_cap)title[0]=0;if(body_cap)body[0]=0;
+    if(tip.kind==HoverTipKind::Description){
+        TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(owner.card.kind));if(owner.card.upgraded)name.ch('+');
+        a.card_description(owner.card,card_targets_enemy(a.game,owner.card)?a.target:-1,body,body_cap,owner.instance,owner.deck,owner.facts);return;
+    }
     if(tip.kind==HoverTipKind::Card){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
         const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,-1,-1,tip.has_facts?&tip.facts:&canonical);return;
@@ -238,34 +249,49 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
     else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))c.picture(c.a.content.energy_image(owner.card),r.x+r.w-20,r.y+3,13,13);
     c.paragraph(body,body_x,r.y+20,hover_body_width(tip,r.w,hover_compact_event(owner)),piece.lines,piece.skip,10,body_color);
 }
+// At calculator scale the original card face can ellipsize its body. Keep
+// the full, current instance description in the ordinary hover stack instead
+// of requiring a secondary inspector. The cached face already knows whether
+// fitting truncated, so this adds no layout or glyph I/O to a settled hand.
+static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,HoverTipList&tips){
+    collect_keyword_hover_tips(c.a,owner,tips);
+    if(owner.detail||owner.event_option>=0||owner.instance<0||c.a.library||c.a.panel||
+       !c.a.hand_can_focus()||!c.a.hand_focus||owner.instance>=c.a.game.card_count)return;
+    const auto&tile=hand_tile(c,owner.instance);
+    if(!tile.description_truncated)return;
+    if(tips.count==MaxCardHoverTips){--tips.count;tips.overflow=true;}
+    for(unsigned i=tips.count;i;i--)tips.items[i]=tips.items[i-1];
+    HoverTip full{};full.kind=HoverTipKind::Description;full.key=definitions[owner.card.kind].key;full.card=owner.card;full.instanced=true;
+    tips.items[0]=full;++tips.count;
+}
 static void keyword_tooltips(Canvas&c){
     auto&a=c.a;CardHoverTarget owner{};
     if(!keyword_hover_target(a,owner)){a.keyword_hover.owner=0;a.keyword_hover.page=0;if(a.detail_card<0)a.keyword_hover.details=false;return;}
     if(a.keyword_hover.owner!=owner.identity){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
-    HoverTipList tips{};collect_keyword_hover_tips(a,owner,tips);
+    HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);
     const bool detail=owner.detail&&a.keyword_hover.details;
     if(detail){c.dim(11,47,298,155,250);}
     if(!tips.count){if(detail){c.centered("这张牌没有关联词条。",18,102,284,12,Muted);
-        c.centered(owner.event_option>=0?"返回事件":"V 返回卡牌",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}
+        c.centered(owner.event_option>=0?"返回事件":"返回",18,192,284,10,Gold);c.hit(18,190,284,13,HitKind::Command,int(Key::Statuses));}return;}
     HoverPage page=hover_page(c,owner,tips,a.keyword_hover.page);
     if(a.keyword_hover.page>=page.pages){a.keyword_hover.page=page.pages-1;page=hover_page(c,owner,tips,a.keyword_hover.page);}
     for(unsigned i=0;i<page.count;++i)draw_hover_piece(c,owner,tips,page.pieces[i]);
     if(!page.count)return;
     char footer[96]{};TextBuffer text{footer,sizeof footer,0,&c.a.content};text.number(a.keyword_hover.page+1);text.ch('/');text.number(page.pages);
-    if(detail){if(owner.event_option>=0){text.text("  ↑↓ · V ");text.text("返回事件");}else text.text("  ↑↓ 翻页 · V 返回卡牌");c.centered(footer,12,192,296,10,Gold);
+    if(detail){c.centered(footer,12,192,296,10,Gold);
         // Existing command dispatch keeps these controls modal and cancels a
         // captured release correctly; hover panels themselves remain passive.
         c.hit(12,190,65,13,HitKind::Command,int(Key::Up),a.keyword_hover.page>0);
         c.hit(243,190,65,13,HitKind::Command,int(Key::Down),a.keyword_hover.page+1<page.pages);
         c.hit(78,190,164,13,HitKind::Command,int(Key::Statuses));
     }else if(page.pages>1||owner.event_option>=0){
-        text.text(owner.event_option>=0?" · V":" 滚轮 / I→V");const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,14,Panel);c.centered(footer,column.x,foot_y+1,column.w,10,Gold);
+        const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,14,Panel);c.centered(footer,column.x,foot_y+1,column.w,10,Gold);
     }
 }
 bool keyword_hover_scroll(App&a,int rows){
     if(!rows)return false;CardHoverTarget owner{};if(!keyword_hover_target(a,owner))return false;
-    HoverTipList tips{};collect_keyword_hover_tips(a,owner,tips);if(!tips.count)return false;
-    Canvas c{a};auto page=hover_page(c,owner,tips,0);if(page.pages<2&&!a.keyword_hover.details)return false;
+    Canvas c{a};HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);if(!tips.count)return false;
+    auto page=hover_page(c,owner,tips,0);if(page.pages<2&&!a.keyword_hover.details)return false;
     if(a.keyword_hover.owner!=owner.identity){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
     a.keyword_hover.page=mn(mx(0,a.keyword_hover.page+rows),page.pages-1);return true;
 }

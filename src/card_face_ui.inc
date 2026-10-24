@@ -1,6 +1,6 @@
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr){
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
@@ -39,7 +39,8 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     const int bottom=l.description.y+l.description.h;
     l.description.y=mx(l.description.y,l.type.y+plaque_h);
     l.description.h=mx(0,bottom-l.description.y);
-    c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,w>=100?10:8,White,8,true);
+    const auto description_layout=c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,w>=100?10:8,White,8,true);
+    if(description_truncated)*description_truncated=description_layout.truncated;
 
     c.picture(a.content.energy_image(card),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;
@@ -99,13 +100,13 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 }
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
-static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr){
+static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr){
     // The 8px energy label has a 1px outline above the energy artwork.
     const int left=x-6,top=y-4;
-    const bool candidate=c.a.content.healthy()&&w==47&&h==66&&!c.coverage&&c.opacity==255&&c.brightness==255&&
+    const bool candidate=!description_truncated&&c.a.content.healthy()&&w==47&&h==66&&!c.coverage&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
         left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;
-    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
+    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated);return;}
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     char body[1024]{},localized[1024]{};
     if(!description){

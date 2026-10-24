@@ -148,7 +148,8 @@ static void pointer_and_keyboard(){
     capture("keyword-detail-orbs");auto b=tips(owner.card);auto page=card_hover_page(a,owner,b);a.input(Key::Down);CHECK(a.keyword_hover.page==(page.pages>1?1:0));a.pointer_scroll(-1);CHECK(a.keyword_hover.page==0);
     a.input(Key::Back);CHECK(!a.keyword_hover.details&&a.detail_card>=0);a.input(Key::Back);CHECK(a.detail_card<0);unchanged();
     a.open_card_detail({Bash,0});a.pointer_move(55,110);a.render();CHECK(card_hover_target(a,owner));a.pointer_move(250,215);CHECK(!card_hover_target(a,owner));a.render();
-    auto control=hit(HitKind::Command,int(Key::Statuses));a.pointer_move(control.x+control.w/2,control.y+control.h/2);a.pointer_button(true);a.pointer_button(false);a.render();CHECK(a.keyword_hover.details);unchanged();
+    for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Command||a.hits[i].value!=int(Key::Statuses));
+    a.input(Key::Statuses);a.render();CHECK(a.keyword_hover.details);unchanged();
     a.input(Key::Back);a.input(Key::Back);a.library=true;a.library_filter=a.library_sort=a.library_page=a.library_tab=a.library_selected=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner));
     auto item=hit(HitKind::LibraryItem,2);a.pointer_move(item.x+item.w/2,item.y+item.h/2);a.render();CHECK(card_hover_target(a,owner));capture("keyword-library");unchanged();
     a.library=false;a.panel=1;a.pile_tab=0;a.inspect_cursor=a.scroll=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner)&&owner.deck==0);unchanged();

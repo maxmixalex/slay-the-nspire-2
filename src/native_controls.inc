@@ -1,19 +1,22 @@
 // Original component artwork preserves its aspect ratio, including the
 // authored transparent margins. Callers own the larger readable hit target.
-static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,const char*label,bool enabled,bool selected){
+static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,const char*label,bool enabled,bool selected,bool cross=false){
  const auto visual=c.control_visual(label,x,y,w,h,ButtonFamily::Action,selected,enabled);
- const int original_w=w;w=mx(1,w*visual.scale/4096);x+=(original_w-w)/2;
  const int image=c.a.content.world_image("common",kind);const unsigned opacity=255;
+ int image_h=h;
+ if(image>=0){const auto info=c.a.content.image(image);
+  if(info.w&&info.h){const int fitted=mn(w,h*info.w/info.h);
+   const int scaled=mx(1,fitted*visual.scale/4096);x+=(w-scaled)/2;w=scaled;image_h=mx(1,w*info.h/info.w);}}
  Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
  if(image>=0){
-  const auto info=c.a.content.image(image);const int height=info.w?int(w*info.h/info.w):h,top=y+(h-height)/2;
+  const int height=image_h,top=y+(h-height)/2;
   Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(image,x+2,top+2,w,height,64);
   layer.picture(image,x,top,w,height,opacity);
   char key[48]{};TextBuffer b{key,sizeof key,0};b.text(kind);b.text("_OUTLINE");
   if(visual.hover&&enabled){int outline=c.a.content.world_image("common",key);if(outline>=0){Canvas glow=layer;glow.tint_red=240;glow.tint_green=180;glow.tint_blue=0;glow.picture(outline,x,top,w,height,unsigned(visual.hover)*255/4096,presentation::Add);}}
  }else layer.ui(U_RewardSkip,x,y,w,h,opacity);
  int label_x=x+3,label_w=w-6;
- if(image>=0&&(kind[0]=='B'||kind[0]=='C')){int icon=c.a.content.world_image("common",kind[0]=='B'?"BACK_ARROW":"CONFIRM_TICK");
+ if(image>=0&&(kind[0]=='B'||kind[0]=='C')){int icon=cross&&c.a.content.version()>=Ui6ContentVersion?c.a.content.ui_image(I6_CloseX):c.a.content.world_image("common",kind[0]=='B'?"BACK_ARROW":"CONFIRM_TICK");
   if(icon>=0){
    if(!*label){
     // The character-select ConfirmButton contains an 80px cream tick on
@@ -31,7 +34,7 @@ static void native_proceed(Canvas&c,int x,int y,int w,int h,const char*label,boo
  const auto visual=c.control_visual(label,x,y,w,h,ButtonFamily::Action,selected,enabled);
  const int normal=c.a.content.world_image("common","PROCEED"),outline=c.a.content.world_image("common","PROCEED_OUTLINE");
  if(normal<0){native_control(c,"PROCEED",x,y,w,h,label,enabled,selected);return;}
- const int width=mx(1,w*visual.scale/4096),height=mx(1,width*192/393),left=x+(w-width)/2,top=mn(y+(h-height)/2,c.clip_h-height);
+ const int fitted=mn(w,h*393/192),width=mx(1,fitted*visual.scale/4096),height=mx(1,width*192/393),left=x+(w-width)/2,top=mn(y+(h-height)/2,c.clip_h-height);
  Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
  Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(normal,left+2,top+2,width,height,64);
  // This is the original atlas arrow, with its authored transparent margins.
@@ -39,10 +42,12 @@ static void native_proceed(Canvas&c,int x,int y,int w,int h,const char*label,boo
  if(outline>=0&&visual.hover&&enabled)layer.picture(outline,left,top,width,height,unsigned(visual.hover)*255/4096,presentation::Add);
  layer.picture(normal,left,top,width,height);
  const int text_y=top+(height-12)/2;
- layer.centered(label,left+1,text_y+1,width,12,rgb(87,16,8));
- layer.centered(label,left,text_y,width,12,enabled?rgb(255,246,226):Muted);
+ const int label_x=left+width*57/393,label_w=width*240/393;
+ layer.text_fitted(label,label_x+1,text_y+1,label_w,12,rgb(87,16,8),8,true);
+ layer.text_fitted(label,label_x,text_y,label_w,12,enabled?rgb(255,246,226):Muted,8,true);
 }
-static void native_back(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"BACK",x,y,w,h,label,enabled,selected);}
+static void native_back(Canvas&c,int x,int y,int w,int h,const char*,bool enabled=true,bool selected=false){native_control(c,"BACK",x,y,w,h,"",enabled,selected);}
+static void native_close(Canvas&c,int x,int y,int w,int h,bool selected=false){native_control(c,"BACK",x,y,w,h,"",true,selected,true);}
 static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"CONFIRM",x,y,w,h,label,enabled,selected);}
 static void native_end_turn(Canvas&c,bool enabled){
  auto&a=c.a;const auto visual=c.control_visual("END_TURN",254,173,66,31,ButtonFamily::EndTurn,false,enabled);

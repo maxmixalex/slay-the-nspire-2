@@ -103,14 +103,40 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
         map_picture(c,map_named_picture(c.a.content,"BOSS_",d->key),x,y,static_size,static_size,MapShader::Tint,ink);
     }
 }
+constexpr int MapLegendX=244,MapLegendY=74,MapLegendRowY=96,MapLegendRowStep=12;
+static int map_legend_hover(const App&a,int offset_x=0){
+    if(!a.pointer.visible||a.pointer.x<MapLegendX+5+offset_x||a.pointer.x>=MapLegendX+71+offset_x||
+       a.pointer.y<MapLegendRowY||a.pointer.y>=MapLegendRowY+6*MapLegendRowStep)return -1;
+    return (a.pointer.y-MapLegendRowY)/MapLegendRowStep;
+}
+static const char* map_legend_key(unsigned item){
+    static const char*keys[]={"LEGEND_UNKNOWN","LEGEND_MERCHANT","LEGEND_TREASURE","LEGEND_REST","LEGEND_ENEMY","LEGEND_ELITE"};
+    return keys[item<6?item:0];
+}
+static const char* map_legend_text(const App&a,unsigned item,const char*suffix,char*key,size_t capacity){
+    TextBuffer text{key,capacity,0};text.text(map_legend_key(item));text.text(suffix);return a.content.world_string("map",key);
+}
 static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
-    auto&a=c.a;const int x=186+offset_x,y=35;
-    map_picture(c,a.content.world_image("map","LEGEND"),x+66,y+88,132,176,MapShader::Original,0,0,255,0,22,235);
-    c.centered("图例",x+9,y+6,106,12,colors.ink);c.text("×",x+110,y+4,12,colors.ink);c.action(x+103,y,27,25,UiAction::ToggleMapLegend);
-    for(unsigned i=0;i<6;++i){const int row=y+29+int(i)*23;const auto type=map_legend_type(i);const bool selected=a.map_legend_item==i;
-        if(selected)c.box(x+10,row-2,111,23,colors.ink);
-        map_picture(c,world_point_image(type),x+27,row+8,19,19,MapShader::Normal,0,colors.paper,255,0,22,235);
-        c.text(world_point_name(type),x+43,row+2,12,colors.ink,75);c.action(x+9,row-3,114,25,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
+    auto&a=c.a;const int x=MapLegendX+offset_x,y=MapLegendY;
+    map_picture(c,a.content.world_image("map","LEGEND"),x+38,y+51,76,102,MapShader::Original,0,0,255,0,22,235);
+    const char*header=a.content.world_string("map","LEGEND_HEADER");c.centered(*header?header:"图例",x+5,y+8,66,10,colors.ink);
+    for(unsigned i=0;i<6;++i){const int row=MapLegendRowY+int(i)*MapLegendRowStep;const auto type=map_legend_type(i);const bool selected=a.map_legend&&a.map_legend_item==i;
+        // NMapLegendItem scales its icon and highlights its point type; the
+        // paper itself is always present and is not a separate modal window.
+        map_picture(c,world_point_image(type),x+14,row+6,selected?14:11,selected?14:11,MapShader::Normal,0,colors.paper,255,0,22,235);
+        char key[96]{};const char*label=map_legend_text(a,i,".title",key,sizeof key);
+        c.text_fitted(*label?label:world_point_name(type),x+25,row+1,45,8,colors.ink,8);
+        c.action(x+5,row,66,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
+    }
+    if(a.map_legend){
+        char key[96]{},title[160]{};const char*source=map_legend_text(a,a.map_legend_item,".hoverTip.title",key,sizeof key);
+        TextBuffer label{title,sizeof title,0};label.text(*source?source:world_point_name(map_legend_type(a.map_legend_item)));
+        const char*body=map_legend_text(a,a.map_legend_item,".hoverTip.description",key,sizeof key);
+        if(*body){const int width=204,lines=mn(3,c.paragraph(body,0,0,width-16,0,0,10)),height=24+lines*13,top=mn(178,239-height);
+            const int skin=a.content.world_image("common","HOVER_TIP");
+            if(skin>=0)c.nine_image(skin,112,top,width,height,28,22,46,16);else{c.rect(112,top,width,height,Panel);c.box(112,top,width,height,Muted);}
+            c.text(title,120,top+4,10,Gold,width-16);c.paragraph(body,120,top+20,width-16,lines,0,10,rgb(255,246,226));
+        }
     }
 }
 static uint8_t map_window_product(unsigned byte,unsigned q12){
@@ -127,6 +153,11 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     a.map_visuals.update(s,a.map_clock_ms);
     WorldMapView view=a.map_view(layout);a.map_scroll=view.scroll;
     const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);
+    const int legend_offset=window?map_source_offset(window->legend_x_q12):0;
+    if(a.pointer.visible&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help){
+        const int hovered=map_legend_hover(a,legend_offset);a.map_legend=hovered>=0;
+        if(hovered>=0)a.map_legend_item=uint8_t(hovered);
+    }
     // A HUD window uses the authored BG alpha over the retained live room;
     // the standalone Phase::Map path retains its existing paper fallback.
     map_background(c,view,colors,window==nullptr||s.phase==Phase::Map);
@@ -141,8 +172,16 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
         const bool traveling=a.map_visuals.traveling(),target=a.map_visuals.target()==i;
-        const bool allowed=!traveling&&!a.treasure_empty_waiting()&&world_reachable(s,i),focused=target||(allowed&&p.col==a.cursor&&!inspect&&!a.map_legend);
         const int half=world_map_half_size(*m,i);
+        const bool allowed=!traveling&&!a.treasure_empty_waiting()&&world_reachable(s,i);
+        const int hit_size=p.type==reference::PointType::Boss?mn(82,2*half):p.type==reference::PointType::Start?48:30;
+        // A retained keyboard column is not mouse focus. Every available
+        // point keeps its original selectable pulse until that point is
+        // actually hovered, or controller navigation explicitly selects it.
+        const bool hover=a.pointer.visible&&a.pointer.x>=x-hit_size/2&&a.pointer.x<x+hit_size/2&&
+            a.pointer.y>=mx(WorldMapTop,y-hit_size/2)&&a.pointer.y<mn(WorldMapBottom,y+hit_size/2);
+        const bool focused=target||(allowed&&!inspect&&!a.map_legend&&
+            (a.map_directional?p.col==a.cursor:hover));
         const int reticle_height=p.type==reference::PointType::Boss?306:p.type==reference::PointType::Start?208:84;
         int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;
         const auto circle=a.map_visuals.circle(i,a.map_clock_ms);
@@ -169,24 +208,19 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     }
     // NMapScreen's paper and graph run behind the HUD without a separate
     // header/footer. The act name already has the original NActBanner entry.
-    // Fold only the legend for 320px; leave its toggle on the paper itself.
     if(!a.map_legend){
-        const bool close=window&&a.panel==3&&s.phase!=Phase::Map;
-        c.text("图例",close?246:278,27,10,colors.ink);c.action(close?238:268,23,close?48:52,24,UiAction::ToggleMapLegend);
         if(a.map_can_scroll()&&view.origin<view.maximum){
             c.text("↑",304,53,12,colors.ink);c.hit(297,47,23,28,HitKind::Scroll,-1);
         }
         if(a.map_can_scroll()&&view.origin>view.minimum){
             c.text("↓",304,218,12,colors.ink);c.hit(297,211,23,29,HitKind::Scroll,1);
         }
-    }else{
-        // Legend is a sibling of TheMap, not a child of its fade/slide.
-        Canvas legend=parent;int offset=0;
-        if(window){legend.opacity=map_window_product(legend.opacity,window->legend.alpha);
-            legend.brightness=map_window_product(legend.brightness,window->legend.rgb);
-            offset=map_source_offset(window->legend_x_q12);}
-        map_legend_screen(legend,colors,offset);
     }
+    // Legend is a permanent sibling of TheMap and keeps its own fade/slide.
+    Canvas legend=parent;
+    if(window){legend.opacity=map_window_product(legend.opacity,window->legend.alpha);
+        legend.brightness=map_window_product(legend.brightness,window->legend.rgb);}
+    map_legend_screen(legend,colors,legend_offset);
 }
 
 static LocalizedValue map_act_number_value(const void*context,const char*key){
@@ -231,7 +265,7 @@ static void world_map_window_screen(Canvas&c){
     }
     world_map_screen(c,!a.map_routes_active(),&sample);
     world_map_act_banner_screen(c);
-    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map&&!a.map_legend)c.close_button();
+    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map)c.close_button();
     // Closed immediately restores room input; only the visual tail remains.
     if(!a.map_window.is_open)a.hit_count=old_hits;
 }
