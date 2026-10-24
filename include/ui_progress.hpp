@@ -21,6 +21,8 @@ struct UiFloorHistory {
 struct UiRunHistory {
     uint64_t run_seed=0;
     uint32_t serial=0,seed=0,started_at=0,seconds=0,gold_gained=0;
+    uint32_t modifiers=0,daily_day=0;
+    uint8_t mode=0,modifier_order=0;
     uint16_t floor=0,hp=0,max_hp=0,gold=0,deck_count=0,relic_count=0;
     uint16_t last_battle=0,finished_battle=0,encounter=0,last_enemy_identity=0;
     uint8_t character=0,ascension=0,outcome=0,start_region=0,regions[3]{};

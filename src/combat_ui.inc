@@ -109,12 +109,12 @@ static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
  ui_picture_transform(c,image,cx,cy,mx(1,16*p.scale/1024),mx(1,12*p.scale/1024),p.sine,p.cosine);
 }
 static void combat_actors(Canvas&c){
-    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();c.actor(0,player.x,player.feet,player.scale);
+    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();c.actor(0,player.sprite_x,player.sprite_y,player.scale);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){const auto p=a.combat_player_pose(true);const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
-        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.x,p.feet,elapsed,p.scale,false);
-        else if(a.combat_health(MaxEnemies+1).hp>0)c.scaled_clip(AnimOstyIdle,p.x,p.feet,a.animation*33,p.scale);
-        else c.ui(U_OstyPortrait,p.x-9,p.feet-14,18,18,100);
+        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.sprite_x,p.sprite_y,elapsed,p.scale,false);
+        else if(a.combat_health(MaxEnemies+1).hp>0)c.scaled_clip(AnimOstyIdle,p.sprite_x,p.sprite_y,a.animation*33,p.scale);
+        else c.scaled_clip(AnimOstyDie,p.sprite_x,p.sprite_y,uint32_t(-1),p.scale,false);
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
@@ -123,7 +123,7 @@ static void combat_actors(Canvas&c){
         if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
         if(s.enemies[i].hp>0||s.enemy_world.active){auto p=a.combat_enemy_pose(i);Canvas actor=c;
-            if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.x,p.feet,p.scale);}
+            if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.sprite_x,p.sprite_y,p.scale);}
     }
     if(shared>=0){int clip;uint32_t elapsed;bool loop;
         // The original Kaiser actor shares one background skeleton. Its baked
@@ -242,20 +242,13 @@ static void combat_scene_shake(Canvas&c,int first_hit){
   for(int x=first_x;x!=last_x;x+=step_x){const int sx=health_bar::bounded(x-dx,0,319);c.pixels[y*c.pitch+x]=c.pixels[sy*c.pitch+sx];}}
  for(int i=first_hit;i<c.a.hit_count;++i){c.a.hits[i].x+=dx;c.a.hits[i].y+=dy;}
 }
+#include "combat_orb_ui.inc"
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
     const int scene_hits=a.hit_count;
     const auto player=a.combat_player_pose();const int player_x=player.x;combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],creature_health_left(player),player.hp,player.width);
-    if(s.expansion.orb_slots){
-        const int count=s.expansion.orb_slots,left=mx(3,player_x-count*7);
-        for(int i=0;i<count;i++){
-            int x=left+(count-1-i)*14;
-            if(i<s.expansion.orb_count)c.ui(orb_image(s.defect.orb_kind[i]),x,46,13,13);
-            else c.box(x+2,48,9,9,Muted);
-        }
-        c.action(left-2,44,count*14+4,19,UiAction::ShowOrbs);
-    }
+    combat_orbs(c);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
         const auto p=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],creature_health_left(p),p.hp,p.width);

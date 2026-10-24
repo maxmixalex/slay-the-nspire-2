@@ -152,6 +152,36 @@ static void original_aspect_layout(){
  a.reset_presentation();const auto fallback=a.combat_enemy_pose(0);a.render();const auto rebuilt=a.combat_enemy_pose(0);
  CHECK(!std::memcmp(&fallback,&rebuilt,sizeof fallback));unchanged();
 }
+static void original_osty_and_orbs(){
+ enemy_visual_fight(EncounterId::NibbitsWeak,Character::Necrobinder);const auto initial=a.combat_player_pose(true);
+ const uint32_t gain=a.animation+10;
+ {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback.effect_at=gain;queue_extension(a.game,XOp::NSummon,75,1);resolve_pending(a.game);}
+ CHECK(a.game.expansion.osty_hp>=75);snapshot();a.animation=gain-1;a.render();
+ CHECK(a.combat_player_pose(true).scale==initial.scale&&a.combat_player_pose(true).x==initial.x);unchanged();
+ a.animation=gain;a.render();const auto begin=a.combat_player_pose(true);
+ CHECK(begin.scale==initial.scale&&begin.body_width==initial.body_width);
+ a.animation=gain+12;a.render();const auto middle=a.combat_player_pose(true);
+ CHECK(middle.scale>begin.scale&&middle.body_width==begin.body_width&&middle.x!=begin.x);capture("osty-growing-bounds-held");unchanged();
+ a.animation=gain+23;a.render();const auto grown=a.combat_player_pose(true);
+ CHECK(grown.scale>middle.scale&&grown.body_width>begin.body_width);
+ CHECK(a.health_bars[MaxEnemies+1].width==health_bar::inner_width(grown.width));capture("osty-grown-original-position");unchanged();
+ {UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::NKillOsty);resolve_pending(a.game);}
+ snapshot();a.render();CHECK(a.osty_motion.clip==AnimOstyDie);
+ const uint32_t death_begin=a.osty_presentation.started;CHECK(int32_t(death_begin-a.animation*33u)>0);
+ CHECK(a.combat_player_pose(true).scale==grown.scale);
+ a.animation=(death_begin+782)/33u;a.render();const auto down=a.combat_player_pose(true);
+ CHECK(down.scale<grown.scale&&a.osty_presentation.bounds_scale==1024);capture("osty-death-terminal-pose");unchanged();
+ enemy_visual_fight(EncounterId::NibbitsWeak,Character::Defect);a.animation+=15;a.render();
+ CHECK(a.orb_presentation.slots==3);const auto edge=CombatOrbPresentation::target(3,0),center=CombatOrbPresentation::target(3,1);
+ CHECK(edge.x>0&&center.y<edge.y);const uint32_t slots_at=a.animation+5;
+ {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback.effect_at=slots_at;queue_extension(a.game,XOp::DSlots,2);resolve_pending(a.game);}
+ snapshot();a.animation=slots_at-1;a.render();CHECK(a.orb_presentation.slots==3&&!has(HitKind::Orb,3));unchanged();
+ a.animation=slots_at;a.render();CHECK(a.orb_presentation.slots==5&&has(HitKind::Orb,4));
+ a.animation=slots_at+14;a.render();unsigned holders=0;int left=320,right=-1,top=240,bottom=-1;
+ for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind!=HitKind::Orb)continue;++holders;
+  left=std::min(left,int(h.x));right=std::max(right,int(h.x+h.w));top=std::min(top,int(h.y));bottom=std::max(bottom,int(h.y+h.h));}
+ CHECK(holders==5&&right-left>60&&bottom-top>20&&top>22);capture("defect-source-orb-arc");unchanged();
+}
 static std::vector<uint16_t> intent_background;
 static void spatial_card_targeting(){
  const auto select_potion=[](int target){
@@ -1230,4 +1260,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_aspect_layout();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_aspect_layout();original_osty_and_orbs();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

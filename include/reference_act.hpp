@@ -10,6 +10,7 @@ struct ActSettings {
     bool replace_treasure = false;
     bool second_boss = false;
     uint8_t variant = 0;
+    bool big_game_hunter = false;
 };
 struct QuotaTrace {
     QuotaError error = QuotaError::None;

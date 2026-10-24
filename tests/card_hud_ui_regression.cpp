@@ -411,7 +411,10 @@ static void ui7_hud_nodes(){
     w.event_combat_parent=1;w.parent_room_type=uint8_t(WorldRoom::Event);w.room_type=uint8_t(WorldRoom::Monster);
     room=hud_room_info(app.game);CHECK(!std::strcmp(room.room_key,"EVENT")&&!std::strcmp(room.room_tip,"ROOM_UNKNOWN_EVENT"));
     w.event_combat_parent=w.parent_room_type=0;map.points[point].type=old_type;w.room_type=old_room;
-    map.second_boss=uint8_t(map.boss-1);act.boss_count=2;act.bosses[0]=EncounterId::KaiserCrabBoss;act.bosses[1]=EncounterId::QueenBoss;
+    // Boss is the first allocated map node, not the highest node index.
+    // Subtracting one from it creates NoPoint and silently disables this case.
+    unsigned second=0;while(second<map.count&&(second==map.boss||second==point))++second;CHECK(second<map.count);
+    map.second_boss=uint8_t(second);act.boss_count=2;act.bosses[0]=EncounterId::KaiserCrabBoss;act.bosses[1]=EncounterId::QueenBoss;
     room=hud_room_info(app.game);CHECK(room.boss==EncounterId::KaiserCrabBoss&&room.second_boss==EncounterId::QueenBoss&&room.second_placeholder);
     clear();app.hit_count=0;hud(c);app.hud_focus=slots+4;hud_hover_tip(c);capture("hud-double-boss-tooltip");
     w.current_point=map.boss;w.room_type=uint8_t(WorldRoom::Boss);room=hud_room_info(app.game);

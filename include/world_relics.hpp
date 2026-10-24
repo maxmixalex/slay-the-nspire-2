@@ -52,6 +52,7 @@ bool world_relic_can_reroll_reward(const State&);
 bool world_relic_reroll_reward(State&);
 unsigned world_relic_eligible(const State&,uint16_t* out,unsigned capacity);
 void init_world_relics(State&);
+void world_remove_relic_from_bags(State&,RelicId);
 void world_relic_hook(State&,WorldRelicHook,int a=0,int b=0,int c=0);
 void world_relic_effect(State&,int frame_index);
 void world_relic_resume(State&);

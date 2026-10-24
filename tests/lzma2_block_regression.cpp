@@ -8,6 +8,7 @@ using namespace spire;
 static unsigned checks;
 #define CHECK(x) do {++checks;if(!(x)){std::fprintf(stderr,"LZMA2 failure at %u: %s\n",unsigned(__LINE__),#x);std::exit(1);}}while(0)
 #include "fixtures/lzma2_blocks.inc"
+#include "fixtures/lzma2_contexts.inc"
 
 static void fixture(const std::vector<uint8_t>&raw,const std::vector<uint8_t>&packed){
     std::vector<uint8_t> guarded(raw.size()+64,0xcd);
@@ -55,6 +56,10 @@ static std::vector<uint8_t> uncompressed(const std::vector<uint8_t>&raw){
 }
 int main(){
     std::vector<uint8_t> raw(4097);
+    for(size_t i=0;i<raw.size();++i)raw[i]=(i%31)*5;
+    fixture(raw,{context_4_0_1,context_4_0_1+sizeof context_4_0_1});
+    fixture(raw,{context_3_1_1,context_3_1_1+sizeof context_3_1_1});
+    fixture(raw,{context_3_0_0,context_3_0_0+sizeof context_3_0_0});
     for(size_t i=0;i<raw.size();++i)raw[i]=i%251;
     fixture(raw,{compressed_ramp,compressed_ramp+sizeof compressed_ramp});
     raw.assign(Lzma2BlockRawLimit,0);fixture(raw,{compressed_zeros,compressed_zeros+sizeof compressed_zeros});
@@ -74,5 +79,5 @@ int main(){
     CHECK(!decode_lzma2_block(input,sizeof input,2,input+1,sizeof input-1,14));
     CHECK(decode_lzma2_block(output,sizeof output,1,input,sizeof input,14)&&output[0]==0x5a);
     input[3]=0x6b;CHECK(decode_lzma2_block(output,sizeof output,1,input,sizeof input,14)&&output[0]==0x6b);
-    std::printf("Bounded LZMA2: %u checks, 5 synthetic fixtures, 512 KiB maximum output, 28,544-byte probability arena\n",checks);
+    std::printf("Bounded LZMA2: %u checks, 8 synthetic fixtures, adaptive literal contexts, 512 KiB maximum output, 28,544-byte probability arena\n",checks);
 }

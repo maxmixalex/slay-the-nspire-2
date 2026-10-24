@@ -26,9 +26,14 @@ template<class Codec>void card(Codec&c,EventDeckSnapshot&v){
     c.integer(v.facts.energy_offset);c.integer(v.facts.progress);c.integer(v.genetic);c.integer(v.scythe);
     if(v.card.kind>=CardKinds||v.card.upgraded>1||enchantment>=EventEnchantmentKinds)c.good=false;
 }
-template<class Codec>void run(Codec&c,UiRunHistory&v){
+template<class Codec>void run(Codec&c,UiRunHistory&v,unsigned version){
     c.integer(v.serial);if(!v.serial)return;
     c.integer(v.run_seed);c.integer(v.seed);c.integer(v.started_at);c.integer(v.seconds);c.integer(v.gold_gained);
+    if(version>=3){
+        c.integer(v.modifiers);c.integer(v.daily_day);c.integer(v.mode);c.integer(v.modifier_order);
+        RunOptions options{};options.mode=RunMode(v.mode);options.modifiers=v.modifiers;options.daily_day=v.daily_day;options.setup_flags=v.modifier_order;
+        if((v.modifier_order&~2u)||!valid_run_options(options)){c.good=false;return;}
+    }
     c.integer(v.floor);c.integer(v.hp);c.integer(v.max_hp);c.integer(v.gold);c.integer(v.deck_count);c.integer(v.relic_count);
     c.integer(v.last_battle);c.integer(v.finished_battle);c.integer(v.encounter);c.integer(v.last_enemy_identity);
     c.integer(v.character);c.integer(v.ascension);c.integer(v.outcome);c.integer(v.start_region);
@@ -60,33 +65,35 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
         c.integer(s.play_seconds);c.integer(s.fastest_win_seconds);c.integer(s.gold_gained);c.integer(s.floors_climbed);c.integer(s.highest_ascension);}
     for(auto&model:v.enemies)for(auto&s:model){c.integer(s.seen);c.integer(s.wins);c.integer(s.losses);}
     for(auto&model:v.encounters)for(auto&s:model){c.integer(s.seen);c.integer(s.wins);c.integer(s.losses);}
-    run(c,v.current);
-    for(unsigned i=0;i<v.count&&c.good;++i)run(c,v.history[i]);
+    run(c,v.current,version);
+    for(unsigned i=0;i<v.count&&c.good;++i)run(c,v.history[i],version);
 }
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
 size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     if(!out||capacity<8)return 0;
-    out[0]='N';out[1]='S';out[2]='H';out[3]='2';for(unsigned i=4;i<8;++i)out[i]=0;
+    unsigned version=value.current.mode?3:2;
+    for(unsigned i=0;i<value.count&&i<UiHistoryCapacity;++i)if(value.history[i].mode)version=3;
+    out[0]='N';out[1]='S';out[2]='H';out[3]=char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
-    Encoder c{out,capacity,8};progress(c,const_cast<UiProgress&>(value),2);
+    Encoder c{out,capacity,8};progress(c,const_cast<UiProgress&>(value),version);
     if(!c.good||c.at>UiProgressCapacity)return 0;
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||(data[3]!='1'&&data[3]!='2'))return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'3')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||(data[3]!='1'&&data[3]!='2'))return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'3')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);
     if(!c.good||!serial||count>UiHistoryCapacity||next>=UiHistoryCapacity)return false;
-    const bool version2=data[3]=='2';if(version2)c.integer(out.last_saved_at);
+    const bool version2=data[3]>='2';if(version2)c.integer(out.last_saved_at);
     const size_t fields=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8+(version2?CardKinds*sizeof(uint32_t):0);
     if(c.at>size||fields>size-c.at)return false;c.at+=fields;
     for(unsigned character=0;character<CharacterKinds;++character){uint32_t seconds=0;

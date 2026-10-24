@@ -3,6 +3,7 @@
 #include "world_card_factory.hpp"
 #include "world_run.hpp"
 #include "reference_sort.hpp"
+#include "run_modes.hpp"
 
 namespace spire {
 namespace {
@@ -229,6 +230,7 @@ bool original_event_choose(State&s,int option){
 void original_event_resume(State&s){auto&e=s.original_events;
  if(!e.active||e.combat_pending||world_relic_pending(s)||s.phase==Phase::Error||s.phase==Phase::Dead)return;
  if(e.selection_committed)apply_selection(s);
+ if(e.selection==OriginalEventSelection::None&&(s.run_options.setup_flags&1))modifier_neow_resume(s);
  if(e.selection!=OriginalEventSelection::None||world_relic_pending(s)||s.phase==Phase::Error||s.phase==Phase::Dead)return;
  s.phase=Phase::Event;
  // Legacy pending procurement keeps its save representation. A full belt

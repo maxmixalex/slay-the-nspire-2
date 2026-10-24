@@ -1,4 +1,5 @@
 #include "world_card_factory.hpp"
+#include "run_options.hpp"
 namespace spire {
 namespace {
 int compare_keys(const char*a,const char*b){
@@ -80,10 +81,30 @@ unsigned world_card_candidates(const State&s,const WorldCardOptions&o,CardKind*o
   const auto&pool=world_pools[p];for(unsigned j=0;j<pool.count;++j){CardKind k=pool.ids[j];if(seen[k]||!accepts(s,o,k,combat))continue;seen[k]=true;if(n<capacity)out[n++]=k;}}
  return n;
 }
+void world_modifier_card_pools(const State&s,WorldCardOptions&o,bool merchant){
+ const uint8_t mask=run_modifier_character_mask(s);if(!mask)return;
+ for(unsigned i=0;i<run_modifier_count(s.run_options);++i){
+  RunModifier m=run_modifier_at(s.run_options,i);Character c;
+  switch(m){case RunModifier::IroncladCards:c=Character::Ironclad;break;case RunModifier::SilentCards:c=Character::Silent;break;
+   case RunModifier::RegentCards:c=Character::Regent;break;case RunModifier::NecrobinderCards:c=Character::Necrobinder;break;case RunModifier::DefectCards:c=Character::Defect;break;default:continue;}
+  // Merchant hooks stop extending as soon as a previous hook has introduced
+  // another character. Reward hooks union every selected pool instead.
+  bool present=false;for(unsigned j=0;j<o.pool_count;++j){unsigned p=o.pools[j]==WorldCardPool::Own?unsigned(s.character):unsigned(o.pools[j]);if(merchant&&p!=unsigned(s.character))return;if(p==unsigned(c))present=true;}
+  if(!present&&o.pool_count<11)o.pools[o.pool_count++]=WorldCardPool(unsigned(c));
+ }
+}
+static void modifier_card_creation(const State&s,WorldCardOptions&o){
+ if(!(o.flags&WorldIsCardReward)||(o.flags&WorldNoCardPoolModifications))return;
+ world_modifier_card_pools(s,o);
+ if(has_run_modifier(s,RunModifier::BigGameHunter)&&o.source==WorldCardSource::Encounter&&o.odds==WorldCardOdds::EliteEncounter&&!(o.flags&WorldNoRarityModification)){
+  o.odds=WorldCardOdds::Uniform;o.rarity_mask=world_rarity_mask(4);
+  CardKind candidates[CardKinds];if(!world_card_candidates(s,o,candidates,CardKinds)){o.pool_count=1;o.pools[0]=WorldCardPool::Own;}
+ }
+}
 bool world_create_reward(State&s,reference::Random&rng,unsigned count,const WorldCardOptions&original,Card*out,EventCardFacts*facts,unsigned capacity,unsigned*result_count){
  if(!capacity)capacity=count;if(!out||!facts||count>CardKinds||count>capacity)return false;
  for(unsigned i=0;i<count;++i){
-  WorldCardOptions o=original;world_relic_modify_card_creation(s,o);
+  WorldCardOptions o=original;world_relic_modify_card_creation(s,o);modifier_card_creation(s,o);
   CardKind pool[CardKinds];unsigned n=world_card_candidates(s,o,pool,CardKinds);
   unsigned used=0;for(unsigned j=0;j<n;++j){bool duplicate=false;for(unsigned q=0;q<i;++q)if(out[q].kind==pool[j])duplicate=true;if(!duplicate)pool[used++]=pool[j];}n=used;
   if(o.odds==WorldCardOdds::Uniform){used=0;for(unsigned j=0;j<n;++j)if(card_rarity(pool[j])!=1&&card_rarity(pool[j])!=5)pool[used++]=pool[j];n=used;}

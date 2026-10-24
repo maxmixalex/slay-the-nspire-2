@@ -73,7 +73,7 @@ static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&
 static void same_saved(const SaveData&target){CHECK(save(a.game,after));CHECK(after.size==target.size&&!std::memcmp(after.bytes,target.bytes,target.size));}
 static void presentation(bool title=false){
  a.title=title;a.paused=a.help=a.library=a.character_select=a.settings_open=a.quit=false;a.frontend_confirm=a.frontend_choice=a.settings_tab=a.settings_item=0;
- a.run_settings=a.practice_entry=false;a.map_preview.open=false;a.menu=0;a.reset_presentation();a.pointer.visible=false;
+ a.run_settings=a.practice_entry=false;a.run_mode={};a.map_preview.open=false;a.menu=0;a.reset_presentation();a.pointer.visible=false;
 }
 static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,const char*run_seed=nullptr,unsigned ascension=3,reference::ActKind region=reference::ActKind::Overgrowth){
  a.forget_run_checkpoint();new_run(a.game,seed,false,character);if(run_seed)CHECK(world_set_seed(a.game,run_seed));
@@ -111,6 +111,7 @@ static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);a.i
 
 static void character_click_confirmation(){
  empty_disk();start();snapshot();a.return_to_title();press(HitKind::Menu,0);
+ CHECK(a.run_mode.screen==RunMenu::Singleplayer&&!a.character_select);unchanged();action(UiAction::OpenStandardRun);
  CHECK(a.character_select&&a.title);const unsigned run=a.run_number;const Character previous=a.selected_character;
  const auto portrait=find_hit(HitKind::UiAction,int(UiAction::SelectRegent));
  a.pointer_move(portrait.x+portrait.w/2,portrait.y+portrait.h/2);a.render();CHECK(a.selected_character==previous);unchanged();
@@ -242,7 +243,10 @@ static void probe_is_read_only(){
 static void main_menu_and_continue(){
  empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==4);menu_rows(4);capture("frontend-title-new");
  a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
- press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.render();a.advance(500);capture("frontend-character-select");a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
+ press(HitKind::Menu,0);CHECK(a.run_mode.screen==RunMenu::Singleplayer&&!a.character_select);unchanged();capture("frontend-singleplayer");
+ action(UiAction::OpenStandardRun);CHECK(a.character_select&&a.title&&!a.practice_entry);a.render();a.advance(500);capture("frontend-character-select");
+ a.input(Key::Back);CHECK(!a.character_select&&a.title&&a.run_mode.screen==RunMenu::Singleplayer);unchanged();
+ a.input(Key::Back);CHECK(a.run_mode.screen==RunMenu::Closed);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.compendium_open&&a.title&&!a.library);action(UiAction::LibraryCards);CHECK(a.library&&a.title);
  a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.title);unchanged();

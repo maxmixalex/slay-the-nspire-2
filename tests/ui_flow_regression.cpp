@@ -13,7 +13,9 @@ static void init(){a=App{};new_run(a.game,7,true);a.title=false;a.render();}
 static bool findclick(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
 static void action(UiAction x){CHECK(findclick(HitKind::UiAction,(int)x));}
 int main(){
-    init();snapshot();a.title=true;a.menu=0;a.input(Key::Confirm);CHECK(a.character_select);unchanged();a.input(Key::Back);CHECK(!a.character_select);unchanged();
+    init();snapshot();a.title=true;a.menu=0;a.input(Key::Confirm);CHECK(a.run_mode.screen==RunMenu::Singleplayer&&!a.character_select);unchanged();
+    a.input(Key::Confirm);CHECK(a.character_select);unchanged();a.input(Key::Back);CHECK(!a.character_select&&a.run_mode.screen==RunMenu::Singleplayer);unchanged();
+    a.input(Key::Back);CHECK(a.run_mode.screen==RunMenu::Closed);unchanged();
     a.menu=2;a.input(Key::Confirm);CHECK(a.compendium_open&&!a.library);unchanged();
     for(int tab=0;tab<3;tab++){
         action((UiAction)((int)UiAction::LibraryCards+tab));CHECK(a.library&&a.library_tab==tab);

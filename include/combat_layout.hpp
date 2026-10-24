@@ -30,11 +30,11 @@ struct MerchantLayout {
 };
 struct CreaturePose {
  int x,feet,width,scale,intent,hp,status;
- int body_left=0,body_top=0,body_width=0,body_height=0,center_x=0,center_y=0,intent_x=0;
+ int body_left=0,body_top=0,body_width=0,body_height=0,center_x=0,center_y=0,intent_x=0,sprite_x=0,sprite_y=0;
 };
 inline CreaturePose legacy_creature_pose(CreaturePose p){
  p.body_left=p.x-p.width/2;p.body_height=84*p.scale/1024;p.body_top=p.feet-p.body_height;
- p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;p.intent_x=p.x;return p;
+ p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;p.intent_x=p.x;p.sprite_x=p.x;p.sprite_y=p.feet;return p;
 }
 inline int creature_health_left(CreaturePose p){return p.body_left+(p.body_width-p.width)/2;}
 inline CreaturePose enemy_pose(int count,int index){
@@ -93,6 +93,22 @@ inline CreatureAnchors player_anchors(Character character,bool pet=false){
   {-105,-270,105,0,3,-191,0,-326},{-116,-204,116,0,-15,-109,0,-218}
  };
  return anchors[pet?5:unsigned(character)<5?unsigned(character):0];
+}
+inline int creature_sprite_units(EnemyId kind){
+ static constexpr uint16_t units[]={
+#include "combat_sprite_units.inc"
+ };
+ static_assert(sizeof units/sizeof units[0]==EnemyKinds,"Every model needs an independently registered sprite");
+ return unsigned(kind)<EnemyKinds?units[unsigned(kind)]:1024;
+}
+struct PlayerSpriteRegistration {uint16_t units;int16_t x,y;};
+inline PlayerSpriteRegistration player_sprite_registration(Character character,bool pet=false){
+ // Raw player bakes predate the scene sampler. Apply the original Spine
+ // child's scale and position separately from the creature's Bounds.
+ static constexpr PlayerSpriteRegistration registrations[]={
+  {4483,5,-19},{3239,16,-21},{3618,4,-27},{4541,2,-20},{5120,-2,-6},{4254,-19,-23}
+ };
+ return registrations[pet?5:unsigned(character)<5?unsigned(character):0];
 }
 // Camera-scaled source coordinates in thousandths of a pixel. Scaling the
 // formation before dividing preserves the exact 960px half-width and centers
@@ -172,32 +188,38 @@ inline int combat_project_extent(EncounterCamera camera,CombatSceneLayout layout
  return int(int64_t(source)*camera.zoom*CombatSourceWidth*4*numerator/(right*21000*denominator));
 }
 inline CreaturePose project_creature_pose(EncounterCamera camera,CombatSceneLayout layout,EnemyFormationPoint point,
-                                        CreatureAnchors anchors,bool enemy,int normalized_height=84){
+                                        CreatureAnchors anchors,bool enemy,int sprite_units,int visual_scale=1024,int bounds_scale=1024,
+                                        int sprite_offset_x=0,int sprite_offset_y=0){
  const auto xx=[&](int offset){return combat_project_x(camera,layout,point.x+offset*camera.zoom,enemy);};
  const auto yy=[&](int offset){return combat_project_y(camera,layout,point.y+offset*camera.zoom);};
- CreaturePose p{};p.x=xx(0);p.feet=yy(0);p.body_left=xx(anchors.left);p.body_top=yy(anchors.top);
- p.body_width=xx(anchors.right)-p.body_left;p.body_height=yy(anchors.bottom)-p.body_top;
- p.center_x=xx(anchors.center_x);p.center_y=yy(anchors.center_y);
+ const auto sx=[&](int offset,int scale){return combat_project_x(camera,layout,point.x+int(int64_t(offset)*camera.zoom*scale/1024),enemy);};
+ const auto sy=[&](int offset,int scale){return combat_project_y(camera,layout,point.y+int(int64_t(offset)*camera.zoom*scale/1024));};
+ CreaturePose p{};p.x=xx(0);p.feet=yy(0);p.body_left=sx(anchors.left,bounds_scale);p.body_top=sy(anchors.top,bounds_scale);
+ p.body_width=sx(anchors.right,bounds_scale)-p.body_left;p.body_height=sy(anchors.bottom,bounds_scale)-p.body_top;
+ p.center_x=sx(anchors.center_x,visual_scale);p.center_y=sy(anchors.center_y,visual_scale);
+ p.sprite_x=sx(sprite_offset_x,visual_scale);p.sprite_y=sy(sprite_offset_y,visual_scale);
  p.width=p.body_width<22?22:p.body_width;
- // The existing raster bank uses a shared normalized standing height.
- // This restores authored relative Bounds sizes; it is not a re-bake of
- // original full skeletal extents or a change to those clip durations.
- p.scale=combat_project_extent(camera,layout,anchors.bottom-anchors.top,1024,normalized_height);
+ // Bounds are authored interaction rectangles, not a raster normalizer.
+ // Recover the exact common clip bake scale before projecting to4:3.
+ p.scale=combat_project_extent(camera,layout,sprite_units,visual_scale,1024);
  if(p.scale<1)p.scale=1;
- p.intent_x=xx(anchors.intent_x);p.intent=yy(anchors.intent_y)-8;if(p.intent<25)p.intent=25;
+ p.intent_x=xx(anchors.intent_x);p.intent=sy(anchors.intent_y,bounds_scale)-8;if(p.intent<25)p.intent=25;
  // The compact health/status adapter retains its readable patch heights.
  p.hp=p.feet+7;p.status=p.feet+24;return p;
 }
 inline CreaturePose player_pose(const State&s,CombatSceneLayout layout,bool pet=false){
  if(!s.enemy_world.active){auto p=legacy_creature_pose({pet?112:60,pet?123:124,pet?34:62,1024,50,pet?131:129,149});return p;}
  const auto camera=encounter_camera(s.enemy_world.encounter);
- return project_creature_pose(camera,layout,player_formation_point(s,camera.zoom,pet),player_anchors(s.character,pet),false,pet?51:82);
+ const auto registration=player_sprite_registration(s.character,pet);
+ const int hp=s.expansion.osty_hp>0?s.expansion.osty_max_hp:0,scale=pet?1024+1024*(hp>150?150:hp<0?0:hp)/150:1024;
+ return project_creature_pose(camera,layout,player_formation_point(s,camera.zoom,pet),player_anchors(s.character,pet),false,
+  registration.units,scale,scale,registration.x,registration.y);
 }
 inline CreaturePose enemy_pose(const State&s,int index,CombatSceneLayout layout){
  if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
  const auto camera=encounter_camera(s.enemy_world.encounter);const auto kind=s.enemy_world.models[index].kind;
  if(kind==EnemyId::LegacyNibbit)return enemy_pose(s.enemy_count,index);
- auto p=project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true);
+ auto p=project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true,creature_sprite_units(kind));
  // NHealthBar adds24 source pixels around monster Bounds. The segmented
  // boss alone subtracts35 first; player health bars have no extra width.
  const bool segment=kind==EnemyId::DecimillipedeSegmentBack||kind==EnemyId::DecimillipedeSegmentFront||kind==EnemyId::DecimillipedeSegmentMiddle;

@@ -157,6 +157,9 @@ static RelicId w_pull(State& s,WorldRelicPool pool,bool back,bool shop,unsigned 
   rarity=rarity==5?2:rarity==2?3:rarity==3?4:0;
  }return WorldRelicCirclet;
 }
+void world_remove_relic_from_bags(State&s,RelicId id){
+ if(id>=WorldRelicKinds)return;init_world_relics(s);w_bags(s);w_bag_remove(s,id);
+}
 RelicId world_relic_pull(State& s,WorldRelicPool pool,bool back,bool shop){return w_pull(s,pool,back,shop,1);}
 RelicId world_relic_pull_shared(State& s,WorldRelicPool pool){return w_pull(s,pool,false,false,0);}
 RelicId random_world_relic(State& s,WorldRelicPool pool){

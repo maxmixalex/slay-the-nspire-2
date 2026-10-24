@@ -115,7 +115,8 @@ static void native_pixels(){
  app.render();CHECK(pixel(112,133)==rgb(59,111,163));
  CHECK(pixel(99,129)==rgb(16,20,22)); // Tracked owner block does not add a second shield.
  CHECK(encounter_setup(app.game,EncounterId::WaterfallGiantBoss));app.game.enemy_world.models[0].data[2]=1;
- app.render();CHECK(enemy_infinite_hp(app.game,0));CHECK(pixel(235,131)==0xffff);
+ app.render();CHECK(enemy_infinite_hp(app.game,0));const auto giant=app.combat_enemy_pose(0);
+ CHECK(pixel(creature_health_left(giant)+(giant.width-18)/2+5,giant.hp+2)==0xffff);
  capture("health-native-infinite");
 }
 static void lifecycle(){

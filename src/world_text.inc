@@ -231,8 +231,17 @@ void App::relic_description(RelicId id,char*out,size_t cap,int position)const{
  WorldTextContext x{this,"relics",{},int(id)};x.relic_position=position;wt_model_key(x,key);char raw[8192]{};TextBuffer source{raw,sizeof raw,0};source.text(content.world_string("relics",key));wt_formatter(out,cap,&x).format(raw);
  if(!*out&&id<RelicKinds){TextBuffer text{out,cap,0};text.text(relic_definitions[id].description);}
 }
+const char* App::run_modifier_text(RunModifier modifier,bool description)const{
+ char key[96]{};TextBuffer b{key,sizeof key,0};b.text(run_modifier_key(modifier));
+ b.text(run_modifier_character(modifier)?(description?".cardsModifierDescription":".cardsModifierTitle"):(description?".description":".title"));
+ const char*value=content.world_string(run_modifier_character(modifier)?"characters":"modifiers",key);
+ return *value?value:description?"":run_modifier_key(modifier);
+}
 void App::original_event_text(int option,bool description,char*out,size_t cap)const{
  if(!cap)return;out[0]=0;char key[256]{};
+ if(option==0&&!game.original_events.finished&&current_neow_modifier(game)!=RunModifier::Count){
+  TextBuffer text{out,cap,0};text.text(run_modifier_text(current_neow_modifier(game),description));return;
+ }
  if(option<0&&description&&!game.original_events.finished){
   const auto id=game.original_events.id;
   if(id==OriginalEventId::Neow||id==OriginalEventId::Darv||id==OriginalEventId::Nonupeipe||id==OriginalEventId::Tanx||id==OriginalEventId::Orobas||id==OriginalEventId::Pael||id==OriginalEventId::Tezcatara||id==OriginalEventId::Vakuu){

@@ -30,6 +30,7 @@ CardKind world_card_id(const char* key); // CardKinds is the absent sentinel.
 WorldCardPool world_card_pool(CardKind);
 unsigned world_card_pool_models(WorldCardPool,CardKind*,unsigned capacity);
 unsigned world_card_candidates(const State&,const WorldCardOptions&,CardKind*,unsigned capacity,bool combat=false);
+void world_modifier_card_pools(const State&,WorldCardOptions&,bool merchant=false);
 bool world_card_modifier_allowed(CardKind);
 bool world_card_combat_allowed(CardKind);
 bool world_card_gains_block(CardKind);

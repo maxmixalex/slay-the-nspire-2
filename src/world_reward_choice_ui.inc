@@ -73,6 +73,7 @@ static void native_card_reward_screen(Canvas&c,const uint16_t*ids,unsigned count
   c.action(x-2,195,w+4,25,bit==1?UiAction::SacrificeReward:UiAction::RerollReward);
  }
  const bool can_back=a.world_choice_min()==0;
+ if(!can_back&&neow_modifier_selection(s,RunModifier::Draft))return;
  c.ui(U_RewardSkip,209,219,103,19,can_back?255:100);c.centered("返回奖励",210,222,101,10,can_back?Gold:Muted);
  c.action(205,218,111,22,UiAction::Back,can_back);
 }

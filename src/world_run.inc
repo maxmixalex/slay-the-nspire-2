@@ -73,7 +73,7 @@ static bool world_enter_event(State&s,OriginalEventId id,bool mark_visited=true)
     return true;
 }
 static void world_reset_unknown_odds(State&s){
-    auto&w=s.world;w.unknown_monster_bits=0x3dcccccdU;w.unknown_elite_bits=0xbf800000U;
+    auto&w=s.world;w.unknown_monster_bits=0x3dcccccdU;w.unknown_elite_bits=has_run_modifier(s,RunModifier::DeadlyEvents)?0x3dcccccdU:0xbf800000U;
     w.unknown_shop_bits=0x3cf5c28fU;w.unknown_treasure_bits=0x3ca3d70aU;
 }
 static bool world_enter_act(State&s,unsigned act){
@@ -83,10 +83,17 @@ static bool world_enter_act(State&s,unsigned act){
     reference::ActSettings settings;settings.act=reference::ActKind(w.rooms[act].region);
     settings.increased_elites=w.ascension>=1;settings.second_boss=w.rooms[act].boss_count==2;
     settings.variant=uint8_t(world_map_variant(s));
+    settings.big_game_hunter=has_run_modifier(s,RunModifier::BigGameHunter);
     reference::QuotaTrace trace;
     if(!reference::generate_act_map(w.maps[act],w.run_seed,settings,trace))return world_fail(s);
     w.map_ready[act]=1;world_relic_map_generated(s);
     s.current_node=-1;s.next_row=0;s.phase=Phase::Map;w.room_type=uint8_t(WorldRoom::Map);
+    if(has_run_modifier(s,RunModifier::CursedRun)){
+        WorldCardOptions options;options.pools[0]=WorldCardPool::Curse;CardKind cards[CardKinds];
+        unsigned n=world_card_candidates(s,options,cards,CardKinds),count=0;
+        for(unsigned i=0;i<n;++i)if(world_card_modifier_allowed(cards[i]))cards[count++]=cards[i];
+        if(!count||event_add_deck_card(s,{cards[world_rng(s,WorldRng::Niche).below(count)],0})<0)return world_fail(s);
+    }
     ++s.revision;
     // Only the first Neow is automatically entered. Later ancients remain a
     // selectable starting point, exactly like RunManager.EnterAct.
@@ -113,8 +120,9 @@ static OriginalEventId world_pull_event(State&s,bool forced){
     // scan. Lantern Key replaces the selected event after this scan.
     return forced?OriginalEventId::WarHistorianRepy:OriginalEventId(q.events[q.event_cursor%q.event_count]);
 }
-static bool world_free_travel(const State&s){return has_world_relic(s,WorldRelicWingedBoots)&&world_relic_counter(s,WorldRelicWingedBoots)>0;}
+static bool world_free_travel(const State&s){return has_run_modifier(s,RunModifier::Flight)||(has_world_relic(s,WorldRelicWingedBoots)&&world_relic_counter(s,WorldRelicWingedBoots)>0);}
 static void world_use_free_travel(State&s){
+    if(has_run_modifier(s,RunModifier::Flight))return;
     for(unsigned i=0;i<s.world_relics.count;++i){auto&r=s.world_relics.entries[i];
         if(r.id==WorldRelicWingedBoots&&!(r.flags&WorldRelicMelted)&&r.values[0]<3)++r.values[0];
     }
@@ -128,6 +136,11 @@ bool world_begin_run(State&s,reference::ActKind first_region,unsigned ascension)
     s.potion_slots=uint8_t(ascension>=4?2:3);
     if(ascension>=5&&event_add_deck_card(s,{EventCardAscendersBane,0})<0)return world_fail(s);
     if(s.phase==Phase::Error||!world_make_room_sets(s,unsigned(first_region)))return false;
+    if(has_run_modifier(s,RunModifier::DeadlyEvents))world_remove_relic_from_bags(s,WorldRelicJuzuBracelet);
+    if(s.run_options.modifiers&RunExclusiveDeckModifiers){
+        s.deck_count=0;for(auto&c:s.deck)c={};for(auto&f:s.event_cards.deck)f={};
+        for(auto&v:s.defect.genetic_deck)v=0;for(auto&v:s.necro.scythe_deck)v=0;
+    }
     return world_enter_act(s,0);
 }
 const char* world_region_key(const State&s){return s.world.active&&s.world.act_index<WorldActCount&&s.world.rooms[s.world.act_index].region<4?WorldRegionPools[s.world.rooms[s.world.act_index].region].key:"";}
@@ -216,7 +229,10 @@ bool world_choose_point(State&s,unsigned point){
     }
     // Combat setup invokes this after constructing/shuffling the deck and
     // before the initial draw. Noncombat rooms have no combat continuation.
-    if(!world_room_is_combat(s))world_relic_hook(s,WorldRelicHook::AfterRoomEntered);
+    if(!world_room_is_combat(s)){
+        world_relic_hook(s,WorldRelicHook::AfterRoomEntered);
+        if(has_run_modifier(s,RunModifier::Terminal)&&s.max_hp>1)player_lose_max_hp(s,1);
+    }
     if(room==WorldRoom::Treasure&&!world_prepare_treasure(s))return world_fail(s);
     if(room==WorldRoom::Shop)world_resume_room(s);
     ++s.revision;return s.phase!=Phase::Error;
@@ -229,6 +245,7 @@ bool world_refresh_map_modifiers(State&s){
     if(w.current_point!=w.maps[w.act_index].root)return world_fail(s);
     reference::ActSettings settings;settings.act=reference::ActKind(w.rooms[w.act_index].region);
     settings.increased_elites=w.ascension>=1;settings.second_boss=w.rooms[w.act_index].boss_count==2;settings.variant=uint8_t(variant);
+    settings.big_game_hunter=has_run_modifier(s,RunModifier::BigGameHunter);
     reference::QuotaTrace trace;if(!reference::generate_act_map(w.maps[w.act_index],w.run_seed,settings,trace))return world_fail(s);
     for(auto&v:w.visited[w.act_index])v=0;for(auto&v:w.visited_rooms[w.act_index])v=0;
     w.current_point=w.maps[w.act_index].root;w.visited[w.act_index][w.current_point]=1;

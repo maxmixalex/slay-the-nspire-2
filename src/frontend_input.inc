@@ -10,12 +10,13 @@ static bool resumable_run(const State&s){return s.phase!=Phase::Dead&&s.phase!=P
 static State frontend_saved_probe{};
 static SavedRunIdentity saved_run_identity(const State&s){
  SavedRunIdentity out{};out.seed=s.seed;out.character=s.character;
+ out.mode=s.run_options.mode;out.modifiers=s.run_options.modifiers;out.daily_day=s.run_options.daily_day;
  out.world=s.world.active;out.practice=s.practice;
  if(out.world){out.run_seed=s.world.run_seed;out.ascension=s.world.ascension;out.region=s.world.rooms[0].region;}
  return out;
 }
 static bool same_run_identity(const SavedRunIdentity&a,const SavedRunIdentity&b){
- return a.seed==b.seed&&a.character==b.character&&a.world==b.world&&a.practice==b.practice&&
+ return a.seed==b.seed&&a.character==b.character&&a.world==b.world&&a.practice==b.practice&&a.mode==b.mode&&a.modifiers==b.modifiers&&a.daily_day==b.daily_day&&
   (!a.world||(a.run_seed==b.run_seed&&a.ascension==b.ascension&&a.region==b.region));
 }
 static void remember_saved(App&a,const State&s){

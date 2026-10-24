@@ -16,7 +16,8 @@ static WorldRoom world_roll_unknown(State&s,unsigned point){
     bool allowed[4]={!has_world_relic(s,WorldRelicJuzuBracelet),true,true,!w.point_had_shop&&!only_shops};
     if(world_relic_golden_path(s,w.act_index)||event_card_forces_historian(s,w.act_index))for(auto&v:allowed)v=false;
     const WorldRoom kinds[]={WorldRoom::Monster,WorldRoom::Elite,WorldRoom::Treasure,WorldRoom::Shop};
-    const uint32_t base[]={0x3dcccccdU,0xbf800000U,0x3ca3d70aU,0x3cf5c28fU};
+    const bool deadly=has_run_modifier(s,RunModifier::DeadlyEvents);
+    const uint32_t base[]={0x3dcccccdU,deadly?0x3dcccccdU:0xbf800000U,0x3ca3d70aU,0x3cf5c28fU};
     uint32_t*odds[]={&w.unknown_monster_bits,&w.unknown_elite_bits,&w.unknown_treasure_bits,&w.unknown_shop_bits};
     // Even an event-only hook consumes the original UnknownMapPoint draw.
     Real roll=world_random_float(world_rng(s,WorldRng::UnknownMapPoint)),sum=Real::integer(0);
@@ -26,7 +27,7 @@ static WorldRoom world_roll_unknown(State&s,unsigned point){
     }
     for(unsigned i=0;i<4;++i){
         if(result==kinds[i])*odds[i]=base[i];
-        else if(allowed[i])*odds[i]=world_float_bits(world_float_round(world_float(*odds[i])+world_float(base[i])));
+        else if(allowed[i])*odds[i]=world_float_bits(world_float_round(world_float(*odds[i])+world_float(base[i])*Real::integer(deadly&&i==2?2:1)));
     }
     return result;
 }
@@ -91,6 +92,7 @@ static bool world_populate_shop_card(State&s,unsigned slot,bool sale){
     options.rarity_mask=world_rarity_mask(2)|world_rarity_mask(3)|world_rarity_mask(4);
     const CardType types[]={CardType::Attack,CardType::Attack,CardType::Skill,CardType::Skill,CardType::Power};
     if(slot<5)options.type_mask=world_type_mask(types[slot]);
+    if(slot<5)world_modifier_card_pools(s,options,true);
     CardKind pool[CardKinds];unsigned count=world_card_candidates(s,options,pool,CardKinds),n=0;
     for(unsigned i=0;i<count;++i){bool used=false;for(unsigned j=0;j<ShopCardCount;++j)
         if((!(s.shop_sold&(1U<<j))||j==slot)&&w.shop_cards[j].kind==pool[i])used=true;
@@ -163,6 +165,7 @@ static bool world_buy_priced(State&s,int item,bool free){
     if(s.phase!=Phase::Shop||item<0||item>ShopRemove||s.world.shop_pending_item!=255||(s.shop_sold&(1U<<item)))return false;
     int price=free?0:world_shop_price(s,item);if(s.gold<price)return false;
     if(item==ShopRemove){
+        if(has_run_modifier(s,RunModifier::Hoarder))return false;
         bool eligible=false;for(unsigned i=0;i<s.deck_count;++i)if(card_removable(s,s.deck[i],i))eligible=true;
         if(!eligible||s.deck_count<=1)return false;s.world.shop_free_remove=uint8_t(free);s.phase=Phase::Remove;++s.revision;return true;
     }

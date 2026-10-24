@@ -138,7 +138,13 @@ static void stars_and_upgraded_transform(){
 static void orbs_and_osty(){
     start(Character::Defect);auto&s=a.game;s.expansion.orb_slots=10;s.expansion.orb_count=5;s.expansion.powers[(int)XPower::Focus]=-2;
     for(int i=0;i<MaxOrbs;i++){s.defect.orb_kind[i]=(uint8_t)(i<5?i:0);s.expansion.dark[i]=(int16_t)(i==0?23:i==4?4:0);}
-    auto before=snapshot();capture("defect-five-orbs");action(UiAction::ShowOrbs);CHECK(selected_status()==46&&status_amount(s,0,39)==-2);capture("defect-orb-detail");
+    auto before=snapshot();a.render();a.advance(250);a.advance(250);a.render();capture("defect-five-orbs");
+    // Each original orb/empty slot owns its hover. Clicking retains this
+    // focused tip; it no longer opens the port's aggregate status dialog.
+    for(int i=0;i<10;++i){tap(HitKind::Orb,i);CHECK(a.status_actor<0);unchanged(before);}
+    tap(HitKind::Orb,0);capture("defect-orb-hover");tap(HitKind::Orb,8);capture("defect-empty-orb-hover");
+    // The existing status hotkey/detail remains available independently.
+    a.ui_action(UiAction::ShowOrbs);CHECK(selected_status()==46&&status_amount(s,0,39)==-2);capture("defect-orb-detail");
     action(UiAction::MoreStatus);CHECK(a.status_scroll==5);capture("defect-empty-orb-slots");a.input(Key::Confirm);CHECK(a.status_scroll==0);unchanged(before);a.input(Key::Back);
     start(Character::Necrobinder);clear_hand();a.game.energy=10;CHECK(a.game.expansion.osty_hp==1);
     int guard=add({NecroBodyguard,0});play_ui(guard);CHECK(a.game.expansion.osty_hp==6&&a.game.expansion.osty_max_hp==6);

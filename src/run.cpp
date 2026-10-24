@@ -4,6 +4,7 @@
 #include "original_events.hpp"
 #include "debug_commands.hpp"
 #include "inplace_reset.hpp"
+#include "run_options.hpp"
 namespace spire {
 namespace {static bool world_make_rewards(State&);static bool world_buy(State&,int);static bool world_open_treasure(State&);static bool world_take_treasure(State&);}
 static int min(int a,int b){return a<b?a:b;}
@@ -128,7 +129,7 @@ bool claim_reward_potion(State&s){
     return false;
 }
 bool leave_rewards(State&s){if(s.phase!=Phase::Reward)return false;finish_room(s);return true;}
-int rest_heal_amount(const State&s){return s.max_hp*3/10+((s.world.active?has_world_relic(s,WorldRelicRegalPillow):(s.relics&RegalPillow)!=0)?15:0);}
+int rest_heal_amount(const State&s){return s.world.active&&has_run_modifier(s,RunModifier::NightTerrors)?s.max_hp:s.max_hp*3/10+((s.world.active?has_world_relic(s,WorldRelicRegalPillow):(s.relics&RegalPillow)!=0)?15:0);}
 int remove_price(const State&s){return s.world.active?world_shop_price(s,ShopRemove):min(9999,75+s.removals*25);}
 static bool has_removable(const State&s){for(unsigned i=0;i<s.deck_count;i++)if(card_removable(s.deck[i]))return true;return false;}
 static unsigned transformable_count(const State&s){unsigned count=0;for(unsigned i=0;i<s.deck_count;i++)if(card_transformable(s.deck[i]))++count;return count;}

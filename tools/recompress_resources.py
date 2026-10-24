@@ -23,6 +23,7 @@ from repack_retained import DESCRIPTOR, auxiliary_count
 
 
 VERSIONS = tuple(range(20, 29))
+ENCODER_ID = b'NSP2-adaptive-LZMA2-v1'
 
 
 def view(data):
@@ -60,24 +61,36 @@ def groups(pack):
     return ordered
 
 
-def encode_group(payload):
-    header = list(tiles.GROUP.unpack_from(payload))
-    tiled = header[0] == b'TGR1'
-    raw_size = header[3] if tiled else header[1]
-    raw = tiles.decode_lzma2(payload[32:], raw_size)
-    encoded = lzma.compress(raw, format=lzma.FORMAT_RAW,
-        filters=[dict(id=lzma.FILTER_LZMA2, preset=9, dict_size=tiles.GROUP_LIMIT,
-                      nice_len=273, depth=512)])
-    tiles.require(tiles.decode_lzma2(encoded, raw_size) == raw,
-                  'Recompressed group differs after independent decoding')
-    header[4 if tiled else 2] = len(encoded)
-    candidate = tiles.GROUP.pack(*header) + encoded
-    # Preserve the replaced span's parity. Any extra byte is outside the
-    # group, so exact-consumption runtime decoding does not accept padding.
+def choose_group(payload, candidate, raw_size):
     physical = candidate + bytes((len(payload) - len(candidate)) & 1)
     if len(physical) >= len(payload):
         return payload, payload, raw_size
     return candidate, physical, raw_size
+
+
+def encode_group(payload, raw=None):
+    header = list(tiles.GROUP.unpack_from(payload))
+    tiled = header[0] == b'TGR1'
+    raw_size = header[3] if tiled else header[1]
+    raw = tiles.decode_lzma2(payload[32:], raw_size) if raw is None else raw
+    # Tile color planes benefit from position-aware literal contexts; frame
+    # indices and sparse retained records have a different byte structure.
+    # lc+lp never exceeds four, the decoder's existing fixed probability arena.
+    profiles = ((3, 0, 2), (4, 0, 1), (3, 1, 1)) if tiled and header[1] == 1 else \
+               ((3, 0, 2), (3, 0, 0), (4, 0, 1))
+    candidate = payload
+    for lc, lp, pb in profiles:
+        encoded = lzma.compress(raw, format=lzma.FORMAT_RAW,
+            filters=[dict(id=lzma.FILTER_LZMA2, preset=9, dict_size=tiles.GROUP_LIMIT,
+                          nice_len=273, depth=512, lc=lc, lp=lp, pb=pb)])
+        tiles.require(tiles.decode_lzma2(encoded, raw_size) == raw,
+                      'Recompressed group differs after independent decoding')
+        if len(encoded) + 32 < len(candidate):
+            header[4 if tiled else 2] = len(encoded)
+            candidate = tiles.GROUP.pack(*header) + encoded
+    # Preserve the replaced span's parity. Any extra byte is outside the
+    # group, so exact-consumption runtime decoding does not accept padding.
+    return choose_group(payload, candidate, raw_size)
 
 
 class Relocation:
@@ -147,7 +160,9 @@ def rewrite(data, plan):
     # Check every decoder input and every unchanged literal independently of
     # the writer. Equal decoded groups plus equal slice/index metadata imply
     # identical image pixels and alpha without decoding 30,000 frames twice.
-    for (old_offset, old_length), (new_offset, new_length) in zip(groups(source), groups(target)):
+    old_groups, new_groups = groups(source), groups(target)
+    tiles.require(len(old_groups) == len(new_groups), 'Recompression changed group count')
+    for (old_offset, old_length), (new_offset, new_length) in zip(old_groups, new_groups):
         tiles.require(new_offset == relocate(old_offset), 'Group relocation differs')
         old = data[old_offset:old_offset + old_length]
         new = out[new_offset:new_offset + new_length]
@@ -185,24 +200,46 @@ def rewrite(data, plan):
         input_sha256=hashlib.sha256(data).hexdigest(), output_sha256=hashlib.sha256(out).hexdigest())
 
 
-def recompress(data, *, workers=2, cache=None):
+def recompress(data, *, workers=2, cache=None, cache_directory=None):
     source = view(data)
     entries = groups(source)
     cache = {} if cache is None else cache
+    if cache_directory is not None:
+        cache_directory = Path(cache_directory)
+        cache_directory.mkdir(parents=True, exist_ok=True)
 
     def convert(entry):
         offset, length = entry
         old = bytes(data[offset:offset + length])
-        key = hashlib.sha256(old).digest()
+        header = list(tiles.GROUP.unpack_from(old))
+        tiled = header[0] == b'TGR1'
+        raw_size = header[3] if tiled else header[1]
+        raw = tiles.decode_lzma2(old[32:], raw_size)
+        header[4 if tiled else 2] = 0
+        # A raw-content key survives earlier lossless repacking and locale
+        # relocation. Final UI/font appends can reuse the completed encoding.
+        key = hashlib.sha256(ENCODER_ID + tiles.GROUP.pack(*header) + raw).digest()
         known = cache.get(key)
-        result = known if known is not None else encode_group(old)
+        path = cache_directory / (key.hex() + '.bin') if cache_directory is not None else None
+        if known is None and path is not None and path.exists():
+            try:
+                candidate = path.read_bytes()
+                checked = list(tiles.GROUP.unpack_from(candidate))
+                checked[4 if tiled else 2] = 0
+                if checked == header and tiles.decode_lzma2(candidate[32:], raw_size) == raw:
+                    known = candidate
+            except (OSError, ValueError, struct.error, lzma.LZMAError):
+                pass  # A disposable build cache never substitutes for input verification.
+        result = choose_group(old, known, raw_size) if known is not None else encode_group(old, raw)
+        if known is None and path is not None:
+            tiles.atomic_bytes(path, result[0])
         return offset, length, result, key
 
     plan, saved = [], 0
     with ThreadPoolExecutor(max_workers=workers) as pool:
         for offset, length, (payload, physical, raw), key in pool.map(convert, entries):
             plan.append((offset, length, payload, physical, raw))
-            cache[key] = (payload, physical, raw)
+            cache[key] = payload
             saved += length - len(physical)
             if len(plan) % 64 == 0:
                 print(json.dumps(dict(stage='recompress', completed=len(plan), total=len(entries),
@@ -216,21 +253,26 @@ def main():
     parser.add_argument('--zhs', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--workers', type=int, default=2)
+    parser.add_argument('--cache', type=Path, help='Private content-addressed encoder cache for later UI/font appends')
     args = parser.parse_args()
     tiles.require(1 <= args.workers <= 4, 'Use one to four bounded encoder workers')
     inputs = {lang: tiles.private_path(getattr(args, lang), 'Private source pack') for lang in ('eng', 'zhs')}
     output = tiles.private_path(args.output, 'Private compressed directory')
+    cache_directory = tiles.private_path(args.cache, 'Private encoder cache') if args.cache else None
     tiles.require(len(set(inputs.values())) == 2 and all(
         output / ('compressed-' + lang + '.nsp') not in inputs.values() for lang in inputs),
         'Never overwrite an input pack')
     start, cache, receipts = time.monotonic(), {}, {}
     for language, path in inputs.items():
-        result, receipt = recompress(path.read_bytes(), workers=args.workers, cache=cache)
+        result, receipt = recompress(path.read_bytes(), workers=args.workers, cache=cache,
+                                    cache_directory=cache_directory)
         tiles.atomic_bytes(output / ('compressed-' + language + '.nsp'), result)
         receipts[language] = receipt
         print(json.dumps(dict(language=language, **receipt)), flush=True)
     summary = dict(schema=1, reference='v0.111.0 / 41cef1ea', languages=receipts,
-        elapsed_seconds=time.monotonic() - start, encoder='LZMA2 BT4 nice273 depth512 dictionary512KiB')
+        elapsed_seconds=time.monotonic() - start,
+        encoder='Adaptive LZMA2 BT4 nice273 depth512 dictionary512KiB lc+lp<=4',
+        encoder_cache=str(cache_directory) if cache_directory else None)
     tiles.atomic_bytes(output / 'recompressed-receipt.json', json.dumps(summary, indent=2).encode() + b'\n')
 
 

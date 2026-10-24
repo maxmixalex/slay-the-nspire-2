@@ -1,6 +1,7 @@
 """Exact synthetic pack coverage for the production group recompressor."""
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
@@ -57,6 +58,20 @@ class ResourceRecompressionTests(unittest.TestCase):
         self.assertEqual(split.reconstruct(common, languages['zhs'], 'zhs'), zhs_new)
         self.exact_images(eng, eng_new)
         self.exact_images(zhs, zhs_new)
+
+    def test_persistent_cache_survives_relocation_and_recovers_corruption(self):
+        eng, _, plan = retained.repack(fixture('eng', glyphs=1), fast_images='none')
+        zhs, _, _ = retained.repack(fixture('zhs', glyphs=3), batches=plan, fast_images='none')
+        with tempfile.TemporaryDirectory() as directory:
+            first, _ = compact.recompress(eng, workers=1, cache_directory=directory)
+            cached = sorted(Path(directory).glob('*.bin'))
+            self.assertTrue(cached)
+            expected, _ = compact.recompress(zhs, workers=1)
+            relocated, _ = compact.recompress(zhs, workers=1, cache_directory=directory)
+            self.assertEqual(expected, relocated)
+            cached[0].write_bytes(b'not a complete encoder cache')
+            recovered, _ = compact.recompress(eng, workers=1, cache_directory=directory)
+            self.assertEqual(first, recovered)
 
 
 if __name__ == '__main__':

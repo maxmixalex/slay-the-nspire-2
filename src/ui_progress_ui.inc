@@ -243,7 +243,8 @@ static void history_screen(Canvas&c){
     ProgressTextValues values;values.seed=r.seed_text;values.date=date;values.time=time;values.hp=r.hp;values.max_hp=r.max_hp;values.gold=r.gold;values.floor=r.floor;
     progress_text(a,"run_history","INFO.DATE_TIME",values,text,sizeof text);page.text_fitted(text,168+dx,1-offset,123,8,White,8);
     progress_text(a,"run_history","INFO.SEED",values,text,sizeof text);page.text_fitted(text,168+dx,12-offset,123,8,White,8);
-    const char*mode=frontend_text(a,"run_history","GAME_MODE.standard","Standard");page.text_fitted(mode,168+dx,23-offset,123,8,White,8);
+    const char*mode_key=r.mode==unsigned(RunMode::Custom)?"GAME_MODE.custom":r.mode==unsigned(RunMode::Daily)?"GAME_MODE.daily":"GAME_MODE.standard";
+    const char*mode=frontend_text(a,"run_history",mode_key,r.mode==unsigned(RunMode::Custom)?"Custom":r.mode==unsigned(RunMode::Daily)?"Daily":"Standard");page.text_fitted(mode,168+dx,23-offset,123,8,White,8);
     page.text_fitted("v0.111.0 / 41cef1ea",168+dx,34-offset,123,8,Muted,8);
     page.picture(A_Heart,54+dx,17-offset,9,10);TextBuffer line{text,sizeof text,0};text[0]=0;line.number(r.hp);line.ch('/');line.number(r.max_hp);page.text(text,65+dx,17-offset,8,White);
     page.picture(A_Coin,103+dx,17-offset,9,10);text[0]=0;line.n=0;line.number(r.gold);page.text(text,114+dx,17-offset,8,Gold);

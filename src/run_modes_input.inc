@@ -82,7 +82,7 @@ bool App::run_modes_input(Key key){
         return true;
     }
     if(key==Key::EndTurn||(run_mode.screen==RunMenu::Daily&&key==Key::Confirm)){ui_action(UiAction::StartConfiguredRun);return true;}
-    if(run_mode.screen==RunMenu::Daily)return true;
+    if(run_mode.screen==RunMenu::Daily){if(key==Key::Up||key==Key::Down)progress_page_scroll.wheel(key==Key::Up?-4:4);return true;}
     auto&focus=run_mode.focus;if(focus<0)focus=0;
     if(key==Key::Map)focus=9;
     else if(key==Key::Right){if(focus<4)++focus;else if(focus<9)focus=9;}

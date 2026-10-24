@@ -69,7 +69,7 @@ bool App::progress_navigation_input(Key key){
     return true;
 }
 bool App::progress_pointer_button(bool down,const HitRegion&hit){
-    if((!statistics_open&&!history_open&&run_mode.screen!=RunMenu::Custom)||detail_card>=0||detail_item>=0||settings_open||frontend_confirm)return false;
+    if((!statistics_open&&!history_open&&run_mode.screen!=RunMenu::Custom&&run_mode.screen!=RunMenu::Daily)||detail_card>=0||detail_item>=0||settings_open||frontend_confirm)return false;
     auto&scroller=progress_page_scroll;
     if(down){
         if(hit.kind==HitKind::ProgressThumb||hit.kind==HitKind::ProgressScroll||hit.kind==HitKind::HistoryCard||hit.kind==HitKind::HistoryRelic||hit.kind==HitKind::HistoryFloor||hit.kind==HitKind::RunModifier){

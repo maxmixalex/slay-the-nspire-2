@@ -25,6 +25,8 @@
 #include "health_bar.hpp"
 #include "combat_feedback.hpp"
 #include "combat_card_motion.hpp"
+#include "combat_osty_presentation.hpp"
+#include "combat_orb_presentation.hpp"
 #include "card_grid_scroll.hpp"
 #include "card_library.hpp"
 #include "collection_assets.hpp"
@@ -112,8 +114,8 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>HudUi7ContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        if(version_<ContentVersion||version_>HistoryUi8ContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
@@ -173,6 +175,8 @@ struct Callbacks {
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
     uint64_t run_seed=0;uint32_t seed=0;
+    uint32_t modifiers=0,daily_day=0;
+    RunMode mode=RunMode::Standard;
     Character character=Character::Ironclad;
     uint8_t ascension=0,region=0;
     bool world=false,practice=false;
@@ -322,6 +326,8 @@ struct App {
     bool run_modes_action(UiAction);
     void run_modifier_select(unsigned);
     bool start_selected_run(const RunOptions&);
+    const char* run_modifier_text(RunModifier,bool description=false)const;
+    uint16_t localized_card_rank(CardKind)const;
     void accept_frontend_confirm();
     int title_menu_count()const{return has_save?5:4;}
     bool practice_entry=false;
@@ -499,6 +505,8 @@ struct App {
     EnemyPresentation enemy_presentation[MaxEnemies]{};
     CombatSceneLayout creature_layout{};
     CreaturePose player_presentation[2]{};
+    CombatOstyPresentation osty_presentation{};
+    CombatOrbPresentation orb_presentation{};
     CombatFeedback combat_feedback{};
     CombatStatus combat_status{};
     CombatSparkMotion combat_sparks{};

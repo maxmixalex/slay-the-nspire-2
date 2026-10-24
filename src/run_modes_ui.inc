@@ -1,8 +1,5 @@
 static const char* modifier_localized(const App&a,RunModifier modifier,bool description){
-    char key[96]{};TextBuffer b{key,sizeof key,0};b.text(run_modifier_key(modifier));
-    b.text(run_modifier_character(modifier)?(description?".cardsModifierDescription":".cardsModifierTitle"):(description?".description":".title"));
-    const char*value=a.content.world_string(run_modifier_character(modifier)?"characters":"modifiers",key);
-    return *value?value:description?"":run_modifier_key(modifier);
+    return a.run_modifier_text(modifier,description);
 }
 struct RunModeTextValues {const char*title="",*description="",*color="gold",*time="";unsigned ascension=0;};
 static LocalizedValue run_mode_text_value(const void*context,const char*key){
@@ -112,17 +109,22 @@ static void daily_run_screen(Canvas&c){
     c.text_fitted(*name?name:character.name,52,74,113,10,Gold,8);
     run_mode_text(a,"DAILY_RUN_MENU.ASCENSION",values,text,sizeof text);c.text_fitted(text,52,88,113,8,Blue,8);
     c.text_fitted(label("DAILY_RUN_MENU.MODIFIERS","Modifiers:"),13,111,156,10,Gold,8);
-    int y=125;for(unsigned i=0;i<run_modifier_count(mode.pending)&&i<3;++i){const RunModifier modifier=run_modifier_at(mode.pending,i);
-        if(a.content.version()>=HistoryUi8ContentVersion)c.ui(I8_ModifierDraft+int(run_modifier_icon(modifier)),14,y+2,16,16);
-        modifier_text(a,modifier,text,sizeof text,true);const int lines=mx(2,c.paragraph(text,0,0,133,0,0,8));
-        c.paragraph(text,34,y,133,mn(4,lines),0,8,White);y+=mn(4,lines)*11+5;
+    int row_y[4]{};const unsigned count=mn(3,run_modifier_count(mode.pending));
+    for(unsigned i=0;i<count;++i){modifier_text(a,run_modifier_at(mode.pending,i),text,sizeof text,true);row_y[i+1]=row_y[i]+mx(2,c.paragraph(text,0,0,133,0,0,8))*11+5;}
+    auto&scroller=a.progress_page_scroll;scroller.configure(row_y[count],81);
+    Canvas modifiers=c;modifiers.pixels+=123*modifiers.pitch;if(modifiers.coverage)modifiers.coverage+=123*modifiers.pitch;modifiers.clip_h=81;
+    c.hit(12,123,160,81,HitKind::ProgressScroll);
+    for(unsigned i=0;i<count;++i){const RunModifier modifier=run_modifier_at(mode.pending,i);const int y=row_y[i]-scroller.offset(),height=row_y[i+1]-row_y[i];
+        if(y+height<=0||y>=81)continue;
+        if(a.content.version()>=HistoryUi8ContentVersion)modifiers.ui(I8_ModifierDraft+int(run_modifier_icon(modifier)),14,y+2,16,16);
+        modifier_text(a,modifier,text,sizeof text,true);modifiers.paragraph(text,34,y,133,(height-5)/11,0,8,White);
     }
     c.text_fitted(label("DAILY_RUN_MENU.LEADERBOARDS.title","Leaderboards"),183,24,126,15,Gold,10,true,true);
     // This offline host has neither Steam identities nor a leaderboard API.
     // Preserve the leaderboard's empty region and explicitly identify the
     // unavailable service; never manufacture ranks or submitted scores.
     c.paragraph_fitted(a.content.english()?"Leaderboards unavailable offline.":"离线时无法连接排行榜。",190,94,111,41,9,Muted,8);
-    c.paragraph_fitted(a.content.english()?"Challenge uses this device’s UTC date.":"挑战使用本机 UTC 日期。",190,142,111,38,8,Muted,8);
+    c.paragraph_fitted(a.content.english()?"Challenge uses this device's UTC date.":"挑战使用本机 UTC 日期。",190,142,111,38,8,Muted,8);
     c.text_fitted(label("DAILY_RUN_MENU.disclaimer",""),11,209,297,8,Muted,8,true);
     native_original_back(c,mode.started);if(mode.pending.mode==RunMode::Daily)native_original_confirm(c,UiAction::StartConfiguredRun,mode.started);
 }

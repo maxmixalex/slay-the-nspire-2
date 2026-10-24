@@ -68,7 +68,26 @@ bool generate_act_map(ReferenceMap& out, uint64_t run_seed, const ActSettings& s
         Random spoils;spoils.named(run_seed,"spoils_map");
         if(!act_quotas(spoils,settings,config,trace)){out.error=MapError::Configuration;return false;}
         config.second_boss=false;config.replace_treasure=false;
-        return generate_spoils_map(out,spoils,config,scratch);
+        if(!generate_spoils_map(out,spoils,config,scratch))return false;
+    }
+    if(settings.big_game_hunter){
+        // ModifyGeneratedMap derives quotas from the completed map, then uses
+        // a fresh named stream with the explicit-count constructor (no quota
+        // gaussian draws). GoldenPath returns above and is unchanged.
+        config=out.config;config.rests=config.unknowns=config.elites=0;config.shops=3;
+        for(unsigned i=0;i<out.count;++i)if(out.points[i].active){
+            switch(out.points[i].type){
+            case PointType::Rest:++config.rests;break;
+            case PointType::Unknown:++config.unknowns;break;
+            case PointType::Elite:++config.elites;break;
+            default:break;
+            }
+        }
+        unsigned half=unsigned(config.elites)*5,elites=half/2;
+        if((half&1)&&(elites&1))++elites;
+        config.elites=uint8_t(elites);config.ignore_elite_rules=true;
+        Random replacement;replacement.named(run_seed,settings.variant==2?"spoils_map":stream);
+        return settings.variant==2?generate_spoils_map(out,replacement,config,scratch):generate_map(out,replacement,config,scratch);
     }
     return true;
 }

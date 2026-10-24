@@ -1,7 +1,17 @@
 static bool world_choice_phase(Phase p){return p==Phase::WorldRelicChoice||p==Phase::OriginalEventChoice;}
 unsigned App::world_choice_options(uint16_t*out,unsigned capacity)const{
  if(game.phase==Phase::WorldRelicChoice)return world_relic_eligible(game,out,capacity);
- if(game.phase==Phase::OriginalEventChoice)return original_event_eligible(game,out,capacity);
+ if(game.phase==Phase::OriginalEventChoice){
+  const unsigned count=original_event_eligible(game,out,capacity);
+  if(out&&capacity>=count&&neow_modifier_selection(game,RunModifier::SealedDeck)){
+   const auto&e=game.original_events;
+   for(unsigned i=1;i<count;++i){const uint16_t value=out[i];const Card card=card_from_token(e.offers[value]);unsigned j=i;
+    while(j){const Card prior=card_from_token(e.offers[out[j-1]]);const int rarity=card_rarity(prior.kind)-card_rarity(card.kind);
+     if(rarity<0||(!rarity&&localized_card_rank(prior.kind)<=localized_card_rank(card.kind)))break;out[j]=out[j-1];--j;}
+    out[j]=value;
+   }
+  }return count;
+ }
  return 0;
 }
 unsigned App::world_choice_min()const{return game.phase==Phase::WorldRelicChoice?game.world_relics.choice_min:game.original_events.select_min;}
@@ -22,6 +32,7 @@ Potion App::world_choice_potion(int id)const{
  return Potion::Empty;
 }
 bool App::world_choice_is_card_reward()const{
+ if(game.phase==Phase::OriginalEventChoice&&neow_modifier_selection(game,RunModifier::Draft))return true;
  if(original_event_has_card_reward(game))return true;
  if(game.phase!=Phase::WorldRelicChoice)return false;const auto&w=game.world_relics;
  if(w.choice!=WorldRelicChoice::OfferCard||!w.choice_reward||w.choice_reward>w.reward_count)return false;

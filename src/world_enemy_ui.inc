@@ -142,7 +142,14 @@ CreaturePose App::combat_enemy_pose(int slot)const{
 }
 CreaturePose App::combat_player_pose(bool pet)const{
  if(creature_layout.right&&game.enemy_world.active&&enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&
-    enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter))return player_presentation[pet?1:0];
+    enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter)){
+  if(!pet)return player_presentation[0];
+  const auto camera=encounter_camera(game.enemy_world.encounter);auto point=player_formation_point(game,camera.zoom,true);
+  const auto&motion=osty_presentation;const uint32_t now=animation*33u;point.x=motion.x(now);
+  const auto registration=player_sprite_registration(game.character,true);
+  return project_creature_pose(camera,creature_layout,point,player_anchors(game.character,true),false,
+   registration.units,motion.scale(now),motion.bounds_scale,registration.x,registration.y);
+ }
  return player_pose(game,combat_layout_for(game),pet);
 }
 void App::sync_enemy_feedback(){
@@ -159,7 +166,21 @@ void App::sync_enemy_feedback(){
   enemy_visual_seed=game.seed;enemy_visual_floor=game.floor;enemy_visual_combat=game.world.combat_count;enemy_visual_encounter=int(game.enemy_world.encounter);
   creature_layout={};
  }
- if(!creature_layout.right){creature_layout=combat_layout_for(game);player_presentation[0]=player_pose(game,creature_layout);player_presentation[1]=player_pose(game,creature_layout,true);}
+ if(!creature_layout.right){creature_layout=combat_layout_for(game);player_presentation[0]=player_pose(game,creature_layout);player_presentation[1]=player_pose(game,creature_layout,true);orb_presentation={};
+  const auto camera=encounter_camera(game.enemy_world.encounter);const auto pet=combat_health(MaxEnemies+1);
+  osty_presentation.bind(animation*33u,pet.max_hp,pet.hp>0,player_formation_point(game,camera.zoom,true).x);
+ }
+ if(game.character==Character::Necrobinder||game.expansion.osty_max_hp>0){
+  const auto pet=combat_health(MaxEnemies+1);const auto camera=encounter_camera(game.enemy_world.encounter);
+  const auto bounds=player_anchors(game.character);const int hp=health_bar::bounded(pet.max_hp,0,150);
+  const int x=player_formation_point(game,camera.zoom).x+((bounds.right-bounds.left)/2+150)*camera.zoom+100*camera.zoom*hp/150;
+  uint32_t cue=animation*33u;
+  if(pet.hp<=0&&osty_presentation.alive&&osty_motion.clip==AnimOstyDie){
+   const auto clip=content.clip(AnimOstyDie);const uint32_t end=osty_motion.start*33u+uint32_t(clip.count)*clip.frame_ms+500u;
+   if(int32_t(end-cue)>0)cue=end;
+  }
+  osty_presentation.observe(animation*33u,pet.max_hp,pet.hp>0,x,cue);
+ }
  for(int i=0;i<game.enemy_count;i++){auto&m=enemy_presentation[i];const auto&source=game.enemy_world.models[i];
   if(ui_feedback_bound(*this)&&combat_feedback.identity[i+1]!=ui_feedback_identity(game,unsigned(i+1)))continue;
   if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){

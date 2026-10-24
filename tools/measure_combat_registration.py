@@ -140,6 +140,7 @@ def main():
     parser.add_argument('--prior-layouts', type=Path)
     parser.add_argument('--models', nargs='*')
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--cpp-units', type=Path, help='Optional source-only numeric runtime table')
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     with args.content.open('rb') as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
@@ -154,6 +155,14 @@ def main():
         report = dict(reference='v0.111.0/41cef1ea', content_version=source.version,
                       enemies=enemies, players=players, pixel_payloads_changed=False)
         tiles.atomic_bytes(args.output, json.dumps(report, indent=2).encode()+b'\n')
+        if args.cpp_units:
+            tiles.require([row['id'] for row in enemies] == list(range(109)),
+                          'A runtime table needs the complete ordered model catalog')
+            text = ('// Q10 original creature-space units per baked pixel. Numeric registration\n'
+                    '// from the pinned original scene/runtime, checked against1144 stored clips.\n'
+                    '// tools/measure_combat_registration.py; shared Kaiser layers use scene pixels.\n')
+            text += ''.join(f" {row['sprite_units']}, // {row['model']}\n" for row in enemies)
+            tiles.atomic_bytes(args.cpp_units, text.encode())
 
 
 if __name__ == '__main__':

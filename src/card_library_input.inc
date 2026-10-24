@@ -1,6 +1,7 @@
 // Original NCardLibrary predicates and presentation-only sorting. The retained
 // index list is rebuilt on an actual filter/query change, never per hover.
 #include "card_library_metadata.inc"
+uint16_t App::localized_card_rank(CardKind kind)const{return kind<CardKinds?card_title_sort_rank[content.english()?0:1][kind]:0;}
 static bool library_equal(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 static void library_copy(char*out,unsigned capacity,const char*in){unsigned n=0;while(n+1<capacity&&in[n]){out[n]=in[n];++n;}out[n]=0;}
 static void library_normalize(char*out,unsigned capacity,const char*in,bool tags=false){

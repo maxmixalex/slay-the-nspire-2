@@ -124,6 +124,7 @@ struct Builder {
         }
     }
     bool allowed(PointType type, uint8_t id) const {
+        if (type == PointType::Elite && m.config.ignore_elite_rules) return true;
         const auto& p = m.points[id];
         if (p.row < 6 && (type == PointType::Rest || type == PointType::Elite)) return false;
         if (p.row >= m.config.rows - 3 && type == PointType::Rest) return false;
@@ -215,18 +216,26 @@ struct Builder {
     void segment(const uint8_t* ids, unsigned length) {
         if (!good()) return;
         char key[96]{}; segment_key(ids, length, key);
-        unsigned lo = 0, hi = w.group_count;
-        while (lo < hi) { unsigned mid = (lo + hi) / 2; if (compare_group(w.order[mid], key) < 0) lo = mid + 1; else hi = mid; }
-        unsigned group;
-        if (lo < w.group_count && compare_group(w.order[lo], key) == 0) {
-            group = w.order[lo];
+        // Repeated paths revisit the same groups many times. Only a newly
+        // observed group needs insertion into the source's sorted order;
+        // exact key equality still resolves every bucket collision.
+        uint32_t hash = 2166136261u;
+        for (const char* p = key; *p; ++p) hash = (hash ^ uint8_t(*p)) * 16777619u;
+        const unsigned bucket = hash & (MapWorkspace::GroupBuckets - 1);
+        unsigned group = MapWorkspace::MaxGroups;
+        for (unsigned link = w.group_buckets[bucket]; link; link = w.groups[link - 1].next)
+            if (compare_group(link - 1, key) == 0) { group = link - 1; break; }
+        if (group != MapWorkspace::MaxGroups) {
             for (int index = w.groups[group].first; index >= 0; index = w.segments[index].next) {
                 const auto& existing = w.segments[index];
                 for (unsigned i = 1; i + 1 < length; ++i) if (segment_id(existing, i) == ids[i]) return;
             }
         } else {
             if (w.group_count == MapWorkspace::MaxGroups) { fail(MapError::Capacity); return; }
+            unsigned lo = 0, hi = w.group_count;
+            while (lo < hi) { unsigned mid = (lo + hi) / 2; if (compare_group(w.order[mid], key) < 0) lo = mid + 1; else hi = mid; }
             group = w.group_count; auto& g = w.groups[group]; g = MapWorkspace::Group{}; g.first = g.last = -1;
+            g.next = w.group_buckets[bucket]; w.group_buckets[bucket] = uint16_t(group + 1);
             for (unsigned i = w.group_count; i > lo; --i) w.order[i] = w.order[i - 1];
             w.order[lo] = uint16_t(group); ++w.group_count;
         }
@@ -298,6 +307,7 @@ struct Builder {
     }
     bool prune_once() {
         w.group_count = w.segment_count = 0; w.paths = 0;
+        for (auto& bucket : w.group_buckets) bucket = 0;
         // Do not consult the mutable grid when decoding a segment: a removed
         // point remains part of the current pass's original segment identity.
         for (unsigned id = 0; id < m.count; ++id) {

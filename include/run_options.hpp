@@ -5,6 +5,13 @@ namespace spire {
 inline bool has_run_modifier(const State&s,RunModifier modifier){
     return (s.run_options.modifiers&run_modifier_bit(modifier))!=0;
 }
+inline RunModifier current_neow_modifier(const State&s){
+    return s.original_events.active&&s.original_events.id==OriginalEventId::Neow&&s.run_options.neow_current&&
+        s.run_options.neow_current<=RunModifierKinds?RunModifier(s.run_options.neow_current-1):RunModifier::Count;
+}
+inline bool neow_modifier_selection(const State&s,RunModifier modifier){
+    return (s.run_options.setup_flags&1)&&current_neow_modifier(s)==modifier;
+}
 inline unsigned run_modifier_count(const RunOptions&o){
     unsigned count=0;for(uint32_t bits=o.modifiers;bits;bits&=bits-1)++count;return count;
 }

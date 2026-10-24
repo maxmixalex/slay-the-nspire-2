@@ -8,7 +8,8 @@ struct UiHistoryScroll {
     int last_y=0;
     static int clamp(int v,int low,int high){return v<low?low:v>high?high:v;}
     void reset(){position=target=maximum=0;dragging=thumb=false;}
-    void configure(int height,int view_height=174){viewport=view_height;maximum=height>viewport?(height-viewport)*256:0;target=clamp(target,0,maximum);position=clamp(position,0,maximum);}
+    void configure(int height,int view_height=174){const int limit=height>view_height?(height-view_height)*256:0;
+        if(viewport!=view_height||maximum!=limit){viewport=view_height;maximum=limit;target=clamp(target,0,maximum);position=clamp(position,0,maximum);}}
     int offset()const{return position/256;}
     void wheel(int rows){target=clamp(target+rows*80*256/9,-viewport*256,maximum+viewport*256);}
     void set_thumb(int y){target=maximum*clamp(y-61,0,128)/128;position=target;}

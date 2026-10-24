@@ -36,6 +36,7 @@ void combat(State&s,const char*key,bool resume=false){auto id=encounter_id(key);
 void fixed_offer(State&s,CardKind kind){push_step(s,OriginalEventOp::Special,ES_FixedOffer,int(kind));}
 int rand_range(State&s,int low,int high){auto rng=event_random(s);int value=rng.range(low,high);keep_random(s,rng);return value;}
 bool ancient(OriginalEventId id){switch(id){case OriginalEventId::Neow:case OriginalEventId::Darv:case OriginalEventId::Nonupeipe:case OriginalEventId::Orobas:case OriginalEventId::Pael:case OriginalEventId::Tanx:case OriginalEventId::Tezcatara:case OriginalEventId::Vakuu:return true;default:return false;}}
+#include "original_event_modifiers.inc"
 #include "original_event_ancients.inc"
 struct SimpleEvent {OriginalEventId id;const char*a;const char*b;const char*c;};
 const SimpleEvent simple_events[]={
@@ -126,6 +127,7 @@ bool rules_begin(State&s){auto&e=s.original_events;page(s,"INITIAL");
  }return true;
 }
 bool rules_enabled(const State&s,unsigned option){const auto&e=s.original_events;
+ if(e.id==OriginalEventId::Neow&&s.run_options.modifiers)return option==0&&current_neow_modifier(s)!=RunModifier::Count;
  if(ancient(e.id))return option<e.offer_count&&e.offers[option]<WorldRelicKinds;
  switch(e.id){
  case OriginalEventId::AbyssalBaths:return option==1||(option==0&&s.max_hp<=997&&e.values[0]<9999);
@@ -140,6 +142,7 @@ bool rules_enabled(const State&s,unsigned option){const auto&e=s.original_events
  }
 }
 bool rules_choose(State&s,unsigned option){auto&e=s.original_events;
+ if(e.id==OriginalEventId::Neow&&s.run_options.modifiers)return option==0&&modifier_neow_choose(s);
  if(ancient(e.id)){relic(s,e.offers[option]);finish_page(s,"DONE");return true;}
  if(e.id==OriginalEventId::ColorfulPhilosophers){push_step(s,OriginalEventOp::Special,ES_Continue,e.values[option]);finish_page(s,"DONE");return true;}
  const char*done=nullptr;for(auto&entry:simple_events)if(entry.id==e.id){done=option==0?entry.a:option==1?entry.b:entry.c;break;}

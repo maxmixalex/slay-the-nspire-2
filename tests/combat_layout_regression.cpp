@@ -14,7 +14,7 @@ static void fight(EncounterId encounter){
 }
 static bool same(CreaturePose a,CreaturePose b){
  return a.x==b.x&&a.feet==b.feet&&a.width==b.width&&a.scale==b.scale&&a.intent==b.intent&&a.hp==b.hp&&a.status==b.status&&
-  a.body_left==b.body_left&&a.body_top==b.body_top&&a.body_width==b.body_width&&a.body_height==b.body_height&&a.center_x==b.center_x&&a.center_y==b.center_y&&a.intent_x==b.intent_x;
+  a.body_left==b.body_left&&a.body_top==b.body_top&&a.body_width==b.body_width&&a.body_height==b.body_height&&a.center_x==b.center_x&&a.center_y==b.center_y&&a.intent_x==b.intent_x&&a.sprite_x==b.sprite_x&&a.sprite_y==b.sprite_y;
 }
 // Independent source-space oracle: Godot's authored parent positions, pivot
 // and scales are composed as separate floating transforms. Production uses
@@ -65,13 +65,20 @@ static void agrees_with_source(int index){
  CHECK(p.body_width==pixel(bottom.x)-pixel(top.x)&&p.body_height==pixel(bottom.y)-pixel(top.y));
  CHECK(p.center_x==pixel(center.x)&&p.center_y==pixel(center.y));
  CHECK(p.intent_x==pixel(reference_point({local.x+a.intent_x,local.y+a.intent_y},true,right).x));
+ CHECK(p.sprite_x==p.x&&p.sprite_y==p.feet);
+ const long double scale=creature_sprite_units(game.enemy_world.models[index].kind)*
+  (encounter_camera(game.enemy_world.encounter).zoom/1000.0L)*(1680/right)*4/21;
+ CHECK(p.scale==(scale<1?1:pixel(scale)));
  CHECK(creature_health_left(p)==p.body_left+(p.body_width-p.width)/2);
  const auto player=player_pose(game,layout);const auto want_player=reference_point(local_player(),false,right);
  CHECK(player.x==pixel(want_player.x)&&player.feet==pixel(want_player.y));
+ const auto registration=player_sprite_registration(game.character);const auto source=local_player();
+ const auto want_sprite=reference_point({source.x+registration.x,source.y+registration.y},false,right);
+ CHECK(player.sprite_x==pixel(want_sprite.x)&&player.sprite_y==pixel(want_sprite.y));
 }
 static void authored_widths(){
  fight(EncounterId::NibbitsWeak);auto p=enemy_pose(game,0);
- CHECK(combat_layout_for(game).right==1680000);CHECK(p.x==251&&p.feet==158&&p.body_width==52&&p.scale==339);
+ CHECK(combat_layout_for(game).right==1680000);CHECK(p.x==251&&p.feet==158&&p.body_width==52&&p.scale==311);
  CHECK(combat_player_x(game)==68);game.character=Character::Necrobinder;CHECK(combat_player_x(game)==40);
  fight(EncounterId::CorpseSlugsNormal);CHECK(!encounter_positions(game.enemy_world.encounter));
  // Three 232px Bounds use source centers191,480,769. Their right edge
@@ -86,7 +93,7 @@ static void authored_widths(){
  CHECK(enemy_pose(game,1).feet<enemy_pose(game,0).feet&&enemy_pose(game,1).feet==enemy_pose(game,3).feet);
  fight(EncounterId::SlimesNormal);CHECK(encounter_camera(game.enemy_world.encounter).zoom==900);
  for(int i=0;i<game.enemy_count;++i)agrees_with_source(i);CHECK(enemy_pose(game,0).scale>enemy_pose(game,2).scale);
- fight(EncounterId::AeonglassBoss);p=enemy_pose(game,0);CHECK(p.x==253&&p.feet==164&&p.scale==1101);agrees_with_source(0);
+ fight(EncounterId::AeonglassBoss);p=enemy_pose(game,0);CHECK(p.x==253&&p.feet==164&&p.scale==1084);agrees_with_source(0);
 }
 static void scene_slots_without_slots_override(){
  for(auto encounter:{EncounterId::BowlbugsNormal,EncounterId::BowlbugsWeak,EncounterId::KnightsElite,EncounterId::SlumberingBeetleNormal}){
@@ -105,7 +112,7 @@ static void catalog_and_purity(){
  for(unsigned id=1;id<EncounterKinds;++id){
   fight(EncounterId(id));before=game;if(encounter_positions(EncounterId(id)))++scene_count;
   for(int i=0;i<game.enemy_count;++i){const auto p=enemy_pose(game,i);agrees_with_source(i);
-   CHECK(p.x>0&&p.x<320&&p.feet>30&&p.feet<200&&p.width>=22&&p.width<160&&p.scale>0&&p.scale<2048);
+   CHECK(p.x>0&&p.x<320&&p.feet>30&&p.feet<200&&p.width>=22&&p.width<160&&p.scale>0&&p.scale<8192);
    CHECK(p.body_width>0&&p.body_height>0&&p.body_top<p.feet&&same(p,enemy_pose(game,i)));
   }
   CHECK(!std::memcmp(&before,&game,sizeof game));

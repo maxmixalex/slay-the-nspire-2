@@ -2,7 +2,8 @@ static uint32_t progress_add(uint32_t value,uint32_t amount){return amount>UINT3
 static void progress_clear_run(UiRunHistory&r){auto*bytes=reinterpret_cast<uint8_t*>(&r);for(unsigned i=0;i<sizeof r;++i)bytes[i]=0;}
 static bool progress_matches(const UiRunHistory&r,const State&s){
     return r.serial&&s.world.active&&!s.practice&&r.seed==s.seed&&r.run_seed==s.world.run_seed&&
-        r.character==unsigned(s.character)&&r.ascension==s.world.ascension&&r.start_region==s.world.rooms[0].region;
+        r.character==unsigned(s.character)&&r.ascension==s.world.ascension&&r.start_region==s.world.rooms[0].region&&
+        r.mode==unsigned(s.run_options.mode)&&r.modifiers==s.run_options.modifiers&&r.daily_day==s.run_options.daily_day;
 }
 static void progress_snapshot(UiRunHistory&r,const State&s){
     r.floor=s.world.total_floor;r.hp=uint16_t(mx(0,s.hp));r.max_hp=uint16_t(mx(0,s.max_hp));r.gold=uint16_t(mx(0,s.gold));
@@ -39,6 +40,7 @@ void App::begin_progress(bool resumed){
     auto&r=progress.current;progress_clear_run(r);
     r.serial=progress.next_serial++;if(!progress.next_serial)progress.next_serial=1;
     r.seed=game.seed;r.run_seed=game.world.run_seed;r.character=unsigned(game.character);r.ascension=game.world.ascension;
+    r.mode=unsigned(game.run_options.mode);r.modifiers=game.run_options.modifiers;r.daily_day=game.run_options.daily_day;r.modifier_order=game.run_options.setup_flags&2;
     r.start_region=game.world.rooms[0].region;r.partial=resumed;r.started_at=callbacks.wall_clock?callbacks.wall_clock():0;
     for(unsigned i=0;i<65;++i)r.seed_text[i]=game.world.seed_text[i];
     // Earlier fights in an old save have no observed per-enemy outcome.
@@ -177,7 +179,7 @@ void App::finish_progress(bool abandoned,const State*source){
         progress_end_battle(*this,s,s.world.combat_ending||s.phase==Phase::Complete);
     progress_snapshot(r,s);r.outcome=abandoned?3:s.phase==Phase::Complete?1:2;r.abandoned=abandoned;
     auto&stats=progress.characters[r.character];
-    if(r.outcome==1){stats.wins=progress_add(stats.wins,1);stats.current_streak=progress_add(stats.current_streak,1);
+    if(r.mode==unsigned(RunMode::Standard)&&r.outcome==1){stats.wins=progress_add(stats.wins,1);stats.current_streak=progress_add(stats.current_streak,1);
         // ProgressSaveManager counts distinct ModelIds in the final deck,
         // once per victory, independently from copy count or upgrade level.
         uint8_t unique[(CardKinds+7)/8]{};
@@ -187,7 +189,7 @@ void App::finish_progress(bool abandoned,const State*source){
         if(r.ascension==stats.highest_ascension&&stats.highest_ascension<10)++stats.highest_ascension;
         progress.current_streak=progress_add(progress.current_streak,1);if(progress.current_streak>progress.best_streak)progress.best_streak=progress.current_streak;
         if(!r.partial&&(!stats.fastest_win_seconds||r.seconds<stats.fastest_win_seconds))stats.fastest_win_seconds=r.seconds;
-    }else{stats.losses=progress_add(stats.losses,1);stats.current_streak=0;progress.current_streak=0;}
+    }else if(r.mode==unsigned(RunMode::Standard)){stats.losses=progress_add(stats.losses,1);stats.current_streak=0;progress.current_streak=0;}
     stats.play_seconds=progress_add(stats.play_seconds,r.seconds);stats.gold_gained=progress_add(stats.gold_gained,r.gold_gained);
     stats.floors_climbed=progress_add(stats.floors_climbed,r.floor);
     progress.history[progress.next_history]=r;progress.next_history=uint8_t((progress.next_history+1)%UiHistoryCapacity);

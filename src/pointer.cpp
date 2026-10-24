@@ -143,7 +143,7 @@ void App::pointer_scroll(int rows){
     if(!rows||map_transition_blocks_pointer()||frontend_confirm)return;
     if(settings_open){settings_action(rows>0?UiAction::SettingsScrollDown:UiAction::SettingsScrollUp);return;}
     if(keyword_hover_scroll(*this,rows))return;
-    if((statistics_open||history_open||run_mode.screen==RunMenu::Custom)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
+    if((statistics_open||history_open||run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
     sync_map_window();
     map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.
@@ -330,6 +330,7 @@ void App::pointer_button(bool down){
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
     case HitKind::StatusActor:open_statuses(hit.value);break;
     case HitKind::BattleStatus:open_status_icon(hit.value);break;
+    case HitKind::Orb:break; // Original orb focus retains its anchored hover tip.
     case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;
     }

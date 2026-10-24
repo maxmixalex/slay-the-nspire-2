@@ -85,7 +85,9 @@ static void world_choice_screen(Canvas&c){
  if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
  const bool scrolling_cards=!potion&&!relics&&!bundle&&!(offer&&count<=3);
  auto&grid=a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);CardGridPainter painter{c,grid};const int first=scrolling_cards?grid.first():a.cursor/10*10;
- c.dim(0,0,320,240,224);c.centered(world_choice_heading(s),0,6,320,16,Gold);
+ c.dim(0,0,320,240,224);
+ if(neow_modifier_selection(s,RunModifier::SealedDeck))c.text_fitted(a.content.world_string("modifiers","SEALED_DECK.selectionPrompt"),8,6,304,14,Gold,8,true);
+ else c.centered(world_choice_heading(s),0,6,320,16,Gold);
  char label[128]{};TextBuffer title{label,sizeof label,0,&c.a.content};
  {title.text("已选择 ");title.number(a.choice_selected_count);title.text(" / ");title.number(a.world_choice_max());}
  c.centered(label,0,29,320,10,White);

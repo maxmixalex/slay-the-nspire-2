@@ -12,8 +12,11 @@ from run_modes_ui8_assets import ICONS, TEXTS, build_mode_images, build_mode_tex
 from patch_feedback_assets import SOURCE_PCK_SHA256
 from patch_frontend_assets import patch_pack
 from pck import Pack
+from world_scene_assets import load_scene_texture
+from patch_feedback_assets import write_image
+from PIL import Image
 
-VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS), 1753, 8704
+VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1, 1753, 8704
 
 
 def build_art(path, cache):
@@ -22,6 +25,12 @@ def build_art(path, cache):
     try:
         rows = build_images(pack, cache)
         rows.extend(build_mode_images(pack, cache))
+        source = "images/orbs/empty_orb.png"
+        orb = load_scene_texture(pack, source).convert("RGBA")
+        orb = orb.resize((12, 12), Image.Resampling.LANCZOS)
+        row = write_image(cache, "empty-orb", orb)
+        row.update(key="empty-orb", source=source, auxiliary=BASE_AUX + len(rows))
+        rows.append(row)
         localized = build_mode_text(pack)
     finally:
         pack.close()

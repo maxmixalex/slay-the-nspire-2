@@ -18,7 +18,9 @@ MODIFIERS=tuple(name.upper() for name in ICONS if name!='character_cards')
 TEXT_KEYS=tuple('main_menu_ui.'+key for key in MENU_KEYS)+tuple(
     'modifiers.'+key+'.'+suffix for key in MODIFIERS for suffix in ('title','description'))+tuple(
     'characters.'+key+'.cardsModifier'+suffix for key in ('IRONCLAD','SILENT','REGENT','NECROBINDER','DEFECT')
-    for suffix in ('Title','Description'))+('modifiers.SEALED_DECK.selectionPrompt','modifiers.NIGHT_TERRORS.additionalRestSiteHealText')
+    for suffix in ('Title','Description'))+('modifiers.SEALED_DECK.selectionPrompt','modifiers.NIGHT_TERRORS.additionalRestSiteHealText')+(
+    'orbs.DARK_ORB.smartDescription','orbs.FROST_ORB.smartDescription','orbs.GLASS_ORB.smartDescription',
+    'orbs.LIGHTNING_ORB.smartDescription','orbs.PLASMA_ORB.smartDescription','orbs.EMPTY_SLOT.title','orbs.EMPTY_SLOT.description')
 TEXTS=tuple(enumerate(TEXT_KEYS,8412))
 assert 8412+len(TEXTS)<=8704
 
@@ -42,7 +44,7 @@ def build_mode_text(pack):
     result={}
     for language in ('eng','zhs'):
         tables={table:json.loads(pack.read('localization/'+language+'/'+table+'.json'))
-                for table in ('main_menu_ui','modifiers','characters')}
+                for table in ('main_menu_ui','modifiers','characters','orbs')}
         result[language]={}
         for _,qualified in TEXTS:
             table,key=qualified.split('.',1);value=tables[table].get(key)

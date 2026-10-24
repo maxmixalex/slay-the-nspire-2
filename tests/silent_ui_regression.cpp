@@ -19,7 +19,8 @@ int main(int argc,char**argv){
  std::vector<uint8_t> content;
  if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);content.resize(spire_test::pack_size(f));size_t n=fread(content.data(),1,content.size(),f);fclose(f);CHECK(a.init(content.data(),n,{save_cb,load_cb}));}
  else a.callbacks={save_cb,load_cb};
- a.input(Key::Confirm);CHECK(a.character_select);action(UiAction::SelectSilent);CHECK(a.selected_character==Character::Silent);
+ a.input(Key::Confirm);CHECK(a.run_mode.screen==RunMenu::Singleplayer&&!a.character_select);action(UiAction::OpenStandardRun);
+ CHECK(a.character_select);action(UiAction::SelectSilent);CHECK(a.selected_character==Character::Silent);
  // The source confirm enters from beyond the right edge over 350 ms.
  // Select still works during that entrance; wait for its visible hit next.
  CHECK(!click(HitKind::UiAction,int(UiAction::StartCharacter)));a.advance(250);a.advance(100);action(UiAction::StartCharacter);

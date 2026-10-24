@@ -27,6 +27,7 @@ struct MapConfig {
     uint8_t rows = 16, rests = 7, shops = 3, elites = 5, unknowns = 12;
     bool replace_treasure = false, second_boss = false, prune = true;
     uint8_t variant = 0; // 0 StandardActMap, 1 GoldenPathActMap, 2 SpoilsActMap.
+    bool ignore_elite_rules = false; // Constructor-only BigGameHunter override.
 };
 struct ReferenceMap {
     MapPoint points[MaxPoints]{};
@@ -42,7 +43,7 @@ struct ReferenceMap {
 // Fixed storage; generation never allocates per path. The limits fail explicitly
 // instead of dropping segments and silently producing a different map.
 struct MapWorkspace {
-    static constexpr int MaxGroups = 32768, MaxSegments = 32768;
+    static constexpr int MaxGroups = 32768, MaxSegments = 32768, GroupBuckets = 4096;
     // Every edge advances one row and every row has seven columns. Keep the
     // columns in three bits rather than repeating a byte-sized point id for
     // all 32,768 possible segments. The stable row/column table below retains
@@ -64,15 +65,16 @@ struct MapWorkspace {
                 (columns[byte + 1] & ~(7u >> (8 - shift))) | (column >> (8 - shift)));
         }
     };
-    struct Group { int16_t first = 0, last = 0; uint16_t count = 0; };
+    struct Group { int16_t first = 0, last = 0; uint16_t count = 0, next = 0; };
     Segment segments[MaxSegments]{};
     Group groups[MaxGroups]{};
     uint16_t order[MaxGroups]{};
+    uint16_t group_buckets[GroupBuckets]{};
     uint8_t point_ids[MaxRows + 2][Columns]{};
     uint16_t group_count = 0, segment_count = 0;
     uint32_t paths = 0;
 };
-static_assert(sizeof(MapWorkspace::Segment) == 14 && sizeof(MapWorkspace) <= 721064,
+static_assert(sizeof(MapWorkspace::Segment) == 14 && sizeof(MapWorkspace) <= 794792,
               "Map work storage must keep the full segment capacity within its compact budget");
 
 // Ports the StandardActMap constructor's explicit-count path. The caller supplies

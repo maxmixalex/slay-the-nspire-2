@@ -29,7 +29,8 @@ enum HistoryUi8Asset {
  I8_ModifierMurderous,
  I8_ModifierNightTerrors,
  I8_ModifierTerminal,
+ I8_EmptyOrb,
  HistoryUi8AuxiliaryCount
 };
-static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&HistoryUi8AuxiliaryCount==1971,"Original history and modifier layer order");
+static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&HistoryUi8AuxiliaryCount==1972,"Original history and modifier layer order");
 }

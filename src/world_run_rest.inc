@@ -9,7 +9,8 @@ static int world_rest_relic(const State& s,RelicId id){
 }
 static bool world_make_rest(State& s){
  auto& w=s.world;s.phase=Phase::Camp;w.rest_count=w.rest_pending=0;w.rest_used=0;w.rest_deck_before=0;
- if(!world_add_rest_option(s,WorldRestOption::Heal)||!world_add_rest_option(s,WorldRestOption::Smith))return false;
+ if(!world_add_rest_option(s,WorldRestOption::Heal))return false;
+ if(!has_run_modifier(s,RunModifier::Midas)&&!world_add_rest_option(s,WorldRestOption::Smith))return false;
  for(unsigned i=0;i<s.deck_count;++i)if(s.deck[i].kind==EventCardByrdonisEgg&&!world_add_rest_option(s,WorldRestOption::Hatch))return false;
  for(unsigned i=0;i<s.world_relics.count;++i){const auto& r=s.world_relics.entries[i];if(r.flags&WorldRelicMelted)continue;
   WorldRestOption option=WorldRestOption::Count;
@@ -52,7 +53,9 @@ bool world_rest_choose(State& s,unsigned index){
  auto& w=s.world;auto option=WorldRestOption(w.rest_options[index]);w.rest_pending=uint8_t(index+1);w.rest_deck_before=s.deck_count;
  switch(option){
  case WorldRestOption::Heal:
-  heal(s,rest_heal_amount(s));world_relic_hook(s,WorldRelicHook::AfterRest);world_relic_rest_rewards(s);break;
+  heal(s,rest_heal_amount(s));world_relic_hook(s,WorldRelicHook::AfterRest);
+  if(has_run_modifier(s,RunModifier::NightTerrors)&&s.max_hp>1)player_lose_max_hp(s,min(5,s.max_hp-1));
+  world_relic_rest_rewards(s);break;
  case WorldRestOption::Smith:s.phase=Phase::Upgrade;++s.revision;return true;
  case WorldRestOption::Hatch:if(!gain_world_relic(s,WorldRelicByrdpip))return false;break;
  case WorldRestOption::Dig:{RelicId id=random_world_relic(s);if(id==NoWorldRelic||!gain_world_relic(s,id))return world_fail(s);break;}
