@@ -51,6 +51,9 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
  return lo<N&&!wc_compare(rows[lo].key,joined)?rows[lo].index:-1;
 }
 }
+int Content::world_string_id(const char*table,const char*key)const{
+ const int native=wc_find(native_ui_text_index,table,key);return native>=0?native:wc_find(world_text_index,table,key);
+}
 const char* Content::world_string(const char*table,const char*key)const{
  if(version_>=LocaleContentVersion){const char*text=locale_string(table,key);if(*text)return text;}
  if(version_>=NativeUiContentVersion){int id=wc_find(native_ui_text_index,table,key);if(id>=0)return string(id);}

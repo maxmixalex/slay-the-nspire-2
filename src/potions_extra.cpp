@@ -31,7 +31,7 @@ bool add_potion_slots(State&s,unsigned count){
 }
 bool procure_potion_at(State&s,Potion p,unsigned slot){
  if(!potion_definition(p)||slot>=potion_slot_count(s)||s.potions[slot]!=Potion::Empty||has_world_relic(s,world_relic_id("SOZU")))return false;
- s.potions[slot]=p;world_relic_hook(s,WorldRelicHook::AfterPotionProcured,(int)p,(int)slot);return true;
+ s.potions[slot]=p;notify_history(s,RunHistoryEvent::PotionObtained,unsigned(p));world_relic_hook(s,WorldRelicHook::AfterPotionProcured,(int)p,(int)slot);return true;
 }
 bool procure_potion(State&s,Potion p){if(!potion_definition(p))return false;for(unsigned i=0;i<potion_slot_count(s);++i)if(s.potions[i]==Potion::Empty)return procure_potion_at(s,p,i);return false;}
 

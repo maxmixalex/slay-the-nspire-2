@@ -4,6 +4,7 @@
 #include "world_rng.hpp"
 #include "world_relics.hpp"
 #include "run_options_state.hpp"
+#include "run_history_event.hpp"
 
 namespace spire {
 using CardKind=uint16_t;
@@ -272,6 +273,7 @@ struct CoreObserver {
     // UI statistics must count instances without changing spawned_models.
     void(*on_enemy_spawned)(void*,const State&,unsigned,uint16_t)=nullptr;
     void(*on_run_fact)(void*,const State&,unsigned,unsigned)=nullptr;
+    void(*on_history)(void*,const State&,const RunHistoryNotice&)=nullptr;
 };
 enum class CoreRunFact : uint8_t { ShopGoldSpent,RestChoice };
 CoreObserver set_core_observer(CoreObserver);
@@ -280,6 +282,7 @@ void notify_power_flash(const State&,int receiver,const char* key);
 void notify_deck_removing(const State&,int index);
 void notify_enemy_spawned(const State&,unsigned model,uint16_t identity);
 void notify_run_fact(const State&,CoreRunFact,unsigned value);
+void notify_history(const State&,RunHistoryEvent,unsigned model=0,unsigned detail=0,unsigned flags=0,const char*key=nullptr);
 void record(State&,LogKind,int a=0,int b=0);
 void create_map(State&);
 void finish_room(State&);

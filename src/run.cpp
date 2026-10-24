@@ -10,7 +10,7 @@ namespace {static bool world_make_rewards(State&);static bool world_buy(State&,i
 static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 void heal(State&s,int amount){int old=s.hp;s.hp=(int16_t)min(s.max_hp,s.hp+max(0,amount));record(s,LogKind::Heal,s.hp-old);if(s.world_relics.active&&s.hp!=old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);}
-void increase_max_hp(State&s,int amount){int old=s.hp;amount=min(amount,999-s.max_hp);s.max_hp+=amount;s.hp+=amount;if(s.world_relics.active&&s.hp!=old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);}
+void increase_max_hp(State&s,int amount){int old=s.hp;amount=min(amount,999-s.max_hp);s.max_hp+=amount;s.hp+=amount;if(amount)notify_history(s,amount>0?RunHistoryEvent::MaxHpGained:RunHistoryEvent::MaxHpLost,unsigned(amount>0?amount:-amount));if(s.world_relics.active&&s.hp!=old)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old,s.hp,-1);}
 static void lose_hp(State&s,int amount){player_hp_loss(s,amount,false,false);}
 void gain_gold(State&s,int amount){
     if(s.world_relics.active&&amount>0){
@@ -22,6 +22,7 @@ void gain_gold(State&s,int amount){
         amount=Real::integer(9999)<value?9999:world_float_truncate(value);
     }
     s.gold=int16_t(min(9999,max(0,s.gold+amount)));record(s,LogKind::Gold,amount);
+    if(amount<0){const unsigned lost=0u-unsigned(amount);notify_history(s,RunHistoryEvent::GoldLost,lost&65535u,lost>>16);}
     if(s.world_relics.active&&amount>0)world_relic_hook(s,WorldRelicHook::AfterGoldGained,amount);
 }
 void create_map(State&s){
@@ -213,7 +214,7 @@ bool event_choice(State&s,int option){
             // Distinct eligible instances, shuffled before taking at most two.
             // This expedition's RNG is not the original event RNG stream.
             for(unsigned i=n;i>1;--i){unsigned j=random_below(s.rng_world,i);auto t=eligible[i-1];eligible[i-1]=eligible[j];eligible[j]=t;}
-            for(unsigned i=0;i<n&&i<2;i++){auto&c=s.deck[eligible[i]];c.upgraded=1;record(s,LogKind::Upgrade,c.kind);}
+            for(unsigned i=0;i<n&&i<2;i++){auto&c=s.deck[eligible[i]];c.upgraded=1;record(s,LogKind::Upgrade,c.kind);notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(c)));}
             s.event_page=2;
         }else{s.event_deck_action=EventDeckAction::Remove;s.phase=Phase::Remove;}
         break;

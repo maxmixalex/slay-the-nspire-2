@@ -4,6 +4,7 @@
 #include "world_run.hpp"
 #include "run_score.hpp"
 #include "game_over_ui.hpp"
+#include "ui_core_observer.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -15,6 +16,7 @@ static App a;
 static SaveData before,after;
 static unsigned checks;
 static const char* capture_directory;
+static const char* character_names[]={"ironclad","silent","defect","regent","necrobinder"};
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"world game-over UI: %s:%d %s (event=%s phase=%u)\n",__FILE__,__LINE__,#x,original_event_key(a.game.original_events.id),unsigned(a.game.phase));std::exit(1);}}while(0)
 
 struct TextIndex {const char* key;uint16_t index;};
@@ -72,7 +74,12 @@ static std::vector<uint8_t> synthetic_profile(){
 static bool actual_profile;
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&&!std::memcmp(after.bytes,before.bytes,before.size));}
-static void present(){a.title=a.paused=a.help=a.library=a.character_select=a.settings_open=false;a.frontend_confirm=0;a.run_settings=false;a.map_preview.open=false;a.reset_presentation();a.pointer.visible=false;}
+static void present(){a.title=a.paused=a.help=a.library=a.character_select=a.settings_open=false;a.frontend_confirm=0;a.run_settings=false;a.map_preview.open=false;a.reset_presentation();a.physical_keys_cancel();a.pointer.visible=false;}
+static void advance_ms(unsigned ms){while(ms){const unsigned step=ms>250?250:ms;a.advance(step);ms-=step;}}
+static void advance_to(unsigned age){
+ const auto&m=a.game_over_presentation;const unsigned now=m.summary?m.summary_age(a.map_clock_ms):m.initial_age(a.map_clock_ms);
+ CHECK(now<=age);advance_ms(age-now);
+}
 static void settle_game_over(){
  a.sync_game_over_presentation();const auto&m=a.game_over_presentation;
  const unsigned age=m.summary?m.summary_age(a.map_clock_ms):m.initial_age(a.map_clock_ms),end=(m.summary?m.menu_start():m.intro_delay())+500;
@@ -89,6 +96,38 @@ static void capture(const char*name){
  if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
+}
+static void capture_stage(const char*prefix,const char*stage){
+ char name[160];const int n=std::snprintf(name,sizeof name,"gameover-%s-%s",prefix,stage);CHECK(n>0&&unsigned(n)<sizeof name);capture(name);
+}
+static unsigned detail_hits(bool discoveries){
+ unsigned n=0;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::GameOverDetail&&a.hits[i].enabled&&(a.hits[i].value>=32)==discoveries)++n;return n;
+}
+static uint16_t select_key(){a.keyboard_only=true;return a.input_bindings.keys[1][unsigned(InputCommand::Select)];}
+static void intro_stages(const char*prefix){
+ a.sync_game_over_presentation();CHECK(!a.game_over_summary&&a.game_over_presentation.initial_age(a.map_clock_ms)==0);
+ const uint16_t select=select_key();CHECK(a.physical_key(select,true)&&!a.game_over_summary);
+ capture_stage(prefix,"intro-start");advance_to(100);capture_stage(prefix,"intro-100ms");
+ advance_to(200);capture_stage(prefix,"intro-200ms");
+ if(actual_profile&&a.content.version()>=GameOverTransitionContentVersion&&a.game_over_presentation.event_room){a.render();CHECK(a.pixels[239*ScreenW+319]==0);}
+ advance_to(950);capture_stage(prefix,"intro-950ms");a.render();CHECK(!has_action(UiAction::GameOverSummary));
+ advance_to(a.game_over_presentation.intro_delay()-1);a.render();CHECK(!has_action(UiAction::GameOverSummary));unchanged();
+ advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.game_over_summary);
+ settle_game_over();capture_stage(prefix,"intro-settled");unchanged();
+}
+static void summary_stages(const char*prefix){
+ CHECK(a.game_over_summary&&a.game_over_presentation.summary_age(a.map_clock_ms)==0);
+ const uint16_t select=select_key();CHECK(a.physical_key(select,true)&&!a.title);
+ capture_stage(prefix,"summary-start");advance_to(150);capture_stage(prefix,"summary-score");a.render();CHECK(!has_action(UiAction::GameOverMainMenu));
+ const auto&m=a.game_over_presentation;
+ if(m.rows>1){advance_to(550);capture_stage(prefix,"summary-score-next");}
+ advance_to(m.badge_start()-1);a.render();CHECK(!detail_hits(false)&&!detail_hits(true));
+ if(m.badges){advance_to(m.badge_start()+125);capture_stage(prefix,"summary-badges");a.render();CHECK(detail_hits(false)==1&&!detail_hits(true));}
+ if(m.discoveries){advance_to(m.discovery_start()+125);capture_stage(prefix,"summary-discovery-header");a.render();CHECK(detail_hits(true)==1);
+  advance_to(m.discovery_start()+250);capture_stage(prefix,"summary-discoveries");a.render();CHECK(detail_hits(true)==1);}
+ advance_to(m.menu_start()-1);a.render();CHECK(!has_action(UiAction::GameOverMainMenu));unchanged();
+ advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.title);
+ settle_game_over();capture_stage(prefix,"summary-settled");unchanged();
 }
 static void start(Character character=Character::Ironclad){
  new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-GAME-OVER-017"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));present();
@@ -137,20 +176,37 @@ static void saved_facts(){
 }
 static void death_flow(){
  for(unsigned i=0;i<CharacterKinds;i++){
-  dead(Character(i));a.render();CHECK(!has_action(UiAction::GameOverSummary)&&!has_action(UiAction::GameOverMainMenu));a.input(Key::Confirm);CHECK(!a.game_over_summary);settle_game_over();a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
+  dead(Character(i));a.render();CHECK(!has_action(UiAction::GameOverSummary)&&!has_action(UiAction::GameOverMainMenu));a.input(Key::Confirm);CHECK(!a.game_over_summary);intro_stages(character_names[i]);a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
   if(!i){overlays_do_not_advance();capture("gameover-defeat");press(UiAction::GameOverSummary);}else a.input(Key::Confirm);
-  CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(!has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));a.input(Key::Confirm);CHECK(!a.title);settle_game_over();a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverViewRun));unchanged();saved_facts();
+  CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(!has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));a.input(Key::Confirm);CHECK(!a.title);summary_stages(character_names[i]);a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverViewRun));unchanged();saved_facts();
   if(!i){capture("gameover-defeat-summary");a.ui_action(UiAction::GameOverViewRun);a.open_game_over_history();CHECK(!a.history_open&&!a.history_from_game_over&&!a.compendium_open&&a.game_over_summary);unchanged();
    a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(a.panel==5);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
   CHECK(a.title&&!a.game_over_summary&&a.game.phase==Phase::Dead&&a.game.world.finished);unchanged();
  }
 }
 static void victory_flow(){
- victory();unsigned wins=a.game.event_run.wins;uint32_t wongo=a.game.event_run.wongo_total;settle_game_over();capture("gameover-victory");a.input(Key::Confirm);CHECK(a.game_over_summary&&!a.title);settle_game_over();saved_facts();capture("gameover-victory-summary");
+ victory();unsigned wins=a.game.event_run.wins;uint32_t wongo=a.game.event_run.wongo_total;intro_stages("victory");capture("gameover-victory");
+ const auto select=select_key();CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,false)&&a.game_over_summary&&!a.title);
+ summary_stages("victory");saved_facts();capture("gameover-victory-summary");
  a.render();a.pointer_scroll(1);a.render();unchanged();press(UiAction::GameOverMainMenu);CHECK(a.title&&a.game.phase==Phase::Complete&&a.game.event_run.wins==wins&&a.game.event_run.wongo_total==wongo);unchanged();
  // Loading/reopening a terminal save starts on Continue, without repeating
  // any completion accounting. The UI flag is never serialized into the run.
  CHECK(load(a.game,before.bytes,before.size));present();CHECK(!a.game_over_summary);a.render();CHECK(!has_action(UiAction::GameOverSummary));settle_game_over();a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
+}
+static void combat_backdrop_flow(){
+ start(Character::Silent);
+ // Supply only the opening ancient-room outcome to reach the actual first
+ // combat. Its omitted choice is explicitly partial history; no score or
+ // unseen earlier badge is invented to exercise the retained combat layer.
+ a.progress.current.partial=1;a.progress.current.facts.complete=0;a.game.original_events={};CHECK(world_finish_room(a.game));
+ uint8_t available[reference::Columns]{};CHECK(world_available_points(a.game,available,reference::Columns));
+ {UiCoreObserver observer(a);CHECK(world_choose_point(a.game,available[0]));}
+ CHECK(combat_phase(a.game.phase));
+ {UiCoreObserver observer(a);player_kill(a.game,true);resolve_pending(a.game);}
+ CHECK(a.game.phase==Phase::Dead&&a.game.world.finished);present();snapshot();
+ a.sync_game_over_presentation();CHECK(!a.game_over_presentation.event_room);intro_stages("combat-silent");
+ const auto select=select_key();CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,false)&&a.game_over_summary);
+ summary_stages("combat-silent");press(UiAction::GameOverMainMenu);CHECK(a.title);unchanged();
 }
 static void legacy_and_capacity(){
  new_run(a.game,1,true,Character::Ironclad);a.game.phase=Phase::Complete;present();a.input(Key::Confirm);CHECK(a.title&&!a.game_over_summary);
@@ -159,5 +215,5 @@ static void legacy_and_capacity(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;actual_profile=argc>1;if(actual_profile){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- death_flow();victory_flow();legacy_and_capacity();std::printf("world game-over UI: %u checks passed; %s profile; saved facts and two-stage terminal flow\n",checks,actual_profile?"actual":"synthetic");
+ death_flow();victory_flow();combat_backdrop_flow();legacy_and_capacity();std::printf("world game-over UI: %u checks passed; %s profile; five full actors, source transition/summary stages, real release gates and unchanged saves\n",checks,actual_profile?"actual":"synthetic");
 }

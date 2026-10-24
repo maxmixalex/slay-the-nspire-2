@@ -31,7 +31,7 @@ int main(){
     CHECK(app.progress.discovered_potions[(PotionKinds-1)/8]&(1u<<((PotionKinds-1)%8)));
     // Three actual initial creatures of one model must not collapse to one
     // victory, and an already observed identity must not count as a summon.
-    ++app.game.world.combat_count;
+    ++app.game.world.combat_count;app.game.world.room_type=unsigned(WorldRoom::Monster);
     {UiCoreObserver observer(app);CHECK(encounter_setup(app.game,EncounterId::CorpseSlugsNormal,0));app.game.phase=Phase::Combat;}
     const unsigned model=unsigned(EnemyId::CorpseSlug);CHECK(app.game.enemy_count==3);CHECK(app.enemy_statistics(model).seen==3);
     app.observe_enemy_spawned(app.game,model,app.game.enemy_world.models[0].combat_id);CHECK(app.enemy_statistics(model).seen==3);
@@ -73,7 +73,7 @@ int main(){
     // NSH1 used the same remaining schema but had neither the timestamp nor
     // per-card wins. Preserve its real history/discoveries, with new fields 0.
     restored=app.progress;restored.current.facts={};for(auto&r:restored.history)r.facts={};
-    restored.current_discoveries={};restored.architect_damage=0;
+    restored.current_discoveries={};restored.architect_damage=0;restored.journal={};
     saved_size=encode_ui_progress(restored,bytes,UiProgressCapacity);CHECK(saved_size&&bytes[3]=='2');
     constexpr size_t discovery_bytes=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8;
     const size_t tail=28+discovery_bytes+CardKinds*4,old_size=saved_size-4-CardKinds*4;

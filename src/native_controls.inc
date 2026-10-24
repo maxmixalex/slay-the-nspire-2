@@ -30,21 +30,32 @@ static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,cons
  layer.centered(label,label_x+1,y+(h-12)/2+1,label_w,12,Ink);
  layer.centered(label,label_x,y+(h-12)/2,label_w,12,enabled?rgb(255,246,226):Muted);
 }
-static void native_proceed(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){
- const auto visual=c.control_visual(label,x,y,w,h,ButtonFamily::Action,selected,enabled);
+static void native_proceed(Canvas&c,const char*label,bool enabled=true,bool selected=false){
+ using namespace proceed_layout;
+ const auto visual=c.control_visual("ORIGINAL_PROCEED",X,Y,W,H,ButtonFamily::Proceed,selected,enabled);
+ if(!enabled)return;
  const int normal=c.a.content.world_image("common","PROCEED"),outline=c.a.content.world_image("common","PROCEED_OUTLINE");
- if(normal<0){native_control(c,"PROCEED",x,y,w,h,label,enabled,selected);return;}
- const int fitted=mn(w,h*393/192),width=mx(1,fitted*visual.scale/4096),height=mx(1,width*192/393),left=x+(w-width)/2,top=mn(y+(h-height)/2,c.clip_h-height);
+ if(normal<0){native_control(c,"PROCEED",X,Y,W,H,label,enabled,selected);return;}
+ const auto px=[&](int value){return PivotX+(value-PivotX)*visual.scale/4096;};
+ const auto py=[&](int value){return PivotY+(value-PivotY)*visual.scale/4096;};
+ const int left=px(ImageX),top=py(ImageY),width=mx(1,ImageW*visual.scale/4096),height=mx(1,ImageH*visual.scale/4096);
  Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
  Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(normal,left+2,top+2,width,height,64);
- // This is the original atlas arrow, with its authored transparent margins.
- // The outlined skin already contains the scene's yellow self_modulate.
  if(outline>=0&&visual.hover&&enabled)layer.picture(outline,left,top,width,height,unsigned(visual.hover)*255/4096,presentation::Add);
  layer.picture(normal,left,top,width,height);
- const int text_y=top+(height-12)/2;
- const int label_x=left+width*57/393,label_w=width*240/393;
- layer.text_fitted(label,label_x+1,text_y+1,label_w,12,rgb(87,16,8),8,true);
- layer.text_fitted(label,label_x,text_y,label_w,12,enabled?rgb(255,246,226):Muted,8,true);
+ // KreonBold/SourceHanSerifSCBold, source 34px at 4/21. Preserve the
+ // original red outline instead of an oversized regular 12px label.
+ layer.font_face=5;
+ const int label_x=px(LabelX),text_y=py(LabelY),label_w=mx(1,LabelW*visual.scale/4096);
+ Canvas text_shadow=layer;text_shadow.opacity=uint8_t(div255(layer.opacity*32));
+ text_shadow.text_fitted(label,label_x+1,text_y+1,label_w,FontSize,0,5,true);
+ layer.fitted(label,label_x,text_y,label_w,FontSize+3,FontSize,5,enabled?rgb(255,246,226):Muted,true,true,true,false,rgb(87,16,8));
+}
+static void native_proceed_action(Canvas&c,UiAction action,bool enabled=true){
+ if(enabled)c.action(proceed_layout::X,proceed_layout::Y,proceed_layout::W,proceed_layout::H,action);
+}
+static void native_proceed_choice(Canvas&c,int choice,bool enabled=true){
+ if(enabled)c.hit(proceed_layout::X,proceed_layout::Y,proceed_layout::W,proceed_layout::H,HitKind::Choice,choice);
 }
 static void native_back(Canvas&c,int x,int y,int w,int h,const char*,bool enabled=true,bool selected=false){native_control(c,"BACK",x,y,w,h,"",enabled,selected);}
 // NBackButton positions its Control separately from its larger child sprite.

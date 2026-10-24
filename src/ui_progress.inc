@@ -5,6 +5,11 @@ static bool progress_matches(const UiRunHistory&r,const State&s){
         r.character==unsigned(s.character)&&r.ascension==s.world.ascension&&r.start_region==s.world.rooms[0].region&&
         r.mode==unsigned(s.run_options.mode)&&r.modifiers==s.run_options.modifiers&&r.daily_day==s.run_options.daily_day;
 }
+int App::bind_history_journal(){
+ uint32_t live[UiHistoryCapacity+1]{};unsigned n=0;if(progress.current.serial)live[n++]=progress.current.serial;
+ for(unsigned i=0;i<progress.count;++i)if(progress.history[i].serial)live[n++]=progress.history[i].serial;
+ return progress.journal.bind(progress.current.serial,live,n);
+}
 bool App::run_timer_visible()const{
     // NRunTimer observes the map and capstone visibility even when the
     // preference is off. The preference requests the same label everywhere.
@@ -27,9 +32,13 @@ static UiFloorHistory* progress_observe_floor(App&a,const State&s){
     auto&f=r.floors[r.floor_count++];f={};f.floor=s.world.total_floor;f.act=s.world.act_index;
     f.region=s.world.rooms[s.world.act_index].region;f.point=s.world.current_point;f.room=s.world.event_combat_parent?s.world.parent_room_type:s.world.room_type;
     f.hp=uint16_t(mx(0,s.hp));f.max_hp=uint16_t(mx(0,s.max_hp));f.gold=uint16_t(mx(0,s.gold));f.entered_seconds=r.seconds;
-    f.encounter=s.enemy_world.active?unsigned(s.enemy_world.encounter):0;f.event=s.original_events.active?unsigned(s.original_events.id):0;
+    // The canonical retained room still carries the preceding combat's
+    // enemies and turn. A floor owns an encounter only after its real spawn.
+    f.encounter=0;f.event=s.original_events.active?unsigned(s.original_events.id):0;
     if(f.point<s.world.maps[f.act].count)f.map_type=uint8_t(s.world.maps[f.act].points[f.point].type);
-    f.facts=complete?1:0;r.facts.last_room=f.room;a.progress_dirty=true;return &f;
+    f.facts=complete?1:0;r.facts.last_room=f.room;
+    if(const int owner=a.bind_history_journal();owner>=0)a.progress.journal.owners[owner].observe(r.floor_count-1,complete);
+    a.progress_dirty=true;return &f;
 }
 static void progress_snapshot(UiRunHistory&r,const State&s){
     r.floor=s.world.total_floor;r.hp=uint16_t(mx(0,s.hp));r.max_hp=uint16_t(mx(0,s.max_hp));r.gold=uint16_t(mx(0,s.gold));
@@ -111,7 +120,9 @@ void App::discover_relic(RelicId relic){
         if(progress_matches(progress.current,game)&&!progress.current.outcome)progress.current_discoveries.add(1,id);}
 }
 void App::observe_progress_log(Log log){
-    if(log.kind!=LogKind::Gold||log.a<=0||!progress_matches(progress.current,game)||progress.current.outcome)return;
+    if(!progress_matches(progress.current,game)||progress.current.outcome)return;
+    if(log.kind==LogKind::Heal&&log.a>0){observe_history(game,{RunHistoryEvent::Healed,uint16_t(log.a),uint16_t(unsigned(log.a)>>16),0,nullptr});return;}
+    if(log.kind!=LogKind::Gold||log.a<=0)return;
     auto&r=progress.current;r.gold_gained=progress_add(r.gold_gained,unsigned(log.a));
     if(auto*f=progress_observe_floor(*this,game))f->gold_gained=progress_add(f->gold_gained,unsigned(log.a));
     progress_dirty=true;
@@ -125,18 +136,53 @@ void App::observe_progress_damage(const State&s,const CoreDamageResult&damage){
         if((f->facts&3)==1){const unsigned previous=f->facts>>2;auto&perfect=progress.current.facts.perfect_bosses;
             perfect=uint16_t(perfect>=previous?perfect-previous:0);}
         f->facts|=2;progress_dirty=true;
+        observe_history(s,{RunHistoryEvent::DamageTaken,uint16_t(damage.unblocked),uint16_t(unsigned(damage.unblocked)>>16),0,nullptr});
     }
 }
 void App::observe_run_fact(const State&s,unsigned kind,unsigned value){
     auto&r=progress.current;if(!progress_matches(r,s)||r.outcome)return;
-    if(kind==unsigned(CoreRunFact::ShopGoldSpent))r.facts.shop_spent=progress_add(r.facts.shop_spent,value);
-    else if(kind==unsigned(CoreRunFact::RestChoice)&&value<8){if(auto*f=progress_observe_floor(*this,s))f->rest_choices|=uint8_t(1u<<value);}
+    if(kind==unsigned(CoreRunFact::ShopGoldSpent)){r.facts.shop_spent=progress_add(r.facts.shop_spent,value);observe_history(s,{RunHistoryEvent::GoldSpent,uint16_t(value),uint16_t(value>>16),0,nullptr});}
+    else if(kind==unsigned(CoreRunFact::RestChoice)&&value<8){if(auto*f=progress_observe_floor(*this,s))f->rest_choices|=uint8_t(1u<<value);observe_history(s,{RunHistoryEvent::RestChoice,uint16_t(value),0,0,nullptr});}
     else return;progress_dirty=true;
 }
+void App::observe_history(const State&s,const RunHistoryNotice&notice){
+ if(&s!=&game||!progress_matches(progress.current,s)||progress.current.outcome||notice.kind==RunHistoryEvent::None||notice.kind>=RunHistoryEvent::Count)return;
+ auto*f=progress_observe_floor(*this,s);if(!f)return;auto&journal=progress.journal;const int owner=bind_history_journal();if(owner<0)return;
+ const unsigned floor=unsigned(f-progress.current.floors);auto&observed=journal.owners[owner];
+ // A legacy NSH1–6 floor may already exist before this observer is installed.
+ // Its earlier actions remain unknown even as later actions are collected.
+ if(!observed.observed(floor))observed.observe(floor,false);
+ unsigned model=notice.model,flags=notice.flags;
+ if(notice.kind==RunHistoryEvent::EventChoice){
+  const int text=notice.key?content.world_string_id(flags&128?"relics":"events",notice.key):-1;flags&=127;
+  if(text<0){observed.lose(floor);progress_dirty=true;return;}model=unsigned(text);
+ }
+ if(notice.kind==RunHistoryEvent::CardTransformed&&notice.flags==2){
+  // The canonical batch queue predates this journal and retains only the
+  // original kind. Keep the original upgraded token in its observed pending
+  // row, including across NSH7 saves, until the actual replacement is added.
+  int match=-1;
+  for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);
+   if(e.owner!=owner||e.floor!=floor||e.kind!=RunHistoryEvent::CardTransformed||e.flags!=1||card_from_token(e.model).kind!=notice.model||card_from_token(e.detail).kind!=card_from_token(notice.detail).kind)continue;
+   if(match<0)match=int(i);if(e.detail==notice.detail){match=int(i);break;}
+  }
+  if(match>=0){auto&e=journal.at(unsigned(match));e.detail=notice.detail;e.flags=0;}
+  else{observed.lose(floor);journal.append(unsigned(owner),floor,notice.kind,unsigned(card_token({CardKind(notice.model),0})),notice.detail,4);}
+  progress_dirty=true;return;
+ }
+ if(notice.kind==RunHistoryEvent::FurCoat)for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);if(e.owner==owner&&e.floor==floor&&e.kind==notice.kind)return;}
+ if(notice.kind>=RunHistoryEvent::GoldSpent&&notice.kind<=RunHistoryEvent::MaxHpLost)
+  journal.amount(unsigned(owner),floor,notice.kind,uint32_t(model)|(uint32_t(notice.detail)<<16));
+ else journal.append(unsigned(owner),floor,notice.kind,model,notice.detail,flags);
+ progress_dirty=true;
+}
 static void progress_begin_battle(App&a,const State&s){
-    auto&r=a.progress.current;if(r.last_battle==s.world.combat_count)return;
+    auto&r=a.progress.current;if(!world_room_is_combat(s)||r.last_battle==s.world.combat_count)return;
     r.last_battle=s.world.combat_count;r.last_enemy_identity=0;
-    progress_observe_floor(a,s);r.facts.last_room=r.facts.last_battle_room=s.world.room_type;
+    auto*floor=progress_observe_floor(a,s);r.facts.last_room=r.facts.last_battle_room=s.world.room_type;
+    if(floor){const int owner=a.progress.journal.owner(r.serial);
+        if(!floor->encounter&&owner>=0&&!a.progress.journal.owners[owner].incomplete(unsigned(floor-r.floors)))floor->encounter=uint16_t(s.enemy_world.encounter);
+        a.observe_history(s,{RunHistoryEvent::CombatStarted,uint16_t(s.enemy_world.encounter),s.world.combat_count,s.world.room_type,nullptr});}
     if(s.world.room_type==unsigned(WorldRoom::Elite)&&r.facts.elite_rooms<UINT16_MAX)++r.facts.elite_rooms;
     if(s.world.room_type==unsigned(WorldRoom::Boss)&&r.facts.boss_rooms<UINT16_MAX)++r.facts.boss_rooms;
     for(auto&v:r.battle_seen)v=0;
@@ -148,7 +194,7 @@ static void progress_begin_battle(App&a,const State&s){
 }
 void App::observe_enemy_spawned(const State&s,unsigned model,uint16_t identity){
     auto&r=progress.current;
-    if(&s!=&game||!progress_matches(r,s)||r.outcome||!s.enemy_world.active||!s.world.combat_count||model>=EnemyKinds)return;
+    if(&s!=&game||!progress_matches(r,s)||r.outcome||!s.enemy_world.active||!s.world.combat_count||!world_room_is_combat(s)||model>=EnemyKinds)return;
     progress_begin_battle(*this,s);
     if(!identity||identity<=r.last_enemy_identity)return;
     r.last_enemy_identity=identity;
@@ -199,16 +245,20 @@ void App::sync_progress(){
     if(game.phase==Phase::Reward&&!game.world.combat_ending){discover_potion(game.reward_potion);discover_relic(game.world.reward_relic);}
     if(game.original_events.active&&unsigned(game.original_events.id)&&unsigned(game.original_events.id)<=OriginalEventKinds){const unsigned id=unsigned(game.original_events.id)-1;progress.discovered_events[id/8]|=uint8_t(1u<<(id%8));}
     for(unsigned i=0;i<game.world_relics.count;++i)discover_relic(game.world_relics.entries[i].id);
+    if(game.world.combat_count&&game.enemy_world.active)progress_begin_battle(*this,game);
     if(r.floor_count){auto&f=r.floors[r.floor_count-1];
         if(f.act==game.world.act_index&&f.point==game.world.current_point){
             f.hp=uint16_t(mx(0,game.hp));f.max_hp=uint16_t(mx(0,game.max_hp));f.gold=uint16_t(mx(0,game.gold));
-            f.turns=uint16_t(mx(0,game.turn));f.seconds=r.seconds>=f.entered_seconds?r.seconds-f.entered_seconds:0;
-            if(game.enemy_world.active)f.encounter=unsigned(game.enemy_world.encounter);
+            f.seconds=r.seconds>=f.entered_seconds?r.seconds-f.entered_seconds:0;
+            if(world_room_is_combat(game)&&game.enemy_world.active){
+                const int owner=progress.journal.owner(r.serial);uint16_t first_battle=0;
+                for(unsigned i=progress.journal.count;i;--i){const auto&e=progress.journal.at(i-1);if(e.owner!=owner||e.floor!=r.floor_count-1)break;if(e.kind==RunHistoryEvent::CombatStarted)first_battle=e.detail;}
+                if(owner>=0&&!progress.journal.owners[owner].incomplete(r.floor_count-1)&&first_battle==game.world.combat_count)f.turns=uint16_t(mx(0,game.turn));
+            }
             if(game.original_events.active)f.event=unsigned(game.original_events.id);
         }
     }
-    if(game.world.combat_count&&game.enemy_world.active){
-        progress_begin_battle(*this,game);
+    if(game.world.combat_count&&game.enemy_world.active&&world_room_is_combat(game)){
         // A resumed old save only exposes actors still present. Ordered
         // identities prevent re-counting slots or revived creatures.
         unsigned slots[MaxEnemies],count=0;
@@ -251,6 +301,9 @@ void App::finish_progress(bool abandoned,const State*source){
     stats.floors_climbed=progress_add(stats.floors_climbed,r.floor);
     progress.history[progress.next_history]=r;progress.next_history=uint8_t((progress.next_history+1)%UiHistoryCapacity);
     if(progress.count<UiHistoryCapacity)++progress.count;
+    uint32_t live[UiHistoryCapacity+1]{};live[0]=r.serial;
+    for(unsigned i=0;i<progress.count;++i)live[i+1]=progress.history[i].serial;
+    progress.journal.prune(live,progress.count+1);
     progress_dirty=true;persist_progress();
 }
 bool App::bestiary_available()const{

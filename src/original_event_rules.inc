@@ -209,7 +209,7 @@ bool event_special(State&s,int op,int a,int b,int c,int d){auto&e=s.original_eve
   return pause_selection(s,OriginalEventSelection::OfferCard,OriginalEventFilter::Any,unsigned(d),d?unsigned(d):1,d==0);}
  case ES_FixedOffer:e.offer_count=1;e.offers[0]=uint16_t(card_token({CardKind(a),0}));e.offer_facts[0]={};return pause_selection(s,OriginalEventSelection::OfferCard,OriginalEventFilter::Any,0,1,true);
  case ES_Reflections:{auto rng=event_random(s);for(unsigned phase=0;phase<2;phase++){uint16_t list[MaxDeck];unsigned n=0;for(unsigned i=0;i<s.deck_count;i++)if(phase?card_upgradeable(s.deck[i]):s.deck[i].upgraded!=0)list[n++]=uint16_t(i);
-   for(unsigned i=0;i<(phase?4U:2U)&&n;i++){unsigned at=rng.below(n);s.deck[list[at]].upgraded=uint8_t(phase);if(phase)record(s,LogKind::Upgrade,s.deck[list[at]].kind);for(unsigned j=at+1;j<n;j++)list[j-1]=list[j];--n;}}
+   for(unsigned i=0;i<(phase?4U:2U)&&n;i++){unsigned at=rng.below(n);s.deck[list[at]].upgraded=uint8_t(phase);if(phase)record(s,LogKind::Upgrade,s.deck[list[at]].kind);notify_history(s,phase?RunHistoryEvent::CardUpgraded:RunHistoryEvent::CardDowngraded,unsigned(card_token(s.deck[list[at]])));for(unsigned j=at+1;j<n;j++)list[j-1]=list[j];--n;}}
   keep_random(s,rng);return true;}
  case ES_DuplicateAll:{unsigned count=s.deck_count;if(count*2+1>MaxDeck)return false;e.selection=OriginalEventSelection::Duplicate;e.filter=OriginalEventFilter::Any;e.select_min=e.select_max=uint8_t(count);e.selected_count=uint16_t(count);e.selected_cursor=0;e.selection_committed=1;
   for(unsigned i=0;i<count;i++){e.selected[i]=uint16_t(i);e.selected_cards[i]={s.deck[i],s.event_cards.deck[i],s.defect.genetic_deck[i],s.necro.scythe_deck[i]};}apply_selection(s);return s.phase!=Phase::Error;}

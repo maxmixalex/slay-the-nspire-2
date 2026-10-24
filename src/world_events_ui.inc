@@ -89,8 +89,8 @@ static void native_fake_merchant_screen(Canvas&c){
   // six-slot rug is a separate inventory overlay, not the event's page body.
   c.action(195,92,67,95,UiAction::OpenShop);
   const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
-  native_proceed(c,211,210,105,27,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);
-  c.action(206,207,112,31,UiAction::LeaveShop);
+  native_proceed(c,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);
+  native_proceed_action(c,UiAction::LeaveShop);
   if(!motion.visible(a.map_clock_ms))return;
  }
  const int dy=motion.offset(a.map_clock_ms);

@@ -176,6 +176,40 @@ static void card_cache_pixels(){
     }
     CHECK(app.content.healthy());invalidate_card_face_cache();
 }
+static void original_resource_colors(){
+    auto saved=std::make_unique<State>(app.game);const bool title=app.title,library=app.library,history=app.history_open;
+    app.title=app.library=app.history_open=false;new_run(app.game,8137,true,Character::Regent);
+    CHECK(app.game.hand.count);const int id=app.game.hand.ids[0];app.game.cards[id]={Strike,0};
+    const auto style=[&](int energy,int stars){return card_face_resource_styles(app,app.game.cards[id],energy,stars,id,nullptr);};
+    app.game.energy=9;app.game.expansion.stars=9;
+    CHECK((style(1,0)&3)==ResourceNormal);CHECK((style(2,0)&3)==ResourceIncreased);CHECK((style(0,0)&3)==ResourceDecreased);
+    app.game.energy=0;CHECK((style(1,0)&3)==ResourceInsufficient);CHECK((style(-1,0)&3)==ResourceNormal);
+    app.library=true;CHECK(style(1,0)==0);app.library=false;
+    CHECK(card_energy_outline({Strike,0})==rgb(128,32,32));CHECK(card_title_outline({Strike,0},true)==rgb(77,75,64));
+    CHECK(card_title_outline({Strike,1},true)==rgb(27,97,49));CHECK(card_title_outline({Strike,1},false)==rgb(77,75,64));
+    CHECK(app.content.energy_image({Wound,0})<0&&app.content.energy_image({Wound,0},true)>=0);
+    Canvas c{app};const uint16_t colors[]={rgb(255,246,226),rgb(64,255,255),rgb(127,255,0),rgb(255,85,85)};
+    for(unsigned mode=0;mode<4;++mode){clear();card_resource_label(c,"2",40,50,8,mode,card_energy_outline({Strike,0}),false);
+        unsigned found=0;for(int y=49;y<64;++y)for(int x=39;x<50;++x)found+=app.pixels[y*320+x]==colors[mode];CHECK(found);}
+    // Both frames are unplayable because stars are insufficient. Energy
+    // becoming affordable must still invalidate the cached red energy label.
+    app.game.cards[id]={RegentFallingStar,0};const int price=cost(app.game,id);CHECK(price>0);
+    app.game.energy=price-1;app.game.expansion.stars=0;++app.game.revision;invalidate_hand_tiles();begin_card_face_frame();
+    SaveData before{},after{};CHECK(save(app.game,before));const auto&red=hand_tile(c,id);
+    CHECK(!red.playable&&(red.resource_styles&3)==ResourceInsufficient&&(red.resource_styles>>2)==ResourceInsufficient);
+    const std::vector<uint16_t> old(red.pixels,red.pixels+HandTileW*HandTileH);
+    CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    app.game.energy=price;++app.game.revision;begin_card_face_frame();CHECK(save(app.game,before));const auto&cream=hand_tile(c,id);
+    CHECK(!cream.playable&&(cream.resource_styles&3)==ResourceNormal&&(cream.resource_styles>>2)==ResourceInsufficient);
+    CHECK(std::memcmp(old.data(),cream.pixels,sizeof cream.pixels));
+    CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    // A real star-cost card keeps its icon when made free. The price style
+    // uses its canonical positive cost, not truthiness of the displayed zero.
+    app.game.expansion.star_turn_free[id]=1;app.game.expansion.stars=9;++app.game.revision;begin_card_face_frame();
+    CHECK(card_star_cost(app.game,app.game.cards[id],id)==0&&card_star_cost(app.game,app.game.cards[id])>0);
+    CHECK((style(price,0)>>2)==ResourceDecreased);
+    app.game=*saved;app.title=title;app.library=library;app.history_open=history;invalidate_hand_tiles();
+}
 static void focused_card_scale(){
     Canvas c{app};static HandTile transparent;transparent.playable=true;
     struct Example {HandPose pose;int left,top,right,bottom;};
@@ -483,5 +517,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();original_resource_colors();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

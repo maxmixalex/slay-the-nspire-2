@@ -3,6 +3,7 @@
 namespace {
 struct HandTile {
     bool valid=false,playable=false,description_truncated=false;
+    uint8_t resource_styles=0;
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0;
@@ -34,6 +35,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
         t.sampled_target==a.target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded){t.used=hand_tile_clock;return t;}
     auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_instance=instance;t.sampled_deck=deck;t.sampled_target=a.target;t.sampled_visual=visual;};
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
+    const unsigned resource_styles=card_face_resource_styles(a,card,energy,stars,instance,event_card_facts(a.game,card,instance,deck));
     bool playable=visual||can_play_card(a.game,instance);
     char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,instance,deck);
     int portrait=a.card_face_image(card,instance,deck),frame=a.card_face_frame(card,instance,deck);
@@ -43,18 +45,20 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     // shifted slot, while keeping the same ten 80 x 112 cache allocations.
     for(auto&t:hand_tiles){
         if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
-           t.playable==playable&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
+           t.playable==playable&&t.resource_styles==resource_styles&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
         if(!slot||(!t.valid&&slot->valid)||(t.valid==slot->valid&&int32_t(t.used-slot->used)<0))slot=&t;
     }
     auto&t=*slot;t.used=hand_tile_clock;stamp(t);
     t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
+    t.resource_styles=uint8_t(resource_styles);
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
     for(int i=0;i<HandTileW*HandTileH;i++){t.pixels[i]=0;t.alpha[i]=0;}
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     // Left inset contains the original star cost below the energy icon;
     // neither resource adds a second title row or moves the card portrait.
     draw_card_face(tile,card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,energy,stars,instance,deck,nullptr,description,&t.description_truncated);
-    if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
+    // NHandCardHolder hides its playable highlight; it does not gray the
+    // entire portrait, description and resource label when a card cannot play.
     t.valid=true;return t;
 }
 static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255){

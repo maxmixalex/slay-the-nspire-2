@@ -66,5 +66,5 @@ static void native_reward_screen(Canvas&c){
   native_reward_row_hit(c,y,dy,HitKind::UiAction,int(action));
  }
  native_reward_scrollbar(panel,dy);
- const bool remaining=count>1;const char*proceed=a.content.world_string("gameplay_ui",remaining?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON");native_proceed(c,213,211,99,25,*proceed?proceed:remaining?"跳过":"前进",true,a.cursor==count-1);c.action(209,208,107,30,UiAction::LeaveRewards);
+ const bool remaining=count>1;const char*proceed=a.content.world_string("gameplay_ui",remaining?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON");native_proceed(c,*proceed?proceed:remaining?"跳过":"前进",true,a.cursor==count-1);native_proceed_action(c,UiAction::LeaveRewards);
 }

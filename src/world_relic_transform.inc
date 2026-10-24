@@ -31,6 +31,10 @@ static bool w_transform_batch(State& s,unsigned owner,const uint16_t* ids,unsign
   unsigned at=ids[i];for(unsigned j=0;j<i;j++)if(ids[j]<ids[i])--at;
   auto& entry=w.transforms[i];entry.index=uint16_t(at);
   if(!mode&&!w_transform_card(s,at,rng,CardKinds,false,0,entry.card)){w_error(s);return false;}
+  // The saved transform queue retains only the original model kind. Keep
+  // its complete upgrade token in the observer's pending journal entry,
+  // then finalize it after the normal deck modifiers have run on append.
+  notify_history(s,RunHistoryEvent::CardTransformed,unsigned(card_token(s.deck[at])),entry.card.token,1);
   EventDeckSnapshot removed;if(!event_take_deck_card(s,int(at),removed)){w_error(s);return false;}
  }
  reference::comparison_sort(w.transforms,count,[](const WorldRelicTransformEntry& entry){return entry.index;});w.transform_count=uint16_t(count);w.transform_cursor=0;
@@ -42,6 +46,7 @@ static void w_transform_append(State& s,unsigned owner){
  if(w.transform_cursor>w.transform_count||w.transform_count>MaxDeck){w_error(s);return;}
  const auto entry=w.transforms[w.transform_cursor++];
  if(!w_enqueue(s,WorldRelicOp::TransformAppend,owner))return;
- int at=w_restore_card(s,entry.card);if(at<0){w_error(s);return;}
+ int at=w_restore_card(s,entry.card,false,false,false);if(at<0){w_error(s);return;}
  record(s,LogKind::Transform,entry.original,s.deck[at].kind);
+ notify_history(s,RunHistoryEvent::CardTransformed,entry.original,unsigned(card_token(s.deck[at])),2);
 }

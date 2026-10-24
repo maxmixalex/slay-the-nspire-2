@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI8 stage 7 candidate; executable acceptance follows frozen-source checkpoint",
+  "source_stage": "UI8 stage 8 candidate; full integrated acceptance follows the remotely verified frozen checkpoint",
   "scope": {
     "excluded": [
       "audio",
@@ -17,7 +17,7 @@
   },
   "methodology": {
     "full_path_scan": "All 3538 current C# files and all 1022 PCK scene paths were enumerated. 10 extra top-level/generated files distinguish this directory from the historical 3528-file index.",
-    "nodes": "719 nonempty namespace-declared node files plus 5 empty original node paths = 724 indexed node files. Empty files are not treated as reviewed methods.",
+    "nodes": "719 nonempty namespace-declared node files plus 5 initially empty node paths = 724 indexed node files. Complete NCombatRoom, NDropdownContainer and NMapPointHistoryHoverTip were recovered from the pinned assembly; the journal renderer was checked against the recovered method bodies. An initial empty file is not treated as a reviewed method.",
     "method_review": "Concrete source methods and scenes identified in module audit documents were reviewed and implemented; a path scan does not assert every method has been reviewed.",
     "acceptance": "Native suites, actual bilingual scene review, browser behavior and linked ARM/Firebird checks are separate evidence. No restoration percentage is inferred from file, model, contract or passing-test counts.",
     "privacy": "Only identifiers, counts, independent implementation summaries and test references are public."
@@ -217,10 +217,12 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed run summary/map/relic/tiny-deck carousel, continuous scroll, inspect, original map drawing and NSH6 rest/damage/score facts.",
-      "remaining": "Complete per-floor card offers/skips, purchases/removals and event-option histories are not yet retained; old unavailable records remain unknown.",
+      "implemented": "Observed run summary/map/relic/tiny-deck carousel, original map drawing, NSH7 bounded per-floor actual acquisitions, transformations, purchases/spending, reward/shop skips and event options; source action/reward/skipped grouping and scrollable visible rows.",
+      "remaining": "Unknown earlier facts and evicted journal entries are explicitly partial. Full Stage8 codec, real-command and actual bilingual hover acceptance remains required.",
       "regressions": [
         "history_ui8_regression",
+        "run_history_journal_ui8_regression",
+        "run_history_acquisition_regression",
         "map_drawing_ui_regression"
       ],
       "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
@@ -293,8 +295,8 @@
       ],
       "contract": "Visited-node history hover",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Visited non-current nodes show actual observed history; rest type and damage are recorded when known.",
-      "remaining": "Full original per-floor choice history is still incomplete.",
+      "implemented": "Visited-node and completed-run history share the recorded journal, source action order, rewards/skipped columns, original sprite-font icons and independent tooltip scrolling. Ordinary retained rooms record leftover skips only when actually exited.",
+      "remaining": "Bounded old/overflow history stays explicitly partial; original GPU text/material equivalence is not claimed.",
       "regressions": [
         "history_ui8_regression"
       ],
@@ -410,7 +412,7 @@
       ],
       "contract": "Chest opening, relic appearance, take/leave",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original chest/room layers, actual open/take/leave and relic choices.",
+      "implemented": "Original chest/holder/banner timing and command guards; original 125x31 common banner, separate 39px holder/23px icon, source hover/press scaling, actual relic hover tips, centered empty label and shared original Proceed. Legacy permanent description and extra Details control removed.",
       "remaining": "All original particles/materials are not reproduced.",
       "regressions": [
         "world_room_ui_regression"
@@ -445,8 +447,8 @@
       ],
       "contract": "Death/victory summary, score, badges and discoveries",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available.",
-      "remaining": "Full floor item/reward/purchase journal is being implemented separately. Shader/material and deterministic sampled particle differences require explicit visual acceptance; no numeric fidelity claim.",
+      "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available. The original dark-red threshold mask and event-only pure-black prelude replace the generic Ink fade, preserving actor layer order.",
+      "remaining": "Full Stage8 stage/gate and actual-mask pixel acceptance remains required. Exact GPU raster equivalence and a numerical fidelity result remain unestablished.",
       "regressions": [
         "world_game_over_ui_regression",
         "ui_progress_regression"
@@ -462,7 +464,7 @@
       ],
       "contract": "Hover expansion, tips, counts and inventory entry",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original room/boss controls, hover tips, inventory, counts, relic scrolling and deck gain pulse.",
+      "implemented": "Original ordered HUD, source potion/room/relic controls and run timer. Right-aligned map/deck/settings positions stay fixed across timer/map visibility; NSPF4 remembers the real Show Run Timer checkbox.",
       "remaining": "All secondary source effects are not reproduced.",
       "regressions": [
         "card_hud_ui_regression"
@@ -479,8 +481,8 @@
       ],
       "contract": "Fan, hover, drag, keyboard held-card and targeting confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering.",
-      "remaining": "Projected 5px font fix requires matching resources; all trails remain incomplete.",
+      "implemented": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed.",
+      "remaining": "Unplayable-resource cross artwork and all original secondary highlight/trail shaders remain incomplete; final resource and host acceptance is required.",
       "regressions": [
         "card_hud_ui_regression",
         "card_presentation_regression"
@@ -663,8 +665,8 @@
       ],
       "contract": "Death tracks, corpse removal and once-only normal/Fast/boss reward waits",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual death/corpse/reward sequencing, normal/Fast/boss waits and pre-clear player power freeze beneath rewards.",
-      "remaining": "Original dissolve and five character Die tracks remain incomplete.",
+      "implemented": "Original victory/reward handoff and UI timers, frozen visible victory powers, all five original normal and merchant nonlooping Die tracks with held exact final poses; separate additive Defect/Regent particle layers.",
+      "remaining": "Original GPU-particle implementation equivalence is not established. Actual bilingual five-character four-room checks preserved full sampled source timing, separate particle decay and terminal poses; matching final integrated resources must still be accepted.",
       "regressions": [
         "combat_ui_regression",
         "power_order_ui8_regression"

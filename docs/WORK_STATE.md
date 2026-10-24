@@ -1,5 +1,54 @@
 # Work state — 2026-10-24
 
+## UI8 stage 8 candidate — journal, common controls and matching resources
+
+The full stage-seven runtime checkpoint
+`e9aaac1c252d38d9b4b773d9b9e549ab468c72c4` compiled and passed 93/97
+native suites. Three failures were stale profile/resource-version or exact
+shadow expectations. The fourth exposed a real top-bar bug: enabling the
+source map timer moved the Map button under a captured pointer. This candidate
+keeps the right-aligned Map/Deck/Settings positions fixed; the original travel
+regression remains unchanged. Short profile/font/resource checks passed, while
+the complete integrated rerun remains required.
+
+The actual v29 death conversion passed from its frozen asset source. All five
+characters retain their complete source body clips, separate additive particle
+layers and terminal poses. Actual English and Chinese actor and complete
+Game Over captures ran successfully; visual review identified the remaining
+backdrop color/threshold transition for correction in this candidate. A passing
+isolated actor test does not certify the composed screen.
+
+Merchant occlusion now has an actual whole-frame oracle: 2,376 complete
+320x240 frames per language match the unculled renderer, including animation
+and input boundaries. Quiet host measurements found a 28.74% English and
+19.94% Chinese reduction in steady merchant frame time in the measured pair;
+these are host timings, not calculator FPS. After warming, the matching v29
+six-scene traces read no additional source data in their third window. Cache
+capacities and original animation frames remain unchanged.
+
+Stage eight adds an observer-only per-floor item and action journal, bounded
+NSH7 persistence and a shared scrollable history hover. It records actual
+card/relic/potion acquisition, removal, transformation, spending, event choices,
+and reward/shop skips. Retained rooms defer skipped-item records until actual
+departure. Older unrecorded facts stay unknown. State remains 200,368 bytes;
+the single journal adds 33,696 bytes to UiProgress, with no duplicated run blob.
+The full codec, acquisition, retained-room and actual-render acceptance is still
+pending at this source checkpoint.
+
+Original Proceed geometry and bold typography now replace the old room-specific
+large button labels. Treasure uses the source banner and holder composition,
+with the actual relic hover instead of a permanent title, description and
+extra Details control. Six missing Chinese glyphs were appended without
+replacing existing glyphs, and the four original map-history sprite icons
+were appended with a byte-preserving v30 resource contract. The source game-over
+threshold mask then adds one static v31 image without new resident buffers.
+Card faces also restore original resource-state colors, rarity outlines and
+unknown energy icons, with matching cache invalidation and no whole-card gray
+overlay for an inability to play. Final runtime,
+resource, browser, ARM and ordinary Firebird gates remain to be executed after
+the coherent source freeze. No 95% fidelity or 30–40 MB installation claim is
+made from path scans, test totals or compression substeps.
+
 ## UI8 stage 7 candidate — source preservation before validation
 
 Stage-six runtime `f937cf13374ec5ba2e010f8c8899b691600565f0`

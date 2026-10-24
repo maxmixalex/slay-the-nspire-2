@@ -1,4 +1,5 @@
 #include "ui_progress.hpp"
+#include "ui7_assets.hpp"
 namespace spire {
 namespace {
 struct Encoder {
@@ -53,6 +54,53 @@ template<class Codec>void run(Codec&c,UiRunHistory&v,unsigned version){
         if(f.act>=3||f.region>3)c.good=false;
     }
 }
+static const UiRunHistory* journal_run(const UiProgress&v,uint32_t serial){
+    if(!serial)return nullptr;if(v.current.serial==serial)return &v.current;
+    for(unsigned i=0;i<v.count;++i)if(v.history[i].serial==serial)return &v.history[i];return nullptr;
+}
+static bool journal_entry_valid(const UiProgress&v,const UiHistoryJournalEntry&e){
+    if(e.owner>=UiJournalOwners||e.floor>=UiHistoryFloors||e.kind==RunHistoryEvent::None||e.kind>=RunHistoryEvent::Count)return false;
+    const auto&owner=v.journal.owners[e.owner];const auto*r=journal_run(v,owner.serial);
+    if(!r||e.floor>=r->floor_count||!owner.observed(e.floor))return false;
+    const auto valid_card=[](unsigned token){return card_from_token(int(token)).kind<CardKinds;};
+    using K=RunHistoryEvent;
+    switch(e.kind){
+    case K::CardTransformed:return (e.flags==0||e.flags==1||e.flags==4)&&valid_card(e.model)&&valid_card(e.detail);
+    case K::CardEnchanted:return valid_card(e.model)&&e.flags>0&&e.flags<EventEnchantmentKinds&&e.detail<=9999;
+    case K::CardObtained:case K::CardRemoved:case K::CardUpgraded:case K::CardDowngraded:
+    case K::CardPicked:case K::CardSkipped:case K::CardBought:return !e.flags&&valid_card(e.model);
+    case K::AncientSkipped:return !e.flags&&(e.model<WorldRelicKinds||e.model==NoWorldRelic);
+    case K::RelicObtained:case K::RelicRemoved:case K::RelicSkipped:case K::RelicBought:case K::AncientPicked:return !e.flags&&e.model<WorldRelicKinds;
+    case K::PotionObtained:case K::PotionUsed:case K::PotionDiscarded:case K::PotionSkipped:case K::PotionBought:return !e.flags&&e.model>0&&e.model<=PotionKinds;
+    case K::EventChoice:
+        if(e.model>=Ui7StringCount||e.flags>unsigned(HistoryChoiceVariable::PotionRarity))return false;
+        if(e.flags==unsigned(HistoryChoiceVariable::Relic))return e.detail<WorldRelicKinds;
+        if(e.flags==unsigned(HistoryChoiceVariable::Potion))return e.detail>0&&e.detail<=PotionKinds;
+        if(e.flags==unsigned(HistoryChoiceVariable::PotionRarity))return e.detail>=1&&e.detail<=5;
+        return true;
+    case K::ModifierChoice:return !e.flags&&e.model<RunModifierKinds;
+    case K::RestChoice:return !e.flags&&e.model<8;
+    case K::QuestCompleted:return !e.flags&&e.model<CardKinds;
+    case K::FurCoat:return !e.flags&&e.model==WorldRelicFurCoat;
+    case K::CombatStarted:return e.model>0&&e.model<EncounterKinds&&e.detail>0&&e.flags>=1&&e.flags<=3;
+    default:return !e.flags;
+    }
+}
+template<class Codec>void journal(Codec&c,UiProgress&v){
+    auto&j=v.journal;
+    for(unsigned i=0;i<UiJournalOwners&&c.good;++i){auto&o=j.owners[i];c.integer(o.serial);if(!o.serial)continue;
+        const auto*r=journal_run(v,o.serial);if(!r){c.good=false;return;}
+        for(unsigned k=0;k<i;++k)if(j.owners[k].serial==o.serial){c.good=false;return;}
+        for(auto&bits:o.known)c.integer(bits);for(auto&bits:o.partial)c.integer(bits);
+        for(unsigned f=r->floor_count;f<UiJournalFloors;++f)if((o.known[f/32]|o.partial[f/32])&(uint32_t(1)<<(f%32))){c.good=false;return;}
+    }
+    c.integer(j.count);if(j.count>UiJournalEntries||j.first>=UiJournalEntries){c.good=false;return;}
+    if constexpr(Codec::reading)j.first=0;
+    for(unsigned i=0;i<j.count&&c.good;++i){auto&e=j.at(i);c.integer(e.model);c.integer(e.detail);c.integer(e.owner);c.integer(e.floor);
+        uint8_t kind=uint8_t(e.kind);c.integer(kind);if constexpr(Codec::reading)e.kind=RunHistoryEvent(kind);c.integer(e.flags);
+        if(!journal_entry_valid(v,e))c.good=false;
+    }
+}
 template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
     c.integer(v.next_serial);c.integer(v.count);c.integer(v.next_history);c.integer(v.discovered_acts);
     c.integer(v.characters_started);c.integer(v.current_streak);c.integer(v.best_streak);
@@ -94,6 +142,7 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
         }
         c.integer(v.architect_damage);
     }
+    if(version>=7)journal(c,v);
 }
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
@@ -106,6 +155,8 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     if(value.current.facts.version||value.architect_damage)version=6;
     for(unsigned i=0;i<value.count&&i<UiHistoryCapacity;++i)if(value.history[i].facts.version)version=6;
     const auto*d=reinterpret_cast<const uint8_t*>(&value.current_discoveries);for(unsigned i=0;i<sizeof value.current_discoveries;++i)if(d[i])version=6;
+    for(const auto&owner:value.journal.owners)if(owner.serial){version=7;break;}
+    if(value.journal.count)version=7;
     out[0]='N';out[1]='S';out[2]='H';out[3]=char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
@@ -114,13 +165,13 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'6')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'7')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'6')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'7')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);

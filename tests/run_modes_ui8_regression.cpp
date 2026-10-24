@@ -54,12 +54,12 @@ int main(int argc,char**argv){
     CHECK(restored.run_options.mode==RunMode::Custom&&restored.run_options.modifiers==a.game.run_options.modifiers);
     a.progress_time(2200);a.game.phase=Phase::Complete;a.finish_progress();CHECK(a.progress.count&&a.history_at(0)->mode==unsigned(RunMode::Custom));
     CHECK(a.progress.characters[unsigned(a.game.character)].wins==0&&a.progress.characters[unsigned(a.game.character)].highest_ascension==0);
-    const size_t n=encode_ui_progress(a.progress,history_bytes,sizeof history_bytes);CHECK(n&&history_bytes[3]=='6');CHECK(decode_ui_progress(history_bytes,n,history));
+    const size_t n=encode_ui_progress(a.progress,history_bytes,sizeof history_bytes);CHECK(n&&history_bytes[3]=='7');CHECK(decode_ui_progress(history_bytes,n,history));
     CHECK(history.history[0].mode==unsigned(RunMode::Custom)&&history.history[0].modifiers==run_modifier_bit(RunModifier::Flight));
     UiProgressSummary summary{};CHECK(decode_ui_progress_summary(history_bytes,n,summary)&&summary.play_seconds>=2);
     // Build the actual older NSH3 shape, rather than stamping a new facts
     // tail with its former version. Mode and modifier data survive both.
-    history.current.facts={};for(auto&r:history.history)r.facts={};history.current_discoveries={};history.architect_damage=0;
+    history.current.facts={};for(auto&r:history.history)r.facts={};history.current_discoveries={};history.architect_damage=0;history.journal={};
     const size_t legacy_size=encode_ui_progress(history,history_bytes,sizeof history_bytes);CHECK(legacy_size&&history_bytes[3]=='3');
     CHECK(decode_ui_progress(history_bytes,legacy_size,history)&&history.history[0].mode==unsigned(RunMode::Custom)&&history.history[0].modifiers==run_modifier_bit(RunModifier::Flight)&&!history.current.facts.version);
     std::printf("Singleplayer hierarchy, custom/daily seed/modifiers, drag, save/resume and unranked statistics: %u checks\n",checks);

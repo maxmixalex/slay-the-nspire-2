@@ -98,16 +98,18 @@ static void ancient_families(){
  CHECK(c.font_style(bold)==1&&c.font_style(italic)==2);
  CHECK(app.content.glyph_metrics('A',6,1).advance==5&&app.content.glyph_metrics('A',6,2).advance==4);
  CHECK(ancient_text_metric(c,bold,6).advance==7&&ancient_text_metric(c,italic,6).advance==6);
- const char*sample="[b]A[/b][i]A[/i]B";const uint16_t ink=rgb(255,246,226);
+ const char*sample="[b]A[/b][i]A[/i]B";const uint16_t ink=rgb(255,246,226),shadow=0x0821,half_shadow=0x0020;
  CHECK(ancient_text_rows(c,sample,16)==1&&ancient_text_rows(c,sample,15)==2);
  clear();ancient_text(c,sample,10,10,16,1);
- CHECK(pixel(10,10)==ink&&pixel(13,10)==ink&&pixel(11,10)==0&&pixel(12,10)==0);
- CHECK(pixel(18,10)==ink&&pixel(19,10)==ink&&pixel(17,10)==0&&pixel(20,10)==0);
- CHECK(pixel(23,10)!=0&&pixel(22,10)==0&&pixel(24,10)==0);
+ // Original +1px, 64/255-opacity dark-ink shadows occupy the mask holes
+ // directly to the right; those pixels are intentionally not the black clear.
+ CHECK(pixel(10,10)==ink&&pixel(13,10)==ink&&pixel(11,10)==shadow&&pixel(12,10)==0);
+ CHECK(pixel(18,10)==ink&&pixel(19,10)==ink&&pixel(17,10)==0&&pixel(20,10)==shadow);
+ CHECK(pixel(23,10)!=0&&pixel(22,10)==0&&pixel(24,10)==half_shadow);
  clear();ancient_text(c,sample,10,20,12,2);
  CHECK(pixel(10,20)==ink&&pixel(13,20)==ink&&pixel(18,20)==0);
  CHECK(pixel(11,27)==ink&&pixel(12,27)==ink&&pixel(16,27)!=0);
- CHECK(pixel(10,27)==0&&pixel(13,27)==0&&pixel(17,27)==0&&app.content.healthy());
+ CHECK(pixel(10,27)==0&&pixel(13,27)==shadow&&pixel(17,27)==half_shadow&&app.content.healthy());
 }
 struct Provider {
  const Bytes*bytes;unsigned calls=0;

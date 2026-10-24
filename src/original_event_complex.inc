@@ -8,7 +8,7 @@ unsigned potion_slots(const State&s,uint16_t*out){unsigned n=0;for(unsigned i=0;
 unsigned basic_count(const State&s,unsigned kind){unsigned n=0;for(unsigned i=0;i<s.deck_count;i++)if(card_removable(s,s.deck[i],i)&&(kind==0?basic_strike(s.deck[i].kind):kind==1?basic_defend(s.deck[i].kind):card_rarity(s.deck[i].kind)==1))++n;return n;}
 bool book_option(const State&s,unsigned option){const EventEnchantment enchant[]={EventEnchantment::Sharp,EventEnchantment::Nimble,EventEnchantment::Swift};for(unsigned i=0;i<s.deck_count;i++)if(unsigned(card_type(s,s.deck[i],-1,i))==option&&event_card_can_enchant(s,i,enchant[option]))return true;return false;}
 void random_one_upgrade(State&s,bool all=false){uint16_t list[MaxDeck];unsigned n=0;for(unsigned i=0;i<s.deck_count;i++)if(card_upgradeable(s.deck[i]))list[n++]=uint16_t(i);
- if(!n)return;if(all)for(unsigned i=0;i<n;i++){s.deck[list[i]].upgraded=1;record(s,LogKind::Upgrade,s.deck[list[i]].kind);}else{unsigned i=unsigned(rand_range(s,0,int(n)));s.deck[list[i]].upgraded=1;record(s,LogKind::Upgrade,s.deck[list[i]].kind);}}
+ if(!n)return;if(all)for(unsigned i=0;i<n;i++){s.deck[list[i]].upgraded=1;record(s,LogKind::Upgrade,s.deck[list[i]].kind);notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[list[i]])));}else{unsigned i=unsigned(rand_range(s,0,int(n)));s.deck[list[i]].upgraded=1;record(s,LogKind::Upgrade,s.deck[list[i]].kind);notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[list[i]])));}}
 void stable_relics(RelicId*ids,unsigned n){for(unsigned i=1;i<n;i++){RelicId id=ids[i];unsigned j=i;while(j&&compare_text(world_relic_key(ids[j-1]),world_relic_key(id))>0){ids[j]=ids[j-1];--j;}ids[j]=id;}}
 void bridge_card(State&s,bool initial){auto&e=s.original_events;uint16_t list[MaxDeck];unsigned n=0;int previous=e.values[1];if(!initial&&previous>=0&&previous<s.deck_count)e.remembered[previous]=1;
  for(unsigned i=0;i<s.deck_count;i++)if(card_removable(s,s.deck[i],i)&&!e.remembered[i]&&(initial?card_rarity(s.deck[i].kind)!=1:previous<0||s.deck[i].kind!=s.deck[previous].kind))list[n++]=uint16_t(i);
@@ -156,13 +156,13 @@ bool complex_choose(State&s,unsigned option){auto&e=s.original_events;const char
    else{e.values[2]=e.values[option];e.page=2;page(s,"CHOOSE_RIDER");const char*riders[]={"SAPPING","VIOLENCE","CHOKING","ENERGIZED","WISDOM","CHAOS","EXPERTISE","CURIOUS","IMPROVEMENT"};for(unsigned i=0;i<2;i++){e.values[i]=int16_t(e.values[2]*3+list[i]+1);option_key(s,i,"CHOOSE_RIDER.options.",riders[e.values[i]-1]);}}return true;}
   push_step(s,OriginalEventOp::Special,CX_Tinker,e.values[2],e.values[option]);done="DONE";break;
  case OriginalEventId::WelcomeToWongos:
-  if(option==3){uint16_t ids[MaxDeck];unsigned n=0;for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].upgraded)ids[n++]=uint16_t(i);if(n)s.deck[ids[rand_range(s,0,int(n))]].upgraded=0;done="LEAVE";}
+  if(option==3){uint16_t ids[MaxDeck];unsigned n=0;for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].upgraded)ids[n++]=uint16_t(i);if(n){const unsigned at=ids[rand_range(s,0,int(n))];s.deck[at].upgraded=0;notify_history(s,RunHistoryEvent::CardDowngraded,unsigned(card_token(s.deck[at])));}done="LEAVE";}
   else{gold(s,-100*int(option+1));if(option==0)push_step(s,OriginalEventOp::Special,CX_Wongo,0);else relic(s,option==1?RelicId(e.values[0]):WorldRelicWongosMysteryTicket);push_step(s,OriginalEventOp::Special,CX_Wongo,int(option+1));return true;}break;
  case OriginalEventId::CrystalSphere:if(!option)gold(s,-e.values[0]);else card(s,EventCardDebt);push_step(s,OriginalEventOp::Special,CX_CrystalBegin,option?6:3);return true;
  case OriginalEventId::EndlessConveyor:
   if(option){if(!e.page){push_step(s,OriginalEventOp::Special,CX_RandomUpgrade);done="OBSERVE_CHEF";}else done="LEAVE";break;}
   if(e.values[1]!=6)gold(s,-40);switch(e.values[1]){case 0:maxhp(s,4);break;case 1:push_step(s,OriginalEventOp::Special,CX_RandomUpgrade);break;case 2:select_deck(s,OriginalEventSelection::Transform);break;case 3:push_step(s,OriginalEventOp::Special,CX_ConveyorCard);break;case 4:queue_random_potion(s,WorldPotionUniform);break;case 5:healing(s,10);break;case 6:gold(s,75);break;case 7:card(s,EventCardFeedingFrenzy);break;default:return false;}push_step(s,OriginalEventOp::Special,CX_ConveyorNext);return true;
- case OriginalEventId::FakeMerchant:if(option==6){finish_page(s,"INITIAL");return true;}gold(s,-e.choice_prices[option]);relic(s,e.offers[option]);push_step(s,OriginalEventOp::Special,CX_ShopAfter,int(option),e.choice_prices[option]);return true;
+ case OriginalEventId::FakeMerchant:if(option==6){for(unsigned i=0;i<6;++i)if(e.offers[i]<WorldRelicKinds)notify_history(s,RunHistoryEvent::RelicSkipped,e.offers[i]);finish_page(s,"INITIAL");return true;}gold(s,-e.choice_prices[option]);relic(s,e.offers[option]);push_step(s,OriginalEventOp::Special,CX_ShopAfter,int(option),e.choice_prices[option]);return true;
  case OriginalEventId::TheArchitect:++e.values[1];architect_page(s);return true;
  default:return false;
  }
@@ -170,7 +170,7 @@ bool complex_choose(State&s,unsigned option){auto&e=s.original_events;const char
 }
 bool complex_special(State&s,int op,int a,int b,int c,int){auto&e=s.original_events;
  switch(op){
- case CX_DiscardPotion:{if(a<0||a>=int(potion_slot_count(s)))return false;Potion old=potion_at(s,unsigned(a));if(old==Potion::Empty)return false;if(!potion_set(s,unsigned(a),Potion::Empty))return false;world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,int(old),a);return true;}
+ case CX_DiscardPotion:{if(a<0||a>=int(potion_slot_count(s)))return false;Potion old=potion_at(s,unsigned(a));if(old==Potion::Empty)return false;if(!potion_set(s,unsigned(a),Potion::Empty))return false;notify_history(s,RunHistoryEvent::PotionDiscarded,unsigned(old));world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,int(old),a);return true;}
  case CX_RandomUpgrade:if(b)rand_range(s,0,100);else random_one_upgrade(s,a!=0);return true;
  case CX_Tablet:{if(!a){const int loss=e.values[0];const bool lethal=loss>=s.max_hp;
    maxhp(s,lethal?1-s.max_hp:-loss);if(lethal)push_step(s,OriginalEventOp::KillPlayer);
@@ -179,7 +179,7 @@ bool complex_special(State&s,int op,int a,int b,int c,int){auto&e=s.original_eve
   const char*pages[]={"","DECIPHER_1","DECIPHER_2","DECIPHER_3","DECIPHER_4","DECIPHER_5"};if(e.page==5){finish_page(s,pages[e.page]);return true;}
   e.values[0]=e.page==1?6:e.page==2?12:e.page==3?24:int16_t(s.max_hp-1);page(s,pages[e.page]);options(s);const char*prefix[]={"","DECIPHER_1.options.","DECIPHER_2.options.","DECIPHER_3.options.","DECIPHER_4.options."};option_key(s,0,prefix[e.page],"DECIPHER");option_key(s,1,"DECIPHER.options.","GIVE_UP");return true;}
  case CX_RemoveAt:return event_remove_deck_card(s,a);
- case CX_RemoveQuest:{unsigned left=unsigned(a);for(unsigned i=0;i<s.deck_count&&left;)if(s.deck[i].kind==EventCardLanternKey){EventDeckSnapshot snap;if(!event_take_deck_card(s,int(i),snap))return false;world_relic_hook(s,WorldRelicHook::AfterDeckRemoved,EventCardLanternKey,int(i));--left;}else ++i;return true;}
+ case CX_RemoveQuest:{unsigned left=unsigned(a);for(unsigned i=0;i<s.deck_count&&left;)if(s.deck[i].kind==EventCardLanternKey){notify_history(s,RunHistoryEvent::QuestCompleted,EventCardLanternKey);EventDeckSnapshot snap;if(!event_take_deck_card(s,int(i),snap))return false;notify_history(s,RunHistoryEvent::CardRemoved,unsigned(card_token(snap.card)));world_relic_hook(s,WorldRelicHook::AfterDeckRemoved,EventCardLanternKey,int(i));--left;}else ++i;return true;}
  case CX_RepyDone:{if(e.values[14])s.event_run.freed_repy=1;bool key=false;for(unsigned i=0;i<s.deck_count;i++)if(s.deck[i].kind==EventCardLanternKey)key=true;
   if(!b&&key){e.page=1;e.values[0]=int16_t(1-a);page(s,a?"UNLOCK_CHEST":"UNLOCK_CAGE");options(s,a?"INITIAL.options.UNLOCK_CAGE":"INITIAL.options.UNLOCK_CHEST");}
   else finish_page(s,b?(a?"EXTRA_UNLOCK_CHEST":"EXTRA_UNLOCK_CAGE"):(a?"UNLOCK_CHEST":"UNLOCK_CAGE"));return true;}
@@ -197,7 +197,7 @@ bool complex_special(State&s,int op,int a,int b,int c,int){auto&e=s.original_eve
  case CX_CrystalBegin:return crystal_begin(s,unsigned(a));
  case CX_CrystalClear:return crystal_clear(s,unsigned(a),unsigned(b));
  case CX_CrystalNext:return crystal_next(s);
- case CX_ShopAfter:if(a<0||a>=6)return false;e.offers[a]=NoWorldRelic;world_relic_hook(s,WorldRelicHook::AfterItemPurchased,ShopRelicStart+a,b);return true;
+ case CX_ShopAfter:if(a<0||a>=6)return false;notify_history(s,RunHistoryEvent::RelicBought,e.offers[a],unsigned(b));e.offers[a]=NoWorldRelic;world_relic_hook(s,WorldRelicHook::AfterItemPurchased,ShopRelicStart+a,b);return true;
  case CX_Wongo:
   if(!a)return gain_world_relic(s,world_relic_pull(s,WorldRelicPool::Common,false,true));
   {unsigned points=a==1?32:a==2?16:8;s.event_run.wongo_earned=points;unsigned now=s.event_run.wongo_total%2000+points;if(now>=2000){relic(s,WorldRelicWongoCustomerAppreciationBadge);finish_page(s,"AFTER_BUY_RECEIVE_BADGE");}else finish_page(s,(s.event_run.wongo_total+points)/2000?"AFTER_BUY_BADGE_COUNTER":"AFTER_BUY");return true;}

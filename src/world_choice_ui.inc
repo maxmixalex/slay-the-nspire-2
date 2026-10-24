@@ -38,8 +38,8 @@ static void native_potion_reward_screen(Canvas&c){
  const int label_size=native_reward_label_size(a);layer.bold_face=5;layer.fitted(potion_name(int(bottle),&a.content),138,y+1,60,15,label_size,label_size,selected?Gold:rgb(255,246,226),true,false,true,false);
  native_reward_row_hit(c,y,window.y,HitKind::WorldChoice,0,potion_definition(bottle));
  const bool skip=a.world_choice_min()==0;
- native_proceed(c,209,211,103,27,native_reward_text(a,"gameplay_ui","CHOOSE_CARD_SKIP_BUTTON","跳过"),skip);
- c.action(205,208,111,32,UiAction::ConfirmWorldChoice,skip);
+ native_proceed(c,native_reward_text(a,"gameplay_ui","CHOOSE_CARD_SKIP_BUTTON","跳过"),skip);
+ native_proceed_action(c,UiAction::ConfirmWorldChoice,skip);
 }
 static void world_choice_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;a.sync_selection();a.hit_count=0;

@@ -210,25 +210,19 @@ static void hud(Canvas&c){
     if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
     hud_room_nodes(c);
     if(c.a.run_timer_visible()){
-        // Preserve the authored right-aligned order. When the timer appears,
-        // the three existing 18px buttons use nonoverlapping 20px hit areas.
+        // RightAlignedStuff uses end alignment. Timer visibility must never
+        // move Map/Deck/Pause; a second click must hit the same map button.
         char elapsed[24]{};c.a.run_timer_label(elapsed,sizeof elapsed);
         if(c.a.content.version()>=CharacterDeathContentVersion)c.ui(I9_RunTimerIcon,225,3,7,15);
         Canvas timer=c;timer.font_face=5;timer.text_fitted(elapsed,233,6,24,6,Gold,5,false,true);
-        hud_navigation(c,0,U_TopMap,267,257,20,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
-        hud_navigation(c,1,U_TopDeck,287,277,20,Key::Inspect,true,c.a.panel==1&&c.a.pile_tab==0);
-        hud_deck_count(c,296);
-        hud_navigation(c,2,U_TopSettings,307,297,23,Key::Back,true,c.a.paused);
-    }else{
-#if SPIRE_DEBUG_COMMANDS
-        if(s.practice){c.text_fitted("图鉴",217,5,31,10,Gold,8,true);c.hit(216,0,33,22,HitKind::Command,(int)Key::Collection);}
-        else
-#endif
-        hud_navigation(c,0,U_TopMap,237,225,24,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
-        hud_navigation(c,1,U_TopDeck,266,249,34,Key::Inspect,true,c.a.panel==1&&c.a.pile_tab==0);
-        hud_deck_count(c);
-        hud_navigation(c,2,U_TopSettings,300,283,37,Key::Back,true,c.a.paused);
     }
+#if SPIRE_DEBUG_COMMANDS
+    if(s.practice){c.text_fitted("图鉴",225,5,31,10,Gold,8,true);c.hit(225,0,31,22,HitKind::Command,(int)Key::Collection);}
+#endif
+    hud_navigation(c,0,U_TopMap,267,257,20,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
+    hud_navigation(c,1,U_TopDeck,287,277,20,Key::Inspect,true,c.a.panel==1&&c.a.pile_tab==0);
+    hud_deck_count(c,296);
+    hud_navigation(c,2,U_TopSettings,307,297,23,Key::Back,true,c.a.paused);
     if((!c.a.panel||c.a.panel==3)&&s.phase!=Phase::Complete&&s.phase!=Phase::Dead&&s.phase!=Phase::Error)owned_relic_strip(c);
 
 }

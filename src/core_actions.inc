@@ -2,6 +2,11 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 static CoreObserver core_observer{};
 CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
+void notify_history(const State&s,RunHistoryEvent kind,unsigned model,unsigned detail,unsigned flags,const char*key){
+    const CoreObserver observer=core_observer;if(!observer.on_history)return;
+    const RunHistoryNotice notice{kind,uint16_t(model),uint16_t(detail),uint8_t(flags),key};
+    observer.on_history(observer.context,s,notice);
+}
 void notify_run_fact(const State&s,CoreRunFact kind,unsigned value){
     const CoreObserver observer=core_observer;
     if(observer.on_run_fact)observer.on_run_fact(observer.context,s,unsigned(kind),value);

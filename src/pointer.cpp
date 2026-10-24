@@ -174,6 +174,7 @@ void App::pointer_scroll(int rows){
     if(bestiary.open){bestiary_scroll(rows);return;}
     if(!rows||map_transition_blocks_pointer()||frontend_confirm)return;
     if(settings_open){settings_action(rows>0?UiAction::SettingsScrollDown:UiAction::SettingsScrollUp);return;}
+    if(const auto*hit=hit_at(pointer.x,pointer.y);hit&&hit->kind==HitKind::HistoryJournalScroll){pointer_cancel();history_tooltip.scroll(rows);return;}
     if(keyword_hover_scroll(*this,rows))return;
     if((statistics_open||history_open||run_mode.screen==RunMenu::Custom||run_mode.screen==RunMenu::Daily)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
     sync_map_window();

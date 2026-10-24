@@ -16,6 +16,11 @@ struct GameOverPresentation {
  unsigned intro_delay()const{return event_room?1950u:1750u;}
  uint32_t initial_age(uint32_t now)const{return now-opened;}
  uint32_t summary_age(uint32_t now)const{return now-summary_started;}
+ unsigned black_alpha(uint32_t now)const{return event_room?255*room_curve::linear(initial_age(now),200)/4096:0;}
+ unsigned backstop_phase(uint32_t now)const{
+  const unsigned age=initial_age(now),delay=event_room?200:0;
+  return age<=delay?0:room_curve::sine_in_out(age-delay,1500);
+ }
  bool continue_ready(uint32_t now)const{return bound&&!summary&&initial_age(now)>=intro_delay();}
  unsigned ui_alpha(uint32_t now)const{const unsigned age=initial_age(now),start=intro_delay()-250;return age<start?0:255*room_curve::linear(age-start,250)/4096;}
  unsigned initial_quote_alpha(uint32_t now)const{const unsigned age=initial_age(now);return age<intro_delay()?0:255*room_curve::linear(age-intro_delay(),1500)/4096;}

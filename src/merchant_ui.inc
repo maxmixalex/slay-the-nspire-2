@@ -113,7 +113,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
                 map_reticle_tile(c,p,left,top,left+6,top+6,right,bottom,255,false);}}
         c.action(x-2,y-2,w+4,h+4,UiAction::OpenShop);
         const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
-        native_proceed(c,211,210,105,27,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);c.action(206,207,112,31,UiAction::LeaveShop);
+        native_proceed(c,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);native_proceed_action(c,UiAction::LeaveShop);
         if(!motion.visible(a.map_clock_ms))return;
     }
     const int dy=motion.offset(a.map_clock_ms);

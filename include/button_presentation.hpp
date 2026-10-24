@@ -2,7 +2,7 @@
 #include "health_bar.hpp"
 
 namespace spire {
-enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative };
+enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic };
 enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled };
 struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
@@ -10,7 +10,7 @@ inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     ButtonVisual v;
     if(family==ButtonFamily::RewardAlternative){v.scale=focus?4301:press?3891:4096;v.shade=focus?281:press?179:230;}
     else if(family==ButtonFamily::Pause){v.scale=focus?3891:press?3482:3686;v.y=press?8192:0;}
-    else if(family==ButtonFamily::Action||family==ButtonFamily::Back){v.scale=focus?4301:press&&family==ButtonFamily::Action?3891:4096;v.shade=press?128:255;}
+    else if(family==ButtonFamily::Action||family==ButtonFamily::Back||family==ButtonFamily::Proceed||family==ButtonFamily::TreasureRelic){v.scale=focus?4301:press&&family!=ButtonFamily::Back?3891:4096;v.shade=press&&family!=ButtonFamily::TreasureRelic?128:255;}
     else v.y=press?8192:focus?-2048:0;
     v.hover=focus?4096:0;if(state==ButtonState::Disabled)v.shade=128;
     return v;
@@ -25,6 +25,22 @@ struct ButtonMotion {
     bool interacted=false;
     ButtonVisual sample(uint32_t now)const{
         auto to=button_target(family,state);const uint32_t elapsed=now-start;
+        if(family==ButtonFamily::Proceed||family==ButtonFamily::TreasureRelic){
+            if(state==ButtonState::Disabled)return to;
+            const unsigned duration=state==ButtonState::Focus?50:family==ButtonFamily::TreasureRelic?400:500;
+            const unsigned linear=elapsed>=duration?4096:elapsed*4096/duration;
+            const unsigned scale_q=state==ButtonState::Focus?linear:health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);
+            ButtonVisual out{from.scale+(to.scale-from.scale)*int(scale_q)/4096,0,
+                from.hover+(to.hover-from.hover)*int(linear)/4096,
+                from.shade+(to.shade-from.shade)*int(scale_q)/4096};
+            if(family==ButtonFamily::Proceed&&state==ButtonState::Rest){
+                // NProceedButton loops 0.25 -> 0.75 -> 0.25 in 500ms legs.
+                // The first leg starts from the interrupted outline alpha.
+                if(elapsed<500)out.hover=from.hover+(1024-from.hover)*int(elapsed)/500;
+                else{const unsigned phase=(elapsed-500)%1000;out.hover=phase<500?1024+int(phase)*2048/500:3072-int(phase-500)*2048/500;}
+            }
+            return out;
+        }
         if(family==ButtonFamily::Back){
             // NBackButton: focus and outline rise linearly over 50 ms;
             // press returns to scale 1 over 250 ms (Expo.Out), while its
@@ -62,6 +78,15 @@ struct ButtonMotion {
     }
 };
 constexpr unsigned MaxButtonMotions=32;
+
+namespace proceed_layout {
+// NProceedButton.ShowPos is a viewport ratio, while its child sizes use the
+// uniform FourByThree scale 320/1680. AtlasTexture fits inside Image, not the
+// parent hit rectangle. Text coordinates are relative to Image's 296px box.
+constexpr int X=264,Y=170,W=51,H=21,PivotX=290,PivotY=180;
+constexpr int ImageX=262,ImageY=167,ImageW=56,ImageH=27;
+constexpr int LabelX=273,LabelY=179,LabelW=34,FontSize=6;
+}
 
 // NEndTurnButton + end_turn_button.tscn, pinned v0.111.0. Scales are
 // relative to the authored half-scale Image; alpha and scale use Q12.

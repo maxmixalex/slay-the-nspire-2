@@ -192,7 +192,7 @@ static void world_shared_effect(State&s,WorldStage op,int value){
  case WorldStage::OrbPassive:defect_orb_passive(s,unsigned(value)%MaxOrbs,value/MaxOrbs-1);break;
  case WorldStage::PlayerDeath:if(value||!revive(s))death_cleanup(s);break;
  case WorldStage::AutoPotionUsed:hook(WorldRelicHook::AfterPotionUsed,value,-1);break;
- case WorldStage::SetMaxHp:s.max_hp=int16_t(value);s.hp=int16_t(min(s.hp,s.max_hp));break;
+ case WorldStage::SetMaxHp:{const int old=s.max_hp;s.max_hp=int16_t(value);s.hp=int16_t(min(s.hp,s.max_hp));if(old!=s.max_hp)notify_history(s,old>s.max_hp?RunHistoryEvent::MaxHpLost:RunHistoryEvent::MaxHpGained,unsigned(old>s.max_hp?old-s.max_hp:s.max_hp-old));break;}
  case WorldStage::GambitKill:
   if(power_value(s,XPower::Gambit)){x.powers[int(XPower::Gambit)]=0;player_kill(s);}break;
  default:fail(s);break;

@@ -226,7 +226,9 @@ static void native_treasure_screen(Canvas&c){
  const bool offering=s.treasure_state==1&&s.world.treasure_relic!=NoWorldRelic;
  if(s.treasure_state&&!offering)a.cursor=1;treasure_scene(c);
  const unsigned banner_alpha=a.treasure_banner_opacity();
- if(banner_alpha){Canvas banner=c;banner.opacity=uint8_t(div255(c.opacity*banner_alpha));const int y=a.treasure_banner_offset();banner.ui(U_RewardBanner,34,29+y,252,48);banner.centered(treasure_text(a,"TREASURE_BANNER","宝藏"),47,40+y,226,20,Gold);}
+ if(banner_alpha){Canvas banner=c;banner.opacity=uint8_t(div255(c.opacity*banner_alpha));const int y=a.treasure_banner_offset();
+  banner.ui(a.content.version()>=Ui6ContentVersion?I6_CommonBanner:U_RewardBanner,98,56+y,125,31);
+  banner.font_face=5;banner.fitted(treasure_text(a,"TREASURE_BANNER","宝藏"),117,60+y,86,16,6,5,rgb(255,246,226),true,false,true,false,rgb(74,60,42));}
  if(!s.treasure_state){
   // Projection of the original centered 800x500 Chest control at 1920x1080.
   c.action(87,96,162,101,UiAction::TreasureOpen);
@@ -234,24 +236,27 @@ static void native_treasure_screen(Canvas&c){
   Canvas collection=c;collection.opacity=uint8_t(div255(c.opacity*a.treasure_collection_opacity()));
   Canvas holder=collection;holder.opacity=uint8_t(div255(collection.opacity*a.treasure_holder_opacity()));
   holder.brightness=uint8_t(div255(collection.brightness*a.treasure_holder_brightness()));
-  const int holder_y=a.treasure_holder_offset();holder.picture(a.relic_face_image(s.world.treasure_relic),138,84+holder_y,44,44);
+  // The centered single-player holder is 204x204; its child relic is 68px
+  // at 2x scale with a 60px icon. Keep those separate source rectangles.
+  const int holder_y=a.treasure_holder_offset();
+  const auto visual=c.control_visual("TREASURE_RELIC",141,85+holder_y,39,39,ButtonFamily::TreasureRelic,!a.pointer.visible&&a.cursor==0,a.treasure_pointer_can_take());
+  const int size=mx(1,23*visual.scale/4096),left=149-(size-23+1)/2,top=93+holder_y-(size-23+1)/2;
+  int outline=collection_assets::RelicOutline[s.world.treasure_relic];
+  if(s.world.treasure_relic==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[unsigned(s.character)<5?unsigned(s.character):0];
+  if(outline>=0){Canvas shadow=holder;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}
+  holder.picture(a.relic_face_image(s.world.treasure_relic),left,top,size,size);
   // Omitting the hit while ignored also rejects a press begun before the
   // gate that is released after it. No disabled capture can become enabled.
-  if(a.treasure_pointer_can_take())c.action(119,77+holder_y,82,77,UiAction::TreasureTake);
-  // Reserve the full +30px entry extent above the readable fixed labels.
-  // Two 12px description lines end before the Proceed hit region at y=205.
-  collection.centered(a.relic_title(s.world.treasure_relic),13,158,294,16,Gold);
-  char description[2048]{};a.relic_description(s.world.treasure_relic,description,sizeof description);collection.paragraph(description,31,178,258,2,0,12,White);
-  // The calculator's fixed readable labels and focused Confirm remain
-  // available during the original holder's entry motion.
-  c.button("详情",112,211,91,false,24);c.hit(109,207,96,31,HitKind::Command,int(Key::Detail));
+  if(a.treasure_pointer_can_take())c.action(141,85+holder_y,39,39,UiAction::TreasureTake);
+  // NTreasureRoomRelicHolder owns a hover-tip set. The legacy always-visible
+  // title, description and extra Details button are not in this scene.
  }else{
   if(s.treasure_state==1&&a.treasure_collection_opacity()){
    Canvas empty=c;const unsigned self_alpha=treasure_alpha8(treasure_linear(0,65535,a.animation-a.treasure_open_tick,250));
-   empty.opacity=uint8_t(div255(div255(c.opacity*a.treasure_collection_opacity())*self_alpha));empty.centered(treasure_text(a,"TREASURE_EMPTY","空的……"),21,65,278,16,White);
+   empty.opacity=uint8_t(div255(div255(c.opacity*a.treasure_collection_opacity())*self_alpha));empty.fitted(treasure_text(a,"TREASURE_EMPTY","空的……"),112,101,96,38,9,8,rgb(135,206,235),true,false,true);
   }
   owned_relic_strip(c);
  }
- const bool enabled=a.treasure_can_proceed();native_proceed(c,212,210,102,28,treasure_text(a,offering?"SKIP_REWARDS_BUTTON":"PROCEED_BUTTON",offering?"跳过":"前进"),enabled,a.cursor==1);
- c.action(208,205,112,33,UiAction::TreasureLeave,enabled);
+ const bool enabled=a.treasure_can_proceed();native_proceed(c,treasure_text(a,offering?"SKIP_REWARDS_BUTTON":"PROCEED_BUTTON",offering?"跳过":"前进"),enabled,a.cursor==1);
+ native_proceed_action(c,UiAction::TreasureLeave,enabled);
 }

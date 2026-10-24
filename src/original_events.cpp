@@ -80,6 +80,12 @@ bool pause_selection(State&s,OriginalEventSelection kind,OriginalEventFilter fil
  e.selected_count=e.selected_cursor=0;e.selection_committed=0;s.phase=Phase::OriginalEventChoice;return true;
 }
 bool event_special(State&,int,int,int,int,int);
+static bool history_event_gold_is_spent(OriginalEventId id){
+ switch(id){case OriginalEventId::ZenWeaver:case OriginalEventId::CrystalSphere:case OriginalEventId::EndlessConveyor:
+ case OriginalEventId::TeaMaster:case OriginalEventId::LuminousChoir:case OriginalEventId::RanwidTheElder:
+ case OriginalEventId::WelcomeToWongos:case OriginalEventId::WhisperingHollow:case OriginalEventId::WaterloggedScriptorium:
+ case OriginalEventId::FakeMerchant:return true;default:return false;}
+}
 #include "original_event_rewards.inc"
 void apply_selection(State&s){auto&e=s.original_events;
  while(e.selection_committed&&e.selected_cursor<e.selected_count&&!world_relic_pending(s)&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){
@@ -96,7 +102,7 @@ void apply_selection(State&s){auto&e=s.original_events;
    if(index>=s.deck_count){fail(s);return;}
    switch(e.selection){
    case OriginalEventSelection::Remove:if(!event_remove_deck_card(s,int(index))){fail(s);return;}break;
-   case OriginalEventSelection::Upgrade:s.deck[index].upgraded=1;record(s,LogKind::Upgrade,s.deck[index].kind);break;
+   case OriginalEventSelection::Upgrade:s.deck[index].upgraded=1;record(s,LogKind::Upgrade,s.deck[index].kind);notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[index])));break;
    case OriginalEventSelection::Enchant:if(!event_card_enchant(s,int(index),EventEnchantment(e.select_enchantment),e.select_amount)){fail(s);return;}break;
    case OriginalEventSelection::Transform:{
     auto rng=event_random(s);Card replacement{};EventCardFacts facts{};
@@ -120,7 +126,10 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
  case OriginalEventOp::MaxHp:
   if(step.a>=0)increase_max_hp(s,step.a);else player_lose_max_hp(s,-int(step.a));return true;
  case OriginalEventOp::KillPlayer:player_kill(s,step.a!=0);return true;
- case OriginalEventOp::Gold:if(step.a<0&&s.gold<-step.a)return false;gain_gold(s,step.a);return true;
+ case OriginalEventOp::Gold:
+  if(step.a<0&&s.gold<-step.a)return false;
+  if(step.a<0&&history_event_gold_is_spent(e.id)){s.gold=int16_t(s.gold+step.a);record(s,LogKind::Gold,step.a);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(-int(step.a)));}
+  else gain_gold(s,step.a);return true;
  case OriginalEventOp::AddCard:case OriginalEventOp::AddCurse:
   if(step.a<0||step.a>=CardKinds||step.b!=1||step.c<0||step.c>1||s.deck_count>=MaxDeck)return false;
   if(step.op==OriginalEventOp::AddCurse&&definitions[step.a].type!=CardType::Curse)return false;
@@ -154,7 +163,7 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
   // StableShuffle first orders CardModels by model key, then upgrade level.
   if(step.b)for(unsigned i=1;i<n;i++){auto value=ids[i];unsigned j=i;while(j&&compare_text(definitions[s.deck[ids[j-1]].kind].key,definitions[s.deck[value].kind].key)>0){ids[j]=ids[j-1];--j;}ids[j]=value;}
   auto rng=event_random(s);reference::shuffle(ids,n,rng);keep_random(s,rng);
-  for(unsigned i=0;i<n&&i<unsigned(step.a);i++){s.deck[ids[i]].upgraded=1;record(s,LogKind::Upgrade,s.deck[ids[i]].kind);}return true;
+  for(unsigned i=0;i<n&&i<unsigned(step.a);i++){s.deck[ids[i]].upgraded=1;record(s,LogKind::Upgrade,s.deck[ids[i]].kind);notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[ids[i]])));}return true;
  }
  case OriginalEventOp::CardReward:{
   if(step.a<=0||step.a>int(MaxOriginalEventOffers)||step.b<0||step.b>int(WorldCardPool::Own)||step.c< -1||step.c>10||step.d<0||step.e<step.d||step.e>step.a)return false;
@@ -199,6 +208,7 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
  }
 }
 #include "original_event_rules.inc"
+#include "history_event_choices.inc"
 }
 
 const char* original_event_key(OriginalEventId id){return unsigned(id)<unsigned(OriginalEventId::Count)?names[unsigned(id)].key:"";}
@@ -224,7 +234,8 @@ bool original_event_option_enabled(const State&s,int option){
 }
 bool original_event_choose(State&s,int option){
  if(!original_event_option_enabled(s,option))return false;if(s.original_events.finished)return original_event_leave(s);
- if(!rules_choose(s,unsigned(option)))return false;record(s,LogKind::Event,int(s.original_events.id),option);
+ const auto history=history_event_choice(s,unsigned(option));
+ if(!rules_choose(s,unsigned(option)))return false;history_event_chosen(s,history);record(s,LogKind::Event,int(s.original_events.id),option);
  original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
 void original_event_resume(State&s){auto&e=s.original_events;
@@ -268,6 +279,15 @@ bool original_event_select(State&s,const uint16_t*ids,unsigned count){auto&e=s.o
   if(!found)return false;for(unsigned j=0;j<i;j++)if(ids[j]==ids[i])return false;
  }
  if((e.selection==OriginalEventSelection::OfferCard||e.selection==OriginalEventSelection::Duplicate)&&s.deck_count+count>MaxDeck)return false;
+ const bool reward_wrapper=e.reward_active&&e.reward_current<e.reward_count;
+ if(e.selection==OriginalEventSelection::OfferCard&&(count||!reward_wrapper))for(unsigned i=0;i<e.offer_count;++i){
+  bool picked=false;for(unsigned j=0;j<count;++j)if(ids[j]==i)picked=true;
+  notify_history(s,picked?RunHistoryEvent::CardPicked:RunHistoryEvent::CardSkipped,e.offers[i]);
+ }
+ if(e.selection==OriginalEventSelection::Relic&&(count||!reward_wrapper))for(unsigned i=0;i<e.offer_count;++i){
+  bool picked=false;for(unsigned j=0;j<count;++j)if(ids[j]==i)picked=true;
+  if(!picked)notify_history(s,RunHistoryEvent::RelicSkipped,e.offers[i]);
+ }
  e.selected_count=uint16_t(count);e.selected_cursor=0;e.selection_committed=1;
  for(unsigned i=0;i<count;i++){
   e.selected[i]=ids[i];
@@ -285,6 +305,7 @@ bool original_event_potion(State&s,int slot){auto&e=s.original_events;
   bool room=false;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)room=true;
   if(!room)return false;
  }
+ if(slot<0&&!(e.reward_active&&e.reward_current<e.reward_count))notify_history(s,RunHistoryEvent::PotionSkipped,unsigned(potion));
  clear_selection(s);s.phase=Phase::Event;
  if(slot>=0){
   if(!procure_potion(s,potion)&&!has_world_relic(s,WorldRelicSozu)){fail(s);return false;}
@@ -295,7 +316,7 @@ bool original_event_potion(State&s,int slot){auto&e=s.original_events;
 }
 bool original_event_reward(State&s,int index){auto&e=s.original_events;
  if(!e.active||!e.reward_active||s.phase!=Phase::OriginalEventChoice||e.selection!=OriginalEventSelection::Rewards||world_relic_pending(s)||index< -1||index>=int(e.reward_count))return false;
- if(index<0){e.reward_active=0;e.reward_current=NoOriginalEventReward;clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;}
+ if(index<0){for(unsigned i=0;i<e.reward_count;++i)history_skip_event_reward(s,e.rewards[i]);e.reward_active=0;e.reward_current=NoOriginalEventReward;clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;}
  auto&r=e.rewards[index];if(r.claimed)return false;
  if(r.kind==2&&!has_world_relic(s,WorldRelicSozu)){
   bool room=false;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)room=true;
@@ -313,12 +334,13 @@ bool original_event_reward(State&s,int index){auto&e=s.original_events;
  original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
 bool original_event_has_card_reward(const State&s){const auto&e=s.original_events;return e.active&&s.phase==Phase::OriginalEventChoice&&e.selection==OriginalEventSelection::OfferCard&&e.reward_active&&e.reward_current<e.reward_count&&e.rewards[e.reward_current].kind==4&&!e.rewards[e.reward_current].claimed&&!e.selection_committed;}
-bool original_event_consume_card_reward(State&s){if(!original_event_has_card_reward(s))return false;auto&e=s.original_events;e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;clear_selection(s);++s.revision;return true;}
+bool original_event_consume_card_reward(State&s){if(!original_event_has_card_reward(s))return false;auto&e=s.original_events;history_skip_event_reward(s,e.rewards[e.reward_current]);e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;clear_selection(s);++s.revision;return true;}
 bool original_event_can_reroll_reward(const State&s){return original_event_has_card_reward(s)&&(s.original_events.rewards[s.original_events.reward_current].flags&4)!=0;}
 bool original_event_reroll_reward(State&s){if(!original_event_can_reroll_reward(s))return false;auto&e=s.original_events;auto&r=e.rewards[e.reward_current];WorldCardOptions options;
  options.flags=r.creation_flags;options.rarity_mask=r.rarity_mask;options.type_mask=r.type_mask;options.zero_energy=r.zero_energy;options.pool_count=r.pool_count;options.odds=WorldCardOdds(r.odds);options.source=WorldCardSource(r.source);for(unsigned i=0;i<r.pool_count;i++)options.pools[i]=WorldCardPool(r.pools[i]);
  Card cards[MaxOriginalEventOffers];EventCardFacts facts[MaxOriginalEventOffers];unsigned made=0;auto local=event_random(s);auto&rng=(r.flags&16)?local:world_rng(s,WorldRng::Rewards);
  if(!world_create_reward(s,rng,r.original_count,options,cards,facts,MaxOriginalEventOffers,&made)||made!=r.count){fail(s);return false;}if(r.flags&16)keep_random(s,local);
+ history_skip_event_reward(s,r);
  r.flags=uint8_t((r.flags&~4)|8);for(unsigned i=0;i<made;i++){if((r.flags&2)&&card_upgradeable(cards[i]))cards[i].upgraded=1;e.reward_cards[r.first+i]=e.offers[i]=uint16_t(card_token(cards[i]));e.reward_facts[r.first+i]=e.offer_facts[i]=facts[i];}e.offer_count=uint16_t(made);++s.revision;return true;
 }
 bool original_event_leave(State&s){auto&e=s.original_events;

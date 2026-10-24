@@ -216,7 +216,7 @@ bool camp(State&s,bool upgrading){
 }
 bool upgrade_card(State&s,int index){
     if(s.phase!=Phase::Upgrade||index<0||index>=s.deck_count||!card_upgradeable(s.deck[index]))return false;
-    s.deck[index].upgraded=1;record(s,LogKind::Upgrade,s.deck[index].kind);
+    s.deck[index].upgraded=1;record(s,LogKind::Upgrade,s.deck[index].kind);notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[index])));
     if(s.event_deck_action==EventDeckAction::Upgrade)complete_event_selection(s);else finish_room(s);
     return true;
 }

@@ -51,7 +51,7 @@ bool use_potion(State&s,int slot,int target){
     Potion p=s.potions[slot];
     const auto* definition=potion_definition(p);if(!definition->targeted)target=-1;
     // Consume first so the same bottle cannot be reused during any later hook.
-    s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,(int)p);
+    s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,(int)p);notify_history(s,RunHistoryEvent::PotionUsed,unsigned(p));
     const bool fighting=s.phase==Phase::Combat;
     if(fighting)s.expansion.potion_active=1;
     before_potion_use(s,p,target);
@@ -85,6 +85,6 @@ bool can_discard_potion(const State&s,int slot){
 }
 bool discard_potion(State&s,int slot){
     if(!can_discard_potion(s,slot))return false;
-    Potion old=s.potions[slot];s.potions[slot]=Potion::Empty;world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,(int)old,slot);s.revision++;return true;
+    Potion old=s.potions[slot];s.potions[slot]=Potion::Empty;notify_history(s,RunHistoryEvent::PotionDiscarded,unsigned(old));world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,(int)old,slot);s.revision++;return true;
 }
 }

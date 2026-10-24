@@ -5,7 +5,7 @@ Reference: owner-supplied v0.111.0 / 41cef1ea C# and PCK. This records implement
 ## Original source contracts
 
 - `Nodes.Screens.GameOverScreen/NGameOverScreen.cs`: initial death/victory screen, Continue → summary, score lines, badge container, discoveries, and Main Menu. Continue/Main Menu use Select on release. The pinned source creates a View Run child-screen handler but `_Ready()` disables its button and the scene hides it; no later enable call exists. The port therefore hides and disables this entry, including its Confirm hotkey. Normal Compendium → Run History remains available.
-- `Nodes.Screens.GameOverScreen/{NScoreLine,NBadge,NDiscoveredItem,NRunSummary}.cs` and `scenes/screens/game_over_screen/{game_over_screen,score_line,badge,discovered_item,game_over_button}.tscn`: uniformly project the 1680 × 1260 viewport. The banner is 125 × 31; score rows 100 × 9 with a 7-pixel step; badge cells 13 × 13; bottom buttons 50 × 12. Actual source textures replace the former oversized Proceed and unrelated merchant image.
+- `Nodes.Screens.GameOverScreen/{NScoreLine,NBadge,NDiscoveredItem,NRunSummary}.cs`, `scenes/screens/game_over_screen.tscn`, and its `game_over_screen/{score_line,badge,discovered_item,game_over_button}.tscn` children: uniformly project the 1680 × 1260 viewport. The banner is 125 × 31; score rows 100 × 9 with a 7-pixel step; badge cells 13 × 13; bottom buttons 50 × 12. Actual source textures replace the former oversized Proceed and unrelated merchant image.
 - `Runs/ScoreUtility.cs`: weighted per-act floor points, cumulative gold gained / 100 for one player, 50 points per elite, 100 per boss, then the original binary64 Ascension multiplier and truncation. The source unconditionally excludes a final Elite room; a final Boss is excluded only on a loss. This pinned behavior is retained.
 - `Models.Badges/BadgePool.cs` and the nineteen single-player badge models: original order, final deck/relic/HP/gold conditions, actual 20-card turn, actual shop spending, rest choices, unknown map points, and perfect bosses. The four multiplayer-only badges are outside the single-player target.
 - `Nodes.Screens.RunHistoryScreen/NRunHistory.cs`: encounter/event loss localization, character/grammar substitution, and seed-local deterministic false-victory/abandon quote selection. Presentation never advances simulation RNG.
@@ -53,6 +53,52 @@ The animation state occupies 40 bytes. It caches nineteen immutable badge tiers 
 
 The character module supplies the five original non-looping Die clips in resource version 29, with exact terminal frames. `game_over_actor` is layered above the entry backstop and below the summary backstop; event creatures share the 200 ms entry fade. Older resource versions remain readable and do not substitute an unrelated portrait or Hurt/Camp pose.
 
+## Original transition mask and resource compatibility
+
+Full App screenshot review of the stage-seven actual-resource tests exposed a
+real remaining difference: the general `Canvas::dim` painted green-black Ink,
+and a uniform fade replaced the authored texture transition. The stage-eight
+candidate corrects the renderer from `game_over_screen.tscn`,
+`materials/transitions/game_over_transition_mat.tres`, and
+`shaders/texture_transition.gdshader`:
+
+- The event-only `FullBlackBackstop` fades to **pure black** over 200 ms and
+  stays opaque. Its tween finishes before the following shader tween starts.
+- The normal backstop retains source color `(0.12, 0, 0.042)`, converted by the
+  existing RGB565 canvas as `rgb(31,0,11)`, and material opacity `0.9`.
+- The 1,500 ms Sine InOut tween evaluates
+  `step(1 - texture.red, mix(-0.1, 1.1, threshold))`. There is no additional
+  fade: the actual material sets `additionalFade` to zero.
+- The creature, including its separate additive particle plane, remains above
+  both initial backstops. The separate summary backstop then covers the
+  creature with source RGB `(29,3,0)` and opacity `224/255` over 500 ms.
+
+NSP2 **v31** appends exactly one static image, auxiliary index **2049**, after
+the four v30 history icons. The total is **2,050 auxiliary images**, **1,765
+clips**, and the unchanged **8,704 strings**. Versions 29 and 30 keep their
+original counts and remain readable. Pre-v31 packs have no source transition
+mask and use the corrected color/opacity/timing with a uniform fallback; the
+final matching v31 resources use the authored mask.
+
+The original imported BPTC texture is 2560 × 1200 with only its base level
+(3,072,052 imported bytes). A full 320 × 240 ColorRect samples it at source
+pixel centers `(8*x+3.5, 5*y+2)`. The converter preserves the sum of its two
+horizontal red texels as a **0–510 scalar in the existing 16-bit image
+storage**. This retains half-red samples instead of reducing the shader to
+RGB565's five-bit red channel. The runtime uses one integer cutoff per frame
+and one comparison per pixel; the settled frame directly draws the uniform
+source color and does not fetch the mask. It creates no additional raster,
+permanent buffer, frame cache, or simulation state. The decoded mask is
+153,600 bytes / 38 pages of the existing shared image cache; the measured
+lossless LZ4 image payload is 56,355 bytes before directory overhead.
+
+`patch_game_over_transition_assets.py` only appends this image to the final
+v30 packs. It does not rebake character clips or historical art. Its existing
+append relocation checks require old image/glyph/string/clip/model entries
+and old payload bytes to remain equal after relocation. Native content,
+locale boot, split-file readers, tile readers, recompression and font tools
+share the version contract; regression fixtures retain future-v32 rejection.
+
 Retained victory powers exist only in live presentation. Loading an already-cleared reward save does not reconstruct unavailable powers. Resetting or entering a new battle clears the retained view. The root reward-room underlay draws the retained player strip only while the identity-bound freeze is valid.
 
 ## Verification and remaining differences
@@ -61,4 +107,37 @@ Stage6 native acceptance passed the new observed-facts, game-over UI, power-orde
 
 `game_over_facts_ui8_regression` checks score arithmetic and final-room semantics, nineteen-badge representative boundaries, positive facts versus incomplete prefixes, actual shop/removal and rest cancellation, actual generated-and-played twenty-card turn, blocked/unblocked damage, same-point Perfect invalidation, discovery deduplication, NSH6 round trips and old NSH5 decoding, source timing boundaries, release input contexts, the original hidden View Run gate, and unchanged simulation save bytes. Existing game-over flow tests wait for the actual intro/summary timeline, check absent early hits, and verify observed gold rather than the removed balance row. NSH1 and NSH5 migration tests construct genuine historical prefixes. Power regression covers live victory with/without feedback, persistence/reset, and semantic save equivalence.
 
-Remaining material visual/flow differences are explicit: the entry backdrop uses a bounded raster fade in place of the original threshold shader; the original per-floor detailed acquired/removed/upgraded/bought/reward-card-choice journal is not yet retained. First-time tutorial overlays are also still absent. Die resource/particle acceptance is reported by the character module's Stage7 validation, separately from these UI timing checks. Timeline unlock presentation, audio, and multiplayer are outside this single-player port's scope; original disabled View Run and Achievements controls are not counted as missing behavior.
+Matching stage-seven native code and v29 ENG/ZHS packs each passed 1,334 full
+App game-over checks, including actual initial and summary artwork, early
+disabled buttons, modal exclusion, Main Menu, and unchanged saved facts.
+Their eight captures were visually reviewed; the initial backdrop defect
+above was found despite those functional passes. Matching isolated actor
+checks separately passed 8,090 checks per language across all five characters
+in combat, event, rest, and merchant coordinate systems, with exact held
+terminal body frames, decaying source particle layers, and the original timer.
+Those results certify the earlier executed stage, not the later correction.
+
+The stage-eight `world_game_over_ui_regression` candidate captures all five
+full actors at opening, 100 ms, 200 ms, 950 ms, and settled entry; it captures
+first/next score lines, badge entry, discovery header/items, and settled
+summary. It also covers a real first-combat death and the Architect route,
+explicitly marking supplied earlier room outcomes as partial history. The
+same real key-down/repeat/key-up sequence verifies that a press held across a
+disabled interval cannot activate when released, while a fresh release does.
+The private-Canvas `character_death_ui9_regression` candidate checks every
+scalar and clock phase against the source shader equation and, with v31
+resources, compares 27 complete rendered masks against an independent scalar
+oracle at three opacities. These new checks require the next frozen native
+build and matching final-resource execution; short syntax and synthetic
+projection checks alone are not visual acceptance.
+
+The detailed per-floor acquisition/choice journal is implemented in the
+parallel stage-eight candidate; its provenance, compatibility and executed
+acceptance belong to that module's report. Remaining differences include
+first-time tutorial overlays and the death particle implementation's fixed
+presentation random seed / bounded CPU approximation for Regent turbulence;
+the source authored timing, emission counts, images and body frames are
+retained. Timeline unlock presentation, audio, and multiplayer are outside
+this single-player port's scope; original disabled View Run and Achievements
+controls are not counted as missing behavior. No whole-game fidelity
+percentage is inferred from these tests.

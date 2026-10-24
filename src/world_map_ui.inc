@@ -147,64 +147,9 @@ static uint8_t map_window_product(unsigned byte,unsigned q12){
     return uint8_t((byte*q12+2048)/4096);
 }
 #include "world_map_drawing_ui.inc"
-static bool map_history_key(const char*a,const char*b){unsigned i=0;while(a[i]&&a[i]==b[i])++i;return a[i]==b[i];}
-static LocalizedValue map_history_number(const void*context,const char*key){
-    const auto&h=*static_cast<const UiFloorHistory*>(context);
-    const char*keys[]={"FloorNum","HP","MaxHP","Gold","Turns","Amount"};
-    const uint32_t values[]={h.floor,h.hp,h.max_hp,h.gold,h.turns,h.gold_gained};
-    for(unsigned i=0;i<6;++i)if(map_history_key(key,keys[i]))return {true,values[i],1,nullptr};
-    if(map_history_key(key,"Icon"))return {true,0,1,""};
-    return {};
-}
-static void map_history_text(const App&a,const UiFloorHistory&h,const char*key,const char*fallback,char*out,unsigned size){
-    const char*format=a.content.world_string("run_history",key);
-    LocalizedTemplate(out,size,map_history_number,&h).format(*format?format:fallback);
-}
-static void map_history_tip(Canvas&c,const reference::ReferenceMap&m,unsigned point,int node_x,int node_y){
-    auto&a=c.a;const auto*h=a.current_floor_history(a.game.world.act_index,point);if(!h)return;
-    const auto type=m.points[point].type;const auto room=WorldRoom(h->room);
-    const char*room_key=type==reference::PointType::Start?"ROOM_ANCIENT":room==WorldRoom::Event?"ROOM_EVENT":
-        room==WorldRoom::Shop?"ROOM_MERCHANT":room==WorldRoom::Rest?"ROOM_REST":room==WorldRoom::Treasure?"ROOM_TREASURE":
-        room==WorldRoom::Elite?"ROOM_ELITE":room==WorldRoom::Boss?"ROOM_BOSS":"ROOM_ENEMY";
-    if(type==reference::PointType::Unknown){
-        if(room==WorldRoom::Monster)room_key="ROOM_UNKNOWN_ENEMY";
-        else if(room==WorldRoom::Elite)room_key="ROOM_UNKNOWN_ELITE";
-        else if(room==WorldRoom::Shop)room_key="ROOM_UNKNOWN_MERCHANT";
-        else if(room==WorldRoom::Treasure)room_key="ROOM_UNKNOWN_TREASURE";
-    }
-    char key[64]{},title[96]{},player[192]{},room_text[256]{},turns[96]{},gold[96]{};
-    TextBuffer k{key,sizeof key,0};k.text(room_key);k.text(".title");
-    TextBuffer r{room_text,sizeof room_text,0};r.text(a.content.world_string("static_hover_tips",key));
-    const char*model="";
-    if(room==WorldRoom::Event)model=a.content.world_title("events",original_event_key(OriginalEventId(h->event)));
-    else if(room==WorldRoom::Monster||room==WorldRoom::Elite||room==WorldRoom::Boss)
-        if(const auto*definition=encounter_definition(EncounterId(h->encounter)))model=a.content.world_title("encounters",definition->key);
-    // MAP_POINT_HISTORY.room_stats is the room type followed by an optional
-    // model title. Keep that structure, including no invented model for shops.
-    if(*model){r.ch(' ');r.text(model);}
-    map_history_text(a,*h,"MAP_POINT_HISTORY.header",a.content.english()?"Floor {FloorNum}":"第{FloorNum}层",title,sizeof title);
-    map_history_text(a,*h,"MAP_POINT_HISTORY.player_stats",a.content.english()?"{HP}/{MaxHP} HP    {Gold} Gold":"{HP}/{MaxHP}生命    {Gold}金币",player,sizeof player);
-    const bool combat=room==WorldRoom::Monster||room==WorldRoom::Elite||room==WorldRoom::Boss;
-    if(combat)map_history_text(a,*h,"MAP_POINT_HISTORY.turnsTaken",a.content.english()?"{Turns} {Turns:plural:Turn|Turns}":"{Turns}回合",turns,sizeof turns);
-    if(h->gold_gained)map_history_text(a,*h,"HISTORY_ENTRY.goldGained",a.content.english()?"{Amount} Gold":"{Amount}金币",gold,sizeof gold);
-    // The PC tooltip's 22px body would be below five device pixels at 4:3.
-    // Use readable 8px text and a bounded 156px bubble beside the selected
-    // node; source gold title, rich HP/gold colors and row order are retained.
-    constexpr int width=156,body_width=140;
-    const int player_lines=mn(2,c.paragraph(player,0,0,body_width,0,0,8));
-    const int room_lines=mn(3,c.paragraph(room_text,0,0,body_width,0,0,8));
-    const int height=25+(player_lines+room_lines)*11+(combat?12:0)+(*gold?14:0);
-    const int x=mn(318-width,mx(2,node_x<160?node_x+20:node_x-20-width));
-    const int y=mn(238-height,mx(WorldMapTop,node_y-height/2));
-    const int skin=a.content.world_image("common","HOVER_TIP");
-    if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,y+2,width,height,28,22,46,16,64);c.nine_image(skin,x,y,width,height,28,22,46,16);}
-    else{c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Muted);}
-    Canvas shadow=c;shadow.opacity=uint8_t(unsigned(c.opacity)*64/255);shadow.text(title,x+8,y+4,10,0,body_width);
-    c.text(title,x+7,y+3,10,Gold,body_width);
-    int at=y+18;c.paragraph(player,x+7,at,body_width,player_lines,0,8,rgb(255,246,226));at+=player_lines*11;
-    c.paragraph(room_text,x+7,at,body_width,room_lines,0,8,rgb(255,246,226));at+=room_lines*11;
-    if(combat){c.text(turns,x+7,at,8,rgb(255,246,226),body_width);at+=12;}
-    if(*gold){c.picture(A_Coin,x+7,at,10,10);c.text(gold,x+20,at,8,rgb(255,246,226),body_width-13);}
+static void map_history_tip(Canvas&c,const reference::ReferenceMap&,unsigned point,int node_x,int node_y){
+ auto&a=c.a;const auto*h=a.current_floor_history(a.game.world.act_index,point);if(!h)return;
+ journal_floor_tooltip(c,a.progress.current,unsigned(h-a.progress.current.floors),node_x,node_y,2);
 }
 static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*window=nullptr){
     Canvas c=parent;
@@ -219,7 +164,8 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);
     const int legend_offset=window?map_source_offset(window->legend_x_q12):0;
     if(a.pointer.visible&&a.map_drawing.mode==MapDrawingMode::None&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help){
-        const int hovered=map_legend_hover(a,legend_offset);a.map_legend=hovered>=0;
+        const bool over_history=a.history_tooltip.source==2&&a.history_tooltip.serial==a.progress.current.serial&&a.history_tooltip.contains(a.pointer.x,a.pointer.y);
+        const int hovered=over_history?-1:map_legend_hover(a,legend_offset);a.map_legend=hovered>=0;
         if(hovered>=0)a.map_legend_item=uint8_t(hovered);
     }
     // A HUD window uses the authored BG alpha over the retained live room;
@@ -234,6 +180,15 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     // Paths and Marker are siblings of Points and do not share that delay.
     Canvas points=c;if(window)points.opacity=map_window_product(points.opacity,window->points_alpha);
     unsigned history_point=reference::NoPoint;int history_x=0,history_y=0;
+    const auto&hover_history=a.history_tooltip;
+    if(a.pointer.visible&&hover_history.source==2&&hover_history.serial==a.progress.current.serial&&hover_history.floor>=0&&hover_history.floor<a.progress.current.floor_count&&
+       hover_history.contains(a.pointer.x,a.pointer.y)&&!a.map_visuals.traveling()&&!a.map_directional&&a.map_drawing.mode==MapDrawingMode::None&&
+       !a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help&&!a.map_legend&&(!a.panel||a.panel==3)&&(!window||a.map_window.is_open)){
+        const auto&floor=a.progress.current.floors[hover_history.floor];
+        if(floor.act==s.world.act_index&&floor.point<m->count&&floor.point!=s.world.current_point&&a.map_visuals.traveled(s,floor.point)){
+            history_point=floor.point;history_x=layout.points[history_point].x;history_y=layout.points[history_point].y+view.origin;
+        }
+    }
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
         const bool traveling=a.map_visuals.traveling(),target=a.map_visuals.target()==i;

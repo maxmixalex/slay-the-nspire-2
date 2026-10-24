@@ -111,9 +111,22 @@ bool event_hover_target(const App&a,CardHoverTarget&target){
     target.identity=0x60000000u|(unsigned(a.game.original_events.id)<<16)|(unsigned(a.game.original_events.page)<<8)|unsigned(hit->value);
     return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return event_hover_target(a,target)||card_hover_target(a,target);}
+static bool treasure_hover_target(const App&a,CardHoverTarget&target){
+    const auto&s=a.game;
+    if(!s.world.active||s.phase!=Phase::Treasure||s.treasure_state!=1||s.world.treasure_relic>=WorldRelicKinds||
+       a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||a.library||a.panel||a.map_window.visible||
+       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.pointer.held||a.map_transition_blocks_pointer())return false;
+    const HitRegion*hit=nullptr;
+    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind!=HitKind::UiAction||h.value!=int(UiAction::TreasureTake)||!h.enabled)continue;
+        if(a.pointer.visible?hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y):a.cursor==0){hit=&h;break;}}
+    if(!hit)return false;
+    target={};target.relic=int(s.world.treasure_relic);target.owner={hit->x,hit->y,hit->w,hit->h};
+    target.identity=0x71000000u|unsigned(s.world.treasure_relic);return true;
+}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){return treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
-    if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
+    if(owner.relic>=0){out={};event_hover_relic(a,out,RelicId(owner.relic),true);out.finish();}
+    else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
     else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.facts);
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){

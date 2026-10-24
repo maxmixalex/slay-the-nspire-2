@@ -120,7 +120,7 @@ static void crystal_screen(Canvas&c){
  }else{
   a.cursor=0;
   const char*proceed=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
-  native_proceed(layer,209,211,103,27,*proceed?proceed:"前进",true);c.hit(205,208,111,32,HitKind::Choice,0,true);
+  native_proceed(layer,*proceed?proceed:"前进",true);native_proceed_choice(c,0);
  }
  if(resources)crystal_dialogue(layer);
 }

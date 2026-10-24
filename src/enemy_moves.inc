@@ -67,7 +67,7 @@ static void enemy_take_card(State&s,int t){
   if(priority<best){best=priority;n=0;}if(priority==best)candidates[n++]=(uint16_t)id;
  }}
  if(!n)return;int id=candidates[world_rng(s,WorldRng::CombatCardGeneration).below(n)],deck=s.event_cards.deck_origin[id]-1;
- if(!event_take_deck_card(s,deck,m.captured_deck))return;enemy_remove_instance(s,id);m.captured_card=(uint16_t)(id+1);enemy_apply_power(s,t,EnemyPower::Swipe,1,t);
+ if(!event_take_deck_card(s,deck,m.captured_deck))return;notify_history(s,RunHistoryEvent::CardRemoved,unsigned(card_token(m.captured_deck.card)));enemy_remove_instance(s,id);m.captured_card=(uint16_t)(id+1);enemy_apply_power(s,t,EnemyPower::Swipe,1,t);
 }
 static void enemy_execute_special(State&s,int t,int step){
  if(!enemy_slot_exists(s,t))return;if(step==254){enemy_visual_attack_end(s,t);return;}auto&m=s.enemy_world.models[t];EnemyCommands q{s,t};auto value=[&](EnemyValue v){return enemy_number(s,t,v);};
@@ -81,7 +81,7 @@ static void enemy_execute_special(State&s,int t,int step){
  case EnemyId::Fabricator:{
   EnemyId pool[2]={step==0?EnemyId::Guardbot:EnemyId::Zapbot,step==0?EnemyId::Noisebot:EnemyId::Stabbot};EnemyId candidates[2];unsigned n=0;for(auto k:pool)if((int)k!=m.data[0])candidates[n++]=k;
   int slot=enemy_open_slot(s);if(slot>=0&&n){EnemyId kind=candidates[world_rng(s,WorldRng::MonsterAi).below(n)];m.data[0]=(int16_t)kind;int spawned=enemy_spawn(s,kind,slot,t);if(spawned>=0)enemy_apply_power(s,spawned,EnemyPower::Minion,1,t);}break;}
- case EnemyId::GremlinMerc:{int gold=min(s.gold,enemy_power_value(s,t,EnemyPower::Thievery));s.gold-=(int16_t)gold;m.stolen_gold=(int16_t)min(9999,m.stolen_gold+gold);record(s,LogKind::Gold,-gold);break;}
+ case EnemyId::GremlinMerc:{int gold=min(s.gold,enemy_power_value(s,t,EnemyPower::Thievery));s.gold-=(int16_t)gold;m.stolen_gold=(int16_t)min(9999,m.stolen_gold+gold);record(s,LogKind::Gold,-gold);if(gold>0)notify_history(s,RunHistoryEvent::GoldStolen,unsigned(gold));break;}
  case EnemyId::LivingFog:{int slot=enemy_open_slot(s);if(slot>=0)enemy_spawn(s,EnemyId::GasBomb,slot,t);break;}
  case EnemyId::Ovicopter:for(int i=0;i<3;++i){int slot=enemy_open_slot(s,true);if(slot>=0){int spawned=enemy_spawn(s,EnemyId::ToughEgg,slot,t);if(spawned>=0)enemy_apply_power(s,spawned,EnemyPower::Minion,1,t);}}break;
  case EnemyId::TestSubject:if(step==1)m.data[1]=(int16_t)min(996,m.data[1]+1);else{

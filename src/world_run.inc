@@ -185,12 +185,14 @@ bool world_choose_column(State&s,int col){
     if(col<0||col>=reference::Columns)return false;const auto*map=world_current_map(s);if(!map)return false;
     for(unsigned i=0;i<map->count;++i)if(map->points[i].col==col&&world_reachable(s,i))return world_choose_point(s,i);return false;
 }
+static void world_history_leave(const State&);
 bool world_choose_point(State&s,unsigned point){
     if(!world_reachable(s,point))return false;
     auto&w=s.world;
     // Opening/closing the UI never exits a room. A direct top-bar selection
     // performs the same one-time completion as Proceed, at this boundary.
     if(w.room_open==1&&!world_finish_room(s))return false;
+    world_history_leave(s);
     const auto&p=w.maps[w.act_index].points[point];
     WorldRoom room=WorldRoom::None;
     switch(p.type){
@@ -259,6 +261,22 @@ bool world_enter_event_combat(State&s,const char*key,bool resume_parent){
     s.original_events.combat_pending=1;s.original_events.resume_after_combat=resume_parent;s.original_events.encounter=uint16_t(id);
     event_card_before_room(s,false,false);return world_start_combat(s,id);
 }
+static void world_history_leave(const State&s){
+    const auto&w=s.world;if(!w.room_open)return;
+    if(s.phase==Phase::Reward){
+        if(!(s.reward_claimed&2))for(unsigned i=0;i<w.reward_count;++i)notify_history(s,RunHistoryEvent::CardSkipped,unsigned(card_token(w.reward_cards[i])));
+        if(!(s.reward_claimed&4)&&s.reward_potion!=Potion::Empty)notify_history(s,RunHistoryEvent::PotionSkipped,unsigned(s.reward_potion));
+        if(!w.reward_relic_claimed&&w.reward_relic!=NoWorldRelic)notify_history(s,RunHistoryEvent::RelicSkipped,w.reward_relic);
+    }else if(s.phase==Phase::Shop){
+        // MerchantRoom.Exit records the remaining inventory, including any
+        // actual Courier replacement stocked after a completed purchase.
+        for(unsigned i=0;i<ShopRemove;++i)if(!(s.shop_sold&(1u<<i))){
+            if(i<ShopCardCount)notify_history(s,RunHistoryEvent::CardSkipped,unsigned(card_token(w.shop_cards[i])));
+            else if(i<ShopPotionStart){const auto id=w.shop_relics[i-ShopRelicStart];if(id!=NoWorldRelic)notify_history(s,RunHistoryEvent::RelicSkipped,id);}
+            else if(s.shop_potions[i-ShopPotionStart])notify_history(s,RunHistoryEvent::PotionSkipped,s.shop_potions[i-ShopPotionStart]);
+        }
+    }
+}
 bool world_finish_room(State&s){
     auto&w=s.world;if(!w.active)return false;
     if(s.hp<=0){w.finished=1;s.phase=Phase::Dead;original_event_finish_run(s);return true;}
@@ -283,6 +301,7 @@ bool world_finish_room(State&s){
         ++s.revision;return true;
     }
     if(w.event_combat_parent&&s.original_events.combat_pending){
+        world_history_leave(s);
         w.event_combat_parent=0;w.room_type=w.parent_room_type;w.parent_room_type=0;
         original_event_after_combat(s,true);
         if(s.original_events.active||s.phase==Phase::Dead||s.phase==Phase::Error)return s.phase!=Phase::Error;
@@ -297,6 +316,7 @@ bool world_finish_room(State&s){
     ++w.rooms_completed;
     const unsigned end=map->second_boss!=NoPoint?map->second_boss:map->boss;
     if(w.current_point==end){
+        world_history_leave(s);
         w.room_open=0;s.original_events.active=0;
         s.treasure_state=0;s.treasure_relic=0;w.treasure_relic=NoWorldRelic;w.treasure_gold=0;w.treasure_gold_claimed=0;
         s.event_deck_action=EventDeckAction::None;s.event_first=-1;s.event_remaining=0;s.necro.grimoire_pending=0;

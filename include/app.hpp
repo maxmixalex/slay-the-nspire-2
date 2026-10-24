@@ -56,6 +56,8 @@
 #include "hud_ui7_assets.hpp"
 #include "hud_ui7_presentation.hpp"
 #include "ui_history_presentation.hpp"
+#include "history_journal_ui8_assets.hpp"
+#include "game_over_transition_assets.hpp"
 #include "ui_history_layout.hpp"
 #include "history_ui8_assets.hpp"
 #include "run_modes.hpp"
@@ -127,8 +129,8 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>CharacterDeathContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        if(version_<ContentVersion||version_>GameOverTransitionContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
@@ -137,12 +139,13 @@ public:
     int ui_image(int key)const;
     int relic_image(int index)const;
     int frame_image(Card)const;
-    int energy_image(Card)const;
+    int energy_image(Card,bool unknown=false)const;
     int potion_image(Potion)const;
     const char* card_string(int kind,int variant=0)const;
     // Keys and directory indexes are public metadata; localized reference
     // strings and image payloads remain in the owner's private resource pack.
     const char* world_string(const char* table,const char* key)const;
+    int world_string_id(const char*table,const char*key)const;
     const char* locale_string(const char* table,const char* key)const;
     const char* ui_text(const char* legacy_utf8)const;
     bool english()const;
@@ -308,6 +311,7 @@ struct App {
     uint8_t compendium_selection=0,history_index=0;
     int history_selected=-1;
     UiHistoryPresentation history_presentation{};
+    UiHistoryTooltip history_tooltip{};
     uint32_t progress_page_started=0;
     UiHistoryScroll progress_page_scroll{};
     UiMenuTransition compendium_motion[6]{};
@@ -332,6 +336,9 @@ struct App {
     void observe_progress_effect(const State&);
     void observe_progress_damage(const State&,const CoreDamageResult&);
     void observe_run_fact(const State&,unsigned,unsigned);
+    void observe_history(const State&,const RunHistoryNotice&);
+    int bind_history_journal();
+    void history_journal_line(const UiHistoryJournalEntry&,char*,unsigned)const;
     void discover_potion(Potion);
     void discover_card(CardKind);
     void discover_relic(RelicId);

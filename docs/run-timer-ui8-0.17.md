@@ -18,8 +18,10 @@ an em dash. Rendering never changes the canonical game save or simulates time.
 The original timer icon is appended in v29. The time uses the actual original
 bold font face at a six-pixel target. To accommodate the fixed 320×240 display,
 the three existing right-hand map/deck/settings images retain their 18-pixel
-size while their hit areas become 20/20/23 pixels when the timer is visible.
-Their order and interactions remain the same. There is no startup preference
+size with fixed 20/20/23-pixel hit areas. The original container aligns to its
+right edge, so timer visibility never moves these buttons. The timer also stays
+visible through the map's closing animation; a potion context menu alone does
+not show it. Their order and interactions remain the same. There is no startup preference
 screen and language remains in the original title Settings flow.
 
 The preference record is now NSPF4, still exactly 108 bytes including both key

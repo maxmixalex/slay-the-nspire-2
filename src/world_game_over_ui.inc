@@ -126,6 +126,26 @@ void App::game_over_detail(int focus,char*title,unsigned title_capacity,char*bod
   else b.text(monster_title(EnemyId(id)));
  }if(discoveries.count[kind]>10)b.text("\n....");
 }
+static void game_over_shader_backstop(Canvas&c,unsigned phase){
+ if(!phase)return;const uint16_t color=rgb(31,0,11);const int cutoff=game_over_transition::cutoff(phase);
+ if(cutoff>int(game_over_transition::Denominator))return;
+ if(cutoff<=0){Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*game_over_transition::Alpha));layer.rect(0,0,ScreenW,ScreenH,color);return;}
+ const auto mask=c.a.content.image(c.a.content.ui_image(I9_GameOverTransition));
+ if(c.a.content.version()>=GameOverTransitionContentVersion&&mask.pixels&&mask.format==0&&mask.w==ScreenW&&mask.h==ScreenH){
+  // Source texture_transition.gdshader: step(1-red,mix(-.1,1.1,t)).
+  // The baked scalar keeps the two exact linear-filter taps, so this is one
+  // unsigned comparison per output pixel. No new raster or lookup cache.
+  for(int y=0;y<mn(c.clip_h,ScreenH);++y){const uint8_t*row=mask.pixels+unsigned(y)*ScreenW*2;
+   for(int x=0;x<mn(c.clip_w,ScreenW);++x){const unsigned value=unsigned(row[x*2])|(unsigned(row[x*2+1])<<8);
+    if(int(value)>=cutoff)c.paint(y*c.pitch+x,color,game_over_transition::Alpha);
+   }
+  }
+ }else{
+  // Pre-v31 packs lack the authored scalar texture. Keep them playable with
+  // the correct color, final alpha and source clock; v31 uses the mask above.
+  Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*game_over_transition::Alpha*phase/4096));layer.rect(0,0,ScreenW,ScreenH,color);
+ }
+}
 static void game_over_backdrop(Canvas&c){
  auto&a=c.a;const auto&s=a.game;
  const bool event_room=(s.phase==Phase::Complete&&s.original_events.id==OriginalEventId::TheArchitect)||
@@ -133,11 +153,11 @@ static void game_over_backdrop(Canvas&c){
  const int event=event_room?a.content.world_image("events",original_event_key(s.original_events.id)):-1;
  if(event>=0)c.picture(event,0,22,320,218);else c.picture(a.combat_background(),0,22,320,218);
  const auto&m=a.game_over_presentation;const unsigned age=m.initial_age(a.map_clock_ms);
- // The event-only full-black backstop remains opaque after its 200 ms fade;
- // the following shader transition must not expose the event image again.
- const unsigned shade=m.event_room?255*room_curve::linear(age,200)/4096:200*room_curve::sine_in_out(age,1500)/4096;
- c.dim(0,22,320,218,shade);
- game_over_actor(c,age,m.event_room?255*room_curve::linear(age,200)/4096:255);
+ // FullBlackBackstop is true black, not the general UI's green-black Ink.
+ // The event's 200 ms fade precedes the 1500 ms source threshold tween.
+ if(m.event_room){Canvas black=c;black.opacity=uint8_t(div255(black.opacity*m.black_alpha(a.map_clock_ms)));black.rect(0,0,ScreenW,ScreenH,0);}
+ game_over_shader_backstop(c,m.backstop_phase(a.map_clock_ms));
+ game_over_actor(c,age,m.event_room?m.black_alpha(a.map_clock_ms):255);
  // The separate summary backstop subsequently covers retained creatures.
  if(a.game_over_summary){Canvas summary=c;summary.opacity=uint8_t(div255(summary.opacity*224*m.summary_opacity(a.map_clock_ms)/255));summary.rect(0,22,320,218,rgb(29,3,0));}
 }

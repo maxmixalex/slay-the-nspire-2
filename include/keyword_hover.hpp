@@ -52,6 +52,7 @@ struct CardHoverTarget {
     uint32_t identity=0;
     bool detail=false;
     int event_option=-1;
+    int relic=-1;
 };
 struct HoverPiece {unsigned tip=0;int skip=0,lines=0;HoverRect box{};};
 struct HoverPage {HoverPiece pieces[MaxCardHoverTips]{};unsigned count=0;int pages=1;};

@@ -73,10 +73,12 @@ bool event_card_apply_enchantment(Card&c,EventCardFacts&f,EventEnchantment e,int
 bool event_card_enchant(State&s,int deck,EventEnchantment e,int amount){
  if(!event_card_can_enchant(s,deck,e)||amount<0||amount>9999)return false;
  if(!event_card_apply_enchantment(s.deck[deck],s.event_cards.deck[deck],e,amount))return false;
+ notify_history(s,RunHistoryEvent::CardEnchanted,unsigned(card_token(s.deck[deck])),unsigned(amount),unsigned(e));
  ++s.revision;return true;
 }
-void event_deck_acquired(State&s,int index,bool cloned){
+void event_deck_acquired(State&s,int index,bool cloned,bool obtained){
  if(index<0||index>=s.deck_count)return;
+ if(obtained)notify_history(s,RunHistoryEvent::CardObtained,unsigned(card_token(s.deck[index])));
  world_relic_hook(s,WorldRelicHook::AfterDeckAdded,index,0,cloned?-1:0);
  if(cloned||!s.world.active||!has_run_modifier(s,RunModifier::Hoarder))return;
  if(s.deck_count+2>MaxDeck){fail(s);return;}
@@ -84,6 +86,7 @@ void event_deck_acquired(State&s,int index,bool cloned){
  for(unsigned copy=0;copy<2;++copy){
   const int added=event_restore_deck_card(s,original);if(added<0){fail(s);return;}
   record(s,LogKind::Reward,original.card.kind,original.card.upgraded);
+  notify_history(s,RunHistoryEvent::CardObtained,unsigned(card_token(s.deck[added])));
   // Every source clone supplies clonedBy, so BingBong and Hoarder both stop
   // here while the ordinary acquisition listeners still see each new card.
   world_relic_hook(s,WorldRelicHook::AfterDeckAdded,added,0,-1);
@@ -99,7 +102,7 @@ int event_add_deck_card(State&s,Card c,const EventCardFacts*facts,bool cloned){
 static bool ec_remove_deck(State&s,int index,bool hooks,bool log=true){
  if(index<0||index>=s.deck_count)return false;Card removed=s.deck[index];
  notify_deck_removed(s,index);for(int i=index+1;i<s.deck_count;++i)s.deck[i-1]=s.deck[i];s.deck[--s.deck_count]={};
- if(log)record(s,LogKind::Remove,removed.kind);if(hooks)world_relic_hook(s,WorldRelicHook::AfterDeckRemoved,removed.kind,index);return true;
+ if(log)record(s,LogKind::Remove,removed.kind);if(hooks){notify_history(s,RunHistoryEvent::CardRemoved,unsigned(card_token(removed)));world_relic_hook(s,WorldRelicHook::AfterDeckRemoved,removed.kind,index);}return true;
 }
 bool event_remove_deck_card(State&s,int index){return index>=0&&index<s.deck_count&&card_removable(s,s.deck[index],index)&&ec_remove_deck(s,index,true);}
 bool event_replace_deck_card(State&s,int index,Card c,const EventCardFacts*facts){
@@ -111,7 +114,7 @@ bool event_replace_deck_card(State&s,int index,Card c,const EventCardFacts*facts
  if(!ec_remove_deck(s,index,false,false))return false;
  if(!world_relic_modify_deck_card(s,c,added)){fail(s);return false;}
  const int appended=s.deck_count++;s.deck[appended]=c;notify_deck_replaced(s,appended);s.event_cards.deck[appended]=added;
- record(s,LogKind::Transform,old.kind,c.kind);event_deck_acquired(s,appended);return s.phase!=Phase::Error;
+ record(s,LogKind::Transform,old.kind,c.kind);notify_history(s,RunHistoryEvent::CardTransformed,unsigned(card_token(old)),unsigned(card_token(c)));event_deck_acquired(s,appended,false,false);return s.phase!=Phase::Error;
 }
 bool event_take_deck_card(State&s,int index,EventDeckSnapshot&snap){
  if(index<0||index>=s.deck_count)return false;snap={s.deck[index],s.event_cards.deck[index],s.defect.genetic_deck[index],s.necro.scythe_deck[index]};return ec_remove_deck(s,index,false);
@@ -122,7 +125,7 @@ int event_restore_deck_card(State&s,const EventDeckSnapshot&snap){
 bool event_card_hatch(State&s,int deck){return deck>=0&&deck<s.deck_count&&s.deck[deck].kind==EventCardByrdonisEgg&&gain_world_relic(s,world_relic_id("BYRDPIP"));}
 bool event_card_spoils_complete(State&s,int deck){
  if(deck<0||deck>=s.deck_count||s.deck[deck].kind!=EventCardSpoilsMap)return false;
- gain_gold(s,600);return event_remove_deck_card(s,deck);
+ gain_gold(s,600);notify_history(s,RunHistoryEvent::QuestCompleted,EventCardSpoilsMap);return event_remove_deck_card(s,deck);
 }
 int event_card_spoils_act(const State&s){for(unsigned i=0;i<s.deck_count;++i)if(s.deck[i].kind==EventCardSpoilsMap)return s.event_cards.deck[i].progress;return -1;}
 bool event_card_forces_historian(const State&s,unsigned act){if(act!=2)return false;for(unsigned i=0;i<s.deck_count;++i)if(s.deck[i].kind==EventCardLanternKey)return true;return false;}
@@ -270,7 +273,7 @@ static void event_card_combat_end(State&s,bool won){
  if(!won)return;
  for(int i=s.deck_count-1;i>=0;--i)if(s.deck[i].kind==EventCardGuilty&&++s.event_cards.deck[i].progress>=5)event_remove_deck_card(s,i);
  uint16_t eligible[MaxDeck];unsigned count=0;for(unsigned i=0;i<s.deck_count;++i)if(card_upgradeable(s.deck[i]))eligible[count++]=(uint16_t)i;
- for(int n=ec_power(s,EventCardPower::Improvement);n>0&&count;--n){unsigned at=world_rng(s,WorldRng::CombatCardSelection).below(count);s.deck[eligible[at]].upgraded=1;for(unsigned j=at+1;j<count;++j)eligible[j-1]=eligible[j];--count;}
+ for(int n=ec_power(s,EventCardPower::Improvement);n>0&&count;--n){unsigned at=world_rng(s,WorldRng::CombatCardSelection).below(count);s.deck[eligible[at]].upgraded=1;notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[eligible[at]])));for(unsigned j=at+1;j<count;++j)eligible[j-1]=eligible[j];--count;}
 }
 static bool event_card_choice(XChoice c){return c==XChoice::EventDualWield||c==XChoice::EventNeowsFury||c==XChoice::EventWish||c==XChoice::EventAbundance;}
 static bool choose_event_card(State&s,const uint16_t*ids,unsigned count){

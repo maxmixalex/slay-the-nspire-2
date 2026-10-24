@@ -16,6 +16,37 @@ static void library_blurred_portrait(Canvas&c,int image,const card_face::Rect&r)
     c.picture(Picture{reinterpret_cast<const uint8_t*>(pixels),nullptr,nullptr,uint16_t(r.w),uint16_t(r.h),0},r.x,r.y);
 }
 struct CardFaceFonts {int title,type,body,body_minimum,energy,star,minimum;bool compact;};
+// NCard and CardCostHelper distinguish modified costs from an inability to
+// pay. Keep this in the face key: a player's resources can change while the
+// card's numeric price and overall playability both remain unchanged.
+enum CardResourceStyle : uint8_t {ResourceNormal,ResourceIncreased,ResourceDecreased,ResourceInsufficient};
+static uint8_t card_face_resource_styles(const App&a,Card card,int energy,int stars,int instance,const EventCardFacts*facts){
+    if(a.title||a.library||a.history_open||instance<0||instance>=a.game.card_count||a.game.zones[instance]!=Zone::Hand||a.game.cards[instance].kind!=card.kind)return 0;
+    const auto style=[](int value,int base,int available){return uint8_t(value<0?ResourceNormal:value>available?ResourceInsufficient:base>=0&&value>base?ResourceIncreased:base>=0&&value<base?ResourceDecreased:ResourceNormal);};
+    return uint8_t(style(energy,a.card_offer_cost(card,facts),a.game.energy)|(style(stars,card_star_cost(a.game,card),a.game.expansion.stars)<<2));
+}
+static uint16_t card_energy_outline(Card card){
+    if(definitions[card.kind].type==CardType::Quest)return rgb(67,30,20);
+    switch(card_color(card.kind)){
+    case CardColor::Ironclad:return rgb(128,32,32);case CardColor::Silent:return rgb(26,102,37);
+    case CardColor::Defect:return rgb(29,86,115);case CardColor::Regent:return rgb(128,61,14);
+    case CardColor::Necrobinder:return rgb(128,51,103);default:return rgb(92,84,64);}
+}
+static uint16_t card_title_outline(Card card,bool known){
+    if(known&&card.upgraded)return rgb(27,97,49);
+    switch(card_rarity(card.kind)){case 3:return rgb(0,92,117);case 4:return rgb(107,75,0);
+    case 9:return rgb(85,11,158);case 10:return rgb(126,62,21);case 8:return rgb(79,82,47);
+    case 6:return rgb(27,97,49);default:return rgb(77,75,64);}
+}
+static void card_resource_label(Canvas&c,const char*text,int x,int y,int size,unsigned style,uint16_t default_outline,bool star){
+    uint16_t color=rgb(255,246,226),outline=default_outline;
+    if(style==ResourceIncreased){color=rgb(64,255,255);outline=rgb(32,89,92);}
+    else if(style==ResourceDecreased){color=rgb(127,255,0);outline=rgb(31,89,35);}
+    else if(style==ResourceInsufficient){color=rgb(255,85,85);outline=rgb(80,23,23);}
+    Canvas edge=c;if(star&&style==ResourceNormal)edge.opacity=uint8_t(div255(edge.opacity*220));
+    for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)edge.text(text,x+dx,y+dy,size,outline);
+    c.text(text,x,y,size,color);
+}
 static CardFaceFonts card_face_fonts(const Canvas&c,int width){
     const auto&content=c.a.content;
     const bool compact=content.version()>=HistoryUi8ContentVersion&&content.font_size(5)==5;
@@ -45,7 +76,7 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(known?a.content.card_string(card.kind):a.content.locale_string("card_library","UNKNOWN.title"));if(known&&card.upgraded)name.ch('+');
     const int title_size=fonts.title;
     const int title_y=l.title.y+mx(0,(l.title.h-title_size-2)/2);
-    c.text_fitted(title,l.title.x,title_y,l.title.w,title_size,card.upgraded?Green:White,fonts.minimum,true,true);
+    c.text_fitted(title,l.title.x,title_y,l.title.w,title_size,known&&card.upgraded?rgb(127,255,0):rgb(255,246,226),fonts.minimum,true,true,card_title_outline(card,known));
 
     const char*type_text=card_type_label(type,&a.content);Canvas type_label=c;if(fonts.compact)type_label.font_face=5;
     const int type_size=fonts.type,plaque_h=fonts.compact?mx(type_size+3,l.type.h):mx(11,l.type.h);
@@ -73,19 +104,18 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     const auto description_layout=c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,body_size,White,fonts.body_minimum,true);
     if(description_truncated)*description_truncated=description_layout.truncated;
 
-    c.picture(a.content.energy_image(card),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
+    c.picture(a.content.energy_image(card,!known),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;
+    const int base_stars=card_star_cost(a.game,card),star_value=stars==-2?base_stars:stars;
+    const unsigned resource_styles=known?card_face_resource_styles(a,card,energy,star_value,instance,facts):0;
     const int cost_size=fonts.energy;Canvas cost_label=c;if(fonts.compact)cost_label.font_face=5;
     char cost_text[16]{};TextBuffer cost_value{cost_text,sizeof cost_text,0,&a.content};if(!known)cost_value.ch('?');else if(energy==-1)cost_value.ch('X');else cost_value.number(energy);
-    if(known)cost_label.energy_label(energy,l.energy.x+(l.energy.w-cost_label.width(cost_text,cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size);
-    else cost_label.text("?",l.energy.x+(l.energy.w-cost_label.width("?",cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size,White);
-    const int base_stars=card_star_cost(a.game,card);
+    if(!known||energy!=-2)card_resource_label(cost_label,cost_text,l.energy.x+(l.energy.w-cost_label.width(cost_text,cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size,resource_styles&3,card_energy_outline(card),false);
     if(known&&(base_stars||(stars!=-2&&stars))){
         c.ui(U_Star,l.star.x,l.star.y,l.star.w,l.star.h);
         const int value=stars==-2?base_stars:stars;char label[16]{};TextBuffer count{label,sizeof label,0,&a.content};if(value<0)count.ch('X');else count.number(value);
         const int px=l.star.x+(l.star.w-cost_label.width(label,fonts.star))/2,py=l.star.y+(l.star.h-fonts.star-2)/2;
-        for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)cost_label.text(label,px+dx,py+dy,fonts.star,Ink);
-        cost_label.text(label,px,py,fonts.star,White);
+        card_resource_label(cost_label,label,px,py,fonts.star,resource_styles>>2,rgb(23,85,97),true);
     }
 }
 
@@ -103,7 +133,7 @@ struct SmallCardFaceCache {
     Card card{};
     int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
     CardType type=CardType::Attack;
-    uint8_t width=0,height=0;
+    uint8_t width=0,height=0,resource_styles=0;
     bool star_visible=false,valid=false;
     char title[128]{},description[512]{};
     uint16_t background[SmallCardCacheW*SmallCardCacheH]{};
@@ -165,6 +195,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     const int energy_image=a.content.energy_image(card),energy=fee==-2?a.card_offer_cost(card,facts):fee;
     const int base_stars=card_star_cost(a.game,card),star_count=stars==-2?base_stars:stars;
     const bool star_visible=base_stars||(stars!=-2&&stars);
+    const unsigned resource_styles=card_face_resource_styles(a,card,energy,star_count,instance,facts);
     const auto geometry=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
     // Large dynamic costs can extend beyond the fixed cache, just as their
     // uncached labels do. Keep those exact without increasing the ARM pool.
@@ -174,7 +205,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     SmallCardFaceCache* entry=nullptr;
     for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&
         slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
-        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&
+        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&slot.resource_styles==resource_styles&&
         card_cache_text_equal(slot.title,title)&&card_cache_text_equal(slot.description,description)){
         bool matches=true;
         for(int yy=0;yy<SmallCardCacheH&&matches;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
@@ -197,6 +228,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     entry->valid=false;entry->owner=&a.content;entry->generation=a.content.generation();entry->seen=small_card_frame;
     entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;entry->width=uint8_t(w);entry->height=uint8_t(h);
     entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;
+    entry->resource_styles=uint8_t(resource_styles);
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->background[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];

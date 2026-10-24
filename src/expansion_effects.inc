@@ -11,7 +11,7 @@ static bool revive(State&s){
  // Fairy is an ordinary ShouldDie listener; Lizard Tail is ShouldDieLate.
  // OnUseWrapper consumes the bottle and awaits healing before potion listeners.
  for(unsigned slot=0;slot<potion_slot_count(s);++slot)if(s.potions[slot]==Potion::FairyInABottle){
-  s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,int(Potion::FairyInABottle));
+  s.potions[slot]=Potion::Empty;record(s,LogKind::Potion,int(Potion::FairyInABottle));notify_history(s,RunHistoryEvent::PotionUsed,unsigned(Potion::FairyInABottle));
   before_potion_use(s,Potion::FairyInABottle,-1);
   const bool saved=combat_phase(s.phase)&&world_shared_active(s);
   if(saved)world_stage(s,WorldStage::AutoPotionUsed,int(Potion::FairyInABottle));
@@ -40,7 +40,7 @@ void player_lose_max_hp(State&s,int amount){
  const bool saved=combat_phase(s.phase)&&world_shared_active(s);
  if(saved)world_stage(s,WorldStage::SetMaxHp,target);
  if(loss)player_hp_loss(s,loss,false,false,-1);
- if(!saved){s.max_hp=int16_t(target);s.hp=int16_t(min(s.hp,s.max_hp));}
+ if(!saved){const int old=s.max_hp;s.max_hp=int16_t(target);s.hp=int16_t(min(s.hp,s.max_hp));if(old!=s.max_hp)notify_history(s,old>s.max_hp?RunHistoryEvent::MaxHpLost:RunHistoryEvent::MaxHpGained,unsigned(old>s.max_hp?old-s.max_hp:s.max_hp-old));}
 }
 int player_hp_loss(State&s,int amount,bool attack,bool blockable,int card_source,int dealer){
  if(s.hp<=0)return 0;auto&x=s.expansion;amount=max(0,amount);

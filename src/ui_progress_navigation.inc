@@ -13,17 +13,26 @@ void App::open_history(){
     if(!progress.count)return;
     history_from_game_over=false;
     compendium_open=true;compendium_selection=5;history_open=true;statistics_open=library=false;history_index=0;history_selected=-1;
-    progress_page_started=map_clock_ms;progress_page_scroll.reset();history_presentation.open(map_clock_ms);pointer_cancel();
+    progress_page_started=map_clock_ms;progress_page_scroll.reset();history_presentation.open(map_clock_ms);history_tooltip={};pointer_cancel();
 }
 void App::history_select(int direction){
     if(!history_open||!progress.count)return;
     const int next=int(history_index)+direction;
     if(next<0||next>=int(progress.count))return;
-    history_index=uint8_t(next);history_selected=-1;progress_page_scroll.reset();history_presentation.open(map_clock_ms,direction>0?-1:1);pointer_cancel();
+    history_index=uint8_t(next);history_selected=-1;progress_page_scroll.reset();history_presentation.open(map_clock_ms,direction>0?-1:1);history_tooltip={};pointer_cancel();
 }
 bool App::progress_navigation_input(Key key){
     if(library||bestiary.open||detail_card>=0||detail_item>=0)return false;
     if(statistics_open||history_open){
+        if(history_open&&history_tooltip.keyboard){
+            if(key==Key::Back||key==Key::Inspect||key==Key::Detail||key==Key::Confirm){history_tooltip.keyboard=false;return true;}
+            if(key==Key::Up||key==Key::Down){history_tooltip.scroll(key==Key::Up?-1:1);return true;}
+            history_tooltip.keyboard=false;
+        }
+        if(history_open&&(key==Key::Inspect||key==Key::Detail||key==Key::Confirm)){
+            const auto*r=history_at(history_index);const int floor=history_presentation.focus;
+            if(r&&floor>=0&&floor<r->floor_count){history_tooltip.bind(r->serial,unsigned(floor),1);history_tooltip.keyboard=true;return true;}
+        }
         if(key==Key::Back||key==Key::Collection){statistics_open=history_open=false;if(history_from_game_over){history_from_game_over=false;compendium_open=false;}pointer_cancel();return true;}
         if(history_open&&(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right||key==Key::Confirm)){
             const auto*r=history_at(history_index);if(!r)return true;

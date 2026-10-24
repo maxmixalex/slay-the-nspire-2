@@ -41,8 +41,8 @@ static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count)
  }
  native_reward_scrollbar(panel,dy);
  const bool can_leave=a.world_choice_min()==0;
- native_proceed(c,209,211,103,27,native_reward_text(a,"gameplay_ui",count?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON",count?"跳过剩余":"前进"),can_leave);
- c.action(205,208,111,32,UiAction::LeaveWorldRewards,can_leave);
+ native_proceed(c,native_reward_text(a,"gameplay_ui",count?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON",count?"跳过剩余":"前进"),can_leave);
+ native_proceed_action(c,UiAction::LeaveWorldRewards,can_leave);
 }
 static void native_card_reward_screen(Canvas&c,const uint16_t*ids,unsigned count){
  native_reward_backdrop(c);native_card_reward_body(c,ids,count,false);

@@ -78,6 +78,7 @@ void world_relic_run_hook(State& s,unsigned serial,WorldRelicHook hook,int a,int
   else if(r.id==WorldRelicBingBong&&!c){
    EventDeckSnapshot snap{s.deck[a],s.event_cards.deck[a],s.defect.genetic_deck[a],s.necro.scythe_deck[a]};
    int added=event_restore_deck_card(s,snap);if(added<0){w_error(s);return;}world_relic_flash(s,r.id);
+   notify_history(s,RunHistoryEvent::CardObtained,unsigned(card_token(s.deck[added])));
    // Original clonedBy is non-null for every duplicate created by BingBong,
    // including other owned copies of the relic. It must not clone recursively.
    world_relic_hook(s,WorldRelicHook::AfterDeckAdded,added,0,int(serial));
@@ -113,8 +114,8 @@ bool world_take_card_reward_alternative(State& s,unsigned bit){
  }
  int at=w_first(s,WorldRelicPaelsWing,true);if(at<0)return false;
  auto&w=s.world_relics;
- if(s.phase==Phase::Reward)s.reward_claimed|=2;
- else if(s.phase==Phase::WorldRelicChoice){w.rewards[w.choice_reward-1].flags|=1;w_clear_choice(s);}
+ if(s.phase==Phase::Reward){for(unsigned i=0;i<s.world.reward_count;++i)notify_history(s,RunHistoryEvent::CardSkipped,unsigned(card_token(s.world.reward_cards[i])));s.reward_claimed|=2;}
+ else if(s.phase==Phase::WorldRelicChoice){const auto&reward=w.rewards[w.choice_reward-1];for(unsigned i=0;i<reward.count;++i)notify_history(s,RunHistoryEvent::CardSkipped,reward.tokens[i]);w.rewards[w.choice_reward-1].flags|=1;w_clear_choice(s);}
  else if(!original_event_consume_card_reward(s))return false;
  auto&r=w.entries[at];r.values[0]=(r.values[0]+1)%2;world_relic_flash(s,r.id);
  if(!r.values[0]){

@@ -41,6 +41,23 @@ int main(){
  check(back.sample(400).scale==4096&&back.sample(400).shade==128);
  back.observe(4,ButtonFamily::Back,ButtonState::Rest,400);check(back.sample(900).scale==4301);
  check(back.observe(5,ButtonFamily::Back,ButtonState::Rest,900).scale==4096);
+ // Source Proceed uses a 50ms focus, a 500ms press/unfocus and an
+ // independent repeating outline. It must not inherit Action's instant focus.
+ ButtonMotion proceed;proceed.observe(6,ButtonFamily::Proceed,ButtonState::Rest,100);
+ check(proceed.sample(600).hover==1024&&proceed.sample(1100).hover==3072&&proceed.sample(1600).hover==1024);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,1600);
+ check(proceed.sample(1625).scale==4198&&proceed.sample(1650).scale==4301&&proceed.sample(1650).hover==4096);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Press,1650);
+ check(proceed.sample(2149).scale>=3891&&proceed.sample(2150).scale==3891&&proceed.sample(2150).shade==128);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Rest,2150);check(proceed.sample(2650).scale==4096);
+ ButtonMotion relic;relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Focus,0);
+ check(relic.sample(25).scale==4198&&relic.sample(50).scale==4301);
+ relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Press,50);
+ check(relic.sample(450).scale==3891&&relic.sample(450).shade==255);
+ // Independently project the original viewport ratio and source dimensions.
+ check(std::abs(proceed_layout::X-1583.*320/1920)<.5&&std::abs(proceed_layout::Y-764.*240/1080)<.5);
+ check(std::abs(proceed_layout::W-269.*320/1680)<.5&&std::abs(proceed_layout::ImageW-296.*320/1680)<.5);
+ check(proceed_layout::X+proceed_layout::W<=320&&proceed_layout::Y+proceed_layout::H<=240);
  m.observe(3,ButtonFamily::EndTurn,ButtonState::Focus,0xfffffff0u);m.observe(3,ButtonFamily::EndTurn,ButtonState::Rest,0xfffffff5u);
  check(m.sample(600).y==0&&m.sample(600).hover==0);
  EndTurnGlowMotion glow;EndTurnGlowIdentity combat{37,2,4,260};

@@ -438,7 +438,7 @@ struct Canvas{
     void centered(const char*p,int x,int y,int w,int size=12,uint16_t color=White){text(p,x+mx(0,(w-width(p,size))/2),y,size,color,w);}
     // Card labels have a real rectangle, unlike scrollable detail text. Use
     // actual available glyph bands, then ellipsize within the final visible line.
-    fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false){
+    fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false,uint16_t outline_color=Ink){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
         minimum=a.content.font_size(minimum,font_face);preferred=mx(minimum,a.content.font_size(preferred,font_face));
@@ -466,7 +466,7 @@ struct Canvas{
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
             xx=mx(x,mn(xx+dx,x+w-int(g.w)));yy=mx(y,yy+dy);
-            auto ink=shadow?Ink:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,at*26000/mx(1,size)):colors[ch.style.color];
+            auto ink=shadow?outline_color:a.text_effects&&ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,at*26000/mx(1,size)):colors[ch.style.color];
             clipped.character(ch.codepoint,g,xx+offset_x,yy+offset_y,ink,shadow);
         });};
         // The eight outline passes reuse one fit/centering decision. Their
@@ -477,7 +477,7 @@ struct Canvas{
         else if(drop_shadow)draw(1,1,true);
         draw(0,0,false);return plan;
     }
-    void text_fitted(const char*p,int x,int y,int w,int preferred=10,uint16_t color=White,int minimum=8,bool centered=false,bool outline=false){fitted(p,x,y,w,preferred+3,preferred,minimum,color,centered,true,outline);}
+    void text_fitted(const char*p,int x,int y,int w,int preferred=10,uint16_t color=White,int minimum=8,bool centered=false,bool outline=false,uint16_t outline_color=Ink){fitted(p,x,y,w,preferred+3,preferred,minimum,color,centered,true,outline,false,outline_color);}
     fitted_text::Plan paragraph_fitted(const char*p,int x,int y,int w,int h,int preferred=10,uint16_t color=White,int minimum=8,bool centered=false){return fitted(p,x,y,w,h,preferred,minimum,color,centered);}
     void num(int v,int x,int y,int size=12,uint16_t color=White){char b[16]={};TextBuffer t{b,sizeof b,0};t.number(v);text(b,x,y,size,color);}
     void energy_label(int value,int x,int y,int size=12){

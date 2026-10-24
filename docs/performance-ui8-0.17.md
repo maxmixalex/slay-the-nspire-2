@@ -160,8 +160,67 @@ frame. Any translucent edge, hole, unsupported sparse cover, opening, closing
 or interrupted tween uses the full original rendering path. No frame is
 removed from the pack and no cache budget changes. A new independent alpha
 sampling test and complete merchant covered/unculled frame comparison cover
-five character cycles and opening/closing transitions. Actual whole-frame and
-post-change I/O/CPU results remain the stage-seven checkpoint gate.
+five character cycles and opening/closing transitions.
+
+Frozen stage seven (`e9aaac1c252d38d9b4b773d9b9e549ab468c72c4`) passed
+**41,589 checks and 2,376 exact full frames per language**, using the same
+original v28 rug/clip resources accepted by the v29-compatible loader. The
+reference branch requests every original lower layer. All five character
+cycles, opening/closing/interruption, 32-bit clock boundaries, hit regions and
+canonical saves matched. A separate cold-cache assertion proves all five
+fully hidden character frames avoid decoding. Receipts:
+`ui8-merchant-occlusion-eng-v28-1b0a16c7b7b4.json` and
+`ui8-merchant-occlusion-zhs-v28-b740f67dcc5e.json`.
+
+A production range-reader run with three 720-frame windows then reduced the
+merchant's final two windows to **zero source calls, bytes and seeks**. The
+same v28 baseline had 166/169 calls and 3,090,210/3,172,373 bytes. All three
+merchant window-end frame hashes also match the baseline, and saves remain
+unchanged. That run was not isolated from other work, so its timings are not
+used for a CPU speedup claim. Receipt:
+`ui8-room-occlusion-io-eng-v28-947c82cb84d4.json`. A quiet CPU comparison and
+the final matching v29 resource set were then tested separately.
+
+After the other builds and converters ended, one sequential baseline/candidate
+pair per language used that same v28 pack and two steady 180-frame windows:
+
+| Merchant | Stage six | Stage seven | Mean time reduction |
+| --- | ---: | ---: | ---: |
+| English | 1.704048 ms | 1.214242 ms | 28.74% |
+| Chinese | 1.537949 ms | 1.231255 ms | 19.94% |
+
+These are quiet shared-host measurements, not ARM frame rates or repeated-run
+statistical estimates. All four window-end frame hashes match their baseline.
+The English candidate makes no source reads in either measured window; Chinese
+reads one 4,096-byte page in window two and none in window three. The baseline
+performs 55 and 40 reads in each language. Exact outputs are retained in
+`merchant-quiet-comparison.json` and receipts
+`ui8-rooms-quiet-baseline-eng-v28-72c8607c54e1.json`,
+`ui8-rooms-quiet-occlusion-eng-v28-f646260edf70.json`,
+`ui8-rooms-quiet-baseline-zhs-v28-e600d1d8775e.json` and
+`ui8-rooms-quiet-occlusion-zhs-v28-169a2448678b.json`.
+
+The matching final v29 packs, including all 1,005 newly baked character death
+frames, also passed all six room fixtures in both languages. Every scene makes
+**zero source reads, bytes and seeks in its third 180-frame window**, with
+unchanged canonical saves and no save callbacks. The measured third-window
+means are:
+
+| Scene | English | Chinese |
+| --- | ---: | ---: |
+| Map | 1.796836 ms | 1.716024 ms |
+| Merchant | 1.256786 ms | 1.338539 ms |
+| Card reward | 0.655312 ms | 0.640821 ms |
+| Crystal, full | 1.533636 ms | 1.207597 ms |
+| Crystal, revealed | 1.342181 ms | 1.221099 ms |
+| Ancient | 0.727189 ms | 0.746982 ms |
+
+Receipts: `ui9-room-render-real-eng-71587f70d1e1.json` and
+`ui9-room-render-real-zhs-10a287743292.json`. Each run also emitted 24 PPM
+captures outside the timed regions. The private `final-v29-contact.png` was
+visually inspected for the map, merchant, card reward, both Crystal states and
+Ancient in both languages. Later changes still require their matching final
+gate; these results describe frozen stage seven.
 
 ## Crystal coordinate work and actual resource measurements
 
@@ -274,6 +333,23 @@ common file, 1,834,058-byte English sidecar and 4,626,707-byte Chinese sidecar:
 new glyphs and saves. These are arithmetic from actual pack layouts; the final
 UI8 split still needs to be emitted and reconstructed. Common payload savings
 must be counted once for an installed bilingual set, not once per locale.
+
+The later, actually emitted v29 split is larger because it includes the new
+UI assets, complete small font faces, and all character death frames. Its
+successful conversion/split receipts report:
+
+| Installed part | Actual bytes |
+| --- | ---: |
+| Shared artwork and other common data | 92,635,042 |
+| English locale | 2,937,411 |
+| Simplified Chinese locale | 7,522,168 |
+| Both locales plus common data | **103,094,621** |
+
+The reconstructed full packs are 95,572,293 bytes for English and 100,157,050
+bytes for Chinese. The split is a tested delivery artifact, not the earlier
+v27 projection. The final launcher and saved data are additional. The requested
+30–40 MB installed size is still unmet; these results do not conceal that gap
+by dropping original frames or lowering pixel quality.
 
 ## Portable validation gates and recorded failures
 

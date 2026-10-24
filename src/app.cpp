@@ -43,6 +43,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "native_controls.inc"
 #include "world_text.inc"
 #include "ui_text.inc"
+#include "ui_history_journal_ui.inc"
 #include "world_enemy_ui.inc"
 #include "turn_banner_ui.inc"
 #include "combat_preparation.inc"
@@ -151,7 +152,7 @@ static void reward_screen(Canvas&c){
         char label[80]={};TextBuffer t{label,sizeof label,0,&c.a.content};t.text("魔典移牌 × ");t.number(s.necro.grimoire_pending);
         c.text(label,107,178,12,White,137);c.action(68,171,184,31,UiAction::RewardGrimoire);
     }
-    native_proceed(c,213,211,99,25,"前进",true,a.cursor==(grimoire?4:3));c.action(209,208,107,30,UiAction::LeaveRewards);
+    native_proceed(c,"前进",true,a.cursor==(grimoire?4:3));native_proceed_action(c,UiAction::LeaveRewards);
 }
 
 #include "world_camp_ui.inc"

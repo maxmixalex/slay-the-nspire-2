@@ -1,6 +1,7 @@
 #pragma once
 #include "core.hpp"
 #include "map_drawing.hpp"
+#include "ui_history_journal.hpp"
 
 namespace spire {
 // Separate optional UI history. Never inserted into a simulation save or RNG
@@ -71,6 +72,7 @@ struct UiProgress {
     uint32_t test_subject_kills=0;
     UiRunDiscoveries current_discoveries{};
     uint32_t architect_damage=0;
+    UiHistoryJournal journal{};
 };
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);

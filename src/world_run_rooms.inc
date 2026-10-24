@@ -171,11 +171,14 @@ static bool world_buy_priced(State&s,int item,bool free){
         if(s.deck_count>=MaxDeck)return false;
         if(event_add_deck_card(s,s.world.shop_cards[item],&s.world.shop_facts[item])<0)return false;
         s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));record(s,LogKind::Buy,s.shop_cards[item]);
+        notify_history(s,RunHistoryEvent::CardBought,unsigned(card_token(s.world.shop_cards[item])),unsigned(price));
     }else if(item<ShopPotionStart){
         s.world.shop_pending_item=uint8_t(item);s.world.shop_pending_price=int16_t(price);
         s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));if(!gain_world_relic(s,s.world.shop_relics[item-ShopRelicStart]))return false;
+        notify_history(s,RunHistoryEvent::RelicBought,s.world.shop_relics[item-ShopRelicStart],unsigned(price));
     }else{
         if(!procure_potion(s,Potion(s.shop_potions[item-ShopPotionStart])))return false;s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));
+        notify_history(s,RunHistoryEvent::PotionBought,s.shop_potions[item-ShopPotionStart],unsigned(price));
     }
     s.world.shop_pending_item=uint8_t(item);s.world.shop_pending_price=int16_t(price);
     // Acquiring a relic can suspend for a selection or a nested reward set.
@@ -269,16 +272,19 @@ int world_shop_price(const State&s,int item){
 bool world_claim_reward_card(State&s,int index){
     if(s.phase!=Phase::Reward||(s.reward_claimed&2)||index< -1||index>=int(s.world.reward_count))return false;
     if(index>=0&&event_add_deck_card(s,s.world.reward_cards[index],&s.world.reward_facts[index])<0)return false;
+    for(unsigned i=0;i<s.world.reward_count;++i)notify_history(s,int(i)==index?RunHistoryEvent::CardPicked:RunHistoryEvent::CardSkipped,unsigned(card_token(s.world.reward_cards[i])));
     s.reward_claimed|=2;++s.revision;return true;
 }
 bool world_reroll_reward(State&s){
     auto&w=s.world;if(!w.active||s.phase!=Phase::Reward||!w.reward_count||(s.reward_claimed&2)||!w.reward_can_reroll||w.reward_rerolled)return false;
+    uint16_t previous[MaxWorldRewardCards]{};const unsigned previous_count=w.reward_count;for(unsigned i=0;i<previous_count;++i)previous[i]=uint16_t(card_token(w.reward_cards[i]));
     WorldCardOptions options;options.source=WorldCardSource::Encounter;
     options.odds=w.room_type==unsigned(WorldRoom::Boss)?WorldCardOdds::BossEncounter:w.room_type==unsigned(WorldRoom::Elite)?WorldCardOdds::EliteEncounter:WorldCardOdds::RegularEncounter;
     options.flags=WorldIsCardReward|WorldIsFromCombat;
     unsigned count=unsigned(world_relic_modify_card_reward_count(s,3,options));
     if(count>MaxWorldRewardCards||!world_create_reward(s,world_rng(s,WorldRng::Rewards),count,options,w.reward_cards,w.reward_facts,MaxWorldRewardCards,&count))return world_fail(s);
     w.reward_count=uint8_t(count);w.reward_rerolled=1;w.reward_can_reroll=0;
+    for(unsigned i=0;i<previous_count;++i)notify_history(s,RunHistoryEvent::CardSkipped,previous[i]);
     for(unsigned i=0;i<3;++i)s.reward[i]=i<count?w.reward_cards[i].kind:Strike;
     ++s.revision;return true;
 }

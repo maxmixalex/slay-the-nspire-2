@@ -127,8 +127,25 @@ Bold and Bitter Medium Italic; the option scene also uses Kreon Bold. Stage
 seven maps those observed styles locally to the existing packed families 5/6,
 using one selector for both measurement and painting. Generic text elsewhere
 keeps its own families. Distinct synthetic masks/advances and an actual-font
-whole-surface oracle cover both font selection and wrapped placement; executing
-them and inspecting the final Darv capture remain stage-seven gates.
+whole-surface oracle cover both font selection and wrapped placement.
+
+Stage-seven actual-font checks with the same compatible original v28 resources
+passed 74,506 checks per language after correcting the test's shadow pixels:
+the synthetic fixture initially expected black where the source's +1px,
+64/255-opacity Ink shadow correctly paints `0x0821` (`0x0020` for its
+half-alpha glyph). Instrumenting the frozen renderer confirmed the exact
+masks and advances; no runtime change was needed. The corrected test uses
+frozen stage-seven production source/headers/archive and awaits the next full
+native checkpoint. Receipts: `ui8-font-ancient-corrected-eng-v28-341c783ac5e5.json`
+and `ui8-font-ancient-corrected-zhs-v28-5f70bb1427f0.json`.
+
+The complete actual Ancient interaction suites also passed and the Darv
+comparison was inspected: 308 English pixels change only inside the character
+reply's text rectangle, now using the real Bitter Italic family. Chinese uses
+its existing original CJK fallback and remains pixel-identical in that reply.
+Receipts: `ui8-world-events-real-eng-v28-d3cf0e96ad08.json` and
+`ui8-world-events-real-zhs-v28-eb1e79041f4a.json`. Final v29 packaging and
+ordinary calculator interaction are still separate gates.
 
 The synthetic RGBA fixture also exposed a test isolation issue: keyboard focus
 on Tanx's first offer legitimately displayed a mechanic tooltip over the sampled

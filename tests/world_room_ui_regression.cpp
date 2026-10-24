@@ -294,7 +294,9 @@ static void holder_pixels(unsigned child_alpha,unsigned brightness){
  CHECK(image.w==2&&image.h==2&&image.alpha&&!image.palette&&image.alpha[0]==255&&image.alpha[1]==128&&!image.alpha[2]);
  const unsigned opacity=(a.treasure_collection_opacity()*child_alpha+127)/255;
  const uint16_t color=uint16_t((((31*brightness+127)/255)<<11)|(((63*brightness+127)/255)<<5)|((31*brightness+127)/255));
- const int x[]={141,166,141,166},y[]={87,87,112,112};
+ // Original 60px child icon at 2x and 4/21 scale, inside its independent
+ // 204px holder. Sample the same four source quadrants after projection.
+ const int x[]={151,165,151,165},y[]={96,96,111,111};
  for(unsigned pixel=0;pixel<4;pixel++){
   const int yy=y[pixel]+a.treasure_holder_offset(),xx=x[pixel];
   const uint16_t background=a.pixels[yy*ScreenW+(xx<160?5:315)];
@@ -326,9 +328,12 @@ static void holder_entry(){
   {399999,21,255,255,-3,false},{399999,30,255,255,0,false},{399999,31,255,255,0,true}
  };
  for(const auto&sample:samples){
-  a.treasure_holder_delay_us=sample.delay;a.animation=start+sample.tick;a.pointer.visible=false;a.render();
+  a.treasure_holder_delay_us=sample.delay;a.animation=start+sample.tick;a.pointer.visible=false;a.cursor=1;a.render();
   CHECK(a.treasure_holder_opacity()==sample.alpha&&a.treasure_holder_brightness()==sample.brightness&&a.treasure_holder_offset()==sample.y);
   CHECK(a.treasure_pointer_can_take()==sample.pointer&&exists(HitKind::UiAction,int(UiAction::TreasureTake),false)==sample.pointer);
+  if(sample.pointer){const auto region=hit(HitKind::UiAction,int(UiAction::TreasureTake));
+   CHECK(region.x==141&&region.y==85+sample.y&&region.w==39&&region.h==39);}
+  CHECK(!exists(HitKind::Command,int(Key::Detail),false));
   holder_pixels(sample.alpha,sample.brightness);CHECK(a.treasure_random==presentation_random);unchanged();
   a.render();CHECK(a.treasure_random==presentation_random);unchanged();
  }
@@ -337,7 +342,9 @@ static void holder_entry(){
  a.treasure_holder_delay_us=300000;a.animation=start+27;a.render();CHECK(!a.treasure_pointer_can_take());
  a.pointer_move(160,110);a.pointer_button(true);CHECK(a.pointer.held&&a.pointer.captured.kind!=HitKind::UiAction);
  advance_to(start+28);CHECK(a.treasure_pointer_can_take());a.pointer_button(false);a.pointer.visible=false;unchanged();
- CHECK(a.game.treasure_state==1&&a.treasure_random==presentation_random);capture("treasure-holder-settled");click(UiAction::TreasureTake);
+ CHECK(a.game.treasure_state==1&&a.treasure_random==presentation_random);capture("treasure-holder-settled");
+ a.pointer_move(160,105);a.render();CHECK(a.keyword_hover.owner==(0x71000000u|unsigned(WorldRelicVajra)));unchanged();a.cursor=0;capture("treasure-relic-hover");
+ a.pointer_move(35,190);a.render();CHECK(a.keyword_hover.owner==0);a.pointer.visible=false;unchanged();click(UiAction::TreasureTake);
  CHECK(a.game.treasure_state==2&&has_world_relic(a.game,WorldRelicVajra)&&a.treasure_random==presentation_random);
  // A later room takes one further draw from the existing presentation
  // stream, rather than re-seeding from the run or the new room clock.

@@ -197,6 +197,7 @@ static const char* history_room_key(const UiFloorHistory&f){
 }
 static int history_focus_id(const App&a,const UiRunHistory&r,const uint16_t*indices,unsigned groups){
     if(!a.pointer.visible)return a.history_presentation.focus;
+    if(a.history_tooltip.source==1&&a.history_tooltip.serial==r.serial&&a.history_tooltip.contains(a.pointer.x,a.pointer.y))return a.history_tooltip.floor;
     const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit)return -1;
     if(hit->kind==HitKind::HistoryFloor&&hit->value>=0&&hit->value<r.floor_count)return hit->value;
     if(hit->kind==HitKind::HistoryRelic&&hit->value>=0&&hit->value<r.relic_count)return UiHistoryLayout::RelicFirst+hit->value;
@@ -208,6 +209,7 @@ static void history_tooltip(Canvas&c,const UiRunHistory&r,int focus,const UiHist
     UiHistoryLayout::Point point{};if(!layout.point(r,focus,point))return;
     const int py=point.y-offset+UiHistoryLayout::ViewTop;
     if(py+point.h<=UiHistoryLayout::ViewTop||py>=UiHistoryLayout::ViewTop+UiHistoryLayout::ViewHeight)return;
+    if(focus<UiHistoryLayout::RelicFirst){journal_floor_tooltip(c,r,unsigned(focus),point.x+dx+point.w/2,py+point.h/2,1);return;}
     char title[256]{},body[2048]{};ProgressTextValues values;
     if(focus>=UiHistoryLayout::RelicFirst){const RelicId id=RelicId(r.relics[focus-UiHistoryLayout::RelicFirst]);
         TextBuffer name{title,sizeof title,0};name.text(c.a.relic_title(id));c.a.relic_description(id,body,sizeof body);
@@ -254,12 +256,15 @@ static void history_screen(Canvas&c){
         page.ui(U_PotionPlaceholder,x,30-offset,10,13);
         if(r.potions[i])page.picture(a.content.potion_image(Potion(r.potions[i])),x,30-offset,10,13);
     }
+    uint32_t quests[3]{};const int journal_owner=a.progress.journal.owner(r.serial);
+    for(unsigned i=0;i<a.progress.journal.count;++i){const auto&e=a.progress.journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
     for(unsigned i=0;i<r.floor_count;++i){const auto&f=r.floors[i];const auto point=layout.floor(r,i);const int x=point.x+dx,y=point.y-offset;
         if(y+point.h<=0||y>=page.clip_h)continue;
         if(!i||r.floors[i-1].act!=f.act){const char*act=a.content.world_title("acts",map_colors(f.region).region);page.text_fitted(act,27+dx,y+3,30,8,Gold,8);}
         const int size=mn(19,12*int(motion.scale(int(i),a.map_clock_ms))/1000);
         if(a.content.version()>=HudUi7ContentVersion)hud_room_icon(page,history_room_key(f),x+6-size/2,y+7-size/2,size,size);
         else page.picture(f.room==unsigned(WorldRoom::Rest)?A_MapCamp:f.room==unsigned(WorldRoom::Shop)?A_MapShop:f.room==unsigned(WorldRoom::Treasure)?A_MapTreasure:f.room==unsigned(WorldRoom::Event)?A_MapEvent:A_MapCombat,x,y,12,12);
+        if(quests[i/32]&(uint32_t(1)<<(i%32)))page.picture(a.content.world_image("map","QUEST"),x+7,y-1,5,5);
     }
     values.total=r.relic_count;progress_text(a,"run_history","RELIC_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.relic_header-offset,257,10,Gold,8);
     for(unsigned i=0;i<r.relic_count;++i){const auto point=layout.relic(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;
