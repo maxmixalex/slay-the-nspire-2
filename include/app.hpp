@@ -59,6 +59,7 @@
 #include "history_journal_ui8_assets.hpp"
 #include "game_over_transition_assets.hpp"
 #include "grouped_glyphs.hpp"
+#include "grouped_strings.hpp"
 #include "card_resource_assets.hpp"
 #include "ui_history_layout.hpp"
 #include "history_ui8_assets.hpp"
@@ -131,7 +132,7 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>GroupedGlyphContentVersion||cards_!=CardKinds)return false;
+        if(version_<ContentVersion||version_>GroupedStringContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);

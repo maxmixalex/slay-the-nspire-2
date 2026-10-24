@@ -4,6 +4,7 @@
 #include "inline_icons.hpp"
 #include "unicode_text.hpp"
 #include "resource_transfer.hpp"
+#include "tile_filter.hpp"
 namespace spire {
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
@@ -135,6 +136,7 @@ struct ImageReservation {
 };
 #include "content_text_cache.inc"
 #include "content_grouped_glyphs.inc"
+#include "content_grouped_strings.inc"
 static void clear_caches(const Content* owner){
     clear_tile_cache(owner);
     for(auto&v:image_cache)if(v.owner==owner)discard_image(v);
@@ -170,7 +172,7 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>GroupedGlyphContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>GroupedStringContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
@@ -451,10 +453,24 @@ Glyph Content::glyph(uint32_t cp,int size,unsigned style)const{
 }
 const char* Content::string(int id)const{
     if(!metadata_||!io_good_||id<0||(unsigned)id>=strings_)return "";
-    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;const uint32_t off=u32(r),size=u32(r+4);
-    if(size>=MaxStringBytes||!reader_.contains(off,size+1)){io_good_=false;return "";}
-    if(data_){if(data_[off+size]){io_good_=false;return "";}return (const char*)(data_+off);}
-    const auto*bytes=string_cache.read(this,off,size+1,reader_);
+    const uint8_t*r=metadata_+40+images_*16+glyphs_*16+id*8;
+    const uint32_t off=u32(r),stored=u32(r+4),size=stored&~GroupedStringFlag;
+    const bool grouped=bool(stored&GroupedStringFlag);
+    if(size>=MaxStringBytes||(grouped&&version_<GroupedStringContentVersion)||
+       !reader_.contains(off,grouped?GroupedStringDescriptorBytes:size+1)){io_good_=false;return "";}
+    const uint8_t*bytes=nullptr;
+    if(grouped){
+        bytes=string_cache.cached(this,off,size+1);
+        if(!bytes){
+            ResourceTransferLease transfer(ResourceTransferUse::Bytes);
+            // A reentrant cache miss may not modify an active save/image
+            // workspace or evict text; it remains retryable after the lease.
+            if(!transfer)return "";
+            const GroupedStringRead read{this,&reader_,transfer.bytes()};
+            bytes=string_cache.read_with(this,off,size+1,&read,read_grouped_string);
+        }
+    }else if(data_)bytes=data_+off;
+    else bytes=string_cache.read(this,off,size+1,reader_);
     if(!bytes||bytes[size]){io_good_=false;return "";}
     return reinterpret_cast<const char*>(bytes);
 }

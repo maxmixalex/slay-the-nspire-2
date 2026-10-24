@@ -141,7 +141,15 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     for clip in clips:
         tiles.require(0 <= clip['first'] <= count - clip['count'] and 1 <= clip['count'] <= 256,
                       'Appended animation lies outside new image directory')
-    art_end = min([row[1] for row in source.glyphs] + [row[0] for row in source.strings])
+    if input_version >= 32:
+        # Grouped glyph/text data can precede their directory-referenced
+        # descriptors. Insert before the complete locale tail, not before
+        # its first descriptor, so all signed relative offsets stay exact.
+        from split_content import layout
+        bounds = layout(data, language)
+        art_end = (bounds['prefix'] + bounds['artwork'] + 1) & ~1
+    else:
+        art_end = min([row[1] for row in source.glyphs] + [row[0] for row in source.strings])
     descriptor_end = old_tiles.descriptors + old_tiles.frame_count * tiles.DESCRIPTOR.size
     tiles.require(art_end % 2 == 0 and descriptor_end <= art_end, 'Invalid art/locale boundary')
     header = list(tiles.GLOBAL.unpack_from(data, source.base_end))

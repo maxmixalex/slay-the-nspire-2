@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..32 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..33 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This
@@ -50,8 +50,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/32")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/33")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= 32768 and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
@@ -95,8 +95,9 @@ def layout(data, language):
         graphic(off, count)
         require(count >= 32, "Truncated compressed animation group")
         group = struct.unpack_from("<4s7I", data, off)
-        require(group[0] == b"TGR1" and group[2] == i and group[4] == count - 32 and
-                group[7] == 0, "Invalid compressed animation group header")
+        transformed = group[0] == b"TGR2" and version >= 33 and i < tile[5] and group[1] == 1 and group[7] in (1, 2)
+        require((transformed or (group[0] == b"TGR1" and group[7] == 0)) and
+                group[2] == i and group[4] == count - 32, "Invalid compressed animation group header")
     for i in range(ni):
         off, width, height, fmt, count = struct.unpack_from("<IHHII", data, 40 + i * 16)
         require(0 < width <= 320 and 0 < height <= 240 and fmt <= (7 if version >= 20 else 6),
@@ -154,9 +155,26 @@ def layout(data, language):
                     "Invalid glyph group header/slice")
     marker = None
     for i in range(ns):
-        off, count = struct.unpack_from("<II", data, string_at + i * 8)
-        require(count < 16384 and end <= off < length and count < length - off and
-                data[off + count] == 0, "Text must be after artwork and terminated")
+        off, stored = struct.unpack_from("<II", data, string_at + i * 8)
+        grouped, count = stored & 0x80000000, stored & 0x7fffffff
+        require(not grouped or version >= 33, "Grouped string requires NSP2/33")
+        require(count < 16384 and end <= off <= length - (16 if grouped else count + 1),
+                "Text must be after artwork within its byte bound")
+        if grouped:
+            require(i != MARKER, "Locale marker must remain ungrouped")
+            relative, group_size, raw_at, raw_bytes = struct.unpack_from('<iIII', data, off)
+            group_at = off + relative
+            require(32 < group_size <= 617323 and end <= group_at <= length - group_size and
+                    raw_bytes == count + 1 and (group_at + group_size <= off or off + 16 <= group_at),
+                    "Invalid grouped string descriptor")
+            group = struct.unpack_from('<4s7I', data, group_at)
+            require(group[0] == b'RGR1' and 0 < group[1] <= 32768 and
+                    group[2] == group_size - 32 and group[3] == 14 and
+                    0 < group[4] <= 16384 and group[5:] == (0, 0, 0) and
+                    raw_at <= group[1] and raw_bytes <= group[1] - raw_at,
+                    "Invalid string group header/slice")
+        else:
+            require(data[off + count] == 0, "Text must be terminated")
         if i == MARKER:
             marker = bytes(data[off:off + count])
     require(marker == language.encode("ascii"), "Language label does not match the NSP2 marker")

@@ -99,11 +99,13 @@ static bool tile_header_bounds(const uint8_t* h,uint32_t base,uint32_t length,
     return prefix<=length&&prefix<=directory_capacity&&descriptors>=prefix&&!(descriptors&1u)&&
         descriptors<=length&&frames<=(length-descriptors)/16;
 }
-static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* p,unsigned length){
+static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* p,unsigned length,bool filtered_allowed){
     const uint32_t tiles=u32(h+16),groups=u32(h+20);
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     const bool is_tile=id<groups;
-    if(u32(p)!=0x31524754u||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
+    const bool filtered=u32(p)==FilteredTileGroupMagic;
+    if((filtered?(!filtered_allowed||!is_tile||u32(p+28)<1||u32(p+28)>2):
+        (u32(p)!=0x31524754u||u32(p+28)!=0))||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
        !size||size>Lzma2BlockRawLimit||encoded!=length-32)return false;
     if(is_tile){
         const unsigned per_group=u32(h+44),left=tiles-id*per_group;
@@ -124,10 +126,20 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     if(!encoded_pixels||length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
-    if(!valid_tile_group_header(h,id,p,length))return nullptr;
+    if(!valid_tile_group_header(h,id,p,length,owner->version()>=TileFilterContentVersion))return nullptr;
+    const unsigned filter=u32(p)==FilteredTileGroupMagic?u32(p+28):0;
     TileGroup* group=reserve_tile_group(size);if(!group)return nullptr;
     if(!decode_lzma2_block(tile_bytes(*group),group->pages*TilePageBytes,size,p+32,encoded,u32(h+12))){
         tile_discard(*group);return nullptr;
+    }
+    if(filter){
+        // LZMA2 has consumed its input. Reuse the same transfer lease for the
+        // reversible field shuffle; cache size and decoded group IDs stay exact.
+        const uint8_t* decoded=tile_bytes(*group);
+        for(unsigned i=0;i<size;++i)encoded_pixels[i]=decoded[i];
+        if(!restore_tile_filter(tile_bytes(*group),encoded_pixels,size,items,filter)){
+            tile_discard(*group);return nullptr;
+        }
     }
     group->id=id;group->size=size;group->items=uint16_t(items);group->age=next_tile_age();
     group->owner=owner;return group;

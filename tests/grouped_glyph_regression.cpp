@@ -22,9 +22,9 @@ struct Package {
     Bytes raw[Glyphs];
     unsigned append(const Bytes&data){if(bytes.size()&1)bytes.push_back(0);const unsigned at=unsigned(bytes.size());bytes.insert(bytes.end(),data.begin(),data.end());return at;}
     unsigned group(const Bytes&data){Bytes encoded=stored(data),g(32);put(g,0,0x31524752);put(g,4,unsigned(data.size()));put(g,8,unsigned(encoded.size()));put(g,12,14);put(g,16,Glyphs);g.insert(g.end(),encoded.begin(),encoded.end());return append(g);}
-    explicit Package(bool grouped=true,bool pressure=false,unsigned extra_group_bytes=0){
+    explicit Package(bool grouped=true,bool pressure=false,unsigned extra_group_bytes=0,bool extra_auxiliary=false){
         const unsigned strings=glyph_at+Glyphs*16,clips=strings+Strings*8,cards=clips+Clips*16,aux=cards+CardKinds*16;
-        base=aux+Aux*4;const unsigned table=base+64,cost=table+16,frame=cost+Images;
+        base=aux+(Aux+unsigned(extra_auxiliary))*4;const unsigned table=base+64,cost=table+16,frame=cost+Images;
         bytes.resize(frame+16);put(bytes,0,0x3250534e);put(bytes,4,grouped?GroupedGlyphContentVersion:GameOverTransitionContentVersion);put(bytes,8,0x41cef1ea);
         put(bytes,16,Images);put(bytes,20,Glyphs);put(bytes,24,Strings);put(bytes,28,Clips);put(bytes,32,CardKinds);
         put(bytes,base,0x314c4954);put(bytes,base+4,1);put(bytes,base+8,16);put(bytes,base+12,14);
@@ -75,6 +75,7 @@ static void exact_and_lease(){
     CHECK(streamed->glyph('C',5).pixels==a.pixels);input.fail=true;CHECK(streamed->glyph('B',5).pixels&&streamed->healthy());
 }
 static void lifetime(){Package p(true,true);Provider provider{&p.bytes};auto content=std::make_unique<Content>();CHECK(content->open(provider.source()));const Glyph glyph=content->glyph('A',5);CHECK(glyph.pixels);for(unsigned i=0;i<11;++i){auto picture=content->image(i);CHECK(picture.pixels&&picture.pixels[0]==i&&picture.pixels[1]==0x42);}const unsigned calls=provider.calls;provider.fail=true;CHECK(content->glyph('A',5).pixels==glyph.pixels);CHECK(!std::memcmp(glyph.pixels,p.raw[1].data(),6));CHECK(content->healthy()&&provider.calls==calls);}
+static void optional_auxiliary(){Package p(true,false,0,true);auto content=std::make_unique<Content>();CHECK(content->open(p.bytes.data(),p.bytes.size()));CHECK(content->current_profile()&&content->ui_image(I9_CardUnplayable)==0);put(p.bytes,p.base-4,Package::Images);CHECK(!content->open(p.bytes.data(),p.bytes.size()));put(p.bytes,p.base-4,0);put(p.bytes,4,GameOverTransitionContentVersion);CHECK(!content->open(p.bytes.data(),p.bytes.size()));}
 static void malformed(){
     for(unsigned mode=0;mode<12;++mode){Package p;const unsigned descriptor=p.descriptors[1];
         switch(mode){case 0:put(p.bytes,descriptor,0x80000000u);break;case 1:put(p.bytes,descriptor+4,32);break;case 2:put(p.bytes,descriptor+4,ResourceTransferCapacity+1);break;case 3:put(p.bytes,descriptor+8,65536);break;case 4:put(p.bytes,descriptor+12,7);break;case 5:put(p.bytes,p.group_at,0);break;case 6:put(p.bytes,p.group_at+12,13);break;case 7:put(p.bytes,p.group_at+8,0);break;case 8:put(p.bytes,descriptor+4,unsigned(p.bytes.size()));break;case 9:put(p.bytes,p.glyph_at+16+14,GroupedGlyphFlag|1,2);break;case 10:put(p.bytes,4,GameOverTransitionContentVersion);break;default:put(p.bytes,descriptor,0);break;}
@@ -87,12 +88,19 @@ static void malformed(){
 }
 static Bytes read_file(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0);CHECK(!std::fseek(f,0,SEEK_SET));Bytes result(size);CHECK(std::fread(result.data(),1,result.size(),f)==result.size());CHECK(!std::fclose(f));return result;}
 static void actual(const char*before_path,const char*after_path){
-    Bytes before=read_file(before_path),after=read_file(after_path);auto original=std::make_unique<Content>(),candidate=std::make_unique<Content>();CHECK(original->open(before.data(),before.size()));CHECK(candidate->open(after.data(),after.size()));CHECK(candidate->version()==GroupedGlyphContentVersion);
-    const unsigned count=word(before,20);CHECK(count==word(after,20));const unsigned rows=40+word(before,16)*16;unsigned skipped=0;
-    for(unsigned i=0;i<count;++i){const unsigned at=rows+i*16,cp=word(before,at),packed=unsigned(before[at+8])|(unsigned(before[at+9])<<8),size=packed&31,style=packed>>5;
+    Bytes before=read_file(before_path),after=read_file(after_path);auto original=std::make_unique<Content>(),candidate=std::make_unique<Content>();CHECK(original->open(before.data(),before.size()));CHECK(candidate->open(after.data(),after.size()));CHECK(candidate->version()>=GroupedGlyphContentVersion);
+    const unsigned count=word(before,20);CHECK(count==word(after,20));const unsigned rows=40+word(before,16)*16,after_rows=40+word(after,16)*16;unsigned skipped=0;
+    for(unsigned i=0;i<count;++i){const unsigned at=rows+i*16,cp=word(before,at),packed=unsigned(before[at+8])|(unsigned(before[at+9])<<8),size=packed&31,style=((packed>>6)&3u)|((packed>>3)&4u);
+        const unsigned candidate_row=after_rows+i*16;CHECK(cp==word(after,candidate_row));CHECK(!std::memcmp(before.data()+at+8,after.data()+candidate_row+8,6));
+        CHECK((unsigned(before[at+14])|(unsigned(before[at+15])<<8))==((unsigned(after[candidate_row+14])|(unsigned(after[candidate_row+15])<<8))&~GroupedGlyphFlag));
         if(text_format_control(cp)||inline_icon(cp)){++skipped;continue;}
-        const Glyph a=original->glyph(cp,size,style),b=candidate->glyph(cp,size,style);CHECK(a.pixels&&b.pixels&&a.w==b.w&&a.h==b.h&&a.advance==b.advance&&a.encoded_size==b.encoded_size);const unsigned length=a.encoded_size?a.encoded_size:unsigned(a.w)*a.h;CHECK(!std::memcmp(a.pixels,b.pixels,length));CHECK(original->healthy()&&candidate->healthy());
+        const Glyph a=original->glyph(cp,size,style),b=candidate->glyph(cp,size,style),metric=candidate->glyph_metrics(cp,size,style);
+        if(!(a.pixels&&b.pixels&&a.w==b.w&&a.h==b.h&&a.advance==b.advance&&a.encoded_size==b.encoded_size))
+            std::fprintf(stderr,"actual row=%u cp=U+%04x packed=%u size=%u face=%u; original=(%u,%u,%u,%u,%p) candidate=(%u,%u,%u,%u,%p), healthy=%u/%u\n",i,cp,packed,size,style,a.w,a.h,a.advance,a.encoded_size,(const void*)a.pixels,b.w,b.h,b.advance,b.encoded_size,(const void*)b.pixels,original->healthy(),candidate->healthy());
+        CHECK(a.pixels&&b.pixels&&a.w==b.w&&a.h==b.h&&a.advance==b.advance&&a.encoded_size==b.encoded_size);
+        CHECK(a.w==before[at+10]&&a.h==before[at+11]&&a.advance==(unsigned(before[at+12])|(unsigned(before[at+13])<<8)));
+        CHECK(!metric.pixels&&metric.w==a.w&&metric.h==a.h&&metric.advance==a.advance&&metric.encoded_size==a.encoded_size);const unsigned length=a.encoded_size?a.encoded_size:unsigned(a.w)*a.h;CHECK(!std::memcmp(a.pixels,b.pixels,length));CHECK(original->healthy()&&candidate->healthy());
     }
     std::printf("actual glyph rows: %u, structural inline/control entries: %u; exact raw/RLE bytes and metrics\n",count,skipped);
 }
-int main(int argc,char**argv){CHECK(argc==1||argc==3);exact_and_lease();lifetime();malformed();if(argc==3)actual(argv[1],argv[2]);std::printf("grouped glyph: %u checks; old/new, direct/ranged, aliases, raw/RLE, lease, image eviction and bad bounds passed\n",checks);}
+int main(int argc,char**argv){CHECK(argc==1||argc==3);exact_and_lease();lifetime();malformed();optional_auxiliary();if(argc==3)actual(argv[1],argv[2]);std::printf("grouped glyph: %u checks; old/new, direct/ranged, aliases, raw/RLE, lease, image eviction and bad bounds passed\n",checks);}

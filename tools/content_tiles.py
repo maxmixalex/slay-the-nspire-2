@@ -23,6 +23,7 @@ from tempfile import TemporaryDirectory, NamedTemporaryFile
 import time
 
 import numpy as np
+from tile_filter import restore_tiles
 
 try:
     import lz4.block as _lz4
@@ -41,6 +42,9 @@ GROUP_LIMIT = 512 * 1024
 GLYPH_GROUP_VERSION = 32
 GLYPH_GROUP_FLAG = 0x8000
 GLYPH_GROUP_LIMIT = 64 * 1024
+STRING_GROUP_VERSION = 33
+STRING_GROUP_FLAG = 0x80000000
+STRING_GROUP_LIMIT = 32 * 1024
 SIDE = 16
 TILE_BYTES = 770
 MAX_TILES_PER_GROUP = GROUP_LIMIT // TILE_BYTES
@@ -216,9 +220,8 @@ class PackView:
             previous_glyph = glyph_key
             self.glyph_payload(glyph_id)
         self.strings = [struct.unpack_from('<II', data, self.string_at + i * 8) for i in range(ns)]
-        for offset, length in self.strings:
-            require(length < STRING_LIMIT, 'String exceeds runtime byte limit')
-            payload = self.block(offset, length + 1)
+        for string_id in range(len(self.strings)):
+            payload = self.string_payload(string_id)
             require(payload[-1] == 0 and b'\0' not in payload[:-1], 'Invalid string terminator')
             payload[:-1].decode('utf-8')
         self.clips = [CLIP.unpack_from(data, self.clip_at + i * 16) for i in range(nc)]
@@ -281,6 +284,42 @@ class PackView:
         if not self.glyphs[glyph_id][6] & ~GLYPH_GROUP_FLAG:
             return bytes(payload)
         return b''.join(bytes((alpha,)) * count for count, alpha in zip(payload[::2], payload[1::2]))
+
+    def string_length(self, string_id):
+        return self.strings[string_id][1] & ~STRING_GROUP_FLAG
+
+    def string_payload(self, string_id):
+        """Return exact UTF-8 bytes including the original terminal NUL."""
+        offset, stored = self.strings[string_id]
+        grouped, length = stored & STRING_GROUP_FLAG, stored & ~STRING_GROUP_FLAG
+        require(length < STRING_LIMIT, 'String exceeds runtime byte limit')
+        require(not grouped or self.version >= STRING_GROUP_VERSION,
+                'Grouped string requires NSP2/33')
+        require(not grouped or string_id != 6110, 'Locale marker must remain ungrouped')
+        if not grouped:
+            return self.block(offset, length + 1)
+        relative, group_size, raw_at, raw_bytes = struct.unpack('<iIII', self.block(offset, 16))
+        group_at = offset + relative
+        require(GROUP.size < group_size <= ENCODED_LIMIT and raw_bytes == length + 1 and
+                group_at >= self.base_end and group_size <= len(self.data) - group_at and
+                (group_at + group_size <= offset or offset + 16 <= group_at),
+                'Invalid grouped string descriptor')
+        tag, raw_size, stored_size, prop, items, a, b, c = GROUP.unpack_from(self.data, group_at)
+        require(tag == b'RGR1' and 0 < raw_size <= STRING_GROUP_LIMIT and
+                stored_size == group_size - GROUP.size and prop == 14 and
+                0 < items <= 16384 and not (a or b or c) and
+                raw_at <= raw_size and raw_bytes <= raw_size - raw_at,
+                'Invalid grouped string header/slice')
+        cache_key = ('string', group_at, group_size)
+        if cache_key in self.retained_cache:
+            self.retained_cache.move_to_end(cache_key)
+            raw = self.retained_cache[cache_key]
+        else:
+            raw = decode_lzma2(self.data[group_at + GROUP.size:group_at + group_size], raw_size)
+            if len(self.retained_cache) >= HOST_CACHE_GROUPS:
+                self.retained_cache.popitem(last=False)
+            self.retained_cache[cache_key] = raw
+        return raw[raw_at:raw_at + raw_bytes]
 
     def image_raw(self, image_id):
         offset, width, height, fmt, length = self.images[image_id]
@@ -708,7 +747,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31), 'Tiled reader requires version 15 through 31')
+        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33), 'Tiled reader requires version 15 through 33')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)
@@ -738,12 +777,22 @@ class TileReader:
                 require(off >= descriptor_end and length <= len(pack.data) - off,
                         'Image invades descriptor array')
         for _cp, off, _px, w, h, _advance, enc in pack.glyphs:
-            require(off >= descriptor_end and (enc or w * h) <= len(pack.data) - off,
+            grouped = enc & GLYPH_GROUP_FLAG
+            require(off >= descriptor_end and (16 if grouped else enc or w * h) <= len(pack.data) - off,
                     'Glyph invades descriptor array')
+            if grouped:
+                relative, count = struct.unpack_from('<iI', pack.data, off)
+                require(off + relative >= descriptor_end and count <= len(pack.data) - off - relative,
+                        'Glyph group invades descriptor array')
         for off, length in pack.strings:
-            require(off >= descriptor_end and length + 1 <= len(pack.data) - off,
+            grouped = length & STRING_GROUP_FLAG
+            require(off >= descriptor_end and (16 if grouped else length + 1) <= len(pack.data) - off,
                     'String invades descriptor array')
-        self.groups = []
+            if grouped:
+                relative, count = struct.unpack_from('<iI', pack.data, off)
+                require(off + relative >= descriptor_end and count <= len(pack.data) - off - relative,
+                        'String group invades descriptor array')
+        self.groups, self.filters = [], []
         previous_end = descriptor_end
         for i in range(group_count):
             off, length = struct.unpack_from('<II', pack.data, table + i * 8)
@@ -751,7 +800,9 @@ class TileReader:
                     and off + length <= len(pack.data), 'Invalid or overlapping group range')
             header = GROUP.unpack_from(pack.data, off)
             tag, kind, number, raw_size, encoded_size, crc, count, zero = header
-            require(tag == b'TGR1' and number == i and zero == 0 and encoded_size + GROUP.size == length
+            filtered = tag == b'TGR2'
+            require(((filtered and pack.version >= 33 and kind == 1 and zero in (1, 2)) or
+                     (tag == b'TGR1' and zero == 0)) and number == i and encoded_size + GROUP.size == length
                     and 0 < raw_size <= GROUP_LIMIT, 'Invalid group header')
             if i < self.tile_groups:
                 expected = min(self.per_group, self.tile_count - i * self.per_group)
@@ -759,6 +810,7 @@ class TileReader:
             else:
                 require(kind == 2 and 0 < count <= INDEX_FRAMES, 'Invalid index group item count')
             self.groups.append((off + GROUP.size, encoded_size, raw_size, crc, kind, count))
+            self.filters.append(zero if filtered else 0)
             previous_end = off + length
         self.cache = OrderedDict()
         self.group_reads = self.decoded_bytes = 0
@@ -770,6 +822,8 @@ class TileReader:
             return self.cache[group_id]
         off, encoded_size, raw_size, crc, kind, count = self.groups[group_id]
         raw = decode_lzma2(self.pack.data[off:off + encoded_size], raw_size)
+        if self.filters[group_id]:
+            raw = restore_tiles(raw, self.filters[group_id])
         if kind == 1:
             validate_tiles(raw)
             starts = None

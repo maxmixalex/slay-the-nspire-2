@@ -16,7 +16,7 @@ namespace {
 static App app;static SaveData before,after;static unsigned save_attempts=0;
 static const char*capture_directory=nullptr;
 struct Io {uint64_t calls=0,bytes=0,seeks=0;};
-struct Source {FILE*file=nullptr;uint32_t length=0;ResourceFileCursor cursor{};Io io{};FILE*trace=nullptr;const char*scene="",*window="";};
+struct Source {FILE*file=nullptr;uint32_t length=0;ResourceFileCursor cursor{};Io io{};FILE*trace=nullptr;FILE*frames=nullptr;const char*scene="",*window="";};
 int seek_file(void*f,long offset,int origin){return std::fseek(static_cast<FILE*>(f),offset,origin);}
 unsigned read_file(void*out,unsigned size,unsigned count,void*f){return unsigned(std::fread(out,size,count,static_cast<FILE*>(f)));}
 bool read_at(void*context,uint32_t offset,void*out,uint32_t count){
@@ -94,6 +94,7 @@ bool setup(unsigned scene){
 }
 bool frame(Source&source,Cost&cost,unsigned step){
  const auto io=source.io;const auto start=Clock::now();if(step)app.advance(step);app.render();cost.add(start,io,source);
+ if(source.frames&&std::fprintf(source.frames,"%s %s %u %016llx\n",source.scene,source.window,cost.frames,(unsigned long long)pixels())<0)return false;
  return app.content.healthy();
 }
 bool run_scene(Source&source,unsigned scene,unsigned frames){
@@ -124,13 +125,14 @@ bool run_scene(Source&source,unsigned scene,unsigned frames){
 }
 }
 int main(int argc,char**argv){
- if(argc<2||argc>4){std::fprintf(stderr,"Usage: room_render_benchmark REAL_PACK [FRAMES_PER_WINDOW] [EXISTING_CAPTURE_DIRECTORY]\n");return 2;}
+ if(argc<2||argc>5){std::fprintf(stderr,"Usage: room_render_benchmark REAL_PACK [FRAMES_PER_WINDOW] [EXISTING_CAPTURE_DIRECTORY|-] [FRAME_TRANSCRIPT]\n");return 2;}
  unsigned frames=argc>=3?unsigned(std::strtoul(argv[2],nullptr,10)):180;if(frames<10||frames>3600)return 2;
- if(argc==4)capture_directory=argv[3];
+ if(argc>=4&&std::strcmp(argv[3],"-"))capture_directory=argv[3];
  Source source;source.file=std::fopen(argv[1],"rb");if(!source.file||std::fseek(source.file,0,SEEK_END))return 3;
  const long length=std::ftell(source.file);if(length<40||uint64_t(length)>MaxContentFile)return 3;source.length=uint32_t(length);
  if(const char*trace=std::getenv("NSPIRE_RESOURCE_TRACE")){source.trace=std::fopen(trace,"wb");if(!source.trace)return 3;}
+ if(argc==5){source.frames=std::fopen(argv[4],"wb");if(!source.frames)return 3;}
  std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"frames_per_window\":%u,\"windows\":3,\"step_ms\":33,\"method\":\"Frozen native renderer; real range-read resources; host CPU intervals without pacing; frame hashes outside timed intervals; fixtures do not certify whole-run play\"}\n",source.length,frames);
  for(unsigned i=0;i<6;++i)if(!run_scene(source,i,frames)){std::fprintf(stderr,"room benchmark failed scene %u phase %u healthy %u\n",i,unsigned(app.game.phase),app.content.healthy());return 10+int(i);}
- const bool trace_ok=!source.trace||!std::fclose(source.trace);return !std::fclose(source.file)&&trace_ok?0:4;
+ const bool trace_ok=!source.trace||!std::fclose(source.trace),frames_ok=!source.frames||!std::fclose(source.frames);return !std::fclose(source.file)&&trace_ok&&frames_ok?0:4;
 }
