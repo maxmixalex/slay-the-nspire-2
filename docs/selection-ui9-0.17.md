@@ -36,8 +36,8 @@ both RGB and alpha. This projected fixed-point shader does not claim to be
 bit-identical to Godot's GPU implementation.
 
 Only the missing original glyphs at the actual scene sizes are appended.
-The pre-conversion directory check requires10 additional English keys and52
-Chinese keys for the currently specified selection, pause and potion text,
+The pre-conversion directory check requires10 additional English keys and53
+Chinese keys for the currently specified combat/world selection, pause and potion text,
 leaving both below the existing32768-entry limit. Conversion readback must
 verify every required glyph and byte preservation before accepting output.
 These counts are planning checks, not yet a production-conversion receipt.

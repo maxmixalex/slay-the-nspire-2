@@ -45,6 +45,12 @@ PILE_KEYS = tuple('cards.'+key+'.selectionScreenPrompt' for key in PILE_CARDS) +
     'potions.DROPLET_OF_PRECOGNITION.selectionScreenPrompt',
     'potions.LIQUID_MEMORIES.selectionScreenPrompt',
     'relics.CHOICES_PARADOX.selectionScreenPrompt')
+WORLD_KEYS = ('card_selection.TO_ENCHANT', 'relics.DOLLYS_MIRROR.selectionScreenPrompt',
+              'relics.CLAWS.selectionScreenPrompt', 'relics.SEA_GLASS.selectionScreenPrompt',
+              'events.BRAIN_LEECH.pages.SHARE_KNOWLEDGE.selectionScreenPrompt',
+              'events.ROOM_FULL_OF_CHEESE.pages.GORGE.selectionScreenPrompt',
+              'gameplay_ui.COMBAT_REWARD_CARD_REMOVAL.selectionScreenPrompt',
+              'modifiers.SEALED_DECK.selectionPrompt')
 TEXT_KEYS = tuple(sorted(HAND_KEYS+PILE_KEYS))
 # These are the remaining empty slots, not a new larger string directory.
 TEXT_SLOTS = tuple(range(8378, 8400))+tuple(range(8689, 8699))
@@ -171,7 +177,8 @@ def append(data, manifest, cache):
 def source_text_index():
     root = Path(__file__).resolve().parents[1]/'src'
     result = {}
-    for name in ('world_text_index.inc', 'locale_text_index.inc', 'native_ui_text_index.inc'):
+    for name in ('world_text_index.inc', 'locale_text_index.inc', 'native_ui_text_index.inc',
+                 'run_modes_text_index.inc'):
         result.update((key, int(slot)) for key, slot in
                       re.findall(r'\{"([^"]+)",\s*(\d+)\}', (root/name).read_text()))
     result.update((key, slot) for slot, key in TEXTS)
@@ -189,6 +196,8 @@ def glyph_requirements(source):
             required.update((cp, size, face) for cp in alphabet for size in sizes for face in faces)
     add(HAND_KEYS, (6,), (5,))
     add(PILE_KEYS, (5,), (0, 5))
+    add(WORLD_KEYS, (5,), (0, 5))
+    add(('gameplay_ui.CHOOSE_A_PACK',), (6,), (5,))
     add(('card_selection.TO_DISCARD', 'card_selection.TO_EXHAUST', 'card_selection.TO_TRANSFORM'), (6,), (5,))
     add(('card_selection.TO_EXHAUST', 'card_selection.TO_UPGRADE', 'card_selection.TO_REMOVE',
          'card_selection.TO_TRANSFORM'), (5,), (0, 5))
