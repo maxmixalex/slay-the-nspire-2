@@ -158,14 +158,8 @@ static void native_fake_merchant_screen(Canvas&c){
  }
  if(a.shop_open){native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==6);c.action(0,209,61,31,UiAction::CloseShop);}
  merchant_hand(c,true);merchant_dialogue(c,true);
- if(focused>=0&&!a.pointer.held){
-  char description[4096]{};a.relic_description(RelicId(e.offers[focused]),description,sizeof description);
-  const int width=170,lines=mn(7,c.paragraph(description,0,0,width-16,0,0,10)),height=28+lines*13,x=5,y=mx(23,120-height/2);
-  const int skin=a.content.world_image("common","HOVER_TIP");
-  if(skin>=0)c.nine_image(skin,x,y,width,height,28,22,46,16);else c.dim(x,y,width,height,225);
-  c.text_fitted(a.relic_title(RelicId(e.offers[focused])),x+8,y+5,width-16,12,Gold,8);
-  c.paragraph(description,x+8,y+24,width-16,lines,0,10,rgb(255,246,226));
- }
+ // NFakeMerchantRelic shares the normal relic hover-tip set. Its event owner
+ // is collected by event_hover_target; a second local panel would duplicate it.
 }
 static void native_event_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;

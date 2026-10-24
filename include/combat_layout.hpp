@@ -28,15 +28,22 @@ constexpr int HandTileW=80,HandTileH=112;
 struct MerchantLayout {
  static constexpr int BodyX=209,BodyY=116,BodyW=55,BodyH=67;
 };
-struct CreaturePose {int x,feet,width,scale,intent,hp,status;};
+struct CreaturePose {
+ int x,feet,width,scale,intent,hp,status;
+ int body_left=0,body_top=0,body_width=0,body_height=0,center_x=0,center_y=0;
+};
+inline CreaturePose legacy_creature_pose(CreaturePose p){
+ p.body_left=p.x-p.width/2;p.body_height=84*p.scale/1024;p.body_top=p.feet-p.body_height;
+ p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;return p;
+}
 inline CreaturePose enemy_pose(int count,int index){
  if(count<1)count=1;if(count>MaxEnemies)count=MaxEnemies;
  if(index<0)index=0;if(index>=count)index=count-1;
- if(count==1)return {238,122,60,1024,50,129,149};
- if(count==2)return {178+index*88,122,60,1024,50,129,149};
- if(count<=4){int width=180/count;return {137+width/2+index*width,122,width-4,720,58,129,148};}
+ if(count==1)return legacy_creature_pose({238,122,60,1024,50,129,149});
+ if(count==2)return legacy_creature_pose({178+index*88,122,60,1024,50,129,149});
+ if(count<=4){int width=180/count;return legacy_creature_pose({137+width/2+index*width,122,width-4,720,58,129,148});}
  int columns=(count+1)/2,row=index/columns,col=index%columns,width=180/columns;
- int feet=row?145:86;return {137+width/2+col*width,feet,width-5,448,row?113:50,feet+3,feet+18};
+ int feet=row?145:86;return legacy_creature_pose({137+width/2+col*width,feet,width-5,448,row?113:50,feet+3,feet+18});
 }
 struct EncounterPositions {EncounterId encounter;uint8_t count;uint16_t zoom;int16_t offset_x,offset_y;int16_t points[6][2];};
 inline const EncounterPositions* encounter_positions(EncounterId encounter){
@@ -70,9 +77,26 @@ inline CreatureBounds creature_bounds(EnemyId kind){
  static_assert(sizeof bounds/sizeof bounds[0]==EnemyKinds,"Every model needs a bounds entry");
  return unsigned(kind)<EnemyKinds?bounds[unsigned(kind)]:CreatureBounds{0,0};
 }
+struct CreatureAnchors {int16_t left,top,right,bottom,center_x,center_y,intent_x,intent_y;};
+inline CreatureAnchors creature_anchors(EnemyId kind){
+ static constexpr CreatureAnchors anchors[]={
+#include "combat_creature_anchors.inc"
+ };
+ static_assert(sizeof anchors/sizeof anchors[0]==EnemyKinds,"Every model needs authored anchors");
+ return unsigned(kind)<EnemyKinds?anchors[unsigned(kind)]:CreatureAnchors{};
+}
+inline CreatureAnchors player_anchors(Character character,bool pet=false){
+ static constexpr CreatureAnchors anchors[]={
+  {-121,-278,121,0,4,-168,30,-310},{-122,-244,122,0,0,-146,0,-302},
+  {-125,-260,125,0,4,-179,0,-328},{-115,-335,115,0,0,-178,24,-414},
+  {-105,-270,105,0,3,-191,0,-326},{-116,-204,116,0,-15,-109,0,-218}
+ };
+ return anchors[pet?5:unsigned(character)<5?unsigned(character):0];
+}
 // Camera-scaled source coordinates in thousandths of a pixel. Scaling the
 // formation before dividing preserves the exact 960px half-width and centers
-// at fractional zooms; scene markers use the same units and one final /6000.
+// at fractional zooms. The 4:3 projection divides only after applying the
+// original container transform and its optional aspect-fit ratio.
 // Retaining removed models keeps survivors stationary after a death.
 struct EnemyFormationPoint {int x=0,y=200000;};
 inline EnemyFormationPoint unnamed_enemy_point(const State&s,int index,int zoom){
@@ -89,40 +113,92 @@ inline EnemyFormationPoint unnamed_enemy_point(const State&s,int index,int zoom)
  int x=left+widths[index]/2;for(int i=0;i<index;++i)x+=widths[i]+gap;
  return {x,200*zoom-(index%2?stagger:0)};
 }
-inline int combat_player_x(const State&s){
- if(!s.enemy_world.active)return 60;
- // Single-player NCombatRoom.PositionPlayersAndPets centers the ordinary
- // player in the left half. Camera zoom cancels that half-width; the local
- // Necrobinder's additional -150 offset is still camera-scaled.
- const auto camera=encounter_camera(s.enemy_world.encounter);
- const int center=s.enemy_world.encounter==EncounterId::KaiserCrabBoss?960:480;
- return (center+camera.x-(s.character==Character::Necrobinder?150*camera.zoom/1000:0))/6;
-}
-inline CreaturePose enemy_pose(const State&s,int index){
- if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
+inline EnemyFormationPoint enemy_formation_point(const State&s,int index,int z){
  const auto*layout=encounter_positions(s.enemy_world.encounter);const auto&model=s.enemy_world.models[index];
- const auto camera=encounter_camera(s.enemy_world.encounter);int z=camera.zoom;
  unsigned slot=model.slot;
  // This encounter has HasScene and literal merc/sneaky/fat SlotNames but
  // no Slots override. Its simulation slots intentionally retain spawn order.
  if(s.enemy_world.encounter==EncounterId::GremlinMercNormal)
   slot=model.kind==EnemyId::GremlinMerc?0:model.kind==EnemyId::SneakyGremlin?1:2;
- EnemyFormationPoint point;
- if(layout&&slot<layout->count)point={(layout->points[slot][0]-960)*z,(layout->points[slot][1]-540)*z};
- else point=unnamed_enemy_point(s,index,z);
- // SceneContainer has a 960,540 pivot and camera offset. Retain the
- // calculator's 122px ground rail while preserving authored slot spacing.
- const int x=(960000+point.x+camera.x*1000)/6000;
- const int feet=122+(540000+point.y+camera.y*1000-740000)/6000;
- const auto bounds=creature_bounds(model.kind);const int body_width=bounds.width,body_height=bounds.height;
- int width=body_width?body_width*z/6000:enemy_pose(s.enemy_count,index).width;
- if(width<22)width=22;if(width>80)width=80;
- // Existing sprites share an 84px normalized body; the original Bounds
- // restores relative creature size (e.g. eggs versus their Ovicopter).
- int scale=body_height?body_height*z*1024/(6000*84):enemy_pose(s.enemy_count,index).scale;
- if(scale<160)scale=160;if(scale>1400)scale=1400;
- const int height=84*scale/1024,intent=feet-height-15;
- return {x,feet,width,scale,intent<25?25:intent,feet+7,feet+24};
+ if(layout&&slot<layout->count)return {(layout->points[slot][0]-960)*z,(layout->points[slot][1]-540)*z};
+ return unnamed_enemy_point(s,index,z);
 }
+inline EnemyFormationPoint player_formation_point(const State&s,int z,bool pet=false){
+ const bool centered=s.enemy_world.encounter==EncounterId::KaiserCrabBoss;
+ const int ordinary=centered?0:-480000;
+ if(!pet)return {ordinary-(s.character==Character::Necrobinder?150*z:0),200*z};
+ // PositionLocalPlayerOsty places the initial companion from targetXPos,
+ // the player's half Bounds width and GetOstyOffsetFromPlayer. Subsequent
+ // HP-driven growth/reposition tweens remain a separate presentation flow.
+ const auto bounds=player_anchors(s.character);int hp=s.expansion.osty_max_hp;
+ if(hp<0)hp=0;if(hp>150)hp=150;
+ return {ordinary+(bounds.right-bounds.left+150)*z+100*z*hp/150,125*z};
+}
+// NGame.FourByThree is 1680x1260. combat_room.tscn keeps the fixed
+// (960,540) SceneContainer pivot, but both creature parents are anchored at
+// (840,630). NCombatRoom.AdjustCreatureScaleForAspectRatio runs at Ready
+// and viewport changes, not after a summon or a death. A retained value is
+// enough to reproduce that contract without retaining another State.
+struct CombatSceneLayout {int32_t right=0;};
+constexpr int CombatSourceWidth=1680000;
+inline CombatSceneLayout combat_layout_for(const State&s){
+ if(!s.enemy_world.active)return {};
+ const auto camera=encounter_camera(s.enemy_world.encounter);const int z=camera.zoom;
+ const int base=960000-120*z+camera.x*1000;
+ int right=0;
+ const auto include=[&](EnemyFormationPoint p,int width){const int edge=base+p.x+width*z/2;if(edge>right)right=edge;};
+ const auto player=player_anchors(s.character);include(player_formation_point(s,z),player.right-player.left);
+ if(s.character==Character::Necrobinder||s.expansion.osty_max_hp>0)include(player_formation_point(s,z,true),232);
+ for(int i=0;i<s.enemy_count;++i)include(enemy_formation_point(s,i,z),creature_bounds(s.enemy_world.models[i].kind).width);
+ right+=15000;return {right>CombatSourceWidth?right:CombatSourceWidth};
+}
+inline int combat_project_x(EncounterCamera camera,CombatSceneLayout layout,int point,bool enemy){
+ const int64_t right=layout.right>CombatSourceWidth?layout.right:CombatSourceWidth;
+ const int64_t base=960000-120*camera.zoom+camera.x*1000;
+ // EnemyContainer's extra left shift is in SceneContainer local units;
+ // its camera scale must be applied after the aspect-fit correction.
+ const int64_t shifted=enemy?(right-CombatSourceWidth)*camera.zoom:0;
+ const int64_t value=base*right*1000+int64_t(point)*CombatSourceWidth*1000-shifted*CombatSourceWidth;
+ return int(value*4/(right*21000000));
+}
+inline int combat_project_y(EncounterCamera camera,CombatSceneLayout layout,int point){
+ const int64_t right=layout.right>CombatSourceWidth?layout.right:CombatSourceWidth;
+ const int64_t base=540000+90*camera.zoom+camera.y*1000;
+ return int((base*right+int64_t(point)*CombatSourceWidth)*4/(right*21000));
+}
+inline int combat_project_extent(EncounterCamera camera,CombatSceneLayout layout,int source,int numerator=1,int denominator=1){
+ const int64_t right=layout.right>CombatSourceWidth?layout.right:CombatSourceWidth;
+ return int(int64_t(source)*camera.zoom*CombatSourceWidth*4*numerator/(right*21000*denominator));
+}
+inline CreaturePose project_creature_pose(EncounterCamera camera,CombatSceneLayout layout,EnemyFormationPoint point,
+                                        CreatureAnchors anchors,bool enemy,int normalized_height=84){
+ const auto xx=[&](int offset){return combat_project_x(camera,layout,point.x+offset*camera.zoom,enemy);};
+ const auto yy=[&](int offset){return combat_project_y(camera,layout,point.y+offset*camera.zoom);};
+ CreaturePose p{};p.x=xx(0);p.feet=yy(0);p.body_left=xx(anchors.left);p.body_top=yy(anchors.top);
+ p.body_width=xx(anchors.right)-p.body_left;p.body_height=yy(anchors.bottom)-p.body_top;
+ p.center_x=xx(anchors.center_x);p.center_y=yy(anchors.center_y);
+ p.width=p.body_width<22?22:p.body_width;
+ // The existing raster bank uses a shared normalized standing height.
+ // This restores authored relative Bounds sizes; it is not a re-bake of
+ // original full skeletal extents or a change to those clip durations.
+ p.scale=combat_project_extent(camera,layout,anchors.bottom-anchors.top,1024,normalized_height);
+ if(p.scale<1)p.scale=1;
+ p.intent=yy(anchors.intent_y)-8;if(p.intent<25)p.intent=25;
+ // The compact health/status adapter retains its readable patch heights.
+ p.hp=p.feet+7;p.status=p.feet+24;return p;
+}
+inline CreaturePose player_pose(const State&s,CombatSceneLayout layout,bool pet=false){
+ if(!s.enemy_world.active){auto p=legacy_creature_pose({pet?112:60,pet?123:124,pet?34:62,1024,50,pet?131:129,149});return p;}
+ const auto camera=encounter_camera(s.enemy_world.encounter);
+ return project_creature_pose(camera,layout,player_formation_point(s,camera.zoom,pet),player_anchors(s.character,pet),false,pet?51:82);
+}
+inline CreaturePose enemy_pose(const State&s,int index,CombatSceneLayout layout){
+ if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
+ const auto camera=encounter_camera(s.enemy_world.encounter);const auto kind=s.enemy_world.models[index].kind;
+ if(kind==EnemyId::LegacyNibbit)return enemy_pose(s.enemy_count,index);
+ return project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true);
+}
+inline CreaturePose enemy_pose(const State&s,int index){return enemy_pose(s,index,combat_layout_for(s));}
+inline int combat_player_x(const State&s){return player_pose(s,combat_layout_for(s)).x;}
 
 }

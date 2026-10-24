@@ -6,22 +6,23 @@ function createProfileStorage(access) {
  function valid(slot){if(!Number.isInteger(slot)||slot<1||slot>3)throw Error('Invalid save profile');return slot;}
  function key(base,slot){valid(slot);return base+(slot===1?'':'-profile-'+slot);}
  function keys(slot,history){
-  const list=[];for(let version=3;version<=15;version++)list.push(key('nSpire2-save-v'+version,slot));
+  const list=[];for(let version=3;version<=16;version++)list.push(key('nSpire2-save-v'+version,slot));
   if(history)list.push(key('nSpire2-progress-v1',slot),key('nSpire2-preferences-v1',slot),key('nSpire2-preferences-v2',slot));return list;
  }
  function readJournal(text){
   if(text.length>8*1024*1024)throw Error('Invalid profile transaction');
   const value=JSON.parse(text);valid(value.slot);
-  if(value.version!==1||!Array.isArray(value.entries)||value.entries.length>16)throw Error('Invalid profile transaction');
+  if((value.version!==1&&value.version!==2)||!Array.isArray(value.entries)||value.entries.length>17)throw Error('Invalid profile transaction');
   const allowed=new Set(keys(value.slot,true)),seen=new Set();
   for(const entry of value.entries){
-   if(!Array.isArray(entry)||entry.length!==2||!allowed.has(entry[0])||seen.has(entry[0])||typeof entry[1]!=='string')throw Error('Invalid profile transaction');
+   if(!Array.isArray(entry)||entry.length!==2||!allowed.has(entry[0])||seen.has(entry[0])||
+      (typeof entry[1]!=='string'&&!(value.version===2&&entry[1]===null)))throw Error('Invalid profile transaction');
    seen.add(entry[0]);
   }
   return value;
  }
  function restore(){
-  try{const storage=access();for(const [name,value]of pending.entries)storage.setItem(name,value);
+  try{const storage=access();for(const [name,value]of pending.entries){if(value===null)storage.removeItem(name);else storage.setItem(name,value);}
    storage.removeItem(journalKey);pending=null;return true;
   }catch(error){return false;}
  }
@@ -59,15 +60,30 @@ function createProfileStorage(access) {
    const old=json(read(key('nSpire2-preferences-v1',slot)));
    return 4|(2<<8)|(old&&old.version===1&&old.fastMode===true?1:0);
   },
-  readRun(slot){for(let version=15;version>=3;version--){const value=read(key('nSpire2-save-v'+version,slot));if(value)return value;}return null;},
-  writeRun(slot,value){if(!recover())return false;access().setItem(key('nSpire2-save-v15',slot),value);return true;},
+  readRun(slot,maxVersion=16){for(let version=16;version>=3;version--){const value=read(key('nSpire2-save-v'+version,slot));
+   if(value){if(version>maxVersion)throw Error('This run requires a newer player');return value;}}return null;},
+  writeRun(slot,value,version=15,maxVersion=16){
+   if((version!==15&&version!==16)||version>maxVersion)throw Error('Unsupported save format');
+   if(!recover())return false;
+   const storage=access(),target=key('nSpire2-save-v'+version,slot),entries=[];
+   // An older WASM must not replace an unreadable Custom/Daily run with a new
+   // Standard run. Updating the HTML does not upgrade its embedded codec.
+   if(maxVersion<16&&storage.getItem(key('nSpire2-save-v16',slot)))return false;
+   for(const name of keys(slot,false)){const old=storage.getItem(name);if(old!==null||name===target)entries.push([name,old]);}
+   if(entries.length===1&&entries[0][1]===value)return true;
+   const transaction={version:2,slot,entries};
+   storage.setItem(journalKey,JSON.stringify(transaction));pending=transaction;
+   try{storage.setItem(target,value);for(const [name]of entries)if(name!==target)storage.removeItem(name);
+    storage.removeItem(journalKey);pending=null;return true;
+   }catch(error){restore();return false;}
+  },
   writeProgress(slot,value){if(!recover())return false;access().setItem(key('nSpire2-progress-v1',slot),value);return true;},
   writePreferences(slot,flags){
    if(!validFlags(flags))throw Error('Invalid preferences');if(!recover())return false;
    const storage=access();storage.setItem(key('nSpire2-preferences-v2',slot),JSON.stringify({version:2,flags}));
    storage.setItem(key('nSpire2-preferences-v1',slot),JSON.stringify({version:1,fastMode:(flags&1)!==0}));return true;
   },
-  clearRun(slot){return erase(slot,false);},
+  clearRun(slot,maxVersion=16){if(maxVersion<16&&read(key('nSpire2-save-v16',slot)))return false;return erase(slot,false);},
   deleteProfile(slot){return erase(slot,true);}
  };
 }

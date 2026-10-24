@@ -273,21 +273,33 @@ struct CodecWorkspaceLease {
     CodecWorkspaceLease(const CodecWorkspaceLease&)=delete;
     CodecWorkspaceLease&operator=(const CodecWorkspaceLease&)=delete;
 };
+static void code_run_options(RunOptions&o,Codec&c){
+    field(o.modifiers,c);field(o.daily_day,c);field(o.neow_completed,c);
+    uint32_t packed=unsigned(o.mode)|(uint32_t(o.neow_current)<<8)|
+        (uint32_t(o.draft_remaining)<<16)|(uint32_t(o.setup_flags)<<24);
+    field(packed,c);
+    if(c.in){o.mode=RunMode(packed&255);o.neow_current=uint8_t(packed>>8);
+        o.draft_remaining=uint8_t(packed>>16);o.setup_flags=uint8_t(packed>>24);}
+}
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
     CodecWorkspaceLease workspace;if(!workspace.state)return false;
     State&copy=*workspace.state;copy=s;
-    Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
+    const unsigned version=s.run_options.mode==RunMode::Standard?SaveVersion:CustomSaveVersion;
+    Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(version);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
+    if(version==CustomSaveVersion)code_run_options(copy.run_options,c);
     c.field(0);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(!data||len<16||len>sizeof(SaveData::bytes)||len%4)return false;
     Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
     const unsigned version=c.field(0);
-    if((version<3||version>SaveVersion)||c.field(0)!=0x41CEF1EA)return false;
+    if((version<3||version>CustomSaveVersion)||c.field(0)!=0x41CEF1EA)return false;
     CodecWorkspaceLease workspace;if(!workspace.state)return false;
     State&tmp=*workspace.state;reset_in_place(tmp);
-    code_state(tmp,c,version);if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
+    code_state(tmp,c,version==CustomSaveVersion?SaveVersion:version);
+    if(version==CustomSaveVersion){code_run_options(tmp.run_options,c);if(tmp.run_options.mode==RunMode::Standard)return false;}
+    if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     // Older v3-v15 files carry a checksum here; it is intentionally ignored.
     s=tmp;return true;
 }

@@ -119,6 +119,39 @@ static void enemy_visual_fight(EncounterId encounter,Character character=Charact
  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
  CHECK(!a.combat_preparation.active);unchanged();
 }
+static void original_aspect_layout(){
+ for(unsigned character=0;character<5;++character){
+  enemy_visual_fight(EncounterId::CorpseSlugsNormal,Character(character));
+  CHECK(a.creature_layout.right==1740000);
+  const auto player=a.combat_player_pose();CHECK(player.feet==156&&player.body_top<player.feet&&player.body_width>0);
+  CHECK(a.health_bars[0].width==health_bar::inner_width(player.width));
+  for(int i=0;i<a.game.enemy_count;++i){const auto pose=a.combat_enemy_pose(i);CHECK(pose.feet==156&&pose.body_top<pose.feet);
+   CHECK(a.health_bars[i+1].width==health_bar::inner_width(pose.width));}
+  if(character==unsigned(Character::Necrobinder)){const auto pet=a.combat_player_pose(true);CHECK(pet.x>player.x&&pet.feet<player.feet);}
+  char name[48];std::snprintf(name,sizeof name,"combat-43-character-%u",character);capture(name);unchanged();
+ }
+ enemy_visual_fight(EncounterId::AeonglassBoss);const auto boss=a.combat_enemy_pose(0);
+ CHECK(boss.x==253&&boss.feet==164&&boss.body_height>80);capture("combat-43-large-enemy");unchanged();
+ enemy_visual_fight(EncounterId::LivingFogNormal);CHECK(a.game.enemy_count==1);
+ const auto actor=a.combat_enemy_pose(0),player=a.combat_player_pose();const auto layout=a.creature_layout;
+ {UiCoreObserver observer(a);for(int slot=0;slot<5;++slot){queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::GasBomb),slot+8);resolve_pending(a.game);}}
+ CHECK(a.game.enemy_count==6&&combat_layout_for(a.game).right>layout.right);snapshot();
+ // Ready fits the actors present at entry. AddCreature does not repeat
+ // that pass; a newly spawned far-right slot cannot move the old actors.
+ for(unsigned frame=0;frame<24;++frame){a.advance(33);a.render();
+  CHECK(a.creature_layout.right==layout.right);
+  const auto held=a.combat_enemy_pose(0),ally=a.combat_player_pose();
+  CHECK(!std::memcmp(&actor,&held,sizeof actor)&&!std::memcmp(&player,&ally,sizeof player));unchanged();
+ }
+ const int last=a.game.enemy_count-1;const auto added=a.combat_enemy_pose(last),want=enemy_pose(a.game,last,layout);
+ CHECK(!std::memcmp(&added,&want,sizeof added));capture("combat-43-summon-stable");
+ {UiCoreObserver observer(a);damage_unpowered(a.game,last,9999);resolve_pending(a.game);}snapshot();a.render();
+ const auto after_death=a.combat_enemy_pose(0);CHECK(a.creature_layout.right==layout.right&&!std::memcmp(&actor,&after_death,sizeof actor));unchanged();
+ // Reset/load is an explicitly new presentation scene; its pre-render
+ // fallback and its first bound render must agree on the current actors.
+ a.reset_presentation();const auto fallback=a.combat_enemy_pose(0);a.render();const auto rebuilt=a.combat_enemy_pose(0);
+ CHECK(!std::memcmp(&fallback,&rebuilt,sizeof fallback));unchanged();
+}
 static std::vector<uint16_t> intent_background;
 static void spatial_card_targeting(){
  const auto select_potion=[](int target){
@@ -573,7 +606,7 @@ static void deferred_enemy_values(){
   unchanged();
   a.animation=replace;a.render();
   CHECK(a.combat_feedback.active&&a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);
-  CHECK(a.combat_enemy_pose(1).scale==enemy_pose(a.game,1).scale&&a.combat_enemy_pose(1).width==enemy_pose(a.game,1).width);
+  CHECK(a.combat_enemy_pose(1).scale==enemy_pose(a.game,1,a.creature_layout).scale&&a.combat_enemy_pose(1).width==enemy_pose(a.game,1,a.creature_layout).width);
   CHECK(!a.combat_intent(1).flags&&!has(HitKind::EnemyIntent,1)&&!intent_panel());unchanged();
   a.animation=done-1;a.render();CHECK(a.combat_feedback.active&&!a.combat_intent(1).flags&&!has(HitKind::EnemyIntent,1)&&!intent_panel());unchanged();
   a.animation=done;a.render();const auto revealed=a.combat_intent(1);
@@ -1197,4 +1230,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_aspect_layout();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

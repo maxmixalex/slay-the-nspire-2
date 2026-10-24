@@ -109,12 +109,12 @@ static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
  ui_picture_transform(c,image,cx,cy,mx(1,16*p.scale/1024),mx(1,12*p.scale/1024),p.sine,p.cosine);
 }
 static void combat_actors(Canvas&c){
-    auto&a=c.a;const auto&s=a.game;const int player_x=combat_player_x(s);c.actor(0,player_x,124);
+    auto&a=c.a;const auto&s=a.game;const auto player=a.combat_player_pose();c.actor(0,player.x,player.feet,player.scale);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
-    if(pet){const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
-        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,player_x+52,123,elapsed,true,false);
-        else if(a.combat_health(MaxEnemies+1).hp>0)c.clip(AnimOstyIdle,player_x+52,123,a.animation*33);
-        else c.ui(U_OstyPortrait,player_x+43,109,18,18,100);
+    if(pet){const auto p=a.combat_player_pose(true);const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
+        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.x,p.feet,elapsed,p.scale,false);
+        else if(a.combat_health(MaxEnemies+1).hp>0)c.scaled_clip(AnimOstyIdle,p.x,p.feet,a.animation*33,p.scale);
+        else c.ui(U_OstyPortrait,p.x-9,p.feet-14,18,18,100);
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
@@ -246,7 +246,7 @@ static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
     const int scene_hits=a.hit_count;
-    const int player_x=combat_player_x(s);combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],player_x-31,129,62);
+    const auto player=a.combat_player_pose();const int player_x=player.x;combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],player_x-player.width/2,player.hp,player.width);
     if(s.expansion.orb_slots){
         const int count=s.expansion.orb_slots,left=mx(3,player_x-count*7);
         for(int i=0;i<count;i++){
@@ -258,14 +258,15 @@ static void combat_screen(Canvas&c){
     }
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
-        c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],player_x+39,131,34);c.action(player_x+36,107,40,41,UiAction::ShowOsty);
+        const auto p=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],p.x-p.width/2,p.hp,p.width);
+        c.action(p.body_left,p.body_top,p.body_width,p.hp+health_bar::Height-p.body_top,UiAction::ShowOsty);
     }
     const bool stars=combat_stars_visible(a);
-    status_strip(c,0,player_x-36,149,96);
+    status_strip(c,0,player_x-player.width/2,player.status,mx(player.width,48));
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];const auto pos=a.combat_enemy_pose(i);int x=pos.x;
         if(a.combat_health(i+1).hp<=0){health_block_break(c,a.health_bars[i+1],x-pos.width/2,pos.hp);if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
-        c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);
+        c.hit(pos.body_left-2,mn(pos.body_top,pos.intent),pos.body_width+4,pos.status-mn(pos.body_top,pos.intent)+15,HitKind::Enemy,i);
         if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
         else{
             const bool attacking=e.move!=2;c.picture(attacking?A_AttackIntent:A_BuffIntent,x-pos.width/2,pos.intent,13,13);

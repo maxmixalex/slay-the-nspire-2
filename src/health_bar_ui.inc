@@ -14,9 +14,9 @@ void App::sync_health_bars(){
  const auto observe=[&](int slot,uint32_t identity,int width){const auto v=combat_health(slot);
   auto&motion=health_bars[slot];const bool restored=!motion.valid||motion.identity!=identity;
   motion.observe(identity,v.hp,v.max_hp,health_bar::inner_width(width),now);motion.observe_block(v.block,now,restored);};
- observe(0,1+unsigned(game.character),62);
+ observe(0,1+unsigned(game.character),combat_player_pose().width);
  const bool pet=game.character==Character::Necrobinder||game.expansion.osty_max_hp>0;
- if(pet)observe(MaxEnemies+1,1,34);else health_bars[MaxEnemies+1].reset();
+ if(pet)observe(MaxEnemies+1,1,combat_player_pose(true).width);else health_bars[MaxEnemies+1].reset();
  for(int i=0;i<MaxEnemies;++i){
   if(i>=game.enemy_count){health_bars[i+1].reset();continue;}
   const auto&model=game.enemy_world.models[i];

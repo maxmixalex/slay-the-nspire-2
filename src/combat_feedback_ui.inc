@@ -36,9 +36,8 @@ static void ui_damage_apply(App&a,const CombatFeedback::DamageCue&cue){
  if(identity!=cue.identity)return;
  a.combat_status.damage(actor,cue.amount,cue.identity,cue.at,a.animation,cue.flags,cue.shake_strength);
  if(cue.amount>0||(cue.flags&CoreDamageResult::FullyBlocked)){
-  const bool pet=actor==MaxEnemies+1;const auto pose=a.combat_enemy_pose(actor&&!pet?int(actor)-1:0);
-  const int x=pet?combat_player_x(a.game)+52:actor?pose.x:combat_player_x(a.game),y=pet?93:actor?pose.feet-30:91;
-  a.combat_sparks.emit(cue.at*33u,x,y,bool(cue.flags&CoreDamageResult::FullyBlocked),a.combat_status.cosmetic);
+  const bool pet=actor==MaxEnemies+1;const auto pose=pet?a.combat_player_pose(true):actor?a.combat_enemy_pose(int(actor)-1):a.combat_player_pose();
+  a.combat_sparks.emit(cue.at*33u,pose.center_x,pose.center_y,bool(cue.flags&CoreDamageResult::FullyBlocked),a.combat_status.cosmetic);
  }
  // Self-inflicted damage and explicit kills do not play a fabricated Hit.
  // DamageResult still owns its number/sparks when a command suppresses hurt.
@@ -62,11 +61,11 @@ void App::combat_scene_offset(int&x,int&y)const{
  for(unsigned i=combat_status.damage_count;i>0;--i){const auto&d=combat_status.damages[i-1];
   const int elapsed=int32_t(animation-d.at)*33;if(elapsed<0||!d.shake_strength)continue;if(elapsed>=300)return;
   // ScreenPunchInstance: cos(remaining*60rad/s), CubicOut(remaining/.3),
-  // one latest punch at a time. Camera scale is1920->320; UI stays still.
+  // one latest punch at a time. The logical viewport is1680->320; UI stays still.
   const unsigned q=unsigned(elapsed)*1024u/300u,envelope=1024u-q*q/1024u*q/1024u;
   const int phase=int((unsigned(300-elapsed)*391139u+5000u)/10000u);
   int amplitude=int(unsigned(d.shake_strength)*multiplier*envelope/1024u);
-  amplitude=amplitude*CombatCardMotion::sine(phase+1024)/1024/6;
+  amplitude=amplitude*CombatCardMotion::sine(phase+1024)/1024*4/21;
   const int xx=amplitude*CombatCardMotion::sine(d.angle+1024)/1024,yy=amplitude*CombatCardMotion::sine(d.angle)/1024;
   x=(xx+(xx<0?-512:512))/1024;y=(yy+(yy<0?-512:512))/1024;return;
  }

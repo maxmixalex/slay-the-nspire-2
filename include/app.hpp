@@ -49,6 +49,8 @@
 #include "hud_ui7_assets.hpp"
 #include "hud_ui7_presentation.hpp"
 #include "ui_history_presentation.hpp"
+#include "ui_history_layout.hpp"
+#include "history_ui8_assets.hpp"
 #include "bestiary_presentation.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
@@ -258,6 +260,7 @@ struct App {
     bool compendium_open=false,statistics_open=false,history_open=false;
     uint8_t compendium_selection=0,history_index=0;
     int history_selected=-1;
+    UiHistoryPresentation history_presentation{};
     uint32_t progress_page_started=0;
     UiHistoryScroll progress_page_scroll{};
     UiMenuTransition compendium_motion[6]{};
@@ -486,6 +489,8 @@ struct App {
     uint32_t next_run_seed(bool* randomized=nullptr);
     Motion motion[MaxEnemies+1]{};
     EnemyPresentation enemy_presentation[MaxEnemies]{};
+    CombatSceneLayout creature_layout{};
+    CreaturePose player_presentation[2]{};
     CombatFeedback combat_feedback{};
     CombatStatus combat_status{};
     CombatSparkMotion combat_sparks{};
@@ -522,6 +527,7 @@ struct App {
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();
     CreaturePose combat_enemy_pose(int)const;
+    CreaturePose combat_player_pose(bool pet=false)const;
     void observe_core(const State&,Log);
     void observe_enemy_animation(const State&,int slot,const char* trigger);
     void enemy_trigger(int,const char*,int move=-1,bool direct=false,const EnemyVisualFacts* facts=nullptr,uint32_t earliest=0);

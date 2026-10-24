@@ -64,15 +64,10 @@ static void card_target_reticles(Canvas&c,bool modal){
         if(!combat){motion={};continue;}
         motion.observe(selected[actor],a.map_clock_ms);
         if(selected[actor]){
-            if(actor>0&&actor<=MaxEnemies){const auto pose=a.combat_enemy_pose(actor-1);const int h=84*pose.scale/1024;motion.bounds(pose.x-pose.width/2+scene_x,pose.feet-h+scene_y,pose.width,h);}
+            if(actor>0&&actor<=MaxEnemies){const auto pose=a.combat_enemy_pose(actor-1);motion.bounds(pose.body_left+scene_x,pose.body_top+scene_y,pose.body_width,pose.body_height);}
             else{
-                // Authored Bounds from the five creature_visuals scenes;
-                // the combat camera uses a 1/6 source-to-screen projection.
-                static constexpr int sizes[6][2]={{242,278},{244,244},{250,260},{230,335},{210,270},{232,204}};
-                const int index=actor==MaxEnemies+1?5:int(s.character),zoom=s.enemy_world.active?encounter_camera(s.enemy_world.encounter).zoom:1000;
-                const int w=sizes[index][0]*zoom/6000,h=sizes[index][1]*zoom/6000;
-                const int x=combat_player_x(s)+(actor==MaxEnemies+1?52:0),feet=actor==MaxEnemies+1?123:124;
-                motion.bounds(x-w/2+scene_x,feet-h+scene_y,w,h);
+                const auto pose=a.combat_player_pose(actor==MaxEnemies+1);
+                motion.bounds(pose.body_left+scene_x,pose.body_top+scene_y,pose.body_width,pose.body_height);
             }
         }
         if(!modal)target_reticle_draw(c,motion);

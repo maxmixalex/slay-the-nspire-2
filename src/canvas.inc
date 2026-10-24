@@ -279,6 +279,13 @@ struct Canvas{
         index=loop?index%c.count:(unsigned)mn((int)index,c.count-1);
         picture((int)c.first+(int)index,x-(anchored?c.pivot_x:0),y-(anchored?c.pivot_y:0));
     }
+    void scaled_clip(int id,int x,int y,uint32_t milliseconds,int scale,bool loop=true){
+        if(scale==1024){clip(id,x,y,milliseconds,true,loop);return;}
+        auto cl=a.content.clip(id);if(!cl.count||scale<=0)return;
+        unsigned frame=milliseconds/cl.frame_ms;frame=loop?frame%cl.count:unsigned(mn(int(frame),cl.count-1));
+        int image=int(cl.first)+int(frame);auto p=a.content.image(image);
+        picture(image,x-cl.pivot_x*scale/1024,y-cl.pivot_y*scale/1024,mx(1,p.w*scale/1024),mx(1,p.h*scale/1024));
+    }
     void actor(int actor,int x,int y,int scale=1024){
         if(actor<0||actor>MaxEnemies)return;
         int id=actor?AnimEnemyIdle:AnimHeroIdle;uint32_t elapsed=a.animation*33;bool loop=true;
@@ -287,11 +294,7 @@ struct Canvas{
             if(actor==0)id=character_animation(a.game.character,id);
             elapsed+=((id==AnimEnemyIdle)?actor*347:0);
         }
-        if(scale==1024){clip(id,x,y,elapsed,true,loop);return;}
-        auto cl=a.content.clip(id);if(!cl.count)return;
-        unsigned frame=elapsed/cl.frame_ms;frame=loop?frame%cl.count:unsigned(mn(int(frame),cl.count-1));
-        int image=int(cl.first)+int(frame);auto p=a.content.image(image);
-        picture(image,x-cl.pivot_x*scale/1024,y-cl.pivot_y*scale/1024,mx(1,p.w*scale/1024),mx(1,p.h*scale/1024));
+        scaled_clip(id,x,y,elapsed,scale,loop);
     }
     int width(const char*p,int size){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);

@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "world_rng.hpp"
 #include "world_relics.hpp"
+#include "run_options_state.hpp"
 
 namespace spire {
 using CardKind=uint16_t;
@@ -182,9 +183,9 @@ struct State {
     EnemyWorldState enemy_world;
     WorldRelicState world_relics;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
-
+    RunOptions run_options{};
 };
-constexpr unsigned SaveVersion=15,SaveCapacity=262144;
+constexpr unsigned SaveVersion=15,CustomSaveVersion=16,SaveCapacity=262144;
 #include "event_card_api.inc"
 CardType card_type(const State&,Card,int instance=-1,int deck_index=-1);
 uint8_t card_keywords(const State&,Card,int instance=-1,int deck_index=-1);

@@ -136,7 +136,14 @@ CreaturePose App::combat_enemy_pose(int slot)const{
  if(game.enemy_world.active&&slot>=0&&slot<game.enemy_count&&enemy_presentation[slot].identity&&
     enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter))
   return enemy_presentation[slot].pose;
- return enemy_pose(game,slot);
+ const bool bound=creature_layout.right&&enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&
+  enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter);
+ return enemy_pose(game,slot,bound?creature_layout:combat_layout_for(game));
+}
+CreaturePose App::combat_player_pose(bool pet)const{
+ if(creature_layout.right&&game.enemy_world.active&&enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&
+    enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter))return player_presentation[pet?1:0];
+ return player_pose(game,combat_layout_for(game),pet);
 }
 void App::sync_enemy_feedback(){
  sync_combat_feedback();
@@ -145,16 +152,18 @@ void App::sync_enemy_feedback(){
  // A completed encounter remains in State for saves/rewards. Re-entering an
  // event/rest/shop must not reconstruct those old corpses as a new battle.
  if(!game.enemy_world.active||(game.world.active&&!combat_phase(game.phase)&&!ui_feedback_bound(*this)&&!world_room_is_combat(game)&&!pending_reward)){
-  for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;enemy_visual_encounter=-1;return;}
+  for(auto&m:enemy_presentation)m=EnemyPresentation{};creature_layout={};enemy_visual_clock=combat_linger_until=animation;enemy_visual_encounter=-1;return;}
  if(enemy_visual_seed!=game.seed||enemy_visual_floor!=game.floor||enemy_visual_combat!=game.world.combat_count||enemy_visual_encounter!=int(game.enemy_world.encounter)){
   for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;
   combat_status.reward_at=0;combat_status.reward_scheduled=combat_status.had_live_scene=false;
   enemy_visual_seed=game.seed;enemy_visual_floor=game.floor;enemy_visual_combat=game.world.combat_count;enemy_visual_encounter=int(game.enemy_world.encounter);
+  creature_layout={};
  }
+ if(!creature_layout.right){creature_layout=combat_layout_for(game);player_presentation[0]=player_pose(game,creature_layout);player_presentation[1]=player_pose(game,creature_layout,true);}
  for(int i=0;i<game.enemy_count;i++){auto&m=enemy_presentation[i];const auto&source=game.enemy_world.models[i];
   if(ui_feedback_bound(*this)&&combat_feedback.identity[i+1]!=ui_feedback_identity(game,unsigned(i+1)))continue;
   if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){
-   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.pose=enemy_pose(game,i);m.hp=combat_health(i+1).hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
+   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.pose=enemy_pose(game,i,creature_layout);m.hp=combat_health(i+1).hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
    int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
    ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
    ui_enemy_removal(*this,i,m.dead);

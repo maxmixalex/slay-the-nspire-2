@@ -1,7 +1,9 @@
 #include "combat_layout.hpp"
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 using namespace spire;
 static State game,before;
 static unsigned checks;
@@ -10,65 +12,108 @@ static void fight(EncounterId encounter){
     new_run(game,0x6117,false);game.phase=Phase::Combat;game.turn=1;
     CHECK(encounter_setup(game,encounter));CHECK(validate(game));
 }
-static bool same(CreaturePose a,CreaturePose b){return a.x==b.x&&a.feet==b.feet&&a.width==b.width&&a.scale==b.scale&&a.intent==b.intent&&a.hp==b.hp&&a.status==b.status;}
+static bool same(CreaturePose a,CreaturePose b){
+ return a.x==b.x&&a.feet==b.feet&&a.width==b.width&&a.scale==b.scale&&a.intent==b.intent&&a.hp==b.hp&&a.status==b.status&&
+  a.body_left==b.body_left&&a.body_top==b.body_top&&a.body_width==b.body_width&&a.body_height==b.body_height&&a.center_x==b.center_x&&a.center_y==b.center_y;
+}
+// Independent source-space oracle: Godot's authored parent positions, pivot
+// and scales are composed as separate floating transforms. Production uses
+// camera-scaled integer formation coordinates and a retained rational fit.
+// Sources: NGame.FourByThree, combat_room.tscn, NCombatRoom's Ready/position/
+// aspect methods, and the numeric CreatureVisuals scene metadata.
+struct SourcePoint {long double x,y;};
+static SourcePoint local_enemy(int index){
+ const auto camera=encounter_camera(game.enemy_world.encounter);const long double zoom=camera.zoom/1000.0L;
+ const auto*scene=encounter_positions(game.enemy_world.encounter);const auto&m=game.enemy_world.models[index];unsigned slot=m.slot;
+ if(game.enemy_world.encounter==EncounterId::GremlinMercNormal)slot=m.kind==EnemyId::GremlinMerc?0:m.kind==EnemyId::SneakyGremlin?1:2;
+ if(scene&&slot<scene->count)return {scene->points[slot][0]-960.0L,scene->points[slot][1]-540.0L};
+ long double widths[MaxEnemies]{},sum=0;for(int i=0;i<game.enemy_count;++i){widths[i]=creature_bounds(game.enemy_world.models[i].kind).width;sum+=widths[i];}
+ const long double half=960/zoom;long double gap=70,span=sum+(game.enemy_count-1)*gap,left=(half-span)/2,stagger=0;
+ if(left<150)left=150;
+ if(left+span>half&&game.enemy_count>1){gap=(half-150-sum)/(game.enemy_count-1);if(gap<5)gap=5;span=sum+(game.enemy_count-1)*gap;left=(half-span)/2;if(gap<30)stagger=60-(gap-5)*20/25;}
+ for(int i=0;i<index;++i)left+=widths[i]+gap;return {left+widths[index]/2,200-(index%2?stagger:0)};
+}
+static SourcePoint local_player(bool pet=false){
+ const long double zoom=encounter_camera(game.enemy_world.encounter).zoom/1000.0L;
+ const long double player=game.enemy_world.encounter==EncounterId::KaiserCrabBoss?0:-480/zoom;
+ if(!pet)return {player-(game.character==Character::Necrobinder?150:0),200};
+ const auto b=player_anchors(game.character);const int hp=game.expansion.osty_max_hp<0?0:game.expansion.osty_max_hp>150?150:game.expansion.osty_max_hp;
+ return {player+b.right-b.left+150+100.0L*hp/150,125};
+}
+static long double source_right(){
+ const auto camera=encounter_camera(game.enemy_world.encounter);const long double zoom=camera.zoom/1000.0L;
+ const long double origin=960+(840-960)*zoom+camera.x;long double right=0;
+ const auto include=[&](SourcePoint p,int width){const long double edge=origin+(p.x+width/2.0L)*zoom;if(edge>right)right=edge;};
+ const auto b=player_anchors(game.character);include(local_player(),b.right-b.left);
+ if(game.character==Character::Necrobinder||game.expansion.osty_max_hp>0)include(local_player(true),232);
+ for(int i=0;i<game.enemy_count;++i)include(local_enemy(i),creature_bounds(game.enemy_world.models[i].kind).width);
+ return right+15>1680?right+15:1680;
+}
+static SourcePoint reference_point(SourcePoint local,bool enemy,long double right){
+ const auto camera=encounter_camera(game.enemy_world.encounter);const long double zoom=camera.zoom/1000.0L,ratio=1680/right;
+ const SourcePoint parent{840-(enemy?(right-1680)*ratio:0),630};
+ return {(960+(parent.x+local.x*ratio-960)*zoom+camera.x)*4/21,
+         (540+(parent.y+local.y*ratio-540)*zoom+camera.y)*4/21};
+}
+static int pixel(long double value){return int(value+0.000000001L);}
+static void agrees_with_source(int index){
+ const auto layout=combat_layout_for(game);const auto p=enemy_pose(game,index,layout);const auto local=local_enemy(index);const auto a=creature_anchors(game.enemy_world.models[index].kind);
+ const long double right=source_right();CHECK(std::fabs(layout.right/1000.0L-right)<0.002L);
+ const auto point=reference_point(local,true,right),top=reference_point({local.x+a.left,local.y+a.top},true,right),bottom=reference_point({local.x+a.right,local.y+a.bottom},true,right);
+ const auto center=reference_point({local.x+a.center_x,local.y+a.center_y},true,right);
+ CHECK(p.x==pixel(point.x)&&p.feet==pixel(point.y));CHECK(p.body_left==pixel(top.x)&&p.body_top==pixel(top.y));
+ CHECK(p.body_width==pixel(bottom.x)-pixel(top.x)&&p.body_height==pixel(bottom.y)-pixel(top.y));
+ CHECK(p.center_x==pixel(center.x)&&p.center_y==pixel(center.y));
+ const auto player=player_pose(game,layout);const auto want_player=reference_point(local_player(),false,right);
+ CHECK(player.x==pixel(want_player.x)&&player.feet==pixel(want_player.y));
+}
 static void authored_widths(){
-    fight(EncounterId::NibbitsWeak);auto p=enemy_pose(game,0);
-    CHECK(p.x==240&&p.feet==122&&p.width==45&&p.scale==296);
-    CHECK(combat_player_x(game)==80);game.character=Character::Necrobinder;CHECK(combat_player_x(game)==55);
-    fight(EncounterId::CorpseSlugsNormal);CHECK(!encounter_positions(game.enemy_world.encounter));
-    // Source Bounds are 232 wide. The 960-wide half has three 232px
-    // creatures, two 57px gaps and a 75px inset: 191, 480, 769 centers.
-    CHECK(enemy_pose(game,0).x==191&&enemy_pose(game,1).x==240&&enemy_pose(game,2).x==288);
-    CHECK(enemy_pose(game,0).feet==enemy_pose(game,1).feet&&enemy_pose(game,1).feet==enemy_pose(game,2).feet);
-    const auto middle=enemy_pose(game,1),right=enemy_pose(game,2);
-    damage_unpowered(game,0,9999);resolve_pending(game);
-    CHECK(!game.enemies[0].hp&&same(middle,enemy_pose(game,1))&&same(right,enemy_pose(game,2)));
-    fight(EncounterId::ScrollsOfBitingNormal);
-    // Four 183px Bounds compress the gap to 26px. Only alternate creatures
-    // move upward by the authored 43.2px; the encounter is still one row.
-    const int xs[]={187,222,257,292};
-    for(int i=0;i<4;++i){p=enemy_pose(game,i);CHECK(p.x==xs[i]&&p.feet==(i%2?115:122)&&p.scale==337);}
-    fight(EncounterId::SlimesNormal);
-    CHECK(encounter_camera(game.enemy_world.encounter).zoom==900);
-    CHECK(enemy_pose(game,0).feet==127&&enemy_pose(game,1).feet==127);
-    CHECK(enemy_pose(game,0).scale>enemy_pose(game,2).scale);
-    fight(EncounterId::AeonglassBoss);p=enemy_pose(game,0);
-    CHECK(p.x==240&&p.feet==128&&p.scale==963);
+ fight(EncounterId::NibbitsWeak);auto p=enemy_pose(game,0);
+ CHECK(combat_layout_for(game).right==1680000);CHECK(p.x==251&&p.feet==158&&p.body_width==52&&p.scale==339);
+ CHECK(combat_player_x(game)==68);game.character=Character::Necrobinder;CHECK(combat_player_x(game)==40);
+ fight(EncounterId::CorpseSlugsNormal);CHECK(!encounter_positions(game.enemy_world.encounter));
+ // Three 232px Bounds use source centers191,480,769. Their right edge
+ // plus15 is1740, so this encounter exercises the actual4:3 fit branch.
+ CHECK(combat_layout_for(game).right==1740000);
+ for(int i=0;i<3;++i)agrees_with_source(i);
+ const auto layout=combat_layout_for(game);const auto middle=enemy_pose(game,1,layout),right=enemy_pose(game,2,layout);
+ damage_unpowered(game,0,9999);resolve_pending(game);
+ CHECK(!game.enemies[0].hp&&same(middle,enemy_pose(game,1,layout))&&same(right,enemy_pose(game,2,layout)));
+ fight(EncounterId::ScrollsOfBitingNormal);
+ for(int i=0;i<4;++i){agrees_with_source(i);if(i)CHECK(enemy_pose(game,i).x>enemy_pose(game,i-1).x);}
+ CHECK(enemy_pose(game,1).feet<enemy_pose(game,0).feet&&enemy_pose(game,1).feet==enemy_pose(game,3).feet);
+ fight(EncounterId::SlimesNormal);CHECK(encounter_camera(game.enemy_world.encounter).zoom==900);
+ for(int i=0;i<game.enemy_count;++i)agrees_with_source(i);CHECK(enemy_pose(game,0).scale>enemy_pose(game,2).scale);
+ fight(EncounterId::AeonglassBoss);p=enemy_pose(game,0);CHECK(p.x==253&&p.feet==164&&p.scale==1101);agrees_with_source(0);
 }
 static void scene_slots_without_slots_override(){
-    fight(EncounterId::BowlbugsNormal);
-    CHECK(enemy_pose(game,0).x==183&&enemy_pose(game,1).x==228&&enemy_pose(game,2).x==277);
-    fight(EncounterId::BowlbugsWeak);CHECK(enemy_pose(game,0).x==204&&enemy_pose(game,1).x==256);
-    fight(EncounterId::KnightsElite);CHECK(enemy_pose(game,0).x==169&&enemy_pose(game,2).x==286);
-    fight(EncounterId::SlumberingBeetleNormal);
-    CHECK(enemy_pose(game,0).x==159&&enemy_pose(game,1).x==191&&enemy_pose(game,2).x==265);
-    CHECK(enemy_pose(game,2).scale>enemy_pose(game,0).scale*2);
-    fight(EncounterId::GremlinMercNormal);CHECK(enemy_pose(game,0).x==216);
-    damage_unpowered(game,0,9999);resolve_pending(game);CHECK(game.phase==Phase::Combat&&game.enemy_count==2);
-    int fat=-1,sneaky=-1;
-    for(unsigned i=0;i<game.enemy_count;++i){if(game.enemy_world.models[i].kind==EnemyId::FatGremlin)fat=int(i);if(game.enemy_world.models[i].kind==EnemyId::SneakyGremlin)sneaky=int(i);}
-    CHECK(fat>=0&&sneaky>=0&&fat!=sneaky);
-    CHECK(enemy_pose(game,fat).x==260&&enemy_pose(game,sneaky).x==216);
-    CHECK(enemy_pose(game,fat).feet<enemy_pose(game,sneaky).feet);
-    CHECK(validate(game));
+ for(auto encounter:{EncounterId::BowlbugsNormal,EncounterId::BowlbugsWeak,EncounterId::KnightsElite,EncounterId::SlumberingBeetleNormal}){
+  fight(encounter);for(int i=0;i<game.enemy_count;++i)agrees_with_source(i);
+ }
+ CHECK(enemy_pose(game,2).scale>enemy_pose(game,0).scale*2);
+ fight(EncounterId::GremlinMercNormal);const auto layout=combat_layout_for(game);agrees_with_source(0);
+ damage_unpowered(game,0,9999);resolve_pending(game);CHECK(game.phase==Phase::Combat&&game.enemy_count==2);
+ int fat=-1,sneaky=-1;
+ for(unsigned i=0;i<game.enemy_count;++i){if(game.enemy_world.models[i].kind==EnemyId::FatGremlin)fat=int(i);if(game.enemy_world.models[i].kind==EnemyId::SneakyGremlin)sneaky=int(i);}
+ CHECK(fat>=0&&sneaky>=0&&fat!=sneaky);CHECK(enemy_pose(game,fat,layout).x>enemy_pose(game,sneaky,layout).x);
+ CHECK(enemy_pose(game,fat,layout).feet<enemy_pose(game,sneaky,layout).feet);CHECK(validate(game));
 }
 static void catalog_and_purity(){
-    unsigned scene_count=0;
-    for(unsigned id=1;id<EncounterKinds;++id){
-        fight(EncounterId(id));before=game;
-        if(encounter_positions(EncounterId(id)))++scene_count;
-        for(int i=0;i<game.enemy_count;++i){const auto p=enemy_pose(game,i);
-            CHECK(p.x>0&&p.x<320&&p.feet>30&&p.feet<155&&p.width>=22&&p.width<=80&&p.scale>=160&&p.scale<=1400);
-            CHECK(same(p,enemy_pose(game,i)));
-        }
-        CHECK(!std::memcmp(&before,&game,sizeof game));
-    }
-    CHECK(scene_count==24);
-    fight(EncounterId::OvicopterNormal);CHECK(combat_player_x(game)==63);
-    const auto before_summon=enemy_pose(game,0);
-    queue_extension(game,XOp::EnemySpawn,int(EnemyId::ToughEgg),8);resolve_pending(game);
-    CHECK(same(before_summon,enemy_pose(game,0))&&enemy_pose(game,1).scale<before_summon.scale);
-    fight(EncounterId::KaiserCrabBoss);CHECK(combat_player_x(game)==160);game.character=Character::Necrobinder;CHECK(combat_player_x(game)==141);
-    game.enemy_world.active=0;CHECK(combat_player_x(game)==60&&same(enemy_pose(game,0),enemy_pose(game.enemy_count,0)));
+ unsigned scene_count=0;
+ for(unsigned id=1;id<EncounterKinds;++id){
+  fight(EncounterId(id));before=game;if(encounter_positions(EncounterId(id)))++scene_count;
+  for(int i=0;i<game.enemy_count;++i){const auto p=enemy_pose(game,i);agrees_with_source(i);
+   CHECK(p.x>0&&p.x<320&&p.feet>30&&p.feet<200&&p.width>=22&&p.width<160&&p.scale>0&&p.scale<2048);
+   CHECK(p.body_width>0&&p.body_height>0&&p.body_top<p.feet&&same(p,enemy_pose(game,i)));
+  }
+  CHECK(!std::memcmp(&before,&game,sizeof game));
+ }
+ CHECK(scene_count==24);
+ fight(EncounterId::OvicopterNormal);const auto layout=combat_layout_for(game);const auto before_summon=enemy_pose(game,0,layout);
+ queue_extension(game,XOp::EnemySpawn,int(EnemyId::ToughEgg),8);resolve_pending(game);
+ CHECK(same(before_summon,enemy_pose(game,0,layout))&&enemy_pose(game,1,layout).scale<before_summon.scale);
+ fight(EncounterId::KaiserCrabBoss);for(int i=0;i<game.enemy_count;++i)agrees_with_source(i);
+ const int ironclad=combat_player_x(game);game.character=Character::Necrobinder;CHECK(combat_player_x(game)<ironclad);
+ game.enemy_world.active=0;CHECK(combat_player_x(game)==60&&same(enemy_pose(game,0),enemy_pose(game.enemy_count,0)));
 }
 int main(){authored_widths();scene_slots_without_slots_override();catalog_and_purity();std::printf("combat layout: %u checks passed\n",checks);}

@@ -5,7 +5,7 @@ static void combat_power_flashes(Canvas&c){
  for(unsigned i=0;i<v.flash_count;++i){const auto&f=v.flashes[i];const int ms=int32_t(a.animation-f.at)*33;
   if(ms<0||ms>=1050||f.actor>unsigned(a.game.enemy_count))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[f.actor]:ui_feedback_identity(a.game,f.actor);if(identity!=f.identity)continue;
-  const auto pose=a.combat_enemy_pose(f.actor?f.actor-1:0);const int x=f.actor?pose.x:combat_player_x(a.game),y=f.actor?pose.feet-32:91;
+  const auto pose=f.actor?a.combat_enemy_pose(f.actor-1):a.combat_player_pose();const int x=pose.center_x,y=pose.center_y;
   const auto p=a.content.image(ui_status_image(a,f.id));if(!p.pixels||p.format>3)continue;
   // NPowerFlashVfx's two initial tweens run in parallel for400ms. The
   // subsequent scale400ms and opacity250ms run sequentially: total1050ms.
@@ -43,7 +43,7 @@ static void combat_power_popups(Canvas&c){
   if(ms<0||ms>=(p.removed?1750:1250)||p.actor>unsigned(a.game.enemy_count))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[p.actor]:ui_feedback_identity(a.game,p.actor);
   if(identity!=p.identity)continue;
-  const auto pose=a.combat_enemy_pose(p.actor?p.actor-1:0);const int x=p.actor?pose.x:combat_player_x(a.game),cy=(p.actor?pose.feet-32:91)-int(p.lane)*18;
+  const auto pose=p.actor?a.combat_enemy_pose(p.actor-1):a.combat_player_pose();const int x=pose.center_x,cy=pose.center_y-int(p.lane)*18;
   if(p.removed){
    const unsigned alpha=ms<250?TurnBannerPresentation::ease(unsigned(ms),250):ms<750?4096u:unsigned(1750-ms)*4096u/1000u;
    const unsigned rest=unsigned(2000-ms)*1024u/2000u,q2=rest*rest/1024u,moved=1024u-q2*q2/1024u;
@@ -102,16 +102,15 @@ static void combat_damage_popups(Canvas&c){
   const bool pet=d.actor==MaxEnemies+1;
   if(ms<0||ms>=2000||(!pet&&d.actor>unsigned(a.game.enemy_count)))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[d.actor]:ui_feedback_identity(a.game,d.actor);if(identity!=d.identity)continue;
-  const auto p=a.combat_enemy_pose(d.actor&&!pet?d.actor-1:0);
-  const int origin_x=pet?combat_player_x(a.game)+52:d.actor?p.x:combat_player_x(a.game);
-  const int origin_y=pet?93:d.actor?p.feet-30:91;
+  const auto p=pet?a.combat_player_pose(true):d.actor?a.combat_enemy_pose(d.actor-1):a.combat_player_pose();
+  const int origin_x=p.center_x,origin_y=p.center_y;
   if(d.flags&CoreDamageResult::FullyBlocked){
    // NDamageBlockedVfx: 2s Quad.Out rise/scale, Cubic.Out blue->white,
    // with a delayed Sine.In fade. It is a localized word, never HP delta 0.
    const unsigned q=unsigned(ms)*1024u/2000u,progress=1024u-(1024u-q)*(1024u-q)/1024u;
-   const int cx=origin_x+int(d.variation%41u)/6-3;
-   const int cy=origin_y-10+int(d.variation%21u)/6-int(progress*250u*218u/(1024u*1080u));
-   const int scale=(1024-int(progress*410u/1024u))*64/(6*16);
+   const int cx=origin_x+(int(d.variation%41u)-20)*4/21;
+   const int cy=origin_y-10+int(d.variation%21u)*4/21-int(progress*250u*4u/(1024u*21u));
+   const int scale=(1024-int(progress*410u/1024u))*64*4/(21*16);
    const unsigned alpha=ms<=500?255u:255u*CombatCardMotion::sine(unsigned(2000-ms)*1024u/1500u)/1024u;
    Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/255u);
    const unsigned color=CombatCardMotion::cubic(unsigned(ms),2000u)*255u/1024u;
@@ -120,11 +119,11 @@ static void combat_damage_popups(Canvas&c){
   }
   // The original integration uses 2000px/s^2 gravity, initial vertical
   // velocity -800..-700px/s, and a small independent horizontal scatter.
-  const int cx=origin_x+int(d.vx)*ms/6000+int(d.variation%5)-2;
-  const int cy=origin_y+(int(d.vy)*ms+ms*ms)*218/1080000;
+  const int cx=origin_x+int(d.vx)*ms*4/21000+int(d.variation%5)-2;
+  const int cy=origin_y+(int(d.vy)*ms+ms*ms)*4/21000;
   const unsigned u=unsigned(ms)*1024u/2000u,alpha=255u*(1024u-u*u/1024u)/1024u;
   const unsigned rest=ms<1200?unsigned(1200-ms)*1024u/1200u:0u;
-  const int base=(1200+int(d.variation))*64*1024/(1000*6*16),scale=base*(1024+int(1536u*rest/1024u*rest/1024u))/1024;
+  const int base=(1200+int(d.variation))*64*1024*4/(1000*21*16),scale=base*(1024+int(1536u*rest/1024u*rest/1024u))/1024;
   if(cy>250||cy<-50)continue;
   Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/255u);
   const unsigned color=CombatCardMotion::cubic(unsigned(ms),500u)*255u/1024u;
