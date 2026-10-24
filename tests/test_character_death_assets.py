@@ -20,6 +20,21 @@ class CharacterDeathTest(unittest.TestCase):
             self.assertTrue(all(a<b for a,b in zip(values,values[1:])))
         self.assertEqual(len(death.times(5,60)),301)
 
+    def test_particle_tail_keeps_global_clock_across_adapter_limit(self):
+        class Sampler:
+            def __init__(self):self.calls=[]
+            def sample(self,resource,clip,values,*,loop):
+                self.calls.append((resource,clip,list(values),loop))
+                self_test.assertLessEqual(len(values),256)
+                return [dict(time=value) for value in values]
+        self_test=self;sampler=Sampler();values=death.times(5,60)
+        actual=death.sample_bounded(sampler,'regent','die',values)
+        self.assertEqual([pose['time'] for pose in actual],values)
+        self.assertEqual([len(call[2]) for call in sampler.calls],[256,45])
+        self.assertGreater(sampler.calls[1][2][0],sampler.calls[0][2][-1])
+        self.assertEqual(actual[-1]['time'],5.)
+        self.assertTrue(all(not call[3] for call in sampler.calls))
+
     def test_registered_sampling_changes_neither_origin_nor_scene_extent(self):
         points=np.array([[-6000.,-1500.],[1800.,4500.]])
         box=death.layout(points,.065)

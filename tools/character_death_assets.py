@@ -91,6 +91,20 @@ def material_overrides(pack,name,merchant):
     return result
 
 
+def sample_bounded(sampler,resource,clip,sample_times,*,loop=False):
+    # The adapter accepts at most 256 output poses per request. Each request
+    # creates its skeleton at time zero and advances the official runtime to
+    # these absolute times, so later batches must not restart their clock.
+    # Regent's five-second particle tail needs all 301 binding poses at 60 Hz.
+    frames=[]
+    for first in range(0,len(sample_times),256):
+        batch=sample_times[first:first+256]
+        poses=sampler.sample(resource,clip,batch,loop=loop)
+        tiles.require(len(poses)==len(batch),'Death sampler omitted a binding pose')
+        frames.extend(poses)
+    return frames
+
+
 def build_art(pck_path,source,cache,*,runtime,dotnet=None):
     cache=Path(cache);cache.mkdir(parents=True,exist_ok=True)
     stamp=identity(runtime);catalog=cache/'character-death-assets.json'
@@ -119,7 +133,7 @@ def build_art(pck_path,source,cache,*,runtime,dotnet=None):
                     duration=animation['duration'];sample_times=times(duration)
                     tiles.require(animation['duration_ms']==DURATIONS[index] and len(sample_times)==COUNTS[index],
                                   'Original death timing changed: '+name)
-                    frames=sampler.sample(resource,'die',sample_times,loop=False)
+                    frames=sample_bounded(sampler,resource,'die',sample_times,loop=False)
                     points=[(x,y) for frame in frames for draw in frame['draw']
                             for x,y in zip(draw['vertices'][::2],draw['vertices'][1::2])]
                     geometry=layout(points,registrations[name]['baked_scale'])
@@ -140,7 +154,7 @@ def build_art(pck_path,source,cache,*,runtime,dotnet=None):
                     print(json.dumps(dict(character=key,frames=len(frames),size=geometry['size'])),flush=True)
                     if not merchant and name in ('defect','regent'):
                         particle_duration=5. if name=='regent' else duration
-                        particle_frames=sampler.sample(resource,'die',times(particle_duration,60),loop=False)
+                        particle_frames=sample_bounded(sampler,resource,'die',times(particle_duration,60),loop=False)
                         samples,report=sample_particles(pack,name,animation['events'],particle_frames)
                         particle_jobs.append((name,samples,report,particle_duration,original_scale,registrations[name]['baked_scale']))
             for name,samples,report,duration,original_scale,preferred in particle_jobs:
