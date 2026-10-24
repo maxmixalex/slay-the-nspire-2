@@ -4,7 +4,7 @@ static int spatial_enemy_target(const App&a,int current,Key key,bool potion=fals
     if(key!=Key::Left&&key!=Key::Right)return current;
     struct Target {int id,x;} ordered[MaxEnemies];unsigned count=0;
     for(int i=0;i<a.game.enemy_count;++i)if(potion?can_use_potion(a.game,a.scroll,i):a.game.enemies[i].hp>0){
-        const Target next{i,enemy_pose(a.game,i).x};unsigned at=count++;
+        const Target next{i,a.combat_enemy_pose(i).x};unsigned at=count++;
         while(at&&ordered[at-1].x>next.x){ordered[at]=ordered[at-1];--at;}ordered[at]=next;
     }
     if(!count)return current;

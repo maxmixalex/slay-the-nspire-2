@@ -229,6 +229,25 @@ static void character_hover(){
     CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.pointer.visible=false;app.character_select=false;
 }
+static void top_bar_large_rotation(){
+    const uint32_t clock=app.map_clock_ms;
+    TopBarMotion motion{};app.map_clock_ms=6200;
+    motion.observe(app,0,true,2);const int from=motion.angle;
+    CHECK(from>350000&&from<360000);
+    motion.observe(app,1,false,2);CHECK(motion.angle==from);
+    // BackOut overshoots -180 degrees before returning to it. This span
+    // exercises a product beyond signed 32-bit range at a real open angle.
+    for(unsigned elapsed:{200u,350u,500u}){
+        app.map_clock_ms=6200+elapsed;motion.observe(app,1,false,2);
+        CHECK(motion.angle<0&&motion.angle>=-240000);
+    }
+    CHECK(motion.angle==-180000);
+    app.map_clock_ms=6800;motion.observe(app,0,false,2);
+    app.map_clock_ms=7800;motion.observe(app,0,false,2);CHECK(motion.angle==0&&motion.scale==4096);
+    CHECK(top_bar_scaled(-540000,4096)==-540000);
+    CHECK(top_bar_scaled(540000,4506)==594052&&top_bar_scaled(-540000,4506)==-594052);
+    app.map_clock_ms=clock;
+}
 static void character_confirm_art(){
     const int base=app.content.world_image("common","CONFIRM"),tick=app.content.world_image("common","CONFIRM_TICK");
     if(base<0||tick<0)return; // The synthetic profile has no original control atlas.
@@ -310,8 +329,19 @@ static void ui6_screens(){
         capture(names[i]);app.input(Key::Back);}
     app.cursor=-1;for(unsigned i=0;i<app.game.hand.count;++i){const int id=app.game.hand.ids[i];
         if(can_play_card(app.game,id)&&card_targets_enemy(app.game,app.game.cards[id],id)){app.cursor=int(i);break;}}
-    CHECK(app.cursor>=0);app.input(Key::Confirm);CHECK(app.keyboard_card>=0);app.advance(250);app.render();capture("card-original-target-arrow");app.input(Key::Back);
+    CHECK(app.cursor>=0);app.input(Key::Confirm);CHECK(app.keyboard_card>=0);app.render();capture("card-original-target-start");
+    for(unsigned frame=0;frame<20;++frame){app.advance(33);app.render();}
+    CHECK(target_arrow_motion.active&&CombatCardMotion::magnitude(target_arrow_motion.x/256-enemy_pose(app.game,app.target).x)<=1);
+    capture("card-original-target-arrow");app.input(Key::Back);
     app.pointer_move(135,10);app.render();capture("potion-original-hover");
+    // Empty holders keep the original hover explanation but cannot activate
+    // the use/discard popup. Disabled hit geometry remains discoverable.
+    app.pointer_move(150,10);app.render();const auto*empty=app.hit_at(150,10);
+    CHECK(empty&&empty->kind==HitKind::PotionSlot&&!empty->enabled&&potion_at(app.game,unsigned(empty->value))==Potion::Empty);
+    const std::vector<uint16_t> hover_frame(app.pixels,app.pixels+ScreenW*ScreenH);
+    capture("potion-empty-original-hover");app.pointer.visible=false;app.render();
+    unsigned changed=0;for(int y=27;y<100;++y)for(int x=170;x<315;++x)changed+=hover_frame[y*ScreenW+x]!=app.pixels[y*ScreenW+x];
+    CHECK(changed>100);app.pointer_move(150,10);app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel);
     app.pointer_move(300,10);app.advance(165);app.render();capture("top-settings-hover");
     CHECK(app.content.image(app.content.ui_image(I6_CursorDefault)).w==16);
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
@@ -321,5 +351,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();if(argc>1)character_confirm_art();long_hand_description();ui6_screens();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui6_screens();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

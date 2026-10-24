@@ -20,7 +20,7 @@ static void combat_power_popups(Canvas&c){
   if(ms<0||ms>=(p.removed?1750:1250)||p.actor>unsigned(a.game.enemy_count))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[p.actor]:ui_feedback_identity(a.game,p.actor);
   if(identity!=p.identity)continue;
-  const auto pose=enemy_pose(a.game,p.actor?p.actor-1:0);const int x=p.actor?pose.x:combat_player_x(a.game),cy=(p.actor?pose.feet-32:91)-int(p.lane)*18;
+  const auto pose=a.combat_enemy_pose(p.actor?p.actor-1:0);const int x=p.actor?pose.x:combat_player_x(a.game),cy=(p.actor?pose.feet-32:91)-int(p.lane)*18;
   if(p.removed){
    const unsigned alpha=ms<250?TurnBannerPresentation::ease(unsigned(ms),250):ms<750?4096u:unsigned(1750-ms)*4096u/1000u;
    const unsigned rest=unsigned(2000-ms)*1024u/2000u,q2=rest*rest/1024u,moved=1024u-q2*q2/1024u;
@@ -75,7 +75,7 @@ static void combat_damage_popups(Canvas&c){
  for(unsigned i=0;i<v.damage_count;++i){const auto&d=v.damages[i];const int ms=int32_t(a.animation-d.at)*33;
   if(ms<0||ms>=2000||d.actor>unsigned(a.game.enemy_count))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[d.actor]:ui_feedback_identity(a.game,d.actor);if(identity!=d.identity)continue;
-  const auto p=enemy_pose(a.game,d.actor?d.actor-1:0);
+  const auto p=a.combat_enemy_pose(d.actor?d.actor-1:0);
   // The original integration uses 2000px/s^2 gravity, initial vertical
   // velocity -800..-700px/s, and a small independent horizontal scatter.
   const int cx=(d.actor?p.x:combat_player_x(a.game))+int(d.vx)*ms/6000+int(d.variation%5)-2;

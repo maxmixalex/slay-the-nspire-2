@@ -21,7 +21,7 @@ void App::sync_health_bars(){
   if(i>=game.enemy_count){health_bars[i+1].reset();continue;}
   const auto&model=game.enemy_world.models[i];
   const uint32_t identity=ui_feedback_bound(*this)?combat_feedback.identity[i+1]:game.enemy_world.active?(uint32_t(model.combat_id)<<16)|(1+unsigned(model.kind)):uint32_t(i+1);
-  observe(i+1,identity,enemy_pose(game,i).width);
+  observe(i+1,identity,combat_enemy_pose(i).width);
  }
 }
 

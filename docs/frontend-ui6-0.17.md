@@ -65,6 +65,12 @@ Corrected merchant clips are a separate original-atlas conversion repair; see
 [rooms and merchant](rooms-ui6-0.17.md). No private art, font, assembly, PCK,
 generated pack or embedded-content HTML belongs in public Git.
 
+New port-authored labels have a small compiled bilingual fallback catalog.
+This keeps every one of the historical 935 sorted UI-string slots stable;
+inserting new labels into that old table would silently mistranslate existing
+packs. Both generation and runtime fallback are checked. The final Chinese
+pack already contains every glyph needed by the new labels at 8/10/12/16 px.
+
 Remaining broader work includes event typewriter and option entry/press timing,
 special ancient/fake-merchant layouts, secondary GPU particles, original pickup
 trails and full input remapping. None is counted as completed by this document.

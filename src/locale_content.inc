@@ -3,6 +3,10 @@ struct LocaleUiIndex {uint32_t hash;uint16_t index,length;};
 static const LocaleUiIndex locale_ui_index[]={
 #include "locale_ui_index.inc"
 };
+struct InlineLocaleUi {uint32_t hash;uint16_t length;const char* english;};
+static const InlineLocaleUi locale_ui_inline[]={
+#include "locale_ui_inline.inc"
+};
 static const WorldContentIndex locale_text_index[]={
 #include "locale_text_index.inc"
 };
@@ -34,5 +38,11 @@ const char* Content::ui_text(const char*source)const{
  while(lo<hi){unsigned middle=(lo+hi)/2;if(locale_ui_index[middle].hash<hash)lo=middle+1;else hi=middle;}
  if(lo<sizeof(locale_ui_index)/sizeof(locale_ui_index[0])&&locale_ui_index[lo].hash==hash&&locale_ui_index[lo].length==length)
   return string(locale_ui_index[lo].index);
+ if(english()){
+  lo=0;hi=sizeof(locale_ui_inline)/sizeof(locale_ui_inline[0]);
+  while(lo<hi){unsigned middle=(lo+hi)/2;if(locale_ui_inline[middle].hash<hash)lo=middle+1;else hi=middle;}
+  if(lo<sizeof(locale_ui_inline)/sizeof(locale_ui_inline[0])&&locale_ui_inline[lo].hash==hash&&locale_ui_inline[lo].length==length)
+   return locale_ui_inline[lo].english;
+ }
  return source;
 }

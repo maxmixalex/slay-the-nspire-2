@@ -97,6 +97,9 @@ static void single_reward(unsigned kind,unsigned value){auto&w=a.game.world_reli
 static void glass_eye(){
  reset();add(WorldRelicDriftwood);add(WorldRelicPaelsWing);CHECK(gain_world_relic(a.game,WorldRelicGlassEye));present();auto&w=a.game.world_relics;
  CHECK(w.choice==WorldRelicChoice::OfferReward&&w.offer_count==5&&a.world_choice_page_size()==4);single_column(4);snapshot();
+ CHECK(a.reward_presentation.window(a.map_clock_ms).alpha==0);
+ a.advance(250);a.render();CHECK(a.reward_presentation.window(a.map_clock_ms).alpha>100&&a.reward_presentation.window(a.map_clock_ms).alpha<200);unchanged();capture("rewards-glass-eye-entering");
+ a.advance(250);a.render();CHECK(a.reward_presentation.window(a.map_clock_ms).alpha==255);unchanged();capture("rewards-glass-eye-settled");
  a.input(Key::Down);CHECK(a.cursor==1);a.input(Key::Up);CHECK(a.cursor==0);a.pointer_scroll(1);CHECK(a.cursor==4);single_column(1);unchanged();capture("rewards-glass-eye-page-2");
  press_action(UiAction::PreviousWorldPage);CHECK(a.cursor==0);single_column(4);unchanged();capture("rewards-glass-eye");
  const unsigned reward=w.offers[0],deck=a.game.deck_count;const int gold=a.game.gold;const auto rng=a.game.world.rng[unsigned(WorldRng::Rewards)];

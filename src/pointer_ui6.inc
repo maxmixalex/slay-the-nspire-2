@@ -53,14 +53,14 @@ static void pointer_overlay(Canvas&c){
     if(!modal&&armed>=0&&armed<a.game.card_count&&a.game.zones[armed]==Zone::Hand&&a.game.phase==Phase::Combat&&card_targets_enemy(a.game,a.game.cards[armed],armed)){
         const bool controller=a.keyboard_card>=0;
         int x=p.x,y=p.y;bool enemy=false;
-        if(controller&&a.target>=0&&a.target<a.game.enemy_count&&a.game.enemies[a.target].hp>0){const auto pose=enemy_pose(a.game,a.target);x=pose.x;y=pose.feet-35;enemy=true;}
+        if(controller&&a.target>=0&&a.target<a.game.enemy_count&&a.game.enemies[a.target].hp>0){const auto pose=a.combat_enemy_pose(a.target);x=pose.x;y=pose.feet-35;enemy=true;}
         else if(const auto*h=a.hit_at(x,y))enemy=h->enabled&&(h->kind==HitKind::Enemy||h->kind==HitKind::EnemyIntent);
         HandPose origin{160,198,768,0,1024};const auto hand=a.combat_hand();
         for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==armed){origin=a.combat_hand_pose(i,false);break;}
         targeting_arrow(c,origin.cx,origin.cy,x,y,controller,enemy);targeting=true;
     }else if(!modal&&a.panel==4&&a.potion_targeting){
         const bool controller=!p.visible;int x=p.x,y=p.y;bool enemy=false;
-        if(controller&&a.game.phase==Phase::Combat&&a.target>=0&&a.target<a.game.enemy_count){const auto pose=enemy_pose(a.game,a.target);x=pose.x;y=pose.feet-35;enemy=true;}
+        if(controller&&a.game.phase==Phase::Combat&&a.target>=0&&a.target<a.game.enemy_count){const auto pose=a.combat_enemy_pose(a.target);x=pose.x;y=pose.feet-35;enemy=true;}
         else if(const auto*h=a.hit_at(x,y))enemy=h->enabled&&(h->kind==HitKind::Enemy||h->kind==HitKind::EnemyIntent||h->kind==HitKind::PotionMerchant);
         const int origin=128+(a.scroll%3)*(potion_slot_count(a.game)>3?14:17)+7;
         targeting_arrow(c,origin,13,x,y,controller,enemy);targeting=true;

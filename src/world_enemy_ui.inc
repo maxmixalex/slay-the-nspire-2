@@ -132,6 +132,12 @@ void App::enemy_trigger(int slot,const char*trigger,int move,bool direct,const E
  if(m.count>=MaxEnemyVisualCommands){m.overflow=true;return;}
  auto&command=m.queue[m.count++];command={trigger,facts?*facts:ui_enemy_facts(game,slot),int16_t(move),uint8_t(direct),earliest?earliest:animation};ui_enemy_advance(*this,slot);
 }
+CreaturePose App::combat_enemy_pose(int slot)const{
+ if(game.enemy_world.active&&slot>=0&&slot<game.enemy_count&&enemy_presentation[slot].identity&&
+    enemy_visual_seed==game.seed&&enemy_visual_floor==game.floor&&enemy_visual_combat==game.world.combat_count&&enemy_visual_encounter==int(game.enemy_world.encounter))
+  return enemy_presentation[slot].pose;
+ return enemy_pose(game,slot);
+}
 void App::sync_enemy_feedback(){
  sync_combat_feedback();
  const bool pending_reward=combat_status.reward_scheduled&&combat_status.visual_seed==game.seed&&combat_status.visual_floor==game.floor&&
@@ -148,7 +154,7 @@ void App::sync_enemy_feedback(){
  for(int i=0;i<game.enemy_count;i++){auto&m=enemy_presentation[i];const auto&source=game.enemy_world.models[i];
   if(ui_feedback_bound(*this)&&combat_feedback.identity[i+1]!=ui_feedback_identity(game,unsigned(i+1)))continue;
   if(m.identity!=source.combat_id||m.model!=unsigned(source.kind)){
-   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.hp=combat_health(i+1).hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
+   m=EnemyPresentation{};m.identity=source.combat_id;m.model=uint8_t(source.kind);m.pose=enemy_pose(game,i);m.hp=combat_health(i+1).hp;m.dead=m.hp<=0;m.skin=uint8_t(ui_enemy_skin(game,i,m.model));m.facts=ui_enemy_facts(game,i);
    int initial=source.age?world_enemy_resume(m.model,ui_enemy_fact,&m.facts):world_enemy_initial(m.model,ui_enemy_fact,&m.facts);
    ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
    ui_enemy_removal(*this,i,m.dead);

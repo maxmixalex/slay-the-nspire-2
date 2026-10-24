@@ -33,7 +33,9 @@ static void combat(EncounterId encounter=EncounterId::NibbitsWeak){
 static void kill_and_reward(){
     const unsigned next_id=game.enemy_world.next_creature_id;
     check(debug_kill_enemies(game),"force-kill succeeds");
-    check(game.phase==Phase::Reward&&game.world.reward_count>0,"force-kill runs the actual victory and reward construction");
+    check(game.phase==Phase::WorldRelicChoice&&game.world_relics.choice==WorldRelicChoice::OfferReward&&game.world_relics.return_phase==uint8_t(Phase::Reward),"force-kill opens the actual combat RewardsSet");
+    bool cards=false;for(const auto&r:game.world_relics.rewards)if(r.group==game.world_relics.choice_group&&r.kind==1&&r.count>0)cards=true;
+    check(cards&&game.world_relics.offer_count>0,"the reward group retains its actual generated cards and claimable offers");
     check(!game.effect_count&&game.playing==-1&&!game.expansion.depth,"victory owns no orphaned continuation");
     for(unsigned i=0;i<game.enemy_count;++i)check(!game.enemies[i].hp&&(game.enemy_world.models[i].flags&EnemyRemoved),"all original actors are finally removed");
     check(game.enemy_world.next_creature_id==next_id,"force-kill does not leave a replacement actor alive");valid();

@@ -91,6 +91,57 @@ generated table is part of the following source checkpoint before compilation.
 No native suite, final private-pack visual acceptance, WASM comparison, ARM build
 or physical-device performance result is claimed by this checkpoint document.
 
+## Executed stage-3 validation and repairs
+
+The unchanged source receipt `20262f09eb1edab0035e632ca9ee4f065fb51fc4`
+was tested from its immutable archive with the real corrected v23 English and
+Chinese packs. These are host regression results; repeated pixel assertions
+are not separate gameplay scenarios.
+
+| Regression | English | Chinese |
+| --- | ---: | ---: |
+| Card/HUD, automatic descriptions and UI6 captures | 325,331 passed | 336,661 passed |
+| Five-character UI | 3,138 passed | 3,138 passed |
+| Colorless/potion acquisition UI | 5,689 passed | 5,689 passed |
+| Keyword tooltip UI | 402,636 passed | 402,528 passed |
+| UI flow | 3,861 passed | 3,861 passed |
+
+The common input regression passed 170 checks. All these journals ended as
+`passed` with `source_changed: false`. Their stems begin
+`ui6-stage3-card-hud`, `five-character`, `expansion`, `keyword`, `ui-flow`
+and `input`, under the immutable archive's `build/journal` directory.
+The expansion driver's historical success text still says NSP2/11; both
+supplied inputs and the current-profile check identify the actual v23 pack.
+
+The character acquisition driver reached all 860 model/upgrade variants in
+each language, then failed at Inky checks. English exposed a historical test
+that hard-coded Chinese words. Chinese exposed a real localized-description
+bug: modifier suffixes could borrow an inspected combat instance while the
+compendium was open. The repair makes `card_modifier_text` respect library
+model isolation, retaining the existing assertion; the English assertion
+checks its own locale. These failures remain failures until the repaired
+checkpoint runs the complete driver.
+
+The integrated potion suite separately caught empty holders marked as active
+click targets. `NPotionHolder.OnFocus` explicitly allows their tooltip, while
+`OpenPotionPopup` requires `HasPotion`. The repair restores a disabled action
+hit without removing hover geometry or the original empty-slot description.
+The added actual-pack regression requires visible tooltip pixels and no popup
+or canonical-state change when clicked.
+
+Arithmetic review also found a signed-overflow path when the rotating settings
+icon approached +360 degrees before focusing toward -180. The repaired Q12
+multiply uses a wide product, preserves truncation and uses a shift instead of
+a 64-bit division. A focused test covers the real +355-degree start, BackOut
+overshoot and final normal pose. These repairs are source-complete and await
+the next frozen test receipt.
+
+Eight actual English/Chinese frames were reviewed for deck sorting, separate
+pile presentation, deck-count/setting tips and potion descriptions. The first
+arrow capture sampled only the start of controller interpolation; the revised
+capture records both its start and twenty subsequent 33-ms frames. A static
+initial frame is not treated as acceptance of the settled targeting arrow.
+
 ## Remaining fidelity boundaries to keep explicit
 
 * The 320×240 grid uses readable 47×66 cards in discrete ten-card pages. The

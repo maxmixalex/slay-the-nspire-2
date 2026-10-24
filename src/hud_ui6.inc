@@ -1,4 +1,11 @@
 namespace {
+static int top_bar_scaled(int value,int q){
+    // A rotating settings button can enter focus from almost +360 degrees
+    // toward -180. The Q12 product exceeds int32; retain truncation toward
+    // zero without a freestanding 64-bit division helper.
+    const int64_t product=int64_t(value)*q;
+    return int((product+(product<0?4095:0))>>12);
+}
 struct TopBarMotion {
     const Content*owner=nullptr;uint32_t generation=0,start=0;
     int from_angle=0,from_scale=4096;uint8_t state=0;
@@ -12,15 +19,15 @@ struct TopBarMotion {
         if(state==1){
             scale=4506;int q=4096;
             if(elapsed<500){const int u=int(elapsed*4096/500)-4096;q=4096+(u*u/4096)*((11066*u/4096)+6970)/4096;}
-            const int to=kind==2?-180000:-12000;angle=from_angle+(to-from_angle)*q/4096;
+            const int to=kind==2?-180000:-12000;angle=from_angle+top_bar_scaled(to-from_angle,q);
         }else if(state==2){
             scale=4506;const int inverse=4096-mn(4096,int(elapsed)*4096/250),q=4096-(inverse*inverse/4096)*inverse/4096;
-            angle=from_angle+(kind==2?45000:24000)*q/4096;
+            angle=from_angle+top_bar_scaled(kind==2?45000:24000,q);
         }else{
             const int q=elapsed>=1000?4096:int(health_bar::expo_out(elapsed));
             scale=from_scale+(4096-from_scale)*q/4096;
             const int elastic=elapsed>=1000?4096:4096+(4096-q)*CombatCardMotion::sine(int(elapsed)*40960/3000-1024)/1024;
-            angle=from_angle*(4096-elastic)/4096;
+            angle=top_bar_scaled(from_angle,4096-elastic);
         }
         if(opened&&state==0)scale=4096;
         if(opened&&state!=2&&kind==1)angle=CombatCardMotion::sine(int((a.map_clock_ms%6283)*4096/1571))*6875/1024;
@@ -95,7 +102,7 @@ static void hud(Canvas&c){
             const int scale=c.a.potion_removed_discard?4096:4096-back,w=mx(1,(width-3)*scale/4096),h=mx(1,18*scale/4096);
             c.picture(c.a.content.potion_image(c.a.potion_removed),x+width/2-w/2,11-h/2-(c.a.potion_removed_discard?back*20/4096:0),w,h);
         }
-        c.hit(x,0,width,22,HitKind::PotionSlot,slot);
+        c.hit(x,0,width,22,HitKind::PotionSlot,slot,potion!=Potion::Empty);
     }
     if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
     c.ui(U_TopFloor,183,3,13,16);b[0]=0;t.n=0;t.number(s.floor);c.text_fitted(b,198,5,17,8,Gold);c.hit(182,0,34,22,HitKind::HudInfo,2);

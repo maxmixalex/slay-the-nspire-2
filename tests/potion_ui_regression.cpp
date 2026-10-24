@@ -51,7 +51,9 @@ int main(int argc,char**argv){
     reset();click(HitKind::PotionSlot,0);const int block=app.game.block;click(HitKind::Potion,0);
     CHECK(!app.potion_targeting&&!app.panel&&app.game.potions[0]==Potion::Empty&&app.game.block==block+12);
     reset();app.game.potions[0]=Potion::Empty;snapshot();auto empty=find(HitKind::PotionSlot,0);CHECK(!empty.enabled);
-    app.pointer_move(empty.x+4,8);app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel);unchanged();
+    app.pointer_move(empty.x+4,8);app.render();
+    CHECK(app.hit_at(empty.x+4,8)&&app.hit_at(empty.x+4,8)->kind==HitKind::PotionSlot&&!app.hit_at(empty.x+4,8)->enabled);
+    capture("potion-empty-hover");app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel);unchanged();
     // Extra physical slots stay reachable through the small top-bar pager.
     CHECK(add_potion_slots(app.game,13));CHECK(potion_slot_count(app.game)==16);app.game.potions[15]=Potion::Fruit;
     for(int i=0;i<5;++i)click(HitKind::PotionPage,1);CHECK(app.potion_page==5);

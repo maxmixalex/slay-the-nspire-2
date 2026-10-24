@@ -291,7 +291,9 @@ int App::relic_face_image(RelicId id)const{
  return content.relic_image(id);
 }
 void App::card_modifier_text(Card card,char*out,size_t cap,int instance,int deck,const EventCardFacts*facts)const{
- if(!cap||card.kind>=CardKinds)return;
+ // The compendium displays the canonical model, even when an equal combat
+ // instance was previously inspected. Local enchantments belong to its copy.
+ if(!cap||card.kind>=CardKinds||library)return;
  if(!facts&&instance>=0&&instance<game.card_count)facts=&game.event_cards.cards[instance];
  if(!facts&&deck>=0&&deck<game.deck_count)facts=&game.event_cards.deck[deck];
  size_t n=0;while(n<cap&&out[n])++n;if(n>=cap)return;TextBuffer b{out,cap,n,&content};

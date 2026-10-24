@@ -111,8 +111,12 @@ inline CreaturePose enemy_pose(const State&s,int index){
  else point=unnamed_enemy_point(s,index,z);
  // SceneContainer has a 960,540 pivot and camera offset. Retain the
  // calculator's 122px ground rail while preserving authored slot spacing.
- const int x=(960+point.x*z/16000+camera.x)/6;
- const int feet=122+(540+point.y*z/16000+camera.y-740)/6;
+ // A Q4 center can lie just below an exact camera pixel (e.g. 960/.9).
+ // Round that subpixel residue once before adapting the authored canvas;
+ // truncating it twice would displace a centered boss by a full display px.
+ const auto scaled=[&](int value){const int product=value*z;return (product+(product>=0?8000:-8000))/16000;};
+ const int x=(960+scaled(point.x)+camera.x)/6;
+ const int feet=122+(540+scaled(point.y)+camera.y-740)/6;
  const auto bounds=creature_bounds(model.kind);const int body_width=bounds.width,body_height=bounds.height;
  int width=body_width?body_width*z/6000:enemy_pose(s.enemy_count,index).width;
  if(width<22)width=22;if(width>80)width=80;

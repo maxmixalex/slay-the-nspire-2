@@ -109,6 +109,7 @@ static void catalog_navigation(){
 }
 static void open_model(unsigned model,unsigned upgraded){
     CHECK(catalog_navigation_verified);progress("open-model",(unsigned)a.game.character,model,upgraded);
+    settle_fixture_preparation();
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
     action(UiAction::FilterAll);CardKind ids[CardKinds];unsigned count=a.library_items(ids),index=0;
     CHECK(count==CardKinds);while(index<count&&ids[index]!=model)++index;CHECK(index<count);
@@ -234,8 +235,11 @@ static int hand_index(unsigned id){
     CHECK(false);return -1;
 }
 static void inky_and_dynamic_targets(){
+    const char* inky=a.content.english()?"Inky":"墨影";
+    const char* weak_text=a.content.english()?"Weak":"虚弱";
+    const char* all=a.content.english()?"all enemies":"所有敌人";
     start(Character::Silent);open_model(BladeOfInk,0);unsigned id=a.game.card_count;fixture_card();
-    CHECK(play(a.game,hand_index(id),0));a.reset_presentation();CHECK(a.game.phase==Phase::Combat&&validate(a.game));
+    CHECK(play(a.game,hand_index(id),0));a.reset_presentation();settle_fixture_preparation();CHECK(a.game.phase==Phase::Combat&&validate(a.game));
     unsigned ink[2]={},count=0;
     for(unsigned i=0;i<a.game.hand.count;i++){
         unsigned instance=a.game.hand.ids[i];
@@ -244,24 +248,24 @@ static void inky_and_dynamic_targets(){
     CHECK(count==2&&card_targets_enemy(a.game,a.game.cards[ink[0]]));
     a.open_choice_detail((int)ink[0]);char text[1024]={};auto before=snapshot();
     a.card_description(a.game.cards[ink[0]],0,text,sizeof text,(int)ink[0]);
-    CHECK(std::strstr(text,"墨影")&&std::strstr(text,"虚弱")&&!std::strstr(text,"所有敌人"));unchanged(before);
+    CHECK(std::strstr(text,inky)&&std::strstr(text,weak_text)&&!std::strstr(text,all));unchanged(before);
     if(real_profile)CHECK(a.content.image(a.content.ui_image(U_Inky)).pixels);
     capture("silent-inky-target");a.input(Key::Back);
     // Opening the same model in the compendium must not inherit its enchantment.
     open_model(Shiv,0);a.card_description({Shiv,0},0,text,sizeof text,(int)ink[0]);
-    CHECK(!std::strstr(text,"墨影"));a.input(Key::Back);a.input(Key::Back);CHECK(!a.library);
+    CHECK(!std::strstr(text,inky));a.input(Key::Back);a.input(Key::Back);CHECK(!a.library);
     open_model(FanOfKnives,0);id=a.game.card_count;fixture_card();
-    CHECK(play(a.game,hand_index(id),0));a.reset_presentation();CHECK(a.game.phase==Phase::Combat&&validate(a.game));
+    CHECK(play(a.game,hand_index(id),0));a.reset_presentation();settle_fixture_preparation();CHECK(a.game.phase==Phase::Combat&&validate(a.game));
     CHECK(!card_targets_enemy(a.game,a.game.cards[ink[0]]));
     a.open_choice_detail((int)ink[0]);a.card_description(a.game.cards[ink[0]],-1,text,sizeof text,(int)ink[0]);
-    CHECK(std::strstr(text,"墨影")&&std::strstr(text,"所有敌人"));capture("silent-inky-all-enemies");a.input(Key::Back);
+    CHECK(std::strstr(text,inky)&&std::strstr(text,all));capture("silent-inky-all-enemies");a.input(Key::Back);
     int hp[MaxEnemies]={},weak[MaxEnemies]={};
     for(int t=0;t<a.game.enemy_count;t++){hp[t]=a.game.enemies[t].hp;weak[t]=a.game.enemies[t].weak;}
     // A second click on this non-targeted hand card plays it immediately.
     tap(HitKind::Hand,(int)ink[0]);CHECK(a.pointer.armed_card==(int)ink[0]);tap(HitKind::Hand,(int)ink[0]);
     CHECK(a.game.zones[ink[0]]==Zone::Exhaust);
     for(int t=0;t<a.game.enemy_count;t++)CHECK(a.game.enemies[t].hp<hp[t]&&a.game.enemies[t].weak==weak[t]+1);
-    a.reset_presentation();
+    a.reset_presentation();settle_fixture_preparation();
     // Dragging another enchanted Shiv onto empty battlefield needs no enemy hit.
     auto region=hit(HitKind::Hand,(int)ink[1]);CHECK(region.enabled);
     a.pointer_move(region.x+region.w/2,region.y+region.h/2);a.pointer_button(true);a.pointer_move(104,58);

@@ -111,7 +111,7 @@ static void combat_actors(Canvas&c){
         const auto*v=s.enemy_world.active?world_enemy_visual(a.enemy_presentation[i].model):nullptr;
         if(v&&v->shared_group){const auto&m=a.enemy_presentation[i];bool action=!m.loop&&int32_t(a.animation-m.start)>=0&&int32_t(m.until-a.animation)>0;
             if(shared<0||(action&&(!shared_action||int32_t(m.start-a.enemy_presentation[shared].start)>=0))||(!shared_action&&!action&&s.enemies[i].hp>0)){shared=i;shared_action=action;}continue;}
-        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=enemy_pose(s,i);Canvas actor=c;
+        if(s.enemies[i].hp>0||s.enemy_world.active){auto p=a.combat_enemy_pose(i);Canvas actor=c;
             if(s.enemy_world.active)actor.opacity=uint8_t(a.enemy_opacity(i));actor.actor(i+1,p.x,p.feet,p.scale);}
     }
     if(shared>=0){int clip;uint32_t elapsed;bool loop;
@@ -239,7 +239,7 @@ static void combat_screen(Canvas&c){
     const bool stars=combat_stars_visible(a);
     status_strip(c,0,player_x-36,149,96);
     for(int i=0;i<s.enemy_count;i++){
-        const auto&e=s.enemies[i];const auto pos=enemy_pose(s,i);int x=pos.x;
+        const auto&e=s.enemies[i];const auto pos=a.combat_enemy_pose(i);int x=pos.x;
         if(a.combat_health(i+1).hp<=0){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);
         if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
@@ -255,7 +255,7 @@ static void combat_screen(Canvas&c){
     if(s.enemy_world.active)combat_damage_popups(c);
     else for(int i=0;i<=s.enemy_count;i++){
         const int age=int(a.animation)-a.hit_start[i];
-        if(a.last_hit[i]&&age>=0&&age<24){const auto p=enemy_pose(s,i?i-1:0);c.num(a.last_hit[i],i?p.x-12:48,(i?p.feet-30:91)-age/2,16,Red);}
+        if(a.last_hit[i]&&age>=0&&age<24){const auto p=a.combat_enemy_pose(i?i-1:0);c.num(a.last_hit[i],i?p.x-12:48,(i?p.feet-30:91)-age/2,16,Red);}
     }
     combat_power_popups(c);
     const auto hand=a.combat_hand();

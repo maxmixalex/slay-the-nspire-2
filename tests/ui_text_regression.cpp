@@ -25,6 +25,14 @@ static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static bool braces(const char*text){return std::strchr(text,'{')||std::strchr(text,'}');}
 static std::string ui(const char*source){char buffer[1024]{};const char*out=a.ui_text(source,buffer,sizeof buffer);CHECK(out);return out;}
+static void inline_port_labels(){
+    if(!actual_pack)return;
+    const char* const labels[][2]={{"调试指令","Developer commands"},{"  被动/激发","  Passive/Evoke"},{"  已达成","  Complete"},{"设置保存失败，请重试","Could not save settings."},{"全文","Read"}};
+    for(const auto&row:labels)CHECK(!std::strcmp(a.content.ui_text(row[0]),row[a.content.english()?1:0]));
+    // Existing private pack rows are still selected through their historical
+    // 935-entry index, independently of the appended compiled labels.
+    CHECK(!std::strcmp(a.content.ui_text("牌组"),a.content.world_string("static_hover_tips","DECK.title")));
+}
 static void number(const char*source,int expected){
     const auto shown=ui(source);CHECK(!braces(shown.c_str()));char digits[32];std::snprintf(digits,sizeof digits,"%d",expected);
     CHECK(shown.find(digits)!=std::string::npos);
@@ -278,7 +286,7 @@ int main(int argc,char**argv){
     std::vector<uint8_t>pack;
     if(argc>=2){FILE*file=std::fopen(argv[1],"rb");CHECK(file);pack.resize(spire_test::pack_size(file));CHECK(std::fread(pack.data(),1,pack.size(),file)==pack.size());CHECK(!std::fclose(file));
         CHECK(a.init(pack.data(),pack.size(),{}));CHECK(a.content.version()>=LocaleContentVersion);actual_pack=true;}
-    selection_contexts();hotkeys_and_frontend();bounded_fallback();live_power_values();if(actual_pack)inline_star_sprites();
+    selection_contexts();hotkeys_and_frontend();bounded_fallback();live_power_values();inline_port_labels();if(actual_pack)inline_star_sprites();
     unsigned failures=argc==3?catalog_routes(argv[2]):0;
     CHECK(!actual_pack||a.content.healthy());std::printf("{\"operation\":\"regression\",\"checks\":%u,\"actual_pack\":%s,\"unresolved_bindings\":%u,\"passed\":%s}\n",checks,actual_pack?"true":"false",failures,failures?"false":"true");return failures?1:0;
 }

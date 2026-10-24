@@ -43,7 +43,7 @@ int main(int argc,char**argv){
         CHECK(!app.debug_open&&!std::memcmp(&snapshot,&app.game,sizeof snapshot));
     }
     CHECK(app.debug_command("energy 77")&&app.game.energy==77);
-    CHECK(app.debug_command("kill all")&&app.game.phase==Phase::Reward&&validate(app.game));
+    CHECK(app.debug_command("kill all")&&app.game.phase==Phase::WorldRelicChoice&&app.game.world_relics.choice==WorldRelicChoice::OfferReward&&app.game.world_relics.return_phase==uint8_t(Phase::Reward)&&app.game.world_relics.offer_count>0&&validate(app.game));
     CHECK(app.debug_command("room shop")&&app.game.phase==Phase::Shop);
     const auto gold=app.game.gold;CHECK(app.debug_command("gold 1000")&&app.game.gold>=gold);
     CHECK(app.debug_command("act 3")&&app.game.world.act_index==2&&validate(app.game));

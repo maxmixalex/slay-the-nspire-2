@@ -165,6 +165,7 @@ struct EnemyVisualFacts {uint64_t known=0;int values[MaxEnemyVisualFacts]{};};
 struct EnemyVisualCommand {const char* action=nullptr;EnemyVisualFacts facts{};int16_t move=-1;uint8_t direct=0;uint32_t earliest=0;};
 struct EnemyPresentation {
     uint16_t identity=0;uint8_t model=0,skin=0;
+    CreaturePose pose{};
     int state=-1,clip=-1,move=-1,hp=0;
     uint32_t start=0,until=0;
     const char* next_clip=nullptr;
@@ -389,6 +390,7 @@ struct App {
     uint32_t enemy_visual_clock=0,combat_linger_until=0;
     uint32_t enemy_visual_seed=0;int enemy_visual_floor=-1,enemy_visual_combat=-1,enemy_visual_encounter=-1;
     void sync_enemy_feedback();
+    CreaturePose combat_enemy_pose(int)const;
     void observe_core(const State&,Log);
     void observe_enemy_animation(const State&,int slot,const char* trigger);
     void enemy_trigger(int,const char*,int move=-1,bool direct=false,const EnemyVisualFacts* facts=nullptr,uint32_t earliest=0);

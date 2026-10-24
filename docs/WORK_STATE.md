@@ -2,6 +2,26 @@
 
 ## UI6 functional stage — awaiting complete validation
 
+Stage 3 was preserved and read back at
+`20262f09eb1edab0035e632ca9ee4f065fb51fc4`, tree
+`a3cd607efa551438e2a4a16eedbebae109c98a99` (50 blob SHA checks).
+Its full Clang18 native build and ARM build passed. Normal native suites
+passed 73/77; failures led to a real empty-potion action bug, delayed enemy
+identity/pose mismatch and two old layout/overlay expectations. WASM exposed
+a missing boot-locale include. Python passed 141/143; its failures identified
+unreviewed new bilingual UI literals and an outdated rejected-version fixture.
+The pending repair preserves all 935 legacy text slots using compiled fallback
+translations. No private resource reindexing or bulk reconversion is needed.
+Additional actual-pack checks found and fixed compendium modifier leakage and
+an overflow in top-bar angle interpolation. Failed stage journals are retained.
+
+The lossless merchant compactor has now removed 2,555,380 bytes (including
+alignment) from the English corrected pack. All 47,686 images, retained
+encodings, glyph bytes/order, localized text and tile IDs were compared after
+pointer relocation. The Chinese run and final split-package verification are
+in progress. Validation uses fixed source archives; live fixes await a new
+checkpoint before any rerun. No stage-3 failure is relabeled as accepted.
+
 The complete stage-2 work ref is now verified at
 `6b46a74eddf37381cff9a89cdbcf30572849cf73`, tree
 `7152976b545f283028611274b4af8c37b3086a07`. Its immutable archive produced

@@ -140,6 +140,12 @@ Necrobinder keeps the additional authored 150 source-pixel offset for Osty.
 - Scene formations use a sorted-table lookup. Unnamed formations use bounded
   width sums over at most eight actors; no string lookup, allocation or
   transform tree is involved. Neither path mutates saved state or RNG.
+- Each displayed enemy now retains its 28-byte pose alongside its displayed
+  identity. Sprite, intent hit, health bar and floating text consume that one
+  pose until the identity cue releases its replacement. This fixes future
+  Bounds leaking through a delayed replacement, prevents existing actors
+  from moving when a summon arrives, and removes repeated per-frame formation
+  sums from those consumers. A fresh/reset view still derives the current pose.
 - Formal measurements belong to the later frozen checkpoint, not to this
   source-only implementation note. No physical calculator FPS claim is made.
 
@@ -147,10 +153,23 @@ Necrobinder keeps the additional authored 150 source-pixel offset for Osty.
 
 Short Clang 18 syntax checks of the production `app.cpp`, card-motion,
 health-motion, world-UI, debug and dedicated formation tests passed after
-these changes. Formal frozen build/test results remain pending the next
-parent checkpoint. The first debug build on stage 2 used GCC and stopped at
+these changes. The first debug build on stage 2 used GCC and stopped at
 an aggregate assignment rejected by that compiler; the live fix reconstructs
 that bounded reward record in place. It is not recorded as a passing test.
+
+Frozen stage 3 `20262f09eb1edab0035e632ca9ee4f065fb51fc4` completed the full
+Clang 18 debug build. Its 79-test run passed 73 tests; two debug reward
+assertions incorrectly expected the old `Phase::Reward` fields instead of
+the current unified `OfferReward` group. They now check the real group and
+its card/claimable records, without bypassing reward selection. The UI run
+also exposed the delayed-replacement geometry leak described above, and a
+Q4 truncation moved Aeonglass's centered position one display pixel left.
+Both implementation fixes await the next frozen checkpoint. The remaining
+potion/map failures belong to their parallel UI scopes. The layout test's
+first debug invocation lacked executable permission; after repairing only
+that built-file mode, a logged retry reproduced the same Aeonglass assertion
+as the normal build. Actual English/Chinese world and debug UI attempts
+stopped at those same failures; they are not counted as passing coverage.
 
 Regressions now cover first block entry/re-gain/restoration, generated-card
 preview and flight, state/RNG invariance, simultaneous status rows and expiry,

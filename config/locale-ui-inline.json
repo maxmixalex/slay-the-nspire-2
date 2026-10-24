@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "note": "New port-authored bilingual labels compiled as fallbacks. Never reindex the historical pack binding table.",
+  "bindings": [
+    {
+      "source": "  已达成",
+      "eng": "  Complete"
+    },
+    {
+      "source": "  被动/激发",
+      "eng": "  Passive/Evoke"
+    },
+    {
+      "source": " 张",
+      "eng": " cards"
+    },
+    {
+      "source": " 次",
+      "eng": ""
+    },
+    {
+      "source": "Tab / Q：牌组   A / D / F：牌堆",
+      "eng": "Tab / Q: deck   A / D / F: piles"
+    },
+    {
+      "source": "事件房间",
+      "eng": "Event room"
+    },
+    {
+      "source": "全文",
+      "eng": "Read"
+    },
+    {
+      "source": "击杀全部敌人",
+      "eng": "Defeat all enemies"
+    },
+    {
+      "source": "商人房间",
+      "eng": "Merchant room"
+    },
+    {
+      "source": "回复生命",
+      "eng": "Heal"
+    },
+    {
+      "source": "地图",
+      "eng": "Map"
+    },
+    {
+      "source": "增加 1000 金币",
+      "eng": "Gain 1000 gold"
+    },
+    {
+      "source": "宝箱房间",
+      "eng": "Treasure room"
+    },
+    {
+      "source": "幕数",
+      "eng": "Act"
+    },
+    {
+      "source": "开始新局",
+      "eng": "New run"
+    },
+    {
+      "source": "效果结束",
+      "eng": "Wears Off"
+    },
+    {
+      "source": "方向键选择  Enter 执行  I 编辑",
+      "eng": "Arrows: choose  Enter: run  I: type"
+    },
+    {
+      "source": "普通敌人房间",
+      "eng": "Monster room"
+    },
+    {
+      "source": "精英房间",
+      "eng": "Elite room"
+    },
+    {
+      "source": "设为 99 能量",
+      "eng": "Set energy to 99"
+    },
+    {
+      "source": "设置保存失败，请重试",
+      "eng": "Could not save settings."
+    },
+    {
+      "source": "调试指令",
+      "eng": "Developer commands"
+    },
+    {
+      "source": "选牌后 Enter，左右选择目标，Enter 出牌",
+      "eng": "Enter to aim, Left/Right target, Enter to play"
+    },
+    {
+      "source": "首领房间",
+      "eng": "Boss room"
+    }
+  ]
+}

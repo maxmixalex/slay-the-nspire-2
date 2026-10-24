@@ -247,6 +247,7 @@ static void pending_hud_pointer_remains_available(){
         CHECK(app.map_transition_blocks_keyboard()&&!app.map_transition_blocks_pointer());
         click(hit(HitKind::Command,int(commands[kind])));
         if(kind==0)CHECK(app.panel==1);
+        else if(kind==1)CHECK(app.map_window.is_open&&app.panel==3&&app.paused);
         else CHECK(!app.map_window.is_open&&!app.panel&&!app.paused);
         app.update_map_travel();CHECK(app.map_travel.pending);same_state(before);
         // The original HUD retains MouseFilter=Ignore during map selection.
@@ -254,6 +255,7 @@ static void pending_hud_pointer_remains_available(){
         // keyboard/controller Back still waits for RoomFadeIn's callback.
         app.input(Key::Back);
         if(kind==0)CHECK(app.panel==1);
+        else if(kind==1)CHECK(app.map_window.is_open&&app.panel==3&&app.paused);
         else CHECK(!app.map_window.is_open&&!app.panel&&!app.paused);
         advance_ms(699);CHECK(app.map_travel.pending);same_state(before);
         app.advance(1);CHECK(!app.map_travel.pending&&app.map_travel.fading_in);
@@ -265,8 +267,7 @@ static void pending_exit_confirmation(){
     for(unsigned accept=0;accept<2;++accept){
         fresh();const unsigned destination=first_point();snapshot();make_oracle(destination);
         keyboard_begin(destination);advance_ms(250);
-        click(hit(HitKind::Command,int(Key::Back)));CHECK(!app.map_window.is_open);
-        click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused);
+        click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused&&app.map_window.is_open);
         app.input(Key::Quit);CHECK(app.frontend_confirm==3&&app.map_travel.pending&&!app.quit);
         click(hit(HitKind::UiAction,int(accept?UiAction::FrontendAccept:UiAction::FrontendCancel)));
         CHECK(!app.frontend_confirm);
@@ -279,8 +280,7 @@ static void pending_exit_confirmation(){
 }
 static void pending_compendium_quit_cancels_immediately(){
     fresh();snapshot();keyboard_begin(first_point());advance_ms(250);
-    click(hit(HitKind::Command,int(Key::Back)));CHECK(!app.map_window.is_open);
-    click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused&&app.map_travel.pending);
+    click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused&&app.map_window.is_open&&app.map_travel.pending);
     click(hit(HitKind::Menu,2));CHECK(app.library&&app.map_travel.pending);
     const uint32_t clock=app.map_clock_ms;
     // This is the Compendium's real Quit dispatch, without a later update

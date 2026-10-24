@@ -291,7 +291,7 @@ def main():
     tiles.require(release.get('version')=='v0.111.0' and release.get('commit')=='41cef1ea','Unpinned reference input')
     from pck import Pack
     from build_content import choose_font
-    from locale_profile import bindings_and_keys,validate_generated
+    from locale_profile import bindings_and_keys,inline_bindings,validate_generated
     validate_generated();bindings,extra_keys=bindings_and_keys()
     data=source_path.read_bytes();source=tiles.PackView(data,1188,versions=(16,),profile=(558,6110,1695,1188))
     font=choose_font(str(args.font) if args.font else None)
@@ -301,7 +301,7 @@ def main():
         for language in (('zhs','eng') if args.language=='both' else (args.language,)):
             tables=read_tables(pack,language)
             texts=localized_strings(source,tables,language,bindings,extra_keys)
-            glyphs=glyph_subset(texts,font,language,[r['source'] for r in bindings] if language=='zhs' else ())
+            glyphs=glyph_subset(texts,font,language,[r['source'] for r in bindings+inline_bindings()] if language=='zhs' else ())
             output,receipt=repack(data,1188,texts,glyphs,skins,profile=(558,6110,1695,1188))
             receipt.update(schema=1,reference='v0.111.0 / 41cef1ea',language=language,format=17,
                 original_text_keys=extra_keys,ui_bindings=len(bindings),skins=skin_receipt,

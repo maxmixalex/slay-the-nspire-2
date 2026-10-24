@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "locale_boot.hpp"
 #include "runtime_scene.hpp"
 #if SPIRE_DEBUG_COMMANDS
 #include "original_events.hpp"

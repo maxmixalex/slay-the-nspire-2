@@ -545,6 +545,7 @@ static void deferred_enemy_values(){
   char old_text[1024]{},retained_text[1024]{};
   a.localized_text("intents","STATUS.description",old_text,sizeof old_text,1,2);
   const uint32_t old_identity=a.enemy_presentation[1].identity,old_bar_identity=a.health_bars[2].identity,replace=a.animation+10;
+  const auto old_pose=a.combat_enemy_pose(1);
   const int old_hp=a.game.enemies[1].hp;
   // Real escape/spawn commands force reuse of Fogmog's summoned Eye slot.
   // The Eye has not reached an intent-hide cue; reusing its slot must not
@@ -557,6 +558,7 @@ static void deferred_enemy_values(){
   const uint32_t done=a.combat_feedback.end_at;
   snapshot();a.animation=replace-1;a.render();
   CHECK(a.enemy_presentation[1].identity==old_identity&&a.enemy_opacity(1)==255&&a.health_bars[2].identity==old_bar_identity);
+  CHECK(a.combat_enemy_pose(1).x==old_pose.x&&a.combat_enemy_pose(1).feet==old_pose.feet&&a.combat_enemy_pose(1).scale==old_pose.scale&&a.combat_enemy_pose(1).width==old_pose.width);
   CHECK(a.combat_intent(1).flags==old_intent.flags&&a.combat_intent(1).status_cards==old_intent.status_cards);
   CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());
   a.localized_text("intents","STATUS.description",retained_text,sizeof retained_text,1,2);CHECK(!std::strcmp(old_text,retained_text));
@@ -564,11 +566,16 @@ static void deferred_enemy_values(){
   unchanged();
   a.animation=replace;a.render();
   CHECK(a.combat_feedback.active&&a.combat_health(2).hp==a.game.enemies[1].hp&&a.enemy_presentation[1].identity==a.game.enemy_world.models[1].combat_id&&a.health_bars[2].identity==a.combat_feedback.identity[2]);
+  CHECK(a.combat_enemy_pose(1).scale==enemy_pose(a.game,1).scale&&a.combat_enemy_pose(1).width==enemy_pose(a.game,1).width);
   CHECK(!a.combat_intent(1).flags&&!has(HitKind::EnemyIntent,1)&&!intent_panel());unchanged();
   a.animation=done-1;a.render();CHECK(a.combat_feedback.active&&!a.combat_intent(1).flags&&!has(HitKind::EnemyIntent,1)&&!intent_panel());unchanged();
   a.animation=done;a.render();const auto revealed=a.combat_intent(1);
   CHECK(!a.combat_feedback.active&&revealed.flags==new_intent.flags&&revealed.damage==new_intent.damage&&revealed.hits==new_intent.hits&&revealed.status_cards==new_intent.status_cards&&!std::strcmp(revealed.move_key,new_intent.move_key));
-  CHECK(has(HitKind::EnemyIntent,1)&&intent_panel());bool renamed=false;
+  // The replacement's authored Bounds can move its intent. Hover the new
+  // actual region after reveal, rather than the removed Eye's old geometry.
+  CHECK(has(HitKind::EnemyIntent,1));found=false;
+  for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==1){a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+1;found=true;break;}
+  CHECK(found);a.render();CHECK(intent_panel());bool renamed=false;
   for(int y=53;y<67;++y)renamed|=std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t))!=0;
   // synthetic_profile has numeric glyphs only. Its blank alphabetic
   // title cannot prove a name change; keep every state/intent/hit/panel check
