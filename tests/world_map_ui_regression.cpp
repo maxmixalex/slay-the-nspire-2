@@ -351,7 +351,11 @@ static void circle_pixels(){
 static void layout_and_input(){
     start();CHECK(app.game.world.visited_rooms[0][app.game.world.current_point]==unsigned(WorldRoom::Event));
     app.input(Key::Map);CHECK(app.panel==3);snapshot();app.render();CHECK(!world_hits());capture("map-neow-inspection");
-    app.input(Key::Detail);CHECK(app.map_legend);app.render();CHECK(!world_hits());app.input(Key::Back);CHECK(!app.map_legend&&app.panel==3&&!app.paused);
+    const auto*legend_toggle=find_hit(HitKind::UiAction,int(UiAction::ToggleMapLegend));const auto*map_close=find_hit(HitKind::Close,0);
+    CHECK(legend_toggle&&map_close&&legend_toggle->x+legend_toggle->w<=map_close->x);
+    const auto*target=app.hit_at(legend_toggle->x+legend_toggle->w/2,legend_toggle->y+legend_toggle->h/2);
+    CHECK(target&&target->kind==HitKind::UiAction&&target->value==int(UiAction::ToggleMapLegend));
+    app.input(Key::Detail);CHECK(app.map_legend);app.render();CHECK(!world_hits()&&!find_hit(HitKind::Close,0));app.input(Key::Back);CHECK(!app.map_legend&&app.panel==3&&!app.paused);
     app.input(Key::Back);CHECK(!app.panel);unchanged();finish_routing_fixture();snapshot();
     WorldMapLayout a,b;CHECK(world_map_layout(app.game,a));CHECK(world_map_layout(app.game,b));
     const auto&m=*world_current_map(app.game);unsigned regular=0;

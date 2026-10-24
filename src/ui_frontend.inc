@@ -111,8 +111,8 @@ static void frontend_settings_screen(Canvas&c){
  const bool english=a.content.english(),native=a.content.version()>=FrontendContentVersion;
  // settings_screen.tscn is an unframed list behind a horizontal tab manager.
  // Only implemented settings have tabs; the calculator has no audio/video rows.
- const char*tab_labels[]={frontend_text(a,"settings_ui","TAB_GENERAL",english?"General":"游戏设置"),
-                         frontend_text(a,"settings_ui","TAB_INPUT",english?"Input":"操作设置")};
+ const char*tab_labels[]={frontend_text(a,"settings_ui","TAB_GENERAL","General"),
+                         frontend_text(a,"settings_ui","TAB_INPUT","Input")};
  for(int i=0;i<2;++i){
   const int x=48+i*112,y=13;const bool selected=a.settings_tab==i;
   const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+112&&a.pointer.y>=y&&a.pointer.y<y+39;
@@ -150,10 +150,13 @@ static void frontend_settings_screen(Canvas&c){
    }
   }
  }else{
-  const char*labels[]={english?"Navigate":"选择",frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.confirm",english?"Confirm":"确认"),
-      frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.endTurn",english?"End Turn":"结束回合"),english?"Piles":"牌堆",english?"Map / Potions":"地图 / 药水",english?"Details":"查看详情"};
-  const char*keys[]={"↑ ↓ ← →",english?"Enter / 5":"Enter / 5",english?"Space":"Space","Tab","M / P","I"};
-  for(int i=0;i<6;++i){const int y=62+i*21;c.text_fitted(labels[i],29,y,164,10,White);c.text_fitted(keys[i],200,y,91,10,White,8,true);divider.rect(25,y+17,270,1,rgb(232,220,190));}
+  char map_potions[128]{};TextBuffer labels_text{map_potions,sizeof map_potions,0,&a.content};
+  labels_text.text(frontend_text(a,"static_hover_tips","MAP.title","Map"));labels_text.text(" / ");
+  labels_text.text(frontend_text(a,"static_hover_tips","POTION_SLOT.title","Potions"));
+  const char*labels[]={"方向键 / 4、6、8、2：导航",frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.confirm",english?"Confirm":"确认"),
+      frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.endTurn",english?"End Turn":"结束回合"),"牌组",map_potions,"详情"};
+  const char*keys[]={"","Enter / 5","Space","Tab","M / P","I"};
+  for(int i=0;i<6;++i){const int y=62+i*21;c.text_fitted(labels[i],29,y,i?164:262,10,White);c.text_fitted(keys[i],200,y,91,10,White,8,true);divider.rect(25,y+17,270,1,rgb(232,220,190));}
   c.text_fitted("操作说明",191,192,104,10,a.settings_item==0?Gold:White,8,true);c.action(188,186,112,23,UiAction::SettingsControls);
  }
  native_back(c,7,211,84,28,"返回",true,a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
@@ -188,7 +191,6 @@ static void character_screen(Canvas&c){
         c.text_fitted(a.relic_title(id),panel_x+46,145,99,12,Gold);
         c.paragraph_fitted(text,panel_x+14,172,132,34,10,White);
     }
-    c.dim(0,209,320,31,130);
     native_back(c,2,212,84,28,"返回");c.action(1,209,86,31,UiAction::Back);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
     for(int i=0;i<CharacterKinds;i++){

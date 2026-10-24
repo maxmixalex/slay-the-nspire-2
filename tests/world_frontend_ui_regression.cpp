@@ -150,7 +150,7 @@ static void title_particle_curves(){
  }
 }
 static void title_background_layers(){
- CHECK(a.content.version()==TitleEffectsContentVersion);
+ CHECK(a.content.version()>=TitleEffectsContentVersion);
  const auto backdrop=a.content.image(a.content.ui_image(U_TitleBackdrop));CHECK(backdrop.pixels&&backdrop.w==320&&backdrop.h==240);
  const auto particles=a.content.image(a.content.ui_image(U_TitleParticles));CHECK(particles.pixels&&particles.w==270&&particles.h==216);
  const auto foreground=a.content.image(a.content.ui_image(U_TitleForeground));CHECK(foreground.pixels&&foreground.w==320&&foreground.h==240);
@@ -221,7 +221,7 @@ static void probe_is_read_only(){
 static void main_menu_and_continue(){
  empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==4);menu_rows(4);capture("frontend-title-new");
  a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
- press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
+ press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.advance(500);capture("frontend-character-select");a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
  press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
@@ -380,7 +380,13 @@ static void modal_isolation_and_fast_mode(){
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind==HitKind::UiAction&&(a.hits[i].value==int(UiAction::FrontendAccept)||a.hits[i].value==int(UiAction::FrontendCancel)));
  action(UiAction::FrontendCancel);CHECK(!a.frontend_confirm);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);a.character_select=true;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;unchanged();
- CHECK(a.settings_tab==0);capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
+ CHECK(a.settings_tab==0);
+ if(a.content.version()>=FrontendContentVersion){
+  CHECK(*a.content.world_string("settings_ui","TAB_GENERAL"));CHECK(*a.content.world_string("settings_ui","TAB_INPUT"));
+  CHECK(!std::strcmp(a.content.world_string("settings_ui","TAB_GENERAL"),a.content.string(FrontendSettingsGeneralString)));
+  CHECK(!std::strcmp(a.content.world_string("settings_ui","TAB_INPUT"),a.content.string(FrontendSettingsInputString)));
+ }
+ capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
  a.pointer_move(input.x+input.w/2,input.y+input.h/2);a.render();CHECK(a.settings_tab==0);unchanged();
  a.pointer_button(true);CHECK(a.settings_tab==0);a.pointer_button(false);CHECK(a.settings_tab==1&&a.settings_item==0);a.pointer.visible=false;capture("settings-input");unchanged();
  action(UiAction::SettingsControls);CHECK(a.help&&a.settings_open);bool fast=a.fast_mode;a.input(Key::Confirm);CHECK(!a.help&&a.settings_open&&a.fast_mode==fast);unchanged();

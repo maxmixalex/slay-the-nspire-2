@@ -8,13 +8,18 @@ static void native_reward_backdrop(Canvas&c){
  if(s.phase==Phase::WorldRelicChoice&&s.world_relics.return_phase==uint8_t(Phase::Reward))c.picture(c.a.combat_background(),0,22,320,218);
  c.dim(0,22,320,218,185);
 }
-static void native_reward_pages(Canvas&c,unsigned count,unsigned per,int y){
+static void native_reward_pages(Canvas&c,unsigned count,unsigned per,int y,bool cards=false){
  auto&a=c.a;const unsigned pages=(count+per-1)/per,page=unsigned(a.cursor)/per;
  if(pages<=1)return;
  char label[40]{};TextBuffer b{label,sizeof label,0,&c.a.content};b.number(page+1);b.text(" / ");b.number(pages);
- c.centered(label,99,y+1,122,10,Muted);
- c.centered("‹",55,y-2,35,16,page?Gold:Muted);c.action(52,y-2,41,21,UiAction::PreviousWorldPage,page>0);
- c.centered("›",230,y-2,35,16,page+1<pages?Gold:Muted);c.action(227,y-2,41,21,UiAction::NextWorldPage,page+1<pages);
+ c.centered(label,99,y+1,122,cards?8:10,Muted);
+ if(cards){
+  c.centered("‹",0,119,22,16,page?Gold:Muted);c.action(0,116,22,26,UiAction::PreviousWorldPage,page>0);
+  c.centered("›",298,119,22,16,page+1<pages?Gold:Muted);c.action(298,116,22,26,UiAction::NextWorldPage,page+1<pages);
+ }else{
+  c.centered("‹",55,y-2,35,16,page?Gold:Muted);c.action(52,y-2,41,21,UiAction::PreviousWorldPage,page>0);
+  c.centered("›",230,y-2,35,16,page+1<pages?Gold:Muted);c.action(227,y-2,41,21,UiAction::NextWorldPage,page+1<pages);
+ }
 }
 static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count){
  auto&a=c.a;const auto&s=a.game;const bool relic=s.phase==Phase::WorldRelicChoice;
@@ -54,9 +59,9 @@ static void native_card_reward_screen(Canvas&c,const uint16_t*ids,unsigned count
  auto&a=c.a;const auto&s=a.game;const bool relic=s.phase==Phase::WorldRelicChoice;
  const unsigned per=a.world_choice_page_size(),first=unsigned(a.cursor)/per*per;
  const unsigned shown=mn(int(per),int(count-first));
- native_reward_backdrop(c);c.ui(U_RewardBanner,28,27,264,47);
- c.centered(native_reward_text(a,"gameplay_ui","CHOOSE_CARD_HEADER","选择一张牌"),52,38,216,16,Gold);
- native_reward_pages(c,count,per,57);
+ native_reward_backdrop(c);c.ui(U_RewardBanner,28,44,264,30);
+ c.centered(native_reward_text(a,"gameplay_ui","CHOOSE_CARD_HEADER","选择一张牌"),52,48,216,16,Gold);
+ native_reward_pages(c,count,per,64,true);
  for(unsigned i=0;i<shown;i++){
   const unsigned at=ids[first+i];Card card=card_from_token(relic?s.world_relics.offers[at]:s.original_events.offers[at]);
   const auto&facts=relic?s.world_relics.offer_facts[at]:s.original_events.offer_facts[at];

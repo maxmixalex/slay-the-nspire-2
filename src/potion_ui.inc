@@ -46,7 +46,7 @@ static void potion_popup_screen(Canvas&c){
     if(original&&(pointer_discard||(!a.pointer.visible&&a.potion_menu_item)))layer.ui(F_PotionPopupBottom,x+3,y+43,72,28,discard?64:90);
     const char*verb=a.content.world_string("gameplay_ui",a.potion_is_thrown()?"POTION_POPUP.throw":"POTION_POPUP.drink");
     const char*discard_text=a.content.world_string("gameplay_ui","POTION_POPUP.discard");
-    layer.centered(*verb?verb:a.potion_is_thrown()?"投掷":"饮用",x+5,y+23,68,10,use?White:Muted);
+    layer.centered(*verb?verb:a.potion_is_thrown()?"Throw":"Drink",x+5,y+23,68,10,use?White:Muted);
     layer.centered(*discard_text?discard_text:"丢弃",x+5,y+49,68,10,discard?rgb(244,122,102):Muted);
     c.hit(x+3,y+14,72,28,HitKind::Potion,a.scroll,use);
     c.action(x+3,y+43,72,26,UiAction::DiscardPotion,discard);

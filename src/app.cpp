@@ -36,6 +36,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "turn_banner_ui.inc"
 #include "combat_preparation.inc"
 #include "world_map_motion.inc"
+static bool ui_ancient_event(OriginalEventId);
 #include "app_input.inc"
 #include "reward_presentation.inc"
 static const char* card_type_label(CardType type,const Content*content=nullptr){
@@ -387,7 +388,7 @@ void App::render(){
     if(frontend_confirm)frontend_confirm_screen(c);
     if(help){
         hit_count=0;c.hit(6,7,308,226,HitKind::Close);c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
-        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单","事件中：↑↓ 阅读，←→ 选项","三幕路线，含首领、古代之民与事件。","触摸板：轻触/按下点击，按住可拖牌。"};
+        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单","← → 选择 · I 全文","三幕路线，含首领、古代之民与事件。","触摸板：轻触/按下点击，按住可拖牌。"};
         for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
     }
     if(character_select)character_screen(c);

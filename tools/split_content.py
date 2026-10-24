@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..21 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..22 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This

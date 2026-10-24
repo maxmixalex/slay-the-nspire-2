@@ -20,12 +20,12 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
 }
-static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr){
+static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr,int deck=-1){
     auto&a=c.a;Card card=visual?visual->card:a.game.cards[instance];
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     bool playable=visual||can_play_card(a.game,instance);
-    char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,instance);
-    int portrait=a.card_face_image(card,instance),frame=a.card_face_frame(card,instance);
+    char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,instance,deck);
+    int portrait=a.card_face_image(card,instance,deck),frame=a.card_face_frame(card,instance,deck);
     ++hand_tile_clock;HandTile*slot=nullptr;
     // A holder index changes when a neighbour leaves the hand. Reuse the
     // visual key across hand, play and flight instead of repainting every
@@ -42,7 +42,7 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     // Left inset contains the original star cost below the energy icon;
     // neither resource adds a second title row or moves the card portrait.
-    draw_card_face(tile,card,8,6,69,97,energy,stars,instance,-1,nullptr,description);
+    draw_card_face(tile,card,8,6,69,97,energy,stars,instance,deck,nullptr,description);
     if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
     t.valid=true;return t;
 }
@@ -150,20 +150,11 @@ static bool combat_stars_visible(App&a){
     const int count=a.combat_status_amount(0,44);
     v.stars_visible=v.stars_visible||s.character==Character::Regent||count>0;
     if(count>v.star_observed)v.star_gain_at=a.animation;
-    if(count<v.star_observed){v.star_lerp=float(count);v.star_velocity=0;v.star_gain_at=a.animation-7;}
+    if(count<v.star_observed){v.star_count.decrease(count);v.star_gain_at=a.animation-7;}
     const uint32_t delta=a.map_clock_ms-v.star_tick;
     v.star_rotation_mdeg=(v.star_rotation_mdeg+(delta%72000u)*(v.star_zero?5u:30u))%360000u;
     v.star_tick=a.map_clock_ms;v.star_zero=count==0;v.star_observed=count;
-    if(delta&&v.star_lerp!=float(count)){
-        // NStarCounter uses MathHelper.SmoothDamp with smoothTime=.1.
-        // One scalar update per rendered frame; no particles or heap work.
-        const float dt=float(delta<1000u?delta:1000u)/1000.f,x=20.f*dt;
-        const float decay=1.f/(1.f+x+.48f*x*x+.235f*x*x*x),change=v.star_lerp-float(count);
-        const float step=(v.star_velocity+20.f*change)*dt;
-        v.star_velocity=(v.star_velocity-20.f*step)*decay;const float next=float(count)+(change+step)*decay;
-        if((float(count)-v.star_lerp>0)==(next>float(count))){v.star_lerp=float(count);v.star_velocity=0;}
-        else v.star_lerp=next;
-    }
+    v.star_count.advance(count,delta);
     return v.stars_visible;
 }
 static void combat_energy(Canvas&c,bool stars){
@@ -188,7 +179,7 @@ static void combat_energy(Canvas&c,bool stars){
     c.centered(label,left,top+13,42,size,empty?rgb(255,85,85):rgb(255,246,226));
     c.hit(left,top,42,42,HitKind::Battlefield);
     if(stars){
-        const int count=int(a.combat_status.star_lerp+.5f),age=int32_t(a.animation-a.combat_status.star_gain_at)*33,star_top=regent?183:187;
+        const int count=a.combat_status.star_count.displayed(),age=int32_t(a.animation-a.combat_status.star_gain_at)*33,star_top=regent?183:187;
         const unsigned light=count&&age>=0&&age<200?255+unsigned(200-age)*255/200:255;
         if(a.content.version()>=FrontendContentVersion){
             for(int layer=0;layer<3;++layer)combat_energy_layer(c,a.content.ui_image(F_StarCounterBase+layer),

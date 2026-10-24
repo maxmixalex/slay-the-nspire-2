@@ -184,9 +184,27 @@ static void acquisition_flights(){
  reset();single_reward(2,WorldRelicGoldenPearl);a.render();a.advance(500);a.render();const unsigned slot=ui_owned_relic_count(a.game);press_reward(0);
  CHECK(a.reward_pickup_hidden(RewardPickupKind::Relic,slot));snapshot();a.advance(175);a.render();unchanged();capture("reward-relic-flight");a.advance(175);a.render();CHECK(!a.reward_pickup_hidden(RewardPickupKind::Relic,slot));unchanged();
 }
+static void acquired_card_visual_facts(){
+ // Isolate the pickup renderer at a fixed clock. Actual localized templates
+ // must preserve permanent growth and enchantments after the holder vanishes.
+ const Card cards[]={{DefectGeneticAlgorithm,0},{NecroTheScythe,0},{EventCardMadScience,0},{Defend,0},{Strike,0}};
+ const auto pixels=[](){uint32_t value=2166136261u;for(auto pixel:a.pixels)value=(value^pixel)*16777619u;return value;};
+ for(unsigned i=0;i<sizeof cards/sizeof cards[0];++i){
+  reset();a.game.deck[0]=cards[i];a.game.event_cards.deck[0]=EventCardFacts{};a.game.defect.genetic_deck[0]=a.game.necro.scythe_deck[0]=0;
+  a.reward_presentation.append(RewardPickupKind::Card,cards[i].kind,0,120,125,a.map_clock_ms,cards[i]);a.render();const auto plain=pixels();
+  if(i==0)a.game.defect.genetic_deck[0]=40;
+  else if(i==1)a.game.necro.scythe_deck[0]=23;
+  else if(i==2)a.game.event_cards.deck[0].science_type=2;
+  else if(i==3)CHECK(event_card_apply_enchantment(a.game.deck[0],a.game.event_cards.deck[0],EventEnchantment::Nimble,3));
+  else CHECK(event_card_apply_enchantment(a.game.deck[0],a.game.event_cards.deck[0],EventEnchantment::TezcatarasEmber,1));
+  a.render();CHECK(pixels()!=plain);snapshot();a.render();unchanged();if(i==0)capture("reward-card-genetic-flight");
+  a.game.event_cards.deck[0]=EventCardFacts{};a.game.defect.genetic_deck[0]=a.game.necro.scythe_deck[0]=0;a.render();CHECK(pixels()==plain);
+ }
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
  reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();camp_proceed(false);camp_proceed(true);acquisition_flights();
+ if(a.content.version()>=LocaleContentVersion)acquired_card_visual_facts();
  std::printf("world reward UI: %u checks passed; %s profile; reward ownership, direct claim, alternatives and Camp Proceed\n",checks,argc>1?"actual":"synthetic");
 }

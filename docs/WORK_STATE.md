@@ -1,5 +1,57 @@
 # Work state — 2026-10-24
 
+## UI5 stage 3: measured repairs and bounded optimization, validation pending
+
+Stage 2 was pushed/read back at `eb6f9564c6f3c88bc47b73829036af21d0489072`,
+tree `f772d1adc7894e739ab326f8b205b00b22cf122b`. Its immutable validation
+checkout is `/tmp/slay-ui5-stage2`; original inputs remain outside Git.
+Main still holds the accepted UI4 source. Do not promote this untested repair
+stage until the following checks have actually completed.
+
+Stage 2 compiled all 75 native ASan/UBSan suites and WASM. The full native run
+passed 65/75: six large host fixtures overflowed the 8 MiB process stack, and
+four UI fixtures retained older potion/intent behavior assumptions. The same
+six binaries all passed with a 32 MiB host stack; CI now applies that test-only
+allowance. Local LeakSanitizer is disabled because this host uses ptrace;
+AddressSanitizer and UndefinedBehaviorSanitizer remain enabled. Stage 2 ARM
+linking failed on floating-point ABI helpers in the star animation. The
+failure journals remain retained; no stage-2 calculator execution is claimed.
+
+The real v22 ENG/ZHS conversion and exact split/reassembly passed. Actual
+event/reward/map suites passed in both languages. Python's first group exposed
+the old version-22 rejection and eight unbound UI literals; its second group
+passed 53 tests. These are not full-suite acceptance. Remote Actions was still
+queued at the last readback (run 40053740324).
+
+This repair stage implements a Q14/Q30 star counter with original gain/loss
+velocity behavior; a before-effect observer keeps enemy animation hooks behind
+their command waits, including the reproduced Lagavulin wake-ahead-of-hit bug.
+Status capture skips absent enemy slots after its complete initial reset.
+The full original float-reference motion comparison passed 109,989 checks;
+the target build and integrated suites remain to be rerun after persistence.
+
+Settings receive original General/Input labels in unused fixed locale slots
+8103/8104, preserving all 935 existing bindings and historical payloads.
+Ordinary event Up/Down cycles choices; character selection loses the added
+bottom strip; reward card headers avoid the relic strip, and pickup cards
+preserve actual acquired-instance facts. Native potion fixtures distinguish
+Fire's immediate damage from a real autoplayed multi-hit command sequence.
+
+A lossless offline glyph-payload locality converter and actual Rainbow detail
+pointer benchmark are included as a candidate. Adoption requires same-runtime
+pixel/save equality and cold-read improvement across all measured entrances,
+with no material regression. It adds no runtime cache, preload or integrity
+scan. Stage-2 Chinese detail still required 28 reads, 23 for glyphs; its stall
+has not been declared solved. Visible ten-card removal batching reduces ENG
+39→30 and ZHS 78→69 calls with unchanged output. Timing comparisons must run
+serially outside competing builds before any CPU speed claim.
+
+Next: push/read back this complete stage, rebuild native/ARM/WASM, rerun the
+75 native suites and Python tests, regenerate final v22 locales, inspect both
+languages and measure the locality candidate. A normal-OS Firebird controller
+has been built against the recovered owner-provided boot/NAND inputs; the
+original NAND stays untouched and no new game execution is established yet.
+
 ## UI5 stage 2: original controls and presentation, validation pending
 
 Continuing from remote-verified `3253b22f8dcd50f354f1b7c094a00e5cb80b279f`

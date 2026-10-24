@@ -101,7 +101,7 @@ void App::combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,
  f.effect_at=ui_feedback_later(f.effect_at,action);f.end_at=ui_feedback_later(f.end_at,end);
  f.hidden|=uint8_t(1u<<slot);f.hide_at[slot]=start;
 }
-void App::observe_combat_effect(const State&s,Effect effect){
+void App::before_combat_effect(const State&s,Effect effect){
  if(&s!=&game||!ui_feedback_bound(*this))return;auto&f=combat_feedback;
  const XOp op=effect.kind==EffectKind::Extended?XOp(effect.target):XOp::Count;
  const EnemyId kind=f.move_slot>=0&&f.move_slot<s.enemy_count?s.enemy_world.models[f.move_slot].kind:EnemyId::Count;
@@ -168,6 +168,12 @@ void App::observe_combat_effect(const State&s,Effect effect){
   // their existing fallback; this is the audited selection boundary only.
   f.effect_at=ui_feedback_later(f.effect_at,f.move_at+wait(1000,250));
  }
+ // Hooks invoked from inside this synchronous effect must see the same
+ // boundary as its later HP/status sample (e.g. Asleep's Wake on damage).
+ f.after_at=after;
+}
+void App::observe_combat_effect(const State&s,Effect){
+ if(&s!=&game||!ui_feedback_bound(*this))return;auto&f=combat_feedback;
  // The numeric attack profile covers per-hit animation and Damage waits.
  // Other pre/post commands retain the separately audited move timeline.
  ui_card_finish_wait(*this);
@@ -183,7 +189,7 @@ void App::observe_combat_effect(const State&s,Effect effect){
  if(hand_add)f.effect_at=ui_card_add_wait(*this,f.effect_at);
  // Round cumulative command time once, rather than adding rounded waits.
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.
- if(after)f.effect_at=ui_feedback_later(f.effect_at,after);
+ if(f.after_at)f.effect_at=ui_feedback_later(f.effect_at,f.after_at);
  f.end_at=ui_feedback_later(f.end_at,f.effect_at);
  // A choice is a barrier in this same command stream, not a request to
  // display the synchronously advanced phase before its preceding effects.

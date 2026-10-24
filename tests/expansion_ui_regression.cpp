@@ -107,7 +107,7 @@ static void open_potion(Potion potion){
     tap(HitKind::LibraryItem,index);CHECK(a.detail_item==WorldRelicKinds+index);
 }
 static void acquire_potion(Potion potion){open_potion(potion);action(UiAction::LabPotion);CHECK(!a.library&&a.game.potions[0]==potion);}
-static void drink(){a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Confirm);CHECK(a.panel==0);}
+static void drink(){a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Confirm);if(a.potion_targeting)a.input(Key::Confirm);CHECK(a.panel==0);}
 static void modal_only(){
     a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Battlefield);
 }

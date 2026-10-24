@@ -28,6 +28,13 @@ and sub-frame time; skipped hits against defeated actors do not add a phantom
 impact. Existing bounded health/status queues still converge to canonical
 values at their endpoint if their intermediate capacity is exceeded.
 
+The effect's presentation boundary is established before its synchronous
+hooks run, and the settled values are sampled afterwards. A retained stage-2
+reproduction showed Lagavulin waking at input tick 0 while its health impacts
+were still queued for ticks 5 and 16. The optional `CoreObserver.before_effect`
+callback fixes that ordering for Wake and Flutter's StunTrigger without
+changing saved effects or the existing four observer callback fields.
+
 Power feedback stores at most 96 compact `(actor, power, identity, time)`
 records. The records can outlive an action's value projection, but are cleared
 on presentation reset and combat-identity changes. No title strings, frame
@@ -35,6 +42,24 @@ buffers, full State copies or persistent gameplay data are added. Original
 power classification is a compact static byte table. Original `Minion` and
 `Illusion` suppress power-applied VFX; star, pet and orb resource slots are not
 power popups.
+
+The first ARM link exposed unavailable floating-point helper symbols in the
+star count animation. `StarCounterMotion` now evaluates the same damped
+trajectory with Q14 value/velocity and Q30 reciprocal precision, using the
+exact integer form of the original cubic denominator. It adds no software
+floating-point runtime. Integer labels are checked against original-float
+golden trajectories, including large gains and short/long frame intervals.
+All labels match at the tested 16, 17, 33, 50, 100, 250 and 1000 ms intervals.
+An artificial 1 ms cadence and a 9999-star gain accumulate a maximum
+0.025879-star difference from float rounding; only values near a half-integer
+may briefly round to an adjacent label. Losses and zero remain immediate.
+
+After a complete initial snapshot, status capture scans the player and the
+currently allocated enemy slots rather than all eight possible enemies on
+every effect. Removed slots remain allocated; summons extend the bound and
+slot replacements are still sampled. Player resources and auxiliary facts
+keep their complete sampling. This removes absent-slot comparisons without
+adding memory or omitting any live status.
 
 ## Deliberate remaining scope
 
@@ -63,6 +88,10 @@ remaining attack. Chomper and Axebot exercise repeated
 animation versus animation-once enemy attacks. Further checks cover the
 power popup's application time/type, intent delay/fade boundaries, the star
 resource's deferred value and absence from the power list, and reset cleanup.
+Wake and Flutter's stun must retain their prior animation and HP until the
+same damage boundary, in both speed modes, with byte-identical canonical
+saves. Positive Strength decreases, negative Strength and ordinary duration
+ticks check the original counter-versus-duration popup distinction.
 
 The v22 pack relocation test checks all newly appended assets while retaining
 the existing image, animation, locale and decoded-cost entries. Source is

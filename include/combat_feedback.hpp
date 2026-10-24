@@ -75,12 +75,12 @@ struct CombatFeedback {
  uint32_t hide_at[MaxEnemies]{};
  Cue cues[Capacity]{};
  CombatHand hand{};
- uint32_t seed=0,effect_at=0,move_at=0,move_end=0,end_at=0,choice_at=0;
+ uint32_t seed=0,effect_at=0,after_at=0,move_at=0,move_end=0,end_at=0,choice_at=0;
  int floor=-1,combat=-1,encounter=-1,move_slot=-1,move=-1;
  uint16_t head=0,count=0;
  uint8_t hidden=0;
  bool active=false,finished=false,overflow=false,choice_pending=false;
- void reset(){active=finished=overflow=choice_pending=false;head=count=0;hidden=0;move_slot=move=-1;for(auto&a:attacks)a.active=false;enemy_attack.active=false;}
+ void reset(){active=finished=overflow=choice_pending=false;head=count=0;hidden=0;after_at=0;move_slot=move=-1;for(auto&a:attacks)a.active=false;enemy_attack.active=false;}
  static bool same(const HealthBarValues&a,const HealthBarValues&b){
   return a.hp==b.hp&&a.max_hp==b.max_hp&&a.block==b.block&&a.tracked_block==b.tracked_block&&
    a.poison_damage==b.poison_damage&&a.doom==b.doom&&a.infinite==b.infinite;

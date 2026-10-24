@@ -38,7 +38,11 @@ jobs:
       - name: Build synthetic regressions
         run: cmake --build build/ci --parallel 2
       - name: Run all registered native suites
-        run: ctest --test-dir build/ci --output-on-failure --parallel 2
+        # Instrumented fixtures keep multiple complete States/save snapshots.
+        # This host-only allowance does not change the Ndless runtime budget.
+        run: |
+          ulimit -s 32768
+          ctest --test-dir build/ci --output-on-failure --parallel 2
 
   conversion:
     runs-on: ubuntu-24.04

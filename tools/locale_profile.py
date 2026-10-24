@@ -7,6 +7,9 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE,UI_BASE,LIMIT=6111,7168,8192
+# v22 appends these original strings only into previously empty slots. Never
+# extend the sorted legacy binding table over them or reindex earlier packs.
+FRONTEND_TEXTS=((8103,'settings_ui.TAB_GENERAL'),(8104,'settings_ui.TAB_INPUT'))
 
 
 def source_literals():
@@ -54,7 +57,7 @@ def bindings_and_keys():
     extra=set(config.get('extra_keys',[]))|{r['reference'] for r in rows if r.get('reference')}
     extra.update('cards.'+key+'.title' for key in ('SETUP_STRIKE','FOCUSED_STRIKE','HOTFIX','HYPERBEAM','SYNCHRONIZE'))
     extra=sorted(extra-existing)
-    if len(extra)>UI_BASE-BASE or len(rows)>LIMIT-UI_BASE:
+    if len(extra)>UI_BASE-BASE or len(rows)>FRONTEND_TEXTS[0][0]-UI_BASE:
         raise ValueError('Locale directory capacity exceeded')
     return rows,extra
 

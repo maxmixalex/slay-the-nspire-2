@@ -11,8 +11,9 @@ static void reward_pickup_screen(Canvas&c){
   }else if(f.kind==RewardPickupKind::Relic){tx=f.slot<15?11+int(f.slot)*19:302;ty=32;}
   const auto v=m.sample(f,tx,ty,a.map_clock_ms);if(!v.visible)continue;
   if(f.kind==RewardPickupKind::Card){
-   CombatCardMotion::Sprite sprite;sprite.card=f.card;sprite.energy=int16_t(cost(f.card));sprite.stars=int16_t(card_star_cost(a.game,f.card));
-   const auto&tile=hand_tile(c,-1,&sprite);
+   const int deck=f.slot<a.game.deck_count&&card_token(a.game.deck[f.slot])==card_token(f.card)?int(f.slot):-1;
+   CombatCardMotion::Sprite sprite;sprite.card=f.card;sprite.energy=int16_t(a.card_offer_cost(f.card,event_card_facts(a.game,f.card,-1,deck)));sprite.stars=int16_t(card_star_cost(a.game,f.card));
+   const auto&tile=hand_tile(c,-1,&sprite,deck);
    draw_hand_tile(c,tile,{v.x,v.y,v.scale,CombatCardMotion::sine(v.angle),CombatCardMotion::sine(v.angle+1024)},false,v.shade);
   }else{
    const int image=f.kind==RewardPickupKind::Potion?a.content.potion_image(Potion(f.model)):a.relic_face_image(RelicId(f.model));

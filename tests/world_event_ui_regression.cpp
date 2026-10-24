@@ -176,6 +176,10 @@ static void ordinary_events(bool synthetic){
  const char*names[]={"event-wellspring","event-colorful-philosophers","event-relic-trader"};
  for(unsigned model=0;model<sizeof ids/sizeof ids[0];++model){
   begin(ids[model],0x6ab19,0);snapshot();a.render();const unsigned count=original_event_option_count(a.game);CHECK(count>0);
+  // Ordinary pages display a fitted body, so vertical navigation selects
+  // options and wraps instead of scrolling a hidden duplicate text panel.
+  a.cursor=0;a.input(Key::Up);CHECK(a.cursor==int(count)-1);a.input(Key::Down);CHECK(a.cursor==0);
+  for(unsigned i=0;i<count;++i)a.input(Key::Down);CHECK(a.cursor==0&&a.scroll==0);unchanged();
   for(unsigned selected=0;selected<count;++selected){
    a.cursor=int(selected);a.render();CHECK(choice_count()==(count-selected/3*3<3?count-selected/3*3:3));
    HitRegion previous{};for(unsigned i=selected/3*3;i<count&&i<selected/3*3+3;++i){const auto h=choice(int(i));

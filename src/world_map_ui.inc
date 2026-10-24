@@ -171,7 +171,8 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     // header/footer. The act name already has the original NActBanner entry.
     // Fold only the legend for 320px; leave its toggle on the paper itself.
     if(!a.map_legend){
-        c.text("图例",278,27,10,colors.ink);c.action(268,23,52,24,UiAction::ToggleMapLegend);
+        const bool close=window&&a.panel==3&&s.phase!=Phase::Map;
+        c.text("图例",close?246:278,27,10,colors.ink);c.action(close?238:268,23,close?48:52,24,UiAction::ToggleMapLegend);
         if(a.map_can_scroll()&&view.origin<view.maximum){
             c.text("↑",304,53,12,colors.ink);c.hit(297,47,23,28,HitKind::Scroll,-1);
         }
@@ -230,7 +231,7 @@ static void world_map_window_screen(Canvas&c){
     }
     world_map_screen(c,!a.map_routes_active(),&sample);
     world_map_act_banner_screen(c);
-    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map)c.close_button();
+    if(a.map_window.is_open&&a.panel==3&&a.game.phase!=Phase::Map&&!a.map_legend)c.close_button();
     // Closed immediately restores room input; only the visual tail remains.
     if(!a.map_window.is_open)a.hit_count=old_hits;
 }

@@ -59,7 +59,7 @@ struct RewardPresentation {
   return unsigned(time*4096/f.duration);
  }
  static uint32_t card_arrival(const Flight&f){
-  // One bounded integer search per sample avoids floating-point square roots.
+  // One bounded integer search per new flight avoids floating-point roots.
   uint32_t lo=0,hi=1600;
   for(unsigned i=0;i<11;++i){const uint32_t mid=(lo+hi)/2;if(card_progress(f,mid)<4096)lo=mid+1;else hi=mid;}
   return hi;

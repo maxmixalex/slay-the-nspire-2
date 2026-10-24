@@ -88,7 +88,12 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
 #include "combat_power_visuals.inc"
  };
  static_assert(sizeof visual_flags==StatusKinds,"Every displayed power needs its original VFX classification");
- for(unsigned actor=0;actor<CombatStatus::Actors;++actor)for(int id=0;id<StatusKinds;++id){
+ // A combat never shrinks enemy_count: removed actors retain their slots,
+ // and a summon either reuses one or extends it. Only the initial snapshot
+ // must clear every absent slot; later effects scan actual actor slots.
+ unsigned actors=initial?CombatStatus::Actors:unsigned(s.enemy_count)+1;
+ if(actors>CombatStatus::Actors)actors=CombatStatus::Actors;
+ for(unsigned actor=0;actor<actors;++actor)for(int id=0;id<StatusKinds;++id){
   const unsigned cell=actor*StatusKinds+id;const auto value=ui_combat_status_value(s,int(actor),id);
   if(initial)view.shown[cell]=view.observed[cell]=value;
   else{
@@ -96,7 +101,7 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
    // NCreature.OnPowerIncreased creates title/icon VFX; duration ticks and
    // removals do not. Negative-capable counters (Strength/Dexterity/Focus)
    // also report losses, using the power type at the resulting amount.
-   const bool increased=value.amount>old.amount,negative=(flags&4)&&value.amount<old.amount&&value.amount<0;
+   const bool increased=value.amount>old.amount,negative=(flags&4)&&value.amount<old.amount;
    if((flags&1)&&value.amount&&value.visible&&(increased||negative)&&
       (actor==0?s.hp>0:actor<=unsigned(s.enemy_count)&&s.enemies[actor-1].hp>0)){
     const bool debuff=(flags&4)&&value.amount<0?true:(flags&2)!=0;

@@ -69,6 +69,9 @@ def fixture(language='eng', glyphs=1, incompressible=False, tail_image=False, wo
     offset = append(language.encode() + b'\0')
     for i in range(ns):
         struct.pack_into('<II', out, string_at + i * 8, offset, 3)
+    if world_profile:
+        for slot, _key in frontend.FRONTEND_TEXTS:
+            struct.pack_into('<II', out, string_at + slot * 8, offset + 3, 0)
     for i in range(nc):
         tiles.CLIP.pack_into(out, string_at + ns * 8 + i * 16, 5, 1, 100, 0, 0, 0)
     tiles.GLOBAL.pack_into(out, base, b'TIL1', 1, 16, 14, 1, 1, 1, 1,
@@ -173,6 +176,9 @@ class RetainedPackTest(unittest.TestCase):
                 frontend_rows.append(dict(file=name, width=2, height=2, format=0, bytes=len(raw),
                     sha256=tiles.sha256(raw), raw_sha256=tiles.sha256(raw)))
             outputs, frontend_outputs, batches = {}, {}, None
+            localized_text = {language:{key:language + ' synthetic ' + str(slot)
+                                      for slot,key in frontend.FRONTEND_TEXTS} for language in ('eng','zhs')}
+            frontend_manifest = dict(images=frontend_rows,localized_text=localized_text)
             for language, glyphs in (('eng', 1), ('zhs', 3)):
                 old = fixture(language, glyphs=glyphs, tail_image=True, world_profile=True)
                 extended, receipt = retained.append_title_art(old, manifest_path)
@@ -198,13 +204,26 @@ class RetainedPackTest(unittest.TestCase):
                 # v22 inserts a larger image/auxiliary directory and decoded
                 # cost table without disturbing old format-7 relative links,
                 # tile descriptors, animation blocks, localized text or art.
-                extended, report = frontend.patch_pack(output, dict(images=frontend_rows), path)
+                extended, report = frontend.patch_pack(output, frontend_manifest, path)
                 newer = tiles.PackView(extended, frontend.AUXILIARY, versions=(22,))
                 self.assertEqual(newer.aux[:1265], target.aux)
                 self.assertTrue(report['unchanged_old_payload'])
                 self.assertTrue(report['unchanged_old_decoded_costs'])
                 self.assertEqual(report['appended_images'], frontend.AUXILIARY - frontend.BASE_AUX)
                 self.assertEqual(report['appended_clips'], 0)
+                self.assertEqual(report['localized_slots'], [slot for slot, _key in frontend.FRONTEND_TEXTS])
+                self.assertTrue(report['unchanged_preexisting_strings'])
+                new_labels = dict(frontend.FRONTEND_TEXTS)
+                for slot, ((old_at, old_length), (new_at, new_length)) in enumerate(zip(target.strings, newer.strings)):
+                    expected = localized_text[language][new_labels[slot]].encode() + b'\0' if slot in new_labels else output[old_at:old_at+old_length+1]
+                    self.assertEqual(extended[new_at:new_at+new_length+1], expected)
+                # A later catalog that occupies a reserved slot is rejected;
+                # historical text can never be silently overwritten.
+                occupied = bytearray(output)
+                occupied_at = target.string_at + frontend.FRONTEND_TEXTS[0][0] * 8
+                struct.pack_into('<II', occupied, occupied_at, *target.strings[6110])
+                with self.assertRaisesRegex(ValueError, 'already occupied'):
+                    frontend.patch_pack(occupied, frontend_manifest, path)
                 for i, record in enumerate(target.images):
                     if record[3] == 6:
                         self.assertEqual(tiles.TileReader(newer).image_raw(i), tiles.TileReader(target).image_raw(i))

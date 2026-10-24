@@ -96,7 +96,7 @@ static void special_reward_snapshots(){
  }
 }
 static void potion_lock_and_capacity(){
- world();a.game.potion_slots=16;for(unsigned i=0;i<16;i++)CHECK(potion_set(a.game,i,Potion::Strength));CHECK(original_event_begin(a.game,OriginalEventId::StoneOfAllTime,7,1));CHECK(original_event_blocks_potions(a.game));a.input(Key::Potions);CHECK(a.panel==4);a.pointer_scroll(1);for(int i=0;i<7;i++)a.input(Key::Right);CHECK(a.scroll==15);snapshot();a.render();CHECK(has(HitKind::Potion,15));CHECK(a.scroll==15);capture("potion-full-second-page");a.ui_action(UiAction::DiscardPotion);CHECK(potion_at(a.game,15)==Potion::Strength);unchanged();a.panel=0;
+ world();a.game.potion_slots=16;for(unsigned i=0;i<16;i++)CHECK(potion_set(a.game,i,Potion::Strength));CHECK(original_event_begin(a.game,OriginalEventId::StoneOfAllTime,7,1));CHECK(original_event_blocks_potions(a.game));a.input(Key::Potions);CHECK(a.panel==4);for(int i=0;i<15;i++)a.input(Key::Right);CHECK(a.scroll==15);snapshot();a.render();CHECK(has(HitKind::Potion,15));CHECK(a.scroll==15);capture("potion-full-second-page");a.ui_action(UiAction::DiscardPotion);CHECK(potion_at(a.game,15)==Potion::Strength);unchanged();a.panel=0;
 }
 static void offer_facts(){
  world();EventCardFacts facts{};facts.science_type=1;facts.rider=unsigned(TinkerRider::Wisdom);facts.energy_offset=-1;
@@ -670,6 +670,7 @@ static void deferred_enemy_statuses(){
   a.animation=power;a.render();CHECK(a.combat_status_amount(1,0)==a.game.enemies[0].strength&&has(HitKind::BattleStatus,StatusKinds));
   a.open_status_icon(StatusKinds);CHECK(a.status_actor==1);int ids[StatusKinds];
   CHECK(a.combat_statuses(1,ids)>0&&ids[a.status_selected]==0);a.render();unchanged();a.input(Key::Statuses);
+  if(!fast){a.animation=power+6;a.render();capture("power-applied-buff");unchanged();}
   a.animation=done;a.render();CHECK(!a.combat_feedback.active&&a.combat_status_amount(1,0)==a.game.enemies[0].strength);
 
   enemy_visual_fight(EncounterId::LouseProgenitorNormal);a.fast_mode=fast!=0;a.game.enemy_world.models[0].node=0;
@@ -681,6 +682,7 @@ static void deferred_enemy_statuses(){
   popup=false;for(unsigned i=0;i<a.combat_status.popup_count;++i){const auto&p=a.combat_status.popups[i];if(p.actor==0&&p.id==frail){CHECK(p.at==web&&!p.buff);popup=true;}}
   CHECK(popup);
   CHECK(a.combat_status_source(0,int(EnemyPower::Frail))==EnemyId::LouseProgenitor);unchanged();
+  if(!fast){a.animation=web+6;a.render();capture("power-applied-debuff");unchanged();}
  }
  a.fast_mode=false;
  // Auxiliary counts and per-instance details follow the same presentation
@@ -703,6 +705,17 @@ static void deferred_enemy_statuses(){
  for(unsigned i=0;i<CombatStatus::Capacity+20;++i)view.append(0,{int(i+1),0,0,1},a.animation+i+1);
  CHECK(view.overflow);view.sync(a.animation+CombatStatus::Capacity+30);view.finish();
  CHECK(view.shown[0].amount==int(CombatStatus::Capacity+20));a.reset_presentation();
+ // InvokePowerModified reports Counter/AllowNegative decreases through
+ // PowerIncreased too, even while Strength remains positive. Ordinary
+ // duration losses and removal are not application popups.
+ enemy_visual_fight(EncounterId::NibbitsWeak);a.game.strength=3;a.game.enemies[0].weak=3;
+ a.begin_combat_feedback();a.game.strength=1;a.game.enemies[0].weak=2;
+ a.observe_combat_effect(a.game,{});CHECK(a.combat_status.popup_count==1);
+ CHECK(a.combat_status.popups[0].id==0&&a.combat_status.popups[0].buff);
+ a.combat_feedback.effect_at+=5;a.game.strength=-1;a.observe_combat_effect(a.game,{});
+ CHECK(a.combat_status.popup_count==2&&!a.combat_status.popups[1].buff);
+ a.combat_feedback.effect_at+=5;a.game.strength=0;a.observe_combat_effect(a.game,{});
+ CHECK(a.combat_status.popup_count==2);a.reset_presentation();
 }
 static void sequential_hit_feedback(){
  static State direct;static SaveData expected;
@@ -714,7 +727,9 @@ static void sequential_hit_feedback(){
   a.game.energy=9;if(test==3)a.game.expansion.stars=9;
   for(int slot=0;slot<a.game.enemy_count;++slot){a.game.enemies[slot].hp=a.game.enemies[slot].max_hp=999;a.game.enemies[slot].block=2;}
   const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,kinds[test],1025);resolve_pending(a.game);
-  CHECK(a.game.zones[id]==Zone::Hand);a.reset_presentation();a.render();a.cursor=a.game.hand.count-1;a.target=0;
+  CHECK(a.game.zones[id]==Zone::Hand);a.reset_presentation();a.render();
+  for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
+  CHECK(!a.combat_preparation.active);a.cursor=a.game.hand.count-1;a.target=0;
   const int hit=damage(a.game,a.game.cards[id],0,id),hits=test<2||test==4?2:3;
   CHECK(hit>2);snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,0));CHECK(save(direct,expected));
   const uint32_t start=a.animation;a.input(Key::Confirm);CHECK(a.combat_feedback.active&&!a.combat_feedback.overflow);
@@ -743,7 +758,9 @@ static void sequential_hit_feedback(){
  for(unsigned fast=0;fast<2;++fast){
   enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.game.energy=3;a.game.enemies[0].hp=1;
   const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,TwinStrike,1025);resolve_pending(a.game);
-  a.reset_presentation();a.render();a.cursor=a.game.hand.count-1;const uint32_t start=a.animation;a.input(Key::Confirm);
+  a.reset_presentation();a.render();
+  for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
+  CHECK(!a.combat_preparation.active);a.cursor=a.game.hand.count-1;const uint32_t start=a.animation;a.input(Key::Confirm);
   CHECK(a.game.enemies[0].hp==0&&a.combat_feedback.active);
   unsigned impacts=0;for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor==1&&q.value.hp==0)++impacts;}
   CHECK(impacts==1);CHECK(a.combat_feedback.end_at<start+TurnBannerPresentation::wait_ticks(700,350,fast!=0));
@@ -783,6 +800,35 @@ static void sequential_hit_feedback(){
  for(unsigned i=0;i<a.combat_status.popup_count;++i)CHECK(a.combat_status.popups[i].id!=44);
  a.ui_action(UiAction::ShowStars);CHECK(a.status_actor<0);unchanged();capture("regent-star-resource");
  a.reset_presentation();CHECK(a.combat_status.popup_count==0);
+}
+static void synchronous_damage_hook_feedback(){
+ static State direct;static SaveData expected;
+ for(unsigned fast=0;fast<2;++fast)for(unsigned flutter=0;flutter<2;++flutter){
+  enemy_visual_fight(flutter?EncounterId::ThievingHopperWeak:EncounterId::LagavulinMatriarchBoss);
+  a.fast_mode=fast!=0;a.game.energy=3;a.game.enemies[0].block=0;
+  if(flutter){auto&m=a.game.enemy_world.models[0];m.power[unsigned(EnemyPower::Flutter)]=1;m.data[8]=1;}
+  const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,TwinStrike,1025);resolve_pending(a.game);
+  a.reset_presentation();a.render();
+  for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
+  CHECK(!a.combat_preparation.active);a.cursor=a.game.hand.count-1;a.target=0;
+  const int previous=a.enemy_presentation[0].state,hp=a.game.enemies[0].hp;
+  snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,0));CHECK(save(direct,expected));
+  const uint32_t impact=a.animation+TurnBannerPresentation::wait_ticks(150,75,fast!=0);
+  a.input(Key::Confirm);CHECK(a.combat_feedback.active&&a.game.enemies[0].hp<hp);
+  CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));
+  // These notifications happen synchronously *inside* damage. They must
+  // queue at the already-established hit boundary, not at the input tick.
+  CHECK(a.combat_health(1).hp==hp&&a.enemy_presentation[0].state==previous);
+  const char*trigger=flutter?"StunTrigger":"Wake";bool hook=false;
+  for(unsigned i=0;i<a.enemy_presentation[0].count;++i){const auto&q=a.enemy_presentation[0].queue[i];
+   if(!std::strcmp(q.action,trigger)){CHECK(q.earliest==impact);hook=true;}}
+  CHECK(hook);snapshot();a.animation=impact-1;a.render();
+  CHECK(a.combat_health(1).hp==hp&&a.enemy_presentation[0].state==previous);unchanged();
+  a.animation=impact;a.render();CHECK(a.combat_health(1).hp<hp);
+  CHECK(a.enemy_presentation[0].state!=previous&&a.enemy_presentation[0].start==impact);
+  unchanged();if(!fast)capture(flutter?"flutter-damage-stun":"sleep-damage-wake");
+ }
+ a.fast_mode=false;
 }
 static void hidden_choice_input(int token){
  CHECK(!a.combat_choice_ready());a.render();CHECK(has(HitKind::Battlefield,0));
@@ -1012,4 +1058,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();deferred_combat_choices();original_card_movement();sequential_hit_feedback();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

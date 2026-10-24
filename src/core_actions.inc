@@ -202,6 +202,8 @@ static void resolve(State&s){
     struct Guard { Guard(){resolving=true;} ~Guard(){resolving=false;} } guard;
     while(s.effect_count&&s.phase==Phase::Combat){
         Effect e=s.effects[0];for(int i=1;i<s.effect_count;i++)s.effects[i-1]=s.effects[i];s.effect_count--;
+        const CoreObserver before=core_observer;
+        if(before.before_effect)before.before_effect(before.context,s,e);
         switch(e.kind){
         case EffectKind::Extended:extension_effect(s,e);break;
         case EffectKind::RandomDamage:{

@@ -348,6 +348,7 @@ struct App {
     void begin_combat_feedback(int manual_card=-1);
     void finish_combat_feedback();
     void sync_combat_feedback();
+    void before_combat_effect(const State&,Effect);
     void observe_combat_effect(const State&,Effect);
     void combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,uint32_t end);
     HealthBarValues combat_health(int actor)const;

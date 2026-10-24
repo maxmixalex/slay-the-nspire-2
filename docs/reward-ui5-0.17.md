@@ -20,6 +20,10 @@ the owner's extracted/decompiled source and visual assets remain private.
   The flight retains the source acceleration/duration ranges, quadratic
   Bézier direction, early shrink/darken and final shrinking tail. Cosmetic
   parameters come from an independent presentation hash, never a gameplay RNG.
+  Rendering uses the newly acquired deck slot for enchantments, permanent
+  Genetic Algorithm/Scythe growth, portrait type and energy offsets. The hand
+  cache key still contains the resolved portrait/frame/text/cost; no new raster
+  allocation is introduced for pickup cards.
 - `NTopBarGold.UpdateGoldAnim` supplies the count popup; there is no invented
   coin-flight effect. It enters over 250 ms, waits 150 ms, consumes the delta
   in the source 75/10/1 increments, waits 250 ms and withdraws. Large uniform
@@ -39,6 +43,9 @@ The calculator has three visible potion slots per page and fifteen visible
 relic slots. An off-page bottle flies to the page affordance; overflow relics
 land at the existing additional-relic indicator. Window/banner geometry is
 compressed below the 22 px HUD and relic strip, leaving Proceed at the bottom.
+Card subpage headings also begin below the relic strip. Eight-card compact
+offers reserve separate bounds for both card rows and their alternative/footer
+controls; three-card pages retain the larger card faces.
 
 The Spine/particle card trail and inventory flash shaders are not reproduced
 by the integer raster flight. Its card tangent uses a direct integer angle

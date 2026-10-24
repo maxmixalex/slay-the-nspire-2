@@ -56,11 +56,16 @@ static bool choice_fixture(){
 }
 static bool setup(unsigned scene){
     new_run(app.game,781,true,Character::Ironclad);app.reset_presentation();
-    app.title=scene==0;app.library=scene==0;app.character_select=false;app.pointer.visible=false;
+    app.title=scene==0||scene==3;app.library=app.title;app.character_select=false;app.pointer.visible=false;
     app.library_tab=app.library_filter=app.library_page=app.library_selected=app.library_sort=0;
     app.panel=0;app.cursor=0;app.detail_card=app.detail_item=-1;
     if(scene==1){app.game.phase=Phase::Shop;return buy(app.game,ShopRemove)&&app.game.deck_count>=10;}
     if(scene==2)return choice_fixture();
+    if(scene==3){
+        CardKind ids[CardKinds];const unsigned count=app.library_items(ids);
+        for(unsigned i=0;i<count;++i)if(ids[i]==DefectRainbow){app.library_selected=int(i);app.library_page=int(i/8);return true;}
+        return false;
+    }
     return app.library_items()>=8;
 }
 static bool capture(const char*directory,const char*scene){
@@ -84,8 +89,8 @@ int main(int argc,char**argv){
         source.trace=std::fopen(path,"wb");if(!source.trace){std::fclose(file);return 3;}
     }
     std::printf("{\"operation\":\"scope\",\"pack_bytes\":%u,\"frames_per_scene\":%u,\"elapsed_ms_per_update\":33,\"method\":\"Host steady-clock CPU intervals without pacing; production ranged FILE source; seeded practice fixtures; animations advance on every observed frame.\"}\n",source.length,frames);
-    const char*names[]={"library_8","remove_10","draw_choice_10"};
-    for(unsigned scene=0;scene<3;++scene){
+    const char*names[]={"library_8","remove_10","draw_choice_10","library_rainbow_8"};
+    for(unsigned scene=0;scene<4;++scene){
         source.scene=names[scene];source.phase="open_and_fixture";
         Cost opened,preparation,first,warm;auto started=mark(source);
         if(!app.init({&source,source.length,read_resource,nullptr},{save_game,nullptr})||!setup(scene)){std::fclose(file);return 4;}
@@ -108,7 +113,7 @@ int main(int argc,char**argv){
         const bool unchanged=save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size)&&!save_attempts;
         opened.write(names[scene],"open_and_fixture");preparation.write(names[scene],"preparation");first.write(names[scene],"first_visible");warm.write(names[scene],"warm_animation_window");
         std::printf("{\"operation\":\"observation\",\"scene\":\"%s\",\"visible_cards\":%u,\"preparation_updates\":%u,\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s,\"save_callback_attempts\":%u}\n",
-            names[scene],scene?10u:8u,preparation_updates,initial_hash,framebuffer_hash(),unchanged?"true":"false",save_attempts);
+            names[scene],scene==1||scene==2?10u:8u,preparation_updates,initial_hash,framebuffer_hash(),unchanged?"true":"false",save_attempts);
         std::fflush(stdout);if(!unchanged){std::fclose(file);return 8;}
         // Use the same ordinary detail command from each visible page. The
         // first sample includes input, any decoding and the complete frame;
@@ -128,6 +133,28 @@ int main(int argc,char**argv){
         std::printf("{\"operation\":\"detail_observation\",\"scene\":\"%s\",\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s,\"save_callback_attempts\":%u}\n",
             detail_name,detail_hash,framebuffer_hash(),detail_unchanged?"true":"false",save_attempts);
         std::fflush(stdout);if(!detail_unchanged){std::fclose(file);return 12;}
+        if(scene==3){
+            // The same public hit-test locates a real localized gold word in
+            // both packs. Include the entire pointer search in the first cost;
+            // discovering its location cannot preload glyphs out of band.
+            Cost hover_first,hover_warm;unsigned candidates=0;int hover_x=-1,hover_y=-1;
+            source.phase="pointer_scan_to_keyword_frame";started=mark(source);
+            for(int row=0;row<8&&hover_x<0;++row)for(int x=123;x<300;x+=3){
+                const int y=66+row*15+7;app.pointer_move(x,y);++candidates;CardHoverTarget owner{};
+                if(card_hover_target(app,owner)&&owner.detail&&owner.owner.x==123){hover_x=x;hover_y=y;break;}
+            }
+            if(hover_x<0){std::fclose(file);return 13;}
+            app.render();hover_first.add(started,source);
+            if(!app.content.healthy()||!app.keyword_hover.owner||!capture(argc==4?argv[3]:nullptr,"rainbow_detail_keyword")){std::fclose(file);return 14;}
+            const uint32_t hover_hash=framebuffer_hash();source.phase="warm_keyword_pointer_window";
+            for(unsigned frame=0;frame<frames;++frame){started=mark(source);app.pointer_move(hover_x+int(frame&1),hover_y);app.advance(33);app.render();hover_warm.add(started,source);
+                if(!app.content.healthy()||!app.keyword_hover.owner||app.detail_card<0||app.game.phase!=phase){std::fclose(file);return 15;}}
+            const bool hover_unchanged=save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size)&&!save_attempts;
+            hover_first.write(detail_name,"pointer_scan_to_keyword_frame");hover_warm.write(detail_name,"warm_keyword_pointer_window");
+            std::printf("{\"operation\":\"keyword_observation\",\"scene\":\"%s\",\"pointer_candidates\":%u,\"hover_x\":%d,\"hover_y\":%d,\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s}\n",
+                detail_name,candidates,hover_x,hover_y,hover_hash,framebuffer_hash(),hover_unchanged?"true":"false");
+            std::fflush(stdout);if(!hover_unchanged){std::fclose(file);return 16;}
+        }
     }
     const bool trace_good=!source.trace||std::fclose(source.trace)==0;
     return std::fclose(file)==0&&trace_good?0:9;

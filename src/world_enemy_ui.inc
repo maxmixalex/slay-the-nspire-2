@@ -215,6 +215,7 @@ void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
  if(&s!=&game||!s.enemy_world.active||slot<0||slot>=s.enemy_count||!trigger)return;
  sync_enemy_feedback();auto&m=enemy_presentation[slot];auto facts=ui_enemy_facts(s,slot);
  uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
+ if(ui_feedback_bound(*this))when=ui_feedback_later(when,combat_feedback.effect_at);
  int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&facts);
  const auto*node=world_enemy_state(m.model,state);int clip=node?world_enemy_resolve_clip(m.model,node->clip,m.skin,-1,ui_enemy_fact,&facts):-1;
  // Power hooks can replace a generic death/hurt animation at this exact

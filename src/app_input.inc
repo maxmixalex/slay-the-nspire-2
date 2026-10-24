@@ -159,7 +159,11 @@ void App::input(Key k){
     if(game.phase==Phase::Complete||game.phase==Phase::Dead||game.phase==Phase::Error){if(k==Key::Confirm){title=true;menu=0;}return;}
     int count=choice_count(*this);if(k==Key::Left)cursor=count?(cursor+count-1)%count:0;if(k==Key::Right)cursor=count?(cursor+1)%count:0;
     if(k==Key::Up||k==Key::Down){
-        if(game.phase==Phase::Event){scroll=mx(0,scroll+(k==Key::Up?-1:1));}
+        if(game.phase==Phase::Event){
+            if(game.original_events.active&&!ui_ancient_event(game.original_events.id)&&game.original_events.id!=OriginalEventId::FakeMerchant)
+                cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
+            else scroll=mx(0,scroll+(k==Key::Up?-1:1));
+        }
         else if(game.phase==Phase::Map){map_scroll=mx(-reference::MaxRows,mn(reference::MaxRows,map_scroll+(k==Key::Up?1:-1)));}
         else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
         else if(game.phase==Phase::Shop){

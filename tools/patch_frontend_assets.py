@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append ten original settings/potion/star UI images to private NSP2/21 packs.
+"""Append original frontend UI images and two tab labels to private NSP2/21 packs.
 
 The v22 extension changes directories and adds images, without re-encoding any
 historical artwork. Its decoded-cost table grows with the image directory;
@@ -19,6 +19,7 @@ from PIL import Image
 
 import content_tiles as tiles
 from patch_feedback_assets import SOURCE_PCK_SHA256, write_image
+from locale_profile import FRONTEND_TEXTS
 from pck import Pack
 from world_scene_assets import load_scene_texture
 
@@ -61,12 +62,17 @@ def build_art(pck_path, cache):
     path = cache / 'frontend-assets.json'
     if path.exists():
         manifest = json.loads(path.read_text())
-        tiles.require(manifest.get('schema') == 1 and manifest.get('output_version') == VERSION and
+        tiles.require(manifest.get('schema') == 2 and manifest.get('output_version') == VERSION and
                       len(manifest.get('images', [])) == len(SPECS), 'Incompatible frontend cache')
         for row in manifest['images']:
             payload = (cache / row['file']).read_bytes()
             tiles.require(len(payload) == row['bytes'] and tiles.sha256(payload) == row['sha256'],
                           'Invalid cached frontend image: ' + row['file'])
+        for language in ('eng', 'zhs'):
+            localized = manifest.get('localized_text', {}).get(language, {})
+            tiles.require(set(localized) == {key for _, key in FRONTEND_TEXTS} and
+                          all(isinstance(value, str) and value and '\0' not in value for value in localized.values()),
+                          'Invalid cached frontend localization')
         return manifest
     pack, textures = Pack(pck_path), OrderedDict()
     try:
@@ -88,11 +94,20 @@ def build_art(pck_path, cache):
             row.update(source=source, source_size=list(original.size), size=list(size),
                        auxiliary=BASE_AUX + len(rows))
             rows.append(row)
+        localized_text = {}
+        for language in ('eng', 'zhs'):
+            table = json.loads(pack.read('localization/' + language + '/settings_ui.json'))
+            localized_text[language] = {}
+            for _slot, qualified in FRONTEND_TEXTS:
+                value = table.get(qualified.split('.', 1)[1])
+                tiles.require(isinstance(value, str) and value and '\0' not in value,
+                              'Missing original frontend label: ' + language + ' / ' + qualified)
+                localized_text[language][qualified] = value
     finally:
         pack.close()
-    manifest = dict(schema=1, reference='v0.111.0 / 41cef1ea', reference_sha256=SOURCE_PCK_SHA256,
+    manifest = dict(schema=2, reference='v0.111.0 / 41cef1ea', reference_sha256=SOURCE_PCK_SHA256,
                     output_version=VERSION, auxiliary_count=AUXILIARY, animation_count=CLIPS,
-                    images=rows, clips=[], runtime_added_pixel_buffers=0)
+                    images=rows, clips=[], localized_text=localized_text, runtime_added_pixel_buffers=0)
     tiles.atomic_bytes(path, json.dumps(manifest, indent=2).encode() + b'\n')
     return manifest
 
@@ -101,6 +116,19 @@ def patch_pack(data, manifest, cache):
     source = tiles.PackView(data, BASE_AUX, versions=(21,), profile=(558, 8192, CLIPS, BASE_AUX))
     old_tiles = tiles.TileReader(source)
     ni, ng, ns, nc, nk, nu = source.counts
+    marker_at, marker_length = source.strings[6110]
+    language = data[marker_at:marker_at + marker_length].decode('ascii')
+    localized = manifest.get('localized_text', {}).get(language)
+    tiles.require(language in ('eng', 'zhs') and isinstance(localized, dict), 'Missing frontend locale')
+    new_strings = {}
+    for slot, key in FRONTEND_TEXTS:
+        off, length = source.strings[slot]
+        tiles.require(length == 0 and data[off] == 0, 'Reserved frontend string slot is already occupied')
+        value = localized.get(key)
+        tiles.require(isinstance(value, str) and value and '\0' not in value, 'Missing frontend label: ' + key)
+        raw = value.encode('utf-8') + b'\0'
+        tiles.require(len(raw) < tiles.STRING_LIMIT, 'Frontend label exceeds string bound')
+        new_strings[slot] = raw
     rows = manifest['images']
     count = len(rows)
     tiles.require(count == AUXILIARY - BASE_AUX and ni + count <= 65535, 'Unexpected frontend extension')
@@ -146,6 +174,7 @@ def patch_pack(data, manifest, cache):
     insertion = len(out)
     out.extend(payload)
     out.extend(data[art_end:])
+    original_end = len(out)
     for i, (off, w, h, fmt, length) in enumerate(source.images):
         tiles.IMAGE.pack_into(out, 40 + i * 16, shifted(off), w, h, fmt, length)
     for i, row in enumerate(rows):
@@ -156,6 +185,9 @@ def patch_pack(data, manifest, cache):
                              cp, shifted(off), px, w, h, advance, encoded)
     for i, (off, length) in enumerate(source.strings):
         struct.pack_into('<II', out, source.string_at + count * 16 + i * 8, shifted(off), length)
+    for slot, raw in new_strings.items():
+        struct.pack_into('<II', out, source.string_at + count * 16 + slot * 8, len(out), len(raw) - 1)
+        out.extend(raw)
     header[8], header[9], header[14], header[15] = shifted(header[8]), shifted(header[9]), shifted(header[14]), ni + count
     tiles.GLOBAL.pack_into(out, source.base_end + directory_delta, *header)
     for i in range(old_tiles.tile_groups + old_tiles.index_groups):
@@ -173,14 +205,18 @@ def patch_pack(data, manifest, cache):
     tiles.require(target.clips == source.clips and target.cards == source.cards and target.aux[:nu] == source.aux,
                   'Historical catalog changed')
     tiles.require(out[shifted(descriptor_end):insertion] == data[descriptor_end:art_end] and
-                  out[insertion + len(payload):] == data[art_end:], 'Historical payload changed')
+                  out[insertion + len(payload):original_end] == data[art_end:], 'Historical payload changed')
     tiles.require(out[header[14]:header[14] + ni] == data[cost_at:cost_at + ni], 'Historical decoded costs changed')
     for old, new in zip(source.images, target.images):
         tiles.require(new == (shifted(old[0]), *old[1:]), 'Image relocation differs')
     for old, new in zip(source.glyphs, target.glyphs):
         tiles.require(new == (old[0], shifted(old[1]), *old[2:]), 'Glyph relocation differs')
-    for old, new in zip(source.strings, target.strings):
-        tiles.require(new == (shifted(old[0]), old[1]), 'String relocation differs')
+    for slot, (old, new) in enumerate(zip(source.strings, target.strings)):
+        if slot in new_strings:
+            off, length = new
+            tiles.require(out[off:off + length + 1] == new_strings[slot], 'Frontend label roundtrip differs')
+        else:
+            tiles.require(new == (shifted(old[0]), old[1]), 'String relocation differs')
     for i, row in enumerate(rows):
         decoded = target.image_raw(ni + i)
         tiles.require(tiles.sha256(decoded[3]) == row['raw_sha256'], 'New image roundtrip differs')
@@ -190,7 +226,9 @@ def patch_pack(data, manifest, cache):
                    auxiliary_count=AUXILIARY, unchanged_old_payload=True, unchanged_old_directory_indices=True,
                    unchanged_old_decoded_costs=True, common_art_insertion=art_end,
                    added_common_art_bytes=len(payload), common_art_sha256=tiles.sha256(payload),
-                   verified_new_images=count, verified_all_offset_relocations=True, runtime_integrity_scan=False)
+                   verified_new_images=count, verified_all_offset_relocations=True, runtime_integrity_scan=False,
+                   localized_slots=list(new_strings), added_locale_bytes=len(out)-original_end,
+                   unchanged_preexisting_strings=True)
     return bytes(out), receipt
 
 

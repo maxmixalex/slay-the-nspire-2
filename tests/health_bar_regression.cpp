@@ -1,4 +1,5 @@
 #include "health_bar.hpp"
+#include "star_counter_motion.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -90,4 +91,50 @@ static void easing(){
  CHECK(health_bar::expo_out(UINT32_MAX)==4096);
  std::printf("health easing maximum width error %.6f px\n",worst);
 }
-int main(){ratios();forecasts();motion(1000);motion(UINT32_MAX-1200);easing();std::printf("health bar: %u checks\n",checks);}
+static void star_counter(){
+ // Original MathHelper.SmoothDamp with NStarCounter's smoothTime=.1.
+ // The reference uses floats only in this native test; the calculator path
+ // must not depend on a software floating-point arithmetic runtime.
+ const auto reference=[](float current,int target,float&velocity,unsigned ms){
+  const float dt=float(ms)/1000.f,omega=20.f,x=omega*dt;
+  const float decay=1.f/(1.f+x+0.48f*x*x+0.235f*x*x*x);
+  const float change=current-float(target),step=(velocity+omega*change)*dt;
+  velocity=(velocity-omega*step)*decay;
+  float next=float(target)+(change+step)*decay;
+  if((float(target)>current)==(next>float(target))){next=float(target);velocity=0;}
+  return next;
+ };
+ float worst=0;
+ for(unsigned dt:{1u,16u,17u,33u,50u,100u,250u,1000u})for(int target:{1,3,23,500,9999}){
+  StarCounterMotion fixed;float value=0,velocity=0;
+  for(unsigned frame=0;frame<2000/dt+5;++frame){
+   const int before=fixed.value;fixed.advance(target,dt);value=reference(value,target,velocity,dt);
+   CHECK(fixed.value>=before&&fixed.value<=target*fixed.Scale);
+   const float error=std::fabs(float(fixed.value)/fixed.Scale-value);if(error>worst)worst=error;
+   CHECK(error<.031f);
+   const int expected=int(std::nearbyint(value));
+   // Normal UI intervals preserve every original rounded label. At an
+   // artificial 1ms update and a 9999-star gain, original float rounding
+   // accumulates up to .03 stars; only a half-integer boundary may differ.
+   if(dt>=16)CHECK(fixed.displayed()==expected);
+   else CHECK(std::abs(fixed.displayed()-expected)<=1);
+  }
+  fixed.advance(target,0);CHECK(fixed.displayed()==target);
+  fixed.set(0);CHECK(fixed.value==0&&fixed.velocity==0&&fixed.displayed()==0);
+ }
+ StarCounterMotion fixed;float value=0,velocity=0;
+ for(unsigned frame=0;frame<40;++frame){const int target=frame<3?3:frame<9?8:23;
+  fixed.advance(target,33);value=reference(value,target,velocity,33);CHECK(fixed.displayed()==int(std::nearbyint(value)));
+ }
+ fixed.set(0);value=velocity=0;
+ for(unsigned frame=0;frame<40;++frame){const int target=frame<3?23:1;
+  if(frame==3){fixed.decrease(1);value=1;CHECK(fixed.displayed()==1&&fixed.velocity>0);}
+  fixed.advance(target,33);value=reference(value,target,velocity,33);CHECK(fixed.displayed()==int(std::nearbyint(value)));
+ }
+ fixed.set(2);CHECK(fixed.displayed()==2);fixed.advance(2,1000);CHECK(fixed.value==2*fixed.Scale&&!fixed.velocity);
+ fixed.value=fixed.Scale/2;CHECK(fixed.displayed()==0);
+ fixed.value=fixed.Scale+fixed.Scale/2;CHECK(fixed.displayed()==2);
+ fixed.value=2*fixed.Scale+fixed.Scale/2;CHECK(fixed.displayed()==2);
+ std::printf("star count maximum original-float difference %.6f stars\n",worst);
+}
+int main(){ratios();forecasts();motion(1000);motion(UINT32_MAX-1200);easing();star_counter();std::printf("health bar: %u checks\n",checks);}

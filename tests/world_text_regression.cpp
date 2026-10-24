@@ -239,7 +239,10 @@ static void deferred_intent_text(){
   a.game.enemy_world.models[0].combat_id=a.game.enemy_world.next_creature_id++;
   snapshot();CHECK(attack_description(0)==first);a.render();CHECK(intent_panel());unchanged();
   size_t title_at=0;for(int y=53;y<67;++y)for(int x=title_x;x<title_x+166;++x)CHECK(a.pixels[y*ScreenW+x]==title[title_at++]);
-  a.animation=hide;a.render();CHECK(!a.combat_intent(0).flags&&!intent_panel());unchanged();
+  a.animation=hide;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)==255&&intent_panel());unchanged();
+  a.animation=hide+12;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)==255&&intent_panel());unchanged();
+  a.animation=hide+20;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)>0&&a.combat_intent_alpha(0)<255&&intent_panel());unchanged();
+  CHECK(done>hide+28);a.animation=hide+28;a.render();CHECK(!a.combat_intent(0).flags&&!intent_panel());unchanged();
   a.animation=done;a.render();CHECK(!a.combat_feedback.active);CHECK(attack_description(0)!=first);unchanged();
   a.pointer.visible=false;
  }

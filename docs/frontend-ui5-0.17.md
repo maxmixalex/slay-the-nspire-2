@@ -9,17 +9,22 @@ generated resource packs remain outside the public source repository.
 | Surface | Direct reference | Runtime change |
 | --- | --- | --- |
 | Settings | `settings_screen.tscn`, `settings_tab.tscn`, `settings_tickbox.tscn`, `tickbox.tscn`, `NSettingsTab` | The reward panel has been removed. Functional General/Input tabs sit above left-label/right-control rows and faint dividers. Tab selection uses the authored cyan additive stroke; focus uses gold lettering, 1.05 scale and a 0.5 s EXPO_OUT return. The original tickbox retains its 0.8 inner scale. |
-| Character selection | `char_select_button.tscn`, `NCharacterSelectButton` | Pointer hover is presentation only; release on the pressed portrait selects. The existing authored gold selection outline now uses additive compositing. Hover and drag-cancel regression coverage protects selection and save state. |
+| Character selection | `char_select_button.tscn`, `character_select_screen.tscn`, `NCharacterSelectButton` | Pointer hover is presentation only; release on the pressed portrait selects. The authored gold selection outline uses additive compositing. The invented full-width footer is removed, retaining independent Back/Embark controls over the illustration. Hover and drag-cancel regression coverage protects selection and save state. |
 | Map | `map_screen.tscn`, existing pinned map audit | Paper occupies the entire area under the HUD. The duplicated full-width act heading and bottom instruction bar are gone. The existing original transient act banner supplies the act heading; compact legend/scroll controls remain directly over the paper. |
 | Ordinary event | `default_event_layout.tscn`, `event_option_button.tscn`, `NEventLayout`, `NEventOptionButton` | The right-column story is centered above one options stack. The unrelated dark column and repeated selected-option description over the illustration are gone. A single option label contains its gold/red bold title, newline and description; the focused outline is blue/additive. The story rectangle still opens the complete reader. |
-| Resource storage | `tools/patch_frontend_assets.py` | NSP2/22 appends seven original settings/potion-popup images. All old image, clip and auxiliary indices, image/group payloads, relative retained-group links and localized payloads remain intact. Directory offsets and the resident decoded-cost table grow without a runtime scan. |
+| Resource storage | `tools/patch_frontend_assets.py` | NSP2/22 appends seven original settings/potion-popup images and three original star-counter layers. All old image, clip and auxiliary indices, image/group payloads, relative retained-group links and localized payloads remain intact. Directory offsets and the resident decoded-cost table grow without a runtime scan. |
 
 General contains the implemented fast-mode control and the pre-existing practice
 and reference-map entries. Input documents the calculator bindings. Audio and
 graphics controls have not been fabricated for unavailable calculator features.
-Original settings tab labels use explicit English/Chinese fallbacks where v21
-has no indexed string. Other existing labels retain the established UI locale
-mapping.
+Original settings tab labels occupy the previously empty slots 8103 and 8104.
+The converter reads both languages from the pinned PCK and refuses an input
+whose reserved slots are occupied. It appends localized bytes without changing
+any of the 935 earlier UI bindings or pre-existing string payloads. All five
+existing font sizes already contain the required glyphs. The runtime accepts
+those new keys only for v22; older resources retain English tab fallbacks.
+Other controls use existing indexed labels, including separate original map
+and potion-slot titles.
 
 ## Concrete remaining differences
 
@@ -49,10 +54,19 @@ mapping.
 The frontend regression exercises hover without selection, pressed/released
 tabs, keyboard tab changes, native tickbox targeting, modal isolation and
 unchanged serialized run state. The event regression covers ordinary option
-pagination/hit bounds, complete text access, untouched illustration pixels and
+pagination/hit bounds, Up/Down wrapping, complete text access, untouched illustration pixels and
 unchanged run/RNG state. The synthetic retained-pack fixture includes ordinary,
 LZ4, relative-group and tiled images and checks the v22 extension and bilingual
-split/reconstruction path.
+split/reconstruction path. It compares all earlier localized strings and
+rejects attempted overwrites of the two new label slots.
+
+At stage 2 checkpoint `eb6f9564c6f3c88bc47b73829036af21d0489072`, actual
+English and Chinese event, map and reward UI regressions passed. Frontend
+testing stopped on its obsolete v21-only version assertion; that failure is
+retained, and the assertion now permits later compatible resource profiles.
+Stage 2 screenshots exposed a card-reward heading overlapping the relic band;
+the heading now starts below that band. The follow-up source requires a new
+checkpoint and bilingual conversion before its screenshots can be accepted.
 
 These tests and desktop captures do not measure touchpad latency, frame pacing
 or cold resource I/O on physical hardware. Calculator/Firebird timings must be

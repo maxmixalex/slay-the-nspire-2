@@ -6,12 +6,19 @@ static const LocaleUiIndex locale_ui_index[]={
 static const WorldContentIndex locale_text_index[]={
 #include "locale_text_index.inc"
 };
+static_assert(sizeof locale_ui_index/sizeof locale_ui_index[0]<=FrontendSettingsGeneralString-LocaleUiTextBase,
+              "Existing locale UI bindings overlap the fixed frontend slots");
+static const WorldContentIndex frontend_text_index[]={
+ {"settings_ui.TAB_GENERAL",FrontendSettingsGeneralString},
+ {"settings_ui.TAB_INPUT",FrontendSettingsInputString}
+};
 }
 bool Content::english()const{
  if(version_<LocaleContentVersion)return false;const char*p=string(LocaleMarkerString);
  return p[0]=='e'&&p[1]=='n'&&p[2]=='g'&&!p[3];
 }
 const char* Content::locale_string(const char*table,const char*key)const{
+ if(version_>=FrontendContentVersion){const int index=wc_find(frontend_text_index,table,key);if(index>=0)return string(index);}
  return version_>=LocaleContentVersion?string(wc_find(locale_text_index,table,key)):"";
 }
 const char* Content::ui_text(const char*source)const{

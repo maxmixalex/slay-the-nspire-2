@@ -242,6 +242,9 @@ struct CoreObserver {
     void(*on_log)(void*,const State&,Log)=nullptr;
     void(*on_enemy_animation)(void*,const State&,int,const char*)=nullptr;
     void(*on_effect)(void*,const State&,Effect)=nullptr;
+    // Establish a display command boundary before synchronous damage/power
+    // hooks run. Appending preserves existing four-field observer bindings.
+    void(*before_effect)(void*,const State&,Effect)=nullptr;
 };
 CoreObserver set_core_observer(CoreObserver);
 void notify_enemy_animation(const State&,int slot,const char* trigger);
