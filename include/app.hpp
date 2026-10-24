@@ -51,6 +51,7 @@
 #include "ui_history_presentation.hpp"
 #include "ui_history_layout.hpp"
 #include "history_ui8_assets.hpp"
+#include "run_modes.hpp"
 #include "bestiary_presentation.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
@@ -314,6 +315,13 @@ struct App {
     bool finish_saved_run();
     void return_to_title();
     bool frontend_input(Key);
+    RunModeFrontend run_mode{};
+    void open_run_menu(RunMenu);
+    void refresh_daily_run();
+    bool run_modes_input(Key);
+    bool run_modes_action(UiAction);
+    void run_modifier_select(unsigned);
+    bool start_selected_run(const RunOptions&);
     void accept_frontend_confirm();
     int title_menu_count()const{return has_save?5:4;}
     bool practice_entry=false;
@@ -561,6 +569,7 @@ struct App {
     CardInspectPresentation card_inspect{};
     unsigned card_inspect_ids(int*out)const;
     void bind_card_inspect();
+    void close_card_inspect();
     void move_card_inspect(int direction);
     KeywordHoverState keyword_hover{};
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);

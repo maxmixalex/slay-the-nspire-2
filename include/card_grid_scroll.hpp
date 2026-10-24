@@ -14,7 +14,7 @@ struct CardGridScroll {
     // Keep fractional 377.6px source row spacing until the final projection.
     static int row_offset(int row){return (row*7552+52)/105;}
     uint32_t identity=0,epoch=0,hover_changed=0;
-    int32_t position=0,target=0;
+    int32_t position=0,target=0,thumb_position=0,thumb_velocity=0;
     int16_t count=0,top=0,bottom=0,origin=0,focused_index=-1,left=Left,custom_height=-1,bar_inset=25;
     uint8_t columns=Columns;bool center_short=true;
     bool bound=false,dragging=false,thumb_drag=false,thumb_hover=false;
@@ -47,15 +47,16 @@ struct CardGridScroll {
     }
     int bar_top()const{return top+bar_inset;}
     int bar_bottom()const{return bottom-25;}
-    int thumb_y()const{
+    int thumb_target()const{
         const int range=maximum();
         return bar_top()+(range>0?(bar_bottom()-bar_top())*clamp(thumb_drag?target:position,0,range)/range:0);
     }
+    int thumb_y()const{return thumb_position/Unit;}
     void reset(){*this=CardGridScroll{};}
     void configure(uint32_t key,uint32_t generation,int total,int y0,int y1,int inset,int column_count=Columns,int x0=Left,bool centered=true,int content_height=-1){
         const bool changed=!bound||identity!=key||epoch!=generation||count!=total||top!=y0||bottom!=y1||origin!=inset||columns!=column_count||left!=x0||center_short!=centered||custom_height!=content_height;
         identity=key;epoch=generation;count=int16_t(total);top=int16_t(y0);bottom=int16_t(y1);origin=int16_t(inset);columns=uint8_t(column_count);left=int16_t(x0);center_short=centered;custom_height=int16_t(content_height);bound=true;
-        if(changed){position=target=minimum();dragging=thumb_drag=false;thumb_hover=false;hover_changed=0;focused_index=-1;for(auto&face:faces)face=FaceMotion{};}
+        if(changed){position=target=minimum();thumb_position=bar_top()*Unit;thumb_velocity=0;dragging=thumb_drag=false;thumb_hover=false;hover_changed=0;focused_index=-1;for(auto&face:faces)face=FaceMotion{};}
     }
     int face_scale(int index,uint32_t now)const{
         const auto&face=faces[unsigned(index)%16];if(face.index!=index)return 800;
@@ -97,6 +98,20 @@ struct CardGridScroll {
             target+=fraction(end-target,bounce);
             const int remaining=end-target;if(remaining>-Unit/2&&remaining<Unit/2)target=end;
         }
+        // NScrollbar's handle follows Value through MathHelper.SmoothDamp,
+        // with a 50ms smoothing time independently of the content lerp.
+        // Q12 evaluates the same critically-damped rational polynomial.
+        constexpr int Q=4096;
+        const int destination=thumb_target()*Unit,change=thumb_position-destination;
+        const int x=int(elapsed)*40*Q/1000;
+        const int x2=int(int64_t(x)*x/Q),x3=int(int64_t(x2)*x/Q);
+        const int decay=int(int64_t(Q)*Q/(Q+x+x2*48/100+x3*235/1000));
+        const int temp=(thumb_velocity+40*change)*int(elapsed)/1000;
+        thumb_velocity=int(int64_t(thumb_velocity-40*temp)*decay/Q);
+        const int result=destination+int(int64_t(change+temp)*decay/Q);
+        if((destination>thumb_position)==(result>destination)){thumb_position=destination;thumb_velocity=0;}
+        else thumb_position=result;
+        if(thumb_position-destination>-Unit/16&&thumb_position-destination<Unit/16&&thumb_velocity>-Unit&&thumb_velocity<Unit){thumb_position=destination;thumb_velocity=0;}
     }
 };
 static_assert(sizeof(CardGridScroll)*unsigned(CardGridSurface::Count)<=2048,"Card grid state must stay bounded");

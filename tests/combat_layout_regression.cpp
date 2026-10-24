@@ -14,7 +14,7 @@ static void fight(EncounterId encounter){
 }
 static bool same(CreaturePose a,CreaturePose b){
  return a.x==b.x&&a.feet==b.feet&&a.width==b.width&&a.scale==b.scale&&a.intent==b.intent&&a.hp==b.hp&&a.status==b.status&&
-  a.body_left==b.body_left&&a.body_top==b.body_top&&a.body_width==b.body_width&&a.body_height==b.body_height&&a.center_x==b.center_x&&a.center_y==b.center_y;
+  a.body_left==b.body_left&&a.body_top==b.body_top&&a.body_width==b.body_width&&a.body_height==b.body_height&&a.center_x==b.center_x&&a.center_y==b.center_y&&a.intent_x==b.intent_x;
 }
 // Independent source-space oracle: Godot's authored parent positions, pivot
 // and scales are composed as separate floating transforms. Production uses
@@ -64,6 +64,8 @@ static void agrees_with_source(int index){
  CHECK(p.x==pixel(point.x)&&p.feet==pixel(point.y));CHECK(p.body_left==pixel(top.x)&&p.body_top==pixel(top.y));
  CHECK(p.body_width==pixel(bottom.x)-pixel(top.x)&&p.body_height==pixel(bottom.y)-pixel(top.y));
  CHECK(p.center_x==pixel(center.x)&&p.center_y==pixel(center.y));
+ CHECK(p.intent_x==pixel(reference_point({local.x+a.intent_x,local.y+a.intent_y},true,right).x));
+ CHECK(creature_health_left(p)==p.body_left+(p.body_width-p.width)/2);
  const auto player=player_pose(game,layout);const auto want_player=reference_point(local_player(),false,right);
  CHECK(player.x==pixel(want_player.x)&&player.feet==pixel(want_player.y));
 }

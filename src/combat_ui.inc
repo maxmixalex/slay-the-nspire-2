@@ -246,7 +246,7 @@ static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
     const int scene_hits=a.hit_count;
-    const auto player=a.combat_player_pose();const int player_x=player.x;combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],player_x-player.width/2,player.hp,player.width);
+    const auto player=a.combat_player_pose();const int player_x=player.x;combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],creature_health_left(player),player.hp,player.width);
     if(s.expansion.orb_slots){
         const int count=s.expansion.orb_slots,left=mx(3,player_x-count*7);
         for(int i=0;i<count;i++){
@@ -258,23 +258,23 @@ static void combat_screen(Canvas&c){
     }
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
-        const auto p=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],p.x-p.width/2,p.hp,p.width);
+        const auto p=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],creature_health_left(p),p.hp,p.width);
         c.action(p.body_left,p.body_top,p.body_width,p.hp+health_bar::Height-p.body_top,UiAction::ShowOsty);
     }
     const bool stars=combat_stars_visible(a);
-    status_strip(c,0,player_x-player.width/2,player.status,mx(player.width,48));
+    status_strip(c,0,player.body_left,player.status,mx(player.body_width+5,48));
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];const auto pos=a.combat_enemy_pose(i);int x=pos.x;
-        if(a.combat_health(i+1).hp<=0){health_block_break(c,a.health_bars[i+1],x-pos.width/2,pos.hp);if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
+        if(a.combat_health(i+1).hp<=0){health_block_break(c,a.health_bars[i+1],creature_health_left(pos),pos.hp);if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(pos.body_left-2,mn(pos.body_top,pos.intent),pos.body_width+4,pos.status-mn(pos.body_top,pos.intent)+15,HitKind::Enemy,i);
-        if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
+        if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",pos.body_left-7,pos.intent+3,10,Gold);}
         else{
             const bool attacking=e.move!=2;c.picture(attacking?A_AttackIntent:A_BuffIntent,x-pos.width/2,pos.intent,13,13);
             char label[32]{};TextBuffer tb{label,sizeof label,0};if(attacking)tb.number(enemy_damage(s,i));else tb.text("强化");
             c.text(label,x-pos.width/2+14,pos.intent,10,attacking?Gold:Green,pos.width-11);
             if(a.target==i)c.text("▼",x-5,pos.intent+14,8,Gold);
         }
-        c.hp(a.combat_health(i+1),a.health_bars[i+1],x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
+        c.hp(a.combat_health(i+1),a.health_bars[i+1],creature_health_left(pos),pos.hp,pos.width);status_strip(c,i+1,pos.body_left,pos.status,mx(pos.body_width+5,22));
 
     }
     combat_scene_shake(c,scene_hits);

@@ -22,6 +22,12 @@ bool Content::english()const{
  return p[0]=='e'&&p[1]=='n'&&p[2]=='g'&&!p[3];
 }
 const char* Content::locale_string(const char*table,const char*key)const{
+ if(version_>=HistoryUi8ContentVersion){
+  static const WorldContentIndex mode_text_index[]={
+#include "run_modes_text_index.inc"
+  };
+  const int index=wc_find(mode_text_index,table,key);if(index>=0)return string(index);
+ }
  if(version_>=ProfileContentVersion){
   static const WorldContentIndex profile_text_index[]={
 #include "profile_text_index.inc"

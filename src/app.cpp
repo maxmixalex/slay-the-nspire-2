@@ -218,6 +218,7 @@ int App::detail_stars()const{
 #include "ui_frontend.inc"
 #include "bestiary_ui7.inc"
 #include "ui_progress_ui.inc"
+#include "run_modes_ui.inc"
 #include "card_choice_ui.inc"
 #include "world_choice_ui.inc"
 #include "world_game_over_ui.inc"
@@ -250,9 +251,10 @@ void App::render(){
     Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(profiles_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;profiles_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
-    if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
@@ -303,7 +305,7 @@ void App::render(){
     if(character_select)character_screen(c);
     if(library)library_screen(c);
     if(deck_candidate>=0&&!paused&&!help&&!panel)deck_confirm_screen(c);
-    if(detail_card>=0)detail_screen(c);
+    if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);
     if(detail_item>=0)item_detail_screen(c);
     if(status_actor>=0)status_screen(c);
     if(event_reader)event_reader_screen(c);

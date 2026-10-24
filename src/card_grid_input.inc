@@ -6,7 +6,8 @@ CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint3
         grid.configure(card_library.epoch,pile_sort_epoch,count,0,240,15,4,75,false);return grid;
     }
     else if(surface==CardGridSurface::DeckChoice){top=48;bottom=208;inset=6;identity=identity*32+unsigned(game.phase)+unsigned(grimoire_select)*256;}
-    grid.configure(identity,pile_sort_epoch,count,top,bottom,inset,CardGridScroll::Columns,left);grid.bar_inset=surface==CardGridSurface::Pile?18:25;return grid;
+    grid.bar_inset=surface==CardGridSurface::Pile?18:25;
+    grid.configure(identity,pile_sort_epoch,count,top,bottom,inset,CardGridScroll::Columns,left);return grid;
 }
 void App::reset_card_grids(){for(auto&grid:card_grids)grid.reset();card_grid_drag=-1;}
 int App::active_card_grid()const{

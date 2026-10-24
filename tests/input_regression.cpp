@@ -11,6 +11,14 @@ static App app;
 static void click(int x,int y){app.pointer_move(x,y);app.pointer_button(true);app.pointer_button(false);app.render();}
 static void unchanged(const SaveData& old){SaveData data{};CHECK(save(app.game,data));CHECK(data.size==old.size&&!std::memcmp(data.bytes,old.bytes,data.size));}
 int main(){
+    // NScrollbar's independent 50ms spring must lag a moved Value and
+    // converge without overshooting, including a capped250ms host update.
+    CardGridScroll scroll;scroll.configure(1,1,64,40,220,20);scroll.thumb_drag=true;
+    scroll.drag_thumb(scroll.bar_bottom());const int original_thumb=scroll.thumb_y();
+    scroll.advance(16);CHECK(scroll.thumb_y()>original_thumb&&scroll.thumb_y()<scroll.bar_bottom());
+    int previous=scroll.thumb_y();for(unsigned i=0;i<20;++i){scroll.advance(16);CHECK(scroll.thumb_y()>=previous&&scroll.thumb_y()<=scroll.bar_bottom());previous=scroll.thumb_y();}
+    CHECK(scroll.thumb_y()==scroll.bar_bottom());scroll.drag_thumb(scroll.bar_top());scroll.advance(250);
+    CHECK(scroll.thumb_y()>=scroll.bar_top()&&scroll.thumb_y()<previous);
     new_run(app.game,7,true);app.title=false;app.render();SaveData before{};CHECK(save(app.game,before));
     app.input(Key::Inspect);app.render();auto&grid=app.card_grids[unsigned(CardGridSurface::Pile)];
     CHECK(grid.bound&&grid.has_scrollbar());const int origin=grid.position;

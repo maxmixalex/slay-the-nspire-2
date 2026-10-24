@@ -22,6 +22,7 @@ uint32_t App::next_run_seed(bool* randomized){
 }
 #include "card_library_input.inc"
 #include "collection_input.inc"
+#include "run_modes_input.inc"
 void App::sync_selection(){
     if(choice_revision!=game.revision){choice_selected_count=0;choice_revision=game.revision;}
     if(!game.world.active||game.practice||!combat_choice_ready()||(catalog_choice_revision==game.revision&&catalog_choice_phase==unsigned(game.phase)))return;
@@ -94,6 +95,7 @@ void App::ui_action(UiAction action){
     // Opaque frontend modals own all actions until explicitly dismissed.
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
     if(settings_open&&!frontend_confirm){settings_action(action);return;}
+    if(run_modes_action(action))return;
     if(!combat_choice_ready())switch(action){
     case UiAction::ConfirmChoice:case UiAction::ClearChoice:case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
     case UiAction::ConfirmWorldChoice:case UiAction::ClearWorldChoice:case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:
@@ -168,32 +170,7 @@ void App::ui_action(UiAction action){
     case UiAction::ReadEvent:
         if(!title&&!paused&&!panel&&!library&&game.phase==Phase::Event){event_reader=true;event_reader_scroll=0;}break;
     case UiAction::CloseEventReader:event_reader=false;break;
-    case UiAction::StartCharacter:
-        if(character_select){
-            uint32_t seed=0;char canonical[65]{};
-            if(!practice_entry&&*selected_seed){
-                if(!reference::canonicalize_ascii(selected_seed,canonical,sizeof canonical)){message("种子无效");break;}
-                ++run_number;
-            }else{
-                bool randomized=false;seed=next_run_seed(&randomized);
-                if(randomized&&!practice_entry){
-                    static const char digits[]="0123456789ABCDEF";
-                    for(unsigned i=0;i<8;++i)canonical[i]=digits[(seed>>((7-i)*4))&15];
-                }
-            }
-            // An automatically displayed seed is also a valid manual replay
-            // seed. Fold the same canonical hash into legacy presentation
-            // streams before world_set_seed initializes the named streams.
-            if(*canonical){unsigned length=0;while(canonical[length])++length;
-                const uint64_t hash=reference::hash64(canonical,length);
-                seed=uint32_t(hash)^uint32_t(hash>>32);if(!seed)seed=1;
-            }
-            forget_run_checkpoint();
-            new_run(game,seed,practice_entry,selected_character);
-            if(!practice_entry){if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
-            character_select=run_settings=false;title=false;reset_presentation();begin_progress();
-            if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*m=world_current_map(game))map_visuals.initial_marker(m->root,map_clock_ms);}
-        }break;
+    case UiAction::StartCharacter:if(character_select)start_selected_run({});break;
     case UiAction::RunSettings:break; // Retired port-only overlay; keep enum ABI.
     case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
     case UiAction::RunAscensionUp:if(character_select&&selected_ascension<10)selected_ascension++;break;
@@ -305,7 +282,7 @@ bool App::screen_input(Key key){
         else if(key==Key::ExhaustPile&&!practice_entry)ui_action(UiAction::RunAscensionUp);
         else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)
             selected_character=(Character)(((int)selected_character+(key==Key::Left||key==Key::Up?CharacterKinds-1:1))%CharacterKinds);
-        else if(key==Key::Back)character_select=false;
+        else if(key==Key::Back){if(practice_entry)character_select=false;else open_run_menu(RunMenu::Singleplayer);}
         else if(key==Key::Quit){cancel_map_travel();quit=true;}
         return true;
     }

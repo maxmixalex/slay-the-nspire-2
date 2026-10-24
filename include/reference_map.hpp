@@ -43,14 +43,37 @@ struct ReferenceMap {
 // instead of dropping segments and silently producing a different map.
 struct MapWorkspace {
     static constexpr int MaxGroups = 32768, MaxSegments = 32768;
-    struct Segment { uint8_t ids[MaxRows + 2]{}; uint8_t length = 0; int16_t next = 0; };
+    // Every edge advances one row and every row has seven columns. Keep the
+    // columns in three bits rather than repeating a byte-sized point id for
+    // all 32,768 possible segments. The stable row/column table below retains
+    // point identity even after pruning clears a cell in ReferenceMap::grid.
+    struct Segment {
+        uint8_t columns[((MaxRows + 2) * 3 + 7) / 8]{};
+        uint8_t first_row = 0, length = 0;
+        int16_t next = 0;
+        unsigned column(unsigned index) const {
+            const unsigned bit = index * 3, byte = bit >> 3, shift = bit & 7;
+            unsigned value = columns[byte];
+            if (shift > 5) value |= unsigned(columns[byte + 1]) << 8;
+            return (value >> shift) & 7u;
+        }
+        void set_column(unsigned index, unsigned column) {
+            const unsigned bit = index * 3, byte = bit >> 3, shift = bit & 7;
+            columns[byte] = uint8_t((columns[byte] & ~(7u << shift)) | (column << shift));
+            if (shift > 5) columns[byte + 1] = uint8_t(
+                (columns[byte + 1] & ~(7u >> (8 - shift))) | (column >> (8 - shift)));
+        }
+    };
     struct Group { int16_t first = 0, last = 0; uint16_t count = 0; };
     Segment segments[MaxSegments]{};
     Group groups[MaxGroups]{};
     uint16_t order[MaxGroups]{};
+    uint8_t point_ids[MaxRows + 2][Columns]{};
     uint16_t group_count = 0, segment_count = 0;
     uint32_t paths = 0;
 };
+static_assert(sizeof(MapWorkspace::Segment) == 14 && sizeof(MapWorkspace) <= 721064,
+              "Map work storage must keep the full segment capacity within its compact budget");
 
 // Ports the StandardActMap constructor's explicit-count path. The caller supplies
 // room quotas and the RNG after any quota draws. Gaussian room-pool construction

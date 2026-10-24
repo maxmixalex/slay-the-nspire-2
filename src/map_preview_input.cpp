@@ -3,6 +3,12 @@ namespace spire {
 void App::reference_text(int code) {
     pointer_cancel();
     if (map_preview.open && map_preview.editing) {
+        if(run_seed_editing&&code==13){
+            char canonical[65]{};
+            if(*map_preview.draft&&!reference::canonicalize_ascii(map_preview.draft,canonical,sizeof canonical))return;
+            unsigned n=0;do{selected_seed[n]=canonical[n];}while(canonical[n++]);
+            map_preview.editing=map_preview.open=run_seed_editing=false;return;
+        }
         if(run_seed_editing&&code==13&&!map_preview.draft[0]){selected_seed[0]=0;map_preview.editing=map_preview.open=run_seed_editing=false;return;}
         map_preview.edit(code);
         if(run_seed_editing&&!map_preview.editing){if(code==13){unsigned n=0;do{selected_seed[n]=map_preview.seed[n];}while(map_preview.seed[n++]);}run_seed_editing=false;map_preview.open=false;}
@@ -19,6 +25,12 @@ bool App::reference_input(Key key) {
 #endif
     if (!view.open) return false;
     if (view.editing) {
+        if(run_seed_editing&&run_mode.screen==RunMenu::Custom){
+            if(key==Key::Back)reference_text(27);
+            else if(key==Key::Confirm||key==Key::EndTurn)reference_text(13);
+            else if(key==Key::Quit)quit=true;
+            return true;
+        }
         if (key == Key::Back) reference_text(27);
         else if (key == Key::Left) view.editor_selection = (view.editor_selection + SeedButtonCount - 1) % SeedButtonCount;
         else if (key == Key::Right) view.editor_selection = (view.editor_selection + 1) % SeedButtonCount;

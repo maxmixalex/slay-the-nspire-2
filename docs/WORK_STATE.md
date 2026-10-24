@@ -1,5 +1,23 @@
 # Work state — 2026-10-24
 
+## UI8 recovery and integrated implementation (in progress)
+
+Recovered the complete UI7 checkout, including uncommitted combat geometry and
+run-options/history work. Recovery checkpoint `d9e84e10161017610566610bb3bb2a8afad59327`
+is verified on the existing remote work branch. Main still holds UI6. The current
+stage adds original history layout/tiny-card rendering, Custom/Daily frontends,
+card-inspector closing transitions, creature anchor corrections, lossless map
+workspace packing, bounded image-cache lookup, and an offline lossless group
+recompressor. Custom/Daily simulation hooks are still in progress: exposing the
+frontend does not certify modifier behavior. Exact sprite-registration recovery
+and v28 resource/font integration precede whole-run visual acceptance.
+
+No UI8 full build or fidelity percentage is claimed at this checkpoint. The
+latest inherited UI7 CP9 CTest result was 85/87, with card HUD and expansion UI
+failures remaining; old reports are preserved below. Next: persist this stage,
+run native regressions and measured private registration/compression in parallel,
+finish all actual mode hooks, inspect bilingual screens, and verify portable builds.
+
 ## UI7 implementation checkpoint 9 (being prepared)
 
 Verified remote checkpoint 8 is `e378d4a20b5a2a43a419efad513ba6aed135840a`.

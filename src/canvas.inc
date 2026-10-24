@@ -229,14 +229,29 @@ struct Canvas{
             for(int yy=top;yy<bottom;yy++){int at=(y+yy)*pitch+x+left;const uint8_t*src=p.pixels+(yy*p.w+left)*2;for(int xx=left;xx<right;xx++,at++,src+=2)paint(at,src[0]|(uint16_t)src[1]<<8,255,blend_mode);}
             return;
         }
-        uint16_t source[320];for(int xx=left;xx<right;xx++)source[xx-left]=(uint16_t)(xx*p.w/width);
+        // Exact nearest-neighbour sampling needs a division only at the
+        // clipped start and for the step, rather than for each destination
+        // column/row. This matters on the calculator's integer-only ARMv5.
+        uint16_t source[320];
+        const unsigned divisor=unsigned(width),step=p.w/divisor,advance=p.w%divisor;
+        const unsigned first=unsigned(left)*p.w;
+        unsigned column=first/divisor,remainder=first%divisor;
+        for(int xx=left;xx<right;++xx){
+            source[xx-left]=uint16_t(column);column+=step;remainder+=advance;
+            if(remainder>=divisor){remainder-=divisor;++column;}
+        }
+        const unsigned row_divisor=unsigned(height),row_step=p.h/row_divisor,row_advance=p.h%row_divisor;
+        const unsigned first_row=unsigned(top)*p.h;
+        unsigned row_index=first_row/row_divisor,row_remainder=first_row%row_divisor;
         for(int yy=top;yy<bottom;yy++){
-            int row=(yy*p.h/height)*p.w;int at=(y+yy)*pitch+x+left;
+            int row=int(row_index*p.w);int at=(y+yy)*pitch+x+left;
             for(int xx=left;xx<right;xx++,at++){
                 int i=row+source[xx-left];unsigned alpha=p.alpha?p.alpha[i]:255;if(opacity!=255)alpha=div255(alpha*opacity);if(!alpha)continue;
                 const uint8_t*pixel=p.palette?p.palette+p.pixels[i]*2:p.pixels+i*2;uint16_t color=pixel[0]|(uint16_t)pixel[1]<<8;
                 paint(at,color,alpha,blend_mode);
             }
+            row_index+=row_step;row_remainder+=row_advance;
+            if(row_remainder>=row_divisor){row_remainder-=row_divisor;++row_index;}
         }
     }
     // Atlas regions stay at their prebaked size. A mirrored region shares its

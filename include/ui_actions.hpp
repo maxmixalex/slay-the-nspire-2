@@ -25,6 +25,7 @@ enum class UiAction {
     InspectPreviousCard, InspectNextCard,
     OpenCompendium, OpenBestiary, OpenStatistics, OpenHistory, HistoryPrevious, HistoryNext,
     OpenProfiles, SelectProfile1, SelectProfile2, SelectProfile3,
-    DeleteProfile1, DeleteProfile2, DeleteProfile3
+    DeleteProfile1, DeleteProfile2, DeleteProfile3,
+    OpenStandardRun, OpenCustomRun, OpenDailyRun, RandomizeRun, StartConfiguredRun
 };
 }

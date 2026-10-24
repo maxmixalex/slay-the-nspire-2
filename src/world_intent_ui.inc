@@ -23,11 +23,12 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
  const auto intent=c.a.combat_intent(slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
  if(!count)return;const int size=mn(14,mx(9,pos.width/int(count)));int width=0;
  // NIntent moves at PI radians/sec, 10 px amplitude and 8 px offset in
- // the original 1920px canvas. Retain that slow 1-2px motion at 320px.
- pos.intent+=(8+10*CombatCardMotion::sine(int((c.a.animation*33u%2000u)*4096u/2000u))/1024)/6;
+ // the original1680px FourByThree viewport. Its own IntentPos.x may
+ // differ from the creature origin (for example Ceremonial Beast).
+ pos.intent+=(8+10*CombatCardMotion::sine(int((c.a.animation*33u%2000u)*4096u/2000u))/1024)*4/21;
  Canvas faded=c;faded.opacity=uint8_t(unsigned(c.opacity)*c.a.combat_intent_alpha(slot)/255);
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)width+=mx(size,ui_intent_value(c,part,intent).width+2);
- const int left=mx(1,mn(c.clip_w-width-1,pos.x-width/2));int next=left;
+ const int left=mx(1,mn(c.clip_w-width-1,pos.intent_x-width/2));int next=left;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){
   const auto label=ui_intent_value(c,part,intent);const int cell=mx(size,label.width+2),center=next+cell/2;next+=cell;
   faded.picture(ui_intent_image(c.a,part,intent),center-size/2,pos.intent,size,size);
@@ -39,7 +40,7 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
   for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){faded.text(label.value,x+dx,y+dy,10,Ink);faded.text(label.repeat,x+label.value_width+dx,y+2+dy,8,Ink);}
   faded.text(label.value,x,y,10,rgb(255,246,226));faded.text(label.repeat,x+label.value_width,y+2,8,rgb(255,246,226));
  }
- const int actor_left=pos.x-pos.width/2-2,hit_left=mn(actor_left,left),hit_right=mx(actor_left+pos.width+4,left+width);
+ const int actor_left=pos.body_left-2,hit_left=mn(actor_left,left),hit_right=mx(actor_left+pos.body_width+4,left+width);
  c.hit(hit_left,pos.intent-2,hit_right-hit_left,size+14,HitKind::EnemyIntent,slot);
 }
 static void enemy_intent_tooltip(Canvas&c){

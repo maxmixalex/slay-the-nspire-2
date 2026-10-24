@@ -18,6 +18,7 @@ const HitRegion* App::hit_at(int x,int y)const{
 }
 uint32_t App::input_context()const{
     if(bestiary.open)return 0x42535400u|unsigned(bestiary.actions);
+    if(run_mode.screen!=RunMenu::Closed)return 0x52554e00u|unsigned(run_mode.screen)|(uint32_t(map_preview.open)<<4)|(uint32_t(frontend_confirm!=0)<<5);
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
@@ -71,7 +72,7 @@ void App::pointer_move(int x,int y){
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
     if(pointer.held&&progress_page_scroll.dragging){
         if(progress_page_scroll.thumb)progress_page_scroll.set_thumb(pointer.y);
-        else progress_page_scroll.target=UiHistoryScroll::clamp(progress_page_scroll.target-(pointer.y-progress_page_scroll.last_y)*256,-174*256,progress_page_scroll.maximum+174*256);
+        else progress_page_scroll.target=UiHistoryScroll::clamp(progress_page_scroll.target-(pointer.y-progress_page_scroll.last_y)*256,-progress_page_scroll.viewport*256,progress_page_scroll.maximum+progress_page_scroll.viewport*256);
         progress_page_scroll.last_y=pointer.y;return;
     }
     if(pointer.held&&map_dragging){
@@ -142,7 +143,7 @@ void App::pointer_scroll(int rows){
     if(!rows||map_transition_blocks_pointer()||frontend_confirm)return;
     if(settings_open){settings_action(rows>0?UiAction::SettingsScrollDown:UiAction::SettingsScrollUp);return;}
     if(keyword_hover_scroll(*this,rows))return;
-    if((statistics_open||history_open)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
+    if((statistics_open||history_open||run_mode.screen==RunMenu::Custom)&&detail_card<0&&detail_item<0){pointer_cancel();progress_page_scroll.wheel(rows);return;}
     sync_map_window();
     map_directional=false;sync_map_reticles();
     // A release after scrolling must not activate the control now underneath.
@@ -306,7 +307,7 @@ void App::pointer_button(bool down){
     case HitKind::PotionPage:{const unsigned pages=(potion_slot_count(game)+2)/3;close_potion();potion_page=uint8_t((potion_page+1)%pages);break;}
     case HitKind::Scroll:pointer_scroll(hit.value);break;
     case HitKind::Close:pointer_key(Key::Back);break;
-    case HitKind::DetailClose:detail_card=-1;break;
+    case HitKind::DetailClose:close_card_inspect();break;
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
     case HitKind::WorldNode:
         if(!map_legend&&map_routes_active())begin_map_travel(unsigned(hit.value));break;
@@ -325,6 +326,7 @@ void App::pointer_button(bool down){
     case HitKind::UiAction:ui_action((UiAction)hit.value);break;
     case HitKind::LibraryItem:select_library_item(hit.value);break;
     case HitKind::LibraryControl:library_control(hit.value);break;
+    case HitKind::RunModifier:run_modifier_select(unsigned(hit.value));break;
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
     case HitKind::StatusActor:open_statuses(hit.value);break;
     case HitKind::BattleStatus:open_status_icon(hit.value);break;

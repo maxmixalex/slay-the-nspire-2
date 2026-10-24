@@ -1,6 +1,11 @@
+void App::close_card_inspect(){
+    if(detail_card<0)return;
+    card_inspect.closed_energy=detail_energy();card_inspect.closed_stars=detail_stars();
+    card_inspect.close(detail_card,map_clock_ms);detail_card=-1;keyword_hover={};
+}
 unsigned App::card_inspect_ids(int*out)const{
     const auto source=card_inspect.source;
-    if(source==CardInspectSource::History){const auto*r=history_at(history_index);if(!r)return 0;if(out)for(unsigned i=0;i<r->deck_count;++i)out[i]=int(i);return r->deck_count;}
+    if(source==CardInspectSource::History){const auto*r=history_at(history_index);if(!r)return 0;uint16_t ids[MaxDeck]{};const unsigned count=ui_history_groups(*r,out?ids:nullptr);if(out)for(unsigned i=0;i<count;++i)out[i]=int(ids[i]);return count;}
     if(source==CardInspectSource::Library){CardKind ids[CardKinds];const unsigned count=library_items(ids);unsigned seen=0;
         for(unsigned i=0;i<count;++i)if(library_card_seen(ids[i])){if(out)out[seen]=ids[i];++seen;}return seen;}
     if(source==CardInspectSource::DeckPile||source==CardInspectSource::InstancePile)return pile_items(out);

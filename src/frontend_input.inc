@@ -74,6 +74,7 @@ void App::return_to_title(){
  title=true;paused=library=character_select=help=settings_open=compendium_open=statistics_open=history_open=false;frontend_confirm=frontend_choice=0;confirmed_run={};menu=0;
  map_preview.open=false;reset_presentation();refresh_save();
  profiles_open=profile_pending=false;bestiary.open=false;
+ run_mode={};
 }
 void App::accept_frontend_confirm(){
  const unsigned action=frontend_confirm;if(!action)return;
@@ -112,6 +113,7 @@ bool App::frontend_input(Key key){
  if(settings_input(key))return true;
  if(profiles_input(key))return true;
  if(progress_navigation_input(key))return true;
+ if(run_modes_input(key))return true;
  if(library||character_select||map_preview.open||detail_card>=0||detail_item>=0||status_actor>=0)return false;
  if(title){
   const int count=title_menu_count();if(menu<0||menu>=count)menu=0;
@@ -122,7 +124,7 @@ bool App::frontend_input(Key key){
   else if(key==Key::Load){
    if(load_saved_run())title=false;else{refresh_save();message("没有有效的存档");}
   }else if(key==Key::Confirm){switch(front_item(*this,menu)){
-   case FrontStart:practice_entry=false;character_select=true;break;
+   case FrontStart:open_run_menu(RunMenu::Singleplayer);break;
    case FrontContinue:if(load_saved_run())title=false;else{refresh_save();menu=0;message("没有有效的存档");}break;
    case FrontAbandon:
     if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}

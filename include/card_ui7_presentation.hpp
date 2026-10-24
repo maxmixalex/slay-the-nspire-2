@@ -50,7 +50,12 @@ struct PotionBeltMotion {
 enum class CardInspectSource:uint8_t { None,Library,DeckPile,InstancePile,DeckChoice,Hand,CombatChoice,WorldChoice,Reward,History };
 struct CardInspectPresentation {
     CardInspectSource source=CardInspectSource::None;
-    uint32_t opened=0,slid=0;
+    uint32_t opened=0,slid=0,closed=0;
+    int closed_token=-1;
+    int closed_energy=-2,closed_stars=-2;
+    uint16_t closed_scale=8192;
+    int16_t closed_x=card_inspect_layout::CenterX;
+    uint8_t closed_root=255,closed_backstop=255,closed_face=255,closed_arrow=255;
     int16_t index=0,count=1;int8_t direction=0;
     bool view_all_upgraded=false,description_truncated=false;
     struct Arrow {
@@ -76,6 +81,18 @@ struct CardInspectPresentation {
     unsigned opacity(uint32_t now)const{const unsigned age=now-opened;return age>=250?255:255*health_bar::expo_out(age*4)/4096;}
     int card_scale(uint32_t now)const{const unsigned age=now-opened;return 7168+(age<=100?0:spring(age-100)/4);}
     int card_x(uint32_t now)const{const unsigned age=now-slid;return card_inspect_layout::CenterX+(!direction||age>=250?0:direction*card_inspect_layout::Travel*int(4096-health_bar::expo_out(age*4))/4096);}
+    bool closing(uint32_t now)const{return closed_token>=0&&now-closed<250;}
+    void close(int token,uint32_t now){
+        if(token<0)return;
+        const unsigned age=now-opened,arrow_age=age>100?age-100:0;
+        closed_token=token;closed=now;closed_scale=uint16_t(card_scale(now));closed_x=int16_t(card_x(now));
+        closed_root=uint8_t(opacity(now));closed_backstop=uint8_t(age>=250?255:age*255/250);
+        closed_face=uint8_t(direction?255:closed_backstop);
+        closed_arrow=uint8_t(arrow_age>=250?255:arrow_age*255/250);
+    }
+    unsigned close_alpha(uint32_t now,unsigned duration,unsigned initial)const{
+        const unsigned age=now-closed;return age>=duration?0:initial*(duration-age)/duration;
+    }
 };
 
 }

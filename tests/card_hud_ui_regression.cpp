@@ -381,6 +381,13 @@ static void ui7_cards(){
     app.input(Key::Right);CHECK(app.detail_deck_index==2);app.input(Key::Confirm);CHECK(!card_from_token(app.detail_card).upgraded);
     app.input(Key::Left);CHECK(app.detail_deck_index==1&&!card_from_token(app.detail_card).upgraded&&app.inspect_cursor==cursor);
     app.advance(250);app.render();CHECK(app.card_inspect.card_x(app.map_clock_ms)==160);capture("inspector-carousel-upgrade");unchanged();app.input(Key::Back);CHECK(app.detail_card<0&&app.panel==1);
+    const uint32_t closed=app.map_clock_ms;CHECK(app.card_inspect.closing(closed));app.render();
+    for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];CHECK(h.kind!=HitKind::DetailClose);
+        CHECK(h.kind!=HitKind::UiAction||(h.value!=int(UiAction::InspectNextCard)&&h.value!=int(UiAction::InspectPreviousCard)&&h.value!=int(UiAction::ToggleCardUpgrade)));}
+    CHECK(!card_hover_target(app,owner)||!owner.detail);
+    app.advance(99);CHECK(app.card_inspect.close_alpha(app.map_clock_ms,100,255)>0);
+    app.advance(1);CHECK(!app.card_inspect.close_alpha(app.map_clock_ms,100,255)&&app.card_inspect.closing(app.map_clock_ms));
+    app.advance(150);app.render();CHECK(!app.card_inspect.closing(app.map_clock_ms));unchanged();
     app.panel=0;app.reset_presentation();
 }
 static void ui7_hud_nodes(){

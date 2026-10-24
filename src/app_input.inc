@@ -101,7 +101,7 @@ void App::input(Key k){
 #if SPIRE_DEBUG_COMMANDS
         if(k==Key::EndTurn&&library&&!title&&!paused&&!help){ui_action(UiAction::LabCard);return;}
 #endif
-        if(k==Key::Back||k==Key::Detail)detail_card=-1;
+        if(k==Key::Back||k==Key::Detail)close_card_inspect();
         else if(k==Key::Confirm)ui_action(UiAction::ToggleCardUpgrade);
         else if(k==Key::Up||k==Key::Down)keyword_hover_scroll(*this,k==Key::Up?-1:1);
         else if(k==Key::Left||k==Key::Right)move_card_inspect(k==Key::Left?-1:1);

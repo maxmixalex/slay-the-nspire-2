@@ -30,12 +30,13 @@ struct MerchantLayout {
 };
 struct CreaturePose {
  int x,feet,width,scale,intent,hp,status;
- int body_left=0,body_top=0,body_width=0,body_height=0,center_x=0,center_y=0;
+ int body_left=0,body_top=0,body_width=0,body_height=0,center_x=0,center_y=0,intent_x=0;
 };
 inline CreaturePose legacy_creature_pose(CreaturePose p){
  p.body_left=p.x-p.width/2;p.body_height=84*p.scale/1024;p.body_top=p.feet-p.body_height;
- p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;return p;
+ p.body_width=p.width;p.center_x=p.x;p.center_y=p.feet-31;p.intent_x=p.x;return p;
 }
+inline int creature_health_left(CreaturePose p){return p.body_left+(p.body_width-p.width)/2;}
 inline CreaturePose enemy_pose(int count,int index){
  if(count<1)count=1;if(count>MaxEnemies)count=MaxEnemies;
  if(index<0)index=0;if(index>=count)index=count-1;
@@ -183,7 +184,7 @@ inline CreaturePose project_creature_pose(EncounterCamera camera,CombatSceneLayo
  // original full skeletal extents or a change to those clip durations.
  p.scale=combat_project_extent(camera,layout,anchors.bottom-anchors.top,1024,normalized_height);
  if(p.scale<1)p.scale=1;
- p.intent=yy(anchors.intent_y)-8;if(p.intent<25)p.intent=25;
+ p.intent_x=xx(anchors.intent_x);p.intent=yy(anchors.intent_y)-8;if(p.intent<25)p.intent=25;
  // The compact health/status adapter retains its readable patch heights.
  p.hp=p.feet+7;p.status=p.feet+24;return p;
 }
@@ -196,7 +197,12 @@ inline CreaturePose enemy_pose(const State&s,int index,CombatSceneLayout layout)
  if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
  const auto camera=encounter_camera(s.enemy_world.encounter);const auto kind=s.enemy_world.models[index].kind;
  if(kind==EnemyId::LegacyNibbit)return enemy_pose(s.enemy_count,index);
- return project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true);
+ auto p=project_creature_pose(camera,layout,enemy_formation_point(s,index,camera.zoom),creature_anchors(kind),true);
+ // NHealthBar adds24 source pixels around monster Bounds. The segmented
+ // boss alone subtracts35 first; player health bars have no extra width.
+ const bool segment=kind==EnemyId::DecimillipedeSegmentBack||kind==EnemyId::DecimillipedeSegmentFront||kind==EnemyId::DecimillipedeSegmentMiddle;
+ p.width=p.body_width+combat_project_extent(camera,layout,segment?-11:24);
+ if(p.width<22)p.width=22;return p;
 }
 inline CreaturePose enemy_pose(const State&s,int index){return enemy_pose(s,index,combat_layout_for(s));}
 inline int combat_player_x(const State&s){return player_pose(s,combat_layout_for(s)).x;}

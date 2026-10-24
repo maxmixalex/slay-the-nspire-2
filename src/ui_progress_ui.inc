@@ -153,59 +153,127 @@ static void statistics_screen(Canvas&c){
     }
     progress_page_chrome(c);
 }
-static unsigned history_card_groups(const UiRunHistory&r,uint16_t*indices,uint16_t*counts){
-    unsigned n=0;for(unsigned i=0;i<r.deck_count;++i){const auto&card=r.deck[i];unsigned at=0;
-        for(;at<n;++at){const auto&other=r.deck[indices[at]];
-            if(card.card.kind==other.card.kind&&card.card.upgraded==other.card.upgraded&&card.facts.enchantment==other.facts.enchantment&&card.facts.enchantment_amount==other.facts.enchantment_amount&&card.facts.energy_offset==other.facts.energy_offset&&card.facts.science_type==other.facts.science_type&&card.facts.rider==other.facts.rider&&card.facts.progress==other.facts.progress&&card.genetic==other.genetic&&card.scythe==other.scythe)break;
-        }
-        if(at==n){indices[n]=uint16_t(i);counts[n++]=1;}else ++counts[at];
-    }return n;
+// NTinyCard is a color-coded silhouette. It never scales the full readable
+// card renderer into a few pixels or rebuilds a card description per history row.
+static void history_tiny_card(Canvas&c,const EventDeckSnapshot&entry,int x,int y,int size){
+    if(c.a.content.version()<HistoryUi8ContentVersion){
+        c.picture(c.a.content.frame_image(entry.card),x,y,size,size);return;
+    }
+    const Card card=entry.card;const auto pool=world_card_pool(CardKind(card.kind));
+    uint32_t color=0xffffff;
+    switch(pool){
+    case WorldCardPool::Ironclad:color=0xd62000;break;case WorldCardPool::Silent:color=0x5ebd00;break;
+    case WorldCardPool::Defect:color=0x3eb3ed;break;case WorldCardPool::Regent:color=0xe36600;break;
+    case WorldCardPool::Necrobinder:color=0xcd4eed;break;case WorldCardPool::Colorless:case WorldCardPool::Event:color=0xa3a3a3;break;
+    case WorldCardPool::Curse:color=0x585b61;break;case WorldCardPool::Quest:color=0x24476a;break;default:break;
+    }
+    Canvas back=c;back.tint_red=uint8_t(color>>16);back.tint_green=uint8_t(color>>8);back.tint_blue=uint8_t(color);
+    back.ui(I8_TinyCardBack,x,y,size,size);
+    Canvas description=c;description.tint_red=242;description.tint_green=235;description.tint_blue=177;
+    description.ui(I8_TinyCardDescription,x,y,size,size);
+    const auto type=c.a.card_face_type(card,-1,-1,&entry.facts);
+    const int portrait=type==CardType::Attack?I8_TinyCardAttack:type==CardType::Power?I8_TinyCardPower:I8_TinyCardSkill;
+    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.opacity=uint8_t(div255(c.opacity*64));
+    shadow.ui(portrait+1,x,y,size,size);c.ui(portrait,x,y,size,size);
+    shadow.ui(I8_TinyCardBannerShadow,x,y,size,size);
+    const uint32_t rarity_colors[]={0xffffff,0x9c9c9c,0x9c9c9c,0x64ffff,0xffda36,0xe669ff,0x13be1a,0xf46836};
+    const unsigned rarity=unsigned(card_rarity(card.kind));color=rarity<8?rarity_colors[rarity]:0xffffff;
+    Canvas banner=c;banner.tint_red=uint8_t(color>>16);banner.tint_green=uint8_t(color>>8);banner.tint_blue=uint8_t(color);
+    banner.ui(I8_TinyCardBanner,x,y,size,size);
+}
+static void history_hit(Canvas&c,const UiHistoryLayout::Point&p,int dx,int offset,HitKind kind,int value){
+    const int x=p.x+dx,y=UiHistoryLayout::ViewTop+p.y-offset;
+    const int left=mx(0,x),right=mn(320,x+p.w),top=mx(UiHistoryLayout::ViewTop,y),bottom=mn(UiHistoryLayout::ViewTop+UiHistoryLayout::ViewHeight,y+p.h);
+    if(right>left&&bottom>top)c.hit(left,top,right-left,bottom-top,kind,value);
+}
+static const char* history_room_key(const UiFloorHistory&f){
+    if(f.room==unsigned(WorldRoom::Boss)){const auto*d=encounter_definition(EncounterId(f.encounter));if(d)return d->key;}
+    if(f.room==unsigned(WorldRoom::Event)&&f.event<OriginalEventKinds){
+        const auto id=OriginalEventId(f.event);if(ui_ancient_event(id))return original_event_key(id);
+    }
+    switch(WorldRoom(f.room)){case WorldRoom::Monster:return "MONSTER";case WorldRoom::Elite:return "ELITE";
+    case WorldRoom::Boss:return "ELITE";case WorldRoom::Rest:return "REST_SITE";case WorldRoom::Shop:return "SHOP";
+    case WorldRoom::Treasure:return "TREASURE";default:return "EVENT";}
+}
+static int history_focus_id(const App&a,const UiRunHistory&r,const uint16_t*indices,unsigned groups){
+    if(!a.pointer.visible)return a.history_presentation.focus;
+    const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit)return -1;
+    if(hit->kind==HitKind::HistoryFloor&&hit->value>=0&&hit->value<r.floor_count)return hit->value;
+    if(hit->kind==HitKind::HistoryRelic&&hit->value>=0&&hit->value<r.relic_count)return UiHistoryLayout::RelicFirst+hit->value;
+    if(hit->kind==HitKind::HistoryCard)for(unsigned i=0;i<groups;++i)if(indices[i]==hit->value)return UiHistoryLayout::CardFirst+int(i);
+    return -1;
+}
+static void history_tooltip(Canvas&c,const UiRunHistory&r,int focus,const UiHistoryLayout&layout,int dx,int offset){
+    if(focus<0||focus>=UiHistoryLayout::CardFirst)return;
+    UiHistoryLayout::Point point{};if(!layout.point(r,focus,point))return;
+    const int py=point.y-offset+UiHistoryLayout::ViewTop;
+    if(py+point.h<=UiHistoryLayout::ViewTop||py>=UiHistoryLayout::ViewTop+UiHistoryLayout::ViewHeight)return;
+    char title[256]{},body[2048]{};ProgressTextValues values;
+    if(focus>=UiHistoryLayout::RelicFirst){const RelicId id=RelicId(r.relics[focus-UiHistoryLayout::RelicFirst]);
+        TextBuffer name{title,sizeof title,0};name.text(c.a.relic_title(id));c.a.relic_description(id,body,sizeof body);
+    }else{const auto&f=r.floors[focus];values.floor=f.floor;values.hp=f.hp;values.max_hp=f.max_hp;values.gold=f.gold;values.turns=f.turns;
+        progress_text(c.a,"run_history","MAP_POINT_HISTORY.header",values,title,sizeof title);
+        progress_text(c.a,"run_history","MAP_POINT_HISTORY.player_stats",values,body,sizeof body);
+        if(f.turns){char turns[256]{};progress_text(c.a,"run_history","MAP_POINT_HISTORY.turnsTaken",values,turns,sizeof turns);
+            TextBuffer text{body,sizeof body,0};while(body[text.n])++text.n;text.ch('\n');text.text(turns);}
+    }
+    const int width=154,lines=c.paragraph(body,0,0,width-16,0,0,8),height=mn(172,31+lines*11);
+    const int x=mn(162,mx(4,point.x+dx)),y=mn(235-height,mx(4,py>height+8?py-height-5:py+point.h+4));
+    c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7);c.text_fitted(title,x+8,y+6,width-16,10,Gold,8);
+    c.paragraph(body,x+8,y+23,width-16,(height-27)/11,0,8,White);
 }
 static void history_screen(Canvas&c){
     auto&a=c.a;const auto*record=a.history_at(a.history_index);if(!record){a.history_open=false;compendium_screen(c);return;}const auto&r=*record;
     title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
-    c.centered(frontend_text(a,"main_menu_ui","RUN_HISTORY.title","Run History"),24,10,272,16,Gold);
-    uint16_t indices[MaxDeck]{},counts[MaxDeck]{};const unsigned groups=history_card_groups(r,indices,counts);
-    const int relic_rows=(r.relic_count+12)/13,deck_y=105+relic_rows*19,map_y=deck_y+20+int((groups+2)/3)*18;
-    a.progress_page_scroll.configure(map_y+32+int((r.floor_count+12)/13)*22);
-    c.hit(27,40,266,174,HitKind::ProgressScroll);
-    Canvas page=progress_content_canvas(c);const int offset=a.progress_page_scroll.offset();
-    page.ui(U_TopBarIronclad+int(r.character),29,2-offset,26,26);
+    uint16_t indices[MaxDeck]{},counts[MaxDeck]{};const unsigned groups=ui_history_groups(r,indices,counts);
+    const UiHistoryLayout layout(r,groups);auto&motion=a.history_presentation;
+    a.progress_page_scroll.configure(layout.height,UiHistoryLayout::ViewHeight);
+    c.hit(UiHistoryLayout::Left,UiHistoryLayout::ViewTop,UiHistoryLayout::Width,UiHistoryLayout::ViewHeight,HitKind::ProgressScroll);
+    Canvas page=c;page.pixels+=UiHistoryLayout::ViewTop*page.pitch;if(page.coverage)page.coverage+=UiHistoryLayout::ViewTop*page.pitch;page.clip_h=UiHistoryLayout::ViewHeight;
+    page.opacity=uint8_t(div255(page.opacity*motion.alpha(a.map_clock_ms)));
+    const int offset=a.progress_page_scroll.offset(),dx=motion.offset(a.map_clock_ms);
+    for(unsigned i=0;i<r.floor_count;++i)history_hit(c,layout.floor(r,i),dx,offset,HitKind::HistoryFloor,int(i));
+    for(unsigned i=0;i<r.relic_count;++i)history_hit(c,layout.relic(i),dx,offset,HitKind::HistoryRelic,int(i));
+    for(unsigned i=0;i<groups;++i)history_hit(c,layout.card(i),dx,offset,HitKind::HistoryCard,indices[i]);
+    const int focused=history_focus_id(a,r,indices,groups);motion.observe(focused,a.map_clock_ms);
+    page.ui(U_TopBarIronclad+int(r.character),29+dx,2-offset,22,22);
     const auto&ch=character_definitions[r.character];const char*name=a.content.world_title("characters",ch.key);
-    page.text_fitted(*name?name:ch.name,61,5-offset,148,12,Gold,10);
-    char text[256]{},date[64]{},time[32]{},elapsed[32]{};progress_date_text(a,r.started_at,date,sizeof date,time,sizeof time);
+    page.text_fitted(*name?name:ch.name,54+dx,3-offset,109,11,Gold,8);
+    char text[384]{},date[64]{},time[32]{},elapsed[32]{};progress_date_text(a,r.started_at,date,sizeof date,time,sizeof time);
     ProgressTextValues values;values.seed=r.seed_text;values.date=date;values.time=time;values.hp=r.hp;values.max_hp=r.max_hp;values.gold=r.gold;values.floor=r.floor;
-    progress_text(a,"run_history","INFO.DATE_TIME",values,text,sizeof text);page.text_fitted(text,61,20-offset,215,8,White,8);
-    page.picture(A_Heart,29,35-offset,10,11);TextBuffer hp{text,sizeof text,0};text[0]=0;hp.number(r.hp);hp.ch('/');hp.number(r.max_hp);page.text(text,42,35-offset,10,White);
-    page.picture(A_Coin,102,35-offset,10,11);text[0]=0;hp.n=0;hp.number(r.gold);page.text(text,115,35-offset,10,Gold);
-    progress_time_text(elapsed,sizeof elapsed,r.seconds);page.ui(I7_StatsClock,184,33-offset,15,14);page.text(r.partial?"—":elapsed,201,35-offset,10,White);
-    progress_text(a,"run_history","INFO.SEED",values,text,sizeof text);page.text_fitted(text,29,52-offset,258,9,White,8);
-    const char*mode=frontend_text(a,"run_history","GAME_MODE.standard","Standard");page.text_fitted(mode,29,66-offset,180,9,White,8);
-    text[0]=0;hp.n=0;hp.number(r.floor);page.ui(U_TopFloor,224,64-offset,12,12);page.text(text,241,66-offset,10,Gold);
-    for(unsigned i=0;i<r.potion_count&&i<10;++i)if(r.potions[i])page.picture(a.content.potion_image(Potion(r.potions[i])),29+int(i)*16,79-offset,13,16);
-    values.total=r.relic_count;progress_text(a,"run_history","RELIC_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29,99-offset,257,10,Gold,8);
-    for(unsigned i=0;i<r.relic_count;++i){const int x=29+int(i%13)*20,y=114+int(i/13)*19-offset;if(y+18<=0||y>=174)continue;
-        page.picture(a.content.relic_image(r.relics[i]),x,y,17,17);progress_content_hit(c,x,y+40,19,18,HitKind::HistoryRelic,int(i));}
-    values.total=r.deck_count;progress_text(a,"run_history","DECK_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29,deck_y+9-offset,257,10,Gold,8);
-    for(unsigned i=0;i<groups;++i){const int x=29+int(i%3)*86,y=deck_y+27+int(i/3)*18-offset;if(y+17<=0||y>=174)continue;
-        const auto&card=r.deck[indices[i]];draw_card_face(page,card.card,x,y,10,14,-2,-2,-1,-1,&card.facts);
-        text[0]=0;TextBuffer title{text,sizeof text,0,&a.content};if(counts[i]>1){title.number(counts[i]);title.text("x ");}title.text(a.content.card_string(card.card.kind));if(card.card.upgraded)title.ch('+');
-        const bool hover=progress_hover(a,x,y+40,83,17);page.text_fitted(text,x+13,y+2,70,9,hover?Gold:White,8);
-        progress_content_hit(c,x,y+40,83,17,HitKind::HistoryCard,indices[i]);
+    progress_text(a,"run_history","INFO.DATE_TIME",values,text,sizeof text);page.text_fitted(text,168+dx,1-offset,123,8,White,8);
+    progress_text(a,"run_history","INFO.SEED",values,text,sizeof text);page.text_fitted(text,168+dx,12-offset,123,8,White,8);
+    const char*mode=frontend_text(a,"run_history","GAME_MODE.standard","Standard");page.text_fitted(mode,168+dx,23-offset,123,8,White,8);
+    page.text_fitted("v0.111.0 / 41cef1ea",168+dx,34-offset,123,8,Muted,8);
+    page.picture(A_Heart,54+dx,17-offset,9,10);TextBuffer line{text,sizeof text,0};text[0]=0;line.number(r.hp);line.ch('/');line.number(r.max_hp);page.text(text,65+dx,17-offset,8,White);
+    page.picture(A_Coin,103+dx,17-offset,9,10);text[0]=0;line.n=0;line.number(r.gold);page.text(text,114+dx,17-offset,8,Gold);
+    page.ui(U_TopFloor,29+dx,31-offset,10,11);page.num(r.floor,42+dx,32-offset,8,White);
+    progress_time_text(elapsed,sizeof elapsed,r.seconds);page.ui(I7_StatsClock,65+dx,30-offset,12,12);page.text(r.partial?"—":elapsed,79+dx,32-offset,8,White);
+    for(unsigned i=0;i<r.potion_count&&i<10;++i){const int x=127+dx+int(i)*10;
+        page.ui(U_PotionPlaceholder,x,30-offset,10,13);
+        if(r.potions[i])page.picture(a.content.potion_image(Potion(r.potions[i])),x,30-offset,10,13);
     }
-    for(unsigned i=0;i<r.floor_count;++i){const auto&floor=r.floors[i];const int x=31+int(i%13)*20,y=map_y+14+int(i/13)*22-offset;if(y+20<=0||y>=174)continue;
-        const int icon=floor.room==unsigned(WorldRoom::Monster)?A_MapCombat:floor.room==unsigned(WorldRoom::Elite)||floor.room==unsigned(WorldRoom::Boss)?A_MapFinal:floor.room==unsigned(WorldRoom::Rest)?A_MapCamp:floor.room==unsigned(WorldRoom::Shop)?A_MapShop:floor.room==unsigned(WorldRoom::Treasure)?A_MapTreasure:A_MapEvent;
-        page.picture(icon,x,y,16,16);
-        progress_content_hit(c,x,y+40,18,19,HitKind::HistoryFloor,int(i));
+    for(unsigned i=0;i<r.floor_count;++i){const auto&f=r.floors[i];const auto point=layout.floor(r,i);const int x=point.x+dx,y=point.y-offset;
+        if(y+point.h<=0||y>=page.clip_h)continue;
+        if(!i||r.floors[i-1].act!=f.act){const char*act=a.content.world_title("acts",map_colors(f.region).region);page.text_fitted(act,27+dx,y+3,30,8,Gold,8);}
+        const int size=mn(19,12*int(motion.scale(int(i),a.map_clock_ms))/1000);
+        if(a.content.version()>=HudUi7ContentVersion)hud_room_icon(page,history_room_key(f),x+6-size/2,y+7-size/2,size,size);
+        else page.picture(f.room==unsigned(WorldRoom::Rest)?A_MapCamp:f.room==unsigned(WorldRoom::Shop)?A_MapShop:f.room==unsigned(WorldRoom::Treasure)?A_MapTreasure:f.room==unsigned(WorldRoom::Event)?A_MapEvent:A_MapCombat,x,y,12,12);
+    }
+    values.total=r.relic_count;progress_text(a,"run_history","RELIC_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.relic_header-offset,257,10,Gold,8);
+    for(unsigned i=0;i<r.relic_count;++i){const auto point=layout.relic(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;
+        const int size=12*int(motion.scale(UiHistoryLayout::RelicFirst+int(i),a.map_clock_ms))/1000;
+        page.picture(a.content.relic_image(r.relics[i]),x+6-size/2,y+6-size/2,size,size);
+    }
+    values.total=r.deck_count;progress_text(a,"run_history","DECK_HISTORY.header",values,text,sizeof text);page.text_fitted(text,29+dx,layout.deck_header-offset,257,10,Gold,8);
+    for(unsigned i=0;i<groups;++i){const auto point=layout.card(i);const int x=point.x+dx,y=point.y-offset;if(y+point.h<=0||y>=page.clip_h)continue;
+        const auto&entry=r.deck[indices[i]];const unsigned scale=motion.scale(UiHistoryLayout::CardFirst+int(i),a.map_clock_ms);const int size=8*int(scale)/1000;
+        history_tiny_card(page,entry,x+4-size/2,y+6-size/2,size);
+        text[0]=0;TextBuffer title{text,sizeof text,0};if(counts[i]>1){title.number(counts[i]);title.text("x ");}title.text(a.content.card_string(entry.card.kind));if(entry.card.upgraded)title.ch('+');
+        const int label_shift=int(scale-1000)*2/500;
+        page.text_fitted(text,x+10+label_shift,y+2,point.w-10-label_shift,8,entry.facts.enchantment!=EventEnchantment::None?rgb(197,127,255):entry.card.upgraded?Green:White,8);
     }
     if(a.history_index+1<a.progress.count){c.ui(I7_SettingsArrowLeft,7,111,12,24);c.action(0,100,26,49,UiAction::HistoryPrevious);}
     if(a.history_index){c.ui(I7_SettingsArrowRight,307,111,12,24);c.action(297,100,23,49,UiAction::HistoryNext);}
-    progress_page_chrome(c);
-    if(a.pointer.visible){const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(hit&&hit->kind==HitKind::HistoryFloor&&hit->value>=0&&hit->value<r.floor_count){
-        const auto&f=r.floors[hit->value];values.floor=f.floor;values.hp=f.hp;values.max_hp=f.max_hp;values.gold=f.gold;values.turns=f.turns;
-        const int x=mn(161,mx(4,hit->x)),y=hit->y>125?hit->y-64:hit->y+21;c.nine_ui(I7_TinyPanel,x,y,154,59,3,3,3,3);
-        progress_text(a,"run_history","MAP_POINT_HISTORY.header",values,text,sizeof text);c.text_fitted(text,x+7,y+5,140,10,Gold,8);
-        progress_text(a,"run_history","MAP_POINT_HISTORY.player_stats",values,text,sizeof text);c.text_fitted(text,x+7,y+22,140,9,White,8);
-        progress_text(a,"run_history","MAP_POINT_HISTORY.turnsTaken",values,text,sizeof text);if(f.turns)c.text_fitted(text,x+7,y+39,140,9,White,8);
-    }}
+    progress_page_chrome(c);history_tooltip(c,r,focused,layout,dx,offset);
 }

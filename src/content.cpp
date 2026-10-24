@@ -30,23 +30,36 @@ static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacit
 struct ImageCache {
     const Content* owner{};uint32_t image{},age{};
     uint16_t first{};uint8_t pages{},format{};
+    // Low 16 bits retain the image id; the remaining bits hold a 9-bit
+    // one-based chain link and its 7-bit bucket. No cache entry grows.
+    unsigned id()const{return image&65535u;}
+    unsigned next()const{return (image>>16)&511u;}
+    unsigned bucket()const{return image>>25;}
+    void link(unsigned next){image=(image&~(511u<<16))|(next<<16);}
 };
 static ImageCache image_cache[ImageEntries];
+constexpr unsigned ImageBuckets=128;
+static uint16_t image_buckets[ImageBuckets]{};
 static uint32_t image_used[(ImagePages+31)/32]{},image_age=0;
 static_assert(ImagePageBytes==Content::image_page_bytes()&&ImagePages==Content::image_capacity_pages()&&
               ImageEntries==Content::image_capacity_entries(),"Public preparation budget must match the cache");
 static_assert(ImagePages==748&&(MaxImageBytes+ImagePageBytes-1)/ImagePageBytes<=255,
               "Image page indexes and lengths must fit the bounded entry");
-static_assert(ImageEntries<=65536,"Age-wrap entry indexes must fit two bytes");
+static_assert(ImageEntries<512&&ImageBuckets==128,"Image ids and bucket links must share the existing key word");
 static_assert(sizeof image_pixels<=ImageBufferBudget,
               "Image pixels must not exceed the previous four-tier cache");
-static_assert(sizeof image_cache+sizeof image_used+sizeof image_age<=8u*1024u,
+static_assert(sizeof image_cache+sizeof image_buckets+sizeof image_used+sizeof image_age<=8u*1024u,
               "Image-cache bookkeeping must remain below 8 KiB");
 static uint8_t* image_buffer(const ImageCache& cache){return image_pixels+unsigned(cache.first)*ImagePageBytes;}
+static unsigned image_bucket(const uint8_t* descriptor){
+    const uint32_t offset=u32(descriptor),shape=u32(descriptor+4),size=u32(descriptor+12);
+    return ((offset>>1)^(offset>>9)^(shape>>5)^shape^size)&(ImageBuckets-1);
+}
 static ImageCache* find_image(const Content* owner,const uint8_t* metadata,unsigned id){
     const uint8_t* descriptor=metadata+40+16*id;
-    for(auto& cache:image_cache)if(cache.owner==owner){
-        const uint8_t* key=metadata+40+16*cache.image;
+    for(unsigned link=image_buckets[image_bucket(descriptor)];link;){
+        auto& cache=image_cache[link-1];link=cache.next();if(cache.owner!=owner)continue;
+        const uint8_t* key=metadata+40+16*cache.id();
         if(u32(key)==u32(descriptor)&&u32(key+4)==u32(descriptor+4)&&
            u32(key+8)==u32(descriptor+8)&&u32(key+12)==u32(descriptor+12))return &cache;
     }
@@ -60,6 +73,11 @@ static unsigned image_page_bound(const uint8_t* descriptor){
     return (bytes+ImagePageBytes-1)/ImagePageBytes;
 }
 static void discard_image(ImageCache& cache){
+    if(cache.owner){
+        unsigned previous=0,link=image_buckets[cache.bucket()],id=unsigned(&cache-image_cache)+1;
+        while(link&&link!=id){previous=link;link=image_cache[link-1].next();}
+        if(link){if(previous)image_cache[previous-1].link(cache.next());else image_buckets[cache.bucket()]=uint16_t(cache.next());}
+    }
     for(unsigned i=cache.first;i<unsigned(cache.first)+cache.pages;++i)image_used[i/32]&=~(uint32_t(1)<<(i%32));
     cache={};
 }
@@ -108,8 +126,11 @@ struct ImageReservation {
     ImageReservation& operator=(const ImageReservation&)=delete;
     ~ImageReservation(){if(cache&&!cache->owner)discard_image(*cache);}
     uint8_t* bytes()const{return cache?image_buffer(*cache):nullptr;}
-    void publish(const Content* owner,uint32_t image,unsigned format){
-        cache->image=image;cache->format=uint8_t(format);cache->age=next_image_age();cache->owner=owner;
+    void publish(const Content* owner,const uint8_t* metadata,uint32_t image,unsigned format){
+        const unsigned bucket=image_bucket(metadata+40+image*16);
+        cache->image=image|(uint32_t(image_buckets[bucket])<<16)|(bucket<<25);
+        cache->format=uint8_t(format);cache->age=next_image_age();cache->owner=owner;
+        image_buckets[bucket]=uint16_t(cache-image_cache+1);
     }
 };
 #include "content_text_cache.inc"
@@ -296,7 +317,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             const uint8_t* raw=tile_bytes(*group)+raw_offset;
             for(unsigned i=0;i<size;++i)output[i]=raw[i];
             p=output;if(!valid_image(p,size,w,h,fmt))return fail();
-            reservation.publish(this,uint32_t(id),fmt);
+            reservation.publish(this,metadata_,uint32_t(id),fmt);
         }else if(fmt==6){
             TileFrame frame;
             if(!tile_metadata_||length!=16||!frame.open(this,reader_,tile_metadata_,
@@ -304,7 +325,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             size=frame.output_size;fmt=4;
             ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
             if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,output))return fail();
-            p=output;reservation.publish(this,uint32_t(id),fmt);
+            p=output;reservation.publish(this,metadata_,uint32_t(id),fmt);
         }else{
             if(fmt==5&&length<6)return fail();
             const uint8_t* source=supplied&&supplied_size==length?supplied:payload(off,length,resource_transfer_bytes(),ResourceTransferCapacity);if(!source)return fail();
@@ -318,7 +339,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
                 ImageReservation reservation(size);uint8_t*output=reservation.bytes();if(!output)return fail();
                 if(stored_format==5){if(!decode_lz4(source+5,length-5,output,size))return fail();}
                 else for(unsigned i=0;i<size;i++)output[i]=source[i];
-                p=output;if(!valid_image(p,size,w,h,fmt))return fail();reservation.publish(this,uint32_t(id),fmt);
+                p=output;if(!valid_image(p,size,w,h,fmt))return fail();reservation.publish(this,metadata_,uint32_t(id),fmt);
             }
         }
     }

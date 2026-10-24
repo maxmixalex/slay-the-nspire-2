@@ -200,11 +200,16 @@ struct Builder {
         s.number(b.col); s.put(','); s.number(b.row); s.put('-');
         for (unsigned i = 0; i < length; ++i) { if (i) s.put(','); s.number(unsigned(m.points[ids[i]].type)); }
     }
+    uint8_t segment_id(const MapWorkspace::Segment& s, unsigned index) const {
+        return w.point_ids[unsigned(s.first_row) + index][s.column(index)];
+    }
     int compare_group(unsigned group, const char* key) const {
         // Reuse the first segment rather than retaining thousands of almost
         // unique strings. The graph does not mutate while groups are assembled.
         const auto& segment = w.segments[w.groups[group].first];
-        char candidate[96]{}; segment_key(segment.ids, segment.length, candidate);
+        uint8_t ids[MaxRows + 2];
+        for (unsigned i = 0; i < segment.length; ++i) ids[i] = segment_id(segment, i);
+        char candidate[96]{}; segment_key(ids, segment.length, candidate);
         return compare(candidate, key);
     }
     void segment(const uint8_t* ids, unsigned length) {
@@ -217,7 +222,7 @@ struct Builder {
             group = w.order[lo];
             for (int index = w.groups[group].first; index >= 0; index = w.segments[index].next) {
                 const auto& existing = w.segments[index];
-                for (unsigned i = 1; i + 1 < length; ++i) if (existing.ids[i] == ids[i]) return;
+                for (unsigned i = 1; i + 1 < length; ++i) if (segment_id(existing, i) == ids[i]) return;
             }
         } else {
             if (w.group_count == MapWorkspace::MaxGroups) { fail(MapError::Capacity); return; }
@@ -226,8 +231,9 @@ struct Builder {
             w.order[lo] = uint16_t(group); ++w.group_count;
         }
         if (w.segment_count == MapWorkspace::MaxSegments) { fail(MapError::Capacity); return; }
-        unsigned index = w.segment_count++; auto& seg = w.segments[index]; seg.length = uint8_t(length); seg.next = -1;
-        for (unsigned i = 0; i < length; ++i) seg.ids[i] = ids[i];
+        unsigned index = w.segment_count++; auto& seg = w.segments[index]; seg = MapWorkspace::Segment{};
+        seg.first_row = m.points[ids[0]].row; seg.length = uint8_t(length); seg.next = -1;
+        for (unsigned i = 0; i < length; ++i) seg.set_column(i, m.points[ids[i]].col);
         auto& g = w.groups[group]; if (g.last >= 0) w.segments[g.last].next = int16_t(index); else g.first = int16_t(index);
         g.last = int16_t(index); ++g.count;
     }
@@ -248,7 +254,7 @@ struct Builder {
         for (unsigned i = 0; i < children.used; ++i) if (children.slots[i] != NoPoint) visit(children.slots[i], ids, length);
     }
     bool in_segment(const MapWorkspace::Segment& s, uint8_t id) const {
-        for (unsigned i = 0; i < s.length; ++i) if (s.ids[i] == id) return true; return false;
+        for (unsigned i = 0; i < s.length; ++i) if (segment_id(s, i) == id) return true; return false;
     }
     bool removed(uint8_t id) const {
         const auto& p = m.points[id]; return p.row >= m.config.rows || m.grid[p.col][p.row] == NoPoint;
@@ -261,7 +267,7 @@ struct Builder {
     bool prune_segment(const MapWorkspace::Segment& s) {
         bool changed = false;
         for (unsigned i = 0; i + 1 < s.length; ++i) {
-            uint8_t id = s.ids[i]; auto& p = m.points[id];
+            uint8_t id = segment_id(s, i); auto& p = m.points[id];
             if (removed(id) && p.type != PointType::Start && p.type != PointType::Boss) return true;
             if (p.children.count() > 1 || p.parents.count() > 1) continue;
             bool reject = false;
@@ -270,10 +276,10 @@ struct Builder {
             }
             if (reject) continue;
             for (unsigned j = i; j < s.length; ++j) {
-                const auto& q = m.points[s.ids[j]]; if (q.children.count() > 1 && q.parents.count() == 1) reject = true;
+                const auto& q = m.points[segment_id(s, j)]; if (q.children.count() > 1 && q.parents.count() == 1) reject = true;
             }
             if (reject) continue;
-            if (m.points[s.ids[s.length - 1]].parents.count() == 1) return false;
+            if (m.points[segment_id(s, s.length - 1)].parents.count() == 1) return false;
             for (unsigned j = 0; j < p.children.used; ++j) {
                 uint8_t q = p.children.slots[j]; if (q != NoPoint && !in_segment(s, q) && m.points[q].parents.count() == 1) reject = true;
             }
@@ -285,13 +291,18 @@ struct Builder {
     bool break_segment(const MapWorkspace::Segment& s) {
         bool changed = false;
         for (unsigned i = 0; i + 1 < s.length; ++i) {
-            uint8_t p = s.ids[i], q = s.ids[i + 1];
+            uint8_t p = segment_id(s, i), q = segment_id(s, i + 1);
             if (m.points[p].children.count() >= 2 && m.points[q].parents.count() != 1) { unlink(p, q); changed = true; }
         }
         return changed;
     }
     bool prune_once() {
         w.group_count = w.segment_count = 0; w.paths = 0;
+        // Do not consult the mutable grid when decoding a segment: a removed
+        // point remains part of the current pass's original segment identity.
+        for (unsigned id = 0; id < m.count; ++id) {
+            const auto& p = m.points[id]; w.point_ids[p.row][p.col] = uint8_t(id);
+        }
         uint8_t path[MaxRows + 2]; visit(m.root, path, 0); if (!good()) return false;
         for (unsigned i = 0; i < w.group_count; ++i) {
             const auto& g = w.groups[w.order[i]]; if (g.count < 2) continue;
