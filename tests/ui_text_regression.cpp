@@ -83,7 +83,7 @@ static void hotkeys_and_frontend(){
     a.character_select=true;a.selected_ascension=9;CHECK(ui("{ascension}")=="9");
     if(actual_pack)number("进阶等级",9);
     a.character_select=false;a.run_settings=true;a.selected_ascension=4;CHECK(ui("{ascension}")=="4");
-    a.run_settings=false;CHECK(ui("{actNumber}")=="1");CHECK(ui("{singleStarIcon}")== (a.content.english()?"Stars":"辉星"));unchanged();
+    a.run_settings=false;CHECK(ui("{actNumber}")=="1");CHECK(ui("{singleStarIcon}")==InlineStarText);unchanged();
     CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,7));snapshot();a.selected_ascension=2;
     CHECK(ui("{ascension}")=="7"&&ui("{actNumber}")=="1");if(actual_pack){number("进阶等级",7);number("第 {actNumber} 幕",1);}unchanged();
 }
@@ -102,6 +102,26 @@ static void bounded_fallback(){
     LocalizedTemplate too_small(small,sizeof small,ui_text_value,&context);too_small.format(short_known);CHECK(too_small.truncated());
     const char*model="[gold]{n}[/gold] {OwnerName}";CHECK(a.ui_text(model,output,sizeof output)==model);
     CHECK(ui("{Unbound.Event.Value}/{actNumber}")=="{Unbound.Event.Value}/1");unchanged();
+}
+static void inline_star_sprites(){
+    reset();snapshot();Canvas c{a};const auto picture=a.content.ui_image(U_Star);CHECK(picture>=0);
+    const std::string two=std::string(InlineStarText)+InlineStarText;
+    CHECK(c.width(InlineStarText,10)==10&&c.width(two.c_str(),10)==20);
+    CHECK(c.width((std::string("[b]")+two+"[/b]").c_str(),10)==20);
+    auto equal_to=[&](const std::vector<uint16_t>&expected){CHECK(!std::memcmp(expected.data(),a.pixels,sizeof a.pixels));};
+    for(int size:{8,10,12,16}){
+        c.rect(0,0,320,240,Panel);c.picture(picture,17,19,size,size);
+        const std::vector<uint16_t>expected(a.pixels,a.pixels+ScreenW*ScreenH);
+        c.rect(0,0,320,240,Panel);c.text(InlineStarText,17,19,size,White);equal_to(expected);
+        c.rect(0,0,320,240,Panel);c.text((std::string("[b][gold]")+InlineStarText+"[/gold][/b]").c_str(),17,19,size,White);equal_to(expected);
+    }
+    c.rect(0,0,320,240,Panel);c.picture(picture,17,19,10,10);c.picture(picture,17,32,10,10);
+    const std::vector<uint16_t>wrapped(a.pixels,a.pixels+ScreenW*ScreenH);
+    c.rect(0,0,320,240,Panel);CHECK(c.paragraph(two.c_str(),17,19,10,2,0,10)==2);equal_to(wrapped);
+    c.rect(0,0,320,240,Panel);c.picture(picture,17,19,10,10);c.picture(picture,27,19,10,10);
+    const std::vector<uint16_t>fitted(a.pixels,a.pixels+ScreenW*ScreenH);
+    c.rect(0,0,320,240,Panel);c.text_fitted(two.c_str(),17,19,20,10,Gold,10,false,true);equal_to(fitted);
+    unchanged();
 }
 
 // Each model fixture uses the production power queue where one exists and is
@@ -258,7 +278,7 @@ int main(int argc,char**argv){
     std::vector<uint8_t>pack;
     if(argc>=2){FILE*file=std::fopen(argv[1],"rb");CHECK(file);pack.resize(spire_test::pack_size(file));CHECK(std::fread(pack.data(),1,pack.size(),file)==pack.size());CHECK(!std::fclose(file));
         CHECK(a.init(pack.data(),pack.size(),{}));CHECK(a.content.version()>=LocaleContentVersion);actual_pack=true;}
-    selection_contexts();hotkeys_and_frontend();bounded_fallback();live_power_values();
+    selection_contexts();hotkeys_and_frontend();bounded_fallback();live_power_values();if(actual_pack)inline_star_sprites();
     unsigned failures=argc==3?catalog_routes(argv[2]):0;
     CHECK(!actual_pack||a.content.healthy());std::printf("{\"operation\":\"regression\",\"checks\":%u,\"actual_pack\":%s,\"unresolved_bindings\":%u,\"passed\":%s}\n",checks,actual_pack?"true":"false",failures,failures?"false":"true");return failures?1:0;
 }

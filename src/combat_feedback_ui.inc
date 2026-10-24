@@ -62,8 +62,17 @@ EnemyIntent App::combat_intent(int slot)const{
  if(slot<0||slot>=game.enemy_count)return {};
  if(!ui_feedback_bound(*this))return enemy_intent(game,slot);
  const auto&f=combat_feedback;
- if(combat_health(slot+1).hp<=0||((f.hidden&(1u<<slot))&&int32_t(animation-f.hide_at[slot])>=0))return {};
+ if(combat_health(slot+1).hp<=0||!combat_intent_alpha(slot))return {};
  return f.intents[slot];
+}
+unsigned App::combat_intent_alpha(int slot)const{
+ if(slot<0||slot>=game.enemy_count)return 0;
+ if(!ui_feedback_bound(*this))return 255;
+ const auto&f=combat_feedback;if(!(f.hidden&(1u<<slot)))return 255;
+ // NCreature.AnimHideIntent: 400 ms delay, then 500 ms fade. The command
+ // continues independently, and revealing the next intent cancels this fade.
+ const int elapsed=int32_t(animation-f.hide_at[slot])*33;
+ return elapsed<=400?255:elapsed>=900?0:unsigned((900-elapsed)*255/500);
 }
 void App::begin_combat_feedback(int manual_card){
  sync_combat_cards();combat_feedback.reset();if(!game.enemy_world.active||game.phase!=Phase::Combat)return;
@@ -99,6 +108,36 @@ void App::observe_combat_effect(const State&s,Effect effect){
  const auto audited=enemy_command_timing(kind,f.move,fast_mode);
  const bool nibbit=kind==EnemyId::Nibbit,louse=kind==EnemyId::LouseProgenitor;
  const auto wait=[&](unsigned normal,unsigned fast){return TurnBannerPresentation::wait_ticks(normal,fast,fast_mode);};
+ // Existing saved core boundaries identify an AttackCommand without
+ // altering the command queue. Repeated wrappers start a new hit; distinct
+ // targets between them belong to one simultaneous all-opponents hit.
+ auto&attack=f.attacks[s.expansion.depth<=MaxAutoFrames?s.expansion.depth:0];
+ if(op==XOp::SharedAttackStart&&effect.value>=0&&effect.value<s.card_count){
+  const auto timing=combat_card_attack_timing(s,s.cards[effect.value].kind,fast_mode);
+  attack.begin(f.effect_at,timing.delay,timing.wait,timing.once,effect.value);
+ }else if(op==XOp::SharedAttackEnd){
+  for(auto&pending:f.attacks)if(pending.active&&pending.card==effect.value)f.effect_at=ui_feedback_later(f.effect_at,pending.finish(fast_mode));
+ }else if(attack.active){
+  const bool group=effect.kind==EffectKind::RandomDamage||effect.kind==EffectKind::WhirlwindHits||
+   op==XOp::RandomHits||op==XOp::IHits||op==XOp::IAllHits||op==XOp::SHits||
+   op==XOp::DHits||op==XOp::RHits||op==XOp::RAllHits||op==XOp::NRepeatedHit;
+  if(group&&attack.hit)attack.next=true;
+  if((effect.kind==EffectKind::Damage||effect.kind==EffectKind::GreedDamage)&&effect.target>=0&&effect.target<s.enemy_count&&f.observed[effect.target+1].hp>0){
+   // FromOsty uses 300 ms, irrespective of the player's character.
+   if(effect.aux==2)attack.delay_ms=fast_mode?150:300;
+   f.effect_at=ui_feedback_later(f.effect_at,attack.impact(f.effect_at,unsigned(effect.target),fast_mode));
+  }
+ }
+ if(op==XOp::EnemyAttackStart&&effect.value==f.move_slot){
+  const auto timing=combat_enemy_attack_timing(kind,f.move,fast_mode);
+  f.enemy_attack.begin(f.effect_at,timing.delay,timing.wait,timing.once);
+ }else if(op==XOp::EnemyHit&&effect.aux%8==f.move_slot&&f.enemy_attack.active&&f.observed[f.move_slot+1].hp>0&&f.observed[0].hp>0){
+  f.effect_at=ui_feedback_later(f.effect_at,f.enemy_attack.impact(f.effect_at,0,fast_mode));
+ }else if(op==XOp::EnemyAttackEnd&&effect.value==f.move_slot&&f.enemy_attack.active){
+  f.effect_at=ui_feedback_later(f.effect_at,f.enemy_attack.finish(fast_mode));
+  f.move_end=ui_feedback_later(f.move_end,f.effect_at);
+  enemy_visual_clock=ui_feedback_later(enemy_visual_clock,f.effect_at);
+ }
  uint32_t after=0;
  if(op==XOp::EnemyMoveFinish){f.effect_at=ui_feedback_later(f.effect_at,ui_feedback_later(f.move_end,enemy_visual_clock));f.move_slot=-1;}
  else if((audited.effect==EnemyCommandTiming::Attack&&op==XOp::EnemyHit&&effect.aux%8==f.move_slot)||
@@ -129,8 +168,8 @@ void App::observe_combat_effect(const State&s,Effect effect){
   // their existing fallback; this is the audited selection boundary only.
   f.effect_at=ui_feedback_later(f.effect_at,f.move_at+wait(1000,250));
  }
- // Unreviewed models use their existing move-start cue. This deliberately
- // makes no claim about uninspected attack delays or multi-hit intervals.
+ // The numeric attack profile covers per-hit animation and Damage waits.
+ // Other pre/post commands retain the separately audited move timeline.
  ui_card_finish_wait(*this);
  const bool hand_add=ui_capture_card_changes(*this,f.effect_at);
  for(unsigned actor=0;actor<CombatFeedback::Actors;++actor)f.append(actor,ui_health_values(s,int(actor)),ui_feedback_identity(s,actor),f.effect_at);

@@ -3,7 +3,7 @@ static CombatStatus::Value ui_combat_status_value(const State&s,int actor,int id
  value.amount=status_amount(s,actor,id);
  const bool resource=actor==0&&((id==44&&s.character==Character::Regent)||
   (id==45&&(s.character==Character::Necrobinder||s.expansion.osty_max_hp>0))||(id==46&&s.expansion.orb_slots>0));
- value.visible=value.amount!=0||resource;
+ value.visible=id!=44&&(value.amount!=0||resource);
  if(id>=EnemyStatusStart&&id<EventCardStatusStart){const unsigned power=id-EnemyStatusStart;
   value.auxiliary=actor?s.enemy_world.models[actor-1].power_aux[power]:s.enemy_world.player_aux[power];
   const unsigned source=actor?s.enemy_world.models[actor-1].source[power]:s.enemy_world.player_source[power];
@@ -78,10 +78,32 @@ int App::combat_statuses(int actor,int*out)const{
 }
 static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
  auto&view=a.combat_status;const auto&s=a.game;
- if(initial)view.reset();
+ if(initial){
+  view.reset();
+  if(view.visual_seed!=s.seed||view.visual_floor!=s.floor||view.visual_combat!=s.world.combat_count||view.visual_encounter!=int(s.enemy_world.encounter)){
+   view.reset_visuals();view.visual_seed=s.seed;view.visual_floor=s.floor;view.visual_combat=s.world.combat_count;view.visual_encounter=int(s.enemy_world.encounter);view.star_tick=a.map_clock_ms;
+  }
+ }
+ static constexpr uint8_t visual_flags[]={
+#include "combat_power_visuals.inc"
+ };
+ static_assert(sizeof visual_flags==StatusKinds,"Every displayed power needs its original VFX classification");
  for(unsigned actor=0;actor<CombatStatus::Actors;++actor)for(int id=0;id<StatusKinds;++id){
   const unsigned cell=actor*StatusKinds+id;const auto value=ui_combat_status_value(s,int(actor),id);
-  if(initial)view.shown[cell]=view.observed[cell]=value;else view.append(cell,value,at);
+  if(initial)view.shown[cell]=view.observed[cell]=value;
+  else{
+   const auto old=view.observed[cell];const unsigned flags=visual_flags[id];
+   // NCreature.OnPowerIncreased creates title/icon VFX; duration ticks and
+   // removals do not. Negative-capable counters (Strength/Dexterity/Focus)
+   // also report losses, using the power type at the resulting amount.
+   const bool increased=value.amount>old.amount,negative=(flags&4)&&value.amount<old.amount&&value.amount<0;
+   if((flags&1)&&value.amount&&value.visible&&(increased||negative)&&
+      (actor==0?s.hp>0:actor<=unsigned(s.enemy_count)&&s.enemies[actor-1].hp>0)){
+    const bool debuff=(flags&4)&&value.amount<0?true:(flags&2)!=0;
+    view.popup(actor,unsigned(id),!debuff,ui_feedback_identity(s,actor),at,a.animation);
+   }
+   view.append(cell,value,at);
+  }
  }
  for(unsigned fact=0;fact<CombatStatus::Facts;++fact){const unsigned cell=CombatStatus::FactBase+fact;
   const CombatStatus::Value value{ui_combat_status_fact(s,int(fact)),0,0,0};

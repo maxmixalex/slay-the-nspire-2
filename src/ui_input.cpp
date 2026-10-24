@@ -90,7 +90,7 @@ void App::ui_action(UiAction action){
     pointer_cancel();
     // Opaque frontend modals own all actions until explicitly dismissed.
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
-    if(settings_open&&action!=UiAction::SettingsFastMode&&action!=UiAction::SettingsControls&&action!=UiAction::SettingsPractice&&action!=UiAction::SettingsReference&&action!=UiAction::SettingsBack&&action!=UiAction::Back)return;
+    if(settings_open&&action!=UiAction::SettingsFastMode&&action!=UiAction::SettingsControls&&action!=UiAction::SettingsPractice&&action!=UiAction::SettingsReference&&action!=UiAction::SettingsBack&&action!=UiAction::SettingsGeneralTab&&action!=UiAction::SettingsInputTab&&action!=UiAction::Back)return;
     if(!combat_choice_ready())switch(action){
     case UiAction::ConfirmChoice:case UiAction::ClearChoice:case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
     case UiAction::ConfirmWorldChoice:case UiAction::ClearWorldChoice:case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:
@@ -106,6 +106,8 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsPractice:if(settings_open&&title){settings_open=false;practice_entry=true;character_select=true;}break;
     case UiAction::SettingsReference:if(settings_open&&title){settings_open=false;map_preview.open=true;if(!map_preview.generated)map_preview.generate();}break;
     case UiAction::SettingsBack:settings_open=false;break;
+    case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
+        if(settings_open){settings_tab=action==UiAction::SettingsInputTab;settings_item=0;pointer_cancel();}break;
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
         if(library&&!title&&!paused&&!help&&!panel&&!combat_actions_locked()&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
@@ -186,7 +188,10 @@ void App::ui_action(UiAction action){
     case UiAction::ToggleCardUpgrade:
         if(detail_card>=0){Card c=card_from_token(detail_card);if(c.upgraded||card_upgradeable(c)){c.upgraded=!c.upgraded;detail_card=card_token(c);}}break;
     case UiAction::DiscardPotion:
-        if(panel==4&&!combat_actions_locked()&&!original_event_blocks_potions(game)&&discard_potion(game,scroll))message("已丢弃药水");break;
+        if(panel==4&&!combat_actions_locked()&&can_discard_potion(game,scroll)){
+            const Potion bottle=potion_at(game,scroll);const int slot=scroll;
+            if(discard_potion(game,slot)){remove_potion_visual(bottle,slot,true);close_potion();}
+        }break;
     case UiAction::TargetFirst:if(panel==4&&game.enemy_count&&game.enemies[0].hp>0)target=0;break;
     case UiAction::TargetSecond:if(panel==4&&game.enemy_count>1&&game.enemies[1].hp>0)target=1;break;
     case UiAction::RewardCards:
@@ -203,7 +208,8 @@ void App::ui_action(UiAction action){
         if(!title&&!paused&&!help&&!panel&&grimoire_select&&game.phase==Phase::Reward&&necro_grimoire_choice(game,-1)){
             deck_candidate=-1;if(!game.necro.grimoire_pending){grimoire_select=false;cursor=3;}
         }break;
-    case UiAction::ShowStars:case UiAction::ShowOrbs:case UiAction::ShowOsty:{
+    case UiAction::ShowStars:return;
+    case UiAction::ShowOrbs:case UiAction::ShowOsty:{
         open_statuses(0);if(status_actor<0)break;
         const int wanted=action==UiAction::ShowStars?44:action==UiAction::ShowOsty?45:46;
         int ids[StatusKinds],n=combat_statuses(0,ids);for(int i=0;i<n;i++)if(ids[i]==wanted){status_selected=i;break;}

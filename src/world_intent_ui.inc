@@ -22,18 +22,22 @@ static UiIntentValue ui_intent_value(Canvas&c,const UiIntentPart&part,const Enem
 static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
  const auto intent=c.a.combat_intent(slot);unsigned count=0;for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)++count;
  if(!count)return;const int size=mn(14,mx(9,pos.width/int(count)));int width=0;
+ // NIntent moves at PI radians/sec, 10 px amplitude and 8 px offset in
+ // the original 1920px canvas. Retain that slow 1-2px motion at 320px.
+ pos.intent+=(8+10*CombatCardMotion::sine(int((c.a.animation*33u%2000u)*4096u/2000u))/1024)/6;
+ Canvas faded=c;faded.opacity=uint8_t(unsigned(c.opacity)*c.a.combat_intent_alpha(slot)/255);
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag)width+=mx(size,ui_intent_value(c,part,intent).width+2);
  const int left=mx(1,mn(c.clip_w-width-1,pos.x-width/2));int next=left;
  for(const auto&part:ui_intent_parts)if(intent.flags&part.flag){
   const auto label=ui_intent_value(c,part,intent);const int cell=mx(size,label.width+2),center=next+cell/2;next+=cell;
-  c.picture(ui_intent_image(c.a,part,intent),center-size/2,pos.intent,size,size);
+  faded.picture(ui_intent_image(c.a,part,intent),center-size/2,pos.intent,size,size);
   if(!*label.value)continue;
   // Every original NIntent owns its own Value label, including StatusIntent
   // beside AttackIntent. Reserve the text width so their values stay apart.
   // Preserve cream, outline and the smaller 18/22 repeated-hit suffix.
   const int x=center-label.width/2,y=pos.intent+size-2;
-  for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){c.text(label.value,x+dx,y+dy,10,Ink);c.text(label.repeat,x+label.value_width+dx,y+2+dy,8,Ink);}
-  c.text(label.value,x,y,10,rgb(255,246,226));c.text(label.repeat,x+label.value_width,y+2,8,rgb(255,246,226));
+  for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy){faded.text(label.value,x+dx,y+dy,10,Ink);faded.text(label.repeat,x+label.value_width+dx,y+2+dy,8,Ink);}
+  faded.text(label.value,x,y,10,rgb(255,246,226));faded.text(label.repeat,x+label.value_width,y+2,8,rgb(255,246,226));
  }
  const int actor_left=pos.x-pos.width/2-2,hit_left=mn(actor_left,left),hit_right=mx(actor_left+pos.width+4,left+width);
  c.hit(hit_left,pos.intent-2,hit_right-hit_left,size+14,HitKind::EnemyIntent,slot);

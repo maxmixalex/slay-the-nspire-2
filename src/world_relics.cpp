@@ -526,11 +526,8 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
   unsigned index=w.offers[ids[0]];auto& reward=w.rewards[index];w.choice_reward=uint8_t(index+1);
   w_enqueue(s,WorldRelicOp::RewardGroup,serial,int(group));
   if(reward.kind==2){reward.flags|=1;w_enqueue(s,WorldRelicOp::Obtain,0,reward.value,0,(reward.flags&2)?WorldRelicWax:0);}
-  else if(reward.kind==3){
-   bool full=true;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)full=false;
-   if(!full||w_first(s,WorldRelicSozu,true)>=0){w_enqueue(s,WorldRelicOp::ProcurePotion,serial,int(reward.value),-1);reward.flags|=1;}
-   else{w.offer_count=1;w.offers[0]=reward.value;w.choice_cancelable=1;w_pause(s,WorldRelicChoice::Potion,serial,0,1);}
-  }else if(reward.kind==1){Card cards[8];for(unsigned i=0;i<reward.count;i++)cards[i]=card_from_token(reward.tokens[i]);w_show_cards(s,serial,cards,reward.facts,reward.count);}
+  else if(reward.kind==3){w_enqueue(s,WorldRelicOp::ProcurePotion,serial,int(reward.value),-1);reward.flags|=1;}
+  else if(reward.kind==1){Card cards[8];for(unsigned i=0;i<reward.count;i++)cards[i]=card_from_token(reward.tokens[i]);w_show_cards(s,serial,cards,reward.facts,reward.count);}
   else if(reward.kind==4){reward.flags|=1;w_enqueue(s,WorldRelicOp::Gold,serial,reward.value);}
   else if(reward.kind==5){reward.flags|=1;w_queue_card(s,{reward.value,reward.tokens[0],reward.tokens[1],reward.facts[0]},serial);}
   else if(reward.kind==6){
@@ -573,6 +570,12 @@ bool world_relic_select(State& s,const uint16_t* ids,unsigned count){auto& w=s.w
  if(w.choice==WorldRelicChoice::Potion)return world_relic_potion(s,count?int(ids[0]):-1);
  uint16_t eligible[MaxWorldRelicOffers];unsigned n=world_relic_eligible(s,eligible,MaxWorldRelicOffers);
  for(unsigned i=0;i<count;i++){bool found=false;for(unsigned j=0;j<n&&j<MaxWorldRelicOffers;j++)if(eligible[j]==ids[i])found=true;for(unsigned j=0;j<i;j++)if(ids[j]==ids[i])return false;if(!found)return false;}
+ // PotionReward.OnSelect keeps a TooFull reward available. Reject before
+ // clearing its menu or scheduling any continuation; no replacement picker.
+ if(w.choice==WorldRelicChoice::OfferReward&&count&&w.rewards[w.offers[ids[0]]].kind==3&&!has_world_relic(s,WorldRelicSozu)){
+  bool room=false;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)room=true;
+  if(!room)return false;
+ }
  w_select_apply(s,ids,count);w_pump(s);world_relic_resume(s);++s.revision;
  if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){w.offer_count=0;w.choice_group=w.choice_reward=0;original_event_resume(s);world_resume_room(s);}
  if(s.phase==Phase::Combat)resolve_pending(s);return s.phase!=Phase::Error;

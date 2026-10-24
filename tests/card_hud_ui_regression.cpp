@@ -178,7 +178,7 @@ static void synthetic_pixels(){
     // The complete potion tray and portrait are original components in v17.
     clear();app.panel=0;hud(c);CHECK(app.pixels[8*320+8]==0xf800);CHECK(app.pixels[2*320+127]==0x39c7);
     bool potion=false,map=false,deck=false,pause=false;
-    for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];if(h.kind!=HitKind::Command)continue;potion|=h.value==int(Key::Potions);map|=h.value==int(Key::Collection)||h.value==int(Key::Map);deck|=h.value==int(Key::Inspect);pause|=h.value==int(Key::Back);}
+    for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];potion|=h.kind==HitKind::PotionSlot;if(h.kind!=HitKind::Command)continue;map|=h.value==int(Key::Collection)||h.value==int(Key::Map);deck|=h.value==int(Key::Inspect);pause|=h.value==int(Key::Back);}
     CHECK(potion&&map&&deck&&pause);
     // Production portraits were contained inside 36x40 canvases. Their
     // visible 27x40 shape must retain that aspect during focus and release.

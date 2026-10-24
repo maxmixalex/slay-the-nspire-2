@@ -36,6 +36,9 @@ static void deck_select(Canvas&c){
     const char* title=grimoire?"禁忌魔典：永久移除一张牌":s.phase==Phase::Upgrade?"选择一张牌升级":s.phase==Phase::Remove?"移除一张牌":"选择一张牌变化";
     c.centered(title,0,25,320,16,Gold);
     a.cursor=mn(mx(0,a.cursor),s.deck_count-1);int first=a.cursor/10*10;
+    int portraits[10];unsigned portrait_count=0;
+    for(int i=first;i<mn(s.deck_count,first+10);++i)portraits[portrait_count++]=a.card_face_image(s.deck[i],-1,i);
+    a.content.prepare_images(portraits,portrait_count);
     for(int i=first;i<mn(s.deck_count,first+10);i++){
         Card card=s.deck[i];int x=24+(i-first)%5*55,y=54+(i-first)/5*73;
         bool allowed=s.phase==Phase::Upgrade?card_upgradeable(card):s.phase==Phase::Transform?(i!=s.event_first&&card_transformable(card)):(card_removable(card)&&s.deck_count>1);

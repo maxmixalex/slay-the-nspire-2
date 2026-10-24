@@ -107,17 +107,56 @@ static void native_pause_screen(Canvas&c){
  }
 }
 static void frontend_settings_screen(Canvas&c){
- auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,220);c.ui(U_RewardPanel,20,8,280,226);
- c.centered(frontend_text(a,"main_menu_ui","SETTINGS","设置"),0,17,320,20,Gold);
- const int count=a.title?5:3;
- const char*labels[]={frontend_text(a,"settings_ui","FASTMODE","加速模式"),"操作说明","组合练习","参考地图","返回"};
- const UiAction actions[]={UiAction::SettingsFastMode,UiAction::SettingsControls,UiAction::SettingsPractice,UiAction::SettingsReference,UiAction::SettingsBack};
- for(int i=0;i<count;i++){int index=!a.title&&i==2?4:i,y=55+i*29;
-  c.button(labels[index],54,y,212,a.settings_item==i,26);c.action(51,y-1,218,28,actions[index]);
-  if(!index){c.box(67,y+7,11,11,Gold);if(a.fast_mode){int tick=a.content.world_image("common","CONFIRM_TICK");if(tick>=0)c.picture(tick,65,y+4,15,15);else c.text("+",68,y+3,12,Gold);}}
+ auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,205);
+ const bool english=a.content.english(),native=a.content.version()>=FrontendContentVersion;
+ // settings_screen.tscn is an unframed list behind a horizontal tab manager.
+ // Only implemented settings have tabs; the calculator has no audio/video rows.
+ const char*tab_labels[]={frontend_text(a,"settings_ui","TAB_GENERAL",english?"General":"游戏设置"),
+                         frontend_text(a,"settings_ui","TAB_INPUT",english?"Input":"操作设置")};
+ for(int i=0;i<2;++i){
+  const int x=48+i*112,y=13;const bool selected=a.settings_tab==i;
+  const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+112&&a.pointer.y>=y&&a.pointer.y<y+39;
+  // NSettingsTab has no press-size override: focus is 1.05, followed by
+  // a 0.5s EXPO_OUT release. Reuse the bounded UI tween slots, not new storage.
+  ButtonMotion*motion=nullptr;ButtonMotion*oldest=&a.button_motions[0];const uint32_t key=0x738b1000u+unsigned(i);
+  for(auto&candidate:a.button_motions){if(candidate.identity==key){motion=&candidate;break;}if(!candidate.identity)oldest=&candidate;else if(oldest->identity&&uint32_t(a.map_clock_ms-candidate.seen)>uint32_t(a.map_clock_ms-oldest->seen))oldest=&candidate;}
+  if(!motion)motion=oldest;const auto visual=motion->observe(key,ButtonFamily::Action,hover?ButtonState::Focus:ButtonState::Rest,a.map_clock_ms);
+  const int w=(112*visual.scale+2048)/4096,h=(39*visual.scale+2048)/4096,tx=x+(112-w)/2,ty=y+(39-h)/2;
+  if(native){
+   Canvas tab=c;tab.brightness=uint8_t(div255(tab.brightness*229));tab.ui(F_SettingsTab,tx,ty,w,h);
+   if(visual.hover)c.picture(a.content.ui_image(F_SettingsTab),tx,ty,w,h,unsigned(visual.hover)*77/4096,presentation::Add);
+   if(selected)c.picture(a.content.ui_image(F_SettingsTabStroke),tx,ty,w,h,255,presentation::Add);
+  }else if(selected)c.rect(x+10,y+33,92,1,Gold);
+  Canvas label=c;label.opacity=uint8_t(div255(label.opacity*(selected||hover?255:128)));
+  label.text_fitted(tab_labels[i],tx+7,ty+12,w-14,12,hover?Gold:White,10,true,true);
+  c.action(x,y,112,39,i?UiAction::SettingsInputTab:UiAction::SettingsGeneralTab);
  }
- if(!a.title)c.paragraph(frontend_text(a,"settings_ui","FASTMODE_DESCRIPTION","战斗动画和转场加快。"),44,153,234,3,0,10,White);
- c.centered("本次运行生效 · Esc 返回",24,214,272,10,Muted);
+ Canvas divider=c;divider.opacity=uint8_t(div255(divider.opacity*64));
+ const int back_item=a.settings_tab?1:a.title?3:1;
+ if(!a.settings_tab){
+  const bool focus=a.settings_item==0||a.pointer.visible&&a.pointer.x>=24&&a.pointer.x<296&&a.pointer.y>=61&&a.pointer.y<98;
+  c.text_fitted(frontend_text(a,"settings_ui","FASTMODE",english?"Fast Mode":"加速模式"),29,68,210,12,focus?Gold:White);
+  if(native)c.ui(a.fast_mode?F_SettingsTicked:F_SettingsUnticked,261,65,20,20);
+  else{c.box(263,67,16,16,White);if(a.fast_mode)c.picture(a.content.world_image("common","CONFIRM_TICK"),261,65,20,20);}
+  c.action(238,59,61,36,UiAction::SettingsFastMode);
+  divider.rect(25,99,270,1,rgb(232,220,190));
+  if(focus)c.paragraph_fitted(frontend_text(a,"settings_ui","FASTMODE_DESCRIPTION",english?"Combat actions and screen transitions happen more quickly.":"战斗动画和转场加快。"),29,108,262,44,10,White,10);
+  if(a.title){
+   const char*labels[]={"组合练习","参考地图"};
+   for(int i=0;i<2;++i){const int y=160+i*27;const bool selected=a.settings_item==i+1;
+    c.text_fitted(labels[i],29,y,220,10,selected?Gold:White);c.text("›",276,y-2,16,selected?Gold:Muted);
+    divider.rect(25,y+21,270,1,rgb(232,220,190));
+    c.action(24,y-4,272,26,i?UiAction::SettingsReference:UiAction::SettingsPractice);
+   }
+  }
+ }else{
+  const char*labels[]={english?"Navigate":"选择",frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.confirm",english?"Confirm":"确认"),
+      frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.endTurn",english?"End Turn":"结束回合"),english?"Piles":"牌堆",english?"Map / Potions":"地图 / 药水",english?"Details":"查看详情"};
+  const char*keys[]={"↑ ↓ ← →",english?"Enter / 5":"Enter / 5",english?"Space":"Space","Tab","M / P","I"};
+  for(int i=0;i<6;++i){const int y=62+i*21;c.text_fitted(labels[i],29,y,164,10,White);c.text_fitted(keys[i],200,y,91,10,White,8,true);divider.rect(25,y+17,270,1,rgb(232,220,190));}
+  c.text_fitted("操作说明",191,192,104,10,a.settings_item==0?Gold:White,8,true);c.action(188,186,112,23,UiAction::SettingsControls);
+ }
+ native_back(c,7,211,84,28,"返回",true,a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
 }
 static void frontend_confirm_screen(Canvas&c){
  auto&a=c.a;const bool quitting=a.frontend_confirm==3;a.hit_count=0;c.dim(0,0,320,240,210);c.ui(U_RewardPanel,29,43,262,165);
@@ -158,7 +197,7 @@ static void character_screen(Canvas&c){
         const int scale=int(motion.portrait_scale(unsigned(i),a.map_clock_ms));
         const int pw=(36*scale+512)/1024,ph=(40*scale+512)/1024,ow=(33*scale+512)/1024,oh=(47*scale+512)/1024;
         if(selected&&outline<0){c.rect(x+(27-ow)/2,184-oh/2,ow,oh,rgb(87,68,38));c.box(x+(27-ow)/2,184-oh/2,ow,oh,Gold);}
-        if(selected&&outline>=0)c.picture(outline,x+(27-ow)/2,184-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms));
+        if(selected&&outline>=0)c.picture(outline,x+(27-ow)/2,184-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms),presentation::Add);
         c.ui(character_portrait((Character)i),x+(27-pw)/2,184-ph/2,pw,ph,selected||hover==i?255:145);
         c.action(x-2,159,31,48,actions[i]);
     }

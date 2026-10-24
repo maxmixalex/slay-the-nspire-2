@@ -1,6 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
+#include "inline_icons.hpp"
 namespace spire {
 // A bounded interpreter for the formatting forms used by the pinned locale.
 // It never reads gameplay RNG. Unknown values remain visible as {name} so a
@@ -106,8 +107,19 @@ class LocalizedTemplate {
     uint32_t rem;uint64_t rounded=divide(magnitude(delta),scale,rem);
     if(uint64_t(rem)*2>scale||(uint64_t(rem)*2==scale&&(rounded&1)))++rounded;if(negative&&rounded)ch('-');unsigned_integer(rounded);}return;
   }
-  if(same(fmt,fn,"energyIcons()")||same(fmt,fn,"starIcons()")){
-   if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}unit(same(fmt,fn,"starIcons()"));return;
+  if(same(fmt,fn,"starIcons()")){
+   // Pinned StarIconsFormatter casts the preview value to an integer and
+   // emits that many original sprites, including no sprite for zero.
+   // Bound the output work by the destination, not an arbitrary game count.
+   if(v.text||v.number<0){ch('{');text(p,n);ch('}');return;}
+   uint32_t rem;const uint64_t count=divide(uint64_t(v.number),v.scale?v.scale:1,rem);
+   const size_t available=capacity_&&used_<capacity_?(capacity_-used_-1)/3:0;
+   const size_t emit=count>available?available:size_t(count);
+   for(size_t i=0;i<emit;++i)text(InlineStarText);
+   if(count>available)truncated_=true;return;
+  }
+  if(same(fmt,fn,"energyIcons()")){
+   if(v.known)value(v);else{ch('{');text(p,name_len);ch('}');}unit(false);return;
   }
   if(fn>13&&same(fmt,12,"energyIcons(")&&fmt[fn-1]==')'){
    bool preceding=used_&&((out_[used_-1]>='0'&&out_[used_-1]<='9')||out_[used_-1]=='X');

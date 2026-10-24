@@ -1,23 +1,50 @@
 # Work state — 2026-10-24
 
-## UI5 in progress: original interaction, unobstructed map and bounded card reads
+## UI5 stage 2: original controls and presentation, validation pending
 
-Continuing from `a2dc843c` on `work/0.17-world-parity`. The user prioritizes
-original UI fidelity, then performance. Three parallel implementation scopes
-cover frontend/map/events, combat feedback, and card/detail rendering; root
-owns potion/reward interaction and integration. Original private DLL and PCK
-were recovered and their SHA-256 values match `config/reference-release.json`.
-The delivered UI4 bilingual split resources are recovered for actual rendering.
+Continuing from remote-verified `3253b22f8dcd50f354f1b7c094a00e5cb80b279f`
+on `work/0.17-world-parity`. Original UI fidelity remains first, performance
+second. The private DLL/PCK match the pinned v0.111.0 / 41cef1ea hashes. This
+source checkpoint precedes long validation and must not yet replace main.
 
-The first source checkpoint removes hover-driven character selection and
-the added opaque map header/footer, extends the original paper viewport,
-batches only the visible missing card images in the existing encoded workspace,
-and replaces glyph per-pixel division with row traversal. Relevant click and
-bounded-read fixtures are included. This checkpoint precedes compilation and
-is not yet accepted or synchronized to main. Subsequent work must implement
-the original settings/event details, combat hit/status/star presentation,
-potion selection/targeting and reward collection before final validation.
-No private assets are included in this source checkpoint.
+Three parallel scopes implemented frontend/map/events, combat feedback and
+card/detail performance, then reviewed root's potion integration and divided
+reward animation/core potion corrections. No generated images were used.
+
+Implemented in this source stage:
+
+- Original settings tabs/tickboxes, click-only character selection, unobstructed
+  map paper and ordinary-event composition/typography. Original settings and
+  popup art plus three independent star layers are appended as NSP2/22.
+- Original command waits separate hit-by-hit HP/block presentation, including
+  simultaneous area hits and OnlyPlayAnimOnce. Status popups follow original
+  power classification; stars leave the status strip and use their independent
+  animated counter. Descriptions use the original inline star icon formatting.
+- Anchored bottle menus, exact-slot hits, cancellable throw targeting, original
+  automatic/use/discard rules and full-inventory rewards that remain unclaimed.
+  Non-combat no-op hooks no longer accumulate behind a reward choice.
+- Reward window entrance/fade, removal of claimed rows and bounded acquisition
+  flights/counting based on the actual original nodes. Acquisition observation
+  is presentation-only and does not replay on load or consume gameplay RNG.
+- Card detail hover uses glyph metrics, not offscreen pixel payloads; visible
+  deck/choice images join the bounded batching path. Event text shadows use a
+  single original-style shadow pass instead of eight outline passes.
+
+Current executed evidence: stage 1's six bilingual card scenes preserve exact
+RGB565 frames and canonical saves; 180 stable frames have zero reads. An
+8-card collection entry reduces callbacks ENG 39→32 and ZHS 70→63, reading
+4,318 fewer bytes. Sequential native timing samples were noisy and do not
+establish CPU or calculator acceleration. Baseline GCC 13 hit an internal
+compiler error; its failure was retained and comparisons used clang 18.
+Only quick syntax/diff checks have run on stage 2 so far.
+
+Next: preserve this complete source checkpoint remotely, run native and Python
+suites plus ARM/WASM builds, convert the recovered bilingual v21 packs to v22,
+inspect actual bilingual UI frames and measure detail input-to-first-frame.
+After functional acceptance, optimize observed hot paths without changing
+pixels, state, memory budgets or original timing. Keep the original archive
+branches and UI4 artifacts. See frontend-ui5-0.17.md, combat-feedback-ui5-0.17.md
+and potion-ui5-0.17.md for source evidence and explicit remaining differences.
 
 ## Current: UI4 implementation, ordinary emulator acceptance and delivery closed
 

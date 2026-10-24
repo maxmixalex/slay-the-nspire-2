@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "inline_icons.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -329,6 +330,9 @@ static void visible_image_batches(){
     CHECK(provider.calls==1);
     // Warm calls and invalid/unselected identifiers must not touch the source.
     provider.fail=true;ranged->prepare_images(selected,6);CHECK(provider.calls==1&&ranged->healthy());
+    const auto star=ranged->glyph_metrics(InlineStarCodepoint,12),draw_star=ranged->glyph(InlineStarCodepoint,12);
+    CHECK(star.w==12&&star.h==12&&star.advance==12&&!star.pixels&&!draw_star.pixels&&draw_star.advance==12);
+    CHECK(provider.calls==1&&ranged->healthy());
     direct->prepare_images(selected,6);CHECK(direct->healthy());
     // A noncontiguous request uses the normal reader later, rather than
     // fetching the intervening unrequested card or an arbitrary large range.

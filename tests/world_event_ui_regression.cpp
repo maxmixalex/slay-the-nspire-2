@@ -171,10 +171,32 @@ static void ancients(){
   }
  }
 }
+static void ordinary_events(bool synthetic){
+ const OriginalEventId ids[]={OriginalEventId::Wellspring,OriginalEventId::ColorfulPhilosophers,OriginalEventId::RelicTrader};
+ const char*names[]={"event-wellspring","event-colorful-philosophers","event-relic-trader"};
+ for(unsigned model=0;model<sizeof ids/sizeof ids[0];++model){
+  begin(ids[model],0x6ab19,0);snapshot();a.render();const unsigned count=original_event_option_count(a.game);CHECK(count>0);
+  for(unsigned selected=0;selected<count;++selected){
+   a.cursor=int(selected);a.render();CHECK(choice_count()==(count-selected/3*3<3?count-selected/3*3:3));
+   HitRegion previous{};for(unsigned i=selected/3*3;i<count&&i<selected/3*3+3;++i){const auto h=choice(int(i));
+    CHECK(h.x>=128&&h.w>=180&&h.h>=35);if(i%3)CHECK(!overlap(h,previous));previous=h;}
+   unchanged();
+  }
+  a.cursor=0;a.pointer.visible=false;a.render();
+  if(synthetic){
+   // The authored illustration remains unobscured: no repeated option panel
+   // over its lower-left corner and no unrelated right-edge dark gradient.
+   const auto p=a.content.image(a.content.world_image("events",original_event_key(ids[model])));CHECK(p.w==2&&p.h==2&&!p.alpha&&!p.palette);
+   CHECK(a.pixels[200*ScreenW+20]==uint16_t(p.pixels[4]|unsigned(p.pixels[5])<<8));
+   CHECK(a.pixels[50*ScreenW+319]==uint16_t(p.pixels[2]|unsigned(p.pixels[3])<<8));
+  }
+  capture(names[model]);reader(false);unchanged();
+ }
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>data;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  // Only an explicit caller-selected private directory receives captures.
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- if(argc==1)ancient_original_modulation();merchant();ancients();std::printf("world event UI: %u checks passed; %s profile; six stock slots and eight ancient layouts\n",checks,argc>1?"actual":"synthetic");
+ if(argc==1)ancient_original_modulation();merchant();ancients();ordinary_events(argc==1);std::printf("world event UI: %u checks passed; %s profile; merchant, eight ancients and centered ordinary events\n",checks,argc>1?"actual":"synthetic");
 }

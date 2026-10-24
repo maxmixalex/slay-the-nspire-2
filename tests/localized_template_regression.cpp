@@ -144,7 +144,13 @@ static void rainbow(){
 int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N}|base}","base");x.upgraded=true;expect(x,"{IfUpgraded:show:up {N}|base}","up 3");
  expect(x,"{Catalog=7:diff()}","7");expect(x,"{Catalog=-2}","-2");expect(x,"{N=19:diff()}","3");
  expect(x,"{Catalog=2:plural:one|{} many}","2 many");expect(x,"{Catalog=x:diff()}","{Catalog=x:diff()}");
- {char text[128]{};LocalizedTemplate(text,sizeof text,resolve,&x,"ENERGY_UNIT","STAR_UNIT",true).format("{N:energyIcons()} / {N:starIcons()}");CHECK(!std::strcmp(text,"3 ENERGY_UNIT / 3 [gold]STAR_UNIT[/gold]"));}
+ {char text[128]{};LocalizedTemplate(text,sizeof text,resolve,&x,"ENERGY_UNIT","STAR_UNIT",true).format("{N:energyIcons()} / {N:starIcons()}");
+  const auto expected=std::string("3 ENERGY_UNIT / ")+InlineStarText+InlineStarText+InlineStarText;CHECK(text==expected);}
+ {char text[32]{};LocalizedTemplate(text,sizeof text,resolve,&x).format("{Catalog=0:starIcons()}");CHECK(!*text);
+  LocalizedTemplate(text,sizeof text,resolve,&x).format("{Catalog=1:starIcons()}");CHECK(!std::strcmp(text,InlineStarText));
+  LocalizedTemplate(text,sizeof text,resolve,&x).format("{WideRatio:starIcons()}");CHECK(!std::strcmp(text,InlineStarText));
+  LocalizedTemplate clipped(text,8,resolve,&x);clipped.format("{WideMax:starIcons()}");CHECK(clipped.truncated()&&std::strlen(text)==6);
+  RichReader read(text);RichChar ch{};unsigned count=0;while(read.next(ch)){CHECK(ch.codepoint==InlineStarCodepoint);++count;}CHECK(count==2);}
  expect(x,"{N:plural:one|{N} many}","3 many");x.value=1;expect(x,"{N:plural:one|{N} many}","one");
  expect(x,"{Type:choose(Attack|Skill|Power):A {N}|S|P|?}","A 1");x.type="Skill";expect(x,"{Type:choose(Attack|Skill|Power):A|S|P|?}","S");x.type="Quest";expect(x,"{Type:choose(Attack|Skill|Power):A|S|P|?}","?");
  x.value=-2;expect(x,"{N:cond:<0?negative|positive}","negative");expect(x,"{N:abs()}","2");expect(x,"{Min:abs()}","2147483648");

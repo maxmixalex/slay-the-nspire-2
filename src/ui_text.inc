@@ -14,7 +14,7 @@ static LocalizedValue ui_text_value(const void* opaque,const char* name){
     }
     if(wt_equal(name,"ascension"))return wt_number(a.character_select||a.run_settings?a.selected_ascension:world_ascension(s));
     if(wt_equal(name,"actNumber"))return wt_number(s.world.active?s.world.act_index+1:1);
-    if(wt_equal(name,"singleStarIcon"))return wt_string(a.content.english()?"Stars":"辉星");
+    if(wt_equal(name,"singleStarIcon"))return wt_string(InlineStarText);
     return {};
 }
 const char* App::ui_text(const char* source,char* buffer,size_t capacity)const{

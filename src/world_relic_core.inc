@@ -349,6 +349,10 @@ void world_relic_effect(State&s,int index){if(index<0||index>=int(MaxWorldRelicH
  }
 }
 void world_relic_hook(State&s,WorldRelicHook hook,int a,int b,int c){if(!s.world_relics.active||s.phase==Phase::Error)return;auto&w=s.world_relics;
+ // These listeners only act in combat. A reward menu may stay open while a
+ // bottle is used or discarded; do not accumulate empty suspended callbacks.
+ const bool suspended_combat=s.phase==Phase::WorldRelicChoice&&combat_phase(Phase(w.return_phase));
+ if(!combat_phase(s.phase)&&!suspended_combat&&(hook==WorldRelicHook::AfterPotionUsed||hook==WorldRelicHook::AfterPotionProcured||hook==WorldRelicHook::AfterPotionDiscarded||hook==WorldRelicHook::AfterHpChanged))return;
  // All four original pile listeners require the permanent Deck. This engine
  // represents it with AfterDeckAdded/Removed, never with a combat Zone.
  if(hook==WorldRelicHook::AfterCardChangedPiles)return;

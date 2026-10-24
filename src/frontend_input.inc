@@ -102,13 +102,14 @@ bool App::frontend_input(Key key){
  }
  if(help){if(key==Key::Back||key==Key::Confirm)help=false;return true;}
  if(settings_open){
-  const int count=title?5:3;
+  const int count=settings_tab?2:title?4:2;
   if(key==Key::Back){settings_open=false;pointer_cancel();}
-  else if(key==Key::Up||key==Key::Left)settings_item=uint8_t((settings_item+count-1)%count);
-  else if(key==Key::Down||key==Key::Right)settings_item=uint8_t((settings_item+1)%count);
+  else if(key==Key::Left||key==Key::Right){settings_tab^=1;settings_item=0;pointer_cancel();}
+  else if(key==Key::Up)settings_item=uint8_t((settings_item+count-1)%count);
+  else if(key==Key::Down)settings_item=uint8_t((settings_item+1)%count);
   else if(key==Key::Confirm){
-   const UiAction actions[]={UiAction::SettingsFastMode,UiAction::SettingsControls,UiAction::SettingsPractice,UiAction::SettingsReference,UiAction::SettingsBack};
-   ui_action(actions[!title&&settings_item==2?4:settings_item]);
+   const UiAction actions[]={UiAction::SettingsFastMode,UiAction::SettingsPractice,UiAction::SettingsReference,UiAction::SettingsBack};
+   ui_action(settings_tab?(settings_item?UiAction::SettingsBack:UiAction::SettingsControls):actions[!title&&settings_item==1?3:settings_item]);
   }
   return true;
  }
@@ -127,7 +128,7 @@ bool App::frontend_input(Key key){
     if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("无法读取存档，请重试");}break;
    case FrontCompendium:library=true;library_page=library_selected=0;break;
-   case FrontSettings:settings_open=true;settings_item=0;break;
+   case FrontSettings:settings_open=true;settings_tab=settings_item=0;break;
    case FrontQuit:frontend_confirm=3;frontend_choice=0;break;
   }}else if(key==Key::Collection||key==Key::ReferenceMap)return false;
   return true;
@@ -138,7 +139,7 @@ bool App::frontend_input(Key key){
  else if(key==Key::Down||key==Key::Right)menu=(menu+1)%5;
  else if(key==Key::Confirm){switch(menu){
   case 0:paused=false;break;
-  case 1:settings_open=true;settings_item=0;break;
+  case 1:settings_open=true;settings_tab=settings_item=0;break;
   case 2:library=true;library_page=library_selected=0;break;
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:

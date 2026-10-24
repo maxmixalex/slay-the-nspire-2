@@ -1,5 +1,6 @@
 static void native_reward_screen(Canvas&c){
- auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);c.actor(0,54,130);c.dim(0,22,320,218,155);
+ auto&a=c.a;auto&s=a.game;const auto window=a.reward_presentation.window(a.map_clock_ms);
+ c.picture(a.combat_background(),0,22,320,218);c.actor(0,54,130);c.dim(0,22,320,218,a.reward_cards||a.grimoire_select?155:155*window.alpha/255);
  if(a.grimoire_select&&s.necro.grimoire_pending){deck_select(c);return;}
  if(a.reward_cards){
   const int count=s.world.reward_count;a.cursor=mn(mx(0,a.cursor),count);c.centered("选择一张牌",0,28,320,20,Gold);
@@ -15,18 +16,20 @@ static void native_reward_screen(Canvas&c){
   c.ui(U_RewardSkip,211,211,92,25);c.centered("跳过",211,213,92,12,a.cursor==count?Gold:White);c.hit(207,207,104,31,HitKind::Choice,count);return;
  }
  UiAction actions[6];int count=ui_reward_actions(s,actions);a.cursor=mn(mx(0,a.cursor),count-1);
- c.ui(U_RewardPanel,50,32,220,202);c.ui(U_RewardBanner,38,30,244,48);c.centered("战利品",60,42,200,20,Gold);
- for(int i=0;i<count-1;i++){int y=81+i*26;UiAction action=actions[i];bool claimed=false,available=true;int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0,&c.a.content};
+ Canvas panel=c;panel.opacity=uint8_t(div255(panel.opacity*window.alpha));const int dy=window.y;
+ panel.ui(U_RewardPanel,50,46+dy,220,164);panel.ui(U_RewardBanner,38,44+dy,244,40);panel.centered("战利品",60,55+dy,200,16,Gold);
+ for(int i=0;i<count-1;i++){int y=86+i*24+dy;UiAction action=actions[i];int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0,&c.a.content};
   switch(action){
-   case UiAction::RewardGold:claimed=s.reward_claimed&1;image=a.content.ui_image(U_RewardGold);t.number(s.last_gold);t.text(" 金币");break;
-   case UiAction::RewardCards:claimed=s.reward_claimed&2;available=s.world.reward_count!=0;image=a.content.ui_image(U_RewardCard);t.text("选择一张牌");break;
-   case UiAction::RewardPotion:claimed=s.reward_claimed&4;available=s.reward_potion!=Potion::Empty;image=a.content.potion_image(s.reward_potion);if(const auto*d=potion_definition(s.reward_potion))t.text(d->name);else t.text("没有药水掉落");break;
-   case UiAction::RewardRelic:claimed=s.world.reward_relic_claimed;image=a.relic_face_image(s.world.reward_relic);t.text(a.relic_title(s.world.reward_relic));break;
+   case UiAction::RewardGold:image=a.content.ui_image(U_RewardGold);t.number(s.last_gold);t.text(" 金币");break;
+   case UiAction::RewardCards:image=a.content.ui_image(U_RewardCard);t.text("选择一张牌");break;
+   case UiAction::RewardPotion:image=a.content.potion_image(s.reward_potion);if(const auto*d=potion_definition(s.reward_potion))t.text(d->name);break;
+   case UiAction::RewardRelic:image=a.relic_face_image(s.world.reward_relic);t.text(a.relic_title(s.world.reward_relic));break;
    case UiAction::RewardGrimoire:image=a.content.ui_image(U_NecroPowerStart+(int)NPower::ForbiddenGrimoire);t.text("魔典移牌 × ");t.number(s.necro.grimoire_pending);break;
    default:break;
   }
-  c.ui(U_RewardButton,69,y,182,24,(claimed||!available)?110:255);if(a.cursor==i&&!claimed&&available)c.box(68,y-1,184,26,Gold);
-  c.picture(image,75,y+1,22,22);c.text(claimed?"已领取":text,103,y+4,10,claimed?Muted:White,143);c.action(68,y-1,184,26,action,!claimed&&available);
+  Canvas button=panel;button.brightness=uint8_t(div255(button.brightness*(a.cursor==i?255:229)));
+  button.ui(U_RewardButton,69,y,182,22);if(a.cursor==i)panel.box(68,y-1,184,24,Gold);
+  panel.picture(image,76,y+1,20,20);panel.text(text,103,y+3,10,a.cursor==i?Gold:White,143);c.action(68,y-1,184,24,action);
  }
  c.ui(U_RewardSkip,213,211,99,25);c.centered("前进 ›",213,214,99,12,a.cursor==count-1?Gold:White);c.action(209,208,107,30,UiAction::LeaveRewards);
 }

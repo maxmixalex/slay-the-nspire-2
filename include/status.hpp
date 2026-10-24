@@ -80,8 +80,10 @@ inline int status_amount(const State&s,int actor,int id){
 }
 inline int collect_statuses(const State&s,int actor,int* out){
     int count=0;for(int i=0;i<StatusKinds;i++){
-        const bool resource=actor==0&&((i==44&&s.character==Character::Regent)||
-            (i==45&&(s.character==Character::Necrobinder||s.expansion.osty_max_hp>0))||(i==46&&s.expansion.orb_slots>0));
+        // NStarCounter is a combat resource control, never a Power icon.
+        // Keep status_amount(44) for deferred resource-value snapshots.
+        if(i==44)continue;
+        const bool resource=actor==0&&((i==45&&(s.character==Character::Necrobinder||s.expansion.osty_max_hp>0))||(i==46&&s.expansion.orb_slots>0));
         if(resource||status_amount(s,actor,i)!=0){if(out)out[count]=i;++count;}
     }return count;
 }

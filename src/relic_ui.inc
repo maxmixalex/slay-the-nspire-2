@@ -34,7 +34,7 @@ static void owned_relic_strip(Canvas&c){
  auto&a=c.a;auto&s=a.game;unsigned count=ui_owned_relic_count(s);
  for(unsigned i=0;i<count&&i<15;i++){int x=3+i*19;RelicId id=ui_owned_relic_id(s,i);
   if(ui_relic_flash(a,id)){c.box(x-1,23,19,20,Gold);c.rect(x+2,42,13,1,Green);}
-  c.picture(a.relic_face_image(id),x,24,17,17,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+7,31);c.hit(x-1,22,19,22,HitKind::OwnedRelic,i);
+  if(!a.reward_pickup_hidden(RewardPickupKind::Relic,i)){c.picture(a.relic_face_image(id),x,24,17,17,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+7,31);}c.hit(x-1,22,19,22,HitKind::OwnedRelic,i);
  }
  if(count>15){char more[16]{};TextBuffer b{more,sizeof more,0};b.ch('+');b.number(count-15);c.text(more,290,25,10,Gold);c.hit(287,22,33,22,HitKind::Command,(int)Key::Relics);}
 }

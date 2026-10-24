@@ -72,7 +72,7 @@ static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&&!std::memcmp(after.bytes,before.bytes,before.size));}
 static void same_saved(const SaveData&target){CHECK(save(a.game,after));CHECK(after.size==target.size&&!std::memcmp(after.bytes,target.bytes,target.size));}
 static void presentation(bool title=false){
- a.title=title;a.paused=a.help=a.library=a.character_select=a.settings_open=a.quit=false;a.frontend_confirm=a.frontend_choice=a.settings_item=0;
+ a.title=title;a.paused=a.help=a.library=a.character_select=a.settings_open=a.quit=false;a.frontend_confirm=a.frontend_choice=a.settings_tab=a.settings_item=0;
  a.run_settings=a.practice_entry=false;a.map_preview.open=false;a.menu=0;a.reset_presentation();a.pointer.visible=false;
 }
 static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,const char*run_seed=nullptr,unsigned ascension=3,reference::ActKind region=reference::ActKind::Overgrowth){
@@ -380,8 +380,15 @@ static void modal_isolation_and_fast_mode(){
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind==HitKind::UiAction&&(a.hits[i].value==int(UiAction::FrontendAccept)||a.hits[i].value==int(UiAction::FrontendCancel)));
  action(UiAction::FrontendCancel);CHECK(!a.frontend_confirm);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);a.character_select=true;a.ui_action(UiAction::StartCharacter);CHECK(a.run_number==run);a.character_select=false;unchanged();
+ CHECK(a.settings_tab==0);capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
+ a.pointer_move(input.x+input.w/2,input.y+input.h/2);a.render();CHECK(a.settings_tab==0);unchanged();
+ a.pointer_button(true);CHECK(a.settings_tab==0);a.pointer_button(false);CHECK(a.settings_tab==1&&a.settings_item==0);a.pointer.visible=false;capture("settings-input");unchanged();
  action(UiAction::SettingsControls);CHECK(a.help&&a.settings_open);bool fast=a.fast_mode;a.input(Key::Confirm);CHECK(!a.help&&a.settings_open&&a.fast_mode==fast);unchanged();
- action(UiAction::SettingsFastMode);CHECK(a.fast_mode!=fast);action(UiAction::SettingsFastMode);CHECK(a.fast_mode==fast);unchanged();
+ a.input(Key::Left);CHECK(a.settings_tab==0&&a.settings_item==0);a.render();unchanged();
+ // A settings row's label supplies focus/description; only its right-side
+ // native tickbox is the pointer action. A tab change never toggles a value.
+ a.pointer_move(60,73);a.pointer_button(true);a.pointer_button(false);CHECK(a.fast_mode==fast);a.pointer.visible=false;
+ action(UiAction::SettingsFastMode);CHECK(a.fast_mode!=fast);capture("settings-checked");action(UiAction::SettingsFastMode);CHECK(a.fast_mode==fast);unchanged();
  // Fast changes command waits, not the animation clock. No rules, draws,
  // event offers, RNG stream or encoded field changes during these ticks.
  a.animation=1000;a.tick_remainder=0;a.busy=a.card_fly=a.feedback=a.notice_ticks=12;a.fast_mode=false;

@@ -37,6 +37,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "combat_preparation.inc"
 #include "world_map_motion.inc"
 #include "app_input.inc"
+#include "reward_presentation.inc"
 static const char* card_type_label(CardType type,const Content*content=nullptr){
     const char*keys[]={"CARD_TYPE.ATTACK","CARD_TYPE.SKILL","CARD_TYPE.POWER","CARD_TYPE.STATUS","CARD_TYPE.CURSE","CARD_TYPE.QUEST"};
     if(content&&unsigned(type)<6){const char*text=content->world_string("gameplay_ui",keys[unsigned(type)]);if(*text)return text;}
@@ -102,24 +103,34 @@ static void hud(Canvas&c){
     const auto health=c.a.combat_health(0);
     c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
     c.text_fitted(b,41,5,43,8,rgb(255,85,85));
-    c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(s.gold);c.text_fitted(b,100,5,25,8,Gold);
+    c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,100,5,25,8,Gold);
     c.nine_ui(U_TopBarBackdrop,127,1,53,20,7,6,7,6);
-    const int slots=potion_slot_count(s),visible=mn(slots,3),width=17;
+    const int slots=potion_slot_count(s),width=slots>3?14:17;
+    c.a.potion_page=uint8_t(mn(int(c.a.potion_page),(slots-1)/3));
+    const int first=int(c.a.potion_page)*3,visible=mn(slots-first,3);
     for(int i=0;i<visible;i++){
-        int x=128+i*width;Potion potion=potion_at(s,i);
-        if(potion!=Potion::Empty)c.picture(c.a.content.potion_image(potion),x+1,2,14,18);
-        else if(c.a.content.ui_image(U_PotionPlaceholder)>=0)c.ui(U_PotionPlaceholder,x+1,3,14,15);
+        int x=128+i*width;const int slot=first+i;Potion potion=potion_at(s,slot);
+        const unsigned age=c.a.map_clock_ms-c.a.potion_removed_start;
+        const bool removing=c.a.potion_removed!=Potion::Empty&&c.a.potion_removed_slot==slot&&age<(c.a.potion_removed_discard?400u:200u);
+        if(potion!=Potion::Empty){if(!c.a.reward_pickup_hidden(RewardPickupKind::Potion,slot))c.picture(c.a.content.potion_image(potion),x+1,2,width-3,18);}
+        else if(c.a.content.ui_image(U_PotionPlaceholder)>=0){const unsigned alpha=age<200&&c.a.potion_removed_slot==slot?0:age<400&&c.a.potion_removed_slot==slot?(age-200)*255/200:255;c.ui(U_PotionPlaceholder,x+1,3,width-3,15,alpha);}
         else{c.box(x+4,5,7,12,rgb(92,90,83));c.rect(x+5,2,5,3,Muted);}
-        c.hit(x,0,width,22,HitKind::Command,(int)Key::Potions);
+        if(removing){
+            const int duration=c.a.potion_removed_discard?400:200,t=int(age)*4096/duration;
+            const int back=int((int64_t(t)*t/4096)*(int64_t(11066)*t/4096-6970)/4096);
+            const int scale=c.a.potion_removed_discard?4096:4096-back,w=mx(1,(width-3)*scale/4096),h=mx(1,18*scale/4096);
+            c.picture(c.a.content.potion_image(c.a.potion_removed),x+width/2-w/2,11-h/2-(c.a.potion_removed_discard?back*20/4096:0),w,h);
+        }
+        c.hit(x,0,width,22,HitKind::PotionSlot,slot,potion!=Potion::Empty);
     }
-    if(slots>3){c.rect(163,12,17,10,Panel);c.text("+",163,11,8,Gold);c.num(slots-3,169,11,8,Gold);}
+    if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
     c.ui(U_TopFloor,183,3,13,16);b[0]=0;t.n=0;t.number(s.floor);c.text_fitted(b,198,5,17,8,Gold);
     if(s.practice)c.text_fitted("图鉴",217,5,31,10,Gold,8,true);
     else c.ui(U_TopMap,224,2,18,18);
     c.hit(216,0,33,22,HitKind::Command,(int)(s.practice?Key::Collection:Key::Map),!s.world.active||s.phase!=Phase::Map);
     c.ui(U_TopDeck,257,2,18,18);c.hit(249,0,34,22,HitKind::Command,(int)Key::Inspect);
     c.ui(U_TopSettings,291,2,18,18);c.hit(283,0,37,22,HitKind::Command,(int)Key::Back);
-    if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp))owned_relic_strip(c);
+    if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp||s.phase==Phase::Reward||s.phase==Phase::WorldRelicChoice||s.phase==Phase::OriginalEventChoice))owned_relic_strip(c);
 
 }
 
@@ -132,6 +143,7 @@ static void large_card(Canvas&c,Card card,int x,int y,bool selected,int fee=-2,i
     draw_card_face(c,card,x,y,80,112,fee,stars,instance,deck_index,facts);
 }
 #include "world_reward_ui.inc"
+#include "reward_presentation_ui.inc"
 static void reward_screen(Canvas&c){
     if(c.a.game.world.active){native_reward_screen(c);return;}
     auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);c.actor(0,54,130);c.dim(0,22,320,218,155);
@@ -194,8 +206,9 @@ static void camp_screen(Canvas&c){
     c.centered(info,0,221,320,10,White);
 }
 
+#include "potion_ui.inc"
 static void panels(Canvas&c){
-    auto&a=c.a;auto&s=a.game;a.hit_count=0;if(a.panel==3){map_screen(c,true);c.close_button();return;}
+    auto&a=c.a;auto&s=a.game;if(a.panel==4){potion_popup_screen(c);return;}a.hit_count=0;if(a.panel==3){map_screen(c,true);c.close_button();return;}
     c.rect(4,24,312,212,Panel);c.box(4,24,312,212,Gold);
     if(a.panel==1){
         const char*names[]={"牌组","抽牌堆","弃牌堆","消耗堆","能力"};
@@ -232,26 +245,7 @@ static void panels(Canvas&c){
         for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}c.text("↑↓ 滚动 · Esc 返回",15,216,10,Muted);
     }else if(a.panel==5){
         owned_relic_panel(c);
-    }else if(a.panel==4){
-        const int count=potion_slot_count(s);a.scroll=mn(mx(0,a.scroll),count-1);const int first=a.scroll/8*8;
-        c.centered("药水",0,29,320,16,Gold);
-        for(int i=first;i<mn(count,first+8);i++){
-            int x=13+(i-first)%4*76,y=49+(i-first)/4*34;Potion p=potion_at(s,i);
-            if(a.scroll==i)c.box(x-2,y-1,73,33,Gold);c.picture(a.content.potion_image(p),x+4,y+1,23,27);
-            c.paragraph(potion_name(int(p),&a.content),x+29,y+1,40,2,0,8,White);c.hit(x-2,y-1,73,33,HitKind::Potion,i);
-        }
-        if(count>8){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first+1);b.text("–");b.number(mn(count,first+8));b.ch('/');b.number(count);c.text(page,12,32,10,Gold);}
-        Potion selected=potion_at(s,a.scroll);char description[2048]{};ui_potion_description(a,int(selected),description,sizeof description);c.paragraph(description,19,121,282,2,0,10);
-        const auto*d=potion_definition(selected);
-        if(d&&d->targeted&&s.phase==Phase::Combat){
-            for(int i=0;i<s.enemy_count;i++){int x=11+(i%4)*77,y=156+(i/4)*21;char label[64]{};TextBuffer t{label,sizeof label,0,&c.a.content};t.number(i+1);t.text(" ");
-                const auto*enemy=enemy_definition(s.enemy_world.models[i].kind);if(enemy){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(enemy->key);b.text(".name");t.text(a.content.world_string("monsters",key));}
-                c.button(label,x,y,70,a.target==i,19);c.hit(x,y,70,19,HitKind::EnemySelect,i,s.enemies[i].hp>0);
-            }
-        }
-        c.button("丢弃",28,205,113,false,25);c.action(25,204,119,28,UiAction::DiscardPotion,d!=nullptr&&!a.combat_actions_locked()&&!original_event_blocks_potions(s));
-        bool usable=!a.combat_actions_locked()&&can_use_potion(s,a.scroll,a.target);c.button(d&&d->automatic?"自动触发":usable?"使用":"无法使用",176,205,113,usable,25);
-        c.hit(174,204,117,28,HitKind::Command,(int)Key::Confirm,usable);
+
     }
     c.close_button();
     if(a.panel==2){c.text("↑",299,53,12,Gold);c.hit(294,50,23,24,HitKind::Scroll,-1);c.text("↓",299,157,12,Gold);c.hit(294,153,23,24,HitKind::Scroll,1);}
@@ -326,6 +320,7 @@ static void pointer_overlay(Canvas&c){
         if(a.map_transition_blocks_pointer())a.hit_count=0;
     }
     auto&p=a.pointer;if(!p.visible)return;
+    if(a.panel==4&&a.potion_targeting){const int x=128+(a.scroll%3)*(potion_slot_count(a.game)>3?14:17)+7;c.line(x,21,p.x,p.y,Blue,true);c.box(p.x-5,p.y-5,11,11,Gold);}
     if(p.armed_card>=0&&p.armed_card<a.game.card_count){
         if(a.game.zones[p.armed_card]!=Zone::Hand||a.game.phase!=Phase::Combat)p.armed_card=-1;
         else{c.line(160,180,p.x,p.y,Blue,true);c.box(p.x-5,p.y-5,11,11,Gold);}
@@ -336,6 +331,7 @@ static void pointer_overlay(Canvas&c){
 }
 void App::render(){
     begin_card_face_frame();
+    sync_reward_presentation();
     sync_map_window();
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
     sync_combat_preparation();
@@ -379,10 +375,11 @@ void App::render(){
         // covering capstone's scroll position.
         if(map_window.is_open){map_room_cursor=cursor;map_room_scroll=scroll;cursor=map_cursor;scroll=panel_scroll;}
         if(map_window.visible)world_map_window_screen(c);
+        if(!combat_linger&&(!panel||panel==4)&&!library&&combat_choice_ready()&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
+        else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase))card_choice_screen(c);
         if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger||combat_feedback.active)turn_banner_screen(c);
-        if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
-        else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase))card_choice_screen(c);
+        reward_pickup_screen(c);
         if(paused)native_pause_screen(c);
 
     }
@@ -402,6 +399,7 @@ void App::render(){
     if(event_reader)event_reader_screen(c);
     if(map_preview.open)reference_map_screen(c);
     if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&game.phase!=Phase::Event&&game.phase!=Phase::Shop&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    potion_hover_tip(c);
     owned_relic_tooltip(c);
     enemy_intent_tooltip(c);
     battle_status_tooltip(c);

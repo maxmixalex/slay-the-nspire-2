@@ -30,8 +30,13 @@ static void grant(int16_t& stat,int amount,int16_t* temporary=nullptr){
     int n=cap(amount,9999-stat);stat=(int16_t)(stat+n);
     if(temporary)*temporary=(int16_t)(*temporary+n);
 }
+static bool potion_choice_blocked(const State&s){
+    if(s.phase==Phase::WorldRelicChoice)return s.world_relics.choice!=WorldRelicChoice::OfferReward;
+    if(s.phase==Phase::OriginalEventChoice)return s.original_events.selection!=OriginalEventSelection::Rewards;
+    return choice_phase(s.phase);
+}
 bool can_use_potion(const State&s,int slot,int target){
-    if(slot<0||slot>=(int)potion_slot_count(s)||s.hp<=0||choice_phase(s.phase)||s.phase==Phase::Dead||
+    if(slot<0||slot>=(int)potion_slot_count(s)||s.hp<=0||potion_choice_blocked(s)||s.phase==Phase::Dead||
        s.phase==Phase::Complete||s.phase==Phase::Error||s.effect_count||s.playing>=0)return false;
     if(original_event_blocks_potions(s))return false;
     const auto*d=potion_definition(s.potions[slot]);if(!d||d->automatic)return false;
@@ -73,9 +78,13 @@ bool use_potion(State&s,int slot,int target){
     else if(s.hp>0)world_relic_hook(s,WorldRelicHook::AfterPotionUsed,(int)p,target);
     resolve_pending(s);s.revision++;return true;
 }
-bool discard_potion(State&s,int slot){
-    if(slot<0||slot>=(int)potion_slot_count(s)||!potion_definition(s.potions[slot])||choice_phase(s.phase)||
+bool can_discard_potion(const State&s,int slot){
+    if(slot<0||slot>=(int)potion_slot_count(s)||!potion_definition(s.potions[slot])||potion_choice_blocked(s)||
        s.phase==Phase::Dead||s.phase==Phase::Error||s.phase==Phase::Complete)return false;
+    return !original_event_blocks_potions(s);
+}
+bool discard_potion(State&s,int slot){
+    if(!can_discard_potion(s,slot))return false;
     Potion old=s.potions[slot];s.potions[slot]=Potion::Empty;world_relic_hook(s,WorldRelicHook::AfterPotionDiscarded,(int)old,slot);s.revision++;return true;
 }
 }

@@ -137,22 +137,29 @@ static void native_event_screen(Canvas&c){
  if(ui_ancient_event(e.id)){native_ancient_screen(c);return;}
  if(e.id==OriginalEventId::FakeMerchant&&!e.finished){native_fake_merchant_screen(c);return;}
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
- for(int x=122;x<320;x++)c.dim(x,22,1,218,unsigned(mn(178,(x-122)*5)));
- c.centered(native_event_title(a),131,27,182,16,Gold);
- char text[8192]{};a.original_event_text(-1,true,text,sizeof text);int lines=c.paragraph(text,140,53,164,0,0,10);
- a.scroll=mn(mx(0,a.scroll),mx(0,lines-5));c.paragraph(text,140,53,164,5,a.scroll,10);
- c.text("全文 I",141,119,10,Gold);c.action(134,115,83,20,UiAction::ReadEvent);
- c.text("↑",271,119,10,a.scroll?Gold:Muted);c.hit(263,115,24,20,HitKind::Scroll,-1,a.scroll>0);
- c.text("↓",298,119,10,a.scroll+5<lines?Gold:Muted);c.hit(290,115,24,20,HitKind::Scroll,1,a.scroll+5<lines);
+ // default_event_layout.tscn places a centered story above one options VBox
+ // on the right of the illustration. No extra dark column or duplicate
+ // selected-description box belongs on top of the event artwork.
+ c.fitted(native_event_title(a),131,30,182,19,16,12,Gold,true,true,false,true);
+ char text[8192]{};a.original_event_text(-1,true,text,sizeof text);
+ const auto story=c.fitted(text,137,54,173,65,10,10,White,true,false,false,true);
+ if(story.truncated)c.text("…",298,106,10,Gold,12);
+ c.action(132,51,183,68,UiAction::ReadEvent);
  const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));int first=a.cursor/3*3;
- for(int i=first;i<mn(count,first+3);i++){int y=137+(i-first)*33;bool enabled=original_event_option_enabled(s,i),selected=a.cursor==i;
-  c.ui(U_EventButton,130,y,186,32,enabled?255:115);if(selected)c.ui(U_EventOutline,130,y,186,32,170);
-  bool icon=!e.finished&&(ui_ancient_event(e.id)||e.id==OriginalEventId::FakeMerchant)&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
-  int tx=icon?163:140,tw=icon?141:164;if(icon)c.picture(a.relic_face_image(e.offers[i]),135,y+4,24,24,enabled?255:100);
-  char label[256]{},description[2048]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
-  c.text(label,tx,y+1,10,enabled?Gold:Muted,tw);c.paragraph(description,tx,y+15,tw,1,0,8,enabled?White:Muted);
-  c.hit(130,y,186,32,HitKind::Choice,i,enabled);
+ for(int i=first;i<mn(count,first+3);i++){const int y=123+(i-first)*38;const bool enabled=original_event_option_enabled(s,i),selected=a.cursor==i;
+  // NEventOptionButton: a shadow plus a blue additive focus outline, and a
+  // single rich label with a gold/red bold title followed by its description.
+  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(U_EventOutline,130,y+1,186,37,128);
+  Canvas button=c;button.brightness=uint8_t(div255(button.brightness*(enabled?(selected?255:229):166)));
+  button.ui(U_EventButton,130,y,186,37,230);
+  if(selected&&enabled){Canvas outline=c;outline.tint_red=uint8_t(div255(outline.tint_red*120));outline.tint_blue=uint8_t(div255(outline.tint_blue*254));
+   outline.picture(a.content.ui_image(U_EventOutline),129,y-1,188,39,192,presentation::Add);}
+  char label[256]{},description[2048]{},combined[2432]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
+  TextBuffer body{combined,sizeof combined,0,&a.content};
+  if(*label){body.text(enabled?"[gold][b]":"[red][b]");body.text(label);body.text(enabled?"[/b][/gold]":"[/b][/red]");if(*description)body.ch('\n');}body.text(description);
+  Canvas words=c;if(!enabled)words.opacity=uint8_t(div255(words.opacity*179));
+  words.paragraph_fitted(combined,140,y+3,164,32,10,White,8);
+  c.hit(130,y,186,37,HitKind::Choice,i,enabled);
  }
- if(count){char focused[4096]{};native_event_option(a,a.cursor,true,focused,sizeof focused);c.dim(4,148,123,90,195);c.paragraph(focused,10,151,111,6,0,10,White);}
- if(count>3){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first+1);b.text("–");b.number(mn(first+3,count));b.text(" / ");b.number(count);c.text(page,8,132,10,Gold,116);}
+ if(count>3){char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/3+1);b.ch('/');b.number((count+2)/3);c.text(page,285,23,8,White,30);}
 }

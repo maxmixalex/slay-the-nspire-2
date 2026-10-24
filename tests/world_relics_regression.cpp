@@ -175,15 +175,35 @@ int main(){
  w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;save_pending();old_deck=s.deck_count;uint16_t special=0;
  require(world_relic_select(s,&special,1)&&s.deck_count==old_deck+1&&s.deck[old_deck].kind==EventCardLanternKey,"special card reward adds its exact card directly");
  require(s.phase==Phase::Map&&!world_relic_pending(s)&&relic(WorldRelicPaelsWing).values[0]==0,"special card does not expose card-reward alternatives");
- // Back from a full potion inventory preserves the reward. Taking the last
- // bottle must free the group and every UI index before a save is allowed.
- reset();for(unsigned i=0;i<potion_slot_count(s);i++)potion_set(s,i,Potion::Blood);
- w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=3;w.rewards[0].value=uint16_t(Potion::Strength);
- w.choice=WorldRelicChoice::OfferReward;w.choice_group=1;w.return_phase=uint8_t(Phase::Map);w.choice_max=1;w.choice_cancelable=1;w.offer_count=1;w.offers[0]=0;s.phase=Phase::WorldRelicChoice;save_pending();
- uint16_t bottle=0;require(world_relic_select(s,&bottle,1)&&w.choice==WorldRelicChoice::Potion,"full inventory opens bottle replacement");save_pending();
- require(world_relic_potion(s,-1)&&w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1),"canceling bottle replacement returns to the unclaimed reward");save_pending();
- require(world_relic_select(s,&bottle,1)&&world_relic_potion(s,0)&&potion_at(s,0)==Potion::Strength,"last bottle can replace a held potion after returning");
+ // PotionReward.OnSelect rejects TooFull without opening a replacement grid.
+ // The player can free any real belt slot while its reward remains available.
+ reset();add(WorldRelicBeltBuckle);require(add_potion_slots(s,MaxPotionSlots-potion_slot_count(s)),"expand potion belt to its actual capacity");
+ for(unsigned i=0;i<MaxPotionSlots;i++)potion_set(s,i,Potion::Blood);potion_set(s,15,Potion::FairyInABottle);
+ single_reward(3,unsigned(Potion::Strength));save_pending();uint16_t bottle=0;original=s;
+ require(!world_relic_select(s,&bottle,1)&&!std::memcmp(&s,&original,sizeof s),"full reward rejection preserves menu, queue, revision and every bottle");
+ require(can_discard_potion(s,15)&&discard_potion(s,15)&&potion_at(s,15)==Potion::Empty,"automatic potion can be discarded from the sixteenth slot");
+ require(w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1),"discard keeps the same unclaimed reward menu");
+ for(const auto&frame:w.hook_frames)require(!frame.active,"discard creates no inert suspended potion hook");save_pending();
+ require(world_relic_select(s,&bottle,1)&&potion_at(s,15)==Potion::Strength,"claim fills the freed sixteenth slot directly");
+ for(unsigned i=0;i<15;i++)require(potion_at(s,i)==Potion::Blood,"claim leaves every other bottle intact");
  require(s.phase==Phase::Map&&!world_relic_pending(s)&&!w.group_count&&!w.reward_count&&!w.choice_group&&!w.choice_reward&&!w.offer_count,"last potion clears the completed reward group's saved indexes");save_pending();
+ reset();add(WorldRelicSozu);for(unsigned i=0;i<potion_slot_count(s);i++)potion_set(s,i,Potion::Blood);single_reward(3,unsigned(Potion::Strength));
+ require(world_relic_select(s,&bottle,1)&&s.phase==Phase::Map&&!world_relic_pending(s),"Sozu's NotAllowed result consumes the reward even with a full belt");
+ for(unsigned i=0;i<potion_slot_count(s);i++)require(potion_at(s,i)==Potion::Blood,"Sozu never replaces a held bottle");save_pending();
+ reset();add(WorldRelicBeltBuckle);add(WorldRelicReptileTrinket);single_reward(4,1);
+ for(unsigned i=0;i<MaxWorldRelicHookFrames+2;i++){
+  s.hp=40;require(potion_set(s,0,Potion::Blood)&&can_use_potion(s,0,-1)&&use_potion(s,0,-1),"noncombat potion remains usable over a reward menu");
+  require(s.hp==56&&w.choice==WorldRelicChoice::OfferReward&&s.phase==Phase::WorldRelicChoice&&!w.rewards[0].flags,"drinking heals without dismissing or consuming the reward");
+  require(procure_potion(s,Potion::Blood)&&can_discard_potion(s,0)&&discard_potion(s,0),"a replenished bottle can be discarded while rewards stay open");
+  for(const auto&frame:w.hook_frames)require(!frame.active,"reward potion actions do not accumulate no-op hook frames");
+ }
+ require(!s.effect_count&&!w.step_count&&!s.strength&&!s.dexterity,"reward use does not activate combat-only potion relic bonuses");save_pending();
+ // A relic-acquisition reward can also suspend an active combat. Its hooks
+ // must still resume after that menu; only genuinely noncombat hooks are empty.
+ reset();add(WorldRelicRedSkull);combat();s.hp=35;hook(WorldRelicHook::AfterHpChanged,80,35,-1);require(s.strength==3,"prepare active Red Skull before a nested combat reward");
+ single_reward(4,1);w.return_phase=uint8_t(Phase::Combat);potion_set(s,0,Potion::Blood);
+ require(use_potion(s,0,-1)&&s.hp==51&&w.choice==WorldRelicChoice::OfferReward,"healing can preserve a reward suspended inside combat");save_pending();
+ require(world_relic_select(s,&bottle,1)&&s.phase==Phase::Combat&&!world_relic_pending(s)&&!s.strength,"nested combat reward resumes the deferred HP listener");save_pending();
  // Acquiring a reward-producing relic nests a new set inside its parent.
  // Closing that child must resume, then close the already claimed parent.
  reset();w.group_count=w.reward_count=1;w.group_active[0]=w.group_skip[0]=1;w.rewards[0].group=1;w.rewards[0].kind=2;w.rewards[0].value=WorldRelicCauldron;

@@ -1,6 +1,7 @@
 #pragma once
 #include "core.hpp"
 #include "health_bar.hpp"
+#include "combat_command_timing.hpp"
 
 namespace spire {
 // Only the ten displayed instance IDs travel with a hand change. Cards keep
@@ -44,6 +45,29 @@ static_assert(sizeof(CombatHand)<=1024,"Hand playback stores instance IDs, not f
 // the queue; playback then converges at the end of that side's presentation.
 struct CombatFeedback {
  static constexpr unsigned Actors=MaxEnemies+3,Energy=MaxEnemies+2,Capacity=128;
+ // AttackCommand awaits every hit, whereas all targets of one hit share
+ // its Damage command. Keep that distinction before the value coalescer.
+ struct Attack {
+  uint32_t base=0,clock_ms=0;uint16_t delay_ms=0,wait_ms=0;int16_t card=-1;
+  uint8_t targets=0;bool active=false,hit=false,next=false,once=false;
+  void begin(uint32_t at,unsigned delay,unsigned wait=0,bool only_once=false,int instance=-1){
+   base=at;clock_ms=0;delay_ms=uint16_t(delay);wait_ms=uint16_t(wait);card=int16_t(instance);
+   targets=0;active=true;hit=next=false;once=only_once;
+  }
+  uint32_t impact(uint32_t at,unsigned target,bool fast){
+   const uint8_t bit=uint8_t(1u<<target);
+   if(!hit||next||(targets&bit)){
+    // A hook may await another command between hits. Preserve that time;
+    // otherwise retain sub-tick precision across long multi-hit chains.
+    if(int32_t(at-(base+(clock_ms+32)/33))>0)clock_ms=(at-base)*33;
+    if(hit)clock_ms+=fast?100:200;
+    if(!hit||!once)clock_ms+=delay_ms;
+    clock_ms+=wait_ms;targets=0;hit=true;next=false;
+   }
+   targets|=bit;return base+(clock_ms+32)/33;
+  }
+  uint32_t finish(bool fast){active=false;return base+(hit?(clock_ms+(fast?100:200)+32)/33:clock_ms/33);}
+ } attacks[MaxAutoFrames+1]{},enemy_attack{};
  struct Cue {HealthBarValues value{};uint32_t identity=0,at=0;uint8_t actor=0;};
  HealthBarValues shown[Actors]{},observed[Actors]{};
  uint32_t identity[Actors]{},observed_identity[Actors]{};
@@ -56,7 +80,7 @@ struct CombatFeedback {
  uint16_t head=0,count=0;
  uint8_t hidden=0;
  bool active=false,finished=false,overflow=false,choice_pending=false;
- void reset(){active=finished=overflow=choice_pending=false;head=count=0;hidden=0;move_slot=move=-1;}
+ void reset(){active=finished=overflow=choice_pending=false;head=count=0;hidden=0;move_slot=move=-1;for(auto&a:attacks)a.active=false;enemy_attack.active=false;}
  static bool same(const HealthBarValues&a,const HealthBarValues&b){
   return a.hp==b.hp&&a.max_hp==b.max_hp&&a.block==b.block&&a.tracked_block==b.tracked_block&&
    a.poison_damage==b.poison_damage&&a.doom==b.doom&&a.infinite==b.infinite;

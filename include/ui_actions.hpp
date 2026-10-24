@@ -16,6 +16,7 @@ enum class UiAction {
     GameOverSummary, GameOverMainMenu,
     FrontendAccept, FrontendCancel, SettingsFastMode, SettingsControls,
     SettingsPractice, SettingsReference, SettingsBack,
-    TreasureOpen, TreasureTake, TreasureLeave, PreviousCampPage, NextCampPage
+    TreasureOpen, TreasureTake, TreasureLeave, PreviousCampPage, NextCampPage,
+    SettingsGeneralTab, SettingsInputTab
 };
 }

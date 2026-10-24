@@ -263,6 +263,7 @@ bool take_treasure(State&);
 bool leave_treasure(State&);
 bool use_potion(State&,int slot,int target);
 bool can_use_potion(const State&,int slot,int target);
+bool can_discard_potion(const State&,int slot);
 bool discard_potion(State&,int slot);
 void draw_cards(State&,int count);
 void damage_unpowered(State&,int target,int amount);

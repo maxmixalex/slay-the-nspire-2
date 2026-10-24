@@ -16,7 +16,30 @@ static void persisted(){
  require(load(loaded,bytes.bytes,bytes.size),"load pending event");require(save(loaded,again),"resave pending event");
  require(bytes.size==again.size&&!std::memcmp(bytes.bytes,again.bytes,bytes.size),"event save is byte exact");game=loaded;
 }
+static void potion_reward_inventory(){
+ for(unsigned sozu=0;sozu<2;sozu++){
+  reset();require(gain_world_relic(game,WorldRelicBeltBuckle),"prepare event potion listener");
+  if(sozu)require(gain_world_relic(game,WorldRelicSozu),"prepare event procurement prohibition");
+  require(add_potion_slots(game,MaxPotionSlots-potion_slot_count(game)),"expand event potion belt");
+  for(unsigned i=0;i<MaxPotionSlots;i++)potion_set(game,i,Potion::Strength);
+  require(original_event_begin(game,OriginalEventId::ColorfulPhilosophers,5,0)&&original_event_choose(game,0),"open a real event reward set");
+  auto&e=game.original_events;for(auto&r:e.rewards)r=OriginalEventReward{};e.reward_count=2;e.reward_card_count=0;
+  e.rewards[0].kind=2;e.rewards[0].model=uint16_t(Potion::Blood);e.rewards[1].kind=1;e.rewards[1].amount=5;persisted();
+  if(!sozu){
+   before=game;require(!original_event_reward(game,0)&&!std::memcmp(&game,&before,sizeof game),"full event potion reward is rejected without mutating any saved state");
+   potion_set(game,0,Potion::Blood);game.hp=40;
+   require(can_use_potion(game,0,-1)&&use_potion(game,0,-1)&&game.hp==56,"a noncombat potion is usable while event rewards remain open");
+   require(e.selection==OriginalEventSelection::Rewards&&e.reward_active&&!e.rewards[0].claimed&&!world_relic_pending(game),"drinking preserves event reward ownership without pending hooks");
+   require(procure_potion(game,Potion::Strength),"restore the first slot before exercising the last slot");potion_set(game,15,Potion::FairyInABottle);
+   require(can_discard_potion(game,15)&&discard_potion(game,15)&&e.selection==OriginalEventSelection::Rewards,"discard automatic bottle from slot sixteen without leaving event rewards");persisted();
+  }
+  require(original_event_reward(game,0)&&e.rewards[0].claimed&&e.selection==OriginalEventSelection::Rewards&&e.reward_current==NoOriginalEventReward,"event potion claims directly and returns to the remaining reward");
+  for(unsigned i=0;i<MaxPotionSlots;i++)require(potion_at(game,i)==(!sozu&&i==15?Potion::Blood:Potion::Strength),"event procurement changes only a real empty slot and respects Sozu");persisted();
+  require(original_event_reward(game,1)&&!e.reward_active&&game.phase==Phase::Event&&e.finished,"last event reward resumes the original event");persisted();
+ }
+}
 int main(){
+ potion_reward_inventory();
  for(unsigned i=1;i<unsigned(OriginalEventId::Count);i++){
   auto id=OriginalEventId(i);require(original_event_key(id)[0],"canonical event key exists");
   require(original_event_id(original_event_key(id))==id,"canonical key roundtrip");
@@ -146,7 +169,7 @@ int main(){
  require(potion_at(game,0)==Potion::Empty&&game.original_events.page==1&&game.original_events.rng_calls==prior_rng,"revived decipher advances dialogue without the skipped upgrade roll");persisted();
  const OriginalEventId locked[]={OriginalEventId::StoneOfAllTime,OriginalEventId::RanwidTheElder,OriginalEventId::TheFutureOfPotions};
  for(auto id:locked){reset();potion_set(game,0,Potion::Blood);require(original_event_begin(game,id,7,1),"begin event with locked potion inventory");
-  before=game;require(original_event_blocks_potions(game)&&!can_use_potion(game,0,-1)&&!use_potion(game,0,-1),"event potion lock reaches the public use API");require(!std::memcmp(&game,&before,sizeof game),"blocked potion use changes no state");}
+  before=game;require(original_event_blocks_potions(game)&&!can_use_potion(game,0,-1)&&!use_potion(game,0,-1),"event potion lock reaches the public use API");require(!can_discard_potion(game,0)&&!discard_potion(game,0),"event potion lock also reaches the public discard API");require(!std::memcmp(&game,&before,sizeof game),"blocked potion actions change no state");}
  reset();potion_set(game,0,Potion::Blood);require(original_event_begin(game,OriginalEventId::StoneOfAllTime,7,1)&&original_event_choose(game,0),"event may consume its own offered potion while ordinary use is locked");
  require(potion_at(game,0)==Potion::Empty&&game.original_events.finished&&!original_event_blocks_potions(game),"finished event releases potion lock");
  reset();require(world_begin_run(game,reference::ActKind::Overgrowth,0),"start native world for event combat fixture");game.original_events=OriginalEventState{};potion_set(game,0,Potion::FoulPotion);

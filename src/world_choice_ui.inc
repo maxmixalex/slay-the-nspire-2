@@ -89,6 +89,13 @@ static void world_choice_screen(Canvas&c){
   }
  }else{
   const bool large=offer&&count<=3;
+  int portraits[10];unsigned portrait_count=0;
+  for(int i=first;i<mn(int(count),first+(large?3:10));++i){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
+   if(offer){card=card_from_token(relic?w.offers[at]:e.offers[at]);facts=relic?&w.offer_facts[at]:&e.offer_facts[at];}
+   else if(hand){instance=at;card=s.cards[at];}else{deck=at;card=s.deck[at];}
+   portraits[portrait_count++]=a.card_face_image(card,instance,deck,facts);
+  }
+  a.content.prepare_images(portraits,portrait_count);
   for(int i=first;i<mn(int(count),first+(large?3:10));i++){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
    if(offer){card=card_from_token(relic?w.offers[at]:e.offers[at]);facts=relic?&w.offer_facts[at]:&e.offer_facts[at];}
    else if(hand){instance=at;card=s.cards[at];}else{deck=at;card=s.deck[at];}

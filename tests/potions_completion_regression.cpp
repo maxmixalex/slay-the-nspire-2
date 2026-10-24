@@ -64,11 +64,13 @@ static void scopes_and_inventory(){
         for(unsigned j=1;j<k;j++)CHECK(std::strcmp(d->key,potion_definition((Potion)j)->key));
         State s{};fight(s);s.potions[0]=p;
         CHECK(can_use_potion(s,0,0)==(p!=Potion::FairyInABottle));
+        CHECK(can_discard_potion(s,0));
         CHECK(d->automatic==(p==Potion::FairyInABottle));automatic+=d->automatic;targeted+=d->targeted;
         for(int slot:{-1,2}){auto before=s;CHECK(!use_potion(s,slot,0));unchanged(s,before);}
-        for(Phase phase:{Phase::Dead,Phase::Complete,Phase::Error,Phase::ExtendedChoice}){
+        for(Phase phase:{Phase::Dead,Phase::Complete,Phase::Error,Phase::ExtendedChoice,Phase::WorldRelicChoice,Phase::OriginalEventChoice}){
             auto blocked=s;blocked.phase=phase;auto before=blocked;
             CHECK(!use_potion(blocked,0,0));unchanged(blocked,before);
+            CHECK(!can_discard_potion(blocked,0)&&!discard_potion(blocked,0));unchanged(blocked,before);
         }
         auto busy=s;busy.effect_count=1;auto before=busy;CHECK(!use_potion(busy,0,0));unchanged(busy,before);
         busy=s;busy.playing=0;before=busy;CHECK(!use_potion(busy,0,0));unchanged(busy,before);
@@ -82,7 +84,17 @@ static void scopes_and_inventory(){
             fight(s);s.phase=phase;s.potions[0]=p;
             bool expected=ordinary_outside(p)||(p==Potion::FoulPotion&&phase==Phase::Shop);
             CHECK(can_use_potion(s,0,0)==expected);
+            CHECK(can_discard_potion(s,0));
             if(!expected){before=s;CHECK(!use_potion(s,0,0));unchanged(s,before);}
+        }
+        for(Phase phase:{Phase::WorldRelicChoice,Phase::OriginalEventChoice}){
+            fight(s);s.phase=phase;s.potions[0]=p;
+            s.world_relics.choice=WorldRelicChoice::OfferReward;s.original_events.selection=OriginalEventSelection::Rewards;
+            CHECK(can_use_potion(s,0,0)==ordinary_outside(p));CHECK(can_discard_potion(s,0));
+            before=s;
+            if(!ordinary_outside(p)){CHECK(!use_potion(s,0,0));unchanged(s,before);}
+            s.world_relics.choice=WorldRelicChoice::OfferCard;s.original_events.selection=OriginalEventSelection::OfferCard;before=s;
+            CHECK(!can_use_potion(s,0,0)&&!can_discard_potion(s,0));CHECK(!discard_potion(s,0));unchanged(s,before);
         }
         // All 64 kinds can be explicitly obtained (including practice-only
         // models), without overwriting occupied bottles or mutating on failure.
@@ -96,6 +108,7 @@ static void scopes_and_inventory(){
     CHECK(!potion_definition(Potion::Empty)&&!potion_definition((Potion)255));
     State s{};fight(s);auto before=s;CHECK(!procure_potion(s,Potion::Empty));unchanged(s,before);
     CHECK(!procure_potion(s,(Potion)255));unchanged(s,before);
+    CHECK(!can_discard_potion(s,-1)&&!can_discard_potion(s,0)&&!can_discard_potion(s,int(potion_slot_count(s))));
 }
 static void resources_and_damage(){
     State s{};fight(s);s.strength=99;s.vigor=8;s.enemies[0].vulnerable=3;s.enemies[0].block=7;

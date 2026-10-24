@@ -291,7 +291,7 @@ struct Canvas{
     int width(const char*p,int size){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         RichReader reader(p);RichChar ch{};int w=0;
-        while(reader.next(ch)&&ch.codepoint!='\n')w+=a.content.glyph_metrics(ch.codepoint,size).advance+(ch.style.bold?1:0);
+        while(reader.next(ch)&&ch.codepoint!='\n')w+=a.content.glyph_metrics(ch.codepoint,size).advance+rich_bold_advance(ch);
         return w;
     }
     void glyph(Glyph g,int x,int y,uint16_t color){
@@ -319,19 +319,27 @@ struct Canvas{
             unsigned alpha=g.pixels[yy*g.w+xx];paint((y+yy)*pitch+x+xx,color,alpha);
         }
     }
+    void character(uint32_t codepoint,Glyph g,int x,int y,uint16_t color,bool shadow=false){
+        if(codepoint==InlineStarCodepoint){
+            // Sprite-font images keep their authored colors and do not gain
+            // a second copy from font bold/outline passes.
+            if(!shadow)ui(U_Star,x,y,g.w,g.h);return;
+        }
+        glyph(g,x,y,color);
+    }
     int text(const char*p,int x,int y,int size=12,uint16_t color=White,int maxwidth=320,int maxlines=1){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         RichReader reader(p);RichChar ch{};int start=x,line=0;
-        while(reader.next(ch)){auto metric=a.content.glyph_metrics(ch.codepoint,size);int advance=metric.advance+(ch.style.bold?1:0);
+        while(reader.next(ch)){auto metric=a.content.glyph_metrics(ch.codepoint,size);int advance=metric.advance+rich_bold_advance(ch);
             if(ch.codepoint=='\n'||(x>start&&x+advance>start+maxwidth)){x=start;y+=size+3;if(++line>=maxlines)break;if(ch.codepoint=='\n')continue;}
             const auto g=a.content.glyph(ch.codepoint,size);
             int dy=ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
             const auto ink=ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(x-start)*26000/mx(1,size)):colors[ch.style.color];
-            glyph(g,x+dx,y+dy,ink);if(ch.style.bold)glyph(g,x+dx+1,y+dy,ink);x+=advance;
+            character(ch.codepoint,g,x+dx,y+dy,ink);if(ch.style.bold&&!inline_icon(ch.codepoint))glyph(g,x+dx+1,y+dy,ink);x+=advance;
         }return x;
     }
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
@@ -339,14 +347,14 @@ struct Canvas{
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         RichReader reader(p);RichChar ch{};int at=x,row=0;bool boundary=true;
         const bool words=a.content.english();
-        auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px);const int advance=g.advance+(value.style.bold?1:0);return fitted_text::Metric{advance,advance};};
+        auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px);const int advance=g.advance+rich_bold_advance(value);return fitted_text::Metric{advance,advance};};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         while(reader.next(ch)){
             // Only English paragraphs reserve the next complete word. The
             // copied rich reader preserves styles across tags and the live
             // reader's character indices. Oversized words retain glyph wrap.
             const int word=words&&boundary&&at>x&&fitted_text::word_character(ch.codepoint)?fitted_text::word_width(reader,ch,size,metrics):0;
-            const auto metric=a.content.glyph_metrics(ch.codepoint,size);int advance=metric.advance+(ch.style.bold?1:0);
+            const auto metric=a.content.glyph_metrics(ch.codepoint,size);int advance=metric.advance+rich_bold_advance(ch);
             const bool space=ch.codepoint==' '||ch.codepoint=='\t';
             if(words&&space&&(at==x||at+advance>x+w)){boundary=true;continue;}
             if(ch.codepoint=='\n'||(at>x&&(at+advance>x+w||(word&&word<=w&&at+word>x+w)))){at=x;row++;if(ch.codepoint=='\n'){boundary=true;continue;}}
@@ -357,16 +365,16 @@ struct Canvas{
                 // Original event body text is 26px. Normalize native glyph
                 // advances to that scale, retaining label-local x after wrap.
                 auto ink=ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,(at-x)*26000/mx(1,size)):colors[ch.style.color];int yy=y+(row-skip)*(size+3)+dy;
-                glyph(g,at+dx,yy,ink);if(ch.style.bold)glyph(g,at+dx+1,yy,ink);}
+                character(ch.codepoint,g,at+dx,yy,ink);if(ch.style.bold&&!inline_icon(ch.codepoint))glyph(g,at+dx+1,yy,ink);}
             at+=advance;
         }return row+1;
     }
     void centered(const char*p,int x,int y,int w,int size=12,uint16_t color=White){text(p,x+mx(0,(w-width(p,size))/2),y,size,color,w);}
     // Card labels have a real rectangle, unlike scrollable detail text. Use
     // native 8/10/12px glyphs, then ellipsize within its final visible line.
-    fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false){
+    fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
-        auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size);const int bold=ch.style.bold?1:0;return fitted_text::Metric{g.advance+bold,mx(int(g.w),int(g.advance))+bold};};
+        auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size);const int bold=rich_bold_advance(ch);return fitted_text::Metric{g.advance+bold,mx(int(g.w),int(g.advance))+bold};};
         auto plan=fitted_text::plan(p,w,h,preferred,minimum,metrics);
         if(single_line){
             while(plan.total>1&&plan.size>minimum){plan.size=fitted_text::next_size(plan.size);plan.total=fitted_text::line_count(p,w,plan.size,metrics);}
@@ -378,6 +386,7 @@ struct Canvas{
         const int top=y+(centered&&!single_line?mx(0,(h-(plan.rows*plan.step+2))/2):0);
         const auto draw=[&](int offset_x,int offset_y,bool shadow){
         Canvas clipped=*this;clipped.clip_w=mn(clip_w,x+w+offset_x);clipped.clip_h=mn(clip_h,y+h+offset_y);
+        if(shadow&&drop_shadow&&!outline)clipped.opacity=uint8_t(div255(clipped.opacity*128));
         fitted_text::visit(p,w,plan,metrics,[&](const RichChar&ch,int at,int row,int size){
             const auto g=a.content.glyph(ch.codepoint,size);int xx=x+at+(centered?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
             // Keep animated rich text within its allocated card rectangle.
@@ -385,13 +394,16 @@ struct Canvas{
             int dy=ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
-            xx=mx(x,mn(xx+dx,x+w-int(g.w)-(ch.style.bold?1:0)));yy=mx(y,yy+dy);
+            xx=mx(x,mn(xx+dx,x+w-int(g.w)-rich_bold_advance(ch)));yy=mx(y,yy+dy);
             auto ink=shadow?Ink:ch.style.rainbow?rich_rainbow_rgb565(ch.style.rainbow_parameters,a.map_clock_ms,at*26000/mx(1,size)):colors[ch.style.color];
-            clipped.glyph(g,xx+offset_x,yy+offset_y,ink);if(ch.style.bold)clipped.glyph(g,xx+offset_x+1,yy+offset_y,ink);
+            clipped.character(ch.codepoint,g,xx+offset_x,yy+offset_y,ink,shadow);if(ch.style.bold&&!inline_icon(ch.codepoint))clipped.glyph(g,xx+offset_x+1,yy+offset_y,ink);
         });};
         // The eight outline passes reuse one fit/centering decision. Their
         // paint order stays unchanged, including overlapping antialiased glyphs.
-        if(outline)for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)draw(dx,dy,true);
+        if(outline){for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)draw(dx,dy,true);}
+        // The native event labels use a half-alpha offset shadow. One pass
+        // keeps that authored shadow instead of paying for an eight-pass rim.
+        else if(drop_shadow)draw(1,1,true);
         draw(0,0,false);return plan;
     }
     void text_fitted(const char*p,int x,int y,int w,int preferred=10,uint16_t color=White,int minimum=8,bool centered=false,bool outline=false){fitted(p,x,y,w,preferred+3,preferred,minimum,color,centered,true,outline);}

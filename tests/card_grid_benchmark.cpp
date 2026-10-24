@@ -110,6 +110,24 @@ int main(int argc,char**argv){
         std::printf("{\"operation\":\"observation\",\"scene\":\"%s\",\"visible_cards\":%u,\"preparation_updates\":%u,\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s,\"save_callback_attempts\":%u}\n",
             names[scene],scene?10u:8u,preparation_updates,initial_hash,framebuffer_hash(),unchanged?"true":"false",save_attempts);
         std::fflush(stdout);if(!unchanged){std::fclose(file);return 8;}
+        // Use the same ordinary detail command from each visible page. The
+        // first sample includes input, any decoding and the complete frame;
+        // it cannot hide a first-open stall in preparation or preload time.
+        char detail_name[80];std::snprintf(detail_name,sizeof detail_name,"%s_detail",names[scene]);
+        source.scene=detail_name;source.phase="input_to_first_complete_frame";
+        Cost detail_first,detail_warm;started=mark(source);app.input(Key::Detail);
+        // A visible pointer outside the text reproduces normal modal use;
+        // metadata-only hit testing must not load offscreen paragraph glyphs.
+        app.pointer_move(308,210);app.render();detail_first.add(started,source);
+        if(app.detail_card<0||!app.content.healthy()||app.combat_preparation.active||!capture(argc==4?argv[3]:nullptr,detail_name)){std::fclose(file);return 10;}
+        const uint32_t detail_hash=framebuffer_hash();source.phase="warm_detail_animation_window";
+        for(unsigned frame=0;frame<frames;++frame){started=mark(source);app.advance(33);app.render();detail_warm.add(started,source);
+            if(app.detail_card<0||!app.content.healthy()||app.combat_preparation.active||app.game.phase!=phase){std::fclose(file);return 11;}}
+        const bool detail_unchanged=save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size)&&!save_attempts;
+        detail_first.write(detail_name,"input_to_first_complete_frame");detail_warm.write(detail_name,"warm_detail_animation_window");
+        std::printf("{\"operation\":\"detail_observation\",\"scene\":\"%s\",\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s,\"save_callback_attempts\":%u}\n",
+            detail_name,detail_hash,framebuffer_hash(),detail_unchanged?"true":"false",save_attempts);
+        std::fflush(stdout);if(!detail_unchanged){std::fclose(file);return 12;}
     }
     const bool trace_good=!source.trace||std::fclose(source.trace)==0;
     return std::fclose(file)==0&&trace_good?0:9;

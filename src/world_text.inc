@@ -90,7 +90,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"FloorCount"))return wt_number(s.world.total_floor);
   if(wt_equal(name,"AscensionLevel"))return wt_number(s.world.ascension);
  }
- if(wt_equal(name,"singleStarIcon"))return wt_string(a.content.world_title("static_hover_tips","STAR_COUNT"));
+ if(wt_equal(name,"singleStarIcon"))return wt_string(InlineStarText);
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){
   if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=(wt_equal(x.table,"intents")||wt_equal(x.table,"powers"))?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;const auto*d=enemy_definition(kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}

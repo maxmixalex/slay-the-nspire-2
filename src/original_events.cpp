@@ -287,9 +287,16 @@ bool original_event_reward(State&s,int index){auto&e=s.original_events;
  if(!e.active||!e.reward_active||s.phase!=Phase::OriginalEventChoice||e.selection!=OriginalEventSelection::Rewards||world_relic_pending(s)||index< -1||index>=int(e.reward_count))return false;
  if(index<0){e.reward_active=0;e.reward_current=NoOriginalEventReward;clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;}
  auto&r=e.rewards[index];if(r.claimed)return false;
+ if(r.kind==2&&!has_world_relic(s,WorldRelicSozu)){
+  bool room=false;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)room=true;
+  if(!room)return false;
+ }
  clear_selection(s);s.phase=Phase::Event;e.reward_current=uint16_t(index);
  if(r.kind==1){r.claimed=1;gain_gold(s,r.amount);e.reward_current=NoOriginalEventReward;}
- else if(r.kind==2){e.offer_count=1;e.offers[0]=r.model;pause_selection(s,OriginalEventSelection::Potion,OriginalEventFilter::Any,0,1,true);}
+ else if(r.kind==2){
+  if(!procure_potion(s,Potion(r.model))&&!has_world_relic(s,WorldRelicSozu)){fail(s);return false;}
+  r.claimed=1;e.reward_current=NoOriginalEventReward;
+ }
  else if(r.kind==3){r.claimed=1;if(!gain_world_relic(s,r.model)){fail(s);return false;}e.reward_current=NoOriginalEventReward;}
  else if(r.kind==4){e.offer_count=r.count;for(unsigned i=0;i<r.count;i++){e.offers[i]=e.reward_cards[r.first+i];e.offer_facts[i]=e.reward_facts[r.first+i];}pause_selection(s,OriginalEventSelection::OfferCard,OriginalEventFilter::Any,0,1,true);}
  else{fail(s);return false;}

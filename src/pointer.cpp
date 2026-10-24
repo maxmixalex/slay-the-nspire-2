@@ -18,7 +18,7 @@ const HitRegion* App::hit_at(int x,int y)const{
 }
 uint32_t App::input_context()const{
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
-        ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)(detail_card>=0)<<16)|
+        ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
 void App::pointer_cancel(){hand_focus=false;map_dragging=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};}
@@ -118,7 +118,7 @@ void App::pointer_scroll(int rows){
         // rounded back to the same page on every wheel event.
         scroll=clamp(scroll+(rows>0?10:-10),0,MaxCards);inspect_cursor=scroll;
     }
-    else if(panel==4)scroll=clamp(scroll+(rows>0?8:-8),0,int(potion_slot_count(game))-1);
+    else if(panel==4){if(!potion_targeting)potion_input(rows>0?Key::Right:Key::Left);}
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
     else if(panel==3||game.phase==Phase::Map)scroll_map(-rows);
     else if(panel==5)scroll=clamp(scroll+rows,0,ui_owned_relic_count(game)?int(ui_owned_relic_count(game))-1:0);
@@ -172,6 +172,9 @@ void App::pointer_button(bool down){
         pointer.armed_card=-1;return;
     }
     if(!same||!hit.enabled){if(pointer.dragging)pointer.armed_card=-1;return;}
+    if(panel==4&&potion_targeting&&(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||hit.kind==HitKind::PotionMerchant)){
+        finish_potion_use(hit.kind==HitKind::PotionMerchant?-1:hit.value);return;
+    }
     if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||hit.kind==HitKind::Battlefield){
         if(pointer.armed_card<0||combat_actions_locked()||game.phase!=Phase::Combat)return;
         int index=-1;for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==pointer.armed_card)index=i;
@@ -196,7 +199,9 @@ void App::pointer_button(bool down){
     case HitKind::DeckCard:if(hit.value>=0&&hit.value<game.deck_count)open_card_detail(game.deck[hit.value],hit.value);break;
     case HitKind::Relic:scroll=hit.value;open_owned_relic(hit.value);break;
     case HitKind::OwnedRelic:open_owned_relic(hit.value);break;
-    case HitKind::Potion:scroll=hit.value;break;
+    case HitKind::Potion:if(panel==4&&scroll==hit.value)start_potion_use();break;
+    case HitKind::PotionSlot:open_potion(hit.value);break;
+    case HitKind::PotionPage:{const unsigned pages=(potion_slot_count(game)+2)/3;close_potion();potion_page=uint8_t((potion_page+1)%pages);break;}
     case HitKind::Scroll:pointer_scroll(hit.value);break;
     case HitKind::Close:pointer_key(Key::Back);break;
     case HitKind::DetailClose:detail_card=-1;break;

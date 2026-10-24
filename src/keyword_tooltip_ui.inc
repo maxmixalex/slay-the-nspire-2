@@ -104,10 +104,12 @@ void collect_card_hover_tips(const App&a,Card card,HoverTipList&out,int instance
 
 static bool hover_in(const HoverRect&r,int x,int y){return x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;}
 static bool hover_detail_word(const App&a,Card card){
+    if(!hover_in({123,66,177,120},a.pointer.x,a.pointer.y))return false;
     char text[2048]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,text,sizeof text,a.detail_instance,a.detail_deck_index);
     RichReader reader(text);RichChar ch{};int x=123,row=0;
-    while(reader.next(ch)){auto glyph=a.content.glyph(ch.codepoint,12);int advance=glyph.advance+(ch.style.bold?1:0);
+    while(reader.next(ch)){auto glyph=a.content.glyph_metrics(ch.codepoint,12);int advance=glyph.advance+rich_bold_advance(ch);
         if(ch.codepoint=='\n'||(x>123&&x+advance>300)){x=123;++row;if(ch.codepoint=='\n')continue;}
+        if(row>=a.detail_scroll+8)return false;
         if(row>=a.detail_scroll&&row<a.detail_scroll+8&&ch.style.color==1&&
            hover_in({x,66+(row-a.detail_scroll)*15,mx(1,advance),15},a.pointer.x,a.pointer.y))return true;
         x+=advance;

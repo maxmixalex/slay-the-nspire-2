@@ -123,10 +123,9 @@ static void canonical_blade_context(){
 static void original_resource_labels(){
  if(a.content.version()<LocaleContentVersion)return;
  reset(3);snapshot();
- // Read the actual locale labels rather than inferring tiny rendered glyphs.
- // Both resource formatters and the standalone star-icon binding must use
- // the same original key in each language, including relic and potion text.
- const std::string star=a.content.world_title("static_hover_tips","STAR_COUNT");
+ // The pinned star formatter repeats sprite-font icons. Its standalone
+ // binding uses the same sprite; localized prose still names the resource.
+ const std::string star=InlineStarText;
  const std::string energy=a.content.world_title("static_hover_tips","ENERGY_COUNT");
  CHECK(!star.empty()&&!energy.empty());
  CHECK(description(WorldRelicDivineRight).find(star)!=std::string::npos);unchanged();

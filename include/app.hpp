@@ -27,6 +27,8 @@
 #include "combat_preparation.hpp"
 #include "title_scene.hpp"
 #include "title_assets.hpp"
+#include "frontend_assets.hpp"
+#include "reward_presentation.hpp"
 #include "title_particles.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
@@ -87,8 +89,8 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>TitleEffectsContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        if(version_<ContentVersion||version_>FrontendContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
@@ -114,9 +116,10 @@ inline unsigned ui_owned_relic_count(const State&s){return s.world_relics.active
 inline RelicId ui_owned_relic_id(const State&s,unsigned position){return position<ui_owned_relic_count(s)?(s.world_relics.active?s.world_relics.entries[position].id:s.relic_order[position]):NoWorldRelic;}
 constexpr unsigned MaxWorldUiChoices=MaxOriginalEventRewards>MaxWorldRelicOffers?MaxOriginalEventRewards:MaxWorldRelicOffers;
 inline unsigned ui_reward_actions(const State&s,UiAction*out){
- unsigned n=0;const UiAction base[]={UiAction::RewardGold,UiAction::RewardCards,UiAction::RewardPotion};
- const bool transferred=s.world.active&&s.world.reward_count==0&&(s.reward_claimed&7)==7;
- if(!transferred)for(auto a:base){if(out)out[n]=a;++n;}
+ unsigned n=0;auto add=[&](UiAction action){if(out)out[n]=action;++n;};
+ if(!(s.reward_claimed&1)&&s.last_gold>0)add(UiAction::RewardGold);
+ if(!(s.reward_claimed&2)&&(!s.world.active||s.world.reward_count))add(UiAction::RewardCards);
+ if(!(s.reward_claimed&4)&&s.reward_potion!=Potion::Empty)add(UiAction::RewardPotion);
  if(s.world.active&&s.world.reward_relic!=NoWorldRelic&&!s.world.reward_relic_claimed){if(out)out[n]=UiAction::RewardRelic;++n;}
  if(s.necro.grimoire_pending){if(out)out[n]=UiAction::RewardGrimoire;++n;}
  if(out)out[n]=UiAction::LeaveRewards;return n+1;
@@ -181,12 +184,18 @@ struct App {
     int turn_banner_floor=-1,turn_banner_combat=-1,turn_banner_encounter=-1,turn_banner_number=0;
     void sync_turn_banner();
     CombatPreparation combat_preparation{};
+    RewardPresentation reward_presentation{};
+    RewardAcquisitionSnapshot reward_acquisition_snapshot()const;
+    void finish_reward_acquisition(const RewardAcquisitionSnapshot&);
+    void sync_reward_presentation();
+    bool reward_pickup_hidden(RewardPickupKind,unsigned)const;
+    int reward_gold()const;
     void sync_combat_preparation();
     void step_combat_preparation();
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;
-    uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0;
+    uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0,settings_tab=0;
     Character saved_character=Character::Ironclad;
     uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
     uint64_t saved_run_seed=0;
@@ -255,6 +264,20 @@ struct App {
     bool grimoire_select=false;
     int library_tab=0,library_page=0,library_selected=0;
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
+    uint8_t potion_menu_item=0,potion_page=0;
+    bool potion_targeting=false,potion_removed_discard=false;
+    int potion_popup_slot=-1,potion_removed_slot=-1;
+    uint32_t potion_popup_start=0,potion_removed_start=0;
+    Potion potion_removed=Potion::Empty;
+    void open_potion(int slot);
+    void close_potion();
+    void start_potion_use();
+    bool finish_potion_use(int target);
+    bool potion_input(Key);
+    bool potion_needs_target()const;
+    bool potion_is_thrown()const;
+    bool potion_usable()const;
+    void remove_potion_visual(Potion,int slot,bool discarded);
     int map_scroll=0,busy=0,card_fly=0,fly_card=-1,last_hit[MaxEnemies+1]={},hit_start[MaxEnemies+1]={};
     HealthBarMotion health_bars[MaxEnemies+2]{};
     uint32_t health_bar_seed=0;
@@ -329,6 +352,7 @@ struct App {
     void combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,uint32_t end);
     HealthBarValues combat_health(int actor)const;
     EnemyIntent combat_intent(int slot)const;
+    unsigned combat_intent_alpha(int slot)const;
     int combat_energy(bool maximum=false)const;
     CombatHand::Cards combat_hand()const;
     HandPose combat_hand_pose(unsigned index,bool focused=false)const;

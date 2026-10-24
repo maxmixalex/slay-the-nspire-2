@@ -2,9 +2,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "rich_rainbow.hpp"
+#include "inline_icons.hpp"
 namespace spire {
 struct RichStyle { uint8_t color=0; bool bold=false,italic=false,wave=false,jitter=false,rainbow=false,thinky_dots=false; unsigned thinky_start=0;RichRainbow rainbow_parameters{}; };
 struct RichChar { uint32_t codepoint; RichStyle style; unsigned index; };
+inline int rich_bold_advance(const RichChar&ch){return ch.style.bold&&!inline_icon(ch.codepoint)?1:0;}
 // RichTextThinkyDots uses a 400 ms positive half-sine, a 4 s rest and
 // a 100 ms delay per relative character. Quantize to one screen pixel so
 // small calculator glyphs remain legible. This clock is presentation only.

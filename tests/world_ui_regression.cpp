@@ -363,7 +363,7 @@ static void audited_leaf_and_cultist_timing(){
   const uint32_t end=start+((fast?fast_end[model][move]:normal_end[model][move])+32)/33;
   if(slot+1<a.game.enemy_count){const auto&next=a.enemy_presentation[slot+1];CHECK(next.count==1&&next.queue[0].earliest==end+TurnBannerPresentation::intent_lead_ticks(fast!=0));}
   else CHECK(a.enemy_visual_clock==end);
-  snapshot();a.animation=start;a.render();CHECK(!a.combat_intent(slot).flags);
+  snapshot();a.animation=start;a.render();CHECK(a.combat_intent(slot).flags&&a.combat_intent_alpha(slot)>0);
   const int hp_before=a.combat_health(0).hp,ritual=EnemyStatusStart+int(EnemyPower::Ritual);
   const auto piles_before=a.combat_pile_counts();
   a.animation=impact-1;a.render();CHECK(a.combat_health(0).hp==hp_before);
@@ -429,11 +429,11 @@ static void deferred_enemy_values(){
   const uint32_t block=second+TurnBannerPresentation::wait_ticks(350,175,fast!=0),done=a.combat_feedback.end_at;
   snapshot();a.input(Key::Confirm);a.input(Key::EndTurn);unchanged();
   a.animation=first-lead-1;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent(1).flags);
-  a.animation=first-lead;a.render();CHECK(!a.combat_intent(0).flags&&a.combat_intent(1).flags);
+  a.animation=first-lead;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)==255&&a.combat_intent(1).flags);
   a.animation=first+impact-1;a.render();CHECK(a.combat_health(0).hp==hp&&a.combat_health(0).block==3);
   a.animation=first+impact;a.render();CHECK(a.combat_health(0).hp==hp-(first_intent.damage-3)&&a.combat_health(0).block==0);
   CHECK(a.hit_start[0]==int(first+impact)&&a.combat_energy()==0);capture(fast?"enemy-values-first-fast":"enemy-values-first");
-  a.animation=second+impact-1;a.render();CHECK(a.combat_health(0).hp==hp-(first_intent.damage-3)&&!a.combat_intent(1).flags);
+  a.animation=second+impact-1;a.render();CHECK(a.combat_health(0).hp==hp-(first_intent.damage-3)&&a.combat_intent(1).flags&&a.combat_intent_alpha(1)>0);
   a.animation=second+impact;a.render();CHECK(a.combat_health(0).hp==a.game.hp&&a.combat_health(2).block==0);
   a.animation=block-1;a.render();CHECK(a.combat_health(2).block==0);
   a.animation=block;a.render();CHECK(a.combat_health(2).block==a.game.enemies[1].block&&a.combat_energy()==0);
@@ -664,6 +664,8 @@ static void deferred_enemy_statuses(){
   CHECK(a.game.enemies[0].strength>0&&a.combat_status_amount(1,0)==0);
   const uint32_t start=a.enemy_presentation[0].queue[0].earliest;
   const uint32_t power=start+TurnBannerPresentation::wait_ticks(600,250,fast!=0),done=a.combat_feedback.end_at;
+  bool popup=false;for(unsigned i=0;i<a.combat_status.popup_count;++i){const auto&p=a.combat_status.popups[i];if(p.actor==1&&p.id==0){CHECK(p.at==power&&p.buff);popup=true;}}
+  CHECK(popup);
   snapshot();a.animation=power-1;a.render();CHECK(a.combat_status_amount(1,0)==0&&!has(HitKind::BattleStatus,StatusKinds));
   a.animation=power;a.render();CHECK(a.combat_status_amount(1,0)==a.game.enemies[0].strength&&has(HitKind::BattleStatus,StatusKinds));
   a.open_status_icon(StatusKinds);CHECK(a.status_actor==1);int ids[StatusKinds];
@@ -676,6 +678,8 @@ static void deferred_enemy_statuses(){
   const uint32_t web=a.enemy_presentation[0].queue[0].earliest+TurnBannerPresentation::wait_ticks(400,200,fast!=0);
   snapshot();a.animation=web-1;a.render();CHECK(a.combat_status_amount(0,frail)==0&&!has(HitKind::BattleStatus,frail));
   a.animation=web;a.render();CHECK(a.combat_status_amount(0,frail)==status_amount(a.game,0,frail)&&has(HitKind::BattleStatus,frail));
+  popup=false;for(unsigned i=0;i<a.combat_status.popup_count;++i){const auto&p=a.combat_status.popups[i];if(p.actor==0&&p.id==frail){CHECK(p.at==web&&!p.buff);popup=true;}}
+  CHECK(popup);
   CHECK(a.combat_status_source(0,int(EnemyPower::Frail))==EnemyId::LouseProgenitor);unchanged();
  }
  a.fast_mode=false;
@@ -699,6 +703,86 @@ static void deferred_enemy_statuses(){
  for(unsigned i=0;i<CombatStatus::Capacity+20;++i)view.append(0,{int(i+1),0,0,1},a.animation+i+1);
  CHECK(view.overflow);view.sync(a.animation+CombatStatus::Capacity+30);view.finish();
  CHECK(view.shown[0].amount==int(CombatStatus::Capacity+20));a.reset_presentation();
+}
+static void sequential_hit_feedback(){
+ static State direct;static SaveData expected;
+ // Real card commands exercise repeated single targets, an all-target hit,
+ // and random targets. Playback must preserve every canonical RNG/save byte.
+ const CardKind kinds[]={TwinStrike,DaggerSpray,SwordBoomerang,RegentCelestialMight,DefectRefract};
+ for(unsigned fast=0;fast<2;++fast)for(unsigned test=0;test<5;++test){
+  enemy_visual_fight(EncounterId::NibbitsNormal,test==1?Character::Silent:test==3?Character::Regent:test==4?Character::Defect:Character::Ironclad);a.fast_mode=fast!=0;
+  a.game.energy=9;if(test==3)a.game.expansion.stars=9;
+  for(int slot=0;slot<a.game.enemy_count;++slot){a.game.enemies[slot].hp=a.game.enemies[slot].max_hp=999;a.game.enemies[slot].block=2;}
+  const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,kinds[test],1025);resolve_pending(a.game);
+  CHECK(a.game.zones[id]==Zone::Hand);a.reset_presentation();a.render();a.cursor=a.game.hand.count-1;a.target=0;
+  const int hit=damage(a.game,a.game.cards[id],0,id),hits=test<2||test==4?2:3;
+  CHECK(hit>2);snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,0));CHECK(save(direct,expected));
+  const uint32_t start=a.animation;a.input(Key::Confirm);CHECK(a.combat_feedback.active&&!a.combat_feedback.overflow);
+  CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));snapshot();
+  unsigned distinct=0;uint32_t times[8]{};
+  for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor<1||q.actor>unsigned(a.game.enemy_count)||q.value.hp==999)continue;
+   bool found=false;for(unsigned j=0;j<distinct;++j)found|=times[j]==q.at;if(!found){CHECK(distinct<8);times[distinct++]=q.at;}}
+  CHECK(distinct==unsigned(hits));
+  for(unsigned n=0;n<distinct;++n){
+   const unsigned gap=test==4?(fast?100u:200u):(fast?175u:350u);
+   const uint32_t at=start+((fast?75u:150u)+n*gap+32u)/33u;CHECK(times[n]==at);
+   a.animation=at-1;a.render();
+   if(!n)CHECK(a.combat_health(1).hp==999&&a.combat_health(1).block==2);
+   a.animation=at;a.render();
+   if(test!=2){const int expected_hp=999-int(n+1)*hit+2;CHECK(a.combat_health(1).hp==expected_hp&&a.combat_health(1).block==0);
+    CHECK(a.last_hit[1]==hit-(n?0:2)&&a.hit_start[1]==int(at));
+    if(test==1)CHECK(a.combat_health(2).hp==expected_hp&&a.hit_start[2]==int(at));
+    else CHECK(a.combat_health(2).hp==999);
+   }
+   if(n==0&&test==1)capture(fast?"multi-hit-area-first-fast":"multi-hit-area-first");
+   unchanged();
+  }
+  a.animation=a.combat_feedback.end_at;a.render();CHECK(!a.combat_feedback.active);
+  for(int slot=0;slot<a.game.enemy_count;++slot)CHECK(a.combat_health(slot+1).hp==a.game.enemies[slot].hp);unchanged();
+ }
+ for(unsigned fast=0;fast<2;++fast){
+  enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;a.game.energy=3;a.game.enemies[0].hp=1;
+  const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,TwinStrike,1025);resolve_pending(a.game);
+  a.reset_presentation();a.render();a.cursor=a.game.hand.count-1;const uint32_t start=a.animation;a.input(Key::Confirm);
+  CHECK(a.game.enemies[0].hp==0&&a.combat_feedback.active);
+  unsigned impacts=0;for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor==1&&q.value.hp==0)++impacts;}
+  CHECK(impacts==1);CHECK(a.combat_feedback.end_at<start+TurnBannerPresentation::wait_ticks(700,350,fast!=0));
+ }
+ // Chomper animates each hit; Axebot's OneTwo explicitly animates once.
+ // Both use the original 200/100ms post-Damage wait, independent of clips.
+ for(unsigned fast=0;fast<2;++fast)for(unsigned once=0;once<2;++once){
+  enemy_visual_fight(once?EncounterId::AxebotsNormal:EncounterId::ChompersNormal);a.fast_mode=fast!=0;
+  for(int slot=0;slot<a.game.enemy_count;++slot)a.game.enemy_world.models[slot].node=uint8_t(once?1:0);
+  a.game.block=2;const auto intent=enemy_intent(a.game,0);CHECK(intent.hits==2&&intent.damage>2);
+  const int hp=a.game.hp;snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(end_turn(direct));CHECK(save(direct,expected));
+  a.input(Key::EndTurn);CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));
+  const uint32_t start=a.enemy_presentation[0].queue[0].earliest;const unsigned delay=once?350:300,first=fast?delay/2:delay;
+  const unsigned gap=(fast?100:200)+(once?0:first);snapshot();
+  for(unsigned hit=0;hit<2;++hit){const uint32_t at=start+(first+hit*gap+32)/33;
+   a.animation=at-1;a.render();CHECK(a.combat_health(0).hp==hp-int(hit)*intent.damage+(hit?2:0));
+   a.animation=at;a.render();CHECK(a.combat_health(0).hp==hp-int(hit+1)*intent.damage+2&&a.combat_health(0).block==0);CHECK(a.hit_start[0]==int(at));unchanged();}
+ }
+ a.fast_mode=false;
+ // HideIntent retains the old label during its delay, fades independently,
+ // and is cancelled when the next set of intents is revealed.
+ enemy_visual_fight(EncounterId::NibbitsWeak);a.begin_combat_feedback();const uint32_t hide=a.animation;
+ a.combat_feedback_move(0,0,hide,hide,hide+40);snapshot();
+ a.animation=hide+12;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)==255);
+ a.animation=hide+20;a.render();CHECK(a.combat_intent(0).flags&&a.combat_intent_alpha(0)>0&&a.combat_intent_alpha(0)<255);
+ a.animation=hide+28;a.render();CHECK(!a.combat_intent(0).flags&&a.combat_intent_alpha(0)==0);unchanged();a.reset_presentation();
+ // Regent's amount is still in the display projection, but never in the
+ // power strip/list. A queued gain cannot leak into its independent HUD.
+ enemy_visual_fight(EncounterId::NibbitsWeak,Character::Regent);a.game.expansion.stars=0;a.render();
+ CHECK(has(HitKind::UiAction,int(UiAction::ShowStars))&&!has(HitKind::BattleStatus,44));
+ const uint32_t gain=a.animation+10;
+ {UiCoreObserver observer(a);a.begin_combat_feedback();a.combat_feedback.effect_at=gain;queue_extension(a.game,XOp::RStars,3);resolve_pending(a.game);}
+ CHECK(a.game.expansion.stars==3&&a.combat_status_amount(0,44)==0);snapshot();
+ a.animation=gain-1;a.render();CHECK(a.combat_status_amount(0,44)==0&&!has(HitKind::BattleStatus,44));
+ a.animation=gain;a.render();CHECK(a.combat_status_amount(0,44)==3&&has(HitKind::UiAction,int(UiAction::ShowStars)));
+ int ids[StatusKinds];const int count=a.combat_statuses(0,ids);for(int i=0;i<count;++i)CHECK(ids[i]!=44);
+ for(unsigned i=0;i<a.combat_status.popup_count;++i)CHECK(a.combat_status.popups[i].id!=44);
+ a.ui_action(UiAction::ShowStars);CHECK(a.status_actor<0);unchanged();capture("regent-star-resource");
+ a.reset_presentation();CHECK(a.combat_status.popup_count==0);
 }
 static void hidden_choice_input(int token){
  CHECK(!a.combat_choice_ready());a.render();CHECK(has(HitKind::Battlefield,0));
@@ -928,4 +1012,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();deferred_combat_choices();original_card_movement();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();deferred_combat_choices();original_card_movement();sequential_hit_feedback();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

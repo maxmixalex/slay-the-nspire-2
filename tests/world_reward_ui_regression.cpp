@@ -115,10 +115,11 @@ static void glass_eye(){
 }
 static void potion_and_special(){
  reset();CHECK(add_potion_slots(a.game,MaxPotionSlots-potion_slot_count(a.game)));for(unsigned i=0;i<MaxPotionSlots;i++)potion_set(a.game,i,Potion::Blood);
- single_reward(3,unsigned(Potion::Strength));auto&w=a.game.world_relics;press_reward(0);CHECK(w.choice==WorldRelicChoice::Potion&&a.world_choice_page_size()==10);snapshot();a.pointer_scroll(1);a.render();CHECK(a.cursor==10&&hit_count(HitKind::WorldChoice)==6);unchanged();
- // Cancel replacement, then reopen and select the actual sixteenth slot.
- a.ui_action(UiAction::ConfirmWorldChoice);CHECK(w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1));press_reward(0);a.pointer_scroll(1);press(HitKind::WorldChoice,15);CHECK(a.choice_selected_count==1&&potion_at(a.game,15)==Potion::Blood);
- press_action(UiAction::ConfirmWorldChoice);CHECK(a.game.phase==Phase::Map&&potion_at(a.game,15)==Potion::Strength);for(unsigned i=0;i<15;i++)CHECK(potion_at(a.game,i)==Potion::Blood);snapshot();
+ single_reward(3,unsigned(Potion::Strength));auto&w=a.game.world_relics;snapshot();press_reward(0);CHECK(w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1));unchanged();
+ // Free the actual sixteenth belt slot without leaving the reward menu.
+ a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Left);CHECK(a.scroll==15);a.render();unchanged();
+ press_action(UiAction::DiscardPotion);CHECK(!a.panel&&potion_at(a.game,15)==Potion::Empty&&w.choice==WorldRelicChoice::OfferReward);snapshot();
+ press_reward(0);CHECK(a.game.phase==Phase::Map&&potion_at(a.game,15)==Potion::Strength);for(unsigned i=0;i<15;i++)CHECK(potion_at(a.game,i)==Potion::Blood);snapshot();
  reset();add(WorldRelicDriftwood);add(WorldRelicPaelsWing);single_reward(5,card_token({DefectGeneticAlgorithm,1}));auto&r=a.game.world_relics.rewards[0];
  r.tokens[0]=17;r.facts[0].enchantment=EventEnchantment::Nimble;r.facts[0].enchantment_amount=3;a.render();snapshot();a.input(Key::Detail);
  CHECK(a.detail_has_facts&&a.detail_genetic==17&&a.detail_scythe==0&&a.detail_facts.enchantment==EventEnchantment::Nimble&&a.detail_facts.enchantment_amount==3);a.render();a.input(Key::Back);unchanged();
@@ -157,9 +158,35 @@ static void camp_proceed(bool keyboard){
  press(HitKind::Choice,0);CHECK(a.game.phase==Phase::Camp&&world_rest_can_proceed(a.game)&&world_rest_option_enabled(a.game,1));a.render();CHECK(has_action(UiAction::LeaveCamp));const int hp=a.game.hp;capture(keyboard?"rest-tent-keyboard":"rest-tent-proceed");
  if(keyboard)a.input(Key::EndTurn);else press_action(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Camp&&w.room_open==2&&a.map_window.is_open&&a.game.hp==hp);snapshot();
 }
+static void reward_animation_curves(){
+ RewardPresentation p;p.observe_window(1,17,3,1000);CHECK(p.window(1000).alpha==0&&p.window(1000).y==20);
+ CHECK(p.window(1250).alpha>100&&p.window(1250).alpha<200);CHECK(p.window(1500).alpha==255&&p.window(1500).y==0);
+ p.observe_window(1,17,2,1500);CHECK(p.window_start==1000);p.observe_window(1,17,0,1500);
+ CHECK(p.window(1625).alpha>100&&p.window(1625).alpha<200);CHECK(p.window(1750).alpha==0);
+ p.append(RewardPickupKind::Potion,unsigned(Potion::Strength),0,86,120,2000);
+ CHECK(p.hidden(RewardPickupKind::Potion,0,2349)&&!p.hidden(RewardPickupKind::Potion,0,2350));
+ const auto potion=p.sample(p.flights[0],135,11,2175);CHECK(potion.x==122&&potion.y==39);
+ p.append(RewardPickupKind::Relic,WorldRelicGoldenPearl,1,86,120,2000);const auto relic=p.sample(p.flights[1],30,32,2175);
+ CHECK(relic.x<58&&relic.x>42&&relic.y<76&&relic.y>50);
+ // Compare the bounded arithmetic gold path with the literal source delay
+ // sequence, including positive/negative and very large changes.
+ for(int delta:{1,9,51,101,9999,-1,-101,-9999})for(unsigned elapsed:{0u,399u,400u,450u,900u,3000u,20000u}){
+  p.begin_gold(10000,10000+delta,0);int remaining=delta;unsigned at=400;
+  while(remaining&&elapsed>=at){const int amount=remaining<0?-remaining:remaining,step=amount>100?75:amount>50?10:1;remaining+=remaining>0?-step:step;const int next=remaining<0?-remaining:remaining;at+=10+unsigned(next<10?10-next:0)*10;}
+  CHECK(p.remaining_gold(elapsed)==remaining);CHECK(p.displayed_gold(elapsed)==10000+delta-remaining);
+ }
+}
+static void acquisition_flights(){
+ reset();potion_set(a.game,0,Potion::Empty);single_reward(3,unsigned(Potion::Strength));a.render();a.advance(500);a.render();
+ const uint32_t serial=a.reward_presentation.serial;press_reward(0);CHECK(potion_at(a.game,0)==Potion::Strength);
+ CHECK(a.reward_presentation.serial==serial+1&&a.reward_pickup_hidden(RewardPickupKind::Potion,0));
+ snapshot();a.advance(175);a.render();unchanged();capture("reward-potion-flight");a.advance(175);a.render();CHECK(!a.reward_pickup_hidden(RewardPickupKind::Potion,0));unchanged();
+ reset();single_reward(2,WorldRelicGoldenPearl);a.render();a.advance(500);a.render();const unsigned slot=ui_owned_relic_count(a.game);press_reward(0);
+ CHECK(a.reward_pickup_hidden(RewardPickupKind::Relic,slot));snapshot();a.advance(175);a.render();unchanged();capture("reward-relic-flight");a.advance(175);a.render();CHECK(!a.reward_pickup_hidden(RewardPickupKind::Relic,slot));unchanged();
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();camp_proceed(false);camp_proceed(true);
+ reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();camp_proceed(false);camp_proceed(true);acquisition_flights();
  std::printf("world reward UI: %u checks passed; %s profile; reward ownership, direct claim, alternatives and Camp Proceed\n",checks,argc>1?"actual":"synthetic");
 }
