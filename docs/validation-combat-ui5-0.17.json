@@ -334,5 +334,37 @@
     "No physical-device or calculator performance inferred from ASan host callback timing.",
     "Power silent-application distinction still lacks a dedicated presentation notification.",
     "Power flash shader, star-gain particles, overlapping damage-number VFX, and all 15-fps intent sprite frames remain outside this implementation."
-  ]
+  ],
+  "final_optional_target_acceptance": {
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "target": "combat_feedback_benchmark",
+    "build": {
+      "journal": "ui5-final-optional-benchmark-build-97e63c578183",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "441b0d28d9e7b1aafeed1e83d82e615aa19900cc8c14968ddc7febccff6b429a"
+    },
+    "run": {
+      "journal": "ui5-final-optional-benchmark-2af6f57d8593",
+      "status": "passed",
+      "source_changed": false,
+      "log_sha256": "c4aefdb89199f07356c8a40cb0d75cf4ffde6b0985cae3364ab62dd76327df50"
+    },
+    "iterations_per_case": 100,
+    "scope": "Explicit optional-target build and functional smoke only; these concurrently run samples do not replace the quiet serial performance comparison above.",
+    "cases": [
+      {
+        "actors": 2,
+        "effects": 1700,
+        "save_hash": "9a9f5751874312f2",
+        "cue_hash": "73a5dc3304f4b93c"
+      },
+      {
+        "actors": 3,
+        "effects": 1900,
+        "save_hash": "6ae389b733af28d7",
+        "cue_hash": "6e9fb7c702479b64"
+      }
+    ]
+  }
 }

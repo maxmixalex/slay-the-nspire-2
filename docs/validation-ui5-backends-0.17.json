@@ -187,7 +187,7 @@
     "path_correction": "The initial compound commands requested dist/nSpire2.wasm after completing native captures. Correct reruns use build/web/nSpire2.wasm and reuse all successful native frames/saves."
   },
   "rooms": {
-    "status": "Corrected source fixture ready; stage 5 checkpoint and formal execution pending",
+    "status": "passed",
     "planned_scenarios": [
       "aroma-transform",
       "aroma-upgrade-silent",
@@ -223,11 +223,103 @@
     },
     "cause": "The script sent detail/back/play before advancing the existing real-asset preparation screen. This failed the required successful-play revision assertion; it was not accepted as a runtime failure or a completed validation.",
     "fixture_change": "Retain every original scripted action, successful-play revision check, final turn check and three-save assertion. Record bounded readiness updates in the scenario manifest before inputs. Keep script indices separate from added capture-frame indices so all five characters remain checked.",
-    "runtime_changed_for_fixture": false
+    "runtime_changed_for_fixture": false,
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "driver_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "source_tree": "9b75a36ccfbea8bf9b0e233a7de4e4c8556041cd",
+    "scenarios_per_language": 9,
+    "frames_per_language": 514,
+    "saves_per_language": 23,
+    "readiness_frames_per_language": 139,
+    "preserved_semantic_assertions": [
+      "Every scripted controlled card advances game revision and remains in Combat",
+      "Each of the five character sequences ends on turn 2 with exactly 3 save callbacks",
+      "Event transform/upgrade/remove sequences reach their post-choice event page",
+      "Shop removal is sold and the shop remains active"
+    ],
+    "scenarios": [
+      {
+        "name": "aroma-transform",
+        "frames": 19,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "aroma-upgrade-silent",
+        "frames": 16,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "doors-remove",
+        "frames": 15,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "shop",
+        "frames": 30,
+        "recorded_readiness_updates": 0,
+        "saves": 2
+      },
+      {
+        "name": "ironclad-combat",
+        "frames": 75,
+        "recorded_readiness_updates": 23,
+        "saves": 3
+      },
+      {
+        "name": "silent-combat",
+        "frames": 69,
+        "recorded_readiness_updates": 17,
+        "saves": 3
+      },
+      {
+        "name": "defect-orbs",
+        "frames": 94,
+        "recorded_readiness_updates": 35,
+        "saves": 3
+      },
+      {
+        "name": "regent-stars-forge",
+        "frames": 114,
+        "recorded_readiness_updates": 48,
+        "saves": 3
+      },
+      {
+        "name": "necro-osty-doom",
+        "frames": 82,
+        "recorded_readiness_updates": 16,
+        "saves": 3
+      }
+    ],
+    "runs": [
+      {
+        "language": "eng",
+        "status": "passed",
+        "native_journal": "ui5-release-eng-rooms-native-232181c9e606.json",
+        "wasm_journal": "ui5-release-eng-rooms-wasm-bbdd3842ff39.json",
+        "source_changed": false,
+        "exact_RGB565_frames": 514,
+        "exact_serialized_saves": 23,
+        "manifest_sha256": "b1f6895e0f0046a2de28599b150857cd74b0997d96f064677bc7d438ce09b2ce"
+      },
+      {
+        "language": "zhs",
+        "status": "passed",
+        "native_journal": "ui5-release-zhs-rooms-native-adca9a569e6a.json",
+        "wasm_journal": "ui5-release-zhs-rooms-wasm-64e1f60580e4.json",
+        "source_changed": false,
+        "exact_RGB565_frames": 514,
+        "exact_serialized_saves": 23,
+        "manifest_sha256": "b1f6895e0f0046a2de28599b150857cd74b0997d96f064677bc7d438ce09b2ce"
+      }
+    ]
   },
   "limitations": [
     "Exact RGB565 and serialized-save agreement compares this project native and WASM implementations; it does not compare the original PC game.",
     "Full-pack WASM resource callbacks do not test split-resource startup or the HTML browser loader. The independent browser report covers that boundary.",
     "No physical-calculator frame pacing, cold I/O, touchpad latency or Firebird execution is claimed."
-  ]
+  ],
+  "identity_note": "The world matrix is the executed stage 4 runtime evidence. The rooms matrix uses final checkpoint binaries and WASM. They are reported separately and are not combined into a claim that every scenario ran at the final checkpoint."
 }

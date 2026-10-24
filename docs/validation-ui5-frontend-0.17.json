@@ -193,7 +193,7 @@
   },
   "potion_fixture_followup": {
     "runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
-    "status": "External corrected fixture passes; source checkpoint and formal rerun pending",
+    "status": "Formally checkpointed and passed at final acceptance checkpoint",
     "initial_failures": [
       "ui5-stage4-actual-eng-potion_ui_regression-51d7097e5ad6.json",
       "ui5-stage4-actual-zhs-potion_ui_regression-08534a5718a1.json"
@@ -223,6 +223,21 @@
         "checks": 805,
         "status": "passed",
         "journal": "ui5-stage4-potion-settled-zhs-897a9bf88475.json"
+      }
+    ],
+    "formal_runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "formal_runs": [
+      {
+        "language": "eng",
+        "checks": 805,
+        "status": "passed",
+        "journal": "ui5-release-eng-potion-a57b42169cf1.json"
+      },
+      {
+        "language": "zhs",
+        "checks": 805,
+        "status": "passed",
+        "journal": "ui5-release-zhs-potion-4c995b520ed7.json"
       }
     ]
   },
@@ -262,7 +277,15 @@
       "reward-card-genetic-flight"
     ],
     "character_select_stage3": "The capture occurred at the first entrance frame because advance preceded first render. The source fixture is corrected in stage 4; this partial entrance frame is not a settled-layout acceptance image.",
-    "pickup_fixture_scope": "Single-potion/relic timing fixtures return to the legacy prototype map. Their screenshots verify the moving icon and withheld destination, not native-map visual parity. rewards-combat-extras is a native event-combat reward route."
+    "pickup_fixture_scope": "Single-potion/relic timing fixtures return to the legacy prototype map. Their screenshots verify the moving icon and withheld destination, not native-map visual parity. rewards-combat-extras is a native event-combat reward route.",
+    "release_directory_name": "ui5-release-captures",
+    "release_key_frames": [
+      "frontend-character-select",
+      "selector-3-settled",
+      "potion-fire-menu",
+      "potion-throw-targeting",
+      "potion-automatic-menu"
+    ]
   },
   "retained_failures": [
     "Stage 2 actual frontend runs stopped at a test assertion requiring version 21 exactly; stage 3 accepts the compatible v22 profile and both languages pass.",
@@ -279,7 +302,7 @@
     "Desktop regression passes and stored source timings do not establish physical-calculator input latency, cold-I/O performance, frame pacing or a visual similarity percentage. Performance-agent reports and hardware/emulator evidence must be cited separately."
   ],
   "character_confirmation_followup": {
-    "status": "Source correction and regressions ready; stage 5 checkpoint and actual-pack execution pending",
+    "status": "Passed actual English and Chinese packs at final acceptance checkpoint; settled screenshots manually reviewed",
     "reference": [
       "scenes/screens/character_select_screen.tscn",
       "scenes/ui/confirm_button.tscn",
@@ -306,6 +329,100 @@
     "quick_validation": [
       "clang++-18 fsyntax-only passed",
       "git diff --check passed"
+    ],
+    "source_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "actual_art_runs": [
+      {
+        "language": "eng",
+        "checks": 323010,
+        "status": "passed",
+        "journal": "ui5-release-eng-card-hud-242279e4f002.json"
+      },
+      {
+        "language": "zhs",
+        "checks": 334340,
+        "status": "passed",
+        "journal": "ui5-release-zhs-card-hud-763a09b1d716.json"
+      }
+    ],
+    "click_start_runs": [
+      {
+        "language": "eng",
+        "checks": 63742,
+        "status": "passed",
+        "journal": "ui5-release-eng-frontend-a271beaf5439.json"
+      },
+      {
+        "language": "zhs",
+        "checks": 64260,
+        "status": "passed",
+        "journal": "ui5-release-zhs-frontend-38e6d675b279.json"
+      }
     ]
+  },
+  "final_acceptance_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+  "final_acceptance_tree": "9b75a36ccfbea8bf9b0e233a7de4e4c8556041cd",
+  "release_validation": {
+    "source_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "packs": "accepted_release_resources",
+    "suites_passed": 6,
+    "checks_passed": 786962,
+    "runs": [
+      {
+        "language": "eng",
+        "target": "world_frontend_ui_regression",
+        "checks": 63742,
+        "status": "passed",
+        "source_changed": false,
+        "journal": "ui5-release-eng-frontend-a271beaf5439.json"
+      },
+      {
+        "language": "eng",
+        "target": "card_hud_ui_regression",
+        "checks": 323010,
+        "status": "passed",
+        "source_changed": false,
+        "journal": "ui5-release-eng-card-hud-242279e4f002.json"
+      },
+      {
+        "language": "eng",
+        "target": "potion_ui_regression",
+        "checks": 805,
+        "status": "passed",
+        "source_changed": false,
+        "journal": "ui5-release-eng-potion-a57b42169cf1.json"
+      },
+      {
+        "language": "zhs",
+        "target": "world_frontend_ui_regression",
+        "checks": 64260,
+        "status": "passed",
+        "source_changed": false,
+        "journal": "ui5-release-zhs-frontend-38e6d675b279.json"
+      },
+      {
+        "language": "zhs",
+        "target": "card_hud_ui_regression",
+        "checks": 334340,
+        "status": "passed",
+        "source_changed": false,
+        "journal": "ui5-release-zhs-card-hud-763a09b1d716.json"
+      },
+      {
+        "language": "zhs",
+        "target": "potion_ui_regression",
+        "checks": 805,
+        "status": "passed",
+        "source_changed": false,
+        "journal": "ui5-release-zhs-potion-4c995b520ed7.json"
+      }
+    ],
+    "private_capture_directory": "ui5-release-captures",
+    "manual_image_review": [
+      "English and Chinese settled character pages: original cream confirmation tick, no Standard-mode label",
+      "Chinese Fire Potion original throw/discard popup",
+      "English Fairy in a Bottle original popup with disabled manual Drink action"
+    ],
+    "scope": "Final-checkpoint regressions include real-art centered-tick pixel comparison, click-select then click-confirm run advancement, and formally saved potion preparation fixture. Historical event/map/reward runs retain their separate stage 3 identity."
   }
 }

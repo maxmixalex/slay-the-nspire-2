@@ -1,5 +1,128 @@
 # Work state — 2026-10-24
 
+## UI5 accepted delivery: original controls, combat feedback and measured cold-read reductions
+
+Final runtime `1c774c0847ef8e47b2bd23fd3bc6a11635d8e219`, tree
+`9b75a36ccfbea8bf9b0e233a7de4e4c8556041cd`, was pushed and read back before
+its final immutable validation. This acceptance update changes documentation
+only; do not relabel the binaries or historical performance runs with the
+subsequent documentation commit. GitHub Actions
+[40057127163](https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40057127163)
+completed successfully at that runtime SHA (conversion, native and portable).
+Verified progress is ready for the authorized fast-forward of main, preserving
+the archive/checkpoint branches and all unique history.
+
+### Implemented behavior
+
+Three parallel scopes covered card detail/performance, combat/Regent feedback,
+and original frontend/map/events; root integrated potion and reward behavior.
+The pinned original v0.111.0 / 41cef1ea code/scenes/assets remain the reference.
+Card image batching uses existing bounded workspace; keyword hit testing uses
+metrics without fetching offscreen pixels. Original star sprites replace the
+word/resource-status treatment, with a separate Regent counter and integer
+reference-motion behavior. Attack commands project individual HP/block hits
+and original waits; status text follows the original classification. Future
+Lagavulin wake/Flutter stun poses no longer appear ahead of their queued hit.
+
+Settings use actual General/Input tabs and functional controls. Character
+hover no longer selects; actual click/release and separate original icon-only
+confirmation do. Map strips and conflicting close/legend hits were corrected;
+ordinary event layout, focus and keyboard options were revised. Rewards enter,
+claimed rows disappear, acquired cards/potions/relics fly to inventory, and
+gold uses the original count popup, preserving instance facts and gameplay
+RNG/state. Potion
+menus anchor to the bottle, preserve proper use/throw/discard/automatic rules,
+consume only on valid execution, and keep full-inventory rewards unclaimed.
+The real split-package version-22 startup rejection discovered during browser
+acceptance was fixed before delivery; rejected stage4 files remain separate.
+
+### Final verification and files
+
+- Final local Clang18 ASan/UBSan: **75/75 suites passed**. The test host uses a
+  32 MiB stack; LeakSanitizer is disabled for its ptrace limitation, while ASan
+  and UBSan remain enabled. ARM and WASM builds passed. Python **139+53** passed
+  at the unchanged converter checkpoint; final CI also passed conversion.
+- Actual bilingual final frontend/card-HUD/potion suites: **786,962 checks**.
+  These include pixels/repeated assertions, not distinct gameplay features.
+- Final native/WASM room equivalence: **9 scenarios / 514 frames / 23 saves per
+  language**, with 139 real wait/preparation frames retained. Earlier world
+  equivalence remains identified as stage4 `1ad3788`: **23 / 649 / 30 per
+  language**. Neither evidence proves original-PC visual equivalence.
+- Actual offline Chromium: bilingual startup, normal new run, S/O, refresh
+  Continue, shared save across language changes, remembered language/cancel,
+  visible profiler, **zero page errors and zero external requests**. Settled
+  700ms character captures confirm complete text after the original entrance.
+- Ordinary Firebird **Chinese** route passed: OS/Ndless startup, title/settings,
+  collection/detail, Ironclad/Neow/two card rewards/map, save/quit, relaunch and
+  Continue, profile/save download, NAND flush and normal stop. Final launcher
+  USB readback is exact. No state injection or snapshot restoration was used.
+  This is emulator execution, not physical-device or combat acceptance.
+
+The completed pair has been saved successfully for the user:
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Slay-the-Nspire-2-0.17-ui5-bilingual-calculator.zip | 76,867,136 | efa945025d9a4597ca28be5ac1ff5094d66596fa7972cb48a0317438e5f09af9 |
+| Slay-the-Nspire-2-0.17-ui5-bilingual-offline.html | 115,769,276 | 2cf225ac0cef59a943fb603c3cd44b00ac4cabfc6da91bd76c50b953cc05fdd6 |
+
+Installed calculator files total **82,267,347 bytes** before saves. The ARM
+launcher is **1,018,044 bytes**, with **16,364,896 bytes** allocation, below the
+16 MiB ceiling. The earlier 30–40 MB installation target remains unmet.
+Private original assets, generated packs/HTML, emulator images, screenshots
+and saves are not included in public Git.
+
+### Performance: actual gains and remaining stalls
+
+Adopted Chinese per-size glyph-frequency locality; English keeps original
+ordering. This offline lossless conversion changes no glyph pixel/metric,
+resource length or runtime cache budget. Rejected cross-size interleaving and
+English-reorder candidates remain documented. On the same measured runtime,
+cold Chinese detail callbacks are **28→16** (collection), **27→16** (remove),
+**46→23** (draw choice), and **34→23** (Rainbow). All 18 before/after image
+pairs are exact; each of 36 warm windows is 180 frames with zero I/O. Four
+resource comparisons execute all 472 pointer positions. These comparisons
+are transplant-before/after, not original-PC screenshot comparisons.
+
+Host CPU timings are mixed: some improve, while Rainbow detail and collection
+have slower samples. The separate quiet serial ASan command benchmark reduced
+before+after status observation from **31.135→19.144 us** (TwinStrike) and
+**36.544→26.479 us** (DaggerSpray), keeping effects/cues/saves equal. Neither
+callback reductions nor observer microseconds imply a device FPS improvement.
+Historical performance runtime `55fdd6e`, driver/converter `1ad3788`, and final
+runtime `1c774c0` remain explicitly distinguished in their reports.
+
+The real unprofiled Chinese emulator first detail still showed the collection
+at 300ms and the detail by 1000ms; same-card reopen displayed detail at the
+100ms sample. These are coarse observation brackets, not exact latency.
+A separate opt-in SP804 session recorded zero resource failures, a **1382.141ms
+cold collection render**, and 377 title frames with zero in-loop resource
+reads. Its mixed overlay bucket must not be called a pure detail benchmark.
+Cold stalls are therefore **still open**, despite the measurable read savings.
+
+### Next concrete work and evidence limits
+
+Continue original UI work on event typewriter/entry/press timing, reward-card
+reticles and pickup trails, potion exit fade/hover/target particles, editable
+and persistent settings, independent damage-number overlap and remaining
+original status/star effects. English keyword hit regions still use a
+character-wrap approximation in places, and the inline energy icon remains
+unrestored. Special ancient/fake-merchant/legacy pages are separate scopes.
+Do not call the whole original UI complete or claim 95% fidelity.
+
+The next performance step is to reduce actual cold split-file request cost
+and first-present stalls while preserving original pixels and the current
+memory bound; do not trade this for integrity scans, unbounded preloads, or
+merely additional diagnostic probes. Existing retained failure journals,
+including earlier compiler/fixture/boot/USB and rejected split-package
+attempts, remain failures rather than being relabeled as passed.
+
+See `validation-ui5-runtime-0.17.json` for the final aggregate,
+`validation-ui5-firebird-0.17.json` for the ordinary route and exact scope,
+and the linked frontend/backend/browser/card-performance/combat/potion/reward
+reports for evidence and remaining work. Audio, multiplayer and Timeline
+remain explicitly excluded.
+
+
 ## UI5 stage 5: fix real split-package startup before delivery
 
 The stage-4 source was pushed/read back at

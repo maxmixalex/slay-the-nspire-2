@@ -88,6 +88,15 @@ Manual inspection of those settled captures exposed the old Standard-mode
 label on the character confirmation. The source correction above and its
 actual-art centered-tick / click-to-start regressions are recorded separately
 from those historical stage 4 passes.
+At final checkpoint `1c774c0847ef8e47b2bd23fd3bc6a11635d8e219`, both accepted
+language packs pass frontend, card/HUD and potion UI regressions: six runs and
+786,962 checks under ASan/UBSan. Actual atlas pixels establish the centered
+cream tick; pointer actions establish that hovering preserves the selection,
+clicking selects Regent and a separate confirmation click starts that run.
+Both settled character captures were inspected, along with the Fire Potion
+and disabled Fairy in a Bottle menus. The formerly premature potion fixture
+now waits for the real bounded preparation screen and passes its original
+805 checks in each language.
 The accepted Chinese resource subsequently changes only glyph payload order;
 the performance report records exact glyph geometry/pixels, unchanged other
 bytes and 18 exact frame pairs. See

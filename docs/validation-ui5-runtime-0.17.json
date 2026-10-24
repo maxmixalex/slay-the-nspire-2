@@ -1,0 +1,500 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-10-24T03:28:53.881985+00:00",
+  "reference": "v0.111.0 / 41cef1ea",
+  "status": "accepted_with_explicit_scope",
+  "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+  "runtime_tree": "9b75a36ccfbea8bf9b0e233a7de4e4c8556041cd",
+  "tree_verification": "Read-only git rev-parse of the exact runtime commit agrees with the remotely verified archive tree. The tree is not an Actions API field.",
+  "resource_converter_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+  "scope": "Final UI5 source and artifact identities, full local native sanitizers, portable builds, actual bilingual UI, native/WASM replay, split-resource startup and real offline-browser acceptance. Ordinary Firebird acceptance is tracked in its separate report.",
+  "local_native": {
+    "status": "passed",
+    "compiler": "Clang 18",
+    "configuration": "Debug, O1, frame pointers retained",
+    "sanitizers": [
+      "AddressSanitizer",
+      "UndefinedBehaviorSanitizer"
+    ],
+    "host_stack_KiB": 32768,
+    "ASAN_OPTIONS": "detect_leaks=0",
+    "leak_sanitizer_note": "Host LeakSanitizer cannot execute under ptrace; ASan and UBSan remain active. The 32 MiB process stack is a host-fixture allowance, not calculator allocation.",
+    "passed_suites": 75,
+    "failed_suites": 0,
+    "elapsed_seconds": 270.86,
+    "build": {
+      "journal": "ui5-final-asan-build-ddef72535acb.json",
+      "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-24T03:09:39.220175+00:00",
+      "ended_at": "2026-10-24T03:11:25.138701+00:00",
+      "log_sha256": "e58d0a74e4074e370cf23c8b1344ebd4675499de932d98c8c78709577beaf2e0"
+    },
+    "suite": {
+      "journal": "ui5-final-native-release-gate-40ef2789959b.json",
+      "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-24T03:12:08.483616+00:00",
+      "ended_at": "2026-10-24T03:16:39.376187+00:00",
+      "log_sha256": "fc300eb30726a510bf27e660a00979c2c624809d5dccdcc0256f30fe90376792"
+    }
+  },
+  "runtime_artifacts": {
+    "ndless": {
+      "path": "dist/nSpire2.tns",
+      "bytes": 1018044,
+      "sha256": "052764aa4755cc15d3cf9206883ae7f95978812b840e8fc1f313197176f841b8",
+      "allocation_bytes": 16364896,
+      "allocation_limit_bytes": 16777216,
+      "remaining_allocation_bytes": 412320,
+      "absolute_relocations": 31089,
+      "build": {
+        "journal": "ui5-final-arm-95d93627d06f.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:09:39.146578+00:00",
+        "ended_at": "2026-10-24T03:10:21.511603+00:00",
+        "log_sha256": "929d6a44faa1f70e7880dd29b6ad73867d0055219bbcb2780efb6c7315d7ca5b"
+      }
+    },
+    "wasm": {
+      "path": "build/web/nSpire2.wasm",
+      "bytes": 5524610,
+      "sha256": "3882bf57bf911eab81caae9b92e772d04a312e814d27c7e937fb5caeac6af876",
+      "fixed_memory_bytes": 16777216,
+      "build": {
+        "journal": "ui5-final-wasm-a76ef1c2b993.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:09:39.181905+00:00",
+        "ended_at": "2026-10-24T03:10:31.216323+00:00",
+        "log_sha256": "237b78d232afc8474c977770ad90a27ab2db0e3b6c1b63a4cd3cacfba58d20e1"
+      }
+    }
+  },
+  "github_actions": {
+    "run_id": 40057127163,
+    "url": "https://github.com/maxmixalex/slay-the-nspire-2/actions/runs/40057127163",
+    "head_sha": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "status": "completed",
+    "conclusion": "success",
+    "checked_at_utc": "2026-10-24",
+    "evidence": "GitHub API readback retained in private ui5-final-ci-receipt.json",
+    "receipt_sha256": "7feeda8ff9aea91a02ab2d690da3b9e6cc38ba595386dbbb2f8a376e0b772ca6",
+    "scope": "This records the final run conclusion. The 75-suite count and sanitizer configuration above come from the separately executed local journal."
+  },
+  "resources": {
+    "converter_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "format": "NSC1/NSL1 with inner NSP2 version 22",
+    "auxiliary_images": 1275,
+    "selected_layout": {
+      "eng": "Original v22 glyph order",
+      "zhs": "Per-size frequency ordering of existing glyph payloads"
+    },
+    "complete_packs": {
+      "eng": {
+        "bytes": 76685257,
+        "sha256": "bb23c56f807db301fcb6c1014cd6a39f92a8cf69d66ffd3d84a9c0d0695a30ea"
+      },
+      "zhs": {
+        "bytes": 79467968,
+        "sha256": "cb7ae529b4d61766ccd8cd5a88630ab44657130a442937bf9a36624d879205ac"
+      }
+    },
+    "files": [
+      {
+        "file": "nSpire2.common.tns",
+        "bytes": 74904242,
+        "sha256": "94cf29f154b834e851c596433e5817d681902704afa800519fa0e0c97867562e"
+      },
+      {
+        "file": "nSpire2.eng.tns",
+        "bytes": 1781175,
+        "sha256": "a39f30f94578a39531ebc47276fd2b6736613c109af8f26bad2f0b02b7268cb0"
+      },
+      {
+        "file": "nSpire2.zhs.tns",
+        "bytes": 4563886,
+        "sha256": "fbbcf5504f2437895ad6fe0036698b2003897296a58cd2e7a989ec007a3c55bf"
+      }
+    ],
+    "stored_bytes": 81249303,
+    "byte_identical_roundtrip": true,
+    "runtime_integrity_checks": false,
+    "glyph_conversion": {
+      "journal": "ui5-glyph-frequency-final-convert-f695d1d13c5f.json",
+      "checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-24T02:46:54.102372+00:00",
+      "ended_at": "2026-10-24T02:46:55.098835+00:00",
+      "log_sha256": "a5557627cc9172f0fd8d49837191ee094d0961fc9f9939e9c24a7240fd7d7c8c"
+    },
+    "split_conversion": {
+      "journal": "ui5-release-frequency-split-18ad0c739819.json",
+      "checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-24T02:51:43.265412+00:00",
+      "ended_at": "2026-10-24T02:51:44.238720+00:00",
+      "log_sha256": "d943bee7a9b6285d493cce9b4b4f83d405aa2c01e375e03c7930e7543a4a9bb6"
+    },
+    "identity_note": "The base v22 frontend-art conversion ran at stage 3 (55fdd6e703cd921220740f41e1537f864a02b300). The accepted glyph-locality conversion and final resource split ran at the resource converter checkpoint above; the English glyph reorder candidate was not selected.",
+    "detail_report": "validation-ui5-card-performance-0.17.json"
+  },
+  "actual_bilingual_ui": {
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "status": "passed",
+    "runs_passed": 6,
+    "checks_passed": 786962,
+    "count_scope": "Assertion counts include repeated pixel and bounded-work checks; they are not counts of distinct features or UI scenarios.",
+    "runs": [
+      {
+        "language": "eng",
+        "target": "world_frontend_ui_regression",
+        "checks": 63742,
+        "journal": "ui5-release-eng-frontend-a271beaf5439.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:11:53.602178+00:00",
+        "ended_at": "2026-10-24T03:12:08.017574+00:00",
+        "log_sha256": "0a5161e7bf689ec0bc9a11c2dd1c57499b34887fd141924e26a3d80e0f12c19b"
+      },
+      {
+        "language": "eng",
+        "target": "card_hud_ui_regression",
+        "checks": 323010,
+        "journal": "ui5-release-eng-card-hud-242279e4f002.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:11:59.612696+00:00",
+        "ended_at": "2026-10-24T03:11:59.880644+00:00",
+        "log_sha256": "007f41298541ff3358d0b031441eb3c105e06946de438b066ecc30d7efd92476"
+      },
+      {
+        "language": "eng",
+        "target": "potion_ui_regression",
+        "checks": 805,
+        "journal": "ui5-release-eng-potion-a57b42169cf1.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:12:07.937634+00:00",
+        "ended_at": "2026-10-24T03:12:08.211133+00:00",
+        "log_sha256": "8398c7989995a91fcc1533463713b8d2631b406353b63f3719a0fef2c4861ab0"
+      },
+      {
+        "language": "zhs",
+        "target": "world_frontend_ui_regression",
+        "checks": 64260,
+        "journal": "ui5-release-zhs-frontend-38e6d675b279.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:11:53.621587+00:00",
+        "ended_at": "2026-10-24T03:12:08.089839+00:00",
+        "log_sha256": "90fed4b50bf8ff3b4194502099c7579f51eb0fbb8d90dbeeb414d98a3e85f09e"
+      },
+      {
+        "language": "zhs",
+        "target": "card_hud_ui_regression",
+        "checks": 334340,
+        "journal": "ui5-release-zhs-card-hud-763a09b1d716.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:11:59.628717+00:00",
+        "ended_at": "2026-10-24T03:11:59.897601+00:00",
+        "log_sha256": "9072c02165df6211f942ca4cef34986e611dc7ee93f0f30ce8658e780c33bfba"
+      },
+      {
+        "language": "zhs",
+        "target": "potion_ui_regression",
+        "checks": 805,
+        "journal": "ui5-release-zhs-potion-4c995b520ed7.json",
+        "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+        "status": "passed",
+        "returncode": 0,
+        "source_changed": false,
+        "started_at": "2026-10-24T03:12:07.920458+00:00",
+        "ended_at": "2026-10-24T03:12:08.291674+00:00",
+        "log_sha256": "8398c7989995a91fcc1533463713b8d2631b406353b63f3719a0fef2c4861ab0"
+      }
+    ],
+    "report": "validation-ui5-frontend-0.17.json"
+  },
+  "native_wasm_equivalence": {
+    "report": "validation-ui5-backends-0.17.json",
+    "final_rooms": {
+      "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+      "status": "passed",
+      "scenarios_per_language": 9,
+      "RGB565_frames_per_language": 514,
+      "serialized_saves_per_language": 23,
+      "readiness_frames_per_language": 139,
+      "scope": "Four controlled event/shop sequences and five character combat sequences. Real preparation updates are recorded before scripted inputs; successful-play, final-turn and save assertions remain intact.",
+      "runs": [
+        {
+          "language": "eng",
+          "native": {
+            "journal": "ui5-release-eng-rooms-native-232181c9e606.json",
+            "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-24T03:12:12.023681+00:00",
+            "ended_at": "2026-10-24T03:12:13.196134+00:00",
+            "log_sha256": "ba34f2b2c38dafd5297086ff2b8c0d461bc3f06ece93b45448d2e0580d6aba45"
+          },
+          "wasm": {
+            "journal": "ui5-release-eng-rooms-wasm-bbdd3842ff39.json",
+            "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-24T03:12:20.267731+00:00",
+            "ended_at": "2026-10-24T03:12:21.399938+00:00",
+            "log_sha256": "af9b9799268d906c54e76cdea9132641f4c1280f1595c26e9ecae53583f8cdb3"
+          },
+          "exact_RGB565_frames": 514,
+          "exact_serialized_saves": 23,
+          "manifest_sha256": "b1f6895e0f0046a2de28599b150857cd74b0997d96f064677bc7d438ce09b2ce"
+        },
+        {
+          "language": "zhs",
+          "native": {
+            "journal": "ui5-release-zhs-rooms-native-adca9a569e6a.json",
+            "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-24T03:12:12.001593+00:00",
+            "ended_at": "2026-10-24T03:12:13.274990+00:00",
+            "log_sha256": "ba34f2b2c38dafd5297086ff2b8c0d461bc3f06ece93b45448d2e0580d6aba45"
+          },
+          "wasm": {
+            "journal": "ui5-release-zhs-rooms-wasm-64e1f60580e4.json",
+            "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-24T03:12:20.278493+00:00",
+            "ended_at": "2026-10-24T03:12:21.273735+00:00",
+            "log_sha256": "af9b9799268d906c54e76cdea9132641f4c1280f1595c26e9ecae53583f8cdb3"
+          },
+          "exact_RGB565_frames": 514,
+          "exact_serialized_saves": 23,
+          "manifest_sha256": "b1f6895e0f0046a2de28599b150857cd74b0997d96f064677bc7d438ce09b2ce"
+        }
+      ]
+    },
+    "stage4_world": {
+      "runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+      "status": "passed",
+      "scenarios_per_language": 23,
+      "RGB565_frames_per_language": 649,
+      "serialized_saves_per_language": 30,
+      "runs": [
+        {
+          "language": "eng",
+          "wasm_comparison": {
+            "journal": "ui5-backend-world-wasm-eng-1dd40913ec4b.json",
+            "checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-24T02:56:53.574662+00:00",
+            "ended_at": "2026-10-24T02:56:57.155704+00:00",
+            "log_sha256": "07da987183d74d0ed130ddfce8588c9453d39a8a43f4e40c7a9438d8b77c5224"
+          },
+          "exact_RGB565_frames": 649,
+          "exact_serialized_saves": 30
+        },
+        {
+          "language": "zhs",
+          "wasm_comparison": {
+            "journal": "ui5-backend-world-wasm-zhs-f96228f6b953.json",
+            "checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+            "status": "passed",
+            "returncode": 0,
+            "source_changed": false,
+            "started_at": "2026-10-24T02:56:53.554690+00:00",
+            "ended_at": "2026-10-24T02:56:57.089588+00:00",
+            "log_sha256": "07da987183d74d0ed130ddfce8588c9453d39a8a43f4e40c7a9438d8b77c5224"
+          },
+          "exact_RGB565_frames": 649,
+          "exact_serialized_saves": 30
+        }
+      ],
+      "native_capture_note": "The initial compound commands requested dist/nSpire2.wasm after completing native captures. Correct reruns use build/web/nSpire2.wasm and reuse all successful native frames/saves."
+    },
+    "identity_note": "The final rooms and stage-4 world matrices are distinct executed evidence. Their scenario/frame totals are not combined into a claim that every scenario ran at the final runtime checkpoint.",
+    "scope_limit": "Exact native/WASM frames and saves compare this project backends. They do not establish original-PC framebuffer parity or browser DOM/storage behavior."
+  },
+  "browser_and_split": {
+    "report": "validation-ui5-browser-0.17.json",
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "status": "passed",
+    "browser": "134.0.6998.35",
+    "playwright": "1.51.1",
+    "browser_run": {
+      "journal": "ui5-final-offline-browser-9fa0aa71f594.json",
+      "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-24T03:13:20.747621+00:00",
+      "ended_at": "2026-10-24T03:14:11.833072+00:00",
+      "log_sha256": "afe5b2940f79dbbbdcee4019d095c9f6dee59e637d085af3f1f16f1317b3d8b2"
+    },
+    "checks_completed": 9,
+    "page_errors": 0,
+    "external_requests": 0,
+    "save_bytes": 230088,
+    "same_save_after_reload_continue_and_language_switch": true,
+    "captures_manually_reviewed": 11,
+    "actual_split_resources": [
+      {
+        "language": "eng",
+        "virtual_bytes": 76685257,
+        "checks": 5457,
+        "byte_identical_to_selected_complete_pack": true,
+        "native_adapter_bytes": 104,
+        "journal": "ui5-final-split-eng-c39db1dbe984",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "a27ecbfd42e1749dc05d8d98c2d54878853825da3278eed3f7f7430d562f385f"
+      },
+      {
+        "language": "zhs",
+        "virtual_bytes": 79467968,
+        "checks": 5583,
+        "byte_identical_to_selected_complete_pack": true,
+        "native_adapter_bytes": 104,
+        "journal": "ui5-final-split-zhs-a95516919f95",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "d27c39520023de749c62d57aafed7dbc813d0e972986c54bd500eef62d9d5930"
+      }
+    ],
+    "scope": "Actual generated self-contained HTML through visible DOM controls, keyboard handlers and Canvas. Browser startup/Continue, S/O, both languages, cancellation, reload and profiler control were exercised; this is not a full browser three-act playthrough."
+  },
+  "delivery": {
+    "package": {
+      "journal": "ui5-final-package-8fec722742ee.json",
+      "checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+      "status": "passed",
+      "returncode": 0,
+      "source_changed": false,
+      "started_at": "2026-10-24T03:11:46.053580+00:00",
+      "ended_at": "2026-10-24T03:11:49.544660+00:00",
+      "log_sha256": "afbab38cfb0279ba669969899c4b4b44319a6beb520253dddb0fef5818543e45"
+    },
+    "artifacts": [
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui5-bilingual-calculator.zip",
+        "bytes": 76867136,
+        "sha256": "efa945025d9a4597ca28be5ac1ff5094d66596fa7972cb48a0317438e5f09af9"
+      },
+      {
+        "file": "Slay-the-Nspire-2-0.17-ui5-bilingual-offline.html",
+        "bytes": 115769276,
+        "sha256": "2cf225ac0cef59a943fb603c3cd44b00ac4cabfc6da91bd76c50b953cc05fdd6"
+      }
+    ],
+    "installed_bytes_before_saves": 82267347,
+    "installed_components": "One 1018044-byte launcher plus 81249303 bytes of shared and bilingual resources.",
+    "artifact_identity_verification": "Both current deliverable files were read-only rehashed against the accepted browser report before this summary; sizes and SHA-256 values match.",
+    "installation_target_30_to_40_MB_reached": false
+  },
+  "optional_benchmark": {
+    "target": "combat_feedback_benchmark",
+    "report": "validation-combat-ui5-0.17.json",
+    "final_build_and_smoke": {
+      "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+      "target": "combat_feedback_benchmark",
+      "build": {
+        "journal": "ui5-final-optional-benchmark-build-97e63c578183",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "441b0d28d9e7b1aafeed1e83d82e615aa19900cc8c14968ddc7febccff6b429a"
+      },
+      "run": {
+        "journal": "ui5-final-optional-benchmark-2af6f57d8593",
+        "status": "passed",
+        "source_changed": false,
+        "log_sha256": "c4aefdb89199f07356c8a40cb0d75cf4ffde6b0985cae3364ab62dd76327df50"
+      },
+      "iterations_per_case": 100,
+      "scope": "Explicit optional-target build and functional smoke only; these concurrently run samples do not replace the quiet serial performance comparison above.",
+      "cases": [
+        {
+          "actors": 2,
+          "effects": 1700,
+          "save_hash": "9a9f5751874312f2",
+          "cue_hash": "73a5dc3304f4b93c"
+        },
+        {
+          "actors": 3,
+          "effects": 1900,
+          "save_hash": "6ae389b733af28d7",
+          "cue_hash": "6e9fb7c702479b64"
+        }
+      ]
+    },
+    "scope": "The final optional-target smoke is distinct from the historical quiet serial callback comparison at stage 4. No device speedup is inferred."
+  },
+  "ordinary_firebird": {
+    "status": "passed_with_explicit_scope",
+    "report": "validation-ui5-firebird-0.17.json",
+    "runtime_checkpoint": "1c774c0847ef8e47b2bd23fd3bc6a11635d8e219",
+    "journal": "ui5-calculator-acceptance-b8d3dc7d4494.json",
+    "source_changed": false,
+    "scope": "Ordinary Chinese OS boot, Ndless launcher, settings, card collection/detail, Ironclad/Neow/card rewards/map, save/quit, relaunch/Continue, profile download and normal flush/exit. No physical device, combat or English emulator claim.",
+    "remaining_performance_issue": "First detail is visible by 1000ms but not 300ms in coarse unprofiled samples; second profiled session retains a 1382.141ms cold collection render. No universal speedup claim."
+  },
+  "retained_failure_evidence": [
+    {
+      "report": "validation-ui5-browser-0.17.json",
+      "finding": "The stage-4 split reader rejected version 22; the rejected HTML and native reproduction are preserved. Final actual split and browser acceptance pass after the supported-version bound repair."
+    },
+    {
+      "report": "validation-ui5-backends-0.17.json",
+      "finding": "Earlier room scripts sent input before real combat preparation completed. Final scripts record readiness updates while retaining successful-play and save assertions; production readiness behavior was not bypassed."
+    },
+    {
+      "report": "validation-combat-ui5-0.17.json",
+      "finding": "Earlier ARM floating-point linkage, special enemy hook timing, fixture and external-launch failures remain recorded with their actual checkpoint identities."
+    }
+  ],
+  "limits": [
+    "No original-PC framebuffer-equivalence result or percentage of overall visual fidelity is established by these tests.",
+    "Host sanitizer callback timing and browser CPU/Canvas intervals do not measure physical-calculator FPS, input latency or cold-storage performance.",
+    "The final full native suite, final real-asset UI runs, final room matrix and historical world/combat/performance matrices retain separate identities.",
+    "Original assets, screenshots, saves, raw disassembly and embedded-content HTML remain outside the public source repository."
+  ],
+  "related_reports": [
+    "validation-ui5-frontend-0.17.json",
+    "validation-ui5-backends-0.17.json",
+    "validation-ui5-card-performance-0.17.json",
+    "validation-combat-ui5-0.17.json",
+    "validation-ui5-browser-0.17.json"
+  ]
+}
