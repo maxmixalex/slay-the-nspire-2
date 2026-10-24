@@ -177,6 +177,16 @@ static void event_begin(OriginalEventId id,unsigned seed=77){
     CHECK(validate(a.game));
 }
 static HoverTipList event_tips(int option){HoverTipList out{};collect_event_hover_tips(a,option,out);CHECK(!out.overflow);return out;}
+static void settle_event_entry(){
+    a.render();CardHoverTarget hidden{};CHECK(!event_hover_target(a,hidden));
+    // NEventOptionButton enables MouseFilter after 500ms delay, 200ms
+    // stagger and 500ms entry (250/100/250 in Fast). Body reveal ends later
+    // for the first buttons; captures wait for that original text sequence.
+    const unsigned count=original_event_option_count(a.game),last=count?count-1:0;
+    const unsigned reveal=a.room_presentation.event.fast?950:1750;
+    unsigned remaining=a.room_presentation.event.fast?500+last*100:1000+last*200;if(remaining<reveal)remaining=reveal;
+    while(remaining){const unsigned step=remaining<250?remaining:250;a.advance(step);a.render();remaining-=step;}
+}
 static void event_associations(){
     event_begin(OriginalEventId::Amalgamator);snapshot();
     auto t=event_tips(0);CHECK(t.find(HoverTipKind::Card,"ULTIMATE_STRIKE")>=0);
@@ -241,21 +251,22 @@ static void event_pointer_keyboard_and_text(){
     const OriginalEventId ids[]={OriginalEventId::Amalgamator,OriginalEventId::AromaOfChaos,OriginalEventId::Bugslayer,
       OriginalEventId::DrowningBeacon,OriginalEventId::FieldOfManSizedHoles,OriginalEventId::GraveOfTheForgotten,
       OriginalEventId::TeaMaster,OriginalEventId::SelfHelpBook,OriginalEventId::WaterloggedScriptorium,OriginalEventId::WoodCarvings};
-    for(auto id:ids){event_begin(id);snapshot();a.render();
+    for(auto id:ids){event_begin(id);snapshot();settle_event_entry();
         for(unsigned option=0;option<original_event_option_count(a.game);++option){
-            a.cursor=int(option);a.pointer.visible=false;a.render();CardHoverTarget owner{};CHECK(event_hover_target(a,owner));CHECK(owner.event_option==int(option));
+            a.cursor=int(option);a.pointer.visible=false;a.render();CardHoverTarget owner{};const bool enabled=original_event_option_enabled(a.game,option);
+            CHECK(event_hover_target(a,owner)==enabled);if(enabled)CHECK(owner.event_option==int(option));
             auto t=event_tips(int(option));for(unsigned i=0;i<t.count;++i){char title[160]{},body[2048]{};
                 format_card_hover_tip(a,owner,t.items[i],title,sizeof title,body,sizeof body);
                 if(!*title||!*body||std::strchr(body,'{'))std::fprintf(stderr,"event hover unresolved %s / %s: %s\n",original_event_key(id),t.items[i].key,body);
                 CHECK(*title&&*body&&!std::strchr(body,'{')&&!std::strchr(title,'{'));
             }
-            auto h=hit(HitKind::Choice,int(option));a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();CHECK(event_hover_target(a,owner)&&owner.event_option==int(option));
-            if(t.count){a.pointer.visible=false;CHECK(keyword_detail_input(a,Key::Statuses));a.render();CHECK(a.keyword_hover.details);CHECK(event_hover_target(a,owner));
+            auto h=hit(HitKind::Choice,int(option));a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();CHECK(event_hover_target(a,owner)==enabled);if(enabled)CHECK(owner.event_option==int(option));
+            if(t.count&&enabled){a.pointer.visible=false;CHECK(keyword_detail_input(a,Key::Statuses));a.render();CHECK(a.keyword_hover.details);CHECK(event_hover_target(a,owner));
                 const auto pages=card_hover_page(a,owner,t,0);CHECK(pages.pages>0);keyword_hover_scroll(a,1000);a.render();CHECK(a.keyword_hover.page<pages.pages);
                 CHECK(keyword_detail_input(a,Key::Back));CHECK(!a.keyword_hover.details);a.render();}
         }unchanged();
     }
-    event_begin(OriginalEventId::Bugslayer);a.render();capture("event-option-tooltip");snapshot();
+    event_begin(OriginalEventId::Bugslayer);settle_event_entry();capture("event-option-tooltip");snapshot();
     CHECK(keyword_detail_input(a,Key::Statuses));a.render();capture("event-option-tooltip-details");unchanged();
     CHECK(keyword_detail_input(a,Key::Back));a.input(Key::Detail);a.render();CardHoverTarget owner{};CHECK(!event_hover_target(a,owner));
 }

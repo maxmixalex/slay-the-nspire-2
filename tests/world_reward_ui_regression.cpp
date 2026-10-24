@@ -182,8 +182,10 @@ static void camp_proceed(bool keyboard){
  // NRestSiteButton.MouseFilter remains blocked for its 500ms entrance.
  CHECK(!hit(HitKind::Choice,0).enabled);a.advance(250);a.advance(249);a.render();CHECK(!hit(HitKind::Choice,0).enabled);a.advance(1);a.render();CHECK(hit(HitKind::Choice,0).enabled);unchanged();
  press(HitKind::Choice,0);CHECK(a.game.phase==Phase::Camp&&world_rest_can_proceed(a.game)&&world_rest_option_enabled(a.game,1));a.render();CHECK(!has_action(UiAction::LeaveCamp));snapshot();
- for(unsigned i=0;i<9;++i)a.advance(250);a.advance(249);a.render();CHECK(!has_action(UiAction::LeaveCamp));unchanged();a.advance(1);a.render();CHECK(has_action(UiAction::LeaveCamp));unchanged();
- a.advance(250);a.advance(250);a.render();const int hp=a.game.hp;capture(keyboard?"rest-tent-keyboard":"rest-tent-proceed");
+ for(unsigned i=0;i<9;++i)a.advance(250);a.advance(249);a.render();CHECK(!has_action(UiAction::LeaveCamp));unchanged();a.advance(1);a.render();
+ CHECK(a.camp_proceed_ready()&&a.proceed_motion.enabled&&!has_action(UiAction::LeaveCamp));unchanged();
+ // Enable begins the original offscreen 500ms slide; its hit follows it.
+ a.advance(250);a.advance(250);a.render();CHECK(has_action(UiAction::LeaveCamp));const int hp=a.game.hp;capture(keyboard?"rest-tent-keyboard":"rest-tent-proceed");
  if(keyboard)a.input(Key::EndTurn);else press_action(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Camp&&w.room_open==2&&a.map_window.is_open&&a.game.hp==hp);snapshot();
 }
 static void reward_animation_curves(){

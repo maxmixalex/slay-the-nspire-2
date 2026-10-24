@@ -143,6 +143,11 @@ static void observed_rewards(){
 int main(int argc,char**argv){
     std::vector<uint8_t>bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);CHECK(a.init(bytes.data(),bytes.size(),{}));}if(argc>2)captures=argv[2];
     new_run(a.game,711,true);a.title=false;a.reset_presentation();SaveData before{};CHECK(save(a.game,before));
+    // This fixture starts in a real practice battle. Compressed original
+    // actor poses must finish the bounded loading phase before the first
+    // library click, just as they do in the actual host loop.
+    a.render();unsigned preparation=0;while(a.combat_preparation.active&&preparation++<1024){a.advance(33);a.render();}
+    CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged(before);
     pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

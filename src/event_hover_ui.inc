@@ -104,7 +104,7 @@ bool event_hover_target(const App&a,CardHoverTarget&target){
         a.status_actor>=0||a.detail_item>=0||a.detail_card>=0||a.event_reader||a.panel||a.map_window.is_open||
         a.pointer.held||a.pointer.armed_card>=0||a.map_transition_blocks_pointer())return false;
     const HitRegion*hit=nullptr;
-    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind!=HitKind::Choice)continue;
+    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind!=HitKind::Choice||!h.enabled)continue;
         if(a.pointer.visible&&!a.keyword_hover.details){if(hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y))hit=&h;}
         else if(h.value==a.cursor)hit=&h;
     }

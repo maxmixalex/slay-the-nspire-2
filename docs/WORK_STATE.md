@@ -1,5 +1,44 @@
 # Work state — 2026-10-24
 
+## UI8 stage 8a1 — composed-screen corrections and lossless installation work
+
+Runtime `aec36376ae055042a9f7f2ce069df5a7356a0f58` compiled native/WASM
+and passed the Python suites. Its complete native result is 94/100, with six
+failures at original Proceed entry boundaries. Fixtures now observe the actual
+moving control, preserving its offscreen start and disabled input. The fast
+map-travel interruption still tests the independent keyboard/pointer gates,
+using a visible moving button 33ms into the 300ms Fast fade-in.
+
+The new Proceed also exposed a real retained-room lifecycle issue: confirming
+a Tent upgrade reset an already-shown parent button. Retained presentation now
+keeps that tween; its own run/floor/point/phase identity still resets on actual
+room replacement. Actual source-font checks found a negative centering offset
+when Defect's four-line English description exceeded its fixed VBox minimum;
+the source container grows downward and the spare-height calculation now
+clamps at zero. Original event options no longer reveal related-card tips
+while transparent/disabled or locked; the original enable gate is retained.
+
+Matched stage-eight-a actual checks passed both languages for journal (8,445
+each), five-character UI (9,041 each), keyword tooltips (405,292 each), and
+three-profile behavior. Chinese original font/layout checks passed 151,852
+checks with zero extra reads over 64 warm frames. Actual card/HUD rendering
+passed 329,327 English / 359,279 Chinese checks with a precise anti-alias-aware
+color fixture: the original 8px digit need not contain an opaque pixel, so the
+isolated palette check uses its original 16px face while real compact hand
+rendering and cache invalidation remain independently checked. Acquisition
+checks retain strict State-byte equality. New event-enabled behavior and the
+English VBox correction still need matching execution from this checkpoint.
+
+The independent retained-art compact tool preserves all decoded pixels,
+alpha, dimensions, original animation frames and timing. It compares retaining
+old groups against purpose-ordered regrouping, bounds card batches at 128 KiB
+and UI batches at 64 KiB, and reuses the existing RGR1 decoder/cache. Its three
+synthetic exact roundtrip tests passed; actual reduction and cold/warm costs
+remain to be measured. This addresses the real ordinary-device capacity gate,
+not a completed storage-size claim. Grouped original glyph storage is a
+separate next source stage and is not included in this runtime checkpoint.
+
+
 ## UI8 stage 8a candidate — final integration and device fit
 
 Stage-eight runtime `2ab4e1bc014dca1a3059bffdb6dd46b6a0db734c` built all

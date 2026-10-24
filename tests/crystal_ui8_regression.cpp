@@ -47,7 +47,9 @@ int main(int argc,char**argv){
   if(turn<5)CHECK(!app.game.original_events.crystal_clear[app.cursor]);
  }
  CHECK(app.game.original_events.reward_active);capture("crystal-rewards");CHECK(original_event_reward(app.game,-1));
- CHECK(app.game.original_events.finished);app.render();capture("crystal-finished");
+ CHECK(app.game.original_events.finished);app.render();
+ for(int i=0;i<app.hit_count;++i)CHECK(app.hits[i].kind!=HitKind::Choice||app.hits[i].value!=0);
+ app.advance(250);app.advance(250);app.render();capture("crystal-finished");
  bool proceed=false;for(int i=0;i<app.hit_count;++i){CHECK(app.hits[i].kind!=HitKind::CrystalCell);if(app.hits[i].kind==HitKind::Choice&&app.hits[i].value==0)proceed=true;}
  CHECK(proceed);CHECK(save(app.game,before));for(unsigned i=0;i<120;++i){app.advance(33);app.render();}
  CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));

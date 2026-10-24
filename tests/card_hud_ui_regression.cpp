@@ -189,8 +189,11 @@ static void original_resource_colors(){
     CHECK(card_title_outline({Strike,1},true)==rgb(27,97,49));CHECK(card_title_outline({Strike,1},false)==rgb(77,75,64));
     CHECK(app.content.energy_image({Wound,0})<0&&app.content.energy_image({Wound,0},true)>=0);
     Canvas c{app};const uint16_t colors[]={rgb(255,246,226),rgb(64,255,255),rgb(127,255,0),rgb(255,85,85)};
-    for(unsigned mode=0;mode<4;++mode){clear();card_resource_label(c,"2",40,50,8,mode,card_energy_outline({Strike,0}),false);
-        unsigned found=0;for(int y=49;y<64;++y)for(int x=39;x<50;++x)found+=app.pixels[y*320+x]==colors[mode];CHECK(found);}
+    // At the original 8px raster this digit can have no fully opaque pixel.
+    // Isolate the exact color contract with the same original 16px face;
+    // the real compact hand rendering and its cache are checked below.
+    for(unsigned mode=0;mode<4;++mode){clear();card_resource_label(c,"2",40,50,16,mode,card_energy_outline({Strike,0}),false);
+        unsigned found=0;for(int y=49;y<76;++y)for(int x=39;x<63;++x)found+=app.pixels[y*320+x]==colors[mode];CHECK(found);}
     // Both frames are unplayable because stars are insufficient. Energy
     // becoming affordable must still invalidate the cached red energy label.
     CHECK(lab_card(app.game,{RegentCrescentSpear,0}));id=app.game.card_count-1;CHECK(app.game.zones[id]==Zone::Hand);const int price=cost(app.game,id);CHECK(price>0);

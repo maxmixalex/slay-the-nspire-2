@@ -124,7 +124,7 @@ static void rest_scene_pixel(const char*key){
 static void advance_to(unsigned tick){while(a.animation<tick)a.advance(33);CHECK(a.animation==tick);a.render();}
 static void room_clock(unsigned milliseconds){while(milliseconds){const unsigned step=milliseconds>250?250:milliseconds;a.advance(step);milliseconds-=step;}a.render();}
 static void settle_rest_buttons(){a.render();const auto&m=a.room_presentation.rest;CHECK(!m.choices_locked());const unsigned age=a.map_clock_ms-m.start;if(age<500)room_clock(500-age);}
-static void settle_rest_completion(){a.render();const auto&m=a.room_presentation.rest;if(m.waiting(a.map_clock_ms))room_clock(m.post_wait-(a.map_clock_ms-m.post_start));CHECK(!m.choices_locked());if(a.camp_options(nullptr,0))settle_rest_buttons();}
+static void settle_rest_completion(){a.render();const auto&m=a.room_presentation.rest;if(m.waiting(a.map_clock_ms))room_clock(m.post_wait-(a.map_clock_ms-m.post_start));CHECK(!m.choices_locked());if(a.camp_options(nullptr,0))settle_rest_buttons();if(a.camp_proceed_ready())room_clock(500);}
 static void treasure_alpha(unsigned chest,unsigned collection,unsigned banner,int y=0){
  CHECK(a.treasure_chest_opacity()==chest);CHECK(a.treasure_collection_opacity()==collection);CHECK(a.treasure_banner_opacity()==banner);CHECK(a.treasure_banner_offset()==y);
 }
@@ -454,8 +454,8 @@ static void rest_completion(){
   room_clock(250);CHECK(!m.screen_alpha(a.map_clock_ms)&&m.hiding&&!choices());
   room_clock(wait-501);CHECK(m.waiting(a.map_clock_ms)&&!a.camp_proceed_ready()&&!exists(HitKind::UiAction,int(UiAction::LeaveCamp)));unchanged();
   room_clock(1);CHECK(!m.hiding&&m.returning&&m.mask==2&&!m.screen_alpha(a.map_clock_ms)&&a.camp_proceed_ready());
-  CHECK(exists(HitKind::UiAction,int(UiAction::LeaveCamp))&&!choices());unchanged();
-  room_clock(499);CHECK(choices()==1&&!hit(HitKind::Choice,1).enabled);room_clock(1);CHECK(hit(HitKind::Choice,1).enabled&&!exists(HitKind::Choice,0,false));unchanged();
+  CHECK(a.proceed_motion.enabled&&!exists(HitKind::UiAction,int(UiAction::LeaveCamp))&&!choices());unchanged();
+  room_clock(499);CHECK(exists(HitKind::UiAction,int(UiAction::LeaveCamp))&&choices()==1&&!hit(HitKind::Choice,1).enabled);room_clock(1);CHECK(hit(HitKind::Choice,1).enabled&&!exists(HitKind::Choice,0,false));unchanged();
   capture(fast?"rest-tent-choices-return-fast":"rest-tent-choices-return");
  }
  for(unsigned fast=0;fast<2;++fast){
@@ -463,7 +463,7 @@ static void rest_completion(){
   a.input(Key::Back);a.render();CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_used&&!a.room_presentation.rest.choices_locked()&&choices()==2);
   a.cursor=1;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Upgrade);a.cursor=0;a.input(Key::Confirm);CHECK(a.deck_candidate==0);a.input(Key::Confirm);
   CHECK(a.game.phase==Phase::Camp&&a.game.deck[0].upgraded&&a.room_presentation.rest.hiding&&a.room_presentation.rest.mask==3&&a.room_presentation.rest.description==1);
-  const unsigned wait=fast?1000:2000;CHECK(a.room_presentation.rest.post_wait==wait);snapshot();room_clock(wait-1);CHECK(!a.camp_proceed_ready());unchanged();room_clock(1);CHECK(a.camp_proceed_ready()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));unchanged();
+  const unsigned wait=fast?1000:2000;CHECK(a.room_presentation.rest.post_wait==wait);snapshot();room_clock(wait-1);CHECK(!a.camp_proceed_ready());unchanged();room_clock(1);CHECK(a.camp_proceed_ready()&&a.proceed_motion.enabled&&!exists(HitKind::UiAction,int(UiAction::LeaveCamp)));unchanged();room_clock(500);CHECK(exists(HitKind::UiAction,int(UiAction::LeaveCamp)));unchanged();
  }
  // An already-shown Proceed is not disabled by another Tent option's VFX.
  begin_room(WorldRoom::Rest,reference::ActKind::Overgrowth,0,&tent,1);click(HitKind::Choice,0);settle_rest_completion();click(HitKind::Choice,1);a.cursor=0;a.input(Key::Confirm);a.input(Key::Confirm);a.render();
@@ -523,7 +523,7 @@ static void merchant_motion_and_pickups(){
  CHECK(!a.room_presentation.merchant.visible(a.map_clock_ms)&&!a.room_presentation.merchant.alpha(a.map_clock_ms));unchanged();
 }
 static void fake_merchant_layout(){
- begin_event(OriginalEventId::FakeMerchant);a.game.gold=9999;a.render();snapshot();
+ begin_event(OriginalEventId::FakeMerchant);a.game.gold=9999;a.render();room_clock(500);snapshot();
  CHECK(!a.shop_open&&!choices()&&exists(HitKind::UiAction,int(UiAction::OpenShop))&&exists(HitKind::UiAction,int(UiAction::LeaveShop)));
  capture("fake-merchant-closed");click(UiAction::OpenShop);CHECK(a.shop_open);room_clock(1000);CHECK(choices()==6);
  constexpr int x[]={166,227,137,197,272,156},y[]={66,82,132,147,128,206};

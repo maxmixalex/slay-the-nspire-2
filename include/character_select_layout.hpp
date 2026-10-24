@@ -16,7 +16,12 @@ constexpr int InfoPanelX=project(89),InfoPanelY=project(411),InfoPanelWidth=proj
 constexpr int StatsOffset=project(-26),StatsIcon=project(40),StatsGap=project(48),StatsLabelGap=project(4);
 constexpr int RelicIcon=project(64),RelicIconY=project(8),RelicTextX=project(72),RelicTextWidth=project(420);
 constexpr int RelicTitleY=project(12),RelicDescriptionY=project(44);
-constexpr int info_top(int description_height){return InfoY+(InfoHeight-NameHeight-StatsHeight-description_height-RelicHeight)/2;}
+constexpr int info_top(int description_height){
+    // Godot containers expand to their combined minimum size; center
+    // alignment must never shift a longer locale above the VBox origin.
+    const int spare=InfoHeight-NameHeight-StatsHeight-description_height-RelicHeight;
+    return InfoY+(spare>0?spare/2:0);
+}
 constexpr int AscensionX=project(539),AscensionY=project(918),AscensionWidth=project(600),AscensionHeight=project(118);
 constexpr unsigned FirstClip=1705;
 constexpr uint32_t Durations[5]={5333,11667,13333,6667,8000};

@@ -313,15 +313,18 @@ static void fast_shop_can_immediately_start_pointer_travel(){
     CHECK(shop!=reference::NoPoint);
     snapshot();make_oracle(shop);keyboard_begin(shop);advance_ms(600);same_state(expected);
     CHECK(app.game.phase==Phase::Shop&&!app.map_travel.pending&&app.map_travel.fading_in&&!app.shop_open);
+    // The actual Proceed starts offscreen. Its first moving portion is
+    // clickable while Fast's independent 300ms keyboard gate is still held.
+    app.render();app.advance(33);app.render();
     const uint32_t clock=app.map_clock_ms;const int hp=app.game.hp,gold=app.game.gold;
     click(hit(HitKind::UiAction,int(UiAction::LeaveShop)));
     CHECK(app.game.phase==Phase::Shop&&app.game.world.room_open==2&&app.map_window.is_open&&app.game.world.current_point==shop&&app.map_clock_ms==clock);
     CHECK(app.game.hp==hp&&app.game.gold==gold);
-    CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)==255);
+    CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)==world_map_transition::fade_in_alpha(world_map_transition::Speed::Fast,33));
     CHECK(app.map_transition_blocks_keyboard()&&!app.map_transition_blocks_pointer());
     const unsigned next=first_point();snapshot();
     // Give Confirm a valid destination so its rejection tests the remaining
-    // 300 ms keyboard gate. The following pointer selects the real node hit.
+    // remaining keyboard gate. The following pointer selects the real node hit.
     app.cursor=world_current_map(app.game)->points[next].col;app.map_scroll=0;
     app.input(Key::Confirm);CHECK(!app.map_travel.pending&&app.map_clock_ms==clock);same_state(before);
     make_oracle(next);pointer_begin(next);
