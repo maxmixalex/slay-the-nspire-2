@@ -336,7 +336,7 @@ static void regent_combat_end(State&s,bool won){
 }
 
 static bool regent_choice(XChoice k){return k>=XChoice::RTransformHand&&k<=XChoice::RTyranny;}
-static bool choose_regent(State&s,const uint16_t*ids,unsigned n){
+static bool apply_regent_choice(State&s,const uint16_t*ids,unsigned n){
  auto&x=s.expansion;XChoice kind=x.choice;
  if(s.phase!=Phase::ExtendedChoice||!regent_choice(kind)||n<x.choice_min||n>x.choice_max||n>MaxHand||(n&&!ids))return false;
  unsigned queued=(kind==XChoice::RDecisions)?3:n;
@@ -347,12 +347,15 @@ static bool choose_regent(State&s,const uint16_t*ids,unsigned n){
   if(!found||id<0||id>=s.card_count)return false;for(unsigned j=0;j<i;j++)if(selected[j]==id)return false;
   Zone expected=(kind==XChoice::RTransformDraw||kind==XChoice::RForegone)?Zone::Draw:kind==XChoice::RDiscardTop?Zone::Discard:Zone::Hand;
   if(s.zones[id]!=expected)return false;
-  if(kind==XChoice::RDecisions&&card_type(s,s.cards[id],id)!=CardType::Skill)return false;
+  if(kind==XChoice::RDecisions&&(card_type(s,s.cards[id],id)!=CardType::Skill||(card_keywords(s,s.cards[id],id)&128)))return false;
   if(kind==XChoice::RHeirloom&&!card_colorless(s.cards[id].kind))return false;
   selected[i]=(uint16_t)id;
  }
  bool upgraded=x.choice_free;clear_extended_choice(s);s.phase=Phase::Combat;
  if(kind==XChoice::RDecisions&&n){for(unsigned i=0;i<3;i++)queue_extension(s,XOp::AutoInstance,selected[0],0,true);}
+ // CardPileCmd.Add enumerates the returned selection in order. Queue-backed
+ // transforms below are prepended backwards, but direct hand moves are not.
+ else if(kind==XChoice::RForegone)for(unsigned i=0;i<n;i++){bool room=s.hand.count<MaxHand;move_instance(s,selected[i],s.draw,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard);}
  else for(unsigned i=n;i>0;i--){int id=selected[i-1];
   if(kind==XChoice::RTransformHand||kind==XChoice::RTransformDraw||kind==XChoice::RTransformGuards){
    CardKind token=kind==XChoice::RTransformHand?MinionStrike:kind==XChoice::RTransformDraw?MinionDiveBomb:MinionSacrifice;
@@ -360,9 +363,8 @@ static bool choose_regent(State&s,const uint16_t*ids,unsigned n){
   }else if(kind==XChoice::RHeirloom)queue_extension(s,XOp::RClone,id,0,true);
   else if(kind==XChoice::RTyranny)enqueue(s,EffectKind::ExhaustCard,id,0,true);
   else if(kind==XChoice::RDiscardTop)move_instance(s,id,s.discard,s.draw,Zone::Draw);
-  else if(kind==XChoice::RForegone){bool room=s.hand.count<MaxHand;move_instance(s,id,s.draw,room?s.hand:s.discard,room?Zone::Hand:Zone::Discard);}
  }
- resolve_pending(s);++s.revision;return true;
+ return true;
 }
 
 static bool queue_regent(State&s,Card c,int target,int energy){
@@ -481,7 +483,7 @@ static bool regent_effect(State&s,Effect e){
  case XOp::RTransformCard:
   if(a>=0&&a<s.card_count){Card c=card_from_token(b);s.cards[a]=c;reset_card_modifiers(s,a);notify_card_generated(s,a);record(s,LogKind::Create,1,c.kind);}break;
  case XOp::RDecisions:{
-  Pile choices{};for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(card_type(s,s.cards[id],id)==CardType::Skill)choices.ids[choices.count++]=(uint16_t)id;}
+  Pile choices{};for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(card_type(s,s.cards[id],id)==CardType::Skill&&!(card_keywords(s,s.cards[id],id)&128))choices.ids[choices.count++]=(uint16_t)id;}
   set_extended_choice(s,XChoice::RDecisions,choices,1,1);break;
  }
  case XOp::RHeirloom:{

@@ -153,26 +153,14 @@ bool play(State&s,int h,int target){
 }
 
 bool choose_exhaust(State&s,int index){
-    if(s.phase!=Phase::ExhaustChoice||index<0||index>=s.hand.count)return false;
-    s.phase=Phase::Combat;exhaust(s,index);resolve(s);s.revision++;return true;
+    if(!apply_exhaust_choice(s,index))return false;
+    resolve(s);++s.revision;return true;
 }
 bool choose_discard(State&s,const uint16_t* ids,unsigned count){
-    if(s.phase!=Phase::DiscardChoice||!ids||count!=s.discard_required||!count||count>MaxHand)return false;
-    // Validate the entire choice before moving any instance; invalid requests
-    // cannot partially discard cards or consume RNG.
-    uint16_t selected[MaxHand];
-    for(unsigned i=0;i<count;i++){
-        bool in_hand=false;for(unsigned j=0;j<s.hand.count;j++)if(s.hand.ids[j]==ids[i])in_hand=true;
-        if(!in_hand)return false;
-        for(unsigned j=0;j<i;j++)if(ids[i]==ids[j])return false;
-        selected[i]=ids[i];
-    }
-    for(unsigned i=0;i<count;i++)for(int j=0;j<s.hand.count;j++)if(s.hand.ids[j]==selected[i]){
-        int id=remove(s.hand,j);put(s,s.discard,id,Zone::Discard);record(s,LogKind::Discard,s.cards[id].kind);break;
-    }
-    for(unsigned i=count;i>0;i--)silent_card_discarded(s,selected[i-1]);
-    s.discard_required=0;s.phase=Phase::Combat;resolve(s);s.revision++;return true;
+    if(!apply_discard_choice(s,ids,count))return false;
+    resolve(s);++s.revision;return true;
 }
+
 unsigned choice_min(const State&s){
     return s.phase==Phase::ExtendedChoice?s.expansion.choice_min:s.phase==Phase::ExhaustManyChoice?0:s.phase==Phase::DiscardChoice?s.discard_required:1;
 }
@@ -190,12 +178,10 @@ bool choose_exhaust_many(State&s,const uint16_t* ids,unsigned count){
     s.exhaust_limit=0;s.phase=Phase::Combat;resolve(s);s.revision++;return true;
 }
 bool choose_return_to_draw(State&s,int card_id){
-    if(s.phase!=Phase::ReturnChoice||card_id<0||card_id>=s.card_count)return false;
-    int index=-1;for(int i=0;i<s.discard.count;i++)if(s.discard.ids[i]==card_id){index=i;break;}
-    if(index<0)return false;
-    int id=remove(s.discard,index);put(s,s.draw,id,Zone::Draw);
-    s.phase=Phase::Combat;resolve(s);s.revision++;return true;
+    if(!apply_return_choice(s,card_id))return false;
+    resolve(s);++s.revision;return true;
 }
+
 bool end_turn(State&s){
     if(s.phase!=Phase::Combat||s.effect_count||s.playing!=-1)return false;
     s.relic_flash=0;queue_extension(s,XOp::TurnEnd);resolve_pending(s);++s.revision;return true;

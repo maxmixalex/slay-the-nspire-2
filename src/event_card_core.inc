@@ -276,14 +276,14 @@ static void event_card_combat_end(State&s,bool won){
  for(int n=ec_power(s,EventCardPower::Improvement);n>0&&count;--n){unsigned at=world_rng(s,WorldRng::CombatCardSelection).below(count);s.deck[eligible[at]].upgraded=1;notify_history(s,RunHistoryEvent::CardUpgraded,unsigned(card_token(s.deck[eligible[at]])));for(unsigned j=at+1;j<count;++j)eligible[j-1]=eligible[j];--count;}
 }
 static bool event_card_choice(XChoice c){return c==XChoice::EventDualWield||c==XChoice::EventNeowsFury||c==XChoice::EventWish||c==XChoice::EventAbundance;}
-static bool choose_event_card(State&s,const uint16_t*ids,unsigned count){
+static bool apply_event_card_choice(State&s,const uint16_t*ids,unsigned count){
  auto&x=s.expansion;if(s.phase!=Phase::ExtendedChoice||!event_card_choice(x.choice)||count<x.choice_min||count>x.choice_max||(count&&!ids))return false;
  for(unsigned i=0;i<count;++i){bool found=false;for(unsigned j=0;j<x.choices.count;++j)if(x.choices.ids[j]==ids[i])found=true;if(!found)return false;for(unsigned j=0;j<i;++j)if(ids[j]==ids[i])return false;}
  XChoice which=x.choice;int copies=s.event_cards.choice_copies;s.event_cards.choice_copies=0;clear_extended_choice(s);s.phase=Phase::Combat;
  if(which==XChoice::EventDualWield&&count){for(int n=0;n<copies;++n){int id=create_to_hand(s,s.cards[ids[0]],false);if(id<0)break;copy_card_modifiers(s,id,ids[0]);notify_card_generated(s,id);}}
  else if(which==XChoice::EventAbundance&&count){int id=create_to_hand(s,x.offers[ids[0]-MaxCards]);if(id>=0)set_free_this_turn(s,id);}
  else for(unsigned i=0;i<count;++i){int id=ids[i];if(s.hand.count>=MaxHand)break;move_instance(s,id,which==XChoice::EventWish?s.draw:s.discard,s.hand,Zone::Hand);}
- resolve_pending(s);++s.revision;return true;
+ return true;
 }
 static bool event_card_effect(State&s,Effect e){
  auto&v=s.event_cards;auto&x=s.expansion;int a=e.value,b=e.aux;Card c=s.playing>=0?s.cards[s.playing]:Card{};

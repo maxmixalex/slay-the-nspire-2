@@ -1,7 +1,7 @@
 static bool queue_event_card(State&,Card,int,int);
 static bool event_card_effect(State&,Effect);
 static bool event_card_choice(XChoice);
-static bool choose_event_card(State&,const uint16_t*,unsigned);
+static bool apply_event_card_choice(State&,const uint16_t*,unsigned);
 static bool event_card_play_allowed(const State&,int,bool automatic);
 static int event_card_base_cost(const State&,Card,int,int base);
 static int event_card_cost(const State&,Card,int,int base);

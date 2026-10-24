@@ -39,6 +39,7 @@ uint8_t resource_transfer_uses=0;
 #include "world_relic_core.inc"
 #include "post_play_core.inc"
 #include "core_turns.inc"
+#include "combat_selection_core.inc"
 #include "world_shared_core.inc"
 #include "expansion_effects.inc"
 #include "expansion_validation.inc"

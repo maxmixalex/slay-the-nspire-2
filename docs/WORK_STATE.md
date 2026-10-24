@@ -218,3 +218,72 @@ variants and every monster-specific timing path still lack full differential
 proof. Original-game paired captures and physical-hardware measurements are not
 available. Do not convert adapted 320×240 rendering or emulator results into an
 unsupported “95% original fidelity” assertion.
+
+## Stage8e integrated acceptance — before fixture-only checkpoint
+
+Runtime/resource checkpoint `492915341106b129f730e46ed84d152637a24b7d`
+built native, ordinary ARM and ordinary WASM successfully. Python passed
+204/204. Initial CTest passed105/106: only the new FTUE fixture failed.
+Initial bilingual actual-resource acceptance passed20/21 targets per locale:
+the remaining map-window failure was the last reset/wrap fixture starting
+before actor preparation. All runtime sources remain unchanged by the fixture
+repairs. Complete tests are retained, including canonical State and animation
+purity during bounded preparation, source reward-card entrance timing, and
+strict synthetic tile-directory bounds. Short repaired FTUE checks passed
+59564 synthetic /5987 English /5284 Chinese; repaired map passed82678 per locale.
+Formal execution must use the next remotely frozen test checkpoint.
+
+Actual terminal select/aim/Strike now passes full canonical-save equivalence
+and closes the combat display queue. Both actual locales pass4076 reward
+checks, with inspected captures showing no hand, energy, piles or End Turn
+beneath the terminal reward list or card choices. The GameOver source-pixel
+oracle and all other actual scene targets pass.
+
+Final FTUE resource conversion and byte-identical split roundtrip passed.
+The seven original images,31 texts and native4px/18px font additions retain all
+old payloads. Common84772852 + English2160488 + Chinese5184978 =92118318 bytes.
+The ARM launcher is1370912 bytes (SHA256
+`17634b518ef85b3a46ac4d1d42da7205e32e281ab3e71b2f44a518cd63968918`);
+allocation16672244 leaves104972 bytes below16MiB. Linked12880 division/ABI,
+42 LZMA2,14 tile-filter and9110 additional signed32-bit division/remainder
+checks pass. These do not establish physical-device FPS.
+
+Per-profile formal storage checks pass6413 core/export plus259 Ndless cases
+and the actual exported NSH7/8 browser transaction tests. Full NSH8 is295349
+bytes. The final ordinary offline HTML passed16 browser flows and27 captures,
+including actual Yes/No, three tutorial pages, final-page marking, real Neow
+and map travel, v17 first-turn save/reload/Continue without repeat prompts,
+three-profile isolation and deletion, Settings language/fast/timer persistence.
+No page errors or external requests occurred. The first Chrome launch was
+blocked by sandbox setsockopt; its failed receipt remains distinct from the
+subsequent approved local-only pass.
+
+USB upgrade exposed a real temporary-storage constraint: replacing the old
+Chinese sidecar while it still existed failed with-255. Removing only that old
+resource and sending the new matching sidecar succeeded. The install session
+remains recorded as failed; subsequent readback/startup uses a new gate. The
+release instructions now explain removing all three old resource sidecars
+before replacement while retaining every save/profile file. Final ordinary
+map timing, new-profile first victory, three-profile capacity and final
+source/main/artifact delivery are still in progress.
+
+## Stage8f core/resource checkpoint — UI integration still in progress
+
+Independent source review identified active legacy standard-deck, combat
+selector, world-choice, pause and potion-popup presentation. These are now
+being implemented in parallel, not deferred as a diagnostic-only result.
+The core/resource checkpoint preserves the selector command shortcuts,
+32 private original prompt bindings and a two-image append-only converter.
+See `docs/selection-ui9-0.17.md` and the exact caller audit in
+`docs/combat-selection-source-0.17.md`. The converter's four synthetic data
+contracts and short Clang syntax checks pass; formal core execution and
+private conversion start only after its branch ref is verified remotely.
+The complete UI worktree remains uncommitted until those agents finish and
+must receive its own remote checkpoint before the final full builds.
+
+An additional actual FTUE pixel oracle found the relic arrow missing its
+source vertical flip. The narrow correction changes870 pixels per locale;
+the old parameter fails the independent orientation check and the corrected
+private-overlay diagnostic passes6113 English/5410 Chinese checks. This is
+a runtime correction, unlike the earlier FTUE/map fixture repairs. Its
+formal final gate remains part of the complete UI checkpoint.

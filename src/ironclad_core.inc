@@ -20,13 +20,13 @@ static void ironclad_gain_power(State&s,IPower p,int n){
  }
 }
 static bool ironclad_choice(XChoice c){return c==XChoice::IUpgrade;}
-static bool choose_ironclad(State&s,const uint16_t*ids,unsigned n){
+static bool apply_ironclad_choice(State&s,const uint16_t*ids,unsigned n){
  auto&x=s.expansion;
  if(s.phase!=Phase::ExtendedChoice||x.choice!=XChoice::IUpgrade||n!=1||!ids)return false;
  unsigned id=ids[0];bool found=false;for(unsigned j=0;j<x.choices.count;j++)if(x.choices.ids[j]==id)found=true;
  if(!found||id>=s.card_count||s.zones[id]!=Zone::Hand||s.cards[id].upgraded)return false;
  s.cards[id].upgraded=1;record(s,LogKind::Upgrade,s.cards[id].kind);clear_extended_choice(s);s.phase=Phase::Combat;
- resolve_pending(s);++s.revision;return true;
+ return true;
 }
 static void ironclad_card_reset(State&s,int id){
  if(id<0||id>=MaxCards)return;auto&i=s.ironclad;i.damage_bonus[id]=0;

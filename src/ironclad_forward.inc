@@ -29,7 +29,7 @@ static void ironclad_card_reset(State&,int);
 static void ironclad_temporary_cost_set(State&,int);
 static void ironclad_combat_cost_set(State&,int);
 static bool ironclad_choice(XChoice);
-static bool choose_ironclad(State&,const uint16_t*,unsigned);
+static bool apply_ironclad_choice(State&,const uint16_t*,unsigned);
 static bool valid_ironclad_state(const State&);
 static bool valid_ironclad_effect(const State&,const Effect&);
 bool ironclad_description_value(const State&,Card,int,int,const char*,int&);

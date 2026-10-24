@@ -355,6 +355,7 @@ static void resolve(State&s){
             s.embrace=min(99,s.embrace+e.value);record(s,LogKind::Embrace,s.embrace);break;
         case EffectKind::Finish:finish_extended_card(s);break;
         }
+        resolve_trivial_card_selection(s);
         enemy_check_deaths(s);necro_observe_deaths(s);power_order_prune(s);
         // Observe settled values, including commands which produce no log
         // (enemy block, pet interception, side-start block/energy reset).

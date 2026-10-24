@@ -37,7 +37,7 @@ static void silent_turn_ready(State&);
 static void silent_player_side_end(State&);
 // Replaces the legacy once-per-enemy poison loop; also used by Outbreak.
 static void silent_enemy_poison(State&);
-static bool silent_choose(State&,const uint16_t*,unsigned);
+static bool apply_silent_choice(State&,const uint16_t*,unsigned);
 static bool valid_silent_state(const State&);
 static bool valid_silent_effect(const State&,const Effect&);
 static bool silent_description_value(const State&,Card,int target,int instance,const char* variable,int& out);

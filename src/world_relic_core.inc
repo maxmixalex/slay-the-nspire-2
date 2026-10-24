@@ -97,6 +97,9 @@ static unsigned wr_generate_options(State&s,Card*cards,EventCardFacts*facts,unsi
  return world_combat_cards(s,world_rng(s,WorldRng::CombatCardGeneration),n,o,true,cards,facts);}
 static void wr_batch(State&s,WorldRelicInstance&r,unsigned count,int kind,bool free=false){Card cards[2];EventCardFacts facts[2];count=wr_generate_options(s,cards,facts,min(2,count),kind);for(unsigned i=0;i<count;i++){r.card_tokens[i]=uint16_t(card_token(cards[i]));r.card_facts[i]=facts[i];}if(count)wr_action(s,r.serial,WRA_GenerateBatch,0,int(count)|(free?256:0));}
 static void wr_choose_hand(State&s,WorldRelicInstance&r,unsigned low,unsigned high){auto&w=s.world_relics;unsigned n=s.hand.count;if(!n){if(r.id==WorldRelicToastyMittens)world_relic_gain_strength(s,1);return;}
+ // Toasty Mittens uses FromHand with fixed 1; Gambling Chip is explicitly
+ // manual and must still offer its zero-card choice even for a single card.
+ if(r.id==WorldRelicToastyMittens&&n<=low&&low==high){world_relic_combat_select(s,r.serial,s.hand.ids,n);return;}
  w.return_phase=uint8_t(s.phase);w.choice=WorldRelicChoice::Hand;w.choice_owner=r.serial;w.choice_min=uint16_t(min(low,n));w.choice_max=uint16_t(min(high,n));w.choice_cancelable=low==0;w.offer_count=uint16_t(n);w.selected_count=0;w.choice_group=w.choice_reward=0;for(unsigned i=0;i<n;i++)w.offers[i]=s.hand.ids[i];s.phase=Phase::WorldRelicChoice;}
 static void wr_choose_generated(State&s,WorldRelicInstance&r,unsigned count,int pool,bool optional){Card cards[5];EventCardFacts facts[5];count=wr_generate_options(s,cards,facts,count,pool);if(!count)return;auto&w=s.world_relics;
  w.return_phase=uint8_t(s.phase);w.choice=WorldRelicChoice::CombatOffer;w.choice_owner=r.serial;w.choice_min=optional?0:1;w.choice_max=1;w.choice_cancelable=optional;w.offer_count=uint16_t(count);w.selected_count=0;w.choice_group=w.choice_reward=0;
@@ -206,7 +209,7 @@ static void wr_listener(State&s,WorldRelicInstance&r,WorldRelicHook hook,int a,i
   case WorldRelicBlessedAntler:if(first){flash();wr_action(s,r.serial,WRA_GenerateDraw,card_token({Dazed,0}),3);}break;
   case WorldRelicRadiantPearl:if(first)wr_action(s,r.serial,WRA_GenerateHand,card_token({EventCardLuminesce,0}),1);break;
   case WorldRelicJeweledMask:if(first){uint16_t ids[MaxCards];unsigned n=0;for(unsigned pass=0;pass<2&&!n;pass++)for(unsigned i=0;i<s.draw.count;i++){unsigned id=s.draw.ids[i];if(wr_type(s,int(id))==CardType::Power&&(pass||!card_innate(s,s.cards[id],int(id))))ids[n++]=uint16_t(id);}if(n){int id=ids[world_rng(s,WorldRng::CombatCardSelection).below(n)];flash();set_free_this_turn(s,id);bool hand=s.hand.count<MaxHand;move_instance(s,id,s.draw,hand?s.hand:s.discard,hand?Zone::Hand:Zone::Discard);}}break;
-  case WorldRelicToolbox:if(first){flash();wr_choose_generated(s,r,3,1,true);}break;
+  case WorldRelicToolbox:if(first){flash();wr_choose_generated(s,r,3,1,false);}break;
   default:break;}break;
  case WorldRelicHook::AfterHandDraw:
   switch(r.id){

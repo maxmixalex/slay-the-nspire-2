@@ -37,7 +37,7 @@ static void regent_player_side_end(State&);
 static void regent_enemy_side_end(State&);
 static void regent_combat_end(State&,bool won);
 static bool regent_choice(XChoice);
-static bool choose_regent(State&,const uint16_t*,unsigned);
+static bool apply_regent_choice(State&,const uint16_t*,unsigned);
 static bool valid_regent_state(const State&);
 static bool valid_regent_effect(const State&,const Effect&);
 int card_star_cost(const State&,Card,int instance);

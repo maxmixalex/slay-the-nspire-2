@@ -236,7 +236,7 @@ static int silent_clone(State&s,const SilentSnapshot&n){
  s.enemy_world.affliction[id]=n.enemy_affliction;s.enemy_world.affliction_amount[id]=n.enemy_affliction_amount;s.enemy_world.dampen_restore[id]=n.enemy_dampen_restore;s.enemy_world.card_value[id]=n.enemy_card_value;
  notify_card_generated(s,id);return id;
 }
-static bool silent_choose(State&s,const uint16_t*ids,unsigned count){
+static bool apply_silent_choice(State&s,const uint16_t*ids,unsigned count){
  auto&x=s.expansion;XChoice kind=x.choice;
  if(s.phase!=Phase::ExtendedChoice||(kind!=XChoice::SlySkill&&kind!=XChoice::NightmareCard)||!ids||count!=1||x.choice_min!=1||x.choice_max!=1)return false;
  int id=ids[0];bool found=false;for(unsigned i=0;i<x.choices.count;i++)if(x.choices.ids[i]==id)found=true;
@@ -245,7 +245,7 @@ static bool silent_choose(State&s,const uint16_t*ids,unsigned count){
  int slot=0;if(kind==XChoice::NightmareCard){while(slot<MaxNightmares&&s.silent.nightmare_active[slot])++slot;if(slot==MaxNightmares||s.silent.power_count>=SPowerCount+MaxNightmares)return false;}
  if(kind==XChoice::SlySkill)s.silent.sly[id]|=2;
  else{s.silent.nightmares[slot]=silent_capture(s,id);s.silent.nightmare_active[slot]=1;silent_register(s,SPowerCount+slot);}
- clear_extended_choice(s);s.phase=Phase::Combat;resolve_pending(s);++s.revision;return true;
+ clear_extended_choice(s);s.phase=Phase::Combat;return true;
 }
 static bool queue_silent(State&s,Card c,int target,int energy){
  if(!card_in_pool(c.kind,Character::Silent)&&c.kind!=Shiv)return false;

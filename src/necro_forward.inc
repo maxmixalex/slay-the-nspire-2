@@ -1,7 +1,7 @@
 // Explicit integration surface for all 86 Necrobinder cards and SweepingGaze.
 static bool queue_necro(State&,Card,int target,int energy);
 static bool necro_effect(State&,Effect);
-static bool necro_choose(State&,const uint16_t*,unsigned);
+static bool apply_necro_choice(State&,const uint16_t*,unsigned);
 static void necro_combat_start(State&);
 static void necro_combat_end(State&);
 static void necro_card_created(State&,int id);

@@ -519,7 +519,7 @@ static void necro_choice_begin(State&s,XChoice which,int count){
  count=min(count,eligible.count);if(count<=0)return;
  set_extended_choice(s,which,eligible,count,count);
 }
-static bool necro_choose(State&s,const uint16_t*ids,unsigned count){
+static bool apply_necro_choice(State&s,const uint16_t*ids,unsigned count){
  auto&x=s.expansion;XChoice k=x.choice;
  if(s.phase!=Phase::ExtendedChoice||k<XChoice::NCleanse||k>XChoice::NTransfigure||!ids||!count||count!=x.choice_min||count!=x.choice_max)return false;
  Zone zone=k==XChoice::NCleanse||k==XChoice::NSeance?Zone::Draw:k==XChoice::NDredge?Zone::Discard:Zone::Hand;
@@ -545,7 +545,7 @@ static bool necro_choose(State&s,const uint16_t*ids,unsigned count){
    s.expansion.replay[id]=(uint8_t)min(255,s.expansion.replay[id]+1);
   }
  }
- resolve_pending(s);++s.revision;return true;
+ return true;
 }
 static bool necro_effect(State&s,Effect e){
  XOp op=(XOp)e.target;int a=e.value,b=e.aux;auto&v=s.necro;auto&x=s.expansion;

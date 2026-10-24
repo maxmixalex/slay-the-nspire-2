@@ -195,6 +195,12 @@ static void generate_card(State&s,int filter,int flags){
 static void clear_extended_choice(State&s){auto&x=s.expansion;x.choice=XChoice::None;x.choices.count=0;x.choice_min=x.choice_max=x.choice_free=0;}
 static void set_extended_choice(State&s,XChoice kind,const Pile&pool,int lo,int hi,int flags=0){
  if(!alive(s)||!pool.count)return;
+ // These fixed-count pile commands can request more cards than fit in Hand.
+ // The source shortcut precedes UI capacity clamps and returns every card;
+ // CardPileCmd.Add then sends the overflow to Discard in source pile order.
+ if((kind==XChoice::Draw||kind==XChoice::RForegone)&&lo==hi&&pool.count>MaxHand&&int(pool.count)<=lo){
+  apply_complete_draw_choice(s,pool,(flags&1)!=0);return;
+ }
  hi=min(hi,min(MaxHand,(int)pool.count));lo=min(lo,hi);if(hi<=0)return;
  auto&x=s.expansion;x.choices=pool;x.choice=kind;x.choice_min=(uint8_t)lo;x.choice_max=(uint8_t)hi;x.choice_free=flags&1;
  if(!s.effect_count)queue_extension(s,XOp::Noop);
@@ -207,15 +213,14 @@ Card choice_card(const State&s,int token){
 static bool move_instance(State&s,int id,Pile&from,Pile&to,Zone z){
  for(unsigned i=0;i<from.count;i++)if(from.ids[i]==id){remove(from,i);return put(s,to,id,z);}return false;
 }
-bool choose_extended(State&s,const uint16_t*ids,unsigned n){
+static bool apply_extended_choice(State&s,const uint16_t*ids,unsigned n){
  auto&x=s.expansion;
- if(event_card_choice(x.choice))return choose_event_card(s,ids,n);
- if(x.choice==XChoice::EnemyKnowledge)return n==1&&ids&&enemy_choice(s,ids[0]);
- if(ironclad_choice(x.choice))return choose_ironclad(s,ids,n);
- if(x.choice==XChoice::SlySkill||x.choice==XChoice::NightmareCard)return silent_choose(s,ids,n);
- if(regent_choice(x.choice))return choose_regent(s,ids,n);
- if(x.choice>=XChoice::NCleanse&&x.choice<=XChoice::NTransfigure)return necro_choose(s,ids,n);
- if(s.phase!=Phase::ExtendedChoice||x.choice==XChoice::None||n>MaxHand||n<x.choice_min||n>x.choice_max||(n&&!ids))return false;
+ if(event_card_choice(x.choice))return apply_event_card_choice(s,ids,n);
+ if(ironclad_choice(x.choice))return apply_ironclad_choice(s,ids,n);
+ if(x.choice==XChoice::SlySkill||x.choice==XChoice::NightmareCard)return apply_silent_choice(s,ids,n);
+ if(regent_choice(x.choice))return apply_regent_choice(s,ids,n);
+ if(x.choice>=XChoice::NCleanse&&x.choice<=XChoice::NTransfigure)return apply_necro_choice(s,ids,n);
+ if(s.phase!=Phase::ExtendedChoice||x.choice==XChoice::None||n>MaxHand||n<(x.choice==XChoice::Offer?0:x.choice_min)||n>x.choice_max||(n&&!ids))return false;
  // Refuse a continuation that cannot be queued before changing the choice or
  // any pile. Optional exhaust uses the same atomic boundary as legacy Purity.
  unsigned queued=x.choice==XChoice::Exhaust?n:x.choice==XChoice::DiscardRedraw?1:0;
@@ -245,13 +250,19 @@ bool choose_extended(State&s,const uint16_t*ids,unsigned n){
   for(unsigned i=n;i>0;i--)silent_card_discarded(s,selected[i-1]);
   queue_extension(s,XOp::Draw,(int)n,0,true);
  }
+ return true;
+}
+bool choose_extended(State&s,const uint16_t*ids,unsigned n){
+ if(s.expansion.choice==XChoice::EnemyKnowledge)return n==1&&ids&&enemy_choice(s,ids[0]);
+ if(!apply_extended_choice(s,ids,n))return false;
  resolve_pending(s);++s.revision;return true;
 }
+
 static void offer_cards(State&s,int filter,int flags){
  CardKind pool[CardKinds];unsigned n=0;for(unsigned k=0;k<CardKinds;k++)if(matches_generated(s,k,filter))pool[n++]=(CardKind)k;
  Pile choices{};
  for(unsigned i=0;i<3&&n;i++){unsigned j=random_below(s.rng_cards,n);s.expansion.offers[i]={pool[j],(uint8_t)((flags&2)!=0)};pool[j]=pool[--n];choices.ids[choices.count++]=(uint16_t)(MaxCards+i);}
- set_extended_choice(s,XChoice::Offer,choices,1,1,flags);
+ set_extended_choice(s,XChoice::Offer,choices,0,1,flags);
 }
 static void choose_draw(State&s,int filter,int sample=0,int count=1){
  Pile eligible{};
