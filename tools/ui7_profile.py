@@ -39,7 +39,7 @@ TEXT_KEYS = (
 _extra=json.loads((Path(__file__).resolve().parents[1]/"config/frontend-ui7-text-keys.json").read_text())
 TEXT_KEYS=tuple(dict.fromkeys((*TEXT_KEYS,*_extra)))
 TEXTS = tuple(enumerate(TEXT_KEYS, 8106))
-assert 8106+len(TEXTS)<=8704
+assert 8106+len(TEXTS)<=8400  # The profile catalog starts at this stable slot.
 # The pinned ENG/ZHS HEADER values are byte-identical to SCREENSHAKE.
 # Expose its source HoverTip key without another physical string slot.
 TEXT_ALIASES = {'settings_ui.SCREENSHAKE_HEADER':'settings_ui.SCREENSHAKE'}

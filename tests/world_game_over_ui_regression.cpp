@@ -92,6 +92,29 @@ static void press(UiAction action){
  a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;
 }
 static uint32_t pixels(int x,int y,int w,int h){uint32_t hash=2166136261u;for(int yy=y;yy<y+h;yy++)for(int xx=x;xx<x+w;xx++){hash^=a.pixels[yy*ScreenW+xx];hash*=16777619u;}return hash;}
+static void settled_layer_pixels(){
+ if(!actual_profile)return;using namespace game_over_ui;
+ CHECK(a.content.healthy()&&a.game_over_presentation.ui_alpha(a.map_clock_ms)==255&&a.game_over_presentation.button_alpha(a.map_clock_ms)==255);
+ // Compare the finished App frame against opaque texels in the real source
+ // controls. Exclude their text rectangles, whose glyphs legitimately cover
+ // the artwork. This detects a missing/covered layer even when its hit exists.
+ const auto verify=[&](int slot,int x,int y,int width,int height,int text_x,int text_y,int text_w,int text_h,unsigned shade,unsigned minimum){
+  const auto p=a.content.image(a.content.ui_image(slot));CHECK(p.pixels&&p.format<4&&p.w&&p.h);unsigned compared=0;
+  for(int yy=0;yy<height;++yy)for(int xx=0;xx<width;++xx){
+   const bool text=xx>=text_x&&xx<text_x+text_w&&yy>=text_y&&yy<text_y+text_h;
+   const unsigned at=unsigned(yy)*p.h/unsigned(height)*p.w+unsigned(xx)*p.w/unsigned(width);
+   if(p.alpha&&p.alpha[at]!=255)continue;
+   const uint8_t*pixel=p.palette?p.palette+unsigned(p.pixels[at])*2:p.pixels+at*2;const unsigned source=pixel[0]|unsigned(pixel[1])<<8;
+   const unsigned red=((source>>11)*shade+127)/255,green=(((source>>5)&63)*shade+127)/255,blue=((source&31)*shade+127)/255;
+   const bool equal=a.pixels[(y+yy)*ScreenW+x+xx]==uint16_t(red<<11|green<<5|blue);
+   if(!text)CHECK(equal);compared+=equal;
+  }CHECK(compared>=minimum);CHECK(a.content.healthy());
+ };
+ // The quote can rise across the banner's bottom rows during its own tween.
+ // Limit this oracle to the stable top/wings above that independently drawn text.
+ verify(I6_CommonBanner,BannerX,a.game_over_presentation.banner_y(a.map_clock_ms),BannerWidth,BannerHeight,10,9,BannerWidth-20,BannerHeight,255,100);
+ verify(U_RewardSkip,a.game_over_summary?MainMenuX:ContinueX,ButtonY,ButtonWidth,ButtonHeight,3,1,ButtonWidth-6,11,215,60);
+}
 static void capture(const char*name){
  if(!capture_directory)return;a.pointer.visible=false;a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
@@ -113,7 +136,7 @@ static void intro_stages(const char*prefix){
  advance_to(950);capture_stage(prefix,"intro-950ms");a.render();CHECK(!has_action(UiAction::GameOverSummary));
  advance_to(a.game_over_presentation.intro_delay()-1);a.render();CHECK(!has_action(UiAction::GameOverSummary));unchanged();
  advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.game_over_summary);
- settle_game_over();capture_stage(prefix,"intro-settled");unchanged();
+ settle_game_over();a.render();settled_layer_pixels();capture_stage(prefix,"intro-settled");unchanged();
 }
 static void summary_stages(const char*prefix){
  CHECK(a.game_over_summary&&a.game_over_presentation.summary_age(a.map_clock_ms)==0);
@@ -127,7 +150,7 @@ static void summary_stages(const char*prefix){
   advance_to(m.discovery_start()+250);capture_stage(prefix,"summary-discoveries");a.render();CHECK(detail_hits(true)==1);}
  advance_to(m.menu_start()-1);a.render();CHECK(!has_action(UiAction::GameOverMainMenu));unchanged();
  advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.title);
- settle_game_over();capture_stage(prefix,"summary-settled");unchanged();
+ settle_game_over();a.render();settled_layer_pixels();capture_stage(prefix,"summary-settled");unchanged();
  if(actual_profile){
   // Both source nodes own ordinary 360px NHoverTipSets at different fixed
   // offsets. Render actual localized badge/discovery content through the

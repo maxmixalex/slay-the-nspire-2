@@ -124,8 +124,8 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     tiles.require(language in ('eng', 'zhs') and isinstance(localized, dict), 'Missing frontend locale')
     new_strings = {}
     for slot, key in texts:
-        off, length = source.strings[slot]
-        tiles.require(length == 0 and data[off] == 0, 'Reserved frontend string slot is already occupied')
+        tiles.require(source.string_payload(slot) == b'\0',
+                      'Reserved frontend string slot is already occupied')
         value = localized.get(key)
         tiles.require(isinstance(value, str) and value and '\0' not in value, 'Missing frontend label: ' + key)
         raw = value.encode('utf-8') + b'\0'

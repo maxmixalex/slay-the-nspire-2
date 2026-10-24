@@ -312,6 +312,10 @@ def scene_glyphs(source, faces):
         ordinal=int(ordinal)
         if ordinal>=len(texts):continue
         alphabet=visible_alphabet(texts[ordinal])
+        if key.startswith(('ftues.','main_menu_ui.ENABLE_TUTORIALS.')):
+            small_bold.update(alphabet)
+        if key=='ftues.ASCENSION_SINGLEPLAYER_FTUE_TITLE' or key.startswith('main_menu_ui.ENABLE_TUTORIALS.'):
+            banner_bold.update(alphabet)
         if key.startswith('game_over_screen.'):
             small_bold.update(alphabet)
             if key.startswith('game_over_screen.BANNER.'):banner_bold.update(alphabet)
