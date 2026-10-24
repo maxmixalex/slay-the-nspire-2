@@ -168,5 +168,23 @@ class OriginalFontTest(unittest.TestCase):
         self.assertEqual(receipt['fallback_codepoints_by_font'],{'0':[287],'1':[0x1f642],'2':[0x279d]})
         self.assertEqual(len(receipt['fallback_fonts']),3)
 
+    def test_tooltip_small_bold_is_title_scoped_and_append_only(self):
+        import append_ui9_tooltip_glyphs as tooltip
+        texts=['']*8704;texts[20]='新';texts[21]='黜';texts[2230]='疲';texts[6135]='血'
+        source=SimpleNamespace(version=31,strings=[(i,len(t.encode())) for i,t in enumerate(texts)],
+            cards=[(0,20,21,21)],glyphs=[(cp,0,101,1,1,1,0) for cp in range(32,127)]+[(ord('疲'),0,101,1,1,1,0)],
+            block=lambda off,n:texts[off].encode()[:n])
+        self.assertEqual(fonts.tooltip_small_bold_alphabet(source)-set(range(32,127)),set(map(ord,'新疲血')))
+        class SyntheticFace:
+            coverage=set(map(ord,'新血'))
+            def glyph(self,cp,px,style):
+                self.asserted=(px,style)
+                return cp,px|((style&3)<<6)|((style&4)<<3),1,1,1,0,b'\xff'
+        face=SyntheticFace();rows=tooltip.missing_glyphs(source,face)
+        self.assertEqual({(row[0],row[1]) for row in rows},{(ord('新'),101),(ord('血'),101)})
+        self.assertEqual(face.asserted,(5,5))
+        source.glyphs += [(cp,0,px,w,h,advance,encoded) for cp,px,w,h,advance,encoded,_ in rows]
+        self.assertEqual(tooltip.missing_glyphs(source,face),[])
+
 
 if __name__ == '__main__': unittest.main()

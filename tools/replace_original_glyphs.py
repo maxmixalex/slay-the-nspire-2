@@ -238,6 +238,27 @@ def control_small_bold_alphabet(source):
     return scene_label_alphabet(source,'world_text_index.inc',CONTROL_SMALL_BOLD_KEYS)
 
 
+def tooltip_small_bold_alphabet(source):
+    """Original NHoverTip titles select KreonBold at projected 5px only."""
+    result=set(range(32,127))
+    indices=Path(__file__).resolve().parents[1]/'src'
+    for name in ('world_text_index.inc','native_ui_text_index.inc','ui7_text_index.inc','locale_text_index.inc'):
+        for key,ordinal in re.findall(r'\{"([^\"]+)",(\d+)\}',(indices/name).read_text()):
+            if not (re.fullmatch(r'(card_keywords|static_hover_tips|powers|orbs|enchantments|afflictions|relics|potions)\..*\.title',key) or
+                    key in ('main_menu_ui.COMPENDIUM_RELIC_COLLECTION.unknown.title','main_menu_ui.POTION_LAB_COLLECTION.unknown.title')):
+                continue
+            ordinal=int(ordinal)
+            if ordinal>=len(source.strings):continue
+            offset,length=source.strings[ordinal]
+            result.update(visible_alphabet(bytes(source.block(offset,length)).decode('utf-8')))
+    for row in getattr(source,'cards',()):
+        ordinal=row[1]
+        if ordinal<len(source.strings):
+            offset,length=source.strings[ordinal]
+            result.update(visible_alphabet(bytes(source.block(offset,length)).decode('utf-8')))
+    return result
+
+
 def scene_glyphs(source, faces):
     """Pack actual explicit faces only for the screens that select them."""
     if source.version < 28 or not any(faces): return [], {}
@@ -265,7 +286,7 @@ def scene_glyphs(source, faces):
     # The game-over scene has its own5px score/quote faces. Restrict the
     # added italic glyphs to strings that can actually enter that scene,
     # including grammatical replacements and localized room names.
-    small_bold=set(alphabets[1])|history_small_bold_alphabet(source);small_italic=set(range(32,127));banner_bold=set();victory_bold=set()
+    small_bold=set(alphabets[1])|history_small_bold_alphabet(source)|tooltip_small_bold_alphabet(source);small_italic=set(range(32,127));banner_bold=set();victory_bold=set()
     for key,ordinal in entries:
         ordinal=int(ordinal)
         if ordinal>=len(texts):continue
