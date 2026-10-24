@@ -1,0 +1,194 @@
+[
+  {
+    "table": "card_library",
+    "key": "CARD_COUNT"
+  },
+  {
+    "table": "card_library",
+    "key": "COST_ONE_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "COST_THREE_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "COST_TWO_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "COST_X_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "COST_ZERO_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "LOCKED.description"
+  },
+  {
+    "table": "card_library",
+    "key": "LOCKED.title"
+  },
+  {
+    "table": "card_library",
+    "key": "NO_RESULTS"
+  },
+  {
+    "table": "card_library",
+    "key": "POOL_ANCIENT_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "POOL_COLORLESS_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "POOL_MISC_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_COMMON"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_COMMON_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_OTHER"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_OTHER_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_RARE"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_RARE_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_UNCOMMON"
+  },
+  {
+    "table": "card_library",
+    "key": "RARITY_UNCOMMON_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "SEARCH_PLACEHOLDER"
+  },
+  {
+    "table": "card_library",
+    "key": "TYPE_ATTACK_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "TYPE_OTHER_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "TYPE_POWER_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "TYPE_SKILL_TIP"
+  },
+  {
+    "table": "card_library",
+    "key": "UNKNOWN.description"
+  },
+  {
+    "table": "card_library",
+    "key": "UNKNOWN.title"
+  },
+  {
+    "table": "card_library",
+    "key": "VICTORIES"
+  },
+  {
+    "table": "card_library",
+    "key": "VIEW_MULTIPLAYER_CARDS"
+  },
+  {
+    "table": "card_library",
+    "key": "VIEW_STATS"
+  },
+  {
+    "table": "card_library",
+    "key": "VIEW_UPGRADES"
+  },
+  {
+    "table": "potion_lab",
+    "key": "COMMON"
+  },
+  {
+    "table": "potion_lab",
+    "key": "RARE"
+  },
+  {
+    "table": "potion_lab",
+    "key": "SPECIAL"
+  },
+  {
+    "table": "potion_lab",
+    "key": "UNCOMMON"
+  },
+  {
+    "table": "relic_collection",
+    "key": "ANCIENT"
+  },
+  {
+    "table": "relic_collection",
+    "key": "ANCIENT_SUBCATEGORY"
+  },
+  {
+    "table": "relic_collection",
+    "key": "COMMON"
+  },
+  {
+    "table": "relic_collection",
+    "key": "EVENT"
+  },
+  {
+    "table": "relic_collection",
+    "key": "RARE"
+  },
+  {
+    "table": "relic_collection",
+    "key": "SHOP"
+  },
+  {
+    "table": "relic_collection",
+    "key": "STARTER"
+  },
+  {
+    "table": "relic_collection",
+    "key": "UNCOMMON"
+  },
+  {
+    "table": "relic_collection",
+    "key": "UNKNOWN_ANCIENT"
+  },
+  {
+    "table": "main_menu_ui",
+    "key": "COMPENDIUM_RELIC_COLLECTION.unknown.title"
+  },
+  {
+    "table": "main_menu_ui",
+    "key": "COMPENDIUM_RELIC_COLLECTION.unknown.description"
+  },
+  {
+    "table": "main_menu_ui",
+    "key": "POTION_LAB_COLLECTION.unknown.title"
+  },
+  {
+    "table": "main_menu_ui",
+    "key": "POTION_LAB_COLLECTION.unknown.description"
+  }
+]

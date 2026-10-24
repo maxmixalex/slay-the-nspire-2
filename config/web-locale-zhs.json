@@ -26,8 +26,6 @@
   "invalid_content": "内容包校验失败。",
   "closed": "程序已退出。刷新页面可重新启动。",
   "measuring": "采样中，请照常操作游戏…",
-  "language": "语言 / Language",
-  "switch_language": "切换语言会重新启动游戏。未保存的进度会丢失；请先按 S 保存。现在切换吗？",
   "startup_failed": "启动失败。请检查资源文件。",
   "missing_resources": "未找到所选语言的资源。",
   "profile_scope": "当前浏览器 CPU 与 Canvas2D 提交间隔，不包含合成器或屏幕刷新率。",

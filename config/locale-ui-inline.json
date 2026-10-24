@@ -103,6 +103,130 @@
     {
       "source": "首领房间",
       "eng": "Boss room"
+    },
+    {
+      "source": "{Amount}金币",
+      "eng": "{Amount} Gold"
+    },
+    {
+      "source": "{HP}/{MaxHP}生命    {Gold}金币",
+      "eng": "{HP}/{MaxHP} HP    {Gold} Gold"
+    },
+    {
+      "source": "{Turns}回合",
+      "eng": "{Turns} turns"
+    },
+    {
+      "source": "中文",
+      "eng": "Chinese"
+    },
+    {
+      "source": "剧烈",
+      "eng": "Intense"
+    },
+    {
+      "source": "动作",
+      "eng": "Actions"
+    },
+    {
+      "source": "受伤",
+      "eng": "Hurt"
+    },
+    {
+      "source": "咔咔！",
+      "eng": "Caw caw!"
+    },
+    {
+      "source": "复生",
+      "eng": "Revive"
+    },
+    {
+      "source": "屏幕抖动",
+      "eng": "Screen Shake"
+    },
+    {
+      "source": "恐惧症模式",
+      "eng": "Phobia Mode"
+    },
+    {
+      "source": "恢复默认设置？",
+      "eng": "Restore default settings?"
+    },
+    {
+      "source": "文字特效",
+      "eng": "Text Effects"
+    },
+    {
+      "source": "无",
+      "eng": "Off"
+    },
+    {
+      "source": "无法切换语言。",
+      "eng": "Unable to change language."
+    },
+    {
+      "source": "无法读取语言资源。",
+      "eng": "Unable to read language resources."
+    },
+    {
+      "source": "显示手牌计数",
+      "eng": "Show Hand Card Numbers"
+    },
+    {
+      "source": "查看动作",
+      "eng": "View Actions"
+    },
+    {
+      "source": "查看升级",
+      "eng": "View Upgrades"
+    },
+    {
+      "source": "查看统计",
+      "eng": "View Statistics"
+    },
+    {
+      "source": "格挡",
+      "eng": "Blocked"
+    },
+    {
+      "source": "正常",
+      "eng": "Normal"
+    },
+    {
+      "source": "死亡",
+      "eng": "Death"
+    },
+    {
+      "source": "第{FloorNum}层",
+      "eng": "Floor {FloorNum}"
+    },
+    {
+      "source": "纯键盘模式",
+      "eng": "Keyboard Mode"
+    },
+    {
+      "source": "语言选项",
+      "eng": "Language Options"
+    },
+    {
+      "source": "语言选项（仅可在主菜单调整）",
+      "eng": "Language Options (main menu only)"
+    },
+    {
+      "source": "轻微",
+      "eng": "Subtle"
+    },
+    {
+      "source": "遭遇：{total}\n击杀：{kills}\n死亡：{deaths}\n胜率：{winrate}%",
+      "eng": "Encounters: {total}\nKills: {kills}\nDeaths: {deaths}\nWin rate: {winrate}%"
+    },
+    {
+      "source": "重置",
+      "eng": "Reset"
+    },
+    {
+      "source": "重置设置",
+      "eng": "Reset Settings"
     }
   ]
 }

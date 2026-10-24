@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "health_bar.hpp"
 
 namespace spire {
 enum class CardGridSurface : uint8_t { Pile, Library, DeckChoice, CombatChoice, WorldChoice, Count };
@@ -11,30 +12,31 @@ struct CardGridScroll {
     static constexpr int Left=39, BottomMargin=71, ThumbSize=16;
     uint32_t identity=0,epoch=0,hover_changed=0;
     int32_t position=0,target=0;
-    int16_t count=0,top=0,bottom=0,origin=0,focused_index=-1;
+    int16_t count=0,top=0,bottom=0,origin=0,focused_index=-1,left=Left,custom_height=-1;
+    uint8_t columns=Columns;bool center_short=true;
     bool bound=false,dragging=false,thumb_drag=false,thumb_hover=false;
     struct FaceMotion {uint32_t start=0;int16_t index=-1;bool focused=false;};
     FaceMotion faces[16]{};
 
     static int clamp(int value,int low,int high){return value<low?low:value>high?high:value;}
     static int fraction(int value,int thousandths){return (value/1000)*thousandths+(value%1000)*thousandths/1000;}
-    int rows()const{return (count+Columns-1)/Columns;}
+    int rows()const{return (count+columns-1)/columns;}
     int height()const{return bottom-top;}
-    int cards_height()const{return rows()?CardH+(rows()-1)*StepY:0;}
-    int extent()const{return origin+cards_height()+BottomMargin;}
-    int minimum()const{return extent()<height()?-(height()-extent())*Unit/2:0;}
+    int cards_height()const{return custom_height>=0?custom_height:rows()?CardH+(rows()-1)*StepY:0;}
+    int extent()const{return custom_height>=0?custom_height:origin+cards_height()+BottomMargin;}
+    int minimum()const{return center_short&&extent()<height()?-(height()-extent())*Unit/2:0;}
     int maximum()const{return extent()>height()?(extent()-height())*Unit:minimum();}
     bool has_scrollbar()const{return count&&origin+cards_height()>height();}
     int offset()const{return position/Unit;}
-    int card_y(int index)const{return top+origin+(index/Columns)*StepY-offset();}
-    int card_x(int index)const{return Left+(index%Columns)*StepX;}
+    int card_y(int index)const{return top+origin+(index/columns)*StepY-offset();}
+    int card_x(int index)const{return left+(index%columns)*StepX;}
     int first()const{
         const int above=offset()-origin-CardH-4;
-        return clamp((above>0?(above/StepY+1)*Columns:0),0,count);
+        return clamp((above>0?(above/StepY+1)*columns:0),0,count);
     }
     int last()const{
         const int below=height()+offset()-origin+4;
-        return clamp((below>0?(below/StepY+1)*Columns:0),0,count);
+        return clamp((below>0?(below/StepY+1)*columns:0),0,count);
     }
     int bar_top()const{return top+29;}
     int bar_bottom()const{return bottom-29;}
@@ -43,16 +45,16 @@ struct CardGridScroll {
         return bar_top()+(range>0?(bar_bottom()-bar_top())*clamp(thumb_drag?target:position,0,range)/range:0);
     }
     void reset(){*this=CardGridScroll{};}
-    void configure(uint32_t key,uint32_t generation,int total,int y0,int y1,int inset){
-        const bool changed=!bound||identity!=key||epoch!=generation||count!=total||top!=y0||bottom!=y1||origin!=inset;
-        identity=key;epoch=generation;count=int16_t(total);top=int16_t(y0);bottom=int16_t(y1);origin=int16_t(inset);bound=true;
+    void configure(uint32_t key,uint32_t generation,int total,int y0,int y1,int inset,int column_count=Columns,int x0=Left,bool centered=true,int content_height=-1){
+        const bool changed=!bound||identity!=key||epoch!=generation||count!=total||top!=y0||bottom!=y1||origin!=inset||columns!=column_count||left!=x0||center_short!=centered||custom_height!=content_height;
+        identity=key;epoch=generation;count=int16_t(total);top=int16_t(y0);bottom=int16_t(y1);origin=int16_t(inset);columns=uint8_t(column_count);left=int16_t(x0);center_short=centered;custom_height=int16_t(content_height);bound=true;
         if(changed){position=target=minimum();dragging=thumb_drag=false;thumb_hover=false;hover_changed=0;focused_index=-1;for(auto&face:faces)face=FaceMotion{};}
     }
     int face_scale(int index,uint32_t now)const{
         const auto&face=faces[unsigned(index)%16];if(face.index!=index)return 800;
         if(face.focused)return 1000;const unsigned elapsed=now-face.start;
-        if(elapsed>=500)return 800;const int left=500-int(elapsed);
-        return 800+200*(left*left/500)*left/250000;
+        if(elapsed>=500)return 800;
+        return 800+200*int(4096-health_bar::expo_out(elapsed*2))/4096;
     }
     int observe_face(int index,bool focused,uint32_t now){
         auto&face=faces[unsigned(index)%16];
@@ -67,7 +69,7 @@ struct CardGridScroll {
     }
     void focus(int index){
         if(index<0||index>=count)return;
-        target=clamp((origin+(index/Columns)*StepY+CardH/2-height()/2)*Unit,minimum(),maximum());
+        target=clamp((origin+(index/columns)*StepY+CardH/2-height()/2)*Unit,minimum(),maximum());
     }
     void drag_content(int delta){
         target=clamp(target-delta*Unit,minimum()-height()*Unit,maximum()+height()*Unit);

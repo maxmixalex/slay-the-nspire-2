@@ -1,5 +1,17 @@
 // Pinned reward UI observation. Only real acquisitions emitted by a UI input
 // scope create flights; restoring a save and ordinary rendering never do.
+void App::observe_deck_removing(const State&s,int index){
+ // The picker already captures its selected card across reset_presentation.
+ // Direct event/relic removals bypass that picker but use the same original
+ // CardPileCmd removal preview. Combat-only removals may disable showPreview
+ // in the source and are deliberately not inferred from a generic callback.
+ if(&s!=&game||index<0||index>=s.deck_count||combat_phase(s.phase)||s.phase==Phase::Remove||grimoire_select)return;
+ auto&removed=reward_presentation.removed;removed=RewardPresentation::RemovedCard{};
+ removed.card=s.deck[index];if(const auto*facts=event_card_facts(s,removed.card,-1,index))removed.facts=*facts;
+ removed.energy=int16_t(card_offer_cost(removed.card,&removed.facts));removed.stars=int16_t(card_star_cost(s,removed.card));
+ card_description(removed.card,-1,removed.description,sizeof removed.description,-1,index,&removed.facts);
+ removed.start=map_clock_ms;removed.active=true;
+}
 static uint8_t reward_list_mode(const App&a){
  if(a.game.phase==Phase::Reward&&!a.reward_cards&&!a.grimoire_select)return 1;
  if(a.game.phase==Phase::WorldRelicChoice&&a.game.world_relics.choice==WorldRelicChoice::OfferReward)return 2;
@@ -10,8 +22,9 @@ RewardAcquisitionSnapshot App::reward_acquisition_snapshot()const{
  RewardAcquisitionSnapshot out;out.serial=reward_presentation.serial;out.seed=game.seed;out.run=run_number;
  if(title||paused||help||library||panel||settings_open||map_window.is_open||detail_card>=0||detail_item>=0||status_actor>=0||event_reader)return out;
  const bool cards=game.phase==Phase::Reward&&reward_cards||world_choice_is_card_reward();
- const unsigned mode=reward_list_mode(*this);if(!mode&&!cards)return out;
- out.context=cards?2:1;out.deck_count=game.deck_count;out.relic_count=uint16_t(ui_owned_relic_count(game));out.gold=game.gold;
+ const bool direct=game.phase==Phase::Shop&&shop_open||game.phase==Phase::Event&&game.original_events.active||game.phase==Phase::OriginalEventChoice;
+ const unsigned mode=reward_list_mode(*this);if(!mode&&!cards&&!direct)return out;
+ out.context=cards||direct?2:1;out.deck_count=game.deck_count;out.relic_count=uint16_t(ui_owned_relic_count(game));out.gold=game.gold;
  for(unsigned i=0;i<MaxPotionSlots;++i)out.potions[i]=potion_at(game,i);
  const HitRegion*chosen=nullptr;
  if(pointer.visible){const auto*h=hit_at(pointer.x,pointer.y);
@@ -24,8 +37,8 @@ RewardAcquisitionSnapshot App::reward_acquisition_snapshot()const{
   for(int i=0;i<hit_count;++i)if(hits[i].kind==kind&&hits[i].value==id){chosen=&hits[i];break;}
  }
  const int dy=reward_presentation.window(map_clock_ms).y;
- out.x=int16_t(chosen?chosen->x+(cards?chosen->w/2:18):cards?160:86);
- out.y=int16_t(chosen?chosen->y+chosen->h/2:cards?125:93+dy);
+ out.x=int16_t(chosen?chosen->x+(cards||direct?chosen->w/2:18):cards||direct?160:86);
+ out.y=int16_t(chosen?chosen->y+chosen->h/2:cards||direct?125:93+dy);
  out.potion_x=out.relic_x=out.x;out.potion_y=out.relic_y=out.y;
  if(mode==1)for(int i=0;i<hit_count;++i){const auto&h=hits[i];if(h.kind!=HitKind::UiAction)continue;
   if(h.value==int(UiAction::RewardPotion)){out.potion_x=int16_t(h.x+18);out.potion_y=int16_t(h.y+h.h/2);}

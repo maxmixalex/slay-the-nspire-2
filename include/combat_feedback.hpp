@@ -69,7 +69,7 @@ struct CombatFeedback {
   uint32_t finish(bool fast){active=false;return base+(hit?(clock_ms+(fast?100:200)+32)/33:clock_ms/33);}
  } attacks[MaxAutoFrames+1]{},enemy_attack{};
  struct Cue {HealthBarValues value{};uint32_t identity=0,at=0;uint8_t actor=0;};
- struct DamageCue {uint32_t identity=0,at=0;int32_t amount=0;uint8_t actor=0,flags=0;};
+ struct DamageCue {uint32_t identity=0,at=0;int32_t amount=0;uint8_t actor=0,flags=0,shake_strength=0;};
  HealthBarValues shown[Actors]{},observed[Actors]{};
  uint32_t identity[Actors]{},observed_identity[Actors]{};
  EnemyIntent intents[MaxEnemies]{};
@@ -87,7 +87,7 @@ struct CombatFeedback {
   if(actor>=Actors||!(result.amount()>0||(result.flags&(CoreDamageResult::FullyBlocked|CoreDamageResult::ShowZero))))return;
   if(damage_count==Capacity&&damage_head){for(unsigned i=damage_head;i<damage_count;++i)damages[i-damage_head]=damages[i];damage_count-=damage_head;damage_head=0;}
   if(damage_count==Capacity){damage_overflow=true;return;}
-  damages[damage_count++]={id,at,result.amount(),uint8_t(actor),result.flags};
+  damages[damage_count++]={id,at,result.amount(),uint8_t(actor),result.flags,result.shake_strength};
   if(int32_t(at-end_at)>0)end_at=at;
  }
  static bool same(const HealthBarValues&a,const HealthBarValues&b){

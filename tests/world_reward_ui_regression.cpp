@@ -121,7 +121,7 @@ static void potion_and_special(){
  reset();CHECK(add_potion_slots(a.game,MaxPotionSlots-potion_slot_count(a.game)));for(unsigned i=0;i<MaxPotionSlots;i++)potion_set(a.game,i,Potion::Blood);
  single_reward(3,unsigned(Potion::Strength));auto&w=a.game.world_relics;snapshot();press_reward(0);CHECK(w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[0].flags&1));unchanged();
  // Free the actual sixteenth belt slot without leaving the reward menu.
- a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Left);CHECK(a.scroll==15);a.render();unchanged();
+ a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4);a.input(Key::Left);CHECK(a.scroll==15);a.render();unchanged();
  press_action(UiAction::DiscardPotion);CHECK(!a.panel&&potion_at(a.game,15)==Potion::Empty&&w.choice==WorldRelicChoice::OfferReward);snapshot();
  press_reward(0);CHECK(a.game.phase==Phase::Map&&potion_at(a.game,15)==Potion::Strength);for(unsigned i=0;i<15;i++)CHECK(potion_at(a.game,i)==Potion::Blood);snapshot();
  reset();add(WorldRelicDriftwood);add(WorldRelicPaelsWing);single_reward(5,card_token({DefectGeneticAlgorithm,1}));auto&r=a.game.world_relics.rewards[0];

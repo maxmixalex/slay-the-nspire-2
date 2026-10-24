@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -11,17 +12,18 @@ static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i
 static void action(UiAction u){CHECK(click(HitKind::UiAction,(int)u));}
 static SaveData snapshot(){SaveData b{};CHECK(save(a.game,b));return b;}
 static void unchanged(const SaveData&b){auto now=snapshot();CHECK(b.size==now.size&&!std::memcmp(b.bytes,now.bytes,b.size));}
-static void init(){new_run(a.game,7,true);a.reset_presentation();a.title=a.library=a.paused=a.help=false;}
+static void init(){new_run(a.game,7,true);a.reset_presentation();a.title=a.library=a.paused=a.help=a.compendium_open=a.statistics_open=a.history_open=false;}
 int main(int argc,char**argv){
  std::vector<uint8_t> data;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
- init();auto before=snapshot();a.input(Key::Collection);action(UiAction::LibraryRelics);action(UiAction::NextPage);a.render();CHECK(a.library_page==1);
- // The original relic directory fills this page. Every item target must
- // still end before the selected name at y=163.
- unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].value>=18&&a.hits[i].value<36);CHECK(a.hits[i].y+a.hits[i].h<=160);}CHECK(count==18);unchanged(before);
- CHECK(click(HitKind::LibraryItem,24));CHECK(a.detail_item==24);a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::LibraryItem);unchanged(before);
- a.input(Key::Back);CHECK(a.library&&a.library_page==1);a.input(Key::Back);CHECK(!a.library);
- init();a.game.phase=Phase::Upgrade;a.cursor=31;before=snapshot();CHECK(click(HitKind::Choice,31));CHECK(a.deck_candidate==31);unchanged(before);
+ init();auto before=snapshot();a.input(Key::Collection);action(UiAction::LibraryRelics);a.render();
+ // Categories occupy one scroll container; clicking a relic only focuses
+ // its hover tip and does not invent a separate inspection dialog.
+ CHECK(a.collection.count>RelicKinds);unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].y>=0&&a.hits[i].y+a.hits[i].h<=240);}CHECK(count>0);unchanged(before);
+ a.library_selected=24;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,24));CHECK(a.library_selected==24&&a.detail_item<0);unchanged(before);
+ CHECK(spire_test::drag_grid_thumb(a,true));CHECK(spire_test::drag_grid_thumb(a,false));unchanged(before);
+ a.input(Key::Back);CHECK(!a.library&&a.compendium_open);a.input(Key::Back);CHECK(!a.compendium_open);
+ init();a.game.phase=Phase::Upgrade;a.cursor=31;CHECK(spire_test::focus_card_grid(a));before=snapshot();CHECK(click(HitKind::Choice,31));CHECK(a.deck_candidate==31);unchanged(before);
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Choice&&a.hits[i].kind!=HitKind::Enemy);
  a.input(Key::Back);CHECK(a.deck_candidate<0&&a.game.phase==Phase::Upgrade);unchanged(before);
  a.input(Key::Confirm);CHECK(a.deck_candidate==31);action(UiAction::ConfirmDeckChoice);CHECK(a.game.deck[31].upgraded&&a.game.phase==Phase::Complete);

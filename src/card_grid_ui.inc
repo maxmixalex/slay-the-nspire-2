@@ -11,11 +11,11 @@ static void card_grid_hit(Canvas&c,const CardGridScroll&grid,int x,int y,int w,i
 }
 struct CardGridPainter {
     Canvas&c;CardGridScroll&grid;int hover=-1;
-    struct Face {int index=-1,fee=-2,stars=-2,instance=-1,deck=-1,scale=800;Card card{};const EventCardFacts*facts=nullptr;bool playable=true,chosen=false;} front;
+    struct Face {int index=-1,fee=-2,stars=-2,instance=-1,deck=-1,scale=800;Card card{};const EventCardFacts*facts=nullptr;bool playable=true,chosen=false,known=true;} front;
     struct CardHit {int index=-1,value=0;HitKind kind=HitKind::None;bool enabled=true;} front_hit;
     CardGridPainter(Canvas&canvas,CardGridScroll&scroll):c(canvas),grid(scroll){
         const auto&p=c.a.pointer;
-        if(!p.visible||grid.dragging||grid.thumb_drag||p.y<grid.top||p.y>=grid.bottom)return;
+        if(!p.visible||(grid.dragging&&p.dragging)||grid.thumb_drag||p.y<grid.top||p.y>=grid.bottom)return;
         // NGridCardHolder.MoveToFront keeps the enlarged card above its
         // neighbours. Test that holder first so crossing the overlap cannot
         // focus two cards or alternate ownership on consecutive frames.
@@ -33,14 +33,14 @@ struct CardGridPainter {
     void draw(const Face&face){
         Canvas layer=card_grid_canvas(c,grid);const int w=face_width(face.scale),h=face_height(face.scale);
         const int x=grid.card_x(face.index)+(CardGridScroll::CardW-w)/2,y=grid.card_y(face.index)-grid.top+(CardGridScroll::CardH-h)/2;
-        draw_card_face(layer,face.card,x,y,w,h,face.fee,face.stars,face.instance,face.deck,face.facts);
+        draw_card_face(layer,face.card,x,y,w,h,face.fee,face.stars,face.instance,face.deck,face.facts,nullptr,nullptr,face.known);
         if(!face.playable)layer.dim(x,y,w,h,125);
         if(face.chosen){layer.box(x-3,y-3,w+6,h+6,Green);layer.rect(x+w-16,y+h-18,14,17,Panel);layer.text("✓",x+w-15,y+h-18,12,Green);}
     }
-    void card(int index,Card card,bool focused,bool playable=true,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,bool chosen=false){
+    void card(int index,Card card,bool focused,bool playable=true,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,bool chosen=false,bool known=true){
         if(c.a.pointer.visible)focused=index==hover;
         const int scale=grid.observe_face(index,focused,c.a.map_clock_ms);
-        Face face{index,fee,stars,instance,deck,scale,card,facts,playable,chosen};
+        Face face{index,fee,stars,instance,deck,scale,card,facts,playable,chosen,known};
         if(focused){front=face;grid.focused_index=int16_t(index);}else draw(face);
     }
     void draw_hit(const CardHit&hit){
@@ -64,8 +64,8 @@ static void card_grid_scrollbar(Canvas&c,CardGridScroll&grid,CardGridSurface sur
     const bool hover=c.a.pointer.visible&&c.a.pointer.x>=295&&c.a.pointer.x<316&&c.a.pointer.y>=center-10&&c.a.pointer.y<center+10;
     if(hover!=grid.thumb_hover){grid.thumb_hover=hover;grid.hover_changed=c.a.map_clock_ms;}
     const unsigned elapsed=c.a.map_clock_ms-grid.hover_changed;
-    const int left=elapsed>=500?0:500-int(elapsed);
-    const int scale=hover?1178:1024+154*(left*left/500)*left/250000;
+    const int recovery=elapsed>=500?0:4096-int(health_bar::expo_out(elapsed*2));
+    const int scale=hover?1178:1024+154*recovery/4096;
     const int size=CardGridScroll::ThumbSize*scale/1024;
     c.ui(I6_ScrollbarGrabber,305-size/2,center-size/2,size,size);
     c.hit(294,top-8,23,bottom-top+16,HitKind::GridScroll,int(surface));

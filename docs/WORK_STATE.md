@@ -1,5 +1,52 @@
 # Work state — 2026-10-24
 
+## UI7 implementation checkpoint 4 (2026-10-24, in progress)
+
+The whole-source stage now includes the original card-library filters, search,
+continuous collection grids, known/unknown presentation, restored compendium
+routes, Bestiary entries, and observed statistics/history with separate bounded
+persistence on all three hosts. UI metadata does not change the gameplay State,
+historical save bytes or gameplay RNG. Older saves cannot supply unobserved past
+results; those histories are explicitly partial. The current history view does
+not yet reproduce every original run-history field or floor choice record.
+
+Character selection now uses the authored four-to-three layout, correct panel
+and button anchors, click selection and independent entrance clocks. The private
+converter adds five original skeletal loops (540 frames); independent particles,
+water distortion and Regent hover variants remain recorded differences. The UI7
+profile is version 24 with 8,704 strings, 1,710 clips and 1,877 auxiliary entries.
+Its new image catalog is 1,092 images, including 372 collection outlines/icons;
+the five character auxiliary entries share their clip's first image. Adjacent
+merchant hand poses and character frames use existing bounded lossless retained
+groups. Actual resulting size and decoding speed still require conversion.
+
+Combat and room work includes observed per-hit damage/blocked feedback, shield
+pieces and spark layers, original merchant hand/speech behavior, event text and
+option timing, Ancient/fake-merchant layout, source-based rest text, direct card
+removal and actual visited-floor hover data. The five newest feedback items are
+implemented in source: no startup language picker, in-game language settings,
+no Expedition Settings overlay or potion slot picker, revised merchant scale
+and centered map. Actual bilingual screen acceptance is still pending.
+
+The private official Spine runtime and 94 hand poses were actually sampled and
+verified under checkpoints 1/2. Checkpoint 3 `37c0217f4843889bb96124be853f9f14c3e98a10`
+contains the structured Godot FontFile extractor; five original fonts were
+successfully extracted from the owner's PCK with a passed immutable-source
+journal. The source now supports separate real glyph faces and a replacement
+converter that removes the prior glyph suffix. Its actual bilingual conversion
+and regression run are pending this checkpoint. English scene-specific inherited
+font-family overrides are not all implemented by the current face mapping.
+
+Short C++ syntax checks and Python parsing have passed. The earlier complete
+checkpoint-1 build passed, but its CTest run failed 13 of 80 suites. Those
+failures led to fixes for stale grid/Expedition Settings fixtures and a real
+choice-overlay interception bug; no replacement complete pass is claimed yet.
+Next: immutable-source native suites, actual bilingual resource conversion,
+visual/interaction acceptance, and measured runtime/storage optimization.
+Phobia artwork, remaining original menu modes/profiles and complete history
+details remain open. The full-source inventory is not a fidelity percentage;
+no 95% original-game restoration or UI7 release has been established.
+
 ## UI7 implementation checkpoint 1 (2026-10-24, in progress)
 
 The next source stage removes the calculator startup language chooser and browser page language selector, and routes language changes through in-game main-menu settings. Host locale switching reuses the common resource source; the original disables language changes during a run. UI preferences now have an eight-byte version 2 with version 1 migration. Settings add the existing source-backed flags, and the port-only Expedition Settings overlay has no reachable UI. The pinned CharacterSelect ShouldShowActDropdown is false: its scene node is not a reason to expose act selection.

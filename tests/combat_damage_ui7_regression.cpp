@@ -31,13 +31,14 @@ static Results enemy_damage(int hp,int block,int amount){
 }
 static void exact_results(){
  auto r=enemy_damage(7,0,20).values[0];CHECK(r.receiver==0&&r.blocked==0&&r.unblocked==7&&r.overkill==13&&r.amount()==20);
- CHECK(!(r.flags&CoreDamageResult::FullyBlocked));
+ CHECK(!(r.flags&CoreDamageResult::FullyBlocked)&&r.shake_strength==20);
  r=enemy_damage(10,3,8).values[0];CHECK(r.blocked==3&&r.unblocked==5&&r.overkill==0&&r.amount()==5);
- CHECK((r.flags&CoreDamageResult::BlockBroken)&&!(r.flags&CoreDamageResult::FullyBlocked));
+ CHECK((r.flags&CoreDamageResult::BlockBroken)&&!(r.flags&CoreDamageResult::FullyBlocked)&&r.shake_strength==5);
  r=enemy_damage(10,7,3).values[0];CHECK(r.blocked==3&&r.unblocked==0&&r.overkill==0&&r.amount()==0);
- CHECK((r.flags&CoreDamageResult::FullyBlocked)&&!(r.flags&CoreDamageResult::BlockBroken));
+ CHECK((r.flags&CoreDamageResult::FullyBlocked)&&!(r.flags&CoreDamageResult::BlockBroken)&&r.shake_strength==5);
  r=enemy_damage(10,3,3).values[0];CHECK((r.flags&(CoreDamageResult::FullyBlocked|CoreDamageResult::BlockBroken))==(CoreDamageResult::FullyBlocked|CoreDamageResult::BlockBroken));
- r=enemy_damage(10,0,0).values[0];CHECK(!r.amount()&&(r.flags&CoreDamageResult::ShowZero)&&!(r.flags&CoreDamageResult::FullyBlocked));
+ r=enemy_damage(10,0,0).values[0];CHECK(!r.amount()&&(r.flags&CoreDamageResult::ShowZero)&&!(r.flags&CoreDamageResult::FullyBlocked)&&!r.shake_strength);
+ r=enemy_damage(50,0,20).values[0];CHECK(r.shake_strength==40);
  // NDamageNumVfx is not emitted for Buffer's prevented nonzero hit.
  setup();app.game.expansion.powers[int(XPower::Buffer)]=1;Results out;
  auto old=set_core_observer({&out,nullptr,nullptr,nullptr,nullptr,Results::damage,Results::power});
@@ -71,16 +72,35 @@ static void presentation(){
   damage_unpowered(direct,0,amount);resolve_pending(direct);
   {UiCoreObserver observer(app);app.begin_combat_feedback();damage_unpowered(s,0,amount);resolve_pending(s);}
   app.render();save_equal();CHECK(app.combat_status.damage_count==1);
+  CHECK(app.combat_sparks.count==(kind==3?0:1));
+  if(kind!=3)CHECK(bool(app.combat_sparks.bursts[0].blocked)==(kind==1||kind==2));
   const auto&d=app.combat_status.damages[0];CHECK(d.actor==1&&d.amount==(kind==0?20:0));
   CHECK(bool(d.flags&CoreDamageResult::FullyBlocked)==(kind==1||kind==2));
   CHECK(bool(d.flags&CoreDamageResult::ShowZero)==(kind==3));
-  for(unsigned i=0;i<62;++i){app.advance(33);app.render();}CHECK(!app.combat_status.damage_count);save_equal();
+  for(unsigned i=0;i<62;++i){app.advance(33);app.render();}CHECK(!app.combat_status.damage_count&&!app.combat_sparks.count);save_equal();
  }
  setup();app.game.expansion.powers[int(XPower::Intangible)]=1;app.reset_presentation();app.render();direct=app.game;
  player_hp_loss(direct,10,true,true,-1,0);resolve_pending(direct);
  {UiCoreObserver observer(app);app.begin_combat_feedback();player_hp_loss(app.game,10,true,true,-1,0);resolve_pending(app.game);}
  app.render();save_equal();CHECK(app.combat_status.flash_count==1&&app.combat_status.flashes[0].id==21);
- app.advance(1056);app.render();CHECK(!app.combat_status.flash_count);save_equal();
+ // Host updates deliberately clamp stalls to250ms; exercise the real tick
+ // clock rather than asking one frame to fast-forward a full VFX lifetime.
+ for(unsigned i=0;i<32;++i){app.advance(33);app.render();}
+ CHECK(!app.combat_status.flash_count);save_equal();
+}
+static void screen_shake(){
+ setup();app.game.enemies[0].hp=app.game.enemies[0].max_hp=99;app.reset_presentation();app.render();direct=app.game;
+ damage_unpowered(direct,0,20);resolve_pending(direct);
+ {UiCoreObserver observer(app);app.begin_combat_feedback();damage_unpowered(app.game,0,20);resolve_pending(app.game);}
+ app.render();CHECK(app.combat_status.damage_count==1&&app.combat_status.damages[0].shake_strength==40);
+ // Keep the cosmetic direction horizontal so the settings' projected
+ // amplitudes can be compared without depending on gameplay random state.
+ app.combat_status.damages[0].angle=0;int x=0,y=0;
+ app.screen_shake=0;app.combat_scene_offset(x,y);CHECK(x==0&&y==0);
+ int widths[5]{};for(unsigned i=1;i<5;++i){app.screen_shake=uint8_t(i);app.combat_scene_offset(x,y);CHECK(y==0);widths[i]=x<0?-x:x;}
+ CHECK(widths[1]>0&&widths[2]>widths[1]&&widths[3]>widths[2]&&widths[4]>widths[3]);
+ app.screen_shake=2;for(unsigned i=0;i<10;++i){app.advance(33);app.render();}
+ app.combat_scene_offset(x,y);CHECK(x==0&&y==0);save_equal();
 }
 static void block_break(){
  HealthBarMotion m;m.observe(1,10,10,58,1000);m.observe_block(4,1000,true);CHECK(!m.block_breaking);
@@ -89,7 +109,22 @@ static void block_break(){
  CHECK(HealthBarMotion::block_break_progress(300,true)==2048&&HealthBarMotion::block_break_progress(600,true)==4096);
  m.observe_block(0,1633);CHECK(!m.block_breaking);m.observe_block(3,1700,true);m.observe_block(0,1701,true);CHECK(!m.block_breaking);
 }
+static void sparks(){
+ CombatSparkMotion stepped,skipped;
+ for(unsigned i=0;i<3;++i){stepped.emit(100,50+int(i)*40,90,i==1,0x41cef1eau+i);skipped.emit(100,50+int(i)*40,90,i==1,0x41cef1eau+i);}
+ CHECK(stepped.count==3&&skipped.count==3);
+ for(const auto&p:stepped.bursts[0].particles){CHECK(p.lifetime>=200&&p.lifetime<=1000);CHECK(p.scale>=307&&p.scale<=461);}
+ for(unsigned now=100;now<600;now+=17)stepped.step(now);stepped.step(600);skipped.step(600);
+ // The authored material is integrated on its own60Hz boundaries. Host
+ // rendering cadence cannot alter its emitted paths or display random seed.
+ CHECK(!std::memcmp(&stepped,&skipped,sizeof stepped));
+ const auto before=stepped;stepped.step(600);CHECK(!std::memcmp(&before,&stepped,sizeof stepped));
+ CHECK(stepped.bursts[0].particles[0].distance>0);stepped.step(1099);CHECK(stepped.count==3);stepped.step(1100);CHECK(!stepped.count);
+ for(unsigned i=0;i<CombatSparkMotion::Capacity+3;++i)stepped.emit(i,20,30,false,i+1);
+ CHECK(stepped.count==CombatSparkMotion::Capacity&&stepped.bursts[0].at==3);
+ stepped.reset();CHECK(!stepped.count);
+}
 int main(int argc,char**argv){
  std::vector<uint8_t> data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);CHECK(app.init(data.data(),data.size(),{}));}
- exact_results();pet_and_powers();presentation();block_break();std::printf("damage UI7: %u checks passed\n",checks);
+ exact_results();pet_and_powers();presentation();block_break();screen_shake();sparks();std::printf("damage UI7: %u checks passed\n",checks);
 }

@@ -31,8 +31,8 @@ static void grant(int16_t& stat,int amount,int16_t* temporary=nullptr){
     if(temporary)*temporary=(int16_t)(*temporary+n);
 }
 static bool potion_choice_blocked(const State&s){
-    if(s.phase==Phase::WorldRelicChoice)return s.world_relics.choice!=WorldRelicChoice::OfferReward;
-    if(s.phase==Phase::OriginalEventChoice)return s.original_events.selection!=OriginalEventSelection::Rewards;
+    if(s.phase==Phase::WorldRelicChoice)return s.world_relics.choice!=WorldRelicChoice::OfferReward&&s.world_relics.choice!=WorldRelicChoice::Potion;
+    if(s.phase==Phase::OriginalEventChoice)return s.original_events.selection!=OriginalEventSelection::Rewards&&s.original_events.selection!=OriginalEventSelection::Potion;
     return choice_phase(s.phase);
 }
 bool can_use_potion(const State&s,int slot,int target){

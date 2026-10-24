@@ -34,7 +34,12 @@ static void ui_damage_apply(App&a,const CombatFeedback::DamageCue&cue){
  const unsigned actor=cue.actor;
  const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[actor]:ui_feedback_identity(a.game,actor);
  if(identity!=cue.identity)return;
- a.combat_status.damage(actor,cue.amount,cue.identity,cue.at,a.animation,cue.flags);
+ a.combat_status.damage(actor,cue.amount,cue.identity,cue.at,a.animation,cue.flags,cue.shake_strength);
+ if(cue.amount>0||(cue.flags&CoreDamageResult::FullyBlocked)){
+  const bool pet=actor==MaxEnemies+1;const auto pose=a.combat_enemy_pose(actor&&!pet?int(actor)-1:0);
+  const int x=pet?combat_player_x(a.game)+52:actor?pose.x:combat_player_x(a.game),y=pet?93:actor?pose.feet-30:91;
+  a.combat_sparks.emit(cue.at*33u,x,y,bool(cue.flags&CoreDamageResult::FullyBlocked),a.combat_status.cosmetic);
+ }
  // Self-inflicted damage and explicit kills do not play a fabricated Hit.
  // DamageResult still owns its number/sparks when a command suppresses hurt.
  if(!(cue.flags&CoreDamageResult::Hurt)||cue.amount<=0||int32_t(a.animation-cue.at)>=24)return;
@@ -48,7 +53,23 @@ void App::observe_combat_damage(const State&s,const CoreDamageResult&result){
  const auto identity=ui_feedback_identity(s,actor);auto&f=combat_feedback;
  if(ui_feedback_bound(*this))f.append_damage(actor,result,identity,f.effect_at);
  else if(result.amount()>0||(result.flags&(CoreDamageResult::FullyBlocked|CoreDamageResult::ShowZero)))
-  ui_damage_apply(*this,{identity,animation,result.amount(),uint8_t(actor),result.flags});
+  ui_damage_apply(*this,{identity,animation,result.amount(),uint8_t(actor),result.flags,result.shake_strength});
+}
+void App::combat_scene_offset(int&x,int&y)const{
+ x=y=0;if(!screen_shake)return;
+ static constexpr unsigned multipliers[]={0,512,1024,2048,4096};
+ const unsigned multiplier=multipliers[screen_shake<5?screen_shake:2];
+ for(unsigned i=combat_status.damage_count;i>0;--i){const auto&d=combat_status.damages[i-1];
+  const int elapsed=int32_t(animation-d.at)*33;if(elapsed<0||!d.shake_strength)continue;if(elapsed>=300)return;
+  // ScreenPunchInstance: cos(remaining*60rad/s), CubicOut(remaining/.3),
+  // one latest punch at a time. Camera scale is1920->320; UI stays still.
+  const unsigned q=unsigned(elapsed)*1024u/300u,envelope=1024u-q*q/1024u*q/1024u;
+  const int phase=int((unsigned(300-elapsed)*391139u+5000u)/10000u);
+  int amplitude=int(unsigned(d.shake_strength)*multiplier*envelope/1024u);
+  amplitude=amplitude*CombatCardMotion::sine(phase+1024)/1024/6;
+  const int xx=amplitude*CombatCardMotion::sine(d.angle+1024)/1024,yy=amplitude*CombatCardMotion::sine(d.angle)/1024;
+  x=(xx+(xx<0?-512:512))/1024;y=(yy+(yy<0?-512:512))/1024;return;
+ }
 }
 void App::sync_combat_damage(){
  auto&f=combat_feedback;

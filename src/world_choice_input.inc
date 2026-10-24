@@ -6,6 +6,21 @@ unsigned App::world_choice_options(uint16_t*out,unsigned capacity)const{
 }
 unsigned App::world_choice_min()const{return game.phase==Phase::WorldRelicChoice?game.world_relics.choice_min:game.original_events.select_min;}
 unsigned App::world_choice_max()const{return game.phase==Phase::WorldRelicChoice?game.world_relics.choice_max:game.original_events.select_max;}
+bool App::world_choice_is_potion_reward()const{
+ return game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::Potion:
+  game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Potion;
+}
+Potion App::world_choice_potion(int id)const{
+ if(id<0)return Potion::Empty;
+ if(game.phase==Phase::WorldRelicChoice){const auto&w=game.world_relics;
+  if(w.choice==WorldRelicChoice::Potion&&w.offer_count)return Potion(w.offers[0]);
+  if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==3)return Potion(r.value);}
+ }else if(game.phase==Phase::OriginalEventChoice){const auto&e=game.original_events;
+  if(e.selection==OriginalEventSelection::Potion&&e.offer_count)return Potion(e.offers[0]);
+  if(e.selection==OriginalEventSelection::Rewards&&id<e.reward_count&&e.rewards[id].kind==2)return Potion(e.rewards[id].model);
+ }
+ return Potion::Empty;
+}
 bool App::world_choice_is_card_reward()const{
  if(original_event_has_card_reward(game))return true;
  if(game.phase!=Phase::WorldRelicChoice)return false;const auto&w=game.world_relics;
@@ -23,8 +38,8 @@ void App::toggle_world_choice(int id){
  uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
  for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
  const bool reward=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
- if(reward||world_choice_is_card_reward()){continue_combat_choice();uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
-  if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}return;
+ if(reward||world_choice_is_card_reward()||world_choice_is_potion_reward()){const bool potion=world_choice_potion(id)!=Potion::Empty;continue_combat_choice();uint16_t selected=uint16_t(id);bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,&selected,1):original_event_select(game,&selected,1);
+  if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}else if(potion)potion_obtain_failed();return;
  }
  for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
   for(unsigned j=i+1;j<choice_selected_count;j++)choice_selected[j-1]=choice_selected[j];--choice_selected_count;return;
@@ -47,13 +62,13 @@ void App::world_choice_detail(int id){
   if((w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer)&&id<w.offer_count)open_card_offer(card_from_token(w.offers[id]),w.offer_facts[id]);
   else if(w.choice==WorldRelicChoice::OfferBundle&&id*3<w.offer_count)open_card_offer(card_from_token(w.offers[id*3]),w.offer_facts[id*3]);
   else if(w.choice==WorldRelicChoice::Hand&&id<game.card_count)open_choice_detail(id);
-  else if(w.choice==WorldRelicChoice::Potion&&id<int(potion_slot_count(game))&&potion_at(game,id)!=Potion::Empty){detail_item=WorldRelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
+  else if(w.choice==WorldRelicChoice::Potion&&w.offer_count){detail_item=WorldRelicKinds+w.offers[0]-1;detail_owned=-1;detail_scroll=0;}
   else if(w.choice==WorldRelicChoice::OfferReward&&id<w.offer_count){const auto&r=w.rewards[w.offers[id]];if(r.kind==2)detail_item=r.value;else if(r.kind==3)detail_item=WorldRelicKinds+r.value-1;else if(r.kind==5)open_card_offer(card_from_token(r.value),r.facts[0],r.tokens[0],r.tokens[1]);detail_owned=-1;detail_scroll=0;}
   else if(w.choice!=WorldRelicChoice::OfferReward&&id<game.deck_count)open_card_detail(game.deck[id],id);
  }else if(game.phase==Phase::OriginalEventChoice){
   const auto&e=game.original_events;
   if(e.selection==OriginalEventSelection::OfferCard&&id<e.offer_count)open_card_offer(card_from_token(e.offers[id]),e.offer_facts[id]);
-  else if(e.selection==OriginalEventSelection::Potion&&id<int(potion_slot_count(game))&&potion_at(game,id)!=Potion::Empty){detail_item=WorldRelicKinds+int(potion_at(game,id))-1;detail_scroll=0;}
+  else if(e.selection==OriginalEventSelection::Potion&&e.offer_count){detail_item=WorldRelicKinds+e.offers[0]-1;detail_owned=-1;detail_scroll=0;}
   else if(e.selection==OriginalEventSelection::Relic&&id<e.offer_count){detail_item=e.offers[id];detail_owned=-1;detail_scroll=0;}
   else if(e.selection==OriginalEventSelection::Rewards&&id<e.reward_count){const auto&r=e.rewards[id];if(r.kind==3)detail_item=r.model;else if(r.kind==2)detail_item=WorldRelicKinds+r.model-1;detail_owned=-1;detail_scroll=0;}
   else if(e.selection!=OriginalEventSelection::Relic&&e.selection!=OriginalEventSelection::Crystal&&e.selection!=OriginalEventSelection::Rewards&&id<game.deck_count)open_card_detail(game.deck[id],id);
@@ -76,6 +91,8 @@ bool App::world_choice_input(Key key){
  uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);
  if(count>MaxWorldUiChoices)return false;if(cursor<0||cursor>=int(count))cursor=0;
  const bool rewards=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
+ const bool potion_reward=world_choice_is_potion_reward();
+ if(potion_reward&&(key==Key::EndTurn||key==Key::Back)){choice_selected_count=0;confirm_world_choice();return true;}
  const bool card_reward=world_choice_is_card_reward();const int columns=rewards?1:card_reward?0:5;
  if(key==Key::Left&&count)cursor=(cursor+int(count)-1)%int(count);
  else if(key==Key::Right&&count)cursor=(cursor+1)%int(count);

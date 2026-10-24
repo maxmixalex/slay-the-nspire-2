@@ -16,7 +16,7 @@ static void merchant_price(Canvas&c,int item,int x,int y,int w){
     c.picture(A_Coin,left,y+2,7,7);c.text(value,left+9,y,8,s.gold>=price?(sale?Green:White):Red);
 }
 static bool merchant_hovered(const App&a,int item,int x,int y,int w,int h){
-    if(a.paused||a.help||a.panel||a.library||a.settings_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0)return false;
+    if(a.paused||a.help||a.panel||a.library||a.settings_open||a.event_reader||a.map_window.is_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0)return false;
     return a.pointer.visible?a.pointer.x>=x&&a.pointer.x<x+w&&a.pointer.y>=y&&a.pointer.y<y+h:a.cursor==item;
 }
 static unsigned room_rich_characters(const char*text){RichReader reader(text);RichChar ch{};unsigned count=0;while(reader.next(ch))count=ch.index+1;return count;}
@@ -26,21 +26,30 @@ static void merchant_hand(Canvas&c,bool fake=false){
  // bounded samples preserve deformation; a whole-texture rotation cannot.
  const int source_x=int(m.hand_x)*9/32;
  const int degrees=-10+(source_x-770)/5;
- const unsigned sample=unsigned(mn(46,mx(0,(degrees+132)/5)));
+ const unsigned sample=unsigned(mn(46,mx(0,(degrees+134)/5)));
  c.ui((fake?I7_FakeMerchantHandStart:I7_MerchantHandStart)+int(sample),m.hand_x/16-MerchantHandPivotX,m.hand_y/16-MerchantHandPivotY);
 }
 static void merchant_dialogue(Canvas&c,bool fake=false){
  auto&a=c.a;const auto&m=a.room_presentation.merchant;const unsigned alpha=m.dialogue_alpha(a.map_clock_ms);if(!alpha)return;
  const char*families[]={"purchaseSuccess","purchaseFailureGold","purchaseFailureSpace","purchaseFailureForbidden","openInventory","welcome"};
  if(m.dialogue<0||m.dialogue>=6)return;
- const unsigned counts[]={3,4,2,2,8,4};char key[128]{};TextBuffer k{key,sizeof key,0};k.text(fake?"FAKE_MERCHANT.talk.":"MERCHANT.talk.");k.text(families[m.dialogue]);k.text(".line");k.number(1+int((m.dialogue_serial-1)%counts[m.dialogue]));
+ const unsigned ordinary_counts[]={3,4,2,2,0,0},fake_counts[]={6,3,3,3,8,4};const unsigned count=(fake?fake_counts:ordinary_counts)[m.dialogue];if(!count)return;
+ char key[128]{};TextBuffer k{key,sizeof key,0};k.text(fake?"FAKE_MERCHANT.talk.":"MERCHANT.talk.");k.text(families[m.dialogue]);k.text(".line");k.number(1+int((m.dialogue_random>>16)%count));
  const char*text=a.content.world_string(fake?"events":"merchant_room",key);if(!*text)return;
- const unsigned age=a.map_clock_ms-m.dialogue_start;const int y=47-int(18*(room_curve::Q-room_curve::expo_out(age,500))/room_curve::Q);
+ const unsigned age=a.map_clock_ms-m.dialogue_start;
+ const int node_y=MerchantInventoryLayout::project(271)-18*(int(room_curve::Q)-room_curve::back_out(room_curve::linear(age,500)))/int(room_curve::Q);
+ const unsigned scale=1365+2731*room_curve::expo_out(age,500)/room_curve::Q;
+ const int width=int((70*scale+2048)/4096),height=int((48*scale+2048)/4096);
+ const int center_x=m.dialogue_x-10,center_y=node_y-6;
  Canvas bubble=c;bubble.opacity=uint8_t(div255(bubble.opacity*alpha));
- if(a.content.version()>=RoomUi7ContentVersion)bubble.ui(I7_MerchantDialogue,196,y,112,68);
- else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,196,y,112,68,28,22,46,16);}
+ if(a.content.version()>=RoomUi7ContentVersion){
+  Canvas shadow=bubble;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.opacity=uint8_t(div255(shadow.opacity*64));
+  shadow.ui(I7_MerchantDialogue,center_x-width/2,center_y-height/2+1,width,height);
+  bubble.ui(I7_MerchantDialogue,center_x-width/2,center_y-height/2,width,height);
+ }else{const int skin=a.content.world_image("common","HOVER_TIP");if(skin>=0)bubble.nine_image(skin,center_x-35,center_y-24,70,48,28,22,46,16);}
  bubble.text_visible_characters=room_rich_characters(text)*room_curve::linear(age,400)/room_curve::Q;
- bubble.fitted(text,205,y+14,92,43,10,8,rgb(255,246,226),true,false,false,true);
+ bubble.opacity=uint8_t(div255(bubble.opacity*230));
+ bubble.fitted(text,m.dialogue_x-40,node_y-15,62,34,8,8,rgb(255,246,226),true,false,false,true);
 }
 static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool sold,const EventCardFacts*facts=nullptr){
  if(sold)return;const int w=MerchantInventoryLayout::size(300,scale),h=MerchantInventoryLayout::size(422,scale);
@@ -109,7 +118,7 @@ static void shop_screen(Canvas&c){
     for(int i=0;i<ShopCardCount;i++){
         const int cx=MerchantInventoryLayout::card_x(i),cy=MerchantInventoryLayout::card_y(i)+dy;const bool sold=s.shop_sold&(1u<<i);
         const unsigned scale=motion.scale(unsigned(i),a.map_clock_ms);const auto r=MerchantInventoryLayout::bounds(unsigned(i),dy);
-        merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},cx,cy,scale,sold,s.world.active?&s.world.shop_facts[i]:nullptr);
+        merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},cx+motion.wiggle(unsigned(i),a.map_clock_ms),cy,scale,sold,s.world.active?&s.world.shop_facts[i]:nullptr);
         merchant_price(c,i,cx-26,cy+MerchantInventoryLayout::size(220,scale),52);
         if(s.world.active&&s.world.shop_sale==i&&!sold){const int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,cx+MerchantInventoryLayout::size(146,scale)-10,cy-MerchantInventoryLayout::size(153,scale)-8,20,16);}
         if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,i,!sold);
@@ -118,12 +127,12 @@ static void shop_screen(Canvas&c){
         const int x=MerchantInventoryLayout::item_x(i);int item=ShopRelicStart+i,index=-1;bool sold=s.shop_sold&(1u<<item);
         if(s.world.active)index=s.world.shop_relics[i]==NoWorldRelic?-1:s.world.shop_relics[i];else for(int r=0;r<RelicKinds;r++)if(relic_definitions[r].id==s.shop_relics[i])index=r;
         unsigned scale=motion.scale(unsigned(item),a.map_clock_ms);int size=MerchantInventoryLayout::size(128,scale);auto r=MerchantInventoryLayout::bounds(unsigned(item),dy);
-        if(index>=0&&!sold)c.picture(a.relic_face_image(index),x-size/2,MerchantInventoryLayout::RelicY+dy-size/2,size,size);
+        if(index>=0&&!sold)c.picture(a.relic_face_image(index),x-size/2+motion.wiggle(unsigned(item),a.map_clock_ms),MerchantInventoryLayout::RelicY+dy-size/2,size,size);
         merchant_price(c,item,x-16,MerchantInventoryLayout::RelicY+dy+MerchantInventoryLayout::size(52,scale),32);
         if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,item,!sold);
         item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);scale=motion.scale(unsigned(item),a.map_clock_ms);r=MerchantInventoryLayout::bounds(unsigned(item),dy);
         const int w=MerchantInventoryLayout::size(90,scale),h=MerchantInventoryLayout::size(120,scale);
-        if(!sold)c.picture(a.content.potion_image((Potion)s.shop_potions[i]),x-w/2,MerchantInventoryLayout::PotionY+dy-h/2,w,h);
+        if(!sold)c.picture(a.content.potion_image((Potion)s.shop_potions[i]),x-w/2+motion.wiggle(unsigned(item),a.map_clock_ms),MerchantInventoryLayout::PotionY+dy-h/2,w,h);
         merchant_price(c,item,x-16,MerchantInventoryLayout::PotionY+dy+MerchantInventoryLayout::size(48,scale),32);
         if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,item,!sold);
     }
@@ -136,7 +145,7 @@ static void shop_screen(Canvas&c){
         else if(remove_age<733)remove_image=I7_MerchantRemoval04;
     }
     const int remove_size=MerchantInventoryLayout::size(270,remove_scale);const auto remove_rect=MerchantInventoryLayout::bounds(ShopRemove,dy);
-    c.ui(remove_image,MerchantInventoryLayout::RemoveX-remove_size/2,MerchantInventoryLayout::RemoveY+dy-remove_size/2,remove_size,remove_size);
+    c.ui(remove_image,MerchantInventoryLayout::RemoveX-remove_size/2+motion.wiggle(ShopRemove,a.map_clock_ms),MerchantInventoryLayout::RemoveY+dy-remove_size/2,remove_size,remove_size);
     merchant_price(c,ShopRemove,MerchantInventoryLayout::RemoveX-26,MerchantInventoryLayout::RemoveY+dy+MerchantInventoryLayout::size(177,remove_scale),52);
     if(a.shop_open){c.hit(remove_rect.x,mx(22,remove_rect.y),remove_rect.w,mx(0,remove_rect.y+remove_rect.h-mx(22,remove_rect.y)),HitKind::Choice,ShopRemove,!removed);
         native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,61,31,HitKind::Choice,ShopLeave);}

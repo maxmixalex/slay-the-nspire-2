@@ -1,3 +1,4 @@
+#include "card_target_ui7.inc"
 namespace {
 struct TargetArrowMotion {
     const App*owner=nullptr;uint32_t time=0;int x=0,y=0,sine=0,cosine=1024;bool active=false;
@@ -49,18 +50,24 @@ static void pointer_overlay(Canvas&c){
     }
     auto&p=a.pointer;bool targeting=false;
     const bool modal=a.title||a.paused||a.settings_open||a.frontend_confirm||a.help||a.library||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.map_transition_blocks_pointer();
+    card_target_reticles(c,modal);
+    const auto*focused_hud=modal?nullptr:hud_focused_hit(a);
+    a.hud_focus_reticle.observe(focused_hud!=nullptr,a.map_clock_ms);
+    if(focused_hud)a.hud_focus_reticle.bounds(focused_hud->x,focused_hud->y+2,focused_hud->w,focused_hud->h-4);
+    target_reticle_draw(c,a.hud_focus_reticle);
+    int scene_x=0,scene_y=0;a.combat_scene_offset(scene_x,scene_y);
     const int armed=a.selected_hand_card();
     if(!modal&&armed>=0&&armed<a.game.card_count&&a.game.zones[armed]==Zone::Hand&&a.game.phase==Phase::Combat&&card_targets_enemy(a.game,a.game.cards[armed],armed)){
         const bool controller=a.keyboard_card>=0;
         int x=p.x,y=p.y;bool enemy=false;
-        if(controller&&a.target>=0&&a.target<a.game.enemy_count&&a.game.enemies[a.target].hp>0){const auto pose=a.combat_enemy_pose(a.target);x=pose.x;y=pose.feet-35;enemy=true;}
+        if(controller&&a.target>=0&&a.target<a.game.enemy_count&&a.game.enemies[a.target].hp>0){const auto pose=a.combat_enemy_pose(a.target);x=pose.x+scene_x;y=pose.feet-35+scene_y;enemy=true;}
         else if(const auto*h=a.hit_at(x,y))enemy=h->enabled&&(h->kind==HitKind::Enemy||h->kind==HitKind::EnemyIntent);
         HandPose origin{160,198,768,0,1024};const auto hand=a.combat_hand();
         for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==armed){origin=a.combat_hand_pose(i,false);break;}
         targeting_arrow(c,origin.cx,origin.cy,x,y,controller,enemy);targeting=true;
     }else if(!modal&&a.panel==4&&a.potion_targeting){
         const bool controller=!p.visible;int x=p.x,y=p.y;bool enemy=false;
-        if(controller&&a.game.phase==Phase::Combat&&a.target>=0&&a.target<a.game.enemy_count){const auto pose=a.combat_enemy_pose(a.target);x=pose.x;y=pose.feet-35;enemy=true;}
+        if(controller&&a.game.phase==Phase::Combat&&a.target>=0&&a.target<a.game.enemy_count){const auto pose=a.combat_enemy_pose(a.target);x=pose.x+scene_x;y=pose.feet-35+scene_y;enemy=true;}
         else if(const auto*h=a.hit_at(x,y))enemy=h->enabled&&(h->kind==HitKind::Enemy||h->kind==HitKind::EnemyIntent||h->kind==HitKind::PotionMerchant);
         const int origin=128+(a.scroll%3)*(potion_slot_count(a.game)>3?14:17)+7;
         targeting_arrow(c,origin,13,x,y,controller,enemy);targeting=true;

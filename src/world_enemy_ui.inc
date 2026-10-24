@@ -185,6 +185,7 @@ void App::sync_enemy_feedback(){
 }
 void App::observe_core(const State&s,Log log){
  if(&s!=&game)return;
+ observe_progress_log(log);
  if(log.kind==LogKind::Enemy){
   // Bind a newly entered encounter before reserving its lead-in; the first
   // identity sync resets the presentation clock to the current frame.

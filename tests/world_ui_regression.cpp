@@ -64,7 +64,10 @@ static void world(){a.title=true;a.character_select=true;a.practice_entry=false;
  // Later checks supply their own event outcomes, after verifying ordinary Neow entry.
  a.game.original_events=OriginalEventState{};CHECK(world_finish_room(a.game));}
 static void options_and_readers(){
- a.character_select=true;a.practice_entry=false;a.title=true;a.ui_action(UiAction::RunSettings);CHECK(a.run_settings);a.ui_action(UiAction::RunRegion);a.ui_action(UiAction::RunAscensionUp);a.ui_action(UiAction::RunAscensionUp);
+ a.character_select=true;a.practice_entry=false;a.title=true;a.run_settings=false;a.selected_ascension=0;
+ a.ui_action(UiAction::RunSettings);CHECK(!a.run_settings);a.render();
+ CHECK(!has(HitKind::UiAction,int(UiAction::RunSettings))&&!has(HitKind::UiAction,int(UiAction::RunRegion)));
+ CHECK(has(HitKind::UiAction,int(UiAction::RunAscensionUp)));a.input(Key::ExhaustPile);a.input(Key::ExhaustPile);CHECK(a.selected_ascension==2);
  a.ui_action(UiAction::RunSeed);CHECK(a.map_preview.editing&&a.run_seed_editing);a.reference_text(-1);for(const char*p="WORLD-UI-17";*p;p++)a.reference_text(*p);a.reference_text(13);CHECK(!a.map_preview.open&&!a.run_seed_editing&&a.selected_seed[0]);
  a.ui_action(UiAction::StartCharacter);CHECK(a.game.world.active&&a.game.world.ascension==2);CHECK(a.game.original_events.id==OriginalEventId::Neow);snapshot();
  a.render();CHECK(a.hit_count>0);capture("ancient-neow");a.ui_action(UiAction::ReadEvent);a.render();CHECK(a.event_reader);capture("ancient-reader");a.pointer_scroll(1);a.render();a.ui_action(UiAction::CloseEventReader);unchanged();
@@ -96,7 +99,7 @@ static void special_reward_snapshots(){
  }
 }
 static void potion_lock_and_capacity(){
- world();a.game.potion_slots=16;for(unsigned i=0;i<16;i++)CHECK(potion_set(a.game,i,Potion::Strength));CHECK(original_event_begin(a.game,OriginalEventId::StoneOfAllTime,7,1));CHECK(original_event_blocks_potions(a.game));a.input(Key::Potions);CHECK(a.panel==4);for(int i=0;i<15;i++)a.input(Key::Right);CHECK(a.scroll==15);snapshot();a.render();CHECK(has(HitKind::Potion,15));CHECK(a.scroll==15);capture("potion-full-second-page");a.ui_action(UiAction::DiscardPotion);CHECK(potion_at(a.game,15)==Potion::Strength);unchanged();a.panel=0;
+ world();a.game.potion_slots=16;for(unsigned i=0;i<16;i++)CHECK(potion_set(a.game,i,Potion::Strength));CHECK(original_event_begin(a.game,OriginalEventId::StoneOfAllTime,7,1));CHECK(original_event_blocks_potions(a.game));a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4);for(int i=0;i<15;i++)a.input(Key::Right);CHECK(a.scroll==15);snapshot();a.render();CHECK(has(HitKind::Potion,15));CHECK(a.scroll==15);capture("potion-full-second-page");a.ui_action(UiAction::DiscardPotion);CHECK(potion_at(a.game,15)==Potion::Strength);unchanged();a.panel=0;
 }
 static void offer_facts(){
  world();EventCardFacts facts{};facts.science_type=1;facts.rider=unsigned(TinkerRider::Wisdom);facts.energy_offset=-1;
@@ -587,7 +590,7 @@ static void deferred_enemy_values(){
  a.fast_mode=false;
 
  enemy_visual_fight(EncounterId::NibbitsNormal);CHECK(potion_set(a.game,0,Potion::Strength));a.input(Key::EndTurn);
- a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
+ a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
  a.input(Key::Confirm);CHECK(a.panel==4&&potion_at(a.game,0)==Potion::Strength);unchanged();
  // Browser '5' and the calculator's numeric confirmation normalize to the
  // same Key::Confirm value (4); neither can bypass the panel's action guard.
@@ -962,7 +965,7 @@ static void deferred_combat_choices(){
   CHECK(a.combat_feedback.choice_at==barrier);
   const uint32_t original_end=a.combat_feedback.end_at;
   hidden_choice_input(ids[0]);
-  a.input(Key::Potions);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
+  a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4&&a.combat_actions_locked());snapshot();
   a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();a.input(Key::Potions);CHECK(!a.panel);
   advance_combat_ms((barrier-a.animation-1)*33);a.render();hidden_choice_input(ids[0]);
   CHECK(a.turn_banner.player_start==player&&a.turn_banner.sample_player(a.animation).kind==TurnBannerPresentation::Player);
@@ -1176,8 +1179,14 @@ static void feedback_hud_and_merchant(){
   }
   capture((std::string("merchant-")+names[character]).c_str());a.advance(250);a.render();unchanged();
   a.ui_action(UiAction::OpenShop);CHECK(a.shop_open);a.render();
+  CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);
+  a.advance(250);a.advance(250);a.advance(200);a.render();unchanged();
+  // Source card-slot centers in the 1440x1080 viewport, projected once at
+  // 2/9. The rug intentionally extends beyond the viewport; its items do not.
+  constexpr int centers[]={44,102,160,218,277,58,119};
   for(int i=0;i<ShopCardCount;++i){const HitRegion*card=nullptr;for(int j=0;j<a.hit_count;++j)if(a.hits[j].kind==HitKind::Choice&&a.hits[j].value==i)card=&a.hits[j];
-   CHECK(card&&card->x>=30&&card->x+card->w<=275&&card->y>=60&&card->y+card->h<=211);}
+   CHECK(card&&card->x+card->w/2==centers[i]&&card->w==54&&card->h==85);
+   CHECK(card->x>=0&&card->x+card->w<=320&&card->y>=22&&card->y+card->h<=235);}
   capture((std::string("merchant-inventory-")+names[character]).c_str());a.input(Key::Back);CHECK(!a.shop_open);unchanged();
  }
 }

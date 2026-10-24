@@ -397,7 +397,11 @@ static void layout_and_input(){
     // A press begun on a real map node cannot turn into a room entry after a
     // modal opens. The ordinary release path must discard the stale gesture.
     app.render();const auto*h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);const int x=h->x+h->w/2,y=h->y+h->h/2;
-    app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.input(Key::Detail);app.pointer_button(false);CHECK(world_can_travel(app.game)&&!app.pointer.held);app.input(Key::Back);
+    app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.input(Key::Detail);app.pointer_button(false);
+    // A physical button event restores mouse mode. This release cancels the
+    // keyboard legend at the node's actual pointer position; another Back
+    // would now pause the run instead of dismissing an already closed legend.
+    CHECK(world_can_travel(app.game)&&!app.pointer.held&&app.pointer.visible&&!app.map_legend&&!app.paused);
     for(int i=0;i<40;++i){app.input(Key::Up);app.render();}const auto top=world_map_view(app.game,a,app.map_scroll);CHECK(top.origin==top.maximum);CHECK(!world_hits());capture("map-boss-distant");
     app.input(Key::Confirm);CHECK(world_can_travel(app.game)&&app.map_scroll==0);
     app.advance(67);app.render();CHECK(world_hits()==n);unchanged();

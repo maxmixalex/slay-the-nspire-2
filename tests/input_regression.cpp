@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -11,18 +12,21 @@ static void click(int x,int y){app.pointer_move(x,y);app.pointer_button(true);ap
 static void unchanged(const SaveData& old){SaveData data{};CHECK(save(app.game,data));CHECK(data.size==old.size&&!std::memcmp(data.bytes,old.bytes,data.size));}
 int main(){
     new_run(app.game,7,true);app.title=false;app.render();SaveData before{};CHECK(save(app.game,before));
-    app.input(Key::Inspect);app.render();app.pointer_scroll(1);app.render();CHECK(app.scroll==10);
-    app.pointer_scroll(1);app.render();CHECK(app.scroll==20);
-    app.pointer_scroll(1);app.render();CHECK(app.scroll==30);
-    // The complete character pool and 53 colorless models remain inspectable,
-    // including the last partial page after the former 128-card deck boundary.
-    CHECK(app.game.deck_count==IroncladCards+53);
-    const int last=(app.game.deck_count-1)/10;
-    for(int page=4;page<=last;page++){app.pointer_scroll(1);app.render();CHECK(app.scroll==page*10);}
-    app.pointer_scroll(1);app.render();CHECK(app.scroll==last*10);
-    app.pointer_scroll(-1);app.render();CHECK(app.scroll==(last-1)*10);unchanged(before);
-    // Scrolling during capture cannot activate the new card under that position.
-    app.pointer_move(33,80);app.pointer_button(true);app.pointer_scroll(1);app.pointer_button(false);
+    app.input(Key::Inspect);app.render();auto&grid=app.card_grids[unsigned(CardGridSurface::Pile)];
+    CHECK(grid.bound&&grid.has_scrollbar());const int origin=grid.position;
+    app.pointer_scroll(1);CHECK(grid.target>origin&&grid.position==origin);
+    CHECK(spire_test::settle_card_grid(app));CHECK(grid.position>origin&&grid.position<20*CardGridScroll::Unit);
+    // One continuous scroll surface contains the full deck beyond 128 cards.
+    CHECK(app.game.deck_count==IroncladCards+53);CHECK(spire_test::drag_grid_thumb(app,true));
+    CHECK(grid.position==grid.maximum());bool last_visible=false;
+    for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::DeckCard){
+        CHECK(app.hits[i].y>=grid.top&&app.hits[i].y+app.hits[i].h<=grid.bottom);
+        last_visible|=app.hits[i].value==app.game.deck_count-1;
+    }
+    CHECK(last_visible);const int end=grid.position;app.pointer_scroll(-1);CHECK(spire_test::settle_card_grid(app));CHECK(grid.position<end);unchanged(before);
+    // Scrolling during capture cannot activate the newly exposed card.
+    HitRegion card{};for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::DeckCard){card=app.hits[i];break;}CHECK(card.w>0);
+    app.pointer_move(card.x+card.w/2,card.y+card.h/2);app.pointer_button(true);app.pointer_scroll(1);app.pointer_button(false);
     CHECK(app.detail_card<0);unchanged(before);
     app.input(Key::Back);app.render();
     for(auto key:{Key::DrawPile,Key::DiscardPile,Key::ExhaustPile}){

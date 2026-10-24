@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
@@ -25,20 +26,24 @@ int main(int argc,char**argv){
  // the ordinary character-selection flow above now enters the original run.
  new_run(a.game,7,false,Character::Silent);a.reset_presentation();CHECK(choose_node(a.game,0));CHECK(a.game.hand.count==7);
  SaveData prior{};CHECK(save(a.game,prior));a.input(Key::Collection);
- // The Silent filter includes Shiv; generated Soul/Blade remain only in All.
- unsigned counts[]={CardKinds,0,0,0};for(unsigned i=0;i<CardKinds;i++){auto color=card_color(i);counts[1]+=color==CardColor::Ironclad;counts[2]+=color==CardColor::Silent;counts[3]+=color==CardColor::Colorless;}
- for(unsigned filter=0;filter<4;filter++){
-  action((UiAction)((int)UiAction::FilterAll+filter));CHECK(a.library_items()==counts[filter]);CardKind ids[CardKinds];a.library_items(ids);
+ action(UiAction::LibraryCards);spire_test::discover_all_cards(a);
+ // The original pools exclude generated cards; those use the Misc control.
+ const int filters[]={1,2,5,6,4,3,7,8};const unsigned counts[]={85,86,86,86,86,53,19,67};
+ for(unsigned filter=0;filter<8;filter++){
+  CHECK(spire_test::choose_library_pool(a,filters[filter]));CHECK(a.library_items()==counts[filter]);CardKind ids[CardKinds];a.library_items(ids);
   for(unsigned i=0;i<counts[filter];i++){
-   a.library_page=i/8;a.library_selected=i;CHECK(click(HitKind::LibraryItem,i));CHECK(card_from_token(a.detail_card).kind==ids[i]);a.input(Key::Back);same(prior);
+   a.library_selected=i;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,i));CHECK(card_from_token(a.detail_card).kind==ids[i]);a.input(Key::Back);same(prior);
   }
-  action(UiAction::CycleSort);CHECK(a.library_sort==1);a.library_items(ids);
+  CHECK(click(HitKind::LibraryControl,LibrarySortCost));CHECK(a.card_library.sort_priority[0]==2);a.library_items(ids);
   for(unsigned i=1;i<counts[filter];i++)CHECK(cost({ids[i-1],0})<=cost({ids[i],0}));
-  action(UiAction::CycleSort);CHECK(a.library_sort==2);a.library_items(ids);
+  CHECK(click(HitKind::LibraryControl,LibrarySortCost));a.library_items(ids);
+  for(unsigned i=1;i<counts[filter];i++)CHECK(cost({ids[i-1],0})>=cost({ids[i],0}));
+  CHECK(click(HitKind::LibraryControl,LibrarySortType));CHECK(a.card_library.sort_priority[0]==0);a.library_items(ids);
   for(unsigned i=1;i<counts[filter];i++)CHECK(definitions[ids[i-1]].type<=definitions[ids[i]].type);
-  action(UiAction::CycleSort);CHECK(a.library_sort==0);same(prior);
+  CHECK(click(HitKind::LibraryControl,LibrarySortType));same(prior);
  }
- action(UiAction::LibraryRelics);CHECK(click(HitKind::LibraryItem,16));CHECK(a.library_selected==16);CHECK(a.detail_item==16);a.input(Key::Back);CHECK(a.library);a.input(Key::Back);CHECK(!a.library);
+ a.input(Key::Back);CHECK(a.compendium_open);action(UiAction::LibraryRelics);a.library_selected=16;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,16));CHECK(a.library_selected==16&&a.detail_item<0);
+ a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);
  // Construct a choice using real instance IDs; production UI must stay modal.
  new_run(a.game,7,true,Character::Silent);a.reset_presentation();a.title=false;
  // A substituted fixture card is detached from the old permanent identity.

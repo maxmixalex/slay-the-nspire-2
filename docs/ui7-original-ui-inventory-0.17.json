@@ -1,0 +1,796 @@
+{
+  "schema": 1,
+  "reference": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea",
+    "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
+  },
+  "port_baseline": "9cecd0f743ce6cd100df91b103babe67babf480f",
+  "status": "complete path index; selected method-contract audit; UI7 runtime not yet accepted",
+  "methodology": {
+    "index": "All decompiled.cs and allPCK scenes/*.tscn paths inventoried",
+    "method_review": "Selected visible flow methods and implemented combat contracts; not every method reviewed",
+    "coverage": "No original-restoration percentage inferred from file/class counts, scans or native/WASM agreement",
+    "gates": "Runtime visibility/availability overrides scene node existence; gated and excluded are distinct",
+    "private_data": "No original source/art/scenes embedded"
+  },
+  "counts": {
+    "all_cs": 3528,
+    "empty_cs": 14,
+    "nodes_namespace_cs": 724,
+    "broad_ui_cs": 740,
+    "broad_ui_empty_cs": 5,
+    "N_prefixed_cs": 682,
+    "pck_scenes": 1022,
+    "behavior_contracts": 58
+  },
+  "namespaces": {
+    "MegaCrit.Sts2.Core.AutoSlay.Handlers.Screens": 13,
+    "MegaCrit.Sts2.Core.Entities.UI": 3,
+    "MegaCrit.Sts2.Core.Nodes": 10,
+    "MegaCrit.Sts2.Core.Nodes.Animation": 3,
+    "MegaCrit.Sts2.Core.Nodes.Audio": 3,
+    "MegaCrit.Sts2.Core.Nodes.Cards": 8,
+    "MegaCrit.Sts2.Core.Nodes.Cards.Holders": 6,
+    "MegaCrit.Sts2.Core.Nodes.Combat": 34,
+    "MegaCrit.Sts2.Core.Nodes.CommonUi": 34,
+    "MegaCrit.Sts2.Core.Nodes.Debug": 11,
+    "MegaCrit.Sts2.Core.Nodes.Debug.Multiplayer": 2,
+    "MegaCrit.Sts2.Core.Nodes.Events": 9,
+    "MegaCrit.Sts2.Core.Nodes.Events.Custom": 1,
+    "MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere": 5,
+    "MegaCrit.Sts2.Core.Nodes.Ftue": 16,
+    "MegaCrit.Sts2.Core.Nodes.GodotExtensions": 10,
+    "MegaCrit.Sts2.Core.Nodes.HoverTips": 3,
+    "MegaCrit.Sts2.Core.Nodes.Multiplayer": 15,
+    "MegaCrit.Sts2.Core.Nodes.Orbs": 8,
+    "MegaCrit.Sts2.Core.Nodes.Pooling": 3,
+    "MegaCrit.Sts2.Core.Nodes.Potions": 6,
+    "MegaCrit.Sts2.Core.Nodes.Reaction": 4,
+    "MegaCrit.Sts2.Core.Nodes.Relics": 4,
+    "MegaCrit.Sts2.Core.Nodes.RestSite": 3,
+    "MegaCrit.Sts2.Core.Nodes.Rewards": 2,
+    "MegaCrit.Sts2.Core.Nodes.Rooms": 10,
+    "MegaCrit.Sts2.Core.Nodes.Screens": 12,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary": 11,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Capstones": 2,
+    "MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary": 10,
+    "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection": 13,
+    "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect": 8,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Credits": 1,
+    "MegaCrit.Sts2.Core.Nodes.Screens.CustomRun": 4,
+    "MegaCrit.Sts2.Core.Nodes.Screens.DailyRun": 13,
+    "MegaCrit.Sts2.Core.Nodes.Screens.FeedbackScreen": 9,
+    "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen": 8,
+    "MegaCrit.Sts2.Core.Nodes.Screens.InspectScreens": 2,
+    "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu": 26,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Map": 20,
+    "MegaCrit.Sts2.Core.Nodes.Screens.ModdingScreen": 5,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Overlays": 2,
+    "MegaCrit.Sts2.Core.Nodes.Screens.PauseMenu": 2,
+    "MegaCrit.Sts2.Core.Nodes.Screens.PotionLab": 3,
+    "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen": 4,
+    "MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection": 3,
+    "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen": 10,
+    "MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext": 3,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Settings": 73,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Shops": 10,
+    "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen": 8,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Timeline": 18,
+    "MegaCrit.Sts2.Core.Nodes.Screens.Timeline.UnlockScreens": 8,
+    "MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic": 4,
+    "MegaCrit.Sts2.Core.Nodes.TopBar": 5,
+    "MegaCrit.Sts2.Core.Nodes.TreasureRooms": 1,
+    "MegaCrit.Sts2.Core.Nodes.Vfx": 152,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Backgrounds": 3,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Cards": 14,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Events": 1,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Examples": 3,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Forms": 6,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Ui": 6,
+    "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities": 23,
+    "MegaCrit.sts2.Core.Nodes.TopBar": 8
+  },
+  "scene_prefixes": {
+    "asset_loader.tscn": 1,
+    "backgrounds": 193,
+    "cards": 19,
+    "combat": 26,
+    "creature_visuals": 126,
+    "debug": 20,
+    "encounters": 24,
+    "events": 22,
+    "ftue": 15,
+    "game.tscn": 1,
+    "merchant": 11,
+    "orbs": 7,
+    "pause_menu": 1,
+    "potions": 4,
+    "relics": 3,
+    "rest_site": 14,
+    "rewards": 2,
+    "rooms": 8,
+    "run.tscn": 1,
+    "scene_container.tscn": 1,
+    "screens": 129,
+    "timeline_screen": 16,
+    "ui": 66,
+    "vfx": 312
+  },
+  "initial_empty_sources": [
+    "MegaCrit.Sts2.Core.Nodes.CommonUi/NDropdownContainer.cs",
+    "MegaCrit.Sts2.Core.Runs.Metrics/MetricUtilities.cs",
+    "MegaCrit.Sts2.Core.Models.Powers/GalvanicPower.cs",
+    "MegaCrit.Sts2.Core.Nodes.HoverTips/NMapPointHistoryHoverTip.cs",
+    "MegaCrit.Sts2.Core.Models/PotionModel.cs",
+    "MegaCrit.Sts2.Core.Models/ActModel.cs",
+    "MegaCrit.Sts2.Core.Models.Relics/BurningBlood.cs",
+    "MegaCrit.Sts2.Core.Multiplayer.Game/RewardsSetSynchronizer.cs",
+    "MegaCrit.Sts2.Core.Multiplayer.Game/JoinFlow.cs",
+    "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NJoinFriendScreen.cs",
+    "MegaCrit.Sts2.Core.Nodes.Rooms/NCombatRoom.cs",
+    "MegaCrit.Sts2.Core.Nodes.Cards/NCard.cs",
+    "MegaCrit.Sts2.Core.Hooks/Hook.cs",
+    "MegaCrit.Sts2.Core.Models.Monsters/Chomper.cs"
+  ],
+  "empty_source_handling": {
+    "NCombatRoom": "selected repaired decompile available",
+    "GalvanicPower": "selected repaired decompile available",
+    "NCard": "cards targeted recovery",
+    "PotionModel": "cards targeted recovery",
+    "NDropdownContainer": "root targeted recovery",
+    "NMapPointHistoryHoverTip": "rooms targeted recovery",
+    "NJoinFriendScreen": "multiplayer excluded",
+    "other_empty": "unknown until independently recovered; not counted reviewed"
+  },
+  "contracts": [
+    {
+      "id": "title_navigation",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuTextButton.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuSubmenuStack.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Title focus/reticles and nested menu ownership",
+      "remaining": "Port entry works; original full menu composition/shader transition differs"
+    },
+    {
+      "id": "continue_abandon",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuContinueButton.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NContinueRunInfo.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Continue preview, abandoned-run confirmation and return",
+      "remaining": "Functional port save/continue exists; original run-info presentation remains partial"
+    },
+    {
+      "id": "character_select",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect/NCharacterSelectScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect/NCharacterSelectButton.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Click-selected character, Ascension, seed and embark",
+      "remaining": "Root UI7 restoring real AscensionPanel; no claim final acceptance yet"
+    },
+    {
+      "id": "act_selector",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect/NCharacterSelectScreen.cs"
+      ],
+      "port_assessment": "original_hidden",
+      "contract": "ShouldShowActDropdown=false hides existing ActDropdown scene node",
+      "remaining": "Not a visible original requirement"
+    },
+    {
+      "id": "custom_run",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CustomRun/NCustomRunScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CustomRun/NRunModifierTickbox.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Modifier/seed setup and real start",
+      "remaining": "Visible after CustomAndSeedsEpoch; legacy port Expedition is not this flow"
+    },
+    {
+      "id": "daily_run",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.DailyRun/NDailyRunScreen.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Singleplayer daily preparation/start/score",
+      "remaining": "Visible after DailyRunEpoch; online leaderboard capability separately scoped"
+    },
+    {
+      "id": "card_library",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary/NCardLibrary.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary/NCardLibraryGrid.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Filters, discoveries, card grid and inspect",
+      "remaining": "Port reference catalogue exists; complete original layout/filter/discovery parity not accepted"
+    },
+    {
+      "id": "relic_collection",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection/NRelicCollection.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Relic categories and inspect",
+      "remaining": "Port reference catalogue exists; source collection composition remains partial"
+    },
+    {
+      "id": "potion_lab",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.PotionLab/NPotionLab.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Potion catalogue and inspect",
+      "remaining": "Port reference catalogue exists; original lab composition remains partial"
+    },
+    {
+      "id": "bestiary",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary/NBestiary.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary/NBestiaryMoveButton.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Enemy list, layouts, move descriptions and character filtering",
+      "remaining": "Original gate: discovered act plus enemy victory; port has no persistent discovery metadata"
+    },
+    {
+      "id": "statistics",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NStatsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NCharacterStats.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NAchievementsGrid.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "General/character statistics and achievements",
+      "remaining": "No corresponding original Stats UI or persisted progress summary"
+    },
+    {
+      "id": "run_history",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NRunHistory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NMapPointHistory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NDeckHistory.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Historical run navigation, per-floor map/deck/relic details",
+      "remaining": "No corresponding persisted original run-history flow"
+    },
+    {
+      "id": "profiles",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen/NProfileScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen/NDeleteProfileButton.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Profile select/icons/delete confirmation",
+      "remaining": "Single port save slot does not implement this flow"
+    },
+    {
+      "id": "compendium_leaderboards",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NCompendiumSubmenu.cs"
+      ],
+      "port_assessment": "original_hidden",
+      "contract": "Leaderboards Visible=false; OpenLeaderboards empty",
+      "remaining": "Do not expose a working-looking empty button"
+    },
+    {
+      "id": "map_routes",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Map/NMapScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Map/NMapPoint.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Scroll, current/available/visited nodes and travel",
+      "remaining": "UI6 actual route motion exists; UI7 rooms validating remaining controls"
+    },
+    {
+      "id": "map_legend",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Map/NMapLegendItem.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Legend focus/highlight and500ms unfocus recovery",
+      "remaining": "UI7 rooms implementation/acceptance pending"
+    },
+    {
+      "id": "map_history",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.HoverTips/NMapPointHistoryHoverTip.cs"
+      ],
+      "port_assessment": "unverified",
+      "contract": "Visited-node history hover",
+      "remaining": "Initial decompile empty; targeted recovery needed before source-contract acceptance"
+    },
+    {
+      "id": "combat_entry",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NCombatRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Prepared room fade-in, enemies and hand arrival",
+      "remaining": "UI6 real sequence exists; complete per-enemy entrance/VFX unaccepted"
+    },
+    {
+      "id": "event_base",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NEventRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Events/NEventOptionButton.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Artwork, text reveal, option timing and enabled choice",
+      "remaining": "UI7 rooms implementing original typewriter and option timing"
+    },
+    {
+      "id": "event_special",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Events/NAncientEventLayout.cs",
+        "MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere/NCrystalSphereScreen.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Ancient and custom event layouts/choices",
+      "remaining": "Must accept each special layout; regular event fallback is not full parity"
+    },
+    {
+      "id": "rest",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NRestSiteRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.RestSite/NRestSiteButton.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Rest actions, character, text and upgrade selection",
+      "remaining": "UI6 corrected source layout; alternative action/VFX contracts remain"
+    },
+    {
+      "id": "shop",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NMerchantRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Shops/NMerchantInventory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Shops/NMerchantSlot.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Entrance, inventory hover, speech, purchase and sold state",
+      "remaining": "UI7 rooms implementing original movement/dialogue/hand tracking"
+    },
+    {
+      "id": "remove_card",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Cards/NCardRemoveVfx.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Purchased/direct/forced removal feedback",
+      "remaining": "Purchased UI6 motion exists; direct/forced and secondary effects separately required"
+    },
+    {
+      "id": "treasure",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NTreasureRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic/NTreasureRoomRelicCollection.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Chest opening, relic appearance, take/leave",
+      "remaining": "Port real flow exists; all source particles/materials not accepted"
+    },
+    {
+      "id": "loot",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens/NRewardsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Rewards/NRewardButton.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NCardRewardSelectionScreen.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Loot opening, take/skip and nested card alternatives",
+      "remaining": "UI6 original art/timing improved; pickup trails and each alternative need verification"
+    },
+    {
+      "id": "game_over",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen/NGameOverScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen/NRunSummary.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen/NScoreLine.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Death/victory summary, score, badges and discoveries",
+      "remaining": "Port summary exists; original discoveries/history/stats persistence incomplete"
+    },
+    {
+      "id": "topbar",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.CommonUi/NTopBar.cs",
+        "MegaCrit.Sts2.Core.Nodes.TopBar/NTopBarDeckButton.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Hover expansion, tips, counts and inventory entry",
+      "remaining": "UI6 implemented counts/hover; UI7 cards adds deck gain pulse"
+    },
+    {
+      "id": "hand",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NPlayerHand.cs",
+        "MegaCrit.Sts2.Core.Nodes.Cards.Holders/NHandCardHolder.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NControllerCardPlay.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Fan, hover, drag, keyboard held-card and targeting confirmation",
+      "remaining": "UI6 actual pose/selection exists; UI7 original hand-index preference implemented"
+    },
+    {
+      "id": "piles",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens/NDeckViewScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatCardPile.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Deck/draw/discard/exhaust grids, sort and scroll",
+      "remaining": "UI7 cards implementing continuous scroll/drag thumb"
+    },
+    {
+      "id": "inspect",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens/NInspectCardScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Cards/NCard.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Full descriptions and upgrade compare",
+      "remaining": "Functional cached inspect exists; NCard targeted recovery avoids empty-source false coverage"
+    },
+    {
+      "id": "targeting",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NTargetManager.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCardPlay.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Single/all/self reticles and arrow",
+      "remaining": "UI7 cards mapping actual original target models; no invented multiplayer ally requirements"
+    },
+    {
+      "id": "potions",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Potions/NPotionHolder.cs",
+        "MegaCrit.Sts2.Core.Nodes.Potions/NPotionPopup.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Tooltip, choice popup, targeting, use and discard",
+      "remaining": "UI6 real logic exists; UI7 cards closes source controls/error flows"
+    },
+    {
+      "id": "damage_result",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Entities.Creatures/DamageResult.cs",
+        "MegaCrit.Sts2.Core.Commands/CreatureCmd.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NDamageNumVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NDamageBlockedVfx.cs"
+      ],
+      "port_assessment": "implemented_unvalidated",
+      "contract": "Distinct HP loss, overkill, zero and completely blocked feedback",
+      "remaining": "UI7 real canonical observer/queue and regression source implemented; formal run pending"
+    },
+    {
+      "id": "health_block",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NHealthBar.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NBlockBrokenVfx.cs"
+      ],
+      "port_assessment": "implemented_unvalidated",
+      "contract": "Delayed health fill, block gain and shield loss",
+      "remaining": "UI7 authored400ms split/600ms fade added; actual new assets not yet accepted"
+    },
+    {
+      "id": "power_strip",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NPowerContainer.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NPower.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Power icon/amount policy, names and tooltip",
+      "remaining": "UI6 None/Single amount labels and Stars corrected; ordering/dynamic descriptions not globally accepted"
+    },
+    {
+      "id": "power_feedback",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreature.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NPowerAppliedVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NPowerRemovedVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NPowerFlashVfx.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Applied/removed titles and actual power Flash events",
+      "remaining": "UI7 common9trigger families plus original additive shader implemented; other triggers/secondary particles unaccepted"
+    },
+    {
+      "id": "hit_sparks",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NHitSparkVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NBlockSparkVfx.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Original warm/blue hit sparks and secondary particles",
+      "remaining": "Source assets/params audited; rendering still requires implementation"
+    },
+    {
+      "id": "formations",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NCombatRoom.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Named scene slots, unnamed widths and stable summon replacements",
+      "remaining": "UI6 all24named scenes+width contracts accepted; not whole-engine parity"
+    },
+    {
+      "id": "death_rewards",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreature.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Death tracks, corpse removal and once-only normal/Fast/boss reward waits",
+      "remaining": "UI6 source timing accepted; original dissolve/monster secondary VFX remains partial"
+    },
+    {
+      "id": "generated_cards",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Cards/NCard.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Enemy-generated status/curse preview and card entry",
+      "remaining": "UI6 actual batch animation exists; all direct insertion and source secondary variants unaccepted"
+    },
+    {
+      "id": "card_secondary",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Cards/NCardExhaustVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NCardFlyVfx.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Discard/exhaust/draw and pickup/flight particles",
+      "remaining": "Primary card motions implemented; all original trails/materials not reproduced"
+    },
+    {
+      "id": "turn_flow",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NEndTurnButton.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Player/enemy banners, turn-end blocking and command waits",
+      "remaining": "Common source timing exists; not every original monster command sequence audited"
+    },
+    {
+      "id": "resources",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Orbs/NOrbManager.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NStarCounter.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreature.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Orbs, stars, Osty resources and activation/evoke feedback",
+      "remaining": "Stars corrected UI6; orb layout and all invoke/evoke effects remain partial"
+    },
+    {
+      "id": "choices",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NCombatPileCardSelectScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NChooseABundleSelectionScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NDeckEnchantSelectScreen.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Awaited card/grid/bundle/enchant selection",
+      "remaining": "Canonical choices work; each original choice layout/control still separate contract"
+    },
+    {
+      "id": "pause",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.PauseMenu/NPauseMenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.CommonUi/NModalContainer.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Overlay focus ownership and settings return",
+      "remaining": "UI6 input occlusion fixed; UI7 root original settings structure pending acceptance"
+    },
+    {
+      "id": "settings",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsTabManager.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Real supported controls, persistence and platform restrictions",
+      "remaining": "UI7 root persisted defaults/controls; no fake rows count as implemented"
+    },
+    {
+      "id": "language",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NLanguageDropdown.cs"
+      ],
+      "port_assessment": "implemented_unvalidated",
+      "contract": "Title-only choice, disabled while run active",
+      "remaining": "UI7 root wiring3hosts and removing boot chooser; formal acceptance pending"
+    },
+    {
+      "id": "phobia",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreatureVisuals.cs",
+        "MegaCrit.Sts2.Core.Models/MonsterModel.cs",
+        "MegaCrit.Sts2.Core.Models.Monsters/DecimillipedeSegment.cs",
+        "MegaCrit.Sts2.Core.Nodes.Animation/NPhobiaAnimationToggler.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "5skin models+8alternate bodies+3dead variants+18background layers",
+      "remaining": "UI7 runtime mapping added;32skin clips/11body clips/background conversion pending; Entomancer swarm explicitly outstanding"
+    },
+    {
+      "id": "text_effects",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.addons.mega_text/MegaRichTextLabel.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsScreen.cs"
+      ],
+      "port_assessment": "unverified",
+      "contract": "Rich-text animation option affects text tags",
+      "remaining": "Never disable all damage/status popups as substitute for rich-text effects"
+    },
+    {
+      "id": "keyboard_rebind",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NInputSettingsPanel.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NInputSettingsEntry.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Binding capture/conflict/reset and navigation",
+      "remaining": "Fixed mappings/keyboard-only preference do not implement original remapping"
+    },
+    {
+      "id": "screen_shake",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities/NScreenShake.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities/ScreenPunchInstance.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NScreenshakePaginator.cs"
+      ],
+      "port_assessment": "implemented_unvalidated",
+      "contract": "Scene-only latest punch,300ms,5/20/40px and0/.5/1/2/4strength",
+      "remaining": "UI7 actual camera composition implemented; original rumble/trauma and all trigger sites remain partial"
+    },
+    {
+      "id": "patch_notes",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NPatchNotesScreen.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Patch-notes reader",
+      "remaining": "No corresponding reader; remote feed availability not assumed"
+    },
+    {
+      "id": "feedback",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.FeedbackScreen/NSendFeedbackScreen.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Feedback form and submit acknowledgement",
+      "remaining": "No corresponding form; automatic external submission not authorized"
+    },
+    {
+      "id": "modding",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.ModdingScreen/NModdingScreen.cs"
+      ],
+      "port_assessment": "unverified",
+      "contract": "Installed-mod settings and loading confirmation",
+      "remaining": "Conditional onModSettings and installedmods; not required visible on unmodded port"
+    },
+    {
+      "id": "credits",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Credits/NCreditsScreen.cs"
+      ],
+      "port_assessment": "unimplemented",
+      "contract": "Credits and return",
+      "remaining": "No original-equivalent credits flow"
+    },
+    {
+      "id": "audio",
+      "group": "excluded",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Audio/NAudioManager.cs"
+      ],
+      "port_assessment": "excluded",
+      "contract": "Playback,mixing,audio controls",
+      "remaining": "Explicitly excluded by active scope; no fidelity credit"
+    },
+    {
+      "id": "multiplayer",
+      "group": "excluded",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMultiplayerSubmenu.cs"
+      ],
+      "port_assessment": "excluded",
+      "contract": "Lobby,co-op,synchronization and remoteplayers",
+      "remaining": "Explicitly excluded; singleplayer daily functionality not silently excluded with it"
+    },
+    {
+      "id": "timeline",
+      "group": "excluded",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Timeline/NTimelineScreen.cs"
+      ],
+      "port_assessment": "excluded",
+      "contract": "Timeline unlock presentation",
+      "remaining": "Explicitly excluded; other screens visibility gates still documented"
+    }
+  ],
+  "assessment_counts": {
+    "excluded": 3,
+    "implemented_unvalidated": 4,
+    "original_hidden": 2,
+    "partial": 35,
+    "unimplemented": 11,
+    "unverified": 3
+  }
+}

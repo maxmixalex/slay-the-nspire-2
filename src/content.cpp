@@ -146,13 +146,13 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>Ui6ContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>Ui7ContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
-    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
+    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
        (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
-       (version>=LocaleContentVersion&&ns!=LocaleStringCount))return false;
-    const unsigned auxiliary=version>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+       (version>=LocaleContentVersion&&ns!=(version>=Ui7ContentVersion?Ui7StringCount:LocaleStringCount)))return false;
+    const unsigned auxiliary=version>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(base>n||base>DirectoryCapacity)return false;
     reader_.progress(ResourceStage::Header,1,1);
@@ -324,27 +324,34 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
 }
-const uint8_t* Content::glyph_record(uint32_t cp,int size)const{
-    if(!metadata_||!io_good_)return nullptr;uint32_t key=((uint32_t)size<<24)|cp;int lo=0,hi=(int)glyphs_;
+const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
+    if(!metadata_||!io_good_||size<=0||size>32||cp>0x10ffff)return nullptr;
+    // UI7 keeps the16-byte descriptor. Its size byte uses low6bits for
+    // pixel size and high2bits for regular/bold/italic/bold-italic. Only
+    // referenced styled glyphs are packed; a missing face uses Regular.
+    const unsigned face=version_>=Ui7ContentVersion?(style&3u):0u;
+    uint32_t key=((uint32_t(size)|(face<<6))<<24)|cp;int lo=0,hi=(int)glyphs_;
     while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=metadata_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
     if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
         const unsigned w=r[10],h=r[11],encoded=u16(r+14);
-        if(!w||w>40||!h||h>40||u16(r+8)>32||u16(r+12)>40||
+        const unsigned sized=u16(r+8),pixel_size=sized&63u;
+        if(!w||w>40||!h||h>40||!pixel_size||pixel_size>32||sized>255||(version_<Ui7ContentVersion&&sized>32)||u16(r+12)>40||
            (encoded&&(version_<5||encoded%2||encoded>2*w*h))){io_good_=false;return nullptr;}
         return r;
     }}
-    return cp!='?'?glyph_record('?',size):nullptr;
+    if(face)return glyph_record(cp,size,0);
+    return cp!='?'?glyph_record('?',size,0):nullptr;
 }
-Glyph Content::glyph_metrics(uint32_t cp,int size)const{
+Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_)return {nullptr,0,0,0};
     if(inline_icon(cp)&&size>0&&size<=255)return {nullptr,uint8_t(size),uint8_t(size),uint16_t(size)};
-    const uint8_t*r=glyph_record(cp,size);
+    const uint8_t*r=glyph_record(cp,size,style);
     return r?Glyph{nullptr,r[10],r[11],u16(r+12),u16(r+14)}:Glyph{nullptr,0,0,uint16_t(size/2)};
 }
-Glyph Content::glyph(uint32_t cp,int size)const{
+Glyph Content::glyph(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_)return {nullptr,0,0,0};
     if(inline_icon(cp))return glyph_metrics(cp,size);
-    if(const uint8_t*r=glyph_record(cp,size)){
+    if(const uint8_t*r=glyph_record(cp,size,style)){
         const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;
         if(!reader_.contains(off,len)){io_good_=false;return {nullptr,0,0,0};}
         if(data_)bytes=data_+off;

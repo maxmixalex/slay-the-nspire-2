@@ -5,10 +5,10 @@ void App::restore_preferences(){
     }
     fast_mode=value.fast_mode;
     show_card_indices=value.show_card_indices;text_effects=value.text_effects;
-    keyboard_only=value.keyboard_only;phobia_mode=value.phobia_mode;screen_shake=value.screen_shake;
+    keyboard_only=value.keyboard_only;phobia_mode=value.phobia_mode;screen_shake=value.screen_shake;bestiary_actions_preferred=value.bestiary_actions_preferred;
 }
 void App::persist_preferences(){
-    const UiPreferences value{fast_mode,show_card_indices,text_effects,keyboard_only,phobia_mode,screen_shake};
+    const UiPreferences value{fast_mode,show_card_indices,text_effects,keyboard_only,phobia_mode,screen_shake,bestiary_actions_preferred};
     if(callbacks.save_preferences&&!callbacks.save_preferences(value))
         message(content.english()?"Could not save settings.":"设置保存失败，请重试");
 }
@@ -54,7 +54,7 @@ void App::settings_action(UiAction action){
         if(title&&available_languages()==3){settings_language_open=true;settings_language_item=content.english()?0:1;}break;
     case UiAction::SettingsFastMode:fast_mode=!fast_mode;persist_preferences();break;
     case UiAction::SettingsCardIndices:show_card_indices=!show_card_indices;persist_preferences();break;
-    case UiAction::SettingsTextEffects:text_effects=!text_effects;persist_preferences();break;
+    case UiAction::SettingsTextEffects:text_effects=!text_effects;invalidate_hand_tiles();persist_preferences();break;
     case UiAction::SettingsKeyboardOnly:keyboard_only=!keyboard_only;if(!keyboard_only)pointer.visible=true;persist_preferences();break;
     case UiAction::SettingsPhobia:phobia_mode=!phobia_mode;persist_preferences();break;
     case UiAction::SettingsShakeDown:if(screen_shake){--screen_shake;persist_preferences();}break;

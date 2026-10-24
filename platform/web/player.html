@@ -8,6 +8,7 @@
 <h1>nSpire II 0.17 <span data-i18n="development">Development build</span> <small data-i18n="campaign">Original three-act expeditions</small></h1>
 <p id="loading" role="status" hidden>正在载入 / Loading…</p>
 <canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
+<textarea id="text-entry" tabindex="-1" aria-label="Search / 搜索" autocomplete="off" autocapitalize="off" spellcheck="false" style="position:fixed;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none"></textarea>
 <div id="actions">
 <button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Enter</button><button data-key="6" data-i18n="end_turn">Space</button><button data-key="7" data-i18n="piles">Tab</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
 </div>
@@ -77,12 +78,16 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  game=result.instance.exports;memory=game.memory;
  const entropyWord=new Uint32Array(1);
  function refreshEntropy(){
+  if(game.set_wall_clock)game.set_wall_clock(Math.floor(Date.now()/1000));
   if(!game.set_seed_entropy)return;
   if(globalThis.crypto&&typeof globalThis.crypto.getRandomValues==='function')globalThis.crypto.getRandomValues(entropyWord);
   else entropyWord[0]=(Date.now()^Math.floor(clock()*1000)^Math.floor(Math.random()*4294967296))>>>0;
   game.set_seed_entropy(entropyWord[0]);
  }
  refreshEntropy();
+ if(game.set_progress){
+  try{const stored=localStorage.getItem('nSpire2-progress-v1');if(stored){const bytes=decode(stored);if(bytes.length<=game.progress_capacity()){memoryBytes().set(bytes,game.progress_buffer());game.set_progress(bytes.length);}}}catch(e){game.set_progress(0);}
+ }
  if(game.set_preferences_v2){
   let flags=4|(2<<8);
   try{const saved=JSON.parse(localStorage.getItem('nSpire2-preferences-v2'));
@@ -119,6 +124,12 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   }catch(e){ok=0;}
   game.preferences_ack(ok);
  }
+ function flushProgress(){
+  if(!game.progress_pending||!game.progress_pending())return;
+  let ok=1;try{const p=game.progress_buffer(),n=game.progress_length();localStorage.setItem('nSpire2-progress-v1',encode(memoryBytes().subarray(p,p+n)));}catch(e){ok=0;}
+  game.progress_ack(ok);
+ }
+ window.addEventListener('pagehide',()=>{if(game.flush_progress){game.flush_progress();flushProgress();}});
  async function serviceLanguage(){
   if(changingLanguage||!isSplit||!game.language_request)return;
   const code=game.language_request();if(!code)return;
@@ -143,7 +154,15 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    if(!restored)throw error;
   }finally{changingLanguage=false;dirty=true;previous=clock();nextPaint=previous;canvas.focus();}
  }
- function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');void serviceLanguage().catch(error=>console.error(error));}
+ const textEntry=document.getElementById('text-entry');let composing=false;
+ function syncTextEntry(){
+  const active=game.text_entry_active()&&!game.closed()&&!changingLanguage;
+  if(active&&document.hasFocus()){
+   const rect=canvas.getBoundingClientRect();textEntry.style.left=(rect.left+rect.width*5/320)+'px';textEntry.style.top=(rect.top+rect.height*16/240)+'px';
+   if(document.activeElement!==textEntry)textEntry.focus({preventScroll:true});
+  }else if(document.activeElement===textEntry){textEntry.value='';composing=false;canvas.focus({preventScroll:true});}
+ }
+ function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();flushProgress();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');syncTextEntry();void serviceLanguage().catch(error=>console.error(error));}
  function key(k){input(()=>game.input(k));}
  if(game.debug_execute){
   keyMap.F1=22;keyMap.g=22;keyMap.G=22;
@@ -158,7 +177,24 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    for(let i=1;i<game.debug_catalog_count(type);++i)rows.push(readString(game.debug_catalog(type,i)));return rows;};
   const button=document.createElement('button');button.textContent=language==='eng'?'Debug F1':'调试 F1';button.addEventListener('click',()=>{key(22);canvas.focus();});document.getElementById('actions').append(button);
  }
- document.addEventListener('keydown',e=>{if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();input(()=>game.text_input(code));return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}});
+ function commitText(text){if(text&&game.text_entry_active())input(()=>{for(const character of text){const code=character.codePointAt(0);if(code>=32)game.text_input(code);}});}
+ function flushTextEntry(){if(composing)return;const value=textEntry.value;textEntry.value='';commitText(value);}
+ textEntry.addEventListener('compositionstart',()=>{composing=true;});
+ textEntry.addEventListener('compositionend',()=>{composing=false;queueMicrotask(flushTextEntry);});
+ textEntry.addEventListener('input',e=>{if(!e.isComposing)flushTextEntry();});
+ textEntry.addEventListener('paste',e=>{e.preventDefault();commitText(e.clipboardData.getData('text'));});
+ document.addEventListener('keydown',e=>{
+  if(game.text_entry_active()){
+   if(e.isComposing||composing||e.keyCode===229)return;
+   if(e.ctrlKey||e.altKey||e.metaKey)return;
+   const code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:[...e.key].length===1?e.key.codePointAt(0):0;
+   if(code){e.preventDefault();input(()=>game.text_input(code));}
+   else if(e.key==='Tab'){e.preventDefault();key(3);}
+   else if(e.key.startsWith('Arrow'))e.preventDefault();
+   return;
+  }
+  if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}
+ });
  document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
  canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
@@ -172,7 +208,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent=t('measuring');canvas.focus();});
  let previous=clock(),nextPaint=previous+1000/30;
  function loop(now){const elapsed=now-previous;previous=now;if(!document.hidden&&!game.closed()&&!changingLanguage){
-  const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
+  const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));flushProgress();if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
   // Inputs mark the next presentation dirty. Never render again synchronously
   // in every pointer/key callback and then duplicate it in the same RAF.
   if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}

@@ -103,25 +103,6 @@ void collect_card_hover_tips(const App&a,Card card,HoverTipList&out,int instance
 }
 
 static bool hover_in(const HoverRect&r,int x,int y){return x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;}
-static bool hover_detail_word(const App&a,Card card){
-    if(!hover_in({123,66,177,120},a.pointer.x,a.pointer.y))return false;
-    char text[2048]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,text,sizeof text,a.detail_instance,a.detail_deck_index);
-    RichReader reader(text);RichChar ch{};int x=123,row=0;bool boundary=true;
-    const bool words=a.content.english();
-    auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px);const int advance=g.advance+rich_bold_advance(value);return fitted_text::Metric{advance,advance};};
-    while(reader.next(ch)){
-        const int word=words&&boundary&&x>123&&fitted_text::word_character(ch.codepoint)?fitted_text::word_width(reader,ch,12,metrics):0;
-        const auto glyph=a.content.glyph_metrics(ch.codepoint,12);const int advance=glyph.advance+rich_bold_advance(ch);
-        const bool space=ch.codepoint==' '||ch.codepoint=='\t';
-        if(words&&space&&(x==123||x+advance>300)){boundary=true;continue;}
-        if(ch.codepoint=='\n'||(x>123&&(x+advance>300||(word&&word<=177&&x+word>300)))){x=123;++row;if(ch.codepoint=='\n'){boundary=true;continue;}}
-        if(words){boundary=space;if(x==123&&space)continue;}
-        if(row>=a.detail_scroll+8)return false;
-        if(row>=a.detail_scroll&&ch.style.color==1&&
-           hover_in({x,66+(row-a.detail_scroll)*15,mx(1,advance),15},a.pointer.x,a.pointer.y))return true;
-        x+=advance;
-    }return false;
-}
 static const HitRegion* hover_keyboard_hit(const App&a){
     if(a.library&&a.library_tab==0){for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::LibraryItem&&a.hits[i].value==a.library_selected)return &a.hits[i];}
     if(a.panel==1&&a.pile_control_focus<0){int ids[MaxCards];const unsigned count=a.pile_items(ids);if(unsigned(a.inspect_cursor)<count)for(int i=0;i<a.hit_count;++i)if((a.hits[i].kind==HitKind::DeckCard||a.hits[i].kind==HitKind::InstanceCard)&&a.hits[i].value==ids[a.inspect_cursor])return &a.hits[i];}
@@ -133,14 +114,14 @@ static const HitRegion* hover_keyboard_hit(const App&a){
 bool card_hover_target(const App&a,CardHoverTarget&target){
     target={};if(a.paused||a.help||a.settings_open||a.frontend_confirm||a.character_select||a.map_preview.open||a.status_actor>=0||
         a.detail_item>=0||a.event_reader||a.pointer.held||a.pointer.armed_card>=0||a.keyboard_card>=0||a.map_transition_blocks_pointer())return false;
+    if(a.library&&!a.library_tab&&!a.pointer.visible&&a.card_library.control>=0)return false;
     if(a.detail_card>=0){
         target.card=card_from_token(a.detail_card);target.instance=a.detail_instance;target.deck=a.detail_deck_index;
-        target.facts=a.detail_has_facts?&a.detail_facts:nullptr;target.owner={18,61,94,132};target.detail=true;
+        target.facts=a.detail_has_facts?&a.detail_facts:nullptr;target.owner={82,27,156,186};target.detail=true;
         target.identity=0x40000000u|uint32_t(a.detail_card);
-        if(a.keyword_hover.details)return target.card.kind<CardKinds;
-        if(!a.pointer.visible)return false;
-        if(hover_in(target.owner,a.pointer.x,a.pointer.y))return target.card.kind<CardKinds;
-        if(hover_detail_word(a,target.card)){target.owner={123,66,177,120};return target.card.kind<CardKinds;}return false;
+        // NInspectCardScreen creates its hover-tip set when the displayed
+        // card changes, independent of mouse location or a second hotkey.
+        return target.card.kind<CardKinds;
     }
     if((a.title&&!a.library)||a.deck_candidate>=0||a.game_over_summary||(a.panel&&a.panel!=1)||a.map_window.is_open)return false;
     const HitRegion*h=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):hover_keyboard_hit(a);
@@ -153,7 +134,7 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     if(!h)return false;target.owner={h->x,h->y,h->w,h->h};target.identity=0x100000u|(unsigned(h->kind)<<16)|unsigned(uint16_t(h->value));
     const auto&s=a.game;
     switch(h->kind){
-    case HitKind::LibraryItem:{if(!a.library||a.library_tab!=0)return false;CardKind ids[CardKinds];unsigned n=a.library_items(ids);if(h->value<0||unsigned(h->value)>=n)return false;
+    case HitKind::LibraryItem:{if(!a.library||a.library_tab!=0)return false;CardKind ids[CardKinds];unsigned n=a.library_items(ids);if(h->value<0||unsigned(h->value)>=n||!a.library_card_seen(ids[h->value]))return false;
         target.card={ids[h->value],uint8_t(a.library_upgraded&&card_upgradeable({ids[h->value],0}))};break;}
     case HitKind::DeckCard:if(h->value<0||h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];if(a.panel==1&&!a.pile_tab&&a.pile_upgraded&&card_upgradeable(target.card))target.card.upgraded=1;break;
     case HitKind::InstanceCard:if(h->value<0||h->value>=s.card_count)return false;target.instance=h->value;target.card=s.cards[h->value];break;
@@ -210,6 +191,28 @@ static bool hover_compact_event(const CardHoverTarget&owner){return owner.event_
 static int hover_body_width(const HoverTip&tip,int width,bool compact=false){return mx(16,width-(tip.kind==HoverTipKind::Card&&!compact?61:17));}
 static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,int selected){
     const bool details=owner.detail&&c.a.keyword_hover.details;
+    if(owner.detail&&!details){
+        // Original inspect tips split related cards to the left and text to
+        // the right of HoverTipRect. At 320x240, readable 8px text can need
+        // additional pages; scrolling changes only this presentation.
+        HoverPage out{};int text_page=0,card_page=0,text_y=0,card_y=0;
+        for(unsigned i=0;i<tips.count;++i){char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
+            if(tips.items[i].kind==HoverTipKind::Card){
+                if(card_y+72>190){card_y=0;++card_page;}
+                if(card_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,0,0,{29,27+card_y,53,72}};
+                card_y+=73;continue;
+            }
+            if(!*title||!*body)continue;
+            const int count=c.paragraph(body,0,0,74,0,0,8);int skip=0;
+            while(skip<count){const int need=23+(count-skip)*11;
+                if(190-text_y<34||(need<=190&&need>190-text_y)){text_y=0;++text_page;}
+                const int lines=mn(count-skip,mx(1,(190-text_y-23)/11)),height=23+lines*11;
+                if(text_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,skip,lines,{232,27+text_y,86,height}};
+                text_y+=height+2;skip+=lines;if(skip<count){text_y=0;++text_page;}
+            }
+        }
+        out.pages=mx(text_page,card_page)+1;return out;
+    }
     const HoverRect column=details?HoverRect{13,52,145,139}:keyword_hover_column(owner);
     const int columns=details?2:1;int page=0,lane=0,y=0;HoverPage result{};
     for(unsigned i=0;i<tips.count;++i){char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
@@ -233,11 +236,18 @@ HoverPage card_hover_page(App&a,const CardHoverTarget&owner,const HoverTipList&t
 static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,const HoverPiece&piece){
     const auto&tip=tips.items[piece.tip];const auto&r=piece.box;char title[160]{},body[2048]{};
     format_card_hover_tip(c.a,owner,tip,title,sizeof title,body,sizeof body);
+    const bool inspect=owner.detail&&!c.a.keyword_hover.details;
+    if(inspect&&tip.kind==HoverTipKind::Card){
+        const EventCardFacts canonical{};
+        draw_card_face(c,tip.card,r.x+1,r.y+1,50,70,cost(tip.card),-2,-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
+    }
     int skin=c.a.content.world_image("common",tip.debuff?"HOVER_TIP_DEBUFF":"HOVER_TIP");
     if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,r.x+2,r.y+2,r.w,r.h,28,22,46,16,64);
         c.nine_image(skin,r.x,r.y,r.w,r.h,28,22,46,16);
     }else{c.rect(r.x+2,r.y+2,r.w,r.h,Ink);c.rect(r.x,r.y,r.w,r.h,tip.debuff?rgb(59,35,45):rgb(31,43,49));c.box(r.x,r.y,r.w,r.h,rgb(104,117,115));}
     const uint16_t title_color=rgb(239,200,81),body_color=rgb(255,246,226);
+    if(inspect){c.text_fitted(title,r.x+5,r.y+4,r.w-12,8,title_color,8);
+        c.paragraph(body,r.x+5,r.y+16,r.w-12,piece.lines,piece.skip,8,body_color);return;}
     c.text(title,r.x+7,r.y+5,10,title_color,r.w-16);
     int body_x=r.x+7;
     if(tip.kind==HoverTipKind::Card&&!hover_compact_event(owner)){
@@ -255,10 +265,13 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
 // fitting truncated, so this adds no layout or glyph I/O to a settled hand.
 static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,HoverTipList&tips){
     collect_keyword_hover_tips(c.a,owner,tips);
-    if(owner.detail||owner.event_option>=0||owner.instance<0||c.a.library||c.a.panel||
-       !c.a.hand_can_focus()||!c.a.hand_focus||owner.instance>=c.a.game.card_count)return;
-    const auto&tile=hand_tile(c,owner.instance);
-    if(!tile.description_truncated)return;
+    bool truncated=owner.detail&&c.a.card_inspect.description_truncated;
+    if(!owner.detail){
+        if(owner.event_option>=0||owner.instance<0||c.a.library||c.a.panel||
+           !c.a.hand_can_focus()||!c.a.hand_focus||owner.instance>=c.a.game.card_count)return;
+        truncated=hand_tile(c,owner.instance).description_truncated;
+    }
+    if(!truncated)return;
     if(tips.count==MaxCardHoverTips){--tips.count;tips.overflow=true;}
     for(unsigned i=tips.count;i;i--)tips.items[i]=tips.items[i-1];
     HoverTip full{};full.kind=HoverTipKind::Description;full.key=definitions[owner.card.kind].key;full.card=owner.card;full.instanced=true;
@@ -284,6 +297,10 @@ static void keyword_tooltips(Canvas&c){
         c.hit(12,190,65,13,HitKind::Command,int(Key::Up),a.keyword_hover.page>0);
         c.hit(243,190,65,13,HitKind::Command,int(Key::Down),a.keyword_hover.page+1<page.pages);
         c.hit(78,190,164,13,HitKind::Command,int(Key::Statuses));
+    }else if(owner.detail&&page.pages>1){
+        c.rect(232,219,86,14,Panel);c.centered(footer,232,220,86,8,Gold);
+        c.hit(232,219,35,14,HitKind::Scroll,-1,a.keyword_hover.page>0);
+        c.hit(283,219,35,14,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
     }else if(page.pages>1||owner.event_option>=0){
         const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,14,Panel);c.centered(footer,column.x,foot_y+1,column.w,10,Gold);
     }

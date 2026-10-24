@@ -30,7 +30,7 @@ static void notify_card_generated(State&s,int id){
  world_card_entered(s,id);
 }
 void notify_deck_card_created(State&s,int id,int index){defect_deck_card_created(s,id,index);necro_deck_card_created(s,id,index);event_card_deck_created(s,id,index);}
-void notify_deck_removed(State&s,int index){defect_deck_removed(s,index);necro_deck_removed(s,index);event_card_deck_removed(s,index);}
+void notify_deck_removed(State&s,int index){notify_deck_removing(s,index);defect_deck_removed(s,index);necro_deck_removed(s,index);event_card_deck_removed(s,index);}
 void notify_deck_replaced(State&s,int index){defect_deck_replaced(s,index);necro_deck_replaced(s,index);event_card_deck_replaced(s,index);}
 void notify_deck_copied(State&s,int to,int from){defect_deck_copied(s,to,from);necro_deck_copied(s,to,from);event_card_deck_copied(s,to,from);}
 bool character_deck_description_value(const State&s,Card c,int index,const char*key,int&out){

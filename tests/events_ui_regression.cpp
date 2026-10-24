@@ -19,7 +19,7 @@ static void click(HitRegion h){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_but
 static void action(UiAction cmd){click(hit(HitKind::UiAction,(int)cmd));}
 static int reader_lines(unsigned e){
  char localized[1024];const char*text=a.ui_text(a.content.string(EventTextBase+e*EventTextStride+1),localized,sizeof localized);
- auto metrics=[](const RichChar&ch,int size){int advance=a.content.glyph_metrics(ch.codepoint,size).advance+(ch.style.bold?1:0);return fitted_text::Metric{advance,advance};};
+ auto metrics=[](const RichChar&ch,int size){int advance=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch)).advance;return fitted_text::Metric{advance,advance};};
  // The reader reserves complete English words. Counting glyph wrap alone
  // undercounts Baths (12 instead of 13 lines in the real English pack).
  if(a.content.english()){int lines=fitted_text::line_count(text,277,12,metrics);return lines?lines:1;}
@@ -61,10 +61,17 @@ static void shop(){
   a.pointer_move(166,190);a.pointer_button(true);a.pointer_button(false);CHECK(!a.shop_open);same(before);
  }
  action(UiAction::OpenShop);CHECK(a.shop_open);same(before);a.input(Key::Back);CHECK(!a.shop_open&&!a.paused);same(before);a.input(Key::Confirm);CHECK(a.shop_open);same(before);
+ // The original rug moves from y=-1000 to y=80 over 700 ms. Inspection
+ // assertions below deliberately use its settled geometry after this real
+ // clock, rather than searching for offscreen slots during its first frame.
+ a.advance(250);a.advance(250);a.advance(200);a.render();same(before);
  for(int item=0;item<ShopRemove;item++){
   auto target=hit(HitKind::Choice,item);const auto*resolved=a.hit_at(target.x+target.w/2,target.y+target.h/2);CHECK(resolved&&resolved->kind==HitKind::Choice&&resolved->value==item);a.cursor=item;a.input(Key::Detail);CHECK(item<7?a.detail_card>=0:a.detail_item>=0);same(before);a.input(Key::Back);CHECK(a.shop_open);same(before);
  }
- s.gold=9999;a.cursor=0;a.input(Key::Confirm);CHECK(s.shop_sold&1);before=snap();a.input(Key::Confirm);same(before);
+ s.gold=9999;a.cursor=0;a.input(Key::Confirm);CHECK(s.shop_sold&1);before=snap();
+ // Purchase moves controller focus to the nearest remaining slot. Selecting
+ // the sold slot explicitly still cannot buy it a second time.
+ CHECK(a.cursor!=0);a.cursor=0;a.input(Key::Confirm);same(before);
  a.input(Key::Save);a.input(Key::Back);a.input(Key::Load);CHECK(!a.shop_open&&s.phase==Phase::Shop&&s.hp==55);same(before);action(UiAction::OpenShop);a.input(Key::Back);action(UiAction::LeaveShop);CHECK(s.phase==Phase::Map);
 }
 int main(int argc,char**argv){std::vector<uint8_t>data;if(argc>1){FILE*f=fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=fread(data.data(),1,data.size(),f);fclose(f);CHECK(a.init(data.data(),n,{save_cb,load_cb}));}

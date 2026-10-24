@@ -73,12 +73,40 @@ static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=145)
     c.text_fitted(title,x+8,y+6,width-16,10,Gold,8);
     c.paragraph(body,x+8,y+24,width-16,mx(0,(height-28)/13),0,10,White);
 }
+static const HitRegion* hud_focused_hit(const App&a){
+    if(a.hud_focus<0||a.pointer.visible)return nullptr;
+    const int slots=int(potion_slot_count(a.game));
+    const HitKind kind=a.hud_focus>=2&&a.hud_focus<slots+2?HitKind::PotionSlot:HitKind::HudInfo;
+    const int value=kind==HitKind::PotionSlot?a.hud_focus-2:a.hud_focus<2?a.hud_focus:2;
+    for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==kind&&a.hits[i].value==value)return &a.hits[i];
+    return nullptr;
+}
 static void hud_hover_tip(Canvas&c){
-    const auto&a=c.a;if(a.title||a.paused||a.help||a.library||a.settings_open||a.frontend_confirm||!a.pointer.visible||a.detail_card>=0||a.detail_item>=0)return;
-    const auto*h=a.hit_at(a.pointer.x,a.pointer.y);if(!h||!h->enabled)return;
+    const auto&a=c.a;if(a.title||a.paused||a.help||a.library||a.settings_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0)return;
+    const auto*h=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):hud_focused_hit(a);if(!h||!h->enabled)return;
     if(h->kind==HitKind::HudInfo){static const char*keys[]={"HIT_POINTS","MONEY_POUCH","FLOOR"};if(unsigned(h->value)<3)hud_static_tip(c,keys[h->value],h->x);}
     else if(h->kind==HitKind::Command&&h->y==0){const auto key=Key(h->value);const char*name=key==Key::Inspect?"DECK":key==Key::Map?"MAP":key==Key::Back?"SETTINGS":nullptr;if(name)hud_static_tip(c,name,h->x+h->w-145);}
     else if(h->kind==HitKind::OpenPile){const char*name=h->value==1?"DRAW_PILE":h->value==2?"DISCARD_PILE":h->value==3?"EXHAUST_PILE":nullptr;if(name)hud_static_tip(c,name,h->x<160?8:167,h->y<150?85:122);}
+}
+static void hud_deck_count(Canvas&c){
+ auto&a=c.a;char label[16]{};TextBuffer b{label,sizeof label,0};b.number(a.game.deck_count);
+ const int scale=a.deck_count_pulse.observe(a.game.deck_count,a.map_clock_ms),width=c.width(label,8),x=280-width;
+ if(scale==4096){
+  for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text(label,x+dx,12+dy,8,Ink);
+  c.text(label,x,12,8,White);return;
+ }
+ uint16_t pixels[32*14]{};uint8_t alpha[32*14]{};Canvas tile{a,pixels,32,32,14,alpha};
+ const int tx=(32-width)/2;
+ for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)tile.text(label,tx+dx,2+dy,8,Ink);
+ tile.text(label,tx,2,8,White);
+ const Picture picture{reinterpret_cast<const uint8_t*>(pixels),alpha,nullptr,32,14,1};
+ ui_picture_transform(c,picture,x+width/2,17,32*scale/4096,14*scale/4096);
+}
+static int hud_potion_shake(const App&a){
+ const auto&m=a.potion_belt_motion;if(!m.failed)return 0;const unsigned age=a.map_clock_ms-m.failed_at;if(age>=500)return 0;
+ const int phase=int(age)*4096/500;
+ const int value=2*CombatCardMotion::sine(phase*5)*CombatCardMotion::sine(phase/2),unit=3*1024*1024;
+ return value<0?-((-value+unit/2)/unit):(value+unit/2)/unit;
 }
 static void hud(Canvas&c){
     auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
@@ -98,15 +126,22 @@ static void hud(Canvas&c){
     c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,100,5,25,8,Gold);
     c.hit(85,0,42,22,HitKind::HudInfo,1);
     c.nine_ui(U_TopBarBackdrop,127,1,53,20,7,6,7,6);
+    const unsigned error=c.a.potion_belt_motion.error_alpha(c.a.map_clock_ms);
+    if(error&&c.a.content.version()>=Ui7ContentVersion)c.nine_ui(I7_PotionErrorBackground,127,1,53,20,7,6,7,6,error);
+    const int shake=hud_potion_shake(c.a);
     const int slots=potion_slot_count(s),width=slots>3?14:17;
     c.a.potion_page=uint8_t(mn(int(c.a.potion_page),(slots-1)/3));
     const int first=int(c.a.potion_page)*3,visible=mn(slots-first,3);
     for(int i=0;i<visible;i++){
-        int x=128+i*width;const int slot=first+i;Potion potion=potion_at(s,slot);
+        int x=128+i*width+shake;const int slot=first+i;Potion potion=potion_at(s,slot);
+        const bool focused=hud_pointer_inside(c.a,x,width)||(!c.a.pointer.visible&&c.a.hud_focus==slot+2&&!c.a.paused&&!c.a.settings_open&&!c.a.frontend_confirm&&c.a.detail_card<0&&c.a.detail_item<0);
+        auto&holder=c.a.potion_belt_motion.holders[slot];const int scale=holder.observe(focused,potion!=Potion::Empty,c.a.map_clock_ms);
+        int bounce=0;if(holder.bouncing){const unsigned t=c.a.map_clock_ms-holder.bounce;const int phase=t<125?int(t)*1024/125:1024+int(t-125)*1024/125;bounce=(8*CombatCardMotion::sine(phase)+1536)/(3*1024);}
+        const int pw=mx(1,(width-3)*scale/4096),ph=mx(1,18*scale/4096);
         const unsigned age=c.a.map_clock_ms-c.a.potion_removed_start;
         const bool removing=c.a.potion_removed!=Potion::Empty&&c.a.potion_removed_slot==slot&&age<(c.a.potion_removed_discard?400u:200u);
-        if(potion!=Potion::Empty){if(!c.a.reward_pickup_hidden(RewardPickupKind::Potion,slot))c.picture(c.a.content.potion_image(potion),x+1,2,width-3,18);}
-        else if(c.a.content.ui_image(U_PotionPlaceholder)>=0){const unsigned alpha=age<200&&c.a.potion_removed_slot==slot?0:age<400&&c.a.potion_removed_slot==slot?(age-200)*255/200:255;c.ui(U_PotionPlaceholder,x+1,3,width-3,15,alpha);}
+        if(potion!=Potion::Empty){if(!c.a.reward_pickup_hidden(RewardPickupKind::Potion,slot))c.picture(c.a.content.potion_image(potion),x+width/2-pw/2,11-ph/2-bounce,pw,ph);}
+        else if(c.a.content.ui_image(U_PotionPlaceholder)>=0){const unsigned alpha=age<200&&c.a.potion_removed_slot==slot?0:age<400&&c.a.potion_removed_slot==slot?(age-200)*255/200:255;c.ui(U_PotionPlaceholder,x+width/2-pw/2,10-(15*scale/4096)/2,pw,mx(1,15*scale/4096),alpha);}
         else{c.box(x+4,5,7,12,rgb(92,90,83));c.rect(x+5,2,5,3,Muted);}
         if(removing){
             const int duration=c.a.potion_removed_discard?400:200,t=int(age)*4096/duration;
@@ -124,9 +159,7 @@ static void hud(Canvas&c){
 #endif
     hud_navigation(c,0,U_TopMap,233,216,33,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
     hud_navigation(c,1,U_TopDeck,266,249,34,Key::Inspect,true,c.a.panel==1&&c.a.pile_tab==0);
-    b[0]=0;t.n=0;t.number(s.deck_count);const int count_x=280-c.width(b,8);
-    for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text(b,count_x+dx,12+dy,8,Ink);
-    c.text(b,count_x,12,8,White);
+    hud_deck_count(c);
     hud_navigation(c,2,U_TopSettings,300,283,37,Key::Back,true,c.a.paused);
     if(!c.a.panel&&(combat_phase(s.phase)||s.phase==Phase::Shop||s.phase==Phase::Camp||s.phase==Phase::Reward||s.phase==Phase::WorldRelicChoice||s.phase==Phase::OriginalEventChoice))owned_relic_strip(c);
 

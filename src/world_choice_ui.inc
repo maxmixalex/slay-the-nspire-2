@@ -6,14 +6,14 @@ static const char* world_choice_heading(const State&s){
   case WorldRelicChoice::Remove:return "选择移除的牌";case WorldRelicChoice::Upgrade:return "选择升级的牌";
   case WorldRelicChoice::Transform:return "选择变化的牌";case WorldRelicChoice::Duplicate:return "选择复制的牌";
   case WorldRelicChoice::Enchant:return "选择附魔的牌";case WorldRelicChoice::OfferBundle:return "选择一组卡牌";
-  case WorldRelicChoice::OfferReward:return "选择领取的奖励";case WorldRelicChoice::Potion:return "选择药水槽";
+  case WorldRelicChoice::OfferReward:return "选择领取的奖励";case WorldRelicChoice::Potion:return "战利品";
   default:return "选择卡牌";
  }}
  switch(s.original_events.selection){
   case OriginalEventSelection::Remove:return "选择移除的牌";case OriginalEventSelection::Upgrade:return "选择升级的牌";
   case OriginalEventSelection::Transform:return "选择变化的牌";case OriginalEventSelection::Duplicate:return "选择复制的牌";
   case OriginalEventSelection::Enchant:case OriginalEventSelection::TransferEnchantment:return "选择附魔的牌";
-  case OriginalEventSelection::Rewards:return "选择领取的奖励";case OriginalEventSelection::Potion:return "选择药水槽";
+  case OriginalEventSelection::Rewards:return "选择领取的奖励";case OriginalEventSelection::Potion:return "战利品";
   case OriginalEventSelection::Relic:return "选择遗物";default:return "选择卡牌";
  }
 }
@@ -52,6 +52,21 @@ static void crystal_screen(Canvas&c){
  c.dim(0,214,320,26,185);c.centered("方向键定位 · Enter 占卜 · 空格切换工具",0,219,320,10,White);
 }
 #include "world_reward_choice_ui.inc"
+// Standalone PotionReward uses the same original row as a reward set. The
+// button attempts first-empty procurement; the belt remains interactive so
+// the player can discard a bottle explicitly and retry a TooFull reward.
+static void native_potion_reward_screen(Canvas&c){
+ auto&a=c.a;const Potion bottle=a.world_choice_potion(0);const auto window=a.reward_presentation.window(a.map_clock_ms);
+ Canvas layer=c;layer.opacity=uint8_t(div255(layer.opacity*window.alpha));
+ native_reward_backdrop(layer);native_reward_window(layer,window.y);
+ const int y=79+window.y;const bool selected=a.pointer.visible?a.pointer.x>=97&&a.pointer.x<223&&a.pointer.y>=y-1&&a.pointer.y<y+27:true;
+ native_reward_row(layer,y,selected);layer.picture(a.content.potion_image(bottle),106,y+4,18,18);
+ layer.paragraph_fitted(potion_name(int(bottle),&a.content),128,y+2,88,22,10,selected?Gold:rgb(255,246,226),8);
+ c.hit(97,y-1,126,28,HitKind::WorldChoice,0,potion_definition(bottle));
+ const bool skip=a.world_choice_min()==0;
+ native_proceed(c,209,211,103,27,native_reward_text(a,"gameplay_ui","CHOOSE_CARD_SKIP_BUTTON","跳过"),skip);
+ c.action(205,208,111,32,UiAction::ConfirmWorldChoice,skip);
+}
 static void world_choice_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;a.sync_selection();a.hit_count=0;
  if(s.phase==Phase::OriginalEventChoice&&s.original_events.selection==OriginalEventSelection::Crystal){crystal_screen(c);return;}
@@ -66,13 +81,13 @@ static void world_choice_screen(Canvas&c){
  uint16_t ids[MaxWorldUiChoices];unsigned count=a.world_choice_options(ids,MaxWorldUiChoices);count=mn(int(count),MaxWorldUiChoices);
  a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));
  if(rewards){native_reward_set_screen(c,ids,count);return;}
+ if(potion){native_potion_reward_screen(c);return;}
  if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
  const bool scrolling_cards=!potion&&!relics&&!bundle&&!(offer&&count<=3);
  auto&grid=a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);CardGridPainter painter{c,grid};const int first=scrolling_cards?grid.first():a.cursor/10*10;
  c.dim(0,0,320,240,224);c.centered(world_choice_heading(s),0,6,320,16,Gold);
  char label[128]{};TextBuffer title{label,sizeof label,0,&c.a.content};
- if(potion){unsigned id=relic?w.offers[0]:e.offers[0];const auto*d=potion_definition(Potion(id));title.text(d?d->name:"");}
- else{title.text("已选择 ");title.number(a.choice_selected_count);title.text(" / ");title.number(a.world_choice_max());}
+ {title.text("已选择 ");title.number(a.choice_selected_count);title.text(" / ");title.number(a.world_choice_max());}
  c.centered(label,0,29,320,10,White);
  if(bundle){
   const int first_bundle=a.cursor/2*2;
@@ -80,13 +95,12 @@ static void world_choice_screen(Canvas&c){
    for(int j=0;j<3;j++){unsigned at=ids[i]*3+j;if(at<w.offer_count)small_card(c,card_from_token(w.offers[at]),56+j*79,yy,selected||a.cursor==i,true,0,-2,-2,-1,-1,&w.offer_facts[at]);}
    c.hit(44,yy-2,237,70,HitKind::WorldChoice,ids[i]);
   }
- }else if(potion||relics){
+ }else if(relics){
   for(int i=first;i<mn(int(count),first+10);i++){unsigned at=ids[i];int x=12+(i-first)%5*61,y=48+(i-first)/5*67;
-   const unsigned model=potion?unsigned(potion_at(s,at)):e.offers[at];bool selected=world_selected(a,at);
+   const unsigned model=e.offers[at];bool selected=world_selected(a,at);
    if(selected||i==a.cursor)c.box(x-2,y-2,58,65,selected?Green:Gold);
-   c.picture(potion?a.content.potion_image(Potion(model)):a.relic_face_image(model),x+13,y+1,30,34);
-   const auto*pd=potion?potion_definition(Potion(model)):nullptr;
-   const char*name=potion?(pd?pd->name:"空药水槽"):a.relic_title(RelicId(model));
+   c.picture(a.relic_face_image(model),x+13,y+1,30,34);
+   const char*name=a.relic_title(RelicId(model));
    c.paragraph(name,x,y+37,54,2,0,10,White);c.hit(x-2,y-2,58,65,HitKind::WorldChoice,at);
   }
  }else{

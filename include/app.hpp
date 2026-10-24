@@ -25,7 +25,12 @@
 #include "combat_feedback.hpp"
 #include "combat_card_motion.hpp"
 #include "card_grid_scroll.hpp"
+#include "card_library.hpp"
+#include "collection_assets.hpp"
+#include "card_ui7_presentation.hpp"
+#include "card_target_presentation.hpp"
 #include "combat_status.hpp"
+#include "combat_spark_motion.hpp"
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
@@ -33,9 +38,13 @@
 #include "title_assets.hpp"
 #include "frontend_assets.hpp"
 #include "ui6_assets.hpp"
+#include "ui7_assets.hpp"
 #include "reward_presentation.hpp"
 #include "title_particles.hpp"
 #include "ui_preferences.hpp"
+#include "ui_progress.hpp"
+#include "ui_history_presentation.hpp"
+#include "bestiary_presentation.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -64,7 +73,7 @@ class Content {
     // The optional table uses the existing directory tail, never another pool.
     uint8_t* image_pages_{};
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
-    const uint8_t* glyph_record(uint32_t cp,int size)const;
+    const uint8_t* glyph_record(uint32_t cp,int size,unsigned style=0)const;
     Picture image_payload(int id,const uint8_t* supplied,uint32_t supplied_size)const;
 public:
     bool open(const uint8_t*,size_t);
@@ -86,19 +95,19 @@ public:
     static constexpr unsigned image_page_bytes(){return 4096;}
     static constexpr unsigned image_capacity_pages(){return 748;}
     static constexpr unsigned image_capacity_entries(){return 320;}
-    Glyph glyph(uint32_t cp,int size)const;
+    Glyph glyph(uint32_t cp,int size,unsigned style=0)const;
     // Layout uses the resident descriptor only. Measuring a label must not
     // decode/read glyph pixels or evict the glyphs about to be painted.
-    Glyph glyph_metrics(uint32_t cp,int size)const;
+    Glyph glyph_metrics(uint32_t cp,int size,unsigned style=0)const;
     const char* string(int id)const;
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>Ui6ContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
-        const unsigned animations=version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
-        const bool text=version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
+        if(version_<ContentVersion||version_>Ui7ContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        const unsigned animations=version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
     }
     int card_image(int kind)const;
@@ -146,6 +155,9 @@ struct Callbacks {
     // serviced by the host after the current input callback has returned.
     unsigned(*available_languages)()=nullptr;
     bool(*request_language)(unsigned)=nullptr;
+    bool(*load_progress)(UiProgress&)=nullptr;
+    bool(*save_progress)(const UiProgress&)=nullptr;
+    uint32_t(*wall_clock)()=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -200,6 +212,7 @@ struct App {
     RewardPresentation reward_presentation{};
     RewardAcquisitionSnapshot reward_acquisition_snapshot()const;
     void finish_reward_acquisition(const RewardAcquisitionSnapshot&);
+    void observe_deck_removing(const State&,int index);
     void sync_reward_presentation();
     bool reward_pickup_hidden(RewardPickupKind,unsigned)const;
     int reward_gold()const;
@@ -210,6 +223,7 @@ struct App {
     bool settings_open=false,fast_mode=false;
     bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false;
     uint8_t screen_shake=2;
+    bool bestiary_actions_preferred=true;
     bool settings_language_open=false;
     uint8_t settings_language_item=0,settings_top=0;
     void restore_preferences();
@@ -220,6 +234,47 @@ struct App {
     bool reload_language(ResourceSource source);
     void settings_action(UiAction);
     bool settings_input(Key);
+    UiProgress progress{};
+    bool compendium_open=false,statistics_open=false,history_open=false;
+    uint8_t compendium_selection=0,history_index=0;
+    int history_selected=-1;
+    uint32_t progress_page_started=0;
+    UiHistoryScroll progress_page_scroll{};
+    UiMenuTransition compendium_motion[6]{};
+    void open_compendium();
+    void open_statistics();
+    void open_history();
+    void history_select(int direction);
+    bool progress_navigation_input(Key);
+    bool progress_pointer_button(bool,const HitRegion&);
+    void history_pointer(const HitRegion&);
+    bool progress_loaded=false,progress_dirty=false;
+    uint32_t progress_seen_revision=0,progress_remainder_ms=0;
+    uint16_t progress_seen_floor=0,progress_seen_battle=0;
+    uint8_t progress_seen_phase=255;
+    bool progress_seen_ending=false;
+    void restore_progress();
+    bool persist_progress();
+    void begin_progress(bool resumed=false);
+    void sync_progress();
+    void progress_time(uint32_t);
+    void observe_progress_log(Log);
+    void discover_potion(Potion);
+    void observe_enemy_spawned(const State&,unsigned model,uint16_t identity);
+    void finish_progress(bool abandoned=false,const State*source=nullptr);
+    bool bestiary_available()const;
+    bool act_discovered(unsigned region)const;
+    const UiEnemyStatistics& enemy_statistics(unsigned model,int character=-1)const;
+    const UiEnemyStatistics& encounter_statistics(unsigned encounter,int character=-1)const;
+    const UiRunHistory* history_at(unsigned newest_first)const;
+    const UiFloorHistory* current_floor_history(unsigned act,unsigned point)const;
+    BestiaryPresentation bestiary{};
+    bool open_bestiary(bool force=false);
+    bool bestiary_input(Key);
+    bool bestiary_pointer(const HitRegion&);
+    void bestiary_scroll(int rows);
+    unsigned bestiary_move_count()const;
+    unsigned bestiary_entry_model(int row)const;
     uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0,settings_tab=0;
     Character saved_character=Character::Ironclad;
     uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
@@ -285,7 +340,20 @@ struct App {
     int event_reader_scroll=0;
     bool room_input(Key);
     Character selected_character=Character::Ironclad;
-    int library_filter=0,library_sort=0;
+    int library_filter=1,library_sort=0;
+    CardLibraryPresentation card_library{};CollectionPresentation collection{};
+    bool library_search_editing=false;
+    void open_library(int tab);
+    bool library_input(Key);
+    void library_control(int);
+    void library_text(int code);
+    void commit_library_query();
+    bool library_card_seen(CardKind)const;
+    bool library_item_seen(int tab,int index)const;
+    unsigned library_item_character(int tab,int index)const;
+    void prepare_collection();
+    void focus_collection();
+    bool collection_input(Key);
     uint16_t choice_selected[MaxDeck]{};unsigned choice_selected_count=0;uint32_t choice_revision=0;
     bool character_select=false,library=false,reward_cards=false,library_upgraded=false;
     bool grimoire_select=false;
@@ -309,10 +377,16 @@ struct App {
     bool card_target_input(Key);
     int selected_hand_card()const;
     uint8_t potion_menu_item=0,potion_page=0;
+    int hud_focus=-1; // HP, gold, every physical potion holder, floor.
+    TargetReticleMotion hud_focus_reticle{};
     bool potion_targeting=false,potion_removed_discard=false;
     int potion_popup_slot=-1,potion_removed_slot=-1;
     uint32_t potion_popup_start=0,potion_removed_start=0;
     Potion potion_removed=Potion::Empty;
+    PotionBeltMotion potion_belt_motion{};
+    DeckCountPulse deck_count_pulse{};
+    TargetReticleMotion target_reticles[MaxEnemies+2]{};
+    void potion_obtain_failed();
     void open_potion(int slot);
     void close_potion();
     void start_potion_use();
@@ -388,6 +462,7 @@ struct App {
     EnemyPresentation enemy_presentation[MaxEnemies]{};
     CombatFeedback combat_feedback{};
     CombatStatus combat_status{};
+    CombatSparkMotion combat_sparks{};
     CombatCardMotion combat_cards{};
     void begin_combat_feedback(int manual_card=-1);
     void finish_combat_feedback();
@@ -396,6 +471,7 @@ struct App {
     void observe_combat_effect(const State&,Effect);
     void observe_combat_damage(const State&,const CoreDamageResult&);
     void sync_combat_damage();
+    void combat_scene_offset(int&x,int&y)const;
     void observe_power_flash(const State&,int receiver,const char*key);
     void combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,uint32_t end);
     HealthBarValues combat_health(int actor)const;
@@ -450,6 +526,10 @@ struct App {
     uint16_t detail_genetic=0,detail_scythe=0;
     void open_choice_detail(int token);
     int detail_card = -1, detail_scroll = 0, inspect_cursor = 0;
+    CardInspectPresentation card_inspect{};
+    unsigned card_inspect_ids(int*out)const;
+    void bind_card_inspect();
+    void move_card_inspect(int direction);
     KeywordHoverState keyword_hover{};
     void add_hit(int x,int y,int w,int h,HitKind,int value=0,bool enabled=true);
     const HitRegion* hit_at(int x,int y) const;
@@ -476,6 +556,8 @@ struct App {
     unsigned world_choice_min()const;
     unsigned world_choice_max()const;
     bool world_choice_is_card_reward()const;
+    bool world_choice_is_potion_reward()const;
+    Potion world_choice_potion(int id)const;
     unsigned world_choice_page_size()const;
     void toggle_world_choice(int);
     void confirm_world_choice();

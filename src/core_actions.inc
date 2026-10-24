@@ -2,18 +2,29 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 static CoreObserver core_observer{};
 CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
-static void notify_damage_result(const State&s,int receiver,int blocked,int hp_loss,int old_hp,bool fully_blocked,bool block_broken,bool show_zero,bool hurt=true){
+void notify_enemy_spawned(const State&s,unsigned model,uint16_t identity){
+    const CoreObserver observer=core_observer;
+    if(observer.on_enemy_spawned)observer.on_enemy_spawned(observer.context,s,model,identity);
+}
+static void notify_damage_result(const State&s,int receiver,int blocked,int hp_loss,int old_hp,bool fully_blocked,bool block_broken,bool show_zero,bool hurt=true,int shake_damage=-1){
     const CoreObserver observer=core_observer;if(!observer.on_damage)return;
     CoreDamageResult result;result.receiver=int8_t(receiver);result.blocked=blocked;
     result.unblocked=min(old_hp,hp_loss);result.overkill=max(0,hp_loss-old_hp);
     result.flags=uint8_t((fully_blocked?CoreDamageResult::FullyBlocked:0)|(block_broken?CoreDamageResult::BlockBroken:0)|
         (show_zero?CoreDamageResult::ShowZero:0)|(hurt?CoreDamageResult::Hurt:0));
+    if(shake_damage<0)shake_damage=result.unblocked;
+    result.shake_strength=uint8_t(fully_blocked?5:hp_loss>0?(shake_damage<6?5:shake_damage<11?20:40):0);
     observer.on_damage(observer.context,s,result);
 }
 void notify_power_flash(const State&s,int receiver,const char*key){
     const CoreObserver observer=core_observer;
     if(observer.on_power_flash&&combat_phase(s.phase)&&(receiver<0?s.hp>0:receiver<s.enemy_count&&s.enemies[receiver].hp>0))
         observer.on_power_flash(observer.context,s,receiver,key);
+}
+void notify_deck_removing(const State&s,int index){
+    const CoreObserver observer=core_observer;
+    if(observer.on_deck_removing&&index>=0&&index<s.deck_count)
+        observer.on_deck_removing(observer.context,s,index);
 }
 void notify_enemy_animation(const State&s,int slot,const char*trigger){
     const CoreObserver observer=core_observer;

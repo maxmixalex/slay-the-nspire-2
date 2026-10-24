@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "status.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -83,7 +84,7 @@ static void setup(bool practice=true){
     s.enemies[0]=s.enemies[1]={46,46,0,0,0,0};
     for(int i=0;i<18;i++)append({i%2?Strike:Defend,0},Zone::Draw);
     append({Strike,0},Zone::Discard);append({Defend,0},Zone::Discard);
-    a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=false;
+    a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.compendium_open=a.statistics_open=a.history_open=false;
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
     a.reset_presentation();a.callbacks={save_cb,load_cb};a.notice_ticks=0;CHECK(validate(s));settle_fixture_preparation();
 }
@@ -97,29 +98,28 @@ static void tap(HitKind kind,int value){
 }
 static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
 static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
-static void fixture_potion(){CHECK(a.detail_item>=WorldRelicKinds&&lab_potion(a.game,(Potion)(a.detail_item-WorldRelicKinds+1)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
+static void fixture_potion(){CHECK(a.library&&a.library_tab==2&&a.library_selected>=0&&a.library_selected<a.collection.count);CHECK(lab_potion(a.game,Potion(a.collection.ids[a.library_selected]+1)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
 static void open_model(unsigned model,bool upgraded=false){
-    if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
-    action(card_colorless(model)?UiAction::FilterColorless:UiAction::FilterAll);
-    CardKind ids[CardKinds];unsigned count=a.library_items(ids),index=0;
-    while(index<count&&ids[index]!=model)++index;CHECK(index<count);
-    while(a.library_page<(int)index/8)action(UiAction::NextPage);
+    a.open_library(0);
+    const int index=spire_test::library_model_index(a,CardKind(model));CHECK(index>=0);
+    a.library_selected=int(index);CHECK(spire_test::focus_card_grid(a));
     tap(HitKind::LibraryItem,(int)index);CHECK(card_from_token(a.detail_card).kind==model);
     if((card_from_token(a.detail_card).upgraded!=0)!=upgraded)action(UiAction::ToggleCardUpgrade);
 }
 static void open_potion(Potion potion){
-    if(!a.library)a.input(Key::Collection);action(UiAction::LibraryPotions);
-    int index=(int)potion-1;while(a.library_page<index/18)action(UiAction::NextPage);
-    tap(HitKind::LibraryItem,index);CHECK(a.detail_item==WorldRelicKinds+index);
+    a.open_library(2);
+    a.prepare_collection();int index=-1;for(unsigned i=0;i<a.collection.count;++i)if(a.collection.ids[i]==unsigned(potion)-1)index=int(i);CHECK(index>=0);
+    a.progress.discovered_potions[(unsigned(potion)-1)/8]|=uint8_t(1u<<((unsigned(potion)-1)%8));
+    a.library_selected=index;CHECK(spire_test::focus_card_grid(a));tap(HitKind::LibraryItem,index);CHECK(a.detail_item<0&&a.library_selected==index);
 }
 static void acquire_potion(Potion potion){open_potion(potion);fixture_potion();CHECK(!a.library&&a.game.potions[0]==potion);}
-static void drink(){a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Confirm);if(a.potion_targeting)a.input(Key::Confirm);CHECK(a.panel==0);}
+static void drink(){a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4);a.input(Key::Confirm);if(a.potion_targeting)a.input(Key::Confirm);CHECK(a.panel==0);}
 static void modal_only(){
     a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Battlefield);
 }
 static void acquisitions(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))for(unsigned up=0;up<2;up++){
-        setup();auto before=snapshot();a.input(Key::Collection);CHECK(a.library);unchanged(before);
+        setup();auto before=snapshot();a.input(Key::Collection);CHECK(a.compendium_open&&!a.library);unchanged(before);
         open_model(kind,up!=0);modal_only();unchanged(before);int id=a.game.card_count,deck=a.game.deck_count;
         if(real_profile){
             auto portrait=a.content.image(a.content.card_image(kind));CHECK(portrait.pixels&&portrait.w==82&&portrait.h==60);
@@ -151,7 +151,7 @@ static void acquisition_guards(){
 #endif
     setup();open_potion(Potion::ColorlessPotion);locked=snapshot();
 #if SPIRE_DEBUG_COMMANDS
-    action(UiAction::LabPotion);CHECK(!a.library&&a.detail_item<0);
+    a.detail_item=WorldRelicKinds+int(Potion::ColorlessPotion)-1;a.ui_action(UiAction::LabPotion);CHECK(!a.library&&a.detail_item<0);
 #else
     CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(locked);
 #endif
@@ -204,7 +204,7 @@ static void offers(){
         CHECK(cost(a.game,a.game.hand.ids[0])==(cost(a.game.cards[a.game.hand.ids[0]])<0?-1:0)&&!a.game.expansion.potion_active);CHECK(validate(a.game));
         a.input(Key::Load);CHECK(a.game.phase==Phase::ExtendedChoice&&a.choice_selected_count==0);unchanged(before);
         auto h=hit(HitKind::CombatChoice,a.game.expansion.choices.ids[0]);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);
-        a.input(Key::Collection);a.pointer_button(false);CHECK(a.library&&a.choice_selected_count==0);unchanged(before);a.input(Key::Back);
+        a.input(Key::Collection);a.pointer_button(false);CHECK(a.compendium_open&&!a.library&&a.choice_selected_count==0);unchanged(before);a.input(Key::Back);
         a.cursor=1;a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
     }
     setup();open_model(Discovery);fixture_card();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.playing>=0);
@@ -231,9 +231,9 @@ static void pile_choices_and_instances(){
     setup();for(int i=0;i<26;i++)append({Strike,0},Zone::Discard);
     acquire_potion(Potion::LiquidMemories);drink();CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Discard);
     int id=a.game.expansion.choices.ids[22];auto before=snapshot();modal_only();
-    action(UiAction::NextChoicePage);action(UiAction::NextChoicePage);CHECK(a.cursor==20);
+    for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));
     tap(HitKind::CombatChoice,id);a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override==0);
-    a.input(Key::Back);unchanged(before);action(UiAction::PreviousChoicePage);CHECK(a.choice_selected_count==1&&a.choice_selected[0]==id);unchanged(before);
+    a.input(Key::Back);unchanged(before);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected_count==1&&a.choice_selected[0]==id);unchanged(before);
     action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==0);CHECK(validate(a.game));
     setup();int left=append({SovereignBlade,0},Zone::Hand),right=append({SovereignBlade,0},Zone::Hand);
     a.game.expansion.blade_damage[left]=25;a.game.expansion.blade_damage[right]=47;a.game.expansion.turn_cost[left]=1;

@@ -132,10 +132,13 @@ bool perform_step(State&s,const OriginalEventStep&step){auto&e=s.original_events
   e.offer_count=1;e.offers[0]=uint16_t(step.a);return pause_selection(s,OriginalEventSelection::Potion,OriginalEventFilter::Any,0,1,true);
  case OriginalEventOp::ProcurePotion:{
   if(step.a<=0||step.a>PotionKinds||step.b<0||step.b>=int(potion_slot_count(s))||step.c<0||step.c>1)return false;
-  if(!step.c){if(e.step_count>=MaxOriginalEventSteps)return false;for(unsigned i=e.step_count;i>e.step_cursor;i--)e.steps[i]=e.steps[i-1];e.steps[e.step_cursor]={OriginalEventOp::ProcurePotion,step.a,step.b,1};++e.step_count;
-   return potion_at(s,unsigned(step.b))==Potion::Empty||discard_potion(s,step.b);}
-  const bool obtained=procure_potion_at(s,Potion(step.a),unsigned(step.b));if(!obtained&&!has_world_relic(s,WorldRelicSozu))return false;
-  if(e.reward_active&&e.reward_current<e.reward_count){if(obtained)e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;}return true;
+  // Preserve the serialized operation for old pending events, but procurement
+  // never discards an occupied bottle. PotionReward / AddPotionInternal use
+  // the first empty slot; TooFull leaves the same reward available to retry.
+  if(!has_world_relic(s,WorldRelicSozu)&&!procure_potion(s,Potion(step.a))){
+   e.offer_count=1;e.offers[0]=uint16_t(step.a);return pause_selection(s,OriginalEventSelection::Potion,OriginalEventFilter::Any,0,1,true);
+  }
+  if(e.reward_active&&e.reward_current<e.reward_count){e.rewards[e.reward_current].claimed=1;e.reward_current=NoOriginalEventReward;}return true;
  }
  case OriginalEventOp::Select:{
   if(step.a<=0||step.a>=int(OriginalEventSelection::Count)||step.b<0||step.b>=int(OriginalEventFilter::Count)||step.c<0||step.d<0)return false;
@@ -228,10 +231,10 @@ void original_event_resume(State&s){auto&e=s.original_events;
  if(e.selection_committed)apply_selection(s);
  if(e.selection!=OriginalEventSelection::None||world_relic_pending(s)||s.phase==Phase::Error||s.phase==Phase::Dead)return;
  s.phase=Phase::Event;
- // Replacing a bottle is an awaited discard followed by procurement. Finish
- // these saved steps before reopening the enclosing reward set.
- while(e.step_cursor<e.step_count&&e.steps[e.step_cursor].op==OriginalEventOp::ProcurePotion&&!world_relic_pending(s)&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){auto step=e.steps[e.step_cursor++];if(!perform_step(s,step)){fail(s);return;}}
- if(world_relic_pending(s)||s.phase==Phase::Dead||s.phase==Phase::Error)return;
+ // Legacy pending procurement keeps its save representation. A full belt
+ // reopens the unchanged optional reward, before any enclosing continuation.
+ while(e.step_cursor<e.step_count&&e.steps[e.step_cursor].op==OriginalEventOp::ProcurePotion&&e.selection==OriginalEventSelection::None&&!world_relic_pending(s)&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){auto step=e.steps[e.step_cursor++];if(!perform_step(s,step)){fail(s);return;}}
+ if(world_relic_pending(s)||e.selection!=OriginalEventSelection::None||s.phase==Phase::Dead||s.phase==Phase::Error)return;
  if(e.reward_active){reward_menu(s);if(e.reward_active)return;}
  while(e.step_cursor<e.step_count&&!e.combat_pending&&!world_relic_pending(s)&&e.selection==OriginalEventSelection::None&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){
   auto step=e.steps[e.step_cursor++];if(!perform_step(s,step)){fail(s);return;}
@@ -248,7 +251,7 @@ unsigned original_event_eligible(const State&s,uint16_t*out,unsigned capacity){c
  if(!e.active||e.selection==OriginalEventSelection::None||e.selection_committed)return 0;
  if(e.selection==OriginalEventSelection::Rewards){for(unsigned i=0;i<e.reward_count;i++)if(!e.rewards[i].claimed){if(out&&n<capacity)out[n]=uint16_t(i);++n;}return n;}
  if(e.selection==OriginalEventSelection::OfferCard||e.selection==OriginalEventSelection::Relic){for(unsigned i=0;i<e.offer_count;i++){if(out&&n<capacity)out[n]=uint16_t(i);++n;}return n;}
- if(e.selection==OriginalEventSelection::Potion){for(unsigned i=0;i<potion_slot_count(s);i++){if(out&&n<capacity)out[n]=uint16_t(i);++n;}return n;}
+ if(e.selection==OriginalEventSelection::Potion){if(e.offer_count!=1)return 0;if(out&&capacity)out[0]=0;return 1;}
  if(!selection_kind(e.selection))return 0;
  for(unsigned i=0;i<s.deck_count;i++)if(deck_eligible(s,i)){if(out&&n<capacity)out[n]=uint16_t(i);++n;}return n;
 }
@@ -273,15 +276,20 @@ bool original_event_select(State&s,const uint16_t*ids,unsigned count){auto&e=s.o
 }
 bool original_event_potion(State&s,int slot){auto&e=s.original_events;
  if(!e.active||s.phase!=Phase::OriginalEventChoice||e.selection!=OriginalEventSelection::Potion||e.offer_count!=1||slot< -1||slot>=int(potion_slot_count(s))||(!e.select_cancelable&&slot<0))return false;
- Potion potion=Potion(e.offers[0]);if(!potion_definition(potion))return false;
- if(slot>=0){
-  // Acquisition callbacks run even when a full inventory required a decision.
-  // Sozu prevents acquisition before any existing bottle can be discarded.
-  if(has_world_relic(s,WorldRelicSozu)||e.step_count+2>MaxOriginalEventSteps)return false;
-  for(unsigned i=e.step_count;i>e.step_cursor;i--)e.steps[i]=e.steps[i-1];e.steps[e.step_cursor]={OriginalEventOp::ProcurePotion,int16_t(potion),int16_t(slot),0};++e.step_count;
+ const Potion potion=Potion(e.offers[0]);if(!potion_definition(potion))return false;
+ // Nonnegative legacy arguments mean accept, never a replacement slot.
+ // Reject TooFull before changing the saved selection, reward, or RNG.
+ if(slot>=0&&!has_world_relic(s,WorldRelicSozu)){
+  bool room=false;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)room=true;
+  if(!room)return false;
  }
- if(slot<0&&e.reward_active&&e.reward_current<e.reward_count)e.reward_current=NoOriginalEventReward;
- clear_selection(s);original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
+ clear_selection(s);s.phase=Phase::Event;
+ if(slot>=0){
+  if(!procure_potion(s,potion)&&!has_world_relic(s,WorldRelicSozu)){fail(s);return false;}
+  if(e.reward_active&&e.reward_current<e.reward_count)e.rewards[e.reward_current].claimed=1;
+ }
+ if(e.reward_active&&e.reward_current<e.reward_count)e.reward_current=NoOriginalEventReward;
+ original_event_resume(s);++s.revision;return s.phase!=Phase::Error;
 }
 bool original_event_reward(State&s,int index){auto&e=s.original_events;
  if(!e.active||!e.reward_active||s.phase!=Phase::OriginalEventChoice||e.selection!=OriginalEventSelection::Rewards||world_relic_pending(s)||index< -1||index>=int(e.reward_count))return false;

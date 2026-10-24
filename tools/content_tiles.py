@@ -203,7 +203,8 @@ class PackView:
         self.glyphs = [GLYPH.unpack_from(data, self.glyph_at + i * 16) for i in range(ng)]
         previous_glyph = -1
         for cp, offset, px, w, h, advance, encoded in self.glyphs:
-            require(cp <= 0x10ffff and px in (8, 10, 12, 16, 20) and
+            require(cp <= 0x10ffff and 0 < px <= (255 if self.version >= 24 else 32) and
+                    (px & 63) in (8, 10, 12, 16, 20) and
                     0 < w <= 40 and 0 < h <= 40 and advance <= 40,
                     'Invalid glyph geometry')
             glyph_key = (px << 24) | cp
@@ -660,7 +661,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23), 'Tiled reader requires version 15 through 23')
+        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25), 'Tiled reader requires version 15 through 25')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

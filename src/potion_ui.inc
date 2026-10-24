@@ -54,7 +54,7 @@ static void potion_popup_screen(Canvas&c){
     if(tw>=95)potion_tip(layer,a.scroll,tx,28,tw);else potion_tip(layer,a.scroll,mx(4,x-124),28,120);
 }
 static void potion_hover_tip(Canvas&c){
-    auto&a=c.a;if((a.panel&&a.panel!=1&&a.panel!=3)||a.title||a.paused||a.help||a.library||a.settings_open||a.frontend_confirm||!a.pointer.visible||a.detail_card>=0||a.detail_item>=0)return;
-    const auto*h=a.hit_at(a.pointer.x,a.pointer.y);if(!h||h->kind!=HitKind::PotionSlot)return;
-    potion_tip(c,h->value,170,27,145);
+    auto&a=c.a;if((a.panel&&a.panel!=1&&a.panel!=3)||a.title||a.paused||a.help||a.library||a.settings_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0)return;
+    const auto*h=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):hud_focused_hit(a);if(!h||h->kind!=HitKind::PotionSlot)return;
+    potion_tip(c,h->value,mn(171,mx(4,h->x)),33,145);
 }

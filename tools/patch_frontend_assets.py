@@ -113,8 +113,9 @@ def build_art(pck_path, cache):
 
 
 def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
-               input_version=21, version=VERSION, texts=FRONTEND_TEXTS):
-    source = tiles.PackView(data, base_aux, versions=(input_version,), profile=(558, 8192, CLIPS, base_aux))
+               input_version=21, version=VERSION, texts=FRONTEND_TEXTS, base_clips=CLIPS, base_strings=8192,
+               appended_art=None):
+    source = tiles.PackView(data, base_aux, versions=(input_version,), profile=(558, base_strings, base_clips, base_aux))
     old_tiles = tiles.TileReader(source)
     ni, ng, ns, nc, nk, nu = source.counts
     marker_at, marker_length = source.strings[6110]
@@ -131,8 +132,15 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
         tiles.require(len(raw) < tiles.STRING_LIMIT, 'Frontend label exceeds string bound')
         new_strings[slot] = raw
     rows = manifest['images']
-    count = len(rows)
-    tiles.require(count == auxiliary - base_aux and ni + count <= 65535, 'Unexpected frontend extension')
+    clips = manifest.get('clips', [])
+    count, clip_count, added_aux = len(rows), len(clips), auxiliary - base_aux
+    tiles.require(0 <= added_aux <= count and ni + count <= 65535, 'Unexpected frontend extension')
+    auxiliary_rows = manifest.get('auxiliary_rows', list(range(added_aux)))
+    tiles.require(len(auxiliary_rows) == added_aux and all(isinstance(i, int) and 0 <= i < count for i in auxiliary_rows),
+                  'Invalid appended auxiliary image references')
+    for clip in clips:
+        tiles.require(0 <= clip['first'] <= count - clip['count'] and 1 <= clip['count'] <= 256,
+                      'Appended animation lies outside new image directory')
     art_end = min([row[1] for row in source.glyphs] + [row[0] for row in source.strings])
     descriptor_end = old_tiles.descriptors + old_tiles.frame_count * tiles.DESCRIPTOR.size
     tiles.require(art_end % 2 == 0 and descriptor_end <= art_end, 'Invalid art/locale boundary')
@@ -145,10 +153,10 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
             relative, group_size, _raw_at, _shape = struct.unpack_from('<iIII', data, off)
             tiles.require(descriptor_end <= off + relative <= art_end - group_size,
                           'Historical retained group crosses insertion boundary')
-    payload, positions, costs = bytearray(), [], bytearray(data[cost_at:cost_at + ni])
+    payload, entries, costs = bytearray(), [], bytearray(data[cost_at:cost_at + ni])
     for row in rows:
         payload.extend(bytes(len(payload) & 1))
-        positions.append(len(payload))
+        entries.append((len(payload), row['format'], row['bytes']))
         raw = (cache / row['file']).read_bytes()
         tiles.require(len(raw) == row['bytes'] and tiles.sha256(raw) == row['sha256'],
                       'Frontend image changed during relocation')
@@ -158,8 +166,26 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
         tiles.require(0 < pages <= 255, 'Frontend image exceeds decoded-page bound')
         costs.append(pages)
     payload.extend(bytes(len(payload) & 1))
+    if appended_art is not None:
+        tiles.require(len(appended_art['entries']) == len(rows) and
+                      len(appended_art['decoded_sizes']) == len(rows), 'Invalid appended-art layout size')
+        replacement = appended_art['payload']
+        tiles.require(len(replacement) % 2 == 0 and len(replacement) <= len(payload),
+                      'Grouped appended art enlarged or misaligned the payload')
+        for index, (offset, fmt, length) in enumerate(appended_art['entries']):
+            tiles.require(offset % 2 == 0 and 0 <= offset < len(replacement) and
+                          0 < length <= len(replacement)-offset and 0 <= fmt <= 7 and fmt != 6,
+                          'Invalid appended-art image descriptor')
+            tiles.require(costs[ni+index] == (appended_art['decoded_sizes'][index]+4095)//4096,
+                          'Grouped appended image changed decoded cost')
+            if fmt == 7:
+                tiles.require(length == 16, 'Invalid appended retained descriptor')
+                relative, size, _raw_at, _shape = struct.unpack_from('<iIII', replacement, offset)
+                tiles.require(0 <= offset+relative <= len(replacement)-size,
+                              'Appended retained group escapes insertion')
+        payload, entries = bytearray(replacement), appended_art['entries']
     costs.extend(bytes(len(costs) & 1))
-    directory_delta = count * 16 + count * 4
+    directory_delta = count * 16 + clip_count * 16 + added_aux * 4
     cost_delta = len(costs) - ((ni + 1) & ~1)
 
     def shifted(off):
@@ -167,8 +193,10 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
 
     out = bytearray(data[:source.glyph_at])
     out.extend(bytes(count * 16))
-    out.extend(data[source.glyph_at:source.base_end])
-    out.extend(struct.pack('<' + 'I' * count, *range(ni, ni + count)))
+    out.extend(data[source.glyph_at:source.card_at])
+    out.extend(bytes(clip_count * 16))
+    out.extend(data[source.card_at:source.base_end])
+    out.extend(struct.pack('<' + 'I' * added_aux, *(ni + i for i in auxiliary_rows)))
     out.extend(data[source.base_end:cost_at])
     out.extend(costs)
     out.extend(data[old_tiles.descriptors:art_end])
@@ -179,8 +207,9 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     for i, (off, w, h, fmt, length) in enumerate(source.images):
         tiles.IMAGE.pack_into(out, 40 + i * 16, shifted(off), w, h, fmt, length)
     for i, row in enumerate(rows):
-        tiles.IMAGE.pack_into(out, 40 + (ni + i) * 16, insertion + positions[i],
-                             row['width'], row['height'], row['format'], row['bytes'])
+        offset, fmt, length = entries[i]
+        tiles.IMAGE.pack_into(out, 40 + (ni + i) * 16, insertion + offset,
+                             row['width'], row['height'], fmt, length)
     for i, (cp, off, px, w, h, advance, encoded) in enumerate(source.glyphs):
         tiles.GLYPH.pack_into(out, source.glyph_at + count * 16 + i * 16,
                              cp, shifted(off), px, w, h, advance, encoded)
@@ -189,6 +218,9 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     for slot, raw in new_strings.items():
         struct.pack_into('<II', out, source.string_at + count * 16 + slot * 8, len(out), len(raw) - 1)
         out.extend(raw)
+    for i, clip in enumerate(clips):
+        tiles.CLIP.pack_into(out, source.card_at + count * 16 + i * 16,
+                             ni + clip['first'], clip['count'], clip['frame_ms'], *clip['pivot'], 0)
     header[8], header[9], header[14], header[15] = shifted(header[8]), shifted(header[9]), shifted(header[14]), ni + count
     tiles.GLOBAL.pack_into(out, source.base_end + directory_delta, *header)
     for i in range(old_tiles.tile_groups + old_tiles.index_groups):
@@ -200,11 +232,12 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
         global_at, group, offset, length = tiles.DESCRIPTOR.unpack_from(data, at)
         tiles.require(global_at == source.base_end, 'Invalid historical tile descriptor')
         tiles.DESCRIPTOR.pack_into(out, shifted(at), shifted(global_at), group, offset, length)
-    tiles.HEADER.pack_into(out, 0, b'NSP2', version, tiles.REFERENCE, len(out), ni + count, ng, ns, nc, nk, 0)
-    target = tiles.PackView(out, auxiliary, versions=(version,), profile=(nk, ns, nc, auxiliary))
+    tiles.HEADER.pack_into(out, 0, b'NSP2', version, tiles.REFERENCE, len(out), ni + count, ng, ns, nc + clip_count, nk, 0)
+    target = tiles.PackView(out, auxiliary, versions=(version,), profile=(nk, ns, nc + clip_count, auxiliary))
     tiles.TileReader(target)
-    tiles.require(target.clips == source.clips and target.cards == source.cards and target.aux[:nu] == source.aux,
+    tiles.require(target.clips[:nc] == source.clips and target.cards == source.cards and target.aux[:nu] == source.aux,
                   'Historical catalog changed')
+    tiles.require(target.aux[nu:] == [ni + i for i in auxiliary_rows], 'Appended auxiliary mapping changed')
     tiles.require(out[shifted(descriptor_end):insertion] == data[descriptor_end:art_end] and
                   out[insertion + len(payload):original_end] == data[art_end:], 'Historical payload changed')
     tiles.require(out[header[14]:header[14] + ni] == data[cost_at:cost_at + ni], 'Historical decoded costs changed')
@@ -223,13 +256,15 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
         tiles.require(tiles.sha256(decoded[3]) == row['raw_sha256'], 'New image roundtrip differs')
     receipt = dict(schema=1, reference='v0.111.0 / 41cef1ea', input_version=input_version, output_version=version,
                    input_sha256=tiles.sha256(data), output_sha256=tiles.sha256(out),
-                   input_bytes=len(data), output_bytes=len(out), appended_images=count, appended_clips=0,
+                   input_bytes=len(data), output_bytes=len(out), appended_images=count, appended_clips=clip_count,
                    auxiliary_count=auxiliary, unchanged_old_payload=True, unchanged_old_directory_indices=True,
                    unchanged_old_decoded_costs=True, common_art_insertion=art_end,
                    added_common_art_bytes=len(payload), common_art_sha256=tiles.sha256(payload),
                    verified_new_images=count, verified_all_offset_relocations=True, runtime_integrity_scan=False,
                    localized_slots=list(new_strings), added_locale_bytes=len(out)-original_end,
                    unchanged_preexisting_strings=True)
+    if appended_art is not None:
+        receipt['appended_art_grouping'] = appended_art['report']
     return bytes(out), receipt
 
 

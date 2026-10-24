@@ -159,7 +159,7 @@ static void colossal_flower(){
  CHECK(std::strstr(text,"[sine][rainbow freq=0.3 sat=0.8 val=1]")&&std::strstr(text,"[/rainbow][/sine]"));
  RichReader reader(text);RichChar ch{};unsigned colored=0,row=0,x=0,first_row=0;bool finished=false;
  while(reader.next(ch)){
-  CHECK(ch.codepoint!='['&&ch.codepoint!=']');auto glyph=a.content.glyph(ch.codepoint,10);unsigned advance=glyph.advance+(ch.style.bold?1:0);
+  CHECK(ch.codepoint!='['&&ch.codepoint!=']');auto glyph=a.content.glyph(ch.codepoint,10,rich_font_style(ch));unsigned advance=glyph.advance;
   if(ch.codepoint=='\n'||(x&&x+advance>164)){x=0;++row;if(ch.codepoint=='\n')continue;}
   if(ch.style.rainbow){CHECK(!finished&&ch.style.wave);CHECK(ch.style.rainbow_parameters.frequency==300&&ch.style.rainbow_parameters.saturation==800&&ch.style.rainbow_parameters.value==1000&&ch.style.rainbow_parameters.speed==1000);if(!colored)first_row=row;++colored;}
   else if(colored)finished=true;

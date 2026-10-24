@@ -242,7 +242,7 @@ struct CoreDamageResult {
     // receiver convention matches damage commands: -1 player, -2 Osty.
     enum Flag : uint8_t { FullyBlocked=1,BlockBroken=2,ShowZero=4,Hurt=8 };
     int32_t blocked=0,unblocked=0,overkill=0;
-    int8_t receiver=-1;uint8_t flags=0;
+    int8_t receiver=-1;uint8_t flags=0,shake_strength=0;
     int amount()const{return unblocked+overkill;}
 };
 struct CoreObserver {
@@ -255,10 +255,18 @@ struct CoreObserver {
     void(*before_effect)(void*,const State&,Effect)=nullptr;
     void(*on_damage)(void*,const State&,const CoreDamageResult&)=nullptr;
     void(*on_power_flash)(void*,const State&,int,const char*)=nullptr;
+    // Observe the still-intact card/facts before a permanent-deck compaction.
+    // This callback has no return value and cannot change canonical removal.
+    void(*on_deck_removing)(void*,const State&,int)=nullptr;
+    // One notification per newly created combat identity, including summons.
+    // UI statistics must count instances without changing spawned_models.
+    void(*on_enemy_spawned)(void*,const State&,unsigned,uint16_t)=nullptr;
 };
 CoreObserver set_core_observer(CoreObserver);
 void notify_enemy_animation(const State&,int slot,const char* trigger);
 void notify_power_flash(const State&,int receiver,const char* key);
+void notify_deck_removing(const State&,int index);
+void notify_enemy_spawned(const State&,unsigned model,uint16_t identity);
 void record(State&,LogKind,int a=0,int b=0);
 void create_map(State&);
 void finish_room(State&);

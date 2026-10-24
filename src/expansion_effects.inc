@@ -51,14 +51,14 @@ int player_hp_loss(State&s,int amount,bool attack,bool blockable,int card_source
  if(attack)amount=amount*wr_incoming_damage_percent(s,dealer,true)/100;
  if(in_combat&&power_value(s,XPower::Intangible)){if(amount>1)notify_power_flash(s,-1,"INTANGIBLE_POWER");amount=min(1,amount);}
  int absorbed=blockable?min(s.block,amount):0;s.block-=(int16_t)absorbed;int unblocked=amount-absorbed,loss=unblocked;
- const bool redirected=attack&&x.osty_hp;
+ const bool redirected=attack&&x.osty_hp;const int pet_actual=redirected?min(loss,x.osty_hp):-1;
  if(redirected){int old_pet=x.osty_hp,pet=min(loss,x.osty_hp);x.osty_hp-=(int16_t)pet;loss-=pet;
   notify_damage_result(s,-2,0,unblocked,old_pet,false,false,amount==0);necro_osty_hp_lost(s,old_pet);}
  loss=wr_player_hp_loss(s,loss);
  if(loss&&in_combat&&power_value(s,XPower::Buffer)){gain_power(s,XPower::Buffer,-1);loss=0;}
  const int old=s.hp;s.hp=(int16_t)max(0,s.hp-loss);const int actual=old-s.hp;
  if(in_combat)notify_damage_result(s,-1,absorbed,loss,old,blockable&&(absorbed>0||s.block>0)&&(redirected?unblocked:loss)==0,
-  absorbed>0&&s.block==0,amount==0&&!redirected,attack||card_source<0);
+  absorbed>0&&s.block==0,amount==0&&!redirected,attack||card_source<0,pet_actual);
  record(s,LogKind::LoseHp,actual);
  const int flags=(attack?1:0)|(blockable?2:0)|(in_combat?4:0)|(!s.hp?8:0);
  if(in_combat&&world_shared_active(s)){

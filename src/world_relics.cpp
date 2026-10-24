@@ -558,7 +558,7 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
 
 unsigned world_relic_eligible(const State& s,uint16_t* out,unsigned capacity){const auto& w=s.world_relics;unsigned n=0;
  if(w.choice==WorldRelicChoice::None)return 0;
- if(w.choice==WorldRelicChoice::Potion){for(unsigned i=0;i<potion_slot_count(s);i++){if(out&&n<capacity)out[n]=uint16_t(i);++n;}return n;}
+ if(w.choice==WorldRelicChoice::Potion){if(!w.offer_count)return 0;if(out&&capacity)out[0]=0;return 1;}
  if(w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer||w.choice==WorldRelicChoice::OfferReward||w.choice==WorldRelicChoice::OfferBundle){unsigned count=w.choice==WorldRelicChoice::OfferBundle?w.offer_count/3:w.offer_count;for(unsigned i=0;i<count;i++){if(out&&n<capacity)out[n]=uint16_t(i);++n;}return n;}
  if(w.choice==WorldRelicChoice::Hand){for(unsigned i=0;i<w.offer_count;i++){unsigned id=w.offers[i];if(id<s.card_count&&s.zones[id]==Zone::Hand){if(out&&n<capacity)out[n]=uint16_t(id);++n;}}return n;}
  if(w.offer_count&&w.choice==WorldRelicChoice::Enchant){for(unsigned i=0;i<w.offer_count;i++)if(w_deck_eligible(s,w.offers[i])){if(out&&n<capacity)out[n]=w.offers[i];++n;}return n;}
@@ -580,9 +580,15 @@ bool world_relic_select(State& s,const uint16_t* ids,unsigned count){auto& w=s.w
  if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){w.offer_count=0;w.choice_group=w.choice_reward=0;original_event_resume(s);world_resume_room(s);}
  if(s.phase==Phase::Combat)resolve_pending(s);return s.phase!=Phase::Error;
 }
-bool world_relic_potion(State& s,int slot){auto& w=s.world_relics;if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::Potion||slot< -1||slot>=int(potion_slot_count(s))||(slot>=0&&w_first(s,WorldRelicSozu,true)>=0))return false;
- unsigned reward=w.choice_reward;Potion potion=Potion(w.offers[0]);w_clear_choice(s);
- if(slot>=0){w_enqueue(s,WorldRelicOp::ProcurePotion,w.choice_owner,int(potion),slot);if(potion_at(s,unsigned(slot))!=Potion::Empty)w_enqueue(s,WorldRelicOp::DiscardPotion,w.choice_owner,slot);if(reward&&reward<=w.reward_count)w.rewards[reward-1].flags|=1;}
+bool world_relic_potion(State& s,int slot){auto& w=s.world_relics;
+ if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::Potion||slot< -1||slot>=int(potion_slot_count(s)))return false;
+ const unsigned reward=w.choice_reward,owner=w.choice_owner;const Potion potion=Potion(w.offers[0]);if(!potion_definition(potion))return false;
+ if(slot>=0&&!has_world_relic(s,WorldRelicSozu)){
+  bool room=false;for(unsigned i=0;i<potion_slot_count(s);i++)if(potion_at(s,i)==Potion::Empty)room=true;
+  if(!room)return false;
+ }
+ w_clear_choice(s);
+ if(slot>=0){w_enqueue(s,WorldRelicOp::ProcurePotion,owner,int(potion),-1);if(reward&&reward<=w.reward_count)w.rewards[reward-1].flags|=1;}
  w_pump(s);world_relic_resume(s);++s.revision;if(!world_relic_pending(s)&&s.phase!=Phase::Error&&s.phase!=Phase::Dead){original_event_resume(s);world_resume_room(s);}if(s.phase==Phase::Combat)resolve_pending(s);return s.phase!=Phase::Error;
 }
 bool world_relic_can_reroll_reward(const State&s){const auto&w=s.world_relics;if(s.phase!=Phase::WorldRelicChoice||w.choice!=WorldRelicChoice::OfferCard||!w.choice_reward||w.choice_reward>w.reward_count)return false;const auto&r=w.rewards[w.choice_reward-1];return r.group&&r.kind==1&&!(r.flags&1)&&(r.flags&16);}

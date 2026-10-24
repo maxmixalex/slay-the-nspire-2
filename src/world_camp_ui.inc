@@ -48,21 +48,37 @@ static void camp_scene(Canvas&c,bool dark){
  if(a.game.character==Character::Necrobinder)c.clip(AnimOstyCamp,247,100,a.animation*33,false);
  if(!dark){c.picture(a.content.ui_image(U_CampFlames)+int((a.animation*33/125)%160),130,76,46,58);c.picture(A_CampFire,128,111,55,34);}
 }
+static void camp_icon(Canvas&c,int image,int x,int y,int w,int h,bool enabled,unsigned value){
+ small_material_icon(c,image,x,y,w,h,enabled?1000:0,enabled?value:600);
+}
 static void native_camp_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;uint8_t options[MaxWorldRestOptions];const unsigned count=a.camp_options(options,MaxWorldRestOptions);
  const unsigned selected=camp_selected(a,options,count),first=selected/4*4,shown=mn(4,int(count-first));if(count)a.cursor=options[selected];camp_scene(c,count==0);
+ auto&motion=a.room_presentation.rest;uint32_t mask=0;for(unsigned i=0;i<count;++i)mask|=1u<<options[i];motion.observe(mask,a.map_clock_ms);
  if(count){
   // RestSiteRoom keeps Header, ChoicesContainer and Description on the same
   // centered axis. Preserve that authored hierarchy at the room camera scale.
   const char*prompt=a.content.world_string("rest_site_ui","PROMPT");c.centered(*prompt?prompt:"休息片刻……",59,52,202,12,White);
   const int step=71,start=(320-int(shown)*50-int(shown-1)*21)/2;
+  const bool available=native_room_input_available(a,Phase::Camp);int focused=-1;
+  Canvas choices=c;choices.opacity=uint8_t(div255(choices.opacity*motion.alpha(a.map_clock_ms)));
+  choices.brightness=uint8_t(div255(choices.brightness*motion.alpha(a.map_clock_ms)));
   for(unsigned i=0;i<shown;++i){const unsigned slot=options[first+i];const char*key=world_rest_option_key(s,slot);const bool enabled=world_rest_option_enabled(s,slot);const int x=start+int(i)*step;
-   if(a.cursor==int(slot))c.ui(U_RestOutline,x-2,73,54,37,enabled?255:130);
-   c.picture(a.content.world_image("rest",key),x,76,50,33,enabled?255:95);
+   const bool hover=available&&(a.pointer.visible?motion.mouse_ready(a.map_clock_ms)&&a.pointer.x>=x-6&&a.pointer.x<x+56&&a.pointer.y>=71&&a.pointer.y<123:a.cursor==int(slot));
+   const bool pressed=hover&&enabled&&a.pointer.held&&a.pointer.captured.kind==HitKind::Choice&&a.pointer.captured.value==int(slot)&&a.pointer.context==a.input_context();
+   const auto sample=motion.buttons[slot].observe(pressed?2:hover?1:0,a.map_clock_ms);if(hover)focused=int(slot);
+   const int w=(50*sample.scale+2048)/4096,h=(33*sample.scale+2048)/4096;
+   const unsigned outline_scale=room_curve::multiply(unsigned(sample.scale),unsigned(sample.outline));
+   const int ow=int((50*outline_scale+2048)/4096),oh=int((35*outline_scale+2048)/4096);
+   Canvas outline=choices;outline.tint_red=255;outline.tint_green=179;outline.tint_blue=0;outline.opacity=uint8_t(div255(outline.opacity*192));
+   outline.picture(a.content.ui_image(U_RestOutline),x+25-ow/2,91-oh/2,ow,oh,255,presentation::Add);
+   camp_icon(choices,a.content.world_image("rest",key),x+(50-w)/2,76+(33-h)/2,w,h,enabled,unsigned(sample.value));
    char title[96]{};TextBuffer b{title,sizeof title,0,&c.a.content};b.text("OPTION_");b.text(key);b.text(".name");const char*name=a.content.world_string("rest_site_ui",title);
-   c.centered(*name?name:key,x-7,110,64,10,enabled?rgb(212,182,91):Muted);c.hit(x-6,71,62,52,HitKind::Choice,int(slot),enabled);
+   choices.centered(*name?name:key,x-7,110+(sample.label*2+9*2048)/(9*4096),64,10,rgb(212,182,91));
+   c.hit(x-6,71,62,52,HitKind::Choice,int(slot),enabled&&motion.mouse_ready(a.map_clock_ms));
   }
-  const unsigned slot=options[selected];const auto option=WorldRestOption(s.world.rest_options[slot]);const bool enabled=world_rest_option_enabled(s,slot);
+  motion.focus(focused,a.map_clock_ms);const unsigned description_alpha=motion.description_alpha(a.map_clock_ms);
+  if(description_alpha){const unsigned slot=unsigned(motion.description);const auto option=WorldRestOption(s.world.rest_options[slot]);const bool enabled=world_rest_option_enabled(s,slot);
   char key[128]{},description[1024]{};TextBuffer b{key,sizeof key,0,&c.a.content};b.text("OPTION_");b.text(world_rest_option_key(s,slot));
   b.text(!enabled&&(option==WorldRestOption::Smith||option==WorldRestOption::Cook)?".descriptionDisabled":".description");a.localized_text("rest_site_ui",key,description,sizeof description,int(option));
   // Rich spans select their own colors. Tint the whole shadow pass so gold
@@ -70,13 +86,15 @@ static void native_camp_screen(Canvas&c){
   // The source RichTextLabel is horizontally centered but top-aligned. The
   // shared card fitter centers both axes, so give it only the actual text
   // height rather than moving this description down inside the 393px box.
-  auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size);const int bold=rich_bold_advance(ch);
-   return fitted_text::Metric{g.advance+bold,mx(int(g.w),int(g.advance))+bold};};
+  auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch));
+   return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
   const auto fit=fitted_text::plan(description,166,78,10,8,metrics);const int text_height=mn(78,fit.rows*fit.step+2);
-  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
+  Canvas description_layer=c;description_layer.opacity=uint8_t(div255(description_layer.opacity*description_alpha));
+  Canvas shadow=description_layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
   shadow.opacity=uint8_t(div255(shadow.opacity*128));
   shadow.paragraph_fitted(description,78,127,166,text_height,fit.size,White,fit.size,true);
-  c.paragraph_fitted(description,77,126,166,text_height,fit.size,rgb(255,246,226),fit.size,true);
+  description_layer.paragraph_fitted(description,77,126,166,text_height,fit.size,rgb(255,246,226),fit.size,true);
+  }
  }
  if(count>4){
   c.text("‹",12,212,16,Gold);c.action(2,204,36,34,UiAction::PreviousCampPage,first>0);c.text("›",117,212,16,Gold);c.action(105,204,36,34,UiAction::NextCampPage,first+shown<count);

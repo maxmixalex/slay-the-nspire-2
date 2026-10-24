@@ -21,6 +21,8 @@ enum class UiAction {
     SettingsLanguage, SettingsLanguageEnglish, SettingsLanguageChinese,
     SettingsLanguageClose, SettingsCardIndices, SettingsTextEffects,
     SettingsKeyboardOnly, SettingsPhobia, SettingsShakeDown, SettingsShakeUp,
-    SettingsReset, SettingsScrollUp, SettingsScrollDown
+    SettingsReset, SettingsScrollUp, SettingsScrollDown,
+    InspectPreviousCard, InspectNextCard,
+    OpenCompendium, OpenBestiary, OpenStatistics, OpenHistory, HistoryPrevious, HistoryNext
 };
 }

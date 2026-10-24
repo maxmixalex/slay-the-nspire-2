@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "status.hpp"
 #include <cstdio>
@@ -66,7 +67,7 @@ static void capture(const char*name){
     for(int y=0;y<240;y++){for(int x=0;x<320;x++){uint16_t p=a.pixels[y*320+x];row[x*3]=(uint8_t)(((p>>11)&31)*255/31);row[x*3+1]=(uint8_t)(((p>>5)&63)*255/63);row[x*3+2]=(uint8_t)((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
 static void start(Character character){
-    new_run(a.game,71,true,character);a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.settings_open=false;
+    new_run(a.game,71,true,character);a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.settings_open=a.compendium_open=a.statistics_open=a.history_open=false;
     a.selected_character=character;a.reset_presentation();
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
     CHECK(a.game.character==character&&a.game.phase==Phase::Combat&&a.game.practice);CHECK(validate(a.game));settle_fixture_preparation();
@@ -85,21 +86,21 @@ static void play_ui(int id){
 static int deck_index(CardKind kind){for(int i=0;i<a.game.deck_count;i++)if(a.game.deck[i].kind==kind)return i;CHECK(false);return -1;}
 static int selected_status(){int ids[StatusKinds];int n=collect_statuses(a.game,a.status_actor,ids);CHECK(a.status_selected>=0&&a.status_selected<n);return ids[a.status_selected];}
 static void directory_and_characters(){
-    const UiAction filters[]={UiAction::FilterIronclad,UiAction::FilterSilent,UiAction::FilterDefect,UiAction::FilterRegent,UiAction::FilterNecrobinder};
+    const int filters[]={1,2,4,5,6};
     for(unsigned character=0;character<CharacterKinds;character++){
-        start((Character)character);a.input(Key::Collection);action(UiAction::LibraryCards);action(filters[character]);
-        CardKind ids[CardKinds];unsigned n=a.library_items(ids);const unsigned expected[]={88,90,90,86,86};CHECK(n==expected[character]);
+        start((Character)character);a.input(Key::Collection);action(UiAction::LibraryCards);CHECK(spire_test::choose_library_pool(a,filters[character]));
+        CardKind ids[CardKinds];unsigned n=a.library_items(ids);const unsigned expected[]={85,86,86,86,86};CHECK(n==expected[character]);
         for(unsigned i=0;i<n;i++)CHECK(card_in_pool(ids[i],(Character)character)||(character==1&&ids[i]==Shiv)||ids[i]>=EventCardBadLuck);
         auto before=snapshot();a.render();unchanged(before);
         if(character==2)capture("defect-library");if(character==3)capture("regent-library");if(character==4)capture("necro-library");
-        a.input(Key::Back);a.character_select=true;
+        a.input(Key::Back);a.input(Key::Back);a.character_select=true;
         if(character==2)capture("defect-character");if(character==3)capture("regent-character");if(character==4)capture("necro-character");
     }
     a.selected_character=Character::Ironclad;a.input(Key::Left);CHECK(a.selected_character==Character::Necrobinder);a.input(Key::Right);CHECK(a.selected_character==Character::Ironclad);
-    start(Character::Regent);a.input(Key::Collection);action(UiAction::FilterAll);CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
-    for(unsigned i=0;i<CardKinds;i++)CHECK(ids[i]==i);
-    a.library_upgraded=true;a.select_library_item(Debris);CHECK(card_from_token(a.detail_card).kind==Debris&&!card_from_token(a.detail_card).upgraded);
-    CHECK(!hit(HitKind::UiAction,(int)UiAction::ToggleCardUpgrade).enabled);auto before=snapshot();a.input(Key::Right);unchanged(before);CHECK(!card_from_token(a.detail_card).upgraded);
+    start(Character::Regent);a.input(Key::Collection);action(UiAction::LibraryCards);const int debris=spire_test::library_model_index(a,Debris);CHECK(debris>=0);
+    a.library_upgraded=true;a.select_library_item(debris);CHECK(card_from_token(a.detail_card).kind==Debris&&!card_from_token(a.detail_card).upgraded);
+    a.render();for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::UiAction||a.hits[i].value!=int(UiAction::ToggleCardUpgrade));
+    auto before=snapshot();a.input(Key::Confirm);unchanged(before);CHECK(card_from_token(a.detail_card).kind==Debris&&!card_from_token(a.detail_card).upgraded);
     fixture_card();CHECK(a.game.cards[a.game.card_count-1].kind==Debris);
     // All eleven generated/status models render correctly from explicit fixtures.
     for(CardKind kind=Dazed;kind<CardKinds;kind++)for(int up=0;up<=(card_upgradeable({kind,0})?1:0);up++){
@@ -126,7 +127,7 @@ static void stars_and_upgraded_transform(){
     // selections must preview the resulting energy and the independent stars.
     start(Character::Regent);clear_hand();a.game.energy=10;target=add({RegentReflect,0});
     play_ui(add({NecroBorrowedTime,0}));a.game.potions[0]=Potion::TouchOfInsanity;
-    wait_action_ready();a.input(Key::Potions);a.input(Key::Confirm);
+    wait_action_ready();a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4);a.input(Key::Confirm);
     CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Free);
     a.open_choice_detail(target);CHECK(a.detail_energy()==1&&a.detail_stars()==0);
     before=snapshot();capture("regent-free-resource-choice");unchanged(before);a.input(Key::Back);
@@ -151,12 +152,12 @@ static void permanent_card_previews(){
         start(character);CardKind kind=character==Character::Defect?DefectGeneticAlgorithm:NecroTheScythe;int index=deck_index(kind);
         if(character==Character::Defect)a.game.defect.genetic_deck[index]=12;else a.game.necro.scythe_deck[index]=27;
         a.game.strength=5;a.game.dexterity=7;a.game.enemies[0].vulnerable=2;
-        a.panel=1;a.pile_tab=0;a.scroll=index/10*10;a.inspect_cursor=index;auto before=snapshot();tap(HitKind::DeckCard,index);
+        a.panel=1;a.pile_tab=0;a.inspect_cursor=index;CHECK(spire_test::focus_card_grid(a));auto before=snapshot();tap(HitKind::DeckCard,index);
         CHECK(a.detail_deck_index==index&&a.detail_instance==-1&&card_from_token(a.detail_card).kind==kind);
         char text[1024]={};a.card_description(a.game.deck[index],0,text,sizeof text,-1,index);CHECK(std::strstr(text,character==Character::Defect?"13":"40"));
         CHECK(!std::strchr(text,'{'));action(UiAction::ToggleCardUpgrade);a.card_description(card_from_token(a.detail_card),0,text,sizeof text,-1,index);
         CHECK(std::strstr(text,character==Character::Defect?"13":"40"));unchanged(before);capture(character==Character::Defect?"genetic-deck-preview":"scythe-deck-preview");
-        a.input(Key::Back);a.input(Key::Back);a.input(Key::Collection);a.open_card_detail({kind,0});a.card_description({kind,0},0,text,sizeof text,-1,index);
+        a.input(Key::Back);a.input(Key::Back);a.input(Key::Collection);action(UiAction::LibraryCards);a.open_card_detail({kind,0});a.card_description({kind,0},0,text,sizeof text,-1,index);
         CHECK(!std::strstr(text,character==Character::Defect?"13":"40"));a.input(Key::Back);a.input(Key::Back);
     }
 }
@@ -180,8 +181,8 @@ static void grimoire_and_relic_width(){
     play_ui(add({NecroForbiddenGrimoire,0}));play_ui(add({NecroForbiddenGrimoire,1}));
     for(int i=0;i<a.game.enemy_count;i++)a.game.enemies[i].hp=1;play_ui(add({DefectSweepingBeam,0}));
     CHECK(a.game.phase==Phase::Reward&&a.game.necro.grimoire_pending==2);capture("necro-grimoire-reward");action(UiAction::RewardGrimoire);
-    int eternal=deck_index(NecroForbiddenGrimoire);a.cursor=eternal;CHECK(!hit(HitKind::Choice,eternal).enabled);auto before=snapshot();a.input(Key::Confirm);CHECK(a.deck_candidate<0);unchanged(before);
-    int index=deck_index(NecroTheScythe);a.cursor=index;tap(HitKind::Choice,index);CHECK(a.deck_candidate_valid());capture("necro-grimoire-confirm");before=snapshot();action(UiAction::CancelDeckChoice);unchanged(before);
+    int eternal=deck_index(NecroForbiddenGrimoire);a.cursor=eternal;CHECK(spire_test::focus_card_grid(a));CHECK(!hit(HitKind::Choice,eternal).enabled);auto before=snapshot();a.input(Key::Confirm);CHECK(a.deck_candidate<0);unchanged(before);
+    int index=deck_index(NecroTheScythe);a.cursor=index;CHECK(spire_test::focus_card_grid(a));tap(HitKind::Choice,index);CHECK(a.deck_candidate_valid());capture("necro-grimoire-confirm");before=snapshot();action(UiAction::CancelDeckChoice);unchanged(before);
     a.cursor=index;tap(HitKind::Choice,index);unsigned deck=a.game.deck_count;int gold=a.game.gold;action(UiAction::ConfirmDeckChoice);
     CHECK(a.game.deck_count==deck-1&&a.game.gold==gold&&a.game.necro.grimoire_pending==1&&a.grimoire_select);
     deck=a.game.deck_count;action(UiAction::SkipGrimoire);CHECK(a.game.deck_count==deck&&!a.game.necro.grimoire_pending&&!a.grimoire_select);CHECK(validate(a.game));

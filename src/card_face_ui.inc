@@ -1,6 +1,23 @@
+// The original unknown portrait is a separable Gaussian with a 32-texel
+// radius. At the library's 53/67px card sizes its projected support is three
+// pixels; a normalized seven-tap kernel keeps that blur local and bounded.
+static void library_blurred_portrait(Canvas&c,int image,const card_face::Rect&r){
+    if(r.w<=0||r.h<=0||r.w>80||r.h>80)return;
+    uint16_t pixels[80*80]{},line[80];Canvas tile=c;tile.pixels=pixels;tile.pitch=r.w;tile.clip_w=r.w;tile.clip_h=r.h;
+    tile.coverage=nullptr;tile.opacity=tile.brightness=tile.tint_red=tile.tint_green=tile.tint_blue=255;
+    tile.picture(image,0,0,r.w,r.h);
+    static constexpr unsigned weights[]={1,6,15,20,15,6,1};
+    auto sample=[&](int at,int size){unsigned red=0,green=0,blue=0;
+        for(int k=-3;k<=3;++k){const uint16_t color=line[mn(size-1,mx(0,at+k))];const unsigned w=weights[k+3];red+=(color>>11)*w;green+=((color>>5)&63)*w;blue+=(color&31)*w;}
+        return uint16_t(((red+32)/64<<11)|((green+32)/64<<5)|(blue+32)/64);
+    };
+    for(int y=0;y<r.h;++y){for(int x=0;x<r.w;++x)line[x]=pixels[y*r.w+x];for(int x=0;x<r.w;++x)pixels[y*r.w+x]=sample(x,r.w);}
+    for(int x=0;x<r.w;++x){for(int y=0;y<r.h;++y)line[y]=pixels[y*r.w+x];for(int y=0;y<r.h;++y)pixels[y*r.w+x]=sample(y,r.h);}
+    c.picture(Picture{reinterpret_cast<const uint8_t*>(pixels),nullptr,nullptr,uint16_t(r.w),uint16_t(r.h),0},r.x,r.y);
+}
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr){
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
@@ -9,13 +26,14 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     auto l=card_face::layout(x,y,w,h);
     // Portrait precedes Frame and PortraitBorder in the original scene.
     // Drawing it last used to cover the frame's lower edge and description.
-    c.picture(a.card_face_image(card,instance,deck,facts),l.portrait.x,l.portrait.y,l.portrait.w,l.portrait.h);
+    if(known)c.picture(a.card_face_image(card,instance,deck,facts),l.portrait.x,l.portrait.y,l.portrait.w,l.portrait.h);
+    else library_blurred_portrait(c,a.card_face_image(card,instance,deck,facts),l.portrait);
     c.picture(a.card_face_frame(card,instance,deck,facts),x,y,w,h);
     c.ui(border,l.border.x,l.border.y,l.border.w,l.border.h);
     int banner=a.content.ui_image(base+4);
     if(banner<0)banner=a.content.ui_image(group==2?U_RareBanner:group==1?U_BigBanner:U_CommonBanner);
     c.picture(banner,l.banner.x,l.banner.y,l.banner.w,l.banner.h);
-    char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(a.content.card_string(card.kind));if(card.upgraded)name.ch('+');
+    char title[160]{};TextBuffer name{title,sizeof title,0,&a.content};name.text(known?a.content.card_string(card.kind):a.content.locale_string("card_library","UNKNOWN.title"));if(known&&card.upgraded)name.ch('+');
     const int title_size=w>=100?12:w>=70?10:8;
     const int title_y=l.title.y+mx(0,(l.title.h-title_size-2)/2);
     c.text_fitted(title,l.title.x,title_y,l.title.w,title_size,card.upgraded?Green:White,8,true,true);
@@ -29,6 +47,7 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     c.text_fitted(type_text,plaque_x+2,l.type.y,plaque_w-4,type_size,White,8,true);
 
     char body[1024]{};
+    if(!known)description=a.content.locale_string("card_library","UNKNOWN.description");
     if(!description){
         if(facts)a.world_card_description(card,-1,body,sizeof body,instance,deck,facts);
         else a.card_description(card,-1,body,sizeof body,instance,deck);
@@ -45,10 +64,11 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     c.picture(a.content.energy_image(card),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;
     const int cost_size=w>=100?12:w>=70?10:8;
-    char cost_text[16]{};TextBuffer cost_value{cost_text,sizeof cost_text,0,&a.content};if(energy==-1)cost_value.ch('X');else cost_value.number(energy);
-    c.energy_label(energy,l.energy.x+(l.energy.w-c.width(cost_text,cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size);
+    char cost_text[16]{};TextBuffer cost_value{cost_text,sizeof cost_text,0,&a.content};if(!known)cost_value.ch('?');else if(energy==-1)cost_value.ch('X');else cost_value.number(energy);
+    if(known)c.energy_label(energy,l.energy.x+(l.energy.w-c.width(cost_text,cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size);
+    else c.text("?",l.energy.x+(l.energy.w-c.width("?",cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size,White);
     const int base_stars=card_star_cost(a.game,card);
-    if(base_stars||(stars!=-2&&stars)){
+    if(known&&(base_stars||(stars!=-2&&stars))){
         c.ui(U_Star,l.star.x,l.star.y,l.star.w,l.star.h);
         const int value=stars==-2?base_stars:stars;char label[16]{};TextBuffer count{label,sizeof label,0,&a.content};if(value<0)count.ch('X');else count.number(value);
         const int px=l.star.x+(l.star.w-c.width(label,8))/2,py=l.star.y+(l.star.h-10)/2;
@@ -101,14 +121,14 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 }
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
-static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr){
+static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true){
     // The 8px energy label has a 1px outline above the energy artwork.
     const int left=x-6,top=y-4;
     const bool supported_size=(w==47&&h==66)||(w==36&&h==50)||(w==44&&h==62);
-    const bool candidate=!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
+    const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
         left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;
-    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated);return;}
+    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated,known);return;}
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     char body[1024]{},localized[1024]{};
     if(!description){

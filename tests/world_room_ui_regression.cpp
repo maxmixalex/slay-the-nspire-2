@@ -3,6 +3,7 @@
 #include "original_events.hpp"
 #include "world_run.hpp"
 #include "world_room_assets.hpp"
+#include "ui_core_observer.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -119,6 +120,8 @@ static void rest_scene_pixel(const char*key){
  CHECK(scene_pixel()==expected);
 }
 static void advance_to(unsigned tick){while(a.animation<tick)a.advance(33);CHECK(a.animation==tick);a.render();}
+static void room_clock(unsigned milliseconds){while(milliseconds){const unsigned step=milliseconds>250?250:milliseconds;a.advance(step);milliseconds-=step;}a.render();}
+static void settle_rest_buttons(){a.render();const auto&m=a.room_presentation.rest;if(!m.mouse_ready(a.map_clock_ms))room_clock(500-(a.map_clock_ms-m.start));}
 static void treasure_alpha(unsigned chest,unsigned collection,unsigned banner,int y=0){
  CHECK(a.treasure_chest_opacity()==chest);CHECK(a.treasure_collection_opacity()==collection);CHECK(a.treasure_banner_opacity()==banner);CHECK(a.treasure_banner_offset()==y);
 }
@@ -141,7 +144,7 @@ static void begin_room(WorldRoom room,reference::ActKind region=reference::ActKi
  new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(a.game,region,0));
  for(unsigned i=0;i<count;i++)add(relics[i]);
  for(unsigned guard=0;guard<120;guard++){
-  if(a.game.world.room_open&&a.game.world.room_type==unsigned(room)&&a.game.world.act_index==act){present();CHECK(validate(a.game));return;}
+  if(a.game.world.room_open&&a.game.world.room_type==unsigned(room)&&a.game.world.act_index==act){present();if(room==WorldRoom::Rest)settle_rest_buttons();CHECK(validate(a.game));return;}
   CHECK(a.game.phase!=Phase::Dead&&a.game.phase!=Phase::Complete&&a.game.phase!=Phase::Error);
   if(world_can_travel(a.game)){uint8_t ids[reference::Columns];unsigned n=world_available_points(a.game,ids,reference::Columns);CHECK(n);CHECK(world_choose_point(a.game,ids[0]));}
   else finish_routing_fixture();
@@ -164,7 +167,7 @@ static void blocked_actions(UiAction action,bool capture_pointer=true){
 static void ordinary_rest(){
  begin_room(WorldRoom::Rest);CHECK(a.camp_options(nullptr,0)==2);a.render();CHECK(choices()==2&&!world_rest_can_proceed(a.game));
  snapshot();a.input(Key::EndTurn);unchanged();click(HitKind::Choice,1);CHECK(a.game.phase==Phase::Upgrade);a.input(Key::Back);CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_used&&!world_rest_can_proceed(a.game));
- a.game.hp=30;present();const int heal_before=a.game.hp;const uint16_t lit=scene_pixel();rest_scene_pixel("OVERGROWTH");capture("rest-overgrowth-choices");click(HitKind::Choice,0);
+ a.game.hp=30;present();settle_rest_buttons();const int heal_before=a.game.hp;const uint16_t lit=scene_pixel();rest_scene_pixel("OVERGROWTH");capture("rest-overgrowth-choices");click(HitKind::Choice,0);
  CHECK(a.game.phase==Phase::Camp&&a.game.hp>heal_before&&a.game.world.room_open&&world_rest_can_proceed(a.game));CHECK(!a.camp_options(nullptr,0));a.render();CHECK(!choices()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
  if(!actual_profile)CHECK(scene_pixel()!=lit);rest_scene_pixel("OVERGROWTH_DARK");capture("rest-overgrowth-completed");blocked_actions(UiAction::LeaveCamp);
  snapshot();CHECK(a.save_current_run());a.advance(250);CHECK(a.load_saved_run());CHECK(a.game.phase==Phase::Camp&&!a.camp_options(nullptr,0));a.render();unchanged();
@@ -391,10 +394,106 @@ static void region_captures(){
   begin_room(WorldRoom::Treasure,e.start,e.act);std::snprintf(name,sizeof name,"treasure-%s-closed",e.name);capture(name);click(UiAction::TreasureOpen);advance_to(a.treasure_open_tick+50);std::snprintf(name,sizeof name,"treasure-%s-open",e.name);capture(name);snapshot();a.render();unchanged();
  }
 }
+static void rest_motion(){
+ begin_room(WorldRoom::Rest);a.room_presentation.rest={};a.pointer_move(310,35);a.render();snapshot();
+ CHECK(!hit(HitKind::Choice,0).enabled&&!a.room_presentation.rest.alpha(a.map_clock_ms));
+ click(HitKind::Choice,0);unchanged();room_clock(250);
+ CHECK(a.room_presentation.rest.alpha(a.map_clock_ms)==223&&!hit(HitKind::Choice,0).enabled);capture("rest-entry-half");
+ room_clock(250);CHECK(hit(HitKind::Choice,0).enabled);unchanged();
+ const auto h=hit(HitKind::Choice,0);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();room_clock(50);
+ CHECK(a.room_presentation.rest.buttons[0].sample(a.map_clock_ms).scale==4506);
+ CHECK(a.room_presentation.rest.description==0&&a.room_presentation.rest.description_alpha(a.map_clock_ms)==255);
+ capture("rest-original-hover");unchanged();
+ // A captured press visibly shrinks; releasing off the icon cannot heal.
+ a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.render();room_clock(250);
+ CHECK(a.room_presentation.rest.buttons[0].sample(a.map_clock_ms).scale<4096);
+ a.pointer_move(310,35);a.pointer_button(false);a.render();unchanged();room_clock(500);
+ CHECK(a.room_presentation.rest.description_alpha(a.map_clock_ms)>0&&a.room_presentation.rest.description_alpha(a.map_clock_ms)<16);
+ room_clock(500);CHECK(!a.room_presentation.rest.description_alpha(a.map_clock_ms));unchanged();
+}
+static void begin_event(OriginalEventId id,Character character=Character::Ironclad){
+ new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-ROOM-UI7"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
+ if(id!=OriginalEventId::Neow){a.game.original_events={};CHECK(world_finish_room(a.game));CHECK(original_event_begin(a.game,id,19,1));}
+ present();a.render();CHECK(a.game.phase==Phase::Event);snapshot();
+}
+static void event_motion(){
+ begin_event(OriginalEventId::AromaOfChaos);const auto&motion=a.room_presentation.event;
+ CHECK(!motion.title_alpha(a.map_clock_ms)&&!motion.body_reveal(a.map_clock_ms));
+ CHECK(choices()==2&&!hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
+ a.input(Key::Confirm);unchanged();room_clock(500);CHECK(!hit(HitKind::Choice,0).enabled);
+ CHECK(hit(HitKind::Choice,0).x==117);room_clock(250);
+ CHECK(motion.title_alpha(a.map_clock_ms)>0&&motion.title_alpha(a.map_clock_ms)<255&&!motion.body_reveal(a.map_clock_ms));
+ capture("event-options-entering");unchanged();room_clock(250);
+ CHECK(motion.title_alpha(a.map_clock_ms)==255&&hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
+ CHECK(motion.body_reveal(a.map_clock_ms)>motion.body_progress(a.map_clock_ms));
+ room_clock(200);CHECK(hit(HitKind::Choice,1).enabled);unchanged();room_clock(550);
+ CHECK(motion.body_reveal(a.map_clock_ms)==4096);capture("event-typewriter-complete");
+ const uint32_t entered=motion.start;a.input(Key::Detail);CHECK(a.event_reader);room_clock(125);a.input(Key::Back);a.render();
+ CHECK(!a.event_reader&&motion.start==entered);unchanged();
+ // Single-player release selects immediately: the source's .3 s flash is
+ // only awaited for shared multiplayer choices, which this port excludes.
+ click(HitKind::Choice,1);CHECK(a.game.phase==Phase::OriginalEventChoice);
+ begin_event(OriginalEventId::AromaOfChaos);a.fast_mode=true;a.room_presentation.event={};a.render();snapshot();
+ room_clock(500);CHECK(hit(HitKind::Choice,0).enabled&&!hit(HitKind::Choice,1).enabled);
+ room_clock(100);CHECK(hit(HitKind::Choice,1).enabled);unchanged();a.fast_mode=false;
+ begin_event(OriginalEventId::Neow);CHECK(a.room_presentation.event.ancient);a.input(Key::Confirm);unchanged();room_clock(800);
+ CHECK(a.game.phase==Phase::Event&&a.room_presentation.event.start+800==a.map_clock_ms);room_clock(200);
+ CHECK(choices()>=2);capture("ancient-source-dialogue-layout");unchanged();
+}
+static void merchant_motion_and_pickups(){
+ begin_room(WorldRoom::Shop);a.game.gold=9999;a.render();snapshot();click(UiAction::OpenShop);CHECK(a.shop_open);
+ const uint32_t began=a.map_clock_ms;CHECK(a.room_presentation.merchant.y(began)==-222);CHECK(!choices());unchanged();
+ room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)>0&&a.room_presentation.merchant.y(a.map_clock_ms)<18);capture("merchant-rug-half-open");unchanged();
+ room_clock(350);CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==18);
+ constexpr int centers[]={44,102,160,218,277,58,119};
+ for(int i=0;i<ShopCardCount;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==centers[i]&&h.w==54&&h.h==85&&h.y+h.h<=235);}
+ room_clock(300);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)==204);capture("merchant-source-scale");unchanged();
+ auto h=hit(HitKind::Choice,4);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();room_clock(250);room_clock(250);
+ CHECK(a.room_presentation.merchant.focused==4&&a.room_presentation.merchant.scale(4,a.map_clock_ms)==800);
+ CHECK(a.room_presentation.merchant.hand_x/16>240);capture("merchant-pointing-hand");unchanged();
+ a.pointer_move(310,35);a.render();room_clock(250);CHECK(a.room_presentation.merchant.scale(4,a.map_clock_ms)>650&&a.room_presentation.merchant.scale(4,a.map_clock_ms)<660);
+ room_clock(250);CHECK(a.room_presentation.merchant.scale(4,a.map_clock_ms)==650);unchanged();
+ // The actual purchase creates one bounded card pickup; nested key/pointer
+ // observation cannot duplicate it or change saved rules/RNG.
+ static State oracle;static SaveData expected;CHECK(load(oracle,before.bytes,before.size));CHECK(buy(oracle,0));CHECK(save(oracle,expected));
+ const auto count=a.game.deck_count;click(HitKind::Choice,0);CHECK(a.game.deck_count==count+1);
+ CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,expected.size));
+ unsigned flights=0;for(const auto&f:a.reward_presentation.flights)flights+=f.kind==RewardPickupKind::Card;CHECK(flights==1&&a.cursor!=0);
+ snapshot();room_clock(150);capture("merchant-card-pickup");unchanged();
+ click(UiAction::CloseShop);CHECK(!a.shop_open);a.render();CHECK(!choices());room_clock(500);
+ CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)>0);room_clock(300);
+ CHECK(!a.room_presentation.merchant.visible(a.map_clock_ms)&&!a.room_presentation.merchant.alpha(a.map_clock_ms));unchanged();
+}
+static void fake_merchant_layout(){
+ begin_event(OriginalEventId::FakeMerchant);a.game.gold=9999;a.render();snapshot();
+ CHECK(!a.shop_open&&!choices()&&exists(HitKind::UiAction,int(UiAction::OpenShop))&&exists(HitKind::UiAction,int(UiAction::LeaveShop)));
+ capture("fake-merchant-closed");click(UiAction::OpenShop);CHECK(a.shop_open);room_clock(1000);CHECK(choices()==6);
+ constexpr int x[]={166,227,137,197,272,156},y[]={66,82,132,147,128,206};
+ for(int i=0;i<6;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==x[i]&&h.y+17==y[i]&&h.enabled);}
+ CHECK(!exists(HitKind::UiAction,int(UiAction::LeaveShop)));capture("fake-merchant-inventory");unchanged();
+ const unsigned relics=ui_owned_relic_count(a.game);click(HitKind::Choice,0);CHECK(ui_owned_relic_count(a.game)==relics+1&&a.game.original_events.offers[0]==NoWorldRelic);a.render();
+ CHECK(!hit(HitKind::Choice,0).enabled&&a.room_presentation.merchant.dialogue==0);
+ snapshot();click(UiAction::CloseShop);CHECK(!a.shop_open);room_clock(800);unchanged();click(UiAction::LeaveShop);
+ CHECK(a.map_window.is_open&&!a.game.original_events.active);
+}
+static void direct_removal_preview(){
+ begin_event(OriginalEventId::SlipperyBridge);const unsigned index=unsigned(a.game.original_events.values[1]);CHECK(index<a.game.deck_count);
+ const auto enchant=card_type(a.game,a.game.deck[index],-1,int(index))==CardType::Attack?EventEnchantment::Sharp:EventEnchantment::Nimble;
+ CHECK(event_card_enchant(a.game,int(index),enchant,7));a.render();room_clock(1800);
+ const Card removed=a.game.deck[index];const EventCardFacts facts=a.game.event_cards.deck[index];char description[1024]{};
+ a.card_description(removed,-1,description,sizeof description,-1,int(index),&facts);snapshot();
+ static State oracle;static SaveData expected;CHECK(load(oracle,before.bytes,before.size));CHECK(original_event_choose(oracle,0));CHECK(save(oracle,expected));
+ click(HitKind::Choice,0);CHECK(a.reward_presentation.removed.active&&card_token(a.reward_presentation.removed.card)==card_token(removed));
+ CHECK(a.reward_presentation.removed.facts.enchantment_amount==7&&!std::strcmp(a.reward_presentation.removed.description,description));
+ CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,expected.size));
+ snapshot();room_clock(250);capture("event-direct-card-removal");unchanged();room_clock(1450);
+ CHECK(!a.reward_presentation.removed.alive(a.map_clock_ms));unchanged();
+}
 int main(int argc,char**argv){
  std::vector<uint8_t>data;actual_profile=argc>1;if(actual_profile){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));CHECK(a.content.current_profile());
  ordinary_rest();rest_actor_layers();combat_backgrounds();paged_tent();closed_chest();opening_and_reload();holder_entry();actual_claim();restored_claim();empty_chest();treasure_clock_wrap();region_captures();
+ rest_motion();event_motion();merchant_motion_and_pickups();fake_merchant_layout();direct_removal_preview();
  const uint32_t presentation_random=a.treasure_random;
  a.treasure_presentation=3;a.treasure_open_tick=17;a.treasure_banner_tick=19;a.treasure_close_tick=23;a.treasure_chest_from=123;a.treasure_banner_from=456;a.treasure_banner_y=7;a.treasure_holder_delay_us=333333;CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));cleared_treasure();CHECK(a.treasure_random==presentation_random);
  std::printf("world room UI: %u checks passed; %s profile; stable rest choices and real treasure acquisition with presentation-only timing\n",checks,actual_profile?"actual":"synthetic");

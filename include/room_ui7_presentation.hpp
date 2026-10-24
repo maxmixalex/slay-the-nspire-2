@@ -24,6 +24,7 @@ inline unsigned sine_out(uint32_t age,uint32_t duration){
  return samples[index]+(samples[index+1]-samples[index])*fraction/Q;
 }
 inline int back_out(unsigned q){if(q>=Q)return int(Q);const int u=int(q)-int(Q);return int(Q)+(u*u/int(Q))*((11066*u/int(Q))+6970)/int(Q);}
+inline int sine_turn(unsigned phase){const unsigned quadrant=phase/1024%4,within=phase%1024;const int value=int(sine_out(quadrant&1?1024-within:within,1024));return quadrant>=2?-value:value;}
 inline int interpolate(int from,int to,unsigned progress){return from+(to-from)*int(progress)/int(Q);}
 }
 
@@ -32,11 +33,12 @@ struct RoomUi7Presentation {
  struct FocusRecovery {uint32_t start=0;bool recovering=false;};
  struct Merchant {
   static constexpr int ClosedY=-222,OpenY=MerchantInventoryLayout::RugY;
-  uint32_t start=0,hand_return=0,dialogue_start=0,dialogue_serial=0,remove_start=0;
+  uint32_t start=0,hand_return=0,dialogue_start=0,dialogue_serial=0,remove_start=0,failure_start=0,dialogue_random=0x39a719d5u;
+  int16_t dialogue_x=253;
   uint16_t sold_mask=0;
   int16_t from_y=ClosedY;uint16_t from_alpha=0;
   int16_t hand_x=52*16,hand_y=-12*16,target_x=52*16,target_y=-12*16;
-  int8_t focused=-1,dialogue=-1;bool open=false,initialized=false,hand_lingering=false;
+  int8_t focused=-1,dialogue=-1,failed=-1;bool open=false,initialized=false,hand_lingering=false;
   FocusRecovery slots[14]{};
   int y(uint32_t now)const{return room_curve::interpolate(from_y,open?OpenY:ClosedY,open?room_curve::quint_out(now-start,700):room_curve::cubic_out(now-start,500));}
   unsigned alpha(uint32_t now)const{return unsigned(room_curve::interpolate(from_alpha,open?204:0,room_curve::sine_in_out(now-start,open?1000:800)));}
@@ -64,7 +66,19 @@ struct RoomUi7Presentation {
    hand_x=int16_t(int(hand_x)+(int(target_x)-hand_x)*int(weight)/1000);
    hand_y=int16_t(int(hand_y)+(int(target_y)-hand_y)*int(weight)/1000);
   }
-  void speak(int kind,uint32_t now){dialogue=int8_t(kind);dialogue_start=now;++dialogue_serial;}
+  void speak(int kind,uint32_t now){
+   dialogue=int8_t(kind);dialogue_start=now;++dialogue_serial;
+   // Rng.Chaotic is cosmetic in the source. A private presentation stream
+   // keeps its varied line/position behavior without consuming saved RNG.
+   dialogue_random^=dialogue_random<<13;dialogue_random^=dialogue_random>>17;dialogue_random^=dialogue_random<<5;
+   dialogue_x=int16_t(MerchantInventoryLayout::project(450+int(dialogue_random%1001)));
+  }
+  void failure(int item,int kind,uint32_t now){failed=int8_t(item);failure_start=now;speak(kind,now);}
+  int wiggle(unsigned item,uint32_t now)const{
+   const uint32_t age=now-failure_start;if(int(item)!=failed||age>=400)return 0;
+   const unsigned inverse=room_curve::Q-room_curve::linear(age,400),q=2*(room_curve::Q-room_curve::multiply(inverse,inverse));
+   return 2*room_curve::sine_turn(q)/int(room_curve::Q);
+  }
   unsigned dialogue_alpha(uint32_t now)const{
    const uint32_t age=now-dialogue_start;if(dialogue<0||age>=2000)return 0;
    if(age<250)return age*255/250;if(age<1500)return 255;
@@ -79,6 +93,29 @@ struct RoomUi7Presentation {
    return items[item].recovering?5120-room_curve::expo_out(now-items[item].start,500)/4:4096;
   }
  } legend;
+ struct Rest {
+  struct Button {
+   uint32_t start=0;int16_t from_scale=4096,from_outline=3686,from_label=0,from_value=1000;uint8_t state=0;
+   struct Sample {int scale,outline,label,value;};
+   Sample sample(uint32_t now)const{
+    const unsigned q=state==1?room_curve::linear(now-start,50):room_curve::expo_out(now-start,1000);
+    return {room_curve::interpolate(from_scale,state==1?4506:state==2?3686:4096,q),
+      room_curve::interpolate(from_outline,state==1?4096:3686,q),
+      room_curve::interpolate(from_label,state==1?6*4096:0,q),
+      state==1?1200:room_curve::interpolate(from_value,1000,q)};
+   }
+   Sample observe(uint8_t next,uint32_t now){
+    if(next!=state){const auto v=sample(now);from_scale=int16_t(v.scale);from_outline=int16_t(v.outline);from_label=int16_t(v.label);from_value=1200;state=next;start=now;}
+    return sample(now);
+   }
+  } buttons[32]{};
+  uint32_t mask=0,start=0,description_start=0;int8_t focused=-1,description=-1;bool bound=false;
+  void observe(uint32_t next,uint32_t now){if(bound&&mask==next)return;mask=next;start=now;bound=true;focused=description=-1;for(auto&button:buttons)button=Button{};}
+  unsigned alpha(uint32_t now)const{return 255*room_curve::cubic_out(now-start,500)/room_curve::Q;}
+  bool mouse_ready(uint32_t now)const{return now-start>=500;}
+  void focus(int next,uint32_t now){if(next==focused)return;if(next<0)description_start=now;else description=int8_t(next);focused=int8_t(next);}
+  unsigned description_alpha(uint32_t now)const{return description<0?0:focused>=0?255:255-255*room_curve::expo_out(now-description_start,1000)/room_curve::Q;}
+ } rest;
  struct Event {
   struct Button {
    uint32_t start=0;int16_t from_scale=4096,from_shade=191,from_glow=0;uint8_t state=0;

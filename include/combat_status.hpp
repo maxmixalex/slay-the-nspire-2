@@ -37,7 +37,7 @@ struct CombatStatus {
  static constexpr unsigned PopupCapacity=96;
  struct Popup {uint32_t at=0,identity=0;uint16_t id=0;uint8_t actor=0,buff=0,lane=0,removed=0;};
  static constexpr unsigned DamageCapacity=48;
- struct Damage {uint32_t at=0,identity=0;int32_t amount=0;int16_t vx=0,vy=0;uint8_t actor=0,variation=0,flags=0;};
+ struct Damage {uint32_t at=0,identity=0;int32_t amount=0;int16_t vx=0,vy=0;uint8_t actor=0,variation=0,flags=0,shake_strength=0;uint16_t angle=0;};
  Damage damages[DamageCapacity]{};uint8_t damage_count=0;uint32_t cosmetic=0x48a56b39u,pruned_at=UINT32_MAX;
  Popup popups[PopupCapacity]{};uint8_t popup_count=0;
  static constexpr unsigned FlashCapacity=48;
@@ -76,11 +76,11 @@ struct CombatStatus {
   popups[popup_count++]={at,identity,uint16_t(id),uint8_t(actor),uint8_t(buff),uint8_t(lane),uint8_t(removed)};
  }
  unsigned random(){cosmetic^=cosmetic<<13;cosmetic^=cosmetic>>17;cosmetic^=cosmetic<<5;return cosmetic;}
- void damage(unsigned actor,int amount,uint32_t identity,uint32_t at,uint32_t now,uint8_t flags=0){
+ void damage(unsigned actor,int amount,uint32_t identity,uint32_t at,uint32_t now,uint8_t flags=0,uint8_t strength=0){
   expire(now);
   if(damage_count==DamageCapacity){for(unsigned i=1;i<damage_count;++i)damages[i-1]=damages[i];--damage_count;}
   // NDamageNumVfx's chaotic stream never consumes saved combat RNG.
-  damages[damage_count++]={at,identity,amount,int16_t(int(random()%201u)-100),int16_t(-800+int(random()%101u)),uint8_t(actor),uint8_t(random()%101u),flags};
+  damages[damage_count++]={at,identity,amount,int16_t(int(random()%201u)-100),int16_t(-800+int(random()%101u)),uint8_t(actor),uint8_t(random()%101u),flags,strength,uint16_t(random()&4095u)};
  }
  void reset(){head=count=0;overflow=false;}
  void append(unsigned cell,Value value,uint32_t at){

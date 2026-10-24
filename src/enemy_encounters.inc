@@ -51,6 +51,7 @@ static int enemy_create(State&s,EnemyId kind,int slot,int owner=-1,int bonus=0,i
  const int col=world_map_column(s),row=world_map_row(s);m.rng.reset(world_run_seed(s)+(col<0?0:col)+(row<0?0:row)+world_act_index(s)+m.combat_id);
  if(!s.enemy_world.spawned_models[unsigned(kind)]){s.enemy_world.spawned_models[unsigned(kind)]=1;++s.enemy_world.spawned_model_count;}
  if(kind==EnemyId::TwoTailedRat)m.data[3]=-1;
+ notify_enemy_spawned(s,unsigned(kind),m.combat_id);
  return t;
 }
 static void enemy_initial_powers(State&s,int t){

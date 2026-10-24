@@ -47,11 +47,11 @@ void App::forget_run_checkpoint(){run_save_linked=false;confirmed_run={};}
 bool App::refresh_save(){return read_saved(*this)&&has_save;}
 bool App::load_saved_run(){
  if(!read_saved(*this)||!has_save)return false;
- game=frontend_saved_probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);return true;
+ game=frontend_saved_probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;
 }
 bool App::save_current_run(){
  if(!callbacks.save||!callbacks.save(game))return false;
- remember_saved(*this,game);run_save_linked=has_save;return true;
+ remember_saved(*this,game);run_save_linked=has_save;sync_progress();return persist_progress();
 }
 bool App::finish_saved_run(){
  // Starting a run does not associate it with another run already on disk.
@@ -70,7 +70,8 @@ bool App::finish_saved_run(){
  forget_saved(*this);forget_run_checkpoint();return true;
 }
 void App::return_to_title(){
- title=true;paused=library=character_select=help=settings_open=false;frontend_confirm=frontend_choice=0;confirmed_run={};menu=0;
+ persist_progress();
+ title=true;paused=library=character_select=help=settings_open=compendium_open=statistics_open=history_open=false;frontend_confirm=frontend_choice=0;confirmed_run={};menu=0;
  map_preview.open=false;reset_presentation();refresh_save();
 }
 void App::accept_frontend_confirm(){
@@ -79,23 +80,23 @@ void App::accept_frontend_confirm(){
  frontend_confirm=frontend_choice=0;confirmed_run={};pointer_cancel();
  if(action==4){
   UiPreferences defaults{};fast_mode=defaults.fast_mode;show_card_indices=defaults.show_card_indices;
-  text_effects=defaults.text_effects;keyboard_only=defaults.keyboard_only;phobia_mode=defaults.phobia_mode;screen_shake=defaults.screen_shake;
-  settings_language_open=false;persist_preferences();return;
+  text_effects=defaults.text_effects;keyboard_only=defaults.keyboard_only;phobia_mode=defaults.phobia_mode;screen_shake=defaults.screen_shake;bestiary_actions_preferred=defaults.bestiary_actions_preferred;
+  settings_language_open=false;invalidate_hand_tiles();persist_preferences();return;
  }
- if(action==3){cancel_map_travel();quit=true;return;}
+ if(action==3){cancel_map_travel();persist_progress();quit=true;return;}
  if(action==1){
   if(!title)return;
   if(!read_saved(*this)){message("无法读取存档，请重试");return;}
   if(!has_save||!same_run_identity(confirmed,saved_run_identity(frontend_saved_probe))){menu=0;message("存档已变更，请重新确认");return;}
   if(callbacks.clear_save){if(!callbacks.clear_save()){message("无法删除存档，请重试");return;}}
   else if(!callbacks.save||!terminal_probe(frontend_saved_probe)||!callbacks.save(frontend_saved_probe)){message("无法保存终局，请重试");return;}
-  forget_run_checkpoint();forget_saved(*this);menu=0;return;
+  finish_progress(true,&frontend_saved_probe);forget_run_checkpoint();forget_saved(*this);menu=0;return;
  }
  if(action==2&&paused&&resumable_run(game)){
   // RunManager.Abandon guarantees a forced player death; death prevention
   // must not turn the requested abandon into a surviving run.
   if(!finish_saved_run()){message("无法删除存档，请重试");return;}
-  if(resumable_run(game)){player_kill(game,true);resolve_pending(game);}paused=false;reset_presentation();
+  if(resumable_run(game)){player_kill(game,true);resolve_pending(game);}finish_progress(true);paused=false;reset_presentation();
  }
 }
 bool App::frontend_input(Key key){
@@ -107,6 +108,7 @@ bool App::frontend_input(Key key){
  }
  if(help){if(key==Key::Back||key==Key::Confirm)help=false;return true;}
  if(settings_input(key))return true;
+ if(progress_navigation_input(key))return true;
  if(library||character_select||map_preview.open||detail_card>=0||detail_item>=0||status_actor>=0)return false;
  if(title){
   const int count=title_menu_count();if(menu<0||menu>=count)menu=0;
@@ -121,7 +123,7 @@ bool App::frontend_input(Key key){
    case FrontAbandon:
     if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("无法读取存档，请重试");}break;
-   case FrontCompendium:library=true;library_page=library_selected=0;break;
+   case FrontCompendium:open_compendium();break;
    case FrontSettings:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;
    case FrontQuit:frontend_confirm=3;frontend_choice=0;break;
   }}else if(key==Key::Collection||key==Key::ReferenceMap)return false;
@@ -134,7 +136,7 @@ bool App::frontend_input(Key key){
  else if(key==Key::Confirm){switch(menu){
   case 0:paused=false;break;
   case 1:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;
-  case 2:library=true;library_page=library_selected=0;break;
+  case 2:open_compendium();break;
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:
    if(!resumable_run(game)){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}

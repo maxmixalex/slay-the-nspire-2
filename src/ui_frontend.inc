@@ -173,7 +173,7 @@ static void frontend_settings_screen(Canvas&c){
   checkbox(a.keyboard_only,60);c.action(252,60,42,27,UiAction::SettingsKeyboardOnly);
   divider.rect(25,87,270,1,rgb(232,220,190));
   if(a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=60&&a.pointer.y<87)hover=6;
-  const char*keys[]={"INPUT_SETTINGS.INPUT_TITLE.confirm","INPUT_SETTINGS.INPUT_TITLE.endTurn","INPUT_SETTINGS.INPUT_TITLE.viewDeckAndTabLeft","INPUT_SETTINGS.INPUT_TITLE.viewMap"};
+  const char*keys[]={"INPUT_SETTINGS.INPUT_TITLE.confirm","INPUT_SETTINGS.INPUT_TITLE.endTurn","INPUT_SETTINGS.INPUT_TITLE.viewDeck","INPUT_SETTINGS.INPUT_TITLE.viewMap"};
   const char*english_labels[]={"Confirm","End Turn","View Deck","View Map"};
   const char*chinese_labels[]={"确认","结束回合","牌组","地图"};
   const char*bindings[]={"Enter / 5","Space","Tab / Q","M"};
@@ -234,124 +234,9 @@ static void frontend_confirm_screen(Canvas&c){
   c.action(36,151,115,46,UiAction::FrontendCancel);c.action(169,151,115,46,UiAction::FrontendAccept);
  }
 }
-static void character_screen(Canvas&c){
-    auto&a=c.a;a.hit_count=0;
-    int hover=a.pointer.visible?-2:-1;
-    if(a.pointer.visible&&a.pointer.y>=159&&a.pointer.y<207)
-        for(int i=0;i<CharacterKinds;++i)if(a.pointer.x>=157+i*31&&a.pointer.x<188+i*31)hover=i;
-    auto&motion=a.character_select_presentation;motion.observe(true,unsigned(a.selected_character),hover,a.map_clock_ms);
-    const int panel_x=motion.panel_offset(a.map_clock_ms);
-    const auto& definition=character_definitions[(unsigned)a.selected_character];
-    c.ui(character_background(a.selected_character),0,0);
-    int information=a.content.world_image("character","INFO_PANEL");if(information>=0)c.picture(information,panel_x,0,155,209);else c.dim(panel_x,0,150,208,140);
-    const char*title=a.content.world_title("characters",definition.key);c.text_fitted(*title?title:definition.name,panel_x+13,15,134,20,Gold,12);
-    c.picture(A_Heart,panel_x+14,49,13,14);char hp[32]={};TextBuffer h{hp,sizeof hp,0,&a.content};h.number(definition.starting_hp);h.ch('/');h.number(definition.starting_hp);c.text(hp,panel_x+31,48,10,White);
-    // All five pinned single-player models begin with 99 gold.
-    c.picture(A_Coin,panel_x+101,50,12,12);c.num(99,panel_x+116,48,10,Gold);
-    char description_key[96]{},description[1024]{};TextBuffer key{description_key,sizeof description_key,0,&a.content};key.text(definition.key);key.text(".description");a.localized_text("characters",description_key,description,sizeof description);
-    c.paragraph_fitted(*description?description:character_summary(a.selected_character),panel_x+14,73,132,65,10,White);
-    if(const auto*relic=relic_definition(definition.starting_relic)){
-        RelicId id=RelicId(relic-relic_definitions);char text[1024]{};a.relic_description(id,text,sizeof text);
-        c.picture(a.relic_face_image(id),panel_x+14,141,25,25);
-        c.text_fitted(a.relic_title(id),panel_x+46,145,99,12,Gold);
-        c.paragraph_fitted(text,panel_x+14,172,132,34,10,White);
-    }
-    native_close(c,2,212,84,28);c.action(1,209,86,31,UiAction::Back);
-    const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
-    for(int i=0;i<CharacterKinds;i++){
-        int x=159+i*31;bool selected=i==(int)a.selected_character;
-        int outline=a.content.world_image("character","OUTLINE");
-        const int scale=int(motion.portrait_scale(unsigned(i),a.map_clock_ms));
-        const int pw=(36*scale+512)/1024,ph=(40*scale+512)/1024,ow=(33*scale+512)/1024,oh=(47*scale+512)/1024;
-        if(selected&&outline<0){c.rect(x+(27-ow)/2,184-oh/2,ow,oh,rgb(87,68,38));c.box(x+(27-ow)/2,184-oh/2,ow,oh,Gold);}
-        if(selected&&outline>=0)c.picture(outline,x+(27-ow)/2,184-oh/2,ow,oh,motion.outline_alpha(a.map_clock_ms),presentation::Add);
-        c.ui(character_portrait((Character)i),x+(27-pw)/2,184-ph/2,pw,ph,selected||hover==i?255:145);
-        c.action(x-2,159,31,48,actions[i]);
-    }
-    if(a.practice_entry)native_proceed(c,215,212,103,28,"练习");else native_confirm(c,215,212,103,28,"");c.action(213,207,107,33,UiAction::StartCharacter);
-    if(!a.practice_entry){
-        // The pinned character scene owns AscensionPanel directly. Its
-        // ActDropdown is explicitly hidden by ShouldShowActDropdown=false.
-        Canvas panel=c;panel.tint_red=panel.tint_green=panel.tint_blue=0;panel.opacity=128;
-        if(a.content.version()>=RoomUi7ContentVersion)panel.nine_ui(I7_TinyPanel,166,124,142,31,3,3,3,3);
-        else panel.dim(166,124,142,31,128);
-        if(a.selected_ascension){c.ui(I7_SettingsArrowLeft,159,129,10,21);c.action(154,122,21,35,UiAction::RunAscensionDown);}
-        if(a.selected_ascension<10){c.ui(I7_SettingsArrowRight,308,129,10,21);c.action(303,122,17,35,UiAction::RunAscensionUp);}
-        c.ui(U_TopBarAscension,175,127,14,26);c.num(a.selected_ascension,178,137,10,White);
-        char key[40]{};TextBuffer b{key,sizeof key,0};b.text("LEVEL_");b.ch(char('0'+a.selected_ascension/10));b.ch(char('0'+a.selected_ascension%10));b.text(".title");
-        c.text_fitted(frontend_text(a,"ascension",key,a.content.english()?"Ascension":"进阶等级"),194,127,109,10,Gold,8);
-        key[8]=0;b.n=8;b.text(".description");const char*description=a.content.world_string("ascension",key);
-        c.paragraph_fitted(description,194,139,109,16,8,White,8);
-    }
-}
-static void library_screen(Canvas&c){
-    auto&a=c.a;a.hit_count=0;title_background(c,false);c.dim(0,0,320,240,225);
-    c.centered("图鉴",0,1,320,16,Gold);c.close_button(294,3);
-    const char* tabs[]={"卡牌","遗物","药水"};
-    const int totals[]={(int)a.library_items(),WorldRelicKinds,PotionKinds};
-    for(int i=0;i<3;i++){
-        int x=5+i*104;char label[32]={};TextBuffer b{label,sizeof label,0,&a.content};b.text(tabs[i]);b.ch(' ');b.number(i==0?CardKinds:totals[i]);
-        c.ui(U_LibraryCards+i,x+6,24,18,18);c.text(label,x+29,25,10,i==a.library_tab?Gold:Muted);
-        if(i==a.library_tab)c.rect(x+6,43,91,1,Gold);
-        c.action(x,22,104,23,(UiAction)((int)UiAction::LibraryCards+i));
-    }
-    if(a.library_tab==0){
-        const char* filters[]={"全部","铁甲","猎手","故障","储君","亡灵","无色"};
-        const int filter_ids[]={0,1,2,4,5,6,3};
-        const UiAction filter_actions[]={UiAction::FilterAll,UiAction::FilterIronclad,UiAction::FilterSilent,UiAction::FilterDefect,UiAction::FilterRegent,UiAction::FilterNecrobinder,UiAction::FilterColorless};
-        int filter_hover=-1;
-        for(int i=0;i<7;i++){int x=4+i*33;bool selected=a.library_filter==filter_ids[i];if(selected)c.rect(x,46,32,18,rgb(67,54,38));
-            const bool hovered=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+33&&a.pointer.y>=45&&a.pointer.y<64;
-            if(hovered)filter_hover=i;
-            // card_library.tscn uses the same top-panel portraits as the HUD.
-            // Icons leave the full original localized name to its hover tip.
-            const int image=i?a.content.ui_image(i==6?U_ColorlessEnergy:U_TopBarIronclad+i-1):-1;
-            if(image>=0){const int size=hovered?20:18;c.picture(image,x+(32-size)/2,46+(18-size)/2,size,size,selected||hovered?255:150);}
-            else c.text_fitted(filters[i],x+1,48,30,10,selected?Gold:Muted,8,true);
-            c.action(x,45,33,19,filter_actions[i]);}
-        const char* sorts[]={"默认排序","按费用","按类型"};c.centered(sorts[a.library_sort],238,46,79,10,Gold);c.action(237,45,83,19,UiAction::CycleSort);
-        CardKind ids[CardKinds];const int count=int(a.library_items(ids));
-        auto&grid=a.configure_card_grid(CardGridSurface::Library,count);CardGridPainter painter{c,grid};
-        a.library_selected=mn(mx(0,a.library_selected),mx(0,count-1));
-        int portraits[16];unsigned portrait_count=0;
-        for(int i=grid.first();i<grid.last()&&portrait_count<16;++i)
-            portraits[portrait_count++]=a.card_face_image({ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))});
-        a.content.prepare_images(portraits,portrait_count);
-        for(int i=grid.first();i<grid.last();++i){
-            const int x=grid.card_x(i),y=grid.card_y(i);
-            const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
-            painter.card(i,{ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))},hover||(!a.pointer.visible&&i==a.library_selected));
-            painter.hit(i,HitKind::LibraryItem,i);
-        }
-        painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::Library);
-        c.action(108,211,116,29,UiAction::ToggleUpgrades);c.centered(a.library_upgraded?"升级版本 +":"基础版本",108,215,116,12,Green);
-        if(filter_hover>=0){
-            const char*name=filter_hover>0&&filter_hover<6?a.content.world_title("characters",character_definitions[filter_hover-1].key):a.content.ui_text(filters[filter_hover]);
-            if(!*name)name=a.content.ui_text(filters[filter_hover]);
-            const int width=mn(184,mx(92,c.width(name,10)+18)),x=mn(318-width,mx(2,20+filter_hover*33-width/2));
-            const int skin=a.content.world_image("common","HOVER_TIP");
-            if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,70,width,28,28,22,46,16,64);c.nine_image(skin,x,68,width,28,28,22,46,16);}
-            else{c.rect(x,68,width,28,Panel);c.box(x,68,width,28,Muted);}
-            c.text_fitted(name,x+8,75,width-16,10,Gold,8,true);
-        }
-    }else{
-        const int count=totals[a.library_tab];
-        const int last=(count-1)/18;a.library_page=mn(mx(0,a.library_page),last);int first=a.library_page*18;
-        for(int i=first;i<mn(count,first+18);i++){
-            int j=i-first;int x=22+(j%6)*49,y=53+(j/6)*35;bool selected=i==a.library_selected;
-            if(selected){c.rect(x-4,y-2,38,34,rgb(75,58,37));c.box(x-4,y-2,38,34,Gold);}
-            int image=a.library_tab==1?a.relic_face_image(i):a.content.potion_image((Potion)(i+1));
-            c.picture(image,x+2,y,25,29);c.hit(x-5,y-3,47,35,HitKind::LibraryItem,i);
-        }
-        int index=mn(count-1,mx(0,a.library_selected));const char*name;const char*desc;char description[2048]{};
-        if(a.library_tab==1){name=a.relic_title(RelicId(index));a.relic_description(RelicId(index),description,sizeof description);desc=description;}
-        else{name=potion_name(index+1,&a.content);ui_potion_description(a,index+1,description,sizeof description);desc=description;}
-        c.centered(name,10,163,300,16,Gold);c.paragraph(desc,20,189,282,2,0,12,White);
-        c.text("‹",12,215,16,Gold);c.action(0,211,44,29,UiAction::PreviousPage,a.library_page>0);
-        c.text("›",296,215,16,Gold);c.action(277,211,43,29,UiAction::NextPage,a.library_page<last);
-        char page[64]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);c.centered(page,40,222,236,10,Muted);
-    }
-}
+#include "character_select_ui7.inc"
+#include "card_library_ui.inc"
+#include "collection_ui.inc"
 
 static void item_detail_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,190);c.ui(U_RewardPanel,43,26,234,206);

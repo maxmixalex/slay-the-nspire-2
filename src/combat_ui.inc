@@ -229,10 +229,23 @@ static void combat_resource_tooltip(Canvas&c,bool stars){
     c.text(a.content.world_title("static_hover_tips",key),x+6,y+4,10,Gold,148);
     c.paragraph(body,x+6,y+22,148,7,0,10,White);
 }
+#include "combat_sparks_ui7.inc"
 #include "combat_vfx_ui6.inc"
+static void combat_scene_shake(Canvas&c,int first_hit){
+ int dx=0,dy=0;c.a.combat_scene_offset(dx,dy);if(!dx&&!dy)return;
+ // NCombatRoom shakes CombatSceneContainer (background and creatures),
+ // while CombatUi and the foreground VFX container are siblings. Move only
+ // the already-painted scene, before cards/topbar/popups are composed.
+ const int first_y=dy>0?239:22,last_y=dy>0?21:240,step_y=dy>0?-1:1;
+ const int first_x=dx>0?319:0,last_x=dx>0?-1:320,step_x=dx>0?-1:1;
+ for(int y=first_y;y!=last_y;y+=step_y){const int sy=health_bar::bounded(y-dy,22,239);
+  for(int x=first_x;x!=last_x;x+=step_x){const int sx=health_bar::bounded(x-dx,0,319);c.pixels[y*c.pitch+x]=c.pixels[sy*c.pitch+sx];}}
+ for(int i=first_hit;i<c.a.hit_count;++i){c.a.hits[i].x+=dx;c.a.hits[i].y+=dy;}
+}
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
+    const int scene_hits=a.hit_count;
     const int player_x=combat_player_x(s);combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],player_x-31,129,62);
     if(s.expansion.orb_slots){
         const int count=s.expansion.orb_slots,left=mx(3,player_x-count*7);
@@ -263,6 +276,8 @@ static void combat_screen(Canvas&c){
         c.hp(a.combat_health(i+1),a.health_bars[i+1],x-pos.width/2,pos.hp,pos.width);status_strip(c,i+1,x-pos.width/2,pos.status,pos.width);
 
     }
+    combat_scene_shake(c,scene_hits);
+    combat_hit_sparks(c);
     if(s.enemy_world.active)combat_damage_popups(c);
     else for(int i=0;i<=s.enemy_count;i++){
         const int age=int(a.animation)-a.hit_start[i];

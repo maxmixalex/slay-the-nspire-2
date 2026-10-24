@@ -4,7 +4,7 @@ void App::open_potion(int slot){
     if(title||paused||help||library||character_select||slot<0||slot>=int(potion_slot_count(game)))return;
     if(potion_at(game,unsigned(slot))==Potion::Empty)return;
     if(panel==4&&scroll==slot&&!potion_targeting){close_potion();return;}
-    pointer_cancel();panel=4;scroll=slot;potion_page=uint8_t(slot/3);
+    pointer_cancel();hud_focus=-1;panel=4;scroll=slot;potion_page=uint8_t(slot/3);
     potion_targeting=false;potion_menu_item=0;potion_popup_slot=slot;potion_popup_start=map_clock_ms;
     if(!potion_usable()&&can_discard_potion(game,slot))potion_menu_item=1;
 }
@@ -52,6 +52,22 @@ void App::start_potion_use(){
     }else finish_potion_use(target);
 }
 bool App::potion_input(Key key){
+    if(hud_focus>=0&&panel!=4){
+        if(title||paused||help||library||character_select||settings_open||frontend_confirm||status_actor>=0||event_reader){hud_focus=-1;return false;}
+        if(key==Key::Save||key==Key::Load||key==Key::Quit)return false;
+        const int slots=int(potion_slot_count(game));hud_focus=mn(hud_focus,slots+2);
+        if(key==Key::Left||key==Key::Right){
+            hud_focus=mn(mx(0,hud_focus+(key==Key::Left?-1:1)),slots+2);
+            if(hud_focus>=2&&hud_focus<slots+2)potion_page=uint8_t((hud_focus-2)/3);
+            return true;
+        }
+        if(key==Key::Up)return true;
+        if(key==Key::Confirm){if(hud_focus>=2&&hud_focus<slots+2)open_potion(hud_focus-2);return true;}
+        if(key==Key::Detail){if(hud_focus>=2&&hud_focus<slots+2&&potion_at(game,unsigned(hud_focus-2))!=Potion::Empty){detail_owned=-1;detail_item=WorldRelicKinds+int(potion_at(game,unsigned(hud_focus-2)))-1;detail_scroll=0;}return true;}
+        hud_focus=-1;
+        if(key==Key::Back||key==Key::Potions||key==Key::Down)return true;
+        return false;
+    }
     if(panel!=4)return false;
     if(key==Key::Save||key==Key::Load||key==Key::Quit)return false;
     if(key==Key::Map||key==Key::Inspect||key==Key::Relics||key==Key::Log){close_potion();return false;}
@@ -70,4 +86,10 @@ bool App::potion_input(Key key){
     else if(key==Key::Confirm){if(potion_menu_item)ui_action(UiAction::DiscardPotion);else start_potion_use();}
     else if(key==Key::Detail){detail_owned=-1;detail_item=WorldRelicKinds+int(potion_at(game,unsigned(scroll)))-1;detail_scroll=0;}
     return true;
+}
+
+void App::potion_obtain_failed(){
+    if(has_world_relic(game,WorldRelicSozu))return;
+    for(unsigned i=0;i<potion_slot_count(game);++i)if(potion_at(game,i)==Potion::Empty)return;
+    potion_belt_motion.fail(map_clock_ms);
 }

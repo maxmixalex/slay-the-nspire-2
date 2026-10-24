@@ -17,6 +17,7 @@
 #include "card_hud_assets.hpp"
 #include "feedback_assets.hpp"
 #include "frontend_ui7_assets.hpp"
+#include "character_select_layout.hpp"
 #include "card_face_layout.hpp"
 #include "fitted_text.hpp"
 #if SPIRE_DEBUG_COMMANDS
@@ -27,6 +28,7 @@ namespace spire {
 #include "character_ui.inc"
 #include "combat_feedback_ui.inc"
 #include "canvas.inc"
+#include "small_material_ui7.inc"
 static void world_region_image_key(const State&s,char*out,size_t size){
  // Run models retain names such as Overgrowth; both original-image families
  // register uppercase keys. Normalize only at the presentation boundary.
@@ -210,40 +212,11 @@ int App::detail_stars()const{
     }
     return stars;
 }
-static void detail_screen(Canvas&c){
-    auto&a=c.a;Card card=card_from_token(a.detail_card);
-    a.hit_count=0;c.dim(0,0,320,240,170);c.rect(7,22,306,211,Panel);c.box(7,22,306,211,Gold);
-    char title[128]={};TextBuffer name{title,sizeof title,0,&a.content};name.text(a.content.card_string(card.kind));if(card.upgraded)name.text("+");
-    c.text_fitted(title,18,28,270,16,card.upgraded?Green:Gold,10,true);
-    int type=(int)a.card_face_type(card,a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr);
-    char description[2048]={};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.detail_instance,a.detail_deck_index);
-    draw_card_face(c,card,22,62,86,121,a.detail_energy(),a.detail_stars(),a.detail_instance,a.detail_deck_index,a.detail_has_facts?&a.detail_facts:nullptr,description);
-    if(!a.library&&combat_phase(a.game.phase)&&a.detail_instance>=0&&a.detail_instance<a.game.card_count&&
-       a.game.cards[a.detail_instance].kind==card.kind&&a.game.silent.inky[a.detail_instance])c.ui(U_Inky,56,177,18,18);
-    int lines=c.paragraph(description,123,66,177,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-8));
-    c.paragraph(description,123,66,177,8,a.detail_scroll);
-    c.text(card_type_label((CardType)type,&a.content),124,48,10,Muted);
-#if SPIRE_DEBUG_COMMANDS
-    const bool lab=a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
-#else
-    const bool lab=false;
-#endif
-    const bool upgrade_preview=card.upgraded||card_upgradeable(card);
-    if(lab){
-        c.button("返回",11,205,67,false,25);c.hit(9,202,72,31,HitKind::DetailClose);
-        c.button(card.upgraded?"基础":upgrade_preview?"升级":"不可升级",87,205,67,false,25);c.action(84,202,74,31,UiAction::ToggleCardUpgrade,upgrade_preview);
-        const bool room=a.game.card_count<MaxCards;
-        c.button(room?(a.game.hand.count<MaxHand?"加入手牌":"加入弃牌堆"):"卡牌已满",168,205,135,room,25);
-        c.action(163,202,143,31,UiAction::LabCard,room);
-    }else{
-        c.button("返回",21,204,98,false,25);c.hit(20,202,101,28,HitKind::DetailClose);
-        c.button(card.upgraded?"查看基础":upgrade_preview?"预览升级":"不可升级",166,204,132,upgrade_preview,25);c.action(163,202,139,28,UiAction::ToggleCardUpgrade,upgrade_preview);
-    }
-    c.close_button(290,26);c.hit(288,24,25,24,HitKind::DetailClose);
-    if(lines>8&&!a.keyword_hover.details){c.hit(285,55,25,25,HitKind::Scroll,-1);c.hit(285,174,25,25,HitKind::Scroll,1);}
-}
+#include "card_inspect_ui.inc"
 #include "reference_map_ui.inc"
 #include "ui_frontend.inc"
+#include "bestiary_ui7.inc"
+#include "ui_progress_ui.inc"
 #include "card_choice_ui.inc"
 #include "world_choice_ui.inc"
 #include "world_game_over_ui.inc"
@@ -256,6 +229,7 @@ void App::render(){
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){Canvas c{*this};debug_screen(c);pointer_overlay(c);return;}
 #endif
+    if(bestiary.open){Canvas c{*this};bestiary_screen(c);pointer_overlay(c);return;}
     sync_reward_presentation();
     sync_map_window();
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
@@ -276,6 +250,8 @@ void App::render(){
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer_overlay(c);return;}
+    if(statistics_open||history_open){if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(compendium_open){compendium_screen(c);if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
     if(settings_open||frontend_confirm||help)pointer.visible=false;

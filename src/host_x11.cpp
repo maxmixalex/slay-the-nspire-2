@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "locale_boot.hpp"
+#include "host_text_input.hpp"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
@@ -8,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <clocale>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -44,7 +46,22 @@ static spire::BootLanguage read_preference(const std::string&path){
     return spire::boot_preference(bytes,(uint32_t)count);
 }
 static std::string save_path;
-static std::string settings_path;
+static std::string settings_path,progress_path;
+static uint8_t progress_bytes[spire::UiProgressCapacity+1];
+static uint32_t wall_clock(){return uint32_t(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());}
+static bool load_progress(spire::UiProgress&out){
+    if(progress_path.empty())return false;
+    FILE*f=fopen(progress_path.c_str(),"rb");if(!f)return false;
+    const size_t n=fread(progress_bytes,1,sizeof progress_bytes,f);const bool ok=!ferror(f);fclose(f);
+    return ok&&spire::decode_ui_progress(progress_bytes,n,out);
+}
+static bool save_progress(const spire::UiProgress&value){
+    if(progress_path.empty())return true;
+    const size_t n=spire::encode_ui_progress(value,progress_bytes,sizeof progress_bytes);if(!n)return false;
+    const std::string temp=progress_path+".tmp";FILE*f=fopen(temp.c_str(),"wb");if(!f)return false;
+    bool ok=fwrite(progress_bytes,1,n,f)==n;ok=(fclose(f)==0)&&ok;
+    if(ok)ok=rename(temp.c_str(),progress_path.c_str())==0;if(!ok)remove(temp.c_str());return ok;
+}
 static bool load_preferences(spire::UiPreferences& value){
     if(settings_path.empty())return false;
     FILE*f=fopen(settings_path.c_str(),"rb");if(!f)return false;
@@ -97,10 +114,10 @@ int main(int argc,char**argv){
 #if SPIRE_DEBUG_COMMANDS
         else if(a=="--debug-command"&&i+1<argc)debug_commands.emplace_back(argv[++i]);
 #endif
-        else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--settings"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
+        else if((a=="--pack"||a=="--common"||a=="--locale"||a=="--resources"||a=="--language"||a=="--save"||a=="--settings"||a=="--progress"||a=="--capture"||a=="--actions")&&i+1<argc){const char*v=argv[++i];
             if(a=="--pack")packpath=v;else if(a=="--common")commonpath=v;else if(a=="--locale")localepath=v;else if(a=="--resources")dir=v;
             else if(a=="--language"){if(!strcmp(v,"eng"))language=spire::BootLanguage::English;else if(!strcmp(v,"zhs"))language=spire::BootLanguage::Chinese;else{fprintf(stderr,"--language eng|zhs\n");return 2;}}
-            else if(a=="--save")save_path=v;else if(a=="--settings")settings_path=v;else if(a=="--capture")shot=v;else actions=v;}
+            else if(a=="--save")save_path=v;else if(a=="--settings")settings_path=v;else if(a=="--progress")progress_path=v;else if(a=="--capture")shot=v;else actions=v;}
         else {fprintf(stderr,"Usage: %s [--pack FILE | --resources DIR | --common FILE --locale FILE] [--language eng|zhs] [--save FILE] [--headless] [--actions enter,right,...] [--capture FILE.ppm]\n",argv[0]);return 2;}}
     if(!packpath.empty()&&(!commonpath.empty()||!localepath.empty())){fprintf(stderr,"Choose --pack or --common/--locale\n");return 2;}
     const bool explicit_split=!commonpath.empty()||!localepath.empty();
@@ -137,8 +154,9 @@ int main(int argc,char**argv){
         source=file_source(resource.file);language=spire::boot_probe_language(source);
     }
     if(!installed_languages)installed_languages=language==spire::BootLanguage::English?1u:2u;
+    if(progress_path.empty()&&!headless)progress_path=directory(save_path)+"/nSpire2.progress.tns";
     if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
-    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language}))return error(spire::BootText::InvalidResources);
+    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock}))return error(spire::BootText::InvalidResources);
     auto persist_language=[&](){
         if(headless)return;
         FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}
@@ -176,21 +194,28 @@ int main(int argc,char**argv){
     }
     if(shot)capture(shot);
     if(headless){auto&s=app.game;printf("{\"title\":%s,\"phase\":%d,\"hp\":%d,\"energy\":%d,\"block\":%d,\"pain\":%d,\"embrace\":%d,\"hand\":%u,\"discard\":%u,\"exhaust\":%u,\"pending\":%u,\"valid\":%s}\n",app.title?"true":"false",(int)s.phase,s.hp,s.energy,s.block,s.pain,s.embrace,s.hand.count,s.discard.count,s.exhaust.count,s.effect_count,app.title||spire::validate(s)?"true":"false");return 0;}
+    std::setlocale(LC_CTYPE,"");XSetLocaleModifiers("");
     Display*d=XOpenDisplay(nullptr);if(!d){fprintf(stderr,"No X display. Use --headless for batch execution.\n");return 2;}
     Bool detectable;XkbSetDetectableAutoRepeat(d,True,&detectable);
     int screen=DefaultScreen(d);Window win=XCreateSimpleWindow(d,RootWindow(d,screen),0,0,960,720,0,0,0);
     XStoreName(d,win,"nSpire II 0.17");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
     Atom close=XInternAtom(d,"WM_DELETE_WINDOW",False);XSetWMProtocols(d,win,&close,1);XMapWindow(d,win);
+    XIM input_method=XOpenIM(d,nullptr,nullptr,nullptr);
+    XIC input_context=input_method?XCreateIC(input_method,XNInputStyle,XIMPreeditNothing|XIMStatusNothing,XNClientWindow,win,XNFocusWindow,win,nullptr):nullptr;
+    bool text_focused=false;
+    auto sync_text_focus=[&](){const bool active=app.library&&!app.library_tab&&app.library_search_editing;
+        if(input_context&&active!=text_focused){if(active)XSetICFocus(input_context);else XUnsetICFocus(input_context);}text_focused=active;};
     const char transparent[1]={0};Pixmap cursor_mask=XCreateBitmapFromData(d,win,transparent,1,1);XColor cursor_color{};
     Cursor hidden_cursor=XCreatePixmapCursor(d,cursor_mask,cursor_mask,&cursor_color,&cursor_color,0,0);XDefineCursor(d,win,hidden_cursor);XFreePixmap(d,cursor_mask);XFreeCursor(d,hidden_cursor);
     GC gc=XCreateGC(d,win,0,nullptr);int width=960,height=720;bool held[256]={};XImage*image=nullptr;
     auto last_frame=std::chrono::steady_clock::now();
     while(!app.quit){
         while(XPending(d)){
-            XEvent e;XNextEvent(d,&e);
+            sync_text_focus();XEvent e;XNextEvent(d,&e);if(text_focused&&XFilterEvent(&e,win))continue;
             if(e.type==ClientMessage&&(Atom)e.xclient.data.l[0]==close)app.quit=true;
             else if(e.type==ConfigureNotify){width=std::max(320,e.xconfigure.width);height=std::max(240,e.xconfigure.height);if(image){XDestroyImage(image);image=nullptr;}}
-            else if(e.type==FocusOut){memset(held,0,sizeof held);app.pointer_cancel();app.pointer.visible=false;}
+            else if(e.type==FocusIn){text_focused=false;sync_text_focus();}
+            else if(e.type==FocusOut){if(input_context)XUnsetICFocus(input_context);text_focused=false;memset(held,0,sizeof held);app.pointer_cancel();app.pointer.visible=false;}
             else if(e.type==MotionNotify||e.type==ButtonPress||e.type==ButtonRelease){
                 int scale=std::max(1,std::min(width/320,height/240));
                 int ex=e.type==MotionNotify?e.xmotion.x:e.xbutton.x,ey=e.type==MotionNotify?e.xmotion.y:e.xbutton.y;
@@ -205,7 +230,17 @@ int main(int argc,char**argv){
             }
             else if(e.type==LeaveNotify&&!app.pointer.held)app.pointer.visible=false;
             else if(e.type==KeyRelease)held[e.xkey.keycode&255]=false;
-            else if(e.type==KeyPress&&!held[e.xkey.keycode&255]){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
+            else if(e.type==KeyPress&&(!held[e.xkey.keycode&255]||app.library_search_editing)){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
+                if(app.library&&!app.library_tab&&app.library_search_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
+                    char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;
+                    if(input_context)size=Xutf8LookupString(input_context,&e.xkey,text,sizeof text,&actual,&status);
+                    else size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
+                    if(actual==XK_Return||actual==XK_KP_Enter)app.library_text(13);
+                    else if(actual==XK_BackSpace)app.library_text(8);
+                    else if(actual==XK_Escape)app.library_text(27);
+                    else if(status==XBufferOverflow&&size>0&&size<=65536){std::vector<char>commit(size+1);size=Xutf8LookupString(input_context,&e.xkey,commit.data(),int(commit.size()),&actual,&status);if(status!=XBufferOverflow&&size>0)spire::host_text_utf8(commit.data(),size,[](int code){app.library_text(code);});}
+                    else if(size>0&&size<=int(sizeof text))spire::host_text_utf8(text,size,[](int code){app.library_text(code);});
+                }else
 #if SPIRE_DEBUG_COMMANDS
                 if(app.debug_open&&app.debug_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[16];KeySym actual;int size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
@@ -229,5 +264,6 @@ int main(int argc,char**argv){
         for(int y=0;y<h;y++){auto*row=(uint32_t*)(image->data+y*image->bytes_per_line);for(int x=0;x<w;x++){uint16_t p=app.pixels[(y/scale)*320+x/scale];row[x]=((p>>11)*255/31)<<16|(((p>>5)&63)*255/63)<<8|(p&31)*255/31;}}
         XPutImage(d,win,gc,image,0,0,(width-w)/2,(height-h)/2,w,h);XFlush(d);std::this_thread::sleep_until(now+std::chrono::milliseconds(33));
     }
+    if(input_context)XDestroyIC(input_context);if(input_method)XCloseIM(input_method);
     if(image)XDestroyImage(image);XFreeGC(d,gc);XDestroyWindow(d,win);XCloseDisplay(d);return 0;
 }

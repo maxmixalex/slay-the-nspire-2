@@ -13,18 +13,19 @@ struct UiPreferences {
     bool keyboard_only=false;
     bool phobia_mode=false;
     uint8_t screen_shake=2;
+    bool bestiary_actions_preferred=true;
 };
 constexpr unsigned UiPreferencesBytes=8;
 inline unsigned ui_preference_flags(const UiPreferences& p){
     return unsigned(p.fast_mode)|(unsigned(p.show_card_indices)<<1)|
         (unsigned(p.text_effects)<<2)|(unsigned(p.keyboard_only)<<3)|
-        (unsigned(p.phobia_mode)<<4)|(unsigned(p.screen_shake)<<8);
+        (unsigned(p.phobia_mode)<<4)|(unsigned(!p.bestiary_actions_preferred)<<5)|(unsigned(p.screen_shake)<<8);
 }
 inline bool ui_preferences_from_flags(unsigned flags,UiPreferences& out){
-    if((flags&~0x71fu)||(flags>>8)>4)return false;
+    if((flags&~0x73fu)||(flags>>8)>4)return false;
     UiPreferences p{};p.fast_mode=flags&1;p.show_card_indices=flags&2;
     p.text_effects=flags&4;p.keyboard_only=flags&8;p.phobia_mode=flags&16;
-    p.screen_shake=uint8_t(flags>>8);out=p;return true;
+    p.screen_shake=uint8_t(flags>>8);p.bestiary_actions_preferred=!(flags&32);out=p;return true;
 }
 inline void encode_ui_preferences(const UiPreferences& prefs,uint8_t* out){
     const unsigned flags=ui_preference_flags(prefs);

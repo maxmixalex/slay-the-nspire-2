@@ -147,7 +147,14 @@ int main(){
  require(original_event_choose(game,0),"consume named potion");require(original_event_description_reference(game,"DrinkRandomPotion",-1,true,reference)&&reference.model==unsigned(Potion::Strength),"consumed potion remains named on outcome page");persisted();
  reset();for(unsigned i=0;i<potion_slot_count(game);i++)potion_set(game,i,Potion::Strength);
  require(original_event_begin(game,OriginalEventId::DrowningBeacon,9,0)&&original_event_choose(game,0),"beacon offers Glowwater to full potion inventory");persisted();
- require(original_event_potion(game,1),"replace one potion through discard and procure stages");require(potion_at(game,1)==Potion::GlowwaterPotion&&potion_at(game,0)==Potion::Strength&&game.original_events.finished,"potion replacement completes before the queued event outcome");persisted();
+ before=game;require(!original_event_potion(game,1)&&!std::memcmp(&game,&before,sizeof game),"full standalone potion reward preserves every saved field and bottle");
+ uint16_t potion_offers[MaxPotionSlots]{};
+ require(game.original_events.selection==OriginalEventSelection::Potion&&original_event_eligible(game,potion_offers,MaxPotionSlots)==1&&potion_offers[0]==0,"standalone reward exposes one potion, never replacement-slot choices");persisted();
+ require(can_discard_potion(game,1)&&discard_potion(game,1),"explicit belt discard is available while the reward remains pending");persisted();
+ require(original_event_potion(game,0),"retry standalone reward after freeing a slot");require(potion_at(game,1)==Potion::GlowwaterPotion&&potion_at(game,0)==Potion::Strength&&game.original_events.finished,"first-empty procurement completes before the queued event outcome");persisted();
+ reset();require(gain_world_relic(game,WorldRelicSozu),"prepare standalone Sozu reward");for(unsigned i=0;i<potion_slot_count(game);++i)potion_set(game,i,Potion::Strength);
+ require(original_event_begin(game,OriginalEventId::DrowningBeacon,9,0)&&original_event_choose(game,0)&&original_event_potion(game,0),"Sozu consumes the denied standalone reward and lets the event finish");
+ require(game.original_events.finished,"Sozu reward resumes queued event continuation");for(unsigned i=0;i<potion_slot_count(game);++i)require(potion_at(game,i)==Potion::Strength,"Sozu never overwrites a held bottle");persisted();
  reset();require(gain_world_relic(game,WorldRelicDriftwood)&&gain_world_relic(game,WorldRelicLastingCandy),"obtain event-reward modifier fixtures");
  require(original_event_begin(game,OriginalEventId::ColorfulPhilosophers,5,0)&&original_event_choose(game,0),"create restricted event card rewards with Driftwood");
  for(unsigned i=0;i<game.world_relics.count;i++)if(game.world_relics.entries[i].id==WorldRelicLastingCandy)require(game.world_relics.entries[i].values[0]==0,"event rewards do not advance Candy's combat-only cadence");

@@ -50,8 +50,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/22")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/25")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= 32768 and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
@@ -132,7 +132,8 @@ def layout(data, language):
         cp, off, px, w, h, advance, encoded = struct.unpack_from("<IIHBBHH", data, glyph_at + i * 16)
         count = encoded or w * h
         require(cp <= 0x10FFFF and 0 < w <= 40 and 0 < h <= 40 and
-                0 < px <= 32 and advance <= 40 and end <= off <= length - count,
+                0 < px <= (255 if version >= 24 else 32) and 0 < (px & 63) <= 32 and
+                advance <= 40 and end <= off <= length - count,
                 "Glyphs must be after the artwork region")
     marker = None
     for i in range(ns):

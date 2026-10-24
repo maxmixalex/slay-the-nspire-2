@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "host_text_input.hpp"
 #include "resource_file_cursor.hpp"
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
@@ -25,6 +26,9 @@ static spire::SaveData scratch;
 static spire::RuntimePerformance performance;
 static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512],language_path[512];
 static char settings_path[512],settings_temp[512],settings_backup[512];
+static char progress_path[512],progress_temp[512],progress_backup[512];
+static uint8_t progress_bytes[spire::UiProgressCapacity+1];
+static uint32_t wall_clock(){return *(volatile uint32_t*)0x90090000u;}
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 static uint32_t entropy_start=0;
 static unsigned installed_languages=0,pending_language=0;
@@ -97,6 +101,23 @@ static bool save_preferences(const spire::UiPreferences& value){
     if(old){nd_unlink(settings_backup);if(nd_rename(settings_path,settings_backup)!=0){nd_unlink(settings_temp);return false;}}
     if(nd_rename(settings_temp,settings_path)!=0){if(old)nd_rename(settings_backup,settings_path);return false;}
     if(old)nd_unlink(settings_backup);return true;
+}
+static bool load_progress(spire::UiProgress&out){
+    const char*paths[]={progress_path,progress_backup};
+    for(const char*path:paths){void*f=nd_open(path,"rb");if(!f)continue;
+        const unsigned n=nd_read(progress_bytes,1,sizeof progress_bytes,f);nd_close(f);
+        if(spire::decode_ui_progress(progress_bytes,n,out))return true;
+    }return false;
+}
+static bool save_progress(const spire::UiProgress&value){
+    const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,sizeof progress_bytes));if(!n)return false;
+    void*f=nd_open(progress_temp,"wb");if(!f)return false;
+    bool ok=nd_write(progress_bytes,1,n,f)==n;ok=(nd_close(f)==0)&&ok;
+    if(!ok){nd_unlink(progress_temp);return false;}
+    bool old=false;f=nd_open(progress_path,"rb");if(f){old=true;nd_close(f);}
+    if(old){nd_unlink(progress_backup);if(nd_rename(progress_path,progress_backup)!=0){nd_unlink(progress_temp);return false;}}
+    if(nd_rename(progress_temp,progress_path)!=0){if(old)nd_rename(progress_backup,progress_path);return false;}
+    if(old)nd_unlink(progress_backup);return true;
 }
 static bool save_game(const spire::State&s){
     if(!spire::save(s,scratch))return false;
@@ -203,7 +224,7 @@ struct Touchpad {
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
-    if(!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(settings_path,launcher,"nSpire2.settings.tns")||!sibling(settings_temp,launcher,"nSpire2.settings.tmp.tns")||!sibling(settings_backup,launcher,"nSpire2.settings.bak.tns"))return 3;
+    if(!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(settings_path,launcher,"nSpire2.settings.tns")||!sibling(settings_temp,launcher,"nSpire2.settings.tmp.tns")||!sibling(settings_backup,launcher,"nSpire2.settings.bak.tns")||!sibling(progress_path,launcher,"nSpire2.progress.tns")||!sibling(progress_temp,launcher,"nSpire2.progress.tmp.tns")||!sibling(progress_backup,launcher,"nSpire2.progress.bak.tns"))return 3;
     // Ndless may wait for all launch keys to be released before entering main,
     // so a held CTRL alone cannot reliably opt in. An owner-created sibling
     // marker enables startup timing without a loader/key timing dependency.
@@ -240,7 +261,7 @@ extern "C" int main(int argc,char**argv){
         valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
         if(valid)resource=split.source();
     }else{source.language=spire::boot_probe_language(resource);installed_languages=source.language==spire::BootLanguage::English?1u:2u;}
-    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language})){
+    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
     if(selected_language&&source.language!=preferred)store_language(source.language);
@@ -273,7 +294,7 @@ extern "C" int main(int argc,char**argv){
     ,spire::Key::Debug
 #endif
     };
-    uint32_t previous=0xffff;unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;
+    uint32_t previous=0xffff;uint16_t text_previous[8]{};unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;
     uint32_t first_start=performance.enabled?timer_ticks():0;
     app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
     uint32_t last_present=performance.enabled?timer_ticks():0;
@@ -327,16 +348,20 @@ extern "C" int main(int argc,char**argv){
         if(pressed(0x18,0x40))p|=1u<<18; // A: draw pile
         if(pressed(0x18,4))p|=1u<<19; // D: discard pile
         if(pressed(0x18,1))p|=1u<<20; // F: exhaust pile
+        uint16_t text_keys[8];for(unsigned row=0;row<8;++row)text_keys[row]=*(volatile uint16_t*)(0x900E0010u+row*2);
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.
             quiet_ms=(p==0&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
             if(quiet_ms>=100)input_ready=true;
-            previous=p;pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
+            previous=p;for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
         }
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
-        for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
+        if(app.library&&!app.library_tab&&app.library_search_editing)
+            spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
+        else for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);
+        previous=p;for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
         change_language();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press

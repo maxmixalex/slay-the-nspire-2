@@ -116,10 +116,10 @@ static void health_amount(TextBuffer&b,int value){
 }
 static void health_block_break(Canvas&c,const HealthBarMotion&motion,int x,int y){
  const unsigned elapsed=c.a.animation*33u-motion.block_break_ms;
- if(!motion.block_breaking||elapsed>=600u)return;
+ if(!motion.block_breaking||elapsed>=600u||c.a.content.version()<Ui7ContentVersion)return;
  const unsigned p=HealthBarMotion::block_break_progress(elapsed),alpha=(4096u-HealthBarMotion::block_break_progress(elapsed,true))*255u/4096u;
  for(unsigned side=0;side<2;++side){HealthPatch patch;
-  if(!patch.read(c.a.content,c.a.content.world_image("common",side?"BLOCK_BREAK_RIGHT":"BLOCK_BREAK_LEFT")))continue;
+  if(!patch.read(c.a.content,c.a.content.ui_image(side?I7_BlockBreakRight:I7_BlockBreakLeft)))continue;
   const int dx=side?4096+13*int(p):-4096-15*int(p),dy=side?-11*4096+10*int(p):-10*4096+9*int(p);
   // Scene scales each128px fragment by .5. At the room's 1/6 scale it
   // spans10.67px, centered on the shield's original control center.

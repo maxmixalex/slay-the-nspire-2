@@ -4,6 +4,8 @@
 #include "original_events.hpp"
 #include "ui_core_observer.hpp"
 namespace spire {
+static bool room_shop_context(const App&a){return a.game.phase==Phase::Shop||(a.game.phase==Phase::Event&&a.game.original_events.active&&a.game.original_events.id==OriginalEventId::FakeMerchant&&!a.game.original_events.finished);}
+static bool room_shop_available(const App&a){return room_shop_context(a)&&!a.title&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.character_select&&!a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&!a.map_window.is_open&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;}
 #include "world_choice_input.inc"
 #include "pile_input.inc"
 #include "card_grid_input.inc"
@@ -18,23 +20,8 @@ uint32_t App::next_run_seed(bool* randomized){
     value^=value>>16;value*=0x7feb352du;value^=value>>15;
     value*=0x846ca68bu;value^=value>>16;return value?value:1u;
 }
-unsigned App::library_items(CardKind* out)const{
-    unsigned count=0;CardKind ids[CardKinds];
-    const CardColor filters[]={CardColor::Token,CardColor::Ironclad,CardColor::Silent,CardColor::Colorless,
-        CardColor::Defect,CardColor::Regent,CardColor::Necrobinder};
-    for(unsigned i=0;i<CardKinds;i++){
-        CardColor color=card_color(i);
-        if(library_filter>0&&library_filter<7&&color!=filters[library_filter])continue;
-        ids[count++]=(CardKind)i;
-    }
-    if(library_sort)for(unsigned i=1;i<count;i++){
-        CardKind id=ids[i];unsigned j=i;
-        auto order=[&](CardKind k){return library_sort==1?cost({k,(uint8_t)(library_upgraded&&card_upgradeable({k,0}))}):(int)definitions[k].type;};
-        while(j&&order(ids[j-1])>order(id)){ids[j]=ids[j-1];--j;}ids[j]=id;
-    }
-    if(out)for(unsigned i=0;i<count;i++)out[i]=ids[i];
-    return count;
-}
+#include "card_library_input.inc"
+#include "collection_input.inc"
 void App::sync_selection(){
     if(choice_revision!=game.revision){choice_selected_count=0;choice_revision=game.revision;}
 }
@@ -80,11 +67,11 @@ bool App::selection_input(Key key){
     return true;
 }
 void App::select_library_item(int index){
-    int count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds;
-    if(!library||index<0||index>=count)return;
-    library_selected=index;
-    if(library_tab==0){CardKind ids[CardKinds];library_items(ids);open_card_detail({ids[index],(uint8_t)(library_upgraded&&card_upgradeable({ids[index],0}))});}
-    else{detail_owned=-1;detail_item=library_tab==1?index:WorldRelicKinds+index;detail_scroll=0;pointer_cancel();}
+    if(!library)return;
+    if(library_tab){prepare_collection();if(index>=0&&index<collection.count)library_selected=index;return;}
+    CardKind ids[CardKinds];const unsigned count=library_items(ids);if(index<0||unsigned(index)>=count)return;
+    library_selected=index;card_library.control=-1;library_search_editing=false;
+    if(library_card_seen(ids[index]))open_card_detail({ids[index],uint8_t(library_upgraded&&card_upgradeable({ids[index],0}))});
 }
 void App::ui_action(UiAction action){
     if(map_transition_blocks_pointer())return;
@@ -101,6 +88,12 @@ void App::ui_action(UiAction action){
     default:break;
     }
     switch(action){
+    case UiAction::OpenCompendium:open_compendium();break;
+    case UiAction::OpenBestiary:if(compendium_open)open_bestiary();break;
+    case UiAction::OpenStatistics:if(compendium_open)open_statistics();break;
+    case UiAction::OpenHistory:if(compendium_open)open_history();break;
+    case UiAction::HistoryPrevious:history_select(1);break;
+    case UiAction::HistoryNext:history_select(-1);break;
     case UiAction::FrontendAccept:accept_frontend_confirm();break;
     case UiAction::FrontendCancel:frontend_confirm=frontend_choice=0;break;
     case UiAction::SettingsFastMode:if(settings_open)set_fast_mode(!fast_mode);break;
@@ -134,11 +127,14 @@ void App::ui_action(UiAction action){
     case UiAction::LabCard:case UiAction::LabPotion:break;
 #endif
     case UiAction::OpenShop:
-        if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;room_presentation.merchant.set_open(true,map_clock_ms);cursor=0;}break;
+        if(room_shop_available(*this)){shop_open=true;room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);cursor=0;}break;
     case UiAction::CloseShop:
-        if(game.phase==Phase::Shop){shop_open=false;room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;
+        if(room_shop_available(*this)){shop_open=false;room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;
     case UiAction::LeaveShop:
-        if(!shop_open&&game.phase==Phase::Shop&&leave_shop(game))proceed_map_window();break;
+        if(!shop_open&&room_shop_available(*this)){
+            if(game.phase==Phase::Shop){if(leave_shop(game))proceed_map_window();}
+            else if(event_choice(game,6)&&original_event_leave(game)){cursor=0;proceed_map_window();}
+        }break;
     case UiAction::GameOverSummary:
         if(game_over_available()&&!game_over_summary){game_over_summary=true;pointer_cancel();}break;
     case UiAction::GameOverMainMenu:
@@ -175,7 +171,7 @@ void App::ui_action(UiAction action){
             forget_run_checkpoint();
             new_run(game,seed,practice_entry,selected_character);
             if(!practice_entry){if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");break;}if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");break;}}
-            character_select=run_settings=false;title=false;reset_presentation();
+            character_select=run_settings=false;title=false;reset_presentation();begin_progress();
             if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*m=world_current_map(game))map_visuals.initial_marker(m->root,map_clock_ms);}
         }break;
     case UiAction::RunSettings:break; // Retired port-only overlay; keep enum ABI.
@@ -191,16 +187,13 @@ void App::ui_action(UiAction action){
     case UiAction::MapLegendRest:case UiAction::MapLegendMonster:case UiAction::MapLegendElite:
         if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map)))map_legend_item=uint8_t(int(action)-int(UiAction::MapLegendUnknown));break;
     case UiAction::LibraryCards:case UiAction::LibraryRelics:case UiAction::LibraryPotions:
-        if(library){library_tab=(int)action-(int)UiAction::LibraryCards;library_page=library_selected=0;}break;
-    case UiAction::PreviousPage:case UiAction::NextPage:
-        if(library){int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds;
-            int last=(count-1)/per;library_page+=action==UiAction::PreviousPage?-1:1;
-            if(library_page<0)library_page=0;if(library_page>last)library_page=last;
-            library_selected=library_page*per;
-        }break;
-    case UiAction::ToggleUpgrades:if(library&&library_tab==0)library_upgraded=!library_upgraded;break;
+        if(library||compendium_open)open_library(int(action)-int(UiAction::LibraryCards));break;
+    case UiAction::PreviousPage:case UiAction::NextPage:break; // Retired pagination ABI.
+    case UiAction::ToggleUpgrades:if(library&&!library_tab)library_control(LibraryViewUpgrades);break;
+    case UiAction::InspectPreviousCard:move_card_inspect(-1);break;
+    case UiAction::InspectNextCard:move_card_inspect(1);break;
     case UiAction::ToggleCardUpgrade:
-        if(detail_card>=0){Card c=card_from_token(detail_card);if(c.upgraded||card_upgradeable(c)){c.upgraded=!c.upgraded;detail_card=card_token(c);}}break;
+        if(detail_card>=0){Card c=card_from_token(detail_card);if(c.upgraded||card_upgradeable(c)){c.upgraded=!c.upgraded;detail_card=card_token(c);card_inspect.view_all_upgraded=false;}}break;
     case UiAction::DiscardPotion:
         if(panel==4&&!combat_actions_locked()&&can_discard_potion(game,scroll)){
             const Potion bottle=potion_at(game,scroll);const int slot=scroll;
@@ -213,7 +206,7 @@ void App::ui_action(UiAction action){
     case UiAction::RewardGold:
         if(game.phase==Phase::Reward){claim_reward_gold(game);}break;
     case UiAction::RewardPotion:
-        if(game.phase==Phase::Reward&&!claim_reward_potion(game))message("药水栏已满，可先打开药水栏丢弃一瓶");break;
+        if(game.phase==Phase::Reward&&!claim_reward_potion(game))potion_obtain_failed();break;
     case UiAction::LeaveRewards:
         if(game.phase==Phase::Reward){const bool left=leave_rewards(game);reward_cards=grimoire_select=false;cursor=0;if(left)proceed_map_window();}break;
     case UiAction::RewardGrimoire:
@@ -234,10 +227,8 @@ void App::ui_action(UiAction action){
         if(character_select)selected_character=action==UiAction::SelectIronclad?Character::Ironclad:action==UiAction::SelectSilent?Character::Silent:
             action==UiAction::SelectDefect?Character::Defect:action==UiAction::SelectRegent?Character::Regent:Character::Necrobinder;break;
     case UiAction::FilterAll:case UiAction::FilterIronclad:case UiAction::FilterSilent:case UiAction::FilterColorless:
-        if(library&&library_tab==0){library_filter=(int)action-(int)UiAction::FilterAll;library_page=library_selected=0;}break;
     case UiAction::FilterDefect:case UiAction::FilterRegent:case UiAction::FilterNecrobinder:
-        if(library&&library_tab==0){library_filter=4+(int)action-(int)UiAction::FilterDefect;library_page=library_selected=0;}break;
-    case UiAction::CycleSort:if(library&&library_tab==0){library_sort=(library_sort+1)%3;library_page=library_selected=0;}break;
+    case UiAction::CycleSort:break; // Replaced by original sidebar controls.
     case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
         if(!title&&!paused&&!help&&!panel&&choice_phase(game.phase)){
             int page=cursor/10+(action==UiAction::PreviousChoicePage?-1:1);
@@ -280,21 +271,12 @@ void App::ui_action(UiAction action){
     }
 }
 bool App::screen_input(Key key){
-    if(key==Key::Collection){library=!library;library_page=library_selected=0;pointer_cancel();return true;}
+    if(key==Key::Collection){open_compendium();return true;}
     if(library){
-        int per=library_tab==0?8:18,count=library_tab==0?(int)library_items():library_tab==1?WorldRelicKinds:PotionKinds,columns=library_tab==0?4:6;
-        if(key==Key::Back){library=false;return true;}
+        if(key==Key::Back){open_compendium();return true;}
         if(key==Key::Map&&game.world.active&&!title&&!paused){library=false;if(!map_window.visible)open_map_window(true);return true;}
         if(key==Key::Quit){cancel_map_travel();quit=true;return true;}
-        if(key==Key::Inspect){library_tab=(library_tab+1)%3;library_page=library_selected=0;return true;}
-        if(key==Key::Up)library_selected-=columns;
-        if(key==Key::Down)library_selected+=columns;
-        if(key==Key::Left)--library_selected;
-        if(key==Key::Right)++library_selected;
-        if(library_selected<0)library_selected=0;if(library_selected>=count)library_selected=count-1;
-        library_page=library_selected/per;
-        if(key==Key::Confirm||key==Key::Detail)select_library_item(library_selected);
-        return true;
+        library_input(key);return true;
     }
     if(character_select){
         run_settings=false;
@@ -343,7 +325,11 @@ void App::confirm_deck_choice(){
         else message("此时无法移除这张牌");return;
     }
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
-    if(ok){reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;}}
+    if(ok){reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;
+        // The removal picker covers the open rug. Returning to that rug is
+        // not another Open animation; Used starts when removal succeeds.
+        auto&m=room_presentation.merchant;m.open=m.initialized=true;m.start=map_clock_ms-1000;m.from_y=MerchantInventoryLayout::RugY;m.from_alpha=204;m.remove_start=map_clock_ms;m.sold_mask=game.shop_sold;m.speak(0,map_clock_ms);
+    }}
     else message("此时无法完成这项操作");
 }
 bool App::deck_input(Key key){
@@ -430,10 +416,18 @@ bool App::room_input(Key key){
         return true;
     }
     if(title||paused||help||panel||library||character_select||map_preview.open||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;
-    if(game.phase==Phase::Event&&key==Key::Detail){ui_action(UiAction::ReadEvent);return true;}
-    if(game.phase!=Phase::Shop)return false;
+    const bool fake=game.phase==Phase::Event&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished;
+    if(game.phase==Phase::Event&&!fake){
+        if(key==Key::Detail){ui_action(UiAction::ReadEvent);return true;}
+        if(key==Key::Confirm&&game.original_events.active){const auto&m=room_presentation.event;
+            if(!m.bound||m.id!=unsigned(game.original_events.id)||(!m.ancient&&!m.option_ready(unsigned(cursor),map_clock_ms))||(m.ancient&&!pointer.dispatching&&map_clock_ms-m.start<800))return true;
+        }
+        return false;
+    }
+    if(!room_shop_context(*this))return false;
     if(shop_open){
-        if(key==Key::Back||(key==Key::Confirm&&cursor==ShopLeave)){ui_action(UiAction::CloseShop);return true;}
+        if(key==Key::Back||(key==Key::Confirm&&cursor==(fake?6:ShopLeave))){ui_action(UiAction::CloseShop);return true;}
+        if(fake&&(key==Key::Up||key==Key::Down)){cursor=(cursor+(key==Key::Up?6:1))%7;return true;}
         return false;
     }
     if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){cursor=cursor?0:1;return true;}

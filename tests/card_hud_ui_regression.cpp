@@ -309,15 +309,15 @@ static void samples(){
     c.text_fitted("Card frame / star cost / overflow",8,209,304,12,White);capture("cards-and-hud");
     clear();c.rect(0,0,320,240,Panel);comparison_card(c,{RegentDyingStar,0},18,32);comparison_card(c,{RegentDyingStar,1},184,32);capture("card-upgrade-comparison");
     app.detail_card=card_token({RegentDyingStar,0});app.detail_instance=app.detail_deck_index=-1;clear();detail_screen(c);capture("card-detail");
-    app.detail_card=-1;app.library=true;app.library_tab=app.library_filter=app.library_page=app.library_selected=app.library_sort=0;
+    app.detail_card=-1;app.open_library(0);
     clear();library_screen(c);capture("card-library");
-    app.pointer.visible=true;app.pointer.x=185;app.pointer.y=52;clear();library_screen(c);capture("card-library-filter-hover");
-    CHECK(app.library_filter==0);app.pointer.visible=false;app.library=false;
+    app.pointer.visible=true;app.pointer.x=25;app.pointer.y=25;clear();library_screen(c);capture("card-library-filter-hover");
+    CHECK(app.library_filter==5);app.pointer.visible=false;app.library=false;
     app.has_save=true;app.saved_character=Character::Necrobinder;app.saved_hp=54;app.saved_max_hp=66;app.saved_floor=14;app.saved_ascension=3;app.menu=0;
     clear();title_screen(c);capture("title-continue");
     for(unsigned character=0;character<CharacterKinds;++character){
         app.character_select=true;app.selected_character=Character(character);app.map_clock_ms=1000+character*2000;app.character_select_presentation.reset();clear();character_screen(c);
-        CHECK(app.character_select_presentation.panel_offset(app.map_clock_ms)==-50);
+        CHECK(app.character_select_presentation.panel_offset(app.map_clock_ms)==-67);
         char name[64]{};std::snprintf(name,sizeof name,"selector-%u-start",character);capture(name);
         app.map_clock_ms+=500;clear();character_screen(c);CHECK(app.character_select_presentation.panel_offset(app.map_clock_ms)==0);
         std::snprintf(name,sizeof name,"selector-%u-settled",character);capture(name);
@@ -336,6 +336,37 @@ static void long_hand_description(){
     CHECK(&hand_tile(c,0)==&tile&&hand_tile(c,0).description_truncated);
     keyword_tooltips(c);capture("hand-automatic-description");
     app.reset_presentation();
+}
+static void ui7_cards(){
+    DeckCountPulse count{};CHECK(count.observe(10,100)==6144);const int fading=count.observe(10,350);CHECK(fading>4096&&fading<4200);
+    CHECK(count.observe(10,600)==4096&&count.observe(9,700)==4096&&count.observe(10,800)==4096);
+    CHECK(count.observe(11,900)==6144&&count.high_water==11);
+    PotionHolderMotion holder{};CHECK(holder.observe(true,false,100)==4096);CHECK(holder.observe(true,false,150)==4710);
+    holder.observe(false,false,200);CHECK(holder.observe(false,false,450)>4096&&holder.scale<4120);CHECK(holder.observe(false,false,700)==4096);
+    TargetReticleMotion reticle{};reticle.observe(true,100);CHECK(reticle.scale(100)==4096);CHECK(reticle.scale(101)<3800&&reticle.scale(350)>4080);CHECK(reticle.scale(600)==4096);
+    new_run(app.game,713,false);auto&s=app.game;s.phase=Phase::Combat;s.floor=s.turn=1;s.current_node=0;s.energy=99;
+    CHECK(encounter_setup(s,EncounterId::NibbitsNormal));s.card_count=s.deck_count=s.hand.count=3;
+    s.draw.count=s.discard.count=s.exhaust.count=s.powers.count=0;
+    const Card cards[]={{Whirlwind,0},{Bash,0},{Defend,1}};
+    for(unsigned i=0;i<3;++i){s.cards[i]=s.deck[i]=cards[i];s.hand.ids[i]=uint16_t(i);s.zones[i]=Zone::Hand;s.event_cards.deck_origin[i]=0;}
+    app.title=app.library=app.character_select=app.paused=app.settings_open=false;app.reset_presentation();app.pointer.visible=false;
+    app.render();for(unsigned i=0;app.combat_preparation.active&&i<1024;++i){app.advance(33);app.render();}CHECK(!app.combat_preparation.active);
+    SaveData before{},after{};CHECK(save(s,before));const auto unchanged=[&](){CHECK(save(s,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));};
+    app.cursor=0;app.input(Key::Confirm);CHECK(app.keyboard_card==0);app.render();
+    for(unsigned i=0;i<s.enemy_count;++i)CHECK(app.target_reticles[1+i].selected);CHECK(!app.target_reticles[0].selected);capture("target-reticle-all-enemies");unchanged();
+    app.input(Key::Back);app.render();for(unsigned i=0;i<s.enemy_count;++i)CHECK(!app.target_reticles[1+i].selected&&app.target_reticles[1+i].active);
+    app.advance(201);app.render();for(unsigned i=0;i<s.enemy_count;++i)CHECK(!app.target_reticles[1+i].active);
+    app.cursor=2;app.input(Key::Confirm);app.render();CHECK(app.target_reticles[0].selected);
+    for(unsigned i=0;i<s.enemy_count;++i)CHECK(!app.target_reticles[1+i].selected);capture("target-reticle-self");unchanged();app.input(Key::Back);
+    app.panel=1;app.pile_tab=0;app.open_card_detail(s.deck[0],0);CHECK(app.card_inspect.index==0&&app.card_inspect.count==3);
+    app.render();CHECK(app.card_inspect.card_scale(app.map_clock_ms)==7168);app.advance(250);app.render();
+    CHECK(app.card_inspect.card_scale(app.map_clock_ms)==8192);CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.detail);capture("inspector-original-centered");
+    const int cursor=app.inspect_cursor;app.input(Key::Right);CHECK(app.detail_deck_index==1&&card_from_token(app.detail_card).kind==Bash&&app.card_inspect.card_x(app.map_clock_ms)==182);
+    app.input(Key::Confirm);CHECK(card_from_token(app.detail_card).upgraded);app.input(Key::Right);CHECK(app.detail_deck_index==2&&card_from_token(app.detail_card).upgraded);
+    app.input(Key::Right);CHECK(app.detail_deck_index==2);app.input(Key::Confirm);CHECK(!card_from_token(app.detail_card).upgraded);
+    app.input(Key::Left);CHECK(app.detail_deck_index==1&&!card_from_token(app.detail_card).upgraded&&app.inspect_cursor==cursor);
+    app.advance(250);app.render();CHECK(app.card_inspect.card_x(app.map_clock_ms)==160);capture("inspector-carousel-upgrade");unchanged();app.input(Key::Back);CHECK(app.detail_card<0&&app.panel==1);
+    app.panel=0;app.reset_presentation();
 }
 static void ui6_screens(){
     if(app.content.version()<Ui6ContentVersion)return;
@@ -379,5 +410,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

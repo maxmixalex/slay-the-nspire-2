@@ -17,6 +17,16 @@ static uint32_t browser_entropy=0;
 static spire::UiPreferences preferences{};
 static bool preferences_dirty=false;
 static unsigned language_mask=0,pending_language=0;
+static uint8_t progress_bytes[spire::UiProgressCapacity];
+static unsigned progress_size=0;
+static bool progress_dirty=false;
+static uint32_t browser_wall_clock=0;
+static uint32_t wall_clock(){return browser_wall_clock;}
+static bool load_progress(spire::UiProgress&out){return spire::decode_ui_progress(progress_bytes,progress_size,out);}
+static bool save_progress(const spire::UiProgress&value){
+    const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,sizeof progress_bytes));if(!n)return false;
+    progress_size=n;progress_dirty=true;return true;
+}
 static bool load_preferences(spire::UiPreferences& out){out=preferences;return true;}
 static bool save_preferences(const spire::UiPreferences& value){preferences=value;preferences_dirty=true;return true;}
 static unsigned available_languages(){return language_mask?language_mask:(app.content.english()?1u:2u);}
@@ -40,6 +50,17 @@ extern "C" {
 // Optional host hook preserves the existing imports for deterministic replay.
 // Interactive browsers set this from crypto before dispatching user input.
 void set_seed_entropy(uint32_t value){browser_entropy=value;}
+void set_wall_clock(uint32_t value){browser_wall_clock=value;}
+unsigned progress_buffer(){return unsigned(size_t(progress_bytes));}
+unsigned progress_capacity(){return sizeof progress_bytes;}
+void set_progress(unsigned size){progress_size=size<=sizeof progress_bytes?size:0;progress_dirty=false;}
+unsigned progress_length(){return progress_size;}
+int progress_pending(){return progress_dirty?1:0;}
+void progress_ack(int success){
+    progress_dirty=false;
+    if(!success){app.progress_dirty=true;app.message(app.content.english()?"Could not save history.":"历史记录保存失败，请重试");}
+}
+void flush_progress(){app.persist_progress();}
 // Optional exports retain the established three-import ABI. Preferences are
 // stored by the browser separately from the player's run, in either language.
 void set_preferences(unsigned flags){preferences.fast_mode=flags==1;preferences_dirty=false;}
@@ -55,7 +76,7 @@ int start(unsigned n){
     split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};
     boot_language=spire::boot_probe_language(resource);
     pending_language=0;
-    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language})?1:0;
+    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock})?1:0;
 }
 int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
     split.close();if(language!=1&&language!=2)return 0;
@@ -63,7 +84,7 @@ int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language)
     if(!split.open({nullptr,common_bytes,read_common,nullptr},
         {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
     pending_language=0;
-    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language})?1:0;
+    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock})?1:0;
 }
 void set_available_languages(unsigned mask){language_mask=mask&3u;}
 unsigned language_request(){return pending_language;}
@@ -89,12 +110,13 @@ int text_entry_active(){
 #if SPIRE_DEBUG_COMMANDS
     if(app.debug_open)return app.debug_editing;
 #endif
-    return app.map_preview.open&&app.map_preview.editing;
+    return (app.library&&!app.library_tab&&app.library_search_editing&&app.detail_card<0)||(app.map_preview.open&&app.map_preview.editing);
 }
 void text_input(int ch){
 #if SPIRE_DEBUG_COMMANDS
     if(app.debug_open){app.debug_text(ch);return;}
 #endif
+    if(app.library&&!app.library_tab&&app.library_search_editing){app.library_text(ch);return;}
     app.reference_text(ch);
 }
 #if SPIRE_DEBUG_COMMANDS

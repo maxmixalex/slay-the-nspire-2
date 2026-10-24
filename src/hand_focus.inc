@@ -3,7 +3,7 @@
 bool App::hand_can_focus()const{
     return game.phase==Phase::Combat&&combat_hand().count&&!title&&!paused&&!help&&
         !panel&&!library&&!character_select&&!map_preview.open&&!event_reader&&!settings_open&&!frontend_confirm&&
-        detail_card<0&&detail_item<0&&deck_candidate<0&&status_actor<0;
+        detail_card<0&&detail_item<0&&deck_candidate<0&&status_actor<0&&hud_focus<0;
 }
 int App::selected_hand_card()const{
     if(!hand_can_focus())return -1;

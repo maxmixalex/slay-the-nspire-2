@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -63,60 +64,52 @@ static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_tok
 static SaveData snapshot(){SaveData data{};CHECK(validate(a.game));CHECK(save(a.game,data));return data;}
 static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void start(Character character){
-    new_run(a.game,71,true,character);a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.settings_open=false;
+    new_run(a.game,71,true,character);a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.settings_open=a.compendium_open=a.statistics_open=a.history_open=false;
     a.selected_character=character;a.reset_presentation();
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
     CHECK(!a.title&&!a.character_select&&a.game.character==character&&a.game.practice);
     CHECK(a.game.deck_count==(character==Character::Ironclad?138:139));
     CHECK(a.game.deck_count>128&&a.game.deck_count<=MaxDeck);CHECK(validate(a.game));settle_fixture_preparation();
 }
-static void catalog_page_click(UiAction action,bool enabled,int expected_page){
-    CHECK(a.library&&a.library_tab==0&&a.detail_card<0);
-    CHECK(action==UiAction::NextPage||action==UiAction::PreviousPage);
-    const int previous_page=a.library_page;
-    CHECK(expected_page==previous_page+(enabled?(action==UiAction::NextPage?1:-1):0));
-    progress(action==UiAction::NextPage?"catalog-next":"catalog-previous");
-    a.render();int index=-1;
-    for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==(int)action){
-        CHECK(index<0);index=i;
-    }
-    CHECK(index>=0);const HitRegion h=a.hits[index];CHECK(h.w>0&&h.h>0&&h.enabled==enabled);
-    const int x=h.x+h.w/2,y=h.y+h.h/2;
-    CHECK(a.hit_at(x,y)==&a.hits[index]); // Unique action is also the topmost real pointer target.
-    a.pointer_move(x,y);a.pointer_button(true);
-    CHECK(a.pointer.held&&!a.pointer.dragging);
-    CHECK(a.pointer.captured.kind==HitKind::UiAction&&a.pointer.captured.value==(int)action&&a.pointer.captured.enabled==enabled);
-    CHECK(a.library_page==previous_page); // A press alone must not turn the page.
-    a.pointer_button(false);CHECK(!a.pointer.held);
-    CHECK(a.library_page==expected_page&&a.library_selected==expected_page*8);
-}
 static void catalog_navigation(){
     CHECK(!catalog_navigation_verified);progress("catalog-navigation-start");
     const uint32_t run_number=a.run_number;
     start(Character::Ironclad);auto before=snapshot();
-    a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
-    CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
-    const int last=(CardKinds-1)/8;CHECK(a.library_page==0&&last>0);
-    catalog_page_click(UiAction::PreviousPage,false,0);unchanged(before);
-    for(int page=1;page<=last;++page)catalog_page_click(UiAction::NextPage,true,page);
-    catalog_page_click(UiAction::NextPage,false,last);unchanged(before);
-    for(int page=last-1;page>=0;--page)catalog_page_click(UiAction::PreviousPage,true,page);
-    catalog_page_click(UiAction::PreviousPage,false,0);unchanged(before);
-    a.input(Key::Back);CHECK(!a.library);unchanged(before);
-    // Direct content fixtures do not consume a production run-start seed.
+    a.input(Key::Collection);action(UiAction::LibraryCards);spire_test::discover_all_cards(a);
+    CardKind ids[CardKinds];const int count=int(a.library_items(ids));CHECK(count==85);a.render();
+    auto&grid=a.card_grids[unsigned(CardGridSurface::Library)];CHECK(grid.has_scrollbar());
+    for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction)
+        CHECK(a.hits[i].value!=int(UiAction::NextPage)&&a.hits[i].value!=int(UiAction::PreviousPage));
+    const int before_scroll=grid.position;a.pointer_scroll(1);CHECK(grid.target>before_scroll&&grid.position==before_scroll);
+    CHECK(spire_test::settle_card_grid(a));CHECK(grid.position>before_scroll);unchanged(before);
+    // Thumb drag reaches both ends through the actual captured pointer path.
+    CHECK(spire_test::drag_grid_thumb(a,true));CHECK(grid.position==grid.maximum());
+    auto last=hit(HitKind::LibraryItem,count-1);CHECK(last.y>=grid.top&&last.y+last.h<=grid.bottom);unchanged(before);
+    CHECK(spire_test::drag_grid_thumb(a,false));CHECK(grid.position==grid.minimum());
+    // Original library navigation has three columns and does not wrap
+    // horizontally. The left edge returns focus to its sidebar.
+    a.card_library.control=-1;a.library_selected=0;a.input(Key::Left);CHECK(a.card_library.control==LibraryPoolFirst);
+    for(int i=0;i<4;++i)a.input(Key::Right);CHECK(a.card_library.control<0&&a.library_selected==0);
+    a.input(Key::Right);a.input(Key::Right);CHECK(a.library_selected==2);a.input(Key::Right);CHECK(a.library_selected==2);
+    a.input(Key::Left);a.input(Key::Left);CHECK(a.library_selected==0);
+    const int final_row=(count-1)/3*3;
+    for(int index=3;index<=final_row;index+=3){a.input(Key::Down);CHECK(a.library_selected==index);}
+    CHECK(spire_test::settle_card_grid(a));a.input(Key::Down);CHECK(a.library_selected==final_row);
+    for(int column=1;column<count-final_row;++column)a.input(Key::Right);
+    CHECK(a.library_selected==count-1);a.input(Key::Right);CHECK(a.library_selected==count-1);unchanged(before);
+    a.library_selected=final_row;for(int index=final_row-3;index>=0;index-=3){a.input(Key::Up);CHECK(a.library_selected==index);}
+    CHECK(spire_test::settle_card_grid(a));a.input(Key::Back);CHECK(!a.library&&a.compendium_open);a.input(Key::Back);CHECK(!a.compendium_open);unchanged(before);
     CHECK(a.run_number==run_number);
     catalog_navigation_verified=true;progress("catalog-navigation-complete");
 }
 static void open_model(unsigned model,unsigned upgraded){
     CHECK(catalog_navigation_verified);progress("open-model",(unsigned)a.game.character,model,upgraded);
     settle_fixture_preparation();
-    if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
-    action(UiAction::FilterAll);CardKind ids[CardKinds];unsigned count=a.library_items(ids),index=0;
-    CHECK(count==CardKinds);while(index<count&&ids[index]!=model)++index;CHECK(index<count);
-    // Every real page-button transition was checked before any model fixture.
-    // Position this isolated fixture without replaying all preceding pages;
-    // the model itself is still opened, upgraded and acquired by real clicks.
-    a.library_page=(int)index/8;a.library_selected=a.library_page*8;
+    a.open_library(0);
+    const int index=spire_test::library_model_index(a,CardKind(model));CHECK(index>=0);
+    // Wheel/thumb/directional navigation was exercised before the model
+    // census. Center this isolated model, then inspect it by its real hit.
+    a.library_selected=int(index);CHECK(spire_test::focus_card_grid(a));
     tap(HitKind::LibraryItem,(int)index);CHECK(card_from_token(a.detail_card).kind==model);
     if(card_from_token(a.detail_card).upgraded!=(int)upgraded)action(UiAction::ToggleCardUpgrade);
     CHECK(a.detail_card==card_token({(CardKind)model,(uint8_t)upgraded}));
@@ -180,17 +173,12 @@ static void overflow_and_catalog(){
         unsigned id=s.card_count;open_model(GiantRock,1);fixture_card();
         CHECK(s.card_count==id+1&&s.zones[id]==Zone::Discard&&s.cards[id].kind==GiantRock&&s.cards[id].upgraded);
         CHECK(validate(s));
-        a.input(Key::Collection);action(UiAction::LibraryCards);action(UiAction::FilterAll);
-        while(a.library_page<(CardKinds-1)/8){
-            const int page=a.library_page;progress("overflow-catalog-next",(unsigned)character);
-            action(UiAction::NextPage);CHECK(a.library_page==page+1);
-        }
-        CHECK(a.library_page==(CardKinds-1)/8);CardKind ids[CardKinds];CHECK(a.library_items(ids)==CardKinds);
-        CHECK(ids[CardKinds-1]==EventCardWrithe);auto before=snapshot();
-        auto next=hit(HitKind::UiAction,(int)UiAction::NextPage);CHECK(!next.enabled);
-        a.pointer_move(next.x+next.w/2,next.y+next.h/2);a.pointer_button(true);a.pointer_button(false);
-        CHECK(a.library_page==(CardKinds-1)/8);unchanged(before);
-        tap(HitKind::LibraryItem,CardKinds-1);CHECK(card_from_token(a.detail_card).kind==EventCardWrithe);
+        a.input(Key::Collection);action(UiAction::LibraryCards);CHECK(spire_test::choose_library_pool(a,8));spire_test::discover_all_cards(a);
+        CHECK(spire_test::drag_grid_thumb(a,true));CardKind ids[CardKinds];const unsigned count=a.library_items(ids);CHECK(count==67);
+        const CardKind last=ids[count-1];auto before=snapshot();
+        const auto&grid=a.card_grids[unsigned(CardGridSurface::Library)];const int bottom=grid.position;
+        a.pointer_scroll(1);CHECK(spire_test::settle_card_grid(a));CHECK(grid.position==bottom);unchanged(before);
+        tap(HitKind::LibraryItem,int(count)-1);CHECK(card_from_token(a.detail_card).kind==last);
     }
 }
 static void named_value_and_screens(){

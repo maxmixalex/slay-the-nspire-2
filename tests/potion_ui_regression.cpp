@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "world_run.hpp"
+#include "original_events.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -31,10 +32,23 @@ static void reset(){
     for(unsigned i=0;app.combat_preparation.active&&i<1024;++i){app.advance(33);app.render();}
     CHECK(!app.combat_preparation.active);
 }
+static void standalone_reward(){
+    new_run(app.game,91,false);app.game.phase=Phase::Map;app.title=app.paused=app.help=app.library=app.character_select=false;
+    for(unsigned slot=0;slot<potion_slot_count(app.game);++slot)potion_set(app.game,slot,Potion::Strength);
+    CHECK(original_event_begin(app.game,OriginalEventId::DrowningBeacon,9,0)&&original_event_choose(app.game,0));
+    app.reset_presentation();app.render();CHECK(app.world_choice_is_potion_reward());
+    unsigned choices=0;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::WorldChoice){++choices;CHECK(app.hits[i].value==0);}CHECK(choices==1);
+    snapshot();click(HitKind::WorldChoice,0);CHECK(app.game.phase==Phase::OriginalEventChoice&&app.potion_belt_motion.failed);unchanged();
+    app.advance(150);CHECK(app.potion_belt_motion.error_alpha(app.map_clock_ms)==141);capture("potion-full-reward");
+    click(HitKind::PotionSlot,1);click(HitKind::UiAction,int(UiAction::DiscardPotion));
+    CHECK(app.game.phase==Phase::OriginalEventChoice&&potion_at(app.game,1)==Potion::Empty);
+    click(HitKind::WorldChoice,0);CHECK(app.game.phase==Phase::Event&&app.game.original_events.finished);
+    CHECK(potion_at(app.game,0)==Potion::Strength&&potion_at(app.game,1)==Potion::GlowwaterPotion);CHECK(validate(app.game));
+}
 int main(int argc,char**argv){
     std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);CHECK(app.content.open(data.data(),data.size())&&app.content.current_profile());}
     if(argc>2)captures=argv[2];
-    reset();snapshot();auto bottle=find(HitKind::PotionSlot,1);
+    standalone_reward();reset();snapshot();auto bottle=find(HitKind::PotionSlot,1);
     app.pointer_move(bottle.x+4,8);app.render();CHECK(!app.panel);unchanged();
     click(HitKind::PotionSlot,1);CHECK(app.panel==4&&app.scroll==1&&!app.potion_targeting);app.advance(150);capture("potion-fire-menu");unchanged();
     click(HitKind::Potion,1);CHECK(app.potion_targeting&&app.game.potions[1]==Potion::Fire);capture("potion-throw-targeting");unchanged();
@@ -54,6 +68,10 @@ int main(int argc,char**argv){
     app.pointer_move(empty.x+4,8);app.render();
     CHECK(app.hit_at(empty.x+4,8)&&app.hit_at(empty.x+4,8)->kind==HitKind::PotionSlot&&!app.hit_at(empty.x+4,8)->enabled);
     capture("potion-empty-hover");app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel);unchanged();
+    app.input(Key::Potions);app.render();CHECK(!app.panel&&app.hud_focus==2&&!app.pointer.visible);app.input(Key::Confirm);CHECK(!app.panel&&app.hud_focus==2);unchanged();
+    app.input(Key::Left);app.render();CHECK(app.hud_focus==1);app.input(Key::Right);app.input(Key::Right);CHECK(app.hud_focus==3);
+    app.input(Key::Confirm);CHECK(app.panel==4&&app.scroll==1);app.input(Key::Back);CHECK(!app.panel);unchanged();
+    app.input(Key::Potions);CHECK(app.hud_focus==2);app.input(Key::Potions);CHECK(app.hud_focus<0&&!app.panel);unchanged();
     // Extra physical slots stay reachable through the small top-bar pager.
     CHECK(add_potion_slots(app.game,13));CHECK(potion_slot_count(app.game)==16);app.game.potions[15]=Potion::Fruit;
     for(int i=0;i<5;++i)click(HitKind::PotionPage,1);CHECK(app.potion_page==5);

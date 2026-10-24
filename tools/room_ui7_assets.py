@@ -7,7 +7,9 @@ is used. The common pivot/scale keep scene registration stable across poses.
 """
 from __future__ import annotations
 import json
+import hashlib
 from pathlib import Path
+import shutil
 import numpy as np
 from PIL import Image
 
@@ -48,14 +50,65 @@ def source_checks(pack):
         require(expected in dialogue, 'Changed original merchant dialogue: ' + expected)
 
 
-def build_images(pack, cache, *, runtime=None, dotnet=None, work_dir=None):
+def cached_hands(source, target, sampler):
+    """Reuse the completed private hand stage without accepting stale poses.
+
+    The separately retained skeleton/atlas inputs are compared with the exact
+    source resources before reusing geometry. The source PCK itself remains the
+    caller's pinned v0.111.0 input, as for all other UI asset stages.
+    """
+    source = Path(source)
+    manifest = json.loads((source / 'room-ui7-sampling.json').read_text())
+    rows_path = source / 'room-ui7-rows.json'
+    if not rows_path.is_file():
+        rows_path = source / 'rows-stage2.json'
+    rows = json.loads(rows_path.read_text())[:2 * HAND_SAMPLES]
+    geometry = manifest['hand_samples']
+    require(manifest['runtime_sha256'] == sampler.runtime_identity,
+            'Merchant hand cache uses a different Spine runtime')
+    require(tuple(manifest['hand_size']) == HAND_SIZE and
+            tuple(manifest['hand_pivot']) == HAND_PIVOT and
+            manifest['hand_scale'] == HAND_SCALE and
+            len(rows) == len(geometry) == 2 * HAND_SAMPLES,
+            'Merchant hand cache framing/count changed')
+    for hand, (name, resource) in enumerate(HANDS):
+        resolved, metadata = sampler.resolve(resource), sampler.metadata(resource)
+        for field in ('local_skeleton', 'local_atlas'):
+            current = Path(resolved[field])
+            previous = source / 'spine-adapter' / 'inputs' / current.name
+            require(previous.read_bytes() == current.read_bytes(),
+                    'Merchant hand cache original skeleton/atlas changed')
+        for index in range(HAND_SAMPLES):
+            at = hand * HAND_SAMPLES + index
+            row, bounds = rows[at], geometry[at]
+            key = f'{name}-hand-{index:02d}'
+            require(row['key'] == 'room_ui7.' + key and bounds['key'] == key and
+                    bounds['degrees'] == -132 + index * 5 and bounds['source'] == resource and
+                    bounds['source_version'] == metadata['source_version'] and
+                    (row['width'], row['height'], row['format'], row['decoded_format']) == (*HAND_SIZE, 5, 4),
+                    'Merchant hand cache order/source/pose changed')
+            raw = (source / row['file']).read_bytes()
+            require(len(raw) == row['bytes'] and hashlib.sha256(raw).hexdigest() == row['sha256'],
+                    'Merchant hand cache payload changed')
+            destination = target / row['file']
+            if destination.resolve() != (source / row['file']).resolve():
+                destination.write_bytes(raw)
+            png = source / (key + '.png')
+            if png.is_file() and png.resolve() != (target / png.name).resolve():
+                shutil.copyfile(png, target / png.name)
+    return rows, geometry
+
+
+def build_images(pack, cache, *, runtime=None, dotnet=None, work_dir=None, hand_cache=None):
     cache = Path(cache)
     cache.mkdir(parents=True, exist_ok=True)
     source_checks(pack)
     rows, geometry = [], []
     with SpineSampler(pack, runtime=runtime, dotnet=dotnet,
                       work_dir=work_dir or cache / 'spine-adapter') as sampler:
-        for name, resource in HANDS:
+        if hand_cache is not None:
+            rows, geometry = cached_hands(hand_cache, cache, sampler)
+        for name, resource in (() if hand_cache is not None else HANDS):
             metadata = sampler.metadata(resource)
             require(metadata['source_version'].startswith('4.2.'), 'Unexpected merchant skeleton version')
             for index in range(HAND_SAMPLES):
@@ -89,8 +142,8 @@ def build_images(pack, cache, *, runtime=None, dotnet=None, work_dir=None):
         image = texture(pack, 'images/rooms/merchant_room/card_removal_' + frame + '.png')
         rows.append(image_row(cache, 'merchant-removal-' + frame,
                               image.resize((60, 60), Image.Resampling.LANCZOS)))
-    rows.append(image_row(cache, 'ancient-dialogue', texture(pack, 'images/ui/dialogue_nine_patch.png')))
-    rows.append(image_row(cache, 'ancient-dialogue-tail', texture(pack, 'images/ui/dialogue_tail.png')))
+    rows.append(image_row(cache, 'ancient-dialogue', texture(pack, 'images/ui/dialogue_nine_patch.png').resize((26, 19), Image.Resampling.LANCZOS)))
+    rows.append(image_row(cache, 'ancient-dialogue-tail', texture(pack, 'images/ui/dialogue_tail.png').resize((8, 9), Image.Resampling.LANCZOS)))
     for name in ANCIENTS:
         icon = texture(pack, f'images/ui/run_history/{name}.png').convert('RGBA')
         outline = texture(pack, f'images/ui/run_history/{name}_outline.png').convert('RGBA')
@@ -104,5 +157,7 @@ def build_images(pack, cache, *, runtime=None, dotnet=None, work_dir=None):
     (cache / 'room-ui7-sampling.json').write_text(json.dumps(dict(
         hand_size=HAND_SIZE, hand_pivot=HAND_PIVOT, hand_scale=HAND_SCALE,
         runtime_sha256=runtime_identity, hand_samples=geometry,
+        reused_hand_cache=str(Path(hand_cache).resolve()) if hand_cache is not None else None,
         auxiliary_first=BASE_AUX, auxiliary_count=BASE_AUX + COUNT), indent=2) + '\n')
+    (cache / 'room-ui7-rows.json').write_text(json.dumps(rows, indent=2) + '\n')
     return rows

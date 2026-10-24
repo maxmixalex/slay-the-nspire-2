@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "status.hpp"
 #include <cstdio>
@@ -23,10 +24,10 @@ static void setup(){
 static void return_choice(){
  setup();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
- action(UiAction::NextChoicePage);action(UiAction::NextChoicePage);CHECK(a.cursor==20);unchanged(before);
+ for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));unchanged(before);
  CHECK(click(HitKind::CombatChoice,22));CHECK(a.choice_selected_count==1&&a.choice_selected[0]==22);unchanged(before);
  a.input(Key::Detail);CHECK(a.detail_card==Defend);a.input(Key::Back);CHECK(a.choice_selected_count==1&&a.game.phase==Phase::ReturnChoice);unchanged(before);
- a.input(Key::Save);CHECK(stored.size);action(UiAction::PreviousChoicePage);CHECK(a.choice_selected[0]==22);unchanged(before);
+ a.input(Key::Save);CHECK(stored.size);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected[0]==22);unchanged(before);
  action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==22);
  a.input(Key::Load);CHECK(a.game.phase==Phase::ReturnChoice&&a.choice_selected_count==0);unchanged(before);
  // Capturing a card, then scrolling, must never select the replacement region.

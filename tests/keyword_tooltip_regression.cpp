@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "combat_layout.hpp"
 #include "world_card_factory.hpp"
@@ -144,13 +145,13 @@ static void pointer_and_keyboard(){
     a.pointer_move(300,23);a.render();CHECK(!card_hover_target(a,owner));a.input(Key::Right);a.render();CHECK(card_hover_target(a,owner)&&a.hand_focus);unchanged();
     a.paused=true;CHECK(!card_hover_target(a,owner));a.paused=false;a.help=true;CHECK(!card_hover_target(a,owner));a.help=false;
     a.settings_open=true;CHECK(!card_hover_target(a,owner));a.settings_open=false;a.frontend_confirm=1;CHECK(!card_hover_target(a,owner));a.frontend_confirm=0;
-    a.open_card_detail({DefectRainbow,0});a.pointer.visible=false;a.render();CHECK(!card_hover_target(a,owner));a.input(Key::Statuses);a.render();CHECK(a.keyword_hover.details&&card_hover_target(a,owner)&&owner.detail);
+    a.open_card_detail({DefectRainbow,0});a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner)&&owner.detail);a.input(Key::Statuses);a.render();CHECK(a.keyword_hover.details&&card_hover_target(a,owner)&&owner.detail);
     capture("keyword-detail-orbs");auto b=tips(owner.card);auto page=card_hover_page(a,owner,b);a.input(Key::Down);CHECK(a.keyword_hover.page==(page.pages>1?1:0));a.pointer_scroll(-1);CHECK(a.keyword_hover.page==0);
     a.input(Key::Back);CHECK(!a.keyword_hover.details&&a.detail_card>=0);a.input(Key::Back);CHECK(a.detail_card<0);unchanged();
-    a.open_card_detail({Bash,0});a.pointer_move(55,110);a.render();CHECK(card_hover_target(a,owner));a.pointer_move(250,215);CHECK(!card_hover_target(a,owner));a.render();
+    a.open_card_detail({Bash,0});a.pointer_move(55,110);a.render();CHECK(card_hover_target(a,owner));a.pointer_move(250,215);CHECK(card_hover_target(a,owner)&&owner.detail);a.render();
     for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::Command||a.hits[i].value!=int(Key::Statuses));
     a.input(Key::Statuses);a.render();CHECK(a.keyword_hover.details);unchanged();
-    a.input(Key::Back);a.input(Key::Back);a.library=true;a.library_filter=a.library_sort=a.library_page=a.library_tab=a.library_selected=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner));
+    a.input(Key::Back);a.input(Key::Back);a.open_library(0);spire_test::discover_all_cards(a);a.card_library.control=-1;a.library_selected=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner));
     auto item=hit(HitKind::LibraryItem,2);a.pointer_move(item.x+item.w/2,item.y+item.h/2);a.render();CHECK(card_hover_target(a,owner));capture("keyword-library");unchanged();
     a.library=false;a.panel=1;a.pile_tab=0;a.inspect_cursor=a.scroll=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner)&&owner.deck==0);unchanged();
     a.reset_presentation();CHECK(!a.keyword_hover.details&&!a.keyword_hover.owner&&!a.keyword_hover.page);unchanged();

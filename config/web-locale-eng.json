@@ -26,8 +26,6 @@
   "invalid_content": "The content pack failed validation.",
   "closed": "The game has closed. Reload this page to restart.",
   "measuring": "Measuring. Continue playing as usual…",
-  "language": "语言 / Language",
-  "switch_language": "Changing language restarts the game. Unsaved progress will be lost; press S to save first. Switch now?",
   "startup_failed": "Startup failed. Please check the resource files.",
   "missing_resources": "Resources for the selected language were not found.",
   "profile_scope": "Current browser CPU and Canvas2D submission intervals; excludes compositor/display FPS.",

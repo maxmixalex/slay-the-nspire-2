@@ -6,7 +6,9 @@
 namespace spire {
 struct RichStyle { uint8_t color=0; bool bold=false,italic=false,wave=false,jitter=false,rainbow=false,thinky_dots=false; unsigned thinky_start=0;RichRainbow rainbow_parameters{}; };
 struct RichChar { uint32_t codepoint; RichStyle style; unsigned index; };
-inline int rich_bold_advance(const RichChar&ch){return ch.style.bold&&!inline_icon(ch.codepoint)?1:0;}
+// Original styles select their own font metrics. They are never simulated by
+// widening or drawing a second offset copy of the regular glyph.
+inline unsigned rich_font_style(const RichChar&ch){return inline_icon(ch.codepoint)?0u:unsigned(ch.style.bold)|(unsigned(ch.style.italic)<<1);}
 // RichTextThinkyDots uses a 400 ms positive half-sine, a 4 s rest and
 // a 100 ms delay per relative character. Quantize to one screen pixel so
 // small calculator glyphs remain legible. This clock is presentation only.
