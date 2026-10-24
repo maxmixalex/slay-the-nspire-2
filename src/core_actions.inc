@@ -2,6 +2,19 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 static CoreObserver core_observer{};
 CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
+static void notify_damage_result(const State&s,int receiver,int blocked,int hp_loss,int old_hp,bool fully_blocked,bool block_broken,bool show_zero,bool hurt=true){
+    const CoreObserver observer=core_observer;if(!observer.on_damage)return;
+    CoreDamageResult result;result.receiver=int8_t(receiver);result.blocked=blocked;
+    result.unblocked=min(old_hp,hp_loss);result.overkill=max(0,hp_loss-old_hp);
+    result.flags=uint8_t((fully_blocked?CoreDamageResult::FullyBlocked:0)|(block_broken?CoreDamageResult::BlockBroken:0)|
+        (show_zero?CoreDamageResult::ShowZero:0)|(hurt?CoreDamageResult::Hurt:0));
+    observer.on_damage(observer.context,s,result);
+}
+void notify_power_flash(const State&s,int receiver,const char*key){
+    const CoreObserver observer=core_observer;
+    if(observer.on_power_flash&&combat_phase(s.phase)&&(receiver<0?s.hp>0:receiver<s.enemy_count&&s.enemies[receiver].hp>0))
+        observer.on_power_flash(observer.context,s,receiver,key);
+}
 void notify_enemy_animation(const State&s,int slot,const char*trigger){
     const CoreObserver observer=core_observer;
     if(observer.on_enemy_animation)observer.on_enemy_animation(observer.context,s,slot,trigger);
@@ -234,8 +247,10 @@ static void resolve(State&s){
                 int amount=max(0,wr_damage_add(s,card,s.playing,e.value+event_enchantment_damage_add(s,card,s.playing))+(pet?necro_osty_bonus(s):s.strength+s.attack_vigor))*relic_attack_multiplier(s);
                 amount=amount*wr_damage_percent(s,card,s.playing,e.target)/100;
                 amount=silent_attack_factor(s,e.target,amount,card,s.playing);
+                if(amount>1&&enemy_power_value(s,e.target,EnemyPower::Intangible))notify_power_flash(s,e.target,"INTANGIBLE_POWER");
                 amount=enemy_damage_cap(s,e.target,amount,true);enemy_before_damage(s,e.target,amount,true,pet);
                 int absorb=min(t.block,amount);t.block-=absorb;int hp_loss=enemy_hp_loss_cap(s,e.target,wr_enemy_hp_loss(s,amount-absorb,true));t.hp=max(0,t.hp-hp_loss);
+                notify_damage_result(s,e.target,absorb,hp_loss,old_hp,(absorb>0||t.block>0)&&hp_loss==0,absorb>0&&t.block==0,amount==0);
                 if(absorb&&!t.block)world_relic_hook(s,WorldRelicHook::AfterBlockBroken,e.target,pet?-2:-1);
                 if(old_hp!=t.hp)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old_hp,t.hp,e.target);
                 // Fisticuffs and Omnislice use TotalDamage + OverkillDamage.
@@ -324,9 +339,11 @@ static void resolve(State&s){
 }
 void damage_unpowered(State&s,int target,int amount){
     if(target<0||target>=s.enemy_count||s.enemies[target].hp<=0)return;
+    if(amount>1&&enemy_power_value(s,target,EnemyPower::Intangible))notify_power_flash(s,target,"INTANGIBLE_POWER");
     amount=enemy_damage_cap(s,target,max(0,amount),false);enemy_before_damage(s,target,amount,false);
     auto&e=s.enemies[target];int old_hp=e.hp,absorbed=min(e.block,amount);e.block-=absorbed;
-    int loss=min(e.hp,enemy_hp_loss_cap(s,target,amount-absorbed));e.hp-=loss;
+    const int hp_loss=enemy_hp_loss_cap(s,target,amount-absorbed);int loss=min(e.hp,hp_loss);e.hp-=loss;
+    notify_damage_result(s,target,absorbed,hp_loss,old_hp,(absorbed>0||e.block>0)&&hp_loss==0,absorbed>0&&e.block==0,amount==0);
     if(absorbed&&!e.block)world_relic_hook(s,WorldRelicHook::AfterBlockBroken,target,-1);
     if(loss)world_relic_hook(s,WorldRelicHook::AfterHpChanged,old_hp,e.hp,target);
     record(s,LogKind::Damage,amount,target);enemy_after_damage(s,target,absorbed,loss,false);enemy_check_deaths(s);necro_observe_deaths(s);

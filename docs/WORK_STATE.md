@@ -1,5 +1,13 @@
 # Work state — 2026-10-24
 
+## UI7 implementation checkpoint 1 (2026-10-24, in progress)
+
+The next source stage removes the calculator startup language chooser and browser page language selector, and routes language changes through in-game main-menu settings. Host locale switching reuses the common resource source; the original disables language changes during a run. UI preferences now have an eight-byte version 2 with version 1 migration. Settings add the existing source-backed flags, and the port-only Expedition Settings overlay has no reachable UI. The pinned CharacterSelect ShouldShowActDropdown is false: its scene node is not a reason to expose act selection.
+
+Parallel work has implemented continuous four-column card grids with scrolling/dragging, damage-result presentation independent from clamped health loss, hand-index preferences, centered map geometry and revised merchant scale/open motion. The room converter now samples merchant hands with the official pinned Spine 4.2 runtime instead of approximating its transform constraints. The original full-source inventory remains in progress. A scan count is not an implementation or fidelity percentage.
+
+This checkpoint is an implementation snapshot on the work branch, not a release or a 95% parity claim. Only short C++ syntax checks have run. No UI7 resource conversion, complete build, regression run, browser acceptance, or Firebird validation is claimed here. UI7 new resources, original potion obtain behavior, event wiring, phobia conversion, missing single-player menu/history/statistics/bestiary flows, whole-run verification, and post-feature performance/storage work remain to be completed. Immutable-source builds and conversion must use the verified remote checkpoint receipt.
+
 ## UI6 accepted runtime and current handoff
 
 **Accepted runtime:** `96f7b5c6914762fad998f03ab5da1b4c283ecaa0`.

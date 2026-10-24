@@ -5,7 +5,8 @@ enum class HitKind : uint8_t {
     None, Menu, Choice, Hand, Enemy, Battlefield, Command,
     PileTab, PileCard, Relic, Potion, Scroll, Close, DetailClose, OpenPile, ReferenceNode, ReferenceAction, SeedCharacter, UiAction, LibraryItem, CombatChoice, StatusActor, StatusItem, OwnedRelic, InstanceCard, DeckCard,
     WorldNode, EnemySelect, WorldChoice, CrystalCell, EnemyIntent, BattleStatus,
-    PotionSlot, PotionPage, PotionMerchant, HudInfo, PileSort, PileUpgrades, DebugItem
+    PotionSlot, PotionPage, PotionMerchant, HudInfo, PileSort, PileUpgrades, DebugItem,
+    GridScroll
 };
 struct HitRegion {
     int16_t x{}, y{}, w{}, h{};
@@ -18,7 +19,7 @@ struct PointerState {
     int x = 160, y = 120;
     bool visible{}, held{}, dragging{}, dispatching{};
     int down_x{}, down_y{}, armed_card = -1;
-    uint32_t context{}, revision{};
+    uint32_t context{}, revision{}, motion_time{};
     HitRegion captured{};
 };
 } // namespace spire

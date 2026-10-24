@@ -1,5 +1,28 @@
 // v0.111.0 NPowerAppliedVfx / NPowerRemovedVfx and NDamageNumVfx.
 // Timings are authored milliseconds; positions are adapted to 320x240.
+static void combat_power_flashes(Canvas&c){
+ const auto&a=c.a;const auto&v=a.combat_status;
+ for(unsigned i=0;i<v.flash_count;++i){const auto&f=v.flashes[i];const int ms=int32_t(a.animation-f.at)*33;
+  if(ms<0||ms>=1050||f.actor>unsigned(a.game.enemy_count))continue;
+  const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[f.actor]:ui_feedback_identity(a.game,f.actor);if(identity!=f.identity)continue;
+  const auto pose=a.combat_enemy_pose(f.actor?f.actor-1:0);const int x=f.actor?pose.x:combat_player_x(a.game),y=f.actor?pose.feet-32:91;
+  const auto p=a.content.image(ui_status_image(a,f.id));if(!p.pixels||p.format>3)continue;
+  // NPowerFlashVfx's two initial tweens run in parallel for400ms. The
+  // subsequent scale400ms and opacity250ms run sequentially: total1050ms.
+  const unsigned grow=ms<=400?0u:ms>=800?4096u:unsigned(ms-400)*4096u/400u;
+  const int size=17+int(grow*2u/4096u),left=x-size/2,top=y-size/2;
+  const unsigned opacity=ms<=800?255u:255u*CombatCardMotion::sine(unsigned(1050-ms)*1024u/250u)/1024u;
+  for(int yy=mx(0,-top);yy<mn(size,c.clip_h-top);++yy)for(int xx=mx(0,-left);xx<mn(size,c.clip_w-left);++xx){
+   const unsigned at=unsigned(yy*p.h/size)*p.w+unsigned(xx*p.w/size);const uint8_t*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
+   const uint16_t color=uint16_t(pixel[0]|uint16_t(pixel[1])<<8);const unsigned alpha=p.alpha?p.alpha[at]:255;
+   // power_flash_vfx.gdshader samples the icon twice, multiplies RGB by3
+   // and uses blend_add. Preserve this instead of a white rectangular glow.
+   const unsigned r=color>>11,g=(color>>5)&63,b=color&31;
+   const uint16_t lit=uint16_t((mn(31,int(r*r*3u/31u))<<11)|(mn(63,int(g*g*3u/63u))<<5)|mn(31,int(b*b*3u/31u)));
+   c.paint((top+yy)*c.pitch+left+xx,lit,div255(div255(alpha*alpha)*opacity),presentation::Add);
+  }
+ }
+}
 static void combat_power_popups(Canvas&c){
  const auto&a=c.a;const auto&v=a.combat_status;
  int occupied[CombatStatus::Actors][3]{},heights[CombatStatus::Actors][3]{};uint8_t rows[CombatStatus::Actors]{};
@@ -47,10 +70,10 @@ static void combat_power_popups(Canvas&c){
 }
 // Rasterize each fetched glyph once; scaling and outline share this small
 // alpha-only scratch line. There is no new sprite pack or persistent cache.
-static void combat_damage_label(Canvas&c,int value,int cx,int cy,int scale,uint16_t color){
+static void combat_damage_text(Canvas&c,const char*label,int cx,int cy,int scale,uint16_t color){
  constexpr int W=128,H=40;uint8_t mask[W*H]{};
- char label[16]{};TextBuffer b{label,sizeof label,0};b.number(value);int width=0,height=0;
- for(const char*p=label;*p;++p){const auto g=c.a.content.glyph(unsigned(*p),16);if(width+mx(g.w,g.advance)>=W)break;
+ int width=0,height=0;
+ for(const char*p=label;*p;){const auto g=c.a.content.glyph(utf8(p),16);if(width+mx(g.w,g.advance)>=W)break;
   if(g.pixels){unsigned pos=0;
    const auto pixel=[&](unsigned at,unsigned alpha){const unsigned yy=at/g.w,xx=at-yy*g.w;if(yy<H)mask[yy*W+width+xx]=uint8_t(alpha);};
    if(g.encoded_size){for(unsigned at=0;at+1<g.encoded_size&&pos<unsigned(g.w)*g.h;at+=2){unsigned n=mn(g.pixels[at],int(unsigned(g.w)*g.h-pos));const unsigned alpha=g.pixels[at+1];while(n--)pixel(pos++,alpha);}}
@@ -70,16 +93,35 @@ static void combat_damage_label(Canvas&c,int value,int cx,int cy,int scale,uint1
   }
  }
 }
+static void combat_damage_label(Canvas&c,int value,int cx,int cy,int scale,uint16_t color){
+ char label[16]{};TextBuffer b{label,sizeof label,0};b.number(value);combat_damage_text(c,label,cx,cy,scale,color);
+}
 static void combat_damage_popups(Canvas&c){
  const auto&a=c.a;const auto&v=a.combat_status;
  for(unsigned i=0;i<v.damage_count;++i){const auto&d=v.damages[i];const int ms=int32_t(a.animation-d.at)*33;
-  if(ms<0||ms>=2000||d.actor>unsigned(a.game.enemy_count))continue;
+  const bool pet=d.actor==MaxEnemies+1;
+  if(ms<0||ms>=2000||(!pet&&d.actor>unsigned(a.game.enemy_count)))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[d.actor]:ui_feedback_identity(a.game,d.actor);if(identity!=d.identity)continue;
-  const auto p=a.combat_enemy_pose(d.actor?d.actor-1:0);
+  const auto p=a.combat_enemy_pose(d.actor&&!pet?d.actor-1:0);
+  const int origin_x=pet?combat_player_x(a.game)+52:d.actor?p.x:combat_player_x(a.game);
+  const int origin_y=pet?93:d.actor?p.feet-30:91;
+  if(d.flags&CoreDamageResult::FullyBlocked){
+   // NDamageBlockedVfx: 2s Quad.Out rise/scale, Cubic.Out blue->white,
+   // with a delayed Sine.In fade. It is a localized word, never HP delta 0.
+   const unsigned q=unsigned(ms)*1024u/2000u,progress=1024u-(1024u-q)*(1024u-q)/1024u;
+   const int cx=origin_x+int(d.variation%41u)/6-3;
+   const int cy=origin_y-10+int(d.variation%21u)/6-int(progress*250u*218u/(1024u*1080u));
+   const int scale=(1024-int(progress*410u/1024u))*64/(6*16);
+   const unsigned alpha=ms<=500?255u:255u*CombatCardMotion::sine(unsigned(2000-ms)*1024u/1500u)/1024u;
+   Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/255u);
+   const unsigned color=CombatCardMotion::cubic(unsigned(ms),2000u)*255u/1024u;
+   const char*label=a.content.world_string("vfx","BLOCKED");if(!*label)label=a.content.english()?"Blocked":"格挡";
+   combat_damage_text(text,label,cx,cy,scale,blend(rgb(33,192,255),rgb(255,246,226),color));continue;
+  }
   // The original integration uses 2000px/s^2 gravity, initial vertical
   // velocity -800..-700px/s, and a small independent horizontal scatter.
-  const int cx=(d.actor?p.x:combat_player_x(a.game))+int(d.vx)*ms/6000+int(d.variation%5)-2;
-  const int cy=(d.actor?p.feet-30:91)+(int(d.vy)*ms+ms*ms)*218/1080000;
+  const int cx=origin_x+int(d.vx)*ms/6000+int(d.variation%5)-2;
+  const int cy=origin_y+(int(d.vy)*ms+ms*ms)*218/1080000;
   const unsigned u=unsigned(ms)*1024u/2000u,alpha=255u*(1024u-u*u/1024u)/1024u;
   const unsigned rest=ms<1200?unsigned(1200-ms)*1024u/1200u:0u;
   const int base=(1200+int(d.variation))*64*1024/(1000*6*16),scale=base*(1024+int(1536u*rest/1024u*rest/1024u))/1024;

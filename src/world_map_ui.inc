@@ -103,9 +103,11 @@ static void map_special_node(Canvas&c,const reference::ReferenceMap&m,unsigned i
         map_picture(c,map_named_picture(c.a.content,"BOSS_",d->key),x,y,static_size,static_size,MapShader::Tint,ink);
     }
 }
-constexpr int MapLegendX=244,MapLegendY=74,MapLegendRowY=96,MapLegendRowStep=12;
+// NMapScreen places the legend at viewport_width * .8. Keep that anchor;
+// its text column is fitted to the remaining 64 pixels at this viewport.
+constexpr int MapLegendX=256,MapLegendY=74,MapLegendRowY=96,MapLegendRowStep=12;
 static int map_legend_hover(const App&a,int offset_x=0){
-    if(!a.pointer.visible||a.pointer.x<MapLegendX+5+offset_x||a.pointer.x>=MapLegendX+71+offset_x||
+    if(!a.pointer.visible||a.pointer.x<MapLegendX+3+offset_x||a.pointer.x>=MapLegendX+64+offset_x||
        a.pointer.y<MapLegendRowY||a.pointer.y>=MapLegendRowY+6*MapLegendRowStep)return -1;
     return (a.pointer.y-MapLegendRowY)/MapLegendRowStep;
 }
@@ -119,14 +121,16 @@ static const char* map_legend_text(const App&a,unsigned item,const char*suffix,c
 static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
     auto&a=c.a;const int x=MapLegendX+offset_x,y=MapLegendY;
     map_picture(c,a.content.world_image("map","LEGEND"),x+38,y+51,76,102,MapShader::Original,0,0,255,0,22,235);
-    const char*header=a.content.world_string("map","LEGEND_HEADER");c.centered(*header?header:"图例",x+5,y+8,66,10,colors.ink);
-    for(unsigned i=0;i<6;++i){const int row=MapLegendRowY+int(i)*MapLegendRowStep;const auto type=map_legend_type(i);const bool selected=a.map_legend&&a.map_legend_item==i;
+    const char*header=a.content.world_string("map","LEGEND_HEADER");c.centered(*header?header:"图例",x+3,y+8,58,10,colors.ink);
+    a.room_presentation.legend.observe(a.map_legend?a.map_legend_item:-1,a.map_clock_ms);
+    for(unsigned i=0;i<6;++i){const int row=MapLegendRowY+int(i)*MapLegendRowStep;const auto type=map_legend_type(i);
         // NMapLegendItem scales its icon and highlights its point type; the
         // paper itself is always present and is not a separate modal window.
-        map_picture(c,world_point_image(type),x+14,row+6,selected?14:11,selected?14:11,MapShader::Normal,0,colors.paper,255,0,22,235);
+        const int size=int((11*a.room_presentation.legend.scale(i,a.map_clock_ms)+2048)/4096);
+        map_picture(c,world_point_image(type),x+12,row+6,size,size,MapShader::Normal,0,colors.paper,255,0,22,235);
         char key[96]{};const char*label=map_legend_text(a,i,".title",key,sizeof key);
-        c.text_fitted(*label?label:world_point_name(type),x+25,row+1,45,8,colors.ink,8);
-        c.action(x+5,row,66,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
+        c.text_fitted(*label?label:world_point_name(type),x+22,row+1,41,8,colors.ink,8);
+        c.action(x+3,row,61,MapLegendRowStep,UiAction(int(UiAction::MapLegendUnknown)+int(i)));
     }
     if(a.map_legend){
         char key[96]{},title[160]{};const char*source=map_legend_text(a,a.map_legend_item,".hoverTip.title",key,sizeof key);

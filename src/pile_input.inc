@@ -56,5 +56,5 @@ void App::sort_pile(unsigned column){
     pile_sort_descending^=uint8_t(1u<<column);unsigned at=0;
     while(at<4&&pile_sort_priority[at]!=column)++at;
     for(unsigned i=at;i>0;--i)if(i<4)pile_sort_priority[i]=pile_sort_priority[i-1];
-    pile_sort_priority[0]=uint8_t(column);scroll=inspect_cursor=0;
+    pile_sort_priority[0]=uint8_t(column);scroll=inspect_cursor=0;card_grids[unsigned(CardGridSurface::Pile)].reset();
 }

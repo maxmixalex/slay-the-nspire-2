@@ -16,6 +16,7 @@
 #include "loading_screen.hpp"
 #include "card_hud_assets.hpp"
 #include "feedback_assets.hpp"
+#include "frontend_ui7_assets.hpp"
 #include "card_face_layout.hpp"
 #include "fitted_text.hpp"
 #if SPIRE_DEBUG_COMMANDS
@@ -97,6 +98,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
 }
 #include "relic_ui.inc"
 #include "ui_picture_transform.inc"
+#include "card_grid_ui.inc"
 #include "hud_ui6.inc"
 
 #include "rooms_ui.inc"

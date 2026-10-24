@@ -20,6 +20,41 @@ static bool ui_feedback_bound(const App&a){const auto&f=a.combat_feedback;const 
  return f.active&&s.enemy_world.active&&f.seed==s.seed&&f.floor==s.floor&&f.combat==s.world.combat_count&&f.encounter==int(s.enemy_world.encounter);
 }
 static uint32_t ui_feedback_later(uint32_t a,uint32_t b){return int32_t(a-b)>0?a:b;}
+static const char*ui_status_key(int);
+void App::observe_power_flash(const State&s,int receiver,const char*key){
+ if(&s!=&game||!key||receiver<-1||receiver>=s.enemy_count)return;
+ const unsigned actor=unsigned(receiver+1);int id=-1;
+ for(int candidate=0;candidate<StatusKinds;++candidate){const char*stored=ui_status_key(candidate);if(!stored)continue;
+  const char*left=key,*right=stored;while(*left&&*left==*right){++left;++right;}if(!*left&&!*right){id=candidate;break;}}
+ if(id<0)return;
+ const uint32_t at=ui_feedback_bound(*this)?combat_feedback.effect_at:animation;
+ combat_status.flash(actor,unsigned(id),ui_feedback_identity(s,actor),at,animation);
+}
+static void ui_damage_apply(App&a,const CombatFeedback::DamageCue&cue){
+ const unsigned actor=cue.actor;
+ const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[actor]:ui_feedback_identity(a.game,actor);
+ if(identity!=cue.identity)return;
+ a.combat_status.damage(actor,cue.amount,cue.identity,cue.at,a.animation,cue.flags);
+ // Self-inflicted damage and explicit kills do not play a fabricated Hit.
+ // DamageResult still owns its number/sparks when a command suppresses hurt.
+ if(!(cue.flags&CoreDamageResult::Hurt)||cue.amount<=0||int32_t(a.animation-cue.at)>=24)return;
+ if(actor==0)a.motion[0]={AnimHeroHurt,cue.at};
+ else if(actor<=MaxEnemies&&a.combat_health(int(actor)).hp>0)a.enemy_trigger(int(actor)-1,"Hit");
+}
+void App::observe_combat_damage(const State&s,const CoreDamageResult&result){
+ if(&s!=&game||(!combat_phase(s.phase)&&!ui_feedback_bound(*this)))return;
+ const unsigned actor=result.receiver==-2?MaxEnemies+1:unsigned(result.receiver+1);
+ if(actor>=CombatFeedback::Energy)return;
+ const auto identity=ui_feedback_identity(s,actor);auto&f=combat_feedback;
+ if(ui_feedback_bound(*this))f.append_damage(actor,result,identity,f.effect_at);
+ else if(result.amount()>0||(result.flags&(CoreDamageResult::FullyBlocked|CoreDamageResult::ShowZero)))
+  ui_damage_apply(*this,{identity,animation,result.amount(),uint8_t(actor),result.flags});
+}
+void App::sync_combat_damage(){
+ auto&f=combat_feedback;
+ while(f.damage_head<f.damage_count&&int32_t(animation-f.damages[f.damage_head].at)>=0)ui_damage_apply(*this,f.damages[f.damage_head++]);
+ if(f.damage_head==f.damage_count)f.damage_head=f.damage_count=0;
+}
 #include "combat_card_motion_ui.inc"
 #include "combat_status_ui.inc"
 HealthBarValues App::combat_health(int actor)const{
@@ -245,9 +280,6 @@ static void ui_feedback_apply(App&a,unsigned actor,const HealthBarValues&value,u
  if(!same&&actor>0&&actor<=MaxEnemies)f.intents[actor-1]={};
  if(same&&old.hp>value.hp&&actor<=MaxEnemies){
   a.last_hit[actor]=old.hp-value.hp;a.hit_start[actor]=int(at);
-  a.combat_status.damage(actor,old.hp-value.hp,identity,at,a.animation);
-  if(actor==0)a.motion[0]={AnimHeroHurt,at};
-  else if(value.hp>0&&int32_t(a.animation-at)<24)a.enemy_trigger(int(actor)-1,"Hit");
  }
 }
 void App::sync_combat_feedback(){
@@ -257,6 +289,7 @@ void App::sync_combat_feedback(){
  sync_combat_cards();
  while(f.head<f.count&&int32_t(animation-f.cues[f.head].at)>=0){const auto cue=f.cues[f.head++];ui_feedback_apply(*this,cue.actor,cue.value,cue.identity,cue.at);}
  if(f.head==f.count)f.head=f.count=0;
+ sync_combat_damage();
  combat_status.sync(animation);
  if(f.finished&&int32_t(animation-f.end_at)>=0){
   // Overflow only drops intermediate presentation entries. At the scheduled

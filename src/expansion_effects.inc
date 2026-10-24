@@ -49,12 +49,17 @@ int player_hp_loss(State&s,int amount,bool attack,bool blockable,int card_source
  if(card_source==-2)card_source=attack?-1:s.playing;
  if(card_source<0||card_source>=s.card_count)card_source=-1;
  if(attack)amount=amount*wr_incoming_damage_percent(s,dealer,true)/100;
- if(in_combat&&power_value(s,XPower::Intangible))amount=min(1,amount);
+ if(in_combat&&power_value(s,XPower::Intangible)){if(amount>1)notify_power_flash(s,-1,"INTANGIBLE_POWER");amount=min(1,amount);}
  int absorbed=blockable?min(s.block,amount):0;s.block-=(int16_t)absorbed;int unblocked=amount-absorbed,loss=unblocked;
- if(attack&&x.osty_hp){int old_pet=x.osty_hp,pet=min(loss,x.osty_hp);x.osty_hp-=(int16_t)pet;loss-=pet;necro_osty_hp_lost(s,old_pet);}
+ const bool redirected=attack&&x.osty_hp;
+ if(redirected){int old_pet=x.osty_hp,pet=min(loss,x.osty_hp);x.osty_hp-=(int16_t)pet;loss-=pet;
+  notify_damage_result(s,-2,0,unblocked,old_pet,false,false,amount==0);necro_osty_hp_lost(s,old_pet);}
  loss=wr_player_hp_loss(s,loss);
  if(loss&&in_combat&&power_value(s,XPower::Buffer)){gain_power(s,XPower::Buffer,-1);loss=0;}
- const int old=s.hp;s.hp=(int16_t)max(0,s.hp-loss);const int actual=old-s.hp;record(s,LogKind::LoseHp,actual);
+ const int old=s.hp;s.hp=(int16_t)max(0,s.hp-loss);const int actual=old-s.hp;
+ if(in_combat)notify_damage_result(s,-1,absorbed,loss,old,blockable&&(absorbed>0||s.block>0)&&(redirected?unblocked:loss)==0,
+  absorbed>0&&s.block==0,amount==0&&!redirected,attack||card_source<0);
+ record(s,LogKind::LoseHp,actual);
  const int flags=(attack?1:0)|(blockable?2:0)|(in_combat?4:0)|(!s.hp?8:0);
  if(in_combat&&world_shared_active(s)){
   // AfterBlockBroken -> HPChanged -> DamageGiven -> DamageReceived / Kill.
@@ -124,7 +129,7 @@ static void next_enemy(State&s,int i){
  if(s.enemy_world.active){enemy_queue_turn(s,i);return;}
  auto&e=s.enemies[i];if(!e.hp)return;
  e.block=0;int hit=enemy_damage(s,i);bool attack=e.move!=2;record(s,LogKind::Enemy,i,e.move);
- if(attack&&s.thorns)damage_unpowered(s,i,s.thorns);
+ if(attack&&s.thorns){notify_power_flash(s,-1,"THORNS_POWER");damage_unpowered(s,i,s.thorns);}
  int blocked=min(s.block,hit);player_hp_loss(s,hit,attack,true,-1,i);if(s.phase==Phase::Dead)return;
  if(attack)regent_after_blocked_attack(s,i,blocked);
  if(attack&&s.flame_barrier)damage_unpowered(s,i,s.flame_barrier);
@@ -252,9 +257,9 @@ static void extension_effect(State&s,Effect e){
   event_card_before_hand_end(s);
   queue_extension(s,XOp::AllCharactersFlush,0,0,true);
   relic_hook(s,RelicHook::TurnEnd);
-  if(power_value(s,XPower::Plating))gain_unpowered_block(s,power_value(s,XPower::Plating));
+  if(power_value(s,XPower::Plating)){notify_power_flash(s,-1,"PLATING_POWER");gain_unpowered_block(s,power_value(s,XPower::Plating));}
   if(power_value(s,XPower::Regen)){heal(s,power_value(s,XPower::Regen));gain_power(s,XPower::Regen,-1);}
-  if(power_value(s,XPower::Ritual))s.strength=(int16_t)min(9999,s.strength+power_value(s,XPower::Ritual));
+  if(power_value(s,XPower::Ritual)){notify_power_flash(s,-1,"RITUAL_POWER");s.strength=(int16_t)min(9999,s.strength+power_value(s,XPower::Ritual));}
   for(int i=MaxBombs-1;i>=0;i--)if(x.bomb_turns[i]&&!--x.bomb_turns[i]){queue_extension(s,XOp::AllDamage,x.bomb_damage[i],0,true);x.bomb_damage[i]=0;}
   queue_extension(s,XOp::OrbsEnd,0,0,true);defect_turn_end(s);regent_turn_end(s);ironclad_turn_end(s);burn_hand(s);break;
  case XOp::EndDiscard:
@@ -277,7 +282,8 @@ static void extension_effect(State&s,Effect e){
  case XOp::EnemyDone:
   if(world_shared_active(s)){world_stage(s,WorldStage::EnemyBeforeEndVeryEarly);break;}
   necro_enemy_side_end(s);
-  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp&&x.demise[t]){int n=min(s.enemies[t].hp,x.demise[t]);s.enemies[t].hp-=n;record(s,LogKind::LoseHp,n,t+1);}
+  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp&&x.demise[t]){notify_power_flash(s,t,"DEMISE_POWER");int old=s.enemies[t].hp,n=min(old,x.demise[t]);s.enemies[t].hp-=n;
+   notify_damage_result(s,t,0,x.demise[t],old,false,false,false);record(s,LogKind::LoseHp,n,t+1);}
   ironclad_enemy_side_end(s);regent_enemy_side_end(s);
   s.flame_barrier=0;if(s.no_block)--s.no_block;
   if(power_value(s,XPower::Intangible))gain_power(s,XPower::Intangible,-1);
@@ -297,7 +303,7 @@ static void extension_effect(State&s,Effect e){
   x.nonpower_started=0;x.returning=0;for(auto&v:x.turn_cost)v=0;for(auto&v:x.star_turn_free)v=0;for(auto&v:x.panache_count)v=0;
   relic_reset_turn_counters(s);if(s.block)record(s,LogKind::Block,s.block);
   if(power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);
-  if(s.demon_form){s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
+  if(s.demon_form){notify_power_flash(s,-1,"DEMON_FORM_POWER");s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
   s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));
   relic_hook(s,RelicHook::TurnStart);
   for(unsigned id=0;id<s.card_count;id++)if(x.return_turn[id]&&x.return_turn[id]<=s.turn){

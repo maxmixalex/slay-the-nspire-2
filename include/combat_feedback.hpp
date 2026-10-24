@@ -69,18 +69,27 @@ struct CombatFeedback {
   uint32_t finish(bool fast){active=false;return base+(hit?(clock_ms+(fast?100:200)+32)/33:clock_ms/33);}
  } attacks[MaxAutoFrames+1]{},enemy_attack{};
  struct Cue {HealthBarValues value{};uint32_t identity=0,at=0;uint8_t actor=0;};
+ struct DamageCue {uint32_t identity=0,at=0;int32_t amount=0;uint8_t actor=0,flags=0;};
  HealthBarValues shown[Actors]{},observed[Actors]{};
  uint32_t identity[Actors]{},observed_identity[Actors]{};
  EnemyIntent intents[MaxEnemies]{};
  uint32_t hide_at[MaxEnemies]{};
  Cue cues[Capacity]{};
+ DamageCue damages[Capacity]{};uint16_t damage_head=0,damage_count=0;
  CombatHand hand{};
  uint32_t seed=0,effect_at=0,after_at=0,move_at=0,move_end=0,end_at=0,choice_at=0;
  int floor=-1,combat=-1,encounter=-1,move_slot=-1,move=-1;
  uint16_t head=0,count=0;
  uint8_t hidden=0;
- bool active=false,finished=false,overflow=false,choice_pending=false;
- void reset(){active=finished=overflow=choice_pending=false;head=count=0;hidden=0;after_at=0;move_slot=move=-1;for(auto&a:attacks)a.active=false;enemy_attack.active=false;}
+ bool active=false,finished=false,overflow=false,choice_pending=false,damage_overflow=false;
+ void reset(){active=finished=overflow=choice_pending=damage_overflow=false;head=count=damage_head=damage_count=0;hidden=0;after_at=0;move_slot=move=-1;for(auto&a:attacks)a.active=false;enemy_attack.active=false;}
+ void append_damage(unsigned actor,const CoreDamageResult&result,uint32_t id,uint32_t at){
+  if(actor>=Actors||!(result.amount()>0||(result.flags&(CoreDamageResult::FullyBlocked|CoreDamageResult::ShowZero))))return;
+  if(damage_count==Capacity&&damage_head){for(unsigned i=damage_head;i<damage_count;++i)damages[i-damage_head]=damages[i];damage_count-=damage_head;damage_head=0;}
+  if(damage_count==Capacity){damage_overflow=true;return;}
+  damages[damage_count++]={id,at,result.amount(),uint8_t(actor),result.flags};
+  if(int32_t(at-end_at)>0)end_at=at;
+ }
  static bool same(const HealthBarValues&a,const HealthBarValues&b){
   return a.hp==b.hp&&a.max_hp==b.max_hp&&a.block==b.block&&a.tracked_block==b.tracked_block&&
    a.poison_damage==b.poison_damage&&a.doom==b.doom&&a.infinite==b.infinite;
@@ -99,5 +108,5 @@ struct CombatFeedback {
   cues[count++]={value,id,at,uint8_t(actor)};
  }
 };
-static_assert(sizeof(CombatFeedback)<=8*1024,"Combat display must remain a small, bounded App projection");
+static_assert(sizeof(CombatFeedback)<=12*1024,"Combat display must remain a small, bounded App projection");
 }

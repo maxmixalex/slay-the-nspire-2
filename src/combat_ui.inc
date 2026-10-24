@@ -97,6 +97,17 @@ static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     card_title(c,label,x-2,y+13,27,Gold);
     c.hit(x-3,y-3,29,28,HitKind::OpenPile,tab);
 }
+static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
+ if(!c.a.show_card_indices||p.scale<=0)return;
+ // NHandCardHolder.HandIndex is centered256 source px above a300x422
+ // face. The port face is69x97px; keep the holder's rotation and scale.
+ uint16_t pixels[16*12]{};uint8_t alpha[16*12]{};
+ Canvas tile{c.a,pixels,16,16,12,alpha};char label[8]{};TextBuffer b{label,sizeof label,0};b.number(int(index+1));
+ health_label(tile,label,0,2,16,8,rgb(255,246,226),Ink);
+ const int cx=p.cx+59*p.sine*p.scale/(1024*1024),cy=p.cy-59*p.cosine*p.scale/(1024*1024);
+ const Picture image{reinterpret_cast<const uint8_t*>(pixels),alpha,nullptr,16,12,1};
+ ui_picture_transform(c,image,cx,cy,mx(1,16*p.scale/1024),mx(1,12*p.scale/1024),p.sine,p.cosine);
+}
 static void combat_actors(Canvas&c){
     auto&a=c.a;const auto&s=a.game;const int player_x=combat_player_x(s);c.actor(0,player_x,124);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
@@ -240,7 +251,7 @@ static void combat_screen(Canvas&c){
     status_strip(c,0,player_x-36,149,96);
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];const auto pos=a.combat_enemy_pose(i);int x=pos.x;
-        if(a.combat_health(i+1).hp<=0){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
+        if(a.combat_health(i+1).hp<=0){health_block_break(c,a.health_bars[i+1],x-pos.width/2,pos.hp);if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
         c.hit(x-pos.width/2-2,pos.intent,pos.width+4,pos.status-pos.intent+15,HitKind::Enemy,i);
         if(s.enemy_world.active){native_enemy_intent(c,i,pos);if(a.target==i)c.text("›",x-pos.width/2-7,pos.intent+3,10,Gold);}
         else{
@@ -257,7 +268,7 @@ static void combat_screen(Canvas&c){
         const int age=int(a.animation)-a.hit_start[i];
         if(a.last_hit[i]&&age>=0&&age<24){const auto p=a.combat_enemy_pose(i?i-1:0);c.num(a.last_hit[i],i?p.x-12:48,(i?p.feet-30:91)-age/2,16,Red);}
     }
-    combat_power_popups(c);
+    combat_power_flashes(c);combat_power_popups(c);
     const auto hand=a.combat_hand();
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
@@ -272,6 +283,7 @@ static void combat_screen(Canvas&c){
         if((focused&&i==selected)||hand.ids[i]==held_card)continue;
         auto p=a.combat_hand_pose(unsigned(i),focused&&i==selected);
         draw_hand_tile(c,hand_tile(c,hand.ids[i]),p,false);
+        combat_hand_index(c,unsigned(i),p);
         auto r=hand_rail(hand.count,i);
         int top=p.cy-HandTileH*p.scale/(2*1024);
         if(a.combat_hand_settled(unsigned(i),focused&&i==selected))
@@ -286,6 +298,7 @@ static void combat_screen(Canvas&c){
         if(focused&&hand.ids[selected]!=held_card){
             auto p=a.combat_hand_pose(unsigned(selected),true);
             draw_hand_tile(c,hand_tile(c,hand.ids[selected]),p,true);
+            combat_hand_index(c,unsigned(selected),p);
             // While X is still approaching the focused position there is no
             // settled bottom rail. Keep its actual lower face hoverable too.
             const int height=a.combat_hand_settled(unsigned(selected),true)?68:HandTileH;

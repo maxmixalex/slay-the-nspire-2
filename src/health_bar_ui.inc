@@ -114,6 +114,28 @@ static void health_amount(TextBuffer&b,int value){
  if(value>=1000000){b.number(value/1000000);b.ch('M');}
  else if(value>=10000){b.number(value/1000);b.ch('k');}else b.number(value);
 }
+static void health_block_break(Canvas&c,const HealthBarMotion&motion,int x,int y){
+ const unsigned elapsed=c.a.animation*33u-motion.block_break_ms;
+ if(!motion.block_breaking||elapsed>=600u)return;
+ const unsigned p=HealthBarMotion::block_break_progress(elapsed),alpha=(4096u-HealthBarMotion::block_break_progress(elapsed,true))*255u/4096u;
+ for(unsigned side=0;side<2;++side){HealthPatch patch;
+  if(!patch.read(c.a.content,c.a.content.world_image("common",side?"BLOCK_BREAK_RIGHT":"BLOCK_BREAK_LEFT")))continue;
+  const int dx=side?4096+13*int(p):-4096-15*int(p),dy=side?-11*4096+10*int(p):-10*4096+9*int(p);
+  // Scene scales each128px fragment by .5. At the room's 1/6 scale it
+  // spans10.67px, centered on the shield's original control center.
+  const int cx=(x-2)*1024+dx/24,cy=(y+3)*1024+dy/24;
+  const unsigned angle=(side?275u:232u)*p/4096u;
+  const int sn=(side?1:-1)*int(CombatCardMotion::sine(angle)),cs=int(CombatCardMotion::sine(1024u-angle));
+  const int left=mx(0,cx/1024-8),right=mn(c.clip_w,cx/1024+9),top=mx(0,cy/1024-8),bottom=mn(c.clip_h,cy/1024+9);
+  for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx){
+   const int rx=xx*1024+512-cx,ry=yy*1024+512-cy;
+   const int u=(rx*cs+ry*sn)/1024+5461,v=(-rx*sn+ry*cs)/1024+5461;
+   if(u<0||v<0||u>=10923||v>=10923)continue;
+   const int at=(v*patch.height/10923)*patch.width+u*patch.width/10923;
+   c.paint(yy*c.pitch+xx,patch.color[at],div255(unsigned(patch.alpha[at])*alpha));
+  }
+ }
+}
 }
 
 void Canvas::hp(const HealthBarValues&v,const HealthBarMotion&motion,int x,int y,int width){
@@ -158,4 +180,5 @@ void Canvas::hp(const HealthBarValues&v,const HealthBarMotion&motion,int x,int y
   if(this->width(label,8)>16){b.n=0;label[0]=0;health_amount(b,v.block);}
   health_label(shield,label,bx,by+4,16,8,cream,rgb(11,85,107));
  }
+ health_block_break(*this,motion,x,y);
 }

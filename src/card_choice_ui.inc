@@ -50,16 +50,17 @@ static void card_choice_screen(Canvas&c){
     const auto&source=choice_pile(s);const unsigned limit=choice_max(s);
     const bool offer=s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::Offer||s.expansion.choice==XChoice::EnemyKnowledge||s.expansion.choice==XChoice::EventAbundance);
     const bool optional=choice_min(s)==0;
-    a.cursor=mn(mx(0,a.cursor),mx(0,source.count-1));const int first=offer?0:a.cursor/10*10;
+    a.cursor=mn(mx(0,a.cursor),mx(0,source.count-1));
+    auto&grid=a.configure_card_grid(CardGridSurface::CombatChoice,source.count,s.revision);CardGridPainter painter{c,grid};const int first=offer?0:grid.first(),last=offer?mn(source.count,3):grid.last();
     c.dim(0,0,320,240,215);c.centered(choice_title(s),0,8,320,16,Gold);
     char label[96]={};TextBuffer text{label,sizeof label,0,&c.a.content};
     text.text("已选择 ");text.number(a.choice_selected_count);text.text(optional?" / 最多 ":" / ");text.number(limit);
     c.centered(label,0,31,320,10,White);
-    int portraits[10];unsigned portrait_count=0;
-    for(int i=first;i<mn(source.count,first+(offer?3:10));++i){const int id=source.ids[i];
+    int portraits[16];unsigned portrait_count=0;
+    for(int i=first;i<last;++i){const int id=source.ids[i];
         portraits[portrait_count++]=a.card_face_image(choice_card(s,id),id<s.card_count?id:-1);}
     a.content.prepare_images(portraits,portrait_count);
-    for(int i=first;i<mn(source.count,first+(offer?3:10));i++){
+    for(int i=first;i<last;i++){
         const int id=source.ids[i];Card card=choice_card(s,id);bool selected=false;
         for(unsigned j=0;j<a.choice_selected_count;j++)if(a.choice_selected[j]==id)selected=true;
         if(offer){
@@ -68,17 +69,14 @@ static void card_choice_screen(Canvas&c){
             if(selected)c.box(x-4,y-4,88,120,Green);
             c.hit(x-5,y-5,90,126,HitKind::CombatChoice,id);
         }else{
-            const int x=26+(i-first)%5*56,y=48+(i-first)/5*73;
-            small_card(c,card,x,y,i==a.cursor,true,0,choice_display_cost(s,id),choice_display_stars(s,id),id<s.card_count?id:-1);
-            if(selected){c.box(x-3,y-3,53,72,Green);c.rect(x+32,y+46,14,17,Panel);c.text("✓",x+33,y+46,12,Green);}
-            c.hit(x-3,y-3,53,72,HitKind::CombatChoice,id);
+            const int x=grid.card_x(i),y=grid.card_y(i);
+            const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+            painter.card(i,card,hover||(!a.pointer.visible&&i==a.cursor),true,choice_display_cost(s,id),choice_display_stars(s,id),id<s.card_count?id:-1,-1,nullptr,selected);
+            painter.hit(i,HitKind::CombatChoice,id);
         }
     }
-    if(!offer&&source.count>10){
-        c.text("‹",12,191,16,Gold);c.action(0,187,42,21,UiAction::PreviousChoicePage,first>0);
-        c.text("›",295,191,16,Gold);c.action(278,187,42,21,UiAction::NextChoicePage,first+10<source.count);
-        char page[32]={};TextBuffer text{page,sizeof page,0,&c.a.content};text.number(first/10+1);text.text(" / ");text.number((source.count+9)/10);c.centered(page,43,194,234,10,Muted);
-    }
+    painter.finish();
+    if(!offer)card_grid_scrollbar(c,grid,CardGridSurface::CombatChoice);
     c.button("清除",4,213,77,false,24);c.action(1,209,83,31,UiAction::ClearChoice,a.choice_selected_count!=0);
     c.button("详情",85,213,77,false,24);c.hit(82,209,83,31,HitKind::Command,(int)Key::Detail,source.count>0);
     const bool ready=a.choice_selected_count>=choice_min(s)&&a.choice_selected_count<=limit;

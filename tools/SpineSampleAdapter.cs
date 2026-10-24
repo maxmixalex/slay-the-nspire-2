@@ -228,6 +228,17 @@ static class SpineSampleAdapter {
             if (!Bool(drive, "enabled", true)) continue;
             var bone = skeleton.FindBone(String(drive, "bone"));
             if (bone == null) throw new InvalidDataException("Unknown driven bone: " + String(drive, "bone"));
+            // NMerchantHand sets this local property directly. A Follow
+            // node's world matrix has different axis conventions and must
+            // not stand in for that setter or bypass weighted constraints.
+            if (drive.TryGetProperty("local_rotation", out var localRotation)) {
+                float angle = localRotation.GetSingle();
+                if (!float.IsFinite(angle) || angle < -3600 || angle > 3600)
+                    throw new InvalidDataException("Driven local rotation is out of range");
+                bone.Rotation = angle;
+                changed = true;
+                continue;
+            }
             float[] m = DriveMatrix(drive, time);
             float x = m[2], y = m[5];
             if (bone.Parent != null) bone.Parent.WorldToLocal(x, y, out x, out y);

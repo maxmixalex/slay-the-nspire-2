@@ -10,10 +10,9 @@ namespace spire {
 // extra strips for a duplicated act title or keyboard instructions.
 constexpr int WorldMapTop=22,WorldMapBottom=240;
 constexpr uint32_t WorldMapScaleBits=0x3e6147aeU; // binary32 0.22
-// Keep the original always-visible legend beside the graph on a 320px screen.
-// Only the graph's camera anchor moves; node spacing, jitter, travel and scroll
-// still use the authored uniform scale above.
-constexpr int WorldMapGraphCenter=126;
+// Points and paper share the viewport center. Moving only the graph to make
+// space for the legend misregisters every route against its authored paper.
+constexpr int WorldMapGraphCenter=160;
 struct WorldMapPosition {int16_t x=0,y=0;int8_t angle=0;};
 struct WorldMapLayout {
     WorldMapPosition points[reference::MaxPoints]{};

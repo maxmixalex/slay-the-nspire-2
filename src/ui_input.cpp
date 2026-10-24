@@ -6,6 +6,7 @@
 namespace spire {
 #include "world_choice_input.inc"
 #include "pile_input.inc"
+#include "card_grid_input.inc"
 uint32_t App::next_run_seed(bool* randomized){
     const uint32_t serial=run_number++;
     const uint32_t entropy=callbacks.seed_entropy?callbacks.seed_entropy():0;
@@ -91,7 +92,7 @@ void App::ui_action(UiAction action){
     pointer_cancel();
     // Opaque frontend modals own all actions until explicitly dismissed.
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
-    if(settings_open&&action!=UiAction::SettingsFastMode&&action!=UiAction::SettingsControls&&action!=UiAction::SettingsPractice&&action!=UiAction::SettingsReference&&action!=UiAction::SettingsBack&&action!=UiAction::SettingsGeneralTab&&action!=UiAction::SettingsInputTab&&action!=UiAction::Back)return;
+    if(settings_open&&!frontend_confirm){settings_action(action);return;}
     if(!combat_choice_ready())switch(action){
     case UiAction::ConfirmChoice:case UiAction::ClearChoice:case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
     case UiAction::ConfirmWorldChoice:case UiAction::ClearWorldChoice:case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:
@@ -113,6 +114,10 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsBack:settings_open=false;break;
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
         if(settings_open){settings_tab=action==UiAction::SettingsInputTab;settings_item=0;pointer_cancel();}break;
+    case UiAction::SettingsLanguage:case UiAction::SettingsLanguageEnglish:case UiAction::SettingsLanguageChinese:
+    case UiAction::SettingsLanguageClose:case UiAction::SettingsCardIndices:case UiAction::SettingsTextEffects:
+    case UiAction::SettingsKeyboardOnly:case UiAction::SettingsPhobia:case UiAction::SettingsShakeDown:case UiAction::SettingsShakeUp:
+    case UiAction::SettingsReset:case UiAction::SettingsScrollUp:case UiAction::SettingsScrollDown:break;
 #if SPIRE_DEBUG_COMMANDS
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
@@ -129,9 +134,9 @@ void App::ui_action(UiAction action){
     case UiAction::LabCard:case UiAction::LabPotion:break;
 #endif
     case UiAction::OpenShop:
-        if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;cursor=0;}break;
+        if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;room_presentation.merchant.set_open(true,map_clock_ms);cursor=0;}break;
     case UiAction::CloseShop:
-        if(game.phase==Phase::Shop){shop_open=false;cursor=0;}break;
+        if(game.phase==Phase::Shop){shop_open=false;room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;
     case UiAction::LeaveShop:
         if(!shop_open&&game.phase==Phase::Shop&&leave_shop(game))proceed_map_window();break;
     case UiAction::GameOverSummary:
@@ -173,7 +178,7 @@ void App::ui_action(UiAction action){
             character_select=run_settings=false;title=false;reset_presentation();
             if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*m=world_current_map(game))map_visuals.initial_marker(m->root,map_clock_ms);}
         }break;
-    case UiAction::RunSettings:if(character_select&&!practice_entry)run_settings=!run_settings;break;
+    case UiAction::RunSettings:break; // Retired port-only overlay; keep enum ABI.
     case UiAction::RunAscensionDown:if(character_select&&selected_ascension)selected_ascension--;break;
     case UiAction::RunAscensionUp:if(character_select&&selected_ascension<10)selected_ascension++;break;
     case UiAction::RunRegion:if(character_select)selected_region=selected_region==reference::ActKind::Overgrowth?reference::ActKind::Underdocks:reference::ActKind::Overgrowth;break;
@@ -292,16 +297,10 @@ bool App::screen_input(Key key){
         return true;
     }
     if(character_select){
-        if(run_settings){
-            if(key==Key::Back||key==Key::EndTurn)run_settings=false;
-            else if(key==Key::Left)ui_action(UiAction::RunAscensionDown);
-            else if(key==Key::Right)ui_action(UiAction::RunAscensionUp);
-            else if(key==Key::Up||key==Key::Down)ui_action(UiAction::RunRegion);
-            else if(key==Key::Confirm)ui_action(UiAction::RunSeed);
-            return true;
-        }
+        run_settings=false;
         if(key==Key::Confirm)ui_action(UiAction::StartCharacter);
-        else if(key==Key::EndTurn&&!practice_entry)run_settings=true;
+        else if(key==Key::Inspect&&!practice_entry)ui_action(UiAction::RunAscensionDown);
+        else if(key==Key::ExhaustPile&&!practice_entry)ui_action(UiAction::RunAscensionUp);
         else if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down)
             selected_character=(Character)(((int)selected_character+(key==Key::Left||key==Key::Up?CharacterKinds-1:1))%CharacterKinds);
         else if(key==Key::Back)character_select=false;

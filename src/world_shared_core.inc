@@ -70,7 +70,7 @@ static void world_shared_effect(State&s,WorldStage op,int value){
   silent_turn_start(s);defect_turn_start(s);regent_turn_start(s);necro_turn_start(s);
   s.attacked_this_turn=0;relic_reset_turn_counters(s);
   if(s.turn>1&&power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);
-  if(s.demon_form)world_relic_gain_strength(s,s.demon_form);
+  if(s.demon_form){notify_power_flash(s,-1,"DEMON_FORM_POWER");world_relic_gain_strength(s,s.demon_form);}
   s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));
   for(unsigned id=0;id<s.card_count;id++)if(x.return_turn[id]&&x.return_turn[id]<=s.turn){
    x.return_turn[id]=0;
@@ -113,9 +113,9 @@ static void world_shared_effect(State&s,WorldStage op,int value){
  case WorldStage::EndEarly:next(WorldStage::EndPowers);hook(WorldRelicHook::BeforeSideTurnEndEarly,0);break;
  case WorldStage::EndPowers:
   next(WorldStage::EndRelics);
-  if(power_value(s,XPower::Plating))gain_unpowered_block(s,power_value(s,XPower::Plating));
+  if(power_value(s,XPower::Plating)){notify_power_flash(s,-1,"PLATING_POWER");gain_unpowered_block(s,power_value(s,XPower::Plating));}
   if(power_value(s,XPower::Regen)){heal(s,power_value(s,XPower::Regen));gain_power(s,XPower::Regen,-1);}
-  if(power_value(s,XPower::Ritual))world_relic_gain_strength(s,power_value(s,XPower::Ritual));
+  if(power_value(s,XPower::Ritual)){notify_power_flash(s,-1,"RITUAL_POWER");world_relic_gain_strength(s,power_value(s,XPower::Ritual));}
   for(int i=MaxBombs-1;i>=0;--i)if(x.bomb_turns[i]&&!--x.bomb_turns[i]){queue_extension(s,XOp::AllDamage,x.bomb_damage[i],0,true);x.bomb_damage[i]=0;}
   defect_turn_end(s);regent_turn_end(s);ironclad_turn_end(s);break;
  case WorldStage::EndRelics:next(WorldStage::EndOrbs);hook(WorldRelicHook::BeforeSideTurnEnd,0);break;
@@ -152,7 +152,8 @@ static void world_shared_effect(State&s,WorldStage op,int value){
   next(WorldStage::EnemyEndRelics);
   int doom_deaths=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0&&x.doom[t]>=s.enemies[t].hp&&x.doom[t]&&enemy_death_is_fatal(s,t))++doom_deaths;
   necro_enemy_side_end(s);if(doom_deaths)hook(WorldRelicHook::AfterDiedToDoom,doom_deaths);
-  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp&&x.demise[t]){int n=min(s.enemies[t].hp,x.demise[t]);s.enemies[t].hp-=(int16_t)n;record(s,LogKind::LoseHp,n,t+1);}
+  for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp&&x.demise[t]){notify_power_flash(s,t,"DEMISE_POWER");int old=s.enemies[t].hp,n=min(old,x.demise[t]);s.enemies[t].hp-=(int16_t)n;
+   notify_damage_result(s,t,0,x.demise[t],old,false,false,false);record(s,LogKind::LoseHp,n,t+1);}
   ironclad_enemy_side_end(s);regent_enemy_side_end(s);wr_power_side_end(s,1);
   s.flame_barrier=0;if(s.no_block)--s.no_block;if(power_value(s,XPower::Intangible))gain_power(s,XPower::Intangible,-1);
   for(int i=0;i<s.enemy_count;i++){s.enemies[i].strength=(int16_t)min(9999,s.enemies[i].strength+x.restore_strength[i]);x.restore_strength[i]=0;necro_clear_temp_strength(s,i);}break;}

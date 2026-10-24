@@ -132,32 +132,82 @@ static void frontend_settings_screen(Canvas&c){
   c.action(x,y,112,39,i?UiAction::SettingsInputTab:UiAction::SettingsGeneralTab);
  }
  Canvas divider=c;divider.opacity=uint8_t(div255(divider.opacity*64));
- const int back_item=1;
+ const auto label=[&](const char*key,const char*eng,const char*zhs){return frontend_text(a,"settings_ui",key,english?eng:zhs);};
+ const auto checkbox=[&](bool value,int y){
+  if(native)c.ui(value?F_SettingsTicked:F_SettingsUnticked,264,y+3,20,20);
+  else{c.box(266,y+5,16,16,White);if(value)c.picture(a.content.world_image("common","CONFIRM_TICK"),264,y+3,20,20);}
+ };
+ int hover=-1;
  if(!a.settings_tab){
-  const bool focus=a.settings_item==0||a.pointer.visible&&a.pointer.x>=24&&a.pointer.x<296&&a.pointer.y>=61&&a.pointer.y<98;
-  c.text_fitted(frontend_text(a,"settings_ui","FASTMODE",english?"Fast Mode":"加速模式"),29,68,210,12,focus?Gold:White);
-  if(native)c.ui(a.fast_mode?F_SettingsTicked:F_SettingsUnticked,261,65,20,20);
-  else{c.box(263,67,16,16,White);if(a.fast_mode)c.picture(a.content.world_image("common","CONFIRM_TICK"),261,65,20,20);}
-  c.action(238,59,61,36,UiAction::SettingsFastMode);
-  divider.rect(25,99,270,1,rgb(232,220,190));
-  if(focus)c.paragraph_fitted(frontend_text(a,"settings_ui","FASTMODE_DESCRIPTION",english?"Combat actions and screen transitions happen more quickly.":"战斗动画和转场加快。"),29,108,262,44,10,White,10);
-
+  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS"};
+  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Hand Card Count","Text Effects"};
+  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示手牌计数","文字特效"};
+  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects};
+  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_card_indices,a.text_effects};
+  for(unsigned i=a.settings_top;i<6&&i<a.settings_top+5;++i){
+   const int y=60+int(i-a.settings_top)*28;
+   const bool pointed=a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=y&&a.pointer.y<y+27;
+   if(pointed)hover=int(i);
+   const bool focus=pointed||(!a.pointer.visible&&a.settings_item==i),enabled=i!=0||a.title;
+   Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(row.opacity*115));
+   row.text_fitted(label(keys[i],eng[i],zhs[i]),29,y+7,i==0?161:i==1?146:222,11,focus?Gold:White,8);
+   if(i==0){
+    row.rect(196,y+3,93,22,rgb(44,67,79));
+    row.text_fitted(english?"English":"中文",201,y+7,71,10,Gold,8,true);
+    if(a.content.version()>=RoomUi7ContentVersion)row.ui(I7_SettingsArrowDown,276,y+10,6,6);
+    c.action(194,y,99,27,actions[i],enabled&&a.available_languages()==3);
+   }else if(i==1){
+    static const char*levels[]={"SCREENSHAKE_NONE","SCREENSHAKE_SOME","SCREENSHAKE_NORMAL","SCREENSHAKE_LOTS","SCREENSHAKE_CAAAW"};
+    static const char*levels_en[]={"None","Some","Normal","Lots","CAAAW!"};
+    static const char*levels_zh[]={"无","轻微","正常","剧烈","咔咔！"};
+    c.text_fitted(label(levels[a.screen_shake],levels_en[a.screen_shake],levels_zh[a.screen_shake]),198,y+7,72,10,Gold,8,true);
+    if(a.content.version()>=RoomUi7ContentVersion){c.ui(I7_SettingsArrowLeft,185,y+4,9,17,a.screen_shake?255:70);c.ui(I7_SettingsArrowRight,279,y+4,9,17,a.screen_shake<4?255:70);}
+    c.action(178,y,21,27,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(272,y,22,27,UiAction::SettingsShakeUp,a.screen_shake<4);
+   }else{checkbox(checked[i],y);c.action(252,y,42,27,actions[i]);}
+   divider.rect(25,y+27,270,1,rgb(232,220,190));
+  }
+  c.rect(303,61,2,139,rgb(18,33,41));c.rect(301,61+int(a.settings_top)*23,6,116,rgb(80,115,132));
  }else{
-  char map_potions[128]{};TextBuffer labels_text{map_potions,sizeof map_potions,0,&a.content};
-  labels_text.text(frontend_text(a,"static_hover_tips","MAP.title","Map"));labels_text.text(" / ");
-  labels_text.text(frontend_text(a,"static_hover_tips","POTION_SLOT.title","Potions"));
-  const char*labels[]={"方向键 / 4、6、8、2：导航",frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.confirm",english?"Confirm":"确认"),
-      frontend_text(a,"settings_ui","INPUT_SETTINGS.INPUT_TITLE.endTurn",english?"End Turn":"结束回合"),"牌组",map_potions,"详情"};
-  const char*keys[]={"","Enter / 5","Space","Tab","M / P","I"};
-  for(int i=0;i<6;++i){const int y=62+i*21;c.text_fitted(labels[i],29,y,i?164:262,10,White);c.text_fitted(keys[i],200,y,91,10,White,8,true);divider.rect(25,y+17,270,1,rgb(232,220,190));}
-  c.text_fitted("操作说明",191,192,104,10,a.settings_item==0?Gold:White,8,true);c.action(188,186,112,23,UiAction::SettingsControls);
+  const bool focus=!a.pointer.visible&&a.settings_item==0;
+  c.text_fitted(label("KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only Mode","纯键盘模式"),29,67,218,11,focus?Gold:White);
+  checkbox(a.keyboard_only,60);c.action(252,60,42,27,UiAction::SettingsKeyboardOnly);
+  divider.rect(25,87,270,1,rgb(232,220,190));
+  if(a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=60&&a.pointer.y<87)hover=6;
+  const char*keys[]={"INPUT_SETTINGS.INPUT_TITLE.confirm","INPUT_SETTINGS.INPUT_TITLE.endTurn","INPUT_SETTINGS.INPUT_TITLE.viewDeckAndTabLeft","INPUT_SETTINGS.INPUT_TITLE.viewMap"};
+  const char*english_labels[]={"Confirm","End Turn","View Deck","View Map"};
+  const char*chinese_labels[]={"确认","结束回合","牌组","地图"};
+  const char*bindings[]={"Enter / 5","Space","Tab / Q","M"};
+  for(unsigned i=0;i<4;++i){const int y=98+int(i)*22;c.text_fitted(label(keys[i],english_labels[i],chinese_labels[i]),29,y,170,10,White);c.text_fitted(bindings[i],204,y,87,10,White,8,true);divider.rect(25,y+17,270,1,rgb(232,220,190));}
+  c.text_fitted(english?"Controls":"操作说明",195,191,96,10,a.settings_item==1?Gold:White,8,true);c.action(190,184,106,24,UiAction::SettingsControls);
  }
- native_back(c,7,211,84,28,"返回",true,a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
+ const unsigned reset_item=a.settings_tab?2:6,back_item=reset_item+1;
+ native_back(c,7,211,84,28,"返回",true,!a.pointer.visible&&a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
+ c.button(label("RESET_SETTINGS_BUTTON","Reset","重置"),241,211,69,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(237,207,78,33,UiAction::SettingsReset);
+ if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
+  const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
+  const char*body=a.content.world_string("settings_ui",descriptions[hover]);
+  if(*body){const int width=154,lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(112,12+lines*13);
+   const int y=hover<3?102:55;
+   c.nine_ui(U_HoverTip,137,y,width,height,7,7,7,7);c.paragraph(body,145,y+6,width-16,(height-12)/13,0,10,White);
+  }
+ }
+ if(a.settings_language_open){
+  a.hit_count=0;c.action(0,0,320,240,UiAction::SettingsLanguageClose);
+  const int top=86;
+  c.rect(196,top,93,46,rgb(18,33,41));
+  for(unsigned i=0;i<2;++i){const int y=top+2+int(i)*21;
+   const bool selected=a.pointer.visible?a.pointer.x>=198&&a.pointer.x<287&&a.pointer.y>=y&&a.pointer.y<y+21:a.settings_language_item==i;
+   if(selected)c.rect(198,y,89,21,rgb(44,88,112));
+   c.text_fitted(i?"中文":"English",201,y+5,83,10,White,8,true);
+   c.action(198,y,89,21,i?UiAction::SettingsLanguageChinese:UiAction::SettingsLanguageEnglish);
+  }
+ }
+
 }
 static void frontend_confirm_screen(Canvas&c){
- auto&a=c.a;const bool quitting=a.frontend_confirm==3;a.hit_count=0;c.dim(0,0,320,240,210);
- const char*header=frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",quitting?"退出游戏":"你确定吗？");
- const char*body=frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。");
+ auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4;a.hit_count=0;c.dim(0,0,320,240,210);
+ const char*header=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_CONFIRMATION.header":quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",reset?"重置设置":quitting?"退出游戏":"你确定吗？");
+ const char*body=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_GAMEPLAY_CONFIRMATION.body":quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",reset?"恢复默认设置？":quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。");
  if(a.content.version()>=Ui6ContentVersion){
   // NGenericPopup instantiates the 522x600 vertical popup and independent
   // cancel/confirm skins, not the navigation BackButton/ConfirmButton.
@@ -187,7 +237,7 @@ static void frontend_confirm_screen(Canvas&c){
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;
     int hover=a.pointer.visible?-2:-1;
-    if(a.pointer.visible&&!a.run_settings&&a.pointer.y>=159&&a.pointer.y<207)
+    if(a.pointer.visible&&a.pointer.y>=159&&a.pointer.y<207)
         for(int i=0;i<CharacterKinds;++i)if(a.pointer.x>=157+i*31&&a.pointer.x<188+i*31)hover=i;
     auto&motion=a.character_select_presentation;motion.observe(true,unsigned(a.selected_character),hover,a.map_clock_ms);
     const int panel_x=motion.panel_offset(a.map_clock_ms);
@@ -219,13 +269,19 @@ static void character_screen(Canvas&c){
         c.action(x-2,159,31,48,actions[i]);
     }
     if(a.practice_entry)native_proceed(c,215,212,103,28,"练习");else native_confirm(c,215,212,103,28,"");c.action(213,207,107,33,UiAction::StartCharacter);
-    if(!a.practice_entry){c.button("远征设置",99,216,108,false,23);c.action(96,209,114,31,UiAction::RunSettings);}
-    if(a.run_settings){a.hit_count=0;c.dim(0,0,320,240,218);c.ui(U_RewardPanel,17,17,286,213);c.centered("远征设置",0,26,320,20,Gold);
-        c.text("进阶等级",39,69,12,White);c.button("−",174,63,36,false,26);c.action(172,62,40,29,UiAction::RunAscensionDown,a.selected_ascension>0);c.num(a.selected_ascension,222,67,16,Gold);c.button("+",252,63,36,false,26);c.action(250,62,40,29,UiAction::RunAscensionUp,a.selected_ascension<10);
-        c.text("第一幕",39,105,12,White);c.button(a.content.world_title("acts",a.selected_region==reference::ActKind::Overgrowth?"OVERGROWTH":"UNDERDOCKS"),156,98,132,false,26);c.action(154,97,136,29,UiAction::RunRegion);
-        c.text("种子",39,141,12,White);c.text_fitted(*a.selected_seed?a.selected_seed:"自动生成",87,141,196,10,Gold);c.action(84,134,202,31,UiAction::RunSeed);
-        c.button("编辑种子",38,170,113,false,24);c.action(36,168,117,28,UiAction::RunSeed);c.button("清除",171,170,113,false,24);c.action(169,168,117,28,UiAction::RunSeedClear,*a.selected_seed);
-        c.button("返回",100,202,120,true,24);c.action(98,200,124,28,UiAction::RunSettings);
+    if(!a.practice_entry){
+        // The pinned character scene owns AscensionPanel directly. Its
+        // ActDropdown is explicitly hidden by ShouldShowActDropdown=false.
+        Canvas panel=c;panel.tint_red=panel.tint_green=panel.tint_blue=0;panel.opacity=128;
+        if(a.content.version()>=RoomUi7ContentVersion)panel.nine_ui(I7_TinyPanel,166,124,142,31,3,3,3,3);
+        else panel.dim(166,124,142,31,128);
+        if(a.selected_ascension){c.ui(I7_SettingsArrowLeft,159,129,10,21);c.action(154,122,21,35,UiAction::RunAscensionDown);}
+        if(a.selected_ascension<10){c.ui(I7_SettingsArrowRight,308,129,10,21);c.action(303,122,17,35,UiAction::RunAscensionUp);}
+        c.ui(U_TopBarAscension,175,127,14,26);c.num(a.selected_ascension,178,137,10,White);
+        char key[40]{};TextBuffer b{key,sizeof key,0};b.text("LEVEL_");b.ch(char('0'+a.selected_ascension/10));b.ch(char('0'+a.selected_ascension%10));b.text(".title");
+        c.text_fitted(frontend_text(a,"ascension",key,a.content.english()?"Ascension":"进阶等级"),194,127,109,10,Gold,8);
+        key[8]=0;b.n=8;b.text(".description");const char*description=a.content.world_string("ascension",key);
+        c.paragraph_fitted(description,194,139,109,16,8,White,8);
     }
 }
 static void library_screen(Canvas&c){
@@ -254,22 +310,21 @@ static void library_screen(Canvas&c){
             else c.text_fitted(filters[i],x+1,48,30,10,selected?Gold:Muted,8,true);
             c.action(x,45,33,19,filter_actions[i]);}
         const char* sorts[]={"默认排序","按费用","按类型"};c.centered(sorts[a.library_sort],238,46,79,10,Gold);c.action(237,45,83,19,UiAction::CycleSort);
-        CardKind ids[CardKinds];const int count=(int)a.library_items(ids),last=mx(0,(count-1)/8);
-        a.library_page=mn(mx(0,a.library_page),last);a.library_selected=mn(mx(0,a.library_selected),count-1);
-        // Only the visible page participates in bounded adjacent image reads.
-        int portraits[8];unsigned portrait_count=0;
-        for(int i=a.library_page*8;i<mn(count,a.library_page*8+8);++i)
+        CardKind ids[CardKinds];const int count=int(a.library_items(ids));
+        auto&grid=a.configure_card_grid(CardGridSurface::Library,count);CardGridPainter painter{c,grid};
+        a.library_selected=mn(mx(0,a.library_selected),mx(0,count-1));
+        int portraits[16];unsigned portrait_count=0;
+        for(int i=grid.first();i<grid.last()&&portrait_count<16;++i)
             portraits[portrait_count++]=a.card_face_image({ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))});
         a.content.prepare_images(portraits,portrait_count);
-        for(int i=a.library_page*8;i<mn(count,a.library_page*8+8);i++){
-            int k=i-a.library_page*8,x=29+(k%4)*69,y=68+(k/4)*71;
-            small_card(c,{ids[i],(uint8_t)(a.library_upgraded&&card_upgradeable({ids[i],0}))},x,y,i==a.library_selected,true,0);
-            c.hit(x-3,y-2,55,70,HitKind::LibraryItem,i);
+        for(int i=grid.first();i<grid.last();++i){
+            const int x=grid.card_x(i),y=grid.card_y(i);
+            const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+            painter.card(i,{ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))},hover||(!a.pointer.visible&&i==a.library_selected));
+            painter.hit(i,HitKind::LibraryItem,i);
         }
+        painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::Library);
         c.action(108,211,116,29,UiAction::ToggleUpgrades);c.centered(a.library_upgraded?"升级版本 +":"基础版本",108,215,116,12,Green);
-        c.text("‹",12,214,16,Gold);c.action(1,211,43,29,UiAction::PreviousPage,a.library_page>0);
-        c.text("›",296,214,16,Gold);c.action(277,211,43,29,UiAction::NextPage,a.library_page<last);
-        char page[32]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);c.text(page,51,218,10,Muted);
         if(filter_hover>=0){
             const char*name=filter_hover>0&&filter_hover<6?a.content.world_title("characters",character_definitions[filter_hover-1].key):a.content.ui_text(filters[filter_hover]);
             if(!*name)name=a.content.ui_text(filters[filter_hover]);

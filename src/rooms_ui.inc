@@ -27,30 +27,29 @@ static void map_screen(Canvas&c,bool inspect=false){
     if(inspect)c.centered("路线预览 · ↑↓ 滚动 · M / Esc 返回",0,214,320,12,Gold);
     else{char b[64]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.text("第 ");t.number(s.next_row+1);t.text(" 层  ");t.text(room_name(s.map[s.next_row*3+a.cursor].room));c.centered(b,0,207,320,12,Gold);c.centered("←→ 选路   Enter 进入   ↑↓ 查看远方",0,225,320,10,Muted);}
 }
-#include "events_ui.inc"
 #include "merchant_ui.inc"
+#include "events_ui.inc"
 
 static void deck_select(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.dim(0,20,320,220,225);
     const bool grimoire=a.grimoire_select&&s.phase==Phase::Reward&&s.necro.grimoire_pending;
     const char* title=grimoire?"禁忌魔典：永久移除一张牌":s.phase==Phase::Upgrade?"选择一张牌升级":s.phase==Phase::Remove?"移除一张牌":"选择一张牌变化";
     c.centered(title,0,25,320,16,Gold);
-    a.cursor=mn(mx(0,a.cursor),s.deck_count-1);int first=a.cursor/10*10;
-    int portraits[10];unsigned portrait_count=0;
-    for(int i=first;i<mn(s.deck_count,first+10);++i)portraits[portrait_count++]=a.card_face_image(s.deck[i],-1,i);
+    a.cursor=mn(mx(0,a.cursor),mx(0,s.deck_count-1));
+    auto&grid=a.configure_card_grid(CardGridSurface::DeckChoice,s.deck_count,s.revision);CardGridPainter painter{c,grid};const int first=grid.first();
+    int portraits[16];unsigned portrait_count=0;
+    for(int i=first;i<grid.last();++i)portraits[portrait_count++]=a.card_face_image(s.deck[i],-1,i);
     a.content.prepare_images(portraits,portrait_count);
-    for(int i=first;i<mn(s.deck_count,first+10);i++){
-        Card card=s.deck[i];int x=24+(i-first)%5*55,y=54+(i-first)/5*73;
+    for(int i=first;i<grid.last();i++){
+        Card card=s.deck[i];int x=grid.card_x(i),y=grid.card_y(i);
         bool allowed=s.phase==Phase::Upgrade?card_upgradeable(card):s.phase==Phase::Transform?(i!=s.event_first&&card_transformable(card)):(card_removable(card)&&s.deck_count>1);
-        small_card(c,card,x,y,a.cursor==i,allowed,0,-2,-2,-1,i);
-        c.hit(x-3,y-2,53,71,HitKind::Choice,i,allowed);
+        const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+        painter.card(i,card,hover||(!a.pointer.visible&&a.cursor==i),allowed,-2,-2,-1,i);
+        painter.hit(i,HitKind::Choice,i,allowed);
     }
     if(grimoire){char text[96]={};TextBuffer b{text,sizeof text,0,&c.a.content};b.text("剩余 ");b.number(s.necro.grimoire_pending);b.text(a.content.english()?"":" 次");c.centered(text,0,196,320,10,Muted);}
     else if(s.phase==Phase::Transform){char text[64]={};TextBuffer b{text,sizeof text,0,&c.a.content};b.text("还需变化 ");b.number(s.event_remaining);b.text(a.content.english()?" cards":" 张");c.centered(text,0,196,320,10,Muted);}
-    int page=first/10,last=(s.deck_count-1)/10;
-    c.text("‹",12,214,16,Gold);c.action(0,210,43,30,UiAction::PreviousDeckPage,page>0);
-    c.text("›",296,214,16,Gold);c.action(277,210,43,30,UiAction::NextDeckPage,page<last);
-    char label[24]={};TextBuffer b{label,sizeof label,0,&c.a.content};b.number(page+1);b.text(" / ");b.number(last+1);c.centered(label,grimoire?129:112,218,grimoire?61:96,10,Muted);
+    painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::DeckChoice);
     if(grimoire){c.button("返回",44,213,78,false,24);c.action(42,210,82,30,UiAction::Back);
         c.button("放弃一次",194,213,81,false,24);c.action(192,210,83,30,UiAction::SkipGrimoire);}
 }

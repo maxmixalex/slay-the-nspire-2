@@ -93,8 +93,8 @@ inline unsigned expo_out(uint32_t elapsed){
 // facts; sample is pure, so redraws never advance a tween. Replacement,
 // death/revival and changed geometry snap to the new creature's own health.
 struct HealthBarMotion {
- uint32_t identity=0,start_ms=0,block_start_ms=0;
- int block=0;bool block_entering=false;
+ uint32_t identity=0,start_ms=0,block_start_ms=0,block_break_ms=0;
+ int block=0;bool block_entering=false,block_breaking=false;
  int32_t hp=0,max_hp=0,from_q8=0,to_q8=0;
  uint16_t width=0;
  bool valid=false,delayed=false;
@@ -110,9 +110,22 @@ struct HealthBarMotion {
  // NHealthBar.AnimateInBlock only animates the first 0 -> positive gain.
  // Position uses Back.Out from -20 authored px; opacity uses Sine.Out.
  void observe_block(int value,uint32_t now,bool restored=false){
-  if(restored){block=value;block_entering=false;return;}
+  if(restored){block=value;block_entering=block_breaking=false;return;}
   if(block<=0&&value>0){block_start_ms=now;block_entering=true;}
+  // RefreshBlockUi triggers on losing the visible shield, including the
+  // normal turn-start removal. Loading a zero-block state is not a break.
+  if(block>0&&value<=0){block_break_ms=now;block_breaking=true;}
+  if(block_breaking&&now-block_break_ms>=600u)block_breaking=false;
   if(value<=0||now-block_start_ms>=500u)block_entering=false;block=value;
+ }
+ static unsigned block_break_progress(unsigned elapsed,bool opacity=false){
+  // Numeric samples of the authored Bezier tracks: 250ms horizontal
+  // handles at both ends, zero vertical handles; position400ms/alpha600ms.
+  static constexpr uint16_t position[]={0,15,64,157,310,545,895,1399,2048,2697,3201,3551,3786,3939,4032,4081,4096};
+  static constexpr uint16_t fade[]={0,32,129,296,533,838,1203,1613,2048,2483,2893,3258,3563,3800,3967,4064,4096};
+  const unsigned duration=opacity?600u:400u;if(elapsed>=duration)return 4096;
+  const auto*table=opacity?fade:position;const unsigned p=elapsed*16u,i=p/duration,r=p%duration;
+  return (unsigned(table[i])*(duration-r)+unsigned(table[i+1])*r+duration/2u)/duration;
  }
  unsigned block_alpha(uint32_t now)const{
   if(!block_entering||now-block_start_ms>=500u)return 255;

@@ -115,7 +115,9 @@ static void enemy_prune_legacy_powers(State&s){
 static void enemy_before_damage(State&s,int t,int,bool attack,bool pet){
  if(!s.enemy_world.active||!enemy_slot_alive(s,t)||(!attack&&(s.playing<0||s.cards[s.playing].kind!=Omnislice)))return;
  int thorns=enemy_power_value(s,t,EnemyPower::Thorns);if(!thorns)return;
- if(pet&&s.expansion.osty_hp){int old=s.expansion.osty_hp;s.expansion.osty_hp=(int16_t)max(0,old-thorns);necro_osty_hp_lost(s,old);}
+ notify_power_flash(s,t,"THORNS_POWER");
+ if(pet&&s.expansion.osty_hp){int old=s.expansion.osty_hp;s.expansion.osty_hp=(int16_t)max(0,old-thorns);
+  notify_damage_result(s,-2,0,thorns,old,false,false,false);necro_osty_hp_lost(s,old);}
  else player_hp_loss(s,thorns,false,true,-1);
 }
 static void enemy_after_damage(State&s,int t,int blocked,int loss,bool attack,bool){
@@ -188,7 +190,7 @@ static void enemy_side_end(State&s,bool player){
   // Asleep removes Plating before its early-end block callback on the final
   // sleeping turn, independent of the order in which powers were acquired.
   for(unsigned at=n;at>0;--at){int t=order[at-1];if(enemy_power_value(s,t,EnemyPower::Asleep)==1)enemy_clear_power(s,t,EnemyPower::Plating);
-   int plating=enemy_power_value(s,t,EnemyPower::Plating);if(plating&&enemy_slot_alive(s,t))queue_extension(s,XOp::EnemyGainBlock,plating,t,true);
+   int plating=enemy_power_value(s,t,EnemyPower::Plating);if(plating&&enemy_slot_alive(s,t)){notify_power_flash(s,t,"PLATING_POWER");queue_extension(s,XOp::EnemyGainBlock,plating,t,true);}
   }
  }
 }
@@ -230,7 +232,7 @@ static void enemy_power_hook(State&s,int t,EnemyPower p,int stage){
  case EnemyPower::EscapeArtist:if(amount>1)enemy_tick(s,t,p);break;
  case EnemyPower::Hatch:enemy_tick(s,t,p);break;
  case EnemyPower::HighVoltage:case EnemyPower::Territorial:enemy_apply_power(s,t,EnemyPower::Strength,amount,t);break;
- case EnemyPower::Ritual:if(t>=0){if(enemy_aux(s,t,p))enemy_aux(s,t,p)=0;else enemy_apply_power(s,t,EnemyPower::Strength,amount,t);}break;
+ case EnemyPower::Ritual:if(t>=0){if(enemy_aux(s,t,p))enemy_aux(s,t,p)=0;else{notify_power_flash(s,t,"RITUAL_POWER");enemy_apply_power(s,t,EnemyPower::Strength,amount,t);}}break;
  case EnemyPower::Asleep:enemy_tick(s,t,p);if(!enemy_power_value(s,t,p)&&t>=0&&s.enemy_world.models[t].kind==EnemyId::LagavulinMatriarch){notify_enemy_animation(s,t,"Wake");s.enemy_world.models[t].data[8]|=1;}break;
  case EnemyPower::Slumber:enemy_tick(s,t,p);if(!enemy_power_value(s,t,p)){if(t>=0&&s.enemy_world.models[t].kind==EnemyId::SlumberingBeetle)s.enemy_world.models[t].data[8]=1;notify_enemy_animation(s,t,"WakeUp");enemy_clear_power(s,t,EnemyPower::Plating);}break;
  case EnemyPower::Nemesis:enemy_aux(s,t,p)^=1;if(enemy_aux(s,t,p))enemy_apply_power(s,t,EnemyPower::Intangible,1,t);else enemy_clear_power(s,t,EnemyPower::Intangible);break;

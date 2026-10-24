@@ -77,6 +77,11 @@ void App::accept_frontend_confirm(){
  const unsigned action=frontend_confirm;if(!action)return;
  const SavedRunIdentity confirmed=confirmed_run;
  frontend_confirm=frontend_choice=0;confirmed_run={};pointer_cancel();
+ if(action==4){
+  UiPreferences defaults{};fast_mode=defaults.fast_mode;show_card_indices=defaults.show_card_indices;
+  text_effects=defaults.text_effects;keyboard_only=defaults.keyboard_only;phobia_mode=defaults.phobia_mode;screen_shake=defaults.screen_shake;
+  settings_language_open=false;persist_preferences();return;
+ }
  if(action==3){cancel_map_travel();quit=true;return;}
  if(action==1){
   if(!title)return;
@@ -101,17 +106,7 @@ bool App::frontend_input(Key key){
   return true;
  }
  if(help){if(key==Key::Back||key==Key::Confirm)help=false;return true;}
- if(settings_open){
-  const int count=2;
-  if(key==Key::Back){settings_open=false;pointer_cancel();}
-  else if(key==Key::Left||key==Key::Right){settings_tab^=1;settings_item=0;pointer_cancel();}
-  else if(key==Key::Up)settings_item=uint8_t((settings_item+count-1)%count);
-  else if(key==Key::Down)settings_item=uint8_t((settings_item+1)%count);
-  else if(key==Key::Confirm){
-   ui_action(settings_item?UiAction::SettingsBack:settings_tab?UiAction::SettingsControls:UiAction::SettingsFastMode);
-  }
-  return true;
- }
+ if(settings_input(key))return true;
  if(library||character_select||map_preview.open||detail_card>=0||detail_item>=0||status_actor>=0)return false;
  if(title){
   const int count=title_menu_count();if(menu<0||menu>=count)menu=0;
@@ -127,7 +122,7 @@ bool App::frontend_input(Key key){
     if(refresh_save()){confirmed_run=saved_run_identity(frontend_saved_probe);frontend_confirm=1;frontend_choice=0;}
     else{menu=0;message("无法读取存档，请重试");}break;
    case FrontCompendium:library=true;library_page=library_selected=0;break;
-   case FrontSettings:settings_open=true;settings_tab=settings_item=0;break;
+   case FrontSettings:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;
    case FrontQuit:frontend_confirm=3;frontend_choice=0;break;
   }}else if(key==Key::Collection||key==Key::ReferenceMap)return false;
   return true;
@@ -138,7 +133,7 @@ bool App::frontend_input(Key key){
  else if(key==Key::Down||key==Key::Right)menu=(menu+1)%5;
  else if(key==Key::Confirm){switch(menu){
   case 0:paused=false;break;
-  case 1:settings_open=true;settings_tab=settings_item=0;break;
+  case 1:settings_open=true;settings_language_open=false;settings_top=settings_tab=settings_item=0;break;
   case 2:library=true;library_page=library_selected=0;break;
   case 3:if(resumable_run(game)){frontend_confirm=2;frontend_choice=0;}break;
   case 4:

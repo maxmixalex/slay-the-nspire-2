@@ -16,6 +16,12 @@
 #include <random>
 
 static spire::App app;
+static unsigned installed_languages=0,pending_language=0;
+static unsigned available_languages(){return installed_languages;}
+static bool request_language(unsigned language){
+    if(language<1||language>2||!(installed_languages&(1u<<(language-1))))return false;
+    pending_language=language;return true;
+}
 static uint32_t seed_entropy(){
     static std::random_device device;
     const uint64_t now=uint64_t(std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -107,6 +113,7 @@ int main(int argc,char**argv){
         if(localepath.empty()){
             const std::string root=directory(commonpath);
             FILE*english=fopen((root+"/nSpire2.eng.tns").c_str(),"rb"),*chinese=fopen((root+"/nSpire2.zhs.tns").c_str(),"rb");
+            installed_languages=(english?1u:0u)|(chinese?2u:0u);
             if(language==spire::BootLanguage::Unknown){
                 language=read_preference(preference);
                 if(!english)language=spire::BootLanguage::Chinese;else if(!chinese)language=spire::BootLanguage::English;
@@ -129,11 +136,31 @@ int main(int argc,char**argv){
         resource.file=fopen(packpath.c_str(),"rb");if(!resource.file)return error(spire::BootText::MissingResources);
         source=file_source(resource.file);language=spire::boot_probe_language(source);
     }
+    if(!installed_languages)installed_languages=language==spire::BootLanguage::English?1u:2u;
     if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
-    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences}))return error(spire::BootText::InvalidResources);
-    if(common.file&&!headless&&read_preference(preference)!=language){
+    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language}))return error(spire::BootText::InvalidResources);
+    auto persist_language=[&](){
+        if(headless)return;
         FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}
-    }
+    };
+    if(common.file&&read_preference(preference)!=language)persist_language();
+    auto change_language=[&](){
+        const unsigned requested=pending_language;pending_language=0;
+        if(!requested||!common.file||!app.title)return;
+        const std::string next_path=directory(commonpath)+(requested==1?"/nSpire2.eng.tns":"/nSpire2.zhs.tns");
+        FILE*next=fopen(next_path.c_str(),"rb");
+        if(!next){app.message(app.content.english()?"Language resources are unavailable.":"无法读取语言资源。");return;}
+        FILE*previous=resource.file;const auto old_language=language;resource.file=next;
+        if(split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(requested))&&app.reload_language(split.source())){
+            language=static_cast<spire::BootLanguage>(requested);fclose(previous);persist_language();
+        }else{
+            fclose(next);resource.file=previous;
+            if(!split.open(file_source(common.file),file_source(resource.file),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
+                error(spire::BootText::InvalidResources);app.quit=true;return;
+            }
+            app.message(app.content.english()?"Could not change language.":"无法切换语言。");
+        }
+    };
 #if SPIRE_DEBUG_COMMANDS
     for(const auto&command:debug_commands){if(!app.debug_command(command.c_str())){fprintf(stderr,"Debug: %s\n",app.debug_reply);return 2;}}
 #endif
@@ -144,7 +171,7 @@ int main(int argc,char**argv){
             if(a=="left")k=Key::Left;else if(a=="right")k=Key::Right;else if(a=="up")k=Key::Up;else if(a=="down")k=Key::Down;else if(a=="enter")k=Key::Confirm;
             else if(a=="space"||a=="e")k=Key::EndTurn;else if(a=="esc")k=Key::Back;else if(a=="tab"||a=="q")k=Key::Inspect;else if(a=="draw"||a=="a")k=Key::DrawPile;else if(a=="discard"||a=="d")k=Key::DiscardPile;else if(a=="exhaust"||a=="f")k=Key::ExhaustPile;else if(a=="save")k=Key::Save;else if(a=="load")k=Key::Load;else if(a=="log")k=Key::Log;else if(a=="map")k=Key::Map;else if(a=="potions")k=Key::Potions;else if(a=="relics")k=Key::Relics;
             else{fprintf(stderr,"Unknown action: %s\n",a.c_str());return 2;}
-            app.input(k);for(int tick=0;tick<100;tick++)app.tick();start=end+1;
+            app.input(k);change_language();for(int tick=0;tick<100;tick++)app.tick();start=end+1;
         }
     }
     if(shot)capture(shot);
@@ -152,7 +179,7 @@ int main(int argc,char**argv){
     Display*d=XOpenDisplay(nullptr);if(!d){fprintf(stderr,"No X display. Use --headless for batch execution.\n");return 2;}
     Bool detectable;XkbSetDetectableAutoRepeat(d,True,&detectable);
     int screen=DefaultScreen(d);Window win=XCreateSimpleWindow(d,RootWindow(d,screen),0,0,960,720,0,0,0);
-    XStoreName(d,win,"nSpire II | Original world 0.17");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
+    XStoreName(d,win,"nSpire II 0.17");XSelectInput(d,win,ExposureMask|KeyPressMask|KeyReleaseMask|StructureNotifyMask|FocusChangeMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|LeaveWindowMask);
     Atom close=XInternAtom(d,"WM_DELETE_WINDOW",False);XSetWMProtocols(d,win,&close,1);XMapWindow(d,win);
     const char transparent[1]={0};Pixmap cursor_mask=XCreateBitmapFromData(d,win,transparent,1,1);XColor cursor_color{};
     Cursor hidden_cursor=XCreatePixmapCursor(d,cursor_mask,cursor_mask,&cursor_color,&cursor_color,0,0);XDefineCursor(d,win,hidden_cursor);XFreePixmap(d,cursor_mask);XFreeCursor(d,hidden_cursor);
@@ -196,6 +223,7 @@ int main(int argc,char**argv){
                     else {spire::Key k;if(key(symbol,k))app.input(k);}
                 }else {spire::Key k;if(key(symbol,k))app.input(k);}}
         }
+        change_language();
         auto now=std::chrono::steady_clock::now();app.advance((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(now-last_frame).count());last_frame=now;app.render();int scale=std::max(1,std::min(width/320,height/240)),w=320*scale,h=240*scale;
         if(!image){image=XCreateImage(d,DefaultVisual(d,screen),DefaultDepth(d,screen),ZPixmap,0,nullptr,w,h,32,0);if(!image)break;image->data=(char*)calloc(image->bytes_per_line,h);if(!image->data){XDestroyImage(image);image=nullptr;break;}}
         for(int y=0;y<h;y++){auto*row=(uint32_t*)(image->data+y*image->bytes_per_line);for(int x=0;x<w;x++){uint16_t p=app.pixels[(y/scale)*320+x/scale];row[x]=((p>>11)*255/31)<<16|(((p>>5)&63)*255/63)<<8|(p&31)*255/31;}}

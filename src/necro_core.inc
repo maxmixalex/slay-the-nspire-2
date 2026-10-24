@@ -486,7 +486,8 @@ static void necro_copy_debuffs(State&s,int from,bool front){
 }
 static void necro_hp_loss_enemy(State&s,int t,int n){
  if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||n<=0)return;
- int lost=min(s.enemies[t].hp,n);s.enemies[t].hp-=lost;record(s,LogKind::LoseHp,lost,t+1);necro_observe_deaths(s);
+ int old=s.enemies[t].hp,lost=min(old,n);s.enemies[t].hp-=lost;
+ notify_damage_result(s,t,0,n,old,false,false,false);record(s,LogKind::LoseHp,lost,t+1);necro_observe_deaths(s);
 }
 static int necro_random_enemy(State&s){
  int ids[MaxEnemies],count=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp>0)ids[count++]=t;

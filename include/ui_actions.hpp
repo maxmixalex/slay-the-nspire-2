@@ -17,6 +17,10 @@ enum class UiAction {
     FrontendAccept, FrontendCancel, SettingsFastMode, SettingsControls,
     SettingsPractice, SettingsReference, SettingsBack,
     TreasureOpen, TreasureTake, TreasureLeave, PreviousCampPage, NextCampPage,
-    SettingsGeneralTab, SettingsInputTab
+    SettingsGeneralTab, SettingsInputTab,
+    SettingsLanguage, SettingsLanguageEnglish, SettingsLanguageChinese,
+    SettingsLanguageClose, SettingsCardIndices, SettingsTextEffects,
+    SettingsKeyboardOnly, SettingsPhobia, SettingsShakeDown, SettingsShakeUp,
+    SettingsReset, SettingsScrollUp, SettingsScrollDown
 };
 }

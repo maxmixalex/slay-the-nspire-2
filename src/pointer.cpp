@@ -21,7 +21,7 @@ uint32_t App::input_context()const{
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
-void App::pointer_cancel(bool keep_keyboard_card){hand_focus=false;map_dragging=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
+void App::pointer_cancel(bool keep_keyboard_card){hand_focus=false;map_dragging=false;card_grid_drag=-1;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 void App::open_card_detail(Card card,int deck_index){
     if(card.kind>=CardKinds)return;
@@ -49,11 +49,21 @@ void App::pointer_move(int x,int y){
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;return;}
 #endif
-    // The platform pointer API has no Godot motion velocity. An actual
-    // coordinate change is the bounded adapter for its mouse-mode switch;
-    // repeated stationary samples do not cancel directional focus.
-    if(clamp(x,0,319)!=pointer.x||clamp(y,0,239)!=pointer.y){map_directional=false;keyboard_card=-1;sync_map_reticles();}
-    pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;
+    const int px=clamp(x,0,319),py=clamp(y,0,239),dx=px-pointer.x,dy=py-pointer.y;
+    const unsigned distance=unsigned(dx*dx+dy*dy),elapsed=map_clock_ms-pointer.motion_time;
+    pointer.x=px;pointer.y=py;
+    if(distance){
+        // NControllerManager accepts motion faster than 10 source px/s and
+        // rejects relative warps beyond 500 source px. Hosts supply positions
+        // rather than Godot velocity: derive it from the presentation clock,
+        // using the UI projection 2/9 and no floating-point/backend rounding.
+        const unsigned dt=elapsed?elapsed:1;
+        const bool mouse=pointer.visible||!keyboard_only||
+            (distance*81u<=1000000u&&dt<50000u&&uint64_t(distance)*20250000u>uint64_t(dt)*dt*100u);
+        pointer.motion_time=map_clock_ms;
+        if(mouse){pointer.visible=true;map_directional=false;keyboard_card=-1;sync_map_reticles();}
+    }
+    if(!pointer.visible)return;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
     if(pointer.held&&map_dragging){
@@ -65,6 +75,13 @@ void App::pointer_move(int x,int y){
     // replaced stale hit geometry from the covered pause/title page. Their
     // own hover rendering reads coordinates; no underlying selection changes.
     if(settings_open||frontend_confirm||help){hand_focus=false;return;}
+    if(pointer.held&&card_grid_drag>=0){
+        if(pointer.context!=input_context()||pointer.revision!=game.revision){pointer_cancel();return;}
+        auto&grid=card_grids[card_grid_drag];
+        if(grid.thumb_drag)grid.drag_thumb(pointer.y);
+        else if(pointer.dragging)grid.drag_content(pointer.y-card_grid_drag_y);
+        card_grid_drag_y=pointer.y;return;
+    }
     if(!pointer.held)hand_focus=hand_can_focus()&&h&&h->kind==HitKind::Hand;
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
     if(!combat_choice_ready()&&(h->kind==HitKind::Hand||h->kind==HitKind::Choice||
@@ -101,7 +118,8 @@ void App::pointer_scroll(int rows){
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){if(rows)debug_input(rows<0?Key::Up:Key::Down);return;}
 #endif
-    if(!rows||map_transition_blocks_pointer()||settings_open||frontend_confirm)return;
+    if(!rows||map_transition_blocks_pointer()||frontend_confirm)return;
+    if(settings_open){settings_action(rows>0?UiAction::SettingsScrollDown:UiAction::SettingsScrollUp);return;}
     if(keyword_hover_scroll(*this,rows))return;
     sync_map_window();
     map_directional=false;sync_map_reticles();
@@ -116,6 +134,8 @@ void App::pointer_scroll(int rows){
     if(map_preview.open){map_preview.first_row=clamp(map_preview.first_row-rows,0,int(map_preview.map.config.rows)-3);return;}
     if(detail_item>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
+    const int grid=active_card_grid();
+    if(grid>=0&&card_grids[grid].bound){card_grids[grid].wheel(rows);return;}
     if(library){ui_action(rows>0?UiAction::NextPage:UiAction::PreviousPage);return;}
     if(title||paused||help||character_select||deck_candidate>=0)return;
     if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map))){map_legend_item=uint8_t(clamp(int(map_legend_item)+rows,0,5));return;}
@@ -151,6 +171,9 @@ void App::pointer_button(bool down){
 #endif
     UiCoreObserver observer(*this);
     if(down)keyboard_card=-1;
+    // Mouse buttons always restore mouse mode in the original, including
+    // when KeyboardMode is enabled in preferences.
+    pointer.visible=true;pointer.motion_time=map_clock_ms;
     struct ReticleSync {App&a;~ReticleSync(){a.sync_map_window();a.sync_map_reticles();}} reticle_sync{*this};
     map_directional=false;sync_map_reticles();
     if(map_transition_blocks_pointer()){pointer_cancel();return;}
@@ -171,10 +194,22 @@ void App::pointer_button(bool down){
         }
         pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
         pointer.captured=hit;pointer.context=input_context();pointer.revision=game.revision;
+        const int grid_index=active_card_grid();
+        if(grid_index>=0){auto&grid=card_grids[grid_index];
+            const bool card=hit.kind==HitKind::DeckCard||hit.kind==HitKind::InstanceCard||hit.kind==HitKind::LibraryItem||hit.kind==HitKind::CombatChoice||hit.kind==HitKind::WorldChoice||hit.kind==HitKind::Choice;
+            if(grid.bound&&pointer.y>=grid.top&&pointer.y<grid.bottom&&(card||hit.kind==HitKind::None||hit.kind==HitKind::GridScroll)){
+                card_grid_drag=grid_index;card_grid_drag_y=pointer.y;grid.thumb_drag=hit.kind==HitKind::GridScroll;grid.dragging=!grid.thumb_drag;
+                if(grid.thumb_drag)grid.drag_thumb(pointer.y);else grid.target=grid.position;
+            }
+        }
         return;
     }
     if(!pointer.held)return;
     if(map_dragging){pointer_cancel();return;}
+    if(card_grid_drag>=0){
+        auto&grid=card_grids[card_grid_drag];const bool dragged=grid.thumb_drag||pointer.dragging;
+        grid.dragging=grid.thumb_drag=false;card_grid_drag=-1;if(dragged){pointer_cancel();return;}
+    }
     pointer.held=false;
     HitRegion captured=pointer.captured;pointer.captured={};
     if(pointer.context!=input_context()||pointer.revision!=game.revision){pointer_cancel();return;}
@@ -217,7 +252,7 @@ void App::pointer_button(bool down){
     case HitKind::Command:
         if(hit.y==0&&Key(hit.value)==Key::Back&&!title){pointer_cancel();paused=true;menu=0;}
         else pointer_key((Key)hit.value);break;
-    case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;pile_control_focus=-1;break;
+    case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;pile_control_focus=-1;card_grids[unsigned(CardGridSurface::Pile)].reset();break;
     case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::InstanceCard:open_choice_detail(hit.value);break;
     case HitKind::PileCard:open_card_detail(card_from_token(hit.value));break;

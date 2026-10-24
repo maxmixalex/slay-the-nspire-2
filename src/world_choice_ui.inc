@@ -64,9 +64,11 @@ static void world_choice_screen(Canvas&c){
  const bool bundle=relic&&w.choice==WorldRelicChoice::OfferBundle;
  const bool hand=relic&&w.choice==WorldRelicChoice::Hand;
  uint16_t ids[MaxWorldUiChoices];unsigned count=a.world_choice_options(ids,MaxWorldUiChoices);count=mn(int(count),MaxWorldUiChoices);
- a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));const int first=a.cursor/10*10;
+ a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));
  if(rewards){native_reward_set_screen(c,ids,count);return;}
  if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
+ const bool scrolling_cards=!potion&&!relics&&!bundle&&!(offer&&count<=3);
+ auto&grid=a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);CardGridPainter painter{c,grid};const int first=scrolling_cards?grid.first():a.cursor/10*10;
  c.dim(0,0,320,240,224);c.centered(world_choice_heading(s),0,6,320,16,Gold);
  char label[128]{};TextBuffer title{label,sizeof label,0,&c.a.content};
  if(potion){unsigned id=relic?w.offers[0]:e.offers[0];const auto*d=potion_definition(Potion(id));title.text(d?d->name:"");}
@@ -89,24 +91,29 @@ static void world_choice_screen(Canvas&c){
   }
  }else{
   const bool large=offer&&count<=3;
-  int portraits[10];unsigned portrait_count=0;
-  for(int i=first;i<mn(int(count),first+(large?3:10));++i){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
+  int portraits[16];unsigned portrait_count=0;
+  for(int i=first;i<(large?mn(int(count),first+3):grid.last());++i){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
    if(offer){card=card_from_token(relic?w.offers[at]:e.offers[at]);facts=relic?&w.offer_facts[at]:&e.offer_facts[at];}
    else if(hand){instance=at;card=s.cards[at];}else{deck=at;card=s.deck[at];}
    portraits[portrait_count++]=a.card_face_image(card,instance,deck,facts);
   }
   a.content.prepare_images(portraits,portrait_count);
-  for(int i=first;i<mn(int(count),first+(large?3:10));i++){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
+  for(int i=first;i<(large?mn(int(count),first+3):grid.last());i++){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
    if(offer){card=card_from_token(relic?w.offers[at]:e.offers[at]);facts=relic?&w.offer_facts[at]:&e.offer_facts[at];}
    else if(hand){instance=at;card=s.cards[at];}else{deck=at;card=s.deck[at];}
-   bool selected=world_selected(a,at);int x=large?(320-int(count)*94)/2+7+i*94:26+(i-first)%5*56,y=large?65:48+(i-first)/5*73;
+   bool selected=world_selected(a,at);int x=large?(320-int(count)*94)/2+7+i*94:grid.card_x(i),y=large?65:grid.card_y(i);
    if(large)large_card(c,card,x,y,selected||a.cursor==i,-2,-2,instance,deck,facts);
-   else small_card(c,card,x,y,a.cursor==i,true,0,instance>=0?cost(s,instance):-2,-2,instance,deck,facts);
-   if(selected)c.box(x-3,y-3,large?86:53,large?118:72,Green);
-   c.hit(x-3,y-3,large?86:53,large?118:72,HitKind::WorldChoice,at);
+   else{
+    const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+    painter.card(i,card,hover||(!a.pointer.visible&&a.cursor==i),true,instance>=0?cost(s,instance):-2,-2,instance,deck,facts,selected);
+   }
+   if(large){if(selected)c.box(x-3,y-3,86,118,Green);c.hit(x-3,y-3,86,118,HitKind::WorldChoice,at);}
+   else painter.hit(i,HitKind::WorldChoice,at);
   }
  }
- if(count>(bundle?2:10)){const int page_first=bundle?a.cursor/2*2:first,per=bundle?2:10;c.text("‹",12,191,16,Gold);c.action(0,187,42,21,UiAction::PreviousWorldPage,page_first>0);c.text("›",295,191,16,Gold);c.action(278,187,42,21,UiAction::NextWorldPage,page_first+per<int(count));}
+ painter.finish();
+ if(scrolling_cards)card_grid_scrollbar(c,grid,CardGridSurface::WorldChoice);
+ else if(count>(bundle?2:10)){const int page_first=bundle?a.cursor/2*2:first,per=bundle?2:10;c.text("‹",12,191,16,Gold);c.action(0,187,42,21,UiAction::PreviousWorldPage,page_first>0);c.text("›",295,191,16,Gold);c.action(278,187,42,21,UiAction::NextWorldPage,page_first+per<int(count));}
  else if(offer&&world_card_reward_alternatives(s)){
   unsigned alternatives=world_card_reward_alternatives(s);if(alternatives&1){c.button("献祭牌奖励",18,189,133,false,20);c.action(16,187,137,23,UiAction::SacrificeReward);}
   if(alternatives&2){c.button("重掷",169,189,133,false,20);c.action(167,187,137,23,UiAction::RerollReward);}

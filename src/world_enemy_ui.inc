@@ -259,10 +259,31 @@ void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
 bool App::enemy_frame(int slot,int&clip,uint32_t&elapsed,bool&loop){
  if(slot<0||slot>=game.enemy_count||!game.enemy_world.active||!enemy_opacity(slot))return false;
  if(!ui_feedback_bound(*this)||combat_feedback.identity[slot+1]==ui_feedback_identity(game,unsigned(slot+1)))ui_enemy_advance(*this,slot);const auto&m=enemy_presentation[slot];
- clip=m.clip;elapsed=int32_t(animation-m.start)>=0?(animation-m.start)*33:0;loop=m.loop;return clip>=0;
+ clip=m.clip;elapsed=int32_t(animation-m.start)>=0?(animation-m.start)*33:0;loop=m.loop;
+ if(phobia_mode&&clip>=0){
+  const auto kind=EnemyId(m.model);bool skin=false,body=false,segment=false;
+  switch(kind){
+  case EnemyId::TheObscura:case EnemyId::FossilStalker:case EnemyId::SkulkingColony:case EnemyId::TwigSlimeM:case EnemyId::HauntedShip:skin=true;break;
+  case EnemyId::DecimillipedeSegmentBack:case EnemyId::DecimillipedeSegmentFront:case EnemyId::DecimillipedeSegmentMiddle:segment=true;body=true;break;
+  case EnemyId::Entomancer:case EnemyId::PhrogParasite:case EnemyId::TerrorEel:case EnemyId::TheInsatiable:case EnemyId::Wriggler:body=true;break;
+  default:break;
+  }
+  int alternate=-1;
+  if(skin){if(const auto*row=world_enemy_clip_directory(unsigned(clip)))alternate=content.world_clip("phobia",row->key);}
+  else if(body){const auto*model=world_enemy_visual(m.model);char key[96]{};unsigned n=0;
+   if(model){for(const char*p=model->name;*p&&n+12<sizeof key;++p)key[n++]=*p;
+    const char*tail=segment&&combat_health(slot+1).hp<=0?".dead_body":".body";while(*tail&&n+1<sizeof key)key[n++]=*tail++;
+    alternate=content.world_clip("phobia",key);}}
+  if(alternate>=0){clip=alternate;if(body){elapsed=0;loop=true;}}
+ }
+ return clip>=0;
 }
 int App::combat_background()const{
- if(game.enemy_world.active){const auto*e=encounter_definition(game.enemy_world.encounter);if(e){int image=content.world_image("backgrounds",e->key);if(image>=0)return image;}}
- if(game.world.active){char region[24]{};world_region_image_key(game,region,sizeof region);int image=content.world_image("backgrounds",region);if(image>=0)return image;}
+ if(game.enemy_world.active){const auto*e=encounter_definition(game.enemy_world.encounter);if(e){
+  if(phobia_mode){int image=content.world_image("phobia_backgrounds",e->key);if(image>=0)return image;}
+  int image=content.world_image("backgrounds",e->key);if(image>=0)return image;}}
+ if(game.world.active){char region[24]{};world_region_image_key(game,region,sizeof region);
+  if(phobia_mode){int image=content.world_image("phobia_backgrounds",region);if(image>=0)return image;}
+  int image=content.world_image("backgrounds",region);if(image>=0)return image;}
  return content.ui_image(U_BattleBackground);
 }

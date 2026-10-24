@@ -37,18 +37,30 @@ struct CombatStatus {
  static constexpr unsigned PopupCapacity=96;
  struct Popup {uint32_t at=0,identity=0;uint16_t id=0;uint8_t actor=0,buff=0,lane=0,removed=0;};
  static constexpr unsigned DamageCapacity=48;
- struct Damage {uint32_t at=0,identity=0;int32_t amount=0;int16_t vx=0,vy=0;uint8_t actor=0,variation=0;};
+ struct Damage {uint32_t at=0,identity=0;int32_t amount=0;int16_t vx=0,vy=0;uint8_t actor=0,variation=0,flags=0;};
  Damage damages[DamageCapacity]{};uint8_t damage_count=0;uint32_t cosmetic=0x48a56b39u,pruned_at=UINT32_MAX;
  Popup popups[PopupCapacity]{};uint8_t popup_count=0;
+ static constexpr unsigned FlashCapacity=48;
+ struct Flash {uint32_t at=0,identity=0;uint16_t id=0;uint8_t actor=0;};
+ Flash flashes[FlashCapacity]{};uint8_t flash_count=0;
  uint32_t reward_at=0;bool reward_scheduled=false,had_live_scene=false;
  uint32_t visual_seed=0,star_gain_at=0,star_rotation_mdeg=0,star_tick=0;int visual_floor=-1,visual_combat=-1,visual_encounter=-1;
  StarCounterMotion star_count{};int star_observed=0;bool stars_visible=false,star_zero=true;
- void reset_visuals(){reward_at=0;reward_scheduled=had_live_scene=false;popup_count=damage_count=0;cosmetic=0x48a56b39u;pruned_at=UINT32_MAX;visual_floor=visual_combat=visual_encounter=-1;stars_visible=false;star_observed=0;star_gain_at=star_rotation_mdeg=star_tick=0;star_count={};star_zero=true;}
+ void reset_visuals(){reward_at=0;reward_scheduled=had_live_scene=false;popup_count=damage_count=flash_count=0;cosmetic=0x48a56b39u;pruned_at=UINT32_MAX;visual_floor=visual_combat=visual_encounter=-1;stars_visible=false;star_observed=0;star_gain_at=star_rotation_mdeg=star_tick=0;star_count={};star_zero=true;}
  static uint32_t popup_ticks(const Popup&p){return p.removed?54u:38u;}
  void expire(uint32_t now){
   if(now==pruned_at)return;pruned_at=now;
   unsigned out=0;for(unsigned i=0;i<popup_count;++i)if(int32_t(now-popups[i].at)<int32_t(popup_ticks(popups[i])))popups[out++]=popups[i];popup_count=uint8_t(out);
   out=0;for(unsigned i=0;i<damage_count;++i)if(int32_t(now-damages[i].at)*33<2000)damages[out++]=damages[i];damage_count=uint8_t(out);
+  out=0;for(unsigned i=0;i<flash_count;++i)if(int32_t(now-flashes[i].at)*33<1050)flashes[out++]=flashes[i];flash_count=uint8_t(out);
+ }
+ void flash(unsigned actor,unsigned id,uint32_t identity,uint32_t at,uint32_t now){
+  expire(now);if(id>=StatusKinds||!(PowerFlags[id]&1))return;
+  // Multiple modifiers of the same impact share one power flash; distinct
+  // commands retain their own lifetime, independently of amount changes.
+  for(unsigned i=0;i<flash_count;++i)if(flashes[i].actor==actor&&flashes[i].id==id&&flashes[i].identity==identity&&flashes[i].at==at)return;
+  if(flash_count==FlashCapacity){for(unsigned i=1;i<flash_count;++i)flashes[i-1]=flashes[i];--flash_count;}
+  flashes[flash_count++]={at,identity,uint16_t(id),uint8_t(actor)};
  }
  void popup(unsigned actor,unsigned id,bool buff,uint32_t identity,uint32_t at,uint32_t now,bool removed=false){
   expire(now);
@@ -64,11 +76,11 @@ struct CombatStatus {
   popups[popup_count++]={at,identity,uint16_t(id),uint8_t(actor),uint8_t(buff),uint8_t(lane),uint8_t(removed)};
  }
  unsigned random(){cosmetic^=cosmetic<<13;cosmetic^=cosmetic>>17;cosmetic^=cosmetic<<5;return cosmetic;}
- void damage(unsigned actor,int amount,uint32_t identity,uint32_t at,uint32_t now){
+ void damage(unsigned actor,int amount,uint32_t identity,uint32_t at,uint32_t now,uint8_t flags=0){
   expire(now);
   if(damage_count==DamageCapacity){for(unsigned i=1;i<damage_count;++i)damages[i-1]=damages[i];--damage_count;}
   // NDamageNumVfx's chaotic stream never consumes saved combat RNG.
-  damages[damage_count++]={at,identity,amount,int16_t(int(random()%201u)-100),int16_t(-800+int(random()%101u)),uint8_t(actor),uint8_t(random()%101u)};
+  damages[damage_count++]={at,identity,amount,int16_t(int(random()%201u)-100),int16_t(-800+int(random()%101u)),uint8_t(actor),uint8_t(random()%101u),flags};
  }
  void reset(){head=count=0;overflow=false;}
  void append(unsigned cell,Value value,uint32_t at){

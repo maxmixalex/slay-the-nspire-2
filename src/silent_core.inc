@@ -171,9 +171,9 @@ static void silent_before_hand_draw(State&s){
  auto&v=s.silent;bool blades=false;
  for(unsigned i=v.power_count;i>0;i--){unsigned p=v.power_order[i-1];
   if(p>=SPowerCount)queue_extension(s,XOp::SNightmareCopies,p-SPowerCount,0,true);
-  else if(p==(unsigned)SPower::InfiniteBlades){blades=true;if(s.infinite_blades)queue_extension(s,XOp::Create,s.infinite_blades,Shiv,true);}
+  else if(p==(unsigned)SPower::InfiniteBlades){blades=true;if(s.infinite_blades){notify_power_flash(s,-1,"INFINITE_BLADES_POWER");queue_extension(s,XOp::Create,s.infinite_blades,Shiv,true);}}
  }
- if(!blades&&s.infinite_blades)queue_extension(s,XOp::Create,s.infinite_blades,Shiv,true);
+ if(!blades&&s.infinite_blades){notify_power_flash(s,-1,"INFINITE_BLADES_POWER");queue_extension(s,XOp::Create,s.infinite_blades,Shiv,true);}
 }
 static void silent_turn_ready(State&s){
  auto&v=s.silent;bool noxious=false;
@@ -197,7 +197,8 @@ static void silent_player_side_end(State&s){
 static void silent_enemy_poison(State&s){
  for(int t=0;t<s.enemy_count;t++){
   auto&e=s.enemies[t];int ticks=min(e.poison,1+spower(s,SPower::Accelerant));
-  while(ticks--&&e.hp&&e.poison){int n=e.poison;e.hp=max(0,e.hp-n);if(e.hp)--e.poison;record(s,LogKind::PoisonDamage,n,t);}
+  while(ticks--&&e.hp&&e.poison){int n=e.poison,old=e.hp;e.hp=max(0,e.hp-n);
+   notify_damage_result(s,t,0,n,old,false,false,false);if(e.hp)--e.poison;record(s,LogKind::PoisonDamage,n,t);}
  }
 }
 static void silent_combat_end(State&s){
@@ -417,7 +418,8 @@ static bool silent_effect(State&s,Effect e){
   if(a>=0&&a<s.enemy_count&&s.enemies[a].hp&&b>0){if(!silent_blocks_debuff(s,a)){int change=min(9999+s.enemies[a].strength,b);s.enemies[a].strength-=(int16_t)change;necro_note_debuff(s,a,NDebuff::Strength);necro_debuff_applied(s,a,change);}enqueue(s,EffectKind::Weak,b,a,true);}break;
  case XOp::SPoisonTrigger:silent_enemy_poison(s);break;
  case XOp::SStrangle:
-  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){int n=min(s.enemies[a].hp,b);s.enemies[a].hp-=n;record(s,LogKind::LoseHp,n,a+1);}break;
+  if(a>=0&&a<s.enemy_count&&s.enemies[a].hp){notify_power_flash(s,a,"STRANGLE_POWER");int old=s.enemies[a].hp,n=min(old,b);s.enemies[a].hp-=n;
+   notify_damage_result(s,a,0,b,old,false,false,b==0);record(s,LogKind::LoseHp,n,a+1);}break;
  case XOp::SUnpoweredRandom:{
   int ids[MaxEnemies],n=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp)ids[n++]=t;
   if(n)damage_unpowered(s,ids[random_below(s.rng_cards,n)],a);break;
@@ -425,7 +427,7 @@ static bool silent_effect(State&s,Effect e){
  case XOp::SUpMySleeve:
   if(a>=0&&a<s.card_count&&s.cards[a].kind==UpMySleeve)v.discount[a]=(uint16_t)min(9999,v.discount[a]+1);break;
  case XOp::SPowerTurn:
-  if(a==(int)SPower::NoxiousFumes){for(int t=0;t<s.enemy_count;t++)apply_poison(s,t,s.noxious_fumes);}
+  if(a==(int)SPower::NoxiousFumes){notify_power_flash(s,-1,"NOXIOUS_FUMES_POWER");for(int t=0;t<s.enemy_count;t++)apply_poison(s,t,s.noxious_fumes);}
   else if(a==(int)SPower::WraithForm){int n=spower(s,SPower::WraithForm);s.dexterity=(int16_t)max(-9999,s.dexterity-n);record(s,LogKind::Dexterity,-n);}
   else if(a==(int)SPower::ShadowStep){int n=spower(s,SPower::ShadowStep);silent_gain_power(s,SPower::DoubleDamage,n);silent_gain_power(s,SPower::ShadowStep,-n);}
   else if(a==(int)SPower::Blur)silent_gain_power(s,SPower::Blur,-1);

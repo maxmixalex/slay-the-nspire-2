@@ -27,6 +27,12 @@ static char pack_path[512],save_path[512],temp_path[512],backup_path[512],perfor
 static char settings_path[512],settings_temp[512],settings_backup[512];
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 static uint32_t entropy_start=0;
+static unsigned installed_languages=0,pending_language=0;
+static unsigned available_languages(){return installed_languages;}
+static bool request_language(unsigned language){
+    if(language<1||language>2||!(installed_languages&(1u<<(language-1))))return false;
+    pending_language=language;return true;
+}
 static uint32_t seed_entropy(){
     // Same read-only RTC used by the official Ndless _gettimeofday. Mix the
     // current input-time subsecond counter and pre-init timing; never reset
@@ -43,7 +49,7 @@ struct ResourceFile {
     uint32_t drawn=0,phase_start=0;
     spire::ResourceStage phase=spire::ResourceStage::Count;
     spire::BootLanguage language=spire::BootLanguage::Unknown;
-    void close(){if(file){nd_close(file);file=nullptr;}}
+    void close(){if(file){nd_close(file);file=nullptr;}cursor={};}
     ~ResourceFile(){close();}
 };
 static void resource_progress(void*context,spire::ResourceStage stage,uint32_t completed,uint32_t total){
@@ -71,6 +77,7 @@ static bool sibling(char*out,const char*launcher,const char*filename){
 }
 static void* open_sibling(const char*launcher,const char*name){return sibling(pack_path,launcher,name)?nd_open(pack_path,"rb"):nullptr;}
 static spire::ResourceSource file_source(ResourceFile&file){
+    file.cursor={}; // This length probe moves the underlying stream as well.
     if(!file.file||nd_seek(file.file,0,2)!=0)return {};
     const long length=nd_tell(file.file);
     if(length<=0||(unsigned long)length>spire::MaxContentFile)return {};
@@ -150,25 +157,6 @@ static void store_language(spire::BootLanguage language){
     bool good=nd_write(spire::boot_preference_bytes(language),1,8,f)==8;
     good=(nd_close(f)==0)&&good;if(!good)nd_unlink(language_path);
 }
-static spire::BootLanguage choose_language(void(*blit)(void*),bool english,bool chinese,spire::BootLanguage preferred){
-    using spire::BootLanguage;
-    if(!english)return chinese?BootLanguage::Chinese:BootLanguage::Unknown;
-    if(!chinese)return BootLanguage::English;
-    BootLanguage selected=preferred==BootLanguage::English?BootLanguage::English:BootLanguage::Chinese;
-    bool automatic=preferred!=BootLanguage::Unknown;
-    spire::boot_language_screen(app.pixels,selected,automatic);blit(app.pixels);
-    exit_input_release(timer_ticks,boot_keys_held);
-    const uint32_t began=timer_ticks();unsigned previous=0;
-    for(;;){
-        unsigned keys=(pressed(0x14,0x80)?1u:0u)|(pressed(0x14,8)?2u:0u)|
-            ((pressed(0x10,2)||pressed(0x1A,0x40))?4u:0u)|(pressed(0x1C,0x80)?8u:0u);
-        const unsigned edge=keys&~previous;previous=keys;
-        if(edge&8)return BootLanguage::Unknown;
-        if(edge&3){selected=(edge&2)?BootLanguage::English:BootLanguage::Chinese;automatic=false;
-            spire::boot_language_screen(app.pixels,selected,false);blit(app.pixels);}
-        if((edge&4)||(automatic&&began-timer_ticks()>=32768u))return selected;
-    }
-}
 struct Clock {
     uint32_t load, control, last;bool active=false;
     // SP804 timer 2 is dedicated to this foreground runtime. Do not reset
@@ -236,21 +224,23 @@ extern "C" int main(int argc,char**argv){
     if(common.file){
         void*english=open_sibling(launcher,"nSpire2.eng.tns");void*chinese=open_sibling(launcher,"nSpire2.zhs.tns");
         if(!english&&!chinese){boot_error(blit,spire::BootText::MissingLanguage,spire::BootLanguage::Unknown);return 4;}
-        source.language=choose_language(blit,english!=nullptr,chinese!=nullptr,preferred);
+        installed_languages=(english?1u:0u)|(chinese?2u:0u);
+        source.language=preferred==spire::BootLanguage::English&&english?spire::BootLanguage::English:
+            preferred==spire::BootLanguage::Chinese&&chinese?spire::BootLanguage::Chinese:
+            chinese?spire::BootLanguage::Chinese:spire::BootLanguage::English;
         if(source.language==spire::BootLanguage::English){source.file=english;if(chinese)nd_close(chinese);}
         else if(source.language==spire::BootLanguage::Chinese){source.file=chinese;if(english)nd_close(english);}
         else {if(english)nd_close(english);if(chinese)nd_close(chinese);exit_input_release(timer_ticks,boot_keys_held);return 0;}
         selected_language=true;
     }else source.file=open_sibling(launcher,"nSpire2.nsp.tns");
     if(!source.file){boot_error(blit,spire::BootText::MissingResources,spire::BootLanguage::Unknown);return 4;}
-    // User time on the language selector is outside the startup work metric.
     const uint32_t startup_start=performance.enabled?timer_ticks():0;
     source.blit=blit;auto resource=file_source(source);bool valid=resource.length!=0;
     if(common.file){
         valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
         if(valid)resource=split.source();
-    }else source.language=spire::boot_probe_language(resource);
-    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences})){
+    }else{source.language=spire::boot_probe_language(resource);installed_languages=source.language==spire::BootLanguage::English?1u:2u;}
+    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
     if(selected_language&&source.language!=preferred)store_language(source.language);
@@ -258,6 +248,23 @@ extern "C" int main(int argc,char**argv){
     if(performance.enabled){const uint32_t now=timer_ticks();performance.startup.add(startup_start-now);
         if(source.phase!=spire::ResourceStage::Count)performance.startup_phases[(unsigned)source.phase].add(source.phase_start-now);}
     source.blit=nullptr; // Startup progress cannot repaint over the live game.
+    auto change_language=[&](){
+        const unsigned requested=pending_language;pending_language=0;
+        if(!requested||!common.file||!app.title)return;
+        void*next=open_sibling(launcher,requested==1?"nSpire2.eng.tns":"nSpire2.zhs.tns");
+        if(!next){app.message(app.content.english()?"Language resources are unavailable.":"无法读取语言资源。");return;}
+        void*previous=source.file;const auto old_language=source.language;
+        source.file=next;source.language=static_cast<spire::BootLanguage>(requested);
+        const bool opened=split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(requested));
+        if(opened&&app.reload_language(split.source())){nd_close(previous);store_language(source.language);}
+        else{
+            nd_close(next);source.file=previous;source.language=old_language;
+            if(!split.open(file_source(common),file_source(source),static_cast<spire::ResourceLanguage>(old_language))||!app.reload_language(split.source())){
+                boot_error(blit,spire::BootText::InvalidResources,old_language);app.quit=true;return;
+            }
+            app.message(app.content.english()?"Could not change language.":"无法切换语言。");
+        }
+    };
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
     clock.last=timer_ticks();uint32_t input_clock=0;
@@ -330,6 +337,7 @@ extern "C" int main(int argc,char**argv){
         uint32_t edge=p&~previous;
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
         for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);previous=p;
+        change_language();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press
         // to the document browser when Ndless restores the foreground.

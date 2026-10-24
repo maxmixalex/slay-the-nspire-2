@@ -124,7 +124,7 @@ static bool hover_detail_word(const App&a,Card card){
 }
 static const HitRegion* hover_keyboard_hit(const App&a){
     if(a.library&&a.library_tab==0){for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::LibraryItem&&a.hits[i].value==a.library_selected)return &a.hits[i];}
-    if(a.panel==1&&a.pile_control_focus<0){int index=0;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::DeckCard||a.hits[i].kind==HitKind::InstanceCard){if(index++==a.inspect_cursor-a.scroll)return &a.hits[i];}}
+    if(a.panel==1&&a.pile_control_focus<0){int ids[MaxCards];const unsigned count=a.pile_items(ids);if(unsigned(a.inspect_cursor)<count)for(int i=0;i<a.hit_count;++i)if((a.hits[i].kind==HitKind::DeckCard||a.hits[i].kind==HitKind::InstanceCard)&&a.hits[i].value==ids[a.inspect_cursor])return &a.hits[i];}
     if(!a.panel&&!a.library){for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
         if(h.kind==HitKind::Choice&&h.value==a.cursor)return &h;
         if(h.kind==HitKind::CombatChoice){const auto&source=choice_pile(a.game);if(a.cursor>=0&&a.cursor<source.count&&h.value==source.ids[a.cursor])return &h;}

@@ -237,6 +237,14 @@ uint32_t random_below(uint32_t&, uint32_t bound);
 // Presentation observers are process-local and never enter State or a save.
 // Callbacks may inspect the exact recorded state, but must not invoke actions.
 // Swapping returns the previous binding for a nested, scoped registration.
+struct CoreDamageResult {
+    // CreatureCmd.Damage keeps actual HP loss and overkill separate. The
+    // receiver convention matches damage commands: -1 player, -2 Osty.
+    enum Flag : uint8_t { FullyBlocked=1,BlockBroken=2,ShowZero=4,Hurt=8 };
+    int32_t blocked=0,unblocked=0,overkill=0;
+    int8_t receiver=-1;uint8_t flags=0;
+    int amount()const{return unblocked+overkill;}
+};
 struct CoreObserver {
     void* context=nullptr;
     void(*on_log)(void*,const State&,Log)=nullptr;
@@ -245,9 +253,12 @@ struct CoreObserver {
     // Establish a display command boundary before synchronous damage/power
     // hooks run. Appending preserves existing four-field observer bindings.
     void(*before_effect)(void*,const State&,Effect)=nullptr;
+    void(*on_damage)(void*,const State&,const CoreDamageResult&)=nullptr;
+    void(*on_power_flash)(void*,const State&,int,const char*)=nullptr;
 };
 CoreObserver set_core_observer(CoreObserver);
 void notify_enemy_animation(const State&,int slot,const char* trigger);
+void notify_power_flash(const State&,int receiver,const char* key);
 void record(State&,LogKind,int a=0,int b=0);
 void create_map(State&);
 void finish_room(State&);

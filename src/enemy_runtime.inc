@@ -58,7 +58,7 @@ static bool enemy_effect(State&s,Effect e){
   int t=b%8,remaining=b/8;if(!enemy_slot_alive(s,t)||remaining<=0||s.hp<=0)break;
   if(remaining>1)queue_extension(s,XOp::EnemyHit,a,t+8*(remaining-1),true);
   int hit=enemy_attack_value(s,t,a);
-  if(s.thorns)damage_unpowered(s,t,s.thorns);
+  if(s.thorns){notify_power_flash(s,-1,"THORNS_POWER");damage_unpowered(s,t,s.thorns);}
   int old_pet=s.expansion.osty_hp,blocked=min(s.block,hit);
   int player_loss=player_hp_loss(s,hit,true,true,-1,t);if(s.phase==Phase::Dead)break;
   auto&m=w.models[t];int pet_loss=max(0,old_pet-s.expansion.osty_hp);

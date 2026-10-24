@@ -16,8 +16,14 @@ static spire::BootLanguage boot_language=spire::BootLanguage::Unknown;
 static uint32_t browser_entropy=0;
 static spire::UiPreferences preferences{};
 static bool preferences_dirty=false;
+static unsigned language_mask=0,pending_language=0;
 static bool load_preferences(spire::UiPreferences& out){out=preferences;return true;}
 static bool save_preferences(const spire::UiPreferences& value){preferences=value;preferences_dirty=true;return true;}
+static unsigned available_languages(){return language_mask?language_mask:(app.content.english()?1u:2u);}
+static bool request_language(unsigned value){
+    if(value<1||value>2||!(available_languages()&(1u<<(value-1))))return false;
+    pending_language=value;return true;
+}
 static uint32_t seed_entropy(){return browser_entropy;}
 static bool read_resource(void*,uint32_t offset,void* output,uint32_t count){return host_resource_read(offset,(uint8_t*)output,count)!=0;}
 // Keep the original single resource_read import for existing replay hosts.
@@ -38,6 +44,8 @@ void set_seed_entropy(uint32_t value){browser_entropy=value;}
 // stored by the browser separately from the player's run, in either language.
 void set_preferences(unsigned flags){preferences.fast_mode=flags==1;preferences_dirty=false;}
 unsigned preferences_flags(){return preferences.fast_mode?1u:0u;}
+void set_preferences_v2(unsigned flags){spire::UiPreferences value{};if(spire::ui_preferences_from_flags(flags,value))preferences=value;preferences_dirty=false;}
+unsigned preferences_v2_flags(){return spire::ui_preference_flags(preferences);}
 int preferences_pending(){return preferences_dirty?1:0;}
 void preferences_ack(int success){
     preferences_dirty=false;
@@ -46,14 +54,26 @@ void preferences_ack(int success){
 int start(unsigned n){
     split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};
     boot_language=spire::boot_probe_language(resource);
-    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences})?1:0;
+    pending_language=0;
+    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language})?1:0;
 }
 int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
     split.close();if(language!=1&&language!=2)return 0;
     boot_language=language==1?spire::BootLanguage::English:spire::BootLanguage::Chinese;
     if(!split.open({nullptr,common_bytes,read_common,nullptr},
         {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
-    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences})?1:0;
+    pending_language=0;
+    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language})?1:0;
+}
+void set_available_languages(unsigned mask){language_mask=mask&3u;}
+unsigned language_request(){return pending_language;}
+int switch_language_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
+    pending_language=0;
+    if(!app.title||language<1||language>2||!(available_languages()&(1u<<(language-1))))return 0;
+    if(!split.open({nullptr,common_bytes,read_common,nullptr},
+        {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
+    if(!app.reload_language(split.source()))return 0;
+    boot_language=language==1?spire::BootLanguage::English:spire::BootLanguage::Chinese;return 1;
 }
 int resource_language(){return app.content.english()?1:2;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}

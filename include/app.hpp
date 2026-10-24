@@ -1,5 +1,7 @@
 #pragma once
 #include "merchant_layout.hpp"
+#include "room_ui7_presentation.hpp"
+#include "room_ui7_assets.hpp"
 #include "core.hpp"
 #include "keyword_hover.hpp"
 #include "event_assets.hpp"
@@ -22,6 +24,7 @@
 #include "health_bar.hpp"
 #include "combat_feedback.hpp"
 #include "combat_card_motion.hpp"
+#include "card_grid_scroll.hpp"
 #include "combat_status.hpp"
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
@@ -139,6 +142,10 @@ struct Callbacks {
     uint32_t(*seed_entropy)()=nullptr;
     bool(*load_preferences)(UiPreferences&)=nullptr;
     bool(*save_preferences)(const UiPreferences&)=nullptr;
+    // Bits 0/1 identify installed English/Chinese resources. Requests are
+    // serviced by the host after the current input callback has returned.
+    unsigned(*available_languages)()=nullptr;
+    bool(*request_language)(unsigned)=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -201,8 +208,18 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;
+    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false;
+    uint8_t screen_shake=2;
+    bool settings_language_open=false;
+    uint8_t settings_language_item=0,settings_top=0;
     void restore_preferences();
     void set_fast_mode(bool value);
+    void persist_preferences();
+    unsigned available_languages()const;
+    bool request_language(unsigned language);
+    bool reload_language(ResourceSource source);
+    void settings_action(UiAction);
+    bool settings_input(Key);
     uint8_t frontend_confirm=0,frontend_choice=0,settings_item=0,settings_tab=0;
     Character saved_character=Character::Ironclad;
     uint32_t saved_seed=0;int saved_floor=0,saved_hp=0,saved_max_hp=0,saved_gold=0;
@@ -221,6 +238,7 @@ struct App {
     int title_menu_count()const{return has_save?5:4;}
     bool practice_entry=false;
     bool run_settings=false,run_seed_editing=false;
+    uint8_t character_control=0;
     bool game_over_summary=false;
     bool game_over_available()const;
     bool game_over_input(Key);
@@ -263,6 +281,7 @@ struct App {
     bool hand_focus=false; // Presentation only, never part of a saved run.
     bool hand_can_focus()const;
     bool shop_open=false,event_reader=false;
+    RoomUi7Presentation room_presentation{};
     int event_reader_scroll=0;
     bool room_input(Key);
     Character selected_character=Character::Ironclad;
@@ -278,6 +297,13 @@ struct App {
     int pile_control_focus=-1;
     unsigned pile_items(int*out=nullptr)const;
     void sort_pile(unsigned column);
+    CardGridScroll card_grids[unsigned(CardGridSurface::Count)]{};
+    int card_grid_drag=-1,card_grid_drag_y=0;
+    CardGridScroll& configure_card_grid(CardGridSurface,int count,uint32_t identity=0);
+    int active_card_grid()const;
+    bool card_grid_input(Key);
+    void reset_card_grids();
+    void focus_card_grid();
     int keyboard_card=-1;
     uint32_t keyboard_card_revision=0;
     bool card_target_input(Key);
@@ -368,6 +394,9 @@ struct App {
     void sync_combat_feedback();
     void before_combat_effect(const State&,Effect);
     void observe_combat_effect(const State&,Effect);
+    void observe_combat_damage(const State&,const CoreDamageResult&);
+    void sync_combat_damage();
+    void observe_power_flash(const State&,int receiver,const char*key);
     void combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,uint32_t end);
     HealthBarValues combat_health(int actor)const;
     EnemyIntent combat_intent(int slot)const;
