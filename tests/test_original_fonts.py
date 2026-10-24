@@ -185,6 +185,11 @@ class OriginalFontTest(unittest.TestCase):
         self.assertEqual(face.asserted,(5,5))
         source.glyphs += [(cp,0,px,w,h,advance,encoded) for cp,px,w,h,advance,encoded,_ in rows]
         self.assertEqual(tooltip.missing_glyphs(source,face),[])
+        texts[2291]='铁';source.strings[2291]=(2291,len('铁'.encode()))
+        display=SyntheticFace();display.coverage={ord('铁')}
+        rows=tooltip.missing_glyphs(source,face,display)
+        self.assertEqual({(row[0],row[1]) for row in rows},{(ord('铁'),px|32) for px in (10,12,14)})
+        self.assertEqual(display.asserted,(14,4))
 
 
 if __name__ == '__main__': unittest.main()

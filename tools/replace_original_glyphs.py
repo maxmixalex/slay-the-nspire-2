@@ -259,6 +259,11 @@ def tooltip_small_bold_alphabet(source):
     return result
 
 
+def character_title_display_alphabet(source):
+    return scene_label_alphabet(source,'world_text_index.inc',{
+        'characters.'+key+'.title' for key in ('IRONCLAD','SILENT','DEFECT','REGENT','NECROBINDER')})
+
+
 def scene_glyphs(source, faces):
     """Pack actual explicit faces only for the screens that select them."""
     if source.version < 28 or not any(faces): return [], {}
@@ -314,6 +319,11 @@ def scene_glyphs(source, faces):
         for cp in sorted(covered):
             for px in SCENE_SIZES:
                 rows.append(face.glyph(cp,px,4+i));present.add((cp,px))
+        if i==0:
+            for cp in sorted(character_title_display_alphabet(source)):
+                if cp>=32 and cp in face.coverage:
+                    for px in (10,12,14):
+                        if (cp,px) not in present:rows.append(face.glyph(cp,px,4));present.add((cp,px));covered.add(cp)
         if i==1:
             # PatchText explicitly selects KreonBold at its 8px body size;
             # the credits reader uses the same face for 10px section labels.
