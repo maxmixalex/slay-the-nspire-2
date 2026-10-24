@@ -9,6 +9,7 @@ using namespace spire;
 static App app;
 static SaveData before,after;
 static unsigned checks,preferences_saved,run_writes;
+#include "fixtures/bestiary_order_ui7.inc"
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"bestiary UI7:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static bool store_preferences(const UiPreferences&){++preferences_saved;return true;}
 static bool store_run(const State&){++run_writes;return true;}
@@ -19,6 +20,19 @@ static void settle(unsigned frames=20){for(unsigned i=0;i<frames;++i){app.advanc
 static HitRegion find(HitKind kind,int value=-1){for(unsigned i=0;i<unsigned(app.hit_count);++i)if(app.hits[i].kind==kind&&(value<0||app.hits[i].value==value))return app.hits[i];return {};}
 static void click(HitRegion hit){CHECK(hit.kind!=HitKind::None);app.pointer_move(hit.x+hit.w/2,hit.y+hit.h/2);app.pointer_button(true);app.pointer_button(false);app.render();}
 static void capture(const char*folder,const char*name){if(!folder)return;std::string path=std::string(folder)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto pixel:app.pixels){const unsigned char rgb[3]={static_cast<unsigned char>((pixel>>11)*255/31),static_cast<unsigned char>(((pixel>>5)&63)*255/63),static_cast<unsigned char>((pixel&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
+static void ordered_catalog(){
+ new_run(app.game,0x41cef1ea,false,Character::Ironclad);app.title=true;app.reset_presentation();
+ clear_ui_progress(app.progress);app.progress_loaded=true;app.progress.discovered_acts=15;CHECK(save(app.game,before));
+ CHECK(app.open_bestiary(true)&&app.bestiary.row_count==106);
+ const unsigned lengths[]={29,22,22,23,5};const auto&order=expected_bestiary_order[app.content.english()?0:1];
+ unsigned row_index=0,index=0;bool seen[101]{};
+ for(unsigned region=0;region<5;++region){CHECK(app.bestiary.rows[row_index++]==-1-int(region));
+  for(unsigned i=0;i<lengths[region];++i){const auto entry=app.bestiary.rows[row_index++];
+   CHECK(entry==order[index++]&&entry>=0&&entry<101&&!seen[entry]);seen[entry]=true;
+  }
+ }
+ CHECK(row_index==106&&index==101);unchanged();app.input(Key::Back);CHECK(!app.bestiary.open);
+}
 static void flow(const char*folder){
  new_run(app.game,0x41cef1ea,false,Character::Silent);app.title=true;app.bestiary_actions_preferred=true;app.reset_presentation();
  app.callbacks.save=store_run;app.callbacks.load=load_run;app.callbacks.save_preferences=store_preferences;
@@ -40,7 +54,17 @@ static void flow(const char*folder){
  const int menu=app.menu;app.pointer_move(50,55);CHECK(app.menu==menu);unchanged();
  app.input(Key::Down);CHECK(app.bestiary.selected_row==alternate&&app.bestiary.focused!=alternate);app.input(Key::Confirm);CHECK(app.bestiary.selected_row==app.bestiary.focused);
  app.bestiary_pointer({0,0,0,0,HitKind::BestiaryEntry,int16_t(nr),true});settle();CHECK(app.bestiary.selected_row==nr);
- CHECK(app.bestiary_move_count()>=5);app.input(Key::Left);app.input(Key::Confirm);CHECK(app.bestiary.actors[0].count>0);const int move_clip=app.bestiary.actors[0].clips[0];CHECK(move_clip>=0);settle(3);capture(folder,"bestiary-nibbit-action");unchanged();
+ // Nibbit.ShouldShowMoveInBestiary explicitly hides SLICE_MOVE. The
+ // original buttons are BUTT, HISS, Hurt and Die; no fifth Slice button.
+ CHECK(app.bestiary_move_count()==4);app.input(Key::Left);
+ const char*clips[]={"attack","hiss","hurt","die"};
+ for(unsigned i=0;i<4;++i){
+  CHECK(app.bestiary.action==i);app.input(Key::Confirm);CHECK(app.bestiary.actors[0].count==1);
+  const auto*clip=world_enemy_clip_directory(unsigned(app.bestiary.actors[0].clips[0]));
+  CHECK(clip&&!std::strcmp(clip->native_clip,clips[i]));
+  if(i!=3)app.input(Key::Down);
+ }
+ app.input(Key::Down);CHECK(!app.bestiary.action);app.input(Key::Confirm);settle(3);capture(folder,"bestiary-nibbit-action");unchanged();
  app.input(Key::EndTurn);CHECK(!app.bestiary.actions&&!app.bestiary_actions_preferred&&preferences_saved==1);settle();
  CHECK(find(HitKind::BestiaryFilter,1).enabled&&find(HitKind::BestiaryFilter,2).enabled&&!find(HitKind::BestiaryFilter,3).enabled);
  click(find(HitKind::BestiaryFilter,2));settle();CHECK(app.bestiary.filter==2);capture(folder,"bestiary-silent-loss-statistics");
@@ -66,5 +90,5 @@ static void flow(const char*folder){
 }
 int main(int argc,char**argv){
  std::vector<uint8_t> pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.init(pack.data(),pack.size(),{}));}
- flow(argc>2?argv[2]:nullptr);std::printf("bestiary UI7: %u checks passed\n",checks);
+ ordered_catalog();flow(argc>2?argv[2]:nullptr);std::printf("bestiary UI7: %u checks passed\n",checks);
 }

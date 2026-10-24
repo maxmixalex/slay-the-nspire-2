@@ -29,6 +29,24 @@ static Results enemy_damage(int hp,int block,int amount){
  Results out;const auto previous=set_core_observer({&out,nullptr,nullptr,nullptr,nullptr,Results::damage,Results::power});
  damage_unpowered(s,0,amount);resolve_pending(s);set_core_observer(previous);CHECK(out.count==1);CHECK(validate(s));return out;
 }
+static void feedback_storage(){
+ CombatFeedback f;CHECK(sizeof(f)<=8192&&sizeof(CombatFeedback::Cue)==28);
+ HealthBarValues v{1000000000,2000000000,32767,-32768,
+  health_bar::poison_next_damage(32767,32767),32767,true};
+ CoreDamageResult hit{0,1000000000,1000000000,0,CoreDamageResult::Hurt,40};
+ // The compact queue preserves billion-HP creatures and the complete
+ // poison arithmetic series; only already-int16 canonical facts narrow.
+ for(unsigned i=0;i<CombatFeedback::Capacity;++i){
+  v.hp=1000000000+int(i);const auto actor=i%CombatFeedback::Actors;
+  f.append(actor,v,0x1234fefdu,i+1);f.append_damage(actor,hit,0x1234fefdu,i+1);
+  const auto&q=f.cues[i];CHECK(q.actor==actor&&q.identity==0x1234fefdu&&q.at==i+1&&CombatFeedback::same(q.value(),v));
+  const auto&d=f.damages[i];CHECK(d.amount==2000000000&&d.actor==actor&&d.at==i+1);
+ }
+ CHECK(f.count==128&&f.damage_count==128&&!f.overflow&&!f.damage_overflow);
+ v.hp=12;f.append(0,v,1,129);f.append_damage(0,hit,1,129);
+ CHECK(f.count==128&&f.damage_count==128&&f.overflow&&f.damage_overflow);
+ CHECK(f.observed[0].hp==12&&f.observed_identity[0]==1&&f.end_at==129);
+}
 static void exact_results(){
  auto r=enemy_damage(7,0,20).values[0];CHECK(r.receiver==0&&r.blocked==0&&r.unblocked==7&&r.overkill==13&&r.amount()==20);
  CHECK(!(r.flags&CoreDamageResult::FullyBlocked)&&r.shake_strength==20);
@@ -137,5 +155,5 @@ static void sparks(){
 }
 int main(int argc,char**argv){
  std::vector<uint8_t> data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);CHECK(app.init(data.data(),data.size(),{}));}
- exact_results();pet_and_powers();presentation();block_break();screen_shake();sparks();std::printf("damage UI7: %u checks passed\n",checks);
+ feedback_storage();exact_results();pet_and_powers();presentation();block_break();screen_shake();sparks();std::printf("damage UI7: %u checks passed\n",checks);
 }

@@ -171,14 +171,19 @@ static void pointer_and_capstone(){
     app.input(Key::Map);CHECK(app.panel==3&&app.map_act_intro.banner_count==1);unchanged();
 }
 static void saving_and_reset(){
-    new_game(false,0xffffff00u);proceed_neow();snapshot();advance_ms(1250);CHECK(app.save_current_run());
+    constexpr uint32_t intro_start=0xffffff00u;
+    // Starting the character screen and both Ancient pages now consumes
+    // their actual 350+1000+1000ms entries. Keep the map animation itself
+    // crossing uint32 wrap, rather than wrapping during that prelude.
+    constexpr unsigned prelude=350+1000+1000;
+    new_game(false,intro_start-prelude);proceed_neow();CHECK(app.map_clock_ms==intro_start);snapshot();advance_ms(1250);CHECK(app.save_current_run());
     const unsigned elapsed=app.map_act_intro.camera_elapsed;const int y=app.map_act_intro.y_q12;
     read_ok=false;app.input(Key::Load);CHECK(app.map_window.is_open&&app.map_act_intro.camera_elapsed==elapsed&&app.map_act_intro.y_q12==y);unchanged();
     write_ok=false;CHECK(!app.save_current_run());CHECK(app.map_act_intro.camera_elapsed==elapsed);write_ok=read_ok=true;
     app.input(Key::Load);CHECK(!app.map_window.visible&&app.map_act_intro.played&&!app.map_act_intro.camera_running&&!app.map_act_intro.banner_count);unchanged();
     app.input(Key::Map);CHECK(app.map_window.is_open&&!app.map_window.opening()&&!app.map_act_intro.y_q12&&!app.map_act_intro.banner_count);unchanged();
-    new_game(false,0xffffff00u);proceed_neow();snapshot();advance_ms(4750);
-    CHECK(app.map_clock_ms==uint32_t(0xffffff00u+4750u)&&!app.map_act_intro.camera_running&&!app.map_act_intro.banner_count);unchanged();
+    new_game(false,intro_start-prelude);proceed_neow();CHECK(app.map_clock_ms==intro_start);snapshot();advance_ms(4750);
+    CHECK(app.map_clock_ms==uint32_t(intro_start+4750u)&&!app.map_act_intro.camera_running&&!app.map_act_intro.banner_count);unchanged();
     app.return_to_title();CHECK(!app.map_window.visible&&!app.map_act_intro.banner_count&&!app.map_act_intro.camera_running);
     new_game();proceed_neow();CHECK(app.map_act_intro.camera_running&&app.map_act_intro.camera_elapsed==0);
 }

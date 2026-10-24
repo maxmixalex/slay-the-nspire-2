@@ -91,8 +91,15 @@ static void capture(const char*name){
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
 static HitRegion find_hit(HitKind kind,int value){
- a.render();HitRegion found{};unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value){found=a.hits[i];++count;}
- CHECK(count==1&&found.enabled&&found.x>=0&&found.y>=0&&found.x+found.w<=ScreenW&&found.y+found.h<=ScreenH);return found;
+ HitRegion found{};unsigned count=0;
+ // Authored Back/Confirm controls enter from outside the viewport. Wait for
+ // an actual enabled hit, rather than dispatching an invisible action.
+ for(unsigned frame=0;frame<=25;++frame){
+  a.render();found={};count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value){found=a.hits[i];++count;}
+  if(count==1&&found.enabled&&found.w>0&&found.h>0)break;
+  if(frame<25)a.advance(16);
+ }
+ CHECK(count==1&&found.enabled&&found.w>0&&found.h>0&&found.x>=0&&found.y>=0&&found.x+found.w<=ScreenW&&found.y+found.h<=ScreenH);return found;
 }
 static void press(HitKind kind,int value){const auto h=find_hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;}
 static void action(UiAction value){press(HitKind::UiAction,int(value));}

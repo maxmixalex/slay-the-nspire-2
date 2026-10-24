@@ -308,7 +308,7 @@ void App::sync_combat_feedback(){
  auto&f=combat_feedback;if(!f.active){sync_combat_cards();return;}
  if(title||!ui_feedback_bound(*this)||game.phase==Phase::Error){f.reset();sync_combat_cards();return;}
  sync_combat_cards();
- while(f.head<f.count&&int32_t(animation-f.cues[f.head].at)>=0){const auto cue=f.cues[f.head++];ui_feedback_apply(*this,cue.actor,cue.value,cue.identity,cue.at);}
+ while(f.head<f.count&&int32_t(animation-f.cues[f.head].at)>=0){const auto cue=f.cues[f.head++];ui_feedback_apply(*this,cue.actor,cue.value(),cue.identity,cue.at);}
  if(f.head==f.count)f.head=f.count=0;
  sync_combat_damage();
  combat_status.sync(animation);

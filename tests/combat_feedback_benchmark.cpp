@@ -42,7 +42,7 @@ int main(int argc,char**argv){
   if(!save(app.game,actual)||expected.size!=actual.size||std::memcmp(expected.bytes,actual.bytes,actual.size))return 4;
   hash=1469598103934665603ULL;for(unsigned i=0;i<actual.size;++i)mix(actual.bytes[i]);const auto save_hash=hash;
   hash=1469598103934665603ULL;const auto&f=app.combat_feedback;
-  for(unsigned i=0;i<f.count;++i){const auto&q=f.cues[i];mix(q.actor);mix(q.at);mix(q.value.hp);mix(q.value.block);mix(q.value.max_hp);}
+  for(unsigned i=0;i<f.count;++i){const auto&q=f.cues[i];mix(q.actor);mix(q.at);mix(q.hp);mix(q.block);mix(q.max_hp);}
   const auto&v=app.combat_status;for(unsigned i=0;i<v.count;++i){const auto&q=v.cues[i];mix(q.cell);mix(q.at);mix(q.value.amount);mix(q.value.auxiliary);mix(q.value.source);mix(q.value.visible);}
   printf("actors=%u iterations=%u effects=%llu capture_ns_per_effect=%.3f save_hash=%016llx cue_hash=%016llx\n",app.game.enemy_count+1,repeat,(unsigned long long)effects,double(nanos)/double(effects),(unsigned long long)save_hash,(unsigned long long)hash);
  }

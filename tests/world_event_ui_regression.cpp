@@ -132,8 +132,13 @@ static void merchant(){
  CHECK(a.game.phase==Phase::Event&&!a.game.original_events.finished);CHECK(a.game.original_events.offers[0]==NoWorldRelic&&has_world_relic(a.game,bought));
  CHECK(a.game.gold==gold-price&&a.game.world_relics.count==count+1);CHECK(validate(a.game));advance_ms(1000);CHECK(choice_count()==6&&!choice(0).enabled);capture("fake-merchant-sold");
  snapshot();press_choice(0);unchanged();press_action(UiAction::CloseShop);CHECK(!a.shop_open);advance_ms(800);unchanged();
- count=a.game.world_relics.count;gold=a.game.gold;press_action(UiAction::LeaveShop);
- CHECK(!a.game.original_events.active&&a.game.phase==Phase::Event);
+ count=a.game.world_relics.count;gold=a.game.gold;
+ static State leave_oracle;static SaveData leave_expected;
+ CHECK(load(leave_oracle,before.bytes,before.size));CHECK(event_choice(leave_oracle,6)&&original_event_leave(leave_oracle));CHECK(save(leave_oracle,leave_expected));
+ press_action(UiAction::LeaveShop);
+ CHECK(save(a.game,after)&&after.size==leave_expected.size&&!std::memcmp(after.bytes,leave_expected.bytes,after.size));
+ // Finished native rooms remain underneath the map until actual travel.
+ CHECK(a.game.original_events.active&&a.game.original_events.finished&&a.game.phase==Phase::Event&&a.game.world.room_open==2);
  CHECK(world_can_travel(a.game)&&a.map_window.visible&&a.game.world_relics.count==count&&a.game.gold==gold);CHECK(validate(a.game));
 }
 static void ancient_original_modulation(){

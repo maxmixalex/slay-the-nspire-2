@@ -70,7 +70,9 @@ static void character_motion(){
     CHECK(motion.portrait_scale(1,600)==1126&&motion.value(1,600)==1100);
     motion.observe(true,0,-2,650);
     CHECK(motion.portrait_scale(1,900)>1024&&motion.portrait_scale(1,900)<1040);
-    CHECK(motion.value(1,900)>800&&motion.value(1,900)<810);
+    // Halfway through the source EXPO_OUT recovery, Q12 interpolation of
+    // 1.1 -> .8 rounds the displayed thousandths to 810, not below 810.
+    CHECK(motion.value(1,900)==810);
     CHECK(motion.portrait_scale(1,1150)==1024&&motion.value(1,1150)==800&&motion.value(2,1150)==400);
     motion.observe(true,0,1,1200);motion.observe(true,1,1,1220);
     CHECK(motion.panel_offset(1220)==-57&&motion.opened==100&&motion.portrait_scale(1,1220)==1126);

@@ -5,6 +5,7 @@ struct BestiaryModelSpec {uint16_t first;uint8_t count;};
 struct BestiaryMoveSpec {const char*label;const char*clip;int16_t node;};
 #include "bestiary_catalog_ui7.inc"
 static constexpr unsigned BestiaryEntries=sizeof bestiary_entries/sizeof bestiary_entries[0];
+#include "bestiary_order_ui7.inc"
 static_assert(BestiaryEntries+5<=BestiaryPresentation::Capacity,"Bestiary list capacity");
 static const BestiaryEntrySpec* bestiary_entry(int index){return index>=0&&unsigned(index)<BestiaryEntries?&bestiary_entries[index]:nullptr;}
 static const UiEnemyStatistics& bestiary_statistics(const App&a,const BestiaryEntrySpec&e,int character=-1){
@@ -17,16 +18,6 @@ static const char* bestiary_text(const App&a,const char*key,const char*english,c
 static const char* bestiary_title(const App&a,const BestiaryEntrySpec&e,bool encounter=false){
  if(!encounter&&e.model!=255){const auto*d=enemy_definition(EnemyId(e.model));return d?a.content.world_title("monsters",d->key):"";}
  const auto*d=encounter_definition(EncounterId(e.encounter));return d?a.content.world_title("encounters",d->key):"";
-}
-static int bestiary_compare_text(const char*a,const char*b){
- while(*a&&*b){unsigned ca=uint8_t(*a),cb=uint8_t(*b);if(ca>='A'&&ca<='Z')ca+='a'-'A';if(cb>='A'&&cb<='Z')cb+='a'-'A';
-  if(ca!=cb)return ca<cb?-1:1;++a;++b;}return uint8_t(*a)-uint8_t(*b);
-}
-static bool bestiary_before(const App&a,int first,int second){
- const auto&x=bestiary_entries[first];const auto&y=bestiary_entries[second];
- if(x.room!=y.room)return x.room<y.room;
- if(x.room==3){const int order=bestiary_compare_text(bestiary_title(a,x,true),bestiary_title(a,y,true));if(order)return order<0;}
- return bestiary_compare_text(bestiary_title(a,x),bestiary_title(a,y))<0;
 }
 static BestiaryModelSpec bestiary_moves_for(const BestiaryEntrySpec*e){return !e?BestiaryModelSpec{}:e->model==255?bestiary_decimillipede:bestiary_models[e->model];}
 unsigned App::bestiary_move_count()const{return bestiary_moves_for(bestiary_entry(bestiary.selected)).count;}
@@ -76,11 +67,14 @@ static void bestiary_select(App&a,int row){
 bool App::open_bestiary(bool force){
  if(!force&&!bestiary_available())return false;
  pointer_cancel();bestiary={};auto&b=bestiary;b.open=true;b.actions=bestiary_actions_preferred;b.selected_at=b.mode_at=b.filter_at=map_clock_ms;
- for(unsigned region=0;region<5;++region){if(region<4&&!act_discovered(region))continue;
-  b.rows[b.row_count++]=int16_t(-1-int(region));const unsigned first=b.row_count;
-  for(unsigned entry=0;entry<BestiaryEntries;++entry)if(bestiary_entries[entry].region==region)b.rows[b.row_count++]=int16_t(entry);
-  for(unsigned i=first+1;i<unsigned(b.row_count);++i){const int value=b.rows[i];unsigned j=i;
-   while(j>first&&bestiary_before(*this,value,b.rows[j-1])){b.rows[j]=b.rows[j-1];--j;}b.rows[j]=int16_t(value);}
+ // NBestiary uses CurrentCulture; NGame pins that to InvariantCulture.
+ // The two101-byte tables contain the original localized order, verified
+ // with .NET. Opening needs one pass and no title decoding or sort scratch.
+ const auto&order=bestiary_order[content.english()?0:1];int previous_region=-1;
+ for(unsigned position=0;position<BestiaryEntries;++position){const unsigned entry=order[position],region=bestiary_entries[entry].region;
+  if(region<4&&!act_discovered(region))continue;
+  if(int(region)!=previous_region){b.rows[b.row_count++]=int16_t(-1-int(region));previous_region=int(region);}
+  b.rows[b.row_count++]=int16_t(entry);
  }
  for(int row=0;row<b.row_count;++row)if(bestiary_known(*this,b.rows[row])){bestiary_select(*this,row);break;}
  hit_count=0;return true;

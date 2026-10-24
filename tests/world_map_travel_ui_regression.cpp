@@ -289,26 +289,34 @@ static void pending_compendium_quit_cancels_immediately(){
     app.input(Key::Quit);CHECK(app.quit&&app.map_clock_ms==clock);
     assert_cancelled();same_state(before);advance_ms(1300);same_state(before);
 }
-static void fast_rest_can_immediately_start_pointer_travel(){
-    fresh(true);unsigned rest=reference::NoPoint;
-    for(unsigned step=0;step<reference::MaxRows&&rest==reference::NoPoint;++step){
+static bool route_to_shop(const reference::ReferenceMap&map,unsigned point,unsigned depth=0){
+    if(point>=map.count||depth>reference::MaxRows+2)return false;
+    if(map.points[point].type==reference::PointType::Shop)return true;
+    const auto&children=map.points[point].children;
+    for(unsigned i=0;i<children.used;++i)if(route_to_shop(map,children.slots[i],depth+1))return true;
+    return false;
+}
+static void fast_shop_can_immediately_start_pointer_travel(){
+    // Rest options now have their original 500ms entrance input block, so
+    // they cannot exercise this separate 300ms fade-in channel contract.
+    // The shop's closed-room Proceed is genuinely available immediately.
+    fresh(true);unsigned shop=reference::NoPoint;
+    for(unsigned step=0;step<reference::MaxRows&&shop==reference::NoPoint;++step){
         const auto*m=world_current_map(app.game);CHECK(m&&app.game.world.act_index==0);
-        for(unsigned i=0;i<m->count;++i)if(m->points[i].type==reference::PointType::Rest&&world_reachable(app.game,i)){rest=i;break;}
-        if(rest!=reference::NoPoint)break;
-        CHECK(world_choose_point(app.game,first_point()));finish_routing_fixture();
+        uint8_t ids[reference::Columns]{};const unsigned count=world_available_points(app.game,ids,reference::Columns);CHECK(count);
+        unsigned next=reference::NoPoint;
+        for(unsigned i=0;i<count;++i)if(route_to_shop(*m,ids[i])){next=ids[i];break;}
+        CHECK(next!=reference::NoPoint);
+        if(m->points[next].type==reference::PointType::Shop){shop=next;break;}
+        CHECK(world_choose_point(app.game,next));finish_routing_fixture();
     }
-    CHECK(rest!=reference::NoPoint&&app.game.max_hp>10);app.game.hp=app.game.max_hp-10;
-    snapshot();make_oracle(rest);keyboard_begin(rest);advance_ms(600);same_state(expected);
-    CHECK(app.game.phase==Phase::Camp&&!app.map_travel.pending&&app.map_travel.fading_in);
-    const uint32_t clock=app.map_clock_ms;const int hp=app.game.hp;
-    unsigned heal=world_rest_option_count(app.game);
-    for(unsigned i=0;i<world_rest_option_count(app.game);++i)
-        if(WorldRestOption(app.game.world.rest_options[i])==WorldRestOption::Heal){heal=i;break;}
-    CHECK(heal<world_rest_option_count(app.game)&&world_rest_option_enabled(app.game,heal));
-    click(hit(HitKind::Choice,int(heal)));
-    CHECK(app.game.phase==Phase::Camp&&app.game.hp>hp&&world_rest_can_proceed(app.game));
-    click(hit(HitKind::UiAction,int(UiAction::LeaveCamp)));
-    CHECK(app.game.phase==Phase::Camp&&app.game.world.room_open==2&&app.map_window.is_open&&app.game.world.current_point==rest&&app.map_clock_ms==clock);
+    CHECK(shop!=reference::NoPoint);
+    snapshot();make_oracle(shop);keyboard_begin(shop);advance_ms(600);same_state(expected);
+    CHECK(app.game.phase==Phase::Shop&&!app.map_travel.pending&&app.map_travel.fading_in&&!app.shop_open);
+    const uint32_t clock=app.map_clock_ms;const int hp=app.game.hp,gold=app.game.gold;
+    click(hit(HitKind::UiAction,int(UiAction::LeaveShop)));
+    CHECK(app.game.phase==Phase::Shop&&app.game.world.room_open==2&&app.map_window.is_open&&app.game.world.current_point==shop&&app.map_clock_ms==clock);
+    CHECK(app.game.hp==hp&&app.game.gold==gold);
     CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)==255);
     CHECK(app.map_transition_blocks_keyboard()&&!app.map_transition_blocks_pointer());
     const unsigned next=first_point();snapshot();
@@ -439,7 +447,7 @@ int main(){
     delayed_commit(false,false,false,0xfffffe00u);delayed_commit(true,true,false,0xfffffe00u);
     invalid_and_scrolled_input();persistence_during_travel();lifecycle_cancellation();stale_source_guards();
     pending_hud_pointer_remains_available();pending_exit_confirmation();pending_compendium_quit_cancels_immediately();
-    fast_rest_can_immediately_start_pointer_travel();fade_in_input_channels(false);fade_in_input_channels(true);
+    fast_shop_can_immediately_start_pointer_travel();fade_in_input_channels(false);fade_in_input_channels(true);
     free_travel_commits_once();entry_observer_survives_reset();entry_damage_initializes_new_enemy_feedback();preparation_preserves_room_fade(false);preparation_preserves_room_fade(true);
     std::printf("map travel UI: %u checks passed; synthetic current profile; canonical save/RNG oracle\n",checks);
 }

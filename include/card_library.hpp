@@ -19,10 +19,12 @@ struct CardLibraryPresentation {
     uint32_t epoch=1,query_changed=0,opened=0;
     bool editing=false,query_pending=false,show_stats=false;
     char draft[128]{},query[128]{};
+    uint8_t seen[(CardKinds+7)/8]{};
     mutable uint32_t cached_epoch=0,cached_generation=0;
     mutable int cached_filter=-1;
     mutable bool cached_upgrades=false;
     mutable uint16_t count=0,ids[CardKinds]{};
+    bool was_seen(CardKind kind)const{return kind<CardKinds&&(seen[unsigned(kind)/8]&(1u<<(unsigned(kind)%8)));}
     void invalidate(){if(++epoch==0)++epoch;}
 };
 struct CollectionPresentation {

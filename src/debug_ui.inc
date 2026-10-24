@@ -15,7 +15,7 @@ static bool debug_failure(App&a,const char*text){set_debug_reply(a,text);return 
 static void debug_begin(App&a,Character character=Character::Ironclad,uint32_t seed=1){
     new_run(a.game,seed,false,character);world_begin_run(a.game);
     a.title=a.character_select=a.library=a.paused=a.help=a.settings_open=false;
-    a.compendium_open=a.statistics_open=a.history_open=a.bestiary.open=false;
+    a.compendium_open=a.statistics_open=a.history_open=a.bestiary.open=a.profiles_open=a.profile_pending=false;
     a.frontend_confirm=0;a.practice_entry=false;a.map_preview.open=false;
     a.forget_run_checkpoint();a.reset_presentation();
 }
@@ -96,7 +96,7 @@ bool App::debug_command(const char*command){
         }else return debug_failure(*this,"Unknown command. Use help");
     }
     if(!ok)return debug_failure(*this,"Command cannot run in the current state");
-    if(reset){title=character_select=library=paused=help=settings_open=false;compendium_open=statistics_open=history_open=bestiary.open=false;frontend_confirm=0;map_preview.open=false;reset_presentation();}
+    if(reset){title=character_select=library=paused=help=settings_open=false;compendium_open=statistics_open=history_open=bestiary.open=profiles_open=profile_pending=false;frontend_confirm=0;map_preview.open=false;reset_presentation();}
     // Debug commands never autosave or replace a user's previous checkpoint.
     forget_run_checkpoint();debug_open=debug_editing=false;pointer_cancel();set_debug_reply(*this,"OK");return true;
 }

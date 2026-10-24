@@ -2,7 +2,9 @@
 #include "lz4_block.hpp"
 #include "lzma2_block.hpp"
 #include "inline_icons.hpp"
+#include "resource_transfer.hpp"
 namespace spire {
+ResourceTransferWorkspace resource_transfer_workspace{};
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
 namespace {
@@ -20,7 +22,7 @@ constexpr unsigned ImageBufferBudget=64u*4096u+16u*32768u+8u*131072u+2u*MaxImage
 // Only bounded metadata grows; the pixel budget remains exactly 748 pages.
 constexpr unsigned ImagePageBytes=4096,ImagePages=ImageBufferBudget/ImagePageBytes,ImageEntries=320;
 alignas(4) static uint8_t image_pixels[ImagePages*ImagePageBytes];
-static uint8_t encoded_pixels[MaxEncodedImage];
+static_assert(MaxEncodedImage==ResourceTransferCapacity,"Shared transfer capacity must preserve the original decoding bound");
 #include "content_tiles.inc"
 // Keep a directory index in the existing key word. The immutable, resident
 // descriptor supplies offset, geometry, stored format and encoded length
@@ -254,6 +256,7 @@ void Content::prepare_images(const int* ids,unsigned count)const{
             end=next.offset+next.length;pages+=next.pages;++last;
         }
         if(last-first>1){
+            uint8_t*encoded_pixels=resource_transfer_bytes();
             if(!reader_.read(start,encoded_pixels,end-start)){io_good_=false;clear_caches(this);return;}
             for(unsigned i=first;i<last;++i){
                 const auto&r=requests[i];
@@ -304,7 +307,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             p=output;reservation.publish(this,uint32_t(id),fmt);
         }else{
             if(fmt==5&&length<6)return fail();
-            const uint8_t* source=supplied&&supplied_size==length?supplied:payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return fail();
+            const uint8_t* source=supplied&&supplied_size==length?supplied:payload(off,length,resource_transfer_bytes(),ResourceTransferCapacity);if(!source)return fail();
             // The descriptor already gives the stored byte count. Read it
             // once and parse its five-byte LZ4 header in the same buffer; a
             // separate header read used to fetch an extra 4 KiB cache page.

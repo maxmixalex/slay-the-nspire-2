@@ -5,6 +5,7 @@
 #include "runtime_scene.hpp"
 #include "touchpad.hpp"
 #include "loading_screen.hpp"
+#include "resource_transfer.hpp"
 extern "C" {
 void* nd_open(const char*,const char*);
 unsigned nd_read(void*,unsigned,unsigned,void*);
@@ -22,12 +23,11 @@ int nd_touch_read(unsigned,unsigned,void*);
 int nd_touch_write(unsigned,unsigned,const void*);
 }
 static spire::App app;
-static spire::SaveData scratch;
 static spire::RuntimePerformance performance;
 static char pack_path[512],save_path[512],temp_path[512],backup_path[512],performance_path[512],profile_path[512],language_path[512];
 static char settings_path[512],settings_temp[512],settings_backup[512];
 static char progress_path[512],progress_temp[512],progress_backup[512];
-static uint8_t progress_bytes[spire::UiProgressCapacity+1];
+static_assert(spire::UiProgressCapacity+1<=spire::ResourceTransferCapacity,"History transfers fit the shared foreground workspace");
 static uint32_t wall_clock(){return *(volatile uint32_t*)0x90090000u;}
 static uint32_t timer_ticks(){return *(volatile uint32_t*)0x900D0004u;}
 static uint32_t entropy_start=0;
@@ -104,14 +104,16 @@ static bool save_preferences(const spire::UiPreferences& value){
     if(old)nd_unlink(settings_backup);return true;
 }
 static bool load_progress(spire::UiProgress&out){
+    uint8_t*progress_bytes=spire::resource_transfer_bytes();
     const char*paths[]={progress_path,progress_backup};
     for(const char*path:paths){void*f=nd_open(path,"rb");if(!f)continue;
-        const unsigned n=nd_read(progress_bytes,1,sizeof progress_bytes,f);nd_close(f);
+        const unsigned n=nd_read(progress_bytes,1,spire::UiProgressCapacity+1,f);nd_close(f);
         if(spire::decode_ui_progress(progress_bytes,n,out))return true;
     }return false;
 }
 static bool save_progress(const spire::UiProgress&value){
-    const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,sizeof progress_bytes));if(!n)return false;
+    uint8_t*progress_bytes=spire::resource_transfer_bytes();
+    const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,spire::UiProgressCapacity));if(!n)return false;
     void*f=nd_open(progress_temp,"wb");if(!f)return false;
     bool ok=nd_write(progress_bytes,1,n,f)==n;ok=(nd_close(f)==0)&&ok;
     if(!ok){nd_unlink(progress_temp);return false;}
@@ -121,6 +123,7 @@ static bool save_progress(const spire::UiProgress&value){
     if(old)nd_unlink(progress_backup);return true;
 }
 static bool save_game(const spire::State&s){
+    auto&scratch=spire::resource_transfer_save();
     if(!spire::save(s,scratch))return false;
     void*f=nd_open(temp_path,"wb");if(!f)return false;
     bool good=nd_write(scratch.bytes,1,(unsigned)scratch.size,f)==scratch.size;
@@ -132,6 +135,7 @@ static bool save_game(const spire::State&s){
 }
 static bool load_game(spire::State&s){
     void*f=nd_open(save_path,"rb");if(!f)return false;
+    auto&scratch=spire::resource_transfer_save();
     unsigned n=nd_read(scratch.bytes,1,sizeof scratch.bytes,f);uint8_t extra=0;bool end=nd_read(&extra,1,1,f)==0;nd_close(f);
     return end&&spire::load(s,scratch.bytes,n);
 }

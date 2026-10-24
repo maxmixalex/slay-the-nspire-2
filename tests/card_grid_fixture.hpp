@@ -2,7 +2,13 @@
 #include "app.hpp"
 
 namespace spire_test {
-inline void discover_card(spire::App&a,spire::CardKind kind){a.progress.discovered_cards[unsigned(kind)/8]|=uint8_t(1u<<(unsigned(kind)%8));a.card_library.invalidate();}
+inline void discover_card(spire::App&a,spire::CardKind kind){
+    const unsigned index=unsigned(kind)/8;const auto bit=uint8_t(1u<<(unsigned(kind)%8));
+    a.progress.discovered_cards[index]|=bit;
+    // Census fixtures establish a catalog's initial observations explicitly.
+    // Runtime observation tests use App::discover_card and keep the snapshot.
+    a.card_library.seen[index]|=bit;a.card_library.invalidate();
+}
 inline void discover_all_cards(spire::App&a){for(unsigned i=0;i<spire::CardKinds;++i)discover_card(a,spire::CardKind(i));}
 inline bool choose_library_pool(spire::App&a,int filter){
     static constexpr int filters[]={1,2,5,6,4,3,7,8};

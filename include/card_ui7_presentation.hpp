@@ -1,7 +1,18 @@
 #pragma once
 #include <stdint.h>
 #include "health_bar.hpp"
+#include "reference_viewport.hpp"
 namespace spire {
+namespace card_inspect_layout {
+constexpr int CenterX=160,CenterY=120;
+constexpr int CardW=reference_viewport::project(600),CardH=reference_viewport::project(844);
+constexpr int ArrowSize=reference_viewport::project(128),ArrowY=reference_viewport::project(630-64);
+constexpr int LeftArrowX=reference_viewport::project(840-488),RightArrowX=reference_viewport::project(840+360);
+constexpr int Travel=reference_viewport::project(100);
+constexpr int TipX=reference_viewport::project(840-353),TipY=reference_viewport::project(630-418);
+constexpr int TipW=reference_viewport::project(706),TipH=reference_viewport::project(836);
+constexpr int UpgradeY=reference_viewport::project(630+450),UpgradeH=reference_viewport::project(64);
+}
 // These models are UI-only. Their clocks never enter State or saved RNG.
 struct DeckCountPulse {
     uint32_t start=0;unsigned high_water=0;bool active=false;
@@ -64,7 +75,7 @@ struct CardInspectPresentation {
     }
     unsigned opacity(uint32_t now)const{const unsigned age=now-opened;return age>=250?255:255*health_bar::expo_out(age*4)/4096;}
     int card_scale(uint32_t now)const{const unsigned age=now-opened;return 7168+(age<=100?0:spring(age-100)/4);}
-    int card_x(uint32_t now)const{const unsigned age=now-slid;return 160+(!direction||age>=250?0:direction*22*int(4096-health_bar::expo_out(age*4))/4096);}
+    int card_x(uint32_t now)const{const unsigned age=now-slid;return card_inspect_layout::CenterX+(!direction||age>=250?0:direction*card_inspect_layout::Travel*int(4096-health_bar::expo_out(age*4))/4096);}
 };
 
 }

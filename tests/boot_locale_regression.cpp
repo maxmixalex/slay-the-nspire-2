@@ -27,7 +27,6 @@ int main(){
         unsigned gold=0;for(unsigned x=40;x<280;++x)gold+=screen[169*320+x]==0xc568;CHECK(gold==120);
         CHECK(pixels.front()==0xface&&pixels.back()==0xface);
     }
-    boot_language_screen(screen,BootLanguage::Chinese,false);CHECK(pixels.front()==0xface&&pixels.back()==0xface);
     boot_error_screen(screen,BootText::InvalidResources,BootLanguage::Unknown);CHECK(pixels.front()==0xface&&pixels.back()==0xface);
     loading_screen(nullptr,ResourceStage::Header,0,1,0,nullptr,false,BootLanguage::Chinese);
     for(auto language:{BootLanguage::English,BootLanguage::Chinese}){
@@ -39,13 +38,13 @@ int main(){
     put(pack,4,18);put(pack,8,0x41cef1ea);put(pack,12,pack.size());put(pack,16,1);put(pack,20,1);put(pack,24,6111);
     const unsigned row=40+16+16+6110*8;put(pack,row,pack.size()-4);put(pack,row+4,3);
     ProbeSource probe{pack};ResourceSource ranged{&probe,uint32_t(pack.size()),probe_read,nullptr};
-    for(unsigned version:{17u,18u,19u,20u,21u,22u,23u}){put(pack,4,version);
+    for(unsigned version:{17u,18u,19u,20u,21u,22u,23u,24u,25u,26u}){put(pack,4,version);
         std::memcpy(pack.data()+pack.size()-4,"eng",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::English);
         probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::English);CHECK(probe.calls==3&&probe.bytes==52);
         std::memcpy(pack.data()+pack.size()-4,"zhs",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Chinese);
         probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::Chinese);CHECK(probe.calls==3&&probe.bytes==52);
     }
-    put(pack,4,Ui6ContentVersion+1);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
+    put(pack,4,ProfileContentVersion+1);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::Unknown);CHECK(probe.calls==1&&probe.bytes==40);put(pack,4,19);
     put(pack,row,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     put(pack,16,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);

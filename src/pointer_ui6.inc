@@ -75,7 +75,11 @@ static void pointer_overlay(Canvas&c){
     if(!targeting)target_arrow_motion.active=false;
     // NTargetingArrow hides the normal cursor while following a mouse target.
     if(!p.visible||targeting)return;
-    const auto*h=a.hit_at(p.x,p.y);const bool inspect=a.library&&h&&h->kind==HitKind::LibraryItem;
+    const auto*h=a.hit_at(p.x,p.y);bool inspect=false;
+    if(a.library&&!a.library_tab&&h&&h->kind==HitKind::LibraryItem&&h->value>=0){
+        CardKind ids[CardKinds];const unsigned count=a.library_items(ids);
+        inspect=unsigned(h->value)<count&&a.card_library.was_seen(ids[h->value]);
+    }
     const int image=a.content.ui_image(inspect?I6_CursorInspect:p.held?I6_CursorTilted:I6_CursorDefault);
     if(image>=0)c.picture(image,p.x-3,p.y-(inspect?3:1),16,16);
 }

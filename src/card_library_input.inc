@@ -28,6 +28,10 @@ void App::open_library(int tab){
     if(tab<0||tab>2)return;pointer_cancel();compendium_open=false;library=true;library_tab=tab;library_page=library_selected=0;
     library_upgraded=false;library_sort=0;library_search_editing=false;
     card_library=CardLibraryPresentation{};card_library.opened=map_clock_ms;collection=CollectionPresentation{};
+    // NCardLibraryGrid.RefreshVisibility snapshots discovery when its
+    // submenu opens. New canonical tooltip observations affect the next
+    // opening, while search/detail predicates still use live progress.
+    for(unsigned i=0;i<sizeof card_library.seen;++i)card_library.seen[i]=progress.discovered_cards[i];
     static constexpr uint8_t character_filter[5]={1,2,4,5,6};
     library_filter=!title&&unsigned(game.character)<5?character_filter[unsigned(game.character)]:1;
     static constexpr uint8_t filter_control[9]={0,0,1,5,4,2,3,6,7};

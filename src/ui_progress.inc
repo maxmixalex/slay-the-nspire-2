@@ -62,7 +62,13 @@ void App::discover_potion(Potion potion){
 }
 void App::discover_card(CardKind kind){
     const unsigned id=unsigned(kind);if(id>=CardKinds)return;const uint8_t bit=uint8_t(1u<<(id%8));
-    if(!(progress.discovered_cards[id/8]&bit)){progress.discovered_cards[id/8]|=bit;progress_dirty=true;card_library.invalidate();}
+    if(!(progress.discovered_cards[id/8]&bit)){
+        progress.discovered_cards[id/8]|=bit;progress_dirty=true;
+        // NHoverTipSet can discover a generated card while its parent's
+        // grid holder is being pressed. NCardLibrary rebuilds on filter/search
+        // actions, not on this observation: rebuilding here moves the grid
+        // under the pointer and changes the captured model before release.
+    }
 }
 void App::discover_relic(RelicId relic){
     const unsigned id=unsigned(relic);if(id>=WorldRelicKinds)return;const uint8_t bit=uint8_t(1u<<(id%8));

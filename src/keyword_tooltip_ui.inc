@@ -117,7 +117,8 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     if(a.library&&!a.library_tab&&!a.pointer.visible&&a.card_library.control>=0)return false;
     if(a.detail_card>=0){
         target.card=card_from_token(a.detail_card);target.instance=a.detail_instance;target.deck=a.detail_deck_index;
-        target.facts=a.detail_has_facts?&a.detail_facts:nullptr;target.owner={82,27,156,186};target.detail=true;
+        target.facts=a.detail_has_facts?&a.detail_facts:nullptr;
+        target.owner={card_inspect_layout::TipX,card_inspect_layout::TipY,card_inspect_layout::TipW,card_inspect_layout::TipH};target.detail=true;
         target.identity=0x40000000u|uint32_t(a.detail_card);
         // NInspectCardScreen creates its hover-tip set when the displayed
         // card changes, independent of mouse location or a second hotkey.
@@ -134,7 +135,7 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
     if(!h)return false;target.owner={h->x,h->y,h->w,h->h};target.identity=0x100000u|(unsigned(h->kind)<<16)|unsigned(uint16_t(h->value));
     const auto&s=a.game;
     switch(h->kind){
-    case HitKind::LibraryItem:{if(!a.library||a.library_tab!=0)return false;CardKind ids[CardKinds];unsigned n=a.library_items(ids);if(h->value<0||unsigned(h->value)>=n||!a.library_card_seen(ids[h->value]))return false;
+    case HitKind::LibraryItem:{if(!a.library||a.library_tab!=0)return false;CardKind ids[CardKinds];unsigned n=a.library_items(ids);if(h->value<0||unsigned(h->value)>=n||!a.card_library.was_seen(ids[h->value]))return false;
         target.card={ids[h->value],uint8_t(a.library_upgraded&&card_upgradeable({ids[h->value],0}))};break;}
     case HitKind::DeckCard:if(h->value<0||h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];if(a.panel==1&&!a.pile_tab&&a.pile_upgraded&&card_upgradeable(target.card))target.card.upgraded=1;break;
     case HitKind::InstanceCard:if(h->value<0||h->value>=s.card_count)return false;target.instance=h->value;target.card=s.cards[h->value];break;
@@ -196,19 +197,20 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
         // the right of HoverTipRect. At 320x240, readable 8px text can need
         // additional pages; scrolling changes only this presentation.
         HoverPage out{};int text_page=0,card_page=0,text_y=0,card_y=0;
+        const int top=owner.owner.y,height=235-top,right=owner.owner.x+owner.owner.w+5,width=318-right;
         for(unsigned i=0;i<tips.count;++i){char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
             if(tips.items[i].kind==HoverTipKind::Card){
-                if(card_y+72>190){card_y=0;++card_page;}
-                if(card_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,0,0,{29,27+card_y,53,72}};
+                if(card_y+72>height){card_y=0;++card_page;}
+                if(card_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,0,0,{owner.owner.x-53,top+card_y,53,72}};
                 card_y+=73;continue;
             }
             if(!*title||!*body)continue;
-            const int count=c.paragraph(body,0,0,74,0,0,8);int skip=0;
+            const int count=c.paragraph(body,0,0,width-12,0,0,8);int skip=0;
             while(skip<count){const int need=23+(count-skip)*11;
-                if(190-text_y<34||(need<=190&&need>190-text_y)){text_y=0;++text_page;}
-                const int lines=mn(count-skip,mx(1,(190-text_y-23)/11)),height=23+lines*11;
-                if(text_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,skip,lines,{232,27+text_y,86,height}};
-                text_y+=height+2;skip+=lines;if(skip<count){text_y=0;++text_page;}
+                if(height-text_y<34||(need<=height&&need>height-text_y)){text_y=0;++text_page;}
+                const int lines=mn(count-skip,mx(1,(height-text_y-23)/11)),piece_height=23+lines*11;
+                if(text_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,skip,lines,{right,top+text_y,width,piece_height}};
+                text_y+=piece_height+2;skip+=lines;if(skip<count){text_y=0;++text_page;}
             }
         }
         out.pages=mx(text_page,card_page)+1;return out;

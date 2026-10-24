@@ -33,7 +33,7 @@ static void card_library_screen(Canvas&c){
     a.content.prepare_images(portraits,prepared);
     for(int i=grid.first();i<grid.last();++i){
         const bool focused=!a.pointer.visible&&a.card_library.control<0&&i==a.library_selected;
-        painter.card(i,{ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))},focused,true,-2,-2,-1,-1,&canonical,false,a.library_card_seen(ids[i]));
+        painter.card(i,{ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))},focused,true,-2,-2,-1,-1,&canonical,false,a.card_library.was_seen(ids[i]));
         painter.hit(i,HitKind::LibraryItem,i);
     }
     painter.finish();library_edge_fade(c,55,265);card_grid_scrollbar(c,grid,CardGridSurface::Library);

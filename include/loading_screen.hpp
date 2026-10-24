@@ -96,15 +96,6 @@ inline void loading_screen(uint16_t* pixels,ResourceStage stage,uint32_t complet
     }
 }
 
-inline void boot_language_screen(uint16_t*pixels,BootLanguage selected,bool automatic){
-    BootPaint c{pixels};c.box(0,0,320,240,0x10c3);
-    c.center("SLAY THE NSPIRE",42,0xef5b,2);
-    c.center(boot_text(BootText::ChooseLanguage,BootLanguage::Unknown),83,0xef5b);
-    c.box(38,119,244,30,0x2945);
-    c.center(boot_text(BootText::NativeLanguage,selected),127,0xc568);
-    c.center(boot_text(BootText::ChooseKeys,BootLanguage::Unknown),165,0xef5b);
-    c.center(boot_text(automatic?BootText::Starting:BootText::Confirm,BootLanguage::Unknown),197,0xc568);
-}
 inline void boot_error_screen(uint16_t*pixels,BootText error,BootLanguage language){
     BootPaint c{pixels};c.box(0,0,320,240,0x10c3);
     c.center("SLAY THE NSPIRE",54,0xef5b,2);

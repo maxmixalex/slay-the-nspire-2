@@ -121,7 +121,8 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     if(id>=u32(h+20)+u32(h+24))return nullptr;
     const uint8_t* row=h+64+id*8;
     const uint32_t offset=u32(row),length=u32(row+4);
-    if(length<33||length>sizeof encoded_pixels||!reader.read(offset,encoded_pixels,length))return nullptr;
+    uint8_t*encoded_pixels=resource_transfer_bytes();
+    if(length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     if(!valid_tile_group_header(h,id,p,length))return nullptr;
@@ -141,7 +142,8 @@ static TileGroup* load_retained_group(const Content* owner,const ResourceReader&
     if(TileGroup* hit=find_tile_group(owner,id)){
         hit->age=next_tile_age();return hit;
     }
-    if(length<33||length>sizeof encoded_pixels||!reader.read(offset,encoded_pixels,length))return nullptr;
+    uint8_t*encoded_pixels=resource_transfer_bytes();
+    if(length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+4),encoded=u32(p+8),property=u32(p+12);
     if(u32(p)!=0x31524752u||!size||size>Lzma2BlockRawLimit||encoded!=length-32||

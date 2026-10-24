@@ -835,7 +835,7 @@ static void sequential_hit_feedback(){
   const uint32_t start=a.animation;a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.combat_feedback.active&&!a.combat_feedback.overflow);
   CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));snapshot();
   unsigned distinct=0;uint32_t times[8]{};
-  for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor<1||q.actor>unsigned(a.game.enemy_count)||q.value.hp==999)continue;
+  for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor<1||q.actor>unsigned(a.game.enemy_count)||q.hp==999)continue;
    bool found=false;for(unsigned j=0;j<distinct;++j)found|=times[j]==q.at;if(!found){CHECK(distinct<8);times[distinct++]=q.at;}}
   CHECK(distinct==unsigned(hits));
   for(unsigned n=0;n<distinct;++n){
@@ -864,7 +864,7 @@ static void sequential_hit_feedback(){
   for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
   CHECK(!a.combat_preparation.active);a.cursor=a.game.hand.count-1;const uint32_t start=a.animation;a.input(Key::Confirm);a.input(Key::Confirm);
   CHECK(a.game.enemies[0].hp==0&&a.combat_feedback.active);
-  unsigned impacts=0;for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor==1&&q.value.hp==0)++impacts;}
+  unsigned impacts=0;for(unsigned i=0;i<a.combat_feedback.count;++i){const auto&q=a.combat_feedback.cues[i];if(q.actor==1&&q.hp==0)++impacts;}
   CHECK(impacts==1);CHECK(a.combat_feedback.end_at<start+TurnBannerPresentation::wait_ticks(700,350,fast!=0));
  }
  // Chomper animates each hit; Axebot's OneTwo explicitly animates once.

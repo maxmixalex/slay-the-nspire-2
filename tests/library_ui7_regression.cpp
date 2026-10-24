@@ -50,6 +50,23 @@ static void discovery_search_and_capture(){
     a.card_library.control=-1;a.library_selected=0;a.input(Key::Left);CHECK(a.card_library.control==LibraryPoolFirst);
     for(unsigned i=0;i<4;++i)a.input(Key::Right);CHECK(a.card_library.control<0&&a.library_selected==0);
 }
+static void hover_discovery_preserves_capture(){
+    a.pointer.visible=false;std::memset(a.progress.discovered_cards,0,sizeof a.progress.discovered_cards);
+    a.open_library(0);const int selected=spire_test::library_model_index(a,CloakAndDagger);CHECK(selected>=0);
+    a.library_selected=selected;CHECK(spire_test::focus_card_grid(a));
+    auto&grid=a.card_grids[unsigned(CardGridSurface::Library)];CHECK(grid.position>grid.minimum());
+    const int position=grid.position;const uint32_t epoch=a.card_library.epoch;
+    CHECK(!a.card_library.was_seen(Shiv));const auto h=hit(HitKind::LibraryItem,selected);
+    a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();
+    // NHoverTipSet discovers the real generated Shiv without rebuilding the
+    // open library's visibility snapshot or moving its captured holder.
+    CHECK(a.library_card_seen(Shiv)&&!a.card_library.was_seen(Shiv));
+    CHECK(grid.position==position&&a.card_library.epoch==epoch);
+    a.pointer_button(true);CHECK(a.pointer.held&&a.pointer.captured.kind==HitKind::LibraryItem&&a.pointer.captured.value==selected);
+    a.discover_card(Soul);a.render();CHECK(grid.position==position&&a.card_library.epoch==epoch);
+    a.pointer_button(false);CHECK(a.detail_card>=0&&card_from_token(a.detail_card).kind==CloakAndDagger);
+    a.input(Key::Back);a.open_library(0);CHECK(a.card_library.was_seen(Shiv)&&a.card_library.was_seen(Soul));
+}
 static void collections(){
     for(int tab=1;tab<=2;++tab){a.open_library(tab);a.prepare_collection();const auto&v=a.collection;CHECK(v.count>0&&v.row_count>0);bool seen[WorldRelicKinds]{};
         for(unsigned i=0;i<v.count;++i){CHECK(v.ids[i]<(tab==1?WorldRelicKinds:PotionKinds));CHECK(!seen[v.ids[i]]);seen[v.ids[i]]=true;}
@@ -73,7 +90,12 @@ static void host_input(){
 }
 static void observed_rewards(){
     a.library=a.compendium_open=a.statistics_open=a.history_open=a.title=false;
-    new_run(a.game,7319,false);CHECK(world_begin_run(a.game));a.reset_presentation();
+    new_run(a.game,7319,false);CHECK(world_begin_run(a.game));
+    CHECK(a.game.original_events.id==OriginalEventId::Neow&&a.game.original_events.active);
+    // Place this isolated reward test in an ordinary event room after the
+    // automatically entered Ancient. It exercises the actual event reward
+    // commands below, not an overlapping second active event.
+    a.game.original_events=OriginalEventState{};a.game.phase=Phase::Map;a.reset_presentation();
     clear_ui_progress(a.progress);a.progress_loaded=true;a.begin_progress();
     CHECK(original_event_begin(a.game,OriginalEventId::ColorfulPhilosophers,5,0));CHECK(original_event_choose(a.game,0));
     CHECK(a.game.phase==Phase::OriginalEventChoice&&a.game.original_events.selection==OriginalEventSelection::Rewards);
@@ -98,6 +120,6 @@ static void observed_rewards(){
 int main(int argc,char**argv){
     std::vector<uint8_t>bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);CHECK(a.init(bytes.data(),bytes.size(),{}));}if(argc>2)captures=argv[2];
     new_run(a.game,711,true);a.title=false;a.reset_presentation();SaveData before{};CHECK(save(a.game,before));
-    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);collections();unchanged(before);host_input();observed_rewards();
+    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

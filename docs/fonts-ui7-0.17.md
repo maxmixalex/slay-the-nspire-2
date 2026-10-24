@@ -57,6 +57,10 @@ share storage. Frequently used characters are stored with their faces/sizes
 near each other, improving page locality without a new runtime cache.
 
 The runtime keeps its existing bounded glyph cache and resident directory.
+If a resource contains no requested style band, a constant-time last-record
+check skips the necessarily unsuccessful styled binary search. This saves
+the extra search for Regular-only English resources without allocating a
+face-presence table or reading additional provider pages.
 The converter does not retain obsolete font suffixes or introduce an eager
 runtime font scan. The actual rasterizer is Pillow/FreeType at the port's
 8/10/12/16/20-pixel sizes; this is original-font selection, not a claim that
@@ -90,8 +94,8 @@ Chinese requires no fallback font. Conversion journals are
 `ui7-original-glyphs-zhs-3f01db1594e6`, both passed with unchanged source.
 
 These are intermediate resource files. The character-screen viewport is
-being resampled from the corrected original 1680×1260 display contract, and
-the later phobia/profile append will be followed by the same final font pass.
+now resampled from the corrected original 1680×1260 display contract, and
+the later phobia/profile/HUD appends will be followed by the final font pass.
 No intermediate resource hash is labeled as the final delivery hash.
 
 ## Regression boundary
@@ -101,8 +105,11 @@ single-pass glyph painting, centered text, paragraph wrapping, fitted layout,
 old-resource compatibility and provider-cache reuse. Its checkpoint-4 run
 reached the final I/O assertion but failed because the tiny synthetic glyph
 payload shared the locale-marker page already read during open. The updated
-fixture separates those pages and retains the cold-read/warm-reuse check;
-formal execution awaits the next checkpoint. The failed journal is retained.
+fixture separates those pages and retains the cold-read/warm-reuse check.
+It passed under checkpoint 6 (`871b2b363ab1145e488c1f226831388f5ed21aaf`),
+including a modern Regular-only resource and absent-style fallback. The
+checkpoint-4 failed journal is retained. This scoped pass does not change
+checkpoint 6's overall 75/87 native-suite result into a full pass.
 
 An optional actual-pack mode draws a mixed Regular/gold/bold/italic sample,
 captures the result and requires 64 repeated frames to have identical pixels

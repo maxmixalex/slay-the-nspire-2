@@ -472,7 +472,7 @@ static void merchant_motion_and_pickups(){
  CHECK(save(a.game,after)&&after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,expected.size));
  unsigned flights=0;for(const auto&f:a.reward_presentation.flights)flights+=f.kind==RewardPickupKind::Card;CHECK(flights==1&&a.cursor!=0);
  snapshot();room_clock(150);capture("merchant-card-pickup");unchanged();
- click(UiAction::CloseShop);CHECK(!a.shop_open);a.render();CHECK(!choices());room_clock(500);
+ click(HitKind::Choice,ShopLeave);CHECK(!a.shop_open);a.render();CHECK(!choices());room_clock(500);
  CHECK(a.room_presentation.merchant.y(a.map_clock_ms)==-222);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)>0);room_clock(300);
  CHECK(!a.room_presentation.merchant.visible(a.map_clock_ms)&&!a.room_presentation.merchant.alpha(a.map_clock_ms));unchanged();
 }
@@ -486,7 +486,7 @@ static void fake_merchant_layout(){
  const unsigned relics=ui_owned_relic_count(a.game);click(HitKind::Choice,0);CHECK(ui_owned_relic_count(a.game)==relics+1&&a.game.original_events.offers[0]==NoWorldRelic);a.render();
  CHECK(!hit(HitKind::Choice,0).enabled&&a.room_presentation.merchant.dialogue==0);
  snapshot();click(UiAction::CloseShop);CHECK(!a.shop_open);room_clock(800);unchanged();click(UiAction::LeaveShop);
- CHECK(a.map_window.is_open&&!a.game.original_events.active);
+ CHECK(a.map_window.is_open&&a.game.original_events.active&&a.game.original_events.finished&&a.game.world.room_open==2);
 }
 static void direct_removal_preview(){
  begin_event(OriginalEventId::SlipperyBridge);const unsigned index=unsigned(a.game.original_events.values[1]);CHECK(index<a.game.deck_count);

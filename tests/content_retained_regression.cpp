@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "resource_transfer.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -151,5 +152,34 @@ void requested_bounds(){
     changed=f.bytes;put(changed,f.base+60,Fixture::Images+1);CHECK(!content->open(changed.data(),changed.size()));
     changed=f.bytes;put(changed,f.base+56,0xffffffff);CHECK(!content->open(changed.data(),changed.size()));
 }
+void foreground_workspace_reuse(){
+    Fixture f;Provider source{&f.bytes};auto content=std::make_unique<Content>();
+    CHECK(content->open(source.source()));const Picture retained=picture(*content,0,f,0);
+    const Picture tile=content->image(Fixture::Images-1);CHECK(tile.pixels&&tile.format==4);
+    const auto warm=source.read_bytes;
+    // Rendering publishes only stable decoded views. File save/history I/O
+    // can overwrite every encoded byte without evicting or corrupting them.
+    auto*transfer=resource_transfer_bytes();std::memset(transfer,0xa5,ResourceTransferCapacity);
+    CHECK(!std::memcmp(retained.pixels,f.raw[0].data(),f.raw[0].size()));
+    CHECK(tile.pixels[0]==0&&tile.pixels[1]==0);picture(*content,0,f,0);
+    CHECK(source.read_bytes==warm);
+    static State original,restored;static SaveData expected,actual;
+    new_run(original,0x71727,true);CHECK(save(original,expected));
+    auto&scratch=resource_transfer_save();CHECK(save(original,scratch));
+    CHECK(scratch.size==expected.size&&!std::memcmp(scratch.bytes,expected.bytes,expected.size));
+    Bytes disk(scratch.bytes,scratch.bytes+scratch.size);
+    CHECK(content->open(source.source()));picture(*content,3,f,3); // Cold retained decode borrows the same storage.
+    auto&readback=resource_transfer_save();std::memcpy(readback.bytes,disk.data(),disk.size());
+    CHECK(load(restored,readback.bytes,disk.size()));CHECK(save(restored,actual));
+    CHECK(expected.size==actual.size&&!std::memcmp(expected.bytes,actual.bytes,expected.size));
+    auto progress=std::make_unique<UiProgress>();clear_ui_progress(*progress);
+    progress->characters[2].play_seconds=903;progress->card_wins[0]=17;progress->last_saved_at=1792838400;
+    transfer=resource_transfer_bytes();const size_t size=encode_ui_progress(*progress,transfer,UiProgressCapacity);CHECK(size);
+    Bytes history(transfer,transfer+size);picture(*content,4,f,4);
+    transfer=resource_transfer_bytes();std::memcpy(transfer,history.data(),history.size());
+    clear_ui_progress(*progress);CHECK(decode_ui_progress(transfer,history.size(),*progress));
+    CHECK(progress->characters[2].play_seconds==903&&progress->card_wins[0]==17&&progress->last_saved_at==1792838400);
+    picture(*content,3,f,3);picture(*content,4,f,4);
 }
-int main(){for(unsigned version:{20u,21u})for(bool streamed:{false,true})roundtrip(streamed,version);requested_bounds();std::printf("%u retained-content checks passed\n",checks);}
+}
+int main(){for(unsigned version:{20u,21u})for(bool streamed:{false,true})roundtrip(streamed,version);requested_bounds();foreground_workspace_reuse();std::printf("%u retained-content checks passed\n",checks);}

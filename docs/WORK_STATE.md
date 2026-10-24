@@ -1,5 +1,47 @@
 # Work state — 2026-10-24
 
+## UI7 implementation checkpoint 8 (in progress)
+
+Checkpoint 6 `871b2b363ab1145e488c1f226831388f5ed21aaf` completed its 216-step
+Release build and passed 75/87 CTest suites. Profiles, Ndless storage failure
+recovery, font styling and Phobia runtime tests passed; twelve failures remain
+recorded in its journal. Investigation found a real library interaction bug:
+related-card hover discovery invalidated the list between pointer press and
+release, changing its scroll position and clicked model. The latest source
+keeps the original menu-open discovery snapshot and stable captured identity.
+Other fixes preserve precise source-based animation, room-exit and memory
+invariants rather than weakening model/save comparisons.
+
+Checkpoint 7 `5773497e1b4b733aef1e24b36b255491aba6213f` passed actual browser
+profile transaction tests and its ordinary WASM build (6,134,846 bytes). Its
+ARM image linked but failed Zehn packaging at 17,367,220 bytes, above the
+existing 16 MiB bound. The latest source shares synchronous Ndless save and
+progress transfers with the existing encoded-image workspace; it preserves
+all decoded caches and adds an interleaved save/history/image regression.
+The budget and actual package must be reverified; the failed build is not
+counted as a portable pass. CombatFeedback separately shrinks 9320 to 7784
+bytes with both 128-entry queues and full health/poison ranges retained.
+
+The corrected 1680x1260 five-character conversion actually passed under CP6:
+540 source frames, five static planes, all reconstructed RGB565/alpha equal.
+A matched retained-codec comparison using the same original 1680 frames
+measured a net 1,286,180 bytes saved per pack after new directory costs. The
+new v24 ENG/ZHS files are 90,960,006 and 93,752,638 bytes. Phobia conversion
+then passed with 43 clips, four backgrounds and 811 verified images; v25
+ENG/ZHS are 94,054,914 and 96,847,546 bytes. These are larger than UI6 after
+adding the new original artwork. Compression savings are not a claim that
+the entire final installation is smaller. No device FPS is established.
+
+CP8 also fixes the bounded boot locale probe and generic tile tooling's
+outdated version limits, removes the unused startup language-screen renderer,
+corrects the inspector's reference geometry, and replaces Bestiary's runtime
+title insertion sort with independently verified invariant-culture ordering.
+Remaining original top-bar room/boss controls are assigned as the separate
+v27 resource/runtime stage. Final fonts follow that last localization/art
+step. Next: rerun the failed native gate, package ARM with the unchanged
+budget, append profile/HUD assets, then actual bilingual whole-run UI review
+and matched performance measurements. No 95% fidelity or UI7 release is claimed.
+
 ## UI7 implementation checkpoint 6 (in progress)
 
 Checkpoint 4 `68350fe532d34ee7c16f55027324b4f54be86816` built successfully

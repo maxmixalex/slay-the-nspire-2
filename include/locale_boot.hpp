@@ -1,9 +1,9 @@
 #pragma once
 #include "resource_source.hpp"
-#include "ui6_assets.hpp"
+#include "profile_assets.hpp"
 
 namespace spire {
-// Built-in text keeps language selection and load errors independent of packs.
+// Built-in load-error text remains independent of resource packs.
 // Unknown is deliberately bilingual, including missing/invalid-pack errors.
 enum class BootLanguage : uint8_t { Unknown=0,English=1,Chinese=2 };
 enum class BootText : uint8_t {
@@ -49,7 +49,7 @@ inline BootLanguage boot_probe_language(ResourceSource source){
     uint8_t h[40];if(!read(0,h,sizeof h)||h[0]!='N'||h[1]!='S'||h[2]!='P'||h[3]!='2'||
         u32(h+8)!=0x41cef1eau||u32(h+12)!=source.length)return BootLanguage::Unknown;
     const uint32_t version=u32(h+4);if(version<17)return version>=1?BootLanguage::Chinese:BootLanguage::Unknown;
-    if(version>Ui6ContentVersion)return BootLanguage::Unknown;
+    if(version>ProfileContentVersion)return BootLanguage::Unknown;
     const uint32_t images=u32(h+16),glyphs=u32(h+20),strings=u32(h+24);
     if(!images||images>65535||!glyphs||glyphs>32768||strings<=6110||strings>16384)return BootLanguage::Unknown;
     uint8_t row[8],marker[4];if(!read(40+images*16+glyphs*16+6110*8,row,8)||u32(row+4)!=3||!read(u32(row),marker,4)||marker[3])return BootLanguage::Unknown;

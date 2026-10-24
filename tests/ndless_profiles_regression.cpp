@@ -1,5 +1,6 @@
 #include "ui_profiles.hpp"
 #include "ui_progress.hpp"
+#include "resource_transfer.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -74,6 +75,15 @@ static void summaries(){setup();spire::UiProgressSummary summary;CHECK(!profile_
  files[path(3,3)]={9};files[path(3,5)]=files[path(2,3)];CHECK(profile_info(3,summary)&&summary.play_seconds==42);
  CHECK(current_profile()==1);
 }
+static void recovered_selector(){setup();files[selector_path]={1,2,3};files[selector_backup]=selector(2);
+ selected_profile=load_profile_selector();CHECK(selected_profile==2&&configure_profile_paths(selected_profile));
+ const std::string previous=save_path;fail_rename=selector_temp;
+ CHECK(request_profile(3,false));service_profile();
+ CHECK(!app.success&&current_profile()==2&&previous==save_path&&load_profile_selector()==2);
+ CHECK(files.at(selector_backup)==selector(2)&&!files.count(selector_temp));
+ CHECK(request_profile(3,false));service_profile();CHECK(app.success&&current_profile()==3&&load_profile_selector()==3);
+ CHECK(files.at(selector_path)==selector(3));
+}
 static void removal(){setup();files[selector_path]=selector(1);
  for(unsigned slot=1;slot<=3;++slot)for(unsigned i=0;i<6;++i)files[path(slot,i)]={uint8_t(slot),uint8_t(i)};
  const auto saved=files;fail_rename=path(2,2);CHECK(request_profile(2,true));service_profile();CHECK(!app.success&&files==saved&&current_profile()==1);
@@ -88,4 +98,4 @@ static void removal(){setup();files[selector_path]=selector(1);
  fail_unlink=path(3,0,true);CHECK(request_profile(3,true));service_profile();CHECK(app.success&&!profile_info(3,summary));
  CHECK(files.count(path(3,0,true))&&!files.count(path(3,0)));
 }
-int main(){routing();summaries();removal();std::printf("Ndless profiles: %u checks passed\n",checks);}
+int main(){routing();summaries();recovered_selector();removal();std::printf("Ndless profiles: %u checks passed\n",checks);}

@@ -1,8 +1,9 @@
 # UI7 original phobia visuals
 
-Reference: **v0.111.0 / 41cef1ea**. Source implementation and public fixtures
-are ready for the next checkpoint. Private conversion, bilingual visual
-acceptance and final resource-size measurement remain pending.
+Reference: **v0.111.0 / 41cef1ea**. Checkpoint 6's original-art conversion,
+five Python suites, native synthetic fixture and both actual-pack App flows
+have passed. Final integrated UI7 resources and platform acceptance remain
+pending; this is a scoped phobia result, not whole-game UI acceptance.
 
 ## Actual original switch
 
@@ -67,7 +68,31 @@ runtime lookup. Native fixtures exercise the actual App renderer across all
 13 affected models, all 32 animated skin mappings, three actual segment
 deaths, unaffected models, old-resource fallback and unchanged save bytes.
 Optional private-pack captures cover the normal/enabled/dead presentations.
-Only short syntax checks have run so far; no full pass is claimed here.
+The executed source is **`871b2b363ab1145e488c1f226831388f5ed21aaf`**.
+The five Python suites passed in `ui7-phobia-public-geometry-600b8bac4e80`.
+The native fixture passed in the checkpoint-6 CTest gate, whose overall
+result was 75/87. Both actual-pack runs passed separately:
+`ui7-phobia-actual-eng-5b374d823046` and
+`ui7-phobia-actual-zhs-dbd03ce8d51e`. Each produced 29 private normal,
+enabled and dead-body captures. The 13 pairs and three dead-body captures
+were visually reviewed for registration, clipping and unchanged actor
+placement. These isolated encounter fixtures do not cover whole-run routing.
+
+Actual conversion journal `ui7-phobia-original-assets-noise-c2cd54f1d72e`
+passed with unchanged source. It measured the ordinary registrations before
+sampling 811 images, 43 clips and four backgrounds. All 811 new images decode
+exactly after retained grouping; previous payload, indices and locale strings
+are unchanged. The groups store **3,080,418 bytes** instead of **6,734,218**,
+saving **3,653,800 bytes**, with 73 groups and 21 exact frame aliases. The
+largest group's decoded payload is 209,280 bytes; no runtime buffer grows.
+
+The intermediate English v25 file is 94,054,914 bytes and Chinese is
+96,847,546 bytes. Profiles, additional HUD resources and final original-font
+replacement are later appends; these are not final delivery sizes or hashes.
+The first conversion attempt, `ui7-phobia-original-assets-74b8b8e4deb4`,
+failed for a missing reviewed FastNoiseLite dependency. Its failed receipt
+is retained. The successful retry used the exact Godot 4.5.1 header already
+identified in [enemy-assets-0.17.md](enemy-assets-0.17.md).
 
 The Entomancer's alternate body has a separate 100-particle, two-second swarm
 system. That independent particle effect is not yet converted. Original

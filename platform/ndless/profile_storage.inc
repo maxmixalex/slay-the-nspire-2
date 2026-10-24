@@ -23,15 +23,17 @@ static bool configure_profile_paths(unsigned profile){
     char paths[6][512];if(!profile_paths(profile,paths))return false;install_profile_paths(paths);return true;
 }
 static unsigned current_profile(){return selected_profile;}
+static int read_profile_selector(const char*path,unsigned&value){
+    void*f=nd_open(path,"rb");if(!f)return 0;
+    uint8_t bytes[spire::UiProfileSelectorBytes+1],canonical[spire::UiProfileSelectorBytes];
+    const unsigned n=nd_read(bytes,1,sizeof bytes,f);if(nd_close(f)!=0)return -1;
+    if(n!=spire::UiProfileSelectorBytes)return 0;
+    value=spire::decode_profile_selector(bytes,n);spire::encode_profile_selector(value,canonical);
+    for(unsigned i=0;i<n;++i)if(bytes[i]!=canonical[i])return 0;return 1;
+}
 static unsigned load_profile_selector(){
     const char*const paths[]={selector_path,selector_backup};
-    for(const char*path:paths){void*f=nd_open(path,"rb");if(!f)continue;
-        uint8_t bytes[spire::UiProfileSelectorBytes+1],canonical[spire::UiProfileSelectorBytes];
-        const unsigned n=nd_read(bytes,1,sizeof bytes,f);const bool closed=nd_close(f)==0;
-        if(!closed||n!=spire::UiProfileSelectorBytes)continue;
-        const unsigned value=spire::decode_profile_selector(bytes,n);spire::encode_profile_selector(value,canonical);
-        bool valid=true;for(unsigned i=0;i<n;++i)valid&=bytes[i]==canonical[i];if(valid)return value;
-    }return 1;
+    for(const char*path:paths){unsigned value;if(read_profile_selector(path,value)>0)return value;}return 1;
 }
 static int profile_file_present(const char*path){void*f=nd_open(path,"rb");return !f?0:nd_close(f)==0?1:-1;}
 static bool remove_profile_file(const char*path){const int present=profile_file_present(path);return present==0||(present>0&&nd_unlink(path)==0);}
@@ -41,17 +43,23 @@ static bool store_profile_selector(unsigned profile){
     bool ok=nd_write(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(nd_close(f)==0)&&ok;
     if(!ok){nd_unlink(selector_temp);return false;}
     const int old=profile_file_present(selector_path);
-    if(old<0||!remove_profile_file(selector_backup)){nd_unlink(selector_temp);return false;}
-    if(old&&nd_rename(selector_path,selector_backup)!=0){nd_unlink(selector_temp);return false;}
-    if(nd_rename(selector_temp,selector_path)!=0){if(old)nd_rename(selector_backup,selector_path);nd_unlink(selector_temp);return false;}
-    if(old)nd_unlink(selector_backup);return true;
+    unsigned previous=1;const int valid=old>0?read_profile_selector(selector_path,previous):0;
+    if(old<0||valid<0){nd_unlink(selector_temp);return false;}
+    if(valid){
+        if(!remove_profile_file(selector_backup)||nd_rename(selector_path,selector_backup)!=0){nd_unlink(selector_temp);return false;}
+    }else if(old&&nd_unlink(selector_path)!=0){nd_unlink(selector_temp);return false;}
+    // A corrupt primary may have booted from a valid backup. Never replace
+    // that recovery copy with corrupt bytes before the new selector commits.
+    if(nd_rename(selector_temp,selector_path)!=0){if(valid)nd_rename(selector_backup,selector_path);nd_unlink(selector_temp);return false;}
+    if(valid)nd_unlink(selector_backup);return true;
 }
 static bool profile_info(unsigned profile,spire::UiProgressSummary&out){
     out={};if(profile<1||profile>spire::UiProfileCount)return false;
+    uint8_t*progress_bytes=spire::resource_transfer_bytes();
     char path[512];
     const unsigned candidates[]={3,5};for(unsigned index:candidates){if(!profile_sibling(path,profile_files[index],profile))return false;
         void*f=nd_open(path,"rb");if(!f)continue;
-        const unsigned n=nd_read(progress_bytes,1,sizeof progress_bytes,f);const bool closed=nd_close(f)==0;
+        const unsigned n=nd_read(progress_bytes,1,spire::UiProgressCapacity+1,f);const bool closed=nd_close(f)==0;
         if(closed&&spire::decode_ui_progress_summary(progress_bytes,n,out))return true;
     }
     // Old ports have no UI-history file. The first byte is only an existence

@@ -267,8 +267,12 @@ static void top_bar_session_lifecycle(const Bytes&data){
         const auto fresh=[&](){
             reset_in_place(app);
             CHECK(source_overload?app.init(ResourceSource::memory(data.data(),data.size()),{}):app.init(data.data(),data.size(),{}));
-            CHECK(app.content.generation()==1);new_run(app.game,701,true);app.title=false;app.map_clock_ms=2617;
+            CHECK(app.content.generation()==1);new_run(app.game,701,true);app.title=false;app.map_clock_ms=1617;
             clear();Canvas c{app};hud(c);
+            // The original deck count pulses on its initial 0 -> N binding.
+            // Compare settled HUDs while retaining the independent icon
+            // hover/reconstruction clocks tested below.
+            app.map_clock_ms=2617;clear();hud(c);CHECK(!app.deck_count_pulse.active);
         };
         fresh();CHECK(top_bar_motions[1].angle==0&&top_bar_motions[1].scale==4096);
         const std::vector<uint16_t> baseline(app.pixels,app.pixels+ScreenW*22);
@@ -365,8 +369,14 @@ static void ui7_cards(){
     for(unsigned i=0;i<s.enemy_count;++i)CHECK(!app.target_reticles[1+i].selected);capture("target-reticle-self");unchanged();app.input(Key::Back);
     app.panel=1;app.pile_tab=0;app.open_card_detail(s.deck[0],0);CHECK(app.card_inspect.index==0&&app.card_inspect.count==3);
     app.render();CHECK(app.card_inspect.card_scale(app.map_clock_ms)==7168);app.advance(250);app.render();
-    CHECK(app.card_inspect.card_scale(app.map_clock_ms)==8192);CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.detail);capture("inspector-original-centered");
-    const int cursor=app.inspect_cursor;app.input(Key::Right);CHECK(app.detail_deck_index==1&&card_from_token(app.detail_card).kind==Bash&&app.card_inspect.card_x(app.map_clock_ms)==182);
+    CHECK(app.card_inspect.card_scale(app.map_clock_ms)==8192);CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.detail);
+    CHECK(card_inspect_layout::CardW==114&&card_inspect_layout::CardH==161);
+    CHECK(owner.owner.x==93&&owner.owner.y==40&&owner.owner.w==134&&owner.owner.h==159);
+    app.advance(100);app.render();bool arrow=false,upgrade=false;for(int i=0;i<app.hit_count;++i){const auto&h=app.hits[i];if(h.kind!=HitKind::UiAction)continue;
+        if(h.value==int(UiAction::InspectNextCard)){CHECK(h.x==229&&h.y==108&&h.w==24&&h.h==24);arrow=true;}
+        if(h.value==int(UiAction::ToggleCardUpgrade)){CHECK(h.y==206&&h.h==12);upgrade=true;}}
+    CHECK(arrow&&upgrade);capture("inspector-original-centered");
+    const int cursor=app.inspect_cursor;app.input(Key::Right);CHECK(app.detail_deck_index==1&&card_from_token(app.detail_card).kind==Bash&&app.card_inspect.card_x(app.map_clock_ms)==179);
     app.input(Key::Confirm);CHECK(card_from_token(app.detail_card).upgraded);app.input(Key::Right);CHECK(app.detail_deck_index==2&&card_from_token(app.detail_card).upgraded);
     app.input(Key::Right);CHECK(app.detail_deck_index==2);app.input(Key::Confirm);CHECK(!card_from_token(app.detail_card).upgraded);
     app.input(Key::Left);CHECK(app.detail_deck_index==1&&!card_from_token(app.detail_card).upgraded&&app.inspect_cursor==cursor);

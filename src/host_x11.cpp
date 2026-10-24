@@ -86,11 +86,28 @@ static bool request_profile(unsigned profile,bool erase){
     pending_profile=profile;pending_profile_delete=erase;return true;
 }
 static void configure_profile_paths(){save_path=scoped_profile_path(base_save_path,selected_profile);progress_path=scoped_profile_path(base_progress_path,selected_profile);}
+static bool erase_profile_files(unsigned target){
+    const std::string bases[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target)};
+    std::string originals[6],removed[6];unsigned count=0,present=0,moved=0;
+    for(const auto&base:bases)if(!base.empty())for(const char*suffix:{"",".tmp",".bak"}){
+        originals[count]=base+suffix;removed[count]=originals[count]+".deleted";
+        FILE*f=fopen(originals[count].c_str(),"rb");
+        if(f){if(fclose(f)!=0)return false;present|=1u<<count;}else if(errno!=ENOENT)return false;
+        if(std::remove(removed[count].c_str())!=0&&errno!=ENOENT)return false;++count;
+    }
+    for(unsigned i=0;i<count;++i)if(present&(1u<<i)){
+        if(rename(originals[i].c_str(),removed[i].c_str())!=0){
+            for(unsigned j=i;j>0;--j)if(moved&(1u<<(j-1)))rename(removed[j-1].c_str(),originals[j-1].c_str());
+            return false;
+        }moved|=1u<<i;
+    }
+    for(unsigned i=0;i<count;++i)if(moved&(1u<<i))std::remove(removed[i].c_str());
+    return true;
+}
 static void service_profile(){
     if(!pending_profile)return;const unsigned target=pending_profile;pending_profile=0;bool ok=true;
     if(pending_profile_delete){
-        const std::string paths[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target)};
-        for(const auto&path:paths)for(const char*suffix:{"",".tmp",".bak"})if(!path.empty()&&std::remove((path+suffix).c_str())!=0&&errno!=ENOENT)ok=false;
+        ok=erase_profile_files(target);
     }else{
         uint8_t bytes[spire::UiProfileSelectorBytes];spire::encode_profile_selector(target,bytes);
         const std::string temporary=profile_selector_path+".tmp";FILE*f=fopen(temporary.c_str(),"wb");

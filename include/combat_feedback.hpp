@@ -68,7 +68,21 @@ struct CombatFeedback {
   }
   uint32_t finish(bool fast){active=false;return base+(hit?(clock_ms+(fast?100:200)+32)/33:clock_ms/33);}
  } attacks[MaxAutoFrames+1]{},enemy_attack{};
- struct Cue {HealthBarValues value{};uint32_t identity=0,at=0;uint8_t actor=0;};
+ // Canonical block/tracked-block/doom are signed16 facts; HP, maximum HP
+ // and the derived poison series need their full32 bits. Place the actor
+ // and infinite flag in the remaining two bytes rather than repeating the
+ // padding of HealthBarValues in every queued sample. No packed/unaligned
+ // accesses, narrowed HP, smaller queue or change to saved State is needed.
+ struct Cue {
+  uint32_t identity=0,at=0;int32_t hp=0,max_hp=0,poison_damage=0;
+  int16_t block=0,tracked_block=0,doom=0;uint8_t actor=0;bool infinite=false;
+  Cue()=default;
+  Cue(const HealthBarValues&v,uint32_t id,uint32_t when,uint8_t who):
+   identity(id),at(when),hp(v.hp),max_hp(v.max_hp),poison_damage(v.poison_damage),
+   block(int16_t(v.block)),tracked_block(int16_t(v.tracked_block)),doom(int16_t(v.doom)),actor(who),infinite(v.infinite){}
+  HealthBarValues value()const{return {hp,max_hp,block,tracked_block,poison_damage,doom,infinite};}
+ };
+ static_assert(sizeof(Cue)==28,"Health playback keeps full HP with aligned canonical-width facts");
  struct DamageCue {uint32_t identity=0,at=0;int32_t amount=0;uint8_t actor=0,flags=0,shake_strength=0;};
  HealthBarValues shown[Actors]{},observed[Actors]{};
  uint32_t identity[Actors]{},observed_identity[Actors]{};
@@ -108,5 +122,5 @@ struct CombatFeedback {
   cues[count++]={value,id,at,uint8_t(actor)};
  }
 };
-static_assert(sizeof(CombatFeedback)<=12*1024,"Combat display must remain a small, bounded App projection");
+static_assert(sizeof(CombatFeedback)<=8*1024,"Combat display must remain a small, bounded App projection");
 }
