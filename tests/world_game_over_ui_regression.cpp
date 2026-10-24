@@ -128,6 +128,21 @@ static void summary_stages(const char*prefix){
  advance_to(m.menu_start()-1);a.render();CHECK(!has_action(UiAction::GameOverMainMenu));unchanged();
  advance_ms(1);CHECK(a.game_over_button_ready());CHECK(a.physical_key(select,false)&&!a.title);
  settle_game_over();capture_stage(prefix,"summary-settled");unchanged();
+ if(actual_profile){
+  // Both source nodes own ordinary 360px NHoverTipSets at different fixed
+  // offsets. Render actual localized badge/discovery content through the
+  // complete screen and reject the former 160px port-only tooltip panel.
+  const int previous=a.game_over_focus;a.game_over_focus=-1;a.render();
+  const std::vector<uint16_t> base(a.pixels,a.pixels+ScreenW*ScreenH);
+  HitRegion selected[2]{};for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind==HitKind::GameOverDetail&&selected[h.value>=32].kind==HitKind::None)selected[h.value>=32]=h;}
+  for(unsigned kind=0;kind<2;++kind){const auto&h=selected[kind];if(h.kind==HitKind::None)continue;
+   a.game_over_focus=int8_t(h.value);a.render();const int proposed=h.x+(kind?game_over_ui::DiscoveryTipX:game_over_ui::BadgeTipX),left=proposed<3?3:proposed>248?248:proposed;
+   unsigned changed=0;for(int y=0;y<ScreenH;++y)for(int x=0;x<ScreenW;++x){if(x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h)continue;
+    if(base[y*ScreenW+x]!=a.pixels[y*ScreenW+x]){CHECK(x>=left&&x<=left+69);++changed;}}
+   CHECK(changed>25);capture_stage(prefix,kind?"summary-discovery-source-hover":"summary-badge-source-hover");unchanged();
+  }
+  a.game_over_focus=int8_t(previous);a.render();
+ }
 }
 static void start(Character character=Character::Ironclad){
  new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-GAME-OVER-017"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));present();

@@ -24,10 +24,19 @@ static bool card_face_is_hand(const App&a,Card card,int instance){
     return !a.title&&!a.library&&!a.history_open&&instance>=0&&instance<a.game.card_count&&
         a.game.zones[instance]==Zone::Hand&&a.game.cards[instance].kind==card.kind;
 }
-static uint8_t card_face_resource_styles(const App&a,Card card,int energy,int stars,int instance,const EventCardFacts*facts){
-    if(!card_face_is_hand(a,card,instance))return 0;
+static uint8_t card_face_resource_styles(const App&a,Card card,int energy,int stars,int instance,const EventCardFacts*facts,bool upgrade_preview=false){
     const auto style=[](int value,int base,int available){return uint8_t(value<0?ResourceNormal:value>available?ResourceInsufficient:base>=0&&value>base?ResourceIncreased:base>=0&&value<base?ResourceDecreased:ResourceNormal);};
-    return uint8_t(style(energy,a.card_offer_cost(card,facts),a.game.energy)|(style(stars,card_star_cost(a.game,card),a.game.expansion.stars)<<2));
+    uint8_t result=card_face_is_hand(a,card,instance)?uint8_t(style(energy,a.card_offer_cost(card,facts),a.game.energy)|(style(stars,card_star_cost(a.game,card),a.game.expansion.stars)<<2)):0;
+    // NCard checks WasJustUpgraded before hand affordability. That flag is
+    // cleared when an actual upgrade is finalized: only a preview copy whose
+    // own cost changed receives the green value and matching green outline.
+    if(upgrade_preview&&card.upgraded){const Card before{card.kind,0};
+        const int base_energy=a.card_offer_cost(before,facts),upgraded_energy=a.card_offer_cost(card,facts);
+        if(energy>=0&&base_energy>=0&&upgraded_energy>=0&&base_energy!=upgraded_energy)result=uint8_t((result&12)|ResourceDecreased);
+        const int base_stars=card_star_cost(a.game,before),upgraded_stars=card_star_cost(a.game,card);
+        if(stars>=0&&base_stars>=0&&upgraded_stars>=0&&base_stars!=upgraded_stars)result=uint8_t((result&3)|(ResourceDecreased<<2));
+    }
+    return result;
 }
 static bool card_face_resource_cross(const App&a,Card card,int energy,int stars,int instance){
     // Source HasResourceCostReason is energy OR stars: either shortage
@@ -74,7 +83,7 @@ static CardFaceFonts card_face_fonts(const Canvas&c,int width){
 }
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true){
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
@@ -124,7 +133,7 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     c.picture(a.content.energy_image(card,!known),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;
     const int base_stars=card_star_cost(a.game,card),star_value=stars==-2?base_stars:stars;
-    const unsigned resource_styles=known?card_face_resource_styles(a,card,energy,star_value,instance,facts):0;
+    const unsigned resource_styles=known?card_face_resource_styles(a,card,energy,star_value,instance,facts,upgrade_preview):0;
     const int cost_size=fonts.energy;Canvas cost_label=c;if(fonts.compact)cost_label.font_face=5;
     char cost_text[16]{};TextBuffer cost_value{cost_text,sizeof cost_text,0,&a.content};if(!known)cost_value.ch('?');else if(energy==-1)cost_value.ch('X');else cost_value.number(energy);
     if(!known||energy!=-2)card_resource_label(cost_label,cost_text,l.energy.x+(l.energy.w-cost_label.width(cost_text,cost_size))/2,l.energy.y+(l.energy.h-cost_size-2)/2,cost_size,resource_styles&3,card_energy_outline(card),false);
@@ -185,7 +194,7 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 }
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
-static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true){
+static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false){
     // NCard.Model marks a local run/combat model when it is bound. Canonical
     // collection/history/title previews do not constitute such a binding.
     // This is an O(1) first-observation bit check, never a catalog scan.
@@ -196,7 +205,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
         left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;
-    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated,known);return;}
+    if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated,known,upgrade_preview);return;}
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     char body[1024]{},localized[1024]{};
     if(!description){
@@ -209,21 +218,21 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     if(!card_cache_text_fits(title,sizeof small_card_faces[0].title)||
        !card_cache_text_fits(description,sizeof small_card_faces[0].description)||
        !card_cache_static_text(title)||!card_cache_static_text(description)){
-        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;
+        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);return;
     }
     const int portrait=a.card_face_image(card,instance,deck,facts),frame=a.card_face_frame(card,instance,deck,facts);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const int energy_image=a.content.energy_image(card),energy=fee==-2?a.card_offer_cost(card,facts):fee;
     const int base_stars=card_star_cost(a.game,card),star_count=stars==-2?base_stars:stars;
     const bool star_visible=base_stars||(stars!=-2&&stars);
-    const unsigned resource_styles=card_face_resource_styles(a,card,energy,star_count,instance,facts);
+    const unsigned resource_styles=card_face_resource_styles(a,card,energy,star_count,instance,facts,upgrade_preview);
     const bool resource_cross=card_face_resource_cross(a,card,energy,star_count,instance);
     const auto geometry=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
     // Large dynamic costs can extend beyond the fixed cache, just as their
     // uncached labels do. Keep those exact without increasing the ARM pool.
     if(!a.content.healthy()||!card_cache_label_fits(c,geometry.energy,energy,false,left,top,fonts.energy,fonts.compact?5u:c.font_face)||
        (star_visible&&!card_cache_label_fits(c,geometry.star,star_count,true,left,top,fonts.star,fonts.compact?5u:c.font_face))){
-        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
+        render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);return;}
     SmallCardFaceCache* entry=nullptr;
     for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&
         slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
@@ -246,7 +255,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
         if(!entry||!slot.valid||slot.seen<entry->seen)entry=&slot;
         if(!slot.valid)break;
     }
-    if(!entry){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
+    if(!entry){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);return;}
     entry->valid=false;entry->owner=&a.content;entry->generation=a.content.generation();entry->seen=small_card_frame;
     entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;entry->width=uint8_t(w);entry->height=uint8_t(h);
     entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;entry->resource_cross=resource_cross;
@@ -254,7 +263,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->background[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
-    render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);
+    render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,nullptr,known,upgrade_preview);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
         entry->pixels[yy*SmallCardCacheW+xx]=c.pixels[(top+yy)*c.pitch+left+xx];
     entry->valid=a.content.healthy();

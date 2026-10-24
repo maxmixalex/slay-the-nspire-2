@@ -354,7 +354,6 @@ void App::render(){
     potion_hover_tip(c);
     owned_relic_tooltip(c);
     enemy_intent_tooltip(c);
-    battle_status_tooltip(c);
     orb_hover_tip(c);
     keyword_tooltips(c);
     pointer_overlay(c);

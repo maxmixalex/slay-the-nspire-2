@@ -4,8 +4,12 @@
 struct HoverTipSpec {HoverTipKind kind;const char*key;uint8_t flags;};
 struct CardHoverCatalog {uint16_t first;uint8_t count,flags;uint32_t order;};
 #include "keyword_hover_catalog.inc"
+#include "power_hover_catalog.inc"
 
-static bool hover_power_debuff(const char*key){for(auto name:hover_debuff_keys)if(hover_key_equal(name,key))return true;return false;}
+static bool hover_power_debuff(const char*key){
+    for(unsigned id=0;id<StatusKinds;++id)if((CombatStatus::PowerFlags[id]&2)&&hover_key_equal(ui_status_key(int(id)),key))return true;
+    for(auto name:hover_debuff_keys)if(hover_key_equal(name,key))return true;return false;
+}
 static void hover_add(HoverTipList&out,HoverTipKind kind,const char*key,int amount=0,int actor=-1,bool smart=false){
     HoverTip tip{};tip.kind=kind;tip.key=key;tip.amount=int16_t(amount);tip.actor=int16_t(actor);tip.smart=smart;
     tip.debuff=kind==HoverTipKind::Affliction||(kind==HoverTipKind::Power&&hover_power_debuff(key));out.add(tip);
@@ -101,6 +105,7 @@ static void hover_collect(const App&a,Card card,HoverTipList&out,int instance,in
 void collect_card_hover_tips(const App&a,Card card,HoverTipList&out,int instance,int deck,const EventCardFacts*facts){
     out=HoverTipList{};hover_collect(a,card,out,instance,deck,facts,0);out.finish();
 }
+#include "power_hover_ui.inc"
 
 static bool hover_in(const HoverRect&r,int x,int y){return x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;}
 static const HitRegion* hover_keyboard_hit(const App&a){
@@ -164,16 +169,22 @@ static LocalizedValue hover_text_value(const void*opaque,const char*name){
 }
 void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTip&tip,char*title,size_t title_cap,char*body,size_t body_cap){
     if(title_cap)title[0]=0;if(body_cap)body[0]=0;
+    if(owner.power>=0&&tip.kind==HoverTipKind::Power&&tip.instanced){
+        const auto token=uint16_t(owner.power);const int id=int(power_id(token)),actor=int(power_actor(token));
+        TextBuffer name{title,title_cap,0};name.text(ui_status_title(a,id));
+        ui_status_description(a,actor,id,body,body_cap,power_instanced(unsigned(id))?int(power_instance(token)):-1);return;
+    }
     if(tip.kind==HoverTipKind::Description){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(owner.card.kind));if(owner.card.upgraded)name.ch('+');
         a.card_description(owner.card,card_targets_enemy(a.game,owner.card)?a.target:-1,body,body_cap,owner.instance,owner.deck,owner.facts);return;
     }
     if(tip.kind==HoverTipKind::Card){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
-        const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,-1,-1,tip.has_facts?&tip.facts:&canonical);return;
+        const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical);return;
     }
     if(tip.kind==HoverTipKind::Relic){
-        const RelicId id=world_relic_id(tip.key);TextBuffer name{title,title_cap,0};name.text(a.relic_title(id));a.relic_description(id,body,body_cap);return;
+        const RelicId id=world_relic_id(tip.key);const int position=owner.historical?int(WorldRelicCapacity):-1;
+        TextBuffer name{title,title_cap,0};name.text(a.relic_title(id,position));a.relic_description(id,body,body_cap,position);return;
     }
     if(tip.kind==HoverTipKind::Potion){
         TextBuffer name{title,title_cap,0};name.text(potion_name(tip.amount,&a.content));ui_potion_description(a,tip.amount,body,body_cap);return;
@@ -194,6 +205,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     const HoverRect column=details?HoverRect{13,52,SourceHoverWidth,139}:inspect?
         HoverRect{mn(318-SourceHoverWidth,owner.owner.x+owner.owner.w+1),owner.owner.y,SourceHoverWidth,235-owner.owner.y}:keyword_hover_column(owner);
     int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
+    if(owner.power>=0)direction=owner.power_left?-1:1;
     int card_count=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)++card_count;
     const int space=direction<0?column.x-3:317-column.x-column.w;
     const bool cards_need_room=card_count&&(hover_compact_event(owner)||(direction>0?owner.owner.x<50:owner.owner.x+owner.owner.w+47>317));
@@ -243,7 +255,7 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
     const auto&tip=tips.items[piece.tip];const auto&r=piece.box;char title[160]{},body[2048]{};
     format_card_hover_tip(c.a,owner,tip,title,sizeof title,body,sizeof body);
     if(tip.kind==HoverTipKind::Card){
-        const EventCardFacts canonical{};draw_card_face(c,tip.card,r.x+1,r.y,43,60,cost(tip.card),-2,-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
+        const EventCardFacts canonical{};draw_card_face(c,tip.card,r.x+1,r.y,43,60,cost(tip.card),-2,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
     }
     source_hover_skin(c,r,tip.debuff);int icon=-1;
     if(tip.kind==HoverTipKind::Relic)icon=c.a.relic_face_image(world_relic_id(tip.key));
@@ -277,7 +289,7 @@ static void keyword_tooltips(Canvas&c){
     const bool new_owner=a.keyword_hover.owner!=owner.identity;
     if(new_owner){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
     HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);
-    if(new_owner)for(unsigned i=0;i<tips.count;++i){const auto&tip=tips.items[i];
+    if(new_owner&&!owner.historical)for(unsigned i=0;i<tips.count;++i){const auto&tip=tips.items[i];
         if(tip.kind==HoverTipKind::Card)a.discover_card(tip.card.kind);
         else if(tip.kind==HoverTipKind::Relic)a.discover_relic(world_relic_id(tip.key));
         else if(tip.kind==HoverTipKind::Potion)a.discover_potion(Potion(tip.amount));

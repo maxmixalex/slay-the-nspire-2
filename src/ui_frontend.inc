@@ -203,12 +203,12 @@ static void frontend_settings_screen(Canvas&c){
  if(a.settings_tab){c.button(label("INPUT_SETTINGS.RESET_TO_DEFAULT","Reset to Default","恢复默认"),210,211,100,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(206,207,109,33,UiAction::SettingsReset);}
  else{c.button(label("RESET_SETTINGS_BUTTON","Reset","重置"),241,211,69,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(237,207,78,33,UiAction::SettingsReset);}
  if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
+  const char*titles[]={"","SCREENSHAKE_HEADER","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","KEYBOARD_ONLY_MODE_HEADER"};
   const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
   const char*body=a.content.world_string("settings_ui",descriptions[hover]);
-  if(*body){const int width=154,lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(112,12+lines*13);
-   const int y=hover<3?102:55;
-   c.nine_ui(U_HoverTip,137,y,width,height,7,7,7,7);c.paragraph(body,145,y+6,width-16,(height-12)/13,0,10,White);
-  }
+  // NSettingsScreen gives every setting a full HoverTip and offsets it by
+  // (1012,-60) source units from that setting, including its header.
+  if(*body)source_hover_box(c,a.content.world_string("settings_ui",titles[hover]),body,25+193,60+(hover==7?0:hover-int(a.settings_top))*28-11);
  }
  if(a.settings_language_open){
   a.hit_count=0;c.action(0,0,320,240,UiAction::SettingsLanguageClose);

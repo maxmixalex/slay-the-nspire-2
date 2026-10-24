@@ -24,17 +24,19 @@ struct ButtonMotion {
     ButtonFamily family=ButtonFamily::Action;
     ButtonState state=ButtonState::Rest;
     bool interacted=false;
+    ButtonState disabled_from=ButtonState::Rest;
     ButtonVisual sample(uint32_t now)const{
-        auto to=button_target(family,state);const uint32_t elapsed=now-start;
+        const bool proceeding_disabled=family==ButtonFamily::Proceed&&state==ButtonState::Disabled;
+        const auto sampled_state=proceeding_disabled?disabled_from:state;
+        auto to=button_target(family,sampled_state);const uint32_t elapsed=now-start;
         if(family==ButtonFamily::Proceed||family==ButtonFamily::TreasureRelic){
-            // Disable animates the independent Image.self_modulate and
-            // Outline.modulate, leaving its interrupted hover appearance.
-            if(family==ButtonFamily::Proceed&&state==ButtonState::Disabled)return from;
-            if(state==ButtonState::Disabled)return to;
-            if(family==ButtonFamily::Proceed&&state==ButtonState::Focus){to.shade=from.shade;to.saturation=from.saturation;}
-            const unsigned duration=state==ButtonState::Focus?50:family==ButtonFamily::TreasureRelic?400:500;
+            // OnDisable kills the glow tween, but leaves the independent
+            // hover scale/material tween running beneath the exit motion.
+            if(state==ButtonState::Disabled&&!proceeding_disabled)return to;
+            if(family==ButtonFamily::Proceed&&sampled_state==ButtonState::Focus){to.shade=from.shade;to.saturation=from.saturation;}
+            const unsigned duration=sampled_state==ButtonState::Focus?50:family==ButtonFamily::TreasureRelic?400:500;
             const unsigned linear=elapsed>=duration?4096:elapsed*4096/duration;
-            const unsigned scale_q=state==ButtonState::Focus?linear:health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);
+            const unsigned scale_q=sampled_state==ButtonState::Focus?linear:health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);
             ButtonVisual out{from.scale+(to.scale-from.scale)*int(scale_q)/4096,0,
                 from.hover+(to.hover-from.hover)*int(linear)/4096,
                 from.shade+(to.shade-from.shade)*int(family==ButtonFamily::Proceed?linear:scale_q)/4096};
@@ -42,17 +44,18 @@ struct ButtonMotion {
                 // The source hue stays at 1. Focus/unfocus changes V/S in
                 // 50ms, press in 250ms, independently of the 500ms scale
                 // and Image.modulate. Children do not inherit this shader.
-                const unsigned color_duration=state==ButtonState::Press?250:50;
+                const unsigned color_duration=sampled_state==ButtonState::Press?250:50;
                 const unsigned color_q=elapsed>=color_duration?4096:elapsed*4096/color_duration;
                 out.saturation=uint16_t(int(from.saturation)+(int(to.saturation)-int(from.saturation))*int(color_q)/4096);
                 out.value=uint16_t(int(from.value)+(int(to.value)-int(from.value))*int(color_q)/4096);
             }
-            if(family==ButtonFamily::Proceed&&state==ButtonState::Rest){
+            if(family==ButtonFamily::Proceed&&sampled_state==ButtonState::Rest){
                 // NProceedButton loops 0.25 -> 0.75 -> 0.25 in 500ms legs.
                 // The first leg starts from the interrupted outline alpha.
                 if(elapsed<500)out.hover=from.hover+(1024-from.hover)*int(elapsed)/500;
                 else{const unsigned phase=(elapsed-500)%1000;out.hover=phase<500?1024+int(phase)*2048/500:3072-int(phase-500)*2048/500;}
             }
+            if(proceeding_disabled)out.hover=from.y;
             return out;
         }
         if(family==ButtonFamily::Back){
@@ -86,11 +89,23 @@ struct ButtonMotion {
         return out;
     }
     ButtonVisual observe(uint32_t key,ButtonFamily kind,ButtonState mode,uint32_t now){
-        if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;interacted=false;from=button_target(kind,state);start=now;}
+        if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;disabled_from=ButtonState::Rest;interacted=false;from=button_target(kind,state);start=now;}
         // Releasing while still inside is OnRelease, not another OnFocus.
         // Its shader returns to neutral until the pointer leaves/re-enters.
         if(kind==ButtonFamily::Proceed&&mode==ButtonState::Focus&&(state==ButtonState::Press||state==ButtonState::Release))mode=ButtonState::Release;
-        if(state!=mode){from=sample(now);state=mode;start=now;if(mode==ButtonState::Focus||mode==ButtonState::Press)interacted=true;}
+        if(state!=mode){
+            if(kind==ButtonFamily::Proceed&&mode==ButtonState::Disabled){
+                // Proceed has no vertical hover movement. Reuse its unused
+                // y component for the stopped glow, preserving the original
+                // tween start and avoiding another per-button allocation.
+                const int glow=sample(now).hover;disabled_from=state;state=mode;from.y=glow;
+            }else{
+                const bool enabling=kind==ButtonFamily::Proceed&&state==ButtonState::Disabled;
+                from=sample(now);state=mode;start=now;
+                if(enabling){from.scale=4096;from.saturation=from.value=1000;from.y=0;}
+                if(mode==ButtonState::Focus||mode==ButtonState::Press)interacted=true;
+            }
+        }
         seen=now;return sample(now);
     }
 };

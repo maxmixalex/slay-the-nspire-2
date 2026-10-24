@@ -75,3 +75,35 @@ The remaining last cleanup hides a redundant 1/1 footer, including the optional
 expanded tip view, while preserving actual multipage navigation and its hits.
 It is included in the parent's final eight-b checkpoint; the earlier captures
 and logs remain evidence for their exact executed revisions.
+# Battle power hover follow-up
+
+The final integration candidate routes `BattleStatus` and `PowerInstance`
+through the same source-sized hover set as cards and relics. The old 170px
+panel, extra large icon/count header and nine-line cutoff are removed. The
+source chain is `NPower.OnHovered` → `NCreature.ShowHoverTips` →
+`PowerModel.HoverTips`: the whole creature Hitbox owns the set, with left/right
+alignment chosen at the viewport midpoint. The current smart description and
+independent instance progress remain in the first panel; debuff status keeps
+its original skin. Text continues through the existing bounded columns/pages
+instead of silently losing its final lines.
+
+`generate_power_hovers.py` reads all 99 authored power `ExtraHoverTips` getters
+and emits only model keys and association flags. The runtime consumes the
+table, including independent related-card previews and their requested card
+hover chains. Stateful Swipe uses the captured card; Withering Presence uses
+the retained Wither instance at the current original upgrade level. The
+existing separate temporary-Focus/Setup Strike status channels retain their
+origin model; when mixed upgraded copies make the particular origin unknown,
+the extra preview is withheld rather than claiming a fabricated upgrade.
+Primary status amounts/descriptions remain available in that case.
+
+The empty reference stubs for Bound, Hexed and Tainted were checked against
+the original assembly. Bound has no extra tip; Hexed adds Ethereal; Tainted
+adds the original Tainted Power chain. The recovered source remains private.
+
+The new regression exercises real status hits, the creature Hitbox anchor,
+both alignments, source widths, all-page access, debuff/related-Shiv captures,
+drag/input suppression, save purity and separate Panache instances. At this
+point the candidate has passed short syntax checks; matching frozen execution
+and bilingual captures are still required before calling this follow-up
+accepted.

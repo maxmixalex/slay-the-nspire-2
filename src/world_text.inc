@@ -88,7 +88,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"Heal"))return wt_number(s.max_hp);
   if(wt_equal(name,"MaxHpLoss"))return wt_number(5);
  }
- if(wt_equal(name,"InCombat"))return wt_number(wt_equal(x.table,"cards")?wt_live_card(x):!a.library&&combat_phase(s.phase));
+ if(wt_equal(name,"InCombat"))return wt_number(wt_equal(x.table,"cards")?wt_live_card(x):x.relic_position<int(WorldRelicCapacity)&&!a.library&&combat_phase(s.phase));
  if(wt_equal(name,"OnPlayer"))return wt_number(x.actor<=0);
  if(wt_equal(x.table,"monsters")&&wt_equal(x.model_key,"monsters.TEST_SUBJECT")&&wt_equal(name,"Count"))
   return wt_number(a.progress.test_subject_kills>unsigned(INT32_MAX-8)?INT32_MAX:int(a.progress.test_subject_kills)+8);
@@ -211,7 +211,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   RelicId id=RelicId(x.model);if(wt_equal(name,"Title"))return wt_string(a.relic_title(id,x.relic_position));
   int value=0;if(world_relic_description_value(s,id,name,value,x.relic_position))return wt_number(value);
   OriginalTextReference ref;
-  if(wt_equal(name,"CardTitles")){char list[2048]{};TextBuffer b{list,sizeof list,0};unsigned count=world_relic_description_reference_count(s,id,name,x.relic_position);
+  if(wt_equal(name,"CardTitles")){char list[2048]{};TextBuffer b{list,sizeof list,0};unsigned count=x.relic_position>=int(WorldRelicCapacity)?0:world_relic_description_reference_count(s,id,name,x.relic_position);
    for(unsigned i=0;i<count;i++)if(world_relic_description_reference(s,id,name,ref,x.relic_position,i)){auto v=wt_reference(x,ref);if(i)b.ch('\n');b.text("- ");b.text(v.text);}
    TextBuffer out{x.nested,sizeof x.nested,0};out.text(list);return wt_string(x.nested);
   }

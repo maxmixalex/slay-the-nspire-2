@@ -270,8 +270,9 @@ static void event_pointer_keyboard_and_text(){
     CHECK(keyword_detail_input(a,Key::Statuses));a.render();capture("event-option-tooltip-details");unchanged();
     CHECK(keyword_detail_input(a,Key::Back));a.input(Key::Detail);a.render();CardHoverTarget owner{};CHECK(!event_hover_target(a,owner));
 }
+#include "power_hover_ui_cases.inc"
 int main(int argc,char**argv){
     std::vector<uint8_t>data;actual=argc>1;if(actual){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
-    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_potion_and_relic_catalog();event_pointer_keyboard_and_text();
+    CHECK(a.init(data.data(),data.size(),{}));if(argc>2)screenshots=argv[2];associations();duplicate_rules();complete_catalog_and_layout();pointer_and_keyboard();event_associations();event_potion_and_relic_catalog();event_pointer_keyboard_and_text();power_hover_catalog_and_input();
     std::printf("keyword tooltip: %u checks passed (%s profile)\n",checks,actual?"private":"synthetic");
 }

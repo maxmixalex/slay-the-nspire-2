@@ -46,7 +46,7 @@ static void pile_screen(Canvas&c){
         const int x=grid.card_x(i),y=grid.card_y(i);
         const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+CardGridScroll::CardW+2&&a.pointer.y>=y-2&&a.pointer.y<y+CardGridScroll::CardH+2&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
         painter.card(i,card,hover||(!a.pointer.visible&&a.pile_control_focus<0&&i==a.inspect_cursor),true,
-            deck?a.card_offer_cost(card,event_card_facts(s,card,-1,deck_index)):cost(s,instance),card_star_cost(s,card,instance),instance,deck_index);
+            deck?a.card_offer_cost(card,event_card_facts(s,card,-1,deck_index)):cost(s,instance),card_star_cost(s,card,instance),instance,deck_index,nullptr,false,true,deck&&a.pile_upgraded&&!s.deck[ids[i]].upgraded);
         painter.hit(i,deck?HitKind::DeckCard:HitKind::InstanceCard,ids[i]);
     }
     painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::Pile);

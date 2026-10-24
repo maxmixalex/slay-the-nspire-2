@@ -14,10 +14,10 @@ static void event_hover_card(const App&a,HoverTipList&out,Card card,bool associa
     if(associated){const EventCardFacts canonical{};hover_collect(a,card,out,-1,-1,facts?facts:&canonical,0);}
 }
 static void event_hover_potion(const App&,HoverTipList&,Potion,bool=false);
-static void event_hover_relic(const App&,HoverTipList&,RelicId,bool,unsigned=0);
-static void event_hover_spec(const App&a,HoverTipList&out,HoverTipKind kind,const char*key,int amount,unsigned flags,unsigned depth=0){
+static void event_hover_relic(const App&,HoverTipList&,RelicId,bool,unsigned=0,bool=false);
+static void event_hover_spec(const App&a,HoverTipList&out,HoverTipKind kind,const char*key,int amount,unsigned flags,unsigned depth=0,bool historical=false){
     if(kind==HoverTipKind::Card)event_hover_card(a,out,{world_card_id(key),uint8_t((flags&4)!=0)},(flags&2)!=0);
-    else if(kind==HoverTipKind::Relic)event_hover_relic(a,out,world_relic_id(key),(flags&1)==0,depth+1);
+    else if(kind==HoverTipKind::Relic)event_hover_relic(a,out,world_relic_id(key),(flags&1)==0,depth+1,historical);
     else if(kind==HoverTipKind::Enchantment)hover_enchantment(out,key,amount);
     else if(kind==HoverTipKind::Potion){
         for(unsigned i=1;i<=PotionKinds;++i){const auto*d=potion_definition(Potion(i));if(d&&wt_equal(d->key,key)){event_hover_potion(a,out,Potion(i));break;}}
@@ -28,17 +28,20 @@ static void event_hover_potion(const App&a,HoverTipList&out,Potion potion,bool a
     if(associated)for(const auto&spec:potion_hover_specs)if(spec.potion==potion)
         event_hover_spec(a,out,spec.kind,spec.key,spec.amount,spec.flags);
 }
-static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool include_self,unsigned depth){
+static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool include_self,unsigned depth,bool historical){
     if(id>=WorldRelicKinds||depth>2)return;const char*key=world_relic_key(id);
     if(include_self)hover_add(out,HoverTipKind::Relic,key,int(id));
     for(const auto&spec:relic_hover_specs)if(wt_equal(key,spec.relic)){
         int amount=spec.amount;
         if(*spec.value){char model[128]{};TextBuffer m{model,sizeof model,0};m.text("relics.");m.text(key);
-            if(!world_relic_description_value(a.game,id,spec.value,amount))
+            if(historical||!world_relic_description_value(a.game,id,spec.value,amount))
                 for(const auto&value:world_text_numbers)if(wt_equal(model,value.model)&&wt_equal(spec.value,value.name)){amount=value.base;break;}
         }
-        event_hover_spec(a,out,spec.kind,spec.key,amount,spec.flags,depth);
+        event_hover_spec(a,out,spec.kind,spec.key,amount,spec.flags,depth,historical);
     }
+    // Serializable history currently retains IDs only. Prepared or owned
+    // models in a different live run cannot reconstruct these old facts.
+    if(historical)return;
     const char*names[2]{};unsigned count=0;
     if(id==WorldRelicArchaicTooth){names[count++]="StarterCard";names[count++]="AncientCard";}
     else if(id==WorldRelicDustyTome)names[count++]="AncientCard";
@@ -57,7 +60,7 @@ static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool inclu
         else if(reference.kind==OriginalTextReferenceKind::Relic)event_hover_relic(a,out,RelicId(reference.model),true,depth+1);
     }
 }
-void collect_relic_hover_tips(const App&a,RelicId id,HoverTipList&out){out={};event_hover_relic(a,out,id,true);out.finish();}
+void collect_relic_hover_tips(const App&a,RelicId id,HoverTipList&out,bool historical){out={};event_hover_relic(a,out,id,true,0,historical);out.finish();}
 void collect_potion_hover_tips(const App&a,Potion potion,HoverTipList&out){out={};event_hover_potion(a,out,potion,true);out.finish();}
 void collect_event_hover_tips(const App&a,int option,HoverTipList&out){
     out=HoverTipList{};const auto&s=a.game;const auto&e=s.original_events;
@@ -136,14 +139,27 @@ static bool collection_hover_target(const App&a,CardHoverTarget&target){
     if(a.library_tab==1)target.relic=id;else target.potion=id+1;
     target.identity=0x72000000u|(unsigned(a.library_tab)<<20)|unsigned(id);return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return collection_hover_target(a,target)||treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
+static bool history_relic_hover_target(const App&a,CardHoverTarget&target){
+    if(!a.history_open||a.pointer.held||a.detail_item>=0||a.detail_card>=0||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
+    const auto*run=a.history_at(a.history_index);if(!run)return false;
+    const HitRegion*hit=nullptr;
+    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind!=HitKind::HistoryRelic||!h.enabled)continue;
+        if(a.pointer.visible?hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y):a.history_presentation.hover==UiHistoryLayout::RelicFirst+h.value){hit=&h;break;}}
+    if(!hit||hit->value<0||hit->value>=run->relic_count)return false;
+    target={};target.relic=run->relics[hit->value];target.historical=true;target.owner={hit->x,hit->y,hit->w,hit->h};
+    target.identity=0x73000000u|((run->serial&0xffffu)<<8)|unsigned(hit->value);return true;
+}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){return history_relic_hover_target(a,target)||power_hover_target(a,target)||collection_hover_target(a,target)||treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
-    if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),out);
+    if(owner.power>=0)collect_power_hover_tips(a,uint16_t(owner.power),out);
+    else if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),out,owner.historical);
     else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);
     else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
     else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.facts);
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){
+    if(owner.power>=0){const int x=owner.power_left?owner.owner.x-SourceHoverWidth-1:owner.owner.x+owner.owner.w+1;
+        return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     if(owner.event_option>=0&&owner.owner.w>240)
         return {3,24,SourceHoverWidth,mx(56,owner.owner.y-42)};
     if(owner.relic>=0){const int x=owner.owner.x<240?owner.owner.x:owner.owner.x+owner.owner.w-SourceHoverWidth;return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}

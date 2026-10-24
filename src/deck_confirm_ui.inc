@@ -1,6 +1,6 @@
 // A larger original-framed card keeps upgrade text inside the card itself.
-static void comparison_card(Canvas&c,Card card,int x,int y,int deck_index=-1){
-    draw_card_face(c,card,x,y,118,166,-2,-2,-1,deck_index);
+static void comparison_card(Canvas&c,Card card,int x,int y,int deck_index=-1,bool upgrade_preview=false){
+    draw_card_face(c,card,x,y,118,166,-2,-2,-1,deck_index,nullptr,nullptr,nullptr,true,upgrade_preview);
 }
 // Confirm irreversible deck operations with the captured revision still valid.
 static void deck_confirm_screen(Canvas&c){
@@ -10,7 +10,7 @@ static void deck_confirm_screen(Canvas&c){
     const bool upgrade=s.phase==Phase::Upgrade,remove=s.phase==Phase::Remove||a.grimoire_select;
     c.centered(upgrade?"确认升级":remove?"确认永久移除":"确认变化",0,5,320,20,Gold);
     if(upgrade){
-        comparison_card(c,before,18,35,a.deck_candidate);Card after=before;after.upgraded=1;comparison_card(c,after,185,35,a.deck_candidate);
+        comparison_card(c,before,18,35,a.deck_candidate);Card after=before;after.upgraded=1;comparison_card(c,after,185,35,a.deck_candidate,!before.upgraded);
         c.text("→",147,104,20,Gold);
     }else{
         large_card(c,before,120,49,true,-2,-2,-1,a.deck_candidate);

@@ -210,19 +210,8 @@ static void history_tooltip(Canvas&c,const UiRunHistory&r,int focus,const UiHist
     const int py=point.y-offset+UiHistoryLayout::ViewTop;
     if(py+point.h<=UiHistoryLayout::ViewTop||py>=UiHistoryLayout::ViewTop+UiHistoryLayout::ViewHeight)return;
     if(focus<UiHistoryLayout::RelicFirst){journal_floor_tooltip(c,r,unsigned(focus),point.x+dx+point.w/2,py+point.h/2,1);return;}
-    char title[256]{},body[2048]{};ProgressTextValues values;
-    if(focus>=UiHistoryLayout::RelicFirst){const RelicId id=RelicId(r.relics[focus-UiHistoryLayout::RelicFirst]);
-        TextBuffer name{title,sizeof title,0};name.text(c.a.relic_title(id));c.a.relic_description(id,body,sizeof body);
-    }else{const auto&f=r.floors[focus];values.floor=f.floor;values.hp=f.hp;values.max_hp=f.max_hp;values.gold=f.gold;values.turns=f.turns;
-        progress_text(c.a,"run_history","MAP_POINT_HISTORY.header",values,title,sizeof title);
-        progress_text(c.a,"run_history","MAP_POINT_HISTORY.player_stats",values,body,sizeof body);
-        if(f.turns){char turns[256]{};progress_text(c.a,"run_history","MAP_POINT_HISTORY.turnsTaken",values,turns,sizeof turns);
-            TextBuffer text{body,sizeof body,0};while(body[text.n])++text.n;text.ch('\n');text.text(turns);}
-    }
-    const int width=154,lines=c.paragraph(body,0,0,width-16,0,0,8),height=mn(172,31+lines*11);
-    const int x=mn(162,mx(4,point.x+dx)),y=mn(235-height,mx(4,py>height+8?py-height-5:py+point.h+4));
-    c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7);c.text_fitted(title,x+8,y+6,width-16,10,Gold,8);
-    c.paragraph(body,x+8,y+23,width-16,(height-27)/11,0,8,White);
+    // NRelicBasicHolder.Model.HoverTips is drawn by the shared keyword stack,
+    // including the source's associated cards and mechanic descriptions.
 }
 static void history_screen(Canvas&c){
     auto&a=c.a;const auto*record=a.history_at(a.history_index);if(!record){a.history_open=false;compendium_screen(c);return;}const auto&r=*record;

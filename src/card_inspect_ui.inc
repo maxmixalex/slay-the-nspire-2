@@ -32,7 +32,7 @@ static void detail_screen(Canvas&c){
     const int x=(closing?view.closed_x:view.card_x(a.map_clock_ms))-(w+1)/2,y=card_inspect_layout::CenterY-(h+1)/2;
     char description[2048]{};const auto*facts=a.detail_has_facts?&a.detail_facts:nullptr;
     a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,a.detail_instance,a.detail_deck_index,facts);
-    if(face_alpha)draw_card_face(face,card,x,y,w,h,closing?view.closed_energy:a.detail_energy(),closing?view.closed_stars:a.detail_stars(),a.detail_instance,a.detail_deck_index,facts,description,&view.description_truncated);
+    if(face_alpha)draw_card_face(face,card,x,y,w,h,closing?view.closed_energy:a.detail_energy(),closing?view.closed_stars:a.detail_stars(),a.detail_instance,a.detail_deck_index,facts,description,&view.description_truncated,true,view.upgrade_preview(card.upgraded));
     if(!a.library&&combat_phase(a.game.phase)&&a.detail_instance>=0&&a.detail_instance<a.game.card_count&&
        a.game.cards[a.detail_instance].kind==card.kind&&a.game.silent.inky[a.detail_instance])face.ui(U_Inky,151,y+h-7,18,18);
     if(card.upgraded||card_upgradeable(card)){

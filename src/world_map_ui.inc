@@ -136,11 +136,9 @@ static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
         char key[96]{},title[160]{};const char*source=map_legend_text(a,a.map_legend_item,".hoverTip.title",key,sizeof key);
         TextBuffer label{title,sizeof title,0};label.text(*source?source:world_point_name(map_legend_type(a.map_legend_item)));
         const char*body=map_legend_text(a,a.map_legend_item,".hoverTip.description",key,sizeof key);
-        if(*body){const int width=204,lines=mn(3,c.paragraph(body,0,0,width-16,0,0,10)),height=24+lines*13,top=mn(178,239-height);
-            const int skin=a.content.world_image("common","HOVER_TIP");
-            if(skin>=0)c.nine_image(skin,112,top,width,height,28,22,46,16);else{c.rect(112,top,width,height,Panel);c.box(112,top,width,height,Muted);}
-            c.text(title,120,top+4,10,Gold,width-16);c.paragraph(body,120,top+20,width-16,lines,0,10,rgb(255,246,226));
-        }
+        // NMapLegendItem anchors below its containing LegendItems column,
+        // right-aligned with that column, independently of the hovered row.
+        if(*body)source_hover_box(c,title,body,x+64-SourceHoverWidth,MapLegendRowY+6*MapLegendRowStep);
     }
 }
 static uint8_t map_window_product(unsigned byte,unsigned q12){

@@ -1,5 +1,63 @@
 # Work state — 2026-10-24
 
+## UI8 stage 8c — complete hover owners and lossless NSP2/33 candidate
+
+The codec/converter stage is remotely preserved as
+`4e51f970133a3fa9625c76eceb1838a851dc86c8`. Its actual cross insertion and
+string grouping passed: English saves 707,431 bytes; Chinese saves 710,700
+bytes, with all 8,704 strings and existing font/art/frame data exact. Full tile
+conversion is running from that immutable checkpoint.
+
+The UI stage also restores preview-only green energy/star costs and outlines,
+keeping permanent upgraded cards and hand cards on their actual ordinary cost
+rules. History relics now use the complete shared association stack while
+excluding current-run mutable card facts and discovery mutations. Proceed's
+independent hover tween continues during Disable, while only its glow stops;
+re-enabling resets source scale/S/V without adding per-button allocation.
+Short button checks pass 98,880 cases. Full composed acceptance remains pending.
+
+A real glyph audit covers every new ordinary hover key. It found a missing
+SCREENSHAKE_HEADER lookup, now aliased to its byte-identical ENG/ZHS existing
+SCREENSHAKE string without a new slot. It also found 24 missing Chinese native
+5px bold title glyphs; all regular body glyphs are present. Their private
+font append is being prepared separately and must precede final visual/package
+acceptance. Source syntax alone does not close that resource gap.
+
+The frozen stage-8b-base checkpoint `da8c78b632653463b65787b5ae2d3b16e5292f66`
+passed all five focused native suites, including the formerly failing room and
+library fixtures. Matching real English/Chinese content, card/HUD, room and
+library execution passed. The first actual grouped-font comparison failed in
+its test driver: `packed >> 5` decoded a display-font style incorrectly and
+requested a non-existent font band in both packs. The corrected driver uses
+the actual native face bit layout and additionally compares every directory
+key, geometry, advance and encoded length. Short matching-base execution now
+passes all 3,073 English / 31,162 Chinese glyphs (24,688 / 249,400 checks). This
+was a fixture repair; the reader did not change. The failed journal is retained.
+
+The new source stage finishes card-rule resource-cross artwork insertion and
+source power-hover associations, and replaces the remaining legacy ordinary
+hover panels for energy, stars, orbs, settings, map legend, drawing tools and
+run-summary badges/discoveries. These owners use the shared source width,
+font, skin and verified owner-relative positions. Source-specific discovery
+limits remain intact. See `static-hovers-0.17.md` and `hover-ui8-0.17.md`.
+
+NSP2/33 adds exact 32KiB grouped strings and optional reversible tile-stream
+filtering while retaining old version support and the raw locale marker. Both
+reuse the existing transfer scratch/cache; neither adds a resident buffer or
+increases cache pages. Tile groups retain IDs, membership, original RGB565 and
+alpha bytes, frame/index streams and timing. Two reversible encodings compete
+with the original whole stream; a non-saving replacement is discarded. Details
+and bounds are in `grouped-strings-0.17.md` and `tile-filter-0.17.md`.
+
+The new codec/source tests have short local passes; the matching complete
+native, ARM/WASM, real bilingual conversion, cold/warm cost, browser and normal
+Firebird transfer/launch gates are **pending this source checkpoint**. Sample
+compression ratios are not final package sizes or proof of device fit. The
+ordinary-device installation still requires enough headroom for saves/history,
+not merely a transfer that consumes all free flash. No pixel/frame/text quality
+has been traded for storage, and no physical-device speed claim is made.
+
+
 ## UI8 stage 8b base — source preservation before final compression
 
 This source stage adds bounded NSP2/32 grouped-glyph reads through the existing

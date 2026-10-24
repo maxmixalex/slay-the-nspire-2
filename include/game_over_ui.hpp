@@ -12,6 +12,9 @@ constexpr int ContinueX=135,ViewRunX=111,MainMenuX=133;
 constexpr bool ViewRunEnabled=false; // Pinned _Ready disables it; no Enable call exists.
 constexpr int ScoreX=110,ScoreWidth=100,ScoreHeight=9,ScoreStep=7;
 constexpr int BadgeSize=13;
+// NBadge.OnFocus (+10,-132) and NDiscoveredItem.OnFocus (-76,-200),
+// projected at the same 320/1680 scale as their ordinary NHoverTipSet.
+constexpr int BadgeTipX=2,BadgeTipY=-25,DiscoveryTipX=-14,DiscoveryTipY=-38;
 constexpr int ViewRunText=8687,PartialHistoryText=8688;
 struct BadgeText {uint16_t first;uint8_t tiers;};
 constexpr BadgeText BadgeTexts[]={

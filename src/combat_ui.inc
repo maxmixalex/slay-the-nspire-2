@@ -231,11 +231,10 @@ static void combat_resource_tooltip(Canvas&c,bool stars){
     const char*key=star?"STAR_COUNT":"ENERGY_COUNT";
     char full[64]{},body[1024]{};TextBuffer name{full,sizeof full,0};name.text(key);name.text(".description");
     a.localized_text("static_hover_tips",full,body,sizeof body);
-    if(!*body)return;const int lines=mn(7,c.paragraph(body,0,0,148,0,0,10)),height=27+lines*13,x=5,y=mx(25,top-height-5);
-    const int skin=a.content.world_image("common","HOVER_TIP");
-    if(skin>=0)c.nine_image(skin,x,y,160,height,28,22,46,16);else{c.rect(x,y,160,height,Panel);c.box(x,y,160,height,Gold);}
-    c.text(a.content.world_title("static_hover_tips",key),x+6,y+4,10,Gold,148);
-    c.paragraph(body,x+6,y+22,148,7,0,10,White);
+    if(!*body)return;
+    // NEnergyCounter (-70,-200) / NStarCounter (-34,-300), projected
+    // from the source 1680px viewport, relative to the actual counter.
+    source_hover_box(c,a.content.world_title("static_hover_tips",key),body,star?12-6:left-13,star?star_top-57:top-38);
 }
 #include "combat_sparks_ui7.inc"
 #include "combat_vfx_ui6.inc"

@@ -71,6 +71,20 @@ int main(){
  proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,3700);check(proceed.state==ButtonState::Release&&proceed.sample(3700).value==1000);
  proceed.observe(6,ButtonFamily::Proceed,ButtonState::Rest,3800);
  proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,3900);check(proceed.sample(3950).value==1400);
+ // NProceedButton.OnDisable kills _glowTween, not _hoverTween. It must
+ // finish the already-started scale/material motion while leaving its
+ // glow frozen beneath the independent 800ms exit modulation.
+ static_assert(sizeof(ButtonMotion)==36,"Disabled tween must use existing button storage");
+ for(auto mode:{ButtonState::Rest,ButtonState::Focus,ButtonState::Press,ButtonState::Release}){
+  ButtonMotion disabled;disabled.observe(10,ButtonFamily::Proceed,ButtonState::Focus,100);
+  disabled.observe(10,ButtonFamily::Proceed,mode,150);const auto running=disabled;
+  const auto stopped=disabled.observe(10,ButtonFamily::Proceed,ButtonState::Disabled,175);
+  for(unsigned ms=175;ms<=975;ms+=25){const auto v=disabled.sample(ms),r=running.sample(ms);
+   check(v.scale==r.scale&&v.shade==r.shade&&v.saturation==r.saturation&&v.value==r.value&&v.hover==stopped.hover);
+  }
+  const auto enabled=disabled.observe(10,ButtonFamily::Proceed,ButtonState::Rest,1000);
+  check(enabled.scale==4096&&enabled.value==1000&&enabled.saturation==1000);
+ }
  ButtonMotion relic;relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Focus,0);
  check(relic.sample(25).scale==4198&&relic.sample(50).scale==4301);
  relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Press,50);

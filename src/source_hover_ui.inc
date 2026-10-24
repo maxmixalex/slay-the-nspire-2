@@ -50,10 +50,13 @@ static void source_hover_title(Canvas&c,const char*title,HoverRect r,int icon=-1
     label.text_fitted(title,r.x+SourceHoverLeft,r.y+SourceHoverTop,width,size,rgb(239,200,81),size);
     if(icon>=0)c.picture(icon,r.x+r.w-SourceHoverRight-6,r.y+SourceHoverTop,6,6);
 }
-static void source_hover_box(Canvas&c,const char*title,const char*body,int x,int y,int width=SourceHoverWidth){
+static int source_hover_height(Canvas&c,const char*title,const char*body,int width=SourceHoverWidth){
+    return mn(234,source_hover_overhead(c,*title)+source_hover_paragraph(c,body,0,0,source_hover_body_width(width),0)*source_hover_step(c));
+}
+static void source_hover_box(Canvas&c,const char*title,const char*body,int x,int y,int width=SourceHoverWidth,int icon=-1,bool debuff=false){
     width=mn(width,SourceHoverWidth);const int step=source_hover_step(c),overhead=source_hover_overhead(c,*title);
     const int lines=source_hover_paragraph(c,body,0,0,source_hover_body_width(width),0);
     const int height=mn(234,overhead+lines*step);x=mx(3,mn(317-width,x));y=mx(3,mn(237-height,y));
-    const HoverRect r{x,y,width,height};source_hover_skin(c,r);source_hover_title(c,title,r);
+    const HoverRect r{x,y,width,height};source_hover_skin(c,r,debuff);source_hover_title(c,title,r,icon);
     source_hover_paragraph(c,body,x+SourceHoverLeft,y+SourceHoverTop+(*title?step:0),source_hover_body_width(width),mx(0,(height-overhead)/step));
 }

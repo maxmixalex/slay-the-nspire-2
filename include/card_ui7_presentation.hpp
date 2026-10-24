@@ -57,7 +57,8 @@ struct CardInspectPresentation {
     int16_t closed_x=card_inspect_layout::CenterX;
     uint8_t closed_root=255,closed_backstop=255,closed_face=255,closed_arrow=255;
     int16_t index=0,count=1;int8_t direction=0;
-    bool view_all_upgraded=false,description_truncated=false;
+    bool view_all_upgraded=false,description_truncated=false,original_upgraded=false;
+    bool upgrade_preview(bool upgraded)const{return upgraded&&!original_upgraded;}
     struct Arrow {
         uint32_t changed=0;uint8_t state=0;int16_t from_scale=4096;bool interacted=false;
         int scale(uint32_t now)const{

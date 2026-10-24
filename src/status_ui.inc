@@ -26,26 +26,21 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
         c.hit(xx-1,yy-1,cell,cell,power_instanced(id)?HitKind::PowerInstance:HitKind::BattleStatus,power_instanced(id)?token:actor*StatusKinds+int(id));
     }
 }
-static void battle_status_tooltip(Canvas&c){
-    auto&a=c.a;
+bool power_hover_target(const App&a,CardHoverTarget&target){
     if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||
-       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.combat_feedback.active&&!a.choice_peeking))return;
-    const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::BattleStatus&&hit->kind!=HitKind::PowerInstance))return;
+       a.keyboard_card>=0||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.combat_feedback.active&&!a.choice_peeking))return false;
+    const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::BattleStatus&&hit->kind!=HitKind::PowerInstance))return false;
     const bool instanced=hit->kind==HitKind::PowerInstance;
     const int actor=instanced?0:hit->value/StatusKinds,id=instanced?(hit->value&255):hit->value%StatusKinds;
-    if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds)return;
+    if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds||!(CombatStatus::PowerFlags[id]&1))return false;
     const uint16_t token=instanced?uint16_t(hit->value):power_token(unsigned(actor),unsigned(id));
-    char body[8192]{};ui_status_description(a,actor,id,body,sizeof body,instanced?int(power_instance(token)):-1);
-    const int lines=c.paragraph(body,0,0,158,0,0,10),shown=mn(lines,9),height=29+shown*13;
-    const int x=a.pointer.x>=160?7:143,y=mx(25,mn(218-height,hit->y-height-5));
-    const int skin=a.content.world_image("common","HOVER_TIP");
-    if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,y+2,170,height,28,22,46,16,64);c.nine_image(skin,x,y,170,height,28,22,46,16);}
-    else{c.rect(x,y,170,height,Panel);c.box(x,y,170,height,Gold);}
-    c.picture(ui_status_image(a,id),x+6,y+5,13,13);
-    c.text(ui_status_title(a,id),x+23,y+4,10,Gold,122);
-    if(a.combat_power_counter(token))c.num(a.combat_power_amount(token,true),x+145,y+4,8,White);
-    c.paragraph(body,x+6,y+23,158,shown,0,10,White);
-    if(lines>shown)c.text("…",x+151,y+height-13,10,Gold);
+    // NPower delegates to its NCreature owner. The actual source Hitbox,
+    // not the small power icon or pointer, owns the complete hover-tip set.
+    const auto pose=actor?a.combat_enemy_pose(actor-1):a.combat_player_pose();
+    target={};target.owner={pose.body_left,pose.body_top,pose.body_width,pose.body_height};
+    target.power=int(token);target.power_left=pose.x>=160;target.identity=0x73000000u|token;
+    static constexpr CardKind cards[]={Strike,StrikeSilent,DefectStrike,RegentStrike,NecroStrikeNecrobinder};
+    target.card={cards[unsigned(a.game.character)<5?unsigned(a.game.character):0],0};return true;
 }
 static void orb_status_detail(Canvas&c){
     const auto&a=c.a;

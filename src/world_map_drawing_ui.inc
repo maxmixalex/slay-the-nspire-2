@@ -54,11 +54,9 @@ static void map_drawing_tools(Canvas&parent,const MapWindowSample*window){
         const char*title=a.content.world_string("map",key);char title_copy[192]{};TextBuffer copy{title_copy,sizeof title_copy,0};copy.text(title);
         key[0]=0;TextBuffer body_key{key,sizeof key,0};body_key.text(keys[hovered]);body_key.text(".description");
         const char*body=a.content.world_string("map",key);
-        if(*title_copy){const int w=194,lines=mn(3,c.paragraph(body,0,0,w-14,0,0,8)),h=22+lines*11,y=top-h-4;
-            const int skin=a.content.world_image("common","HOVER_TIP");
-            if(skin>=0)c.nine_image(skin,left,y,w,h,28,22,46,16);else c.rect(left,y,w,h,Panel);
-            c.text(title_copy,left+7,y+5,9,Gold,w-14);c.paragraph(body,left+7,y+18,w-14,lines,0,8,White);
-        }
+        // All three source controls anchor to DrawingTools+(10,-132),
+        // not to the particular icon or a separate full-width reader.
+        if(*title_copy)source_hover_box(c,title_copy,body,left+2,top-25);
     }
 }
 static bool map_drawing_cursor(Canvas&c){

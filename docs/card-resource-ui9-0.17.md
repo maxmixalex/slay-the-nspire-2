@@ -50,3 +50,22 @@ Validation completed before the final integration checkpoint:
 Actual original-image append, final composed card captures and matching
 integration execution are the next acceptance gate. No private art or captures
 are stored in the public repository.
+
+## Upgrade preview resource colors
+
+Recovered `NCard.UpdateEnergyCostVisuals` and `UpdateStarCostVisuals` test
+`WasJustUpgraded` before affordability. `CardEnergyCost.FinalizeUpgrade` clears
+that transient flag for a permanently upgraded card. Explicit preview context
+now follows the library and deck upgrade toggles, inspector checkbox/navigation
+and camp upgrade comparison into the common face renderer. A changed numeric
+cost receives the original green value and green outline; an unchanged or X
+cost does not. Permanent upgraded cards retain normal hand cost rules.
+
+The inspector retains each original model's upgrade state across navigation
+and its close fade. The small-face cache already includes the resulting
+resource style; hand tiles use ordinary finalized cards and retain their
+existing style key. New regression cases alternate identical upgraded faces
+between normal/preview cache entries, compare cached pixels with direct
+composition, and check the unchanged/X cost, finalized-hand, shortage-priority
+and inspector-origin branches. Short C++ syntax validation passed; these new
+cases await the same complete integration checkpoint as the original cross.

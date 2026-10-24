@@ -62,11 +62,9 @@ static void orb_hover_tip(Canvas&c){
  const CombatOrbTipContext context{&a,index};LocalizedTemplate(body,sizeof body,combat_orb_tip_value,&context,
   a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).format(source);
  if(!*title)title=a.content.ui_text(index<count?orb_name(kind):"空槽位");
- const int lines=c.paragraph(body,0,0,132,0,0,10),shown=mn(lines,11),height=29+shown*13;
- const int x=health_bar::bounded(hit->x+hit->w+4,3,173),y=health_bar::bounded(hit->y-height/2,24,mx(24,235-height));
- const int skin=a.content.world_image("common","HOVER_TIP");
- if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,x+2,y+2,144,height,28,22,46,16,64);c.nine_image(skin,x,y,144,height,28,22,46,16);}
- else{c.rect(x,y,144,height,Panel);c.box(x,y,144,height,Gold);}
- c.text(title,x+6,y+4,10,Gold,132);c.paragraph(body,x+6,y+23,132,shown,0,10,White);
- if(lines>shown)c.text("…",x+125,y+height-13,10,Gold);
+ // NOrb uses its bounds, the default 75% left/right threshold, and the
+ // OrbModel's icon in the normal HoverTip header. The complete dynamic
+ // Passive/Evoke body shares the same native 5px layout as other tips.
+ const int x=hit->x>240?hit->x-SourceHoverWidth:hit->x+hit->w;
+ source_hover_box(c,title,body,x,hit->y,SourceHoverWidth,index<count?a.content.ui_image(orb_image(kind)):-1);
 }

@@ -23,7 +23,7 @@ static void card_grid_stats(Canvas&c,CardKind kind,int cx,int cy,int scale){
 }
 struct CardGridPainter {
     Canvas&c;CardGridScroll&grid;int hover=-1;
-    struct Face {int index=-1,fee=-2,stars=-2,instance=-1,deck=-1,scale=800;Card card{};const EventCardFacts*facts=nullptr;bool playable=true,chosen=false,known=true;} front;
+    struct Face {int index=-1,fee=-2,stars=-2,instance=-1,deck=-1,scale=800;Card card{};const EventCardFacts*facts=nullptr;bool playable=true,chosen=false,known=true,upgrade_preview=false;} front;
     struct CardHit {int index=-1,value=0;HitKind kind=HitKind::None;bool enabled=true;} front_hit;
     CardGridPainter(Canvas&canvas,CardGridScroll&scroll):c(canvas),grid(scroll){
         const auto&p=c.a.pointer;
@@ -45,15 +45,15 @@ struct CardGridPainter {
     void draw(const Face&face){
         Canvas layer=card_grid_canvas(c,grid);const int w=face_width(face.scale),h=face_height(face.scale);
         const int x=grid.card_x(face.index)+(CardGridScroll::CardW-w)/2,y=grid.card_y(face.index)-grid.top+(CardGridScroll::CardH-h)/2;
-        draw_card_face(layer,face.card,x,y,w,h,face.fee,face.stars,face.instance,face.deck,face.facts,nullptr,nullptr,face.known);
+        draw_card_face(layer,face.card,x,y,w,h,face.fee,face.stars,face.instance,face.deck,face.facts,nullptr,nullptr,face.known,face.upgrade_preview);
         if(c.a.library&&!c.a.library_tab&&c.a.card_library.show_stats)card_grid_stats(layer,face.card.kind,x+w/2,y+h/2,face.scale);
         if(!face.playable)layer.dim(x,y,w,h,125);
         if(face.chosen){layer.box(x-3,y-3,w+6,h+6,Green);layer.rect(x+w-16,y+h-18,14,17,Panel);layer.text("✓",x+w-15,y+h-18,12,Green);}
     }
-    void card(int index,Card card,bool focused,bool playable=true,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,bool chosen=false,bool known=true){
+    void card(int index,Card card,bool focused,bool playable=true,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,bool chosen=false,bool known=true,bool upgrade_preview=false){
         if(c.a.pointer.visible)focused=index==hover;
         const int scale=grid.observe_face(index,focused,c.a.map_clock_ms);
-        Face face{index,fee,stars,instance,deck,scale,card,facts,playable,chosen,known};
+        Face face{index,fee,stars,instance,deck,scale,card,facts,playable,chosen,known,upgrade_preview};
         if(focused){front=face;grid.focused_index=int16_t(index);}else draw(face);
     }
     void draw_hit(const CardHit&hit){

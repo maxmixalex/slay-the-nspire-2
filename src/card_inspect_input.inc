@@ -20,6 +20,10 @@ void App::bind_card_inspect(){
     card_inspect={};card_inspect.opened=map_clock_ms;
     if(detail_card<0)return;
     int wanted=-1;const Card card=card_from_token(detail_card);
+    card_inspect.original_upgraded=card.upgraded;
+    if(library&&library_tab==0)card_inspect.original_upgraded=false;
+    else if(detail_instance>=0&&detail_instance<game.card_count&&game.cards[detail_instance].kind==card.kind)card_inspect.original_upgraded=game.cards[detail_instance].upgraded;
+    else if(detail_deck_index>=0&&detail_deck_index<game.deck_count&&game.deck[detail_deck_index].kind==card.kind)card_inspect.original_upgraded=game.deck[detail_deck_index].upgraded;
     if(history_open){card_inspect.source=CardInspectSource::History;wanted=history_selected;}
     else if(library&&library_tab==0){card_inspect.source=CardInspectSource::Library;wanted=card.kind;card_inspect.view_all_upgraded=library_upgraded;}
     else if(panel==1){card_inspect.source=pile_tab?CardInspectSource::InstancePile:CardInspectSource::DeckPile;wanted=pile_tab?detail_instance:detail_deck_index;card_inspect.view_all_upgraded=!pile_tab&&pile_upgraded;}
@@ -61,5 +65,5 @@ void App::move_card_inspect(int direction){
     default:return;
     }
     if(context.view_all_upgraded){auto card=card_from_token(detail_card);if(card_upgradeable(card)){card.upgraded=1;detail_card=card_token(card);}}
-    card_inspect=context;card_inspect.index=int16_t(next);card_inspect.count=int16_t(count);card_inspect.slid=map_clock_ms;card_inspect.direction=int8_t(direction<0?-1:1);card_inspect.description_truncated=false;
+    const bool original_upgraded=card_inspect.original_upgraded;card_inspect=context;card_inspect.original_upgraded=original_upgraded;card_inspect.index=int16_t(next);card_inspect.count=int16_t(count);card_inspect.slid=map_clock_ms;card_inspect.direction=int8_t(direction<0?-1:1);card_inspect.description_truncated=false;
 }

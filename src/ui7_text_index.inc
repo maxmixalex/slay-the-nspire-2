@@ -195,6 +195,7 @@
  {"settings_ui.SCREENSHAKE",8108},
  {"settings_ui.SCREENSHAKE_CAAAW",8113},
  {"settings_ui.SCREENSHAKE_DESCRIPTION",8114},
+ {"settings_ui.SCREENSHAKE_HEADER",8108},
  {"settings_ui.SCREENSHAKE_LOTS",8112},
  {"settings_ui.SCREENSHAKE_NONE",8109},
  {"settings_ui.SCREENSHAKE_NORMAL",8111},

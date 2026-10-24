@@ -20,6 +20,7 @@ int main(int argc,char**argv){
     new_run(a.game,0x8813,false);CHECK(world_begin_run(a.game));a.title=true;
     auto&r=a.progress.history[0];r.serial=1;r.character=0;r.started_at=1792838400;r.seconds=3723;r.hp=61;r.max_hp=80;r.gold=145;r.floor=45;r.floor_count=45;r.outcome=1;
     std::strcpy(r.seed_text,"H1ST0RY");r.relic_count=36;for(unsigned i=0;i<r.relic_count;++i)r.relics[i]=uint16_t(i);
+    r.relics[0]=WorldRelicNinjaScroll;r.relics[1]=WorldRelicDustyTome;
     r.potion_count=3;r.potions[0]=unsigned(Potion::Fire);r.potions[2]=unsigned(Potion::FairyInABottle);
     for(unsigned i=0;i<r.floor_count;++i){auto&f=r.floors[i];f.floor=uint16_t(i+1);f.act=uint8_t(i/15);f.region=f.act;f.room=unsigned(i%6==0?WorldRoom::Rest:i%7==0?WorldRoom::Shop:i%8==0?WorldRoom::Treasure:WorldRoom::Monster);f.hp=60;f.max_hp=80;f.gold=uint16_t(i*3);f.turns=4;}
     r.deck_count=60;for(unsigned i=0;i<r.deck_count;++i)r.deck[i].card={CardKind(i/2),0};
@@ -31,11 +32,29 @@ int main(int argc,char**argv){
     CHECK(layout.relic_header>layout.floor(r,44).y&&layout.deck_header>layout.relic(35).y);
     a.progress.count=1;a.progress.next_history=1;a.progress_loaded=true;a.open_history();settle();
     CHECK(a.progress_page_scroll.viewport==UiHistoryLayout::ViewHeight&&a.progress_page_scroll.maximum>0);
+    // A historical relic only has its recorded ID. A different live run's
+    // prepared ancient offer must neither change its prose nor add its card.
+    CardHoverTarget historical{};historical.relic=WorldRelicDustyTome;historical.historical=true;
+    HoverTipList old_tips{};collect_relic_hover_tips(a,WorldRelicDustyTome,old_tips,true);
+    char old_title[256]{},old_body[2048]{},new_title[256]{},new_body[2048]{};
+    CHECK(old_tips.count==1);format_card_hover_tip(a,historical,old_tips.items[0],old_title,sizeof old_title,old_body,sizeof old_body);
+    CHECK(world_relic_prepare(a.game,WorldRelicDustyTome));HoverTipList live_tips{};collect_relic_hover_tips(a,WorldRelicDustyTome,live_tips);
+    bool live_card=false;for(unsigned i=0;i<live_tips.count;++i)live_card|=live_tips.items[i].kind==HoverTipKind::Card;CHECK(live_card);
+    collect_relic_hover_tips(a,WorldRelicDustyTome,old_tips,true);CHECK(old_tips.count==1);
+    format_card_hover_tip(a,historical,old_tips.items[0],new_title,sizeof new_title,new_body,sizeof new_body);
+    CHECK(!std::strcmp(old_title,new_title)&&!std::strcmp(old_body,new_body));
+    HoverTipList static_tips{};collect_relic_hover_tips(a,WorldRelicNinjaScroll,static_tips,true);
+    CHECK(static_tips.find(HoverTipKind::Relic,"NINJA_SCROLL")>=0&&static_tips.find(HoverTipKind::Card,"SHIV")>=0&&static_tips.find(HoverTipKind::Keyword,"EXHAUST")>=0);
     SaveData before{},after{};CHECK(save(a.game,before));capture("history-top");
     a.pointer.visible=false;a.input(Key::Down);CHECK(a.history_presentation.focus==0);a.input(Key::Right);CHECK(a.history_presentation.focus==1);
     a.input(Key::Down);CHECK(a.history_presentation.focus>=15);a.render();CHECK(a.history_presentation.hover==a.history_presentation.focus);
     // Clicking relics focuses a tooltip; it does not introduce a new modal.
-    a.progress_page_scroll.target=(layout.relic_y-80)*256;settle();click(HitKind::HistoryRelic,0);CHECK(a.detail_item<0);capture("history-relic-hover");
+    a.progress_page_scroll.target=(layout.relic_y-80)*256;settle();click(HitKind::HistoryRelic,0);a.render();CHECK(a.detail_item<0);
+    CHECK((a.keyword_hover.owner&0xff000000u)==0x73000000u);capture("history-relic-hover");
+    const auto rh=hit(HitKind::HistoryRelic,0);historical.relic=WorldRelicNinjaScroll;historical.owner={rh.x,rh.y,rh.w,rh.h};
+    const auto related=card_hover_page(a,historical,static_tips);bool card_piece=false;
+    for(unsigned i=0;i<related.count;++i){const auto&p=related.pieces[i];CHECK(p.box.x>=0&&p.box.x+p.box.w<=320&&p.box.y>=0&&p.box.y+p.box.h<=240);card_piece|=static_tips.items[p.tip].kind==HoverTipKind::Card;}CHECK(card_piece);
+    a.pointer.visible=false;a.history_presentation.focus=UiHistoryLayout::RelicFirst;a.render();CHECK((a.keyword_hover.owner&0xff000000u)==0x73000000u);
     a.pointer.visible=false;a.progress_page_scroll.target=(layout.deck_y-40)*256;settle();
     click(HitKind::HistoryCard,0);CHECK(a.detail_card>=0&&a.card_inspect.source==CardInspectSource::History&&a.card_inspect.count==31);
     CHECK(a.history_selected==0);a.input(Key::Right);CHECK(a.history_selected==2);a.input(Key::Back);CHECK(a.detail_card<0);

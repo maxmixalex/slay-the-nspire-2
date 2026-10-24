@@ -182,10 +182,8 @@ static void game_over_score_line(Canvas&c,const char*key,unsigned icon,int y,con
 }
 static void game_over_hover(Canvas&c,int focus,int anchor_x,int anchor_y){
  char title[192]{},body[2048]{};c.a.game_over_detail(focus,title,sizeof title,body,sizeof body);if(!*title)return;
- const int width=160,lines=c.paragraph(body,0,0,width-16,0,0,8),height=mn(208,31+lines*11);
- const int x=mn(157,mx(3,anchor_x+12)),y=mn(238-height,mx(23,anchor_y-height-4));
- c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7);c.text_fitted(title,x+8,y+6,width-16,10,Gold,8);
- c.paragraph(body,x+8,y+23,width-16,(height-27)/11,0,8,White);
+ using namespace game_over_ui;
+ source_hover_box(c,title,body,anchor_x+(focus<32?BadgeTipX:DiscoveryTipX),anchor_y+(focus<32?BadgeTipY:DiscoveryTipY));
 }
 static void native_game_over_screen(Canvas&c){
  using namespace game_over_ui;auto&a=c.a;const auto&s=a.game;a.hit_count=0;game_over_backdrop(c);
