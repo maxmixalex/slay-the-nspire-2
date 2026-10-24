@@ -170,6 +170,52 @@ are `ui6-stage4-card-hud-eng-7b7f174ff9fa`,
 The failed English journal `ui6-stage4-character-eng-bac16083b382` remains a
 failure and is not counted as a complete pass.
 
+## Final targeted stage-5 result
+
+At frozen receipt `c4431cc647b5b1710d23c877759f4f25cc6ca278`, the English
+character driver passed its complete **38,846 checks / 860 acquired variants**,
+including the corrected uppercase original text and the final mouse-play paths.
+The Chinese complete pass remains explicitly tied to stage 4; the stage-5
+change to that driver was the English expected string only.
+
+The final native build also repeated actual English/Chinese card/HUD
+(**325,828 / 337,158**) and potion UI (**1,048 each**) against the same final
+packs. All five stage-5 journals ended `passed`, `source_changed: false`:
+
+* `ui6-stage5-character-eng-93a2a7cf4431`
+* `ui6-stage5-card-hud-eng-e9f59e018f94`
+* `ui6-stage5-card-hud-zhs-37b6e6a9df78`
+* `ui6-stage5-potion-eng-ebe482907915`
+* `ui6-stage5-potion-zhs-a05026ec4c75`
+
+The final **34 captures per language** are byte-identical to the corresponding
+stage-4 frames, including the reviewed settled arrow and disabled empty-slot
+tooltips. The positional arithmetic review also confirmed that the final
+camera-scaled formation uses the same displayed pose for actors, hit regions,
+health bars, card/potion arrows and directional targeting. None of these host
+results establishes physical-calculator performance or exact original-PC
+pixel equivalence. Integrated platform and timing receipts belong to the root
+validation report.
+
+## Backend lifecycle correction after stage 5
+
+The complete native/WASM matrix found ten differing frames, all confined to
+the top-bar deck icon. The remaining pixels and saves still matched. This was
+a real session-lifecycle bug: the native fixture reconstructed `App` at the
+same address, so `Content` again opened at generation 1, while the three static
+HUD motion records retained an earlier `from_angle` and `start`. When the new
+clock reached that old start, a prior unfocus animation resumed. Each WASM
+scenario had fresh static storage and therefore did not reproduce the residue.
+
+Both production `App::init` overloads now explicitly invalidate those motion
+records, as they already invalidate hand-card caches. The driver was left
+unchanged. The new card/HUD regression reconstructs the real App at the same
+address, checks its repeated generation-1 open, induces a complete hover and
+unfocus, then compares a fresh session at the previous start time with clean
+HUD pixels. It covers memory and `ResourceSource` initialization. This repair
+awaits its own frozen native/WASM and card/HUD receipt; earlier failed matrix
+runs are not counted as passing equivalence.
+
 ## Remaining fidelity boundaries to keep explicit
 
 * The 320×240 grid uses readable 47×66 cards in discrete ten-card pages. The

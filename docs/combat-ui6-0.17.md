@@ -152,6 +152,32 @@ Necrobinder keeps the additional authored 150 source-pixel offset for Osty.
 
 ## Verification status
 
+Final runtime checkpoint: `c4431cc647b5b1710d23c877759f4f25cc6ca278`.
+The complete Clang 18 Release build with `SPIRE_DEBUG_COMMANDS=ON` passed.
+All 79 registered CTest cases were executed successfully: the first complete
+run passed 78 and could not launch `five_character_ui_regression` because the
+built file had mode 0644. Restoring only its execution permission and running
+CTest's `--rerun-failed` passed the remaining case; no source or executable
+bytes changed. The initial NotRun journal remains preserved.
+
+The final formation regression passed 612 checks, and core debug commands
+passed 498 checks, including real reviver deaths, Gremlin Horn/Stratagem
+continuation, permanent-card growth, room/act replacement and rollback.
+Both final private resource languages completed the entire world-UI suite
+(27,039 checks each) and the debug-UI suite. The latter exercises real
+RewardsSet construction, cross-room/act commands, typed input, modal close,
+no automatic saves and English/Chinese captures. Final Ovicopter/egg and
+Kaiser screenshots were inspected again after the coordinate precision fix.
+
+Final private journals are under `ui6-debug-stage5-journal`: build
+`7caefabe141d`, full CTest `eed0a8522d1a`, permission retry `e21dbaebb3f6`,
+formation `f06477b9d8d3`, world ENG/ZHS `8d9762f17817`/`021ce2f02db8`,
+and debug UI ENG/ZHS `1761221429ee`/`040ded766cb6`. Every completed command
+reported unchanged checkpoint source. These are runtime/UI checks, not
+physical calculator performance measurements.
+
+### Earlier checkpoint failures
+
 Short Clang 18 syntax checks of the production `app.cpp`, card-motion,
 health-motion, world-UI, debug and dedicated formation tests passed after
 these changes. The first debug build on stage 2 used GCC and stopped at
@@ -182,7 +208,8 @@ formation test caught a one-pixel regression at Slumbering Beetle's last
 marker caused by stage 4's intermediate source-pixel rounding. The live fix
 uses camera-scaled integer thousandths for both authored and computed points,
 with one final viewport division. All 24 scene transforms were checked against
-exact rational projection; the next frozen build must verify the whole catalog.
+exact rational projection; the final stage 5 catalog regression above verifies
+that correction.
 
 Regressions now cover first block entry/re-gain/restoration, generated-card
 preview and flight, state/RNG invariance, simultaneous status rows and expiry,

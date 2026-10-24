@@ -36,6 +36,11 @@ struct TopBarMotion {
 };
 static TopBarMotion top_bar_motions[3];
 }
+static void invalidate_hud_motion(){
+    // A new App can occupy the same address and reopen generation 1. Its
+    // session clock must never resume a prior holder's hover/unfocus tween.
+    for(auto&motion:top_bar_motions)motion=TopBarMotion{};
+}
 static bool hud_pointer_inside(const App&a,int x,int width){return a.pointer.visible&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&a.detail_card<0&&a.detail_item<0&&a.pointer.x>=x&&a.pointer.x<x+width&&a.pointer.y>=0&&a.pointer.y<22;}
 static void hud_navigation(Canvas&c,int index,int asset,int cx,int hit_x,int hit_width,Key key,bool enabled,bool opened){
     auto&a=c.a;const bool hover=enabled&&hud_pointer_inside(a,hit_x,hit_width);

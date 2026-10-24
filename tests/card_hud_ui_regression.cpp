@@ -2,6 +2,7 @@
 // app.cpp object when this test translation unit already provides it.
 #include "../src/app.cpp"
 #include "content_fixture.hpp"
+#include "inplace_reset.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -248,6 +249,27 @@ static void top_bar_large_rotation(){
     CHECK(top_bar_scaled(540000,4506)==594052&&top_bar_scaled(-540000,4506)==-594052);
     app.map_clock_ms=clock;
 }
+static void top_bar_session_lifecycle(const Bytes&data){
+    // The host may reconstruct App at the same address. Each source overload
+    // reopens Content at generation 1, as the independent WASM instances do.
+    for(bool source_overload:{false,true}){
+        const auto fresh=[&](){
+            reset_in_place(app);
+            CHECK(source_overload?app.init(ResourceSource::memory(data.data(),data.size()),{}):app.init(data.data(),data.size(),{}));
+            CHECK(app.content.generation()==1);new_run(app.game,701,true);app.title=false;app.map_clock_ms=2617;
+            clear();Canvas c{app};hud(c);
+        };
+        fresh();CHECK(top_bar_motions[1].angle==0&&top_bar_motions[1].scale==4096);
+        const std::vector<uint16_t> baseline(app.pixels,app.pixels+ScreenW*22);
+        Canvas c{app};app.map_clock_ms=3000;app.pointer.x=266;app.pointer.y=10;app.pointer.visible=true;hud(c);
+        app.map_clock_ms=3500;hud(c);CHECK(top_bar_motions[1].angle==-12000);
+        app.map_clock_ms=3617;app.pointer.visible=false;hud(c);
+        CHECK(top_bar_motions[1].state==0&&top_bar_motions[1].start==3617&&top_bar_motions[1].from_angle==-12000);
+        fresh();app.map_clock_ms=3617;clear();hud(c);
+        CHECK(top_bar_motions[1].angle==0&&top_bar_motions[1].scale==4096);
+        CHECK(!std::memcmp(baseline.data(),app.pixels,ScreenW*22*sizeof(uint16_t)));
+    }
+}
 static void character_confirm_art(){
     const int base=app.content.world_image("common","CONFIRM"),tick=app.content.world_image("common","CONFIRM_TICK");
     if(base<0||tick<0)return; // The synthetic profile has no original control atlas.
@@ -351,5 +373,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui6_screens();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

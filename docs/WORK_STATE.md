@@ -1,5 +1,35 @@
 # Work state — 2026-10-24
 
+## UI6 stage 6: reset HUD animation at session initialization
+
+Stage 5 (`c4431cc647b5b1710d23c877759f4f25cc6ca278`, tree
+`bd14706965cee55b3f3ac43a32297e0734ddeeba`) passed the complete ordinary
+77-suite run, both normal/debug portable builds, final actual card/potion
+checks and the corrected 612-check formation fixture. Its bilingual room
+backend comparison passed 9 scenarios / 539 frames / 23 saves per language.
+Full world comparison found ten frames with a residual deck-button tween;
+all 30 saves and the rest of each 649-frame sequence were identical.
+
+The actual cause was lifecycle state: a new native App can reuse the same
+Content address and generation 1, while a fresh WASM instance starts with
+empty static motion state. Both App::init overloads now explicitly reset the
+three top-bar motions. A same-address reconstruction test covers the old
+start timestamp and both overloads; the backend pixel checks remain strict.
+This correction adds no cache or per-frame work. Stage-5 mismatch journals
+remain failed, and stage-6 acceptance requires its own frozen rerun.
+
+The ordinary Firebird session has booted the stage-5 ARM launcher, read it
+back byte-for-byte over ordinary USB, reopened the remembered Chinese
+language, and confirmed the checked Fast Mode setting after exiting the old
+launcher and replacing it. The underlying 8-byte NSPF preference was also
+read back. This is emulator execution, not physical-device timing.
+
+Next: preserve this final lifecycle correction, verify its native/WASM/ARM
+outputs and the full affected backend matrices, then perform quiet serial
+performance comparison, final ordinary emulator/debug/browser acceptance,
+and package only matching resources/runtimes. The optional debug launcher
+remains separate and ordinary builds omit its commands.
+
 ## UI6 stage 5: close the final geometry and interaction regression gaps
 
 Stage 4 is preserved at `8c9270300aae0f479dadb216cfb37744e9c2b220`
