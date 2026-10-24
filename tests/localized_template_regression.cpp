@@ -94,6 +94,38 @@ static void thinky_dots(){
  CHECK(rich_thinky_offset(300,1)==-1&&rich_thinky_offset(500,1)==0);
 }
 static std::string rich_plain(const char*text){RichReader reader(text);RichChar ch{};std::string out;while(reader.next(ch)){CHECK(ch.codepoint<128);out+=char(ch.codepoint);}return out;}
+static void source_font_sizes(){
+ for(unsigned size:{18u,22u,28u}){
+  const auto text="[i][font_size="+std::to_string(size)+"]a[b]b[/b]c[/font_size][/i]d";
+  RichReader reader(text.c_str());RichChar ch{};
+  CHECK(reader.next(ch)&&ch.codepoint=='a'&&ch.style.italic&&!ch.style.bold&&ch.index==0);
+  CHECK(reader.next(ch)&&ch.codepoint=='b'&&ch.style.italic&&ch.style.bold&&ch.index==1);
+  CHECK(reader.next(ch)&&ch.codepoint=='c'&&ch.style.italic&&!ch.style.bold&&ch.index==2);
+  CHECK(reader.next(ch)&&ch.codepoint=='d'&&!ch.style.italic&&!ch.style.bold&&ch.index==3);CHECK(!reader.next(ch));
+ }
+ CHECK(rich_plain("[font_size=28][gold]a[font_size=22]b[/font_size]c[/gold][/font_size]d")=="abcd");
+ for(const char*text:{"[font_size]x[/font_size]","[font_size=]x[/font_size]","[font_size=-1]x[/font_size]",
+     "[font_size=22px]x[/font_size]","[font_size=0]x[/font_size]","[font_size=99999999999999999999]x[/font_size]",
+     "[font_size=22","[/font_size]","[/font_size=22]"})CHECK(rich_plain(text)==text);
+ CHECK(rich_plain("[font_size=22]a[font_size=bad]b[/font_size]c[/font_size]d")=="a[font_size=bad]b[/font_size]cd");
+ std::string deep;for(unsigned i=0;i<17;++i)deep+="[font_size=22]";deep+='x';for(unsigned i=0;i<17;++i)deep+="[/font_size]";
+ CHECK(rich_plain(deep.c_str())=="[font_size=22]x[/font_size]");
+}
+static void brackets_and_code(){
+ CHECK(rich_plain("[lb]Unknown[rb]")=="[Unknown]");
+ CHECK(rich_plain("[lb]gold[rb]X[lb]/gold[rb]")=="[gold]X[/gold]");
+ RichReader literal("[lb]gold[rb]X[lb]/gold[rb]");RichChar ch{};
+ while(literal.next(ch))CHECK(!ch.style.color);
+ RichReader reader("[i][code]a[gold]b[/gold]c[/code][/i]d");
+ CHECK(reader.next(ch)&&ch.codepoint=='a'&&ch.style.italic&&!ch.style.color&&ch.index==0);
+ CHECK(reader.next(ch)&&ch.codepoint=='b'&&ch.style.italic&&ch.style.color==1&&ch.index==1);
+ CHECK(reader.next(ch)&&ch.codepoint=='c'&&ch.style.italic&&!ch.style.color&&ch.index==2);
+ CHECK(reader.next(ch)&&ch.codepoint=='d'&&!ch.style.italic&&!ch.style.color&&ch.index==3);CHECK(!reader.next(ch));
+ for(const char*text:{"[lb text]","[/lb]","[rb", "[code x]a[/code]","[code=foo]a[/code]","[code","[/code]"})CHECK(rich_plain(text)==text);
+ CHECK(rich_plain("[code]a[code bad]b[/code]c[/code]d")=="a[code bad]b[/code]cd");
+ std::string deep;for(unsigned i=0;i<17;++i)deep+="[code]";deep+='x';for(unsigned i=0;i<17;++i)deep+="[/code]";
+ CHECK(rich_plain(deep.c_str())=="[code]x[/code]");
+}
 static void rainbow(){
  RichReader reader("x[sine][rainbow freq=0.3 sat=0.8 val=1]a[gold]b[/gold][rainbow speed=-1 sat=0]c[/rainbow]d[/rainbow][/sine]z");RichChar ch{};
  CHECK(reader.next(ch)&&ch.codepoint=='x'&&!ch.style.rainbow);
@@ -159,5 +191,6 @@ int main(){Context x;expect(x,"{N:diff()}","3");expect(x,"{IfUpgraded:show:up {N
  expect(x,"{WideScale}","0.9999");expect(x,"{WideRatio:percentMore()}","50");expect(x,"{WideMin:choose(-9223372036854775808|0):minimum|zero|other}","minimum");
  expect(x,"x{Empty}y","xy");expect(x,"{Missing:show:bad|also bad}","{Missing:show:bad|also bad}");expect(x,"{Missing}","{Missing}");expect(x,"{unclosed","{unclosed");
  for(unsigned size=0;size<16;size++){char b[24];std::memset(b,0x5a,sizeof b);LocalizedTemplate(b,size,resolve,&x).format("prefix{N:abs()}long suffix");CHECK((unsigned char)b[size]==0x5a);if(size)CHECK(std::memchr(b,0,size));}
- catalog_context();conditional_corpus();thinky_dots();rainbow();std::printf("localized templates: %u checks passed\n",checks);
+ expect(x,"{WideMin:n()}","-9,223,372,036,854,775,808");expect(x,"{WideMax:n()}","9,223,372,036,854,775,807");expect(x,"{WideRatio:n()}","1");expect(x,"{Low:n()}","0");expect(x,"{Missing:n()}","{Missing:n()}");
+ catalog_context();conditional_corpus();thinky_dots();source_font_sizes();brackets_and_code();rainbow();std::printf("localized templates: %u checks passed\n",checks);
 }

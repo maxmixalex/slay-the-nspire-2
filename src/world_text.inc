@@ -95,6 +95,13 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(x.table,"game_over_screen")&&s.world.active){
   if(wt_equal(name,"FloorCount"))return wt_number(s.world.total_floor);
   if(wt_equal(name,"AscensionLevel"))return wt_number(s.world.ascension);
+  const auto*r=a.game_over_run();if(r&&ui_run_score(*r).complete){
+   if(wt_equal(name,"GoldAmount"))return wt_number(r->gold_gained);
+   if(wt_equal(name,"EliteCount"))return wt_number(ui_run_score(*r).elites);
+   if(wt_equal(name,"BossCount"))return wt_number(ui_run_score(*r).bosses);
+   if(wt_equal(name,"PlayerDamage"))return wt_number(ui_run_score(*r).total);
+   if(wt_equal(name,"PersonalDamage"))return wt_number(a.progress.architect_damage);
+  }
  }
  if(wt_equal(name,"singleStarIcon"))return wt_string(InlineStarText);
  if(wt_equal(name,"energyPrefix"))return wt_number(1);

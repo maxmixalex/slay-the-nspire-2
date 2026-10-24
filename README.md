@@ -8,7 +8,29 @@ Native TI-Nspire Ndless adaptation of Slay the Spire 2. Reference: the owner's *
 
 The original three-act route now drives the playable world: Overgrowth or Underdocks, then Hive and Glory, with original regional room queues, encounters, events, ancients and saved map history. The five character/card/potion foundation is retained. There are **558 card models**, including the 61 appended event/curse dependencies, **64 potions**, a **297-model world relic registry** and **109 enemy IDs** including compatibility/display entries. Those are model counts, not a claim that every interaction has original-game differential coverage.
 
-### Current feedback work
+### Current UI8 feedback work
+
+UI8 replaces the retired startup language page, expedition setup and potion
+destination chooser with the original navigation and acquisition flow. The
+current source includes original-scale merchant/map composition, Standard /
+Custom / Daily setup, real two-bank key rebinding, source hand/orb/creature
+geometry, continuous loot/card selection, Crystal Sphere and Ancient dialogue,
+run history, profiles, credits, patch notes and local feedback export. The
+integrated candidate also repairs actual card typography, unavailable-size
+blank text and leaked rich-text markup, and implements solo score/badges and
+discoveries from observed run facts.
+
+The current source-to-UI ledger is
+[the UI8 source audit](docs/ui8-source-ui-audit-0.17.json). It distinguishes
+implemented behavior, unavailable historical facts, original hidden controls,
+scope exclusions and remaining visual differences. The path scan covers the
+supplied C# and scene inventory; it does not turn file or test counts into a
+restoration percentage. Module evidence is recorded in
+[rewards](docs/rewards-ui8-0.17.md),
+[modes and input](docs/ui8-input-and-modes-0.17.md),
+[powers](docs/power-order-ui8-0.17.md),
+[auxiliary screens](docs/auxiliary-ui8-0.17.md), and
+[performance/storage](docs/performance-ui8-0.17.md).
 
 The UI8 resource extension is **NSP2/28**. One launcher can use one shared
 art/animation file and either or both language files:
@@ -45,6 +67,8 @@ Image, glyph and string payloads are decoded when used. Whole-pack integrity
 hashing, integrity-only CRC and eager resource-wide validation are removed;
 the actual ranges and format rules required for decoding remain.
 
+### Historical UI3 measurements and delivery
+
 The historical UI3 title-glow hybrid resources total **81,100,703 bytes**, compared with
 93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
 keep their fast individual encoding; other retained animation images use bounded
@@ -57,7 +81,7 @@ measurements used the earlier b4f7ba0 candidate; the final title glow adds only
 [the retained storage measurements](docs/retained-storage-0.17.md) for the
 all-group comparison, cold-page tradeoffs and host-only timing limits.
 
-Current fixes include explicit event-option tooltips, contextual rich-text and
+The UI3 fixes included explicit event-option tooltips, contextual rich-text and
 template substitution, scaled card focus geometry, original energy/intent/banner
 composition, merchant body interaction and shop animations, and the original
 Proceed artwork. Combat selections now wait for their effect cue, and intent
@@ -78,7 +102,8 @@ Exact coverage and remaining gaps are recorded in
 [rendering-performance-0.17.md](docs/rendering-performance-0.17.md).
 The merchant's finite six-second flame samples and remaining GPU particles are
 described in [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). The title's
-separate background GPU stars and fog are also not implemented.
+separate background stars and fog were added later as bounded CPU effects;
+full original GPU turbulence is still a visual difference.
 Original UI fidelity is the first priority; neither overall 95% acceptance nor
 physical calculator FPS has been established.
 

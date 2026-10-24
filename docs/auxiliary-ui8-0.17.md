@@ -1,9 +1,13 @@
 # Original auxiliary screens and bounded text
 
 Pinned reference: **v0.111.0 / 41cef1ea**. This document distinguishes
-implemented source behavior from executed acceptance. The stage 5 runtime
-has passed short C++/Python/JavaScript syntax checks; its immutable full build,
-actual resource conversion and bilingual capture review remain pending.
+implemented source behavior from executed acceptance. Stage 5 compiled all
+native targets and passed 91 of 96 suites; its five failures are retained in
+the journal. The auxiliary input correction was frozen in stage 5c
+(`44b4999659121ef6418e58c7711e2eb110f5b16a`), whose focused native gate and
+actual English/Chinese auxiliary gates both passed. Notes, credits and
+feedback captures were reviewed individually. The later Latin-wrap and
+BBCode corrections still require stage 6 execution.
 
 ## Working entry points
 
@@ -98,7 +102,7 @@ not turn VS16 into a question mark, perform a glyph read for it, or add a
 visible-character reveal slot. The offline converter reports these controls
 separately and refuses a replacement with uncovered newly localized glyphs.
 
-The resource tail is **2013 auxiliary entries**. The 17 auxiliary-screen
+The stage 5c resource tail is **2013 auxiliary entries**. The 17 auxiliary-screen
 images occupy 1996–2012, including the shared original keyboard keycap at
 2012. The 147 new localized entries use existing reserved slots 8507–8653;
 the total 8704-string contract does not grow. Image pixels, original fonts,
@@ -114,14 +118,25 @@ game saves. It can use a synthetic public pack or the actual private pack
 and emit screenshots. The Ndless profile suite now exercises the exact
 report writer, short writes, rename rollback and profile isolation.
 
-The font generator's nine synthetic tests passed in 0.243 seconds, including
+The font generator's nine synthetic tests passed, including
 fallback priority, auxiliary-only sizes and format-control exclusion. C++
 format-control tests additionally assert zero reads/advance and no visible
-replacement glyph. These test additions do not certify the new runtime
-until the next frozen native/actual-resource gate is executed.
+replacement glyph. The stage 5c native and actual-resource gates exercised
+these paths successfully. Their receipts are `ui8-stage5c-aux-native-8f1713345d71`,
+`ui8-stage5c-aux-eng-0396553cd68d` and `ui8-stage5c-aux-zhs-d5fd7bfee33b`.
 
 The stage 5 native run exposed a real input-order defect: after switching an
 article, a wheel event before the next rendered frame used an unconfigured
 scroll range and was lost. Layout is now measured once when an article is
 opened or changed, before accepting scroll input. The existing no-render
 between next-article and wheel regression is retained.
+
+Actual Chinese captures also exposed English fallback articles breaking
+Latin words at individual letters. Patch-note measurement and painting now
+use word-aware wrapping irrespective of the selected UI language. This is
+the original rich-text wrapping behavior, and leaves the stored article
+bytes unchanged. A separate excluded benchmark target measures seven actual
+auxiliary scenes, stationary render time, provider reads, whole-frame hashes
+and canonical-save preservation. Its first measured run awaits the next
+immutable runtime checkpoint; no rendering speedup is asserted from its
+existence.

@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "content_fixture.hpp"
+#include "rich_text.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -20,6 +21,14 @@ static void settle(unsigned frames=20){for(unsigned i=0;i<frames;++i){app.advanc
 static HitRegion find(HitKind kind,int value=-1){for(unsigned i=0;i<unsigned(app.hit_count);++i)if(app.hits[i].kind==kind&&(value<0||app.hits[i].value==value))return app.hits[i];return {};}
 static void click(HitRegion hit){CHECK(hit.kind!=HitKind::None);app.pointer_move(hit.x+hit.w/2,hit.y+hit.h/2);app.pointer_button(true);app.pointer_button(false);app.render();}
 static void capture(const char*folder,const char*name){if(!folder)return;std::string path=std::string(folder)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto pixel:app.pixels){const unsigned char rgb[3]={static_cast<unsigned char>((pixel>>11)*255/31),static_cast<unsigned char>(((pixel>>5)&63)*255/63),static_cast<unsigned char>((pixel&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
+static void original_unknown_labels(){
+ for(const char*key:{"LOCKED.monsterName","UNSEEN.monsterName"}){
+  const char*text=app.content.world_string("bestiary",key);CHECK(std::strstr(text,"[lb]")&&std::strstr(text,"[rb]"));
+  RichReader reader(text);RichChar ch{};unsigned count=0,left=0,right=0;uint32_t first=0,last=0;
+  while(reader.next(ch)){if(!count)first=ch.codepoint;last=ch.codepoint;++count;left+=ch.codepoint=='[';right+=ch.codepoint==']';}
+  CHECK(count>2&&first=='['&&last==']'&&left==1&&right==1);
+ }
+}
 static void ordered_catalog(){
  new_run(app.game,0x41cef1ea,false,Character::Ironclad);app.title=true;app.reset_presentation();
  clear_ui_progress(app.progress);app.progress_loaded=true;app.progress.discovered_acts=15;CHECK(save(app.game,before));
@@ -90,5 +99,5 @@ static void flow(const char*folder){
 }
 int main(int argc,char**argv){
  std::vector<uint8_t> pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.init(pack.data(),pack.size(),{}));}
- ordered_catalog();flow(argc>2?argv[2]:nullptr);std::printf("bestiary UI7: %u checks passed\n",checks);
+ if(argc>1)original_unknown_labels();ordered_catalog();flow(argc>2?argv[2]:nullptr);std::printf("bestiary UI7: %u checks passed\n",checks);
 }

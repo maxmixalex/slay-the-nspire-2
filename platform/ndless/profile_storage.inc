@@ -59,7 +59,8 @@ static bool store_profile_selector(unsigned profile){
 }
 static bool profile_info(unsigned profile,spire::UiProgressSummary&out){
     out={};if(profile<1||profile>spire::UiProfileCount)return false;
-    uint8_t*progress_bytes=spire::resource_transfer_bytes();
+    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Bytes);if(!transfer)return false;
+    uint8_t*progress_bytes=transfer.bytes();
     char path[512];
     const unsigned candidates[]={3,5};for(unsigned index:candidates){if(!profile_sibling(path,profile_files[index],profile))return false;
         void*f=nd_open(path,"rb");if(!f)continue;

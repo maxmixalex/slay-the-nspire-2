@@ -18,6 +18,23 @@ struct UiFloorHistory {
     uint32_t entered_seconds=0,seconds=0,gold_gained=0;
     uint16_t floor=0,encounter=0,hp=0,max_hp=0,gold=0,turns=0;
     uint8_t act=0,region=0,point=255,room=0,event=0;
+    // These fill the former three padding bytes; no per-floor allocation.
+    // facts: bit 0 observes the complete point, bit 1 records unblocked HP
+    // loss, upper bits count completed Boss rooms at this same map point.
+    // The source A10 second boss shares its point's DamageTaken statistic.
+    uint8_t map_type=0,rest_choices=0,facts=0;
+};
+struct UiRunFacts {
+    uint32_t shop_spent=0;
+    uint16_t elite_rooms=0,boss_rooms=0,perfect_bosses=0;
+    uint8_t version=0,complete=0,last_room=0,last_battle_room=0,combo=0;
+};
+struct UiRunDiscoveries {
+    // NRunSummary lists only the first ten titles per category, in discovery
+    // order. Global collection bits already deduplicate each observation.
+    uint16_t count[4]{},first[4][10]{};
+    void add(unsigned category,unsigned model){if(category>=4)return;const unsigned n=count[category];
+        if(n<10)first[category][n]=uint16_t(model);if(n<UINT16_MAX)++count[category];}
 };
 struct UiRunHistory {
     uint64_t run_seed=0;
@@ -34,6 +51,7 @@ struct UiRunHistory {
     EventDeckSnapshot deck[MaxDeck]{};
     uint16_t relics[WorldRelicCapacity]{};
     UiFloorHistory floors[UiHistoryFloors]{};
+    UiRunFacts facts{};
 };
 struct UiProgress {
     uint32_t next_serial=1;
@@ -51,6 +69,8 @@ struct UiProgress {
     // Source ProgressSaveManager adds each completed run's knockouts. The
     // current run retains its own counter in State, including saved deaths.
     uint32_t test_subject_kills=0;
+    UiRunDiscoveries current_discoveries{};
+    uint32_t architect_damage=0;
 };
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);

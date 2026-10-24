@@ -56,6 +56,36 @@ Stage2's card-HUD suite passed, including full save invariants; later hand
 geometry and layer changes require the next immutable gate and actual
 bilingual screenshots. This is implementation evidence, not95% acceptance.
 
+## UI8 native card fonts and available size bands
+
+Review of the actual stage5 captures exposed oversized card text: every small
+face still used an8px minimum and an11px type plaque, leaving descriptions
+only one visible line. The pinned `card.tscn` uses a300×422 frame, regular26
+for the title, regular21 with a12 minimum for the body, bold16 for the type,
+bold32 for energy and bold22 for stars. `NCard.UpdateTypePlaqueSizeAndPosition`
+expands the centered plaque to the actual label width plus17 source pixels.
+The updated renderer projects these sizes with each card, retains a native5px
+small-screen floor and preserves the complete136-source-pixel body rectangle.
+The type label uses the source black color and actual bold face. Energy/star
+centering and cache bounds use their corresponding fonts. Legacy packs without
+native small glyphs keep their available8px path.
+
+Five-pixel glyphs are rasterized from the real fonts for the core alphabet and
+explicit bold labels; article-only alphabets stay at8/10px. The game-over quote
+face receives only its own five-pixel quote/character-name alphabet. Generic Canvas text entry points now
+select actual resident size bands before both layout and paint, preventing
+missing11px/9px/7px requests from being mistaken for zero-width fitting text.
+Availability is lazily determined from resident sorted metadata and reused;
+there is no glyph-payload read or resource-wide startup scan.
+
+Short syntax checks passed for the application, content reader and card HUD.
+The focused card-presentation executable passed 3,989 checks, including a
+two-line native-five-pixel description that retains every character. All nine
+font-conversion tests passed. The broader font-style regression adds actual
+band selection, nonzero fitted pixels, no additional provider reads, and
+generation invalidation; its new cases still require the frozen native gate.
+The next matching actual-font captures are required before visual acceptance.
+
 ## Checkpoint 9 implementation and evidence
 
 Checkpoint 8 (`e378d4a20b5a2a43a419efad513ba6aed135840a`) built successfully

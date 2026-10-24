@@ -1,6 +1,7 @@
 #include "app.hpp"
 #include "world_run.hpp"
 #include "power_strip_layout.hpp"
+#include "ui_core_observer.hpp"
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -76,7 +77,10 @@ static void actual_power_order(){
  CHECK(a.combat_power_counter(power_token(0,monologue))&&a.combat_power_amount(power_token(0,monologue),true)==applied+3);
  // Real invisible wrapper, independent orb and pet controls do not create
  // duplicate on-creature power icons. Every visible instance gets a hit.
- effect(XOp::DPower,int(DPower::HyperbeamFocus),2);effect(XOp::Summon,5);a.render();
+ // Hyperbeam applies the temporary Focus wrapper through DFocus, which also
+ // updates the matching Focus balance. Raw DPower would leave an invalid
+ // cross-field fixture that cannot arise from the original card command.
+ effect(XOp::DFocus,-2,3);effect(XOp::Summon,5);a.render();
  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}CHECK(!a.combat_preparation.active);
  CHECK(hit(HitKind::PowerInstance,int(power_token(0,panache)))&&hit(HitKind::PowerInstance,int(power_token(0,panache,1))));
  CHECK(!hit(HitKind::BattleStatus,44)&&!hit(HitKind::BattleStatus,45)&&!hit(HitKind::BattleStatus,46));
@@ -103,6 +107,33 @@ static void delayed_order_and_layout(){
  const auto small=PowerStripLayout::make(10,140,47,3,12);CHECK(small.columns==4&&small.rows==1&&small.left==10&&small.width==36);
  const auto large=PowerStripLayout::make(10,140,47,11,12);CHECK(large.columns==6&&large.rows==2&&large.left==-2&&large.width==72);
  CHECK(large.x(5)==58&&large.y(5)==140&&large.x(6)==-2&&large.y(6)==152&&large.y(10)==152);
+}
+static void retained_victory_powers(){
+ scenario="live victory retains power nodes while canonical models clear";
+ const unsigned loop=DefectStatusStart+unsigned(DPower::Loop),panache=18+unsigned(XPower::Panache);
+ for(unsigned playback=0;playback<2;++playback){
+  start();effect(XOp::DPower,int(DPower::Loop),2);effect(XOp::Power,int(XPower::Panache),10);
+  a.game.expansion.panache_count[0]=3;CHECK(save(a.game,saved));CHECK(load(restored,saved.bytes,saved.size));
+  for(unsigned i=0;i<restored.enemy_count;++i){damage_unpowered(restored,int(i),9999);resolve_pending(restored);}
+  CHECK(save(restored,again));
+  {UiCoreObserver observer(a);if(playback)a.begin_combat_feedback();
+   for(unsigned i=0;i<a.game.enemy_count;++i){damage_unpowered(a.game,int(i),9999);resolve_pending(a.game);}}
+  CHECK(a.game.phase==Phase::Reward&&a.combat_powers_frozen());
+  CHECK(status_amount(a.game,0,loop)==0&&status_amount(a.game,0,panache)==0);
+  CHECK(save(a.game,saved)&&saved.size==again.size&&!std::memcmp(saved.bytes,again.bytes,saved.size));
+  a.animation+=10000;a.sync_combat_feedback();CHECK(!a.combat_feedback.active);
+  CHECK(a.combat_status_amount(0,loop)==2&&a.combat_power_amount(power_token(0,panache))==10);
+  CHECK(a.combat_power_amount(power_token(0,panache),true)==2);
+  uint16_t tokens[MaxPlayerPowerEntries]{};const unsigned n=a.combat_power_entries(0,tokens,MaxPlayerPowerEntries);
+  CHECK(n==2&&tokens[0]==power_token(0,loop)&&tokens[1]==power_token(0,panache));
+  // A saved Reward room contains the cleaned simulation. Loading it does
+  // not manufacture vanished powers from another live presentation.
+  CHECK(load(a.game,saved.bytes,saved.size));a.reset_presentation();CHECK(!a.combat_powers_frozen());
+  CHECK(!a.combat_status_amount(0,loop)&&!a.combat_power_entries(0,nullptr,0));
+  start();CHECK(!a.combat_powers_frozen());effect(XOp::DPower,int(DPower::Loop),1);
+  a.begin_combat_feedback();CHECK(!a.combat_powers_frozen()&&a.combat_status_amount(0,loop)==1);
+ }
+ a.reset_presentation();
 }
 static void word(uint8_t*b,size_t at,unsigned value){for(unsigned i=0;i<4;++i)b[at+i]=uint8_t(value>>(8*i));}
 static void migration(){
@@ -141,6 +172,9 @@ static void test_subject(){
   CHECK(a.progress.test_subject_kills==previous+2);a.finish_progress(true);CHECK(a.progress.test_subject_kills==previous+2);
  }
  a.progress.map_drawing.seed=1;a.progress.map_drawing.serial=1;a.progress.map_drawing.act=0;a.progress.map_drawing.count=1;a.progress.map_drawing.points[0].x=10;a.progress.map_drawing.points[0].y_flags=20|0x8000;
+ // Isolate the NSH5 migration prefix. NSH6's independently tested observed
+ // score/discovery tail is absent from a historical NSH5 fixture.
+ a.progress.current.facts={};for(auto&r:a.progress.history)r.facts={};a.progress.current_discoveries={};a.progress.architect_damage=0;
  const size_t n=encode_ui_progress(a.progress,progress_bytes,sizeof progress_bytes);CHECK(n&&progress_bytes[3]=='5');
  CHECK(decode_ui_progress(progress_bytes,n,decoded)&&decoded.test_subject_kills==29&&decoded.map_drawing.count==1);
  UiProgressSummary summary;CHECK(decode_ui_progress_summary(progress_bytes,n,summary)&&summary.exists);
@@ -150,6 +184,6 @@ static void test_subject(){
  progress_bytes[3]='5';word(progress_bytes,4,unsigned(n-4));CHECK(!decode_ui_progress(progress_bytes,n-4,decoded));
 }
 int main(int argc,char**argv){std::vector<uint8_t> bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());CHECK(!std::fclose(f));CHECK(a.init(bytes.data(),bytes.size(),{}));}
- actual_power_order();delayed_order_and_layout();migration();test_subject();
+ actual_power_order();delayed_order_and_layout();migration();test_subject();retained_victory_powers();
  std::printf("Power order: %u checks; actual multi-family applications, seven instance types, visibility, effect-time order, v15/v16/v17 migration, TestSubject run/profile persistence. State=%zu order=%zu CombatStatus=%zu\n",checks,sizeof(State),sizeof(PowerOrderState),sizeof(CombatStatus));
 }

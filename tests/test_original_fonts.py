@@ -120,13 +120,14 @@ class OriginalFontTest(unittest.TestCase):
         before = tiles.PackView(original, 1, versions=(28,))
         cp, off, px, w, h, advance, enc = before.glyphs[0]
         regular = (cp, px, w, h, advance, enc, bytes(before.block(off, enc or w*h)))
-        rows = [regular, (cp, 6 | 32, 2, 1, 2, 0, b'\xff\x00'),
+        rows = [regular, (cp, 5, 1, 1, 1, 0, b'\xff'), (cp, 5 | 32 | 64, 1, 1, 1, 0, b'\x80'),
+                (cp, 6 | 32, 2, 1, 2, 0, b'\xff\x00'),
                 (cp, 14 | 32 | 64, 2, 1, 2, 0, b'\x00\xff')]
         result, _ = fonts.replace(bytes(original), 'eng', rows)
         profile = split_content.layout(result, 'eng')
-        self.assertEqual(profile['glyphs'], 3)
+        self.assertEqual(profile['glyphs'], 5)
         decoded = tiles.PackView(result, 1, versions=(28,))
-        self.assertEqual({row[2] for row in decoded.glyphs}, {px, 38, 110})
+        self.assertEqual({row[2] for row in decoded.glyphs}, {px, 5, 101, 38, 110})
 
     def test_complete_article_alphabet_uses_its_actual_reader_sizes(self):
         class SyntheticFace:
@@ -142,6 +143,7 @@ class OriginalFontTest(unittest.TestCase):
         self.assertEqual(article,{(8,0),(10,0),(8,1),(10,1)})
         self.assertEqual(report['missing_regular_codepoints'],[])
         self.assertEqual(report['auxiliary_only_codepoints'],[ord('甲')])
+        self.assertIn((65,5),{(row[0],row[1]) for row in rows})
 
     def test_ordered_fallbacks_cover_each_real_character_without_format_glyphs(self):
         class SyntheticFace:
@@ -157,7 +159,7 @@ class OriginalFontTest(unittest.TestCase):
         rows,receipt=fonts.generate(source,[primary,None,None,None],[latin,emoji,symbols])
         by_cp={cp:{(size,raw) for glyph_cp,size,_w,_h,_advance,_encoded,raw in rows if glyph_cp==cp}
                for cp in (65,287,0x1f642,0x279d,0xfe0f)}
-        self.assertEqual(by_cp[65],{(6,b'\x0a'),(8,b'\x0a')})
+        self.assertEqual(by_cp[65],{(5,b'\x0a'),(6,b'\x0a'),(8,b'\x0a')})
         self.assertEqual(by_cp[287],{(8,b'\x14'),(10,b'\x14')})
         self.assertEqual(by_cp[0x1f642],{(8,b'\x1e'),(10,b'\x1e')})
         self.assertEqual(by_cp[0x279d],{(8,b'\x28'),(10,b'\x28')})

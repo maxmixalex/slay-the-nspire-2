@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "rich_text.hpp"
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
@@ -55,6 +56,7 @@ static std::vector<uint8_t> synthetic_profile(){
    strings[row.index]="EVENT_READER_TEXT ";for(unsigned i=0;i<40;i++)strings[row.index]+="visible rules and saved choices ";
   }
   if(key=="ancients.PROCEED.title"||key=="events.PROCEED.title")strings[row.index]="PROCEED";
+  if(key=="ancients.DARV.talk.IRONCLAD.2-1.char")strings[row.index]="[i][font_size=22]Character reply.[/font_size][/i]";
  }
  for(unsigned i=0;i<ContentStrings;i++){put(b,stringdir+i*8,unsigned(b.size()));put(b,stringdir+i*8+4,unsigned(strings[i].size()));b.insert(b.end(),strings[i].begin(),strings[i].end());b.push_back(0);}
  for(unsigned i=0;i<AnimationKinds;i++){put(b,clipdir+i*16+4,1,2);put(b,clipdir+i*16+6,33,2);}
@@ -153,7 +155,11 @@ static void ancient_original_modulation(){
   {OriginalEventId::Orobas,1,.05,0,.1,.35},{OriginalEventId::Pael,1,.03,.08,0,.75},
   {OriginalEventId::Tezcatara,1,.08,.04,0,.75},{OriginalEventId::Vakuu,2,.05,.06,.12,.8}};
  for(const auto&entry:originals){
-  begin(entry.id,0x71ef23,entry.act);a.cursor=0;snapshot();a.render();unchanged();
+  begin(entry.id,0x71ef23,entry.act);a.cursor=0;
+  // Park the pointer outside every option. Some legitimate first-offer
+  // mechanic tooltips (Tanx in this seed) overlap the third row when keyboard
+  // focus is active; this assertion measures its button's own RGBA surface.
+  a.pointer_move(318,23);a.pointer_move(319,23);snapshot();a.render();unchanged();
   Picture background=a.content.image(a.content.world_image("events",original_event_key(entry.id)));
   CHECK(background.pixels&&!background.alpha&&!background.palette&&background.w==2&&background.h==2);
   const unsigned at=3*2;const uint16_t back=uint16_t(background.pixels[at]|unsigned(background.pixels[at+1])<<8);
@@ -210,6 +216,8 @@ static void ancient_conversation(bool synthetic){
  CHECK(!std::strcmp(d.keys[1],"DARV.talk.IRONCLAD.2-1.char")&&(d.character_lines&2));
  CHECK(!choice_count());snapshot();advance_ms(1600);capture("ancient-dialogue-visit4-first");unchanged();
  a.input(Key::Confirm);a.render();CHECK(d.current==1&&!choice_count());advance_ms(1000);
+ char response[1024]{};a.ancient_dialogue_text(1,response,sizeof response);RichReader response_reader(response);RichChar response_char{};unsigned response_count=0;
+ while(response_reader.next(response_char)){CHECK(response_char.codepoint!='['&&response_char.codepoint!=']'&&response_char.style.italic);++response_count;}CHECK(response_count);
  capture("ancient-dialogue-character-response");unchanged();reader(false);
  a.pointer_move(305,170);const auto*next=a.hit_at(305,170);CHECK(next&&next->kind==HitKind::AncientDialogueNext);
  a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;a.render();CHECK(d.current==2&&d.last());

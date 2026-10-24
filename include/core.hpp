@@ -271,12 +271,15 @@ struct CoreObserver {
     // One notification per newly created combat identity, including summons.
     // UI statistics must count instances without changing spawned_models.
     void(*on_enemy_spawned)(void*,const State&,unsigned,uint16_t)=nullptr;
+    void(*on_run_fact)(void*,const State&,unsigned,unsigned)=nullptr;
 };
+enum class CoreRunFact : uint8_t { ShopGoldSpent,RestChoice };
 CoreObserver set_core_observer(CoreObserver);
 void notify_enemy_animation(const State&,int slot,const char* trigger);
 void notify_power_flash(const State&,int receiver,const char* key);
 void notify_deck_removing(const State&,int index);
 void notify_enemy_spawned(const State&,unsigned model,uint16_t identity);
+void notify_run_fact(const State&,CoreRunFact,unsigned value);
 void record(State&,LogKind,int a=0,int b=0);
 void create_map(State&);
 void finish_room(State&);

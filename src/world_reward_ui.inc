@@ -7,6 +7,11 @@ static void native_reward_window(Canvas&c,int dy){
  const char*title=c.a.content.world_string("gameplay_ui","COMBAT_REWARD_HEADER_LOOT");
  native_reward_header(c,*title?title:"战利品",57+dy);
 }
+static int native_reward_label_size(const App&a){
+ // RewardButton's source label is 24px, projected to 5px. Historical packs
+ // without the new native glyph size retain a real available font face.
+ return a.content.glyph_metrics('?',5).w?5:a.content.glyph_metrics('?',6).w?6:8;
+}
 static void native_reward_row(Canvas&c,int y,bool selected){
  Canvas button=c;button.brightness=uint8_t(div255(button.brightness*(selected?255:204)));
  button.ui(U_RewardButton,122,y,77,16);
@@ -43,7 +48,7 @@ static void native_reward_screen(Canvas&c){
  UiAction actions[6];int count=ui_reward_actions(s,actions);a.cursor=mn(mx(0,a.cursor),count-1);
  Canvas panel=c;panel.opacity=uint8_t(div255(panel.opacity*window.alpha));const int dy=window.y;
  native_reward_window(panel,dy);
- Canvas rows=native_reward_list_layer(panel,dy);
+ Canvas rows=native_reward_list_layer(panel,dy);const int label_size=native_reward_label_size(a);
  for(int i=0;i<count-1;i++){const int y=88+RewardPresentation::row_offset(unsigned(i))-a.reward_presentation.list_scroll.offset()+dy;
   if(!native_reward_row_visible(y,dy))continue;
   UiAction action=actions[i];int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0,&c.a.content};
@@ -57,7 +62,7 @@ static void native_reward_screen(Canvas&c){
   }
   const bool selected=a.pointer.visible?a.pointer.x>=120&&a.pointer.x<201&&a.pointer.y>=y-1&&a.pointer.y<y+17:a.cursor==i;
   const int local=y-82-dy;native_reward_row(rows,local,selected);rows.picture(image,125,local+3,11,11);
-  rows.fitted(text,138,local,59,16,6,6,selected?Gold:rgb(255,246,226),true,false,true,false);
+  rows.fitted(text,138,local+1,60,15,label_size,label_size,selected?Gold:rgb(255,246,226),true,false,true,false);
   native_reward_row_hit(c,y,dy,HitKind::UiAction,int(action));
  }
  native_reward_scrollbar(panel,dy);

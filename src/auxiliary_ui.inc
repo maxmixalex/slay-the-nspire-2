@@ -29,7 +29,7 @@ static void auxiliary_date(uint32_t date,char*out,unsigned capacity){
 }
 static void auxiliary_notes_screen(Canvas&c){
  auto&a=c.a;auto&v=a.auxiliary;title_background(c);title_logo(c);c.dim(0,0,320,240,210);a.hit_count=0;
- Canvas layer=c;layer.opacity=uint8_t(auxiliary_alpha(a));layer.bold_face=5;const auto&note=AuxiliaryNotes[v.note];
+ Canvas layer=c;layer.opacity=uint8_t(auxiliary_alpha(a));layer.bold_face=5;layer.wrap_latin_words=true;const auto&note=AuxiliaryNotes[v.note];
  auxiliary_measure_note(a);
  const int offset=v.scroll.offset();char date[48]{};auxiliary_date(note.date,date,sizeof date);
  layer.text_fitted(date,68,8-offset,184,10,Gold,8,true,true);

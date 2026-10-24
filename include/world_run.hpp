@@ -32,6 +32,9 @@ unsigned world_card_reward_alternatives(const State&);
 bool world_take_card_reward_alternative(State&,unsigned alternative_bit);
 bool world_valid_run(const State&);
 bool world_room_is_combat(const State&);
+// Presentation may retain existing power nodes at this original lifecycle
+// boundary; the effect still clears the canonical combat models normally.
+bool world_effect_clears_combat_powers(Effect);
 unsigned world_available_points(const State&, uint8_t* out, unsigned capacity);
 const char* world_region_key(const State&);
 bool world_refresh_map_modifiers(State&);

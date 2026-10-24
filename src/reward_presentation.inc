@@ -44,7 +44,12 @@ void App::sync_card_reward_presentation(){
   const bool relic=game.phase==Phase::WorldRelicChoice;
   for(unsigned i=0;i<count;++i)mix(relic?game.world_relics.offers[ids[i]]:game.original_events.offers[ids[i]]);
   mix(relic?game.world_relics.choice_reward:game.original_events.reward_active);
-  mix(game.revision); // RefreshOptions, including consecutive identical Draft offers.
+  // RefreshOptions has its own offer/reward progress. Unrelated potion or
+  // relic changes can bump State::revision without reopening this overlay.
+  mix(game.run_options.draft_remaining);mix(game.run_options.neow_current);
+  if(relic){mix(game.world_relics.choice_owner);if(game.world_relics.choice_reward)mix(game.world_relics.rewards[game.world_relics.choice_reward-1].flags);}
+  else{mix(game.original_events.step_cursor);mix(unsigned(game.original_events.values[14]));
+   if(game.original_events.reward_current<game.original_events.reward_count)mix(game.original_events.rewards[game.original_events.reward_current].flags);}
  }
  if(m.observe(true,key,count,map_clock_ms))cursor=int(count/2);
 }

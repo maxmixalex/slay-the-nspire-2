@@ -35,7 +35,7 @@ static void native_potion_reward_screen(Canvas&c){
  native_reward_backdrop(layer);native_reward_window(layer,window.y);
  const int y=88+window.y;const bool selected=a.pointer.visible?a.pointer.x>=120&&a.pointer.x<201&&a.pointer.y>=y-1&&a.pointer.y<y+17:true;
  native_reward_row(layer,y,selected);layer.picture(a.content.potion_image(bottle),125,y+3,11,11);
- layer.bold_face=5;layer.fitted(potion_name(int(bottle),&a.content),138,y,59,16,6,6,selected?Gold:rgb(255,246,226),true,false,true,false);
+ const int label_size=native_reward_label_size(a);layer.bold_face=5;layer.fitted(potion_name(int(bottle),&a.content),138,y+1,60,15,label_size,label_size,selected?Gold:rgb(255,246,226),true,false,true,false);
  native_reward_row_hit(c,y,window.y,HitKind::WorldChoice,0,potion_definition(bottle));
  const bool skip=a.world_choice_min()==0;
  native_proceed(c,209,211,103,27,native_reward_text(a,"gameplay_ui","CHOOSE_CARD_SKIP_BUTTON","跳过"),skip);

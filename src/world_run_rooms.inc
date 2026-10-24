@@ -170,12 +170,12 @@ static bool world_buy_priced(State&s,int item,bool free){
     if(item<ShopCardCount){
         if(s.deck_count>=MaxDeck)return false;
         if(event_add_deck_card(s,s.world.shop_cards[item],&s.world.shop_facts[item])<0)return false;
-        s.gold-=int16_t(price);record(s,LogKind::Buy,s.shop_cards[item]);
+        s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));record(s,LogKind::Buy,s.shop_cards[item]);
     }else if(item<ShopPotionStart){
         s.world.shop_pending_item=uint8_t(item);s.world.shop_pending_price=int16_t(price);
-        s.gold-=int16_t(price);if(!gain_world_relic(s,s.world.shop_relics[item-ShopRelicStart]))return false;
+        s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));if(!gain_world_relic(s,s.world.shop_relics[item-ShopRelicStart]))return false;
     }else{
-        if(!procure_potion(s,Potion(s.shop_potions[item-ShopPotionStart])))return false;s.gold-=int16_t(price);
+        if(!procure_potion(s,Potion(s.shop_potions[item-ShopPotionStart])))return false;s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));
     }
     s.world.shop_pending_item=uint8_t(item);s.world.shop_pending_price=int16_t(price);
     // Acquiring a relic can suspend for a selection or a nested reward set.

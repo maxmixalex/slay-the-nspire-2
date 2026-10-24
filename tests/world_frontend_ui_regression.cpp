@@ -417,6 +417,15 @@ static void modal_isolation_and_fast_mode(){
   CHECK(!std::strcmp(a.content.world_string("settings_ui","TAB_GENERAL"),a.content.string(FrontendSettingsGeneralString)));
   CHECK(!std::strcmp(a.content.world_string("settings_ui","TAB_INPUT"),a.content.string(FrontendSettingsInputString)));
  }
+ // Labels must paint actual glyphs, including packs whose raster-size table
+ // has no 11px entry. Only the text changes colour on keyboard focus here;
+ // comparing its own rectangle catches the previous invisible-label bug.
+ a.pointer.visible=false;a.settings_item=0;a.render();
+ uint16_t fast_label[182*11]{};
+ for(unsigned y=0;y<11;++y)for(unsigned x=0;x<182;++x)fast_label[y*182+x]=a.pixels[(123+y)*ScreenW+29+x];
+ a.settings_item=2;a.render();unsigned focused_label_pixels=0;
+ for(unsigned y=0;y<11;++y)for(unsigned x=0;x<182;++x)focused_label_pixels+=fast_label[y*182+x]!=a.pixels[(123+y)*ScreenW+29+x];
+ CHECK(focused_label_pixels>8);a.settings_item=0;unchanged();
  capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
  a.pointer_move(input.x+input.w/2,input.y+input.h/2);a.render();CHECK(a.settings_tab==0);unchanged();
  a.pointer_button(true);CHECK(a.settings_tab==0);a.pointer_button(false);CHECK(a.settings_tab==1&&a.settings_item==0);a.pointer.visible=false;capture("settings-input");unchanged();

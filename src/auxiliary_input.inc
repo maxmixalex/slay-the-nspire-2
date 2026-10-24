@@ -15,7 +15,7 @@ static void auxiliary_reveal_caret(App&a){
 }
 static void auxiliary_measure_note(App&a){
  auto&v=a.auxiliary;if(v.screen!=AuxiliaryScreen::PatchNotes||v.measured_note==int(v.note))return;
- Canvas measure{a};measure.bold_face=5;const auto&note=AuxiliaryNotes[v.note];int total=0;
+ Canvas measure{a};measure.bold_face=5;measure.wrap_latin_words=true;const auto&note=AuxiliaryNotes[v.note];int total=0;
  for(unsigned i=0;i<note.chunks;++i){const char*body=a.content.string(note.text+i);
   int lines=*body?measure.paragraph(body,0,0,184,0,0,8):0;unsigned length=0;while(body[length])++length;
   if(i+1<note.chunks&&length&&body[length-1]=='\n'&&lines)--lines;

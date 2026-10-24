@@ -51,9 +51,21 @@ static int ui_combat_status_fact(const State&s,int fact){
  const unsigned card=s.enemy_world.models[slot].captured_card;
  return card&&card<=s.card_count?card_token(s.cards[card-1]):-1;
 }
+bool App::combat_powers_frozen()const{
+ const auto&v=combat_status;const auto&s=game;
+ return v.powers_frozen&&v.visual_seed==s.seed&&v.visual_floor==s.floor&&
+  v.visual_combat==s.world.combat_count&&v.visual_encounter==int(s.enemy_world.encounter);
+}
+static bool ui_power_fact(int fact){
+ // These belong to independent resource controls rather than NPower nodes.
+ if(fact==CombatStatus::StarsGained||fact==CombatStatus::OstyMax||fact==CombatStatus::OstyAttacks||
+    fact==CombatStatus::OrbSlots||fact==CombatStatus::OrbCount)return false;
+ return fact<CombatStatus::OrbKind||fact>=CombatStatus::CapturedCard;
+}
 int App::combat_status_amount(int actor,int id,bool label)const{
  if(actor<0||actor>MaxEnemies||id<0||id>=StatusKinds)return 0;
- const auto value=ui_feedback_bound(*this)?combat_status.shown[actor*StatusKinds+id]:ui_combat_status_value(game,actor,id);
+ const bool retained=combat_powers_frozen()&&id!=44&&id!=45&&id!=46;
+ const auto value=ui_feedback_bound(*this)||retained?combat_status.shown[actor*StatusKinds+id]:ui_combat_status_value(game,actor,id);
  if(label&&id==RegentStatusStart+int(RPower::Monologue)){int applied=0;for(int i=0;i<MaxPowerInstances;++i)applied+=combat_status_fact(CombatStatus::MonologueApplied,i);return applied;}
  if(label&&id==EnemyStatusStart+int(EnemyPower::Slow))return value.auxiliary*10;
  if(label&&id==EnemyStatusStart+int(EnemyPower::WitheringPresence))return value.auxiliary;
@@ -67,18 +79,18 @@ bool App::combat_status_counter(int actor,int id)const{
 }
 int App::combat_status_auxiliary(int actor,int power)const{
  if(actor<0||actor>MaxEnemies||power<0||power>=EnemyPowerCount)return 0;
- return ui_feedback_bound(*this)?combat_status.shown[actor*StatusKinds+EnemyStatusStart+power].auxiliary:
+ return ui_feedback_bound(*this)||combat_powers_frozen()?combat_status.shown[actor*StatusKinds+EnemyStatusStart+power].auxiliary:
   ui_combat_status_value(game,actor,EnemyStatusStart+power).auxiliary;
 }
 EnemyId App::combat_status_source(int actor,int power)const{
  if(actor<0||actor>MaxEnemies||power<0||power>=EnemyPowerCount)return EnemyId::Count;
- const unsigned source=ui_feedback_bound(*this)?combat_status.shown[actor*StatusKinds+EnemyStatusStart+power].source:
+ const unsigned source=ui_feedback_bound(*this)||combat_powers_frozen()?combat_status.shown[actor*StatusKinds+EnemyStatusStart+power].source:
   ui_combat_status_value(game,actor,EnemyStatusStart+power).source;
  return source?EnemyId(source-1):EnemyId::Count;
 }
 int App::combat_status_fact(int fact,int slot)const{
  fact+=slot;if(fact<0||fact>=CombatStatus::Facts)return 0;
- return ui_feedback_bound(*this)?combat_status.shown[CombatStatus::FactBase+fact].amount:ui_combat_status_fact(game,fact);
+ return ui_feedback_bound(*this)||(combat_powers_frozen()&&ui_power_fact(fact))?combat_status.shown[CombatStatus::FactBase+fact].amount:ui_combat_status_fact(game,fact);
 }
 int App::combat_statuses(int actor,int*out)const{
  if(actor<0||actor>MaxEnemies)return 0;
@@ -110,7 +122,8 @@ bool App::combat_power_counter(uint16_t token)const{
 }
 unsigned App::combat_power_entries(int actor,uint16_t*out,unsigned capacity)const{
  if(actor<0||actor>MaxEnemies)return 0;
- const auto&order=ui_feedback_bound(*this)?combat_status.shown_order:game.power_sequence;
+ const bool retained=ui_feedback_bound(*this)||combat_powers_frozen();
+ const auto&order=retained?combat_status.shown_order:game.power_sequence;
  bool seen[StatusKinds]{};uint16_t instances[InstancedPowerFamilies]{};unsigned count=0;
  const auto append=[&](uint16_t token){const unsigned id=power_id(token),slot=power_instance(token);
   if(power_instanced(id)){const unsigned family=power_instance_family(id);const uint16_t bit=uint16_t(1)<<slot;if(instances[family]&bit)return;instances[family]|=bit;}
@@ -123,14 +136,14 @@ unsigned App::combat_power_entries(int actor,uint16_t*out,unsigned capacity)cons
  // that every live token is already in the persistent ordered prefix.
  for(unsigned id=0;id<StatusKinds;++id){if(id==44||id==45||id==46)continue;
   if(power_instanced(id)){if(!actor)for(unsigned slot=0;slot<MaxPowerInstances;++slot){const auto token=power_token(0,id,slot);if(combat_power_amount(token))append(token);}}
-  else{const auto value=ui_feedback_bound(*this)?combat_status.shown[actor*StatusKinds+id]:ui_combat_status_value(game,actor,int(id));if(value.visible)append(power_token(unsigned(actor),id));}
+  else{const auto value=retained?combat_status.shown[actor*StatusKinds+id]:ui_combat_status_value(game,actor,int(id));if(value.visible)append(power_token(unsigned(actor),id));}
  }
  return count;
 }
 static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
  auto&view=a.combat_status;const auto&s=a.game;
  if(initial){
-  view.reset();
+  view.reset();view.powers_frozen=false;
   if(view.visual_seed!=s.seed||view.visual_floor!=s.floor||view.visual_combat!=s.world.combat_count||view.visual_encounter!=int(s.enemy_world.encounter)){
    view.reset_visuals();view.visual_seed=s.seed;view.visual_floor=s.floor;view.visual_combat=s.world.combat_count;view.visual_encounter=int(s.enemy_world.encounter);view.star_tick=a.map_clock_ms;
   }
@@ -141,6 +154,7 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
  unsigned actors=initial?CombatStatus::Actors:unsigned(s.enemy_count)+1;
  if(actors>CombatStatus::Actors)actors=CombatStatus::Actors;
  for(unsigned actor=0;actor<actors;++actor)for(int id=0;id<StatusKinds;++id){
+  if(a.combat_powers_frozen()&&id!=44&&id!=45&&id!=46)continue;
   const unsigned cell=actor*StatusKinds+id;const auto value=ui_combat_status_value(s,int(actor),id);
   if(initial)view.shown[cell]=view.observed[cell]=value;
   else{
@@ -162,8 +176,18 @@ static void ui_capture_combat_status(App&a,uint32_t at,bool initial=false){
   }
  }
  for(unsigned fact=0;fact<CombatStatus::Facts;++fact){const unsigned cell=CombatStatus::FactBase+fact;
+  if(a.combat_powers_frozen()&&ui_power_fact(int(fact)))continue;
   const CombatStatus::Value value{ui_combat_status_fact(s,int(fact)),0,0,0};
   if(initial)view.shown[cell]=view.observed[cell]=value;else view.append(cell,value,at);
  }
- view.capture_order(s.power_sequence,at,initial);
+ if(!a.combat_powers_frozen())view.capture_order(s.power_sequence,at,initial);
+}
+static void ui_freeze_combat_powers(App&a){
+ if(a.combat_powers_frozen())return;
+ const bool bound=ui_feedback_bound(a);
+ ui_capture_combat_status(a,bound?a.combat_feedback.effect_at:a.animation,!bound);
+ // Original NPowerContainer.Remove refuses to remove its existing nodes
+ // after CombatManager.IsInProgress becomes false. Reuse the observed
+ // values/order; independent orb, star and Osty controls keep updating.
+ a.combat_status.powers_frozen=true;
 }

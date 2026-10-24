@@ -2,6 +2,10 @@ static int min(int a,int b){return a<b?a:b;}
 static int max(int a,int b){return a>b?a:b;}
 static CoreObserver core_observer{};
 CoreObserver set_core_observer(CoreObserver observer){CoreObserver previous=core_observer;core_observer=observer;return previous;}
+void notify_run_fact(const State&s,CoreRunFact kind,unsigned value){
+    const CoreObserver observer=core_observer;
+    if(observer.on_run_fact)observer.on_run_fact(observer.context,s,unsigned(kind),value);
+}
 void notify_enemy_spawned(const State&s,unsigned model,uint16_t identity){
     const CoreObserver observer=core_observer;
     if(observer.on_enemy_spawned)observer.on_enemy_spawned(observer.context,s,model,identity);

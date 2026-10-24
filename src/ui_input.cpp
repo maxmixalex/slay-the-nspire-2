@@ -163,6 +163,7 @@ void App::ui_action(UiAction action){
         if(game_over_available()&&!game_over_summary){game_over_summary=true;pointer_cancel();}break;
     case UiAction::GameOverMainMenu:
         if(game_over_available()&&game_over_summary){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}break;
+    case UiAction::GameOverViewRun:open_game_over_history();break;
     case UiAction::LeaveCamp:
         camp_input(Key::EndTurn);break;
     case UiAction::TreasureOpen:case UiAction::TreasureTake:case UiAction::TreasureLeave:

@@ -160,7 +160,7 @@ bool remove_card(State&s,int index){
         if(has_run_modifier(s,RunModifier::Hoarder))return false;
         if(index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s,s.deck[index],index)||(s.shop_sold&(1U<<ShopRemove)))return false;
         int price=s.world.shop_free_remove?0:remove_price(s);if(s.gold<price||!event_remove_deck_card(s,index))return false;
-        s.gold-=int16_t(price);s.shop_sold|=1U<<ShopRemove;if(s.removals<255)++s.removals;s.phase=Phase::Shop;
+        s.gold-=int16_t(price);notify_run_fact(s,CoreRunFact::ShopGoldSpent,unsigned(price));s.shop_sold|=1U<<ShopRemove;if(s.removals<255)++s.removals;s.phase=Phase::Shop;
         s.world.shop_free_remove=0;
         world_relic_hook(s,WorldRelicHook::AfterItemPurchased,ShopRemove,price);++s.revision;return true;
     }

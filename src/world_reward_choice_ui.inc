@@ -14,7 +14,7 @@ static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count)
  const auto window=a.reward_presentation.window(a.map_clock_ms);const int dy=window.y;
  Canvas panel=c;panel.opacity=uint8_t(div255(panel.opacity*window.alpha));
  native_reward_backdrop(panel);native_reward_window(panel,dy);
- Canvas rows=native_reward_list_layer(panel,dy);
+ Canvas rows=native_reward_list_layer(panel,dy);const int label_size=native_reward_label_size(a);
  for(unsigned i=first;i<count&&i<first+7;i++){
   const unsigned at=ids[i];unsigned kind,model,amount;const EventCardFacts*facts=nullptr;
   if(relic){const auto&r=s.world_relics.rewards[s.world_relics.offers[at]];
@@ -36,7 +36,7 @@ static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count)
   else if(kind==5)b.text(a.content.card_string(card_from_token(model).kind));
   else if(kind==6)b.text(native_reward_text(a,"gameplay_ui","COMBAT_REWARD_CARD_REMOVAL","移除一张牌"));
   else b.text(native_reward_text(a,"gameplay_ui","COMBAT_REWARD_ADD_CARD","选择一张牌"));
-  rows.fitted(name,138,local,59,16,6,6,selected?Gold:rgb(255,246,226),true,false,true,false);
+  rows.fitted(name,138,local+1,60,15,label_size,label_size,selected?Gold:rgb(255,246,226),true,false,true,false);
   native_reward_row_hit(c,y,dy,HitKind::WorldChoice,int(at));
  }
  native_reward_scrollbar(panel,dy);

@@ -83,6 +83,8 @@ class Content {
     ResourceReader reader_{};
     mutable bool io_good_=true;
     uint32_t generation_=0;
+    mutable uint32_t font_sizes_[8]{},font_size_generation_=0;
+    mutable uint8_t font_sizes_known_=0;
     // Decoded page costs learned on demand or supplied by the v20 directory.
     // The optional table uses the existing directory tail, never another pool.
     uint8_t* image_pages_{};
@@ -109,6 +111,9 @@ public:
     static constexpr unsigned image_page_bytes(){return 4096;}
     static constexpr unsigned image_capacity_pages(){return 748;}
     static constexpr unsigned image_capacity_entries(){return 320;}
+    // Select a real resident font band before layout. This never loads a
+    // glyph or scans the resource payload; sparse legacy faces fall back.
+    int font_size(int preferred,unsigned style=0,bool at_most=false)const;
     Glyph glyph(uint32_t cp,int size,unsigned style=0)const;
     // Layout uses the resident descriptor only. Measuring a label must not
     // decode/read glyph pixels or evict the glyphs about to be painted.
@@ -318,6 +323,9 @@ struct App {
     void sync_progress();
     void progress_time(uint32_t);
     void observe_progress_log(Log);
+    void observe_progress_effect(const State&);
+    void observe_progress_damage(const State&,const CoreDamageResult&);
+    void observe_run_fact(const State&,unsigned,unsigned);
     void discover_potion(Potion);
     void discover_card(CardKind);
     void discover_relic(RelicId);
@@ -364,9 +372,14 @@ struct App {
     bool practice_entry=false;
     bool run_settings=false,run_seed_editing=false;
     uint8_t character_control=0;
-    bool game_over_summary=false;
+    bool game_over_summary=false,history_from_game_over=false;
+    int8_t game_over_focus=-1;
     bool game_over_available()const;
     bool game_over_input(Key);
+    const UiRunHistory* game_over_run()const;
+    void open_game_over_history();
+    void game_over_quote(char*,unsigned)const;
+    void game_over_detail(int,char*,unsigned,char*,unsigned)const;
     // Room animation clocks describe presentation only. Reloading an opened
     // chest shows its final pose without repeating any reward operation.
     // 0 restored, 1 awaiting extra rewards, 2 opening, 3 closing, 4 closing
@@ -592,6 +605,7 @@ struct App {
     CombatCardMotion::Counts combat_pile_counts()const;
     void sync_combat_cards();
     int combat_status_amount(int actor,int id,bool label=false)const;
+    bool combat_powers_frozen()const;
     bool combat_status_counter(int actor,int id)const;
     int combat_status_auxiliary(int actor,int power)const;
     unsigned combat_power_entries(int actor,uint16_t*out,unsigned capacity)const;

@@ -23,6 +23,8 @@
 #include "fitted_text.hpp"
 #include "inplace_reset.hpp"
 #include "map_drawing_raster.hpp"
+#include "run_score.hpp"
+#include "game_over_ui.hpp"
 #if SPIRE_DEBUG_COMMANDS
 #include "debug_commands.hpp"
 #endif

@@ -227,6 +227,250 @@
     {
       "source": "重置设置",
       "eng": "Reset Settings"
+    },
+    {
+      "source": "Enter 应用  Esc 取消",
+      "eng": "Enter: apply  Esc: cancel"
+    },
+    {
+      "source": "{Id}号存档",
+      "eng": "Profile {Id}"
+    },
+    {
+      "source": "{Id}号存档内的所有数据将被删除。这一操作无法逆转。",
+      "eng": "All data in profile {Id} will be deleted. This cannot be undone."
+    },
+    {
+      "source": "你的感受：",
+      "eng": "How do you feel?"
+    },
+    {
+      "source": "删除存档",
+      "eng": "Delete Profile"
+    },
+    {
+      "source": "制作名单",
+      "eng": "Credits"
+    },
+    {
+      "source": "历史记录保存失败，请重试",
+      "eng": "History could not be saved. Please try again."
+    },
+    {
+      "source": "反馈",
+      "eng": "Feedback"
+    },
+    {
+      "source": "反馈分类：",
+      "eng": "Feedback category:"
+    },
+    {
+      "source": "发送反馈",
+      "eng": "Send Feedback"
+    },
+    {
+      "source": "取消 / 退出",
+      "eng": "Cancel / Back"
+    },
+    {
+      "source": "向上",
+      "eng": "Up"
+    },
+    {
+      "source": "向下",
+      "eng": "Down"
+    },
+    {
+      "source": "向右",
+      "eng": "Right"
+    },
+    {
+      "source": "向左",
+      "eng": "Left"
+    },
+    {
+      "source": "在设置 > 输入中更改按键",
+      "eng": "Change keys in Settings > Input"
+    },
+    {
+      "source": "地图标记已满，请先清空后继续绘制。",
+      "eng": "The map drawing is full. Clear it to continue drawing."
+    },
+    {
+      "source": "存档{Id}",
+      "eng": "Profile {Id}"
+    },
+    {
+      "source": "导出",
+      "eng": "Export"
+    },
+    {
+      "source": "导出失败，草稿已保留。",
+      "eng": "Export failed. Your draft has been kept."
+    },
+    {
+      "source": "将文本报告保存到此设备。",
+      "eng": "Save the text report to this device."
+    },
+    {
+      "source": "恢复默认",
+      "eng": "Reset to Default"
+    },
+    {
+      "source": "打开",
+      "eng": "Open"
+    },
+    {
+      "source": "报告已导出到本地。",
+      "eng": "The report has been exported to this device."
+    },
+    {
+      "source": "指令",
+      "eng": "Command"
+    },
+    {
+      "source": "挑战使用本机 UTC 日期。",
+      "eng": "The challenge uses this device's UTC date."
+    },
+    {
+      "source": "无法开始游戏",
+      "eng": "Unable to start the run"
+    },
+    {
+      "source": "无法更换存档档案，请重试",
+      "eng": "Unable to switch profiles. Please try again."
+    },
+    {
+      "source": "无法更新存档档案，请重试",
+      "eng": "Unable to update the profile. Please try again."
+    },
+    {
+      "source": "是否删除{Id}号存档？",
+      "eng": "Delete profile {Id}?"
+    },
+    {
+      "source": "本地反馈报告",
+      "eng": "Local Feedback Report"
+    },
+    {
+      "source": "查看",
+      "eng": "View"
+    },
+    {
+      "source": "查看地图",
+      "eng": "View Map"
+    },
+    {
+      "source": "查看弃牌堆",
+      "eng": "View Discard Pile"
+    },
+    {
+      "source": "查看战斗",
+      "eng": "View Combat"
+    },
+    {
+      "source": "查看抽牌堆",
+      "eng": "View Draw Pile"
+    },
+    {
+      "source": "查看本局",
+      "eng": "View Run"
+    },
+    {
+      "source": "查看消耗堆 / 下一页",
+      "eng": "View Exhaust Pile / Next Page"
+    },
+    {
+      "source": "查看牌组 / 上一页",
+      "eng": "View Deck / Previous Page"
+    },
+    {
+      "source": "查看详情",
+      "eng": "Inspect"
+    },
+    {
+      "source": "点击编辑",
+      "eng": "Click to edit"
+    },
+    {
+      "source": "献祭",
+      "eng": "Sacrifice"
+    },
+    {
+      "source": "离线时无法连接排行榜。",
+      "eng": "Leaderboards are unavailable offline."
+    },
+    {
+      "source": "空存档",
+      "eng": "Empty Profile"
+    },
+    {
+      "source": "等待输入……",
+      "eng": "Waiting for input..."
+    },
+    {
+      "source": "纯键盘",
+      "eng": "Keyboard-Only"
+    },
+    {
+      "source": "输入不超过8000字的反馈。",
+      "eng": "Enter feedback of up to 8,000 characters."
+    },
+    {
+      "source": "选择",
+      "eng": "Select"
+    },
+    {
+      "source": "选择一个存档进行游玩！",
+      "eng": "Choose a profile to play!"
+    },
+    {
+      "source": "顶部面板",
+      "eng": "Top Bar"
+    },
+    {
+      "source": "鼠标与键盘",
+      "eng": "Mouse + Keyboard"
+    },
+    {
+      "source": "选择卡牌 1",
+      "eng": "Select Card 1"
+    },
+    {
+      "source": "选择卡牌 2",
+      "eng": "Select Card 2"
+    },
+    {
+      "source": "选择卡牌 3",
+      "eng": "Select Card 3"
+    },
+    {
+      "source": "选择卡牌 4",
+      "eng": "Select Card 4"
+    },
+    {
+      "source": "选择卡牌 5",
+      "eng": "Select Card 5"
+    },
+    {
+      "source": "选择卡牌 6",
+      "eng": "Select Card 6"
+    },
+    {
+      "source": "选择卡牌 7",
+      "eng": "Select Card 7"
+    },
+    {
+      "source": "选择卡牌 8",
+      "eng": "Select Card 8"
+    },
+    {
+      "source": "选择卡牌 9",
+      "eng": "Select Card 9"
+    },
+    {
+      "source": "选择卡牌 10",
+      "eng": "Select Card 10"
     }
   ]
 }

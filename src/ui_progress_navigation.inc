@@ -1,4 +1,5 @@
 void App::open_compendium(){
+    history_from_game_over=false;
     const unsigned parent=library?unsigned(library_tab):statistics_open?4:history_open?5:bestiary.open?3:0;
     compendium_open=true;statistics_open=history_open=library=false;bestiary.open=false;
     detail_card=detail_item=-1;compendium_selection=uint8_t(parent);progress_page_started=map_clock_ms;
@@ -10,6 +11,7 @@ void App::open_statistics(){
 }
 void App::open_history(){
     if(!progress.count)return;
+    history_from_game_over=false;
     compendium_open=true;compendium_selection=5;history_open=true;statistics_open=library=false;history_index=0;history_selected=-1;
     progress_page_started=map_clock_ms;progress_page_scroll.reset();history_presentation.open(map_clock_ms);pointer_cancel();
 }
@@ -22,7 +24,7 @@ void App::history_select(int direction){
 bool App::progress_navigation_input(Key key){
     if(library||bestiary.open||detail_card>=0||detail_item>=0)return false;
     if(statistics_open||history_open){
-        if(key==Key::Back||key==Key::Collection){statistics_open=history_open=false;pointer_cancel();return true;}
+        if(key==Key::Back||key==Key::Collection){statistics_open=history_open=false;if(history_from_game_over){history_from_game_over=false;compendium_open=false;}pointer_cancel();return true;}
         if(history_open&&(key==Key::Up||key==Key::Down||key==Key::Left||key==Key::Right||key==Key::Confirm)){
             const auto*r=history_at(history_index);if(!r)return true;
             uint16_t indices[MaxDeck]{};const unsigned groups=ui_history_groups(*r,indices);

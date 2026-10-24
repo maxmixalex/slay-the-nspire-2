@@ -9,13 +9,14 @@ struct UiCoreObserver {
  RewardAcquisitionSnapshot acquisition;
  static void receive(void* context,const State&s,Log log){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_core(s,log);}
  static void receive_animation(void* context,const State&s,int slot,const char*trigger){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_enemy_animation(s,slot,trigger);}
- static void receive_effect(void* context,const State&s,Effect effect){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_combat_effect(s,effect);}
+ static void receive_effect(void* context,const State&s,Effect effect){auto*a=static_cast<App*>(context);if(&s==&a->game){a->observe_combat_effect(s,effect);a->observe_progress_effect(s);}}
  static void before_effect(void* context,const State&s,Effect effect){auto*a=static_cast<App*>(context);if(&s==&a->game)a->before_combat_effect(s,effect);}
- static void receive_damage(void*context,const State&s,const CoreDamageResult&result){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_combat_damage(s,result);}
+ static void receive_damage(void*context,const State&s,const CoreDamageResult&result){auto*a=static_cast<App*>(context);if(&s==&a->game){a->observe_combat_damage(s,result);a->observe_progress_damage(s,result);}}
  static void receive_power_flash(void*context,const State&s,int receiver,const char*key){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_power_flash(s,receiver,key);}
  static void receive_deck_removing(void*context,const State&s,int index){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_deck_removing(s,index);}
  static void receive_enemy_spawned(void*context,const State&s,unsigned model,uint16_t identity){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_enemy_spawned(s,model,identity);}
- explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned})),was_combat(combat_phase(a.game.phase)),
+ static void receive_run_fact(void*context,const State&s,unsigned kind,unsigned value){auto*a=static_cast<App*>(context);if(&s==&a->game)a->observe_run_fact(s,kind,value);}
+ explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned,receive_run_fact})),was_combat(combat_phase(a.game.phase)),
   room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open),acquisition(a.reward_acquisition_snapshot()){app.sync_combat_feedback();app.sync_enemy_feedback();}
  ~UiCoreObserver(){
   set_core_observer(previous);app.finish_combat_feedback();app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();app.sync_camp_presentation();

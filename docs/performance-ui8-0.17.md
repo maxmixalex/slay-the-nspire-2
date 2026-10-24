@@ -80,6 +80,42 @@ alpha comparisons in `canvas_fast_path_regression` passed. This preserves
 sampling and clipping, including the recovered scaled-clip work; it does not
 lower image quality or discard animation frames.
 
+## Shared serialization and resource-transfer storage
+
+The stage-six candidate removes the separate **200,368-byte State staging
+array** used by the state codec. The existing 617,323-byte encoded-resource
+capacity can also hold a `SaveData` prefix followed by aligned State storage;
+the union adds at most alignment padding, not a second large allocation.
+Image, retained-group and tile-group cache capacities remain unchanged.
+The resulting whole-launcher saving must be measured after the next ARM link.
+
+Every user of this storage now holds a bounded foreground lease:
+
+| Caller | Lifetime and overlap |
+| --- | --- |
+| Ndless save/load | A Save lease covers reading/writing and atomic rename; one codec can use its disjoint State suffix. |
+| Ndless history and profile summaries | An exclusive Bytes lease covers the entire read/decode or encode/write operation, including backup fallback. |
+| Cold pictures and coalesced image preparation | An exclusive Bytes lease covers all range callbacks, decoding and publication; tiled images retain it across their index and tile groups. |
+| X11 and browser save/load | Their existing host buffers remain independent; a codec borrows the shared State suffix only for its synchronous call. |
+| Browser history/preferences/feedback handoff | Existing staging remains separate because JavaScript may consume it after the WebAssembly call returns. |
+
+A nested codec or cold image request cannot overwrite active encoded or save
+bytes. A busy image request returns an empty, retryable view without declaring
+the resource corrupt; already published decoded pictures remain readable.
+Every return path releases its lease. The codec constructs a fresh State
+lifetime after an image/history overwrite, preserving nonzero defaults in
+historical saves. It still replaces the caller's State only after full decode
+and validation. The save format, file atomicity and legacy acceptance are
+unchanged; this is not a thread-safe API or an asynchronous lifetime extension.
+
+The new regression cases invoke nested saves, loads and cold-image requests
+from a real range-reader callback after encoded data was copied; check retained
+pixels, untouched output buffers and live state; exercise failed I/O recovery;
+verify prefix/suffix separation during Ndless-style save/load; and overwrite
+the entire transfer union between historical codec operations. Native and ARM
+syntax checks passed. Executing these candidate regressions and the final
+linked budget remains the stage-six checkpoint gate.
+
 ## Crystal coordinate work and actual resource measurements
 
 The stage-four ARM disassembly shows software integer division inside the
@@ -91,16 +127,29 @@ This removes **1,902 coordinate divisions per two-layer frame** and the former
 1,280-byte local axis arrays. The two unsigned 64-bit clock phase calculations
 are also shared by the layers. Pixel colors, polar/noise lookup, coverage,
 border blending, cell timing and the number of rendered frames are unchanged.
-The final linked allocation and stack reduction still require the next ARM
-build; constant-table size alone is not the final executable cost.
+The actual stage-five ARM shader body is **2,080 bytes**, down from 2,864;
+its total local stack use is **400 bytes**, down from 1,648. No software
+division helper call remains in that shader body. The four linked tables
+occupy exactly 2,536 bytes. These changes preserve the formula; they do not
+by themselves establish a frame-rate improvement.
 
 `crystal_shader_regression` compares the axes against independent floor-based
 arithmetic and the clock phases against 128-bit arithmetic. With an actual
 resource pack, it compares the complete 320×240 buffers after each of both
 layers over 192 clock/coverage/opacity cases, including 32-bit clock wrap, then
-times the preserved stage-four software shader against the candidate. These
-new stage-five tests are **prepared but not yet executed** at this source
-checkpoint. Their reference is the preceding port renderer, not Godot.
+times the preserved stage-four software shader against the candidate. Frozen
+stage-five binaries with actual stage-five-c English and Chinese font/resource
+packs passed **7,439 checks per locale**, including all **384 whole-frame
+layer comparisons per locale**. Their reference is the preceding port renderer,
+not Godot. The two successful receipts are
+`ui8-crystal-shader-real-eng-c69aa843cf6b.json` and
+`ui8-crystal-shader-real-zhs-e6e9e9bd42d6.json`.
+
+The single, unpaced shared-host timing pair for 360 two-layer renders was
+133.023 → 139.595 ms in English and 141.428 → 144.103 ms in Chinese. The
+candidate was slightly slower in these host observations; no native speedup
+is claimed. The measured ARM stack/text reductions and removal of software
+division are separate evidence from a future actual calculator profile.
 
 An executed stage-four-b actual-English-pack `card_grid_benchmark` run found
 zero resource reads during 180 warm frames for the 16-card Ironclad library,
@@ -121,8 +170,10 @@ intervals, checks the canonical state is unchanged, and optionally writes
 PPM captures outside the measured intervals. Scene setup uses production
 controllers with explicit fixture outcomes for unrelated routing rooms; it
 does not certify a whole run or count a diagnostic as completed gameplay.
-Execution and inspection of this new driver remain pending the stage-five
-source checkpoint and matching resources.
+The first baseline execution exposed a fixture that forced `Phase::Map` while
+an original event room was still open. The candidate now keeps that actual
+room beneath the map, using the normal overlay contract. Successful execution
+and inspection of the corrected driver remain the stage-six gate.
 
 ## Actual lossless recompression
 
@@ -209,6 +260,25 @@ are `ui8-arm-stage4-ed45b31b1f29.json`,
 `ui8-arm-stage4-division-f40b85211cd0.json` and
 `ui8-arm-stage4-codec-075d0d9c3b10.json`; each reports unchanged frozen source.
 
+Stage five, `41c8875812712a469e19577c7fcd3426722839c9`, also linked and
+packaged successfully: **1,300,556-byte launcher**, **16,724,676-byte
+allocation**, **52,540 bytes** below the unchanged 16 MiB limit. The actual
+ELF SHA-256 is
+`d759a5fc4b69c20d0753e99d160ee0c3760b3cd994ba1a0ddb3680b587018175`.
+All 12,880 linked division vectors and 42 LZMA2 vectors passed again.
+Receipts: `ui8-arm-stage5-space-retry-1b7b51ef9a05.json`,
+`ui8-arm-stage5-division-ab1e65f5ee47.json` and
+`ui8-arm-stage5-codec-b5ca1a9e1a22.json`. The tight remaining budget motivates
+the actual shared-staging change above rather than shrinking image caches.
+
+The initial stage-five ARM/native builds and font writes were interrupted by
+the workspace becoming full. Their failed/incomplete journals and logs remain
+intact, with an additional interruption-classification receipt. Only explicitly
+approved, reproducible older build directories were removed, after preserving
+their CMake/Ninja/test records; the latest stage-four-b and stage-five builds,
+all source snapshots and all original inputs were retained. The ARM retry used
+the same immutable source. A failed first run is not counted as a pass.
+
 The initial GCC 13 map-driver build encountered an internal compiler error in
 the unchanged baseline and the candidate at the same aggregate reset. The
 actual comparison therefore uses Clang 18 for both sides. One stage-two
@@ -223,7 +293,7 @@ no emulator memory was injected. This preparation does **not** establish that
 the new UI8 launcher has run; that requires the final ARM binary and matching
 private resource set.
 
-The stage-four allocation is an actual checkpoint result. The final linked
+The stage-five allocation is an actual checkpoint result. The final linked
 ARM allocation must still be measured after later UI8 features are integrated.
 The map workspace saving
 provides room for features such as bounded map drawing, but it is not a

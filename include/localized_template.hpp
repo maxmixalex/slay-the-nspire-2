@@ -30,6 +30,16 @@ class LocalizedTemplate {
   remainder=uint32_t(r);return q;
  }
  void unsigned_integer(uint64_t u){char digits[24];unsigned n=0;do{uint32_t rem;u=divide(u,10,rem);digits[n++]=char('0'+rem);}while(u);while(n)ch(digits[--n]);}
+ void locale_integer(LocalizedValue v){
+  // LocaleNumberFormatter defaults to N0. Both shipped cultures group in
+  // threes, with midpoint-to-even rounding.
+  uint32_t remainder;const uint32_t scale=v.scale?v.scale:1;
+  uint64_t number=divide(magnitude(v.number),scale,remainder);
+  if(uint64_t(remainder)*2>scale||(uint64_t(remainder)*2==scale&&(number&1)))++number;
+  if(v.number<0&&number)ch('-');char digits[24];unsigned n=0;
+  do{uint32_t rem;number=divide(number,10,rem);digits[n++]=char('0'+rem);}while(number);
+  while(n){ch(digits[--n]);if(n&&n%3==0)ch(',');}
+ }
  void integer(int64_t v){if(v<0)ch('-');unsigned_integer(magnitude(v));}
  void value(LocalizedValue v,bool absolute=false){
   if(v.text){text(v.text);return;}unsigned scale=v.scale?v.scale:1;
@@ -86,6 +96,7 @@ class LocalizedTemplate {
   if(!v.known){ch('{');text(p,n);ch('}');return;}
   const char*fmt=p+colon+1;size_t fn=n-colon-1,second=split(fmt,fn,':');
   const char*body=second<fn?fmt+second+1:nullptr;size_t bn=second<fn?fn-second-1:0;
+  if(same(fmt,fn,"n()")&&!v.text){locale_integer(v);return;}
   if(same(fmt,second,"show")){branch(body,bn,v.known&&(v.text?*v.text!=0:v.number!=0)?0:1,v,depth);return;}
   if(same(fmt,second,"plural")){branch(body,bn,v.number==int64_t(v.scale?v.scale:1)?0:1,v,depth);return;}
   if(second>=8&&same(fmt,7,"choose(")&&fmt[second-1]==')'){

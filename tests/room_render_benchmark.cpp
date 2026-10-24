@@ -78,14 +78,13 @@ bool setup(unsigned scene){
  }else if(scene!=5){
   if(!finish_fixture_room())return false;
   if(scene==2){
-   app.game.phase=Phase::Map;
    if(!gain_world_relic(app.game,WorldRelicGlassEye))return false;
    const uint16_t selected=0;if(!world_relic_select(app.game,&selected,1)||app.game.world_relics.choice!=WorldRelicChoice::OfferCard)return false;
   }else if(scene==3||scene==4){
    if(!original_event_begin(app.game,OriginalEventId::CrystalSphere,31,1))return false;app.game.gold=250;
    if(!original_event_choose(app.game,1))return false;
    if(scene==4&&!original_event_crystal_click(app.game,5,5))return false;
-  }else app.game.phase=Phase::Map;
+  }
  }
  app.title=app.paused=app.help=app.library=app.character_select=app.run_settings=false;
  app.animation=app.map_clock_ms=app.tick_remainder=0;

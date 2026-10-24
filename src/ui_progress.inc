@@ -5,6 +5,18 @@ static bool progress_matches(const UiRunHistory&r,const State&s){
         r.character==unsigned(s.character)&&r.ascension==s.world.ascension&&r.start_region==s.world.rooms[0].region&&
         r.mode==unsigned(s.run_options.mode)&&r.modifiers==s.run_options.modifiers&&r.daily_day==s.run_options.daily_day;
 }
+static UiFloorHistory* progress_observe_floor(App&a,const State&s){
+    auto&r=a.progress.current;if(!progress_matches(r,s)||r.outcome||!s.world.room_open)return nullptr;
+    if(r.floor_count){auto&last=r.floors[r.floor_count-1];if(last.act==s.world.act_index&&last.point==s.world.current_point)return &last;}
+    if(r.floor_count==UiHistoryFloors){r.partial=1;r.facts.complete=0;return nullptr;}
+    const bool complete=r.floor_count||!r.partial;
+    auto&f=r.floors[r.floor_count++];f={};f.floor=s.world.total_floor;f.act=s.world.act_index;
+    f.region=s.world.rooms[s.world.act_index].region;f.point=s.world.current_point;f.room=s.world.event_combat_parent?s.world.parent_room_type:s.world.room_type;
+    f.hp=uint16_t(mx(0,s.hp));f.max_hp=uint16_t(mx(0,s.max_hp));f.gold=uint16_t(mx(0,s.gold));f.entered_seconds=r.seconds;
+    f.encounter=s.enemy_world.active?unsigned(s.enemy_world.encounter):0;f.event=s.original_events.active?unsigned(s.original_events.id):0;
+    if(f.point<s.world.maps[f.act].count)f.map_type=uint8_t(s.world.maps[f.act].points[f.point].type);
+    f.facts=complete?1:0;r.facts.last_room=f.room;a.progress_dirty=true;return &f;
+}
 static void progress_snapshot(UiRunHistory&r,const State&s){
     r.floor=s.world.total_floor;r.hp=uint16_t(mx(0,s.hp));r.max_hp=uint16_t(mx(0,s.max_hp));r.gold=uint16_t(mx(0,s.gold));
     r.potion_count=uint8_t(potion_slot_count(s));for(unsigned i=0;i<MaxPotionSlots;++i)r.potions[i]=unsigned(potion_at(s,i));
@@ -35,9 +47,13 @@ void App::begin_progress(bool resumed){
     if(!game.world.active||game.practice)return;
     restore_progress();progress.characters_started|=uint8_t(1u<<unsigned(game.character));
     if(resumed&&progress_matches(progress.current,game)){
+        // NSH1–5 did not observe these facts. Continue collecting forward,
+        // while the old prefix stays explicitly unknown for score/badges.
+        if(!progress.current.facts.version){progress.current.facts.version=1;progress.current.facts.complete=0;}
         progress_seen_phase=255;progress_seen_revision=0;sync_progress();return;
     }
     auto&r=progress.current;progress_clear_run(r);
+    progress.current_discoveries={};r.facts.version=1;r.facts.complete=resumed?0:1;
     progress.map_drawing.count=0;map_drawing.cancel();
     r.serial=progress.next_serial++;if(!progress.next_serial)progress.next_serial=1;
     r.seed=game.seed;r.run_seed=game.world.run_seed;r.character=unsigned(game.character);r.ascension=game.world.ascension;
@@ -61,12 +77,14 @@ void App::progress_time(uint32_t milliseconds){
 }
 void App::discover_potion(Potion potion){
     const unsigned value=unsigned(potion);if(!value||value>PotionKinds)return;const unsigned id=value-1;
-    const uint8_t bit=uint8_t(1u<<(id%8));if(!(progress.discovered_potions[id/8]&bit)){progress.discovered_potions[id/8]|=bit;progress_dirty=true;}
+    const uint8_t bit=uint8_t(1u<<(id%8));if(!(progress.discovered_potions[id/8]&bit)){progress.discovered_potions[id/8]|=bit;progress_dirty=true;
+        if(progress_matches(progress.current,game)&&!progress.current.outcome)progress.current_discoveries.add(2,id);}
 }
 void App::discover_card(CardKind kind){
     const unsigned id=unsigned(kind);if(id>=CardKinds)return;const uint8_t bit=uint8_t(1u<<(id%8));
     if(!(progress.discovered_cards[id/8]&bit)){
         progress.discovered_cards[id/8]|=bit;progress_dirty=true;
+        if(progress_matches(progress.current,game)&&!progress.current.outcome)progress.current_discoveries.add(0,id);
         // NHoverTipSet can discover a generated card while its parent's
         // grid holder is being pressed. NCardLibrary rebuilds on filter/search
         // actions, not on this observation: rebuilding here moves the grid
@@ -75,17 +93,38 @@ void App::discover_card(CardKind kind){
 }
 void App::discover_relic(RelicId relic){
     const unsigned id=unsigned(relic);if(id>=WorldRelicKinds)return;const uint8_t bit=uint8_t(1u<<(id%8));
-    if(!(progress.discovered_relics[id/8]&bit)){progress.discovered_relics[id/8]|=bit;progress_dirty=true;}
+    if(!(progress.discovered_relics[id/8]&bit)){progress.discovered_relics[id/8]|=bit;progress_dirty=true;
+        if(progress_matches(progress.current,game)&&!progress.current.outcome)progress.current_discoveries.add(1,id);}
 }
 void App::observe_progress_log(Log log){
     if(log.kind!=LogKind::Gold||log.a<=0||!progress_matches(progress.current,game)||progress.current.outcome)return;
     auto&r=progress.current;r.gold_gained=progress_add(r.gold_gained,unsigned(log.a));
-    if(r.floor_count)r.floors[r.floor_count-1].gold_gained=progress_add(r.floors[r.floor_count-1].gold_gained,unsigned(log.a));
+    if(auto*f=progress_observe_floor(*this,game))f->gold_gained=progress_add(f->gold_gained,unsigned(log.a));
     progress_dirty=true;
+}
+void App::observe_progress_effect(const State&s){
+    auto&r=progress.current;if(s.regent.cards_finished_turn>=20&&progress_matches(r,s)&&!r.outcome&&!r.facts.combo){r.facts.combo=1;progress_dirty=true;}
+}
+void App::observe_progress_damage(const State&s,const CoreDamageResult&damage){
+    if(damage.receiver!=-1||damage.unblocked<=0)return;
+    if(auto*f=progress_observe_floor(*this,s)){
+        if((f->facts&3)==1){const unsigned previous=f->facts>>2;auto&perfect=progress.current.facts.perfect_bosses;
+            perfect=uint16_t(perfect>=previous?perfect-previous:0);}
+        f->facts|=2;progress_dirty=true;
+    }
+}
+void App::observe_run_fact(const State&s,unsigned kind,unsigned value){
+    auto&r=progress.current;if(!progress_matches(r,s)||r.outcome)return;
+    if(kind==unsigned(CoreRunFact::ShopGoldSpent))r.facts.shop_spent=progress_add(r.facts.shop_spent,value);
+    else if(kind==unsigned(CoreRunFact::RestChoice)&&value<8){if(auto*f=progress_observe_floor(*this,s))f->rest_choices|=uint8_t(1u<<value);}
+    else return;progress_dirty=true;
 }
 static void progress_begin_battle(App&a,const State&s){
     auto&r=a.progress.current;if(r.last_battle==s.world.combat_count)return;
     r.last_battle=s.world.combat_count;r.last_enemy_identity=0;
+    progress_observe_floor(a,s);r.facts.last_room=r.facts.last_battle_room=s.world.room_type;
+    if(s.world.room_type==unsigned(WorldRoom::Elite)&&r.facts.elite_rooms<UINT16_MAX)++r.facts.elite_rooms;
+    if(s.world.room_type==unsigned(WorldRoom::Boss)&&r.facts.boss_rooms<UINT16_MAX)++r.facts.boss_rooms;
     for(auto&v:r.battle_seen)v=0;
     const unsigned encounter=unsigned(s.enemy_world.encounter),dimensions[2]={0,unsigned(s.character)+1};
     if(encounter<EncounterKinds)for(unsigned index:dimensions){
@@ -99,6 +138,7 @@ void App::observe_enemy_spawned(const State&s,unsigned model,uint16_t identity){
     progress_begin_battle(*this,s);
     if(!identity||identity<=r.last_enemy_identity)return;
     r.last_enemy_identity=identity;
+    if(!progress.enemies[model][0].seen)progress.current_discoveries.add(3,model);
     if(r.battle_seen[model]<UINT16_MAX)++r.battle_seen[model];
     const unsigned dimensions[2]={0,unsigned(s.character)+1};
     for(unsigned index:dimensions){auto&stat=progress.enemies[model][index];stat.seen=progress_add(stat.seen,1);}
@@ -107,6 +147,10 @@ void App::observe_enemy_spawned(const State&s,unsigned model,uint16_t identity){
 static bool progress_end_battle(App&a,const State&s,bool won){
     auto&r=a.progress.current;
     if(!r.last_battle||r.finished_battle==r.last_battle)return false;
+    if(won&&r.facts.last_battle_room==unsigned(WorldRoom::Boss)&&r.floor_count){auto&point=r.floors[r.floor_count-1];
+        if((point.facts&3)==1&&r.facts.perfect_bosses<UINT16_MAX)++r.facts.perfect_bosses;
+        if((point.facts>>2)<63)point.facts=uint8_t(point.facts+4);
+    }
     const unsigned dimensions[2]={0,unsigned(s.character)+1};
     // ProgressSaveManager iterates SpawnedEnemies, including each summon and
     // duplicate model. A resurrection keeps the same combat identity.
@@ -127,10 +171,12 @@ void App::sync_progress(){
     if(progress_seen_revision==game.revision&&progress_seen_phase==unsigned(game.phase)&&
        progress_seen_floor==game.world.total_floor&&progress_seen_battle==game.world.combat_count&&
        progress_seen_ending==bool(game.world.combat_ending))return;
+    bool changed_room=progress_seen_floor!=game.world.total_floor;
     progress_seen_revision=game.revision;progress_seen_phase=unsigned(game.phase);
     progress_seen_floor=game.world.total_floor;progress_seen_battle=game.world.combat_count;
     progress_seen_ending=game.world.combat_ending;
     auto&r=progress.current;
+    progress_observe_floor(*this,game);
     const unsigned region=game.world.rooms[game.world.act_index].region;
     if(region<4)progress.discovered_acts|=uint8_t(1u<<region);
     for(unsigned i=0;i<game.deck_count;++i)discover_card(game.deck[i].kind);
@@ -146,15 +192,6 @@ void App::sync_progress(){
             if(game.enemy_world.active)f.encounter=unsigned(game.enemy_world.encounter);
             if(game.original_events.active)f.event=unsigned(game.original_events.id);
         }
-    }
-    bool changed_room=false;
-    if(game.world.room_open&&(!r.floor_count||r.floors[r.floor_count-1].act!=game.world.act_index||r.floors[r.floor_count-1].point!=game.world.current_point)){
-        if(r.floor_count<UiHistoryFloors){auto&f=r.floors[r.floor_count++];f={};
-            f.floor=game.world.total_floor;f.act=game.world.act_index;f.region=uint8_t(region);f.point=game.world.current_point;
-            f.room=game.world.room_type;f.hp=uint16_t(mx(0,game.hp));f.max_hp=uint16_t(mx(0,game.max_hp));f.gold=uint16_t(mx(0,game.gold));
-            f.entered_seconds=r.seconds;f.encounter=game.enemy_world.active?unsigned(game.enemy_world.encounter):0;
-            f.event=game.original_events.active?unsigned(game.original_events.id):0;changed_room=true;
-        }else r.partial=1;
     }
     if(game.world.combat_count&&game.enemy_world.active){
         progress_begin_battle(*this,game);
@@ -183,6 +220,7 @@ void App::finish_progress(bool abandoned,const State*source){
     // The outcome guard above makes persistence retries and repeated finish
     // notifications idempotent, including an abandoned mid-respawn run.
     progress.test_subject_kills=progress_add(progress.test_subject_kills,s.test_subject_kills);
+    if(r.outcome==1&&ui_run_score(r).complete)progress.architect_damage=progress_add(progress.architect_damage,ui_run_score(r).total);
     auto&stats=progress.characters[r.character];
     if(r.mode==unsigned(RunMode::Standard)&&r.outcome==1){stats.wins=progress_add(stats.wins,1);stats.current_streak=progress_add(stats.current_streak,1);
         // ProgressSaveManager counts distinct ModelIds in the final deck,

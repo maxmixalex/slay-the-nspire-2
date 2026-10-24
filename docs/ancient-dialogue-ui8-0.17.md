@@ -101,8 +101,28 @@ no early relic choice, the final keyboard delay, vertical focus, history
 opacity/review, unknown-history fallback and clearing after completion, with
 byte-for-byte simulation saves around presentation actions.
 
-At this source checkpoint those new behavioral tests and English/Chinese
-original-art captures have not yet run. They require the frozen stage-five
-source and its matching auxiliary/font pack; stage-four packs cannot be used
-as evidence for the later 2013-entry asset directory. Final ARM allocation and
-ordinary Firebird interaction remain subsequent gates.
+Frozen stage five (`41c8875812712a469e19577c7fcd3426722839c9`) with the matching
+2013-entry stage-five-c packs passed **5,250 checks in each language**. The
+actual English and Chinese art captures include all eight Ancients, the mixed
+speaker sequence, preserved history/options, locked Orobas and completion.
+All fourteen Ancient captures in each language were inspected. Receipts:
+`ui8-world-events-real-eng-ecdc204f97ba.json` and
+`ui8-world-events-real-zhs-9d52262233a4.json`.
+
+Inspection found a real defect despite the passing interaction tests: original
+`font_size` tags were printed inside the character's reply. The stage-six
+candidate consumes valid size scopes while preserving italic/bold/color nesting
+and the declared scene or full-reader minimum. The source pack contains 33
+such scopes, with sizes 18, 22 and 28, all below 6px after projection. New parser
+and Ancient-reply assertions cover this failure; malformed tags remain visible.
+Their corrected actual-art render remains a stage-six gate.
+
+The synthetic RGBA fixture also exposed a test isolation issue: keyboard focus
+on Tanx's first offer legitimately displayed a mechanic tooltip over the sampled
+third-row pixel. Moving the pointer outside the options isolates the intended
+button surface without weakening the eight source color expectations or state
+immutability checks. That corrected fixture passed all 5,068 synthetic checks
+against the frozen stage-five library before the new markup assertion was added.
+Final shared-staging ARM allocation and ordinary Firebird interaction remain
+subsequent gates. Stage-four resources cannot establish acceptance of later
+auxiliary/font directories.

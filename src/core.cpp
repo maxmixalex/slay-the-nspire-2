@@ -1,5 +1,6 @@
 #include "core.hpp"
 #include "inplace_reset.hpp"
+#include "resource_transfer.hpp"
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
@@ -8,6 +9,8 @@
 #include "power_values.hpp"
 
 namespace spire {
+ResourceTransferWorkspace resource_transfer_workspace{};
+uint8_t resource_transfer_uses=0;
 #include "card_definitions.inc"
 #include "expansion_forward.inc"
 #include "ironclad_forward.inc"

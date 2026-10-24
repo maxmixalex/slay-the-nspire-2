@@ -20,7 +20,7 @@ int main(int argc,char**argv){
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.content.open(pack.data(),pack.size())&&app.content.current_profile());}
  if(argc>2)captures=argv[2];
  new_run(app.game,7319,false,Character::Ironclad);CHECK(world_begin_run(app.game));app.game.original_events={};CHECK(world_finish_room(app.game));
- CHECK(original_event_begin(app.game,OriginalEventId::CrystalSphere,31,1));app.game.gold=250;CHECK(original_event_choose(app.game,1));
+ CHECK(original_event_begin(app.game,OriginalEventId::CrystalSphere,31,1));app.game.world.room_open=1;app.game.gold=250;CHECK(original_event_choose(app.game,1));
  app.title=false;app.reset_presentation();CHECK(save(app.game,before));app.render();CHECK(!hits());
  const auto start=app.crystal_presentation.start;app.input(Key::Confirm);CHECK(app.game.original_events.crystal_charges==6);
  for(unsigned i=0;i<16;++i)app.advance(33);app.render();CHECK(hits()==97);CHECK(app.crystal_presentation.start==start);
@@ -47,7 +47,14 @@ int main(int argc,char**argv){
  bool proceed=false;for(int i=0;i<app.hit_count;++i){CHECK(app.hits[i].kind!=HitKind::CrystalCell);if(app.hits[i].kind==HitKind::Choice&&app.hits[i].value==0)proceed=true;}
  CHECK(proceed);CHECK(save(app.game,before));for(unsigned i=0;i<120;++i){app.advance(33);app.render();}
  CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
- app.input(Key::Confirm);CHECK(app.game.phase!=Phase::Event);
+ const auto completed=app.game.world.rooms_completed;CHECK(!app.map_window.is_open);
+ app.input(Key::Confirm);CHECK(app.game.phase==Phase::Event&&app.game.original_events.id==OriginalEventId::CrystalSphere);
+ CHECK(app.game.world.room_open==2&&app.game.world.rooms_completed==completed+1&&world_can_travel(app.game)&&app.map_window.is_open);
+ // Proceed opens the map over the retained event; closing and reopening it
+ // must not replay the minigame or count the room a second time.
+ CHECK(save(app.game,before));app.input(Key::Back);CHECK(!app.map_window.is_open);
+ app.input(Key::Confirm);CHECK(app.map_window.is_open&&app.game.world.rooms_completed==completed+1);
+ CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
  // Banner remains keyed to the room, not to a changing page/reward revision.
  AncientBannerPresentation banner;banner.observe(app.game,100);const auto begun=banner.start;app.game.original_events.page++;banner.observe(app.game,900);CHECK(banner.start==begun);
  CHECK(banner.alpha(4600)==255);CHECK(banner.alpha(5100)<64);CHECK(banner.epithet_alpha(1600)==0);CHECK(banner.epithet_alpha(7600)==128);

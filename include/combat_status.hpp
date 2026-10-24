@@ -33,6 +33,7 @@ struct CombatStatus {
  Value shown[Cells]{},observed[Cells]{};
  PowerOrderState shown_order{},observed_order{};
  Cue cues[Capacity]{};uint16_t head=0,count=0;bool overflow=false;
+ bool powers_frozen=false;
  // PowerAppliedVfx outlives its command; finishing a playback trace must
  // not remove the text. Fixed-size identifiers avoid per-frame strings or
  // a second State snapshot, and stay independent of saved gameplay data.
@@ -48,7 +49,7 @@ struct CombatStatus {
  uint32_t reward_at=0;bool reward_scheduled=false,had_live_scene=false;
  uint32_t visual_seed=0,star_gain_at=0,star_rotation_mdeg=0,star_tick=0;int visual_floor=-1,visual_combat=-1,visual_encounter=-1;
  StarCounterMotion star_count{};int star_observed=0;bool stars_visible=false,star_zero=true;
- void reset_visuals(){reward_at=0;reward_scheduled=had_live_scene=false;popup_count=damage_count=flash_count=0;cosmetic=0x48a56b39u;pruned_at=UINT32_MAX;visual_floor=visual_combat=visual_encounter=-1;stars_visible=false;star_observed=0;star_gain_at=star_rotation_mdeg=star_tick=0;star_count={};star_zero=true;}
+ void reset_visuals(){reward_at=0;reward_scheduled=had_live_scene=powers_frozen=false;popup_count=damage_count=flash_count=0;cosmetic=0x48a56b39u;pruned_at=UINT32_MAX;visual_floor=visual_combat=visual_encounter=-1;stars_visible=false;star_observed=0;star_gain_at=star_rotation_mdeg=star_tick=0;star_count={};star_zero=true;}
  static uint32_t popup_ticks(const Popup&p){return p.removed?54u:38u;}
  void expire(uint32_t now){
   if(now==pruned_at)return;pruned_at=now;

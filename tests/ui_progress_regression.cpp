@@ -72,6 +72,9 @@ int main(){
     CHECK(decode_ui_progress_summary(bytes,saved_size,summary)&&summary.last_saved_at==now_seconds);
     // NSH1 used the same remaining schema but had neither the timestamp nor
     // per-card wins. Preserve its real history/discoveries, with new fields 0.
+    restored=app.progress;restored.current.facts={};for(auto&r:restored.history)r.facts={};
+    restored.current_discoveries={};restored.architect_damage=0;
+    saved_size=encode_ui_progress(restored,bytes,UiProgressCapacity);CHECK(saved_size&&bytes[3]=='2');
     constexpr size_t discovery_bytes=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8;
     const size_t tail=28+discovery_bytes+CardKinds*4,old_size=saved_size-4-CardKinds*4;
     std::memmove(bytes+24,bytes+28,discovery_bytes);std::memmove(bytes+24+discovery_bytes,bytes+tail,saved_size-tail);

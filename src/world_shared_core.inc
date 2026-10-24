@@ -2,6 +2,7 @@
 // operations provide the same suspension boundary without native coroutines.
 static bool world_shared_active(const State&s){return s.world.active||s.enemy_world.active||s.world_relics.active;}
 static void world_stage(State&s,WorldStage op,int value,bool first){queue_extension(s,XOp::WorldStage,int(op),value,first);}
+bool world_effect_clears_combat_powers(Effect e){return e.kind==EffectKind::Extended&&XOp(e.target)==XOp::WorldStage&&e.value==int(WorldStage::VictoryPowerClear);}
 static bool world_victory_pending(const State&s){
  for(unsigned i=0;i<s.effect_count;i++){const auto&e=s.effects[i];if(e.kind==EffectKind::Extended&&e.target==int(XOp::WorldStage)&&
   ((e.value>=int(WorldStage::VictoryEarly)&&e.value<=int(WorldStage::VictoryCleanup))||e.value==int(WorldStage::VictoryPlayerEnd)||e.value==int(WorldStage::VictoryPowerClear)))return true;}return false;

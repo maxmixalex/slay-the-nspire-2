@@ -2,6 +2,8 @@
 #include "content_fixture.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
+#include "run_score.hpp"
+#include "game_over_ui.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -85,10 +87,12 @@ static void capture(const char*name){
 }
 static void start(Character character=Character::Ironclad){
  new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-GAME-OVER-017"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,3));present();
+ a.begin_progress();
 }
 static void dead(Character character){start(character);player_kill(a.game,true);resolve_pending(a.game);CHECK(a.game.phase==Phase::Dead&&a.game.world.finished&&a.game.event_run.completion_recorded);present();snapshot();}
 static void victory(){
  start();
+ a.progress.current.partial=1;a.progress.current.facts.complete=0;
  // Supply room outcomes to the existing controller, as in the routing test.
  // This isolates the end-screen contract without claiming combat victories.
  for(unsigned step=0;step<192&&a.game.phase!=Phase::Complete;step++){
@@ -118,17 +122,21 @@ static void overlays_do_not_advance(){
 static void saved_facts(){
  char text[512]{},number[32]{};a.localized_text("game_over_screen","SCORE_LINE.floorsClimbed",text,sizeof text);std::snprintf(number,sizeof number,"%u",a.game.world.total_floor);CHECK(std::strstr(text,number));
  a.localized_text("game_over_screen","SCORE_LINE.ascension",text,sizeof text);std::snprintf(number,sizeof number,"%u",a.game.world.ascension);CHECK(std::strstr(text,number));
- if(!actual_profile){a.localized_text("game_over_screen","SCORE_LINE.goldGained",text,sizeof text);CHECK(std::strstr(text,"GoldAmount"));}
- // Gold on this screen is the saved balance, not the missing lifetime sum.
- // Changing it changes only its numeric row; merely showing it is read-only.
- a.render();uint32_t old=pixels(100,163,74,17);int gold=a.game.gold;a.game.gold=int16_t(gold+7);a.render();CHECK(pixels(100,163,74,17)!=old);a.game.gold=int16_t(gold);a.render();unchanged();
+ const auto*r=a.game_over_run();CHECK(r&&r->outcome);
+ if(!actual_profile){a.localized_text("game_over_screen","SCORE_LINE.goldGained",text,sizeof text);
+  if(ui_run_score(*r).complete){std::snprintf(number,sizeof number,"%u",r->gold_gained);CHECK(std::strstr(text,number)&&!std::strchr(text,'{'));}
+  else CHECK(std::strstr(text,"GoldAmount"));}
+ // The original summary now uses observed GoldGained. Changing only the
+ // canonical balance cannot rewrite a completed historical summary.
+ a.render();uint32_t old=pixels(80,103,160,96);int gold=a.game.gold;a.game.gold=int16_t(gold+7);a.render();CHECK(pixels(80,103,160,96)==old);a.game.gold=int16_t(gold);a.render();unchanged();
 }
 static void death_flow(){
  for(unsigned i=0;i<CharacterKinds;i++){
   dead(Character(i));a.render();CHECK(has_action(UiAction::GameOverSummary)&&!has_action(UiAction::GameOverMainMenu));unchanged();
   if(!i){overlays_do_not_advance();capture("gameover-defeat");press(UiAction::GameOverSummary);}else a.input(Key::Confirm);
   CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));unchanged();saved_facts();
-  if(!i){capture("gameover-defeat-summary");a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(a.panel==5);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
+  if(!i){capture("gameover-defeat-summary");press(UiAction::GameOverViewRun);CHECK(a.history_open&&a.history_from_game_over&&!a.compendium_open&&a.history_at(a.history_index)->serial==a.progress.current.serial);a.render();a.input(Key::Back);CHECK(!a.history_open&&!a.compendium_open&&a.game_over_summary);unchanged();
+   a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(a.panel==5);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
   CHECK(a.title&&!a.game_over_summary&&a.game.phase==Phase::Dead&&a.game.world.finished);unchanged();
  }
 }

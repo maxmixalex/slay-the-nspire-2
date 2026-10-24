@@ -25,6 +25,7 @@ const HitRegion* App::hit_at(int x,int y)const{
     return nullptr;
 }
 uint32_t App::input_context()const{
+    if(game_over_available())return 0x474f0000u^uint32_t(game.world.run_seed)^uint32_t(game.world.run_seed>>32)^unsigned(game_over_summary);
     if(auxiliary.screen!=AuxiliaryScreen::None)return 0x41555800u|unsigned(auxiliary.screen)|(uint32_t(auxiliary.category_open)<<4)|(uint32_t(auxiliary.closing)<<5);
     if(settings_open&&binding_listening>=0)return 0x4b455900u|unsigned(binding_listening);
     if(bestiary.open)return 0x42535400u|unsigned(bestiary.actions);
@@ -405,6 +406,7 @@ void App::pointer_button(bool down){
     case HitKind::PowerInstance:open_status_icon(hit.value&255);break;
     case HitKind::CombatPeek:toggle_combat_peek();break;
     case HitKind::AuxiliaryControl:auxiliary_control(hit.value);break;
+    case HitKind::GameOverDetail:if(game_over_available()&&game_over_summary)game_over_focus=int8_t(hit.value);break;
     case HitKind::Orb:break; // Original orb focus retains its anchored hover tip.
     case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;

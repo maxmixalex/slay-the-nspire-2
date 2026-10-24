@@ -273,6 +273,7 @@ bool world_finish_room(State&s){
             if(s.deck_count+2!=w.rest_deck_before)return world_fail(s);
             increase_max_hp(s,5);
         }
+        notify_run_fact(s,CoreRunFact::RestChoice,unsigned(option));
         w.rest_used|=uint32_t(1)<<index;w.rest_pending=0;w.rest_deck_before=0;s.phase=Phase::Camp;
         if(has_world_relic(s,WorldRelicMiniatureTent))world_relic_flash(s,WorldRelicMiniatureTent);
         else w.rest_used=w.rest_count==32?~uint32_t(0):(uint32_t(1)<<w.rest_count)-1;

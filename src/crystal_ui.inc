@@ -119,7 +119,8 @@ static void crystal_screen(Canvas&c){
   layer.fitted(text,245,146,65,68,6,6,rgb(255,246,226),true,false,false,false);
  }else{
   a.cursor=0;
-  native_proceed(layer,209,211,103,27,"继续前进",true);c.hit(205,208,111,32,HitKind::Choice,0,true);
+  const char*proceed=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+  native_proceed(layer,209,211,103,27,*proceed?proceed:"前进",true);c.hit(205,208,111,32,HitKind::Choice,0,true);
  }
  if(resources)crystal_dialogue(layer);
 }

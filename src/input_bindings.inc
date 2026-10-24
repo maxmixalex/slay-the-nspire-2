@@ -36,6 +36,10 @@ bool App::physical_key(uint16_t code,bool pressed){
         else if(released==251&&auxiliary.screen==AuxiliaryScreen::PatchNotes)close_auxiliary();
         else if((released==248||released==247)&&auxiliary.screen==AuxiliaryScreen::PatchNotes)auxiliary_control(released==248?AuxiliaryPrevious:AuxiliaryNext);
         else if(released==246&&auxiliary.screen!=AuxiliaryScreen::None)auxiliary_input(Key::Back);
+        else if((released==245||released==244)&&game_over_available()&&context==input_context()){
+            if(released==245)open_game_over_history();
+            else ui_action(game_over_summary?UiAction::GameOverMainMenu:UiAction::GameOverSummary);
+        }
         else if((released==250||released==249)&&card_reward_interactive()){
             sync_card_reward_presentation();if(context==reward_presentation.cards.key)card_reward_alternative(released==249);
         }
@@ -72,7 +76,9 @@ bool App::physical_key(uint16_t code,bool pressed){
         return true;
     }
     switch(InputCommand(command)){
-    case InputCommand::Select:return dispatch(Key::Confirm);
+    case InputCommand::Select:
+        if(game_over_available()){held->key=244;held->context=input_context();return true;}
+        return dispatch(Key::Confirm);
     case InputCommand::Cancel:
         if(card_reward_interactive()){sync_card_reward_presentation();held->key=249;held->context=reward_presentation.cards.key;return true;}
         return dispatch(Key::Back);
@@ -86,6 +92,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         if(card_reward_interactive()){sync_card_reward_presentation();held->key=250;held->context=reward_presentation.cards.key;return true;}
         return dispatch(Key::ExhaustPile);
     case InputCommand::Confirm:
+        if(game_over_available()){if(game_over_summary){held->key=245;held->context=input_context();}return true;}
         // NPatchNotesButton listens to MegaInput.confirm's release. Its
         // title shortcut stays distinct from Select and the Enter fallback.
         if(title_patch_notes_available(*this)){held->key=252;return true;}
@@ -111,7 +118,10 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     // Enter remains the desktop UI acceptance key in mouse/keyboard mode;
     // calculator 5 is its physical select button. Explicit mappings win.
-    if(!bank&&(code==13||(calculator_keyboard&&code=='5')))return dispatch(Key::Confirm);
+    if(!bank&&(code==13||(calculator_keyboard&&code=='5'))){
+        if(game_over_available()){held->key=244;held->context=input_context();return true;}
+        return dispatch(Key::Confirm);
+    }
     switch(code){
     case 'L':return dispatch(Key::Log);case 'O':return dispatch(Key::Load);
     case 'P':return dispatch(Key::Potions);case 'R':return dispatch(Key::Relics);

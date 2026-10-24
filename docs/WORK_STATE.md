@@ -1,5 +1,37 @@
 # Work state — 2026-10-24
 
+## UI8 stage 6 candidate — integrated validation next
+
+Asset-only checkpoint `c9a0a4772f294be617a8532b40454c2e1f0f12b4`
+was pushed and read back with tree `78923815c04f486654c971afc11b60ab5d8892b4`.
+Its frozen resource and both original-font conversions passed. The new packs
+contain 2,044 auxiliary images; English has 3,073 glyphs and Chinese 30,164.
+True 5px card/reward glyphs and the original solo score/badge/discovery artwork
+preserve existing artwork, strings and model indices. Final runtime acceptance
+must use these matching packs, not the older stage-five fonts.
+
+Stage-five runtime `41c8875812712a469e19577c7fcd3426722839c9`
+compiled native/ARM/WASM. Its full native gate passed 91/96 suites; the retained
+failures identified immediate auxiliary scrolling plus obsolete or incorrect
+fixture assumptions in power setup, continuous reward scrolling, terminal
+Crystal retained-room state and an Ancient color sample hidden by a tooltip.
+The real auxiliary scrolling defect was fixed and executed from stage-five-c
+`44b4999659121ef6418e58c7711e2eb110f5b16a`; both actual language packs passed.
+The final integrated stage-six rerun is still required. Stage-five browser
+acceptance passed twelve real isolated-profile flows without page errors or
+external requests, but screenshot review found blank Settings labels and
+oversized card typography. These are concrete source fixes in the candidate;
+the older functional pass does not certify the corrected visual result.
+
+The source candidate adds original run scoring/solo badges/discoveries and
+View Run navigation, victory power freezing, actual available-font selection,
+font-tag handling, and shared codec/resource storage which removes the separate
+200,368-byte State workspace. It keeps the 16 MiB runtime allocation gate and
+all decoded-cache capacities. The newest whole-launcher budget and actual
+bilingual scene checks remain the next frozen-runtime gate. The updated
+59-flow source audit explicitly lists remaining differences; it asserts no
+95% fidelity result from counts or diagnostics.
+
 ## UI8 integrated stage 5 candidate
 
 The last remotely verified asset checkpoint is

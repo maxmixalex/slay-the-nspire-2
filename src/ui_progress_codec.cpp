@@ -75,6 +75,25 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
         }
     }
     if(version>=5)c.integer(v.test_subject_kills);
+    if(version>=6){
+        const auto facts=[&](UiRunHistory&r){
+            if(!r.serial)return;auto&f=r.facts;c.integer(f.version);
+            if(f.version>1){c.good=false;return;}if(!f.version)return;
+            c.integer(f.complete);c.integer(f.shop_spent);c.integer(f.elite_rooms);c.integer(f.boss_rooms);c.integer(f.perfect_bosses);
+            c.integer(f.last_room);c.integer(f.last_battle_room);c.integer(f.combo);
+            if(f.complete>1||f.combo>1||f.last_room>8||f.last_battle_room>8||f.perfect_bosses>f.boss_rooms){c.good=false;return;}
+            for(unsigned i=0;i<r.floor_count&&c.good;++i){auto&p=r.floors[i];c.integer(p.map_type);c.integer(p.rest_choices);c.integer(p.facts);
+                if(p.map_type>8)c.good=false;}
+        };
+        facts(v.current);for(unsigned i=0;i<v.count&&c.good;++i)facts(v.history[i]);
+        auto&d=v.current_discoveries;const unsigned kinds[]={CardKinds,WorldRelicKinds,PotionKinds,EnemyKinds};
+        for(unsigned category=0;category<4&&c.good;++category){c.integer(d.count[category]);if(d.count[category]>kinds[category]){c.good=false;return;}
+            const unsigned n=d.count[category]<10?d.count[category]:10;
+            for(unsigned i=0;i<n&&c.good;++i){c.integer(d.first[category][i]);if(d.first[category][i]>=kinds[category])c.good=false;
+                for(unsigned j=0;j<i;++j)if(d.first[category][j]==d.first[category][i])c.good=false;}
+        }
+        c.integer(v.architect_damage);
+    }
 }
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
@@ -84,6 +103,9 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<value.count&&i<UiHistoryCapacity;++i)if(value.history[i].mode)version=3;
     if(value.map_drawing.count)version=4;
     if(value.test_subject_kills)version=5;
+    if(value.current.facts.version||value.architect_damage)version=6;
+    for(unsigned i=0;i<value.count&&i<UiHistoryCapacity;++i)if(value.history[i].facts.version)version=6;
+    const auto*d=reinterpret_cast<const uint8_t*>(&value.current_discoveries);for(unsigned i=0;i<sizeof value.current_discoveries;++i)if(d[i])version=6;
     out[0]='N';out[1]='S';out[2]='H';out[3]=char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
@@ -92,13 +114,13 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'5')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'6')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'5')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'6')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);

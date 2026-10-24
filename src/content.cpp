@@ -5,7 +5,6 @@
 #include "unicode_text.hpp"
 #include "resource_transfer.hpp"
 namespace spire {
-ResourceTransferWorkspace resource_transfer_workspace{};
 static uint16_t u16(const uint8_t*p){return p[0]|(uint16_t)p[1]<<8;}
 static uint32_t u32(const uint8_t*p){return u16(p)|(uint32_t)u16(p+2)<<16;}
 namespace {
@@ -278,7 +277,8 @@ void Content::prepare_images(const int* ids,unsigned count)const{
             end=next.offset+next.length;pages+=next.pages;++last;
         }
         if(last-first>1){
-            uint8_t*encoded_pixels=resource_transfer_bytes();
+            ResourceTransferLease transfer(ResourceTransferUse::Bytes);if(!transfer)return;
+            uint8_t*encoded_pixels=transfer.bytes();
             if(!reader_.read(start,encoded_pixels,end-start)){io_good_=false;clear_caches(this);return;}
             for(unsigned i=first;i<last;++i){
                 const auto&r=requests[i];
@@ -304,6 +304,14 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
         p=image_buffer(*cache);fmt=cache->format;size=unsigned(cache->pages)*ImagePageBytes;cache->age=next_image_age();
     }
     if(!p){
+        // Coalesced literal requests already hold their encoded lease. Every
+        // other cold image owns it until publication, including descriptor
+        // callbacks and all groups of a tiled frame. A reentrant save/load
+        // cannot replace bytes being decoded; a busy resource is not corrupt.
+        const bool provided=supplied&&supplied_size==length&&fmt<=5;
+        ResourceTransferLease transfer(provided?ResourceTransferUse::None:ResourceTransferUse::Bytes);
+        if(!provided&&!transfer)return empty;
+        uint8_t*encoded_pixels=transfer.bytes();
         if(fmt==7){
             uint8_t row[16];if(!reader_.read(off,row,sizeof row))return fail();
             // Relative group positions keep common artwork identical across
@@ -312,7 +320,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
             const uint32_t group_length=u32(row+4),raw_offset=u32(row+8),format_size=u32(row+12);
             fmt=format_size>>24;size=format_size&0xffffffu;
             if(position<0||position>MaxContentFile||fmt>4||!size||size>MaxImageBytes)return fail();
-            TileGroup* group=load_retained_group(this,reader_,uint32_t(position),group_length);
+            TileGroup* group=load_retained_group(this,reader_,uint32_t(position),group_length,encoded_pixels);
             if(!group||raw_offset>group->size||size>group->size-raw_offset)return fail();
             ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
             const uint8_t* raw=tile_bytes(*group)+raw_offset;
@@ -322,14 +330,14 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
         }else if(fmt==6){
             TileFrame frame;
             if(!tile_metadata_||length!=16||!frame.open(this,reader_,tile_metadata_,
-                    uint32_t(tile_metadata_-metadata_),off,w,h))return fail();
+                    uint32_t(tile_metadata_-metadata_),off,w,h,encoded_pixels))return fail();
             size=frame.output_size;fmt=4;
             ImageReservation reservation(size);uint8_t* output=reservation.bytes();if(!output)return fail();
-            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,output))return fail();
+            if(!rebuild_tile_frame(this,reader_,tile_metadata_,frame,w,h,output,encoded_pixels))return fail();
             p=output;reservation.publish(this,metadata_,uint32_t(id),fmt);
         }else{
             if(fmt==5&&length<6)return fail();
-            const uint8_t* source=supplied&&supplied_size==length?supplied:payload(off,length,resource_transfer_bytes(),ResourceTransferCapacity);if(!source)return fail();
+            const uint8_t* source=provided?supplied:payload(off,length,encoded_pixels,ResourceTransferCapacity);if(!source)return fail();
             // The descriptor already gives the stored byte count. Read it
             // once and parse its five-byte LZ4 header in the same buffer; a
             // separate header read used to fetch an extra 4 KiB cache page.
@@ -348,6 +356,31 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
     if(fmt==4)return {p,nullptr,nullptr,w,h,4};
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
+}
+int Content::font_size(int preferred,unsigned style,bool at_most)const{
+    if(!metadata_||!io_good_||!glyphs_)return 8;
+    if(font_size_generation_!=generation_){font_size_generation_=generation_;font_sizes_known_=0;}
+    unsigned face=version_>=HistoryUi8ContentVersion?(style&7u):version_>=Ui7ContentVersion?(style&3u):0u;
+    const auto sizes=[&](unsigned selected){
+        if(!(font_sizes_known_&(1u<<selected))){
+            uint32_t mask=0;const unsigned band=((selected&3u)<<6)|((selected&4u)<<3);
+            for(unsigned px=1;px<=(version_>=HistoryUi8ContentVersion?31u:32u);++px){
+                const unsigned encoded=band|px;unsigned lo=0,hi=glyphs_;
+                while(lo<hi){const unsigned mid=lo+(hi-lo)/2;const auto*r=metadata_+40+images_*16+mid*16;
+                    if(u16(r+8)<encoded)lo=mid+1;else hi=mid;}
+                if(lo<glyphs_&&u16(metadata_+40+images_*16+lo*16+8)==encoded)mask|=1u<<(px-1);
+            }
+            font_sizes_[selected]=mask;font_sizes_known_|=uint8_t(1u<<selected);
+        }return font_sizes_[selected];
+    };
+    uint32_t mask=sizes(face);if(face&4u)mask|=sizes(face&3u);if(face)mask|=sizes(0);
+    if(!mask)return 8;preferred=preferred<1?1:preferred>32?32:preferred;
+    if(at_most){for(int px=preferred;px>0;--px)if(mask&(1u<<(px-1)))return px;
+        for(int px=preferred+1;px<=32;++px)if(mask&(1u<<(px-1)))return px;}
+    for(int distance=0;distance<32;++distance){const int lower=preferred-distance,upper=preferred+distance;
+        if(lower>=1&&(mask&(1u<<(lower-1))))return lower;
+        if(upper<=32&&(mask&(1u<<(upper-1))))return upper;}
+    return 8;
 }
 const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_||size<=0||size>32||cp>0x10ffff)return nullptr;

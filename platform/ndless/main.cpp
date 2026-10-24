@@ -91,7 +91,8 @@ static spire::ResourceSource file_source(ResourceFile&file){
 }
 #include "preferences_storage.inc"
 static bool load_progress(spire::UiProgress&out){
-    uint8_t*progress_bytes=spire::resource_transfer_bytes();
+    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Bytes);if(!transfer)return false;
+    uint8_t*progress_bytes=transfer.bytes();
     const char*paths[]={progress_path,progress_backup};
     for(const char*path:paths){void*f=nd_open(path,"rb");if(!f)continue;
         const unsigned n=nd_read(progress_bytes,1,spire::UiProgressCapacity+1,f);nd_close(f);
@@ -99,7 +100,8 @@ static bool load_progress(spire::UiProgress&out){
     }return false;
 }
 static bool save_progress(const spire::UiProgress&value){
-    uint8_t*progress_bytes=spire::resource_transfer_bytes();
+    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Bytes);if(!transfer)return false;
+    uint8_t*progress_bytes=transfer.bytes();
     const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,spire::UiProgressCapacity));if(!n)return false;
     void*f=nd_open(progress_temp,"wb");if(!f)return false;
     bool ok=nd_write(progress_bytes,1,n,f)==n;ok=(nd_close(f)==0)&&ok;
@@ -110,7 +112,8 @@ static bool save_progress(const spire::UiProgress&value){
     if(old)nd_unlink(progress_backup);return true;
 }
 static bool save_game(const spire::State&s){
-    auto&scratch=spire::resource_transfer_save();
+    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Save);if(!transfer)return false;
+    auto&scratch=*transfer.save();
     if(!spire::save(s,scratch))return false;
     void*f=nd_open(temp_path,"wb");if(!f)return false;
     bool good=nd_write(scratch.bytes,1,(unsigned)scratch.size,f)==scratch.size;
@@ -121,8 +124,9 @@ static bool save_game(const spire::State&s){
     return true;
 }
 static bool load_game(spire::State&s){
+    spire::ResourceTransferLease transfer(spire::ResourceTransferUse::Save);if(!transfer)return false;
     void*f=nd_open(save_path,"rb");if(!f)return false;
-    auto&scratch=spire::resource_transfer_save();
+    auto&scratch=*transfer.save();
     unsigned n=nd_read(scratch.bytes,1,sizeof scratch.bytes,f);uint8_t extra=0;bool end=nd_read(&extra,1,1,f)==0;nd_close(f);
     return end&&spire::load(s,scratch.bytes,n);
 }

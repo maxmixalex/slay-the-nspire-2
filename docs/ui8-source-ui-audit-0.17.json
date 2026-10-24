@@ -1,0 +1,981 @@
+{
+  "schema": 2,
+  "reference": {
+    "version": "v0.111.0",
+    "commit": "41cef1ea",
+    "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
+  },
+  "supersedes": "ui7-original-ui-inventory-0.17.json",
+  "source_stage": "UI8 stage 6 candidate",
+  "scope": {
+    "excluded": [
+      "audio",
+      "multiplayer",
+      "Timeline"
+    ],
+    "adaptation": "1680x1260 source UI projected to 320x240, with documented physical-input and readable-font constraints"
+  },
+  "methodology": {
+    "full_path_scan": "All 3538 current C# files and all 1022 PCK scene paths were enumerated. 10 extra top-level/generated files distinguish this directory from the historical 3528-file index.",
+    "nodes": "719 nonempty namespace-declared node files plus 5 empty original node paths = 724 indexed node files. Empty files are not treated as reviewed methods.",
+    "method_review": "Concrete source methods and scenes identified in module audit documents were reviewed and implemented; a path scan does not assert every method has been reviewed.",
+    "acceptance": "Native suites, actual bilingual scene review, browser behavior and linked ARM/Firebird checks are separate evidence. No restoration percentage is inferred from file, model, contract or passing-test counts.",
+    "privacy": "Only identifiers, counts, independent implementation summaries and test references are public."
+  },
+  "counts": {
+    "current_cs_paths": 3538,
+    "current_empty_cs": 15,
+    "node_nonempty_namespace_cs": 719,
+    "node_empty_paths": 5,
+    "indexed_nodes": 724,
+    "pck_scene_paths": 1022,
+    "flow_contracts": 59
+  },
+  "contracts": [
+    {
+      "id": "title_navigation",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuTextButton.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuSubmenuStack.cs"
+      ],
+      "contract": "Title focus/reticles and nested menu ownership",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original nested menus, focus/reticles, title animation, CPU stars/fog, and direct startup.",
+      "remaining": "GPU noise/turbulence and full original material equivalence are not established.",
+      "regressions": [
+        "world_frontend_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "continue_abandon",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMainMenuContinueButton.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NContinueRunInfo.cs"
+      ],
+      "contract": "Continue preview, abandoned-run confirmation and return",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Real preview, guarded Save & Quit/Continue/Abandon, original confirmation ownership, and atomic host persistence.",
+      "remaining": "Final composed bilingual screenshot review belongs to the integrated runtime gate.",
+      "regressions": [
+        "world_frontend_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "character_select",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect/NCharacterSelectScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect/NCharacterSelectButton.cs"
+      ],
+      "contract": "Click-selected character, Ascension, seed and embark",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Five original sampled character loops use the corrected 1680x1260 projection; click selection, seed, Ascension and start are active.",
+      "remaining": "Independent source particles and hover variants remain incomplete.",
+      "regressions": [
+        "five_character_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "act_selector",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect/NCharacterSelectScreen.cs"
+      ],
+      "contract": "ShouldShowActDropdown=false hides existing ActDropdown scene node",
+      "assessment": "original_hidden",
+      "remaining": "Not a visible original requirement"
+    },
+    {
+      "id": "custom_run",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CustomRun/NCustomRunScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CustomRun/NRunModifierTickbox.cs"
+      ],
+      "contract": "Modifier/seed setup and real start",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original Custom screen, editable seed/character/modifiers, all mode hooks, Neow setup choices and persistent run options.",
+      "remaining": "Final UI8 integrated acceptance is still pending at this source checkpoint.",
+      "regressions": [
+        "run_modes_ui8_regression",
+        "neow_modifiers_ui8_regression",
+        "run_modifier_hooks_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "daily_run",
+      "group": "entry",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.DailyRun/NDailyRunScreen.cs"
+      ],
+      "contract": "Singleplayer daily preparation/start/score",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Date seed dd_MM_yyyy_1P, original named character/Ascension/modifier RNG streams and solo setup/start/scoring.",
+      "remaining": "Steam identity and online leaderboard integration are unavailable; the UI labels the offline state and invents no scores.",
+      "regressions": [
+        "run_modes_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "card_library",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary/NCardLibrary.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardLibrary/NCardLibraryGrid.cs"
+      ],
+      "contract": "Filters, discoveries, card grid and inspect",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Four-column original projection, original pool/filter/discovery rules, delayed search, continuous scroll and inspect.",
+      "remaining": "Full Godot material/raster equivalence is not established.",
+      "regressions": [
+        "library_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "relic_collection",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.RelicCollection/NRelicCollection.cs"
+      ],
+      "contract": "Relic categories and inspect",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and tooltips.",
+      "remaining": "All related-tip chains and randomized Cookie visual variants remain incomplete.",
+      "regressions": [
+        "ui_progress_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "potion_lab",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.PotionLab/NPotionLab.cs"
+      ],
+      "contract": "Potion catalogue and inspect",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "All 64 potion catalogue entries, source rarity groups, known gates and inspect.",
+      "remaining": "All secondary related-tip chains remain incomplete.",
+      "regressions": [
+        "potion_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "bestiary",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary/NBestiary.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary/NBestiaryMoveButton.cs"
+      ],
+      "contract": "Enemy list, layouts, move descriptions and character filtering",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original known gates, character/move/stats views, source-derived invariant-culture ordering, detached preview and persisted Test Subject names.",
+      "remaining": "Every phase-specific move preview and secondary VFX is not reproduced.",
+      "regressions": [
+        "bestiary_ui7_regression",
+        "power_order_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "statistics",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NStatsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NCharacterStats.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NAchievementsGrid.cs"
+      ],
+      "contract": "General/character statistics and achievements",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Observed general/character facts persist independently of game saves; unavailable earlier results are not fabricated.",
+      "remaining": "Source top discovery counts depend on the excluded Timeline. Original Achievements tab is disabled, not a missing enabled solo feature.",
+      "regressions": [
+        "ui_progress_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "run_history",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NRunHistory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NMapPointHistory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NDeckHistory.cs"
+      ],
+      "contract": "Historical run navigation, per-floor map/deck/relic details",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Observed run summary/map/relic/tiny-deck carousel, continuous scroll, inspect, original map drawing and NSH6 rest/damage/score facts.",
+      "remaining": "Complete per-floor card offers/skips, purchases/removals and event-option histories are not yet retained; old unavailable records remain unknown.",
+      "regressions": [
+        "history_ui8_regression",
+        "map_drawing_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "profiles",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen/NProfileScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen/NDeleteProfileButton.cs"
+      ],
+      "contract": "Profile select/icons/delete confirmation",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Three independent profiles, names/icons, delete confirmation/rollback and host routing; language remains global.",
+      "remaining": "Final integrated browser/artifact gate still pending.",
+      "regressions": [
+        "profiles_ui7_regression",
+        "ndless_profiles_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "compendium_leaderboards",
+      "group": "collections",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NCompendiumSubmenu.cs"
+      ],
+      "contract": "Leaderboards Visible=false; OpenLeaderboards empty",
+      "assessment": "original_hidden",
+      "remaining": "Do not expose a working-looking empty button"
+    },
+    {
+      "id": "map_routes",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Map/NMapScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Map/NMapPoint.cs"
+      ],
+      "contract": "Scroll, current/available/visited nodes and travel",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original centered paper projection, available/current/visited nodes, camera/scroll, retained-room overlay and travel transitions.",
+      "remaining": "Pixel equivalence to an unmodified original-game capture is not established.",
+      "regressions": [
+        "world_map_ui_regression",
+        "world_map_window_ui_regression",
+        "world_map_travel_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "map_legend",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Map/NMapLegendItem.cs"
+      ],
+      "contract": "Legend focus/highlight and500ms unfocus recovery",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Source legend focus/highlight and 500ms recovery, with pointer and keyboard ownership.",
+      "remaining": "Final composed bilingual review pending.",
+      "regressions": [
+        "world_map_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "map_history",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.HoverTips/NMapPointHistoryHoverTip.cs"
+      ],
+      "contract": "Visited-node history hover",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Visited non-current nodes show actual observed history; rest type and damage are recorded when known.",
+      "remaining": "Full original per-floor choice history is still incomplete.",
+      "regressions": [
+        "history_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "combat_entry",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NCombatRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs"
+      ],
+      "contract": "Prepared room fade-in, enemies and hand arrival",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original source creature anchors/aspect fitting, entrance timing, actual hand arrival and retained trace.",
+      "remaining": "All independent enemy entrance VFX are not reproduced.",
+      "regressions": [
+        "combat_ui_regression",
+        "combat_layout_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "event_base",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NEventRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Events/NEventOptionButton.cs"
+      ],
+      "contract": "Artwork, text reveal, option timing and enabled choice",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original option/text timing, artwork, revisited-room semantics, tooltips, enabled actions and retained room beneath selections.",
+      "remaining": "Full original material/text animation equivalence is not established.",
+      "regressions": [
+        "world_event_ui_regression",
+        "world_room_lifecycle_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "event_special",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Events/NAncientEventLayout.cs",
+        "MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere/NCrystalSphereScreen.cs"
+      ],
+      "contract": "Ancient and custom event layouts/choices",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Crystal Sphere board/tools/source panels and exact port shader oracle; Ancient per-character first/repeat dialogue, history, timing, terminal ClearDialogue and banner.",
+      "remaining": "Original GPU implementation equivalence is not established; final scene review still required.",
+      "regressions": [
+        "crystal_ui8_regression",
+        "crystal_shader_regression",
+        "world_event_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "rest",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NRestSiteRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.RestSite/NRestSiteButton.cs"
+      ],
+      "contract": "Rest actions, character, text and upgrade selection",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original projected layout, real enabled actions and card upgrade selection with retained room.",
+      "remaining": "Alternative action secondary VFX remain incomplete. Mend is multiplayer-only in the pinned source.",
+      "regressions": [
+        "world_room_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "shop",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NMerchantRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Shops/NMerchantInventory.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Shops/NMerchantSlot.cs"
+      ],
+      "contract": "Entrance, inventory hover, speech, purchase and sold state",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original large inventory composition, sampled hand tracking, dialogue, open/sold animations, actual purchase and source CharacterCards stock weighting.",
+      "remaining": "Full candle/material/secondary particles remain incomplete.",
+      "regressions": [
+        "world_room_ui_regression",
+        "run_modifier_hooks_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "remove_card",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Cards/NCardRemoveVfx.cs"
+      ],
+      "contract": "Purchased/direct/forced removal feedback",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Purchased/direct/forced removals share the real observed removal presentation and original selection geometry.",
+      "remaining": "All source secondary particles are not reproduced.",
+      "regressions": [
+        "world_room_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "treasure",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NTreasureRoom.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic/NTreasureRoomRelicCollection.cs"
+      ],
+      "contract": "Chest opening, relic appearance, take/leave",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original chest/room layers, actual open/take/leave and relic choices.",
+      "remaining": "All original particles/materials are not reproduced.",
+      "regressions": [
+        "world_room_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "loot",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens/NRewardsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Rewards/NRewardButton.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NCardRewardSelectionScreen.cs"
+      ],
+      "contract": "Loot opening, take/skip and nested card alternatives",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original 402x86-source loot rows, continuous scroll/drag/focus, clipped hits, retained room and no potion slot chooser; card reward source scale/timing and alternatives.",
+      "remaining": "Pickup secondary particles remain incomplete. The projected 5px labels require the matching new font pack.",
+      "regressions": [
+        "world_reward_ui_regression",
+        "world_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "game_over",
+      "group": "run",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen/NGameOverScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen/NRunSummary.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen/NScoreLine.cs"
+      ],
+      "contract": "Death/victory summary, score, badges and discoveries",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, death quote, View Run/history return and original release-triggered controls.",
+      "remaining": "Five character Die tracks and per-score-line original animation remain pending; full per-floor details are incomplete.",
+      "regressions": [
+        "world_game_over_ui_regression",
+        "ui_progress_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "topbar",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.CommonUi/NTopBar.cs",
+        "MegaCrit.Sts2.Core.Nodes.TopBar/NTopBarDeckButton.cs"
+      ],
+      "contract": "Hover expansion, tips, counts and inventory entry",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original room/boss controls, hover tips, inventory, counts, relic scrolling and deck gain pulse.",
+      "remaining": "All secondary source effects are not reproduced.",
+      "regressions": [
+        "card_hud_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "hand",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NPlayerHand.cs",
+        "MegaCrit.Sts2.Core.Nodes.Cards.Holders/NHandCardHolder.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NControllerCardPlay.cs"
+      ],
+      "contract": "Fan, hover, drag, keyboard held-card and targeting confirmation",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering.",
+      "remaining": "Projected 5px font fix requires matching resources; all trails remain incomplete.",
+      "regressions": [
+        "card_hud_ui_regression",
+        "card_presentation_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "piles",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens/NDeckViewScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatCardPile.cs"
+      ],
+      "contract": "Deck/draw/discard/exhaust grids, sort and scroll",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original pile panels, continuous scroll/drag thumb, sort, filters and inspect.",
+      "remaining": "Final integrated actual-font review pending.",
+      "regressions": [
+        "card_hud_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "inspect",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens/NInspectCardScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Cards/NCard.cs"
+      ],
+      "contract": "Full descriptions and upgrade compare",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original inspect/compare/related-card carousel with 100ms card and 250ms backdrop/arrows transitions.",
+      "remaining": "Full original material/raster equivalence is not established.",
+      "regressions": [
+        "five_character_ui_regression",
+        "expansion_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "targeting",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NTargetManager.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCardPlay.cs"
+      ],
+      "contract": "Single/all/self reticles and arrow",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Source single/self/all/random reticles and targeting arrow; real pointer and keyboard selection/aim/confirm.",
+      "remaining": "All secondary effects are not reproduced.",
+      "regressions": [
+        "card_hud_ui_regression",
+        "potion_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "potions",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Potions/NPotionHolder.cs",
+        "MegaCrit.Sts2.Core.Nodes.Potions/NPotionPopup.cs"
+      ],
+      "contract": "Tooltip, choice popup, targeting, use and discard",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "First-empty acquisition, full-belt failure, focus-before-popup, original targeting and manual discard/retry; no destination chooser.",
+      "remaining": "Final integrated actual-resource review pending.",
+      "regressions": [
+        "potion_ui_regression",
+        "world_reward_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "damage_result",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Entities.Creatures/DamageResult.cs",
+        "MegaCrit.Sts2.Core.Commands/CreatureCmd.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NDamageNumVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NDamageBlockedVfx.cs"
+      ],
+      "contract": "Distinct HP loss, overkill, zero and completely blocked feedback",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Distinct actual HP loss/overkill/zero/blocked/prevented-hit feedback, independent pet targets and bounded trace queues.",
+      "remaining": "All original GPU secondary effects are not reproduced.",
+      "regressions": [
+        "combat_damage_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "health_block",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NHealthBar.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NBlockBrokenVfx.cs"
+      ],
+      "contract": "Delayed health fill, block gain and shield loss",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original split/delayed health fill, fade and first-block entrance from actual effect trace.",
+      "remaining": "Exact original GPU material output is not established.",
+      "regressions": [
+        "health_bar_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "power_strip",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NPowerContainer.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NPower.cs"
+      ],
+      "contract": "Power icon/amount policy, names and tooltip",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Source visibility/amount policy, actual acquisition order, seven independent instance families, source two-row geometry, per-instance tips and victory freeze.",
+      "remaining": "Old saves have deterministic migrated order because unstored historical interleaving cannot be recovered.",
+      "regressions": [
+        "power_order_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "power_feedback",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreature.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NPowerAppliedVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NPowerRemovedVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NPowerFlashVfx.cs"
+      ],
+      "contract": "Applied/removed titles and actual power Flash events",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual applied/removed titles and common source flash triggers, additive blend and ordered effect-time updates.",
+      "remaining": "All secondary trigger particles remain incomplete.",
+      "regressions": [
+        "combat_damage_ui7_regression",
+        "power_order_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "hit_sparks",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NHitSparkVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NBlockSparkVfx.cs"
+      ],
+      "contract": "Original warm/blue hit sparks and secondary particles",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original sampled glow/ring/streak/speck assets and bounded 60Hz display particles.",
+      "remaining": "GPU turbulence and every secondary variant remain incomplete.",
+      "regressions": [
+        "combat_damage_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "formations",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Rooms/NCombatRoom.cs"
+      ],
+      "contract": "Named scene slots, unnamed widths and stable summon replacements",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "All source named slots, original unnamed widths, per-model registration, aspect fitting and summon replacement identities.",
+      "remaining": "Source per-instance randomized scale/hue and all material variations remain incomplete; the calculator ground rail is an explicit adaptation.",
+      "regressions": [
+        "combat_layout_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "death_rewards",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreature.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs"
+      ],
+      "contract": "Death tracks, corpse removal and once-only normal/Fast/boss reward waits",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual death/corpse/reward sequencing, normal/Fast/boss waits and pre-clear player power freeze beneath rewards.",
+      "remaining": "Original dissolve and five character Die tracks remain incomplete.",
+      "regressions": [
+        "combat_ui_regression",
+        "power_order_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "generated_cards",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Cards/NCard.cs"
+      ],
+      "contract": "Enemy-generated status/curse preview and card entry",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual generated-card batches, entry motions and effect-time hand updates.",
+      "remaining": "All direct-insertion secondary variants remain incomplete.",
+      "regressions": [
+        "card_motion_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "card_secondary",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Cards/NCardExhaustVfx.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx/NCardFlyVfx.cs"
+      ],
+      "contract": "Discard/exhaust/draw and pickup/flight particles",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Primary draw/discard/exhaust/acquisition/removal trajectories and actual action linkage.",
+      "remaining": "All original trails/materials are not reproduced.",
+      "regressions": [
+        "card_motion_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "turn_flow",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCombatUi.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NEndTurnButton.cs"
+      ],
+      "contract": "Player/enemy banners, turn-end blocking and command waits",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts.",
+      "remaining": "Every original per-monster animation/command delay has not received a differential audit.",
+      "regressions": [
+        "turn_banner_regression",
+        "combat_ui_regression",
+        "enemies_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "resources",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Orbs/NOrbManager.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NStarCounter.cs",
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreature.cs"
+      ],
+      "contract": "Orbs, stars, Osty resources and activation/evoke feedback",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original Defect orb arc/move/fill/fade, stars, Osty source anchors/summon timing and actual resource state.",
+      "remaining": "All invoke/evoke secondary VFX remain incomplete.",
+      "regressions": [
+        "card_hud_ui_regression",
+        "combat_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "choices",
+      "group": "combat",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NCombatPileCardSelectScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NChooseABundleSelectionScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection/NDeckEnchantSelectScreen.cs"
+      ],
+      "contract": "Awaited card/grid/bundle/enchant selection",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual awaited card/grid/bundle/enchant/Neow choices and original 250ms Peek with retained combat underlay.",
+      "remaining": "Final integrated bilingual review pending.",
+      "regressions": [
+        "world_ui_regression",
+        "neow_modifiers_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "pause",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.PauseMenu/NPauseMenu.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.CommonUi/NModalContainer.cs"
+      ],
+      "contract": "Overlay focus ownership and settings return",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Original modal ownership, Save & Quit flow and Settings/auxiliary return paths.",
+      "remaining": "Final integrated browser review pending.",
+      "regressions": [
+        "world_frontend_ui_regression",
+        "auxiliary_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "settings",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsScreen.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsTabManager.cs"
+      ],
+      "contract": "Real supported controls, persistence and platform restrictions",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Source General/Input layout, actual gameplay preferences, supported platform restrictions and real local feedback/credits.",
+      "remaining": "Audio is excluded; desktop-only controls are not exposed. ShowRunTimer/CommonTooltips preference parity remains unaudited.",
+      "regressions": [
+        "ui_preferences_regression",
+        "world_frontend_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "language",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NLanguageDropdown.cs"
+      ],
+      "contract": "Title-only choice, disabled while run active",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Direct startup, global remembered language and original main-menu Settings change; disabled during an active run as in source.",
+      "remaining": "No separate startup chooser or unrelated expedition settings remains.",
+      "regressions": [
+        "boot_locale_regression",
+        "profiles_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "phobia",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Combat/NCreatureVisuals.cs",
+        "MegaCrit.Sts2.Core.Models/MonsterModel.cs",
+        "MegaCrit.Sts2.Core.Models.Monsters/DecimillipedeSegment.cs",
+        "MegaCrit.Sts2.Core.Nodes.Animation/NPhobiaAnimationToggler.cs"
+      ],
+      "contract": "5skin models+8alternate bodies+3dead variants+18background layers",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "43 alternate clips, four complete backgrounds, 13 model flows, death variants and persisted preference.",
+      "remaining": "Entomancer swarm and full background GPU materials remain incomplete; Factory has no pinned ordinary-run route.",
+      "regressions": [
+        "phobia_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "text_effects",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.addons.mega_text/MegaRichTextLabel.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NSettingsScreen.cs"
+      ],
+      "contract": "Rich-text animation option affects text tags",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual rich-text option and source tag scopes remain separate from combat popups.",
+      "remaining": "All original rich-text animation/material variants are not established.",
+      "regressions": [
+        "localized_template_regression",
+        "font_styles_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "keyboard_rebind",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NInputSettingsPanel.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NInputSettingsEntry.cs"
+      ],
+      "contract": "Binding capture/conflict/reset and navigation",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Real two-bank capture/conflict-swap/reset and all hosts, linked confirm/end-turn handling, card keys and persisted NSPF3.",
+      "remaining": "Platform-only keys remain unavailable by design.",
+      "regressions": [
+        "input_bindings_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "screen_shake",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities/NScreenShake.cs",
+        "MegaCrit.Sts2.Core.Nodes.Vfx.Utilities/ScreenPunchInstance.cs",
+        "MegaCrit.Sts2.Core.Nodes.Screens.Settings/NScreenshakePaginator.cs"
+      ],
+      "contract": "Scene-only latest punch,300ms,5/20/40px and0/.5/1/2/4strength",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Scene-only latest punch, source duration/amplitudes and five persisted strengths.",
+      "remaining": "Original rumble/trauma and all trigger sites remain incomplete.",
+      "regressions": [
+        "combat_damage_ui7_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "patch_notes",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NPatchNotesScreen.cs"
+      ],
+      "contract": "Patch-notes reader",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "All 126 supplied source notes, continuous reader, real bold glyphs, original opening and immediate wheel layout.",
+      "remaining": "Remote live feed is not implemented; supplied pinned notes are available offline.",
+      "regressions": [
+        "auxiliary_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "feedback",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.FeedbackScreen/NSendFeedbackScreen.cs"
+      ],
+      "contract": "Feedback form and submit acknowledgement",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Actual UTF-8 draft, source 8000 UTF-16-unit limit, 60s retention, mood and local export with explicit acknowledgement.",
+      "remaining": "External submission is not performed; no original service success is claimed.",
+      "regressions": [
+        "auxiliary_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "modding",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.ModdingScreen/NModdingScreen.cs"
+      ],
+      "contract": "Installed-mod settings and loading confirmation",
+      "assessment": "unverified",
+      "remaining": "Conditional onModSettings and installedmods; not required visible on unmodded port"
+    },
+    {
+      "id": "credits",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Credits/NCreditsScreen.cs"
+      ],
+      "contract": "Credits and return",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Complete supplied 64-key original credits, columns/logos, source scrolling, exit gate and fade.",
+      "remaining": "Godot raster/kerning equality is not established.",
+      "regressions": [
+        "auxiliary_ui8_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    },
+    {
+      "id": "audio",
+      "group": "excluded",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Audio/NAudioManager.cs"
+      ],
+      "contract": "Playback,mixing,audio controls",
+      "assessment": "excluded",
+      "remaining": "Explicitly excluded by active scope; no fidelity credit"
+    },
+    {
+      "id": "multiplayer",
+      "group": "excluded",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu/NMultiplayerSubmenu.cs"
+      ],
+      "contract": "Lobby,co-op,synchronization and remoteplayers",
+      "assessment": "excluded",
+      "remaining": "Explicitly excluded; singleplayer daily functionality not silently excluded with it"
+    },
+    {
+      "id": "timeline",
+      "group": "excluded",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Screens.Timeline/NTimelineScreen.cs"
+      ],
+      "contract": "Timeline unlock presentation",
+      "assessment": "excluded",
+      "remaining": "Explicitly excluded; other screens visibility gates still documented"
+    },
+    {
+      "id": "font_faces",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Localization.Fonts.FontPathSets/ZhsFontPathSet.cs",
+        "MegaCrit.Sts2.addons.mega_text/MegaRichTextLabel.cs"
+      ],
+      "contract": "Original locale and scene font families, style measurement and glyph painting",
+      "assessment": "implemented_with_documented_limits",
+      "implemented": "Real source locale/scene families, true 5/6px glyphs, actual available-size selection, consistent metrics/paint and real OFL missing-codepoint fallbacks.",
+      "remaining": "Kerning/Godot rasterization equality is not established. 320x240 minimum readable sizes are documented adaptations.",
+      "regressions": [
+        "font_styles_ui7_regression",
+        "card_hud_ui_regression"
+      ],
+      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+    }
+  ]
+}

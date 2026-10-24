@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "content_fixture.hpp"
+#include "rich_text.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -34,7 +35,7 @@ static Bytes synthetic(){
  const unsigned empty=unsigned(b.size());b.push_back(0);for(unsigned i=0;i<ns;++i)put(b,sa+i*8,empty);
  const auto text=[&](unsigned slot,const std::string&value){put(b,sa+slot*8,unsigned(b.size()));put(b,sa+slot*8+4,unsigned(value.size()));b.insert(b.end(),value.begin(),value.end());b.push_back(0);};
  text(LocaleMarkerString,"eng");text(AuxiliaryCreditsString,"I0\nHSynthetic project\nRRole\tName\nCShared work\nMOne\nMTwo\nPAlpha\nPBeta\nPGamma\nI1\nI2\nI3\nS476\nI4");
- for(unsigned n=0;n<AuxiliaryNoteCount;++n)for(unsigned k=0;k<AuxiliaryNotes[n].chunks;++k){std::string body="[b]Synthetic note[/b]\n";
+ for(unsigned n=0;n<AuxiliaryNoteCount;++n)for(unsigned k=0;k<AuxiliaryNotes[n].chunks;++k){std::string body="[b]Synthetic note[/b]\n[code]sample.identifier[/code]\n";
   for(unsigned line=0;line<70;++line)body+="Bounded text row "+std::to_string(line)+".\n";text(AuxiliaryNotes[n].text+k,body);}
  for(unsigned i=0;i<nc;++i){put(b,ca+i*16+4,1,2);put(b,ca+i*16+6,33,2);}
  put(b,12,unsigned(b.size()));return b;
@@ -50,8 +51,18 @@ static void press(uint16_t code){CHECK(app.physical_key(code,true));CHECK(app.ph
 static void capture(const char*name){if(!captures)return;app.render();FILE*f=std::fopen((std::string(captures)+"/"+name+".ppm").c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");
  for(uint16_t pixel:app.pixels){uint8_t rgb[]={uint8_t((pixel>>11)*255/31),uint8_t(((pixel>>5)&63)*255/63),uint8_t((pixel&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
 static void notes(){
- CHECK(AuxiliaryNoteCount==126);for(unsigned n=0;n<AuxiliaryNoteCount;++n){CHECK(AuxiliaryNotes[n].chunks>0&&AuxiliaryNotes[n].chunks<=4);
-  CHECK(*app.content.string(AuxiliaryNotes[n].text));if(n)CHECK(AuxiliaryNotes[n-1].date>AuxiliaryNotes[n].date);}
+ CHECK(AuxiliaryNoteCount==126);unsigned code_scopes=0;for(unsigned n=0;n<AuxiliaryNoteCount;++n){CHECK(AuxiliaryNotes[n].chunks>0&&AuxiliaryNotes[n].chunks<=4);
+  CHECK(*app.content.string(AuxiliaryNotes[n].text));if(n)CHECK(AuxiliaryNotes[n-1].date>AuxiliaryNotes[n].date);
+  for(unsigned k=0;k<AuxiliaryNotes[n].chunks;++k){const char*text=app.content.string(AuxiliaryNotes[n].text+k);
+   const char*start=std::strstr(text,"[code]");if(!start)continue;
+   RichReader reader(text);RichChar ch{};std::string plain;
+   while(reader.next(ch))plain+=ch.codepoint<128?char(ch.codepoint):'?';
+   CHECK(plain.find("[code]")==std::string::npos&&plain.find("[/code]")==std::string::npos);
+   while(start){const char*end=std::strstr(start+6,"[/code]");CHECK(end);const std::string body(start+6,end);
+    CHECK(!body.empty()&&plain.find(body)!=std::string::npos);++code_scopes;start=std::strstr(end+7,"[code]");}
+  }
+ }
+ CHECK(code_scopes>0);
  snapshot();CHECK(app.physical_key('E',true));CHECK(app.auxiliary.screen==AuxiliaryScreen::None);CHECK(app.physical_key('E',false));
  CHECK(app.auxiliary.screen==AuxiliaryScreen::PatchNotes);advance(250);CHECK(app.auxiliary.scroll.maximum>0);capture("patch-notes-latest");
  CHECK(!exists(HitKind::AuxiliaryControl,AuxiliaryNext));const int menu=app.menu;

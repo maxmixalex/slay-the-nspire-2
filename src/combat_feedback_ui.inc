@@ -157,7 +157,10 @@ void App::combat_feedback_move(int slot,int move,uint32_t start,uint32_t action,
  f.hidden|=uint8_t(1u<<slot);f.hide_at[slot]=start;
 }
 void App::before_combat_effect(const State&s,Effect effect){
- if(&s!=&game||!ui_feedback_bound(*this))return;auto&f=combat_feedback;
+ if(&s!=&game)return;
+ if(world_effect_clears_combat_powers(effect))
+  ui_freeze_combat_powers(*this);
+ if(!ui_feedback_bound(*this))return;auto&f=combat_feedback;
  const XOp op=effect.kind==EffectKind::Extended?XOp(effect.target):XOp::Count;
  const EnemyId kind=f.move_slot>=0&&f.move_slot<s.enemy_count?s.enemy_world.models[f.move_slot].kind:EnemyId::Count;
  const auto audited=enemy_command_timing(kind,f.move,fast_mode);

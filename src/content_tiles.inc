@@ -113,7 +113,7 @@ static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* 
     return true;
 }
 static TileGroup* load_tile_group(const Content* owner,const ResourceReader& reader,
-    const uint8_t* h,uint32_t id){
+    const uint8_t* h,uint32_t id,uint8_t*encoded_pixels){
     if(TileGroup* hit=find_tile_group(owner,id)){
         if(TileCacheLru)hit->age=next_tile_age();
         return hit;
@@ -121,8 +121,7 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
     if(id>=u32(h+20)+u32(h+24))return nullptr;
     const uint8_t* row=h+64+id*8;
     const uint32_t offset=u32(row),length=u32(row+4);
-    uint8_t*encoded_pixels=resource_transfer_bytes();
-    if(length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
+    if(!encoded_pixels||length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     if(!valid_tile_group_header(h,id,p,length))return nullptr;
@@ -137,13 +136,12 @@ static TileGroup* load_tile_group(const Content* owner,const ResourceReader& rea
 // Retained pictures share the existing animation-group pool and scratch.
 // File offsets occupy a separate key namespace from the small tile-group ids.
 static TileGroup* load_retained_group(const Content* owner,const ResourceReader& reader,
-    uint32_t offset,uint32_t length){
+    uint32_t offset,uint32_t length,uint8_t*encoded_pixels){
     const uint32_t id=0x80000000u|offset;
     if(TileGroup* hit=find_tile_group(owner,id)){
         hit->age=next_tile_age();return hit;
     }
-    uint8_t*encoded_pixels=resource_transfer_bytes();
-    if(length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
+    if(!encoded_pixels||length<33||length>ResourceTransferCapacity||!reader.read(offset,encoded_pixels,length))return nullptr;
     const uint8_t* p=encoded_pixels;
     const unsigned size=u32(p+4),encoded=u32(p+8),property=u32(p+12);
     if(u32(p)!=0x31524752u||!size||size>Lzma2BlockRawLimit||encoded!=length-32||
@@ -188,10 +186,10 @@ struct TileFrame {
     TileFrame& operator=(const TileFrame&)=delete;
     ~TileFrame(){if(pinned)pinned->first&=63u;}
     bool open(const Content* owner,const ResourceReader& reader,const uint8_t* h,
-        uint32_t header_offset,uint32_t descriptor,unsigned w,unsigned height){
+        uint32_t header_offset,uint32_t descriptor,unsigned w,unsigned height,uint8_t*encoded_pixels){
         unsigned slot=0;if(!tile_descriptor_slot(h,descriptor,slot))return false;
         uint8_t row[16];if(!read_tile_descriptor(reader,h,header_offset,descriptor,row))return false;
-        pinned=load_tile_group(owner,reader,h,u32(h+20)+u32(row+4));if(!pinned)return false;
+        pinned=load_tile_group(owner,reader,h,u32(h+20)+u32(row+4),encoded_pixels);if(!pinned)return false;
         pinned->first|=128u;
         const uint8_t* record=tile_record_at(*pinned,u32(row+8),u32(row+12));if(!record)return false;
         columns=(w+TileSide-1)/TileSide;count=columns*((height+TileSide-1)/TileSide);
@@ -204,7 +202,7 @@ struct TileFrame {
 
 static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader,
     const uint8_t* h,const TileFrame& frame,unsigned w,unsigned height,
-    uint8_t* output){
+    uint8_t* output,uint8_t*encoded_pixels){
     unsigned row_geometry[240],row_output[240];
     uint8_t active[MaxFrameTiles]{};
     unsigned at=0,out=0;
@@ -242,7 +240,7 @@ static bool rebuild_tile_frame(const Content* owner,const ResourceReader& reader
     unsigned copied=0;
     for(unsigned pass=0;pass<2;++pass)for(unsigned g=0;g<needed_count;++g){
         if(cached[g]!=(pass==0?1:0))continue;
-        TileGroup* group=load_tile_group(owner,reader,h,needed[g]);if(!group)return false;
+        TileGroup* group=load_tile_group(owner,reader,h,needed[g],encoded_pixels);if(!group)return false;
         const uint8_t* records=tile_bytes(*group);
         for(unsigned i=0;i<frame.count;++i)if(active[i]&&u32(frame.ids+i*4)/per_group==needed[g]){
             const unsigned id=u32(frame.ids+i*4)%per_group;

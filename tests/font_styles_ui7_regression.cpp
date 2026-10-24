@@ -12,7 +12,7 @@ static App app;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"font styles:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void put(Bytes&b,unsigned at,uint32_t v,unsigned n=4){CHECK(at+n<=b.size());for(unsigned i=0;i<n;++i)b[at+i]=uint8_t(v>>(i*8));}
-static Bytes fixture(bool modern=true,bool styles=true){
+static Bytes fixture(bool modern=true,bool styles=true,bool small=false){
  const unsigned ni=A_Count,ng=modern&&styles?6:3,ns=modern?Ui7StringCount:LocaleStringCount;
  const unsigned nc=modern?Ui7AnimationKinds:MerchantEffectsAnimationKinds,nu=modern?unsigned(Ui7AuxiliaryCount):unsigned(Ui6AuxiliaryCount);
  const unsigned ga=40+ni*16,sa=ga+ng*16,ca=sa+ns*8,base=ca+nc*16+CardKinds*16+nu*4;
@@ -29,7 +29,7 @@ static Bytes fixture(bool modern=true,bool styles=true){
  b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
  const unsigned cp[]={63,65,66,65,65,65},size[]={8,8,8,72,136,200},advance[]={1,2,3,5,4,6};
  const Bytes alpha[]={{127},{255},{127},{255,0,255},{0,255},{0,255,255,0}};
- for(unsigned i=0;i<ng;++i){const unsigned at=ga+i*16;put(b,at,cp[i]);put(b,at+4,unsigned(b.size()));put(b,at+8,size[i],2);
+ for(unsigned i=0;i<ng;++i){const unsigned at=ga+i*16;put(b,at,cp[i]);put(b,at+4,unsigned(b.size()));put(b,at+8,small&&i==0?5:size[i],2);
   b[at+10]=uint8_t(alpha[i].size());b[at+11]=1;put(b,at+12,advance[i],2);b.insert(b.end(),alpha[i].begin(),alpha[i].end());}
  b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
  const unsigned empty=unsigned(b.size());b.push_back(0);const unsigned marker=unsigned(b.size());b.insert(b.end(),{'e','n','g',0});
@@ -40,6 +40,11 @@ static void clear(){std::fill(std::begin(app.pixels),std::end(app.pixels),0);}
 static uint16_t pixel(unsigned x,unsigned y){return app.pixels[y*320+x];}
 static void direct(){
  auto bytes=fixture();CHECK(app.content.open(bytes.data(),bytes.size()));Canvas c{app};
+ for(int requested:{5,6,7,9,11,14,17}){
+  CHECK(app.content.font_size(requested)==8&&c.width("AB",requested)==5);
+  clear();const auto selected=c.fitted("AB",10,10,40,14,requested,5,0xffff,false,true);
+  CHECK(selected.size==8&&!selected.truncated&&pixel(10,10)==0xffff&&pixel(12,10)!=0);
+ }
  CHECK(app.content.glyph_metrics('A',8).advance==2);
  CHECK(app.content.glyph_metrics('A',8,1).advance==5);
  CHECK(app.content.glyph_metrics('A',8,2).advance==4);
@@ -76,6 +81,10 @@ static void direct(){
  CHECK(c.width("[b]A[/b][i]B[/i]",8)==5);
  clear();c.text("[b]A[/b][i]B[/i]",10,60,8,0xffff);
  CHECK(pixel(10,60)==0xffff&&pixel(12,60)!=0&&pixel(11,60)==0&&pixel(13,60)==0);
+ auto small=fixture(true,true,true);CHECK(app.content.open(small.data(),small.size()));
+ CHECK(app.content.font_size(5)==5&&app.content.font_size(6)==5&&app.content.font_size(7)==8);
+ CHECK(app.content.font_size(7,0,true)==5&&app.content.font_size(11)==8);
+ CHECK(app.content.glyph('?',5).pixels); // Reopening invalidates cached size bands.
 }
 struct Provider {
  const Bytes*bytes;unsigned calls=0;
@@ -87,6 +96,7 @@ static void provider(){
  auto bytes=fixture();Provider p{&bytes};CHECK(app.content.open(p.source()));const auto opened=p.calls;
  for(unsigned face=0;face<8;++face){CHECK(app.content.glyph_metrics(0xfe0f,8,face).advance==0);CHECK(app.content.glyph(0xfe0f,8,face).advance==0);}
  CHECK(p.calls==opened);
+ for(unsigned face=0;face<8;++face)for(int requested:{5,7,9,11,14,20})CHECK(app.content.font_size(requested,face)==8);
  for(unsigned face=0;face<4;++face)CHECK(app.content.glyph_metrics('A',8,face).advance>0);
  CHECK(p.calls==opened);for(unsigned face=0;face<4;++face)CHECK(app.content.glyph('A',8,face).pixels);
  const auto warm=p.calls;CHECK(warm>opened);

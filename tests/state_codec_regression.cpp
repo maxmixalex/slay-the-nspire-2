@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "resource_transfer.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -121,6 +122,11 @@ static void historical_reuse(const char*directory){
         // decoded v15 state behind a deliberately invalid game phase.
         new_run(source,917,true,Character::Necrobinder);save_immutable(source,encoded);
         bad=encoded;put_word(bad.bytes,12,255);reject(bad.bytes,bad.size);
+        // A full-size image/history transfer replaces the union's active
+        // member between codec operations. Historical defaults must come
+        // from a fresh State lifetime, never stale bytes or a cached pointer.
+        {ResourceTransferLease transfer(ResourceTransferUse::Bytes);CHECK(transfer);
+         std::memset(transfer.bytes(),0xa7,ResourceTransferCapacity);}
         CHECK(load(target,bytes.data(),bytes.size()));CHECK(validate(target));legacy_defaults();
         save_immutable(target,encoded);
         CHECK(load(target,encoded.bytes,encoded.size));
@@ -129,6 +135,7 @@ static void historical_reuse(const char*directory){
         CHECK(load(target,bytes.data(),bytes.size()));legacy_defaults();
         save_immutable(target,again);same_encoded(encoded,again);
     }
+    CHECK(!resource_transfer_uses);
 }
 int main(int argc,char**argv){
     CHECK(argc==2);current_states();historical_reuse(argv[1]);

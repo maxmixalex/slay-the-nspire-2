@@ -98,10 +98,13 @@ struct Fixture {
 };
 struct Provider {
     const Bytes*bytes;uint64_t read_bytes=0;unsigned calls=0;
+    void(*after_read)(void*)=nullptr;void*hook=nullptr;bool fail_next=false;
     static bool read(void*context,uint32_t offset,void*out,uint32_t count){
         auto&p=*static_cast<Provider*>(context);++p.calls;p.read_bytes+=count;
         if(offset>p.bytes->size()||count>p.bytes->size()-offset)return false;
-        std::memcpy(out,p.bytes->data()+offset,count);return true;
+        std::memcpy(out,p.bytes->data()+offset,count);
+        if(p.after_read)p.after_read(p.hook);
+        if(p.fail_next){p.fail_next=false;return false;}return true;
     }
     ResourceSource source(){return {this,uint32_t(bytes->size()),read,nullptr};}
 };
@@ -159,27 +162,93 @@ void foreground_workspace_reuse(){
     const auto warm=source.read_bytes;
     // Rendering publishes only stable decoded views. File save/history I/O
     // can overwrite every encoded byte without evicting or corrupting them.
-    auto*transfer=resource_transfer_bytes();std::memset(transfer,0xa5,ResourceTransferCapacity);
+    {ResourceTransferLease transfer(ResourceTransferUse::Bytes);CHECK(transfer);
+     std::memset(transfer.bytes(),0xa5,ResourceTransferCapacity);}
     CHECK(!std::memcmp(retained.pixels,f.raw[0].data(),f.raw[0].size()));
     CHECK(tile.pixels[0]==0&&tile.pixels[1]==0);picture(*content,0,f,0);
     CHECK(source.read_bytes==warm);
     static State original,restored;static SaveData expected,actual;
     new_run(original,0x71727,true);CHECK(save(original,expected));
-    auto&scratch=resource_transfer_save();CHECK(save(original,scratch));
-    CHECK(scratch.size==expected.size&&!std::memcmp(scratch.bytes,expected.bytes,expected.size));
-    Bytes disk(scratch.bytes,scratch.bytes+scratch.size);
+    Bytes disk;
+    {ResourceTransferLease transfer(ResourceTransferUse::Save);CHECK(transfer);
+     auto&scratch=*transfer.save();std::memset(scratch.bytes,0x6d,sizeof scratch.bytes);CHECK(save(original,scratch));
+     CHECK(scratch.size==expected.size&&!std::memcmp(scratch.bytes,expected.bytes,expected.size));
+     // State construction must use the aligned suffix, not overwrite unused
+     // file-buffer bytes, the live encoded prefix or a retained image view.
+     for(size_t i=scratch.size;i<sizeof scratch.bytes;++i)CHECK(scratch.bytes[i]==0x6d);
+     disk.assign(scratch.bytes,scratch.bytes+scratch.size);
+     ResourceTransferLease nested_bytes(ResourceTransferUse::Bytes),nested_save(ResourceTransferUse::Save);
+     CHECK(!nested_bytes&&!nested_save);picture(*content,0,f,0);
+     CHECK(!content->image(3).pixels&&content->healthy());
+     CHECK(save(original,actual)&&actual.size==expected.size&&!std::memcmp(actual.bytes,expected.bytes,actual.size));}
     CHECK(content->open(source.source()));picture(*content,3,f,3); // Cold retained decode borrows the same storage.
-    auto&readback=resource_transfer_save();std::memcpy(readback.bytes,disk.data(),disk.size());
-    CHECK(load(restored,readback.bytes,disk.size()));CHECK(save(restored,actual));
+    {ResourceTransferLease transfer(ResourceTransferUse::Save);CHECK(transfer);
+     auto&readback=*transfer.save();std::memcpy(readback.bytes,disk.data(),disk.size());
+     CHECK(load(restored,readback.bytes,disk.size()));CHECK(save(restored,actual));
+     CHECK(!std::memcmp(readback.bytes,disk.data(),disk.size()));
+     CHECK(!load(restored,readback.bytes,disk.size()-4));
+     CHECK(!std::memcmp(readback.bytes,disk.data(),disk.size()));
+     CHECK(save(restored,actual));}
     CHECK(expected.size==actual.size&&!std::memcmp(expected.bytes,actual.bytes,expected.size));
     auto progress=std::make_unique<UiProgress>();clear_ui_progress(*progress);
     progress->characters[2].play_seconds=903;progress->card_wins[0]=17;progress->last_saved_at=1792838400;
-    transfer=resource_transfer_bytes();const size_t size=encode_ui_progress(*progress,transfer,UiProgressCapacity);CHECK(size);
-    Bytes history(transfer,transfer+size);picture(*content,4,f,4);
-    transfer=resource_transfer_bytes();std::memcpy(transfer,history.data(),history.size());
-    clear_ui_progress(*progress);CHECK(decode_ui_progress(transfer,history.size(),*progress));
+    Bytes history;
+    {ResourceTransferLease transfer(ResourceTransferUse::Bytes);CHECK(transfer);
+     const size_t size=encode_ui_progress(*progress,transfer.bytes(),UiProgressCapacity);CHECK(size);
+     history.assign(transfer.bytes(),transfer.bytes()+size);}
+    picture(*content,4,f,4);
+    {ResourceTransferLease transfer(ResourceTransferUse::Bytes);CHECK(transfer);
+     std::memcpy(transfer.bytes(),history.data(),history.size());
+     clear_ui_progress(*progress);CHECK(decode_ui_progress(transfer.bytes(),history.size(),*progress));}
     CHECK(progress->characters[2].play_seconds==903&&progress->card_wins[0]==17&&progress->last_saved_at==1792838400);
     picture(*content,3,f,3);picture(*content,4,f,4);
+    CHECK(!resource_transfer_uses);
+}
+struct ReentrantRead {
+    Content*content;const Fixture*fixture;const State*original;State*target;
+    const SaveData*saved;SaveData*output;unsigned calls=0;
+    static void attempt(void*context){
+        auto&r=*static_cast<ReentrantRead*>(context);++r.calls;
+        // Exercise an actual ResourceSource callback after it copied encoded
+        // input. Nested serialization must fail before either source or target
+        // is touched, and a cold image must remain retryable after the lease.
+        CHECK(!save(*r.original,*r.output));CHECK(!load(*r.target,r.saved->bytes,r.saved->size));
+        CHECK(!r.content->image(4).pixels&&r.content->healthy());
+        const auto retained=r.content->image(0);CHECK(retained.pixels);
+        CHECK(!std::memcmp(retained.pixels,r.fixture->raw[0].data(),r.fixture->raw[0].size()));
+    }
+};
+void reentrant_transfer_and_failure(){
+    Fixture f;Provider source{&f.bytes};auto content=std::make_unique<Content>();
+    CHECK(content->open(source.source()));picture(*content,0,f,0);
+    static State original,target;static SaveData saved,output;
+    new_run(original,0x41434,true);new_run(target,0x19811,true,Character::Defect);CHECK(save(original,saved));
+    std::memset(&output,0xa6,sizeof output);
+    Bytes before(reinterpret_cast<const uint8_t*>(&target),reinterpret_cast<const uint8_t*>(&target)+sizeof target);
+    ReentrantRead reentry{content.get(),&f,&original,&target,&saved,&output};
+    source.after_read=ReentrantRead::attempt;source.hook=&reentry;
+    const auto tiled=content->image(Fixture::Images-1);CHECK(tiled.pixels&&tiled.format==4);
+    CHECK(tiled.pixels[0]==0&&tiled.pixels[1]==0&&reentry.calls>0);
+    CHECK(!std::memcmp(&target,before.data(),before.size()));
+    const auto*bytes=reinterpret_cast<const uint8_t*>(&output);
+    for(size_t i=0;i<sizeof output;++i)CHECK(bytes[i]==0xa6);
+    source.after_read=nullptr;picture(*content,4,f,4);CHECK(!resource_transfer_uses);
+    {
+        ResourceTransferLease codec(ResourceTransferUse::Codec);CHECK(codec);
+        State&staged=*::new(detail::InPlaceAddress{codec.state_storage()}) State(original);
+        CHECK(!save(original,output)&&!load(target,saved.bytes,saved.size));
+        CHECK(!content->image(3).pixels&&content->healthy());picture(*content,0,f,0);
+        ResourceTransferLease nested(ResourceTransferUse::Save);CHECK(!nested);
+        CHECK(!std::memcmp(&staged,&original,sizeof staged));
+        CHECK(!std::memcmp(&target,before.data(),before.size()));
+    }
+    CHECK(load(target,saved.bytes,saved.size));CHECK(save(target,output));
+    CHECK(saved.size==output.size&&!std::memcmp(saved.bytes,output.bytes,saved.size));picture(*content,3,f,3);
+    // Failed streamed I/O releases the lease as well as the image reservation.
+    CHECK(content->open(source.source()));source.fail_next=true;
+    CHECK(!content->image(0).pixels&&!content->healthy());CHECK(!resource_transfer_uses);
+    CHECK(save(original,output));CHECK(content->open(source.source()));picture(*content,0,f,0);
+    CHECK(!resource_transfer_uses);
 }
 }
-int main(){for(unsigned version:{20u,21u})for(bool streamed:{false,true})roundtrip(streamed,version);requested_bounds();foreground_workspace_reuse();std::printf("%u retained-content checks passed\n",checks);}
+int main(){for(unsigned version:{20u,21u})for(bool streamed:{false,true})roundtrip(streamed,version);requested_bounds();foreground_workspace_reuse();reentrant_transfer_and_failure();std::printf("%u retained-content checks passed\n",checks);}

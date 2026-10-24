@@ -36,6 +36,7 @@ struct Canvas{
     unsigned text_visible_characters=~0u;
     uint8_t font_face=0;
     uint8_t bold_face=0; // A scene can explicitly override its bold family.
+    bool wrap_latin_words=false; // Original article fallback keeps Latin word boundaries in every locale.
     unsigned font_style(const RichChar&ch)const{const unsigned style=rich_font_style(ch);return (style==1&&bold_face?unsigned(bold_face):style)|font_face;}
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
         if(opacity!=255)alpha=div255(alpha*opacity);
@@ -302,7 +303,7 @@ struct Canvas{
         auto cl=a.content.clip(id);if(!cl.count||scale<=0)return;
         unsigned frame=milliseconds/cl.frame_ms;frame=loop?frame%cl.count:unsigned(mn(int(frame),cl.count-1));
         int image=int(cl.first)+int(frame);auto p=a.content.image(image);
-        picture(image,x-cl.pivot_x*scale/1024,y-cl.pivot_y*scale/1024,mx(1,p.w*scale/1024),mx(1,p.h*scale/1024));
+        picture(p,x-cl.pivot_x*scale/1024,y-cl.pivot_y*scale/1024,mx(1,p.w*scale/1024),mx(1,p.h*scale/1024));
     }
     void actor(int actor,int x,int y,int scale=1024){
         if(actor<0||actor>MaxEnemies)return;
@@ -315,6 +316,7 @@ struct Canvas{
         scaled_clip(id,x,y,elapsed,scale,loop);
     }
     int width(const char*p,int size){
+        size=a.content.font_size(size,font_face);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         RichReader reader(p);RichChar ch{};int w=0;
         while(reader.next(ch)&&ch.codepoint!='\n')w+=a.content.glyph_metrics(ch.codepoint,size,font_style(ch)).advance;
@@ -354,6 +356,7 @@ struct Canvas{
         glyph(g,x,y,color);
     }
     int text(const char*p,int x,int y,int size=12,uint16_t color=White,int maxwidth=320,int maxlines=1){
+        size=a.content.font_size(size,font_face);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
@@ -370,14 +373,15 @@ struct Canvas{
         }return x;
     }
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
+        size=a.content.font_size(size,font_face);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         RichReader reader(p);RichChar ch{};int at=x,row=0;bool boundary=true;
-        const bool words=a.content.english();
+        const bool words=a.content.english()||wrap_latin_words;
         auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px,font_style(value));const int advance=g.advance;return fitted_text::Metric{advance,advance};};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         while(reader.next(ch)){
-            // Only English paragraphs reserve the next complete word. The
+            // English paragraphs and source article readers reserve whole words. The
             // copied rich reader preserves styles across tags and the live
             // reader's character indices. Oversized words retain glyph wrap.
             const int word=words&&boundary&&at>x&&fitted_text::word_character(ch.codepoint)?fitted_text::word_width(reader,ch,size,metrics):0;
@@ -398,14 +402,18 @@ struct Canvas{
     }
     void centered(const char*p,int x,int y,int w,int size=12,uint16_t color=White){text(p,x+mx(0,(w-width(p,size))/2),y,size,color,w);}
     // Card labels have a real rectangle, unlike scrollable detail text. Use
-    // native 8/10/12px glyphs, then ellipsize within its final visible line.
+    // actual available glyph bands, then ellipsize within the final visible line.
     fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
-        auto plan=fitted_text::plan(p,w,h,preferred,minimum,metrics);
-        if(single_line){
-            while(plan.total>1&&plan.size>minimum){plan.size=fitted_text::next_size(plan.size);plan.total=fitted_text::line_count(p,w,plan.size,metrics);}
-            plan.rows=1;plan.step=plan.size+1;plan.truncated=plan.total>1;
+        minimum=a.content.font_size(minimum,font_face);preferred=mx(minimum,a.content.font_size(preferred,font_face));
+        fitted_text::Plan plan;
+        for(;;){
+            plan=fitted_text::plan(p,w,h,preferred,preferred,metrics);
+            if(single_line){plan.rows=1;plan.step=plan.size+1;plan.truncated=plan.total>1;}
+            if(!plan.truncated||preferred<=minimum)break;
+            const int next=a.content.font_size(preferred-1,font_face,true);
+            if(next>=preferred)break;preferred=mx(minimum,next);
         }
         int widths[32]{};if(plan.rows>32)plan.rows=32;
         if(centered)fitted_text::visit(p,w,plan,metrics,[&](const RichChar&ch,int at,int row,int size){widths[row]=at+metrics(ch,size).width;});

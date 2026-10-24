@@ -154,7 +154,7 @@ static void frontend_settings_screen(Canvas&c){
    if(pointed&&i<6)hover=int(i);
    const bool focus=pointed||(!a.pointer.visible&&a.settings_item==i),enabled=i!=0||a.title;
    Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(row.opacity*115));
-   row.text_fitted(label(keys[i],eng[i],zhs[i]),29,y+7,i==0?161:i==1?146:i>=6?174:222,11,focus?Gold:White,8);
+   row.text_fitted(label(keys[i],eng[i],zhs[i]),29,y+7,i==0?161:i==1?146:i>=6?174:222,8,focus?Gold:White,8);
    if(i==0){
     row.rect(196,y+3,93,22,rgb(44,67,79));
     row.text_fitted(english?"English":"中文",201,y+7,71,10,Gold,8,true);

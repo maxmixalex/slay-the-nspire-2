@@ -39,6 +39,11 @@ static void text_boundaries(){
         layout("one\ntwo\nthree\nfour\nfive\nsix",width,height);
     }
     CHECK(layout("",38,21).empty());
+    const auto native_small=fitted_text::plan("Deal 6 damage.",37,20,5,5,metric);
+    CHECK(native_small.size==5&&native_small.rows==2&&!native_small.truncated);
+    unsigned small_glyphs=0;fitted_text::visit("Deal 6 damage.",37,native_small,metric,[&](RichChar ch,int x,int row,int size){
+        CHECK(size==5&&x+metric(ch,size).width<=37&&row<2&&ch.codepoint!=0x2026);++small_glyphs;});
+    CHECK(small_glyphs==14);
     const auto words=layout("Keep words intact",38,32,8);
     std::string rows[3];for(const auto&letter:words){CHECK(letter.row<3);rows[letter.row]+=char(letter.ch.codepoint);}
     CHECK(rows[0]=="Keep "&&rows[1]=="words "&&rows[2]=="intact");
