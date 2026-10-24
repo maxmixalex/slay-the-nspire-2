@@ -38,6 +38,9 @@ DIRECTORY_LIMIT = 2 * 1024 * 1024
 IMAGE_LIMIT = 320 * 240 * 8 + 2 * 240
 ENCODED_LIMIT = IMAGE_LIMIT + IMAGE_LIMIT // 255 + 32
 GROUP_LIMIT = 512 * 1024
+GLYPH_GROUP_VERSION = 32
+GLYPH_GROUP_FLAG = 0x8000
+GLYPH_GROUP_LIMIT = 64 * 1024
 SIDE = 16
 TILE_BYTES = 770
 MAX_TILES_PER_GROUP = GROUP_LIMIT // TILE_BYTES
@@ -201,8 +204,9 @@ class PackView:
             require(offset % 2 == 0 and 0 < length <= ENCODED_LIMIT, 'Invalid image range')
             self.block(offset, length)
         self.glyphs = [GLYPH.unpack_from(data, self.glyph_at + i * 16) for i in range(ng)]
+        self.retained_cache = OrderedDict()
         previous_glyph = -1
-        for cp, offset, px, w, h, advance, encoded in self.glyphs:
+        for glyph_id, (cp, offset, px, w, h, advance, encoded) in enumerate(self.glyphs):
             require(cp <= 0x10ffff and 0 < px <= (255 if self.version >= 24 else 32) and
                     (px & (31 if self.version >= 28 else 63)) in ((5, 6, 8, 10, 12, 14, 16, 20) if self.version >= 28 else (8, 10, 12, 16, 20)) and
                     0 < w <= 40 and 0 < h <= 40 and advance <= 40,
@@ -210,10 +214,7 @@ class PackView:
             glyph_key = (px << 24) | cp
             require(glyph_key > previous_glyph, 'Glyph keys must be strictly increasing')
             previous_glyph = glyph_key
-            payload = self.block(offset, encoded or w * h)
-            if encoded:
-                require(encoded % 2 == 0 and all(payload[::2]) and sum(payload[::2]) == w * h,
-                        'Invalid glyph run encoding')
+            self.glyph_payload(glyph_id)
         self.strings = [struct.unpack_from('<II', data, self.string_at + i * 8) for i in range(ns)]
         for offset, length in self.strings:
             require(length < STRING_LIMIT, 'String exceeds runtime byte limit')
@@ -229,12 +230,57 @@ class PackView:
         self.aux = list(struct.unpack_from('<' + 'I' * auxiliary_count, data, self.aux_at))
         require(all(row[0] < ni and all(value < ns for value in row[1:]) for row in self.cards)
                 and all(image < ni for image in self.aux), 'Invalid directory reference')
-        self.retained_cache = OrderedDict()
 
     def block(self, offset, size):
         require(offset >= self.base_end and 0 <= size <= len(self.data) - offset,
                 'Payload outside pack')
         return self.data[offset:offset + size]
+
+    def glyph_payload(self, glyph_id):
+        """Return exact old raw/RLE glyph bytes through either directory form."""
+        _cp, offset, _px, width, height, _advance, encoded = self.glyphs[glyph_id]
+        grouped = encoded & GLYPH_GROUP_FLAG
+        require(not grouped or self.version >= GLYPH_GROUP_VERSION,
+                'Grouped glyph requires NSP2/32')
+        encoded &= ~GLYPH_GROUP_FLAG
+        count = encoded or width * height
+        if not grouped:
+            payload = self.block(offset, count)
+        else:
+            relative, group_size, raw_at, raw_bytes = struct.unpack('<iIII', self.block(offset, 16))
+            group_at = offset + relative
+            require(GROUP.size < group_size <= ENCODED_LIMIT and raw_bytes == count,
+                    'Invalid grouped glyph descriptor')
+            require(group_at >= self.base_end and group_size <= len(self.data) - group_at,
+                    'Grouped glyph payload outside pack')
+            tag, raw_size, stored_size, prop, items, a, b, c = GROUP.unpack_from(self.data, group_at)
+            require(tag == b'RGR1' and 0 < raw_size <= GLYPH_GROUP_LIMIT and
+                    stored_size == group_size - GROUP.size and prop == 14 and
+                    0 < items <= 32768 and not (a or b or c) and
+                    raw_at <= raw_size and raw_bytes <= raw_size - raw_at,
+                    'Invalid grouped glyph header/slice')
+            cache_key = ('glyph', group_at, group_size)
+            if cache_key in self.retained_cache:
+                self.retained_cache.move_to_end(cache_key)
+                raw = self.retained_cache[cache_key]
+            else:
+                raw = decode_lzma2(self.data[group_at + GROUP.size:group_at + group_size], raw_size)
+                if len(self.retained_cache) >= HOST_CACHE_GROUPS:
+                    self.retained_cache.popitem(last=False)
+                self.retained_cache[cache_key] = raw
+            payload = raw[raw_at:raw_at + raw_bytes]
+        if encoded:
+            require(encoded % 2 == 0 and encoded <= 2 * width * height and
+                    all(payload[::2]) and sum(payload[::2]) == width * height,
+                    'Invalid glyph run encoding')
+        return payload
+
+    def glyph_alpha(self, glyph_id):
+        """Independent unpacked alpha plane for converter readback proofs."""
+        payload = self.glyph_payload(glyph_id)
+        if not self.glyphs[glyph_id][6] & ~GLYPH_GROUP_FLAG:
+            return bytes(payload)
+        return b''.join(bytes((alpha,)) * count for count, alpha in zip(payload[::2], payload[1::2]))
 
     def image_raw(self, image_id):
         offset, width, height, fmt, length = self.images[image_id]

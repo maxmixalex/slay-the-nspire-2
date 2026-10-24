@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Separate private NSP2/17..30 artwork from locale metadata, glyphs and text.
+"""Separate private NSP2/17..32 artwork from locale metadata, glyphs and text.
 
 The virtual concatenation prefix + artwork + suffix is byte-identical to each
 input. No image/animation is decoded, recompressed, resampled or omitted. This
@@ -50,8 +50,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/31")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/32")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= 32768 and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")
@@ -130,12 +130,28 @@ def layout(data, language):
         cursor = max(cursor, last)
     for i in range(ng):
         cp, off, px, w, h, advance, encoded = struct.unpack_from("<IIHBBHH", data, glyph_at + i * 16)
-        count = encoded or w * h
+        grouped = encoded & 0x8000
+        require(not grouped or version >= 32, "Grouped glyph requires NSP2/32")
+        original_encoded = encoded & 0x7fff
+        count = original_encoded or w * h
+        require(not original_encoded or original_encoded % 2 == 0 and original_encoded <= 2 * w * h,
+                "Invalid glyph run length")
         require(cp <= 0x10FFFF and 0 < w <= 40 and 0 < h <= 40 and
                 0 < px <= (255 if version >= 24 else 32) and
                 0 < (px & (31 if version >= 28 else 63)) <= 32 and
-                advance <= 40 and end <= off <= length - count,
+                advance <= 40 and end <= off <= length - (16 if grouped else count),
                 "Glyphs must be after the artwork region")
+        if grouped:
+            relative, group_size, raw_at, raw_bytes = struct.unpack_from('<iIII', data, off)
+            group_at = off + relative
+            require(32 < group_size <= 617323 and end <= group_at <= length - group_size and
+                    raw_bytes == count, "Glyph group must be after artwork with an exact slice length")
+            group = struct.unpack_from('<4s7I', data, group_at)
+            require(group[0] == b'RGR1' and 0 < group[1] <= 65536 and
+                    group[2] == group_size - 32 and group[3] == 14 and
+                    0 < group[4] <= 32768 and group[5:] == (0, 0, 0) and
+                    raw_at <= group[1] and raw_bytes <= group[1] - raw_at,
+                    "Invalid glyph group header/slice")
     marker = None
     for i in range(ns):
         off, count = struct.unpack_from("<II", data, string_at + i * 8)
