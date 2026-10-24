@@ -210,6 +210,34 @@ def generate(source, faces, fallback=None):
         rasterizer='Pillow/FreeType at native 5/6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
 
 
+HISTORY_SMALL_BOLD_KEYS = frozenset(('run_history.MAP_POINT_HISTORY.header',
+    'run_history.HISTORY_ENTRY.rewardsHeader', 'run_history.HISTORY_ENTRY.skippedHeader'))
+CONTROL_SMALL_BOLD_KEYS = frozenset(('gameplay_ui.PROCEED_BUTTON',
+    'gameplay_ui.CHOOSE_CARD_SKIP_BUTTON', 'gameplay_ui.SKIP_REWARDS_BUTTON',
+    'gameplay_ui.TREASURE_BANNER'))
+
+
+def scene_label_alphabet(source, index_name, keys):
+    index = Path(__file__).resolve().parents[1]/'src'/index_name
+    entries = re.findall(r'\{"([^\"]+)",(\d+)\}', index.read_text())
+    result = set()
+    for key, ordinal in entries:
+        if key not in keys: continue
+        ordinal = int(ordinal)
+        if ordinal >= len(source.strings): continue
+        offset, length = source.strings[ordinal]
+        if length: result.update(visible_alphabet(bytes(source.block(offset, length)).decode('utf-8')))
+    return result
+
+
+def history_small_bold_alphabet(source):
+    return scene_label_alphabet(source,'ui7_text_index.inc',HISTORY_SMALL_BOLD_KEYS)
+
+
+def control_small_bold_alphabet(source):
+    return scene_label_alphabet(source,'world_text_index.inc',CONTROL_SMALL_BOLD_KEYS)
+
+
 def scene_glyphs(source, faces):
     """Pack actual explicit faces only for the screens that select them."""
     if source.version < 28 or not any(faces): return [], {}
@@ -237,7 +265,7 @@ def scene_glyphs(source, faces):
     # The game-over scene has its own5px score/quote faces. Restrict the
     # added italic glyphs to strings that can actually enter that scene,
     # including grammatical replacements and localized room names.
-    small_bold=set(alphabets[1]);small_italic=set(range(32,127));banner_bold=set();victory_bold=set()
+    small_bold=set(alphabets[1])|history_small_bold_alphabet(source);small_italic=set(range(32,127));banner_bold=set();victory_bold=set()
     for key,ordinal in entries:
         ordinal=int(ordinal)
         if ordinal>=len(texts):continue
@@ -268,7 +296,7 @@ def scene_glyphs(source, faces):
         if i==1:
             # PatchText explicitly selects KreonBold at its 8px body size;
             # the credits reader uses the same face for 10px section labels.
-            for alphabet,px in ((small_bold,5),(banner_bold|victory_bold,6),(banner_bold,8),(banner_bold,10),(auxiliary_bold,8),(auxiliary_headings,10)):
+            for alphabet,px in ((small_bold,5),(banner_bold|victory_bold|control_small_bold_alphabet(source),6),(banner_bold,8),(banner_bold,10),(auxiliary_bold,8),(auxiliary_headings,10)):
                 for cp in sorted(alphabet):
                     if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,px) not in present:
                         rows.append(face.glyph(cp,px,5));present.add((cp,px));covered.add(cp)
