@@ -164,7 +164,13 @@ potion, relic, rest, merchant and singleplayer Ascension. Ascension uses
 Resource tools append seven original images at auxiliaries 2051–2057 and thirty-
 one original texts at reserved slots 8347–8377, preserving all old payloads and
 keeping NSP2/33, 8704 strings and 1765 clips. Three focused converter tests pass;
-production conversion and font coverage are next. See `ftue-resources-ui9-0.17.md`.
+the first production conversion passed with zero missing required glyphs.
+Runtime layout review identified the source4px standard body requirement.
+The small-font production attempt `ui8-ftue-smallfont-production-afb7039c49d3`
+failed the older tool glyph-size whitelist before writing a final receipt.
+The corrected v33-only validator and independent glyph-preservation test are
+ready; rerun from the new frozen source before using the pack. See
+`ftue-resources-ui9-0.17.md`.
 
 The profile candidate adds only two serialized bytes in **NSH8**: thirteen seen
 bits, enabled, initialized and a rejected reserved bit. Earlier NSH1–7 decode

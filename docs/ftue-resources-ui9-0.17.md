@@ -33,8 +33,9 @@ from a fresh full build, but rejects an unrelated occupied value.
 ## Fonts and exact preservation
 
 The append uses the pinned original English Kreon and Chinese Noto/Source Han
-faces. It adds only absent normal 5px and explicit-bold 5px glyphs needed by the
-tutorial fields, the Ascension 6px heading, and the reused confirmation popup's
+faces. It adds only absent normal 4px and explicit-bold 4px glyphs for the ten
+standard 22px-source popup bodies, normal/bold 5px for the other tutorial
+fields, the Ascension 6px heading, and the reused confirmation popup's
 larger body/title bands. Existing glyph keys, metrics, advances, encoded bytes
 and alpha masks remain exact. The full original-font rebuild follows the same
 tutorial heading rules so later asset rebuilds cannot reintroduce missing
@@ -53,7 +54,13 @@ new image and text. It checks the unchanged 32768-glyph directory bound and
 complete required tutorial-font coverage. No resident runtime image pool,
 glyph cache, startup resource scan or integrity-only hash check is added.
 
-At this source checkpoint, the two focused converter regressions pass. The
-private production append, composed runtime/profile/input checks, actual
+The first production append passed with seven images, all thirty-one original
+texts and zero missing required glyphs. Runtime layout review then found that
+standard bodies require the original projected 4px face to fit their authored
+bounds. The next production attempt correctly failed the tool's older 5px
+minimum; the v33 validator now accepts 4px without changing earlier formats.
+Three focused converter regressions pass, including both 4px faces, old glyph
+equality and rejection of the new size under v32. The corrected production
+append, composed runtime/profile/input checks, actual
 bilingual tutorial frames and ordinary calculator/browser flows must be
 completed before the tutorial feature is considered accepted.

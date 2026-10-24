@@ -14,6 +14,7 @@ import group_glyphs
 import ftue_ui9_assets as ftue
 from patch_feedback_assets import write_image
 from patch_frontend_assets import patch_pack
+from patch_ui7_assets import append_glyphs
 from test_group_strings import independent_texts
 from test_card_resource_assets import original
 import split_content
@@ -43,6 +44,27 @@ def fixture(language):
 
 
 class FtueAssetsTest(unittest.TestCase):
+    def test_projected_four_pixel_original_faces_keep_existing_glyphs(self):
+        before, _ = group_strings.repack(fixture('eng'))
+        source = group_strings.view(before)
+        auxiliary = source.counts[5]
+        raw = bytes((0, 255, 0, 64, 255, 64, 255, 0, 255, 0, 255, 0))
+        after, count = append_glyphs(before, auxiliary, len(source.clips),
+            [(ord('x'), 4, 3, 4, 3, 0, raw),
+             (ord('x'), 4 | 96, 3, 4, 3, 0, raw)], version=33,
+            profile=(len(source.cards), len(source.strings), len(source.clips), auxiliary))
+        target = tiles.PackView(after, auxiliary, versions=(33,))
+        self.assertEqual(count, 2)
+        by_key = {(row[0], row[2]): i for i, row in enumerate(target.glyphs)}
+        for i, row in enumerate(source.glyphs):
+            self.assertEqual(source.glyph_alpha(i), target.glyph_alpha(by_key[row[0], row[2]]))
+        for band in (4, 100):
+            self.assertEqual(target.glyph_alpha(by_key[ord('x'), band]), raw)
+        old_format = bytearray(after)
+        struct.pack_into('<I', old_format, 4, 32)
+        with self.assertRaisesRegex(ValueError, 'Invalid glyph geometry'):
+            tiles.PackView(old_format, auxiliary, versions=(32,))
+
     def test_reserved_grouped_empty_slot_can_be_filled_without_changing_aliases(self):
         for language in ('eng', 'zhs'):
             with self.subTest(language=language), tempfile.TemporaryDirectory() as directory:
