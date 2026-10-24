@@ -27,7 +27,7 @@ from patch_phobia_assets import grouped_art
 from pck import Pack
 from world_enemy_assets import SpineSampler
 from world_raster import raster
-from world_scene_assets import load_scene_texture
+from world_scene_assets import SceneLoader, _property, load_scene_texture
 
 CHARACTERS=('ironclad','silent','defect','regent','necrobinder')
 BASE_VERSION,VERSION=28,29
@@ -74,6 +74,23 @@ def clip_row(first,count,duration,geometry,source_scale,key):
                 pivot=[round(n) for n in geometry['origin']],sprite_units=units,key=key)
 
 
+def material_overrides(pack,name,merchant):
+    loader=SceneLoader(pack)
+    path=f'scenes/merchant/characters/{name}_merchant.tscn' if merchant else f'scenes/creature_visuals/{name}.tscn'
+    root=loader.instantiate(path);node_name='SpineSprite' if merchant else 'Visuals'
+    node=next(child for child in root.children if child.name==node_name and child.kind=='SpineSprite')
+    # The Spine Godot default screen material is SUB. These death clips do
+    # not use it; reject an unhandled effective mode instead of painting MIX.
+    result={3:4}
+    for index,key in enumerate(('normal_material','additive_material','multiply_material','screen_material')):
+        ref=_property(node.props,key)
+        if ref is None:continue
+        attrs,props=loader.resource(ref)
+        tiles.require(attrs.get('type')=='CanvasItemMaterial','Unreviewed death scene material')
+        result[index]={0:0,1:1,2:4,3:2,4:5}[int(_property(props,'blend_mode',0))]
+    return result
+
+
 def build_art(pck_path,source,cache,*,runtime,dotnet=None):
     cache=Path(cache);cache.mkdir(parents=True,exist_ok=True)
     stamp=identity(runtime);catalog=cache/'character-death-assets.json'
@@ -108,14 +125,18 @@ def build_art(pck_path,source,cache,*,runtime,dotnet=None):
                     geometry=layout(points,registrations[name]['baked_scale'])
                     original_scale=(.23 if name=='defect' else .47) if merchant else registrations[name]['source_scale']
                     key=('merchant-' if merchant else '')+name
+                    materials=material_overrides(pack,name,merchant)
                     first=len(images)
                     for frame_index,frame in enumerate(frames):
-                        image=raster(sampler.draw(resource,frame),geometry['scale'],np.asarray(geometry['origin']),geometry['size'])
+                        draw=[(*row[:-1],materials.get(row[-1],row[-1])) for row in sampler.draw(resource,frame)]
+                        tiles.require(all(row[-1] in (0,1,2) for row in draw),'Unhandled death material blend: '+key)
+                        image=raster(draw,geometry['scale'],np.asarray(geometry['origin']),geometry['size'])
                         images.append(write_image(cache,f'{key}-die-{frame_index:03}',image,sparse=True))
                         if frame_index in (0,len(frames)//2,len(frames)-1):image.save(cache/f'{key}-die-{frame_index:03}.png')
                     clips.append(clip_row(first,len(frames),duration,geometry,original_scale,key))
                     reports.append(dict(character=name,merchant=merchant,source=resource,source_duration_ms=animation['duration_ms'],
-                        frame_count=len(frames),exact_terminal_sample=True,registration=geometry,source_scale=original_scale))
+                        frame_count=len(frames),exact_terminal_sample=True,registration=geometry,source_scale=original_scale,
+                        scene_material_overrides=materials))
                     print(json.dumps(dict(character=key,frames=len(frames),size=geometry['size'])),flush=True)
                     if not merchant and name in ('defect','regent'):
                         particle_duration=5. if name=='regent' else duration

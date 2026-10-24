@@ -22,7 +22,7 @@ import content_tiles as tiles
 from repack_retained import DESCRIPTOR, auxiliary_count
 
 
-VERSIONS = tuple(range(20, 29))
+VERSIONS = tuple(range(20, 30))
 ENCODER_ID = b'NSP2-adaptive-LZMA2-v1'
 
 
