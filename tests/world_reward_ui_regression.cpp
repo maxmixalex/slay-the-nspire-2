@@ -83,7 +83,8 @@ static void capture(const char*name){
 }
 static void single_column(unsigned expected){
  a.render();CHECK(hit_count(HitKind::WorldChoice)==expected);int x=-1,y=-1,right=-1;
- for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::WorldChoice){const auto&h=a.hits[i];CHECK(h.enabled&&h.w>190);if(x>=0)CHECK(h.x==x&&h.x+h.w==right&&h.y>=y);x=h.x;right=h.x+h.w;y=h.y+h.h;}
+ // Original 402x86 reward rows fit inside the projected 160px paper panel.
+ for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::WorldChoice){const auto&h=a.hits[i];CHECK(h.enabled&&h.w>=120&&h.w<=132&&h.h>=26&&h.h<=30);if(x>=0)CHECK(h.x==x&&h.x+h.w==right&&h.y>=y);x=h.x;right=h.x+h.w;y=h.y+h.h;}
 }
 static unsigned reward_position(unsigned kind,unsigned value=65535){
  const auto&w=a.game.world_relics;for(unsigned i=0;i<w.offer_count;i++){const auto&r=w.rewards[w.offers[i]];if(r.kind==kind&&(value==65535||r.value==value))return i;}CHECK(false);return 0;

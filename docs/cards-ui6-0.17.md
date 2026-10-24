@@ -1,0 +1,107 @@
+# UI6 cards, top bar and targeting
+
+Source reference: **v0.111.0 / 41cef1ea**. The implementation was compared with
+the owner's pinned assembly and PCK. Original images and decompiled source stay
+outside the public repository. This document records the card/HUD agent's scope;
+the integrated checkpoint and final validation receipt belong in `WORK_STATE.md`.
+
+## Implemented behavior
+
+| Area | Implementation | Original reference |
+| --- | --- | --- |
+| Top bar | Map/deck/settings icons enlarge on hover and use their distinct rotation responses; deck count appears at the deck icon's lower right. HP, gold, floor, map, deck, settings and pile icons expose original localized hover text. Settings opens the pause screen over an existing deck/map screen. | `NTopBarButton`, `NTopBarDeckButton`, `NTopBarPauseButton`, `top_bar.tscn`, `static_hover_tips` localization |
+| Deck | Original character-colored sort strip, four independent ascending/descending sorters with a priority stack, upgrade-preview checkbox, original scrollbar images, dark backstop, footer and side back tab. Sorting does not mutate deck order or card facts. | `NDeckViewScreen`, `NCardGrid`, deck screen scene |
+| Combat piles | Draw, discard and exhaust are separate screens. The former invented tab strip is gone. Draw is displayed by rarity then model ID, hiding its canonical shuffled order; discard/exhaust retain their pile order. | `NCardPileScreen`, `NDrawPileScreen`, `NDiscardPileScreen`, `NExhaustPileScreen` |
+| Locale sorting | Alphabetical deck sorting uses numeric ranks generated with .NET `en-US` and `zh-CN` collation. Base and upgraded titles share each locale's rank space, including equal titles. Chinese ordering therefore follows the reference locale rather than UTF-8 bytes. | `NCardGrid` title comparison and `CardModel.Title` |
+| Card targeting | First directional Confirm selects the playable card; Left/Right select a live enemy in screen-X order with wrapping; Up/Down retain that target; second Confirm commits the play; Back returns to the hand. Selection/cancel preserve canonical state. The held card and arrow follow the existing interpolated holder pose, and a play begins from that actual pose. Mouse drag/release remains separate. Targeted potions reuse the same spatial focus graph and keep Up/Down on the current target. | `NControllerCardPlay`, `NMouseCardPlay`, `NPotionHolder`, `NCardPlay.CenterCard`, `NHandCardHolder`, `NCombatRoom.UpdateCreatureNavigation`/`RestrictControllerNavigation` |
+| Target arrow | Nineteen original segment images, the original head image, quadratic curvature, original target offsets, enemy tint and the valid-target head-size change replace the drawn dotted line and target rectangle. Controller movement uses the reference 14-per-second approach factor. | `NTargetingArrow`, `targeting_arrow.tscn` |
+| Cursor | Original default/pressed/inspect cursor images and scaled hotspots replace the drawn cursor. Targeting hides the normal cursor. The inspect cursor is restricted to library cards. | `NCursorManager`, original cursor `.image` resources |
+| Hand tooltip | When the actual fitted hand-card description overflows, its complete resolved description is included automatically before keyword tips. It retains the live instance, target and permanent facts. The result uses the same wrapping rules and cached overflow decision as the visible card. | Original card-description/hover responsibilities, adapted for the calculator's smaller card face |
+| Potion tooltip | Both real bottles and empty slots expose the appropriate original description. Hover works from deck/map overlays as well as combat. | Potion holder and `POTION_SLOT` static hover text |
+| Covered overlays | An open settings/confirmation overlay suppresses hover and scroll interaction with the pause/title or other controls beneath it, including input arriving between rendered frames. | Original overlay mouse ownership |
+
+The visible “V keywords” and “I details” labels were removed from these screens.
+The keyboard inspection commands remain available. Original tooltip titles can
+show the actual control binding through their existing optional Hotkey template.
+
+## Keyboard adapter
+
+The native keyboard-only mapping supplies **A draw**, **D discard**, **F exhaust**,
+**Q deck** and **E end turn**. These work in browser, X11 and the calculator host.
+Existing calculator/navigation aliases remain usable: Tab for the deck, M for
+map, Space for end turn, Enter/5 for Confirm, and Escape for Back.
+
+The added calculator matrix positions were checked against the official Ndless
+[`keys.h`](https://github.com/ndless-nspire/Ndless/blob/master/ndless-sdk/include/keys.h)
+touchpad entries. The shared key enum appends the three pile commands at 19–21;
+the debug command is a separate flag-controlled entry at 22.
+
+Production no longer depends on the old practice/library injection UI. The
+character, five-character and expansion UI regressions create necessary input
+cards through explicitly named fixture helpers. Their production tests require
+missing Lab hit targets and no-op Lab actions; the retained Lab UI assertions
+are compiled only with `SPIRE_DEBUG_COMMANDS`.
+
+## Performance work after implementation
+
+* Deck/draw sorting retains one bounded 512-entry `uint16_t` index array. The
+  cache invalidates on canonical revision, presentation reset, content reload,
+  seed, pile or sorter changes. Type/cost sort keys are resolved once per card
+  on a miss, rather than in every comparator and on every rendered frame.
+* Visible pile portraits and shared face layers are prepared in one bounded,
+  deduplicated batch before composing the grid. No whole-pack preflight was
+  added.
+* Keyboard inspection opens the actual sorted instance/deck identity directly.
+  It no longer forces a full render merely to find a hit region.
+* The existing eight-entry 56×70 small-card cache now includes dimensions in
+  its key and accepts the restored merchant sizes, 36×50 and 44×62, alongside
+  47×66. Its exact backdrop comparison and fixed raster-pool size are retained.
+* A hand face sampled again by the automatic-tooltip path in the same rendered
+  frame reuses its resolved dynamic description and overflow result. The key
+  includes instance/deck identity, target, state revision and visual identity.
+* Small rotated UI images use bounded inverse affine sampling with integer
+  arithmetic; no transformed image buffer or per-frame heap allocation is
+  created. Original arrow/cursor resources are ordinary addressable images.
+
+The locale rank data adds 4,464 bytes of read-only numeric metadata. The pile
+index cache is approximately 1 KiB; the existing hand and small-card raster
+pools were not enlarged. These are implementation bounds, **not measured device
+speedups**. Integrated ARM allocation and runtime measurements still need their
+own build/validation receipt.
+
+## Verification status at the second source checkpoint
+
+`git diff --check` passed. Regression source covers separate pile screens,
+two-stage keyboard selection/target/cancel, covered-settings hover, cached versus
+uncached merchant-size composition, full automatic hand descriptions, and
+immediate versus interpolated card-play origins. The correction after stage 2
+also covers card and potion targets around Kaiser on both sides of the player and Living Fog summons
+whose storage order differs from their screen positions. Existing active-play fixtures
+were migrated specifically to two Confirms; pending-choice and blocked-input
+Confirms were not globally replaced.
+
+The rank generator was first run under the verified source receipt
+`d982baf323695bb35b76af99e650e988f6bbb24d`. The restricted .NET CLI could not read
+its own process timing. An approved execution outside that restriction produced
+both locale tables successfully. The generator journal reports `source_changed`
+because it deliberately created the public numeric include while parallel source
+work continued. It is a generation receipt, **not an immutable test pass**. The
+generated table is part of the following source checkpoint before compilation.
+
+No native suite, final private-pack visual acceptance, WASM comparison, ARM build
+or physical-device performance result is claimed by this checkpoint document.
+
+## Remaining fidelity boundaries to keep explicit
+
+* The 320×240 grid uses readable 47×66 cards in discrete ten-card pages. The
+  reference game's continuous grid scrolling and draggable scrollbar thumb are
+  not reproduced by the current page adapter.
+* Single-target arrows are restored. Original all-target/ally reticle animations
+  and the deck-count increase pulse remain separate fidelity work.
+* Private v23 assets are needed for the new cursor, arrow and sort/scroll images.
+  Synthetic and historical packs remain logic fixtures and cannot establish
+  visual parity for those assets.
+
+Do not count diagnostic probes, source-only tests or agreeing backends as original
+game parity. Append actual integrated validation and reviewed screenshots only
+after the corresponding frozen source has passed.

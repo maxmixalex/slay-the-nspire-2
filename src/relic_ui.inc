@@ -50,7 +50,7 @@ static void owned_relic_panel(Canvas&c){
   if(*progress)c.centered(progress,15,180,290,10,Green);c.paragraph(description,20,*progress?197:182,280,*progress?1:2,0,10,White);
  }else c.centered("没有遗物",0,106,320,12,Muted);
  c.text("‹",15,216,16,Gold);c.hit(7,211,35,24,HitKind::Scroll,-18,first>0);c.text("›",292,216,16,Gold);c.hit(278,211,35,24,HitKind::Scroll,18,first+18<count);
- char page[64]{};TextBuffer b{page,sizeof page,0,&a.content};b.number(first/18+1);b.text(" / ");b.number(mx(1,(count+17)/18));b.text(" · 点击 / I 查看详情");c.centered(page,41,219,236,10,Muted);
+ char page[64]{};TextBuffer b{page,sizeof page,0,&a.content};b.number(first/18+1);b.text(" / ");b.number(mx(1,(count+17)/18));c.centered(page,41,219,236,10,Muted);
 }
 static void owned_relic_tooltip(Canvas&c){
  auto&a=c.a;if(a.event_reader||!a.pointer.visible||a.pointer.held||a.title||a.paused||a.help||a.panel||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
@@ -80,7 +80,7 @@ static void treasure_screen(Canvas&c){
     c.hit(119,77,82,77,HitKind::Choice,0,!taken);
     c.button(taken?"已领取":"领取",7,209,99,a.cursor==0&&!taken,27);
     c.hit(4,207,105,31,HitKind::Choice,0,!taken);
-    c.button("详情 I",112,211,91,false,24);c.hit(109,207,96,31,HitKind::Command,(int)Key::Detail,world_id!=NoWorldRelic||d!=nullptr);
+    c.button("详情",112,211,91,false,24);c.hit(109,207,96,31,HitKind::Command,(int)Key::Detail,world_id!=NoWorldRelic||d!=nullptr);
     c.ui(U_RewardSkip,214,210,100,27);c.centered(taken?"前进 ›":"跳过 ›",214,214,100,12,a.cursor==1?Gold:White);
     c.hit(208,207,112,31,HitKind::Choice,1);
 }

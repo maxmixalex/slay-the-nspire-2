@@ -113,6 +113,43 @@ static void enemy_visual_fight(EncounterId encounter,Character character=Charact
  CHECK(!a.combat_preparation.active);unchanged();
 }
 static std::vector<uint16_t> intent_background;
+static void spatial_card_targeting(){
+ const auto select_potion=[](int target){
+  CHECK(potion_set(a.game,0,Potion::Fire));a.target=target;snapshot();a.open_potion(0);
+  CHECK(a.panel==4&&!a.potion_targeting);a.input(Key::Confirm);CHECK(a.potion_targeting&&a.target==target);unchanged();
+ };
+ const auto select_strike=[](int target){
+  const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,Strike,1025);resolve_pending(a.game);
+  CHECK(a.game.card_count==id+1&&a.game.zones[id]==Zone::Hand);a.game.energy=99;a.reset_presentation();a.render();
+  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+  CHECK(!a.combat_preparation.active);a.cursor=a.game.hand.count-1;a.target=target;snapshot();
+  a.input(Key::Confirm);CHECK(a.keyboard_card==id&&a.target==target);unchanged();
+ };
+ // The original Kaiser encounter places its two arms on opposite sides of
+ // the player. Target navigation follows those real positions and wraps.
+ enemy_visual_fight(EncounterId::KaiserCrabBoss);CHECK(a.game.enemy_count==2);
+ CHECK(enemy_pose(a.game,0).x<combat_player_x(a.game)&&enemy_pose(a.game,1).x>combat_player_x(a.game));
+ select_strike(1);a.input(Key::Left);CHECK(a.target==0);a.input(Key::Right);CHECK(a.target==1);
+ a.input(Key::Right);CHECK(a.target==0);a.input(Key::Up);a.input(Key::Down);CHECK(a.target==0);unchanged();
+ a.render();capture("keyboard-kaiser-target");a.input(Key::Back);CHECK(a.keyboard_card<0&&!a.paused);unchanged();
+ select_potion(1);a.input(Key::Left);CHECK(a.target==0);a.input(Key::Right);CHECK(a.target==1);
+ a.input(Key::Right);CHECK(a.target==0);a.input(Key::Up);a.input(Key::Down);CHECK(a.target==0);unchanged();
+ a.render();capture("keyboard-kaiser-potion-target");a.input(Key::Back);CHECK(a.panel==0&&!a.potion_targeting);unchanged();
+ // Living Fog occupies named slot 5. Its summoned slots 0..4 are stored
+ // after it, and slot 2 lies just to its right: raw slot cycling is wrong.
+ enemy_visual_fight(EncounterId::LivingFogNormal);
+ for(int slot=0;slot<5;++slot){queue_extension(a.game,XOp::EnemySpawn,int(EnemyId::GasBomb),slot+8);resolve_pending(a.game);}
+ CHECK(a.game.enemy_count==6);const int spatial[]={1,2,0,3,4,5};
+ for(unsigned i=1;i<6;++i)CHECK(enemy_pose(a.game,spatial[i-1]).x<enemy_pose(a.game,spatial[i]).x);
+ select_strike(0);a.input(Key::Right);CHECK(a.target==3);a.input(Key::Left);CHECK(a.target==0);
+ a.input(Key::Left);CHECK(a.target==2);a.input(Key::Left);CHECK(a.target==1);a.input(Key::Left);CHECK(a.target==5);
+ a.input(Key::Right);CHECK(a.target==1);unchanged();a.render();capture("keyboard-summoned-spatial-target");
+ a.input(Key::Back);CHECK(a.keyboard_card<0&&!a.paused);unchanged();
+ select_potion(0);a.input(Key::Right);CHECK(a.target==3);a.input(Key::Left);CHECK(a.target==0);
+ a.input(Key::Left);CHECK(a.target==2);a.input(Key::Up);a.input(Key::Down);CHECK(a.target==2);
+ a.input(Key::Left);CHECK(a.target==1);a.input(Key::Left);CHECK(a.target==5);a.input(Key::Right);CHECK(a.target==1);unchanged();
+ a.render();capture("keyboard-summoned-potion-target");a.input(Key::Back);CHECK(a.panel==0&&!a.potion_targeting);unchanged();
+}
 static void capture_intent_background(){
  // Remove only display intents at this same clock. The actual room/actor
  // pixels beneath the numeric labels are the independent blend background.
@@ -374,8 +411,12 @@ static void audited_leaf_and_cultist_timing(){
   if(attack){CHECK(intent.damage>0&&a.combat_health(0).hp==hp_before-intent.damage);CHECK(a.hit_start[0]==int(impact));}
   else if(model==2)CHECK(a.combat_status_amount(slot+1,ritual)==enemy_power_value(a.game,slot,EnemyPower::Ritual));
   else{
-   const auto piles=a.combat_pile_counts();CHECK(piles.discard==piles_before.discard+(model==0?1:2));
+   // The generated batch first occupies NCardPreviewContainer. Its pile
+   // counter increases only as each preview finishes its later flight.
+   const auto piles=a.combat_pile_counts();CHECK(piles.discard==piles_before.discard);
    CHECK(piles.draw==piles_before.draw&&piles.exhaust==piles_before.exhaust);
+   unsigned previews=0;for(const auto&v:a.combat_cards.sprites)if(v.mode==CombatCardMotion::Preview&&v.card.kind==Slimed)++previews;
+   CHECK(previews==unsigned(model==0?1:2));
   }
   if(attack){a.animation=end;a.render();CHECK(actor.until>end&&!actor.loop);}
   unchanged();
@@ -1135,4 +1176,4 @@ static void feedback_hud_and_merchant(){
 }
 int main(int argc,char**argv){std::vector<uint8_t>b;
  if(argc>1){actual_pack=true;FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));b.resize(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));}else b=synthetic_profile();
- if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}
+ if(argc>2)screenshot_directory=argv[2];CHECK(a.init(b.data(),b.size(),{}));options_and_readers();crystal_and_large_rewards();potion_lock_and_capacity();offer_facts();special_reward_snapshots();original_enemy_presentation();spatial_card_targeting();original_enemy_transformations();original_enemy_command_waits();audited_leaf_and_cultist_timing();original_combat_clock();deferred_enemy_values();deferred_combat_hand();deferred_enemy_statuses();ui6_combat_fidelity();deferred_combat_choices();original_card_movement();sequential_hit_feedback();synchronous_damage_hook_feedback();ui6_room_removal();feedback_hud_and_merchant();std::printf("world UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");}

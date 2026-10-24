@@ -69,8 +69,8 @@ static void world_choice_screen(Canvas&c){
  if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
  c.dim(0,0,320,240,224);c.centered(world_choice_heading(s),0,6,320,16,Gold);
  char label[128]{};TextBuffer title{label,sizeof label,0,&c.a.content};
- if(potion){unsigned id=relic?w.offers[0]:e.offers[0];const auto*d=potion_definition(Potion(id));title.text(d?d->name:"");title.text(" · 选择替换位置");}
- else{title.text("已选择 ");title.number(a.choice_selected_count);title.text(" / ");title.number(a.world_choice_max());if(a.world_choice_min()==0)title.text(" · 可跳过");}
+ if(potion){unsigned id=relic?w.offers[0]:e.offers[0];const auto*d=potion_definition(Potion(id));title.text(d?d->name:"");}
+ else{title.text("已选择 ");title.number(a.choice_selected_count);title.text(" / ");title.number(a.world_choice_max());}
  c.centered(label,0,29,320,10,White);
  if(bundle){
   const int first_bundle=a.cursor/2*2;
@@ -111,7 +111,6 @@ static void world_choice_screen(Canvas&c){
   unsigned alternatives=world_card_reward_alternatives(s);if(alternatives&1){c.button("献祭牌奖励",18,189,133,false,20);c.action(16,187,137,23,UiAction::SacrificeReward);}
   if(alternatives&2){c.button("重掷",169,189,133,false,20);c.action(167,187,137,23,UiAction::RerollReward);}
  }
- else c.centered(potion?"选择已有药水会替换它 · 不选可跳过":"Enter 选择 · 空格确认 · I 详情",0,192,320,10,Muted);
  c.button("清除",4,213,77,false,24);c.action(1,209,83,31,UiAction::ClearWorldChoice,a.choice_selected_count);
  c.button("详情",85,213,77,false,24);c.hit(82,209,83,31,HitKind::Command,(int)Key::Detail,count>0);
  const bool ready=a.choice_selected_count>=a.world_choice_min()&&a.choice_selected_count<=a.world_choice_max()&&world_rest_selection_allowed(s,a.choice_selected_count);

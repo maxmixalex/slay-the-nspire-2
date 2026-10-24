@@ -92,22 +92,40 @@ core encounter state or breaking event-origin combat.
 
 `NCombatRoom.PositionCreaturesWithSlots` and `AddCreature` bind actors to the
 encounter's named Marker2D; summons do not re-layout every other actor. The
-new compact numeric table contains all **19** encounters with named slots,
+new compact numeric table contains all **24** encounters with scene markers,
 using their authored order, positions and camera getters. Actor drawing,
 intent, health/status placement, target hit regions and pointer targeting
 share `enemy_pose(State, slot)`.
+
+Five of these scenes do not override `EncounterModel.Slots`: both Bowlbugs
+encounters, Gremlin Merc, Knights and Slumbering Beetle. Auditing `HasScene`
+and the literal names passed by `GenerateMonsters` caught this distinction.
+Gremlin Merc's `merc`, `sneaky` and `fat` markers follow the actual actor kind;
+their simulation slot indices intentionally retain the original spawn order.
+Splitting Merc therefore keeps Sneaky at Merc's location and Fat at his own
+authored marker.
 
 The existing per-model normalized sprite raster is resampled using original
 CreatureVisuals Bounds for relative size. This makes small Tough Eggs remain
 small beside Ovicopter, and reserves their locations before they appear.
 The ground rail, minimum readable health width and maximum body size remain
 320×240 adaptations. This does not claim identical PC viewport geometry.
-Unnamed formations retain their previous layout and remain a separate
-follow-up.
+
+Encounters without a scene now use `NCombatRoom.PositionEnemies`: add their
+original Bounds widths, start with 70 source-pixel gaps in a `960 / zoom`
+half-screen, and reserve the initial 150 source-pixel inset. Crowded groups
+recalculate their gap with the original 5 source-pixel minimum and alternate
+vertical offset between 60 and 40 source pixels when the gap is below 30.
+Q4 authored coordinates retain fractional centers without floating point.
+The retained roster includes dead actors so survivors never slide inward
+after a kill. Ordinary encounters no longer use the old uniform columns or
+two-row count-based arrangement.
 
 An adjacent discrepancy was also corrected: KaiserCrabBoss sets
 `FullyCenterPlayers=true`. The player, Osty, health/status/orb positions and
-floating text now move between the left Crusher and right Rocket. The local
+floating text now move between the left Crusher and right Rocket. The normal
+single player starts at the original left-half center (80 adapted pixels),
+and the same encounter camera offset also applies to the player. The local
 Necrobinder keeps the additional authored 150 source-pixel offset for Osty.
 
 ## Performance and storage decisions
@@ -119,22 +137,27 @@ Necrobinder keeps the additional authored 150 source-pixel offset for Osty.
   presentation tick. Re-rendering one frame does not advance or repack time.
 - Power-title outlines fetch each glyph once, replacing nine repeated text
   traversals. Single/None powers also skip amount formatting and measurement.
-- Named formations use a sorted-table lookup; geometry does not scan the
-  current enemy count or mutate positions when a summon appears.
+- Scene formations use a sorted-table lookup. Unnamed formations use bounded
+  width sums over at most eight actors; no string lookup, allocation or
+  transform tree is involved. Neither path mutates saved state or RNG.
 - Formal measurements belong to the later frozen checkpoint, not to this
   source-only implementation note. No physical calculator FPS claim is made.
 
 ## Verification status
 
 Short Clang 18 syntax checks of the production `app.cpp`, card-motion,
-health-motion and world-UI tests passed after these changes. Formal frozen
-build/test results are pending the next parent checkpoint.
+health-motion, world-UI, debug and dedicated formation tests passed after
+these changes. Formal frozen build/test results remain pending the next
+parent checkpoint. The first debug build on stage 2 used GCC and stopped at
+an aggregate assignment rejected by that compiler; the live fix reconstructs
+that bounded reward record in place. It is not recorded as a passing test.
 
 Regressions now cover first block entry/re-gain/restoration, generated-card
 preview and flight, state/RNG invariance, simultaneous status rows and expiry,
 Single/Counter decisions, independent multi-hit numbers, reserved Ovicopter
-slots, surrounding boss placement, original reward delays, and stale room
-presentation rejection. Existing assertions that expected no removal VFX or
+slots, all 24 scene layouts, original width/spacing and alternating-height
+cases, Gremlin Merc's real split, surrounding boss placement, original reward
+delays, and stale room presentation rejection. Existing assertions that expected no removal VFX or
 an immediately opaque new shield were updated to the original behavior.
 
 ## Remaining boundaries
@@ -144,6 +167,7 @@ OverkillDamage and separately blocked-hit VFX still need an explicit damage
 result observer. Per-power GPU flash particles and the original block-break
 particles are not implemented here. Text-row packing, the large-batch preview
 sampler, death dissolve opacity and sprite Bounds scaling are bounded raster
-adaptations, not shader/Spine identity claims. The ordinary unnamed formation
-algorithm still requires its own width-based layout restoration. These are
-not counted as completed fidelity work.
+adaptations, not shader/Spine identity claims. Original random visual scale/
+hue variation and the unusual viewport-overflow container rescale are not
+reproduced by this fixed 320×240 adapter. These are not counted as completed
+fidelity work.

@@ -26,6 +26,21 @@ int main(){
  auto replacement=m.observe(2,ButtonFamily::Pause,ButtonState::Rest,750);check(replacement.scale==3686&&replacement.shade==255);
  auto pause=m.observe(2,ButtonFamily::Pause,ButtonState::Focus,760);check(pause.hover==4096&&pause.scale==3686);
  check(m.sample(810).scale==3891);
+ // Original navigation controls have their own focus/press curve rather
+ // than the generic 0.95 action-button press. Compare interrupted samples.
+ ButtonMotion back;check(back.observe(4,ButtonFamily::Back,ButtonState::Rest,0).scale==4096);
+ check(back.observe(4,ButtonFamily::Back,ButtonState::Focus,100).scale==4096);
+ auto back_half=back.sample(125);check(back_half.scale==4198&&back_half.hover==2048);
+ check(back.sample(150).scale==4301&&back.sample(150).hover==4096);
+ back.observe(4,ButtonFamily::Back,ButtonState::Press,150);
+ for(unsigned t=0;t<=250;++t){auto v=back.sample(150+t);double u=double(t)/250;
+  double expo=t==0?0:t==250?1:1.001*(1-std::pow(2.,-10*u));
+  check(std::abs(v.scale-(4301-205*expo))<3);
+  check(std::abs(v.hover-4096*std::pow(1-u,3))<5);
+ }
+ check(back.sample(400).scale==4096&&back.sample(400).shade==128);
+ back.observe(4,ButtonFamily::Back,ButtonState::Rest,400);check(back.sample(900).scale==4301);
+ check(back.observe(5,ButtonFamily::Back,ButtonState::Rest,900).scale==4096);
  m.observe(3,ButtonFamily::EndTurn,ButtonState::Focus,0xfffffff0u);m.observe(3,ButtonFamily::EndTurn,ButtonState::Rest,0xfffffff5u);
  check(m.sample(600).y==0&&m.sample(600).hover==0);
  EndTurnGlowMotion glow;EndTurnGlowIdentity combat{37,2,4,260};

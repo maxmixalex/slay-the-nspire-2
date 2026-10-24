@@ -230,7 +230,6 @@ static void native_treasure_screen(Canvas&c){
  if(!s.treasure_state){
   // Projection of the original centered 800x500 Chest control at 1920x1080.
   c.action(87,96,162,101,UiAction::TreasureOpen);
-  c.text("打开 Enter",13,216,10,White);
  }else if(offering){
   Canvas collection=c;collection.opacity=uint8_t(div255(c.opacity*a.treasure_collection_opacity()));
   Canvas holder=collection;holder.opacity=uint8_t(div255(collection.opacity*a.treasure_holder_opacity()));
@@ -245,7 +244,7 @@ static void native_treasure_screen(Canvas&c){
   char description[2048]{};a.relic_description(s.world.treasure_relic,description,sizeof description);collection.paragraph(description,31,178,258,2,0,12,White);
   // The calculator's fixed readable labels and focused Confirm remain
   // available during the original holder's entry motion.
-  c.text("领取 Enter",8,216,10,White);c.button("详情 I",112,211,91,false,24);c.hit(109,207,96,31,HitKind::Command,int(Key::Detail));
+  c.button("详情",112,211,91,false,24);c.hit(109,207,96,31,HitKind::Command,int(Key::Detail));
  }else{
   if(s.treasure_state==1&&a.treasure_collection_opacity()){
    Canvas empty=c;const unsigned self_alpha=treasure_alpha8(treasure_linear(0,65535,a.animation-a.treasure_open_tick,250));

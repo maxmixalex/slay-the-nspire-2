@@ -1,7 +1,7 @@
 // Original component artwork preserves its aspect ratio, including the
 // authored transparent margins. Callers own the larger readable hit target.
 static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,const char*label,bool enabled,bool selected,bool cross=false){
- const auto visual=c.control_visual(label,x,y,w,h,ButtonFamily::Action,selected,enabled);
+ const auto visual=c.control_visual(label,x,y,w,h,kind[0]=='B'?ButtonFamily::Back:ButtonFamily::Action,selected,enabled);
  const int image=c.a.content.world_image("common",kind);const unsigned opacity=255;
  int image_h=h;
  if(image>=0){const auto info=c.a.content.image(image);

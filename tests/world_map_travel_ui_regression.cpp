@@ -154,8 +154,9 @@ static void delayed_commit(bool fast,bool pointer,bool toggle,uint32_t start){
     // real Settings control through the HUD during the already begun fade.
     app.advance(100000);CHECK(uint32_t(app.map_clock_ms-start)==250&&app.map_travel.pending);
     if(toggle){
-        click(hit(HitKind::Command,int(Key::Back)));CHECK(!app.map_window.is_open);
-        click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused);
+        // The original top-bar Settings button directly opens the pause
+        // menu over the map; it is not the map's close/back control.
+        click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused&&app.map_window.is_open);
         click(hit(HitKind::Menu,1));CHECK(app.settings_open);
         click(hit(HitKind::UiAction,int(UiAction::SettingsFastMode)));
         CHECK(app.fast_mode!=fast&&app.map_travel.pending);

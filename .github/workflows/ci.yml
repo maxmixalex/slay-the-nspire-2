@@ -43,6 +43,12 @@ jobs:
         run: |
           ulimit -s 32768
           ctest --test-dir build/ci --output-on-failure --parallel 2
+      - name: Build and run optional developer command regressions
+        run: |
+          cmake -S . -B build/debug-commands -G Ninja -DSPIRE_X11=OFF -DSPIRE_DEBUG_COMMANDS=ON -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_C_COMPILER=clang-18 -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/debug-commands --parallel 2 --target debug_commands_regression debug_ui_regression ui_preferences_regression
+          ulimit -s 32768
+          ctest --test-dir build/debug-commands --output-on-failure -R '^(debug_commands|debug_ui|ui_preferences)_regression$'
 
   conversion:
     runs-on: ubuntu-24.04

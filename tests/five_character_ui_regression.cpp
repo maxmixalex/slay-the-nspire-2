@@ -53,7 +53,11 @@ static void wait_choice_ready(){
     CHECK(a.combat_choice_ready());
 }
 static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
-static void fixture_card(){wait_action_ready();CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();}
+static void settle_fixture_preparation(){
+    a.render();for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+    CHECK(!a.combat_preparation.active);
+}
+static void fixture_card(){wait_action_ready();CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
 static SaveData snapshot(){SaveData s{};CHECK(validate(a.game));CHECK(save(a.game,s));return s;}
 static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void capture(const char*name){
@@ -65,7 +69,7 @@ static void start(Character character){
     new_run(a.game,71,true,character);a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.settings_open=false;
     a.selected_character=character;a.reset_presentation();
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
-    CHECK(a.game.character==character&&a.game.phase==Phase::Combat&&a.game.practice);CHECK(validate(a.game));
+    CHECK(a.game.character==character&&a.game.phase==Phase::Combat&&a.game.practice);CHECK(validate(a.game));settle_fixture_preparation();
 }
 static void clear_hand(){auto&s=a.game;while(s.hand.count){unsigned id=s.hand.ids[--s.hand.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}CHECK(validate(s));}
 static int add(Card card){

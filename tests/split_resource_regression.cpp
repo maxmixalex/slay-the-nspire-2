@@ -1,5 +1,6 @@
 #include "resource_source.hpp"
 #include "frontend_assets.hpp"
+#include "ui6_assets.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

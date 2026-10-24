@@ -51,8 +51,8 @@ static int choice_count(const App&a){
     case Phase::Treasure:return a.game.treasure_state?2:1;case Phase::ReturnChoice:return a.game.discard.count;case Phase::ExtendedChoice:return a.game.expansion.choices.count;default:return a.combat_hand().count;}
 }
 static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.target+i)%a.game.enemy_count;if(a.game.enemies[t].hp){a.target=t;break;}}}
-#include "potion_input.inc"
 #include "card_target_input.inc"
+#include "potion_input.inc"
 #include "world_map_input.inc"
 void App::input(Key k){
 #if SPIRE_DEBUG_COMMANDS

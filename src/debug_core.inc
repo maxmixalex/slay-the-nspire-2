@@ -26,7 +26,7 @@ static void abandon_relic_actions(State&s){
     w.offer_count=w.selected_count=0;w.choice_group=w.choice_reward=0;
     w.reward_count=w.group_count=0;
     for(auto&v:w.group_active)v=0;for(auto&v:w.group_skip)v=0;for(auto&v:w.group_owner)v=0;
-    for(auto&v:w.rewards)v={};for(auto&f:w.hook_frames)f={};
+    for(auto&v:w.rewards)reset_in_place(v);for(auto&f:w.hook_frames)reset_in_place(f);
     w.transform_count=w.transform_cursor=w.byrdpip_count=w.byrdpip_cursor=0;
     world_relic_clear_offers(s);
 }
@@ -92,6 +92,22 @@ bool debug_kill_enemies(State&s,int target){
             s.enemies[i].hp=0;queue_extension(s,XOp::EnemyDie,i,0,false);
         }else s.enemies[i].hp=0;
     }
-    resolve_pending(s);finish_combat_if_won(s);resolve_pending(s);++s.revision;
+    resolve_pending(s);
+    // Gremlin Horn can draw across a shuffle while the dying actors still
+    // own their death continuations. Stratagem then opens a real selection.
+    // A force-kill answers those new selections with the first eligible
+    // cards, preserving the existing draw/death hooks and avoiding a second
+    // command just to finish the requested kill. Ordinary kills still await
+    // their player's choice; this path exists only in the debug build.
+    if(target<0){
+        for(unsigned attempts=0;s.phase==Phase::ExtendedChoice&&attempts<MaxEffects;++attempts){
+            uint16_t ids[MaxHand];const unsigned count=s.expansion.choice_min;
+            if(count>MaxHand||count>s.expansion.choices.count)return debug_detail::finish(s,false);
+            for(unsigned i=0;i<count;++i)ids[i]=s.expansion.choices.ids[i];
+            if(!choose_extended(s,ids,count))return debug_detail::finish(s,false);
+        }
+        if(combat_phase(s.phase)&&s.phase!=Phase::Combat)return debug_detail::finish(s,false);
+    }
+    finish_combat_if_won(s);resolve_pending(s);++s.revision;
     return debug_detail::finish(s,true);
 }

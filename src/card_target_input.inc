@@ -1,3 +1,17 @@
+// NCombatRoom owns the same screen-X focus graph for cards and thrown
+// potions. Restricted navigation retains Up/Down and wraps Left/Right.
+static int spatial_enemy_target(const App&a,int current,Key key,bool potion=false){
+    if(key!=Key::Left&&key!=Key::Right)return current;
+    struct Target {int id,x;} ordered[MaxEnemies];unsigned count=0;
+    for(int i=0;i<a.game.enemy_count;++i)if(potion?can_use_potion(a.game,a.scroll,i):a.game.enemies[i].hp>0){
+        const Target next{i,enemy_pose(a.game,i).x};unsigned at=count++;
+        while(at&&ordered[at-1].x>next.x){ordered[at]=ordered[at-1];--at;}ordered[at]=next;
+    }
+    if(!count)return current;
+    unsigned at=0;while(at<count&&ordered[at].id!=current)++at;
+    if(at==count)return ordered[key==Key::Left?count-1:0].id;
+    return ordered[(at+(key==Key::Left?count-1:1))%count].id;
+}
 // The original directional path selects a card, restricts focus to its valid
 // targets, then confirms the play. Pointer drag/release is a separate path.
 bool App::card_target_input(Key key){
@@ -11,10 +25,8 @@ bool App::card_target_input(Key key){
         cursor=index;
         if(key==Key::Back){sync_combat_cards();keyboard_card=-1;hand_focus=true;return true;}
         if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
-            if(card_targets_enemy(game,game.cards[keyboard_card],keyboard_card)){
-                const int direction=key==Key::Left||key==Key::Up?-1:1;
-                for(int step=1;step<=game.enemy_count;++step){const int next=(target+direction*step+game.enemy_count)%game.enemy_count;
-                    if(game.enemies[next].hp>0){target=next;break;}}
+            if((key==Key::Left||key==Key::Right)&&card_targets_enemy(game,game.cards[keyboard_card],keyboard_card)){
+                target=spatial_enemy_target(*this,target,key);
             }return true;
         }
         // Preserve the selected pose until begin_combat_feedback captures it.

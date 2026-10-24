@@ -412,14 +412,15 @@ static void layout_and_input(){
         // Actual art needs a visible preparation frame before bounded image
         // batches can run. A headless advance-only loop cannot display it.
         CHECK(!app.combat_preparation.shown&&!app.combat_preparation.cursor);
-        CHECK(app.map_travel.speed==world_map_transition::Speed::Normal&&app.map_clock_ms-app.map_travel.fade_start>=800);
+        CHECK(app.map_travel.speed==world_map_transition::Speed::Normal&&app.map_clock_ms==app.map_travel.fade_start&&app.map_transition_alpha(100)==255);
         snapshot();app.render();CHECK(app.combat_preparation.shown);
         constexpr unsigned limit=(CombatPreparation::Capacity+CombatPreparation::ImagesPerUpdate-1)/CombatPreparation::ImagesPerUpdate+1;
         unsigned updates=0;while(app.combat_preparation.active&&updates<limit){++updates;app.advance(33);app.render();}
         CHECK(!app.combat_preparation.active&&app.combat_preparation.cursor==app.combat_preparation.count);
-        // Preparation pauses ordinary presentation updates. On resuming,
-        // the already elapsed fade must clear without another room entry.
-        app.advance(0);unchanged();
+        // Resource preparation cannot consume the incoming room's original
+        // fade. It starts at full black only once the first room is ready.
+        app.advance(0);CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)==255);unchanged();
+        for(unsigned i=0;i<4;++i){app.advance(200);app.render();unchanged();}
     }
     CHECK(!app.map_travel.pending&&!app.map_travel.fading_in);
     CHECK(app.game.world.visited_rooms[0][ids[0]]==unsigned(WorldRoom::Monster));snapshot();app.input(Key::Map);app.render();CHECK(!world_hits());capture("map-current-combat");unchanged();app.input(Key::Back);

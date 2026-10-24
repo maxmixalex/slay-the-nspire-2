@@ -67,7 +67,7 @@ int main(){
     app.input(Key::Confirm);CHECK(app.keyboard_card==instance&&app.target==1);unchanged(before);
     app.input(Key::Right);CHECK(app.target==2&&app.keyboard_card==instance);unchanged(before);
     app.input(Key::Right);CHECK(app.target==0);app.input(Key::Left);CHECK(app.target==2);unchanged(before);
-    app.input(Key::Up);CHECK(app.target==1);app.input(Key::Down);CHECK(app.target==2);unchanged(before);
+    app.input(Key::Up);CHECK(app.target==2);app.input(Key::Down);CHECK(app.target==2);unchanged(before);
     app.input(Key::Back);CHECK(app.keyboard_card<0&&!app.paused);unchanged(before);
     app.input(Key::Confirm);CHECK(app.keyboard_card==instance);unchanged(before);
     const auto revision=app.game.revision;app.input(Key::Confirm);CHECK(app.keyboard_card<0&&app.game.revision>revision);

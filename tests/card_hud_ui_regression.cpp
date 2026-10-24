@@ -236,14 +236,16 @@ static void character_confirm_art(){
     Canvas c{app};app.pointer.visible=false;app.pointer.held=false;app.button_motions[0]={};
     clear();native_confirm(c,90,80,103,28,"");const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);
     clear();const auto info=app.content.image(base);CHECK(info.w&&info.h);
-    const int height=103*info.h/info.w,top=80+(28-height)/2;
-    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(base,92,top+2,103,height,64);
-    c.picture(base,90,top,103,height);
+    const int width=mn(103,28*info.w/info.h),height=width*info.h/info.w,left=90+(103-width)/2,top=80+(28-height)/2;
+    const int size=mn(28,width*80/267),tick_x=left+(width-size)/2,tick_y=80+(28-size)/2;
+    CHECK(width<=103&&height<=28&&size>0);
+    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(base,left+2,top+2,width,height,64);
+    c.picture(base,left,top,width,height);
     unsigned changed=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(actual[y*320+x]!=app.pixels[y*320+x]){
-        ++changed;CHECK(x>=127&&x<155&&y>=80&&y<108);
+        ++changed;CHECK(x>=tick_x&&x<tick_x+size&&y>=tick_y&&y<tick_y+size);
     }
     CHECK(changed>20); // The actual atlas tick must be visible at the control center.
-    Canvas cream=c;cream.tint_green=246;cream.tint_blue=226;cream.picture(tick,127,80,28,28);
+    Canvas cream=c;cream.tint_green=246;cream.tint_blue=226;cream.picture(tick,tick_x,tick_y,size,size);
     CHECK(!std::memcmp(actual.data(),app.pixels,sizeof app.pixels));
 }
 static void samples(){
@@ -288,9 +290,36 @@ static void long_hand_description(){
     keyword_tooltips(c);capture("hand-automatic-description");
     app.reset_presentation();
 }
+static void ui6_screens(){
+    if(app.content.version()<Ui6ContentVersion)return;
+    new_run(app.game,701,true);CHECK(encounter_setup(app.game,EncounterId::NibbitsNormal));app.game.energy=99;
+    for(Zone zone:{Zone::Discard,Zone::Exhaust}){auto&s=app.game;CHECK(s.draw.count);const auto id=s.draw.ids[--s.draw.count];
+        auto&destination=zone==Zone::Discard?s.discard:s.exhaust;destination.ids[destination.count++]=id;s.zones[id]=zone;}
+    CHECK(potion_set(app.game,0,Potion::Fire));app.title=app.character_select=app.library=app.paused=app.settings_open=false;app.reset_presentation();app.pointer.visible=false;
+    app.render();for(unsigned i=0;app.combat_preparation.active&&i<1024;++i){app.advance(33);app.render();}CHECK(!app.combat_preparation.active);
+    for(unsigned i=0;i<10;++i){app.advance(250);app.render();}
+    SaveData before{},after{};CHECK(save(app.game,before));
+    app.input(Key::Inspect);app.render();unsigned sorters=0;
+    for(int i=0;i<app.hit_count;++i){sorters+=app.hits[i].kind==HitKind::PileSort;CHECK(app.hits[i].kind!=HitKind::PileTab);}
+    CHECK(sorters==4);capture("deck-original-sorters");
+    app.sort_pile(3);app.pile_upgraded=true;app.render();capture("deck-original-upgrades");
+    app.pointer_move(266,10);app.advance(165);app.render();capture("top-deck-hover-count");app.input(Key::Back);
+    const Key piles[]={Key::DrawPile,Key::DiscardPile,Key::ExhaustPile};const char*names[]={"draw-pile-original","discard-pile-original","exhaust-pile-original"};
+    for(unsigned i=0;i<3;++i){app.input(piles[i]);app.render();CHECK(app.panel==1&&app.pile_tab==int(i+1));
+        for(int h=0;h<app.hit_count;++h)CHECK(app.hits[h].kind!=HitKind::PileTab&&app.hits[h].kind!=HitKind::PileSort);
+        capture(names[i]);app.input(Key::Back);}
+    app.cursor=-1;for(unsigned i=0;i<app.game.hand.count;++i){const int id=app.game.hand.ids[i];
+        if(can_play_card(app.game,id)&&card_targets_enemy(app.game,app.game.cards[id],id)){app.cursor=int(i);break;}}
+    CHECK(app.cursor>=0);app.input(Key::Confirm);CHECK(app.keyboard_card>=0);app.advance(250);app.render();capture("card-original-target-arrow");app.input(Key::Back);
+    app.pointer_move(135,10);app.render();capture("potion-original-hover");
+    app.pointer_move(300,10);app.advance(165);app.render();capture("top-settings-hover");
+    CHECK(app.content.image(app.content.ui_image(I6_CursorDefault)).w==16);
+    CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    app.pointer_cancel();app.pointer.visible=false;app.reset_presentation();
+}
 }
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();if(argc>1)character_confirm_art();long_hand_description();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();if(argc>1)character_confirm_art();long_hand_description();ui6_screens();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

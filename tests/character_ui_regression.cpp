@@ -55,7 +55,11 @@ static void tap(HitKind kind,int value){
 static void action(UiAction x){tap(HitKind::UiAction,(int)x);}
 // Content/description fixtures create their inputs directly; production no
 // longer exposes the old practice injection controls.
-static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();}
+static void settle_fixture_preparation(){
+    a.render();for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+    CHECK(!a.combat_preparation.active);
+}
+static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
 static SaveData snapshot(){SaveData data{};CHECK(validate(a.game));CHECK(save(a.game,data));return data;}
 static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void start(Character character){
@@ -64,7 +68,7 @@ static void start(Character character){
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
     CHECK(!a.title&&!a.character_select&&a.game.character==character&&a.game.practice);
     CHECK(a.game.deck_count==(character==Character::Ironclad?138:139));
-    CHECK(a.game.deck_count>128&&a.game.deck_count<=MaxDeck);CHECK(validate(a.game));
+    CHECK(a.game.deck_count>128&&a.game.deck_count<=MaxDeck);CHECK(validate(a.game));settle_fixture_preparation();
 }
 static void catalog_page_click(UiAction action,bool enabled,int expected_page){
     CHECK(a.library&&a.library_tab==0&&a.detail_card<0);
@@ -99,9 +103,8 @@ static void catalog_navigation(){
     for(int page=last-1;page>=0;--page)catalog_page_click(UiAction::PreviousPage,true,page);
     catalog_page_click(UiAction::PreviousPage,false,0);unchanged(before);
     a.input(Key::Back);CHECK(!a.library);unchanged(before);
-    // This independent navigation run must not shift the existing acquisition
-    // fixtures' deterministic practice seeds.
-    CHECK(a.run_number==run_number+1);a.run_number=run_number;
+    // Direct content fixtures do not consume a production run-start seed.
+    CHECK(a.run_number==run_number);
     catalog_navigation_verified=true;progress("catalog-navigation-complete");
 }
 static void open_model(unsigned model,unsigned upgraded){

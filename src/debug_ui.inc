@@ -49,7 +49,7 @@ bool App::debug_command(const char*command){
     if(command[n])return debug_failure(*this,"Command is too long");
     char*args[5]{};unsigned count=0;char*p=text;
     while(*p){while(*p==' ')++p;if(!*p)break;if(count==5)return debug_failure(*this,"Too many arguments");args[count++]=p;while(*p&&*p!=' ')++p;if(*p)*p++=0;}
-    if(!count||debug_equal(args[0],"help")){set_debug_reply(*this,"kill [all|1..6]; room monster|elite|boss [ID]; room event [ID]; room shop|rest|treasure|map; act 1..3; new [CHAR] [SEED]; heal [N]; gold N; energy N; potion 1..64");return count!=0;}
+    if(!count||debug_equal(args[0],"help")){set_debug_reply(*this,"kill [all|1..8]; room monster|elite|boss [ID]; room event [ID]; room shop|rest|treasure|map; act 1..3; new [CHAR] [SEED]; heal [N]; gold N; energy N; potion 1..64");return count!=0;}
     bool ok=false,reset=false;
     if(debug_equal(args[0],"new")){
         if(count>3)return debug_failure(*this,"new [ironclad|silent|defect|regent|necrobinder] [SEED]");
@@ -78,7 +78,7 @@ bool App::debug_command(const char*command){
         if(title)return debug_failure(*this,"Start a run first (new or room)");
         UiCoreObserver observer(*this);
         if(debug_equal(args[0],"kill")){
-            int target=-1;if(count>2)return debug_failure(*this,"kill [all|1..6]");
+            int target=-1;if(count>2)return debug_failure(*this,"kill [all|1..8]");
             if(count==2&&!debug_equal(args[1],"all")){if(!debug_number(args[1],1,MaxEnemies,target))return debug_failure(*this,"Invalid target index");--target;}
             ok=debug_kill_enemies(game,target);
         }else if(debug_equal(args[0],"heal")){

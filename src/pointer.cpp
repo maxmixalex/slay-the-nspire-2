@@ -64,7 +64,7 @@ void App::pointer_move(int x,int y){
     // Modal controls own pointer focus even before the next timed render has
     // replaced stale hit geometry from the covered pause/title page. Their
     // own hover rendering reads coordinates; no underlying selection changes.
-    if(settings_open||frontend_confirm){hand_focus=false;return;}
+    if(settings_open||frontend_confirm||help){hand_focus=false;return;}
     if(!pointer.held)hand_focus=hand_can_focus()&&h&&h->kind==HitKind::Hand;
     if(!h||(!h->enabled&&h->kind!=HitKind::Hand&&h->kind!=HitKind::Choice))return;
     if(!combat_choice_ready()&&(h->kind==HitKind::Hand||h->kind==HitKind::Choice||

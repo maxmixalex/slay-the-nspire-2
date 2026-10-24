@@ -2,6 +2,39 @@
 
 ## UI6 functional stage — awaiting complete validation
 
+The complete stage-2 work ref is now verified at
+`6b46a74eddf37381cff9a89cdbcf30572849cf73`, tree
+`7152976b545f283028611274b4af8c37b3086a07`. Its immutable archive produced
+the real v23 bilingual UI extension and corrected merchant packs successfully.
+The merchant repair replaces 1,517 changed frames from 1,518 candidates;
+the unchanged backdrop and two direct-PNG candle clips remain untouched.
+The extra retained art is 2,757,238 bytes, with 2,555,322 bytes of old,
+fully unreachable data identified for the separate lossless compaction pass.
+
+Stage-2 acceptance is **not complete**. Native compilation reached a missing
+UI6 header in a split-resource fixture; freestanding WASM/ARM compilation
+exposed C++ standard headers in the small preferences record; a debug build
+exposed an aggregate-reset expression. These source issues are fixed in the
+next checkpoint, while the failed journals remain failures. Some old UI
+fixtures also assumed the old confirmation sprite size, legacy practice-menu
+entry, map legend popup and immediate combat readiness; their expectations
+are being migrated to the implemented production paths without bypassing the
+real preparation clock. Actual English/Chinese keyword tooltip tests and
+English input/UI-flow tests have already passed at the immutable stage-2 tree.
+
+The next checkpoint adds all 24 original encounter scenes, the original
+width-based positioning for scene-less encounters, spatial keyboard targeting,
+nested modal hover isolation, navigation button motion, repeated-hint cleanup,
+and a lossless unused-merchant-data compactor. No performance magnitude or
+complete UI acceptance is inferred before matching tests and measurements run.
+
+Ordinary Firebird preparation has booted the owner's compatible provided ROM
+and installed Ndless using the normal Documents UI on a disposable NAND copy.
+An incompatible provided ROM stayed black and another incomplete dump timed
+out; neither is game execution evidence. The successful prepared OS session
+is awaiting the final runtime/resources. No RAM injection or snapshot restore
+is used. [Shared frontend changes](frontend-ui6-0.17.md) records the scope.
+
 The first source checkpoint `d982baf323695bb35b76af99e650e988f6bbb24d`
 (tree `47363c08c98369b206def6cccfe97ebb94d8af7b`) was uploaded blob by
 blob, compared to the local tree, and its work-branch ref read back. Main still

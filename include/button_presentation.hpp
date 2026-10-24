@@ -2,14 +2,14 @@
 #include "health_bar.hpp"
 
 namespace spire {
-enum class ButtonFamily : uint8_t { Action, Pause, EndTurn };
+enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back };
 enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled };
 struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     const bool focus=state==ButtonState::Focus,press=state==ButtonState::Press;
     ButtonVisual v;
     if(family==ButtonFamily::Pause){v.scale=focus?3891:press?3482:3686;v.y=press?8192:0;}
-    else if(family==ButtonFamily::Action){v.scale=focus?4301:press?3891:4096;v.shade=press?128:255;}
+    else if(family==ButtonFamily::Action||family==ButtonFamily::Back){v.scale=focus?4301:press&&family==ButtonFamily::Action?3891:4096;v.shade=press?128:255;}
     else v.y=press?8192:focus?-2048:0;
     v.hover=focus?4096:0;if(state==ButtonState::Disabled)v.shade=128;
     return v;
@@ -21,8 +21,25 @@ struct ButtonMotion {
     ButtonVisual from{};
     ButtonFamily family=ButtonFamily::Action;
     ButtonState state=ButtonState::Rest;
+    bool interacted=false;
     ButtonVisual sample(uint32_t now)const{
-        const auto to=button_target(family,state);const uint32_t elapsed=now-start;
+        auto to=button_target(family,state);const uint32_t elapsed=now-start;
+        if(family==ButtonFamily::Back){
+            // NBackButton: focus and outline rise linearly over 50 ms;
+            // press returns to scale 1 over 250 ms (Expo.Out), while its
+            // shade/outline use Cubic.Out. Unfocus keeps authored 1.05.
+            if(state==ButtonState::Rest&&interacted)to.scale=4301;
+            if(state==ButtonState::Disabled)return to;
+            const unsigned duration=state==ButtonState::Focus?50:state==ButtonState::Press?250:500;
+            if(elapsed>=duration)return to;
+            const unsigned linear=elapsed*4096/duration;
+            const unsigned scale_q=state==ButtonState::Focus?linear:health_bar::expo_out(elapsed*1000/duration);
+            unsigned color_q=linear;
+            if(state==ButtonState::Press){const unsigned inverse=4096-linear;color_q=4096-(inverse*inverse/4096)*inverse/4096;}
+            return {from.scale+(to.scale-from.scale)*int(scale_q)/4096,0,
+                from.hover+(to.hover-from.hover)*int(color_q)/4096,
+                from.shade+(to.shade-from.shade)*int(color_q)/4096};
+        }
         unsigned duration=500;
         if(state==ButtonState::Disabled)return to;
         if(state==ButtonState::Focus){if(family!=ButtonFamily::Pause)return to;duration=50;}
@@ -37,8 +54,8 @@ struct ButtonMotion {
         return out;
     }
     ButtonVisual observe(uint32_t key,ButtonFamily kind,ButtonState mode,uint32_t now){
-        if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;from=button_target(kind,state);start=now;}
-        if(state!=mode){from=sample(now);state=mode;start=now;}
+        if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;interacted=false;from=button_target(kind,state);start=now;}
+        if(state!=mode){from=sample(now);state=mode;start=now;if(mode==ButtonState::Focus||mode==ButtonState::Press)interacted=true;}
         seen=now;return sample(now);
     }
 };

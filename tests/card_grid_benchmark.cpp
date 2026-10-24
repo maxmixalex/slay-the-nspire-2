@@ -75,6 +75,48 @@ static bool capture(const char*directory,const char*scene){
         row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}good=std::fwrite(row,1,sizeof row,f)==sizeof row;}
     return std::fclose(f)==0&&good;
 }
+static uint32_t save_hash(const SaveData&data){uint32_t hash=2166136261u;for(unsigned i=0;i<data.size;++i)hash=(hash^data.bytes[i])*16777619u;return hash;}
+static bool shop_inventory(Source&source,unsigned frames,bool hovered,const char*directory){
+    const char*name=hovered?"shop_inventory_hover_7":"shop_inventory_idle_7";
+    source.scene=name;source.phase="room_open_and_fixture";Cost room,first,warm;auto started=mark(source);
+    if(!app.init({&source,source.length,read_resource,nullptr},{save_game,nullptr}))return false;
+    new_run(app.game,781,false,Character::Ironclad);app.game.map[0].room=Room::Shop;
+    if(!choose_node(app.game,0))return false;
+    app.animation=app.map_clock_ms=app.tick_remainder=0;app.reset_presentation();
+    app.title=app.paused=app.help=app.library=app.character_select=false;
+    app.pointer_move(10,35);app.render();room.add(started,source);
+    HitRegion open{};bool found=false;
+    for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::UiAction&&app.hits[i].value==int(UiAction::OpenShop)){
+        open=app.hits[i];found=true;break;}
+    if(!found||app.shop_open||app.game.phase!=Phase::Shop||!save(app.game,before))return false;
+    source.phase=hovered?"input_to_first_complete_hover_frame":"input_to_first_complete_inventory_frame";started=mark(source);
+    app.pointer_move(open.x+open.w/2,open.y+open.h/2);app.pointer_button(true);app.pointer_button(false);
+    app.pointer_move(10,35);app.render();
+    if(hovered){
+        HitRegion card{};found=false;
+        for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::Choice&&app.hits[i].value==0){card=app.hits[i];found=true;break;}
+        if(!found)return false;
+        // The complete first-open inventory render above belongs to this
+        // cold sample too; searching its real hit geometry is not a preload.
+        app.pointer_move(card.x+card.w/2,card.y+card.h/3);app.render();
+    }
+    first.add(started,source);const uint32_t first_pixels=framebuffer_hash();
+    if(!app.shop_open||app.game.phase!=Phase::Shop||!app.content.healthy()||app.combat_preparation.active||
+       !save(app.game,after)||before.size!=after.size||std::memcmp(before.bytes,after.bytes,before.size))return false;
+    source.phase="settle";for(unsigned i=0;i<10;++i){app.advance(250);app.render();}
+    unsigned cards=0;for(int i=0;i<app.hit_count;++i)cards+=app.hits[i].kind==HitKind::Choice&&app.hits[i].value>=0&&app.hits[i].value<ShopCardCount;
+    if(cards!=7||!capture(directory,name))return false;
+    const uint32_t settled_pixels=framebuffer_hash();
+    source.phase="warm_inventory_animation_window";
+    for(unsigned i=0;i<frames;++i){started=mark(source);app.advance(33);app.render();warm.add(started,source);
+        if(!app.shop_open||app.game.phase!=Phase::Shop||!app.content.healthy()||app.combat_preparation.active)return false;}
+    const bool unchanged=save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size)&&!save_attempts;
+    room.write(name,"room_open_and_fixture");first.write(name,hovered?"input_to_first_complete_hover_frame":"input_to_first_complete_inventory_frame");
+    warm.write(name,"warm_inventory_animation_window");
+    std::printf("{\"operation\":\"shop_observation\",\"scene\":\"%s\",\"visible_cards\":%u,\"cold_render_calls\":%u,\"hovered\":%s,\"first_rgb565_fnv1a\":%u,\"settled_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_before_fnv1a\":%u,\"canonical_after_fnv1a\":%u,\"canonical_state_unchanged\":%s,\"save_callback_attempts\":%u}\n",
+        name,cards,hovered?2u:1u,hovered?"true":"false",first_pixels,settled_pixels,framebuffer_hash(),save_hash(before),save_hash(after),unchanged?"true":"false",save_attempts);
+    std::fflush(stdout);return unchanged;
+}
 }
 int main(int argc,char**argv){
     if(argc<2||argc>4){std::fprintf(stderr,"Usage: card_grid_benchmark REAL_PACK [FRAMES] [CAPTURE_DIRECTORY]\n");return 2;}
@@ -158,6 +200,11 @@ int main(int argc,char**argv){
             std::fflush(stdout);if(!hover_unchanged){std::fclose(file);return 16;}
         }
     }
+    // These are the actual merchant rug and its seven visible faces. The
+    // settled window keeps room actors animating, exercising exact-background
+    // cache validity instead of repeatedly painting a static empty surface.
+    for(unsigned hovered=0;hovered<2;++hovered)if(!shop_inventory(source,frames,hovered!=0,argc==4?argv[3]:nullptr)){
+        if(source.trace)std::fclose(source.trace);std::fclose(file);return 17+int(hovered);}
     const bool trace_good=!source.trace||std::fclose(source.trace)==0;
     return std::fclose(file)==0&&trace_good?0:9;
 }

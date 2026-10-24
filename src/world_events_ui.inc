@@ -56,7 +56,7 @@ static void native_ancient_screen(Canvas&c){
  const int lines=c.paragraph(text,35,61,250,0,0,10);
  a.scroll=mn(mx(0,a.scroll),mx(0,lines-2));
  if(*text){c.dim(27,58,266,31,120);c.paragraph(text,35,61,250,2,a.scroll,10);}
- c.text("全文 I",141,93,10,Gold);c.action(130,89,72,20,UiAction::ReadEvent);
+ c.text(a.content.english()?"Read":"全文",141,93,10,Gold);c.action(130,89,72,20,UiAction::ReadEvent);
  c.text("↑",265,93,10,a.scroll?Gold:Muted);c.hit(254,89,26,20,HitKind::Scroll,-1,a.scroll>0);
  c.text("↓",293,93,10,a.scroll+2<lines?Gold:Muted);c.hit(282,89,26,20,HitKind::Scroll,1,a.scroll+2<lines);
  const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));
@@ -124,13 +124,12 @@ static void native_fake_merchant_screen(Canvas&c){
  c.dim(4,59,106,140,185);c.paragraph(title,9,62,96,2,0,10,Gold);
  int lines=c.paragraph(description,9,91,96,0,0,10);a.scroll=mn(mx(0,a.scroll),mx(0,lines-6));
  c.paragraph(description,9,91,96,6,a.scroll,10,White);
- c.text("全文 I",10,181,10,Gold);c.action(4,176,66,22,UiAction::ReadEvent);
+ c.text(a.content.english()?"Read":"全文",10,181,10,Gold);c.action(4,176,66,22,UiAction::ReadEvent);
  c.text("↑",77,181,10,a.scroll?Gold:Muted);c.hit(71,176,19,22,HitKind::Scroll,-1,a.scroll>0);
  c.text("↓",97,181,10,a.scroll+6<lines?Gold:Muted);c.hit(91,176,19,22,HitKind::Scroll,1,a.scroll+6<lines);
  char leave[128]{};native_event_option(a,6,false,leave,sizeof leave);
  c.ui(U_RewardSkip,219,208,96,29);if(a.cursor==6)c.box(219,208,96,29,Gold);
  c.centered(leave,225,214,84,12,Gold);c.hit(218,205,98,34,HitKind::Choice,6,original_event_option_enabled(s,6));
- c.text("← → 选择 · I 全文",8,225,10,Muted,200);
 }
 static void native_event_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;

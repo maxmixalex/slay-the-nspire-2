@@ -58,8 +58,7 @@ bool App::potion_input(Key key){
     if(key==Key::Back||key==Key::Potions){close_potion();return true;}
     if(potion_targeting){
         if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
-            const int count=game.enemy_count,direction=(key==Key::Left||key==Key::Up)?-1:1;
-            for(int i=1;i<=count;++i){const int next=(target+count+i*direction)%count;if(can_use_potion(game,scroll,next)){target=next;break;}}
+            target=spatial_enemy_target(*this,target,key,true);
         }else if(key==Key::Confirm)finish_potion_use(target);
         return true;
     }

@@ -23,7 +23,7 @@ def resource_version(path):
 
 
 def readme(info):
-    return f'''Slay the Nspire 2 — 0.17 {info['stage']} / 中文与 English
+    text = f'''Slay the Nspire 2 — 0.17 {info['stage']} / 中文与 English
 
 安装 / Installation
 把下面四个文件放到计算器的同一文件夹，打开 nSpire2.tns：
@@ -39,7 +39,7 @@ With both locales installed, 4 selects Chinese, 6 English, Enter / 5 confirms.
 The choice is remembered and can be changed before loading on later launches.
 
 升级与存档 / Updating and saves
-请配套替换程序、公共包、已安装的语言包；保留 nSpire2.sav.tns 和语言设置。
+请配套替换程序、公共包、已安装的语言包；保留 nSpire2.sav.tns、语言和 settings 设置文件。
 Update the launcher, common pack and installed locales together. Keep your save
 and language preference files. Both languages use the same gameplay save.
 更新前备份存档。新程序可读取旧存档；旧程序可能无法读取更新后写出的存档。
@@ -53,10 +53,15 @@ The old complete nSpire2.nsp.tns pack is unnecessary alongside split resources.
 
 操作 / Controls
 方向键移动；Enter 确认；Space 结束回合或确认选牌；Esc 返回/暂停。
-Tab 牌堆，I 详情，C 百科，V 状态，M 地图，P 药水，R 遗物，S 保存，O 读取。
+Tab / Q 牌组，A 抽牌堆，D 弃牌堆，F 消耗牌堆；I 详情，C 百科，V 状态。
+M 地图，P 药水，R 遗物，S 保存，O 读取。
+键盘选中手牌后 Enter 进入指向，左右选择目标，再按 Enter 出牌；Esc 取消。
 Directions navigate; Enter confirms; Space ends a turn/confirms a selection;
-Esc returns/pauses; Tab piles; I details; C compendium; V statuses; M map;
+Esc returns/pauses; Tab/Q deck; A draw, D discard, F exhaust; I details;
+C compendium; V statuses; M map;
 P potions; R relics; S saves; O loads. Touchpad clicking/dragging is supported.
+With a hand card selected, Enter aims, Left/Right chooses a target, Enter plays;
+Esc cancels aiming. Fast Mode persists independently of the run save.
 离线 HTML 可直接用浏览器打开，在页面选择语言；S 保存、O 读取，存档保留在该浏览器中。
 Open the companion offline HTML in a browser and choose a language on the page.
 S saves and O loads; saves stay in that browser. No asset download or server connection is needed.
@@ -72,6 +77,26 @@ See COPYING, NOTICE.md and licenses/ for source and third-party licenses.
 原版游戏资源的权利属于 Mega Crit 及相应权利人。
 Original game content belongs to Mega Crit and the respective rights holders.
 '''
+    if info.get('debug_launcher'):
+        text += '''
+可选调试版 / Optional developer build
+nSpire2.tns 为普通版，调试指令默认关闭。
+额外的 nSpire2-debug.tns 使用同一文件夹内的资源，按 G 打开指令菜单。
+Normal nSpire2.tns omits developer commands. The additional nSpire2-debug.tns
+uses the same resource files. Press G for its command menu, directions to choose
+an operation/variant, Enter to execute and Esc to close.
+浏览器调试 HTML 按 F1；控制台也可调用 nSpire2Debug('kill all')。
+The separate debug HTML uses F1; its browser console also exposes
+nSpire2Debug('kill all') and nSpire2Debug('room shop').
+可选秒杀、进入普通/精英/首领/事件/商店/休息/宝藏/地图、跳幕等指令。
+Available commands include killing enemies, entering rooms/encounters/events,
+changing acts and starting a temporary run. Commands themselves do not autosave.
+调试版与普通版共享存档位置。调试指令本身不自动存档，手动保存会写入调试后的局面。
+Both launchers share the save location. An explicit Save writes the modified run.
+完整指令 / Full command syntax:
+https://github.com/maxmixalex/slay-the-nspire-2/blob/'''+info['runtime_checkpoint']+'''/docs/debug-commands-0.17.md
+'''
+    return text
 
 
 def main():
@@ -81,6 +106,8 @@ def main():
     p.add_argument('--runtime-checkpoint', required=True)
     p.add_argument('--resource-checkpoint', required=True)
     p.add_argument('--stage', default='ui4', help='Release suffix, for example ui4')
+    p.add_argument('--debug-launcher', type=Path, help='Optional separately compiled developer launcher')
+    p.add_argument('--debug-wasm', type=Path, help='Optional separately compiled developer browser runtime')
     args = p.parse_args()
     if not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]*', args.stage):
         p.error('Stage must contain only letters, digits, underscores or hyphens')
@@ -89,7 +116,11 @@ def main():
             p.error('Checkpoints must be full Git commit IDs')
     paths = {'nSpire2.tns': args.launcher, 'nSpire2.common.tns': args.common,
              'nSpire2.eng.tns': args.eng, 'nSpire2.zhs.tns': args.zhs}
-    for path in (*paths.values(), args.wasm):
+    if bool(args.debug_launcher) != bool(args.debug_wasm):
+        p.error('Provide both optional debug runtimes together')
+    if args.debug_launcher:
+        paths['nSpire2-debug.tns'] = args.debug_launcher
+    for path in (*paths.values(), args.wasm, *([args.debug_wasm] if args.debug_wasm else [])):
         if not path.is_file():
             p.error('Input file is missing: ' + str(path))
     args.output.mkdir(parents=True, exist_ok=True)
@@ -100,6 +131,7 @@ def main():
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
+                debug_launcher=bool(args.debug_launcher),
                 files={name: path.stat().st_size for name, path in paths.items()})
     stem = f'Slay-the-Nspire-2-0.17-{args.stage}-bilingual'
     archive = args.output / (stem + '-calculator.zip')
@@ -127,8 +159,15 @@ def main():
     package_runtime(destination=offline, common_path=args.common, eng_path=args.eng,
                     zhs_path=args.zhs, wasm_path=args.wasm,
                     source_checkpoint=args.runtime_checkpoint)
+    debug_offline = None
+    if args.debug_wasm:
+        debug_offline = args.output / (stem + '-debug-offline.html')
+        package_runtime(destination=debug_offline, common_path=args.common, eng_path=args.eng,
+                        zhs_path=args.zhs, wasm_path=args.debug_wasm,
+                        source_checkpoint=args.runtime_checkpoint)
     print(json.dumps(dict(calculator=str(archive), calculator_bytes=archive.stat().st_size,
                           offline=str(offline), offline_bytes=offline.stat().st_size,
+                          debug_offline=str(debug_offline) if debug_offline else None,
                           installed_bytes=sum(info['files'].values()), members=len(paths) + len(texts))))
 
 

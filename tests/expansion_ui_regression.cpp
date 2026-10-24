@@ -73,6 +73,10 @@ static int append(Card card,Zone zone){
     auto&p=zone==Zone::Hand?s.hand:zone==Zone::Draw?s.draw:zone==Zone::Discard?s.discard:s.exhaust;
     p.ids[p.count++]=(uint16_t)id;return id;
 }
+static void settle_fixture_preparation(){
+    a.render();for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
+    CHECK(!a.combat_preparation.active);
+}
 static void setup(bool practice=true){
     new_run(a.game,71,false);auto&s=a.game;s.practice=practice;s.phase=Phase::Combat;
     s.current_node=0;s.floor=s.turn=1;s.enemy_count=2;s.energy=20;s.deck_count=1;s.deck[0]={Strike,0};
@@ -81,7 +85,7 @@ static void setup(bool practice=true){
     append({Strike,0},Zone::Discard);append({Defend,0},Zone::Discard);
     a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=false;
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
-    a.reset_presentation();a.callbacks={save_cb,load_cb};a.notice_ticks=0;CHECK(validate(s));
+    a.reset_presentation();a.callbacks={save_cb,load_cb};a.notice_ticks=0;CHECK(validate(s));settle_fixture_preparation();
 }
 static bool exists(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value)return true;return false;}
 static HitRegion hit(HitKind kind,int value){
@@ -92,8 +96,8 @@ static void tap(HitKind kind,int value){
     auto h=hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);
 }
 static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
-static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();}
-static void fixture_potion(){CHECK(a.detail_item>=WorldRelicKinds&&lab_potion(a.game,(Potion)(a.detail_item-WorldRelicKinds+1)));a.library=false;a.reset_presentation();}
+static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
+static void fixture_potion(){CHECK(a.detail_item>=WorldRelicKinds&&lab_potion(a.game,(Potion)(a.detail_item-WorldRelicKinds+1)));a.library=false;a.reset_presentation();settle_fixture_preparation();}
 static void open_model(unsigned model,bool upgraded=false){
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
     action(card_colorless(model)?UiAction::FilterColorless:UiAction::FilterAll);

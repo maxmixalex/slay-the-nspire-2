@@ -71,7 +71,7 @@ def fixture(language='eng', glyphs=1, incompressible=False, tail_image=False, wo
     for i in range(ns):
         struct.pack_into('<II', out, string_at + i * 8, offset, 3)
     if world_profile:
-        for slot, _key in frontend.FRONTEND_TEXTS:
+        for slot, _key in (*frontend.FRONTEND_TEXTS, (8105, 'vfx.POWER_WEARS_OFF')):
             struct.pack_into('<II', out, string_at + slot * 8, offset + 3, 0)
     for i in range(nc):
         tiles.CLIP.pack_into(out, string_at + ns * 8 + i * 16, 5, 1, 100, 0, 0, 0)
@@ -88,7 +88,13 @@ class RetainedPackTest(unittest.TestCase):
         view = retained.view(original)
         for slot, image_id in enumerate((0, 2, 3)):
             struct.pack_into('<I', original, view.aux_at + slot * 4, image_id)
-        packed, _, _ = retained.repack(bytes(original), fast_images='none', output_version=23)
+        packed, _, _ = retained.repack(bytes(original), fast_images='none')
+        # The retained codec itself is unchanged in v23. The public synthetic
+        # fixture has a deliberately small auxiliary table, passed explicitly
+        # to the correction helper; the v19 repacker only emits v20/v21.
+        packed = bytearray(packed)
+        struct.pack_into('<I', packed, 4, 23)
+        packed = bytes(packed)
         source = tiles.PackView(packed, 1262, versions=(23,))
         self.assertEqual(source.images[0], source.images[1])
         self.assertEqual(source.images[0][3], 7)

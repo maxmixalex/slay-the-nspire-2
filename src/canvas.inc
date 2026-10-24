@@ -93,7 +93,7 @@ struct Canvas{
     void action(int x,int y,int w,int h,UiAction act,bool enabled=true){hit(x,y,w,h,HitKind::UiAction,(int)act,enabled);}
     void hit(int x,int y,int w,int h,HitKind k,int value=0,bool enabled=true){a.add_hit(x,y,w,h,k,value,enabled);}
     void close_button(int x=292,int y=26){
-        const auto visual=control_visual("BACK_CLOSE",x,y,21,20,ButtonFamily::Action,false,true);
+        const auto visual=control_visual("BACK_CLOSE",x,y,21,20,ButtonFamily::Back,false,true);
         const int back=a.content.world_image("common","BACK"),cross=a.content.version()>=Ui6ContentVersion?a.content.ui_image(I6_CloseX):-1;
         if(back>=0&&cross>=0){Canvas layer=*this;layer.brightness=uint8_t(div255(unsigned(brightness)*visual.shade));
             const auto info=a.content.image(back);const int width=30*visual.scale/4096,height=info.w?width*info.h/info.w:18;

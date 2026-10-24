@@ -47,31 +47,78 @@ inline const EncounterPositions* encounter_positions(EncounterId encounter){
  while(low<high){const unsigned middle=(low+high)/2;if(unsigned(layouts[middle].encounter)<unsigned(encounter))low=middle+1;else high=middle;}
  return low<sizeof layouts/sizeof layouts[0]&&layouts[low].encounter==encounter?&layouts[low]:nullptr;
 }
+struct EncounterCamera {int zoom=1000,x=0,y=0;};
+inline EncounterCamera encounter_camera(EncounterId encounter){
+ if(const auto*p=encounter_positions(encounter))return {p->zoom,p->offset_x,p->offset_y};
+ // All remaining camera overrides belong to encounters without a scene.
+ switch(encounter){
+ case EncounterId::AeonglassBoss:return {900,0,60};
+ case EncounterId::BygoneEffigyElite:return {880,0,50};
+ case EncounterId::CeremonialBeastBoss:case EncounterId::MechaKnightElite:
+ case EncounterId::SlimesNormal:case EncounterId::VantomBoss:return {900,0,50};
+ case EncounterId::KnowledgeDemonBoss:return {850,0,70};
+ case EncounterId::LagavulinMatriarchBoss:case EncounterId::TerrorEelElite:
+ case EncounterId::TheInsatiableBoss:case EncounterId::WaterfallGiantBoss:return {900,0,0};
+ default:return {};
+ }
+}
+struct CreatureBounds {uint16_t width,height;};
+inline CreatureBounds creature_bounds(EnemyId kind){
+ static constexpr CreatureBounds bounds[]={
+#include "combat_creature_bounds.inc"
+ };
+ static_assert(sizeof bounds/sizeof bounds[0]==EnemyKinds,"Every model needs a bounds entry");
+ return unsigned(kind)<EnemyKinds?bounds[unsigned(kind)]:CreatureBounds{0,0};
+}
+// Q4 authored coordinates keep half-pixel centers and compressed gaps without
+// float arithmetic. Retaining removed models in this initial roster keeps
+// surviving creatures stationary, as NCombatRoom does after a death.
+struct EnemyFormationPoint {int x=0,y=3200;};
+inline EnemyFormationPoint unnamed_enemy_point(const State&s,int index,int zoom){
+ if(s.enemy_count<1||s.enemy_count>MaxEnemies||index<0||index>=s.enemy_count||zoom<=0)return {};
+ int widths[MaxEnemies]{},sum=0;
+ for(int i=0;i<s.enemy_count;++i){const auto b=creature_bounds(s.enemy_world.models[i].kind);widths[i]=int(b.width?b.width:360)*16;sum+=widths[i];}
+ const int area=960*16000/zoom;int gap=70*16,span=sum+(s.enemy_count-1)*gap;
+ int left=(area-span)/2;if(left<150*16)left=150*16;int stagger=0;
+ if(left+span>area&&s.enemy_count>1){
+  gap=(area-150*16-sum)/(s.enemy_count-1);if(gap<5*16)gap=5*16;
+  span=sum+(s.enemy_count-1)*gap;left=(area-span)/2;
+  if(gap<30*16)stagger=60*16-(gap-5*16)*20/25;
+ }
+ int x=left+widths[index]/2;for(int i=0;i<index;++i)x+=widths[i]+gap;
+ return {x,200*16-(index%2?stagger:0)};
+}
 inline int combat_player_x(const State&s){
- // KaiserCrabBoss.FullyCenterPlayers; the original local Necrobinder then
- // moves 150 source pixels left to leave Osty's place beside her.
- if(s.enemy_world.active&&s.enemy_world.encounter==EncounterId::KaiserCrabBoss)return s.character==Character::Necrobinder?141:160;
- return 60;
+ if(!s.enemy_world.active)return 60;
+ // Single-player NCombatRoom.PositionPlayersAndPets centers the ordinary
+ // player in the left half. Camera zoom cancels that half-width; the local
+ // Necrobinder's additional -150 offset is still camera-scaled.
+ const auto camera=encounter_camera(s.enemy_world.encounter);
+ const int center=s.enemy_world.encounter==EncounterId::KaiserCrabBoss?960:480;
+ return (center+camera.x-(s.character==Character::Necrobinder?150*camera.zoom/1000:0))/6;
 }
 inline CreaturePose enemy_pose(const State&s,int index){
  if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);
  const auto*layout=encounter_positions(s.enemy_world.encounter);const auto&model=s.enemy_world.models[index];
- if(!layout||model.slot>=layout->count)return enemy_pose(s.enemy_count,index);
- static constexpr uint16_t bounds[][2]={
-#include "combat_creature_bounds.inc"
- };
- static_assert(sizeof bounds/sizeof bounds[0]==EnemyKinds,"Every model needs a bounds entry");
- const int raw_x=layout->points[model.slot][0],raw_y=layout->points[model.slot][1],z=layout->zoom;
+ const auto camera=encounter_camera(s.enemy_world.encounter);int z=camera.zoom;
+ unsigned slot=model.slot;
+ // This encounter has HasScene and literal merc/sneaky/fat SlotNames but
+ // no Slots override. Its simulation slots intentionally retain spawn order.
+ if(s.enemy_world.encounter==EncounterId::GremlinMercNormal)
+  slot=model.kind==EnemyId::GremlinMerc?0:model.kind==EnemyId::SneakyGremlin?1:2;
+ EnemyFormationPoint point;
+ if(layout&&slot<layout->count)point={(layout->points[slot][0]-960)*16,(layout->points[slot][1]-540)*16};
+ else point=unnamed_enemy_point(s,index,z);
  // SceneContainer has a 960,540 pivot and camera offset. Retain the
  // calculator's 122px ground rail while preserving authored slot spacing.
- const int x=(960+(raw_x-960)*z/1000+layout->offset_x)/6;
- const int feet=122+(540+(raw_y-540)*z/1000+layout->offset_y-740)/6;
- const int body_width=bounds[unsigned(model.kind)][0],body_height=bounds[unsigned(model.kind)][1];
- int width=body_width?body_width*z/6000:enemy_pose(layout->count,model.slot).width;
+ const int x=(960+point.x*z/16000+camera.x)/6;
+ const int feet=122+(540+point.y*z/16000+camera.y-740)/6;
+ const auto bounds=creature_bounds(model.kind);const int body_width=bounds.width,body_height=bounds.height;
+ int width=body_width?body_width*z/6000:enemy_pose(s.enemy_count,index).width;
  if(width<22)width=22;if(width>80)width=80;
  // Existing sprites share an 84px normalized body; the original Bounds
  // restores relative creature size (e.g. eggs versus their Ovicopter).
- int scale=body_height?body_height*z*1024/(6000*84):enemy_pose(layout->count,model.slot).scale;
+ int scale=body_height?body_height*z*1024/(6000*84):enemy_pose(s.enemy_count,index).scale;
  if(scale<160)scale=160;if(scale>1400)scale=1400;
  const int height=84*scale/1024,intent=feet-height-15;
  return {x,feet,width,scale,intent<25?25:intent,feet+7,feet+24};

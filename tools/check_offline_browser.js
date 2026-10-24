@@ -9,7 +9,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const {pathToFileURL}=require('node:url');
-const [html,output,modulePath,browserPath]=process.argv.slice(2);
+const [html,output,modulePath,browserPath,debugHtml]=process.argv.slice(2);
 if(!html||!output||!modulePath||!browserPath){
  console.error('usage: check_offline_browser.js HTML OUTPUT PLAYWRIGHT_MODULE CHROMIUM');
  process.exit(2);
@@ -44,7 +44,7 @@ writeReport();
  const canvas=page.locator('#screen');
  async function painted(){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));}
  async function ready(language){
-  await page.waitForFunction(()=>document.querySelector('#loading')?.hidden||document.querySelector('#error')?.textContent,{},{timeout:60000});
+  await page.waitForFunction(()=>!document.querySelector('#measure')?.disabled||document.querySelector('#error')?.textContent,{},{timeout:60000});
   assert.equal(await page.locator('#error').innerText(),'');
   assert.equal(await page.locator('#language').inputValue(),language);
   assert.equal(await page.locator('html').getAttribute('lang'),language==='eng'?'en':'zh-CN');
@@ -64,7 +64,17 @@ writeReport();
  await page.goto(pathToFileURL(path.resolve(html)).href,{waitUntil:'load',timeout:120000});
  await ready('eng');report.first_ready_wall_ms=Date.now()-begin;
  assert.equal(await saved(),null);record('fresh English startup, localized DOM and ready Canvas');
+ assert.equal(await page.evaluate(()=>typeof globalThis.nSpire2Debug),'undefined');
+ record('ordinary HTML does not expose the developer command API');
  await capture('browser-title-eng');
+ await press('ArrowDown');await confirm();await confirm();
+ assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('nSpire2-preferences-v1'))),{version:1,fastMode:true});
+ await capture('browser-settings-persisted-eng');
+ await page.reload({waitUntil:'load'});await ready('eng');
+ await press('ArrowDown');await confirm();await confirm();
+ assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('nSpire2-preferences-v1'))),{version:1,fastMode:false});
+ await press('Escape');await press('ArrowUp');
+ record('Fast Mode survives reload; the real settings toggle reads the restored value');
  await confirm();await capture('browser-character-eng');
  await confirm();await press('s');
  await page.waitForFunction(()=>!!localStorage.getItem('nSpire2-save-v15'));
@@ -103,6 +113,36 @@ writeReport();
  assert.equal(report.performance.finished_reason,'complete');
  assert.ok(report.performance.scenes.some(scene=>scene.scene==='collection'&&scene.render.count>0));
  record('visible 10-second performance control completes while rendering the card collection');
+ if(debugHtml){
+  // A separate origin context prevents developer mutations from altering the
+  // ordinary acceptance save. Only the shipped, flag-gated console is used.
+  const debugContext=await browser.newContext({viewport:{width:1000,height:1100},locale:'en-US',serviceWorkers:'block'});
+  await debugContext.route('**/*',route=>{const url=route.request().url();if(url.startsWith('file:'))return route.continue();report.blocked_requests.push(url);return route.abort();});
+  const debugPage=await debugContext.newPage();debugPage.on('pageerror',error=>report.errors.push(error.message));
+  await debugPage.goto(pathToFileURL(path.resolve(debugHtml)).href,{waitUntil:'load',timeout:120000});
+  await debugPage.waitForFunction(()=>typeof globalThis.nSpire2Debug==='function'&&!document.querySelector('#measure').disabled,{},{timeout:60000});
+  assert.equal(await debugPage.locator('#error').innerText(),'');
+  const catalog=await debugPage.evaluate(()=>({encounters:nSpire2DebugList('encounters'),events:nSpire2DebugList('events')}));
+  assert.ok(catalog.encounters.length>20&&catalog.events.length>20);
+  assert.equal(await debugPage.evaluate(()=>nSpire2Debug('new regent 12345').ok),true);
+  assert.equal(await debugPage.evaluate(()=>nSpire2Debug('room monster').ok),true);
+  await debugPage.waitForTimeout(1500);
+  await debugPage.locator('#screen').focus();await debugPage.keyboard.press('F1');await debugPage.keyboard.press('i');
+  for(let i=0;i<16;++i)await debugPage.keyboard.press('Backspace');
+  await debugPage.keyboard.type('kill all');await debugPage.keyboard.press('Enter');
+  await debugPage.waitForTimeout(1500);
+  const debugShot=await debugPage.locator('#screen').evaluate(node=>node.toDataURL('image/png'));
+  fs.writeFileSync(path.join(directory,'browser-debug-kill-menu.png'),Buffer.from(debugShot.split(',')[1],'base64'));
+  report.captures.push('browser-debug-kill-menu.png');
+  assert.equal(await debugPage.evaluate(()=>nSpire2Debug('kill all').ok),false); // already resolved by real text entry
+  for(const command of ['room shop','room rest','room treasure','room map','act 3','room event '+catalog.events[0]]){
+   const result=await debugPage.evaluate(value=>nSpire2Debug(value),command);assert.equal(result.ok,true,command+': '+result.message);
+  }
+  assert.equal(await debugPage.evaluate(()=>nSpire2Debug('room event NOT_AN_EVENT').ok),false);
+  assert.equal(await debugPage.evaluate(()=>localStorage.getItem('nSpire2-save-v15')),null);
+  record('separate debug HTML exposes catalogs, accepts real F1 text entry, room/act commands and rejects invalid events without autosaving');
+  await debugContext.close();
+ }
  assert.deepEqual(report.errors,[]);assert.deepEqual(report.blocked_requests,[]);
  record('no page errors or external resource requests');
  report.status='passed';report.ended_at=new Date().toISOString();writeReport();

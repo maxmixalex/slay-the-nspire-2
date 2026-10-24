@@ -294,7 +294,7 @@ static void library_screen(Canvas&c){
         c.centered(name,10,163,300,16,Gold);c.paragraph(desc,20,189,282,2,0,12,White);
         c.text("‹",12,215,16,Gold);c.action(0,211,44,29,UiAction::PreviousPage,a.library_page>0);
         c.text("›",296,215,16,Gold);c.action(277,211,43,29,UiAction::NextPage,a.library_page<last);
-        char page[64]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);b.text(" · 点击查看完整详情");c.centered(page,40,222,236,10,Muted);
+        char page[64]={};TextBuffer b{page,sizeof page,0,&a.content};b.number(a.library_page+1);b.text(" / ");b.number(last+1);c.centered(page,40,222,236,10,Muted);
     }
 }
 

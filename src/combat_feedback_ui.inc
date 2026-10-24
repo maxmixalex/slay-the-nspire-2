@@ -193,7 +193,13 @@ void App::observe_combat_effect(const State&s,Effect effect){
   // AddToCombatAndPreview awaits once for the whole batch. Its 1s Wait is
   // independent of Fast; the .25+1.2s preview and later flight continue.
   const bool in_hand=game.zones[old_card_count]==Zone::Hand;
-  f.effect_at+=in_hand?4u:31u;enemy_visual_clock=ui_feedback_later(enemy_visual_clock,f.effect_at);
+  const EnemyId kind=f.move_slot>=0&&f.move_slot<game.enemy_count?game.enemy_world.models[f.move_slot].kind:EnemyId::Count;
+  const auto audited=enemy_command_timing(kind,f.move,fast_mode);
+  if(!in_hand&&audited.effect==EnemyCommandTiming::GeneratedCard&&effect.value==Slimed&&
+     f.effect_at==f.move_at+(audited.impact_ms+32u)/33u)
+   f.effect_at=f.move_at+(audited.total_ms+32u)/33u;
+  else f.effect_at+=in_hand?4u:31u;
+  enemy_visual_clock=ui_feedback_later(enemy_visual_clock,f.effect_at);
  }
  // Round cumulative command time once, rather than adding rounded waits.
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.

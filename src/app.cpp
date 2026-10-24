@@ -116,7 +116,7 @@ static void reward_screen(Canvas&c){
     if(a.reward_cards){
         c.centered("选择一张牌",0,36,320,20,Gold);
         for(int i=0;i<3;i++){int x=24+i*96;large_card(c,{s.reward[i],0},x,77,a.cursor==i);c.hit(x-3,72,86,121,HitKind::Choice,i);}
-        c.button("详情 I",14,209,91,false,25);c.hit(10,205,99,31,HitKind::Command,(int)Key::Detail,a.cursor<3);
+        c.button("详情",14,209,91,false,25);c.hit(10,205,99,31,HitKind::Command,(int)Key::Detail,a.cursor<3);
         c.ui(U_RewardSkip,211,209,92,25);c.centered("跳过",211,211,92,12,a.cursor==3?Gold:White);c.hit(207,205,104,31,HitKind::Choice,3);
         return;
     }
@@ -178,7 +178,7 @@ static void panels(Canvas&c){
     c.rect(4,24,312,212,Panel);c.box(4,24,312,212,Gold);
     if(a.panel==2){
         c.centered("本局记录（最近 24 条）",5,27,310,12,Gold);a.scroll=mn(a.scroll,mx(0,s.log_count-10));int first=mx(0,s.log_count-10-a.scroll);
-        for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}c.text("↑↓ 滚动 · Esc 返回",15,216,10,Muted);
+        for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}
     }else if(a.panel==5){
         owned_relic_panel(c);
 
@@ -276,7 +276,7 @@ void App::render(){
     if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
-    if(settings_open||frontend_confirm)pointer.visible=false;
+    if(settings_open||frontend_confirm||help)pointer.visible=false;
     if(title){title_screen(c);
     }else{
         // The room beneath a modal can clamp its own text scroll. It must not
@@ -310,12 +310,14 @@ void App::render(){
         if(paused)native_pause_screen(c);
 
     }
-    pointer.visible=underlay_pointer_visible;
+    pointer.visible=underlay_pointer_visible&&!help&&!frontend_confirm;
     if(settings_open)frontend_settings_screen(c);
+    pointer.visible=underlay_pointer_visible&&!help;
     if(frontend_confirm)frontend_confirm_screen(c);
+    pointer.visible=underlay_pointer_visible;
     if(help){
         hit_count=0;c.hit(6,7,308,226,HitKind::Close);c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
-        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合","Tab：牌组与牌堆    L：记录","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单","← → 选择 · I 全文","三幕路线，含首领、古代之民与事件。","触摸板：轻触/按下点击，按住可拖牌。"};
+        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合",content.english()?"Tab / Q: deck   A / D / F: piles":"Tab / Q：牌组   A / D / F：牌堆","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单",content.english()?"Enter to aim, Left/Right target, Enter to play":"选牌后 Enter，左右选择目标，Enter 出牌","三幕路线，含首领、古代之民与事件。","触摸板：轻触/按下点击，按住可拖牌。"};
         for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
     }
     if(character_select)character_screen(c);

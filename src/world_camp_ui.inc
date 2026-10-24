@@ -67,10 +67,16 @@ static void native_camp_screen(Canvas&c){
   b.text(!enabled&&(option==WorldRestOption::Smith||option==WorldRestOption::Cook)?".descriptionDisabled":".description");a.localized_text("rest_site_ui",key,description,sizeof description,int(option));
   // Rich spans select their own colors. Tint the whole shadow pass so gold
   // words do not get a second displaced gold copy beneath the real label.
+  // The source RichTextLabel is horizontally centered but top-aligned. The
+  // shared card fitter centers both axes, so give it only the actual text
+  // height rather than moving this description down inside the 393px box.
+  auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size);const int bold=rich_bold_advance(ch);
+   return fitted_text::Metric{g.advance+bold,mx(int(g.w),int(g.advance))+bold};};
+  const auto fit=fitted_text::plan(description,166,78,10,8,metrics);const int text_height=mn(78,fit.rows*fit.step+2);
   Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
   shadow.opacity=uint8_t(div255(shadow.opacity*128));
-  shadow.paragraph_fitted(description,78,127,166,78,12,White,10,true);
-  c.paragraph_fitted(description,77,126,166,78,12,rgb(255,246,226),10,true);
+  shadow.paragraph_fitted(description,78,127,166,text_height,fit.size,White,fit.size,true);
+  c.paragraph_fitted(description,77,126,166,text_height,fit.size,rgb(255,246,226),fit.size,true);
  }
  if(count>4){
   c.text("‹",12,212,16,Gold);c.action(2,204,36,34,UiAction::PreviousCampPage,first>0);c.text("›",117,212,16,Gold);c.action(105,204,36,34,UiAction::NextCampPage,first+shown<count);

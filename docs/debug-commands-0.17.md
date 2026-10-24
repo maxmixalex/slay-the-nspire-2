@@ -50,6 +50,12 @@ cancelled. A failed core command restores the complete State and RNG words.
 None of these commands autosaves; use the ordinary Save action explicitly if
 you want to retain the modified run.
 
+`kill all` also answers combat card choices newly opened by death-triggered
+draw/shuffle hooks, using eligible cards through the normal selection API, so
+those hooks can finish and the real reward queue can appear. It is bounded;
+failure rolls back the transaction. A targeted `kill N` leaves any resulting
+interactive selection to the player.
+
 ## Browser console and Linux automation
 
 Only the debug HTML installs these helpers:

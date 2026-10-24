@@ -67,6 +67,18 @@ static void begin_exhaust_choice(){
     for(unsigned i=0;i<game.hand.count;++i)if(game.cards[game.hand.ids[i]].kind==BurningPact)index=int(i);
     check(index>=0&&play(game,index,0)&&game.phase==Phase::ExhaustChoice,"real card opens a suspended mandatory choice");valid();
 }
+static void death_hook_choice(){
+    start();combat(EncounterId::NibbitsNormal);
+    check(gain_world_relic(game,WorldRelicGremlinHorn),"obtain real death-draw relic");resolve_pending(game);
+    gain_power(game,XPower::Stratagem,1);game.energy=0;
+    while(game.draw.count){const int id=game.draw.ids[--game.draw.count];game.discard.ids[game.discard.count++]=uint16_t(id);game.zones[id]=Zone::Discard;}
+    valid();const unsigned enemies=game.enemy_count;
+    // Prove the fixture actually opens a selection from a death listener.
+    original=game;damage_unpowered(game,0,9999);resolve_pending(game);
+    check(game.phase==Phase::ExtendedChoice&&game.expansion.choice==XChoice::Draw,"actual Gremlin Horn shuffle suspends for Stratagem");valid();
+    game=original;kill_and_reward();
+    check(game.energy==int(enemies),"force-kill preserves each real Gremlin Horn death hook");
+}
 static void pending_choices(){
     begin_exhaust_choice();snapshot();check(!debug_kill_enemies(game,0),"single-target command cannot abandon an active player card");unchanged();
     kill_and_reward();
@@ -122,6 +134,6 @@ static void guards_and_rollback(){
     check(debug_enter_room(game,WorldRoom::Map)&&game.phase==Phase::Map&&!game.world.room_open,"map command leaves a valid playable map");valid();
 }
 int main(){
-    force_deaths();pending_choices();permanent_state_and_routes();guards_and_rollback();
+    force_deaths();pending_choices();death_hook_choice();permanent_state_and_routes();guards_and_rollback();
     std::printf("debug commands regression: %u checks passed\n",checks);return 0;
 }
