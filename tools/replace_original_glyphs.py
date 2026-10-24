@@ -24,6 +24,7 @@ from split_content import layout
 
 SIZES = (8, 10, 12, 16, 20)
 SCENE_SIZES = (6, 8, 10, 12, 14, 16, 20)
+NATIVE_SIZES = (5,) + SCENE_SIZES
 FACE_NAMES = ('regular', 'bold', 'italic', 'bold_italic')
 KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
     'aqua', 'white', 'gray', 'b', 'i', 'sine', 'jitter', 'rainbow', 'thinky_dots'))
@@ -92,7 +93,7 @@ class Face:
             self.coverage = set(font.getBestCmap() or ())
             self.family = font['name'].getDebugName(1)
             self.subfamily = font['name'].getDebugName(2)
-        self.fonts = {px: ImageFont.truetype(str(self.path), px) for px in SCENE_SIZES}
+        self.fonts = {px: ImageFont.truetype(str(self.path), px) for px in NATIVE_SIZES}
 
     def glyph(self, cp, px, style=0):
         tiles.require(cp in self.coverage, 'Font does not cover requested glyph')
@@ -136,7 +137,6 @@ def generate(source, faces, fallback=None):
             index = fallbacks.index(font)
             fallback_sources[font.path.name if hasattr(font, 'path') else str(index)].add(cp)
     originals = {(row[0], row[2]): row for row in source.glyphs if row[2] < 32}
-    previous_codepoints = {cp for cp, _px in originals}
     required = set().union(*requested)
     new_codepoints = required - {cp for cp, _px in originals}
     missing_regular = []
@@ -169,13 +169,19 @@ def generate(source, faces, fallback=None):
             originals[(cp, px)] = None
         record_fallback(cp, face)
     if getattr(source, 'version', 0) >= 28:
+        # Five-pixel glyphs serve source-sized cards and reward rows. Full
+        # historical articles retain only their reader's8/10px alphabet,
+        # including when converting a pack whose old glyphs already contain it.
+        auxiliary_required = set().union(*styled_alphabet([value for slot, value in enumerate(texts) if slot in auxiliary]))
         for cp in sorted({cp for cp, _px in originals}):
-            if (cp, 6) in originals: continue
-            if cp not in previous_codepoints and cp not in core_required: continue
             if text_format_control(cp): continue
             face = regular_face(cp)
-            if face is not None:
-                rows.append(face.glyph(cp, 6)); originals[(cp, 6)] = None
+            if face is None: continue
+            for px in (5, 6):
+                if (cp, px) in originals: continue
+                if px == 5 and cp not in core_required and not 32 <= cp < 127: continue
+                if px == 6 and cp in auxiliary_required and cp not in core_required: continue
+                rows.append(face.glyph(cp, px)); originals[(cp, px)] = None
     styled_counts, unavailable = {}, {}
     for style in range(1, 4):
         font = faces[style]
@@ -200,7 +206,8 @@ def generate(source, faces, fallback=None):
         fallback_regular_codepoints=sorted(set(substituted)),
         auxiliary_only_codepoints=sorted(new_codepoints-core_required-set(missing_regular)),
         auxiliary_body_sizes=[8, 10],
-        rasterizer='Pillow/FreeType at native 6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
+        small_regular_sizes=[5, 6],
+        rasterizer='Pillow/FreeType at native 5/6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
 
 
 def scene_glyphs(source, faces):
@@ -224,9 +231,32 @@ def scene_glyphs(source, faces):
     auxiliary_bold = styled_alphabet([value for slot, value in enumerate(texts) if slot in auxiliary and slot != 8507])[1]
     auxiliary_headings = set(map(ord, texts[8507])) if len(texts)>8507 and 8507 in auxiliary else set()
     for key, ordinal in entries:
-        if key.startswith('card_reward_ui.') or key in ('gameplay_ui.CHOOSE_CARD_HEADER', 'gameplay_ui.TO_INSPECT_PROMPT', 'gameplay_ui.COMBAT_REWARD_HEADER_LOOT'):
+        if key.startswith(('card_reward_ui.', 'gameplay_ui.CARD_TYPE.')) or key in ('gameplay_ui.CHOOSE_CARD_HEADER', 'gameplay_ui.TO_INSPECT_PROMPT', 'gameplay_ui.COMBAT_REWARD_HEADER_LOOT'):
             ordinal=int(ordinal)
             if ordinal<len(texts): alphabets[1].update(map(ord,texts[ordinal]))
+    # The game-over scene has its own5px score/quote faces. Restrict the
+    # added italic glyphs to strings that can actually enter that scene,
+    # including grammatical replacements and localized room names.
+    small_bold=set(alphabets[1]);small_italic=set(range(32,127));banner_bold=set();victory_bold=set()
+    for key,ordinal in entries:
+        ordinal=int(ordinal)
+        if ordinal>=len(texts):continue
+        alphabet=visible_alphabet(texts[ordinal])
+        if key.startswith('game_over_screen.'):
+            small_bold.update(alphabet)
+            if key.startswith('game_over_screen.BANNER.'):banner_bold.update(alphabet)
+            if key=='game_over_screen.VICTORY_DAMAGE_LOCAL':victory_bold.update(alphabet)
+            if key.startswith(('game_over_screen.QUOTES.','game_over_screen.ENCOUNTER_QUOTE_')):small_italic.update(alphabet)
+        replacement=bool(re.fullmatch(r'characters\.[^.]+\.(title|titleObject|possessiveAdjective|pronounObject|pronounPossessive|pronounSubject)',key))
+        if replacement:small_bold.update(alphabet);small_italic.update(alphabet);victory_bold.update(alphabet)
+        if (key.startswith(('run_history.MAP_POINT_HISTORY.falseVictory.','run_history.MAP_POINT_HISTORY.abandon.')) or
+            key=='run_history.MAP_POINT_HISTORY.debug' or
+            re.fullmatch(r'(encounters|events|ancients)\.[^.]+\.(loss|title)',key)):
+            small_italic.update(alphabet)
+    from game_over_ui8_assets import TEXTS as GAME_OVER_TEXTS
+    for ordinal,key in GAME_OVER_TEXTS:
+        if ordinal<len(texts) and key.startswith('game_over_ui.'):
+            small_bold.update(visible_alphabet(texts[ordinal]))
     rows=[];report={}
     for i,face in enumerate(faces):
         if face is None: continue
@@ -238,10 +268,14 @@ def scene_glyphs(source, faces):
         if i==1:
             # PatchText explicitly selects KreonBold at its 8px body size;
             # the credits reader uses the same face for 10px section labels.
-            for alphabet,px in ((auxiliary_bold,8),(auxiliary_headings,10)):
+            for alphabet,px in ((small_bold,5),(banner_bold|victory_bold,6),(banner_bold,8),(banner_bold,10),(auxiliary_bold,8),(auxiliary_headings,10)):
                 for cp in sorted(alphabet):
                     if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,px) not in present:
                         rows.append(face.glyph(cp,px,5));present.add((cp,px));covered.add(cp)
+        if i==2:
+            for cp in sorted(small_italic):
+                if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,5) not in present:
+                    rows.append(face.glyph(cp,5,6));present.add((cp,5));covered.add(cp)
         report[('display','explicit_bold','scene_italic')[i]]=dict(**face.metadata(),codepoints=len(covered),glyphs=len(present))
     return rows,report
 
@@ -284,7 +318,7 @@ def replace(data, language, glyphs):
     glyph_offsets, shared = {}, {}
     for index in sorted(range(len(glyphs)), key=lambda i: (-frequency[chr(glyphs[i][0])], glyphs[i][0], glyphs[i][1])):
         cp, px, w, h, advance, encoded, raw = glyphs[index]
-        tiles.require(cp <= 0x10ffff and px <= 255 and (px & (31 if source.version >= 28 else 63)) in (SCENE_SIZES if source.version >= 28 else SIZES) and
+        tiles.require(cp <= 0x10ffff and px <= 255 and (px & (31 if source.version >= 28 else 63)) in (NATIVE_SIZES if source.version >= 28 else SIZES) and
             0 < w <= 40 and 0 < h <= 40 and advance <= 40 and
             len(raw) == (encoded or w*h), 'Invalid replacement glyph')
         if raw not in shared:

@@ -71,7 +71,15 @@ enum HistoryUi8Asset {
  I8_FeedbackFlowerHappy,
  I8_PatchNotesArrow,
  I8_KeyboardKeycap,
+ I8_GameOverScoreFloor,I8_GameOverScoreGold,I8_GameOverScoreElite,I8_GameOverScoreBoss,I8_GameOverScoreAscension,
+ I8_GameOverBadgeBronze,I8_GameOverBadgeSilver,I8_GameOverBadgeGold,
+ I8_GameOverBadgeCombo,I8_GameOverBadgeCurses,I8_GameOverBadgeDoubleSnecko,I8_GameOverBadgeElite,
+ I8_GameOverBadgeFamished,I8_GameOverBadgeGlutton,I8_GameOverBadgeHighlander,I8_GameOverBadgeHoned,
+ I8_GameOverBadgeBigDeck,I8_GameOverBadgeILikeShiny,I8_GameOverBadgeKaChing,I8_GameOverBadgeMoneyMoney,
+ I8_GameOverBadgeMysteryMachine,I8_GameOverBadgePerfect,I8_GameOverBadgeRestful,I8_GameOverBadgeRestless,
+ I8_GameOverBadgeSpeedy,I8_GameOverBadgeTablet,I8_GameOverBadgeTinyDeck,
+ I8_GameOverDiscoveryCard,I8_GameOverDiscoveryRelic,I8_GameOverDiscoveryPotion,I8_GameOverDiscoveryEnemy,
  HistoryUi8AuxiliaryCount
 };
-static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&I8_CrystalBackground==1984&&I8_Peek==1993&&I8_AncientNextArrow==1995&&I8_PatchNotesIcon==1996&&I8_KeyboardKeycap==2012&&HistoryUi8AuxiliaryCount==2013,"Original history, modifier, map, crystal and auxiliary-menu layer order");
+static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&I8_CrystalBackground==1984&&I8_Peek==1993&&I8_AncientNextArrow==1995&&I8_PatchNotesIcon==1996&&I8_KeyboardKeycap==2012&&I8_GameOverScoreFloor==2013&&HistoryUi8AuxiliaryCount==2044,"Original history, modifier, map, crystal and auxiliary-menu layer order");
 }
