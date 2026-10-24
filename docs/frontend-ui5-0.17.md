@@ -9,7 +9,7 @@ generated resource packs remain outside the public source repository.
 | Surface | Direct reference | Runtime change |
 | --- | --- | --- |
 | Settings | `settings_screen.tscn`, `settings_tab.tscn`, `settings_tickbox.tscn`, `tickbox.tscn`, `NSettingsTab` | The reward panel has been removed. Functional General/Input tabs sit above left-label/right-control rows and faint dividers. Tab selection uses the authored cyan additive stroke; focus uses gold lettering, 1.05 scale and a 0.5 s EXPO_OUT return. The original tickbox retains its 0.8 inner scale. |
-| Character selection | `char_select_button.tscn`, `character_select_screen.tscn`, `NCharacterSelectButton` | Pointer hover is presentation only; release on the pressed portrait selects. The authored gold selection outline uses additive compositing. The invented full-width footer is removed, retaining independent Back/Embark controls over the illustration. Hover and drag-cancel regression coverage protects selection and save state. |
+| Character selection | `char_select_button.tscn`, `character_select_screen.tscn`, `confirm_button.tscn`, `NCharacterSelectButton`, `NCharacterSelectScreen` | Pointer hover is presentation only; release on the pressed portrait selects. The authored gold selection outline uses additive compositing. The invented full-width footer is removed. The formal-run confirmation uses the original cream tick without a text label; the separate practice entry retains its existing label. Hover and drag-cancel regression coverage protects selection and save state. |
 | Map | `map_screen.tscn`, existing pinned map audit | Paper occupies the entire area under the HUD. The duplicated full-width act heading and bottom instruction bar are gone. The existing original transient act banner supplies the act heading; compact legend/scroll controls remain directly over the paper. |
 | Ordinary event | `default_event_layout.tscn`, `event_option_button.tscn`, `NEventLayout`, `NEventOptionButton` | The right-column story is centered above one options stack. The unrelated dark column and repeated selected-option description over the illustration are gone. A single option label contains its gold/red bold title, newline and description; the focused outline is blue/additive. The story rectangle still opens the complete reader. |
 | Resource storage | `tools/patch_frontend_assets.py` | NSP2/22 appends seven original settings/potion-popup images and three original star-counter layers. All old image, clip and auxiliary indices, image/group payloads, relative retained-group links and localized payloads remain intact. Directory offsets and the resident decoded-cost table grow without a runtime scan. |
@@ -25,6 +25,16 @@ existing font sizes already contain the required glyphs. The runtime accepts
 those new keys only for v22; older resources retain English tab fallbacks.
 Other controls use existing indexed labels, including separate original map
 and potion-slot titles.
+
+The original character screen instances `ConfirmButton` without a text override.
+Its scene contains image, tick, outline and hotkey children, with no label or
+localization key; `NCharacterSelectScreen` connects its release to
+`OnEmbarkPressed`. The tick is 80 px on the 267 px button artwork and uses
+`(1, 0.964706, 0.886275)` modulation. The calculator centers this original icon
+and bounds it to the available control height. The old `启程` UI binding pointed
+to the unrelated Standard-mode title; it remains at its old index for pack
+compatibility, but this entry point no longer asks for that string. Existing
+nonempty-label native controls retain their drawing path.
 
 ## Concrete remaining differences
 
@@ -74,6 +84,10 @@ actual-pack frontend/event/map/reward suites pass in both languages: eight
 runs and 168,744 checks. The corrected character-selection capture observes
 the first frame before advancing its entrance, and both final language packs
 pass the stage 4 frontend suite at `1ad378862fae54fc8c8b346c2680b5f448e26883`.
+Manual inspection of those settled captures exposed the old Standard-mode
+label on the character confirmation. The source correction above and its
+actual-art centered-tick / click-to-start regressions are recorded separately
+from those historical stage 4 passes.
 The accepted Chinese resource subsequently changes only glyph payload order;
 the performance report records exact glyph geometry/pixels, unchanged other
 bytes and 18 exact frame pairs. See
