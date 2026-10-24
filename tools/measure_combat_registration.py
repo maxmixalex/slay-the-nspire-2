@@ -144,7 +144,7 @@ def main():
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     with args.content.open('rb') as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
-        source = tiles.PackView(data, args.auxiliary, versions=tuple(range(14, 30)))
+        source = tiles.PackView(data, args.auxiliary, versions=tuple(range(14, 31)))
         pack = Pack(args.pck)
         try:
             with SpineSampler(pack, runtime=args.runtime, dotnet=args.dotnet, work_dir=args.cache/'spine-adapter') as sampler:

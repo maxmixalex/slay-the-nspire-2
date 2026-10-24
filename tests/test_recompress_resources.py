@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import struct
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import content_tiles as tiles
@@ -14,6 +15,14 @@ from test_compact_ui6_merchant import source_pack
 
 
 class ResourceRecompressionTests(unittest.TestCase):
+    def test_latest_animation_and_journal_versions_keep_exact_rows(self):
+        packed,_,_=retained.repack(fixture(),fast_images='none')
+        for version in (29,30):
+            source=bytearray(packed);struct.pack_into('<I',source,4,version)
+            after,_=compact.recompress(bytes(source),workers=1)
+            self.assertEqual(compact.view(after).version,version)
+            self.exact_images(source,after)
+
     def exact_images(self, before, after):
         source, target = compact.view(before), compact.view(after)
         old_tiles, new_tiles = tiles.TileReader(source), tiles.TileReader(target)
