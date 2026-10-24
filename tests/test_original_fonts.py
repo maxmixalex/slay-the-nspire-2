@@ -77,8 +77,11 @@ class OriginalFontTest(unittest.TestCase):
             self.assertEqual(after.counts[1], 5)
             self.assertEqual(report['directory_growth_bytes'], 32)
             self.assertTrue(report['artwork_bytes_exact'] and report['strings_exact'])
-            self.assertEqual([before.image_raw(i) for i in range(before.counts[0])],
-                             [after.image_raw(i) for i in range(after.counts[0])])
+            old_tiles, new_tiles = tiles.TileReader(before), tiles.TileReader(after)
+            self.assertEqual([old_tiles.image_raw(i) if row[3] == 6 else before.image_raw(i)
+                              for i, row in enumerate(before.images)],
+                             [new_tiles.image_raw(i) if row[3] == 6 else after.image_raw(i)
+                              for i, row in enumerate(after.images)])
             self.assertEqual(after.glyphs[3][2:6], (72, 3, 1, 7))
             self.assertEqual(bytes(after.block(after.glyphs[3][1], 3)), b'\xff\x00\xff')
             # Regenerating the same faces does not accumulate old font tails.

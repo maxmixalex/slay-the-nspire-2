@@ -273,6 +273,36 @@ z_index = 3
         self.assertEqual(alpha, 255)
         self.assertTrue(126 <= red <= 129 and 126 <= blue <= 129)
 
+    def test_serialized_spine_mesh_has_no_geometry_and_retains_child_transform(self):
+        class Sampler:
+            def metadata(self, resource):
+                return {'clips': []}
+            def sample(self, resource, clip, times):
+                return [{'draw': [], 'bones': []}]
+            def draw(self, resource, frame):
+                return []
+        scene = '''[gd_scene format=3]
+[ext_resource type="SpineSkeletonDataResource" path="res://fixture.skel" id="s"]
+[ext_resource type="Texture2D" path="res://pixel.png" id="t"]
+[sub_resource type="CanvasItemMaterial" id="material"]
+blend_mode = 1
+[node name="Root" type="SpineSprite"]
+skeleton_data_res = ExtResource("s")
+position = Vector2(1, 2)
+[node name="_SpineMesh2D_123" type="SpineMesh2D" parent="."]
+position = Vector2(3, 4)
+material = SubResource("material")
+[node name="Dot" type="Sprite2D" parent="_SpineMesh2D_123"]
+centered = false
+texture = ExtResource("t")
+'''
+        p = Pack({'main.tscn': scene}, {'pixel.png': Image.new('RGBA', (1, 1), 'red')})
+        image, diagnostics = render(p, sampler=Sampler())
+        self.assertEqual(image.getbbox(), (4, 6, 5, 7))
+        self.assertEqual(image.getpixel((4, 6)), (255, 0, 0, 255))
+        self.assertEqual(len(diagnostics['drawn']), 1)
+        self.assertEqual(diagnostics['conditions'][0]['condition'], 'serialized_spine_mesh_empty')
+
     def test_sampled_spine_bone_follows_behind_child(self):
         class Sampler:
             def metadata(self, resource):

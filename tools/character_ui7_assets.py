@@ -54,7 +54,9 @@ class FrameSampler:
 class CharacterRenderer(RoomRenderer):
     def spine(self, node, path, matrix, tint, clips, z):
         bones, commands, order = super().spine(node, path, matrix, tint, clips, z)
-        overrides = {}
+        # SpineSprite's Godot default Screen material uses SUB, not the
+        # cross-runtime screen operation. Explicit scene overrides follow it.
+        overrides = {3: 4}
         for mode, key in enumerate(('normal_material', 'additive_material', 'multiply_material', 'screen_material')):
             ref = _property(node.props, key)
             if ref is None:
@@ -67,7 +69,7 @@ class CharacterRenderer(RoomRenderer):
         for slot, draws in commands.items():
             commands[slot] = [(level, image, overrides.get(blend, blend), masks)
                               for level, image, blend, masks in draws]
-        self.diagnostics['spines'][-1]['authored_material_overrides'] = overrides
+        self.diagnostics['spines'][-1]['effective_material_overrides'] = overrides
         return bones, commands, order
 
 

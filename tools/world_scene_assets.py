@@ -412,7 +412,7 @@ _CAMERAS = {
 }
 _CONTROLS = {'Control', 'TextureRect', 'ColorRect', 'Panel', 'Container'}
 _PARTICLES = {'CPUParticles2D', 'GPUParticles2D'}
-_PLAIN = {'Node', 'Node2D', 'Marker2D', 'SpineBoneNode', 'SpineSlotNode'}
+_PLAIN = {'Node', 'Node2D', 'Marker2D', 'SpineBoneNode', 'SpineSlotNode', 'SpineMesh2D'}
 
 
 class _Renderer:
@@ -429,6 +429,7 @@ class _Renderer:
         self.sampler = sampler
         self.owns_sampler = False
         self.time = time
+        self.phobia_mode = False
         self.textures = OrderedDict()
         self.texture_bytes = 0
         self.commands = []
@@ -709,7 +710,7 @@ class _Renderer:
         if not _property(props, 'visible', True):
             self.report('omitted', node, path, reason='authored_hidden')
             return
-        if node.name == 'PhobiaModeVisual':
+        if node.name == 'PhobiaModeVisual' and not self.phobia_mode:
             self.report('conditions', node, path, condition='phobia_mode=false')
             return
         if node.instance and node.instance.endswith('/kaiser_crab_boss_setup.tscn'):
@@ -730,6 +731,13 @@ class _Renderer:
         if node.kind in _PARTICLES:
             self.report('omitted', node, path, reason='dynamic_particles', kind=node.kind)
             return
+        if node.kind == 'SpineMesh2D':
+            # The official 4.2 constructor starts renderer_object at null and
+            # binds no serialized mesh geometry. generate_meshes_for_slots
+            # creates distinct internal instances, already represented by
+            # spine_commands. Additional scene-authored mesh nodes therefore
+            # draw nothing; their transforms, ordering and children still apply.
+            self.report('conditions', node, path, condition='serialized_spine_mesh_empty')
         image = None
         texture_ref = _property(props, 'texture')
         if node.kind in ('Sprite2D', 'TextureRect') and texture_ref:
@@ -902,9 +910,28 @@ def load_scene_texture(pack, path, *, texture_loader=None, cache=None):
     return renderer.texture(path).copy()
 
 
+def select_phobia_visuals(root):
+    """Apply NCombatBackgroundLayer's two mutually exclusive child branches.
+
+    A regular render never calls this routine. Only an explicit alternate
+    render can override the authored visibility of the replacement branch.
+    """
+    changed = 0
+    alternatives = [child for child in root.children if child.name == 'PhobiaModeVisual']
+    if alternatives:
+        regular = [child for child in root.children if child.name == 'Visual']
+        if len(alternatives) != 1 or len(regular) != 1:
+            raise SceneRenderError('Ambiguous original phobia background branches')
+        regular[0].props['visible'] = Property('false', regular[0].scope)
+        alternatives[0].props['visible'] = Property('true', alternatives[0].scope)
+        changed += 1
+    for child in root.children: changed += select_phobia_visuals(child)
+    return changed
+
+
 def render_scene(pack, path, width=320, height=218, mode='scene', *, variants=None,
                  viewport=(1920, 1080), camera=None, texture_loader=None,
-                 sampler=None, sample_time=0., supersample=1, plane='all'):
+                 sampler=None, sample_time=0., supersample=1, plane='all', phobia_mode=False):
     """Return ``(RGBA image, diagnostics)`` for an original static world scene.
 
     ``sampler`` implements world_enemy_assets.SpineSampler.  Passing an injected
@@ -926,6 +953,7 @@ def render_scene(pack, path, width=320, height=218, mode='scene', *, variants=No
     if texture_loader is None:
         from build_content import texture as texture_loader
     renderer = _Renderer(pack, width, height, viewport, texture_loader, sampler, sample_time, supersample)
+    renderer.phobia_mode = bool(phobia_mode)
     path = path.removeprefix('res://')
     root = renderer.loader.instantiate(path)
     renderer.diagnostics.update(path=path, mode=mode)
@@ -965,6 +993,8 @@ def render_scene(pack, path, width=320, height=218, mode='scene', *, variants=No
             parent_matrix = _translate(*(position + pivot)) @ _scale(scale) @ _translate(*-pivot)
             renderer.diagnostics['ancient_container'] = {'position': position.tolist(), 'scale': scale}
     try:
+        if phobia_mode:
+            renderer.diagnostics['phobia_layers'] = select_phobia_visuals(root)
         renderer.visit(root, parent_matrix, parent_size, np.ones(4), 0, root.name)
         return renderer.finish(plane)
     finally:

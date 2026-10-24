@@ -35,6 +35,7 @@ def synthetic_rows(cache):
         else:
             raw, width, height, fmt = bytearray(b'\x12\x34'*4), 2, 2, 0
             key = 'synthetic-static-icon'
+        raw = bytes(raw)
         payload = struct.pack('<BI', fmt, len(raw))+lz4_encode(raw)
         filename = f'pose-{index}.bin'
         (cache/filename).write_bytes(payload)
