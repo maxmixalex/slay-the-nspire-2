@@ -22,6 +22,7 @@ void App::run_modifier_select(unsigned index){
 }
 bool App::start_selected_run(const RunOptions&options){
     if(!valid_run_options(options))return false;
+    if(!practice_entry&&!seen_ftue(FtueId::AcceptTutorials)&&open_ftue(FtueId::AcceptTutorials)){ftue.embark=options;return false;}
     uint32_t seed=0;char canonical[65]{};
     if(!practice_entry&&*selected_seed){
         if(!reference::canonicalize_ascii(selected_seed,canonical,sizeof canonical)){message("种子无效");return false;}++run_number;

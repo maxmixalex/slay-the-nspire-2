@@ -42,6 +42,8 @@
 #include "character_select_presentation.hpp"
 #include "turn_banner_presentation.hpp"
 #include "combat_preparation.hpp"
+#include "ftue_presentation.hpp"
+#include "ftue_assets.hpp"
 #include "title_scene.hpp"
 #include "title_assets.hpp"
 #include "frontend_assets.hpp"
@@ -131,12 +133,13 @@ public:
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
+    bool has_ftue_assets()const{return version_>=FtueContentVersion&&ui_count_==FtueAuxiliaryCount;}
     bool current_profile()const{
         if(version_<ContentVersion||version_>GroupedStringContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
-        const bool ui=ui_count_==auxiliary||(version_>=CardResourceContentVersion&&ui_count_==CardResourceAuxiliaryCount);
+        const bool ui=ui_count_==auxiliary||(version_>=CardResourceContentVersion&&ui_count_==CardResourceAuxiliaryCount)||has_ftue_assets();
         return ui&&text&&clips_==animations;
     }
     int card_image(int kind)const;
@@ -246,6 +249,17 @@ struct App {
     int turn_banner_floor=-1,turn_banner_combat=-1,turn_banner_encounter=-1,turn_banner_number=0;
     void sync_turn_banner();
     CombatPreparation combat_preparation{};
+    FtuePresentation ftue{};
+    bool open_ftue(FtueId,int target=-1);
+    void sync_ftues();
+    void ftue_control(int);
+    bool ftue_input(Key);
+    bool ftue_before_end_turn();
+    bool ftue_before_play(int);
+    bool ftue_before_action(UiAction);
+    void observe_ftue_log(Log);
+    void observe_ftue_history(const RunHistoryNotice&);
+    void ftue_manual_played();
     RewardPresentation reward_presentation{};
     RewardAcquisitionSnapshot reward_acquisition_snapshot()const;
     void finish_reward_acquisition(const RewardAcquisitionSnapshot&);
@@ -328,12 +342,18 @@ struct App {
     bool progress_pointer_button(bool,const HitRegion&);
     void history_pointer(const HitRegion&);
     bool progress_loaded=false,progress_dirty=false;
+    bool ftue_profile_pending=false;
     uint32_t progress_seen_revision=0,progress_remainder_ms=0;
     uint16_t progress_seen_floor=0,progress_seen_battle=0;
     uint8_t progress_seen_phase=255;
     bool progress_seen_ending=false;
     void restore_progress();
     bool persist_progress();
+    bool seen_ftue(FtueId)const;
+    bool seen_popup(FtueId)const;
+    void mark_ftue(FtueId);
+    void set_ftues_enabled(bool);
+    void reset_ftues();
     void begin_progress(bool resumed=false);
     void sync_progress();
     void progress_time(uint32_t);

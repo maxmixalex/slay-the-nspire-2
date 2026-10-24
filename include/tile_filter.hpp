@@ -35,7 +35,7 @@ inline bool restore_tile_filter_records(uint8_t* output,const uint8_t* input,
 inline bool restore_tile_filter(uint8_t* output,const uint8_t* input,
     unsigned bytes,unsigned items,unsigned mode){
     if(!output||!input||!items||items>680||bytes!=items*770u||mode<1||mode>2)return false;
-    // ARM -Os otherwise compares the invariant mode inside every pixel loop.
+    // The ARM compiler otherwise compares this invariant inside every pixel loop.
     // Select the lossless inverse once per group; neither path needs storage.
     return mode==2?restore_tile_filter_records<2>(output,input,items):
                    restore_tile_filter_records<1>(output,input,items);

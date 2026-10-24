@@ -80,6 +80,15 @@ static void summaries(){setup();spire::UiProgressSummary summary;CHECK(!profile_
  const auto count=spire::encode_ui_progress(progress,progress_bytes,sizeof progress_bytes);CHECK(count);
  files[path(2,3)]=Bytes(progress_bytes,progress_bytes+count);CHECK(profile_info(2,summary)&&summary.exists&&summary.play_seconds==42&&summary.last_saved_at==123456);
  files[path(3,3)]={9};files[path(3,5)]=files[path(2,3)];CHECK(profile_info(3,summary)&&summary.play_seconds==42);
+ // Profile discovery reads the prefix of current NSH8 metadata too. The
+ // tutorial preference remains owned by the full codec, not by a summary
+ // scan or the profile-selector transaction.
+ progress.tutorial_flags=spire::FtueInitialized|spire::ftue_bit(spire::FtueId::AcceptTutorials);
+ const auto current_count=spire::encode_ui_progress(progress,progress_bytes,sizeof progress_bytes);
+ CHECK(current_count&&progress_bytes[3]=='8');files[path(3,3)]=Bytes(progress_bytes,progress_bytes+current_count);
+ CHECK(profile_info(3,summary)&&summary.exists&&summary.play_seconds==42&&summary.last_saved_at==123456);
+ static spire::UiProgress restored;CHECK(spire::decode_ui_progress(files[path(3,3)].data(),current_count,restored));
+ CHECK(restored.tutorial_flags==progress.tutorial_flags&&files[path(2,3)][3]=='2');
  CHECK(current_profile()==1);
 }
 static void recovered_selector(){setup();files[selector_path]={1,2,3};files[selector_backup]=selector(2);

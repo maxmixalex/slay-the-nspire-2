@@ -35,7 +35,7 @@ bool App::card_target_input(Key key){
     }
     if(key!=Key::Confirm||cursor<0||cursor>=game.hand.count)return false;
     const int instance=game.hand.ids[cursor];
-    if(!can_play_card(game,instance)){message("资源不足，或尚未满足出牌条件");return true;}
+    if(!can_play_card(game,instance)){if(!ftue_before_play(cursor))message("资源不足，或尚未满足出牌条件");return true;}
     sync_combat_cards();
     keyboard_card=instance;keyboard_card_revision=game.revision;
     // NControllerCardPlay keeps the last valid target, falling back to the

@@ -8,14 +8,15 @@ static void native_reward_backdrop(Canvas&c){
  if(s.original_events.id==OriginalEventId::CrystalSphere&&s.original_events.crystal_item_count&&(s.phase==Phase::OriginalEventChoice||s.phase==Phase::WorldRelicChoice)){c.a.sync_crystal_presentation();Canvas background=c;background.opacity=255;crystal_backdrop(background);crystal_dialogue(background);}
  c.dim(0,22,320,218,185);
 }
-static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count){
+static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count,bool backdrop=true,int only=-1,bool proceed=true){
  auto&a=c.a;const auto&s=a.game;const bool relic=s.phase==Phase::WorldRelicChoice;
  const unsigned first=unsigned(a.reward_presentation.list_first());
  const auto window=a.reward_presentation.window(a.map_clock_ms);const int dy=window.y;
  Canvas panel=c;panel.opacity=uint8_t(div255(panel.opacity*window.alpha));
- native_reward_backdrop(panel);native_reward_window(panel,dy);
+ if(backdrop)native_reward_backdrop(panel);if(only<0)native_reward_window(panel,dy);
  Canvas rows=native_reward_list_layer(panel,dy);const int label_size=native_reward_label_size(a);
  for(unsigned i=first;i<count&&i<first+7;i++){
+  if(only>=0&&int(i)!=only)continue;
   const unsigned at=ids[i];unsigned kind,model,amount;const EventCardFacts*facts=nullptr;
   if(relic){const auto&r=s.world_relics.rewards[s.world_relics.offers[at]];
    kind=r.kind==1?4:r.kind==2?3:r.kind==3?2:r.kind==4?1:r.kind;model=r.value;amount=r.value;if(r.kind==5)facts=&r.facts[0];
@@ -39,7 +40,7 @@ static void native_reward_set_screen(Canvas&c,const uint16_t*ids,unsigned count)
   rows.fitted(name,138,local+1,60,15,label_size,label_size,selected?Gold:rgb(255,246,226),true,false,true,false);
   native_reward_row_hit(c,y,dy,HitKind::WorldChoice,int(at));
  }
- native_reward_scrollbar(panel,dy);
+ if(only<0)native_reward_scrollbar(panel,dy);if(!proceed)return;
  const bool can_leave=a.world_choice_min()==0;
  native_proceed(c,native_reward_text(a,"gameplay_ui",count?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON",count?"跳过剩余":"前进"),can_leave);
  native_proceed_action(c,UiAction::LeaveWorldRewards,can_leave);

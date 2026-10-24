@@ -62,6 +62,22 @@ writeReport();
  async function confirm(){await page.locator('button[data-key="4"]').click();await painted();}
  const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v17'+(id===1?'':'-profile-'+id)),slot);
  const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v4'+(id===1?'':'-profile-'+id))),slot);
+ const progress=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-progress-v1'+(id===1?'':'-profile-'+id)),slot);
+ const tutorial={accept:1,combat:2,map:4,enabled:0x2000,initialized:0x4000,fresh:0x6000};
+ async function tutorialRecord(slot){
+  const value=await progress(slot);if(!value)return null;
+  const data=Buffer.from(value,'base64');assert.equal(data.subarray(0,4).toString(),'NSH8');assert.equal(data.readUInt32LE(4),data.length);
+  const flags=data.readUInt16LE(data.length-2);assert.equal(flags&0x8000,0);assert.ok(flags&tutorial.initialized);
+  return {flags,next_serial:data.readUInt32LE(8),history_count:data[12],bytes:data.length};
+ }
+ async function waitTutorial(slot,mask,value,timeout=10000){
+  await page.waitForFunction(({slot,mask,value})=>{
+   const encoded=localStorage.getItem('nSpire2-progress-v1'+(slot===1?'':'-profile-'+slot));if(!encoded)return false;
+   const data=atob(encoded);if(data.slice(0,4)!=='NSH8'||data.length<10)return false;
+   const flags=data.charCodeAt(data.length-2)|(data.charCodeAt(data.length-1)<<8);return (flags&mask)===value;
+  },{slot,mask,value},{timeout});
+  return tutorialRecord(slot);
+ }
  async function point(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.click(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
  async function titleRow(row,hasRun){await point(119,(hasRun?137:147)+row*20+8);}
  async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
@@ -70,6 +86,12 @@ writeReport();
  async function returnToTitle(){await press('Escape');await point(160,196);}
  async function saveAndResume(){await returnToTitle();await titleRow(0,true);}
  async function selectProfile(slot){await point(20,10);await point(72+(slot-1)*88,120);await page.waitForFunction(id=>localStorage.getItem('nSpire2-selected-profile')===String(id),slot);await painted();}
+ async function declineTutorials(slot,name){
+  assert.equal(await saved(slot),null);assert.equal((await tutorialRecord(slot)).flags,tutorial.fresh);
+  await capture(name+'-ask');await point(127,155);
+  assert.equal((await waitTutorial(slot,0xffff,tutorial.initialized|tutorial.accept)).flags,0x4001);
+  assert.equal(await saved(slot),null); // The modal callback starts, but does not save, the run.
+ }
  const begin=Date.now();
  await page.goto(pathToFileURL(path.resolve(html)).href,{waitUntil:'load',timeout:120000});
  await ready('eng');report.first_ready_wall_ms=Date.now()-begin;
@@ -89,13 +111,15 @@ writeReport();
  record('in-game Fast Mode survives reload and the real toggle reads its restored value');
  record('Show Run Timer uses the real General settings checkbox and survives reload in the v4 profile preference record');
  await titleRow(0,false);await capture('browser-singleplayer-eng');await confirm();await capture('browser-character-eng');
- await confirm();await saveAndResume();
+ assert.equal((await tutorialRecord(1)).flags,tutorial.fresh);
+ await confirm();await declineTutorials(1,'browser-profile1-tutorial');await saveAndResume();
  await page.waitForFunction(()=>!!localStorage.getItem('nSpire2-save-v17'));
  const firstSave=await saved(),bytes=Buffer.from(firstSave,'base64');
  assert.ok(bytes.length>40);report.saved_bytes=bytes.length;
  fs.writeFileSync(path.join(directory,'browser-test-save-v17.bin'),bytes);
  assert.equal(bytes.readUInt32LE(4),17);
  record('original Singleplayer to character flow starts a run; pause Save and Quit writes a v17 save and Continue resumes');
+ record('the tutorial question appears on Embark; No persists only in this profile and continues the original run flow');
  await capture('browser-run-eng');
  await press('o');assert.equal(await saved(),firstSave);await capture('browser-loaded-eng');
  record('O load returns through the real keyboard handler without changing stored save bytes');
@@ -120,7 +144,8 @@ writeReport();
  await selectProfile(2);assert.equal(await saved(2),null);assert.equal(await saved(),firstSave);
  await capture('browser-profile2-title');await openSettings(false);await toggleFast();
  assert.equal((await preference(2)).flags&65,1);assert.equal((await preference()).flags&65,64);
- await press('Escape');await titleRow(0,false);await confirm();await press('ArrowRight');await confirm();await saveAndResume();
+ await press('Escape');await titleRow(0,false);await confirm();await press('ArrowRight');await confirm();
+ await declineTutorials(2,'browser-profile2-tutorial');await saveAndResume();
  const secondSave=await saved(2);assert(secondSave&&secondSave!==firstSave);assert.equal(await saved(),firstSave);
  await capture('browser-profile2-run');await returnToTitle();
  await selectProfile(1);await openSettings(true);await toggleFast();assert.equal((await preference()).flags&1,1);
@@ -135,10 +160,63 @@ writeReport();
  assert.equal(await saved(),firstSave);assert.equal(await saved(2),secondSave);
  await point(160,192);await press('ArrowRight');await confirm();
  assert.equal(await saved(2),null);assert.equal(await preference(2),null);assert.equal(await saved(),firstSave);
- assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-progress-v1-profile-2')),null);
+ // An empty active profile may immediately persist the new source-default
+ // tutorial preference. That fresh NSH8 record must contain no old run or
+ // history identity; deleting it again is not part of the host contract.
+ const deletedProgress=await tutorialRecord(2);
+ if(deletedProgress){assert.equal(deletedProgress.flags,tutorial.fresh);assert.equal(deletedProgress.next_serial,1);assert.equal(deletedProgress.history_count,0);}
  assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-language')),'eng');
  await capture('browser-profile2-deleted');await point(72,120);
  record('three-profile controls preserve legacy slot one, isolate runs and preferences, persist selection, cancel deletion and reset an active profile');
+ // A separate empty profile exercises the enabled path through only real
+ // controls. No run seed, modal state, or completion bit is injected.
+ await selectProfile(3);assert.equal(await saved(3),null);
+ await titleRow(0,false);await confirm();await point(116,214); // Original Ironclad portrait.
+ assert.equal((await tutorialRecord(3)).flags,tutorial.fresh);
+ await confirm();await capture('browser-profile3-tutorial-ask');await point(192,155);
+ await waitTutorial(3,tutorial.fresh|tutorial.accept,tutorial.fresh|tutorial.accept);
+ assert.equal(await saved(3),null);assert.equal((await tutorialRecord(1)).flags,0x4001);
+ // Neow's first randomly offered relic can open an actual card/bundle or
+ // reward choice. Select and the visible confirmation control resolve those
+ // bounded prompts; a map completion bit is observed only after the real
+ // MapSelect modal has opened. The limit makes a stuck/incorrect flow fail.
+ let neowSteps=0;
+ for(;neowSteps<30&&!((await tutorialRecord(3)).flags&tutorial.map);++neowSteps){
+  await confirm();await page.waitForTimeout(900);
+  if((await tutorialRecord(3)).flags&tutorial.map)break;
+  await page.locator('button[data-key="6"]').click();await painted();await page.waitForTimeout(250);
+ }
+ assert.ok((await tutorialRecord(3)).flags&tutorial.map,'real Neow choices must reach the first map tutorial');
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,0);
+ await capture('browser-profile3-map-tutorial');await confirm();
+ await press('ArrowRight');await confirm();await page.waitForTimeout(5500);
+ await capture('browser-profile3-combat-tutorial-page1');
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,0);
+ // Other shortcuts and the visible End turn button are blocked by the
+ // lesson. The saved first-turn value below verifies no turn slipped through.
+ for(const key of ['Escape','m','p','o'])await press(key);
+ await page.locator('button[data-key="6"]').click();await painted();
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,0);assert.equal(await saved(3),null);
+ await press('ArrowRight');await page.waitForTimeout(650);await capture('browser-profile3-combat-tutorial-page2');
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,0);
+ await point(20,120);await page.waitForTimeout(650);await capture('browser-profile3-combat-tutorial-back');
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,0);
+ await point(300,120);await page.waitForTimeout(650);
+ await point(300,120);await page.waitForTimeout(650);await capture('browser-profile3-combat-tutorial-page3');
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,0);
+ await point(300,120);const learned=await waitTutorial(3,tutorial.combat,tutorial.combat);
+ report.tutorial={profile:3,neow_control_steps:neowSteps,flags_after_lesson:learned.flags};
+ await capture('browser-profile3-combat-tutorial-completed');await saveAndResume();
+ const tutorialSave=await saved(3),tutorialBytes=Buffer.from(tutorialSave,'base64');
+ assert.equal(tutorialBytes.readUInt32LE(4),17);assert.equal(tutorialBytes.readUInt32LE(12),0); // Phase::Combat.
+ assert.equal(tutorialBytes.readUInt32LE(56),1); // The unchanged v17 prefix's turn field.
+ await page.reload({waitUntil:'load'});await ready('eng');assert.equal(await saved(3),tutorialSave);
+ assert.equal((await tutorialRecord(3)).flags&tutorial.combat,tutorial.combat);
+ await titleRow(0,true);await page.waitForTimeout(1200);await capture('browser-profile3-combat-resumed');
+ await returnToTitle();await selectProfile(1);assert.equal(await saved(),firstSave);
+ assert.equal((await tutorialRecord(1)).flags,0x4001);assert.equal((await tutorialRecord(3)).flags&tutorial.combat,tutorial.combat);
+ record('a separate fresh profile accepts tutorials, reaches the real first battle, navigates all three pages and persists completion only on the final Next release');
+ record('the combat tutorial blocks gameplay shortcuts and End turn; reload resumes turn one without repeating the completed lesson or changing another profile');
  // Measure through the visible control with the actual library active.
  await press('c');await capture('browser-compendium-eng');await confirm();await capture('browser-card-library-eng');
  await page.locator('#diagnostics summary').click();await page.locator('#measure').click();

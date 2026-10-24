@@ -89,6 +89,7 @@ void App::select_library_item(int index){
     if(library_card_seen(ids[index]))open_card_detail({ids[index],uint8_t(library_upgraded&&card_upgradeable({ids[index],0}))});
 }
 void App::ui_action(UiAction action){
+    sync_ftues();if(ftue_before_action(action))return;
     if(auxiliary.screen!=AuxiliaryScreen::None){if(action==UiAction::Back)close_auxiliary();return;}
     if(map_transition_blocks_pointer())return;
     UiCoreObserver observer(*this);

@@ -2,14 +2,175 @@
 
 This work preserves original UI assets, decoded pixels, animation frames and
 map generation order. It changes the map workspace and lookup costs, image
-cache key lookup, scaled sampling, and the offline encoder. The measured
-resource reduction is **1,316,666 bytes per complete language pack**. The
-owner's 30–40 MB installation goal remains open.
+and text caches, scaled sampling, serialization staging, and lossless resource
+storage. The later NSP2/33 conversion saves **8,756,489 bytes in the English
+full pack and 10,419,445 bytes in Chinese** against the complete NSP2/31 input,
+despite adding the original card-resource cross and 24 missing Chinese title
+glyphs. These per-language reductions must not be added to calculate a
+bilingual installation: most art is shared. The owner's 30–40 MB installation
+goal remains open.
 
 Long commands ran from pushed, immutable source snapshots with
 `tools/run_logged.py`. Private receipts retain the exact command, source hashes,
 start/end times, return code and output hash. Names below identify those
 receipts without publishing original-derived packs or captures.
+
+## Stage 8c/8d actual resources and installation
+
+The completed pre-FTUE NSP2/33 set reconstructs byte-for-byte from its split
+files. These are actual emitted files, before the later FTUE resource append:
+
+| Part | Bytes |
+| --- | ---: |
+| Shared data | 84,719,566 |
+| English sidecar | 2,153,050 |
+| Chinese sidecar | 5,149,970 |
+| Both languages and shared data | **92,022,586** |
+| Stage-8c2 ordinary launcher | 1,350,761 |
+| Installed pre-FTUE bilingual program and resources | **93,373,347** |
+
+The original art, frame indices, frame counts, timing, alpha and hidden RGB565
+values are retained. The production changes are purpose-grouped retained art,
+32 KiB grouped glyphs, 32 KiB grouped strings, and reversible TGR2 color/layout
+filtering before the existing LZMA2 decoder. None adds a resident pixel pool
+or increases the image/group cache capacity. See `grouped-glyphs-0.17.md`,
+`grouped-strings-0.17.md` and `tile-filter-0.17.md` for format bounds.
+
+The TGR conversion keeps 728 smaller replacements and leaves four non-saving
+groups in their original TGR1 form. It saves **3,733,886 common bytes**. Each
+language's receipt proves **443,044,043 decoded tile/index bytes exact**;
+all 452 index streams and retained-art streams remain byte-exact. All old
+glyph payloads and all 8,704 strings are also compared. The later 24 Chinese
+title glyphs add 1,608 bytes without changing an existing key or payload.
+Production receipt: `ui9-tile-filter-production-fba3cf355336.json`.
+
+Ordinary Firebird USB transfer installed all three sidecars and the production
+launcher into a disposable copy of the owner's original OS. The original NAND
+was not changed. The OS showed 92.3 MB total and 2.4 MB remaining after the
+stage-8c2 program; the one-decimal display is not an exact free-byte count.
+The launcher was downloaded back through ordinary USB and matched its build
+SHA-256. This establishes the actual bilingual installation, but its remaining
+space alone did not establish worst-case three-profile save/update capacity.
+
+## Actual cache-key working set and budget
+
+Traced history windows needed 1,249 glyph keys for only about 62 KiB of glyph
+payload, and 932 string keys for about 10 KiB of text. The earlier 512/256 key
+limits evicted useful entries while payload space remained unused. The cache
+now provides 1,536 glyph keys with 163 KiB payload, and 1,024 string keys with
+102 KiB payload. String pages change from 128 to 64 and hash buckets from 64
+to 256. Total ARM allocation for these caches falls **331,332 to 324,132
+bytes**, a **7,200-byte reduction**. The image and retained-group pools are
+unchanged.
+
+The actual English/Chinese history traces each compare 2,160 complete rendered
+frames, with canonical State bytes unchanged. The dense Chinese scroll window
+falls from **6,958 reads / 28,677,506 requested bytes to zero**, and the
+interleaved window from **3,470 / 14,275,970 to zero**. All three warm windows
+in both locales have zero resource reads. The receipt is
+`history-cache-exact-comparison.json`; the recorded candidate logs are
+`ui9-history-cache-candidate-eng-e0161baa8d04.json` and
+`ui9-history-cache-candidate-zhs-758c03f97d27.json`. These concurrent trace
+runs establish read/pixel behavior, not a trustworthy CPU speed percentage.
+
+## NSP2/32 to NSP2/33 cold and warm rendering
+
+The final stage-8c2 native binary at
+`a0df79d8347b76dc86804b0ab8d17f948c600204` rendered both the preserved NSP2/32
+packs and final NSP2/33 packs sequentially while other builds, conversions and
+emulation were paused. Each locale records **3,246 frame hashes and 24 PPM
+captures**, all byte-identical between packs. The map, merchant, card reward,
+covered Crystal Sphere, revealed Crystal Sphere and Ancient fixtures preserve
+canonical State bytes. Every third 180-frame window has **zero reads and zero
+requested bytes**, before and after conversion.
+
+This comparison covers the complete NSP2/33 change: grouped strings, tile
+filtering and the small original-art/glyph additions. It is not an isolated
+TGR2 timing test. Three further alternating-order runs measured cold
+first-render/preparation medians with the resource cache reset by each scene;
+the operating system page cache was not flushed:
+
+| Scene | English NSP32 → NSP33, ms | Chinese NSP32 → NSP33, ms |
+| --- | ---: | ---: |
+| Map | 13.798 → 16.312 | 35.402 → 39.368 |
+| Merchant | 29.496 → 31.962 | 29.678 → 30.358 |
+| Card reward | 16.634 → 18.889 | 23.456 → 26.627 |
+| Crystal, covered | 21.465 → 22.387 | 26.994 → 29.447 |
+| Crystal, revealed | 22.282 → 24.602 | 27.468 → 32.987 |
+| Ancient | 12.092 → 13.669 | 17.542 → 19.370 |
+
+The cold CPU cost increases by about **0.68–5.52 ms** in these cases. Cold
+requests increase by 3–11 reads and 19,768–70,470 bytes because the comparison also
+introduces grouped string payloads; those totals cannot identify the cost of
+tile restoration alone. Warm read behavior and pixels remain unchanged.
+No warm CPU percentage or physical-device FPS is inferred from these samples.
+Receipts: `ui9-room-v32-eng-1c0450af1bb6.json`,
+`ui9-room-v33-eng-6601e15c9212.json`,
+`ui9-room-v32-zhs-ac830cab8af6.json`,
+`ui9-room-v33-zhs-5df20e77ceae.json` and
+`ui9-room-cold-repeat-b51029e826ab.json`.
+
+The production ARM `-O2` disassembly then exposed an invariant mode comparison
+inside every filtered tile pixel. Stage 8d dispatches once per group into two
+compile-time modes. The linked inverse retains exact output across every
+RGB565 value, alpha, dimensions, maximum 680-tile groups and malformed bounds.
+Its text grows 404 to 676 bytes, while stack use falls 52 to 48 bytes; the
+linear and zigzag loops contain 23 and 27 instructions instead of 26 and 34.
+These are instruction counts, not measured device-cycle savings.
+
+## Ordinary ARM flow and lossless run-file storage
+
+The stage-8c2 ordinary Firebird flow reached the Chinese title without a
+prelaunch language chooser, changed to English in Settings, selected Standard
+Ironclad, took Golden Pearl from Neow, traversed the map, manually won the
+first fight in five turns, collected 11 gold and Twin Slam, then used Save and
+Quit and Continue. HP 69/80, gold 260 and deck size 11 survived. The optional
+ordinary performance marker was used only in the disposable test clone and
+is excluded from delivery. All 402 resource requests succeeded.
+
+The emulated ARM SP804 report includes cold loads and interaction: 1,407 combat
+frames average 16.107 ms of rendering; 729 room frames average 24.710 ms;
+79 map frames average 79.467 ms; and 238 title frames average 36.836 ms.
+These are emulator measurements, not physical-calculator FPS. The map's
+minimum recorded render is about 56.85 ms, so its cost cannot be explained
+solely by one cold frame. A separate map sampling optimization is being
+verified against the unchanged direct inverse-transform oracle.
+
+The canonical run remains NSV1 save version 17. Stage 8d adds a lossless NSZ1
+file envelope only in calculator file I/O, retaining raw input support and
+the existing atomic primary/backup rotation. It uses a 512-byte stack block;
+it does not allocate another State or static pool. A raw fallback is used
+when compression would not reduce size.
+
+The real ordinary run's **230,540-byte** raw save continued successfully in
+stage 8d, then saved as **7,456 bytes**. Its first backup remained the exact
+old raw file. Decoding both downloaded files reproduces every original byte.
+The program was launched again and actually continued from NSZ1; after another
+normal save, both primary and backup were 7,456-byte, byte-identical NSZ1 files.
+One long-lived USB session timed out on its later download. That failed log
+is retained; after flushing and rebooting the ordinary OS, a new USB session
+downloaded the files and launcher successfully. No save contents were repaired
+or substituted to recover that transfer.
+
+The more demanding valid dense-state fixture compresses **250,964 to 121,503
+bytes**, rather than relying on the mostly-zero ordinary example. Full history
+is **295,347 bytes**. The tested three-profile peak with dense compressed
+primary/backup runs and a full atomic history update is **1,910,746 bytes**;
+three compressed primaries plus three bounded old raw backups during migration
+are bounded by **2,305,021 bytes**. Final resource additions and ordinary OS
+space must still be checked against those peaks.
+
+Stage 8d (`d938a661c7a69e46b829a4a879ce6cd411be0f2b`) produces a
+**1,352,081-byte launcher**, allocation **16,639,308 bytes**, and **137,908
+bytes headroom** below the unchanged 16 MiB gate. Its 12,880 division, 42
+LZMA2 and 14 filtered-tile linked ARM vectors pass. Successful receipts are
+`ui9-stage8d-arm-7508b890e38a.json`,
+`ui9-stage8d-arm-division-d6d6e5fdd401.json`,
+`ui9-stage8d-arm-lzma-6ea2d61000c2.json` and
+`ui9-stage8d-arm-tiles-6ff18d2026b0.json`.
+
+The remaining sections record the earlier implemented steps and their
+historical checkpoint measurements.
 
 ## Map workspace and generation
 

@@ -3,7 +3,7 @@
 static bool native_room_input_available(const App&a,Phase phase){
  return a.game.world.active&&a.game.world.room_open&&a.game.phase==phase&&
   a.game.world.room_type==unsigned(phase==Phase::Camp?WorldRoom::Rest:WorldRoom::Treasure)&&!a.title&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.character_select&&
-  !a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;
+  !a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&!a.ftue.active()&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;
 }
 static const char* treasure_text(const App&a,const char*key,const char*fallback){const char*t=a.content.world_string("gameplay_ui",key);return *t?t:fallback;}
 static void treasure_key(const State&s,const char*action,char*out,size_t size){TextBuffer key{out,size,0};key.text("ACT");key.number(s.world.act_index+1);if(action){key.ch('.');key.text(action);}}
@@ -111,6 +111,10 @@ int App::treasure_holder_offset()const{
 }
 bool App::treasure_pointer_can_take()const{
  if(!native_room_input_available(*this,Phase::Treasure)||game.treasure_state!=1||game.world.treasure_relic==NoWorldRelic)return false;
+ // RelicFtueCheck disables the collection until its one-second wait and
+ // tutorial. A queued explanation must not be bypassed before the renderer
+ // has opened it; migrated/disabled profiles retain the ordinary timing.
+ if(content.has_ftue_assets()&&!seen_ftue(FtueId::RelicReward))return false;
  if(!treasure_presentation)return true;
  // Original MouseFilter=IGNORE lasts through delay + the 600ms movement.
  // Focused keyboard/controller select does not use this pointer-only gate.
@@ -174,6 +178,7 @@ void App::treasure_action(UiAction action){
  if(action==UiAction::TreasureOpen){
   if(!game.treasure_state&&open_treasure(game)){reset_treasure_presentation();treasure_presentation=1;treasure_banner_tick=animation;treasure_remember_room(*this);sync_treasure_presentation();cursor=game.world.treasure_relic==NoWorldRelic?1:0;choice_selected_count=0;choice_revision=game.revision;pointer_cancel();}
  }else if(action==UiAction::TreasureTake){
+  if(content.has_ftue_assets()&&!seen_ftue(FtueId::RelicReward))return;
   // Capture before acquisition changes treasure_state, including a restored
   // offer. Original RelicPickingFinished need not await its acquired relic's
   // subsequent deck choice (for example Dolly's Mirror).

@@ -16,6 +16,7 @@ bool App::combat_hand_settled(unsigned index,bool focused)const{
  return !ui_cards_bound(*this)||combat_cards.settled(index,focused);
 }
 CombatCardMotion::Counts App::combat_pile_counts()const{
+ if(ftue.id==FtueId::Shuffle)return {ftue.shuffle_draw,ftue.shuffle_discard,ftue.shuffle_exhaust};
  return ui_cards_bound(*this)?combat_cards.visible_counts():CombatCardMotion::capture_counts(game);
 }
 // Observe actual settled pile membership, including Add commands used by

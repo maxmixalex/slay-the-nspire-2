@@ -25,6 +25,7 @@ const HitRegion* App::hit_at(int x,int y)const{
     return nullptr;
 }
 uint32_t App::input_context()const{
+    if(ftue.active())return 0x46540000u^(ftue.serial*256u)^unsigned(ftue.id);
     if(game_over_available())return 0x474f0000u^uint32_t(game.world.run_seed)^uint32_t(game.world.run_seed>>32)^unsigned(game_over_summary);
     if(auxiliary.screen!=AuxiliaryScreen::None)return 0x41555800u|unsigned(auxiliary.screen)|(uint32_t(auxiliary.category_open)<<4)|(uint32_t(auxiliary.closing)<<5);
     if(settings_open&&binding_listening>=0)return 0x4b455900u|unsigned(binding_listening);
@@ -79,6 +80,7 @@ void App::pointer_move(int x,int y){
         if(mouse){pointer.visible=true;hud_focus=-1;map_directional=false;keyboard_card=-1;if(auxiliary.screen==AuxiliaryScreen::None){sync_map_reticles();map_drawing_pointer_motion();}}
     }
     if(!pointer.visible)return;
+    if(ftue.active())return;
     if(auxiliary.screen!=AuxiliaryScreen::None){
         if(pointer.held){const int xx=pointer.x-pointer.down_x,yy=pointer.y-pointer.down_y;if(xx*xx+yy*yy>=25)pointer.dragging=true;}
         auto&scroll=auxiliary.scroll;
@@ -166,6 +168,7 @@ void App::pointer_move(int x,int y){
     }
 }
 void App::pointer_scroll(int rows){
+    if(ftue.active())return;
     if(auxiliary.screen!=AuxiliaryScreen::None){pointer_cancel();auxiliary_scroll(rows);return;}
     if(map_drawing_ready()&&map_drawing.mode!=MapDrawingMode::None)return;
 #if SPIRE_DEBUG_COMMANDS
@@ -216,6 +219,15 @@ void App::pointer_scroll(int rows){
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
+    sync_ftues();
+    if(ftue.active()){
+        pointer.visible=true;pointer.motion_time=map_clock_ms;render();
+        const auto*found=hit_at(pointer.x,pointer.y);const HitRegion hit=found?*found:HitRegion{};
+        if(down){if(pointer.held)return;pointer.held=true;pointer.dragging=false;pointer.captured=hit;pointer.context=input_context();}
+        else if(pointer.held){const auto captured=pointer.captured;const bool same=pointer.context==input_context()&&captured.kind==hit.kind&&captured.value==hit.value;
+            pointer_cancel();if(same&&hit.enabled&&hit.kind==HitKind::FtueControl)ftue_control(hit.value);}
+        return;
+    }
     if(auxiliary.screen!=AuxiliaryScreen::None){
         pointer.visible=true;pointer.motion_time=map_clock_ms;render();
         if(down&&auxiliary.screen==AuxiliaryScreen::Credits){close_auxiliary();return;}

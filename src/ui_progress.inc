@@ -55,7 +55,13 @@ static void progress_snapshot(UiRunHistory&r,const State&s){
 void App::restore_progress(){
     if(progress_loaded)return;
     clear_ui_progress(progress);
-    if(callbacks.load_progress&&!callbacks.load_progress(progress))clear_ui_progress(progress);
+    const bool loaded=callbacks.load_progress&&callbacks.load_progress(progress);
+    if(!loaded)clear_ui_progress(progress);
+    // A browser profile_info callback is asynchronously cached. Reuse the
+    // ordinary current-run read below instead of scanning profiles at boot.
+    // Existing metadata, including NSH1-7, always retains its decoded flags.
+    ftue_profile_pending=!loaded&&callbacks.load_progress&&callbacks.save_progress&&
+        callbacks.current_profile&&callbacks.profile_info&&callbacks.load;
     progress_loaded=true;progress_dirty=false;progress_seen_phase=255;progress_remainder_ms=0;
 }
 bool App::persist_progress(){
@@ -65,6 +71,35 @@ bool App::persist_progress(){
         if(callbacks.wall_clock)progress.last_saved_at=callbacks.wall_clock();
         if(!callbacks.save_progress(progress)){progress.last_saved_at=previous_saved;return false;}}
     progress_dirty=false;return true;
+}
+bool App::seen_ftue(FtueId id)const{
+    const uint16_t bit=ftue_bit(id);return !bit||!(progress.tutorial_flags&FtueEnabled)||bool(progress.tutorial_flags&bit);
+}
+bool App::seen_popup(FtueId id)const{
+    const uint16_t bit=ftue_bit(id);
+    // Old profiles did not observe FTUE completion. Preserve their previous
+    // unobstructed UI without manufacturing seen bits. Fresh profiles use
+    // the source popup rule, which ignores the ordinary tutorial preference.
+    return !bit||!(progress.tutorial_flags&FtueInitialized)||bool(progress.tutorial_flags&bit);
+}
+void App::mark_ftue(FtueId id){
+    const uint16_t bit=ftue_bit(id);if(!bit)return;restore_progress();
+    // Source auto-completion may run without displaying a modal (for
+    // example, proceeding after collecting late-floor rewards). It must
+    // not turn an unknown legacy profile into a newly initialized one or
+    // accidentally make its unseen Ascension popup eligible.
+    if(!(progress.tutorial_flags&FtueInitialized))return;
+    const uint16_t flags=progress.tutorial_flags|bit;
+    if(flags==progress.tutorial_flags)return;
+    progress.tutorial_flags=flags;ftue_profile_pending=false;progress_dirty=true;persist_progress();
+}
+void App::set_ftues_enabled(bool enabled){
+    restore_progress();const uint16_t flags=uint16_t((progress.tutorial_flags|FtueInitialized)&~FtueEnabled)|(enabled?FtueEnabled:0);
+    if(flags==progress.tutorial_flags)return;
+    progress.tutorial_flags=flags;ftue_profile_pending=false;progress_dirty=true;persist_progress();
+}
+void App::reset_ftues(){
+    restore_progress();progress.tutorial_flags=FtueFresh;ftue_profile_pending=false;progress_dirty=true;persist_progress();
 }
 void App::begin_progress(bool resumed){
     if(!game.world.active||game.practice)return;

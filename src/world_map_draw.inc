@@ -28,6 +28,22 @@ static int map_source_offset(int source_q12){
     const int scaled=source_q12*22;
     return scaled<0?-((-scaled+204800)/409600):(scaled+204800)/409600;
 }
+struct MapSampleStep {
+    int whole,remainder,divisor;
+    MapSampleStep(int delta,int denominator):whole(delta/denominator),remainder(delta%denominator),divisor(denominator){
+        if(remainder<0){--whole;remainder+=divisor;}
+    }
+};
+struct MapSampleAxis {
+    int index,remainder;
+    MapSampleAxis(int numerator,int divisor):index(numerator/divisor),remainder(numerator%divisor){
+        if(remainder<0){--index;remainder+=divisor;}
+    }
+    void advance(const MapSampleStep&step){
+        index+=step.whole;remainder+=step.remainder;
+        if(remainder>=step.divisor){remainder-=step.divisor;++index;}
+    }
+};
 static void map_picture(Canvas&c,int id,int cx,int cy,int width,int height,MapShader shader=MapShader::Original,
                         uint16_t ink=0,uint16_t paper=0,unsigned opacity=255,int angle=0,int clip_top=WorldMapTop,int clip_bottom=WorldMapBottom){
     if(width<=0||height<=0||!opacity)return;const auto p=c.a.content.image(id);if(!p.pixels)return;
@@ -79,14 +95,28 @@ static void map_picture(Canvas&c,int id,int cx,int cy,int width,int height,MapSh
         }
         return;
     }
-    for(int yy=top;yy<bottom;++yy)for(int xx=left;xx<right;++xx){
-        const int dx=2*(xx-cx)+1,dy=2*(yy-cy)+1;
-        const int u=dx*cosine+dy*sine+width*1024,v=dy*cosine-dx*sine+height*1024;
-        if(u<0||v<0||u>=width*2048||v>=height*2048)continue;
-        const unsigned at=unsigned(v*p.h/(height*2048))*p.w+unsigned(u*p.w/(width*2048));
-        unsigned alpha=p.alpha?p.alpha[at]:255;alpha=div255(alpha*opacity);if(!alpha)continue;
-        const uint8_t*src=p.palette?p.palette+p.pixels[at]*2:p.pixels+at*2;
-        const uint16_t color=map_shade(uint16_t(src[0]|uint16_t(src[1])<<8),shader,ink,paper);c.paint(yy*c.pitch+xx,color,alpha);
+    // The inverse coordinates are affine along each scanline. ARM otherwise
+    // calls its software signed divider twice per covered pixel. Keep the
+    // exact pixel-center integers, including negative off-image coordinates,
+    // and carry nonnegative remainders instead of rounding a fixed-point step.
+    const int du=2*cosine,dv=-2*sine,limit_u=width*2048,limit_v=height*2048;
+    const MapSampleStep step_x(du*p.w,limit_u),step_y(dv*p.h,limit_v);
+    const int dx=2*(left-cx)+1;
+    for(int yy=top;yy<bottom;++yy){
+        const int dy=2*(yy-cy)+1;
+        int u=dx*cosine+dy*sine+width*1024,v=dy*cosine-dx*sine+height*1024;
+        MapSampleAxis source_x(u*p.w,limit_u),source_y(v*p.h,limit_v);
+        for(int xx=left;xx<right;++xx){
+            if(u>=0&&v>=0&&u<limit_u&&v<limit_v){
+                const unsigned at=unsigned(source_y.index)*p.w+unsigned(source_x.index);
+                unsigned alpha=p.alpha?p.alpha[at]:255;alpha=div255(alpha*opacity);
+                if(alpha){
+                    const uint8_t*src=p.palette?p.palette+p.pixels[at]*2:p.pixels+at*2;
+                    const uint16_t color=map_shade(uint16_t(src[0]|uint16_t(src[1])<<8),shader,ink,paper);c.paint(yy*c.pitch+xx,color,alpha);
+                }
+            }
+            u+=du;v+=dv;source_x.advance(step_x);source_y.advance(step_y);
+        }
     }
 }
 static int map_reticle_project(int coordinate,unsigned scale,bool smaller){

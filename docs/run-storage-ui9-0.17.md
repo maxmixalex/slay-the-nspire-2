@@ -124,7 +124,11 @@ truncation, output overflow, trailing input, close failures, rotation/rollback,
 and shared-transfer conflicts. It can export its valid dense and capacity files
 with `--export <existing-directory>` for calculator installation tests.
 
-At source-ready time, the two changed translation units passed short native
-syntax checks and both capacity/density measurements passed. Full logged native,
-portable, and device validation must use the next remotely preserved checkpoint;
-this source-ready note does not claim those future gates have run.
+The frozen storage checkpoint
+`d938a661c7a69e46b829a4a879ce6cd411be0f2b` passed the exact-host test with
+**1,410 checks**. Build receipt: `ui9-stage8d-run-storage-build-faa297b71185`;
+execution receipt: `ui9-stage8d-run-storage-b7eee0b6d2b6`. It reproduced both
+measurements above and exported the dense file with SHA-256
+`83bc4ed5be2fb3016f4080ede942668aef764cf46bfd2b4d015058a027f107d7`.
+These are native fault-injection results; final ARM/device and combined-build
+verification remain separate gates.

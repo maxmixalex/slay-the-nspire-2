@@ -19,9 +19,9 @@ struct Package {
  std::string text[5];
  unsigned append(const Bytes&data){if(bytes.size()&1)bytes.push_back(0);const unsigned at=unsigned(bytes.size());bytes.insert(bytes.end(),data.begin(),data.end());return at;}
  unsigned group(const Bytes&raw){Bytes encoded=stored(raw),g(32);put(g,0,0x31524752);put(g,4,unsigned(raw.size()));put(g,8,unsigned(encoded.size()));put(g,12,14);put(g,16,4);g.insert(g.end(),encoded.begin(),encoded.end());return append(g);}
- explicit Package(bool grouped=true,bool pressure=false,unsigned extra=0,bool missing_nul=false){
+ explicit Package(bool grouped=true,bool pressure=false,unsigned extra=0,bool missing_nul=false,unsigned auxiliary=Aux){
   const unsigned clips=string_at+Strings*8,cards=clips+Clips*16,aux=cards+CardKinds*16;
-  base=aux+Aux*4;const unsigned table=base+64,cost=table+16,frame=cost+Images;
+  base=aux+auxiliary*4;const unsigned table=base+64,cost=table+16,frame=cost+Images;
   bytes.resize(frame+16);put(bytes,0,0x3250534e);put(bytes,4,grouped?GroupedStringContentVersion:GroupedGlyphContentVersion);put(bytes,8,0x41cef1ea);
   put(bytes,16,Images);put(bytes,20,Glyphs);put(bytes,24,Strings);put(bytes,28,Clips);put(bytes,32,CardKinds);
   put(bytes,base,0x314c4954);put(bytes,base+4,1);put(bytes,base+8,16);put(bytes,base+12,14);
@@ -60,6 +60,20 @@ static void exact_and_lease(){
  CHECK(streamed->string(2)==hello);const unsigned warm=provider.calls;provider.fail=true;for(unsigned frame=0;frame<64;++frame)for(unsigned i=0;i<5;++i)CHECK(!std::strcmp(streamed->string(i),packed.text[i].c_str()));CHECK(provider.calls==warm&&streamed->healthy());
 }
 static void lifetime(){Package p(true,true);Provider provider{&p.bytes};auto content=std::make_unique<Content>();CHECK(content->open(provider.source()));const char*small=content->string(0),*maximum=content->string(3);CHECK(!std::strcmp(small,p.text[0].c_str())&&std::strlen(maximum)==16383);for(unsigned i=0;i<11;++i){const auto picture=content->image(i);CHECK(picture.pixels&&picture.pixels[0]==i&&picture.pixels[1]==0x42);}const unsigned calls=provider.calls;provider.fail=true;CHECK(content->string(0)==small&&content->string(3)==maximum);CHECK(!std::strcmp(small,p.text[0].c_str())&&!std::memcmp(maximum,p.text[3].c_str(),16384));CHECK(content->healthy()&&provider.calls==calls);}
+static void optional_catalogs(){
+ for(unsigned count:{unsigned(GameOverTransitionAuxiliaryCount),unsigned(CardResourceAuxiliaryCount),unsigned(FtueAuxiliaryCount)}){
+  Package p(true,false,0,false,count);Provider provider{&p.bytes};auto content=std::make_unique<Content>();
+  CHECK(content->open(provider.source())&&content->current_profile());
+  CHECK(content->has_ftue_assets()==(count==FtueAuxiliaryCount));
+  const unsigned opened=provider.calls;CHECK(!std::strcmp(content->string(LocaleMarkerString),"eng"));CHECK(provider.calls==opened);
+  CHECK(!std::strcmp(content->string(0),p.text[0].c_str())&&content->healthy());
+ }
+ for(unsigned count:{unsigned(CardResourceAuxiliaryCount+1),unsigned(FtueAuxiliaryCount-1),unsigned(FtueAuxiliaryCount+1)}){
+  Package p(true,false,0,false,count);auto content=std::make_unique<Content>();CHECK(!content->open(p.bytes.data(),p.bytes.size()));
+ }
+ Package old(false,false,0,false,FtueAuxiliaryCount);auto content=std::make_unique<Content>();CHECK(!content->open(old.bytes.data(),old.bytes.size()));
+ Package invalid(true,false,0,false,FtueAuxiliaryCount);put(invalid.bytes,invalid.base-4,Package::Images);CHECK(!content->open(invalid.bytes.data(),invalid.bytes.size()));
+}
 static void malformed(){
  for(unsigned mode=0;mode<11;++mode){Package p;const unsigned d=p.descriptors[0];switch(mode){case 0:put(p.bytes,d,0x80000000u);break;case 1:put(p.bytes,d+4,32);break;case 2:put(p.bytes,d+8,32768);break;case 3:put(p.bytes,d+12,1);break;case 4:put(p.bytes,p.group_at,0);break;case 5:put(p.bytes,p.group_at+12,13);break;case 6:put(p.bytes,p.group_at+8,0);break;case 7:put(p.bytes,d+4,ResourceTransferCapacity+1);break;case 8:put(p.bytes,p.string_at+4,GroupedStringFlag|16384);break;case 9:put(p.bytes,4,GroupedGlyphContentVersion);break;default:put(p.bytes,d,0);break;}
   auto content=std::make_unique<Content>();CHECK(content->open(p.bytes.data(),p.bytes.size()));CHECK(!*content->string(0)&&!content->healthy());
@@ -70,4 +84,4 @@ static void malformed(){
 }
 static Bytes read_file(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0);CHECK(!std::fseek(f,0,SEEK_SET));Bytes b(size);CHECK(std::fread(b.data(),1,b.size(),f)==b.size());CHECK(!std::fclose(f));return b;}
 static void actual(const char*old_path,const char*new_path){Bytes before=read_file(old_path),after=read_file(new_path);Provider input{&after};auto old=std::make_unique<Content>(),direct=std::make_unique<Content>(),streamed=std::make_unique<Content>();CHECK(old->open(before.data(),before.size())&&direct->open(after.data(),after.size())&&streamed->open(input.source()));CHECK(direct->version()==GroupedStringContentVersion&&direct->current_profile());const unsigned count=word(before,24);CHECK(count==word(after,24));const uint64_t open_bytes=input.byte_count;for(unsigned i=0;i<count;++i){const char*a=old->string(i),*b=direct->string(i),*c=streamed->string(i);CHECK(!std::strcmp(a,b)&&!std::strcmp(a,c));CHECK(old->healthy()&&direct->healthy()&&streamed->healthy());}for(unsigned i=0;i<128;++i)CHECK(!std::strcmp(streamed->string(i),old->string(i)));const unsigned cold=input.calls;input.fail=true;for(unsigned frame=0;frame<64;++frame)for(unsigned i=0;i<128;++i)CHECK(!std::strcmp(streamed->string(i),old->string(i)));CHECK(streamed->healthy()&&input.calls==cold);std::printf("actual string rows %u exact; open read %llu bytes; 128 strings x64 warm frames add zero provider calls\n",count,(unsigned long long)open_bytes);}
-int main(int argc,char**argv){CHECK(argc==1||argc==3);exact_and_lease();lifetime();malformed();if(argc==3)actual(argv[1],argv[2]);std::printf("grouped strings: %u checks; raw/grouped/direct/ranged/max-length/aliases/lease/evicted-group pointers/bad bounds\n",checks);}
+int main(int argc,char**argv){CHECK(argc==1||argc==3);exact_and_lease();lifetime();optional_catalogs();malformed();if(argc==3)actual(argv[1],argv[2]);std::printf("grouped strings: %u checks; raw/grouped/direct/ranged/max-length/aliases/lease/evicted-group pointers/bad bounds\n",checks);}

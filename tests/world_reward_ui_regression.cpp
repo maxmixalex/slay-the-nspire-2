@@ -175,6 +175,39 @@ static void event_combat_rewards(){
  // action; it cannot leave a second legacy reward screen or award extras twice.
  press_action(UiAction::LeaveWorldRewards);CHECK(a.game.phase==Phase::Event&&a.game.original_events.finished&&!a.game.original_events.combat_pending&&original_event_combat_reward_count(a.game)==0);snapshot();
 }
+static void terminal_combat_cleanup(){
+ // Prepare the first real encounter, then use ordinary select/aim/play to
+ // deliver its final hit. Do not reset presentation after the command: that
+ // used to conceal the still-active feedback trace under terminal rewards.
+ reset();CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
+ a.game.original_events=OriginalEventState{};a.game.phase=Phase::Event;
+ CHECK(world_finish_room(a.game));uint8_t routes[reference::Columns];
+ CHECK(world_available_points(a.game,routes,reference::Columns));CHECK(world_choose_point(a.game,routes[0]));
+ CHECK(a.game.phase==Phase::Combat&&a.game.enemy_count>0&&a.game.hand.count>0);
+ int card=-1;for(unsigned i=0;i<a.game.hand.count;++i){const int id=a.game.hand.ids[i];if(a.game.cards[id].kind==Strike){card=int(i);break;}}
+ CHECK(card>=0);a.game.energy=99;
+ for(int i=0;i<a.game.enemy_count;++i){a.game.enemies[i].hp=i?0:1;a.game.enemies[i].block=0;}
+ present();a.render();for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
+ CHECK(!a.combat_preparation.active&&validate(a.game));
+ static State oracle;oracle=a.game;CHECK(play(oracle,card,0));CHECK(save(oracle,before));
+ a.cursor=card;a.target=0;a.input(Key::Confirm);CHECK(a.keyboard_card>=0);a.input(Key::Confirm);
+ CHECK(a.game.phase==Phase::WorldRelicChoice&&a.game.world_relics.choice==WorldRelicChoice::OfferReward&&
+       a.game.world_relics.return_phase==uint8_t(Phase::Reward));unchanged();
+ CHECK(a.combat_feedback.active&&a.combat_feedback.finished&&!a.combat_feedback.choice_pending);
+ for(unsigned i=0;i<240&&a.combat_actions_locked();++i){a.advance(33);a.render();}
+ CHECK(!a.combat_feedback.active&&!a.combat_actions_locked());unchanged();
+ for(unsigned i=0;i<24;++i){a.advance(33);a.render();}unchanged();
+ CHECK(!hit_count(HitKind::Hand)&&!hit_count(HitKind::OpenPile));single_column(a.game.world_relics.offer_count);
+ capture("rewards-terminal-from-manual-kill");
+ const auto group=a.game.world_relics.choice_group;const int gold=a.game.gold;
+ const unsigned row=reward_position(4),amount=a.game.world_relics.rewards[a.game.world_relics.offers[row]].value;
+ press_reward(row);CHECK(a.game.gold==gold+int(amount)&&a.game.world_relics.choice_group==group);
+ press_reward(reward_position(1));CHECK(a.world_choice_is_card_reward());
+ for(unsigned i=0;i<24;++i){a.advance(33);a.render();}
+ CHECK(!a.combat_feedback.active&&!hit_count(HitKind::Hand)&&!hit_count(HitKind::OpenPile));
+ snapshot();capture("rewards-terminal-card-selection-clean");unchanged();
+ a.input(Key::Back);CHECK(a.game.world_relics.choice==WorldRelicChoice::OfferReward&&a.game.world_relics.choice_group==group);
+}
 static void camp_proceed(bool keyboard){
  reset();a.fast_mode=false;CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));a.game.original_events=OriginalEventState{};a.game.world.room_type=uint8_t(WorldRoom::Rest);a.game.phase=Phase::Camp;
  auto&w=a.game.world;w.rest_count=2;w.rest_options[0]=uint8_t(WorldRestOption::Heal);w.rest_options[1]=uint8_t(WorldRestOption::Smith);add(WorldRelicMiniatureTent);a.game.hp=30;present();a.render();
@@ -234,7 +267,7 @@ static void acquired_card_visual_facts(){
 int main(int argc,char**argv){
  std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{}));CHECK(a.content.current_profile());
- reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();camp_proceed(false);camp_proceed(true);acquisition_flights();
+ reward_animation_curves();glass_eye();potion_and_special();last_reward_indexes();event_card_rewards();event_combat_rewards();terminal_combat_cleanup();camp_proceed(false);camp_proceed(true);acquisition_flights();
  if(a.content.version()>=LocaleContentVersion)acquired_card_visual_facts();
  std::printf("world reward UI: %u checks passed; %s profile; reward ownership, direct claim, alternatives and Camp Proceed\n",checks,argc>1?"actual":"synthetic");
 }

@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI8 stage 8a candidate; matched final native, portable, bilingual and device acceptance follows the remotely verified frozen checkpoint",
+  "source_stage": "UI8 stage8e integrated FTUE/reward/map candidate. a0df and d938 verification is historical baseline evidence; matching final verification is pending.",
   "scope": {
     "excluded": [
       "audio",
@@ -20,7 +20,8 @@
     "nodes": "719 nonempty namespace-declared node files plus 5 initially empty node paths = 724 indexed node files. Complete NCombatRoom, NDropdownContainer and NMapPointHistoryHoverTip were recovered from the pinned assembly; the journal renderer was checked against the recovered method bodies. An initial empty file is not treated as a reviewed method.",
     "method_review": "Concrete source methods and scenes identified in module audit documents were reviewed and implemented; a path scan does not assert every method has been reviewed.",
     "acceptance": "Native suites, actual bilingual scene review, browser behavior and linked ARM/Firebird checks are separate evidence. No restoration percentage is inferred from file, model, contract or passing-test counts.",
-    "privacy": "Only identifiers, counts, independent implementation summaries and test references are public."
+    "privacy": "Only identifiers, counts, independent implementation summaries and test references are public.",
+    "ftue_review": "All thirteen in-scope Ftue classes and their actual callers were reviewed, including mark-on-open versus mark-on-close, two distinct auto-completion counter lifetimes, release-hidden Reset Tutorials, and independent Ascension SeenPopup semantics. See ftue-ui9-0.17.md."
   },
   "counts": {
     "current_cs_paths": 3538,
@@ -29,7 +30,7 @@
     "node_empty_paths": 5,
     "indexed_nodes": 724,
     "pck_scene_paths": 1022,
-    "flow_contracts": 59
+    "flow_contracts": 72
   },
   "contracts": [
     {
@@ -47,7 +48,7 @@
       "regressions": [
         "world_frontend_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "continue_abandon",
@@ -63,7 +64,7 @@
       "regressions": [
         "world_frontend_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "character_select",
@@ -80,7 +81,7 @@
       "regressions": [
         "five_character_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "act_selector",
@@ -109,7 +110,7 @@
         "neow_modifiers_ui8_regression",
         "run_modifier_hooks_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "daily_run",
@@ -125,7 +126,7 @@
       "regressions": [
         "run_modes_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "card_library",
@@ -141,7 +142,7 @@
       "regressions": [
         "library_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "relic_collection",
@@ -156,7 +157,7 @@
       "regressions": [
         "ui_progress_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "potion_lab",
@@ -171,7 +172,7 @@
       "regressions": [
         "potion_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "bestiary",
@@ -188,7 +189,7 @@
         "bestiary_ui7_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "statistics",
@@ -205,7 +206,7 @@
       "regressions": [
         "ui_progress_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "run_history",
@@ -217,15 +218,15 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed run summary/map/relic/tiny-deck carousel, original map drawing, NSH7 bounded per-floor actual acquisitions, transformations, purchases/spending, reward/shop skips and event options; source action/reward/skipped grouping and scrollable visible rows. Actual terminal combat reward groups remain available after Proceed, closing the map and save/load; actual travel records remaining skips. Legacy noncombat encounter data does not draw as observed combat.",
-      "remaining": "Unknown earlier facts and evicted journal entries are explicitly partial. Full Stage8 codec, real-command and actual bilingual hover acceptance remains required.",
+      "implemented": "Observed run summary/map/relic/tiny-deck carousel, original map drawing, NSH7/8 bounded per-floor actual acquisitions, transformations, purchases/spending, reward/shop skips and event options; source action/reward/skipped grouping and scrollable visible rows. Actual terminal combat reward groups remain available after Proceed, closing the map and save/load; actual travel records remaining skips. Legacy noncombat encounter data does not draw as observed combat.",
+      "remaining": "Unknown earlier facts and evicted journal entries are explicitly partial. Source69px hover columns preserve actual historical relic keyword/related-card facts without mutating State.",
       "regressions": [
         "history_ui8_regression",
         "run_history_journal_ui8_regression",
         "run_history_acquisition_regression",
         "map_drawing_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "profiles",
@@ -236,13 +237,13 @@
       ],
       "contract": "Profile select/icons/delete confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Three independent profiles, names/icons, delete confirmation/rollback and host routing; language remains global.",
+      "implemented": "Three independent profiles, names/icons, delete confirmation/rollback and host routing; language remains global. NSH8 adds two per-profile tutorial bytes with unknown legacy viewing history kept distinct from fresh profiles; existing startup save lookup determines new-profile eligibility.",
       "remaining": "Final integrated browser/artifact gate still pending.",
       "regressions": [
         "profiles_ui7_regression",
         "ndless_profiles_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "compendium_leaderboards",
@@ -270,7 +271,7 @@
         "world_map_window_ui_regression",
         "world_map_travel_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "map_legend",
@@ -285,7 +286,7 @@
       "regressions": [
         "world_map_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "map_history",
@@ -300,7 +301,7 @@
       "regressions": [
         "history_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "combat_entry",
@@ -317,7 +318,7 @@
         "combat_ui_regression",
         "combat_layout_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "event_base",
@@ -334,7 +335,7 @@
         "world_event_ui_regression",
         "world_room_lifecycle_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "event_special",
@@ -352,7 +353,7 @@
         "crystal_shader_regression",
         "world_event_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "rest",
@@ -368,7 +369,7 @@
       "regressions": [
         "world_room_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "shop",
@@ -386,7 +387,7 @@
         "world_room_ui_regression",
         "run_modifier_hooks_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "remove_card",
@@ -401,7 +402,7 @@
       "regressions": [
         "world_room_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "treasure",
@@ -417,7 +418,7 @@
       "regressions": [
         "world_room_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "loot",
@@ -435,7 +436,7 @@
         "world_reward_ui_regression",
         "world_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "game_over",
@@ -448,12 +449,12 @@
       "contract": "Death/victory summary, score, badges and discoveries",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available. The original dark-red threshold mask and event-only pure-black prelude replace the generic Ink fade, preserving actor layer order.",
-      "remaining": "Full Stage8 stage/gate and actual-mask pixel acceptance remains required. Exact GPU raster equivalence and a numerical fidelity result remain unestablished.",
+      "remaining": "The opaque source-banner/button pixel oracle passed a short frozen-core check in both locales; its matching full gate remains pending. Exact GPU raster equivalence and a numerical fidelity result remain unestablished.",
       "regressions": [
         "world_game_over_ui_regression",
         "ui_progress_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "topbar",
@@ -469,7 +470,7 @@
       "regressions": [
         "card_hud_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "hand",
@@ -481,13 +482,13 @@
       ],
       "contract": "Fan, hover, drag, keyboard held-card and targeting confirmation",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed.",
-      "remaining": "Unplayable-resource cross artwork and all original secondary highlight/trail shaders remain incomplete; final resource and host acceptance is required.",
+      "implemented": "All 55 source hand positions for one through ten cards, source scales/hover displacement, drag, held-card keyboard aim and queued layering. Source resource-state colors, card-pool and rarity outlines, unknown energy icons and cache invalidation are restored; the legacy whole-card gray overlay is removed. Original card-rule resource-cross texture and eligibility, dynamic cache invalidation and upgrade-preview-only changed-cost color/outline are implemented.",
+      "remaining": "All original secondary highlight/trail shaders are not reproduced; original GPU/raster equality is not established.",
       "regressions": [
         "card_hud_ui_regression",
         "card_presentation_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "piles",
@@ -503,7 +504,7 @@
       "regressions": [
         "card_hud_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "inspect",
@@ -520,7 +521,7 @@
         "five_character_ui_regression",
         "expansion_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "targeting",
@@ -537,7 +538,7 @@
         "card_hud_ui_regression",
         "potion_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "potions",
@@ -554,7 +555,7 @@
         "potion_ui_regression",
         "world_reward_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "damage_result",
@@ -572,7 +573,7 @@
       "regressions": [
         "combat_damage_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "health_block",
@@ -588,7 +589,7 @@
       "regressions": [
         "health_bar_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "power_strip",
@@ -604,7 +605,7 @@
       "regressions": [
         "power_order_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "power_feedback",
@@ -623,7 +624,7 @@
         "combat_damage_ui7_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "hit_sparks",
@@ -639,7 +640,7 @@
       "regressions": [
         "combat_damage_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "formations",
@@ -654,7 +655,7 @@
       "regressions": [
         "combat_layout_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "death_rewards",
@@ -671,7 +672,7 @@
         "combat_ui_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "generated_cards",
@@ -686,7 +687,7 @@
       "regressions": [
         "card_motion_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "card_secondary",
@@ -702,7 +703,7 @@
       "regressions": [
         "card_motion_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "turn_flow",
@@ -713,14 +714,14 @@
       ],
       "contract": "Player/enemy banners, turn-end blocking and command waits",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts.",
+      "implemented": "Original player/enemy banners, turn-end blocking, feedback waits and scheduled displayed facts. The candidate settles terminal WorldRelicChoice rewards after the final combat trace; only actual combat choices suspend it. A manual-kill regression reproduces the former indefinite hand/energy/end-turn residue on a0df before the fix.",
       "remaining": "Every original per-monster animation/command delay has not received a differential audit.",
       "regressions": [
         "turn_banner_regression",
         "combat_ui_regression",
         "enemies_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "resources",
@@ -738,7 +739,7 @@
         "card_hud_ui_regression",
         "combat_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "choices",
@@ -756,7 +757,7 @@
         "world_ui_regression",
         "neow_modifiers_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "pause",
@@ -774,7 +775,7 @@
         "world_frontend_ui_regression",
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "settings",
@@ -786,13 +787,13 @@
       "contract": "Real supported controls, persistence and platform restrictions",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Source General/Input layout, actual gameplay preferences including Show Run Timer, NSPF4 profile persistence/backward migration, supported platform restrictions and real local feedback/credits.",
-      "remaining": "Audio is excluded; desktop-only controls are not exposed. Pinned CommonTooltips is hidden and its untick handler is a stub, so it is intentionally not exposed.",
+      "remaining": "Audio is excluded; desktop-only controls are not exposed. Pinned CommonTooltips is hidden and its untick handler is a stub, so it is intentionally not exposed. Reset Tutorials and its divider are also hidden by the pinned release gate; no ordinary reset row is added.",
       "regressions": [
         "ui_preferences_regression",
         "world_frontend_ui_regression",
         "web_profiles_storage_test.js"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "language",
@@ -808,7 +809,7 @@
         "boot_locale_regression",
         "profiles_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "phobia",
@@ -826,7 +827,7 @@
       "regressions": [
         "phobia_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "text_effects",
@@ -843,7 +844,7 @@
         "localized_template_regression",
         "font_styles_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "keyboard_rebind",
@@ -859,7 +860,7 @@
       "regressions": [
         "input_bindings_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "screen_shake",
@@ -876,7 +877,7 @@
       "regressions": [
         "combat_damage_ui7_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "patch_notes",
@@ -891,7 +892,7 @@
       "regressions": [
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "feedback",
@@ -906,7 +907,7 @@
       "regressions": [
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "modding",
@@ -931,7 +932,7 @@
       "regressions": [
         "auxiliary_ui8_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
     },
     {
       "id": "audio",
@@ -972,13 +973,267 @@
       ],
       "contract": "Original locale and scene font families, style measurement and glyph painting",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact.",
+      "implemented": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact. The candidate also supplies native4px regular/bold glyphs for the ten standard tutorial bodies and source12/14/16/18px display glyphs for the post-tutorial battle-start banner.",
       "remaining": "Kerning/Godot rasterization equality is not established. 320x240 minimum readable sizes are documented adaptations.",
       "regressions": [
         "font_styles_ui7_regression",
         "card_hud_ui_regression"
       ],
-      "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
+      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+    },
+    {
+      "id": "tutorial_accept",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NAcceptTutorialsFtue.cs"
+      ],
+      "contract": "Embark release asks once; Yes/No mark before continuing, with No disabling general FTUEs.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_combat_rules",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NCombatRulesFtue.cs"
+      ],
+      "contract": "First combat StartTurn opens three pages; previous/next and final release mark completion before the original battle-start banner.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_map",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NMapSelectFtue.cs"
+      ],
+      "contract": "First map camera sweep and100ms prompt delay; modal blocks root-node selection until confirmation.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_can_play",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NCanPlayCardsFtue.cs"
+      ],
+      "contract": "End Turn with a playable card prompts without ending the turn; three no-play attempts auto-mark per combat.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_cannot_play",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NCannotPlayCardFtue.cs"
+      ],
+      "contract": "Only exact EnergyCostTooHigh prompts; eight successful manual cards auto-mark over the process lifetime.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_power",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NPowerCardFtue.cs"
+      ],
+      "contract": "First displayed Power in the actual card-reward choices is lifted above the backstop; no reward is granted by the tutorial.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_shuffle",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NShuffleFtue.cs"
+      ],
+      "contract": "The modal blocks the visible command queue before its real shuffle cue and preserves pre-shuffle displayed pile counts.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate. The authoritative core remains synchronous; the presentation queue pauses before shuffle. Canonical RNG rollback or an awaited core transaction is not claimed.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_combat_reward",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NCombatRewardFtue.cs"
+      ],
+      "contract": "Skipping remaining ordinary terminal rewards prompts and stays in the same room; collected rewards auto-mark only after act floor4.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_relic",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NRelicRewardFtue.cs"
+      ],
+      "contract": "Displayed relic reward after two frames, or treasure relic after one second; not a global obtained-relic substitution.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_potion",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NObtainPotionFtue.cs"
+      ],
+      "contract": "A newly accepted potion triggers; restored belts and rejected full-belt additions do not.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_merchant",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NMerchantFtue.cs"
+      ],
+      "contract": "Leaving before opening the inventory prompts; opening it marks without a prompt; room entry alone does not.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_rest",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NRestSiteFtue.cs"
+      ],
+      "contract": "Choice entrance after500ms lifts the original rest controls while blocking gameplay input.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
+    },
+    {
+      "id": "tutorial_ascension",
+      "group": "tutorials",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Nodes.Ftue/NAscensionSingleplayerFtue.cs"
+      ],
+      "contract": "Standard mode unlocked Ascension uses independent SeenPopup,1s delay and300ms entrance; completion marks on close.",
+      "assessment": "implemented_pending_integrated_acceptance",
+      "implemented": "Source-derived layout, original assets/text/font faces, modal ownership and per-profile seen state are connected to the actual trigger.",
+      "remaining": "Actual bilingual rendering, input, profile and ordinary-host execution await the matching final gate.",
+      "regressions": [
+        "ftue_ui9_regression",
+        "ftue_progress_regression",
+        "web_profiles_storage_test.js",
+        "check_offline_browser.js"
+      ],
+      "acceptance": "Pending matching stage8e frozen runtime/resources."
     }
-  ]
+  ],
+  "verification_baseline": {
+    "runtime": "a0df79d8347b76dc86804b0ab8d17f948c600204",
+    "native_suites": {
+      "passed": 103,
+      "total": 103
+    },
+    "python_tests": {
+      "passed": 201,
+      "total": 201
+    },
+    "actual_scene_targets_per_language": {
+      "passed": 18,
+      "total": 19,
+      "failed": "world_map_window_ui_regression: fixture omitted bounded asset preparation; source repair awaits matching execution"
+    },
+    "ordinary_firebird": "Passed Chinese title, Settings language switch, Standard Ironclad, Neow, centered map, five-turn victory, rewards, Save & Quit and Continue; terminal reward combat-UI residue was subsequently confirmed and repaired in this candidate.",
+    "save_storage_runtime": "d938a661c7a69e46b829a4a879ce6cd411be0f2b",
+    "save_storage_checks": 1410,
+    "ordinary_nsz_readback": "230540-byte old raw run continued; two ordinary saves produced7456-byte primary and backup that independently decode to the exact original canonical bytes. A USB-session timeout was retained as failed; restarted ordinary OS readback completed the proof."
+  }
 }

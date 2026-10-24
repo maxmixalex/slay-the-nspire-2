@@ -108,7 +108,11 @@ histories peak at 1,910,746 bytes; retaining three conservatively bounded old ra
 backups during migration peaks at 2,305,021 bytes. These are explicit fixture
 bounds, not a claim that every arbitrary accepted raw payload compresses so
 well. The unconditional raw fallback bound remains 2,699,296 bytes. See
-`run-storage-ui9-0.17.md`. Ordinary 8d raw-Continue/new-NSZ-save readback is next.
+`run-storage-ui9-0.17.md`. Ordinary8d readback now passed: the old230540-byte
+raw run continued, and two explicit saves produced7456-byte NSZ1 primary and
+backup. Both independently decode to the exact original canonical bytes. A
+USB-session timeout remains recorded as failed; a restarted normal OS session
+completed readback without changing any save bytes.
 
 The d938 ARM build and all three linked gates pass. Launcher: 1,352,081 bytes,
 SHA-256 `b7e453c9646b117dca2832872a019909b772a43a54b949614575d2008de7bb5b`;
@@ -179,8 +183,22 @@ profiles enable tutorials after the existing save lookup; no new startup scan
 of all profiles is added. No-persistence native fixtures keep legacy behavior.
 Source release `NGame.IsReleaseGame()` is true; Reset Tutorials and its divider
 are hidden in the pinned scene and remain hidden in the ordinary port.
-Trigger/input/render integration is in progress, so no tutorial completion
-claim is made from these resource/persistence preparations alone.
+The complete trigger/input/render candidate and its native/browser regression
+sources are ready for the next combined freeze. The source4px production append
+passed at f8701249 with zero missing glyphs: English3181 and Chinese31675 glyphs.
+The final append also adds the original display face for the post-tutorial
+Battle Start banner. No tutorial completion claim is made before integrated
+execution.
+
+Ordinary first-victory review found an additional concrete defect: the reward
+list retained hand, energy and End Turn beneath it. `finish_combat_feedback`
+mistook terminal WorldRelicChoice(parent Reward) for a suspended combat choice.
+The candidate completes that trace, allowing the existing source-shaped
+`combat_reward_room` to render. A new real select/aim/Strike regression against
+the frozen a0df core reproduces the exact stuck-trace assertion after its full
+canonical-save oracle has already passed. Matching execution of the repair is
+required; the earlier all-scene declaration is not treated as proof of this
+previously missing transition coverage.
 
 ## Remaining gates and boundaries
 

@@ -23,6 +23,7 @@ from world_scene_assets import load_scene_texture
 
 BASE_AUX, AUXILIARY, VERSION, CLIPS, STRINGS = 2051, 2058, 33, 1765, 8704
 TEXT_FIRST = 8347
+BATTLE_START_SLOT = 3426
 TEXT_KEYS = (
     'ftues.ASCENSION_SINGLEPLAYER_FTUE_DESCRIPTION',
     'ftues.ASCENSION_SINGLEPLAYER_FTUE_DISCLAIMER',
@@ -175,6 +176,10 @@ def glyph_requirements(source):
     required.update((cp, 4, face) for key in SMALL_BODY_KEYS
                     for cp in visible_alphabet(text[key]) for face in (0, 5))
     required.update((cp, 6, 5) for cp in visible_alphabet(text[TEXT_KEYS[2]]))
+    battle = source.string_payload(BATTLE_START_SLOT)[:-1].decode('utf-8')
+    tiles.require(bool(battle), 'Missing original battle-start banner text')
+    required.update((cp, px, 4) for cp in visible_alphabet(battle)
+                    for px in (12, 14, 16, 18))
     # The existing original vertical popup uses its larger body/title bands.
     for key in ('main_menu_ui.ENABLE_TUTORIALS.description', 'main_menu_ui.ENABLE_TUTORIALS.title'):
         required.update((cp, px, face) for cp in visible_alphabet(text[key])
@@ -183,7 +188,7 @@ def glyph_requirements(source):
             if cp >= 32 and not text_format_control(cp)}
 
 
-def append_fonts(data, regular, bold):
+def append_fonts(data, regular, bold, display):
     source = tiles.PackView(data, AUXILIARY, versions=(VERSION,))
     known = {(row[0], row[2]) for row in source.glyphs}
     rows = []
@@ -191,7 +196,7 @@ def append_fonts(data, regular, bold):
         packed = px | ((style & 3) << 6) | ((style & 4) << 3)
         if (cp, packed) in known:
             continue
-        face = bold if style == 5 else regular
+        face = display if style == 4 else bold if style == 5 else regular
         tiles.require(cp in face.coverage, 'Original tutorial font lacks codepoint '+str(cp))
         rows.append(face.glyph(cp, px, style))
     out, count = append_glyphs(data, AUXILIARY, CLIPS, rows, version=VERSION)
@@ -203,7 +208,7 @@ def append_fonts(data, regular, bold):
         packed = px | ((style & 3) << 6) | ((style & 4) << 3)
         tiles.require((cp, packed) in actual, 'Tutorial glyph coverage incomplete')
     return bytes(out), dict(added_glyphs=count, glyphs=len(target.glyphs),
-        regular_font=regular.metadata(), bold_font=bold.metadata(),
+        regular_font=regular.metadata(), bold_font=bold.metadata(), display_font=display.metadata(),
         original_glyphs_exact=proof, missing_required_glyphs=0)
 
 
@@ -217,13 +222,13 @@ def main():
     fonts = tiles.private_path(args.font_dir, 'Original font directory')
     manifest = build_art(tiles.private_path(args.pck, 'Pinned PCK'), cache)
     reports = {}
-    for language, names in (('eng', ('kreon_regular.ttf', 'kreon_bold.ttf')),
-                            ('zhs', ('NotoSansMonoCJKsc-Regular.otf', 'SourceHanSerifSC-Bold.otf'))):
+    for language, names in (('eng', ('kreon_regular.ttf', 'kreon_bold.ttf', 'supplement/spectral_bold.ttf')),
+                            ('zhs', ('NotoSansMonoCJKsc-Regular.otf', 'SourceHanSerifSC-Bold.otf', 'SourceHanSerifSC-Bold.otf'))):
         path = tiles.private_path(getattr(args, 'input_'+language), 'Previous private content')
         destination = output/('ui9-'+language+'.nsp')
         tiles.require(path.resolve() != destination.resolve(), 'Preserve the previous pack')
         data, receipt = append(path.read_bytes(), manifest, cache)
-        out, font_receipt = append_fonts(data, Face(fonts/names[0]), Face(fonts/names[1]))
+        out, font_receipt = append_fonts(data, *(Face(fonts/name) for name in names))
         receipt.update(fonts=font_receipt, final_bytes=len(out), final_sha256=tiles.sha256(out))
         tiles.atomic_bytes(destination, out)
         reports[language] = receipt

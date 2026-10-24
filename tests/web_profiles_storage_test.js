@@ -1,5 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
 const createProfileStorage=require('../platform/web/profile_storage.js');
 function fixture(){
  const values=new Map();let fail=()=>false;
@@ -120,5 +122,56 @@ function fixture(){
  assert.throws(()=>p.readRun(1,16));assert.throws(()=>p.writeRun(1,'bad-codec',17,16));
  assert.equal(p.writeRun(1,'older-custom',16,16),false);assert.equal(p.clearRun(1,16),false);
  assert.equal(p.readRun(1,17),'power-order-v17');assert(p.deleteProfile(1));assert.equal(p.readRun(1),null);
+}
+{
+ // This host deliberately treats progress as opaque bytes. Its ordinary
+ // test stresses storage length and transaction preservation; passing the
+ // ftue_progress_regression --export directory repeats these checks with
+ // valid, round-tripped NSH7/8 payloads emitted by the canonical C++ codec.
+ const directory=process.argv[2],f=fixture(),p=f.profile;
+ function progress(name,version,flags,length=40){
+  let bytes;
+  if(directory)bytes=fs.readFileSync(path.join(directory,name));
+  else{
+   bytes=Buffer.alloc(length);for(let i=8;i<length;i++)bytes[i]=(i*43+17)&255;
+   bytes.write('NSH'+version,0,'ascii');bytes.writeUInt32LE(length,4);
+   if(version===8)bytes.writeUInt16LE(flags,length-2);
+  }
+  assert.equal(bytes.toString('ascii',0,4),'NSH'+version);assert.equal(bytes.readUInt32LE(4),bytes.length);
+  if(version===8)assert.equal(bytes.readUInt16LE(bytes.length-2),flags);
+  return bytes.toString('base64');
+ }
+ const old=progress('legacy-profile.nsh',7,0),declined=progress('declined-profile.nsh',8,0x4001);
+ const enabled=progress('enabled-profile.nsh',8,0x6000),full=progress('full-profile.nsh',8,0x7fff,295349);
+ assert.equal(Buffer.from(full,'base64').length,295349);
+ const histories=[old,declined,full];
+ for(let slot=1;slot<=3;slot++){
+  assert(p.writeRun(slot,'canonical-v17-'+slot,17,17));assert(p.writeProgress(slot,histories[slot-1]));
+ }
+ for(let slot=1;slot<=3;slot++)assert.equal(p.readProgress(slot),histories[slot-1]);
+ assert(p.select(2));assert.equal(p.selected(),2);assert.equal(p.readProgress(1),old);
+ // Run-only deletion and every preference fallback must preserve the FTUE
+ // preference/completions in the independent progress record byte-for-byte.
+ assert(p.clearRun(2));assert.equal(p.readProgress(2),declined);
+ f.values.set('nSpire2-preferences-v1-profile-2',JSON.stringify({version:1,fastMode:true}));
+ f.values.set('nSpire2-preferences-v2-profile-2','broken');
+ assert.equal(p.readPreferences(2),517);assert.equal(p.readProgress(2),declined);
+ assert(p.writePreferences(2,580));assert.equal(p.readProgress(2),declined);
+ let before=new Map(f.values),failed=false;
+ f.fail((op,key)=>!failed&&op==='set'&&key==='nSpire2-preferences-v4-profile-2'?(failed=true):false);
+ assert.equal(p.writePreferences(2,516),false);assert.deepEqual(f.values,before);
+ f.fail((op,key)=>op==='set'&&key==='nSpire2-progress-v1-profile-2');
+ assert.throws(()=>p.writeProgress(2,enabled));assert.equal(p.readProgress(2),declined);assert.deepEqual(f.values,before);
+ f.fail(()=>false);assert(p.writeProgress(2,enabled));assert.equal(p.readProgress(2),enabled);
+ // A denied deletion after the run has moved must retain even a maximum
+ // NSH8 profile across a new host instance and restore it on recovery.
+ before=new Map(f.values);let denied=false;
+ f.fail((op,key)=>{if(op==='remove'&&key==='nSpire2-progress-v1-profile-3')denied=true;return denied&&op!=='get';});
+ assert.equal(p.deleteProfile(3),false);assert.equal(p.readProgress(3),full);assert.equal(p.readRun(3),'canonical-v17-3');
+ const next=createProfileStorage(()=>f.storage);assert.equal(next.recover(),false);assert.equal(next.readProgress(3),full);
+ assert.equal(next.writeProgress(3,enabled),false);f.fail(()=>false);assert(next.recover());assert.deepEqual(f.values,before);
+ assert(next.deleteProfile(3));assert.equal(next.readProgress(3),null);assert.equal(next.readRun(3),null);
+ assert.equal(next.readProgress(1),old);assert.equal(next.readProgress(2),enabled);assert.equal(next.selected(),2);
+ console.log(directory?'Web profiles: valid canonical NSH7/8 export fixtures passed':'Web profiles: maximum-size opaque NSH8 storage/rollback fixture passed');
 }
 console.log('Web profiles: isolated runs/history/two-bank preferences, legacy migration, failed writes and recoverable deletion passed');

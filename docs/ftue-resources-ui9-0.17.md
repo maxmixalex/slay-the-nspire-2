@@ -41,6 +41,11 @@ and alpha masks remain exact. The full original-font rebuild follows the same
 tutorial heading rules so later asset rebuilds cannot reintroduce missing
 small bold glyphs.
 
+The ordinary battle-start banner following CombatRules uses its existing
+`gameplay_ui.BATTLE_START` value at slot3426, with the original display face:
+English Spectral Bold and Chinese Source Han Serif Bold. Only this field's
+missing12/14/16/18px glyphs are appended; no text slot or image is added for it.
+
 Old grouped glyph and string payloads are relocated opaquely. New text may
 replace a grouped empty-string descriptor; other aliases of that empty string
 remain untouched. The generalized append helper now recognizes the decoded
@@ -61,6 +66,8 @@ bounds. The next production attempt correctly failed the tool's older 5px
 minimum; the v33 validator now accepts 4px without changing earlier formats.
 Three focused converter regressions pass, including both 4px faces, old glyph
 equality and rejection of the new size under v32. The corrected production
-append, composed runtime/profile/input checks, actual
+append at f8701249 passed with3181 English and31675 Chinese glyphs, zero missing
+required characters and exact old payloads. The final battle-banner append,
+composed runtime/profile/input checks, actual
 bilingual tutorial frames and ordinary calculator/browser flows must be
 completed before the tutorial feature is considered accepted.

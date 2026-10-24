@@ -24,7 +24,7 @@ from split_content import layout
 
 SIZES = (8, 10, 12, 16, 20)
 SCENE_SIZES = (6, 8, 10, 12, 14, 16, 20)
-NATIVE_SIZES = (4, 5) + SCENE_SIZES
+NATIVE_SIZES = (4, 5, 18) + SCENE_SIZES
 FACE_NAMES = ('regular', 'bold', 'italic', 'bold_italic')
 KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
     'aqua', 'white', 'gray', 'b', 'i', 'sine', 'jitter', 'rainbow', 'thinky_dots'))
@@ -259,6 +259,7 @@ def control_small_bold_alphabet(source):
 
 
 def ftue_small_alphabet(source):
+    if getattr(source, 'version', 0) < 33: return set()
     from ftue_ui9_assets import SMALL_BODY_KEYS
     return scene_label_alphabet(source, 'ui7_text_index.inc', SMALL_BODY_KEYS)
 
@@ -357,6 +358,11 @@ def scene_glyphs(source, faces):
             for cp in sorted(character_title_display_alphabet(source)):
                 if cp>=32 and cp in face.coverage:
                     for px in (10,12,14):
+                        if (cp,px) not in present:rows.append(face.glyph(cp,px,4));present.add((cp,px));covered.add(cp)
+            battle_alphabet = scene_label_alphabet(source, 'world_text_index.inc', {'gameplay_ui.BATTLE_START'}) if source.version>=33 else set()
+            for cp in sorted(battle_alphabet):
+                if cp>=32 and cp in face.coverage:
+                    for px in (12,14,16,18):
                         if (cp,px) not in present:rows.append(face.glyph(cp,px,4));present.add((cp,px));covered.add(cp)
         if i==1:
             # PatchText explicitly selects KreonBold at its 8px body size;

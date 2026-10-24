@@ -38,18 +38,13 @@ static void native_reward_scrollbar(Canvas&c,int dy){
  c.ui(I6_ScrollbarGrabber,208,center-4,9,9);c.hit(205,top-5,15,bottom-top+10,HitKind::RewardScroll);
 }
 #include "reward_cards_ui.inc"
-static void native_reward_screen(Canvas&c){
+static void native_reward_content(Canvas&c,bool include_proceed=true,int only=-1){
  auto&a=c.a;auto&s=a.game;const auto window=a.reward_presentation.window(a.map_clock_ms);
- combat_reward_room(c);c.dim(0,22,320,218,a.reward_cards||a.grimoire_select?155:155*window.alpha/255);
- if(a.grimoire_select&&s.necro.grimoire_pending){deck_select(c);return;}
- if(a.reward_cards){
-  native_card_reward_body(c,nullptr,s.world.reward_count,true);return;
- }
  UiAction actions[6];int count=ui_reward_actions(s,actions);a.cursor=mn(mx(0,a.cursor),count-1);
  Canvas panel=c;panel.opacity=uint8_t(div255(panel.opacity*window.alpha));const int dy=window.y;
- native_reward_window(panel,dy);
+ if(only<0)native_reward_window(panel,dy);
  Canvas rows=native_reward_list_layer(panel,dy);const int label_size=native_reward_label_size(a);
- for(int i=0;i<count-1;i++){const int y=88+RewardPresentation::row_offset(unsigned(i))-a.reward_presentation.list_scroll.offset()+dy;
+ for(int i=0;i<count-1;i++){if(only>=0&&i!=only)continue;const int y=88+RewardPresentation::row_offset(unsigned(i))-a.reward_presentation.list_scroll.offset()+dy;
   if(!native_reward_row_visible(y,dy))continue;
   UiAction action=actions[i];int image=-1;char text[256]{};TextBuffer t{text,sizeof text,0,&c.a.content};
   switch(action){
@@ -65,6 +60,16 @@ static void native_reward_screen(Canvas&c){
   rows.fitted(text,138,local+1,60,15,label_size,label_size,selected?Gold:rgb(255,246,226),true,false,true,false);
   native_reward_row_hit(c,y,dy,HitKind::UiAction,int(action));
  }
- native_reward_scrollbar(panel,dy);
+ if(only<0)native_reward_scrollbar(panel,dy);
+ if(!include_proceed)return;
  const bool remaining=count>1;const char*proceed=a.content.world_string("gameplay_ui",remaining?"CHOOSE_CARD_SKIP_BUTTON":"PROCEED_BUTTON");native_proceed(c,*proceed?proceed:remaining?"跳过":"前进",true,a.cursor==count-1);native_proceed_action(c,UiAction::LeaveRewards);
+}
+static void native_reward_screen(Canvas&c){
+ auto&a=c.a;auto&s=a.game;const auto window=a.reward_presentation.window(a.map_clock_ms);
+ combat_reward_room(c);c.dim(0,22,320,218,a.reward_cards||a.grimoire_select?155:155*window.alpha/255);
+ if(a.grimoire_select&&s.necro.grimoire_pending){deck_select(c);return;}
+ if(a.reward_cards){
+  native_card_reward_body(c,nullptr,s.world.reward_count,true);return;
+ }
+ native_reward_content(c);
 }

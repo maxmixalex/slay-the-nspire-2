@@ -349,7 +349,7 @@ static void map_pictures(){
   {styles[4],MapShader::Normal,123},{styles[16],MapShader::Boss,255},{styles[0],MapShader::Tint,123},
   {styles[0],MapShader::Normal,255},{styles[0],MapShader::Boss,123},{styles[0],MapShader::Original,0}};
  for(unsigned id:{0u,2u,3u,4u,6u,7u})for(auto placement:placements)for(auto settings:map_styles)
- for(int angle:{0,360,-360,17,90}){
+ for(int angle:{0,360,-360,-179,-91,-17,17,63,90,179,180,270}){
   const auto style=settings.layer;const auto shader=settings.shader;const auto opacity=settings.opacity;
   Pair pair({320,240,327},style);const int cx=placement.x,cy=placement.y,w=placement.w,h=placement.h;
   const uint16_t ink=0x2945,paper=0xfeb6;const int clip_top=(id&1)?55:22,clip_bottom=(id&1)?170:207;

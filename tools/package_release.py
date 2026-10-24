@@ -37,6 +37,9 @@ A color TI-Nspire with Ndless is required. Install either or both locale files.
 启动直接进入游戏主菜单。双语安装可在主菜单的设置里切换语言，之后会记住选择。
 Startup opens the game menu directly. With both locales installed, change the
 language in the main menu's Settings. The choice is remembered across launches.
+新档案首次选择“启程”时可选择是否启用原版教程；教程进度按档案独立记忆。
+A new profile asks whether to enable tutorials on its first Embark. Tutorial
+progress is remembered separately for each profile.
 
 升级与存档 / Updating and saves
 请配套替换程序、公共包、已安装的语言包；保留 sav、progress、settings、slots、lang 文件。
@@ -138,6 +141,7 @@ def main():
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
     info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
+                progress_version=8, settings_version=4, calculator_run_storage='NSZ1 or raw NSV1',
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,

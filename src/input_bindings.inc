@@ -29,7 +29,9 @@ bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
     if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
-        if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));
+        if(ftue.active()&&released!=243){if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));return true;}
+        if(released==243&&ftue.active()&&context==input_context())ftue_input(Key::Confirm);
+        else if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));
         else if(released==254)toggle_combat_peek();
         else if(released==253&&run_mode.screen==RunMenu::Custom)ui_action(UiAction::RandomizeRun);
         else if(released==252&&title_patch_notes_available(*this))open_auxiliary(AuxiliaryScreen::PatchNotes);
@@ -45,6 +47,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         }
         return true;}
     if(held){
+        if(ftue.active())return true;
         // OS repeat navigates lists, but a held selection key must never play
         // another card or accept a newly exposed modal.
         if(held->key<=unsigned(Key::Down))input(Key(held->key));return true;
@@ -59,6 +62,14 @@ bool App::physical_key(uint16_t code,bool pressed){
     const unsigned bank=keyboard_only?1:0;unsigned command=InputCommandCount;
     for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[bank][i]==code){command=i;break;}
     const auto dispatch=[&](Key key){held->key=uint8_t(key);input(key);return true;};
+    sync_ftues();
+    if(ftue.active()){
+        if(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))ftue_input(command==unsigned(InputCommand::Left)?Key::Left:Key::Right);
+        else if(command==unsigned(InputCommand::Select)||(code==13&&!keyboard_only)){
+            if(ftue.id!=FtueId::CombatRules){held->key=243;held->context=input_context();}
+        }
+        return true;
+    }
     if(auxiliary.screen!=AuxiliaryScreen::None){
         if(command==unsigned(InputCommand::Cancel)){held->key=246;return true;}
         if(auxiliary.screen==AuxiliaryScreen::PatchNotes&&(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))){held->key=command==unsigned(InputCommand::Left)?248:247;return true;}

@@ -1,4 +1,5 @@
 bool App::map_drawing_ready()const{
+    if(ftue.active())return false;
     return game.world.active&&map_window.is_open&&(panel==3||(!panel&&game.phase==Phase::Map))&&
         !title&&!paused&&!help&&!library&&!character_select&&!settings_open&&!frontend_confirm&&
         !map_preview.open&&!event_reader&&detail_card<0&&detail_item<0&&status_actor<0&&deck_candidate<0&&
@@ -110,6 +111,7 @@ bool App::map_drawing_pointer_button(bool down,const HitRegion&hit){
     return true;
 }
 void App::pointer_aux_button(unsigned button,bool down){
+    if(ftue.active())return;
     if(button!=2&&button!=3)return;
     pointer.visible=true;pointer.motion_time=map_clock_ms;hud_focus=-1;
     sync_map_window();

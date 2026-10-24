@@ -160,23 +160,8 @@ static int hud_potion_shake(const App&a){
  const int value=2*CombatCardMotion::sine(phase*5)*CombatCardMotion::sine(phase/2),unit=3*1024*1024;
  return value<0?-((-value+unit/2)/unit):(value+unit/2)/unit;
 }
-static void hud(Canvas&c){
-    auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
-    // top_bar.tscn order: portrait, red HP, gold, recessed potion tray,
-    // room/floor information, then the right-aligned navigation controls.
-    c.nine_ui(U_TopBarBackdrop,1,0,24,22,7,6,7,6);
-    int portrait=c.a.content.ui_image(U_TopBarIronclad+int(s.character));
-    if(portrait<0)portrait=c.a.content.ui_image(character_portrait(s.character));
-    c.picture(portrait,3,1,20,20);
-    if(const unsigned ascension=world_ascension(s)){
-        c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
-    }
-    const auto health=c.a.combat_health(0);
-    c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
-    c.text_fitted(b,41,5,43,8,rgb(255,85,85));
-    c.hit(26,0,59,22,HitKind::HudInfo,0);
-    c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,100,5,25,8,Gold);
-    c.hit(85,0,42,22,HitKind::HudInfo,1);
+static void hud_potion_container(Canvas&c){
+    auto&s=c.a.game;
     c.nine_ui(U_TopBarBackdrop,127,1,53,20,7,6,7,6);
     const unsigned error=c.a.potion_belt_motion.error_alpha(c.a.map_clock_ms);
     if(error&&c.a.content.version()>=Ui7ContentVersion)c.nine_ui(I7_PotionErrorBackground,127,1,53,20,7,6,7,6,error);
@@ -204,6 +189,25 @@ static void hud(Canvas&c){
         c.hit(x,0,width,22,HitKind::PotionSlot,slot,potion!=Potion::Empty);
     }
     if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
+}
+static void hud(Canvas&c){
+    auto&s=c.a.game;c.rect(0,0,320,22,Panel);c.ui(U_TopBar,0,0,320,22);
+    // top_bar.tscn order: portrait, red HP, gold, recessed potion tray,
+    // room/floor information, then the right-aligned navigation controls.
+    c.nine_ui(U_TopBarBackdrop,1,0,24,22,7,6,7,6);
+    int portrait=c.a.content.ui_image(U_TopBarIronclad+int(s.character));
+    if(portrait<0)portrait=c.a.content.ui_image(character_portrait(s.character));
+    c.picture(portrait,3,1,20,20);
+    if(const unsigned ascension=world_ascension(s)){
+        c.ui(U_TopBarAscension,13,10,7,11);c.num(int(ascension),19,10,8,Gold);
+    }
+    const auto health=c.a.combat_health(0);
+    c.picture(A_Heart,27,4,12,13);char b[32]={};TextBuffer t{b,sizeof b,0,&c.a.content};t.number(health.hp);t.ch('/');t.number(health.max_hp);
+    c.text_fitted(b,41,5,43,8,rgb(255,85,85));
+    c.hit(26,0,59,22,HitKind::HudInfo,0);
+    c.picture(A_Coin,86,4,12,13);b[0]=0;t.n=0;t.number(c.a.reward_gold());c.text_fitted(b,100,5,25,8,Gold);
+    c.hit(85,0,42,22,HitKind::HudInfo,1);
+    hud_potion_container(c);
     hud_room_nodes(c);
     if(c.a.run_timer_visible()){
         // RightAlignedStuff uses end alignment. Timer visibility must never

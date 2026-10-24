@@ -2,6 +2,7 @@
 #include "core.hpp"
 #include "map_drawing.hpp"
 #include "ui_history_journal.hpp"
+#include "ftue.hpp"
 
 namespace spire {
 // Separate optional UI history. Never inserted into a simulation save or RNG
@@ -73,6 +74,10 @@ struct UiProgress {
     UiRunDiscoveries current_discoveries{};
     uint32_t architect_damage=0;
     UiHistoryJournal journal{};
+    // Zero means a pre-FTUE profile whose prior viewing history is unknown.
+    // New profiles use FtueFresh; ordinary tutorial preference and popup
+    // completion remain distinct, matching EnableFtues / SeenPopup.
+    uint16_t tutorial_flags=0;
 };
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);

@@ -162,6 +162,15 @@ void App::before_combat_effect(const State&s,Effect effect){
   ui_freeze_combat_powers(*this);
  if(!ui_feedback_bound(*this))return;auto&f=combat_feedback;
  const XOp op=effect.kind==EffectKind::Extended?XOp(effect.target):XOp::Count;
+ if(op==XOp::DrawOne&&effect.value>0&&!s.draw.count&&s.discard.count&&!s.no_draw&&s.hand.count<MaxHand&&
+    !seen_ftue(FtueId::Shuffle)&&!ftue.shuffle_waiting){
+  ftue.shuffle_at=ui_feedback_later(animation+1,f.effect_at);ftue.shuffle_waiting=true;
+  ftue.shuffle_draw=s.draw.count;ftue.shuffle_discard=s.discard.count;ftue.shuffle_exhaust=s.exhaust.count;
+  // A command beginning on this frame must not publish its shuffled piles
+  // or newly drawn hand before tick() reaches the modal barrier. Only this
+  // presentation cue moves; the canonical command and RNG still resolve.
+  f.effect_at=ftue.shuffle_at;
+ }
  const EnemyId kind=f.move_slot>=0&&f.move_slot<s.enemy_count?s.enemy_world.models[f.move_slot].kind:EnemyId::Count;
  const auto audited=enemy_command_timing(kind,f.move,fast_mode);
  const bool nibbit=kind==EnemyId::Nibbit,louse=kind==EnemyId::LouseProgenitor;
@@ -273,9 +282,14 @@ void App::finish_combat_feedback(){
  if(!combat_feedback.active)return;
  if(!ui_feedback_bound(*this)||game.phase==Phase::Error){combat_feedback.reset();return;}
  auto&f=combat_feedback;
- // A saved choice may suspend a hook in the middle of the same side. Keep
- // observing its continuation when the player completes that choice.
- if(choice_phase(game.phase)){
+ // A saved combat choice may suspend a hook in the same side. Terminal
+ // room rewards also use WorldRelicChoice, but their parent is Reward:
+ // NCombatUi.OnCombatEnded has already withdrawn hand, piles and counters.
+ // Leaving this display trace suspended there would retain combat controls
+ // beneath the entire reward list until the player claimed every reward.
+ const bool room_rewards=game.phase==Phase::WorldRelicChoice&&
+     game.world_relics.return_phase==uint8_t(Phase::Reward);
+ if(choice_phase(game.phase)&&!room_rewards){
   if(!f.choice_pending){f.choice_pending=true;f.choice_at=ui_feedback_later(f.effect_at,animation);}
   return;
  }

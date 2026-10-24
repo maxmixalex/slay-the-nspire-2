@@ -10,6 +10,7 @@ void App::reset_map_window(){
     map_room_cursor=map_room_scroll=0;
 }
 bool App::map_routes_active()const{
+    if(ftue.active()||(content.has_ftue_assets()&&!seen_ftue(FtueId::MapSelect)))return false;
     return world_can_travel(game)&&!treasure_empty_waiting()&&camp_proceed_ready()&&((game.phase==Phase::Map&&!panel)||
         (map_window.is_open&&panel==3));
 }
@@ -32,9 +33,8 @@ void App::open_map_window(bool from_top_bar){
     // tween is paused. The surviving tween may write again next frame.
     map_act_intro.snap(map_camera_target_q12());
     if(map_intro_at_entry()&&!map_act_intro.played){
-        // No original FTUE profile exists in this frontend. Its established
-        // no-tutorial flow is explicitly treated as "map_select_ftue seen".
-        map_act_intro.open_intro(!from_top_bar&&!fast_mode,game.world.act_index,
+        // A fresh tutorial profile sees the first camera sweep even in Fast.
+        map_act_intro.open_intro(!from_top_bar&&(!fast_mode||!seen_ftue(FtueId::MapSelect)),game.world.act_index,
             game.world.rooms[game.world.act_index].region,fast_mode);
     }
     if(game.phase==Phase::Map&&!map_act_room_entered){
@@ -49,6 +49,7 @@ void App::open_map_window(bool from_top_bar){
         const auto*m=world_current_map(game);if(m&&n)cursor=m->points[ids[0]].col;
     }
     map_visuals.set_open(game,true,map_clock_ms);
+    if(!seen_ftue(FtueId::MapSelect))ftue.page_started=map_clock_ms;
     pointer_cancel();hit_count=0;
 }
 void App::close_map_window(bool animate){

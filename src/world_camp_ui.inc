@@ -31,6 +31,7 @@ void App::camp_page(int direction){
 }
 bool App::camp_input(Key key){
  if(!native_room_input_available(*this,Phase::Camp))return false;
+ if(content.has_ftue_assets()&&!seen_ftue(FtueId::RestSite)&&map_clock_ms-ftue.room_since<500)return true;
  sync_camp_presentation();auto&motion=room_presentation.rest;
  uint8_t options[MaxWorldRestOptions];const unsigned count=camp_options(options,MaxWorldRestOptions);unsigned selected=camp_selected(*this,options,count);
  if(key==Key::EndTurn){if(camp_proceed_ready()&&world_rest_proceed(game))proceed_map_window();return true;}
@@ -85,6 +86,7 @@ static void native_camp_screen(Canvas&c){
  uint8_t options[MaxWorldRestOptions];unsigned count=0;for(unsigned i=0;i<s.world.rest_count;++i)if(motion.mask&(uint32_t(1)<<i))options[count++]=uint8_t(i);
  unsigned selected=camp_selected(a,options,count);if(motion.choices_locked())for(unsigned i=0;i<count;++i)if(options[i]==motion.selection.slot)selected=i;
  const unsigned first=selected/4*4,shown=mn(4,int(count-first));if(count&&!motion.choices_locked())a.cursor=options[selected];camp_scene(c,a.camp_options(nullptr,0)==0);
+ if(a.content.has_ftue_assets()&&!a.seen_ftue(FtueId::RestSite)&&a.map_clock_ms-a.ftue.room_since<500)return;
  Canvas screen=c;screen.opacity=uint8_t(div255(screen.opacity*motion.screen_alpha(a.map_clock_ms)));
  if(count&&screen.opacity){
   // RestSiteRoom keeps Header, ChoicesContainer and Description on the same

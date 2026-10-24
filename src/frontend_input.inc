@@ -45,7 +45,16 @@ static bool terminal_probe(State&s){
  return validate(s)&&(s.phase==Phase::Dead||s.phase==Phase::Complete);
 }
 void App::forget_run_checkpoint(){run_save_linked=false;confirmed_run={};}
-bool App::refresh_save(){return read_saved(*this)&&has_save;}
+bool App::refresh_save(){
+ const bool existing=read_saved(*this);
+ if(ftue_profile_pending){
+  ftue_profile_pending=false;
+  // A valid old run is an existing profile even without UI history. Only
+  // the new empty profile gets the source default EnableFtues=true.
+  if(!existing){progress.tutorial_flags=FtueFresh;progress_dirty=true;}
+ }
+ return existing&&has_save;
+}
 bool App::load_saved_run(){
  if(!read_saved(*this)||!has_save)return false;
  game=frontend_saved_probe;run_save_linked=true;reset_presentation();reset_map_act_intro(true);begin_progress(true);return true;

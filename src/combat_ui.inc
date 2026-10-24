@@ -189,7 +189,7 @@ static bool combat_stars_visible(App&a){
     v.star_count.advance(count,delta);
     return v.stars_visible;
 }
-static void combat_energy(Canvas&c,bool stars){
+static void combat_energy(Canvas&c,bool stars,bool include_stars=true){
     auto&a=c.a;const auto&s=a.game;const int energy=a.combat_energy();const bool empty=energy==0;
     // NCombatUi raises the Regent's energy counter. The star scene stays
     // below-left (and at 0.8 scale), outside the creature's power strip.
@@ -209,7 +209,7 @@ static void combat_energy(Canvas&c,bool stars){
     const int size=8;const uint16_t edge=empty?rgb(55,24,26):outline[unsigned(s.character)];
     health_label(c,label,left-2,top+8,28,size,empty?rgb(255,85,85):rgb(255,246,226),edge);
     c.hit(left,top,24,24,HitKind::Battlefield);
-    if(stars){
+    if(stars&&include_stars){
         const int count=a.combat_status.star_count.displayed(),age=int32_t(a.animation-a.combat_status.star_gain_at)*33,star_top=200;
         const unsigned light=count&&age>=0&&age<200?255+unsigned(200-age)*255/200:255;
         if(a.content.version()>=FrontendContentVersion){

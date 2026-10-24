@@ -256,6 +256,7 @@ static void auxiliary_patch_button(Canvas&);
 #include "deck_confirm_ui.inc"
 #include "keyword_tooltip_ui.inc"
 #include "auxiliary_ui.inc"
+#include "ftue_ui.inc"
 #include "pointer_ui6.inc"
 
 void App::render(){
@@ -282,17 +283,17 @@ void App::render(){
     // lifecycle must not replay when the deck or compendium is dismissed.
     map_visuals.set_open(game,game.world.active&&!title&&!character_select&&!map_preview.open&&
         (game.phase==Phase::Map||map_window.is_open||panel==3),map_clock_ms);
-    sync_game_over_presentation();Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
+    sync_game_over_presentation();Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();sync_ftues();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(profiles_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;profiles_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm||ftue.active())pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);ftue_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
     if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(character_select){character_screen(c);pointer_overlay(c);return;}
+    if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);pointer.visible=mouse;ftue_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
-    if(settings_open||frontend_confirm||help)pointer.visible=false;
+    if(settings_open||frontend_confirm||help||ftue.active())pointer.visible=false;
     if(title){title_screen(c);
     }else{
         // The room beneath a modal can clamp its own text scroll. It must not
@@ -350,12 +351,15 @@ void App::render(){
     if(event_reader)event_reader_screen(c);
     if(map_preview.open)reference_map_screen(c);
     if(notice_ticks&&detail_item<0&&detail_card<0&&!panel&&game.phase!=Phase::Treasure&&game.phase!=Phase::Event&&game.phase!=Phase::Shop&&status_actor<0&&!map_preview.open&&!library&&!character_select&&deck_candidate<0&&!choice_phase(game.phase)){c.rect(2,219,316,20,Panel);c.box(2,219,316,20,Gold);c.centered(notice,3,221,314,10,Gold);}
+    if(!ftue.active()){
     hud_hover_tip(c);
     potion_hover_tip(c);
     owned_relic_tooltip(c);
     enemy_intent_tooltip(c);
     orb_hover_tip(c);
     keyword_tooltips(c);
+    }
+    ftue_screen(c);
     pointer_overlay(c);
 }
 } // namespace spire

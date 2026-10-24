@@ -183,8 +183,18 @@ bool Content::open(ResourceSource source){
     if(version>=CardResourceContentVersion){
         uint32_t next=0;if(!reader_.u32(base,next))return false;
         if(next!=0x314c4954u){
-            if(next>=ni||!reader_.u32(base+4,next)||next!=0x314c4954u)return false;
-            auxiliary=CardResourceAuxiliaryCount;base+=4;
+            if(next>=ni||!reader_.u32(base+4,next))return false;
+            if(next==0x314c4954u){auxiliary=CardResourceAuxiliaryCount;base+=4;}
+            else{
+                // The optional tutorial catalog follows the card overlay.
+                // Probe only its six remaining image IDs and TIL1, never
+                // scan arbitrary payload or decode a startup image/string.
+                if(version<FtueContentVersion||next>=ni)return false;
+                uint8_t suffix[28];if(!reader_.read(base+8,suffix,sizeof suffix))return false;
+                for(unsigned i=0;i<6;++i)if(u32(suffix+i*4)>=ni)return false;
+                if(u32(suffix+24)!=0x314c4954u)return false;
+                auxiliary=FtueAuxiliaryCount;base+=32;
+            }
         }
     }
     if(base>n||base>DirectoryCapacity)return false;
