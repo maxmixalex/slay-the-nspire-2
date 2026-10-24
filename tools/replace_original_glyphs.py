@@ -24,7 +24,7 @@ from split_content import layout
 
 SIZES = (8, 10, 12, 16, 20)
 SCENE_SIZES = (6, 8, 10, 12, 14, 16, 20)
-NATIVE_SIZES = (5,) + SCENE_SIZES
+NATIVE_SIZES = (4, 5) + SCENE_SIZES
 FACE_NAMES = ('regular', 'bold', 'italic', 'bold_italic')
 KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
     'aqua', 'white', 'gray', 'b', 'i', 'sine', 'jitter', 'rainbow', 'thinky_dots'))
@@ -119,7 +119,7 @@ class Face:
 
 
 def generate(source, faces, fallback=None):
-    texts = [bytes(source.block(off, length)).decode('utf-8') for off, length in source.strings]
+    texts = [source_text(source, ordinal) for ordinal in range(len(source.strings))]
     requested = styled_alphabet(texts)
     auxiliary = auxiliary_body_slots(source)
     core_requested = styled_alphabet([value for slot, value in enumerate(texts) if slot not in auxiliary])
@@ -182,6 +182,14 @@ def generate(source, faces, fallback=None):
                 if px == 5 and cp not in core_required and not 32 <= cp < 127: continue
                 if px == 6 and cp in auxiliary_required and cp not in core_required: continue
                 rows.append(face.glyph(cp, px)); originals[(cp, px)] = None
+    # Only the ten authored small tutorial bodies need the projected4px
+    # font. Preserve that narrow alphabet in full rebuilds as well as appends.
+    for cp in sorted(ftue_small_alphabet(source)):
+        if (cp, 4) in originals or text_format_control(cp): continue
+        face = regular_face(cp)
+        if face is not None:
+            rows.append(face.glyph(cp, 4)); originals[(cp, 4)] = None
+            record_fallback(cp, face)
     styled_counts, unavailable = {}, {}
     for style in range(1, 4):
         font = faces[style]
@@ -207,7 +215,8 @@ def generate(source, faces, fallback=None):
         auxiliary_only_codepoints=sorted(new_codepoints-core_required-set(missing_regular)),
         auxiliary_body_sizes=[8, 10],
         small_regular_sizes=[5, 6],
-        rasterizer='Pillow/FreeType at native 5/6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
+        tutorial_body_size=4,
+        rasterizer='Pillow/FreeType at native 4/5/6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
 
 
 HISTORY_SMALL_BOLD_KEYS = frozenset(('run_history.MAP_POINT_HISTORY.header',
@@ -249,6 +258,11 @@ def control_small_bold_alphabet(source):
     return scene_label_alphabet(source,'world_text_index.inc',CONTROL_SMALL_BOLD_KEYS)
 
 
+def ftue_small_alphabet(source):
+    from ftue_ui9_assets import SMALL_BODY_KEYS
+    return scene_label_alphabet(source, 'ui7_text_index.inc', SMALL_BODY_KEYS)
+
+
 def tooltip_small_bold_alphabet(source):
     """Original NHoverTip titles select KreonBold at projected 5px only."""
     result=set(range(32,127))
@@ -283,7 +297,7 @@ def character_title_display_alphabet(source):
 def scene_glyphs(source, faces):
     """Pack actual explicit faces only for the screens that select them."""
     if source.version < 28 or not any(faces): return [], {}
-    texts = [bytes(source.block(off, length)).decode('utf-8') for off, length in source.strings]
+    texts = [source_text(source, ordinal) for ordinal in range(len(source.strings))]
     index = Path(__file__).resolve().parents[1]/'src/world_text_index.inc'
     entries = re.findall(r'\{"([^\"]+)",(\d+)\}', index.read_text())
     alphabets = [set(range(32,127)),set(range(32,127)),set(range(32,127))]
@@ -347,7 +361,7 @@ def scene_glyphs(source, faces):
         if i==1:
             # PatchText explicitly selects KreonBold at its 8px body size;
             # the credits reader uses the same face for 10px section labels.
-            for alphabet,px in ((small_bold,5),(banner_bold|victory_bold|control_small_bold_alphabet(source),6),(banner_bold,8),(banner_bold,10),(auxiliary_bold,8),(auxiliary_headings,10)):
+            for alphabet,px in ((ftue_small_alphabet(source),4),(small_bold,5),(banner_bold|victory_bold|control_small_bold_alphabet(source),6),(banner_bold,8),(banner_bold,10),(auxiliary_bold,8),(auxiliary_headings,10)):
                 for cp in sorted(alphabet):
                     if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,px) not in present:
                         rows.append(face.glyph(cp,px,5));present.add((cp,px));covered.add(cp)

@@ -57,6 +57,12 @@ TEXT_KEYS = (
     'main_menu_ui.ENABLE_TUTORIALS.title',
 )
 TEXTS = tuple(enumerate(TEXT_KEYS, TEXT_FIRST))
+SMALL_BODY_KEYS = frozenset('ftues.'+key for key in (
+    'CANNOT_PLAY_CARD_FTUE_DESCRIPTION', 'CAN_PLAY_CARDS_FTUE_DESCRIPTION',
+    'MAP_SELECT_DESCRIPTION', 'MERCHANT_FTUE_DESCRIPTION',
+    'POTION_FTUE_DESCRIPTION', 'POWER_FTUE_DESCRIPTION',
+    'RELIC_FTUE_DESCRIPTION', 'REST_SITE_FTUE_DESCRIPTION',
+    'REWARDS_FTUE_DESCRIPTION', 'SHUFFLE_FTUE_DESCRIPTION'))
 SPECS = (
     ('popup', 'ftue_popup', (579, 257), (146, 65)),
     ('confirm', 'ftue_confirm_button', (195, 63), (56, 18)),
@@ -164,6 +170,10 @@ def glyph_requirements(source):
     alphabet = set().union(*(visible_alphabet(value) for value in text.values()))
     # Normal and explicitly authored bold are separate original font faces.
     required = {(cp, 5, face) for cp in alphabet for face in (0, 5)}
+    # Standard popups use the source 22px body at 320/1680 scale. This
+    # dedicated 4px alphabet does not change the general fitting minimum.
+    required.update((cp, 4, face) for key in SMALL_BODY_KEYS
+                    for cp in visible_alphabet(text[key]) for face in (0, 5))
     required.update((cp, 6, 5) for cp in visible_alphabet(text[TEXT_KEYS[2]]))
     # The existing original vertical popup uses its larger body/title bands.
     for key in ('main_menu_ui.ENABLE_TUTORIALS.description', 'main_menu_ui.ENABLE_TUTORIALS.title'):
