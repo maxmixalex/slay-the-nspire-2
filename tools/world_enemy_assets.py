@@ -86,8 +86,11 @@ class SpineSampler:
                 raise ValueError('A local .NET SDK is required to compile the independent Spine adapter')
             sdk_version, sdk_root = max(sdks, key=lambda row: _version(row[0]))
             major = _version(sdk_version)[0]
-            if major < 10:
-                raise ValueError('The reviewed private runtime requires a .NET 10 or newer SDK')
+            # The official 4.2 source can be compiled against the local .NET 8
+            # reference assemblies. Do not retain the .NET 10 requirement of
+            # a previously supplied private binary as an adapter requirement.
+            if major < 8:
+                raise ValueError('The Spine sampling adapter requires a .NET 8 or newer SDK')
             sdk_root = Path(sdk_root)
             refs_root = sdk_root.parent / 'packs/Microsoft.NETCore.App.Ref'
             refs_version = max((p for p in refs_root.iterdir() if p.is_dir()), key=lambda p: _version(p.name))
