@@ -69,3 +69,14 @@ between normal/preview cache entries, compare cached pixels with direct
 composition, and check the unchanged/X cost, finalized-hand, shortage-priority
 and inspector-origin branches. Short C++ syntax validation passed; these new
 cases await the same complete integration checkpoint as the original cross.
+
+Final-resource evidence for immutable UI source
+`474e592f112ab64b9116f80e5aa20cba4a9231c7`: the original overlay was appended
+before grouped-string compression with all existing directories/payloads
+verified exact (338 additional bytes per language before the following storage
+transform). The final v33 card/HUD run passed 359,342 English and 383,522 Chinese
+checks. The actual `card-resource-cross-both` and
+`card-cost-finalized-versus-upgrade-preview` captures were reviewed in both
+languages: the two authored cross positions are visible, and the identical
+finalized/preview upgraded cards retain cream/green resource labels respectively.
+No additional pixel cache or gameplay state was introduced.

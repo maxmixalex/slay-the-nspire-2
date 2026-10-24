@@ -239,7 +239,16 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     int card_x=inspect?owner.owner.x-46:direction>0?owner.owner.x-47:owner.owner.x+owner.owner.w+1;
     if(details)card_x=13+3*70;
     if(hover_compact_event(owner))card_x=column.x+columns*(column.w+1);
-    if(card_x<3||card_x+46>317)card_x=direction>0?column.x+columns*(column.w+1):column.x-(columns-1)*(column.w+1)-47;
+    if(owner.power>=0&&!details&&!inspect&&card_count&&result.count){
+        // NHoverTipSet.CorrectHorizontalOverflow moves the actual containers
+        // together. Empty available text columns must not separate a power
+        // from its associated card when the original opposite side overflows.
+        int left=317,right=3;for(unsigned i=0;i<result.count;++i){left=mn(left,result.pieces[i].box.x);right=mx(right,result.pieces[i].box.x+result.pieces[i].box.w);}
+        int shift=0;if(card_x+46<=317&&right>317)shift=card_x-1-right;
+        else if(card_x+46>317||right>317){card_x=right-46;shift=-47;}
+        else if(card_x<3||left<3){card_x=left;shift=47;}
+        for(unsigned i=0;i<result.count;++i)result.pieces[i].box.x+=shift;
+    }else if(card_x<3||card_x+46>317)card_x=direction>0?column.x+columns*(column.w+1):column.x-(columns-1)*(column.w+1)-47;
     card_x=mx(3,mn(271,card_x));
     const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*63-1);
     int card_top=details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);

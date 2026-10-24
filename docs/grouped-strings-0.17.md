@@ -81,7 +81,38 @@ readers, the 16,383-byte maximum, exact aliases, busy Save leases, failure/reope
 malformed bounds and NUL, and borrowed small/maximum string pointers after eleven
 512 KiB image-group loads evict their original group. Its actual-pack mode
 compares every indexed string and then reuses 128 strings for 64 warm frames
-without new provider reads. Short Clang syntax passes. Production conversion,
-full native/ARM acceptance and measured final installation margins require the
-parent's frozen checkpoint; the earlier 707,710/712,356-byte locale savings were
-planning measurements, not a production receipt.
+without new provider reads.
+
+## Executed production and runtime checks
+
+Production conversion used remotely saved checkpoint
+`4e51f970133a3fa9625c76eceb1838a851dc86c8`, after appending the original card
+resource overlay. Both locales use 42 groups and retain their literal language
+marker. These are measured converter results, before the subsequent TGR2 pass:
+
+| Locale | Input bytes | Output bytes | String saving |
+| --- | ---: | ---: | ---: |
+| English | 91,313,773 | 90,606,342 | 707,431 |
+| Chinese | 94,312,354 | 93,601,654 | 710,700 |
+
+The converter compared all 8,704 indexed strings in each locale and preserved
+the complete glyph, art and animation payloads. Exact receipts are retained
+with the private build journal; superseded intermediate packs were retired only
+after checking their hashes against a verified exact successor.
+
+The frozen native UI build
+`474e592f112ab64b9116f80e5aa20cba4a9231c7` subsequently ran the complete native
+string regression against the original v32 and final v33 packs. Each locale
+passed 26,133 checks, including all 8,704 strings through direct and ranged
+readers, maximum-length text, aliases, malformed inputs, busy Save leases and
+pointer stability after compressed-group eviction. Reusing 128 strings for
+64 warm frames caused zero additional provider reads. Opening read 1,049,110
+bytes for English and 1,498,918 for Chinese, including the existing metadata
+directory; no compressed string was needed for the language probe.
+
+After the independent TGR2 pass and 24 missing original Chinese hover-title
+glyphs were appended, exact bilingual splitting produced 84,719,566 common
+bytes, 2,153,050 English bytes and 5,149,970 Chinese bytes. Their combined
+92,022,586 bytes exclude the launcher and user profiles. Device installation
+headroom must therefore be assessed using the final launcher and profile-growth
+budget, not just whether the resource files fit.

@@ -83,7 +83,35 @@ idempotence, obsolete-tail reclamation, previous formats, bilingual exact split
 reconstruction, altered keys/geometry/art/text, malformed descriptors and
 headers, stream corruption and trailing bytes. Its independent parser directly
 decompresses the RGR1 stream and reconstructs each alpha plane. Eight synthetic
-tests pass, alongside the three preexisting split regressions. Production-pack
-size reductions, native/ARM runtime behavior and installation fit require the
-parent's frozen-tool conversion and runtime acceptance; no size estimate is
-reported as a measured result here.
+tests pass, alongside the three preexisting split regressions.
+
+## Executed production results
+
+The remotely saved tool checkpoint
+`73a18dfb2a30592cb9c42ec72f3f3260d09205c4` converted both private production
+locales with 32 KiB groups. English fell from 91,390,491 to 91,313,435 bytes
+(77,056 saved, eight groups); Chinese fell from 96,039,596 to 94,312,016 bytes
+(1,727,580 saved, 136 groups). All 3,073 English and 31,162 Chinese original
+glyph keys, metrics, raw/RLE bytes and expanded alpha planes compared exactly,
+as did every indexed string and the complete art section.
+
+A single measured Chinese 64 KiB comparison saved only 28,788 additional bytes.
+The production choice remains 32 KiB to retain the smaller cold decode unit.
+The comparison's hash, byte count and verification receipt are retained; its
+reconstructable large output was retired after verification.
+
+The subsequent v33 string and tile passes preserve these font groups. The
+append-only tooltip tool now accepts versions 31–33 and moves the complete
+existing tail together, preserving all compressed streams and signed relative
+descriptors. Its final Chinese pass adds exactly 24 source-font face-5/5px
+glyphs for settings, map tools and game-over badge headings: 1,608 bytes total,
+without changing any old glyph, text, image or animation. Separate synthetic
+fixtures cover raw payloads, grouped fonts, grouped strings, TGR2, old glyph
+alpha, original encoded streams and idempotent repeated insertion.
+
+Final v33 actual font regressions passed in both languages. The same measured
+font frame used 31 English and 66 Chinese cold provider calls, down from the
+earlier 43 and 169; 64 warm frames add zero reads. The final five character
+screens in both languages compare pixel-for-pixel with the earlier v31
+captures. These desktop reader and pixel results do not substitute for the
+parent's separate final ARM memory and device installation acceptance.

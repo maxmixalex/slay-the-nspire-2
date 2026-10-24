@@ -107,3 +107,16 @@ drag/input suppression, save purity and separate Panache instances. At this
 point the candidate has passed short syntax checks; matching frozen execution
 and bilingual captures are still required before calling this follow-up
 accepted.
+
+The final Power visual review also checked the original
+`NHoverTipSet.CorrectHorizontalOverflow` branches. A card preview that initially
+lands beyond the creature's opposite screen edge now moves adjacent to the
+actual text container; unused available columns no longer create a large gap.
+This correction is limited to creature Power tips and covers both screen edges.
+The two-Panache regression uses the actual Power command to register aggregate
+amount and post-play listeners. Newly required Power icons explicitly finish
+the bounded combat preparation phase before pointer hit checks, with the
+canonical save and animation clock unchanged. A diagnostic run against the
+frozen UI runtime passed 635,828 checks in each language before the final
+Power-only horizontal-position correction; the final checkpoint rerun remains
+the acceptance gate for that correction.

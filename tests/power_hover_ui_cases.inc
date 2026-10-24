@@ -1,7 +1,14 @@
+// A new power icon can invalidate the already prepared battle resource set.
+// Finish that explicit preparation phase before querying the normal hit list.
+static void prepare_power_hover_scene(){
+    snapshot();a.reset_presentation();const unsigned animation=a.animation;a.render();unsigned steps=0;
+    while(a.combat_preparation.active&&steps++<1024){a.advance(33);a.render();CHECK(a.animation==animation);}
+    CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged();
+}
 static void power_hover_catalog_and_input(){
     setup();a.game.pain=2;a.game.infinite_blades=1;a.game.enemies[0].weak=2;
     power_order_set(a.game,0,7,true);power_order_set(a.game,0,14,true);power_order_set(a.game,1,4,true);
-    a.reset_presentation();a.render();snapshot();
+    prepare_power_hover_scene();
     auto collect=[&](uint16_t token){HoverTipList list{};collect_power_hover_tips(a,token,list);CHECK(!list.overflow);return list;};
     auto list=collect(power_token(0,14));CHECK(list.count==2&&list.items[0].smart&&list.items[0].instanced);
     CHECK(list.items[1].kind==HoverTipKind::Card&&list.items[1].card.kind==Shiv);
@@ -18,6 +25,16 @@ static void power_hover_catalog_and_input(){
         CHECK(owner.owner.x==pose.body_left&&owner.owner.y==pose.body_top&&owner.owner.w==pose.body_width&&owner.owner.h==pose.body_height);
         CHECK(owner.power_left==(pose.x>=160));list=collect(token);
         const auto pages=card_hover_page(a,owner,list);CHECK(pages.count&&pages.pages>0);
+        if(!actor){
+            CHECK(pages.count==2);const auto&text=pages.pieces[0].box;const auto&card=pages.pieces[1].box;
+            if(owner.owner.x<50)CHECK(card.x==owner.owner.x+owner.owner.w+1&&text.x==card.x+card.w+1);
+            // Mirror the real owner to the right screen edge. The source's
+            // overflow correction moves text left and keeps the card adjacent.
+            CardHoverTarget right=owner;right.owner={285,owner.owner.y,32,owner.owner.h};right.power_left=true;
+            const auto mirrored=card_hover_page(a,right,list);CHECK(mirrored.count==2);
+            const auto&text_right=mirrored.pieces[0].box;const auto&card_right=mirrored.pieces[1].box;
+            CHECK(text_right.x+text_right.w+1==card_right.x&&card_right.x+card_right.w<=317);
+        }
         int visited[MaxCardHoverTips]{};
         for(int n=0;n<pages.pages;++n){const auto page=card_hover_page(a,owner,list,n);
             for(unsigned i=0;i<page.count;++i){const auto&p=page.pieces[i];const auto&r=p.box;
@@ -42,7 +59,7 @@ static void power_hover_catalog_and_input(){
     queue_extension(a.game,XOp::Power,int(XPower::Panache),20);resolve_pending(a.game);
     a.game.expansion.panache_count[0]=1;a.game.expansion.panache_count[1]=3;CHECK(validate(a.game));
     const unsigned id=18+unsigned(XPower::Panache);power_order_set(a.game,0,id,true,0);power_order_set(a.game,0,id,true,1);
-    a.reset_presentation();a.render();snapshot();uint32_t identities[2]{};std::string descriptions[2];
+    prepare_power_hover_scene();uint32_t identities[2]{};std::string descriptions[2];
     for(unsigned slot=0;slot<2;++slot){const auto token=power_token(0,id,slot);const auto region=hit(HitKind::PowerInstance,token);
         a.pointer_move(region.x+region.w/2,region.y+region.h/2);a.render();CardHoverTarget owner{};
         CHECK(power_hover_target(a,owner)&&owner.power==token);identities[slot]=owner.identity;list=collect(token);

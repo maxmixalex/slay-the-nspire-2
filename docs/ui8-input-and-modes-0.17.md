@@ -199,3 +199,42 @@ checks each original portrait hit and the Start hit, and confirms pointer
 selection leaves the run's serialized State unchanged. App and both test
 translation units pass short Clang syntax; the parent's frozen Stage 8a build
 and two-language screenshots remain the actual acceptance gate.
+
+## Completed Stage 8c acceptance and history associations
+
+The character gate above was subsequently executed against both final v33
+locale packs using frozen native source
+`474e592f112ab64b9116f80e5aa20cba4a9231c7`. Both five-character regressions
+passed 9,041 checks. The actual English font regression passed 152,614 checks;
+Chinese passed 151,852. Every description line and its source font bands are
+checked. All ten settled character screenshots also compare byte-for-byte
+with the previously reviewed v31 frames, so the resource compression preserves
+these rendered screens exactly. The English Defect's four-line minimum child
+height correctly grows the VBox allocation rather than centering with a
+negative spare height; the background rectangle remains authored separately.
+
+History relics now use the same complete tooltip set as the source
+`NRelicBasicHolder.OnFocus` (`Model.HoverTips` and `SetAlignmentForRelic`).
+The ordinary source-sized primary tooltip, associated mechanic descriptions
+and actual card previews share the existing 69-pixel columns and paging. Mouse
+and keyboard focus both reach the stack. The existing `UiRunHistory` contains
+relic IDs, so historical hover uses canonical model text and static associations.
+It does not take an unrelated current run's Archaic Tooth, Dusty Tome, Touch of
+Orobas or Pael's Tooth prepared/stored card facts as historical evidence.
+No State, App buffer or history schema was added, and viewing history does not
+add new discovery records.
+
+Both actual locale history regressions passed with full page scrolling,
+grouped-card inspection, drag behavior and unchanged serialized gameplay.
+They also check Ninja Scroll's Shiv/Exhaust association and prove that preparing
+a current Dusty Tome changes its live preview but does not change a historical
+description or add an unrecorded historical card. The two rendered relic stacks
+were visually inspected. Screenshot pixel-write assertions are not treated as
+separate gameplay coverage.
+
+The final actual per-floor journal regressions passed 8,445 checks per locale,
+including true reward/purchase observers, retained terminal reward sets,
+owner reuse, NSH1–6 unknown-data migration, late malformed-tail publication,
+long-hover scrolling and gameplay purity. The maximum fixture uses 287,075 of
+524,288 encoded bytes. The three-profile regression also passed independent
+runs/progress, confirmation, failed profile switches and active-profile deletion.

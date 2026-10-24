@@ -4,6 +4,17 @@
 
 ### Integrated corrections before final acceptance
 
+The actual bilingual power-hover review found a visible association gap: the
+fallback placed Shiv at the end of all potentially available columns instead
+of beside the actual text. The power owner now follows the source horizontal
+overflow container reorder, with adjacent card/text and explicit checks for
+both screen edges. New power scenes wait only for their explicit resource
+preparation, preserving clock and State; they do not wait for arbitrary absent
+hits. The existing actor/card motion and other tooltip owners are unchanged.
+All final resources have passed ordinary USB sidecar transfer/readback in the
+disposable Firebird OS clone; the final launcher and continued-session flow
+still require this corrected runtime's build and acceptance.
+
 UI runtime checkpoint `474e592f112ab64b9116f80e5aa20cba4a9231c7` builds ARM
 (1,350,570-byte launcher, 16,637,148-byte allocation) and WASM (6,514,615 bytes).
 The unchanged 16MiB ARM gate retains 140,068 bytes of headroom. The linked ARM
