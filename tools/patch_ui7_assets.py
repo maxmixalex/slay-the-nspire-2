@@ -198,13 +198,14 @@ def grow_string_directory(data, count, auxiliary, clips, version):
     return bytes(out)
 
 
-def append_glyphs(data, auxiliary, clips, glyphs, *, version):
+def append_glyphs(data, auxiliary, clips, glyphs, *, version, profile=None):
     """Grow the sorted glyph directory, preserving every old payload byte.
 
     This small relocation does not resample old glyphs or move text indices.
     New glyph bytes follow the locale suffix; common art stays byte-identical.
     """
-    source = tiles.PackView(data, auxiliary, versions=(version,), profile=(558, 8704, clips, auxiliary))
+    if profile is None: profile = (558, 8704, clips, auxiliary)
+    source = tiles.PackView(data, auxiliary, versions=(version,), profile=profile)
     old_tiles = tiles.TileReader(source)
     ni, ng, ns, nc, nk, _nu = source.counts
     known = {(r[0], r[2]) for r in source.glyphs}
@@ -217,7 +218,7 @@ def append_glyphs(data, auxiliary, clips, glyphs, *, version):
     out.extend(data[source.string_at:])
     rows = [(cp, off+delta, px, w, h, advance, encoded) for cp, off, px, w, h, advance, encoded in source.glyphs]
     for cp, px, w, h, advance, encoded, raw in added:
-        tiles.require(0 < w <= 40 and 0 < h <= 40 and len(raw) == (encoded or w*h), 'Invalid added glyph')
+        tiles.require(0 < w <= 40 and 0 < h <= 40 and 0 <= encoded < 0x8000 and len(raw) == (encoded or w*h), 'Invalid added glyph')
         rows.append((cp, len(out), px, w, h, advance, encoded));out.extend(raw)
     rows.sort(key=lambda r: (r[2], r[0]))
     for i, row in enumerate(rows): tiles.GLYPH.pack_into(out, source.glyph_at+i*16, *row)
@@ -234,7 +235,7 @@ def append_glyphs(data, auxiliary, clips, glyphs, *, version):
         at = old_tiles.descriptors+i*16;global_at, group, offset, length = tiles.DESCRIPTOR.unpack_from(data, at)
         tiles.DESCRIPTOR.pack_into(out, at+delta, global_at+delta, group, offset, length)
     tiles.HEADER.pack_into(out, 0, b'NSP2', version, tiles.REFERENCE, len(out), ni, len(rows), ns, nc, nk, 0)
-    target = tiles.PackView(out, auxiliary, versions=(version,), profile=(558, 8704, clips, auxiliary))
+    target = tiles.PackView(out, auxiliary, versions=(version,), profile=profile)
     tiles.TileReader(target)
     tiles.require(target.clips == source.clips and target.cards == source.cards and target.aux == source.aux, 'Glyph insertion changed model indices')
     old_end = len(data)+delta

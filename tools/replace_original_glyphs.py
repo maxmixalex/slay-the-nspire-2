@@ -215,6 +215,17 @@ HISTORY_SMALL_BOLD_KEYS = frozenset(('run_history.MAP_POINT_HISTORY.header',
 CONTROL_SMALL_BOLD_KEYS = frozenset(('gameplay_ui.PROCEED_BUTTON',
     'gameplay_ui.CHOOSE_CARD_SKIP_BUTTON', 'gameplay_ui.SKIP_REWARDS_BUTTON',
     'gameplay_ui.TREASURE_BANNER'))
+SETTINGS_HOVER_TITLE_KEYS = frozenset('settings_ui.'+key for key in (
+    'SCREENSHAKE_HEADER','FASTMODE','PHOBIA_MODE','SHOW_RUN_TIMER_HEADER',
+    'SHOW_HAND_CARD_COUNT_HEADER','TEXT_EFFECTS','KEYBOARD_ONLY_MODE_HEADER'))
+
+
+def source_text(source, ordinal):
+    """Native strings may be literal or an NSP2/33 retained-group slice."""
+    if hasattr(source, 'string_payload'):
+        return source.string_payload(ordinal)[:-1].decode('utf-8')
+    offset, length = source.strings[ordinal]
+    return bytes(source.block(offset, length)).decode('utf-8')
 
 
 def scene_label_alphabet(source, index_name, keys):
@@ -225,8 +236,7 @@ def scene_label_alphabet(source, index_name, keys):
         if key not in keys: continue
         ordinal = int(ordinal)
         if ordinal >= len(source.strings): continue
-        offset, length = source.strings[ordinal]
-        if length: result.update(visible_alphabet(bytes(source.block(offset, length)).decode('utf-8')))
+        result.update(visible_alphabet(source_text(source, ordinal)))
     return result
 
 
@@ -245,17 +255,22 @@ def tooltip_small_bold_alphabet(source):
     for name in ('world_text_index.inc','native_ui_text_index.inc','ui7_text_index.inc','locale_text_index.inc'):
         for key,ordinal in re.findall(r'\{"([^\"]+)",(\d+)\}',(indices/name).read_text()):
             if not (re.fullmatch(r'(card_keywords|static_hover_tips|powers|orbs|enchantments|afflictions|relics|potions)\..*\.title',key) or
+                    re.fullmatch(r'map\.(LEGEND_.*\.hoverTip\.title|CLEAR_DRAWING\.title|(?:DRAWING|ERASING)_BUTTON\.title_(?:mkb|controller))',key) or
+                    key.startswith('game_over_screen.DISCOVERY_HEADER_') or key in SETTINGS_HOVER_TITLE_KEYS or
                     key in ('main_menu_ui.COMPENDIUM_RELIC_COLLECTION.unknown.title','main_menu_ui.POTION_LAB_COLLECTION.unknown.title')):
                 continue
             ordinal=int(ordinal)
             if ordinal>=len(source.strings):continue
-            offset,length=source.strings[ordinal]
-            result.update(visible_alphabet(bytes(source.block(offset,length)).decode('utf-8')))
+            result.update(visible_alphabet(source_text(source,ordinal)))
     for row in getattr(source,'cards',()):
         ordinal=row[1]
         if ordinal<len(source.strings):
-            offset,length=source.strings[ordinal]
-            result.update(visible_alphabet(bytes(source.block(offset,length)).decode('utf-8')))
+            result.update(visible_alphabet(source_text(source,ordinal)))
+    # Badge title and body share a slot; only the first line selects bold.
+    from game_over_ui8_assets import TEXTS
+    for ordinal,key in TEXTS:
+        if key.startswith('game_over_badge.') and ordinal<len(source.strings):
+            result.update(visible_alphabet(source_text(source,ordinal).split('\n',1)[0]))
     return result
 
 

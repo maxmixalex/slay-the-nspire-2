@@ -89,10 +89,21 @@ static void malformed(){
 static Bytes read_file(const char*path){FILE*f=std::fopen(path,"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0);CHECK(!std::fseek(f,0,SEEK_SET));Bytes result(size);CHECK(std::fread(result.data(),1,result.size(),f)==result.size());CHECK(!std::fclose(f));return result;}
 static void actual(const char*before_path,const char*after_path){
     Bytes before=read_file(before_path),after=read_file(after_path);auto original=std::make_unique<Content>(),candidate=std::make_unique<Content>();CHECK(original->open(before.data(),before.size()));CHECK(candidate->open(after.data(),after.size()));CHECK(candidate->version()>=GroupedGlyphContentVersion);
-    const unsigned count=word(before,20);CHECK(count==word(after,20));const unsigned rows=40+word(before,16)*16,after_rows=40+word(after,16)*16;unsigned skipped=0;
+    const unsigned count=word(before,20),new_count=word(after,20);CHECK(count<=new_count);const unsigned rows=40+word(before,16)*16,after_rows=40+word(after,16)*16;unsigned skipped=0,cursor=0,added=0;
+    const auto key=[](const Bytes&data,unsigned at){return (uint32_t(unsigned(data[at+8])|(unsigned(data[at+9])<<8))<<24)|word(data,at);};
+    const auto extra=[&](unsigned at){
+        const unsigned cp=word(after,at),packed=unsigned(after[at+8])|(unsigned(after[at+9])<<8),size=packed&31,face=((packed>>6)&3u)|((packed>>3)&4u);
+        const Glyph g=candidate->glyph(cp,size,face),m=candidate->glyph_metrics(cp,size,face);++added;
+        CHECK(g.pixels&&g.w==after[at+10]&&g.h==after[at+11]&&g.advance==(unsigned(after[at+12])|(unsigned(after[at+13])<<8)));
+        CHECK(g.encoded_size==((unsigned(after[at+14])|(unsigned(after[at+15])<<8))&~GroupedGlyphFlag));
+        CHECK(!m.pixels&&m.w==g.w&&m.h==g.h&&m.advance==g.advance&&m.encoded_size==g.encoded_size);
+        if(g.encoded_size){unsigned pixels=0;for(unsigned j=0;j<g.encoded_size;j+=2)pixels+=g.pixels[j];CHECK(pixels==unsigned(g.w)*g.h);}
+        CHECK(candidate->healthy());
+    };
     for(unsigned i=0;i<count;++i){const unsigned at=rows+i*16,cp=word(before,at),packed=unsigned(before[at+8])|(unsigned(before[at+9])<<8),size=packed&31,style=((packed>>6)&3u)|((packed>>3)&4u);
-        const unsigned candidate_row=after_rows+i*16;CHECK(cp==word(after,candidate_row));CHECK(!std::memcmp(before.data()+at+8,after.data()+candidate_row+8,6));
-        CHECK((unsigned(before[at+14])|(unsigned(before[at+15])<<8))==((unsigned(after[candidate_row+14])|(unsigned(after[candidate_row+15])<<8))&~GroupedGlyphFlag));
+        while(cursor<new_count&&key(after,after_rows+cursor*16)<key(before,at))extra(after_rows+cursor++*16);
+        CHECK(cursor<new_count);const unsigned candidate_row=after_rows+cursor++*16;CHECK(key(before,at)==key(after,candidate_row));CHECK(!std::memcmp(before.data()+at+8,after.data()+candidate_row+8,6));
+        CHECK(((unsigned(before[at+14])|(unsigned(before[at+15])<<8))&~GroupedGlyphFlag)==((unsigned(after[candidate_row+14])|(unsigned(after[candidate_row+15])<<8))&~GroupedGlyphFlag));
         if(text_format_control(cp)||inline_icon(cp)){++skipped;continue;}
         const Glyph a=original->glyph(cp,size,style),b=candidate->glyph(cp,size,style),metric=candidate->glyph_metrics(cp,size,style);
         if(!(a.pixels&&b.pixels&&a.w==b.w&&a.h==b.h&&a.advance==b.advance&&a.encoded_size==b.encoded_size))
@@ -101,6 +112,8 @@ static void actual(const char*before_path,const char*after_path){
         CHECK(a.w==before[at+10]&&a.h==before[at+11]&&a.advance==(unsigned(before[at+12])|(unsigned(before[at+13])<<8)));
         CHECK(!metric.pixels&&metric.w==a.w&&metric.h==a.h&&metric.advance==a.advance&&metric.encoded_size==a.encoded_size);const unsigned length=a.encoded_size?a.encoded_size:unsigned(a.w)*a.h;CHECK(!std::memcmp(a.pixels,b.pixels,length));CHECK(original->healthy()&&candidate->healthy());
     }
-    std::printf("actual glyph rows: %u, structural inline/control entries: %u; exact raw/RLE bytes and metrics\n",count,skipped);
+    while(cursor<new_count)extra(after_rows+cursor++*16);
+    CHECK(added==new_count-count);
+    std::printf("actual original glyph rows: %u, structural inline/control entries: %u; exact raw/RLE bytes and metrics; added keys individually checked: %u\n",count,skipped,added);
 }
 int main(int argc,char**argv){CHECK(argc==1||argc==3);exact_and_lease();lifetime();malformed();optional_auxiliary();if(argc==3)actual(argv[1],argv[2]);std::printf("grouped glyph: %u checks; old/new, direct/ranged, aliases, raw/RLE, lease, image eviction and bad bounds passed\n",checks);}
