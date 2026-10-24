@@ -189,6 +189,15 @@ Private journals under `ui6-debug-stage6-journal` are build `dc5afcebf7d5`,
 three-case CTest `7f2205b6abe6`, and actual debug UI ENG/ZHS
 `9eb2691ed702`/`1ce0b448199d`; all reported unchanged checkpoint source.
 
+Stage 7 `16507a5aaf12ccb344be0347408707f9e1c6dd92` corrects the debug menu's
+platform capability: Ndless exposes its presets and enumerations without a
+nonfunctional text editor, while browser/Linux retain free typing. Both
+capabilities passed independent Clang 18 builds and actual English/Chinese
+debug-UI flows; capability 1 also passed the three debug/preferences CTest
+cases, and capability 0 passed its menu-interaction CTest. Combat code is
+unchanged. The detailed receipts and scope are in
+`docs/debug-commands-0.17.md`; this does not replace the stage 5 combat gate.
+
 ### Earlier checkpoint failures
 
 Short Clang 18 syntax checks of the production `app.cpp`, card-motion,

@@ -1,5 +1,29 @@
 # Work state — 2026-10-24
 
+## UI6 stage 8: remove the remaining signed rotation overflow
+
+The full stage-6 ASan/UBSan run passed 76/77 suites and exposed a real
+remaining signed overflow in the settings icon's continuous rotation:
+`6200 * 360000` exceeded int32 before division. Release optimization had
+hidden this in the existing angle expectation. This checkpoint keeps the
+same expected 355244 millidegrees, uses the bounded unsigned product, clamps
+held-button elapsed time before multiplication and reduces full turns before
+converting angle to the sine phase. No 64-bit division helper or extra cache
+is introduced. Tests retain the original expectation and add period endpoints
+and a 600000-ms hold. The failed sanitizer journal remains failed.
+
+Stage 7 (`16507a5aaf12ccb344be0347408707f9e1c6dd92`) passed both developer
+input capabilities with the actual English/Chinese resources, plus all
+143+54 Python tests. Its ordinary ARM/WASM/native library were byte-identical
+to stage 6, so its ordinary acceptance correctly inherited that binary's
+results. Stage 8 changes the HUD arithmetic and therefore needs new portable
+artifacts and affected native, sanitizer and backend verification; no stage-7
+identity claim is reused for the changed binaries.
+
+Next: freeze this arithmetic correction, execute its sanitizer and backend
+checks, compare UI5/UI6 cold and warm rendering in a quiet serial window,
+finish the ordinary calculator debug route and deliver the matched final files.
+
 ## UI6 stage 7: match developer input to the calculator's actual controls
 
 Stage 6 is preserved at `a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea`, tree

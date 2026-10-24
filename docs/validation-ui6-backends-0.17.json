@@ -492,5 +492,36 @@
     "The backend runner uses a memory save adapter; it does not validate browser DOM or persistent localStorage.",
     "Full-pack callbacks do not validate split-resource startup; resource split reconstruction has a separate exact-byte receipt.",
     "No host frame pacing, emulator speed or physical-calculator performance is inferred from these functional replays."
-  ]
+  ],
+  "final_ordinary_binary_inheritance": {
+    "method": "The final ordinary ARM launcher, WASM module, and native core library were independently rebuilt at stage 7 and compared byte for byte with the stage-6 artifacts. The stage-6 matrix therefore exercises the exact final ordinary binaries; the 64 language-scenarios were not represented as rerun at stage 7.",
+    "final_checkpoint": "16507a5aaf12ccb344be0347408707f9e1c6dd92",
+    "executed_checkpoint": "a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea",
+    "proof_sha256": "18550595a617961fe68145cd165f082a7ec9faa216b7b8801d2df77edbd914a4",
+    "comparisons": [
+      {
+        "artifact": "ordinary_arm",
+        "bytes": 1045926,
+        "baseline_sha256": "b351b824171584c8d65f2bfb5bc5023e8e70739b4b6d7e81cb9f5ed38ddd6f15",
+        "final_sha256": "b351b824171584c8d65f2bfb5bc5023e8e70739b4b6d7e81cb9f5ed38ddd6f15",
+        "byte_identical": true
+      },
+      {
+        "artifact": "ordinary_wasm",
+        "bytes": 5602028,
+        "baseline_sha256": "ae10bf0f2d0b880109dac71e412171ee602e17781dda2cc49433300898b8c371",
+        "final_sha256": "ae10bf0f2d0b880109dac71e412171ee602e17781dda2cc49433300898b8c371",
+        "byte_identical": true
+      },
+      {
+        "artifact": "ordinary_native_core",
+        "bytes": 4429392,
+        "baseline_sha256": "203c473a1437e8042bd5be8e2850d67ea1a34104d2c6978572bcb52fd7640a16",
+        "final_sha256": "203c473a1437e8042bd5be8e2850d67ea1a34104d2c6978572bcb52fd7640a16",
+        "byte_identical": true
+      }
+    ],
+    "private_proof": "private-inputs/ui6-final-ordinary-identity.json",
+    "debug_build_covered_by_this_inheritance": false
+  }
 }

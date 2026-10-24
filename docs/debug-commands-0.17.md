@@ -35,8 +35,8 @@ text syntax; it does not imply calculator free-text support.
 
 `SPIRE_DEBUG_TEXT_INPUT` defaults to 1. The Ndless builder explicitly sets it to
 0; it only controls editor input, its hit region and the platform hint. A native
-menu-only regression build uses `-DSPIRE_DEBUG_COMMANDS=ON
--DSPIRE_DEBUG_TEXT_INPUT=OFF`. The ordinary debug-disabled build has no menu or
+menu-only regression build uses `-DSPIRE_DEBUG_COMMANDS=ON` and
+`-DSPIRE_DEBUG_TEXT_INPUT=OFF`. The ordinary debug-disabled build has no menu or
 mutation code regardless of this capability.
 
 ## Commands
@@ -95,3 +95,29 @@ The commands are developer facilities, not claims about original-game console
 syntax. Normal gameplay and the historical save codecs are unchanged by the
 default-off build option. UI adaptation and original-game parity remain separate
 from test-fixture mutations.
+
+## Input-capability verification
+
+Frozen checkpoint `16507a5aaf12ccb344be0347408707f9e1c6dd92` was built with
+Clang 18 Release in two independent native directories. Both enable debug
+commands; their compiler flags explicitly select text capability 1 or 0.
+
+| Capability | Executed checks | Result |
+| --- | --- | --- |
+| 1, browser/Linux editor | Preferences, core debug and debug UI CTest cases; actual ENG/ZHS debug UI including typed room commands | Three CTest cases and both actual-language runs passed |
+| 0, calculator menu | Debug UI CTest; actual ENG/ZHS runs rejecting I editing, command-line editing hits and text mutations while retaining left/right enumeration, up/down selection and Enter room execution | CTest and both actual-language runs passed |
+
+The menu-only English and Chinese footer captures were inspected. The text
+capability's six captured menu/room images remain byte-identical to stage 6.
+The new menu hint is the only new inline locale row and is compiled only when
+debug commands are enabled. All 935 legacy indexes remain byte-identical.
+Ordinary `app`, `content`, `core` and `run` preprocessed translation units also
+remain byte-identical to stage 6; this check is separate from portable binary
+comparison and emulator acceptance.
+
+Private journals are under `ui6-debug-stage7-journal`: text build
+`094d485dd8ed`, text CTest `7aee44eabf70`, menu build `8a5485ea8a02`, menu
+CTest `4ac1efcdabf6`, actual text ENG/ZHS `f8d113758d42`/`1b7ebea8a88a`, and
+actual menu ENG/ZHS `30b589b72541`/`462f7aec4e41`. All completed commands
+reported unchanged checkpoint source. The actual-run logs identify their
+input mode as `text input passed` or `menu-only input passed`.

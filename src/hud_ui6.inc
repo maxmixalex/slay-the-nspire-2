@@ -6,6 +6,11 @@ static int top_bar_scaled(int value,int q){
     const int64_t product=int64_t(value)*q;
     return int((product+(product<0?4095:0))>>12);
 }
+static int top_bar_phase(int angle){
+    // Trigonometry is periodic. Reduce whole turns before the Q12 product
+    // so even a repeatedly interrupted press cannot overflow this conversion.
+    return (angle%360000)*4096/360000;
+}
 struct TopBarMotion {
     const Content*owner=nullptr;uint32_t generation=0,start=0;
     int from_angle=0,from_scale=4096;uint8_t state=0;
@@ -21,7 +26,7 @@ struct TopBarMotion {
             if(elapsed<500){const int u=int(elapsed*4096/500)-4096;q=4096+(u*u/4096)*((11066*u/4096)+6970)/4096;}
             const int to=kind==2?-180000:-12000;angle=from_angle+top_bar_scaled(to-from_angle,q);
         }else if(state==2){
-            scale=4506;const int inverse=4096-mn(4096,int(elapsed)*4096/250),q=4096-(inverse*inverse/4096)*inverse/4096;
+            scale=4506;const int inverse=elapsed>=250?0:4096-int(elapsed)*4096/250,q=4096-(inverse*inverse/4096)*inverse/4096;
             angle=from_angle+top_bar_scaled(kind==2?45000:24000,q);
         }else{
             const int q=elapsed>=1000?4096:int(health_bar::expo_out(elapsed));
@@ -31,7 +36,9 @@ struct TopBarMotion {
         }
         if(opened&&state==0)scale=4096;
         if(opened&&state!=2&&kind==1)angle=CombatCardMotion::sine(int((a.map_clock_ms%6283)*4096/1571))*6875/1024;
-        if(opened&&state!=2&&kind==2)angle=int(a.map_clock_ms%6283)*360000/6283;
+        // The maximum product is 6282*360000 = 2,261,520,000: it fits
+        // uint32_t, but not int32_t. The divided angle is below 360000.
+        if(opened&&state!=2&&kind==2)angle=int((a.map_clock_ms%6283u)*360000u/6283u);
     }
 };
 static TopBarMotion top_bar_motions[3];
@@ -46,7 +53,7 @@ static void hud_navigation(Canvas&c,int index,int asset,int cx,int hit_x,int hit
     auto&a=c.a;const bool hover=enabled&&hud_pointer_inside(a,hit_x,hit_width);
     const bool press=hover&&a.pointer.held&&a.pointer.captured.kind==HitKind::Command&&a.pointer.captured.value==int(key);
     auto&motion=top_bar_motions[index];motion.observe(a,press?2:hover?1:0,opened,unsigned(index));
-    const int size=18*motion.scale/4096,phase=motion.angle*4096/360000;
+    const int size=18*motion.scale/4096,phase=top_bar_phase(motion.angle);
     Canvas layer=c;if(!enabled)layer.opacity=150;else if(press)layer.brightness=128;
     ui_picture_transform(layer,a.content.ui_image(asset),cx,11,size,size,CombatCardMotion::sine(phase),CombatCardMotion::sine(phase+1024));
     c.hit(hit_x,0,hit_width,22,HitKind::Command,int(key),enabled);

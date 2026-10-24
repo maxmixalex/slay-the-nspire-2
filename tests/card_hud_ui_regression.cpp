@@ -234,7 +234,7 @@ static void top_bar_large_rotation(){
     const uint32_t clock=app.map_clock_ms;
     TopBarMotion motion{};app.map_clock_ms=6200;
     motion.observe(app,0,true,2);const int from=motion.angle;
-    CHECK(from>350000&&from<360000);
+    CHECK(from>350000&&from<360000);CHECK(from==355244);
     motion.observe(app,1,false,2);CHECK(motion.angle==from);
     // BackOut overshoots -180 degrees before returning to it. This span
     // exercises a product beyond signed 32-bit range at a real open angle.
@@ -247,6 +247,12 @@ static void top_bar_large_rotation(){
     app.map_clock_ms=7800;motion.observe(app,0,false,2);CHECK(motion.angle==0&&motion.scale==4096);
     CHECK(top_bar_scaled(-540000,4096)==-540000);
     CHECK(top_bar_scaled(540000,4506)==594052&&top_bar_scaled(-540000,4506)==-594052);
+    TopBarMotion rotation{};app.map_clock_ms=6282;rotation.observe(app,0,true,2);CHECK(rotation.angle==359942);
+    app.map_clock_ms=6283;rotation.observe(app,0,true,2);CHECK(rotation.angle==0);
+    TopBarMotion held{};app.map_clock_ms=0;held.observe(app,2,false,2);CHECK(held.angle==0);
+    app.map_clock_ms=250;held.observe(app,2,false,2);CHECK(held.angle==45000);
+    app.map_clock_ms=600000;held.observe(app,2,false,2);CHECK(held.angle==45000&&held.scale==4506);
+    CHECK(top_bar_phase(765000)==512&&top_bar_phase(-765000)==-512);
     app.map_clock_ms=clock;
 }
 static void top_bar_session_lifecycle(const Bytes&data){
