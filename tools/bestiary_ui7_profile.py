@@ -127,7 +127,7 @@ def build(reference, pck):
         all_moves.append(dict(label='monsters.DECIMILLIPEDE_SEGMENT.moves.'+key+'.title', node=node, clip=clip))
     return dict(schema=1, reference='v0.111.0 / 41cef1ea',
         sources=['NBestiary.CreateEntries/AddAct/AddEvents', 'MonsterModel.GenerateBestiaryMoveList', 'NBestiaryEntry._Ready', 'NBestiaryLayoutKaiserCrab.Setup', 'NBestiaryLayoutDecimillipede.Setup'],
-        notes=['Model ids are EnemyId values, never battle slots.', 'Runtime sorts names using the selected private locale.', 'Disabled unknown entries and hidden Epithet remain hidden/disabled.', 'Moves expose real animator clips; command-specific VFX are separately scoped.'],
+        notes=['Model ids are EnemyId values, never battle slots.', 'Precomputed locale order follows NGame invariant culture and the NBestiary comparer.', 'Disabled unknown entries and hidden Epithet remain hidden/disabled.', 'Moves expose real animator clips; command-specific VFX are separately scoped.'],
         entries=entries, models=model_rows, decimillipede=dict(first=first, count=3), moves=all_moves)
 
 

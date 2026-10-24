@@ -18,7 +18,7 @@ struct UiCoreObserver {
  explicit UiCoreObserver(App&a):app(a),previous(set_core_observer({&a,receive,receive_animation,receive_effect,before_effect,receive_damage,receive_power_flash,receive_deck_removing,receive_enemy_spawned})),was_combat(combat_phase(a.game.phase)),
   room_seed(a.game.world.run_seed),window_generation(a.map_window_generation),room_act(a.game.world.act_index),room_point(a.game.world.current_point),room_open(a.game.world.room_open),acquisition(a.reward_acquisition_snapshot()){app.sync_combat_feedback();app.sync_enemy_feedback();}
  ~UiCoreObserver(){
-  set_core_observer(previous);app.finish_combat_feedback();app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();
+  set_core_observer(previous);app.finish_combat_feedback();app.sync_combat_feedback();app.sync_enemy_feedback();app.sync_turn_banner();app.sync_treasure_presentation();app.sync_camp_presentation();
   app.finish_reward_acquisition(acquisition);
   if(app.game.enemy_world.active&&combat_phase(app.game.phase)&&int32_t(app.enemy_visual_clock-app.animation)>app.busy)app.busy=int(app.enemy_visual_clock-app.animation);
   if(app.combat_feedback.active&&combat_phase(app.game.phase)&&int32_t(app.combat_feedback.end_at-app.animation)>app.busy)app.busy=int(app.combat_feedback.end_at-app.animation);

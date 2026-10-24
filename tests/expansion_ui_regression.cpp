@@ -180,6 +180,7 @@ static void acquisition_guards(){
     setup();a.game.potions[0]=Potion::Block;a.game.potions[1]=Potion::Fire;open_potion(Potion::ColorlessPotion);before=snapshot();
     CHECK(!lab_potion(a.game,Potion::ColorlessPotion));
 #if SPIRE_DEBUG_COMMANDS
+    a.detail_item=WorldRelicKinds+int(Potion::ColorlessPotion)-1;
     CHECK(!hit(HitKind::UiAction,(int)UiAction::LabPotion).enabled);action(UiAction::LabPotion);
 #else
     CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);

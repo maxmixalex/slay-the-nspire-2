@@ -140,6 +140,7 @@ static void retained_rest_and_travel(){
     begin_room(WorldRoom::Rest);CHECK(gain_world_relic(app.game,WorldRelicMiniatureTent));app.game.hp=20;
     app.cursor=0;app.input(Key::Confirm);CHECK(app.game.phase==Phase::Camp&&world_rest_can_proceed(app.game)&&!app.map_window.visible);
     CHECK(app.camp_options(nullptr,0)==1);const int healed=app.game.hp;const unsigned completed=app.game.world.rooms_completed;
+    snapshot();app.ui_action(UiAction::LeaveCamp);CHECK(!app.map_window.visible&&!app.camp_proceed_ready());unchanged();advance_ms(2499);CHECK(!app.camp_proceed_ready());unchanged();advance_ms(1);CHECK(app.camp_proceed_ready());unchanged();
     app.ui_action(UiAction::LeaveCamp);CHECK(app.game.phase==Phase::Camp&&app.game.world.room_open==2&&app.map_routes_active());
     CHECK(app.game.world.rooms_completed==completed+1);snapshot();close_window();unchanged();
     // Tent's unused Smith remains interactive after closing the map. The

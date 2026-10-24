@@ -88,21 +88,7 @@ static spire::ResourceSource file_source(ResourceFile&file){
     if(length<=0||(unsigned long)length>spire::MaxContentFile)return {};
     return {&file,(uint32_t)length,read_resource,nullptr,resource_progress};
 }
-static bool load_preferences(spire::UiPreferences& value){
-    void*f=nd_open(settings_path,"rb");if(!f)return false;
-    uint8_t bytes[spire::UiPreferencesBytes+1];const unsigned n=nd_read(bytes,1,sizeof bytes,f);
-    nd_close(f);return spire::decode_ui_preferences(bytes,n,value);
-}
-static bool save_preferences(const spire::UiPreferences& value){
-    uint8_t bytes[spire::UiPreferencesBytes];spire::encode_ui_preferences(value,bytes);
-    void*f=nd_open(settings_temp,"wb");if(!f)return false;
-    bool ok=nd_write(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(nd_close(f)==0)&&ok;
-    if(!ok){nd_unlink(settings_temp);return false;}
-    bool old=false;f=nd_open(settings_path,"rb");if(f){old=true;nd_close(f);}
-    if(old){nd_unlink(settings_backup);if(nd_rename(settings_path,settings_backup)!=0){nd_unlink(settings_temp);return false;}}
-    if(nd_rename(settings_temp,settings_path)!=0){if(old)nd_rename(settings_backup,settings_path);return false;}
-    if(old)nd_unlink(settings_backup);return true;
-}
+#include "preferences_storage.inc"
 static bool load_progress(spire::UiProgress&out){
     uint8_t*progress_bytes=spire::resource_transfer_bytes();
     const char*paths[]={progress_path,progress_backup};
@@ -230,7 +216,7 @@ extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
     profile_launcher=launcher;
-    if(!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(settings_path,launcher,"nSpire2.settings.tns")||!sibling(settings_temp,launcher,"nSpire2.settings.tmp.tns")||!sibling(settings_backup,launcher,"nSpire2.settings.bak.tns")||!sibling(selector_path,launcher,"nSpire2.slots.tns")||!sibling(selector_temp,launcher,"nSpire2.slots.tmp.tns")||!sibling(selector_backup,launcher,"nSpire2.slots.bak.tns"))return 3;
+    if(!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(selector_path,launcher,"nSpire2.slots.tns")||!sibling(selector_temp,launcher,"nSpire2.slots.tmp.tns")||!sibling(selector_backup,launcher,"nSpire2.slots.bak.tns"))return 3;
     selected_profile=load_profile_selector();if(!configure_profile_paths(selected_profile))return 3;
     // Ndless may wait for all launch keys to be released before entering main,
     // so a held CTRL alone cannot reliably opt in. An owner-created sibling

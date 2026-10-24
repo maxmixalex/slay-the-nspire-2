@@ -55,17 +55,40 @@ bool App::potion_input(Key key){
     if(hud_focus>=0&&panel!=4){
         if(title||paused||help||library||character_select||settings_open||frontend_confirm||status_actor>=0||event_reader){hud_focus=-1;return false;}
         if(key==Key::Save||key==Key::Load||key==Key::Quit)return false;
-        const int slots=int(potion_slot_count(game));hud_focus=mn(hud_focus,slots+2);
+        const int slots=int(potion_slot_count(game));
+        const auto return_to_screen=[&](){
+            hud_focus=-1;
+            if(panel==1){pile_control_focus=-1;focus_card_grid();}
+            else if(!panel&&combat_phase(game.phase)){hand_focus=true;cursor=mn(mx(0,cursor),mx(0,int(combat_hand().count)-1));}
+        };
+        if(hud_focus>=HudRelicFocusFirst){
+            const int count=int(ui_owned_relic_count(game));if(!count){return_to_screen();return false;}
+            int index=mn(hud_focus-HudRelicFocusFirst,count-1);
+            if(key==Key::Left||key==Key::Right){index=(index+count+(key==Key::Left?-1:1))%count;hud_focus=HudRelicFocusFirst+index;return true;}
+            if(key==Key::Up||key==Key::Potions){hud_focus=2;potion_page=0;return true;}
+            if(key==Key::Confirm||key==Key::Detail){open_owned_relic(index);return true;}
+            if(key==Key::Down||key==Key::Back||key==Key::Relics){return_to_screen();return true;}
+            hud_focus=-1;return false;
+        }
+        hud_focus=mn(hud_focus,slots+4);
         if(key==Key::Left||key==Key::Right){
-            hud_focus=mn(mx(0,hud_focus+(key==Key::Left?-1:1)),slots+2);
+            const auto room=hud_room_info(game);const int step=key==Key::Left?-1:1;
+            for(int next=hud_focus+step;next>=0&&next<=slots+4;next+=step){
+                if(next==slots+2&&!room.room_enabled)continue;if(next==slots+4&&!room.boss_enabled)continue;
+                hud_focus=next;break;
+            }
             if(hud_focus>=2&&hud_focus<slots+2)potion_page=uint8_t((hud_focus-2)/3);
             return true;
         }
         if(key==Key::Up)return true;
+        if(key==Key::Down){
+            if((!panel||panel==3)&&ui_owned_relic_count(game))hud_focus=HudRelicFocusFirst;
+            else return_to_screen();return true;
+        }
         if(key==Key::Confirm){if(hud_focus>=2&&hud_focus<slots+2)open_potion(hud_focus-2);return true;}
         if(key==Key::Detail){if(hud_focus>=2&&hud_focus<slots+2&&potion_at(game,unsigned(hud_focus-2))!=Potion::Empty){detail_owned=-1;detail_item=WorldRelicKinds+int(potion_at(game,unsigned(hud_focus-2)))-1;detail_scroll=0;}return true;}
         hud_focus=-1;
-        if(key==Key::Back||key==Key::Potions||key==Key::Down)return true;
+        if(key==Key::Back||key==Key::Potions)return true;
         return false;
     }
     if(panel!=4)return false;

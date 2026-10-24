@@ -1,5 +1,35 @@
 # Work state — 2026-10-24
 
+## UI7 implementation checkpoint 9 (being prepared)
+
+Verified remote checkpoint 8 is `e378d4a20b5a2a43a419efad513ba6aed135840a`.
+Its immutable Release build passed all compile/link steps and **83/87 CTest
+suites**. Four remaining UI assertions are assigned to Cards/Rooms; no failed
+journal is rewritten. The ordinary ARM package now passes the unchanged 16 MiB
+bound: **16,713,656 bytes allocated**, 1,185,939-byte launcher. This leaves
+63,560 bytes of static-image headroom; further source additions need a fresh
+package check. The memory correction retains the same decoded image/font/tile
+caches. It is neither Firebird execution nor physical-device FPS evidence.
+
+The actual v26 profile conversion passed for both languages: ENG 94,068,452
+bytes, ZHS 96,861,101 bytes, eight original images, twelve localized keys,
+13,538/13,555 bytes added. Historical payloads and directory indices remain
+unchanged. Both actual-pack room suites passed, producing 35 captures each.
+The merchant and rest samples were visually inspected. Whole-run acceptance,
+the final font merge and matched performance measurements are still pending.
+
+The next coherent source stage scopes supported gameplay preferences to each
+of the three save profiles on X11, Ndless and Web. Slot one keeps legacy paths
+and keys; language stays global, matching PrefsSave versus SettingsSave.
+Profile deletion includes run, progress and preferences with rollback on
+storage failure. The browser loads target preferences before its profile
+acknowledgement, and failed preference writes stay pending for retry. The
+actual browser acceptance driver now uses the in-game language dropdown and
+real profile controls instead of the removed startup language selector.
+HUD v27 adds original room/boss icons and continuous relic inventory behavior;
+the full, split, boot and font readers share its version/auxiliary contract.
+These new source changes still require their own checkpoint and executed gates.
+
 ## UI7 implementation checkpoint 8 (in progress)
 
 Checkpoint 6 `871b2b363ab1145e488c1f226831388f5ed21aaf` completed its 216-step

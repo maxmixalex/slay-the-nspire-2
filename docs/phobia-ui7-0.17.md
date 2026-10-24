@@ -74,7 +74,7 @@ The native fixture passed in the checkpoint-6 CTest gate, whose overall
 result was 75/87. Both actual-pack runs passed separately:
 `ui7-phobia-actual-eng-5b374d823046` and
 `ui7-phobia-actual-zhs-dbd03ce8d51e`. Each produced 29 private normal,
-enabled and dead-body captures. The 13 pairs and three dead-body captures
+enabled and dead-body captures. The 13 English pairs and three dead-body captures
 were visually reviewed for registration, clipping and unchanged actor
 placement. These isolated encounter fixtures do not cover whole-run routing.
 

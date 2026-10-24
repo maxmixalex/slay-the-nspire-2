@@ -46,6 +46,8 @@
 #include "ui_progress.hpp"
 #include "ui_profiles.hpp"
 #include "profile_assets.hpp"
+#include "hud_ui7_assets.hpp"
+#include "hud_ui7_presentation.hpp"
 #include "ui_history_presentation.hpp"
 #include "bestiary_presentation.hpp"
 namespace spire {
@@ -107,8 +109,8 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>ProfileContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        if(version_<ContentVersion||version_>HudUi7ContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
         const unsigned animations=version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
@@ -348,6 +350,8 @@ struct App {
     bool treasure_input(Key);
     void treasure_action(UiAction);
     unsigned camp_options(uint8_t*,unsigned)const;
+    void sync_camp_presentation();
+    bool camp_proceed_ready()const;
     bool camp_input(Key);
     void camp_page(int);
     uint8_t selected_ascension=0;
@@ -398,7 +402,8 @@ struct App {
     bool card_target_input(Key);
     int selected_hand_card()const;
     uint8_t potion_menu_item=0,potion_page=0;
-    int hud_focus=-1; // HP, gold, every physical potion holder, floor.
+    int hud_focus=-1; // HP, gold, holders, Room/Floor/Boss, then relic positions at 32.
+    HudRelicMotion hud_relic_motion{};
     TargetReticleMotion hud_focus_reticle{};
     bool potion_targeting=false,potion_removed_discard=false;
     int potion_popup_slot=-1,potion_removed_slot=-1;

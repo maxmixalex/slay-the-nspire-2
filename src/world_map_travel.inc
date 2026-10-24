@@ -9,7 +9,7 @@ static bool map_travel_scene(const App&a){
 static bool map_travel_run(const App&a){
     // Original RoomFadeOut leaves the top bar's pointer controls enabled.
     // Opening a deck, pause or settings overlay does not leave this run.
-    return world_can_travel(a.game)&&!a.treasure_empty_waiting()&&!a.title&&!a.quit&&
+    return world_can_travel(a.game)&&!a.treasure_empty_waiting()&&a.camp_proceed_ready()&&!a.title&&!a.quit&&
         !a.character_select&&!a.map_preview.open;
 }
 bool App::begin_map_travel(unsigned point){

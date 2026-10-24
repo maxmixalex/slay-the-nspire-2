@@ -43,7 +43,7 @@ void App::sync_map_reticles(){
         else if(r.mode==2&&uint32_t(map_clock_ms-r.start)>=200)r.mode=0;
     }
     unsigned next=reference::NoPoint;
-    if(map_directional&&!map_travel.pending&&map_routes_active()&&!title&&!paused&&!help&&!library&&!character_select&&
+    if(map_directional&&hud_focus<0&&!map_travel.pending&&map_routes_active()&&!title&&!paused&&!help&&!library&&!character_select&&
        !map_preview.open&&!map_legend&&!event_reader&&!frontend_confirm&&!settings_open&&
        detail_card<0&&detail_item<0&&status_actor<0&&deck_candidate<0){
         uint8_t ids[reference::Columns];const unsigned count=world_available_points(game,ids,reference::Columns);

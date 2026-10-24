@@ -134,6 +134,12 @@ static void reticle_timing(){
     app.input(Key::Back);CHECK(!app.map_legend&&app.map_reticle_opacity(app.map_reticle_current)==255);
     app.input(Key::Inspect);CHECK(app.panel==1&&app.map_reticle_current==reference::NoPoint);
     app.input(Key::Back);CHECK(app.panel==3&&app.map_reticle_current<reference::MaxPoints);unchanged();
+    // Top-bar keyboard focus owns the cursor without dismissing the map.
+    // Keep the authored 200ms map deselection instead of showing two reticles.
+    const unsigned before_hud=app.map_reticle_current;app.input(Key::Potions);app.render();
+    CHECK(app.hud_focus==2&&app.panel==3&&app.map_reticle_current==reference::NoPoint);
+    ticks(7);app.render();CHECK(!app.map_reticle_opacity(before_hud));unchanged();
+    app.input(Key::Back);app.render();CHECK(app.hud_focus==-1&&app.panel==3&&app.map_reticle_current<reference::MaxPoints);unchanged();
     // A wrapped presentation clock continues the same selected/dismissed tween.
     app.map_clock_ms=0xffffff9du;app.reset_map_reticles();app.render();const unsigned wrapped=app.map_reticle_current;
     CHECK(wrapped<reference::MaxPoints&&app.map_reticles[wrapped].start==0xffffff9du);ticks(3);

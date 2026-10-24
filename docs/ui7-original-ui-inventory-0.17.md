@@ -33,8 +33,8 @@ The JSON companion contains the exact source type paths, namespace/scene counts,
 - Cards: real grid scrolling/thumb, target reticles, potion error/selection behavior, and original library/collection filters.
 - Rooms: merchant movement/dialogue/hand tracking, event typewriter/option timing and special layouts, map legend/history, reward alternatives and direct removal.
 - Shared interface: title/compendium routes, original-supported settings and language switching, persistent statistics/history contracts.
-- Bestiary: the real enemy list, preview actions and character statistics now use independent observed progress and the original gate. Corrected fixtures and actual bilingual acceptance are pending; all special move VFX and phase-dependent preview contexts remain partial.
-- Fonts and phobia: actual bilingual original-font conversion passed. Phobia's original skin/body/background converter and App selection path are implemented with registration/codec fixtures; its actual conversion and screen acceptance remain pending.
+- Bestiary: the real enemy list, preview actions and character statistics use independent observed progress and the original gate. Its precomputed bilingual order now matches the original invariant culture and removes runtime insertion sorting. The corrected four-action Nibbit fixture and complete order oracle await checkpoint-8 execution; special move VFX, phase-dependent contexts and actual bilingual screen acceptance remain partial. See [bestiary-ui7-0.17.md](bestiary-ui7-0.17.md).
+- Fonts and phobia: intermediate actual bilingual original-font conversion passed. Phobia's original43-clip/four-background conversion and both actual-pack13-model App flows passed, with ordinary registrations and811 decoded new images verified. Final integrated font/resources/platform acceptance and Entomancer's independent swarm remain open. See [phobia-ui7-0.17.md](phobia-ui7-0.17.md).
 
 Checkpoint 4's Release build succeeded, but its complete native gate passed
 **68 of 84 suites**. Corrected fixtures do not retroactively change that result.
@@ -44,7 +44,13 @@ stated checkpoint-4 scope; failed later modal/room suites and still-unexecuted
 viewport corrections remain separate. The actual character conversion also
 exposed an incorrect 1440×1080 assumption; the source's 1680×1260 contract is
 now the basis for the pending resample. Sampling original artwork is not
-whole-screen acceptance.
+whole-screen acceptance. Checkpoint6 then built all216 native steps and passed
+75/87 CTest suites; combat-damage, font-style, phobia and Ndless-profile suites
+passed within that partial result. Its corrected1680 character conversion
+and both actual phobia flows passed separately. Checkpoint8's split17..26
+matrix passed, but the suite stopped at a stale negative assertion that
+still rejected the now-supported24 format. The unknown-version fix awaits
+the next checkpoint. No complete latest native or platform pass is implied.
 
 ## What this audit does not establish
 

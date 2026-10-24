@@ -253,7 +253,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Enemy list, layouts, move descriptions and character filtering",
-      "remaining": "Real list/known gates/actions/stats filters and detached preview implemented, with independent observed progress. CP4 fixture failed on an incorrect undiscovered-act assumption; corrected source awaits checkpoint. All special move VFX/phase contexts and localized collation remain incomplete."
+      "remaining": "Real list/known gates/actions/stats filters and detached previews implemented. CP6 exposed a fixture expecting a hidden Nibbit Slice button; original explicitly allows four actions, now checked exactly in source. Invariant-culture bilingual index order replaces runtime ordinal sorting and matches the independent .NET oracle; native acceptance awaits the next checkpoint. Special move VFX/phase contexts, scene-specific fonts and persisted TestSubject death-count title remain incomplete."
     },
     {
       "id": "statistics",
@@ -510,7 +510,7 @@
       ],
       "port_assessment": "implemented_unvalidated",
       "contract": "Distinct HP loss, overkill, zero and completely blocked feedback",
-      "remaining": "UI7 real canonical observer/queue and regression source implemented; formal run pending"
+      "remaining": "CP6 combat_damage_ui7_regression passed exact overkill, blocked/zero, pet and prevented-hit command cases with unchanged State/save. Post-CP6 queue layout shrinks9320 to7784 bytes with both128-entry capacities unchanged; boundary regression is source-ready, not yet formally rerun. Actual complete VFX screen acceptance remains pending."
     },
     {
       "id": "health_block",
@@ -521,7 +521,7 @@
       ],
       "port_assessment": "implemented_unvalidated",
       "contract": "Delayed health fill, block gain and shield loss",
-      "remaining": "UI7 authored400ms split/600ms fade added; actual new assets not yet accepted"
+      "remaining": "Authored400ms split/600ms fade and first-block entrance implemented; CP6 native timing fixture passed. Actual composed VFX screen acceptance remains pending."
     },
     {
       "id": "power_strip",
@@ -556,7 +556,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Original warm/blue hit sparks and secondary particles",
-      "remaining": "Actual original glow/ring/streak/speck assets and bounded 60Hz display particles implemented. CP4 cadence fixture read struct padding; corrected field-wise regression awaits next checkpoint. Original GPU turbulence and all secondary variants remain incomplete."
+      "remaining": "Original glow/ring/streak/speck assets and bounded60Hz display particles implemented; corrected field-wise cadence fixture passed inCP6. Original GPU turbulence and all secondary variants remain incomplete."
     },
     {
       "id": "formations",
@@ -566,7 +566,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Named scene slots, unnamed widths and stable summon replacements",
-      "remaining": "UI6 all24named scenes+width contracts accepted; not whole-engine parity"
+      "remaining": "UI6 all24named scenes and unnamed-width contracts accepted. Original NCombatRoom.AdjustCreatureScaleForAspectRatio container fitting, per-model random scale/hue, and complete original4:3 combat composition remain differences; fixed122px calculator ground rail is an adaptation."
     },
     {
       "id": "death_rewards",
@@ -679,7 +679,7 @@
       ],
       "port_assessment": "partial",
       "contract": "5skin models+8alternate bodies+3dead variants+18background layers",
-      "remaining": "Runtime switch and original 32skin/11body/4background converter are implemented with normal-registration verification and original-mode tests. Actual conversion/visual acceptance pending. Entomancer swarm remains outstanding; Factory has no pinned normal-run route."
+      "remaining": "CP6 original43-clip/four-background conversion passed with verified normal registration and811 lossless decoded images. Five Python suites, native synthetic fixture and actual bilingual13-model flows passed;58 private captures generated and English model pairs/death captures reviewed. Entomancer swarm and full original background particles/materials remain incomplete; Factory has no pinned normal-run route. Final integrated platform acceptance is pending."
     },
     {
       "id": "text_effects",
@@ -713,7 +713,7 @@
       ],
       "port_assessment": "implemented_unvalidated",
       "contract": "Scene-only latest punch,300ms,5/20/40px and0/.5/1/2/4strength",
-      "remaining": "UI7 actual camera composition implemented; original rumble/trauma and all trigger sites remain partial"
+      "remaining": "Actual latest-hit camera composition and preference strengths passed CP6 native behavior checks. Original rumble/trauma and all trigger sites remain partial; no complete original camera-VFX parity claim."
     },
     {
       "id": "patch_notes",
@@ -806,5 +806,5 @@
     "unimplemented": 6,
     "unverified": 2
   },
-  "validation_boundary": "Checkpoint4 Release built; CTest68/84 passed. Checkpoint5 five font Python tests and both actual font conversions passed. Unrelated partial suites or corrected unexecuted fixtures do not turn the complete native gate into a pass."
+  "validation_boundary": "Checkpoint4 Release built; CTest68/84 passed. Checkpoint5 five font Python tests and both intermediate font conversions passed. Checkpoint6 built216 steps and passed75/87 CTest suites; phobia/font-style/Ndless-profile/combat-damage suites passed within that partial gate. CP6 actual phobia ENG/ZHS flows and corrected1680 character conversion passed separately. CP8 split17..26 lossless matrix passed but its suite failed a stale unsupported-v24 assertion; the corrected unknown-version fixture remains unexecuted. Final resource fonts/platform acceptance and the complete latest native gate remain pending."
 }

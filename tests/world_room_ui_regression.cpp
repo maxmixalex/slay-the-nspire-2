@@ -121,7 +121,8 @@ static void rest_scene_pixel(const char*key){
 }
 static void advance_to(unsigned tick){while(a.animation<tick)a.advance(33);CHECK(a.animation==tick);a.render();}
 static void room_clock(unsigned milliseconds){while(milliseconds){const unsigned step=milliseconds>250?250:milliseconds;a.advance(step);milliseconds-=step;}a.render();}
-static void settle_rest_buttons(){a.render();const auto&m=a.room_presentation.rest;if(!m.mouse_ready(a.map_clock_ms))room_clock(500-(a.map_clock_ms-m.start));}
+static void settle_rest_buttons(){a.render();const auto&m=a.room_presentation.rest;CHECK(!m.choices_locked());const unsigned age=a.map_clock_ms-m.start;if(age<500)room_clock(500-age);}
+static void settle_rest_completion(){a.render();const auto&m=a.room_presentation.rest;if(m.waiting(a.map_clock_ms))room_clock(m.post_wait-(a.map_clock_ms-m.post_start));CHECK(!m.choices_locked());if(a.camp_options(nullptr,0))settle_rest_buttons();}
 static void treasure_alpha(unsigned chest,unsigned collection,unsigned banner,int y=0){
  CHECK(a.treasure_chest_opacity()==chest);CHECK(a.treasure_collection_opacity()==collection);CHECK(a.treasure_banner_opacity()==banner);CHECK(a.treasure_banner_offset()==y);
 }
@@ -180,7 +181,7 @@ static void ordinary_rest(){
  begin_room(WorldRoom::Rest);CHECK(a.camp_options(nullptr,0)==2);a.render();CHECK(choices()==2&&!world_rest_can_proceed(a.game));
  snapshot();a.input(Key::EndTurn);unchanged();click(HitKind::Choice,1);CHECK(a.game.phase==Phase::Upgrade);a.input(Key::Back);CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_used&&!world_rest_can_proceed(a.game));
  a.game.hp=30;present();settle_rest_buttons();const int heal_before=a.game.hp;const uint16_t lit=scene_pixel();rest_scene_pixel("OVERGROWTH");capture("rest-overgrowth-choices");click(HitKind::Choice,0);
- CHECK(a.game.phase==Phase::Camp&&a.game.hp>heal_before&&a.game.world.room_open&&world_rest_can_proceed(a.game));CHECK(!a.camp_options(nullptr,0));a.render();CHECK(!choices()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
+ CHECK(a.game.phase==Phase::Camp&&a.game.hp>heal_before&&a.game.world.room_open&&world_rest_can_proceed(a.game));CHECK(!a.camp_options(nullptr,0));settle_rest_completion();a.render();CHECK(!choices()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
  if(!actual_profile)CHECK(scene_pixel()!=lit);rest_scene_pixel("OVERGROWTH_DARK");capture("rest-overgrowth-completed");blocked_actions(UiAction::LeaveCamp);
  snapshot();CHECK(a.save_current_run());a.advance(250);CHECK(a.load_saved_run());CHECK(a.game.phase==Phase::Camp&&!a.camp_options(nullptr,0));a.render();unchanged();
  const int hp=a.game.hp;const unsigned rooms=a.game.world.rooms_completed;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Camp&&a.game.world.room_open==2&&a.map_window.is_open&&a.game.hp==hp&&a.game.world.rooms_completed==rooms+1);snapshot();a.ui_action(UiAction::LeaveCamp);unchanged();
@@ -230,6 +231,7 @@ static void paged_tent(){
  snapshot();click(UiAction::NextCampPage);CHECK(a.cursor==4);a.render();CHECK(choices()==2&&exists(HitKind::Choice,4)&&exists(HitKind::Choice,5));unchanged();capture("rest-tent-page-2");
  CHECK(a.game.world.rest_options[4]==unsigned(WorldRestOption::Kindle));int candle=-1;for(unsigned i=0;i<a.game.world_relics.count;i++)if(a.game.world_relics.entries[i].id==WorldRelicPumpkinCandle)candle=int(i);CHECK(candle>=0);const int previous=a.game.world_relics.entries[candle].values[0];
  click(HitKind::Choice,4);CHECK(a.game.phase==Phase::Camp&&a.game.world_relics.entries[candle].values[0]==previous+5&&world_rest_can_proceed(a.game));CHECK(!world_rest_option_visible(a.game,4)&&a.camp_options(visible,MaxWorldRestOptions)==5&&visible[4]==5);
+ settle_rest_completion();
  snapshot();a.cursor=3;a.input(Key::Right);CHECK(a.cursor==5);a.input(Key::Right);CHECK(a.cursor==0);a.input(Key::Left);CHECK(a.cursor==5);unchanged();
  // Both disabled options remain visible for their real core reason. Their
  // original slot IDs survive removing an option on a different page.
@@ -402,7 +404,7 @@ static void region_captures(){
  struct Room{reference::ActKind start;unsigned act;const char*name;const char*lit;const char*dark;};
  const Room entries[]={{reference::ActKind::Underdocks,0,"underdocks","UNDERDOCKS","UNDERDOCKS_DARK"},{reference::ActKind::Overgrowth,1,"hive","HIVE","HIVE_DARK"},{reference::ActKind::Overgrowth,2,"glory","GLORY","GLORY_DARK"}};
  for(const auto&e:entries){
-  begin_room(WorldRoom::Rest,e.start,e.act);rest_scene_pixel(e.lit);char name[80]{};std::snprintf(name,sizeof name,"rest-%s-choices",e.name);capture(name);snapshot();a.render();a.advance(66);a.render();unchanged();click(HitKind::Choice,0);std::snprintf(name,sizeof name,"rest-%s-completed",e.name);capture(name);CHECK(!a.camp_options(nullptr,0));rest_scene_pixel(e.dark);
+  begin_room(WorldRoom::Rest,e.start,e.act);rest_scene_pixel(e.lit);char name[80]{};std::snprintf(name,sizeof name,"rest-%s-choices",e.name);capture(name);snapshot();a.render();a.advance(66);a.render();unchanged();click(HitKind::Choice,0);settle_rest_completion();std::snprintf(name,sizeof name,"rest-%s-completed",e.name);capture(name);CHECK(!a.camp_options(nullptr,0));rest_scene_pixel(e.dark);
   begin_room(WorldRoom::Treasure,e.start,e.act);std::snprintf(name,sizeof name,"treasure-%s-closed",e.name);capture(name);click(UiAction::TreasureOpen);advance_to(a.treasure_open_tick+50);std::snprintf(name,sizeof name,"treasure-%s-open",e.name);capture(name);snapshot();a.render();unchanged();
  }
 }
@@ -422,6 +424,41 @@ static void rest_motion(){
  a.pointer_move(310,35);a.pointer_button(false);a.render();unchanged();room_clock(500);
  CHECK(a.room_presentation.rest.description_alpha(a.map_clock_ms)>0&&a.room_presentation.rest.description_alpha(a.map_clock_ms)<16);
  room_clock(500);CHECK(!a.room_presentation.rest.description_alpha(a.map_clock_ms));unchanged();
+}
+static void rest_completion(){
+ // The original HideChoices 500ms runs concurrently with the selected local
+ // VFX wait. Keep authoritative effects immediate and block only presentation.
+ const RelicId tent=WorldRelicMiniatureTent;
+ for(unsigned fast=0;fast<2;++fast){
+  begin_room(WorldRoom::Rest,reference::ActKind::Overgrowth,0,&tent,1);a.game.hp=20;a.fast_mode=fast;
+  if(fast){a.map_clock_ms=0xfffffe00u;a.room_presentation.rest.start=a.map_clock_ms-500;}
+  click(HitKind::Choice,0);auto&m=a.room_presentation.rest;const unsigned wait=fast?1500:2500;
+  CHECK(a.game.hp>20&&world_rest_can_proceed(a.game)&&m.hiding&&m.post_wait==wait&&m.mask==3&&m.description==0);
+  CHECK(m.screen_alpha(a.map_clock_ms)==255&&!a.camp_proceed_ready());a.render();CHECK(!choices()&&!exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
+  snapshot();a.input(Key::EndTurn);a.ui_action(UiAction::LeaveCamp);a.cursor=1;a.input(Key::Confirm);unchanged();
+  CHECK(a.game.phase==Phase::Camp&&!a.map_window.visible&&m.hiding);
+  room_clock(250);CHECK(m.screen_alpha(a.map_clock_ms)==128&&m.description_alpha(a.map_clock_ms)==255);unchanged();capture(fast?"rest-completion-half-fast":"rest-completion-half");
+  // Top-bar Map remains available for inspection while its routes are locked.
+  a.input(Key::Map);a.render();CHECK(a.map_window.is_open&&!a.map_routes_active());uint8_t ids[reference::Columns];const unsigned n=world_available_points(a.game,ids,reference::Columns);CHECK(n);
+  for(int i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind!=HitKind::WorldNode||!a.hits[i].enabled);
+  CHECK(!a.begin_map_travel(ids[0]));a.input(Key::Map);unchanged();
+  room_clock(250);CHECK(!m.screen_alpha(a.map_clock_ms)&&m.hiding&&!choices());
+  room_clock(wait-501);CHECK(m.waiting(a.map_clock_ms)&&!a.camp_proceed_ready()&&!exists(HitKind::UiAction,int(UiAction::LeaveCamp)));unchanged();
+  room_clock(1);CHECK(!m.hiding&&m.returning&&m.mask==2&&!m.screen_alpha(a.map_clock_ms)&&a.camp_proceed_ready());
+  CHECK(exists(HitKind::UiAction,int(UiAction::LeaveCamp))&&!choices());unchanged();
+  room_clock(499);CHECK(choices()==1&&!hit(HitKind::Choice,1).enabled);room_clock(1);CHECK(hit(HitKind::Choice,1).enabled&&!exists(HitKind::Choice,0,false));unchanged();
+  capture(fast?"rest-tent-choices-return-fast":"rest-tent-choices-return");
+ }
+ for(unsigned fast=0;fast<2;++fast){
+  begin_room(WorldRoom::Rest);a.fast_mode=fast;a.cursor=1;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Upgrade&&a.room_presentation.rest.selection.pending);
+  a.input(Key::Back);a.render();CHECK(a.game.phase==Phase::Camp&&!a.game.world.rest_used&&!a.room_presentation.rest.choices_locked()&&choices()==2);
+  a.cursor=1;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Upgrade);a.cursor=0;a.input(Key::Confirm);CHECK(a.deck_candidate==0);a.input(Key::Confirm);
+  CHECK(a.game.phase==Phase::Camp&&a.game.deck[0].upgraded&&a.room_presentation.rest.hiding&&a.room_presentation.rest.mask==3&&a.room_presentation.rest.description==1);
+  const unsigned wait=fast?1000:2000;CHECK(a.room_presentation.rest.post_wait==wait);snapshot();room_clock(wait-1);CHECK(!a.camp_proceed_ready());unchanged();room_clock(1);CHECK(a.camp_proceed_ready()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));unchanged();
+ }
+ // An already-shown Proceed is not disabled by another Tent option's VFX.
+ begin_room(WorldRoom::Rest,reference::ActKind::Overgrowth,0,&tent,1);click(HitKind::Choice,0);settle_rest_completion();click(HitKind::Choice,1);a.cursor=0;a.input(Key::Confirm);a.input(Key::Confirm);a.render();
+ CHECK(a.room_presentation.rest.hiding&&a.room_presentation.rest.selection.proceed&&a.camp_proceed_ready()&&exists(HitKind::UiAction,int(UiAction::LeaveCamp)));
 }
 static void begin_event(OriginalEventId id,Character character=Character::Ironclad){
  new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-ROOM-UI7"));CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
@@ -505,7 +542,7 @@ int main(int argc,char**argv){
  std::vector<uint8_t>data;actual_profile=argc>1;if(actual_profile){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=synthetic_profile();
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));CHECK(a.content.current_profile());
  ordinary_rest();rest_actor_layers();combat_backgrounds();paged_tent();closed_chest();opening_and_reload();holder_entry();actual_claim();restored_claim();empty_chest();treasure_clock_wrap();region_captures();
- rest_motion();event_motion();merchant_motion_and_pickups();fake_merchant_layout();direct_removal_preview();
+ rest_motion();rest_completion();event_motion();merchant_motion_and_pickups();fake_merchant_layout();direct_removal_preview();
  const uint32_t presentation_random=a.treasure_random;
  a.treasure_presentation=3;a.treasure_open_tick=17;a.treasure_banner_tick=19;a.treasure_close_tick=23;a.treasure_chest_from=123;a.treasure_banner_from=456;a.treasure_banner_y=7;a.treasure_holder_delay_us=333333;CHECK(a.init(data.data(),data.size(),{memory_save,memory_load}));cleared_treasure();CHECK(a.treasure_random==presentation_random);
  std::printf("world room UI: %u checks passed; %s profile; stable rest choices and real treasure acquisition with presentation-only timing\n",checks,actual_profile?"actual":"synthetic");

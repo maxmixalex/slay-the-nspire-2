@@ -94,14 +94,8 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  if(game.set_progress){
   try{const bytes=readProfileProgress(saveProfile);copyProgress(bytes);game.set_progress(bytes.length);}catch(e){game.set_progress(0);}
  }
- if(game.set_preferences_v2){
-  let flags=4|(2<<8);
-  try{const saved=JSON.parse(localStorage.getItem('nSpire2-preferences-v2'));
-   if(saved&&saved.version===2&&Number.isInteger(saved.flags)&&saved.flags>=0&&saved.flags<=0xffffffff)flags=saved.flags;
-   else{const old=JSON.parse(localStorage.getItem('nSpire2-preferences-v1'));if(old&&old.version===1&&old.fastMode===true)flags|=1;}
-  }catch(e){}
-  game.set_preferences_v2(flags);
- }else if(game.set_preferences){let flags=0;try{const saved=JSON.parse(localStorage.getItem('nSpire2-preferences-v1'));if(saved&&saved.version===1&&typeof saved.fastMode==='boolean')flags=saved.fastMode?1:0;}catch(e){}game.set_preferences(flags);}
+ let initialPreferences=4|(2<<8);try{initialPreferences=profileStorage.readPreferences(saveProfile);}catch(error){}
+ installPreferences(initialPreferences);
  if(game.set_available_languages)game.set_available_languages(available.reduce((mask,key)=>mask|(key==='eng'?1:2),0));
  if(!(isSplit?game.start_split(common.length,localized.length,language==='eng'?1:2):game.start(content.length)))throw Error(t('invalid_content'));
  if(game.resource_language&&game.resource_language()!==(language==='eng'?1:2))throw Error(t('invalid_content'));
@@ -123,13 +117,14 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   if(active){const end=clock();add(stats.render,rendered-begin);add(stats.conversion,converted-rendered);add(stats.present,end-converted);if(lastPresented)add(lastScene===index?stats.interval:profile.transition_interval,end-lastPresented);lastPresented=end;lastScene=index;recordIo(stats,calls,bytes,io);}
  }
  function flushPreferences(){
-  if(!game.preferences_pending||!game.preferences_pending())return;
+  if(!game.preferences_pending||!game.preferences_pending())return true;
   let ok=1;try{
-   if(game.preferences_v2_flags)localStorage.setItem('nSpire2-preferences-v2',JSON.stringify({version:2,flags:game.preferences_v2_flags()}));
-   localStorage.setItem('nSpire2-preferences-v1',JSON.stringify({version:1,fastMode:game.preferences_flags()===1}));
+   const flags=game.preferences_v2_flags?game.preferences_v2_flags():4|(2<<8)|game.preferences_flags();
+   ok=profileStorage.writePreferences(saveProfile,flags)?1:0;
   }catch(e){ok=0;}
-  game.preferences_ack(ok);
+  game.preferences_ack(ok);return ok!==0;
  }
+ function installPreferences(flags){if(game.set_preferences_v2)game.set_preferences_v2(flags);else if(game.set_preferences)game.set_preferences(flags&1);}
  function flushProgress(){
   if(!game.progress_pending||!game.progress_pending())return true;
   let ok=1;try{const p=game.progress_buffer(),n=game.progress_length();ok=profileStorage.writeProgress(saveProfile,encode(memoryBytes().subarray(p,p+n)))?1:0;}catch(e){ok=0;}
@@ -148,15 +143,16 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   if(request){
    const target=request&255,erase=(request&256)!==0;let ok=false;
    try{
+    if(!flushPreferences())throw Error('Preferences storage is unavailable');
     if(game.flush_progress()===0||!flushProgress())throw Error('History storage is unavailable');
     if(erase){
      ok=profileStorage.deleteProfile(target);
-     if(ok&&target===saveProfile)game.set_progress(0);
+     if(ok&&target===saveProfile){game.set_progress(0);installPreferences(4|(2<<8));}
     }else{
      // Read first. A denied selector write leaves both the live slot and all
      // stored data untouched; target metadata is copied only after commit.
-     const bytes=readProfileProgress(target);
-     if(profileStorage.select(target)){saveProfile=target;copyProgress(bytes);game.set_progress(bytes.length);ok=true;}
+     const bytes=readProfileProgress(target),flags=profileStorage.readPreferences(target);
+     if(profileStorage.select(target)){saveProfile=target;copyProgress(bytes);game.set_progress(bytes.length);installPreferences(flags);ok=true;}
     }
    }catch(error){ok=false;}
    game.profile_ack(ok?1:0,saveProfile);dirty=true;
@@ -173,7 +169,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    finally{game.profile_summaries_done();dirty=true;}
   }
  }
- window.addEventListener('pagehide',()=>{if(game.flush_progress){game.flush_progress();flushProgress();}});
+ window.addEventListener('pagehide',()=>{flushPreferences();if(game.flush_progress){game.flush_progress();flushProgress();}});
  async function serviceLanguage(){
   if(changingLanguage||!isSplit||!game.language_request)return;
   const code=game.language_request();if(!code)return;

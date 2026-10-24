@@ -10,7 +10,7 @@
   ],
   "notes": [
     "Model ids are EnemyId values, never battle slots.",
-    "Runtime sorts names using the selected private locale.",
+    "Precomputed locale order follows NGame invariant culture and the NBestiary comparer.",
     "Disabled unknown entries and hidden Epithet remain hidden/disabled.",
     "Moves expose real animator clips; command-specific VFX are separately scoped."
   ],

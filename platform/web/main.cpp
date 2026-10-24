@@ -110,11 +110,11 @@ void profile_summaries_done(){
 // stored by the browser separately from the player's run, in either language.
 void set_preferences(unsigned flags){preferences.fast_mode=flags==1;preferences_dirty=false;}
 unsigned preferences_flags(){return preferences.fast_mode?1u:0u;}
-void set_preferences_v2(unsigned flags){spire::UiPreferences value{};if(spire::ui_preferences_from_flags(flags,value))preferences=value;preferences_dirty=false;}
+void set_preferences_v2(unsigned flags){spire::UiPreferences value{};spire::ui_preferences_from_flags(flags,value);preferences=value;preferences_dirty=false;}
 unsigned preferences_v2_flags(){return spire::ui_preference_flags(preferences);}
 int preferences_pending(){return preferences_dirty?1:0;}
 void preferences_ack(int success){
-    preferences_dirty=false;
+    preferences_dirty=!success;
     if(!success)app.message(app.content.english()?"Could not save settings.":"设置保存失败，请重试");
 }
 int start(unsigned n){

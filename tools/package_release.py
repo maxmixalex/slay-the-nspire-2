@@ -34,14 +34,18 @@ Put these four files in one calculator folder, then open nSpire2.tns:
   nSpire2.zhs.tns      中文 / Chinese
 需要已安装 Ndless 的彩屏 TI-Nspire。单语言使用可只安装对应的语言包。
 A color TI-Nspire with Ndless is required. Install either or both locale files.
-双语安装时，4 选中文、6 选英文、Enter / 5 确认；后续启动记住该选择。
-With both locales installed, 4 selects Chinese, 6 English, Enter / 5 confirms.
-The choice is remembered and can be changed before loading on later launches.
+启动直接进入游戏主菜单。双语安装可在主菜单的设置里切换语言，之后会记住选择。
+Startup opens the game menu directly. With both locales installed, change the
+language in the main menu's Settings. The choice is remembered across launches.
 
 升级与存档 / Updating and saves
-请配套替换程序、公共包、已安装的语言包；保留 nSpire2.sav.tns、语言和 settings 设置文件。
-Update the launcher, common pack and installed locales together. Keep your save
-and language preference files. Both languages use the same gameplay save.
+请配套替换程序、公共包、已安装的语言包；保留 sav、progress、settings、slots、lang 文件。
+Update the launcher, common pack and installed locales together. Keep your run,
+progress, settings, profile selector and language files, including .p2/.p3 files.
+Both languages use the same three gameplay profiles.
+主菜单左上角可以切换三个存档档位；每个档位独立保存局面、历史和游戏设置，语言全局保存。
+Use the top-left profile button to switch among three independent run/history/
+gameplay-settings profiles. Language is shared. Slot 1 keeps older save filenames.
 更新前备份存档。新程序可读取旧存档；旧程序可能无法读取更新后写出的存档。
 Back up the save before upgrading. This launcher reads older saves; an older
 launcher may reject a save subsequently written by this version.
@@ -63,8 +67,8 @@ C compendium; V statuses; M map;
 P potions; R relics; S saves; O loads. Touchpad clicking/dragging is supported.
 With a hand card selected, Enter aims, Left/Right chooses a target, Enter plays;
 Esc cancels aiming. Fast Mode persists independently of the run save.
-离线 HTML 可直接用浏览器打开，在页面选择语言；S 保存、O 读取，存档保留在该浏览器中。
-Open the companion offline HTML in a browser and choose a language on the page.
+离线 HTML 可直接用浏览器打开，在游戏内设置切换语言；S 保存、O 读取，存档保留在该浏览器中。
+Open the companion offline HTML in a browser; change language in game Settings.
 S saves and O loads; saves stay in that browser. No asset download or server connection is needed.
 
 版本 / Build

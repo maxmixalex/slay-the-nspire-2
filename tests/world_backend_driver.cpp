@@ -275,7 +275,9 @@ static void rest_steps(){
  for(unsigned i=0;i<3;i++)advance(250);
  const int hp=app.game.hp;click(HitKind::Choice,0);
  require(app.game.phase==Phase::Camp&&app.game.hp>hp&&world_rest_can_proceed(app.game),"healing extinguishes rest scene");
- for(unsigned i=0;i<3;i++)advance(250);
+ require(!app.camp_proceed_ready(),"first Proceed waits for original local rest VFX");
+ const unsigned wait=app.fast_mode?1500:2500;for(unsigned elapsed=0;elapsed+250<wait;elapsed+=250)advance(250);
+ advance(249);require(!app.camp_proceed_ready(),"rest VFX remains pending at final millisecond");advance(1);require(app.camp_proceed_ready(),"rest VFX releases Proceed at source wait");
  key(Key::Save);key(Key::Load);advance(250);
  require(app.game.phase==Phase::Camp&&!app.camp_options(nullptr,0),"rest completion survives reload");
  key(Key::Confirm);require(app.game.phase==Phase::Camp&&app.game.world.room_open==2&&app.map_window.is_open,"completed rest stays beneath the opened map");

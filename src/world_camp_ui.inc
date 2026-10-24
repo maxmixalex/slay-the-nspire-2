@@ -1,22 +1,51 @@
 unsigned App::camp_options(uint8_t*out,unsigned capacity)const{
  unsigned count=0;for(unsigned i=0;i<world_rest_option_count(game);++i)if(world_rest_option_visible(game,i)){if(out&&count<capacity)out[count]=uint8_t(i);++count;}return count;
 }
+void App::sync_camp_presentation(){
+ const auto&w=game.world;if(!w.active||w.room_type!=unsigned(WorldRoom::Rest)||game.phase!=Phase::Camp)return;
+ auto&m=room_presentation.rest;uint32_t next=0;for(unsigned i=0;i<w.rest_count;++i)if(world_rest_option_visible(game,i))next|=uint32_t(1)<<i;
+ if(m.selection.pending&&!w.rest_pending){
+  const auto&selection=m.selection;const bool completed=selection.slot>=0&&
+   (w.rest_used&~selection.used&(uint32_t(1)<<unsigned(selection.slot)));
+  if(completed){
+   // HideChoices runs beside DoLocalPostSelectVfx. Only its completion
+   // enables first Proceed/travel; the authoritative option is already done.
+   unsigned wait=500;const auto option=WorldRestOption(selection.option);
+   if(option==WorldRestOption::Heal)wait=fast_mode?1500:2500;
+   else if(option==WorldRestOption::Smith)wait=fast_mode?1000:2000;
+   m.complete(map_clock_ms,wait);
+  }else m.cancel(next,map_clock_ms); // canceled Smith/Cook keeps the room's existing controls
+ }
+ if(m.hiding&&!m.waiting(map_clock_ms)){
+  const uint32_t appeared=m.post_start+m.post_wait;m.hiding=false;m.show(next,appeared,true);
+ }else m.observe(next,map_clock_ms);
+}
+bool App::camp_proceed_ready()const{
+ return !game.world.active||game.world.room_type!=unsigned(WorldRoom::Rest)||
+  room_presentation.rest.proceed_ready(map_clock_ms);
+}
 static unsigned camp_selected(const App&a,const uint8_t*options,unsigned count){for(unsigned i=0;i<count;++i)if(options[i]==a.cursor)return i;return 0;}
 void App::camp_page(int direction){
- if(!native_room_input_available(*this,Phase::Camp))return;uint8_t options[MaxWorldRestOptions];const unsigned count=camp_options(options,MaxWorldRestOptions);if(!count)return;
+ if(!native_room_input_available(*this,Phase::Camp)||room_presentation.rest.choices_locked())return;uint8_t options[MaxWorldRestOptions];const unsigned count=camp_options(options,MaxWorldRestOptions);if(!count)return;
  const int page=int(camp_selected(*this,options,count)/4),last=int((count-1)/4);cursor=options[unsigned(mn(mx(0,page+direction),last))*4];pointer_cancel();
 }
 bool App::camp_input(Key key){
  if(!native_room_input_available(*this,Phase::Camp))return false;
+ sync_camp_presentation();auto&motion=room_presentation.rest;
  uint8_t options[MaxWorldRestOptions];const unsigned count=camp_options(options,MaxWorldRestOptions);unsigned selected=camp_selected(*this,options,count);
+ if(key==Key::EndTurn){if(camp_proceed_ready()&&world_rest_proceed(game))proceed_map_window();return true;}
+ if(motion.choices_locked())return key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down||key==Key::Confirm;
  if(key==Key::Left||key==Key::Up){if(count)cursor=options[(selected+count-1)%count];return true;}
  if(key==Key::Right||key==Key::Down){if(count)cursor=options[(selected+1)%count];return true;}
- if(key==Key::EndTurn){if(world_rest_proceed(game))proceed_map_window();return true;}
  if(key==Key::Confirm){
-  if(!count){if(world_rest_proceed(game))proceed_map_window();return true;}cursor=options[selected];if(world_rest_choose(game,unsigned(cursor))){
+  if(!count){if(camp_proceed_ready()&&world_rest_proceed(game))proceed_map_window();return true;}cursor=options[selected];
+  if(!world_rest_option_enabled(game,unsigned(cursor))){message("此选项当前不可用");return true;}
+  uint32_t enabled=0;for(unsigned i=0;i<game.world.rest_count;++i)if(world_rest_option_enabled(game,i))enabled|=uint32_t(1)<<i;
+  motion.select(unsigned(cursor),game.world.rest_options[cursor],enabled,game.world.rest_used,world_rest_can_proceed(game));
+  if(world_rest_choose(game,unsigned(cursor))){
    choice_selected_count=0;choice_revision=game.revision;scroll=0;pointer_cancel();
    uint8_t remaining[MaxWorldRestOptions];if(game.phase==Phase::Camp){const unsigned n=camp_options(remaining,MaxWorldRestOptions);cursor=n?remaining[0]:0;}else cursor=0;
-  }else message("此选项当前不可用");return true;
+  }else{motion.cancel(motion.mask,map_clock_ms);message("此选项当前不可用");}sync_camp_presentation();return true;
  }
  return false;
 }
@@ -52,18 +81,20 @@ static void camp_icon(Canvas&c,int image,int x,int y,int w,int h,bool enabled,un
  small_material_icon(c,image,x,y,w,h,enabled?1000:0,enabled?value:600);
 }
 static void native_camp_screen(Canvas&c){
- auto&a=c.a;const auto&s=a.game;uint8_t options[MaxWorldRestOptions];const unsigned count=a.camp_options(options,MaxWorldRestOptions);
- const unsigned selected=camp_selected(a,options,count),first=selected/4*4,shown=mn(4,int(count-first));if(count)a.cursor=options[selected];camp_scene(c,count==0);
- auto&motion=a.room_presentation.rest;uint32_t mask=0;for(unsigned i=0;i<count;++i)mask|=1u<<options[i];motion.observe(mask,a.map_clock_ms);
- if(count){
+ auto&a=c.a;const auto&s=a.game;a.sync_camp_presentation();auto&motion=a.room_presentation.rest;
+ uint8_t options[MaxWorldRestOptions];unsigned count=0;for(unsigned i=0;i<s.world.rest_count;++i)if(motion.mask&(uint32_t(1)<<i))options[count++]=uint8_t(i);
+ unsigned selected=camp_selected(a,options,count);if(motion.choices_locked())for(unsigned i=0;i<count;++i)if(options[i]==motion.selection.slot)selected=i;
+ const unsigned first=selected/4*4,shown=mn(4,int(count-first));if(count&&!motion.choices_locked())a.cursor=options[selected];camp_scene(c,a.camp_options(nullptr,0)==0);
+ Canvas screen=c;screen.opacity=uint8_t(div255(screen.opacity*motion.screen_alpha(a.map_clock_ms)));
+ if(count&&screen.opacity){
   // RestSiteRoom keeps Header, ChoicesContainer and Description on the same
   // centered axis. Preserve that authored hierarchy at the room camera scale.
-  const char*prompt=a.content.world_string("rest_site_ui","PROMPT");c.centered(*prompt?prompt:"休息片刻……",59,52,202,12,White);
+  const char*prompt=a.content.world_string("rest_site_ui","PROMPT");screen.centered(*prompt?prompt:"休息片刻……",59,52,202,12,White);
   const int step=71,start=(320-int(shown)*50-int(shown-1)*21)/2;
-  const bool available=native_room_input_available(a,Phase::Camp);int focused=-1;
-  Canvas choices=c;choices.opacity=uint8_t(div255(choices.opacity*motion.alpha(a.map_clock_ms)));
+  const bool available=native_room_input_available(a,Phase::Camp)&&!motion.choices_locked();int focused=-1;
+  Canvas choices=screen;choices.opacity=uint8_t(div255(choices.opacity*motion.alpha(a.map_clock_ms)));
   choices.brightness=uint8_t(div255(choices.brightness*motion.alpha(a.map_clock_ms)));
-  for(unsigned i=0;i<shown;++i){const unsigned slot=options[first+i];const char*key=world_rest_option_key(s,slot);const bool enabled=world_rest_option_enabled(s,slot);const int x=start+int(i)*step;
+  for(unsigned i=0;i<shown;++i){const unsigned slot=options[first+i];const char*key=world_rest_option_key(s,slot);const bool enabled=motion.choices_locked()?bool(motion.selection.enabled&(uint32_t(1)<<slot)):world_rest_option_enabled(s,slot);const int x=start+int(i)*step;
    const bool hover=available&&(a.pointer.visible?motion.mouse_ready(a.map_clock_ms)&&a.pointer.x>=x-6&&a.pointer.x<x+56&&a.pointer.y>=71&&a.pointer.y<123:a.cursor==int(slot));
    const bool pressed=hover&&enabled&&a.pointer.held&&a.pointer.captured.kind==HitKind::Choice&&a.pointer.captured.value==int(slot)&&a.pointer.context==a.input_context();
    const auto sample=motion.buttons[slot].observe(pressed?2:hover?1:0,a.map_clock_ms);if(hover)focused=int(slot);
@@ -75,10 +106,10 @@ static void native_camp_screen(Canvas&c){
    camp_icon(choices,a.content.world_image("rest",key),x+(50-w)/2,76+(33-h)/2,w,h,enabled,unsigned(sample.value));
    char title[96]{};TextBuffer b{title,sizeof title,0,&c.a.content};b.text("OPTION_");b.text(key);b.text(".name");const char*name=a.content.world_string("rest_site_ui",title);
    choices.centered(*name?name:key,x-7,110+(sample.label*2+9*2048)/(9*4096),64,10,rgb(212,182,91));
-   c.hit(x-6,71,62,52,HitKind::Choice,int(slot),enabled&&motion.mouse_ready(a.map_clock_ms));
+   if(!motion.choices_locked())c.hit(x-6,71,62,52,HitKind::Choice,int(slot),enabled&&motion.mouse_ready(a.map_clock_ms));
   }
-  motion.focus(focused,a.map_clock_ms);const unsigned description_alpha=motion.description_alpha(a.map_clock_ms);
-  if(description_alpha){const unsigned slot=unsigned(motion.description);const auto option=WorldRestOption(s.world.rest_options[slot]);const bool enabled=world_rest_option_enabled(s,slot);
+  if(!motion.choices_locked())motion.focus(focused,a.map_clock_ms);const unsigned description_alpha=motion.description_alpha(a.map_clock_ms);
+  if(description_alpha){const unsigned slot=unsigned(motion.description);const auto option=WorldRestOption(s.world.rest_options[slot]);const bool enabled=motion.choices_locked()||world_rest_option_enabled(s,slot);
   char key[128]{},description[1024]{};TextBuffer b{key,sizeof key,0,&c.a.content};b.text("OPTION_");b.text(world_rest_option_key(s,slot));
   b.text(!enabled&&(option==WorldRestOption::Smith||option==WorldRestOption::Cook)?".descriptionDisabled":".description");a.localized_text("rest_site_ui",key,description,sizeof description,int(option));
   // Rich spans select their own colors. Tint the whole shadow pass so gold
@@ -89,18 +120,18 @@ static void native_camp_screen(Canvas&c){
   auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch));
    return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
   const auto fit=fitted_text::plan(description,166,78,10,8,metrics);const int text_height=mn(78,fit.rows*fit.step+2);
-  Canvas description_layer=c;description_layer.opacity=uint8_t(div255(description_layer.opacity*description_alpha));
+  Canvas description_layer=screen;description_layer.opacity=uint8_t(div255(description_layer.opacity*description_alpha));
   Canvas shadow=description_layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
   shadow.opacity=uint8_t(div255(shadow.opacity*128));
   shadow.paragraph_fitted(description,78,127,166,text_height,fit.size,White,fit.size,true);
   description_layer.paragraph_fitted(description,77,126,166,text_height,fit.size,rgb(255,246,226),fit.size,true);
   }
  }
- if(count>4){
+ if(count>4&&!motion.choices_locked()){
   c.text("‹",12,212,16,Gold);c.action(2,204,36,34,UiAction::PreviousCampPage,first>0);c.text("›",117,212,16,Gold);c.action(105,204,36,34,UiAction::NextCampPage,first+shown<count);
   char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/4+1);b.text(" / ");b.number((count+3)/4);c.centered(page,40,216,63,10,Muted);
  }
- if(world_rest_can_proceed(s)){
+ if(world_rest_can_proceed(s)&&a.camp_proceed_ready()){
   const char*text=a.content.world_string("gameplay_ui","PROCEED_BUTTON");native_proceed(c,211,210,103,28,*text?text:"前进");c.action(207,205,111,33,UiAction::LeaveCamp);
  }
 }

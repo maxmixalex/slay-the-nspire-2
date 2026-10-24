@@ -1,8 +1,10 @@
 # Three save profiles
 
-Pinned reference: v0.111.0 / 41cef1ea. Source implementation is pending its
-checkpoint-6 build, native persistence scenarios, actual private artwork and
-browser/device acceptance. This document is not a release receipt.
+Pinned reference: v0.111.0 / 41cef1ea. Native profile scenarios and the actual
+browser storage helper passed at checkpoints 6/7; original private profile
+artwork conversion passed at checkpoint 8. The latest per-profile preferences
+stage, real browser controls and device acceptance still need execution.
+This document is not a release receipt.
 
 The main-menu profile button opens three profiles. Selecting the current one
 closes this screen; selecting another persists the current observed metadata,
@@ -27,7 +29,7 @@ move in their index spaces. Runtime full-pack and split readers accept the same
 versions; they do not add full-file integrity scans. The original PCK and all
 derived art/fonts remain private.
 
-Slot 1 retains historical run/history paths or storage keys. Slots 2 and 3
+Slot 1 retains historical run/history/preferences paths or storage keys. Slots 2 and 3
 receive distinct suffixes. The selector is separate from every run and from
 the calculator's existing profiler marker. Optional NSH2 metadata provides a
 bounded summary decoder; opening the profile screen does not allocate another
@@ -39,7 +41,11 @@ The meaningful native scenario exercises two independent runs and metadata,
 deferred host acknowledgements, unchanged historical save bytes, cancellation,
 failed switching, inactive deletion and active deletion. Browser storage
 transactions and calculator rename/backup behavior still require their own
-actual platform validation. UI settings/language currently remain global;
-the original separately reloads profile-specific Prefs on a switch. Calendar
-formatting also retains the port's UTC timestamp boundary. These remain named
-differences rather than implicitly claimed profile equivalence.
+actual platform validation. The current source reloads supported gameplay
+Prefs on a switch or active-profile deletion; language remains global, as in
+the original PrefsSave/SettingsSave separation. Ndless and X11 erase all three
+file families, including their temporary/backup siblings, as one rollbackable
+operation. Web deletion journals now cover the legacy/current preferences
+keys as well as the run/history. A denied write does not silently discard
+pending browser preferences or allow a profile switch. Calendar formatting
+retains the port's UTC boundary and is still a named original difference.

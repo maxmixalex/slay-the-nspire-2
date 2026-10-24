@@ -333,6 +333,7 @@ bool App::deck_candidate_valid()const{
 void App::confirm_deck_choice(){
     if(!deck_candidate_valid()){deck_candidate=-1;return;}
     int index=deck_candidate;Phase phase=game.phase;deck_candidate=-1;pointer_cancel();
+    const auto rest_selection=room_presentation.rest.selection;
     RewardPresentation::RemovedCard removed;
     if(phase==Phase::Remove||grimoire_select){
         removed.card=game.deck[index];if(const auto*facts=event_card_facts(game,removed.card,-1,index))removed.facts=*facts;
@@ -345,7 +346,11 @@ void App::confirm_deck_choice(){
         else message("此时无法移除这张牌");return;
     }
     bool ok=phase==Phase::Upgrade?upgrade_card(game,index):phase==Phase::Remove?remove_card(game,index):transform_card(game,index);
-    if(ok){reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;
+    if(ok){reset_presentation(true);if(removed.active)reward_presentation.removed=removed;
+      if(rest_selection.pending&&game.world.active&&game.world.room_type==unsigned(WorldRoom::Rest)){
+        room_presentation.rest.restore_selection(rest_selection,map_clock_ms);sync_camp_presentation();
+      }
+      if(game.phase==Phase::Shop){cursor=ShopRemove;shop_open=true;
         // The removal picker covers the open rug. Returning to that rug is
         // not another Open animation; Used starts when removal succeeds.
         auto&m=room_presentation.merchant;m.open=m.initialized=true;m.start=map_clock_ms-1000;m.from_y=MerchantInventoryLayout::RugY;m.from_alpha=204;m.remove_start=map_clock_ms;m.sold_mask=game.shop_sold;m.speak(0,map_clock_ms);

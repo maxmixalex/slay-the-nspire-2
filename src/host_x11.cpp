@@ -47,7 +47,7 @@ static spire::BootLanguage read_preference(const std::string&path){
 }
 static std::string save_path;
 static std::string settings_path,progress_path;
-static std::string base_save_path,base_progress_path,profile_selector_path;
+static std::string base_save_path,base_progress_path,base_settings_path,profile_selector_path;
 static unsigned selected_profile=1,pending_profile=0;
 static bool pending_profile_delete=false;
 static unsigned current_profile(){return selected_profile;}
@@ -85,10 +85,10 @@ static bool request_profile(unsigned profile,bool erase){
     if(profile<1||profile>spire::UiProfileCount||pending_profile||profile_selector_path.empty())return false;
     pending_profile=profile;pending_profile_delete=erase;return true;
 }
-static void configure_profile_paths(){save_path=scoped_profile_path(base_save_path,selected_profile);progress_path=scoped_profile_path(base_progress_path,selected_profile);}
+static void configure_profile_paths(){save_path=scoped_profile_path(base_save_path,selected_profile);progress_path=scoped_profile_path(base_progress_path,selected_profile);settings_path=scoped_profile_path(base_settings_path,selected_profile);}
 static bool erase_profile_files(unsigned target){
-    const std::string bases[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target)};
-    std::string originals[6],removed[6];unsigned count=0,present=0,moved=0;
+    const std::string bases[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target),scoped_profile_path(base_settings_path,target)};
+    std::string originals[9],removed[9];unsigned count=0,present=0,moved=0;
     for(const auto&base:bases)if(!base.empty())for(const char*suffix:{"",".tmp",".bak"}){
         originals[count]=base+suffix;removed[count]=originals[count]+".deleted";
         FILE*f=fopen(originals[count].c_str(),"rb");
@@ -210,11 +210,11 @@ int main(int argc,char**argv){
     }
     if(!installed_languages)installed_languages=language==spire::BootLanguage::English?1u:2u;
     if(progress_path.empty()&&!headless)progress_path=directory(save_path)+"/nSpire2.progress.tns";
-    base_save_path=save_path;base_progress_path=progress_path;
+    if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
+    base_save_path=save_path;base_progress_path=progress_path;base_settings_path=settings_path;
     if(!headless){profile_selector_path=directory(base_save_path)+"/nSpire2.slots.tns";
         if(FILE*f=fopen(profile_selector_path.c_str(),"rb")){uint8_t bytes[spire::UiProfileSelectorBytes+1];const size_t n=fread(bytes,1,sizeof bytes,f);fclose(f);selected_profile=spire::decode_profile_selector(bytes,n);}
         configure_profile_paths();}
-    if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
     if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock,current_profile,headless?nullptr:profile_info,headless?nullptr:request_profile}))return error(spire::BootText::InvalidResources);
     auto persist_language=[&](){
         if(headless)return;

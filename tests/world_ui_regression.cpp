@@ -977,7 +977,7 @@ static void deferred_combat_choices(){
   if(!delayed)capture(fast?"choice-toasty-before-fast":"choice-toasty-before");
   // Pressing the background before a new overlay appears cannot select its
   // card on release. A fresh click after the same boundary can select it.
-  a.pointer_move(49,80);a.pointer_button(true);advance_combat_ms(33);a.render();
+  a.pointer_move(CardGridScroll::Left+CardGridScroll::CardW/2,80);a.pointer_button(true);advance_combat_ms(33);a.render();
   CHECK(a.animation==barrier&&a.combat_choice_ready()&&has(HitKind::WorldChoice,ids[0]));
   CHECK(!has(HitKind::Battlefield,0));a.pointer_button(false);CHECK(!a.choice_selected_count);
   CHECK(a.turn_banner.player_start==player);snapshot();
@@ -992,7 +992,8 @@ static void deferred_combat_choices(){
    a.ui_action(UiAction::ClearWorldChoice);CHECK(!a.choice_selected_count);advance_combat_ms(99);a.render();
   }
   if(!delayed)capture(fast?"choice-toasty-ready-fast":"choice-toasty-ready");
-  a.busy=300;a.pointer_move(49,80);a.pointer_button(true);a.pointer_button(false);
+  a.busy=300;HitRegion option{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::WorldChoice&&a.hits[i].value==ids[0]){option=a.hits[i];break;}
+  CHECK(option.kind==HitKind::WorldChoice);a.pointer_move(option.x+option.w/2,option.y+option.h/2);a.pointer_button(true);a.pointer_button(false);
   CHECK(a.choice_selected_count==1&&a.choice_selected[0]==ids[0]);
   CHECK(world_relic_select(direct,ids,1));CHECK(save(direct,expected));
   a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count);

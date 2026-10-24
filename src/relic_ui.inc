@@ -31,12 +31,30 @@ static void ui_relic_progress(const State&s,unsigned position,char*out,size_t si
  int value=0;if(world_relic_display(s,position,value)){if(b.n)b.text(" · ");b.text("计数：");b.number(value);}if(r.flags&WorldRelicWax)b.text(" · 蜡制遗物");
 }
 static void owned_relic_strip(Canvas&c){
- auto&a=c.a;auto&s=a.game;unsigned count=ui_owned_relic_count(s);
- for(unsigned i=0;i<count&&i<15;i++){int x=3+i*19;RelicId id=ui_owned_relic_id(s,i);
-  if(ui_relic_flash(a,id)){c.box(x-1,23,19,20,Gold);c.rect(x+2,42,13,1,Green);}
-  if(!a.reward_pickup_hidden(RewardPickupKind::Relic,i)){c.picture(a.relic_face_image(id),x,24,17,17,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+7,31);}c.hit(x-1,22,19,22,HitKind::OwnedRelic,i);
+ auto&a=c.a;auto&s=a.game;const unsigned count=ui_owned_relic_count(s);
+ for(unsigned i=0;i<count;++i){
+  const int x=hud_relic_layout::x(i),y=hud_relic_layout::y(i),cell=hud_relic_layout::Size;
+  const bool interactive=!a.paused&&!a.help&&!a.settings_open&&!a.frontend_confirm&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&!a.event_reader;
+  const bool focused=interactive&&(a.pointer.visible?(a.pointer.x>=x&&a.pointer.x<x+cell&&a.pointer.y>=y&&a.pointer.y<y+cell):a.hud_focus==HudRelicFocusFirst+int(i));
+  const RelicId id=ui_owned_relic_id(s,i);const uint16_t identity=s.world_relics.active?s.world_relics.entries[i].serial:uint16_t(id+1);
+  const int scale=a.hud_relic_motion.observe(i,identity,focused,a.map_clock_ms),size=(hud_relic_layout::Icon*scale+2048)/4096;
+  const int left=hud_relic_layout::center_x(i)-size/2,top=hud_relic_layout::center_y(i)-size/2;
+  if(!a.reward_pickup_hidden(RewardPickupKind::Relic,i)){
+   if(id<WorldRelicKinds){int outline=collection_assets::RelicOutline[id];
+    if(id==WorldRelicYummyCookie)outline=collection_assets::CookieOutline[unsigned(s.character)<5?unsigned(s.character):0];
+    if(outline>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.ui(outline,left,top,size,size,128);}}
+   Canvas icon=c;if(s.world_relics.active&&world_relic_disabled(s,i))icon.brightness=128;
+   icon.picture(a.relic_face_image(id),left,top,size,size);
+   int value=0;bool counter=s.world_relics.active?world_relic_display(s,i,value):false;
+   if(!s.world_relics.active&&id<RelicKinds){const auto legacy=relic_definitions[id].id;
+    counter=relic_counter_limit(legacy)&&(!relic_counter_is_turn_scoped(legacy)||combat_phase(s.phase));value=int(relic_counter(s,legacy));}
+   if(counter){char amount[16]{};TextBuffer text{amount,sizeof amount,0};text.number(value);const int tx=x+cell-c.width(amount,8),ty=y+cell-8;
+    for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text(amount,tx+dx,ty+dy,8,Ink);
+    c.text(amount,tx,ty,8,rgb(255,246,226));}
+   if(ui_relic_flash(a,id))c.picture(a.relic_face_image(id),left-1,top-1,size+2,size+2,100,presentation::Add);
+  }
+  c.hit(x,y,cell,cell,HitKind::OwnedRelic,int(i));
  }
- if(count>15){char more[16]{};TextBuffer b{more,sizeof more,0};b.ch('+');b.number(count-15);c.text(more,290,25,10,Gold);c.hit(287,22,33,22,HitKind::Command,(int)Key::Relics);}
 }
 static void owned_relic_panel(Canvas&c){
  auto&a=c.a;auto&s=a.game;const int count=ui_owned_relic_count(s);a.scroll=mn(mx(0,a.scroll),mx(0,count-1));int first=a.scroll/18*18;
@@ -53,11 +71,16 @@ static void owned_relic_panel(Canvas&c){
  char page[64]{};TextBuffer b{page,sizeof page,0,&a.content};b.number(first/18+1);b.text(" / ");b.number(mx(1,(count+17)/18));c.centered(page,41,219,236,10,Muted);
 }
 static void owned_relic_tooltip(Canvas&c){
- auto&a=c.a;if(a.event_reader||!a.pointer.visible||a.pointer.held||a.title||a.paused||a.help||a.panel||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
- const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return;
- RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,a.pointer.x-66),150),y=47;c.rect(x,y,166,87,Panel);c.box(x,y,166,87,Gold);c.text(a.relic_title(id,hit->value),x+8,y+5,12,Gold,150);
+ auto&a=c.a;if(a.event_reader||a.pointer.held||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||(a.panel&&a.panel!=3)||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
+ const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;
+ if(!a.pointer.visible&&a.hud_focus>=HudRelicFocusFirst)for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::OwnedRelic&&a.hits[i].value==a.hud_focus-HudRelicFocusFirst){hit=&a.hits[i];break;}
+ if(!hit||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return;
+ RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,hit->x-15),150),y=mn(147,hit->y+hit->h+4);
  char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress,&a.content);a.relic_description(id,description,sizeof description,hit->value);
- if(*progress)c.text(progress,x+8,y+24,10,Green,150);c.paragraph(description,x+8,y+(*progress?40:25),150,3,0,10,White);
+ const int top=*progress?40:25,lines=c.paragraph(description,0,0,150,0,0,10),height=mn(236-y,top+lines*13+6);
+ if(!c.nine_ui(U_HoverTip,x,y,166,height,7,7,7,7)){c.rect(x,y,166,height,Panel);c.box(x,y,166,height,Gold);}
+ c.text_fitted(a.relic_title(id,hit->value),x+8,y+5,150,12,Gold,8);
+ if(*progress)c.text(progress,x+8,y+24,10,Green,150);c.paragraph(description,x+8,y+top,150,mx(1,(height-top-4)/13),0,10,White);
 }
 #include "world_treasure_ui.inc"
 static void treasure_screen(Canvas&c){

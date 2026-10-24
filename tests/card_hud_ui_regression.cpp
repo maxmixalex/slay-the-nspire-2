@@ -383,6 +383,41 @@ static void ui7_cards(){
     app.advance(250);app.render();CHECK(app.card_inspect.card_x(app.map_clock_ms)==160);capture("inspector-carousel-upgrade");unchanged();app.input(Key::Back);CHECK(app.detail_card<0&&app.panel==1);
     app.panel=0;app.reset_presentation();
 }
+static void ui7_hud_nodes(){
+    new_run(app.game,719,false);CHECK(world_begin_run(app.game));app.title=app.library=app.character_select=app.paused=app.settings_open=false;app.reset_presentation();
+    Canvas c{app};clear();app.hit_count=0;hud(c);auto room=hud_room_info(app.game);
+    CHECK(room.room_enabled&&room.boss_enabled&&!std::strcmp(room.room_tip,"ROOM_ANCIENT"));
+    CHECK(!std::strcmp(room.room_key,"NEOW"));CHECK(hud_ui7_icon(room.room_key)&&hud_ui7_icon("KAISER_CRAB_BOSS"));
+    SaveData before{},after{};CHECK(save(app.game,before));app.pointer.visible=false;app.input(Key::Potions);
+    const int slots=int(potion_slot_count(app.game));for(int i=0;i<slots;++i)app.input(Key::Right);
+    CHECK(app.hud_focus==slots+2);clear();app.hit_count=0;hud(c);const auto*focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::HudInfo&&focus->value==HudRoom);
+    hud_hover_tip(c);capture("hud-current-room-tooltip");app.input(Key::Right);CHECK(app.hud_focus==slots+3);
+    app.input(Key::Right);CHECK(app.hud_focus==slots+4);app.input(Key::Right);CHECK(app.hud_focus==slots+4);
+    clear();app.hit_count=0;hud(c);hud_hover_tip(c);capture("hud-act-boss-tooltip");
+    app.input(Key::Down);CHECK(app.hud_focus==HudRelicFocusFirst);clear();app.hit_count=0;hud(c);focus=hud_focused_hit(app);CHECK(focus&&focus->kind==HitKind::OwnedRelic&&focus->value==0);
+    app.input(Key::Up);CHECK(app.hud_focus==2);app.input(Key::Back);CHECK(app.hud_focus<0);
+    CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    auto&w=app.game.world;auto&map=w.maps[w.act_index];auto&act=w.rooms[w.act_index];const unsigned point=w.current_point;
+    const auto old_type=map.points[point].type;const uint8_t old_room=w.room_type,old_second=map.second_boss,old_count=act.boss_count;const EncounterId old_bosses[]={act.bosses[0],act.bosses[1]};
+    map.points[point].type=reference::PointType::Unknown;w.room_type=uint8_t(WorldRoom::Shop);
+    room=hud_room_info(app.game);CHECK(!std::strcmp(room.room_key,"UNKNOWN_SHOP")&&!std::strcmp(room.room_tip,"ROOM_UNKNOWN_MERCHANT"));
+    w.event_combat_parent=1;w.parent_room_type=uint8_t(WorldRoom::Event);w.room_type=uint8_t(WorldRoom::Monster);
+    room=hud_room_info(app.game);CHECK(!std::strcmp(room.room_key,"EVENT")&&!std::strcmp(room.room_tip,"ROOM_UNKNOWN_EVENT"));
+    w.event_combat_parent=w.parent_room_type=0;map.points[point].type=old_type;w.room_type=old_room;
+    map.second_boss=uint8_t(map.boss-1);act.boss_count=2;act.bosses[0]=EncounterId::KaiserCrabBoss;act.bosses[1]=EncounterId::QueenBoss;
+    room=hud_room_info(app.game);CHECK(room.boss==EncounterId::KaiserCrabBoss&&room.second_boss==EncounterId::QueenBoss&&room.second_placeholder);
+    clear();app.hit_count=0;hud(c);app.hud_focus=slots+4;hud_hover_tip(c);capture("hud-double-boss-tooltip");
+    w.current_point=map.boss;w.room_type=uint8_t(WorldRoom::Boss);room=hud_room_info(app.game);
+    CHECK(room.boss_enabled&&room.boss==EncounterId::QueenBoss&&room.second_boss==EncounterId::None&&!room.second_placeholder);
+    w.current_point=map.second_boss;CHECK(!hud_room_info(app.game).boss_enabled);
+    w.final_event=1;room=hud_room_info(app.game);CHECK(!room.room_enabled&&!room.boss_enabled);w.final_event=0;
+    w.current_point=uint8_t(point);w.room_type=old_room;map.second_boss=old_second;act.boss_count=old_count;act.bosses[0]=old_bosses[0];act.bosses[1]=old_bosses[1];
+    HudTipContext context{{&app,"P"},"Alpha","Beta"};char names[64]{};LocalizedTemplate(names,sizeof names,hud_tip_value,&context).format("{BossName1}/{BossName2}");CHECK(!std::strcmp(names,"Alpha/Beta"));
+    HudRelicMotion relic;CHECK(relic.observe(0,1,true,100)==4096);CHECK(relic.observe(0,1,true,150)==5120);
+    CHECK(relic.observe(0,1,false,150)==5120);CHECK(relic.observe(0,1,false,1150)==4096);
+    CHECK(relic.observe(32,2,true,1200)==4096);CHECK(relic.observe(32,2,true,1250)==5120);CHECK(relic.observe(0,1,false,1250)==4096);
+    app.hud_focus=-1;app.reset_presentation();
+}
 static void ui6_screens(){
     if(app.content.version()<Ui6ContentVersion)return;
     new_run(app.game,701,true);CHECK(encounter_setup(app.game,EncounterId::NibbitsNormal));app.game.energy=99;
@@ -425,5 +460,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

@@ -109,12 +109,33 @@ struct RoomUi7Presentation {
     return sample(now);
    }
   } buttons[32]{};
-  uint32_t mask=0,start=0,description_start=0;int8_t focused=-1,description=-1;bool bound=false;
-  void observe(uint32_t next,uint32_t now){if(bound&&mask==next)return;mask=next;start=now;bound=true;focused=description=-1;for(auto&button:buttons)button=Button{};}
+  struct Selection {
+   uint32_t mask=0,enabled=0,used=0;
+   int8_t slot=-1;uint8_t option=0;bool pending=false,proceed=false;
+  } selection;
+  uint32_t mask=0,start=0,description_start=0,post_start=0;
+  uint16_t post_wait=0;int8_t focused=-1,description=-1;bool bound=false,hiding=false,returning=false;
+  void show(uint32_t next,uint32_t now,bool again=false){mask=next;start=now;bound=true;returning=again;focused=description=-1;for(auto&button:buttons)button=Button{};}
+  void observe(uint32_t next,uint32_t now){if(selection.pending||hiding||(bound&&mask==next))return;show(next,now);}
+  void select(unsigned slot,unsigned option,uint32_t enabled,uint32_t used,bool proceed){
+   selection={mask,enabled,used,int8_t(slot),uint8_t(option),true,proceed};focused=-1;description=int8_t(slot);
+  }
+  void restore_selection(const Selection&saved,uint32_t now){
+   selection=saved;mask=saved.mask;bound=true;start=now-500;focused=-1;description=saved.slot;returning=false;
+  }
+  void complete(uint32_t now,unsigned wait){selection.pending=false;post_start=now;post_wait=uint16_t(wait<500?500:wait);hiding=true;focused=-1;description=selection.slot;}
+  void cancel(uint32_t next,uint32_t now){selection.pending=false;hiding=false;mask=next;focused=description=selection.slot;description_start=now;}
+  bool waiting(uint32_t now)const{return hiding&&uint32_t(now-post_start)<post_wait;}
+  bool proceed_ready(uint32_t now)const{return !waiting(now)||selection.proceed;}
+  bool choices_locked()const{return selection.pending||hiding;}
+  unsigned screen_alpha(uint32_t now)const{
+   if(hiding)return 255-255*room_curve::linear(now-post_start,500)/room_curve::Q;
+   return returning?255*room_curve::cubic_out(now-start,500)/room_curve::Q:255;
+  }
   unsigned alpha(uint32_t now)const{return 255*room_curve::cubic_out(now-start,500)/room_curve::Q;}
-  bool mouse_ready(uint32_t now)const{return now-start>=500;}
+  bool mouse_ready(uint32_t now)const{return !choices_locked()&&now-start>=500;}
   void focus(int next,uint32_t now){if(next==focused)return;if(next<0)description_start=now;else description=int8_t(next);focused=int8_t(next);}
-  unsigned description_alpha(uint32_t now)const{return description<0?0:focused>=0?255:255-255*room_curve::expo_out(now-description_start,1000)/room_curve::Q;}
+  unsigned description_alpha(uint32_t now)const{return description<0?0:focused>=0||choices_locked()?255:255-255*room_curve::expo_out(now-description_start,1000)/room_curve::Q;}
  } rest;
  struct Event {
   struct Button {

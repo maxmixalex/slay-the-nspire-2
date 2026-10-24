@@ -35,7 +35,7 @@ def fixture(language, version=17):
 
 class SplitContentTest(unittest.TestCase):
     def test_lossless_known_versions(self):
-        for version in (17,18,19,20,21,22,23,24,25,26):
+        for version in (17,18,19,20,21,22,23,24,25,26,27):
             original={lang:fixture(lang,version) for lang in ("eng","zhs")}
             common,locales,receipt=split.split(original)
             self.assertEqual(receipt["common"]["artwork_bytes"],40)
@@ -68,7 +68,7 @@ class SplitContentTest(unittest.TestCase):
     def test_locale_and_ranges(self):
         data=fixture("eng")
         with self.assertRaises(ValueError):split.layout(data,"zhs")
-        with self.assertRaises(ValueError):split.layout(fixture("eng",24),"eng")
+        with self.assertRaises(ValueError):split.layout(fixture("eng",0xffffffff),"eng")
         for at,value in ((12,len(data)+1),(16,65536),(20,32769),(24,6110)):
             bad=bytearray(data);struct.pack_into("<I",bad,at,value)
             with self.assertRaises(ValueError):split.layout(bad,"eng")

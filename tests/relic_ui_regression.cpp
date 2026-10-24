@@ -19,16 +19,20 @@ static void inventory(){
  setup();for(int i=25;i<=28;i++)a.game.relic_counters[i]=2;a.game.relic_counters[29]=9;
  auto before=snapshot();a.render();
  // Each HUD icon addresses its own owned instance, not the first relic.
- for(int i=0;i<15;i++){
+ for(int i=0;i<30;i++){
   CHECK(click(HitKind::OwnedRelic,i));CHECK(a.detail_item==a.game.relic_order[i]&&a.detail_owned==i);same(before);
   a.input(Key::EndTurn);a.input(Key::Statuses);same(before);CHECK(a.status_actor<0);
   a.input(Key::Back);CHECK(a.detail_item<0&&a.detail_owned<0);
  }
- a.input(Key::Relics);CHECK(a.panel==5);a.pointer_scroll(18);a.render();CHECK(a.scroll==18);shot("relic-grid");
- for(int i=18;i<30;i++){
-  CHECK(click(HitKind::Relic,i));CHECK(a.detail_owned==i);same(before);a.input(Key::Back);CHECK(a.panel==5);
- }
- a.scroll=26;a.input(Key::Detail);CHECK(a.detail_item==26); // Model index, not relic mask.
+ a.input(Key::Relics);CHECK(!a.panel&&a.hud_focus==HudRelicFocusFirst);a.render();shot("relic-wrapped-inventory");
+ // Original inventory wraps in 68px cells; all owned holders remain directly
+ // reachable. Keyboard siblings wrap and Up returns to the first potion.
+ CHECK(hud_relic_layout::Columns==23&&hud_relic_layout::y(23)>hud_relic_layout::y(22));
+ a.input(Key::Left);CHECK(a.hud_focus==HudRelicFocusFirst+int(ui_owned_relic_count(a.game))-1);
+ a.input(Key::Right);CHECK(a.hud_focus==HudRelicFocusFirst);a.input(Key::Up);CHECK(a.hud_focus==2);
+ a.input(Key::Down);CHECK(a.hud_focus==HudRelicFocusFirst);
+ for(int i=0;i<26;++i)a.input(Key::Right);a.input(Key::Detail);CHECK(a.detail_item==26&&a.detail_owned==26); // Model index, not relic mask.
+ same(before);
 }
 static void treasure(){
  setup();a.game.phase=Phase::Treasure;a.game.current_node=19;a.game.next_row=6;a.game.floor=7;

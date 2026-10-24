@@ -5,6 +5,45 @@ not a fidelity percentage or a completed acceptance report. Original assembly,
 scene, shader and artwork inputs stay private. Public generators emit numeric
 metadata and asset paths only.
 
+## Checkpoint 9 implementation and evidence
+
+Checkpoint 8 (`e378d4a20b5a2a43a419efad513ba6aed135840a`) built successfully
+and passed **83 of 87** native suites. The actual four-column library/model
+capture fix, inspector geometry, new grid-cache pixel cases, library metadata,
+and progress fixtures are included in that checkpoint. This is evidence for
+those tests, not a whole-game visual-parity result. The Web profile-storage
+test ran from checkpoint 7 and passed with receipt
+`ui7-web-profile-storage-82c03e149d3b`; browser profile interaction is a separate
+acceptance gate.
+
+The next snapshot adds original room/floor/boss HUD nodes, exact dynamic boss
+names and double-boss ordering, and the first-relic keyboard transition.
+`NTopBar.UpdateNavigation`, `NPotionContainer.UpdateNavigation`,
+`NRelicInventory.UpdateNavigation`, `NRelicInventoryHolder`, `top_bar.tscn`
+and `run.tscn` are the private reference sources. The relic inventory no
+longer truncates after 15 entries: its 68-pixel source cells form 23 columns
+at the verified 1680-pixel viewport. Left/right wrap through all owned relics,
+Up returns to the first potion, and Down returns to the active screen. R is
+still a port shortcut; it now focuses the original-style inventory rather
+than opening the former in-run paginated panel.
+
+The v27 resource append contains **56 original image paths** at auxiliary
+indices **1889–1944**, plus eight reused Ancient icons. Room and boss symbols
+use the source run-history icons and outlines, not animated map sprites.
+The count/visibility/tooltip logic distinguishes the current room, event
+parent rooms, first/second boss, and the final victory room. No strings, game
+rules, gameplay-save fields or RNG draws are added. Relic hover state uses a
+bounded 320-holder array of approximately 3.8 KiB; no pixel cache is enlarged.
+
+Three checkpoint-8 failures have concrete follow-up fixes. The deck sorting
+control's source-height hit area no longer overlaps the first card row. The
+debug full-belt fixture explicitly opens its debug detail before asserting
+that acquisition is disabled. The combat-selection fixture obtains its fresh
+card click from the real hit rectangle while retaining the stale-press and
+exact selected-model/save assertions. These fixes and the new HUD paths have
+passed short Clang syntax checks only; their frozen native and actual bilingual
+resource execution remains pending at this snapshot.
+
 ## Surface and interaction inventory
 
 | Surface | Pinned source contract | Implementation in this stage | Verification state |
@@ -18,7 +57,7 @@ metadata and asset paths only.
 | Potion compendium | `NPotionLab`, `NPotionLabCategory`, `NLabPotionHolder`, `NPotion` | Independent continuous Common/Uncommon/Rare/Special page with 64 entries, pool grouping, original outlines, unknown state, character color and hover scale. | Same collection fixture preserves all 64 potion acquisition tests separately from the hover-only directory. Actual assets/captures pending. |
 | Card inspection | `NInspectCardScreen`, `NInspectCardUpgradeToggle`, `NCard`, `inspect_card_screen.tscn` | Centered card and full backstop, delayed entrance, spring scale, neighboring arrows, no-wrap carousel, canonical upgrade toggle and automatic related-card/text tips. Root adds run-history carousel context. Confirm toggles the upgrade checkbox and Back closes the inspector. | Old card-model census still exercises 860 character variants and all 106 colorless variants through real card hits. Checkpoint 4 character suite passed all 860 variants. Expansion reached its acquisition section but failed a later modal fixture; the complete replacement expansion run remains pending. |
 | Held card and targets | `NMouseCardPlay`, `NControllerCardPlay`, `NCardPlay`, `NTargetManager`, `NTargetingArrow`, `NTargetReticle` | Original arrow assets retained; single-enemy, self, all-enemy and random-enemy presentations use the corresponding original target type. Scene punch offsets also move target endpoints. Spatial keyboard targets and select/aim/confirm remain functional. | Existing targeting fixtures plus new pulse/reticle tests; pending current-stage execution. |
-| Top bar and potion navigation | `NTopBar`, `NTopBarDeckButton`, `NPotionHolder` | Deck-gain pulse; P enters holder focus, including empty holders; Confirm opens an occupied holder. Mouse clicks restore mouse mode even with Keyboard Mode enabled. | Lifecycle/overflow coverage from UI6 retained; UI7 P-focus regressions migrated. |
+| Top bar and potion navigation | `NTopBar`, `NTopBarDeckButton`, `NPotionHolder`, `NRelicInventory` | Deck-gain pulse; P enters holder focus, including empty holders; Confirm opens an occupied holder. Room, Floor and Boss complete the rightward chain; Down enters the first relic. Mouse clicks restore mouse mode even with Keyboard Mode enabled. | Checkpoint 8 card-HUD suite passed. New node, dynamic-name, double-boss, per-holder hover and relic-navigation assertions are implemented for checkpoint 9 and await frozen execution. |
 | Obtaining potions | `PotionCmd.TryToProcure`, `PotionModel`, `PotionReward`, `NPotionHolder`, `NPotionPopup` | First empty slot is filled. A full belt reports the source error without silently replacing a slot. The player can discard an existing potion and retry a pending reward. No legacy choose-slot page remains. | Full-belt State/RNG preservation, manual discard/retry and Sozu fixtures added or updated; merchant failure uses the same presentation entry point. |
 | Potion visibility metadata | `PotionCmd`, `MerchantPotionEntry`, `PotionReward.MarkContentAsSeen`, `NHoverTipSet` | Successful possession across all belt slots, shop entries, ordinary/event/relic reward offers and actual canonical tooltips update independent progress metadata. An unopened CardReward does not discover its hidden cards. | The new actual Colorful Philosophers reward fixture checks hidden versus opened cards, read-only rendering, full-belt discovery and no catalog self-discovery. It awaits the next checkpoint run. |
 
@@ -49,9 +88,10 @@ measured performance improvement**. After the viewport correction, 46×64 grid
 faces and 43×61 merchant faces fit the existing eight-slot 56×70 pool; those
 two sizes are admitted without increasing its memory budget. The merchant's
 53×75 focused face still exceeds its height and remains uncached. Exact cached
-versus uncached full-surface pixel checks now include the two new sizes.
+versus uncached full-surface pixel checks now include the two new sizes and
+passed in checkpoint 8's synthetic suite.
 Actual cold/warm measurements after functional acceptance must guide any
-further cache-budget change; the new cases have not yet executed formally.
+further cache-budget change; final actual-resource measurements remain pending.
 
 ## Post-checkpoint metadata and runtime findings
 
@@ -71,8 +111,9 @@ timestamps are inferred from old histories. A failed save retains dirty state
 and the prior successful timestamp. `decode_ui_progress_summary` reads only
 the bounded fixed fields and five character statistics, with no history
 allocation or history traversal, for the parent's profile-selection page.
-The gameplay save format and RNG are unchanged. These post-checkpoint changes
-have passed short syntax checks; their formal tests are still pending.
+The gameplay save format and RNG are unchanged. Progress and library regression
+suites passed at checkpoint 8; that does not establish browser or calculator
+profile acceptance.
 
 A further source audit corrected a previous layout assumption:
 `NGame.ApplyDisplaySettings(FourByThree)` sets **1680×1260**, not 1440×1080.
@@ -83,21 +124,24 @@ adaptation, not evidence of the original viewport. The follow-up uses the
 shared `reference_viewport` projection for ordinary/library grids and relic/
 potion collection geometry. It preserves authored fractional row spacing
 instead of accumulating a rounded row height through large decks. Card
-library filter text retains an eight-pixel readability floor. The inspector's
-larger card and some selection-page header/footer spacing remain adaptations,
-not source-exact viewport projections. Formal captures of the revised layout
-are pending.
+library filter text retains an eight-pixel readability floor. Checkpoint 8 also
+projects the inspector card to 114×161, its owner bounds to (93,40,134,159),
+and its arrows to the actual 1680-pixel scene. Full descriptions and related
+tooltips remain available. Some selection-page header/footer spacing and the
+22-pixel top-bar height retain explicit readability adaptations. Formal
+captures of the final revised resources are pending.
 
 The Web host now queues three-profile operations through optional exports and
 retains the established three imports. Slot one keeps all historical storage
 keys; slots two and three scope run versions 3–15 and progress separately.
-Settings and language remain global. Switching requires the current metadata
+The checkpoint-9 host follow-up makes gameplay preferences profile-specific;
+language/display remain global. Switching requires the current metadata
 to be stored first; selector-write failure leaves the active slot unchanged.
 Deletion records a bounded recovery journal before removing any original
 key, and failed deletion rolls back or keeps that journal for recovery on the
 next launch. The independent JavaScript regression covers these failure paths
-and isolation. Only syntax checks have run; actual browser/profile execution
-is still required. A nonempty legacy run with no readable metadata is shown
+and isolation. The frozen checkpoint-7 JavaScript suite passed; actual
+browser/profile execution is still required. A nonempty legacy run with no readable metadata is shown
 as an existing slot with unknown time, while Continue retains its full save
 decoder. Profile summaries temporarily reuse the existing transfer buffer;
 they do not allocate another 512-KiB buffer or load all histories at startup.
@@ -123,17 +167,24 @@ they do not allocate another 512-KiB buffer or load all histories at startup.
   clear/commit/cancel. Original LineEdit selection, caret movement and native
   clipboard editing are not complete. The calculator has physical ASCII entry,
   not an invented Chinese IME. Browser paste and IME commits are supported.
-- Top-bar focus does not yet reproduce every room/boss target or the original
-  downward transition into the first relic. Full keyboard remapping belongs to
-  the shared settings/input audit.
+- The new top-bar room/boss/relic chain awaits frozen execution and actual art
+  review. Full keyboard remapping belongs to the shared settings/input audit.
+  The original run timer is not yet rendered. Three-slot potion paging, the
+  retained 22-pixel HUD height and minimum text size are port adaptations.
+- Owned-relic tooltips now wrap the full main body to their available screen
+  height, but complete related-tip chains and the legacy relic detail window
+  remain open fidelity work. A hover animation or source sprite alone does not
+  establish complete relic UI parity.
 - No supported single-player card uses the original multiplayer ally-target
   path. It remains excluded with multiplayer; this does not prove all possible
   ally/Osty reticle geometry. Character/sprite scaling remains coordinated
   with the combat source audit.
-- Checkpoint 4 built and its new library/progress suites passed; the complete
-  gate failed 16 of 84 suites. The follow-up fixes remain unverified beyond
-  short syntax checks. No dirty-tree native build, complete UI7 native/WASM
-  equality, browser acceptance, Firebird run, or performance gain is claimed.
+- Checkpoint 8 built and passed 83 of 87 suites. The new checkpoint-9 changes
+  are still unverified beyond short syntax checks. No dirty-tree native build,
+  complete UI7 native/WASM equality, browser acceptance, Firebird run, or
+  performance gain is claimed here. Earlier table entries describe the gates
+  available at their implementation checkpoint; this section records the
+  latest complete native result.
 
 The physical key adapter uses public Ndless `ndless-sdk/include/keys.h`
 numeric matrix facts, reviewed at blob `71f141c361b8333056117f32ff87403aa7dc6895`.

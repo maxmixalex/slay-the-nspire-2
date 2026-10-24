@@ -25,6 +25,9 @@ The added regression overwrites the entire encoded workspace while holding
 real retained/tile decoded views, checks those views and warm zero-I/O reuse,
 then interleaves a complete historical save roundtrip, cold image decoding and
 NSH2 history serialization. It keeps exact saved-state byte comparisons.
-The memory reduction and updated ARM package still require the next immutable
-build and actual-device/emulator route. No device FPS claim follows from the
-source-level buffer sharing or a successful linker result.
+Checkpoint 8's actual ordinary ARM build packages successfully at 16,713,656
+bytes of image allocation and 1,185,939 bytes on disk. The unchanged 16 MiB
+bound leaves 63,560 bytes of static-image headroom. Its native interleaving
+regression also passed within the 83/87 complete CTest run; four unrelated UI
+assertions remain failed. Actual-device/emulator execution remains separate.
+No device FPS claim follows from the buffer sharing or the package result.

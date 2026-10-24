@@ -36,7 +36,7 @@ void App::finish_profile_change(bool success){
     if(!erased||active){
         // All old live-model references belong to the previous profile.
         // A profile switch returns to the menu; Continue is a separate action.
-        progress_loaded=false;restore_progress();forget_run_checkpoint();
+        progress_loaded=false;restore_progress();restore_preferences();forget_run_checkpoint();
         reset_in_place(game);reset_presentation();refresh_save();menu=0;
         compendium_open=statistics_open=history_open=library=character_select=settings_open=false;bestiary.open=false;
         paused=help=false;detail_card=detail_item=-1;map_preview.open=false;

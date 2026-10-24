@@ -16,7 +16,7 @@ static void pile_screen(Canvas&c){
         static const char*keys[]={"SORT_OBTAINED","SORT_TYPE","SORT_COST","SORT_ALPHABET"};
         const int bar=I6_PileSortBar+mn(4,int(s.character)),bar_y=33-grid.offset();rows.ui(bar,44,bar_y-grid.top,236,12);
         for(int sort=0;sort<4;++sort){const int x=44+reference_viewport::project(sort*300);
-            const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+48&&a.pointer.y>=bar_y-2&&a.pointer.y<bar_y+14&&a.pointer.y>=grid.top;
+            const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+48&&a.pointer.y>=bar_y+1&&a.pointer.y<bar_y+9&&a.pointer.y>=grid.top;
             const bool focused=hover||(!a.pointer.visible&&a.pile_control_focus==sort);
             Canvas layer=rows;if(!focused)layer.brightness=204;
             layer.ui(bar,x,bar_y-grid.top,48,12);
@@ -24,7 +24,7 @@ static void pile_screen(Canvas&c){
             layer.text_fitted(label,x+1,bar_y+2-grid.top,38,8,Gold,8,true);
             const bool descending=(a.pile_sort_descending&(1u<<sort))!=0;
             ui_picture_transform(layer,a.content.ui_image(I6_SortDescending),x+43,bar_y+7-grid.top,7,5,0,descending?1024:-1024);
-            card_grid_hit(c,grid,x,bar_y-2,48,16,HitKind::PileSort,sort);
+            card_grid_hit(c,grid,x,bar_y+1,48,reference_viewport::project(42),HitKind::PileSort,sort);
         }
     }
     // Batch the exact visible faces (portrait/frame/border/banner/energy),

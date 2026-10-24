@@ -46,9 +46,10 @@ writeReport();
  async function ready(language){
   await page.waitForFunction(()=>!document.querySelector('#measure')?.disabled||document.querySelector('#error')?.textContent,{},{timeout:60000});
   assert.equal(await page.locator('#error').innerText(),'');
-  assert.equal(await page.locator('#language').inputValue(),language);
+  assert.equal(await page.locator('#language').count(),0);
   assert.equal(await page.locator('html').getAttribute('lang'),language==='eng'?'en':'zh-CN');
-  assert.equal(await page.locator('#language').isEnabled(),true);
+  assert.equal(await canvas.isVisible(),true);
+  assert.equal(await page.locator('#loading').isVisible(),false);
   await painted();
  }
  async function capture(name){
@@ -59,22 +60,28 @@ writeReport();
  }
  async function press(key){await canvas.focus();await page.keyboard.press(key);await painted();}
  async function confirm(){await page.locator('button[data-key="4"]').click();await painted();}
- const saved=()=>page.evaluate(()=>localStorage.getItem('nSpire2-save-v15'));
+ const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v15'+(id===1?'':'-profile-'+id)),slot);
+ const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v2'+(id===1?'':'-profile-'+id))),slot);
+ async function point(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.click(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
+ async function openSettings(hasRun){for(let i=0;i<(hasRun?2:1);++i)await press('ArrowDown');await confirm();}
+ async function toggleFast(){await press('ArrowDown');await press('ArrowDown');await confirm();}
+ async function returnToTitle(){await press('Escape');for(let i=0;i<4;++i)await press('ArrowDown');await confirm();}
+ async function selectProfile(slot){await point(20,10);await point(72+(slot-1)*88,120);await page.waitForFunction(id=>localStorage.getItem('nSpire2-selected-profile')===String(id),slot);await painted();}
  const begin=Date.now();
  await page.goto(pathToFileURL(path.resolve(html)).href,{waitUntil:'load',timeout:120000});
  await ready('eng');report.first_ready_wall_ms=Date.now()-begin;
- assert.equal(await saved(),null);record('fresh English startup, localized DOM and ready Canvas');
+ assert.equal(await saved(),null);record('fresh English title without a startup language chooser or external language control');
  assert.equal(await page.evaluate(()=>typeof globalThis.nSpire2Debug),'undefined');
  record('ordinary HTML does not expose the developer command API');
  await capture('browser-title-eng');
- await press('ArrowDown');await confirm();await confirm();
- assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('nSpire2-preferences-v1'))),{version:1,fastMode:true});
+ await openSettings(false);await toggleFast();
+ assert.equal((await preference()).flags&1,1);
  await capture('browser-settings-persisted-eng');
  await page.reload({waitUntil:'load'});await ready('eng');
- await press('ArrowDown');await confirm();await confirm();
- assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('nSpire2-preferences-v1'))),{version:1,fastMode:false});
+ await openSettings(false);await toggleFast();
+ assert.equal((await preference()).flags&1,0);
  await press('Escape');await press('ArrowUp');
- record('Fast Mode survives reload; the real settings toggle reads the restored value');
+ record('in-game Fast Mode survives reload and the real toggle reads its restored value');
  await confirm();await capture('browser-character-eng');
  await confirm();await press('s');
  await page.waitForFunction(()=>!!localStorage.getItem('nSpire2-save-v15'));
@@ -88,31 +95,51 @@ writeReport();
  await page.reload({waitUntil:'load'});await ready('eng');assert.equal(await saved(),firstSave);
  await capture('browser-continue-eng');await confirm();await press('s');assert.equal(await saved(),firstSave);
  record('reload offers Continue and resumed run saves the same canonical bytes');
+ await returnToTitle();await openSettings(true);
  async function switchLanguage(language){
-  const loaded=page.waitForEvent('load',{timeout:60000});
-  await page.locator('#language').selectOption(language);await loaded;await ready(language);
+  const origin=await page.evaluate(()=>performance.timeOrigin);
+  await point(241,73);await point(241,language==='eng'?98:119);
+  await page.waitForFunction(lang=>document.documentElement.lang===(lang==='eng'?'en':'zh-CN')&&localStorage.getItem('nSpire2-language')===lang,language,{timeout:60000});
+  await ready(language);assert.equal(await page.evaluate(()=>performance.timeOrigin),origin);
   assert.equal(await saved(),firstSave);
-  assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-language')),language);
  }
- await switchLanguage('zhs');await capture('browser-continue-zhs');
- await confirm();await press('s');assert.equal(await saved(),firstSave);await press('o');
- await capture('browser-run-zhs');record('Chinese language selection, confirmation, Continue and S/O share the original save');
+ await switchLanguage('zhs');await capture('browser-settings-zhs');
+ await press('Escape');await confirm();await press('s');assert.equal(await saved(),firstSave);await press('o');
+ await capture('browser-run-zhs');record('language changes inside the title settings, without reload or changing the saved run');
  await page.reload({waitUntil:'load'});await ready('zhs');assert.equal(await saved(),firstSave);
  await capture('browser-reloaded-zhs');record('reload remembers Chinese and the same save');
- acceptDialog=false;await page.locator('#language').selectOption('eng');await painted();
- assert.equal(await page.locator('#language').inputValue(),'zhs');assert.equal(await saved(),firstSave);
- record('cancelling the language confirmation preserves the selected language and save');
- acceptDialog=true;await switchLanguage('eng');
- // Exercise the existing visible measurement control while the card grid is
- // on screen. The page report keeps CPU/Canvas submission timing distinct
- // from compositor FPS and physical-device performance.
- await page.locator('button[data-key="17"]').click();await painted();await capture('browser-compendium-eng');
+ await openSettings(true);await switchLanguage('eng');await press('Escape');
+ assert.deepEqual(report.dialogs,[]);record('original language dropdown changes directly without a browser confirmation dialog');
+ await selectProfile(2);assert.equal(await saved(2),null);assert.equal(await saved(),firstSave);
+ await capture('browser-profile2-title');await openSettings(false);await toggleFast();
+ assert.equal((await preference(2)).flags&1,1);assert.equal((await preference()).flags&1,0);
+ await press('Escape');await press('ArrowUp');await confirm();await press('ArrowRight');await confirm();await press('s');
+ const secondSave=await saved(2);assert(secondSave&&secondSave!==firstSave);assert.equal(await saved(),firstSave);
+ await capture('browser-profile2-run');await returnToTitle();
+ await selectProfile(1);await openSettings(true);await toggleFast();assert.equal((await preference()).flags&1,1);
+ await confirm();assert.equal((await preference()).flags&1,0);await press('Escape');
+ // The original profile picker is a real modal. Cancel leaves the other
+ // profile's run/history/preferences intact; active deletion resets only it.
+ await selectProfile(2);await page.reload({waitUntil:'load'});await ready('eng');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-selected-profile')),'2');
+ await openSettings(true);await toggleFast();assert.equal((await preference(2)).flags&1,0);
+ await confirm();assert.equal((await preference(2)).flags&1,1);await press('Escape');
+ await point(20,10);await capture('browser-profiles');await point(72,192);await capture('browser-profile-delete-confirm');await press('Escape');
+ assert.equal(await saved(),firstSave);assert.equal(await saved(2),secondSave);
+ await point(160,192);await press('ArrowRight');await confirm();
+ assert.equal(await saved(2),null);assert.equal(await preference(2),null);assert.equal(await saved(),firstSave);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-progress-v1-profile-2')),null);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-language')),'eng');
+ await capture('browser-profile2-deleted');await point(72,120);
+ record('three-profile controls preserve legacy slot one, isolate runs and preferences, persist selection, cancel deletion and reset an active profile');
+ // Measure through the visible control with the actual library active.
+ await press('c');await capture('browser-compendium-eng');await confirm();await capture('browser-card-library-eng');
  await page.locator('#diagnostics summary').click();await page.locator('#measure').click();
  await page.waitForFunction(()=>document.querySelector('#performance-report').textContent.trim().startsWith('{'),{},{timeout:20000});
  report.performance=JSON.parse(await page.locator('#performance-report').innerText());
  assert.equal(report.performance.finished_reason,'complete');
  assert.ok(report.performance.scenes.some(scene=>scene.scene==='collection'&&scene.render.count>0));
- record('visible 10-second performance control completes while rendering the card collection');
+ record('visible 10-second performance control renders the actual card library');
  if(debugHtml){
   // A separate origin context prevents developer mutations from altering the
   // ordinary acceptance save. Only the shipped, flag-gated console is used.
