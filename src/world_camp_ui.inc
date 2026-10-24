@@ -131,7 +131,7 @@ static void native_camp_screen(Canvas&c){
   c.text("‹",12,212,16,Gold);c.action(2,204,36,34,UiAction::PreviousCampPage,first>0);c.text("›",117,212,16,Gold);c.action(105,204,36,34,UiAction::NextCampPage,first+shown<count);
   char page[32]{};TextBuffer b{page,sizeof page,0,&c.a.content};b.number(first/4+1);b.text(" / ");b.number((count+3)/4);c.centered(page,40,216,63,10,Muted);
  }
- if(world_rest_can_proceed(s)&&a.camp_proceed_ready()){
-  const char*text=a.content.world_string("gameplay_ui","PROCEED_BUTTON");native_proceed(c,*text?text:"前进");native_proceed_action(c,UiAction::LeaveCamp);
- }
+ const bool can_proceed=world_rest_can_proceed(s)&&a.camp_proceed_ready();
+ const char*text=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+ native_proceed(c,*text?text:"前进",can_proceed);native_proceed_action(c,UiAction::LeaveCamp,can_proceed);
 }

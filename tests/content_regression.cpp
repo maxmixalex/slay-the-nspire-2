@@ -42,8 +42,8 @@ struct AliasGlyph {unsigned cp,size,w,h,advance,encoded;};
 // empty strings and single-frame clips. No original payload is embedded.
 static std::vector<uint8_t> alias_pack(AliasImage first,AliasImage second,const std::vector<uint8_t>&pixels,
                                      const std::vector<AliasGlyph>&glyphs={},const std::vector<uint8_t>&glyph_bytes={},
-                                     unsigned images=160){
-    constexpr unsigned strings=66,clips=11,cards=26,ui=56;
+                                     unsigned images=160,unsigned strings=66){
+    constexpr unsigned clips=11,cards=26,ui=56;
     const unsigned dir=40+images*16+(unsigned)glyphs.size()*16+strings*8+clips*16+cards*16+ui*4,at=dir+9840;
     std::vector<uint8_t>b(at+pixels.size()+glyph_bytes.size()+1);
     put(b,0,0x3250534e);put(b,4,5);put(b,8,0x41cef1ea);put(b,12,(uint32_t)b.size());
@@ -236,23 +236,24 @@ static void compressed_picture_reads_once(){
     CHECK(content->image(1).pixels==picture.pixels&&content->read_stats().callbacks==after.callbacks);
 }
 static void text_cache_working_set(){
-    // Real Chinese grids exceed the old 64-glyph / eight-string key limits.
+    // A real long Chinese history page uses 1,249 small glyph keys. Their
+    // bytes fit the original budget, but 512 keys caused repeated disk reads.
     // Scatter these small synthetic records across more reader pages than
     // fit, so the lower page cache cannot conceal text-cache churn.
-    constexpr unsigned glyph_count=600,working_glyphs=192,working_strings=40;
+    constexpr unsigned glyph_count=1800,working_glyphs=1280,working_strings=960,string_count=1100;
     std::vector<AliasGlyph> specs;
-    for(unsigned i=0;i<glyph_count;++i)specs.push_back({0x4e00+i,8,8,13,8,0});
+    for(unsigned i=0;i<glyph_count;++i)specs.push_back({0x4e00+i,8,5,10,5,0});
     specs.push_back({0x4e00+glyph_count,20,40,40,40,3200});
-    const AliasImage image{1,1,0,2};auto bytes=alias_pack(image,image,{0x34,0x12},specs);
+    const AliasImage image{1,1,0,2};auto bytes=alias_pack(image,image,{0x34,0x12},specs,{},160,string_count);
     const auto append=[&](unsigned length,unsigned value,bool rle){
         bytes.resize((bytes.size()+4095)&~size_t(4095));const unsigned at=unsigned(bytes.size());
         for(unsigned i=0;i<length;++i)bytes.push_back(rle&&i%2==0?1:uint8_t(value+i));
         return at;
     };
     const unsigned glyph_dir=40+160*16,string_dir=glyph_dir+unsigned(specs.size())*16;
-    for(unsigned i=0;i<specs.size();++i)put(bytes,glyph_dir+i*16+4,append(i==glyph_count?3200:104,i,i==glyph_count));
-    for(unsigned i=0;i<66;++i){
-        const unsigned length=i==65?16383:80;
+    for(unsigned i=0;i<specs.size();++i)put(bytes,glyph_dir+i*16+4,append(i==glyph_count?3200:50,i,i==glyph_count));
+    for(unsigned i=0;i<string_count;++i){
+        const unsigned length=i==string_count-1?16383:48;
         const unsigned at=append(length+1,65+i,false);
         for(unsigned j=0;j<length;++j)bytes[at+j]=uint8_t('A'+(i+j)%26);bytes[at+length]=0;
         put(bytes,string_dir+i*8,at);put(bytes,string_dir+i*8+4,length);
@@ -261,7 +262,7 @@ static void text_cache_working_set(){
     AliasProvider provider{&bytes};auto content=std::make_unique<Content>();CHECK(content->open(provider.source()));
     const auto check_glyph=[&](unsigned i){
         const auto glyph=content->glyph(0x4e00+i,i==glyph_count?20:8);
-        CHECK(glyph.pixels);const unsigned length=i==glyph_count?3200:104;
+        CHECK(glyph.pixels);const unsigned length=i==glyph_count?3200:50;
         const unsigned off=unsigned(bytes[glyph_dir+i*16+4])|unsigned(bytes[glyph_dir+i*16+5])<<8|
             unsigned(bytes[glyph_dir+i*16+6])<<16|unsigned(bytes[glyph_dir+i*16+7])<<24;
         CHECK(!std::memcmp(glyph.pixels,bytes.data()+off,length));
@@ -270,15 +271,15 @@ static void text_cache_working_set(){
     };
     const uint8_t*first=check_glyph(0);
     for(unsigned i=1;i<working_glyphs;++i)check_glyph(i);
-    for(unsigned i=0;i<working_strings;++i){const char*text=content->string(i);CHECK(std::strlen(text)==80&&text[0]=='A'+i%26);}
+    for(unsigned i=0;i<working_strings;++i){const char*text=content->string(i);CHECK(std::strlen(text)==48&&text[0]=='A'+i%26);}
     provider.fail=true;const auto before=content->read_stats();
     for(unsigned cycle=0;cycle<3;++cycle){
         for(unsigned i=0;i<working_glyphs;++i)check_glyph(i);
-        for(unsigned i=0;i<working_strings;++i){const char*text=content->string(i);CHECK(std::strlen(text)==80&&text[79]=='A'+(i+79)%26);}
+        for(unsigned i=0;i<working_strings;++i){const char*text=content->string(i);CHECK(std::strlen(text)==48&&text[47]=='A'+(i+47)%26);}
     }
     CHECK(content->healthy()&&content->read_stats().callbacks==before.callbacks);
     CHECK(check_glyph(0)==first); // Unrelated retained records do not move a view.
-    provider.fail=false;check_glyph(glyph_count);CHECK(std::strlen(content->string(65))==16383);
+    provider.fail=false;check_glyph(glyph_count);CHECK(std::strlen(content->string(string_count-1))==16383);
 
     // A second owner really exceeds the key capacity. Eviction must lead to
     // a normal requested read, and a refused read must not reveal stale data.

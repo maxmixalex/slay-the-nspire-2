@@ -1,10 +1,13 @@
 // The Chinese card-page working set exceeds 64 glyphs and eight strings, but
 // their actual payloads occupy a small fraction of the former fixed slots.
-// Retain exact bytes in 128-byte runs instead. Entries never move, so a view
+// The full Chinese history page visits 1,249 glyph keys (62,257 bytes) and
+// 932 string keys (10,452 bytes). Retain exact bytes in 64-byte runs and give
+// the existing byte budget more keys instead of evicting these tiny records.
+// Entries never move, so a view
 // remains valid until that entry is evicted or its Content owner is reopened.
 // The key index hashes only the requested offset/length; no payload is hashed.
 template<unsigned ByteCount,unsigned Entries> class ContentTextCache {
-    static constexpr unsigned PageBytes=128,Pages=ByteCount/PageBytes,Buckets=64;
+    static constexpr unsigned PageBytes=64,Pages=ByteCount/PageBytes,Buckets=256;
     struct Entry {
         const Content* owner=nullptr;
         uint32_t offset=0,age=0;
@@ -85,8 +88,8 @@ public:
         return nullptr;
     }
 };
-using GlyphByteCache=ContentTextCache<188u*1024u,512>;
-using StringByteCache=ContentTextCache<120u*1024u,256>;
+using GlyphByteCache=ContentTextCache<163u*1024u,1536>;
+using StringByteCache=ContentTextCache<102u*1024u,1024>;
 // Include all cache metadata in the old 64*3200 / 8*16384 payload budgets.
 // These assertions hold on both 32-bit calculator and 64-bit native hosts.
 static_assert(sizeof(GlyphByteCache)<=64u*(MaxGlyphBytes+sizeof(const Content*)+sizeof(uint32_t)),

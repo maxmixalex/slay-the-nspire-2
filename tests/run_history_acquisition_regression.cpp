@@ -7,7 +7,8 @@
 #include <vector>
 using namespace spire;
 static unsigned checks;
-#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"history acquisition %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
+static const char*scenario="initial";
+#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"history acquisition %d [%s]: %s\n",__LINE__,scenario,#x);std::exit(1);}}while(0)
 static State state,plain,observed;
 static std::vector<RunHistoryNotice> notices;
 static void capture(void*,const State&s,const RunHistoryNotice&notice){CHECK(&s==&observed);notices.push_back(notice);}
@@ -27,7 +28,7 @@ static void reset(){
     state.world_relics.count=0;state.relic_count=0;state.relics=0;
     for(auto&r:state.world_relics.entries)r={};for(auto&p:state.potions)p=Potion::Empty;notices.clear();
 }
-static void cards(){
+static void cards(){scenario="cards";
     reset();const int at=state.deck_count;
     CHECK(command([](State&s){return event_add_deck_card(s,{Strike,1})>=0;}));
     CHECK(one(RunHistoryEvent::CardObtained).model==card_token({Strike,1}));CHECK(notices.size()==1);
@@ -43,23 +44,26 @@ static void cards(){
     // caller determines whether a real RemoveFromDeck/Add command occurred.
     CHECK(command([](State&s){EventDeckSnapshot card;return event_take_deck_card(s,0,card)&&event_restore_deck_card(s,card)>=0;}));CHECK(notices.empty());
 }
-static void clones(){
+static void clones(){scenario="clones";
     reset();CHECK(gain_world_relic(state,WorldRelicBingBong));state.world.active=1;state.run_options.mode=RunMode::Custom;state.run_options.modifiers=run_modifier_bit(RunModifier::Hoarder);
     const unsigned before=state.deck_count;
     CHECK(command([](State&s){return event_add_deck_card(s,{Bash,1})>=0;}));
     CHECK(state.deck_count==before+4&&count(RunHistoryEvent::CardObtained)==4);
     for(const auto&v:notices)CHECK(v.kind==RunHistoryEvent::CardObtained&&v.model==card_token({Bash,1}));
 }
-static void relics(){
+static void relics(){scenario="relics";
     reset();CHECK(command([](State&s){return gain_world_relic(s,WorldRelicStrawberry);}));
     CHECK(one(RunHistoryEvent::RelicObtained).model==WorldRelicStrawberry);CHECK(one(RunHistoryEvent::MaxHpGained).model==7);
     const unsigned serial=state.world_relics.entries[0].serial;
     CHECK(command([=](State&s){return world_relic_replace(s,serial,WorldRelicVajra);}));
     CHECK(one(RunHistoryEvent::RelicRemoved).model==WorldRelicStrawberry&&one(RunHistoryEvent::RelicObtained).model==WorldRelicVajra);
     CHECK(command([](State&s){return lose_world_relic(s,WorldRelicVajra);}));CHECK(one(RunHistoryEvent::RelicRemoved).model==WorldRelicVajra);
+    const auto&empty=state.world_relics.entries[0];CHECK(empty.id==NoWorldRelic&&!empty.floor&&!empty.serial&&!empty.flags&&!empty.skin);
+    for(auto value:empty.values)CHECK(!value);for(auto value:empty.marked_points)CHECK(!value);for(auto value:empty.card_tokens)CHECK(!value);
+    for(const auto&facts:empty.card_facts)CHECK(facts.enchantment==EventEnchantment::None&&!facts.science_type&&!facts.rider&&!facts.enchantment_amount&&!facts.energy_offset&&!facts.progress);
     CHECK(!command([](State&s){return lose_world_relic(s,WorldRelicVajra);}));CHECK(notices.empty());
 }
-static void potions(){
+static void potions(){scenario="potions";
     reset();CHECK(command([](State&s){return procure_potion_at(s,Potion::Fruit,0);}));CHECK(one(RunHistoryEvent::PotionObtained).model==unsigned(Potion::Fruit));
     CHECK(!command([](State&s){return procure_potion_at(s,Potion::Blood,0);}));CHECK(notices.empty());
     CHECK(command([](State&s){return use_potion(s,0,-1);}));CHECK(one(RunHistoryEvent::PotionUsed).model==unsigned(Potion::Fruit));CHECK(one(RunHistoryEvent::MaxHpGained).model==5);
@@ -73,7 +77,7 @@ static void potions(){
     reset();enter_combat(state);resolve_pending(state);CHECK(state.phase==Phase::Combat);CHECK(procure_potion_at(state,Potion::Forge,0));
     CHECK(command([](State&s){return use_potion(s,0,-1);}));CHECK(count(RunHistoryEvent::PotionUsed)==1&&!count(RunHistoryEvent::CardUpgraded));
 }
-static void maximum_hp(){
+static void maximum_hp(){scenario="maximum_hp";
     reset();state.hp=state.max_hp=998;
     CHECK(command([](State&s){increase_max_hp(s,20);return true;}));CHECK(state.max_hp==999&&one(RunHistoryEvent::MaxHpGained).model==1);
     CHECK(command([](State&s){increase_max_hp(s,20);return true;}));CHECK(notices.empty());
@@ -81,7 +85,7 @@ static void maximum_hp(){
     CHECK(command([](State&s){player_lose_max_hp(s,2);return true;}));CHECK(!count(RunHistoryEvent::MaxHpLost));
     CHECK(command([](State&s){resolve_pending(s);return true;}));CHECK(state.max_hp==old-2&&one(RunHistoryEvent::MaxHpLost).model==2);
 }
-static void batch_transform(){
+static void batch_transform(){scenario="batch_transform";
     reset();state.deck_count=3;state.deck[0]={Strike,0};state.deck[1]={Strike,1};state.deck[2]={Defend,1};
     CHECK(command([](State&s){return gain_world_relic(s,WorldRelicPandorasBox);}));
     CHECK(state.deck_count==3&&count(RunHistoryEvent::CardTransformed,1)==3&&count(RunHistoryEvent::CardTransformed,2)==3);
@@ -90,7 +94,7 @@ static void batch_transform(){
     for(const auto&v:notices)if(v.kind==RunHistoryEvent::CardTransformed&&v.flags==1){CHECK(v.model==originals[pending++]);CHECK(card_from_token(v.detail).kind<CardKinds&&card_token(card_from_token(v.detail))==v.detail);}
     CHECK(pending==3);
 }
-static void quest_completion(){
+static void quest_completion(){scenario="quest_completion";
     reset();const int index=event_add_deck_card(state,{EventCardSpoilsMap,0});CHECK(index>=0);
     const int gold=state.gold;
     CHECK(command([=](State&s){return event_card_spoils_complete(s,index);}));

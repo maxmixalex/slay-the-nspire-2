@@ -102,6 +102,8 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         if(effects)merchant_idle(c,focused?AnimMerchantRoomFocused:AnimMerchantRoomTop,covered);
         else c.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
+    const char*proceed_label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+    native_proceed(c,*proceed_label?proceed_label:"前进",!a.shop_open,!a.pointer.visible&&a.cursor==1);
     if(!a.shop_open){
         const int x=body_x,y=body_y,w=body_w,h=body_h;
         // Pinned NMerchantButton.RefreshFocus (0x06007d3d) uses the outline
@@ -112,8 +114,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
                 map_reticle_tile(c,p,left+1,top+1,left+7,top+7,right,bottom,255,true);
                 map_reticle_tile(c,p,left,top,left+6,top+6,right,bottom,255,false);}}
         c.action(x-2,y-2,w+4,h+4,UiAction::OpenShop);
-        const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
-        native_proceed(c,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);native_proceed_action(c,UiAction::LeaveShop);
+        native_proceed_action(c,UiAction::LeaveShop);
         if(!motion.visible(a.map_clock_ms))return;
     }
     const int dy=motion.offset(a.map_clock_ms);

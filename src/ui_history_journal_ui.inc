@@ -116,14 +116,25 @@ static void journal_floor_tooltip(Canvas&c,const UiRunHistory&run,unsigned floor
  motion.bind(run.serial,floor,source);motion.node_x=int16_t(node_x);motion.node_y=int16_t(node_y);
  const auto&journal=a.progress.journal;const int owner=journal.owner(run.serial);
  const bool partial=owner<0||journal.owners[owner].incomplete(floor);
- const auto room=WorldRoom(point.room);const bool combat=point.encounter||room==WorldRoom::Monster||room==WorldRoom::Elite||room==WorldRoom::Boss;
- uint16_t order[UiJournalEntries+3]{},counts[30]{},positions[30]{};unsigned groups[3]{};
- for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);if(e.owner==owner&&e.floor==floor){const unsigned rank=journal_rank(e);if(rank<30)++counts[rank];}}
+ const auto room=WorldRoom(point.room);const bool combat_room=room==WorldRoom::Monster||room==WorldRoom::Elite||room==WorldRoom::Boss;
+ // Each consumed order slot is written by its rank below. Clearing all
+ // 4,099 slots would touch 8 KiB even for a floor with only one visible row.
+ uint16_t order[UiJournalEntries+3],counts[30]{},positions[30];unsigned groups[3]{};
+ bool observed_combat=false;unsigned first=journal.count,last=0;
+ for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);if(e.owner==owner&&e.floor==floor){const unsigned rank=journal_rank(e);
+  if(rank<30){++counts[rank];if(first==journal.count)first=i;last=i+1;}if(e.kind==RunHistoryEvent::CombatStarted)observed_combat=true;}}
+ // Older profiles could copy a retained encounter into the following shop
+ // or event. Only its real combat room or a new observed start proves that
+ // this point contained combat. A partial event cannot identify its first
+ // fight, so its legacy turn snapshot must remain unknown.
+ const bool combat=combat_room||observed_combat,turns=combat_room||(!partial&&observed_combat);
  const bool zero_damage=combat&&!partial&&!counts[7];if(zero_damage)++counts[7];
- if(combat)++counts[10];if(point.gold_gained)++counts[17];
+ if(turns)++counts[10];if(point.gold_gained)++counts[17];
  unsigned count=0;for(unsigned i=0;i<30;++i){positions[i]=uint16_t(count);count+=counts[i];groups[i<17?0:i<27?1:2]+=counts[i];}
- for(unsigned i=0;i<journal.count;++i){const auto&e=journal.at(i);if(e.owner==owner&&e.floor==floor){const unsigned rank=journal_rank(e);if(rank<30)order[positions[rank]++]=uint16_t(i);}}
- if(combat)order[positions[10]++]=UiJournalEntries;
+ // Normal observed floors occupy a short contiguous span. Keeping the
+ // owner/floor filter also preserves any valid interleaved decoded journal.
+ for(unsigned i=first;i<last;++i){const auto&e=journal.at(i);if(e.owner==owner&&e.floor==floor){const unsigned rank=journal_rank(e);if(rank<30)order[positions[rank]++]=uint16_t(i);}}
+ if(turns)order[positions[10]++]=UiJournalEntries;
  if(point.gold_gained)order[positions[17]++]=UiJournalEntries+1;
  if(zero_damage)order[positions[7]++]=UiJournalEntries+2;
  // NMapPointHistoryHoverTip fills a whole first column, then the second.

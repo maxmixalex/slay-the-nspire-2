@@ -232,6 +232,7 @@ struct App {
     const char* ui_text(const char* source,char* buffer,size_t capacity)const;
     State game{};Content content{};Callbacks callbacks{};
     ButtonMotion button_motions[MaxButtonMotions]{};
+    ProceedMotion proceed_motion{};
     EndTurnGlowMotion end_turn_glow{};
     CharacterSelectPresentation character_select_presentation{};
     TurnBannerPresentation turn_banner{};

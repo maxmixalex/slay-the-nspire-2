@@ -92,7 +92,11 @@ static void shop_and_retained_rooms(){
  }
  CHECK(a.game.phase==Phase::Shop);a.progress.current.partial=1;a.progress.current.facts.complete=0;a.game.gold=9999;
  scenario="map history reader owns its wheel while the underlying route stays fixed";
- a.open_map_window(true);for(unsigned i=0;i<20;++i)a.advance(100);a.render();WorldMapLayout layout;CHECK(world_map_layout(a.game,layout));const auto view=a.map_view(layout);bool hovered=false;
+ a.open_map_window(true);for(unsigned i=0;i<20;++i)a.advance(100);a.render();
+ // The source camera opens at the current point near the viewport bottom;
+ // its already traveled parents are below the screen until scrolled back.
+ a.pointer_move(32,100);a.pointer_scroll(3);for(unsigned i=0;i<10;++i)a.advance(100);a.render();
+ WorldMapLayout layout;CHECK(world_map_layout(a.game,layout));const auto view=a.map_view(layout);bool hovered=false;
  for(unsigned i=a.progress.current.floor_count-1;i;--i){const auto&floor=a.progress.current.floors[i-1];const int x=layout.points[floor.point].x,y=layout.points[floor.point].y+view.origin;if(y<45||y>220)continue;
   a.pointer_move(x,y);a.render();for(int h=0;h<a.hit_count;++h)if(a.hits[h].kind==HitKind::HistoryJournalScroll)hovered=true;if(hovered)break;}
  CHECK(hovered&&a.history_tooltip.source==2);const auto tooltip=a.history_tooltip;const int scroll=a.map_scroll;
@@ -115,6 +119,37 @@ static void shop_and_retained_rooms(){
  CHECK(world_available_points(a.game,ids,reference::Columns));
  {UiCoreObserver observer(a);CHECK(world_choose_point(a.game,ids[0]));}
  CHECK(amount(RunHistoryEvent::CardSkipped)==skipped+ShopCardCount-1&&amount(RunHistoryEvent::RelicSkipped)==relic_skipped+ShopPotionStart-ShopRelicStart);
+}
+static void terminal_rewards(){
+ scenario="actual combat RewardsSet stays claimable after Proceed, map close and save/load";start();
+ CHECK(gain_world_relic(a.game,WorldRelicPrayerWheel)&&gain_world_relic(a.game,WorldRelicWhiteBeastStatue));
+ uint8_t ids[reference::Columns]{};CHECK(world_available_points(a.game,ids,reference::Columns));
+ {UiCoreObserver observer(a);CHECK(world_choose_point(a.game,ids[0]));CHECK(encounter_setup(a.game,EncounterId::NibbitsNormal,0));
+  for(unsigned guard=0;guard<64&&a.game.phase==Phase::Combat;++guard){for(unsigned i=0;i<a.game.enemy_count;++i)if(enemy_allow_target(a.game,int(i)))damage_unpowered(a.game,int(i),9999);resolve_pending(a.game);}}
+ CHECK(world_retained_reward_group(a.game)&&world_can_travel(a.game));
+ for(unsigned i=0;i<30;++i)a.advance(100);a.render();CHECK(a.combat_choice_ready());
+ const unsigned group=a.game.world_relics.choice_group,offers=a.game.world_relics.offer_count,completed=a.game.world.rooms_completed;
+ const unsigned skipped=amount(RunHistoryEvent::CardSkipped),potion_skipped=amount(RunHistoryEvent::PotionSkipped);
+ a.ui_action(UiAction::LeaveWorldRewards);for(unsigned i=0;i<20;++i)a.advance(100);
+ CHECK(a.map_window.is_open&&a.game.world.room_open==2&&a.game.world.rooms_completed==completed+1);
+ CHECK(world_retained_reward_group(a.game)&&a.game.world_relics.choice_group==group&&a.game.world_relics.offer_count==offers&&!a.game.world.finish_pending);
+ CHECK(amount(RunHistoryEvent::CardSkipped)==skipped&&amount(RunHistoryEvent::PotionSkipped)==potion_skipped&&save(a.game,before));
+ a.input(Key::Back);for(unsigned i=0;i<4;++i)a.advance(100);CHECK(!a.map_window.visible&&world_retained_reward_group(a.game));
+ CHECK(save(a.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+ CHECK(load(a.game,before.bytes,before.size));a.reset_presentation(true);for(unsigned i=0;i<20;++i)a.advance(100);a.render();
+ CHECK(world_retained_reward_group(a.game)&&a.game.world_relics.offer_count==offers&&world_can_travel(a.game));
+ int card_reward=-1;for(unsigned i=0;i<a.game.world_relics.offer_count;++i)if(a.game.world_relics.rewards[a.game.world_relics.offers[i]].kind==1){card_reward=int(i);break;}CHECK(card_reward>=0);
+ a.cursor=card_reward;a.input(Key::Confirm);CHECK(a.world_choice_is_card_reward());a.render();for(unsigned i=0;i<5;++i)a.advance(100);a.render();
+ a.cursor=0;a.input(Key::Confirm);CHECK(world_retained_reward_group(a.game)&&amount(RunHistoryEvent::CardPicked)==1&&amount(RunHistoryEvent::CardObtained)==1&&amount(RunHistoryEvent::CardSkipped)==skipped+2);
+ unsigned remaining_cards=0,remaining_potions=0;for(const auto&r:a.game.world_relics.rewards)if(r.group==group&&!(r.flags&1)){if(r.kind==1)remaining_cards+=r.count;else if(r.kind==3)++remaining_potions;}
+ CHECK(remaining_cards==3&&remaining_potions==1);
+ for(unsigned i=0;i<10;++i)a.advance(100);a.ui_action(UiAction::LeaveWorldRewards);for(unsigned i=0;i<20;++i)a.advance(100);
+ CHECK(a.map_window.is_open&&a.game.world.rooms_completed==completed+1&&amount(RunHistoryEvent::CardSkipped)==skipped+2);
+ CHECK(world_available_points(a.game,ids,reference::Columns));const unsigned old_point=a.game.world.current_point;
+ CHECK(a.begin_map_travel(ids[0]));CHECK(a.game.world.current_point==old_point&&amount(RunHistoryEvent::CardSkipped)==skipped+2);
+ for(unsigned i=0;i<100&&a.game.world.current_point==old_point;++i)a.advance(100);
+ CHECK(a.game.world.current_point!=old_point&&amount(RunHistoryEvent::CardSkipped)==skipped+2+remaining_cards&&amount(RunHistoryEvent::PotionSkipped)==potion_skipped+remaining_potions);
+ CHECK(!a.game.world_relics.group_active[group-1]&&validate(a.game));
 }
 static bool load_profile(UiProgress&value){if(decode_ui_progress(bytes,bad_size,value))return true;return load_mode==2&&decode_ui_progress(backup,backup_size,value);}
 static void persistence(){
@@ -185,7 +220,16 @@ static void hover(){
  a.pointer_scroll(-4096);CHECK(a.history_tooltip.offset==0);a.pointer_move(319,239);a.render();
  CHECK(save(a.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
+static void legacy_hover(){
+ scenario="legacy noncombat encounter residue cannot invent a combat or turn row";start();a.finish_progress(true);
+ a.progress.journal={};auto&floor=a.progress.history[0].floors[0];floor.room=unsigned(WorldRoom::Shop);floor.map_type=unsigned(reference::PointType::Shop);
+ floor.encounter=unsigned(EncounterId::NibbitsNormal);floor.turns=9;a.open_history();for(unsigned i=0;i<50;++i)a.advance(33);
+ a.pointer.visible=false;a.history_presentation.focus=0;a.render();CHECK(a.history_tooltip.source==1);
+ const auto reader=a.history_tooltip;std::vector<uint16_t> pixels(a.pixels,a.pixels+ScreenW*ScreenH);
+ floor.encounter=0;floor.turns=0;a.render();
+ CHECK(a.history_tooltip.h==reader.h&&a.history_tooltip.maximum==reader.maximum&&!std::memcmp(pixels.data(),a.pixels,sizeof a.pixels));
+}
 int main(int argc,char**argv){std::vector<uint8_t> resource;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);resource.resize(spire_test::pack_size(f));CHECK(std::fread(resource.data(),1,resource.size(),f)==resource.size());CHECK(!std::fclose(f));CHECK(a.init(resource.data(),resource.size(),{}));}
- choices();card_rewards();shop_and_retained_rooms();persistence();capacity();hover();
+ choices();card_rewards();terminal_rewards();shop_and_retained_rooms();persistence();capacity();hover();legacy_hover();
  std::printf("NSH7 actual event/reward/purchase history, retained rooms, bounded owners, migration, decode failure publication and scroll purity: %u checks.\n",checks);
 }

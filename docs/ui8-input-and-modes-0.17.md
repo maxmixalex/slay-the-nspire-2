@@ -171,3 +171,31 @@ The stage-5 source adds complete cross-family power order, independent power
 icons and Test Subject run/profile progression. See
 [power-order-ui8-0.17.md](power-order-ui8-0.17.md) for the source contracts,
 compact migration format, measured memory cost and actual verification boundary.
+
+## Stage 8a character information geometry
+
+`character_select_screen.tscn` gives InfoPanel/VBox a fixed 575 × 380 source
+rectangle at (163, 414), with a centered 140-pixel Name slot, 20-pixel stats
+spacer and 100-pixel relic slot. Its NinePatch is independently fixed at
+(89, 411), 700 × 402. The earlier port imposed an 8-pixel body floor and grew
+the panel upward. The current implementation preserves the source rectangles,
+centers the natural description height within the VBox and uses real 5-pixel
+Kreon body / explicit Kreon Bold stats and relic titles. Descriptions keep every
+line rather than applying the former five/four-line limits.
+
+Names use the original Spectral family at the available 14/12/10-pixel bands,
+source two-pixel character spacing and a bounded alpha dilation for the
+projected five-pixel, quarter-opacity outline. The 57 missing Chinese title
+glyphs are appended by the parent's font converter, without reassigning existing
+glyph descriptors. Neither this change nor its temporary outline mask adds
+anything to App, State or the serialized records.
+
+`font_styles_ui7_regression` now checks the source coordinates and, for all five
+characters in each actual locale pack, verifies the title fits, every body and
+relic-description codepoint is emitted without an ellipsis, the real 5-pixel
+bands are selected and the full text stays above Ascension. The existing
+five-character UI regression now captures all five settled information panels,
+checks each original portrait hit and the Start hit, and confirms pointer
+selection leaves the run's serialized State unchanged. App and both test
+translation units pass short Clang syntax; the parent's frozen Stage 8a build
+and two-language screenshots remain the actual acceptance gate.

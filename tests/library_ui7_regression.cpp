@@ -77,6 +77,29 @@ static void collections(){
         capture(tab==1?"relic-collection-top":"potion-lab-top");CHECK(spire_test::drag_grid_thumb(a,true));capture(tab==1?"relic-collection-bottom":"potion-lab-bottom");CHECK(spire_test::drag_grid_thumb(a,false));
     }
 }
+static void collection_associated_models(){
+    for(int tab=1;tab<=2;++tab){
+        const int id=tab==1?int(WorldRelicFencingManual):int(Potion::CunningPotion)-1;
+        const CardKind related=tab==1?CardKind(SovereignBlade):CardKind(Shiv);
+        a.progress.discovered_cards[unsigned(related)/8]&=uint8_t(~(1u<<(unsigned(related)%8)));
+        if(tab==1)a.discover_relic(WorldRelicFencingManual);else a.discover_potion(Potion::CunningPotion);
+        a.pointer.visible=false;a.open_library(tab);a.prepare_collection();int selected=-1;
+        for(unsigned i=0;i<a.collection.count;++i)if(a.collection.ids[i]==id){selected=int(i);break;}
+        CHECK(selected>=0&&!a.library_card_seen(related));a.library_selected=selected;CHECK(spire_test::focus_card_grid(a));
+        const auto h=hit(HitKind::LibraryItem,selected);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();
+        CHECK(a.keyword_hover.owner==(0x72000000u|(unsigned(tab)<<20)|unsigned(id)));
+        CHECK(a.library_card_seen(related));
+        HoverTipList tips{};
+        if(tab==1){collect_relic_hover_tips(a,WorldRelicFencingManual,tips);CHECK(tips.find(HoverTipKind::Relic,"FENCING_MANUAL")>=0&&tips.find(HoverTipKind::Static,"FORGE")>=0);}
+        else collect_potion_hover_tips(a,Potion::CunningPotion,tips);
+        const int preview=tips.find(HoverTipKind::Card,definitions[related].key);CHECK(preview>=0&&tips.items[preview].card.upgraded==(tab==2));
+        const auto&grid=a.card_grids[unsigned(CardGridSurface::Library)];const int position=grid.position;const unsigned generation=a.collection.generation;
+        capture(tab==1?"relic-collection-associated-forge":"potion-lab-associated-shiv");
+        a.render();CHECK(grid.position==position&&a.collection.generation==generation);
+        a.pointer_button(true);CHECK(a.pointer.held&&a.pointer.captured.kind==HitKind::LibraryItem&&a.pointer.captured.value==selected);
+        a.render();CHECK(!a.keyword_hover.owner);a.pointer_button(false);a.render();CHECK(a.detail_item<0&&grid.position==position);
+    }
+}
 static void host_input(){
     std::vector<int> codes;auto emit=[&](int code){codes.push_back(code);};host_text_utf8("A升级",7,emit);CHECK(codes.size()==3&&codes[0]=='A'&&codes[1]==0x5347&&codes[2]==0x7ea7);
     codes.clear();const char invalid[]={char(0xc0),char(0xaf),char(0xed),char(0xa0),char(0x80),'z'};host_text_utf8(invalid,sizeof invalid,emit);CHECK(codes.size()==1&&codes[0]=='z');
@@ -120,6 +143,6 @@ static void observed_rewards(){
 int main(int argc,char**argv){
     std::vector<uint8_t>bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);CHECK(a.init(bytes.data(),bytes.size(),{}));}if(argc>2)captures=argv[2];
     new_run(a.game,711,true);a.title=false;a.reset_presentation();SaveData before{};CHECK(save(a.game,before));
-    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);host_input();observed_rewards();
+    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

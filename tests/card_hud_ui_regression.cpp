@@ -179,7 +179,7 @@ static void card_cache_pixels(){
 static void original_resource_colors(){
     auto saved=std::make_unique<State>(app.game);const bool title=app.title,library=app.library,history=app.history_open;
     app.title=app.library=app.history_open=false;new_run(app.game,8137,true,Character::Regent);
-    CHECK(app.game.hand.count);const int id=app.game.hand.ids[0];app.game.cards[id]={Strike,0};
+    CHECK(lab_card(app.game,{Strike,0}));int id=app.game.card_count-1;CHECK(app.game.zones[id]==Zone::Hand);
     const auto style=[&](int energy,int stars){return card_face_resource_styles(app,app.game.cards[id],energy,stars,id,nullptr);};
     app.game.energy=9;app.game.expansion.stars=9;
     CHECK((style(1,0)&3)==ResourceNormal);CHECK((style(2,0)&3)==ResourceIncreased);CHECK((style(0,0)&3)==ResourceDecreased);
@@ -193,7 +193,7 @@ static void original_resource_colors(){
         unsigned found=0;for(int y=49;y<64;++y)for(int x=39;x<50;++x)found+=app.pixels[y*320+x]==colors[mode];CHECK(found);}
     // Both frames are unplayable because stars are insufficient. Energy
     // becoming affordable must still invalidate the cached red energy label.
-    app.game.cards[id]={RegentFallingStar,0};const int price=cost(app.game,id);CHECK(price>0);
+    CHECK(lab_card(app.game,{RegentCrescentSpear,0}));id=app.game.card_count-1;CHECK(app.game.zones[id]==Zone::Hand);const int price=cost(app.game,id);CHECK(price>0);
     app.game.energy=price-1;app.game.expansion.stars=0;++app.game.revision;invalidate_hand_tiles();begin_card_face_frame();
     SaveData before{},after{};CHECK(save(app.game,before));const auto&red=hand_tile(c,id);
     CHECK(!red.playable&&(red.resource_styles&3)==ResourceInsufficient&&(red.resource_styles>>2)==ResourceInsufficient);
@@ -317,7 +317,7 @@ static void top_bar_session_lifecycle(const Bytes&data){
         };
         fresh();CHECK(top_bar_motions[1].angle==0&&top_bar_motions[1].scale==4096);
         const std::vector<uint16_t> baseline(app.pixels,app.pixels+ScreenW*22);
-        Canvas c{app};app.map_clock_ms=3000;app.pointer.x=266;app.pointer.y=10;app.pointer.visible=true;hud(c);
+        Canvas c{app};app.map_clock_ms=3000;app.pointer.x=287;app.pointer.y=10;app.pointer.visible=true;hud(c);
         app.map_clock_ms=3500;hud(c);CHECK(top_bar_motions[1].angle==-12000);
         app.map_clock_ms=3617;app.pointer.visible=false;hud(c);
         CHECK(top_bar_motions[1].state==0&&top_bar_motions[1].start==3617&&top_bar_motions[1].from_angle==-12000);
@@ -325,6 +325,23 @@ static void top_bar_session_lifecycle(const Bytes&data){
         CHECK(top_bar_motions[1].angle==0&&top_bar_motions[1].scale==4096);
         CHECK(!std::memcmp(baseline.data(),app.pixels,ScreenW*22*sizeof(uint16_t)));
     }
+}
+static void original_proceed_translation(){
+    const auto clock=app.map_clock_ms;const auto saved_motion=app.proceed_motion;
+    const auto saved_pointer=app.pointer;app.pointer.visible=false;app.pointer.held=false;
+    app.proceed_motion={};app.map_clock_ms=1000;Canvas c{app};SaveData before{},after{};CHECK(save(app.game,before));
+    auto draw=[&](bool enabled){clear();app.hit_count=0;native_proceed(c,"Proceed",enabled);native_proceed_action(c,UiAction::LeaveRewards,enabled);};
+    draw(false);CHECK(app.hit_count==0);draw(true);CHECK(app.hit_count==0);capture("proceed-entry-start");
+    app.map_clock_ms=1025;draw(true);CHECK(app.hit_count==1&&app.hits[0].x>proceed_layout::X&&app.hits[0].x<ScreenW);
+    CHECK(app.hits[0].x+app.hits[0].w<=ScreenW);capture("proceed-entry-moving");
+    app.map_clock_ms=1500;draw(true);CHECK(app.hit_count==1&&app.hits[0].x==proceed_layout::X&&app.hits[0].w==proceed_layout::W);
+    capture("proceed-entry-settled");draw(false);CHECK(app.hit_count==0&&app.proceed_motion.sample(app.map_clock_ms).x==0);
+    app.map_clock_ms=1600;draw(false);CHECK(app.hit_count==0&&app.proceed_motion.sample(app.map_clock_ms).x>0);
+    capture("proceed-exit-moving");const auto leaving=app.proceed_motion.sample(app.map_clock_ms);draw(true);
+    CHECK(app.proceed_motion.sample(app.map_clock_ms).x==leaving.x);app.map_clock_ms=2100;draw(true);
+    CHECK(app.hit_count==1&&app.hits[0].x==proceed_layout::X);
+    CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
+    app.map_clock_ms=clock;app.proceed_motion=saved_motion;app.pointer=saved_pointer;
 }
 static void character_confirm_art(){
     const int base=app.content.world_image("common","CONFIRM"),tick=app.content.world_image("common","CONFIRM_TICK");
@@ -488,7 +505,7 @@ static void ui6_screens(){
     for(int i=0;i<app.hit_count;++i){sorters+=app.hits[i].kind==HitKind::PileSort;CHECK(app.hits[i].kind!=HitKind::PileTab);}
     CHECK(sorters==4);capture("deck-original-sorters");
     app.sort_pile(3);app.pile_upgraded=true;app.render();capture("deck-original-upgrades");
-    app.pointer_move(266,10);app.advance(165);app.render();capture("top-deck-hover-count");app.input(Key::Back);
+    app.pointer_move(287,10);app.advance(165);app.render();capture("top-deck-hover-count");app.input(Key::Back);
     const Key piles[]={Key::DrawPile,Key::DiscardPile,Key::ExhaustPile};const char*names[]={"draw-pile-original","discard-pile-original","exhaust-pile-original"};
     for(unsigned i=0;i<3;++i){app.input(piles[i]);app.render();CHECK(app.panel==1&&app.pile_tab==int(i+1));
         for(int h=0;h<app.hit_count;++h)CHECK(app.hits[h].kind!=HitKind::PileTab&&app.hits[h].kind!=HitKind::PileSort);
@@ -517,5 +534,5 @@ static void ui6_screens(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();original_resource_colors();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();original_resource_colors();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();top_bar_large_rotation();original_proceed_translation();if(argc>1)character_confirm_art();long_hand_description();ui7_cards();ui7_hud_nodes();ui6_screens();samples();top_bar_session_lifecycle(data);std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, original resource colors, automatic overflow tooltip, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

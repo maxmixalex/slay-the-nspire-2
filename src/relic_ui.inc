@@ -75,12 +75,10 @@ static void owned_relic_tooltip(Canvas&c){
  const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;
  if(!a.pointer.visible&&a.hud_focus>=HudRelicFocusFirst)for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::OwnedRelic&&a.hits[i].value==a.hud_focus-HudRelicFocusFirst){hit=&a.hits[i];break;}
  if(!hit||hit->kind!=HitKind::OwnedRelic||hit->value<0||hit->value>=int(ui_owned_relic_count(a.game)))return;
- RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,hit->x-15),150),y=mn(147,hit->y+hit->h+4);
+ RelicId id=ui_owned_relic_id(a.game,hit->value);int x=mn(mx(4,hit->x-3),317-SourceHoverWidth),y=hit->y+hit->h+2;
  char progress[128]{},description[2048]{};ui_relic_progress(a.game,hit->value,progress,sizeof progress,&a.content);a.relic_description(id,description,sizeof description,hit->value);
- const int top=*progress?40:25,lines=c.paragraph(description,0,0,150,0,0,10),height=mn(236-y,top+lines*13+6);
- if(!c.nine_ui(U_HoverTip,x,y,166,height,7,7,7,7)){c.rect(x,y,166,height,Panel);c.box(x,y,166,height,Gold);}
- c.text_fitted(a.relic_title(id,hit->value),x+8,y+5,150,12,Gold,8);
- if(*progress)c.text(progress,x+8,y+24,10,Green,150);c.paragraph(description,x+8,y+top,150,mx(1,(height-top-4)/13),0,10,White);
+ char body[2304]{};TextBuffer text{body,sizeof body,0};if(*progress){text.text("[green]");text.text(progress);text.text("[/green]\n");}text.text(description);
+ source_hover_box(c,a.relic_title(id,hit->value),body,x,y);
 }
 #include "world_treasure_ui.inc"
 static void treasure_screen(Canvas&c){

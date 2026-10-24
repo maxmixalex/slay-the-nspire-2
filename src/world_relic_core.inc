@@ -76,8 +76,15 @@ static bool wr_extra_turn(State&s,bool commit){auto*r=wr_find(s,WorldRelicPaelsE
 static int wr_orb_value(const State&s,DOrb kind,int n){return n+(kind==DOrb::Lightning&&wr_has(s,WorldRelicInfusedCore)?1:0);}
 static int wr_orb_passive_count(State&s,int slot,int n,bool commit){if(slot==0&&wr_has(s,WorldRelicGoldPlatedCables)){if(commit)world_relic_flash(s,WorldRelicGoldPlatedCables);return n+1;}return n;}
 enum WRAction {WRA_FillPotions=1,WRA_GenerateDraw,WRA_GenerateHand,WRA_GenerateBatch,WRA_Exhaust,WRA_Discard,WRA_Draw,WRA_Strength,WRA_History,WRA_Whisper,WRA_OrbPassives,WRA_Delayed,WRA_TransformEgg,WRA_WhisperStars,WRA_WhisperPlay};
+// Hook frames are wholly zero-initialized, including their two alignment
+// bytes before args. Copying a temporary aggregate left those bytes dependent
+// on earlier observer callbacks, despite identical canonical field values.
+static void wr_clear_hook_frame(WorldRelicHookFrame&frame){
+ static_assert(unsigned(WorldRelicHook::BeforeCombatStart)==0,"Zero hook frame must retain its default hook");
+ clear_zero_object(frame);
+}
 static int wr_frame(State&s){for(unsigned i=0;i<MaxWorldRelicHookFrames;i++)if(!s.world_relics.hook_frames[i].active)return int(i);fail(s);return -1;}
-static void wr_action(State&s,unsigned owner,int op,int a=0,int b=0){int at=wr_frame(s);if(at<0)return;auto&f=s.world_relics.hook_frames[at];f=WorldRelicHookFrame{};f.active=1;f.hook=WorldRelicHook::Internal;f.count=1;f.serials[0]=uint16_t(owner);f.args[0]=op;f.args[1]=a;f.args[2]=b;queue_extension(s,XOp::WRelicHook,at,0,true);}
+static void wr_action(State&s,unsigned owner,int op,int a=0,int b=0){int at=wr_frame(s);if(at<0)return;auto&f=s.world_relics.hook_frames[at];wr_clear_hook_frame(f);f.active=1;f.hook=WorldRelicHook::Internal;f.count=1;f.serials[0]=uint16_t(owner);f.args[0]=op;f.args[1]=a;f.args[2]=b;queue_extension(s,XOp::WRelicHook,at,0,true);}
 static int wr_generated(State&s,Card card,const EventCardFacts* facts,bool in_draw=false,bool free=false,bool retained=false){int id=make_card(s,card);if(id<0)return -1;if(facts)s.event_cards.cards[id]=*facts;
  if(free)set_free_this_turn(s,id);if(retained)s.silent.retain[id]=1;
  if(in_draw){unsigned at=world_rng(s,WorldRng::Shuffle).below(s.draw.count+1);put(s,s.draw,id,Zone::Draw);for(unsigned i=s.draw.count-1;i>at;i--)s.draw.ids[i]=s.draw.ids[i-1];s.draw.ids[at]=uint16_t(id);}
@@ -331,19 +338,19 @@ static void wr_dispatch(State&s,unsigned serial,WorldRelicHook hook,int a,int b,
  world_relic_run_hook(s,serial,hook,a,b,c);at=world_relic_instance_index(s,serial);if(at>=0&&wr_live(s.world_relics.entries[at]))wr_listener(s,s.world_relics.entries[at],hook,a,b,c);}
 void world_relic_schedule_acquisition(State&s){auto&w=s.world_relics;int index=-1;
  for(unsigned i=0;i<MaxWorldRelicHookFrames;i++)if(w.hook_frames[i].active&&w.hook_frames[i].hook==WorldRelicHook::Acquisition){index=int(i);break;}
- if(index<0){index=wr_frame(s);if(index<0)return;auto&f=w.hook_frames[index];f=WorldRelicHookFrame{};f.active=1;f.hook=WorldRelicHook::Acquisition;}
+ if(index<0){index=wr_frame(s);if(index<0)return;auto&f=w.hook_frames[index];wr_clear_hook_frame(f);f.active=1;f.hook=WorldRelicHook::Acquisition;}
  // Nested acquisition must precede the suspended parent's next listener.
  // Move its existing marker instead of creating two independent pumps.
  for(unsigned i=0;i<s.effect_count;i++)if(s.effects[i].kind==EffectKind::Extended&&s.effects[i].target==int(XOp::WRelicHook)&&s.effects[i].value==index){for(unsigned j=i+1;j<s.effect_count;j++)s.effects[j-1]=s.effects[j];s.effects[--s.effect_count]={};break;}
  queue_extension(s,XOp::WRelicHook,index,0,true);
 }
 void world_relic_effect(State&s,int index){if(index<0||index>=int(MaxWorldRelicHookFrames))return;auto&f=s.world_relics.hook_frames[index];if(!f.active)return;
- if(f.hook==WorldRelicHook::Acquisition){f=WorldRelicHookFrame{};world_relic_acquisition_resume(s);return;}
+ if(f.hook==WorldRelicHook::Acquisition){wr_clear_hook_frame(f);world_relic_acquisition_resume(s);return;}
  while(f.active&&s.world_relics.choice==WorldRelicChoice::None&&s.phase!=Phase::Dead&&s.phase!=Phase::Error){
-  if(f.cursor==f.count){f=WorldRelicHookFrame{};return;}
+  if(f.cursor==f.count){wr_clear_hook_frame(f);return;}
   unsigned serial=f.serials[f.cursor++];auto hook=f.hook;int a=f.args[0],b=f.args[1],c=f.args[2];bool combat=combat_phase(s.phase);
   if(combat&&f.cursor<f.count)queue_extension(s,XOp::WRelicHook,index,0,true);
-  if(f.cursor==f.count)f=WorldRelicHookFrame{};
+  if(f.cursor==f.count)wr_clear_hook_frame(f);
   wr_dispatch(s,serial,hook,a,b,c);
   if(combat)return;
  }
@@ -362,9 +369,9 @@ void world_relic_hook(State&s,WorldRelicHook hook,int a,int b,int c){if(!s.world
  // Confused is a single power even if both the real and fake eye are owned.
  if(hook==WorldRelicHook::AfterCardDrawn&&wr_card(s,a)&&cost(s.cards[a])>=0&&(wr_has(s,WorldRelicSneckoEye)||wr_has(s,WorldRelicFakeSneckoEye))){s.expansion.combat_cost[a]=uint8_t(world_rng(s,WorldRng::CombatEnergyCosts).below(4)+1);s.expansion.turn_cost[a]=0;combat_cost_set(s,a);}
  if(hook==WorldRelicHook::AfterCardDrawn)return;
- int at=wr_frame(s);if(at<0)return;auto&f=w.hook_frames[at];f=WorldRelicHookFrame{};f.active=1;f.hook=hook;f.args[0]=a;f.args[1]=b;f.args[2]=c;
+ int at=wr_frame(s);if(at<0)return;auto&f=w.hook_frames[at];wr_clear_hook_frame(f);f.active=1;f.hook=hook;f.args[0]=a;f.args[1]=b;f.args[2]=c;
  for(unsigned i=0;i<w.count;i++)if(wr_live(w.entries[i]))f.serials[f.count++]=w.entries[i].serial;
- if(!f.count){f=WorldRelicHookFrame{};return;}
+ if(!f.count){wr_clear_hook_frame(f);return;}
  if(combat_phase(s.phase))queue_extension(s,XOp::WRelicHook,at,0,true);else world_relic_effect(s,at);
 }
 void world_relic_resume(State&s){if(s.world_relics.choice!=WorldRelicChoice::None||s.phase==Phase::Error||s.phase==Phase::Dead)return;

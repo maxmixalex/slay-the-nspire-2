@@ -4,6 +4,7 @@
 #include "world_run.hpp"
 #include "reference_sort.hpp"
 #include "run_options.hpp"
+#include "inplace_reset.hpp"
 
 namespace spire {
 #include "world_relic_definitions.inc"
@@ -16,6 +17,7 @@ int w_min(int a,int b){return a<b?a:b;}
 int w_max(int a,int b){return a>b?a:b;}
 void w_error(State& s){s.phase=Phase::Error;record(s,LogKind::Capacity,WorldRelicCapacity);}
 bool w_present(const WorldRelicInstance& r){return !(r.flags&WorldRelicMelted);}
+void w_clear_instance(WorldRelicInstance& r){clear_zero_object(r);r.id=NoWorldRelic;}
 int w_first(const State& s,RelicId id,bool active=false){
  for(unsigned i=0;i<s.world_relics.count;i++)if(s.world_relics.entries[i].id==id&&(!active||w_present(s.world_relics.entries[i])))return int(i);
  return -1;
@@ -68,12 +70,12 @@ void w_clean_bags(State& s){auto& w=s.world_relics;for(unsigned b=0;b<2;b++)for(
  for(unsigned i=n;i<w.bag_sizes[b][r];i++)w.bags[b][r][i]=0;w.bag_sizes[b][r]=uint16_t(n);
 }}
 bool w_enqueue(State& s,WorldRelicOp op,unsigned owner,int a=0,int b=0,int c=0){auto& w=s.world_relics;
- if(w.step_cursor){unsigned remaining=w.step_count-w.step_cursor;for(unsigned i=0;i<remaining;i++)w.steps[i]=w.steps[i+w.step_cursor];for(unsigned i=remaining;i<w.step_count;i++)w.steps[i]=WorldRelicStep{};w.step_count=uint8_t(remaining);w.step_cursor=0;}
+ if(w.step_cursor){unsigned remaining=w.step_count-w.step_cursor;for(unsigned i=0;i<remaining;i++)w.steps[i]=w.steps[i+w.step_cursor];for(unsigned i=remaining;i<w.step_count;i++)clear_zero_object(w.steps[i]);w.step_count=uint8_t(remaining);w.step_cursor=0;}
  if(w.step_count>=MaxWorldRelicSteps){w_error(s);return false;}
  // Insertion at the current cursor gives awaited child acquisitions precedence
  // over the continuation of the reward/event that caused them.
  for(unsigned i=w.step_count;i>w.step_cursor;i--)w.steps[i]=w.steps[i-1];
- w.steps[w.step_cursor]={op,uint16_t(owner),a,b,c};++w.step_count;return true;
+ auto&step=w.steps[w.step_cursor];clear_zero_object(step);step.op=op;step.owner=uint16_t(owner);step.a=a;step.b=b;step.c=c;++w.step_count;return true;
 }
 void w_pump(State&);
 void w_obtained(State&,WorldRelicInstance&);
@@ -100,7 +102,7 @@ void w_pump(State& s){auto& w=s.world_relics;if(w.running||w.choice!=WorldRelicC
  }
  w.running=0;
  if(w.step_cursor==w.step_count&&w.choice==WorldRelicChoice::None){
-  for(unsigned i=0;i<w.step_count;i++)w.steps[i]={};w.step_count=w.step_cursor=0;
+  for(unsigned i=0;i<w.step_count;i++)clear_zero_object(w.steps[i]);w.step_count=w.step_cursor=0;
  }
 }
 void w_pause(State& s,WorldRelicChoice choice,unsigned serial,unsigned minimum,unsigned maximum,unsigned filter=0){auto& w=s.world_relics;
@@ -145,7 +147,7 @@ unsigned world_relic_candidates(const State& s,RelicId* out,unsigned capacity,Wo
 void init_world_relics(State& s){auto& w=s.world_relics;if(w.active)return;w.active=1;
  for(unsigned i=0;i<s.relic_count;i++){
   RelicId id=s.relic_order[i];if(id>=RelicKinds||w.count>=WorldRelicCapacity){w_error(s);return;}
-  auto& r=w.entries[w.count++];r=WorldRelicInstance{};r.id=id;r.serial=++w.last_serial;w_initial_values(r);r.values[0]=s.relic_counters[id];
+  auto& r=w.entries[w.count++];w_clear_instance(r);r.id=id;r.serial=++w.last_serial;w_initial_values(r);r.values[0]=s.relic_counters[id];
  }
  w_bags(s);
 }
@@ -170,13 +172,13 @@ RelicId random_world_relic(State& s,WorldRelicPool pool){
 void world_relic_flash(State& s,RelicId id){s.world_relics.last_flash=id;++s.world_relics.flash_revision;record(s,LogKind::RelicIndex,id);}
 bool gain_world_relic(State& s,RelicId id){if(id>=WorldRelicKinds)return false;init_world_relics(s);if(!w_enqueue(s,WorldRelicOp::Obtain,0,id))return false;w_pump(s);++s.revision;return s.phase!=Phase::Error;}
 bool lose_world_relic(State& s,RelicId id){init_world_relics(s);int at=w_first(s,id);if(at<0)return false;auto& w=s.world_relics;
- for(unsigned i=unsigned(at)+1;i<w.count;i++)w.entries[i-1]=w.entries[i];w.entries[--w.count]=WorldRelicInstance{};
+ for(unsigned i=unsigned(at)+1;i<w.count;i++)w.entries[i-1]=w.entries[i];w_clear_instance(w.entries[--w.count]);
  if(id<RelicKinds&&w_first(s,id)<0){s.relics&=~(RelicMask(1)<<id);for(unsigned i=0;i<s.relic_count;i++)if(s.relic_order[i]==id){for(unsigned j=i+1;j<s.relic_count;j++)s.relic_order[j-1]=s.relic_order[j];s.relic_order[--s.relic_count]=0;break;}s.relic_counters[id]=0;}
  notify_history(s,RunHistoryEvent::RelicRemoved,id);++s.revision;return true;
 }
 bool world_relic_replace(State&s,unsigned serial,RelicId id){int at=world_relic_instance_index(s,serial);if(at<0||id>=WorldRelicKinds)return false;RelicId old=s.world_relics.entries[at].id;
  // Replace preserves ownership order and gives the new model a new identity.
- auto&w=s.world_relics;for(unsigned i=unsigned(at)+1;i<w.count;i++)w.entries[i-1]=w.entries[i];w.entries[--w.count]=WorldRelicInstance{};
+ auto&w=s.world_relics;for(unsigned i=unsigned(at)+1;i<w.count;i++)w.entries[i-1]=w.entries[i];w_clear_instance(w.entries[--w.count]);
  if(old<RelicKinds&&w_first(s,old)<0){s.relics&=~(RelicMask(1)<<old);for(unsigned i=0;i<s.relic_count;i++)if(s.relic_order[i]==old){for(unsigned j=i+1;j<s.relic_count;j++)s.relic_order[j-1]=s.relic_order[j];s.relic_order[--s.relic_count]=0;break;}s.relic_counters[old]=0;}
  notify_history(s,RunHistoryEvent::RelicRemoved,old);
  if(!w_enqueue(s,WorldRelicOp::Obtain,0,id,at+1))return false;w_pump(s);return s.phase!=Phase::Error;}
@@ -476,7 +478,7 @@ void w_obtained(State& s,WorldRelicInstance& r){unsigned id=r.id,owner_serial=r.
 void w_step(State& s,const WorldRelicStep& step){auto& w=s.world_relics;switch(step.op){
  case WorldRelicOp::Obtain:{if(step.a<0||step.a>=WorldRelicKinds||w.count>=WorldRelicCapacity||w.last_serial==65535){w_error(s);return;}
   unsigned at=step.b>0?unsigned(step.b-1):w.count;if(at>w.count)at=w.count;for(unsigned i=w.count;i>at;i--)w.entries[i]=w.entries[i-1];++w.count;
-  auto& r=w.entries[at];r=WorldRelicInstance{};r.id=RelicId(step.a);r.floor=uint16_t(world_total_floor(s));r.serial=++w.last_serial;r.flags=uint8_t(step.c&WorldRelicWax);w_initial_values(r);
+  auto& r=w.entries[at];w_clear_instance(r);r.id=RelicId(step.a);r.floor=uint16_t(world_total_floor(s));r.serial=++w.last_serial;r.flags=uint8_t(step.c&WorldRelicWax);w_initial_values(r);
   if(r.id<RelicKinds){RelicMask bit=RelicMask(1)<<r.id;if(!(s.relics&bit)){s.relics|=bit;s.relic_order[s.relic_count++]=uint8_t(r.id);}}
   if(!(world_relic_definitions[r.id].flags&8))w_bag_remove(s,r.id);world_relic_flash(s,r.id);unsigned serial=r.serial;
   notify_history(s,RunHistoryEvent::RelicObtained,r.id);

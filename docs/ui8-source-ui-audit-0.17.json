@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI8 stage 8 candidate; full integrated acceptance follows the remotely verified frozen checkpoint",
+  "source_stage": "UI8 stage 8a candidate; matched final native, portable, bilingual and device acceptance follows the remotely verified frozen checkpoint",
   "scope": {
     "excluded": [
       "audio",
@@ -75,8 +75,8 @@
       ],
       "contract": "Click-selected character, Ascension, seed and embark",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Five original sampled character loops use the corrected 1680x1260 projection; click selection, seed, Ascension and start are active.",
-      "remaining": "Independent source particles and hover variants remain incomplete.",
+      "implemented": "Five original sampled character loops, original portrait focus/scale/saturation/outline, fixed source VBox and Name slot, 5px body/relic and 14/12/10px display title with original source glyphs; seed, Ascension and actual start controls remain active.",
+      "remaining": "All independent source particles and exact GPU material/raster equivalence are not established; final matching bilingual composed review remains required.",
       "regressions": [
         "five_character_ui_regression"
       ],
@@ -151,8 +151,8 @@
       ],
       "contract": "Relic categories and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and tooltips.",
-      "remaining": "All related-tip chains and randomized Cookie visual variants remain incomplete.",
+      "implemented": "Original category/starter/Ancient groups, discovery gates, icons and source 69px hover columns with associated keywords and separate related-card previews.",
+      "remaining": "Randomized Cookie visual variants and exact GPU material equivalence remain incomplete; final matching regression required.",
       "regressions": [
         "ui_progress_regression"
       ],
@@ -166,8 +166,8 @@
       ],
       "contract": "Potion catalogue and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 64 potion catalogue entries, source rarity groups, known gates and inspect.",
-      "remaining": "All secondary related-tip chains remain incomplete.",
+      "implemented": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews.",
+      "remaining": "Final matching real-pack collection and hover boundary acceptance remains required.",
       "regressions": [
         "potion_ui_regression"
       ],
@@ -217,7 +217,7 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed run summary/map/relic/tiny-deck carousel, original map drawing, NSH7 bounded per-floor actual acquisitions, transformations, purchases/spending, reward/shop skips and event options; source action/reward/skipped grouping and scrollable visible rows.",
+      "implemented": "Observed run summary/map/relic/tiny-deck carousel, original map drawing, NSH7 bounded per-floor actual acquisitions, transformations, purchases/spending, reward/shop skips and event options; source action/reward/skipped grouping and scrollable visible rows. Actual terminal combat reward groups remain available after Proceed, closing the map and save/load; actual travel records remaining skips. Legacy noncombat encounter data does not draw as observed combat.",
       "remaining": "Unknown earlier facts and evicted journal entries are explicitly partial. Full Stage8 codec, real-command and actual bilingual hover acceptance remains required.",
       "regressions": [
         "history_ui8_regression",
@@ -412,7 +412,7 @@
       ],
       "contract": "Chest opening, relic appearance, take/leave",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original chest/holder/banner timing and command guards; original 125x31 common banner, separate 39px holder/23px icon, source hover/press scaling, actual relic hover tips, centered empty label and shared original Proceed. Legacy permanent description and extra Details control removed.",
+      "implemented": "Original chest/holder/banner timing and command guards; original 125x31 common banner, separate 39px holder/23px icon, source hover/press scaling, actual relic hover tips, centered empty label and shared original Proceed. Legacy permanent description and extra Details control removed. Shared Proceed retains original 500/800ms enable/disable translation and moving pointer bounds.",
       "remaining": "All original particles/materials are not reproduced.",
       "regressions": [
         "world_room_ui_regression"
@@ -972,7 +972,7 @@
       ],
       "contract": "Original locale and scene font families, style measurement and glyph painting",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Real source locale/scene families, true 5/6px glyphs, actual available-size selection, consistent metrics/paint and real OFL missing-codepoint fallbacks.",
+      "implemented": "Original regular/bold/display/italic faces at source-derived sizes, including 935 missing 5px bold Chinese tooltip glyphs and 57 display character-title glyphs, append-only with all old bitmaps exact.",
       "remaining": "Kerning/Godot rasterization equality is not established. 320x240 minimum readable sizes are documented adaptations.",
       "regressions": [
         "font_styles_ui7_regression",

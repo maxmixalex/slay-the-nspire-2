@@ -48,7 +48,7 @@ void record(State&s,LogKind k,int a,int b){
       case LogKind::Noxious:power=11;break;case LogKind::Accuracy:power=12;break;default:break;}
     if(power>=0)power_order_set(s,0,unsigned(power),power_amount(s,0,power)!=0);
     if(s.log_count==24){for(int i=1;i<24;i++)s.logs[i-1]=s.logs[i];s.log_count--;}
-    const Log entry{k,(int32_t)a,(int32_t)b};s.logs[s.log_count++]=entry;
+    Log entry;clear_zero_object(entry);entry.kind=k;entry.a=int32_t(a);entry.b=int32_t(b);s.logs[s.log_count++]=entry;
     // Capture the binding so a nested presentation scope can replace and
     // restore it without changing the context of the current notification.
     const CoreObserver observer=core_observer;

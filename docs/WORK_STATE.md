@@ -1,5 +1,67 @@
 # Work state — 2026-10-24
 
+## UI8 stage 8a candidate — final integration and device fit
+
+Stage-eight runtime `2ab4e1bc014dca1a3059bffdb6dd46b6a0db734c` built all
+native targets and passed 96/100 suites. Three failures were exact fixture
+assumptions exposed by the source UI changes: an offscreen map-history node,
+a zero-energy card selected as a positive-cost fixture plus the former deck
+button coordinate, and a treasure background sample now covered by the real
+relic hover. The corrected frozen-eight focused checks passed. The fourth
+failure found real uninitialized padding in hook frames, card facts, relic
+instances and log entries. This candidate clears only verified all-zero
+representations or preserves their explicit nonzero defaults. The strict full
+State comparisons pass 204 focused checks in both Release and Debug; they have
+not been weakened to compare selected fields.
+
+Portable correction `24fc0af663e93119f16a74fa3f39db07e355d174` passed ARM
+and WASM. Its ordinary launcher is 1,341,246 bytes; the unchanged 16 MiB
+allocation gate reports 16,629,448 bytes, leaving 147,768 bytes. Linked ARM
+ABI/division and LZMA2 checks passed. Matching v31 real-pack acceptance passed
+both languages for frontend, events, rewards, map, Crystal, journal, all five
+character death animations and complete Game Over staging. The ordinary
+self-contained browser candidate passed 13 actual DOM/Canvas flows with no
+external requests or page errors. These are baseline results, not acceptance
+of the further changes in this candidate.
+
+This candidate retains actual terminal combat-reward groups when Proceed
+opens the map. Closing the map or saving/loading returns to the real choices;
+only committing travel records and releases leftovers. Older noncombat
+history with leaked encounter fields no longer draws them as recorded facts.
+The journal renderer avoids unnecessary large scratch-array initialization
+and stops its second pass at the matching floor range. Its full owner ring
+still distinguishes interleaved floor entries.
+
+Actual Chinese long-history traces exposed key-count eviction, despite spare
+payload memory. Glyph/string key counts become 1,536/1,024 with 64-byte runs
+and 256 lookup buckets, within a smaller total static allocation: ARM text
+caches fall by 7,200 bytes. Image caches and animation frames are unchanged.
+Exact final bilingual frame, State and read-traffic comparisons are required
+from this candidate's frozen build before claiming the observed improvement.
+
+The original 69px hover-tip columns, 5px original text faces and collection
+related tips replace the old oversized boxes. Character selection restores
+its fixed source information slots and sizes. Proceed now uses independent
+500/800ms entry/exit translation and linear image/outline modulation; its
+moving hit rectangle follows the control and disabled exits cannot capture
+input. The independent full-curve, reversal and clock-wrap checks passed
+97,635 assertions. These UI changes require new composed-screen review.
+
+Font-only checkpoints `3d2d8641e87991fcb43d9bd38cf0f947188c1461` and
+`1c975fded0090be318c5d87be7a90b1f00e22d2b` append only missing source
+5px bold tooltip titles and 10/12/14px character display titles. Existing
+bitmaps, strings, images, model indices and full animation registrations stay
+exact. Their original-derived outputs remain private.
+
+Ordinary Firebird transfer has exposed an installation-size problem: its OS
+reports 92.3 MB total storage, and the current 104,493,068-byte bilingual set
+cannot be treated as an installable result. Work continues on the disposable
+validation NAND, actual lossless resource reduction, final integrated native /
+portable / browser / Firebird gates, and verified main synchronization.
+No numerical original-game fidelity percentage or 30–40 MB claim is inferred
+from directory scans, test counts, successful builds or a partial transfer.
+
+
 ## UI8 stage 8 candidate — journal, common controls and matching resources
 
 Frozen stage-eight runtime `2ab4e1bc014dca1a3059bffdb6dd46b6a0db734c`

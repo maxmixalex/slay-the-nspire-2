@@ -110,7 +110,9 @@ static void capture(const char*name){
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
-static uint16_t scene_pixel(){a.render();return a.pixels[100*ScreenW+5];}
+// Sample outside source hover-tip columns; keyboard focus may legitimately
+// open the new treasure relic tip over the old left-edge sample.
+static uint16_t scene_pixel(){a.render();return a.pixels[100*ScreenW+(a.game.phase==Phase::Treasure?319:5)];}
 static void rest_scene_pixel(const char*key){
  if(actual_profile)return;const int id=a.content.world_image("rest_background",key);CHECK(id>=0);
  const auto image=a.content.image(id);CHECK(image.pixels&&image.w==2&&image.h==2&&!image.alpha&&!image.palette);

@@ -51,6 +51,13 @@ reported only on actual `world_choose_point` departure. Returning from an event
 combat or changing acts performs the actual exit immediately. Repeated Proceed
 and failed/full-belt purchases do not create duplicate outcomes.
 
+The saved owner-zero terminal combat RewardsSet, including its main rewards and
+Prayer Wheel or other extra rewards, remains the same active choice while its
+map is open. Closing that map or restoring the State save returns to those exact
+offers. Ordinary Proceed completes the room counter once; destination commit
+then releases the group and reports remaining choices. Nested event/relic groups
+and act-ending boss groups keep their actual immediate-exit behavior.
+
 Ordinary event choices capture the original title localization ID and its
 parameter before page changes and item consumption. All 200 original event
 option title keys have stable registered IDs. Ranwid's gold/potion/relic,
@@ -73,6 +80,9 @@ first actual battle. Its encounter/turn count is retained across a second boss
 or later event battle, matching the source hover's first combat room. Missing
 legacy or evicted first-battle metadata never invents a zero-damage outcome or
 relabels a later combat as the first.
+Old noncombat floors may contain an encounter/turn residue from earlier versions;
+the reader does not display that as combat. It requires a real combat-room type
+or an observed start, and leaves unknown first-event-combat turns unavailable.
 
 ## Bounded storage and compatibility
 
@@ -115,11 +125,18 @@ retained-room departure, combat-to-noncombat history, both hover input surfaces,
 State-pure scrolling, NSH1–7 migration, late-tail restore fallback, full-capacity
 encoding, transformation continuation and owner reuse.
 
+The full 33-owner, 96-floor-per-run, 4,096-entry profile fixture encodes to
+**287,075 / 524,288 bytes**. `UiProgress` is 308,296 bytes, its journal 33,696 bytes,
+and its hover reader 24 bytes. The Stage8 runtime passed 8,410 journal checks after
+correcting the test to scroll the real map back to its off-screen traveled
+points. The additional terminal-group retention and old noncombat pixel
+regressions await the frozen Stage8a runtime; they are not included in that count.
+
 The independent bounded owner audit completed 34,500 appends over 150 run serials
 and 6,762,772 oracle comparisons, including wrap/eviction/prune/reuse. This proves
 the container invariants only; it does not replace the frozen runtime regression
-or real-resource visual checks. Full native/ARM/resource validation is pending
-the root-owned immutable Stage8 checkpoint.
+or real-resource visual checks. Final native/ARM/resource results are recorded
+by the root-owned immutable checkpoints.
 
 The retained entry pool is deliberately bounded. Earlier facts from old profiles
 and entries lost to this bound remain unavailable. This work does not claim a

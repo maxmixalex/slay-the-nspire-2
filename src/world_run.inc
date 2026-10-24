@@ -145,10 +145,20 @@ bool world_begin_run(State&s,reference::ActKind first_region,unsigned ascension)
 }
 const char* world_region_key(const State&s){return s.world.active&&s.world.act_index<WorldActCount&&s.world.rooms[s.world.act_index].region<4?WorldRegionPools[s.world.rooms[s.world.act_index].region].key:"";}
 bool world_room_is_combat(const State&s){return s.world.active&&s.world.room_type>=uint8_t(WorldRoom::Monster)&&s.world.room_type<=uint8_t(WorldRoom::Boss);}
+bool world_retained_reward_group(const State&s){
+    const auto&w=s.world;const auto&r=s.world_relics;const auto*map=world_current_map(s);
+    if(!world_room_is_combat(s)||!map||!w.room_open||w.final_event||w.event_combat_parent||s.original_events.active||
+       s.phase!=Phase::WorldRelicChoice||r.choice!=WorldRelicChoice::OfferReward||r.return_phase!=uint8_t(Phase::Reward)||
+       !r.choice_group||r.choice_group>r.group_count||r.choice_min)return false;
+    const unsigned end=map->second_boss!=NoPoint?map->second_boss:map->boss;
+    const unsigned group=r.choice_group-1;
+    return w.current_point!=end&&r.group_active[group]&&r.group_skip[group]&&!r.group_owner[group];
+}
 bool world_can_travel(const State&s){
     const auto&w=s.world;
     if(!w.active||w.finished||w.final_event||s.hp<=0||w.finish_pending||w.rest_pending||
-       w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255||world_relic_pending(s))return false;
+       w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255||
+       (world_relic_pending(s)&&!world_retained_reward_group(s)))return false;
     if(s.phase==Phase::Map)return !w.room_open;
     if(!w.room_open||w.room_open>2)return false;
     // NMapScreen's travel permission is enabled by the room, not by the
@@ -161,6 +171,7 @@ bool world_can_travel(const State&s){
     case Phase::Camp:return w.room_type==uint8_t(WorldRoom::Rest)&&!s.original_events.active&&
         (w.room_open==2||world_rest_can_proceed(s));
     case Phase::Reward:return !s.original_events.active&&!w.event_combat_parent;
+    case Phase::WorldRelicChoice:return world_retained_reward_group(s);
     case Phase::Event:{
         const auto&e=s.original_events;
         return w.room_type==uint8_t(WorldRoom::Event)&&!w.event_combat_parent&&
@@ -192,6 +203,11 @@ bool world_choose_point(State&s,unsigned point){
     // Opening/closing the UI never exits a room. A direct top-bar selection
     // performs the same one-time completion as Proceed, at this boundary.
     if(w.room_open==1&&!world_finish_room(s))return false;
+    // NRewardsScreen.Proceed opens the map without skipping its terminal
+    // set. Commit its remaining choices only at this real destination exit.
+    if(world_retained_reward_group(s)){
+        if(!world_relic_select(s,nullptr,0)||world_relic_pending(s))return false;
+    }
     world_history_leave(s);
     const auto&p=w.maps[w.act_index].points[point];
     WorldRoom room=WorldRoom::None;
@@ -281,7 +297,7 @@ bool world_finish_room(State&s){
     auto&w=s.world;if(!w.active)return false;
     if(s.hp<=0){w.finished=1;s.phase=Phase::Dead;original_event_finish_run(s);return true;}
     if(w.shop_free_remove||w.shop_auto_active||w.shop_pending_item!=255)return false;
-    if(world_relic_pending(s)||s.phase==Phase::OriginalEventChoice){w.finish_pending=1;return false;}
+    if((world_relic_pending(s)&&!world_retained_reward_group(s))||s.phase==Phase::OriginalEventChoice){w.finish_pending=1;return false;}
     w.finish_pending=0;
     if(w.rest_pending){
         unsigned index=w.rest_pending-1;if(index>=w.rest_count)return world_fail(s);

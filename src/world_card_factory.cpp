@@ -1,5 +1,6 @@
 #include "world_card_factory.hpp"
 #include "run_options.hpp"
+#include "inplace_reset.hpp"
 namespace spire {
 namespace {
 int compare_keys(const char*a,const char*b){
@@ -37,7 +38,7 @@ unsigned roll_rarity(State&s,const WorldCardOptions&o){
  }
  return rarity;
 }
-void default_facts(Card c,EventCardFacts&f){f={};if(c.kind==EventCardSpoilsMap)f.progress=1;}
+void default_facts(Card c,EventCardFacts&f){clear_zero_object(f);if(c.kind==EventCardSpoilsMap)f.progress=1;}
 }
 Real world_float(uint32_t bits){
  uint64_t sign=uint64_t(bits>>31)<<63;unsigned e=(bits>>23)&255;uint32_t m=bits&0x7fffff;

@@ -148,12 +148,50 @@ static void ancient_actual_oracle(Canvas&c){
   CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
  }
 }
+static void character_information_actual(Canvas&c){
+ using namespace character_select_layout;
+ // Independently projected source VBox / NinePatch geometry. Text may change
+ // its natural height, but may not move or stretch the background panel.
+ CHECK(InfoX==31&&InfoY==79&&InfoWidth==110&&InfoHeight==72);
+ CHECK(InfoPanelX==17&&InfoPanelY==78&&InfoPanelWidth==133&&InfoPanelHeight==77);
+ CHECK(NameHeight==27&&StatsHeight==4&&RelicHeight==19);
+ Canvas body=c;body.bold_face=5;Canvas name=c;name.font_face=4;Canvas bold=c;bold.font_face=5;
+ for(unsigned character=0;character<CharacterKinds;++character){
+  const auto&definition=character_definitions[character];char key[96]{},description[1024]{},relic_text[1024]{};
+  TextBuffer b{key,sizeof key,0};b.text(definition.key);b.text(".description");app.localized_text("characters",key,description,sizeof description);
+  const auto*relic=relic_definition(definition.starting_relic);CHECK(relic&&*description);
+  const auto relic_id=RelicId(relic-relic_definitions);app.relic_description(relic_id,relic_text,sizeof relic_text);CHECK(*relic_text);
+  const char*title=app.content.world_title("characters",definition.key);CHECK(*title);
+  const int title_size=character_name_size(name,title);CHECK(title_size>=10&&title_size<=14&&app.content.font_size(title_size,4)==title_size);
+  CHECK(character_name_width(name,title,title_size)<=InfoWidth);
+  const auto body_plan=character_info_plan(body,description,InfoWidth),relic_plan=character_info_plan(body,relic_text,RelicTextWidth);
+  CHECK(body_plan.size==5&&relic_plan.size==5&&!body_plan.truncated&&!relic_plan.truncated);
+  const int body_height=body_plan.rows*body_plan.step+2,top=info_top(body_height),body_y=top+NameHeight+StatsHeight;
+  CHECK(top>=InfoY&&body_y+body_height+RelicDescriptionY+relic_plan.rows*relic_plan.step+2<AscensionY);
+  // Walk the actual render plans and require every non-whitespace codepoint,
+  // including rich colored values, to be emitted rather than ellipsized.
+  for(unsigned which=0;which<2;++which){const char*text=which?relic_text:description;const auto&plan=which?relic_plan:body_plan;const int width=which?RelicTextWidth:InfoWidth;
+   unsigned expected=0,emitted=0;RichReader reader(text);RichChar ch{};while(reader.next(ch))if(ch.codepoint>32)++expected;
+   auto metric=[&](const RichChar&value,int px){const auto g=app.content.glyph_metrics(value.codepoint,px,body.font_style(value));return fitted_text::Metric{g.advance,std::max(int(g.w),int(g.advance))};};
+   fitted_text::visit(text,width,plan,metric,[&](const RichChar&value,int x,int row,int px){
+    CHECK(value.codepoint!=0x2026&&row<plan.rows&&px==5);if(value.codepoint>32)++emitted;
+    CHECK(x+metric(value,px).width<=width);
+   });CHECK(expected==emitted);
+  }
+  const auto relic_title=character_info_plan(bold,app.relic_title(relic_id),RelicTextWidth);
+  CHECK(relic_title.size==5&&relic_title.rows==1&&!relic_title.truncated);
+  clear();character_info_name(name,title,InfoX,top+(NameHeight-title_size-3)/2,title_size);
+  character_info_text(body,description,InfoX,body_y,InfoWidth,body_plan,rgb(255,246,226));
+  character_info_text(body,relic_text,InfoX+RelicTextX,body_y+body_height+RelicDescriptionY,RelicTextWidth,relic_plan,rgb(255,246,226));
+  CHECK(app.content.healthy());
+ }
+}
 static void actual(const char*path,const char*capture){
  FILE*f=std::fopen(path,"rb");CHECK(f&&std::fseek(f,0,SEEK_END)==0);const long size=std::ftell(f);
  CHECK(size>=40&&static_cast<unsigned long>(size)<=MaxContentFile&&std::fseek(f,0,SEEK_SET)==0);
  Bytes bytes(static_cast<size_t>(size));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());CHECK(!std::fclose(f));
  Provider p{&bytes};CHECK(app.content.open(p.source())&&app.content.version()>=Ui7ContentVersion);Canvas c{app};
- if(app.content.version()>=HistoryUi8ContentVersion)ancient_actual_oracle(c);
+ if(app.content.version()>=HistoryUi8ContentVersion){ancient_actual_oracle(c);character_information_actual(c);}
  const char*sample=app.content.english()?"Upgrade one [gold]card[/gold] in your [gold]deck[/gold].\n[b]Strength[/b] [i]Dexterity[/i]\nA [b]B[/b] [i]C[/i]":
      "升级你牌组中的一张牌。\n[gold]升级[/gold]你[gold]牌组[/gold]中的一张牌。\n[b]力量[/b] [i]敏捷[/i]\nA [b]B[/b] [i]C[/i]";
  const auto draw=[&](){clear();c.paragraph(sample,16,30,288,8,0,12,0xffff);

@@ -26,6 +26,9 @@ struct ButtonMotion {
     ButtonVisual sample(uint32_t now)const{
         auto to=button_target(family,state);const uint32_t elapsed=now-start;
         if(family==ButtonFamily::Proceed||family==ButtonFamily::TreasureRelic){
+            // Disable animates the independent Image.self_modulate and
+            // Outline.modulate, leaving its interrupted hover appearance.
+            if(family==ButtonFamily::Proceed&&state==ButtonState::Disabled)return from;
             if(state==ButtonState::Disabled)return to;
             const unsigned duration=state==ButtonState::Focus?50:family==ButtonFamily::TreasureRelic?400:500;
             const unsigned linear=elapsed>=duration?4096:elapsed*4096/duration;
@@ -86,7 +89,31 @@ namespace proceed_layout {
 constexpr int X=264,Y=170,W=51,H=21,PivotX=290,PivotY=180;
 constexpr int ImageX=262,ImageY=167,ImageW=56,ImageH=27;
 constexpr int LabelX=273,LabelY=179,LabelW=34,FontSize=6;
+constexpr int HideOffset=67; // 400 / 1920 of the current viewport width.
 }
+
+// NProceedButton keeps its enabled/disabled translation separate from the
+// interruptible hover tween. A pointer follows the moving Control, while an
+// immediately disabled button cannot receive input during its exit.
+struct ProceedVisual {int x=proceed_layout::HideOffset,shade=128,outline=0;};
+struct ProceedMotion {
+    uint32_t identity=0,start=0;
+    ProceedVisual from{};
+    bool bound=false,enabled=false;
+    ProceedVisual sample(uint32_t now)const{
+        const uint32_t age=now-start;const unsigned duration=enabled?500:800;
+        const unsigned linear=age>=duration?4096:(age*4096+duration/2)/duration;
+        const unsigned position=age>=duration?4096:health_bar::expo_out((age*1000+duration/2)/duration);
+        const auto mix=[](int a,int b,unsigned q){const int delta=(b-a)*int(q);return a+(delta+(delta<0?-2048:2048))/4096;};
+        return {mix(from.x,enabled?0:proceed_layout::HideOffset,position),
+            mix(from.shade,enabled?255:128,linear),mix(from.outline,enabled?255:0,linear)};
+    }
+    ProceedVisual observe(uint32_t key,bool active,uint32_t now){
+        if(!bound||identity!=key){identity=key;start=now;from={};bound=true;enabled=false;}
+        if(enabled!=active){from=sample(now);start=now;enabled=active;}
+        return sample(now);
+    }
+};
 
 // NEndTurnButton + end_turn_button.tscn, pinned v0.111.0. Scales are
 // relative to the authored half-scale Image; alpha and scale use Q12.

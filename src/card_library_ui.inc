@@ -1,13 +1,7 @@
 // The library is an independent submenu, with its original narrow sidebar.
 // Grid geometry uses the actual 1680x1260 4:3 viewport. Sidebar labels retain
 // the 8px readable font floor, with their controls fitted to its 55px width.
-static void library_hover_box(Canvas&c,const char*title,const char*body,int x,int y,int width=132){
-    const int title_height=*title?16:0,lines=c.paragraph(body,0,0,width-16,0,0,8);
-    const int height=mn(218,16+title_height+lines*11);x=mx(3,mn(317-width,x));y=mx(3,mn(237-height,y));
-    if(!c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7)){c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Gold);}
-    if(*title)c.text_fitted(title,x+8,y+5,width-16,10,Gold,8);
-    c.paragraph(body,x+8,y+7+title_height,width-16,mx(0,(height-12-title_height)/11),0,8,White);
-}
+static void library_hover_box(Canvas&c,const char*title,const char*body,int x,int y,int width=SourceHoverWidth){source_hover_box(c,title,body,x,y,width);}
 static void library_edge_fade(Canvas&c,int x,int width){
     for(int y=0;y<12;++y){const unsigned alpha=unsigned(230*(12-y)/12);c.dim(x,y,width,1,alpha);c.dim(x,239-y,width,1,alpha);}
 }

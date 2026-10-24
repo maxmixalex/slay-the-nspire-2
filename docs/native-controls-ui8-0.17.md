@@ -17,9 +17,14 @@ Merchant, fake merchant, treasure, rest, combat rewards, event/relic rewards,
 potion rewards and Crystal terminal pages share this component and hit box.
 Disabled controls are absent and cannot capture a pointer. Focus uses the
 source 50ms scale transition, press/unfocus use 500ms, and the original outline
-pulse runs between 0.25 and 0.75 in half-second legs. This stage does not claim
-the original HSV shader or its enable/disable translation tween; those remain
-explicit material/transition differences rather than inferred equivalence.
+pulse runs between 0.25 and 0.75 in half-second legs. The independent original
+enable/disable translation now slides by 400/1920 of the viewport width with
+500/800ms Expo.Out curves. Image brightness and outline visibility follow
+their separate linear tweens. Pointer hit rectangles follow the moving
+Control, disabled exits receive no input, and reversing an interrupted entry
+or exit preserves its current position. The presentation survives overlays
+that retain the same room and is reset for a new room or restored session.
+The original HSV shader remains an explicit material difference.
 
 The treasure scene also contained visible legacy UI. Its banner is now the
 original 654×162 component projected to 125×31, with the source label family
@@ -34,7 +39,11 @@ holder and banner timing and acquisition guards remain in force; rare/uncommon
 particle glow and the full Godot material renderer remain separate gaps.
 
 `button_presentation_regression` checks independent source ratio projection,
-focus/press timing and pulse boundaries. `world_room_ui_regression` retains
+focus/press timing, pulse boundaries and both complete translation curves
+against the independent floating-point source equation, including reversal
+and clock wrap. The card/HUD regression exercises the actually clipped moving
+hit rectangles and disabled exit, with unchanged serialized game bytes.
+`world_room_ui_regression` retains
 its actual command, alpha, RNG and saved-byte checks at the corrected source
 rectangles, and checks the real hover target and absence of the legacy Details
 button. Actual ENG/ZHS resource captures are required after the frozen runtime

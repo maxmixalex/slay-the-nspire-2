@@ -22,6 +22,9 @@ bool world_reachable(const State&, unsigned point);
 bool world_choose_point(State&, unsigned point);
 bool world_choose_column(State&, int column);
 bool world_finish_room(State&);
+// An ordinary terminal RewardsSet stays live behind its map until travel.
+// Nested event rewards and act-ending boss sets have a real exit instead.
+bool world_retained_reward_group(const State&);
 bool world_claim_reward_card(State&, int index);
 bool world_claim_reward_relic(State&);
 bool world_reroll_reward(State&);

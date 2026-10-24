@@ -2,7 +2,7 @@
 static bool ec_word(const char*a,const char*b){if(!a||!b)return false;while(*a&&*a==*b){++a;++b;}return *a==*b;}
 static int ec_power(const State&s,EventCardPower p){return s.event_cards.powers[unsigned(p)];}
 static bool ec_new_card(unsigned k){return k>=EventCardBadLuck&&k<CardKinds&&!(k>=EventCardBeckon&&k<=EventCardWither);}
-static EventCardFacts ec_default(Card c){EventCardFacts f{};if(c.kind==EventCardSpoilsMap)f.progress=1;return f;}
+static EventCardFacts ec_default(Card c){EventCardFacts f;clear_zero_object(f);if(c.kind==EventCardSpoilsMap)f.progress=1;return f;}
 const EventCardFacts* event_card_facts(const State&s,Card c,int id,int deck){
  if(id>=0&&id<s.card_count&&s.cards[id].kind==c.kind)return &s.event_cards.cards[id];
  if(deck>=0&&deck<s.deck_count&&s.deck[deck].kind==c.kind)return &s.event_cards.deck[deck];

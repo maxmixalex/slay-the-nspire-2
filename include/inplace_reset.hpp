@@ -12,6 +12,15 @@ inline void* operator new(size_t, spire::detail::InPlaceAddress where) noexcept 
 }
 
 namespace spire {
+// Only for trivial records whose complete zero representation is a valid
+// default. Unlike assigning T{}, this also initializes alignment bytes and
+// does not materialize an aggregate temporary on the ARM stack.
+template<class T> inline void clear_zero_object(T& value) noexcept {
+    static_assert(__is_trivially_copyable(T), "Zeroed storage must be trivial");
+    auto* bytes=reinterpret_cast<unsigned char*>(&value);
+    for(size_t i=0;i<sizeof(T);++i)bytes[i]=0;
+}
+
 // Storage must be aligned for T and contain at least sizeof(T) bytes. The
 // returned pointer starts the object's lifetime; no heap allocation occurs.
 template<class T> inline T* value_construct_at(void* storage) noexcept {

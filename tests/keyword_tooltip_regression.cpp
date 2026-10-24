@@ -128,13 +128,23 @@ static void complete_catalog_and_layout(){
         for(bool details:{false,true}){a.keyword_hover.details=owner.detail=details;int visited[MaxCardHoverTips]{};
             const auto first=card_hover_page(a,owner,b);CHECK(first.pages>0&&first.pages<=128);
             for(int p=0;p<first.pages;++p){const auto page=card_hover_page(a,owner,b,p);CHECK(page.pages==first.pages);if(b.count)CHECK(page.count>0);
-                for(unsigned j=0;j<page.count;++j){const auto&piece=page.pieces[j];const auto&r=piece.box;CHECK(piece.tip<b.count&&piece.lines>0&&piece.skip==visited[piece.tip]);visited[piece.tip]+=piece.lines;
+                for(unsigned j=0;j<page.count;++j){const auto&piece=page.pieces[j];const auto&r=piece.box;CHECK(piece.tip<b.count&&piece.skip==visited[piece.tip]);
+                    if(b.items[piece.tip].kind==HoverTipKind::Card){CHECK(piece.lines==0&&r.w==46&&r.h==62);++visited[piece.tip];}
+                    else{CHECK(piece.lines>0&&r.w==69);visited[piece.tip]+=piece.lines;}
                     CHECK(r.x>=0&&r.y>=24&&r.w>0&&r.h>0&&r.x+r.w<=320&&r.y+r.h<=(details?191:218));}
             }
             for(unsigned i=0;i<b.count;++i)CHECK(visited[i]>0);
         }
     }
-    for(int x:{0,3,55,120,200,270,319})for(int y:{0,40,122,239}){auto r=card_hover_column({x,y,48,67});CHECK(r.x>=0&&r.x+r.w<=320&&r.y>=0&&r.y+r.h<=240);}
+    a.keyword_hover.details=false;
+    for(int x:{0,3,55,120,200,270,319})for(int y:{0,40,122,239}){auto r=card_hover_column({x,y,48,67});CHECK(r.w==69&&r.x>=0&&r.x+r.w<=320&&r.y>=0&&r.y+r.h<=240);
+        CardHoverTarget owner{};owner.card={RegentBigBang,0};owner.owner={x,y,48,67};const auto related=tips(owner.card);
+        const int count=card_hover_page(a,owner,related).pages;
+        for(int page=0;page<count;++page){const auto layout=card_hover_page(a,owner,related,page);
+            for(unsigned i=0;i<layout.count;++i){const auto&one=layout.pieces[i].box;CHECK(one.x>=3&&one.x+one.w<=317&&one.y>=24&&one.y+one.h<=218);
+                for(unsigned j=0;j<i;++j){const auto&other=layout.pieces[j].box;CHECK(one.x+one.w<=other.x||other.x+other.w<=one.x||one.y+one.h<=other.y||other.y+other.h<=one.y);}}
+        }
+    }
     a.library=false;a.keyword_hover={};unchanged();
 }
 static void pointer_and_keyboard(){

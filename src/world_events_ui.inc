@@ -84,12 +84,12 @@ static void native_fake_merchant_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;auto&motion=a.room_presentation.merchant;
  motion.set_open(a.shop_open,a.map_clock_ms);
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
+ const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
+ native_proceed(c,*label?label:"前进",!a.shop_open,!a.pointer.visible&&a.cursor==1);
  if(!a.shop_open){
   // The original custom event first exposes its merchant and Proceed. The
   // six-slot rug is a separate inventory overlay, not the event's page body.
   c.action(195,92,67,95,UiAction::OpenShop);
-  const char*label=a.content.world_string("gameplay_ui","PROCEED_BUTTON");
-  native_proceed(c,*label?label:"前进",true,!a.pointer.visible&&a.cursor==1);
   native_proceed_action(c,UiAction::LeaveShop);
   if(!motion.visible(a.map_clock_ms))return;
  }

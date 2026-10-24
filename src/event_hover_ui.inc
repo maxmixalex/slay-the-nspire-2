@@ -57,6 +57,8 @@ static void event_hover_relic(const App&a,HoverTipList&out,RelicId id,bool inclu
         else if(reference.kind==OriginalTextReferenceKind::Relic)event_hover_relic(a,out,RelicId(reference.model),true,depth+1);
     }
 }
+void collect_relic_hover_tips(const App&a,RelicId id,HoverTipList&out){out={};event_hover_relic(a,out,id,true);out.finish();}
+void collect_potion_hover_tips(const App&a,Potion potion,HoverTipList&out){out={};event_hover_potion(a,out,potion,true);out.finish();}
 void collect_event_hover_tips(const App&a,int option,HoverTipList&out){
     out=HoverTipList{};const auto&s=a.game;const auto&e=s.original_events;
     if(!e.active||s.phase!=Phase::Event||e.finished||option<0||unsigned(option)>=original_event_option_count(s))return;
@@ -123,14 +125,27 @@ static bool treasure_hover_target(const App&a,CardHoverTarget&target){
     target={};target.relic=int(s.world.treasure_relic);target.owner={hit->x,hit->y,hit->w,hit->h};
     target.identity=0x71000000u|unsigned(s.world.treasure_relic);return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
+static bool collection_hover_target(const App&a,CardHoverTarget&target){
+    if(!a.library||(a.library_tab!=1&&a.library_tab!=2)||a.pointer.held||a.detail_item>=0||a.detail_card>=0||a.paused||a.help||a.settings_open||a.frontend_confirm)return false;
+    const HitRegion*hit=nullptr;
+    for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind!=HitKind::LibraryItem||!h.enabled)continue;
+        if(a.pointer.visible?hover_in({h.x,h.y,h.w,h.h},a.pointer.x,a.pointer.y):h.value==a.library_selected){hit=&h;break;}}
+    if(!hit||hit->value<0||hit->value>=int(a.collection.count))return false;
+    const int id=a.collection.ids[hit->value];if(!a.library_item_seen(a.library_tab,id))return false;
+    target={};target.owner={hit->x,hit->y,hit->w,hit->h};
+    if(a.library_tab==1)target.relic=id;else target.potion=id+1;
+    target.identity=0x72000000u|(unsigned(a.library_tab)<<20)|unsigned(id);return true;
+}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){return collection_hover_target(a,target)||treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
-    if(owner.relic>=0){out={};event_hover_relic(a,out,RelicId(owner.relic),true);out.finish();}
+    if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),out);
+    else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);
     else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
     else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.facts);
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){
     if(owner.event_option>=0&&owner.owner.w>240)
-        return {3,24,154,mx(56,owner.owner.y-42)};
+        return {3,24,SourceHoverWidth,mx(56,owner.owner.y-42)};
+    if(owner.relic>=0){const int x=owner.owner.x<240?owner.owner.x:owner.owner.x+owner.owner.w-SourceHoverWidth;return {mx(3,mn(317-SourceHoverWidth,x)),24,SourceHoverWidth,194};}
     return card_hover_column(owner.owner);
 }

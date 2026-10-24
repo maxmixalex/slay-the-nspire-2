@@ -117,19 +117,28 @@ in combat, event, rest, and merchant coordinate systems, with exact held
 terminal body frames, decaying source particle layers, and the original timer.
 Those results certify the earlier executed stage, not the later correction.
 
-The stage-eight `world_game_over_ui_regression` candidate captures all five
+The executed stage-eight `world_game_over_ui_regression` captures all five
 full actors at opening, 100 ms, 200 ms, 950 ms, and settled entry; it captures
 first/next score lines, badge entry, discovery header/items, and settled
 summary. It also covers a real first-combat death and the Architect route,
 explicitly marking supplied earlier room outcomes as partial history. The
 same real key-down/repeat/key-up sequence verifies that a press held across a
 disabled interval cannot activate when released, while a fresh release does.
-The private-Canvas `character_death_ui9_regression` candidate checks every
+The private-Canvas `character_death_ui9_regression` checks every
 scalar and clock phase against the source shader equation and, with v31
 resources, compares 27 complete rendered masks against an independent scalar
-oracle at three opacities. These new checks require the next frozen native
-build and matching final-resource execution; short syntax and synthetic
-projection checks alone are not visual acceptance.
+oracle at three opacities. Matching native stage eight (`2ab4e1bc`) and final
+v31 ENG/ZHS packs passed **19,715 full App checks per language** and
+**4,175,314 actor/shader checks per language**. Journals retain labels
+`ui9-stage8-actual-gameover-{eng,zhs}` and
+`ui9-stage8-actual-death-{eng,zhs}`. The opening/summary and all five actors
+were captured under `private-inputs/ui9-stage8-captures/{eng,zhs}`; full App
+transition and summary montages were visually reviewed. Event black is pure
+black by 200 ms; the authored irregular transition is visible mid-tween;
+combat actors retain their original baseline. No early Continue appears.
+Summary score, badge and discovery sections retain their independent timing.
+Absent current-run discovery categories remain absent rather than inventing
+new discoveries for a later repeated scenario.
 
 The detailed per-floor acquisition/choice journal is implemented in the
 parallel stage-eight candidate; its provenance, compatibility and executed

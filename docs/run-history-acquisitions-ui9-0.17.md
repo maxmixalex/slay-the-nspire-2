@@ -81,6 +81,20 @@ RNGs and command logs, and verifies successful/failed command notice counts,
 complete card tokens, per-clone entries, deferred commit timing and absence of
 false remove/gain or permanent-combat-upgrade entries.
 
-The new test and affected core translation units pass Clang 18 syntax checking.
-Execution belongs to the complete Stage8 checkpoint gate; syntax success is
-not a claim that the runtime gate has passed.
+The immutable stage-eight full gate exposed a real object-representation
+problem: aggregate temporaries copied uninitialized alignment bytes into
+`WorldRelicHookFrame`, `EventCardFacts`, nested relic snapshots and `Log`.
+Gameplay field values matched, but observer callbacks altered stack contents
+and therefore strict whole-State comparison failed. The strict comparison
+remains unchanged. The affected zero-default records now use one freestanding
+`clear_zero_object` helper before assigning actual fields; relic instances
+explicitly restore their nonzero `NoWorldRelic` sentinel. No field, offset,
+saved format, command order, random draw or observer payload was added.
+
+Focused execution against matching stage-eight headers/library, replacing the
+three affected translation units, passes **204 checks** with those units built
+at both Clang 18 `-O3` and `-O0`. Tests include the inactive relic's named fields
+and sentinel in addition to every State byte, successful/failed command counts,
+clones, capped HP and batch transform identities. The complete stage-eight-a
+native/ARM/WASM acceptance belongs to the parent's immutable follow-up gate;
+these focused results do not stand in for that complete gate.

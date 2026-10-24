@@ -42,6 +42,7 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 }
 #include "native_controls.inc"
 #include "world_text.inc"
+#include "source_hover_ui.inc"
 #include "ui_text.inc"
 #include "ui_history_journal_ui.inc"
 #include "world_enemy_ui.inc"

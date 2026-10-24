@@ -1,3 +1,61 @@
+// The source's 24px Kreon descriptions fit their natural height inside a
+// centered VBox. Use actual available glyphs, preserving every localized line.
+static fitted_text::Plan character_info_plan(Canvas&c,const char*text,int width){
+    const int size=c.a.content.font_size(5,c.font_face);
+    auto metric=[&](const RichChar&ch,int px){const auto g=c.a.content.glyph_metrics(ch.codepoint,px,c.font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
+    const int rows=fitted_text::line_count(text,width,size,metric);
+    return {size,rows,rows,size+1,false};
+}
+static void character_info_text(Canvas&c,const char*text,int x,int y,int width,const fitted_text::Plan&plan,uint16_t color){
+    const int height=plan.rows*plan.step+2;
+    Canvas shadow=c;shadow.opacity=uint8_t(div255(shadow.opacity*64));shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
+    shadow.fitted(text,x+1,y,width,height,plan.size,plan.size,rgb(0,0,0));
+    c.fitted(text,x,y,width,height,plan.size,plan.size,color);
+}
+static int character_name_width(Canvas&c,const char*text,int size){
+    size=c.a.content.font_size(size,4);
+    RichReader reader(text);RichChar ch{};int width=0,count=0;
+    while(reader.next(ch)&&ch.codepoint!='\n'){width+=c.a.content.glyph_metrics(ch.codepoint,size,4).advance;++count;}
+    return width+character_select_layout::project(mx(0,count-1)*2);
+}
+static int character_name_size(Canvas&c,const char*text){
+    constexpr int sizes[]={14,12,10};
+    for(int size:sizes)if(character_name_width(c,text,size)<=character_select_layout::InfoWidth)return c.a.content.font_size(size,4);
+    return c.a.content.font_size(10,4);
+}
+static void character_name_outline(Canvas&c,Glyph glyph,int x,int y){
+    // Source outline_size=24 projects to five pixels. Build a bounded alpha
+    // dilation once per glyph, so overlapping taps do not darken the stroke.
+    constexpr int Radius=5,Stride=48,Height=40;
+    if(!glyph.pixels||glyph.w+2*Radius>Stride||glyph.h+2*Radius>Height)return;
+    uint8_t mask[Stride*Height]{};
+    constexpr int span[11]={0,3,4,4,4,5,4,4,4,3,0};
+    const auto pixel=[&](unsigned at,unsigned alpha){
+        if(!alpha)return;const unsigned row=at/glyph.w,column=at-row*glyph.w;
+        for(int dy=-Radius;dy<=Radius;++dy){const int reach=span[dy+Radius];
+            auto*out=mask+(int(row)+Radius+dy)*Stride+int(column)+Radius;
+            for(int dx=-reach;dx<=reach;++dx)out[dx]=uint8_t(mx(out[dx],alpha));
+        }
+    };
+    const unsigned length=unsigned(glyph.w)*glyph.h;
+    if(glyph.encoded_size){unsigned at=0;for(unsigned i=0;i+1<glyph.encoded_size&&at<length;i+=2){
+        const unsigned stop=mn(length,at+glyph.pixels[i]);while(at<stop){pixel(at,glyph.pixels[i+1]);++at;}
+    }}else for(unsigned at=0;at<length;++at)pixel(at,glyph.pixels[at]);
+    Canvas shade=c;shade.opacity=uint8_t(div255(shade.opacity*64));
+    Glyph outline{};outline.pixels=mask;outline.w=Stride;outline.h=uint8_t(glyph.h+2*Radius);
+    shade.glyph(outline,x-Radius,y-Radius,rgb(0,0,0));
+}
+static void character_info_name(Canvas&c,const char*text,int x,int y,int size){
+    RichReader reader(text);RichChar ch{};int at=0,index=0;
+    while(reader.next(ch)&&ch.codepoint!='\n'){
+        const auto g=c.a.content.glyph(ch.codepoint,size,4);character_name_outline(c,g,x+at+character_select_layout::project(index++*2),y);at+=g.advance;
+    }
+    reader=RichReader(text);at=index=0;
+    while(reader.next(ch)&&ch.codepoint!='\n'){
+        const auto g=c.a.content.glyph(ch.codepoint,size,4);
+        c.character(ch.codepoint,g,x+at+character_select_layout::project(index++*2),y,rgb(239,200,81));at+=g.advance;
+    }
+}
 static void character_screen(Canvas&c){
     using namespace character_select_layout;
     auto&a=c.a;a.hit_count=0;
@@ -25,31 +83,38 @@ static void character_screen(Canvas&c){
     const char*body=*description?description:character_summary(a.selected_character);
     const auto*relic=relic_definition(definition.starting_relic);const RelicId relic_id=relic?RelicId(relic-relic_definitions):RelicId(0);
     if(relic)a.relic_description(relic_id,relic_text,sizeof relic_text);
-    const int body_rows=mn(5,c.paragraph(body,0,0,InfoWidth,0,0,8));
-    const int relic_rows=relic?mn(4,c.paragraph(relic_text,0,0,InfoWidth-18,0,0,8)):0;
-    const int height=24+14+body_rows*11+(relic?5+11+relic_rows*11:0);
-    // Preserve the original left-center information block and 133px fuzzy
-    // panel width. The minimum readable 8px body grows upward, keeping the
-    // bottom clear of the source ascension strip and centered portrait row.
-    const int top=InfoBottom-height,panel_top=top-6,panel_height=height+12;
+    Canvas body_font=c;body_font.bold_face=5;
+    Canvas bold=c;bold.font_face=5;
+    Canvas name=c;name.font_face=4;
+    const auto body_plan=character_info_plan(body_font,body,InfoWidth);
+    const auto relic_plan=character_info_plan(body_font,relic_text,RelicTextWidth);
+    const int description_height=body_plan.rows*body_plan.step+2;
+    const int top=info_top(description_height);
     if(a.content.version()>=RoomUi7ContentVersion){Canvas shade=c;shade.tint_red=shade.tint_green=shade.tint_blue=0;
-        shade.nine_ui(I7_CharacterInfoPanel,dx+InfoPanelX,panel_top,InfoPanelWidth,panel_height,8,8,8,8,128);
-    }else{const int skin=a.content.world_image("character","INFO_PANEL");if(skin>=0)c.nine_image(skin,dx+InfoPanelX,panel_top,InfoPanelWidth,panel_height,7,7,7,7);}
+        shade.nine_ui(I7_CharacterInfoPanel,dx+InfoPanelX,InfoPanelY,InfoPanelWidth,InfoPanelHeight,8,8,8,8,128);
+    }else{const int skin=a.content.world_image("character","INFO_PANEL");if(skin>=0)c.nine_image(skin,dx+InfoPanelX,InfoPanelY,InfoPanelWidth,InfoPanelHeight,7,7,7,7);}
     const char*title=a.content.world_title("characters",definition.key);if(!*title)title=definition.name;
-    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.opacity=64;
-    shadow.text_fitted(title,dx+InfoX+1,top+1,InfoWidth,20,0,12);
-    c.text_fitted(title,dx+InfoX,top,InfoWidth,20,rgb(239,200,81),12);
-    int y=top+24;
-    c.picture(A_Heart,dx+InfoX,y,9,9);char hp[32]{};TextBuffer health{hp,sizeof hp,0};health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);
-    c.text(hp,dx+InfoX+11,y,8,rgb(255,100,100));
-    const int gold_x=dx+InfoX+11+c.width(hp,8)+11;c.picture(A_Coin,gold_x,y,9,9);c.num(99,gold_x+11,y,8,rgb(255,210,80));
-    y+=14;c.paragraph(body,dx+InfoX,y,InfoWidth,body_rows,0,8,White);y+=body_rows*11;
+    const int title_size=character_name_size(name,title);
+    character_info_name(name,title,dx+InfoX,top+(NameHeight-title_size-3)/2,title_size);
+    const int stats_y=top+NameHeight+StatsOffset;
+    c.picture(A_Heart,dx+InfoX,stats_y,StatsIcon,StatsIcon);
+    char hp[32]{};TextBuffer health{hp,sizeof hp,0};health.number(definition.starting_hp);health.ch('/');health.number(definition.starting_hp);
+    const int hp_x=dx+InfoX+StatsIcon+StatsLabelGap;
+    character_info_text(bold,hp,hp_x,stats_y,InfoWidth,character_info_plan(bold,hp,InfoWidth),rgb(255,100,100));
+    const int gold_x=hp_x+bold.width(hp,5)+StatsGap;
+    c.picture(A_Coin,gold_x,stats_y,StatsIcon,StatsIcon);
+    character_info_text(bold,"99",gold_x+StatsIcon+StatsLabelGap,stats_y,30,character_info_plan(bold,"99",30),rgb(239,200,81));
+    const int body_y=top+NameHeight+StatsHeight;
+    character_info_text(body_font,body,dx+InfoX,body_y,InfoWidth,body_plan,rgb(255,246,226));
     if(relic){
-        y+=5;Canvas relic_shadow=c;relic_shadow.tint_red=relic_shadow.tint_green=relic_shadow.tint_blue=0;
-        relic_shadow.picture(a.relic_face_image(relic_id),dx+InfoX+1,y+2,14,14,128);
-        c.picture(a.relic_face_image(relic_id),dx+InfoX,y+1,14,14);
-        c.text_fitted(a.relic_title(relic_id),dx+InfoX+18,y,InfoWidth-18,8,rgb(239,200,81),8);
-        c.paragraph(relic_text,dx+InfoX+18,y+11,InfoWidth-18,relic_rows,0,8,White);
+        const int relic_y=body_y+description_height;
+        Canvas relic_shadow=c;relic_shadow.tint_red=relic_shadow.tint_green=relic_shadow.tint_blue=0;
+        relic_shadow.picture(a.relic_face_image(relic_id),dx+InfoX,relic_y+RelicIconY,RelicIcon,RelicIcon,128);
+        c.picture(a.relic_face_image(relic_id),dx+InfoX,relic_y+RelicIconY,RelicIcon,RelicIcon);
+        const char*relic_name=a.relic_title(relic_id);
+        const auto title_plan=character_info_plan(bold,relic_name,RelicTextWidth);
+        character_info_text(bold,relic_name,dx+InfoX+RelicTextX,relic_y+RelicTitleY,RelicTextWidth,title_plan,rgb(239,200,81));
+        character_info_text(body_font,relic_text,dx+InfoX+RelicTextX,relic_y+RelicDescriptionY,RelicTextWidth,relic_plan,rgb(255,246,226));
     }
     native_original_back(c,motion.opened);
     const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};

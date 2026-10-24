@@ -241,6 +241,12 @@ void App::ui_action(UiAction action){
         const bool rewards=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Rewards;
         if(!rewards||world_choice_min())break;
         const bool terminal=game.world.active&&game.phase==Phase::WorldRelicChoice&&game.world_relics.return_phase==uint8_t(Phase::Reward);
+        if(world_retained_reward_group(game)){
+            // The original terminal list is still claimable after closing
+            // its map. Preserve its exact active group and offers here.
+            if(world_finish_room(game))proceed_map_window();
+            break;
+        }
         choice_selected_count=0;confirm_world_choice();
         // A terminal combat set's Skip is the room's Proceed action. Nested
         // event/relic sets resume their parent and are never closed here.

@@ -42,7 +42,7 @@ static bool w_transform_batch(State& s,unsigned owner,const uint16_t* ids,unsign
 }
 static void w_transform_append(State& s,unsigned owner){
  auto& w=s.world_relics;
- if(w.transform_cursor==w.transform_count){for(unsigned i=0;i<w.transform_count;i++)w.transforms[i]=WorldRelicTransformEntry{};w.transform_count=w.transform_cursor=0;return;}
+ if(w.transform_cursor==w.transform_count){for(unsigned i=0;i<w.transform_count;i++)clear_zero_object(w.transforms[i]);w.transform_count=w.transform_cursor=0;return;}
  if(w.transform_cursor>w.transform_count||w.transform_count>MaxDeck){w_error(s);return;}
  const auto entry=w.transforms[w.transform_cursor++];
  if(!w_enqueue(s,WorldRelicOp::TransformAppend,owner))return;

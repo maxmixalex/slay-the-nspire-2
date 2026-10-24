@@ -1,6 +1,6 @@
 // Card hover ownership and content follow the pinned CardModel/NHoverTipSet.
-// The calculator adapter wraps at 10 px and pages when readable text cannot
-// fit beside its owner. It adds no gameplay hits, RNG calls or save fields.
+// Original 5px text flows into 69px columns. The calculator adapter pages
+// only when the available viewport cannot contain the whole associated set. It adds no gameplay hits, RNG calls or save fields.
 struct HoverTipSpec {HoverTipKind kind;const char*key;uint8_t flags;};
 struct CardHoverCatalog {uint16_t first;uint8_t count,flags;uint32_t order;};
 #include "keyword_hover_catalog.inc"
@@ -189,77 +189,69 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
 }
 
 static bool hover_compact_event(const CardHoverTarget&owner){return owner.event_option>=0&&owner.owner.w>240&&!owner.detail;}
-static int hover_body_width(const HoverTip&tip,int width,bool compact=false){return mx(16,width-(tip.kind==HoverTipKind::Card&&!compact?61:17));}
 static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,int selected){
-    const bool details=owner.detail&&c.a.keyword_hover.details;
-    if(owner.detail&&!details){
-        // Original inspect tips split related cards to the left and text to
-        // the right of HoverTipRect. At 320x240, readable 8px text can need
-        // additional pages; scrolling changes only this presentation.
-        HoverPage out{};int text_page=0,card_page=0,text_y=0,card_y=0;
-        const int top=owner.owner.y,height=235-top,right=owner.owner.x+owner.owner.w+5,width=318-right;
-        for(unsigned i=0;i<tips.count;++i){char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
-            if(tips.items[i].kind==HoverTipKind::Card){
-                if(card_y+72>height){card_y=0;++card_page;}
-                if(card_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,0,0,{owner.owner.x-53,top+card_y,53,72}};
-                card_y+=73;continue;
-            }
-            if(!*title||!*body)continue;
-            const int count=c.paragraph(body,0,0,width-12,0,0,8);int skip=0;
-            while(skip<count){const int need=23+(count-skip)*11;
-                if(height-text_y<34||(need<=height&&need>height-text_y)){text_y=0;++text_page;}
-                const int lines=mn(count-skip,mx(1,(height-text_y-23)/11)),piece_height=23+lines*11;
-                if(text_page==selected&&out.count<MaxCardHoverTips)out.pieces[out.count++]={i,skip,lines,{right,top+text_y,width,piece_height}};
-                text_y+=piece_height+2;skip+=lines;if(skip<count){text_y=0;++text_page;}
-            }
-        }
-        out.pages=mx(text_page,card_page)+1;return out;
-    }
-    const HoverRect column=details?HoverRect{13,52,145,139}:keyword_hover_column(owner);
-    const int columns=details?2:1;int page=0,lane=0,y=0;HoverPage result{};
-    for(unsigned i=0;i<tips.count;++i){char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
+    const bool details=owner.detail&&c.a.keyword_hover.details,inspect=owner.detail&&!details;
+    const HoverRect column=details?HoverRect{13,52,SourceHoverWidth,139}:inspect?
+        HoverRect{mn(318-SourceHoverWidth,owner.owner.x+owner.owner.w+1),owner.owner.y,SourceHoverWidth,235-owner.owner.y}:keyword_hover_column(owner);
+    int direction=column.x<owner.owner.x?-1:1;if(owner.relic>=0)direction=owner.owner.x>240?-1:1;
+    int card_count=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card)++card_count;
+    const int space=direction<0?column.x-3:317-column.x-column.w;
+    const bool cards_need_room=card_count&&(hover_compact_event(owner)||(direction>0?owner.owner.x<50:owner.owner.x+owner.owner.w+47>317));
+    const int columns=details?(card_count?3:4):inspect?1:mn(3,mx(1,1+(space-(cards_need_room?47:0))/(column.w+1)));
+    const int step=source_hover_step(c),overhead=source_hover_overhead(c),minimum=overhead+step;
+    int page=0,lane=0,y=0;HoverPage result{};
+    for(unsigned i=0;i<tips.count;++i){
+        if(tips.items[i].kind==HoverTipKind::Card)continue;
+        char title[160]{},body[2048]{};format_card_hover_tip(c.a,owner,tips.items[i],title,sizeof title,body,sizeof body);
         if(!*title||!*body)continue;
-        const int count=c.paragraph(body,0,0,hover_body_width(tips.items[i],column.w,hover_compact_event(owner)),0,0,10),minimum=tips.items[i].kind==HoverTipKind::Card&&!hover_compact_event(owner)?83:42;
-        int skip=0;while(skip<count){
-            int needed=mx(minimum,28+(count-skip)*13),room=column.h-y;
-            if(room<minimum||(needed<=column.h&&needed>room)){y=0;if(++lane>=columns){lane=0;++page;}room=column.h;}
-            int lines=mn(count-skip,mx(1,(room-28)/13)),height=mx(minimum,28+lines*13);
-            if(page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,skip,lines,{column.x+lane*(column.w+4),column.y+y,column.w,height}};
-            y+=height+3;skip+=lines;
-            if(skip<count){y=0;if(++lane>=columns){lane=0;++page;}}
+        const int count=source_hover_paragraph(c,body,0,0,source_hover_body_width(column.w),0);int skip=0;
+        while(skip<count){
+            const int needed=overhead+(count-skip)*step;
+            if(column.h-y<minimum||(needed<=column.h&&needed>column.h-y)){y=0;if(++lane>=columns){lane=0;++page;}}
+            const int lines=mn(count-skip,mx(1,(column.h-y-overhead)/step)),height=overhead+lines*step;
+            if(page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,skip,lines,{column.x+(details?1:direction)*lane*(column.w+1),column.y+y,column.w,height}};
+            y+=height+1;skip+=lines;if(skip<count){y=0;if(++lane>=columns){lane=0;++page;}}
         }
     }
-    result.pages=page+1;
-    if(!details&&result.count){int height=result.pieces[result.count-1].box.y+result.pieces[result.count-1].box.h-column.y;
-        int top=mn(mx(column.y,owner.owner.y),column.y+column.h-height),shift=top-column.y;for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=shift;}
-    return result;
+    int text_height=0;for(unsigned i=0;i<result.count;++i)text_height=mx(text_height,result.pieces[i].box.y+result.pieces[i].box.h-column.y);
+    int text_top=column.y;
+    if(!details&&!inspect&&text_height){
+        int requested=owner.relic>=0?owner.owner.y+owner.owner.h+2:owner.owner.y;
+        if(owner.relic>=0&&owner.owner.y>180)requested=owner.owner.y-text_height;
+        text_top=mn(mx(column.y,requested),column.y+column.h-text_height);
+        for(unsigned i=0;i<result.count;++i)result.pieces[i].box.y+=text_top-column.y;
+    }
+    // CardHoverTip is a separate 239x323 source container with a 0.75 card;
+    // it has no duplicate title or body beside its actual card face.
+    const int cards_per_page=mx(1,(column.h+1)/63),card_pages=mx(1,(card_count+cards_per_page-1)/cards_per_page);
+    int card_x=inspect?owner.owner.x-46:direction>0?owner.owner.x-47:owner.owner.x+owner.owner.w+1;
+    if(details)card_x=13+3*70;
+    if(hover_compact_event(owner))card_x=column.x+columns*(column.w+1);
+    if(card_x<3||card_x+46>317)card_x=direction>0?column.x+columns*(column.w+1):column.x-(columns-1)*(column.w+1)-47;
+    card_x=mx(3,mn(271,card_x));
+    const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*63-1);
+    int card_top=details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
+    if(owner.relic>=0&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
+    int card=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card){
+        if(card/cards_per_page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,0,0,{card_x,card_top+(card%cards_per_page)*63,46,62}};
+        ++card;
+    }
+    result.pages=mx(page+1,card_pages);return result;
 }
 HoverPage card_hover_page(App&a,const CardHoverTarget&owner,const HoverTipList&tips,int page){Canvas c{a};return hover_page(c,owner,tips,page);}
 static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTipList&tips,const HoverPiece&piece){
     const auto&tip=tips.items[piece.tip];const auto&r=piece.box;char title[160]{},body[2048]{};
     format_card_hover_tip(c.a,owner,tip,title,sizeof title,body,sizeof body);
-    const bool inspect=owner.detail&&!c.a.keyword_hover.details;
-    if(inspect&&tip.kind==HoverTipKind::Card){
-        const EventCardFacts canonical{};
-        draw_card_face(c,tip.card,r.x+1,r.y+1,50,70,cost(tip.card),-2,-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
+    if(tip.kind==HoverTipKind::Card){
+        const EventCardFacts canonical{};draw_card_face(c,tip.card,r.x+1,r.y,43,60,cost(tip.card),-2,-1,-1,tip.has_facts?&tip.facts:&canonical,body);return;
     }
-    int skin=c.a.content.world_image("common",tip.debuff?"HOVER_TIP_DEBUFF":"HOVER_TIP");
-    if(skin>=0){Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.nine_image(skin,r.x+2,r.y+2,r.w,r.h,28,22,46,16,64);
-        c.nine_image(skin,r.x,r.y,r.w,r.h,28,22,46,16);
-    }else{c.rect(r.x+2,r.y+2,r.w,r.h,Ink);c.rect(r.x,r.y,r.w,r.h,tip.debuff?rgb(59,35,45):rgb(31,43,49));c.box(r.x,r.y,r.w,r.h,rgb(104,117,115));}
-    const uint16_t title_color=rgb(239,200,81),body_color=rgb(255,246,226);
-    if(inspect){c.text_fitted(title,r.x+5,r.y+4,r.w-12,8,title_color,8);
-        c.paragraph(body,r.x+5,r.y+16,r.w-12,piece.lines,piece.skip,8,body_color);return;}
-    c.text(title,r.x+7,r.y+5,10,title_color,r.w-16);
-    int body_x=r.x+7;
-    if(tip.kind==HoverTipKind::Card&&!hover_compact_event(owner)){
-        const EventCardFacts canonical{};
-        draw_card_face(c,tip.card,r.x+5,r.y+20,45,63,cost(tip.card),-2,-1,-1,tip.has_facts?&tip.facts:&canonical,body);body_x=r.x+54;
-    }else if(tip.kind==HoverTipKind::Relic){int icon=c.a.relic_face_image(world_relic_id(tip.key));if(icon>=0)c.picture(icon,r.x+r.w-21,r.y+3,14,14);}
-    else if(tip.kind==HoverTipKind::Potion){c.picture(c.a.content.potion_image(Potion(tip.amount)),r.x+r.w-19,r.y+3,12,15);}
-    else if(tip.kind==HoverTipKind::Enchantment){int icon=c.a.content.world_image("enchantments",tip.key);if(icon>=0)c.picture(icon,r.x+r.w-20,r.y+3,13,13);}
-    else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))c.picture(c.a.content.energy_image(owner.card),r.x+r.w-20,r.y+3,13,13);
-    c.paragraph(body,body_x,r.y+20,hover_body_width(tip,r.w,hover_compact_event(owner)),piece.lines,piece.skip,10,body_color);
+    source_hover_skin(c,r,tip.debuff);int icon=-1;
+    if(tip.kind==HoverTipKind::Relic)icon=c.a.relic_face_image(world_relic_id(tip.key));
+    else if(tip.kind==HoverTipKind::Potion)icon=c.a.content.potion_image(Potion(tip.amount));
+    else if(tip.kind==HoverTipKind::Enchantment)icon=c.a.content.world_image("enchantments",tip.key);
+    else if(tip.kind==HoverTipKind::Static&&hover_key_equal(tip.key,"ENERGY"))icon=c.a.content.energy_image(owner.card);
+    source_hover_title(c,title,r,icon);
+    source_hover_paragraph(c,body,r.x+SourceHoverLeft,r.y+SourceHoverTop+source_hover_step(c),source_hover_body_width(r.w),piece.lines,piece.skip);
 }
 // At calculator scale the original card face can ellipsize its body. Keep
 // the full, current instance description in the ordinary hover stack instead
@@ -306,11 +298,11 @@ static void keyword_tooltips(Canvas&c){
         c.hit(243,190,65,13,HitKind::Command,int(Key::Down),a.keyword_hover.page+1<page.pages);
         c.hit(78,190,164,13,HitKind::Command,int(Key::Statuses));
     }else if(owner.detail&&page.pages>1){
-        c.rect(232,219,86,14,Panel);c.centered(footer,232,220,86,8,Gold);
-        c.hit(232,219,35,14,HitKind::Scroll,-1,a.keyword_hover.page>0);
-        c.hit(283,219,35,14,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
+        c.rect(248,230,69,8,Panel);c.centered(footer,248,230,69,source_hover_size(c),Gold);
+        c.hit(248,230,30,8,HitKind::Scroll,-1,a.keyword_hover.page>0);
+        c.hit(287,230,30,8,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
     }else if(page.pages>1||owner.event_option>=0){
-        const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,14,Panel);c.centered(footer,column.x,foot_y+1,column.w,10,Gold);
+        const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,8,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
     }
 }
 bool keyword_hover_scroll(App&a,int rows){

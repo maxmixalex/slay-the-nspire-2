@@ -68,7 +68,7 @@ static LocalizedValue hud_tip_value(const void*opaque,const char*name){
 static const char* hud_boss_name(const Content&content,EncounterId id){
     const auto*definition=encounter_definition(id);return definition?content.world_title("encounters",definition->key):"";
 }
-static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=145){
+static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=SourceHoverWidth){
     char title_key[64]{},body_key[64]{};TextBuffer title_name{title_key,sizeof title_key,0},body_name{body_key,sizeof body_key,0};
     title_name.text(key);title_name.text(".title");body_name.text(key);body_name.text(".description");
     const auto*title=c.a.content.world_string("static_hover_tips",title_key);const auto*body=c.a.content.world_string("static_hover_tips",body_key);
@@ -82,11 +82,7 @@ static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=145)
     LocalizedTemplate format_body(formatted_body,sizeof formatted_body,hud_tip_value,&context);
     format_title.format(title);format_body.format(body);
     if(!format_title.truncated())title=formatted_title;if(!format_body.truncated())body=formatted_body;
-    const int lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(210-y,30+mn(lines,12)*13);
-    x=mx(4,mn(316-width,x));
-    if(!c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7)){c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Gold);}
-    c.text_fitted(title,x+8,y+6,width-16,10,Gold,8);
-    c.paragraph(body,x+8,y+24,width-16,mx(0,(height-28)/13),0,10,White);
+    source_hover_box(c,title,body,x,y,width);
 }
 static const HitRegion* hud_focused_hit(const App&a){
     if(a.hud_focus<0||a.pointer.visible)return nullptr;
@@ -105,8 +101,8 @@ static void hud_hover_tip(Canvas&c){
         if(unsigned(h->value)<3)hud_static_tip(c,keys[h->value],h->x);
         else if(h->value==HudRoom)hud_static_tip(c,hud_room_info(a.game).room_tip,h->x);
         else if(h->value==HudBoss){const auto info=hud_room_info(a.game);hud_static_tip(c,info.second_boss==EncounterId::None?"BOSS":"DOUBLE_BOSS",h->x);}
-    }else if(h->kind==HitKind::Command&&h->y==0){const auto key=Key(h->value);const char*name=key==Key::Inspect?"DECK":key==Key::Map?"MAP":key==Key::Back?"SETTINGS":nullptr;if(name)hud_static_tip(c,name,h->x+h->w-145);}
-    else if(h->kind==HitKind::OpenPile){const char*name=h->value==1?"DRAW_PILE":h->value==2?"DISCARD_PILE":h->value==3?"EXHAUST_PILE":nullptr;if(name)hud_static_tip(c,name,h->x<160?8:167,h->y<150?85:122);}
+    }else if(h->kind==HitKind::Command&&h->y==0){const auto key=Key(h->value);const char*name=key==Key::Inspect?"DECK":key==Key::Map?"MAP":key==Key::Back?"SETTINGS":nullptr;if(name)hud_static_tip(c,name,h->x+h->w-SourceHoverWidth);}
+    else if(h->kind==HitKind::OpenPile){const char*name=h->value==1?"DRAW_PILE":h->value==2?"DISCARD_PILE":h->value==3?"EXHAUST_PILE":nullptr;if(name)hud_static_tip(c,name,h->x<160?h->x+h->w+2:h->x-SourceHoverWidth-2,h->y);}
 }
 static void hud_room_picture(Canvas&c,int auxiliary,int x,int y,int w,int h,bool placeholder=false,uint16_t tint=0){
     const auto picture=c.a.content.image(c.a.content.ui_image(auxiliary));if(!picture.pixels||!picture.w||!picture.h)return;

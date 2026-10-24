@@ -58,6 +58,30 @@ int main(){
  check(std::abs(proceed_layout::X-1583.*320/1920)<.5&&std::abs(proceed_layout::Y-764.*240/1080)<.5);
  check(std::abs(proceed_layout::W-269.*320/1680)<.5&&std::abs(proceed_layout::ImageW-296.*320/1680)<.5);
  check(proceed_layout::X+proceed_layout::W<=320&&proceed_layout::Y+proceed_layout::H<=240);
+ // The original enable/disable tweens use 500/800ms Expo.Out position
+ // and independent linear Image/Outline modulation. Compare full curves
+ // against the source equation, including interrupted/reversed movement.
+ ProceedMotion slide;auto hidden=slide.observe(81,false,100);
+ check(hidden.x==67&&hidden.shade==128&&hidden.outline==0);
+ slide.observe(81,true,200);
+ for(unsigned t=0;t<=500;++t){const auto v=slide.sample(200+t);const double u=double(t)/500;
+  const double q=t==0?0:t==500?1:1.001*(1-std::pow(2.,-10*u));
+  check(std::abs(v.x-67*(1-q))<1.1);
+  check(std::abs(v.shade-(128+127*u))<1.1&&std::abs(v.outline-255*u)<1.1);
+ }
+ slide.observe(81,false,700);
+ for(unsigned t=0;t<=800;++t){const auto v=slide.sample(700+t);const double u=double(t)/800;
+  const double q=t==0?0:t==800?1:1.001*(1-std::pow(2.,-10*u));
+  check(std::abs(v.x-67*q)<1.1);
+  check(std::abs(v.shade-(255-127*u))<1.1&&std::abs(v.outline-255*(1-u))<1.1);
+ }
+ slide.observe(81,true,1600);const auto entering=slide.sample(1700);
+ auto interrupted_slide=slide.observe(81,false,1700);check(interrupted_slide.x==entering.x&&interrupted_slide.shade==entering.shade&&interrupted_slide.outline==entering.outline);
+ auto exiting=slide.sample(1750);auto reversed=slide.observe(81,true,1750);
+ check(exiting.x==reversed.x&&exiting.shade==reversed.shade&&exiting.outline==reversed.outline);
+ check(slide.sample(2250).x==0&&slide.sample(2250).shade==255);
+ check(slide.observe(82,true,2300).x==67);
+ slide.observe(83,true,0xfffffff0u);check(slide.sample(484).x==0);
  m.observe(3,ButtonFamily::EndTurn,ButtonState::Focus,0xfffffff0u);m.observe(3,ButtonFamily::EndTurn,ButtonState::Rest,0xfffffff5u);
  check(m.sample(600).y==0&&m.sample(600).hover==0);
  EndTurnGlowMotion glow;EndTurnGlowIdentity combat{37,2,4,260};

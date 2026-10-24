@@ -2,6 +2,7 @@
 #include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "status.hpp"
+#include "character_select_layout.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -93,8 +94,18 @@ static void directory_and_characters(){
         for(unsigned i=0;i<n;i++)CHECK(card_in_pool(ids[i],(Character)character)||(character==1&&ids[i]==Shiv)||ids[i]>=EventCardBadLuck);
         auto before=snapshot();a.render();unchanged(before);
         if(character==2)capture("defect-library");if(character==3)capture("regent-library");if(character==4)capture("necro-library");
-        a.input(Key::Back);a.input(Key::Back);a.character_select=true;
-        if(character==2)capture("defect-character");if(character==3)capture("regent-character");if(character==4)capture("necro-character");
+        a.input(Key::Back);a.input(Key::Back);a.title=a.character_select=true;a.practice_entry=false;
+        a.render();for(unsigned frame=0;frame<6;++frame){a.advance(100);a.render();}
+        CHECK(a.character_select_presentation.panel_offset(a.map_clock_ms)==0);
+        const UiAction selectors[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
+        for(unsigned i=0;i<CharacterKinds;++i){const auto h=hit(HitKind::UiAction,int(selectors[i]));
+            CHECK(h.enabled&&h.x==character_select_layout::portrait_x(i)-1&&h.y==character_select_layout::PortraitTop-2);
+            CHECK(h.w==character_select_layout::PortraitWidth+2&&h.h==character_select_layout::PortraitHeight+4);
+        }
+        before=snapshot();tap(HitKind::UiAction,int(selectors[character]));CHECK(a.selected_character==Character(character));unchanged(before);
+        CHECK(hit(HitKind::UiAction,int(UiAction::StartCharacter)).enabled);
+        const char*captures[]={"ironclad-character","silent-character","defect-character","regent-character","necro-character"};
+        capture(captures[character]);
     }
     a.selected_character=Character::Ironclad;a.input(Key::Left);CHECK(a.selected_character==Character::Necrobinder);a.input(Key::Right);CHECK(a.selected_character==Character::Ironclad);
     start(Character::Regent);a.input(Key::Collection);action(UiAction::LibraryCards);const int debris=spire_test::library_model_index(a,Debris);CHECK(debris>=0);

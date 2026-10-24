@@ -83,12 +83,12 @@ struct Canvas{
     bool nine_ui(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255){
         return nine_image(a.content.ui_image(id),x,y,w,h,l,t,r,b,alpha);
     }
-    ButtonVisual control_visual(const char*label,int x,int y,int w,int h,ButtonFamily family,bool selected,bool enabled){
+    ButtonVisual control_visual(const char*label,int x,int y,int w,int h,ButtonFamily family,bool selected,bool enabled,int shift_x=0){
         const auto&pointer=a.pointer;
-        const bool inside=pointer.visible&&pointer.x>=x&&pointer.x<x+w&&pointer.y>=y&&pointer.y<y+h;
+        const bool inside=pointer.visible&&pointer.x>=x+shift_x&&pointer.x<x+shift_x+w&&pointer.y>=y&&pointer.y<y+h;
         const auto&captured=pointer.captured;
         const bool pressed=inside&&pointer.held&&captured.enabled&&captured.kind!=HitKind::None&&
-            captured.x<=x+w/2&&captured.x+captured.w>x+w/2&&captured.y<=y+h/2&&captured.y+captured.h>y+h/2&&
+            captured.x<=x+shift_x+w/2&&captured.x+captured.w>x+shift_x+w/2&&captured.y<=y+h/2&&captured.y+captured.h>y+h/2&&
             pointer.context==a.input_context();
         const ButtonState mode=!enabled?ButtonState::Disabled:pressed?ButtonState::Press:inside||selected?ButtonState::Focus:ButtonState::Rest;
         uint32_t key=2166136261u;for(const char*p=label;*p;++p)key=(key^uint8_t(*p))*16777619u;

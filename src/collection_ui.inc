@@ -23,6 +23,7 @@ static int collection_item_scale(App&a,int index,bool focused,bool relic){
 static void collection_tooltip(Canvas&c,int index,int x,int y,int width){
     auto&a=c.a;if(index<0||index>=a.collection.count)return;
     const int id=a.collection.ids[index];const bool relic=a.library_tab==1,seen=a.library_item_seen(a.library_tab,id);
+    if(seen)return; // The shared source hover stack also includes related models.
     const char*title="";char body[2048]{};
     if(seen){
         if(relic){title=a.relic_title(RelicId(id));a.relic_description(RelicId(id),body,sizeof body);}
@@ -75,7 +76,7 @@ static void collection_screen(Canvas&c){
     }
     library_edge_fade(c,0,320);card_grid_scrollbar(c,grid,CardGridSurface::Library);
     native_original_back(c,a.card_library.opened);
-    if(focused>=0){const int width=132,x=focus_x<160?focus_x+15:focus_x-width-15;collection_tooltip(c,focused,x,focus_y,width);}
+    if(focused>=0){const int width=SourceHoverWidth,x=focus_x<160?focus_x+15:focus_x-width-15;collection_tooltip(c,focused,x,focus_y,width);}
 }
 static void library_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;title_background(c,false);c.dim(0,0,320,240,185);
