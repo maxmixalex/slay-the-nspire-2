@@ -44,7 +44,7 @@ static void draft(bool hoarder){
         CHECK(game.run_options.draft_remaining==10-round&&game.deck_count==round*copies);
         for(unsigned i=0;i<e.offer_count;++i)CHECK(!card_from_token(e.offers[i]).upgraded);
         before=game;CHECK(!original_event_select(game,nullptr,0));same_save(game,before);
-        persisted();app.game=game;CHECK(app.world_choice_is_card_reward()&&app.world_choice_page_size()==3);
+        persisted();app.game=game;CHECK(app.world_choice_is_card_reward()&&app.world_choice_page_size()>=e.offer_count);
         uint16_t choice=uint16_t(round%3);const Card picked=card_from_token(game.original_events.offers[choice]);
         before=game;CHECK(original_event_select(game,&choice,1));
         CHECK(game.deck_count==(round+1)*copies);

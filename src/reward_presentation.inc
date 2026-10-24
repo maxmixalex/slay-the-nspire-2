@@ -16,7 +16,52 @@ static uint8_t reward_list_mode(const App&a){
  if(a.game.phase==Phase::Reward&&!a.reward_cards&&!a.grimoire_select)return 1;
  if(a.game.phase==Phase::WorldRelicChoice&&a.game.world_relics.choice==WorldRelicChoice::OfferReward)return 2;
  if(a.game.phase==Phase::OriginalEventChoice&&a.game.original_events.selection==OriginalEventSelection::Rewards)return 3;
+ if(a.world_choice_is_potion_reward())return 4;
  return 0;
+}
+bool App::reward_list_interactive()const{
+ return reward_list_mode(*this)&&!title&&!paused&&!help&&!library&&!panel&&!settings_open&&!frontend_confirm&&
+  !map_window.is_open&&!character_select&&detail_card<0&&detail_item<0&&status_actor<0&&!event_reader;
+}
+bool App::card_reward_active()const{
+ return (game.phase==Phase::Reward&&reward_cards&&!grimoire_select)||world_choice_is_card_reward();
+}
+bool App::card_reward_interactive()const{
+ return card_reward_active()&&!title&&!paused&&!help&&!library&&!panel&&!settings_open&&!frontend_confirm&&
+  !map_window.is_open&&!character_select&&detail_card<0&&detail_item<0&&status_actor<0&&!event_reader;
+}
+void App::sync_card_reward_presentation(){
+ auto&m=reward_presentation.cards;
+ if(!card_reward_active()){m.observe(false,0,0,map_clock_ms);return;}
+ uint32_t key=game.seed^run_number*0x9e3779b9u^unsigned(game.floor)*0x85ebca6bu^unsigned(game.phase)*0xc2b2ae35u;
+ unsigned count=0;
+ const auto mix=[&](unsigned value){key=(key^value)*16777619u;};
+ if(game.phase==Phase::Reward){count=game.world.active?game.world.reward_count:3;
+  for(unsigned i=0;i<count;++i)mix(game.world.active?card_token(game.world.reward_cards[i]):game.reward[i]);
+  mix(game.world.reward_rerolled);
+ }else{
+  uint16_t ids[MaxWorldUiChoices];count=world_choice_options(ids,MaxWorldUiChoices);
+  const bool relic=game.phase==Phase::WorldRelicChoice;
+  for(unsigned i=0;i<count;++i)mix(relic?game.world_relics.offers[ids[i]]:game.original_events.offers[ids[i]]);
+  mix(relic?game.world_relics.choice_reward:game.original_events.reward_active);
+  mix(game.revision); // RefreshOptions, including consecutive identical Draft offers.
+ }
+ if(m.observe(true,key,count,map_clock_ms))cursor=int(count/2);
+}
+bool App::card_reward_input_ready(){
+ sync_card_reward_presentation();return reward_presentation.cards.clickable(map_clock_ms);
+}
+void App::card_reward_alternative(bool skip){
+ if(!card_reward_interactive())return;
+ if(skip){if(game.phase==Phase::Reward){reward_cards=false;cursor=1;sync_card_reward_presentation();}
+  else if(!world_choice_min()){choice_selected_count=0;confirm_world_choice();}
+  return;
+ }
+ const unsigned alternatives=world_card_reward_alternatives(game);
+ // Source alternatives are Skip, Reroll, then relic hooks. Each normal set
+ // has at most two buttons; preserve that order for its shared hotkey.
+ if(alternatives&2)ui_action(UiAction::RerollReward);
+ else if(alternatives&1)ui_action(UiAction::SacrificeReward);
 }
 RewardAcquisitionSnapshot App::reward_acquisition_snapshot()const{
  RewardAcquisitionSnapshot out;out.serial=reward_presentation.serial;out.seed=game.seed;out.run=run_number;
@@ -59,6 +104,7 @@ void App::finish_reward_acquisition(const RewardAcquisitionSnapshot&old){
  if(changed)++m.serial; // Nested pointer/key/action observers share one acquisition.
 }
 void App::sync_reward_presentation(){
+ sync_card_reward_presentation();
  auto&m=reward_presentation;
  if(!m.gold_bound||m.gold_to!=game.gold){m.gold_bound=true;m.gold_from=m.gold_to=game.gold;m.gold_active=false;}
  for(auto&f:m.flights){
@@ -69,12 +115,14 @@ void App::sync_reward_presentation(){
  uint8_t mode=reward_list_mode(*this);unsigned count=0;
  if(title||paused||help||library||(panel&&panel!=4)||settings_open||map_window.is_open||int32_t(combat_linger_until-animation)>0)mode=0;
  if(mode==1)count=ui_reward_actions(game,nullptr)-1;
+ else if(mode==4)count=1;
  else if(mode)count=world_choice_options(nullptr,0);
  // The semantic room/set identity changes on a new run/room, not on hover,
  // scroll, layout or a single row disappearing from the same rewards set.
  uint32_t key=game.seed^run_number*0x9e3779b9u^unsigned(game.floor)*0x85ebca6bu;
  key^=unsigned(game.original_events.id)<<16;key^=unsigned(game.original_events.reward_active)<<8;
  m.observe_window(mode,key,count,map_clock_ms);
+ m.configure_list(mode,key,count,pointer.visible?-1:cursor,map_clock_ms);
 }
 bool App::reward_pickup_hidden(RewardPickupKind kind,unsigned position)const{return reward_presentation.hidden(kind,position,map_clock_ms);}
 int App::reward_gold()const{return reward_presentation.gold_bound?reward_presentation.displayed_gold(map_clock_ms):game.gold;}

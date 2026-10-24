@@ -2,6 +2,9 @@ void App::sync_crystal_presentation(){
  const auto&e=game.original_events;
  if(e.id!=OriginalEventId::CrystalSphere||!e.crystal_item_count)return;
  const bool fresh=crystal_presentation.observe(game,map_clock_ms);
+ // The same board stays behind its reward overlay and terminal screen.
+ // Those screens own their own cursor; painting a backdrop cannot move it.
+ if(game.phase!=Phase::OriginalEventChoice||e.selection!=OriginalEventSelection::Crystal)return;
  if(fresh||cursor<0||cursor>=CrystalCells||e.crystal_clear[cursor]){
   const int next=crystal_layout::nearest(e,fresh?60:cursor<0?60:cursor);
   if(next>=0)cursor=next;

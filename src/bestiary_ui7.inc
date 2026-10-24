@@ -16,7 +16,7 @@ static const char* bestiary_text(const App&a,const char*key,const char*english,c
  const char*text=a.content.world_string("bestiary",key);return *text?text:a.content.english()?english:chinese;
 }
 static const char* bestiary_title(const App&a,const BestiaryEntrySpec&e,bool encounter=false){
- if(!encounter&&e.model!=255){const auto*d=enemy_definition(EnemyId(e.model));return d?a.content.world_title("monsters",d->key):"";}
+ if(!encounter&&e.model!=255)return a.monster_title(EnemyId(e.model));
  const auto*d=encounter_definition(EncounterId(e.encounter));return d?a.content.world_title("encounters",d->key):"";
 }
 static BestiaryModelSpec bestiary_moves_for(const BestiaryEntrySpec*e){return !e?BestiaryModelSpec{}:e->model==255?bestiary_decimillipede:bestiary_models[e->model];}

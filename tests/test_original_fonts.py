@@ -143,5 +143,28 @@ class OriginalFontTest(unittest.TestCase):
         self.assertEqual(report['missing_regular_codepoints'],[])
         self.assertEqual(report['auxiliary_only_codepoints'],[ord('甲')])
 
+    def test_ordered_fallbacks_cover_each_real_character_without_format_glyphs(self):
+        class SyntheticFace:
+            def __init__(self, coverage, alpha): self.coverage,self.alpha=set(coverage),alpha
+            def glyph(self, cp, px, style=0):
+                return (cp,px|((style&3)<<6)|((style&4)<<3),1,1,1,0,bytes([self.alpha]))
+            def metadata(self): return dict(family='synthetic',alpha=self.alpha)
+        texts=['']*8704;texts[0]='A';texts[8519]='ğ🙂\ufe0f➝'
+        source=SimpleNamespace(version=28,strings=[(i,len(t.encode())) for i,t in enumerate(texts)],
+            glyphs=[(65,0,8,1,1,1,0)],block=lambda off,n:texts[off].encode()[:n])
+        primary=SyntheticFace([65],10);latin=SyntheticFace([65,287],20)
+        emoji=SyntheticFace([287,0x1f642,0xfe0f],30);symbols=SyntheticFace([0x279d],40)
+        rows,receipt=fonts.generate(source,[primary,None,None,None],[latin,emoji,symbols])
+        by_cp={cp:{(size,raw) for glyph_cp,size,_w,_h,_advance,_encoded,raw in rows if glyph_cp==cp}
+               for cp in (65,287,0x1f642,0x279d,0xfe0f)}
+        self.assertEqual(by_cp[65],{(6,b'\x0a'),(8,b'\x0a')})
+        self.assertEqual(by_cp[287],{(8,b'\x14'),(10,b'\x14')})
+        self.assertEqual(by_cp[0x1f642],{(8,b'\x1e'),(10,b'\x1e')})
+        self.assertEqual(by_cp[0x279d],{(8,b'\x28'),(10,b'\x28')})
+        self.assertFalse(by_cp[0xfe0f]);self.assertEqual(receipt['zero_width_format_controls'],[0xfe0f])
+        self.assertEqual(receipt['missing_regular_codepoints'],[])
+        self.assertEqual(receipt['fallback_codepoints_by_font'],{'0':[287],'1':[0x1f642],'2':[0x279d]})
+        self.assertEqual(len(receipt['fallback_fonts']),3)
+
 
 if __name__ == '__main__': unittest.main()

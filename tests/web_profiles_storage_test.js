@@ -94,4 +94,19 @@ function fixture(){
  const bad=record.slice();bad[4]=4;assert.throws(()=>p.writePreferences(3,516,bad));assert.equal(p.readPreferencesRecord(3),null);
  f.values.set('nSpire2-preferences-v3-profile-3','{"version":3,"bytes":[78,83,80,70]}');assert.equal(p.readPreferencesRecord(3),null);
 }
+{
+ const f=fixture(),p=f.profile;
+ assert(p.writeRun(1,'historical-standard',15,15));
+ assert(p.writeRun(1,'historical-custom',16,16));
+ assert(!f.values.has('nSpire2-save-v15'));assert.equal(p.readRun(1,16),'historical-custom');
+ assert.throws(()=>p.readRun(1,15));assert.equal(p.writeRun(1,'old-overwrite',15,15),false);assert.equal(p.clearRun(1,15),false);
+ const before=new Map(f.values);let failed=false;
+ f.fail((op,key)=>!failed&&op==='remove'&&key==='nSpire2-save-v16'?(failed=true):false);
+ assert.equal(p.writeRun(1,'power-order-v17',17,17),false);assert.deepEqual(f.values,before);
+ f.fail(()=>false);assert(p.writeRun(1,'power-order-v17',17,17));
+ assert.equal(p.readRun(1,17),'power-order-v17');assert(!f.values.has('nSpire2-save-v16'));
+ assert.throws(()=>p.readRun(1,16));assert.throws(()=>p.writeRun(1,'bad-codec',17,16));
+ assert.equal(p.writeRun(1,'older-custom',16,16),false);assert.equal(p.clearRun(1,16),false);
+ assert.equal(p.readRun(1,17),'power-order-v17');assert(p.deleteProfile(1));assert.equal(p.readRun(1),null);
+}
 console.log('Web profiles: isolated runs/history/two-bank preferences, legacy migration, failed writes and recoverable deletion passed');

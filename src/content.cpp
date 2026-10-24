@@ -2,6 +2,7 @@
 #include "lz4_block.hpp"
 #include "lzma2_block.hpp"
 #include "inline_icons.hpp"
+#include "unicode_text.hpp"
 #include "resource_transfer.hpp"
 namespace spire {
 ResourceTransferWorkspace resource_transfer_workspace{};
@@ -372,13 +373,13 @@ const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     return cp!='?'?glyph_record('?',size,0):nullptr;
 }
 Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{
-    if(!metadata_||!io_good_)return {nullptr,0,0,0};
+    if(!metadata_||!io_good_||text_format_control(cp))return {nullptr,0,0,0};
     if(inline_icon(cp)&&size>0&&size<=255)return {nullptr,uint8_t(size),uint8_t(size),uint16_t(size)};
     const uint8_t*r=glyph_record(cp,size,style);
     return r?Glyph{nullptr,r[10],r[11],u16(r+12),u16(r+14)}:Glyph{nullptr,0,0,uint16_t(size/2)};
 }
 Glyph Content::glyph(uint32_t cp,int size,unsigned style)const{
-    if(!metadata_||!io_good_)return {nullptr,0,0,0};
+    if(!metadata_||!io_good_||text_format_control(cp))return {nullptr,0,0,0};
     if(inline_icon(cp))return glyph_metrics(cp,size);
     if(const uint8_t*r=glyph_record(cp,size,style)){
         const uint32_t off=u32(r+4),len=u16(r+14)?u16(r+14):unsigned(r[10])*r[11];const uint8_t*bytes=nullptr;

@@ -40,13 +40,14 @@ bool App::world_choice_is_card_reward()const{
  const auto&r=w.rewards[w.choice_reward-1];return r.group&&r.kind==1&&!(r.flags&1)&&w.choice_max==1;
 }
 unsigned App::world_choice_page_size()const{
- if(world_choice_is_card_reward())return 3;
- if(game.phase==Phase::WorldRelicChoice){if(game.world_relics.choice==WorldRelicChoice::OfferReward)return 4;if(game.world_relics.choice==WorldRelicChoice::OfferBundle)return 2;}
- if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Rewards)return 4;
+ if(world_choice_is_card_reward())return MaxWorldUiChoices; // One original centered row.
+ if(game.phase==Phase::WorldRelicChoice){if(game.world_relics.choice==WorldRelicChoice::OfferReward)return MaxWorldUiChoices;if(game.world_relics.choice==WorldRelicChoice::OfferBundle)return 2;}
+ if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Rewards)return MaxWorldUiChoices;
  return 10;
 }
 void App::toggle_world_choice(int id){
  if(choice_peeking||!world_choice_phase(game.phase)||id<0||!combat_choice_ready())return;sync_selection();
+ if(world_choice_is_card_reward()&&!card_reward_input_ready())return;
  uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
  for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
  const bool reward=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
@@ -89,6 +90,7 @@ void App::world_choice_detail(int id){
 bool App::world_choice_input(Key key){
  if(choice_peeking||title||paused||help||panel||!world_choice_phase(game.phase)||!combat_choice_ready())return false;
  sync_selection();
+ if(world_choice_is_card_reward())sync_card_reward_presentation();
  if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal)return crystal_input(key);
  uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);
  if(count>MaxWorldUiChoices)return false;if(cursor<0||cursor>=int(count))cursor=0;
@@ -96,6 +98,7 @@ bool App::world_choice_input(Key key){
  const bool potion_reward=world_choice_is_potion_reward();
  if(potion_reward&&(key==Key::EndTurn||key==Key::Back)){choice_selected_count=0;confirm_world_choice();return true;}
  const bool card_reward=world_choice_is_card_reward();const int columns=rewards?1:card_reward?0:5;
+ if(card_reward&&key==Key::ExhaustPile){card_reward_alternative(false);return true;}
  if(key==Key::Left&&count)cursor=(cursor+int(count)-1)%int(count);
  else if(key==Key::Right&&count)cursor=(cursor+1)%int(count);
  else if(key==Key::Up&&count)cursor=cursor>=columns?cursor-columns:cursor;

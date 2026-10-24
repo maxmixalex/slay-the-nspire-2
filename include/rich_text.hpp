@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "rich_rainbow.hpp"
 #include "inline_icons.hpp"
+#include "unicode_text.hpp"
 namespace spire {
 struct RichStyle { uint8_t color=0; bool bold=false,italic=false,wave=false,jitter=false,rainbow=false,thinky_dots=false; unsigned thinky_start=0;RichRainbow rainbow_parameters{}; };
 struct RichChar { uint32_t codepoint; RichStyle style; unsigned index; };
@@ -76,10 +77,13 @@ class RichReader {
 public:
  explicit RichReader(const char*p):p_(p){}
  bool next(RichChar&out){
+  for(;;){
   while(*p_&&markup()){}if(!*p_)return false;
   uint32_t cp=(uint8_t)*p_++;
   if(cp>=128){int n=cp<224?1:cp<240?2:3;cp&=(1u<<(6-n))-1;while(n--){uint8_t b=(uint8_t)*p_;if((b&192)!=128){cp='?';break;}++p_;cp=(cp<<6)|(b&63);}}
+  if(text_format_control(cp))continue;
   if(literal_tag_&&cp==']')literal_tag_=false;out={cp,style_,index_++};return true;
+  }
  }
 };
 }

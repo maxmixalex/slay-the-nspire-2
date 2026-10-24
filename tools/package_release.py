@@ -56,24 +56,29 @@ nSpire2.common.tns first, then transfer the new complete set. Keep your saves.
 The old complete nSpire2.nsp.tns pack is unnecessary alongside split resources.
 
 操作 / Controls
-计算器用 8/2/4/6 移动，电脑用方向键；Enter / 5 确认；Space 结束回合或确认选牌；Esc 返回/暂停。
-Tab / Q 牌组，A 抽牌堆，D 弃牌堆，F 消耗牌堆；I 详情，C 百科，V 状态。
-M 地图，P 药水，R 遗物，S 保存，O 读取。
+计算器用 8/2/4/6 移动，Enter / 5 选择，E 结束回合，Space 按住查看选牌界面下方的战场，Esc 返回/暂停。
+计算器 Q 牌组，A 抽牌堆，D 弃牌堆，F 消耗牌堆，M 地图。
+电脑默认鼠标与键盘：方向键移动，Enter 选择，E 结束回合，D 牌组，A 抽牌堆，S 弃牌堆，X 消耗牌堆。
+在设置中可选择纯键盘操作并分别改键。I 详情，C 百科，V 状态，P 药水，R 遗物，O 读取。
 键盘选中手牌后 Enter 进入指向，左右选择目标，再按 Enter 出牌；Esc 取消。
-Calculator 8/2/4/6 or desktop arrow keys navigate; Enter/5 confirms;
-Space ends a turn/confirms a selection;
-Esc returns/pauses; Tab/Q deck; A draw, D discard, F exhaust; I details;
-C compendium; V statuses; M map;
-P potions; R relics; S saves; O loads. Touchpad clicking/dragging is supported.
+Calculator: 8/2/4/6 navigate; Enter/5 selects; E ends the turn;
+hold Space to peek beneath a combat card selection; Esc returns/pauses.
+Q deck; A draw, D discard, F exhaust; M map.
+Desktop mouse-and-keyboard defaults: arrows navigate; Enter selects; E ends
+the turn; D deck; A draw, S discard, X exhaust; M map; Space peeks.
+Settings has separate remappable mouse/keyboard and keyboard-only banks.
+I details; C compendium; V statuses; P potions; R relics; O loads.
+Touchpad clicking/dragging is supported. Save through the pause menu.
 With a hand card selected, Enter aims, Left/Right chooses a target, Enter plays;
 Esc cancels aiming. Fast Mode persists independently of the run save.
-离线 HTML 可直接用浏览器打开，在游戏内设置切换语言；S 保存、O 读取，存档保留在该浏览器中。
+离线 HTML 可直接用浏览器打开，在主菜单的设置里切换语言；暂停菜单保存、O 读取，存档保留在该浏览器中。
 Open the companion offline HTML in a browser; change language in game Settings.
-S saves and O loads; saves stay in that browser. No asset download or server connection is needed.
+Save from the pause menu and load with O; saves stay in that browser.
+No asset download or server connection is needed.
 
 版本 / Build
 参考游戏 / game reference: v0.111.0 / 41cef1ea
-Resource format: NSP2/{info['resource_format']}; save format: v15
+Resource format: NSP2/{info['resource_format']}; save format: v{info['save_version']}
 Installed files: {sum(info['files'].values()):,} bytes before saves
 Runtime source: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['runtime_checkpoint']}
 Resource converter: https://github.com/maxmixalex/slay-the-nspire-2/tree/{info['resource_checkpoint']}
@@ -132,7 +137,7 @@ def main():
     version = resource_version(args.eng)
     if resource_version(args.zhs) != version:
         p.error('English and Chinese resources must use the same format version')
-    info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=15,
+    info = dict(reference='v0.111.0 / 41cef1ea', resource_format=version, save_version=17,
                 stage=args.stage,
                 runtime_checkpoint=args.runtime_checkpoint,
                 resource_checkpoint=args.resource_checkpoint,
@@ -144,7 +149,7 @@ def main():
     texts = {'README.txt': readme(info).encode('utf-8'),
              'BUILD-INFO.json': (json.dumps(info, ensure_ascii=False, indent=2) + '\n').encode('utf-8')}
     for name in ('COPYING', 'NOTICE.md', 'licenses/Go-BSD-3-Clause.txt',
-                 'licenses/OkHSV-Godot-MIT.txt', 'licenses/Noto-Boot-OFL.txt'):
+                 'licenses/OkHSV-Godot-MIT.txt', 'licenses/Noto-Boot-OFL.txt','licenses/NotoEmoji-OFL.txt','licenses/NotoSansSymbols2-OFL.txt'):
         paths[name] = ROOT / name
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for name, path in paths.items():

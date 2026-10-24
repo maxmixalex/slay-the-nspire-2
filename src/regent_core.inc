@@ -206,11 +206,14 @@ static void regent_gain_power(State&s,RPower p,int amount){
  if(amount>0&&(p==RPower::Orbit||p==RPower::Monologue)){
   int16_t*slots=p==RPower::Orbit?r.orbit:r.monologue;int at=0;while(at<MaxPowerInstances&&slots[at])++at;
   if(at==MaxPowerInstances){fail(s);return;}slots[at]=(int16_t)amount;
+  power_order_set(s,0,RegentStatusStart+k,true,unsigned(at));
   if(p==RPower::Monologue)after_play_register(s,(unsigned)PostPlayActor::RegentMonologueStart+at);
  }
  if(!old&&value){if(r.power_count==RPowerCount){fail(s);return;}r.power_order[r.power_count++]=(uint8_t)k;}
  if(old&&!value){for(unsigned at=0;at<r.power_count;at++)if(r.power_order[at]==k){for(unsigned j=at+1;j<r.power_count;j++)r.power_order[j-1]=r.power_order[j];r.power_order[--r.power_count]=0;break;}}
  r.powers[k]=(int16_t)value;unsigned actor=regent_actor(p);
+ if(!power_instanced(RegentStatusStart+k))power_order_set(s,0,RegentStatusStart+k,value!=0);
+ else if(!value)for(unsigned slot=0;slot<MaxPowerInstances;++slot)power_order_set(s,0,RegentStatusStart+k,false,slot);
  if(p==RPower::VoidForm&&amount>0)r.void_played_turn=9999;
  if(actor&&!old&&value)after_play_register(s,actor);if(actor&&old&&!value)after_play_unregister(s,actor);
 }
@@ -264,7 +267,7 @@ static bool regent_post_play_actor_active(const State&s,unsigned actor){
 static void regent_after_play_listener(State&s,unsigned actor){
  auto&r=s.regent;unsigned d=s.expansion.depth;
  if(actor==(unsigned)PostPlayActor::RegentBlackHole){if(!s.expansion.remaining&&r.stars_spent[d]>0&&rpower(s,RPower::BlackHole))queue_extension(s,XOp::AllDamage,rpower(s,RPower::BlackHole),0,true);return;}
- if(actor==(unsigned)PostPlayActor::RegentPaleBlueDot){if(!r.pale_activated&&r.cards_finished_turn>=5&&rpower(s,RPower::PaleBlueDot)){r.pale_activated=1;s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+rpower(s,RPower::PaleBlueDot));}return;}
+ if(actor==(unsigned)PostPlayActor::RegentPaleBlueDot){if(!r.pale_activated&&r.cards_finished_turn>=5&&rpower(s,RPower::PaleBlueDot)){r.pale_activated=1;s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+rpower(s,RPower::PaleBlueDot));power_order_set(s,0,17,s.draw_next_turn!=0);}return;}
  if(actor==(unsigned)PostPlayActor::RegentVoidForm){if(!r.automatic[d]&&!s.expansion.remaining)r.void_played_turn=(uint16_t)min(9999,r.void_played_turn+1);return;}
  if(actor>=(unsigned)PostPlayActor::RegentMonologueStart&&actor<(unsigned)PostPlayActor::RegentMonologueStart+MaxPowerInstances){
   int at=actor-(unsigned)PostPlayActor::RegentMonologueStart;int amount=r.monologue_capture[at][d];r.monologue_capture[at][d]=0;
@@ -464,7 +467,7 @@ static bool regent_effect(State&s,Effect e){
  case XOp::RBlock:{
   Card c=s.playing>=0?s.cards[s.playing]:Card{RegentDefend,0};
   int next=b?silent_modify_block(s,ironclad_block(s,c,powered_block(s,c,b))):0;
-  gain_card_block(s,powered_block(s,c,a));if(next)s.block_next_turn=(int16_t)min(9999,s.block_next_turn+next);break;
+  gain_card_block(s,powered_block(s,c,a));if(next)s.block_next_turn=(int16_t)min(9999,s.block_next_turn+next);power_order_set(s,0,16,s.block_next_turn!=0);break;
  }
  case XOp::RUnpoweredBlock:gain_unpowered_block(s,a);break;
  case XOp::RHits:
@@ -527,7 +530,7 @@ static bool regent_effect(State&s,Effect e){
  case XOp::REndTurn:r.end_turn_requested=1;break;
  case XOp::RReturnBlade:
   for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==SovereignBlade)regent_return_to_hand(s,id);break;
- case XOp::RVigor:s.vigor=(int16_t)min(9999,s.vigor+a);break;
+ case XOp::RVigor:s.vigor=(int16_t)min(9999,s.vigor+a);power_order_set(s,0,2,s.vigor!=0);break;
  case XOp::RDebris:{
   int count=a?a:MaxHand-s.hand.count;if(s.card_count+count>MaxCards){fail(s);break;}
   for(int n=0;n<count;n++)if(create_to_hand(s,{Debris,0})<0)break;break;

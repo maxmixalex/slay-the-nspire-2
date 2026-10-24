@@ -17,8 +17,9 @@ constexpr uint32_t run_modifier_bit(RunModifier value){return uint32_t(1)<<unsig
 constexpr uint32_t RunExclusiveDeckModifiers=run_modifier_bit(RunModifier::Draft)|
     run_modifier_bit(RunModifier::SealedDeck)|run_modifier_bit(RunModifier::Insanity);
 
-// Persisted simulation options, never optional UI metadata. Standard runs keep
-// this structure zero and retain their historical v15 byte representation.
+// Persisted simulation options, never optional UI metadata. Standard runs
+// keep this structure zero. The v17 writer appends it after the frozen v15
+// payload; historical v15 Standard and v16 Custom/Daily saves remain readable.
 // Neow's ordered modifier selections can suspend in an ordinary card chooser.
 struct RunOptions {
     uint32_t modifiers=0,daily_day=0,neow_completed=0;

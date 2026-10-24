@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "core.hpp"
 #include "room_ui7_presentation.hpp"
+#include "crystal_shader_coordinates.hpp"
 
 namespace spire {
 // CrystalSphereScreen, 1680x1260, uniformly projected to the calculator.

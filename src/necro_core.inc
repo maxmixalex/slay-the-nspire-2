@@ -10,6 +10,7 @@ static void necro_unregister(State&s,unsigned p){
 static void necro_gain_power(State&s,NPower p,int amount){
  auto&v=s.necro;auto&n=v.powers[(unsigned)p];int old=n;
  n=(int16_t)max(0,min(9999,n+amount));
+ power_order_set(s,0,NecroStatusStart+unsigned(p),n!=0);
  if(!old&&n){if(v.power_count==NPowerCount){fail(s);return;}v.power_order[v.power_count++]=(uint8_t)p;}
  else if(old&&!n)necro_unregister(s,(unsigned)p);
  unsigned actor=p==NPower::DevourLife?(unsigned)PostPlayActor::NecroDevourLife:p==NPower::Haunt?(unsigned)PostPlayActor::NecroHaunt:p==NPower::ReaperForm?(unsigned)PostPlayActor::NecroReaperForm:0;
@@ -159,7 +160,7 @@ static void necro_debuff_applied(State&s,int t,int change,bool doom){
 static void necro_apply_doom(State&s,int t,int amount){
  if(amount<=0)return;
  if(t==-1){
-  if(s.hp<=0)return;int n=min(9999-s.necro.player_doom,amount);s.necro.player_doom+=(int16_t)n;
+  if(s.hp<=0)return;int n=min(9999-s.necro.player_doom,amount);s.necro.player_doom+=(int16_t)n;power_order_set(s,0,42,s.necro.player_doom!=0);
   necro_debuff_applied(s,-1,n,true);return;
  }
  if(t<0||t>=s.enemy_count||s.enemies[t].hp<=0||silent_blocks_debuff(s,t))return;
@@ -406,6 +407,7 @@ static int necro_debuff_amount(const State&s,int t,NDebuff p){
 }
 static void necro_note_debuff(State&s,int t,NDebuff p){
  if(t<0||t>=s.enemy_count||(unsigned)p>=NDebuffCount)return;auto&v=s.necro;
+ power_order_set(s,unsigned(t+1),debuff_power_id(p),true);
  uint8_t entry=(uint8_t)((unsigned)p+1);for(unsigned i=0;i<v.debuff_count[t];i++)if(v.debuff_order[t][i]==entry)return;
  if(v.debuff_count[t]==NDebuffCount){fail(s);return;}v.debuff_order[t][v.debuff_count[t]++]=entry;enemy_note_legacy_power(s,t,p);
 }
@@ -420,6 +422,7 @@ static void necro_prune_debuffs(State&s){
   for(unsigned i=n;i<NDebuffCount;i++)v.debuff_order[t][i]=0;v.debuff_count[t]=(uint8_t)n;
  }
  enemy_prune_legacy_powers(s);
+ power_order_prune(s);
 }
 static void necro_clear_temp_strength(State&s,int t){
  if(t<0||t>=MaxEnemies)return;

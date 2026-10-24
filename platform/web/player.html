@@ -67,6 +67,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  loading.textContent=t('loading_resources');await new Promise(resolve=>setTimeout(resolve,0));
  let ioCalls=0,ioBytes=0,ioTime=0;
  function memoryBytes(){if(!ram||ram.buffer!==memory.buffer)ram=new Uint8Array(memory.buffer);return ram;}
+ const supportedSaveVersion=()=>game&&game.save_version?game.save_version():15;
  const result=await WebAssembly.instantiate(decode('__WASM__'),{env:{
   resource_read:(offset,p,n)=>{const start=profiling?clock():0;try{
    let bytes=content;
@@ -75,8 +76,13 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    const target=memoryBytes();if(!bytes||offset<0||n<0||offset>bytes.length||n>bytes.length-offset||p<0||p>target.length||n>target.length-p)return 0;
    target.set(bytes.subarray(offset,offset+n),p);if(profiling){ioCalls++;ioBytes+=n;ioTime+=clock()-start;}return 1
   }catch(e){return 0}},
-  save:(p,n)=>{try{return(n===0?profileStorage.clearRun(saveProfile):profileStorage.writeRun(saveProfile,encode(memoryBytes().subarray(p,p+n))))?1:0}catch(e){return 0}},
-  load:(p,max)=>{try{const s=profileStorage.readRun(saveProfile);if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
+  save:(p,n)=>{try{
+   if(n===0)return profileStorage.clearRun(saveProfile,supportedSaveVersion())?1:0;
+   const bytes=memoryBytes().subarray(p,p+n);if(bytes.length<16)return 0;
+   const version=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(4,true);
+   return profileStorage.writeRun(saveProfile,encode(bytes),version,supportedSaveVersion())?1:0;
+  }catch(e){return 0}},
+  load:(p,max)=>{try{const s=profileStorage.readRun(saveProfile,supportedSaveVersion());if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
  }});
  game=result.instance.exports;memory=game.memory;
  // An older WASM has no profile callback. It continues to use the historical
@@ -170,7 +176,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    if(game.flush_progress()===0||!flushProgress()){game.profile_summaries_done();return;}
    try{for(let slot=1;slot<=3;slot++){
     try{const bytes=readProfileProgress(slot);copyProgress(bytes);
-     game.profile_summary_set(slot,bytes.length,profileStorage.readRun(slot)?1:0);
+     game.profile_summary_set(slot,bytes.length,profileStorage.readRun(slot,supportedSaveVersion())?1:0);
     }catch(error){game.profile_summary_set(slot,0,0);}
    }}
    finally{game.profile_summaries_done();dirty=true;}
@@ -209,7 +215,17 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    if(document.activeElement!==textEntry)textEntry.focus({preventScroll:true});
   }else if(document.activeElement===textEntry){textEntry.value='';composing=false;canvas.focus({preventScroll:true});}
  }
- function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();flushProgress();serviceProfiles();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');syncTextEntry();void serviceLanguage().catch(error=>console.error(error));}
+ function flushFeedback(){
+  if(!game.feedback_length||!game.feedback_length())return;
+  let ok=false,url=null;
+  try{
+   const bytes=memoryBytes().slice(game.feedback_buffer(),game.feedback_buffer()+game.feedback_length());
+   url=URL.createObjectURL(new Blob([bytes],{type:'text/plain;charset=utf-8'}));
+   const link=document.createElement('a');link.href=url;link.download='nSpire2-feedback.txt';document.body.append(link);link.click();link.remove();ok=true;
+  }catch(error){console.error(error);}
+  finally{if(url)setTimeout(()=>URL.revokeObjectURL(url),1000);game.feedback_ack(ok?1:0);}
+ }
+ function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushFeedback();flushPreferences();flushProgress();serviceProfiles();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');syncTextEntry();void serviceLanguage().catch(error=>console.error(error));}
  function key(k){input(()=>game.input(k));}
  if(game.debug_execute){
   keyMap.F1=22;keyMap.g=22;keyMap.G=22;
@@ -224,7 +240,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    for(let i=1;i<game.debug_catalog_count(type);++i)rows.push(readString(game.debug_catalog(type,i)));return rows;};
   const button=document.createElement('button');button.textContent=language==='eng'?'Debug F1':'调试 F1';button.addEventListener('click',()=>{key(22);canvas.focus();});document.getElementById('actions').append(button);
  }
- function commitText(text){if(text&&game.text_entry_active())input(()=>{for(const character of text){const code=character.codePointAt(0);if(code>=32)game.text_input(code);}});}
+ function commitText(text){if(text&&game.text_entry_active())input(()=>{for(const character of text){const code=character.codePointAt(0);if(code>=32||(code===10&&game.feedback_text_active&&game.feedback_text_active()))game.text_input(code);}});}
  function flushTextEntry(){if(composing)return;const value=textEntry.value;textEntry.value='';commitText(value);}
  textEntry.addEventListener('compositionstart',()=>{composing=true;});
  textEntry.addEventListener('compositionend',()=>{composing=false;queueMicrotask(flushTextEntry);});
@@ -244,7 +260,8 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   if(game.text_entry_active()&&!(game.key_binding_listening&&game.key_binding_listening())){
    if(e.isComposing||composing||e.keyCode===229)return;
    if(e.ctrlKey||e.altKey||e.metaKey)return;
-   const code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:[...e.key].length===1?e.key.codePointAt(0):0;
+   const feedback=game.feedback_text_active&&game.feedback_text_active(),editing={ArrowLeft:-1,ArrowRight:-2,ArrowUp:-3,ArrowDown:-4,Home:-5,End:-6,Delete:127,Tab:9};
+   const code=feedback&&e.key in editing?editing[e.key]:e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:[...e.key].length===1?e.key.codePointAt(0):0;
    if(code){e.preventDefault();input(()=>game.text_input(code));}
    else if(e.key==='Tab'){e.preventDefault();key(3);}
    else if(e.key.startsWith('Arrow'))e.preventDefault();

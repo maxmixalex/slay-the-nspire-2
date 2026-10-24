@@ -134,7 +134,11 @@ static void old_save(const char*path){
     before.size=std::fread(before.bytes,1,sizeof before.bytes,f);check(!std::ferror(f)&&std::feof(f),"read complete historical save");std::fclose(f);
     check(before.size>16&&before.bytes[4]==15,"fixture was produced by frozen v15 writer");
     check(load(game,before.bytes,before.size),"new reader accepts old 0/1 lifecycle values");
-    unchanged();
+    check(save(game,after)&&after.bytes[4]==SaveVersion,"historical run migrates to current save version");
+    // v17 appends mode/order/profile fields; every frozen v15 base field
+    // remains at its original offset with no gameplay or RNG rewrite.
+    check(after.size>before.size&&!std::memcmp(before.bytes+8,after.bytes+8,before.size-12),"historical payload and room continuation remain unchanged");
+    before=after;unchanged();
 }
 int main(int argc,char**argv){
     finished_event_retains_scene();merchant_remains_usable();treasure_keeps_awaited_pickup();

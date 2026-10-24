@@ -23,7 +23,7 @@ static void genuine_v13(const char*path){
  CHECK(s.expansion.after_play_order[0]==(unsigned)PostPlayActor::Afterimage&&s.expansion.after_play_order[1]==(unsigned)PostPlayActor::SerpentForm);
  CHECK(s.silent.nightmare_active[0]&&s.silent.nightmares[0].card.kind==UpMySleeve&&s.silent.nightmares[0].discount==2&&s.silent.nightmares[0].sly==1&&s.silent.nightmares[0].retain==1);
  CHECK(!s.defect.power_count&&!s.regent.power_count&&!s.necro.power_count&&!s.silent.nightmares[0].necro_ethereal);
- auto migrated=snapshot(s);CHECK(migrated.bytes[4]==15&&migrated.size>b.size());
+ auto migrated=snapshot(s);CHECK(migrated.bytes[4]==SaveVersion&&migrated.size>b.size());
  // Every v13 payload byte stays at the same offset, including the old 22
  // listener fields and the original smaller Nightmare snapshot records.
  CHECK(!std::memcmp(migrated.bytes+8,b.data()+8,b.size()-12));

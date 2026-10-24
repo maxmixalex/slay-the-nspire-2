@@ -44,7 +44,7 @@ static int enemy_create(State&s,EnemyId kind,int slot,int owner=-1,int bonus=0,i
  if(kind==EnemyId::LegacyNibbit||unsigned(kind)>=EnemyKinds||slot<0||slot>=s.enemy_world.slot_limit)return -1;
  int t=-1;for(int i=0;i<s.enemy_count;++i)if(!enemy_slot_exists(s,i)&&i!=s.enemy_world.actor){t=i;break;}
  if(t<0){if(s.enemy_count>=MaxEnemies){fail(s);return -1;}t=s.enemy_count++;}
- enemy_reset_shared_slot(s,t);auto&m=s.enemy_world.models[t];m=EnemyModelState{};m.kind=kind;m.slot=(uint8_t)slot;m.owner=owner<0?255:(uint8_t)owner;
+ power_order_clear_actor(s,unsigned(t+1));enemy_reset_shared_slot(s,t);auto&m=s.enemy_world.models[t];m=EnemyModelState{};m.kind=kind;m.slot=(uint8_t)slot;m.owner=owner<0?255:(uint8_t)owner;
  // HP is sampled before attaching this new combat identity.
  int hp=enemy_unique_hp(s,kind,t,bonus,pending_add);s.enemies[t].hp=s.enemies[t].max_hp=(int16_t)hp;
  m.flags=EnemyPresent;m.combat_id=s.enemy_world.next_creature_id++;m.spawned_this_side=s.enemy_world.side;

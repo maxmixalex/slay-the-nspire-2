@@ -25,11 +25,13 @@ static void enemy_write_power(State&s,int t,EnemyPower p,int amount){
  enemy_raw_power(s,t,p)=(int16_t)amount;
 }
 static void enemy_power_order_add(State&s,int t,EnemyPower p){
+ power_order_set(s,unsigned(t+1),enemy_power_id(unsigned(t+1),p),true);
  auto&w=s.enemy_world;uint8_t*order=t<0?w.player_power_order:w.models[t].power_order;uint8_t&n=t<0?w.player_power_count:w.models[t].power_count;
  for(unsigned i=0;i<n;i++)if(order[i]==(unsigned)p)return;
  if(n>=EnemyPowerCount){fail(s);return;}order[n++]=(uint8_t)p;
 }
 static void enemy_power_order_remove(State&s,int t,EnemyPower p){
+ power_order_set(s,unsigned(t+1),enemy_power_id(unsigned(t+1),p),false);
  auto&w=s.enemy_world;uint8_t*order=t<0?w.player_power_order:w.models[t].power_order;uint8_t&n=t<0?w.player_power_count:w.models[t].power_count;
  for(unsigned i=0;i<n;i++)if(order[i]==(unsigned)p){for(unsigned j=i+1;j<n;j++)order[j-1]=order[j];order[--n]=0;break;}
 }

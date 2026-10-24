@@ -58,6 +58,7 @@
 #include "history_ui8_assets.hpp"
 #include "run_modes.hpp"
 #include "bestiary_presentation.hpp"
+#include "auxiliary_ui.hpp"
 namespace spire {
 constexpr int ScreenW=320,ScreenH=240,MaxPack=13*1024*1024;
 // MaxPack remains the historical in-memory fixture limit. Production hosts
@@ -174,6 +175,7 @@ struct Callbacks {
     unsigned(*current_profile)()=nullptr;
     bool(*profile_info)(unsigned,UiProgressSummary&)=nullptr;
     bool(*request_profile)(unsigned,bool)=nullptr;
+    bool(*write_feedback)(const char*,unsigned)=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -232,6 +234,12 @@ struct App {
     void finish_reward_acquisition(const RewardAcquisitionSnapshot&);
     void observe_deck_removing(const State&,int index);
     void sync_reward_presentation();
+    bool card_reward_active()const;
+    bool reward_list_interactive()const;
+    bool card_reward_interactive()const;
+    void sync_card_reward_presentation();
+    bool card_reward_input_ready();
+    void card_reward_alternative(bool skip);
     bool reward_pickup_hidden(RewardPickupKind,unsigned)const;
     int reward_gold()const;
     void sync_combat_preparation();
@@ -239,6 +247,15 @@ struct App {
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
     bool settings_open=false,fast_mode=false;
+    AuxiliaryUi auxiliary{};
+    void open_auxiliary(AuxiliaryScreen);
+    void close_auxiliary();
+    void auxiliary_control(int);
+    bool auxiliary_input(Key);
+    bool auxiliary_text(int);
+    void auxiliary_scroll(int);
+    void advance_auxiliary(unsigned);
+    unsigned feedback_report(char*,unsigned)const;
     bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false;
     uint8_t screen_shake=2;
     bool bestiary_actions_preferred=true;
@@ -246,7 +263,7 @@ struct App {
     bool calculator_keyboard=false;
     int8_t binding_listening=-1;
     uint8_t binding_bank=0;
-    struct HeldInput {uint16_t code=0;uint8_t key=255;};
+    struct HeldInput {uint16_t code=0;uint8_t key=255;uint32_t context=0;};
     HeldInput held_inputs[12]{};
     void begin_key_rebind(unsigned command);
     bool physical_key(uint16_t code,bool pressed);
@@ -577,6 +594,9 @@ struct App {
     int combat_status_amount(int actor,int id,bool label=false)const;
     bool combat_status_counter(int actor,int id)const;
     int combat_status_auxiliary(int actor,int power)const;
+    unsigned combat_power_entries(int actor,uint16_t*out,unsigned capacity)const;
+    int combat_power_amount(uint16_t token,bool label=false)const;
+    bool combat_power_counter(uint16_t token)const;
     EnemyId combat_status_source(int actor,int power)const;
     int combat_status_fact(int fact,int slot=0)const;
     int combat_statuses(int actor,int*out)const;
@@ -673,6 +693,8 @@ struct App {
     void card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
     void world_card_description(Card,int,char*,size_t,int instance=-1,int deck_index=-1,const EventCardFacts* facts=nullptr)const;
     void localized_text(const char* table,const char* key,char*,size_t,int model=-1,int actor=-1,int amount=0)const;
+    mutable char monster_title_buffer[128]{};
+    const char* monster_title(EnemyId)const;
     void original_event_text(int option,bool description,char*,size_t)const;
     const char* relic_title(RelicId,int position=-1)const;
     void relic_description(RelicId,char*,size_t,int position=-1)const;

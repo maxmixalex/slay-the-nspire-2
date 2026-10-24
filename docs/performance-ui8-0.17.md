@@ -80,6 +80,50 @@ alpha comparisons in `canvas_fast_path_regression` passed. This preserves
 sampling and clipping, including the recovered scaled-clip work; it does not
 lower image quality or discard animation frames.
 
+## Crystal coordinate work and actual resource measurements
+
+The stage-four ARM disassembly shows software integer division inside the
+Crystal Sphere's invariant axis preparation: its four projected axis lengths
+are 158, 157, 159 and 160 pixels, with three dynamic divisions per coordinate.
+The stage-five candidate evaluates that exact integer mapping at compile time.
+Four immutable tables contain **634 four-byte records, 2,536 bytes total**.
+This removes **1,902 coordinate divisions per two-layer frame** and the former
+1,280-byte local axis arrays. The two unsigned 64-bit clock phase calculations
+are also shared by the layers. Pixel colors, polar/noise lookup, coverage,
+border blending, cell timing and the number of rendered frames are unchanged.
+The final linked allocation and stack reduction still require the next ARM
+build; constant-table size alone is not the final executable cost.
+
+`crystal_shader_regression` compares the axes against independent floor-based
+arithmetic and the clock phases against 128-bit arithmetic. With an actual
+resource pack, it compares the complete 320×240 buffers after each of both
+layers over 192 clock/coverage/opacity cases, including 32-bit clock wrap, then
+times the preserved stage-four software shader against the candidate. These
+new stage-five tests are **prepared but not yet executed** at this source
+checkpoint. Their reference is the preceding port renderer, not Godot.
+
+An executed stage-four-b actual-English-pack `card_grid_benchmark` run found
+zero resource reads during 180 warm frames for the 16-card Ironclad library,
+its detail view and the 12-card removal grid. Their measured host means were
+1.078, 1.711 and 0.756 ms respectively. The seven-card merchant's first measured
+180-frame animation window averaged 1.478 ms with 73 reads / 909,485 bytes;
+its hover case averaged 1.558 ms with 71 reads / 886,929 bytes. This first-cycle
+I/O does not by itself establish cache thrashing, because the sparse setup
+advances have not visited all sprite frames. The retained successful receipt
+is `ui8-hotframes-stage4b-eng-ab1a0f23c2e0.json`, using source
+`2f3f18f11b16263456cf3dd0cc8a7525291ddf71` and the 93,345,135-byte English
+resource pack. These are shared-host observations, not quiet A/B or device FPS.
+
+The new `room_render_benchmark` measures three consecutive animation windows
+for map, merchant, card reward, covered/revealed Crystal Sphere and Ancient
+rooms. It records real range reads, seeks, decoded-cache occupancy and CPU
+intervals, checks the canonical state is unchanged, and optionally writes
+PPM captures outside the measured intervals. Scene setup uses production
+controllers with explicit fixture outcomes for unrelated routing rooms; it
+does not certify a whole run or count a diagnostic as completed gameplay.
+Execution and inspection of this new driver remain pending the stage-five
+source checkpoint and matching resources.
+
 ## Actual lossless recompression
 
 `tools/recompress_resources.py` rewrites existing TGR1/RGR1 groups without
@@ -142,8 +186,12 @@ runtime previously supplied only the unsigned helper. The failed receipt
 `ui8-arm-stage3-9c4648be6a97.json` is retained. The fix supplies a shared signed
 wrapper without changing pose math, converts `INT64_MIN` to an unsigned
 magnitude, restores quotient/remainder signs, preserves r4–r11 and keeps the
-stack aligned. It needs the next frozen linked-ELF validation before a portable
-pass can be claimed.
+stack aligned. Frozen stage four
+`a5ad4a955af293d66001cf2aa1e046ff85a196b0` then successfully built the
+1,256,810-byte launcher. Its linked allocation is **16,610,388 bytes**, leaving
+**166,828 bytes** below the unchanged 16 MiB packaging limit. The actual ELF
+SHA-256 is `7144e5b8533158e122b95c881d7187dddb7251c94657de09c024aa9758a11a9b`.
+The unsigned and signed helpers occupy 140 and 84 bytes respectively.
 
 `tests/arm_division_regression.py` now checks both production linked helpers
 against exact Python integer quotients/remainders, including signed extremes,
@@ -151,6 +199,15 @@ random vectors, zero-divisor fallback and `INT64_MIN / -1` local bit behavior.
 `tests/arm_lzma2_regression.py` also covers the adaptive contexts in actual
 ARM926 instructions. Instruction-level checks are separate from ordinary
 calculator launch and do not measure device frame rate.
+
+Against that actual linked ELF, **12,880 division vectors** passed (5,249
+unsigned and 7,631 signed), including exact quotient/remainder, return PC,
+stack and r4–r11 preservation. **42 LZMA2 vectors in seven fixture families**
+passed, including contexts 3/0/0, 4/0/1 and 3/1/1, raw/compressed 512 KiB
+chunks, bounds, guards and arena reuse. The three retained successful receipts
+are `ui8-arm-stage4-ed45b31b1f29.json`,
+`ui8-arm-stage4-division-f40b85211cd0.json` and
+`ui8-arm-stage4-codec-075d0d9c3b10.json`; each reports unchanged frozen source.
 
 The initial GCC 13 map-driver build encountered an internal compiler error in
 the unchanged baseline and the candidate at the same aggregate reset. The
@@ -166,7 +223,8 @@ no emulator memory was injected. This preparation does **not** establish that
 the new UI8 launcher has run; that requires the final ARM binary and matching
 private resource set.
 
-The final linked ARM allocation must still be measured against the existing
-16 MiB limit after all UI8 features are integrated. The map workspace saving
+The stage-four allocation is an actual checkpoint result. The final linked
+ARM allocation must still be measured after later UI8 features are integrated.
+The map workspace saving
 provides room for features such as bounded map drawing, but it is not a
 substitute for the final linked budget or a whole-process memory measurement.

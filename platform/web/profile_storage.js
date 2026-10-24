@@ -1,18 +1,18 @@
 // Slot one retains the keys used by every previous offline player. Original
 // PrefsSave is profile-specific; SettingsSave (including language) is global.
 function createProfileStorage(access) {
- const selector='nSpire2-selected-profile',journalKey='nSpire2-profile-delete-pending';
+ const selector='nSpire2-selected-profile',journalKey='nSpire2-profile-delete-pending',latestSaveVersion=17;
  let pending=null;
  function valid(slot){if(!Number.isInteger(slot)||slot<1||slot>3)throw Error('Invalid save profile');return slot;}
  function key(base,slot){valid(slot);return base+(slot===1?'':'-profile-'+slot);}
  function keys(slot,history){
-  const list=[];for(let version=3;version<=16;version++)list.push(key('nSpire2-save-v'+version,slot));
+  const list=[];for(let version=3;version<=latestSaveVersion;version++)list.push(key('nSpire2-save-v'+version,slot));
   if(history)list.push(key('nSpire2-progress-v1',slot),key('nSpire2-preferences-v1',slot),key('nSpire2-preferences-v2',slot),key('nSpire2-preferences-v3',slot));return list;
  }
  function readJournal(text){
   if(text.length>8*1024*1024)throw Error('Invalid profile transaction');
   const value=JSON.parse(text);valid(value.slot);
-  if((value.version!==1&&value.version!==2)||!Array.isArray(value.entries)||value.entries.length>18)throw Error('Invalid profile transaction');
+  if((value.version!==1&&value.version!==2)||!Array.isArray(value.entries)||value.entries.length>keys(value.slot,true).length)throw Error('Invalid profile transaction');
   const allowed=new Set(keys(value.slot,true)),seen=new Set();
   for(const entry of value.entries){
    if(!Array.isArray(entry)||entry.length!==2||!allowed.has(entry[0])||seen.has(entry[0])||
@@ -64,15 +64,15 @@ function createProfileStorage(access) {
    const old=json(read(key('nSpire2-preferences-v1',slot)));
    return 4|(2<<8)|(old&&old.version===1&&old.fastMode===true?1:0);
   },
-  readRun(slot,maxVersion=16){for(let version=16;version>=3;version--){const value=read(key('nSpire2-save-v'+version,slot));
+  readRun(slot,maxVersion=latestSaveVersion){for(let version=latestSaveVersion;version>=3;version--){const value=read(key('nSpire2-save-v'+version,slot));
    if(value){if(version>maxVersion)throw Error('This run requires a newer player');return value;}}return null;},
-  writeRun(slot,value,version=15,maxVersion=16){
-   if((version!==15&&version!==16)||version>maxVersion)throw Error('Unsupported save format');
+  writeRun(slot,value,version=15,maxVersion=latestSaveVersion){
+   if((version!==15&&version!==16&&version!==17)||version>maxVersion)throw Error('Unsupported save format');
    if(!recover())return false;
    const storage=access(),target=key('nSpire2-save-v'+version,slot),entries=[];
-   // An older WASM must not replace an unreadable Custom/Daily run with a new
-   // Standard run. Updating the HTML does not upgrade its embedded codec.
-   if(maxVersion<16&&storage.getItem(key('nSpire2-save-v16',slot)))return false;
+   // Updating the HTML does not upgrade an embedded older codec. Preserve
+   // every newer unreadable run until its supporting runtime is loaded.
+   for(let newer=latestSaveVersion;newer>maxVersion;--newer)if(storage.getItem(key('nSpire2-save-v'+newer,slot)))return false;
    for(const name of keys(slot,false)){const old=storage.getItem(name);if(old!==null||name===target)entries.push([name,old]);}
    if(entries.length===1&&entries[0][1]===value)return true;
    const transaction={version:2,slot,entries};
@@ -96,7 +96,7 @@ function createProfileStorage(access) {
    try{for(const [name,value]of writes)storage.setItem(name,value);storage.removeItem(journalKey);pending=null;return true;}
    catch(error){restore();return false;}
   },
-  clearRun(slot,maxVersion=16){if(maxVersion<16&&read(key('nSpire2-save-v16',slot)))return false;return erase(slot,false);},
+  clearRun(slot,maxVersion=latestSaveVersion){for(let newer=latestSaveVersion;newer>maxVersion;--newer)if(read(key('nSpire2-save-v'+newer,slot)))return false;return erase(slot,false);},
   deleteProfile(slot){return erase(slot,true);}
  };
 }

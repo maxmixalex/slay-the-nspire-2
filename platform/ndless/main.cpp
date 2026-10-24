@@ -133,6 +133,7 @@ static bool clear_save(){
         void*f=nd_open(path,"rb");if(!f)continue;if(nd_close(f)!=0||nd_unlink(path)!=0)return false;
     }return true;
 }
+#include "feedback_storage.inc"
 static bool pressed(unsigned offset,unsigned mask){return (*(volatile uint16_t*)(0x900E0000u+offset)&mask)!=0;}
 template<class Ticks,class Held>
 static bool exit_input_release(Ticks ticks,Held held){
@@ -256,7 +257,7 @@ extern "C" int main(int argc,char**argv){
         if(valid)resource=split.source();
     }else{source.language=spire::boot_probe_language(resource);installed_languages=source.language==spire::BootLanguage::English?1u:2u;}
     app.calculator_keyboard=true;
-    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile})){
+    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile,write_feedback})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
     if(selected_language&&source.language!=preferred)store_language(source.language);
@@ -325,9 +326,19 @@ extern "C" int main(int argc,char**argv){
         }
         const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
         const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
-        spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text,
+        const bool feedback_text=app.auxiliary.screen==spire::AuxiliaryScreen::Feedback&&app.auxiliary.editing&&app.binding_listening<0;
+        spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text||feedback_text,
             [](uint16_t code,bool down){app.physical_key(code,down);});
-        if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
+        if(feedback_text){
+            // Numeric keys remain literal text; SHIFT plus the established
+            // 4/6/8/2 pad moves the caret on the CX's shared keyboard.
+            spire::calculator_text_edges(text_keys,text_previous,[&](int code){
+                if((text_keys[7]&0x100)&&(code=='4'||code=='6'||code=='8'||code=='2'))app.auxiliary_text(code=='4'?-1:code=='6'?-2:code=='8'?-3:-4);
+                else app.auxiliary_text(code);
+            });
+            if((text_keys[6]&0x200)&&!(text_previous[6]&0x200))app.auxiliary_text(9);
+        }
+        else if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
         else if(seed_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.reference_text(code);});
         for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
         change_language();service_profile();

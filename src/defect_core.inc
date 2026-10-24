@@ -18,7 +18,7 @@ static void defect_gain_power(State&s,DPower p,int amount){
    for(unsigned j=i+1;j<v.power_count;j++)v.power_order[j-1]=v.power_order[j];v.power_order[--v.power_count]=0;break;
   }
  }
- v.powers[k]=(int16_t)value;unsigned actor=defect_actor(p);
+ v.powers[k]=(int16_t)value;power_order_set(s,0,DefectStatusStart+k,value!=0);unsigned actor=defect_actor(p);
  if(p==DPower::Feral){
   if(!old&&value)card_result_register(s,CardResultActor::Feral);
   else if(old&&!value)card_result_unregister(s,CardResultActor::Feral);

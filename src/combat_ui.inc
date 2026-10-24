@@ -245,6 +245,17 @@ static void combat_scene_shake(Canvas&c,int first_hit){
  for(int i=first_hit;i<c.a.hit_count;++i){c.a.hits[i].x+=dx;c.a.hits[i].y+=dy;}
 }
 #include "combat_orb_ui.inc"
+static void combat_reward_room(Canvas&c){
+    // NCombatUi.AnimOut withdraws the hand, piles, energy and end-turn
+    // controls. The room's creatures and player health remain underneath
+    // the reward stack; NCreature.OnCombatEnded clears intents and orbs.
+    auto&a=c.a;c.picture(a.combat_background(),0,22,320,218);combat_actors(c);
+    const auto player=a.combat_player_pose();
+    c.hp(a.combat_health(0),a.health_bars[0],creature_health_left(player),player.hp,player.width);
+    if(a.game.character==Character::Necrobinder||a.game.expansion.osty_max_hp>0){
+        const auto pet=a.combat_player_pose(true);c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],creature_health_left(pet),pet.hp,pet.width);
+    }
+}
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);

@@ -179,6 +179,10 @@ void App::finish_progress(bool abandoned,const State*source){
     if(s.enemy_world.active&&r.last_battle==s.world.combat_count)
         progress_end_battle(*this,s,s.world.combat_ending||s.phase==Phase::Complete);
     progress_snapshot(r,s);r.outcome=abandoned?3:s.phase==Phase::Complete?1:2;r.abandoned=abandoned;
+    // This precedes the original Standard/Custom/Daily statistics filter.
+    // The outcome guard above makes persistence retries and repeated finish
+    // notifications idempotent, including an abandoned mid-respawn run.
+    progress.test_subject_kills=progress_add(progress.test_subject_kills,s.test_subject_kills);
     auto&stats=progress.characters[r.character];
     if(r.mode==unsigned(RunMode::Standard)&&r.outcome==1){stats.wins=progress_add(stats.wins,1);stats.current_streak=progress_add(stats.current_streak,1);
         // ProgressSaveManager counts distinct ModelIds in the final deck,

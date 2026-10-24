@@ -183,6 +183,7 @@ static void event_card_after_return_to_draw(State&s,int){s.event_cards.rebound_r
 enum class ECSpecial:int16_t {Enlightenment,Maul,Whistle,FeedingFrenzy,Entrench,UpgradeAll,MaxHpLoss,MadScience,Rebound,Power,Thorns};
 static void ec_gain_power(State&s,EventCardPower p,int amount){
  auto&v=s.event_cards;unsigned k=unsigned(p);int before=v.powers[k];v.powers[k]=(int16_t)max(0,min(9999,before+amount));
+ power_order_set(s,0,EventCardStatusStart+k,v.powers[k]!=0);
  if(!before&&v.powers[k]){if(v.power_count>=EventCardPowerKinds+MaxPowerInstances){fail(s);return;}v.power_order[v.power_count++]=(uint8_t)k;}
  if(before&&!v.powers[k])for(unsigned i=0;i<v.power_count;++i)if(v.power_order[i]==k){for(unsigned j=i+1;j<v.power_count;++j)v.power_order[j-1]=v.power_order[j];v.power_order[--v.power_count]=0;break;}
  if(p==EventCardPower::Rebound){
@@ -294,7 +295,7 @@ static bool event_card_effect(State&s,Effect e){
   case ECSpecial::MaxHpLoss:s.max_hp=(int16_t)max(1,s.max_hp-b);s.hp=(int16_t)min(s.hp,s.max_hp);break;
   case ECSpecial::Rebound:ec_gain_power(s,EventCardPower::Rebound,1);break;
   case ECSpecial::Power:ec_gain_power(s,EventCardPower(b),1);break;
-  case ECSpecial::Thorns:s.thorns=(int16_t)min(9999,s.thorns+b);break;
+  case ECSpecial::Thorns:s.thorns=(int16_t)min(9999,s.thorns+b);power_order_set(s,0,3,s.thorns!=0);break;
   case ECSpecial::MadScience:switch(TinkerRider(b)){
    case TinkerRider::Sapping:enqueue(s,EffectKind::Vulnerable,2,x.target,true);enqueue(s,EffectKind::Weak,2,x.target,true);break;
    case TinkerRider::Choking:queue_extension(s,XOp::SPower,SPowerCount+x.target,6,true);break;

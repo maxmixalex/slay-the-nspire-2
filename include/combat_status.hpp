@@ -20,7 +20,8 @@ struct CombatStatus {
   NightmareActive=NightmareCard+MaxNightmares,Orbit=NightmareActive+MaxNightmares,
   OrbitRemainder=Orbit+MaxPowerInstances,OrbKind=OrbitRemainder+MaxPowerInstances,
   OrbPassive=OrbKind+MaxOrbs,OrbEvoke=OrbPassive+MaxOrbs,CapturedCard=OrbEvoke+MaxOrbs,
-  Facts=CapturedCard+MaxEnemies
+  Automation=CapturedCard+MaxEnemies,AutomationCount=Automation+MaxPowerInstances,
+  Facts=AutomationCount+MaxPowerInstances
  };
  static constexpr unsigned Actors=MaxEnemies+1,FactBase=Actors*StatusKinds,
   Cells=FactBase+Facts,Capacity=256;
@@ -30,6 +31,7 @@ struct CombatStatus {
  };
  struct Cue {Value value{};uint32_t at=0;uint16_t cell=0;};
  Value shown[Cells]{},observed[Cells]{};
+ PowerOrderState shown_order{},observed_order{};
  Cue cues[Capacity]{};uint16_t head=0,count=0;bool overflow=false;
  // PowerAppliedVfx outlives its command; finishing a playback trace must
  // not remove the text. Fixed-size identifiers avoid per-frame strings or
@@ -91,12 +93,47 @@ struct CombatStatus {
   if(count==Capacity){overflow=true;return;}
   cues[count++]={value,at,uint16_t(cell)};
  }
+ static void update_token(PowerOrderState&order,uint16_t token,bool present){
+  unsigned at=0;while(at<order.count&&order.entries[at]!=token)++at;
+  if(present){if(at==order.count&&order.count<MaxPowerOrderEntries)order.entries[order.count++]=token;}
+  else if(at<order.count){for(unsigned i=at+1;i<order.count;++i)order.entries[i-1]=order.entries[i];order.entries[--order.count]=0;}
+ }
+ void queue_order(uint16_t token,bool present,uint32_t at){
+  if(overflow)return;
+  if(count==Capacity&&head){for(unsigned i=head;i<count;++i)cues[i-head]=cues[i];count-=head;head=0;}
+  if(count==Capacity){overflow=true;return;}
+  // Unlike value cues, a remove/reapply pair must not coalesce: its position
+  // is the change. These tokens occupy a disjoint compact cell-ID range.
+  cues[count++]={Value{present?1:0,0,0,0},at,uint16_t(Cells+token)};
+ }
+ void capture_order(const PowerOrderState&next,uint32_t at,bool initial){
+  if(initial){shown_order=observed_order=next;return;}
+  // Power nodes only disappear or append. Keep the longest prefix of the
+  // new list that is a subsequence of the old list, so deleting an early
+  // icon emits one cue instead of rebuilding every later icon. Both scans
+  // are linear and preserve remove/reapply ordering without an extra array.
+  unsigned retained=0,scan=0;
+  while(retained<next.count){
+   while(scan<observed_order.count&&observed_order.entries[scan]!=next.entries[retained])++scan;
+   if(scan==observed_order.count)break;++scan;++retained;
+  }
+  unsigned keep=0;
+  for(unsigned i=0;i<observed_order.count;++i){
+   if(keep<retained&&observed_order.entries[i]==next.entries[keep])++keep;
+   else queue_order(observed_order.entries[i],false,at);
+  }
+  for(unsigned i=retained;i<next.count;++i)queue_order(next.entries[i],true,at);
+  observed_order=next;
+ }
  void sync(uint32_t now){
-  while(head<count&&int32_t(now-cues[head].at)>=0){const auto&cue=cues[head++];shown[cue.cell]=cue.value;}
+  while(head<count&&int32_t(now-cues[head].at)>=0){const auto&cue=cues[head++];
+   if(cue.cell>=Cells)update_token(shown_order,uint16_t(cue.cell-Cells),cue.value.amount!=0);
+   else shown[cue.cell]=cue.value;
+  }
   if(head==count)head=count=0;
  }
- void finish(){for(unsigned i=0;i<Cells;++i)shown[i]=observed[i];reset();}
+ void finish(){for(unsigned i=0;i<Cells;++i)shown[i]=observed[i];shown_order=observed_order;reset();}
 };
-static_assert(CombatStatus::Cells<65536&&EnemyKinds<255,"Status cue indices must fit their compact fields");
+static_assert(CombatStatus::Cells+(MaxEnemies<<12)+(15<<8)+255<65536&&EnemyKinds<255,"Status cue indices must fit their compact fields");
 static_assert(sizeof(CombatStatus)<=64*1024,"Power playback must have a fixed, bounded memory cost");
 }

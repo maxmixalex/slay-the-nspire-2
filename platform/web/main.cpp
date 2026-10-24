@@ -11,6 +11,7 @@ __attribute__((import_module("env"),import_name("resource_read"))) int host_reso
 }
 static spire::App app;
 static spire::SaveData buffer;
+static unsigned feedback_size=0;
 static spire::SplitResourceSource split;
 static spire::BootLanguage boot_language=spire::BootLanguage::Unknown;
 static uint32_t browser_entropy=0;
@@ -64,10 +65,20 @@ static bool load_game(spire::State&s){int n=host_load(buffer.bytes,sizeof buffer
 // The paired browser host treats an explicit empty save as deletion. Normal
 // saves always contain the validated NSP save header and are nonempty.
 static bool clear_save(){return host_save(nullptr,0)!=0;}
+static bool write_feedback(const char*report,unsigned length){
+    if(!length||length>sizeof buffer.bytes)return false;
+    // The browser consumes this foreground transfer immediately after input,
+    // before profile/save callbacks reuse the existing SaveData workspace.
+    for(unsigned i=0;i<length;++i)buffer.bytes[i]=uint8_t(report[i]);feedback_size=length;return true;
+}
 extern "C" {
 // Optional host hook preserves the existing imports for deterministic replay.
 // Interactive browsers set this from crypto before dispatching user input.
 void set_seed_entropy(uint32_t value){browser_entropy=value;}
+unsigned feedback_buffer(){return unsigned(size_t(buffer.bytes));}
+unsigned feedback_length(){return feedback_size;}
+void feedback_ack(int success){feedback_size=0;app.auxiliary.export_result=success?1:2;}
+int feedback_text_active(){return app.auxiliary.screen==spire::AuxiliaryScreen::Feedback&&app.auxiliary.editing;}
 void set_wall_clock(uint32_t value){browser_wall_clock=value;}
 unsigned progress_buffer(){return unsigned(size_t(progress_bytes));}
 unsigned progress_capacity(){return sizeof progress_bytes;}
@@ -128,7 +139,7 @@ int start(unsigned n){
     split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};
     boot_language=spire::boot_probe_language(resource);
     pending_language=0;
-    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr})?1:0;
+    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr,write_feedback})?1:0;
 }
 int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
     split.close();if(language!=1&&language!=2)return 0;
@@ -136,7 +147,7 @@ int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language)
     if(!split.open({nullptr,common_bytes,read_common,nullptr},
         {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
     pending_language=0;
-    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr})?1:0;
+    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr,write_feedback})?1:0;
 }
 void set_available_languages(unsigned mask){language_mask=mask&3u;}
 unsigned language_request(){return pending_language;}
@@ -149,6 +160,7 @@ int switch_language_split(unsigned common_bytes,unsigned language_bytes,unsigned
     boot_language=language==1?spire::BootLanguage::English:spire::BootLanguage::Chinese;return 1;
 }
 int resource_language(){return app.content.english()?1:2;}
+unsigned save_version(){return spire::SaveVersion;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}
 void input(int key){if(key>=0&&key<=(int)spire::Key::Debug)app.input((spire::Key)key);}
 void frame(){app.tick();app.render();}
@@ -167,9 +179,10 @@ int text_entry_active(){
 #if SPIRE_DEBUG_COMMANDS
     if(app.debug_open)return app.debug_editing;
 #endif
-    return (app.library&&!app.library_tab&&app.library_search_editing&&app.detail_card<0)||(app.map_preview.open&&app.map_preview.editing);
+    return feedback_text_active()||(app.library&&!app.library_tab&&app.library_search_editing&&app.detail_card<0)||(app.map_preview.open&&app.map_preview.editing);
 }
 void text_input(int ch){
+    if(app.auxiliary_text(ch))return;
 #if SPIRE_DEBUG_COMMANDS
     if(app.debug_open){app.debug_text(ch);return;}
 #endif

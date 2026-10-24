@@ -33,7 +33,8 @@ int main(){
     a.input(Key::Back);CHECK(!a.compendium_open);unchanged();
     a.title=false;a.game.phase=Phase::Reward;a.game.reward_claimed=0;a.game.last_gold=20;a.game.reward_potion=Potion::Fruit;a.game.reward[0]=Offering;a.game.reward[1]=Strike;a.game.reward[2]=Bludgeon;
     int gold=a.game.gold;action(UiAction::RewardGold);CHECK(a.game.gold==gold+20);action(UiAction::RewardGold);CHECK(a.game.gold==gold+20);
-    action(UiAction::RewardCards);CHECK(a.reward_cards);a.input(Key::Detail);CHECK(a.detail_card==Offering);a.input(Key::Back);CHECK(a.reward_cards);CHECK(findclick(HitKind::Choice,0));CHECK(!a.reward_cards&&(a.game.reward_claimed&2));
+    action(UiAction::RewardCards);CHECK(a.reward_cards&&a.cursor==1);a.input(Key::Detail);CHECK(a.detail_card==Strike);a.input(Key::Back);CHECK(a.reward_cards);
+    a.advance(250);a.advance(100);CHECK(findclick(HitKind::Choice,0));CHECK(!a.reward_cards&&(a.game.reward_claimed&2));
     action(UiAction::RewardPotion);CHECK(a.game.potions[0]==Potion::Fruit);snapshot();a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);a.render();CHECK(a.panel==4);action(UiAction::DiscardPotion);CHECK(a.game.potions[0]==Potion::Empty&&!a.panel);
     action(UiAction::LeaveRewards);CHECK(a.game.phase==Phase::Complete);
     init();a.game.practice=0;a.game.current_node=1;a.game.next_row=1;a.game.phase=Phase::Map;a.game.gold=9999;CHECK(choose_node(a.game,1));a.ui_action(UiAction::OpenShop);for(unsigned i=0;i<7;++i)a.advance(100);a.render();

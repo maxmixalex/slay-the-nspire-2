@@ -90,6 +90,8 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  }
  if(wt_equal(name,"InCombat"))return wt_number(wt_equal(x.table,"cards")?wt_live_card(x):!a.library&&combat_phase(s.phase));
  if(wt_equal(name,"OnPlayer"))return wt_number(x.actor<=0);
+ if(wt_equal(x.table,"monsters")&&wt_equal(x.model_key,"monsters.TEST_SUBJECT")&&wt_equal(name,"Count"))
+  return wt_number(a.progress.test_subject_kills>unsigned(INT32_MAX-8)?INT32_MAX:int(a.progress.test_subject_kills)+8);
  if(wt_equal(x.table,"game_over_screen")&&s.world.active){
   if(wt_equal(name,"FloorCount"))return wt_number(s.world.total_floor);
   if(wt_equal(name,"AscensionLevel"))return wt_number(s.world.ascension);
@@ -97,7 +99,7 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(name,"singleStarIcon"))return wt_string(InlineStarText);
  if(wt_equal(name,"energyPrefix"))return wt_number(1);
  if(wt_equal(name,"OwnerName")||wt_equal(name,"TargetPlayer")||wt_equal(name,"character")){
-  if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=(wt_equal(x.table,"intents")||wt_equal(x.table,"powers"))?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;const auto*d=enemy_definition(kind);if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}}
+  if(x.actor>0&&x.actor<=s.enemy_count){const auto kind=(wt_equal(x.table,"intents")||wt_equal(x.table,"powers"))?ui_intent_enemy_kind(a,x.actor-1):s.enemy_world.models[x.actor-1].kind;if(enemy_definition(kind))return wt_string(a.monster_title(kind));}
   const auto&character=character_definitions[(unsigned)s.character];const char*title=a.content.world_title("characters",character.key);return wt_string(*title?title:a.content.ui_text(character.name));
  }
  if(wt_equal(x.table,"cards")){
@@ -152,9 +154,9 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
     if(wt_equal(x.model_key,"powers.CRIMSON_MANTLE_POWER"))return wt_number(a.combat_status_fact(CombatStatus::CrimsonDamage));
     if(wt_equal(x.model_key,"powers.INFERNO_POWER"))return wt_number(a.combat_status_fact(CombatStatus::InfernoDamage));
    }
-   // A compact status icon can represent several independent power models.
-   // Its readable description supplies the original instance slot; never
-   // use the icon's aggregate count as a model's damage/turn/progress value.
+   // Every instanced strip icon supplies its original slot. The optional
+   // model browser also formats each slot individually; an aggregate count
+   // is never a model's damage, turn, or progress value.
    if(x.model>=0&&x.model<MaxPowerInstances){
     if(wt_equal(x.model_key,"powers.PANACHE_POWER")&&wt_equal(name,"CardsLeft")&&a.combat_status_fact(CombatStatus::Panache,x.model))
      return wt_number(5-a.combat_status_fact(CombatStatus::PanacheCards,x.model));
@@ -172,8 +174,8 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"AfflictionTitle")&&x.model==int(EnemyPower::Galvanic))return wt_string(a.content.world_title("afflictions","GALVANIZED"));
   if((wt_equal(name,"DisplayAmount")||wt_equal(name,"SlowAmount"))&&x.model==int(EnemyPower::Slow)){int n=a.combat_status_auxiliary(x.actor>0?x.actor:0,x.model);return wt_number(n*(wt_equal(name,"DisplayAmount")?10:1));}
   if(wt_equal(name,"Applier")||wt_equal(name,"ApplierName")||wt_equal(name,"Applier.StringValue")||wt_equal(name,"ApplierName.StringValue")){
-   const auto*d=enemy_definition(a.combat_status_source(x.actor>0?x.actor:0,x.model));
-   if(d){char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");return wt_string(a.content.world_string("monsters",key));}
+   const auto kind=a.combat_status_source(x.actor>0?x.actor:0,x.model);
+   if(enemy_definition(kind))return wt_string(a.monster_title(kind));
    return wt_string(a.content.world_title("characters",character_definitions[(unsigned)s.character].key));
   }
   if(wt_equal(name,"Card")&&x.actor>0&&x.actor<=s.enemy_count){const int token=a.combat_status_fact(CombatStatus::CapturedCard,x.actor-1);if(token>=0)return wt_string(a.content.card_string(card_from_token(token).kind));}
@@ -232,6 +234,15 @@ void App::localized_text(const char*table,const char*key,char*out,size_t cap,int
  const char*raw=content.world_string(table,key);char source[8192]{};TextBuffer b{source,sizeof source,0};b.text(raw);
  wt_formatter(out,cap,&x).format(source);
 }
+const char* App::monster_title(EnemyId id)const{
+ const auto*d=enemy_definition(id);if(!d)return "";
+ char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");
+ const char*raw=content.world_string("monsters",key);
+ if(id!=EnemyId::TestSubject)return *raw?raw:d->key;
+ if(*raw){localized_text("monsters",key,monster_title_buffer,sizeof monster_title_buffer);return monster_title_buffer;}
+ TextBuffer fallback{monster_title_buffer,sizeof monster_title_buffer,0};fallback.text(d->key);fallback.ch(' ');
+ fallback.number(progress.test_subject_kills>unsigned(INT32_MAX-8)?INT32_MAX:int(progress.test_subject_kills)+8);return monster_title_buffer;
+}
 const char* App::relic_title(RelicId id,int position)const{
  if(id>=WorldRelicKinds)return "";char key[128]{};world_relic_title_key(game,id,key,sizeof key,position);const char*text=content.world_string("relics",key);
  return *text?text:id<RelicKinds?relic_definitions[id].name:world_relic_key(id);
@@ -255,8 +266,10 @@ void App::original_event_text(int option,bool description,char*out,size_t cap)co
  if(option<0&&description&&!game.original_events.finished){
   const auto id=game.original_events.id;
   if(id==OriginalEventId::Neow||id==OriginalEventId::Darv||id==OriginalEventId::Nonupeipe||id==OriginalEventId::Tanx||id==OriginalEventId::Orobas||id==OriginalEventId::Pael||id==OriginalEventId::Tezcatara||id==OriginalEventId::Vakuu){
-   // No cross-run AncientStats profile exists yet. The exact first-visit line
-   // is the explicit historyless fallback; it does not invent a visit count.
+   const auto&dialogue=ancient_dialogue;
+   if(dialogue.bound&&dialogue.id==unsigned(id)&&dialogue.seed==game.world.run_seed&&dialogue.count){ancient_dialogue_text(dialogue.current,out,cap);return;}
+   // A direct text query before the room is bound uses the canonical source
+   // first-visit line. Active conversations use their actual revealed line.
    TextBuffer b{key,sizeof key,0};b.text(original_event_key(id));b.text(".talk.firstVisitEver.0-0.ancient");
    localized_text("ancients",key,out,cap,int(id));return;
   }

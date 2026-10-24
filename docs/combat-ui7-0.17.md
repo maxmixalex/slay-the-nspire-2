@@ -103,6 +103,50 @@ legacy aggregate status panel. The existing keyboard status route remains
 available. These slots currently use original raster icons; this is not a
 claim of complete original orb skeleton, evoke or shader parity.
 
+## UI8 combat HUD and selection Peek
+
+The HUD now projects original source geometry through the same 4/21 viewport
+scale as the battlefield. The normal energy counter is (19,192), 24×24;
+Regent's runtime activation moves only energy to (19,154). Its star counter
+retains the global position (12,200), 20×20, after the original reparent.
+The runtime EndTurn ShowPos produces a (267,188,42,17) hit rectangle and
+(264,184,49,24) image with its authored image pivot. Draw/discard are 15×15
+at (3,222)/(302,222); the exhaust runtime offset places it at (303,185).
+The same centers drive card transfers, and the actual hand owns overlapping
+pixels and pointer input. `NGame`, `NCombatUi.Activate`, `NEnergyCounter`,
+`NEndTurnButton`, `NExhaustPileButton` and their scenes are the source anchors.
+
+`NPeekButton` is a release toggle (default Space in mouse/keyboard mode and
+S in keyboard-only mode). Ordinary pending combat choices and combat relic
+choices keep their exact selected IDs and canonical transaction. Peek hides
+the selection controls/backstop, retains the battlefield and status/intent/orb
+tips, and allows pile/status inspection followed by return. Confirm/end-turn
+cannot resolve the hidden choice. A revision/phase change cancels Peek.
+The current played card moves toward the source Peek marker and half scale
+with the original 250 ms CubicOut transition. Original Peek and Flash assets
+are appended at 1993/1994. Pile/status navigation does not reset the choice.
+
+## Stage 4b executed evidence
+
+The remotely verified immutable checkpoint is
+`2f3f18f11b16263456cf3dd0cc8a7525291ddf71`. Its full Clang18 build completed
+228 build steps and passed **90/93** native suites. All combat layout,
+health bar, five-character, hand motion, card HUD and physical-input suites
+passed. One world fixture still expected the obsolete generated-preview
+scale 640 instead of source scale 1.0 projected to 848. The other two failures
+identified Crystal reward-cursor/terminal-Proceed defects, handled in the
+room implementation. Their corrections await the stage 5 immutable run.
+
+Both actual English and Chinese five-character runs passed **8,460 checks**.
+Individually reviewed actual stage 4b captures include Necrobinder/Osty,
+Regent energy/star placement, Defect's five orbs, and the large-enemy scene.
+The actual world run stopped at the same obsolete preview assertion. The
+actual card-HUD run exposed a test-only glyph query that treated v28's font
+family bits as the pixel size; its correction retains all metadata, cache
+and no-I/O assertions. Neither failed run has been renamed as a pass.
+The new pending-choice Peek sequence is present but is after the obsolete
+world assertion, so its actual-pack execution remains a stage 5 gate.
+
 ## Executed evidence and remaining work
 
 The immutable UI8 stage2 checkpoint

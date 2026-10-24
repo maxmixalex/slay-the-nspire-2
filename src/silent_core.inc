@@ -1,12 +1,14 @@
 // Full Silent model effects use the ordinary serialized continuation queue.
 static int spower(const State&s,SPower p){return s.silent.powers[(unsigned)p];}
 static void silent_unregister(State&s,unsigned entry){
+ power_order_set(s,0,silent_power_id(entry),false,entry<SPowerCount?0:entry-SPowerCount);
  auto&v=s.silent;for(unsigned i=0;i<v.power_count;i++)if(v.power_order[i]==entry){
   for(unsigned j=i+1;j<v.power_count;j++)v.power_order[j-1]=v.power_order[j];
   v.power_order[--v.power_count]=0;return;
  }
 }
 static void silent_register(State&s,unsigned entry){
+ power_order_set(s,0,silent_power_id(entry),true,entry<SPowerCount?0:entry-SPowerCount);
  auto&v=s.silent;for(unsigned i=0;i<v.power_count;i++)if(v.power_order[i]==entry)return;
  if(v.power_count>=SPowerCount+MaxNightmares){fail(s);return;}
  v.power_order[v.power_count++]=(uint8_t)entry;
@@ -14,6 +16,7 @@ static void silent_register(State&s,unsigned entry){
 static void silent_gain_power(State&s,SPower p,int amount){
  auto&n=s.silent.powers[(unsigned)p];int old=n;n=(int16_t)max(0,min(9999,n+amount));
  if(!old&&n)silent_register(s,(unsigned)p);else if(old&&!n)silent_unregister(s,(unsigned)p);
+ power_order_set(s,0,silent_power_id(unsigned(p)),n!=0);
  unsigned actor=p==SPower::Afterimage?(unsigned)PostPlayActor::Afterimage:p==SPower::SerpentForm?(unsigned)PostPlayActor::SerpentForm:p==SPower::MasterPlanner?(unsigned)PostPlayActor::MasterPlanner:p==SPower::Envenom?(unsigned)PostPlayActor::SilentEnvenom:0;
  if(actor){if(!old&&n)after_play_register(s,actor);else if(old&&!n)after_play_unregister(s,actor);}
 }
@@ -102,18 +105,19 @@ static void silent_card_discarded(State&s,int id){
 }
 static bool silent_blocks_debuff(State&s,int t){
  if(t<0||t>=s.enemy_count||!s.silent.enemy_artifact[t])return false;
- --s.silent.enemy_artifact[t];return true;
+ --s.silent.enemy_artifact[t];power_order_set(s,unsigned(t+1),CharacterExtraStatusStart+2,s.silent.enemy_artifact[t]!=0);return true;
 }
 static void silent_attack_damage(State&s,int t,int unblocked){
  if(unblocked>0&&spower(s,SPower::Envenom))enqueue(s,EffectKind::Poison,spower(s,SPower::Envenom),t,true);
 }
 static void silent_hunt_reward(State&s){
  if(s.world.active)encounter_add_card_reward(s);
- else s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);
+ else{s.silent.extra_rewards=(uint16_t)min(9999,s.silent.extra_rewards+1);power_order_set(s,0,CharacterExtraStatusStart+5,true);}
 }
 static void silent_attack_killed(State&s,int){if(s.playing>=0&&s.cards[s.playing].kind==TheHunt)silent_hunt_reward(s);}
 static bool silent_next_reward(State&s){
  if(!s.silent.extra_rewards)return false;--s.silent.extra_rewards;
+ power_order_set(s,0,CharacterExtraStatusStart+5,s.silent.extra_rewards!=0);
  for(int i=0;i<3;i++){int k;bool duplicate;do{k=(int)random_reward_card(s);duplicate=false;for(int j=0;j<i;j++)if(s.reward[j]==k)duplicate=true;}while(duplicate);s.reward[i]=(CardKind)k;}
  s.reward_claimed&=(uint8_t)~2;return true;
 }
@@ -352,7 +356,7 @@ static bool silent_effect(State&s,Effect e){
   if(a==(int)SPower::NoxiousFumes){s.noxious_fumes=(int16_t)min(9999,s.noxious_fumes+b);record(s,LogKind::Noxious,b);}
   if(a==(int)SPower::PhantomBlades)for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==Shiv)v.retain[id]|=1;
   break;
- case XOp::SAbrasive:world_relic_gain_dexterity(s,1);s.thorns=(int16_t)min(9999,s.thorns+a);break;
+ case XOp::SAbrasive:world_relic_gain_dexterity(s,1);s.thorns=(int16_t)min(9999,s.thorns+a);power_order_set(s,0,3,s.thorns!=0);break;
  case XOp::SAnticipate:{int n=min(a,min(9999-s.dexterity,9999-s.temporary_dexterity));world_relic_gain_dexterity(s,n);s.temporary_dexterity+=(int16_t)n;break;}
  case XOp::SBulletTime:
   for(unsigned i=0;i<s.hand.count;i++){int id=s.hand.ids[i];if(cost(s.cards[id])>=0)set_free_this_turn(s,id);}

@@ -1,4 +1,5 @@
 void enter_combat(State&s){
+    s.power_sequence={};
     const EncounterId pending_encounter=s.enemy_world.encounter;
     s.world.combat_ending=0;s.world.combat_bonus_gold=0;
     reset_in_place(s.expansion);
@@ -89,7 +90,7 @@ static void queue_legacy(State&s,Card c,int target,int energy){
     if(c.kind==DodgeAndRoll)enqueue(s,EffectKind::DodgeBlock,block);
     else if(c.kind==EscapePlan)enqueue(s,EffectKind::EscapeSkillBlock,block);
     else if(block)enqueue_card_block(s,block);
-    if(c.kind==FlameBarrier)s.flame_barrier=(int16_t)min(9999,s.flame_barrier+power);
+    if(c.kind==FlameBarrier){s.flame_barrier=(int16_t)min(9999,s.flame_barrier+power);power_order_set(s,0,15,s.flame_barrier!=0);}
     if(c.kind==DemonForm)enqueue(s,EffectKind::Demon,power);
     if(c.kind==InfiniteBlades)enqueue(s,EffectKind::Blades,1);
     if(c.kind==FiendFire){

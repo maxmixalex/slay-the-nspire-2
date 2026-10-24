@@ -43,8 +43,8 @@ existing draw/discard/exhaust destination centers remain attached to the
 port's visible pile controls.
 
 The original CombatUi node order places energy/stars, end turn and piles
-before preview/hand/played cards. The next source stage corrects this order
-so an outer focused card is not cut through by those controls. The card's
+before preview/hand/played cards. Stage 4 implements this order, so an outer
+focused card covers the controls beneath its visible face. The card's
 visible face owns overlapping pointer input. Hovering away restores access
 to controls beneath it, as in the original scene.
 

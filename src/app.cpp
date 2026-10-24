@@ -3,6 +3,7 @@
 #include "rich_text.hpp"
 #include "status.hpp"
 #include "combat_layout.hpp"
+#include "power_strip_layout.hpp"
 #include "event_assets.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
@@ -121,13 +122,7 @@ static void reward_screen(Canvas&c){
     if(c.a.game.world.active){native_reward_screen(c);return;}
     auto&a=c.a;auto&s=a.game;c.ui(U_BattleBackground,0,22);c.actor(0,54,130);c.dim(0,22,320,218,155);
     if(a.grimoire_select&&s.necro.grimoire_pending){deck_select(c);return;}
-    if(a.reward_cards){
-        c.centered("选择一张牌",0,36,320,20,Gold);
-        for(int i=0;i<3;i++){int x=24+i*96;large_card(c,{s.reward[i],0},x,77,a.cursor==i);c.hit(x-3,72,86,121,HitKind::Choice,i);}
-        c.button("详情",14,209,91,false,25);c.hit(10,205,99,31,HitKind::Command,(int)Key::Detail,a.cursor<3);
-        c.ui(U_RewardSkip,211,209,92,25);c.centered("跳过",211,211,92,12,a.cursor==3?Gold:White);c.hit(207,205,104,31,HitKind::Choice,3);
-        return;
-    }
+    if(a.reward_cards){native_card_reward_body(c,nullptr,3,true);return;}
     const bool grimoire=s.necro.grimoire_pending!=0;
     c.ui(U_RewardPanel,50,34,220,192);c.ui(U_RewardBanner,38,32,244,54);c.centered("战利品",60,47,200,20,Gold);
     for(int i=0;i<3;i++){
@@ -179,6 +174,31 @@ static void camp_screen(Canvas&c){
     c.centered(info,0,221,320,10,White);
 }
 
+static void choice_room_underlay(Canvas&c){
+    auto&a=c.a;const auto&s=a.game;
+    // NOverlayStack retains its room. Painting it must not clamp the modal's
+    // independent cursor/scroll or leave clickable controls behind it.
+    const int cursor=a.cursor,scroll=a.scroll,hits=a.hit_count;const bool mouse=a.pointer.visible;
+    a.pointer.visible=false;
+    const Phase parent=s.phase==Phase::WorldRelicChoice?Phase(s.world_relics.return_phase):s.phase;
+    if(world_room_is_combat(s)||parent==Phase::Reward||combat_phase(parent)){
+        if(combat_phase(parent))combat_screen(c);else combat_reward_room(c);
+    }else if(s.original_events.active)event_screen(c);
+    else if(s.world.active){
+        switch(WorldRoom(s.world.room_type)){
+        case WorldRoom::Shop:shop_screen(c);break;
+        case WorldRoom::Rest:camp_screen(c);break;
+        case WorldRoom::Treasure:treasure_screen(c);break;
+        case WorldRoom::Map:map_screen(c,true);break;
+        default:c.picture(a.combat_background(),0,22,320,218);break;
+        }
+    }else if(parent==Phase::Shop)shop_screen(c);
+    else if(parent==Phase::Camp||s.phase==Phase::Upgrade)camp_screen(c);
+    else if(parent==Phase::Treasure)treasure_screen(c);
+    else c.picture(a.combat_background(),0,22,320,218);
+    a.cursor=cursor;a.scroll=scroll;a.hit_count=hits;a.pointer.visible=mouse;
+}
+
 #include "potion_ui.inc"
 #include "pile_ui6.inc"
 static void panels(Canvas&c){
@@ -218,6 +238,7 @@ int App::detail_stars()const{
 }
 #include "card_inspect_ui.inc"
 #include "reference_map_ui.inc"
+static void auxiliary_patch_button(Canvas&);
 #include "ui_frontend.inc"
 #include "bestiary_ui7.inc"
 #include "ui_progress_ui.inc"
@@ -228,10 +249,12 @@ int App::detail_stars()const{
 #include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
 #include "keyword_tooltip_ui.inc"
+#include "auxiliary_ui.inc"
 #include "pointer_ui6.inc"
 
 void App::render(){
     begin_card_face_frame();
+    if(auxiliary.screen!=AuxiliaryScreen::None){Canvas c{*this};auxiliary_screen(c);pointer_overlay(c);return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){Canvas c{*this};debug_screen(c);pointer_overlay(c);return;}
 #endif
@@ -277,11 +300,11 @@ void App::render(){
         case Phase::Shop:shop_screen(c);break;
         case Phase::Event:event_screen(c);break;
         case Phase::Camp:camp_screen(c);break;
-        case Phase::Upgrade:case Phase::Remove:case Phase::Transform:c.picture(A_Title,0,0);deck_select(c);break;
+        case Phase::Upgrade:case Phase::Remove:case Phase::Transform:choice_room_underlay(c);deck_select(c);break;
         case Phase::Reward:reward_screen(c);break;
         case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:case Phase::ExtendedChoice:combat_screen(c);break;
         case Phase::Treasure:treasure_screen(c);break;
-        case Phase::WorldRelicChoice:case Phase::OriginalEventChoice:c.picture(A_Title,0,0);break;
+        case Phase::WorldRelicChoice:case Phase::OriginalEventChoice:choice_room_underlay(c);break;
         default:if(game.world.active&&(game.phase==Phase::Complete||game.phase==Phase::Dead)){native_game_over_screen(c);break;}c.picture(A_Title,0,0);c.dim(0,20,320,220,120);c.centered(game.phase==Phase::Complete?"远征完成":game.phase==Phase::Dead?"倒在了高塔下":"达到安全容量上限",0,78,320,20,Gold);c.centered("Enter 返回标题",0,150,320,12);c.hit(0,130,320,65,HitKind::Command,(int)Key::Confirm);if(!game.world.active)c.centered("原型路线结束，并非完整原版通关。",0,210,320,10,Muted);break;
         }
         // The underlying live room may clamp its own navigation while it is

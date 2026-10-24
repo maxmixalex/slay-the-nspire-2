@@ -13,6 +13,7 @@ void gain_power(State&s,XPower p,int n){
  auto&x=s.expansion;auto&v=x.powers[(unsigned)p];
  if(p==XPower::Entropy&&!v&&n>0){x.entropy_boulder_prefix=0;for(auto b:x.boulder)if(b)++x.entropy_boulder_prefix;}
  int old=v;v=(int16_t)max(p==XPower::Focus?-9999:0,min(9999,v+n));if(p==XPower::Entropy&&!v)x.entropy_boulder_prefix=0;
+ if(!power_instanced(18+unsigned(p)))power_order_set(s,0,18+unsigned(p),v!=0);
  if(p==XPower::Calamity){
   if(!old&&v)after_play_register(s,(unsigned)PostPlayActor::Calamity);
   else if(old&&!v)after_play_unregister(s,(unsigned)PostPlayActor::Calamity);

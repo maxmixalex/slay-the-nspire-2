@@ -1,45 +1,41 @@
 // Original power icons and textured panels, reflowed for a 320x240 display.
 #include "world_status_ui.inc"
 static void status_strip(Canvas&c,int actor,int x,int y,int width){
-    int ids[StatusKinds],count=c.a.combat_statuses(actor,ids);
+    uint16_t tokens[MaxPlayerPowerEntries]{};int count=0;
+    const unsigned all=c.a.combat_power_entries(actor,tokens,MaxPlayerPowerEntries);
+    // NPowerContainer.Add omits IsVisible=false models. Resources have
+    // their own original controls; the details browser can still expose
+    // their auxiliary facts without inventing duplicate Power icons.
+    for(unsigned i=0;i<all;++i)if(CombatStatus::PowerFlags[power_id(tokens[i])]&1)tokens[count++]=tokens[i];
     if(!count)return;
-    // NPowerContainer keeps every icon visible. Wrap at the creature's
-    // display width; the amount overlaps the icon's lower-right corner.
-    // Measure actual amounts, including negative and three-digit stacks.
-    int widths[StatusKinds],rows=1,used=0;
+    const auto&a=c.a;
+    const auto scene=a.creature_layout.right?a.creature_layout:combat_layout_for(a.game);
+    const int cell=a.game.enemy_world.active?mx(1,combat_project_extent(encounter_camera(a.game.enemy_world.encounter),scene,48)):12;
+    const auto layout=PowerStripLayout::make(x,y,width,count,cell);
+    const int icon=mx(1,(cell*40+24)/48),label_right=(cell*44+24)/48,label_y=cell*21/48;
+    c.hit(layout.left-1,layout.top-1,layout.width+2,layout.rows*cell+2,HitKind::StatusActor,actor);
     for(int i=0;i<count;i++){
-        widths[i]=14;if(c.a.combat_status_counter(actor,ids[i])){
-            char amount[16]{};TextBuffer number{amount,sizeof amount,0};number.number(c.a.combat_status_amount(actor,ids[i],true));
-            widths[i]=mx(18,11+c.width(amount,8));}
-        if(used&&used+widths[i]>width){++rows;used=0;}used+=widths[i];
-    }
-    // Preserve the original order below HP. When several readable rows no
-    // longer fit above the resting hand, move the complete group above HP;
-    // the old single174px cap put one-row powers directly on the new bars.
-    const auto pose=actor?c.a.combat_enemy_pose(actor-1):c.a.combat_player_pose();
-    const int top=mx(24,y+rows*12>190?pose.hp-3-rows*12:y);
-    c.hit(x-2,top-2,width+4,rows*12+3,HitKind::StatusActor,actor);
-    used=0;int row=0;
-    for(int i=0;i<count;i++){
-        if(used&&used+widths[i]>width){++row;used=0;}
-        const int xx=x+used,yy=top+row*12,value=c.a.combat_status_amount(actor,ids[i],true);
-        c.picture(ui_status_image(c.a,ids[i]),xx,yy,11,11);
-        if(c.a.combat_status_counter(actor,ids[i])){
+        const uint16_t token=tokens[i];const unsigned id=power_id(token);
+        const int xx=layout.x(i),yy=layout.y(i),value=c.a.combat_power_amount(token,true);
+        c.picture(ui_status_image(c.a,int(id)),xx,yy,icon,icon);
+        if(c.a.combat_power_counter(token)){
         char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(value);
-        for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.text(amount,xx+9+dx,yy+3+dy,8,Ink);
-        c.text(amount,xx+9,yy+3,8,value<0?rgb(255,102,102):White);}
-        c.hit(xx-1,yy-1,widths[i],12,HitKind::BattleStatus,actor*StatusKinds+ids[i]);
-        used+=widths[i];
+        const int tx=xx+label_right-c.width(amount,8),ty=yy+label_y;
+        for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.text(amount,tx+dx,ty+dy,8,Ink);
+        c.text(amount,tx,ty,8,value<0?rgb(255,102,102):White);}
+        c.hit(xx-1,yy-1,cell,cell,power_instanced(id)?HitKind::PowerInstance:HitKind::BattleStatus,power_instanced(id)?token:actor*StatusKinds+int(id));
     }
 }
 static void battle_status_tooltip(Canvas&c){
     auto&a=c.a;
     if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||
        a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.combat_feedback.active&&!a.choice_peeking))return;
-    const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::BattleStatus)return;
-    const int actor=hit->value/StatusKinds,id=hit->value%StatusKinds;
+    const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::BattleStatus&&hit->kind!=HitKind::PowerInstance))return;
+    const bool instanced=hit->kind==HitKind::PowerInstance;
+    const int actor=instanced?0:hit->value/StatusKinds,id=instanced?(hit->value&255):hit->value%StatusKinds;
     if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds)return;
-    char body[8192]{};ui_status_description(a,actor,id,body,sizeof body);
+    const uint16_t token=instanced?uint16_t(hit->value):power_token(unsigned(actor),unsigned(id));
+    char body[8192]{};ui_status_description(a,actor,id,body,sizeof body,instanced?int(power_instance(token)):-1);
     const int lines=c.paragraph(body,0,0,158,0,0,10),shown=mn(lines,9),height=29+shown*13;
     const int x=a.pointer.x>=160?7:143,y=mx(25,mn(218-height,hit->y-height-5));
     const int skin=a.content.world_image("common","HOVER_TIP");
@@ -47,7 +43,7 @@ static void battle_status_tooltip(Canvas&c){
     else{c.rect(x,y,170,height,Panel);c.box(x,y,170,height,Gold);}
     c.picture(ui_status_image(a,id),x+6,y+5,13,13);
     c.text(ui_status_title(a,id),x+23,y+4,10,Gold,122);
-    if(a.combat_status_counter(actor,id))c.num(a.combat_status_amount(actor,id,true),x+145,y+4,8,White);
+    if(a.combat_power_counter(token))c.num(a.combat_power_amount(token,true),x+145,y+4,8,White);
     c.paragraph(body,x+6,y+23,158,shown,0,10,White);
     if(lines>shown)c.text("…",x+151,y+height-13,10,Gold);
 }

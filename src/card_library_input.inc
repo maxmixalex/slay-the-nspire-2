@@ -91,6 +91,7 @@ void App::commit_library_query(){
     card_grids[unsigned(CardGridSurface::Library)].reset();
 }
 void App::library_text(int code){
+    if(auxiliary_text(code))return;
     if(!library||library_tab||!library_search_editing||detail_card>=0)return;
     if(code==27){library_search_editing=card_library.editing=false;return;}
     if(code==13){commit_library_query();library_search_editing=card_library.editing=false;return;}

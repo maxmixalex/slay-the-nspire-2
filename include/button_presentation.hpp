@@ -2,13 +2,14 @@
 #include "health_bar.hpp"
 
 namespace spire {
-enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back };
+enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative };
 enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled };
 struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     const bool focus=state==ButtonState::Focus,press=state==ButtonState::Press;
     ButtonVisual v;
-    if(family==ButtonFamily::Pause){v.scale=focus?3891:press?3482:3686;v.y=press?8192:0;}
+    if(family==ButtonFamily::RewardAlternative){v.scale=focus?4301:press?3891:4096;v.shade=focus?281:press?179:230;}
+    else if(family==ButtonFamily::Pause){v.scale=focus?3891:press?3482:3686;v.y=press?8192:0;}
     else if(family==ButtonFamily::Action||family==ButtonFamily::Back){v.scale=focus?4301:press&&family==ButtonFamily::Action?3891:4096;v.shade=press?128:255;}
     else v.y=press?8192:focus?-2048:0;
     v.hover=focus?4096:0;if(state==ButtonState::Disabled)v.shade=128;
@@ -44,6 +45,7 @@ struct ButtonMotion {
         if(state==ButtonState::Disabled)return to;
         if(state==ButtonState::Focus){if(family!=ButtonFamily::Pause)return to;duration=50;}
         if(state==ButtonState::Press&&family==ButtonFamily::Action)duration=250;
+        if(state==ButtonState::Press&&family==ButtonFamily::RewardAlternative)duration=200;
         if(elapsed>=duration)return to;
         unsigned q=elapsed*4096/duration;
         if(state==ButtonState::Press&&family==ButtonFamily::Action){unsigned inverse=4096-q;q=4096-(inverse*inverse/4096)*inverse/4096;}

@@ -141,6 +141,12 @@ static bool load_game(spire::State&s){
     static uint8_t b[sizeof(spire::SaveData::bytes)+1];size_t n=fread(b,1,sizeof b,f);bool ok=!ferror(f);fclose(f);return ok&&spire::load(s,b,n);
 }
 static bool clear_save(){return std::remove(save_path.c_str())==0||errno==ENOENT;}
+static bool write_feedback(const char*report,unsigned length){
+    const std::string path=scoped_profile_path(directory(base_save_path)+"/nSpire2-feedback.txt",selected_profile),temporary=path+".tmp";
+    FILE*f=fopen(temporary.c_str(),"wb");if(!f)return false;
+    bool ok=fwrite(report,1,length,f)==length;ok=(fclose(f)==0)&&ok;
+    if(ok)ok=rename(temporary.c_str(),path.c_str())==0;if(!ok)remove(temporary.c_str());return ok;
+}
 static void capture(const char*path){
     app.render();FILE*f=fopen(path,"wb");if(!f){perror(path);exit(3);}fprintf(f,"P6\n320 240\n255\n");
     for(auto p:app.pixels){uint8_t c[3]={(uint8_t)(((p>>11)*255+15)/31),(uint8_t)((((p>>5)&63)*255+31)/63),(uint8_t)(((p&31)*255+15)/31)};fwrite(c,1,3,f);}fclose(f);
@@ -216,7 +222,7 @@ int main(int argc,char**argv){
     if(!headless){profile_selector_path=directory(base_save_path)+"/nSpire2.slots.tns";
         if(FILE*f=fopen(profile_selector_path.c_str(),"rb")){uint8_t bytes[spire::UiProfileSelectorBytes+1];const size_t n=fread(bytes,1,sizeof bytes,f);fclose(f);selected_profile=spire::decode_profile_selector(bytes,n);}
         configure_profile_paths();}
-    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock,current_profile,headless?nullptr:profile_info,headless?nullptr:request_profile}))return error(spire::BootText::InvalidResources);
+    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock,current_profile,headless?nullptr:profile_info,headless?nullptr:request_profile,write_feedback}))return error(spire::BootText::InvalidResources);
     auto persist_language=[&](){
         if(headless)return;
         FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}
@@ -299,13 +305,17 @@ int main(int argc,char**argv){
                 if(!repeat){held[e.xkey.keycode&255]=false;app.physical_key(physical_keycode(XLookupKeysym(&e.xkey,0)),false);}}
             else if(e.type==KeyPress){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
                 if(app.binding_listening>=0)app.physical_key(physical_keycode(symbol),true);
-                else if(app.library&&!app.library_tab&&app.library_search_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
+                else if(((app.library&&!app.library_tab&&app.library_search_editing)||(app.auxiliary.screen==spire::AuxiliaryScreen::Feedback&&app.auxiliary.editing))&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;
                     if(input_context)size=Xutf8LookupString(input_context,&e.xkey,text,sizeof text,&actual,&status);
                     else size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
                     if(actual==XK_Return||actual==XK_KP_Enter)app.library_text(13);
                     else if(actual==XK_BackSpace)app.library_text(8);
                     else if(actual==XK_Escape)app.library_text(27);
+                    else if(app.auxiliary.editing&&(actual==XK_Tab||actual==XK_ISO_Left_Tab))app.auxiliary_text(9);
+                    else if(app.auxiliary.editing&&actual==XK_Delete)app.auxiliary_text(127);
+                    else if(app.auxiliary.editing&&(actual==XK_Left||actual==XK_Right||actual==XK_Up||actual==XK_Down||actual==XK_Home||actual==XK_End))
+                        app.auxiliary_text(actual==XK_Left?-1:actual==XK_Right?-2:actual==XK_Up?-3:actual==XK_Down?-4:actual==XK_Home?-5:-6);
                     else if(status==XBufferOverflow&&size>0&&size<=65536){std::vector<char>commit(size+1);size=Xutf8LookupString(input_context,&e.xkey,commit.data(),int(commit.size()),&actual,&status);if(status!=XBufferOverflow&&size>0)spire::host_text_utf8(commit.data(),size,[](int code){app.library_text(code);});}
                     else if(size>0&&size<=int(sizeof text))spire::host_text_utf8(text,size,[](int code){app.library_text(code);});
                 }else

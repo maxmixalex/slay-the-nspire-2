@@ -27,6 +27,10 @@ const char* Content::locale_string(const char*table,const char*key)const{
 #include "run_modes_text_index.inc"
   };
   const int index=wc_find(mode_text_index,table,key);if(index>=0)return string(index);
+  static const WorldContentIndex auxiliary_text_index[]={
+#include "auxiliary_text_index.inc"
+  };
+  const int auxiliary=wc_find(auxiliary_text_index,table,key);if(auxiliary>=0)return string(auxiliary);
  }
  if(version_>=ProfileContentVersion){
   static const WorldContentIndex profile_text_index[]={

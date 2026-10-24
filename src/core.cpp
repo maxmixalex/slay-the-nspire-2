@@ -5,6 +5,7 @@
 #include "world_run.hpp"
 #include "debug_commands.hpp"
 #include "run_options.hpp"
+#include "power_values.hpp"
 
 namespace spire {
 #include "card_definitions.inc"
@@ -19,6 +20,7 @@ namespace spire {
 #include "enemy_forward.inc"
 #include "world_relic_forward.inc"
 #include "world_shared_forward.inc"
+#include "power_order_core.inc"
 #include "core_actions.inc"
 #include "expansion_core.inc"
 #include "ironclad_core.inc"

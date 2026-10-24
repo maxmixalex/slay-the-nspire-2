@@ -65,8 +65,10 @@ void App::settings_action(UiAction action){
     case UiAction::SettingsShakeUp:if(screen_shake<4){++screen_shake;persist_preferences();}break;
     case UiAction::SettingsReset:if(settings_tab)reset_input_bindings();else{frontend_confirm=4;frontend_choice=0;}break;
     case UiAction::SettingsControls:help=true;break;
+    case UiAction::SettingsFeedback:open_auxiliary(AuxiliaryScreen::Feedback);break;
+    case UiAction::SettingsCredits:open_auxiliary(AuxiliaryScreen::Credits);break;
     case UiAction::SettingsScrollUp:if(settings_top)settings_top--;break;
-    case UiAction::SettingsScrollDown:if(settings_top<(settings_tab?InputCommandCount-5:1))settings_top++;break;
+    case UiAction::SettingsScrollDown:if(settings_top<(settings_tab?InputCommandCount-5:3))settings_top++;break;
     default:break;
     }
 }
@@ -79,20 +81,21 @@ bool App::settings_input(Key key){
         else if(key==Key::Confirm)request_language(settings_language_item+1);
         return true;
     }
-    const unsigned count=settings_tab?InputCommandCount+3u:8u; // Mode, commands, Reset, Back.
+    const unsigned count=settings_tab?InputCommandCount+3u:10u; // Mode/rows, Reset, Back.
     if(key==Key::Back)settings_action(UiAction::SettingsBack);
     else if(key==Key::Inspect){settings_tab^=1;settings_item=settings_top=0;}
     else if(key==Key::Up||key==Key::Down){
         settings_item=uint8_t((settings_item+count+(key==Key::Up?-1:1))%count);
-        if(!settings_tab&&settings_item<6){if(settings_item<settings_top)settings_top=settings_item;else if(settings_item>=settings_top+5)settings_top=settings_item-4;}
+        if(!settings_tab&&settings_item<8){if(settings_item<settings_top)settings_top=settings_item;else if(settings_item>=settings_top+5)settings_top=settings_item-4;}
         if(settings_tab&&settings_item>=1&&settings_item<=InputCommandCount){const unsigned row=settings_item-1;if(row<settings_top)settings_top=row;else if(row>=settings_top+5)settings_top=row-4;}
     }else if(key==Key::Left||key==Key::Right){
         if(!settings_tab&&settings_item==1)settings_action(key==Key::Left?UiAction::SettingsShakeDown:UiAction::SettingsShakeUp);
         else{settings_tab^=1;settings_item=settings_top=0;}
     }else if(key==Key::Confirm){
         static const UiAction general[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,
-            UiAction::SettingsPhobia,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,UiAction::SettingsReset,UiAction::SettingsBack};
-        if(!settings_tab)settings_action(general[settings_item%8]);
+            UiAction::SettingsPhobia,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,
+            UiAction::SettingsFeedback,UiAction::SettingsCredits,UiAction::SettingsReset,UiAction::SettingsBack};
+        if(!settings_tab)settings_action(general[settings_item%10]);
         else if(!settings_item)settings_action(UiAction::SettingsKeyboardOnly);
         else if(settings_item<=InputCommandCount)begin_key_rebind(settings_item-1);
         else settings_action(settings_item==InputCommandCount+1?UiAction::SettingsReset:UiAction::SettingsBack);

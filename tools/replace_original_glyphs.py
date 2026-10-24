@@ -30,6 +30,17 @@ KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
 TAG = re.compile(r'\[(/?)([a-z_]+)(?:\s+[^\]]*)?\]')
 
 
+def text_format_control(cp):
+    """Match unicode_text.hpp without changing any stored localization byte."""
+    return (0x200b <= cp <= 0x200f or 0x202a <= cp <= 0x202e or
+            0x2060 <= cp <= 0x206f or cp == 0xfeff or
+            0xfe00 <= cp <= 0xfe0f or 0xe0100 <= cp <= 0xe01ef)
+
+
+def visible_alphabet(text):
+    return {ord(ch) for ch in text if ord(ch) >= 32 and not text_format_control(ord(ch))}
+
+
 def auxiliary_body_slots(source):
     """Full notes/credits are rendered only at 8/10px by their own reader.
 
@@ -55,7 +66,7 @@ def styled_alphabet(texts):
         for match in TAG.finditer(text):
             if match[2] not in KNOWN_TAGS:
                 continue
-            result[face].update(ord(ch) for ch in text[at:match.start()] if ord(ch) >= 32)
+            result[face].update(visible_alphabet(text[at:match.start()]))
             closing, tag = match[1], match[2]
             if closing:
                 for i in range(len(stack)-1, -1, -1):
@@ -68,7 +79,7 @@ def styled_alphabet(texts):
                 if tag == 'b': face |= 1
                 if tag == 'i': face |= 2
             at = match.end()
-        result[face].update(ord(ch) for ch in text[at:] if ord(ch) >= 32)
+        result[face].update(visible_alphabet(text[at:]))
     for face in range(1, 4):
         if result[face]: result[face].update(range(32, 127))
     return result
@@ -115,6 +126,15 @@ def generate(source, faces, fallback=None):
     rows, retained, substituted = [], [], []
     primary = faces[0]
     tiles.require(primary is not None, 'A regular font is required')
+    fallbacks = list(fallback) if isinstance(fallback, (tuple, list)) else [fallback] if fallback else []
+    def regular_face(cp):
+        return next((font for font in [primary, *fallbacks] if cp in font.coverage), None)
+    fallback_sources = {font.path.name if hasattr(font, 'path') else str(i): set() for i, font in enumerate(fallbacks)}
+    def record_fallback(cp, font):
+        if font is not primary:
+            substituted.append(cp)
+            index = fallbacks.index(font)
+            fallback_sources[font.path.name if hasattr(font, 'path') else str(index)].add(cp)
     originals = {(row[0], row[2]): row for row in source.glyphs if row[2] < 32}
     previous_codepoints = {cp for cp, _px in originals}
     required = set().union(*requested)
@@ -123,10 +143,13 @@ def generate(source, faces, fallback=None):
     # Every old regular codepoint/size remains addressable, including runtime
     # literals absent from localization and Unicode input hints.
     for (cp, px), row in originals.items():
-        face = primary if cp in primary.coverage else fallback
-        if face is not None and cp in face.coverage:
+        if text_format_control(cp):
+            rows.append((cp, px, 1, 1, 0, 0, b'\0'))
+            continue
+        face = regular_face(cp)
+        if face is not None:
             rows.append(face.glyph(cp, px))
-            if face is not primary: substituted.append(cp)
+            record_fallback(cp, face)
         else:
             _cp, off, _px, w, h, advance, encoded = row
             rows.append((cp, px, w, h, advance, encoded,
@@ -136,21 +159,22 @@ def generate(source, faces, fallback=None):
     # the alphabet from every localized span before choosing styled variants;
     # otherwise a new modifier/tooltip may silently render '?' in Chinese.
     for cp in sorted(new_codepoints):
-        face = primary if cp in primary.coverage else fallback
-        if face is None or cp not in face.coverage:
+        face = regular_face(cp)
+        if face is None:
             missing_regular.append(cp)
             continue
         for px in SIZES if cp in core_required else (8, 10):
             row = face.glyph(cp, px)
             rows.append(row)
             originals[(cp, px)] = None
-        if face is not primary: substituted.append(cp)
+        record_fallback(cp, face)
     if getattr(source, 'version', 0) >= 28:
         for cp in sorted({cp for cp, _px in originals}):
             if (cp, 6) in originals: continue
             if cp not in previous_codepoints and cp not in core_required: continue
-            face = primary if cp in primary.coverage else fallback
-            if face is not None and cp in face.coverage:
+            if text_format_control(cp): continue
+            face = regular_face(cp)
+            if face is not None:
                 rows.append(face.glyph(cp, 6)); originals[(cp, 6)] = None
     styled_counts, unavailable = {}, {}
     for style in range(1, 4):
@@ -164,7 +188,10 @@ def generate(source, faces, fallback=None):
         unavailable[FACE_NAMES[style]] = sorted(eligible-covered)
     rows.sort(key=lambda row: (row[1], row[0]))
     return rows, dict(fonts={FACE_NAMES[i]: face.metadata() for i, face in enumerate(faces) if face},
-        fallback_font=fallback.metadata() if fallback else None,
+        fallback_font=fallbacks[0].metadata() if fallbacks else None,
+        fallback_fonts=[font.metadata() for font in fallbacks],
+        fallback_codepoints_by_font={key: sorted(value) for key, value in fallback_sources.items()},
+        zero_width_format_controls=sorted({ord(ch) for text in texts for ch in text if text_format_control(ord(ch))}),
         regular_codepoints=len({cp for cp, _ in originals}),
         appended_regular_codepoints=sorted(new_codepoints-set(missing_regular)),
         missing_regular_codepoints=missing_regular,
@@ -197,13 +224,13 @@ def scene_glyphs(source, faces):
     auxiliary_bold = styled_alphabet([value for slot, value in enumerate(texts) if slot in auxiliary and slot != 8507])[1]
     auxiliary_headings = set(map(ord, texts[8507])) if len(texts)>8507 and 8507 in auxiliary else set()
     for key, ordinal in entries:
-        if key.startswith('card_reward_ui.') or key in ('gameplay_ui.CHOOSE_CARD_HEADER', 'gameplay_ui.TO_INSPECT_PROMPT'):
+        if key.startswith('card_reward_ui.') or key in ('gameplay_ui.CHOOSE_CARD_HEADER', 'gameplay_ui.TO_INSPECT_PROMPT', 'gameplay_ui.COMBAT_REWARD_HEADER_LOOT'):
             ordinal=int(ordinal)
             if ordinal<len(texts): alphabets[1].update(map(ord,texts[ordinal]))
     rows=[];report={}
     for i,face in enumerate(faces):
         if face is None: continue
-        covered={cp for cp in alphabets[i] if cp>=32 and cp in face.coverage}
+        covered={cp for cp in alphabets[i] if cp>=32 and not text_format_control(cp) and cp in face.coverage}
         present=set()
         for cp in sorted(covered):
             for px in SCENE_SIZES:
@@ -213,7 +240,7 @@ def scene_glyphs(source, faces):
             # the credits reader uses the same face for 10px section labels.
             for alphabet,px in ((auxiliary_bold,8),(auxiliary_headings,10)):
                 for cp in sorted(alphabet):
-                    if cp>=32 and cp in face.coverage and (cp,px) not in present:
+                    if cp>=32 and not text_format_control(cp) and cp in face.coverage and (cp,px) not in present:
                         rows.append(face.glyph(cp,px,5));present.add((cp,px));covered.add(cp)
         report[('display','explicit_bold','scene_italic')[i]]=dict(**face.metadata(),codepoints=len(covered),glyphs=len(present))
     return rows,report
@@ -301,7 +328,8 @@ def main():
     parser.add_argument('--bold-font', type=Path)
     parser.add_argument('--italic-font', type=Path)
     parser.add_argument('--bold-italic-font', type=Path)
-    parser.add_argument('--fallback-font', type=Path)
+    parser.add_argument('--fallback-font', type=Path, action='append', default=[],
+        help='Repeat in priority order; each missing character uses the first real covering font')
     parser.add_argument('--display-font', type=Path)
     parser.add_argument('--scene-bold-font', type=Path)
     parser.add_argument('--scene-italic-font', type=Path)
@@ -312,10 +340,12 @@ def main():
     tiles.require(len({input_path, output_path, receipt_path}) == 3, 'Input/output/receipt must differ')
     paths = (args.font, args.bold_font, args.italic_font, args.bold_italic_font)
     faces = [Face(tiles.private_path(path, 'Original font')) if path else None for path in paths]
-    fallback = Face(tiles.private_path(args.fallback_font, 'Fallback font')) if args.fallback_font else None
+    fallback = [Face(tiles.private_path(path, 'Fallback font')) for path in args.fallback_font]
     data = input_path.read_bytes(); info = layout(data, args.language)
     source = tiles.PackView(data, info['auxiliary'], versions=(24, 25, 26, 27, 28))
     glyphs, font_report = generate(source, faces, fallback)
+    tiles.require(not font_report['missing_regular_codepoints'],
+                  'Fallback chain does not cover localized characters: '+repr(font_report['missing_regular_codepoints']))
     scene_faces=[Face(tiles.private_path(path, 'Original scene font')) if path else None for path in
                  (args.display_font,args.scene_bold_font,args.scene_italic_font)]
     extra,scene_report=scene_glyphs(source,scene_faces);glyphs.extend(extra)

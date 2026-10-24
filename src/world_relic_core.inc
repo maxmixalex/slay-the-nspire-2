@@ -169,7 +169,7 @@ static void wr_listener(State&s,WorldRelicInstance&r,WorldRelicHook hook,int a,i
  case WorldRelicHook::AfterSideTurnStart:
   if(a)break;
   switch(r.id){
-  case WorldRelicAkabeko:if(first){flash();s.vigor=(int16_t)min(9999,s.vigor+8);}break;
+  case WorldRelicAkabeko:if(first){flash();s.vigor=(int16_t)min(9999,s.vigor+8);power_order_set(s,0,2,s.vigor!=0);}break;
   case WorldRelicDivineDestiny:if(first){flash();regent_gain_stars(s,7);}break;
   case WorldRelicSealOfGold:if(s.gold>=3){flash();wr_energy(s,1);gain_gold(s,-3);}break;
   case WorldRelicPhylacteryUnbound:necro_summon(s,2);break;

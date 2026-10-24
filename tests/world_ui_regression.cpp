@@ -867,7 +867,7 @@ static void ui6_combat_fidelity(){
  {UiCoreObserver observer(a);a.begin_combat_feedback();queue_extension(a.game,XOp::EnemyGenerateCard,Slimed,2+2048);resolve_pending(a.game);}
  CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));snapshot();
  a.render();CHECK(a.combat_cards.find(first)&&a.combat_cards.find(first+1));CHECK(a.combat_cards.find(first)->mode==CombatCardMotion::Preview);
- a.animation=at+8;a.render();CHECK(a.combat_cards.find(first)->scale==640);capture("ui6-enemy-status-card-preview");unchanged();
+ a.animation=at+8;a.render();CHECK(a.combat_cards.find(first)->scale==848);capture("ui6-enemy-status-card-preview");unchanged();
  a.animation=at+44;a.render();CHECK(a.combat_cards.find(first)->mode==CombatCardMotion::Fly);unchanged();
 
  for(unsigned fast=0;fast<2;++fast){enemy_visual_fight(EncounterId::NibbitsWeak);a.fast_mode=fast!=0;

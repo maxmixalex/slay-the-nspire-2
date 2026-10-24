@@ -7,6 +7,7 @@ static bool world_victory_pending(const State&s){
   ((e.value>=int(WorldStage::VictoryEarly)&&e.value<=int(WorldStage::VictoryCleanup))||e.value==int(WorldStage::VictoryPlayerEnd)||e.value==int(WorldStage::VictoryPowerClear)))return true;}return false;
 }
 static void world_clear_player_powers(State&s){
+ power_order_clear_actor(s,0);
  // Player.AfterCombatEnd removes powers without invoking their removal hooks.
  // Combat card instances remain owned until the final cleanup, so a saved
  // callback never leaves a Limbo reservation or a permanent-deck binding lost.
@@ -80,7 +81,7 @@ static void world_shared_effect(State&s,WorldStage op,int value){
   s.attacked_this_turn=0;relic_reset_turn_counters(s);
   if(s.turn>1&&power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);
   if(s.demon_form){notify_power_flash(s,-1,"DEMON_FORM_POWER");world_relic_gain_strength(s,s.demon_form);}
-  s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));
+  s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));power_order_set(s,0,2,s.vigor!=0);
   for(unsigned id=0;id<s.card_count;id++)if(x.return_turn[id]&&x.return_turn[id]<=s.turn){
    x.return_turn[id]=0;
    if(s.zones[id]==Zone::Draw){bool hand=s.hand.count<MaxHand;move_instance(s,id,s.draw,hand?s.hand:s.discard,hand?Zone::Hand:Zone::Discard);}

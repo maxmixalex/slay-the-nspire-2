@@ -91,16 +91,23 @@ static void glyph_measurement(const Bytes&data){
     auto word=[&](unsigned at){return uint32_t(data[at])|uint32_t(data[at+1])<<8|uint32_t(data[at+2])<<16|uint32_t(data[at+3])<<24;};
     const unsigned count=word(20),first=40+word(16)*16;
     CHECK(count>=64);
-    for(unsigned i=0;i<64;++i){const unsigned at=first+i*16;CHECK(content->glyph(word(at),data[at+8]|unsigned(data[at+9])<<8).pixels);}
+    const auto glyph_request=[&](unsigned at,bool pixels){
+        const unsigned encoded=data[at+8]|unsigned(data[at+9])<<8;
+        const bool scene_fonts=content->version()>=HistoryUi8ContentVersion;
+        const unsigned size=encoded&(scene_fonts?31u:63u);
+        const unsigned style=content->version()>=Ui7ContentVersion?((encoded>>6)&3u)|(scene_fonts&&(encoded&32u)?4u:0u):0u;
+        return pixels?content->glyph(word(at),size,style):content->glyph_metrics(word(at),size,style);
+    };
+    for(unsigned i=0;i<64;++i){const unsigned at=first+i*16;CHECK(glyph_request(at,true).pixels);}
     const auto stats=content->read_stats();const unsigned calls=provider.calls;
     // Measuring the complete catalog must neither read pixels nor evict the
     // 64 glyphs just prepared for painting. This catches layout-cache churn.
-    for(unsigned i=0;i<count;++i){const unsigned at=first+i*16;const int size=data[at+8]|unsigned(data[at+9])<<8;
-        const auto g=content->glyph_metrics(word(at),size);CHECK(!g.pixels&&g.w==data[at+10]&&g.h==data[at+11]&&g.advance==(data[at+12]|unsigned(data[at+13])<<8));}
+    for(unsigned i=0;i<count;++i){const unsigned at=first+i*16;
+        const auto g=glyph_request(at,false);CHECK(!g.pixels&&g.w==data[at+10]&&g.h==data[at+11]&&g.advance==(data[at+12]|unsigned(data[at+13])<<8));}
     const auto measured=content->read_stats();
     CHECK(provider.calls==calls&&measured.callback_bytes==stats.callback_bytes&&measured.callbacks==stats.callbacks&&
         measured.cache_hits==stats.cache_hits&&measured.cache_misses==stats.cache_misses&&measured.bypasses==stats.bypasses&&measured.direct_reads==stats.direct_reads);
-    for(unsigned i=0;i<64;++i){const unsigned at=first+i*16;CHECK(content->glyph(word(at),data[at+8]|unsigned(data[at+9])<<8).pixels);}
+    for(unsigned i=0;i<64;++i){const unsigned at=first+i*16;CHECK(glyph_request(at,true).pixels);}
     CHECK(provider.calls==calls&&content->read_stats().cache_hits==measured.cache_hits);
     const auto missing=content->glyph_metrics(0x10ffff,8),fallback=content->glyph_metrics('?',8);
     CHECK(missing.w==fallback.w&&missing.h==fallback.h&&missing.advance==fallback.advance&&content->healthy());

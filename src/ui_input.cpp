@@ -89,6 +89,7 @@ void App::select_library_item(int index){
     if(library_card_seen(ids[index]))open_card_detail({ids[index],uint8_t(library_upgraded&&card_upgradeable({ids[index],0}))});
 }
 void App::ui_action(UiAction action){
+    if(auxiliary.screen!=AuxiliaryScreen::None){if(action==UiAction::Back)close_auxiliary();return;}
     if(map_transition_blocks_pointer())return;
     UiCoreObserver observer(*this);
     pointer_cancel();
@@ -132,7 +133,8 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsLanguage:case UiAction::SettingsLanguageEnglish:case UiAction::SettingsLanguageChinese:
     case UiAction::SettingsLanguageClose:case UiAction::SettingsCardIndices:case UiAction::SettingsTextEffects:
     case UiAction::SettingsKeyboardOnly:case UiAction::SettingsPhobia:case UiAction::SettingsShakeDown:case UiAction::SettingsShakeUp:
-    case UiAction::SettingsReset:case UiAction::SettingsScrollUp:case UiAction::SettingsScrollDown:break;
+    case UiAction::SettingsReset:case UiAction::SettingsScrollUp:case UiAction::SettingsScrollDown:
+    case UiAction::SettingsFeedback:case UiAction::SettingsCredits:break;
 #if SPIRE_DEBUG_COMMANDS
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
@@ -199,7 +201,7 @@ void App::ui_action(UiAction action){
     case UiAction::TargetFirst:if(panel==4&&game.enemy_count&&game.enemies[0].hp>0)target=0;break;
     case UiAction::TargetSecond:if(panel==4&&game.enemy_count>1&&game.enemies[1].hp>0)target=1;break;
     case UiAction::RewardCards:
-        if(game.phase==Phase::Reward&&!(game.reward_claimed&2)){reward_cards=true;cursor=0;}break;
+        if(game.phase==Phase::Reward&&!(game.reward_claimed&2)){reward_cards=true;sync_card_reward_presentation();}break;
     case UiAction::RewardGold:
         if(game.phase==Phase::Reward){claim_reward_gold(game);}break;
     case UiAction::RewardPotion:
@@ -245,6 +247,8 @@ void App::ui_action(UiAction action){
         break;}
     case UiAction::ClearWorldChoice:choice_selected_count=0;break;
     case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:{
+        if(reward_list_interactive()){reward_presentation.scroll_list(action==UiAction::PreviousWorldPage?-10:10);break;}
+        if(card_reward_active())break;
         const unsigned per=world_choice_page_size();
         unsigned count=world_choice_options(nullptr,0);int page=cursor/int(per)+(action==UiAction::PreviousWorldPage?-1:1);
         if(page<0)page=0;if(page>int((count?count-1:0)/per))page=int((count?count-1:0)/per);cursor=page*int(per);break;}
@@ -420,6 +424,9 @@ bool App::room_input(Key key){
     if(title||paused||help||panel||library||character_select||map_preview.open||detail_card>=0||detail_item>=0||deck_candidate>=0)return false;
     const bool fake=game.phase==Phase::Event&&game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished;
     if(game.phase==Phase::Event&&!fake){
+        if(ancient_dialogue_input(key))return true;
+        if(game.original_events.id==OriginalEventId::CrystalSphere&&game.original_events.finished&&game.original_events.crystal_item_count)
+            return key==Key::Detail; // Its own Proceed has no default-event option tween.
         if(key==Key::Detail){ui_action(UiAction::ReadEvent);return true;}
         if(key==Key::Confirm&&game.original_events.active){const auto&m=room_presentation.event;
             if(!m.bound||m.id!=unsigned(game.original_events.id)||(!m.ancient&&!m.option_ready(unsigned(cursor),map_clock_ms))||(m.ancient&&!pointer.dispatching&&map_clock_ms-m.start<800))return true;

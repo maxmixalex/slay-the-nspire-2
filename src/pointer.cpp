@@ -25,6 +25,7 @@ const HitRegion* App::hit_at(int x,int y)const{
     return nullptr;
 }
 uint32_t App::input_context()const{
+    if(auxiliary.screen!=AuxiliaryScreen::None)return 0x41555800u|unsigned(auxiliary.screen)|(uint32_t(auxiliary.category_open)<<4)|(uint32_t(auxiliary.closing)<<5);
     if(settings_open&&binding_listening>=0)return 0x4b455900u|unsigned(binding_listening);
     if(bestiary.open)return 0x42535400u|unsigned(bestiary.actions);
     if(run_mode.screen!=RunMenu::Closed)return 0x52554e00u|unsigned(run_mode.screen)|(uint32_t(map_preview.open)<<4)|(uint32_t(frontend_confirm!=0)<<5);
@@ -32,7 +33,7 @@ uint32_t App::input_context()const{
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
-void App::pointer_cancel(bool keep_keyboard_card){map_drawing.cancel();progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
+void App::pointer_cancel(bool keep_keyboard_card){reward_presentation.list_scroll.dragging=reward_presentation.list_scroll.thumb=false;map_drawing.cancel();auxiliary.scroll.dragging=auxiliary.scroll.thumb=false;progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 #include "card_inspect_input.inc"
 void App::open_card_detail(Card card,int deck_index){
@@ -74,12 +75,30 @@ void App::pointer_move(int x,int y){
         const bool mouse=pointer.visible||!keyboard_only||
             (distance*81u<=1000000u&&dt<50000u&&uint64_t(distance)*20250000u>uint64_t(dt)*dt*100u);
         pointer.motion_time=map_clock_ms;
-        if(mouse){pointer.visible=true;hud_focus=-1;map_directional=false;keyboard_card=-1;sync_map_reticles();map_drawing_pointer_motion();}
+        if(mouse){pointer.visible=true;hud_focus=-1;map_directional=false;keyboard_card=-1;if(auxiliary.screen==AuxiliaryScreen::None){sync_map_reticles();map_drawing_pointer_motion();}}
     }
     if(!pointer.visible)return;
+    if(auxiliary.screen!=AuxiliaryScreen::None){
+        if(pointer.held){const int xx=pointer.x-pointer.down_x,yy=pointer.y-pointer.down_y;if(xx*xx+yy*yy>=25)pointer.dragging=true;}
+        auto&scroll=auxiliary.scroll;
+        if(pointer.held&&scroll.dragging){
+            if(pointer.context!=input_context()){pointer_cancel();return;}
+            if(scroll.thumb)scroll.set_thumb(pointer.y,33,154);
+            else scroll.target=UiHistoryScroll::clamp(scroll.target-(pointer.y-scroll.last_y)*256,-scroll.viewport*256,scroll.maximum+scroll.viewport*256);
+            scroll.last_y=pointer.y;
+        }return;
+    }
     if(map_drawing.pressed)return;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
+    if(pointer.held&&reward_presentation.list_scroll.dragging){
+        auto&list=reward_presentation.list_scroll;
+        if(pointer.context!=input_context()||!reward_list_interactive()){pointer_cancel();return;}
+        const int dy=reward_presentation.window(map_clock_ms).y;
+        if(list.thumb)list.set_thumb(pointer.y,89+dy,85);
+        else if(pointer.dragging)list.target=UiHistoryScroll::clamp(list.target-(pointer.y-list.last_y)*256,-76*256,list.maximum+76*256);
+        list.last_y=pointer.y;return;
+    }
     if(pointer.held&&progress_page_scroll.dragging){
         if(progress_page_scroll.thumb)progress_page_scroll.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:61,run_mode.screen==RunMenu::Custom?158:128);
         else progress_page_scroll.target=UiHistoryScroll::clamp(progress_page_scroll.target-(pointer.y-progress_page_scroll.last_y)*256,-progress_page_scroll.viewport*256,progress_page_scroll.maximum+progress_page_scroll.viewport*256);
@@ -146,6 +165,7 @@ void App::pointer_move(int x,int y){
     }
 }
 void App::pointer_scroll(int rows){
+    if(auxiliary.screen!=AuxiliaryScreen::None){pointer_cancel();auxiliary_scroll(rows);return;}
     if(map_drawing_ready()&&map_drawing.mode!=MapDrawingMode::None)return;
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){if(rows)debug_input(rows<0?Key::Up:Key::Down);return;}
@@ -160,6 +180,7 @@ void App::pointer_scroll(int rows){
     // A release after scrolling must not activate the control now underneath.
     pointer_cancel();
     if(event_reader){event_reader_scroll=clamp(event_reader_scroll+rows,0,2048);return;}
+    if(scroll_ancient_dialogue(rows))return;
     if(status_actor>=0){
         int count=combat_statuses(status_actor,nullptr);
         status_selected=clamp(status_selected+rows,0,count?count-1:0);status_scroll=0;return;
@@ -172,6 +193,7 @@ void App::pointer_scroll(int rows){
     if(grid>=0&&card_grids[grid].bound){card_grids[grid].wheel(rows);return;}
     if(library)return;
     if(title||paused||help||character_select||deck_candidate>=0)return;
+    if(reward_list_interactive()){reward_presentation.scroll_list(rows);return;}
     if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map))){map_legend_item=uint8_t(clamp(int(map_legend_item)+rows,0,5));return;}
     if(!panel&&choice_peeking)return;
     if(!panel&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)){ui_action(rows>0?UiAction::NextWorldPage:UiAction::PreviousWorldPage);return;}
@@ -192,6 +214,31 @@ void App::pointer_scroll(int rows){
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
+    if(auxiliary.screen!=AuxiliaryScreen::None){
+        pointer.visible=true;pointer.motion_time=map_clock_ms;render();
+        if(down&&auxiliary.screen==AuxiliaryScreen::Credits){close_auxiliary();return;}
+        const auto*found=hit_at(pointer.x,pointer.y);const HitRegion hit=found?*found:HitRegion{};
+        if(down&&auxiliary.screen==AuxiliaryScreen::Feedback&&auxiliary.category_open&&
+           !(hit.kind==HitKind::AuxiliaryControl&&(hit.value==AuxiliaryFeedbackCategory||
+             (hit.value>=AuxiliaryFeedbackCategoryFirst&&hit.value<AuxiliaryFeedbackCategoryFirst+4)))){
+            auxiliary.category_open=false;pointer_cancel();return;
+        }
+        if(down){
+            if(pointer.held)return;
+            pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
+            pointer.captured=hit;pointer.context=input_context();
+            if(auxiliary.screen==AuxiliaryScreen::PatchNotes&&hit.kind==HitKind::AuxiliaryControl&&hit.enabled&&
+               (hit.value==AuxiliaryScrollArea||hit.value==AuxiliaryScrollThumb)){
+                auto&scroll=auxiliary.scroll;scroll.dragging=true;scroll.thumb=hit.value==AuxiliaryScrollThumb;scroll.last_y=pointer.y;
+                if(scroll.thumb)scroll.set_thumb(pointer.y,33,154);else scroll.target=scroll.position;
+            }
+        }else if(pointer.held){
+            const auto captured=pointer.captured;const bool same=pointer.context==input_context()&&!pointer.dragging&&
+                !auxiliary.scroll.thumb&&captured.kind==hit.kind&&captured.value==hit.value;
+            pointer_cancel();
+            if(same&&hit.enabled&&hit.kind==HitKind::AuxiliaryControl)auxiliary_control(hit.value);
+        }return;
+    }
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){
         const auto*h=hit_at(pointer.x,pointer.y);
@@ -243,6 +290,13 @@ void App::pointer_button(bool down){
         }
         pointer.held=true;pointer.dragging=false;pointer.down_x=pointer.x;pointer.down_y=pointer.y;
         pointer.captured=hit;pointer.context=input_context();pointer.revision=game.revision;
+        if(reward_list_interactive()&&reward_presentation.list_scroll.maximum){
+            auto&list=reward_presentation.list_scroll;const int dy=reward_presentation.window(map_clock_ms).y;
+            if(hit.kind==HitKind::RewardScroll||(pointer.x>=114&&pointer.x<205&&pointer.y>=82+dy&&pointer.y<174+dy)){
+                list.dragging=true;list.thumb=hit.kind==HitKind::RewardScroll;list.last_y=pointer.y;
+                if(list.thumb)list.set_thumb(pointer.y,89+dy,85);else list.target=list.position;
+            }
+        }
         const int grid_index=active_card_grid();
         if(grid_index>=0){auto&grid=card_grids[grid_index];
             const bool card=hit.kind==HitKind::DeckCard||hit.kind==HitKind::InstanceCard||hit.kind==HitKind::LibraryItem||hit.kind==HitKind::CombatChoice||hit.kind==HitKind::WorldChoice||hit.kind==HitKind::Choice;
@@ -254,6 +308,8 @@ void App::pointer_button(bool down){
         return;
     }
     if(!pointer.held)return;
+    if(reward_presentation.list_scroll.dragging){auto&list=reward_presentation.list_scroll;const bool dragged=list.thumb||pointer.dragging;
+        list.dragging=list.thumb=false;if(dragged){pointer_cancel();return;}}
     if(bestiary.open&&(bestiary.dragging||bestiary.thumb_drag)){
         const bool dragged=bestiary.thumb_drag||pointer.dragging;bestiary.dragging=bestiary.thumb_drag=false;
         if(dragged){pointer_cancel();return;}
@@ -325,6 +381,7 @@ void App::pointer_button(bool down){
     case HitKind::WorldNode:
         if(!map_legend&&map_routes_active())begin_map_travel(unsigned(hit.value));break;
     case HitKind::MapDrawingTool:map_drawing_tool(unsigned(hit.value));break;
+    case HitKind::AncientDialogueNext:next_ancient_dialogue();break;
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
     case HitKind::CrystalCell:
@@ -345,7 +402,9 @@ void App::pointer_button(bool down){
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
     case HitKind::StatusActor:open_statuses(hit.value);break;
     case HitKind::BattleStatus:open_status_icon(hit.value);break;
+    case HitKind::PowerInstance:open_status_icon(hit.value&255);break;
     case HitKind::CombatPeek:toggle_combat_peek();break;
+    case HitKind::AuxiliaryControl:auxiliary_control(hit.value);break;
     case HitKind::Orb:break; // Original orb focus retains its anchored hover tip.
     case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;

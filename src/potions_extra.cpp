@@ -67,7 +67,7 @@ void execute_potion(State&s,Potion p,int t){
  case Potion::RadiantTincture:s.energy=(int16_t)cap(999,s.energy+1);pw(XPower::Radiance,3);break;
  case Potion::RegenPotion:pw(XPower::Regen,5);break;
  case Potion::ShacklingPotion:for(int i=0;i<s.enemy_count;i++)op(XOp::StrengthLoss,i,7);break;
- case Potion::ShipInABottle:gain_unpowered_block(s,10);s.block_next_turn=(int16_t)cap(9999,s.block_next_turn+10);break;
+ case Potion::ShipInABottle:gain_unpowered_block(s,10);s.block_next_turn=(int16_t)cap(9999,s.block_next_turn+10);power_order_set(s,0,16,s.block_next_turn!=0);break;
  case Potion::SkillPotion:op(XOp::Offer,2,1);break;
  case Potion::SneckoOil:op(XOp::Draw,7);op(XOp::RandomCosts);break;
  case Potion::StableSerum:pw(XPower::Retain,2);break;

@@ -124,6 +124,7 @@ const RelicDefinition* relic_definition(RelicMask);
 #include "world_factory_state.inc"
 #include "original_event_state.inc"
 #include "world_relic_state.inc"
+#include "power_order_state.inc"
 
 struct State {
     Phase phase;
@@ -184,8 +185,16 @@ struct State {
     WorldRelicState world_relics;
     uint8_t attacked_this_turn; // Retained through enemy actions until energy reset.
     RunOptions run_options{};
+    PowerOrderState power_sequence{};
+    uint16_t test_subject_kills=0;
 };
-constexpr unsigned SaveVersion=15,CustomSaveVersion=16,SaveCapacity=262144;
+constexpr unsigned LegacySaveVersion=15,CustomSaveVersion=16,SaveVersion=17,SaveCapacity=262144;
+void power_order_set(State&,unsigned actor,unsigned id,bool present,unsigned instance=0);
+void power_order_clear_actor(State&,unsigned actor);
+void power_order_prune(State&);
+void power_order_reconcile(State&);
+void power_order_migrate(State&);
+bool valid_power_order(const State&);
 #include "event_card_api.inc"
 CardType card_type(const State&,Card,int instance=-1,int deck_index=-1);
 uint8_t card_keywords(const State&,Card,int instance=-1,int deck_index=-1);

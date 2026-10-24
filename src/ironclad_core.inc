@@ -8,6 +8,7 @@ static void ironclad_gain_power(State&s,IPower p,int n){
  if(!old&&value){if(i.power_count==IPowerCount){fail(s);return;}i.power_order[i.power_count++]=(uint8_t)k;}
  if(old&&!value)for(unsigned at=0;at<i.power_count;at++)if(i.power_order[at]==k){for(unsigned j=at+1;j<i.power_count;j++)i.power_order[j-1]=i.power_order[j];i.power_order[--i.power_count]=0;break;}
  i.powers[k]=(int16_t)value;
+ power_order_set(s,0,IroncladStatusStart+k,value!=0);
  if(p==IPower::Corruption){
   if(!old&&value)card_result_register(s,CardResultActor::Corruption);
   if(old&&!value)card_result_unregister(s,CardResultActor::Corruption);
@@ -323,7 +324,7 @@ static bool ironclad_effect(State&s,Effect e){
  case XOp::IAllHits:
   if(b>0&&alive(s)){if(b>1)queue_extension(s,XOp::IAllHits,a,b-1,true);for(int t=s.enemy_count-1;t>=0;t--)if(s.enemies[t].hp)enqueue(s,EffectKind::Damage,a,t,true);}break;
  case XOp::ITemporaryStrength:{
-  int actual=min(9999-s.strength,a);world_relic_gain_strength(s,actual);i.setup_strength=(int16_t)min(9999,i.setup_strength+actual);break;}
+  int actual=min(9999-s.strength,a);world_relic_gain_strength(s,actual);i.setup_strength=(int16_t)min(9999,i.setup_strength+actual);power_order_set(s,0,CharacterExtraStatusStart+4,i.setup_strength!=0);break;}
  case XOp::IHeal:heal(s,a);break;
  case XOp::IUnpoweredRandom:{int targets[MaxEnemies],n=0;for(int t=0;t<s.enemy_count;t++)if(s.enemies[t].hp)targets[n++]=t;if(n)damage_unpowered(s,targets[random_below(s.rng_cards,n)],a);break;}
  default:return false;

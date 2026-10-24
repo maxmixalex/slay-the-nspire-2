@@ -22,20 +22,20 @@ void App::sync_ancient_dialogue(){
  const auto&e=game.original_events;if(!e.active||!ui_ancient_event(e.id))return;
  auto&d=ancient_dialogue;const uint32_t revision=native_event_revision(e);
  const bool new_room=!d.bound||d.seed!=game.world.run_seed||d.serial!=progress.current.serial||
-  d.id!=unsigned(e.id)||d.act!=game.world.act_index||d.point!=game.world.current_point;
+  d.id!=unsigned(e.id)||d.act!=game.world.act_index||d.point!=game.world.current_point||d.character!=unsigned(game.character)||d.profile!=current_profile();
  if(!new_room){
   if(d.revision!=revision||d.finished!=bool(e.finished)){
    // NEventRoom.RefreshEventState clears the conversation before displaying
    // its resulting description/options. It does not manufacture a reply.
-   d.count=d.current=d.character_lines=0;d.measured=false;d.scroll=0;d.start=map_clock_ms;
+   d.count=d.current=d.character_lines=0;d.measured=d.laid_out=false;d.scroll=0;d.start=map_clock_ms;
    d.revision=revision;d.finished=e.finished;
   }
   if(d.english!=content.english()){d.english=content.english();d.measured=false;}
   return;
  }
  d={};d.bound=true;d.seed=game.world.run_seed;d.serial=progress.current.serial;d.id=unsigned(e.id);
- d.act=game.world.act_index;d.point=game.world.current_point;d.revision=revision;d.finished=e.finished;
- d.start=map_clock_ms;d.english=content.english();
+ d.act=game.world.act_index;d.point=game.world.current_point;d.character=unsigned(game.character);d.profile=uint8_t(current_profile());d.revision=revision;d.finished=e.finished;
+ d.start=d.entered=map_clock_ms;d.english=content.english();
  d.random^=uint32_t(d.seed)^uint32_t(d.seed>>32)^d.serial*0x9e3779b9u^d.id*0x85ebca6bu;
  if(e.finished)return;
  unsigned total_visits=0,character_visits=0;
@@ -82,7 +82,8 @@ void App::ancient_dialogue_text(unsigned line,char*out,size_t capacity)const{
 }
 void App::next_ancient_dialogue(){
  if(!ancient_dialogue_ready())return;sync_ancient_dialogue();auto&d=ancient_dialogue;
- if(d.last())return;++d.current;d.measured=false;d.scroll=0;pointer_cancel();
+ if(d.last())return;++d.current;d.measured=false;d.scroll=0;d.start=map_clock_ms;
+ d.history_hovered=false;d.hover_from=64;d.hover_start=map_clock_ms;pointer_cancel();
 }
 bool App::scroll_ancient_dialogue(int rows){
  if(!rows||!ancient_dialogue_ready())return false;sync_ancient_dialogue();auto&d=ancient_dialogue;
@@ -90,9 +91,18 @@ bool App::scroll_ancient_dialogue(int rows){
 }
 bool App::ancient_dialogue_input(Key key){
  if(!ancient_dialogue_ready())return false;sync_ancient_dialogue();auto&d=ancient_dialogue;
- if(key==Key::Up||key==Key::Down){scroll_ancient_dialogue(key==Key::Up?-1:1);return true;}
+ if(key==Key::Up||key==Key::Down){
+  if(d.last()&&!d.scroll){
+   // NEventLayout wraps vertical focus through the options and keeps both
+   // horizontal neighbors on the same button. The reader still exposes the
+   // entire dialogue to keyboard-only users at the larger reading size.
+   if(map_clock_ms-d.start>=800){const int count=int(original_event_option_count(game));
+    if(count)cursor=(cursor+(key==Key::Up?count-1:1))%count;}
+  }else scroll_ancient_dialogue(key==Key::Up?-1:1);
+  return true;
+ }
  if(!d.last()&&(key==Key::Confirm||key==Key::EndTurn)){next_ancient_dialogue();return true;}
- if(!d.last()&&(key==Key::Left||key==Key::Right))return true;
+ if(key==Key::Left||key==Key::Right)return true;
  // Source enables pointer buttons on the last line, then keyboard focus at
  // 0.8s. The content still completes its one-second ExpoOut slide.
  if(key==Key::Confirm&&!pointer.dispatching&&map_clock_ms-d.start<800)return true;

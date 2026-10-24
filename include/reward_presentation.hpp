@@ -1,6 +1,8 @@
 #pragma once
 #include "core.hpp"
 #include "combat_card_motion.hpp"
+#include "card_reward_presentation.hpp"
+#include "ui_history_presentation.hpp"
 
 namespace spire {
 enum class RewardPickupKind:uint8_t {None,Potion,Relic,Card};
@@ -16,6 +18,24 @@ struct RewardAcquisitionSnapshot {
 struct RewardWindowVisual {int y=0;unsigned alpha=255;};
 struct RewardPickupVisual {int x=0,y=0,scale=1024,angle=0;unsigned alpha=255,shade=255;bool visible=false;};
 struct RewardPresentation {
+ CardRewardPresentation cards{};
+ UiHistoryScroll list_scroll{};
+ uint32_t list_key=0;
+ uint16_t list_count=0;
+ int16_t list_focus=-1;
+ uint8_t list_mode=0;
+ static int row_offset(unsigned index){return int((index*128+3)/7);}
+ void configure_list(uint8_t mode,uint32_t key,unsigned count,int focused,uint32_t now){
+  (void)now;if(!mode)return;
+  if(mode!=list_mode||key!=list_key){list_scroll.reset();list_focus=-1;list_key=key;list_mode=mode;}
+  list_count=uint16_t(count);list_scroll.configure(count?row_offset(count-1)+16:0,76);
+  if(focused>=0&&unsigned(focused)<count&&list_focus!=focused){
+   list_focus=int16_t(focused);
+   list_scroll.target=UiHistoryScroll::clamp((row_offset(unsigned(focused))-39)*256,0,list_scroll.maximum);
+  }
+ }
+ void scroll_list(int rows){list_scroll.target=UiHistoryScroll::clamp(list_scroll.target+UiHistoryScroll::clamp(rows,-64,64)*160*256/21,-76*256,list_scroll.maximum+76*256);}
+ int list_first()const{const int above=list_scroll.offset()-23;return above>0?above*7/128:0;}
  static constexpr unsigned MaxFlights=12;
  struct Flight {
   RewardPickupKind kind=RewardPickupKind::None;

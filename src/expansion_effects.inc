@@ -188,8 +188,8 @@ static void extension_effect(State&s,Effect e){
  case XOp::Power:{
   if(a<0||a>=XPowerCount){fail(s);break;}
   int16_t*instances=a==(int)XPower::Automation?x.automation:a==(int)XPower::Panache?x.panache:a==(int)XPower::RollingBoulder?x.boulder:nullptr;
-  if(instances){int i=0;while(i<MaxPowerInstances&&instances[i])++i;if(i==MaxPowerInstances){fail(s);break;}instances[i]=(int16_t)b;if(a==(int)XPower::Panache){x.panache_skip[i]=1;after_play_register(s,(unsigned)PostPlayActor::PanacheStart+i);}}
-  if(a==(int)XPower::Gambit)x.powers[a]=1;else gain_power(s,(XPower)a,b);break;}
+  if(instances){int i=0;while(i<MaxPowerInstances&&instances[i])++i;if(i==MaxPowerInstances){fail(s);break;}instances[i]=(int16_t)b;power_order_set(s,0,18+unsigned(a),b!=0,unsigned(i));if(a==(int)XPower::Panache){x.panache_skip[i]=1;after_play_register(s,(unsigned)PostPlayActor::PanacheStart+i);}}
+  if(a==(int)XPower::Gambit){x.powers[a]=1;power_order_set(s,0,18+unsigned(a),true);}else gain_power(s,(XPower)a,b);break;}
  case XOp::AllDamage:for(int i=0;i<s.enemy_count;i++)damage_unpowered(s,i,a);break;
  case XOp::StrengthLoss:
   // Legacy continuations did not store the temporary source separately.
@@ -227,10 +227,10 @@ static void extension_effect(State&s,Effect e){
  case XOp::CopyDamage:{int amount=x.last_damage;for(int i=0;i<s.enemy_count;i++)if(i!=a)damage_unpowered(s,i,amount);break;}
  case XOp::DamageBlock:if(s.playing>=0)gain_card_block(s,powered_block(s,s.cards[s.playing],x.last_damage));break;
  case XOp::ReturnNext:if(a>=0&&a<s.card_count)x.return_turn[a]=(uint16_t)(s.turn+1);break;
- case XOp::Prolong:s.block_next_turn=(int16_t)min(9999,s.block_next_turn+s.block);break;
+ case XOp::Prolong:s.block_next_turn=(int16_t)min(9999,s.block_next_turn+s.block);power_order_set(s,0,16,s.block_next_turn!=0);break;
  case XOp::Restless:
   if(!s.hand.count){enqueue(s,EffectKind::Energy,b,0,true);queue_extension(s,XOp::Draw,a,0,true);}break;
- case XOp::Bomb:{int i=0;while(i<MaxBombs&&x.bomb_turns[i])++i;if(i==MaxBombs){fail(s);break;}x.bomb_damage[i]=(int16_t)a;x.bomb_turns[i]=(uint8_t)b;break;}
+ case XOp::Bomb:{int i=0;while(i<MaxBombs&&x.bomb_turns[i])++i;if(i==MaxBombs){fail(s);break;}x.bomb_damage[i]=(int16_t)a;x.bomb_turns[i]=(uint8_t)b;power_order_set(s,0,43,b!=0,unsigned(i));break;}
  case XOp::ShuffleAll:
   while(s.hand.count){int id=remove(s.hand,s.hand.count-1);put(s,s.discard,id,Zone::Discard);}shuffle(s);break;
  case XOp::RandomCosts:
@@ -259,7 +259,7 @@ static void extension_effect(State&s,Effect e){
   relic_hook(s,RelicHook::TurnEnd);
   if(power_value(s,XPower::Plating)){notify_power_flash(s,-1,"PLATING_POWER");gain_unpowered_block(s,power_value(s,XPower::Plating));}
   if(power_value(s,XPower::Regen)){heal(s,power_value(s,XPower::Regen));gain_power(s,XPower::Regen,-1);}
-  if(power_value(s,XPower::Ritual)){notify_power_flash(s,-1,"RITUAL_POWER");s.strength=(int16_t)min(9999,s.strength+power_value(s,XPower::Ritual));}
+  if(power_value(s,XPower::Ritual)){notify_power_flash(s,-1,"RITUAL_POWER");s.strength=(int16_t)min(9999,s.strength+power_value(s,XPower::Ritual));power_order_set(s,0,0,s.strength!=0);}
   for(int i=MaxBombs-1;i>=0;i--)if(x.bomb_turns[i]&&!--x.bomb_turns[i]){queue_extension(s,XOp::AllDamage,x.bomb_damage[i],0,true);x.bomb_damage[i]=0;}
   queue_extension(s,XOp::OrbsEnd,0,0,true);defect_turn_end(s);regent_turn_end(s);ironclad_turn_end(s);burn_hand(s);break;
  case XOp::EndDiscard:
@@ -304,7 +304,7 @@ static void extension_effect(State&s,Effect e){
   relic_reset_turn_counters(s);if(s.block)record(s,LogKind::Block,s.block);
   if(power_value(s,XPower::Plating))gain_power(s,XPower::Plating,-1);
   if(s.demon_form){notify_power_flash(s,-1,"DEMON_FORM_POWER");s.strength=(int16_t)min(9999,s.strength+s.demon_form);record(s,LogKind::Strength,s.demon_form);}
-  s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));
+  s.vigor=(int16_t)min(9999,s.vigor+power_value(s,XPower::PrepTime));power_order_set(s,0,2,s.vigor!=0);
   relic_hook(s,RelicHook::TurnStart);
   for(unsigned id=0;id<s.card_count;id++)if(x.return_turn[id]&&x.return_turn[id]<=s.turn){
    x.return_turn[id]=0;

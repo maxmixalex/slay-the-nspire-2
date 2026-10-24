@@ -19,13 +19,26 @@ void App::reset_input_bindings(){
 void App::physical_keys_cancel(){
     for(auto&held:held_inputs){if(held.code&&held.key<=unsigned(Key::Debug))map_drawing_key_release(Key(held.key));held={};}
 }
+static bool title_patch_notes_available(const App&a){
+    return a.title&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help&&!a.panel&&!a.library&&
+        !a.character_select&&!a.map_preview.open&&!a.compendium_open&&!a.statistics_open&&!a.history_open&&
+        !a.profiles_open&&!a.bestiary.open&&a.run_mode.screen==RunMenu::Closed&&
+        a.auxiliary.screen==AuxiliaryScreen::None&&a.detail_card<0&&a.detail_item<0;
+}
 bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
-    if(!pressed){if(!held)return false;const unsigned released=held->key;*held={};
+    if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
         if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));
         else if(released==254)toggle_combat_peek();
         else if(released==253&&run_mode.screen==RunMenu::Custom)ui_action(UiAction::RandomizeRun);
+        else if(released==252&&title_patch_notes_available(*this))open_auxiliary(AuxiliaryScreen::PatchNotes);
+        else if(released==251&&auxiliary.screen==AuxiliaryScreen::PatchNotes)close_auxiliary();
+        else if((released==248||released==247)&&auxiliary.screen==AuxiliaryScreen::PatchNotes)auxiliary_control(released==248?AuxiliaryPrevious:AuxiliaryNext);
+        else if(released==246&&auxiliary.screen!=AuxiliaryScreen::None)auxiliary_input(Key::Back);
+        else if((released==250||released==249)&&card_reward_interactive()){
+            sync_card_reward_presentation();if(context==reward_presentation.cards.key)card_reward_alternative(released==249);
+        }
         return true;}
     if(held){
         // OS repeat navigates lists, but a held selection key must never play
@@ -41,7 +54,12 @@ bool App::physical_key(uint16_t code,bool pressed){
     const unsigned bank=keyboard_only?1:0;unsigned command=InputCommandCount;
     for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[bank][i]==code){command=i;break;}
     const auto dispatch=[&](Key key){held->key=uint8_t(key);input(key);return true;};
+    if(auxiliary.screen!=AuxiliaryScreen::None){
+        if(command==unsigned(InputCommand::Cancel)){held->key=246;return true;}
+        if(auxiliary.screen==AuxiliaryScreen::PatchNotes&&(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))){held->key=command==unsigned(InputCommand::Left)?248:247;return true;}
+    }
     if(command>=unsigned(InputCommand::Card1)&&command<InputCommandCount){
+        if(auxiliary.screen!=AuxiliaryScreen::None)return true;
         const unsigned card=command-unsigned(InputCommand::Card1);
         if(hand_can_focus()&&!combat_actions_locked()&&card<unsigned(game.hand.count)){
             if(!bank&&keyboard_card==game.hand.ids[card]){keyboard_card=-1;hand_focus=true;return true;}
@@ -55,15 +73,24 @@ bool App::physical_key(uint16_t code,bool pressed){
     }
     switch(InputCommand(command)){
     case InputCommand::Select:return dispatch(Key::Confirm);
-    case InputCommand::Cancel:return dispatch(Key::Back);
+    case InputCommand::Cancel:
+        if(card_reward_interactive()){sync_card_reward_presentation();held->key=249;held->context=reward_presentation.cards.key;return true;}
+        return dispatch(Key::Back);
     case InputCommand::Map:return dispatch(Key::Map);
     case InputCommand::TopPanel:
-        if(!title&&!paused&&!settings_open&&!frontend_confirm&&!library&&!character_select&&!map_preview.open){pointer_cancel();pointer.visible=false;hud_focus=hud_focus<0?0:-1;}return true;
+        if(auxiliary.screen==AuxiliaryScreen::None&&!title&&!paused&&!settings_open&&!frontend_confirm&&!library&&!character_select&&!map_preview.open){pointer_cancel();pointer.visible=false;hud_focus=hud_focus<0?0:-1;}return true;
     case InputCommand::Deck:return dispatch(Key::Inspect);
     case InputCommand::Draw:return dispatch(Key::DrawPile);
     case InputCommand::Discard:return dispatch(Key::DiscardPile);
-    case InputCommand::Exhaust:return dispatch(Key::ExhaustPile);
+    case InputCommand::Exhaust:
+        if(card_reward_interactive()){sync_card_reward_presentation();held->key=250;held->context=reward_presentation.cards.key;return true;}
+        return dispatch(Key::ExhaustPile);
     case InputCommand::Confirm:
+        // NPatchNotesButton listens to MegaInput.confirm's release. Its
+        // title shortcut stays distinct from Select and the Enter fallback.
+        if(title_patch_notes_available(*this)){held->key=252;return true;}
+        if(auxiliary.screen==AuxiliaryScreen::PatchNotes){held->key=251;return true;}
+        if(card_reward_interactive())return dispatch(Key::Detail);
         if(!title&&!paused&&!settings_open&&!frontend_confirm&&!help&&!panel&&!library&&detail_card<0&&detail_item<0){
             if(choice_phase(game.phase)||((game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)&&!world_choice_is_card_reward()&&
                !(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal)))return dispatch(Key::EndTurn);
@@ -73,6 +100,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         return dispatch(Key::Confirm);
     case InputCommand::EndTurn:return dispatch(Key::EndTurn);
     case InputCommand::Peek:
+        if(auxiliary.screen!=AuxiliaryScreen::None)return true;
         held->key=run_mode.screen==RunMenu::Custom?253:254;
         return true;
     case InputCommand::Up:return dispatch(Key::Up);

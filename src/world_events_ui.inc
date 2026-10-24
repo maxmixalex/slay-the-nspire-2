@@ -61,63 +61,20 @@ static void native_event_option(const App&a,int option,bool description,char*out
  if(!*out&&!description){TextBuffer b{out,size,0,&a.content};b.text(e.finished?"继续前进":"继续");}
 }
 #include "ancient_dialogue_input.inc"
+#include "ancient_dialogue_ui.inc"
 static void native_ancient_screen(Canvas&c){
- auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
- const auto&motion=a.room_presentation.event;const unsigned age=a.map_clock_ms-motion.start;
- const int entering=int(182*(room_curve::Q-room_curve::expo_out(age,1000))/room_curve::Q);
+ auto&a=c.a;const auto&e=a.game.original_events;a.sync_ancient_dialogue();
+ auto&d=a.ancient_dialogue;const unsigned count=unsigned(mn(3,original_event_option_count(a.game)));
+ a.cursor=mn(mx(0,a.cursor),mx(0,int(count)-1));
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);
- c.centered(native_event_title(a),14,27,292,16,Gold);
- char key[128]{};TextBuffer k{key,sizeof key,0,&c.a.content};k.text(original_event_key(e.id));k.text(".epithet");
- c.centered(a.content.world_string("ancients",key),22,46,276,10,White);
- char text[8192]{};a.original_event_text(-1,true,text,sizeof text);
- const int lines=c.paragraph(text,66,64,231,0,0,10);
- a.scroll=mn(mx(0,a.scroll),mx(0,lines-2));
- if(*text){Canvas line=c;line.opacity=uint8_t(unsigned(line.opacity)*room_curve::linear(age,100)/room_curve::Q);
-  const auto color=native_ancient_dialogue_color(e.id);const int y=58+entering;
-  if(a.content.version()>=RoomUi7ContentVersion){
-   line.ui(I7_AncientSpeakerStart+int(native_ancient_index(e.id)),25,y+7,23,23);
-   Canvas shadow=line;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
-   shadow.nine_ui(I7_AncientDialogue,57,y+1,249,37,6,6,6,6,64);shadow.ui(I7_AncientDialogueTail,50,y+13,8,9,64);
-   Canvas bubble=line;bubble.tint_red=color.red;bubble.tint_green=color.green;bubble.tint_blue=color.blue;
-   bubble.nine_ui(I7_AncientDialogue,56,y,249,37,6,6,6,6);bubble.ui(I7_AncientDialogueTail,49,y+12,8,9);
-  }else line.dim(56,y,249,37,145);
-  line.paragraph(text,66,64+entering,231,2,a.scroll,10,rgb(255,246,226));
-  if(lines>2)line.text("…",287,79+entering,10,Gold,12);
-  const int hit_y=mx(22,y),hit_bottom=mn(240,y+37);if(hit_bottom>hit_y)c.action(25,hit_y,281,hit_bottom-hit_y,UiAction::ReadEvent);
- }
- const int count=original_event_option_count(s);a.cursor=mn(mx(0,a.cursor),mx(0,count-1));
- // The original ancient scene is a centered VBox of three 1000x100 rows.
- // Keep that hierarchy while enlarging type and targets for 320x240.
- for(int i=0;i<count&&i<3;i++){
-  const int y=(e.finished?196:106+i*42)+entering;bool enabled=original_event_option_enabled(s,i);
-  const bool selected=enabled&&(a.pointer.visible||age>=800)&&merchant_hovered(a,i,14,y,292,40);
-  int image=a.content.world_image("events","ANCIENT_OPTION");if(image<0)image=a.content.ui_image(U_EventButton);
-  const auto color=native_ancient_button_color(e.id);Canvas button=c;
-  button.tint_red=uint8_t(div255(button.tint_red*color.red));
-  button.tint_green=uint8_t(div255(button.tint_green*color.green));
-  button.tint_blue=uint8_t(div255(button.tint_blue*color.blue));
-  button.picture(image,14,y,292,40,color.alpha);
-  if(selected&&enabled){
-   image=a.content.world_image("events","ANCIENT_OPTION_OUTLINE");if(image<0)image=a.content.ui_image(U_EventOutline);
-   Canvas outline=c;outline.tint_red=uint8_t(div255(outline.tint_red*120));
-   outline.tint_blue=uint8_t(div255(outline.tint_blue*254));
-   // Original BlueGlow and additive material; its 1024x124 rect, scale
-   // and pivot normalize to this independent 301x52 outline.
-   outline.picture(image,10,y-6,301,52,192,presentation::Add);
-  }
-  bool icon=!e.finished&&i<e.offer_count&&e.offers[i]<WorldRelicKinds;
-  if(icon)c.picture(a.relic_face_image(e.offers[i]),24,y+8,24,24);
-  char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);
-  int tx=icon?60:26,tw=icon?234:268;
-  Canvas label_canvas=c;if(!enabled)label_canvas.opacity=uint8_t(div255(label_canvas.opacity*179));
-  if(e.finished)label_canvas.centered(label,26,y+12,268,12,enabled?Gold:Red);
-  else{
-   label_canvas.text(label,tx,y+2,10,enabled?Gold:Red,tw);
-   int rows=label_canvas.paragraph(description,tx,y+14,tw,2,0,10,White);
-   if(rows>2){c.dim(283,y+26,14,12,180);c.text("…",285,y+26,10,enabled?Gold:Muted,12);}
-  }
-  const int hit_y=mx(22,y),hit_bottom=mn(240,y+40);if(hit_bottom>hit_y)c.hit(14,hit_y,292,hit_bottom-hit_y,HitKind::Choice,i,enabled);
- }
+ const int dialogue_height=ancient_measure(c,count),top=d.y(a.map_clock_ms)+d.scroll;
+ Canvas clipped=c;clipped.pixels+=ancient_layout::ClipY*clipped.pitch+ancient_layout::ClipX;
+ clipped.clip_w=ancient_layout::ClipW;
+ clipped.clip_h=(d.last()?ancient_layout::Bottom:ancient_layout::NextBottom)-ancient_layout::ClipY;
+ ancient_dialogue_lines(c,clipped,top);
+ if(d.last())for(unsigned i=0;i<count;++i)ancient_option(c,clipped,int(i),top+dialogue_height+(d.count?2:0)+ancient_layout::option_y(i));
+ else ancient_next_button(c);
+ native_ancient_banner(c);
 }
 static void native_fake_price(Canvas&c,int amount,int x,int y,bool enabled){
  char text[24]{};TextBuffer b{text,sizeof text,0,&c.a.content};b.number(amount);int left=x-(c.width(text,10)+13)/2;

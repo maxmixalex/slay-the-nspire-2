@@ -86,7 +86,12 @@ static void enemy_die(State&s,int t){
   if(kind==EnemyId::TorchHeadAmalgam&&observer.kind==EnemyId::Queen){observer.data[0]=1;if(observer.node==2)enemy_set_move(s,other,5,true);}
  }
  if(illusion){m.resume_node=m.previous;m.flags|=EnemyDown;enemy_set_move(s,t,30,true);notify_enemy_animation(s,t,"StunTrigger");}
- else if(adaptable){m.flags|=EnemyDown;enemy_set_move(s,t,0,true);notify_enemy_animation(s,t,"DeadTrigger");}
+ else if(adaptable){
+  // TestSubject.TriggerDeadState counts the knockout before its animation,
+  // even if the player dies before the following turn can revive it.
+  if(kind==EnemyId::TestSubject&&s.test_subject_kills<UINT16_MAX)++s.test_subject_kills;
+  m.flags|=EnemyDown;enemy_set_move(s,t,0,true);notify_enemy_animation(s,t,"DeadTrigger");
+ }
  else if(reattach){m.flags|=EnemyDown;enemy_set_move(s,t,3,true);}
  else if(steam){m.data[2]=1;s.enemies[t].hp=s.enemies[t].max_hp=999999999;enemy_set_move(s,t,6,true);}
  const bool retained=illusion||adaptable||reattach||steam;

@@ -153,3 +153,16 @@ The offline HTML packager includes it with the existing notices.
 The pinned public sources, table reconstruction procedure and measured error
 limits are documented in `docs/rich-rainbow-0.17.md`. These mathematical tables
 contain no original game image, font or localization payload.
+
+## Optional auxiliary-text glyph fallbacks
+
+The private content conversion can use the real Noto Emoji and Noto Sans
+Symbols2 fonts from Google Fonts to cover symbols absent from the pinned
+game fonts. Only required glyphs are baked; font files remain private inputs.
+These fonts are licensed under the SIL Open Font License 1.1. The complete
+copyright notices and license terms are included in
+`licenses/NotoEmoji-OFL.txt` and `licenses/NotoSansSymbols2-OFL.txt`, and are
+carried into the calculator ZIP and offline HTML by the packaging tools.
+
+Source: https://github.com/google/fonts/tree/main/ofl/notoemoji and
+https://github.com/google/fonts/tree/main/ofl/notosanssymbols2.

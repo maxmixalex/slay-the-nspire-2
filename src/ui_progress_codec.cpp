@@ -74,6 +74,7 @@ template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
                (i&&!p.start()&&p.erase()!=d.points[i-1].erase()))c.good=false;
         }
     }
+    if(version>=5)c.integer(v.test_subject_kills);
 }
 }
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
@@ -82,6 +83,7 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     unsigned version=value.current.mode?3:2;
     for(unsigned i=0;i<value.count&&i<UiHistoryCapacity;++i)if(value.history[i].mode)version=3;
     if(value.map_drawing.count)version=4;
+    if(value.test_subject_kills)version=5;
     out[0]='N';out[1]='S';out[2]='H';out[3]=char('0'+version);for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
@@ -90,13 +92,13 @@ size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'4')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'5')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
 }
 bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
     out={};
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'4')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]<'1'||data[3]>'5')return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
     Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
     c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);

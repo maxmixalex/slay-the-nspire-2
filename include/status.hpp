@@ -1,5 +1,6 @@
 #pragma once
 #include "core.hpp"
+#include "power_values.hpp"
 #include "ui_assets.hpp"
 namespace spire {
 // Names follow the pinned power localization. Descriptions use {n} for the
@@ -28,56 +29,8 @@ inline constexpr StatusDefinition status_definitions[]={
 #include "character_status_definitions.inc"
 #include "five_character_status_definitions.inc"
 };
-constexpr int LegacyStatusKinds=sizeof(status_definitions)/sizeof(status_definitions[0]);
-constexpr int EnemyStatusStart=LegacyStatusKinds,EventCardStatusStart=EnemyStatusStart+EnemyPowerCount;
-constexpr int StatusKinds=EventCardStatusStart+EventCardPowerKinds;
-constexpr int IroncladStatusStart=47,SilentStatusStart=IroncladStatusStart+IPowerCount;
-constexpr int CharacterExtraStatusStart=SilentStatusStart+SPowerCount-2;
-constexpr int DefectStatusStart=CharacterExtraStatusStart+6,RegentStatusStart=DefectStatusStart+DPowerCount;
-constexpr int NecroStatusStart=RegentStatusStart+RPowerCount,FiveCharacterExtraStatusStart=NecroStatusStart+NPowerCount;
-static_assert(IPowerCount==18&&SPowerCount==22&&DPowerCount==24&&RPowerCount==22&&NPowerCount==22&&LegacyStatusKinds==FiveCharacterExtraStatusStart+5,"Keep power and status directories aligned");
-inline int status_amount(const State&s,int actor,int id){
-    if(id<0||id>=StatusKinds||actor<0||actor>s.enemy_count)return 0;
-    if(id>=EventCardStatusStart)return actor==0?s.event_cards.powers[id-EventCardStatusStart]:0;
-    if(id>=EnemyStatusStart){
-        if(!s.enemy_world.active||actor&&s.enemies[actor-1].hp<=0)return 0;EnemyPower power=EnemyPower(id-EnemyStatusStart);
-        if(actor){if(power==EnemyPower::Strength||power==EnemyPower::Weak||power==EnemyPower::Vulnerable||power==EnemyPower::Artifact||power==EnemyPower::Debilitate)return 0;}
-        else if(power==EnemyPower::Strength||power==EnemyPower::Dexterity||power==EnemyPower::Thorns||power==EnemyPower::Vigor||power==EnemyPower::Weak||power==EnemyPower::Vulnerable||power==EnemyPower::Plating||power==EnemyPower::Ritual||power==EnemyPower::Intangible)return 0;
-        return enemy_power_value(s,actor-1,power);
-    }
-    if(actor){const auto&e=s.enemies[actor-1];if(!e.hp)return 0;
-        if(id==CharacterExtraStatusStart+1)return s.silent.strangle[actor-1];
-        if(id==CharacterExtraStatusStart+2)return s.silent.enemy_artifact[actor-1];
-        if(id==CharacterExtraStatusStart+3)return s.expansion.restore_strength[actor-1];
-        if(id==40)return s.expansion.demise[actor-1];
-        if(id==41)return s.expansion.beetle[actor-1];
-        if(id==42)return s.expansion.doom[actor-1];
-        if(id==FiveCharacterExtraStatusStart)return s.regent.conqueror[actor-1];
-        if(id==FiveCharacterExtraStatusStart+1)return s.necro.debilitate[actor-1];
-        if(id==FiveCharacterExtraStatusStart+2)return s.necro.hang[actor-1];
-        if(id==FiveCharacterExtraStatusStart+3)return s.necro.oblivion[actor-1];
-        if(id==FiveCharacterExtraStatusStart+4)return s.necro.sic_em[actor-1];
-        switch(id){case 0:return e.strength;case 4:return e.weak;case 5:return e.vulnerable;case 6:return e.poison;default:return 0;}}
-    const int values[]={s.strength,s.dexterity,s.vigor,s.thorns,s.enemy_world.active?enemy_power_value(s,-1,EnemyPower::Weak):0,s.enemy_world.active?enemy_power_value(s,-1,EnemyPower::Vulnerable):0,0,s.pain,s.embrace,
-        s.no_draw,s.no_block,s.noxious_fumes,s.accuracy,s.demon_form,s.infinite_blades,
-        s.flame_barrier,s.block_next_turn,s.draw_next_turn};
-    if(id<18)return values[id];
-    if(id<40)return s.expansion.powers[id-18];
-    if(id==42)return s.necro.player_doom;
-    if(id==43){int n=0;for(auto turns:s.expansion.bomb_turns)n+=turns!=0;return n;}
-    if(id==44)return s.expansion.stars;
-    if(id==45)return s.expansion.osty_hp;
-    if(id==46)return s.expansion.orb_count;
-    if(id>=IroncladStatusStart&&id<SilentStatusStart)return s.ironclad.powers[id-IroncladStatusStart];
-    if(id>=SilentStatusStart&&id<CharacterExtraStatusStart)return s.silent.powers[id-SilentStatusStart];
-    if(id==CharacterExtraStatusStart){int n=0;for(auto active:s.silent.nightmare_active)n+=active!=0;return n;}
-    if(id==CharacterExtraStatusStart+4)return s.ironclad.setup_strength;
-    if(id==CharacterExtraStatusStart+5)return s.silent.extra_rewards;
-    if(id>=DefectStatusStart&&id<RegentStatusStart)return s.defect.powers[id-DefectStatusStart];
-    if(id>=RegentStatusStart&&id<NecroStatusStart)return s.regent.powers[id-RegentStatusStart];
-    if(id>=NecroStatusStart&&id<FiveCharacterExtraStatusStart)return s.necro.powers[id-NecroStatusStart];
-    return 0;
-}
+static_assert(sizeof(status_definitions)/sizeof(status_definitions[0])==LegacyStatusKinds,"Keep the power model and visual directories aligned");
+inline int status_amount(const State&s,int actor,int id){return power_amount(s,actor,id);}
 inline int collect_statuses(const State&s,int actor,int* out){
     int count=0;for(int i=0;i<StatusKinds;i++){
         // NStarCounter is a combat resource control, never a Power icon.

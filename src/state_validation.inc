@@ -1,5 +1,5 @@
 bool validate(const State&s){
-    if(!valid_run_options(s.run_options))return false;
+    if(!valid_run_options(s.run_options)||!valid_power_order(s))return false;
     if((int)s.phase>(int)Phase::OriginalEventChoice||s.practice>1||(!s.world.active&&s.floor>MapRows)||s.max_hp<1||s.max_hp>999||s.hp<0||s.hp>s.max_hp||s.energy<0||s.energy>999||s.turn<0||s.turn>20000)return false;
     if((unsigned)s.character>=CharacterKinds||s.noxious_fumes<0||s.noxious_fumes>9999||s.accuracy<0||s.accuracy>9999||s.discard_required>MaxHand)return false;
     if(s.phase!=Phase::DiscardChoice&&s.discard_required)return false;

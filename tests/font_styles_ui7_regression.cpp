@@ -45,6 +45,14 @@ static void direct(){
  CHECK(app.content.glyph_metrics('A',8,2).advance==4);
  CHECK(app.content.glyph_metrics('A',8,3).advance==6);
  CHECK(app.content.glyph_metrics('B',8,2).advance==3); // unbaked style uses same regular codepoint
+ CHECK(c.width(u8"A\ufe0fB",8)==5&&c.width(u8"A\U000e0100B",8)==5);
+ for(unsigned cp:{0xfe0fu,0xfe0eu,0x200du,0xe0100u}){
+  CHECK(!app.content.glyph(cp,8).pixels&&app.content.glyph(cp,8).advance==0);
+  CHECK(app.content.glyph_metrics(cp,8).w==0&&app.content.glyph_metrics(cp,8).advance==0);
+ }
+ RichReader invisible(u8"A\ufe0f\u200dB");RichChar visible{};
+ CHECK(invisible.next(visible)&&visible.codepoint=='A'&&visible.index==0);
+ CHECK(invisible.next(visible)&&visible.codepoint=='B'&&visible.index==1);CHECK(!invisible.next(visible));
  CHECK(app.content.glyph_metrics('Z',8,1).advance==1); // then ordinary ? fallback
  CHECK(c.width("A[b]A[/b][i]A[/i][b][i]A[/i][/b]",8)==17);
  CHECK(c.width("[b]A[/b]B",8)==8);
@@ -77,6 +85,8 @@ struct Provider {
 };
 static void provider(){
  auto bytes=fixture();Provider p{&bytes};CHECK(app.content.open(p.source()));const auto opened=p.calls;
+ for(unsigned face=0;face<8;++face){CHECK(app.content.glyph_metrics(0xfe0f,8,face).advance==0);CHECK(app.content.glyph(0xfe0f,8,face).advance==0);}
+ CHECK(p.calls==opened);
  for(unsigned face=0;face<4;++face)CHECK(app.content.glyph_metrics('A',8,face).advance>0);
  CHECK(p.calls==opened);for(unsigned face=0;face<4;++face)CHECK(app.content.glyph('A',8,face).pixels);
  const auto warm=p.calls;CHECK(warm>opened);

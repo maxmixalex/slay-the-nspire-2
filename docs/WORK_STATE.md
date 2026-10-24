@@ -1,5 +1,32 @@
 # Work state — 2026-10-24
 
+## UI8 integrated stage 5 candidate
+
+The last remotely verified asset checkpoint is
+`9a2b319c668022c314930e2f5c3253df11af5764`. Stage 4b
+(`2f3f18f11b16263456cf3dd0cc8a7525291ddf71`) compiled and passed 90/93
+native CTest suites; the old enlarged card-preview expectation and two real
+Crystal terminal/cursor defects are corrected in this candidate. Failed
+journals remain intact. Stage 4 ARM packaging passed the unchanged 16 MiB
+allocation gate at 16,610,388 bytes; this is historical, not stage 5 acceptance.
+
+The integrated candidate includes original card/loot reward geometry and
+continuous scrolling, retained room underlays, full ancient conversation
+history, credits, patch-note reader, local feedback export, real ordered and
+independent power instances, Test Subject progression, v17/NSH5 persistence,
+and actual browser save-version migration. Font conversion now resolves
+missing characters through actual original and OFL fallback fonts; format
+selectors retain their UTF-8 text with zero visual width. A fixed Crystal
+coordinate table removes 1,902 software divisions per frame without changing
+its formula; its whole-frame old-formula oracle is included for execution.
+
+Stage 5 asset and font conversions before the final credits/fallback changes
+passed, but those outputs are not final delivery packs. Next: save and read
+back this coherent source, freeze it, then run native behavior/artwork gates,
+final font/resource conversion, WASM/browser and ARM/Firebird in parallel.
+Only verified compiling progress is to be synchronized to main. No 95%
+reconstruction or physical-device performance claim has been established.
+
 ## UI8 recovery and integrated implementation (in progress)
 
 ### Stage 4 candidate, following verified stage 3

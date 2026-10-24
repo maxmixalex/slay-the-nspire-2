@@ -32,8 +32,18 @@ static void event_reader_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,235);
     c.ui(U_RewardPanel,4,5,312,230);c.centered(event_title(c),18,18,278,16,Gold);c.close_button(289,10);
     char full[12288]{};const char*text=a.content.string(event_body_text(a.game));
-    if(a.game.original_events.active){a.original_event_text(-1,true,full,sizeof full);TextBuffer b{full,sizeof full,0,&c.a.content};while(full[b.n])++b.n;
-        for(unsigned i=0;i<original_event_option_count(a.game);i++){char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);b.text("\n\n[gold]");b.text(label);b.text("[/gold]\n");b.text(description);}text=full;}
+    if(a.game.original_events.active){
+        const bool ancient=ui_ancient_event(a.game.original_events.id);if(ancient)a.sync_ancient_dialogue();
+        TextBuffer b{full,sizeof full,0};
+        if(ancient&&a.ancient_dialogue.count){
+            const auto&d=a.ancient_dialogue;
+            for(unsigned i=0;i<d.count&&i<=d.current;++i){char line[8192]{};a.ancient_dialogue_text(i,line,sizeof line);
+                if(i)b.text("\n\n");b.text("[gold]");
+                b.text(d.character_lines&(1u<<i)?a.content.world_title("characters",character_definitions[unsigned(a.game.character)].key):native_event_title(a));
+                b.text("[/gold]\n");b.text(line);}
+        }else if(!ancient){a.original_event_text(-1,true,full,sizeof full);while(full[b.n])++b.n;}
+        if(!ancient||a.ancient_dialogue.last())for(unsigned i=0;i<original_event_option_count(a.game);i++){char label[256]{},description[4096]{};native_event_option(a,i,false,label,sizeof label);native_event_option(a,i,true,description,sizeof description);b.text("\n\n[gold]");b.text(label);b.text("[/gold]\n");b.text(description);}text=full;
+    }
     int lines=c.paragraph(text,20,49,277,0,0,12);
     a.event_reader_scroll=mn(mx(0,a.event_reader_scroll),mx(0,lines-10));
     c.paragraph(text,20,49,277,10,a.event_reader_scroll,12);

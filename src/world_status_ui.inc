@@ -25,14 +25,19 @@ static const char* ui_status_title(const App&a,int id){
  const char*key=ui_status_key(id);if(!key)return a.content.ui_text(status_definitions[id].name);
  const char*title=a.content.world_title("powers",key);return *title?title:id<LegacyStatusKinds?a.content.ui_text(status_definitions[id].name):key;
 }
-static void ui_status_description(const App&a,int actor,int id,char*out,size_t size){
+static void ui_status_description(const App&a,int actor,int id,char*out,size_t size,int instance=-1){
  if(!size)return;out[0]=0;const char*key=ui_status_key(id);int amount=a.combat_status_amount(actor,id);
+ if(instance>=0&&power_instanced(unsigned(id))&&key){
+  char full[128]{};TextBuffer name{full,sizeof full,0};name.text(key);name.text(".smartDescription");
+  if(!*a.content.world_string("powers",full)){name.n=0;full[0]=0;name.text(key);name.text(".description");}
+  if(*a.content.world_string("powers",full)){a.localized_text("powers",full,out,size,instance,actor,a.combat_power_amount(power_token(unsigned(actor),unsigned(id),unsigned(instance))));return;}
+ }
  if(id==44&&*a.content.world_string("static_hover_tips","STAR_COUNT.description")){a.localized_text("static_hover_tips","STAR_COUNT.description",out,size,-1,actor,amount);return;}
  if(id==45&&*a.content.world_string("static_hover_tips","SUMMON_STATIC.description")){a.localized_text("static_hover_tips","SUMMON_STATIC.description",out,size,-1,actor,amount);return;}
  if(id==CharacterExtraStatusStart&&actor<=0&&*a.content.world_string("powers","NIGHTMARE_POWER.smartDescription")){
   TextBuffer b{out,size,0};for(int slot=0;slot<MaxNightmares;slot++)if(a.combat_status_fact(CombatStatus::NightmareActive,slot)){char line[1024]{};
-   // Each original Nightmare power owns one snapshot and makes three copies;
-   // the compact status icon's layer count is the number of active snapshots.
+   // The optional details browser lists all original independent snapshots.
+   // The battle strip itself renders each snapshot and its own tooltip.
    a.localized_text("powers","NIGHTMARE_POWER.smartDescription",line,sizeof line,slot,actor,3);if(b.n)b.ch('\n');b.text(line);
   }return;
  }
@@ -58,6 +63,5 @@ static void ui_status_description(const App&a,int actor,int id,char*out,size_t s
  TextBuffer b{out,size,0};for(const char*p=a.content.ui_text(status_definitions[id].description);*p;){if(p[0]=='{'&&p[1]=='n'&&p[2]=='}'){b.number(amount);p+=3;}else b.ch(*p++);}
 }
 static const char* ui_enemy_name(const App&a,int enemy){
- if(enemy<0||enemy>=a.game.enemy_count)return "";const auto*d=enemy_definition(ui_intent_enemy_kind(a,enemy));if(!d)return "";
- char key[128]{};TextBuffer b{key,sizeof key,0};b.text(d->key);b.text(".name");const char*name=a.content.world_string("monsters",key);return *name?name:d->key;
+ return enemy>=0&&enemy<a.game.enemy_count?a.monster_title(ui_intent_enemy_kind(a,enemy)):"";
 }

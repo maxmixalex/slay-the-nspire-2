@@ -64,8 +64,16 @@ static HitRegion hit(HitKind kind,int value){
  unsigned count=0;HitRegion found{};for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==kind&&a.hits[i].value==value){found=a.hits[i];++count;}
  CHECK(count==1);CHECK(found.x>=0&&found.y>=0&&found.w>0&&found.h>0&&found.x+found.w<=ScreenW&&found.y+found.h<=ScreenH);return found;
 }
+static void settle_list(){
+ a.render();for(unsigned i=0;i<48&&a.reward_presentation.list_scroll.position!=a.reward_presentation.list_scroll.target;++i){a.advance(33);a.render();}
+ CHECK(a.reward_presentation.list_scroll.position==a.reward_presentation.list_scroll.target);
+}
 static void press(HitKind kind,int value){
- a.render();const auto h=hit(kind,value);CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;
+ a.render();if(a.card_reward_active()&&(kind==HitKind::WorldChoice||kind==HitKind::Choice)&&!a.card_reward_input_ready()){
+  a.advance(250);a.advance(100);a.render();
+ }
+ if(a.reward_list_interactive())settle_list();
+ const auto h=hit(kind,value);CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;
 }
 static void press_action(UiAction action){press(HitKind::UiAction,int(action));}
 static void present(){
@@ -81,10 +89,12 @@ static void capture(const char*name){
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
-static void single_column(unsigned expected){
- a.render();CHECK(hit_count(HitKind::WorldChoice)==expected);int x=-1,y=-1,right=-1;
- // Original 402x86 reward rows fit inside the projected 160px paper panel.
- for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::WorldChoice){const auto&h=a.hits[i];CHECK(h.enabled&&h.w>=120&&h.w<=132&&h.h>=26&&h.h<=30);if(x>=0)CHECK(h.x==x&&h.x+h.w==right&&h.y>=y);x=h.x;right=h.x+h.w;y=h.y+h.h;}
+static void single_column(unsigned total){
+ a.render();const unsigned visible=hit_count(HitKind::WorldChoice);CHECK(visible>0&&visible<=6&&visible<=total);if(total<=4)CHECK(visible==total);int x=-1,y=-1,right=-1;
+ // Original 402x86 rows and the 474x484 clipping mask at 4/21 scale.
+ const int dy=a.reward_presentation.window(a.map_clock_ms).y;
+ for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::WorldChoice){const auto&h=a.hits[i];CHECK(h.enabled&&h.w==81&&h.h>0&&h.h<=18&&h.y>=82+dy&&h.y+h.h<=174+dy);if(x>=0)CHECK(h.x==x&&h.x+h.w==right&&h.y>=y);x=h.x;right=h.x+h.w;y=h.y+h.h;}
+ CHECK(!has_action(UiAction::PreviousWorldPage)&&!has_action(UiAction::NextWorldPage));
 }
 static unsigned reward_position(unsigned kind,unsigned value=65535){
  const auto&w=a.game.world_relics;for(unsigned i=0;i<w.offer_count;i++){const auto&r=w.rewards[w.offers[i]];if(r.kind==kind&&(value==65535||r.value==value))return i;}CHECK(false);return 0;
@@ -96,21 +106,31 @@ static void single_reward(unsigned kind,unsigned value){auto&w=a.game.world_reli
 }
 static void glass_eye(){
  reset();add(WorldRelicDriftwood);add(WorldRelicPaelsWing);CHECK(gain_world_relic(a.game,WorldRelicGlassEye));present();auto&w=a.game.world_relics;
- CHECK(w.choice==WorldRelicChoice::OfferReward&&w.offer_count==5&&a.world_choice_page_size()==4);single_column(4);snapshot();
+ CHECK(w.choice==WorldRelicChoice::OfferReward&&w.offer_count==5&&a.world_choice_page_size()>=w.offer_count);single_column(5);snapshot();
  CHECK(a.reward_presentation.window(a.map_clock_ms).alpha==0);
  a.advance(250);a.render();CHECK(a.reward_presentation.window(a.map_clock_ms).alpha>100&&a.reward_presentation.window(a.map_clock_ms).alpha<200);unchanged();capture("rewards-glass-eye-entering");
  a.advance(250);a.render();CHECK(a.reward_presentation.window(a.map_clock_ms).alpha==255);unchanged();capture("rewards-glass-eye-settled");
- a.input(Key::Down);CHECK(a.cursor==1);a.input(Key::Up);CHECK(a.cursor==0);a.pointer_scroll(1);CHECK(a.cursor==4);single_column(1);unchanged();capture("rewards-glass-eye-page-2");
- press_action(UiAction::PreviousWorldPage);CHECK(a.cursor==0);single_column(4);unchanged();capture("rewards-glass-eye");
+ a.input(Key::Down);CHECK(a.cursor==1);a.input(Key::Up);CHECK(a.cursor==0);a.render();a.pointer_scroll(1);CHECK(a.cursor==0&&a.reward_presentation.list_scroll.target>0);settle_list();single_column(5);unchanged();capture("rewards-glass-eye-scroll");
+ a.pointer_move(190,130);a.pointer_button(true);a.pointer_move(190,105);a.pointer_button(false);CHECK(a.game.deck_count>0&&w.choice==WorldRelicChoice::OfferReward);unchanged();
+ a.pointer_scroll(-40);settle_list();while(a.cursor)a.input(Key::Up);a.pointer.visible=false;settle_list();CHECK(a.cursor==0);single_column(5);unchanged();capture("rewards-glass-eye");
  const unsigned reward=w.offers[0],deck=a.game.deck_count;const int gold=a.game.gold;const auto rng=a.game.world.rng[unsigned(WorldRng::Rewards)];
  uint16_t original[8]{};for(unsigned i=0;i<w.rewards[reward].count;i++)original[i]=w.rewards[reward].tokens[i];
- press_reward(0);CHECK(a.world_choice_is_card_reward()&&w.choice_reward==reward+1&&a.world_choice_page_size()==3);a.render();CHECK(hit_count(HitKind::WorldChoice)==3);CHECK(has_action(UiAction::RerollReward)&&has_action(UiAction::SacrificeReward));capture("rewards-card-row");
+ press_reward(0);CHECK(a.world_choice_is_card_reward()&&w.choice_reward==reward+1&&a.world_choice_page_size()>=w.offer_count);a.render();CHECK(hit_count(HitKind::WorldChoice)==3);CHECK(has_action(UiAction::RerollReward)&&has_action(UiAction::SacrificeReward));
+ CHECK(a.cursor==1);snapshot();CHECK(!hit(HitKind::WorldChoice,1).enabled);a.input(Key::Confirm);unchanged();
+ a.advance(250);a.advance(99);a.render();CHECK(!hit(HitKind::WorldChoice,1).enabled);a.input(Key::Confirm);unchanged();
+ a.advance(1);a.render();CHECK(hit(HitKind::WorldChoice,1).enabled);a.advance(150);a.render();
+ CHECK(hit(HitKind::WorldChoice,0).x+hit(HitKind::WorldChoice,0).w/2==93);
+ CHECK(hit(HitKind::WorldChoice,1).x+hit(HitKind::WorldChoice,1).w/2==160);
+ CHECK(hit(HitKind::WorldChoice,2).x+hit(HitKind::WorldChoice,2).w/2==227);
+ CHECK(hit(HitKind::WorldChoice,1).w>hit(HitKind::WorldChoice,0).w);a.advance(250);a.advance(250);a.render();unchanged();capture("rewards-card-row");
  snapshot();a.input(Key::Detail);CHECK(a.detail_card>=0);a.render();a.pointer_scroll(4);a.input(Key::Back);CHECK(a.detail_card<0);a.render();unchanged();
  // Back only closes the card overlay. It does not spend the parent reward,
  // repopulate it, or modify the deck; reopening sees those same three cards.
  a.input(Key::Back);CHECK(w.choice==WorldRelicChoice::OfferReward&&!(w.rewards[reward].flags&1)&&a.game.deck_count==deck&&a.game.gold==gold);
  CHECK(!std::memcmp(&rng,&a.game.world.rng[unsigned(WorldRng::Rewards)],sizeof rng));press_reward(0);for(unsigned i=0;i<w.offer_count;i++)CHECK(w.offers[i]==original[i]);
- press_action(UiAction::RerollReward);CHECK(a.world_choice_is_card_reward()&&w.choice_reward==reward+1&&!world_relic_can_reroll_reward(a.game));a.render();CHECK(!has_action(UiAction::RerollReward));
+ a.render();snapshot();const auto alternate_key=a.input_bindings.keys[0][unsigned(InputCommand::Exhaust)];
+ CHECK(a.physical_key(alternate_key,true));unchanged();CHECK(a.physical_key(alternate_key,false));
+ CHECK(a.world_choice_is_card_reward()&&w.choice_reward==reward+1&&!world_relic_can_reroll_reward(a.game));a.render();CHECK(!has_action(UiAction::RerollReward));
  for(unsigned i=0;i<w.offer_count;i++)CHECK(card_rarity(card_from_token(w.offers[i]).kind)==2);snapshot();a.ui_action(UiAction::RerollReward);unchanged();
  const auto selected=w.offers[1];press(HitKind::WorldChoice,1);CHECK(a.game.deck_count==deck+1&&card_token(a.game.deck[deck])==selected&&w.choice==WorldRelicChoice::OfferReward&&w.offer_count==4);
  CHECK(!a.choice_selected_count);press_reward(0);const unsigned sacrificed=w.choice_reward-1;press_action(UiAction::SacrificeReward);
@@ -132,15 +152,15 @@ static void potion_and_special(){
 }
 static void last_reward_indexes(){
  reset();single_reward(4,1);auto&w=a.game.world_relics;w.reward_count=w.offer_count=MaxWorldRelicRewards;
- for(unsigned i=0;i<MaxWorldRelicRewards;i++){auto&r=w.rewards[i];r=WorldRelicReward{};r.group=1;r.kind=4;r.value=uint16_t(i+1);w.offers[i]=uint16_t(i);}present();a.cursor=MaxWorldRelicRewards-2;snapshot();a.input(Key::Down);CHECK(a.cursor==MaxWorldRelicRewards-1);single_column(4);unchanged();
+ for(unsigned i=0;i<MaxWorldRelicRewards;i++){auto&r=w.rewards[i];r=WorldRelicReward{};r.group=1;r.kind=4;r.value=uint16_t(i+1);w.offers[i]=uint16_t(i);}present();a.cursor=MaxWorldRelicRewards-2;snapshot();a.input(Key::Down);CHECK(a.cursor==MaxWorldRelicRewards-1);settle_list();single_column(MaxWorldRelicRewards);unchanged();
  const int gold=a.game.gold;press_reward(MaxWorldRelicRewards-1);CHECK(a.game.gold==gold+MaxWorldRelicRewards&&w.offer_count==MaxWorldRelicRewards-1);snapshot();
  reset();CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,31,1)&&original_event_choose(a.game,1));auto&e=a.game.original_events;
  e.finished=1;e.selection=OriginalEventSelection::Rewards;e.select_min=0;e.select_max=1;e.select_cancelable=1;e.reward_active=1;e.reward_count=MaxOriginalEventRewards;e.reward_current=NoOriginalEventReward;e.reward_card_count=0;
- for(auto&r:e.rewards){r=OriginalEventReward{};r.kind=1;r.amount=1;}a.game.phase=Phase::OriginalEventChoice;present();a.cursor=MaxOriginalEventRewards-2;snapshot();a.input(Key::Down);CHECK(a.cursor==MaxOriginalEventRewards-1);single_column(MaxOriginalEventRewards%4?MaxOriginalEventRewards%4:4);unchanged();
+ for(auto&r:e.rewards){r=OriginalEventReward{};r.kind=1;r.amount=1;}a.game.phase=Phase::OriginalEventChoice;present();a.cursor=MaxOriginalEventRewards-2;snapshot();a.input(Key::Down);CHECK(a.cursor==MaxOriginalEventRewards-1);settle_list();single_column(MaxOriginalEventRewards);unchanged();
  const int event_gold=a.game.gold;press(HitKind::WorldChoice,MaxOriginalEventRewards-1);CHECK(a.game.gold==event_gold+1&&e.rewards[MaxOriginalEventRewards-1].claimed);snapshot();capture("rewards-crystal-last-index");
 }
 static void event_card_rewards(){
- reset();add(WorldRelicDriftwood);CHECK(original_event_begin(a.game,OriginalEventId::ColorfulPhilosophers,5,0)&&original_event_choose(a.game,0));present();auto&e=a.game.original_events;CHECK(e.selection==OriginalEventSelection::Rewards);single_column(e.reward_count<4?e.reward_count:4);
+ reset();add(WorldRelicDriftwood);CHECK(original_event_begin(a.game,OriginalEventId::ColorfulPhilosophers,5,0)&&original_event_choose(a.game,0));present();auto&e=a.game.original_events;CHECK(e.selection==OriginalEventSelection::Rewards);single_column(e.reward_count);
  const unsigned deck=a.game.deck_count;press(HitKind::WorldChoice,0);CHECK(a.world_choice_is_card_reward());const unsigned current=e.reward_current;uint16_t original[MaxOriginalEventOffers]{};for(unsigned i=0;i<e.offer_count;i++)original[i]=e.offers[i];
  a.input(Key::Back);CHECK(e.selection==OriginalEventSelection::Rewards&&!e.rewards[current].claimed);press(HitKind::WorldChoice,0);for(unsigned i=0;i<e.offer_count;i++)CHECK(e.offers[i]==original[i]);
  const unsigned chosen=e.offers[0];press(HitKind::WorldChoice,0);CHECK(a.game.deck_count==deck+1&&card_token(a.game.deck[deck])==chosen);CHECK(e.selection==OriginalEventSelection::Rewards&&e.rewards[current].claimed);snapshot();press_action(UiAction::LeaveWorldRewards);CHECK(a.game.phase==Phase::Event&&e.finished&&!e.reward_active);snapshot();
@@ -148,7 +168,7 @@ static void event_card_rewards(){
 static void event_combat_rewards(){
  reset();CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));a.game.original_events=OriginalEventState{};potion_set(a.game,0,Potion::FoulPotion);
  CHECK(original_event_begin(a.game,OriginalEventId::FakeMerchant,23,1)&&use_potion(a.game,0,-1));for(unsigned i=0;i<a.game.enemy_count;i++)a.game.enemies[i].hp=0;resolve_pending(a.game);present();auto&w=a.game.world_relics;
- CHECK(w.choice==WorldRelicChoice::OfferReward&&w.offer_count>=9);single_column(4);const unsigned group=w.choice_group;press_reward(reward_position(1));CHECK(a.world_choice_is_card_reward());a.input(Key::Back);CHECK(w.choice==WorldRelicChoice::OfferReward);
+ CHECK(w.choice==WorldRelicChoice::OfferReward&&w.offer_count>=9);single_column(w.offer_count);const unsigned group=w.choice_group;press_reward(reward_position(1));CHECK(a.world_choice_is_card_reward());a.input(Key::Back);CHECK(w.choice==WorldRelicChoice::OfferReward);
  press_reward(reward_position(2,WorldRelicFakeMerchantsRug));CHECK(has_world_relic(a.game,WorldRelicFakeMerchantsRug)&&w.choice_group==group);press_reward(reward_position(1));const unsigned deck=a.game.deck_count,token=w.offers[0];press(HitKind::WorldChoice,0);
  CHECK(a.game.deck_count==deck+1&&card_token(a.game.deck[deck])==token&&a.game.original_events.combat_pending&&w.choice_group==group);capture("rewards-combat-extras");snapshot();
  // Terminal Skip continues through the saved combat parent in one public UI

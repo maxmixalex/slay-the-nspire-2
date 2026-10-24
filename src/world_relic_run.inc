@@ -52,7 +52,7 @@ void world_relic_run_hook(State& s,unsigned serial,WorldRelicHook hook,int a,int
   case WorldRelicVajra:if(combat){world_relic_flash(s,r.id);wr_strength(s,1);}break;
   case WorldRelicSwordOfJade:if(combat){world_relic_flash(s,r.id);wr_strength(s,3);}break;
   case WorldRelicOddlySmoothStone:if(combat){world_relic_flash(s,r.id);world_relic_gain_dexterity(s,1);}break;
-  case WorldRelicBronzeScales:if(combat){world_relic_flash(s,r.id);s.thorns=int16_t(w_min(9999,s.thorns+3));}break;
+  case WorldRelicBronzeScales:if(combat){world_relic_flash(s,r.id);s.thorns=int16_t(w_min(9999,s.thorns+3));power_order_set(s,0,3,s.thorns!=0);}break;
   case WorldRelicSlingOfCourage:if(world_room_type(s)==unsigned(WorldRoom::Elite)){world_relic_flash(s,r.id);wr_strength(s,2);}break;
   case WorldRelicDataDisk:if(combat){world_relic_flash(s,r.id);gain_power(s,XPower::Focus,1);}break;
   case WorldRelicGorget:if(combat){world_relic_flash(s,r.id);gain_power(s,XPower::Plating,4);}break;

@@ -15,13 +15,14 @@ and Timeline remain outside the agreed single-player scope.
 - `Nodes.Combat/NPlayerHand.cs`, `NMouseCardPlay.cs`, `NControllerCardPlay.cs` and
   `NPeekButton.cs`: numeric card selection, cancellation, keyboard-only Select,
   and Peek on release. The separate combat work implements Peek's real overlay.
-- `Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs`, `NCustomRunScreen.cs` and
-  `NDailyRunScreen.cs`, plus their `.tscn` scenes: three single-player entries,
+- `Nodes.Screens.MainMenu/NSingleplayerSubmenu.cs`,
+  `Nodes.Screens.CustomRun/NCustomRunScreen.cs` and
+  `Nodes.Screens.DailyRun/NDailyRunScreen.cs`, plus their `.tscn` scenes: three single-player entries,
   custom modifiers and seed, and daily generation. The custom/daily scene uses
   original left/right columns; submenu cards inherit the 330 × 705 base button.
 - `Models.Modifiers/{Draft,SealedDeck,Insanity,Specialized,AllStar}.cs`: original
   Neow setup sequence. `ModifierModel.Pick2Good1Bad` supplies daily modifier order.
-- `Nodes.Screens.RunHistory` and `Saves/ProgressSaveManager.cs`: history order and
+- `Nodes.Screens.RunHistoryScreen` and `Saves.Managers/ProgressSaveManager.cs`: history order and
   exclusion of custom/daily runs from standard victories and ascension progress.
 - `Models.Modifiers/CharacterCards.cs`, `Factories/CardFactory.cs`,
   `Runs/CardCreationOptions.cs`, `Entities.Merchant/MerchantCardEntry.cs` and
@@ -71,6 +72,16 @@ Back cancels listening. Editing a used key swaps its previous command into the
 old binding, retaining source Confirm–EndTurn linkage in the mouse/keyboard map.
 Input Reset restores both maps immediately, matching the source input panel.
 
+The General list includes the original Send Feedback and Credits rows with their
+right-hand action buttons, after Text Effects. All eight rows are reachable by
+scroll, pointer and keyboard; opening the auxiliary screen retains the settings
+selection for return. The title's Patch Notes button uses Confirm on release
+(`E` in mouse/keyboard, Enter in keyboard-only), while Select and the desktop
+Enter fallback keep their menu-selection role. Holding a shortcut does not
+repeat it or act on a replacement screen. Auxiliary page contents and local
+feedback export belong to the separate frontend module; its complete runtime
+verification remains a checkpoint gate.
+
 Desktop/browser defaults are the original key maps: mouse/keyboard uses D for
 deck, A/S/X for piles, M for map, E for confirm/end turn, Space for Peek, and 1–0
 for cards. Keyboard-only uses Q/A/D/F for deck/piles, Tab for map, Space for
@@ -94,7 +105,7 @@ button APIs remain available.
 - Web passes normalized physical keys, keeps key-down identity through key-up,
   and transfers the bounded preference record. Initial optional reads remain
   inside the unavailable-storage fallback; a profile's record is read before
-  committing its selector. Existing run/progress imports are unchanged.
+  committing its selector. The later v17 power-order stage also passes the actual save-header version and the embedded codec capability to run storage; profile metadata transfers retain their existing interface.
 - Ndless uses the same binding/dispatch layer with a bounded matrix-edge table.
   It retains launch/exit key-release gates and the existing foreground file
   rollback behavior.
@@ -103,8 +114,9 @@ button APIs remain available.
 25-entry, little-endian 16-bit key maps. Versions 1 and 2 still decode their
 original eight bytes and select host defaults until the first save. Validation
 checks supported key codes, duplicates and the linked pair; malformed records
-do not partially overwrite preferences. Run `State` and historical run saves
-are unchanged. Web profile deletion and rollback include the new v3 preference
+do not partially overwrite preferences. Key rebinding itself does not alter
+run `State`; the separate [power-order stage](power-order-ui8-0.17.md) now writes
+v17 with historical v3–v16 reading. Web profile deletion and rollback include the new v3 preference
 record. Legacy v1/v2 compatibility flags and the v3 map update together through
 the existing transaction journal; writes through the old flags API preserve an
 existing key map.
@@ -154,3 +166,8 @@ Settings localization occupies newly appended v28 text indices 8477–8506 in
 JSON. Additional frontend modules may append after that range. Resource images
 and the total v28 auxiliary count are coordinated by the parent build, not
 hardcoded in this input layer.
+
+The stage-5 source adds complete cross-family power order, independent power
+icons and Test Subject run/profile progression. See
+[power-order-ui8-0.17.md](power-order-ui8-0.17.md) for the source contracts,
+compact migration format, measured memory cost and actual verification boundary.

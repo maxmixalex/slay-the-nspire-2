@@ -46,6 +46,7 @@ static bool sibling(char*out,const char*launcher,const char*name){
 // Exercise the exact storage implementation used by the ARM foreground host.
 #include "../platform/ndless/profile_storage.inc"
 #include "../platform/ndless/preferences_storage.inc"
+#include "../platform/ndless/feedback_storage.inc"
 static std::string path(unsigned slot,unsigned index,bool removed=false){char names[ProfileFileCount][512];CHECK(profile_paths(slot,names,removed));return names[index];}
 static Bytes selector(unsigned slot){Bytes b(spire::UiProfileSelectorBytes);spire::encode_profile_selector(slot,b.data());return b;}
 static void setup(){
@@ -129,4 +130,16 @@ static void removal(){setup();files[selector_path]=selector(1);
  fail_unlink=path(3,0,true);CHECK(request_profile(3,true));service_profile();CHECK(app.success&&!profile_info(3,summary));
  CHECK(files.count(path(3,0,true))&&!files.count(path(3,0)));
 }
-int main(){routing();summaries();recovered_selector();preferences();removal();std::printf("Ndless profiles: %u checks passed\n",checks);}
+static void feedback(){
+ setup();char destination[512],temporary[512];CHECK(profile_sibling(destination,"nSpire2-feedback.txt.tns",1));
+ CHECK(profile_sibling(temporary,"nSpire2-feedback.tmp.tns",1));const char first[]="Synthetic local report\n",second[]="Replacement draft\n";
+ const auto original=files;CHECK(write_feedback(first,sizeof first-1));CHECK(files.at(destination)==Bytes(first,first+sizeof first-1));
+ for(const auto&pair:original)CHECK(files.at(pair.first)==pair.second);
+ const auto saved=files;fail_write=temporary;CHECK(!write_feedback(second,sizeof second-1)&&files==saved);
+ fail_rename=temporary;CHECK(!write_feedback(second,sizeof second-1)&&files==saved);
+ CHECK(write_feedback(second,sizeof second-1)&&files.at(destination)==Bytes(second,second+sizeof second-1));
+ CHECK(request_profile(2,false));service_profile();CHECK(app.success);CHECK(write_feedback(first,sizeof first-1));
+ char second_destination[512];CHECK(profile_sibling(second_destination,"nSpire2-feedback.txt.tns",2));
+ CHECK(files.at(second_destination)==Bytes(first,first+sizeof first-1)&&files.at(destination)==Bytes(second,second+sizeof second-1));
+}
+int main(){routing();summaries();recovered_selector();preferences();removal();feedback();std::printf("Ndless profiles: %u checks passed\n",checks);}

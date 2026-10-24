@@ -76,7 +76,9 @@ def credits_text(table):
         used.add(key);require(key in table,'Missing credit key: '+key);return table[key]
     def lines(kind,key):
         for line in value(key).splitlines():rows.append(kind+line)
-    def header(key,major=False):lines('H' if major else 'h',key)
+    def header(key,major=False):
+        kind='H' if major else 'B' if key in ('LOC.header','TRAILER.header') else 't' if key in ('LOC_PTB.header','TRAILER_ANIMATION.header') else 's' if key.startswith('LOC_') or key=='TRAILER_EDITOR.header' else 'h'
+        lines(kind,key)
     def centered(key):lines('C',key)
     def roles(key,multi=False):
         for raw in value(key).splitlines():
@@ -90,7 +92,7 @@ def credits_text(table):
     for key in ('COMPOSER','ADDITIONAL_PROGRAMMING','ADDITIONAL_VFX','MARKETING_SUPPORT','CONSULTANTS'):
         header(key+'.header');centered(key+'.names')
     header('VOICES.header');roles('VOICES.names',True);header('LOC.header')
-    for lang in ('PTB','ZHS','ZHT','FRA','DEU','IND','ITA','JPN','KOR','POL','RUS','SPA','ESP','THA','TUR'):
+    for lang in ('PTB','ZHS','ZHT','FRA','DEU','ITA','IND','JPN','KOR','POL','RUS','SPA','ESP','THA','TUR'):
         key='LOC_'+lang;header(key+'.header')
         if key+'.team' in table:centered(key+'.team')
         if lang in ('ZHS','FRA','ITA','RUS','ESP','TUR'):roles(key+'.names')
@@ -99,11 +101,14 @@ def credits_text(table):
     for name in value('MODDING_SUPPORT.names').split('||'):rows.append('M'+name.strip())
     header('PLAYTESTERS.header')
     for name in value('PLAYTESTERS.names').split('||'):rows.append('P'+name.strip())
-    header('TRAILER.header');centered('TRAILER_ANIMATION.team');header('TRAILER_ANIMATION.header');roles('TRAILER_ANIMATION.names')
+    header('TRAILER.header');header('TRAILER_ANIMATION.header');centered('TRAILER_ANIMATION.team');roles('TRAILER_ANIMATION.names')
     header('TRAILER_EDITOR.header');roles('TRAILER_EDITOR.names')
-    for image,key in enumerate(('FMOD','SPINE','GODOT'),1):header(key);rows.append('I'+str(image))
-    rows.append('S55');centered('EXIT_MESSAGE');rows.extend(('S476','I4'))
+    for image,key in enumerate(('FMOD','SPINE','GODOT'),1):
+        rows.append('S'+str(20 if key=='GODOT' else 23));rows.append('I'+str(image));centered(key)
+    exit_lines=value('EXIT_MESSAGE').splitlines();rows.append('S'+str(max(0,76-len(exit_lines)*11)))
+    rows.extend('C'+line for line in exit_lines);rows.extend(('S476','I4'))
     require(used==set(table),'Credits omitted localized keys: '+repr(set(table)-used))
+    require(all(len(line[1:].encode('utf-8'))<192 for line in rows if line[:1] in ('M','P')), 'Credits group name exceeds display buffer')
     text='\n'.join(rows)
     require(len(text.encode('utf-8'))<16383 and all(len(line.encode('utf-8'))<1024 for line in rows),'Credits exceed line/string bounds')
     return text

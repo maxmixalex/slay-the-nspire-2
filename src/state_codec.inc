@@ -248,7 +248,7 @@ if(version>=4){F(s.no_draw);for(int t=0;t<LegacyEnemies;t++)F(s.enemies[t].weak)
  }
 #undef F
 }
-// State is too large for the calculator stack (about 198 KB in the v15
+// State is too large for the calculator stack (about 200 KB in the v17
 // runtime). The event-loop core uses one bounded, process-local codec scratch
 // object instead. Keep its storage in BSS: a static State{} would also embed
 // the full nonzero-default object in the launcher. Construction/reset still
@@ -281,24 +281,32 @@ static void code_run_options(RunOptions&o,Codec&c){
     if(c.in){o.mode=RunMode(packed&255);o.neow_current=uint8_t(packed>>8);
         o.draft_remaining=uint8_t(packed>>16);o.setup_flags=uint8_t(packed>>24);}
 }
+static void code_power_order(State&s,Codec&c){
+    compact_field<2>(s.test_subject_kills,c);compact_field<2>(s.power_sequence.count,c);
+    if(s.power_sequence.count>MaxPowerOrderEntries){c.good=false;return;}
+    for(unsigned i=0;i<s.power_sequence.count;++i)compact_field<2>(s.power_sequence.entries[i],c);
+    // Historical readers require a word-aligned payload. Only the actual
+    // prefix is written, followed by at most two zero alignment bytes.
+    while(c.good&&(c.at&3u)){const unsigned padding=c.compact(0,1);if(padding)c.good=false;}
+}
 bool save(const State&s,SaveData&out){
     if(!validate(s)||s.phase==Phase::Error)return false;
     CodecWorkspaceLease workspace;if(!workspace.state)return false;
-    State&copy=*workspace.state;copy=s;
-    const unsigned version=s.run_options.mode==RunMode::Standard?SaveVersion:CustomSaveVersion;
-    Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(version);c.field(0x41CEF1EA);code_state(copy,c,SaveVersion);
-    if(version==CustomSaveVersion)code_run_options(copy.run_options,c);
+    State&copy=*workspace.state;copy=s;power_order_reconcile(copy);
+    Codec c{out.bytes,nullptr,0,sizeof(out.bytes),true};c.field(0x3156534E);c.field(SaveVersion);c.field(0x41CEF1EA);code_state(copy,c,LegacySaveVersion);
+    code_run_options(copy.run_options,c);code_power_order(copy,c);
     c.field(0);out.size=c.at;return c.good;
 }
 bool load(State&s,const uint8_t*data,size_t len){
     if(!data||len<16||len>sizeof(SaveData::bytes)||len%4)return false;
     Codec c{nullptr,data,0,len-4,true};if(c.field(0)!=0x3156534E)return false;
     const unsigned version=c.field(0);
-    if((version<3||version>CustomSaveVersion)||c.field(0)!=0x41CEF1EA)return false;
+    if((version<3||version>SaveVersion)||c.field(0)!=0x41CEF1EA)return false;
     CodecWorkspaceLease workspace;if(!workspace.state)return false;
     State&tmp=*workspace.state;reset_in_place(tmp);
-    code_state(tmp,c,version==CustomSaveVersion?SaveVersion:version);
-    if(version==CustomSaveVersion){code_run_options(tmp.run_options,c);if(tmp.run_options.mode==RunMode::Standard)return false;}
+    code_state(tmp,c,version>=CustomSaveVersion?LegacySaveVersion:version);
+    if(version>=CustomSaveVersion){code_run_options(tmp.run_options,c);if(version==CustomSaveVersion&&tmp.run_options.mode==RunMode::Standard)return false;}
+    if(version>=17)code_power_order(tmp,c);else if(c.good)power_order_migrate(tmp);
     if(!c.good||c.at!=len-4||!validate(tmp)||tmp.phase==Phase::Error)return false;
     // Older v3-v15 files carry a checksum here; it is intentionally ignored.
     s=tmp;return true;

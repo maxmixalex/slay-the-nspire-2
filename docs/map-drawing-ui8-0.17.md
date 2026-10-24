@@ -95,8 +95,15 @@ map close/reopen, clear, capacity and run-identity changes. State save bytes are
 compared before and after drawing to verify that the UI action does not alter
 gameplay state.
 
-The same binary accepts a real matching pack and capture directory for Pencil,
-erased and cleared frames. Final English/Chinese original-art captures and
-ordinary Firebird interaction with the integrated UI8 launcher remain separate
-acceptance gates. A synthetic handler/raster pass is not presented as completed
-original-art or calculator validation.
+The same frozen binary also passed against both actual stage-three v28/1984
+English and Chinese packs, producing Pencil, erased and cleared frames. The
+inspected originals show the lower-left quill/eraser/clear tools, source tool
+selection, a clipped red stroke, a partial erase gap, a clean cleared map and
+the localized legend. The paper stays inside x18–294. Both receipts are
+retained: `ui8-map-art-eng-d2acf3c31be4.json` and
+`ui8-map-art-zhs-8d57389396f7.json`. The map's act-title banner can still be
+visible above the drawing during its independent source entry animation.
+
+Ordinary Firebird interaction with the final integrated UI8 launcher and its
+matching final resources remains a separate acceptance gate. Actual original
+art in a native frame is not represented as calculator execution or device FPS.

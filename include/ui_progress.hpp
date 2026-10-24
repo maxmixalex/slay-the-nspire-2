@@ -48,6 +48,9 @@ struct UiProgress {
     UiEnemyStatistics encounters[EncounterKinds][CharacterKinds+1]{};
     UiRunHistory current{},history[UiHistoryCapacity]{};
     MapDrawingDocument map_drawing{};
+    // Source ProgressSaveManager adds each completed run's knockouts. The
+    // current run retains its own counter in State, including saved deaths.
+    uint32_t test_subject_kills=0;
 };
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);

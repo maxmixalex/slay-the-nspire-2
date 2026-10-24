@@ -60,18 +60,18 @@ void relic_hook(State&s,RelicHook hook){
    if(id==CrackedCore){queue_extension(s,XOp::DChannel,(int)DOrb::Lightning,1);triggered=true;}
    else if(id==DivineRight){regent_gain_stars(s,3);triggered=true;}
    else if(id==BoundPhylactery){queue_extension(s,XOp::Summon,1);triggered=true;}
-   else if(id==Vajra){s.strength+=1;triggered=true;}
+   else if(id==Vajra){s.strength+=1;power_order_set(s,0,0,s.strength!=0);triggered=true;}
    else if(id==Anchor){gain_unpowered_block(s,10);triggered=true;}
-   else if(id==OddlySmoothStone){s.dexterity+=1;triggered=true;}
+   else if(id==OddlySmoothStone){s.dexterity+=1;power_order_set(s,0,1,s.dexterity!=0);triggered=true;}
    else if(id==BagOfMarbles){for(int j=0;j<s.enemy_count;j++)apply_vulnerable(s,j,1);triggered=true;}
-   else if(id==BronzeScales){s.thorns+=3;triggered=true;}
+   else if(id==BronzeScales){s.thorns+=3;power_order_set(s,0,3,s.thorns!=0);triggered=true;}
    else if(id==BagOfPreparation||id==RingOfTheSnake)triggered=true; // draw count is applied by combat entry.
   }else if(hook==RelicHook::TurnStart){
    if(id==HornCleat&&s.turn==2){gain_unpowered_block(s,14);triggered=true;}
    else if(id==CaptainsWheel&&s.turn==3){gain_unpowered_block(s,18);triggered=true;}
    else if(id==ArtOfWar&&s.turn>1&&!s.attacked_this_turn){++s.energy;triggered=true;}
    else if(id==HappyFlower){auto&n=s.relic_counters[index];if(++n==3){n=0;++s.energy;triggered=true;}}
-   else if(id==Akabeko&&s.turn==1){s.vigor+=8;triggered=true;}
+   else if(id==Akabeko&&s.turn==1){s.vigor+=8;power_order_set(s,0,2,s.vigor!=0);triggered=true;}
    else if(id==Lantern&&s.turn==1){++s.energy;triggered=true;}
   }else if(hook==RelicHook::AfterHandDraw){
    if(id==MercuryHourglass){for(int j=0;j<s.enemy_count;j++)damage_unpowered(s,j,3);triggered=true;}

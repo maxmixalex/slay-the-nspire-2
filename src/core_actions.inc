@@ -31,6 +31,13 @@ void notify_enemy_animation(const State&s,int slot,const char*trigger){
     if(observer.on_enemy_animation)observer.on_enemy_animation(observer.context,s,slot,trigger);
 }
 void record(State&s,LogKind k,int a,int b){
+    // Legacy scalar powers still emit these exact model-change logs. Record
+    // their position before observers capture the corresponding UI boundary.
+    int power=-1;
+    switch(k){case LogKind::Strength:power=0;break;case LogKind::Dexterity:power=1;break;
+      case LogKind::Pain:power=7;break;case LogKind::Embrace:power=8;break;case LogKind::NoDraw:power=9;break;
+      case LogKind::Noxious:power=11;break;case LogKind::Accuracy:power=12;break;default:break;}
+    if(power>=0)power_order_set(s,0,unsigned(power),power_amount(s,0,power)!=0);
     if(s.log_count==24){for(int i=1;i<24;i++)s.logs[i-1]=s.logs[i];s.log_count--;}
     const Log entry{k,(int32_t)a,(int32_t)b};s.logs[s.log_count++]=entry;
     // Capture the binding so a nested presentation scope can replace and
@@ -238,13 +245,13 @@ static void resolve(State&s){
         case EffectKind::ChooseReturn:
             if(alive(s)&&s.discard.count)s.phase=Phase::ReturnChoice;
             break;
-        case EffectKind::Demon:s.demon_form=(int16_t)min(9999,s.demon_form+e.value);break;
-        case EffectKind::Blades:s.infinite_blades=(int16_t)min(MaxCards,s.infinite_blades+e.value);break;
+        case EffectKind::Demon:s.demon_form=(int16_t)min(9999,s.demon_form+e.value);power_order_set(s,0,13,s.demon_form!=0);break;
+        case EffectKind::Blades:s.infinite_blades=(int16_t)min(MaxCards,s.infinite_blades+e.value);power_order_set(s,0,14,s.infinite_blades!=0);break;
         case EffectKind::DodgeBlock:{
             int before=s.block;gain_card_block(s,e.value);int gained=s.block-before;
-            s.block_next_turn=(int16_t)min(9999,s.block_next_turn+gained);
+            s.block_next_turn=(int16_t)min(9999,s.block_next_turn+gained);power_order_set(s,0,16,s.block_next_turn!=0);
             break;}
-        case EffectKind::DrawNextTurn:s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+e.value);break;
+        case EffectKind::DrawNextTurn:s.draw_next_turn=(int16_t)min(MaxCards,s.draw_next_turn+e.value);power_order_set(s,0,17,s.draw_next_turn!=0);break;
         case EffectKind::EscapeSkillBlock:
             s.expansion.last_drawn=-1;
             queue_extension(s,XOp::EscapeBlock,e.value,0,true);
@@ -311,7 +318,7 @@ static void resolve(State&s){
             s.exhaust_limit=(uint8_t)min(e.value,s.hand.count);
             if(s.exhaust_limit)s.phase=Phase::ExhaustManyChoice;
             break;
-        case EffectKind::NoBlock:s.no_block=(int16_t)min(9999,s.no_block+e.value);break;
+        case EffectKind::NoBlock:s.no_block=(int16_t)min(9999,s.no_block+e.value);power_order_set(s,0,10,s.no_block!=0);break;
         case EffectKind::NoDraw:s.no_draw=1;record(s,LogKind::NoDraw);break;
         case EffectKind::Energy:s.energy=min(999,s.energy+e.value);record(s,LogKind::Energy,e.value);break;
         case EffectKind::LoseHp:player_hp_loss(s,e.value,false,false);break;
@@ -339,7 +346,7 @@ static void resolve(State&s){
             s.embrace=min(99,s.embrace+e.value);record(s,LogKind::Embrace,s.embrace);break;
         case EffectKind::Finish:finish_extended_card(s);break;
         }
-        enemy_check_deaths(s);necro_observe_deaths(s);
+        enemy_check_deaths(s);necro_observe_deaths(s);power_order_prune(s);
         // Observe settled values, including commands which produce no log
         // (enemy block, pet interception, side-start block/energy reset).
         // This callback is read-only and neither adds a saved effect nor RNG.

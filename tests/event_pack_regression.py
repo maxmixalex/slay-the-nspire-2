@@ -33,11 +33,14 @@ class PackTests(unittest.TestCase):
             locale=json.loads((root/f'config/web-locale-{language}.json').read_text())
             self.assertEqual(set(re.findall(r'v0\.\d+\.0',locale['about'])),{lock['version']})
             self.assertIn(lock['commit'],locale['about'])
-        self.assertIn("setItem('nSpire2-save-v15'",page)
-        self.assertIn("for(let version=15;version>=3&&!s;version--)",page)
-        self.assertIn("getItem('nSpire2-save-v'+version)",page)
-        for version in range(3,15):
-            self.assertNotIn("setItem('nSpire2-save-v%d'"%version,page)
+        storage=(root/'platform/web/profile_storage.js').read_text()
+        host=(root/'platform/web/main.cpp').read_text()
+        self.assertIn('getUint32(4,true)',page)
+        self.assertIn('profileStorage.writeRun(saveProfile,encode(bytes),version,supportedSaveVersion())',page)
+        self.assertIn('profileStorage.readRun(saveProfile,supportedSaveVersion())',page)
+        self.assertIn('unsigned save_version(){return spire::SaveVersion;}',host)
+        self.assertIn('latestSaveVersion=17',storage)
+        self.assertIn("key('nSpire2-save-v'+version,slot)",storage)
     def test_roundtrip_preserves_records(self):
         p=PackData(synthetic());legacy=(p.images[:],p.glyphs.copy(),p.clips,p.cards[:]);p.strings+=['new']*41;p.aux+=[0]*10
         output=p.encode();q=PackData(output)

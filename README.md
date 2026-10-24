@@ -10,7 +10,7 @@ The original three-act route now drives the playable world: Overgrowth or Underd
 
 ### Current feedback work
 
-The current resource extension is **NSP2/20**. One launcher can use one shared
+The UI8 resource extension is **NSP2/28**. One launcher can use one shared
 art/animation file and either or both language files:
 
 | File | Purpose |
@@ -20,10 +20,11 @@ art/animation file and either or both language files:
 | `nSpire2.eng.tns` | English text, glyphs and directories |
 | `nSpire2.zhs.tns` | Chinese text, glyphs and directories |
 
-Install these files together in one calculator directory. With both languages
-installed, **4** selects Chinese, **6** selects English and **Enter / 5** confirms.
-Later launches remember the choice and allow it to be changed before loading.
-Both languages share the same **v15** gameplay save. All startup stages and
+Install these files together in one calculator directory. Startup goes directly
+to the game menu. With both languages installed, choose the language in the
+main menu's **Settings**; subsequent launches remember it. There is no separate
+startup language screen. Both languages share **v17** gameplay saves, with
+readers for historical v3–v16 saves. All startup stages and
 resource errors have Chinese and English text. See
 [platform-languages.md](docs/platform-languages.md) for browser and native hosts,
 legacy full-pack loading and exact filename rules.
@@ -44,7 +45,7 @@ Image, glyph and string payloads are decoded when used. Whole-pack integrity
 hashing, integrity-only CRC and eager resource-wide validation are removed;
 the actual ranges and format rules required for decoding remain.
 
-The final title-glow hybrid resources total **81,100,703 bytes**, compared with
+The historical UI3 title-glow hybrid resources total **81,100,703 bytes**, compared with
 93,783,363 bytes for the previous bilingual NSP2/19 split. Common card/UI images
 keep their fast individual encoding; other retained animation images use bounded
 compressed groups. This preserves image pixels and timing while saving
@@ -108,7 +109,7 @@ Source22 [`5d177be7`](https://github.com/maxmixalex/slay-the-nspire-2/commit/5d1
 
 The historical source22 launcher is **885,386 bytes**; the two calculator files total **81,731,444 bytes before saves**. The **30–40 MB target is not achieved**. None of the seven alternative reversible tile representations improved the existing encoding in the declared eight-group sample. Grouped retained images/glyphs show about **8.43 MB** of potential component savings, but require an unimplemented format/reader and still model roughly **69 MiB** before new global metadata. See [resource-budget-0.17.md](docs/resource-budget-0.17.md) and [the exact diagnostic evidence](docs/validation-resource-research-source22.json). The private ZIP and offline HTML are development artifacts, not hardware or 95% visual acceptance. That historical pair requires its matching NSP2/15 resource. Use the current split installation above for this feedback stage.
 
-Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current source accepts the full NSP2/20 extension and retains old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Saves remain **v15**, with historical v3–v14 readers; resource-storage and save versions are independent. The browser preserves the existing v15 save key. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extensions in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
+Those source20–22 resource and launcher sizes describe earlier NSP2/14–15 stages. Current UI8 source accepts NSP2/28 and retains old complete-pack readers, including the verified bilingual NSP2/17 and NSP2/18 packs. Gameplay writes **v17**, retaining historical v3–v16 readers; resource-storage and save versions are independent. The browser selects a save key from the actual encoded version and preserves compatible historical keys. Build the current native/ARM sources with the logged commands below. World resource conversion is described in [enemy-assets-0.17.md](docs/enemy-assets-0.17.md), with the latest append-only extensions in [feedback-ui-0.17.md](docs/feedback-ui-0.17.md) and [merchant-effects-0.17.md](docs/merchant-effects-0.17.md). Generated packs and embedded-content HTML stay outside this public repository. The older conversion commands and artifact statistics below describe **0.16 only**.
 
 ## Verified 0.16 baseline — historical content
 
