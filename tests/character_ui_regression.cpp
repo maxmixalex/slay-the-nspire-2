@@ -237,7 +237,7 @@ static int hand_index(unsigned id){
 static void inky_and_dynamic_targets(){
     const char* inky=a.content.english()?"Inky":"墨影";
     const char* weak_text=a.content.english()?"Weak":"虚弱";
-    const char* all=a.content.english()?"all enemies":"所有敌人";
+    const char* all=a.content.english()?"ALL enemies":"所有敌人";
     start(Character::Silent);open_model(BladeOfInk,0);unsigned id=a.game.card_count;fixture_card();
     CHECK(play(a.game,hand_index(id),0));a.reset_presentation();settle_fixture_preparation();CHECK(a.game.phase==Phase::Combat&&validate(a.game));
     unsigned ink[2]={},count=0;

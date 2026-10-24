@@ -1,6 +1,41 @@
 # Work state — 2026-10-24
 
-## UI6 functional stage — awaiting complete validation
+## UI6 stage 5: close the final geometry and interaction regression gaps
+
+Stage 4 is preserved at `8c9270300aae0f479dadb216cfb37744e9c2b220`
+(tree `df6f2826759977db39a4f0727a9289b8e01cddf6`). Normal/debug ARM and
+WASM builds passed; the isolated real offline Chromium flow passed both
+languages, persistent settings, save/load/Continue, normal-build debug exclusion
+and the separate debug F1 text-entry/room/act commands without autosaving.
+Final compacted ENG/ZHS resources passed every one of 47,686 decoded-image
+comparisons per pack and exact split round trips. The converter removed
+2,555,380 bytes of unreachable old merchant data per complete pack.
+
+Normal native completed 75/77 initially: a missing executable mode on the
+Ironclad test artifact was repaired and that unchanged test passed; the remaining
+failure exposed one-pixel formation errors from rounding source coordinates
+before screen adaptation. Debug native passed 78/79 with that same layout
+failure. This checkpoint uses uniformly camera-scaled integer thousandths and
+one final division, with no encounter-specific pixel correction. Existing
+original marker expectations remain unchanged. Two test-only fixes update the
+native/WASM room driver for original select/aim/confirm card input and preserve
+the original English template's uppercase `ALL enemies`. Their failed journals
+remain recorded rather than relabeled as passed.
+
+Actual final-pack map/room/reward/travel, frontend, text, potion and card-HUD
+checks passed in both languages; actual world/combat passed 27,039 checks per
+language. Python passed 143 standard plus 54 additional tests. These are
+scope-specific stage-4 receipts, not an invented stage-5 full pass. Ordinary
+Firebird has installed the matching resources and read back the exact launcher,
+and has reached the language chooser through OS/Documents; full game acceptance
+continues after the corrected runtime is frozen. No physical-device performance
+or original-PC pixel parity is inferred.
+
+Next: preserve and read back this geometry/driver checkpoint, build all final
+runtimes and run the affected tests and cross-backend cases, then quiet serial
+before/after performance measurements and final ordinary emulator acceptance.
+
+## UI6 functional stage — earlier checkpoint history
 
 Stage 3 was preserved and read back at
 `20262f09eb1edab0035e632ca9ee4f065fb51fc4`, tree

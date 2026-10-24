@@ -44,8 +44,12 @@ crop sizes, unrelated image entries and localized payloads. Changed samples
 use the existing bounded 128 KiB retained-group encoder, with the backdrop
 remaining independently decodable. It never overwrites a shared old group.
 Receipts distinguish fully unreachable stored blocks from obsolete decoded
-slices inside groups still needed by another image. Reclaiming those old bytes
-requires a later lossless repack; no runtime pixel/cache allocation is added.
+slices inside groups still needed by another image. A separate
+`compact_ui6_merchant.py` subsequently removes only proved unreachable old
+blocks, repairs every affected absolute and relative pointer, and verifies
+all current decoded images and encoded group bytes. It never recompresses
+images or changes glyph order. No runtime pixel/cache allocation is added by
+the atlas correction or its compaction.
 
 The general atlas loader correction applies to future conversions, but this
 targeted pack repair does **not** rebake the entire game's old animation
@@ -155,3 +159,95 @@ host timing is not a physical calculator measurement. Remaining broader room
 work includes event typewriter/entry/press timing, original pickup trails,
 special ancient/fake-merchant pages, secondary removal particles, and the
 unrepaired historical animation regions described above.
+
+### Recorded resource validation and storage improvement
+
+The art sampler and initial correction ran from immutable source checkpoint
+`6b46a74eddf37381cff9a89cdbcf30572849cf73`. The compactor, synthetic checks,
+final split, and the following actual-pack UI checks ran from checkpoint
+`20262f09eb1edab0035e632ca9ee4f065fb51fc4`.
+
+- 1,518 merchant candidates produced **1,517 changed images**; the unchanged
+  backdrop was skipped. No clip/image/auxiliary directory entry was added by
+  this repair, and the two direct-material candle clips were untouched.
+- The repair added 2,757,238 bytes of new common art. Compaction recovered
+  **2,555,380 bytes** in two disjoint ranges, including 58 alignment bytes.
+  The repaired merchant artwork therefore adds **201,858 bytes net**.
+- Both languages independently checked all **47,686 current images**, with
+  exact decoded pixel/alpha equality before and after compaction. All retained
+  compressed payloads, tile/index-group bytes, glyph order/metrics and UTF-8
+  strings were preserved. 3,524 retained relative pointers were relocated.
+- The 9,454 decoded bytes of obsolete slices inside still-shared groups were
+  deliberately retained; their encoded bytes cannot be removed independently.
+- Final splitting verified both reconstructions byte-for-byte and verified
+  identical shared artwork. Common plus the two locales total **81,543,574
+  bytes**, compared with the recovered UI5 pair's 81,249,303 bytes: this entire
+  UI6 resource extension, including the merchant repair and new UI/VFX art,
+  adds **294,271 bytes**. These totals exclude the launcher and saves.
+
+| Final resource | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `nSpire2.common.tns` | 75,196,602 | `a2d3c270a16a9d0f2670547b1569c50c11453b5c21c8e498b61d2a9377975063` |
+| `nSpire2.eng.tns` | 1,782,129 | `579b4b87d76a0071811986ea693a25c40375f29c69f9fe3db6e6c89394277174` |
+| `nSpire2.zhs.tns` | 4,564,843 | `c79247964c630cf374a2732c85e73d5aa601e80de545bada17ef7de4dba64ba8` |
+
+The stage-3 actual-pack map, rest/treasure room, and reward suites passed in
+both languages: respectively **12,994 / 8,617 / 2,915 checks per language**.
+These include repeated/pixel assertions and must not be presented as distinct
+features. The original atlas fixture passed six tests, and all three new
+compaction fixtures passed, covering shared descriptors, fully orphaned groups
+and positive/negative relative links across removed spans. The stage-3 full
+Python discovery still reported two unrelated localization/version-fixture
+failures; those are not relabeled as passes here. Subsequent runtime/fixture
+validation belongs to the integration report for that later checkpoint.
+
+Private `run_logged` receipt suffixes: art `e2ff874eab05`, corrected packs
+`42a17c8e76a6`, compaction synthetic `ffb5938b884b`, final English compaction
+`d351c25d0e7b`, Chinese `045ad80f56c4`, and split/reconstruction `dc98cd52aee8`.
+Map/room/reward English receipts are `058f7c73aecd`, `343962b256a1`,
+`10ba4dcd5b54`; Chinese receipts are `2fecf79edf7f`, `0599f5cd243e`,
+`550b845e3505`. These journal identifiers refer to preserved private build
+evidence and are not public artwork downloads.
+
+`card_grid_benchmark` now also has real shop-inventory idle and hover scenes.
+It includes actual pointer opening through the first complete inventory frame,
+and includes both the opening frame and the first real hit-targeted hover
+frame in the hover cold sample. Warm samples continue the underlying room
+animations, record ranged-resource callbacks/bytes/seeks, and compare full
+canonical saves and hashes. This provides the needed measurement workload;
+adding it alone is not a measured runtime speed improvement.
+
+### Final functional replay at stage 4
+
+Checkpoint `8c9270300aae0f479dadb216cfb37744e9c2b220` re-ran the complete
+`test_*.py` discovery: **143/143 passed**, including the reviewed compiled
+localization fallbacks and the corrected unsupported-version fixture. The six
+additional Python unittest modules passed **54/54**, including the six atlas
+tests. The optional ARM emulator command-line scripts were not counted as
+unittest coverage; they require a linked ELF and a separate Unicorn runtime.
+
+The final compacted English and Chinese packs each passed the actual map
+suite (**12,994 checks**), rest/treasure room suite (**8,617 checks**) and
+reward suite (**3,410 checks**). Synthetic map travel passed **154,920 checks**,
+including original HUD settings opening the pause overlay directly over an
+in-flight map. This corrects the obsolete test expectation that the settings
+button first closed the map. Production behavior did not need a second patch.
+
+The reward captures now explicitly advance the entrance from 0 to 250 to
+500 ms and verify alpha progression plus byte-identical canonical saves.
+Both settled loot screens were visually reviewed: banner, paper, rows and
+labels are visible and remain within their authored proportions. Chinese
+rest copy is directly below the option labels, with no doubled gold shadow.
+The full world UI integration passed **27,039 checks in each language**;
+its actual captures were reviewed for the pre-removal facts, growing card,
+original slash/erosion samples, corrected merchant orientation, and all five
+characters' inventory geometry. No runtime mirror was added to the merchant.
+
+Private stage-4 receipt suffixes: Python discovery `be87b996b77a`, additional
+unittest suites `32dd14f4e04b`, map travel `8e170ef9d977`; English map/room/reward
+`37da4417175c` / `deaed3c001c6` / `f2cf1cc0f364`; Chinese map/room/reward
+`b12b28e99197` / `feabfefdfd47` / `385f915ea3e1`. The combat agent's full world
+UI receipts are `969731c071a6` / `7c6579bf6437`. Earlier failed journals remain
+preserved: an overly broad Python import pattern included two optional ARM
+CLI modules without Unicorn, and the first reward capture run lacked its
+output directory. Neither is represented as a completed validation run.

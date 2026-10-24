@@ -70,23 +70,24 @@ inline CreatureBounds creature_bounds(EnemyId kind){
  static_assert(sizeof bounds/sizeof bounds[0]==EnemyKinds,"Every model needs a bounds entry");
  return unsigned(kind)<EnemyKinds?bounds[unsigned(kind)]:CreatureBounds{0,0};
 }
-// Q4 authored coordinates keep half-pixel centers and compressed gaps without
-// float arithmetic. Retaining removed models in this initial roster keeps
-// surviving creatures stationary, as NCombatRoom does after a death.
-struct EnemyFormationPoint {int x=0,y=3200;};
+// Camera-scaled source coordinates in thousandths of a pixel. Scaling the
+// formation before dividing preserves the exact 960px half-width and centers
+// at fractional zooms; scene markers use the same units and one final /6000.
+// Retaining removed models keeps survivors stationary after a death.
+struct EnemyFormationPoint {int x=0,y=200000;};
 inline EnemyFormationPoint unnamed_enemy_point(const State&s,int index,int zoom){
  if(s.enemy_count<1||s.enemy_count>MaxEnemies||index<0||index>=s.enemy_count||zoom<=0)return {};
  int widths[MaxEnemies]{},sum=0;
- for(int i=0;i<s.enemy_count;++i){const auto b=creature_bounds(s.enemy_world.models[i].kind);widths[i]=int(b.width?b.width:360)*16;sum+=widths[i];}
- const int area=960*16000/zoom;int gap=70*16,span=sum+(s.enemy_count-1)*gap;
- int left=(area-span)/2;if(left<150*16)left=150*16;int stagger=0;
+ for(int i=0;i<s.enemy_count;++i){const auto b=creature_bounds(s.enemy_world.models[i].kind);widths[i]=int(b.width?b.width:360)*zoom;sum+=widths[i];}
+ const int area=960000;int gap=70*zoom,span=sum+(s.enemy_count-1)*gap;
+ int left=(area-span)/2;if(left<150*zoom)left=150*zoom;int stagger=0;
  if(left+span>area&&s.enemy_count>1){
-  gap=(area-150*16-sum)/(s.enemy_count-1);if(gap<5*16)gap=5*16;
+  gap=(area-150*zoom-sum)/(s.enemy_count-1);if(gap<5*zoom)gap=5*zoom;
   span=sum+(s.enemy_count-1)*gap;left=(area-span)/2;
-  if(gap<30*16)stagger=60*16-(gap-5*16)*20/25;
+  if(gap<30*zoom)stagger=60*zoom-(gap-5*zoom)*20/25;
  }
  int x=left+widths[index]/2;for(int i=0;i<index;++i)x+=widths[i]+gap;
- return {x,200*16-(index%2?stagger:0)};
+ return {x,200*zoom-(index%2?stagger:0)};
 }
 inline int combat_player_x(const State&s){
  if(!s.enemy_world.active)return 60;
@@ -107,16 +108,12 @@ inline CreaturePose enemy_pose(const State&s,int index){
  if(s.enemy_world.encounter==EncounterId::GremlinMercNormal)
   slot=model.kind==EnemyId::GremlinMerc?0:model.kind==EnemyId::SneakyGremlin?1:2;
  EnemyFormationPoint point;
- if(layout&&slot<layout->count)point={(layout->points[slot][0]-960)*16,(layout->points[slot][1]-540)*16};
+ if(layout&&slot<layout->count)point={(layout->points[slot][0]-960)*z,(layout->points[slot][1]-540)*z};
  else point=unnamed_enemy_point(s,index,z);
  // SceneContainer has a 960,540 pivot and camera offset. Retain the
  // calculator's 122px ground rail while preserving authored slot spacing.
- // A Q4 center can lie just below an exact camera pixel (e.g. 960/.9).
- // Round that subpixel residue once before adapting the authored canvas;
- // truncating it twice would displace a centered boss by a full display px.
- const auto scaled=[&](int value){const int product=value*z;return (product+(product>=0?8000:-8000))/16000;};
- const int x=(960+scaled(point.x)+camera.x)/6;
- const int feet=122+(540+scaled(point.y)+camera.y-740)/6;
+ const int x=(960000+point.x+camera.x*1000)/6000;
+ const int feet=122+(540000+point.y+camera.y*1000-740000)/6000;
  const auto bounds=creature_bounds(model.kind);const int body_width=bounds.width,body_height=bounds.height;
  int width=body_width?body_width*z/6000:enemy_pose(s.enemy_count,index).width;
  if(width<22)width=22;if(width>80)width=80;

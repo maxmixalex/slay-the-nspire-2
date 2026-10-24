@@ -3,10 +3,11 @@
 #include "content_fixture.hpp"
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 using namespace spire;
-static App app;static SaveData storage;static std::string root,name;static unsigned saved;
+static App app;static SaveData storage,selection_before,selection_after;static std::string root,name;static unsigned saved;
 static void write(const std::string&path,const void*p,size_t n){FILE*f=fopen(path.c_str(),"wb");if(!f||fwrite(p,1,n,f)!=n||fclose(f))std::exit(3);}
 static bool save_cb(const State&s){if(!save(s,storage))return false;write(root+"/"+name+"-save-"+std::to_string(saved++)+".bin",storage.bytes,storage.size);return true;}
 static bool load_cb(State&s){return load(s,storage.bytes,storage.size);}
@@ -31,11 +32,13 @@ static State combat_fixture(Character character){
  for(CardKind kind:combat_cards[(int)character])if(!lab_card(s,{kind,0}))std::exit(9);
  if(!validate(s))std::exit(10);return s;
 }
+static constexpr unsigned CombatCardStepCount=8,CombatCardSelectStep=2,CombatCardPlayStep=3;
 static std::vector<int> combat_steps(unsigned character){
  std::vector<int> result={4}; // Load the controlled fixture from the title.
  for(unsigned i=0;i<combat_cards[character].size();i++){
-  // Inspect the current physical instance, play it, and let its animation end.
-  for(int key:{15,5,4,-1,-1,-1,-1})result.push_back(key);
+  // NControllerCardPlay first selects the physical instance and restricts
+  // target focus. A second Confirm plays it; selection must not mutate state.
+  for(int key:{15,5,4,4,-1,-1,-1,-1})result.push_back(key);
  }
  for(int key:{8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,9,-1,7,4,5,5,18,3,5,8})result.push_back(key);
  return result;
@@ -65,7 +68,7 @@ int main(int argc,char**argv){
    fprintf(manifest,"%s%d",index?",":"",key);++index;
   };
   for(int key:steps[c]){
-   // Real packs first present a bounded preparation screen. A source-timed
+   // Real packs first finish bounded resource preparation. A source-timed
    // multi-hit command can also exceed the old four 99ms playback frames.
    // Record every necessary update so WASM replays the same visible sequence;
    // retain every scripted detail/play/navigation/save action and its checks.
@@ -75,8 +78,20 @@ int main(int argc,char**argv){
      record(-1);++readiness_steps;
     }
    }
+   const bool card_step=c>=4&&script_index>0&&(script_index-1)/CombatCardStepCount<combat_cards[c-4].size();
+   const unsigned card_offset=script_index?((script_index-1)%CombatCardStepCount):CombatCardStepCount;
+   int selected=-1;
+   if(card_step&&card_offset==CombatCardSelectStep){
+    if(app.cursor<0||app.cursor>=app.game.hand.count||app.keyboard_card>=0||!save(app.game,selection_before))return 14;
+    selected=app.game.hand.ids[app.cursor];
+   }
    const uint32_t revision=app.game.revision;record(key);
-   if(c>=4&&script_index>=3&&(script_index-3)%7==0&&(script_index-3)/7<combat_cards[c-4].size()){
+   if(card_step&&card_offset==CombatCardSelectStep){
+    if(app.keyboard_card!=selected||app.game.revision!=revision||app.game.phase!=Phase::Combat||
+       !save(app.game,selection_after)||selection_before.size!=selection_after.size||
+       std::memcmp(selection_before.bytes,selection_after.bytes,selection_before.size))return 14;
+   }
+   if(card_step&&card_offset==CombatCardPlayStep){
     if(app.game.revision==revision||app.game.phase!=Phase::Combat)return 11;
    }
    ++script_index;

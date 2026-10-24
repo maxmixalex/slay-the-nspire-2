@@ -142,6 +142,34 @@ arrow capture sampled only the start of controller interpolation; the revised
 capture records both its start and twenty subsequent 33-ms frames. A static
 initial frame is not treated as acceptance of the settled targeting arrow.
 
+## Executed stage-4 verification
+
+Receipt `8c9270300aae0f479dadb216cfb37744e9c2b220` was then tested with
+the final, losslessly compacted v23 packs. Actual card/HUD passed **325,828
+English / 337,158 Chinese** checks; actual potion UI passed **1,048 per
+language**. These runs cover the large top-bar rotation repair, disabled empty
+holder hover, and the settled original targeting-arrow textures. Both initial
+and settled arrows and the empty-slot tips were inspected in both languages.
+The files remain private captures; no original art is added to this repository.
+
+The Chinese character UI now passed the complete **38,846 checks / 860
+acquired variants**, including compendium isolation, all-enemy Inky behavior,
+mouse second-click and drag play. English reached the same final behavior but
+stopped on the fixture's lowercase `all enemies`: the pinned SHIV template
+uses uppercase `ALL enemies`. The expected text has been corrected to that
+actual template, with the combined Inky/all-target assertion retained. This
+last adjustment changes only the test and still requires its own complete
+passing receipt.
+
+All five passing stage-4 journals record unchanged frozen source. Their names
+are `ui6-stage4-card-hud-eng-7b7f174ff9fa`,
+`ui6-stage4-card-hud-zhs-6e02dff6c4ba`,
+`ui6-stage4-potion-eng-b12f1eec6f2e`,
+`ui6-stage4-potion-zhs-b8de1789e235`, and
+`ui6-stage4-character-zhs-7fa042e1ddf2`.
+The failed English journal `ui6-stage4-character-eng-bac16083b382` remains a
+failure and is not counted as a complete pass.
+
 ## Remaining fidelity boundaries to keep explicit
 
 * The 320×240 grid uses readable 47×66 cards in discrete ten-card pages. The

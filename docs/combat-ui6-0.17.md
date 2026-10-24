@@ -116,7 +116,8 @@ original Bounds widths, start with 70 source-pixel gaps in a `960 / zoom`
 half-screen, and reserve the initial 150 source-pixel inset. Crowded groups
 recalculate their gap with the original 5 source-pixel minimum and alternate
 vertical offset between 60 and 40 source pixels when the gap is below 30.
-Q4 authored coordinates retain fractional centers without floating point.
+Camera-scaled coordinates retain thousandths of a source pixel and perform
+only one final viewport division, without floating point.
 The retained roster includes dead actors so survivors never slide inward
 after a kill. Ordinary encounters no longer use the old uniform columns or
 two-row count-based arrangement.
@@ -170,6 +171,18 @@ first debug invocation lacked executable permission; after repairing only
 that built-file mode, a logged retry reproduced the same Aeonglass assertion
 as the normal build. Actual English/Chinese world and debug UI attempts
 stopped at those same failures; they are not counted as passing coverage.
+
+Frozen stage 4 `8c9270300aae0f479dadb216cfb37744e9c2b220` passed the full
+Clang 18 debug build, both complete actual-pack world-UI runs (27,039 checks
+per language), all 498 core debug checks, and synthetic plus actual English/
+Chinese debug-UI flows. Screenshots were inspected for status-card previews,
+the Ovicopter/egg formation, power text, simultaneous damage and the centered
+Kaiser encounter. The complete debug CTest run passed 78 of 79 tests: the
+formation test caught a one-pixel regression at Slumbering Beetle's last
+marker caused by stage 4's intermediate source-pixel rounding. The live fix
+uses camera-scaled integer thousandths for both authored and computed points,
+with one final viewport division. All 24 scene transforms were checked against
+exact rational projection; the next frozen build must verify the whole catalog.
 
 Regressions now cover first block entry/re-gain/restoration, generated-card
 preview and flight, state/RNG invariance, simultaneous status rows and expiry,
