@@ -225,6 +225,7 @@ def source_text(source, ordinal):
     if hasattr(source, 'string_payload'):
         return source.string_payload(ordinal)[:-1].decode('utf-8')
     offset, length = source.strings[ordinal]
+    if not length: return ''
     return bytes(source.block(offset, length)).decode('utf-8')
 
 

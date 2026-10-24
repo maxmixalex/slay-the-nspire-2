@@ -2,6 +2,37 @@
 
 ## UI8 stage 8c — complete hover owners and lossless NSP2/33 candidate
 
+### Integrated corrections before final acceptance
+
+UI runtime checkpoint `474e592f112ab64b9116f80e5aa20cba4a9231c7` builds ARM
+(1,350,570-byte launcher, 16,637,148-byte allocation) and WASM (6,514,615 bytes).
+The unchanged 16MiB ARM gate retains 140,068 bytes of headroom. The linked ARM
+helpers pass 12,880 division/ABI vectors, 42 LZMA2 vectors and 14 tile-filter
+vectors including every RGB565 value and maximum 680-tile groups. These are
+linked-function checks, not normal-device installation evidence.
+
+Its complete native suite passed 101/103. A new reader restriction had rejected
+nonzero **reserved** words in legacy TGR1 groups; that is a real compatibility
+regression and is removed here. TGR2's actual mode/version/kind/shape constraints
+remain. A new independent-Panache fixture omitted the existing aggregate and
+listener state; it now establishes both powers through the real queue/resolve
+path before testing their separate progress. Strict validation/save comparison
+is retained. Short corrected checks pass 12,814,724 legacy tile, 1,443,031 new
+filter and 22,957 keyword cases. The first full Python run was 200/201 with one
+empty-text fixture error; the glyph converter now returns an empty raw string
+without an unnecessary zero-byte read. These failures and logs are retained.
+
+Resource conversion is complete through `424c06c6d29f8230fcbac8969627fe20cea0a593`.
+The real TGR pass keeps 728 smaller filtered groups and all four non-saving old
+groups, saving 3,733,886 common bytes. It compares 443,044,043 decoded bytes per
+locale, while all 452 index streams and retained streams stay byte-exact. The
+24 missing original Chinese 5px bold title glyphs add 1,608 bytes; old glyphs
+remain exact. Final hover coverage has zero missing glyphs across 2,783 fields
+per language. Final split sizes are common 84,719,566; English 2,153,050; Chinese
+5,149,970 bytes, with exact full-pack reconstruction. Normal USB installation,
+remaining storage, quiet cold/warm costs and final complete gates are pending.
+
+
 The codec/converter stage is remotely preserved as
 `4e51f970133a3fa9625c76eceb1838a851dc86c8`. Its actual cross insertion and
 string grouping passed: English saves 707,431 bytes; Chinese saves 710,700

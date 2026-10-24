@@ -104,8 +104,10 @@ static bool valid_tile_group_header(const uint8_t* h,uint32_t id,const uint8_t* 
     const unsigned size=u32(p+12),encoded=u32(p+16),items=u32(p+24);
     const bool is_tile=id<groups;
     const bool filtered=u32(p)==FilteredTileGroupMagic;
+    // TGR1 never used its checksum/reserved words at runtime. Keep that legacy
+    // behavior; only the distinct TGR2 magic gives word 7 functional meaning.
     if((filtered?(!filtered_allowed||!is_tile||u32(p+28)<1||u32(p+28)>2):
-        (u32(p)!=0x31524754u||u32(p+28)!=0))||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
+        (u32(p)!=0x31524754u))||u32(p+4)!=(is_tile?1u:2u)||u32(p+8)!=id||
        !size||size>Lzma2BlockRawLimit||encoded!=length-32)return false;
     if(is_tile){
         const unsigned per_group=u32(h+44),left=tiles-id*per_group;

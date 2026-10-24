@@ -38,8 +38,9 @@ static void power_hover_catalog_and_input(){
     }
     // Original independent Panache instances retain their own smart progress;
     // moving between equal Power ids must change ownership and description.
-    setup();a.game.expansion.panache[0]=10;a.game.expansion.panache_count[0]=1;
-    a.game.expansion.panache[1]=20;a.game.expansion.panache_count[1]=3;
+    setup();queue_extension(a.game,XOp::Power,int(XPower::Panache),10);resolve_pending(a.game);
+    queue_extension(a.game,XOp::Power,int(XPower::Panache),20);resolve_pending(a.game);
+    a.game.expansion.panache_count[0]=1;a.game.expansion.panache_count[1]=3;CHECK(validate(a.game));
     const unsigned id=18+unsigned(XPower::Panache);power_order_set(a.game,0,id,true,0);power_order_set(a.game,0,id,true,1);
     a.reset_presentation();a.render();snapshot();uint32_t identities[2]{};std::string descriptions[2];
     for(unsigned slot=0;slot<2;++slot){const auto token=power_token(0,id,slot);const auto region=hit(HitKind::PowerInstance,token);
