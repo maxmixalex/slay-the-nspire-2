@@ -105,7 +105,7 @@ static void world_choice_screen(Canvas&c){
   }
  }else{
   const bool large=offer&&count<=3;
-  int portraits[16];unsigned portrait_count=0;
+  int portraits[24];unsigned portrait_count=0;
   for(int i=first;i<(large?mn(int(count),first+3):grid.last());++i){unsigned at=ids[i];Card card{};const EventCardFacts*facts=nullptr;int instance=-1,deck=-1;
    if(offer){card=card_from_token(relic?w.offers[at]:e.offers[at]);facts=relic?&w.offer_facts[at]:&e.offer_facts[at];}
    else if(hand){instance=at;card=s.cards[at];}else{deck=at;card=s.deck[at];}
@@ -118,7 +118,7 @@ static void world_choice_screen(Canvas&c){
    bool selected=world_selected(a,at);int x=large?(320-int(count)*94)/2+7+i*94:grid.card_x(i),y=large?65:grid.card_y(i);
    if(large)large_card(c,card,x,y,selected||a.cursor==i,-2,-2,instance,deck,facts);
    else{
-    const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+    const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+CardGridScroll::CardW+2&&a.pointer.y>=y-2&&a.pointer.y<y+CardGridScroll::CardH+2&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
     painter.card(i,card,hover||(!a.pointer.visible&&a.cursor==i),true,instance>=0?cost(s,instance):-2,-2,instance,deck,facts,selected);
    }
    if(large){if(selected)c.box(x-3,y-3,86,118,Green);c.hit(x-3,y-3,86,118,HitKind::WorldChoice,at);}

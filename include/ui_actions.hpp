@@ -23,6 +23,8 @@ enum class UiAction {
     SettingsKeyboardOnly, SettingsPhobia, SettingsShakeDown, SettingsShakeUp,
     SettingsReset, SettingsScrollUp, SettingsScrollDown,
     InspectPreviousCard, InspectNextCard,
-    OpenCompendium, OpenBestiary, OpenStatistics, OpenHistory, HistoryPrevious, HistoryNext
+    OpenCompendium, OpenBestiary, OpenStatistics, OpenHistory, HistoryPrevious, HistoryNext,
+    OpenProfiles, SelectProfile1, SelectProfile2, SelectProfile3,
+    DeleteProfile1, DeleteProfile2, DeleteProfile3
 };
 }

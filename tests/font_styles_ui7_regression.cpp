@@ -12,8 +12,8 @@ static App app;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"font styles:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void put(Bytes&b,unsigned at,uint32_t v,unsigned n=4){CHECK(at+n<=b.size());for(unsigned i=0;i<n;++i)b[at+i]=uint8_t(v>>(i*8));}
-static Bytes fixture(bool modern=true){
- const unsigned ni=A_Count,ng=modern?6:3,ns=modern?Ui7StringCount:LocaleStringCount;
+static Bytes fixture(bool modern=true,bool styles=true){
+ const unsigned ni=A_Count,ng=modern&&styles?6:3,ns=modern?Ui7StringCount:LocaleStringCount;
  const unsigned nc=modern?Ui7AnimationKinds:MerchantEffectsAnimationKinds,nu=modern?unsigned(Ui7AuxiliaryCount):unsigned(Ui6AuxiliaryCount);
  const unsigned ga=40+ni*16,sa=ga+ng*16,ca=sa+ns*8,base=ca+nc*16+CardKinds*16+nu*4;
  const unsigned table=base+64,costs=table+16,descriptors=costs+((ni+1)&~1u);
@@ -23,10 +23,15 @@ static Bytes fixture(bool modern=true){
  for(unsigned i=0;i<16;++i)put(b,base+i*4,fields[i]);
  const unsigned image=unsigned(b.size());b.push_back(0);b.push_back(0);
  for(unsigned i=0;i<ni;++i){put(b,40+i*16,image);put(b,44+i*16,1,2);put(b,46+i*16,1,2);put(b,52+i*16,2);}
+ // Keep the cold glyph page separate from the directory, image header and
+ // language marker read during open. A tiny adjacent fixture is already
+ // warm before glyph() and cannot exercise the provider cache miss.
+ b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
  const unsigned cp[]={63,65,66,65,65,65},size[]={8,8,8,72,136,200},advance[]={1,2,3,5,4,6};
  const Bytes alpha[]={{127},{255},{127},{255,0,255},{0,255},{0,255,255,0}};
  for(unsigned i=0;i<ng;++i){const unsigned at=ga+i*16;put(b,at,cp[i]);put(b,at+4,unsigned(b.size()));put(b,at+8,size[i],2);
   b[at+10]=uint8_t(alpha[i].size());b[at+11]=1;put(b,at+12,advance[i],2);b.insert(b.end(),alpha[i].begin(),alpha[i].end());}
+ b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
  const unsigned empty=unsigned(b.size());b.push_back(0);const unsigned marker=unsigned(b.size());b.insert(b.end(),{'e','n','g',0});
  for(unsigned i=0;i<ns;++i)put(b,sa+i*8,empty);put(b,sa+LocaleMarkerString*8,marker);put(b,sa+LocaleMarkerString*8+4,3);
  for(unsigned i=0;i<nc;++i){put(b,ca+i*16+4,1,2);put(b,ca+i*16+6,33,2);}put(b,12,unsigned(b.size()));return b;
@@ -55,6 +60,14 @@ static void direct(){
  CHECK(!plan.truncated&&plan.rows==1);CHECK(pixel(10,50)==0xffff&&pixel(15,50)!=0);
  auto legacy=fixture(false);CHECK(app.content.open(legacy.data(),legacy.size()));
  CHECK(app.content.glyph_metrics('A',8,1).advance==2);CHECK(c.width("[b]A[/b]B",8)==5);
+ // An actual UI7 locale can intentionally supply only Regular. It still
+ // resolves each requested style to the same codepoint, not to '?' and not
+ // to a nonexistent high-bit descriptor beyond the resident directory.
+ auto regular_only=fixture(true,false);CHECK(app.content.open(regular_only.data(),regular_only.size()));
+ for(unsigned face=1;face<4;++face){CHECK(app.content.glyph_metrics('A',8,face).advance==2);CHECK(app.content.glyph_metrics('B',8,face).advance==3);}
+ CHECK(c.width("[b]A[/b][i]B[/i]",8)==5);
+ clear();c.text("[b]A[/b][i]B[/i]",10,60,8,0xffff);
+ CHECK(pixel(10,60)==0xffff&&pixel(12,60)!=0&&pixel(11,60)==0&&pixel(13,60)==0);
 }
 struct Provider {
  const Bytes*bytes;unsigned calls=0;
@@ -70,5 +83,21 @@ static void provider(){
  for(unsigned repeat=0;repeat<20;++repeat)for(unsigned face=0;face<4;++face)CHECK(app.content.glyph('A',8,face).pixels);
  CHECK(p.calls==warm&&app.content.healthy());
 }
+static void actual(const char*path,const char*capture){
+ FILE*f=std::fopen(path,"rb");CHECK(f&&std::fseek(f,0,SEEK_END)==0);const long size=std::ftell(f);
+ CHECK(size>=40&&static_cast<unsigned long>(size)<=MaxContentFile&&std::fseek(f,0,SEEK_SET)==0);
+ Bytes bytes(static_cast<size_t>(size));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());CHECK(!std::fclose(f));
+ Provider p{&bytes};CHECK(app.content.open(p.source())&&app.content.version()>=Ui7ContentVersion);Canvas c{app};
+ const char*sample=app.content.english()?"Upgrade one [gold]card[/gold] in your [gold]deck[/gold].\n[b]Strength[/b] [i]Dexterity[/i]\nA [b]B[/b] [i]C[/i]":
+     "升级你牌组中的一张牌。\n[gold]升级[/gold]你[gold]牌组[/gold]中的一张牌。\n[b]力量[/b] [i]敏捷[/i]\nA [b]B[/b] [i]C[/i]";
+ const auto draw=[&](){clear();c.paragraph(sample,16,30,288,8,0,12,0xffff);
+  c.text("[b]AB[/b] [i]ABC[/i] ABC",16,160,8,0xffff);};
+ draw();const unsigned cold=p.calls;const std::vector<uint16_t> first(app.pixels,app.pixels+ScreenW*ScreenH);
+ for(unsigned i=0;i<64;++i){draw();CHECK(!std::memcmp(first.data(),app.pixels,sizeof app.pixels));}
+ CHECK(p.calls==cold&&app.content.healthy());
+ if(capture){FILE*out=std::fopen(capture,"wb");CHECK(out);std::fprintf(out,"P6\n320 240\n255\n");
+  for(auto pixel:app.pixels){const uint8_t rgb[]={uint8_t((pixel>>11)*255/31),uint8_t(((pixel>>5)&63)*255/63),uint8_t((pixel&31)*255/31)};CHECK(std::fwrite(rgb,1,3,out)==3);}CHECK(!std::fclose(out));}
+ std::printf("actual %s font draw: %u cold provider calls; 64 warm frames add 0 calls\n",app.content.english()?"eng":"zhs",cold);
 }
-int main(){direct();provider();std::printf("font styles: %u checks\n",checks);return 0;}
+}
+int main(int argc,char**argv){direct();provider();if(argc>1)actual(argv[1],argc>2?argv[2]:nullptr);std::printf("font styles: %u checks\n",checks);return 0;}

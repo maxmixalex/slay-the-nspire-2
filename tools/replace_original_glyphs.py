@@ -135,7 +135,7 @@ def replace(data, language, glyphs):
     """Rebuild only the glyph/text tail and relocate the bounded directory."""
     before = layout(data, language)
     tiles.require(before['version'] >= 24, 'Styled glyphs require the UI7 resource contract')
-    source = tiles.PackView(data, before['auxiliary'], versions=(24, 25))
+    source = tiles.PackView(data, before['auxiliary'], versions=(24, 25, 26))
     tiled = tiles.TileReader(source)
     ni, old_ng, ns, nc, nk, auxiliary = source.counts
     glyphs = sorted(glyphs, key=lambda row: (row[1], row[0]))
@@ -185,7 +185,7 @@ def replace(data, language, glyphs):
         struct.pack_into('<II', out, source.string_at+delta+i*8, strings[raw], length)
     tiles.HEADER.pack_into(out, 0, b'NSP2', source.version, tiles.REFERENCE, len(out), ni,
                           len(glyphs), ns, nc, nk, 0)
-    target = tiles.PackView(out, auxiliary, versions=(24, 25))
+    target = tiles.PackView(out, auxiliary, versions=(24, 25, 26))
     tiles.TileReader(target)
     after = layout(out, language)
     tiles.require(after['prefix'] == before['prefix']+delta and after['artwork'] == before['artwork'] and
@@ -223,7 +223,7 @@ def main():
     faces = [Face(tiles.private_path(path, 'Original font')) if path else None for path in paths]
     fallback = Face(tiles.private_path(args.fallback_font, 'Fallback font')) if args.fallback_font else None
     data = input_path.read_bytes(); info = layout(data, args.language)
-    source = tiles.PackView(data, info['auxiliary'], versions=(24, 25))
+    source = tiles.PackView(data, info['auxiliary'], versions=(24, 25, 26))
     glyphs, font_report = generate(source, faces, fallback)
     output, report = replace(data, args.language, glyphs)
     report.update(schema=1, reference='v0.111.0 / 41cef1ea', language=args.language, **font_report)

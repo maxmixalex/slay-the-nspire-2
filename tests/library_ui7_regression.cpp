@@ -2,6 +2,8 @@
 #include "card_grid_fixture.hpp"
 #include "content_fixture.hpp"
 #include "host_text_input.hpp"
+#include "world_run.hpp"
+#include "original_events.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -18,6 +20,8 @@ static void unchanged(const SaveData&before){SaveData now{};CHECK(save(a.game,no
 static void pools_and_filters(){
     a.open_library(0);a.advance(200);a.advance(200);const int filters[]={1,2,5,6,4,3,7,8};const unsigned expected[]={85,86,86,86,86,53,19,67};
     bool all[CardKinds]{};CardKind ids[CardKinds];
+    a.render();CHECK(a.card_grids[unsigned(CardGridSurface::Library)].columns==4);
+    CHECK(CardGridScroll::CardW==46&&CardGridScroll::CardH==64&&CardGridScroll::row_offset(100)==7192);
     for(unsigned pool=0;pool<8;++pool){if(a.library_filter!=filters[pool])control(LibraryPoolFirst+int(pool));CHECK(a.library_filter==filters[pool]);const unsigned count=a.library_items(ids);CHECK(count==expected[pool]);for(unsigned i=0;i<count;++i){CHECK(ids[i]<CardKinds);all[ids[i]]=true;}}
     for(bool found:all)CHECK(found);
     control(LibraryPoolLast);CHECK(a.library_filter==0&&a.library_items()==0);control(LibraryPoolFirst);CHECK(a.library_items()==85);
@@ -27,6 +31,7 @@ static void pools_and_filters(){
     control(LibraryTypeFirst);control(LibraryTypeFirst+1);control(LibraryCostFirst+1);CHECK(a.library_items()==85);
     control(LibrarySortCost);count=a.library_items(ids);for(unsigned i=1;i<count;++i)CHECK(cost({ids[i-1],0})<=cost({ids[i],0}));
     control(LibrarySortCost);a.library_items(ids);for(unsigned i=1;i<count;++i)CHECK(cost({ids[i-1],0})>=cost({ids[i],0}));
+    const int offset=a.card_grids[unsigned(CardGridSurface::Library)].position;control(LibraryViewStats);CHECK(a.card_library.show_stats);a.render();CHECK(a.card_grids[unsigned(CardGridSurface::Library)].position==offset);capture("library-victory-stats");control(LibraryViewStats);CHECK(!a.card_library.show_stats);
     control(LibraryPoolFirst+6);for(int n=0;n<4;++n)CHECK(!hit(HitKind::LibraryControl,LibraryRarityFirst+n).enabled);
     capture("library-ancients-unknown");
 }
@@ -60,10 +65,39 @@ static void host_input(){
     codes.clear();const char invalid[]={char(0xc0),char(0xaf),char(0xed),char(0xa0),char(0x80),'z'};host_text_utf8(invalid,sizeof invalid,emit);CHECK(codes.size()==1&&codes[0]=='z');
     uint16_t current[8]{},previous[8]{};current[4]=0x40;calculator_text_edges(current,previous,emit);CHECK(codes.back()=='a');previous[4]=current[4];const size_t size=codes.size();calculator_text_edges(current,previous,emit);CHECK(codes.size()==size);
     current[4]=0x04;current[7]=0x100;calculator_text_edges(current,previous,emit);CHECK(codes.back()=='D');current[4]=0;current[7]=0;current[6]=0x10;calculator_text_edges(current,previous,emit);CHECK(codes.back()=='2');
+    CollectionPresentation motion{};CHECK(motion.observe_hover(1,true,false,100)==4096);
+    for(int i=0;i<80;++i)if(i!=1)CHECK(motion.observe_hover(i,false,false,125)==4096);
+    const int half=motion.observe_hover(1,true,false,125);CHECK(half>4096&&half<4915);
+    CHECK(motion.observe_hover(1,false,false,125)==half);CHECK(motion.observe_hover(1,false,false,625)==4096);
+    CHECK(motion.observe_hover(1,true,false,700)==4096);CHECK(motion.observe_hover(33,false,false,750)==4096);CHECK(motion.observe_hover(1,true,false,750)==4915);
+}
+static void observed_rewards(){
+    a.library=a.compendium_open=a.statistics_open=a.history_open=a.title=false;
+    new_run(a.game,7319,false);CHECK(world_begin_run(a.game));a.reset_presentation();
+    clear_ui_progress(a.progress);a.progress_loaded=true;a.begin_progress();
+    CHECK(original_event_begin(a.game,OriginalEventId::ColorfulPhilosophers,5,0));CHECK(original_event_choose(a.game,0));
+    CHECK(a.game.phase==Phase::OriginalEventChoice&&a.game.original_events.selection==OriginalEventSelection::Rewards);
+    std::memset(a.progress.discovered_cards,0,sizeof a.progress.discovered_cards);a.card_library.invalidate();
+    const auto&e=a.game.original_events;CHECK(e.reward_count&&e.rewards[0].kind==4&&e.rewards[0].count);
+    CardKind offered[MaxOriginalEventOffers];const unsigned count=e.rewards[0].count;
+    for(unsigned i=0;i<count;++i)offered[i]=card_from_token(e.reward_cards[e.rewards[0].first+i]).kind;
+    SaveData before{};CHECK(save(a.game,before));a.render();
+    for(unsigned i=0;i<count;++i)CHECK(!a.library_card_seen(offered[i]));unchanged(before);
+    // CardReward.MarkContentAsSeen is deliberately empty. The actual card
+    // selection binds these models only after its parent reward is opened.
+    a.toggle_world_choice(0);CHECK(original_event_has_card_reward(a.game));CHECK(save(a.game,before));a.render();
+    for(unsigned i=0;i<count;++i)CHECK(a.library_card_seen(offered[i]));unchanged(before);
+    a.input(Key::Back);CHECK(!original_event_has_card_reward(a.game));
+    // Observing all sixteen real belt holders includes expanded slots; it
+    // still does not invent discovery from an uninspected canonical library.
+    CHECK(add_potion_slots(a.game,MaxPotionSlots-potion_slot_count(a.game)));potion_set(a.game,MaxPotionSlots-1,Potion::ColorlessPotion);++a.game.revision;
+    a.sync_progress();CHECK(a.library_item_seen(2,int(Potion::ColorlessPotion)-1));
+    std::memset(a.progress.discovered_cards,0,sizeof a.progress.discovered_cards);a.open_library(0);a.render();
+    for(unsigned i=0;i<CardKinds;++i)CHECK(!a.library_card_seen(CardKind(i)));
 }
 int main(int argc,char**argv){
     std::vector<uint8_t>bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);CHECK(a.init(bytes.data(),bytes.size(),{}));}if(argc>2)captures=argv[2];
     new_run(a.game,711,true);a.title=false;a.reset_presentation();SaveData before{};CHECK(save(a.game,before));
-    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);collections();unchanged(before);host_input();
+    pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);collections();unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

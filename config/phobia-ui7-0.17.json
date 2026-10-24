@@ -1,0 +1,670 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "base_auxiliary": 1877,
+  "base_clips": 1710,
+  "skin_models": [
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "scene_path": "res://scenes/creature_visuals/fossil_stalker.tscn",
+      "skeleton_path": "res://animations/monsters/fossil_stalker/fossil_stalker.skel",
+      "atlas_path": "res://animations/monsters/fossil_stalker/fossil_stalker.atlas"
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "scene_path": "res://scenes/creature_visuals/haunted_ship.tscn",
+      "skeleton_path": "res://animations/monsters/haunted_ship/haunted_ship.skel",
+      "atlas_path": "res://animations/monsters/haunted_ship/haunted_ship.atlas"
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "scene_path": "res://scenes/creature_visuals/skulking_colony.tscn",
+      "skeleton_path": "res://animations/monsters/skulking_colony/skulking_colony.skel",
+      "atlas_path": "res://animations/monsters/skulking_colony/skulking_colony.atlas"
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "scene_path": "res://scenes/creature_visuals/the_obscura.tscn",
+      "skeleton_path": "res://animations/monsters/the_obscura/the_obscura.skel",
+      "atlas_path": "res://animations/monsters/the_obscura/the_obscura.atlas"
+    },
+    {
+      "model": "TwigSlimeM",
+      "model_id": 101,
+      "scene_path": "res://scenes/creature_visuals/twig_slime_m.tscn",
+      "skeleton_path": "res://animations/monsters/twig_slime_m/twig_slime_m.skel",
+      "atlas_path": "res://animations/monsters/twig_slime_m/twig_slime_m.atlas"
+    }
+  ],
+  "clips": [
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "clip": "attack",
+      "source_key": "FossilStalker.attack",
+      "source_directory": 539,
+      "frames": 12,
+      "duration": 1.0,
+      "original_duration": 1,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "clip": "attack_double",
+      "source_key": "FossilStalker.attack_double",
+      "source_directory": 540,
+      "frames": 13,
+      "duration": 1.0333334,
+      "original_duration": 1.0333334,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "clip": "debuff",
+      "source_key": "FossilStalker.debuff",
+      "source_directory": 541,
+      "frames": 17,
+      "duration": 1.3333334,
+      "original_duration": 1.3333334,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "clip": "die",
+      "source_key": "FossilStalker.die",
+      "source_directory": 542,
+      "frames": 17,
+      "duration": 1.4000001,
+      "original_duration": 1.4000001,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "clip": "hurt",
+      "source_key": "FossilStalker.hurt",
+      "source_directory": 543,
+      "frames": 15,
+      "duration": 1.2,
+      "original_duration": 1.2,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "FossilStalker",
+      "model_id": 37,
+      "clip": "idle_loop",
+      "source_key": "FossilStalker.idle_loop",
+      "source_directory": 544,
+      "frames": 32,
+      "duration": 4.0,
+      "original_duration": 4,
+      "loop": true,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "clip": "attack",
+      "source_key": "HauntedShip.attack",
+      "source_directory": 579,
+      "frames": 13,
+      "duration": 1.0333334,
+      "original_duration": 1.0333334,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "clip": "attack_triple",
+      "source_key": "HauntedShip.attack_triple",
+      "source_directory": 580,
+      "frames": 19,
+      "duration": 1.5000001,
+      "original_duration": 1.5000001,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "clip": "debuff",
+      "source_key": "HauntedShip.debuff",
+      "source_directory": 581,
+      "frames": 23,
+      "duration": 1.8333334,
+      "original_duration": 1.8333334,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "clip": "die",
+      "source_key": "HauntedShip.die",
+      "source_directory": 582,
+      "frames": 24,
+      "duration": 2.0,
+      "original_duration": 2,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "clip": "hurt",
+      "source_key": "HauntedShip.hurt",
+      "source_directory": 583,
+      "frames": 12,
+      "duration": 0.9333334,
+      "original_duration": 0.9333334,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "HauntedShip",
+      "model_id": 44,
+      "clip": "idle_loop",
+      "source_key": "HauntedShip.idle_loop",
+      "source_directory": 584,
+      "frames": 54,
+      "duration": 6.666667,
+      "original_duration": 6.666667,
+      "loop": true,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "clip": "attack_buff",
+      "source_key": "SkulkingColony.attack_buff",
+      "source_directory": 1120,
+      "frames": 28,
+      "duration": 2.2833335,
+      "original_duration": 2.2833335,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "clip": "attack_double",
+      "source_key": "SkulkingColony.attack_double",
+      "source_directory": 1121,
+      "frames": 19,
+      "duration": 1.5500001,
+      "original_duration": 1.5500001,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "clip": "attack_heavy",
+      "source_key": "SkulkingColony.attack_heavy",
+      "source_directory": 1122,
+      "frames": 17,
+      "duration": 1.3666668,
+      "original_duration": 1.3666668,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "clip": "die",
+      "source_key": "SkulkingColony.die",
+      "source_directory": 1123,
+      "frames": 45,
+      "duration": 3.6666667,
+      "original_duration": 3.6666667,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "clip": "hurt",
+      "source_key": "SkulkingColony.hurt",
+      "source_directory": 1124,
+      "frames": 15,
+      "duration": 1.1666667,
+      "original_duration": 1.1666667,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "SkulkingColony",
+      "model_id": 76,
+      "clip": "idle_loop",
+      "source_key": "SkulkingColony.idle_loop",
+      "source_directory": 1125,
+      "frames": 107,
+      "duration": 13.333334,
+      "original_duration": 13.333334,
+      "loop": true,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "attack",
+      "source_key": "TheObscura.attack",
+      "source_directory": 1250,
+      "frames": 11,
+      "duration": 0.8333334,
+      "original_duration": 0.8333334,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "cast",
+      "source_key": "TheObscura.cast",
+      "source_directory": 1251,
+      "frames": 20,
+      "duration": 1.6000001,
+      "original_duration": 1.6000001,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "cast_intro",
+      "source_key": "TheObscura.cast_intro",
+      "source_directory": 1252,
+      "frames": 20,
+      "duration": 1.6000001,
+      "original_duration": 1.6000001,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "die",
+      "source_key": "TheObscura.die",
+      "source_directory": 1253,
+      "frames": 21,
+      "duration": 1.7333335,
+      "original_duration": 1.7333335,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "die_intro",
+      "source_key": "TheObscura.die_intro",
+      "source_directory": 1254,
+      "frames": 21,
+      "duration": 1.7333335,
+      "original_duration": 1.7333335,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "hurt",
+      "source_key": "TheObscura.hurt",
+      "source_directory": 1255,
+      "frames": 9,
+      "duration": 0.73333335,
+      "original_duration": 0.73333335,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "hurt_intro",
+      "source_key": "TheObscura.hurt_intro",
+      "source_directory": 1256,
+      "frames": 9,
+      "duration": 0.73333335,
+      "original_duration": 0.73333335,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "idle_loop",
+      "source_key": "TheObscura.idle_loop",
+      "source_directory": 1257,
+      "frames": 32,
+      "duration": 4.0,
+      "original_duration": 4,
+      "loop": true,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TheObscura",
+      "model_id": 93,
+      "clip": "intro_loop",
+      "source_key": "TheObscura.intro_loop",
+      "source_directory": 1258,
+      "frames": 32,
+      "duration": 4.0,
+      "original_duration": 4,
+      "loop": true,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TwigSlimeM",
+      "model_id": 101,
+      "clip": "attack",
+      "source_key": "TwigSlimeM.attack",
+      "source_directory": 1355,
+      "frames": 18,
+      "duration": 1.4666667,
+      "original_duration": 1.4666667,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TwigSlimeM",
+      "model_id": 101,
+      "clip": "cast",
+      "source_key": "TwigSlimeM.cast",
+      "source_directory": 1356,
+      "frames": 16,
+      "duration": 1.2666668,
+      "original_duration": 1.2666668,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TwigSlimeM",
+      "model_id": 101,
+      "clip": "die",
+      "source_key": "TwigSlimeM.die",
+      "source_directory": 1357,
+      "frames": 27,
+      "duration": 2.2,
+      "original_duration": 2.2,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TwigSlimeM",
+      "model_id": 101,
+      "clip": "hurt",
+      "source_key": "TwigSlimeM.hurt",
+      "source_directory": 1358,
+      "frames": 18,
+      "duration": 1.4666667,
+      "original_duration": 1.4666667,
+      "loop": false,
+      "visual_state": {
+        "facts": {}
+      }
+    },
+    {
+      "model": "TwigSlimeM",
+      "model_id": 101,
+      "clip": "idle_loop",
+      "source_key": "TwigSlimeM.idle_loop",
+      "source_directory": 1359,
+      "frames": 60,
+      "duration": 7.466667,
+      "original_duration": 7.466667,
+      "loop": true,
+      "visual_state": {
+        "facts": {}
+      }
+    }
+  ],
+  "static_bodies": [
+    {
+      "model": "DecimillipedeSegmentBack",
+      "model_id": 24,
+      "scene_path": "scenes/creature_visuals/decimillipede_segment_back.tscn",
+      "source": "images/monsters/phobia_mode/decimillipede_segment_back_phobia.png",
+      "key": "phobia.DecimillipedeSegmentBack.body",
+      "clip_action": "body",
+      "position": [
+        -3.0000005,
+        -149.0
+      ],
+      "scale": [
+        0.4109914,
+        0.4109914
+      ],
+      "dead_source": "images/monsters/phobia_mode/decimillipede_segment_back_shriveled_phobia.png",
+      "dead_key": "phobia.DecimillipedeSegmentBack.dead_body",
+      "dead_clip_action": "dead_body"
+    },
+    {
+      "model": "DecimillipedeSegmentFront",
+      "model_id": 25,
+      "scene_path": "scenes/creature_visuals/decimillipede_segment_front.tscn",
+      "source": "images/monsters/phobia_mode/decimillipede_segment_front_phobia.png",
+      "key": "phobia.DecimillipedeSegmentFront.body",
+      "clip_action": "body",
+      "position": [
+        15.0,
+        -155.99998
+      ],
+      "scale": [
+        0.4565774,
+        0.45657733
+      ],
+      "dead_source": "images/monsters/phobia_mode/decimillipede_segment_front_shriveled_phobia.png",
+      "dead_key": "phobia.DecimillipedeSegmentFront.dead_body",
+      "dead_clip_action": "dead_body"
+    },
+    {
+      "model": "DecimillipedeSegmentMiddle",
+      "model_id": 26,
+      "scene_path": "scenes/creature_visuals/decimillipede_segment_middle.tscn",
+      "source": "images/monsters/phobia_mode/decimillipede_segment_middle_phobia.png",
+      "key": "phobia.DecimillipedeSegmentMiddle.body",
+      "clip_action": "body",
+      "position": [
+        5.0,
+        -144.0
+      ],
+      "scale": [
+        0.4565774,
+        0.45657733
+      ],
+      "dead_source": "images/monsters/phobia_mode/decimillipede_segment_middle_shriveled_phobia.png",
+      "dead_key": "phobia.DecimillipedeSegmentMiddle.dead_body",
+      "dead_clip_action": "dead_body"
+    },
+    {
+      "model": "Entomancer",
+      "model_id": 28,
+      "scene_path": "scenes/creature_visuals/entomancer.tscn",
+      "source": "images/monsters/phobia_mode/phobia_entomancer.png",
+      "key": "phobia.Entomancer.body",
+      "clip_action": "body",
+      "position": [
+        -22.95124,
+        -153.2191
+      ],
+      "scale": [
+        0.297513,
+        0.297513
+      ]
+    },
+    {
+      "model": "PhrogParasite",
+      "model_id": 68,
+      "scene_path": "scenes/creature_visuals/phrog_parasite.tscn",
+      "source": "images/monsters/phobia_mode/phrog_parasite_phobia.png",
+      "key": "phobia.PhrogParasite.body",
+      "clip_action": "body",
+      "position": [
+        18.0,
+        -203.0
+      ],
+      "scale": [
+        0.32384846,
+        0.32995048
+      ]
+    },
+    {
+      "model": "TerrorEel",
+      "model_id": 88,
+      "scene_path": "scenes/creature_visuals/terror_eel.tscn",
+      "source": "images/monsters/phobia_mode/terror_eel_phobia.png",
+      "key": "phobia.TerrorEel.body",
+      "clip_action": "body",
+      "position": [
+        18.0,
+        -180.0
+      ],
+      "scale": [
+        0.19855697,
+        0.20229825
+      ]
+    },
+    {
+      "model": "TheInsatiable",
+      "model_id": 91,
+      "scene_path": "scenes/creature_visuals/the_insatiable.tscn",
+      "source": "images/monsters/phobia_mode/the_insatiable_phobia.png",
+      "key": "phobia.TheInsatiable.body",
+      "clip_action": "body",
+      "position": [
+        19.0,
+        -208.0
+      ],
+      "scale": [
+        0.32384846,
+        0.32995048
+      ]
+    },
+    {
+      "model": "Wriggler",
+      "model_id": 107,
+      "scene_path": "scenes/creature_visuals/wriggler.tscn",
+      "source": "images/monsters/phobia_mode/wriggler_phobia.png",
+      "key": "phobia.Wriggler.body",
+      "clip_action": "body",
+      "position": [
+        4.7683716e-07,
+        -54.0
+      ],
+      "scale": [
+        0.22441502,
+        0.22864349
+      ]
+    }
+  ],
+  "backgrounds": [
+    {
+      "key": "phobia_backgrounds.FACTORY",
+      "path": "scenes/backgrounds/factory/factory_background.tscn",
+      "size": [
+        320,
+        218
+      ]
+    },
+    {
+      "key": "phobia_backgrounds.HIVE",
+      "path": "scenes/backgrounds/hive/hive_background.tscn",
+      "size": [
+        320,
+        218
+      ]
+    },
+    {
+      "key": "phobia_backgrounds.KNOWLEDGE_DEMON_BOSS",
+      "path": "scenes/backgrounds/knowledge_demon_boss/knowledge_demon_boss_background.tscn",
+      "size": [
+        320,
+        218
+      ]
+    },
+    {
+      "key": "phobia_backgrounds.THE_INSATIABLE_BOSS",
+      "path": "scenes/backgrounds/the_insatiable_boss/the_insatiable_boss_background.tscn",
+      "size": [
+        320,
+        218
+      ]
+    }
+  ],
+  "limitations": [
+    "Entomancer SwarmParticles are not converted by the static replacement body.",
+    "Background variation uses the same selected layers and camera as the existing normal packed scene."
+  ]
+}

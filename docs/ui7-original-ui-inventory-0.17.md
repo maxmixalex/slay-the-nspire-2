@@ -6,7 +6,7 @@ Reference: **v0.111.0 /41cef1ea**. Port baseline: `9cecd0f743ce6cd100df91b103bab
 
 The private pinned assembly decompilation contains **3,528 C# files**, including **724 files in Nodes namespaces**. A broad UI path filter adds **13 AutoSlay screen handlers** and **3 Entities.UI support files**, producing **740**. There are **682 N-prefixed files** across the entire source tree, including seven non-UI/debug helpers; that prefix alone is not a visible-interface inventory. The pinned PCK contains **1,022 scene files**. These are indexing counts, not implementation or restoration percentages.
 
-The initial full decompile contains **14 empty files**, including **five in the broad UI set**. `NCombatRoom` and `GalvanicPower` have separate repaired decompilations. `NCard`, `PotionModel`, `NDropdownContainer` and `NMapPointHistoryHoverTip` are assigned targeted recovery. An empty or incomplete class is unknown until that recovery is inspected. Generated Godot method/property wrappers are not functional source coverage.
+The initial full decompile contains **14 empty files**, including **five in the broad UI set**. `NCombatRoom`, `GalvanicPower`, `NCard`, `PotionModel`, `NDropdownContainer`, `NMapPointHistoryHoverTip` and `ActModel` now have separate recovered decompilations used by their corresponding audits. The correct dropdown type is in `Nodes.CommonUi`. Other empty or incomplete classes remain unknown until independently recovered. Generated Godot method/property wrappers are not functional source coverage.
 
 ## Visibility is a code contract
 
@@ -16,15 +16,15 @@ Only **audio, multiplayer and Timeline** are explicitly outside the active proje
 
 ## Behavioral contracts
 
-The JSON companion contains the exact source type paths, namespace/scene counts, empty-source inventory and **58 behavioral contracts**. These contracts have unequal size and complexity and must not be divided into a claimed fidelity percentage. `implemented_unvalidated` means source code and meaningful regression source exist, not a completed feature acceptance. `partial` includes real port behavior plus named remaining original differences.
+The JSON companion contains the exact source type paths, namespace/scene counts, empty-source inventory and **59 behavioral contracts**, including the font-family contract added after actual font recovery. These contracts have unequal size and complexity and must not be divided into a claimed fidelity percentage. `implemented_unvalidated` means source code and meaningful regression source exist, not a completed feature acceptance. `partial` includes real port behavior plus named remaining original differences; `in_progress` is an active source change that has not reached an acceptance gate.
 
 | Domain | Contracts | Current boundaries |
 | --- | ---: | --- |
 | entry | 6 | 1 original_hidden, 3 partial, 2 unimplemented |
-| collections | 8 | 1 original_hidden, 3 partial, 4 unimplemented |
-| run | 12 | 11 partial, 1 unverified |
-| combat | 18 | 2 implemented_unvalidated, 15 partial, 1 unimplemented |
-| global | 11 | 2 implemented_unvalidated, 3 partial, 4 unimplemented, 2 unverified |
+| collections | 8 | 1 original_hidden, 6 partial, 1 in_progress |
+| run | 12 | 12 partial |
+| combat | 18 | 2 implemented_unvalidated, 16 partial |
+| global | 12 | 2 implemented_unvalidated, 4 partial, 4 unimplemented, 2 unverified |
 | excluded | 3 | 3 excluded |
 
 ## Immediate implementation assignments
@@ -33,7 +33,18 @@ The JSON companion contains the exact source type paths, namespace/scene counts,
 - Cards: real grid scrolling/thumb, target reticles, potion error/selection behavior, and original library/collection filters.
 - Rooms: merchant movement/dialogue/hand tracking, event typewriter/option timing and special layouts, map legend/history, reward alternatives and direct removal.
 - Shared interface: title/compendium routes, original-supported settings and language switching, persistent statistics/history contracts.
-- Bestiary: a coherent enemy-list, pose and move-description flow can reuse the pinned enemy catalogue. Its original progress gate needs one shared metadata policy rather than an invented local counter.
+- Bestiary: the real enemy list, preview actions and character statistics now use independent observed progress and the original gate. Corrected fixtures and actual bilingual acceptance are pending; all special move VFX and phase-dependent preview contexts remain partial.
+- Fonts and phobia: actual bilingual original-font conversion passed. Phobia's original skin/body/background converter and App selection path are implemented with registration/codec fixtures; its actual conversion and screen acceptance remain pending.
+
+Checkpoint 4's Release build succeeded, but its complete native gate passed
+**68 of 84 suites**. Corrected fixtures do not retroactively change that result.
+Checkpoint 5 separately passed five font-tool tests and both actual font
+conversions. The library suite and 860-character-variant suite passed their
+stated checkpoint-4 scope; failed later modal/room suites and still-unexecuted
+viewport corrections remain separate. The actual character conversion also
+exposed an incorrect 1440×1080 assumption; the source's 1680×1260 contract is
+now the basis for the pending resample. Sampling original artwork is not
+whole-screen acceptance.
 
 ## What this audit does not establish
 

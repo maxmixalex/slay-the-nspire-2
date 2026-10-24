@@ -1,12 +1,12 @@
 CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint32_t identity){
-    auto&grid=card_grids[unsigned(surface)];int top=43,bottom=207,inset=8;
-    if(surface==CardGridSurface::Pile){top=22;bottom=211;inset=pile_tab?18:40;identity=identity*8+unsigned(pile_tab);}
+    auto&grid=card_grids[unsigned(surface)];int top=43,bottom=207,inset=8,left=CardGridScroll::Left;
+    if(surface==CardGridSurface::Pile){top=22;bottom=240;inset=pile_tab?8:27;left=pile_tab?52:57;identity=identity*8+unsigned(pile_tab);}
     else if(surface==CardGridSurface::Library){
         if(library_tab){prepare_collection();return card_grids[unsigned(surface)];}
-        grid.configure(card_library.epoch,pile_sort_epoch,count,0,240,18,3,92,false);return grid;
+        grid.configure(card_library.epoch,pile_sort_epoch,count,0,240,15,4,75,false);return grid;
     }
     else if(surface==CardGridSurface::DeckChoice){top=48;bottom=208;inset=6;identity=identity*32+unsigned(game.phase)+unsigned(grimoire_select)*256;}
-    grid.configure(identity,pile_sort_epoch,count,top,bottom,inset);return grid;
+    grid.configure(identity,pile_sort_epoch,count,top,bottom,inset,CardGridScroll::Columns,left);grid.bar_inset=surface==CardGridSurface::Pile?18:25;return grid;
 }
 void App::reset_card_grids(){for(auto&grid:card_grids)grid.reset();card_grid_drag=-1;}
 int App::active_card_grid()const{

@@ -1,4 +1,6 @@
 static bool collection_ancient_known(const App&a,unsigned category){
+    static constexpr OriginalEventId events[]={OriginalEventId::Neow,OriginalEventId::Orobas,OriginalEventId::Pael,OriginalEventId::Tezcatara,OriginalEventId::Nonupeipe,OriginalEventId::Tanx,OriginalEventId::Vakuu,OriginalEventId::Darv};
+    if(category>=8&&category<16){const unsigned id=unsigned(events[category-8])-1;if(a.progress.discovered_events[id/8]&(1u<<(id%8)))return true;}
     for(unsigned row=0;row<a.collection.row_count;++row){const auto&r=a.collection.rows[row];
         if(r.category==category)for(unsigned i=0;i<r.count;++i)if(a.library_item_seen(1,a.collection.ids[r.first+i]))return true;
     }return false;
@@ -16,12 +18,7 @@ static const char*collection_header(Canvas&c,unsigned category,char*out,unsigned
     LocalizedTemplate formatter(out,capacity,collection_header_value,name);formatter.format(c.a.content.locale_string("relic_collection","ANCIENT_SUBCATEGORY"));return out;
 }
 static int collection_item_scale(App&a,int index,bool focused,bool relic){
-    auto&motion=a.collection.hover[unsigned(index)%32];
-    if(motion.index!=index){motion={};motion.index=int16_t(index);motion.start=a.map_clock_ms-1000;}
-    if(motion.focused!=focused){motion.focused=focused;motion.start=a.map_clock_ms;}
-    const unsigned elapsed=a.map_clock_ms-motion.start;
-    if(focused)return relic?5120:4096+819*int(mn(int(elapsed),50))/50;
-    const unsigned duration=relic?1000:500;return 4096+(relic?1024:819)*int(elapsed>=duration?0:4096-health_bar::expo_out(elapsed*1000/duration))/4096;
+    return a.collection.observe_hover(index,focused,relic,a.map_clock_ms);
 }
 static void collection_tooltip(Canvas&c,int index,int x,int y,int width){
     auto&a=c.a;if(index<0||index>=a.collection.count)return;
@@ -39,13 +36,13 @@ static void collection_tooltip(Canvas&c,int index,int x,int y,int width){
 }
 static void collection_screen(Canvas&c){
     auto&a=c.a;a.prepare_collection();auto&grid=a.card_grids[unsigned(CardGridSurface::Library)];const bool relic=a.library_tab==1;
-    const int offset=grid.offset(),base_size=relic?19:13;int focused=-1,focus_x=0,focus_y=0;
-    // The category width is 1020 source pixels, centered in the 1440 viewport.
+    const int offset=grid.offset(),base_size=relic?16:11;int focused=-1,focus_x=0,focus_y=0;
+    // The category width is 1020 source pixels, centered in the 1680 viewport.
     for(unsigned i=0;i<a.collection.category_count;++i){const int y=a.collection.category_y[i]-offset;const unsigned category=a.collection.category_kind[i];
         if(y<-12||y>=240)continue;char text[512];const char*header=collection_header(c,category,text,sizeof text);
         const int icon=category>=8?collection_assets::AncientIcon[category-8]:-1;
-        if(icon>=0)c.ui(icon,47,y-2,11,11);
-        c.text_fitted(header,icon>=0?59:47,y,icon>=0?214:226,8,White,8);
+        if(icon>=0)c.ui(icon,63,y-2,9,9);
+        c.text_fitted(header,icon>=0?74:63,y,icon>=0?183:194,8,White,8);
     }
     int images[144];unsigned prepared=0;
     for(unsigned row=0;row<a.collection.row_count;++row){const auto&r=a.collection.rows[row];const int y=r.y-offset;
@@ -58,7 +55,7 @@ static void collection_screen(Canvas&c){
     for(unsigned row=0;row<a.collection.row_count;++row){const auto&r=a.collection.rows[row];const int y=r.y-offset;
         if(y<-base_size-4||y>=244)continue;
         for(unsigned column=0;column<r.count;++column){const int index=r.first+column,id=a.collection.ids[index];
-            const int x=(258+int(column)*(relic?100:92))*2/9,hit_size=(relic?68:60)*2/9;
+            const int x=reference_viewport::project(378+int(column)*(relic?100:92)),hit_size=reference_viewport::project(relic?68:60);
             const bool mouse=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+hit_size+2&&a.pointer.y>=y-2&&a.pointer.y<y+hit_size+2;
             const bool selected=!a.pointer.held&&(mouse||(!a.pointer.visible&&index==a.library_selected));
             const int scale=collection_item_scale(a,index,selected,relic),size=base_size*scale/4096,cx=x+hit_size/2,cy=y+hit_size/2;

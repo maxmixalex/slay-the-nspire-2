@@ -61,8 +61,10 @@ static void title_logo(Canvas&c){
  c.picture_region(logo,title_scene::FireX,title_scene::FireY,int(frame)*title_scene::FireWidth,title_scene::FireAtlasY,
      title_scene::FireWidth,title_scene::FireHeight);
 }
+#include "profiles_ui.inc"
 static void title_screen(Canvas&c){
     auto&a=c.a;title_background(c);title_logo(c);
+    profile_title_button(c);
     const int count=a.title_menu_count();
     for(int i=0;i<count;i++){
         const int y=title_scene::menu_top(count)+i*title_scene::MenuRowHeight;
@@ -205,9 +207,12 @@ static void frontend_settings_screen(Canvas&c){
 
 }
 static void frontend_confirm_screen(Canvas&c){
- auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4;a.hit_count=0;c.dim(0,0,320,240,210);
+ auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4,erase_profile=a.frontend_confirm==5;a.hit_count=0;c.dim(0,0,320,240,210);
  const char*header=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_CONFIRMATION.header":quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",reset?"重置设置":quitting?"退出游戏":"你确定吗？");
  const char*body=frontend_text(a,reset?"settings_ui":"main_menu_ui",reset?"RESET_GAMEPLAY_CONFIRMATION.body":quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",reset?"恢复默认设置？":quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。");
+ char profile_header[128]{},profile_body[1024]{};
+ if(erase_profile){profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.title",a.content.english()?"Delete Save Profile {Id}?":"是否删除{Id}号存档？",{a.profile_target},profile_header,sizeof profile_header);
+  profile_text(a,"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.description",a.content.english()?"All data in Save Profile {Id} will be deleted. This cannot be undone.":"{Id}号存档内的所有数据将被删除。这一操作无法逆转。",{a.profile_target},profile_body,sizeof profile_body);header=profile_header;body=profile_body;}
  if(a.content.version()>=Ui6ContentVersion){
   // NGenericPopup instantiates the 522x600 vertical popup and independent
   // cancel/confirm skins, not the navigation BackButton/ConfirmButton.
@@ -216,7 +221,7 @@ static void frontend_confirm_screen(Canvas&c){
   const int lines=c.paragraph(body,90,61,140,0,0,10,White);
   c.paragraph(body,90,61+mx(0,(101-lines*12)/2),140,8,0,10,White);
   for(int i=0;i<2;++i){const int x=73+i*114,y=169;const bool selected=!a.pointer.visible&&int(a.frontend_choice)==i;
-   const char*label=frontend_text(a,"main_menu_ui",i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel",i?"确认":"取消");
+   const char*label=frontend_text(a,"main_menu_ui",erase_profile?(i?"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.delete":"PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel"):(i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel"),i?"确认":"取消");
    const auto visual=c.control_visual(label,x,y,60,24,ButtonFamily::Action,selected,true);
    const int w=60*visual.scale/4096,h=24*visual.scale/4096,left=x+(60-w)/2,top=y+(24-h)/2;
    Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
@@ -242,6 +247,7 @@ static void item_detail_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,190);c.ui(U_RewardPanel,43,26,234,206);
     bool relic=a.detail_item<WorldRelicKinds;int index=relic?a.detail_item:a.detail_item-WorldRelicKinds;
     if(index<0||index>=(relic?WorldRelicKinds:PotionKinds)){a.detail_item=-1;return;}
+    if(!a.library&&!a.history_open){if(relic)a.discover_relic(RelicId(index));else a.discover_potion(Potion(index+1));}
     const char*name=relic?a.relic_title(RelicId(index),a.detail_owned):potion_name(index+1,&a.content);
     char description[4096]{};if(relic)a.relic_description(RelicId(index),description,sizeof description,a.detail_owned);
     if(!relic)ui_potion_description(a,index+1,description,sizeof description);

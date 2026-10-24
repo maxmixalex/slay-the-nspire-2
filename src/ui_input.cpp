@@ -24,6 +24,20 @@ uint32_t App::next_run_seed(bool* randomized){
 #include "collection_input.inc"
 void App::sync_selection(){
     if(choice_revision!=game.revision){choice_selected_count=0;choice_revision=game.revision;}
+    if(!game.world.active||game.practice||!combat_choice_ready()||(catalog_choice_revision==game.revision&&catalog_choice_phase==unsigned(game.phase)))return;
+    catalog_choice_revision=game.revision;catalog_choice_phase=unsigned(game.phase);
+    // RelicSelectCmd and Reward.MarkContentAsSeen mark the offered content
+    // when its screen is created. Reopening a pending saved choice also
+    // observes it; hovering and timed renders do not rescan the reward set.
+    if(world_choice_is_potion_reward()){discover_potion(world_choice_potion(0));return;}
+    if(game.phase==Phase::OriginalEventChoice){const auto&e=game.original_events;
+        if(e.selection==OriginalEventSelection::OfferCard)for(unsigned i=0;i<e.offer_count;++i)discover_card(card_from_token(e.offers[i]).kind);
+        else if(e.selection==OriginalEventSelection::Relic)for(unsigned i=0;i<e.offer_count;++i)discover_relic(RelicId(e.offers[i]));
+        else if(e.selection==OriginalEventSelection::Rewards)for(unsigned i=0;i<e.reward_count;++i){const auto&r=e.rewards[i];if(r.kind==2)discover_potion(Potion(r.model));else if(r.kind==3)discover_relic(RelicId(r.model));}
+    }else if(game.phase==Phase::WorldRelicChoice){const auto&w=game.world_relics;
+        if(w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer)for(unsigned i=0;i<w.offer_count;++i)discover_card(card_from_token(w.offers[i]).kind);
+        else if(w.choice==WorldRelicChoice::OfferReward)for(unsigned i=0;i<w.offer_count;++i)if(w.offers[i]<w.reward_count){const auto&r=w.rewards[w.offers[i]];if(r.kind==2)discover_relic(RelicId(r.value));else if(r.kind==3)discover_potion(Potion(r.value));}
+    }
 }
 void App::toggle_choice(int id){
     if(!combat_choice_ready())return;
@@ -89,6 +103,12 @@ void App::ui_action(UiAction action){
     }
     switch(action){
     case UiAction::OpenCompendium:open_compendium();break;
+    case UiAction::OpenProfiles:open_profiles();break;
+    case UiAction::SelectProfile1:case UiAction::SelectProfile2:case UiAction::SelectProfile3:
+        request_profile_change(unsigned(action)-unsigned(UiAction::SelectProfile1)+1);break;
+    case UiAction::DeleteProfile1:case UiAction::DeleteProfile2:case UiAction::DeleteProfile3:
+        if(profiles_open&&!profile_pending){const unsigned target=unsigned(action)-unsigned(UiAction::DeleteProfile1);
+            if(profile_summaries[target].exists){profile_target=uint8_t(target+1);frontend_confirm=5;frontend_choice=0;pointer_cancel();}}break;
     case UiAction::OpenBestiary:if(compendium_open)open_bestiary();break;
     case UiAction::OpenStatistics:if(compendium_open)open_statistics();break;
     case UiAction::OpenHistory:if(compendium_open)open_history();break;
@@ -274,7 +294,7 @@ bool App::screen_input(Key key){
     if(key==Key::Collection){open_compendium();return true;}
     if(library){
         if(key==Key::Back){open_compendium();return true;}
-        if(key==Key::Map&&game.world.active&&!title&&!paused){library=false;if(!map_window.visible)open_map_window(true);return true;}
+        if(key==Key::Map&&game.world.active&&!title&&!paused){library=compendium_open=false;if(!map_window.visible)open_map_window(true);return true;}
         if(key==Key::Quit){cancel_map_travel();quit=true;return true;}
         library_input(key);return true;
     }

@@ -109,6 +109,17 @@ static void block_break(){
  CHECK(HealthBarMotion::block_break_progress(300,true)==2048&&HealthBarMotion::block_break_progress(600,true)==4096);
  m.observe_block(0,1633);CHECK(!m.block_breaking);m.observe_block(3,1700,true);m.observe_block(0,1701,true);CHECK(!m.block_breaking);
 }
+static void equal_sparks(const CombatSparkMotion&a,const CombatSparkMotion&b){
+ // Cosmetic structs contain alignment padding. Compare all live display
+ // fields; their uninitialized padding has no renderer or save semantics.
+ CHECK(a.count==b.count&&a.clock==b.clock);
+ for(unsigned i=0;i<a.count;++i){const auto&x=a.bursts[i];const auto&y=b.bursts[i];
+  CHECK(x.at==y.at&&x.seed==y.seed&&x.x==y.x&&x.y==y.y&&x.stepped==y.stepped&&x.steps==y.steps&&x.blocked==y.blocked);
+  for(unsigned j=0;j<CombatSparkMotion::Particles;++j){const auto&p=x.particles[j];const auto&q=y.particles[j];
+   CHECK(p.distance==q.distance&&p.speed==q.speed&&p.radial==q.radial&&p.damping==q.damping&&p.scale==q.scale&&p.lifetime==q.lifetime&&p.angle==q.angle&&p.variation==q.variation);
+  }
+ }
+}
 static void sparks(){
  CombatSparkMotion stepped,skipped;
  for(unsigned i=0;i<3;++i){stepped.emit(100,50+int(i)*40,90,i==1,0x41cef1eau+i);skipped.emit(100,50+int(i)*40,90,i==1,0x41cef1eau+i);}
@@ -117,8 +128,8 @@ static void sparks(){
  for(unsigned now=100;now<600;now+=17)stepped.step(now);stepped.step(600);skipped.step(600);
  // The authored material is integrated on its own60Hz boundaries. Host
  // rendering cadence cannot alter its emitted paths or display random seed.
- CHECK(!std::memcmp(&stepped,&skipped,sizeof stepped));
- const auto before=stepped;stepped.step(600);CHECK(!std::memcmp(&before,&stepped,sizeof stepped));
+ equal_sparks(stepped,skipped);
+ const auto before=stepped;stepped.step(600);equal_sparks(before,stepped);
  CHECK(stepped.bursts[0].particles[0].distance>0);stepped.step(1099);CHECK(stepped.count==3);stepped.step(1100);CHECK(!stepped.count);
  for(unsigned i=0;i<CombatSparkMotion::Capacity+3;++i)stepped.emit(i,20,30,false,i+1);
  CHECK(stepped.count==CombatSparkMotion::Capacity&&stepped.bursts[0].at==3);

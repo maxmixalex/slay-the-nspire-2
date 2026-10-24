@@ -9,6 +9,18 @@ static void card_grid_hit(Canvas&c,const CardGridScroll&grid,int x,int y,int w,i
     const int top=mx(y,int(grid.top)),bottom=mn(y+h,int(grid.bottom));
     if(bottom>top)c.hit(x,top,w,bottom-top,kind,value,enabled);
 }
+static LocalizedValue card_grid_victory_value(const void*opaque,const char*key){return wt_equal(key,"Victories")?LocalizedValue{true,*static_cast<const uint32_t*>(opaque),1,nullptr}:LocalizedValue{};}
+static void card_grid_stats(Canvas&c,CardKind kind,int cx,int cy,int scale){
+    const int x=cx-117*scale*4/21000,y=cy-138*scale*4/21000,w=231*scale*4/21000,h=117*scale*4/21000;
+    c.dim(x,y,w,h,186);char label[128]{};LocalizedTemplate text(label,sizeof label,card_grid_victory_value,&c.a.progress.card_wins[kind]);text.format(c.a.content.locale_string("card_library","VICTORIES"));
+    // The original 30px single-line label projects below the 8px atlas size.
+    // Rasterize that small label once here, then scale into its authored box.
+    const int width=mn(176,mx(1,c.width(label,8))),height=11;uint16_t pixels[176*11]{};uint8_t alpha[176*11]{};
+    Canvas stamp=c;stamp.pixels=pixels;stamp.coverage=alpha;stamp.pitch=width;stamp.clip_w=width;stamp.clip_h=height;
+    stamp.opacity=stamp.brightness=stamp.tint_red=stamp.tint_green=stamp.tint_blue=255;stamp.text(label,0,0,8,White,width);
+    const int draw_width=mn(w-2,width),draw_height=mx(1,height*draw_width/width);
+    c.picture(Picture{reinterpret_cast<const uint8_t*>(pixels),alpha,nullptr,uint16_t(width),uint16_t(height),0},x+(w-draw_width)/2,y+(h-draw_height)/2,draw_width,draw_height);
+}
 struct CardGridPainter {
     Canvas&c;CardGridScroll&grid;int hover=-1;
     struct Face {int index=-1,fee=-2,stars=-2,instance=-1,deck=-1,scale=800;Card card{};const EventCardFacts*facts=nullptr;bool playable=true,chosen=false,known=true;} front;
@@ -28,12 +40,13 @@ struct CardGridPainter {
         const int x=grid.card_x(index)+(CardGridScroll::CardW-w)/2,y=grid.card_y(index)+(CardGridScroll::CardH-h)/2;
         return c.a.pointer.x>=x-2&&c.a.pointer.x<x+w+2&&c.a.pointer.y>=y-2&&c.a.pointer.y<y+h+2;
     }
-    static int face_width(int scale){return (300*scale*2+4500)/9000;}
-    static int face_height(int scale){return (422*scale*2+4500)/9000;}
+    static int face_width(int scale){return (300*scale*4+10500)/21000;}
+    static int face_height(int scale){return (422*scale*4+10500)/21000;}
     void draw(const Face&face){
         Canvas layer=card_grid_canvas(c,grid);const int w=face_width(face.scale),h=face_height(face.scale);
         const int x=grid.card_x(face.index)+(CardGridScroll::CardW-w)/2,y=grid.card_y(face.index)-grid.top+(CardGridScroll::CardH-h)/2;
         draw_card_face(layer,face.card,x,y,w,h,face.fee,face.stars,face.instance,face.deck,face.facts,nullptr,nullptr,face.known);
+        if(c.a.library&&!c.a.library_tab&&c.a.card_library.show_stats)card_grid_stats(layer,face.card.kind,x+w/2,y+h/2,face.scale);
         if(!face.playable)layer.dim(x,y,w,h,125);
         if(face.chosen){layer.box(x-3,y-3,w+6,h+6,Green);layer.rect(x+w-16,y+h-18,14,17,Panel);layer.text("✓",x+w-15,y+h-18,12,Green);}
     }
@@ -59,14 +72,14 @@ struct CardGridPainter {
 static void card_grid_scrollbar(Canvas&c,CardGridScroll&grid,CardGridSurface surface){
     if(!grid.has_scrollbar())return;
     const int top=grid.bar_top(),bottom=grid.bar_bottom(),center=grid.thumb_y();
-    c.ui(I6_ScrollbarTrack,300,top,11,bottom-top);c.ui(I6_ScrollbarEdge,300,top-11,11,11);
-    ui_picture_transform(c,c.a.content.ui_image(I6_ScrollbarEdge),305,bottom+5,11,11,0,-1024);
+    c.ui(I6_ScrollbarTrack,301,top,10,bottom-top);c.ui(I6_ScrollbarEdge,301,top-10,10,10);
+    ui_picture_transform(c,c.a.content.ui_image(I6_ScrollbarEdge),306,bottom+5,10,10,0,-1024);
     const bool hover=c.a.pointer.visible&&c.a.pointer.x>=295&&c.a.pointer.x<316&&c.a.pointer.y>=center-10&&c.a.pointer.y<center+10;
     if(hover!=grid.thumb_hover){grid.thumb_hover=hover;grid.hover_changed=c.a.map_clock_ms;}
     const unsigned elapsed=c.a.map_clock_ms-grid.hover_changed;
     const int recovery=elapsed>=500?0:4096-int(health_bar::expo_out(elapsed*2));
     const int scale=hover?1178:1024+154*recovery/4096;
     const int size=CardGridScroll::ThumbSize*scale/1024;
-    c.ui(I6_ScrollbarGrabber,305-size/2,center-size/2,size,size);
+    c.ui(I6_ScrollbarGrabber,306-size/2,center-size/2,size,size);
     c.hit(294,top-8,23,bottom-top+16,HitKind::GridScroll,int(surface));
 }

@@ -159,6 +159,8 @@ static void camp_proceed(bool keyboard){
  reset();CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));a.game.original_events=OriginalEventState{};a.game.world.room_type=uint8_t(WorldRoom::Rest);a.game.phase=Phase::Camp;
  auto&w=a.game.world;w.rest_count=2;w.rest_options[0]=uint8_t(WorldRestOption::Heal);w.rest_options[1]=uint8_t(WorldRestOption::Smith);add(WorldRelicMiniatureTent);a.game.hp=30;present();a.render();
  CHECK(!world_rest_can_proceed(a.game)&&!has_action(UiAction::LeaveCamp));snapshot();a.input(Key::EndTurn);unchanged();
+ // NRestSiteButton.MouseFilter remains blocked for its 500ms entrance.
+ CHECK(!hit(HitKind::Choice,0).enabled);a.advance(250);a.advance(249);a.render();CHECK(!hit(HitKind::Choice,0).enabled);a.advance(1);a.render();CHECK(hit(HitKind::Choice,0).enabled);unchanged();
  press(HitKind::Choice,0);CHECK(a.game.phase==Phase::Camp&&world_rest_can_proceed(a.game)&&world_rest_option_enabled(a.game,1));a.render();CHECK(has_action(UiAction::LeaveCamp));const int hp=a.game.hp;capture(keyboard?"rest-tent-keyboard":"rest-tent-proceed");
  if(keyboard)a.input(Key::EndTurn);else press_action(UiAction::LeaveCamp);CHECK(a.game.phase==Phase::Camp&&w.room_open==2&&a.map_window.is_open&&a.game.hp==hp);snapshot();
 }

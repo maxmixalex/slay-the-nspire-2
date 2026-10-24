@@ -16,13 +16,13 @@ void App::prepare_collection(){
     const bool relic=library_tab==1;const auto&rank=collection_title_rank[content.english()?0:1];
     int y=150;const int item_size=relic?68:60;
     auto header=[&](unsigned kind){
-        if(v.category_count<16){v.category_kind[v.category_count]=uint8_t(kind);v.category_y[v.category_count++]=int16_t(y*2/9);}y+=56;
+        if(v.category_count<16){v.category_kind[v.category_count]=uint8_t(kind);v.category_y[v.category_count++]=int16_t(reference_viewport::project(y));}y+=56;
     };
     auto rows=[&](const uint16_t*ids,unsigned count,unsigned category){
         for(unsigned start=0;start<count;start+=10){
             const unsigned n=count-start<10?count-start:10;
             if(v.row_count>=CollectionPresentation::MaxRows||v.count+n>WorldRelicKinds)return;
-            auto&row=v.rows[v.row_count++];row={v.count,uint8_t(n),uint8_t(category),int16_t(y*2/9)};
+            auto&row=v.rows[v.row_count++];row={v.count,uint8_t(n),uint8_t(category),int16_t(reference_viewport::project(y))};
             for(unsigned i=0;i<n;++i)v.ids[v.count++]=ids[start+i];y+=item_size+32;
         }
     };
@@ -56,7 +56,7 @@ void App::prepare_collection(){
         for(unsigned ancient=1;ancient<=8;++ancient){header(7+ancient);sorted_group(7,int(ancient),7+int(ancient));}
         header(6);sorted_group(6,0,6);
     }else for(unsigned category=0;category<4;++category){header(category);sorted_group(int(category)+1,0,int(category));}
-    grid.configure(unsigned(library_tab),pile_sort_epoch,v.count,0,240,0,10,57,false,(y+150)*2/9);
+    grid.configure(unsigned(library_tab),pile_sort_epoch,v.count,0,240,0,10,57,false,reference_viewport::project(y+150));
     library_selected=CardGridScroll::clamp(library_selected,0,v.count?int(v.count)-1:0);
 }
 void App::focus_collection(){

@@ -25,7 +25,9 @@ void App::restore_progress(){
 bool App::persist_progress(){
     if(!progress_loaded||!progress_dirty)return true;
     if(progress_matches(progress.current,game)&&!progress.current.outcome)progress_snapshot(progress.current,game);
-    if(callbacks.save_progress&&!callbacks.save_progress(progress))return false;
+    if(callbacks.save_progress){const uint32_t previous_saved=progress.last_saved_at;
+        if(callbacks.wall_clock)progress.last_saved_at=callbacks.wall_clock();
+        if(!callbacks.save_progress(progress)){progress.last_saved_at=previous_saved;return false;}}
     progress_dirty=false;return true;
 }
 void App::begin_progress(bool resumed){
@@ -57,6 +59,14 @@ void App::progress_time(uint32_t milliseconds){
 void App::discover_potion(Potion potion){
     const unsigned value=unsigned(potion);if(!value||value>PotionKinds)return;const unsigned id=value-1;
     const uint8_t bit=uint8_t(1u<<(id%8));if(!(progress.discovered_potions[id/8]&bit)){progress.discovered_potions[id/8]|=bit;progress_dirty=true;}
+}
+void App::discover_card(CardKind kind){
+    const unsigned id=unsigned(kind);if(id>=CardKinds)return;const uint8_t bit=uint8_t(1u<<(id%8));
+    if(!(progress.discovered_cards[id/8]&bit)){progress.discovered_cards[id/8]|=bit;progress_dirty=true;card_library.invalidate();}
+}
+void App::discover_relic(RelicId relic){
+    const unsigned id=unsigned(relic);if(id>=WorldRelicKinds)return;const uint8_t bit=uint8_t(1u<<(id%8));
+    if(!(progress.discovered_relics[id/8]&bit)){progress.discovered_relics[id/8]|=bit;progress_dirty=true;}
 }
 void App::observe_progress_log(Log log){
     if(log.kind!=LogKind::Gold||log.a<=0||!progress_matches(progress.current,game)||progress.current.outcome)return;
@@ -114,12 +124,12 @@ void App::sync_progress(){
     auto&r=progress.current;
     const unsigned region=game.world.rooms[game.world.act_index].region;
     if(region<4)progress.discovered_acts|=uint8_t(1u<<region);
-    for(unsigned i=0;i<game.deck_count;++i){const unsigned id=game.deck[i].kind;if(id<CardKinds)progress.discovered_cards[id/8]|=uint8_t(1u<<(id%8));}
-    for(auto potion:game.potions)discover_potion(potion);
-    if(game.phase==Phase::Shop)for(auto potion:game.shop_potions)discover_potion(Potion(potion));
-    if(game.phase==Phase::Reward&&!game.world.combat_ending)discover_potion(game.reward_potion);
+    for(unsigned i=0;i<game.deck_count;++i)discover_card(game.deck[i].kind);
+    for(unsigned i=0;i<potion_slot_count(game);++i)discover_potion(potion_at(game,i));
+    if(game.phase==Phase::Shop){for(auto potion:game.shop_potions)discover_potion(Potion(potion));for(auto relic:game.world.shop_relics)discover_relic(relic);}
+    if(game.phase==Phase::Reward&&!game.world.combat_ending){discover_potion(game.reward_potion);discover_relic(game.world.reward_relic);}
     if(game.original_events.active&&unsigned(game.original_events.id)&&unsigned(game.original_events.id)<=OriginalEventKinds){const unsigned id=unsigned(game.original_events.id)-1;progress.discovered_events[id/8]|=uint8_t(1u<<(id%8));}
-    for(unsigned i=0;i<game.world_relics.count;++i){const unsigned id=game.world_relics.entries[i].id;if(id<WorldRelicKinds)progress.discovered_relics[id/8]|=uint8_t(1u<<(id%8));}
+    for(unsigned i=0;i<game.world_relics.count;++i)discover_relic(game.world_relics.entries[i].id);
     if(r.floor_count){auto&f=r.floors[r.floor_count-1];
         if(f.act==game.world.act_index&&f.point==game.world.current_point){
             f.hp=uint16_t(mx(0,game.hp));f.max_hp=uint16_t(mx(0,game.max_hp));f.gold=uint16_t(mx(0,game.gold));
@@ -162,6 +172,11 @@ void App::finish_progress(bool abandoned,const State*source){
     progress_snapshot(r,s);r.outcome=abandoned?3:s.phase==Phase::Complete?1:2;r.abandoned=abandoned;
     auto&stats=progress.characters[r.character];
     if(r.outcome==1){stats.wins=progress_add(stats.wins,1);stats.current_streak=progress_add(stats.current_streak,1);
+        // ProgressSaveManager counts distinct ModelIds in the final deck,
+        // once per victory, independently from copy count or upgrade level.
+        uint8_t unique[(CardKinds+7)/8]{};
+        for(unsigned i=0;i<r.deck_count;++i){const unsigned id=r.deck[i].card.kind;if(id<CardKinds&&!(unique[id/8]&(1u<<(id%8)))){
+            unique[id/8]|=uint8_t(1u<<(id%8));progress.card_wins[id]=progress_add(progress.card_wins[id],1);}}
         if(stats.current_streak>stats.best_streak)stats.best_streak=stats.current_streak;
         if(r.ascension==stats.highest_ascension&&stats.highest_ascension<10)++stats.highest_ascension;
         progress.current_streak=progress_add(progress.current_streak,1);if(progress.current_streak>progress.best_streak)progress.best_streak=progress.current_streak;

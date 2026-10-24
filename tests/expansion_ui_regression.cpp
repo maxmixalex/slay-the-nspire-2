@@ -156,11 +156,14 @@ static void acquisition_guards(){
     CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(locked);
 #endif
     for(int mode=0;mode<5;mode++){
+        const auto block=[&](){if(mode==1)a.title=true;if(mode==2)a.paused=true;if(mode==3)a.help=true;if(mode==4)a.panel=1;};
         setup(mode!=0);open_model(Discovery);
-        if(mode==1)a.title=true;if(mode==2)a.paused=true;if(mode==3)a.help=true;if(mode==4)a.panel=1;
+        block();
         auto before=snapshot();CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));
         a.ui_action(UiAction::LabCard);a.input(Key::EndTurn);unchanged(before);
-        a.detail_card=-1;open_potion(Potion::ColorlessPotion);before=snapshot();
+        // Navigate the real collection before covering it with the modal.
+        // A paused/help-covered collection must not accept grid navigation.
+        setup(mode!=0);open_potion(Potion::ColorlessPotion);block();before=snapshot();
         CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(before);
     }
     setup();for(int i=0;i<MaxHand;i++)append({Strike,0},Zone::Hand);

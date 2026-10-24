@@ -60,20 +60,32 @@ static void card_geometry(){
 }
 static void character_motion(){
     CharacterSelectPresentation motion;motion.observe(true,0,-1,100);
-    CHECK(motion.panel_offset(100)==-50&&motion.portrait_scale(0,100)==1126);
+    CHECK(motion.panel_offset(100)==-57&&motion.portrait_scale(0,100)==1024);
+    CHECK(motion.opened==100&&motion.value(0,100)==1100&&motion.saturation(0,100)==1000);
+    CHECK(motion.value(1,100)==400&&motion.value(1,600)==400&&motion.saturation(1,600)==200);
     CHECK(motion.panel_offset(350)<0&&motion.panel_offset(350)>-5);CHECK(motion.panel_offset(600)==0);
-    motion.observe(true,0,1,600);CHECK(motion.panel_start==100);CHECK(motion.portrait_scale(0,600)==1126);
-    CHECK(motion.portrait_scale(0,850)>1024&&motion.portrait_scale(0,850)<1040);CHECK(motion.portrait_scale(0,1100)==1024);
-    motion.observe(true,1,1,1100);CHECK(motion.panel_offset(1100)==-50);
-    for(unsigned t=1101;t<1600;t+=17)motion.observe(true,1,1,t);
-    CHECK(motion.panel_start==1100&&motion.panel_offset(1600)==0);
-    // Rapid switching and a full screen exit must replay the correct motion.
-    motion.observe(true,2,2,1610);motion.observe(true,3,3,1640);CHECK(motion.panel_start==1640);
-    CHECK(motion.portrait_scale(2,1640)==1126&&motion.portrait_scale(3,1640)==1126);
-    motion.observe(false,3,-1,1700);motion.observe(true,3,-1,1800);CHECK(motion.panel_offset(1800)==-50);
-    CHECK(motion.portrait_scale(2,1800)==1024);motion.reset();CHECK(!motion.active);
-    motion.observe(true,0,0,1900);motion.observe(true,0,-2,1950);CHECK(motion.portrait_scale(0,2450)==1024);
-    motion.observe(true,0,-1,2450);CHECK(motion.portrait_scale(0,2450)==1126);
+    // OnFocus only enlarges an unselected portrait; selected keyboard focus
+    // is already illuminated and returns without changing its scale.
+    motion.observe(true,0,1,600);CHECK(motion.panel_start==100&&motion.portrait_scale(0,600)==1024);
+    CHECK(motion.portrait_scale(1,600)==1126&&motion.value(1,600)==1100);
+    motion.observe(true,0,-2,650);
+    CHECK(motion.portrait_scale(1,900)>1024&&motion.portrait_scale(1,900)<1040);
+    CHECK(motion.value(1,900)>800&&motion.value(1,900)<810);
+    CHECK(motion.portrait_scale(1,1150)==1024&&motion.value(1,1150)==800&&motion.value(2,1150)==400);
+    motion.observe(true,0,1,1200);motion.observe(true,1,1,1220);
+    CHECK(motion.panel_offset(1220)==-57&&motion.opened==100&&motion.portrait_scale(1,1220)==1126);
+    for(unsigned t=1221;t<1720;t+=17)motion.observe(true,1,1,t);
+    CHECK(motion.panel_start==1220&&motion.panel_offset(1720)==0&&motion.opened==100);
+    motion.observe(true,1,-2,1740);CHECK(motion.portrait_scale(1,2240)==1024&&motion.value(1,2240)==1100);
+    // A selection replays only the information panel, not Back/Embark entry.
+    motion.observe(true,2,-1,2300);CHECK(motion.portrait_scale(2,2300)==1024&&motion.opened==100);
+    motion.observe(true,2,3,2330);motion.observe(true,3,3,2340);CHECK(motion.panel_start==2340);
+    CHECK(motion.portrait_scale(2,2340)==1024&&motion.portrait_scale(3,2340)==1126);
+    motion.observe(false,3,-1,2400);motion.observe(true,3,-1,2500);
+    CHECK(motion.panel_offset(2500)==-57&&motion.opened==2500&&motion.portrait_scale(2,2500)==1024&&motion.value(2,2500)==400);
+    motion.reset();CHECK(!motion.active);
+    motion.observe(true,0,0,2600);motion.observe(true,0,-2,2650);CHECK(motion.portrait_scale(0,3150)==1024);
+    motion.observe(true,0,-1,3150);CHECK(motion.portrait_scale(0,3150)==1024);
     motion.reset();
     motion.observe(true,4,-1,0xffffff00u);CHECK(motion.panel_offset(244)==0);
     CHECK(motion.outline_alpha(0)==255&&motion.outline_alpha(625)==89&&motion.outline_alpha(1250)==255);

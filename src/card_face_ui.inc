@@ -122,9 +122,13 @@ static bool card_cache_label_fits(Canvas&c,card_face::Rect icon,int value,bool s
 static void invalidate_card_face_cache(){for(auto&entry:small_card_faces)entry.valid=false;}
 static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_face_cache();++small_card_frame;}}
 static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true){
+    // NCard.Model marks a local run/combat model when it is bound. Canonical
+    // collection/history/title previews do not constitute such a binding.
+    // This is an O(1) first-observation bit check, never a catalog scan.
+    if(known&&!c.a.library&&!c.a.history_open&&!c.a.title&&c.a.game.world.active&&!c.a.game.practice)c.a.discover_card(card.kind);
     // The 8px energy label has a 1px outline above the energy artwork.
     const int left=x-6,top=y-4;
-    const bool supported_size=(w==47&&h==66)||(w==36&&h==50)||(w==44&&h==62);
+    const bool supported_size=(w==46&&h==64)||(w==47&&h==66)||(w==43&&h==61)||(w==36&&h==50)||(w==44&&h==62);
     const bool candidate=known&&!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
         left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;

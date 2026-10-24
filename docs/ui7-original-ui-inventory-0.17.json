@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "port_baseline": "9cecd0f743ce6cd100df91b103babe67babf480f",
-  "status": "complete path index; selected method-contract audit; UI7 runtime not yet accepted",
+  "status": "Complete path index; selected method-contract audit; checkpoint5 actual font/asset-tool evidence and in-progress UI7 source, not accepted final runtime",
   "methodology": {
     "index": "All decompiled.cs and allPCK scenes/*.tscn paths inventoried",
     "method_review": "Selected visible flow methods and implemented combat contracts; not every method reviewed",
@@ -22,7 +22,7 @@
     "broad_ui_empty_cs": 5,
     "N_prefixed_cs": 682,
     "pck_scenes": 1022,
-    "behavior_contracts": 58
+    "behavior_contracts": 59
   },
   "namespaces": {
     "MegaCrit.Sts2.Core.AutoSlay.Handlers.Screens": 13,
@@ -136,12 +136,13 @@
   "empty_source_handling": {
     "NCombatRoom": "selected repaired decompile available",
     "GalvanicPower": "selected repaired decompile available",
-    "NCard": "cards targeted recovery",
-    "PotionModel": "cards targeted recovery",
-    "NDropdownContainer": "root targeted recovery",
-    "NMapPointHistoryHoverTip": "rooms targeted recovery",
+    "NCard": "Targeted full decompilation recovered and used by card rendering audit; private ui7-card-reference/NCard.full.cs",
+    "PotionModel": "Targeted full decompilation recovered and used by potion flow audit; private ui7-card-reference/PotionModel.full.cs",
+    "NDropdownContainer": "Correct CommonUi namespace recovered; passed journal ui7-dropdown-commonui-reference-64b53e06f918",
+    "NMapPointHistoryHoverTip": "Targeted source recovered and used; passed journal ui7-map-history-reference-49abce1c77ae",
     "NJoinFriendScreen": "multiplayer excluded",
-    "other_empty": "unknown until independently recovered; not counted reviewed"
+    "other_empty": "unknown until independently recovered; not counted reviewed",
+    "ActModel": "Targeted source recovered; passed journal ui7-actmodel-reference-91be9c20346e; ModelDb.Monsters denominator is 101 actual distinct models, not the 109-entry port registry"
   },
   "contracts": [
     {
@@ -177,7 +178,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Click-selected character, Ascension, seed and embark",
-      "remaining": "Root UI7 restoring real AscensionPanel; no claim final acceptance yet"
+      "remaining": "Original click selection/Ascension and five original skeletal loops implemented. Actual sampling exposed a wrong 1440x1080 assumption; corrected original1680x1260 projection awaits resampling. Independent particles/hover variants remain partial."
     },
     {
       "id": "act_selector",
@@ -221,7 +222,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Filters, discoveries, card grid and inspect",
-      "remaining": "Port reference catalogue exists; complete original layout/filter/discovery parity not accepted"
+      "remaining": "Checkpoint4 library suite passed 558-union/8-pool filters, 250ms search, unknown gates and continuous navigation. Follow-up original 1680x1260/four-column projection and newer progress metadata await next checkpoint; final viewport/visual acceptance is pending."
     },
     {
       "id": "relic_collection",
@@ -231,7 +232,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Relic categories and inspect",
-      "remaining": "Port reference catalogue exists; source collection composition remains partial"
+      "remaining": "Real 10-column categories, original starter and Ancient groups, observed gates and tooltip/hover implemented; checkpoint4 collection fixtures passed. Related-tip chains and Cookie random variant remain partial; actual screen acceptance pending."
     },
     {
       "id": "potion_lab",
@@ -241,7 +242,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Potion catalogue and inspect",
-      "remaining": "Port reference catalogue exists; original lab composition remains partial"
+      "remaining": "Real 64-potion Common/Uncommon/Rare/Special collection and observed gates implemented; checkpoint4 collection fixtures passed. Related tooltip chain and final actual screen acceptance remain incomplete."
     },
     {
       "id": "bestiary",
@@ -250,9 +251,9 @@
         "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary/NBestiary.cs",
         "MegaCrit.Sts2.Core.Nodes.Screens.Bestiary/NBestiaryMoveButton.cs"
       ],
-      "port_assessment": "unimplemented",
+      "port_assessment": "partial",
       "contract": "Enemy list, layouts, move descriptions and character filtering",
-      "remaining": "Original gate: discovered act plus enemy victory; port has no persistent discovery metadata"
+      "remaining": "Real list/known gates/actions/stats filters and detached preview implemented, with independent observed progress. CP4 fixture failed on an incorrect undiscovered-act assumption; corrected source awaits checkpoint. All special move VFX/phase contexts and localized collation remain incomplete."
     },
     {
       "id": "statistics",
@@ -262,9 +263,9 @@
         "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NCharacterStats.cs",
         "MegaCrit.Sts2.Core.Nodes.Screens.StatsScreen/NAchievementsGrid.cs"
       ],
-      "port_assessment": "unimplemented",
+      "port_assessment": "partial",
       "contract": "General/character statistics and achievements",
-      "remaining": "No corresponding original Stats UI or persisted progress summary"
+      "remaining": "Original general/character screen and independently persisted observed statistics implemented. Exact discovery/achievement presentation and final complete UI acceptance remain pending; historical unobserved results are never invented."
     },
     {
       "id": "run_history",
@@ -274,9 +275,9 @@
         "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NMapPointHistory.cs",
         "MegaCrit.Sts2.Core.Nodes.Screens.RunHistoryScreen/NDeckHistory.cs"
       ],
-      "port_assessment": "unimplemented",
+      "port_assessment": "partial",
       "contract": "Historical run navigation, per-floor map/deck/relic details",
-      "remaining": "No corresponding persisted original run-history flow"
+      "remaining": "Observed runs persist separately from gameplay saves and have a real history/deck inspect route. All original per-floor choice details and final UI acceptance are not complete; preexisting saves have only explicitly partial history."
     },
     {
       "id": "profiles",
@@ -285,9 +286,9 @@
         "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen/NProfileScreen.cs",
         "MegaCrit.Sts2.Core.Nodes.Screens.ProfileScreen/NDeleteProfileButton.cs"
       ],
-      "port_assessment": "unimplemented",
+      "port_assessment": "in_progress",
       "contract": "Profile select/icons/delete confirmation",
-      "remaining": "Single port save slot does not implement this flow"
+      "remaining": "Root is implementing independent profile select/icon/delete confirmation and host routing after checkpoint4. No final runtime or interaction acceptance is claimed."
     },
     {
       "id": "compendium_leaderboards",
@@ -326,9 +327,9 @@
       "original_types": [
         "MegaCrit.Sts2.Core.Nodes.HoverTips/NMapPointHistoryHoverTip.cs"
       ],
-      "port_assessment": "unverified",
+      "port_assessment": "partial",
       "contract": "Visited-node history hover",
-      "remaining": "Initial decompile empty; targeted recovery needed before source-contract acceptance"
+      "remaining": "Targeted NMapPointHistoryHoverTip recovered; real observed visited non-current nodes provide history. Updated actual captures and final interaction acceptance remain pending."
     },
     {
       "id": "combat_entry",
@@ -350,7 +351,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Artwork, text reveal, option timing and enabled choice",
-      "remaining": "UI7 rooms implementing original typewriter and option timing"
+      "remaining": "Real typewriter/option timing, revisited-room timing and original controls implemented; checkpoint4 room suites still had fixture failures, with updated formal acceptance pending."
     },
     {
       "id": "event_special",
@@ -384,7 +385,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Entrance, inventory hover, speech, purchase and sold state",
-      "remaining": "UI7 rooms implementing original movement/dialogue/hand tracking"
+      "remaining": "Original hand tracking/dialogue/open motion implemented;94hand frames sampled through official constraints and634new images validated losslessly. Complete original-scale screen/interaction acceptance pending; raw sampling is not whole-screen acceptance."
     },
     {
       "id": "remove_card",
@@ -394,7 +395,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Purchased/direct/forced removal feedback",
-      "remaining": "Purchased UI6 motion exists; direct/forced and secondary effects separately required"
+      "remaining": "Direct/forced observer-driven removal now shares real purchased removal presentation; formal new room regressions and source secondary effects remain separate gates."
     },
     {
       "id": "treasure",
@@ -474,7 +475,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Full descriptions and upgrade compare",
-      "remaining": "Functional cached inspect exists; NCard targeted recovery avoids empty-source false coverage"
+      "remaining": "NCard full source recovered. Original compare/carousel/related-tip flow implemented; checkpoint4 character suite passed 860 variants. Expansion later modal fixture and closing fade remain separate unresolved gates."
     },
     {
       "id": "targeting",
@@ -485,7 +486,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Single/all/self reticles and arrow",
-      "remaining": "UI7 cards mapping actual original target models; no invented multiplayer ally requirements"
+      "remaining": "Single/self/all/random original-type reticles, original arrow and real keyboard select/aim/confirm implemented. New card_hud full suite was blocked by an older character oracle; no complete new acceptance claimed."
     },
     {
       "id": "potions",
@@ -496,7 +497,7 @@
       ],
       "port_assessment": "partial",
       "contract": "Tooltip, choice popup, targeting, use and discard",
-      "remaining": "UI6 real logic exists; UI7 cards closes source controls/error flows"
+      "remaining": "First-empty acquisition, full-belt error, focus-before-popup, manual discard/retry and original target mode implemented. Latest complete formal suites and actual new UI acceptance pending."
     },
     {
       "id": "damage_result",
@@ -553,9 +554,9 @@
         "MegaCrit.Sts2.Core.Nodes.Vfx/NHitSparkVfx.cs",
         "MegaCrit.Sts2.Core.Nodes.Vfx/NBlockSparkVfx.cs"
       ],
-      "port_assessment": "unimplemented",
+      "port_assessment": "partial",
       "contract": "Original warm/blue hit sparks and secondary particles",
-      "remaining": "Source assets/params audited; rendering still requires implementation"
+      "remaining": "Actual original glow/ring/streak/speck assets and bounded 60Hz display particles implemented. CP4 cadence fixture read struct padding; corrected field-wise regression awaits next checkpoint. Original GPU turbulence and all secondary variants remain incomplete."
     },
     {
       "id": "formations",
@@ -678,7 +679,7 @@
       ],
       "port_assessment": "partial",
       "contract": "5skin models+8alternate bodies+3dead variants+18background layers",
-      "remaining": "UI7 runtime mapping added;32skin clips/11body clips/background conversion pending; Entomancer swarm explicitly outstanding"
+      "remaining": "Runtime switch and original 32skin/11body/4background converter are implemented with normal-registration verification and original-mode tests. Actual conversion/visual acceptance pending. Entomancer swarm remains outstanding; Factory has no pinned normal-run route."
     },
     {
       "id": "text_effects",
@@ -783,14 +784,27 @@
       "port_assessment": "excluded",
       "contract": "Timeline unlock presentation",
       "remaining": "Explicitly excluded; other screens visibility gates still documented"
+    },
+    {
+      "id": "font_faces",
+      "group": "global",
+      "original_types": [
+        "MegaCrit.Sts2.Core.Localization.Fonts.FontPathSets/ZhsFontPathSet.cs",
+        "MegaCrit.Sts2.addons.mega_text/MegaRichTextLabel.cs"
+      ],
+      "port_assessment": "partial",
+      "contract": "Original locale and scene font families, style measurement and glyph painting",
+      "remaining": "Original fonts extracted and real bilingual suffix conversion passed at checkpoint5. Chinese three locale faces and English Kreon Regular use actual glyphs without pseudo-bold duplication. Per-scene English family inheritance, kerning/Godot rasterization and final native screen acceptance remain incomplete."
     }
   ],
   "assessment_counts": {
     "excluded": 3,
     "implemented_unvalidated": 4,
+    "in_progress": 1,
     "original_hidden": 2,
-    "partial": 35,
-    "unimplemented": 11,
-    "unverified": 3
-  }
+    "partial": 41,
+    "unimplemented": 6,
+    "unverified": 2
+  },
+  "validation_boundary": "Checkpoint4 Release built; CTest68/84 passed. Checkpoint5 five font Python tests and both actual font conversions passed. Unrelated partial suites or corrected unexecuted fixtures do not turn the complete native gate into a pass."
 }

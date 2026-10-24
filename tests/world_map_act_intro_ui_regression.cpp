@@ -69,14 +69,16 @@ static void new_game(bool fast=false,uint32_t clock=1000){
     app.selected_character=Character::Ironclad;app.selected_region=reference::ActKind::Overgrowth;app.selected_ascension=0;app.selected_seed[0]=0;
     app.return_to_title();app.forget_run_checkpoint();CHECK(app.title&&!app.has_save);
     if(fast){click(HitKind::Menu,1);click(HitKind::UiAction,int(UiAction::SettingsFastMode));click(HitKind::UiAction,int(UiAction::SettingsBack));}
-    click(HitKind::Menu,0);CHECK(app.character_select);click(HitKind::UiAction,int(UiAction::StartCharacter));
+    click(HitKind::Menu,0);CHECK(app.character_select);app.render();advance_ms(350);click(HitKind::UiAction,int(UiAction::StartCharacter));
     CHECK(!app.title&&app.game.original_events.id==OriginalEventId::Neow&&app.game.world.total_floor==1);
     CHECK(app.fast_mode==fast&&app.map_act_intro.fast_at_construction==fast&&!app.map_act_intro.played);
     CHECK(!app.map_window.visible&&!app.map_act_intro.banner_count);app.pointer.visible=false;
 }
 static void proceed_neow(){
     CHECK(app.game.original_events.offers[0]==WorldRelicFishingRod);
+    app.render();advance_ms(1000); // authored Ancient options enter from below.
     click(HitKind::Choice,0);CHECK(app.game.original_events.finished&&!world_relic_pending(app.game));
+    app.render();advance_ms(1000);
     click(HitKind::Choice,0);CHECK(app.game.world.room_open==2&&app.map_window.is_open&&app.panel==3);
     CHECK(app.game.phase==Phase::Event&&app.game.original_events.active);app.pointer.visible=false;
     uint8_t ids[reference::Columns];CHECK(world_available_points(app.game,ids,reference::Columns));

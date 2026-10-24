@@ -83,7 +83,7 @@ def potion_error_tint(pack, image):
 def converter_identity():
     names = ('patch_ui7_assets.py', 'room_ui7_assets.py', 'SpineSampleAdapter.cs',
              'world_enemy_assets.py', 'ui7_profile.py', 'patch_frontend_assets.py','group_ui7_hands.py','repack_retained.py',
-             'character_ui7_assets.py','world_scene_assets.py','world_room_shaders.py','animation.py')
+             'character_ui7_assets.py','character_static_layers.py','world_scene_assets.py','world_room_shaders.py','animation.py')
     configs=('frontend-ui7-0.17.json','frontend-ui7-text-keys.json','collection-ui7-0.17.json')
     root=Path(__file__).resolve().parents[1]
     return tiles.sha256(b''.join((Path(__file__).parent/name).read_bytes() for name in names)+
@@ -97,7 +97,7 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
     if saved.is_file():
         manifest = json.loads(saved.read_text())
         if manifest.get('converter_sha256') == identity:
-            tiles.require(len(manifest['images']) == 1092 and len(manifest.get('auxiliary_rows', [])) == AUXILIARY-BASE_AUX and
+            tiles.require(len(manifest['images']) == 1097 and len(manifest.get('auxiliary_rows', [])) == AUXILIARY-BASE_AUX and
                           len(manifest.get('clips', [])) == CLIPS-BASE_CLIPS, 'Invalid UI7 cache count')
             for row in manifest['images']:
                 raw = (cache/row['file']).read_bytes()
@@ -144,7 +144,7 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
             row=write_image(cache,'ui7-'+spec['key'],picture)
             row.update(key=spec['key'],source=spec['path'],source_size=list(original.size))
             auxiliary_rows.append(len(images));images.append(row)
-        tiles.require(len(images)==1092 and len(auxiliary_rows)==AUXILIARY-BASE_AUX,'UI7 image/auxiliary count mismatch')
+        tiles.require(len(images)==1097 and len(auxiliary_rows)==AUXILIARY-BASE_AUX,'UI7 image/auxiliary count mismatch')
         for index, image_index in enumerate(auxiliary_rows):images[image_index]['auxiliary']=BASE_AUX+index
         localized = {}
         for language in ('eng', 'zhs'):
@@ -159,7 +159,9 @@ def build_art(pck_path, cache, *, runtime, dotnet=None, hand_cache=None):
         pack.close()
     manifest = dict(schema=1, reference='v0.111.0 / 41cef1ea', source_pck_sha256=SOURCE_PCK_SHA256,
                     converter_sha256=identity, output_version=VERSION, images=images, clips=clips, auxiliary_rows=auxiliary_rows,
-                    auxiliary_count=AUXILIARY, localized_text=localized, runtime_added_pixel_buffers=0)
+                    auxiliary_count=AUXILIARY, localized_text=localized, runtime_added_pixel_buffers=0,
+                    character_viewport=character['viewport'], character_static_layering=character['static_layering'],
+                    character_static_layer_reports=character['static_layer_reports'])
     tiles.atomic_bytes(saved, json.dumps(manifest, indent=2).encode()+b'\n')
     return manifest
 
@@ -271,7 +273,9 @@ def main():
         known = {r[0] for r in view.glyphs};missing = ''.join(sorted({ch for text in texts for ch in text if ord(ch) >= 32 and ord(ch) not in known}))
         glyphs = glyph_subset([missing], font, language) if missing else []
         data, added = append_glyphs(data, AUXILIARY, CLIPS, glyphs, version=VERSION)
-        receipt.update(input_sha256=tiles.sha256(input_bytes),input_bytes=len(input_bytes),added_string_slots=512,added_glyphs=added, output_bytes=len(data), output_sha256=tiles.sha256(data))
+        receipt.update(input_sha256=tiles.sha256(input_bytes),input_bytes=len(input_bytes),added_string_slots=512,added_glyphs=added, output_bytes=len(data), output_sha256=tiles.sha256(data),
+                       character_viewport=manifest['character_viewport'],
+                       character_static_layer_reports=manifest['character_static_layer_reports'])
         tiles.atomic_bytes(target, data)
         tiles.atomic_bytes(output/('ui7-'+language+'-receipt.json'), json.dumps(receipt, indent=2).encode()+b'\n')
         print(json.dumps(dict(language=language, **receipt)), flush=True)

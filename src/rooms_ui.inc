@@ -37,13 +37,13 @@ static void deck_select(Canvas&c){
     c.centered(title,0,25,320,16,Gold);
     a.cursor=mn(mx(0,a.cursor),mx(0,s.deck_count-1));
     auto&grid=a.configure_card_grid(CardGridSurface::DeckChoice,s.deck_count,s.revision);CardGridPainter painter{c,grid};const int first=grid.first();
-    int portraits[16];unsigned portrait_count=0;
+    int portraits[24];unsigned portrait_count=0;
     for(int i=first;i<grid.last();++i)portraits[portrait_count++]=a.card_face_image(s.deck[i],-1,i);
     a.content.prepare_images(portraits,portrait_count);
     for(int i=first;i<grid.last();i++){
         Card card=s.deck[i];int x=grid.card_x(i),y=grid.card_y(i);
         bool allowed=s.phase==Phase::Upgrade?card_upgradeable(card):s.phase==Phase::Transform?(i!=s.event_first&&card_transformable(card)):(card_removable(card)&&s.deck_count>1);
-        const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+        const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+CardGridScroll::CardW+2&&a.pointer.y>=y-2&&a.pointer.y<y+CardGridScroll::CardH+2&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
         painter.card(i,card,hover||(!a.pointer.visible&&a.cursor==i),allowed,-2,-2,-1,i);
         painter.hit(i,HitKind::Choice,i,allowed);
     }

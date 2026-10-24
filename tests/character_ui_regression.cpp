@@ -86,18 +86,18 @@ static void catalog_navigation(){
     CHECK(spire_test::drag_grid_thumb(a,true));CHECK(grid.position==grid.maximum());
     auto last=hit(HitKind::LibraryItem,count-1);CHECK(last.y>=grid.top&&last.y+last.h<=grid.bottom);unchanged(before);
     CHECK(spire_test::drag_grid_thumb(a,false));CHECK(grid.position==grid.minimum());
-    // Original library navigation has three columns and does not wrap
+    // At the original 1680px viewport the library has four columns and does not wrap
     // horizontally. The left edge returns focus to its sidebar.
     a.card_library.control=-1;a.library_selected=0;a.input(Key::Left);CHECK(a.card_library.control==LibraryPoolFirst);
     for(int i=0;i<4;++i)a.input(Key::Right);CHECK(a.card_library.control<0&&a.library_selected==0);
-    a.input(Key::Right);a.input(Key::Right);CHECK(a.library_selected==2);a.input(Key::Right);CHECK(a.library_selected==2);
-    a.input(Key::Left);a.input(Key::Left);CHECK(a.library_selected==0);
-    const int final_row=(count-1)/3*3;
-    for(int index=3;index<=final_row;index+=3){a.input(Key::Down);CHECK(a.library_selected==index);}
+    CHECK(grid.columns==4);for(int column=1;column<grid.columns;++column){a.input(Key::Right);CHECK(a.library_selected==column);}a.input(Key::Right);CHECK(a.library_selected==grid.columns-1);
+    for(int column=1;column<grid.columns;++column)a.input(Key::Left);CHECK(a.library_selected==0);
+    const int final_row=(count-1)/grid.columns*grid.columns;
+    for(int index=grid.columns;index<=final_row;index+=grid.columns){a.input(Key::Down);CHECK(a.library_selected==index);}
     CHECK(spire_test::settle_card_grid(a));a.input(Key::Down);CHECK(a.library_selected==final_row);
     for(int column=1;column<count-final_row;++column)a.input(Key::Right);
     CHECK(a.library_selected==count-1);a.input(Key::Right);CHECK(a.library_selected==count-1);unchanged(before);
-    a.library_selected=final_row;for(int index=final_row-3;index>=0;index-=3){a.input(Key::Up);CHECK(a.library_selected==index);}
+    a.library_selected=final_row;for(int index=final_row-grid.columns;index>=0;index-=grid.columns){a.input(Key::Up);CHECK(a.library_selected==index);}
     CHECK(spire_test::settle_card_grid(a));a.input(Key::Back);CHECK(!a.library&&a.compendium_open);a.input(Key::Back);CHECK(!a.compendium_open);unchanged(before);
     CHECK(a.run_number==run_number);
     catalog_navigation_verified=true;progress("catalog-navigation-complete");

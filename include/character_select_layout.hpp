@@ -1,12 +1,16 @@
 #pragma once
 #include <stdint.h>
+#include "reference_viewport.hpp"
 namespace spire::character_select_layout {
-// Original 1440x1080 4:3 control anchors, uniformly projected by 2/9.
-constexpr int PortraitTop=194,PortraitHeight=33,PortraitWidth=22;
-constexpr int portrait_x(unsigned index){return int((438+index*116)*2+4)/9;}
-constexpr int portrait_center(unsigned index){return int((488+index*116)*2+4)/9;}
-constexpr int InfoX=10,InfoWidth=128,InfoBottom=158;
-constexpr int AscensionX=93,AscensionY=165,AscensionWidth=133,AscensionHeight=26;
+using reference_viewport::project;
+// Five 100px portraits plus four 16px gaps center within the source HBox.
+// The actual 4:3 viewport is 1680x1260; the row begins at 1260-209.
+constexpr int PortraitTop=project(1051),PortraitHeight=project(148),PortraitWidth=project(100);
+constexpr int portrait_x(unsigned index){return project(558+int(index)*116);}
+constexpr int portrait_center(unsigned index){return project(608+int(index)*116);}
+constexpr int InfoX=project(163),InfoWidth=project(575),InfoBottom=project(869);
+constexpr int InfoPanelX=project(89),InfoPanelWidth=project(700);
+constexpr int AscensionX=project(539),AscensionY=project(918),AscensionWidth=project(600),AscensionHeight=project(118);
 constexpr unsigned FirstClip=1705;
 constexpr uint32_t Durations[5]={5333,11667,13333,6667,8000};
 inline unsigned frame(unsigned character,uint32_t elapsed,unsigned count){

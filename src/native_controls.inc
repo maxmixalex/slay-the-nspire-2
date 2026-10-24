@@ -48,48 +48,50 @@ static void native_proceed(Canvas&c,int x,int y,int w,int h,const char*label,boo
 }
 static void native_back(Canvas&c,int x,int y,int w,int h,const char*,bool enabled=true,bool selected=false){native_control(c,"BACK",x,y,w,h,"",enabled,selected);}
 // NBackButton positions its Control separately from its larger child sprite.
-// 1440x1080 -> 320x240: image (267x150 keep-aspect), outline (273x156),
-// icon (80x80). Fitting the entire component into its hit rect shrinks it twice.
+// NGame FourByThree is 1680x1260. Source Image/Outline bounds are 267x150
+// and 273x156; KeepAspectCentered fits the complete 300x202 AtlasTexture
+// (including its margin), not just its 267x160 region. The 80px icon retains
+// its independent Control origin. The hit rectangle is a different node.
 static void native_original_back(Canvas&c,uint32_t opened=UINT32_MAX){
  auto&a=c.a;const unsigned age=a.map_clock_ms-opened;
- const int entry=opened==UINT32_MAX||age>=350?0:-40*(4096-room_curve::back_out(age*4096/350))/4096;
- const auto visual=c.control_visual("ORIGINAL_BACK",-9+entry,161,44,25,ButtonFamily::Back,false,true);
- const int pivot_x=-4+entry,pivot_y=170,scale=int(visual.scale);
+ const int entry=opened==UINT32_MAX||age>=350?0:-34*(4096-room_curve::back_out(age*4096/350))/4096;
+ const auto visual=c.control_visual("ORIGINAL_BACK",-8+entry,173,38,21,ButtonFamily::Back,false,true);
+ const int pivot_x=-4+entry,pivot_y=180,scale=int(visual.scale);
  const auto draw=[&](Canvas&layer,int id,int x,int y,int w,int h,unsigned alpha,unsigned mode){
   if(id>=0)layer.picture(id,pivot_x+(x+entry-pivot_x)*scale/4096,pivot_y+(y-pivot_y)*scale/4096,
                        mx(1,w*scale/4096),mx(1,h*scale/4096),alpha,mode);
  };
  const int back=a.content.world_image("common","BACK"),outline=a.content.world_image("common","BACK_OUTLINE");
  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
- draw(shadow,back,-11,161,59,33,64,presentation::Normal);
- if(visual.hover)draw(c,outline,-14,158,61,35,unsigned(visual.hover)*255/4096,presentation::Add);
+ draw(shadow,back,-5,172,42,29,64,presentation::Normal);
+ if(visual.hover)draw(c,outline,-8,170,44,30,unsigned(visual.hover)*255/4096,presentation::Add);
  Canvas face=c;face.brightness=uint8_t(div255(unsigned(face.brightness)*visual.shade));
- draw(face,back,-14,158,59,33,255,presentation::Normal);
- draw(face,a.content.world_image("common","BACK_ARROW"),6,165,18,18,255,presentation::Normal);
- c.action(-9+entry,161,44,25,UiAction::Back);
+ draw(face,back,-7,170,42,29,255,presentation::Normal);
+ draw(face,a.content.world_image("common","BACK_ARROW"),5,175,15,15,255,presentation::Normal);
+ c.action(-8+entry,173,38,21,UiAction::Back);
 }
 static void native_close(Canvas&c,int x,int y,int w,int h,bool selected=false){native_control(c,"BACK",x,y,w,h,"",true,selected,true);}
 static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"CONFIRM",x,y,w,h,label,enabled,selected);}
 static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UINT32_MAX){
  auto&a=c.a;const unsigned age=a.map_clock_ms-opened;
- const int entry=opened==UINT32_MAX||age>=350?0:40*(4096-room_curve::back_out(age*4096/350))/4096;
- // NConfirmButton derives (1280,726) from the 1440x1080 viewport. Image,
- // outline and tick use their own authored child bounds, without containment.
- const auto visual=c.control_visual("ORIGINAL_CONFIRM",284+entry,161,45,25,ButtonFamily::Action,false,true);
- const int pivot_x=324+entry,pivot_y=170,scale=int(visual.scale);
+ const int entry=opened==UINT32_MAX||age>=350?0:34*(4096-room_curve::back_out(age*4096/350))/4096;
+ // NConfirmButton derives (1520,906) from the actual 1680x1260 viewport.
+ // Its child textures use the same full AtlasTexture fitting as Back.
+ const auto visual=c.control_visual("ORIGINAL_CONFIRM",290+entry,173,38,21,ButtonFamily::Action,false,true);
+ const int pivot_x=324+entry,pivot_y=180,scale=int(visual.scale);
  const auto draw=[&](Canvas&layer,int id,int x,int y,int w,int h,unsigned alpha,unsigned mode){
   if(id>=0)layer.picture(id,pivot_x+(x+entry-pivot_x)*scale/4096,pivot_y+(y-pivot_y)*scale/4096,
                        mx(1,w*scale/4096),mx(1,h*scale/4096),alpha,mode);
  };
  const int face=a.content.world_image("common","CONFIRM"),outline=a.content.world_image("common","CONFIRM_OUTLINE");
  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
- draw(shadow,face,275,161,59,33,64,presentation::Normal);
- if(visual.hover)draw(c,outline,272,158,61,35,unsigned(visual.hover)*255/4096,presentation::Add);
+ draw(shadow,face,286,172,42,29,64,presentation::Normal);
+ if(visual.hover)draw(c,outline,283,170,44,30,unsigned(visual.hover)*255/4096,presentation::Add);
  Canvas button=c;button.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
- draw(button,face,273,158,59,33,255,presentation::Normal);
+ draw(button,face,284,170,42,29,255,presentation::Normal);
  button.tint_green=uint8_t(div255(unsigned(button.tint_green)*246));button.tint_blue=uint8_t(div255(unsigned(button.tint_blue)*226));
- draw(button,a.content.world_image("common","CONFIRM_TICK"),292,165,18,18,255,presentation::Normal);
- c.action(284+entry,161,45,25,action);
+ draw(button,a.content.world_image("common","CONFIRM_TICK"),296,175,15,15,255,presentation::Normal);
+ c.action(290+entry,173,38,21,action);
 }
 static void native_end_turn(Canvas&c,bool enabled){
  auto&a=c.a;const auto visual=c.control_visual("END_TURN",254,173,66,31,ButtonFamily::EndTurn,false,enabled);

@@ -64,6 +64,7 @@ static std::vector<uint8_t> synthetic_profile(){
 }
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&&!std::memcmp(after.bytes,before.bytes,before.size));}
+static void advance_ms(unsigned milliseconds){while(milliseconds){const unsigned step=milliseconds>250?250:milliseconds;a.advance(step);milliseconds-=step;}a.render();}
 static HitRegion choice(int value){
  int found=0;HitRegion result{};for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Choice&&a.hits[i].value==value){result=a.hits[i];++found;}
  CHECK(found==1);CHECK(result.x>=0&&result.y>=22&&result.w>0&&result.h>0&&result.x+result.w<=ScreenW&&result.y+result.h<=ScreenH);return result;
@@ -77,6 +78,11 @@ static uint32_t image_hash(int x,int y,int w,int h){
 static void press_choice(int value){
  a.render();auto hit=choice(value);a.pointer_move(hit.x+hit.w/2,hit.y+hit.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;
 }
+static void press_action(UiAction action){
+ a.render();const HitRegion*found=nullptr;
+ for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(action)){CHECK(!found);found=&a.hits[i];}
+ CHECK(found&&found->enabled);const auto hit=*found;a.pointer_move(hit.x+hit.w/2,hit.y+hit.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;
+}
 static void capture(const char*name){
  if(!capture_directory)return;a.pointer.visible=false;a.render();
  char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
@@ -89,7 +95,10 @@ static void begin(OriginalEventId id,uint64_t seed,unsigned act){
  // Substitute the requested model into the already open native event room.
  // Keep that room open so the public Proceed action still leaves it normally.
  if(id!=OriginalEventId::Neow){a.game.original_events=OriginalEventState{};CHECK(original_event_begin(a.game,id,seed,act));}
- a.game.gold=1000;a.title=a.paused=a.help=a.library=a.character_select=false;a.run_settings=false;a.map_preview.open=false;a.reset_presentation();a.pointer.visible=false;CHECK(validate(a.game));
+ a.game.gold=1000;a.title=a.paused=a.help=a.library=a.character_select=false;a.run_settings=false;a.map_preview.open=false;a.reset_presentation();a.pointer.visible=false;a.fast_mode=false;CHECK(validate(a.game));
+ // These are settled layout/pixel checks. The separate room-motion suite
+ // checks the exact original entry/press boundaries and blocked early input.
+ a.render();advance_ms(1800);
 }
 static void reader(bool require_scroll){
  snapshot();uint32_t calls=a.game.original_events.rng_calls,revision=a.game.revision;
@@ -98,7 +107,7 @@ static void reader(bool require_scroll){
  CHECK(a.game.original_events.rng_calls==calls&&a.game.revision==revision);unchanged();
 }
 static void finished_offer_hidden(){
- a.pointer.visible=false;a.render();CHECK(choice_count()==1);auto hit=choice(0);CHECK(hit.enabled);
+ a.pointer.visible=false;a.render();advance_ms(1800);CHECK(choice_count()==1);auto hit=choice(0);CHECK(hit.enabled);
  uint32_t old=image_hash(hit.x,hit.y,hit.w,hit.h);auto saved=a.game.original_events.offers[0];snapshot();
  // Finish keeps the old offer array. Changing that retained identity must
  // not change the sole Proceed button or turn it back into a relic offer.
@@ -106,23 +115,25 @@ static void finished_offer_hidden(){
  a.render();CHECK(image_hash(hit.x,hit.y,hit.w,hit.h)==old);a.game.original_events.offers[0]=saved;unchanged();
 }
 static void merchant(){
- begin(OriginalEventId::FakeMerchant,23,1);a.render();CHECK(choice_count()==7);HitRegion slots[7];
- for(int i=0;i<7;i++){slots[i]=choice(i);CHECK(slots[i].enabled);if(i<6)CHECK(slots[i].w>=36&&slots[i].h>=36);for(int j=0;j<i;j++)CHECK(!overlap(slots[i],slots[j]));}
+ begin(OriginalEventId::FakeMerchant,23,1);a.render();CHECK(!a.shop_open&&!choice_count());
+ press_action(UiAction::OpenShop);CHECK(a.shop_open);advance_ms(1000);CHECK(choice_count()==6);HitRegion slots[6];
+ for(int i=0;i<6;i++){slots[i]=choice(i);CHECK(slots[i].enabled&&slots[i].w==36&&slots[i].h==42);for(int j=0;j<i;j++)CHECK(!overlap(slots[i],slots[j]));}
  CHECK(slots[0].x<slots[1].x&&slots[2].x<slots[3].x&&slots[3].x<slots[4].x);
  CHECK(slots[0].y<slots[2].y&&slots[1].y<slots[4].y&&slots[2].y<slots[5].y&&slots[3].y<slots[5].y&&slots[4].y<slots[5].y);
- snapshot();for(int i=0;i<7;i++){const auto&h=slots[i];a.pointer_move(h.x+h.w/2,h.y+h.h/2);CHECK(a.cursor==i);a.render();const auto*p=a.hit_at(h.x+h.w/2,h.y+h.h/2);CHECK(p&&p->kind==HitKind::Choice&&p->value==i);unchanged();}
+ snapshot();for(int i=0;i<6;i++){const auto&h=slots[i];a.pointer_move(h.x+h.w/2,h.y+h.h/2);CHECK(a.cursor==i);a.render();const auto*p=a.hit_at(h.x+h.w/2,h.y+h.h/2);CHECK(p&&p->kind==HitKind::Choice&&p->value==i);unchanged();}
  a.cursor=0;a.pointer.visible=false;a.render();auto h=choice(0);int price=a.game.original_events.choice_prices[0];
  uint32_t old_price=image_hash(h.x,h.y+h.h-14,h.w,14);snapshot();
  a.game.original_events.choice_prices[0]=int16_t(price+1);a.render();CHECK(image_hash(h.x,h.y+h.h-14,h.w,14)!=old_price);
- a.game.original_events.choice_prices[0]=int16_t(price);a.render();unchanged();capture("fake-merchant-stock");reader(true);
- // Affordability comes from the core predicate; an unfunded click is inert.
- a.game.gold=0;snapshot();a.render();for(int i=0;i<6;i++)CHECK(!choice(i).enabled);CHECK(choice(6).enabled);press_choice(0);unchanged();
+ a.game.original_events.choice_prices[0]=int16_t(price);a.render();unchanged();capture("fake-merchant-stock");
+ // Stock remains focusable when unaffordable, matching the original failed
+ // purchase speech/wiggle; the core still rejects the actual purchase.
+ a.game.gold=0;snapshot();a.render();for(int i=0;i<6;i++)CHECK(choice(i).enabled);press_choice(0);unchanged();CHECK(a.room_presentation.merchant.dialogue==1);
  a.game.gold=1000;auto bought=RelicId(a.game.original_events.offers[0]);unsigned count=a.game.world_relics.count;int gold=a.game.gold;press_choice(0);
  CHECK(a.game.phase==Phase::Event&&!a.game.original_events.finished);CHECK(a.game.original_events.offers[0]==NoWorldRelic&&has_world_relic(a.game,bought));
- CHECK(a.game.gold==gold-price&&a.game.world_relics.count==count+1);CHECK(validate(a.game));a.advance(1000);a.render();CHECK(choice_count()==7&&!choice(0).enabled);capture("fake-merchant-sold");
- snapshot();press_choice(0);unchanged();press_choice(6);CHECK(a.game.original_events.finished);a.advance(1000);a.render();finished_offer_hidden();capture("fake-merchant-complete");
- count=a.game.world_relics.count;gold=a.game.gold;press_choice(0);
- CHECK(a.game.original_events.active&&a.game.original_events.finished&&a.game.phase==Phase::Event);
+ CHECK(a.game.gold==gold-price&&a.game.world_relics.count==count+1);CHECK(validate(a.game));advance_ms(1000);CHECK(choice_count()==6&&!choice(0).enabled);capture("fake-merchant-sold");
+ snapshot();press_choice(0);unchanged();press_action(UiAction::CloseShop);CHECK(!a.shop_open);advance_ms(800);unchanged();
+ count=a.game.world_relics.count;gold=a.game.gold;press_action(UiAction::LeaveShop);
+ CHECK(!a.game.original_events.active&&a.game.phase==Phase::Event);
  CHECK(world_can_travel(a.game)&&a.map_window.visible&&a.game.world_relics.count==count&&a.game.gold==gold);CHECK(validate(a.game));
 }
 static void ancient_original_modulation(){
@@ -147,7 +158,7 @@ static void ancient_original_modulation(){
   const unsigned b=(31*unsigned(entry.b*255.+.5)+127)/255;
   const uint16_t expected=uint16_t((((back>>11)*(255-alpha)+r*alpha+127)/255<<11)|
       ((((back>>5)&63)*(255-alpha)+g*alpha+127)/255<<5)|((back&31)*(255-alpha)+b*alpha+127)/255);
-  CHECK(a.pixels[234*ScreenW+300]==expected);
+  CHECK(a.pixels[226*ScreenW+300]==expected);
  }
 }
 static void ancients(){

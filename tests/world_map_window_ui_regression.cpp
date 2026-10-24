@@ -108,8 +108,9 @@ static void hud_window(bool fast){
     app.input(Key::Confirm);CHECK(!app.map_travel.pending);unchanged();
     app.input(Key::Inspect);CHECK(app.panel==1&&app.map_window.is_open);advance_ms(100);
     app.input(Key::Map);CHECK(app.panel==3&&app.map_window.is_open&&app.map_window.start==opened);
-    app.input(Key::Collection);CHECK(app.library&&app.map_window.is_open);
-    app.input(Key::Map);CHECK(!app.library&&app.map_window.is_open&&app.map_window.start==opened);
+    app.input(Key::Collection);CHECK(app.compendium_open&&!app.library&&app.map_window.is_open);
+    click(HitKind::UiAction,int(UiAction::LibraryCards));CHECK(app.library&&!app.compendium_open&&app.map_window.is_open);
+    app.input(Key::Map);CHECK(!app.library&&!app.compendium_open&&app.map_window.is_open&&app.map_window.start==opened);
     app.input(Key::Back);CHECK(!app.map_window.is_open&&app.map_window.visible&&!app.panel);
     const uint32_t closed=app.map_window.start;app.input(Key::Map);CHECK(!app.map_window.is_open&&app.map_window.start==closed);
     app.render();bool hand=false;for(int i=0;i<app.hit_count;++i)hand|=app.hits[i].kind==HitKind::Hand;CHECK(hand);

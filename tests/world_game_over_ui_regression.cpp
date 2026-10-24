@@ -108,7 +108,11 @@ static void overlays_do_not_advance(){
  a.settings_open=true;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.settings_open=false;unchanged();
  for(uint8_t modal=1;modal<=3;modal++){a.frontend_confirm=modal;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.frontend_confirm=0;unchanged();}
  a.status_actor=0;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.status_actor=-1;unchanged();
- a.open_card_detail(a.game.deck[0],0);a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.input(Key::Confirm);CHECK(a.detail_card<0&&!a.game_over_summary);unchanged();
+ a.open_card_detail(a.game.deck[0],0);a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);
+ // Inspect-card Confirm toggles the original upgrade tickbox; Back closes.
+ const Card viewed=card_from_token(a.detail_card);a.input(Key::Confirm);CHECK(a.detail_card>=0&&!a.game_over_summary);
+ if(viewed.upgraded||card_upgradeable(viewed))CHECK(card_from_token(a.detail_card).upgraded!=viewed.upgraded);
+ unchanged();a.input(Key::Back);CHECK(a.detail_card<0&&!a.game_over_summary);unchanged();
  a.detail_item=0;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.input(Key::Confirm);CHECK(a.detail_item<0&&!a.game_over_summary);unchanged();
 }
 static void saved_facts(){

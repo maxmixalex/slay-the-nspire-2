@@ -1,4 +1,4 @@
-// NCardGrid uses a continuous viewport and source-proportioned 53x75 faces.
+// NCardGrid uses the actual 1680x1260 viewport and 46x64 small faces.
 // Battle piles are separate screens, not tabs. The deck alone owns the four
 // sorters and upgrade preview. The normal top bar remains above the backstop.
 static void pile_screen(Canvas&c){
@@ -14,17 +14,17 @@ static void pile_screen(Canvas&c){
     Canvas rows=card_grid_canvas(c,grid);
     if(deck){
         static const char*keys[]={"SORT_OBTAINED","SORT_TYPE","SORT_COST","SORT_ALPHABET"};
-        const int bar=I6_PileSortBar+mn(4,int(s.character)),bar_y=42-grid.offset();rows.ui(bar,25,bar_y-grid.top,270,15);
-        for(int sort=0;sort<4;++sort){const int x=25+sort*68;
-            const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+67&&a.pointer.y>=bar_y-2&&a.pointer.y<bar_y+17&&a.pointer.y>=grid.top;
+        const int bar=I6_PileSortBar+mn(4,int(s.character)),bar_y=33-grid.offset();rows.ui(bar,44,bar_y-grid.top,236,12);
+        for(int sort=0;sort<4;++sort){const int x=44+reference_viewport::project(sort*300);
+            const bool hover=a.pointer.visible&&a.pointer.x>=x&&a.pointer.x<x+48&&a.pointer.y>=bar_y-2&&a.pointer.y<bar_y+14&&a.pointer.y>=grid.top;
             const bool focused=hover||(!a.pointer.visible&&a.pile_control_focus==sort);
             Canvas layer=rows;if(!focused)layer.brightness=204;
-            layer.ui(bar,x,bar_y-grid.top,67,15);
+            layer.ui(bar,x,bar_y-grid.top,48,12);
             const auto*label=a.content.world_string("gameplay_ui",keys[sort]);
-            layer.text_fitted(label,x+3,bar_y+2-grid.top,51,8,Gold,8,true);
+            layer.text_fitted(label,x+1,bar_y+2-grid.top,38,8,Gold,8,true);
             const bool descending=(a.pile_sort_descending&(1u<<sort))!=0;
-            ui_picture_transform(layer,a.content.ui_image(I6_SortDescending),x+60,bar_y+8-grid.top,9,6,0,descending?1024:-1024);
-            card_grid_hit(c,grid,x,bar_y-3,67,21,HitKind::PileSort,sort);
+            ui_picture_transform(layer,a.content.ui_image(I6_SortDescending),x+43,bar_y+7-grid.top,7,5,0,descending?1024:-1024);
+            card_grid_hit(c,grid,x,bar_y-2,48,16,HitKind::PileSort,sort);
         }
     }
     // Batch the exact visible faces (portrait/frame/border/banner/energy),
@@ -44,7 +44,7 @@ static void pile_screen(Canvas&c){
         Card card=deck?s.deck[ids[i]]:s.cards[ids[i]];if(deck&&a.pile_upgraded&&card_upgradeable(card))card.upgraded=1;
         const int instance=deck?-1:ids[i],deck_index=deck?ids[i]:-1;
         const int x=grid.card_x(i),y=grid.card_y(i);
-        const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+        const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+CardGridScroll::CardW+2&&a.pointer.y>=y-2&&a.pointer.y<y+CardGridScroll::CardH+2&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
         painter.card(i,card,hover||(!a.pointer.visible&&a.pile_control_focus<0&&i==a.inspect_cursor),true,
             deck?a.card_offer_cost(card,event_card_facts(s,card,-1,deck_index)):cost(s,instance),card_star_cost(s,card,instance),instance,deck_index);
         painter.hit(i,deck?HitKind::DeckCard:HitKind::InstanceCard,ids[i]);
@@ -52,15 +52,15 @@ static void pile_screen(Canvas&c){
     painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::Pile);
     if(!n)c.centered("空",0,103,320,12,Muted);
     const char*info=a.content.world_string("gameplay_ui",deck?"DECK_PILE_INFO":a.pile_tab==1?"DRAW_PILE_INFO":a.pile_tab==2?"DISCARD_PILE_INFO":"EXHAUST_PILE_INFO");
-    const int info_x=deck?84:53,info_w=deck?229:260;
-    Canvas plaque=c;plaque.opacity=192;plaque.rect(info_x-3,211,info_w+6,28,0);
-    c.paragraph_fitted(info,info_x,213,info_w,25,8,White,8,true);
+    const int info_w=mn(156,mx(1,c.width(info,8))),info_x=160-info_w/2;
+    Canvas plaque=c;plaque.opacity=192;plaque.rect(info_x-2,225,info_w+4,13,0);
+    c.text_fitted(info,info_x,227,info_w,8,White,8,true);
     if(deck){
-        c.ui(a.pile_upgraded?F_SettingsTicked:F_SettingsUnticked,5,217,13,13);
-        c.text_fitted(a.content.world_string("gameplay_ui","VIEW_UPGRADES"),19,219,61,8,Gold,8);
-        c.hit(3,211,78,27,HitKind::PileUpgrades);
+        c.ui(a.pile_upgraded?F_SettingsTicked:F_SettingsUnticked,3,226,9,9);
+        c.text_fitted(a.content.world_string("gameplay_ui","VIEW_UPGRADES"),14,227,64,8,Gold,8);
+        c.hit(2,223,78,14,HitKind::PileUpgrades);
     }
     // back_button.tscn anchors left, about two thirds down the scene. Keep
     // the cropped side tab outside the first card's hit area and the footer.
-    native_back(c,-8,164,33,24,"",true,false);c.hit(0,161,23,30,HitKind::Close);
+    native_original_back(c);
 }

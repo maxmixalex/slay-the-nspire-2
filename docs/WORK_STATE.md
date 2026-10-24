@@ -1,5 +1,41 @@
 # Work state — 2026-10-24
 
+## UI7 implementation checkpoint 6 (in progress)
+
+Checkpoint 4 `68350fe532d34ee7c16f55027324b4f54be86816` built successfully
+but passed 68/84 CTest suites. Its failed journal remains failed. Checkpoint 5
+`a1f2c9b127fd3bb5e3fce36c7b9c86560176b79f` passed 3 merchant-group,
+19 scene-geometry and 5 font-tool tests, plus actual UI7 bilingual art and
+original-font replacement conversions. These packs used the earlier incorrect
+1440x1080 character projection and are not final visual acceptance.
+
+The latest source uses the verified NGame 4:3 viewport, 1680x1260, for character
+sampling/layout, card grids, common navigation and compendium/profile panels.
+The character converter now separates five exactly invariant pixel planes
+from 540 complementary dynamic frames, adding only five images, keeping all
+clip counts/periods, and checking reconstruction per pixel. Actual corrected
+conversion and measured savings remain pending. The ordinary UI7 art count is
+now 1097 images; its auxiliary/clip counts remain 1877/1710.
+
+Further source work includes original card discovery timing, distinct final-
+deck victory counts and a stats toggle; NSH2 observed metadata retains NSH1
+reading and historical State save bytes. Phobia adds 43 authored alternate
+clips and four whole room backgrounds under v25 (1881 auxiliary/1753 clips).
+Three save-profile UI/storage flows and eight original control images extend
+that to v26 (1889 auxiliary, 1753 clips, 8704 strings). Full-pack, split, and
+font tools accept the same resource contracts without runtime integrity scans.
+Corrected CP4 fixtures preserve actual saved-state and interaction invariants.
+
+Short C++/Python syntax checks have passed for completed modules. These latest
+features still need their immutable checkpoint build, actual resource
+conversion, bilingual screen review and platform validation. Profile-specific
+Prefs, Daily/Custom, complete run-history details and the inventory's other
+named differences remain open. No 95% original-game fidelity or UI7 release
+has been established. Next: checkpoint the coherent source, run the complete
+native gate and corrected private conversion in parallel, inspect actual
+screens, then optimize measured rendering/storage costs and verify portable
+whole-run behavior.
+
 ## UI7 implementation checkpoint 4 (2026-10-24, in progress)
 
 The whole-source stage now includes the original card-library filters, search,

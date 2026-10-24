@@ -79,6 +79,7 @@ static bool sibling(char*out,const char*launcher,const char*filename){
     int slash=-1,n=0;while(launcher&&launcher[n]){if(n>=420)return false;if(launcher[n]=='/')slash=n;n++;}
     int at=0;while(at<=slash){out[at]=launcher[at];at++;}while(*filename&&at<510)out[at++]=*filename++;out[at]=0;return !*filename;
 }
+#include "profile_storage.inc"
 static void* open_sibling(const char*launcher,const char*name){return sibling(pack_path,launcher,name)?nd_open(pack_path,"rb"):nullptr;}
 static spire::ResourceSource file_source(ResourceFile&file){
     file.cursor={}; // This length probe moves the underlying stream as well.
@@ -224,7 +225,9 @@ struct Touchpad {
 extern "C" int main(int argc,char**argv){
     if(nd_revision()<2022||nd_hwtype()==0)return 2;
     const char*launcher=argc>0&&argv&&argv[0]?argv[0]:"";
-    if(!sibling(save_path,launcher,"nSpire2.sav.tns")||!sibling(temp_path,launcher,"nSpire2.tmp.tns")||!sibling(backup_path,launcher,"nSpire2.bak.tns")||!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(settings_path,launcher,"nSpire2.settings.tns")||!sibling(settings_temp,launcher,"nSpire2.settings.tmp.tns")||!sibling(settings_backup,launcher,"nSpire2.settings.bak.tns")||!sibling(progress_path,launcher,"nSpire2.progress.tns")||!sibling(progress_temp,launcher,"nSpire2.progress.tmp.tns")||!sibling(progress_backup,launcher,"nSpire2.progress.bak.tns"))return 3;
+    profile_launcher=launcher;
+    if(!sibling(performance_path,launcher,"nSpire2.perf.tns")||!sibling(profile_path,launcher,"nSpire2.profile.tns")||!sibling(language_path,launcher,"nSpire2.lang.tns")||!sibling(settings_path,launcher,"nSpire2.settings.tns")||!sibling(settings_temp,launcher,"nSpire2.settings.tmp.tns")||!sibling(settings_backup,launcher,"nSpire2.settings.bak.tns")||!sibling(selector_path,launcher,"nSpire2.slots.tns")||!sibling(selector_temp,launcher,"nSpire2.slots.tmp.tns")||!sibling(selector_backup,launcher,"nSpire2.slots.bak.tns"))return 3;
+    selected_profile=load_profile_selector();if(!configure_profile_paths(selected_profile))return 3;
     // Ndless may wait for all launch keys to be released before entering main,
     // so a held CTRL alone cannot reliably opt in. An owner-created sibling
     // marker enables startup timing without a loader/key timing dependency.
@@ -261,7 +264,7 @@ extern "C" int main(int argc,char**argv){
         valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
         if(valid)resource=split.source();
     }else{source.language=spire::boot_probe_language(resource);installed_languages=source.language==spire::BootLanguage::English?1u:2u;}
-    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock})){
+    if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
     if(selected_language&&source.language!=preferred)store_language(source.language);
@@ -362,7 +365,7 @@ extern "C" int main(int argc,char**argv){
             spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
         else for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);
         previous=p;for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
-        change_language();
+        change_language();service_profile();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press
         // to the document browser when Ndless restores the foreground.

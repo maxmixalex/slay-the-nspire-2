@@ -140,13 +140,25 @@ static void finish_routing_fixture(){
  if(world_room_is_combat(a.game))a.game.phase=Phase::Reward;
  CHECK(world_finish_room(a.game));CHECK(world_valid_run(a.game));
 }
+static bool route_to_shop(const reference::ReferenceMap&map,unsigned point,unsigned depth=0){
+ if(point>=map.count||depth>reference::MaxRows+2)return false;
+ if(map.points[point].type==reference::PointType::Shop)return true;
+ const auto&children=map.points[point].children;
+ for(unsigned i=0;i<children.used;++i)if(route_to_shop(map,children.slots[i],depth+1))return true;
+ return false;
+}
 static void begin_room(WorldRoom room,reference::ActKind region=reference::ActKind::Overgrowth,unsigned act=0,const RelicId*relics=nullptr,unsigned count=0,Character character=Character::Ironclad){
  new_run(a.game,0x7195c3,false,character);CHECK(world_set_seed(a.game,"NSPIRE-WORLD-017"));CHECK(world_begin_run(a.game,region,0));
  for(unsigned i=0;i<count;i++)add(relics[i]);
  for(unsigned guard=0;guard<120;guard++){
   if(a.game.world.room_open&&a.game.world.room_type==unsigned(room)&&a.game.world.act_index==act){present();if(room==WorldRoom::Rest)settle_rest_buttons();CHECK(validate(a.game));return;}
   CHECK(a.game.phase!=Phase::Dead&&a.game.phase!=Phase::Complete&&a.game.phase!=Phase::Error);
-  if(world_can_travel(a.game)){uint8_t ids[reference::Columns];unsigned n=world_available_points(a.game,ids,reference::Columns);CHECK(n);CHECK(world_choose_point(a.game,ids[0]));}
+  if(world_can_travel(a.game)){uint8_t ids[reference::Columns];unsigned n=world_available_points(a.game,ids,reference::Columns);CHECK(n);unsigned chosen=ids[0];
+   // The historical leftmost route contains no shop. Choose a generated,
+   // reachable branch to this newly covered room instead of finishing a run.
+   if(room==WorldRoom::Shop&&a.game.world.act_index==act){const auto*map=world_current_map(a.game);CHECK(map);bool found=false;
+    for(unsigned i=0;i<n;++i)if(route_to_shop(*map,ids[i])){chosen=ids[i];found=true;break;}CHECK(found);}
+   CHECK(world_choose_point(a.game,chosen));}
   else finish_routing_fixture();
  }
  CHECK(false);

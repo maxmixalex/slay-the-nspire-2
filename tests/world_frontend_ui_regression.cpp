@@ -237,7 +237,8 @@ static void main_menu_and_continue(){
  a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.render();a.advance(500);capture("frontend-character-select");a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
- press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
+ press(HitKind::Menu,2);CHECK(a.compendium_open&&a.title&&!a.library);action(UiAction::LibraryCards);CHECK(a.library&&a.title);
+ a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.title);unchanged();
  press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,3);confirm_accept();CHECK(a.quit);a.quit=false;unchanged();
 
@@ -245,7 +246,7 @@ static void main_menu_and_continue(){
  a.pointer_move(213,183);CHECK(a.menu==0);a.pointer.visible=false;capture("frontend-title-continue");
  a.menu=0;for(unsigned i=0;i<5;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
  press(HitKind::Menu,2);CHECK(a.settings_open);a.input(Key::Back);CHECK(!a.settings_open);unchanged();
- press(HitKind::Menu,3);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library);unchanged();
+ press(HitKind::Menu,3);CHECK(a.compendium_open&&a.title&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);unchanged();
  press(HitKind::Menu,4);CHECK(a.frontend_confirm==3);a.input(Key::Back);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
  press(HitKind::Menu,0);CHECK(!a.title&&!a.character_select&&a.game.character==Character::Silent);same_saved(expected);
  // A decodable terminal save is not resumable. The shortcut must not replace
@@ -266,7 +267,7 @@ static void pause_save_failure_and_success(){
  const int pause_selection=a.menu;
  for(int y:{54,87,119,151,183}){a.pointer_move(90,y);a.render();CHECK(a.menu==pause_selection&&a.settings_open&&a.paused);}
  a.input(Key::Back);CHECK(!a.settings_open&&a.paused);
- press(HitKind::Menu,2);CHECK(a.library&&a.paused);a.input(Key::Back);CHECK(!a.library&&a.paused);press(HitKind::Menu,0);CHECK(!a.paused&&!a.title);same_saved(disk);
+ press(HitKind::Menu,2);CHECK(a.compendium_open&&a.paused&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.paused);press(HitKind::Menu,0);CHECK(!a.paused&&!a.title);same_saved(disk);
 }
 static void abandon_saved_with_confirmation(){
  empty_disk();start(Character::Regent,4001);put_disk();snapshot();a.return_to_title();unsigned d=deletes;

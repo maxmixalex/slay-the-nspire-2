@@ -15,6 +15,7 @@ import numpy as np
 
 import content_tiles as tiles
 from build_content import texture
+from character_static_layers import split_loop
 from patch_feedback_assets import write_image, SOURCE_PCK_SHA256
 from world_enemy_assets import SpineSampler
 from world_room_shaders import RoomRenderer
@@ -23,13 +24,14 @@ from world_scene_assets import Property, SceneRenderError, _node_matrix, _proper
 CHARACTERS = ('ironclad', 'silent', 'defect', 'regent', 'necrobinder')
 DURATIONS = (5333, 11667, 13333, 6667, 8000)
 COUNTS = (64, 140, 160, 80, 96)
-SIZE, VIEWPORT = (320, 240), (1440, 1080)
+SIZE, VIEWPORT = (320, 240), (1680, 1260)
 CLIP_FIRST, FRAME_COUNT = 1705, 540
 
 
 def converter_identity():
     names = ('character_ui7_assets.py', 'world_scene_assets.py', 'world_room_shaders.py',
-             'world_enemy_assets.py', 'SpineSampleAdapter.cs', 'animation.py')
+             'world_enemy_assets.py', 'SpineSampleAdapter.cs', 'animation.py',
+             'character_static_layers.py')
     return tiles.sha256(b''.join((Path(__file__).parent/name).read_bytes() for name in names))
 
 
@@ -74,11 +76,12 @@ class CharacterRenderer(RoomRenderer):
 
 
 def build_art(pack, cache, *, runtime, dotnet=None):
-    """Return contiguous images/clips and local first-frame auxiliary mapping.
+    """Return five static planes, contiguous delta clips, and auxiliary mapping.
 
     Append ``images`` after the caller's static prefix. Add that prefix length
     to each clip's ``first`` and to ``auxiliary_rows`` before pack insertion.
-    This avoids five duplicate initial frames or duplicate image payloads.
+    The five auxiliaries name disjoint static planes. Each original frame is
+    restored by its static plane plus the corresponding sparse delta image.
     """
     cache = Path(cache);cache.mkdir(parents=True, exist_ok=True)
     path = cache/'character-ui7-assets.json'
@@ -86,7 +89,8 @@ def build_art(pack, cache, *, runtime, dotnet=None):
     if path.is_file():
         previous = json.loads(path.read_text())
         if previous.get('converter_sha256') == identity and previous.get('runtime_sha256') == runtime_identity:
-            tiles.require(len(previous['images']) == FRAME_COUNT and len(previous['clips']) == 5,
+            tiles.require(len(previous['images']) == FRAME_COUNT+5 and len(previous['clips']) == 5 and
+                          previous.get('static_layering') is True,
                           'Changed cached character catalog')
             for row in previous['images']:
                 raw = (cache/row['file']).read_bytes()
@@ -110,7 +114,9 @@ def build_art(pack, cache, *, runtime, dotnet=None):
             root = renderer.loader.instantiate('scenes/screens/character_select_screen.tscn')
             container = next(node for node in root.children if node.name == 'AnimatedBg')
             origin, size = renderer.control_size(container, np.asarray(VIEWPORT, dtype=float))
-            tiles.require(tuple(origin) == (-388., -80.) and tuple(size) == (2080., 1200.) and
+            # NGame's FourByThree setting uses 1680x1260. Retaining the
+            # desktop 1080px height over-crops both the head and torso here.
+            tiles.require(tuple(origin) == (-388., -80.) and tuple(size) == (2320., 1380.) and
                           tuple(_vector(_property(container.props, 'pivot_offset'))) == (1280., 600.),
                           'Original character parent framing changed')
             # NCharacterSelectScreenBg.OnWindowChange clamps aspect to 4:3;
@@ -146,10 +152,20 @@ def build_art(pack, cache, *, runtime, dotnet=None):
             print(json.dumps(dict(character=character, frames=count, duration_ms=duration,
                                   stored_bytes=sum(row['bytes'] for row in rows[first:]))), flush=True)
     tiles.require(len(rows) == FRAME_COUNT, 'Incorrect character animation image count')
+    sampled_rows, bases, dynamic, layer_reports = rows, [], [], []
+    for clip in clips:
+        start, count = clip['first'], clip['count']
+        base, deltas, report = split_loop(sampled_rows[start:start+count], cache, clip['key'])
+        bases.append(base);dynamic.extend(deltas);layer_reports.append(report)
+        clip['first'] += len(CHARACTERS)
+        print(json.dumps(dict(stage='character_static_layers', **report)), flush=True)
+    rows = bases+dynamic
+    auxiliary = list(range(len(CHARACTERS)))
     result = dict(schema=1, reference='v0.111.0 / 41cef1ea', source_pck_sha256=SOURCE_PCK_SHA256,
                   converter_sha256=identity, runtime_sha256=runtime_identity, images=rows, clips=clips,
                   auxiliary_rows=auxiliary, durations_ms=list(DURATIONS), clip_first=CLIP_FIRST,
                   viewport=list(VIEWPORT), output_size=list(SIZE), character_reports=reports,
+                  sampled_images=sampled_rows, static_layering=True, static_layer_reports=layer_reports,
                   limits=['12fps skeletal samples', 'independent particles omitted',
                           'water distortion frozen to authored texture', 'fire shader noise fixed at time zero',
                           'Regent constellation hover skins not sampled', 'no original Godot/GPU pixel oracle'])

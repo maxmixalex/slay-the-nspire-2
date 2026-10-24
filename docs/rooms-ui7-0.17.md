@@ -19,21 +19,31 @@ spacing, named jitter stream and scroll bounds remain intact. The legend
 retains the original viewport-width × 0.8 anchor, with a readable small-screen
 text column. This is a correction to the earlier documented adaptation.
 
-Merchant inventory now uses one **1440×1080 → 320×240** camera projection,
-including rug, cards, prices, relics, potions and removal service. The original
-1,747×978 rug projects to x=-27, y=18, width=388 and height=217; the viewport
-clips the authored edges. The seven card centers come from the source slots,
-with 43×61 idle and 53×75 focused cards. These new dimensions address the UI6
-inventory becoming too small; final visual bounds still require actual pack
-captures. They are not an arbitrary enlargement of selected items alone.
+Inspection of the actual sampled backgrounds exposed an incorrect camera
+assumption. `NGame.ApplyDisplaySettings` selects **1680×1260** for FourByThree;
+the prior 1440×1080 projection cropped character scenes too closely. The live
+sampler and shared `reference_viewport.hpp` now use the source 1680×1260
+canvas. Corrected sampling and complete-screen acceptance are still pending
+the next verified checkpoint. The old samples remain available for comparison.
+
+Merchant inventory retains an explicit **7/6 readability zoom** around display
+(160,0), applied after that original projection to the rug and all its children.
+The combined scale is 2/9; it is a small-screen adaptation, not the original
+camera scale. The 1,747×978 rug is x=-27, y=18, width=388 and height=217. The
+seven source card centers, 43×61 idle cards and 53×75 focused cards share this
+same transform, preserving their relative size to the rug. The viewport clips
+the rug edges. Final merchandise bounds, text readability and interaction
+still require actual complete-screen captures.
 
 Character selection uses the source bottom-centered five-portrait container,
 left information block, progression strip and independent back/confirm child
-geometry. The portrait centers are 108, 134, 160, 186 and 212; their top is
-y=194. The previous right-side vertical column and 155×209 stretched black
+geometry. At the corrected viewport the portrait centers are 116, 138, 160,
+182 and 204; their top is y=200. The previous right-side vertical column and 155×209 stretched black
 panel are removed. Readable 8px information text can grow the left block
 upward; this is an explicit small-screen adaptation, not exact desktop text
-geometry. The selected source release always hides the act dropdown.
+geometry. The selected source release always hides the act dropdown. Original
+back/confirm child controls preserve the full 300×202 atlas margins and the
+source keep-aspect behavior instead of stretching the visible 267×160 region.
 
 ## Source contracts and implementation boundaries
 
@@ -52,7 +62,7 @@ room contracts rather than claiming every generated Godot wrapper reviewed.
 | `Rooms/NMerchantRoom.cs`, `NMerchantButton.cs`; `rooms/merchant_room.tscn`, `rooms/merchant_button.tscn` | Source actor orientation and original corrected atlas textures; open/close input ownership | Existing UI6 atlas correction is targeted, not a rebake of every historic asset |
 | `Screens.Shops/NMerchantInventory.cs`, `NMerchantSlot.cs`; `merchant/merchant_inventory.tscn` and item scenes | Rug opens over 700ms, closes over 500ms; original dim recovery; one camera scale; real prices, availability, nearest remaining focus and failure motion | Final interactive bounds/readability and first-open costs need new resource/runtime acceptance |
 | `Screens.Shops/NMerchantCard.cs`, `NMerchantRelic.cs`, `NMerchantPotion.cs`, `NMerchantCardRemoval.cs` | Source item focus/unfocus, failure wiggle, card-removal used progression, actual purchase and full-belt error integration | Additional original tooltip minutiae and source price font metrics require final visual inspection |
-| `Screens.Shops/NMerchantHand.cs` | Both real and fake merchant hands sampled with official Spine runtime and constraints; item tracking, lerp and linger/return behavior | 47 poses per hand quantize angle; source Perlin micro-motion is not yet reproduced |
+| `Screens.Shops/NMerchantHand.cs` | Both real and fake merchant hands sampled with official Spine runtime and constraints; item tracking, lerp and linger/return behavior | 47 poses per hand quantize angle; the original Perlin drift and its fixed +40/-50 source-pixel bias remain absent |
 | `Screens.Shops/NMerchantDialogue.cs`; `merchant/merchant_rug_dialogue.tscn` | Source message families, bubble, original positions and fade/typewriter clocks | `[fly_in]` glyph transform is not yet represented |
 | `Events/NEventLayout.cs`, `NCombatEventLayout.cs`, `NEventOptionButton.cs`; default/combat layouts and option scenes | Title/body reveal and original normal/fast option entry; focused/pressed motion; disabled hit ownership during entry | More than three options retain a small-screen paging adaptation; some page-to-page transitions and original particles remain |
 | `Events/NAncientEventLayout.cs`, `NAncientDialogueLine.cs`, `NAncientDialogueHitbox.cs`; ancient layout/dialogue/option scenes | Original dialogue bubble/tail/character icon, entry easing and directional focus delay | `NAncientNameBanner` intro and the complete historical multi-line dialogue stack remain |
@@ -65,7 +75,7 @@ room contracts rather than claiming every generated Godot wrapper reviewed.
 | `Vfx.Cards/NCardRemoveVfx.cs`, `Commands/CardPileCmd.cs` | Direct removals now observe full card facts before deck compaction, sharing real removal preview/effect | Multiple simultaneous removals use a bounded last preview; GPU embers/clouds remain absent |
 | `Vfx/NCardFlyVfx.cs` and procurement call sites | Direct shop/event pickups now create flight presentation while canonical acquisition stays immediate | Character-specific trails and exact frame-delta rotation interpolation remain different |
 | `Screens.CharacterSelect/NCharacterSelectScreen.cs`, `NCharacterSelectButton.cs`, `NAscensionPanel.cs`; character-select/button/ascension scenes | Bottom-centered click selection; source info motion, focus saturation/value/scale, selected outline pulse and independently entering buttons | Readable text layout differs from desktop; random/locked progress states need separate frontend policy |
-| `Screens.CharacterSelect/NCharacterSelectScreenBg.cs`, `NRegentCharacterSelectBg.cs`, `Animation/NSpineAutoPlayer.cs`; five character background scenes | Full five skeletal loops are implemented at original camera scale and duration, with authored slot followers/material overrides | Sampling and captures pending; 12fps is bounded sampling, particles/water distortion and Regent constellation hover skins remain absent |
+| `Screens.CharacterSelect/NCharacterSelectScreenBg.cs`, `NRegentCharacterSelectBg.cs`, `Animation/NSpineAutoPlayer.cs`; five character background scenes | Five skeletal loops use actual durations, authored slot followers and material overrides; all 540 prior-viewport frames were sampled | The corrected 1680×1260 resampling and complete-screen acceptance are pending; 12fps is bounded sampling, particles/water distortion and Regent constellation hover skins remain absent |
 
 ## Actual resource evidence already available
 
@@ -79,18 +89,49 @@ it does not accept the complete merchant screen or measure its frame rate.
 
 Character metadata was independently read from the same runtime. Original
 loop durations are 5,333 / 11,667 / 13,333 / 6,667 / 8,000 ms, with
-64 / 140 / 160 / 80 / 96 sampled frames planned. Runtime frame selection uses
+64 / 140 / 160 / 80 / 96 frames actually sampled at checkpoint 5. Runtime frame selection uses
 those real periods instead of multiplying a rounded per-frame millisecond
-value. Initial frames also supply the five static auxiliary entries, avoiding
-duplicate payloads. Independent fire shader time is explicitly frozen to
+value. Independent fire shader time is explicitly frozen to
 zero rather than falsely assigned the skeletal loop's period.
 
-The new grouping helper reuses existing retained format 7: independent
-128KiB-target hand groups and up to the existing 512KiB bound for character
-loops. It introduces no new runtime buffer and inserts only one reachable
-payload copy. Exact new decoded pixels, all historic payload bytes and locale
-indices must be checked after actual conversion. A smaller implementation is
-not a storage or speed result until the resulting byte counts are recorded.
+The complete checkpoint-5 conversion passed with `source_changed=false`:
+`ui7-full-assets-with-explicit-font-b88ba62f78bc`. Its ENG pack is 92,994,374
+bytes, SHA-256 `9c9bd8cb09fee9baa0074d74eb0cf7b97159e2a90a6a9ea644041acc5af1dc26`;
+ZHS is 95,787,006 bytes, SHA-256
+`763d17d4076674345b77272cd05c96f1a9bc621f75f51c64114b5c81ff06043b`.
+This validates 1,092 appended images, five clips, preserved historic payloads
+and locale indices, but does **not** accept the old camera framing as correct.
+The temporary glyph supplement is superseded by the separate original-font
+replacement stage before delivery.
+
+The executed grouping used existing retained format 7: 128KiB-target hand
+groups and character groups within the existing 512KiB bound. For the old
+full-frame artwork, 634 images used 202 groups; the largest decoded group was
+465,840 bytes. Hand payloads fell from 1,036,682 padded independent bytes to
+536,668 bytes. Across hands and characters, grouping saved 29,883,044 bytes
+relative to independent image encoding. New common artwork still occupied
+15,980,182 bytes. These are storage measurements of the prior-viewport pack,
+not timing or final UI acceptance results.
+
+### Implemented storage follow-up, awaiting execution
+
+The corrected character converter now separates each loop into one static
+plane and its original ordered dynamic frames. A complete 16×16 region moves
+to the static plane only if its RGB565 color **and alpha** are identical in
+every frame. Static and dynamic masks are disjoint, so partially transparent
+pixels are applied once, in the existing rendering order. The converter
+decodes both resulting planes and checks their recombination against every
+original sampled frame. Source timestamps, frame counts and durations are
+unchanged; no runtime pixel buffer or new image format is introduced.
+
+The new catalog contains five bases plus 540 dynamic frames, changing the
+appended image count from 1,092 to 1,097 while leaving auxiliary and clip counts
+unchanged. Older v24 packs alias each character auxiliary to the first complete
+frame; the renderer detects that alias and skips the extra base draw. The new
+three-case synthetic suite covers opaque/partial-alpha pixels, edge regions,
+identical loops and corrupt conversion input. The actual corrected conversion,
+new-suite execution, final grouped size and runtime I/O remain pending; no
+storage saving or speed improvement is claimed for this new layering yet.
 
 ## Acceptance still required
 
@@ -105,18 +146,33 @@ The complete stage-4 converter was actually executed from verified checkpoint
 poses and produced the static prefix, then failed on the first character's
 extra serialized `SpineMesh2D`. Receipt `ui7-full-room-character-art-a2c2184bfcdd`
 records failure with `source_changed=false`; no completed resource pack or
-character capture is claimed. The official fixed runtime's
+character capture was claimed for that failed stage. The official fixed runtime's
 [constructor and geometry binding](https://github.com/EsotericSoftware/spine-runtimes/blob/e7dc1435fa4a0083ab431f1b28e083c14a1f5c68/spine-godot/spine_godot/SpineSprite.h)
 and [internal mesh generation](https://github.com/EsotericSoftware/spine-runtimes/blob/e7dc1435fa4a0083ab431f1b28e083c14a1f5c68/spine-godot/spine_godot/SpineSprite.cpp)
-confirm that these extra scene nodes have no geometry. The pending correction
-retains their child transforms/order without drawing a duplicate attachment.
-It also applies the source Godot default Screen material's subtract mode.
+confirm that these extra scene nodes have no geometry. The checkpoint-5
+correction retains their child transforms/order without drawing a duplicate
+attachment. It also applies the source Godot default Screen material's subtract
+mode. The subsequent 19-case scene suite passed under receipt
+`ui7-scene-geometry-synthetic-2f3e641ade2f`.
 
 The new grouping suite's first real run, receipt
 `ui7-hand-groups-synthetic-979facac2502`, failed all three fixtures before
 grouping because their synthetic bytearrays were passed into a byte-keyed
-LZ4 helper. The fixture now produces immutable bytes. That correction and the
-new serialized-node regression need the next verified checkpoint rerun.
+LZ4 helper. The fixture now produces immutable bytes. The corrected three-case
+suite passed at checkpoint 5 under receipt
+`ui7-hand-groups-synthetic-7c6b744ec39b`; the first failure remains recorded.
+
+The complete checkpoint-4 native build passed, followed by 68/84 passing
+regression suites. Six room/map suites exposed stale interaction assumptions:
+the Ancient pixel oracle sampled outside its shifted third option; the shop
+test's fixed leftmost route contained no shop; camp input was attempted before
+the source 500ms entry block; the library skipped its restored Compendium
+route; and character/Ancient entry fixtures clicked before the original
+controls arrived. The live fixtures now use actual generated routes, explicit
+source timing boundaries and the restored intermediate controls. The selected
+character scale/value expectation also now matches the source's separate
+initial, hover and selected states. These fixture migrations preserve the
+real click, save and pixel assertions and await the next immutable rerun.
 
 The next gate is actual ENG/ZHS map, shop, event, rest, reward and character
 captures using the new assets, followed by exact native/WASM replay. Only then

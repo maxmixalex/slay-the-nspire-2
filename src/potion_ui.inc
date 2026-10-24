@@ -4,6 +4,7 @@ static int potion_belt_x(const App&a,int slot){
 }
 static void potion_tip(Canvas&c,int slot,int x,int y,int width){
     const Potion bottle=potion_at(c.a.game,unsigned(slot));if(bottle==Potion::Empty){hud_static_tip(c,"POTION_SLOT",x,y,width);return;}if(!potion_definition(bottle))return;
+    c.a.discover_potion(bottle);
     char body[2048]{};ui_potion_description(c.a,int(bottle),body,sizeof body);
     const int lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(209-y,30+mn(lines,12)*13);
     if(!c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7)){c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Gold);}

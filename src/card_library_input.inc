@@ -115,7 +115,8 @@ void App::library_control(int control){
     }else if(control>=LibraryTypeFirst&&control<=LibraryTypeLast)card_library.types^=uint8_t(1u<<(control-LibraryTypeFirst));
     else if(control>=LibraryRarityFirst&&control<=LibraryRarityLast){if(library_filter<=0||library_filter>=7)return;card_library.rarities^=uint8_t(1u<<(control-LibraryRarityFirst));}
     else if(control>=LibraryCostFirst&&control<=LibraryCostLast)card_library.costs^=uint8_t(1u<<(control-LibraryCostFirst));
-    else if(control==LibraryViewUpgrades)library_upgraded=!library_upgraded;
+    else if(control==LibraryViewStats){card_library.show_stats=!card_library.show_stats;return;}
+    else if(control==LibraryViewUpgrades){library_upgraded=!library_upgraded;if(!*card_library.query)return;}
     else{const unsigned sorter=control==LibrarySortType?0:control==LibrarySortRarity?1:control==LibrarySortCost?2:3;
         card_library.sort_descending^=uint8_t(1u<<sorter);
         const bool reverse=bool(card_library.sort_descending&(1u<<sorter))!=(sorter==1);
@@ -135,7 +136,7 @@ static void library_control_cell(int control,int&row,int&column){
     if(control<=LibraryRarityLast){row=6+control-LibraryRarityFirst;return;}
     if(control==LibrarySortCost){row=10;return;}
     if(control<=LibraryCostLast){row=11;column=control-LibraryCostFirst;return;}
-    row=control==LibrarySortAlphabet?12:13;
+    row=control==LibrarySortAlphabet?12:control==LibraryViewStats?13:14;
 }
 bool App::library_input(Key key){
     if(!library||detail_card>=0||detail_item>=0)return false;
@@ -158,7 +159,7 @@ bool App::library_input(Key key){
             if(d<distance){closest=i;distance=d;}}
         if(key==Key::Right&&(closest<0||closest==control||distance)){control=-1;library_selected=CardGridScroll::clamp(library_selected,0,count?count-1:0);grid.focus(library_selected);return true;}
         if(closest>=0)control=int16_t(closest);else if(key==Key::Up||key==Key::Down){
-            const int step=key==Key::Up?-1:1;for(int r=old_row+step;r>=0&&r<14;r+=step){
+            const int step=key==Key::Up?-1:1;for(int r=old_row+step;r>=0&&r<15;r+=step){
                 int next=-1;for(int i=0;i<LibraryControls;++i){int rr,cc;library_control_cell(i,rr,cc);if(rr==r&&!(i>=LibraryRarityFirst&&i<=LibraryRarityLast&&(library_filter<=0||library_filter>=7))){next=i;break;}}
                 if(next>=0){control=int16_t(next);break;}}
         }(void)old_column;return true;

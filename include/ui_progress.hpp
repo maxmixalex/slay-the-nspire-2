@@ -35,9 +35,10 @@ struct UiRunHistory {
 struct UiProgress {
     uint32_t next_serial=1;
     uint8_t count=0,next_history=0,discovered_acts=0,characters_started=0;
-    uint32_t current_streak=0,best_streak=0;
+    uint32_t current_streak=0,best_streak=0,last_saved_at=0;
     uint8_t discovered_cards[(CardKinds+7)/8]{},discovered_relics[(WorldRelicKinds+7)/8]{};
     uint8_t discovered_potions[(PotionKinds+7)/8]{},discovered_events[(OriginalEventKinds+7)/8]{};
+    uint32_t card_wins[CardKinds]{};
     UiCharacterStatistics characters[CharacterKinds]{};
     // Slot 0 is all characters, 1..5 are the actual character dimensions.
     UiEnemyStatistics enemies[EnemyKinds][CharacterKinds+1]{};
@@ -49,4 +50,6 @@ void clear_ui_progress(UiProgress&);
 // Decoding is used only on initial load into cleared UI storage. Failure does
 // not mutate a State; callers discard this optional metadata on failure.
 bool decode_ui_progress(const uint8_t*,size_t,UiProgress&);
+struct UiProgressSummary {uint32_t play_seconds=0,last_saved_at=0;bool exists=false;};
+bool decode_ui_progress_summary(const uint8_t*,size_t,UiProgressSummary&);
 } // namespace spire

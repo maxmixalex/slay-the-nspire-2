@@ -20,6 +20,7 @@
 #include "character_select_layout.hpp"
 #include "card_face_layout.hpp"
 #include "fitted_text.hpp"
+#include "inplace_reset.hpp"
 #if SPIRE_DEBUG_COMMANDS
 #include "debug_commands.hpp"
 #endif
@@ -229,7 +230,7 @@ void App::render(){
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){Canvas c{*this};debug_screen(c);pointer_overlay(c);return;}
 #endif
-    if(bestiary.open){Canvas c{*this};bestiary_screen(c);pointer_overlay(c);return;}
+    if(bestiary.open){Canvas c{*this};const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;bestiary_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     sync_reward_presentation();
     sync_map_window();
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
@@ -248,10 +249,11 @@ void App::render(){
         (game.phase==Phase::Map||map_window.is_open||panel==3),map_clock_ms);
     Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
+    if(profiles_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;profiles_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
-    if(library){library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer_overlay(c);return;}
-    if(statistics_open||history_open){if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(compendium_open){compendium_screen(c);if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0)detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(character_select){character_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
     if(settings_open||frontend_confirm||help)pointer.visible=false;

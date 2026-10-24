@@ -47,6 +47,15 @@ static spire::BootLanguage read_preference(const std::string&path){
 }
 static std::string save_path;
 static std::string settings_path,progress_path;
+static std::string base_save_path,base_progress_path,profile_selector_path;
+static unsigned selected_profile=1,pending_profile=0;
+static bool pending_profile_delete=false;
+static unsigned current_profile(){return selected_profile;}
+static std::string scoped_profile_path(const std::string&base,unsigned profile){
+    if(profile==1||base.empty())return base;
+    const bool tns=base.size()>=4&&base.compare(base.size()-4,4,".tns")==0;
+    const size_t split=base.size()-(tns?4:0);return base.substr(0,split)+".p"+char('0'+profile)+base.substr(split);
+}
 static uint8_t progress_bytes[spire::UiProgressCapacity+1];
 static uint32_t wall_clock(){return uint32_t(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());}
 static bool load_progress(spire::UiProgress&out){
@@ -61,6 +70,35 @@ static bool save_progress(const spire::UiProgress&value){
     const std::string temp=progress_path+".tmp";FILE*f=fopen(temp.c_str(),"wb");if(!f)return false;
     bool ok=fwrite(progress_bytes,1,n,f)==n;ok=(fclose(f)==0)&&ok;
     if(ok)ok=rename(temp.c_str(),progress_path.c_str())==0;if(!ok)remove(temp.c_str());return ok;
+}
+static bool profile_info(unsigned profile,spire::UiProgressSummary&out){
+    out={};if(profile<1||profile>spire::UiProfileCount||base_progress_path.empty())return false;
+    const std::string path=scoped_profile_path(base_progress_path,profile);FILE*f=fopen(path.c_str(),"rb");
+    if(f){const size_t n=fread(progress_bytes,1,sizeof progress_bytes,f);const bool ok=!ferror(f);fclose(f);
+        if(ok&&spire::decode_ui_progress_summary(progress_bytes,n,out))return true;}
+    // Imported older runs have no UI7 metadata. Presence is enough for this
+    // summary; Continue still performs the normal full save validation.
+    f=fopen(scoped_profile_path(base_save_path,profile).c_str(),"rb");if(!f)return false;
+    out={};out.exists=fgetc(f)!=EOF;fclose(f);return out.exists;
+}
+static bool request_profile(unsigned profile,bool erase){
+    if(profile<1||profile>spire::UiProfileCount||pending_profile||profile_selector_path.empty())return false;
+    pending_profile=profile;pending_profile_delete=erase;return true;
+}
+static void configure_profile_paths(){save_path=scoped_profile_path(base_save_path,selected_profile);progress_path=scoped_profile_path(base_progress_path,selected_profile);}
+static void service_profile(){
+    if(!pending_profile)return;const unsigned target=pending_profile;pending_profile=0;bool ok=true;
+    if(pending_profile_delete){
+        const std::string paths[]={scoped_profile_path(base_save_path,target),scoped_profile_path(base_progress_path,target)};
+        for(const auto&path:paths)for(const char*suffix:{"",".tmp",".bak"})if(!path.empty()&&std::remove((path+suffix).c_str())!=0&&errno!=ENOENT)ok=false;
+    }else{
+        uint8_t bytes[spire::UiProfileSelectorBytes];spire::encode_profile_selector(target,bytes);
+        const std::string temporary=profile_selector_path+".tmp";FILE*f=fopen(temporary.c_str(),"wb");
+        if(!f)ok=false;else{ok=fwrite(bytes,1,sizeof bytes,f)==sizeof bytes;ok=(fclose(f)==0)&&ok;
+            if(ok)ok=rename(temporary.c_str(),profile_selector_path.c_str())==0;if(!ok)remove(temporary.c_str());}
+        if(ok){selected_profile=target;configure_profile_paths();}
+    }
+    app.finish_profile_change(ok);
 }
 static bool load_preferences(spire::UiPreferences& value){
     if(settings_path.empty())return false;
@@ -155,8 +193,12 @@ int main(int argc,char**argv){
     }
     if(!installed_languages)installed_languages=language==spire::BootLanguage::English?1u:2u;
     if(progress_path.empty()&&!headless)progress_path=directory(save_path)+"/nSpire2.progress.tns";
+    base_save_path=save_path;base_progress_path=progress_path;
+    if(!headless){profile_selector_path=directory(base_save_path)+"/nSpire2.slots.tns";
+        if(FILE*f=fopen(profile_selector_path.c_str(),"rb")){uint8_t bytes[spire::UiProfileSelectorBytes+1];const size_t n=fread(bytes,1,sizeof bytes,f);fclose(f);selected_profile=spire::decode_profile_selector(bytes,n);}
+        configure_profile_paths();}
     if(settings_path.empty()&&!headless)settings_path=(common.file?directory(commonpath):directory(packpath))+"/nSpire2.settings.tns";
-    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock}))return error(spire::BootText::InvalidResources);
+    if(!source.length||!app.init(source,{save_game,load_game,clear_save,headless?nullptr:seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,headless?nullptr:wall_clock,current_profile,headless?nullptr:profile_info,headless?nullptr:request_profile}))return error(spire::BootText::InvalidResources);
     auto persist_language=[&](){
         if(headless)return;
         FILE*f=fopen(preference.c_str(),"wb");if(f){bool ok=fwrite(spire::boot_preference_bytes(language),1,8,f)==8;ok=(fclose(f)==0)&&ok;if(!ok)remove(preference.c_str());}
@@ -258,7 +300,7 @@ int main(int argc,char**argv){
                     else {spire::Key k;if(key(symbol,k))app.input(k);}
                 }else {spire::Key k;if(key(symbol,k))app.input(k);}}
         }
-        change_language();
+        change_language();service_profile();
         auto now=std::chrono::steady_clock::now();app.advance((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(now-last_frame).count());last_frame=now;app.render();int scale=std::max(1,std::min(width/320,height/240)),w=320*scale,h=240*scale;
         if(!image){image=XCreateImage(d,DefaultVisual(d,screen),DefaultDepth(d,screen),ZPixmap,0,nullptr,w,h,32,0);if(!image)break;image->data=(char*)calloc(image->bytes_per_line,h);if(!image->data){XDestroyImage(image);image=nullptr;break;}}
         for(int y=0;y<h;y++){auto*row=(uint32_t*)(image->data+y*image->bytes_per_line);for(int x=0;x<w;x++){uint16_t p=app.pixels[(y/scale)*320+x/scale];row[x]=((p>>11)*255/31)<<16|(((p>>5)&63)*255/63)<<8|(p&31)*255/31;}}

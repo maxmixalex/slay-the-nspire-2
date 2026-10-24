@@ -2,6 +2,7 @@
 #include "merchant_layout.hpp"
 #include "room_ui7_presentation.hpp"
 #include "room_ui7_assets.hpp"
+#include "phobia_assets.hpp"
 #include "core.hpp"
 #include "keyword_hover.hpp"
 #include "event_assets.hpp"
@@ -43,6 +44,8 @@
 #include "title_particles.hpp"
 #include "ui_preferences.hpp"
 #include "ui_progress.hpp"
+#include "ui_profiles.hpp"
+#include "profile_assets.hpp"
 #include "ui_history_presentation.hpp"
 #include "bestiary_presentation.hpp"
 namespace spire {
@@ -104,9 +107,9 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>Ui7ContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
-        const unsigned animations=version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        if(version_<ContentVersion||version_>ProfileContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        const unsigned animations=version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
     }
@@ -158,6 +161,9 @@ struct Callbacks {
     bool(*load_progress)(UiProgress&)=nullptr;
     bool(*save_progress)(const UiProgress&)=nullptr;
     uint32_t(*wall_clock)()=nullptr;
+    unsigned(*current_profile)()=nullptr;
+    bool(*profile_info)(unsigned,UiProgressSummary&)=nullptr;
+    bool(*request_profile)(unsigned,bool)=nullptr;
 };
 // Run parameters used by Continue/abandon, without re-encoding saved state.
 struct SavedRunIdentity {
@@ -235,6 +241,18 @@ struct App {
     void settings_action(UiAction);
     bool settings_input(Key);
     UiProgress progress{};
+    bool profiles_open=false,profile_pending=false,profile_delete=false;
+    uint8_t profile_selection=0,profile_target=1;
+    uint32_t profiles_started=0;
+    UiProgressSummary profile_summaries[UiProfileCount]{};
+    UiProfileMotion profile_motion[UiProfileCount*2+1]{};
+    UiProfileLabelMotion profile_labels[UiProfileCount]{};
+    unsigned current_profile()const;
+    void open_profiles();
+    void refresh_profiles();
+    bool profiles_input(Key);
+    bool request_profile_change(unsigned,bool erase=false);
+    void finish_profile_change(bool success);
     bool compendium_open=false,statistics_open=false,history_open=false;
     uint8_t compendium_selection=0,history_index=0;
     int history_selected=-1;
@@ -260,6 +278,8 @@ struct App {
     void progress_time(uint32_t);
     void observe_progress_log(Log);
     void discover_potion(Potion);
+    void discover_card(CardKind);
+    void discover_relic(RelicId);
     void observe_enemy_spawned(const State&,unsigned model,uint16_t identity);
     void finish_progress(bool abandoned=false,const State*source=nullptr);
     bool bestiary_available()const;
@@ -355,6 +375,7 @@ struct App {
     void focus_collection();
     bool collection_input(Key);
     uint16_t choice_selected[MaxDeck]{};unsigned choice_selected_count=0;uint32_t choice_revision=0;
+    uint32_t catalog_choice_revision=UINT32_MAX;uint8_t catalog_choice_phase=255;
     bool character_select=false,library=false,reward_cards=false,library_upgraded=false;
     bool grimoire_select=false;
     int library_tab=0,library_page=0,library_selected=0;

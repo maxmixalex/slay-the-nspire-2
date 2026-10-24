@@ -1,9 +1,10 @@
 #pragma once
 namespace spire {
-// merchant_inventory.tscn in the 4:3 1440x1080 logical viewport. The rug,
-// its children and their .65/.8 slot scales share the same 2/9 projection.
-// The original centered rug extends beyond the viewport; fitting its entire
-// 1747px width into 320px incorrectly applies a second scale to every item.
+// merchant_inventory.tscn uses the original 1680x1260 4:3 canvas. This screen
+// retains a deliberate 7/6 readability zoom around the top-center (160,0):
+// (4/21)*(7/6)=2/9. Apply it equally to the rug and every child/slot scale;
+// fitting the 1747px rug into 320px and separately enlarging items is wrong.
+// The uniform zoom yields 43x61 cards without changing the card/rug ratio.
 struct MerchantInventoryLayout {
  static constexpr int project(int source){return source>=0?(source*2+4)/9:-((-source*2+4)/9);}
  static constexpr int RugX=-27,RugY=18,RugW=388,RugH=217;

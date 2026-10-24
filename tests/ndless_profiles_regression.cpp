@@ -1,0 +1,91 @@
+#include "ui_profiles.hpp"
+#include "ui_progress.hpp"
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <map>
+#include <string>
+#include <vector>
+using Bytes=std::vector<uint8_t>;
+static unsigned checks;
+#define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"Ndless profiles:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
+static std::map<std::string,Bytes> files;
+static std::string fail_write,fail_rename,fail_unlink;
+static unsigned read_bytes=0;
+struct File {std::string path;size_t offset=0;};
+static void*nd_open(const char*path,const char*mode){
+ if(*mode=='w')files[path]={};else if(!files.count(path))return nullptr;
+ return new File{path};
+}
+static unsigned nd_read(void*output,unsigned size,unsigned count,void*handle){
+ auto&f=*static_cast<File*>(handle);auto&data=files.at(f.path);const size_t n=std::min<size_t>(size*count,data.size()-f.offset);
+ if(n)std::memcpy(output,data.data()+f.offset,n);f.offset+=n;read_bytes+=unsigned(n);return unsigned(n/size);
+}
+static unsigned nd_write(const void*input,unsigned size,unsigned count,void*handle){
+ auto&f=*static_cast<File*>(handle);const unsigned n=count-(f.path==fail_write&&count?1:0);fail_write.clear();
+ const auto*bytes=static_cast<const uint8_t*>(input);auto&data=files.at(f.path);data.insert(data.end(),bytes,bytes+size*n);return n;
+}
+static int nd_close(void*handle){delete static_cast<File*>(handle);return 0;}
+static int nd_rename(const char*from,const char*to){
+ if(fail_rename==from){fail_rename.clear();return -1;}
+ auto found=files.find(from);if(found==files.end()||files.count(to))return -1;
+ files.emplace(to,std::move(found->second));files.erase(found);return 0;
+}
+static int nd_unlink(const char*path){if(fail_unlink==path){fail_unlink.clear();return -1;}return files.erase(path)?0:-1;}
+static char save_path[512],temp_path[512],backup_path[512],progress_path[512],progress_temp[512],progress_backup[512];
+static uint8_t progress_bytes[spire::UiProgressCapacity+1];
+static struct AppResult {bool title=true,success=false;unsigned completed=0;void finish_profile_change(bool ok){success=ok;++completed;}} app;
+static bool sibling(char*out,const char*launcher,const char*name){
+ const char*slash=std::strrchr(launcher,'/');const size_t prefix=slash?size_t(slash-launcher)+1:0;
+ if(prefix+std::strlen(name)>=512)return false;std::memcpy(out,launcher,prefix);std::strcpy(out+prefix,name);return true;
+}
+// Exercise the exact storage implementation used by the ARM foreground host.
+#include "../platform/ndless/profile_storage.inc"
+static std::string path(unsigned slot,unsigned index,bool removed=false){char names[6][512];CHECK(profile_paths(slot,names,removed));return names[index];}
+static Bytes selector(unsigned slot){Bytes b(spire::UiProfileSelectorBytes);spire::encode_profile_selector(slot,b.data());return b;}
+static void setup(){
+ files.clear();selected_profile=1;pending_profile=0;app={};profile_launcher="/documents/games/nSpire2.tns";
+ CHECK(sibling(selector_path,profile_launcher,"nSpire2.slots.tns"));CHECK(sibling(selector_temp,profile_launcher,"nSpire2.slots.tmp.tns"));
+ CHECK(sibling(selector_backup,profile_launcher,"nSpire2.slots.bak.tns"));CHECK(configure_profile_paths(1));
+ files["/documents/games/nSpire2.profile.tns"]={7};files["/documents/games/nSpire2.settings.tns"]={8};files["/documents/games/nSpire2.lang.tns"]={9};
+}
+static void routing(){setup();CHECK(load_profile_selector()==1);
+ CHECK(std::string(save_path)=="/documents/games/nSpire2.sav.tns");
+ files[selector_path]=selector(3);CHECK(load_profile_selector()==3);files[selector_path].push_back(0);files[selector_backup]=selector(2);CHECK(load_profile_selector()==2);
+ files.erase(selector_path);files.erase(selector_backup);
+ CHECK(!request_profile(0,false)&&!request_profile(4,false));app.title=false;CHECK(!request_profile(2,false));app.title=true;
+ CHECK(request_profile(2,false));CHECK(!request_profile(3,false));CHECK(current_profile()==1);service_profile();CHECK(app.success&&current_profile()==2);
+ CHECK(files.at(selector_path)==selector(2));CHECK(std::string(save_path)=="/documents/games/nSpire2.sav.p2.tns");
+ CHECK(std::string(temp_path)=="/documents/games/nSpire2.tmp.p2.tns");CHECK(std::string(progress_backup)=="/documents/games/nSpire2.progress.bak.p2.tns");
+ CHECK(files.at("/documents/games/nSpire2.profile.tns")==Bytes{7});
+ CHECK(files.at("/documents/games/nSpire2.settings.tns")==Bytes{8}&&files.at("/documents/games/nSpire2.lang.tns")==Bytes{9});
+ const auto saved=files;const std::string previous=save_path;fail_write=selector_temp;
+ CHECK(request_profile(3,false));service_profile();CHECK(!app.success&&current_profile()==2&&previous==save_path&&files==saved);
+ fail_rename=selector_temp;CHECK(request_profile(3,false));service_profile();CHECK(!app.success&&current_profile()==2&&previous==save_path&&files==saved);
+ CHECK(request_profile(3,false));app.title=false;service_profile();CHECK(!app.success&&current_profile()==2&&files==saved);
+}
+static void summaries(){setup();spire::UiProgressSummary summary;CHECK(!profile_info(0,summary)&&!profile_info(1,summary));
+ files[path(1,0)]={1,2,3,4};read_bytes=0;CHECK(profile_info(1,summary)&&summary.exists&&!summary.play_seconds&&!summary.last_saved_at);CHECK(read_bytes==1);
+ files[path(1,0)].clear();CHECK(!profile_info(1,summary)&&!summary.exists);
+ static spire::UiProgress progress;spire::clear_ui_progress(progress);progress.characters[0].play_seconds=15;progress.characters[1].play_seconds=27;progress.last_saved_at=123456;
+ const auto count=spire::encode_ui_progress(progress,progress_bytes,sizeof progress_bytes);CHECK(count);
+ files[path(2,3)]=Bytes(progress_bytes,progress_bytes+count);CHECK(profile_info(2,summary)&&summary.exists&&summary.play_seconds==42&&summary.last_saved_at==123456);
+ files[path(3,3)]={9};files[path(3,5)]=files[path(2,3)];CHECK(profile_info(3,summary)&&summary.play_seconds==42);
+ CHECK(current_profile()==1);
+}
+static void removal(){setup();files[selector_path]=selector(1);
+ for(unsigned slot=1;slot<=3;++slot)for(unsigned i=0;i<6;++i)files[path(slot,i)]={uint8_t(slot),uint8_t(i)};
+ const auto saved=files;fail_rename=path(2,2);CHECK(request_profile(2,true));service_profile();CHECK(!app.success&&files==saved&&current_profile()==1);
+ CHECK(request_profile(2,true));service_profile();CHECK(app.success&&current_profile()==1);
+ for(unsigned i=0;i<6;++i){CHECK(!files.count(path(2,i))&&!files.count(path(2,i,true)));CHECK(files.at(path(1,i))==saved.at(path(1,i))&&files.at(path(3,i))==saved.at(path(3,i)));}
+ spire::UiProgressSummary summary;CHECK(!profile_info(2,summary));
+ CHECK(request_profile(1,true));service_profile();CHECK(app.success&&current_profile()==1);
+ for(unsigned i=0;i<6;++i)CHECK(!files.count(path(1,i))&&files.count(path(3,i)));
+ CHECK(files.at(selector_path)==selector(1)&&files.at("/documents/games/nSpire2.profile.tns")==Bytes{7});
+ // Cleanup failure after all six names moved does not falsely report a
+ // rollback. The profile is absent; quarantined bytes are never loaded.
+ fail_unlink=path(3,0,true);CHECK(request_profile(3,true));service_profile();CHECK(app.success&&!profile_info(3,summary));
+ CHECK(files.count(path(3,0,true))&&!files.count(path(3,0)));
+}
+int main(){routing();summaries();removal();std::printf("Ndless profiles: %u checks passed\n",checks);}

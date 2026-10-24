@@ -73,11 +73,13 @@ void App::return_to_title(){
  persist_progress();
  title=true;paused=library=character_select=help=settings_open=compendium_open=statistics_open=history_open=false;frontend_confirm=frontend_choice=0;confirmed_run={};menu=0;
  map_preview.open=false;reset_presentation();refresh_save();
+ profiles_open=profile_pending=false;bestiary.open=false;
 }
 void App::accept_frontend_confirm(){
  const unsigned action=frontend_confirm;if(!action)return;
  const SavedRunIdentity confirmed=confirmed_run;
  frontend_confirm=frontend_choice=0;confirmed_run={};pointer_cancel();
+ if(action==5){if(profiles_open)request_profile_change(profile_target,true);return;}
  if(action==4){
   UiPreferences defaults{};fast_mode=defaults.fast_mode;show_card_indices=defaults.show_card_indices;
   text_effects=defaults.text_effects;keyboard_only=defaults.keyboard_only;phobia_mode=defaults.phobia_mode;screen_shake=defaults.screen_shake;bestiary_actions_preferred=defaults.bestiary_actions_preferred;
@@ -108,12 +110,14 @@ bool App::frontend_input(Key key){
  }
  if(help){if(key==Key::Back||key==Key::Confirm)help=false;return true;}
  if(settings_input(key))return true;
+ if(profiles_input(key))return true;
  if(progress_navigation_input(key))return true;
  if(library||character_select||map_preview.open||detail_card>=0||detail_item>=0||status_actor>=0)return false;
  if(title){
   const int count=title_menu_count();if(menu<0||menu>=count)menu=0;
   if(key==Key::Up||key==Key::Left)menu=(menu+count-1)%count;
   else if(key==Key::Down||key==Key::Right)menu=(menu+1)%count;
+  else if(key==Key::Back){open_profiles();}
   else if(key==Key::Quit){frontend_confirm=3;frontend_choice=0;}
   else if(key==Key::Load){
    if(load_saved_run())title=false;else{refresh_save();message("没有有效的存档");}

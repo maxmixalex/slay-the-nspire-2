@@ -280,8 +280,14 @@ static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,Hove
 static void keyword_tooltips(Canvas&c){
     auto&a=c.a;CardHoverTarget owner{};
     if(!keyword_hover_target(a,owner)){a.keyword_hover.owner=0;a.keyword_hover.page=0;if(a.detail_card<0)a.keyword_hover.details=false;return;}
-    if(a.keyword_hover.owner!=owner.identity){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
+    const bool new_owner=a.keyword_hover.owner!=owner.identity;
+    if(new_owner){a.keyword_hover.owner=owner.identity;a.keyword_hover.page=0;}
     HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);
+    if(new_owner)for(unsigned i=0;i<tips.count;++i){const auto&tip=tips.items[i];
+        if(tip.kind==HoverTipKind::Card)a.discover_card(tip.card.kind);
+        else if(tip.kind==HoverTipKind::Relic)a.discover_relic(world_relic_id(tip.key));
+        else if(tip.kind==HoverTipKind::Potion)a.discover_potion(Potion(tip.amount));
+    }
     const bool detail=owner.detail&&a.keyword_hover.details;
     if(detail){c.dim(11,47,298,155,250);}
     if(!tips.count){if(detail){c.centered("这张牌没有关联词条。",18,102,284,12,Muted);

@@ -281,9 +281,10 @@ static void pending_exit_confirmation(){
 static void pending_compendium_quit_cancels_immediately(){
     fresh();snapshot();keyboard_begin(first_point());advance_ms(250);
     click(hit(HitKind::Command,int(Key::Back)));CHECK(app.paused&&app.map_window.is_open&&app.map_travel.pending);
-    click(hit(HitKind::Menu,2));CHECK(app.library&&app.map_travel.pending);
+    click(hit(HitKind::Menu,2));CHECK(app.compendium_open&&!app.library&&app.map_travel.pending);
+    click(hit(HitKind::UiAction,int(UiAction::LibraryCards)));CHECK(app.library&&!app.compendium_open&&app.map_travel.pending);
     const uint32_t clock=app.map_clock_ms;
-    // This is the Compendium's real Quit dispatch, without a later update
+    // This is the card library's real Quit dispatch, without a later update
     // rescuing a stale pending route through the ordinary quit-state guard.
     app.input(Key::Quit);CHECK(app.quit&&app.map_clock_ms==clock);
     assert_cancelled();same_state(before);advance_ms(1300);same_state(before);

@@ -56,7 +56,7 @@ static void card_choice_screen(Canvas&c){
     char label[96]={};TextBuffer text{label,sizeof label,0,&c.a.content};
     text.text("已选择 ");text.number(a.choice_selected_count);text.text(optional?" / 最多 ":" / ");text.number(limit);
     c.centered(label,0,31,320,10,White);
-    int portraits[16];unsigned portrait_count=0;
+    int portraits[24];unsigned portrait_count=0;
     for(int i=first;i<last;++i){const int id=source.ids[i];
         portraits[portrait_count++]=a.card_face_image(choice_card(s,id),id<s.card_count?id:-1);}
     a.content.prepare_images(portraits,portrait_count);
@@ -70,7 +70,7 @@ static void card_choice_screen(Canvas&c){
             c.hit(x-5,y-5,90,126,HitKind::CombatChoice,id);
         }else{
             const int x=grid.card_x(i),y=grid.card_y(i);
-            const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+55&&a.pointer.y>=y-2&&a.pointer.y<y+77&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
+            const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+CardGridScroll::CardW+2&&a.pointer.y>=y-2&&a.pointer.y<y+CardGridScroll::CardH+2&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
             painter.card(i,card,hover||(!a.pointer.visible&&i==a.cursor),true,choice_display_cost(s,id),choice_display_stars(s,id),id<s.card_count?id:-1,-1,nullptr,selected);
             painter.hit(i,HitKind::CombatChoice,id);
         }

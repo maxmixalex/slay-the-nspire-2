@@ -25,7 +25,7 @@ static void progress_text(const App&a,const char*table,const char*key,const Prog
 }
 static void progress_time_text(char*out,size_t capacity,uint32_t seconds){
     TextBuffer text{out,capacity,0};const unsigned hours=seconds/3600,minutes=seconds/60%60;
-    if(hours){text.number(hours);text.ch(':');if(minutes<10)text.ch('0');}text.number(minutes);text.ch(':');
+    if(hours){text.number(hours);text.ch(':');}if(minutes<10)text.ch('0');text.number(minutes);text.ch(':');
     if(seconds%60<10)text.ch('0');text.number(seconds%60);
 }
 static void progress_date_text(const App&a,uint32_t timestamp,char*date,size_t date_size,char*time,size_t time_size){
@@ -49,25 +49,31 @@ static void compendium_button(Canvas&c,unsigned index,int x,int y,int width,int 
     const int w=(width*int(scale)+500)/1000,h=(height*int(scale)+500)/1000,left=x+(width-w)/2,top=y+(height-h)/2;
     if(a.content.version()>=Ui7ContentVersion){c.ui(base+motion.previous,left,top,w,h);c.ui(base+motion.state,left,top,w,h,alpha);}
     else c.dim(left,top,w,h,150);
-    c.ui(icon,left+w/2-(bottom?17:27),top+(bottom?4:23),bottom?34:53,bottom?22:40);
+    c.ui(icon,left+w/2-(bottom?17:25),top+(bottom?4:17),bottom?34:50,bottom?22:38);
     char key[128]{};TextBuffer k{key,sizeof key,0};k.text(prefix);k.text(".title");
     const char*title=frontend_text(a,"main_menu_ui",key,prefix);
-    c.text_fitted(title,left+4,top+(bottom?h-13:9),w-8,bottom?10:11,Gold,8,true,true);
-    if(!bottom){key[0]=0;k.n=0;k.text(prefix);k.text(".description");const char*description=frontend_text(a,"main_menu_ui",key,"");c.fitted(description,left+7,top+63,w-14,h-70,8,8,White,false,true,true);}
+    c.text_fitted(title,left+4,top+(bottom?h-13:7),w-8,bottom?10:10,Gold,8,true,true);
+    if(!bottom){key[0]=0;k.n=0;k.text(prefix);k.text(".description");const char*description=frontend_text(a,"main_menu_ui",key,"");c.fitted(description,left+7,top+56,w-14,h-64,8,8,White,false,true,true);}
     c.action(x,y,width,height,action);
 }
 static void compendium_screen(Canvas&c){
     auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,165);a.hit_count=0;
-    const bool bestiary=a.bestiary_available();const int count=bestiary?4:3,width=74,gap=2,left=(320-count*width-(count-1)*gap)/2;
+    const bool bestiary=a.bestiary_available();const int count=bestiary?4:3;
+    // 368x490 source panels, a 12px HBox gap, and centered 714px VBox.
+    // The source margin container remains 1920 wide even in the 1680 viewport.
+    constexpr int width=reference_viewport::project(368),height=reference_viewport::project(490);
+    const int source_width=count*368+(count-1)*12,source_left=(reference_viewport::Width-source_width)/2;
+    constexpr int top=reference_viewport::project((reference_viewport::Height-714)/2);
     const int panels[]={I7_MenuCardPanel,I7_MenuRelicPanel,I7_MenuPotionPanel,I7_MenuBestiaryPanel};
     const int icons[]={I7_MenuCardIcon,I7_MenuRelicIcon,I7_MenuPotionIcon,I7_MenuBestiaryIcon};
     const char*names[]={"COMPENDIUM_CARD_LIBRARY","COMPENDIUM_RELIC_COLLECTION","COMPENDIUM_POTION_LAB","COMPENDIUM_BESTIARY"};
     const UiAction actions[]={UiAction::LibraryCards,UiAction::LibraryRelics,UiAction::LibraryPotions,UiAction::OpenBestiary};
-    for(int i=0;i<count;++i)compendium_button(c,unsigned(i),left+i*(width+gap),50,width,110,panels[i],icons[i],names[i],actions[i]);
-    const int right=left+count*width+(count-1)*gap;
-    const int stats_x=right-(a.progress.count?116:56);
-    compendium_button(c,4,stats_x,166,56,40,I7_MenuStatsPanel,I7_MenuStatsIcon,"STATISTICS",UiAction::OpenStatistics,true);
-    if(a.progress.count)compendium_button(c,5,right-56,166,56,40,I7_MenuHistoryPanel,I7_MenuHistoryIcon,"RUN_HISTORY",UiAction::OpenHistory,true);
+    for(int i=0;i<count;++i)compendium_button(c,unsigned(i),reference_viewport::project(source_left+i*380),top,width,height,panels[i],icons[i],names[i],actions[i]);
+    constexpr int right=reference_viewport::project(1600),bottom=reference_viewport::project(787);
+    constexpr int bottom_width=reference_viewport::project(280),bottom_height=reference_viewport::project(200),bottom_gap=reference_viewport::project(24);
+    const int stats_x=right-bottom_width-(a.progress.count?bottom_width+bottom_gap:0);
+    compendium_button(c,4,stats_x,bottom,bottom_width,bottom_height,I7_MenuStatsPanel,I7_MenuStatsIcon,"STATISTICS",UiAction::OpenStatistics,true);
+    if(a.progress.count)compendium_button(c,5,right-bottom_width,bottom,bottom_width,bottom_height,I7_MenuHistoryPanel,I7_MenuHistoryIcon,"RUN_HISTORY",UiAction::OpenHistory,true);
     native_original_back(c,a.progress_page_started);
 }
 static Canvas progress_content_canvas(Canvas&c){Canvas layer=c;layer.pixels+=40*layer.pitch;if(layer.coverage)layer.coverage+=40*layer.pitch;layer.clip_h=174;return layer;}

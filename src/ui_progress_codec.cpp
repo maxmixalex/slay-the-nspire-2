@@ -48,12 +48,14 @@ template<class Codec>void run(Codec&c,UiRunHistory&v){
         if(f.act>=3||f.region>3)c.good=false;
     }
 }
-template<class Codec>void progress(Codec&c,UiProgress&v){
+template<class Codec>void progress(Codec&c,UiProgress&v,unsigned version){
     c.integer(v.next_serial);c.integer(v.count);c.integer(v.next_history);c.integer(v.discovered_acts);
     c.integer(v.characters_started);c.integer(v.current_streak);c.integer(v.best_streak);
+    if(version>=2)c.integer(v.last_saved_at);
     if(!v.next_serial||v.count>UiHistoryCapacity||v.next_history>=UiHistoryCapacity){c.good=false;return;}
     for(auto&b:v.discovered_cards)c.integer(b);for(auto&b:v.discovered_relics)c.integer(b);
     for(auto&b:v.discovered_potions)c.integer(b);for(auto&b:v.discovered_events)c.integer(b);
+    if(version>=2)for(auto&wins:v.card_wins)c.integer(wins);
     for(auto&s:v.characters){c.integer(s.wins);c.integer(s.losses);c.integer(s.current_streak);c.integer(s.best_streak);
         c.integer(s.play_seconds);c.integer(s.fastest_win_seconds);c.integer(s.gold_gained);c.integer(s.floors_climbed);c.integer(s.highest_ascension);}
     for(auto&model:v.enemies)for(auto&s:model){c.integer(s.seen);c.integer(s.wins);c.integer(s.losses);}
@@ -65,16 +67,36 @@ template<class Codec>void progress(Codec&c,UiProgress&v){
 void clear_ui_progress(UiProgress&out){auto*bytes=reinterpret_cast<uint8_t*>(&out);for(size_t i=0;i<sizeof out;++i)bytes[i]=0;out.next_serial=1;}
 size_t encode_ui_progress(const UiProgress&value,uint8_t*out,size_t capacity){
     if(!out||capacity<8)return 0;
-    out[0]='N';out[1]='S';out[2]='H';out[3]='1';for(unsigned i=4;i<8;++i)out[i]=0;
+    out[0]='N';out[1]='S';out[2]='H';out[3]='2';for(unsigned i=4;i<8;++i)out[i]=0;
     // Encoder never changes a field. The shared schema keeps its reader and
     // writer in the same order without depending on C++ padding/endianness.
-    Encoder c{out,capacity,8};progress(c,const_cast<UiProgress&>(value));
+    Encoder c{out,capacity,8};progress(c,const_cast<UiProgress&>(value),2);
     if(!c.good||c.at>UiProgressCapacity)return 0;
     for(unsigned i=0;i<4;++i)out[4+i]=uint8_t(c.at>>(i*8));return c.at;
 }
 bool decode_ui_progress(const uint8_t*data,size_t size,UiProgress&out){
-    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||data[3]!='1')return false;
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||(data[3]!='1'&&data[3]!='2'))return false;
     uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
-    clear_ui_progress(out);Decoder c{data,size,8};progress(c,out);return c.good&&c.at==size;
+    clear_ui_progress(out);Decoder c{data,size,8};progress(c,out,unsigned(data[3]-'0'));return c.good&&c.at==size;
+}
+bool decode_ui_progress_summary(const uint8_t*data,size_t size,UiProgressSummary&out){
+    out={};
+    if(!data||size<8||size>UiProgressCapacity||data[0]!='N'||data[1]!='S'||data[2]!='H'||(data[3]!='1'&&data[3]!='2'))return false;
+    uint32_t stored=0;for(unsigned i=0;i<4;++i)stored|=uint32_t(data[4+i])<<(i*8);if(stored!=size)return false;
+    Decoder c{data,size,8};uint32_t serial=0,ignored=0;uint8_t count=0,next=0,byte=0;
+    c.integer(serial);c.integer(count);c.integer(next);c.integer(byte);c.integer(byte);c.integer(ignored);c.integer(ignored);
+    if(!c.good||!serial||count>UiHistoryCapacity||next>=UiHistoryCapacity)return false;
+    const bool version2=data[3]=='2';if(version2)c.integer(out.last_saved_at);
+    const size_t fields=(CardKinds+7)/8+(WorldRelicKinds+7)/8+(PotionKinds+7)/8+(OriginalEventKinds+7)/8+(version2?CardKinds*sizeof(uint32_t):0);
+    if(c.at>size||fields>size-c.at)return false;c.at+=fields;
+    for(unsigned character=0;character<CharacterKinds;++character){uint32_t seconds=0;
+        for(unsigned field=0;field<4;++field)c.integer(ignored);c.integer(seconds);
+        for(unsigned field=0;field<3;++field)c.integer(ignored);c.integer(byte);
+        if(!c.good||byte>10)return false;
+        out.play_seconds=seconds>UINT32_MAX-out.play_seconds?UINT32_MAX:out.play_seconds+seconds;
+    }
+    // This intentionally does not validate or allocate the history tail.
+    // Selecting the profile still uses the complete schema decoder.
+    out.exists=true;return true;
 }
 } // namespace spire

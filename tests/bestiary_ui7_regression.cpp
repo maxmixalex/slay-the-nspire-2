@@ -25,12 +25,15 @@ static void flow(const char*folder){
  clear_ui_progress(app.progress);app.progress_loaded=true;CHECK(save(app.game,before));CHECK(!app.open_bestiary());
  app.progress.discovered_acts=1;CHECK(!app.open_bestiary());
  auto&nibbit=app.progress.enemies[unsigned(EnemyId::Nibbit)];nibbit[0]={4,2,1};nibbit[1]={2,2,0};nibbit[2]={1,0,1};
- auto&louse=app.progress.enemies[unsigned(EnemyId::LouseProgenitor)];louse[0]={1,1,0};louse[2]={1,1,0};
+ auto&wurm=app.progress.enemies[unsigned(EnemyId::FuzzyWurmCrawler)];wurm[0]={1,1,0};wurm[2]={1,1,0};
  CHECK(app.bestiary_available()&&app.open_bestiary());CHECK(app.bestiary.open&&app.bestiary.actions);
  CHECK(app.bestiary.row_count==36);settle();CHECK(app.bestiary.selected>=0);
  const int first=app.bestiary.selected,first_row=app.bestiary.selected_row;
- const int nr=row(unsigned(EnemyId::Nibbit)),lr=row(unsigned(EnemyId::LouseProgenitor));CHECK(nr>=0&&lr>=0&&nr!=lr);
- const int alternate=first_row==nr?lr:nr;app.bestiary.position=app.bestiary.target=0;app.bestiary.reveal(alternate);settle();
+ const int nr=row(unsigned(EnemyId::Nibbit)),wr=row(unsigned(EnemyId::FuzzyWurmCrawler));CHECK(nr>=0&&wr>=0&&nr!=wr);
+ // LouseProgenitor belongs to the Hive. An undiscovered act must remain
+ // absent even if some other act already unlocked the compendium.
+ CHECK(row(unsigned(EnemyId::LouseProgenitor))<0);
+ const int alternate=first_row==nr?wr:nr;app.bestiary.position=app.bestiary.target=0;app.bestiary.reveal(alternate);settle();
  auto item=find(HitKind::BestiaryEntry,alternate);CHECK(item.enabled&&item.kind==HitKind::BestiaryEntry);
  app.pointer_move(item.x+2,item.y+2);app.render();CHECK(app.bestiary.selected==first);click(item);CHECK(app.bestiary.selected_row==alternate);
  // A covered title's selection and all simulation bytes stay unchanged.
@@ -53,7 +56,8 @@ static void flow(const char*folder){
  // defeating one segment alone cannot unlock the complete encounter.
  app.progress.discovered_acts|=4;app.progress.encounters[unsigned(EncounterId::DecimillipedeElite)][0]={1,1,0};
  app.progress.enemies[unsigned(EnemyId::Crusher)][0]={1,1,0};app.progress.enemies[unsigned(EnemyId::Rocket)][0]={1,1,0};
- CHECK(app.open_bestiary());int decimi=-1;for(int i=0;i<app.bestiary.row_count;++i)if(app.bestiary.rows[i]>=0&&app.bestiary_entry_model(i)==255)decimi=i;
+ CHECK(app.open_bestiary());CHECK(row(unsigned(EnemyId::LouseProgenitor))>=0);
+ int decimi=-1;for(int i=0;i<app.bestiary.row_count;++i)if(app.bestiary.rows[i]>=0&&app.bestiary_entry_model(i)==255)decimi=i;
  CHECK(decimi>=0);app.bestiary_pointer({0,0,0,0,HitKind::BestiaryEntry,int16_t(decimi),true});CHECK(app.bestiary.actor_count==3);settle();capture(folder,"bestiary-decimillipede");
  app.input(Key::EndTurn);app.input(Key::Left);app.input(Key::Confirm);CHECK(app.bestiary.actors[0].count&&app.bestiary.actors[1].count&&app.bestiary.actors[2].count);settle(3);unchanged();
  for(EnemyId kind:{EnemyId::Crusher,EnemyId::Rocket}){const int r=row(unsigned(kind));CHECK(r>=0);app.bestiary_pointer({0,0,0,0,HitKind::BestiaryEntry,int16_t(r),true});
