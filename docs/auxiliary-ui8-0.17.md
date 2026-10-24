@@ -100,7 +100,7 @@ separately and refuses a replacement with uncovered newly localized glyphs.
 
 The resource tail is **2013 auxiliary entries**. The 17 auxiliary-screen
 images occupy 1996–2012, including the shared original keyboard keycap at
-2012. The 142 new localized entries use existing reserved slots 8507–8648;
+2012. The 147 new localized entries use existing reserved slots 8507–8653;
 the total 8704-string contract does not grow. Image pixels, original fonts,
 credits and articles stay in private owner resources.
 
@@ -119,3 +119,9 @@ fallback priority, auxiliary-only sizes and format-control exclusion. C++
 format-control tests additionally assert zero reads/advance and no visible
 replacement glyph. These test additions do not certify the new runtime
 until the next frozen native/actual-resource gate is executed.
+
+The stage 5 native run exposed a real input-order defect: after switching an
+article, a wheel event before the next rendered frame used an unconfigured
+scroll range and was lost. Layout is now measured once when an article is
+opened or changed, before accepting scroll input. The existing no-render
+between next-article and wheel regression is retained.

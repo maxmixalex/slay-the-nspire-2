@@ -1,5 +1,10 @@
 // Original auxiliary-menu keys; no localized payloads.
  {"auxiliary.CREDITS",8507},
+ {"auxiliary.FEEDBACK_EXPORT",8650},
+ {"auxiliary.FEEDBACK_EXPORTED",8651},
+ {"auxiliary.FEEDBACK_EXPORT_INFO",8653},
+ {"auxiliary.FEEDBACK_FAILED",8652},
+ {"auxiliary.FEEDBACK_TITLE",8649},
  {"settings_ui.CREDITS",8510},
  {"settings_ui.CREDITS_BUTTON_LABEL",8511},
  {"settings_ui.FEEDBACK_CATEGORY.balance",8516},

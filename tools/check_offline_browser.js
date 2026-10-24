@@ -60,12 +60,14 @@ writeReport();
  }
  async function press(key){await canvas.focus();await page.keyboard.press(key);await painted();}
  async function confirm(){await page.locator('button[data-key="4"]').click();await painted();}
- const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v15'+(id===1?'':'-profile-'+id)),slot);
+ const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v17'+(id===1?'':'-profile-'+id)),slot);
  const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v2'+(id===1?'':'-profile-'+id))),slot);
  async function point(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.click(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
- async function openSettings(hasRun){for(let i=0;i<(hasRun?2:1);++i)await press('ArrowDown');await confirm();}
- async function toggleFast(){await press('ArrowDown');await press('ArrowDown');await confirm();}
- async function returnToTitle(){await press('Escape');for(let i=0;i<4;++i)await press('ArrowDown');await confirm();}
+ async function titleRow(row,hasRun){await point(119,(hasRun?137:147)+row*20+8);}
+ async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
+ async function toggleFast(){await point(274,128);}
+ async function returnToTitle(){await press('Escape');await point(160,196);}
+ async function saveAndResume(){await returnToTitle();await titleRow(0,true);}
  async function selectProfile(slot){await point(20,10);await point(72+(slot-1)*88,120);await page.waitForFunction(id=>localStorage.getItem('nSpire2-selected-profile')===String(id),slot);await painted();}
  const begin=Date.now();
  await page.goto(pathToFileURL(path.resolve(html)).href,{waitUntil:'load',timeout:120000});
@@ -80,20 +82,21 @@ writeReport();
  await page.reload({waitUntil:'load'});await ready('eng');
  await openSettings(false);await toggleFast();
  assert.equal((await preference()).flags&1,0);
- await press('Escape');await press('ArrowUp');
+ await press('Escape');
  record('in-game Fast Mode survives reload and the real toggle reads its restored value');
- await confirm();await capture('browser-character-eng');
- await confirm();await press('s');
- await page.waitForFunction(()=>!!localStorage.getItem('nSpire2-save-v15'));
+ await titleRow(0,false);await capture('browser-singleplayer-eng');await confirm();await capture('browser-character-eng');
+ await confirm();await saveAndResume();
+ await page.waitForFunction(()=>!!localStorage.getItem('nSpire2-save-v17'));
  const firstSave=await saved(),bytes=Buffer.from(firstSave,'base64');
  assert.ok(bytes.length>40);report.saved_bytes=bytes.length;
- fs.writeFileSync(path.join(directory,'browser-test-save-v15.bin'),bytes);
- record('DOM Confirm starts a run; S stores a nonempty v15 browser save');
+ fs.writeFileSync(path.join(directory,'browser-test-save-v17.bin'),bytes);
+ assert.equal(bytes.readUInt32LE(4),17);
+ record('original Singleplayer to character flow starts a run; pause Save and Quit writes a v17 save and Continue resumes');
  await capture('browser-run-eng');
  await press('o');assert.equal(await saved(),firstSave);await capture('browser-loaded-eng');
  record('O load returns through the real keyboard handler without changing stored save bytes');
  await page.reload({waitUntil:'load'});await ready('eng');assert.equal(await saved(),firstSave);
- await capture('browser-continue-eng');await confirm();await press('s');assert.equal(await saved(),firstSave);
+ await capture('browser-continue-eng');await titleRow(0,true);await saveAndResume();assert.equal(await saved(),firstSave);
  record('reload offers Continue and resumed run saves the same canonical bytes');
  await returnToTitle();await openSettings(true);
  async function switchLanguage(language){
@@ -104,7 +107,7 @@ writeReport();
   assert.equal(await saved(),firstSave);
  }
  await switchLanguage('zhs');await capture('browser-settings-zhs');
- await press('Escape');await confirm();await press('s');assert.equal(await saved(),firstSave);await press('o');
+ await press('Escape');await titleRow(0,true);await saveAndResume();assert.equal(await saved(),firstSave);await press('o');
  await capture('browser-run-zhs');record('language changes inside the title settings, without reload or changing the saved run');
  await page.reload({waitUntil:'load'});await ready('zhs');assert.equal(await saved(),firstSave);
  await capture('browser-reloaded-zhs');record('reload remembers Chinese and the same save');
@@ -113,17 +116,17 @@ writeReport();
  await selectProfile(2);assert.equal(await saved(2),null);assert.equal(await saved(),firstSave);
  await capture('browser-profile2-title');await openSettings(false);await toggleFast();
  assert.equal((await preference(2)).flags&1,1);assert.equal((await preference()).flags&1,0);
- await press('Escape');await press('ArrowUp');await confirm();await press('ArrowRight');await confirm();await press('s');
+ await press('Escape');await titleRow(0,false);await confirm();await press('ArrowRight');await confirm();await saveAndResume();
  const secondSave=await saved(2);assert(secondSave&&secondSave!==firstSave);assert.equal(await saved(),firstSave);
  await capture('browser-profile2-run');await returnToTitle();
  await selectProfile(1);await openSettings(true);await toggleFast();assert.equal((await preference()).flags&1,1);
- await confirm();assert.equal((await preference()).flags&1,0);await press('Escape');
+ await toggleFast();assert.equal((await preference()).flags&1,0);await press('Escape');
  // The original profile picker is a real modal. Cancel leaves the other
  // profile's run/history/preferences intact; active deletion resets only it.
  await selectProfile(2);await page.reload({waitUntil:'load'});await ready('eng');
  assert.equal(await page.evaluate(()=>localStorage.getItem('nSpire2-selected-profile')),'2');
  await openSettings(true);await toggleFast();assert.equal((await preference(2)).flags&1,0);
- await confirm();assert.equal((await preference(2)).flags&1,1);await press('Escape');
+ await toggleFast();assert.equal((await preference(2)).flags&1,1);await press('Escape');
  await point(20,10);await capture('browser-profiles');await point(72,192);await capture('browser-profile-delete-confirm');await press('Escape');
  assert.equal(await saved(),firstSave);assert.equal(await saved(2),secondSave);
  await point(160,192);await press('ArrowRight');await confirm();
@@ -166,7 +169,7 @@ writeReport();
    const result=await debugPage.evaluate(value=>nSpire2Debug(value),command);assert.equal(result.ok,true,command+': '+result.message);
   }
   assert.equal(await debugPage.evaluate(()=>nSpire2Debug('room event NOT_AN_EVENT').ok),false);
-  assert.equal(await debugPage.evaluate(()=>localStorage.getItem('nSpire2-save-v15')),null);
+  assert.equal(await debugPage.evaluate(()=>localStorage.getItem('nSpire2-save-v17')),null);
   record('separate debug HTML exposes catalogs, accepts real F1 text entry, room/act commands and rejects invalid events without autosaving');
   await debugContext.close();
  }

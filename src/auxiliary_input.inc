@@ -13,6 +13,16 @@ static void auxiliary_reveal_caret(App&a){
  if(row<int(v.draft_scroll))v.draft_scroll=uint16_t(row);
  else if(row>=int(v.draft_scroll)+4)v.draft_scroll=uint16_t(row-3);
 }
+static void auxiliary_measure_note(App&a){
+ auto&v=a.auxiliary;if(v.screen!=AuxiliaryScreen::PatchNotes||v.measured_note==int(v.note))return;
+ Canvas measure{a};measure.bold_face=5;const auto&note=AuxiliaryNotes[v.note];int total=0;
+ for(unsigned i=0;i<note.chunks;++i){const char*body=a.content.string(note.text+i);
+  int lines=*body?measure.paragraph(body,0,0,184,0,0,8):0;unsigned length=0;while(body[length])++length;
+  if(i+1<note.chunks&&length&&body[length-1]=='\n'&&lines)--lines;
+  v.note_lines[i]=uint16_t(lines);total+=lines;
+ }
+ v.scroll.configure(28+total*11+23,240);v.measured_note=int16_t(v.note);
+}
 void App::open_auxiliary(AuxiliaryScreen screen){
  if(screen==AuxiliaryScreen::None){close_auxiliary();return;}
  if(frontend_confirm||binding_listening>=0)return;
@@ -25,7 +35,7 @@ void App::open_auxiliary(AuxiliaryScreen screen){
   if(map_clock_ms-v.closed>60000u){v.draft[0]=0;v.draft_size=v.draft_units=v.caret=v.draft_scroll=0;v.emoji=-1;}
   if(content.english()&&v.category>2)v.category=2;
  }
- pointer_cancel();physical_keys_cancel();keyword_hover={};
+ auxiliary_measure_note(*this);pointer_cancel();physical_keys_cancel();keyword_hover={};
 }
 void App::close_auxiliary(){
  auto&v=auxiliary;if(v.screen==AuxiliaryScreen::None||v.closing)return;
@@ -48,7 +58,7 @@ void App::advance_auxiliary(unsigned ms){
 void App::auxiliary_scroll(int rows){
  auto&v=auxiliary;if(v.closing||!rows)return;
  if(v.screen==AuxiliaryScreen::Credits)v.credits_target+=rows*50*4*256/21;
- else if(v.screen==AuxiliaryScreen::PatchNotes)v.scroll.wheel(rows);
+ else if(v.screen==AuxiliaryScreen::PatchNotes){auxiliary_measure_note(*this);v.scroll.wheel(rows);}
  else if(v.screen==AuxiliaryScreen::Feedback){const int count=auxiliary_draft_layout(*this,[](unsigned,unsigned,int,int){});
   v.draft_scroll=uint16_t(mx(0,mn(mx(0,count-4),int(v.draft_scroll)+rows)));}
 }
@@ -74,7 +84,7 @@ void App::auxiliary_control(int control){
  if(control==AuxiliaryScrollUp||control==AuxiliaryScrollDown){auxiliary_scroll(control==AuxiliaryScrollUp?-3:3);return;}
  if(v.screen==AuxiliaryScreen::PatchNotes&&(control==AuxiliaryPrevious||control==AuxiliaryNext)){
   const int next=int(v.note)+(control==AuxiliaryPrevious?1:-1);if(next<0||next>=int(AuxiliaryNoteCount))return;
-  v.note=uint16_t(next);v.scroll.reset();v.measured_note=-1;pointer_cancel();return;
+  v.note=uint16_t(next);v.scroll.reset();v.measured_note=-1;auxiliary_measure_note(*this);pointer_cancel();return;
  }
  if(v.screen!=AuxiliaryScreen::Feedback)return;
  if(control!=AuxiliaryFeedbackText)v.editing=false;

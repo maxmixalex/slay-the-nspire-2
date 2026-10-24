@@ -1,6 +1,9 @@
 static const char*auxiliary_label(App&a,const char*key,const char*eng,const char*zhs){
  const char*text=a.content.world_string("settings_ui",key);return *text?text:a.content.english()?eng:zhs;
 }
+static const char*auxiliary_port_label(App&a,const char*key,const char*eng,const char*zhs){
+ const char*text=a.content.world_string("auxiliary",key);return *text?text:a.content.english()?eng:zhs;
+}
 static void auxiliary_rounded(Canvas&c,int x,int y,int w,int h,int radius,uint16_t ink){
  for(int row=0;row<h;++row){const int edge=row<radius?radius-row-1:row>=h-radius?row-(h-radius):0;
   c.rect(x+edge,y+row,w-edge*2,1,ink);}
@@ -16,7 +19,7 @@ static void auxiliary_patch_button(Canvas&c){
  const bool hover=a.pointer.visible&&a.pointer.x>=303&&a.pointer.x<315&&a.pointer.y>=3&&a.pointer.y<15;
  Canvas icon=c;if(!hover)icon.brightness=204;
  if(a.content.ui_image(I8_PatchNotesIcon)>=0)icon.ui(I8_PatchNotesIcon,303,3,12,12);
- else icon.centered("≡",301,2,16,12,White);
+ else icon.centered("...",301,2,16,12,White);
  c.hit(303,3,12,12,HitKind::AuxiliaryControl,open?AuxiliaryBack:AuxiliaryOpenPatchNotes,!a.auxiliary.closing);
 }
 static void auxiliary_date(uint32_t date,char*out,unsigned capacity){
@@ -27,12 +30,7 @@ static void auxiliary_date(uint32_t date,char*out,unsigned capacity){
 static void auxiliary_notes_screen(Canvas&c){
  auto&a=c.a;auto&v=a.auxiliary;title_background(c);title_logo(c);c.dim(0,0,320,240,210);a.hit_count=0;
  Canvas layer=c;layer.opacity=uint8_t(auxiliary_alpha(a));layer.bold_face=5;const auto&note=AuxiliaryNotes[v.note];
- if(v.measured_note!=int(v.note)){
-  int total=0;for(unsigned i=0;i<note.chunks;++i){const char*body=a.content.string(note.text+i);int lines=*body?layer.paragraph(body,0,0,184,0,0,8):0;
-   unsigned length=0;while(body[length])++length;if(i+1<note.chunks&&length&&body[length-1]=='\n'&&lines) --lines;
-   v.note_lines[i]=uint16_t(lines);total+=lines;}
-  v.scroll.configure(28+total*11+23,240);v.measured_note=int16_t(v.note);
- }
+ auxiliary_measure_note(a);
  const int offset=v.scroll.offset();char date[48]{};auxiliary_date(note.date,date,sizeof date);
  layer.text_fitted(date,68,8-offset,184,10,Gold,8,true,true);
  int top=28-offset;
@@ -102,7 +100,7 @@ static void auxiliary_feedback_screen(Canvas&c){
  auto&a=c.a;auto&v=a.auxiliary;a.hit_count=0;c.dim(0,0,320,240,173);
  const bool english=a.content.english();const uint16_t pink=rgb(232,154,198),purple=rgb(69,0,78),ink=rgb(255,246,226);
  auxiliary_rounded(c,92,65,140,115,6,Ink);auxiliary_rounded(c,90,63,140,115,6,pink);
- c.text_fitted(english?"Local feedback report":"本地反馈报告",60,48,200,10,ink,8,true);
+ c.text_fitted(auxiliary_port_label(a,"FEEDBACK_TITLE","Local feedback report","本地反馈报告"),60,48,200,10,ink,8,true);
  auxiliary_rounded(c,93,67,134,56,3,v.editing?rgb(105,0,117):purple);
  if(v.draft_size){Canvas text=c;text.pixels+=70*text.pitch+97;if(text.coverage)text.coverage+=70*text.pitch+97;text.clip_w=126;text.clip_h=48;
   auxiliary_draft_layout(a,[&](unsigned,unsigned cp,int x,int row){if(cp&&cp!='\n'&&row>=int(v.draft_scroll)&&row<int(v.draft_scroll)+4)text.character(cp,a.content.glyph(cp,8),x,(row-v.draft_scroll)*11,ink);});
@@ -123,15 +121,15 @@ static void auxiliary_feedback_screen(Canvas&c){
  }
  const bool export_focus=(!a.pointer.visible&&v.focus==7)||progress_hover(a,189,158,38,15);
  auxiliary_rounded(c,189,158,38,15,3,purple);auxiliary_rounded(c,190,159,36,13,2,rgb(78,162,242));
- c.text_fitted(english?"Export":"导出",191,161,34,8,ink,8,true);if(export_focus)c.box(188,157,40,17,Gold);
+ c.text_fitted(auxiliary_port_label(a,"FEEDBACK_EXPORT","Export","导出"),191,161,34,8,ink,8,true);if(export_focus)c.box(188,157,40,17,Gold);
  c.hit(189,158,38,15,HitKind::AuxiliaryControl,AuxiliaryFeedbackExport, a.callbacks.write_feedback!=nullptr);
  const int flower=v.export_result==1?I8_FeedbackFlowerHappy:export_focus?I8_FeedbackFlowerAnticipation:I8_FeedbackFlower;
  const int tilt=v.export_result==1?CombatCardMotion::sine(int(a.map_clock_ms%1000u)*4096/1000)*143/1024:0;
  ui_picture_transform(c,a.content.ui_image(I8_FeedbackSun),42,43,49,49,0,1024);
  ui_picture_transform(c,a.content.ui_image(I8_FeedbackCupcake),72,193,59,59,0,1024);
  ui_picture_transform(c,a.content.ui_image(flower),289,209,69,68,tilt,1024-(tilt*tilt/2048));
- const char*status=v.export_result==1?(english?"Report exported locally.":"报告已导出到本地。"):
-  v.export_result==2?(english?"Export failed. Your draft is retained.":"导出失败，草稿已保留。"):(english?"Saves a text file on this device.":"将文本报告保存到此设备。" );
+ const char*status=v.export_result==1?auxiliary_port_label(a,"FEEDBACK_EXPORTED","Report exported locally.","报告已导出到本地。"):
+  v.export_result==2?auxiliary_port_label(a,"FEEDBACK_FAILED","Export failed. Your draft is retained.","导出失败，草稿已保留。"):auxiliary_port_label(a,"FEEDBACK_EXPORT_INFO","Saves a text file on this device.","将文本报告保存到此设备。");
  c.paragraph_fitted(status,91,184,140,24,8,v.export_result==2?Red:ink,8,true);
  if(v.category_open){
   const int count=english?3:4;auxiliary_rounded(c,94,146,86,count*16+4,2,purple);

@@ -48,6 +48,21 @@ def split_note(text, limit=15000):
     return parts
 
 
+# Port-only local export labels are ordinary localized records as well. This
+# lets the real font converter discover every visible character (for example
+# Chinese 草稿), instead of relying on an incidental older glyph alphabet.
+PORT_TEXTS={
+ 'eng':{'FEEDBACK_TITLE':'Local feedback report','FEEDBACK_EXPORT':'Export',
+        'FEEDBACK_EXPORTED':'Report exported locally.',
+        'FEEDBACK_FAILED':'Export failed. Your draft is retained.',
+        'FEEDBACK_EXPORT_INFO':'Saves a text file on this device.'},
+ 'zhs':{'FEEDBACK_TITLE':'本地反馈报告','FEEDBACK_EXPORT':'导出',
+        'FEEDBACK_EXPORTED':'报告已导出到本地。',
+        'FEEDBACK_FAILED':'导出失败，草稿已保留。',
+        'FEEDBACK_EXPORT_INFO':'将文本报告保存到此设备。'},
+}
+
+
 NOTE_SPECS=json.loads((Path(__file__).resolve().parents[1]/'config/auxiliary-ui8-0.17.json').read_text())['patch_notes']
 TEXTS=[(BASE_TEXT,'auxiliary.CREDITS')]+list(enumerate(LABEL_KEYS,BASE_TEXT+1))
 NOTES=[]
@@ -56,13 +71,15 @@ for entry in NOTE_SPECS:
     year,month,day=map(int,entry['file'][:-3].split('_'))
     NOTES.append((year*10000+month*100+day,first,entry['chunks']))
     TEXTS.extend((first+i,'patch_notes.'+entry['file'][:-3]+'.'+str(i)) for i in range(entry['chunks']))
+PORT_FIRST=BASE_TEXT+len(TEXTS)
+TEXTS.extend((PORT_FIRST+i,'auxiliary.'+key) for i,key in enumerate(PORT_TEXTS['eng']))
 TEXTS=tuple(TEXTS)
 require(BASE_TEXT+len(TEXTS)<=8704,'Auxiliary text exceeds existing reserved directory')
 
 
 def generated_index():
     return '// Original auxiliary-menu keys; no localized payloads.\n'+''.join(
-        ' {"'+key+'",'+str(slot)+'},\n' for slot,key in sorted(TEXTS[:1+len(LABEL_KEYS)],key=lambda row:row[1]))
+        ' {"'+key+'",'+str(slot)+'},\n' for slot,key in sorted((row for row in TEXTS if not row[1].startswith('patch_notes.')),key=lambda row:row[1]))
 
 
 def generated_notes():
@@ -120,6 +137,7 @@ def build_auxiliary_text(pack):
         settings=json.loads(pack.read('localization/'+lang+'/settings_ui.json'))
         texts={'auxiliary.CREDITS':credits_text(json.loads(pack.read('localization/'+lang+'/credits.json')))}
         for key in LABEL_KEYS:texts[key]=settings[key.split('.',1)[1]]
+        texts.update(('auxiliary.'+key,value) for key,value in PORT_TEXTS[lang].items())
         for entry in NOTE_SPECS:
             path='localization/'+lang+'/patch_notes/'+entry['file']
             if path not in pack.entries:path='localization/eng/patch_notes/'+entry['file']
