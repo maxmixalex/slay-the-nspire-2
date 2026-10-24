@@ -1,5 +1,39 @@
 # Work state — 2026-10-24
 
+## UI5 stage 4: final regression repairs and glyph-layout comparison
+
+Stage 3 was pushed/read back at `55fdd6e703cd921220740f41e1537f864a02b300`,
+tree `6bf99ad03e0ac9e8f8b9014a716a3f98f72d6aaa`. ARM and WASM builds passed
+(the first ARM invocation lacked LLVM on PATH and was rerun with it supplied).
+The native build exposed a nonexistent Pummel fixture ID; it now uses the
+actual TwinStrike and checks two separately displayed hits. Python ran 138
+tests and found one test-variable shadow, now corrected. A Flutter fixture
+must apply its power through the real hook-registration path. Doing so exposed
+another future-idle presentation update, which this stage corrects before its
+queued animation notification. Intent hover and potion tests now find actual
+current hit geometry instead of stale edge/old panel coordinates.
+
+Final v22 conversion and exact split/reassembly passed at stage 3. Eight actual
+bilingual frontend/event/map/reward suites passed: frontend ENG 63,723 / ZHS
+64,241 checks, and event 4,519, map 12,956, reward 2,915 per language. Original
+General/Input labels, independent map legend/close hits, unobstructed reward
+headers and acquired card-fact pixels were exercised. Character-entry capture
+now observes its initial pose before advancing the animation.
+
+The first glyph locality candidate passed losslessness and 18 pixel pairs;
+all 180-frame warm windows had zero reads. It reduced Chinese collection detail
+28→13 reads but regressed several cold grids, so it is not accepted for release.
+This stage adds a per-font-size frequency candidate and a complete 472-position
+detail-hover scan. Preserve both outcomes and use the same runtime for any
+resource-only performance conclusion. No claimed calculator speedup yet.
+
+Firebird reached the normal OS and enumerated the original Ndless folder using
+the owner's supplied compatible ROM. Earlier incomplete-ROM boot and a host
+file-size limit that prevented flush are retained failures; no game execution
+has passed yet. The original NAND is untouched. Next: checkpoint this stage,
+complete all native/Python tests, recheck the corrected runtime builds, compare
+the new resource candidate, then exercise the actual launcher and offline HTML.
+
 ## UI5 stage 3: measured repairs and bounded optimization, validation pending
 
 Stage 2 was pushed/read back at `eb6f9564c6f3c88bc47b73829036af21d0489072`,

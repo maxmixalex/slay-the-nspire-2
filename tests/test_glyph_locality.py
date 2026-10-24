@@ -72,19 +72,22 @@ def pixels(data, row):
 
 class GlyphLocalityTest(unittest.TestCase):
     def test_exact_geometry_pixels_and_non_glyph_sections(self):
-        source = fixture(); result, receipt = locality.reorder(source)
-        before, after = locality.layout(source), locality.layout(result)
-        self.assertEqual(len(result), len(source))
-        self.assertEqual(source[:before.glyph_at], result[:after.glyph_at])
-        self.assertEqual(source[before.glyph_at + len(before.glyphs) * 16:before.first],
-                         result[after.glyph_at + len(after.glyphs) * 16:after.first])
-        self.assertEqual(source[before.last:], result[after.last:])
-        self.assertEqual([pixels(source, row) for row in before.glyphs],
-                         [pixels(result, row) for row in after.glyphs])
-        self.assertTrue(receipt['verification']['non_glyph_bytes_exact'])
-        self.assertEqual(receipt['installation_growth_bytes'], 0)
-        self.assertEqual(receipt['runtime_buffer_growth_bytes'], 0)
-        self.assertGreater(receipt['relocated_glyph_entries'], 0)
+        source = fixture()
+        for order in locality.ORDERS:
+            with self.subTest(order=order):
+                result, receipt = locality.reorder(source, order)
+                before, after = locality.layout(source), locality.layout(result)
+                self.assertEqual(len(result), len(source))
+                self.assertEqual(source[:before.glyph_at], result[:after.glyph_at])
+                self.assertEqual(source[before.glyph_at + len(before.glyphs) * 16:before.first],
+                                 result[after.glyph_at + len(after.glyphs) * 16:after.first])
+                self.assertEqual(source[before.last:], result[after.last:])
+                self.assertEqual([pixels(source, row) for row in before.glyphs],
+                                 [pixels(result, row) for row in after.glyphs])
+                self.assertTrue(receipt['verification']['non_glyph_bytes_exact'])
+                self.assertEqual(receipt['installation_growth_bytes'], 0)
+                self.assertEqual(receipt['runtime_buffer_growth_bytes'], 0)
+                self.assertGreater(receipt['relocated_glyph_entries'], 0)
 
     def test_frequency_keeps_native_sizes_together_and_aliases_shared(self):
         source = fixture(); result, _ = locality.reorder(source)
@@ -96,6 +99,19 @@ class GlyphLocalityTest(unittest.TestCase):
         self.assertTrue(all(row[1] >= common_end for row in after.glyphs if row[0] != 0x5b57))
         self.assertEqual(len({row[1] for row in after.glyphs if row[0] == 32}), 1)
         self.assertEqual(locality.reorder(result)[0], result)
+
+    def test_size_frequency_does_not_interleave_other_sizes(self):
+        source = fixture(); result, _ = locality.reorder(source, 'size-frequency')
+        after = locality.layout(result)
+        # The shared transparent space deliberately stays one alias. Every
+        # other physical unit remains in its native-size frequency cohort.
+        physical = sorted((row[1], row[2], row[0]) for row in after.glyphs if row[0] != 32)
+        self.assertEqual([size for _, size, _ in physical], sorted(size for _, size, _ in physical))
+        for size in (8, 10, 12, 16):
+            self.assertEqual([cp for _, px, cp in physical if px == size], [0x5b57, 0x4e2d, 65, 66])
+        self.assertEqual(len({row[1] for row in after.glyphs if row[0] == 32}), 1)
+        self.assertEqual(locality.reorder(result, 'size-frequency')[0], result)
+        self.assertNotEqual(locality.reorder(source)[0], result)
 
     def test_rejects_unknown_layout_and_detects_pixel_or_art_corruption(self):
         source = fixture(); before = locality.layout(source)

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Reorder an existing private NSP2/20-22 glyph section without changing it.
 
-Frequently used localized characters keep their different native sizes next
-to one another. The ordinary 4 KiB reader can then reuse a page when a card
-detail asks for another size of the same characters. There is no new runtime
-cache, font pre-read, preparation phase, image encoding or installation byte.
-Only glyph offsets and the original packed glyph section may change.
+Frequently used localized characters can be ordered within each native size
+or with their different native sizes together. The ordinary 4 KiB reader then
+reuses more of each requested page. Compare both policies with real visible
+pages before selecting either; grouping sizes can add reads to a page that
+only uses one size. There is no new runtime cache, font pre-read, preparation
+phase, image encoding or installation byte. Only glyph offsets and the
+original packed glyph section may change.
 """
 from __future__ import annotations
 
@@ -22,6 +24,7 @@ from content_tiles import private_path, atomic_bytes
 HEADER = struct.Struct('<4s9I')
 GLYPH = struct.Struct('<IIHBBHH')
 REFERENCE = 0x41CEF1EA
+ORDERS = ('character-frequency', 'size-frequency')
 
 
 def require(condition, message):
@@ -117,7 +120,8 @@ def verify(source, result):
                 non_glyph_bytes_exact=True, unchanged_file_bytes=len(source))
 
 
-def reorder(data):
+def reorder(data, order='character-frequency'):
+    require(order in ORDERS, 'Unknown glyph locality order')
     source = layout(data)
     frequency = Counter()
     # A repeated localization entry is a repeated UI use, while payload aliases
@@ -128,7 +132,8 @@ def reorder(data):
     for index, row in enumerate(source.glyphs):
         cp, offset, px, width, height, _advance, encoded = row
         unit = (offset, encoded or width * height)
-        key = (-frequency[chr(cp)], cp, px, index)
+        key = ((-frequency[chr(cp)], cp, px, index) if order == 'character-frequency'
+               else (px, -frequency[chr(cp)], cp, index))
         if unit not in priority or key < priority[unit]:
             priority[unit] = key
     moved, offsets, cursor = bytearray(), {}, source.first
@@ -152,7 +157,7 @@ def reorder(data):
     result = bytes(result)
     proof = verify(data, result)
     return result, dict(schema=1, reference='v0.111.0 / 41cef1ea', version=source.version,
-        method='localized-character frequency; adjacent native sizes; existing 2-byte alignment',
+        method=order + '; localized codepoint frequency; existing 2-byte alignment',
         input_bytes=len(data), output_bytes=len(result), installation_growth_bytes=0,
         glyph_section_bytes=source.last - source.first, relocated_glyph_entries=changed,
         runtime_buffer_growth_bytes=0, runtime_preload_bytes=0, verification=proof)
@@ -163,6 +168,8 @@ def main():
     parser.add_argument('--eng', type=Path, required=True)
     parser.add_argument('--zhs', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--order', choices=ORDERS, default='character-frequency',
+                        help='Physical locality policy; keep the same runtime for comparison')
     args = parser.parse_args()
     sources = {language: private_path(getattr(args, language), 'Private input pack')
                for language in ('eng', 'zhs')}
@@ -174,7 +181,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     receipts = {}
     for language, path in sources.items():
-        result, receipts[language] = reorder(path.read_bytes())
+        result, receipts[language] = reorder(path.read_bytes(), args.order)
         atomic_bytes(targets[language], result)
     atomic_bytes(output / 'glyph-locality.json', json.dumps(receipts, indent=2).encode() + b'\n')
     print(json.dumps(receipts, indent=2))

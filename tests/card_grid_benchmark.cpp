@@ -134,25 +134,27 @@ int main(int argc,char**argv){
             detail_name,detail_hash,framebuffer_hash(),detail_unchanged?"true":"false",save_attempts);
         std::fflush(stdout);if(!detail_unchanged){std::fclose(file);return 12;}
         if(scene==3){
-            // The same public hit-test locates a real localized gold word in
-            // both packs. Include the entire pointer search in the first cost;
-            // discovering its location cannot preload glyphs out of band.
-            Cost hover_first,hover_warm;unsigned candidates=0;int hover_x=-1,hover_y=-1;
+            // Visit all 8 x 59 pointer positions, including blank rows and
+            // text after the first gold word. Include the complete sweep and
+            // final tooltip frame in the first cost; no glyphs are warmed out
+            // of band by a preliminary search. Keep the first real gold word
+            // as a stable tooltip owner in both localized packs.
+            Cost hover_first,hover_warm;unsigned candidates=0,matches=0;int hover_x=-1,hover_y=-1;
             source.phase="pointer_scan_to_keyword_frame";started=mark(source);
-            for(int row=0;row<8&&hover_x<0;++row)for(int x=123;x<300;x+=3){
+            for(int row=0;row<8;++row)for(int x=123;x<300;x+=3){
                 const int y=66+row*15+7;app.pointer_move(x,y);++candidates;CardHoverTarget owner{};
-                if(card_hover_target(app,owner)&&owner.detail&&owner.owner.x==123){hover_x=x;hover_y=y;break;}
+                if(card_hover_target(app,owner)&&owner.detail&&owner.owner.x==123){++matches;if(hover_x<0){hover_x=x;hover_y=y;}}
             }
             if(hover_x<0){std::fclose(file);return 13;}
-            app.render();hover_first.add(started,source);
+            app.pointer_move(hover_x,hover_y);app.render();hover_first.add(started,source);
             if(!app.content.healthy()||!app.keyword_hover.owner||!capture(argc==4?argv[3]:nullptr,"rainbow_detail_keyword")){std::fclose(file);return 14;}
             const uint32_t hover_hash=framebuffer_hash();source.phase="warm_keyword_pointer_window";
             for(unsigned frame=0;frame<frames;++frame){started=mark(source);app.pointer_move(hover_x+int(frame&1),hover_y);app.advance(33);app.render();hover_warm.add(started,source);
                 if(!app.content.healthy()||!app.keyword_hover.owner||app.detail_card<0||app.game.phase!=phase){std::fclose(file);return 15;}}
             const bool hover_unchanged=save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size)&&!save_attempts;
             hover_first.write(detail_name,"pointer_scan_to_keyword_frame");hover_warm.write(detail_name,"warm_keyword_pointer_window");
-            std::printf("{\"operation\":\"keyword_observation\",\"scene\":\"%s\",\"pointer_candidates\":%u,\"hover_x\":%d,\"hover_y\":%d,\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s}\n",
-                detail_name,candidates,hover_x,hover_y,hover_hash,framebuffer_hash(),hover_unchanged?"true":"false");
+            std::printf("{\"operation\":\"keyword_observation\",\"scene\":\"%s\",\"pointer_candidates\":%u,\"pointer_matches\":%u,\"hover_x\":%d,\"hover_y\":%d,\"first_rgb565_fnv1a\":%u,\"last_rgb565_fnv1a\":%u,\"canonical_state_unchanged\":%s}\n",
+                detail_name,candidates,matches,hover_x,hover_y,hover_hash,framebuffer_hash(),hover_unchanged?"true":"false");
             std::fflush(stdout);if(!hover_unchanged){std::fclose(file);return 16;}
         }
     }

@@ -220,7 +220,7 @@ static void deferred_intent_text(){
   // during the banner, retaining the same text as the still-visible icon.
   a.render();bool found=false;
   for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==0){
-   a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+1;found=true;break;
+   a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+a.hits[i].h/2;found=true;break;
   }
   CHECK(found);a.pointer.visible=true;a.render();CHECK(intent_panel());unchanged();
   const auto hide=a.combat_feedback.hide_at[0],done=a.combat_feedback.end_at;

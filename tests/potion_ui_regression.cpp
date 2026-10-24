@@ -74,12 +74,12 @@ int main(int argc,char**argv){
     // A potion that autoplays a real multi-hit card must retain its future
     // command cues. Do not infer those waits from the bottle animation.
     app.game.potions[0]=Potion::DistilledChaos;app.game.hand.count=app.game.draw.count=app.game.discard.count=app.game.exhaust.count=app.game.powers.count=0;
-    app.game.card_count=1;app.game.cards[0]={Pummel,0};app.game.zones[0]=Zone::Draw;app.game.draw.ids[0]=0;app.game.draw.count=1;
+    app.game.card_count=1;app.game.cards[0]={TwinStrike,0};app.game.zones[0]=Zone::Draw;app.game.draw.ids[0]=0;app.game.draw.count=1;
     app.reset_presentation();app.render();for(unsigned i=0;app.combat_preparation.active&&i<1024;++i){app.advance(33);app.render();}
     const int old_hp=app.game.enemies[0].hp;app.open_potion(0);app.input(Key::Confirm);CHECK(app.game.potions[0]==Potion::Empty);
     CHECK(app.combat_feedback.active&&app.combat_health(1).hp==old_hp&&app.game.enemies[0].hp<old_hp);
     unsigned changes=0;int displayed=old_hp;
     for(unsigned i=0;i<180&&app.combat_feedback.active;++i){app.advance(33);app.render();const int hp_now=app.combat_health(1).hp;if(hp_now!=displayed){++changes;displayed=hp_now;}}
-    CHECK(changes>=4&&displayed==app.game.enemies[0].hp);
+    CHECK(changes>=2&&displayed==app.game.enemies[0].hp);
     std::printf("potion UI: %u checks passed\n",checks);
 }

@@ -213,7 +213,14 @@ void App::observe_core(const State&s,Log log){
 }
 void App::observe_enemy_animation(const State&s,int slot,const char*trigger){
  if(&s!=&game||!s.enemy_world.active||slot<0||slot>=s.enemy_count||!trigger)return;
- sync_enemy_feedback();auto&m=enemy_presentation[slot];auto facts=ui_enemy_facts(s,slot);
+ // A bound actor was synchronized before executing this command. Its
+ // canonical idle predicates may already have changed inside the hook
+ // (Flutter clears IsHovering before StunTrigger). Keep the displayed pose
+ // until this notification's queued boundary instead of resuming that
+ // future idle during synchronization. New identities still need binding.
+ const auto&source=s.enemy_world.models[slot];const auto&current=enemy_presentation[slot];
+ if(!ui_feedback_bound(*this)||current.identity!=source.combat_id||current.model!=unsigned(source.kind))sync_enemy_feedback();
+ auto&m=enemy_presentation[slot];auto facts=ui_enemy_facts(s,slot);
  uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
  if(ui_feedback_bound(*this))when=ui_feedback_later(when,combat_feedback.effect_at);
  int state=world_enemy_transition(m.model,m.state,trigger,ui_enemy_fact,&facts);

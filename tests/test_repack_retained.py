@@ -215,8 +215,8 @@ class RetainedPackTest(unittest.TestCase):
                 self.assertTrue(report['unchanged_preexisting_strings'])
                 new_labels = dict(frontend.FRONTEND_TEXTS)
                 for slot, ((old_at, old_length), (new_at, new_length)) in enumerate(zip(target.strings, newer.strings)):
-                    expected = localized_text[language][new_labels[slot]].encode() + b'\0' if slot in new_labels else output[old_at:old_at+old_length+1]
-                    self.assertEqual(extended[new_at:new_at+new_length+1], expected)
+                    expected_label = localized_text[language][new_labels[slot]].encode() + b'\0' if slot in new_labels else output[old_at:old_at+old_length+1]
+                    self.assertEqual(extended[new_at:new_at+new_length+1], expected_label)
                 # A later catalog that occupies a reserved slot is rejected;
                 # historical text can never be silently overwritten.
                 occupied = bytearray(output)

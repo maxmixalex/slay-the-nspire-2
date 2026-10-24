@@ -543,15 +543,19 @@ static void deferred_enemy_values(){
  // Browser '5' and the calculator's numeric confirmation normalize to the
  // same Key::Confirm value (4); neither can bypass the panel's action guard.
  a.input(static_cast<Key>(4));unchanged();a.ui_action(UiAction::DiscardPotion);unchanged();
- a.render();const auto*use=a.hit_at(230,216);const auto*discard=a.hit_at(75,216);
- CHECK(!use||!use->enabled);CHECK(!discard||!discard->enabled);
- a.pointer_move(230,216);a.pointer_button(true);a.pointer_button(false);unchanged();
- a.pointer_move(75,216);a.pointer_button(true);a.pointer_button(false);unchanged();
+ a.render();HitRegion use{},discard{};bool found_use=false,found_discard=false;
+ for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
+  if(h.kind==HitKind::Potion&&h.value==0){use=h;found_use=true;}
+  if(h.kind==HitKind::UiAction&&h.value==int(UiAction::DiscardPotion)){discard=h;found_discard=true;}}
+ CHECK(found_use&&!use.enabled);CHECK(found_discard&&!discard.enabled);
+ a.pointer_move(use.x+use.w/2,use.y+use.h/2);a.pointer_button(true);a.pointer_button(false);unchanged();
+ a.pointer_move(discard.x+discard.w/2,discard.y+discard.h/2);a.pointer_button(true);a.pointer_button(false);unchanged();
  // A path which clears the generic busy counter still cannot consume the
  // already calculated next turn before the feedback endpoint.
  a.busy=0;CHECK(a.combat_actions_locked());a.input(Key::Confirm);a.ui_action(UiAction::DiscardPotion);unchanged();
  a.animation=a.combat_feedback.end_at;a.busy=0;a.render();CHECK(!a.combat_actions_locked());
- a.input(Key::Confirm);CHECK(potion_at(a.game,0)==Potion::Empty&&a.panel==0);
+ a.potion_menu_item=0;const int strength_before=a.game.strength;
+ a.input(Key::Confirm);CHECK(potion_at(a.game,0)==Potion::Empty&&a.panel==0&&a.game.strength>strength_before);
 
  // A bounded queue may drop intermediate samples, but must retain the
  // complete canonical result until its scheduled convergence boundary.
@@ -806,7 +810,7 @@ static void synchronous_damage_hook_feedback(){
  for(unsigned fast=0;fast<2;++fast)for(unsigned flutter=0;flutter<2;++flutter){
   enemy_visual_fight(flutter?EncounterId::ThievingHopperWeak:EncounterId::LagavulinMatriarchBoss);
   a.fast_mode=fast!=0;a.game.energy=3;a.game.enemies[0].block=0;
-  if(flutter){auto&m=a.game.enemy_world.models[0];m.power[unsigned(EnemyPower::Flutter)]=1;m.data[8]=1;}
+  if(flutter){queue_extension(a.game,XOp::EnemyApplyPower,1,int(EnemyPower::Flutter)+80+720);resolve_pending(a.game);a.game.enemy_world.models[0].data[8]=1;}
   const int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,TwinStrike,1025);resolve_pending(a.game);
   a.reset_presentation();a.render();
   for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}

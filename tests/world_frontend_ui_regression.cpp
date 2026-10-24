@@ -221,7 +221,7 @@ static void probe_is_read_only(){
 static void main_menu_and_continue(){
  empty_disk();start();snapshot();a.return_to_title();CHECK(a.title_menu_count()==4);menu_rows(4);capture("frontend-title-new");
  a.menu=0;for(unsigned i=0;i<4;i++)a.input(Key::Down);CHECK(a.menu==0);unchanged();
- press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.advance(500);capture("frontend-character-select");a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
+ press(HitKind::Menu,0);CHECK(a.character_select&&a.title&&!a.practice_entry);a.render();a.advance(500);capture("frontend-character-select");a.input(Key::Back);CHECK(!a.character_select&&a.title);unchanged();
  press(HitKind::Menu,1);CHECK(a.settings_open);action(UiAction::SettingsBack);CHECK(!a.settings_open);unchanged();
  press(HitKind::Menu,2);CHECK(a.library&&a.title);a.input(Key::Back);CHECK(!a.library&&a.title);unchanged();
  press(HitKind::Menu,3);CHECK(a.frontend_confirm==3&&!a.quit);capture("frontend-quit-confirm");a.input(Key::Confirm);CHECK(!a.frontend_confirm&&!a.quit);unchanged();
