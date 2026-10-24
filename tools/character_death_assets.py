@@ -57,7 +57,7 @@ def layout(points, desired_scale):
     size=np.ceil(extent*scale).astype(int)+4
     tiles.require(0<scale and np.all(size<=[320,240]),'Death image cannot fit its bounded reader')
     return dict(scale=float(scale),size=list(map(int,size)),origin=[float(2-low[0]*scale),float(2+high[1]*scale)],
-                bounds=[low.tolist(),high.tolist()],sampling_scale_limited=scale<desired_scale)
+                bounds=[low.tolist(),high.tolist()],sampling_scale_limited=bool(scale<desired_scale))
 
 
 def identity(runtime):

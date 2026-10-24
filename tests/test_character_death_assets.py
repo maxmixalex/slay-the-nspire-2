@@ -2,6 +2,7 @@
 from pathlib import Path
 import sys
 import unittest
+import json
 import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import character_death_assets as death
@@ -39,6 +40,7 @@ class CharacterDeathTest(unittest.TestCase):
         points=np.array([[-6000.,-1500.],[1800.,4500.]])
         box=death.layout(points,.065)
         self.assertTrue(box['sampling_scale_limited'])
+        self.assertEqual(json.loads(json.dumps(box)),box)
         self.assertLessEqual(box['size'][0],320);self.assertLessEqual(box['size'][1],240)
         row=death.clip_row(3,71,2.3333335,box,.29,'synthetic')
         self.assertGreater(row['sprite_units'],0)
