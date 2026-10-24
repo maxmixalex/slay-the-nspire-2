@@ -191,7 +191,7 @@ static void ftue_screen(Canvas&c){
  case FtueId::ObtainPotion:prefix="POTION_FTUE";ftue_arrow(c,126,42,0,1024,false,true);break;
  case FtueId::CombatReward:prefix="REWARDS_FTUE";x=190;y=151;ftue_arrow(c,221,126,887,512);break;
  case FtueId::PowerCard:prefix="POWER_FTUE";x=191;y=179;ftue_arrow(c,230,129,973,320,false,false,37,31);break;
- case FtueId::RelicReward:prefix="RELIC_FTUE";x=198;y=145;w=122;h=54;{const int ry=a.ftue.target==-2?124:104+RewardPresentation::row_offset(unsigned(mx(0,a.ftue.target)))-a.reward_presentation.list_scroll.offset();ftue_arrow(c,184,ry+20);}break;
+ case FtueId::RelicReward:prefix="RELIC_FTUE";x=198;y=145;w=122;h=54;{const int ry=a.ftue.target==-2?124:104+RewardPresentation::row_offset(unsigned(mx(0,a.ftue.target)))-a.reward_presentation.list_scroll.offset();ftue_arrow(c,184,ry+20,0,1024,false,true);}break;
  case FtueId::Merchant:prefix="MERCHANT_FTUE";x=26;ftue_arrow(c,201,97);break;
  case FtueId::RestSite:prefix="REST_SITE_FTUE";y=140;break;
  case FtueId::Shuffle:prefix="SHUFFLE_FTUE";y=150;ftue_arrow(c,42,192);ftue_arrow(c,278,192,0,1024,true);break;

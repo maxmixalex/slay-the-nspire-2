@@ -51,7 +51,13 @@ int main(int argc,char**argv){
     standalone_reward();reset();snapshot();auto bottle=find(HitKind::PotionSlot,1);
     app.pointer_move(bottle.x+4,8);app.render();CHECK(!app.panel);unchanged();
     click(HitKind::PotionSlot,1);CHECK(app.panel==4&&app.scroll==1&&!app.potion_targeting);app.advance(150);capture("potion-fire-menu");unchanged();
-    click(HitKind::Potion,1);CHECK(app.potion_targeting&&app.game.potions[1]==Potion::Fire);capture("potion-throw-targeting");unchanged();
+    // 259x239 source popup at 4/21, centered beneath the actual holder.
+    const auto use_control=find(HitKind::Potion,1),discard_control=find(HitKind::UiAction,int(UiAction::DiscardPotion));
+    CHECK(use_control.x==131&&use_control.y==43&&use_control.w==45&&use_control.h==16);
+    CHECK(discard_control.x==131&&discard_control.y==60&&discard_control.w==45&&discard_control.h==16);
+    click(HitKind::Potion,1);CHECK(app.potion_targeting&&app.game.potions[1]==Potion::Fire);CHECK(app.potion_popup_exit.active&&app.potion_popup_exit.alpha==255&&app.potion_popup_exit.thrown);
+    app.render();for(int i=0;i<app.hit_count;++i)CHECK(app.hits[i].kind!=HitKind::Potion&&!(app.hits[i].kind==HitKind::UiAction&&app.hits[i].value==int(UiAction::DiscardPotion)));
+    app.advance(50);capture("potion-popup-exit-half");unchanged();app.advance(150);app.render();CHECK(!app.potion_popup_exit.active);capture("potion-throw-targeting");unchanged();
     // Outside click cancels the target manager; it never consumes the bottle.
     app.pointer_move(4,230);app.pointer_button(true);app.pointer_button(false);CHECK(!app.panel&&!app.potion_targeting);unchanged();
     click(HitKind::PotionSlot,1);app.input(Key::Confirm);CHECK(app.potion_targeting);app.input(Key::Back);CHECK(!app.panel);unchanged();

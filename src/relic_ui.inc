@@ -56,20 +56,6 @@ static void owned_relic_strip(Canvas&c){
   c.hit(x,y,cell,cell,HitKind::OwnedRelic,int(i));
  }
 }
-static void owned_relic_panel(Canvas&c){
- auto&a=c.a;auto&s=a.game;const int count=ui_owned_relic_count(s);a.scroll=mn(mx(0,a.scroll),mx(0,count-1));int first=a.scroll/18*18;
- c.centered("遗物",5,28,310,16,Gold);
- for(int i=first;i<mn(count,first+18);i++){int j=i-first,x=20+j%6*49,y=55+j/6*35;RelicId id=ui_owned_relic_id(s,i);
-  if(i==a.scroll){c.rect(x-4,y-2,38,33,rgb(75,58,37));c.box(x-4,y-2,38,33,Gold);}
-  c.picture(a.relic_face_image(id),x,y,25,25,ui_relic_opacity(s,i));ui_relic_badge(c,i,x+20,y+16);c.hit(x-5,y-3,46,34,HitKind::Relic,i);
- }
- if(count){RelicId id=ui_owned_relic_id(s,a.scroll);c.centered(a.relic_title(id,a.scroll),15,161,290,12,Gold);
-  char progress[128]{},description[2048]{};ui_relic_progress(s,a.scroll,progress,sizeof progress,&a.content);a.relic_description(id,description,sizeof description,a.scroll);
-  if(*progress)c.centered(progress,15,180,290,10,Green);c.paragraph(description,20,*progress?197:182,280,*progress?1:2,0,10,White);
- }else c.centered("没有遗物",0,106,320,12,Muted);
- c.text("‹",15,216,16,Gold);c.hit(7,211,35,24,HitKind::Scroll,-18,first>0);c.text("›",292,216,16,Gold);c.hit(278,211,35,24,HitKind::Scroll,18,first+18<count);
- char page[64]{};TextBuffer b{page,sizeof page,0,&a.content};b.number(first/18+1);b.text(" / ");b.number(mx(1,(count+17)/18));c.centered(page,41,219,236,10,Muted);
-}
 static void owned_relic_tooltip(Canvas&c){
  auto&a=c.a;if(a.event_reader||a.pointer.held||a.title||a.paused||a.help||a.settings_open||a.frontend_confirm||(a.panel&&a.panel!=3)||a.library||a.character_select||a.map_preview.open||a.status_actor>=0||a.detail_card>=0||a.detail_item>=0||a.deck_candidate>=0||choice_phase(a.game.phase))return;
  const HitRegion*hit=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):nullptr;

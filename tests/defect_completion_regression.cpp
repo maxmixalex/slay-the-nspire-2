@@ -402,7 +402,7 @@ static void card_instances_and_replays(){
  }
  scenario="Feral reserves the outer result before a nested automatic attack";
  {auto s=fight();cast(s,DefectFeral);int outer=append(s,{DefectUproar,0},Zone::Discard);
-  s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));choose(s,outer);CHECK(cost(s,outer)==0);
+  s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));CHECK(s.phase==Phase::Combat&&cost(s,outer)==0);restore(s);
   int inner=append(s,{DefectClaw,0},Zone::Draw);CHECK(play(s,hand_index(s,outer),0));settle(s);
   CHECK(s.zones[outer]==Zone::Hand&&s.zones[inner]==Zone::Discard&&s.defect.feral_used==1);
  }
@@ -454,10 +454,10 @@ static void statuses_draws_and_choices(){
  }
  scenario="Scrape captured draw identities survive a nested automatic choice";
  {auto s=fight();cast(s,Hellraiser);fill(s,Zone::Draw,3);int sculpt=append(s,{NecroSculptingStrike,0},Zone::Draw),zap=append(s,{DefectZap,1},Zone::Hand);
-  int scrape=append(s,{DefectScrape,0},Zone::Hand);CHECK(play(s,hand_index(s,scrape),0));
+  int other=append(s,{DefectDefend,0},Zone::Hand),scrape=append(s,{DefectScrape,0},Zone::Hand);CHECK(play(s,hand_index(s,scrape),0));
   CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::NEthereal&&s.expansion.depth==1);
   CHECK(s.defect.scrape_count[0]==1&&s.defect.scrape_drawn[0][0]==sculpt+1);
-  choose(s,zap);CHECK(s.zones[zap]==Zone::Hand&&s.hand.count==1&&s.necro.ethereal[zap]);
+  choose(s,zap);CHECK(s.zones[zap]==Zone::Hand&&s.zones[other]==Zone::Hand&&s.hand.count==2&&s.necro.ethereal[zap]&&!s.necro.ethereal[other]);
   CHECK(s.zones[sculpt]==Zone::Discard&&s.silent.drawn_combat==4&&s.silent.discarded_turn==3);
   for(unsigned f=0;f<=MaxAutoFrames;f++)CHECK(!s.defect.scrape_waiting[f]&&!s.defect.scrape_count[f]);
  }
@@ -484,7 +484,7 @@ static void statuses_draws_and_choices(){
  }
  scenario="Flak snapshot operation includes an active ancestor Status and cleanup is idempotent";
  {auto s=fight();cast(s,Hellraiser);int sculpt=append(s,{NecroSculptingStrike,0},Zone::Draw),slimed=append(s,{Slimed,0},Zone::Hand);
-  int zap=append(s,{DefectZap,1},Zone::Hand);CHECK(play(s,hand_index(s,slimed),0));
+  int zap=append(s,{DefectZap,1},Zone::Hand);append(s,{DefectDefend,0},Zone::Hand);CHECK(play(s,hand_index(s,slimed),0));
   CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::NEthereal&&s.expansion.depth==1);
   CHECK(s.zones[slimed]==Zone::Limbo&&s.zones[sculpt]==Zone::Limbo);restore(s);
   // A direct operation-boundary fixture: Hellraiser cannot play Flak Cannon,
@@ -505,10 +505,10 @@ static void statuses_draws_and_choices(){
  }
  scenario="Hologram resumes selected instance with cost history intact";
  {auto s=fight();int modded=cast(s,DefectModded);int hologram=append(s,{DefectHologram,1},Zone::Hand);CHECK(play(s,hand_index(s,hologram),0));
-  CHECK(s.phase==Phase::ExtendedChoice);choose(s,modded);CHECK(s.zones[modded]==Zone::Hand&&cost(s,modded)==1&&s.block==5);
+  CHECK(s.phase==Phase::Combat&&s.zones[modded]==Zone::Hand&&cost(s,modded)==1&&s.block==5);restore(s);
  }
  scenario="Nightmare copies Defect instance values from the choice snapshot";
- {auto s=fight();int claw=cast(s,DefectClaw);move_hand(s,claw);int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));choose(s,claw);
+ {auto s=fight();int claw=cast(s,DefectClaw);move_hand(s,claw);int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));CHECK(s.phase==Phase::Combat);restore(s);
   CHECK(play(s,hand_index(s,claw),0));settle(s);CHECK(s.defect.value[claw]==4);unsigned old_count=s.card_count;quiet_turn(s);
   CHECK(s.card_count==old_count+3);for(unsigned i=old_count;i<s.card_count;i++)CHECK(s.cards[i].kind==DefectClaw&&s.defect.value[i]==2&&!s.defect.deck_origin[i]);
  }

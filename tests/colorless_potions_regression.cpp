@@ -26,7 +26,9 @@ static void same(const State&s,const SaveData&b){auto a=snapshot(s);CHECK(a.size
 static void rt(const State&s){auto b=snapshot(s);State copy{};CHECK(load(copy,b.bytes,b.size));same(copy,b);}
 static void resolve_choices(State&s){
  for(int steps=0;choice_phase(s.phase)&&steps<40;steps++){
-  rt(s);const Pile&p=choice_pile(s);uint16_t ids[MaxHand]{};unsigned n=choice_min(s);
+  rt(s);const Pile&p=choice_pile(s);uint16_t ids[MaxHand]{};
+  // The outcome matrix exercises taking an offer; zero now correctly means Skip.
+  unsigned n=s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::Offer?1:choice_min(s);
   for(unsigned i=0;i<n;i++)ids[i]=p.ids[i];
   if(s.phase==Phase::ExtendedChoice){
    auto before=snapshot(s);uint16_t wrong=65535;CHECK(!choose_extended(s,&wrong,1));same(s,before);

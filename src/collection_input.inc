@@ -71,6 +71,7 @@ bool App::collection_input(Key key){
     if(!library||!library_tab)return false;
     if(key!=Key::Left&&key!=Key::Right&&key!=Key::Up&&key!=Key::Down&&key!=Key::Confirm&&key!=Key::Detail)return false;
     prepare_collection();if(!collection.count)return true;
+    if(key==Key::Confirm||key==Key::Detail){select_library_item(library_selected);return true;}
     unsigned row=0;for(;row+1<collection.row_count&&library_selected>=collection.rows[row].first+collection.rows[row].count;++row){}
     const auto&current=collection.rows[row];int column=library_selected-current.first;
     if(key==Key::Left)column=(column+current.count-1)%current.count;

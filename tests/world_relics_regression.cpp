@@ -89,14 +89,14 @@ int main(){
  reset();add(WorldRelicToastyMittens);add(WorldRelicBurningSticks);
  // Enter without opening AfterPlayerTurnStart, then dispatch the explicit hook.
  s.phase=Phase::Combat;s.turn=1;s.hp=s.max_hp=80;s.enemy_count=1;s.enemies[0].hp=s.enemies[0].max_hp=100;
- s.playing=-1;s.card_count=1;s.cards[0]={Defend,0};s.zones[0]=Zone::Hand;s.hand.count=1;s.hand.ids[0]=0;
+ s.playing=-1;s.card_count=2;s.cards[0]={Defend,0};s.cards[1]={Strike,0};s.zones[0]=s.zones[1]=Zone::Hand;s.hand.count=2;s.hand.ids[0]=0;s.hand.ids[1]=1;
  hook(WorldRelicHook::AfterHandDraw);require(s.phase==Phase::WorldRelicChoice&&s.world_relics.choice==WorldRelicChoice::Hand,"Toasty pauses its ordered hook at a real hand selection");save_pending();
  uint16_t chosen=0;require(world_relic_select(s,&chosen,1),"resolve Toasty selection");resolve_pending(s);
- require(s.strength==1&&s.exhaust.count==1&&s.hand.count==1&&s.cards[s.hand.ids[0]].kind==Defend,"Burning Sticks exhaust callback runs before Toasty's Strength continuation");
- require(!s.world_relics.card_is_dupe[s.hand.ids[0]],"Burning Sticks creates an ordinary clone rather than a replay dupe");
+ require(s.strength==1&&s.exhaust.count==1&&s.hand.count==2&&s.hand.ids[0]==1&&s.cards[s.hand.ids[1]].kind==Defend,"Burning Sticks exhaust callback runs before Toasty's Strength continuation");
+ require(!s.world_relics.card_is_dupe[s.hand.ids[1]],"Burning Sticks creates an ordinary clone rather than a replay dupe");
  for(const auto&f:s.world_relics.hook_frames)require(!f.active,"finished nested hook frame released");
  reset();add(WorldRelicToastyMittens);add(WorldRelicMrStruggles);
- s.phase=Phase::Combat;s.turn=1;s.enemy_count=1;s.enemies[0].hp=s.enemies[0].max_hp=100;s.playing=-1;s.card_count=1;s.cards[0]={Defend,0};s.zones[0]=Zone::Hand;s.hand.count=1;s.hand.ids[0]=0;
+ s.phase=Phase::Combat;s.turn=1;s.enemy_count=1;s.enemies[0].hp=s.enemies[0].max_hp=100;s.playing=-1;s.card_count=2;s.cards[0]={Defend,0};s.cards[1]={Strike,0};s.zones[0]=s.zones[1]=Zone::Hand;s.hand.count=2;s.hand.ids[0]=0;s.hand.ids[1]=1;
  hook(WorldRelicHook::AfterHandDraw);require(s.phase==Phase::WorldRelicChoice,"listener snapshot pauses");
  require(lose_world_relic(s,WorldRelicMrStruggles),"remove later listener while paused");require(gain_world_relic(s,WorldRelicMercuryHourglass),"append another listener while paused");
  require(world_relic_select(s,&chosen,1),"resume saved listener snapshot");resolve_pending(s);

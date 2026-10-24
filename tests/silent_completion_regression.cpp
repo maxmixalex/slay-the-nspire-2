@@ -141,7 +141,10 @@ static int cast(State&s,unsigned kind,unsigned up=0,int target=0){int id=append(
 static void quiet_turn(State&s){for(auto&e:s.enemies)e.move=2;CHECK(end_turn(s));settle(s);CHECK(s.phase==Phase::Combat);}
 static void choose(State&s,int id){CHECK(s.phase==Phase::ExtendedChoice);restore(s);uint16_t selected=(uint16_t)id;CHECK(choose_extended(s,&selected,1));settle(s);}
 static void recall(State&s,int id){
- CHECK(s.zones[id]==Zone::Discard);s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));choose(s,id);CHECK(s.zones[id]==Zone::Hand);
+ CHECK(s.zones[id]==Zone::Discard);unsigned candidates=s.discard.count;
+ s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));
+ if(candidates>1)choose(s,id);else{CHECK(s.phase==Phase::Combat);restore(s);}
+ CHECK(s.zones[id]==Zone::Hand);
 }
 
 static void complete_model_matrix(){
@@ -281,12 +284,12 @@ static void sly_choices_and_discard(){
  s=fight();reflex=append(s,{Reflex,0},Zone::Hand);tactician=append(s,{Tactician,0},Zone::Hand);fill(s,Zone::Draw,20);
  quiet_turn(s);CHECK(s.energy==3&&s.draw.count==15&&s.zones[reflex]==Zone::Discard&&s.zones[tactician]==Zone::Discard&&!s.expansion.cards_finished);
  s=fight();int trick=append(s,{HandTrick,0},Zone::Hand),normal=append(s,{DefendSilent,0},Zone::Hand);
- append(s,{Reflex,0},Zone::Hand);append(s,{StrikeSilent,0},Zone::Hand);fill(s,Zone::Draw,20);
- CHECK(play(s,0,0));CHECK(s.phase==Phase::ExtendedChoice&&choice_pile(s).count==1&&choice_pile(s).ids[0]==normal);
+ append(s,{Reflex,0},Zone::Hand);append(s,{StrikeSilent,0},Zone::Hand);append(s,{DefendSilent,0},Zone::Hand);fill(s,Zone::Draw,20);
+ CHECK(play(s,0,0));CHECK(s.phase==Phase::ExtendedChoice&&choice_pile(s).count==2&&choice_pile(s).ids[0]==normal);
  auto before=s;uint16_t bad=65535;CHECK(!choose_extended(s,&bad,1));CHECK(!std::memcmp(&before,&s,sizeof s));choose(s,normal);
  CHECK(s.silent.sly[normal]==2&&s.zones[trick]==Zone::Discard);quiet_turn(s);CHECK(!s.silent.sly[normal]);
  s=fight();cast(s,MasterPlanner);int defender=cast(s,DefendSilent);CHECK(s.silent.sly[defender]==1);
- recall(s,defender);int survivor=append(s,{Survivor,0},Zone::Hand);CHECK(play(s,hand_index(s,survivor),0));
+ recall(s,defender);append(s,{StrikeSilent,0},Zone::Hand);int survivor=append(s,{Survivor,0},Zone::Hand);CHECK(play(s,hand_index(s,survivor),0));
  CHECK(s.phase==Phase::DiscardChoice);uint16_t selected=(uint16_t)defender;restore(s);CHECK(choose_discard(s,&selected,1));settle(s);
  CHECK(s.block==18&&s.silent.discarded_turn==1&&s.silent.sly[defender]==1);
 }
@@ -343,7 +346,7 @@ static void costs_clones_and_limits(){
  fill(s,Zone::Draw,20);quiet_turn(s);CHECK(cost(s,pinpoint)==3&&!s.silent.discount[pinpoint]);
  scenario="Nightmare immutable snapshot and v13 continuation";s=fight();fill(s,Zone::Draw,20);
  int original=append(s,{Rampage,0},Zone::Hand);s.ironclad.damage_bonus[original]=7;s.expansion.turn_cost[original]=1;s.silent.retain[original]=2;
- int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));choose(s,original);
+ append(s,{DefendSilent,0},Zone::Hand);int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));choose(s,original);
  CHECK(s.silent.nightmare_active[0]&&s.silent.nightmares[0].iron_damage==7&&s.silent.nightmares[0].turn_cost==1);
  s.ironclad.damage_bonus[original]=13;s.expansion.turn_cost[original]=3;s.silent.retain[original]=0;restore(s);
  unsigned first=s.card_count;quiet_turn(s);CHECK(s.card_count==first+3&&!s.silent.nightmare_active[0]);

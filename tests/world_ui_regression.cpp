@@ -74,7 +74,7 @@ static void options_and_readers(){
  a.open_library(1);a.prepare_collection();int cookie=-1;
  for(unsigned i=0;i<a.collection.count;++i)if(a.collection.ids[i]==WorldRelicYummyCookie)cookie=int(i);
  CHECK(cookie>=0);a.library_selected=cookie;a.focus_collection();for(unsigned i=0;i<45;++i)a.advance(33);
- a.render();CHECK(has(HitKind::LibraryItem,cookie));a.select_library_item(cookie);a.render();CHECK(a.detail_item<0);
+ a.render();CHECK(has(HitKind::LibraryItem,cookie));a.select_library_item(cookie);a.render();CHECK(a.detail_item==WorldRelicYummyCookie);a.input(Key::Back);CHECK(a.detail_item<0&&a.library);
  a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);unchanged();
 }
 static void crystal_and_large_rewards(){
@@ -1020,9 +1020,9 @@ static void hidden_choice_input(int token){
      UiAction::PreviousChoicePage,UiAction::NextChoicePage,UiAction::PreviousWorldPage,UiAction::NextWorldPage})a.ui_action(action);
  CHECK(a.cursor==cursor&&a.choice_selected_count==1&&a.game.effect_count==effects);unchanged();a.choice_selected_count=0;
 }
-static void peek_selected_choice(int token,bool world){
+static void peek_selected_choice(int token,bool world,bool selected=true){
  const int cursor=a.cursor;const unsigned count=a.choice_selected_count,revision=a.game.revision;
- CHECK(count&&a.choice_selected[0]==token&&a.combat_peek_available());snapshot();
+ CHECK(count==(selected?1u:0u)&&(!count||a.choice_selected[0]==token)&&a.combat_peek_available());snapshot();
  const auto key=a.input_bindings.keys[a.keyboard_only?1:0][unsigned(InputCommand::Peek)];
  CHECK(a.physical_key(key,true)&&!a.choice_peeking);CHECK(a.physical_key(key,false)&&a.choice_peeking);a.render();
  CHECK(has(HitKind::Battlefield,0)&&has(HitKind::CombatPeek,0));
@@ -1031,13 +1031,13 @@ static void peek_selected_choice(int token,bool world){
  a.input(Key::Confirm);a.input(Key::EndTurn);a.toggle_choice(token);a.toggle_world_choice(token);
  a.confirm_choice();a.confirm_world_choice();a.pointer_scroll(1);
  for(auto action:{UiAction::ClearChoice,UiAction::ClearWorldChoice,UiAction::NextChoicePage,UiAction::NextWorldPage})a.ui_action(action);
- CHECK(a.cursor==cursor&&a.choice_selected_count==count&&a.choice_selected[0]==token&&a.game.revision==revision);unchanged();
+ CHECK(a.cursor==cursor&&a.choice_selected_count==count&&(!count||a.choice_selected[0]==token)&&a.game.revision==revision);unchanged();
  advance_combat_ms(264);a.render();CHECK(a.combat_peek_amount()==1024);
  capture(world?"choice-world-peek":"choice-combat-peek");
  a.input(Key::Detail);CHECK(a.status_actor>=0&&a.choice_peeking);a.input(Key::Back);CHECK(a.status_actor<0&&a.choice_peeking);
  a.input(Key::DrawPile);a.render();CHECK(a.panel==1&&a.pile_tab==1&&a.choice_peeking);a.input(Key::Back);CHECK(!a.panel&&a.choice_peeking);
  CHECK(a.physical_key(key,true)&&a.choice_peeking);CHECK(a.physical_key(key,false)&&!a.choice_peeking);a.render();
- CHECK(has(world?HitKind::WorldChoice:HitKind::CombatChoice,token)&&a.choice_selected_count==count&&a.choice_selected[0]==token);
+ CHECK(has(world?HitKind::WorldChoice:HitKind::CombatChoice,token)&&a.choice_selected_count==count&&(!count||a.choice_selected[0]==token));
  CHECK(a.cursor==cursor&&a.game.revision==revision);unchanged();
 }
 static void deferred_combat_choices(){
@@ -1085,7 +1085,9 @@ static void deferred_combat_choices(){
   }
   if(!delayed)capture(fast?"choice-toasty-ready-fast":"choice-toasty-ready");
   a.busy=300;HitRegion option{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::WorldChoice&&a.hits[i].value==ids[0]){option=a.hits[i];break;}
-  CHECK(option.kind==HitKind::WorldChoice);a.pointer_move(option.x+option.w/2,option.y+option.h/2);a.pointer_button(true);a.pointer_button(false);
+  CHECK(option.kind==HitKind::WorldChoice);bool found=false;int px=0,py=0;
+  for(int y=option.y+option.h-1;y>=option.y&&!found;--y)for(int x=option.x;x<option.x+option.w;++x){const auto*h=a.hit_at(x,y);if(h&&h->kind==HitKind::WorldChoice&&h->value==ids[0]){px=x;py=y;found=true;break;}}
+  CHECK(found);a.pointer_move(px,py);a.pointer_button(true);a.pointer_button(false);
   CHECK(a.choice_selected_count==1&&a.choice_selected[0]==ids[0]);
   peek_selected_choice(ids[0],true);
   CHECK(world_relic_select(direct,ids,1));CHECK(save(direct,expected));
@@ -1113,9 +1115,9 @@ static void deferred_combat_choices(){
   snapshot();a.choice_revision=a.game.revision;a.choice_selected[0]=MaxCards+2;a.choice_selected_count=1;
   a.confirm_choice();CHECK(a.combat_feedback.choice_pending&&a.combat_choice_ready());unchanged();
   a.ui_action(UiAction::ClearChoice);advance_combat_ms(99);
-  a.busy=300;a.toggle_choice(MaxCards+1);CHECK(a.choice_selected_count==1);peek_selected_choice(MaxCards+1,false);
+  a.busy=300;peek_selected_choice(MaxCards+1,false,false);
   const uint32_t answer=a.animation;
-  uint16_t knowledge=MaxCards+1;CHECK(choose_extended(direct,&knowledge,1));a.ui_action(UiAction::ConfirmChoice);
+  uint16_t knowledge=MaxCards+1;CHECK(choose_extended(direct,&knowledge,1));a.toggle_choice(MaxCards+1);
   CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&a.combat_feedback.choice_pending);
   const uint32_t second=a.combat_feedback.choice_at;
   CHECK(second==old_end+(answer-first)+TurnBannerPresentation::wait_ticks(1250,500,fast!=0)&&second>answer);

@@ -61,18 +61,22 @@ static void exact_and_lease(){
 }
 static void lifetime(){Package p(true,true);Provider provider{&p.bytes};auto content=std::make_unique<Content>();CHECK(content->open(provider.source()));const char*small=content->string(0),*maximum=content->string(3);CHECK(!std::strcmp(small,p.text[0].c_str())&&std::strlen(maximum)==16383);for(unsigned i=0;i<11;++i){const auto picture=content->image(i);CHECK(picture.pixels&&picture.pixels[0]==i&&picture.pixels[1]==0x42);}const unsigned calls=provider.calls;provider.fail=true;CHECK(content->string(0)==small&&content->string(3)==maximum);CHECK(!std::strcmp(small,p.text[0].c_str())&&!std::memcmp(maximum,p.text[3].c_str(),16384));CHECK(content->healthy()&&provider.calls==calls);}
 static void optional_catalogs(){
- for(unsigned count:{unsigned(GameOverTransitionAuxiliaryCount),unsigned(CardResourceAuxiliaryCount),unsigned(FtueAuxiliaryCount)}){
+ for(unsigned count:{unsigned(GameOverTransitionAuxiliaryCount),unsigned(CardResourceAuxiliaryCount),unsigned(FtueAuxiliaryCount),unsigned(SelectionAuxiliaryCount),unsigned(InspectionAuxiliaryCount)}){
   Package p(true,false,0,false,count);Provider provider{&p.bytes};auto content=std::make_unique<Content>();
   CHECK(content->open(provider.source())&&content->current_profile());
-  CHECK(content->has_ftue_assets()==(count==FtueAuxiliaryCount));
+  CHECK(content->has_ftue_assets()==(count>=FtueAuxiliaryCount));
+  CHECK(content->has_selection_assets()==(count>=SelectionAuxiliaryCount));
+  CHECK(content->has_inspection_assets()==(count==InspectionAuxiliaryCount));
   const unsigned opened=provider.calls;CHECK(!std::strcmp(content->string(LocaleMarkerString),"eng"));CHECK(provider.calls==opened);
   CHECK(!std::strcmp(content->string(0),p.text[0].c_str())&&content->healthy());
  }
- for(unsigned count:{unsigned(CardResourceAuxiliaryCount+1),unsigned(FtueAuxiliaryCount-1),unsigned(FtueAuxiliaryCount+1)}){
+ for(unsigned count:{unsigned(CardResourceAuxiliaryCount+1),unsigned(FtueAuxiliaryCount-1),unsigned(SelectionAuxiliaryCount-1),unsigned(InspectionAuxiliaryCount+1)}){
   Package p(true,false,0,false,count);auto content=std::make_unique<Content>();CHECK(!content->open(p.bytes.data(),p.bytes.size()));
  }
  Package old(false,false,0,false,FtueAuxiliaryCount);auto content=std::make_unique<Content>();CHECK(!content->open(old.bytes.data(),old.bytes.size()));
- Package invalid(true,false,0,false,FtueAuxiliaryCount);put(invalid.bytes,invalid.base-4,Package::Images);CHECK(!content->open(invalid.bytes.data(),invalid.bytes.size()));
+ for(unsigned count:{unsigned(FtueAuxiliaryCount),unsigned(SelectionAuxiliaryCount),unsigned(InspectionAuxiliaryCount)}){
+  Package invalid(true,false,0,false,count);put(invalid.bytes,invalid.base-4,Package::Images);CHECK(!content->open(invalid.bytes.data(),invalid.bytes.size()));
+ }
 }
 static void malformed(){
  for(unsigned mode=0;mode<11;++mode){Package p;const unsigned d=p.descriptors[0];switch(mode){case 0:put(p.bytes,d,0x80000000u);break;case 1:put(p.bytes,d+4,32);break;case 2:put(p.bytes,d+8,32768);break;case 3:put(p.bytes,d+12,1);break;case 4:put(p.bytes,p.group_at,0);break;case 5:put(p.bytes,p.group_at+12,13);break;case 6:put(p.bytes,p.group_at+8,0);break;case 7:put(p.bytes,d+4,ResourceTransferCapacity+1);break;case 8:put(p.bytes,p.string_at+4,GroupedStringFlag|16384);break;case 9:put(p.bytes,4,GroupedGlyphContentVersion);break;default:put(p.bytes,d,0);break;}

@@ -32,7 +32,7 @@ int main(){
     for(unsigned i=0;i<3;++i)for(unsigned j=0;j<3;++j){inverse[i][j]=matrix[i][j];inverse[i][j+3]=i==j?1.:0.;}
     for(unsigned i=0;i<3;++i){const double pivot=inverse[i][i];for(double&v:inverse[i])v/=pivot;
         for(unsigned j=0;j<3;++j)if(i!=j){const double factor=inverse[j][i];for(unsigned k=0;k<6;++k)inverse[j][k]-=factor*inverse[i][k];}}
-    for(unsigned source=0;source<=65535;source+=17)for(unsigned saturation:{800u,900u,1000u})
+    for(unsigned source=0;source<=65535;source+=17)for(int saturation:{-1100,-1000,-800,800,900,1000,1100})
         for(unsigned value:{1000u,1200u,1400u})for(unsigned brightness:{0u,128u,192u,255u}){
             const double input[]={double(source>>11)/31,double((source>>5)&63)/63,double(source&31)/31};
             double yiq[3]{};for(unsigned i=0;i<3;++i)for(unsigned j=0;j<3;++j)yiq[i]+=matrix[i][j]*input[j];

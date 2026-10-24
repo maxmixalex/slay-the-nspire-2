@@ -145,7 +145,7 @@ static void resources_and_damage(){
 static void choices_and_creation(){
     for(Potion p:{Potion::AttackPotion,Potion::SkillPotion,Potion::PowerPotion,Potion::ColorlessPotion}){
         State s{};fight(s);fill(s,Zone::Hand,2);drink(s,p);CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.potion_active);
-        CHECK(choice_pile(s).count==3&&choice_min(s)==1&&choice_max(s)==1);
+        CHECK(choice_pile(s).count==3&&choice_min(s)==0&&choice_max(s)==1);
         for(unsigned i=0;i<3;i++){
             Card c=choice_card(s,choice_pile(s).ids[i]);
             CHECK(!card_generated(c.kind));
@@ -155,7 +155,8 @@ static void choices_and_creation(){
         }
         auto before=s;uint16_t wrong=65535;
         CHECK(!choose_extended(s,&wrong,1));unchanged(s,before);
-        CHECK(!choose_extended(s,nullptr,0));unchanged(s,before);
+        auto skipped=s;CHECK(choose_extended(skipped,nullptr,0));
+        CHECK(skipped.phase==Phase::Combat&&skipped.hand.count==2&&!skipped.expansion.potion_active);restore(skipped);unchanged(s,before);
         CHECK(!use_potion(s,1,0));unchanged(s,before);
         uint16_t token=choice_pile(s).ids[1];Card chosen=choice_card(s,token);
         select(s,{token});CHECK(s.hand.count==3&&!s.expansion.potion_active);
@@ -165,7 +166,7 @@ static void choices_and_creation(){
     int unchosen=append(s,{Defend,0},Zone::Draw),chosen=append(s,{Defend,1},Zone::Draw);
     drink(s,Potion::DropletOfPrecognition);select(s,{(uint16_t)chosen});
     CHECK(s.zones[chosen]==Zone::Hand&&s.zones[unchosen]==Zone::Draw&&s.cards[chosen].upgraded);
-    chosen=append(s,{Bludgeon,0},Zone::Discard);drink(s,Potion::LiquidMemories);select(s,{(uint16_t)chosen});
+    chosen=append(s,{Bludgeon,0},Zone::Discard);drink(s,Potion::LiquidMemories);CHECK(s.phase==Phase::Combat);restore(s);
     CHECK(s.zones[chosen]==Zone::Hand&&cost(s,chosen)==0);
     fight(s);fill(s,Zone::Hand,4);fill(s,Zone::Draw,10);
     drink(s,Potion::GamblersBrew);uint16_t first=s.hand.ids[0],last=s.hand.ids[3];
@@ -183,7 +184,7 @@ static void choices_and_creation(){
     fight(s);fill(s,Zone::Hand,2);fill(s,Zone::Draw,15);s.no_draw=1;
     drink(s,Potion::GlowwaterPotion);CHECK(s.exhaust.count==2&&!s.hand.count&&s.draw.count==15);
     fight(s);chosen=append(s,{Bludgeon,0},Zone::Hand);s.expansion.turn_cost[chosen]=4;
-    drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)chosen});
+    drink(s,Potion::TouchOfInsanity);CHECK(s.phase==Phase::Combat);restore(s);
     CHECK(cost(s,chosen)==0&&s.expansion.combat_cost[chosen]==1);
     quiet_turn(s);CHECK(cost(s,chosen)==0);
     fight(s);fill(s,Zone::Hand,9);s.no_draw=1;drink(s,Potion::CunningPotion);
@@ -327,7 +328,7 @@ static void pinned_cost_lifetimes(){
     // Generated/returned "free this turn" cards use the same expiry as Snecko:
     // their first play removes the override, including a same-turn return.
     fight(s);id=append(s,{Strike,0},Zone::Discard);gain_power(s,XPower::Nostalgia,2);
-    drink(s,Potion::LiquidMemories);select(s,{(uint16_t)id});CHECK(cost(s,id)==0);
+    drink(s,Potion::LiquidMemories);CHECK(s.phase==Phase::Combat&&cost(s,id)==0);restore(s);
     CHECK(play(s,0,0));CHECK(s.energy==20&&!s.expansion.turn_cost[id]);
     drink(s,Potion::Swift);CHECK(s.hand.ids[0]==id&&cost(s,id)==1);
     CHECK(play(s,0,0));CHECK(s.energy==19);restore(s);
@@ -336,9 +337,9 @@ static void pinned_cost_lifetimes(){
     // zero cost. Applying Touch after Snecko makes the first play free too.
     for(bool touch_first:{false,true}){
         fight(s);id=append(s,{Strike,0},Zone::Hand);gain_power(s,XPower::Nostalgia,2);s.rng_cards=2;
-        if(touch_first){drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)id});}
+        if(touch_first){drink(s,Potion::TouchOfInsanity);CHECK(s.phase==Phase::Combat);restore(s);}
         drink(s,Potion::SneckoOil);CHECK(cost(s,id)==2);
-        if(!touch_first){drink(s,Potion::TouchOfInsanity);select(s,{(uint16_t)id});}
+        if(!touch_first){drink(s,Potion::TouchOfInsanity);CHECK(s.phase==Phase::Combat);restore(s);}
         CHECK(cost(s,id)==(touch_first?2:0));CHECK(play(s,0,0));
         int energy=touch_first?18:20;CHECK(s.energy==energy);
         drink(s,Potion::Swift);CHECK(cost(s,id)==0&&s.expansion.combat_cost[id]==1);
@@ -352,13 +353,16 @@ static void pinned_cost_lifetimes(){
     fight(s);append(s,{Strike,0},Zone::Hand);id=append(s,{Whirlwind,0},Zone::Hand);s.rng_cards=2;
     drink(s,Potion::SneckoOil);CHECK(s.rng_cards==ordinary.rng_cards&&cost(s,0)==cost(ordinary,0));
     CHECK(cost(s,id)==-1&&!s.expansion.turn_cost[id]);
-    drink(s,Potion::TouchOfInsanity);CHECK(choice_pile(s).count==1&&choice_pile(s).ids[0]==0);
+    // Keep two payable candidates so exclusion and invalid selection remain
+    // observable at the manual continuation boundary.
+    append(s,{Defend,0},Zone::Hand);
+    drink(s,Potion::TouchOfInsanity);CHECK(choice_pile(s).count==2&&choice_pile(s).ids[0]==0);
     auto before=s;uint16_t excluded=(uint16_t)id;
     CHECK(!choose_extended(s,&excluded,1));unchanged(s,before);select(s,{0});CHECK(cost(s,id)==-1);
     s.energy=2;CHECK(play(s,1,0));CHECK(s.energy==0&&s.enemies[0].hp==36&&s.enemies[1].hp==36);restore(s);
 
     fight(s);id=append(s,{Whirlwind,0},Zone::Discard);drink(s,Potion::LiquidMemories);
-    select(s,{(uint16_t)id});CHECK(cost(s,id)==-1);s.energy=2;
+    CHECK(s.phase==Phase::Combat&&cost(s,id)==-1);restore(s);s.energy=2;
     CHECK(play(s,0,0));CHECK(s.energy==0&&s.enemies[0].hp==36&&s.enemies[1].hp==36);restore(s);
 
     // Touch's original hand predicate excludes cards with no payable cost,
@@ -367,13 +371,12 @@ static void pinned_cost_lifetimes(){
     s.expansion.turn_cost[temporarily_free]=1;int permanently_free=append(s,{Defend,0},Zone::Hand);
     s.expansion.combat_cost[permanently_free]=1;append(s,{Whirlwind,0},Zone::Hand);
     int eligible=append(s,{Bludgeon,0},Zone::Hand);drink(s,Potion::TouchOfInsanity);
-    CHECK(choice_pile(s).count==1&&choice_pile(s).ids[0]==eligible);
-    select(s,{(uint16_t)eligible});CHECK(cost(s,eligible)==0);restore(s);
+    CHECK(s.phase==Phase::Combat&&cost(s,eligible)==0&&!s.expansion.turn_cost[eligible]);
+    CHECK(s.expansion.turn_cost[temporarily_free]==1&&s.expansion.combat_cost[permanently_free]==1);restore(s);
     fight(s);append(s,{Finesse,0},Zone::Hand);append(s,{Whirlwind,0},Zone::Hand);
     drink(s,Potion::TouchOfInsanity);CHECK(s.phase==Phase::Combat&&!s.expansion.potion_active);restore(s);
     fight(s);eligible=append(s,{Finesse,0},Zone::Hand);s.expansion.turn_cost[eligible]=3;
-    drink(s,Potion::TouchOfInsanity);CHECK(choice_pile(s).count==1&&choice_pile(s).ids[0]==eligible);
-    select(s,{(uint16_t)eligible});CHECK(cost(s,eligible)==0&&s.expansion.combat_cost[eligible]==1&&!s.expansion.turn_cost[eligible]);
+    drink(s,Potion::TouchOfInsanity);CHECK(s.phase==Phase::Combat&&cost(s,eligible)==0&&s.expansion.combat_cost[eligible]==1&&!s.expansion.turn_cost[eligible]);restore(s);
 }
 static void pinned_stacking_and_piles(){
     State s{};fight(s);fill(s,Zone::Draw,60);
@@ -535,7 +538,7 @@ static void distilled_batch(){
 }
 static void costs_before_enemy_choice(){
     State s{};fight(s);int recalled=append(s,{Bludgeon,0},Zone::Discard);
-    drink(s,Potion::LiquidMemories);select(s,{(uint16_t)recalled});CHECK(cost(s,recalled)==0);
+    drink(s,Potion::LiquidMemories);CHECK(s.phase==Phase::Combat&&cost(s,recalled)==0);restore(s);
     drink(s,Potion::StableSerum);CHECK(gain_relic(s,CentennialPuzzle));
     int drawn=append(s,{Strike,0},Zone::Discard);s.expansion.turn_cost[drawn]=4;
     int combat_free=append(s,{Defend,0},Zone::Discard);

@@ -26,6 +26,7 @@ static const char* crystal_item_image(const CrystalItemState&item){
 }
 #include "crystal_ui.inc"
 #include "world_reward_choice_ui.inc"
+#include "world_selection_ui.inc"
 // Standalone PotionReward uses the same original row as a reward set. The
 // button attempts first-empty procurement; the belt remains interactive so
 // the player can discard a bottle explicitly and retry a TooFull reward.
@@ -42,6 +43,7 @@ static void native_potion_reward_screen(Canvas&c){
  native_proceed_action(c,UiAction::ConfirmWorldChoice,skip);
 }
 static void world_choice_screen(Canvas&c){
+ if(c.a.combat_selection_kind()!=CombatSelectionKind::None){card_choice_screen(c);return;}
  auto&a=c.a;const auto&s=a.game;a.sync_selection();a.hit_count=0;
  if(s.phase==Phase::OriginalEventChoice&&s.original_events.selection==OriginalEventSelection::Crystal){crystal_screen(c);return;}
  const bool relic=s.phase==Phase::WorldRelicChoice;
@@ -57,6 +59,7 @@ static void world_choice_screen(Canvas&c){
  if(rewards){native_reward_set_screen(c,ids,count);return;}
  if(potion){native_potion_reward_screen(c);return;}
  if(a.world_choice_is_card_reward()){native_card_reward_screen(c,ids,count);return;}
+ if(a.world_selection_kind()!=WorldSelectionKind::None){native_world_selection_screen(c,ids,count);return;}
  const bool scrolling_cards=!potion&&!relics&&!bundle&&!(offer&&count<=3);
  auto&grid=a.configure_card_grid(CardGridSurface::WorldChoice,int(count),s.revision);CardGridPainter painter{c,grid};const int first=scrolling_cards?grid.first():a.cursor/10*10;
  c.dim(0,0,320,240,224);

@@ -149,13 +149,26 @@ static bool history_relic_hover_target(const App&a,CardHoverTarget&target){
     target={};target.relic=run->relics[hit->value];target.historical=true;target.owner={hit->x,hit->y,hit->w,hit->h};
     target.identity=0x73000000u|((run->serial&0xffffu)<<8)|unsigned(hit->value);return true;
 }
-static bool keyword_hover_target(const App&a,CardHoverTarget&target){return history_relic_hover_target(a,target)||power_hover_target(a,target)||collection_hover_target(a,target)||treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
+static bool inspect_relic_hover_target(const App&a,CardHoverTarget&target){
+    if(a.detail_item<0||a.detail_item>=WorldRelicKinds||!a.relic_inspect.bound||a.relic_inspect.exiting||a.settings_open||a.frontend_confirm)return false;
+    const bool collection=a.relic_inspect.source==RelicInspectSource::Collection;
+    if(collection&&!a.library_item_seen(1,a.detail_item))return false;
+    // NInspectRelicScreen aligns to its stationary HoverTipRect, not the
+    // entering popup or pointer. Related cards are on the opposite side.
+    target={};target.relic=a.detail_item;target.owner={92,47,134,159};target.detail=true;
+    target.inspect_relic=true;target.canonical_relic=collection||a.history_open;target.historical=a.history_open;
+    target.identity=0x74000000u|unsigned(a.detail_item)|(unsigned(a.detail_owned+1)<<12);return true;
+}
+static bool keyword_hover_target(const App&a,CardHoverTarget&target){return inspect_relic_hover_target(a,target)||history_relic_hover_target(a,target)||power_hover_target(a,target)||collection_hover_target(a,target)||treasure_hover_target(a,target)||event_hover_target(a,target)||card_hover_target(a,target);}
 static void collect_keyword_hover_tips(const App&a,const CardHoverTarget&owner,HoverTipList&out){
     if(owner.power>=0)collect_power_hover_tips(a,uint16_t(owner.power),out);
-    else if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),out,owner.historical);
+    else if(owner.relic>=0){
+        if(owner.inspect_relic){out={};event_hover_relic(a,out,RelicId(owner.relic),false,0,owner.historical||owner.canonical_relic);out.finish();}
+        else collect_relic_hover_tips(a,RelicId(owner.relic),out,owner.historical);
+    }
     else if(owner.potion>0)collect_potion_hover_tips(a,Potion(owner.potion),out);
     else if(owner.event_option>=0)collect_event_hover_tips(a,owner.event_option,out);
-    else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.facts);
+    else collect_card_hover_tips(a,owner.card,out,owner.instance,owner.deck,owner.card_facts());
 }
 static HoverRect keyword_hover_column(const CardHoverTarget&owner){
     if(owner.power>=0){const int x=owner.power_left?owner.owner.x-SourceHoverWidth-1:owner.owner.x+owner.owner.w+1;

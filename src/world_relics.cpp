@@ -80,6 +80,7 @@ bool w_enqueue(State& s,WorldRelicOp op,unsigned owner,int a=0,int b=0,int c=0){
 void w_pump(State&);
 void w_obtained(State&,WorldRelicInstance&);
 void w_select_apply(State&,const uint16_t*,unsigned);
+void w_resolve_fixed_deck_choice(State&);
 void w_group_show(State&,unsigned);
 void w_step(State&,const WorldRelicStep&);
 void w_apply_reward_relic(State&,WorldRelicInstance&,Card*,EventCardFacts*,unsigned&,unsigned,const WorldCardOptions&,bool callbacks);
@@ -98,6 +99,11 @@ void w_pump(State& s){auto& w=s.world_relics;if(w.running||w.choice!=WorldRelicC
   WorldRelicStep step=w.steps[w.step_cursor++];const bool combat=combat_phase(s.phase);
   if(combat)world_relic_schedule_acquisition(s);
   if(s.phase==Phase::Error)break;w_step(s,step);
+  // An acquisition may finish building its filtered/shuffled offers after
+  // w_choose_deck returns (Royal Stamp). Apply source shortcuts only here,
+  // after that operation is complete; never recurse through the public
+  // selection entry or automatically resume an already-suspended save.
+  w_resolve_fixed_deck_choice(s);
   if(combat)break;
  }
  w.running=0;
@@ -582,6 +588,37 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
   else{if(!w_enqueue(s,WorldRelicOp::ApplyChoice,serial,int(choice),int(at),int(filter)|(owner_id==WorldRelicAstrolabe?256:0)))return;
    if(choice==WorldRelicChoice::Enchant){auto&f=w.steps[w.step_cursor].card.facts;f.enchantment=w.choice_enchantment;f.enchantment_amount=w.choice_amount;}}
  }
+}
+void w_resolve_fixed_deck_choice(State& s){
+ auto& w=s.world_relics;
+ if(s.phase!=Phase::WorldRelicChoice||!w.choice_min||w.choice_min!=w.choice_max||w.choice_cancelable)return;
+ const int owner=world_relic_instance_index(s,w.choice_owner);if(owner<0)return;
+ WorldRelicChoice expected=WorldRelicChoice::None;
+ // Each listed AfterObtained uses the original fixed, nonmanual deck
+ // command. Optional Claws/Gnarled Hammer/Kifuda, RestSite Smith/Cook,
+ // generated offers and reward-group Remove all have different prefs.
+ switch(w.entries[owner].id){
+ case WorldRelicAstrolabe:case WorldRelicNewLeaf:expected=WorldRelicChoice::Transform;break;
+ case WorldRelicBiiigHug:case WorldRelicEmptyCage:case WorldRelicPaelsTooth:
+ case WorldRelicPrecariousShears:case WorldRelicPreciseScissors:case WorldRelicPreservedFog:expected=WorldRelicChoice::Remove;break;
+ case WorldRelicDollysMirror:expected=WorldRelicChoice::Duplicate;break;
+ case WorldRelicElectricShrymp:case WorldRelicPaelsGrowth:case WorldRelicPunchDagger:
+ case WorldRelicRoyalStamp:case WorldRelicTriBoomerang:expected=WorldRelicChoice::Enchant;break;
+ case WorldRelicPomander:case WorldRelicYummyCookie:expected=WorldRelicChoice::Upgrade;break;
+ default:return;
+ }
+ if(w.choice!=expected)return;
+ // Pael's Tooth is the largest fixed request in this source whitelist.
+ uint16_t ids[5];const unsigned count=world_relic_eligible(s,ids,5);
+ if(!count||count>5||count>w.choice_min)return;
+ if(w.choice==WorldRelicChoice::Remove){
+  // FromDeckForRemoval's stable sortingOrder puts Curses before deck
+  // order, including on the automatic all-eligible return path.
+  for(unsigned i=1;i<count;++i){uint16_t id=ids[i];if(definitions[s.deck[id].kind].type!=CardType::Curse)continue;
+   unsigned j=i;while(j&&definitions[s.deck[ids[j-1]].kind].type!=CardType::Curse){ids[j]=ids[j-1];--j;}ids[j]=id;
+  }
+ }
+ w_select_apply(s,ids,count);
 }
 }
 

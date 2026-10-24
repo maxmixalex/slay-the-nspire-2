@@ -11,9 +11,34 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import selection_ui9_assets as selector
 from lz4_block import decode
+from patch_ui7_assets import append_glyphs
+from test_ftue_assets import fixture
+import group_strings
 
 
 class SelectionAssetsTest(unittest.TestCase):
+    def test_inspector_seven_pixel_and_italic_faces_preserve_grouped_payloads(self):
+        before, _ = group_strings.repack(fixture('eng'))
+        source = group_strings.view(before)
+        auxiliary = source.counts[5]
+        title = bytes((0, 64, 255, 128, 255, 0))*7
+        flavor = bytes((0, 128, 255))*4
+        additions = [(ord('R'), 7 | 96, 6, 7, 6, 0, title),
+                     (ord('f'), 4 | 160, 3, 4, 3, 0, flavor)]
+        after, count = append_glyphs(before, auxiliary, len(source.clips), additions,
+            version=33, profile=(len(source.cards), len(source.strings), len(source.clips), auxiliary))
+        target = selector.tiles.PackView(after, auxiliary, versions=(33,))
+        self.assertEqual(count, 2)
+        proof = selector.verify_append(before, after, auxiliary, 33)
+        self.assertTrue(proof['exact_old_compressed_groups_and_descriptors'])
+        keys = {(row[0], row[2]): i for i, row in enumerate(target.glyphs)}
+        self.assertEqual(target.glyph_alpha(keys[ord('R'), 103]), title)
+        self.assertEqual(target.glyph_alpha(keys[ord('f'), 164]), flavor)
+        old_format = bytearray(after)
+        struct.pack_into('<I', old_format, 4, 32)
+        with self.assertRaisesRegex(ValueError, 'Invalid glyph geometry'):
+            selector.tiles.PackView(old_format, auxiliary, versions=(32,))
+
     def test_half_texture_validates_layout_and_finite_data(self):
         header = bytearray(52)
         header[:4] = b'GST2'

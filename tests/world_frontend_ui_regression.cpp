@@ -272,7 +272,15 @@ static void main_menu_and_continue(){
  disk.bytes[0]^=1;a.input(Key::Load);CHECK(a.title&&!a.has_save);unchanged();disk.bytes[0]^=1;
 }
 static void pause_save_failure_and_success(){
- empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);capture("frontend-pause");
+ empty_disk();start(Character::Necrobinder,3001);snapshot();a.input(Key::Back);CHECK(a.paused&&!a.title);menu_rows(5);
+ const int source_rows[]={88,104,119,134,149};
+ for(int i=0;i<5;++i){const auto h=find_hit(HitKind::Menu,i);CHECK(h.x==125&&h.y==source_rows[i]&&h.w==71&&h.h==15);}
+ a.advance(500);a.render();capture("frontend-pause");unchanged();
+ // Original Back is a partially offscreen Control whose visible region
+ // resumes the run. It must not dispatch a map or a covered room action.
+ bool back=false;for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];if(h.kind==HitKind::UiAction&&h.value==int(UiAction::Back)){
+  back=true;CHECK(h.enabled&&h.x+h.w>0&&h.y==173);a.pointer_move(11,183);a.pointer_button(true);a.pointer_button(false);break;}}
+ CHECK(back&&!a.paused&&!a.title);unchanged();a.pointer.visible=false;a.render();a.input(Key::Back);CHECK(a.paused);a.render();
  unsigned w=writes;write_ok=false;press(HitKind::Menu,4);CHECK(a.paused&&!a.title&&!disk_exists&&writes==w+1&&a.notice_ticks);unchanged();
  write_ok=true;press(HitKind::Menu,4);CHECK(a.title&&!a.paused&&a.has_save&&disk_exists);same_saved(disk);unchanged();
  // The saved expedition remains exactly resumable after returning to title.
@@ -281,7 +289,7 @@ static void pause_save_failure_and_success(){
  // Pointer motion over the covered Resume/Compendium rows must not change
  // pause selection, even before the settings hit list has been refreshed.
  const int pause_selection=a.menu;
- for(int y:{54,87,119,151,183}){a.pointer_move(90,y);a.render();CHECK(a.menu==pause_selection&&a.settings_open&&a.paused);}
+ for(int y:{95,111,126,141,156}){a.pointer_move(160,y);a.render();CHECK(a.menu==pause_selection&&a.settings_open&&a.paused);}
  a.input(Key::Back);CHECK(!a.settings_open&&a.paused);
  press(HitKind::Menu,2);CHECK(a.compendium_open&&a.paused&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open&&a.paused);press(HitKind::Menu,0);CHECK(!a.paused&&!a.title);same_saved(disk);
 }

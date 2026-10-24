@@ -2,7 +2,7 @@
 #include "health_bar.hpp"
 
 namespace spire {
-enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic };
+enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic, OriginalPause, PotionPopup };
 enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled, Release };
 struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;uint16_t saturation=1000,value=1000;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
@@ -14,6 +14,8 @@ inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     else v.y=press?8192:focus?-2048:0;
     v.hover=focus?4096:0;if(state==ButtonState::Disabled)v.shade=128;
     if(family==ButtonFamily::Proceed){v.saturation=press?800:1000;v.value=focus?1400:1000;}
+    if(family==ButtonFamily::OriginalPause){v.scale=focus?3891:press?3482:3686;v.y=press?4681:0;v.saturation=focus?1100:800;v.value=focus?1100:900;}
+    if(family==ButtonFamily::PotionPopup)v.hover=focus||press?4096:0;
     return v;
 }
 // One bounded, interruptible presentation per visible control. Restoring a
@@ -29,6 +31,27 @@ struct ButtonMotion {
         const bool proceeding_disabled=family==ButtonFamily::Proceed&&state==ButtonState::Disabled;
         const auto sampled_state=proceeding_disabled?disabled_from:state;
         auto to=button_target(family,sampled_state);const uint32_t elapsed=now-start;
+        if(family==ButtonFamily::PotionPopup){
+            if(state==ButtonState::Disabled)return to;
+            const unsigned q=elapsed>=150?4096:elapsed*4096/150;
+            to.hover=from.hover+(to.hover-from.hover)*int(q)/4096;return to;
+        }
+        if(family==ButtonFamily::OriginalPause){
+            if(state==ButtonState::Disabled)return to;
+            if(state==ButtonState::Rest&&!interacted)return from;
+            // Original OnFocus never moves Image.y. OnPress never changes
+            // the label color; interrupting focus preserves its current tint.
+            if(state==ButtonState::Focus)to.y=from.y;
+            const unsigned duration=state==ButtonState::Focus?50:500;
+            const unsigned linear=elapsed>=duration?4096:elapsed*4096/duration;
+            const unsigned q=state==ButtonState::Focus?linear:health_bar::expo_out(elapsed>=500?1000:elapsed*1000/500);
+            const auto mix=[&](int a,int b){return a+(b-a)*int(q)/4096;};
+            ButtonVisual out{mix(from.scale,to.scale),mix(from.y,to.y),0,to.shade};
+            const unsigned color=elapsed>=50?4096:elapsed*4096/50;
+            out.hover=state==ButtonState::Press?from.hover:from.hover+(to.hover-from.hover)*int(color)/4096;
+            out.saturation=state==ButtonState::Focus?1100:uint16_t(mix(from.saturation,to.saturation));
+            out.value=state==ButtonState::Focus?1100:uint16_t(mix(from.value,to.value));return out;
+        }
         if(family==ButtonFamily::Proceed||family==ButtonFamily::TreasureRelic){
             // OnDisable kills the glow tween, but leaves the independent
             // hover scale/material tween running beneath the exit motion.
@@ -88,11 +111,12 @@ struct ButtonMotion {
         if(state==ButtonState::Focus)out.hover=4096; // reference shader changes immediately
         return out;
     }
-    ButtonVisual observe(uint32_t key,ButtonFamily kind,ButtonState mode,uint32_t now){
-        if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;disabled_from=ButtonState::Rest;interacted=false;from=button_target(kind,state);start=now;}
+    ButtonVisual observe(uint32_t key,ButtonFamily kind,ButtonState mode,uint32_t now,bool neutral_initial=false){
+        if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;disabled_from=ButtonState::Rest;interacted=false;from=button_target(kind,state);if(kind==ButtonFamily::OriginalPause&&neutral_initial)from.saturation=from.value=1000;start=now;}
         // Releasing while still inside is OnRelease, not another OnFocus.
         // Its shader returns to neutral until the pointer leaves/re-enters.
         if(kind==ButtonFamily::Proceed&&mode==ButtonState::Focus&&(state==ButtonState::Press||state==ButtonState::Release))mode=ButtonState::Release;
+        if(kind==ButtonFamily::OriginalPause&&mode==ButtonState::Focus&&state==ButtonState::Press)mode=ButtonState::Press;
         if(state!=mode){
             if(kind==ButtonFamily::Proceed&&mode==ButtonState::Disabled){
                 // Proceed has no vertical hover movement. Reuse its unused

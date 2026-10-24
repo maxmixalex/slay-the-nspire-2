@@ -39,7 +39,7 @@ static void legacy_phases(){
  const uint32_t rng=s.rng_cards;{Trace trace;act(s);CHECK(!trace.offered&&trace.effects>0);}
  CHECK(s.zones[1]==Zone::Exhaust&&s.hand.count==3&&s.draw.count==2&&s.block==3&&s.rng_cards==rng);ready(s);
  scenario="True Grit+ one card automatically exhausts; two remain a real choice";
- s=fight({{TrueGrit,1},{Defend,0}});act(s);CHECK(s.zones[1]==Zone::Exhaust&&s.block==10);ready(s);
+ s=fight({{TrueGrit,1},{Defend,0}});act(s);CHECK(s.zones[1]==Zone::Exhaust&&s.block==9);ready(s);
  s=fight({{TrueGrit,1},{Defend,0},{Strike,0}});act(s);CHECK(s.phase==Phase::ExhaustChoice);roundtrip(s);
  CHECK(choose_exhaust(s,0));CHECK(s.zones[1]==Zone::Exhaust&&s.zones[2]==Zone::Hand);ready(s);
  scenario="Prepared+ chooses its complete two-card hand without a modal";

@@ -199,7 +199,7 @@ static void overlays_do_not_advance(){
  const Card viewed=card_from_token(a.detail_card);a.input(Key::Confirm);CHECK(a.detail_card>=0&&!a.game_over_summary);
  if(viewed.upgraded||card_upgradeable(viewed))CHECK(card_from_token(a.detail_card).upgraded!=viewed.upgraded);
  unchanged();a.input(Key::Back);CHECK(a.detail_card<0&&!a.game_over_summary);unchanged();
- a.detail_item=0;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.input(Key::Confirm);CHECK(a.detail_item<0&&!a.game_over_summary);unchanged();
+ a.detail_item=0;a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);a.input(Key::Confirm);CHECK(a.detail_item==0&&!a.game_over_summary);unchanged();a.input(Key::Back);CHECK(a.detail_item<0&&!a.game_over_summary);unchanged();
 }
 static void saved_facts(){
  char text[512]{},number[32]{};a.localized_text("game_over_screen","SCORE_LINE.floorsClimbed",text,sizeof text);std::snprintf(number,sizeof number,"%u",a.game.world.total_floor);CHECK(std::strstr(text,number));
@@ -218,7 +218,7 @@ static void death_flow(){
   if(!i){overlays_do_not_advance();capture("gameover-defeat");press(UiAction::GameOverSummary);}else a.input(Key::Confirm);
   CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(!has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));a.input(Key::Confirm);CHECK(!a.title);summary_stages(character_names[i]);a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverViewRun));unchanged();saved_facts();
   if(!i){capture("gameover-defeat-summary");a.ui_action(UiAction::GameOverViewRun);a.open_game_over_history();CHECK(!a.history_open&&!a.history_from_game_over&&!a.compendium_open&&a.game_over_summary);unchanged();
-   a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(a.panel==5);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
+   a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(!a.panel&&a.detail_item<0&&a.game_over_summary);a.render();unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
   CHECK(a.title&&!a.game_over_summary&&a.game.phase==Phase::Dead&&a.game.world.finished);unchanged();
  }
 }

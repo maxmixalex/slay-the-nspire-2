@@ -91,9 +91,10 @@ static void native_original_back(Canvas&c,uint32_t opened=UINT32_MAX){
 }
 static void native_close(Canvas&c,int x,int y,int w,int h,bool selected=false){native_control(c,"BACK",x,y,w,h,"",true,selected,true);}
 static void native_confirm(Canvas&c,int x,int y,int w,int h,const char*label,bool enabled=true,bool selected=false){native_control(c,"CONFIRM",x,y,w,h,label,enabled,selected);}
-static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UINT32_MAX){
- auto&a=c.a;const unsigned age=a.map_clock_ms-opened;
- const int entry=opened==UINT32_MAX||age>=350?0:34*(4096-room_curve::back_out(age*4096/350))/4096;
+static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UINT32_MAX,bool enabled=true){
+ auto&a=c.a;
+ const uint32_t key=NativeConfirmPresentation::identity(opened,a.game.seed,unsigned(action),unsigned(a.game.phase));
+ const int entry=a.native_confirm_motion.observe(key,enabled,opened,a.map_clock_ms);
  // NConfirmButton derives (1520,906) from the actual 1680x1260 viewport.
  // Its child textures use the same full AtlasTexture fitting as Back.
  const auto visual=c.control_visual("ORIGINAL_CONFIRM",290+entry,173,38,21,ButtonFamily::Action,false,true);
@@ -105,12 +106,12 @@ static void native_original_confirm(Canvas&c,UiAction action,uint32_t opened=UIN
  const int face=a.content.world_image("common","CONFIRM"),outline=a.content.world_image("common","CONFIRM_OUTLINE");
  Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;
  draw(shadow,face,286,172,42,29,64,presentation::Normal);
- if(visual.hover)draw(c,outline,283,170,44,30,unsigned(visual.hover)*255/4096,presentation::Add);
+ if(enabled&&visual.hover)draw(c,outline,283,170,44,30,unsigned(visual.hover)*255/4096,presentation::Add);
  Canvas button=c;button.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
  draw(button,face,284,170,42,29,255,presentation::Normal);
  button.tint_green=uint8_t(div255(unsigned(button.tint_green)*246));button.tint_blue=uint8_t(div255(unsigned(button.tint_blue)*226));
  draw(button,a.content.world_image("common","CONFIRM_TICK"),296,175,15,15,255,presentation::Normal);
- c.action(290+entry,173,38,21,action);
+ c.action(290+entry,173,38,21,action,enabled);
 }
 static void native_end_turn(Canvas&c,bool enabled){
  auto&a=c.a;const auto visual=c.control_visual("END_TURN",267,188,42,17,ButtonFamily::EndTurn,false,enabled);

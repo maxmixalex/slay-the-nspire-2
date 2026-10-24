@@ -58,6 +58,21 @@ writeReport();
   fs.writeFileSync(path.join(directory,name+'.png'),Buffer.from(url.split(',')[1],'base64'));
   report.captures.push(name+'.png');
  }
+ async function canvasPixels(x,y,width,height){
+  await painted();return canvas.evaluate((node,box)=>Array.from(node.getContext('2d').getImageData(...box).data),[x,y,width,height]);
+ }
+ function pixelDifference(before,after){
+  assert.equal(before.length,after.length);let difference=0;
+  for(let i=0;i<before.length;++i)if(i%4!==3)difference+=Math.abs(before[i]-after[i]);
+  return difference/(before.length*3/4);
+ }
+ function runPrefix(value){
+  assert.ok(value);const data=Buffer.from(value,'base64');assert.equal(data.subarray(0,4).toString(),'NSV1');
+  assert.equal(data.readUInt32LE(4),17);assert.equal(data.readUInt32LE(8),0x41cef1ea);
+  // The original fixed v17 prefix: 13 scalar fields, two power-order
+  // entries, two RNG fields, seed, revision, then the deck count.
+  return {phase:data.readUInt32LE(12),deck_count:data.readUInt32LE(88),bytes:data.length};
+ }
  async function press(key){await canvas.focus();await page.keyboard.press(key);await painted();}
  async function confirm(){await page.locator('button[data-key="4"]').click();await painted();}
  const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v17'+(id===1?'':'-profile-'+id)),slot);
@@ -83,7 +98,7 @@ writeReport();
  async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
  async function toggleFast(){await point(274,128);}
  async function toggleTimer(){await point(274,184);}
- async function returnToTitle(){await press('Escape');await point(160,196);}
+ async function returnToTitle(){await press('Escape');await point(160,156);}
  async function saveAndResume(){await returnToTitle();await titleRow(0,true);}
  async function selectProfile(slot){await point(20,10);await point(72+(slot-1)*88,120);await page.waitForFunction(id=>localStorage.getItem('nSpire2-selected-profile')===String(id),slot);await painted();}
  async function declineTutorials(slot,name){
@@ -217,8 +232,55 @@ writeReport();
  assert.equal((await tutorialRecord(1)).flags,0x4001);assert.equal((await tutorialRecord(3)).flags&tutorial.combat,tutorial.combat);
  record('a separate fresh profile accepts tutorials, reaches the real first battle, navigates all three pages and persists completion only on the final Next release');
  record('the combat tutorial blocks gameplay shortcuts and End turn; reload resumes turn one without repeating the completed lesson or changing another profile');
+ // The deleted second profile supplies an ordinary, deterministic route to
+ // the native simple selector. No state, save or completion bit is injected.
+ await selectProfile(2);assert.equal(await saved(2),null);
+ await titleRow(0,false);await press('ArrowRight');await press('ArrowRight');await confirm();
+ await press('m');await press('ArrowDown');await confirm(); // Sealed Deck, modifier row one.
+ await capture('browser-sealed-custom-mode');await page.locator('button[data-key="6"]').click();await painted();
+ await declineTutorials(2,'browser-sealed-tutorial');await saveAndResume();
+ const sealedBaseline=await saved(2),sealedBefore=runPrefix(sealedBaseline);
+ assert.equal(sealedBefore.phase,10);assert.equal(sealedBefore.deck_count,0); // Actual Neow Event before its modifier option.
+ await page.waitForTimeout(1000);await confirm();await page.waitForTimeout(650);
+ await capture('browser-sealed-thirty-card-grid');
+ for(let i=0;i<9;++i){await confirm();await press('ArrowRight');}
+ await page.waitForTimeout(650);await capture('browser-sealed-nine-selected');
+ await press('Escape');assert.equal(await saved(2),sealedBaseline);
+ await confirm();await page.waitForTimeout(650);await capture('browser-sealed-ten-manual-confirm');
+ // Toggling the tenth card back off must leave a usable selector. An E
+ // release with nine cards cannot complete it; reselect before confirming.
+ await confirm();await page.waitForTimeout(650);await press('e');
+ await capture('browser-sealed-deselected-tenth');await confirm();await page.waitForTimeout(650);
+ await canvas.focus();await page.keyboard.down('e');await painted();await capture('browser-sealed-confirm-held');
+ assert.equal(await saved(2),sealedBaseline);await page.keyboard.up('e');await painted();await page.waitForTimeout(650);
+ await capture('browser-sealed-completed');await returnToTitle();
+ const sealedSave=await saved(2),sealedAfter=runPrefix(sealedSave);
+ assert.notEqual(sealedSave,sealedBaseline);assert.equal(sealedAfter.phase,10);assert.equal(sealedAfter.deck_count,10);
+ report.selector={profile:2,kind:'Sealed Deck',before:sealedBefore,after:sealedAfter,
+  canonical_snapshot_scope:'Save and Quit before opening the selector and after manual confirmation; intermediate UI purity is covered by the matching native suite'};
+ assert.equal(await saved(),firstSave);assert.equal(await saved(3),tutorialSave);await selectProfile(1);
+ record('ordinary Custom Sealed Deck opens the thirty-card grid, retains manual selection through cancellation and deselection, and commits exactly ten cards through the real E release');
+ // NInspectRelicScreen is reachable from the ordinary Compendium. Compare
+ // the opaque popup and its source icon while letting its 250ms motion end.
+ await press('c');await capture('browser-compendium-eng');await press('ArrowRight');await confirm();await page.waitForTimeout(650);
+ await capture('browser-relic-collection');await confirm();await page.waitForTimeout(650);
+ await capture('browser-relic-inspector-first');const firstRelic=await canvasPixels(142,87,37,37);
+ await point(160,100);await page.waitForTimeout(300);
+ assert.ok(pixelDifference(firstRelic,await canvasPixels(142,87,37,37))<2,'clicking the popup must not close the relic inspector');
+ await press('ArrowRight');await page.waitForTimeout(350);const nextRelic=await canvasPixels(142,87,37,37);
+ assert.ok(pixelDifference(firstRelic,nextRelic)>.5,'the real inspector arrow must advance to another relic');await capture('browser-relic-inspector-next');
+ await press('ArrowLeft');await page.waitForTimeout(350);
+ assert.ok(pixelDifference(firstRelic,await canvasPixels(142,87,37,37))<2,'the previous arrow returns to the same original relic');
+ await point(12,120);await page.waitForTimeout(300);await capture('browser-relic-inspector-backstop-closed');
+ await confirm();await page.waitForTimeout(350);await press('Escape');await page.waitForTimeout(300);await press('Escape');
+ await press('ArrowRight');await confirm();await press('ArrowRight');await press('ArrowLeft');await page.waitForTimeout(650);
+ const potionGrid=await canvasPixels(78,44,165,165);await confirm();await page.waitForTimeout(350);
+ assert.ok(pixelDifference(potionGrid,await canvasPixels(78,44,165,165))<6,'Potion Lab confirmation keeps its collection and hover instead of opening an inspector');
+ await capture('browser-potion-lab-focus-only');await press('Escape');await press('ArrowLeft');await press('ArrowLeft');
+ assert.equal(await saved(),firstSave);assert.equal(await saved(2),sealedSave);assert.equal(await saved(3),tutorialSave);
+ record('ordinary relic collection opens the source inspector with clamped model navigation and popup/backstop dismissal; Potion Lab confirmation remains focus-only without mutating any saved run');
  // Measure through the visible control with the actual library active.
- await press('c');await capture('browser-compendium-eng');await confirm();await capture('browser-card-library-eng');
+ await confirm();await capture('browser-card-library-eng');
  await page.locator('#diagnostics summary').click();await page.locator('#measure').click();
  await page.waitForFunction(()=>document.querySelector('#performance-report').textContent.trim().startsWith('{'),{},{timeout:20000});
  report.performance=JSON.parse(await page.locator('#performance-report').innerText());

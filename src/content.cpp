@@ -192,8 +192,18 @@ bool Content::open(ResourceSource source){
                 if(version<FtueContentVersion||next>=ni)return false;
                 uint8_t suffix[28];if(!reader_.read(base+8,suffix,sizeof suffix))return false;
                 for(unsigned i=0;i<6;++i)if(u32(suffix+i*4)>=ni)return false;
-                if(u32(suffix+24)!=0x314c4954u)return false;
                 auxiliary=FtueAuxiliaryCount;base+=32;
+                if(u32(suffix+24)!=0x314c4954u){
+                    // The optional preview-arrow/SDF pair is one exact
+                    // extension, not an unbounded search for a tile header.
+                    if(u32(suffix+24)>=ni||!reader_.u32(base+4,next)||next>=ni)return false;
+                    if(!reader_.u32(base+8,next))return false;
+                    auxiliary=SelectionAuxiliaryCount;base+=8;
+                    if(next!=0x314c4954u){
+                        if(next>=ni||!reader_.u32(base+4,next)||next!=0x314c4954u)return false;
+                        auxiliary=InspectionAuxiliaryCount;base+=4;
+                    }
+                }
             }
         }
     }
@@ -383,7 +393,7 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
     if(fmt>=2)return {p+512,fmt==3?p+512+w*h:nullptr,p,w,h,(uint8_t)fmt};
     return {p,fmt?p+w*h*2:nullptr,nullptr,w,h,(uint8_t)fmt};
 }
-int Content::font_size(int preferred,unsigned style,bool at_most)const{
+int Content::font_size(int preferred,unsigned style,bool at_most,bool sparse_scene_sizes)const{
     if(!metadata_||!io_good_||!glyphs_)return 8;
     if(font_size_generation_!=generation_){font_size_generation_=generation_;font_sizes_known_=0;}
     unsigned face=version_>=HistoryUi8ContentVersion?(style&7u):version_>=Ui7ContentVersion?(style&3u):0u;
@@ -400,6 +410,10 @@ int Content::font_size(int preferred,unsigned style,bool at_most)const{
         }return font_sizes_[selected];
     };
     uint32_t mask=sizes(face);if(face&4u)mask|=sizes(face&3u);if(face)mask|=sizes(0);
+    // Seven-pixel relic titles are a sparse scene alphabet. Only that
+    // label opts in: computed card sizes and automatic shrink steps keep
+    // their complete existing6/8px alphabets and identical old metrics.
+    if(!sparse_scene_sizes)mask&=~(1u<<6);
     if(!mask)return 8;preferred=preferred<1?1:preferred>32?32:preferred;
     if(at_most){for(int px=preferred;px>0;--px)if(mask&(1u<<(px-1)))return px;
         for(int px=preferred+1;px<=32;++px)if(mask&(1u<<(px-1)))return px;}

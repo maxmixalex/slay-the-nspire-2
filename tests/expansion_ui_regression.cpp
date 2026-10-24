@@ -196,23 +196,23 @@ static void offers(){
         setup();acquire_potion(potion);drink();CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Offer);
         CHECK(a.game.expansion.choices.count==3);auto before=snapshot();modal_only();
         if(potion==Potion::ColorlessPotion)capture("colorless-potion-offer");
-        CHECK(!hit(HitKind::UiAction,(int)UiAction::ConfirmChoice).enabled);action(UiAction::ConfirmChoice);unchanged(before);
+        CHECK(!exists(HitKind::UiAction,(int)UiAction::ConfirmChoice));a.ui_action(UiAction::ConfirmChoice);unchanged(before);
+        a.toggle_choice(a.game.expansion.choices.ids[0]);CHECK(a.choice_selected_count==0);unchanged(before);
         for(unsigned i=0;i<3;i++){
             int token=a.game.expansion.choices.ids[i];CHECK(token>=MaxCards&&token<MaxCards+3);
             if(potion==Potion::ColorlessPotion)CHECK(card_colorless(choice_card(a.game,token).kind));
-            tap(HitKind::CombatChoice,token);CHECK(a.choice_selected_count==1&&a.choice_selected[0]==token);
-            a.input(Key::Detail);CHECK((cost(choice_card(a.game,token))<0?a.detail_cost_override<0:a.detail_cost_override==0)&&a.detail_instance==-1);
+            a.cursor=int(i);a.input(Key::Detail);CHECK((cost(choice_card(a.game,token))<0?a.detail_cost_override<0:a.detail_cost_override==0)&&a.detail_instance==-1);
             CHECK(card_from_token(a.detail_card).kind==choice_card(a.game,token).kind);modal_only();a.input(Key::Back);unchanged(before);
         }
-        a.input(Key::Save);CHECK(stored.size);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
+        a.input(Key::Save);CHECK(stored.size);a.advance(250);a.advance(101);a.render();tap(HitKind::CombatChoice,a.game.expansion.choices.ids[2]);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
         CHECK(cost(a.game,a.game.hand.ids[0])==(cost(a.game.cards[a.game.hand.ids[0]])<0?-1:0)&&!a.game.expansion.potion_active);CHECK(validate(a.game));
         a.input(Key::Load);CHECK(a.game.phase==Phase::ExtendedChoice&&a.choice_selected_count==0);unchanged(before);
         auto h=hit(HitKind::CombatChoice,a.game.expansion.choices.ids[0]);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);
         a.input(Key::Collection);a.pointer_button(false);CHECK(a.compendium_open&&!a.library&&a.choice_selected_count==0);unchanged(before);a.input(Key::Back);
-        a.cursor=1;a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
+        a.advance(250);a.advance(101);a.cursor=1;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
     }
     setup();open_model(Discovery);fixture_card();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.playing>=0);
-    auto before=snapshot();tap(HitKind::CombatChoice,a.game.expansion.choices.ids[2]);unchanged(before);action(UiAction::ConfirmChoice);
+    auto before=snapshot();a.render();a.toggle_choice(a.game.expansion.choices.ids[2]);unchanged(before);a.advance(250);a.advance(101);tap(HitKind::CombatChoice,a.game.expansion.choices.ids[2]);
     CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&a.game.expansion.cards_finished==1);CHECK(validate(a.game));
 }
 static void free_x_costs(){
@@ -220,14 +220,14 @@ static void free_x_costs(){
         setup();acquire_potion(kind==Volley?Potion::ColorlessPotion:Potion::AttackPotion);drink();
         CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Offer);
         a.game.expansion.offers[0]={(CardKind)kind,0};auto before=snapshot();
-        tap(HitKind::CombatChoice,MaxCards);if(kind==Volley)capture("x-cost-offer");
+        a.cursor=0;if(kind==Volley)capture("x-cost-offer");
         a.input(Key::Detail);CHECK(card_from_token(a.detail_card).kind==kind&&a.detail_cost_override<0);
-        a.input(Key::Back);unchanged(before);action(UiAction::ConfirmChoice);
+        a.input(Key::Back);unchanged(before);a.render();a.advance(250);a.advance(101);tap(HitKind::CombatChoice,MaxCards);
         CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&cost(a.game,a.game.hand.ids[0])==-1);
-        setup();int id=append({(CardKind)kind,0},Zone::Discard);
-        acquire_potion(Potion::LiquidMemories);drink();before=snapshot();tap(HitKind::CombatChoice,id);
+        setup();int id=append({(CardKind)kind,0},Zone::Discard);append({Defend,0},Zone::Discard);
+        acquire_potion(Potion::LiquidMemories);drink();before=snapshot();for(unsigned i=0;i<choice_pile(a.game).count;++i)if(choice_pile(a.game).ids[i]==id)a.cursor=int(i);
         a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override<0);
-        a.input(Key::Back);unchanged(before);action(UiAction::ConfirmChoice);
+        a.input(Key::Back);unchanged(before);tap(HitKind::CombatChoice,id);
         CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==-1);CHECK(validate(a.game));
     }
 }
@@ -236,9 +236,9 @@ static void pile_choices_and_instances(){
     acquire_potion(Potion::LiquidMemories);drink();CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Discard);
     int id=a.game.expansion.choices.ids[22];auto before=snapshot();modal_only();
     for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));
-    tap(HitKind::CombatChoice,id);a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override==0);
-    a.input(Key::Back);unchanged(before);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected_count==1&&a.choice_selected[0]==id);unchanged(before);
-    action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==0);CHECK(validate(a.game));
+    a.cursor=22;a.input(Key::Detail);CHECK(a.detail_instance==id&&a.detail_cost_override==0);
+    a.input(Key::Back);unchanged(before);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected_count==0);unchanged(before);
+    a.cursor=22;CHECK(spire_test::focus_card_grid(a));tap(HitKind::CombatChoice,id);CHECK(a.game.phase==Phase::Combat&&a.game.hand.ids[0]==id&&cost(a.game,id)==0);CHECK(validate(a.game));
     setup();int left=append({SovereignBlade,0},Zone::Hand),right=append({SovereignBlade,0},Zone::Hand);
     a.game.expansion.blade_damage[left]=25;a.game.expansion.blade_damage[right]=47;a.game.expansion.turn_cost[left]=1;
     before=snapshot();a.cursor=0;a.input(Key::Detail);CHECK(a.detail_instance==left&&a.detail_cost_override==0);

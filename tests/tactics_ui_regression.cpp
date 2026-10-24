@@ -25,14 +25,15 @@ static void return_choice(){
  setup();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
  for(int row=0;row<5;++row)a.input(Key::Down);CHECK(a.cursor==20);CHECK(spire_test::settle_card_grid(a));unchanged(before);
- CHECK(click(HitKind::CombatChoice,22));CHECK(a.choice_selected_count==1&&a.choice_selected[0]==22);unchanged(before);
- a.input(Key::Detail);CHECK(a.detail_card==Defend);a.input(Key::Back);CHECK(a.choice_selected_count==1&&a.game.phase==Phase::ReturnChoice);unchanged(before);
- a.input(Key::Save);CHECK(stored.size);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected[0]==22);unchanged(before);
- action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==22);
+ a.cursor=21;a.input(Key::Detail);CHECK(a.detail_card==Defend);a.input(Key::Back);CHECK(a.choice_selected_count==0&&a.game.phase==Phase::ReturnChoice);unchanged(before);
+ a.input(Key::Save);CHECK(stored.size);a.pointer_scroll(-9);CHECK(spire_test::settle_card_grid(a));CHECK(a.choice_selected_count==0);unchanged(before);
+ a.cursor=21;CHECK(spire_test::focus_card_grid(a));static State expected;CHECK(load(expected,before.bytes,before.size));CHECK(choose_return_to_draw(expected,22));
+ CHECK(click(HitKind::CombatChoice,22));CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==22);
+ SaveData direct{};CHECK(save(expected,direct));unchanged(direct);
  a.input(Key::Load);CHECK(a.game.phase==Phase::ReturnChoice&&a.choice_selected_count==0);unchanged(before);
  // Capturing a card, then scrolling, must never select the replacement region.
  a.render();a.pointer_move(35,70);a.pointer_button(true);a.pointer_scroll(1);a.pointer_button(false);CHECK(a.choice_selected_count==0);unchanged(before);
- a.cursor=25;a.input(Key::Confirm);CHECK(a.choice_selected_count==1&&a.choice_selected[0]==26);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==26);
+ a.cursor=25;a.input(Key::Confirm);CHECK(a.game.phase==Phase::Combat&&a.game.draw.ids[a.game.draw.count-1]==26);
 }
 static void statuses(){
  setup();auto&s=a.game;s.strength=2;s.dexterity=3;s.vigor=8;s.thorns=3;s.pain=3;s.embrace=1;s.power_order[0]=0;s.power_order[1]=1;s.power_count=2;

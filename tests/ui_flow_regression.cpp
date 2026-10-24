@@ -26,7 +26,7 @@ int main(){
         }else{
             a.prepare_collection();CHECK(a.collection.count>=(tab==1?RelicKinds:PotionKinds));
             for(unsigned index=0;index<a.collection.count;++index){a.library_selected=int(index);CHECK(spire_test::focus_card_grid(a));CHECK(findclick(HitKind::LibraryItem,int(index)));
-                CHECK(a.library_selected==int(index)&&a.detail_item<0);unchanged();}
+                CHECK(a.library_selected==int(index));if(tab==1){CHECK(a.detail_item==a.collection.ids[index]);a.input(Key::Back);CHECK(a.detail_item<0&&a.library);}else CHECK(a.detail_item<0);unchanged();}
         }
         a.input(Key::Back);CHECK(!a.library&&a.compendium_open);unchanged();
     }
@@ -39,7 +39,7 @@ int main(){
     action(UiAction::LeaveRewards);CHECK(a.game.phase==Phase::Complete);
     init();a.game.practice=0;a.game.current_node=1;a.game.next_row=1;a.game.phase=Phase::Map;a.game.gold=9999;CHECK(choose_node(a.game,1));a.ui_action(UiAction::OpenShop);for(unsigned i=0;i<7;++i)a.advance(100);a.render();
     for(int i=0;i<ShopRemove;i++){
-        a.cursor=i;a.input(Key::Detail);CHECK(i<7?a.detail_card>=0:a.detail_item>=0);a.input(Key::Back);CHECK(a.game.phase==Phase::Shop);
+        a.cursor=i;a.input(Key::Detail);CHECK(i<7?a.detail_card>=0:i<ShopPotionStart?a.detail_item>=0:a.detail_item<0&&a.detail_card<0);if(i<ShopPotionStart)a.input(Key::Back);CHECK(a.game.phase==Phase::Shop&&a.shop_open);
         if(i>=ShopPotionStart){discard_potion(a.game,0);discard_potion(a.game,1);}CHECK(findclick(HitKind::Choice,i));CHECK(a.game.shop_sold&(1u<<i));
     }
     CHECK(findclick(HitKind::Choice,ShopRemove));CHECK(a.game.phase==Phase::Remove);a.input(Key::Back);CHECK(a.cursor==ShopRemove&&a.game.phase==Phase::Shop);

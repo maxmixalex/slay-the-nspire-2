@@ -36,7 +36,11 @@ static void capture(const char*name){
 static void modal_hits(){CHECK(a.ftue.active());CHECK(a.hit_count);for(unsigned i=0;i<a.hit_count;++i)CHECK(a.hits[i].kind==HitKind::FtueControl);}
 static HitRegion button(int value){for(unsigned i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::FtueControl&&a.hits[i].value==value)return a.hits[i];CHECK(false);return {};}
 static void click(int value){a.render();const auto h=button(value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);CHECK(a.ftue.active());a.pointer_button(false);}
-static void practice(Character character=Character::Ironclad){new_run(a.game,0x718541,true,character);prepare();}
+static void practice(Character character=Character::Ironclad){
+ new_run(a.game,0x718541,true,character);prepare();snapshot();const unsigned before=a.animation;a.render();
+ for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}
+ CHECK(!a.combat_preparation.active&&a.content.healthy());CHECK(a.animation==before);unchanged();
+}
 static void embark(){
  scenario="fresh Embark asks before seed or State changes";practice();only(FtueId::AcceptTutorials);a.title=a.character_select=true;
  const unsigned serial=a.run_number;snapshot();CHECK(!a.start_selected_run({}));unchanged();CHECK(a.run_number==serial);a.render();modal_hits();
@@ -101,7 +105,7 @@ static void rooms(){
  scenario="terminal reward skip hint does not discard loot";begin_world();a.game.phase=Phase::Reward;a.game.world.room_type=unsigned(WorldRoom::Monster);a.game.last_gold=18;a.game.reward_claimed=0;a.game.world.reward_count=3;only(FtueId::CombatReward);
  advance(600);snapshot();a.ui_action(UiAction::LeaveRewards);CHECK(a.ftue.id==FtueId::CombatReward);advance(330);capture("ftue-rewards");click(1);unchanged();
  scenario="visible relic reward and actual power card use separate source highlights";only(FtueId::RelicReward);a.game.world.reward_relic=WorldRelicAnchor;advance(100);CHECK(a.ftue.id==FtueId::RelicReward);advance(330);capture("ftue-relic");click(1);
- a.game.world.reward_cards[0]={Inflame,0};a.game.world.reward_cards[1]={Strike,0};a.game.world.reward_cards[2]={Defend,0};a.reward_cards=true;only(FtueId::PowerCard);advance(400);CHECK(a.ftue.id==FtueId::PowerCard&&a.ftue.target==0);advance(330);capture("ftue-power");snapshot();click(1);unchanged();
+ a.game.world.reward_cards[0]={Inflame,0};a.game.world.reward_cards[1]={Strike,0};a.game.world.reward_cards[2]={Defend,0};only(FtueId::PowerCard);a.ui_action(UiAction::RewardCards);CHECK(a.reward_cards);advance(400);CHECK(a.ftue.id==FtueId::PowerCard&&a.ftue.target==0);advance(330);capture("ftue-power");snapshot();click(1);unchanged();
  scenario="Ascension uses SeenPopup after tutorials declined, exact entry delay";practice();a.title=a.character_select=true;a.progress.characters[0].highest_ascension=1;a.progress.tutorial_flags=FtueInitialized|ftue_bit(FtueId::AcceptTutorials);a.render();CHECK(a.ftue.id==FtueId::AscensionSingleplayer);
  snapshot();advance(999);CHECK(!a.hit_count);a.input(Key::Confirm);CHECK(a.ftue.active());advance(401);capture("ftue-ascension");click(1);unchanged();CHECK(a.seen_popup(FtueId::AscensionSingleplayer));
  a.progress.characters[0].highest_ascension=0;
@@ -129,6 +133,23 @@ static void real_shuffle(){
  click(1);advance(1000);CHECK(a.animation>stopped);CHECK(CombatHand::same(a.combat_hand(),CombatHand::capture(a.game.hand)));
  const auto after=a.combat_pile_counts();CHECK(after.draw==a.game.draw.count&&after.discard==a.game.discard.count&&after.exhaust==a.game.exhaust.count);unchanged();
 }
+static void relic_arrow_pixels(){
+ if(!actual)return;
+ // obtain_relic_ftue.tscn authors flip_v=true. The treasure holder's
+ // bottom-center anchors the original47x39 arrow; opaque source pixels
+ // therefore appear in reversed row order at (161,125). Check the final
+ // framebuffer, excluding only the popup which is drawn above its right.
+ const auto p=a.content.image(a.content.ui_image(I9_FtueArrow));CHECK(p.pixels&&p.alpha&&p.w==47&&p.h==39&&p.format<=3);
+ unsigned opaque=0,distinguishing=0;
+ for(unsigned sy=0;sy<p.h;++sy)for(unsigned sx=0;sx<p.w;++sx){
+  const unsigned at=sy*p.w+sx;if(p.alpha[at]!=255)continue;
+  const unsigned x=161+sx,y=125+p.h-1-sy;if(x>=198&&y>=145)continue;
+  const auto*pixel=p.palette?p.palette+2*p.pixels[at]:p.pixels+2*at;
+  CHECK(a.pixels[y*320+x]==uint16_t(pixel[0]|unsigned(pixel[1])<<8));++opaque;
+  if(!p.alpha[(p.h-1-sy)*p.w+sx])++distinguishing;
+ }
+ CHECK(opaque>20&&distinguishing>5);
+}
 static void treasure_wait(){
  scenario="real TreasureOpen blocks both Take paths until its real1000ms relic lesson";begin_world();only(FtueId::RelicReward);a.fast_mode=true;
  a.game.original_events=OriginalEventState{};a.game.phase=Phase::Treasure;a.game.world.room_type=unsigned(WorldRoom::Treasure);a.game.world.room_open=1;a.game.treasure_state=0;a.game.world.treasure_relic=WorldRelicAnchor;a.render();
@@ -136,7 +157,7 @@ static void treasure_wait(){
  a.input(Key::Confirm);a.treasure_action(UiAction::TreasureTake);CHECK(!a.treasure_pointer_can_take());unchanged();
  advance(999);CHECK(!a.ftue.active()&&!a.seen_ftue(FtueId::RelicReward));a.input(Key::Confirm);CHECK(!a.treasure_pointer_can_take());unchanged();
  advance(1);CHECK(a.ftue.id==FtueId::RelicReward&&a.ftue.target==-2);CHECK(!a.treasure_pointer_can_take());a.treasure_action(UiAction::TreasureTake);unchanged();
- advance(330);capture("ftue-treasure");click(1);unchanged();CHECK(a.treasure_pointer_can_take());
+ advance(330);capture("ftue-treasure");relic_arrow_pixels();click(1);unchanged();CHECK(a.treasure_pointer_can_take());
  std::memcpy(&oracle_state,&a.game,sizeof(State));CHECK(take_treasure(oracle_state));a.input(Key::Confirm);CHECK(a.game.treasure_state==2&&has_world_relic(a.game,WorldRelicAnchor));CHECK(!std::memcmp(&oracle_state,&a.game,sizeof(State)));
  scenario="legacy treasure keyboard Take retains its existing immediate behavior";begin_world();a.progress.tutorial_flags=0;
  a.game.original_events=OriginalEventState{};a.game.phase=Phase::Treasure;a.game.world.room_type=unsigned(WorldRoom::Treasure);a.game.world.room_open=1;a.game.treasure_state=0;a.game.world.treasure_relic=WorldRelicAnchor;

@@ -18,7 +18,7 @@ struct CardGridScroll {
     int16_t count=0,top=0,bottom=0,origin=0,focused_index=-1,left=Left,custom_height=-1,bar_inset=25;
     uint8_t columns=Columns;bool center_short=true;
     bool bound=false,dragging=false,thumb_drag=false,thumb_hover=false;
-    struct FaceMotion {uint32_t start=0;int16_t index=-1;bool focused=false;};
+    struct FaceMotion {uint32_t start=0,selection_start=0;int16_t index=-1;uint16_t selection_from=0;bool focused=false,chosen=false;};
     FaceMotion faces[16]{};
 
     static int clamp(int value,int low,int high){return value<low?low:value>high?high:value;}
@@ -69,6 +69,20 @@ struct CardGridScroll {
         if(face.index!=index){if(!focused)return 800;face={};face.index=int16_t(index);face.start=now-500;}
         if(face.focused!=focused){face.focused=focused;face.start=now;}
         return face_scale(index,now);
+    }
+    unsigned selection_width(const FaceMotion&face,uint32_t now)const{
+        const unsigned age=now-face.selection_start;
+        if(age>=500)return face.chosen?4915u:0u;
+        const unsigned q=age*4096/500,v=4096-q;
+        const unsigned ease=face.chosen?4096-unsigned(uint64_t(v)*v*v/16777216):q;
+        const int target=face.chosen?4915:0;
+        return unsigned(int(face.selection_from)+(target-int(face.selection_from))*int(ease)/4096);
+    }
+    unsigned observe_selection(int index,bool chosen,uint32_t now){
+        auto&face=faces[unsigned(index)%16];
+        if(face.index!=index){face={};face.index=int16_t(index);face.start=now-500;}
+        if(face.chosen!=chosen){face.selection_from=uint16_t(selection_width(face,now));face.selection_start=now;face.chosen=chosen;}
+        return selection_width(face,now);
     }
     void wheel(int rows){
         // ScrollHelper uses 40 source pixels per notch: 160/21 display pixels.

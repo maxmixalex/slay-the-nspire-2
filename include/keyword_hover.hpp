@@ -48,6 +48,9 @@ struct CardHoverTarget {
     Card card{};
     int instance=-1,deck=-1;
     const EventCardFacts* facts=nullptr;
+    EventCardFacts preview_facts{};
+    bool has_preview_facts=false;
+    const EventCardFacts* card_facts()const{return has_preview_facts?&preview_facts:facts;}
     HoverRect owner{};
     uint32_t identity=0;
     bool detail=false;
@@ -58,6 +61,7 @@ struct CardHoverTarget {
     bool power_left=false;
     // History stores relic IDs, not their acquisition-time mutable models.
     bool historical=false;
+    bool inspect_relic=false,canonical_relic=false;
 };
 struct HoverPiece {unsigned tip=0;int skip=0,lines=0;HoverRect box{};};
 struct HoverPage {HoverPiece pieces[MaxCardHoverTips]{};unsigned count=0;int pages=1;};

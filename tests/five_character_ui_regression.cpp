@@ -43,7 +43,10 @@ static HitRegion hit(HitKind kind,int value){
     a.render();for(int i=a.hit_count-1;i>=0;i--)if(a.hits[i].kind==kind&&a.hits[i].value==value)return a.hits[i];
     std::fprintf(stderr,"missing hit %d/%d phase=%d detail=%d\n",(int)kind,value,(int)a.game.phase,a.detail_card);CHECK(false);return {};
 }
-static void tap(HitKind kind,int value){auto h=hit(kind,value);CHECK(h.enabled);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);}
+static void tap(HitKind kind,int value){auto h=hit(kind,value);CHECK(h.enabled);int x=h.x+h.w/2,y=h.y+h.h/2;
+    if(kind==HitKind::CombatChoice&&combat_selection_hand(a.combat_selection_kind())){bool found=false;
+        for(int py=h.y+h.h-1;py>=h.y&&!found;--py)for(int px=h.x;px<h.x+h.w;++px){const auto*actual=a.hit_at(px,py);if(actual&&actual->kind==kind&&actual->value==value){x=px;y=py;found=true;break;}}CHECK(found);}
+    a.pointer_move(x,y);a.pointer_button(true);a.pointer_button(false);}
 // Advance the same clock and render synchronization used by the player.
 // In particular, clearing busy cannot end a queued combat presentation tail.
 static void wait_action_ready(){
@@ -129,20 +132,20 @@ static void stars_and_upgraded_transform(){
     a.game.energy=10;int form=add({RegentVoidForm,1});play_ui(form);CHECK(a.game.phase==Phase::Combat&&a.game.turn==2);
     pulse=add({RegentAstralPulse,0});a.open_choice_detail(pulse);CHECK(a.detail_energy()==0&&a.detail_stars()==0);a.input(Key::Back);
     dust=add({RegentStardust,0});a.open_choice_detail(dust);CHECK(a.detail_stars()==-1);a.input(Key::Back);capture("regent-void-form");
-    start(Character::Regent);clear_hand();a.game.energy=10;int target=add({RegentKinglyKick,0}),begone=add({RegentBegone,1});play_ui(begone);
+    start(Character::Regent);clear_hand();a.game.energy=10;int target=add({RegentKinglyKick,0});add({RegentDefend,0});int begone=add({RegentBegone,1});play_ui(begone);
     CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::RTransformHand&&a.game.expansion.choice_free==1);
     a.open_choice_detail(target);CHECK(a.detail_energy()==cost(a.game,target)&&a.detail_energy()>0);a.input(Key::Back);
-    wait_choice_ready();tap(HitKind::CombatChoice,target);capture("regent-minion-choice");action(UiAction::ConfirmChoice);
+    wait_choice_ready();tap(HitKind::CombatChoice,target);a.render();a.advance(250);a.advance(100);capture("regent-minion-choice");action(UiAction::ConfirmChoice);
     CHECK(a.game.cards[target].kind==MinionStrike&&a.game.cards[target].upgraded);CHECK(validate(a.game));
     // A local zero Set still passes through BorrowedTime. Full-resource free
     // selections must preview the resulting energy and the independent stars.
-    start(Character::Regent);clear_hand();a.game.energy=10;target=add({RegentReflect,0});
+    start(Character::Regent);clear_hand();a.game.energy=10;target=add({RegentReflect,0});add({RegentDefend,0});
     play_ui(add({NecroBorrowedTime,0}));a.game.potions[0]=Potion::TouchOfInsanity;
     wait_action_ready();a.input(Key::Potions);CHECK(a.hud_focus==2&&!a.panel);a.input(Key::Confirm);CHECK(a.panel==4);a.input(Key::Confirm);
     CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::Free);
     a.open_choice_detail(target);CHECK(a.detail_energy()==1&&a.detail_stars()==0);
     before=snapshot();capture("regent-free-resource-choice");unchanged(before);a.input(Key::Back);
-    wait_choice_ready();tap(HitKind::CombatChoice,target);action(UiAction::ConfirmChoice);
+    wait_choice_ready();tap(HitKind::CombatChoice,target);a.render();a.advance(250);a.advance(100);action(UiAction::ConfirmChoice);
     CHECK(cost(a.game,target)==1&&card_star_cost(a.game,a.game.cards[target],target)==0);
     CHECK(a.game.expansion.star_combat_free[target]&&validate(a.game));
 }

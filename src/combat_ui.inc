@@ -310,7 +310,12 @@ static void combat_screen(Canvas&c){
     if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites)
         if(v.mode==CombatCardMotion::Preview&&v.id<s.card_count)
             draw_hand_tile(c,hand_tile(c,v.id,&v),CombatCardMotion::pose(v),false,a.combat_cards.brightness(v));
-    const auto hand=a.combat_hand();
+    const bool choosing_hand=combat_selection_hand(a.combat_selection_kind())&&a.combat_choice_ready();
+    if(!choosing_hand||a.choice_peeking||a.panel){
+    auto hand=a.combat_hand();
+    if(choosing_hand){unsigned remaining=0;
+        for(unsigned i=0;i<hand.count;++i){bool selected=false;for(unsigned j=0;j<a.choice_selected_count;++j)if(a.choice_selected[j]==hand.ids[i])selected=true;
+            if(!selected)hand.ids[remaining++]=hand.ids[i];}hand.count=uint16_t(remaining);}
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
     const int held_card=a.selected_hand_card();
@@ -320,25 +325,27 @@ static void combat_screen(Canvas&c){
     // Original holders ignore the mouse while a dragged card owns input.
     const bool dragging=a.pointer.held&&a.pointer.dragging&&held_card>=0;
     const auto hand_hit=[&](HandPose pose,int id,bool enabled){if(dragging)return;
-        const auto r=hand_bounds(pose);c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,id,enabled);};
+        const auto r=hand_bounds(pose);c.hit(r.x,r.y,r.w,r.h,choosing_hand?HitKind::InstanceCard:HitKind::Hand,id,enabled);};
+    const auto visible_hand_pose=[&](unsigned i,bool focus){return choosing_hand?hand_pose(int(hand.count),int(i),false):a.combat_hand_pose(i,focus);};
     for(int i=0;i<hand.count;i++){
         if((focused&&i==selected)||hand.ids[i]==held_card)continue;
-        const auto pose=a.combat_hand_pose(unsigned(i),false);
+        const auto pose=visible_hand_pose(unsigned(i),false);
         draw_hand_tile(c,hand_tile(c,hand.ids[i]),pose,false);
         combat_hand_index(c,unsigned(i),pose);
         hand_hit(pose,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
     }
     if(hand.count){
         if(focused&&hand.ids[selected]!=held_card){
-            const auto pose=a.combat_hand_pose(unsigned(selected),true);
+            const auto pose=visible_hand_pose(unsigned(selected),true);
             draw_hand_tile(c,hand_tile(c,hand.ids[selected]),pose,true);
             combat_hand_index(c,unsigned(selected),pose);
             hand_hit(pose,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
     if(held_card>=0)for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==held_card){
-        const auto pose=a.combat_hand_pose(i,false);draw_hand_tile(c,hand_tile(c,held_card),pose,false);
+        const auto pose=visible_hand_pose(i,false);draw_hand_tile(c,hand_tile(c,held_card),pose,false);
         hand_hit(pose,held_card,!a.combat_actions_locked());break;
+    }
     }
     if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites){
         if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.mode==CombatCardMotion::Preview||v.id>=s.card_count)continue;

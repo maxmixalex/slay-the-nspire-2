@@ -15,6 +15,84 @@ Long commands ran from pushed, immutable source snapshots with
 start/end times, return code and output hash. Names below identify those
 receipts without publishing original-derived packs or captures.
 
+## Stage 8e map sampling, final resources and ARM budget
+
+The rotated map-icon inverse is affine along each scanline. It now prepares
+the exact integer quotient and a nonnegative remainder, then advances both
+with addition and a carry. Off-image negative coordinates use floor correction;
+the original bounds check, pixel-center convention, palette, alpha, shading
+and viewport clipping remain unchanged. This removes the two software divisions
+from each covered rotated pixel without adding a framebuffer or resident pool.
+The unrotated paper already had a separate axis table and is unchanged.
+
+The old direct inverse remains an independent pixel oracle. The expanded
+renderer regression covers negative coordinates, positive/negative rotations,
+odd dimensions, opacity, palettes, coverage and clipping. Formal stage-8e
+native rendering also compares the old stage-8c2 binary with the new binary on
+the **same** NSP2/33 resources: **3,246 frame hashes and 24 complete PPMs per
+language match exactly** across all six scenes, and canonical State bytes do
+not change. All third 180-frame windows have zero reads and zero requested
+bytes. The quiet native map pair is 1.783 to 1.832 ms in English and 1.781 to
+1.735 ms in Chinese; that small mixed variation is not claimed as a host CPU
+speedup. Receipt: `map-rotation-whole-frame-comparison.json`.
+
+Actual ARM `-O2` disassembly confirms two step divisions per picture and two
+coordinate divisions per row, with none in the rotated pixel loop. The function
+grows from 2,044 to 2,400 bytes; stack use increases only 768 to 784 bytes.
+An additional short linked check verifies 9,110 signed 32-bit quotient/remainder
+and AAPCS vectors, including negative map starts. All existing 12,880 64-bit
+division, 42 LZMA2 and 14 tile-filter linked vectors also pass.
+
+The ordinary Firebird comparison uses the same actual English save, OS boot,
+Ndless installer, Continue, map-open delay and 20-second idle window:
+
+| SP804 map measurement | Stage 8d | Stage 8e |
+| --- | ---: | ---: |
+| Rendered map frames | 250 | 343 |
+| Mean render time | 89.892 ms | 65.256 ms |
+| Minimum render time | 78.979 ms | 54.382 ms |
+| Resource reads / requested bytes | 24 / 137,854 | 25 / 141,950 |
+| Resource failures | 0 | 0 |
+
+Mean rendering falls **27.41%**, and the minimum falls **31.14%**. The actual
+7,456-byte NSZ1 save is byte-identical after both runs. These are Firebird ARM
+SP804 measurements, not physical-calculator FPS. The scene aggregates include
+cold opening and fades; the final resource set appends tutorial assets, and
+the extra read is not attributed to an unrecorded offset. Every measured map
+frame still exceeds 50 ms, so further map optimization remains warranted.
+Receipt: `map-comparison-receipt.json`, ordinary gate
+`ui9-firebird-stage8e-map-94534a265b38.json`.
+
+The final tutorial append retains all prior payloads and produces 2,058
+auxiliaries, 3,189 English glyphs and 31,689 Chinese glyphs, below the 32,768
+directory limit. Both reconstructed full packs match the split files exactly:
+
+| Final resource part | Bytes |
+| --- | ---: |
+| Shared data | 84,772,852 |
+| English sidecar | 2,160,488 |
+| Chinese sidecar | 5,184,978 |
+| All three resource files | **92,118,318** |
+| Stage-8e launcher | 1,370,912 |
+| Installed bilingual program and resources | **93,489,230** |
+
+Stage 8e (`492915341106b129f730e46ed84d152637a24b7d`) allocates
+**16,672,244 bytes**, leaving **104,972 bytes** below the unchanged 16 MiB
+limit. Ordinary USB transfer installed these exact file lengths and downloaded
+the launcher back with the build SHA-256. Replacing the old Chinese sidecar
+in place first failed with USB status -255; deleting only that obsolete resource
+and transferring again succeeded. The failed journal is preserved. Upgrades
+should remove obsolete resource files before copying the new sidecars, while
+preserving profile/save files. Fresh ordinary startup and the map gate then
+passed independently.
+
+The full NSH8 history fixture is 295,349 bytes. With the valid dense NSZ1 run,
+the three-profile history-update peak is 1,910,754 bytes, or 2,305,029 bytes
+when reserving the conservative raw-backup migration bound. Those are file-byte
+budgets; ordinary filesystem peak installation and restoration remain to be
+checked with the final launcher, and the dense compressed fixture is not a universal upper bound
+on every possible valid compressed run.
+
 ## Stage 8c/8d actual resources and installation
 
 The completed pre-FTUE NSP2/33 set reconstructs byte-for-byte from its split
@@ -133,8 +211,9 @@ frames average 16.107 ms of rendering; 729 room frames average 24.710 ms;
 79 map frames average 79.467 ms; and 238 title frames average 36.836 ms.
 These are emulator measurements, not physical-calculator FPS. The map's
 minimum recorded render is about 56.85 ms, so its cost cannot be explained
-solely by one cold frame. A separate map sampling optimization is being
-verified against the unchanged direct inverse-transform oracle.
+solely by one cold frame. A separate map sampling optimization is recorded
+in the later stage-8e section above, with its direct inverse-transform
+oracle and ordinary ARM comparison preserved.
 
 The canonical run remains NSV1 save version 17. Stage 8d adds a lossless NSZ1
 file envelope only in calculator file I/O, retaining raw input support and

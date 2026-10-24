@@ -26,7 +26,8 @@ static bool card_face_is_hand(const App&a,Card card,int instance){
 }
 static uint8_t card_face_resource_styles(const App&a,Card card,int energy,int stars,int instance,const EventCardFacts*facts,bool upgrade_preview=false){
     const auto style=[](int value,int base,int available){return uint8_t(value<0?ResourceNormal:value>available?ResourceInsufficient:base>=0&&value>base?ResourceIncreased:base>=0&&value<base?ResourceDecreased:ResourceNormal);};
-    uint8_t result=card_face_is_hand(a,card,instance)?uint8_t(style(energy,a.card_offer_cost(card,facts),a.game.energy)|(style(stars,card_star_cost(a.game,card),a.game.expansion.stars)<<2)):0;
+    const bool pretend=a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::RDecisions&&!a.choice_peeking;
+    uint8_t result=card_face_is_hand(a,card,instance)?uint8_t(style(energy,a.card_offer_cost(card,facts),pretend?9999:a.game.energy)|(style(stars,card_star_cost(a.game,card),pretend?9999:a.game.expansion.stars)<<2)):0;
     // NCard checks WasJustUpgraded before hand affordability. That flag is
     // cleared when an actual upgrade is finalized: only a preview copy whose
     // own cost changed receives the green value and matching green outline.
@@ -41,6 +42,7 @@ static uint8_t card_face_resource_styles(const App&a,Card card,int energy,int st
 static bool card_face_resource_cross(const App&a,Card card,int energy,int stars,int instance){
     // Source HasResourceCostReason is energy OR stars: either shortage
     // suppresses both crosses even when another card rule also blocks play.
+    if(a.game.phase==Phase::ExtendedChoice&&a.game.expansion.choice==XChoice::RDecisions&&!a.choice_peeking)return false;
     return card_face_is_hand(a,card,instance)&&energy<=a.game.energy&&stars<=a.game.expansion.stars&&
         card_has_nonresource_play_block(a.game,instance);
 }

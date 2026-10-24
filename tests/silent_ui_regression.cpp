@@ -12,7 +12,9 @@ static unsigned checks=0;static App a;static SaveData stored{};
 #define CHECK(x) do{++checks;if(!(x)){fprintf(stderr,"FAIL %s:%d %s\n",__FILE__,__LINE__,#x);exit(1);}}while(0)
 static bool save_cb(const State&s){return save(s,stored);}
 static bool load_cb(State&s){return load(s,stored.bytes,stored.size);}
-static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value){a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
+static bool click(HitKind kind,int value){a.render();for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==kind&&h.value==value){int x=h.x+h.w/2,y=h.y+h.h/2;
+ if(kind==HitKind::CombatChoice&&combat_selection_hand(a.combat_selection_kind())){bool found=false;for(int py=h.y+h.h-1;py>=h.y&&!found;--py)for(int px=h.x;px<h.x+h.w;++px){const auto*actual=a.hit_at(px,py);if(actual&&actual->kind==kind&&actual->value==value){x=px;y=py;found=true;break;}}if(!found)return false;}
+ a.pointer_move(x,y);a.pointer_button(true);a.pointer_button(false);return true;}}return false;}
 static void action(UiAction x){CHECK(click(HitKind::UiAction,(int)x));}
 static void same(const SaveData&b){SaveData now{};CHECK(save(a.game,now));CHECK(now.size==b.size&&!memcmp(now.bytes,b.bytes,b.size));}
 int main(int argc,char**argv){
@@ -46,7 +48,7 @@ int main(int argc,char**argv){
   for(unsigned i=1;i<counts[filter];i++)CHECK(definitions[ids[i-1]].type<=definitions[ids[i]].type);
   CHECK(click(HitKind::LibraryControl,LibrarySortType));same(prior);
  }
- a.input(Key::Back);CHECK(a.compendium_open);action(UiAction::LibraryRelics);a.library_selected=16;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,16));CHECK(a.library_selected==16&&a.detail_item<0);
+ a.input(Key::Back);CHECK(a.compendium_open);action(UiAction::LibraryRelics);a.library_selected=16;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,16));CHECK(a.library_selected==16&&a.detail_item==a.collection.ids[16]);a.input(Key::Back);CHECK(a.detail_item<0&&a.library);
  a.input(Key::Back);CHECK(a.compendium_open&&!a.library);a.input(Key::Back);CHECK(!a.compendium_open);
  // Construct a choice using real instance IDs; production UI must stay modal.
  new_run(a.game,7,true,Character::Silent);a.reset_presentation();a.title=false;
@@ -56,15 +58,15 @@ int main(int argc,char**argv){
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Hand);
  int first=a.game.hand.ids[0],second=a.game.hand.ids[1];
  CHECK(click(HitKind::CombatChoice,first));CHECK(a.choice_selected_count==1);same(prior);
- action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::DiscardChoice);same(prior);
+ CHECK(!click(HitKind::UiAction,int(UiAction::ConfirmChoice)));a.ui_action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::DiscardChoice);same(prior);
  CHECK(click(HitKind::CombatChoice,second));CHECK(a.choice_selected_count==2);same(prior);
  a.input(Key::Detail);CHECK(a.detail_card>=0);a.input(Key::Back);CHECK(a.game.phase==Phase::DiscardChoice&&a.choice_selected_count==2);
  // Save preserves the mandatory game choice, not a partially selected UI gesture.
- a.input(Key::Save);CHECK(stored.size>0);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat);
+ a.input(Key::Save);CHECK(stored.size>0);a.render();a.advance(250);a.advance(100);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat);
  CHECK(a.game.zones[first]==Zone::Discard&&a.game.zones[second]==Zone::Discard);a.input(Key::Load);a.render();
  CHECK(a.game.phase==Phase::DiscardChoice&&a.choice_selected_count==0&&a.game.discard_required==2);same(prior);
  a.cursor=0;a.input(Key::Confirm);a.input(Key::Right);a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat);
- // Exhaust uses the same separate grid and confirmation; it never ends the turn.
+ // Exhaust retains the source hand and independent confirmation; it never ends the turn.
  new_run(a.game,7,true,Character::Ironclad);a.reset_presentation();a.game.energy=9;
  a.cursor=2;a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.busy=0;int turn=a.game.turn;
  a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.turn==turn);

@@ -45,14 +45,15 @@ static Bytes fixture(){
     for(unsigned i=0;i<8;++i){for(unsigned j=0;j<3;++j)put(b,ui_at+(U_CardBorderCommonAttack+i*5+j)*4,10);put(b,ui_at+(U_CardBorderCommonAttack+i*5+3)*4,11);put(b,ui_at+(U_CardBorderCommonAttack+i*5+4)*4,3);}
     for(unsigned i=0;i<5;++i)put(b,ui_at+(U_TopBarIronclad+i)*4,6);
     for(int image:{U_CharPortrait,U_SilentPortrait,U_DefectPortrait,U_RegentPortrait,U_NecrobinderPortrait})put(b,ui_at+image*4,12);
-    const unsigned fields[]={0x314c4954,1,16,14,1,1,1,1,base+80,base+64,770,85,524288,ResourceTransferCapacity,base+96,images};
+    const unsigned frame=base+80+images;
+    const unsigned fields[]={0x314c4954,1,16,14,1,1,1,1,frame,base+64,770,85,524288,ResourceTransferCapacity,base+80,images};
     for(unsigned i=0;i<16;++i)put(b,base+i*4,fields[i]);
-    for(unsigned i=0;i<images;++i)b[base+96+i]=1;
+    for(unsigned i=0;i<images;++i)b[base+80+i]=1;
     for(unsigned i=FtueTextFirst;i<FtueTextFirst+FtueTextCount;++i)text(i,"SYNTHETIC TUTORIAL BODY");
     for(unsigned i=I9_FtuePopup;i<FtueAuxiliaryCount;++i)put(b,ui_at+i*4,3);
     Bytes tile(770);tile[0]=tile[1]=1;Bytes record(18);put(record,0,2);put(record,4,4);put(record,8,2);
     unsigned tiles=group(b,tile,1,0),indexes=group(b,record,2,1);put(b,base+64,tiles);put(b,base+68,32+unsigned(tile.size())+4);
-    put(b,base+72,indexes);put(b,base+76,32+unsigned(record.size())+4);put(b,base+80,base);put(b,base+92,unsigned(record.size()));
-    put(b,40+199*16,base+80);put(b,44+199*16,1,2);put(b,46+199*16,1,2);put(b,48+199*16,6);put(b,52+199*16,16);
+    put(b,base+72,indexes);put(b,base+76,32+unsigned(record.size())+4);put(b,frame,base);put(b,frame+12,unsigned(record.size()));
+    put(b,40+199*16,frame);put(b,44+199*16,1,2);put(b,46+199*16,1,2);put(b,48+199*16,6);put(b,52+199*16,16);
     put(b,12,unsigned(b.size()));uint32_t hash=2166136261u;for(unsigned i=40;i<b.size();++i)hash=(hash^b[i])*16777619u;put(b,36,hash);return b;
 }

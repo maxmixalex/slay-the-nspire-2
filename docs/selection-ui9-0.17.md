@@ -23,9 +23,10 @@ prompts use verified empty slots 8378–8399 and 8689–8698. Both original loca
 are read from the user's private PCK, never embedded in public source.
 `src/selection_text_index.inc` contains only source keys and indices.
 
-Two appended image references form the optional v33/2060 catalog. Slot2058
-is the source upgrade-preview arrow, projected to13×12 and shared by the
-three source arrow nodes. Slot2059 stores a shader-input image, not a visible
+Three appended image references form the optional v33/2061 catalog. Slot2058
+is the source upgrade-preview arrow, projected to12×12 and shared by the
+three source arrow nodes. The source HBox children do not expand into its
+eight trailing spare pixels. Slot2059 stores a shader-input image, not a visible
 replacement sprite. The pinned512×512 RGBAH card-frame SDF is bilinearly
 sampled at the145×181 projected texel centers with edge clamp. Each texel is
 stored as two little-endian words: alpha UNORM16, then RGB565. The directory
@@ -33,14 +34,23 @@ therefore reports290×181, format0 after optional lossless LZ4 decoding.
 The complete104980-byte decoded input uses the existing image cache; it adds
 no resident pixel pool. RGB is retained because the original shader uses
 both RGB and alpha. This projected fixed-point shader does not claim to be
-bit-identical to Godot's GPU implementation.
+bit-identical to Godot's GPU implementation. Slot2060 is the original
+304×304 relic inspection frame, projected to58×58 without replacing the
+existing reward-panel background or settings arrows.
 
 Only the missing original glyphs at the actual scene sizes are appended.
-The pre-conversion directory check requires10 additional English keys and53
-Chinese keys for the currently specified combat/world selection, pause and potion text,
-leaving both below the existing32768-entry limit. Conversion readback must
+The requested sizes include the selector prompts, all retained enchantment
+titles/descriptions, pause and potion text, original relic inspection titles
+at7px, descriptions at5px, and flavor at4px in their original italic face.
+Both directories must stay below the existing32768-entry limit. Conversion readback must
 verify every required glyph and byte preservation before accepting output.
-These counts are planning checks, not yet a production-conversion receipt.
+The earlier v33/2060 production receipt belongs to its intermediate source
+checkpoint; it does not validate this expanded catalog.
+The sparse7px title alphabet requires an explicit opt-in on its own label,
+so computed card sizes and automatic fitting for unrelated text retain their
+complete existing6/8px glyphs and metrics. Two existing GameOver
+requests now name their already-rendered6px band explicitly, preserving their
+old result instead of accidentally selecting incomplete7px title glyphs.
 
 ## Overlay layout corrections in progress
 
@@ -56,9 +66,18 @@ turn in YIQ chroma, with a separately authored label outline.
 The potion popup's259×239 source rectangle projects to49×46. Use/Discard
 controls project to45×16, and the32px labels to6px. The popup is centered
 under the actual holder and retains its100ms opacity and150ms position
-entrance. Disabled state darkens the source background rather than changing
+entrance and100ms opacity/200ms position exit. Switching holders or entering
+throw targeting immediately removes old hit regions while the old popup fades.
+Disabled state darkens the source background rather than changing
 the authored label colors. Existing throw targeting and automatic placement
 in the first available belt slot are retained.
+
+The legacy generic item panel is being replaced by the original relic
+inspection screen, including its frame, rarity, description, flavor, and
+previous/next controls. The original potion collection has no equivalent
+inspection scene; its normal hover/focus information remains the interaction.
+Owned relic inspection is reached through the actual top-bar relics rather
+than a second invented inventory grid.
 
 The deck, combat and world-choice screens, actual-resource interaction tests,
 ordinary ARM/WASM builds, browser flows and calculator execution must all be

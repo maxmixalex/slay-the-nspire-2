@@ -199,3 +199,109 @@ and event keyword modifications. Combine absence of that bit with the actual
 also apply unrelated current-play restrictions; using either would exclude
 cards that the original selector deliberately accepts. Testing a negative
 energy cost would also confuse the independent X-cost and keyword concepts.
+
+## Selection implementation in the pending UI checkpoint
+
+The UI routes now follow the table above. `combat_selection_kind()` keeps
+retained-hand selection, hand upgrade previews, generated offers, combat pile
+selection and the Choices Paradox simple grid distinct. Hefty Tablet and Lead
+Paperweight also use their original optional choose-a-card screen; ordinary
+card rewards remain under the separate reward controller.
+
+Generated offers use the original 0.8 card scale, 340-source-pixel spacing,
+common banner, optional Skip and strictly greater than 350 ms click gate.
+Inspecting or peeking does not accept an offer. A click commits through the
+existing canonical selector; there is no extra generic confirmation page.
+The source offer callers allow Skip, while Toolbox and Knowledge Demon do
+not. Number shortcuts belong to `NPlayerHand.ActiveHolders` and no longer
+select through an offer or pile overlay.
+
+Hand selections retain the existing fan, hide filtered-out cards, and move
+selected cards into the original central container. The container uses the
+source three size bands, 500 ms sine movement and the selected holder's
+150 ms cubic movement. A full selection replaces its last selected card.
+Peek exposes the remaining hand, including previously filtered cards, while
+keeping the selected container hidden. Hand upgrade previews use the scene's
+0.9 scale and 50-source-pixel vertical offset: only the before card returns
+to the hand; only the after card supplies hover tips. Hover enlarges the
+before preview by 1.1 and releases it with the source 500 ms exponential
+curve. Confirmation is independently enabled at a valid count and uses the
+native right-side control's 350 ms entrance/exit.
+
+Pile and simple-grid selectors use the source 80-pixel top inset, bottom
+selection prompt, ordinary card grid and a single native Confirm when the
+original preferences require it. Fixed-count pile choices commit when the
+required eligible count is selected. The core's automatic all-eligible
+shortcut is implemented at the command boundary, not in rendering. The
+original prompt receives requested minimum/maximum values before filtering;
+manual ranges such as Purity and Neow's Fury are not rewritten to the
+remaining eligible count.
+
+The original `run.tscn` shared overlay backstop is black at 0.85 opacity,
+with a 500 ms cubic entrance. The retained-hand backstop is its separate
+0.75-opacity, 200 ms linear control. The 0.752941 color in the selection
+screen scenes belongs to the small bottom prompt, not the whole screen.
+
+Grid selection replaces the previous green border/checkmark with the
+original card ripple texture and equation. The private converter samples the
+original half-float SDF alpha and color at the projected texture centers;
+the existing image cache holds the interleaved scalar/color words. Rendering
+uses bounded fixed-point evaluation and additive color. The projection and
+RGB565 quantization are explicit adaptations; this does not claim identical
+Godot rasterization or reproduce unrelated GPU effects.
+
+### Verification boundary
+
+The added `combat_selection_ui9_regression` invokes real card, potion and
+relic commands for Discovery, Abundance, Purity, Prepared, Armaments,
+Headbutt, Neow's Fury, Liquid Memories, Hefty Tablet and Lead Paperweight.
+It checks strict opening gates, native hit regions, hand replacement and
+Peek behavior, independent confirmation, original preview ownership,
+scrolling, optional Skip, and byte-identical canonical results against the
+same core commands without UI observation. The shader check uses an
+independent floating-point transcription of the original equation.
+Existing tactics, expansion, world-combat, Silent and five-character UI
+fixtures are being adapted to these source-specific click/confirm rules,
+while retaining their save/load, immutable-inspection and continuation
+assertions. Source syntax checks have passed. Formal frozen-source native
+execution and the new English/Chinese production-asset screenshots remain
+pending at this checkpoint; this section does not convert source coverage
+or test counts into a percentage of original-game fidelity.
+
+## Fixed world-deck command companion
+
+The same source shortcut applies to `CardSelectCmd.FromDeckForUpgrade`
+(3441–3455), `FromDeckForTransformation` (3485–3499), and `FromDeckGeneric`
+(3614–3637): a nonmanual request returns all eligible cards when their count
+does not exceed the requested minimum. `FromDeckForRemoval` (3607–3610)
+delegates to Generic with a stable Curse-first ordering. Enchantment's
+overload (3550–3572) returns its supplied list when its count is at or below
+the minimum, before the normal sorted screen path.
+
+`world_relics.cpp` now applies this after a complete acquisition step, using
+the existing low-level selection continuation. It does not call the public
+selection entry recursively, and it does not resolve a pending selection on
+load. Royal Stamp completes its shuffled offer list before this boundary.
+The whitelist is explicit:
+
+| Source command | Relic acquisition callers |
+| --- | --- |
+| Transform | Astrolabe, New Leaf |
+| Remove | Biiig Hug, Empty Cage, Pael's Tooth, Precarious Shears, Precise Scissors, Preserved Fog |
+| Duplicate through Generic | Dolly's Mirror |
+| Enchant | Electric Shrymp, Pael's Growth, Punch Dagger, Royal Stamp, Tri-Boomerang |
+| Upgrade | Pomander, Yummy Cookie |
+
+Claws, Gnarled Hammer and Kifuda retain their optional manual selection.
+Rest-site Smith/Cook and reward-list removal do not enter this acquisition
+whitelist. The helper needs at most five local card indices and adds no
+serialized field or persistent storage.
+
+`world_selection_shortcut_regression` exercises all sixteen callers through
+real relic acquisition, including Curse-first removal notices, permanent
+Genetic Algorithm metadata through Dolly/Bing Bong, Royal Stamp's filtered
+index, fewer-than-requested multi-card sets, optional zero selection, and
+byte-exact old suspended saves. Its short matched-core diagnostic passed
+326 checks; the existing world-relic suite passed 2,016 with the same new
+translation unit. Formal execution is required again from the combined
+final source checkpoint.

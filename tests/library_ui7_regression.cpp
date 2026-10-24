@@ -72,7 +72,7 @@ static void collections(){
         for(unsigned i=0;i<v.count;++i){CHECK(v.ids[i]<(tab==1?WorldRelicKinds:PotionKinds));CHECK(!seen[v.ids[i]]);seen[v.ids[i]]=true;}
         if(tab==2){CHECK(v.count==PotionKinds&&v.category_count==4);for(unsigned i=0;i<PotionKinds;++i)CHECK(seen[i]);}
         else{CHECK(v.category_count==15&&seen[WorldRelicBurningBlood]&&seen[WorldRelicDivineRight]);CHECK(v.rows[0].count==5&&v.rows[1].count==5);}
-        a.library_selected=0;CHECK(spire_test::focus_card_grid(a));click(HitKind::LibraryItem,0);CHECK(a.detail_item<0&&a.library_selected==0);
+        a.library_selected=0;CHECK(spire_test::focus_card_grid(a));click(HitKind::LibraryItem,0);CHECK(a.library_selected==0);if(tab==1){CHECK(a.detail_item==v.ids[0]&&a.relic_inspect.source==RelicInspectSource::Collection);a.input(Key::Back);a.advance(250);}else CHECK(a.detail_item<0);
         a.pointer.visible=false;a.input(Key::Left);CHECK(a.library_selected==v.rows[0].count-1);a.input(Key::Right);CHECK(a.library_selected==0);
         capture(tab==1?"relic-collection-top":"potion-lab-top");CHECK(spire_test::drag_grid_thumb(a,true));capture(tab==1?"relic-collection-bottom":"potion-lab-bottom");CHECK(spire_test::drag_grid_thumb(a,false));
     }
@@ -97,7 +97,7 @@ static void collection_associated_models(){
         capture(tab==1?"relic-collection-associated-forge":"potion-lab-associated-shiv");
         a.render();CHECK(grid.position==position&&a.collection.generation==generation);
         a.pointer_button(true);CHECK(a.pointer.held&&a.pointer.captured.kind==HitKind::LibraryItem&&a.pointer.captured.value==selected);
-        a.render();CHECK(!a.keyword_hover.owner);a.pointer_button(false);a.render();CHECK(a.detail_item<0&&grid.position==position);
+        a.render();CHECK(!a.keyword_hover.owner);a.pointer_button(false);a.render();CHECK(grid.position==position);if(tab==1){CHECK(a.detail_item==id&&a.relic_inspect.source==RelicInspectSource::Collection);a.input(Key::Back);a.advance(250);}else CHECK(a.detail_item<0);
     }
 }
 static void host_input(){

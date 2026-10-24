@@ -390,7 +390,7 @@ static void samples(){
     clear();c.rect(0,0,320,240,Panel);hud(c);
     large_card(c,{Strike,0},21,47,false);large_card(c,{RegentComet,0},121,47,false);large_card(c,{RegentDyingStar,1},221,47,false);
     c.text_fitted("Card frame / star cost / overflow",8,209,304,12,White);capture("cards-and-hud");
-    clear();c.rect(0,0,320,240,Panel);comparison_card(c,{RegentDyingStar,0},18,32);comparison_card(c,{RegentDyingStar,1},184,32);capture("card-upgrade-comparison");
+    clear();c.rect(0,0,320,240,Panel);card_selection_upgrade_preview(c,{RegentDyingStar,0});capture("card-upgrade-comparison");
     app.detail_card=card_token({RegentDyingStar,0});app.detail_instance=app.detail_deck_index=-1;clear();detail_screen(c);capture("card-detail");
     app.detail_card=-1;app.open_library(0);
     clear();library_screen(c);capture("card-library");

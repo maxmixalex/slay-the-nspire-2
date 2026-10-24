@@ -69,7 +69,7 @@ static void card_contract(unsigned kind,unsigned up){
  case Anger:act(s,kind);CHECK(s.enemies[0].hp==46-6-2*u&&s.card_count==2&&s.discard.count==2&&s.cards[1].upgraded==up);break;
  case PommelStrike:supply(s,4);act(s,kind);CHECK(s.enemies[0].hp==46-9-u&&s.hand.count==1+up);break;
  case ShrugItOff:supply(s,3);act(s,kind);CHECK(s.block==8+3*u&&s.hand.count==1);break;
- case BurningPact:{int id=add(s,Defend);supply(s,6);act(s,kind);CHECK(s.phase==Phase::ExhaustChoice);CHECK(choose_exhaust(s,0));CHECK(s.zones[id]==Zone::Exhaust&&s.hand.count==2+up);break;}
+ case BurningPact:{int id=add(s,Defend);supply(s,6);act(s,kind);CHECK(s.phase==Phase::Combat&&s.zones[id]==Zone::Exhaust&&s.hand.count==2+up);break;}
  case TrueGrit:{int id=add(s,Defend);act(s,kind);drain_choices(s);CHECK(s.zones[id]==Zone::Exhaust&&s.block==7+2*u);break;}
  case TwinStrike:act(s,kind);CHECK(s.enemies[0].hp==46-2*(5+2*u));break;
  case Inflame:act(s,kind);CHECK(s.strength==2+u&&s.zones[0]==Zone::Power);break;
@@ -87,7 +87,7 @@ static void card_contract(unsigned kind,unsigned up){
  case BodySlam:s.block=9;act(s,kind);CHECK(s.enemies[0].hp==37&&s.block==9&&s.energy==99+u);break;
  case BattleTrance:supply(s,8);act(s,kind);CHECK(s.hand.count==3+up&&s.no_draw==1);draw_cards(s,1);CHECK(s.hand.count==3+up);break;
  case FiendFire:supply(s,2,Defend,Zone::Hand);act(s,kind);CHECK(s.exhaust.count==3&&!s.hand.count&&s.enemies[0].hp==46-2*(7+3*u));break;
- case Headbutt:{int id=add(s,Anger,0,Zone::Discard);act(s,kind);CHECK(s.phase==Phase::ReturnChoice);roundtrip(s);CHECK(choose_return_to_draw(s,id));CHECK(s.enemies[0].hp==46-9-3*u&&s.draw.ids[s.draw.count-1]==id);break;}
+ case Headbutt:{int id=add(s,Anger,0,Zone::Discard);act(s,kind);CHECK(s.phase==Phase::Combat);roundtrip(s);CHECK(s.enemies[0].hp==46-9-3*u&&s.draw.ids[s.draw.count-1]==id);break;}
  case SwordBoomerang:act(s,kind);CHECK(total_hp(s)==92-3*(3+u));break;
  case PerfectedStrike:add(s,Strike);add(s,SetupStrike);add(s,AshenStrike);act(s,kind);CHECK(s.enemies[0].hp==46-6-4*(2+u));break;
  case FlameBarrier:act(s,kind);CHECK(s.block==12+4*u&&s.flame_barrier==4+2*u);s.enemies[0].move=0;s.enemies[1].move=2;CHECK(end_turn(s));CHECK(s.enemies[0].hp==46-4-2*u&&s.hp==80);break;
@@ -97,7 +97,7 @@ static void card_contract(unsigned kind,unsigned up){
  case AshenStrike:supply(s,2,Defend,Zone::Exhaust);act(s,kind);CHECK(s.enemies[0].hp==46-6-2*(3+u));break;
  case Barricade:s.block=13;act(s,kind);supply(s,8);next_turn(s);CHECK(s.block==13&&power(s,IPower::Barricade)==1);break;
  case BloodWall:act(s,kind);CHECK(s.hp==78&&s.block==16+4*u);break;
- case Brand:{int id=add(s,Strike);act(s,kind);CHECK(s.phase==Phase::ExhaustChoice&&s.hp==79);CHECK(choose_exhaust(s,0));CHECK(s.zones[id]==Zone::Exhaust&&s.strength==1+u);break;}
+ case Brand:{int id=add(s,Strike);act(s,kind);CHECK(s.phase==Phase::Combat&&s.hp==79&&s.zones[id]==Zone::Exhaust&&s.strength==1+u);break;}
  case Break:act(s,kind);CHECK(s.enemies[0].hp==46-20-10*u&&s.enemies[0].vulnerable==5+2*u);break;
  case Breakthrough:act(s,kind);CHECK(s.hp==79&&total_hp(s)==92-2*(9+4*u));break;
  case Bully:s.enemies[0].vulnerable=3;act(s,kind);CHECK(s.enemies[0].hp==46-(4+3*(2+u))*150/100);break;
@@ -170,7 +170,7 @@ static void grouped_power_events(){
  CHECK(exhausted.zones[first]==Zone::Exhaust&&exhausted.hand.count==1&&exhausted.exhaust.count==1&&exhausted.block==5);ready(exhausted);
 }
 static void unmovable_preview_during_choice(){
- active_kind=Unmovable;active_upgrade=0;auto s=fight(Unmovable);act(s,Unmovable);int arm=add(s,Armaments),wall=add(s,BloodWall);act_id(s,arm);
+ active_kind=Unmovable;active_upgrade=0;auto s=fight(Unmovable);act(s,Unmovable);int arm=add(s,Armaments),wall=add(s,BloodWall);add(s,Strike);act_id(s,arm);
  CHECK(s.phase==Phase::ExtendedChoice&&s.expansion.choice==XChoice::IUpgrade&&s.playing==arm&&s.block==10);
  CHECK(s.ironclad.block_events_turn==1&&s.ironclad.block_events_play[s.expansion.depth]==1);
  int value=-1;CHECK(character_description_value(s,s.cards[wall],-1,wall,"Block",value)&&value==16);
@@ -198,11 +198,11 @@ static void temporary_cost_order(){
  active_kind=Stomp;active_upgrade=0;auto s=fight(Stomp);add(s,Strike);act(s,Strike);CHECK(cost(s,0)==2);
  s.potions[0]=Potion::SneckoOil;CHECK(use_potion(s,0,0));int set=cost(s,0);CHECK(set>=0&&set<=3);CHECK(s.ironclad.stomp_discount[0]==1&&s.ironclad.stomp_turn_origin[0]==1);
  add(s,Strike);act(s,Strike);CHECK(cost(s,0)==(set?set-1:0));roundtrip(s);act_id(s,0);CHECK(!s.expansion.turn_cost[0]&&cost(s,0)==0);ready(s);
- auto free=fight(Stomp);add(free,Strike);act(free,Strike);free.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(free,0,0));CHECK(free.expansion.choice==XChoice::Free);pick(free,1);CHECK(cost(free,0)==0&&free.ironclad.stomp_combat_origin[0]==1);
+ auto free=fight(Stomp);add(free,Strike);act(free,Strike);free.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(free,0,0));CHECK(free.phase==Phase::Combat&&cost(free,0)==0&&free.ironclad.stomp_combat_origin[0]==1);
  supply(free,8);next_turn(free);CHECK(!free.ironclad.stomp_discount[0]&&cost(free,0)==0);ready(free);
 }
 static void autoplay_choices_and_pillage(){
- active_kind=Havoc;active_upgrade=0;auto s=fight(Havoc);int victim=add(s,Strike),arm=add(s,Armaments,0,Zone::Draw);act(s,Havoc);
+ active_kind=Havoc;active_upgrade=0;auto s=fight(Havoc);int victim=add(s,Strike),arm=add(s,Armaments,0,Zone::Draw);add(s,Defend);act(s,Havoc);
  // OnPlayWrapper captures the result before Armaments opens its choice.
  // GetResultLocationForCardPlay consumes ExhaustOnNextPlay at that boundary;
  // the saved physical-play result, rather than the flag, retains Exhaust.
@@ -226,7 +226,7 @@ static void clone_and_transform_cross_character(){
  auto up=fight(GiantRock,1);act(up,GiantRock);CHECK(up.enemies[0].hp==22);ready(up);
 }
 static void reject_module_corruption(){
- active_kind=Armaments;active_upgrade=0;auto s=fight(Armaments);add(s,Defend);act(s,Armaments);CHECK(s.expansion.choice==XChoice::IUpgrade);roundtrip(s);
+ active_kind=Armaments;active_upgrade=0;auto s=fight(Armaments);add(s,Defend);add(s,Strike);act(s,Armaments);CHECK(s.expansion.choice==XChoice::IUpgrade);roundtrip(s);
  State bad=s;bad.expansion.choice_min=0;CHECK(!validate(bad));bad=s;bad.cards[bad.expansion.choices.ids[0]].upgraded=1;CHECK(!validate(bad));
  bad=s;bad.ironclad.power_count=1;bad.ironclad.power_order[0]=(uint8_t)IPower::Rage;CHECK(!validate(bad));
  bad=s;bad.ironclad.stomp_discount[1]=1;CHECK(!validate(bad));

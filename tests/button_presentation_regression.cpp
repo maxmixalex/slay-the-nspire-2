@@ -26,6 +26,32 @@ int main(){
  auto replacement=m.observe(2,ButtonFamily::Pause,ButtonState::Rest,750);check(replacement.scale==3686&&replacement.shade==255);
  auto pause=m.observe(2,ButtonFamily::Pause,ButtonState::Focus,760);check(pause.hover==4096&&pause.scale==3686);
  check(m.sample(810).scale==3891);
+ // The actual pause scene has independent 50ms label and 500ms material
+ // tweens, and its 6px source press offset projects to 1.14 screen pixels.
+ ButtonMotion original_pause;original_pause.observe(21,ButtonFamily::OriginalPause,ButtonState::Rest,0);
+ auto original_focus=original_pause.observe(21,ButtonFamily::OriginalPause,ButtonState::Focus,100);
+ check(original_focus.scale==3686&&original_focus.hover==0&&original_focus.saturation==1100&&original_focus.value==1100);
+ check(original_pause.sample(125).hover==2048&&original_pause.sample(150).scale==3891);
+ original_pause.observe(21,ButtonFamily::OriginalPause,ButtonState::Press,150);
+ check(original_pause.sample(200).hover==4096&&original_pause.sample(200).saturation>800);
+ auto original_pressed=original_pause.sample(650);
+ check(original_pressed.scale==3482&&original_pressed.y==4681&&original_pressed.saturation==800&&original_pressed.value==900);
+ original_pause.observe(21,ButtonFamily::OriginalPause,ButtonState::Rest,650);check(original_pause.sample(1150).y==0);
+ ButtonMotion neutral;neutral.observe(23,ButtonFamily::OriginalPause,ButtonState::Rest,0,true);
+ check(neutral.sample(2000).saturation==1000&&neutral.sample(2000).value==1000);
+ neutral.observe(23,ButtonFamily::OriginalPause,ButtonState::Focus,2100,true);
+ neutral.observe(23,ButtonFamily::OriginalPause,ButtonState::Press,2125,true);check(neutral.sample(2625).hover==2048);
+ neutral.observe(23,ButtonFamily::OriginalPause,ButtonState::Focus,2625,true);check(neutral.state==ButtonState::Press&&neutral.sample(2700).hover==2048);
+ neutral.observe(23,ButtonFamily::OriginalPause,ButtonState::Rest,2700,true);const int interrupted_y=neutral.sample(2750).y;
+ neutral.observe(23,ButtonFamily::OriginalPause,ButtonState::Focus,2750,true);check(neutral.sample(2800).y==interrupted_y);
+ // Potion focus fades its source background to quarter opacity over150ms;
+ // pressing does not erase the focused highlight or move the control.
+ ButtonMotion potion;potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Rest,0);
+ potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Focus,100);
+ check(potion.sample(175).hover==2048&&potion.sample(250).hover==4096);
+ potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Press,250);check(potion.sample(400).hover==4096&&potion.sample(400).scale==4096);
+ potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Rest,400);check(potion.sample(475).hover==2048);
+ potion.observe(22,ButtonFamily::PotionPopup,ButtonState::Focus,475);check(potion.sample(550).hover==3072&&potion.sample(625).hover==4096);
  // Original navigation controls have their own focus/press curve rather
  // than the generic 0.95 action-button press. Compare interrupted samples.
  ButtonMotion back;check(back.observe(4,ButtonFamily::Back,ButtonState::Rest,0).scale==4096);

@@ -111,6 +111,20 @@ static void ancient_families(){
  CHECK(pixel(11,27)==ink&&pixel(12,27)==ink&&pixel(16,27)!=0);
  CHECK(pixel(10,27)==0&&pixel(13,27)==shadow&&pixel(17,27)==half_shadow&&app.content.healthy());
 }
+static void sparse_inspection_size(){
+ auto bytes=fixture(true,true,false,true);
+ // Only the relic-title alphabet has a7px source face. B is deliberately
+ // absent there, but has its complete existing regular6px representation.
+ put(bytes,40+A_Count*16+4*16+8,7|96,2);
+ CHECK(app.content.open(bytes.data(),bytes.size()));Canvas c{app};c.font_face=5;
+ CHECK(app.content.font_size(7,5,false,true)==7&&app.content.font_size(7,5)==6);
+ CHECK(app.content.font_size(7,5,true)==6&&app.content.font_size(8,5)==6);
+ clear();auto ordinary=c.fitted("AB",10,10,8,14,8,5,White,false,true);
+ CHECK(ordinary.size==6&&!ordinary.truncated&&pixel(10,10)!=0&&pixel(15,10)!=0);
+ clear();c.sparse_scene_sizes=true;auto inspection=c.fitted("A",10,10,20,14,7,5,White,false,true);
+ CHECK(inspection.size==7&&!inspection.truncated&&pixel(10,10)==White&&pixel(13,10)==White);
+ CHECK(app.content.healthy());
+}
 struct Provider {
  const Bytes*bytes;unsigned calls=0;
  static bool read(void*context,uint32_t off,void*out,uint32_t count){auto&p=*static_cast<Provider*>(context);++p.calls;
@@ -204,4 +218,4 @@ static void actual(const char*path,const char*capture){
  std::printf("actual %s font draw: %u cold provider calls; 64 warm frames add 0 calls\n",app.content.english()?"eng":"zhs",cold);
 }
 }
-int main(int argc,char**argv){direct();ancient_families();provider();if(argc>1)actual(argv[1],argc>2?argv[2]:nullptr);std::printf("font styles: %u checks\n",checks);return 0;}
+int main(int argc,char**argv){direct();ancient_families();sparse_inspection_size();provider();if(argc>1)actual(argv[1],argc>2?argv[2]:nullptr);std::printf("font styles: %u checks\n",checks);return 0;}

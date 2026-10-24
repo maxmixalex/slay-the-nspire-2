@@ -101,13 +101,31 @@ static void title_screen(Canvas&c){
     c.text("nSpire II 0.17",235,229,8,White,83);
 }
 static void native_pause_screen(Canvas&c){
- auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,185);
- c.centered(frontend_text(a,"gameplay_ui","PAUSE_MENU.PAUSED","暂停"),0,16,320,20,Gold);
+ using namespace pause_menu_layout;auto&a=c.a;a.hit_count=0;
+ if(!a.pause_visible){a.pause_visible=true;a.pause_opened=a.map_clock_ms;}
+ // run.tscn's shared OverlayBackstop is black at .85, independent of
+ // the unused blue Backstop child of pause_menu.tscn.
+ Canvas backstop=c;backstop.opacity=uint8_t(217*room_curve::cubic_out(a.map_clock_ms-a.pause_opened,500)/4096);backstop.rect(0,0,320,240,0);
+ Canvas title=c;title.font_face=4;
+ title.text_fitted(frontend_text(a,"gameplay_ui","PAUSE_MENU.PAUSED","暂停"),0,TitleY,320,TitleFont,rgb(239,200,81),TitleFont,true,true,0);
  const char*keys[]={"PAUSE_MENU.RESUME","PAUSE_MENU.SETTINGS","PAUSE_MENU.COMPENDIUM","PAUSE_MENU.GIVE_UP","PAUSE_MENU.SAVE_AND_QUIT"};
  const char*fallback[]={"继续游戏","设置","图鉴","放弃游戏","保存并返回主菜单"};
- for(int i=0;i<5;i++){const int y=54+i*32;const bool enabled=i!=3||resumable_run(a.game),selected=a.menu==i;
-  c.button(frontend_text(a,"gameplay_ui",keys[i],fallback[i]),61,y,198,selected,28,enabled);c.hit(58,y-1,204,31,HitKind::Menu,i,enabled);
+ for(int i=0;i<5;i++){const int y=row_y(unsigned(i));const bool enabled=i!=3||resumable_run(a.game),selected=a.menu==i;
+  const char*label=frontend_text(a,"gameplay_ui",keys[i],fallback[i]);
+  const auto visual=c.control_visual(label,X,y,W,H,ButtonFamily::OriginalPause,selected,enabled,0,i!=0);
+  const int w=mx(1,W*visual.scale/4096),h=mx(1,H*visual.scale/4096),left=X+(W-w)/2,top=y+(H-h)/2+(visual.y+2048)/4096;
+  // Reuse the original untinted reward plaque and its bounded cache. The
+  // Give Up material's h=.5 negates YIQ chroma, without a replacement skin.
+  uint16_t pixels[W*H];uint8_t alpha[W*H]{};Canvas tile{a,pixels,W,w,h,alpha};tile.ui(U_RewardButton,0,0,w,h);
+  for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx){const int at=yy*W+xx;if(alpha[at])c.paint((top+yy)*c.pitch+left+xx,presentation::yiq_material(pixels[at],i==3?-int(visual.saturation):int(visual.saturation),visual.value,visual.shade),alpha[at]);}
+  Canvas text=c;text.font_face=5;if(!enabled)text.brightness=128;
+  const int label_y=y+(H-Font)/2+(visual.y+2048)/4096;
+  const uint16_t ink=blend(rgb(255,246,226),rgb(239,200,81),unsigned(visual.hover)*255/4096);
+  Canvas shadow=text;shadow.opacity=uint8_t(div255(text.opacity*32));shadow.text_fitted(label,X+7,label_y+1,W-12,Font,0,5,true);
+  text.text_fitted(label,X+6,label_y,W-12,Font,ink,5,true,true,i==3?rgb(92,50,37):rgb(37,84,92));
+  c.hit(X,y,W,H,HitKind::Menu,i,enabled);
  }
+ native_original_back(c,a.pause_opened);
 }
 static void frontend_settings_screen(Canvas&c){
  auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,205);
@@ -265,36 +283,4 @@ static void frontend_confirm_screen(Canvas&c){
 #include "card_library_ui.inc"
 #include "collection_ui.inc"
 
-static void item_detail_screen(Canvas&c){
-    auto&a=c.a;a.hit_count=0;c.dim(0,0,320,240,190);c.ui(U_RewardPanel,43,26,234,206);
-    bool relic=a.detail_item<WorldRelicKinds;int index=relic?a.detail_item:a.detail_item-WorldRelicKinds;
-    if(index<0||index>=(relic?WorldRelicKinds:PotionKinds)){a.detail_item=-1;return;}
-    if(!a.library&&!a.history_open){if(relic)a.discover_relic(RelicId(index));else a.discover_potion(Potion(index+1));}
-    const char*name=relic?a.relic_title(RelicId(index),a.detail_owned):potion_name(index+1,&a.content);
-    char description[4096]{};if(relic)a.relic_description(RelicId(index),description,sizeof description,a.detail_owned);
-    if(!relic)ui_potion_description(a,index+1,description,sizeof description);
-    const char*desc=description;
-    int image=relic?a.relic_face_image(index):a.content.potion_image((Potion)(index+1));
-    c.picture(image,140,40,40,46);c.centered(name,58,91,204,16,Gold);
-    bool owned=relic&&a.detail_owned>=0&&a.detail_owned<int(ui_owned_relic_count(a.game))&&ui_owned_relic_id(a.game,a.detail_owned)==index;
-    char progress[128]{};if(owned)ui_relic_progress(a.game,a.detail_owned,progress,sizeof progress,&a.content);int top=*progress?136:119;
-    if(*progress)c.centered(progress,57,116,206,10,Green);
-    int visible=top==136?4:5;
-    int lines=c.paragraph(desc,67,top,188,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-visible));
-    c.paragraph(desc,67,top,188,visible,a.detail_scroll,12,White);
-    if(lines>visible){c.text("↑",260,top,10,Gold);c.hit(251,top-2,26,20,HitKind::Scroll,-1,a.detail_scroll>0);
-        c.text("↓",260,178,10,Gold);c.hit(251,175,26,21,HitKind::Scroll,1,a.detail_scroll+visible<lines);}
-#if SPIRE_DEBUG_COMMANDS
-    const bool lab=!relic&&a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
-#else
-    const bool lab=false;
-#endif
-    if(lab){
-        bool room=false;for(unsigned i=0;i<potion_slot_count(a.game);i++)room|=potion_at(a.game,i)==Potion::Empty;
-        c.button("返回",57,201,72,false,25);c.action(53,198,80,32,UiAction::Back);
-        c.button(room?"获得药水":"药水栏已满",139,201,127,room,25);
-        c.action(135,198,135,32,UiAction::LabPotion,room);
-    }else{
-        c.button("返回",112,201,96,true,25);c.action(107,198,106,32,UiAction::Back);
-    }
-}
+#include "item_inspect_ui.inc"

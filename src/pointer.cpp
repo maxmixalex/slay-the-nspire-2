@@ -20,6 +20,11 @@ const HitRegion* App::hit_at(int x,int y)const{
                 inside=hand_contains(combat_hand_pose(slot,hand_focus&&int(slot)==cursor),x,y);break;}
             if(!inside)continue;
         }
+        if((h.kind==HitKind::CombatChoice||h.kind==HitKind::WorldChoice)&&combat_selection_hand(combat_selection.kind)&&
+           !(combat_selection.kind==CombatSelectionKind::HandUpgrade&&choice_selected_count&&choice_selected[0]==h.value)){
+            bool inside=false;for(const auto&holder:combat_selection.holders)if(holder.id==h.value){inside=hand_contains(holder.current,x,y);break;}
+            if(!inside)continue;
+        }
         return &h;
     }
     return nullptr;
@@ -33,7 +38,7 @@ uint32_t App::input_context()const{
     if(run_mode.screen!=RunMenu::Closed)return 0x52554e00u|unsigned(run_mode.screen)|(uint32_t(map_preview.open)<<4)|(uint32_t(frontend_confirm!=0)<<5);
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
-        ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
+        ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0||(deck_selection.preview&&world_selection_kind()!=WorldSelectionKind::None))<<30)|((uint32_t)(status_actor>=0)<<31);
 }
 void App::pointer_cancel(bool keep_keyboard_card){reward_presentation.list_scroll.dragging=reward_presentation.list_scroll.thumb=false;map_drawing.cancel();auxiliary.scroll.dragging=auxiliary.scroll.thumb=false;progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
@@ -192,7 +197,7 @@ void App::pointer_scroll(int rows){
     }
     if(map_preview.open&&map_preview.editing)return;
     if(map_preview.open){map_preview.first_row=clamp(map_preview.first_row-rows,0,int(map_preview.map.config.rows)-3);return;}
-    if(detail_item>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
+    if(detail_item>=0)return; // Inspector prose is a fitted VBox, not a legacy scroll panel.
     if(detail_card>=0){detail_scroll=clamp(detail_scroll+rows,0,100);return;}
     const int grid=active_card_grid();
     if(grid>=0&&card_grids[grid].bound){card_grids[grid].wheel(rows);return;}
@@ -200,7 +205,7 @@ void App::pointer_scroll(int rows){
     if(title||paused||help||character_select||deck_candidate>=0)return;
     if(reward_list_interactive()){reward_presentation.scroll_list(rows);return;}
     if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map))){map_legend_item=uint8_t(clamp(int(map_legend_item)+rows,0,5));return;}
-    if(!panel&&choice_peeking)return;
+    if(!panel&&(choice_peeking||combat_selection_hand(combat_selection_kind())||combat_selection_kind()==CombatSelectionKind::Offer))return;
     if(!panel&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)){ui_action(rows>0?UiAction::NextWorldPage:UiAction::PreviousWorldPage);return;}
     if(!panel&&choice_phase(game.phase)){
         ui_action(rows>0?UiAction::NextChoicePage:UiAction::PreviousChoicePage);return;
@@ -213,7 +218,6 @@ void App::pointer_scroll(int rows){
     else if(panel==4){if(!potion_targeting)potion_input(rows>0?Key::Right:Key::Left);}
     else if(panel==2)scroll=clamp(scroll-rows,0,24);
     else if(panel==3||game.phase==Phase::Map)scroll_map(-rows);
-    else if(panel==5)scroll=clamp(scroll+rows,0,ui_owned_relic_count(game)?int(ui_owned_relic_count(game))-1:0);
     else if(game.phase==Phase::Event)scroll=clamp(scroll+rows,0,100);
     else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
@@ -398,6 +402,10 @@ void App::pointer_button(bool down){
     case HitKind::AncientDialogueNext:next_ancient_dialogue();break;
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
+    case HitKind::WorldPreviewCard:{WorldSelectionCard model{};if(world_selection_active()&&hit.value>=0&&world_selection_preview_card(unsigned(hit.value),model)&&model.hover){
+        if(model.deck>=0&&!model.upgraded&&model.facts.enchantment==game.event_cards.deck[model.deck].enchantment)open_card_detail(model.card,model.deck);
+        else open_card_offer(model.card,model.facts,model.deck>=0?game.defect.genetic_deck[model.deck]:0,model.deck>=0?game.necro.scythe_deck[model.deck]:0);
+    }break;}
     case HitKind::CrystalCell:
         if(game.phase==Phase::OriginalEventChoice&&hit.value>=0&&hit.value<CrystalCells){crystal_click(hit.value);}break;
     case HitKind::ReferenceAction:

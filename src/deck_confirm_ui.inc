@@ -1,29 +1,14 @@
-// A larger original-framed card keeps upgrade text inside the card itself.
-static void comparison_card(Canvas&c,Card card,int x,int y,int deck_index=-1,bool upgrade_preview=false){
-    draw_card_face(c,card,x,y,118,166,-2,-2,-1,deck_index,nullptr,nullptr,nullptr,true,upgrade_preview);
-}
-// Confirm irreversible deck operations with the captured revision still valid.
+// Native preview holders retain the source 300x422 card size and centered
+// positions; selection, cancellation and costs remain canonical commands.
 static void deck_confirm_screen(Canvas&c){
     auto&a=c.a;if(!a.deck_candidate_valid()){a.deck_candidate=-1;return;}
-    auto&s=a.game;Card before=s.deck[a.deck_candidate];a.hit_count=0;
-    c.dim(0,0,320,240,235);
-    const bool upgrade=s.phase==Phase::Upgrade,remove=s.phase==Phase::Remove||a.grimoire_select;
-    c.centered(upgrade?"确认升级":remove?"确认永久移除":"确认变化",0,5,320,20,Gold);
-    if(upgrade){
-        comparison_card(c,before,18,35,a.deck_candidate);Card after=before;after.upgraded=1;comparison_card(c,after,185,35,a.deck_candidate,!before.upgraded);
-        c.text("→",147,104,20,Gold);
-    }else{
-        large_card(c,before,120,49,true,-2,-2,-1,a.deck_candidate);
-        char text[128]={};TextBuffer b{text,sizeof text,0,&c.a.content};
-        if(remove){
-            if(a.grimoire_select)b.text("禁忌魔典 · 不消耗金币");
-            else if(s.event_deck_action==EventDeckAction::Remove)b.text("事件移除 · 不消耗金币");
-            else{b.text("永久移除 · 花费 ");b.number(remove_price(s));b.text(" 金币");}
-        }
-        else b.text("替换为本职业牌池中的另一张牌");
-        c.centered(text,4,176,312,10,White);
-    }
-    c.button("取消",13,207,121,false,28);c.action(8,202,130,38,UiAction::CancelDeckChoice);
-    c.button(upgrade?"确认升级":remove?"确认移除":"确认变化",180,207,127,true,28);
-    c.action(176,202,137,38,UiAction::ConfirmDeckChoice);
+    using namespace deck_selection_layout;
+    const Card before=a.game.deck[a.deck_candidate];a.hit_count=0;
+    Canvas backstop=c;backstop.opacity=uint8_t(div255(unsigned(backstop.opacity)*PreviewBackstop));backstop.rect(0,0,320,240,0);
+    if(a.game.phase==Phase::Upgrade){
+        card_selection_upgrade_preview(c,before,-1,a.deck_candidate);
+    }else draw_card_face(c,before,SingleX,PreviewY,PreviewW,PreviewH,-2,-2,-1,a.deck_candidate);
+    native_original_back(c,a.deck_selection.preview_opened);
+    native_original_confirm(c,UiAction::ConfirmDeckChoice,a.deck_selection.preview_opened);
+    deck_selection_prompt(c);deck_selection_upgrades(c);
 }

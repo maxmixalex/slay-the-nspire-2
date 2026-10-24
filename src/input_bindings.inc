@@ -29,8 +29,19 @@ bool App::physical_key(uint16_t code,bool pressed){
     code=normalize_input_key(code);if(!valid_input_key(code))return false;
     HeldInput*held=nullptr;for(auto&entry:held_inputs)if(entry.code==code){held=&entry;break;}
     if(!pressed){if(!held)return false;const unsigned released=held->key;const uint32_t context=held->context;*held={};
+        if(detail_item>=0){if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));return true;}
         if(ftue.active()&&released!=243){if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));return true;}
         if(released==243&&ftue.active()&&context==input_context())ftue_input(Key::Confirm);
+        else if((released==242||released==241)&&deck_selection_active()&&context==input_context()){
+            if(released==242&&deck_candidate_valid())confirm_deck_choice();
+            else if(released==241)cancel_deck_choice();
+        }
+        else if((released==240||released==239)&&combat_selection_interactive()){
+            sync_combat_selection();if(context==combat_selection.row.key){if(released==239)skip_combat_selection();else if(combat_selection_confirmable())confirm_choice();}
+        }
+        else if((released==238||released==237)&&world_selection_active()&&context==input_context()){
+            if(released==237)cancel_world_selection();else if(world_selection_confirmable())confirm_world_choice();
+        }
         else if(released<=unsigned(Key::Debug))map_drawing_key_release(Key(released));
         else if(released==254)toggle_combat_peek();
         else if(released==253&&run_mode.screen==RunMenu::Custom)ui_action(UiAction::RandomizeRun);
@@ -47,7 +58,7 @@ bool App::physical_key(uint16_t code,bool pressed){
         }
         return true;}
     if(held){
-        if(ftue.active())return true;
+        if(ftue.active()||detail_item>=0)return true;
         // OS repeat navigates lists, but a held selection key must never play
         // another card or accept a newly exposed modal.
         if(held->key<=unsigned(Key::Down))input(Key(held->key));return true;
@@ -63,6 +74,14 @@ bool App::physical_key(uint16_t code,bool pressed){
     for(unsigned i=0;i<InputCommandCount;++i)if(input_bindings.keys[bank][i]==code){command=i;break;}
     const auto dispatch=[&](Key key){held->key=uint8_t(key);input(key);return true;};
     sync_ftues();
+    if(detail_item>=0){
+        if(command==unsigned(InputCommand::Left))return dispatch(Key::Left);
+        if(command==unsigned(InputCommand::Right))return dispatch(Key::Right);
+        if(command==unsigned(InputCommand::Cancel))return dispatch(Key::Back);
+        if(command==unsigned(InputCommand::Up))return dispatch(Key::Up);
+        if(command==unsigned(InputCommand::Down))return dispatch(Key::Down);
+        return true; // NHotkeyManager's blocking inspector owns other inputs.
+    }
     if(ftue.active()){
         if(command==unsigned(InputCommand::Left)||command==unsigned(InputCommand::Right))ftue_input(command==unsigned(InputCommand::Left)?Key::Left:Key::Right);
         else if(command==unsigned(InputCommand::Select)||(code==13&&!keyboard_only)){
@@ -82,8 +101,13 @@ bool App::physical_key(uint16_t code,bool pressed){
             // The source cancels a previous card play and selects the newly
             // requested holder. The first press never spends energy.
             keyboard_card=-1;cursor=int(card);dispatch(Key::Confirm);
-        }else if(!title&&!paused&&!settings_open&&!frontend_confirm&&!panel&&!library&&choice_phase(game.phase)&&combat_choice_ready()){
-            const auto&pile=choice_pile(game);if(card<pile.count)toggle_choice(pile.ids[card]);
+        }else if(combat_selection_interactive()&&combat_selection_hand(combat_selection_kind())&&combat_choice_ready()){
+            // NPlayerHand numbers ActiveHolders: selected holders have left
+            // that container, and filtered-out holders have no shortcut.
+            uint16_t ids[MaxHand];const unsigned count=combat_selection_items(ids,MaxHand);unsigned active=0;
+            for(unsigned i=0;i<count&&i<MaxHand;++i){bool selected=false;
+                for(unsigned j=0;j<choice_selected_count;++j)if(choice_selected[j]==ids[i])selected=true;
+                if(!selected&&active++==card){toggle_choice(ids[i]);break;}}
         }
         return true;
     }
@@ -92,6 +116,9 @@ bool App::physical_key(uint16_t code,bool pressed){
         if(game_over_available()){if(game_over_button_ready()){held->key=244;held->context=input_context();}return true;}
         return dispatch(Key::Confirm);
     case InputCommand::Cancel:
+        if(combat_selection_interactive()&&combat_selection_kind()==CombatSelectionKind::Offer&&combat_selection_min()==0){sync_combat_selection();held->key=239;held->context=combat_selection.row.key;return true;}
+        if(deck_selection_active()){held->key=241;held->context=input_context();return true;}
+        if(world_selection_active()){held->key=237;held->context=input_context();return true;}
         if(card_reward_interactive()){sync_card_reward_presentation();held->key=249;held->context=reward_presentation.cards.key;return true;}
         return dispatch(Key::Back);
     case InputCommand::Map:return dispatch(Key::Map);
@@ -104,6 +131,12 @@ bool App::physical_key(uint16_t code,bool pressed){
         if(card_reward_interactive()){sync_card_reward_presentation();held->key=250;held->context=reward_presentation.cards.key;return true;}
         return dispatch(Key::ExhaustPile);
     case InputCommand::Confirm:
+        if(combat_selection_interactive()){
+            if(combat_selection_kind()==CombatSelectionKind::Offer)return dispatch(Key::Detail);
+            sync_combat_selection();if(combat_selection_confirmable()){held->key=240;held->context=combat_selection.row.key;}return true;
+        }
+        if(deck_selection_active()){if(deck_candidate_valid()){held->key=242;held->context=input_context();}return true;}
+        if(world_selection_active()){sync_world_selection();if(world_selection_confirmable()){held->key=238;held->context=input_context();}return true;}
         if(game_over_available()){if(game_over_ui::ViewRunEnabled&&game_over_summary&&game_over_button_ready()){held->key=245;held->context=input_context();}return true;}
         // NPatchNotesButton listens to MegaInput.confirm's release. Its
         // title shortcut stays distinct from Select and the Enter fallback.
@@ -117,7 +150,7 @@ bool App::physical_key(uint16_t code,bool pressed){
             if(bank&&game.phase==Phase::Combat&&hud_focus<0)return true;
         }
         return dispatch(Key::Confirm);
-    case InputCommand::EndTurn:return dispatch(Key::EndTurn);
+    case InputCommand::EndTurn:if(combat_selection_interactive()||world_selection_active())return true;return dispatch(Key::EndTurn);
     case InputCommand::Peek:
         if(auxiliary.screen!=AuxiliaryScreen::None)return true;
         held->key=run_mode.screen==RunMenu::Custom?253:254;

@@ -194,7 +194,7 @@ static void native_game_over_screen(Canvas&c){
  char banner_key[48]{};TextBuffer bk{banner_key,sizeof banner_key,0};
  if(s.phase==Phase::Complete)bk.text("BANNER.falseWin");else{bk.text("BANNER.lose");bk.number(unsigned(s.world.run_seed>>32)%8);}
  Canvas label=c;label.font_face=5;banner.font_face=5;
- banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+10,BannerWidth-22,15,10,7,Gold,true,true,true);
+ banner.fitted(game_over_text(a,banner_key,s.phase==Phase::Complete?"Victory?":"Defeat"),BannerX+11,banner_y+10,BannerWidth-22,15,10,6,Gold,true,true,true);
  char quote[2048]{};
  if(!a.game_over_summary){
   if(s.phase==Phase::Complete&&known){game_over_format(a,game_over_text(a,"VICTORY_DAMAGE_LOCAL"),quote,sizeof quote);
@@ -202,7 +202,7 @@ static void native_game_over_screen(Canvas&c){
    label.opacity=uint8_t(div255(label.opacity*255*room_curve::linear(elapsed,2000)/4096));
    RichReader reader(quote);RichChar ch{};unsigned count=0;while(reader.next(ch))++count;
    label.text_visible_characters=count*room_curve::sine_out(elapsed,2000)/4096;
-   label.paragraph_fitted(quote,42,106,236,72,7,White,5,true);
+   label.paragraph_fitted(quote,42,106,236,72,6,White,5,true);
   }else if(s.phase!=Phase::Complete){char key[24]{};TextBuffer b{key,sizeof key,0};b.text("QUOTES.");unsigned index=unsigned(s.world.run_seed)%17;if(index<10)b.ch('0');b.number(index);
    game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=6;italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
    italic.paragraph_fitted(quote,26,motion.quote_y(now),268,30,5,rgb(255,100,100),5,true);

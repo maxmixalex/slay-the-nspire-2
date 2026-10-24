@@ -94,14 +94,16 @@ static void close_window(){
     CHECK(!app.map_window.is_open&&app.map_window.visible&&!app.panel&&!app.paused);
     advance_ms(350);CHECK(!app.map_window.visible);
 }
-static void hud_window(bool fast){
-    begin_room(WorldRoom::Monster);app.fast_mode=fast;CHECK(!world_can_travel(app.game));
+static void prepare_combat(){
     snapshot();const unsigned animation=app.animation;app.render();unsigned preparation_steps=0;
     // Real compressed actors prepare before room input is enabled. Finish
     // only that explicit presentation phase; opening the map must not be
     // tested against the loading screen or advance the canonical battle.
     while(app.combat_preparation.active&&preparation_steps++<1024){app.advance(33);app.render();CHECK(app.animation==animation);}
     CHECK(!app.combat_preparation.active&&app.content.healthy());unchanged();
+}
+static void hud_window(bool fast){
+    begin_room(WorldRoom::Monster);app.fast_mode=fast;CHECK(!world_can_travel(app.game));prepare_combat();
     const std::vector<uint16_t> room(app.pixels,app.pixels+ScreenW*ScreenH);
     const auto phase=app.game.phase;const unsigned point=app.game.world.current_point;
     app.input(Key::Map);CHECK(app.panel==3&&app.map_window.is_open&&!app.map_routes_active());
@@ -232,10 +234,10 @@ static void nonempty_skip_gate(bool fast,uint32_t clock){
     CHECK(app.game.world_relics.count==relics);snapshot();app.input(Key::Back);app.ui_action(UiAction::TreasureTake);unchanged();
 }
 static void reset_and_wrap(){
-    begin_room(WorldRoom::Monster);app.map_clock_ms=0xffffff80u;snapshot();app.input(Key::Map);advance_ms(450);
+    begin_room(WorldRoom::Monster);prepare_combat();app.map_clock_ms=0xffffff80u;snapshot();app.input(Key::Map);advance_ms(450);
     CHECK(app.map_window.is_open&&app.map_window.sample(app.map_clock_ms).map.alpha==4096);close_window();unchanged();
     app.input(Key::Map);CHECK(app.map_window.is_open);new_run(app.game,17,true,Character::Silent);app.render();CHECK(!app.map_window.visible&&!app.panel);
-    begin_room(WorldRoom::Monster);app.input(Key::Map);app.return_to_title();CHECK(app.title&&!app.map_window.visible);
+    begin_room(WorldRoom::Monster);prepare_combat();app.input(Key::Map);CHECK(app.map_window.is_open);app.return_to_title();CHECK(app.title&&!app.map_window.visible);
 }
 int main(int argc,char**argv){
     actual_profile=argc>1;std::vector<uint8_t>bytes;

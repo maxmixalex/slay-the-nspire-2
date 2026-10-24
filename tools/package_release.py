@@ -52,9 +52,14 @@ gameplay-settings profiles. Language is shared. Slot 1 keeps older save filename
 更新前备份存档。新程序可读取旧存档；旧程序可能无法读取更新后写出的存档。
 Back up the save before upgrading. This launcher reads older saves; an older
 launcher may reject a save subsequently written by this version.
-如果系统替换大文件时提示空间不足，可先删除旧 common 资源文件，再传入新包。
-If TI OS needs extra space while replacing the common file, remove the old
-nSpire2.common.tns first, then transfer the new complete set. Keep your saves.
+计算器剩余空间较少时，USB 替换会临时占用新旧两份资源。升级前先删除旧的
+nSpire2.common.tns、nSpire2.eng.tns、nSpire2.zhs.tns，再传入配套的新资源与程序。
+只删除这三个资源文件；保留所有存档、备份、历史、设置和档位文件。
+With little free calculator space, USB replacement can require both copies of
+a resource temporarily. Before upgrading, remove the old nSpire2.common.tns,
+nSpire2.eng.tns and nSpire2.zhs.tns, then transfer the matching new set and launcher.
+Delete only those three resource files. Keep all run saves, backups, history,
+settings and profile selector files.
 旧版 nSpire2.nsp.tns 完整资源包无需与新的公共/语言包同时保留。
 The old complete nSpire2.nsp.tns pack is unnecessary alongside split resources.
 

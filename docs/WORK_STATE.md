@@ -25,7 +25,32 @@ The previous 300 KB chronological work log remains exactly available in Git:
 This shorter current record preserves active decisions and verified boundaries;
 it does not discard that history or replace module-specific evidence.
 
-## Current verified runtime and resources
+## Integration status before the complete selector/inspection checkpoint
+
+The latest complete runtime/resource build is stage8e, `492915341106b129f730e46ed84d152637a24b7d`.
+Its native/ARM/WASM and resource builds passed; the detailed acceptance below
+retains the initial FTUE and map-window fixture failures and subsequent short
+repairs. The earlier a0df measurements in this document are historical, not
+the current source. No final artifact from the new selector/inspection work
+has been delivered yet.
+
+The coherent core checkpoints `1606be12622f1bffe8b557ed6ee01b8781b32429`
+and `5afb7a9aa8b719b31dcd282c203f43b4341ce7c1` are preserved remotely with
+exact tree/ref receipts. The complete integration adds original combat,
+standard-deck and world selectors; automatic all-eligible source shortcuts;
+pause and potion entrance/exit behavior; original relic inspection; and the
+FTUE arrow orientation correction. Their independent short checks have
+passed, but require the next matched full source/resource/ordinary-host gate.
+
+The 5afb resource receipt is an intermediate v33/2060 result. The candidate
+v33/2061 converter uses12×12 upgrade arrows, the source card-frame shader
+input and58×58 relic frame,32 original prompts and append-only native glyphs.
+Its five public synthetic data/format checks passed. The selected-card shader
+optimization passed5,317,924 exact old/new scalar and coordinate comparisons;
+ordinary ARM timing and final linked-code review remain separate evidence.
+No renderer mutates canonical gameplay to satisfy these comparisons.
+
+## Historical verified runtime and resources before stage8e
 
 Runtime `a0df79d8347b76dc86804b0ab8d17f948c600204` passed **103/103 native**
 suites and **201/201 Python** tests. Matching ARM and WASM built. Its launcher

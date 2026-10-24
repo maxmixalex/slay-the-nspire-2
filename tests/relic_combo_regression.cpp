@@ -28,7 +28,8 @@ static void cards(){
  CHECK(end_turn(s));CHECK(!relic_counter(s,Kunai)&&!relic_counter(s,LetterOpener)&&relic_counter(s,Nunchaku)==2);
  enter_combat(s);CHECK(relic_counter(s,Nunchaku)==2&&!relic_counter(s,Kunai));rt(s);
  s=fight({{Strike,0}});own(s);s.energy=0;auto old=snapshot(s);CHECK(!play(s,0,0));same(s,old);
- s=fight({{Headbutt,0},{Defend,0}});own(s);add(s,Zone::Discard);s.relic_counters[25]=s.relic_counters[26]=s.relic_counters[27]=2;s.relic_counters[29]=9;
+ // Two eligible cards keep the original asynchronous selection boundary.
+ s=fight({{Headbutt,0},{Defend,0}});own(s);add(s,Zone::Discard);add(s,Zone::Discard,{Strike,0});s.relic_counters[25]=s.relic_counters[26]=s.relic_counters[27]=2;s.relic_counters[29]=9;
  CHECK(play(s,0,0));CHECK(s.phase==Phase::ReturnChoice&&s.strength==0&&s.dexterity==0&&s.block==0&&s.energy==8);
  CHECK(relic_counter(s,Nunchaku)==9&&relic_counter(s,Kunai)==2);old=snapshot(s);State restored{};CHECK(load(restored,old.bytes,old.size));
  int id=s.discard.ids[0];CHECK(choose_return_to_draw(s,id));CHECK(choose_return_to_draw(restored,id));same(restored,snapshot(s));

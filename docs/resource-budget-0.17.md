@@ -1,5 +1,12 @@
 # Resource storage and access budget — 2026-10-21
 
+This document preserves the historical source21/source22 and v15/v16 resource
+measurements below. It does not describe the current installation or startup
+path. For the later complete NSP2/33 resources, lossless compression, shared
+cache budgets, removed startup integrity scans, actual ARM measurements and
+ordinary installation evidence, see [UI8 performance and storage](performance-ui8-0.17.md).
+The original 30–40 MB installation goal remains unachieved.
+
 The complete tiled v15 baseline is **80,846,058 bytes = 80.85 MB = 77.100809 MiB**.
 The corrected source25 v16 file adds 13 native UI skins and ten missing orb
 strings, bringing the current complete file to **80,879,519 bytes**. All old

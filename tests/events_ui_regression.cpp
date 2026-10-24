@@ -66,7 +66,7 @@ static void shop(){
  // clock, rather than searching for offscreen slots during its first frame.
  a.advance(250);a.advance(250);a.advance(200);a.render();same(before);
  for(int item=0;item<ShopRemove;item++){
-  auto target=hit(HitKind::Choice,item);const auto*resolved=a.hit_at(target.x+target.w/2,target.y+target.h/2);CHECK(resolved&&resolved->kind==HitKind::Choice&&resolved->value==item);a.cursor=item;a.input(Key::Detail);CHECK(item<7?a.detail_card>=0:a.detail_item>=0);same(before);a.input(Key::Back);CHECK(a.shop_open);same(before);
+  auto target=hit(HitKind::Choice,item);const auto*resolved=a.hit_at(target.x+target.w/2,target.y+target.h/2);CHECK(resolved&&resolved->kind==HitKind::Choice&&resolved->value==item);a.cursor=item;a.input(Key::Detail);CHECK(item<7?a.detail_card>=0:item<ShopPotionStart?a.detail_item>=0:a.detail_item<0&&a.detail_card<0);same(before);if(item<ShopPotionStart)a.input(Key::Back);CHECK(a.shop_open);same(before);
  }
  s.gold=9999;a.cursor=0;a.input(Key::Confirm);CHECK(s.shop_sold&1);before=snap();
  // Purchase moves controller focus to the nearest remaining slot. Selecting

@@ -165,7 +165,7 @@ static void card_contract(unsigned kind,unsigned up){
  case RegentArsenal:act(s);CHECK(power(s,RPower::Arsenal)==1);cast(s,RegentCollisionCourse);CHECK(s.strength==1&&s.regent.cards_created==1);break;
  case RegentAstralPulse:act(s);CHECK(hp(s)==240-4*(6+2*u));break;
  case RegentBeatIntoShape:cast(s,RegentStrike);cast(s,RegentStrike);act(s);CHECK(s.enemies[0].hp==103-2*u);blade(s,25+6*u);break;
- case RegentBegone:{int id=add(s,RegentKinglyKick,1);s.regent.kick_discount[id]=2;s.expansion.turn_cost[id]=1;act(s);CHECK(s.expansion.choice==XChoice::RTransformHand);pick(s,1);CHECK(s.cards[id].kind==MinionStrike&&s.cards[id].upgraded==up&&!s.expansion.turn_cost[id]&&!s.regent.kick_discount[id]&&s.regent.cards_created==1);break;}
+ case RegentBegone:{int id=add(s,RegentKinglyKick,1);s.regent.kick_discount[id]=2;s.expansion.turn_cost[id]=1;act(s);CHECK(s.phase==Phase::Combat&&s.cards[id].kind==MinionStrike&&s.cards[id].upgraded==up&&!s.expansion.turn_cost[id]&&!s.regent.kick_discount[id]&&s.regent.cards_created==1);break;}
  case RegentBigBang:supply(s,2);act(s);CHECK(s.energy==101&&s.expansion.stars==101&&s.hand.count==2);blade(s,15);break;
  case RegentBlackHole:act(s);cast(s,RegentVenerate);CHECK(hp(s)==240-2*(3+u));cast(s,RegentFallingStar);CHECK(hp(s)==240-4*(3+u)-8);break;
  case RegentBombardment:act(s);CHECK(s.enemies[0].hp==102-6*u&&s.zones[0]==Zone::Exhaust);supply(s,10);next_turn(s);CHECK(hp(s)==240-2*(18+6*u)&&s.zones[0]==Zone::Exhaust&&s.energy==3);break;
@@ -179,7 +179,7 @@ static void card_contract(unsigned kind,unsigned up){
  case RegentComet:act(s);CHECK(s.enemies[0].hp==87-11*u&&s.enemies[0].weak==3&&s.enemies[0].vulnerable==3&&s.expansion.stars==95);break;
  case RegentConqueror:act(s);blade(s,13+2*u);CHECK(s.regent.conqueror[0]==1);act(s,find_kind(s,SovereignBlade));CHECK(s.enemies[0].hp==120-2*(13+2*u));break;
  case RegentConvergence:{int retained=add(s,RegentDefend);supply(s,12);act(s);CHECK(power_value(s,XPower::Retain)==1);next_turn(s);CHECK(contains(s.hand,retained)&&s.energy==4&&s.expansion.stars==101+u&&!power(s,RPower::EnergyNextTurn)&&!power(s,RPower::StarsNextTurn));break;}
- case RegentCosmicIndifference:{int id=add(s,RegentStrike,0,Zone::Discard);act(s);CHECK(s.expansion.choice==XChoice::RDiscardTop);pick(s,1);CHECK(s.block==6+3*u&&s.draw.ids[s.draw.count-1]==id);break;}
+ case RegentCosmicIndifference:{int id=add(s,RegentStrike,0,Zone::Discard);act(s);CHECK(s.phase==Phase::Combat&&s.block==6+3*u&&s.draw.ids[s.draw.count-1]==id);break;}
  case RegentCrashLanding:act(s);CHECK(hp(s)==240-2*(21+5*u)&&s.hand.count==10&&count_kind(s,Debris,Zone::Hand)==10&&s.regent.cards_created==10);break;
  case RegentCrescentSpear:add(s,RegentCloakOfStars);add(s,RegentStardust,0,Zone::Exhaust);act(s);CHECK(s.enemies[0].hp==112-3*(2+u));break;
  case RegentCrushUnder:act(s);CHECK(hp(s)==240-2*(8+u)&&s.enemies[0].strength==-1-u&&s.enemies[1].strength==-1-u);supply(s,10);next_turn(s);CHECK(s.enemies[0].strength==2&&s.enemies[1].strength==2);break;
@@ -200,7 +200,7 @@ static void card_contract(unsigned kind,unsigned up){
  case RegentGuidingStar:act(s);CHECK(s.enemies[0].hp==108-u&&s.draw_next_turn==2+u);break;
  case RegentHeavenlyDrill:s.energy=4;act(s);CHECK(s.energy==0&&s.enemies[0].hp==120-8*(8+2*u));break;
  case RegentHegemony:supply(s,10);act(s);CHECK(s.enemies[0].hp==105-3*u&&power(s,RPower::EnergyNextTurn)==2+u);next_turn(s);CHECK(s.energy==5+u);break;
- case RegentHeirloomHammer:{int id=add(s,FlashOfSteel,1);s.expansion.replay[id]=2;s.expansion.turn_cost[id]=1;s.silent.sly[id]=2;s.silent.retain[id]=2;act(s);CHECK(s.expansion.choice==XChoice::RHeirloom);pick(s,1);CHECK(s.enemies[0].hp==100-5*u&&s.hand.count==2&&s.regent.cards_created==1);int copy=s.hand.ids[1];CHECK(s.cards[copy].kind==FlashOfSteel&&s.cards[copy].upgraded&&s.expansion.replay[copy]==2&&s.expansion.turn_cost[copy]==1&&s.silent.sly[copy]==2&&s.silent.retain[copy]==2);break;}
+ case RegentHeirloomHammer:{int id=add(s,FlashOfSteel,1);s.expansion.replay[id]=2;s.expansion.turn_cost[id]=1;s.silent.sly[id]=2;s.silent.retain[id]=2;act(s);CHECK(s.phase==Phase::Combat&&s.enemies[0].hp==100-5*u&&s.hand.count==2&&s.regent.cards_created==1);int copy=s.hand.ids[1];CHECK(s.cards[copy].kind==FlashOfSteel&&s.cards[copy].upgraded&&s.expansion.replay[copy]==2&&s.expansion.turn_cost[copy]==1&&s.silent.sly[copy]==2&&s.silent.retain[copy]==2);break;}
  case RegentHiddenCache:supply(s,10);act(s);CHECK(s.expansion.stars==101&&power(s,RPower::StarsNextTurn)==3+u);next_turn(s);CHECK(s.expansion.stars==104+u);break;
  case RegentIAmInvincible:act(s);CHECK(s.block==10+3*u);supply(s,10);transfer(s,0,Zone::Draw);s.block=0;s.enemies[0].move=0;CHECK(end_turn(s));settle(s);CHECK(s.hp==75-(u?0:2)&&s.zones[0]==Zone::Discard);break;
  case RegentKinglyKick:act(s);CHECK(s.enemies[0].hp==93-8*u&&s.energy==96);break;
@@ -219,7 +219,7 @@ static void card_contract(unsigned kind,unsigned up){
  case RegentParry:act(s);cast(s,SovereignBlade);CHECK(s.enemies[0].hp==110&&s.block==10+4*u);break;
  case RegentParticleWall:act(s);CHECK(s.block==9+3*u&&s.zones[0]==Zone::Hand&&s.expansion.stars==98);break;
  case RegentPatter:act(s);CHECK(s.block==8+2*u&&s.vigor==2+u);break;
- case RegentPhotonCut:supply(s,5);act(s);CHECK(s.enemies[0].hp==110-3*u&&s.expansion.choice==XChoice::Top);pick(s,1);CHECK(s.hand.count==up);break;
+ case RegentPhotonCut:supply(s,5);act(s);CHECK(s.enemies[0].hp==110-3*u);if(up){CHECK(s.expansion.choice==XChoice::Top);pick(s,1);}else CHECK(s.phase==Phase::Combat);CHECK(s.hand.count==up);break;
  case RegentPillarOfCreation:act(s);s.dexterity=7;cast(s,RegentCollisionCourse);CHECK(s.block==2+u&&s.regent.cards_created==1);break;
  case RegentProphesize:supply(s,12);act(s);CHECK(s.hand.count==6+3*u);break;
  case RegentQuasar:act(s);CHECK(s.expansion.choice==XChoice::Offer&&s.expansion.choices.count==3);pick(s,1);colorless_batch(s,1,up);break;
@@ -354,7 +354,7 @@ static void suspended_choices_and_corruption(){
  auto s=fight(RegentForegoneConclusion,1);supply(s,8,RegentDefend,Zone::Discard);act(s);queue_extension(s,XOp::Power,(int)XPower::Stratagem,1);resolve_pending(s);
  CHECK(end_turn(s));CHECK(s.phase==Phase::ExtendedChoice);roundtrip(s);settle(s);CHECK(s.hand.count>=8&&!power(s,RPower::ForegoneConclusion));ready(s);
 
- scenario="nested Decisions choices preserve physical frames";active_kind=RegentDecisionsDecisions;auto d=fight(RegentDecisionsDecisions);int top=add(d,RegentCosmicIndifference);add(d,RegentStrike,0,Zone::Discard);supply(d,8);
+ scenario="nested Decisions choices preserve physical frames";active_kind=RegentDecisionsDecisions;auto d=fight(RegentDecisionsDecisions);int top=add(d,RegentCosmicIndifference);add(d,RegentStrike,0,Zone::Discard);add(d,RegentDefend,0,Zone::Discard);supply(d,8);
  act(d);CHECK(d.expansion.choice==XChoice::RDecisions);pick(d,1);CHECK(d.expansion.choice==XChoice::RDiscardTop&&d.expansion.depth==1&&d.playing==top);roundtrip(d);settle(d);CHECK(d.block==18&&d.regent.cards_finished_turn==4&&d.expansion.stars==94);ready(d);
 
  scenario="Regent suffix rejects malformed counters";active_kind=RegentOrbit;auto bad=fight(RegentOrbit);act(bad);State invalid=bad;invalid.regent.orbit_remainder[0]=4;CHECK(!validate(invalid));invalid=bad;invalid.regent.power_order[1]=1;CHECK(!validate(invalid));invalid=bad;invalid.regent.stars_spent[MaxAutoFrames]=2;CHECK(!validate(invalid));invalid=bad;invalid.regent.kick_discount[0]=1;CHECK(!validate(invalid));
@@ -380,14 +380,14 @@ static void shared_local_costs_and_star_expiry(){
   CHECK(cost(s,0)==0&&card_free_preview_cost(s,s.cards[0],0)==2);cast(s,BulletTime);CHECK(cost(s,0)==2);ready(s);
  }
  scenario="TouchOfInsanity accepts star-only costs and preserves its combat star Set across plays and turns";
- {auto s=fight(RegentAstralPulse);s.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(s,0,0));CHECK(s.expansion.choice==XChoice::Free&&s.expansion.choices.count==1);pick(s,1);
+ {auto s=fight(RegentAstralPulse);s.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(s,0,0));CHECK(s.phase==Phase::Combat);
   CHECK(s.expansion.star_combat_free[0]&&!s.expansion.star_turn_free[0]&&card_star_cost(s,s.cards[0],0)==0);s.expansion.stars=0;act(s);settle(s);CHECK(card_star_cost(s,s.cards[0],0)==0);
   supply(s,8);next_turn(s);CHECK(s.expansion.star_combat_free[0]&&card_star_cost(s,s.cards[0],0)==0);roundtrip(s);
  }
  scenario="TouchOfInsanity also sees a local cost hidden by a global free power";
- {auto s=fight(RegentDefend);cast(s,Pounce);CHECK(cost(s,0)==0);s.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(s,0,0));CHECK(s.expansion.choice==XChoice::Free&&s.expansion.choices.count==1);pick(s,1);CHECK(s.expansion.combat_cost[0]==1);ready(s);}
+ {auto s=fight(RegentDefend);cast(s,Pounce);CHECK(cost(s,0)==0);s.potions[0]=Potion::TouchOfInsanity;CHECK(use_potion(s,0,0));CHECK(s.phase==Phase::Combat&&s.expansion.combat_cost[0]==1);ready(s);}
  scenario="LiquidMemories reduces both fixed costs until the recovered card is played";
- {auto s=fight(RegentDevastate);transfer(s,0,Zone::Discard);s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));pick(s,1);
+ {auto s=fight(RegentDevastate);transfer(s,0,Zone::Discard);s.potions[0]=Potion::LiquidMemories;CHECK(use_potion(s,0,0));CHECK(s.phase==Phase::Combat);
   CHECK(s.zones[0]==Zone::Hand&&cost(s,0)==0&&card_star_cost(s,s.cards[0],0)==0);act(s);settle(s);CHECK(cost(s,0)==1&&card_star_cost(s,s.cards[0],0)==4);
  }
  scenario="Energy-only free attacks and SneckoOil leave fixed star costs intact";

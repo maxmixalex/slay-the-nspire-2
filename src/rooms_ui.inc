@@ -31,25 +31,23 @@ static void map_screen(Canvas&c,bool inspect=false){
 #include "events_ui.inc"
 
 static void deck_select(Canvas&c){
-    auto&a=c.a;auto&s=a.game;c.dim(0,20,320,220,225);
+    auto&a=c.a;auto&s=a.game;a.sync_deck_selection();
+    const unsigned shade=217*room_curve::cubic_out(a.map_clock_ms-a.deck_selection.opened,500)/4096;
+    Canvas backstop=c;backstop.opacity=uint8_t(div255(unsigned(backstop.opacity)*shade));backstop.rect(0,0,320,240,0);
     const bool grimoire=a.grimoire_select&&s.phase==Phase::Reward&&s.necro.grimoire_pending;
-    const char* title=grimoire?"禁忌魔典：永久移除一张牌":s.phase==Phase::Upgrade?"选择一张牌升级":s.phase==Phase::Remove?"移除一张牌":"选择一张牌变化";
-    c.centered(title,0,25,320,16,Gold);
-    a.cursor=mn(mx(0,a.cursor),mx(0,s.deck_count-1));
-    auto&grid=a.configure_card_grid(CardGridSurface::DeckChoice,s.deck_count,s.revision);CardGridPainter painter{c,grid};const int first=grid.first();
+    uint16_t indices[MaxDeck];const unsigned count=a.deck_choice_items(indices,MaxDeck);
+    auto&grid=a.configure_card_grid(CardGridSurface::DeckChoice,int(count),s.revision);CardGridPainter painter{c,grid};const int first=grid.first();
     int portraits[24];unsigned portrait_count=0;
-    for(int i=first;i<grid.last();++i)portraits[portrait_count++]=a.card_face_image(s.deck[i],-1,i);
+    for(int i=first;i<grid.last();++i){const int index=indices[i];portraits[portrait_count++]=a.card_face_image(s.deck[index],-1,index);}
     a.content.prepare_images(portraits,portrait_count);
     for(int i=first;i<grid.last();i++){
-        Card card=s.deck[i];int x=grid.card_x(i),y=grid.card_y(i);
-        bool allowed=s.phase==Phase::Upgrade?card_upgradeable(card):s.phase==Phase::Transform?(i!=s.event_first&&card_transformable(card)):(card_removable(card)&&s.deck_count>1);
-        const bool hover=a.pointer.visible&&a.pointer.x>=x-2&&a.pointer.x<x+CardGridScroll::CardW+2&&a.pointer.y>=y-2&&a.pointer.y<y+CardGridScroll::CardH+2&&a.pointer.y>=grid.top&&a.pointer.y<grid.bottom;
-        painter.card(i,card,hover||(!a.pointer.visible&&a.cursor==i),allowed,-2,-2,-1,i);
-        painter.hit(i,HitKind::Choice,i,allowed);
+        const int index=indices[i];Card card=s.deck[index];const bool preview=s.phase==Phase::Upgrade&&a.deck_selection.show_upgrades;
+        if(preview)card.upgraded=1;
+        painter.card(i,card,a.cursor==index,true,-2,-2,-1,index,nullptr,false,true,preview);
+        painter.hit(i,HitKind::Choice,index);
     }
-    if(grimoire){char text[96]={};TextBuffer b{text,sizeof text,0,&c.a.content};b.text("剩余 ");b.number(s.necro.grimoire_pending);b.text(a.content.english()?"":" 次");c.centered(text,0,196,320,10,Muted);}
-    else if(s.phase==Phase::Transform){char text[64]={};TextBuffer b{text,sizeof text,0,&c.a.content};b.text("还需变化 ");b.number(s.event_remaining);b.text(a.content.english()?" cards":" 张");c.centered(text,0,196,320,10,Muted);}
     painter.finish();card_grid_scrollbar(c,grid,CardGridSurface::DeckChoice);
-    if(grimoire){c.button("返回",44,213,78,false,24);c.action(42,210,82,30,UiAction::Back);
-        c.button("放弃一次",194,213,81,false,24);c.action(192,210,83,30,UiAction::SkipGrimoire);}
+    if(a.deck_candidate<0&&a.deck_selection_cancelable())native_original_back(c,a.deck_selection.opened);
+    if(grimoire)native_original_confirm(c,UiAction::SkipGrimoire,a.deck_selection.opened);
+    deck_selection_prompt(c);deck_selection_upgrades(c);
 }

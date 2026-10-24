@@ -495,7 +495,7 @@ static void physical_cards_and_choices(){
  }
  scenario="A later Flatten Set hides a Transfigure addition, which earlier Set does not hide";
  {auto s=fight();int flat=append(s,{NecroFlatten,0},Zone::Hand);cast(s,NecroPoke);int trans=append(s,{NecroTransfigure,0},Zone::Hand);
-  CHECK(play(s,hand_index(s,trans),0));choose(s,flat);CHECK(cost(s,flat)==1&&s.expansion.replay[flat]==1);
+  CHECK(play(s,hand_index(s,trans),0));CHECK(s.phase==Phase::Combat&&cost(s,flat)==1&&s.expansion.replay[flat]==1);restore(s);
   cast(s,NecroPoke);CHECK(cost(s,flat)==0);repeat_instance(s,flat);CHECK(cost(s,flat)==0);
  }
  scenario="BansheesCry includes prior finished Ethereal plays when newly generated";
@@ -509,7 +509,7 @@ static void physical_cards_and_choices(){
  }
  scenario="Transfigure replays X-cost cards without adding an ordinary energy cost";
  {auto s=fight();int attack=append(s,{NecroEradicate,0},Zone::Hand),trans=append(s,{NecroTransfigure,0},Zone::Hand);
-  CHECK(play(s,hand_index(s,trans),0));choose(s,attack);CHECK(cost(s,attack)==-1&&!s.necro.cost_delta[attack]&&s.expansion.replay[attack]==1);
+  CHECK(play(s,hand_index(s,trans),0));CHECK(s.phase==Phase::Combat&&cost(s,attack)==-1&&!s.necro.cost_delta[attack]&&s.expansion.replay[attack]==1);restore(s);
   s.energy=2;repeat_instance(s,attack);CHECK(s.enemies[0].hp==956&&!s.energy);
  }
  scenario="Undeath copies combat keywords and additive costs, without physical history";
@@ -535,7 +535,7 @@ static void physical_cards_and_choices(){
  }
  scenario="Nightmare snapshots BansheesCry costs without retroactively subtracting history twice";
  {auto s=fight();fill(s,Zone::Draw,12);int cry=append(s,{NecroBansheesCry,0},Zone::Hand);cast(s,NecroDefile);cast(s,NecroDefy);
-  int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));choose(s,cry);quiet_turn(s);
+  int nightmare=append(s,{Nightmare,0},Zone::Hand);CHECK(play(s,hand_index(s,nightmare),0));CHECK(s.phase==Phase::Combat);restore(s);quiet_turn(s);
   int count=0;for(unsigned id=0;id<s.card_count;id++)if(s.cards[id].kind==NecroBansheesCry){++count;CHECK(cost(s,id)==5);}CHECK(count==4);
  }
  scenario="Transfigure composes with RocketPunch local reductions before the final zero clamp";
@@ -567,7 +567,7 @@ static void eidolon_and_persistence(){
  }
  scenario="Eidolon nested selection survives save/load and resumes captured caller frames";
  {auto s=fight();fill(s,Zone::Draw,6);int target=append(s,{NecroDefendNecrobinder,0},Zone::Hand),strike=append(s,{NecroSculptingStrike,0},Zone::Exhaust),soul=append(s,{Soul,0},Zone::Exhaust);
-  s.necro.ethereal[strike]=s.necro.ethereal[soul]=1;int eidolon=append(s,{NecroEidolon,0},Zone::Hand);CHECK(play(s,hand_index(s,eidolon),0));
+  s.necro.ethereal[strike]=s.necro.ethereal[soul]=1;append(s,{NecroDefendNecrobinder,0},Zone::Hand);int eidolon=append(s,{NecroEidolon,0},Zone::Hand);CHECK(play(s,hand_index(s,eidolon),0));
   CHECK(s.phase==Phase::ExtendedChoice&&s.playing==strike&&s.expansion.depth==1);restore(s);choose(s,target);
   CHECK(s.necro.ethereal[target]&&s.necro.drawn_turn==2&&s.zones[eidolon]==Zone::Exhaust&&s.playing==-1&&!s.expansion.depth);
  }

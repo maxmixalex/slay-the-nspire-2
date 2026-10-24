@@ -6,6 +6,9 @@ static const WorldContentIndex world_text_index[]={
 static const WorldContentIndex native_ui_text_index[]={
 #include "native_ui_text_index.inc"
 };
+static const WorldContentIndex selection_text_index[]={
+#include "selection_text_index.inc"
+};
 static const WorldContentIndex world_image_index[]={
 #include "world_image_index.inc"
 };
@@ -52,6 +55,7 @@ template<unsigned N> static int wc_find(const WorldContentIndex(&rows)[N],const 
 }
 }
 int Content::world_string_id(const char*table,const char*key)const{
+ if(has_selection_assets()){const int selection=wc_find(selection_text_index,table,key);if(selection>=0)return selection;}
  const int native=wc_find(native_ui_text_index,table,key);return native>=0?native:wc_find(world_text_index,table,key);
 }
 const char* Content::world_string(const char*table,const char*key)const{

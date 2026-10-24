@@ -30,12 +30,16 @@
 #include "health_bar.hpp"
 #include "combat_feedback.hpp"
 #include "combat_card_motion.hpp"
+#include "combat_selection.hpp"
 #include "combat_osty_presentation.hpp"
 #include "combat_orb_presentation.hpp"
 #include "card_grid_scroll.hpp"
+#include "card_highlight.hpp"
+#include "deck_selection_layout.hpp"
 #include "card_library.hpp"
 #include "collection_assets.hpp"
 #include "card_ui7_presentation.hpp"
+#include "relic_inspect.hpp"
 #include "card_target_presentation.hpp"
 #include "combat_status.hpp"
 #include "combat_spark_motion.hpp"
@@ -44,6 +48,7 @@
 #include "combat_preparation.hpp"
 #include "ftue_presentation.hpp"
 #include "ftue_assets.hpp"
+#include "selection_assets.hpp"
 #include "title_scene.hpp"
 #include "title_assets.hpp"
 #include "frontend_assets.hpp"
@@ -124,7 +129,7 @@ public:
     static constexpr unsigned image_capacity_entries(){return 320;}
     // Select a real resident font band before layout. This never loads a
     // glyph or scans the resource payload; sparse legacy faces fall back.
-    int font_size(int preferred,unsigned style=0,bool at_most=false)const;
+    int font_size(int preferred,unsigned style=0,bool at_most=false,bool sparse_scene_sizes=false)const;
     Glyph glyph(uint32_t cp,int size,unsigned style=0)const;
     // Layout uses the resident descriptor only. Measuring a label must not
     // decode/read glyph pixels or evict the glyphs about to be painted.
@@ -133,7 +138,9 @@ public:
     Clip clip(int id)const;
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
-    bool has_ftue_assets()const{return version_>=FtueContentVersion&&ui_count_==FtueAuxiliaryCount;}
+    bool has_ftue_assets()const{return version_>=FtueContentVersion&&(ui_count_==FtueAuxiliaryCount||has_selection_assets());}
+    bool has_selection_assets()const{return version_>=SelectionContentVersion&&(ui_count_==SelectionAuxiliaryCount||has_inspection_assets());}
+    bool has_inspection_assets()const{return version_>=SelectionContentVersion&&ui_count_==InspectionAuxiliaryCount;}
     bool current_profile()const{
         if(version_<ContentVersion||version_>GroupedStringContentVersion||cards_!=CardKinds)return false;
         const unsigned auxiliary=version_>=GameOverTransitionContentVersion?unsigned(GameOverTransitionAuxiliaryCount):version_>=HistoryJournalContentVersion?unsigned(HistoryJournalAuxiliaryCount):version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
@@ -277,6 +284,8 @@ struct App {
     void step_combat_preparation();
     uint16_t pixels[ScreenW*ScreenH]{};
     bool title=true,paused=false,quit=false,has_save=false,help=false;
+    bool pause_visible=false;
+    uint32_t pause_opened=0;
     bool settings_open=false,fast_mode=false;
     AuxiliaryUi auxiliary{};
     void open_auxiliary(AuxiliaryScreen);
@@ -494,6 +503,19 @@ struct App {
     void focus_collection();
     bool collection_input(Key);
     uint16_t choice_selected[MaxDeck]{};unsigned choice_selected_count=0;uint32_t choice_revision=0;
+    CombatSelectionPresentation combat_selection{};
+    NativeConfirmPresentation native_confirm_motion{};
+    CombatSelectionKind combat_selection_kind()const;
+    CombatSelectionPrompt combat_selection_prompt()const;
+    unsigned combat_selection_items(uint16_t* ids=nullptr,unsigned capacity=0)const;
+    unsigned combat_selection_min()const;
+    unsigned combat_selection_max()const;
+    bool combat_selection_manual()const;
+    bool combat_selection_interactive()const;
+    bool combat_selection_ready();
+    bool combat_selection_confirmable()const;
+    void sync_combat_selection();
+    void skip_combat_selection();
     bool choice_peeking=false;uint16_t choice_peek_from=0;uint32_t choice_peek_at=0,choice_peek_revision=0;
     bool combat_peek_context()const;
     bool combat_peek_available()const;
@@ -530,13 +552,15 @@ struct App {
     bool potion_targeting=false,potion_removed_discard=false;
     int potion_popup_slot=-1,potion_removed_slot=-1;
     uint32_t potion_popup_start=0,potion_removed_start=0;
+    struct PotionPopupExit {uint32_t start=0;int16_t x=0,y=0;uint8_t alpha=0;bool thrown=false,active=false;} potion_popup_exit;
     Potion potion_removed=Potion::Empty;
     PotionBeltMotion potion_belt_motion{};
     DeckCountPulse deck_count_pulse{};
     TargetReticleMotion target_reticles[MaxEnemies+2]{};
     void potion_obtain_failed();
     void open_potion(int slot);
-    void close_potion();
+    void close_potion(Potion bottle=Potion::Empty);
+    void begin_potion_popup_exit(Potion);
     void start_potion_use();
     bool finish_potion_use(int target);
     bool potion_input(Key);
@@ -680,10 +704,22 @@ struct App {
     void open_status_icon(int encoded);
     bool status_input(Key);
     int deck_candidate=-1;uint32_t deck_choice_revision=0;Phase deck_choice_phase=Phase::Map;
+    DeckSelectionPresentation deck_selection{};
+    bool deck_selection_active()const;
+    bool deck_selection_cancelable()const;
+    unsigned deck_choice_items(uint16_t*,unsigned)const;
+    void sync_deck_selection();
+    void cancel_deck_choice();
     bool deck_input(Key);
     bool deck_candidate_valid()const;
     void confirm_deck_choice();
     int detail_item=-1,detail_owned=-1;
+    RelicInspectPresentation relic_inspect{};
+    void open_relic_inspect(RelicId,int owned=-1);
+    void sync_relic_inspect();
+    void close_relic_inspect();
+    void move_relic_inspect(int direction);
+    bool relic_inspect_input(Key);
     uint32_t seen_relic_revision=0;RelicMask relic_flash_mask=0;
     uint32_t seen_world_relic_revision=0;RelicId world_relic_flash=NoWorldRelic;
     int relic_flash_ticks=0;
@@ -724,6 +760,21 @@ struct App {
     unsigned world_choice_options(uint16_t* out,unsigned capacity)const;
     unsigned world_choice_min()const;
     unsigned world_choice_max()const;
+    WorldSelectionKind world_selection_kind()const;
+    bool world_selection_active()const;
+    bool world_selection_cancelable()const;
+    bool world_selection_manual()const;
+    bool world_selection_confirmable()const;
+    bool world_selection_upgrades()const;
+    unsigned world_selection_min()const;
+    unsigned world_selection_max()const;
+    CombatSelectionPrompt world_selection_prompt()const;
+    RelicId world_selection_owner()const;
+    EventEnchantment world_selection_enchantment(int*amount=nullptr)const;
+    unsigned world_selection_preview_cards()const;
+    bool world_selection_preview_card(unsigned,WorldSelectionCard&)const;
+    void sync_world_selection();
+    void cancel_world_selection();
     bool world_choice_is_card_reward()const;
     bool world_choice_is_potion_reward()const;
     Potion world_choice_potion(int id)const;

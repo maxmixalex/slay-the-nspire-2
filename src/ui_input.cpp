@@ -2,6 +2,7 @@
 #include "status.hpp"
 #include "world_run.hpp"
 #include "original_events.hpp"
+#include "world_card_factory.hpp"
 #include "ui_core_observer.hpp"
 namespace spire {
 static bool room_shop_context(const App&a){return a.game.phase==Phase::Shop||(a.game.phase==Phase::Event&&a.game.original_events.active&&a.game.original_events.id==OriginalEventId::FakeMerchant&&!a.game.original_events.finished);}
@@ -40,56 +41,23 @@ void App::sync_selection(){
         else if(w.choice==WorldRelicChoice::OfferReward)for(unsigned i=0;i<w.offer_count;++i)if(w.offers[i]<w.reward_count){const auto&r=w.rewards[w.offers[i]];if(r.kind==2)discover_relic(RelicId(r.value));else if(r.kind==3)discover_potion(Potion(r.value));}
     }
 }
-void App::toggle_choice(int id){
-    if(choice_peeking||!combat_choice_ready())return;
-    sync_selection();if(!choice_phase(game.phase)||id<0||id>=MaxCards+3)return;
-    const auto& source=choice_pile(game);
-    bool in_hand=false;for(unsigned i=0;i<source.count;i++)if(source.ids[i]==id)in_hand=true;
-    if(!in_hand)return;
-    for(unsigned i=0;i<choice_selected_count;i++)if(choice_selected[i]==id){
-        for(unsigned j=i+1;j<choice_selected_count;j++)choice_selected[j-1]=choice_selected[j];--choice_selected_count;return;
-    }
-    unsigned needed=choice_max(game);
-    if(needed==1)choice_selected_count=0;
-    if(choice_selected_count<needed)choice_selected[choice_selected_count++]=(uint16_t)id;
-}
-void App::confirm_choice(){
-    if(choice_peeking||!combat_choice_ready())return;
-    sync_selection();if(!choice_phase(game.phase))return;
-    unsigned needed=choice_max(game);
-    if(choice_selected_count<choice_min(game)||choice_selected_count>needed)return;
-    continue_combat_choice();
-    bool done=false;
-    if(game.phase==Phase::ExtendedChoice)done=choose_extended(game,choice_selected,choice_selected_count);
-    else if(game.phase==Phase::ReturnChoice)done=choose_return_to_draw(game,choice_selected[0]);
-    else if(game.phase==Phase::ExhaustManyChoice)done=choose_exhaust_many(game,choice_selected,choice_selected_count);
-    else if(game.phase==Phase::DiscardChoice)done=choose_discard(game,choice_selected,needed);
-    else for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==choice_selected[0]){done=choose_exhaust(game,i);break;}
-    if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}
-}
-bool App::selection_input(Key key){
-    if(choice_peeking||title||paused||help||panel||!choice_phase(game.phase)||!combat_choice_ready())return false;
-    sync_selection();const auto& source=choice_pile(game);int count=source.count;if(!count)return false;
-    if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
-    if(key==Key::Left)cursor=(cursor+count-1)%count;
-    else if(key==Key::Right)cursor=(cursor+1)%count;
-    else if(key==Key::Up)cursor=cursor>=5?cursor-5:cursor;
-    else if(key==Key::Down)cursor=cursor+5<count?cursor+5:cursor;
-    else if(key==Key::Confirm)toggle_choice(source.ids[cursor]);
-    else if(key==Key::EndTurn)confirm_choice();
-    else if(key==Key::Detail)open_choice_detail(source.ids[cursor]);
-    else return false; // Pause, save/load and browsing remain available.
-    return true;
-}
+#include "combat_selection_input.inc"
+#include "item_inspect_input.inc"
 void App::select_library_item(int index){
     if(!library)return;
-    if(library_tab){prepare_collection();if(index>=0&&index<collection.count)library_selected=index;return;}
+    if(library_tab){prepare_collection();if(index>=0&&index<collection.count){library_selected=index;if(library_tab==1)open_relic_inspect(RelicId(collection.ids[index]));}return;}
     CardKind ids[CardKinds];const unsigned count=library_items(ids);if(index<0||unsigned(index)>=count)return;
     library_selected=index;card_library.control=-1;library_search_editing=false;
     if(library_card_seen(ids[index]))open_card_detail({ids[index],uint8_t(library_upgraded&&card_upgradeable({ids[index],0}))});
 }
 void App::ui_action(UiAction action){
     sync_ftues();if(ftue_before_action(action))return;
+    if(detail_item>=0&&detail_item<WorldRelicKinds){
+        if(action==UiAction::InspectPreviousRelic)move_relic_inspect(-1);
+        else if(action==UiAction::InspectNextRelic)move_relic_inspect(1);
+        else if(action==UiAction::CloseRelicInspect||action==UiAction::Back)close_relic_inspect();
+        return;
+    }
     if(auxiliary.screen!=AuxiliaryScreen::None){if(action==UiAction::Back)close_auxiliary();return;}
     if(map_transition_blocks_pointer())return;
     UiCoreObserver observer(*this);
@@ -198,7 +166,7 @@ void App::ui_action(UiAction action){
     case UiAction::DiscardPotion:
         if(panel==4&&!combat_actions_locked()&&can_discard_potion(game,scroll)){
             const Potion bottle=potion_at(game,scroll);const int slot=scroll;
-            if(discard_potion(game,slot)){remove_potion_visual(bottle,slot,true);close_potion();}
+            if(discard_potion(game,slot)){remove_potion_visual(bottle,slot,true);close_potion(bottle);}
         }break;
     case UiAction::TargetFirst:if(panel==4&&game.enemy_count&&game.enemies[0].hp>0)target=0;break;
     case UiAction::TargetSecond:if(panel==4&&game.enemy_count>1&&game.enemies[1].hp>0)target=1;break;
@@ -236,7 +204,8 @@ void App::ui_action(UiAction action){
             int last=(choice_pile(game).count-1)/10;
             if(page<0)page=0;if(page>last)page=last;cursor=page*10;
         }break;
-    case UiAction::ConfirmChoice:confirm_choice();break;
+    case UiAction::ConfirmChoice:if(combat_selection_confirmable())confirm_choice();break;
+    case UiAction::SkipCombatChoice:skip_combat_selection();break;
     case UiAction::ConfirmWorldChoice:confirm_world_choice();break;
     case UiAction::LeaveWorldRewards:{
         const bool rewards=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Rewards;
@@ -269,7 +238,10 @@ void App::ui_action(UiAction action){
     case UiAction::CrystalLarge:original_event_crystal_tool(game,true);break;
     case UiAction::ClearChoice:if(!choice_peeking)choice_selected_count=0;break;
     case UiAction::ConfirmDeckChoice:confirm_deck_choice();break;
-    case UiAction::CancelDeckChoice:deck_candidate=-1;break;
+    case UiAction::CancelDeckChoice:if(deck_candidate>=0)cancel_deck_choice();break;
+    case UiAction::DeckViewUpgrades:
+        if(deck_selection_active()&&game.phase==Phase::Upgrade&&pointer.visible){sync_deck_selection();deck_selection.show_upgrades=!deck_selection.show_upgrades;}
+        else if(world_selection_active()&&world_selection_upgrades()&&pointer.visible){sync_world_selection();deck_selection.show_upgrades=!deck_selection.show_upgrades;}break;
     case UiAction::PreviousDeckPage:case UiAction::NextDeckPage:
         if(!title&&!paused&&!panel&&deck_candidate<0&&(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||
             (grimoire_select&&game.phase==Phase::Reward&&game.necro.grimoire_pending))){
@@ -310,16 +282,68 @@ bool App::screen_input(Key key){
 
 namespace spire {
 static bool deck_phase(Phase phase){return phase==Phase::Upgrade||phase==Phase::Remove||phase==Phase::Transform;}
+bool App::deck_selection_active()const{
+    return !title&&!paused&&!help&&!panel&&!library&&!character_select&&!settings_open&&!frontend_confirm&&!map_preview.open&&
+        !map_window.is_open&&!event_reader&&!ftue.active()&&status_actor<0&&detail_card<0&&detail_item<0&&
+        (deck_phase(game.phase)||(grimoire_select&&game.phase==Phase::Reward&&game.necro.grimoire_pending));
+}
+bool App::deck_selection_cancelable()const{
+    return grimoire_select||game.phase==Phase::Remove||game.phase==Phase::Upgrade||game.event_deck_action!=EventDeckAction::None;
+}
+unsigned App::deck_choice_items(uint16_t*out,unsigned capacity)const{
+    unsigned count=0;const bool remove=game.phase==Phase::Remove||grimoire_select;
+    // FromDeckForRemoval preserves deck order within its curse-first sort.
+    // Store only indices: all clicks, facts and commands address the actual deck.
+    for(unsigned pass=0;pass<(remove?2u:1u);++pass)for(unsigned i=0;i<game.deck_count;++i){
+        const Card card=game.deck[i];
+        const bool eligible=game.phase==Phase::Upgrade?card_upgradeable(card):game.phase==Phase::Transform?
+            int(i)!=game.event_first&&card_transformable(game,card,int(i)):card_removable(game,card,int(i))&&game.deck_count>1;
+        if(!eligible)continue;
+        if(remove&&((card_type(game,card,-1,int(i))==CardType::Curse)!=(pass==0)))continue;
+        if(out&&count<capacity)out[count]=uint16_t(i);++count;
+    }
+    return count;
+}
+void App::sync_deck_selection(){
+    auto&view=deck_selection;
+    if(!view.bound||view.revision!=game.revision||view.phase!=unsigned(game.phase)){
+        view.reset();view.bound=true;view.revision=game.revision;view.phase=uint8_t(game.phase);view.opened=map_clock_ms;
+        if(game.phase==Phase::Remove&&game.event_deck_action==EventDeckAction::None&&
+           (!game.world.active||game.world.room_type==unsigned(WorldRoom::Shop))){
+            // The source deck overlay covers the already-open inventory.
+            // Loading the picker or canceling it must not replay OpenShop.
+            shop_open=true;auto&m=room_presentation.merchant;
+            m.open=m.initialized=true;m.start=map_clock_ms-1000;m.from_y=MerchantInventoryLayout::RugY;m.from_alpha=204;m.sold_mask=game.shop_sold;
+        }
+    }
+    // NDeckUpgradeSelectScreen clears, rather than merely hides, the tickbox
+    // whenever directional navigation becomes active.
+    if(!pointer.visible&&!paused&&!settings_open&&!frontend_confirm&&!help&&!ftue.active())view.show_upgrades=false;
+    uint16_t indices[MaxDeck];const unsigned count=deck_choice_items(indices,MaxDeck);
+    bool found=false;for(unsigned i=0;i<count;++i)if(indices[i]==cursor){found=true;break;}
+    if(!found)cursor=count?indices[0]:0;
+}
+void App::cancel_deck_choice(){
+    if(!deck_selection_active())return;
+    if(deck_candidate>=0){deck_candidate=-1;pointer_cancel();focus_card_grid();return;}
+    if(!deck_selection_active()||!deck_selection_cancelable())return;
+    if(grimoire_select){grimoire_select=false;cursor=3;}
+    else if(game.event_deck_action!=EventDeckAction::None){cancel_event_selection(game);reset_presentation(true);return;}
+    else if(game.phase==Phase::Remove){game.phase=Phase::Shop;shop_open=true;cursor=ShopRemove;}
+    else if(game.phase==Phase::Upgrade){if(game.world.active)world_rest_cancel(game);else game.phase=Phase::Camp;cursor=1;}
+    deck_selection.reset();pointer_cancel();
+}
 bool App::deck_candidate_valid()const{
     const bool grimoire=grimoire_select&&game.phase==Phase::Reward&&game.necro.grimoire_pending;
     if(deck_candidate<0||deck_candidate>=game.deck_count||deck_choice_revision!=game.revision||deck_choice_phase!=game.phase||(!deck_phase(game.phase)&&!grimoire))return false;
     Card c=game.deck[deck_candidate];
     if(game.phase==Phase::Upgrade&&!card_upgradeable(c))return false;
-    if(game.phase==Phase::Transform&&(deck_candidate==game.event_first||!card_transformable(c)))return false;
-    if((grimoire||game.phase==Phase::Remove)&&(!card_removable(c)||game.deck_count<=1))return false;
+    if(game.phase==Phase::Transform&&(deck_candidate==game.event_first||!card_transformable(game,c,deck_candidate)))return false;
+    if((grimoire||game.phase==Phase::Remove)&&(!card_removable(game,c,deck_candidate)||game.deck_count<=1))return false;
     return true;
 }
 void App::confirm_deck_choice(){
+    if(!deck_selection_active())return;
     if(!deck_candidate_valid()){deck_candidate=-1;return;}
     int index=deck_candidate;Phase phase=game.phase;deck_candidate=-1;pointer_cancel();
     const auto rest_selection=room_presentation.rest.selection;
@@ -351,17 +375,15 @@ bool App::deck_input(Key key){
     if(title||paused||help||panel||library||(!deck_phase(game.phase)&&!grimoire_select))return false;
     if(deck_candidate>=0){
         if(!deck_candidate_valid()){deck_candidate=-1;return true;}
-        if(key==Key::Back){deck_candidate=-1;return true;}
+        if(key==Key::Back){cancel_deck_choice();return true;}
         if(key==Key::Confirm){confirm_deck_choice();return true;}
         // The irreversible-action confirmation consumes navigation/game actions.
         // Save and load remain available; loading resets its captured revision.
         return key!=Key::Save&&key!=Key::Load&&key!=Key::Quit;
     }
-    if(grimoire_select&&key==Key::Back){grimoire_select=false;cursor=3;return true;}
+    sync_deck_selection();
+    if(key==Key::Back){cancel_deck_choice();return true;}
     if(grimoire_select&&key==Key::EndTurn){ui_action(UiAction::SkipGrimoire);return true;}
-    if(key==Key::Back&&game.event_deck_action!=EventDeckAction::None){
-        cancel_event_selection(game);reset_presentation(true);return true;
-    }
     int count=game.deck_count;if(!count)return true;
     if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
     if(key==Key::Left)cursor=cursor>0?cursor-1:0;
@@ -371,9 +393,9 @@ bool App::deck_input(Key key){
     else if(key==Key::Detail)open_card_detail(game.deck[cursor],cursor);
     else if(key==Key::Confirm){
         if(game.phase==Phase::Upgrade&&!card_upgradeable(game.deck[cursor])){message("这张牌不能继续升级");return true;}
-        if(game.phase==Phase::Transform&&(cursor==game.event_first||!card_transformable(game.deck[cursor]))){message("请选择另一张可变化的牌");return true;}
-        if((grimoire_select||game.phase==Phase::Remove)&&(!card_removable(game.deck[cursor])||game.deck_count<=1)){message("这张牌不能移除");return true;}
-        deck_candidate=cursor;deck_choice_revision=game.revision;deck_choice_phase=game.phase;pointer_cancel();
+        if(game.phase==Phase::Transform&&(cursor==game.event_first||!card_transformable(game,game.deck[cursor],cursor))){message("请选择另一张可变化的牌");return true;}
+        if((grimoire_select||game.phase==Phase::Remove)&&(!card_removable(game,game.deck[cursor],cursor)||game.deck_count<=1)){message("这张牌不能移除");return true;}
+        deck_candidate=cursor;deck_choice_revision=game.revision;deck_choice_phase=game.phase;deck_selection.preview_opened=map_clock_ms;pointer_cancel();
     }else return false;
     return true;
 }
@@ -410,8 +432,8 @@ bool App::status_input(Key key){
 namespace spire {
 void App::open_owned_relic(int position){
     if(title||paused||help||library||character_select||map_preview.open||status_actor>=0||
-       detail_card>=0||detail_item>=0||(panel&&panel!=5)||position<0||position>=int(ui_owned_relic_count(game)))return;
-    detail_owned=position;detail_item=ui_owned_relic_id(game,position);detail_scroll=0;pointer_cancel();
+       detail_card>=0||detail_item>=0||(panel&&panel!=3)||position<0||position>=int(ui_owned_relic_count(game)))return;
+    open_relic_inspect(ui_owned_relic_id(game,position),position);
 }
 void App::sync_relic_feedback(){
     if(seen_world_relic_revision!=game.world_relics.flash_revision){seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=game.world_relics.last_flash;relic_flash_ticks=30;}

@@ -9,4 +9,6 @@ constexpr unsigned SelectionContentVersion=33;
 enum SelectionAsset {I9_UpgradeArrow=FtueAuxiliaryCount,I9_CardHighlightSdf,SelectionAuxiliaryCount};
 static_assert(I9_UpgradeArrow==2058&&I9_CardHighlightSdf==2059&&SelectionAuxiliaryCount==2060,
               "Selection artwork follows the complete tutorial catalog");
+enum InspectionAsset {I9_RelicInspectFrame=SelectionAuxiliaryCount,InspectionAuxiliaryCount};
+static_assert(InspectionAuxiliaryCount==2061,"Relic inspection keeps all existing auxiliary IDs");
 }

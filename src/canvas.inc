@@ -37,6 +37,7 @@ struct Canvas{
     uint8_t font_face=0;
     uint8_t bold_face=0; // A scene can explicitly override its bold family.
     bool wrap_latin_words=false; // Original article fallback keeps Latin word boundaries in every locale.
+    bool sparse_scene_sizes=false; // Opt in only when this label's full alphabet is baked.
     unsigned font_style(const RichChar&ch)const{const unsigned style=rich_font_style(ch);return (style==1&&bold_face?unsigned(bold_face):style)|font_face;}
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
         if(opacity!=255)alpha=div255(alpha*opacity);
@@ -83,7 +84,7 @@ struct Canvas{
     bool nine_ui(int id,int x,int y,int w,int h,int l,int t,int r,int b,unsigned alpha=255){
         return nine_image(a.content.ui_image(id),x,y,w,h,l,t,r,b,alpha);
     }
-    ButtonVisual control_visual(const char*label,int x,int y,int w,int h,ButtonFamily family,bool selected,bool enabled,int shift_x=0){
+    ButtonVisual control_visual(const char*label,int x,int y,int w,int h,ButtonFamily family,bool selected,bool enabled,int shift_x=0,bool neutral_initial=false){
         const auto&pointer=a.pointer;
         const bool inside=pointer.visible&&pointer.x>=x+shift_x&&pointer.x<x+shift_x+w&&pointer.y>=y&&pointer.y<y+h;
         const auto&captured=pointer.captured;
@@ -95,7 +96,7 @@ struct Canvas{
         const int values[]={x,y,w,h,int(family),int(a.input_context())};for(int v:values)key=(key^uint32_t(v))*16777619u;if(!key)key=1;
         ButtonMotion*motion=nullptr;ButtonMotion*oldest=&a.button_motions[0];
         for(auto&candidate:a.button_motions){if(candidate.identity==key){motion=&candidate;break;}if(!candidate.identity)oldest=&candidate;else if(oldest->identity&&uint32_t(a.map_clock_ms-candidate.seen)>uint32_t(a.map_clock_ms-oldest->seen))oldest=&candidate;}
-        if(!motion)motion=oldest;return motion->observe(key,family,mode,a.map_clock_ms);
+        if(!motion)motion=oldest;return motion->observe(key,family,mode,a.map_clock_ms,neutral_initial);
     }
     void action(int x,int y,int w,int h,UiAction act,bool enabled=true){hit(x,y,w,h,HitKind::UiAction,(int)act,enabled);}
     void hit(int x,int y,int w,int h,HitKind k,int value=0,bool enabled=true){a.add_hit(x,y,w,h,k,value,enabled);}
@@ -351,7 +352,7 @@ struct Canvas{
         scaled_clip(id,x,y,elapsed,scale,loop);
     }
     int width(const char*p,int size){
-        size=a.content.font_size(size,font_face);
+        size=a.content.font_size(size,font_face,false,sparse_scene_sizes);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         RichReader reader(p);RichChar ch{};int w=0;
         while(reader.next(ch)&&ch.codepoint!='\n')w+=a.content.glyph_metrics(ch.codepoint,size,font_style(ch)).advance;
@@ -391,7 +392,7 @@ struct Canvas{
         glyph(g,x,y,color);
     }
     int text(const char*p,int x,int y,int size=12,uint16_t color=White,int maxwidth=320,int maxlines=1){
-        size=a.content.font_size(size,font_face);
+        size=a.content.font_size(size,font_face,false,sparse_scene_sizes);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
@@ -408,7 +409,7 @@ struct Canvas{
         }return x;
     }
     int paragraph(const char*p,int x,int y,int w,int lines,int skip=0,int size=12,uint16_t color=White){
-        size=a.content.font_size(size,font_face);
+        size=a.content.font_size(size,font_face,false,sparse_scene_sizes);
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         RichReader reader(p);RichChar ch{};int at=x,row=0;bool boundary=true;
@@ -441,13 +442,13 @@ struct Canvas{
     fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false,uint16_t outline_color=Ink){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
-        minimum=a.content.font_size(minimum,font_face);preferred=mx(minimum,a.content.font_size(preferred,font_face));
+        minimum=a.content.font_size(minimum,font_face,false,sparse_scene_sizes);preferred=mx(minimum,a.content.font_size(preferred,font_face,false,sparse_scene_sizes));
         fitted_text::Plan plan;
         for(;;){
             plan=fitted_text::plan(p,w,h,preferred,preferred,metrics);
             if(single_line){plan.rows=1;plan.step=plan.size+1;plan.truncated=plan.total>1;}
             if(!plan.truncated||preferred<=minimum)break;
-            const int next=a.content.font_size(preferred-1,font_face,true);
+            const int next=a.content.font_size(preferred-1,font_face,true,sparse_scene_sizes);
             if(next>=preferred)break;preferred=mx(minimum,next);
         }
         int widths[32]{};if(plan.rows>32)plan.rows=32;

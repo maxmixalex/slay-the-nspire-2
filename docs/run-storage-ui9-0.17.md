@@ -115,6 +115,32 @@ Keeping three *additional permanent history backups* would be a different
 retention policy. The current successful history path does not do that; the
 unconditional peak for that policy would be `7H + 6R + 340 = 3,585,337` bytes.
 
+### Subsequent tutorial metadata
+
+The combined tutorial checkpoint
+`492915341106b129f730e46ed84d152637a24b7d` adds two bytes to each encoded history
+for NSH8; it does not change NSV1/v17 or NSZ1. Its matching C++ export passed
+6,413 persistence checks and measured **H8 = 295,349 bytes**, with a full
+decode/re-encode comparison. Receipt: `ui9-ftue-progress-export-adc5a937cfbb`.
+That valid file, SHA-256
+`4c3628949e7de487aa449744e6b469de25ff2743630b77798a61158a18efe725`, is the
+input supplied to the separate calculator capacity test.
+
+The ordinary history-update peak now uses `4H8`, increasing each previous
+three-profile figure by eight bytes:
+
+| Storage state | Peak including settings | Bytes |
+|---|---|---:|
+| Measured dense compressed primaries and backups | `4H8 + 6C + 340` | 1,910,754 |
+| Three compressed primaries and three conservatively bounded old raw backups | `4H8 + 3C + 3R + 340` | 2,305,029 |
+| Unconditional raw-fallback upper bound | `4H8 + 6R + 340` | 2,699,304 |
+
+Using the actual dense fixture's 250,964-byte raw predecessor instead of the
+conservative 252,928-byte bound yields a migration peak of **2,299,137 bytes**.
+These figures still exclude filesystem overhead. Successful native codecs or
+exact byte budgets do not by themselves establish a successful device write;
+that operation has its own ordinary-USB receipt.
+
 ## Verification status
 
 `ndless_run_storage_regression` exercises the exact host implementation with

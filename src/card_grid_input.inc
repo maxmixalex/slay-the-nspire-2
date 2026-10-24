@@ -1,11 +1,13 @@
 CardGridScroll& App::configure_card_grid(CardGridSurface surface,int count,uint32_t identity){
     auto&grid=card_grids[unsigned(surface)];int top=43,bottom=207,inset=8,left=CardGridScroll::Left;
     if(surface==CardGridSurface::Pile){top=22;bottom=240;inset=pile_tab?8:27;left=pile_tab?52:57;identity=identity*8+unsigned(pile_tab);}
+    else if(surface==CardGridSurface::CombatChoice){top=15;bottom=240;inset=15;}
+    else if(surface==CardGridSurface::WorldChoice&&world_selection_kind()!=WorldSelectionKind::None){top=15;bottom=240;inset=15;}
     else if(surface==CardGridSurface::Library){
         if(library_tab){prepare_collection();return card_grids[unsigned(surface)];}
         grid.configure(card_library.epoch,pile_sort_epoch,count,0,240,15,4,75,false);return grid;
     }
-    else if(surface==CardGridSurface::DeckChoice){top=48;bottom=208;inset=6;identity=identity*32+unsigned(game.phase)+unsigned(grimoire_select)*256;}
+    else if(surface==CardGridSurface::DeckChoice){top=deck_selection_layout::GridTop;bottom=deck_selection_layout::GridBottom;inset=deck_selection_layout::GridInset;identity=identity*32+unsigned(game.phase)+unsigned(grimoire_select)*256;}
     grid.bar_inset=surface==CardGridSurface::Pile?18:25;
     grid.configure(identity,pile_sort_epoch,count,top,bottom,inset,CardGridScroll::Columns,left);return grid;
 }
@@ -18,6 +20,10 @@ int App::active_card_grid()const{
     if(choice_peeking)return -1;
     if(!combat_choice_ready()&&(choice_phase(game.phase)||game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))return -1;
     if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)return int(CardGridSurface::DeckChoice);
+    const auto combat_kind=combat_selection_kind();
+    if(combat_kind!=CombatSelectionKind::None)return combat_kind==CombatSelectionKind::Pile||combat_kind==CombatSelectionKind::SimpleGrid?int(CardGridSurface::CombatChoice):-1;
+    const auto world_kind=world_selection_kind();
+    if(world_kind!=WorldSelectionKind::None)return deck_selection.preview||world_kind==WorldSelectionKind::Bundle?-1:int(CardGridSurface::WorldChoice);
     if(choice_phase(game.phase)&&game.phase!=Phase::WorldRelicChoice&&game.phase!=Phase::OriginalEventChoice){
         if(game.phase==Phase::ExtendedChoice&&(game.expansion.choice==XChoice::Offer||game.expansion.choice==XChoice::EnemyKnowledge||game.expansion.choice==XChoice::EventAbundance))return -1;
         return int(CardGridSurface::CombatChoice);
@@ -39,7 +45,11 @@ int App::active_card_grid()const{
 void App::focus_card_grid(){
     if(library&&library_tab){focus_collection();return;}
     const int surface=active_card_grid();if(surface<0)return;
-    const int selected=surface==int(CardGridSurface::Pile)?inspect_cursor:surface==int(CardGridSurface::Library)?library_selected:cursor;
+    int selected=surface==int(CardGridSurface::Pile)?inspect_cursor:surface==int(CardGridSurface::Library)?library_selected:cursor;
+    if(surface==int(CardGridSurface::DeckChoice)){
+        uint16_t indices[MaxDeck];const unsigned count=deck_choice_items(indices,MaxDeck);selected=-1;
+        for(unsigned i=0;i<count;++i)if(indices[i]==cursor){selected=int(i);break;}
+    }
     card_grids[surface].focus(selected);
 }
 bool App::card_grid_input(Key key){
@@ -47,14 +57,16 @@ bool App::card_grid_input(Key key){
     if(pointer.dispatching||(key!=Key::Left&&key!=Key::Right&&key!=Key::Up&&key!=Key::Down))return false;
     const int surface=active_card_grid();if(surface<0)return false;
     if(surface==int(CardGridSurface::Pile)&&pile_control_focus>=0)return false;
-    int count=0;
+    int count=0;uint16_t deck_indices[MaxDeck];
     if(surface==int(CardGridSurface::Pile))count=int(pile_items());
     else if(surface==int(CardGridSurface::Library))count=int(library_items());
-    else if(surface==int(CardGridSurface::DeckChoice))count=game.deck_count;
-    else if(surface==int(CardGridSurface::CombatChoice))count=choice_pile(game).count;
-    else count=int(world_choice_options(nullptr,0));
+    else if(surface==int(CardGridSurface::DeckChoice)){sync_deck_selection();count=int(deck_choice_items(deck_indices,MaxDeck));}
+    else if(surface==int(CardGridSurface::CombatChoice))count=int(combat_selection_items());
+    else{sync_world_selection();count=int(world_choice_options(nullptr,0));}
     auto&grid=configure_card_grid(CardGridSurface(surface),count,game.revision);
-    int&selected=surface==int(CardGridSurface::Pile)?inspect_cursor:surface==int(CardGridSurface::Library)?library_selected:cursor;
+    int deck_index=0;
+    if(surface==int(CardGridSurface::DeckChoice))for(int i=0;i<count;++i)if(deck_indices[i]==cursor){deck_index=i;break;}
+    int&selected=surface==int(CardGridSurface::Pile)?inspect_cursor:surface==int(CardGridSurface::Library)?library_selected:surface==int(CardGridSurface::DeckChoice)?deck_index:cursor;
     if(!count){selected=0;return true;}selected=CardGridScroll::clamp(selected,0,count-1);
     const int first=selected/grid.columns*grid.columns,last=CardGridScroll::clamp(first+grid.columns,0,count);
     // NCardGrid wraps horizontally within its row. Vertical focus stays in
@@ -65,5 +77,6 @@ bool App::card_grid_input(Key key){
         if(selected<grid.columns&&surface==int(CardGridSurface::Pile)&&!pile_tab){pile_control_focus=selected;return true;}
         if(selected>=grid.columns)selected-=grid.columns;
     }else if(key==Key::Down&&selected+grid.columns<count)selected+=grid.columns;
+    if(surface==int(CardGridSurface::DeckChoice))cursor=deck_indices[selected];
     grid.focus(selected);return true;
 }

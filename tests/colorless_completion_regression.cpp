@@ -194,8 +194,7 @@ static void card_contract(unsigned kind,unsigned up){
         next_turn(s);CHECK(total_hp(s)==92-2*(15+10*(int)up)&&power_value(s,XPower::RollingBoulder)==15+5*(int)up);break;
     case SecretTechnique:case SecretWeapon:{
         int attack=add(s,Strike,0,Zone::Draw),skill=add(s,Defend,0,Zone::Draw),power=add(s,Inflame,0,Zone::Draw);
-        act(s,kind);CHECK(s.expansion.choice==XChoice::Draw&&s.expansion.choices.count==1);
-        CHECK(s.expansion.choices.ids[0]==(kind==SecretTechnique?skill:attack));pick(s,1);
+        act(s,kind);CHECK(s.phase==Phase::Combat&&s.hand.ids[0]==(kind==SecretTechnique?skill:attack));
         CHECK(s.hand.count==1&&s.draw.count==2&&contains(s.draw,power)&&s.zones[0]==(up?Zone::Discard:Zone::Exhaust));break;}
     case SeekerStrike:
         supply(s,8);act(s,kind);CHECK(s.enemies[0].hp==37-3*(int)up&&s.expansion.choice==XChoice::Draw&&s.expansion.choices.count==3);
@@ -290,7 +289,7 @@ static void generation_and_transform_pools(){
     for(unsigned old:{(unsigned)Strike,(unsigned)StrikeSilent,(unsigned)Finesse,(unsigned)Shiv,(unsigned)Soul,(unsigned)SovereignBlade}){
         active_kind=Entropy;active_upgrade=0;auto s=fight(old,1);
         s.expansion.turn_cost[0]=4;s.expansion.combat_cost[0]=1;s.expansion.replay[0]=2;
-        queue_extension(s,XOp::Transform,1);resolve_pending(s);pick(s,1);
+        queue_extension(s,XOp::Transform,1);resolve_pending(s);CHECK(s.phase==Phase::Combat);roundtrip(s);
         unsigned k=s.cards[0].kind;
         CHECK(k!=old&&!s.cards[0].upgraded&&!s.expansion.turn_cost[0]&&!s.expansion.combat_cost[0]&&!s.expansion.replay[0]);
         if(old==Strike)CHECK(card_in_pool(k,Character::Ironclad));
@@ -315,7 +314,7 @@ static void original_continuation_boundaries(){
     active_kind=SecretWeapon;full=fight(Defend);supply(full,9,Defend,Zone::Hand);
     auto_id=add(full,SecretWeapon,0,Zone::Discard);int chosen=add(full,Strike,0,Zone::Draw);
     queue_extension(full,XOp::AutoInstance,auto_id);resolve_pending(full);
-    CHECK(full.expansion.choice==XChoice::Draw&&full.expansion.choices.ids[0]==chosen);pick(full,1);
+    CHECK(full.phase==Phase::Combat);
     CHECK(full.hand.count==MaxHand&&full.draw.count==0&&full.zones[chosen]==Zone::Discard&&full.zones[auto_id]==Zone::Exhaust);ready(full);
 
     for(unsigned up=0;up<2;up++){

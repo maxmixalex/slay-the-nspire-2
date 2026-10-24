@@ -20,6 +20,7 @@
 #include "frontend_ui7_assets.hpp"
 #include "character_select_layout.hpp"
 #include "card_face_layout.hpp"
+#include "menu_overlay_layout.hpp"
 #include "card_resource_assets.hpp"
 #include "fitted_text.hpp"
 #include "inplace_reset.hpp"
@@ -111,6 +112,7 @@ static void log_line(App&a,Log l,char*b,size_t n){
 #include "relic_ui.inc"
 #include "ui_picture_transform.inc"
 #include "card_grid_ui.inc"
+#include "deck_selection_ui.inc"
 #include "hud_ui6.inc"
 
 #include "rooms_ui.inc"
@@ -212,9 +214,6 @@ static void panels(Canvas&c){
     if(a.panel==2){
         c.centered("本局记录（最近 24 条）",5,27,310,12,Gold);a.scroll=mn(a.scroll,mx(0,s.log_count-10));int first=mx(0,s.log_count-10-a.scroll);
         for(int i=first;i<mn(s.log_count,first+10);i++){char b[160]={};log_line(a,s.logs[i],b,sizeof b);c.text(b,13,49+(i-first)*16,10,White,295);}
-    }else if(a.panel==5){
-        owned_relic_panel(c);
-
     }
     c.close_button();
     if(a.panel==2){c.text("↑",299,53,12,Gold);c.hit(294,50,23,24,HitKind::Scroll,-1);c.text("↓",299,157,12,Gold);c.hit(294,153,23,24,HitKind::Scroll,1);}
@@ -261,6 +260,7 @@ static void auxiliary_patch_button(Canvas&);
 
 void App::render(){
     begin_card_face_frame();
+    if(!paused)pause_visible=false;
     if(auxiliary.screen!=AuxiliaryScreen::None){Canvas c{*this};auxiliary_screen(c);pointer_overlay(c);return;}
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){Canvas c{*this};debug_screen(c);pointer_overlay(c);return;}
@@ -288,8 +288,8 @@ void App::render(){
     if(profiles_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;profiles_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm||ftue.active())pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);ftue_screen(c);pointer_overlay(c);return;}
     if(map_preview.open){reference_map_screen(c);pointer_overlay(c);return;}
-    if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
-    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0)item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(library){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;library_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
+    if(statistics_open||history_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;if(statistics_open)statistics_screen(c);else history_screen(c);if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);keyword_tooltips(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(compendium_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;compendium_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(character_select){const bool mouse=pointer.visible;if(ftue.active())pointer.visible=false;character_screen(c);pointer.visible=mouse;ftue_screen(c);pointer_overlay(c);return;}
     const bool underlay_pointer_visible=pointer.visible;
@@ -307,7 +307,7 @@ void App::render(){
         case Phase::Shop:shop_screen(c);break;
         case Phase::Event:event_screen(c);break;
         case Phase::Camp:camp_screen(c);break;
-        case Phase::Upgrade:case Phase::Remove:case Phase::Transform:choice_room_underlay(c);deck_select(c);break;
+        case Phase::Upgrade:case Phase::Remove:case Phase::Transform:sync_deck_selection();choice_room_underlay(c);deck_select(c);break;
         case Phase::Reward:reward_screen(c);break;
         case Phase::Combat:case Phase::ExhaustChoice:case Phase::DiscardChoice:case Phase::ExhaustManyChoice:case Phase::ReturnChoice:case Phase::ExtendedChoice:combat_screen(c);break;
         case Phase::Treasure:treasure_screen(c);break;
@@ -322,6 +322,7 @@ void App::render(){
         if(!combat_linger&&(!panel||panel==4)&&!library&&combat_choice_ready()&&!choice_peeking&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
         else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase)&&!choice_peeking)card_choice_screen(c);
         combat_peek_button(c);
+        potion_popup_exit_screen(c);
         if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger||combat_feedback.active)turn_banner_screen(c);
         reward_pickup_screen(c);
@@ -346,7 +347,7 @@ void App::render(){
     if(library)library_screen(c);
     if(deck_candidate>=0&&!paused&&!help&&!panel)deck_confirm_screen(c);
     if(detail_card>=0||card_inspect.closing(map_clock_ms))detail_screen(c);
-    if(detail_item>=0)item_detail_screen(c);
+    if(detail_item>=0||relic_inspect.closing(map_clock_ms))item_detail_screen(c);
     if(status_actor>=0)status_screen(c);
     if(event_reader)event_reader_screen(c);
     if(map_preview.open)reference_map_screen(c);

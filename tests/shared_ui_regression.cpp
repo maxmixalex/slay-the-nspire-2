@@ -17,10 +17,10 @@ int main(int argc,char**argv){
  std::vector<uint8_t> data;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));size_t n=std::fread(data.data(),1,data.size(),f);std::fclose(f);CHECK(a.init(data.data(),n,{}));}
  init();auto before=snapshot();a.input(Key::Collection);action(UiAction::LibraryRelics);a.render();
- // Categories occupy one scroll container; clicking a relic only focuses
- // its hover tip and does not invent a separate inspection dialog.
+ // Categories occupy one scroll container; relic clicks open the original
+ // NInspectRelicScreen and return to the same collection scroll position.
  CHECK(a.collection.count>RelicKinds);unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::LibraryItem){++count;CHECK(a.hits[i].y>=0&&a.hits[i].y+a.hits[i].h<=240);}CHECK(count>0);unchanged(before);
- a.library_selected=24;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,24));CHECK(a.library_selected==24&&a.detail_item<0);unchanged(before);
+ a.library_selected=24;CHECK(spire_test::focus_card_grid(a));CHECK(click(HitKind::LibraryItem,24));CHECK(a.library_selected==24&&a.detail_item==a.collection.ids[24]);unchanged(before);a.input(Key::Back);CHECK(a.detail_item<0&&a.library);a.advance(250);
  CHECK(spire_test::drag_grid_thumb(a,true));CHECK(spire_test::drag_grid_thumb(a,false));unchanged(before);
  a.input(Key::Back);CHECK(!a.library&&a.compendium_open);a.input(Key::Back);CHECK(!a.compendium_open);
  init();a.game.phase=Phase::Upgrade;a.cursor=31;CHECK(spire_test::focus_card_grid(a));before=snapshot();CHECK(click(HitKind::Choice,31));CHECK(a.deck_candidate==31);unchanged(before);
@@ -32,7 +32,7 @@ int main(int argc,char**argv){
  init();a.game.phase=Phase::Transform;a.game.event_id=EventId::Grove;a.game.event_remaining=2;a.cursor=3;before=snapshot();a.input(Key::Confirm);unchanged(before);action(UiAction::ConfirmDeckChoice);CHECK(a.game.event_remaining==1&&a.game.event_first==3&&a.game.phase==Phase::Transform);
  a.cursor=3;a.input(Key::Confirm);CHECK(a.deck_candidate<0);a.cursor=4;a.input(Key::Confirm);CHECK(a.deck_candidate==4);a.game.revision++;auto stale=snapshot();a.confirm_deck_choice();unchanged(stale);CHECK(a.deck_candidate<0);
  init();a.game.cards[a.game.hand.ids[0]]={Purity,0};a.game.event_cards.deck_origin[a.game.hand.ids[0]]=0;a.cursor=0;a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustManyChoice);before=snapshot();a.render();
- for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);unchanged(before);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.exhaust.count==1);
+ for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);unchanged(before);a.advance(250);a.advance(100);action(UiAction::ConfirmChoice);CHECK(a.game.phase==Phase::Combat&&a.game.exhaust.count==1);
  if(!data.empty()){
   CHECK(a.content.frame_image({StrikeSilent,0})==a.content.ui_image(U_GreenAttack));CHECK(a.content.energy_image({StrikeSilent,0})==a.content.ui_image(U_SilentEnergy));
   for(int i=17;i<30;i++)CHECK(a.content.relic_image(i)==a.content.ui_image(i>=25?U_Kunai+i-25:U_HornCleat+i-17));

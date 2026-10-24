@@ -145,7 +145,8 @@ pages, and persist completion only after the last confirmation. It uses visible
 controls and persisted metadata for observation, without enabling an ordinary
 build's debug API. Its source now uses the implemented pointer-hit geometry and
 checks the stored v17 turn after the lesson to detect an End Turn slipping
-through. Execution against the matching final HTML remains a separate gate.
+through. The matching ordinary HTML passed this complete flow at checkpoint
+`492915341106b129f730e46ed84d152637a24b7d`; see the executed browser receipt below.
 
 ## Source references
 
@@ -171,22 +172,55 @@ preference-versus-popup behavior, no startup profile scan, three independent
 profiles, deleted-profile recreation, dirty-state retry, simulation byte
 purity, and the fully populated 295,349-byte profile. At persistence source-ready
 time, its source and the changed codec/application translation units passed
-short syntax checks. Full matching-library and visual/input tests await the
-combined remotely preserved FTUE checkpoint; persistence alone is not completion
-of the interactive tutorial feature.
+short syntax checks. The matching combined checkpoint
+`492915341106b129f730e46ed84d152637a24b7d` subsequently passed **6,413 checks**
+and exported the valid profiles. Receipt:
+`ui9-ftue-progress-export-adc5a937cfbb`. The measured full profile is
+**295,349 bytes**, `sizeof(UiProgress)` is **308,304**, and the serialized
+tutorial field is **two bytes**. Persistence alone is not completion of the
+interactive tutorial feature.
 
 The optional `--export EXISTING_DIRECTORY` writes codec-produced legacy NSH7,
 enabled/declined/full NSH8, and a valid raw v17 run for host integration tests.
 `web_profiles_storage_test.js DIRECTORY` repeats its ordinary storage checks with
 those exact exported records. The JavaScript host remains format-agnostic:
 progress is an opaque base64 record independent of v17 runs and v4 preferences.
-Its additional full-size storage/rollback fixture passed a short local check;
-the valid exported-record run awaits the matching C++ checkpoint. It covers
-profile isolation, run-only deletion, denied progress writes, preference
-fallback and failed preference transactions, and deletion recovery across a
-new host instance without changing the NSH8 bytes. The native profile regression
-also checks current NSH8 summaries and full tutorial-flag decoding beside its
-existing old-prefix and backup-recovery cases.
+The real exported-record run passed at the same checkpoint, receipt
+`ui9-ftue-web-valid-profiles-e711f101ff00`. It covers profile isolation, run-only
+deletion, denied progress writes, preference fallback and failed preference
+transactions, and deletion recovery across a new host instance without changing
+the NSH8 bytes. The matching native profile regression passed **259 checks**,
+receipt `ui9-ftue-ndless-profiles-a6b4bb661b47`, including current NSH8 summaries
+and full tutorial-flag decoding beside its existing old-prefix and backup
+recovery cases. All three journals recorded `source_changed: false`.
+
+The exported full NSH8 record has SHA-256
+`4c3628949e7de487aa449744e6b469de25ff2743630b77798a61158a18efe725` and was
+handed to the separate ordinary-device capacity gate. It contains actual
+codec-valid maximum counts; it is not used to claim a naturally played run or
+completed UI interaction.
+
+The final ordinary bilingual HTML passed its full browser script at the same
+checkpoint, receipt `ui9-ftue-offline-browser-local-dcab07ff6e07`. The script
+recorded **16 completed flow checks and 27 captures** in isolated Chromium
+156.0.8078.47, with no page errors or external requests. Profiles one and two
+declined the question; a separate fresh profile accepted it, resolved its real
+Neow choices in five control steps, acknowledged the first-map tutorial, and
+entered the first combat. The three-page lesson supported both pointer and
+physical navigation, blocked ordinary shortcuts and End Turn, and recorded
+completion only on the final Next release (`0x6007`: initialized, enabled,
+acceptance, map, and combat seen). The resulting canonical v17 save remained on
+turn one. Reload and Continue preserved that completion without repeating the
+lesson or changing profile one's declined preference. The existing setting,
+language, save, profile-isolation and deletion flows also passed.
+
+The first attempt, `ui9-ftue-offline-browser-5cbda53f30a4`, failed before page
+creation because the command sandbox denied Chromium's local socket setup.
+That failure is retained. The successful rerun received automatic approval for
+the same frozen script in an isolated local browser; all external requests
+remained blocked. The visible ten-second library measurement recorded 301
+renders and zero provider reads. It measures that browser's CPU/Canvas path,
+not calculator display FPS.
 
 ## Modal rendering and actual operation ownership
 
@@ -241,6 +275,15 @@ background disappearance at5.1s. The banner uses original Spectral/Source Han
 Serif display glyphs at18px, an actual2→1 node zoom, and a bounded outline
 coverage scratch array rather than new permanent art or cache storage.
 
+The 5.1s banner is visual and does not hold gameplay input. In the original
+`CombatManager.StartCombatInternal`, adding it is followed by the ordinary
+0.5s Fast/1s Normal preparation wait and `StartTurn`, not an await of the banner.
+`StartTurn` clears `PlayerActionsDisabled`, unpauses the action executor and
+emits `TurnStarted`, which enables the hand and End Turn. The third tutorial
+page likewise creates the banner and immediately closes its blocking modal.
+The port retains its actual preparation/dealing guards and does not add an
+incorrect five-second action lock after tutorial completion.
+
 ### Canonical and renderer boundary
 
 The existing core resolves commands synchronously; the combat UI presents
@@ -272,7 +315,34 @@ clock boundary in Fast, acknowledgement, and unchanged legacy behavior.
 `ftue_progress_regression` independently validates NSH1–8 persistence and the
 three-profile migration boundary.
 
-These new runtime gates await the matching remote source checkpoint and its
-native/ARM/Web builds. A syntax-only check or a generated fixture is not recorded
-as completed actual UI acceptance. Final reports must replace this pending
-sentence only with the matching run receipts and reviewed bilingual captures.
+The first combined49291534 execution retained three failed FTUE receipts:
+synthetic initialization, and both actual locales at the first CombatRules
+input check. The synthetic retained-cost table was positioned incorrectly;
+the actual fixture opened its modal before explicit combat asset preparation
+finished. After those corrections, a third fixture correction used the real
+RewardCards action to start its350ms entrance clock. No production preparation
+or input gate was weakened. Preparation also asserts unchanged State and
+animation, and every existing modal assertion remains.
+
+The corrected fixture linked against the unchanged frozen49291534 runtime and
+headers passed59,564 synthetic /5,987 English /5,284 Chinese checks. Receipts:
+`ui8-stage8e-ftue-probe2-synthetic-375bcf7a2a9d`,
+`ui8-stage8e-ftue-probe2-eng-5146b67d530c`, and
+`ui8-stage8e-ftue-probe2-zhs-98dfe88853e1`. Both final production packs passed
+all required-glyph and complete-paragraph bounds; each locale produced19
+reviewed captures, including real shuffle and treasure commands. Private
+captures are under `ui9-stage8e-captures/ftue/{eng,zhs}`. The three combat-page
+image rectangles are also pixel-identical between locales. The reviewed
+Power-arrow position is authored in its original scene; NPowerCardFtue only
+raises the actual Power holder's Z-index and does not reposition that arrow.
+
+Visual review also identified a real Relic-arrow difference: its original
+scene has `flip_v=true`. The renderer now supplies that one missing transform
+flag. The actual-pack fixture checks the final framebuffer against opaque
+pixels from the original47×39 texture in reversed row order, including pixels
+whose opposite row is transparent so the unflipped direction cannot pass.
+It excludes only the popup's actual overlap, not the arrow's visible tip.
+
+The revised fixtures and this one runtime flag still require their own remote
+checkpoint and formal matching rerun. These diagnostic passes do not overwrite
+the first combined suite's failed result or imply renderer-wide95% fidelity.

@@ -4,11 +4,26 @@ void App::open_potion(int slot){
     if(title||paused||help||library||character_select||slot<0||slot>=int(potion_slot_count(game)))return;
     if(potion_at(game,unsigned(slot))==Potion::Empty)return;
     if(panel==4&&scroll==slot&&!potion_targeting){close_potion();return;}
+    if(panel==4&&!potion_targeting)begin_potion_popup_exit(potion_at(game,unsigned(scroll)));
     pointer_cancel();hud_focus=-1;panel=4;scroll=slot;potion_page=uint8_t(slot/3);
     potion_targeting=false;potion_menu_item=0;potion_popup_slot=slot;potion_popup_start=map_clock_ms;
     if(!potion_usable()&&can_discard_potion(game,slot))potion_menu_item=1;
 }
-void App::close_potion(){
+static bool thrown_bottle(Potion bottle){
+    const auto*d=potion_definition(bottle);
+    return d&&(d->targeted||bottle==Potion::Explosive||bottle==Potion::PotionOfBinding||bottle==Potion::ShacklingPotion||bottle==Potion::FoulPotion);
+}
+void App::begin_potion_popup_exit(Potion bottle){
+    if(panel!=4||potion_targeting||potion_popup_slot<0||bottle==Potion::Empty)return;
+    const unsigned age=map_clock_ms-potion_popup_start;const int width=potion_slot_count(game)>3?14:17;
+    potion_popup_exit.start=map_clock_ms;potion_popup_exit.x=int16_t(128+(scroll-int(potion_page)*3)*width+width/2-24);
+    potion_popup_exit.y=int16_t(33-5*CombatCardMotion::sine(1024+int(age>=150?150:age)*1024/150)/1024);
+    potion_popup_exit.alpha=uint8_t(age>=100?255:(1024-CombatCardMotion::sine(1024+int(age)*2048/100))*255/2048);
+    potion_popup_exit.thrown=thrown_bottle(bottle);potion_popup_exit.active=true;
+}
+void App::close_potion(Potion bottle){
+    if(bottle==Potion::Empty&&scroll>=0&&scroll<int(potion_slot_count(game)))bottle=potion_at(game,unsigned(scroll));
+    begin_potion_popup_exit(bottle);
     if(panel==4)panel=0;
     potion_targeting=false;potion_popup_slot=-1;potion_menu_item=0;pointer_cancel();
 }
@@ -17,9 +32,9 @@ bool App::potion_needs_target()const{
     return d&&(d->targeted||(bottle==Potion::FoulPotion&&game.phase!=Phase::Combat));
 }
 bool App::potion_is_thrown()const{
-    const Potion bottle=potion_at(game,unsigned(scroll));const auto*d=potion_definition(bottle);
+    const Potion bottle=potion_at(game,unsigned(scroll));
     // NPotionPopup includes AnyEnemy, AllEnemies and TargetedNoCreature.
-    return d&&(d->targeted||bottle==Potion::Explosive||bottle==Potion::PotionOfBinding||bottle==Potion::ShacklingPotion||bottle==Potion::FoulPotion);
+    return thrown_bottle(bottle);
 }
 bool App::potion_usable()const{
     if(panel!=4||combat_actions_locked())return false;
@@ -38,7 +53,7 @@ bool App::finish_potion_use(int selected_target){
     if(!can_use_potion(game,slot,selected_target))return false;
     begin_combat_feedback();
     if(!use_potion(game,slot,selected_target)){combat_feedback.reset();combat_status.reset();return false;}
-    remove_potion_visual(bottle,slot,false);close_potion();
+    remove_potion_visual(bottle,slot,false);close_potion(bottle);
     choice_selected_count=0;choice_revision=game.revision;
     if(target>=game.enemy_count||!enemy_allow_target(game,target))for(int i=0;i<game.enemy_count;++i)if(enemy_allow_target(game,i)){target=i;break;}
     return true;
@@ -46,6 +61,7 @@ bool App::finish_potion_use(int selected_target){
 void App::start_potion_use(){
     if(!potion_usable())return;
     if(potion_needs_target()){
+        begin_potion_popup_exit(potion_at(game,unsigned(scroll)));
         pointer_cancel();potion_targeting=true;
         if(game.phase==Phase::Combat&&!can_use_potion(game,scroll,target))
             for(int i=0;i<game.enemy_count;++i)if(can_use_potion(game,scroll,i)){target=i;break;}
@@ -86,7 +102,7 @@ bool App::potion_input(Key key){
             else return_to_screen();return true;
         }
         if(key==Key::Confirm){if(hud_focus>=2&&hud_focus<slots+2)open_potion(hud_focus-2);return true;}
-        if(key==Key::Detail){if(hud_focus>=2&&hud_focus<slots+2&&potion_at(game,unsigned(hud_focus-2))!=Potion::Empty){detail_owned=-1;detail_item=WorldRelicKinds+int(potion_at(game,unsigned(hud_focus-2)))-1;detail_scroll=0;}return true;}
+        if(key==Key::Detail)return true; // NPotionHolder exposes its hover tip, not a separate inspect screen.
         hud_focus=-1;
         if(key==Key::Back||key==Key::Potions)return true;
         return false;
@@ -107,7 +123,7 @@ bool App::potion_input(Key key){
             if(potion_at(game,unsigned(next))!=Potion::Empty){if(next!=scroll)open_potion(next);break;}}
     }else if(key==Key::Up||key==Key::Down)potion_menu_item^=1;
     else if(key==Key::Confirm){if(potion_menu_item)ui_action(UiAction::DiscardPotion);else start_potion_use();}
-    else if(key==Key::Detail){detail_owned=-1;detail_item=WorldRelicKinds+int(potion_at(game,unsigned(scroll)))-1;detail_scroll=0;}
+    else if(key==Key::Detail)return true;
     return true;
 }
 

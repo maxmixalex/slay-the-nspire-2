@@ -114,6 +114,8 @@ static const HitRegion* hover_keyboard_hit(const App&a){
     if(!a.panel&&!a.library){for(int i=0;i<a.hit_count;++i){const auto&h=a.hits[i];
         if(h.kind==HitKind::Choice&&h.value==a.cursor)return &h;
         if(h.kind==HitKind::CombatChoice){const auto&source=choice_pile(a.game);if(a.cursor>=0&&a.cursor<source.count&&h.value==source.ids[a.cursor])return &h;}
+        if(h.kind==HitKind::WorldPreviewCard&&h.value==a.cursor)return &h;
+        if(h.kind==HitKind::WorldChoice){uint16_t ids[MaxWorldUiChoices];const unsigned count=a.world_choice_options(ids,MaxWorldUiChoices);if(a.cursor>=0&&unsigned(a.cursor)<count&&h.value==ids[a.cursor])return &h;}
     }}return nullptr;
 }
 bool card_hover_target(const App&a,CardHoverTarget&target){
@@ -129,7 +131,17 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
         // card changes, independent of mouse location or a second hotkey.
         return target.card.kind<CardKinds;
     }
-    if((a.title&&!a.library)||a.deck_candidate>=0||a.game_over_summary||(a.panel&&a.panel!=1)||a.map_window.is_open)return false;
+    if((a.title&&!a.library)||a.game_over_summary||(a.panel&&a.panel!=1)||a.map_window.is_open)return false;
+    if(a.deck_candidate>=0){
+        if(!a.deck_selection_active()||!a.deck_candidate_valid())return false;
+        using namespace deck_selection_layout;
+        const bool upgrade=a.game.phase==Phase::Upgrade;
+        const int x=upgrade&&a.pointer.visible&&a.pointer.x>=AfterX?AfterX:upgrade?BeforeX:SingleX;
+        if(a.pointer.visible&&(a.pointer.x<x||a.pointer.x>=x+PreviewW||a.pointer.y<PreviewY||a.pointer.y>=PreviewY+PreviewH))return false;
+        target.deck=a.deck_candidate;target.card=a.game.deck[target.deck];
+        if(upgrade&&x==AfterX)target.card.upgraded=1;
+        target.owner={x,PreviewY,PreviewW,PreviewH};target.identity=0x310000u|unsigned(target.deck)|(unsigned(target.card.upgraded)<<12);return true;
+    }
     const HitRegion*h=a.pointer.visible?a.hit_at(a.pointer.x,a.pointer.y):hover_keyboard_hit(a);
     const auto hand=a.combat_hand();
     if(!a.library&&!a.panel&&a.hand_can_focus()&&a.hand_focus&&a.cursor>=0&&a.cursor<hand.count&&
@@ -144,7 +156,34 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
         target.card={ids[h->value],uint8_t(a.library_upgraded&&card_upgradeable({ids[h->value],0}))};break;}
     case HitKind::DeckCard:if(h->value<0||h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];if(a.panel==1&&!a.pile_tab&&a.pile_upgraded&&card_upgradeable(target.card))target.card.upgraded=1;break;
     case HitKind::InstanceCard:if(h->value<0||h->value>=s.card_count)return false;target.instance=h->value;target.card=s.cards[h->value];break;
-    case HitKind::CombatChoice:if(h->value<0)return false;target.card=choice_card(s,h->value);target.instance=h->value<s.card_count?h->value:-1;break;
+    case HitKind::CombatChoice:
+        if(h->value<0)return false;
+        if(a.combat_selection_kind()==CombatSelectionKind::Hand)
+            for(unsigned i=0;i<a.choice_selected_count;++i)if(a.choice_selected[i]==h->value)return false;
+        target.card=choice_card(s,h->value);target.instance=h->value<s.card_count?h->value:-1;
+        if(a.combat_selection_kind()==CombatSelectionKind::HandUpgrade&&a.choice_selected_count&&a.choice_selected[0]==h->value){
+            if(!a.pointer.visible||a.pointer.x<183||a.pointer.x>=234||a.pointer.y<74||a.pointer.y>=146)return false;
+            target.card.upgraded=1;target.owner={183,74,51,72};}
+        break;
+    case HitKind::WorldPreviewCard:{WorldSelectionCard model{};if(h->value<0||!a.world_selection_preview_card(unsigned(h->value),model)||!model.hover)return false;
+        target.card=model.card;target.deck=model.deck;target.preview_facts=model.facts;target.has_preview_facts=true;break;}
+    case HitKind::WorldChoice:{
+        if(h->value<0)return false;const unsigned id=unsigned(h->value);
+        if(s.phase==Phase::WorldRelicChoice){const auto&w=s.world_relics;
+            if(w.choice==WorldRelicChoice::Hand){if(id>=s.card_count)return false;
+                if(combat_selection_hand(a.combat_selection_kind()))for(unsigned i=0;i<a.choice_selected_count;++i)if(a.choice_selected[i]==id)return false;
+                target.instance=int(id);target.card=s.cards[id];
+            }else if(w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer){if(id>=w.offer_count)return false;target.card=card_from_token(w.offers[id]);target.facts=&w.offer_facts[id];}
+            else if(w.choice==WorldRelicChoice::OfferBundle)return false;
+            else if(a.world_selection_kind()!=WorldSelectionKind::None&&id<s.deck_count){target.deck=int(id);target.card=s.deck[id];}
+            else return false;
+        }else if(s.phase==Phase::OriginalEventChoice){const auto&e=s.original_events;
+            if(e.selection==OriginalEventSelection::OfferCard){if(id>=e.offer_count)return false;target.card=card_from_token(e.offers[id]);target.facts=&e.offer_facts[id];}
+            else if(a.world_selection_kind()!=WorldSelectionKind::None&&id<s.deck_count){target.deck=int(id);target.card=s.deck[id];}
+            else return false;
+        }else return false;
+        if(a.world_selection_upgrades()&&a.deck_selection.show_upgrades&&card_upgradeable(target.card))target.card.upgraded=1;
+        break;}
     case HitKind::Choice:
         if(h->value<0)return false;
         if(s.phase==Phase::Reward&&a.reward_cards&&!a.grimoire_select){unsigned n=s.world.active?s.world.reward_count:3;if(unsigned(h->value)>=n)return false;
@@ -153,6 +192,7 @@ bool card_hover_target(const App&a,CardHoverTarget&target){
             target.card=s.world.active?s.world.shop_cards[h->value]:Card{s.shop_cards[h->value],0};target.facts=s.world.active?&s.world.shop_facts[h->value]:nullptr;
         }else if(s.phase==Phase::Upgrade||s.phase==Phase::Remove||s.phase==Phase::Transform||a.grimoire_select){
             if(h->value>=s.deck_count)return false;target.deck=h->value;target.card=s.deck[h->value];
+            if(s.phase==Phase::Upgrade&&a.deck_selection.show_upgrades&&card_upgradeable(target.card))target.card.upgraded=1;
         }else return false;break;
     default:return false;
     }
@@ -176,14 +216,14 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
     }
     if(tip.kind==HoverTipKind::Description){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(owner.card.kind));if(owner.card.upgraded)name.ch('+');
-        a.card_description(owner.card,card_targets_enemy(a.game,owner.card)?a.target:-1,body,body_cap,owner.instance,owner.deck,owner.facts);return;
+        a.card_description(owner.card,card_targets_enemy(a.game,owner.card)?a.target:-1,body,body_cap,owner.instance,owner.deck,owner.card_facts());return;
     }
     if(tip.kind==HoverTipKind::Card){
         TextBuffer name{title,title_cap,0,&a.content};name.text(a.content.card_string(tip.card.kind));if(tip.card.upgraded)name.ch('+');
         const EventCardFacts canonical{};a.card_description(tip.card,-1,body,body_cap,tip.amount>0?tip.amount-1:-1,-1,tip.has_facts?&tip.facts:&canonical);return;
     }
     if(tip.kind==HoverTipKind::Relic){
-        const RelicId id=world_relic_id(tip.key);const int position=owner.historical?int(WorldRelicCapacity):-1;
+        const RelicId id=world_relic_id(tip.key);const int position=owner.historical||owner.canonical_relic?int(WorldRelicCapacity):-1;
         TextBuffer name{title,title_cap,0};name.text(a.relic_title(id,position));a.relic_description(id,body,body_cap,position);return;
     }
     if(tip.kind==HoverTipKind::Potion){
@@ -192,7 +232,7 @@ void format_card_hover_tip(const App&a,const CardHoverTarget&owner,const HoverTi
     const char*table=tip.kind==HoverTipKind::Keyword?"card_keywords":tip.kind==HoverTipKind::Power?"powers":
         tip.kind==HoverTipKind::Orb?"orbs":tip.kind==HoverTipKind::Enchantment?"enchantments":tip.kind==HoverTipKind::Affliction?"afflictions":"static_hover_tips";
     int model=-1;if(tip.kind==HoverTipKind::Power)for(unsigned i=0;i<EnemyPowerCount;++i)if(wt_equal(tip.key,world_enemy_power_keys[i])){model=int(i);break;}
-    HoverTextContext context{{&a,table,{},model,tip.actor,tip.amount,owner.card,owner.instance,owner.deck,owner.facts},&tip};
+    HoverTextContext context{{&a,table,{},model,tip.actor,tip.amount,owner.card,owner.instance,owner.deck,owner.card_facts()},&tip};
     auto format=[&](const char*suffix,char*out,size_t cap){if(!cap)return;char key[160]{},raw[4096]{};TextBuffer k{key,sizeof key,0};k.text(tip.key);k.text(suffix);
         wt_model_key(context.world,key);TextBuffer source{raw,sizeof raw,0};source.text(a.content.world_string(table,key));LocalizedTemplate(out,cap,hover_text_value,&context,a.content.world_title("static_hover_tips","ENERGY_COUNT"),a.content.world_title("static_hover_tips","STAR_COUNT"),a.content.english()).format(raw);};
     format(".title",title,title_cap);format(tip.smart?".smartDescription":".description",body,body_cap);
@@ -252,7 +292,7 @@ static HoverPage hover_page(Canvas&c,const CardHoverTarget&owner,const HoverTipL
     card_x=mx(3,mn(271,card_x));
     const int visible_cards=mx(0,mn(cards_per_page,card_count-selected*cards_per_page)),card_height=mx(0,visible_cards*63-1);
     int card_top=details?column.y:mn(mx(column.y,owner.owner.y),column.y+column.h-card_height);
-    if(owner.relic>=0&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
+    if(owner.relic>=0&&!owner.inspect_relic&&text_top+text_height+1+card_height<=column.y+column.h){card_x=column.x;card_top=text_top+text_height+1;}
     int card=0;for(unsigned i=0;i<tips.count;++i)if(tips.items[i].kind==HoverTipKind::Card){
         if(card/cards_per_page==selected&&result.count<MaxCardHoverTips)result.pieces[result.count++]={i,0,0,{card_x,card_top+(card%cards_per_page)*63,46,62}};
         ++card;
@@ -280,6 +320,7 @@ static void draw_hover_piece(Canvas&c,const CardHoverTarget&owner,const HoverTip
 // fitting truncated, so this adds no layout or glyph I/O to a settled hand.
 static void collect_visible_hover_tips(Canvas&c,const CardHoverTarget&owner,HoverTipList&tips){
     collect_keyword_hover_tips(c.a,owner,tips);
+    if(owner.inspect_relic)return;
     bool truncated=owner.detail&&c.a.card_inspect.description_truncated;
     if(!owner.detail){
         if(owner.event_option>=0||owner.instance<0||c.a.library||c.a.panel||
