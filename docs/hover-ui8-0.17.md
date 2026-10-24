@@ -51,5 +51,27 @@ upgrade states, validates each native text/card geometry, complete line access,
 viewport containment and nonoverlap at 28 edge positions. Collection tests
 exercise actual Fencing Manual and Cunning Potion hover, related-card discovery,
 upgrade state, stable scroll/collection identity and captured pointer release.
-The matching immutable eight-a native gate and real ENG/ZHS capture review are
-still required; syntax and catalog inspection alone are not visual acceptance.
+Matching immutable stage eight-a-one (`16bdbda2`) and the complete private
+v31 font packs pass **405,309 keyword checks per language** and **771,075
+library/collection checks per language**. Captures are retained under
+`private-inputs/ui9-stage8a1-captures/{eng,zhs}`; bilingual hand, related relic
+and related potion montages were visually reviewed. The actual explicit-font
+oracle also passes 152,614 ENG and 151,852 ZHS checks, including all five
+character information blocks; 64 identical warm frames issue zero additional
+provider reads in both languages.
+
+The first actual library run exposed its old practice-combat fixture clicking
+before compressed actors finished preparing. Its real-resource setup now waits
+for that actual bounded preparation; the no-resource synthetic fixture retains
+its original fallback path and separately passes 3,049 checks. The production
+loading phase was not shortened or bypassed. Visual review also exposed event
+tips appearing before their invisible options completed entry. The source
+`AnimateIn.Finished -> EnableButton` and `OnFocus` lock guards now control hover
+target eligibility. Tests explicitly verify absent entry/locked tips and then
+wait only that event's original entry/reveal before interacting. Their real
+captures include the settled story/options alongside associated cards.
+
+The remaining last cleanup hides a redundant 1/1 footer, including the optional
+expanded tip view, while preserving actual multipage navigation and its hits.
+It is included in the parent's final eight-b checkpoint; the earlier captures
+and logs remain evidence for their exact executed revisions.

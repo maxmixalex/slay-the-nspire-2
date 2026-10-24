@@ -475,9 +475,17 @@ static bool start_instance(State&s,int id,int target,bool automatic,int captured
  defect_play_start(s,id,resource_energy,automatic,spent);necro_start_instance(s,id,resource_energy);
  queue_current(s);if(stars_spent)world_stage(s,WorldStage::StarsSpent,stars_spent);regent_begin_play(s,id,automatic,spent,stars_spent,captured_star_x);return true;
 }
+bool card_has_nonresource_play_block(const State&s,int id){
+ if(id<0||id>=s.card_count||s.cards[id].kind>=CardKinds)return false;
+ const Card c=s.cards[id];
+ // NCard's overlay follows CardModel.CanPlay reasons. A busy action queue
+ // and UI phase/input locks are not card rules and must not add crosses.
+ return !wr_can_play(s,false)||cost(c)<-1||!silent_can_play(s,c)||!necro_can_play(s,c)||
+        !enemy_card_can_play(s,id,false)||!event_card_play_allowed(s,id,false);
+}
 bool can_play_card(const State&s,int id){
  if(s.phase!=Phase::Combat||s.effect_count||s.playing>=0||id<0||id>=s.card_count||s.zones[id]!=Zone::Hand)return false;
- Card c=s.cards[id];return c.kind<CardKinds&&wr_can_play(s,false)&&cost(c)>=-1&&cost(s,id)<=s.energy&&card_star_cost(s,c,id)<=s.expansion.stars&&silent_can_play(s,c)&&necro_can_play(s,c)&&enemy_card_can_play(s,id,false)&&event_card_play_allowed(s,id,false);
+ Card c=s.cards[id];return c.kind<CardKinds&&!card_has_nonresource_play_block(s,id)&&cost(s,id)<=s.energy&&card_star_cost(s,c,id)<=s.expansion.stars;
 }
 bool card_targets_enemy(const State&s,Card c,int instance,int deck_index){
  if(c.kind>=CardKinds)return false;bool result=regent_targets_enemy(s,c,silent_card_targets_enemy(s,c));

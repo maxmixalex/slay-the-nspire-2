@@ -48,8 +48,29 @@ int main(){
  proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,1600);
  check(proceed.sample(1625).scale==4198&&proceed.sample(1650).scale==4301&&proceed.sample(1650).hover==4096);
  proceed.observe(6,ButtonFamily::Proceed,ButtonState::Press,1650);
+ for(unsigned t=0;t<=500;++t){const auto v=proceed.sample(1650+t);
+  const double q=t<250?double(t)/250:1;
+  check(std::abs(v.value-(1400-400*q))<1.1&&std::abs(v.saturation-(1000-200*q))<1.1);
+  check(std::abs(v.shade-(255-127*double(t)/500))<1.1);
+ }
  check(proceed.sample(2149).scale>=3891&&proceed.sample(2150).scale==3891&&proceed.sample(2150).shade==128);
  proceed.observe(6,ButtonFamily::Proceed,ButtonState::Rest,2150);check(proceed.sample(2650).scale==4096);
+ for(unsigned t=0;t<=50;++t){const auto v=proceed.sample(2150+t);
+  check(std::abs(v.saturation-(800+200*double(t)/50))<1.1&&v.value==1000);
+ }
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,2700);
+ for(unsigned t=0;t<=50;++t)check(std::abs(proceed.sample(2700+t).value-(1000+400*double(t)/50))<1.1);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Press,2750);
+ const auto partial=proceed.sample(2875);proceed.observe(6,ButtonFamily::Proceed,ButtonState::Rest,2875);
+ check(proceed.sample(2875).value==partial.value&&proceed.sample(2875).saturation==partial.saturation);
+ check(proceed.sample(2925).value==1000&&proceed.sample(2925).saturation==1000);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,3000);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Press,3050);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,3200);
+ check(proceed.state==ButtonState::Release&&proceed.sample(3250).value==1000&&proceed.sample(3250).saturation==1000);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,3700);check(proceed.state==ButtonState::Release&&proceed.sample(3700).value==1000);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Rest,3800);
+ proceed.observe(6,ButtonFamily::Proceed,ButtonState::Focus,3900);check(proceed.sample(3950).value==1400);
  ButtonMotion relic;relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Focus,0);
  check(relic.sample(25).scale==4198&&relic.sample(50).scale==4301);
  relic.observe(7,ButtonFamily::TreasureRelic,ButtonState::Press,50);

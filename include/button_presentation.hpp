@@ -3,8 +3,8 @@
 
 namespace spire {
 enum class ButtonFamily : uint8_t { Action, Pause, EndTurn, Back, RewardAlternative, Proceed, TreasureRelic };
-enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled };
-struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;};
+enum class ButtonState : uint8_t { Rest, Focus, Press, Disabled, Release };
+struct ButtonVisual {int scale=4096,y=0,hover=0,shade=255;uint16_t saturation=1000,value=1000;};
 inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     const bool focus=state==ButtonState::Focus,press=state==ButtonState::Press;
     ButtonVisual v;
@@ -13,6 +13,7 @@ inline ButtonVisual button_target(ButtonFamily family,ButtonState state){
     else if(family==ButtonFamily::Action||family==ButtonFamily::Back||family==ButtonFamily::Proceed||family==ButtonFamily::TreasureRelic){v.scale=focus?4301:press&&family!=ButtonFamily::Back?3891:4096;v.shade=press&&family!=ButtonFamily::TreasureRelic?128:255;}
     else v.y=press?8192:focus?-2048:0;
     v.hover=focus?4096:0;if(state==ButtonState::Disabled)v.shade=128;
+    if(family==ButtonFamily::Proceed){v.saturation=press?800:1000;v.value=focus?1400:1000;}
     return v;
 }
 // One bounded, interruptible presentation per visible control. Restoring a
@@ -30,12 +31,22 @@ struct ButtonMotion {
             // Outline.modulate, leaving its interrupted hover appearance.
             if(family==ButtonFamily::Proceed&&state==ButtonState::Disabled)return from;
             if(state==ButtonState::Disabled)return to;
+            if(family==ButtonFamily::Proceed&&state==ButtonState::Focus){to.shade=from.shade;to.saturation=from.saturation;}
             const unsigned duration=state==ButtonState::Focus?50:family==ButtonFamily::TreasureRelic?400:500;
             const unsigned linear=elapsed>=duration?4096:elapsed*4096/duration;
             const unsigned scale_q=state==ButtonState::Focus?linear:health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);
             ButtonVisual out{from.scale+(to.scale-from.scale)*int(scale_q)/4096,0,
                 from.hover+(to.hover-from.hover)*int(linear)/4096,
-                from.shade+(to.shade-from.shade)*int(scale_q)/4096};
+                from.shade+(to.shade-from.shade)*int(family==ButtonFamily::Proceed?linear:scale_q)/4096};
+            if(family==ButtonFamily::Proceed){
+                // The source hue stays at 1. Focus/unfocus changes V/S in
+                // 50ms, press in 250ms, independently of the 500ms scale
+                // and Image.modulate. Children do not inherit this shader.
+                const unsigned color_duration=state==ButtonState::Press?250:50;
+                const unsigned color_q=elapsed>=color_duration?4096:elapsed*4096/color_duration;
+                out.saturation=uint16_t(int(from.saturation)+(int(to.saturation)-int(from.saturation))*int(color_q)/4096);
+                out.value=uint16_t(int(from.value)+(int(to.value)-int(from.value))*int(color_q)/4096);
+            }
             if(family==ButtonFamily::Proceed&&state==ButtonState::Rest){
                 // NProceedButton loops 0.25 -> 0.75 -> 0.25 in 500ms legs.
                 // The first leg starts from the interrupted outline alpha.
@@ -76,6 +87,9 @@ struct ButtonMotion {
     }
     ButtonVisual observe(uint32_t key,ButtonFamily kind,ButtonState mode,uint32_t now){
         if(identity!=key||family!=kind){identity=key;family=kind;state=ButtonState::Rest;interacted=false;from=button_target(kind,state);start=now;}
+        // Releasing while still inside is OnRelease, not another OnFocus.
+        // Its shader returns to neutral until the pointer leaves/re-enters.
+        if(kind==ButtonFamily::Proceed&&mode==ButtonState::Focus&&(state==ButtonState::Press||state==ButtonState::Release))mode=ButtonState::Release;
         if(state!=mode){from=sample(now);state=mode;start=now;if(mode==ButtonState::Focus||mode==ButtonState::Press)interacted=true;}
         seen=now;return sample(now);
     }

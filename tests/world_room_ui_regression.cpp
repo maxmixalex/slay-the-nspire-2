@@ -531,7 +531,7 @@ static void fake_merchant_layout(){
  CHECK(!exists(HitKind::UiAction,int(UiAction::LeaveShop)));capture("fake-merchant-inventory");unchanged();
  const unsigned relics=ui_owned_relic_count(a.game);click(HitKind::Choice,0);CHECK(ui_owned_relic_count(a.game)==relics+1&&a.game.original_events.offers[0]==NoWorldRelic);a.render();
  CHECK(!hit(HitKind::Choice,0).enabled&&a.room_presentation.merchant.dialogue==0);
- snapshot();click(UiAction::CloseShop);CHECK(!a.shop_open);room_clock(800);unchanged();click(UiAction::LeaveShop);
+ snapshot();click(UiAction::CloseShop);CHECK(!a.shop_open);a.render();room_clock(800);unchanged();click(UiAction::LeaveShop);
  CHECK(a.map_window.is_open&&a.game.original_events.active&&a.game.original_events.finished&&a.game.world.room_open==2);
 }
 static void direct_removal_preview(){

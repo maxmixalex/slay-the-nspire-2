@@ -38,7 +38,7 @@ int main(){
     put(pack,4,18);put(pack,8,0x41cef1ea);put(pack,12,pack.size());put(pack,16,1);put(pack,20,1);put(pack,24,6111);
     const unsigned row=40+16+16+6110*8;put(pack,row,pack.size()-4);put(pack,row+4,3);
     ProbeSource probe{pack};ResourceSource ranged{&probe,uint32_t(pack.size()),probe_read,nullptr};
-    for(unsigned version=17;version<=GameOverTransitionContentVersion;++version){put(pack,4,version);
+    for(unsigned version=17;version<=GroupedGlyphContentVersion;++version){put(pack,4,version);
         std::memcpy(pack.data()+pack.size()-4,"eng",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::English);
         probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::English);CHECK(probe.calls==3&&probe.bytes==52);
         std::memcpy(pack.data()+pack.size()-4,"zhs",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Chinese);

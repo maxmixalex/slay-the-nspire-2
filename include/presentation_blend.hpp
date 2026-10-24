@@ -26,6 +26,26 @@ constexpr uint16_t tint_rgb(uint16_t source,unsigned red,unsigned green,unsigned
         (divide255(((source>>5)&63)*green)<<5)|
         divide255((source&31)*blue));
 }
+// hsv.gdshader with its authored h=1: transform to YIQ, multiply chroma
+// and value, transform back, then apply CanvasItem modulation. Keep values
+// above white until AFTER modulation; an entering highlighted button must
+// not clip its bright texture before its independent gray fade. Q12 color
+// and the inverse matrix's first column avoid floating point on ARMv5.
+inline uint16_t yiq_material(uint16_t source,unsigned saturation,unsigned value,
+                             unsigned brightness=255,unsigned red=255,unsigned green=255,unsigned blue=255){
+    const int r=int(((source>>11)*4096u+15)/31),g=int((((source>>5)&63)*4096u+31)/63),b=int(((source&31)*4096u+15)/31);
+    const int luminance=(2989*r+5870*g+1140*b+5000)/10000;
+    const auto channel=[&](int original,int inverse,unsigned tint,unsigned maximum){
+        const int neutral=(luminance*inverse+32768)/65536;
+        int component=neutral+(original-neutral)*int(saturation)/1000;
+        if(component<0)component=0;
+        unsigned q=unsigned(component)*value/1000;
+        q=(q*brightness*tint+32512)/65025;
+        if(q>4096)q=4096;
+        return (q*maximum+2048)/4096;
+    };
+    return uint16_t((channel(r,65737,red,31)<<11)|(channel(g,65487,green,63)<<5)|channel(b,65318,blue,31));
+}
 constexpr unsigned add_channel(unsigned destination,unsigned source,unsigned alpha,unsigned maximum){
     const unsigned result=destination+divide255(source*alpha);
     return result>maximum?maximum:result;

@@ -49,10 +49,11 @@ template<unsigned ByteCount,unsigned Entries> class ContentTextCache {
         return result;
     }
 public:
+    using Loader=bool(*)(const void*,uint32_t,void*,unsigned);
     void clear(const Content* owner){
         for(unsigned i=0;i<Entries;++i)if(entries_[i].owner==owner)discard(i);
     }
-    const uint8_t* read(const Content* owner,uint32_t offset,unsigned length,const ResourceReader&reader){
+    const uint8_t* cached(const Content* owner,uint32_t offset,unsigned length){
         if(!length||length>65535||length>ByteCount)return nullptr;
         const unsigned key=bucket(offset,length);
         for(unsigned link=buckets_[key];link;link=entries_[link-1].next){
@@ -61,6 +62,13 @@ public:
                 entry.age=next_age();return bytes_+unsigned(entry.first)*PageBytes;
             }
         }
+        return nullptr;
+    }
+    const uint8_t* read_with(const Content* owner,uint32_t offset,unsigned length,
+                            const void*context,Loader load){
+        if(!length||length>65535||length>ByteCount||!load)return nullptr;
+        if(const auto*hit=cached(owner,offset,length))return hit;
+        const unsigned key=bucket(offset,length);
         unsigned slot=Entries;
         for(unsigned i=0;i<Entries;++i){
             const unsigned at=(next_entry_+i)%Entries;
@@ -79,13 +87,18 @@ public:
                 auto&entry=entries_[slot];entry.first=uint16_t(first);entry.pages=uint16_t(pages);
                 for(unsigned i=first;i<first+pages;++i)used_[i/32]|=uint32_t(1)<<(i%32);
                 auto*output=bytes_+first*PageBytes;
-                if(!reader.read(offset,output,length)){discard(slot);return nullptr;}
+                if(!load(context,offset,output,length)){discard(slot);return nullptr;}
                 entry.owner=owner;entry.offset=offset;entry.length=uint16_t(length);entry.age=next_age();
                 entry.next=buckets_[key];buckets_[key]=uint16_t(slot+1);return output;
             }
             const unsigned victim=oldest();if(victim==Entries)return nullptr;discard(victim);
         }
         return nullptr;
+    }
+    const uint8_t* read(const Content* owner,uint32_t offset,unsigned length,const ResourceReader&reader){
+        return read_with(owner,offset,length,&reader,[](const void*context,uint32_t at,void*out,unsigned size){
+            return static_cast<const ResourceReader*>(context)->read(at,out,size);
+        });
     }
 };
 using GlyphByteCache=ContentTextCache<163u*1024u,1536>;

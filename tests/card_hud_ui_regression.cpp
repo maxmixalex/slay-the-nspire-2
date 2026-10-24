@@ -343,6 +343,18 @@ static void original_proceed_translation(){
     capture("proceed-exit-moving");const auto leaving=app.proceed_motion.sample(app.map_clock_ms);draw(true);
     CHECK(app.proceed_motion.sample(app.map_clock_ms).x==leaving.x);app.map_clock_ms=2100;draw(true);
     CHECK(app.hit_count==1&&app.hits[0].x==proceed_layout::X);
+    if(app.content.world_image("common","PROCEED")>=0){
+        // Execute the actual 1.05-scale face: it grows beyond the old 56px
+        // thumbnail bound. Keep the shader on Image, not its label/outline.
+        app.pointer.visible=true;app.pointer.x=290;app.pointer.y=180;draw(true);
+        app.map_clock_ms=2150;draw(true);unsigned painted=0;
+        for(int y=168;y<190;++y)for(int x=264;x<317;++x)painted+=app.pixels[y*ScreenW+x]!=Ink;
+        CHECK(painted>400);capture("proceed-focus-source-material");
+        app.pointer.captured=app.hits[0];app.pointer.held=true;app.pointer.context=app.input_context();draw(true);
+        app.map_clock_ms=2400;draw(true);capture("proceed-press-source-material");
+        app.pointer.held=false;app.pointer.visible=false;draw(true);
+        app.map_clock_ms=2450;draw(true);capture("proceed-unfocus-source-material");
+    }
     CHECK(save(app.game,after)&&before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.map_clock_ms=clock;app.proceed_motion=saved_motion;app.pointer=saved_pointer;
 }

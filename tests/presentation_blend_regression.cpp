@@ -21,7 +21,32 @@ int main(){
         check(modulate_rgb(uint16_t(source),0)==0);
         check(tint_rgb(uint16_t(source),255,255,255)==source);
         check(tint_rgb(uint16_t(source),0,0,0)==0);
+        check(yiq_material(uint16_t(source),1000,1000)==source);
     }
+    // Execute the pinned shader's forward matrix, chroma/value operation
+    // and independently inverted matrix in double precision. Compare the
+    // fixed-point port at RGB565 precision, including over-white highlights
+    // attenuated by entry modulation (clamping before modulation is wrong).
+    const double matrix[3][3]={{.2989,.5870,.1140},{.5959,-.2774,-.3216},{.2115,-.5229,.3114}};
+    double inverse[3][6]{};
+    for(unsigned i=0;i<3;++i)for(unsigned j=0;j<3;++j){inverse[i][j]=matrix[i][j];inverse[i][j+3]=i==j?1.:0.;}
+    for(unsigned i=0;i<3;++i){const double pivot=inverse[i][i];for(double&v:inverse[i])v/=pivot;
+        for(unsigned j=0;j<3;++j)if(i!=j){const double factor=inverse[j][i];for(unsigned k=0;k<6;++k)inverse[j][k]-=factor*inverse[i][k];}}
+    for(unsigned source=0;source<=65535;source+=17)for(unsigned saturation:{800u,900u,1000u})
+        for(unsigned value:{1000u,1200u,1400u})for(unsigned brightness:{0u,128u,192u,255u}){
+            const double input[]={double(source>>11)/31,double((source>>5)&63)/63,double(source&31)/31};
+            double yiq[3]{};for(unsigned i=0;i<3;++i)for(unsigned j=0;j<3;++j)yiq[i]+=matrix[i][j]*input[j];
+            for(unsigned i=0;i<3;++i)yiq[i]*=(i?double(saturation)/1000:1.)*value/1000;
+            const unsigned tints[]={255u,191u,254u};
+            const auto actual=yiq_material(uint16_t(source),saturation,value,brightness,tints[0],tints[1],tints[2]);
+            for(unsigned i=0;i<3;++i){double result=0;for(unsigned j=0;j<3;++j)result+=inverse[i][j+3]*yiq[j];
+                result*=double(brightness)*tints[i]/(255.*255.);if(result<0)result=0;if(result>1)result=1;
+                const unsigned maximum=i==1?63:31,shift=i==0?11:i==1?5:0;
+                check(std::abs(int((actual>>shift)&maximum)-int(rounded(result*maximum,maximum)))<=1);
+            }
+        }
+    const auto lit_gray=yiq_material(0xffff,1000,1400,128);
+    check((lit_gray>>11)>16&&((lit_gray>>5)&63)>32); // retain highlight before dimming
     for(unsigned level=0;level<=255;++level)for(unsigned value=0;value<=63;++value){
         const unsigned r=value&31,g=value,b=(value*7)&31;
         const uint16_t source=uint16_t((r<<11)|(g<<5)|b);

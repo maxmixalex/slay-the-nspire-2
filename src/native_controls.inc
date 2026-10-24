@@ -50,7 +50,7 @@ static void native_proceed(Canvas&c,const char*label,bool enabled=true,bool sele
  Canvas shadow=layer;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(normal,left+2,top+2,width,height,64);
  if(outline>=0&&visual.hover&&entry.outline)layer.picture(outline,left,top,width,height,unsigned(visual.hover)*unsigned(entry.outline)/4096,presentation::Add);
  Canvas face=layer;face.brightness=uint8_t(div255(unsigned(face.brightness)*unsigned(entry.shade)));
- face.picture(normal,left,top,width,height);
+ small_material_icon(face,normal,left,top,width,height,visual.saturation,visual.value,true);
  // KreonBold/SourceHanSerifSCBold, source 34px at 4/21. Preserve the
  // original red outline instead of an oversized regular 12px label.
  layer.font_face=5;

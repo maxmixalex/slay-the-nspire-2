@@ -216,6 +216,7 @@ void new_run(State&, uint32_t seed, bool practice=false, Character character=Cha
 void enter_combat(State&);
 bool play(State&, int hand_index, int target);
 bool can_play_card(const State&,int instance);
+bool card_has_nonresource_play_block(const State&,int instance);
 int max_energy(const State&);
 bool card_targets_enemy(const State&,Card,int instance=-1,int deck_index=-1);
 bool choose_exhaust(State&, int hand_index);

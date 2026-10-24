@@ -291,7 +291,7 @@ static void keyword_tooltips(Canvas&c){
     for(unsigned i=0;i<page.count;++i)draw_hover_piece(c,owner,tips,page.pieces[i]);
     if(!page.count)return;
     char footer[96]{};TextBuffer text{footer,sizeof footer,0,&c.a.content};text.number(a.keyword_hover.page+1);text.ch('/');text.number(page.pages);
-    if(detail){c.centered(footer,12,192,296,10,Gold);
+    if(detail){if(page.pages>1)c.centered(footer,12,192,296,10,Gold);
         // Existing command dispatch keeps these controls modal and cancels a
         // captured release correctly; hover panels themselves remain passive.
         c.hit(12,190,65,13,HitKind::Command,int(Key::Up),a.keyword_hover.page>0);
@@ -301,7 +301,7 @@ static void keyword_tooltips(Canvas&c){
         c.rect(248,230,69,8,Panel);c.centered(footer,248,230,69,source_hover_size(c),Gold);
         c.hit(248,230,30,8,HitKind::Scroll,-1,a.keyword_hover.page>0);
         c.hit(287,230,30,8,HitKind::Scroll,1,a.keyword_hover.page+1<page.pages);
-    }else if(page.pages>1||owner.event_option>=0){
+    }else if(page.pages>1){
         const auto column=keyword_hover_column(owner);const int foot_y=hover_compact_event(owner)?column.y+column.h+1:219;c.rect(column.x,foot_y,column.w,8,Panel);c.centered(footer,column.x,foot_y,column.w,source_hover_size(c),Gold);
     }
 }

@@ -1,5 +1,63 @@
 # Work state — 2026-10-24
 
+## UI8 stage 8b base — source preservation before final compression
+
+This source stage adds bounded NSP2/32 grouped-glyph reads through the existing
+LZMA2 group and glyph caches. It adds no resident payload pool. The short native
+reader checks pass 84 cases, including old/raw/RLE forms, descriptor bounds,
+failed reads, save-transfer exclusion and glyph-view lifetime after image-group
+eviction. Final frozen native/ARM/WASM and actual-font execution remain required.
+The original card resource-cross code is present as a building candidate: it
+separates card-rule blocks from resource shortages and busy UI/action queues.
+Its one optional original image and matching rule/visual acceptance are pending.
+
+Proceed now applies the source hue-one YIQ material to its image alone. Focus
+uses 1.4 value over 50ms, press restores value and reduces saturation to 0.8 over
+250ms, and unfocus/release returns to neutral over 50ms. Image modulation is a
+separate linear 500ms tween; scale retains Expo.Out. Releasing inside the control
+does not synthesize a new focus. The fixed-point color path preserves highlights
+until parent modulation, then clamps, and leaves label/outline shader ownership
+intact. Independent short source-equation checks pass 98,744 motion/layout and
+3,403,038 RGB565 checks. Matching composed screenshots and ARM allocation follow.
+
+The actual retained-art conversion passed with every image pixel/alpha, tile
+stream, frame and timing intact: English 95,628,945 to 91,390,491 bytes and
+Chinese 100,288,821 to 96,039,596 bytes. Frozen font tools at
+`73a18dfb2a30592cb9c42ec72f3f3260d09205c4` then produce exact 32KiB groups:
+English 91,313,435 bytes; Chinese 94,312,016 bytes. All 3,073 / 31,162 glyphs and
+8,704 strings compare exactly. A 64KiB Chinese comparison saves only another
+28,788 bytes and is rejected in favor of smaller cold-decode groups. Actual
+split reconstruction is byte-identical: common 88,453,135, English 2,860,460,
+Chinese 5,859,041 bytes. These are intermediate measurements, not installation
+acceptance: with the 8a1 launcher the bilingual set is 98,517,528 bytes before
+save files, still too large for the ordinary device's observed capacity.
+
+The frozen 8a1 focused native gate passed 9/11 suites. The two remaining fixture
+corrections are included here: synthetic card-library data does not invoke the
+real asset preparation gate, and closing the Fake Merchant renders the start
+of its new Proceed entrance before waiting. Actual 8a1 bilingual keywords,
+library, original fonts, five-character layouts, events, reward cards, Crystal
+and card/HUD checks passed; the actual room driver retained its last uncorrected
+Fake Merchant fixture failure. The integrated rerun must verify these changes.
+The meaningless single-page tooltip page number is removed; genuine pagination
+and its input remain active.
+
+The frozen 8a text-cache comparison passed 2,160 complete frames per language
+with exact pixels and State. Chinese second-pass long-history reads fell from
+28,677,506 bytes (dense) / 14,275,970 bytes (interleaved) to zero; both languages
+now have zero extra reads in all three measured warm scroll traces. ARM text
+cache allocation decreased by 7,200 bytes. These parallel-host traces are not
+quiet speed or physical-device FPS claims. Stage 8a1 ARM itself passed with a
+1,344,892-byte launcher and 16,629,248-byte allocation under the unchanged 16MiB
+gate, plus 12,880 ABI/division and 42 linked LZMA2 checks.
+
+Next: finish actual resource-cross insertion and grouped-string/public-art
+lossless reduction, preserve that source, then run the matching complete native,
+portable, bilingual scene, browser and ordinary Firebird installation gates.
+Source scans and test counts do not establish a numerical original-game fidelity
+percentage. All original assets and generated content remain private.
+
+
 ## UI8 stage 8a1 — composed-screen corrections and lossless installation work
 
 Runtime `aec36376ae055042a9f7f2ce069df5a7356a0f58` compiled native/WASM

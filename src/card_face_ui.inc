@@ -20,10 +20,27 @@ struct CardFaceFonts {int title,type,body,body_minimum,energy,star,minimum;bool 
 // pay. Keep this in the face key: a player's resources can change while the
 // card's numeric price and overall playability both remain unchanged.
 enum CardResourceStyle : uint8_t {ResourceNormal,ResourceIncreased,ResourceDecreased,ResourceInsufficient};
+static bool card_face_is_hand(const App&a,Card card,int instance){
+    return !a.title&&!a.library&&!a.history_open&&instance>=0&&instance<a.game.card_count&&
+        a.game.zones[instance]==Zone::Hand&&a.game.cards[instance].kind==card.kind;
+}
 static uint8_t card_face_resource_styles(const App&a,Card card,int energy,int stars,int instance,const EventCardFacts*facts){
-    if(a.title||a.library||a.history_open||instance<0||instance>=a.game.card_count||a.game.zones[instance]!=Zone::Hand||a.game.cards[instance].kind!=card.kind)return 0;
+    if(!card_face_is_hand(a,card,instance))return 0;
     const auto style=[](int value,int base,int available){return uint8_t(value<0?ResourceNormal:value>available?ResourceInsufficient:base>=0&&value>base?ResourceIncreased:base>=0&&value<base?ResourceDecreased:ResourceNormal);};
     return uint8_t(style(energy,a.card_offer_cost(card,facts),a.game.energy)|(style(stars,card_star_cost(a.game,card),a.game.expansion.stars)<<2));
+}
+static bool card_face_resource_cross(const App&a,Card card,int energy,int stars,int instance){
+    // Source HasResourceCostReason is energy OR stars: either shortage
+    // suppresses both crosses even when another card rule also blocks play.
+    return card_face_is_hand(a,card,instance)&&energy<=a.game.energy&&stars<=a.game.expansion.stars&&
+        card_has_nonresource_play_block(a.game,instance);
+}
+static void card_resource_cross(Canvas&c,int x,int y,int w,int h,bool star){
+    const int image=c.a.content.version()>=CardResourceContentVersion?c.a.content.ui_image(I9_CardUnplayable):-1;
+    if(image<0)return;
+    // Both children are48px square: EnergyIcon+(8,8), StarIcon+(5,5).
+    const auto rect=card_face::region(x,y,w,h,star?-31:-8,star?27:-8,48,48);
+    c.picture(image,rect.x,rect.y,rect.w,rect.h);
 }
 static uint16_t card_energy_outline(Card card){
     if(definitions[card.kind].type==CardType::Quest)return rgb(67,30,20);
@@ -117,6 +134,10 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
         const int px=l.star.x+(l.star.w-cost_label.width(label,fonts.star))/2,py=l.star.y+(l.star.h-fonts.star-2)/2;
         card_resource_label(cost_label,label,px,py,fonts.star,resource_styles>>2,rgb(23,85,97),true);
     }
+    if(known&&card_face_resource_cross(a,card,energy,star_value,instance)){
+        if(a.content.energy_image(card)>=0)card_resource_cross(c,x,y,w,h,false);
+        if(base_stars||(stars!=-2&&stars))card_resource_cross(c,x,y,w,h,true);
+    }
 }
 
 namespace {
@@ -134,7 +155,7 @@ struct SmallCardFaceCache {
     int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
     CardType type=CardType::Attack;
     uint8_t width=0,height=0,resource_styles=0;
-    bool star_visible=false,valid=false;
+    bool star_visible=false,resource_cross=false,valid=false;
     char title[128]{},description[512]{};
     uint16_t background[SmallCardCacheW*SmallCardCacheH]{};
     uint16_t pixels[SmallCardCacheW*SmallCardCacheH]{};
@@ -196,6 +217,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     const int base_stars=card_star_cost(a.game,card),star_count=stars==-2?base_stars:stars;
     const bool star_visible=base_stars||(stars!=-2&&stars);
     const unsigned resource_styles=card_face_resource_styles(a,card,energy,star_count,instance,facts);
+    const bool resource_cross=card_face_resource_cross(a,card,energy,star_count,instance);
     const auto geometry=card_face::layout(x,y,w,h);const auto fonts=card_face_fonts(c,w);
     // Large dynamic costs can extend beyond the fixed cache, just as their
     // uncached labels do. Keep those exact without increasing the ARM pool.
@@ -205,7 +227,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     SmallCardFaceCache* entry=nullptr;
     for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&
         slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
-        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&slot.resource_styles==resource_styles&&
+        slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&slot.resource_styles==resource_styles&&slot.resource_cross==resource_cross&&
         card_cache_text_equal(slot.title,title)&&card_cache_text_equal(slot.description,description)){
         bool matches=true;
         for(int yy=0;yy<SmallCardCacheH&&matches;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)
@@ -227,7 +249,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     if(!entry){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
     entry->valid=false;entry->owner=&a.content;entry->generation=a.content.generation();entry->seen=small_card_frame;
     entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;entry->width=uint8_t(w);entry->height=uint8_t(h);
-    entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;
+    entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;entry->resource_cross=resource_cross;
     entry->resource_styles=uint8_t(resource_styles);
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)

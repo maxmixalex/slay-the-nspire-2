@@ -146,8 +146,10 @@ int main(int argc,char**argv){
     // This fixture starts in a real practice battle. Compressed original
     // actor poses must finish the bounded loading phase before the first
     // library click, just as they do in the actual host loop.
-    a.render();unsigned preparation=0;while(a.combat_preparation.active&&preparation++<1024){a.advance(33);a.render();}
-    CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged(before);
+    if(!bytes.empty()){
+        a.render();unsigned preparation=0;while(a.combat_preparation.active&&preparation++<1024){a.advance(33);a.render();}
+        CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged(before);
+    }
     pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

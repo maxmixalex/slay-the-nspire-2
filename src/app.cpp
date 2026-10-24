@@ -20,6 +20,7 @@
 #include "frontend_ui7_assets.hpp"
 #include "character_select_layout.hpp"
 #include "card_face_layout.hpp"
+#include "card_resource_assets.hpp"
 #include "fitted_text.hpp"
 #include "inplace_reset.hpp"
 #include "map_drawing_raster.hpp"
