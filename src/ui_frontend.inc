@@ -142,19 +142,19 @@ static void frontend_settings_screen(Canvas&c){
  };
  int hover=-1;
  if(!a.settings_tab){
-  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS"};
-  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Hand Card Count","Text Effects","Send Feedback","Credits"};
-  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示手牌计数","文字特效","发送反馈","制作名单"};
-  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,UiAction::SettingsFeedback,UiAction::SettingsCredits};
-  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_card_indices,a.text_effects};
-  if(a.settings_top>3)a.settings_top=3;
-  for(unsigned i=a.settings_top;i<8&&i<a.settings_top+5;++i){
+  const char*keys[]={a.title?"LANGUAGE":"LANGUAGE_IN_RUN","SCREENSHAKE","FASTMODE","PHOBIA_MODE","SHOW_RUN_TIMER_HEADER","SHOW_HAND_CARD_COUNT_HEADER","TEXT_EFFECTS","SEND_FEEDBACK","CREDITS"};
+  const char*eng[]={a.title?"Language":"Language (main menu only)","Screenshake","Fast Mode","Phobia Mode","Show Run Timer","Show Hand Card Count","Text Effects","Send Feedback","Credits"};
+  const char*zhs[]={a.title?"语言选项":"语言选项（仅可在主菜单调整）","屏幕抖动","加速模式","恐惧症模式","显示计时器","显示手牌计数","文字特效","发送反馈","制作名单"};
+  const UiAction actions[]={UiAction::SettingsLanguage,UiAction::SettingsShakeUp,UiAction::SettingsFastMode,UiAction::SettingsPhobia,UiAction::SettingsRunTimer,UiAction::SettingsCardIndices,UiAction::SettingsTextEffects,UiAction::SettingsFeedback,UiAction::SettingsCredits};
+  const bool checked[]={false,false,a.fast_mode,a.phobia_mode,a.show_run_timer,a.show_card_indices,a.text_effects};
+  if(a.settings_top>4)a.settings_top=4;
+  for(unsigned i=a.settings_top;i<9&&i<a.settings_top+5;++i){
    const int y=60+int(i-a.settings_top)*28;
    const bool pointed=a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=y&&a.pointer.y<y+27;
-   if(pointed&&i<6)hover=int(i);
+   if(pointed&&i<7)hover=int(i);
    const bool focus=pointed||(!a.pointer.visible&&a.settings_item==i),enabled=i!=0||a.title;
    Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(row.opacity*115));
-   row.text_fitted(label(keys[i],eng[i],zhs[i]),29,y+7,i==0?161:i==1?146:i>=6?174:222,8,focus?Gold:White,8);
+   row.text_fitted(label(keys[i],eng[i],zhs[i]),29,y+7,i==0?161:i==1?146:i>=7?174:222,8,focus?Gold:White,8);
    if(i==0){
     row.rect(196,y+3,93,22,rgb(44,67,79));
     row.text_fitted(english?"English":"中文",201,y+7,71,10,Gold,8,true);
@@ -167,21 +167,21 @@ static void frontend_settings_screen(Canvas&c){
     c.text_fitted(label(levels[a.screen_shake],levels_en[a.screen_shake],levels_zh[a.screen_shake]),198,y+7,72,10,Gold,8,true);
     if(a.content.version()>=RoomUi7ContentVersion){c.ui(I7_SettingsArrowLeft,185,y+4,9,17,a.screen_shake?255:70);c.ui(I7_SettingsArrowRight,279,y+4,9,17,a.screen_shake<4?255:70);}
     c.action(178,y,21,27,UiAction::SettingsShakeDown,a.screen_shake>0);c.action(272,y,22,27,UiAction::SettingsShakeUp,a.screen_shake<4);
-   }else if(i<6){checkbox(checked[i],y);c.action(252,y,42,27,actions[i]);}
+   }else if(i<7){checkbox(checked[i],y);c.action(252,y,42,27,actions[i]);}
    else{
-    c.button(i==6?label("SEND_FEEDBACK_BUTTON_LABEL","Open","打开"):label("CREDITS_BUTTON_LABEL","View","查看"),209,y+2,80,focus,23);
+    c.button(i==7?label("SEND_FEEDBACK_BUTTON_LABEL","Open","打开"):label("CREDITS_BUTTON_LABEL","View","查看"),209,y+2,80,focus,23);
     c.action(205,y,90,27,actions[i]);
    }
    divider.rect(25,y+27,270,1,rgb(232,220,190));
   }
-  c.rect(303,61,2,139,rgb(18,33,41));c.rect(301,61+int(a.settings_top)*52/3,6,87,rgb(80,115,132));
-  c.action(296,57,17,72,UiAction::SettingsScrollUp,a.settings_top>0);c.action(296,129,17,74,UiAction::SettingsScrollDown,a.settings_top<3);
+  c.rect(303,61,2,139,rgb(18,33,41));c.rect(301,61+int(a.settings_top)*62/4,6,77,rgb(80,115,132));
+  c.action(296,57,17,72,UiAction::SettingsScrollUp,a.settings_top>0);c.action(296,129,17,74,UiAction::SettingsScrollDown,a.settings_top<4);
  }else{
   const bool focus=!a.pointer.visible&&a.settings_item==0;
   c.text_fitted(label("KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only Mode","纯键盘模式"),29,67,218,11,focus?Gold:White);
   checkbox(a.keyboard_only,60);c.action(252,60,42,27,UiAction::SettingsKeyboardOnly);
   divider.rect(25,87,270,1,rgb(232,220,190));
-  if(a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=60&&a.pointer.y<87)hover=6;
+  if(a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=60&&a.pointer.y<87)hover=7;
   const unsigned bank=a.keyboard_only&&!a.pointer.visible?1:0;
   c.text_fitted(label("INPUT_SETTINGS.COMMAND_HEADER","Command","指令"),29,92,139,10,Muted,8);
   c.paragraph(label("INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER","Mouse + Keyboard","鼠标与键盘"),174,91,59,2,0,8,bank==0?Gold:Muted);
@@ -198,12 +198,12 @@ static void frontend_settings_screen(Canvas&c){
   c.rect(303,113,2,90,rgb(18,33,41));c.rect(301,113+int(a.settings_top)*72/int(InputCommandCount-5),6,18,rgb(80,115,132));
   c.action(296,108,17,45,UiAction::SettingsScrollUp,a.settings_top>0);c.action(296,153,17,50,UiAction::SettingsScrollDown,a.settings_top<InputCommandCount-5);
  }
- const unsigned reset_item=a.settings_tab?InputCommandCount+1:8,back_item=reset_item+1;
+ const unsigned reset_item=a.settings_tab?InputCommandCount+1:9,back_item=reset_item+1;
  native_back(c,7,211,84,28,"返回",true,!a.pointer.visible&&a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
  if(a.settings_tab){c.button(label("INPUT_SETTINGS.RESET_TO_DEFAULT","Reset to Default","恢复默认"),210,211,100,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(206,207,109,33,UiAction::SettingsReset);}
  else{c.button(label("RESET_SETTINGS_BUTTON","Reset","重置"),241,211,69,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(237,207,78,33,UiAction::SettingsReset);}
  if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
-  const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
+  const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_RUN_TIMER_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
   const char*body=a.content.world_string("settings_ui",descriptions[hover]);
   if(*body){const int width=154,lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(112,12+lines*13);
    const int y=hover<3?102:55;

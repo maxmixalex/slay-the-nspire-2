@@ -605,8 +605,10 @@ static void deferred_enemy_values(){
   a.animation=a.combat_feedback.end_at;a.render();CHECK(!a.combat_feedback.active);
   CHECK(a.game.enemy_world.models[1].kind==EnemyId::EyeWithTeeth);
   const auto old_intent=a.combat_intent(1);CHECK(old_intent.flags==EnemyIntentStatus&&old_intent.status_cards==3);
+  // Hover the hit interior; the authored intent bob can move its top edge
+  // past a stationary pointer during the later replacement interval.
   bool found=false;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==1){
-   a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+1;found=true;break;
+   a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+a.hits[i].h/2;found=true;break;
   }
   CHECK(found);a.pointer.visible=true;a.render();
   const int panel_x=a.pointer.x>=170?8:134,title_x=panel_x+6;
@@ -650,7 +652,7 @@ static void deferred_enemy_values(){
   // The replacement's authored Bounds can move its intent. Hover the new
   // actual region after reveal, rather than the removed Eye's old geometry.
   CHECK(has(HitKind::EnemyIntent,1));found=false;
-  for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==1){a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+1;found=true;break;}
+  for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EnemyIntent&&a.hits[i].value==1){a.pointer.x=a.hits[i].x+a.hits[i].w/2;a.pointer.y=a.hits[i].y+a.hits[i].h/2;found=true;break;}
   CHECK(found);a.render();CHECK(intent_panel());bool renamed=false;
   for(int y=53;y<67;++y)renamed|=std::memcmp(a.pixels+y*ScreenW+title_x,old_title.data()+(y-53)*166,166*sizeof(uint16_t))!=0;
   // synthetic_profile has numeric glyphs only. Its blank alphabetic
@@ -1152,7 +1154,12 @@ static void original_card_movement(){
  const auto equivalent=[&](){CHECK(save(a.game,after));CHECK(after.size==expected.size&&!std::memcmp(after.bytes,expected.bytes,after.size));};
  for(unsigned fast=0;fast<2;++fast){
   setup();a.fast_mode=fast!=0;a.tick_remainder=0;
-  const int played=add(Defend);a.cursor=a.game.hand.count-1;a.hand_focus=true;a.render();
+  const int played=add(Defend);
+  // The original hover snaps Y/scale/rotation. Establish a neighbouring
+  // hover first so this case exercises the remaining real X interpolation.
+  a.cursor=a.game.hand.count-2;a.hand_focus=true;a.render();
+  for(unsigned frame=0;frame<6;++frame){a.advance(33);a.render();}
+  a.cursor=a.game.hand.count-1;a.render();
   const auto start_pose=a.combat_hand_pose(unsigned(a.cursor),true);const auto old=a.combat_hand();const auto old_piles=a.combat_pile_counts();
   CHECK(!a.combat_hand_settled(unsigned(a.cursor),true));
   int focus_regions=0;for(int h=0;h<a.hit_count;++h)if(a.hits[h].kind==HitKind::Hand&&a.hits[h].value==played)++focus_regions;

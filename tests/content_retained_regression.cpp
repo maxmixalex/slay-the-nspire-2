@@ -72,6 +72,10 @@ struct Fixture {
         put(bytes,46+(Images-1)*16,1,2);put(bytes,48+(Images-1)*16,6);
         Bytes tile(770);tile[0]=tile[1]=1;
         Bytes index(18);put(index,0,2);put(index,4,4);put(index,8,2);
+        // A cold tiled image must actually reach the provider after retained
+        // image 0 is warm. Sharing the preceding descriptor cache page would
+        // skip after_read entirely and never exercise reentrant transfer I/O.
+        bytes.resize((bytes.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
         for(unsigned i=0;i<2;++i){
             const Bytes&data=i?index:tile;const Bytes payload=stored(data);Bytes header(32);
             put(header,0,0x31524754);put(header,4,i+1);put(header,8,i);put(header,12,unsigned(data.size()));
@@ -118,6 +122,8 @@ void roundtrip(bool streamed,unsigned version){
     Fixture f(version);Provider source{&f.bytes};auto content=std::make_unique<Content>();
     CHECK(streamed?content->open(source.source()):content->open(f.bytes.data(),f.bytes.size()));
     CHECK(content->current_profile());const auto initial=source.read_bytes;
+    const auto ordinary=content->image_dimensions(0),sparse=content->image_dimensions(4);
+    CHECK(ordinary.w==2&&ordinary.h==1&&sparse.w==320&&sparse.h==240&&source.read_bytes==initial);
     CHECK(content->version()==version);
     CHECK(content->ui_image(U_TitleBackground)==0);
     for(unsigned i=0;i<3;++i)CHECK(content->ui_image(U_TitleBackdrop+i)==(version>=21?int(i+2):-1));
@@ -228,7 +234,7 @@ void reentrant_transfer_and_failure(){
     ReentrantRead reentry{content.get(),&f,&original,&target,&saved,&output};
     source.after_read=ReentrantRead::attempt;source.hook=&reentry;
     const auto tiled=content->image(Fixture::Images-1);CHECK(tiled.pixels&&tiled.format==4);
-    CHECK(tiled.pixels[0]==0&&tiled.pixels[1]==0&&reentry.calls>0);
+    CHECK(tiled.pixels[0]==0&&tiled.pixels[1]==0);CHECK(reentry.calls>0);
     CHECK(!std::memcmp(&target,before.data(),before.size()));
     const auto*bytes=reinterpret_cast<const uint8_t*>(&output);
     for(size_t i=0;i<sizeof output;++i)CHECK(bytes[i]==0xa6);

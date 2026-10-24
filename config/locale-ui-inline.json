@@ -471,6 +471,10 @@
     {
       "source": "选择卡牌 10",
       "eng": "Select Card 10"
+    },
+    {
+      "source": "显示计时器",
+      "eng": "Show Run Timer"
     }
   ]
 }

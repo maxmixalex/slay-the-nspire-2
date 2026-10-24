@@ -1,5 +1,34 @@
 # Work state — 2026-10-24
 
+## UI8 stage 7 candidate — source preservation before validation
+
+Stage-six runtime `f937cf13374ec5ba2e010f8c8899b691600565f0`
+compiled native, ARM and WASM. All 169 Python checks passed. The full native
+run passed 93/97 suites; its four retained failures were obsolete NSH3 output,
+a cache test whose supposedly cold tile was already warm, two old pointer
+movement assumptions, and a Crystal fixture that completed two rooms on one
+floor. These exact fixtures are corrected in this candidate; short matching-ABI
+reruns passed, and the new complete frozen run remains required.
+
+Actual stage-six ENG/ZHS font, card HUD, reward and auxiliary scene suites
+passed. The five-pixel font lets Rainbow fit fully; the overflow fixture now
+uses genuinely overflowing Rocket Punch and preserves the full-text checks.
+The ordinary ARM image allocates 16,552,328 bytes under the unchanged 16 MiB
+gate, leaving 224,888 bytes. Linked ARM division and LZMA2 vectors passed.
+Map/reward/Crystal/Ancient warm windows made no additional range reads; a
+longer merchant trace found real repeated reads from covered animation groups.
+
+The stage-seven candidate adds source Game Over timing and true death clips,
+retains separate additive particle layers, corrects Ancient font-family
+selection, adds Show Run Timer with backward-compatible 108-byte NSPF4
+preferences, and skips only settled merchant actors whose complete draw bounds
+are covered by fully opaque rug pixels. All original frames and decoded-cache
+capacities remain. The pinned original disables and hides View Run; the port
+now follows that actual behavior. This corrects the older candidate description
+below. Resource v29 and full-frame culling acceptance are not yet executed at
+this candidate checkpoint. Detailed per-floor history is the next independent
+implementation stage. No 95% fidelity or 30–40 MB installation claim is made.
+
 ## UI8 stage 6 candidate — integrated validation next
 
 Asset-only checkpoint `c9a0a4772f294be617a8532b40454c2e1f0f12b4`

@@ -75,6 +75,11 @@ static void presentation(bool title=false){
  a.title=title;a.paused=a.help=a.library=a.character_select=a.settings_open=a.quit=false;a.frontend_confirm=a.frontend_choice=a.settings_tab=a.settings_item=0;
  a.run_settings=a.practice_entry=false;a.run_mode={};a.map_preview.open=false;a.menu=0;a.reset_presentation();a.pointer.visible=false;
 }
+static void settle_game_over(){
+ a.sync_game_over_presentation();const auto&m=a.game_over_presentation;
+ const unsigned age=m.summary?m.summary_age(a.map_clock_ms):m.initial_age(a.map_clock_ms),end=(m.summary?m.menu_start():m.intro_delay())+500;
+ for(unsigned left=age<end?end-age:0;left;){const unsigned step=left>250?250:left;a.advance(step);left-=step;}
+}
 static void start(Character character=Character::Ironclad,uint32_t seed=0x82179,const char*run_seed=nullptr,unsigned ascension=3,reference::ActKind region=reference::ActKind::Overgrowth){
  a.forget_run_checkpoint();new_run(a.game,seed,false,character);if(run_seed)CHECK(world_set_seed(a.game,run_seed));
  CHECK(world_begin_run(a.game,region,ascension));presentation();CHECK(validate(a.game));
@@ -301,7 +306,7 @@ static void abandon_current_bypasses_prevention(){
 static void protected_saved_expeditions(){
  // A different seed must survive a completed practice/expedition's end UI.
  empty_disk();start(Character::Ironclad,6001);put_disk();start(Character::Ironclad,6002);player_kill(a.game,true);resolve_pending(a.game);snapshot();unsigned d=deletes;
- CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();a.input(Key::Confirm);CHECK(a.game_over_summary);action(UiAction::GameOverMainMenu);CHECK(a.title&&a.has_save&&disk_exists&&deletes==d);unchanged();
+ CHECK(a.finish_saved_run()&&disk_exists&&deletes==d);unchanged();settle_game_over();a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();action(UiAction::GameOverMainMenu);CHECK(a.title&&a.has_save&&disk_exists&&deletes==d);unchanged();
  a.menu=0;a.input(Key::Confirm);CHECK(!a.title);same_saved(expected);
  // Equal seed with a different character is also a distinct saved run.
  empty_disk();start(Character::Silent,6101);put_disk();start(Character::Defect,6101);player_kill(a.game,true);resolve_pending(a.game);snapshot();d=deletes;
@@ -399,7 +404,7 @@ static void optional_clear_uses_successful_terminal_probe(){
 }
 static void ending_clears_only_its_checkpoint(){
  empty_disk();start(Character::Ironclad,7001);put_disk();player_kill(a.game,true);resolve_pending(a.game);presentation();snapshot();unsigned d=deletes;
- a.input(Key::Confirm);CHECK(a.game_over_summary);delete_ok=false;action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+1);unchanged();
+ settle_game_over();a.input(Key::Confirm);CHECK(a.game_over_summary);settle_game_over();delete_ok=false;action(UiAction::GameOverMainMenu);CHECK(!a.title&&a.game_over_summary&&disk_exists&&deletes==d+1);unchanged();
  delete_ok=true;action(UiAction::GameOverMainMenu);CHECK(a.title&&!a.has_save&&!disk_exists&&deletes==d+2);unchanged();
  a.input(Key::Load);CHECK(a.title&&!a.has_save&&a.game.phase==Phase::Dead);unchanged();
 }

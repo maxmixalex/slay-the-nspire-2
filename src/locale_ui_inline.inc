@@ -73,6 +73,7 @@
  {0xa9d2973du,6,"Feedback"},
  {0xae376d7au,51,"The map drawing is full. Clear it to continue drawing."},
  {0xb13bc128u,9,"Keyboard-Only"},
+ {0xb574bb7cu,15,"Show Run Timer"},
  {0xb6eb56eau,12,"Inspect"},
  {0xb7cba5c0u,14,"Select Card 4"},
  {0xb8cba753u,14,"Select Card 5"},

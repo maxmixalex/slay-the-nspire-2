@@ -128,6 +128,32 @@ static void picture_case(Surface surface,Style style,unsigned id,Placement p,uns
  }
  pair.compare();
 }
+static void opaque_covers(){
+ Canvas c{app};c.clip_w=23;c.clip_h=19;
+ const Placement covers[]={{0,0,0,0},{-5,-3,31,25},{2,1,21,17},{3,2,4,3},{-30,-21,62,43}};
+ const Placement targets[]={{0,0,1,1},{2,1,2,2},{3,3,7,5},{-3,-2,5,4},{17,14,12,9},{24,20,3,4},{-7,-6,2,2}};
+ for(unsigned id=0;id<images.size();++id){
+  const auto p=app.content.image(int(id));const auto&im=images[id];
+  const auto size=app.content.image_dimensions(int(id));CHECK(size.w==im.w&&size.h==im.h);
+  for(auto cover:covers)for(auto target:targets)for(unsigned opacity:{1u,254u,255u}){
+   c.opacity=uint8_t(opacity);const int w=cover.w?cover.w:int(im.w),h=cover.h?cover.h:int(im.h);
+   bool expected=opacity==255&&im.format<4;
+   if(expected)for(int y=0;y<c.clip_h;++y)for(int x=0;x<c.clip_w;++x){
+    if(x<target.x||x>=target.x+target.w||y<target.y||y>=target.y+target.h)continue;
+    const int dx=x-cover.x,dy=y-cover.y;
+    if(dx<0||dy<0||dx>=w||dy>=h){expected=false;continue;}
+    if(im.alpha[unsigned(dy)*im.h/unsigned(h)*im.w+unsigned(dx)*im.w/unsigned(w)]!=255)expected=false;
+   }
+   CHECK(c.opaque_picture_covers(p,cover.x,cover.y,cover.w,cover.h,target.x,target.y,target.w,target.h)==expected);
+  }
+ }
+ CHECK(!app.content.image_dimensions(-1).w&&!app.content.image_dimensions(100000).h);
+ // The alpha=254 edge must not hide an underlying pixel, even though its
+ // projected control rectangle fully contains the smaller target rectangle.
+ uint8_t colors[8]{},alpha[]={255,255,255,254};const Picture edge{colors,alpha,nullptr,2,2,1};
+ c.opacity=255;CHECK(c.opaque_picture_covers(edge,0,0,8,8,0,0,4,8));
+ CHECK(!c.opaque_picture_covers(edge,0,0,8,8,0,0,8,8));
+}
 static Bytes glyph_fixture(const Bytes&encoded){
  constexpr unsigned count=66,strings=66,clips=11,cards=26,ui=56;
  constexpr unsigned glyph_at=40+count*16,string_at=glyph_at+16,clip_at=string_at+strings*8;
@@ -347,7 +373,7 @@ static void map_pictures(){
 int main(){
  const auto data=fixture();CHECK(app.content.open(data.data(),data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==0u);
- rectangles();pictures();picture_regions();picture_row_views();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
+ rectangles();pictures();opaque_covers();picture_regions();picture_row_views();title_particles();scaled_sparse_clipping();CHECK(app.content.healthy());
  Bytes unaligned(data.size()+1);std::copy(data.begin(),data.end(),unaligned.begin()+1);
  CHECK(app.content.open(unaligned.data()+1,data.size()));
  CHECK((uintptr_t(app.content.image(0).pixels)&1u)==1u);

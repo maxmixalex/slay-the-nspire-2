@@ -29,7 +29,7 @@ static void legacy(){
     CHECK(decode_ui_preferences(old1,sizeof old1,loaded)&&loaded.fast_mode&&!loaded.bindings_saved);
     CHECK(decode_ui_preferences(old2,sizeof old2,loaded)&&loaded.keyboard_only&&!loaded.bindings_saved);
     present=false;app.calculator_keyboard=true;app.restore_preferences();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]=='8');
-    app.persist_preferences();CHECK(disk[4]==3);app.calculator_keyboard=false;app.restore_preferences();
+    app.persist_preferences();CHECK(disk[4]==4);app.calculator_keyboard=false;app.restore_preferences();
     CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]=='8'); // Saved map survives a host/language change.
     app.reset_input_bindings();CHECK(app.input_bindings.keys[0][unsigned(InputCommand::Up)]==InputUp);
     std::memcpy(&loaded.bindings,&app.input_bindings,sizeof loaded.bindings);
@@ -92,5 +92,5 @@ int main(int argc,char**argv){
     std::vector<uint8_t>pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.content.open(pack.data(),pack.size())&&app.content.current_profile());}if(argc>2)captures=argv[2];
     app.callbacks.load_preferences=read_preferences;app.callbacks.save_preferences=write_preferences;
     legacy();settings();gameplay();map_release();calculator();
-    std::printf("Source keyboard maps: %u checks; listening/conflict swaps, two banks, v1/2/3 preferences, actual pile/card input, held-key release and calculator matrix passed\n",checks);
+    std::printf("Source keyboard maps: %u checks; listening/conflict swaps, two banks, v1/2/3/4 preferences, actual pile/card input, held-key release and calculator matrix passed\n",checks);
 }

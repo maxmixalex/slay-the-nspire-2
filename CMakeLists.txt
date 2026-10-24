@@ -81,6 +81,9 @@ if(BUILD_TESTING)
   # Requires paired owner v19/v18 packs; run explicitly with private inputs.
   add_executable(merchant_visual_regression tests/merchant_visual_regression.cpp)
   target_link_libraries(merchant_visual_regression PRIVATE spire_core)
+  # Exact covered/unculled full-frame oracle requires an owner's original pack.
+  add_executable(merchant_occlusion_regression tests/merchant_occlusion_regression.cpp)
+  target_link_libraries(merchant_occlusion_regression PRIVATE spire_core)
   add_executable(combat_preparation_benchmark tests/combat_preparation_benchmark.cpp)
   target_link_libraries(combat_preparation_benchmark PRIVATE spire_core)
   add_executable(card_grid_benchmark tests/card_grid_benchmark.cpp)

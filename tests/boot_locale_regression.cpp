@@ -38,13 +38,13 @@ int main(){
     put(pack,4,18);put(pack,8,0x41cef1ea);put(pack,12,pack.size());put(pack,16,1);put(pack,20,1);put(pack,24,6111);
     const unsigned row=40+16+16+6110*8;put(pack,row,pack.size()-4);put(pack,row+4,3);
     ProbeSource probe{pack};ResourceSource ranged{&probe,uint32_t(pack.size()),probe_read,nullptr};
-    for(unsigned version:{17u,18u,19u,20u,21u,22u,23u,24u,25u,26u,27u,28u}){put(pack,4,version);
+    for(unsigned version:{17u,18u,19u,20u,21u,22u,23u,24u,25u,26u,27u,28u,29u}){put(pack,4,version);
         std::memcpy(pack.data()+pack.size()-4,"eng",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::English);
         probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::English);CHECK(probe.calls==3&&probe.bytes==52);
         std::memcpy(pack.data()+pack.size()-4,"zhs",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Chinese);
         probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::Chinese);CHECK(probe.calls==3&&probe.bytes==52);
     }
-    put(pack,4,HistoryUi8ContentVersion+1);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
+    put(pack,4,CharacterDeathContentVersion+1);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::Unknown);CHECK(probe.calls==1&&probe.bytes==40);put(pack,4,19);
     put(pack,row,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     put(pack,16,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);

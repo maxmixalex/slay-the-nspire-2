@@ -248,6 +248,7 @@ static void auxiliary_patch_button(Canvas&);
 #include "card_choice_ui.inc"
 #include "combat_peek_ui.inc"
 #include "world_choice_ui.inc"
+#include "character_death_ui.inc"
 #include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
 #include "keyword_tooltip_ui.inc"
@@ -278,7 +279,7 @@ void App::render(){
     // lifecycle must not replay when the deck or compendium is dismissed.
     map_visuals.set_open(game,game.world.active&&!title&&!character_select&&!map_preview.open&&
         (game.phase==Phase::Map||map_window.is_open||panel==3),map_clock_ms);
-    Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
+    sync_game_over_presentation();Canvas c{*this};sync_combat_feedback();sync_relic_feedback();sync_character_feedback();sync_enemy_feedback();sync_turn_banner();sync_health_bars();sync_map_reticles();hit_count=0;c.rect(0,0,320,240,Ink);
     // Opaque screens do not redraw the hidden title/combat scene or its clips.
     if(profiles_open){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;profiles_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     if(run_mode.screen!=RunMenu::Closed){const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;run_modes_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}

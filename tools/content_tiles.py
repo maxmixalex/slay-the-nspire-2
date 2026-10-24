@@ -223,7 +223,8 @@ class PackView:
         self.clips = [CLIP.unpack_from(data, self.clip_at + i * 16) for i in range(nc)]
         for first, count, ms, px, py, reserved in self.clips:
             require(0 < count <= 256 and first + count <= ni and 0 < ms <= 1000 and
-                    -640 <= px <= 640 and -480 <= py <= 480 and reserved == 0, 'Invalid clip')
+                    -640 <= px <= 640 and -480 <= py <= 480 and
+                    (0 <= reserved < 1000000 if self.version >= 29 else reserved == 0), 'Invalid clip')
         self.cards = [struct.unpack_from('<4I', data, self.card_at + i * 16) for i in range(nk)]
         self.aux = list(struct.unpack_from('<' + 'I' * auxiliary_count, data, self.aux_at))
         require(all(row[0] < ni and all(value < ns for value in row[1:]) for row in self.cards)
@@ -661,7 +662,7 @@ def index_records(raw, count, tile_count):
 class TileReader:
     """Independent host reference decoder for a completed v15 pack."""
     def __init__(self, pack):
-        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28), 'Tiled reader requires version 15 through 28')
+        require(pack.version in (15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29), 'Tiled reader requires version 15 through 29')
         self.pack = pack
         require(pack.base_end + GLOBAL.size <= len(pack.data), 'Truncated tile header')
         fields = GLOBAL.unpack_from(pack.data, pack.base_end)

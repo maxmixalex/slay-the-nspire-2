@@ -115,7 +115,20 @@ candidate consumes valid size scopes while preserving italic/bold/color nesting
 and the declared scene or full-reader minimum. The source pack contains 33
 such scopes, with sizes 18, 22 and 28, all below 6px after projection. New parser
 and Ancient-reply assertions cover this failure; malformed tags remain visible.
-Their corrected actual-art render remains a stage-six gate.
+The corrected actual stage-six render passed 5,279 English and 5,260 Chinese
+checks, including the real Darv response. Its captured response no longer
+prints either size wrapper. Receipts:
+`ui8-world-events-real-eng-bd882d94288a.json` and
+`ui8-world-events-real-zhs-bcef3359abda.json`.
+
+A subsequent source-font audit found that dialogue bold/italic still selected
+generic rich-text bands. The original dialogue scene explicitly selects Kreon
+Bold and Bitter Medium Italic; the option scene also uses Kreon Bold. Stage
+seven maps those observed styles locally to the existing packed families 5/6,
+using one selector for both measurement and painting. Generic text elsewhere
+keeps its own families. Distinct synthetic masks/advances and an actual-font
+whole-surface oracle cover both font selection and wrapped placement; executing
+them and inspecting the final Darv capture remain stage-seven gates.
 
 The synthetic RGBA fixture also exposed a test isolation issue: keyboard focus
 on Tanx's first offer legitimately displayed a mechanic tooltip over the sampled

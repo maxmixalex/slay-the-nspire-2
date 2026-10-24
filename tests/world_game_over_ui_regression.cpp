@@ -73,6 +73,11 @@ static bool actual_profile;
 static void snapshot(){CHECK(validate(a.game));CHECK(save(a.game,before));}
 static void unchanged(){CHECK(save(a.game,after));CHECK(after.size==before.size&&!std::memcmp(after.bytes,before.bytes,before.size));}
 static void present(){a.title=a.paused=a.help=a.library=a.character_select=a.settings_open=false;a.frontend_confirm=0;a.run_settings=false;a.map_preview.open=false;a.reset_presentation();a.pointer.visible=false;}
+static void settle_game_over(){
+ a.sync_game_over_presentation();const auto&m=a.game_over_presentation;
+ const unsigned age=m.summary?m.summary_age(a.map_clock_ms):m.initial_age(a.map_clock_ms),end=(m.summary?m.menu_start():m.intro_delay())+500;
+ for(unsigned left=age<end?end-age:0;left;){const unsigned step=left>250?250:left;a.advance(step);left-=step;}
+}
 static bool has_action(UiAction action){for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(action)&&a.hits[i].enabled)return true;return false;}
 static void press(UiAction action){
  a.render();HitRegion h{};unsigned count=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::UiAction&&a.hits[i].value==int(action)){h=a.hits[i];++count;}
@@ -132,20 +137,20 @@ static void saved_facts(){
 }
 static void death_flow(){
  for(unsigned i=0;i<CharacterKinds;i++){
-  dead(Character(i));a.render();CHECK(has_action(UiAction::GameOverSummary)&&!has_action(UiAction::GameOverMainMenu));unchanged();
+  dead(Character(i));a.render();CHECK(!has_action(UiAction::GameOverSummary)&&!has_action(UiAction::GameOverMainMenu));a.input(Key::Confirm);CHECK(!a.game_over_summary);settle_game_over();a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
   if(!i){overlays_do_not_advance();capture("gameover-defeat");press(UiAction::GameOverSummary);}else a.input(Key::Confirm);
-  CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));unchanged();saved_facts();
-  if(!i){capture("gameover-defeat-summary");press(UiAction::GameOverViewRun);CHECK(a.history_open&&a.history_from_game_over&&!a.compendium_open&&a.history_at(a.history_index)->serial==a.progress.current.serial);a.render();a.input(Key::Back);CHECK(!a.history_open&&!a.compendium_open&&a.game_over_summary);unchanged();
+  CHECK(!a.title&&a.game_over_summary&&a.game.phase==Phase::Dead);a.render();CHECK(!has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverSummary));a.input(Key::Confirm);CHECK(!a.title);settle_game_over();a.render();CHECK(has_action(UiAction::GameOverMainMenu)&&!has_action(UiAction::GameOverViewRun));unchanged();saved_facts();
+  if(!i){capture("gameover-defeat-summary");a.ui_action(UiAction::GameOverViewRun);a.open_game_over_history();CHECK(!a.history_open&&!a.history_from_game_over&&!a.compendium_open&&a.game_over_summary);unchanged();
    a.input(Key::Inspect);CHECK(a.panel==1);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);a.input(Key::Relics);CHECK(a.panel==5);a.render();a.input(Key::Back);CHECK(!a.panel&&a.game_over_summary);unchanged();press(UiAction::GameOverMainMenu);}else a.input(Key::Confirm);
   CHECK(a.title&&!a.game_over_summary&&a.game.phase==Phase::Dead&&a.game.world.finished);unchanged();
  }
 }
 static void victory_flow(){
- victory();unsigned wins=a.game.event_run.wins;uint32_t wongo=a.game.event_run.wongo_total;capture("gameover-victory");a.input(Key::Confirm);CHECK(a.game_over_summary&&!a.title);saved_facts();capture("gameover-victory-summary");
+ victory();unsigned wins=a.game.event_run.wins;uint32_t wongo=a.game.event_run.wongo_total;settle_game_over();capture("gameover-victory");a.input(Key::Confirm);CHECK(a.game_over_summary&&!a.title);settle_game_over();saved_facts();capture("gameover-victory-summary");
  a.render();a.pointer_scroll(1);a.render();unchanged();press(UiAction::GameOverMainMenu);CHECK(a.title&&a.game.phase==Phase::Complete&&a.game.event_run.wins==wins&&a.game.event_run.wongo_total==wongo);unchanged();
  // Loading/reopening a terminal save starts on Continue, without repeating
  // any completion accounting. The UI flag is never serialized into the run.
- CHECK(load(a.game,before.bytes,before.size));present();CHECK(!a.game_over_summary);a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
+ CHECK(load(a.game,before.bytes,before.size));present();CHECK(!a.game_over_summary);a.render();CHECK(!has_action(UiAction::GameOverSummary));settle_game_over();a.render();CHECK(has_action(UiAction::GameOverSummary));unchanged();
 }
 static void legacy_and_capacity(){
  new_run(a.game,1,true,Character::Ironclad);a.game.phase=Phase::Complete;present();a.input(Key::Confirm);CHECK(a.title&&!a.game_over_summary);

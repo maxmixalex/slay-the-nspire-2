@@ -169,13 +169,13 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>HistoryUi8ContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>CharacterDeathContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
-    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
+    if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?32768u:version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
        (version>=14&&version<LocaleContentVersion&&ns!=ContentStrings&&!(version==NativeUiContentVersion&&ns==NativeUiStringCount))||
        (version>=LocaleContentVersion&&ns!=(version>=Ui7ContentVersion?Ui7StringCount:LocaleStringCount)))return false;
-    const unsigned auxiliary=version>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
+    const unsigned auxiliary=version>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):version>=14?unsigned(U_Count):version==13?339:version==12?233:version==11?185:version==10?105:version==9?95:version==8?90:version==7?83:version==6?74:version==5?56:0;
     const uint32_t base=40+ni*16+ng*16+ns*8+nc*16+cards*16+auxiliary*4;
     if(base>n||base>DirectoryCapacity)return false;
     reader_.progress(ResourceStage::Header,1,1);
@@ -240,6 +240,12 @@ ImageCacheUsage Content::image_cache_usage()const{
 }
 Picture Content::image(int id)const{
     return image_payload(id,nullptr,0);
+}
+ImageDimensions Content::image_dimensions(int id)const{
+    if(!healthy()||id<0||unsigned(id)>=images_)return {};
+    const auto*r=metadata_+40+16*unsigned(id);const unsigned w=u16(r+4),h=u16(r+6);
+    if(!w||w>320||!h||h>240)return {};
+    return {uint16_t(w),uint16_t(h)};
 }
 void Content::prepare_images(const int* ids,unsigned count)const{
     // Called only for the pictures already known to be visible this frame.
@@ -437,7 +443,9 @@ Clip Content::clip(int id)const{
     const uint8_t*r=metadata_+40+images_*16+glyphs_*16+strings_*8+id*16;
     const uint32_t first=u32(r);const uint16_t count=u16(r+4),ms=u16(r+6);
     if(first>=images_||!count||count>images_-first||!ms)return {0,0,1,0,0};
-    return {first,count,ms,(int16_t)u16(r+8),(int16_t)u16(r+10)};
+    const uint32_t units=version_>=CharacterDeathContentVersion?u32(r+12):0;
+    if(units>=1000000)return {0,0,1,0,0};
+    return {first,count,ms,(int16_t)u16(r+8),(int16_t)u16(r+10),units};
 }
 int Content::card_image(int kind)const{
     if(!metadata_||kind<0||(unsigned)kind>=cards_)return -1;

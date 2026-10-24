@@ -6,6 +6,8 @@
 #include "ancient_dialogue_presentation.hpp"
 #include "room_ui7_assets.hpp"
 #include "phobia_assets.hpp"
+#include "character_death_assets.hpp"
+#include "game_over_presentation.hpp"
 #include "core.hpp"
 #include "keyword_hover.hpp"
 #include "event_assets.hpp"
@@ -72,7 +74,8 @@ constexpr unsigned ContentVersion=14,TileContentVersion=15,NativeUiContentVersio
 constexpr unsigned RetainedContentVersion=20;
 struct Picture {const uint8_t* pixels;const uint8_t* alpha;const uint8_t* palette;uint16_t w,h;uint8_t format;};
 struct Glyph {const uint8_t* pixels;uint8_t w,h;uint16_t advance;uint16_t encoded_size=0;};
-struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;};
+struct Clip {uint32_t first;uint16_t count,frame_ms;int16_t pivot_x,pivot_y;uint32_t sprite_units=0;};
+struct ImageDimensions {uint16_t w=0,h=0;};
 struct ImageCacheUsage {unsigned entries=0,pages=0;};
 class Content {
     const uint8_t* data_{};uint32_t version_{},length_{},images_{},glyphs_{},strings_{},clips_{},cards_{},ui_offset_{},ui_count_{};
@@ -104,6 +107,7 @@ public:
     // These planning queries never read the source, decode or change LRU.
     // NSP2/20 uses resident decoded costs; older packs use geometry bounds
     // until first decode, without scanning unrelated image or animation groups.
+    ImageDimensions image_dimensions(int id)const;
     bool image_cached(int id)const;
     bool image_alias(int first,int second)const;
     unsigned image_cache_pages(int id)const;
@@ -123,9 +127,9 @@ public:
     unsigned card_count()const{return cards_;}
     unsigned version()const{return version_;}
     bool current_profile()const{
-        if(version_<ContentVersion||version_>HistoryUi8ContentVersion||cards_!=CardKinds)return false;
-        const unsigned auxiliary=version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
-        const unsigned animations=version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
+        if(version_<ContentVersion||version_>CharacterDeathContentVersion||cards_!=CardKinds)return false;
+        const unsigned auxiliary=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAuxiliaryCount):version_>=HistoryUi8ContentVersion?unsigned(HistoryUi8AuxiliaryCount):version_>=HudUi7ContentVersion?unsigned(HudUi7AuxiliaryCount):version_>=ProfileContentVersion?unsigned(ProfileAuxiliaryCount):version_>=PhobiaContentVersion?unsigned(PhobiaAuxiliaryCount):version_>=Ui7ContentVersion?unsigned(Ui7AuxiliaryCount):version_>=Ui6ContentVersion?unsigned(Ui6AuxiliaryCount):version_>=FrontendContentVersion?unsigned(FrontendAuxiliaryCount):version_>=TitleEffectsContentVersion?unsigned(TitleEffectsAuxiliaryCount):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAuxiliaryCount):version_==FeedbackContentVersion?unsigned(FeedbackAuxiliaryCount):version_==LocaleContentVersion?unsigned(LocaleAuxiliaryCount):version_==NativeUiContentVersion?unsigned(NativeUiAuxiliaryCount):unsigned(U_Count);
+        const unsigned animations=version_>=CharacterDeathContentVersion?unsigned(CharacterDeathAnimationKinds):version_>=PhobiaContentVersion?unsigned(PhobiaAnimationKinds):version_>=Ui7ContentVersion?unsigned(Ui7AnimationKinds):version_>=MerchantEffectsContentVersion?unsigned(MerchantEffectsAnimationKinds):version_==FeedbackContentVersion?unsigned(FeedbackAnimationKinds):unsigned(AnimationKinds);
         const bool text=version_>=Ui7ContentVersion?strings_==Ui7StringCount:version_>=LocaleContentVersion?strings_==LocaleStringCount:strings_==ContentStrings||(version_==NativeUiContentVersion&&strings_==NativeUiStringCount);
         return ui_count_==auxiliary&&text&&clips_==animations;
     }
@@ -261,7 +265,9 @@ struct App {
     void auxiliary_scroll(int);
     void advance_auxiliary(unsigned);
     unsigned feedback_report(char*,unsigned)const;
-    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false;
+    bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false,show_run_timer=false;
+    bool run_timer_visible()const;
+    void run_timer_label(char*,size_t)const;
     uint8_t screen_shake=2;
     bool bestiary_actions_preferred=true;
     InputBindings input_bindings=default_input_bindings();
@@ -373,7 +379,11 @@ struct App {
     bool run_settings=false,run_seed_editing=false;
     uint8_t character_control=0;
     bool game_over_summary=false,history_from_game_over=false;
+    GameOverPresentation game_over_presentation{};
     int8_t game_over_focus=-1;
+    void sync_game_over_presentation();
+    bool game_over_button_ready()const;
+    void show_game_over_summary();
     bool game_over_available()const;
     bool game_over_input(Key);
     const UiRunHistory* game_over_run()const;

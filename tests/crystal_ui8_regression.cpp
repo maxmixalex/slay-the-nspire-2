@@ -19,8 +19,12 @@ int main(int argc,char**argv){
  std::vector<uint8_t>pack;
  if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.content.open(pack.data(),pack.size())&&app.content.current_profile());}
  if(argc>2)captures=argv[2];
- new_run(app.game,7319,false,Character::Ironclad);CHECK(world_begin_run(app.game));app.game.original_events={};CHECK(world_finish_room(app.game));
- CHECK(original_event_begin(app.game,OriginalEventId::CrystalSphere,31,1));app.game.world.room_open=1;app.game.gold=250;CHECK(original_event_choose(app.game,1));
+ new_run(app.game,7319,false,Character::Ironclad);CHECK(world_begin_run(app.game));app.game.original_events={};
+ // Isolate this event within the already-open event point. Completing Neow
+ // first and then reopening the same point manufactured two finished rooms
+ // for one visited floor, which correctly cannot be serialized.
+ CHECK(app.game.world.room_open==1&&app.game.world.rooms_completed==0);
+ CHECK(original_event_begin(app.game,OriginalEventId::CrystalSphere,31,1));app.game.gold=250;CHECK(original_event_choose(app.game,1));
  app.title=false;app.reset_presentation();CHECK(save(app.game,before));app.render();CHECK(!hits());
  const auto start=app.crystal_presentation.start;app.input(Key::Confirm);CHECK(app.game.original_events.crystal_charges==6);
  for(unsigned i=0;i<16;++i)app.advance(33);app.render();CHECK(hits()==97);CHECK(app.crystal_presentation.start==start);

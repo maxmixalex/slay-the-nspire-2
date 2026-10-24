@@ -7,7 +7,7 @@ function createProfileStorage(access) {
  function key(base,slot){valid(slot);return base+(slot===1?'':'-profile-'+slot);}
  function keys(slot,history){
   const list=[];for(let version=3;version<=latestSaveVersion;version++)list.push(key('nSpire2-save-v'+version,slot));
-  if(history)list.push(key('nSpire2-progress-v1',slot),key('nSpire2-preferences-v1',slot),key('nSpire2-preferences-v2',slot),key('nSpire2-preferences-v3',slot));return list;
+  if(history)list.push(key('nSpire2-progress-v1',slot),key('nSpire2-preferences-v1',slot),key('nSpire2-preferences-v2',slot),key('nSpire2-preferences-v3',slot),key('nSpire2-preferences-v4',slot));return list;
  }
  function readJournal(text){
   if(text.length>8*1024*1024)throw Error('Invalid profile transaction');
@@ -37,10 +37,11 @@ function createProfileStorage(access) {
   return access().getItem(name);
  }
  function json(text){try{return JSON.parse(text);}catch(error){return null;}}
- function validFlags(flags){return Number.isInteger(flags)&&flags>=0&&flags<=0xffffffff&&(flags&~0x73f)===0&&(flags>>>8)<=4;}
+ function validFlags(flags,version=4){return Number.isInteger(flags)&&flags>=0&&flags<=0xffffffff&&(flags&~(version>=4?0x77f:0x73f))===0&&(flags>>>8)<=4;}
  function validRecord(bytes){return Array.isArray(bytes)&&bytes.length===108&&bytes.every(x=>Number.isInteger(x)&&x>=0&&x<=255)&&
-  bytes[0]===78&&bytes[1]===83&&bytes[2]===80&&bytes[3]===70&&bytes[4]===3&&bytes[7]===0&&validFlags(bytes[5]|bytes[6]<<8);}
- function readPreferencesRecord(slot){const value=json(read(key('nSpire2-preferences-v3',slot)));return value&&value.version===3&&validRecord(value.bytes)?new Uint8Array(value.bytes):null;}
+  bytes[0]===78&&bytes[1]===83&&bytes[2]===80&&bytes[3]===70&&(bytes[4]===3||bytes[4]===4)&&bytes[7]===0&&validFlags(bytes[5]|bytes[6]<<8,bytes[4]);}
+ function readPreferencesRecord(slot){for(let version=4;version>=3;--version){const value=json(read(key('nSpire2-preferences-v'+version,slot)));
+  if(value&&value.version===version&&validRecord(value.bytes)&&value.bytes[4]===version)return new Uint8Array(value.bytes);}return null;}
  function erase(slot,history){
   if(!recover())return false;
   const storage=access(),entries=[];
@@ -59,8 +60,10 @@ function createProfileStorage(access) {
   readProgress(slot){return read(key('nSpire2-progress-v1',slot));},
   readPreferences(slot){
    const record=readPreferencesRecord(slot);if(record)return record[5]|record[6]<<8;
+   const current=json(read(key('nSpire2-preferences-v4',slot)));
+   if(current&&current.version===4&&validFlags(current.flags))return current.flags;
    const saved=json(read(key('nSpire2-preferences-v2',slot)));
-   if(saved&&saved.version===2&&validFlags(saved.flags))return saved.flags;
+   if(saved&&saved.version===2&&validFlags(saved.flags,2))return saved.flags;
    const old=json(read(key('nSpire2-preferences-v1',slot)));
    return 4|(2<<8)|(old&&old.version===1&&old.fastMode===true?1:0);
   },
@@ -85,11 +88,15 @@ function createProfileStorage(access) {
   writePreferences(slot,flags,record=null){
    if(!validFlags(flags))throw Error('Invalid preferences');if(!recover())return false;
    const storage=access();if(record===null)record=readPreferencesRecord(slot);
-   const writes=[[key('nSpire2-preferences-v2',slot),JSON.stringify({version:2,flags})],
+   const legacyFlags=flags&0x73f;
+   const writes=[[key('nSpire2-preferences-v2',slot),JSON.stringify({version:2,flags:legacyFlags})],
                  [key('nSpire2-preferences-v1',slot),JSON.stringify({version:1,fastMode:(flags&1)!==0})]];
-   if(record!==null){const bytes=Array.from(record);if(!validRecord(bytes))throw Error('Invalid keyboard preferences');bytes[5]=flags&255;bytes[6]=flags>>>8;
-    writes.push([key('nSpire2-preferences-v3',slot),JSON.stringify({version:3,bytes})]);}
-   // Keep all three compatibility records on the same successful settings
+   const current={version:4,flags};
+   if(record!==null){const bytes=Array.from(record);if(!validRecord(bytes))throw Error('Invalid keyboard preferences');bytes[4]=4;bytes[5]=flags&255;bytes[6]=flags>>>8;
+    current.bytes=bytes;const old=bytes.slice();old[4]=3;old[5]=legacyFlags&255;
+    writes.push([key('nSpire2-preferences-v3',slot),JSON.stringify({version:3,bytes:old})]);}
+   writes.push([key('nSpire2-preferences-v4',slot),JSON.stringify(current)]);
+   // Keep the timer and all three compatibility records on one settings
    // revision. A denied write cannot resurrect a stale set of key bindings.
    const transaction={version:2,slot,entries:writes.map(([name])=>[name,storage.getItem(name)])};
    storage.setItem(journalKey,JSON.stringify(transaction));pending=transaction;

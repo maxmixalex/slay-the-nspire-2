@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI8 stage 6 candidate",
+  "source_stage": "UI8 stage 7 candidate; executable acceptance follows frozen-source checkpoint",
   "scope": {
     "excluded": [
       "audio",
@@ -445,8 +445,8 @@
       ],
       "contract": "Death/victory summary, score, badges and discoveries",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, death quote, View Run/history return and original release-triggered controls.",
-      "remaining": "Five character Die tracks and per-score-line original animation remain pending; full per-floor details are incomplete.",
+      "implemented": "Actual original score formula/19 solo badge predicates, observed discoveries, source intro/score/badge/discovery timing and release-triggered controls. Pinned View Run is hidden/disabled and remains unavailable; ordinary Compendium Run History stays available.",
+      "remaining": "Full floor item/reward/purchase journal is being implemented separately. Shader/material and deterministic sampled particle differences require explicit visual acceptance; no numeric fidelity claim.",
       "regressions": [
         "world_game_over_ui_regression",
         "ui_progress_regression"
@@ -783,11 +783,12 @@
       ],
       "contract": "Real supported controls, persistence and platform restrictions",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Source General/Input layout, actual gameplay preferences, supported platform restrictions and real local feedback/credits.",
-      "remaining": "Audio is excluded; desktop-only controls are not exposed. ShowRunTimer/CommonTooltips preference parity remains unaudited.",
+      "implemented": "Source General/Input layout, actual gameplay preferences including Show Run Timer, NSPF4 profile persistence/backward migration, supported platform restrictions and real local feedback/credits.",
+      "remaining": "Audio is excluded; desktop-only controls are not exposed. Pinned CommonTooltips is hidden and its untick handler is a stub, so it is intentionally not exposed.",
       "regressions": [
         "ui_preferences_regression",
-        "world_frontend_ui_regression"
+        "world_frontend_ui_regression",
+        "web_profiles_storage_test.js"
       ],
       "acceptance": "Final UI8 integrated runtime/resources gate pending at this source checkpoint."
     },

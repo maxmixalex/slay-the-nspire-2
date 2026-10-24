@@ -34,6 +34,9 @@ bool capture(const char*directory,const char*name){
 bool run(Source&source,unsigned scene,unsigned frames,const char*directory){
  static const char*names[]={"notes-latest","credits-start","credits-roles","credits-localization","credits-groups","feedback-empty","feedback-editor"};
  if(!app.init({&source,source.length,read_at,nullptr},{}))return false;
+ // The title screen intentionally has no active save. Use a valid canonical
+ // state so read-only modal rendering can be checked with the real codec.
+ new_run(app.game,0x41cef1eau,true);app.reset_presentation();
  app.callbacks.write_feedback=local_report;app.pointer.visible=false;
  app.open_auxiliary(scene==0?AuxiliaryScreen::PatchNotes:scene<5?AuxiliaryScreen::Credits:AuxiliaryScreen::Feedback);
  for(unsigned i=0;i<20;++i)app.advance(100);

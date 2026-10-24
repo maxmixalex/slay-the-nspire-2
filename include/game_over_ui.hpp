@@ -6,7 +6,10 @@ namespace spire::game_over_ui {
 constexpr int BannerX=98,BannerWidth=125,BannerHeight=31;
 constexpr int BannerInitialY=56,BannerSummaryY=50;
 constexpr int ButtonY=207,ButtonWidth=50,ButtonHeight=12;
-constexpr int ContinueX=135,ViewRunX=111,MainMenuX=160;
+// NReturnToMainMenuButton._Ready moves the scene's button -140 source
+// pixels and records that position again. It is centered while View Run is hidden.
+constexpr int ContinueX=135,ViewRunX=111,MainMenuX=133;
+constexpr bool ViewRunEnabled=false; // Pinned _Ready disables it; no Enable call exists.
 constexpr int ScoreX=110,ScoreWidth=100,ScoreHeight=9,ScoreStep=7;
 constexpr int BadgeSize=13;
 constexpr int ViewRunText=8687,PartialHistoryText=8688;

@@ -16,6 +16,26 @@ static SaveData before,after;
 static unsigned checks;
 static const char*scenario="initial";
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"game_over_facts_ui8:%d [%s] %s phase=%u\n",__LINE__,scenario,#x,unsigned(a.game.phase));std::exit(1);}}while(0)
+static void advance_ms(unsigned ms){while(ms){const unsigned step=ms>250?250:ms;a.advance(step);ms-=step;}}
+static void presentation_timing(){
+ scenario="source terminal entry and sequential score/badge/discovery timing";
+ GameOverPresentation m;m.bound=true;m.opened=1000;
+ CHECK(!m.continue_ready(2749)&&m.continue_ready(2750)&&m.ui_alpha(2499)==0&&m.ui_alpha(2750)==255);
+ CHECK(m.initial_quote_alpha(2750)==0&&m.initial_quote_alpha(4250)==255&&m.continue_offset(2750)==36&&m.continue_offset(3250)==0);
+ m.event_room=true;CHECK(!m.continue_ready(2949)&&m.continue_ready(2950));m.event_room=false;
+ constexpr unsigned at=4250;m.begin_summary(at,3,2,1);CHECK(m.quote_from==255&&m.summary_opacity(at)==0&&m.summary_opacity(at+500)==255);
+ CHECK(m.banner_y(at)==game_over_ui::BannerInitialY&&m.banner_y(at+500)==game_over_ui::BannerSummaryY);
+ CHECK(!m.score(1,at+399).visible&&m.score(1,at+400).visible&&m.score(1,at+400).offset==-10&&m.score(1,at+400).alpha==0);
+ CHECK(m.score(1,at+700).offset==0&&m.score(1,at+700).alpha==255);
+ CHECK(m.badge_start()==1950&&m.discovery_start()==2950&&m.menu_start()==3350);
+ CHECK(!m.badge(0,at+1949).visible&&m.badge(0,at+1950).offset==8&&m.badge(0,at+2200).alpha==255&&!m.badge(1,at+2199).visible);
+ CHECK(m.discovery_header_alpha(at+2949)==0&&m.discovery_header_alpha(at+3200)==255);
+ CHECK(!m.discovery(0,at+3049).visible&&m.discovery(0,at+3050).offset==19&&m.discovery(0,at+3350).offset==0&&m.discovery(0,at+3350).alpha==255);
+ CHECK(!m.menu_ready(at+3349)&&m.menu_ready(at+3350)&&m.button_alpha(at+3350)==0&&m.button_alpha(at+3850)==255);
+ CHECK(m.quote_alpha(at)==255&&m.quote_alpha(at+250)==0&&m.quote_alpha(at+1249)==0&&m.quote_alpha(at+2750)==255);
+ m.reset();m.bound=true;m.begin_summary(0,0,0,0);CHECK(m.quote_from==0&&m.menu_start()==1250&&m.quote_alpha(1500)==255);
+ CHECK(!game_over_ui::ViewRunEnabled&&game_over_ui::MainMenuX==133);
+}
 static void start(unsigned seed=0x7195c3){
  a.reset_presentation();a.title=a.paused=a.help=a.library=a.compendium_open=a.history_open=false;
  new_run(a.game,seed,false);CHECK(configure_run_options(a.game,RunMode::Custom,run_modifier_bit(RunModifier::Flight)));
@@ -96,17 +116,24 @@ static void persistence_and_navigation(){
  const size_t old_size=encode_ui_progress(old,legacy,sizeof legacy);CHECK(old_size&&legacy[3]=='5'&&decode_ui_progress(legacy,old_size,decoded));
  CHECK(decoded.current.facts.version==0&&decoded.current_discoveries.count[0]==0&&decoded.architect_damage==0&&decoded.test_subject_kills==4);
  scenario="legacy resumed prefix stays incomplete";start(0x7195c6);a.progress.current.facts={};a.progress.current_discoveries={};a.begin_progress(true);CHECK(a.progress.current.facts.version==1&&!a.progress.current.facts.complete&&!ui_run_score(a.progress.current).complete);
- scenario="source release hotkeys and run-history return preserve simulation";start(0x7195c7);
+ scenario="source release gates and original-hidden View Run preserve simulation";start(0x7195c7);
  {UiCoreObserver observer(a);player_kill(a.game,true);resolve_pending(a.game);}CHECK(a.game.phase==Phase::Dead&&a.progress.current.outcome==2&&validate(a.game)&&save(a.game,before));
  a.keyboard_only=true;const uint16_t select=a.input_bindings.keys[1][unsigned(InputCommand::Select)],confirm=a.input_bindings.keys[1][unsigned(InputCommand::Confirm)];
+ // Holding Select during the intro cannot confirm when its release falls
+ // after the button becomes enabled. The next fresh release can confirm.
+ CHECK(a.physical_key(select,true)&&!a.game_over_summary);const unsigned intro=a.game_over_presentation.intro_delay();advance_ms(intro-1);
+ CHECK(!a.game_over_button_ready());a.ui_action(UiAction::GameOverSummary);CHECK(!a.game_over_summary);advance_ms(1);
+ CHECK(a.game_over_button_ready()&&a.physical_key(select,false)&&!a.game_over_summary);
  CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,true)&&!a.game_over_summary);CHECK(a.physical_key(select,false)&&a.game_over_summary);
- CHECK(a.physical_key(confirm,true)&&!a.history_open);CHECK(a.physical_key(confirm,false)&&a.history_open&&a.history_from_game_over&&!a.compendium_open);
- CHECK(a.history_at(a.history_index)->serial==a.progress.current.serial);a.input(Key::Back);CHECK(!a.history_open&&!a.compendium_open&&a.game_over_summary);
+ const unsigned ending=a.game_over_presentation.menu_start();CHECK(!a.game_over_button_ready());
+ CHECK(a.physical_key(select,true));advance_ms(ending);CHECK(a.game_over_button_ready()&&a.physical_key(select,false)&&!a.title);
+ CHECK(a.physical_key(confirm,true)&&!a.history_open);CHECK(a.physical_key(confirm,false)&&!a.history_open&&!a.title&&a.game_over_summary);
+ a.open_game_over_history();a.ui_action(UiAction::GameOverViewRun);CHECK(!a.history_open&&!a.history_from_game_over&&!a.compendium_open);
  // A modal appearing while a button is held must consume that release.
  CHECK(a.physical_key(select,true));a.paused=true;CHECK(a.physical_key(select,false)&&!a.title);a.paused=false;
  CHECK(save(a.game,after)&&after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));
  CHECK(a.physical_key(select,true)&&!a.title);CHECK(a.physical_key(select,false)&&a.title);
  CHECK(save(a.game,after)&&after.size==before.size&&!std::memcmp(before.bytes,after.bytes,before.size));
 }
-int main(){clear_ui_progress(a.progress);a.progress_loaded=true;score_and_badges();observations();persistence_and_navigation();
+int main(){clear_ui_progress(a.progress);a.progress_loaded=true;presentation_timing();score_and_badges();observations();persistence_and_navigation();
  std::printf("Game-over observed facts: %u checks, UiFloorHistory=%zu UiRunFacts=%zu UiRunDiscoveries=%zu UiRunHistory=%zu UiProgress=%zu App=%zu\n",checks,sizeof(UiFloorHistory),sizeof(UiRunFacts),sizeof(UiRunDiscoveries),sizeof(UiRunHistory),sizeof(UiProgress),sizeof(App));}

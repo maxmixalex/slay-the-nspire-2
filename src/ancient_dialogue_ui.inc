@@ -8,8 +8,15 @@ constexpr int TextW=121,Font=6,TextStep=7;
 inline int option_y(unsigned index){return int(index*96*4/21);}
 inline int options_height(unsigned count){return count?option_y(count-1)+OptionH:0;}
 }
+static unsigned ancient_font_face(const RichChar&ch){
+ // Both ancient scenes explicitly use Kreon Bold; the dialogue additionally
+ // selects Bitter Medium Italic. These UI8 families have their own metrics,
+ // unlike the generic rich-text style bands used by other screens. Combined
+ // bold/italic and inline icons retain the original theme/default selection.
+ const unsigned style=rich_font_style(ch);return style==1?5u:style==2?6u:style;
+}
 static fitted_text::Metric ancient_text_metric(const Canvas&c,const RichChar&ch,int size){
- const auto glyph=c.a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch)|c.font_face);
+ const auto glyph=c.a.content.glyph_metrics(ch.codepoint,size,ancient_font_face(ch));
  return {glyph.advance,mx(int(glyph.advance),int(glyph.w))};
 }
 static int ancient_text_rows(const Canvas&c,const char*text,int width){
@@ -24,7 +31,7 @@ static void ancient_text(Canvas&c,const char*text,int x,int y,int width,int rows
  static const int wave[]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
  fitted_text::visit(text,width,plan,metric,[&](const RichChar&ch,int at,int row,int size){
   int yy=y+row*ancient_layout::TextStep;if(yy+size+3<0||yy>=c.clip_h)return;
-  const auto glyph=c.a.content.glyph(ch.codepoint,size,rich_font_style(ch)|c.font_face);
+  const auto glyph=c.a.content.glyph(ch.codepoint,size,ancient_font_face(ch));
   if(c.a.text_effects&&ch.style.wave)yy+=wave[(c.a.animation/2+ch.index*2)%16];
   if(c.a.text_effects&&ch.style.thinky_dots)yy+=rich_thinky_offset(c.a.map_clock_ms,ch.index-ch.style.thinky_start);
   const int xx=x+at+(c.a.text_effects&&ch.style.jitter?int((c.a.animation/2+ch.index*7)%3)-1:0);

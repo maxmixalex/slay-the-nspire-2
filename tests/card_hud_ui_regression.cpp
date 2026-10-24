@@ -343,7 +343,13 @@ static void long_hand_description(){
     new_run(app.game,787,true,Character::Defect);app.title=false;app.character_select=app.library=false;app.reset_presentation();
     app.game.card_count=app.game.hand.count=1;app.game.hand.ids[0]=0;app.game.cards[0]={DefectRainbow,0};app.game.zones[0]=Zone::Hand;
     app.game.energy=99;app.cursor=0;app.hand_focus=true;app.pointer.visible=false;
-    Canvas c{app};const auto&tile=hand_tile(c,0);CHECK(tile.description_truncated);
+    Canvas c{app};
+    // The native five-pixel font now fits Rainbow's full description.
+    // Keep the overflow requirement on an actually longer original card.
+    if(app.content.version()>=HistoryUi8ContentVersion&&app.content.font_size(5)==5)
+        CHECK(!hand_tile(c,0).description_truncated);
+    app.game.cards[0]={DefectRocketPunch,0};
+    const auto&tile=hand_tile(c,0);CHECK(tile.description_truncated);
     CardHoverTarget owner{};CHECK(card_hover_target(app,owner)&&owner.instance==0);
     HoverTipList tips{};collect_visible_hover_tips(c,owner,tips);CHECK(tips.count&&tips.items[0].kind==HoverTipKind::Description);
     char title[256]{},body[2048]{},expected[2048]{};

@@ -82,12 +82,14 @@ lower image quality or discard animation frames.
 
 ## Shared serialization and resource-transfer storage
 
-The stage-six candidate removes the separate **200,368-byte State staging
+Stage six removes the separate **200,368-byte State staging
 array** used by the state codec. The existing 617,323-byte encoded-resource
 capacity can also hold a `SaveData` prefix followed by aligned State storage;
 the union adds at most alignment padding, not a second large allocation.
 Image, retained-group and tile-group cache capacities remain unchanged.
-The resulting whole-launcher saving must be measured after the next ARM link.
+The actual ARM symbol comparison removes 200,368 bytes after accounting for
+the old codec pointer/busy flag, new lease flag and four added alignment bytes.
+The shared union is 617,328 bytes; its payload capacity stays 617,323 bytes.
 
 Every user of this storage now holds a bounded foreground lease:
 
@@ -112,9 +114,54 @@ The new regression cases invoke nested saves, loads and cold-image requests
 from a real range-reader callback after encoded data was copied; check retained
 pixels, untouched output buffers and live state; exercise failed I/O recovery;
 verify prefix/suffix separation during Ndless-style save/load; and overwrite
-the entire transfer union between historical codec operations. Native and ARM
-syntax checks passed. Executing these candidate regressions and the final
-linked budget remains the stage-six checkpoint gate.
+the entire transfer union between historical codec operations. Stage-six
+`state_codec_regression` passed. The retained-reader test initially failed
+because its tiny tile payload shared an already warm descriptor page, so the
+required reentrant callback was never invoked. Moving that synthetic payload
+to a separate cold page makes the intended nested operation happen. The
+corrected test, compiled with the frozen stage-six headers and archive, passed
+473,283 checks. Its complete checkpoint gate remains part of stage seven.
+
+## Repeated room rendering and conservative merchant occlusion
+
+Frozen stage six (`f937cf13374ec5ba2e010f8c8899b691600565f0`) and its actual
+English/Chinese packs passed six room fixtures, each with three consecutive
+180-frame windows at 33 ms animation steps. All canonical saves were unchanged
+and no save callback was attempted. Every room except the merchant performed
+zero source reads in windows two and three. The measured host means were:
+
+| Scene | English steady windows | Chinese steady windows |
+| --- | ---: | ---: |
+| Map | 1.848–1.853 ms | 1.824–1.831 ms |
+| Card reward | 0.681–0.736 ms | 0.627–0.658 ms |
+| Crystal, full/revealed | 1.271–1.437 ms | 1.174–1.299 ms |
+| Ancient | 0.668–0.683 ms | 0.630–0.649 ms |
+| Merchant | 1.595–1.640 ms | 1.513–1.515 ms |
+
+These are unpaced host intervals from one quiet sequential pass, not device
+FPS or an A/B speedup. Captures are emitted outside the timed intervals.
+Receipts: `ui8-room-render-real-eng-f2c268a08437.json` and
+`ui8-room-render-real-zhs-3e3d2fb452fc.json`.
+
+Merchant windows two and three still read 862,809 and 744,197 bytes, in 55 and
+40 calls respectively, identically in both languages. A separate longer trace
+used three 720-frame windows. Every one of the final two windows' 166/169
+reads revisited an already seen retained group; those diagnostic timings are
+not used as performance measurements. The five room clips span 6,481,363
+decoded bytes in 55 retained pages, exceeding the unchanged 40-page group
+pool. The source is animation working-set churn, not Chinese glyph traffic.
+Trace receipt: `ui8-room-render-trace-eng-2c43af282c0f.json`.
+
+The stage-seven candidate addresses the hidden work directly. Once the
+inventory opening tweens finish, it reads each lower clip's dimensions from
+resident metadata and checks every visible destination alpha sample of the
+original rug. Only a whole rectangle covered by alpha 255 can skip its lower
+frame. Any translucent edge, hole, unsupported sparse cover, opening, closing
+or interrupted tween uses the full original rendering path. No frame is
+removed from the pack and no cache budget changes. A new independent alpha
+sampling test and complete merchant covered/unculled frame comparison cover
+five character cycles and opening/closing transitions. Actual whole-frame and
+post-change I/O/CPU results remain the stage-seven checkpoint gate.
 
 ## Crystal coordinate work and actual resource measurements
 
@@ -279,6 +326,16 @@ their CMake/Ninja/test records; the latest stage-four-b and stage-five builds,
 all source snapshots and all original inputs were retained. The ARM retry used
 the same immutable source. A failed first run is not counted as a pass.
 
+Stage six also linked successfully: **1,316,074-byte launcher**,
+**16,552,328-byte allocation**, **224,888 bytes** below the unchanged 16 MiB
+limit. Its net allocation is 172,348 bytes smaller than stage five despite
+the intervening UI additions. ELF SHA-256:
+`1d69c4466120cdab66de3fac1dfb7b6a89c7f75aad2389c0d3050ea782fbcbe2`.
+All 12,880 linked division vectors and 42 linked LZMA2 vectors passed again.
+Receipts: `ui8-arm-stage6-cf38b1840abd.json`,
+`ui8-arm-stage6-division-af4d4debaaff.json` and
+`ui8-arm-stage6-codec-7b615539abac.json`.
+
 The initial GCC 13 map-driver build encountered an internal compiler error in
 the unchanged baseline and the candidate at the same aggregate reset. The
 actual comparison therefore uses Clang 18 for both sides. One stage-two
@@ -293,7 +350,7 @@ no emulator memory was injected. This preparation does **not** establish that
 the new UI8 launcher has run; that requires the final ARM binary and matching
 private resource set.
 
-The stage-five allocation is an actual checkpoint result. The final linked
+These allocations are actual checkpoint results. The final linked
 ARM allocation must still be measured after later UI8 features are integrated.
 The map workspace saving
 provides room for features such as bounded map drawing, but it is not a

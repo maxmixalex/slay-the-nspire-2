@@ -12,12 +12,13 @@ static App app;
 static unsigned checks;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"font styles:%d %s\n",__LINE__,#x);std::exit(1);}}while(0)
 static void put(Bytes&b,unsigned at,uint32_t v,unsigned n=4){CHECK(at+n<=b.size());for(unsigned i=0;i<n;++i)b[at+i]=uint8_t(v>>(i*8));}
-static Bytes fixture(bool modern=true,bool styles=true,bool small=false){
- const unsigned ni=A_Count,ng=modern&&styles?6:3,ns=modern?Ui7StringCount:LocaleStringCount;
- const unsigned nc=modern?Ui7AnimationKinds:MerchantEffectsAnimationKinds,nu=modern?unsigned(Ui7AuxiliaryCount):unsigned(Ui6AuxiliaryCount);
+static Bytes fixture(bool modern=true,bool styles=true,bool small=false,bool scene=false){
+ const unsigned ni=A_Count,ng=scene?8:modern&&styles?6:3,ns=modern?Ui7StringCount:LocaleStringCount;
+ const unsigned nc=scene?PhobiaAnimationKinds:modern?Ui7AnimationKinds:MerchantEffectsAnimationKinds;
+ const unsigned nu=scene?unsigned(HistoryUi8AuxiliaryCount):modern?unsigned(Ui7AuxiliaryCount):unsigned(Ui6AuxiliaryCount);
  const unsigned ga=40+ni*16,sa=ga+ng*16,ca=sa+ns*8,base=ca+nc*16+CardKinds*16+nu*4;
  const unsigned table=base+64,costs=table+16,descriptors=costs+((ni+1)&~1u);
- Bytes b(descriptors+16);put(b,0,0x3250534e);put(b,4,modern?Ui7ContentVersion:Ui6ContentVersion);put(b,8,0x41cef1ea);
+ Bytes b(descriptors+16);put(b,0,0x3250534e);put(b,4,scene?HistoryUi8ContentVersion:modern?Ui7ContentVersion:Ui6ContentVersion);put(b,8,0x41cef1ea);
  put(b,16,ni);put(b,20,ng);put(b,24,ns);put(b,28,nc);put(b,32,CardKinds);
  const unsigned fields[]={0x314c4954,1,16,14,1,1,1,1,descriptors,table,770,1,524288,617323,costs,ni};
  for(unsigned i=0;i<16;++i)put(b,base+i*4,fields[i]);
@@ -27,10 +28,13 @@ static Bytes fixture(bool modern=true,bool styles=true,bool small=false){
  // language marker read during open. A tiny adjacent fixture is already
  // warm before glyph() and cannot exercise the provider cache miss.
  b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
- const unsigned cp[]={63,65,66,65,65,65},size[]={8,8,8,72,136,200},advance[]={1,2,3,5,4,6};
- const Bytes alpha[]={{127},{255},{127},{255,0,255},{0,255},{0,255,255,0}};
+ const unsigned cp[]={63,65,66,65,65,65,65,65},size[]={8,8,8,72,136,200,0,0},advance[]={1,2,3,5,4,6,0,0};
+ const unsigned scene_size[]={6,6,6,70,102,134,166,198},scene_advance[]={1,2,3,5,7,4,6,6};
+ const Bytes alpha[]={{127},{255},{127},{255,0,255},{0,255},{0,255,255,0},{},{}};
+ const Bytes scene_alpha[]={{127},{255},{127},{255,0,255},{255,0,0,255},{0,255},{0,255,255},{0,255,255,0}};
  for(unsigned i=0;i<ng;++i){const unsigned at=ga+i*16;put(b,at,cp[i]);put(b,at+4,unsigned(b.size()));put(b,at+8,small&&i==0?5:size[i],2);
-  b[at+10]=uint8_t(alpha[i].size());b[at+11]=1;put(b,at+12,advance[i],2);b.insert(b.end(),alpha[i].begin(),alpha[i].end());}
+  if(scene)put(b,at+8,scene_size[i],2);const auto&mask=scene?scene_alpha[i]:alpha[i];
+  b[at+10]=uint8_t(mask.size());b[at+11]=1;put(b,at+12,scene?scene_advance[i]:advance[i],2);b.insert(b.end(),mask.begin(),mask.end());}
  b.resize((b.size()+ResourceReader::PageSize-1)&~size_t(ResourceReader::PageSize-1));
  const unsigned empty=unsigned(b.size());b.push_back(0);const unsigned marker=unsigned(b.size());b.insert(b.end(),{'e','n','g',0});
  for(unsigned i=0;i<ns;++i)put(b,sa+i*8,empty);put(b,sa+LocaleMarkerString*8,marker);put(b,sa+LocaleMarkerString*8+4,3);
@@ -86,6 +90,25 @@ static void direct(){
  CHECK(app.content.font_size(7,0,true)==5&&app.content.font_size(11)==8);
  CHECK(app.content.glyph('?',5).pixels); // Reopening invalidates cached size bands.
 }
+static void ancient_families(){
+ auto bytes=fixture(true,true,false,true);CHECK(app.content.open(bytes.data(),bytes.size()));Canvas c{app};
+ RichChar bold{'A',{},0},italic{'A',{},0};bold.style.bold=true;italic.style.italic=true;
+ // Distinct masks and advances expose either a metrics-only or paint-only
+ // fix. Other scenes must still use generic faces 1/2, not the ancient faces.
+ CHECK(c.font_style(bold)==1&&c.font_style(italic)==2);
+ CHECK(app.content.glyph_metrics('A',6,1).advance==5&&app.content.glyph_metrics('A',6,2).advance==4);
+ CHECK(ancient_text_metric(c,bold,6).advance==7&&ancient_text_metric(c,italic,6).advance==6);
+ const char*sample="[b]A[/b][i]A[/i]B";const uint16_t ink=rgb(255,246,226);
+ CHECK(ancient_text_rows(c,sample,16)==1&&ancient_text_rows(c,sample,15)==2);
+ clear();ancient_text(c,sample,10,10,16,1);
+ CHECK(pixel(10,10)==ink&&pixel(13,10)==ink&&pixel(11,10)==0&&pixel(12,10)==0);
+ CHECK(pixel(18,10)==ink&&pixel(19,10)==ink&&pixel(17,10)==0&&pixel(20,10)==0);
+ CHECK(pixel(23,10)!=0&&pixel(22,10)==0&&pixel(24,10)==0);
+ clear();ancient_text(c,sample,10,20,12,2);
+ CHECK(pixel(10,20)==ink&&pixel(13,20)==ink&&pixel(18,20)==0);
+ CHECK(pixel(11,27)==ink&&pixel(12,27)==ink&&pixel(16,27)!=0);
+ CHECK(pixel(10,27)==0&&pixel(13,27)==0&&pixel(17,27)==0&&app.content.healthy());
+}
 struct Provider {
  const Bytes*bytes;unsigned calls=0;
  static bool read(void*context,uint32_t off,void*out,uint32_t count){auto&p=*static_cast<Provider*>(context);++p.calls;
@@ -103,11 +126,32 @@ static void provider(){
  for(unsigned repeat=0;repeat<20;++repeat)for(unsigned face=0;face<4;++face)CHECK(app.content.glyph('A',8,face).pixels);
  CHECK(p.calls==warm&&app.content.healthy());
 }
+static void ancient_actual_oracle(Canvas&c){
+ // The source dialogue's families are an independent oracle: ordinary Kreon,
+ // explicit Kreon Bold and Bitter Medium Italic, with the declared 6px floor
+ // for source font_size=22. Draw the same glyphs directly, bypassing both the
+ // ancient selector and its layout callback, including a real wrapped case.
+ const char*sample="A[b]A[/b][i][font_size=22]A[/font_size][/i]B";
+ const unsigned cps[]={'A','A','A','B'},faces[]={0,5,6,0};
+ for(int width:{121,11,7}){
+  clear();int at=0,row=0;
+  for(unsigned i=0;i<4;++i){const auto g=app.content.glyph(cps[i],6,faces[i]);CHECK(g.pixels&&g.advance);
+   if(at&&at+std::max(int(g.advance),int(g.w))>width){at=0;++row;}
+   Canvas shadow=c;shadow.opacity=64;shadow.character(cps[i],g,20+at+1,40+row*7,Ink,true);
+   c.character(cps[i],g,20+at,40+row*7,rgb(255,246,226));at+=g.advance;
+  }
+  const std::vector<uint16_t> expected(app.pixels,app.pixels+ScreenW*ScreenH);
+  CHECK(ancient_text_rows(c,sample,width)==row+1);
+  clear();ancient_text(c,sample,20,40,width,row+1);
+  CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));
+ }
+}
 static void actual(const char*path,const char*capture){
  FILE*f=std::fopen(path,"rb");CHECK(f&&std::fseek(f,0,SEEK_END)==0);const long size=std::ftell(f);
  CHECK(size>=40&&static_cast<unsigned long>(size)<=MaxContentFile&&std::fseek(f,0,SEEK_SET)==0);
  Bytes bytes(static_cast<size_t>(size));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());CHECK(!std::fclose(f));
  Provider p{&bytes};CHECK(app.content.open(p.source())&&app.content.version()>=Ui7ContentVersion);Canvas c{app};
+ if(app.content.version()>=HistoryUi8ContentVersion)ancient_actual_oracle(c);
  const char*sample=app.content.english()?"Upgrade one [gold]card[/gold] in your [gold]deck[/gold].\n[b]Strength[/b] [i]Dexterity[/i]\nA [b]B[/b] [i]C[/i]":
      "升级你牌组中的一张牌。\n[gold]升级[/gold]你[gold]牌组[/gold]中的一张牌。\n[b]力量[/b] [i]敏捷[/i]\nA [b]B[/b] [i]C[/i]";
  const auto draw=[&](){clear();c.paragraph(sample,16,30,288,8,0,12,0xffff);
@@ -120,4 +164,4 @@ static void actual(const char*path,const char*capture){
  std::printf("actual %s font draw: %u cold provider calls; 64 warm frames add 0 calls\n",app.content.english()?"eng":"zhs",cold);
 }
 }
-int main(int argc,char**argv){direct();provider();if(argc>1)actual(argv[1],argc>2?argv[2]:nullptr);std::printf("font styles: %u checks\n",checks);return 0;}
+int main(int argc,char**argv){direct();ancient_families();provider();if(argc>1)actual(argv[1],argc>2?argv[2]:nullptr);std::printf("font styles: %u checks\n",checks);return 0;}

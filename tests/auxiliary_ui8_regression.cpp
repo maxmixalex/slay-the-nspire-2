@@ -81,15 +81,15 @@ static void notes(){
  click(HitKind::AuxiliaryControl,AuxiliaryOpenPatchNotes);advance(250);click(HitKind::AuxiliaryControl,AuxiliaryBack);advance(250);CHECK(app.auxiliary.screen==AuxiliaryScreen::None);
 }
 static void settings_entries(){
- app.has_save=false;app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open);app.settings_top=3;app.settings_item=7;
+ app.has_save=false;app.menu=1;app.input(Key::Confirm);CHECK(app.settings_open);app.settings_top=4;app.settings_item=8;
  click(HitKind::UiAction,int(UiAction::SettingsCredits));CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);snapshot();
  app.input(Key::Back);CHECK(!app.auxiliary.closing);advance(1900);app.pointer_button(true);app.pointer_button(false);CHECK(!app.auxiliary.closing);
  advance(100);CHECK(app.auxiliary.credits_position>0);capture("credits-start");const int before_scroll=app.auxiliary.credits_target;
  app.pointer_scroll(2);CHECK(app.auxiliary.credits_target>before_scroll);advance(100);app.auxiliary.credits_position=app.auxiliary.credits_target=400*256;capture("credits-roles");
  CHECK(app.physical_key(27,true)&&!app.auxiliary.closing);CHECK(app.physical_key(27,false)&&app.auxiliary.closing);advance(999);CHECK(app.auxiliary.screen==AuxiliaryScreen::Credits);advance(1);
- CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==3&&app.settings_item==7);unchanged();
- app.settings_item=6;app.input(Key::Confirm);CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);capture("feedback-empty");app.close_auxiliary();
- CHECK(app.settings_open&&app.settings_top==3&&app.settings_item==6);click(HitKind::UiAction,int(UiAction::SettingsFeedback));CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);
+ CHECK(app.auxiliary.screen==AuxiliaryScreen::None&&app.settings_open&&app.settings_top==4&&app.settings_item==8);unchanged();
+ app.settings_item=7;app.input(Key::Confirm);CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);capture("feedback-empty");app.close_auxiliary();
+ CHECK(app.settings_open&&app.settings_top==4&&app.settings_item==7);click(HitKind::UiAction,int(UiAction::SettingsFeedback));CHECK(app.auxiliary.screen==AuxiliaryScreen::Feedback);
 }
 static void feedback(){
  auto&v=app.auxiliary;app.pointer.visible=false;app.auxiliary_control(AuxiliaryFeedbackText);CHECK(v.editing);snapshot();
@@ -109,7 +109,7 @@ static void feedback(){
  app.auxiliary_text(0x1f642);CHECK(v.draft_units==8000&&v.draft_size==8002);app.auxiliary_text('b');CHECK(v.draft_units==8000&&v.draft_size==8002);
  app.auxiliary_text(8);CHECK(v.draft_size==7998&&v.draft_units==7998);app.auxiliary_text(0x4e2d);app.auxiliary_text(0x4e2d);CHECK(v.draft_units==8000&&v.draft_size==8004);
  app.auxiliary_text(0xd800);app.auxiliary_text(0x110000);CHECK(v.draft_units==8000);char small[32];CHECK(!app.feedback_report(small,sizeof small));
- app.auxiliary_text(27);CHECK(!v.editing&&v.screen==AuxiliaryScreen::Feedback);app.input(Key::Back);CHECK(v.screen==AuxiliaryScreen::None&&app.settings_top==3);unchanged();
+ app.auxiliary_text(27);CHECK(!v.editing&&v.screen==AuxiliaryScreen::Feedback);app.input(Key::Back);CHECK(v.screen==AuxiliaryScreen::None&&app.settings_top==4);unchanged();
 }
 }
 int main(int argc,char**argv){

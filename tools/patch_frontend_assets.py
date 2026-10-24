@@ -220,7 +220,7 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
         out.extend(raw)
     for i, clip in enumerate(clips):
         tiles.CLIP.pack_into(out, source.card_at + count * 16 + i * 16,
-                             ni + clip['first'], clip['count'], clip['frame_ms'], *clip['pivot'], 0)
+                             ni + clip['first'], clip['count'], clip['frame_ms'], *clip['pivot'], clip.get('sprite_units', 0))
     header[8], header[9], header[14], header[15] = shifted(header[8]), shifted(header[9]), shifted(header[14]), ni + count
     tiles.GLOBAL.pack_into(out, source.base_end + directory_delta, *header)
     for i in range(old_tiles.tile_groups + old_tiles.index_groups):

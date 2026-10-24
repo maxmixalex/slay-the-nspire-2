@@ -61,11 +61,12 @@ writeReport();
  async function press(key){await canvas.focus();await page.keyboard.press(key);await painted();}
  async function confirm(){await page.locator('button[data-key="4"]').click();await painted();}
  const saved=(slot=1)=>page.evaluate(id=>localStorage.getItem('nSpire2-save-v17'+(id===1?'':'-profile-'+id)),slot);
- const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v2'+(id===1?'':'-profile-'+id))),slot);
+ const preference=(slot=1)=>page.evaluate(id=>JSON.parse(localStorage.getItem('nSpire2-preferences-v4'+(id===1?'':'-profile-'+id))),slot);
  async function point(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.click(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
  async function titleRow(row,hasRun){await point(119,(hasRun?137:147)+row*20+8);}
  async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
  async function toggleFast(){await point(274,128);}
+ async function toggleTimer(){await point(274,184);}
  async function returnToTitle(){await press('Escape');await point(160,196);}
  async function saveAndResume(){await returnToTitle();await titleRow(0,true);}
  async function selectProfile(slot){await point(20,10);await point(72+(slot-1)*88,120);await page.waitForFunction(id=>localStorage.getItem('nSpire2-selected-profile')===String(id),slot);await painted();}
@@ -76,14 +77,17 @@ writeReport();
  assert.equal(await page.evaluate(()=>typeof globalThis.nSpire2Debug),'undefined');
  record('ordinary HTML does not expose the developer command API');
  await capture('browser-title-eng');
- await openSettings(false);await toggleFast();
- assert.equal((await preference()).flags&1,1);
+ await openSettings(false);await toggleFast();await toggleTimer();
+ assert.equal((await preference()).version,4);assert.equal((await preference()).flags&65,65);
  await capture('browser-settings-persisted-eng');
  await page.reload({waitUntil:'load'});await ready('eng');
  await openSettings(false);await toggleFast();
- assert.equal((await preference()).flags&1,0);
+ assert.equal((await preference()).flags&65,64);
+ await toggleTimer();assert.equal((await preference()).flags&64,0);
+ await toggleTimer();assert.equal((await preference()).flags&64,64);
  await press('Escape');
  record('in-game Fast Mode survives reload and the real toggle reads its restored value');
+ record('Show Run Timer uses the real General settings checkbox and survives reload in the v4 profile preference record');
  await titleRow(0,false);await capture('browser-singleplayer-eng');await confirm();await capture('browser-character-eng');
  await confirm();await saveAndResume();
  await page.waitForFunction(()=>!!localStorage.getItem('nSpire2-save-v17'));
@@ -115,7 +119,7 @@ writeReport();
  assert.deepEqual(report.dialogs,[]);record('original language dropdown changes directly without a browser confirmation dialog');
  await selectProfile(2);assert.equal(await saved(2),null);assert.equal(await saved(),firstSave);
  await capture('browser-profile2-title');await openSettings(false);await toggleFast();
- assert.equal((await preference(2)).flags&1,1);assert.equal((await preference()).flags&1,0);
+ assert.equal((await preference(2)).flags&65,1);assert.equal((await preference()).flags&65,64);
  await press('Escape');await titleRow(0,false);await confirm();await press('ArrowRight');await confirm();await saveAndResume();
  const secondSave=await saved(2);assert(secondSave&&secondSave!==firstSave);assert.equal(await saved(),firstSave);
  await capture('browser-profile2-run');await returnToTitle();

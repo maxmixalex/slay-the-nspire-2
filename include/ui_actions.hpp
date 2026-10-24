@@ -27,6 +27,6 @@ enum class UiAction {
     OpenProfiles, SelectProfile1, SelectProfile2, SelectProfile3,
     DeleteProfile1, DeleteProfile2, DeleteProfile3,
     OpenStandardRun, OpenCustomRun, OpenDailyRun, RandomizeRun, StartConfiguredRun,
-    SettingsFeedback, SettingsCredits, GameOverViewRun
+    SettingsFeedback, SettingsCredits, GameOverViewRun, SettingsRunTimer
 };
 }

@@ -128,6 +128,41 @@ struct Canvas{
     void picture(int id,int x,int y,int width=0,int height=0,unsigned opacity=255,unsigned blend_mode=0){
         picture(a.content.image(id),x,y,width,height,opacity,blend_mode);
     }
+    // Conservative occlusion for a later normal-blended image. Every visible
+    // destination sample must have exactly full alpha after nearest sampling;
+    // one hole or antialiased edge keeps the original lower layer. Sparse
+    // covers deliberately take that fallback rather than guessing a bound.
+    bool opaque_picture_covers(Picture cover,int x,int y,int width,int height,
+        int target_x,int target_y,int target_w,int target_h)const{
+        if(!cover.pixels||cover.format>3||!cover.w||!cover.h||opacity!=255)return false;
+        if(!width)width=cover.w;if(!height)height=cover.h;if(width<=0||height<=0)return false;
+        const int left=mx(0,target_x),right=mn(clip_w,target_x+target_w);
+        const int top=mx(0,target_y),bottom=mn(clip_h,target_y+target_h);
+        if(left>=right||top>=bottom)return true;
+        if(left<x||right>x+width||top<y||bottom>y+height)return false;
+        if(!cover.alpha)return true;
+        const int columns=right-left;if(columns>320)return false;
+        uint16_t source[320];
+        const unsigned divisor=unsigned(width),step=cover.w/divisor,advance=cover.w%divisor;
+        const unsigned first=unsigned(left-x)*cover.w;
+        unsigned column=first/divisor,remainder=first%divisor;
+        for(int xx=0;xx<columns;++xx){
+            source[xx]=uint16_t(column);column+=step;remainder+=advance;
+            if(remainder>=divisor){remainder-=divisor;++column;}
+        }
+        const unsigned rows=unsigned(height),row_step=cover.h/rows,row_advance=cover.h%rows;
+        const unsigned initial=unsigned(top-y)*cover.h;
+        unsigned row=initial/rows,row_remainder=initial%rows,previous=~0u;
+        for(int yy=top;yy<bottom;++yy){
+            if(row!=previous){const auto*alpha=cover.alpha+row*cover.w;
+                for(int xx=0;xx<columns;++xx)if(alpha[source[xx]]!=255)return false;
+                previous=row;
+            }
+            row+=row_step;row_remainder+=row_advance;
+            if(row_remainder>=rows){row_remainder-=rows;++row;}
+        }
+        return true;
+    }
     // A full-width atlas band shares its owner's decoded storage, including
     // sparse rows. It can use the existing scaled/additive picture path.
     static Picture picture_rows(Picture p,int first,int count){

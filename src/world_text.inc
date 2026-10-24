@@ -95,10 +95,10 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  if(wt_equal(x.table,"game_over_screen")&&s.world.active){
   if(wt_equal(name,"FloorCount"))return wt_number(s.world.total_floor);
   if(wt_equal(name,"AscensionLevel"))return wt_number(s.world.ascension);
-  const auto*r=a.game_over_run();if(r&&ui_run_score(*r).complete){
+  const auto*r=a.game_over_run();if(r&&ui_run_facts_complete(*r)){
    if(wt_equal(name,"GoldAmount"))return wt_number(r->gold_gained);
-   if(wt_equal(name,"EliteCount"))return wt_number(ui_run_score(*r).elites);
-   if(wt_equal(name,"BossCount"))return wt_number(ui_run_score(*r).bosses);
+   if(wt_equal(name,"EliteCount"))return wt_number(ui_run_elites(*r));
+   if(wt_equal(name,"BossCount"))return wt_number(ui_run_bosses(*r));
    if(wt_equal(name,"PlayerDamage"))return wt_number(ui_run_score(*r).total);
    if(wt_equal(name,"PersonalDamage"))return wt_number(a.progress.architect_damage);
   }

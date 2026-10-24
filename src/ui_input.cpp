@@ -131,7 +131,7 @@ void App::ui_action(UiAction action){
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
         if(settings_open){settings_tab=action==UiAction::SettingsInputTab;settings_item=0;pointer_cancel();}break;
     case UiAction::SettingsLanguage:case UiAction::SettingsLanguageEnglish:case UiAction::SettingsLanguageChinese:
-    case UiAction::SettingsLanguageClose:case UiAction::SettingsCardIndices:case UiAction::SettingsTextEffects:
+    case UiAction::SettingsLanguageClose:case UiAction::SettingsCardIndices:case UiAction::SettingsTextEffects:case UiAction::SettingsRunTimer:
     case UiAction::SettingsKeyboardOnly:case UiAction::SettingsPhobia:case UiAction::SettingsShakeDown:case UiAction::SettingsShakeUp:
     case UiAction::SettingsReset:case UiAction::SettingsScrollUp:case UiAction::SettingsScrollDown:
     case UiAction::SettingsFeedback:case UiAction::SettingsCredits:break;
@@ -160,9 +160,9 @@ void App::ui_action(UiAction action){
             else if(event_choice(game,6)&&original_event_leave(game)){cursor=0;proceed_map_window();}
         }break;
     case UiAction::GameOverSummary:
-        if(game_over_available()&&!game_over_summary){game_over_summary=true;pointer_cancel();}break;
+        show_game_over_summary();break;
     case UiAction::GameOverMainMenu:
-        if(game_over_available()&&game_over_summary){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}break;
+        if(game_over_available()&&game_over_summary&&game_over_button_ready()){if(finish_saved_run())return_to_title();else message("无法删除存档，请重试");}break;
     case UiAction::GameOverViewRun:open_game_over_history();break;
     case UiAction::LeaveCamp:
         camp_input(Key::EndTurn);break;

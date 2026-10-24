@@ -5,6 +5,20 @@ static bool progress_matches(const UiRunHistory&r,const State&s){
         r.character==unsigned(s.character)&&r.ascension==s.world.ascension&&r.start_region==s.world.rooms[0].region&&
         r.mode==unsigned(s.run_options.mode)&&r.modifiers==s.run_options.modifiers&&r.daily_day==s.run_options.daily_day;
 }
+bool App::run_timer_visible()const{
+    // NRunTimer observes the map and capstone visibility even when the
+    // preference is off. The preference requests the same label everywhere.
+    return !title&&game.world.active&&!game.practice&&
+        (show_run_timer||map_window.visible||panel==1||panel==3||paused||settings_open);
+}
+void App::run_timer_label(char*out,size_t capacity)const{
+    TextBuffer text{out,capacity,0};const auto&r=progress.current;
+    if(!progress_matches(r,game)||r.partial){text.text("—");return;}
+    const unsigned hours=r.seconds/3600,minutes=r.seconds/60%60;
+    if(hours){text.number(hours);text.ch(':');}
+    if(minutes<10)text.ch('0');text.number(minutes);text.ch(':');
+    if(r.seconds%60<10)text.ch('0');text.number(r.seconds%60);
+}
 static UiFloorHistory* progress_observe_floor(App&a,const State&s){
     auto&r=a.progress.current;if(!progress_matches(r,s)||r.outcome||!s.world.room_open)return nullptr;
     if(r.floor_count){auto&last=r.floors[r.floor_count-1];if(last.act==s.world.act_index&&last.point==s.world.current_point)return &last;}
@@ -220,7 +234,7 @@ void App::finish_progress(bool abandoned,const State*source){
     // The outcome guard above makes persistence retries and repeated finish
     // notifications idempotent, including an abandoned mid-respawn run.
     progress.test_subject_kills=progress_add(progress.test_subject_kills,s.test_subject_kills);
-    if(r.outcome==1&&ui_run_score(r).complete)progress.architect_damage=progress_add(progress.architect_damage,ui_run_score(r).total);
+    if(r.outcome==1&&ui_run_facts_complete(r))progress.architect_damage=progress_add(progress.architect_damage,ui_run_score(r).total);
     auto&stats=progress.characters[r.character];
     if(r.mode==unsigned(RunMode::Standard)&&r.outcome==1){stats.wins=progress_add(stats.wins,1);stats.current_streak=progress_add(stats.current_streak,1);
         // ProgressSaveManager counts distinct ModelIds in the final deck,

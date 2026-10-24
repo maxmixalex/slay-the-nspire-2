@@ -56,14 +56,29 @@ static void merchant_card(Canvas&c,Card card,int cx,int cy,unsigned scale,bool s
  if(cy+h/2<22||cy-h/2>=240)return;
  draw_card_face(c,card,cx-w/2,cy-h/2,w,h,-2,-2,-1,-1,facts);
 }
-static void merchant_idle(Canvas&c,int clip){
+static void merchant_room_clip(Canvas&c,int clip,uint32_t milliseconds,bool covered){
+    const auto sequence=c.a.content.clip(clip);if(!sequence.count)return;
+    const unsigned frame=milliseconds/sequence.frame_ms%sequence.count;
+    const int image=int(sequence.first+frame),x=-sequence.pivot_x,y=22-sequence.pivot_y;
+    if(covered){
+        // Geometry is resident metadata: a hidden frame is never decoded just
+        // to discover its bounds. The actual rug mask, not its rectangular
+        // control or a fixed silhouette, proves every covered screen sample.
+        const auto size=c.a.content.image_dimensions(image);
+        if(size.w&&size.h&&c.opaque_picture_covers(c.a.content.image(c.a.content.ui_image(U_MerchantRug)),
+            MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH,
+            x,y,size.w,size.h))return;
+    }
+    c.picture(image,x,y);
+}
+static void merchant_idle(Canvas&c,int clip,bool covered=false){
     const auto sequence=c.a.content.clip(clip);if(!sequence.count)return;
     // Both skins sample the same authored six-second idle phase. The v18
     // directory stores rounded frame_ms, so select by the original duration.
     const unsigned frame=(c.a.map_clock_ms%MerchantIdleDurationMs)*sequence.count/MerchantIdleDurationMs;
-    c.clip(clip,0,22,frame*sequence.frame_ms);
+    merchant_room_clip(c,clip,frame*sequence.frame_ms,covered);
 }
-static void shop_screen(Canvas&c){
+static void shop_screen(Canvas&c,bool cull_covered=true){
     auto&a=c.a;auto&s=a.game;auto&motion=a.room_presentation.merchant;motion.set_open(a.shop_open,a.map_clock_ms);const bool registered=a.content.ui_image(U_MerchantBackdrop)>=0&&a.content.clip(AnimMerchantRoomTop).count;
     const int body_x=registered?MerchantLayout::BodyX:181,body_y=registered?MerchantLayout::BodyY:62;
     const int body_w=registered?MerchantLayout::BodyW:105,body_h=registered?MerchantLayout::BodyH:109;
@@ -72,15 +87,19 @@ static void shop_screen(Canvas&c){
     const bool focused=active&&(a.pointer.visible?
         a.pointer.x>=body_x-2&&a.pointer.x<body_x+body_w+2&&a.pointer.y>=body_y-2&&a.pointer.y<body_y+body_h+2:a.cursor==0);
     const bool effects=registered&&a.content.version()>=MerchantEffectsContentVersion;
+    // Wait for both source opening tweens. Opening, interruption and closing
+    // always render the complete room; settled inventory can omit only layers
+    // proven to be wholly overwritten by the opaque original rug.
+    const bool covered=cull_covered&&a.shop_open&&motion.open&&a.map_clock_ms-motion.start>=1000;
     if(registered){
         c.ui(U_MerchantBackdrop,0,22,320,218);
         if(effects){
-            c.clip(AnimMerchantFlamesBehind,0,22,a.map_clock_ms%MerchantIdleDurationMs);
-            merchant_idle(c,AnimMerchantRoomBottom);
-            c.clip(AnimMerchantFlamesFront,0,22,a.map_clock_ms%MerchantIdleDurationMs);
+            merchant_room_clip(c,AnimMerchantFlamesBehind,a.map_clock_ms%MerchantIdleDurationMs,covered);
+            merchant_idle(c,AnimMerchantRoomBottom,covered);
+            merchant_room_clip(c,AnimMerchantFlamesFront,a.map_clock_ms%MerchantIdleDurationMs,covered);
         }else c.clip(AnimMerchantRoomBottom,0,22,a.map_clock_ms);
-        c.clip(AnimMerchantIronclad+int(s.character),0,22,a.map_clock_ms);
-        if(effects)merchant_idle(c,focused?AnimMerchantRoomFocused:AnimMerchantRoomTop);
+        merchant_room_clip(c,AnimMerchantIronclad+int(s.character),a.map_clock_ms,covered);
+        if(effects)merchant_idle(c,focused?AnimMerchantRoomFocused:AnimMerchantRoomTop,covered);
         else c.clip(AnimMerchantRoomTop,0,22,a.map_clock_ms);
     }else{c.picture(A_ShopBackground,0,22,320,218);c.actor(0,54,170);c.clip(AnimMerchantTop,181,62,a.animation*33,false);c.clip(AnimMerchantBottom,152,132,a.animation*33,false);}
     if(!a.shop_open){

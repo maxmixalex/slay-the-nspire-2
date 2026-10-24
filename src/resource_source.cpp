@@ -1,5 +1,5 @@
 #include "resource_source.hpp"
-#include "history_ui8_assets.hpp"
+#include "character_death_assets.hpp"
 
 namespace spire {
 static void resource_copy(void* destination,const uint8_t* source,uint32_t count){
@@ -47,7 +47,7 @@ bool SplitResourceSource::open(ResourceSource common,ResourceSource localized,Re
     language_id_=expected;valid_=true;
     uint8_t h[40],row[8],marker[4];
     if(!read(0,h,sizeof h)||split_u32(h)!=0x3250534Eu||
-       (split_u32(h+4)<17||split_u32(h+4)>HistoryUi8ContentVersion)||split_u32(h+8)!=0x41cef1eau||
+       (split_u32(h+4)<17||split_u32(h+4)>CharacterDeathContentVersion)||split_u32(h+8)!=0x41cef1eau||
        split_u32(h+12)!=total){
         close();return false;
     }
