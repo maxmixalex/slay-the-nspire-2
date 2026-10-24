@@ -78,20 +78,25 @@ static bool capture(const char*directory,const char*scene){
 static uint32_t save_hash(const SaveData&data){uint32_t hash=2166136261u;for(unsigned i=0;i<data.size;++i)hash=(hash^data.bytes[i])*16777619u;return hash;}
 static bool shop_inventory(Source&source,unsigned frames,bool hovered,const char*directory){
     const char*name=hovered?"shop_inventory_hover_7":"shop_inventory_idle_7";
+    // The left edge below the top bar belongs to the starter relic. Keep the
+    // idle pointer in actual empty space instead of timing its hover tooltip.
+    constexpr int idle_x=310,idle_y=35;
     source.scene=name;source.phase="room_open_and_fixture";Cost room,first,warm;auto started=mark(source);
     if(!app.init({&source,source.length,read_resource,nullptr},{save_game,nullptr}))return false;
     new_run(app.game,781,false,Character::Ironclad);app.game.map[0].room=Room::Shop;
     if(!choose_node(app.game,0))return false;
     app.animation=app.map_clock_ms=app.tick_remainder=0;app.reset_presentation();
     app.title=app.paused=app.help=app.library=app.character_select=false;
-    app.pointer_move(10,35);app.render();room.add(started,source);
+    app.pointer_move(idle_x,idle_y);app.render();room.add(started,source);
+    if(const auto*hit=app.hit_at(idle_x,idle_y);hit&&hit->enabled)return false;
     HitRegion open{};bool found=false;
     for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::UiAction&&app.hits[i].value==int(UiAction::OpenShop)){
         open=app.hits[i];found=true;break;}
     if(!found||app.shop_open||app.game.phase!=Phase::Shop||!save(app.game,before))return false;
     source.phase=hovered?"input_to_first_complete_hover_frame":"input_to_first_complete_inventory_frame";started=mark(source);
     app.pointer_move(open.x+open.w/2,open.y+open.h/2);app.pointer_button(true);app.pointer_button(false);
-    app.pointer_move(10,35);app.render();
+    app.pointer_move(idle_x,idle_y);app.render();
+    if(const auto*hit=app.hit_at(idle_x,idle_y);hit&&hit->enabled)return false;
     if(hovered){
         HitRegion card{};found=false;
         for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::Choice&&app.hits[i].value==0){card=app.hits[i];found=true;break;}

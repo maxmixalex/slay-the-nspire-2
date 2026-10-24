@@ -1,5 +1,23 @@
 # Work state — 2026-10-24
 
+## UI6 benchmark fixture correction after accepted runtime
+
+Runtime `96f7b5c6914762fad998f03ab5da1b4c283ecaa0` has now passed all three
+GitHub Actions jobs in run 40073427331 (native sanitizers plus both developer
+input capabilities, conversion, and portable builds). The local 77-suite run,
+new sanitizer HUD checks, bilingual exact backend matrices and final offline
+Chromium flow also passed. The matched calculator ZIP and both offline players
+have been saved successfully; their runtime remains this accepted checkpoint.
+
+Reviewing the first serial benchmark's actual captures found that its nominal
+idle pointer at (10,35) hovered the starter relic, adding a tooltip over the
+shop. Those 12 samples are retained with this limitation and are excluded from
+pure idle/open performance claims. This test-only checkpoint moves the pointer
+to verified empty space at (310,35) and asserts no enabled hit after both real
+renders. Recompile the identical corrected driver against the accepted UI5 and
+UI6 cores and repeat the quiet serial comparison. No runtime or delivery file
+changes are part of this correction.
+
 ## UI6 stage 8: remove the remaining signed rotation overflow
 
 The full stage-6 ASan/UBSan run passed 76/77 suites and exposed a real
