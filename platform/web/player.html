@@ -17,6 +17,7 @@
 </main>
 <script>
 'use strict';
+__PROFILE_STORAGE__
 const translations=__LOCALES__;
 let language=null;
 const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+translations.eng[key];
@@ -24,6 +25,8 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
  const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,e:6,E:6,Tab:7,q:7,Q:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,c:17,C:17,v:18,V:18,a:19,A:19,d:20,D:20,f:21,F:21};
  let memory,game,ram,changingLanguage=false;
+ const profileStorage=createProfileStorage(()=>localStorage);let saveProfile=1;
+ try{profileStorage.recover();}catch(error){}
  const loading=document.getElementById('loading'),measureButton=document.getElementById('measure'),reportView=document.getElementById('performance-report');
  // The shared artwork occurs once in this object and once in decoded memory.
  // Only the selected small locale is decoded. Language changes reuse this one
@@ -72,10 +75,13 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    const target=memoryBytes();if(!bytes||offset<0||n<0||offset>bytes.length||n>bytes.length-offset||p<0||p>target.length||n>target.length-p)return 0;
    target.set(bytes.subarray(offset,offset+n),p);if(profiling){ioCalls++;ioBytes+=n;ioTime+=clock()-start;}return 1
   }catch(e){return 0}},
-  save:(p,n)=>{try{if(n===0){for(let version=3;version<=15;version++)localStorage.removeItem('nSpire2-save-v'+version);return 1}localStorage.setItem('nSpire2-save-v15',encode(memoryBytes().subarray(p,p+n)));return 1}catch(e){return 0}},
-  load:(p,max)=>{try{let s=null;for(let version=15;version>=3&&!s;version--)s=localStorage.getItem('nSpire2-save-v'+version);if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
+  save:(p,n)=>{try{return(n===0?profileStorage.clearRun(saveProfile):profileStorage.writeRun(saveProfile,encode(memoryBytes().subarray(p,p+n))))?1:0}catch(e){return 0}},
+  load:(p,max)=>{try{const s=profileStorage.readRun(saveProfile);if(!s)return 0;const b=decode(s);if(b.length>max)return 0;memoryBytes().set(b,p);return b.length}catch(e){return 0}}
  }});
  game=result.instance.exports;memory=game.memory;
+ // An older WASM has no profile callback. It continues to use the historical
+ // first slot even if this browser has a selector from a newer installation.
+ if(game.set_current_profile){try{saveProfile=profileStorage.selected();}catch(error){}game.set_current_profile(saveProfile);}
  const entropyWord=new Uint32Array(1);
  function refreshEntropy(){
   if(game.set_wall_clock)game.set_wall_clock(Math.floor(Date.now()/1000));
@@ -86,7 +92,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  }
  refreshEntropy();
  if(game.set_progress){
-  try{const stored=localStorage.getItem('nSpire2-progress-v1');if(stored){const bytes=decode(stored);if(bytes.length<=game.progress_capacity()){memoryBytes().set(bytes,game.progress_buffer());game.set_progress(bytes.length);}}}catch(e){game.set_progress(0);}
+  try{const bytes=readProfileProgress(saveProfile);copyProgress(bytes);game.set_progress(bytes.length);}catch(e){game.set_progress(0);}
  }
  if(game.set_preferences_v2){
   let flags=4|(2<<8);
@@ -125,9 +131,47 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   game.preferences_ack(ok);
  }
  function flushProgress(){
-  if(!game.progress_pending||!game.progress_pending())return;
-  let ok=1;try{const p=game.progress_buffer(),n=game.progress_length();localStorage.setItem('nSpire2-progress-v1',encode(memoryBytes().subarray(p,p+n)));}catch(e){ok=0;}
-  game.progress_ack(ok);
+  if(!game.progress_pending||!game.progress_pending())return true;
+  let ok=1;try{const p=game.progress_buffer(),n=game.progress_length();ok=profileStorage.writeProgress(saveProfile,encode(memoryBytes().subarray(p,p+n)))?1:0;}catch(e){ok=0;}
+  game.progress_ack(ok);return ok!==0;
+ }
+ function readProfileProgress(slot){
+  const stored=profileStorage.readProgress(slot);if(!stored)return new Uint8Array(0);
+  // Malformed optional metadata is discarded by the same rule as the native
+  // decoder. A valid historical run in that profile remains available.
+  try{const bytes=decode(stored);return bytes.length<=game.progress_capacity()?bytes:new Uint8Array(0);}catch(error){return new Uint8Array(0);}
+ }
+ function copyProgress(bytes){if(bytes.length)memoryBytes().set(bytes,game.progress_buffer());}
+ function serviceProfiles(){
+  if(!game.profile_request||!game.profile_info_pending)return;
+  const request=game.profile_request();
+  if(request){
+   const target=request&255,erase=(request&256)!==0;let ok=false;
+   try{
+    if(game.flush_progress()===0||!flushProgress())throw Error('History storage is unavailable');
+    if(erase){
+     ok=profileStorage.deleteProfile(target);
+     if(ok&&target===saveProfile)game.set_progress(0);
+    }else{
+     // Read first. A denied selector write leaves both the live slot and all
+     // stored data untouched; target metadata is copied only after commit.
+     const bytes=readProfileProgress(target);
+     if(profileStorage.select(target)){saveProfile=target;copyProgress(bytes);game.set_progress(bytes.length);ok=true;}
+    }
+   }catch(error){ok=false;}
+   game.profile_ack(ok?1:0,saveProfile);dirty=true;
+  }
+  if(game.profile_info_pending()){
+   // Called only after opening/refreshing Profiles, never a startup scan of
+   // all histories. Reuse one transfer buffer; C++ restores live metadata.
+   if(game.flush_progress()===0||!flushProgress()){game.profile_summaries_done();return;}
+   try{for(let slot=1;slot<=3;slot++){
+    try{const bytes=readProfileProgress(slot);copyProgress(bytes);
+     game.profile_summary_set(slot,bytes.length,profileStorage.readRun(slot)?1:0);
+    }catch(error){game.profile_summary_set(slot,0,0);}
+   }}
+   finally{game.profile_summaries_done();dirty=true;}
+  }
  }
  window.addEventListener('pagehide',()=>{if(game.flush_progress){game.flush_progress();flushProgress();}});
  async function serviceLanguage(){
@@ -162,7 +206,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    if(document.activeElement!==textEntry)textEntry.focus({preventScroll:true});
   }else if(document.activeElement===textEntry){textEntry.value='';composing=false;canvas.focus({preventScroll:true});}
  }
- function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();flushProgress();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');syncTextEntry();void serviceLanguage().catch(error=>console.error(error));}
+ function input(action,repaint=true){if(game.closed()||changingLanguage)return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();flushProgress();serviceProfiles();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');syncTextEntry();void serviceLanguage().catch(error=>console.error(error));}
  function key(k){input(()=>game.input(k));}
  if(game.debug_execute){
   keyMap.F1=22;keyMap.g=22;keyMap.G=22;
@@ -208,7 +252,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent=t('measuring');canvas.focus();});
  let previous=clock(),nextPaint=previous+1000/30;
  function loop(now){const elapsed=now-previous;previous=now;if(!document.hidden&&!game.closed()&&!changingLanguage){
-  const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));flushProgress();if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
+  const active=profiling,t=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;game.advance(Math.max(0,Math.min(250,Math.round(elapsed))));flushProgress();serviceProfiles();if(active){add(profile.scenes[index].update,clock()-t);recordIo(profile.scenes[index],calls,bytes,time);}
   // Inputs mark the next presentation dirty. Never render again synchronously
   // in every pointer/key callback and then duplicate it in the same RAF.
   if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}

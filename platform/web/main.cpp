@@ -20,12 +20,29 @@ static unsigned language_mask=0,pending_language=0;
 static uint8_t progress_bytes[spire::UiProgressCapacity];
 static unsigned progress_size=0;
 static bool progress_dirty=false;
+static uint32_t progress_committed_at=0;
+static unsigned selected_profile=1,pending_profile=0;
+static bool profiles_enabled=false,pending_profile_delete=false,profile_summaries_requested=false,delivering_profile_summaries=false;
+static spire::UiProgressSummary profile_summaries[spire::UiProfileCount]{};
 static uint32_t browser_wall_clock=0;
 static uint32_t wall_clock(){return browser_wall_clock;}
-static bool load_progress(spire::UiProgress&out){return spire::decode_ui_progress(progress_bytes,progress_size,out);}
+static bool load_progress(spire::UiProgress&out){
+    const bool ok=spire::decode_ui_progress(progress_bytes,progress_size,out);
+    progress_committed_at=ok?out.last_saved_at:0;return ok;
+}
 static bool save_progress(const spire::UiProgress&value){
     const unsigned n=unsigned(spire::encode_ui_progress(value,progress_bytes,sizeof progress_bytes));if(!n)return false;
     progress_size=n;progress_dirty=true;return true;
+}
+static unsigned current_profile(){return selected_profile;}
+static bool profile_info(unsigned index,spire::UiProgressSummary&out){
+    out={};if(index<1||index>spire::UiProfileCount)return false;
+    if(!delivering_profile_summaries)profile_summaries_requested=true;
+    out=profile_summaries[index-1];return out.exists;
+}
+static bool request_profile(unsigned index,bool erase){
+    if(index<1||index>spire::UiProfileCount||pending_profile)return false;
+    pending_profile=index;pending_profile_delete=erase;return true;
 }
 static bool load_preferences(spire::UiPreferences& out){out=preferences;return true;}
 static bool save_preferences(const spire::UiPreferences& value){preferences=value;preferences_dirty=true;return true;}
@@ -58,9 +75,37 @@ unsigned progress_length(){return progress_size;}
 int progress_pending(){return progress_dirty?1:0;}
 void progress_ack(int success){
     progress_dirty=false;
-    if(!success){app.progress_dirty=true;app.message(app.content.english()?"Could not save history.":"历史记录保存失败，请重试");}
+    if(success)progress_committed_at=app.progress.last_saved_at;
+    else{app.progress.last_saved_at=progress_committed_at;app.progress_dirty=true;
+        app.message(app.content.english()?"Could not save history.":"历史记录保存失败，请重试");}
 }
-void flush_progress(){app.persist_progress();}
+int flush_progress(){return app.persist_progress()?1:0;}
+// Profile operations are serviced after input returns. Keep the established
+// three imports: older deterministic replay hosts need no profile storage.
+void set_current_profile(unsigned value){if(value>=1&&value<=spire::UiProfileCount){selected_profile=value;profiles_enabled=true;}}
+unsigned profile_request(){return pending_profile|(pending_profile&&pending_profile_delete?256u:0u);}
+void profile_ack(int success,unsigned selected){
+    if(!pending_profile)return;
+    if(success&&selected>=1&&selected<=spire::UiProfileCount)selected_profile=selected;
+    else success=0;
+    pending_profile=0;pending_profile_delete=false;app.finish_profile_change(success!=0);
+}
+int profile_info_pending(){return profile_summaries_requested?1:0;}
+void profile_summary_set(unsigned index,unsigned size,int has_run){
+    if(index<1||index>spire::UiProfileCount)return;
+    auto&summary=profile_summaries[index-1];summary={};
+    if(size>sizeof progress_bytes||!spire::decode_ui_progress_summary(progress_bytes,size,summary)){
+        summary={};summary.exists=has_run!=0;
+    }
+}
+void profile_summaries_done(){
+    // The browser reuses the existing 512-KiB transfer buffer while reading
+    // three bounded headers. Restore its live value without persisting an
+    // empty profile or changing its last-successful-save timestamp.
+    progress_size=unsigned(spire::encode_ui_progress(app.progress,progress_bytes,sizeof progress_bytes));
+    profile_summaries_requested=false;delivering_profile_summaries=true;
+    app.refresh_profiles();delivering_profile_summaries=false;
+}
 // Optional exports retain the established three-import ABI. Preferences are
 // stored by the browser separately from the player's run, in either language.
 void set_preferences(unsigned flags){preferences.fast_mode=flags==1;preferences_dirty=false;}
@@ -76,7 +121,7 @@ int start(unsigned n){
     split.close();const spire::ResourceSource resource{nullptr,n,read_resource,nullptr};
     boot_language=spire::boot_probe_language(resource);
     pending_language=0;
-    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock})?1:0;
+    return app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr})?1:0;
 }
 int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language){
     split.close();if(language!=1&&language!=2)return 0;
@@ -84,7 +129,7 @@ int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language)
     if(!split.open({nullptr,common_bytes,read_common,nullptr},
         {nullptr,language_bytes,read_language,nullptr},static_cast<spire::ResourceLanguage>(language)))return 0;
     pending_language=0;
-    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock})?1:0;
+    return app.init(split.source(),{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,profiles_enabled?current_profile:nullptr,profiles_enabled?profile_info:nullptr,profiles_enabled?request_profile:nullptr})?1:0;
 }
 void set_available_languages(unsigned mask){language_mask=mask&3u;}
 unsigned language_request(){return pending_language;}

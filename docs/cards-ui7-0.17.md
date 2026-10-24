@@ -9,9 +9,9 @@ metadata and asset paths only.
 
 | Surface | Pinned source contract | Implementation in this stage | Verification state |
 | --- | --- | --- | --- |
-| Deck, draw, discard and exhaust grids | `NCardPileScreen`, `NDeckViewScreen`, `NCardGrid`, `ScrollHelper`, `NScrollbar` | Four columns; continuous content offset; wheel, content drag and draggable thumb; row navigation; deck-only sorting and upgraded preview. Retired ten-card page actions do nothing. | Checkpoint 4 input, grid and selection fixtures passed where recorded; the complete run still has unrelated and migrated-UI failures. The newly identified viewport correction below is pending. |
+| Deck, draw, discard and exhaust grids | `NCardPileScreen`, `NDeckViewScreen`, `NCardGrid`, `ScrollHelper`, `NScrollbar` | Four columns; continuous content offset; wheel, content drag and draggable thumb; row navigation; deck-only sorting and upgraded preview. Retired ten-card page actions do nothing. The follow-up projects the verified 1680×1260 layout to 46×64 card faces with fractional row spacing. | Checkpoint 4 input, grid and selection fixtures passed where recorded; the complete run still has unrelated and migrated-UI failures. The new viewport projection has passed short syntax checks and awaits checkpoint-6 execution. |
 | Mandatory deck/combat selections | `NCardGridSelectionScreen`, `NDeckCardSelectScreen`, `NCombatPileCardSelectScreen`, `NSimpleCardSelectScreen`, `NDeckUpgradeSelectScreen`, `NChooseACardSelectionScreen` | The same continuous grid owns pointer capture and scrolling; mandatory choices retain their original confirmation and cannot be consumed by unrelated pile input. Three-card offers remain separate. | Existing gameplay-selection suites retained and adapted; no claim that every special selection has matched PC pixel output. |
-| Card compendium | `NCardLibrary`, `NCardLibraryGrid`, `NSearchBar`, `card_library.tscn`, pool/type/rarity/cost controls | Independent page, eight exclusive pool controls, multi-toggle type/rarity/cost predicates, priority sorting, localized card count, upgrade preview, search and shared source-based Back geometry. Checkpoint 4 uses three columns; the verified 1680-wide viewport requires four and is being corrected. | Checkpoint 4 `library_ui7_regression` passed the 558-model union, pool counts, predicates, ordering, discovery, scrolling and capture invalidation. Post-checkpoint statistics, observation and hover fixes have only passed short syntax checks. |
+| Card compendium | `NCardLibrary`, `NCardLibraryGrid`, `NSearchBar`, `card_library.tscn`, pool/type/rarity/cost controls | Independent page, eight exclusive pool controls, multi-toggle type/rarity/cost predicates, priority sorting, localized card count, upgrade preview, search and shared source-based Back geometry. Follow-up corrects checkpoint 4's three-column assumption to the actual four-column viewport and adds the original Victories checkbox. | Checkpoint 4 `library_ui7_regression` passed the 558-model union, pool counts, predicates, ordering, discovery, scrolling and capture invalidation. Post-checkpoint layout, statistics, observation and hover fixes have only passed short syntax checks. |
 | Card search | `NSearchBar`, `NCardLibrary` search predicates | 250 ms debounce, Enter commit, UTF-8, case/space normalization and title/body search for discovered cards; English rarity names retain the original additional match. Browser IME commits, X11 XIM commits and calculator physical letters/numbers reach the actual application field. | UTF-8 and calculator edge-adapter fixtures added. The native adapter fixture passed at checkpoint 4. Browser/XIM/Firebird text interaction still requires actual execution. |
 | Unseen cards | `NCard.UpdateVisuals`, `UpdateEnergyCostVisuals`, `blur.gdshader` | Unknown localized title/body, `?` energy, hidden star cost and blurred original portrait. Opening or carousel-navigation cannot reveal an unseen card. | Unknown/seen and carousel-boundary assertions added. The bounded CPU blur is an approximation of the original Gaussian shader, not shader equivalence. |
 | Relic compendium | `NRelicCollection`, `NRelicCollectionCategory`, `NRelicCollectionEntry`, `NRelic` | Independent continuous category page, ten columns, original starter rows and eight Ancient subgroups, localized ordering, outlines, known-character colors, unknown tooltip and hover animation. Click focuses the tooltip rather than opening an invented detail dialog. | Numeric membership and locale metadata generated; fixture checks categories, uniqueness, keyboard rows and scrolling. Actual assets/captures pending. |
@@ -45,9 +45,13 @@ owns conversion, split-pack accounting and resource validation.
 The card library caches only its filtered/sorted index list until the query,
 filters, upgraded preview or content generation changes. UTF-8 descriptions
 are not rebuilt on every hover. This is an implementation decision, **not a
-measured performance improvement**. The new original 53×75 grid and 53×75
-merchant hover exceed the old small-face cache height. Actual cold/warm
-measurements after functional acceptance must guide any cache-budget change.
+measured performance improvement**. After the viewport correction, 46×64 grid
+faces and 43×61 merchant faces fit the existing eight-slot 56×70 pool; those
+two sizes are admitted without increasing its memory budget. The merchant's
+53×75 focused face still exceeds its height and remains uncached. Exact cached
+versus uncached full-surface pixel checks now include the two new sizes.
+Actual cold/warm measurements after functional acceptance must guide any
+further cache-budget change; the new cases have not yet executed formally.
 
 ## Post-checkpoint metadata and runtime findings
 
@@ -75,9 +79,28 @@ A further source audit corrected a previous layout assumption:
 `NCardGrid.Columns` derives its column count from the scroll-container width:
 ordinary grids remain four columns, while the card library must also have four
 at this viewport. The 53×75 cards and 2/9 projection in checkpoint 4 are a port
-adaptation, not evidence of the original viewport. The next layout pass uses
-this verified runtime size and checks anchors, column count and spacing;
-it will not claim fidelity by blindly shrinking every existing control.
+adaptation, not evidence of the original viewport. The follow-up uses the
+shared `reference_viewport` projection for ordinary/library grids and relic/
+potion collection geometry. It preserves authored fractional row spacing
+instead of accumulating a rounded row height through large decks. Card
+library filter text retains an eight-pixel readability floor. The inspector's
+larger card and some selection-page header/footer spacing remain adaptations,
+not source-exact viewport projections. Formal captures of the revised layout
+are pending.
+
+The Web host now queues three-profile operations through optional exports and
+retains the established three imports. Slot one keeps all historical storage
+keys; slots two and three scope run versions 3–15 and progress separately.
+Settings and language remain global. Switching requires the current metadata
+to be stored first; selector-write failure leaves the active slot unchanged.
+Deletion records a bounded recovery journal before removing any original
+key, and failed deletion rolls back or keeps that journal for recovery on the
+next launch. The independent JavaScript regression covers these failure paths
+and isolation. Only syntax checks have run; actual browser/profile execution
+is still required. A nonempty legacy run with no readable metadata is shown
+as an existing slot with unknown time, while Continue retains its full save
+decoder. Profile summaries temporarily reuse the existing transfer buffer;
+they do not allocate another 512-KiB buffer or load all histories at startup.
 
 ## Explicit remaining differences and evidence limits
 
