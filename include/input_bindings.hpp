@@ -15,12 +15,12 @@ enum class InputCommand:uint8_t {
 };
 constexpr unsigned InputCommandCount=unsigned(InputCommand::Count);
 struct InputBindings {uint16_t keys[2][InputCommandCount]{};};
-constexpr bool input_remappable(unsigned bank,unsigned command){return bank<2&&command<InputCommandCount&&(bank|| (command!=unsigned(InputCommand::Select)&&command!=unsigned(InputCommand::TopPanel)));}
-constexpr uint16_t normalize_input_key(uint16_t key){return key>='a'&&key<='z'?uint16_t(key-'a'+'A'):key;}
-constexpr bool valid_input_key(uint16_t key){return key==8||key==9||key==13||key==27||
+constexpr bool input_remappable(unsigned bank,unsigned command)noexcept{return bank<2&&command<InputCommandCount&&(bank|| (command!=unsigned(InputCommand::Select)&&command!=unsigned(InputCommand::TopPanel)));}
+constexpr uint16_t normalize_input_key(uint16_t key)noexcept{return key>='a'&&key<='z'?uint16_t(key-'a'+'A'):key;}
+constexpr bool valid_input_key(uint16_t key)noexcept{return key==8||key==9||key==13||key==27||
     (key>=32&&key<=126&&!(key>='a'&&key<='z'))||(key>=InputLeft&&key<=InputPageDown)||
     (key>=InputF1&&key<=InputF12)||(key>=InputShift&&key<=InputMeta);}
-constexpr InputBindings default_input_bindings(bool calculator=false){
+constexpr InputBindings default_input_bindings(bool calculator=false)noexcept{
     InputBindings result{};
     const uint16_t mouse[]={0,27,'M',0,'D','A','S','X','E','E',' ',InputUp,InputDown,InputLeft,InputRight};
     const uint16_t keyboard[]={' ',27,9,'W','Q','A','D','F',13,'E','S',InputUp,InputDown,InputLeft,InputRight};
@@ -41,7 +41,7 @@ constexpr InputBindings default_input_bindings(bool calculator=false){
     }
     return result;
 }
-inline bool valid_input_bindings(const InputBindings&bindings){
+inline bool valid_input_bindings(const InputBindings&bindings)noexcept{
     for(unsigned bank=0;bank<2;++bank)for(unsigned i=0;i<InputCommandCount;++i){const uint16_t key=bindings.keys[bank][i];
         if(!input_remappable(bank,i)){if(key)return false;continue;}
         if(!valid_input_key(key))return false;
@@ -49,22 +49,22 @@ inline bool valid_input_bindings(const InputBindings&bindings){
     }
     return bindings.keys[0][unsigned(InputCommand::Confirm)]==bindings.keys[0][unsigned(InputCommand::EndTurn)];
 }
-inline bool rebind_input(InputBindings&bindings,unsigned bank,unsigned command,uint16_t key){
+inline bool rebind_input(InputBindings&bindings,unsigned bank,unsigned command,uint16_t key)noexcept{
     key=normalize_input_key(key);if(!input_remappable(bank,command)||!valid_input_key(key))return false;
     auto&keys=bindings.keys[bank];const uint16_t old=keys[command];
-    const auto assign=[&](unsigned index,uint16_t value){keys[index]=value;
+    const auto assign=[&](unsigned index,uint16_t value)noexcept{keys[index]=value;
         if(!bank&&(index==unsigned(InputCommand::Confirm)||index==unsigned(InputCommand::EndTurn)))keys[unsigned(InputCommand::Confirm)]=keys[unsigned(InputCommand::EndTurn)]=value;};
     // NInputManager swaps a conflicting command into the old slot. The
     // mouse/keyboard Confirm/EndTurn pair stays linked through either swap.
     for(unsigned i=0;i<InputCommandCount;++i)if(input_remappable(bank,i)&&keys[i]==key){assign(i,old);break;}
     assign(command,key);return true;
 }
-inline const char* input_command_key(unsigned command){
+inline const char* input_command_key(unsigned command)noexcept{
     static const char*const names[]={"select","cancel","viewMap","topPanel","viewDeck","viewDraw","viewDiscard","viewExhaust","confirm","endTurn","peek",
         "up","down","left","right","selectCard1","selectCard2","selectCard3","selectCard4","selectCard5","selectCard6","selectCard7","selectCard8","selectCard9","selectCard10"};
     return command<InputCommandCount?names[command]:"";
 }
-inline void input_key_label(uint16_t key,char*out,size_t capacity){
+inline void input_key_label(uint16_t key,char*out,size_t capacity)noexcept{
     if(!capacity)return;out[0]=0;const char*name=nullptr;char text[5]{};
     switch(key){case 0:name="-";break;case 8:name="Backspace";break;case 9:name="Tab";break;case 13:name="Enter";break;case 27:name="Esc";break;case 32:name="Space";break;
         case InputLeft:name="Left";break;case InputRight:name="Right";break;case InputUp:name="Up";break;case InputDown:name="Down";break;

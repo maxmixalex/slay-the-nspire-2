@@ -132,7 +132,8 @@ def layout(data, language):
         cp, off, px, w, h, advance, encoded = struct.unpack_from("<IIHBBHH", data, glyph_at + i * 16)
         count = encoded or w * h
         require(cp <= 0x10FFFF and 0 < w <= 40 and 0 < h <= 40 and
-                0 < px <= (255 if version >= 24 else 32) and 0 < (px & 63) <= 32 and
+                0 < px <= (255 if version >= 24 else 32) and
+                0 < (px & (31 if version >= 28 else 63)) <= 32 and
                 advance <= 40 and end <= off <= length - count,
                 "Glyphs must be after the artwork region")
     marker = None
