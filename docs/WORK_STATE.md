@@ -2,6 +2,15 @@
 
 ## UI8 stage 8 candidate — journal, common controls and matching resources
 
+Frozen stage-eight runtime `2ab4e1bc014dca1a3059bffdb6dd46b6a0db734c`
+was pushed and read back with tree `f18e2ede115dfbf0cbb790c39f6bcd81bfcc0b7a`.
+All 176 Python converter tests plus 54 animation/pack/journal suites passed.
+The first ARM and WASM builds exposed a real portable-header error:
+`character_death_assets.hpp` included C++ `<cstdint>` although both targets are
+freestanding. The precise correction uses the existing C `<stdint.h>` contract;
+the failed receipts remain preserved, and a new source checkpoint is required
+before rerunning those builds. Native integration is still running.
+
 The full stage-seven runtime checkpoint
 `e9aaac1c252d38d9b4b773d9b9e549ab468c72c4` compiled and passed 93/97
 native suites. Three failures were stale profile/resource-version or exact

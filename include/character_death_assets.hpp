@@ -1,5 +1,5 @@
 #pragma once
-#include <cstdint>
+#include <stdint.h>
 #include "history_ui8_assets.hpp"
 namespace spire {
 // Original non-looping player skeletons are appended after the complete
