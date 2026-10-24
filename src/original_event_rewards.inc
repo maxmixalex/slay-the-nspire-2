@@ -18,6 +18,7 @@ bool reward_menu(State&s){auto&e=s.original_events;unsigned left=0;for(unsigned 
  if(!left){e.reward_active=0;return true;}e.reward_active=1;e.reward_current=NoOriginalEventReward;return pause_selection(s,OriginalEventSelection::Rewards,OriginalEventFilter::Any,0,1,true);
 }
 bool reward_offer(State&s){auto&e=s.original_events;
+ if(has_run_modifier(s,RunModifier::Midas))for(unsigned i=0;i<e.reward_count;++i)if(e.rewards[i].kind==1)e.rewards[i].amount=uint16_t(smaller(65535,int(e.rewards[i].amount)*2));
  // RewardsSet populates the supplied sequence, then sorts it for presentation.
  reference::comparison_sort(e.rewards,e.reward_count,[](const OriginalEventReward&r){return r.kind==4?((r.flags&1)?5:4):int(r.kind);});
  if(has_world_relic(s,WorldRelicDriftwood))for(unsigned i=0;i<e.reward_count;i++)if(e.rewards[i].kind==4&&(e.rewards[i].flags&1)&&!(e.rewards[i].flags&8))e.rewards[i].flags|=4;

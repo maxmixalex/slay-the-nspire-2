@@ -76,6 +76,29 @@ static void agrees_with_source(int index){
  const auto want_sprite=reference_point({source.x+registration.x,source.y+registration.y},false,right);
  CHECK(player.sprite_x==pixel(want_sprite.x)&&player.sprite_y==pixel(want_sprite.y));
 }
+static void original_hand_fan(){
+ // Independent authored samples and floating source projection catch a
+ // cache-allocation scale/pivot being mistaken for the300x422 card frame.
+ struct Sample {int count,index,x,y,degrees;};
+ const Sample samples[]={{1,0,0,-50,0},{2,0,-100,-50,-2},{3,1,0,-59,0},
+  {4,0,-240,-25,-8},{5,0,-340,10,-8},{5,1,-170,-30,-4},{5,2,0,-50,0},
+  {6,0,-460,13,-9},{6,1,-273,-25,-6},{7,0,-534,18,-9},{7,2,-189,-39,-3},
+  {8,0,-565,28,-12},{8,2,-231,-39,-6},{9,0,-600,37,-12},{9,3,-150,-45,-3},
+  {10,0,-610,38,-15},{10,1,-472,5,-12},{10,3,-200,-41,-6},{10,9,610,38,15}};
+ for(const auto&v:samples){const auto p=hand_pose(v.count,v.index,false);const double source_scale=.8*(v.count<8?1:1-.05*(v.count-7));
+  CHECK(std::abs(p.cx-(840+v.x)*4.0/21)<=.51&&std::abs(p.cy-(1260+v.y)*4.0/21)<=.51);
+  CHECK(std::abs(p.scale*69.0/1024-300*source_scale*4/21)<.05);
+  const double angle=v.degrees*std::acos(-1.0)/180;
+  CHECK(std::abs(p.sine-1024*std::sin(angle))<.51&&std::abs(p.cosine-1024*std::cos(angle))<.51);
+  const auto focused=hand_pose(v.count,v.index,true);CHECK(focused.cx==p.cx&&focused.cy==200&&focused.scale==848&&focused.sine==0);
+ }
+ CHECK(hand_pose(5,0,false,2).cx==86&&hand_pose(5,1,false,2).cx==113&&hand_pose(5,3,false,2).cx==207&&hand_pose(5,4,false,2).cx==234);
+ const auto selected=hand_selected_pose();CHECK(selected.cx==160&&selected.cy==210&&selected.scale==636);
+ for(int count=1;count<=10;++count)for(int i=0;i<count;++i){const auto p=hand_pose(count,i,false);const auto bounds=hand_bounds(p);
+  CHECK(hand_contains(p,p.cx,p.cy));CHECK(!hand_contains(p,bounds.x-1,p.cy));CHECK(!hand_contains(p,p.cx,bounds.y-1));
+  if(p.sine)CHECK(!hand_contains(p,bounds.x,bounds.y));
+ }
+}
 static void authored_widths(){
  fight(EncounterId::NibbitsWeak);auto p=enemy_pose(game,0);
  CHECK(combat_layout_for(game).right==1680000);CHECK(p.x==251&&p.feet==158&&p.body_width==52&&p.scale==311);
@@ -125,4 +148,4 @@ static void catalog_and_purity(){
  const int ironclad=combat_player_x(game);game.character=Character::Necrobinder;CHECK(combat_player_x(game)<ironclad);
  game.enemy_world.active=0;CHECK(combat_player_x(game)==60&&same(enemy_pose(game,0),enemy_pose(game.enemy_count,0)));
 }
-int main(){authored_widths();scene_slots_without_slots_override();catalog_and_purity();std::printf("combat layout: %u checks passed\n",checks);}
+int main(){original_hand_fan();authored_widths();scene_slots_without_slots_override();catalog_and_purity();std::printf("combat layout: %u checks passed\n",checks);}

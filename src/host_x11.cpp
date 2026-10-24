@@ -283,12 +283,16 @@ int main(int argc,char**argv){
                 if(inside)app.pointer_move((ex-ox)/scale,(ey-oy)/scale);
                 if(e.type==ButtonPress&&inside){
                     if(e.xbutton.button==Button1)app.pointer_button(true);
-                    else if(e.xbutton.button==Button3)app.input(spire::Key::Back);
+                    else if(e.xbutton.button==Button3||e.xbutton.button==Button2)app.pointer_aux_button(e.xbutton.button==Button3?2:3,true);
                     else if(e.xbutton.button==Button4||e.xbutton.button==Button5)app.pointer_scroll(e.xbutton.button==Button4?-1:1);
-                }else if(e.type==ButtonRelease&&e.xbutton.button==Button1){if(inside)app.pointer_button(false);else app.pointer_cancel();}
+                }else if(e.type==ButtonRelease){
+                    if(e.xbutton.button==Button1){if(inside)app.pointer_button(false);else app.pointer_cancel();}
+                    else if(e.xbutton.button==Button3||e.xbutton.button==Button2)app.pointer_aux_button(e.xbutton.button==Button3?2:3,false);
+                }
             }
             else if(e.type==LeaveNotify&&!app.pointer.held)app.pointer.visible=false;
-            else if(e.type==KeyRelease)held[e.xkey.keycode&255]=false;
+            else if(e.type==KeyRelease){held[e.xkey.keycode&255]=false;spire::Key released;
+                if(key(XLookupKeysym(&e.xkey,0),released))app.map_drawing_key_release(released);}
             else if(e.type==KeyPress&&(!held[e.xkey.keycode&255]||app.library_search_editing)){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
                 if(app.library&&!app.library_tab&&app.library_search_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;

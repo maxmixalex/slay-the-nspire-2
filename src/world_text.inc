@@ -84,6 +84,10 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
  const auto&x=*static_cast<const WorldTextContext*>(opaque);const auto&a=*x.app;const auto&s=a.game;
  if(wt_suffix(name,".StringValue")){char base[96]{};unsigned n=0;while(name[n])++n;if(n>=sizeof base)return {};for(unsigned i=0;i+12<n;i++)base[i]=name[i];return wt_resolve(opaque,base);}
  if(wt_equal(name,"IsMultiplayer"))return wt_number(0);
+ if(wt_equal(x.table,"modifiers")){
+  if(wt_equal(name,"Heal"))return wt_number(s.max_hp);
+  if(wt_equal(name,"MaxHpLoss"))return wt_number(5);
+ }
  if(wt_equal(name,"InCombat"))return wt_number(wt_equal(x.table,"cards")?wt_live_card(x):!a.library&&combat_phase(s.phase));
  if(wt_equal(name,"OnPlayer"))return wt_number(x.actor<=0);
  if(wt_equal(x.table,"game_over_screen")&&s.world.active){
@@ -185,7 +189,9 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"EnchantmentName"))return wt_string(a.content.world_title("enchantments","CLONE"));
   if(wt_equal(name,"ExtraText")){TextBuffer out{x.nested,sizeof x.nested,0};x.nested[0]=0;
    const RelicId ids[]={WorldRelicRegalPillow,WorldRelicDreamCatcher,WorldRelicStoneHumidifier,WorldRelicTinyMailbox};
-   for(auto id:ids)if(has_world_relic(s,id)){char key[128]{},formatted[512]{};TextBuffer b{key,sizeof key,0};b.text(world_relic_key(id));b.text(".additionalRestSiteHealText");a.localized_text("relics",key,formatted,sizeof formatted,id);out.ch('\n');out.text(formatted);}return wt_string(x.nested);
+   for(auto id:ids)if(has_world_relic(s,id)){char key[128]{},formatted[512]{};TextBuffer b{key,sizeof key,0};b.text(world_relic_key(id));b.text(".additionalRestSiteHealText");a.localized_text("relics",key,formatted,sizeof formatted,id);out.ch('\n');out.text(formatted);}
+   if(has_run_modifier(s,RunModifier::NightTerrors)){char formatted[512]{};a.localized_text("modifiers","NIGHT_TERRORS.additionalRestSiteHealText",formatted,sizeof formatted);out.ch('\n');out.text(formatted);}
+   return wt_string(x.nested);
   }
  }
  if(wt_equal(x.table,"relics")){

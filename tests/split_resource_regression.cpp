@@ -1,6 +1,7 @@
 #include "resource_source.hpp"
 #include "frontend_assets.hpp"
 #include "hud_ui7_assets.hpp"
+#include "history_ui8_assets.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -98,7 +99,7 @@ static void malformed(){
     // A relabeled header must agree with the actual original marker as well.
     CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::Chinese));
     f=Fixture();CHECK(!joined.open(ResourceSource::memory(f.common.data(),f.common.size()-1),ResourceSource::memory(f.locale.data(),f.locale.size()),ResourceLanguage::English));
-    {Fixture future(false,HudUi7ContentVersion+1);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
+    {Fixture future(false,HistoryUi8ContentVersion+1);CHECK(!joined.open(ResourceSource::memory(future.common.data(),future.common.size()),ResourceSource::memory(future.locale.data(),future.locale.size()),ResourceLanguage::English));}
     File c{&f.common},l{&f.locale};CHECK(joined.open(c.source(),l.source(),ResourceLanguage::English));
     c.fail_at=64+10;uint8_t out[64];CHECK(!joined.read(f.prefix-4,out,32));
     c.fail_at=-1;l.fail_at=96+f.prefix+2;CHECK(!joined.read(f.prefix+f.art-4,out,16));

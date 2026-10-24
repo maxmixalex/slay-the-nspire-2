@@ -110,7 +110,9 @@ static int enemy_spawn(State&s,EnemyId kind,int slot,int owner=-1,int pending_ad
  int t=enemy_create(s,kind,slot,owner,0,pending_add);if(t<0)return t;
  if(kind==EnemyId::Wriggler)s.enemy_world.models[t].data[0]=1;
  enemy_initial_powers(s,t);if(s.enemy_world.side)s.enemy_world.models[t].data[11]=1;else{enemy_set_move(s,t,enemy_initial_node(s,t));s.enemy_world.models[t].previous=s.enemy_world.models[t].node;}
- world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,t);return t;
+ world_relic_hook(s,WorldRelicHook::AfterEnemyAdded,t);
+ if(has_run_modifier(s,RunModifier::Murderous))enemy_apply_power(s,t,EnemyPower::Strength,3);
+ return t;
 }
 struct EnemyComposition{
  EnemyId kind[MaxEnemies]{};uint8_t slot[MaxEnemies]{},count=0;int16_t data[MaxEnemies][12]{};

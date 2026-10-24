@@ -100,6 +100,9 @@ def generate(source, faces, fallback=None):
     primary = faces[0]
     tiles.require(primary is not None, 'A regular font is required')
     originals = {(row[0], row[2]): row for row in source.glyphs if row[2] < 64}
+    required = set().union(*requested)
+    new_codepoints = required - {cp for cp, _px in originals}
+    missing_regular = []
     # Every old regular codepoint/size remains addressable, including runtime
     # literals absent from localization and Unicode input hints.
     for (cp, px), row in originals.items():
@@ -112,6 +115,19 @@ def generate(source, faces, fallback=None):
             rows.append((cp, px, w, h, advance, encoded,
                          bytes(source.block(off, encoded or w*h))))
             retained.append(cp)
+    # UI append packs deliberately retain their old glyph payload. Complete
+    # the alphabet from every localized span before choosing styled variants;
+    # otherwise a new modifier/tooltip may silently render '?' in Chinese.
+    for cp in sorted(new_codepoints):
+        face = primary if cp in primary.coverage else fallback
+        if face is None or cp not in face.coverage:
+            missing_regular.append(cp)
+            continue
+        for px in SIZES:
+            row = face.glyph(cp, px)
+            rows.append(row)
+            originals[(cp, px)] = None
+        if face is not primary: substituted.append(cp)
     styled_counts, unavailable = {}, {}
     for style in range(1, 4):
         font = faces[style]
@@ -125,6 +141,8 @@ def generate(source, faces, fallback=None):
     return rows, dict(fonts={FACE_NAMES[i]: face.metadata() for i, face in enumerate(faces) if face},
         fallback_font=fallback.metadata() if fallback else None,
         regular_codepoints=len({cp for cp, _ in originals}),
+        appended_regular_codepoints=sorted(new_codepoints-set(missing_regular)),
+        missing_regular_codepoints=missing_regular,
         styled_codepoints=styled_counts, missing_style_codepoints=unavailable,
         retained_old_regular_codepoints=sorted(set(retained)),
         fallback_regular_codepoints=sorted(set(substituted)),

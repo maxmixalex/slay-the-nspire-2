@@ -4,6 +4,7 @@
 #include "original_events.hpp"
 #include "world_run.hpp"
 #include "debug_commands.hpp"
+#include "run_options.hpp"
 
 namespace spire {
 #include "card_definitions.inc"

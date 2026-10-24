@@ -157,6 +157,7 @@ bool buy(State&s,int item){
 }
 bool remove_card(State&s,int index){
     if(s.world.active&&s.phase==Phase::Remove&&s.event_deck_action==EventDeckAction::None){
+        if(has_run_modifier(s,RunModifier::Hoarder))return false;
         if(index<0||index>=s.deck_count||s.deck_count<=1||!card_removable(s,s.deck[index],index)||(s.shop_sold&(1U<<ShopRemove)))return false;
         int price=s.world.shop_free_remove?0:remove_price(s);if(s.gold<price||!event_remove_deck_card(s,index))return false;
         s.gold-=int16_t(price);s.shop_sold|=1U<<ShopRemove;if(s.removals<255)++s.removals;s.phase=Phase::Shop;

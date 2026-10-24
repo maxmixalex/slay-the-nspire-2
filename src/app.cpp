@@ -21,6 +21,7 @@
 #include "card_face_layout.hpp"
 #include "fitted_text.hpp"
 #include "inplace_reset.hpp"
+#include "map_drawing_raster.hpp"
 #if SPIRE_DEBUG_COMMANDS
 #include "debug_commands.hpp"
 #endif

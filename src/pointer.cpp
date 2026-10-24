@@ -13,7 +13,15 @@ void App::add_hit(int x,int y,int w,int h,HitKind kind,int value,bool enabled){
 }
 const HitRegion* App::hit_at(int x,int y)const{
     for(int i=hit_count-1;i>=0;--i){const auto&h=hits[i];
-        if(x>=h.x&&x<h.x+h.w&&y>=h.y&&y<h.y+h.h)return &h;}
+        if(x<h.x||x>=h.x+h.w||y<h.y||y>=h.y+h.h)continue;
+        if(h.kind==HitKind::Hand){
+            const auto hand=combat_hand();bool inside=false;
+            for(unsigned slot=0;slot<hand.count;++slot)if(hand.ids[slot]==h.value){
+                inside=hand_contains(combat_hand_pose(slot,hand_focus&&int(slot)==cursor),x,y);break;}
+            if(!inside)continue;
+        }
+        return &h;
+    }
     return nullptr;
 }
 uint32_t App::input_context()const{
@@ -23,7 +31,7 @@ uint32_t App::input_context()const{
         ((uint32_t)help<<10)|((uint32_t)panel<<11)|((uint32_t)potion_targeting<<15)|((uint32_t)(detail_card>=0)<<16)|
         ((uint32_t)pile_tab<<17)|((uint32_t)grimoire_select<<20)|((uint32_t)map_legend<<21)|((uint32_t)(frontend_confirm!=0)<<22)|((uint32_t)settings_open<<23)|((uint32_t)map_preview.open<<24)|((uint32_t)map_preview.editing<<25)|((uint32_t)library<<26)|((uint32_t)character_select<<27)|((uint32_t)reward_cards<<28)|((uint32_t)(detail_item>=0)<<29)|((uint32_t)(deck_candidate>=0)<<30)|((uint32_t)(status_actor>=0)<<31);
 }
-void App::pointer_cancel(bool keep_keyboard_card){progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
+void App::pointer_cancel(bool keep_keyboard_card){map_drawing.cancel();progress_page_scroll.dragging=progress_page_scroll.thumb=false;hand_focus=false;map_dragging=false;card_grid_drag=-1;bestiary.dragging=bestiary.thumb_drag=false;for(auto&grid:card_grids)grid.dragging=grid.thumb_drag=false;pointer.held=pointer.dragging=false;pointer.armed_card=-1;pointer.captured={};if(!keep_keyboard_card)keyboard_card=-1;}
 void App::pointer_key(Key k){pointer.dispatching=true;input(k);pointer.dispatching=false;pointer.visible=true;}
 #include "card_inspect_input.inc"
 void App::open_card_detail(Card card,int deck_index){
@@ -65,13 +73,14 @@ void App::pointer_move(int x,int y){
         const bool mouse=pointer.visible||!keyboard_only||
             (distance*81u<=1000000u&&dt<50000u&&uint64_t(distance)*20250000u>uint64_t(dt)*dt*100u);
         pointer.motion_time=map_clock_ms;
-        if(mouse){pointer.visible=true;hud_focus=-1;map_directional=false;keyboard_card=-1;sync_map_reticles();}
+        if(mouse){pointer.visible=true;hud_focus=-1;map_directional=false;keyboard_card=-1;sync_map_reticles();map_drawing_pointer_motion();}
     }
     if(!pointer.visible)return;
+    if(map_drawing.pressed)return;
     if(pointer.held){int dx=pointer.x-pointer.down_x,dy=pointer.y-pointer.down_y;
         if(dx*dx+dy*dy>=25)pointer.dragging=true;}
     if(pointer.held&&progress_page_scroll.dragging){
-        if(progress_page_scroll.thumb)progress_page_scroll.set_thumb(pointer.y);
+        if(progress_page_scroll.thumb)progress_page_scroll.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:61,run_mode.screen==RunMenu::Custom?158:128);
         else progress_page_scroll.target=UiHistoryScroll::clamp(progress_page_scroll.target-(pointer.y-progress_page_scroll.last_y)*256,-progress_page_scroll.viewport*256,progress_page_scroll.maximum+progress_page_scroll.viewport*256);
         progress_page_scroll.last_y=pointer.y;return;
     }
@@ -136,6 +145,7 @@ void App::pointer_move(int x,int y){
     }
 }
 void App::pointer_scroll(int rows){
+    if(map_drawing_ready()&&map_drawing.mode!=MapDrawingMode::None)return;
 #if SPIRE_DEBUG_COMMANDS
     if(debug_open){if(rows)debug_input(rows<0?Key::Up:Key::Down);return;}
 #endif
@@ -204,6 +214,7 @@ void App::pointer_button(bool down){
     // current screen rather than trusting regions from a previous overlay.
     render();pointer_move(pointer.x,pointer.y);
     const auto*found=hit_at(pointer.x,pointer.y);HitRegion hit=found?*found:HitRegion{};
+    if(map_drawing_pointer_button(down,hit))return;
     if(progress_pointer_button(down,hit))return;
     if(down&&library&&!library_tab&&library_search_editing&&
        !(hit.kind==HitKind::LibraryControl&&(hit.value==LibrarySearch||hit.value==LibraryClearSearch)))
@@ -311,6 +322,7 @@ void App::pointer_button(bool down){
     case HitKind::ReferenceNode:map_preview.selected=hit.value;break;
     case HitKind::WorldNode:
         if(!map_legend&&map_routes_active())begin_map_travel(unsigned(hit.value));break;
+    case HitKind::MapDrawingTool:map_drawing_tool(unsigned(hit.value));break;
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
     case HitKind::CrystalCell:

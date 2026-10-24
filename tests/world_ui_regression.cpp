@@ -1128,14 +1128,14 @@ static void original_card_movement(){
   CHECK(!a.combat_hand_settled(unsigned(a.cursor),true));
   int focus_regions=0;for(int h=0;h<a.hit_count;++h)if(a.hits[h].kind==HitKind::Hand&&a.hits[h].value==played)++focus_regions;
   CHECK(focus_regions==1);
-  const auto*upper=a.hit_at(start_pose.cx,start_pose.cy-HandTileH/2+8);CHECK(upper&&upper->kind==HitKind::Hand&&upper->value==played);
-  // The lower face must keep focus while X lerps; it has no settled rail yet.
+  const auto*upper=a.hit_at(start_pose.cx,start_pose.cy-HandFaceH*start_pose.scale/(2*1024)+8);CHECK(upper&&upper->kind==HitKind::Hand&&upper->value==played);
+  // The lower visible face must keep focus while the authored X lerps.
   a.pointer_move(start_pose.cx,224);a.render();CHECK(a.hand_focus&&a.cursor==old.count-1);
   snapshot();CHECK(load(direct,before.bytes,before.size));CHECK(play(direct,a.cursor,a.target));CHECK(save(direct,expected));
   a.input(Key::Confirm);CHECK(a.keyboard_card==played);unchanged();
   if(fast){advance_combat_ms(198);a.render();}
   const auto play_pose=a.combat_hand_pose(unsigned(a.cursor),false);
-  if(fast)CHECK(play_pose.cy>start_pose.cy&&play_pose.cy<=198&&play_pose.scale<start_pose.scale);
+  if(fast)CHECK(play_pose.cy>start_pose.cy&&play_pose.cy<=210&&play_pose.scale<start_pose.scale);
   else CHECK(play_pose.cx==start_pose.cx&&play_pose.cy==start_pose.cy);
   const uint32_t start=a.animation;a.input(Key::Confirm);equivalent();
   const uint32_t end=start+TurnBannerPresentation::wait_ticks(300,150,fast!=0);

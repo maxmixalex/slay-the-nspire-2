@@ -8,6 +8,7 @@ static void invalidate_hud_motion();
 #include "frontend_input.inc"
 #include "world_map_travel.inc"
 #include "world_map_act_intro.inc"
+#include "world_map_drawing_input.inc"
 #include "world_map_window.inc"
 bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();invalidate_hud_motion();reset_card_grids();card_library={};collection={};library_search_editing=false;bestiary={};hud_focus=-1;hud_focus_reticle={};hud_relic_motion={};card_inspect={};potion_belt_motion={};deck_count_pulse={};for(auto&reticle:target_reticles)reticle={};reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_sparks.reset();combat_cards.reset();combat_preparation.reset();character_select_presentation.reset();room_presentation.reset();turn_banner.reset();reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};end_turn_glow={};map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();profiles_open=profile_pending=false;for(auto&motion:profile_motion)motion={};for(auto&label:profile_labels)label={};callbacks=cb;restore_preferences();restore_progress();if(!content.open(p,n)||!content.current_profile())return false;refresh_save();return true;}
 bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();invalidate_hud_motion();reset_card_grids();card_library={};collection={};library_search_editing=false;bestiary={};hud_focus=-1;hud_focus_reticle={};hud_relic_motion={};card_inspect={};potion_belt_motion={};deck_count_pulse={};for(auto&reticle:target_reticles)reticle={};reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_sparks.reset();combat_cards.reset();combat_preparation.reset();character_select_presentation.reset();room_presentation.reset();turn_banner.reset();reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};end_turn_glow={};map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();profiles_open=profile_pending=false;for(auto&motion:profile_motion)motion={};for(auto&label:profile_labels)label={};callbacks=cb;restore_preferences();restore_progress();if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
@@ -45,7 +46,7 @@ void App::advance(uint32_t ms){
     // banners, creature animations or health-bar tweens through Engine time.
     sync_treasure_presentation();tick_remainder+=ms;
     while(tick_remainder>=33){tick_remainder-=33;tick();}
-    sync_treasure_presentation();sync_camp_presentation();update_map_travel();sync_map_window();sync_progress();
+    sync_treasure_presentation();sync_camp_presentation();update_map_travel();sync_map_window();map_drawing_advance(ms);sync_progress();
 }
 void App::draw_frame(){render();}
 void App::tick(){
@@ -77,6 +78,7 @@ void App::input(Key k){
     // hotkeys follow NInputManager; pointer dispatch follows MouseFilter.
     if((pointer.dispatching?map_transition_blocks_pointer():map_transition_blocks_keyboard())&&
        k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
+    if(!pointer.dispatching&&map_drawing_key(k))return;
     if(!pointer.dispatching&&(k==Key::Left||k==Key::Right||k==Key::Up||k==Key::Down))map_directional=true;
     if(!title&&!paused&&int32_t(combat_linger_until-animation)>0&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
     HandInputFocus focus(*this,k);

@@ -75,7 +75,7 @@ bool App::progress_pointer_button(bool down,const HitRegion&hit){
         if(hit.kind==HitKind::ProgressThumb||hit.kind==HitKind::ProgressScroll||hit.kind==HitKind::HistoryCard||hit.kind==HitKind::HistoryRelic||hit.kind==HitKind::HistoryFloor||hit.kind==HitKind::RunModifier){
             pointer.held=true;pointer.dragging=false;pointer.captured=hit;pointer.down_x=pointer.x;pointer.down_y=pointer.y;pointer.context=input_context();pointer.revision=game.revision;
             scroller.dragging=true;scroller.thumb=hit.kind==HitKind::ProgressThumb;scroller.last_y=pointer.y;
-            if(scroller.thumb)scroller.set_thumb(pointer.y);return true;
+            if(scroller.thumb)scroller.set_thumb(pointer.y,run_mode.screen==RunMenu::Custom?42:61,run_mode.screen==RunMenu::Custom?158:128);return true;
         }
         return false;
     }

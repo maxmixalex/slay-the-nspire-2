@@ -53,15 +53,16 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     Canvas tile{a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
     // Left inset contains the original star cost below the energy icon;
     // neither resource adds a second title row or moves the card portrait.
-    draw_card_face(tile,card,8,6,69,97,energy,stars,instance,deck,nullptr,description,&t.description_truncated);
+    draw_card_face(tile,card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,energy,stars,instance,deck,nullptr,description,&t.description_truncated);
     if(!playable)for(int i=0;i<HandTileW*HandTileH;i++)if(t.alpha[i])t.pixels[i]=blend(t.pixels[i],Ink,85);
     t.valid=true;return t;
 }
 static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255){
     if(p.scale<=0)return;
     int sn=p.sine<0?-p.sine:p.sine,cs=p.cosine<0?-p.cosine:p.cosine;
-    int half_w=((cs*HandTileW+sn*HandTileH)*p.scale)/(2*1024*1024)+2;
-    int half_h=((sn*HandTileW+cs*HandTileH)*p.scale)/(2*1024*1024)+2;
+    constexpr int radius_x=(HandPivotX+1023)/1024,radius_y=(HandTileH*1024-HandPivotY+1023)/1024;
+    int half_w=((cs*radius_x+sn*radius_y)*p.scale)/(1024*1024)+2;
+    int half_h=((sn*radius_x+cs*radius_y)*p.scale)/(1024*1024)+2;
     int left=mx(0,p.cx-half_w),right=mn(320,p.cx+half_w);
     int top=mx(0,p.cy-half_h),bottom=mn(240,p.cy+half_h);
     // Inverse affine sampling: only integer additions in the inner loop.
@@ -70,18 +71,18 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
         // The outline belongs to the card face, not to its transparent cache
         // allocation. Transform the same 69 x 97 face and its 2px inset with
         // the hand pose so focus remains aligned after scale/rotation changes.
-        const auto bounds=card_face::focus_bounds(8,6,69,97);
+        const auto bounds=card_face::focus_bounds(HandFaceX,HandFaceY,HandFaceW,HandFaceH);
         const int xs[]={bounds.x,bounds.x+bounds.w-1,bounds.x+bounds.w-1,bounds.x};
         const int ys[]={bounds.y,bounds.y,bounds.y+bounds.h-1,bounds.y+bounds.h-1};
         int px[4],py[4];
-        for(int i=0;i<4;++i){const int dx=xs[i]-HandTileW/2,dy=ys[i]-HandTileH/2;
-            px[i]=p.cx+(dx*p.cosine-dy*p.sine)*p.scale/(1024*1024);
-            py[i]=p.cy+(dx*p.sine+dy*p.cosine)*p.scale/(1024*1024);}
+        for(int i=0;i<4;++i){const int dx=xs[i]*1024-HandPivotX,dy=ys[i]*1024-HandPivotY;
+            px[i]=p.cx+int((int64_t(dx)*p.cosine-int64_t(dy)*p.sine)*p.scale/(1024LL*1024*1024));
+            py[i]=p.cy+int((int64_t(dx)*p.sine+int64_t(dy)*p.cosine)*p.scale/(1024LL*1024*1024));}
         for(int i=0;i<4;++i)c.line(px[i],py[i],px[(i+1)%4],py[(i+1)%4],t.playable?Gold:Muted);
     }
     for(int y=top;y<bottom;y++){
-        int u=HandTileW*512+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
-        int v=HandTileH*512+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
+        int u=HandPivotX+((left-p.cx)*p.cosine+(y-p.cy)*p.sine)*1024/p.scale;
+        int v=HandPivotY+(-(left-p.cx)*p.sine+(y-p.cy)*p.cosine)*1024/p.scale;
         for(int x=left;x<right;x++,u+=du,v+=dv){
             if(u<0||v<0||u>=HandTileW*1024||v>=HandTileH*1024)continue;
             int at=(v/1024)*HandTileW+u/1024;
@@ -114,7 +115,7 @@ static void combat_actors(Canvas&c){
     if(pet){const auto p=a.combat_player_pose(true);const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
         if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.scaled_clip(m.clip,p.sprite_x,p.sprite_y,elapsed,p.scale,false);
         else if(a.combat_health(MaxEnemies+1).hp>0)c.scaled_clip(AnimOstyIdle,p.sprite_x,p.sprite_y,a.animation*33,p.scale);
-        else c.scaled_clip(AnimOstyDie,p.sprite_x,p.sprite_y,uint32_t(-1),p.scale,false);
+        else{const auto dead=a.content.clip(AnimOstyDie);c.scaled_clip(AnimOstyDie,p.sprite_x,p.sprite_y,dead.count?uint32_t(dead.count-1)*dead.frame_ms:0u,p.scale,false);}
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
@@ -283,49 +284,30 @@ static void combat_screen(Canvas&c){
     const bool focused=a.hand_focus&&a.hand_can_focus();
     const int held_card=a.selected_hand_card();
     if(ui_cards_bound(a))a.combat_cards.set_focus(focused&&hand.count?hand.ids[selected]:-1);
-    // At rest every card remains on the arc. Focus is earned by hover or keys,
-    // not by the cursor index merely existing. The battlefield stays visible.
+    // Hitboxes use the same live transformed frame as painting, including
+    // hover-neighbour motion and interpolation after a card leaves the hand.
+    // Original holders ignore the mouse while a dragged card owns input.
+    const bool dragging=a.pointer.held&&a.pointer.dragging&&held_card>=0;
+    const auto hand_hit=[&](HandPose pose,int id,bool enabled){if(dragging)return;
+        const auto r=hand_bounds(pose);c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,id,enabled);};
     for(int i=0;i<hand.count;i++){
-        // The focused face has its own topmost region below. Registering its
-        // raised pose here as well leaves a duplicate (and sometimes wider)
-        // hit column behind the visible face.
         if((focused&&i==selected)||hand.ids[i]==held_card)continue;
-        auto p=a.combat_hand_pose(unsigned(i),focused&&i==selected);
-        draw_hand_tile(c,hand_tile(c,hand.ids[i]),p,false);
-        combat_hand_index(c,unsigned(i),p);
-        auto r=hand_rail(hand.count,i);
-        int top=p.cy-HandTileH*p.scale/(2*1024);
-        if(a.combat_hand_settled(unsigned(i),focused&&i==selected))
-            c.hit(r.x,top,r.w,mx(0,r.y-top),HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
-        else{
-            const int sn=CombatCardMotion::magnitude(p.sine),cs=CombatCardMotion::magnitude(p.cosine);
-            const int w=(cs*HandTileW+sn*HandTileH)*p.scale/(1024*1024),h=(sn*HandTileW+cs*HandTileH)*p.scale/(1024*1024);
-            c.hit(p.cx-w/2,p.cy-h/2,w,h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
-        }
+        const auto pose=a.combat_hand_pose(unsigned(i),false);
+        draw_hand_tile(c,hand_tile(c,hand.ids[i]),pose,false);
+        combat_hand_index(c,unsigned(i),pose);
+        hand_hit(pose,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
     }
     if(hand.count){
         if(focused&&hand.ids[selected]!=held_card){
-            auto p=a.combat_hand_pose(unsigned(selected),true);
-            draw_hand_tile(c,hand_tile(c,hand.ids[selected]),p,true);
-            combat_hand_index(c,unsigned(selected),p);
-            // While X is still approaching the focused position there is no
-            // settled bottom rail. Keep its actual lower face hoverable too.
-            const int height=a.combat_hand_settled(unsigned(selected),true)?68:HandTileH;
-            c.hit(p.cx-HandTileW/2,p.cy-HandTileH/2,HandTileW,height,HitKind::Hand,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
-        }
-        // A stable bottom selection rail prevents the raised preview from
-        // stealing its neighbours when the pointer crosses from card to card.
-        for(int i=0;i<hand.count;i++){
-            if(hand.ids[i]==held_card)continue;
-            if(!a.combat_hand_settled(unsigned(i),focused&&i==selected))continue;
-            auto r=hand_rail(hand.count,i);
-            c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
+            const auto pose=a.combat_hand_pose(unsigned(selected),true);
+            draw_hand_tile(c,hand_tile(c,hand.ids[selected]),pose,true);
+            combat_hand_index(c,unsigned(selected),pose);
+            hand_hit(pose,hand.ids[selected],!a.combat_actions_locked()&&can_play_card(s,hand.ids[selected]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
     if(held_card>=0)for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==held_card){
         const auto pose=a.combat_hand_pose(i,false);draw_hand_tile(c,hand_tile(c,held_card),pose,false);
-        const int width=HandTileW*pose.scale/1024,height=HandTileH*pose.scale/1024;
-        c.hit(pose.cx-width/2,pose.cy-height/2,width,height,HitKind::Hand,held_card,!a.combat_actions_locked());break;
+        hand_hit(pose,held_card,!a.combat_actions_locked());break;
     }
     if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites){
         if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.id>=s.card_count)continue;

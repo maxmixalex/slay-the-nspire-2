@@ -12,8 +12,8 @@ struct UiHistoryScroll {
         if(viewport!=view_height||maximum!=limit){viewport=view_height;maximum=limit;target=clamp(target,0,maximum);position=clamp(position,0,maximum);}}
     int offset()const{return position/256;}
     void wheel(int rows){target=clamp(target+rows*80*256/9,-viewport*256,maximum+viewport*256);}
-    void set_thumb(int y){target=maximum*clamp(y-61,0,128)/128;position=target;}
-    int thumb_y()const{return 61+(maximum?128*clamp(position,0,maximum)/maximum:0);}
+    void set_thumb(int y,int top=61,int length=128){target=maximum*clamp(y-top,0,length)/length;position=target;}
+    int thumb_y(int top=61,int length=128)const{return top+(maximum?length*clamp(position,0,maximum)/maximum:0);}
     void step(unsigned ms){
         if(!ms)return;const int dt=ms>66?66:int(ms);
         if(!dragging){const int legal=clamp(target,0,maximum);target+=(legal-target)*dt*12/1000;if(target<0&&target>-128)target=0;if(target>maximum&&target<maximum+128)target=maximum;}

@@ -62,7 +62,7 @@ static void pointer_overlay(Canvas&c){
         int x=p.x,y=p.y;bool enemy=false;
         if(controller&&a.target>=0&&a.target<a.game.enemy_count&&a.game.enemies[a.target].hp>0){const auto pose=a.combat_enemy_pose(a.target);x=pose.center_x+scene_x;y=pose.center_y+scene_y;enemy=true;}
         else if(const auto*h=a.hit_at(x,y))enemy=h->enabled&&(h->kind==HitKind::Enemy||h->kind==HitKind::EnemyIntent);
-        HandPose origin{160,198,768,0,1024};const auto hand=a.combat_hand();
+        HandPose origin=hand_selected_pose();const auto hand=a.combat_hand();
         for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==armed){origin=a.combat_hand_pose(i,false);break;}
         targeting_arrow(c,origin.cx,origin.cy,x,y,controller,enemy);targeting=true;
     }else if(!modal&&a.panel==4&&a.potion_targeting){
@@ -73,6 +73,7 @@ static void pointer_overlay(Canvas&c){
         targeting_arrow(c,origin,13,x,y,controller,enemy);targeting=true;
     }
     if(!targeting)target_arrow_motion.active=false;
+    if(map_drawing_cursor(c))return;
     // NTargetingArrow hides the normal cursor while following a mouse target.
     if(!p.visible||targeting)return;
     const auto*h=a.hit_at(p.x,p.y);bool inspect=false;

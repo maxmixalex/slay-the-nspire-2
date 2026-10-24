@@ -235,11 +235,12 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   }
   if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}
  });
- document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus();}));
+ document.addEventListener('keyup',e=>{if(e.key in keyMap)input(()=>game.key_release(keyMap[e.key]));});
+ document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{const code=Number(b.dataset.key);key(code);input(()=>game.key_release(code));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
  canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
- canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(e.button===2){key(5);return;}if(e.button!==0)return;const p=position(e);canvas.setPointerCapture(e.pointerId);input(()=>{game.pointer_move(p.x,p.y);game.pointer_button(1);});});
- canvas.addEventListener('pointerup',e=>{if(e.button!==0)return;const p=position(e);input(()=>{if(p.inside){game.pointer_move(p.x,p.y);game.pointer_button(0);}else game.pointer_cancel();});if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
+ canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(e.button<0||e.button>2)return;const p=position(e);canvas.setPointerCapture(e.pointerId);input(()=>{game.pointer_move(p.x,p.y);if(e.button===0)game.pointer_button(1);else game.pointer_aux_button(e.button===2?2:3,1);});});
+ canvas.addEventListener('pointerup',e=>{if(e.button<0||e.button>2)return;const p=position(e);input(()=>{if(p.inside){game.pointer_move(p.x,p.y);if(e.button===0)game.pointer_button(0);else game.pointer_aux_button(e.button===2?2:3,0);}else game.pointer_cancel();});if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
  canvas.addEventListener('pointercancel',()=>input(()=>game.pointer_cancel()));
  canvas.addEventListener('contextmenu',e=>e.preventDefault());
  canvas.addEventListener('wheel',e=>{e.preventDefault();input(()=>game.pointer_scroll(Math.sign(e.deltaY)));},{passive:false});

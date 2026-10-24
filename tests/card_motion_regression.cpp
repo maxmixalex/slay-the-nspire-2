@@ -46,15 +46,27 @@ static void holder_responses(){
   CHECK(std::abs(v->x/1024.0-x)<.02&&std::abs(v->y/1024.0-y)<.3&&std::abs(v->scale-scale)<3.1);
  }
  const auto before=m.hand_pose_at(0,false);m.set_focus(1);const auto focused=m.hand_pose_at(0,true);
- CHECK(focused.cx==before.cx&&focused.cy==178&&focused.scale==1024&&focused.sine==0);
+ CHECK(focused.cx==before.cx&&focused.cy==200&&focused.scale==848&&focused.sine==0);
  m.advance(96);CHECK(m.settled(0,true)&&same_pose(m.hand_pose_at(0,true),hand_pose(2,0,true)));
  m.set_focus(-1);m.advance(192);CHECK(m.settled(0,false)&&same_pose(m.hand_pose_at(0,false),hand_pose(2,0,false)));
+}
+static void hover_and_selection_layout(){
+ hand(5);const auto saved=state;CombatCardMotion m;m.begin(state,0);m.set_focus(2);m.advance(96);
+ const int hovered[]={86,113,160,207,234};for(unsigned i=0;i<5;++i)CHECK(m.hand_pose_at(i,i==2).cx==hovered[i]);
+ const auto before=m.hand_pose_at(0,false);m.set_selected(2);CHECK(m.hand_pose_at(0,false).cx==before.cx);
+ m.advance(192);const int contracted[]={114,145,160,175,206};
+ for(unsigned i=0;i<5;++i)CHECK(m.hand_pose_at(i,false).cx==contracted[i]);
+ CHECK(m.hand_pose_at(2,false).cy==210&&m.hand_pose_at(2,false).scale==636);
+ m.set_selection_pose({170,90,848,0,1024});m.advance(288);CHECK(m.hand_pose_at(2,false).cx==170&&m.hand_pose_at(2,false).cy==90);
+ m.set_selected(-1);m.set_focus(-1);m.advance(384);
+ for(unsigned i=0;i<5;++i)CHECK(same_pose(m.hand_pose_at(i,false),hand_pose(5,int(i),false)));
+ CHECK(!std::memcmp(&saved,&state,sizeof state));
 }
 static void draw_and_play(){
  hand(0);CombatCardMotion m;m.begin(state,0);m.apply(transfer(0,Zone::Draw,Zone::Hand));
  CombatHand::Cards next;next.count=1;next.ids[0]=0;m.set_hand(next);
  const auto origin=m.hand_pose_at(0,false);CHECK(origin.cx==20&&origin.cy==226&&origin.scale==1024&&!m.settled(0,false));
- m.advance(1);const auto moved=m.hand_pose_at(0,false);CHECK(moved.cx>origin.cx&&moved.cx<160&&moved.cy<origin.cy);
+ m.advance(1);const auto moved=m.hand_pose_at(0,false);CHECK(moved.cx>origin.cx&&moved.cx<160&&moved.cy>=origin.cy&&moved.cy<231);
  m.advance(96);CHECK(m.settled(0,false)&&same_pose(m.hand_pose_at(0,false),hand_pose(1,0,false)));
  for(unsigned fast=0;fast<2;++fast){
   hand(3);m.begin(state,0);m.set_focus(0);const auto start=m.hand_pose_at(0,true);
@@ -118,6 +130,6 @@ static void generated_preview(){
  CHECK(!std::memcmp(&state,&saved,sizeof state));
 }
 int main(){
- CHECK(sizeof(CombatCardMotion)<=6*1024);body_modulation();holder_responses();draw_and_play();discard_curve();skipped_frames_and_bounds();generated_preview();
+ CHECK(sizeof(CombatCardMotion)<=6*1024);body_modulation();holder_responses();hover_and_selection_layout();draw_and_play();discard_curve();skipped_frames_and_bounds();generated_preview();
  std::printf("card movement: %u checks passed; %zu bytes of bounded metadata\n",checks,sizeof(CombatCardMotion));
 }

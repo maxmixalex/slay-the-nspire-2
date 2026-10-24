@@ -34,9 +34,10 @@ struct CombatCardMotion {
  uint32_t seed=0,clock=0,cosmetic=0x906b1a4du,manual_started=0,manual_min_end=0,wait_at=0;
  int floor=-1,combat=-1,encounter=-1,focus=-1,selected=-1,manual=-1;
  int16_t manual_energy=0,manual_stars=0;
+ int16_t selected_x=160,selected_y=210,selected_scale=(HandFocusScale*3+2)/4;
  uint16_t card_count=0;
  uint8_t head=0,count=0,count_head=0,count_count=0,wait_excess=0;
- bool active=false,overflow=false,count_overflow=false;
+ bool active=false,overflow=false,count_overflow=false,selected_centered=false;
 
  static Counts capture_counts(const State&s){return {s.draw.count,s.discard.count,s.exhaust.count};}
  static bool same(Counts a,Counts b){return a.draw==b.draw&&a.discard==b.discard&&a.exhaust==b.exhaust;}
@@ -72,7 +73,7 @@ struct CombatCardMotion {
  }
  void reset(){
   active=overflow=count_overflow=false;head=count=count_head=count_count=0;
-  focus=selected=manual=-1;hand.count=0;for(auto&s:sprites)s.mode=Empty;
+  focus=selected=manual=-1;selected_centered=false;hand.count=0;for(auto&s:sprites)s.mode=Empty;
  }
  Sprite* find(unsigned id){for(auto&s:sprites)if(s.mode!=Empty&&s.id==id)return &s;return nullptr;}
  const Sprite* find(unsigned id)const{for(const auto&s:sprites)if(s.mode!=Empty&&s.id==id)return &s;return nullptr;}
@@ -116,11 +117,23 @@ struct CombatCardMotion {
    // continues to approach its target through AnimPosition.
    const auto p=hand_pose(hand.count,int(i),true);v->y=p.cy*1024;v->scale=int16_t(p.scale);v->angle=0;return;}
  }
- void set_selected(int id){selected=id;}
+ void set_selected(int id){
+  if(selected==id)return;selected=id;selected_centered=false;set_selection_pose(hand_selected_pose());
+  // BeginDrag resets angle and scale immediately before either the mouse
+  // follower or CenterCard supplies a position target.
+  if(id>=0)if(auto*v=find(unsigned(id))){v->angle=0;v->scale=HandFocusScale;}
+ }
+ void set_selection_pose(HandPose p){selected_x=int16_t(p.cx);selected_y=int16_t(p.cy);selected_scale=int16_t(p.scale);}
  HandPose hand_target(unsigned index,bool focused)const{
-  // NCardPlay.CenterCard changes holder targets, retaining its interpolated
-  // position. Playing midway through selection continues from that pose.
-  return index<hand.count&&int(hand.ids[index])==selected?HandPose{160,198,768,0,1024}:hand_pose(hand.count,int(index),focused);
+  if(index>=hand.count)return hand_pose(1,0,focused);
+  if(int(hand.ids[index])==selected)return {selected_x,selected_y,selected_scale,0,1024};
+  // StartCardPlay reparents its holder out of CardHolderContainer. The
+  // remaining hand therefore closes up as soon as selection starts, while
+  // canonical pile order and the eventual played-card cue stay untouched.
+  int active_count=hand.count,active_index=int(index),focus_index=-1;
+  for(unsigned i=0;i<hand.count;++i)if(int(hand.ids[i])==selected){--active_count;if(i<index)--active_index;break;}
+  if(selected<0)for(unsigned i=0;i<hand.count;++i)if(int(hand.ids[i])==focus){focus_index=int(i);break;}
+  return hand_pose(active_count,active_index,focused&&selected<0,focus_index);
  }
  static unsigned cubic(unsigned elapsed,unsigned duration){
   if(elapsed>=duration)return 1024;const unsigned rest=(duration-elapsed)*1024/duration;return 1024-rest*rest/1024*rest/1024;
@@ -130,7 +143,7 @@ struct CombatCardMotion {
  }
  HandPose hand_pose_at(unsigned index,bool focused)const{
   if(index>=hand.count)return hand_pose(1,0,focused);
-  const auto*v=find(hand.ids[index]);if(!v||v->mode!=Hand)return hand_pose(hand.count,int(index),focused);
+  const auto*v=find(hand.ids[index]);if(!v||v->mode!=Hand)return hand_target(index,focused);
   const auto p=hand_target(index,focused);
   if(magnitude(v->x-p.cx*1024)<256&&magnitude(v->y-p.cy*1024)<256&&magnitude(v->scale-p.scale)<2&&magnitude(angle_delta(v->angle,direction(p.sine,p.cosine)))<2)return p;
   return pose(*v);

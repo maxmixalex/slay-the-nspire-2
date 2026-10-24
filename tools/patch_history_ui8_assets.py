@@ -14,9 +14,24 @@ from patch_frontend_assets import patch_pack
 from pck import Pack
 from world_scene_assets import load_scene_texture
 from patch_feedback_assets import write_image
+from patch_ui6_assets import cursor_image
 from PIL import Image
 
-VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1, 1753, 8704
+MAP_IMAGES = [
+    ('map-draw', 'images/packed/map/drawing_quill.png', (16, 16)),
+    ('map-draw-glow', 'images/packed/map/drawing_quill_glow.png', (16, 16)),
+    ('map-erase', 'images/packed/map/drawing_eraser.png', (16, 16)),
+    ('map-erase-glow', 'images/packed/map/drawing_eraser_glow.png', (16, 16)),
+    ('map-clear', 'images/packed/map/drawing_clear.png', (16, 16)),
+    ('map-clear-glow', 'images/packed/map/drawing_clear_glow.png', (16, 16)),
+    ('map-cursor-draw', 'images/packed/common_ui/cursor_quill.png', (16, 16)),
+    ('map-cursor-draw-tilted', 'images/packed/common_ui/cursor_quill_tilted.png', (16, 16)),
+    ('map-cursor-erase', 'images/packed/common_ui/cursor_eraser.png', (16, 16)),
+    ('map-cursor-erase-tilted', 'images/packed/common_ui/cursor_eraser_tilted.png', (16, 16)),
+    ('map-draw-trail', 'images/packed/vfx/trail2.png', None),
+    ('map-erase-trail', 'images/packed/vfx/trail3.png', None),
+]
+VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1 + len(MAP_IMAGES), 1753, 8704
 
 
 def build_art(path, cache):
@@ -31,6 +46,13 @@ def build_art(path, cache):
         row = write_image(cache, "empty-orb", orb)
         row.update(key="empty-orb", source=source, auxiliary=BASE_AUX + len(rows))
         rows.append(row)
+        for key, source, size in MAP_IMAGES:
+            image = cursor_image(pack, source) if key.startswith('map-cursor-') else load_scene_texture(pack, source).convert('RGBA')
+            if size is not None:
+                image = image.resize(size, Image.Resampling.LANCZOS)
+            row = write_image(cache, key, image)
+            row.update(key=key, source=source, auxiliary=BASE_AUX + len(rows))
+            rows.append(row)
         localized = build_mode_text(pack)
     finally:
         pack.close()

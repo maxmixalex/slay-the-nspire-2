@@ -6,7 +6,7 @@ enum class HitKind : uint8_t {
     PileTab, PileCard, Relic, Potion, Scroll, Close, DetailClose, OpenPile, ReferenceNode, ReferenceAction, SeedCharacter, UiAction, LibraryItem, CombatChoice, StatusActor, StatusItem, OwnedRelic, InstanceCard, DeckCard,
     WorldNode, EnemySelect, WorldChoice, CrystalCell, EnemyIntent, BattleStatus,
     PotionSlot, PotionPage, PotionMerchant, HudInfo, PileSort, PileUpgrades, DebugItem,
-    GridScroll, BestiaryEntry, BestiaryMove, BestiaryFilter, BestiaryMode, BestiaryScroll, ProgressScroll, ProgressThumb, HistoryCard, HistoryRelic, HistoryFloor, LibraryControl, RunModifier, Orb
+    GridScroll, BestiaryEntry, BestiaryMove, BestiaryFilter, BestiaryMode, BestiaryScroll, ProgressScroll, ProgressThumb, HistoryCard, HistoryRelic, HistoryFloor, LibraryControl, RunModifier, Orb, MapDrawingTool
 };
 struct HitRegion {
     int16_t x{}, y{}, w{}, h{};

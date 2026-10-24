@@ -13,8 +13,11 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
             widths[i]=mx(18,11+c.width(amount,8));}
         if(used&&used+widths[i]>width){++rows;used=0;}used+=widths[i];
     }
-    // Grow toward the actors when extra rows would enter the resting hand.
-    const int top=mx(24,mn(y,174-rows*12));
+    // Preserve the original order below HP. When several readable rows no
+    // longer fit above the resting hand, move the complete group above HP;
+    // the old single174px cap put one-row powers directly on the new bars.
+    const auto pose=actor?c.a.combat_enemy_pose(actor-1):c.a.combat_player_pose();
+    const int top=mx(24,y+rows*12>190?pose.hp-3-rows*12:y);
     c.hit(x-2,top-2,width+4,rows*12+3,HitKind::StatusActor,actor);
     used=0;int row=0;
     for(int i=0;i<count;i++){

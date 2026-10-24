@@ -20,7 +20,8 @@ static void combat_orbs(Canvas&c){
    const int fade=age>=500?4096:int(health_bar::expo_out(age*2));
    const int scale=age>=500?4096:4096+(4096-fade)*CombatCardMotion::sine(int(age)*40960/1500-1024)/1024;
    const int size=base_size*scale/4096;
-   if(size>0)c.ui(orb_image(unsigned(kind)),x-size/2,y-size/2,size,size);
+   if(size>0){Canvas orb=c;if(kind==int(DOrb::Glass)&&!a.combat_status_fact(CombatStatus::OrbPassive,i)){orb.tint_red=0;orb.tint_green=orb.tint_blue=133;}
+    orb.ui(orb_image(unsigned(kind)),x-size/2,y-size/2,size,size);}
    if(kind!=int(DOrb::Plasma)&&age>=100){
     const int passive=a.combat_status_fact(CombatStatus::OrbPassive,i),evoke=a.combat_status_fact(CombatStatus::OrbEvoke,i);
     const int label_x=x+2,label_y=y+(kind==int(DOrb::Dark)?-9:-4);
@@ -32,8 +33,9 @@ static void combat_orbs(Canvas&c){
     }
    }
   }else{
-   const int size=radius*2;if(a.content.version()>=HistoryUi8ContentVersion)c.ui(I8_EmptyOrb,x-radius,y-radius,size,size);
-   else{c.box(x-radius+1,y-radius+1,size-2,size-2,Muted);}
+   const unsigned age=now-motion.items[i].born;const int size=age>=250?radius*2:int(radius*2*age/250);
+   if(size>0&&a.content.version()>=HistoryUi8ContentVersion)c.ui(I8_EmptyOrb,x-size/2,y-size/2,size,size);
+   else if(size>2)c.box(x-size/2+1,y-size/2+1,size-2,size-2,Muted);
   }
   c.hit(x-radius,y-radius,radius*2,radius*2,HitKind::Orb,i);
  }

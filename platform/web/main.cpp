@@ -149,6 +149,8 @@ void advance(unsigned elapsed_ms){app.advance(elapsed_ms);}
 void draw_frame(){app.render();}
 void pointer_move(int x,int y){app.pointer_move(x,y);}
 void pointer_button(int down){app.pointer_button(down!=0);}
+void pointer_aux_button(int button,int down){app.pointer_aux_button(unsigned(button),down!=0);}
+void key_release(int key){if(key>=0&&key<=(int)spire::Key::Debug)app.map_drawing_key_release((spire::Key)key);}
 void pointer_cancel(){app.pointer_cancel();app.pointer.visible=false;}
 void pointer_scroll(int rows){app.pointer_scroll(rows);}
 int text_entry_active(){

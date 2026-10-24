@@ -1,5 +1,6 @@
 #pragma once
 #include "core.hpp"
+#include "map_drawing.hpp"
 
 namespace spire {
 // Separate optional UI history. Never inserted into a simulation save or RNG
@@ -46,6 +47,7 @@ struct UiProgress {
     UiEnemyStatistics enemies[EnemyKinds][CharacterKinds+1]{};
     UiEnemyStatistics encounters[EncounterKinds][CharacterKinds+1]{};
     UiRunHistory current{},history[UiHistoryCapacity]{};
+    MapDrawingDocument map_drawing{};
 };
 size_t encode_ui_progress(const UiProgress&,uint8_t*,size_t);
 void clear_ui_progress(UiProgress&);

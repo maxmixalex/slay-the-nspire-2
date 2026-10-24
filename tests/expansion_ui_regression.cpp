@@ -283,7 +283,10 @@ static void statuses(){
 static void shop_and_rewards(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind)){
         setup(false);auto&s=a.game;s.phase=Phase::Map;s.current_node=1;s.next_row=1;s.gold=9999;CHECK(choose_node(s,1));
-        s.shop_cards[5]=(CardKind)kind;a.reset_presentation();action(UiAction::OpenShop);a.cursor=5;
+        s.shop_cards[5]=(CardKind)kind;a.reset_presentation();action(UiAction::OpenShop);
+        // Inventory enters from above the paper over the source 700 ms. A
+        // pointer can buy only after its actual slot reaches the viewport.
+        for(unsigned frame=0;frame<22;++frame){a.advance(33);a.render();}a.cursor=5;
         auto before=snapshot();a.input(Key::Detail);CHECK(card_from_token(a.detail_card).kind==kind);a.input(Key::Back);unchanged(before);
         int gold=s.gold,count=s.deck_count,price=s.shop_prices[5];tap(HitKind::Choice,5);
         CHECK(s.deck_count==count+1&&s.deck[count].kind==kind&&s.gold==gold-price&&(s.shop_sold&(1u<<5)));CHECK(validate(s));

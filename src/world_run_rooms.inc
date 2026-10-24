@@ -70,7 +70,7 @@ static bool world_make_rewards(State&s){
     if(room==WorldRoom::Elite)w.reward_relic=random_world_relic(s);
     else w.reward_relic_claimed=1;
     const bool extra_cards=world_relic_combat_rewards(s);
-    world_relic_before_reward_offered(s,count!=0||extra_cards);return s.phase!=Phase::Error;
+    world_relic_before_reward_offered(s,extra_cards);return s.phase!=Phase::Error;
 }
 static unsigned world_shop_rarity(State&s){
     if(!s.world_factory.initialized){s.world_factory.initialized=1;s.world_factory.rarity_offset_bits=0xbd4ccccdU;}
@@ -148,6 +148,7 @@ static bool world_make_shop(State&s){
     Potion potions[3];if(world_random_potions(s,world_rng(s,WorldRng::Shops),3,potions)!=3)return world_fail(s);
     for(unsigned i=0;i<3;++i)if(!world_populate_shop_potion(s,i,potions[i]))return false;
     w.shop_base_prices[ShopRemove]=int16_t((w.ascension>=6?100:75)+(w.ascension>=6?50:25)*s.removals);
+    if(has_run_modifier(s,RunModifier::Hoarder))s.shop_sold|=uint16_t(1u<<ShopRemove);
     world_update_shop(s);return true;
 }
 static bool world_finish_purchase(State&s){

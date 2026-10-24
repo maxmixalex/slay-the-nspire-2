@@ -139,7 +139,7 @@ static void complete_catalog_and_layout(){
 }
 static void pointer_and_keyboard(){
     setup();snapshot();CardHoverTarget owner{};CHECK(!card_hover_target(a,owner));
-    auto rail=hand_rail(a.game.hand.count,0);a.pointer_move(rail.x+rail.w/2,224);a.render();CHECK(card_hover_target(a,owner)&&owner.instance==0&&owner.card.kind==Bash);
+    auto pose=hand_pose(a.game.hand.count,0,false);a.pointer_move(pose.cx,224);a.render();CHECK(card_hover_target(a,owner)&&owner.instance==0&&owner.card.kind==Bash);
     capture("keyword-hand-bash");const int hits=a.hit_count;for(int n=0;n<3;++n){a.render();CHECK(a.hit_count==hits&&card_hover_target(a,owner)&&owner.instance==0);}unchanged();
     a.pointer_button(true);CHECK(!card_hover_target(a,owner));a.pointer_button(false);CHECK(a.pointer.armed_card==0&&!card_hover_target(a,owner));a.pointer_cancel();unchanged();
     a.pointer_move(300,23);a.render();CHECK(!card_hover_target(a,owner));a.input(Key::Right);a.render();CHECK(card_hover_target(a,owner)&&a.hand_focus);unchanged();
@@ -156,7 +156,7 @@ static void pointer_and_keyboard(){
     a.library=false;a.panel=1;a.pile_tab=0;a.inspect_cursor=a.scroll=0;a.pointer.visible=false;a.render();CHECK(card_hover_target(a,owner)&&owner.deck==0);unchanged();
     a.reset_presentation();CHECK(!a.keyword_hover.details&&!a.keyword_hover.owner&&!a.keyword_hover.page);unchanged();
     // Visible tips must not turn a legal card drag into a tooltip command.
-    setup();rail=hand_rail(a.game.hand.count,0);a.pointer_move(rail.x+rail.w/2,224);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
+    setup();pose=hand_pose(a.game.hand.count,0,false);a.pointer_move(pose.cx,224);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.enemies[0].hp==38&&a.game.energy==97);CHECK(validate(a.game));
 }
 static void event_begin(OriginalEventId id,unsigned seed=77){

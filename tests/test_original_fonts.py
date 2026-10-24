@@ -3,6 +3,7 @@ from pathlib import Path
 import struct
 import sys
 import unittest
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import content_tiles as tiles
@@ -61,6 +62,21 @@ class OriginalFontTest(unittest.TestCase):
         self.assertEqual(faces[1]-set(range(32, 127)), {ord('甲'), ord('丙')})
         self.assertEqual(faces[2]-set(range(32, 127)), {ord('丁')})
         self.assertEqual(faces[3]-set(range(32, 127)), {ord('乙')})
+
+    def test_appended_locale_gets_regular_and_styled_glyphs(self):
+        class SyntheticFace:
+            coverage = {65, ord('甲')}
+            def glyph(self, cp, px, style=0):
+                return (cp, px | style << 6, 1, 1, 1, 0, b'\xff')
+            def metadata(self): return dict(family='synthetic')
+        source = SimpleNamespace(strings=[(0, len('A[b]甲[/b]'.encode()))],
+            glyphs=[(65, 0, 8, 1, 1, 1, 0)], block=lambda off, n:'A[b]甲[/b]'.encode()[:n])
+        face = SyntheticFace()
+        rows, report = fonts.generate(source, [face, face, None, None])
+        keys = {(row[0], row[1]) for row in rows}
+        self.assertTrue({(ord('甲'), px) for px in fonts.SIZES} <= keys)
+        self.assertTrue({(ord('甲'), px | 64) for px in fonts.SIZES} <= keys)
+        self.assertEqual(report['appended_regular_codepoints'], [ord('甲')])
 
     def test_replacement_preserves_shared_art_and_exact_locale(self):
         for language in ('eng', 'zhs'):

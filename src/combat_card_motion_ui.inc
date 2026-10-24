@@ -4,7 +4,13 @@ static bool ui_cards_bound(const App&a){const auto&m=a.combat_cards;const auto&s
 HandPose App::combat_hand_pose(unsigned index,bool focused)const{
  const auto hand=combat_hand();
  if(ui_cards_bound(*this))return combat_cards.hand_pose_at(index,focused);
- return index<hand.count&&hand.ids[index]==selected_hand_card()?HandPose{160,198,768,0,1024}:hand_pose(hand.count,int(index),focused);
+ const int selected=selected_hand_card();
+ if(index<hand.count&&hand.ids[index]==selected){
+  if(pointer.held&&pointer.dragging&&!card_targets_enemy(game,game.cards[selected],selected))return {pointer.x,pointer.y,HandFocusScale,0,1024};
+  return hand_selected_pose();
+ }
+ int count=hand.count,slot=int(index);for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==selected){--count;if(i<index)--slot;break;}
+ return hand_pose(count,slot,focused&&selected<0,hand_focus&&selected<0?cursor:-1);
 }
 bool App::combat_hand_settled(unsigned index,bool focused)const{
  return !ui_cards_bound(*this)||combat_cards.settled(index,focused);
@@ -88,6 +94,17 @@ void App::sync_combat_cards(){
   if(!combat_phase(game.phase)){m.reset();return;}m.begin(game,animation);
  }
  m.set_selected(selected_hand_card());
+ if(m.selected>=0&&pointer.held&&pointer.dragging){
+  const bool targeted=card_targets_enemy(game,game.cards[m.selected],m.selected);
+  // NMouseCardPlay enters the play zone100 source px above a low press,
+  // or50px above an already high press. Single-target cards then remain
+  // centered; self/all-target cards continue following the mouse.
+  const int threshold=pointer.down_y>180?(pointer.down_y-19>180?pointer.down_y-19:180):
+      (pointer.down_y-10<180?pointer.down_y-10:180);
+  if(targeted&&pointer.y<threshold)m.selected_centered=true;
+  if(!targeted||!m.selected_centered)m.set_selection_pose({pointer.x,pointer.y,HandFocusScale,0,1024});
+  else m.set_selection_pose(hand_selected_pose());
+ }
  ui_sync_card_queues(*this);
  if(!ui_feedback_bound(*this)){
   // Continue, initial preparation and direct fixture/core entry are already

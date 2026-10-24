@@ -47,7 +47,16 @@ static void world_shared_effect(State&s,WorldStage op,int value){
  case WorldStage::EnterRoom:
   // Finish queued creature construction callbacks after room entry and before
   // combat start. The initial roster is not an AddToCombat summon.
-  world_stage(s,WorldStage::CombatStart,0,false);hook(WorldRelicHook::AfterRoomEntered,s.world.room_type);break;
+  world_stage(s,WorldStage::CombatStart,0,false);hook(WorldRelicHook::AfterRoomEntered,s.world.room_type);
+  if(has_run_modifier(s,RunModifier::Terminal)){
+   if(!s.world.event_combat_parent&&s.max_hp>1)player_lose_max_hp(s,1);
+   gain_power(s,XPower::Plating,5);
+  }
+  if(has_run_modifier(s,RunModifier::Murderous)){
+   world_relic_gain_strength(s,3);
+   for(unsigned i=0;i<s.enemy_count;++i)if(s.enemies[i].hp>0)enemy_apply_power(s,int(i),EnemyPower::Strength,3);
+  }
+  break;
  case WorldStage::CombatStart:next(WorldStage::CombatStartLate);hook(WorldRelicHook::BeforeCombatStart);break;
  case WorldStage::CombatStartLate:next(WorldStage::PlayerStart,1);hook(WorldRelicHook::BeforeCombatStartLate);break;
  case WorldStage::PlayerStart:

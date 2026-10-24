@@ -2,6 +2,7 @@
 // whose controller permits travel. Only destination commit exits that room.
 // Phase::Map remains the later acts' standalone map room.
 void App::reset_map_window(){
+    map_drawing.cancel();map_drawing.transform_valid=false;
     ++map_window_generation;
     map_window.reset();map_window_seed=0;map_window_act=255;map_window_point=reference::NoPoint;
     map_window_step_ms=map_clock_ms;map_window_y_q12=map_window_camera_base_q12=0;map_window_y_tween_finished=false;
@@ -51,6 +52,7 @@ void App::open_map_window(bool from_top_bar){
     pointer_cancel();hit_count=0;
 }
 void App::close_map_window(bool animate){
+    map_drawing.cancel();if(map_drawing.dirty){persist_progress();map_drawing.dirty=progress_dirty;}
     sync_map_act_intro();
     map_window_camera_base_q12=map_camera_target_q12();
     if(!map_window.close(map_clock_ms,animate,map_act_intro.y_q12-map_window_camera_base_q12))return;
@@ -63,6 +65,7 @@ void App::close_map_window(bool animate){
     pointer_cancel();hit_count=0;
 }
 void App::sync_map_window(){
+    struct DrawingSync {App&a;~DrawingSync(){a.sync_map_drawing();}} drawing_sync{*this};
     sync_map_act_intro();
     if(map_window.closing()){
         const uint32_t elapsed=uint32_t(map_clock_ms-map_window.start);

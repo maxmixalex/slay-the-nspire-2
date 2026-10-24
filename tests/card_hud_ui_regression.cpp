@@ -172,8 +172,8 @@ static void card_cache_pixels(){
 static void focused_card_scale(){
     Canvas c{app};static HandTile transparent;transparent.playable=true;
     struct Example {HandPose pose;int left,top,right,bottom;};
-    const Example examples[]={{{160,120,512,0,1024},143,94,179,144},{{160,120,672,0,1024},138,86,184,151},
-        {{160,120,1024,0,1024},126,68,198,168},{{160,120,1024,1024,0},112,86,212,158}};
+    const Example examples[]={{{160,120,512,0,1024},142,95,177,144},{{160,120,672,0,1024},137,87,183,152},
+        {{160,120,1024,0,1024},124,70,195,169},{{160,120,1024,1024,0},111,84,210,155}};
     for(const auto&example:examples){
         clear();draw_hand_tile(c,transparent,example.pose,true);int left=320,top=240,right=-1,bottom=-1;unsigned count=0;
         for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(app.pixels[y*320+x]!=0x0321){CHECK(app.pixels[y*320+x]==Gold);++count;left=mn(left,x);right=mx(right,x);top=mn(top,y);bottom=mx(bottom,y);}

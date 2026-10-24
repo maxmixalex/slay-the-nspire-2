@@ -3,6 +3,7 @@
 #include "original_events.hpp"
 #include "world_run.hpp"
 #include "reference_sort.hpp"
+#include "run_options.hpp"
 
 namespace spire {
 #include "world_relic_definitions.inc"
@@ -265,10 +266,10 @@ bool world_relic_setup_offer(State& s,RelicId id,int value){return world_relic_p
 namespace {
 void w_forget_prepared(State& s,RelicId id){auto& w=s.world_relics;for(unsigned i=0;i<w.prepared_count;i++)if(w.prepared[i].id==id){for(unsigned j=i+1;j<w.prepared_count;j++)w.prepared[j-1]=w.prepared[j];w.prepared[--w.prepared_count]={};return;}}
 WorldRelicCardSnapshot w_snapshot(const State& s,unsigned i){return {uint16_t(card_token(s.deck[i])),s.defect.genetic_deck[i],s.necro.scythe_deck[i],s.event_cards.deck[i]};}
-int w_restore_card(State& s,const WorldRelicCardSnapshot& snap,bool upgrade=false){EventDeckSnapshot card{card_from_token(snap.token),snap.facts,snap.genetic,snap.scythe};if(upgrade&&card_upgradeable(card.card))card.card.upgraded=1;
+int w_restore_card(State& s,const WorldRelicCardSnapshot& snap,bool upgrade=false,bool cloned=false){EventDeckSnapshot card{card_from_token(snap.token),snap.facts,snap.genetic,snap.scythe};if(upgrade&&card_upgradeable(card.card))card.card.upgraded=1;
  if(!world_relic_modify_deck_card(s,card.card,card.facts))return -1;
- int idx=event_restore_deck_card(s,card);if(idx>=0){record(s,LogKind::Reward,card.card.kind,card.card.upgraded);world_relic_hook(s,WorldRelicHook::AfterDeckAdded,idx);}return idx;}
-bool w_queue_card(State&s,const WorldRelicCardSnapshot&card,unsigned owner=0){if(!w_enqueue(s,WorldRelicOp::RestoreCard,owner))return false;s.world_relics.steps[s.world_relics.step_cursor].card=card;return true;}
+ int idx=event_restore_deck_card(s,card);if(idx>=0){record(s,LogKind::Reward,card.card.kind,card.card.upgraded);event_deck_acquired(s,idx,cloned);}return s.phase==Phase::Error?-1:idx;}
+bool w_queue_card(State&s,const WorldRelicCardSnapshot&card,unsigned owner=0,bool cloned=false){if(!w_enqueue(s,WorldRelicOp::RestoreCard,owner,cloned?1:0))return false;s.world_relics.steps[s.world_relics.step_cursor].card=card;return true;}
 #include "world_relic_transform.inc"
 bool w_transform(State& s,unsigned idx,reference::Random& rng,CardKind replacement=CardKinds,bool upgrade=false,unsigned carry=0){
  WorldRelicCardSnapshot card;if(!w_transform_card(s,idx,rng,replacement,upgrade,carry,card))return false;
@@ -318,7 +319,15 @@ bool w_reward_cards(State& s,unsigned group,const WorldCardOptions& o,unsigned n
  r->count=uint8_t(n);for(unsigned i=0;i<n;i++){r->tokens[i]=uint16_t(card_token(cards[i]));r->facts[i]=facts[i];}w_store_options(*r,o);
  if(w_first(s,WorldRelicDriftwood,true)>=0)r->flags|=16;return true;
 }
-void w_schedule_group(State& s,unsigned group){if(group){if(w_first(s,WorldRelicDriftwood,true)>=0)for(auto&r:s.world_relics.rewards)if(r.group==group&&r.kind==1&&!(r.flags&4))r.flags|=16;w_enqueue(s,WorldRelicOp::RewardGroup,s.world_relics.group_owner[group-1],int(group));}}
+void w_schedule_group(State& s,unsigned group,bool combat_set=false){if(group){
+ const bool vintage=combat_set&&world_room_type(s)==unsigned(WorldRoom::Monster)&&has_run_modifier(s,RunModifier::Vintage);
+ for(auto&r:s.world_relics.rewards)if(r.group==group){
+  if(has_run_modifier(s,RunModifier::Midas)&&r.kind==4)r.value=uint16_t(w_min(65535,int(r.value)*2));
+  if(vintage&&r.kind==1){const RelicId relic=random_world_relic(s);r=WorldRelicReward{};r.group=uint8_t(group);r.kind=2;r.value=relic;}
+  if(w_first(s,WorldRelicDriftwood,true)>=0&&r.kind==1&&!(r.flags&4))r.flags|=16;
+ }
+ w_enqueue(s,WorldRelicOp::RewardGroup,s.world_relics.group_owner[group-1],int(group));
+}}
 void w_group_show(State& s,unsigned group){auto& w=s.world_relics;if(!group||group>w.group_count||!w.group_active[group-1])return;w.offer_count=0;
  for(unsigned i=0;i<w.reward_count;i++)if(w.rewards[i].group==group&&!(w.rewards[i].flags&1))w.offers[w.offer_count++]=uint16_t(i);
  reference::comparison_sort(w.offers,w.offer_count,[&w](uint16_t index){const unsigned ranks[]={0,5,3,2,1,4,7};return ranks[w.rewards[index].kind];});
@@ -491,7 +500,7 @@ void w_step(State& s,const WorldRelicStep& step){auto& w=s.world_relics;switch(s
  case WorldRelicOp::TransformAppend:w_transform_append(s,step.owner);break;
  case WorldRelicOp::Gold:gain_gold(s,step.a);break;
  case WorldRelicOp::AddCard:if(step.a<0||step.a>=CardKinds||step.b<0||step.b>int(MaxDeck)){w_error(s);return;}if(step.b){if(step.b>1)w_enqueue(s,WorldRelicOp::AddCard,step.owner,step.a,step.b-1,step.c);if(event_add_deck_card(s,{CardKind(step.a),uint8_t(step.c&&card_upgradeable({CardKind(step.a),0}))})<0)w_error(s);}break;
- case WorldRelicOp::RestoreCard:if(w_restore_card(s,step.card)<0)w_error(s);break;
+ case WorldRelicOp::RestoreCard:if(w_restore_card(s,step.card,false,step.a!=0)<0)w_error(s);break;
  case WorldRelicOp::ApplyChoice:{unsigned at=unsigned(step.b),filter=unsigned(step.c)&255;if(at>=s.deck_count){w_error(s);return;}switch(WorldRelicChoice(step.a)){
   case WorldRelicChoice::Remove:if(!event_remove_deck_card(s,int(at)))w_error(s);break;
   case WorldRelicChoice::Upgrade:if(card_upgradeable(s.deck[at])){s.deck[at].upgraded=1;record(s,LogKind::Upgrade,s.deck[at].kind);}break;
@@ -552,7 +561,7 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
  for(unsigned remaining=count;remaining>0;remaining--){unsigned i=remaining-1;
   unsigned at=selected[i];if(choice==WorldRelicChoice::Remove||choice==WorldRelicChoice::Transform)for(unsigned j=0;j<i;j++)if(selected[j]<selected[i])--at;
   if(at>=s.deck_count){w_error(s);return;}
-  if(choice==WorldRelicChoice::Duplicate){if(!w_queue_card(s,w_snapshot(s,selected[i]),serial))return;}
+  if(choice==WorldRelicChoice::Duplicate){if(!w_queue_card(s,w_snapshot(s,selected[i]),serial,true))return;}
   else{if(!w_enqueue(s,WorldRelicOp::ApplyChoice,serial,int(choice),int(at),int(filter)|(owner_id==WorldRelicAstrolabe?256:0)))return;
    if(choice==WorldRelicChoice::Enchant){auto&f=w.steps[w.step_cursor].card.facts;f.enchantment=w.choice_enchantment;f.enchantment_amount=w.choice_amount;}}
  }

@@ -208,7 +208,9 @@ bool world_relic_combat_rewards(State& s){
  for(unsigned i=0;i<count;++i){bool first=true;for(unsigned j=0;j<i;++j)if(extras[j].serial==extras[i].serial)first=false;if(!first)continue;
   int at=world_relic_instance_index(s,extras[i].serial);if(at>=0){auto& r=s.world_relics.entries[at];if(r.id==WorldRelicWongosMysteryTicket)r.values[1]=1;world_relic_flash(s,r.id);}
  }
- w_schedule_group(s,group);w_pump(s);return cards;
+ w_schedule_group(s,group,true);cards=false;
+ for(const auto&r:s.world_relics.rewards)if(r.group==group&&r.kind==1)cards=true;
+ w_pump(s);return cards;
 }
 
 void world_relic_rest_rewards(State& s){

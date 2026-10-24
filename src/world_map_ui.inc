@@ -146,6 +146,7 @@ static void map_legend_screen(Canvas&c,const MapColors&colors,int offset_x=0){
 static uint8_t map_window_product(unsigned byte,unsigned q12){
     return uint8_t((byte*q12+2048)/4096);
 }
+#include "world_map_drawing_ui.inc"
 static bool map_history_key(const char*a,const char*b){unsigned i=0;while(a[i]&&a[i]==b[i])++i;return a[i]==b[i];}
 static LocalizedValue map_history_number(const void*context,const char*key){
     const auto&h=*static_cast<const UiFloorHistory*>(context);
@@ -217,7 +218,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     WorldMapView view=a.map_view(layout);a.map_scroll=view.scroll;
     const unsigned region=s.world.rooms[s.world.act_index].region;const MapColors colors=map_colors(region);
     const int legend_offset=window?map_source_offset(window->legend_x_q12):0;
-    if(a.pointer.visible&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help){
+    if(a.pointer.visible&&a.map_drawing.mode==MapDrawingMode::None&&!a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help){
         const int hovered=map_legend_hover(a,legend_offset);a.map_legend=hovered>=0;
         if(hovered>=0)a.map_legend_item=uint8_t(hovered);
     }
@@ -246,12 +247,12 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
             a.pointer.y>=mx(WorldMapTop,y-hit_size/2)&&a.pointer.y<mn(WorldMapBottom,y+hit_size/2);
         // NMapPoint.OnFocus exposes actual history only for a traveled,
         // non-current point, and explicitly excludes directional navigation.
-        if(hover&&!a.map_directional&&!traveling&&i!=s.world.current_point&&a.map_visuals.traveled(s,i)&&
+        if(hover&&a.map_drawing.mode==MapDrawingMode::None&&!a.map_directional&&!traveling&&i!=s.world.current_point&&a.map_visuals.traveled(s,i)&&
            !a.paused&&!a.settings_open&&!a.frontend_confirm&&!a.help&&!a.map_legend&&(!a.panel||a.panel==3)&&
            (!window||a.map_window.is_open)&&a.current_floor_history(s.world.act_index,i)){
             history_point=i;history_x=x;history_y=y;
         }
-        const bool focused=target||(allowed&&!inspect&&!a.map_legend&&
+        const bool focused=target||(allowed&&a.map_drawing.mode==MapDrawingMode::None&&!inspect&&!a.map_legend&&
             (a.map_directional?p.col==a.cursor:hover));
         const int reticle_height=p.type==reference::PointType::Boss?306:p.type==reference::PointType::Start?208:84;
         int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;
@@ -266,9 +267,10 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
         // The scene's SelectionReticle follows the complete icon/quest tree.
         map_reticle(points,i,x,y,p.type==reference::PointType::Boss?374:p.type==reference::PointType::Start?240:84,
                     reticle_height,p.type==reference::PointType::Boss&&m->config.second_boss);
-        if(allowed&&!inspect&&!a.map_legend){const int size=p.type==reference::PointType::Boss?mn(82,2*half):p.type==reference::PointType::Start?48:30;
+        if(allowed&&a.map_drawing.mode==MapDrawingMode::None&&!inspect&&!a.map_legend){const int size=p.type==reference::PointType::Boss?mn(82,2*half):p.type==reference::PointType::Start?48:30;
             const int top=mx(WorldMapTop,y-size/2),bottom=mn(WorldMapBottom,y+size/2);if(bottom-top>=15)points.hit(x-size/2,top,size,bottom-top,HitKind::WorldNode,int(i));}
     }
+    map_drawing_ink(c,view);
     const auto marker=a.map_visuals.marker(a.map_clock_ms);
     if(marker.point<m->count){const unsigned id=marker.point;const auto&p=m->points[id];
         // A 16-pixel character marker is the readability adaptation of the
@@ -292,6 +294,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     if(window){legend.opacity=map_window_product(legend.opacity,window->legend.alpha);
         legend.brightness=map_window_product(legend.brightness,window->legend.rgb);}
     map_legend_screen(legend,colors,legend_offset);
+    map_drawing_tools(parent,window);
     if(history_point<m->count)map_history_tip(parent,*m,history_point,history_x,history_y);
 }
 

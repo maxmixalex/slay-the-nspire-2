@@ -350,6 +350,8 @@ extern "C" int main(int argc,char**argv){
             previous=p;for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
         }
         uint32_t edge=p&~previous;
+        const uint32_t released=previous&~p;
+        for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);++i)if(released&(1u<<i))app.map_drawing_key_release(keys[i]);
         for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
         if(app.library&&!app.library_tab&&app.library_search_editing)
             spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});

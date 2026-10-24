@@ -75,11 +75,26 @@ bool event_card_enchant(State&s,int deck,EventEnchantment e,int amount){
  if(!event_card_apply_enchantment(s.deck[deck],s.event_cards.deck[deck],e,amount))return false;
  ++s.revision;return true;
 }
-int event_add_deck_card(State&s,Card c,const EventCardFacts*facts){
+void event_deck_acquired(State&s,int index,bool cloned){
+ if(index<0||index>=s.deck_count)return;
+ world_relic_hook(s,WorldRelicHook::AfterDeckAdded,index,0,cloned?-1:0);
+ if(cloned||!s.world.active||!has_run_modifier(s,RunModifier::Hoarder))return;
+ if(s.deck_count+2>MaxDeck){fail(s);return;}
+ const EventDeckSnapshot original{s.deck[index],s.event_cards.deck[index],s.defect.genetic_deck[index],s.necro.scythe_deck[index]};
+ for(unsigned copy=0;copy<2;++copy){
+  const int added=event_restore_deck_card(s,original);if(added<0){fail(s);return;}
+  record(s,LogKind::Reward,original.card.kind,original.card.upgraded);
+  // Every source clone supplies clonedBy, so BingBong and Hoarder both stop
+  // here while the ordinary acquisition listeners still see each new card.
+  world_relic_hook(s,WorldRelicHook::AfterDeckAdded,added,0,-1);
+ }
+}
+int event_add_deck_card(State&s,Card c,const EventCardFacts*facts,bool cloned){
  if(c.kind>=CardKinds||c.upgraded>1||s.deck_count>=MaxDeck)return -1;
+ if(!cloned&&s.world.active&&has_run_modifier(s,RunModifier::Hoarder)&&s.deck_count+3>MaxDeck)return -1;
  EventCardFacts added=facts?*facts:ec_default(c);if(!world_relic_modify_deck_card(s,c,added))return -1;
  int index=s.deck_count++;s.deck[index]=c;notify_deck_replaced(s,index);s.event_cards.deck[index]=added;
- record(s,LogKind::Reward,c.kind,c.upgraded);world_relic_hook(s,WorldRelicHook::AfterDeckAdded,index);return index;
+ record(s,LogKind::Reward,c.kind,c.upgraded);event_deck_acquired(s,index,cloned);return s.phase==Phase::Error?-1:index;
 }
 static bool ec_remove_deck(State&s,int index,bool hooks,bool log=true){
  if(index<0||index>=s.deck_count)return false;Card removed=s.deck[index];
@@ -89,13 +104,14 @@ static bool ec_remove_deck(State&s,int index,bool hooks,bool log=true){
 bool event_remove_deck_card(State&s,int index){return index>=0&&index<s.deck_count&&card_removable(s,s.deck[index],index)&&ec_remove_deck(s,index,true);}
 bool event_replace_deck_card(State&s,int index,Card c,const EventCardFacts*facts){
  if(index<0||index>=s.deck_count||c.kind>=CardKinds||c.upgraded>1||!card_transformable(s,s.deck[index],index))return false;
+ if(s.world.active&&has_run_modifier(s,RunModifier::Hoarder)&&s.deck_count+2>MaxDeck)return false;
  // CardCmd.Transform removes the original before applying deck modifiers,
  // then appends the replacement. Removal is internal, not a remove-card hook.
  EventCardFacts added=facts?*facts:ec_default(c);const Card old=s.deck[index];
  if(!ec_remove_deck(s,index,false,false))return false;
  if(!world_relic_modify_deck_card(s,c,added)){fail(s);return false;}
  const int appended=s.deck_count++;s.deck[appended]=c;notify_deck_replaced(s,appended);s.event_cards.deck[appended]=added;
- record(s,LogKind::Transform,old.kind,c.kind);world_relic_hook(s,WorldRelicHook::AfterDeckAdded,appended);return true;
+ record(s,LogKind::Transform,old.kind,c.kind);event_deck_acquired(s,appended);return s.phase!=Phase::Error;
 }
 bool event_take_deck_card(State&s,int index,EventDeckSnapshot&snap){
  if(index<0||index>=s.deck_count)return false;snap={s.deck[index],s.event_cards.deck[index],s.defect.genetic_deck[index],s.necro.scythe_deck[index]};return ec_remove_deck(s,index,false);

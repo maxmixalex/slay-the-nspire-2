@@ -1,27 +1,51 @@
 #pragma once
 #include "core.hpp"
 namespace spire {
-// Integer-only presentation geometry. Q10 scales/angles are deliberately
-// independent of the gameplay seed and clock. Cards keep a stable lower rail
-// while their focused preview is raised above it.
+// Card face coordinates, separate from transparent cache padding. The
+// original300x422 frame is centered on its holder; a padded tile must not
+// move that pivot or enlarge its mouse hitbox.
 struct HandPose {int cx,cy,scale,sine,cosine;};
-inline HandPose hand_pose(int count,int index,bool focused){
+constexpr int HandTileW=80,HandTileH=112,HandFaceX=8,HandFaceY=6,HandFaceW=69,HandFaceH=97;
+constexpr int HandPivotX=(HandFaceX*2+HandFaceW)*512,HandPivotY=(HandFaceY*2+HandFaceH)*512;
+constexpr int HandFocusScale=(300*4*1024+21*HandFaceW/2)/(21*HandFaceW);
+inline int hand_project(int source){return (source*4+10)/21;}
+inline HandPose hand_pose(int count,int index,bool focused,int focus=-1){
     if(count<1)count=1;if(count>MaxHand)count=MaxHand;
     if(index<0)index=0;if(index>=count)index=count-1;
-    int step=count>1?162/(count-1):0;if(step>40)step=40;
-    int cx=160-(count-1)*step/2+index*step;
-    int lane=2*index-(count-1),sine=lane*18;
-    if(focused)return {cx<95?95:cx>211?211:cx,178,1024,0,1024};
-    return {cx,210+lane*lane/10,672,sine,1024-sine*sine/2048};
+    struct Point {int16_t x,y,sine,cosine;};
+    static constexpr Point points[]={
+#include "combat_hand_positions.inc"
+    };
+    static_assert(sizeof points/sizeof points[0]==MaxHand*(MaxHand+1)/2,"Every hand size needs its authored fan");
+    const auto p=points[count*(count-1)/2+index];int x=p.x;
+    // RefreshLayout pushes each of the three nearest neighbours away from
+    // the hovered card. The focused holder keeps its authored horizontal slot.
+    if(focus>=0&&focus<count&&focus!=index){int distance=focus>index?focus-index:index-focus;
+        if(distance<4)x+=(index<focus?-1:1)*(100-distance*25);}
+    if(focused)return {hand_project(840+x),hand_project(1260-211+2),HandFocusScale,0,1024};
+    const int percent=count>=8?80*(100-(count-7)*5):8000;
+    const int scale=(HandFocusScale*percent+5000)/10000;
+    return {hand_project(840+x),hand_project(1260+p.y),scale,p.sine,p.cosine};
 }
-struct HandRail {int x,y,w,h;};
-inline HandRail hand_rail(int count,int index){
-    auto p=hand_pose(count,index,false);
-    int left=index?(hand_pose(count,index-1,false).cx+p.cx)/2:p.cx-28;
-    int right=index+1<count?(hand_pose(count,index+1,false).cx+p.cx)/2:p.cx+28;
-    return {left,190,right-left,50};
+inline HandPose hand_selected_pose(){
+    // NCardPlay.CenterCard: viewport bottom minus half of the .75-scale
+    //422px hitbox, with the holder's ordinary position/scale interpolation.
+    return {160,(1260*16-422*6+42)/84,(HandFocusScale*3+2)/4,0,1024};
 }
-constexpr int HandTileW=80,HandTileH=112;
+struct HandRect {int x,y,w,h;};
+inline HandRect hand_bounds(HandPose p){
+    const int sn=p.sine<0?-p.sine:p.sine,cs=p.cosine<0?-p.cosine:p.cosine;
+    const int half_w=((cs*HandFaceW+sn*HandFaceH)*p.scale+2097151)/2097152;
+    const int half_h=((sn*HandFaceW+cs*HandFaceH)*p.scale+2097151)/2097152;
+    return {p.cx-half_w,p.cy-half_h,half_w*2,half_h*2};
+}
+inline bool hand_contains(HandPose p,int x,int y){
+    if(p.scale<=0)return false;
+    const int64_t dx=x-p.cx,dy=y-p.cy;
+    const int64_t u=2*(dx*p.cosine+dy*p.sine),v=2*(-dx*p.sine+dy*p.cosine);
+    return u>=-int64_t(HandFaceW)*p.scale&&u<int64_t(HandFaceW)*p.scale&&
+           v>=-int64_t(HandFaceH)*p.scale&&v<int64_t(HandFaceH)*p.scale;
+}
 // Original merchant_room.tscn uses one scene transform for background,
 // merchant and the relaxed player. 1920x1080 is uniformly covered by the
 // 320x218 room below the top bar, never fitted separately per skeleton.
@@ -204,8 +228,12 @@ inline CreaturePose project_creature_pose(EncounterCamera camera,CombatSceneLayo
  p.scale=combat_project_extent(camera,layout,sprite_units,visual_scale,1024);
  if(p.scale<1)p.scale=1;
  p.intent_x=xx(anchors.intent_x);p.intent=sy(anchors.intent_y,bounds_scale)-8;if(p.intent<25)p.intent=25;
- // The compact health/status adapter retains its readable patch heights.
- p.hp=p.feet+7;p.status=p.feet+24;return p;
+ // creature.tscn's7px health offset and StateDisplay's additional18px
+ // power offset are source pixels. Preserve their order while retaining
+ // the compact renderer's6px readable bar and an unobstructed status row.
+ int health_offset=combat_project_extent(camera,layout,7);if(health_offset<1)health_offset=1;
+ p.hp=p.feet+health_offset;p.status=p.feet+combat_project_extent(camera,layout,25);
+ if(p.status<p.hp+9)p.status=p.hp+9;return p;
 }
 inline CreaturePose player_pose(const State&s,CombatSceneLayout layout,bool pet=false){
  if(!s.enemy_world.active){auto p=legacy_creature_pose({pet?112:60,pet?123:124,pet?34:62,1024,50,pet?131:129,149});return p;}

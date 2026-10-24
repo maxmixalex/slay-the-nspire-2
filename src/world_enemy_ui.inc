@@ -175,8 +175,12 @@ void App::sync_enemy_feedback(){
   const auto bounds=player_anchors(game.character);const int hp=health_bar::bounded(pet.max_hp,0,150);
   const int x=player_formation_point(game,camera.zoom).x+((bounds.right-bounds.left)/2+150)*camera.zoom+100*camera.zoom*hp/150;
   uint32_t cue=animation*33u;
-  if(pet.hp<=0&&osty_presentation.alive&&osty_motion.clip==AnimOstyDie){
-   const auto clip=content.clip(AnimOstyDie);const uint32_t end=osty_motion.start*33u+uint32_t(clip.count)*clip.frame_ms+500u;
+  if(pet.hp<=0&&osty_presentation.alive){
+   // Core observers can synchronize this health cue before the ordinary
+   // character render chooses its Dead track. The same visible death edge
+   // still owns the full animation-plus500ms wait in AnimDie.
+   const auto clip=content.clip(AnimOstyDie);const uint32_t began=osty_motion.clip==AnimOstyDie?osty_motion.start*33u:animation*33u;
+   const uint32_t end=began+uint32_t(clip.count)*clip.frame_ms+500u;
    if(int32_t(end-cue)>0)cue=end;
   }
   osty_presentation.observe(animation*33u,pet.max_hp,pet.hp>0,x,cue);

@@ -30,7 +30,19 @@ enum HistoryUi8Asset {
  I8_ModifierNightTerrors,
  I8_ModifierTerminal,
  I8_EmptyOrb,
+ I8_MapDraw,
+ I8_MapDrawGlow,
+ I8_MapErase,
+ I8_MapEraseGlow,
+ I8_MapClear,
+ I8_MapClearGlow,
+ I8_MapCursorDraw,
+ I8_MapCursorDrawTilted,
+ I8_MapCursorErase,
+ I8_MapCursorEraseTilted,
+ I8_MapDrawTrail,
+ I8_MapEraseTrail,
  HistoryUi8AuxiliaryCount
 };
-static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&HistoryUi8AuxiliaryCount==1972,"Original history and modifier layer order");
+static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&HistoryUi8AuxiliaryCount==1984,"Original history, modifier and map drawing layer order");
 }

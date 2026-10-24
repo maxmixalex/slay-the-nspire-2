@@ -34,7 +34,7 @@ bool App::start_selected_run(const RunOptions&options){
     if(!practice_entry){
         game.run_options=options;
         if(*canonical&&!world_set_seed(game,canonical)){message("种子无效");return false;}
-        if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始远征");return false;}
+        if(!world_begin_run(game,selected_region,selected_ascension)){message("无法开始游戏");return false;}
     }
     character_select=run_settings=false;run_mode={};title=false;reset_presentation();begin_progress();
     if(game.world.active){map_visuals.bind(game,map_clock_ms);if(const auto*map=world_current_map(game))map_visuals.initial_marker(map->root,map_clock_ms);}
@@ -85,10 +85,11 @@ bool App::run_modes_input(Key key){
     if(run_mode.screen==RunMenu::Daily){if(key==Key::Up||key==Key::Down)progress_page_scroll.wheel(key==Key::Up?-4:4);return true;}
     auto&focus=run_mode.focus;if(focus<0)focus=0;
     if(key==Key::Map)focus=9;
-    else if(key==Key::Right){if(focus<4)++focus;else if(focus<9)focus=9;}
-    else if(key==Key::Left){if(focus>=9)focus=8;else if(focus>0)--focus;}
-    else if(key==Key::Up){if(focus>=10)--focus;else if(focus==9)focus=8;else if(focus>=5)focus-=5;}
-    else if(key==Key::Down){if(focus>=9){if(focus<int(9+RunModifierKinds)-1)++focus;}else if(focus<5)focus=7;else focus=9;}
+    else if(key==Key::Right){if(focus<4)++focus;else if(focus==5)focus=6;else if(focus<9)focus=9;}
+    else if(key==Key::Left){if(focus>=8)focus=7;else if(focus==6)focus=5;else if(focus>0&&focus<5)--focus;}
+    else if(key==Key::Up){if(focus>=10)--focus;else if(focus==9||focus==7)focus=8;else if(focus==5||focus==6)focus=7;else if(focus<5)focus=focus<3?5:6;}
+    else if(key==Key::Down){if(focus>=9){if(focus<int(9+RunModifierKinds)-1)++focus;}else if(focus==8)focus=9;else if(focus==7)focus=5;
+        else if(focus==5||focus==6){for(unsigned i=0;i<CharacterKinds;++i)if(RunModeCharacters[i]==selected_character)focus=int16_t(i);}}
     else if(key==Key::Confirm){
         const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectRegent,UiAction::SelectNecrobinder,UiAction::SelectDefect,
             UiAction::RunAscensionDown,UiAction::RunAscensionUp,UiAction::RunSeed,UiAction::RandomizeRun};

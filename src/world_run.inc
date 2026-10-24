@@ -134,7 +134,7 @@ bool world_begin_run(State&s,reference::ActKind first_region,unsigned ascension)
     s.world.active=1;s.world.ascension=uint8_t(ascension);s.world.act_index=0;
     world_rng(s,WorldRng::UpFront);init_world_relics(s);original_event_new_run(s);
     s.potion_slots=uint8_t(ascension>=4?2:3);
-    if(ascension>=5&&event_add_deck_card(s,{EventCardAscendersBane,0})<0)return world_fail(s);
+    if(ascension>=5&&event_add_deck_card(s,{EventCardAscendersBane,0},nullptr,true)<0)return world_fail(s);
     if(s.phase==Phase::Error||!world_make_room_sets(s,unsigned(first_region)))return false;
     if(has_run_modifier(s,RunModifier::DeadlyEvents))world_remove_relic_from_bags(s,WorldRelicJuzuBracelet);
     if(s.run_options.modifiers&RunExclusiveDeckModifiers){

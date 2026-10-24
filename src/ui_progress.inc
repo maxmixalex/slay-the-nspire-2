@@ -38,6 +38,7 @@ void App::begin_progress(bool resumed){
         progress_seen_phase=255;progress_seen_revision=0;sync_progress();return;
     }
     auto&r=progress.current;progress_clear_run(r);
+    progress.map_drawing.count=0;map_drawing.cancel();
     r.serial=progress.next_serial++;if(!progress.next_serial)progress.next_serial=1;
     r.seed=game.seed;r.run_seed=game.world.run_seed;r.character=unsigned(game.character);r.ascension=game.world.ascension;
     r.mode=unsigned(game.run_options.mode);r.modifiers=game.run_options.modifiers;r.daily_day=game.run_options.daily_day;r.modifier_order=game.run_options.setup_flags&2;

@@ -26,7 +26,10 @@ struct CombatOrbPresentation {
  void layout(unsigned count,uint32_t now){
   if(count>MaxOrbs)count=MaxOrbs;
   if(bound&&slots==count)return;
-  for(unsigned i=0;i<count;++i)items[i].from=bound&&i<slots?position(i,now):OrbSourcePoint{};
+  for(unsigned i=0;i<count;++i){
+   if(bound&&i<slots)items[i].from=position(i,now);
+   else{items[i]={};items[i].born=now;}
+  }
   slots=uint8_t(count);started=now;bound=true;
  }
  void model(unsigned index,unsigned kind,uint32_t now){

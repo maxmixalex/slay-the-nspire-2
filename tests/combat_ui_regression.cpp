@@ -22,8 +22,13 @@ static void setup(int count){
     for(int i=0;i<count;i++){s.deck[s.deck_count++]={i%2?Defend:Strike,0};s.cards[s.card_count]=s.deck[i];s.zones[s.card_count]=Zone::Hand;s.hand.ids[s.hand.count++]=s.card_count++;}
     a.title=a.library=a.paused=a.help=a.character_select=a.map_preview.open=false;a.reset_presentation();CHECK(validate(s));await_combat();
 }
-static HitRegion rail(int index){
-    for(int i=0;i<a.hit_count;i++){auto h=a.hits[i];if(h.kind==HitKind::Hand&&h.value==a.game.hand.ids[index]&&h.y+h.h==240)return h;}
+static HitRegion card_point(int index){
+    const auto hand=a.combat_hand();CHECK(index>=0&&index<hand.count);const int id=hand.ids[index];
+    // Pick an actually exposed point, respecting rotated overlap and the
+    // topmost hovered face. This is a real pointer path, not a fixed rail.
+    for(int row=0;row<50;++row){const int y=239-row;
+        for(int x=0;x<320;++x){const auto*h=a.hit_at(x,y);if(h&&h->kind==HitKind::Hand&&h->value==id)
+            return {int16_t(x),int16_t(y),1,1,h->kind,h->value,h->enabled};}}
     CHECK(false);return {};
 }
 static HitRegion command(HitKind kind,int value){
@@ -39,13 +44,15 @@ static void layouts(){
         auto left=hand_pose(count,0,false),right=hand_pose(count,count-1,false);
         CHECK(left.cx+right.cx>=319&&left.cx+right.cx<=321);
         for(int i=0;i<count;i++){
-            auto r=rail(i);CHECK(r.w>=16&&r.h>=25&&r.x>=0&&r.x+r.w<=320);
-            int x=r.x+r.w/2;
-            a.pointer_move(x,224);a.render();CHECK(a.cursor==i);
-            auto h=a.hit_at(x,224);CHECK(h&&h->kind==HitKind::Hand&&h->value==a.game.hand.ids[i]);same(before);
-            auto p=hand_pose(count,i,true);CHECK(p.cx-HandTileW/2>48&&p.cx+HandTileW/2<254);
-            // Repeated same-position hover must not oscillate the selected card.
-            for(int k=0;k<4;k++){a.pointer_move(x,224);a.tick();a.render();CHECK(a.cursor==i);}same(before);
+            a.pointer_move(160,40);a.render();auto r=card_point(i);
+            a.pointer_move(r.x,r.y);a.render();CHECK(a.cursor==i);
+            auto p=a.combat_hand_pose(unsigned(i),true);const auto bounds=hand_bounds(p);
+            CHECK(bounds.x>=0&&bounds.x+bounds.w<=320&&p.cy==200&&p.scale==848);
+            // Move inside the actual focused face; its new X target does not
+            // steal a neighbour's exposed corner or invent a bottom rail.
+            const int x=p.cx,y=205;a.pointer_move(x,y);a.render();
+            auto h=a.hit_at(x,y);CHECK(h&&h->kind==HitKind::Hand&&h->value==a.game.hand.ids[i]);same(before);
+            for(int k=0;k<4;k++){a.pointer_move(x,y);a.tick();a.render();CHECK(a.cursor==i);}same(before);
         }
         auto end=command(HitKind::Command,(int)Key::EndTurn),draw=command(HitKind::OpenPile,1),discard=command(HitKind::OpenPile,2);
         CHECK(end.x>=250&&draw.x<40&&discard.x>280);
@@ -55,16 +62,16 @@ static void layouts(){
     }
 }
 static void input_safety(){
-    setup(5);auto before=snap();auto r=rail(0);a.pointer_move(r.x+r.w/2,224);a.pointer_button(true);
+    setup(5);auto before=snap();auto r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);
     a.input(Key::Inspect);a.pointer_button(false);CHECK(a.panel==1);same(before);a.input(Key::Back);a.render();
     // A real attack drag from the new hand still captures an instance, not index.
-    r=rail(0);a.pointer_move(r.x+r.w/2,224);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
+    r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.enemies[0].hp==40&&a.game.energy==98);CHECK(validate(a.game));
-    setup(5);r=rail(1);a.pointer_move(r.x+r.w/2,224);a.pointer_button(true);a.pointer_move(130,65);a.pointer_button(false);
+    setup(5);r=card_point(1);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(130,65);a.pointer_button(false);
     CHECK(a.game.hand.count==4&&a.game.block==5);CHECK(validate(a.game));
-    setup(5);a.game.energy=0;a.render();before=snap();click(rail(0));CHECK(a.pointer.armed_card<0);same(before);
+    setup(5);a.game.energy=0;a.render();before=snap();click(card_point(0));CHECK(a.pointer.armed_card<0);same(before);
     // No card may play by releasing a drag over a new modal.
-    setup(5);before=snap();r=rail(0);a.pointer_move(r.x+r.w/2,224);a.pointer_button(true);a.input(Key::Back);a.pointer_move(238,82);a.pointer_button(false);
+    setup(5);before=snap();r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.input(Key::Back);a.pointer_move(238,82);a.pointer_button(false);
     CHECK(a.paused);same(before);
 }
 static void rendering(const std::vector<uint8_t>&data){
@@ -74,20 +81,21 @@ static void rendering(const std::vector<uint8_t>&data){
     // Artwork cache must not retain a stale dynamic cost/block description.
     a.game.dexterity=7;a.render();CHECK(std::memcmp(cold.data(),a.pixels,cold.size()*2)!=0);
     a.game.dexterity=0;a.render();CHECK(!std::memcmp(cold.data(),a.pixels,cold.size()*2));
-    auto r=rail(9);click(r);a.input(Key::Detail);CHECK(a.detail_card>=0);a.render();
+    auto r=card_point(9);click(r);a.input(Key::Detail);CHECK(a.detail_card>=0);a.render();
     for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
     a.input(Key::Back);CHECK(a.detail_card<0);
 }
 static int raised_hits(){
-    int n=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Hand&&a.hits[i].h==68)++n;return n;
+    if(!a.hand_focus)return 0;const auto hand=a.combat_hand();if(a.cursor<0||a.cursor>=hand.count)return 0;
+    int n=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Hand&&a.hits[i].value==hand.ids[a.cursor]&&a.hits[i].y<180)++n;return n;
 }
 static void focus_transitions(){
     for(int count=1;count<=10;count++){
         setup(count);auto before=snap();CHECK(!a.hand_focus&&raised_hits()==0);
-        int selected=count/2;auto r=rail(selected);
-        a.pointer_move(r.x+r.w/2,224);a.render();CHECK(a.hand_focus&&a.cursor==selected&&raised_hits()==1);same(before);
+        int selected=count/2;auto r=card_point(selected);
+        a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.render();CHECK(a.hand_focus&&a.cursor==selected&&raised_hits()==1);same(before);
         auto p=hand_pose(count,selected,true);
-        a.pointer_move(p.cx,p.cy-HandTileH/2+8);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
+        a.pointer_move(p.cx,p.cy-HandFaceH*p.scale/(2*1024)+8);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
         a.pointer_move(238,82);a.render();CHECK(!a.hand_focus&&raised_hits()==0);same(before);
         a.input(Key::Left);a.render();CHECK(a.hand_focus&&raised_hits()==1);same(before);
         a.input(Key::Up);a.render();CHECK(a.hand_focus);same(before);
@@ -96,12 +104,11 @@ static void focus_transitions(){
         a.input(Key::Right);CHECK(a.hand_focus);a.pointer_cancel();a.render();CHECK(!a.hand_focus&&raised_hits()==0);same(before);
         a.input(Key::Right);a.input(Key::Back);a.render();CHECK(a.paused&&!a.hand_focus);same(before);
         a.input(Key::Back);a.render();CHECK(!a.paused&&!a.hand_focus);same(before);
-        // The collapsed upper card face is also reachable, not only its rail.
-        r=rail(selected);p=hand_pose(count,selected,false);
-        a.pointer_move(r.x+r.w/2,p.cy-HandTileH*p.scale/(2*1024)+2);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
+        // The visible face remains reachable after modal focus is cleared.
+        r=card_point(selected);a.pointer_move(r.x,r.y);a.render();CHECK(a.hand_focus&&a.cursor==selected);same(before);
         a.reset_presentation();CHECK(!a.hand_focus);same(before);
     }
-    setup(5);auto r=rail(0);a.pointer_move(r.x+r.w/2,224);a.pointer_button(true);a.pointer_move(238,82);
+    setup(5);auto r=card_point(0);a.pointer_move(r.x+r.w/2,r.y+r.h/2);a.pointer_button(true);a.pointer_move(238,82);
     CHECK(a.hand_focus&&a.pointer.held);a.pointer_button(false);a.render();
     CHECK(!a.hand_focus&&a.game.enemies[0].hp==40&&a.game.hand.count==4);
 }

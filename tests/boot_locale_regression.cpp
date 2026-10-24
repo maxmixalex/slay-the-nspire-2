@@ -44,7 +44,7 @@ int main(){
         std::memcpy(pack.data()+pack.size()-4,"zhs",4);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Chinese);
         probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::Chinese);CHECK(probe.calls==3&&probe.bytes==52);
     }
-    put(pack,4,HudUi7ContentVersion+1);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
+    put(pack,4,HistoryUi8ContentVersion+1);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     probe.calls=probe.bytes=0;CHECK(boot_probe_language(ranged)==BootLanguage::Unknown);CHECK(probe.calls==1&&probe.bytes==40);put(pack,4,19);
     put(pack,row,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);
     put(pack,16,0xffffffffu);CHECK(boot_probe_language(ResourceSource::memory(pack.data(),pack.size()))==BootLanguage::Unknown);

@@ -11,7 +11,8 @@ bool event_card_apply_enchantment(Card&,EventCardFacts&,EventEnchantment,int amo
 bool event_card_facts_valid(Card,const EventCardFacts&);
 bool event_card_enchant(State&,int deck_index,EventEnchantment,int amount);
 const char* event_enchantment_key(EventEnchantment);
-int event_add_deck_card(State&,Card,const EventCardFacts* facts=nullptr);
+int event_add_deck_card(State&,Card,const EventCardFacts* facts=nullptr,bool cloned=false);
+void event_deck_acquired(State&,int deck_index,bool cloned=false);
 bool event_remove_deck_card(State&,int deck_index);
 bool event_replace_deck_card(State&,int deck_index,Card,const EventCardFacts* facts=nullptr);
 bool event_take_deck_card(State&,int deck_index,EventDeckSnapshot&);

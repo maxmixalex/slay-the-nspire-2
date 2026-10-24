@@ -66,7 +66,7 @@ bool world_rest_choose(State& s,unsigned index){
   const unsigned before=s.deck_count;unsigned count=0;for(unsigned i=0;i<before;++i)if(s.event_cards.deck[i].enchantment==EventEnchantment::Clone)++count;
   if(before+count>MaxDeck)return world_fail(s);
   for(unsigned i=0;i<before;++i)if(s.event_cards.deck[i].enchantment==EventEnchantment::Clone){
-   int to=event_add_deck_card(s,s.deck[i],&s.event_cards.deck[i]);if(to<0)return world_fail(s);notify_deck_copied(s,to,int(i));
+   int to=event_add_deck_card(s,s.deck[i],&s.event_cards.deck[i],true);if(to<0)return world_fail(s);notify_deck_copied(s,to,int(i));
   }
   world_relic_flash(s,WorldRelicPaelsGrowth);break;
  }

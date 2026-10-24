@@ -89,7 +89,7 @@ void apply_selection(State&s){auto&e=s.original_events;
   }else if(e.selection==OriginalEventSelection::Relic){if(!gain_world_relic(s,e.offers[selected])){fail(s);return;}}
   else if(e.selection==OriginalEventSelection::Duplicate){
    if(event_restore_deck_card(s,e.selected_cards[cursor])<0){fail(s);return;}
-   world_relic_hook(s,WorldRelicHook::AfterDeckAdded,s.deck_count-1);
+   event_deck_acquired(s,s.deck_count-1,true);
   }else{
    unsigned index=selected;
    if(e.selection==OriginalEventSelection::Remove||e.selection==OriginalEventSelection::Transform)for(unsigned i=0;i<cursor;i++)if(e.selected[i]<selected)--index;

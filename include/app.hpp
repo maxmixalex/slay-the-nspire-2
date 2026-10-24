@@ -448,6 +448,17 @@ struct App {
     void sync_health_bars();
     bool map_legend=false;uint8_t map_legend_item=0;
     bool map_directional=false;
+    MapDrawingInput map_drawing{};
+    bool map_drawing_ready()const;
+    void sync_map_drawing();
+    void map_drawing_tool(unsigned tool,bool keyboard=false);
+    bool map_drawing_key(Key);
+    void map_drawing_key_release(Key);
+    void map_drawing_advance(uint32_t);
+    bool map_drawing_pointer_button(bool,const HitRegion&);
+    void map_drawing_pointer_motion();
+    void pointer_aux_button(unsigned button,bool down);
+    bool map_drawing_point(bool begin=false);
     uint32_t map_clock_ms=0;
     MapPresentationState map_visuals{};
     MapTravel map_travel{};
