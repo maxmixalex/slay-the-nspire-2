@@ -57,6 +57,7 @@ class Content {
     uint8_t* image_pages_{};
     const uint8_t* payload(uint32_t offset,uint32_t count,uint8_t* scratch,uint32_t capacity)const;
     const uint8_t* glyph_record(uint32_t cp,int size)const;
+    Picture image_payload(int id,const uint8_t* supplied,uint32_t supplied_size)const;
 public:
     bool open(const uint8_t*,size_t);
     bool open(ResourceSource);
@@ -64,6 +65,9 @@ public:
     uint32_t generation()const{return generation_;}
     ResourceReadStats read_stats()const{return reader_.stats();}
     Picture image(int id)const;
+    // Batch only missing images required by this frame into the existing
+    // encoded-image workspace; decoding and bounds checks stay unchanged.
+    void prepare_images(const int* ids,unsigned count)const;
     // These planning queries never read the source, decode or change LRU.
     // NSP2/20 uses resident decoded costs; older packs use geometry bounds
     // until first decode, without scanning unrelated image or animation groups.

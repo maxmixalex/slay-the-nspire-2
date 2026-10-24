@@ -56,6 +56,10 @@ static void card_choice_screen(Canvas&c){
     if(offer&&choice_free_energy(s))text.text("本回合减免固定费用 · ");
     text.text("已选择 ");text.number(a.choice_selected_count);text.text(optional?" / 最多 ":" / ");text.number(limit);
     c.centered(label,0,31,320,10,White);
+    int portraits[10];unsigned portrait_count=0;
+    for(int i=first;i<mn(source.count,first+(offer?3:10));++i){const int id=source.ids[i];
+        portraits[portrait_count++]=a.card_face_image(choice_card(s,id),id<s.card_count?id:-1);}
+    a.content.prepare_images(portraits,portrait_count);
     for(int i=first;i<mn(source.count,first+(offer?3:10));i++){
         const int id=source.ids[i];Card card=choice_card(s,id);bool selected=false;
         for(unsigned j=0;j<a.choice_selected_count;j++)if(a.choice_selected[j]==id)selected=true;

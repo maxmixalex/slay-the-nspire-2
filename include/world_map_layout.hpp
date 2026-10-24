@@ -6,7 +6,9 @@ namespace spire {
 // NMapScreen's authored coordinates, scaled uniformly for the calculator.
 // These helpers only own presentation RNG copies. Calling them never advances
 // a saved run stream, even when inspecting a map during combat or a choice.
-constexpr int WorldMapTop=44,WorldMapBottom=205;
+// The source map fills the screen behind the top HUD. Do not reserve
+// extra strips for a duplicated act title or keyboard instructions.
+constexpr int WorldMapTop=22,WorldMapBottom=240;
 constexpr uint32_t WorldMapScaleBits=0x3e6147aeU; // binary32 0.22
 struct WorldMapPosition {int16_t x=0,y=0;int8_t angle=0;};
 struct WorldMapLayout {

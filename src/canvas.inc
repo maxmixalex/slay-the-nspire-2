@@ -296,14 +296,23 @@ struct Canvas{
     }
     void glyph(Glyph g,int x,int y,uint16_t color){
         if(g.pixels&&g.encoded_size){
-            unsigned position=0;const unsigned pixels=unsigned(g.w)*g.h;
+            unsigned position=0,column=0,row=0;const unsigned pixels=unsigned(g.w)*g.h;
             for(unsigned at=0;at+1<g.encoded_size&&position<pixels;at+=2){
-                const unsigned count=mn(unsigned(g.pixels[at]),pixels-position),alpha=g.pixels[at+1];
-                if(alpha)for(unsigned j=0;j<count;j++){
-                    int xx=x+(int)((position+j)%g.w),yy=y+(int)((position+j)/g.w);
-                    if(xx>=0&&xx<clip_w&&yy>=0&&yy<clip_h){paint(yy*pitch+xx,color,alpha);}
-                }
+                unsigned count=mn(unsigned(g.pixels[at]),pixels-position);const unsigned alpha=g.pixels[at+1];
                 position+=count;
+                // RLE spans may cross several rows. Advance their row/column
+                // cursor once per span instead of doing ARM software division
+                // and remainder for every visible antialiased glyph pixel.
+                while(count){
+                    const unsigned span=mn(count,unsigned(g.w)-column);
+                    const int yy=y+int(row),left=x+int(column),right=left+int(span);
+                    if(alpha&&yy>=0&&yy<clip_h){
+                        const int start=mx(0,left),end=mn(clip_w,right);
+                        for(int index=yy*pitch+start,stop=yy*pitch+end;index<stop;++index)paint(index,color,alpha);
+                    }
+                    column+=span;count-=span;
+                    if(column==g.w){column=0;++row;}
+                }
             }return;
         }
         if(g.pixels)for(int yy=mx(0,-y);yy<mn(g.h,clip_h-y);yy++)for(int xx=mx(0,-x);xx<mn(g.w,clip_w-x);xx++){

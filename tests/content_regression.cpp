@@ -286,7 +286,65 @@ static void text_cache_working_set(){
     provider.fail=true;CHECK(!content->glyph(0x4e00,8).pixels&&!content->healthy());
     CHECK(other->healthy()&&other->glyph(0x4e00+glyph_count-1,8).pixels);
 }
+static void visible_image_batches(){
+    // Private artwork is unnecessary: literal LZ4 and raw RGB565 pictures
+    // reproduce the adjacent-card source layout, including aliases and gaps.
+    const AliasImage tiny{1,1,0,2};auto bytes=alias_pack(tiny,tiny,{0x34,0x12});
+    std::vector<std::vector<uint8_t>> expected(7);
+    for(unsigned id=1;id<=6;++id){
+        if(id==3){for(unsigned j=0;j<16;++j)bytes[40+id*16+j]=bytes[40+2*16+j];continue;}
+        if(id==4)bytes.insert(bytes.end(),16,0); // The supported alignment gap.
+        if(id==5)bytes.insert(bytes.end(),17,0); // Must not be speculatively read.
+        const unsigned offset=unsigned(bytes.size()),size=82*60*2;
+        auto&raw=expected[id];raw.resize(size);
+        for(unsigned i=0;i<size;++i)raw[i]=uint8_t(i*37+id*17);
+        if(id==2){
+            bytes.insert(bytes.end(),{0,uint8_t(size),uint8_t(size>>8),0,0,0xf0});
+            unsigned literal=size-15;while(literal>=255){bytes.push_back(255);literal-=255;}bytes.push_back(uint8_t(literal));
+        }
+        bytes.insert(bytes.end(),raw.begin(),raw.end());
+        put(bytes,40+id*16,offset);put(bytes,44+id*16,82,2);put(bytes,46+id*16,60,2);
+        put(bytes,48+id*16,id==2?5:0);put(bytes,52+id*16,unsigned(bytes.size())-offset);
+    }
+    put(bytes,12,unsigned(bytes.size()));
+    struct Provider {
+        const std::vector<uint8_t>*bytes;unsigned calls=0;bool fail=false;
+        static bool read(void*context,uint32_t offset,void*out,uint32_t count){
+            auto&p=*static_cast<Provider*>(context);++p.calls;
+            if(p.fail||offset>p.bytes->size()||count>p.bytes->size()-offset)return false;
+            std::memcpy(out,p.bytes->data()+offset,count);return true;
+        }
+        ResourceSource source(){return {this,uint32_t(bytes->size()),read,nullptr};}
+    }provider{&bytes};
+    auto ranged=std::make_unique<Content>(),direct=std::make_unique<Content>();
+    CHECK(ranged->open(provider.source()));CHECK(direct->open(bytes.data(),bytes.size()));
+    const int selected[]={4,2,-1,3,1,50000};provider.calls=0;
+    ranged->prepare_images(selected,6);CHECK(ranged->healthy());CHECK(provider.calls==1);
+    CHECK(!ranged->image_cached(5)&&!ranged->image_cached(6));
+    for(int id:{1,2,3,4}){
+        const auto a=ranged->image(id),b=direct->image(id);const auto&raw=expected[id==3?2:id];
+        CHECK(a.pixels&&b.pixels&&a.w==82&&a.h==60&&a.format==0);
+        CHECK(!std::memcmp(a.pixels,raw.data(),raw.size())&&!std::memcmp(b.pixels,raw.data(),raw.size()));
+    }
+    CHECK(provider.calls==1);
+    // Warm calls and invalid/unselected identifiers must not touch the source.
+    provider.fail=true;ranged->prepare_images(selected,6);CHECK(provider.calls==1&&ranged->healthy());
+    direct->prepare_images(selected,6);CHECK(direct->healthy());
+    // A noncontiguous request uses the normal reader later, rather than
+    // fetching the intervening unrequested card or an arbitrary large range.
+    provider.fail=false;CHECK(ranged->open(provider.source()));provider.calls=0;
+    const int distant[]={1,5};ranged->prepare_images(distant,2);CHECK(provider.calls==0);
+    CHECK(ranged->image(1).pixels&&ranged->image(5).pixels&&provider.calls==2);
+    CHECK(!ranged->image_cached(2)&&!ranged->image_cached(4)&&!ranged->image_cached(6));
+    // Failure cannot publish partial bytes or leave the old owner's cached
+    // picture available. Reopening still recovers using the same API.
+    CHECK(ranged->open(provider.source()));provider.calls=0;provider.fail=true;
+    ranged->prepare_images(selected,6);CHECK(provider.calls==1&&!ranged->healthy());CHECK(!ranged->image(1).pixels);
+    provider.fail=false;CHECK(ranged->open(provider.source()));provider.calls=0;
+    ranged->prepare_images(selected,6);CHECK(provider.calls==1&&ranged->image(2).pixels&&ranged->healthy());
+}
 int main(int argc,char**argv){
+    visible_image_batches();
     image_cache_aliases();
     glyph_cache_aliases();
     compressed_picture_reads_once();

@@ -1,5 +1,24 @@
 # Work state — 2026-10-24
 
+## UI5 in progress: original interaction, unobstructed map and bounded card reads
+
+Continuing from `a2dc843c` on `work/0.17-world-parity`. The user prioritizes
+original UI fidelity, then performance. Three parallel implementation scopes
+cover frontend/map/events, combat feedback, and card/detail rendering; root
+owns potion/reward interaction and integration. Original private DLL and PCK
+were recovered and their SHA-256 values match `config/reference-release.json`.
+The delivered UI4 bilingual split resources are recovered for actual rendering.
+
+The first source checkpoint removes hover-driven character selection and
+the added opaque map header/footer, extends the original paper viewport,
+batches only the visible missing card images in the existing encoded workspace,
+and replaces glyph per-pixel division with row traversal. Relevant click and
+bounded-read fixtures are included. This checkpoint precedes compilation and
+is not yet accepted or synchronized to main. Subsequent work must implement
+the original settings/event details, combat hit/status/star presentation,
+potion selection/targeting and reward collection before final validation.
+No private assets are included in this source checkpoint.
+
 ## Current: UI4 implementation, ordinary emulator acceptance and delivery closed
 
 Continue original UI fidelity and calculator usability first, runtime speed

@@ -215,6 +215,54 @@ ImageCacheUsage Content::image_cache_usage()const{
     return used;
 }
 Picture Content::image(int id)const{
+    return image_payload(id,nullptr,0);
+}
+void Content::prepare_images(const int* ids,unsigned count)const{
+    // Called only for the pictures already known to be visible this frame.
+    // This is synchronous work in the measured render, not a loading phase or
+    // speculative neighbouring-page prefetch. Reuse the existing encoded
+    // workspace and normal decoded-image pool; never allocate another pool.
+    if(!healthy()||data_||!ids)return;
+    struct Request {unsigned id;uint32_t offset,length;unsigned pages;};
+    Request requests[32];unsigned n=0;
+    for(unsigned i=0;i<count&&i<32;++i){
+        const int id=ids[i];if(id<0||unsigned(id)>=images_||image_cached(id))continue;
+        const uint8_t*r=metadata_+40+16*unsigned(id);
+        const uint32_t offset=u32(r),length=u32(r+12),format=u32(r+8);
+        const unsigned pages=image_page_bound(r);
+        if(format>5||(format==5&&(version_<5||length<6))||!length||!pages||
+           !reader_.contains(offset,length))continue;
+        bool duplicate=false;
+        for(unsigned j=0;j<n;++j)if(image_alias(int(requests[j].id),id)){duplicate=true;break;}
+        if(duplicate)continue;
+        unsigned at=n;
+        while(at&&requests[at-1].offset>offset){requests[at]=requests[at-1];--at;}
+        requests[at]={unsigned(id),offset,length,pages};++n;
+    }
+    for(unsigned first=0;first<n;){
+        const uint32_t start=requests[first].offset;
+        uint32_t end=start+requests[first].length;unsigned pages=requests[first].pages,last=first+1;
+        while(last<n){
+            const auto&next=requests[last];
+            // Coalesce only tiny alignment gaps, and never cross the bounded
+            // encoded workspace or decoded-page budget. Sparse distant cards
+            // retain the regular single-image path and its eviction behavior.
+            if(next.offset<end||next.offset-end>16||next.length>MaxEncodedImage||
+               next.offset-start>MaxEncodedImage-next.length||
+               next.pages>ImagePages-pages)break;
+            end=next.offset+next.length;pages+=next.pages;++last;
+        }
+        if(last-first>1){
+            if(!reader_.read(start,encoded_pixels,end-start)){io_good_=false;clear_caches(this);return;}
+            for(unsigned i=first;i<last;++i){
+                const auto&r=requests[i];
+                if(!image_payload(int(r.id),encoded_pixels+r.offset-start,r.length).pixels)return;
+            }
+        }
+        first=last;
+    }
+}
+Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_size)const{
     const Picture empty{nullptr,nullptr,nullptr,0,0,0};
     if(!metadata_||!io_good_||id<0||(unsigned)id>=images_)return empty;
     const auto fail=[&](){io_good_=false;clear_caches(this);return empty;};
@@ -255,7 +303,7 @@ Picture Content::image(int id)const{
             p=output;reservation.publish(this,uint32_t(id),fmt);
         }else{
             if(fmt==5&&length<6)return fail();
-            const uint8_t* source=payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return fail();
+            const uint8_t* source=supplied&&supplied_size==length?supplied:payload(off,length,encoded_pixels,sizeof encoded_pixels);if(!source)return fail();
             // The descriptor already gives the stored byte count. Read it
             // once and parse its five-byte LZ4 header in the same buffer; a
             // separate header read used to fetch an extra 4 KiB cache page.

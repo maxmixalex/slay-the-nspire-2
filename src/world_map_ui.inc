@@ -34,10 +34,10 @@ static MapColors map_colors(unsigned region){
     }
 }
 static void map_background(Canvas&c,const WorldMapView&view,const MapColors&colors,bool fill_paper=true){
-    if(fill_paper)c.rect(0,22,320,185,colors.paper);const char*parts[]={"_TOP","_MIDDLE","_BOTTOM"};
+    if(fill_paper)c.rect(0,WorldMapTop,320,WorldMapBottom-WorldMapTop,colors.paper);const char*parts[]={"_TOP","_MIDDLE","_BOTTOM"};
     // The original 4:3 top offset is relative to the screen center. Adjacent
     // 1080-high layers scroll together at the map's uniform calculator scale.
-    for(int i=0;i<3;++i){int y=view.origin-458+i*238;map_picture(c,map_named_picture(c.a.content,"BG_",colors.region,parts[i]),160,y+119,320,238,MapShader::Original,0,0,255,0,22,207);}
+    for(int i=0;i<3;++i){int y=view.origin-458+i*238;map_picture(c,map_named_picture(c.a.content,"BG_",colors.region,parts[i]),160,y+119,320,238,MapShader::Original,0,0,255,0,WorldMapTop,WorldMapBottom);}
 }
 static int map_direction(int dx,int dy){
     int best=0,score=-2147483647;for(int angle=0;angle<360;angle+=5){int v=dx*map_sin(angle+90)+dy*map_sin(angle);if(v>score){score=v;best=angle;}}return best;
@@ -66,12 +66,6 @@ static void map_paths(Canvas&c,const reference::ReferenceMap&m,const WorldMapLay
 }
 static EncounterId map_boss(const State&s,const reference::ReferenceMap&m,unsigned point){
     const auto&q=s.world.rooms[s.world.act_index];return q.bosses[point==m.second_boss&&q.boss_count>1?1:0];
-}
-static const char* map_point_title(const App&a,const reference::ReferenceMap&m,unsigned point){
-    if(point>=m.count)return "选择相连的节点";const auto type=m.points[point].type;
-    if(type==reference::PointType::Start){const char*name=a.content.world_title("events",original_event_key(OriginalEventId(a.game.world.rooms[a.game.world.act_index].ancient)));if(*name)return name;}
-    if(type==reference::PointType::Boss){const auto*d=encounter_definition(map_boss(a.game,m,point));if(d){const char*name=a.content.world_title("encounters",d->key);if(*name)return name;}}
-    return world_point_name(world_map_visible_type(a.game,point));
 }
 static void map_normal_node(Canvas&c,const reference::ReferenceMap&m,unsigned id,int x,int y,int angle,bool allowed,bool focused,const MapColors&colors){
     const auto&s=c.a.game;const auto&type=m.points[id].type;const bool visited=c.a.map_visuals.traveled(s,id);
@@ -139,7 +133,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     map_paths(c,*m,layout,view,colors);
     uint8_t available[reference::Columns];const unsigned available_count=world_available_points(s,available,reference::Columns);
     if(!inspect&&!a.map_legend&&available_count){bool valid=false;for(unsigned i=0;i<available_count;++i)if(m->points[available[i]].col==a.cursor)valid=true;if(!valid)a.cursor=m->points[available[0]].col;}
-    unsigned selected=reference::NoPoint,quest=reference::NoPoint;
+    unsigned quest=reference::NoPoint;
     if(event_card_spoils_act(s)==s.world.act_index)for(unsigned col=0;col<reference::Columns&&quest==reference::NoPoint;++col)for(unsigned row=0;row<m->config.rows;++row){unsigned id=m->grid[col][row];if(id<m->count&&m->points[id].type==reference::PointType::Treasure){quest=id;break;}}
     // Points inherit TheMap's modulation, then their own delayed alpha.
     // Paths and Marker are siblings of Points and do not share that delay.
@@ -147,7 +141,7 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
     for(unsigned i=0;i<m->count;++i){const auto&p=m->points[i];if(!p.active)continue;
         const int x=layout.points[i].x,y=layout.points[i].y+view.origin;
         const bool traveling=a.map_visuals.traveling(),target=a.map_visuals.target()==i;
-        const bool allowed=!traveling&&!a.treasure_empty_waiting()&&world_reachable(s,i),focused=target||(allowed&&p.col==a.cursor&&!inspect&&!a.map_legend);if(focused)selected=i;
+        const bool allowed=!traveling&&!a.treasure_empty_waiting()&&world_reachable(s,i),focused=target||(allowed&&p.col==a.cursor&&!inspect&&!a.map_legend);
         const int half=world_map_half_size(*m,i);
         const int reticle_height=p.type==reference::PointType::Boss?306:p.type==reference::PointType::Start?208:84;
         int visible_half=a.map_reticle_opacity(i)?mx(half,map_reticle_project(reticle_height/2+12,a.map_reticle_scale(i),p.type==reference::PointType::Boss&&m->config.second_boss)):half;
@@ -173,17 +167,18 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
         const int dy=map_source_offset(marker.source_y),width=int((16*marker.scale_x+2048)/4096),height=int((16*marker.scale_y+2048)/4096);
         map_picture(c,character_map_image(a.content,s.character),layout.points[id].x,layout.points[id].y+view.origin-offset+dy,width,height);
     }
-    c.rect(0,22,320,22,colors.paper);
-    // NActBanner uses ActModel.Title: acts/<region>.title. Keep the compact
-    // map header on that same localized title, with its key as the fallback.
-    const char*region_name=a.content.world_title("acts",colors.region);if(!*region_name)region_name=colors.region;
-    char title[80]{};TextBuffer heading{title,sizeof title,0,&parent.a.content};heading.text("第 ");heading.number(s.world.act_index+1);heading.text(" 幕 · ");heading.text(region_name);
-    c.centered(title,4,25,258,12,colors.ink);c.text("图例 I",268,26,10,colors.ink);c.action(262,22,58,22,UiAction::ToggleMapLegend);
-    c.text("↑",304,47,12,colors.ink);c.hit(297,44,23,24,HitKind::Scroll,-1,!a.map_legend&&a.map_can_scroll()&&view.origin<view.maximum);
-    c.text("↓",304,182,12,colors.ink);c.hit(297,178,23,27,HitKind::Scroll,1,!a.map_legend&&a.map_can_scroll()&&view.origin>view.minimum);
-    c.rect(0,207,320,33,Panel);
-    if(a.map_legend){
-        c.centered("↑↓ 选择图例 · I / Esc 返回路线",0,215,320,10,Gold);
+    // NMapScreen's paper and graph run behind the HUD without a separate
+    // header/footer. The act name already has the original NActBanner entry.
+    // Fold only the legend for 320px; leave its toggle on the paper itself.
+    if(!a.map_legend){
+        c.text("图例",278,27,10,colors.ink);c.action(268,23,52,24,UiAction::ToggleMapLegend);
+        if(a.map_can_scroll()&&view.origin<view.maximum){
+            c.text("↑",304,53,12,colors.ink);c.hit(297,47,23,28,HitKind::Scroll,-1);
+        }
+        if(a.map_can_scroll()&&view.origin>view.minimum){
+            c.text("↓",304,218,12,colors.ink);c.hit(297,211,23,29,HitKind::Scroll,1);
+        }
+    }else{
         // Legend is a sibling of TheMap, not a child of its fade/slide.
         Canvas legend=parent;int offset=0;
         if(window){legend.opacity=map_window_product(legend.opacity,window->legend.alpha);
@@ -191,8 +186,6 @@ static void world_map_screen(Canvas&parent,bool inspect,const MapWindowSample*wi
             offset=map_source_offset(window->legend_x_q12);}
         map_legend_screen(legend,colors,offset);
     }
-    else if(inspect)c.centered("↑↓ 浏览路线 · I 图例 · M / Esc 返回",0,215,320,10,Gold);
-    else{c.centered(map_point_title(a,*m,selected),0,207,320,12,Gold);c.centered("←→ 选路 · Enter 进入 · ↑↓ 浏览",0,225,320,10,Muted);}
 }
 
 static LocalizedValue map_act_number_value(const void*context,const char*key){

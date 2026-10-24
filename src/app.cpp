@@ -208,6 +208,12 @@ static void panels(Canvas&c){
             // Inspecting the draw pile must never disclose its actual shuffle order.
             if(a.pile_tab==1)for(int i=1;i<n;i++){int id=ids[i],j=i;while(j&&s.cards[ids[j-1]].kind>s.cards[id].kind){ids[j]=ids[j-1];--j;}ids[j]=id;}}
         a.inspect_cursor=mn(a.inspect_cursor,mx(0,n-1));a.scroll=mn((a.scroll/10)*10,mx(0,((n-1)/10)*10));
+        int portraits[10];unsigned portrait_count=0;
+        for(int i=a.scroll;i<mn(n,a.scroll+10);++i){
+            Card card=a.pile_tab==0?s.deck[ids[i]]:s.cards[ids[i]];
+            portraits[portrait_count++]=a.card_face_image(card,a.pile_tab==0?-1:ids[i],a.pile_tab==0?ids[i]:-1);
+        }
+        a.content.prepare_images(portraits,portrait_count);
         for(int i=a.scroll;i<mn(n,a.scroll+10);i++){
             Card card=a.pile_tab==0?s.deck[ids[i]]:s.cards[ids[i]];
             int x=24+(i-a.scroll)%5*54,y=52+(i-a.scroll)/5*74;

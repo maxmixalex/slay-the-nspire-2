@@ -197,11 +197,24 @@ static void synthetic_pixels(){
 }
 static void character_hover(){
     static SaveData before,after;CHECK(save(app.game,before));const unsigned run=app.run_number;
-    app.title=false;app.character_select=true;app.run_settings=false;app.pointer.held=false;app.pointer.visible=false;app.render();
+    app.title=false;app.character_select=true;app.run_settings=false;app.pointer.held=false;app.pointer.visible=false;
+    app.selected_character=Character::Ironclad;app.character_select_presentation.reset();app.render();
     for(unsigned i=0;i<CharacterKinds;++i){
-        app.pointer_move(172+int(i)*31,184);app.render();CHECK(app.selected_character==Character(i));CHECK(app.character_select&&app.run_number==run);
+        const Character previous=app.selected_character;
+        const uint32_t entered=app.character_select_presentation.panel_start;
+        app.advance(33);app.pointer_move(172+int(i)*31,184);app.render();
+        CHECK(app.selected_character==previous&&app.character_select_presentation.panel_start==entered);
+        CHECK(app.character_select_presentation.focused==int(i));
+        CHECK(app.character_select_presentation.portrait_scale(i,app.map_clock_ms)==CharacterSelectPresentation::FocusScale);
+        app.pointer_button(true);app.render();CHECK(app.selected_character==previous);
+        app.pointer_button(false);app.render();CHECK(app.selected_character==Character(i));
+        CHECK(app.character_select&&app.run_number==run);
         CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     }
+    // Releasing over a different portrait is not a selection. Only the
+    // clicked portrait owns activation; mere focus still scales its picture.
+    app.pointer_move(172,184);app.pointer_button(true);app.pointer_move(203,184);app.pointer_button(false);app.render();
+    CHECK(app.selected_character==Character::Necrobinder);
     app.pointer_move(263,225);app.render();CHECK(app.character_select&&app.run_number==run);
     CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.pointer.visible=false;app.character_select=false;

@@ -200,6 +200,11 @@ static void library_screen(Canvas&c){
         const char* sorts[]={"默认排序","按费用","按类型"};c.centered(sorts[a.library_sort],238,46,79,10,Gold);c.action(237,45,83,19,UiAction::CycleSort);
         CardKind ids[CardKinds];const int count=(int)a.library_items(ids),last=mx(0,(count-1)/8);
         a.library_page=mn(mx(0,a.library_page),last);a.library_selected=mn(mx(0,a.library_selected),count-1);
+        // Only the visible page participates in bounded adjacent image reads.
+        int portraits[8];unsigned portrait_count=0;
+        for(int i=a.library_page*8;i<mn(count,a.library_page*8+8);++i)
+            portraits[portrait_count++]=a.card_face_image({ids[i],uint8_t(a.library_upgraded&&card_upgradeable({ids[i],0}))});
+        a.content.prepare_images(portraits,portrait_count);
         for(int i=a.library_page*8;i<mn(count,a.library_page*8+8);i++){
             int k=i-a.library_page*8,x=29+(k%4)*69,y=68+(k/4)*71;
             small_card(c,{ids[i],(uint8_t)(a.library_upgraded&&card_upgradeable({ids[i],0}))},x,y,i==a.library_selected,true,0);
