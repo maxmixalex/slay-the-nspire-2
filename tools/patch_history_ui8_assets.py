@@ -16,6 +16,7 @@ from world_scene_assets import load_scene_texture
 from patch_feedback_assets import write_image
 from patch_ui6_assets import cursor_image
 from PIL import Image
+from crystal_ui8_assets import COUNT as CRYSTAL_COUNT, build_crystal_images
 
 MAP_IMAGES = [
     ('map-draw', 'images/packed/map/drawing_quill.png', (16, 16)),
@@ -31,7 +32,12 @@ MAP_IMAGES = [
     ('map-draw-trail', 'images/packed/vfx/trail2.png', None),
     ('map-erase-trail', 'images/packed/vfx/trail3.png', None),
 ]
-VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1 + len(MAP_IMAGES), 1753, 8704
+PEEK_IMAGES = [
+    ('combat-peek', 'images/atlases/ui_atlas.sprites/peek_button.tres', (24, 24)),
+    ('combat-peek-flash', 'images/packed/common_ui/peek_button_sdf.png', (31, 31)),
+    ('ancient-next-arrow', 'images/packed/common_ui/little_arrow.png', (5, 9)),
+]
+VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1 + len(MAP_IMAGES) + CRYSTAL_COUNT + len(PEEK_IMAGES), 1753, 8704
 
 
 def build_art(path, cache):
@@ -50,6 +56,12 @@ def build_art(path, cache):
             image = cursor_image(pack, source) if key.startswith('map-cursor-') else load_scene_texture(pack, source).convert('RGBA')
             if size is not None:
                 image = image.resize(size, Image.Resampling.LANCZOS)
+            row = write_image(cache, key, image)
+            row.update(key=key, source=source, auxiliary=BASE_AUX + len(rows))
+            rows.append(row)
+        rows.extend(build_crystal_images(pack, cache, BASE_AUX + len(rows)))
+        for key, source, size in PEEK_IMAGES:
+            image = load_scene_texture(pack, source).convert('RGBA').resize(size, Image.Resampling.LANCZOS)
             row = write_image(cache, key, image)
             row.update(key=key, source=source, auxiliary=BASE_AUX + len(rows))
             rows.append(row)

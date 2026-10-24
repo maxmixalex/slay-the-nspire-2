@@ -64,12 +64,12 @@ struct CombatCardMotion {
   if(ay>ax)a=1024-a;if(x<0)a=2048-a;if(y<0)a=-a;return a;
  }
  static HandPose pile(uint8_t zone){
-  if(zone==unsigned(Zone::Draw))return {20,226,1024,0,1024};
-  if(zone==unsigned(Zone::Discard))return {302,226,1024,0,1024};
-  if(zone==unsigned(Zone::Exhaust))return {304,117,1024,0,1024};
-  // PlayContainer is centred and lifted 100 source pixels. Its calculator
-  // adaptation shares the combat viewport rather than covering the HUD.
-  return {160,110,819,0,1024};
+  if(zone==unsigned(Zone::Draw))return {hand_project(15+40),hand_project(1165+40),HandFocusScale,0,1024};
+  if(zone==unsigned(Zone::Discard))return {hand_project(1586+40),hand_project(1165+40),HandFocusScale,0,1024};
+  if(zone==unsigned(Zone::Exhaust))return {hand_project(1590+40),hand_project(970+40),HandFocusScale,0,1024};
+  // PileType.Play uses the full viewport center minus100 source pixels.
+  // AppendPileLerpTween targets source scale .8 independently of FastMode.
+  return {160,hand_project(630-100),(HandFocusScale*4+2)/5,0,1024};
  }
  void reset(){
   active=overflow=count_overflow=false;head=count=count_head=count_count=0;
@@ -155,19 +155,19 @@ struct CombatCardMotion {
  void fly(Sprite&v,uint8_t to,uint32_t at){
   v.origin=pose(v);v.mode=Fly;v.to=to;v.at=at;v.progress=0;
   v.speed=72090u+random()%9831u;v.accel=131072u+random()%32769u;v.duration=65536u+random()%49153u;
-  v.arc=int16_t((600u+random()%301u)*218u/1080u);
+  v.arc=int16_t((600u+random()%301u)*4u/21u);
  }
  void arrange_previews(uint32_t at){
   unsigned total=0;for(const auto&v:sprites)if(v.mode==Preview&&v.at==at)++total;
   unsigned index=0;
   for(auto&v:sprites)if(v.mode==Preview&&v.at==at){
-   if(total<=5){v.x=(160+(2*int(index)-int(total)+1)*27)*1024;v.y=131*1024;}
+   if(total<=5){v.x=((1680+(2*int(index)-int(total)+1)*325)*2+10)/21*1024;v.y=hand_project(630+50)*1024;}
    else{
     // The native Messy container samples 150-source-pixel spaced points.
     // Bounded rejection keeps that separation in the smaller viewport.
-    int x=155,y=125;for(unsigned attempt=0;attempt<48;++attempt){
-     if(index){x=44+int(random()%226u);y=44+int(random()%159u);}bool close=false;
-     unsigned previous=0;for(const auto&p:sprites){if(&p==&v)break;if(p.mode==Preview&&p.at==at){++previous;const int dx=p.x/1024-x,dy=p.y/1024-y;close|=dx*dx+dy*dy<625;}}
+    int x=156,y=127;for(unsigned attempt=0;attempt<48;++attempt){
+     if(index){x=50+int(random()%213u);y=37+int(random()%181u);}bool close=false;
+     unsigned previous=0;for(const auto&p:sprites){if(&p==&v)break;if(p.mode==Preview&&p.at==at){++previous;const int dx=p.x/1024-x,dy=p.y/1024-y;close|=dx*dx+dy*dy<817;}}
      if(!close||!previous)break;
     }v.x=x*1024;v.y=y*1024;
    }++index;
@@ -189,7 +189,7 @@ struct CombatCardMotion {
     v.angle=int16_t(direction(v.origin.sine,v.origin.cosine)*int(1024-p)/1024);
    }else if(v.mode==Preview){
     const unsigned age=(clock-v.at)*33u;
-    v.scale=int16_t(640u*cubic(age,250u)/1024u);
+    v.scale=int16_t(unsigned(HandFocusScale)*cubic(age,250u)/1024u);
     if(age>=1450u)fly(v,v.to,clock);
    }else if(v.mode==Fly){
     v.progress+=v.speed*33u/1000u;v.speed+=v.accel*33u/1000u;

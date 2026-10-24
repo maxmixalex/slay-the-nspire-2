@@ -25,6 +25,7 @@ const HitRegion* App::hit_at(int x,int y)const{
     return nullptr;
 }
 uint32_t App::input_context()const{
+    if(settings_open&&binding_listening>=0)return 0x4b455900u|unsigned(binding_listening);
     if(bestiary.open)return 0x42535400u|unsigned(bestiary.actions);
     if(run_mode.screen!=RunMenu::Closed)return 0x52554e00u|unsigned(run_mode.screen)|(uint32_t(map_preview.open)<<4)|(uint32_t(frontend_confirm!=0)<<5);
     return (uint32_t)game.phase|((uint32_t)shop_open<<6)|((uint32_t)event_reader<<7)|((uint32_t)title<<8)|((uint32_t)paused<<9)|
@@ -172,6 +173,7 @@ void App::pointer_scroll(int rows){
     if(library)return;
     if(title||paused||help||character_select||deck_candidate>=0)return;
     if(map_legend&&game.world.active&&(panel==3||(!panel&&game.phase==Phase::Map))){map_legend_item=uint8_t(clamp(int(map_legend_item)+rows,0,5));return;}
+    if(!panel&&choice_peeking)return;
     if(!panel&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice)){ui_action(rows>0?UiAction::NextWorldPage:UiAction::PreviousWorldPage);return;}
     if(!panel&&choice_phase(game.phase)){
         ui_action(rows>0?UiAction::NextChoicePage:UiAction::PreviousChoicePage);return;
@@ -326,7 +328,7 @@ void App::pointer_button(bool down){
     case HitKind::EnemySelect:if(hit.value>=0&&hit.value<game.enemy_count&&game.enemies[hit.value].hp>0)target=hit.value;break;
     case HitKind::WorldChoice:toggle_world_choice(hit.value);break;
     case HitKind::CrystalCell:
-        if(game.phase==Phase::OriginalEventChoice&&hit.value>=0&&hit.value<CrystalCells){cursor=hit.value;original_event_crystal_click(game,hit.value%11,hit.value/11);}break;
+        if(game.phase==Phase::OriginalEventChoice&&hit.value>=0&&hit.value<CrystalCells){crystal_click(hit.value);}break;
     case HitKind::ReferenceAction:
         pointer_cancel();
         if(hit.value==0)map_preview.begin_edit();
@@ -339,9 +341,11 @@ void App::pointer_button(bool down){
     case HitKind::LibraryItem:select_library_item(hit.value);break;
     case HitKind::LibraryControl:library_control(hit.value);break;
     case HitKind::RunModifier:run_modifier_select(unsigned(hit.value));break;
+    case HitKind::InputBinding:begin_key_rebind(unsigned(hit.value));break;
     case HitKind::CombatChoice:toggle_choice(hit.value);break;
     case HitKind::StatusActor:open_statuses(hit.value);break;
     case HitKind::BattleStatus:open_status_icon(hit.value);break;
+    case HitKind::CombatPeek:toggle_combat_peek();break;
     case HitKind::Orb:break; // Original orb focus retains its anchored hover tip.
     case HitKind::StatusItem:status_selected=hit.value;status_scroll=0;break;
     default:break;

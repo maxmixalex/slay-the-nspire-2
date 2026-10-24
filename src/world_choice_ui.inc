@@ -24,33 +24,7 @@ static const char* crystal_item_image(const CrystalItemState&item){
  if(item.kind==3)return item.model==1?"CRYSTAL_SPHERE_COMMON_POTION":item.model==2?"CRYSTAL_SPHERE_UNCOMMON_POTION":"CRYSTAL_SPHERE_RARE_POTION";
  return "CRYSTAL_SPHERE_RELIC";
 }
-static void crystal_screen(Canvas&c){
- auto&a=c.a;const auto&e=a.game.original_events;a.hit_count=0;
- c.picture(a.content.world_image("crystal","CRYSTAL_SPHERE_MINIGAME_BG"),0,22,320,218);
- c.dim(0,0,320,25,190);c.centered(a.content.world_title("events","CRYSTAL_SPHERE"),0,4,320,16,Gold);
- const int left=14,top=39,cell=15;
- // Render discovered pieces through revealed cells only. Uncovering a square
- // must never disclose the position or kind of an adjacent hidden object.
- for(unsigned i=0;i<e.crystal_item_count;i++){const auto&item=e.crystal_items[i];if(!item.w||!item.h)continue;
-  bool visible=false;for(unsigned y=0;y<item.h&&item.y+y<11;y++)for(unsigned x=0;x<item.w&&item.x+x<11;x++){unsigned at=(item.y+y)*11+item.x+x;if(e.crystal_owner[at]==i+1&&e.crystal_clear[at])visible=true;}
-  if(visible)c.picture(a.content.world_image("crystal",crystal_item_image(item)),left+item.x*cell,top+item.y*cell,item.w*cell,item.h*cell);
- }
- for(int y=0;y<11;y++)for(int x=0;x<11;x++){int at=y*11+x,xx=left+x*cell,yy=top+y*cell;
-  if(!e.crystal_clear[at]){c.rect(xx,yy,cell,cell,rgb(64,46,94));c.box(xx,yy,cell,cell,rgb(110,83,146));}
-  if(at==a.cursor&&!e.crystal_clear[at])c.box(xx,yy,cell,cell,Gold);
-  c.hit(xx,yy,cell,cell,HitKind::CrystalCell,at,!e.crystal_clear[at]&&e.crystal_charges);
- }
- char text[512]{};a.localized_text("events","CRYSTAL_SPHERE.minigame.divinationsRemain",text,sizeof text);
- if(!*text){TextBuffer b{text,sizeof text,0,&c.a.content};b.text("剩余占卜：");b.number(e.crystal_charges);}c.paragraph(text,192,39,118,3,0,10,Gold);
- for(int tool=1;tool<=2;tool++){int yy=tool==1?84:139;
-  c.picture(a.content.world_image("crystal",tool==1?"SMALL_DIVINATION_ICON":"BIG_DIVINATION_ICON"),194,yy,31,31);
-  a.localized_text("events",tool==1?"CRYSTAL_SPHERE.button.DIVINATION_LABEL_SMALL":"CRYSTAL_SPHERE.button.DIVINATION_LABEL_BIG",text,sizeof text);
-  c.paragraph(text,229,yy+2,79,3,0,10,e.crystal_tool==tool?Gold:White);
-  if(e.crystal_tool==tool)c.box(190,yy-4,122,45,Gold);
-  c.action(189,yy-5,125,48,tool==1?UiAction::CrystalSmall:UiAction::CrystalLarge,e.crystal_charges);
- }
- c.dim(0,214,320,26,185);c.centered("方向键定位 · Enter 占卜 · 空格切换工具",0,219,320,10,White);
-}
+#include "crystal_ui.inc"
 #include "world_reward_choice_ui.inc"
 // Standalone PotionReward uses the same original row as a reward set. The
 // button attempts first-empty procurement; the belt remains interactive so

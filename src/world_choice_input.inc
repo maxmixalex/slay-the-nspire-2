@@ -1,3 +1,4 @@
+#include "crystal_input.inc"
 static bool world_choice_phase(Phase p){return p==Phase::WorldRelicChoice||p==Phase::OriginalEventChoice;}
 unsigned App::world_choice_options(uint16_t*out,unsigned capacity)const{
  if(game.phase==Phase::WorldRelicChoice)return world_relic_eligible(game,out,capacity);
@@ -45,7 +46,7 @@ unsigned App::world_choice_page_size()const{
  return 10;
 }
 void App::toggle_world_choice(int id){
- if(!world_choice_phase(game.phase)||id<0||!combat_choice_ready())return;sync_selection();
+ if(choice_peeking||!world_choice_phase(game.phase)||id<0||!combat_choice_ready())return;sync_selection();
  uint16_t ids[MaxWorldUiChoices];unsigned n=world_choice_options(ids,MaxWorldUiChoices);bool eligible=false;
  for(unsigned i=0;i<n&&i<MaxWorldUiChoices;i++)if(ids[i]==id)eligible=true;if(!eligible)return;
  const bool reward=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;
@@ -59,7 +60,7 @@ void App::toggle_world_choice(int id){
  if(choice_selected_count<maximum&&choice_selected_count<MaxDeck)choice_selected[choice_selected_count++]=uint16_t(id);
 }
 void App::confirm_world_choice(){
- if(!world_choice_phase(game.phase)||!combat_choice_ready())return;sync_selection();
+ if(choice_peeking||!world_choice_phase(game.phase)||!combat_choice_ready())return;sync_selection();
  if(choice_selected_count<world_choice_min()||choice_selected_count>world_choice_max())return;
  continue_combat_choice();
  bool done=game.phase==Phase::WorldRelicChoice?world_relic_select(game,choice_selected,choice_selected_count):
@@ -67,7 +68,7 @@ void App::confirm_world_choice(){
  if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}
 }
 void App::world_choice_detail(int id){
- if(id<0||!combat_choice_ready())return;
+ if(choice_peeking||id<0||!combat_choice_ready())return;
  if(game.phase==Phase::WorldRelicChoice){
   const auto&w=game.world_relics;
   if((w.choice==WorldRelicChoice::OfferCard||w.choice==WorldRelicChoice::CombatOffer)&&id<w.offer_count)open_card_offer(card_from_token(w.offers[id]),w.offer_facts[id]);
@@ -86,19 +87,9 @@ void App::world_choice_detail(int id){
  }
 }
 bool App::world_choice_input(Key key){
- if(title||paused||help||panel||!world_choice_phase(game.phase)||!combat_choice_ready())return false;
+ if(choice_peeking||title||paused||help||panel||!world_choice_phase(game.phase)||!combat_choice_ready())return false;
  sync_selection();
- if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal){
-  cursor=cursor<0?0:cursor>=CrystalCells?CrystalCells-1:cursor;
-  if(key==Key::Left&&cursor%11)cursor--;
-  else if(key==Key::Right&&cursor%11<10)cursor++;
-  else if(key==Key::Up&&cursor>=11)cursor-=11;
-  else if(key==Key::Down&&cursor+11<CrystalCells)cursor+=11;
-  else if(key==Key::Confirm)original_event_crystal_click(game,cursor%11,cursor/11);
-  else if(key==Key::EndTurn)original_event_crystal_tool(game,game.original_events.crystal_tool!=2);
-  else return false;
-  return true;
- }
+ if(game.phase==Phase::OriginalEventChoice&&game.original_events.selection==OriginalEventSelection::Crystal)return crystal_input(key);
  uint16_t ids[MaxWorldUiChoices];unsigned count=world_choice_options(ids,MaxWorldUiChoices);
  if(count>MaxWorldUiChoices)return false;if(cursor<0||cursor>=int(count))cursor=0;
  const bool rewards=game.phase==Phase::WorldRelicChoice?game.world_relics.choice==WorldRelicChoice::OfferReward:game.original_events.selection==OriginalEventSelection::Rewards;

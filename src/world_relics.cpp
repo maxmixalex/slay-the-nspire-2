@@ -561,7 +561,9 @@ void w_select_apply(State& s,const uint16_t* ids,unsigned count){auto& w=s.world
  for(unsigned remaining=count;remaining>0;remaining--){unsigned i=remaining-1;
   unsigned at=selected[i];if(choice==WorldRelicChoice::Remove||choice==WorldRelicChoice::Transform)for(unsigned j=0;j<i;j++)if(selected[j]<selected[i])--at;
   if(at>=s.deck_count){w_error(s);return;}
-  if(choice==WorldRelicChoice::Duplicate){if(!w_queue_card(s,w_snapshot(s,selected[i]),serial,true))return;}
+  // Dolly's Mirror clones the model, then calls CardPileCmd.Add without
+  // clonedBy. Its new acquisition still triggers BingBong and Hoarder.
+  if(choice==WorldRelicChoice::Duplicate){if(!w_queue_card(s,w_snapshot(s,selected[i]),serial))return;}
   else{if(!w_enqueue(s,WorldRelicOp::ApplyChoice,serial,int(choice),int(at),int(filter)|(owner_id==WorldRelicAstrolabe?256:0)))return;
    if(choice==WorldRelicChoice::Enchant){auto&f=w.steps[w.step_cursor].card.facts;f.enchantment=w.choice_enchantment;f.enchantment_amount=w.choice_amount;}}
  }

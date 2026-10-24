@@ -34,6 +34,7 @@ struct Canvas{
     // Godot visible_ratio reveals glyphs after laying out the complete text.
     // Keep fitting, word wrapping and centering stable during room dialogue.
     unsigned text_visible_characters=~0u;
+    uint8_t font_face=0;
     void paint(int at,uint16_t color,unsigned alpha=255,unsigned mode=0){
         if(opacity!=255)alpha=div255(alpha*opacity);
         if(!alpha)return;
@@ -314,7 +315,7 @@ struct Canvas{
     int width(const char*p,int size){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
         RichReader reader(p);RichChar ch{};int w=0;
-        while(reader.next(ch)&&ch.codepoint!='\n')w+=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch)).advance;
+        while(reader.next(ch)&&ch.codepoint!='\n')w+=a.content.glyph_metrics(ch.codepoint,size,(rich_font_style(ch)|font_face)).advance;
         return w;
     }
     void glyph(Glyph g,int x,int y,uint16_t color){
@@ -355,10 +356,10 @@ struct Canvas{
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         RichReader reader(p);RichChar ch{};int start=x,line=0;
-        while(reader.next(ch)){auto metric=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch));int advance=metric.advance;
+        while(reader.next(ch)){auto metric=a.content.glyph_metrics(ch.codepoint,size,(rich_font_style(ch)|font_face));int advance=metric.advance;
             if(ch.codepoint=='\n'||(x>start&&x+advance>start+maxwidth)){x=start;y+=size+3;if(++line>=maxlines)break;if(ch.codepoint=='\n')continue;}
             if(ch.index>=text_visible_characters){x+=advance;continue;}
-            const auto g=a.content.glyph(ch.codepoint,size,rich_font_style(ch));
+            const auto g=a.content.glyph(ch.codepoint,size,(rich_font_style(ch)|font_face));
             int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
             if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
             int dx=a.text_effects&&ch.style.jitter?int((a.animation/2+ch.index*7)%3)-1:0;
@@ -371,19 +372,19 @@ struct Canvas{
         const uint16_t colors[]={color,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
         RichReader reader(p);RichChar ch{};int at=x,row=0;bool boundary=true;
         const bool words=a.content.english();
-        auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px,rich_font_style(value));const int advance=g.advance;return fitted_text::Metric{advance,advance};};
+        auto metrics=[&](const RichChar&value,int px){const auto g=a.content.glyph_metrics(value.codepoint,px,(rich_font_style(value)|font_face));const int advance=g.advance;return fitted_text::Metric{advance,advance};};
         static const int wave[16]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
         while(reader.next(ch)){
             // Only English paragraphs reserve the next complete word. The
             // copied rich reader preserves styles across tags and the live
             // reader's character indices. Oversized words retain glyph wrap.
             const int word=words&&boundary&&at>x&&fitted_text::word_character(ch.codepoint)?fitted_text::word_width(reader,ch,size,metrics):0;
-            const auto metric=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch));int advance=metric.advance;
+            const auto metric=a.content.glyph_metrics(ch.codepoint,size,(rich_font_style(ch)|font_face));int advance=metric.advance;
             const bool space=ch.codepoint==' '||ch.codepoint=='\t';
             if(words&&space&&(at==x||at+advance>x+w)){boundary=true;continue;}
             if(ch.codepoint=='\n'||(at>x&&(at+advance>x+w||(word&&word<=w&&at+word>x+w)))){at=x;row++;if(ch.codepoint=='\n'){boundary=true;continue;}}
             if(words){boundary=space;if(at==x&&space)continue;}
-            if(row>=skip&&row<skip+lines&&ch.index<text_visible_characters){const auto g=a.content.glyph(ch.codepoint,size,rich_font_style(ch));int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
+            if(row>=skip&&row<skip+lines&&ch.index<text_visible_characters){const auto g=a.content.glyph(ch.codepoint,size,(rich_font_style(ch)|font_face));int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;
                 if(a.text_effects&&ch.style.thinky_dots)dy+=rich_thinky_offset(a.map_clock_ms,ch.index-ch.style.thinky_start);
                 int dx=a.text_effects&&ch.style.jitter?(int)((a.animation/2+ch.index*7)%3)-1:0;
                 // Original event body text is 26px. Normalize native glyph
@@ -398,7 +399,7 @@ struct Canvas{
     // native 8/10/12px glyphs, then ellipsize within its final visible line.
     fitted_text::Plan fitted(const char*p,int x,int y,int w,int h,int preferred,int minimum,uint16_t color,bool centered=false,bool single_line=false,bool outline=false,bool drop_shadow=false){
         char localized[1024];p=a.ui_text(p,localized,sizeof localized);
-        auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,rich_font_style(ch));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
+        auto metrics=[&](const RichChar&ch,int size){const auto g=a.content.glyph_metrics(ch.codepoint,size,(rich_font_style(ch)|font_face));return fitted_text::Metric{g.advance,mx(int(g.w),int(g.advance))};};
         auto plan=fitted_text::plan(p,w,h,preferred,minimum,metrics);
         if(single_line){
             while(plan.total>1&&plan.size>minimum){plan.size=fitted_text::next_size(plan.size);plan.total=fitted_text::line_count(p,w,plan.size,metrics);}
@@ -413,7 +414,7 @@ struct Canvas{
         if(shadow&&drop_shadow&&!outline)clipped.opacity=uint8_t(div255(clipped.opacity*128));
         fitted_text::visit(p,w,plan,metrics,[&](const RichChar&ch,int at,int row,int size){
             if(ch.index>=text_visible_characters)return;
-            const auto g=a.content.glyph(ch.codepoint,size,rich_font_style(ch));int xx=x+at+(centered?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
+            const auto g=a.content.glyph(ch.codepoint,size,(rich_font_style(ch)|font_face));int xx=x+at+(centered?mx(0,(w-widths[row])/2):0),yy=top+row*plan.step;
             // Keep animated rich text within its allocated card rectangle.
             static const int wave[]={0,1,1,2,2,2,1,1,0,-1,-1,-2,-2,-2,-1,-1};
             int dy=a.text_effects&&ch.style.wave?wave[(a.animation/2+ch.index*2)%16]:0;

@@ -5,6 +5,7 @@ static const char* native_reward_text(const App&a,const char*table,const char*ke
 }
 static void native_reward_backdrop(Canvas&c){
  const auto&s=c.a.game;
+ if(s.original_events.id==OriginalEventId::CrystalSphere&&s.original_events.crystal_item_count&&(s.phase==Phase::OriginalEventChoice||s.phase==Phase::WorldRelicChoice)){c.a.sync_crystal_presentation();Canvas background=c;background.opacity=255;crystal_backdrop(background);crystal_dialogue(background);}
  if(s.phase==Phase::WorldRelicChoice&&s.world_relics.return_phase==uint8_t(Phase::Reward))c.picture(c.a.combat_background(),0,22,320,218);
  c.dim(0,22,320,218,185);
 }

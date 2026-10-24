@@ -204,7 +204,7 @@ class PackView:
         previous_glyph = -1
         for cp, offset, px, w, h, advance, encoded in self.glyphs:
             require(cp <= 0x10ffff and 0 < px <= (255 if self.version >= 24 else 32) and
-                    (px & 63) in (8, 10, 12, 16, 20) and
+                    (px & (31 if self.version >= 28 else 63)) in ((6, 8, 10, 12, 14, 16, 20) if self.version >= 28 else (8, 10, 12, 16, 20)) and
                     0 < w <= 40 and 0 < h <= 40 and advance <= 40,
                     'Invalid glyph geometry')
             glyph_key = (px << 24) | cp

@@ -145,17 +145,18 @@ static void capture(const char*path){
     app.render();FILE*f=fopen(path,"wb");if(!f){perror(path);exit(3);}fprintf(f,"P6\n320 240\n255\n");
     for(auto p:app.pixels){uint8_t c[3]={(uint8_t)(((p>>11)*255+15)/31),(uint8_t)((((p>>5)&63)*255+31)/63),(uint8_t)(((p&31)*255+15)/31)};fwrite(c,1,3,f);}fclose(f);
 }
-static bool key(KeySym sym,spire::Key&k){
-#if SPIRE_DEBUG_COMMANDS
-    if(sym==XK_F1||sym==XK_g||sym==XK_G){k=spire::Key::Debug;return true;}
-#endif
-    using spire::Key;switch(sym){case XK_Left:case XK_4:k=Key::Left;break;case XK_Right:case XK_6:k=Key::Right;break;
-    case XK_Up:case XK_8:k=Key::Up;break;case XK_Down:case XK_2:k=Key::Down;break;
-    case XK_Return:case XK_KP_Enter:case XK_5:k=Key::Confirm;break;case XK_space:case XK_e:case XK_E:k=Key::EndTurn;break;
-    case XK_Escape:k=Key::Back;break;case XK_Tab:case XK_q:case XK_Q:k=Key::Inspect;break;case XK_l:case XK_L:k=Key::Log;break;
-    case XK_a:case XK_A:k=Key::DrawPile;break;case XK_d:case XK_D:k=Key::DiscardPile;break;case XK_f:case XK_F:k=Key::ExhaustPile;break;
-    case XK_m:case XK_M:k=Key::Map;break;case XK_p:case XK_P:k=Key::Potions;break;case XK_r:case XK_R:k=Key::Relics;break;case XK_i:case XK_I:k=Key::Detail;break;case XK_c:case XK_C:k=Key::Collection;break;case XK_v:case XK_V:k=Key::Statuses;break;
-    case XK_s:case XK_S:k=Key::Save;break;case XK_o:case XK_O:k=Key::Load;break;default:return false;}return true;
+static uint16_t physical_keycode(KeySym sym){
+    using namespace spire;
+    if(sym>=32&&sym<=126)return normalize_input_key(uint16_t(sym));
+    if(sym>=XK_F1&&sym<=XK_F12)return uint16_t(InputF1+sym-XK_F1);
+    if(sym>=XK_KP_0&&sym<=XK_KP_9)return uint16_t('0'+sym-XK_KP_0);
+    switch(sym){case XK_Left:return InputLeft;case XK_Right:return InputRight;case XK_Up:return InputUp;case XK_Down:return InputDown;
+    case XK_Return:case XK_KP_Enter:return 13;case XK_Escape:return 27;case XK_Tab:case XK_ISO_Left_Tab:return 9;case XK_BackSpace:return 8;
+    case XK_Insert:return InputInsert;case XK_Delete:return InputDelete;case XK_Home:return InputHome;case XK_End:return InputEnd;
+    case XK_Page_Up:return InputPageUp;case XK_Page_Down:return InputPageDown;
+    case XK_Shift_L:case XK_Shift_R:return InputShift;case XK_Control_L:case XK_Control_R:return InputControl;
+    case XK_Alt_L:case XK_Alt_R:return InputAlt;case XK_Meta_L:case XK_Meta_R:case XK_Super_L:case XK_Super_R:return InputMeta;
+    default:return 0;}
 }
 int main(int argc,char**argv){
     std::string dir=directory(argv[0]),actions,packpath,commonpath,localepath;
@@ -274,7 +275,7 @@ int main(int argc,char**argv){
             if(e.type==ClientMessage&&(Atom)e.xclient.data.l[0]==close)app.quit=true;
             else if(e.type==ConfigureNotify){width=std::max(320,e.xconfigure.width);height=std::max(240,e.xconfigure.height);if(image){XDestroyImage(image);image=nullptr;}}
             else if(e.type==FocusIn){text_focused=false;sync_text_focus();}
-            else if(e.type==FocusOut){if(input_context)XUnsetICFocus(input_context);text_focused=false;memset(held,0,sizeof held);app.pointer_cancel();app.pointer.visible=false;}
+            else if(e.type==FocusOut){if(input_context)XUnsetICFocus(input_context);text_focused=false;memset(held,0,sizeof held);app.physical_keys_cancel();app.pointer_cancel();app.pointer.visible=false;}
             else if(e.type==MotionNotify||e.type==ButtonPress||e.type==ButtonRelease){
                 int scale=std::max(1,std::min(width/320,height/240));
                 int ex=e.type==MotionNotify?e.xmotion.x:e.xbutton.x,ey=e.type==MotionNotify?e.xmotion.y:e.xbutton.y;
@@ -291,10 +292,14 @@ int main(int argc,char**argv){
                 }
             }
             else if(e.type==LeaveNotify&&!app.pointer.held)app.pointer.visible=false;
-            else if(e.type==KeyRelease){held[e.xkey.keycode&255]=false;spire::Key released;
-                if(key(XLookupKeysym(&e.xkey,0),released))app.map_drawing_key_release(released);}
-            else if(e.type==KeyPress&&(!held[e.xkey.keycode&255]||app.library_search_editing)){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
-                if(app.library&&!app.library_tab&&app.library_search_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
+            else if(e.type==KeyRelease){
+                // X11 autorepeat is a release/press pair with the same stamp.
+                // Preserve the original press mapping until the actual release.
+                bool repeat=false;if(XPending(d)){XEvent next;XPeekEvent(d,&next);repeat=next.type==KeyPress&&next.xkey.keycode==e.xkey.keycode&&next.xkey.time==e.xkey.time;}
+                if(!repeat){held[e.xkey.keycode&255]=false;app.physical_key(physical_keycode(XLookupKeysym(&e.xkey,0)),false);}}
+            else if(e.type==KeyPress){held[e.xkey.keycode&255]=true;KeySym symbol=XLookupKeysym(&e.xkey,0);
+                if(app.binding_listening>=0)app.physical_key(physical_keycode(symbol),true);
+                else if(app.library&&!app.library_tab&&app.library_search_editing&&!(e.xkey.state&(ControlMask|Mod1Mask))){
                     char text[512];KeySym actual=symbol;Status status=XLookupNone;int size=0;
                     if(input_context)size=Xutf8LookupString(input_context,&e.xkey,text,sizeof text,&actual,&status);
                     else size=XLookupString(&e.xkey,text,sizeof text,&actual,nullptr);
@@ -318,8 +323,8 @@ int main(int argc,char**argv){
                     else if(actual==XK_BackSpace)app.reference_text(8);
                     else if(actual==XK_Escape)app.reference_text(27);
                     else if(size==1&&(unsigned char)text[0]>=32)app.reference_text((unsigned char)text[0]);
-                    else {spire::Key k;if(key(symbol,k))app.input(k);}
-                }else {spire::Key k;if(key(symbol,k))app.input(k);}}
+                    else app.physical_key(physical_keycode(symbol),true);
+                }else app.physical_key(physical_keycode(symbol),true);}
         }
         change_language();service_profile();
         auto now=std::chrono::steady_clock::now();app.advance((uint32_t)std::chrono::duration_cast<std::chrono::milliseconds>(now-last_frame).count());last_frame=now;app.render();int scale=std::max(1,std::min(width/320,height/240)),w=320*scale,h=240*scale;

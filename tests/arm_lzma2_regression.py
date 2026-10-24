@@ -23,6 +23,15 @@ from unicorn.arm_const import (UC_CPU_ARM_926, UC_ARM_REG_R0, UC_ARM_REG_R1,
 
 def fixtures():
     yield 'one', b'Z', b'\x01\x00\x00Z\x00'
+    # The offline adaptive encoder changes literal/position contexts, not the
+    # runtime format or fixed probability arena. Exercise each added context
+    # in the actual linked ARM decoder, including lc+lp == 4's largest arena.
+    raw = bytes((i % 31) * 5 for i in range(4097))
+    for lc, lp, pb in ((3, 0, 0), (4, 0, 1), (3, 1, 1)):
+        packed = lzma.compress(raw, format=lzma.FORMAT_RAW,
+            filters=[dict(id=lzma.FILTER_LZMA2, dict_size=512 * 1024,
+                lc=lc, lp=lp, pb=pb, preset=9, nice_len=273, depth=512)])
+        yield f'contexts-{lc}-{lp}-{pb}', raw, packed
     for name, raw in (
             ('ramp', bytes(i % 251 for i in range(4097))),
             ('maximum', bytes(512 * 1024))):

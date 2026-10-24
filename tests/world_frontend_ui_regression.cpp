@@ -420,11 +420,14 @@ static void modal_isolation_and_fast_mode(){
  capture("settings-general");const auto input=find_hit(HitKind::UiAction,int(UiAction::SettingsInputTab));
  a.pointer_move(input.x+input.w/2,input.y+input.h/2);a.render();CHECK(a.settings_tab==0);unchanged();
  a.pointer_button(true);CHECK(a.settings_tab==0);a.pointer_button(false);CHECK(a.settings_tab==1&&a.settings_item==0);a.pointer.visible=false;capture("settings-input");unchanged();
- action(UiAction::SettingsControls);CHECK(a.help&&a.settings_open);bool fast=a.fast_mode;
- const int help_menu=a.menu,help_item=a.settings_item;
- a.pointer_move(105,31);a.render();CHECK(a.menu==help_menu&&a.settings_item==help_item&&a.settings_tab==1);
- a.pointer_move(273,73);a.render();CHECK(a.menu==help_menu&&a.settings_item==help_item&&a.fast_mode==fast);
- a.input(Key::Confirm);CHECK(!a.help&&a.settings_open&&a.fast_mode==fast);unchanged();
+ // The original input panel opens a real listening modal rather than the
+ // retired port-only Controls page. Its backdrop blocks the settings tabs.
+ press(HitKind::InputBinding,int(InputCommand::Map));CHECK(a.binding_listening==int(InputCommand::Map)&&a.settings_open);bool fast=a.fast_mode;
+ const int listening_menu=a.menu,listening_item=a.settings_item;
+ a.pointer_move(105,31);a.render();CHECK(a.menu==listening_menu&&a.settings_item==listening_item&&a.settings_tab==1);
+ a.pointer_button(true);a.pointer_button(false);CHECK(a.binding_listening==int(InputCommand::Map)&&a.settings_tab==1);
+ a.pointer_move(273,73);a.render();CHECK(a.menu==listening_menu&&a.settings_item==listening_item&&a.fast_mode==fast);
+ CHECK(a.physical_key('Y',true)&&a.physical_key('Y',false));CHECK(a.binding_listening<0&&a.settings_open&&a.fast_mode==fast);a.reset_input_bindings();unchanged();
  a.input(Key::Left);CHECK(a.settings_tab==0&&a.settings_item==0);a.render();unchanged();
  // A settings row's label supplies focus/description; only its right-side
  // native tickbox is the pointer action. A tab change never toggles a value.

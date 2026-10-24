@@ -4,7 +4,7 @@
 namespace spire { namespace fitted_text {
 struct Metric {int advance=0,width=0;};
 struct Plan {int size=8,rows=0,total=0,step=9;bool truncated=false;};
-inline int next_size(int size){return size>16?16:size>12?12:size>10?10:8;}
+inline int next_size(int size){return size>16?16:size>12?12:size>10?10:size>8?8:6;}
 inline int row_capacity(int height,int size){return height>2?(height-2)/(size+1):0;}
 inline bool word_character(uint32_t cp){return cp>32&&cp<0x300;}
 template<class Metrics> int word_width(const RichReader&tail,const RichChar&first,int size,Metrics metrics){
@@ -26,7 +26,7 @@ template<class Metrics> int line_count(const char*text,int width,int size,Metric
     }return row;
 }
 template<class Metrics> Plan plan(const char*text,int width,int height,int preferred,int minimum,Metrics metrics){
-    Plan result;result.size=preferred<8?8:preferred;minimum=minimum<8?8:minimum;
+    Plan result;result.size=preferred<6?6:preferred;minimum=minimum<6?6:minimum;
     if(width<=0||height<=2||!*text)return result;
     for(;;){
         result.rows=row_capacity(height,result.size);result.step=result.size+1;

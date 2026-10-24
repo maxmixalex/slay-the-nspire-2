@@ -15,6 +15,7 @@ static spire::SplitResourceSource split;
 static spire::BootLanguage boot_language=spire::BootLanguage::Unknown;
 static uint32_t browser_entropy=0;
 static spire::UiPreferences preferences{};
+static uint8_t preferences_bytes[spire::UiPreferencesBytes];
 static bool preferences_dirty=false;
 static unsigned language_mask=0,pending_language=0;
 static uint8_t progress_bytes[spire::UiProgressCapacity];
@@ -112,6 +113,12 @@ void set_preferences(unsigned flags){preferences.fast_mode=flags==1;preferences_
 unsigned preferences_flags(){return preferences.fast_mode?1u:0u;}
 void set_preferences_v2(unsigned flags){spire::UiPreferences value{};spire::ui_preferences_from_flags(flags,value);preferences=value;preferences_dirty=false;}
 unsigned preferences_v2_flags(){return spire::ui_preference_flags(preferences);}
+unsigned preferences_buffer(){spire::encode_ui_preferences(preferences,preferences_bytes);return unsigned(size_t(preferences_bytes));}
+unsigned preferences_length(){return sizeof preferences_bytes;}
+int set_preferences_v3(unsigned size){
+    spire::UiPreferences value{};if(size!=sizeof preferences_bytes||!spire::decode_ui_preferences(preferences_bytes,size,value))return 0;
+    preferences=value;preferences_dirty=false;return 1;
+}
 int preferences_pending(){return preferences_dirty?1:0;}
 void preferences_ack(int success){
     preferences_dirty=!success;
@@ -151,6 +158,9 @@ void pointer_move(int x,int y){app.pointer_move(x,y);}
 void pointer_button(int down){app.pointer_button(down!=0);}
 void pointer_aux_button(int button,int down){app.pointer_aux_button(unsigned(button),down!=0);}
 void key_release(int key){if(key>=0&&key<=(int)spire::Key::Debug)app.map_drawing_key_release((spire::Key)key);}
+int physical_key(unsigned code,int pressed){return code<=65535&&app.physical_key(uint16_t(code),pressed!=0);}
+void physical_keys_cancel(){app.physical_keys_cancel();}
+int key_binding_listening(){return app.binding_listening>=0;}
 void pointer_cancel(){app.pointer_cancel();app.pointer.visible=false;}
 void pointer_scroll(int rows){app.pointer_scroll(rows);}
 int text_entry_active(){

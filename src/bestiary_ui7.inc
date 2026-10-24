@@ -322,7 +322,7 @@ static void bestiary_screen(Canvas&c){
  auto&a=c.a;auto&b=a.bestiary;a.hit_count=0;title_background(c,false);
  bestiary_actors(c);const auto*entry=bestiary_entry(b.selected);
  const unsigned age=a.map_clock_ms-b.selected_at;const int eased=age>=500?4096:int(health_bar::expo_out(age*2));
- Canvas title=c;title.opacity=uint8_t(age>=500?255:age*255/500);
+ Canvas title=c;title.font_face=6;title.opacity=uint8_t(age>=500?255:age*255/500);
  const char*name=entry?bestiary_title(a,*entry):bestiary_text(a,"LOCKED.monsterTitle","Unknown","未知");
  title.text_fitted(name,43,5+11*eased/4096,191,16,rgb(239,200,81),10,true);
  bestiary_controls(c);bestiary_list(c);

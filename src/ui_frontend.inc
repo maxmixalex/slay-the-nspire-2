@@ -175,16 +175,26 @@ static void frontend_settings_screen(Canvas&c){
   checkbox(a.keyboard_only,60);c.action(252,60,42,27,UiAction::SettingsKeyboardOnly);
   divider.rect(25,87,270,1,rgb(232,220,190));
   if(a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<295&&a.pointer.y>=60&&a.pointer.y<87)hover=6;
-  const char*keys[]={"INPUT_SETTINGS.INPUT_TITLE.confirm","INPUT_SETTINGS.INPUT_TITLE.endTurn","INPUT_SETTINGS.INPUT_TITLE.viewDeck","INPUT_SETTINGS.INPUT_TITLE.viewMap"};
-  const char*english_labels[]={"Confirm","End Turn","View Deck","View Map"};
-  const char*chinese_labels[]={"确认","结束回合","牌组","地图"};
-  const char*bindings[]={"Enter / 5","Space","Tab / Q","M"};
-  for(unsigned i=0;i<4;++i){const int y=98+int(i)*22;c.text_fitted(label(keys[i],english_labels[i],chinese_labels[i]),29,y,170,10,White);c.text_fitted(bindings[i],204,y,87,10,White,8,true);divider.rect(25,y+17,270,1,rgb(232,220,190));}
-  c.text_fitted(english?"Controls":"操作说明",195,191,96,10,a.settings_item==1?Gold:White,8,true);c.action(190,184,106,24,UiAction::SettingsControls);
+  const unsigned bank=a.keyboard_only&&!a.pointer.visible?1:0;
+  c.text_fitted(label("INPUT_SETTINGS.COMMAND_HEADER","Command","指令"),29,92,139,10,Muted,8);
+  c.paragraph(label("INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER","Mouse + Keyboard","鼠标与键盘"),174,91,59,2,0,8,bank==0?Gold:Muted);
+  c.paragraph(label("INPUT_SETTINGS.KEYBOARD_ONLY_MODE_HEADER","Keyboard-Only","纯键盘"),239,91,56,2,0,8,bank==1?Gold:Muted);
+  for(unsigned i=a.settings_top;i<InputCommandCount&&i<a.settings_top+5;++i){const int y=113+int(i-a.settings_top)*18;
+   const bool enabled=input_remappable(bank,i),pointed=a.pointer.visible&&a.pointer.x>=25&&a.pointer.x<296&&a.pointer.y>=y&&a.pointer.y<y+18;
+   const bool selected=pointed||(!a.pointer.visible&&a.settings_item==i+1);Canvas row=c;if(!enabled)row.opacity=uint8_t(div255(row.opacity*120));
+   if(selected&&enabled)row.rect(25,y,271,17,rgb(31,51,62));
+   row.text_fitted(a.input_command_title(i),29,y+3,139,10,selected?Gold:White,8);
+   for(unsigned b=0;b<2;++b){char binding[16]{};input_key_label(a.input_bindings.keys[b][i],binding,sizeof binding);
+    row.text_fitted(binding,174+int(b)*65,y+3,56,10,selected&&b==bank?Gold:White,8,true);}
+   divider.rect(25,y+17,270,1,rgb(232,220,190));c.hit(25,y,271,18,HitKind::InputBinding,int(i),enabled);
+  }
+  c.rect(303,113,2,90,rgb(18,33,41));c.rect(301,113+int(a.settings_top)*72/int(InputCommandCount-5),6,18,rgb(80,115,132));
+  c.action(296,108,17,45,UiAction::SettingsScrollUp,a.settings_top>0);c.action(296,153,17,50,UiAction::SettingsScrollDown,a.settings_top<InputCommandCount-5);
  }
- const unsigned reset_item=a.settings_tab?2:6,back_item=reset_item+1;
+ const unsigned reset_item=a.settings_tab?InputCommandCount+1:6,back_item=reset_item+1;
  native_back(c,7,211,84,28,"返回",true,!a.pointer.visible&&a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
- c.button(label("RESET_SETTINGS_BUTTON","Reset","重置"),241,211,69,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(237,207,78,33,UiAction::SettingsReset);
+ if(a.settings_tab){c.button(label("INPUT_SETTINGS.RESET_TO_DEFAULT","Reset to Default","恢复默认"),210,211,100,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(206,207,109,33,UiAction::SettingsReset);}
+ else{c.button(label("RESET_SETTINGS_BUTTON","Reset","重置"),241,211,69,!a.pointer.visible&&a.settings_item==reset_item,25);c.action(237,207,78,33,UiAction::SettingsReset);}
  if(hover>=1&&!a.settings_language_open&&!a.frontend_confirm){
   const char*descriptions[]={"","SCREENSHAKE_DESCRIPTION","FASTMODE_DESCRIPTION","PHOBIA_MODE_DESCRIPTION","SHOW_HAND_CARD_COUNT_DESCRIPTION","TEXT_EFFECTS_DESCRIPTION","KEYBOARD_ONLY_MODE_DESCRIPTION"};
   const char*body=a.content.world_string("settings_ui",descriptions[hover]);
@@ -204,7 +214,12 @@ static void frontend_settings_screen(Canvas&c){
    c.action(198,y,89,21,i?UiAction::SettingsLanguageChinese:UiAction::SettingsLanguageEnglish);
   }
  }
-
+ if(a.binding_listening>=0){
+  a.hit_count=0;c.dim(0,0,320,240,200);
+  c.text_fitted(a.input_command_title(unsigned(a.binding_listening)),30,87,260,12,Gold,10,true);
+  c.text_fitted(label("LISTENING_INPUT","Listening for input...","等待输入……"),30,113,260,12,White,10,true);
+  native_back(c,7,211,84,28,"返回",true);c.action(3,207,94,33,UiAction::SettingsBack);
+ }
 }
 static void frontend_confirm_screen(Canvas&c){
  auto&a=c.a;const bool quitting=a.frontend_confirm==3,reset=a.frontend_confirm==4,erase_profile=a.frontend_confirm==5;a.hit_count=0;c.dim(0,0,320,240,210);

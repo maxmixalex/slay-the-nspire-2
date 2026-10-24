@@ -7,12 +7,12 @@ function createProfileStorage(access) {
  function key(base,slot){valid(slot);return base+(slot===1?'':'-profile-'+slot);}
  function keys(slot,history){
   const list=[];for(let version=3;version<=16;version++)list.push(key('nSpire2-save-v'+version,slot));
-  if(history)list.push(key('nSpire2-progress-v1',slot),key('nSpire2-preferences-v1',slot),key('nSpire2-preferences-v2',slot));return list;
+  if(history)list.push(key('nSpire2-progress-v1',slot),key('nSpire2-preferences-v1',slot),key('nSpire2-preferences-v2',slot),key('nSpire2-preferences-v3',slot));return list;
  }
  function readJournal(text){
   if(text.length>8*1024*1024)throw Error('Invalid profile transaction');
   const value=JSON.parse(text);valid(value.slot);
-  if((value.version!==1&&value.version!==2)||!Array.isArray(value.entries)||value.entries.length>17)throw Error('Invalid profile transaction');
+  if((value.version!==1&&value.version!==2)||!Array.isArray(value.entries)||value.entries.length>18)throw Error('Invalid profile transaction');
   const allowed=new Set(keys(value.slot,true)),seen=new Set();
   for(const entry of value.entries){
    if(!Array.isArray(entry)||entry.length!==2||!allowed.has(entry[0])||seen.has(entry[0])||
@@ -38,6 +38,9 @@ function createProfileStorage(access) {
  }
  function json(text){try{return JSON.parse(text);}catch(error){return null;}}
  function validFlags(flags){return Number.isInteger(flags)&&flags>=0&&flags<=0xffffffff&&(flags&~0x73f)===0&&(flags>>>8)<=4;}
+ function validRecord(bytes){return Array.isArray(bytes)&&bytes.length===108&&bytes.every(x=>Number.isInteger(x)&&x>=0&&x<=255)&&
+  bytes[0]===78&&bytes[1]===83&&bytes[2]===80&&bytes[3]===70&&bytes[4]===3&&bytes[7]===0&&validFlags(bytes[5]|bytes[6]<<8);}
+ function readPreferencesRecord(slot){const value=json(read(key('nSpire2-preferences-v3',slot)));return value&&value.version===3&&validRecord(value.bytes)?new Uint8Array(value.bytes):null;}
  function erase(slot,history){
   if(!recover())return false;
   const storage=access(),entries=[];
@@ -50,11 +53,12 @@ function createProfileStorage(access) {
   catch(error){restore();return false;}
  }
  return {
-  key,recover,
+  key,recover,readPreferencesRecord,
   selected(){const value=Number(access().getItem(selector));return Number.isInteger(value)&&value>=1&&value<=3?value:1;},
   select(slot){valid(slot);if(!recover())return false;access().setItem(selector,String(slot));return true;},
   readProgress(slot){return read(key('nSpire2-progress-v1',slot));},
   readPreferences(slot){
+   const record=readPreferencesRecord(slot);if(record)return record[5]|record[6]<<8;
    const saved=json(read(key('nSpire2-preferences-v2',slot)));
    if(saved&&saved.version===2&&validFlags(saved.flags))return saved.flags;
    const old=json(read(key('nSpire2-preferences-v1',slot)));
@@ -78,10 +82,19 @@ function createProfileStorage(access) {
    }catch(error){restore();return false;}
   },
   writeProgress(slot,value){if(!recover())return false;access().setItem(key('nSpire2-progress-v1',slot),value);return true;},
-  writePreferences(slot,flags){
+  writePreferences(slot,flags,record=null){
    if(!validFlags(flags))throw Error('Invalid preferences');if(!recover())return false;
-   const storage=access();storage.setItem(key('nSpire2-preferences-v2',slot),JSON.stringify({version:2,flags}));
-   storage.setItem(key('nSpire2-preferences-v1',slot),JSON.stringify({version:1,fastMode:(flags&1)!==0}));return true;
+   const storage=access();if(record===null)record=readPreferencesRecord(slot);
+   const writes=[[key('nSpire2-preferences-v2',slot),JSON.stringify({version:2,flags})],
+                 [key('nSpire2-preferences-v1',slot),JSON.stringify({version:1,fastMode:(flags&1)!==0})]];
+   if(record!==null){const bytes=Array.from(record);if(!validRecord(bytes))throw Error('Invalid keyboard preferences');bytes[5]=flags&255;bytes[6]=flags>>>8;
+    writes.push([key('nSpire2-preferences-v3',slot),JSON.stringify({version:3,bytes})]);}
+   // Keep all three compatibility records on the same successful settings
+   // revision. A denied write cannot resurrect a stale set of key bindings.
+   const transaction={version:2,slot,entries:writes.map(([name])=>[name,storage.getItem(name)])};
+   storage.setItem(journalKey,JSON.stringify(transaction));pending=transaction;
+   try{for(const [name,value]of writes)storage.setItem(name,value);storage.removeItem(journalKey);pending=null;return true;}
+   catch(error){restore();return false;}
   },
   clearRun(slot,maxVersion=16){if(maxVersion<16&&read(key('nSpire2-save-v16',slot)))return false;return erase(slot,false);},
   deleteProfile(slot){return erase(slot,true);}

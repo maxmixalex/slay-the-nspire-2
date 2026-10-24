@@ -42,7 +42,19 @@ enum HistoryUi8Asset {
  I8_MapCursorEraseTilted,
  I8_MapDrawTrail,
  I8_MapEraseTrail,
+ I8_CrystalBackground,
+ I8_CrystalPolar,
+ I8_CrystalNoiseOne,
+ I8_CrystalNoiseTwo,
+ I8_CrystalOuterInside,
+ I8_CrystalOuterOutside,
+ I8_CrystalInner,
+ I8_CrystalOutline,
+ I8_CrystalDialogue,
+ I8_Peek,
+ I8_PeekFlash,
+ I8_AncientNextArrow,
  HistoryUi8AuxiliaryCount
 };
-static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&HistoryUi8AuxiliaryCount==1984,"Original history, modifier and map drawing layer order");
+static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&I8_CrystalBackground==1984&&I8_Peek==1993&&I8_AncientNextArrow==1995&&HistoryUi8AuxiliaryCount==1996,"Original history, modifier, map and crystal layer order");
 }

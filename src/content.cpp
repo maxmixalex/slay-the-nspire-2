@@ -350,24 +350,25 @@ Picture Content::image_payload(int id,const uint8_t* supplied,uint32_t supplied_
 }
 const uint8_t* Content::glyph_record(uint32_t cp,int size,unsigned style)const{
     if(!metadata_||!io_good_||size<=0||size>32||cp>0x10ffff)return nullptr;
-    // UI7 keeps the16-byte descriptor. Its size byte uses low6bits for
-    // pixel size and high2bits for regular/bold/italic/bold-italic. Only
-    // referenced styled glyphs are packed; a missing face uses Regular.
-    unsigned face=version_>=Ui7ContentVersion?(style&3u):0u;
+    // UI8 uses the previously unused size bit5 for a scene-specific family
+    // (Spectral / Kreon bold / Bitter italic). Existing UI7 sizes and faces
+    // retain their exact keys. Every missing face has a regular fallback.
+    unsigned face=version_>=HistoryUi8ContentVersion?(style&7u):version_>=Ui7ContentVersion?(style&3u):0u;
+    unsigned band=((face&3u)<<6)|((face&4u)<<3);
     // A locale may contain only Regular, or no combined BoldItalic band.
     // Sorted resident metadata already proves that absence: skip a whole
     // failed binary search without scanning fonts or adding cache state.
-    if(face&&glyphs_&&u16(metadata_+40+images_*16+(glyphs_-1)*16+8)<(face<<6))face=0;
-    uint32_t key=((uint32_t(size)|(face<<6))<<24)|cp;int lo=0,hi=(int)glyphs_;
+    if(face&&glyphs_&&u16(metadata_+40+images_*16+(glyphs_-1)*16+8)<band){face=band=0;}
+    uint32_t key=((uint32_t(size)|band)<<24)|cp;int lo=0,hi=(int)glyphs_;
     while(lo<hi){int mid=(lo+hi)/2;const uint8_t*r=metadata_+40+images_*16+mid*16;uint32_t k=(uint32_t)u16(r+8)<<24|u32(r);if(k<key)lo=mid+1;else hi=mid;}
     if((unsigned)lo<glyphs_){const uint8_t*r=metadata_+40+images_*16+lo*16;if(((uint32_t)u16(r+8)<<24|u32(r))==key){
         const unsigned w=r[10],h=r[11],encoded=u16(r+14);
-        const unsigned sized=u16(r+8),pixel_size=sized&63u;
+        const unsigned sized=u16(r+8),pixel_size=sized&(version_>=HistoryUi8ContentVersion?31u:63u);
         if(!w||w>40||!h||h>40||!pixel_size||pixel_size>32||sized>255||(version_<Ui7ContentVersion&&sized>32)||u16(r+12)>40||
            (encoded&&(version_<5||encoded%2||encoded>2*w*h))){io_good_=false;return nullptr;}
         return r;
     }}
-    if(face)return glyph_record(cp,size,0);
+    if(face)return glyph_record(cp,size,(face&4u)?face&3u:0);
     return cp!='?'?glyph_record('?',size,0):nullptr;
 }
 Glyph Content::glyph_metrics(uint32_t cp,int size,unsigned style)const{

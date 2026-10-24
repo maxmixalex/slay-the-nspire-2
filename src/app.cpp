@@ -45,6 +45,8 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "combat_preparation.inc"
 #include "world_map_motion.inc"
 static bool ui_ancient_event(OriginalEventId);
+static void crystal_screen(Canvas&);
+#include "ancient_banner_ui.inc"
 #include "app_input.inc"
 #if SPIRE_DEBUG_COMMANDS
 #include "debug_ui.inc"
@@ -221,6 +223,7 @@ int App::detail_stars()const{
 #include "ui_progress_ui.inc"
 #include "run_modes_ui.inc"
 #include "card_choice_ui.inc"
+#include "combat_peek_ui.inc"
 #include "world_choice_ui.inc"
 #include "world_game_over_ui.inc"
 #include "deck_confirm_ui.inc"
@@ -234,6 +237,7 @@ void App::render(){
 #endif
     if(bestiary.open){Canvas c{*this};const bool mouse=pointer.visible;if(frontend_confirm)pointer.visible=false;bestiary_screen(c);pointer.visible=mouse;if(frontend_confirm)frontend_confirm_screen(c);pointer_overlay(c);return;}
     sync_reward_presentation();
+    sync_combat_peek();
     sync_map_window();
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);
     sync_combat_preparation();
@@ -268,7 +272,7 @@ void App::render(){
         const int map_cursor=cursor;
         if(map_window.is_open){cursor=map_room_cursor;scroll=map_room_scroll;}
         const bool combat_linger=int32_t(combat_linger_until-animation)>0;
-        if(combat_linger||(combat_feedback.active&&choice_phase(game.phase)))combat_screen(c);else switch(game.phase){
+        if(combat_linger||(combat_feedback.active&&choice_phase(game.phase))||combat_peek_context())combat_screen(c);else switch(game.phase){
         case Phase::Map:if(!game.world.active||!map_window.visible)map_screen(c);break;
         case Phase::Shop:shop_screen(c);break;
         case Phase::Event:event_screen(c);break;
@@ -285,8 +289,9 @@ void App::render(){
         // covering capstone's scroll position.
         if(map_window.is_open){map_room_cursor=cursor;map_room_scroll=scroll;cursor=map_cursor;scroll=panel_scroll;}
         if(map_window.visible)world_map_window_screen(c);
-        if(!combat_linger&&(!panel||panel==4)&&!library&&combat_choice_ready()&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
-        else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase))card_choice_screen(c);
+        if(!combat_linger&&(!panel||panel==4)&&!library&&combat_choice_ready()&&!choice_peeking&&(game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))world_choice_screen(c);
+        else if(!combat_linger&&!panel&&!library&&combat_choice_ready()&&choice_phase(game.phase)&&!choice_peeking)card_choice_screen(c);
+        combat_peek_button(c);
         if(panel&&!(panel==3&&map_window.visible)){scroll=panel_scroll;panels(c);}hud(c);
         if(!combat_linger||combat_feedback.active)turn_banner_screen(c);
         reward_pickup_screen(c);
@@ -300,8 +305,12 @@ void App::render(){
     pointer.visible=underlay_pointer_visible;
     if(help){
         hit_count=0;c.hit(6,7,308,226,HitKind::Close);c.rect(6,7,308,226,Panel);c.box(6,7,308,226,Gold);c.centered("操作说明",6,13,308,16,Gold);
-        const char*lines[]={"方向键 / 4、6、8、2：导航","Enter / 5：出牌、选路或确认","空格：结束回合",content.english()?"Tab / Q: deck   A / D / F: piles":"Tab / Q：牌组   A / D / F：牌堆","M：地图  P：药水  R：遗物  I：详情","S：保存  O：载入  C：图鉴  V：状态","Esc：返回或打开菜单",content.english()?"Enter to aim, Left/Right target, Enter to play":"选牌后 Enter，左右选择目标，Enter 出牌","三幕路线，含首领、古代之民与事件。","触摸板：轻触/按下点击，按住可拖牌。"};
-        for(int i=0;i<10;i++)c.text(lines[i],16,41+i*17,12,i<8?White:Muted,291);c.centered("Enter / Esc 返回",0,216,320,10,Gold);
+        const InputCommand commands[]={InputCommand::Select,InputCommand::Confirm,InputCommand::EndTurn,InputCommand::Map,InputCommand::Deck,
+            InputCommand::Draw,InputCommand::Discard,InputCommand::Exhaust,InputCommand::Peek,InputCommand::Cancel};
+        const unsigned bank=keyboard_only?1:0;
+        for(unsigned i=0;i<10;++i){const unsigned command=unsigned(commands[i]);char label[16]{};input_key_label(input_bindings.keys[bank][command],label,sizeof label);
+            c.text_fitted(input_command_title(command),16,41+int(i)*17,204,11,White,8);c.text_fitted(label,225,41+int(i)*17,77,11,Gold,8,true);}
+        c.centered(content.english()?"Change bindings in Settings > Input":"在设置 > 输入中更改按键",0,216,320,10,Gold);
     }
     if(character_select)character_screen(c);
     if(library)library_screen(c);

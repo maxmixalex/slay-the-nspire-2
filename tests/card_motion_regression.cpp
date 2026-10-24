@@ -65,7 +65,7 @@ static void hover_and_selection_layout(){
 static void draw_and_play(){
  hand(0);CombatCardMotion m;m.begin(state,0);m.apply(transfer(0,Zone::Draw,Zone::Hand));
  CombatHand::Cards next;next.count=1;next.ids[0]=0;m.set_hand(next);
- const auto origin=m.hand_pose_at(0,false);CHECK(origin.cx==20&&origin.cy==226&&origin.scale==1024&&!m.settled(0,false));
+ const auto origin=m.hand_pose_at(0,false);CHECK(origin.cx==10&&origin.cy==230&&origin.scale==848&&!m.settled(0,false));
  m.advance(1);const auto moved=m.hand_pose_at(0,false);CHECK(moved.cx>origin.cx&&moved.cx<160&&moved.cy>=origin.cy&&moved.cy<231);
  m.advance(96);CHECK(m.settled(0,false)&&same_pose(m.hand_pose_at(0,false),hand_pose(1,0,false)));
  for(unsigned fast=0;fast<2;++fast){
@@ -76,8 +76,8 @@ static void draw_and_play(){
    const double t=std::fmin(1.0,tick*.033/(fast?.1:.25)),p=1-std::pow(1-t,3);
    const double st=std::fmin(1.0,tick*.033/.25),sp=1-std::pow(1-st,3);
    CHECK(std::abs(v->x/1024.0-(start.cx+(160-start.cx)*p))<.3);
-   CHECK(std::abs(v->y/1024.0-(start.cy+(110-start.cy)*p))<.3);
-   CHECK(std::abs(v->scale-(start.scale+(819-start.scale)*sp))<2.1);
+   CHECK(std::abs(v->y/1024.0-(start.cy+(101-start.cy)*p))<.3);
+   CHECK(std::abs(v->scale-(start.scale+(678-start.scale)*sp))<2.1);
   }
  }
 }
@@ -93,7 +93,7 @@ static void discard_curve(){
    time+=speed*.033;speed+=accel*.033;m.advance(tick);const auto*v=m.find(0);CHECK(v);
    if(v->mode==CombatCardMotion::Tail){CHECK(time>=duration-.002&&m.visible_counts().discard==1);arrived=true;break;}
    CHECK(v->mode==CombatCardMotion::Fly&&m.visible_counts().discard==0);
-   const double p=time/duration,x=start.cx+(302-start.cx)*p,y=start.cy+(226-start.cy)*p-2*initial.arc*p*(1-p);
+   const double p=time/duration,x=start.cx+(310-start.cx)*p,y=start.cy+(230-start.cy)*p-2*initial.arc*p*(1-p);
    CHECK(std::abs(v->x/1024.0-x)<.35&&std::abs(v->y/1024.0-y)<.5);
    CHECK(std::abs(v->scale-start.scale*(1-.9*std::fmin(1.0,3*p)))<2);
    CHECK(std::abs(int(m.brightness(*v))-255*(1-std::fmin(1.0,3*p)))<2);
@@ -123,7 +123,7 @@ static void generated_preview(){
  for(unsigned i=0;i<2;++i){auto cue=transfer(i,Zone::Draw,Zone::Discard);cue.from=CombatCardMotion::NewCard;cue.preview=true;cue.card={Slimed,0};m.apply(cue);}
  m.counts.discard=2;CHECK(m.find(0)&&m.find(1));CHECK(m.find(0)->mode==CombatCardMotion::Preview&&m.find(0)->x<m.find(1)->x);
  CHECK(m.find(0)->scale==0&&m.visible_counts().discard==0);
- m.advance(8);CHECK(m.find(0)->scale==640&&m.find(1)->scale==640);
+ m.advance(8);CHECK(m.find(0)->scale==848&&m.find(1)->scale==848);
  m.advance(43);CHECK(m.find(0)->mode==CombatCardMotion::Preview);
  m.advance(44);CHECK(m.find(0)->mode==CombatCardMotion::Fly&&m.find(1)->mode==CombatCardMotion::Fly);
  m.advance(172);CHECK(!m.find(0)&&!m.find(1)&&m.visible_counts().discard==2);

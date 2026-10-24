@@ -92,12 +92,9 @@ static bool world_populate_shop_card(State&s,unsigned slot,bool sale){
     options.rarity_mask=world_rarity_mask(2)|world_rarity_mask(3)|world_rarity_mask(4);
     const CardType types[]={CardType::Attack,CardType::Attack,CardType::Skill,CardType::Skill,CardType::Power};
     if(slot<5)options.type_mask=world_type_mask(types[slot]);
-    if(slot<5)world_modifier_card_pools(s,options,true);
-    CardKind pool[CardKinds];unsigned count=world_card_candidates(s,options,pool,CardKinds),n=0;
-    for(unsigned i=0;i<count;++i){bool used=false;for(unsigned j=0;j<ShopCardCount;++j)
-        if((!(s.shop_sold&(1U<<j))||j==slot)&&w.shop_cards[j].kind==pool[i])used=true;
-        if(!used)pool[n++]=pool[i];
-    }
+    CardKind blacklist[ShopCardCount];unsigned blacklisted=0;
+    for(unsigned j=0;j<ShopCardCount;++j)if((!(s.shop_sold&(1U<<j))||j==slot)&&w.shop_cards[j].kind<CardKinds)blacklist[blacklisted++]=w.shop_cards[j].kind;
+    CardKind pool[CardKinds];unsigned count=world_merchant_card_candidates(s,options,blacklist,blacklisted,pool,CardKinds),n=count;
     unsigned rarity=slot<5?world_shop_rarity(s):slot==5?3:4,attempts=0;
     for(;attempts<3;++attempts){bool found=false;for(unsigned i=0;i<n;++i)if(unsigned(card_rarity(pool[i]))==rarity)found=true;
         if(found)break;rarity=rarity==4?2:rarity+1;

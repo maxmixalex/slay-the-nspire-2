@@ -15,6 +15,7 @@ int App::active_card_grid()const{
     if(library)return int(CardGridSurface::Library);
     if(title||character_select)return -1;
     if(panel)return panel==1?int(CardGridSurface::Pile):-1;
+    if(choice_peeking)return -1;
     if(!combat_choice_ready()&&(choice_phase(game.phase)||game.phase==Phase::WorldRelicChoice||game.phase==Phase::OriginalEventChoice))return -1;
     if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform||grimoire_select)return int(CardGridSurface::DeckChoice);
     if(choice_phase(game.phase)&&game.phase!=Phase::WorldRelicChoice&&game.phase!=Phase::OriginalEventChoice){

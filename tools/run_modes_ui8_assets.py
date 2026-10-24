@@ -21,6 +21,12 @@ TEXT_KEYS=tuple('main_menu_ui.'+key for key in MENU_KEYS)+tuple(
     for suffix in ('Title','Description'))+('modifiers.SEALED_DECK.selectionPrompt','modifiers.NIGHT_TERRORS.additionalRestSiteHealText')+(
     'orbs.DARK_ORB.smartDescription','orbs.FROST_ORB.smartDescription','orbs.GLASS_ORB.smartDescription',
     'orbs.LIGHTNING_ORB.smartDescription','orbs.PLASMA_ORB.smartDescription','orbs.EMPTY_SLOT.title','orbs.EMPTY_SLOT.description')
+INPUT_COMMANDS=('select','cancel','viewMap','topPanel','viewDeck','viewDraw','viewDiscard','viewExhaust','confirm','endTurn','peek',
+                'up','down','left','right')+tuple('selectCard'+str(i) for i in range(1,11))
+TEXT_KEYS+=tuple('settings_ui.INPUT_SETTINGS.INPUT_TITLE.'+key for key in INPUT_COMMANDS)+(
+    'settings_ui.INPUT_SETTINGS.COMMAND_HEADER','settings_ui.INPUT_SETTINGS.MOUSE_KEYBOARD_HEADER',
+    'settings_ui.INPUT_SETTINGS.KEYBOARD_ONLY_MODE_HEADER','settings_ui.INPUT_SETTINGS.RESET_TO_DEFAULT',
+    'settings_ui.LISTENING_INPUT')
 TEXTS=tuple(enumerate(TEXT_KEYS,8412))
 assert 8412+len(TEXTS)<=8704
 
@@ -44,7 +50,7 @@ def build_mode_text(pack):
     result={}
     for language in ('eng','zhs'):
         tables={table:json.loads(pack.read('localization/'+language+'/'+table+'.json'))
-                for table in ('main_menu_ui','modifiers','characters','orbs')}
+                for table in tuple(sorted({key.split('.',1)[0] for key in TEXT_KEYS}))}
         result[language]={}
         for _,qualified in TEXTS:
             table,key=qualified.split('.',1);value=tables[table].get(key)

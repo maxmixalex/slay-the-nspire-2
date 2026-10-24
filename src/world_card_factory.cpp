@@ -87,11 +87,31 @@ void world_modifier_card_pools(const State&s,WorldCardOptions&o,bool merchant){
   RunModifier m=run_modifier_at(s.run_options,i);Character c;
   switch(m){case RunModifier::IroncladCards:c=Character::Ironclad;break;case RunModifier::SilentCards:c=Character::Silent;break;
    case RunModifier::RegentCards:c=Character::Regent;break;case RunModifier::NecrobinderCards:c=Character::Necrobinder;break;case RunModifier::DefectCards:c=Character::Defect;break;default:continue;}
-  // Merchant hooks stop extending as soon as a previous hook has introduced
-  // another character. Reward hooks union every selected pool instead.
+  // Merchant hooks Concat even the player's own pool, then stop extending
+  // after a foreign pool has been introduced. Reward hooks use Union.
   bool present=false;for(unsigned j=0;j<o.pool_count;++j){unsigned p=o.pools[j]==WorldCardPool::Own?unsigned(s.character):unsigned(o.pools[j]);if(merchant&&p!=unsigned(s.character))return;if(p==unsigned(c))present=true;}
-  if(!present&&o.pool_count<11)o.pools[o.pool_count++]=WorldCardPool(unsigned(c));
+  if((merchant||!present)&&o.pool_count<11)o.pools[o.pool_count++]=WorldCardPool(unsigned(c));
  }
+}
+unsigned world_merchant_card_candidates(const State&s,const WorldCardOptions&base,const CardKind*blacklist,unsigned blacklisted,CardKind*out,unsigned capacity){
+ WorldCardOptions options=base;world_modifier_card_pools(s,options,true);
+ bool seen[CardKinds]{};unsigned count=0;
+ for(unsigned i=0;i<options.pool_count&&i<11;++i){
+  const unsigned p=options.pools[i]==WorldCardPool::Own?unsigned(s.character):unsigned(options.pools[i]);if(p>=11)continue;
+  const auto&pool=world_pools[p];
+  for(unsigned j=0;j<pool.count;++j){const CardKind card=pool.ids[j];
+   if(i<base.pool_count){
+    // MerchantCardEntry.Except runs BEFORE ModifyMerchantCardPool. A later
+    // Concat may restore an already-stocked card and preserve its weighting.
+    bool excluded=seen[card];seen[card]=true;
+    for(unsigned k=0;k<blacklisted;++k)if(blacklist[k]==card)excluded=true;
+    if(excluded)continue;
+   }
+   if(!accepts(s,options,card,false))continue;
+   if(count>=capacity||!out)return 0;out[count++]=card;
+  }
+ }
+ return count;
 }
 static void modifier_card_creation(const State&s,WorldCardOptions&o){
  if(!(o.flags&WorldIsCardReward)||(o.flags&WorldNoCardPoolModifications))return;

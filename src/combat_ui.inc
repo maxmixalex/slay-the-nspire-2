@@ -93,10 +93,13 @@ static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,uns
     }
 }
 static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
-    c.picture(image,x,y,23,23);
+    // All three authored controls are80px square in the1680x1260 viewport.
+    // Draw/discard counts sit on opposite lower corners of those controls.
+    c.picture(image,x,y,15,15);
     char label[16]{};TextBuffer b{label,sizeof label,0};b.number(count);
-    card_title(c,label,x-2,y+13,27,Gold);
-    c.hit(x-3,y-3,29,28,HitKind::OpenPile,tab);
+    const int count_x=x+(tab==1?7:tab==2?-5:-1),count_y=y+(tab==3?3:7);
+    health_label(c,label,count_x,count_y,17,8,Gold,Ink);
+    c.hit(x,y,15,15,HitKind::OpenPile,tab);
 }
 static void combat_hand_index(Canvas&c,unsigned index,HandPose p){
  if(!c.a.show_card_indices||p.scale<=0)return;
@@ -138,7 +141,7 @@ static int energy_sine(int angle){
     unsigned phase=unsigned(angle%360)*256/360;const int sign=phase>=128?-1:1;phase%=128;if(phase>64)phase=128-phase;
     const unsigned i=phase/4,j=phase%4;return sign*(i==16?quarter[i]:(quarter[i]*(4-j)+quarter[i+1]*j)/4);
 }
-static void combat_energy_layer(Canvas&c,int image,int angle,bool empty,int left=6,int top=174,int size=42,bool star=false,unsigned light=255){
+static void combat_energy_layer(Canvas&c,int image,int angle,bool empty,int left=19,int top=192,int size=24,bool star=false,unsigned light=255){
     // TextureRects share the 128px scene pivot. Resampling the two rotating
     // layers needs neither an intermediate framebuffer nor baked rotations.
     if(!angle&&!empty&&light==255){c.picture(image,left,top,size,size);return;}
@@ -185,7 +188,7 @@ static void combat_energy(Canvas&c,bool stars){
     // NCombatUi raises the Regent's energy counter. The star scene stays
     // below-left (and at 0.8 scale), outside the creature's power strip.
     const bool regent=stars&&s.character==Character::Regent;
-    const int left=stars?18:6,top=regent?162:174;
+    const int left=19,top=regent?154:192;
     const uint32_t delta=a.map_clock_ms-a.energy_rotation_tick;
     a.energy_rotation_mdeg=(a.energy_rotation_mdeg+(delta%72000u)*(a.energy_rotation_zero?5u:30u))%360000u;
     a.energy_rotation_tick=a.map_clock_ms;a.energy_rotation_zero=empty;
@@ -194,33 +197,31 @@ static void combat_energy(Canvas&c,bool stars){
         const int layers=s.character==Character::Necrobinder?3:5;
         for(int i=0;i<layers;i++){const bool rotates=i==1||(i==2&&s.character!=Character::Necrobinder);
             combat_energy_layer(c,a.content.ui_image(first+i),rotates?int((a.energy_rotation_mdeg*unsigned(i)/1000)%360):0,empty,left,top);}
-    }else c.picture(character_energy_image(a.content,s.character),left,top,42,42);
+    }else c.picture(character_energy_image(a.content,s.character),left,top,24,24);
     const uint16_t outline[]={rgb(77,19,13),rgb(0,79,4),rgb(22,62,100),rgb(120,64,0),rgb(112,45,111)};
     char label[24]{};TextBuffer b{label,sizeof label,0};b.number(energy);b.ch('/');b.number(a.combat_energy(true));
-    const int size=c.width(label,12)<=37?12:10;const uint16_t edge=empty?rgb(55,24,26):outline[unsigned(s.character)];
-    for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)if(dx||dy)c.centered(label,left+dx,top+13+dy,42,size,edge);
-    c.centered(label,left,top+13,42,size,empty?rgb(255,85,85):rgb(255,246,226));
-    c.hit(left,top,42,42,HitKind::Battlefield);
+    const int size=8;const uint16_t edge=empty?rgb(55,24,26):outline[unsigned(s.character)];
+    health_label(c,label,left-2,top+8,28,size,empty?rgb(255,85,85):rgb(255,246,226),edge);
+    c.hit(left,top,24,24,HitKind::Battlefield);
     if(stars){
-        const int count=a.combat_status.star_count.displayed(),age=int32_t(a.animation-a.combat_status.star_gain_at)*33,star_top=regent?183:187;
+        const int count=a.combat_status.star_count.displayed(),age=int32_t(a.animation-a.combat_status.star_gain_at)*33,star_top=200;
         const unsigned light=count&&age>=0&&age<200?255+unsigned(200-age)*255/200:255;
         if(a.content.version()>=FrontendContentVersion){
             for(int layer=0;layer<3;++layer)combat_energy_layer(c,a.content.ui_image(F_StarCounterBase+layer),
-                layer?int(a.combat_status.star_rotation_mdeg*unsigned(layer)/1000u%360u):0,count==0,6,star_top,34,true,light);
-        }else combat_energy_layer(c,a.content.ui_image(U_StarCounter),0,count==0,6,star_top,34,true,light);
+                layer?int(a.combat_status.star_rotation_mdeg*unsigned(layer)/1000u%360u):0,count==0,12,star_top,20,true,light);
+        }else combat_energy_layer(c,a.content.ui_image(U_StarCounter),0,count==0,12,star_top,20,true,light);
         char number[16]{};TextBuffer b{number,sizeof number,0};b.number(count);
-        const int font=c.width(number,12)<=29?12:10;
-        for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)c.centered(number,6+dx,star_top+11+dy,34,font,rgb(0,62,117));
-        c.centered(number,6,star_top+11,34,font,count?rgb(255,246,226):rgb(255,85,85));
-        c.action(6,star_top,34,32,UiAction::ShowStars);
+        health_label(c,number,12,star_top+7,20,8,count?rgb(255,246,226):rgb(255,85,85),rgb(0,62,117));
+        c.action(12,star_top,20,20,UiAction::ShowStars);
     }
 }
 static void combat_resource_tooltip(Canvas&c,bool stars){
     auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.panel||a.paused||a.help||a.settings_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0)return;
     const bool regent=stars&&a.game.character==Character::Regent;
-    const int px=a.pointer.x,py=a.pointer.y,left=stars?18:6,top=regent?162:174,star_top=regent?183:187;
-    const bool star=stars&&px>=6&&px<40&&py>=star_top&&py<star_top+32;
-    if(!star&&!(px>=left&&px<left+42&&py>=top&&py<top+42))return;
+    const int px=a.pointer.x,py=a.pointer.y,left=19,top=regent?154:192,star_top=200;
+    const bool star=stars&&px>=12&&px<32&&py>=star_top&&py<star_top+20;
+    if(!star&&!(px>=left&&px<left+24&&py>=top&&py<top+24))return;
+    const auto*hit=a.hit_at(px,py);if(hit&&hit->kind==HitKind::Hand)return;
     const char*key=star?"STAR_COUNT":"ENERGY_COUNT";
     char full[64]{},body[1024]{};TextBuffer name{full,sizeof full,0};name.text(key);name.text(".description");
     a.localized_text("static_hover_tips",full,body,sizeof body);
@@ -279,6 +280,18 @@ static void combat_screen(Canvas&c){
         if(a.last_hit[i]&&age>=0&&age<24){const auto p=a.combat_enemy_pose(i?i-1:0);c.num(a.last_hit[i],i?p.x-12:48,(i?p.feet-30:91)-age/2,16,Red);}
     }
     combat_power_flashes(c);combat_power_popups(c);
+    // combat_ui.tscn draws counters, end-turn and pile controls before
+    // Preview/Hand/PlayContainer. A raised outer card owns its overlapping
+    // pixels and mouse area; the old reversed order cut holes in that face.
+    combat_energy(c,stars);
+    native_end_turn(c,s.phase==Phase::Combat&&!a.combat_actions_locked());
+    const auto piles=a.combat_pile_counts();
+    combat_pile(c,A_DrawPile,piles.draw,hand_project(15),hand_project(1165),1);
+    combat_pile(c,A_DiscardPile,piles.discard,hand_project(1586),hand_project(1165),2);
+    if(piles.exhaust)combat_pile(c,A_ExhaustPile,piles.exhaust,hand_project(1590),hand_project(970),3);
+    if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites)
+        if(v.mode==CombatCardMotion::Preview&&v.id<s.card_count)
+            draw_hand_tile(c,hand_tile(c,v.id,&v),CombatCardMotion::pose(v),false,a.combat_cards.brightness(v));
     const auto hand=a.combat_hand();
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
@@ -310,15 +323,13 @@ static void combat_screen(Canvas&c){
         hand_hit(pose,held_card,!a.combat_actions_locked());break;
     }
     if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites){
-        if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.id>=s.card_count)continue;
-        draw_hand_tile(c,hand_tile(c,v.id,&v),CombatCardMotion::pose(v),false,a.combat_cards.brightness(v));
+        if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.mode==CombatCardMotion::Preview||v.id>=s.card_count)continue;
+        auto pose=CombatCardMotion::pose(v);
+        if(v.mode==CombatCardMotion::Play){const unsigned peek=a.combat_peek_amount();
+            pose.cx=(pose.cx*int(1024-peek)+31*int(peek))/1024;pose.cy=(pose.cy*int(1024-peek)+88*int(peek))/1024;
+            pose.scale=pose.scale*int(2048-peek)/2048;}
+        draw_hand_tile(c,hand_tile(c,v.id,&v),pose,false,a.combat_cards.brightness(v));
     }
-    combat_energy(c,stars);
-    native_end_turn(c,s.phase==Phase::Combat&&!a.combat_actions_locked());
-    const auto piles=a.combat_pile_counts();
-    combat_pile(c,A_DrawPile,piles.draw,8,215,1);
-    combat_pile(c,A_DiscardPile,piles.discard,291,215,2);
-    if(piles.exhaust)combat_pile(c,A_ExhaustPile,piles.exhaust,293,106,3);
     if(a.card_fly>0&&a.fly_card>=0){int age=12-a.card_fly;c.picture(a.content.card_image(a.fly_card),150+age*4,163-age*5,26,19,(unsigned)(a.card_fly*18));}
     combat_resource_tooltip(c,stars);
 }

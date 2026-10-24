@@ -35,7 +35,7 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
 static void battle_status_tooltip(Canvas&c){
     auto&a=c.a;
     if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||
-       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.combat_feedback.active))return;
+       a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.combat_feedback.active&&!a.choice_peeking))return;
     const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::BattleStatus)return;
     const int actor=hit->value/StatusKinds,id=hit->value%StatusKinds;
     if(actor<0||actor>a.game.enemy_count||id<0||id>=StatusKinds)return;

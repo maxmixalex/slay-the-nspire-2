@@ -54,6 +54,7 @@ static void layouts(){
             auto h=a.hit_at(x,y);CHECK(h&&h->kind==HitKind::Hand&&h->value==a.game.hand.ids[i]);same(before);
             for(int k=0;k<4;k++){a.pointer_move(x,y);a.tick();a.render();CHECK(a.cursor==i);}same(before);
         }
+        a.pointer_move(160,40);a.render();
         auto end=command(HitKind::Command,(int)Key::EndTurn),draw=command(HitKind::OpenPile,1),discard=command(HitKind::OpenPile,2);
         CHECK(end.x>=250&&draw.x<40&&discard.x>280);
         click(draw);CHECK(a.panel==1&&a.pile_tab==1);same(before);a.input(Key::Back);a.render();

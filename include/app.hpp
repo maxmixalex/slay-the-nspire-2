@@ -1,6 +1,9 @@
 #pragma once
 #include "merchant_layout.hpp"
 #include "room_ui7_presentation.hpp"
+#include "crystal_presentation.hpp"
+#include "ancient_banner_presentation.hpp"
+#include "ancient_dialogue_presentation.hpp"
 #include "room_ui7_assets.hpp"
 #include "phobia_assets.hpp"
 #include "core.hpp"
@@ -239,6 +242,17 @@ struct App {
     bool show_card_indices=false,text_effects=true,keyboard_only=false,phobia_mode=false;
     uint8_t screen_shake=2;
     bool bestiary_actions_preferred=true;
+    InputBindings input_bindings=default_input_bindings();
+    bool calculator_keyboard=false;
+    int8_t binding_listening=-1;
+    uint8_t binding_bank=0;
+    struct HeldInput {uint16_t code=0;uint8_t key=255;};
+    HeldInput held_inputs[12]{};
+    void begin_key_rebind(unsigned command);
+    bool physical_key(uint16_t code,bool pressed);
+    void physical_keys_cancel();
+    void reset_input_bindings();
+    const char* input_command_title(unsigned command)const;
     bool settings_language_open=false;
     uint8_t settings_language_item=0,settings_top=0;
     void restore_preferences();
@@ -378,6 +392,18 @@ struct App {
     bool hand_can_focus()const;
     bool shop_open=false,event_reader=false;
     RoomUi7Presentation room_presentation{};
+    CrystalPresentation crystal_presentation{};
+    AncientBannerPresentation ancient_banner{};
+    AncientDialoguePresentation ancient_dialogue{};
+    void sync_ancient_dialogue();
+    bool ancient_dialogue_ready()const;
+    bool ancient_dialogue_input(Key);
+    void next_ancient_dialogue();
+    bool scroll_ancient_dialogue(int);
+    void ancient_dialogue_text(unsigned,char*,size_t)const;
+    void sync_crystal_presentation();
+    bool crystal_input(Key);
+    void crystal_click(int);
     int event_reader_scroll=0;
     bool room_input(Key);
     Character selected_character=Character::Ironclad;
@@ -396,6 +422,13 @@ struct App {
     void focus_collection();
     bool collection_input(Key);
     uint16_t choice_selected[MaxDeck]{};unsigned choice_selected_count=0;uint32_t choice_revision=0;
+    bool choice_peeking=false;uint16_t choice_peek_from=0;uint32_t choice_peek_at=0,choice_peek_revision=0;
+    bool combat_peek_context()const;
+    bool combat_peek_available()const;
+    unsigned combat_peek_amount()const;
+    void sync_combat_peek();
+    void toggle_combat_peek();
+    bool combat_peek_input(Key);
     uint32_t catalog_choice_revision=UINT32_MAX;uint8_t catalog_choice_phase=255;
     bool character_select=false,library=false,reward_cards=false,library_upgraded=false;
     bool grimoire_select=false;

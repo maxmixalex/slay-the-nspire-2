@@ -10,7 +10,7 @@
 <canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
 <textarea id="text-entry" tabindex="-1" aria-label="Search / 搜索" autocomplete="off" autocapitalize="off" spellcheck="false" style="position:fixed;width:1px;height:1px;padding:0;border:0;opacity:0;pointer-events:none"></textarea>
 <div id="actions">
-<button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Enter</button><button data-key="6" data-i18n="end_turn">Space</button><button data-key="7" data-i18n="piles">Tab</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
+<button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Confirm</button><button data-key="6" data-i18n="end_turn">End turn</button><button data-key="7" data-i18n="piles">Card piles</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
 </div>
 <p data-i18n="help"></p><p data-i18n="about"></p>
 <details id="diagnostics"><summary data-i18n="performance"></summary><p data-i18n="performance_help"></p><button id="measure" data-i18n="measure" disabled></button><pre id="performance-report" style="white-space:pre-wrap;max-height:280px;overflow:auto"></pre></details><div id="error" role="alert"></div>
@@ -94,8 +94,9 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  if(game.set_progress){
   try{const bytes=readProfileProgress(saveProfile);copyProgress(bytes);game.set_progress(bytes.length);}catch(e){game.set_progress(0);}
  }
- let initialPreferences=4|(2<<8);try{initialPreferences=profileStorage.readPreferences(saveProfile);}catch(error){}
- installPreferences(initialPreferences);
+ let initialPreferences=4|(2<<8),initialBindings=null;
+ try{initialPreferences=profileStorage.readPreferences(saveProfile);initialBindings=profileStorage.readPreferencesRecord(saveProfile);}catch(error){}
+ installPreferences(initialPreferences,initialBindings);
  if(game.set_available_languages)game.set_available_languages(available.reduce((mask,key)=>mask|(key==='eng'?1:2),0));
  if(!(isSplit?game.start_split(common.length,localized.length,language==='eng'?1:2):game.start(content.length)))throw Error(t('invalid_content'));
  if(game.resource_language&&game.resource_language()!==(language==='eng'?1:2))throw Error(t('invalid_content'));
@@ -120,11 +121,17 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   if(!game.preferences_pending||!game.preferences_pending())return true;
   let ok=1;try{
    const flags=game.preferences_v2_flags?game.preferences_v2_flags():4|(2<<8)|game.preferences_flags();
-   ok=profileStorage.writePreferences(saveProfile,flags)?1:0;
+   let record=null;if(game.preferences_buffer){const pointer=game.preferences_buffer();record=memoryBytes().slice(pointer,pointer+game.preferences_length());}
+   ok=profileStorage.writePreferences(saveProfile,flags,record)?1:0;
   }catch(e){ok=0;}
   game.preferences_ack(ok);return ok!==0;
  }
- function installPreferences(flags){if(game.set_preferences_v2)game.set_preferences_v2(flags);else if(game.set_preferences)game.set_preferences(flags&1);}
+ function installPreferences(flags,record=null){
+  if(game.set_preferences_v2)game.set_preferences_v2(flags);else if(game.set_preferences)game.set_preferences(flags&1);
+  if(game.set_preferences_v3&&record&&record.length===game.preferences_length()){
+   memoryBytes().set(record,game.preferences_buffer());game.set_preferences_v3(record.length);
+  }
+ }
  function flushProgress(){
   if(!game.progress_pending||!game.progress_pending())return true;
   let ok=1;try{const p=game.progress_buffer(),n=game.progress_length();ok=profileStorage.writeProgress(saveProfile,encode(memoryBytes().subarray(p,p+n)))?1:0;}catch(e){ok=0;}
@@ -151,8 +158,8 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
     }else{
      // Read first. A denied selector write leaves both the live slot and all
      // stored data untouched; target metadata is copied only after commit.
-     const bytes=readProfileProgress(target),flags=profileStorage.readPreferences(target);
-     if(profileStorage.select(target)){saveProfile=target;copyProgress(bytes);game.set_progress(bytes.length);installPreferences(flags);ok=true;}
+     const bytes=readProfileProgress(target),flags=profileStorage.readPreferences(target),record=profileStorage.readPreferencesRecord(target);
+     if(profileStorage.select(target)){saveProfile=target;copyProgress(bytes);game.set_progress(bytes.length);installPreferences(flags,record);ok=true;}
     }
    }catch(error){ok=false;}
    game.profile_ack(ok?1:0,saveProfile);dirty=true;
@@ -223,8 +230,18 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  textEntry.addEventListener('compositionend',()=>{composing=false;queueMicrotask(flushTextEntry);});
  textEntry.addEventListener('input',e=>{if(!e.isComposing)flushTextEntry();});
  textEntry.addEventListener('paste',e=>{e.preventDefault();commitText(e.clipboardData.getData('text'));});
+ const physicalDown=new Map();
+ function physicalCode(e){
+  const special={ArrowLeft:256,ArrowRight:257,ArrowUp:258,ArrowDown:259,Insert:260,Delete:261,Home:262,End:263,PageUp:264,PageDown:265,
+   Shift:288,Control:289,Alt:290,Meta:291,Enter:13,Escape:27,Tab:9,Backspace:8,' ':32};
+  if(e.key in special)return special[e.key];if(/^F([1-9]|1[0-2])$/.test(e.key))return 271+Number(e.key.slice(1));
+  if(/^Key[A-Z]$/.test(e.code))return e.code.charCodeAt(3);if(/^Digit[0-9]$/.test(e.code))return e.code.charCodeAt(5);
+  if(/^Numpad[0-9]$/.test(e.code))return e.code.charCodeAt(6);
+  const punct={Backquote:96,Minus:45,Equal:61,BracketLeft:91,BracketRight:93,Backslash:92,Semicolon:59,Quote:39,Comma:44,Period:46,Slash:47};
+  if(e.code in punct)return punct[e.code];return e.key.length===1&&e.key.charCodeAt(0)>=32&&e.key.charCodeAt(0)<=126?e.key.toUpperCase().charCodeAt(0):0;
+ }
  document.addEventListener('keydown',e=>{
-  if(game.text_entry_active()){
+  if(game.text_entry_active()&&!(game.key_binding_listening&&game.key_binding_listening())){
    if(e.isComposing||composing||e.keyCode===229)return;
    if(e.ctrlKey||e.altKey||e.metaKey)return;
    const code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:[...e.key].length===1?e.key.codePointAt(0):0;
@@ -233,9 +250,17 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
    else if(e.key.startsWith('Arrow'))e.preventDefault();
    return;
   }
-  if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}
+  if(game.physical_key){
+   const code=physicalDown.get(e.code)||physicalCode(e),listening=game.key_binding_listening&&game.key_binding_listening();
+   if(!code||(!listening&&(e.ctrlKey||e.altKey||e.metaKey)&&code<288))return;
+   let handled=false;input(()=>{handled=game.physical_key(code,1)!==0;});
+   if(handled){physicalDown.set(e.code,code);e.preventDefault();}
+  }else if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}
  });
- document.addEventListener('keyup',e=>{if(e.key in keyMap)input(()=>game.key_release(keyMap[e.key]));});
+ document.addEventListener('keyup',e=>{
+  if(game.physical_key){const code=physicalDown.get(e.code);if(code){physicalDown.delete(e.code);input(()=>game.physical_key(code,0));e.preventDefault();}}
+  else if(e.key in keyMap&&game.key_release)input(()=>game.key_release(keyMap[e.key]));
+ });
  document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{const code=Number(b.dataset.key);key(code);input(()=>game.key_release(code));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}
  canvas.addEventListener('pointermove',e=>{const p=position(e);input(()=>game.pointer_move(p.x,p.y),false);});
@@ -244,7 +269,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  canvas.addEventListener('pointercancel',()=>input(()=>game.pointer_cancel()));
  canvas.addEventListener('contextmenu',e=>e.preventDefault());
  canvas.addEventListener('wheel',e=>{e.preventDefault();input(()=>game.pointer_scroll(Math.sign(e.deltaY)));},{passive:false});
- window.addEventListener('blur',()=>game.pointer_cancel());
+ window.addEventListener('blur',()=>{physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();});
  function finishProfile(reason){profiling=false;measureButton.disabled=false;profile.resource_total={read_calls:ioCalls,read_bytes:ioBytes,copy_ms:ioTime};profile.finished_reason=reason;profile.finished_at=new Date().toISOString();reportView.textContent=JSON.stringify(profile,null,2);}
  measureButton.addEventListener('click',()=>{profile=freshProfile();ioCalls=ioBytes=ioTime=0;profiling=true;profileUntil=clock()+10000;lastPresented=0;lastScene=-1;measureButton.disabled=true;reportView.textContent=t('measuring');canvas.focus();});
  let previous=clock(),nextPaint=previous+1000/30;
@@ -254,7 +279,7 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
   // in every pointer/key callback and then duplicate it in the same RAF.
   if(dirty||now>=nextPaint){draw();if(now>=nextPaint){nextPaint+=1000/30;if(nextPaint<now-1000/30)nextPaint=now+1000/30;}}
  }if(profiling&&(clock()>=profileUntil||game.closed()))finishProfile(game.closed()?'game_closed':'complete');requestAnimationFrame(loop);}
- document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
+ document.addEventListener('visibilitychange',()=>{previous=clock();nextPaint=previous;physicalDown.clear();if(game.physical_keys_cancel)game.physical_keys_cancel();game.pointer_cancel();if(profiling&&document.hidden)finishProfile('tab_hidden');});
  draw();loading.hidden=true;measureButton.disabled=false;requestAnimationFrame(loop);canvas.focus();
 
 })().catch(e=>{document.getElementById('error').textContent=t('startup_failed')+'\n'+e.message;console.error(e);});

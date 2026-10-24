@@ -132,6 +132,10 @@ static LocalizedValue wt_resolve(const void*opaque,const char*name){
   if(wt_equal(name,"CardCount"))return wt_number(intent.status_cards);
  }
  if(wt_equal(x.table,"events")||wt_equal(x.table,"ancients")){
+  if(wt_equal(x.table,"ancients")&&wt_equal(name,"Act1Name")&&s.world.active){
+   static constexpr const char*keys[]={"OVERGROWTH","UNDERDOCKS","HIVE","GLORY"};
+   const unsigned region=s.world.rooms[0].region;return wt_string(region<4?a.content.world_title("acts",keys[region]):"");
+  }
   // The original crystal board binds this screen-local Count to its saved
   // divination charges. Do not make unrelated event Count tokens resolve.
   if(wt_equal(x.table,"events")&&wt_equal(x.full_key,"CRYSTAL_SPHERE.minigame.divinationsRemain")&&

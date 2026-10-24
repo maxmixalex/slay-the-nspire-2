@@ -60,6 +60,7 @@ static void native_event_option(const App&a,int option,bool description,char*out
  a.original_event_text(option,description,out,size);
  if(!*out&&!description){TextBuffer b{out,size,0,&a.content};b.text(e.finished?"继续前进":"继续");}
 }
+#include "ancient_dialogue_input.inc"
 static void native_ancient_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;
  const auto&motion=a.room_presentation.event;const unsigned age=a.map_clock_ms-motion.start;
@@ -167,6 +168,7 @@ static void native_event_screen(Canvas&c){
  const bool new_event=!motion.bound||motion.id!=unsigned(e.id);
  motion.observe(unsigned(e.id),e.page,e.finished,native_event_revision(e),a.fast_mode,a.map_clock_ms);motion.ancient=ui_ancient_event(e.id);
  if(new_event&&e.id==OriginalEventId::FakeMerchant){a.shop_open=false;a.room_presentation.merchant=RoomUi7Presentation::Merchant{};}
+ if(e.id==OriginalEventId::CrystalSphere&&e.finished&&e.crystal_item_count){crystal_screen(c);return;}
  if(ui_ancient_event(e.id)){native_ancient_screen(c);return;}
  if(e.id==OriginalEventId::FakeMerchant&&!e.finished){native_fake_merchant_screen(c);return;}
  c.picture(a.content.world_image("events",original_event_key(e.id)),0,22,320,218);

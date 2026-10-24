@@ -79,7 +79,7 @@ static void options_and_readers(){
 }
 static void crystal_and_large_rewards(){
  world();CHECK(original_event_begin(a.game,OriginalEventId::CrystalSphere,31,1));a.game.gold=250;CHECK(original_event_choose(a.game,1));CHECK(a.game.phase==Phase::OriginalEventChoice);a.reset_presentation();snapshot();a.render();
- unsigned cells=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::CrystalCell)cells++;CHECK(cells==CrystalCells&&a.hit_count<=MaxHits);capture("crystal-board");a.input(Key::Right);a.input(Key::Down);a.render();unchanged();
+ for(unsigned i=0;i<16;++i)a.advance(33);a.render();unsigned cells=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::CrystalCell)cells++;CHECK(cells==97&&a.hit_count<=MaxHits);capture("crystal-board");a.input(Key::Right);a.input(Key::Down);a.render();unchanged();
  auto&e=a.game.original_events;e.finished=1;e.selection=OriginalEventSelection::Rewards;e.select_min=0;e.select_max=1;e.select_cancelable=1;e.reward_active=1;e.reward_count=MaxOriginalEventRewards;e.reward_current=NoOriginalEventReward;e.reward_card_count=0;
  for(unsigned i=0;i<e.reward_count;i++){e.rewards[i]={};e.rewards[i].kind=1;e.rewards[i].amount=1;}a.game.phase=Phase::OriginalEventChoice;a.choice_revision=0;a.cursor=MaxOriginalEventRewards-1;snapshot();a.render();CHECK(has(HitKind::WorldChoice,MaxOriginalEventRewards-1));a.world_choice_detail(MaxOriginalEventRewards-1);unchanged();
  int gold=a.game.gold;a.toggle_world_choice(MaxOriginalEventRewards-1);CHECK(a.game.original_events.rewards[MaxOriginalEventRewards-1].claimed&&a.game.gold==gold+1);CHECK(save(a.game,after));CHECK(after.size<=sizeof after.bytes);
@@ -113,9 +113,11 @@ static void offer_facts(){
 }
 static void enemy_visual_fight(EncounterId encounter,Character character=Character::Ironclad){
  new_run(a.game,0x41cef1ea,false,character);a.game.phase=Phase::Combat;a.game.current_node=1;a.game.floor=a.game.turn=1;a.game.hp=a.game.max_hp=999;
- CHECK(encounter_setup(a.game,encounter));
- for(unsigned i=0;i<a.game.deck_count;i++){int id=a.game.card_count;queue_extension(a.game,XOp::EnemyGenerateCard,a.game.deck[i].kind,1);resolve_pending(a.game);CHECK(a.game.card_count==id+1);a.game.cards[id].upgraded=a.game.deck[i].upgraded;notify_deck_card_created(a.game,id,i);}
- draw_cards(a.game,5);a.title=a.library=a.paused=a.help=a.character_select=false;a.reset_presentation();snapshot();a.render();
+ // Enter through the real character/combat initialization before choosing
+ // the visual encounter. Hand construction alone omits Defect's3 slots,
+ // starter relic hooks and Necrobinder's initial companion state.
+ enter_combat(a.game);CHECK(a.game.phase==Phase::Combat);CHECK(encounter_setup(a.game,encounter));
+ a.title=a.library=a.paused=a.help=a.character_select=false;a.reset_presentation();snapshot();a.render();
  for(unsigned frame=0;a.combat_preparation.active&&frame<1024;++frame){a.advance(33);a.render();}
  CHECK(!a.combat_preparation.active);unchanged();
 }
@@ -739,7 +741,7 @@ static void deferred_combat_hand(){
   advance_combat_ms(33);a.render();
   for(unsigned draws=1;draws<=5;++draws){
    CombatHand::Cards arriving=next;arriving.count=uint16_t(kept.count+draws);shown_only(arriving);
-   const auto pose=a.combat_hand_pose(arriving.count-1,false);CHECK(pose.cx==20&&pose.cy==226);
+   const auto pose=a.combat_hand_pose(arriving.count-1,false);CHECK(pose.cx==10&&pose.cy==230);
    for(unsigned j=arriving.count;j<next.count;++j)CHECK(!has(HitKind::Hand,next.ids[j]));
    CHECK(a.combat_feedback.active&&a.combat_actions_locked());
    if(draws<5){const uint32_t next_add=player+TurnBannerPresentation::wait_ticks(draws*250,draws*100,fast!=0);
@@ -997,6 +999,7 @@ static void synchronous_damage_hook_feedback(){
 }
 static void hidden_choice_input(int token){
  CHECK(!a.combat_choice_ready());a.render();CHECK(has(HitKind::Battlefield,0));
+ a.toggle_combat_peek();CHECK(!a.choice_peeking&&!a.combat_peek_available());
  CHECK(!has(HitKind::WorldChoice,token)&&!has(HitKind::CombatChoice,token));
  CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice))&&!has(HitKind::UiAction,int(UiAction::ConfirmWorldChoice)));
  const int cursor=a.cursor;const auto effects=a.game.effect_count;snapshot();
@@ -1010,6 +1013,26 @@ static void hidden_choice_input(int token){
  for(UiAction action:{UiAction::ConfirmChoice,UiAction::ConfirmWorldChoice,UiAction::ClearChoice,UiAction::ClearWorldChoice,
      UiAction::PreviousChoicePage,UiAction::NextChoicePage,UiAction::PreviousWorldPage,UiAction::NextWorldPage})a.ui_action(action);
  CHECK(a.cursor==cursor&&a.choice_selected_count==1&&a.game.effect_count==effects);unchanged();a.choice_selected_count=0;
+}
+static void peek_selected_choice(int token,bool world){
+ const int cursor=a.cursor;const unsigned count=a.choice_selected_count,revision=a.game.revision;
+ CHECK(count&&a.choice_selected[0]==token&&a.combat_peek_available());snapshot();
+ const auto key=a.input_bindings.keys[a.keyboard_only?1:0][unsigned(InputCommand::Peek)];
+ CHECK(a.physical_key(key,true)&&!a.choice_peeking);CHECK(a.physical_key(key,false)&&a.choice_peeking);a.render();
+ CHECK(has(HitKind::Battlefield,0)&&has(HitKind::CombatPeek,0));
+ CHECK(!has(world?HitKind::WorldChoice:HitKind::CombatChoice,token));
+ CHECK(!has(HitKind::UiAction,int(UiAction::ConfirmChoice))&&!has(HitKind::UiAction,int(UiAction::ConfirmWorldChoice)));
+ a.input(Key::Confirm);a.input(Key::EndTurn);a.toggle_choice(token);a.toggle_world_choice(token);
+ a.confirm_choice();a.confirm_world_choice();a.pointer_scroll(1);
+ for(auto action:{UiAction::ClearChoice,UiAction::ClearWorldChoice,UiAction::NextChoicePage,UiAction::NextWorldPage})a.ui_action(action);
+ CHECK(a.cursor==cursor&&a.choice_selected_count==count&&a.choice_selected[0]==token&&a.game.revision==revision);unchanged();
+ advance_combat_ms(264);a.render();CHECK(a.combat_peek_amount()==1024);
+ capture(world?"choice-world-peek":"choice-combat-peek");
+ a.input(Key::Detail);CHECK(a.status_actor>=0&&a.choice_peeking);a.input(Key::Back);CHECK(a.status_actor<0&&a.choice_peeking);
+ a.input(Key::DrawPile);a.render();CHECK(a.panel==1&&a.pile_tab==1&&a.choice_peeking);a.input(Key::Back);CHECK(!a.panel&&a.choice_peeking);
+ CHECK(a.physical_key(key,true)&&a.choice_peeking);CHECK(a.physical_key(key,false)&&!a.choice_peeking);a.render();
+ CHECK(has(world?HitKind::WorldChoice:HitKind::CombatChoice,token)&&a.choice_selected_count==count&&a.choice_selected[0]==token);
+ CHECK(a.cursor==cursor&&a.game.revision==revision);unchanged();
 }
 static void deferred_combat_choices(){
  static State direct;static SaveData expected;
@@ -1058,6 +1081,7 @@ static void deferred_combat_choices(){
   a.busy=300;HitRegion option{};for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::WorldChoice&&a.hits[i].value==ids[0]){option=a.hits[i];break;}
   CHECK(option.kind==HitKind::WorldChoice);a.pointer_move(option.x+option.w/2,option.y+option.h/2);a.pointer_button(true);a.pointer_button(false);
   CHECK(a.choice_selected_count==1&&a.choice_selected[0]==ids[0]);
+  peek_selected_choice(ids[0],true);
   CHECK(world_relic_select(direct,ids,1));CHECK(save(direct,expected));
   a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&!a.game.effect_count);
   CHECK(a.turn_banner.player_start==player); // A late answer must not restart it.
@@ -1083,7 +1107,8 @@ static void deferred_combat_choices(){
   snapshot();a.choice_revision=a.game.revision;a.choice_selected[0]=MaxCards+2;a.choice_selected_count=1;
   a.confirm_choice();CHECK(a.combat_feedback.choice_pending&&a.combat_choice_ready());unchanged();
   a.ui_action(UiAction::ClearChoice);advance_combat_ms(99);
-  const uint32_t answer=a.animation;a.busy=300;a.toggle_choice(MaxCards+1);CHECK(a.choice_selected_count==1);
+  a.busy=300;a.toggle_choice(MaxCards+1);CHECK(a.choice_selected_count==1);peek_selected_choice(MaxCards+1,false);
+  const uint32_t answer=a.animation;
   uint16_t knowledge=MaxCards+1;CHECK(choose_extended(direct,&knowledge,1));a.ui_action(UiAction::ConfirmChoice);
   CHECK(a.game.phase==Phase::WorldRelicChoice&&a.combat_feedback.active&&a.combat_feedback.choice_pending);
   const uint32_t second=a.combat_feedback.choice_at;
@@ -1170,7 +1195,7 @@ static void original_card_movement(){
    const auto shown=a.combat_hand();CHECK(shown.count==base+n);
    for(unsigned i=0;i<shown.count;++i)CHECK(shown.ids[i]==final_hand.ids[i]&&has(HitKind::Hand,shown.ids[i]));
    for(unsigned i=shown.count;i<final_hand.count;++i)CHECK(!has(HitKind::Hand,final_hand.ids[i]));
-   const auto pose=a.combat_hand_pose(shown.count-1,false);CHECK(pose.cx==20&&pose.cy==226&&!a.combat_hand_settled(shown.count-1,false));
+   const auto pose=a.combat_hand_pose(shown.count-1,false);CHECK(pose.cx==10&&pose.cy==230&&!a.combat_hand_settled(shown.count-1,false));
    if(n==2)capture(fast?"card-draw-second-fast":"card-draw-second");
    if(n<3){const uint32_t next=draw_start+TurnBannerPresentation::wait_ticks(n*250,n*100,fast!=0);
     advance_combat_ms((next-a.animation-1)*33);a.render();CHECK(a.combat_hand().count==base+n);

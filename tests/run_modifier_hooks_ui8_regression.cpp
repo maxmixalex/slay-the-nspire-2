@@ -30,7 +30,7 @@ static void complete_routing_fixture(){
     CHECK(world_finish_room(game));
 }
 static unsigned first(){uint8_t ids[reference::Columns]{};CHECK(world_available_points(game,ids,reference::Columns));CHECK(world_choose_point(game,ids[0]));return ids[0];}
-static unsigned route(reference::PointType wanted,bool force_event=false,bool force_elite=false){
+static unsigned route(reference::PointType wanted,bool force_event=false,bool force_elite=false,State*before_target=nullptr){
     const auto&map=game.world.maps[game.world.act_index];uint8_t parents[reference::MaxPoints],queue[reference::MaxPoints];
     for(auto&v:parents)v=reference::NoPoint;parents[map.root]=map.root;queue[0]=map.root;unsigned head=0,count=1,target=reference::NoPoint;
     while(head<count){const unsigned p=queue[head++];if(map.points[p].type==wanted){target=p;break;}
@@ -39,6 +39,7 @@ static unsigned route(reference::PointType wanted,bool force_event=false,bool fo
     for(unsigned p=target;p!=map.root;p=parents[p])path[length++]=uint8_t(p);
     for(unsigned i=length;i>0;--i){if(!world_can_travel(game))complete_routing_fixture();
         if(i==1&&(force_event||force_elite)){game.world.unknown_monster_bits=game.world.unknown_shop_bits=game.world.unknown_treasure_bits=0;game.world.unknown_elite_bits=force_elite?0x3f800000u:0xbf800000u;}
+        if(i==1&&before_target)*before_target=game;
         CHECK(world_choose_point(game,path[i-1]));}
     return target;
 }
@@ -68,7 +69,9 @@ static void deadly_and_hunter(){
     CHECK(game.world.unknown_elite_bits==0x3dcccccdU&&game.world.unknown_treasure_bits==0x3d23d70aU);persisted();
     begin(bit(RunModifier::Flight));const unsigned initial=room_elites();
     begin(bit(RunModifier::Flight)|bit(RunModifier::BigGameHunter));unsigned expected=initial*5/2;if((initial&1)&&(expected&1))++expected;
-    CHECK(game.world.maps[0].config.ignore_elite_rules&&game.world.maps[0].config.elites==expected&&room_elites()>initial);persisted();
+    // ignore_elite_rules is a constructor-only override, intentionally absent
+    // from a saved map. Verify the generated/restored rooms and quota instead.
+    CHECK(game.world.maps[0].config.elites==expected&&room_elites()==expected&&room_elites()>initial);persisted();
     WorldCardOptions options;options.source=WorldCardSource::Encounter;options.odds=WorldCardOdds::EliteEncounter;options.flags=WorldNoUpgradeRoll|WorldIsCardReward|WorldIsFromCombat;
     Card cards[3]{};EventCardFacts facts[3]{};CHECK(world_create_reward(game,world_rng(game,WorldRng::Rewards),3,options,cards,facts));
     for(const Card card:cards)CHECK(card_rarity(card.kind)==4);persisted();
@@ -133,7 +136,53 @@ static void character_cards(){
     route(reference::PointType::Shop);for(unsigned i=0;i<5;++i)CHECK(world_card_pool(game.world.shop_cards[i].kind)==WorldCardPool::Ironclad||world_card_pool(game.world.shop_cards[i].kind)==WorldCardPool::Silent);
     for(unsigned i=5;i<ShopCardCount;++i)CHECK(world_card_pool(game.world.shop_cards[i].kind)==WorldCardPool::Colorless);persisted();
 }
+// Independent direct translation of MerchantCardEntry.Except followed by
+// CharacterCards.Concat. This oracle preserves sequence/multiplicity; it does
+// not call the runtime merchant pool builder under test.
+static unsigned source_merchant_candidates(const State&s,WorldCardPool initial,const CardKind*blacklist,unsigned blacklisted,CardKind*out){
+    CardKind pool[CardKinds];const unsigned count=world_card_pool_models(initial,pool,CardKinds);unsigned n=0;
+    for(unsigned i=0;i<count;++i){bool excluded=false;for(unsigned j=0;j<blacklisted;++j)if(pool[i]==blacklist[j])excluded=true;if(!excluded)out[n++]=pool[i];}
+    for(unsigned i=0;i<run_modifier_count(s.run_options);++i){const auto modifier=run_modifier_at(s.run_options,i);WorldCardPool added;
+        switch(modifier){case RunModifier::IroncladCards:added=WorldCardPool::Ironclad;break;case RunModifier::SilentCards:added=WorldCardPool::Silent;break;
+        case RunModifier::DefectCards:added=WorldCardPool::Defect;break;case RunModifier::RegentCards:added=WorldCardPool::Regent;break;case RunModifier::NecrobinderCards:added=WorldCardPool::Necrobinder;break;default:continue;}
+        bool foreign=false;for(unsigned j=0;j<n;++j)if(unsigned(world_card_pool(out[j]))!=unsigned(s.character))foreign=true;
+        if(!foreign){const unsigned extra=world_card_pool_models(added,pool,CardKinds);for(unsigned j=0;j<extra;++j){CHECK(n<CardKinds);out[n++]=pool[j];}}
+    }
+    return n;
+}
+static CardKind source_merchant_roll(const State&s,unsigned slot,unsigned rarity,const CardKind*blacklist,unsigned blacklisted,reference::Random&rng){
+    CardKind candidates[CardKinds];unsigned n=source_merchant_candidates(s,slot<5?WorldCardPool(s.character):WorldCardPool::Colorless,blacklist,blacklisted,candidates),count=0;
+    const CardType types[]={CardType::Attack,CardType::Attack,CardType::Skill,CardType::Skill,CardType::Power};
+    for(unsigned i=0;i<n;++i)if(unsigned(card_rarity(candidates[i]))==rarity&&(slot>=5||definitions[candidates[i]].type==types[slot]))candidates[count++]=candidates[i];
+    CHECK(count);return candidates[rng.below(count)];
+}
+static void character_card_merchant_multiplicity(){
+    begin(bit(RunModifier::IroncladCards));WorldCardOptions options;options.rarity_mask=world_rarity_mask(2)|world_rarity_mask(3)|world_rarity_mask(4);
+    CardKind own[CardKinds],weighted[CardKinds];const unsigned n=world_card_candidates(game,options,own,CardKinds);CHECK(n>10);
+    CHECK(world_merchant_card_candidates(game,options,nullptr,0,weighted,CardKinds)==n*2);
+    CHECK(!std::memcmp(weighted,own,n*sizeof(CardKind))&&!std::memcmp(weighted+n,own,n*sizeof(CardKind)));
+    CHECK(world_merchant_card_candidates(game,options,own,1,weighted,CardKinds)==n*2-1);
+    unsigned occurrence=0;for(unsigned i=0;i<n*2-1;++i)occurrence+=weighted[i]==own[0];CHECK(occurrence==1);
+    WorldCardOptions reward=options;world_modifier_card_pools(game,reward);CHECK(reward.pool_count==1); // Reward uses Union, not merchant Concat.
+    other=game;other.run_options.modifiers=bit(RunModifier::Flight);Card cards[3],control[3];EventCardFacts facts[3],control_facts[3];reward.flags=WorldIsCardReward|WorldNoUpgradeRoll;
+    CHECK(world_create_reward(game,world_rng(game,WorldRng::Rewards),3,reward,cards,facts)&&world_create_reward(other,world_rng(other,WorldRng::Rewards),3,reward,control,control_facts));
+    CHECK(!std::memcmp(cards,control,sizeof cards)&&world_rng(game,WorldRng::Rewards).calls==world_rng(other,WorldRng::Rewards).calls);
+    begin(bit(RunModifier::IroncladCards)|bit(RunModifier::SilentCards)|bit(RunModifier::DefectCards));
+    WorldCardOptions merchant;world_modifier_card_pools(game,merchant,true);CHECK(merchant.pool_count==3&&merchant.pools[1]==WorldCardPool::Ironclad&&merchant.pools[2]==WorldCardPool::Silent);
+    route(reference::PointType::Shop,false,false,&other);CHECK(game.phase==Phase::Shop);
+    auto shops=world_rng(other,WorldRng::Shops);const unsigned sale=shops.below(5);CHECK(game.world.shop_sale==sale);CardKind inventory[ShopCardCount];unsigned stocked=0;
+    for(unsigned slot=0;slot<ShopCardCount;++slot){
+        const Card actual=game.world.shop_cards[slot];const CardKind expected=source_merchant_roll(other,slot,unsigned(card_rarity(actual.kind)),inventory,stocked,shops);
+        CHECK(actual.kind==expected);inventory[stocked++]=expected;shops.next();if(slot==sale)shops.next();
+    }
+    persisted();CHECK(gain_world_relic(game,WorldRelicTheCourier));game.gold=9999;other=game;shops=world_rng(other,WorldRng::Shops);
+    CHECK(buy(game,0)&&!(game.shop_sold&1));stocked=0;
+    for(unsigned slot=0;slot<ShopCardCount;++slot)if(!(other.shop_sold&(1u<<slot)))inventory[stocked++]=other.world.shop_cards[slot].kind;
+    const CardKind replacement=source_merchant_roll(other,0,unsigned(card_rarity(game.world.shop_cards[0].kind)),inventory,stocked,shops);
+    CHECK(game.world.shop_cards[0].kind==replacement);shops.next();CHECK(world_rng(game,WorldRng::Shops).calls==shops.calls);
+    CHECK(!std::memcmp(world_rng(game,WorldRng::Shops).words,shops.words,sizeof shops.words));persisted();
+}
 int main(){
-    flight();deadly_and_hunter();cursed();murderous_terminal();rest_modifiers();hoarder();reward_modifiers();character_cards();
+    flight();deadly_and_hunter();cursed();murderous_terminal();rest_modifiers();hoarder();reward_modifiers();character_cards();character_card_merchant_multiplicity();
     std::printf("Original map, room, rewards, clones, character pools and modifier hook order: %u checks\n",checks);
 }

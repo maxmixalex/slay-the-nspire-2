@@ -23,6 +23,7 @@ import content_tiles as tiles
 from split_content import layout
 
 SIZES = (8, 10, 12, 16, 20)
+SCENE_SIZES = (6, 8, 10, 12, 14, 16, 20)
 FACE_NAMES = ('regular', 'bold', 'italic', 'bold_italic')
 KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
     'aqua', 'white', 'gray', 'b', 'i', 'sine', 'jitter', 'rainbow', 'thinky_dots'))
@@ -68,7 +69,7 @@ class Face:
             self.coverage = set(font.getBestCmap() or ())
             self.family = font['name'].getDebugName(1)
             self.subfamily = font['name'].getDebugName(2)
-        self.fonts = {px: ImageFont.truetype(str(self.path), px) for px in SIZES}
+        self.fonts = {px: ImageFont.truetype(str(self.path), px) for px in SCENE_SIZES}
 
     def glyph(self, cp, px, style=0):
         tiles.require(cp in self.coverage, 'Font does not cover requested glyph')
@@ -85,7 +86,7 @@ class Face:
             while end < len(raw) and raw[end] == raw[at] and end-at < 255: end += 1
             encoded.extend((end-at, raw[at])); at = end
         payload = bytes(encoded) if len(encoded) < len(raw) else raw
-        return (cp, px | (style << 6), width, height, advance,
+        return (cp, px | ((style & 3) << 6) | ((style & 4) << 3), width, height, advance,
                 len(payload) if payload is not raw else 0, payload)
 
     def metadata(self):
@@ -99,7 +100,7 @@ def generate(source, faces, fallback=None):
     rows, retained, substituted = [], [], []
     primary = faces[0]
     tiles.require(primary is not None, 'A regular font is required')
-    originals = {(row[0], row[2]): row for row in source.glyphs if row[2] < 64}
+    originals = {(row[0], row[2]): row for row in source.glyphs if row[2] < 32}
     required = set().union(*requested)
     new_codepoints = required - {cp for cp, _px in originals}
     missing_regular = []
@@ -128,6 +129,12 @@ def generate(source, faces, fallback=None):
             rows.append(row)
             originals[(cp, px)] = None
         if face is not primary: substituted.append(cp)
+    if getattr(source, 'version', 0) >= 28:
+        for cp in sorted({cp for cp, _px in originals}):
+            if (cp, 6) in originals: continue
+            face = primary if cp in primary.coverage else fallback
+            if face is not None and cp in face.coverage:
+                rows.append(face.glyph(cp, 6)); originals[(cp, 6)] = None
     styled_counts, unavailable = {}, {}
     for style in range(1, 4):
         font = faces[style]
@@ -146,7 +153,34 @@ def generate(source, faces, fallback=None):
         styled_codepoints=styled_counts, missing_style_codepoints=unavailable,
         retained_old_regular_codepoints=sorted(set(retained)),
         fallback_regular_codepoints=sorted(set(substituted)),
-        rasterizer='Pillow/FreeType at native 8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
+        rasterizer='Pillow/FreeType at native 6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
+
+
+def scene_glyphs(source, faces):
+    """Pack actual explicit faces only for the screens that select them."""
+    if source.version < 28 or not any(faces): return [], {}
+    texts = [bytes(source.block(off, length)).decode('utf-8') for off, length in source.strings]
+    index = Path(__file__).resolve().parents[1]/'src/world_text_index.inc'
+    entries = re.findall(r'\{"([^\"]+)",(\d+)\}', index.read_text())
+    alphabets = [set(range(32,127)),set(range(32,127)),set(range(32,127))]
+    for key, ordinal in entries:
+        ordinal=int(ordinal)
+        if ordinal >= len(texts): continue
+        if re.fullmatch(r'ancients\.[^.]+\.title',key):
+            alphabets[0].update(map(ord,texts[ordinal].upper()))
+        if re.fullmatch(r'ancients\.[^.]+\.epithet',key) or re.fullmatch(r'monsters\.[^.]+\.name',key):
+            alphabets[2].update(map(ord,texts[ordinal]))
+        if key.startswith('events.CRYSTAL_SPHERE.'):
+            alphabets[1].update(set().union(*styled_alphabet([texts[ordinal]])))
+    alphabets[1].update(styled_alphabet(texts)[1])
+    rows=[];report={}
+    for i,face in enumerate(faces):
+        if face is None: continue
+        covered={cp for cp in alphabets[i] if cp>=32 and cp in face.coverage}
+        for cp in sorted(covered):
+            for px in SCENE_SIZES: rows.append(face.glyph(cp,px,4+i))
+        report[('display','explicit_bold','scene_italic')[i]]=dict(**face.metadata(),codepoints=len(covered))
+    return rows,report
 
 
 def replace(data, language, glyphs):
@@ -160,7 +194,7 @@ def replace(data, language, glyphs):
     tiles.require(0 < len(glyphs) <= 32768, 'Styled glyph directory exceeds runtime capacity')
     keys = [(row[0], row[1]) for row in glyphs]
     tiles.require(len(set(keys)) == len(keys), 'Duplicate styled glyph key')
-    tiles.require({(r[0], r[2]) for r in source.glyphs if r[2] < 64} <= set(keys),
+    tiles.require({(r[0], r[2]) for r in source.glyphs if r[2] < 32} <= set(keys),
                   'Replacement dropped an existing regular glyph')
     art_end = before['prefix'] + before['artwork']
     delta = (len(glyphs)-old_ng)*tiles.GLYPH.size
@@ -187,7 +221,7 @@ def replace(data, language, glyphs):
     glyph_offsets, shared = {}, {}
     for index in sorted(range(len(glyphs)), key=lambda i: (-frequency[chr(glyphs[i][0])], glyphs[i][0], glyphs[i][1])):
         cp, px, w, h, advance, encoded, raw = glyphs[index]
-        tiles.require(cp <= 0x10ffff and px <= 255 and (px & 63) in SIZES and
+        tiles.require(cp <= 0x10ffff and px <= 255 and (px & (31 if source.version >= 28 else 63)) in (SCENE_SIZES if source.version >= 28 else SIZES) and
             0 < w <= 40 and 0 < h <= 40 and advance <= 40 and
             len(raw) == (encoded or w*h), 'Invalid replacement glyph')
         if raw not in shared:
@@ -232,6 +266,9 @@ def main():
     parser.add_argument('--italic-font', type=Path)
     parser.add_argument('--bold-italic-font', type=Path)
     parser.add_argument('--fallback-font', type=Path)
+    parser.add_argument('--display-font', type=Path)
+    parser.add_argument('--scene-bold-font', type=Path)
+    parser.add_argument('--scene-italic-font', type=Path)
     parser.add_argument('--receipt', type=Path, required=True)
     args = parser.parse_args()
     input_path, output_path, receipt_path = [tiles.private_path(path, label) for path, label in
@@ -243,6 +280,10 @@ def main():
     data = input_path.read_bytes(); info = layout(data, args.language)
     source = tiles.PackView(data, info['auxiliary'], versions=(24, 25, 26, 27, 28))
     glyphs, font_report = generate(source, faces, fallback)
+    scene_faces=[Face(tiles.private_path(path, 'Original scene font')) if path else None for path in
+                 (args.display_font,args.scene_bold_font,args.scene_italic_font)]
+    extra,scene_report=scene_glyphs(source,scene_faces);glyphs.extend(extra)
+    font_report['scene_fonts']=scene_report
     output, report = replace(data, args.language, glyphs)
     report.update(schema=1, reference='v0.111.0 / 41cef1ea', language=args.language, **font_report)
     tiles.atomic_bytes(output_path, output)

@@ -44,7 +44,7 @@ static void native_enemy_intent(Canvas&c,int slot,CreaturePose pos){
  c.hit(hit_left,pos.intent-2,hit_right-hit_left,size+14,HitKind::EnemyIntent,slot);
 }
 static void enemy_intent_tooltip(Canvas&c){
- auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||(!combat_phase(a.game.phase)&&!ui_feedback_bound(a))||!a.game.enemy_world.active)return;
+ auto&a=c.a;if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||(!combat_phase(a.game.phase)&&!ui_feedback_bound(a)&&!a.choice_peeking)||!a.game.enemy_world.active)return;
  const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||(hit->kind!=HitKind::EnemyIntent&&hit->kind!=HitKind::Enemy))return;
  int slot=hit->value;if(slot<0||slot>=a.game.enemy_count||a.combat_health(slot+1).hp<=0)return;auto intent=a.combat_intent(slot);if(!intent.flags)return;
  // The formatter reads the same retained intent as the icon and damage.

@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "host_text_input.hpp"
+#include "host_physical_input.hpp"
 #include "resource_file_cursor.hpp"
 #include "runtime_performance.hpp"
 #include "runtime_scene.hpp"
@@ -254,6 +255,7 @@ extern "C" int main(int argc,char**argv){
         valid=valid&&split.open(file_source(common),resource,source.language==spire::BootLanguage::English?spire::ResourceLanguage::English:spire::ResourceLanguage::Chinese);
         if(valid)resource=split.source();
     }else{source.language=spire::boot_probe_language(resource);installed_languages=source.language==spire::BootLanguage::English?1u:2u;}
+    app.calculator_keyboard=true;
     if(!valid||!app.init(resource,{save_game,load_game,clear_save,seed_entropy,load_preferences,save_preferences,available_languages,request_language,load_progress,save_progress,wall_clock,current_profile,profile_info,request_profile})){
         boot_error(blit,spire::BootText::InvalidResources,source.language);return 5;
     }
@@ -282,12 +284,7 @@ extern "C" int main(int argc,char**argv){
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
     clock.last=timer_ticks();uint32_t input_clock=0;
-    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail,spire::Key::ReferenceMap,spire::Key::Collection,spire::Key::Statuses,spire::Key::DrawPile,spire::Key::DiscardPile,spire::Key::ExhaustPile
-#if SPIRE_DEBUG_COMMANDS
-    ,spire::Key::Debug
-#endif
-    };
-    uint32_t previous=0xffff;uint16_t text_previous[8]{};unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;
+    uint16_t text_previous[8]{};uint8_t repeat[spire::CalculatorPhysicalKeyCount]{};bool input_ready=false;unsigned quiet_ms=0;
     uint32_t first_start=performance.enabled?timer_ticks():0;
     app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
     uint32_t last_present=performance.enabled?timer_ticks():0;
@@ -317,46 +314,22 @@ extern "C" int main(int argc,char**argv){
         if(input_ready&&(pointer.moved||pointer.down||pointer.up||pointer.tap))app.pointer_move(pointer.x,pointer.y);
         if(input_ready&&(pointer.down||pointer.tap))app.pointer_button(true);
         if(input_ready&&(pointer.up||pointer.tap))app.pointer_button(false);
-        uint32_t p=0;
-        if(pressed(0x14,0x80))p|=1u<<0; // 4
-        if(pressed(0x14,8))p|=1u<<1; // 6
-        if(pressed(0x1C,0x40))p|=1u<<2; // 8
-        if(pressed(0x1C,0x10))p|=1u<<3; // 2
-        if(pressed(0x10,2)||pressed(0x1A,0x40))p|=1u<<4; // ENTER / 5
-        if(pressed(0x1C,0x80))p|=1u<<5; // ESC
-        if(pressed(0x10,0x10)||pressed(0x18,2))p|=1u<<6; // SPACE / E
-        if(pressed(0x1C,0x200)||pressed(0x14,2))p|=1u<<7; // TAB / Q
-        if(pressed(0x12,0x40))p|=1u<<8; // S
-        if(pressed(0x14,0x10))p|=1u<<9; // O
-        if(pressed(0x16,1))p|=1u<<10; // L
-        if(pressed(0x14,0x40))p|=1u<<11; // M
-        if(pressed(0x14,4))p|=1u<<12; // P
-        if(pressed(0x14,1))p|=1u<<13; // R: relic collection
-        if(pressed(0x16,0x10))p|=1u<<14; // I: inspect selected card
-#if SPIRE_DEBUG_COMMANDS
-        if(pressed(0x16,0x40))p|=1u<<21; // G: developer command menu
-#endif
-        if(pressed(0x18,0x10))p|=1u<<16; // C: compendium
-        if(pressed(0x12,4))p|=1u<<17; // V: powers and statuses
-        if(pressed(0x18,0x40))p|=1u<<18; // A: draw pile
-        if(pressed(0x18,4))p|=1u<<19; // D: discard pile
-        if(pressed(0x18,1))p|=1u<<20; // F: exhaust pile
         uint16_t text_keys[8];for(unsigned row=0;row<8;++row)text_keys[row]=*(volatile uint16_t*)(0x900E0010u+row*2);
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.
-            quiet_ms=(p==0&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
+            bool held_key=false;spire::calculator_physical_keys([&](unsigned,unsigned row,unsigned mask,uint16_t){if(text_keys[row]&mask)held_key=true;});
+            quiet_ms=(!held_key&&!sample.contact&&!sample.pressed)?quiet_ms+elapsed:0;
             if(quiet_ms>=100)input_ready=true;
-            previous=p;for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
+            for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];pad_cursor.reset();render_frame(update_start,resources_before,update_scene);continue;
         }
-        uint32_t edge=p&~previous;
-        const uint32_t released=previous&~p;
-        for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);++i)if(released&(1u<<i))app.map_drawing_key_release(keys[i]);
-        for(unsigned i=0;i<4;i++){if(p&(1u<<i)){repeat[i]++;if(repeat[i]>10&&repeat[i]%3==0)edge|=1u<<i;}else repeat[i]=0;}
-        if(app.library&&!app.library_tab&&app.library_search_editing)
-            spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
-        else for(unsigned i=0;i<sizeof(keys)/sizeof(keys[0]);i++)if(edge&(1u<<i))app.input(keys[i]);
-        previous=p;for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
+        const bool library_text=app.library&&!app.library_tab&&app.library_search_editing&&app.binding_listening<0;
+        const bool seed_text=app.map_preview.open&&app.map_preview.editing&&app.binding_listening<0;
+        spire::calculator_physical_edges(text_keys,text_previous,repeat,library_text||seed_text,
+            [](uint16_t code,bool down){app.physical_key(code,down);});
+        if(library_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.library_text(code);});
+        else if(seed_text)spire::calculator_text_edges(text_keys,text_previous,[](int code){app.reference_text(code);});
+        for(unsigned row=0;row<8;++row)text_previous[row]=text_keys[row];
         change_language();service_profile();
         // Quit is already committed. A discarded final frame can perform
         // resource syscalls while ENTER is still held and expose that press

@@ -50,7 +50,7 @@ static LocalizedValue combat_orb_tip_value(const void*opaque,const char*name){
 static void orb_hover_tip(Canvas&c){
  auto&a=c.a;
  if(!a.pointer.visible||a.pointer.held||a.pointer.armed_card>=0||a.title||a.library||a.paused||a.help||a.panel||
-    a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||!combat_phase(a.game.phase))return;
+    a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.settings_open||a.frontend_confirm||(!combat_phase(a.game.phase)&&!a.choice_peeking))return;
  const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(!hit||hit->kind!=HitKind::Orb)return;
  const int slots=a.combat_status_fact(CombatStatus::OrbSlots),count=a.combat_status_fact(CombatStatus::OrbCount),index=hit->value;
  if(index<0||index>=slots)return;

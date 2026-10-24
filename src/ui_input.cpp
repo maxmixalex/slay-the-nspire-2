@@ -41,7 +41,7 @@ void App::sync_selection(){
     }
 }
 void App::toggle_choice(int id){
-    if(!combat_choice_ready())return;
+    if(choice_peeking||!combat_choice_ready())return;
     sync_selection();if(!choice_phase(game.phase)||id<0||id>=MaxCards+3)return;
     const auto& source=choice_pile(game);
     bool in_hand=false;for(unsigned i=0;i<source.count;i++)if(source.ids[i]==id)in_hand=true;
@@ -54,7 +54,7 @@ void App::toggle_choice(int id){
     if(choice_selected_count<needed)choice_selected[choice_selected_count++]=(uint16_t)id;
 }
 void App::confirm_choice(){
-    if(!combat_choice_ready())return;
+    if(choice_peeking||!combat_choice_ready())return;
     sync_selection();if(!choice_phase(game.phase))return;
     unsigned needed=choice_max(game);
     if(choice_selected_count<choice_min(game)||choice_selected_count>needed)return;
@@ -68,7 +68,7 @@ void App::confirm_choice(){
     if(done){choice_selected_count=0;choice_revision=game.revision;cursor=0;busy=0;pointer_cancel();}
 }
 bool App::selection_input(Key key){
-    if(title||paused||help||panel||!choice_phase(game.phase)||!combat_choice_ready())return false;
+    if(choice_peeking||title||paused||help||panel||!choice_phase(game.phase)||!combat_choice_ready())return false;
     sync_selection();const auto& source=choice_pile(game);int count=source.count;if(!count)return false;
     if(cursor<0)cursor=0;if(cursor>=count)cursor=count-1;
     if(key==Key::Left)cursor=(cursor+count-1)%count;
@@ -96,7 +96,7 @@ void App::ui_action(UiAction action){
     if(frontend_confirm&&action!=UiAction::FrontendAccept&&action!=UiAction::FrontendCancel&&action!=UiAction::Back)return;
     if(settings_open&&!frontend_confirm){settings_action(action);return;}
     if(run_modes_action(action))return;
-    if(!combat_choice_ready())switch(action){
+    if(choice_peeking||!combat_choice_ready())switch(action){
     case UiAction::ConfirmChoice:case UiAction::ClearChoice:case UiAction::PreviousChoicePage:case UiAction::NextChoicePage:
     case UiAction::ConfirmWorldChoice:case UiAction::ClearWorldChoice:case UiAction::PreviousWorldPage:case UiAction::NextWorldPage:
     case UiAction::LeaveWorldRewards:case UiAction::SacrificeReward:case UiAction::RerollReward:
@@ -255,7 +255,7 @@ void App::ui_action(UiAction action){
         if(world_take_card_reward_alternative(game,2)){choice_selected_count=0;choice_revision=game.revision;cursor=0;pointer_cancel();}break;
     case UiAction::CrystalSmall:original_event_crystal_tool(game,false);break;
     case UiAction::CrystalLarge:original_event_crystal_tool(game,true);break;
-    case UiAction::ClearChoice:choice_selected_count=0;break;
+    case UiAction::ClearChoice:if(!choice_peeking)choice_selected_count=0;break;
     case UiAction::ConfirmDeckChoice:confirm_deck_choice();break;
     case UiAction::CancelDeckChoice:deck_candidate=-1;break;
     case UiAction::PreviousDeckPage:case UiAction::NextDeckPage:
@@ -369,7 +369,7 @@ bool App::deck_input(Key key){
 
 namespace spire {
 void App::open_statuses(int actor){
-    if(title||paused||help||panel||library||character_select||detail_card>=0||detail_item>=0||map_preview.open||!combat_phase(game.phase))return;
+    if(title||paused||help||panel||library||character_select||detail_card>=0||detail_item>=0||map_preview.open||(!combat_phase(game.phase)&&!choice_peeking))return;
     if(actor<0||actor>game.enemy_count)return;
     status_actor=actor;status_selected=status_scroll=status_scroll_limit=0;pointer_cancel();
 }

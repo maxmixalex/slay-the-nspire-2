@@ -5,6 +5,57 @@ not a fidelity percentage or a completed acceptance report. Original assembly,
 scene, shader and artwork inputs stay private. Public generators emit numeric
 metadata and asset paths only.
 
+## UI8 hand geometry, selection and inspector transitions
+
+`HandPosHelper`, `NPlayerHand.RefreshLayout`, `NHandCardHolder` and the
+original holder scenes now drive the combat hand. All55 authored positions
+and angles for1–10 cards have been recovered; the angle arrays were checked
+against the pinned assembly's initialized numeric data. Only numeric
+metadata is committed. The fan uses the1680×1260 projection and the
+original0.8 base scale, reducing it to0.76/0.72/0.68 for8/9/10 cards.
+
+A hand cache is80×112 pixels, but its actual card frame is69×97 with
+transparent padding for energy and star artwork. The frame corresponds to
+the original300×422 card, so the holder's rotation pivot now follows that
+frame's center. The cache's outer bounds no longer determine scale or the
+mouse hitbox. The focused card projects to Y200 and Q10 scale848, while
+`NCardPlay.CenterCard` targets Y210 and scale636. Immediate hover resets Y,
+scale and angle; X keeps the original interpolation. The nearest three
+neighbours move outward by75/50/25 source pixels. Position/scale/angle
+responses retain the original7/8/10-per-second rates.
+
+Every hand hit uses the current visible pose and an inverse rotation test.
+The old fixed bottom rail and the focused card's hardcoded80px hit column
+have been removed. Tooltip ownership uses that same card frame. Selection
+reparents the holder in the original: the port therefore contracts the
+remaining displayed hand immediately without changing canonical piles.
+During a real drag, other hand holders ignore pointer events. Self/all-target
+cards follow the mouse; a single-target card centers after entering the
+source play zone. Existing instance capture, cancel-on-modal, queued card
+transfers and save-state comparisons remain in place.
+
+Card transfers now use the same registered frame scale. `PileType.Play`
+projects the full viewport center minus100 source pixels to Y101 and the
+source0.8 scale to678. Generated previews reach source scale1, use325px
+source spacing and the original50px downshift. Their250ms entrance and
+1,200ms hold are unchanged. Flight arcs use the1680×1260 projection; the
+existing draw/discard/exhaust destination centers remain attached to the
+port's visible pile controls.
+
+The original CombatUi node order places energy/stars, end turn and piles
+before preview/hand/played cards. The next source stage corrects this order
+so an outer focused card is not cut through by those controls. The card's
+visible face owns overlapping pointer input. Hovering away restores access
+to controls beneath it, as in the original scene.
+
+The inspector now releases its modal input immediately on close, retaining
+a frozen presentation for the original100ms card/arrow and250ms backstop
+fade. Continuous collection grids retain a separate50ms smoothed scrollbar
+thumb; dragging and wheel movement still select the current visible models.
+Stage2's card-HUD suite passed, including full save invariants; later hand
+geometry and layer changes require the next immutable gate and actual
+bilingual screenshots. This is implementation evidence, not95% acceptance.
+
 ## Checkpoint 9 implementation and evidence
 
 Checkpoint 8 (`e378d4a20b5a2a43a419efad513ba6aed135840a`) built successfully

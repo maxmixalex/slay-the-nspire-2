@@ -1,4 +1,4 @@
-// Fixed eight-byte preferences use the active profile's already-resolved
+// Bounded versioned preferences (legacy flags or full key maps) use the active profile's already-resolved
 // paths. Slot1 retains the historical names; language remains host-global.
 static bool load_preferences(spire::UiPreferences& value){
     void*f=nd_open(settings_path,"rb");if(!f)return false;

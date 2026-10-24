@@ -125,6 +125,41 @@ __aeabi_uldivmod:
     mov r3,r5
     pop {r4-r8,pc}
 .size __aeabi_uldivmod,.-__aeabi_uldivmod
+.section .text.__aeabi_ldivmod,"ax",%progbits
+.global __aeabi_ldivmod
+.type __aeabi_ldivmod,%function
+/* Signed RTABI32 uses the same four-word quotient/remainder result. Convert
+ * two's-complement magnitudes without a signed C overflow (INT64_MIN is a
+ * valid unsigned magnitude), reuse the tested divider, then restore signs.
+ * Remainder has the numerator's sign. Keep the stack eight-byte aligned.
+ * Zero divisors preserve the unsigned helper's quotient-zero fallback. */
+__aeabi_ldivmod:
+    push {r4-r6,lr}
+    mov r4,r1
+    eor r5,r1,r3
+    cmp r1,#0
+    bpl 1f
+    rsbs r0,r0,#0
+    rsc r1,r1,#0
+1:
+    cmp r3,#0
+    bpl 2f
+    rsbs r2,r2,#0
+    rsc r3,r3,#0
+2:
+    bl __aeabi_uldivmod
+    cmp r5,#0
+    bpl 3f
+    rsbs r0,r0,#0
+    rsc r1,r1,#0
+3:
+    cmp r4,#0
+    bpl 4f
+    rsbs r2,r2,#0
+    rsc r3,r3,#0
+4:
+    pop {r4-r6,pc}
+.size __aeabi_ldivmod,.-__aeabi_ldivmod
 .section .text,"ax",%progbits
 .global __aeabi_memcpy
 .global __aeabi_memcpy4

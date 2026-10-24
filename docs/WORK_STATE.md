@@ -2,6 +2,44 @@
 
 ## UI8 recovery and integrated implementation (in progress)
 
+### Stage 4 candidate, following verified stage 3
+
+The latest remotely stored/read-back source is
+`dc4c07c0da37e7ade17ee042868b4e6e42883303` (stage 3). Its immutable
+Clang18 native build compiled all targets and passed **85/90** CTest suites.
+The five failures were retained: the test inspected a construction-only elite
+flag after map reconstruction; three older combat/input fixtures exposed the
+hand/control layer mismatch or bypassed actual combat initialization; and
+Dolly's Mirror incorrectly suppressed ordinary acquisition listeners. The
+stage 4 candidate repairs the source behavior and appropriate fixtures.
+This is not a claim that those repairs have already passed a new full run.
+
+Stage 3 WASM compilation and real v28/1984-aux ENG/ZHS conversion passed.
+Both actual-pack five-character suites passed 8,460 checks, card HUD suites
+passed, and both map-drawing suites passed with inspected pen/erase/clear
+captures. Stage 3 ARM linking failed on the absent signed 64-bit division ABI
+helper. Stage 4 adds the helper and actual-linked ARM numeric/codec checks.
+The ordinary Firebird preparation flow booted the OS, installed Ndless and
+verified USB; running the final UI8 launcher remains a separate gate.
+
+Quiet serial native measurement generated 1,024 identical maps and final RNG
+states in 57,657.904 ms before and 19,180.886 ms after workspace/hash changes.
+All 1,307,868 transcript bytes match (SHA-256
+`e42c0bb68358a654e59f58cc958cc3401b159448b37efa0ac2ea714efaf655dc`).
+Workspace is 794,788 bytes, down 319,332. This one host measurement is not
+calculator FPS. Two actual lossless compression stages save 1,316,666 bytes
+per v27 language pack, with all 1,643 decoded groups verified identical.
+
+Stage 4 also includes all modifier simulation hooks and Neow selection,
+original 55-position hand geometry, actual map drawing/NSH4 storage, real
+two-bank key rebinding/NSPF3 storage in all three hosts, original combat HUD
+scale and layering, selection Peek, and the Crystal Sphere overlay/software
+shader. Merchant CharacterCards now preserves the source's post-exclusion
+concatenation and duplicate weights; reward pools retain their distinct union.
+Original scene font families and dense 6 px text are in the resource converter.
+Ancient dialogue/history and original auxiliary menu readers are the next
+coherent stage. No percentage is inferred from suite counts or model coverage.
+
 Recovered the complete UI7 checkout, including uncommitted combat geometry and
 run-options/history work. Recovery checkpoint `d9e84e10161017610566610bb3bb2a8afad59327`
 is verified on the existing remote work branch. Main still holds UI6. The current
