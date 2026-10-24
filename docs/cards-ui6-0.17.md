@@ -212,9 +212,18 @@ records, as they already invalidate hand-card caches. The driver was left
 unchanged. The new card/HUD regression reconstructs the real App at the same
 address, checks its repeated generation-1 open, induces a complete hover and
 unfocus, then compares a fresh session at the previous start time with clean
-HUD pixels. It covers memory and `ResourceSource` initialization. This repair
-awaits its own frozen native/WASM and card/HUD receipt; earlier failed matrix
-runs are not counted as passing equivalence.
+HUD pixels. It covers memory and `ResourceSource` initialization.
+
+Frozen repair receipt `a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea` passed
+actual card/HUD **325,846 English / 337,176 Chinese** checks under journals
+`ui6-stage6-card-hud-eng-10ee36ca62de` and
+`ui6-stage6-card-hud-zhs-09ebc20a1e41`, both unchanged-source passes. Their
+30 captured card/HUD frames per language remain byte-identical to the already
+reviewed stage-5 counterparts. The rooms agent separately completed the full
+world/rooms native/WASM comparison at this same repair: **2,376 exact frames
+and 106 exact saves** across both languages. The ten previous deck-icon
+mismatches disappeared without weakening the checker or resetting motion in
+the driver. Earlier failed matrix runs remain recorded as failures.
 
 ## Remaining fidelity boundaries to keep explicit
 

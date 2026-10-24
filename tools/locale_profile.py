@@ -82,6 +82,8 @@ def inline_bindings():
     for row in rows:
         if not isinstance(row.get('eng'),str) or re.search('[\u3400-\u9fff]',row['eng']):
             raise ValueError('Untranslated inline UI text: '+row['source'])
+        if type(row.get('debug_commands_only',False)) is not bool:
+            raise ValueError('Invalid inline debug-only marker')
     return rows
 
 
@@ -97,7 +99,13 @@ def generated_files():
         digest=fnv(row['source'])
         if digest in hashes:raise ValueError('Inline UI hash collision')
         hashes[digest]=None
-        inline.append((digest,len(row['source'].encode('utf-8')),row['eng']))
+        inline.append((digest,len(row['source'].encode('utf-8')),row['eng'],row.get('debug_commands_only',False)))
+    inline_text=''
+    for h,n,eng,debug_only in sorted(inline):
+        # Debug-only labels must not change ordinary runtime bytes or legacy
+        # private-pack slots when a developer-menu hint is corrected.
+        line=f' {{0x{h:08x}u,{n},{json.dumps(eng,ensure_ascii=True)}}},\n'
+        inline_text+=('#if SPIRE_DEBUG_COMMANDS\n'+line+'#endif\n') if debug_only else line
     status=json.loads((ROOT/'config/locale-status-keys.json').read_text())['keys']
     potion_numbers=[]
     for key,values in sorted(json.loads((ROOT/'config/locale-potion-values.json').read_text())['potions'].items()):
@@ -106,7 +114,7 @@ def generated_files():
             potion_numbers.append(f' {{"potions.{key}","{name}",{value},{value},1}},\n')
     return {
         'src/locale_ui_index.inc':comment+''.join(f' {{0x{h:08x}u,{value[0]},{value[1]}}},\n' for h,value in sorted(hashes.items()) if value is not None),
-        'src/locale_ui_inline.inc':'// Generated port-authored translations; historical pack indexes stay unchanged.\n'+''.join(f' {{0x{h:08x}u,{n},{json.dumps(eng,ensure_ascii=True)}}},\n' for h,n,eng in sorted(inline)),
+        'src/locale_ui_inline.inc':'// Generated port-authored translations; historical pack indexes stay unchanged.\n'+inline_text,
         'src/locale_text_index.inc':comment+''.join(' {'+json.dumps(key)+','+str(i)+'},\n' for i,key in enumerate(keys,BASE)),
         'src/locale_status_index.inc':comment+''.join(' '+(json.dumps(key[7:]) if key and key.startswith('powers.') else 'nullptr')+',\n' for key in status),
         'src/locale_potion_numbers.inc':comment+''.join(potion_numbers),

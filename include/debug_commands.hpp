@@ -2,6 +2,9 @@
 #ifndef SPIRE_DEBUG_COMMANDS
 #define SPIRE_DEBUG_COMMANDS 0
 #endif
+#ifndef SPIRE_DEBUG_TEXT_INPUT
+#define SPIRE_DEBUG_TEXT_INPUT 1
+#endif
 
 #if SPIRE_DEBUG_COMMANDS
 #include "world_run.hpp"

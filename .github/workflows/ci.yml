@@ -49,6 +49,12 @@ jobs:
           cmake --build build/debug-commands --parallel 2 --target debug_commands_regression debug_ui_regression ui_preferences_regression
           ulimit -s 32768
           ctest --test-dir build/debug-commands --output-on-failure -R '^(debug_commands|debug_ui|ui_preferences)_regression$'
+      - name: Verify calculator menu without free-text input
+        run: |
+          cmake -S . -B build/debug-commands -DSPIRE_DEBUG_TEXT_INPUT=OFF
+          cmake --build build/debug-commands --parallel 2 --target debug_ui_regression
+          ulimit -s 32768
+          ctest --test-dir build/debug-commands --output-on-failure -R '^debug_ui_regression$'
 
   conversion:
     runs-on: ubuntu-24.04

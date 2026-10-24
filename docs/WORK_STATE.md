@@ -1,5 +1,32 @@
 # Work state — 2026-10-24
 
+## UI6 stage 7: match developer input to the calculator's actual controls
+
+Stage 6 is preserved at `a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea`, tree
+`c773859ec3d2ece4d27119c6f027f67419117aa8`. Both languages now pass the
+complete room/world native–WASM matrices: 64 scenarios, 2,376 exact RGB565
+frames and 106 exact saves. Ordinary and developer offline Chromium flows
+pass, including persistent Fast Mode, save/load/Continue, language reload,
+normal-build debug exclusion and real F1 command editing. The actual ordinary
+ARM launcher was USB-read back exactly, reopened its saved run through the
+OS/Documents UI, and produced the same 230,112-byte save after Continue.
+The ordinary emulator route used no injected state or snapshot restore.
+
+A final platform review found that Ndless did not forward free-text keyboard
+input, although its debug menu advertised I editing. This checkpoint makes
+that capability explicit: the calculator retains its 14 usable presets and
+encounter/event/character/act variants, while only Browser/Linux expose text
+editing. Unsupported command-field hits and editing actions are disabled.
+The new footer translation is compiled only with developer commands; all
+935 historical locale indices remain unchanged. Ordinary app/content/core/run
+preprocessed output is identical to stage 6; portable binary identity will
+be verified after building this checkpoint. New CI coverage exercises the
+menu-only capability as well as the text-capable debug menu.
+
+Next: build and verify the final optional calculator debugger and ordinary
+portable identity, complete sanitizer and quiet performance checks, then save
+the matching release files and synchronize the verified source to main.
+
 ## UI6 stage 6: reset HUD animation at session initialization
 
 Stage 5 (`c4431cc647b5b1710d23c877759f4f25cc6ca278`, tree

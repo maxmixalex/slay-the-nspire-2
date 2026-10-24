@@ -95,7 +95,8 @@ encounter's named Marker2D; summons do not re-layout every other actor. The
 new compact numeric table contains all **24** encounters with scene markers,
 using their authored order, positions and camera getters. Actor drawing,
 intent, health/status placement, target hit regions and pointer targeting
-share `enemy_pose(State, slot)`.
+share the displayed pose from `App::combat_enemy_pose`, derived from
+`enemy_pose(State, slot)` when that actor identity is released.
 
 Five of these scenes do not override `EncounterModel.Slots`: both Bowlbugs
 encounters, Gremlin Merc, Knights and Slumbering Beetle. Auditing `HasScene`
@@ -152,8 +153,9 @@ Necrobinder keeps the additional authored 150 source-pixel offset for Osty.
 
 ## Verification status
 
-Final runtime checkpoint: `c4431cc647b5b1710d23c877759f4f25cc6ca278`.
-The complete Clang 18 Release build with `SPIRE_DEBUG_COMMANDS=ON` passed.
+The complete combat/debug gate used frozen checkpoint
+`c4431cc647b5b1710d23c877759f4f25cc6ca278` (stage 5). Its complete Clang 18
+Release build with `SPIRE_DEBUG_COMMANDS=ON` passed.
 All 79 registered CTest cases were executed successfully: the first complete
 run passed 78 and could not launch `five_character_ui_regression` because the
 built file had mode 0644. Restoring only its execution permission and running
@@ -169,12 +171,23 @@ RewardsSet construction, cross-room/act commands, typed input, modal close,
 no automatic saves and English/Chinese captures. Final Ovicopter/egg and
 Kaiser screenshots were inspected again after the coordinate precision fix.
 
-Final private journals are under `ui6-debug-stage5-journal`: build
+Stage 5 private journals are under `ui6-debug-stage5-journal`: build
 `7caefabe141d`, full CTest `eed0a8522d1a`, permission retry `e21dbaebb3f6`,
 formation `f06477b9d8d3`, world ENG/ZHS `8d9762f17817`/`021ce2f02db8`,
 and debug UI ENG/ZHS `1761221429ee`/`040ded766cb6`. Every completed command
 reported unchanged checkpoint source. These are runtime/UI checks, not
 physical calculator performance measurements.
+
+The later frozen checkpoint `a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea`
+(stage 6) clears three static HUD motions when an App is initialized again;
+it does not change combat timing or the debug core. A fresh Clang 18 debug
+build of `ui_preferences_regression`, `debug_commands_regression` and
+`debug_ui_regression` passed, and CTest passed all three cases. The final
+English and Chinese resource packs also passed the actual debug-UI flows.
+This focused follow-up does not stand for a second complete 79-case run.
+Private journals under `ui6-debug-stage6-journal` are build `dc5afcebf7d5`,
+three-case CTest `7f2205b6abe6`, and actual debug UI ENG/ZHS
+`9eb2691ed702`/`1ce0b448199d`; all reported unchanged checkpoint source.
 
 ### Earlier checkpoint failures
 
@@ -191,7 +204,7 @@ the current unified `OfferReward` group. They now check the real group and
 its card/claimable records, without bypassing reward selection. The UI run
 also exposed the delayed-replacement geometry leak described above, and a
 Q4 truncation moved Aeonglass's centered position one display pixel left.
-Both implementation fixes await the next frozen checkpoint. The remaining
+Those implementation fixes were verified in later frozen checkpoints below. The remaining
 potion/map failures belong to their parallel UI scopes. The layout test's
 first debug invocation lacked executable permission; after repairing only
 that built-file mode, a logged retry reproduced the same Aeonglass assertion

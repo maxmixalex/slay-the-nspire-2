@@ -105,15 +105,21 @@ bool App::debug_input(Key key){
     if(key==Key::Back){debug_open=debug_editing=false;pointer_cancel();return true;}
     if(key==Key::Up||key==Key::Down){debug_selection=(debug_selection+(key==Key::Up?-1:1)+DebugPresetCount)%DebugPresetCount;debug_variant=0;debug_editing=false;debug_preset();}
     else if(key==Key::Left||key==Key::Right){debug_change_variant(*this,key==Key::Left?-1:1);debug_preset();}
+#if SPIRE_DEBUG_TEXT_INPUT
     else if(key==Key::Detail){debug_editing=true;}
+#endif
     else if(key==Key::Confirm){debug_command(debug_line);}
     return true;
 }
 void App::debug_text(int code){
+#if SPIRE_DEBUG_TEXT_INPUT
     if(!debug_open||!debug_editing)return;
     if(code==27){debug_editing=false;return;}if(code==13){debug_command(debug_line);return;}
     unsigned n=0;while(debug_line[n])++n;
     if(code==8){if(n)debug_line[n-1]=0;}else if(code>=32&&code<=126&&n+1<sizeof(debug_line)){debug_line[n]=char(code);debug_line[n+1]=0;}
+#else
+    (void)code;
+#endif
 }
 static void debug_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;c.rect(0,0,320,240,Panel);
@@ -126,6 +132,10 @@ static void debug_screen(Canvas&c){
         c.hit(8,y-1,304,18,HitKind::DebugItem,i);}
     c.rect(9,155,302,40,Ink);c.box(9,155,302,40,a.debug_editing?Green:Muted);c.paragraph(a.debug_line,15,159,290,3,0,10,White);
     if(*a.debug_reply)c.text_fitted(a.debug_reply,12,199,296,10,Gold,8);
+#if SPIRE_DEBUG_TEXT_INPUT
     c.text(a.content.english()?"Arrows: choose  Enter: run  I: type":"方向键选择  Enter 执行  I 编辑",12,216,10,Muted);
     c.hit(9,155,302,40,HitKind::Command,int(Key::Detail));
+#else
+    c.text(a.content.english()?"Up/Down: choose  Left/Right: variant  Enter: run":"上下选择  左右切换  Enter 执行",12,216,10,Muted);
+#endif
 }

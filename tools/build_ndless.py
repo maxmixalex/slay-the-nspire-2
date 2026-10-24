@@ -17,7 +17,7 @@ def main()->None:
     directory=ROOT/'build'/('ndless-debug' if args.debug_commands else 'ndless');directory.mkdir(parents=True,exist_ok=True);(ROOT/'dist').mkdir(exist_ok=True)
     sources=['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/resource_source.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/world_card_factory.cpp', 'src/original_events.cpp', 'src/world_relics.cpp', 'src/world_rng.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/ndless/main.cpp','platform/ndless/entry.S','src/lzma2_block.cpp','third_party/lzma2/LzmaDec.c','third_party/lzma2/Lzma2Dec.c']
     flags=['--target=arm-none-eabi','-mcpu=arm926ej-s','-marm','-mfloat-abi=soft','-mno-unaligned-access','-O2','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-stack-protector','-fno-unwind-tables','-fno-asynchronous-unwind-tables','-ffunction-sections','-fdata-sections','-I'+str(ROOT/'include')]
-    flags += ['-DSPIRE_DEBUG_COMMANDS='+str(int(args.debug_commands))]
+    flags += ['-DSPIRE_DEBUG_COMMANDS='+str(int(args.debug_commands)), '-DSPIRE_DEBUG_TEXT_INPUT=0']
     objects=[]
     for i,source in enumerate(sources):
         out=directory/f'{i}.o';objects.append(str(out))

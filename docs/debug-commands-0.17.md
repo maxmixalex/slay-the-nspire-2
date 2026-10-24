@@ -22,7 +22,22 @@ Open the developer menu with **F1** in the browser/Linux host or **G** on the
 calculator. Up/down chooses a command. Left/right chooses a specific encounter,
 event, character or act for that row. Enter executes; Esc closes. Browser/Linux
 users can press **I** to edit the command line. The debug menu pauses updates;
-calculator commands are all usable through its menu without text entry.
+the calculator uses the menu without text entry and does not show or activate
+the **I** editor.
+
+The calculator menu offers fourteen presets: defeat all enemies, heal to full,
+gain 1000 gold, set energy to 99, ordinary/elite/boss/shop/rest/treasure/event/map
+rooms, a new run, and an act. Left/right enumerates specific encounters/events,
+all five characters for a new run with seed 1, or acts 1–3. The browser and Linux
+text editor additionally allow targeted kills, custom amounts and seeds, potion
+IDs and the `help` command. The command table below describes that complete
+text syntax; it does not imply calculator free-text support.
+
+`SPIRE_DEBUG_TEXT_INPUT` defaults to 1. The Ndless builder explicitly sets it to
+0; it only controls editor input, its hit region and the platform hint. A native
+menu-only regression build uses `-DSPIRE_DEBUG_COMMANDS=ON
+-DSPIRE_DEBUG_TEXT_INPUT=OFF`. The ordinary debug-disabled build has no menu or
+mutation code regardless of this capability.
 
 ## Commands
 

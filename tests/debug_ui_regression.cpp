@@ -49,10 +49,25 @@ int main(int argc,char**argv){
     CHECK(app.debug_command("act 3")&&app.game.world.act_index==2&&validate(app.game));
     snapshot=app.game;app.input(Key::Debug);CHECK(app.debug_open);app.input(Key::Save);app.advance(100);CHECK(!saves&&!std::memcmp(&snapshot,&app.game,sizeof snapshot));
     app.debug_selection=10;app.debug_variant=0;app.debug_preset();app.input(Key::Right);CHECK(app.debug_variant==1&&std::strstr(app.debug_line,"room event "));
+#if SPIRE_DEBUG_TEXT_INPUT
     app.input(Key::Detail);CHECK(app.debug_editing);std::strcpy(app.debug_line,"room res");app.debug_text('t');app.debug_text(13);
+#else
+    app.input(Key::Detail);CHECK(app.debug_open&&!app.debug_editing);
+    char menu_line[sizeof app.debug_line];std::strcpy(menu_line,app.debug_line);
+    app.debug_text('x');app.debug_text(8);CHECK(!std::strcmp(menu_line,app.debug_line));
+    app.render();
+    for(int i=0;i<app.hit_count;++i)CHECK(app.hits[i].kind!=HitKind::Command||app.hits[i].value!=int(Key::Detail));
+    app.pointer_move(160,175);app.pointer_button(true);app.pointer_button(false);
+    CHECK(app.debug_open&&!app.debug_editing&&!std::strcmp(menu_line,app.debug_line));
+    app.input(Key::Left);CHECK(app.debug_variant==0&&!std::strcmp(app.debug_line,"room event"));
+    app.input(Key::Up);CHECK(app.debug_selection==9);
+    app.input(Key::Down);CHECK(app.debug_selection==10);
+    app.input(Key::Up);app.input(Key::Up);CHECK(app.debug_selection==8&&!std::strcmp(app.debug_line,"room rest"));
+    app.input(Key::Confirm);
+#endif
     CHECK(!app.debug_open&&app.game.phase==Phase::Camp&&validate(app.game));
     if(argc>1){CHECK(capture("debug-rest-result"));app.input(Key::Debug);CHECK(capture("debug-room-menu"));app.input(Key::Back);}
     CHECK(saves==0&&!app.run_save_linked);
-    std::printf("debug UI regression: %s profile passed\n",argc>1?(app.content.english()?"actual ENG":"actual ZHS"):"synthetic");
+    std::printf("debug UI regression: %s profile, %s input passed\n",argc>1?(app.content.english()?"actual ENG":"actual ZHS"):"synthetic",SPIRE_DEBUG_TEXT_INPUT?"text":"menu-only");
     return 0;
 }

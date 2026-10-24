@@ -20,6 +20,9 @@
  {0xd2ba348fu,12,"Wears Off"},
  {0xe02feb02u,12,"Heal"},
  {0xe520bd27u,18,"Gain 1000 gold"},
+#if SPIRE_DEBUG_COMMANDS
+ {0xef557a45u,40,"Up/Down: choose  Left/Right: variant  Enter: run"},
+#endif
  {0xef92ba88u,51,"Enter to aim, Left/Right target, Enter to play"},
  {0xf9bf314fu,39,"Arrows: choose  Enter: run  I: type"},
  {0xfa811a5eu,12,"Treasure room"},

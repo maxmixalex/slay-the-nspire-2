@@ -4,6 +4,11 @@
   "note": "New port-authored bilingual labels compiled as fallbacks. Never reindex the historical pack binding table.",
   "bindings": [
     {
+      "source": "上下选择  左右切换  Enter 执行",
+      "eng": "Up/Down: choose  Left/Right: variant  Enter: run",
+      "debug_commands_only": true
+    },
+    {
       "source": "  已达成",
       "eng": "  Complete"
     },

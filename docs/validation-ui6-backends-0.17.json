@@ -1,0 +1,496 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "scope": "Exact native/WASM backend agreement using the final private UI6 language packs. This compares this project with itself, not the original PC game, browser storage, or physical calculator timing.",
+  "runtime_and_driver_checkpoint": "a59cdc2bc139fcf6be7a99f0655fa8ee4bd1e8ea",
+  "native_build": {
+    "configuration": "Release, Clang 18, debug commands disabled",
+    "host_stack_bytes": 33554432,
+    "instrumented": false
+  },
+  "wasm": {
+    "bytes": 5602028,
+    "sha256": "ae10bf0f2d0b880109dac71e412171ee602e17781dda2cc49433300898b8c371"
+  },
+  "native_drivers": {
+    "backend_rooms_driver": {
+      "bytes": 6460120,
+      "sha256": "ef66cfc44cbcf79bfac693e727c1f1e40a3c58c01f2a4b08fd67182393690552"
+    },
+    "world_backend_driver": {
+      "bytes": 6476976,
+      "sha256": "50c1a01a715d7aed503af81edd4b3d70b65e91dd90c773e4007e9fb3a7c555c4"
+    }
+  },
+  "resources": {
+    "converter_compaction_checkpoint": "20262f09eb1edab0035e632ca9ee4f065fb51fc4",
+    "merchant_sampling_checkpoint": "6b46a74eddf37381cff9a89cdbcf30572849cf73",
+    "eng": {
+      "bytes": 76978571,
+      "sha256": "5080df3876fd483b9502b1a3fc971b95561595b60e3e0650837297a2f4d39974"
+    },
+    "zhs": {
+      "bytes": 79761285,
+      "sha256": "b9bc0a838ebe84de014ac95c732e5855e380a0cf4b42155fd0d088297f1ace06"
+    }
+  },
+  "totals": {
+    "language_scenarios": 64,
+    "exact_rgb565_frames": 2376,
+    "exact_serialized_saves": 106
+  },
+  "runs": [
+    {
+      "language": "eng",
+      "scope": "rooms",
+      "status": "passed",
+      "scenarios": 9,
+      "exact_rgb565_frames": 539,
+      "exact_serialized_saves": 23,
+      "manifest_sha256": "ff002a1557f9472b8afca0896e61d7a047f4378d2bb17822686b1bd9d977bf24",
+      "cases": [
+        {
+          "name": "aroma-transform",
+          "frames": 19,
+          "saves": 2
+        },
+        {
+          "name": "aroma-upgrade-silent",
+          "frames": 16,
+          "saves": 2
+        },
+        {
+          "name": "doors-remove",
+          "frames": 15,
+          "saves": 2
+        },
+        {
+          "name": "shop",
+          "frames": 30,
+          "saves": 2
+        },
+        {
+          "name": "ironclad-combat",
+          "frames": 79,
+          "saves": 3
+        },
+        {
+          "name": "silent-combat",
+          "frames": 73,
+          "saves": 3
+        },
+        {
+          "name": "defect-orbs",
+          "frames": 99,
+          "saves": 3
+        },
+        {
+          "name": "regent-stars-forge",
+          "frames": 120,
+          "saves": 3
+        },
+        {
+          "name": "necro-osty-doom",
+          "frames": 88,
+          "saves": 3
+        }
+      ],
+      "receipts": [
+        {
+          "backend": "native",
+          "journal": "ui6-stage6-backend-rooms-eng-native-a35341d0b782.json",
+          "log_sha256": "3b848290438b65b4605009e43b06649c3288054ee83ff1c04e2ae0b4c5ee3159",
+          "source_changed": false
+        },
+        {
+          "backend": "wasm",
+          "journal": "ui6-stage6-backend-rooms-eng-wasm-e1cace71fa99.json",
+          "log_sha256": "babc967355a1359e2a8864e74cee27e2527437244221345014f89154ce8998b0",
+          "source_changed": false
+        }
+      ]
+    },
+    {
+      "language": "zhs",
+      "scope": "rooms",
+      "status": "passed",
+      "scenarios": 9,
+      "exact_rgb565_frames": 539,
+      "exact_serialized_saves": 23,
+      "manifest_sha256": "ff002a1557f9472b8afca0896e61d7a047f4378d2bb17822686b1bd9d977bf24",
+      "cases": [
+        {
+          "name": "aroma-transform",
+          "frames": 19,
+          "saves": 2
+        },
+        {
+          "name": "aroma-upgrade-silent",
+          "frames": 16,
+          "saves": 2
+        },
+        {
+          "name": "doors-remove",
+          "frames": 15,
+          "saves": 2
+        },
+        {
+          "name": "shop",
+          "frames": 30,
+          "saves": 2
+        },
+        {
+          "name": "ironclad-combat",
+          "frames": 79,
+          "saves": 3
+        },
+        {
+          "name": "silent-combat",
+          "frames": 73,
+          "saves": 3
+        },
+        {
+          "name": "defect-orbs",
+          "frames": 99,
+          "saves": 3
+        },
+        {
+          "name": "regent-stars-forge",
+          "frames": 120,
+          "saves": 3
+        },
+        {
+          "name": "necro-osty-doom",
+          "frames": 88,
+          "saves": 3
+        }
+      ],
+      "receipts": [
+        {
+          "backend": "native",
+          "journal": "ui6-stage6-backend-rooms-zhs-native-9fb0e089d81d.json",
+          "log_sha256": "3b848290438b65b4605009e43b06649c3288054ee83ff1c04e2ae0b4c5ee3159",
+          "source_changed": false
+        },
+        {
+          "backend": "wasm",
+          "journal": "ui6-stage6-backend-rooms-zhs-wasm-9604e180d865.json",
+          "log_sha256": "babc967355a1359e2a8864e74cee27e2527437244221345014f89154ce8998b0",
+          "source_changed": false
+        }
+      ]
+    },
+    {
+      "language": "eng",
+      "scope": "world",
+      "status": "passed",
+      "scenarios": 23,
+      "exact_rgb565_frames": 649,
+      "exact_serialized_saves": 30,
+      "manifest_sha256": "d350a5cff682a2fc002361aa4f80f9d4223faace0f2876c64584cedd51cfde43",
+      "cases": [
+        {
+          "name": "world-neow",
+          "frames": 5,
+          "saves": 1
+        },
+        {
+          "name": "world-map",
+          "frames": 96,
+          "saves": 3
+        },
+        {
+          "name": "world-map-pointer",
+          "frames": 79,
+          "saves": 2
+        },
+        {
+          "name": "world-map-fast",
+          "frames": 88,
+          "saves": 2
+        },
+        {
+          "name": "world-native-combat",
+          "frames": 63,
+          "saves": 1
+        },
+        {
+          "name": "world-kaiser",
+          "frames": 57,
+          "saves": 1
+        },
+        {
+          "name": "world-fake-merchant",
+          "frames": 8,
+          "saves": 2
+        },
+        {
+          "name": "world-crystal",
+          "frames": 7,
+          "saves": 1
+        },
+        {
+          "name": "world-colossal",
+          "frames": 15,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-normal",
+          "frames": 28,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-interrupted",
+          "frames": 24,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-top-bar",
+          "frames": 34,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-fast",
+          "frames": 22,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-ironclad",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-silent",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-defect",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-regent",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-necrobinder",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-treasure-keyboard",
+          "frames": 9,
+          "saves": 1
+        },
+        {
+          "name": "world-treasure-pointer",
+          "frames": 15,
+          "saves": 1
+        },
+        {
+          "name": "world-treasure-reload",
+          "frames": 11,
+          "saves": 2
+        },
+        {
+          "name": "world-treasure-dolly",
+          "frames": 18,
+          "saves": 2
+        },
+        {
+          "name": "world-treasure-empty",
+          "frames": 10,
+          "saves": 1
+        }
+      ],
+      "receipts": [
+        {
+          "backend": "native",
+          "journal": "ui6-stage6-backend-world-eng-native-4a2a5ae94489.json",
+          "log_sha256": "af9418e28ac2f9063c672cd87e8e860976c6a6c73600c9b68c69b0121e834345",
+          "source_changed": false
+        },
+        {
+          "backend": "wasm",
+          "journal": "ui6-stage6-backend-world-eng-wasm-a47f7411d61d.json",
+          "log_sha256": "07da987183d74d0ed130ddfce8588c9453d39a8a43f4e40c7a9438d8b77c5224",
+          "source_changed": false
+        }
+      ]
+    },
+    {
+      "language": "zhs",
+      "scope": "world",
+      "status": "passed",
+      "scenarios": 23,
+      "exact_rgb565_frames": 649,
+      "exact_serialized_saves": 30,
+      "manifest_sha256": "d350a5cff682a2fc002361aa4f80f9d4223faace0f2876c64584cedd51cfde43",
+      "cases": [
+        {
+          "name": "world-neow",
+          "frames": 5,
+          "saves": 1
+        },
+        {
+          "name": "world-map",
+          "frames": 96,
+          "saves": 3
+        },
+        {
+          "name": "world-map-pointer",
+          "frames": 79,
+          "saves": 2
+        },
+        {
+          "name": "world-map-fast",
+          "frames": 88,
+          "saves": 2
+        },
+        {
+          "name": "world-native-combat",
+          "frames": 63,
+          "saves": 1
+        },
+        {
+          "name": "world-kaiser",
+          "frames": 57,
+          "saves": 1
+        },
+        {
+          "name": "world-fake-merchant",
+          "frames": 8,
+          "saves": 2
+        },
+        {
+          "name": "world-crystal",
+          "frames": 7,
+          "saves": 1
+        },
+        {
+          "name": "world-colossal",
+          "frames": 15,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-normal",
+          "frames": 28,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-interrupted",
+          "frames": 24,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-top-bar",
+          "frames": 34,
+          "saves": 1
+        },
+        {
+          "name": "world-intro-fast",
+          "frames": 22,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-ironclad",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-silent",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-defect",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-regent",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-rest-necrobinder",
+          "frames": 12,
+          "saves": 1
+        },
+        {
+          "name": "world-treasure-keyboard",
+          "frames": 9,
+          "saves": 1
+        },
+        {
+          "name": "world-treasure-pointer",
+          "frames": 15,
+          "saves": 1
+        },
+        {
+          "name": "world-treasure-reload",
+          "frames": 11,
+          "saves": 2
+        },
+        {
+          "name": "world-treasure-dolly",
+          "frames": 18,
+          "saves": 2
+        },
+        {
+          "name": "world-treasure-empty",
+          "frames": 10,
+          "saves": 1
+        }
+      ],
+      "receipts": [
+        {
+          "backend": "native",
+          "journal": "ui6-stage6-backend-world-zhs-native-a9ba59f509a1.json",
+          "log_sha256": "af9418e28ac2f9063c672cd87e8e860976c6a6c73600c9b68c69b0121e834345",
+          "source_changed": false
+        },
+        {
+          "backend": "wasm",
+          "journal": "ui6-stage6-backend-world-zhs-wasm-2438540dd2ac.json",
+          "log_sha256": "07da987183d74d0ed130ddfce8588c9453d39a8a43f4e40c7a9438d8b77c5224",
+          "source_changed": false
+        }
+      ]
+    }
+  ],
+  "retained_failure_and_fix": {
+    "stage5_checkpoint": "c4431cc647b5b1710d23c877759f4f25cc6ca278",
+    "failed_world_journals": [
+      "ui6-stage5-backend-world-eng-wasm-b4aa44b38ebf.json",
+      "ui6-stage5-backend-world-zhs-wasm-ab7cc9066871.json"
+    ],
+    "diagnostic_journals": [
+      "ui6-stage5-world-diagnostic-7f483ddb5944.json",
+      "ui6-stage5-world-matrix-diagnostic-5dc585cba8b7.json"
+    ],
+    "diagnostic_scope": "The English matrix examined all 649 frames and 30 exact saves, found 10 pixel mismatches, and correctly exited failed. All mismatched pixels were confined to the top-bar deck icon, x=257..275, y=3..18.",
+    "cause": "Static top-bar motion outlived an App reconstructed at the same address with a reset Content generation. Native controlled cases reused this address; independent WASM instances started with cleared static storage.",
+    "runtime_fix": "Both App::init overloads explicitly reset the top-bar motion. Dedicated regressions cover memory and ranged ResourceSource initialization after real in-place reconstruction.",
+    "acceptance": "The ordinary unchanged backend checker then passed every frame and save in both language matrices. No pixel tolerance, save tolerance, or test-driver-only cache reset was introduced."
+  },
+  "two_stage_keyboard_fixture": {
+    "driver": "tests/backend_rooms_driver.cpp",
+    "change": "Each controlled card now receives selection Confirm and play Confirm, matching the original controller targeting flow. The first step verifies the same physical card is selected and the complete canonical serialized state is unchanged; the second retains revision advancement and Combat phase assertions.",
+    "preserved_assertions": [
+      "All five character sequences end on turn 2 with exactly three save callbacks.",
+      "Event transform, upgrade and removal reach their post-choice pages.",
+      "Merchant removal is sold and the shop remains active.",
+      "All resource readiness updates are written into the replay manifest."
+    ],
+    "additional_frames_per_language": 25,
+    "runtime_changed_for_driver": false
+  },
+  "limitations": [
+    "The backend runner uses a memory save adapter; it does not validate browser DOM or persistent localStorage.",
+    "Full-pack callbacks do not validate split-resource startup; resource split reconstruction has a separate exact-byte receipt.",
+    "No host frame pacing, emulator speed or physical-calculator performance is inferred from these functional replays."
+  ]
+}
