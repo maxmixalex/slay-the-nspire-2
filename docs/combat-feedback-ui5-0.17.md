@@ -34,6 +34,10 @@ reproduction showed Lagavulin waking at input tick 0 while its health impacts
 were still queued for ticks 5 and 16. The optional `CoreObserver.before_effect`
 callback fixes that ordering for Wake and Flutter's StunTrigger without
 changing saved effects or the existing four observer callback fields.
+The verified Flutter case also revealed a second early-state path: refreshing
+the current idle inside the notification read the future `IsHovering` fact
+before the notification was queued. An already bound actor now retains its
+display pose at this boundary; new identities still receive normal binding.
 
 Power feedback stores at most 96 compact `(actor, power, identity, time)`
 records. The records can outlive an action's value projection, but are cleared
@@ -97,3 +101,52 @@ The v22 pack relocation test checks all newly appended assets while retaining
 the existing image, animation, locale and decoded-cost entries. Source is
 checkpointed remotely before the longer builds and real-pack verification;
 results belong in the main work log after those checks finish.
+
+### Executed stage-4 acceptance
+
+At remotely verified `1ad378862fae54fc8c8b346c2680b5f448e26883`, the complete
+world-UI suite passes **7,830 checks in each language** with the final actual
+v22 packs. The complete world-text suite passes **6,983 English / 6,766 Chinese
+checks**. A separate driver that also writes the inspected frames passes
+**3,274 checks in each language**, including the actual Wake/Flutter damage
+hooks. The existing Normal/Fast area-hit and Regent zero-resource frames are
+byte-identical before and after optimization in both languages (six frames).
+The green/red power titles, three-layer positive star counter and Chinese
+resource hover tip were inspected in the actual frames. These are port-frame
+comparisons and source/asset checks, not unmodified-PC capture equivalence.
+
+The failures that led to the accepted iteration remain in
+`validation-combat-ui5-0.17.json`: ARM float linking; an actual early Wake;
+fixture preparation and legacy potion coordinates; an unregistered Flutter
+fixture followed by the real early-hover bug; and a pointer anchored at the
+top edge of a bobbing intent. The corrected intent test targets its center;
+it checks the complete 400 ms delay and 500 ms fade without changing runtime
+hover rules. No failed checkpoint is represented as passed.
+
+### Observed callback cost
+
+After functional acceptance, a serial **A B B A A B** comparison ran in a
+quiet host window, with 1,000 actual card plays per case per run. Both builds
+use GCC 13, `-O1`, AddressSanitizer and UndefinedBehaviorSanitizer. The current
+measurement includes **both before-effect and after-effect callbacks**, so
+moving timing work earlier cannot masquerade as a speed improvement.
+
+| Actual command | Observed actors | Stage-2 median | Stage-4 median | Change |
+| --- | ---: | ---: | ---: | ---: |
+| Twin Strike | Player + 1 enemy | 31.135 us/effect | 19.144 us/effect | -38.51% |
+| Dagger Spray | Player + 2 enemies | 36.544 us/effect | 26.479 us/effect | -27.54% |
+
+All runs retain the same effect counts, canonical save bytes and health/status
+cue fingerprints. The sample measures the display observer, excluding initial
+snapshot creation and rendering. It does **not** establish whole-game frame
+rate, calculator execution time or physical-device acceleration. Exact runs,
+checksums, journals and scope are in the validation JSON.
+
+`tests/combat_feedback_benchmark.cpp` is a byte-identical copy of the driver
+used for this measurement. Its optional target is excluded from the default
+build and from CTest; it needs no private resources. Build it explicitly with
+`cmake --build <build-directory> --target combat_feedback_benchmark`, then run
+`<build-directory>/combat_feedback_benchmark 1000`. The target enables the
+before-effect callback; an old-header comparison omits that define. The
+published driver checksum identifies the exact measured source. Builds and
+other performance runs should finish before comparing timing samples.

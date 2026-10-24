@@ -1,0 +1,2006 @@
+{
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "decision": "Use size-frequency for Chinese only; retain the original English v22 payload order. Reject all-size character interleaving.",
+  "evidence_scope": "Native ranged complete NSP2 source; exact payload/geometry and rendered-pixel checks. This is not an emulator, physical calculator, display FPS, or split-container timing result.",
+  "identities": {
+    "baseline_runtime": "a2dc843cdef68768c203bc0a427fa0d2b81bb952",
+    "measured_runtime": "55fdd6e703cd921220740f41e1537f864a02b300",
+    "driver_and_converter": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "driver_sha256": "5acc28adb634187a7fd584e33398d94e37ecdf15e279b4cb196ec13cc8f4c734",
+    "runtime_binary_sha256": "f257e9521a1f4073ebeb4dd0d02a618465d35c54c1c37287ec9daaf92b98e2e1",
+    "baseline_binary_sha256": "d46512cdc9cce12f4decc18683b0dace16afe3dd0c2dba2362eee8f211fcd413",
+    "stage4_release_candidate_runtime": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "runtime_compatibility_note": "The stage4 release candidate required later v22 split-source and boot-language acceptance corrections. The delivery manifest identifies that corrected runtime; these card samples measured the stage3 runtime."
+  },
+  "build": {
+    "compiler": "clang++-18",
+    "configuration": "Release",
+    "flags": [
+      "-std=c++17",
+      "-O3",
+      "-DNDEBUG"
+    ],
+    "driver_links": "The same frozen stage4 driver was separately compiled against each frozen runtime header and static library."
+  },
+  "fixtures": {
+    "seed": 781,
+    "character": "Ironclad",
+    "practice": true,
+    "grids": {
+      "library_8": 8,
+      "remove_10": 10,
+      "draw_choice_10": 10,
+      "library_rainbow_8": 8
+    },
+    "warm_frames": 180,
+    "elapsed_ms_per_update": 33,
+    "pointer_scan_positions": 472,
+    "capture_pairs": 18,
+    "all_capture_pairs_exact": true,
+    "detail_first_sample": "Includes the ordinary Detail command, pointer movement outside the description, and the complete rendered frame. It must not activate preparation.",
+    "choice_preparation": "23 updates, 15 source calls and 178351 source bytes in Chinese, identical before/after. Retained as a separately reported cost; no font work moved here.",
+    "cache_condition": "Content and ResourceReader reopened per grid; OS page cache uncontrolled. Detail opens for the first time after the parent page warm window."
+  },
+  "lossless": {
+    "eng": {
+      "schema": 1,
+      "reference": "v0.111.0 / 41cef1ea",
+      "version": 22,
+      "method": "size-frequency; localized codepoint frequency; existing 2-byte alignment",
+      "input_bytes": 76685257,
+      "output_bytes": 76685257,
+      "installation_growth_bytes": 0,
+      "glyph_section_bytes": 48136,
+      "relocated_glyph_entries": 539,
+      "runtime_buffer_growth_bytes": 0,
+      "runtime_preload_bytes": 0,
+      "verification": {
+        "glyphs": 570,
+        "physical_units": 570,
+        "glyph_pixels_exact": true,
+        "glyph_geometry_exact": true,
+        "aliases_exact": true,
+        "non_glyph_bytes_exact": true,
+        "unchanged_file_bytes": 76685257
+      }
+    },
+    "zhs": {
+      "schema": 1,
+      "reference": "v0.111.0 / 41cef1ea",
+      "version": 22,
+      "method": "size-frequency; localized codepoint frequency; existing 2-byte alignment",
+      "input_bytes": 79467968,
+      "output_bytes": 79467968,
+      "installation_growth_bytes": 0,
+      "glyph_section_bytes": 2633178,
+      "relocated_glyph_entries": 11900,
+      "runtime_buffer_growth_bytes": 0,
+      "runtime_preload_bytes": 0,
+      "verification": {
+        "glyphs": 11900,
+        "physical_units": 11900,
+        "glyph_pixels_exact": true,
+        "glyph_geometry_exact": true,
+        "aliases_exact": true,
+        "non_glyph_bytes_exact": true,
+        "unchanged_file_bytes": 79467968
+      }
+    }
+  },
+  "selected_packs": [
+    {
+      "language": "eng",
+      "mode": "original",
+      "bytes": 76685257,
+      "sha256": "bb23c56f807db301fcb6c1014cd6a39f92a8cf69d66ffd3d84a9c0d0695a30ea"
+    },
+    {
+      "language": "zhs",
+      "mode": "reordered",
+      "bytes": 79467968,
+      "sha256": "cb7ae529b4d61766ccd8cd5a88630ab44657130a442937bf9a36624d879205ac"
+    }
+  ],
+  "split": {
+    "byte_identical_roundtrip": true,
+    "runtime_integrity_checks": false,
+    "stored_bytes": 81249303,
+    "files": {
+      "nSpire2.common.tns": {
+        "bytes": 74904242,
+        "sha256": "94cf29f154b834e851c596433e5817d681902704afa800519fa0e0c97867562e"
+      },
+      "nSpire2.eng.tns": {
+        "bytes": 1781175,
+        "sha256": "a39f30f94578a39531ebc47276fd2b6736613c109af8f26bad2f0b02b7268cb0"
+      },
+      "nSpire2.zhs.tns": {
+        "bytes": 4563886,
+        "sha256": "fbbcf5504f2437895ad6fe0036698b2003897296a58cd2e7a989ec007a3c55bf"
+      }
+    },
+    "journal": "ui5-release-frequency-split-18ad0c739819.json"
+  },
+  "native_io": [
+    {
+      "language": "eng",
+      "layout": "original",
+      "journal": "ui5-frequency-original-eng-7c811a62faae.json",
+      "status": "passed",
+      "stages": [
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.716,
+          "mean_ms": 0.716,
+          "maximum_ms": 0.716,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.79,
+          "mean_ms": 1.79,
+          "maximum_ms": 1.79,
+          "source_calls": 27,
+          "source_bytes": 202337,
+          "source_seeks": 24
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 119.981,
+          "mean_ms": 0.667,
+          "maximum_ms": 1.079,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.104,
+          "mean_ms": 2.104,
+          "maximum_ms": 2.104,
+          "source_calls": 3,
+          "source_bytes": 13006,
+          "source_seeks": 3
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 276.213,
+          "mean_ms": 1.535,
+          "maximum_ms": 2.17,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.291,
+          "mean_ms": 0.291,
+          "maximum_ms": 0.291,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.529,
+          "mean_ms": 2.529,
+          "maximum_ms": 2.529,
+          "source_calls": 27,
+          "source_bytes": 208940,
+          "source_seeks": 24
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 153.573,
+          "mean_ms": 0.853,
+          "maximum_ms": 1.228,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.78,
+          "mean_ms": 1.78,
+          "maximum_ms": 1.78,
+          "source_calls": 7,
+          "source_bytes": 33431,
+          "source_seeks": 6
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 244.005,
+          "mean_ms": 1.356,
+          "maximum_ms": 1.74,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.28,
+          "mean_ms": 0.28,
+          "maximum_ms": 0.28,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 5.789,
+          "mean_ms": 0.241,
+          "maximum_ms": 1.481,
+          "source_calls": 13,
+          "source_bytes": 170159,
+          "source_seeks": 13
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 4.991,
+          "mean_ms": 4.991,
+          "maximum_ms": 4.991,
+          "source_calls": 61,
+          "source_bytes": 312927,
+          "source_seeks": 57
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 347.351,
+          "mean_ms": 1.93,
+          "maximum_ms": 5.503,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.943,
+          "mean_ms": 1.943,
+          "maximum_ms": 1.943,
+          "source_calls": 2,
+          "source_bytes": 12893,
+          "source_seeks": 2
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 366.804,
+          "mean_ms": 2.038,
+          "maximum_ms": 6.054,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.275,
+          "mean_ms": 0.275,
+          "maximum_ms": 0.275,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.011,
+          "mean_ms": 2.011,
+          "maximum_ms": 2.011,
+          "source_calls": 35,
+          "source_bytes": 252965,
+          "source_seeks": 31
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 227.557,
+          "mean_ms": 1.264,
+          "maximum_ms": 3.58,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.129,
+          "mean_ms": 2.129,
+          "maximum_ms": 2.129,
+          "source_calls": 2,
+          "source_bytes": 8910,
+          "source_seeks": 2
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 289.886,
+          "mean_ms": 1.61,
+          "maximum_ms": 2.406,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "pointer_scan_to_keyword_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.783,
+          "mean_ms": 2.783,
+          "maximum_ms": 2.783,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_keyword_pointer_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 305.686,
+          "mean_ms": 1.698,
+          "maximum_ms": 11.238,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        }
+      ],
+      "canonical_state_unchanged": true,
+      "warm_source_calls": 0,
+      "warm_source_bytes": 0,
+      "keyword_observation": {
+        "operation": "keyword_observation",
+        "scene": "library_rainbow_8_detail",
+        "pointer_candidates": 472,
+        "pointer_matches": 94,
+        "hover_x": 123,
+        "hover_y": 73,
+        "first_rgb565_fnv1a": 785894569,
+        "last_rgb565_fnv1a": 182532660,
+        "canonical_state_unchanged": true
+      }
+    },
+    {
+      "language": "eng",
+      "layout": "reordered",
+      "journal": "ui5-frequency-reordered-eng-9f0c06e7c962.json",
+      "status": "passed",
+      "stages": [
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.576,
+          "mean_ms": 0.576,
+          "maximum_ms": 0.576,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.142,
+          "mean_ms": 2.142,
+          "maximum_ms": 2.142,
+          "source_calls": 27,
+          "source_bytes": 202337,
+          "source_seeks": 26
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 121.977,
+          "mean_ms": 0.678,
+          "maximum_ms": 1.119,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.294,
+          "mean_ms": 1.294,
+          "maximum_ms": 1.294,
+          "source_calls": 4,
+          "source_bytes": 17102,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 218.397,
+          "mean_ms": 1.213,
+          "maximum_ms": 3.998,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.725,
+          "mean_ms": 0.725,
+          "maximum_ms": 0.725,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.515,
+          "mean_ms": 2.515,
+          "maximum_ms": 2.515,
+          "source_calls": 27,
+          "source_bytes": 208940,
+          "source_seeks": 26
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 158.516,
+          "mean_ms": 0.881,
+          "maximum_ms": 1.266,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.445,
+          "mean_ms": 1.445,
+          "maximum_ms": 1.445,
+          "source_calls": 7,
+          "source_bytes": 33431,
+          "source_seeks": 6
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 235.35,
+          "mean_ms": 1.307,
+          "maximum_ms": 2.17,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.164,
+          "mean_ms": 0.164,
+          "maximum_ms": 0.164,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 6.694,
+          "mean_ms": 0.279,
+          "maximum_ms": 2.173,
+          "source_calls": 13,
+          "source_bytes": 170159,
+          "source_seeks": 13
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 3.294,
+          "mean_ms": 3.294,
+          "maximum_ms": 3.294,
+          "source_calls": 61,
+          "source_bytes": 312927,
+          "source_seeks": 57
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 289.308,
+          "mean_ms": 1.607,
+          "maximum_ms": 2.487,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.785,
+          "mean_ms": 1.785,
+          "maximum_ms": 1.785,
+          "source_calls": 2,
+          "source_bytes": 12893,
+          "source_seeks": 2
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 419.795,
+          "mean_ms": 2.332,
+          "maximum_ms": 5.047,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.139,
+          "mean_ms": 0.139,
+          "maximum_ms": 0.139,
+          "source_calls": 4,
+          "source_bytes": 947726,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.301,
+          "mean_ms": 2.301,
+          "maximum_ms": 2.301,
+          "source_calls": 35,
+          "source_bytes": 252965,
+          "source_seeks": 33
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 244.363,
+          "mean_ms": 1.358,
+          "maximum_ms": 5.181,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.126,
+          "mean_ms": 2.126,
+          "maximum_ms": 2.126,
+          "source_calls": 3,
+          "source_bytes": 13006,
+          "source_seeks": 3
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 321.282,
+          "mean_ms": 1.785,
+          "maximum_ms": 2.61,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "pointer_scan_to_keyword_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 3.408,
+          "mean_ms": 3.408,
+          "maximum_ms": 3.408,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_keyword_pointer_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 365.071,
+          "mean_ms": 2.028,
+          "maximum_ms": 5.93,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        }
+      ],
+      "canonical_state_unchanged": true,
+      "warm_source_calls": 0,
+      "warm_source_bytes": 0,
+      "keyword_observation": {
+        "operation": "keyword_observation",
+        "scene": "library_rainbow_8_detail",
+        "pointer_candidates": 472,
+        "pointer_matches": 94,
+        "hover_x": 123,
+        "hover_y": 73,
+        "first_rgb565_fnv1a": 785894569,
+        "last_rgb565_fnv1a": 182532660,
+        "canonical_state_unchanged": true
+      }
+    },
+    {
+      "language": "zhs",
+      "layout": "original",
+      "journal": "ui5-frequency-original-zhs-dd1176706c63.json",
+      "status": "passed",
+      "stages": [
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.884,
+          "mean_ms": 0.884,
+          "maximum_ms": 0.884,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.436,
+          "mean_ms": 2.436,
+          "maximum_ms": 2.436,
+          "source_calls": 71,
+          "source_bytes": 392280,
+          "source_seeks": 69
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 104.202,
+          "mean_ms": 0.579,
+          "maximum_ms": 3.588,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.287,
+          "mean_ms": 1.287,
+          "maximum_ms": 1.287,
+          "source_calls": 28,
+          "source_bytes": 125070,
+          "source_seeks": 28
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 285.562,
+          "mean_ms": 1.586,
+          "maximum_ms": 3.809,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.327,
+          "mean_ms": 0.327,
+          "maximum_ms": 0.327,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.494,
+          "mean_ms": 2.494,
+          "maximum_ms": 2.494,
+          "source_calls": 72,
+          "source_bytes": 405548,
+          "source_seeks": 69
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 121.196,
+          "mean_ms": 0.673,
+          "maximum_ms": 1.185,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.51,
+          "mean_ms": 1.51,
+          "maximum_ms": 1.51,
+          "source_calls": 27,
+          "source_bytes": 125070,
+          "source_seeks": 27
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 338.842,
+          "mean_ms": 1.882,
+          "maximum_ms": 3.554,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.36,
+          "mean_ms": 0.36,
+          "maximum_ms": 0.36,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 7.299,
+          "mean_ms": 0.304,
+          "maximum_ms": 1.77,
+          "source_calls": 15,
+          "source_bytes": 178351,
+          "source_seeks": 15
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 5.061,
+          "mean_ms": 5.061,
+          "maximum_ms": 5.061,
+          "source_calls": 155,
+          "source_bytes": 702102,
+          "source_seeks": 152
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 339.936,
+          "mean_ms": 1.889,
+          "maximum_ms": 3.08,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 3.147,
+          "mean_ms": 3.147,
+          "maximum_ms": 3.147,
+          "source_calls": 46,
+          "source_bytes": 202781,
+          "source_seeks": 46
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 334.985,
+          "mean_ms": 1.861,
+          "maximum_ms": 3.358,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.315,
+          "mean_ms": 0.315,
+          "maximum_ms": 0.315,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.966,
+          "mean_ms": 1.966,
+          "maximum_ms": 1.966,
+          "source_calls": 116,
+          "source_bytes": 590364,
+          "source_seeks": 111
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 162.66,
+          "mean_ms": 0.904,
+          "maximum_ms": 3.485,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.335,
+          "mean_ms": 1.335,
+          "maximum_ms": 1.335,
+          "source_calls": 34,
+          "source_bytes": 145550,
+          "source_seeks": 34
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 283.134,
+          "mean_ms": 1.573,
+          "maximum_ms": 6.503,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "pointer_scan_to_keyword_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 3.036,
+          "mean_ms": 3.036,
+          "maximum_ms": 3.036,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_keyword_pointer_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 294.681,
+          "mean_ms": 1.637,
+          "maximum_ms": 4.526,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        }
+      ],
+      "canonical_state_unchanged": true,
+      "warm_source_calls": 0,
+      "warm_source_bytes": 0,
+      "keyword_observation": {
+        "operation": "keyword_observation",
+        "scene": "library_rainbow_8_detail",
+        "pointer_candidates": 472,
+        "pointer_matches": 60,
+        "hover_x": 123,
+        "hover_y": 73,
+        "first_rgb565_fnv1a": 1139069698,
+        "last_rgb565_fnv1a": 1826755174,
+        "canonical_state_unchanged": true
+      }
+    },
+    {
+      "language": "zhs",
+      "layout": "reordered",
+      "journal": "ui5-frequency-reordered-zhs-d1f3ad54ee32.json",
+      "status": "passed",
+      "stages": [
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.677,
+          "mean_ms": 0.677,
+          "maximum_ms": 0.677,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.962,
+          "mean_ms": 1.962,
+          "maximum_ms": 1.962,
+          "source_calls": 65,
+          "source_bytes": 371800,
+          "source_seeks": 61
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 102.66,
+          "mean_ms": 0.57,
+          "maximum_ms": 1.093,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.272,
+          "mean_ms": 1.272,
+          "maximum_ms": 1.272,
+          "source_calls": 16,
+          "source_bytes": 66254,
+          "source_seeks": 16
+        },
+        {
+          "operation": "stage",
+          "scene": "library_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 221.259,
+          "mean_ms": 1.229,
+          "maximum_ms": 1.965,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.224,
+          "mean_ms": 0.224,
+          "maximum_ms": 0.224,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.652,
+          "mean_ms": 1.652,
+          "maximum_ms": 1.652,
+          "source_calls": 63,
+          "source_bytes": 364588,
+          "source_seeks": 59
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 189.142,
+          "mean_ms": 1.051,
+          "maximum_ms": 2.227,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.402,
+          "mean_ms": 2.402,
+          "maximum_ms": 2.402,
+          "source_calls": 16,
+          "source_bytes": 67726,
+          "source_seeks": 16
+        },
+        {
+          "operation": "stage",
+          "scene": "remove_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 375.137,
+          "mean_ms": 2.084,
+          "maximum_ms": 3.426,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.192,
+          "mean_ms": 0.192,
+          "maximum_ms": 0.192,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "preparation",
+          "samples": 24,
+          "cpu_elapsed_ms": 7.295,
+          "mean_ms": 0.304,
+          "maximum_ms": 1.806,
+          "source_calls": 15,
+          "source_bytes": 178351,
+          "source_seeks": 14
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 4.972,
+          "mean_ms": 4.972,
+          "maximum_ms": 4.972,
+          "source_calls": 121,
+          "source_bytes": 554646,
+          "source_seeks": 117
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 412.131,
+          "mean_ms": 2.29,
+          "maximum_ms": 3.714,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.222,
+          "mean_ms": 2.222,
+          "maximum_ms": 2.222,
+          "source_calls": 23,
+          "source_bytes": 96285,
+          "source_seeks": 21
+        },
+        {
+          "operation": "stage",
+          "scene": "draw_choice_10_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 386.127,
+          "mean_ms": 2.145,
+          "maximum_ms": 3.622,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "open_and_fixture",
+          "samples": 1,
+          "cpu_elapsed_ms": 0.241,
+          "mean_ms": 0.241,
+          "maximum_ms": 0.241,
+          "source_calls": 4,
+          "source_bytes": 1129006,
+          "source_seeks": 4
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "preparation",
+          "samples": 0,
+          "cpu_elapsed_ms": 0.0,
+          "mean_ms": 0.0,
+          "maximum_ms": 0.0,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "first_visible",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.075,
+          "mean_ms": 2.075,
+          "maximum_ms": 2.075,
+          "source_calls": 91,
+          "source_bytes": 483868,
+          "source_seeks": 84
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8",
+          "phase": "warm_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 160.041,
+          "mean_ms": 0.889,
+          "maximum_ms": 1.227,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "input_to_first_complete_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 1.519,
+          "mean_ms": 1.519,
+          "maximum_ms": 1.519,
+          "source_calls": 23,
+          "source_bytes": 92302,
+          "source_seeks": 22
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_detail_animation_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 218.195,
+          "mean_ms": 1.212,
+          "maximum_ms": 1.619,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "pointer_scan_to_keyword_frame",
+          "samples": 1,
+          "cpu_elapsed_ms": 2.564,
+          "mean_ms": 2.564,
+          "maximum_ms": 2.564,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        },
+        {
+          "operation": "stage",
+          "scene": "library_rainbow_8_detail",
+          "phase": "warm_keyword_pointer_window",
+          "samples": 180,
+          "cpu_elapsed_ms": 278.965,
+          "mean_ms": 1.55,
+          "maximum_ms": 1.886,
+          "source_calls": 0,
+          "source_bytes": 0,
+          "source_seeks": 0
+        }
+      ],
+      "canonical_state_unchanged": true,
+      "warm_source_calls": 0,
+      "warm_source_bytes": 0,
+      "keyword_observation": {
+        "operation": "keyword_observation",
+        "scene": "library_rainbow_8_detail",
+        "pointer_candidates": 472,
+        "pointer_matches": 60,
+        "hover_x": 123,
+        "hover_y": 73,
+        "first_rgb565_fnv1a": 1139069698,
+        "last_rgb565_fnv1a": 1826755174,
+        "canonical_state_unchanged": true
+      }
+    }
+  ],
+  "timing": {
+    "method": "Three trials per condition, alternating order, one process fully exited before the next began. Parent and peer builds/tests/compression/emulator were paused for the complete approximately 44 second window. 180 advancing warm frames per scene. Host steady-clock CPU intervals only; OS file cache uncontrolled; no calculator timings.",
+    "interpretation": "Cold callback/byte improvements repeat exactly. Host CPU samples are mixed: some medians rise. No general CPU speedup, display responsiveness, or calculator performance percentage is claimed.",
+    "summary": [
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "library_8",
+        "phase": "first_visible",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.987,
+          "minimum_ms": 1.91,
+          "maximum_ms": 2.026,
+          "source_calls": [
+            71,
+            71,
+            71
+          ],
+          "source_bytes": [
+            392280,
+            392280,
+            392280
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 2.112,
+          "minimum_ms": 2.073,
+          "maximum_ms": 2.119,
+          "source_calls": [
+            65,
+            65,
+            65
+          ],
+          "source_bytes": [
+            371800,
+            371800,
+            371800
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "library_8_detail",
+        "phase": "input_to_first_complete_frame",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.407,
+          "minimum_ms": 1.392,
+          "maximum_ms": 1.424,
+          "source_calls": [
+            28,
+            28,
+            28
+          ],
+          "source_bytes": [
+            125070,
+            125070,
+            125070
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 1.403,
+          "minimum_ms": 1.287,
+          "maximum_ms": 1.454,
+          "source_calls": [
+            16,
+            16,
+            16
+          ],
+          "source_bytes": [
+            66254,
+            66254,
+            66254
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "remove_10",
+        "phase": "first_visible",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.699,
+          "minimum_ms": 1.682,
+          "maximum_ms": 2.117,
+          "source_calls": [
+            72,
+            72,
+            72
+          ],
+          "source_bytes": [
+            405548,
+            405548,
+            405548
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 1.73,
+          "minimum_ms": 1.672,
+          "maximum_ms": 1.734,
+          "source_calls": [
+            63,
+            63,
+            63
+          ],
+          "source_bytes": [
+            364588,
+            364588,
+            364588
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "remove_10_detail",
+        "phase": "input_to_first_complete_frame",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.561,
+          "minimum_ms": 1.443,
+          "maximum_ms": 1.676,
+          "source_calls": [
+            27,
+            27,
+            27
+          ],
+          "source_bytes": [
+            125070,
+            125070,
+            125070
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 1.425,
+          "minimum_ms": 1.412,
+          "maximum_ms": 1.55,
+          "source_calls": [
+            16,
+            16,
+            16
+          ],
+          "source_bytes": [
+            67726,
+            67726,
+            67726
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "draw_choice_10",
+        "phase": "first_visible",
+        "original": {
+          "trials": 3,
+          "median_ms": 3.415,
+          "minimum_ms": 3.203,
+          "maximum_ms": 3.445,
+          "source_calls": [
+            155,
+            155,
+            155
+          ],
+          "source_bytes": [
+            702102,
+            702102,
+            702102
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 3.282,
+          "minimum_ms": 3.188,
+          "maximum_ms": 3.581,
+          "source_calls": [
+            121,
+            121,
+            121
+          ],
+          "source_bytes": [
+            554646,
+            554646,
+            554646
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "draw_choice_10_detail",
+        "phase": "input_to_first_complete_frame",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.882,
+          "minimum_ms": 1.85,
+          "maximum_ms": 2.064,
+          "source_calls": [
+            46,
+            46,
+            46
+          ],
+          "source_bytes": [
+            202781,
+            202781,
+            202781
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 1.821,
+          "minimum_ms": 1.82,
+          "maximum_ms": 1.845,
+          "source_calls": [
+            23,
+            23,
+            23
+          ],
+          "source_bytes": [
+            96285,
+            96285,
+            96285
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "library_rainbow_8",
+        "phase": "first_visible",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.99,
+          "minimum_ms": 1.97,
+          "maximum_ms": 2.566,
+          "source_calls": [
+            116,
+            116,
+            116
+          ],
+          "source_bytes": [
+            590364,
+            590364,
+            590364
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 2.037,
+          "minimum_ms": 1.993,
+          "maximum_ms": 2.059,
+          "source_calls": [
+            91,
+            91,
+            91
+          ],
+          "source_bytes": [
+            483868,
+            483868,
+            483868
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "library_rainbow_8_detail",
+        "phase": "input_to_first_complete_frame",
+        "original": {
+          "trials": 3,
+          "median_ms": 1.355,
+          "minimum_ms": 1.345,
+          "maximum_ms": 1.404,
+          "source_calls": [
+            34,
+            34,
+            34
+          ],
+          "source_bytes": [
+            145550,
+            145550,
+            145550
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 1.48,
+          "minimum_ms": 1.352,
+          "maximum_ms": 1.484,
+          "source_calls": [
+            23,
+            23,
+            23
+          ],
+          "source_bytes": [
+            92302,
+            92302,
+            92302
+          ]
+        }
+      },
+      {
+        "group": "frequency",
+        "language": "zhs",
+        "scene": "library_rainbow_8_detail",
+        "phase": "pointer_scan_to_keyword_frame",
+        "original": {
+          "trials": 3,
+          "median_ms": 2.605,
+          "minimum_ms": 2.564,
+          "maximum_ms": 2.707,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        },
+        "reordered": {
+          "trials": 3,
+          "median_ms": 2.591,
+          "minimum_ms": 2.572,
+          "maximum_ms": 3.163,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "group": "hover",
+        "language": "eng",
+        "scene": "library_rainbow_8_detail",
+        "phase": "pointer_scan_to_keyword_frame",
+        "baseline": {
+          "trials": 3,
+          "median_ms": 2.857,
+          "minimum_ms": 2.835,
+          "maximum_ms": 3.664,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        },
+        "stage3": {
+          "trials": 3,
+          "median_ms": 3.032,
+          "minimum_ms": 2.737,
+          "maximum_ms": 3.048,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "group": "hover",
+        "language": "eng",
+        "scene": "library_rainbow_8_detail",
+        "phase": "warm_keyword_pointer_window",
+        "baseline": {
+          "trials": 3,
+          "median_ms": 1.629,
+          "minimum_ms": 1.472,
+          "maximum_ms": 1.741,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        },
+        "stage3": {
+          "trials": 3,
+          "median_ms": 1.62,
+          "minimum_ms": 1.593,
+          "maximum_ms": 1.626,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "group": "hover",
+        "language": "zhs",
+        "scene": "library_rainbow_8_detail",
+        "phase": "pointer_scan_to_keyword_frame",
+        "baseline": {
+          "trials": 3,
+          "median_ms": 3.531,
+          "minimum_ms": 2.687,
+          "maximum_ms": 5.084,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        },
+        "stage3": {
+          "trials": 3,
+          "median_ms": 2.618,
+          "minimum_ms": 2.613,
+          "maximum_ms": 2.62,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "group": "hover",
+        "language": "zhs",
+        "scene": "library_rainbow_8_detail",
+        "phase": "warm_keyword_pointer_window",
+        "baseline": {
+          "trials": 3,
+          "median_ms": 1.647,
+          "minimum_ms": 1.51,
+          "maximum_ms": 1.941,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        },
+        "stage3": {
+          "trials": 3,
+          "median_ms": 1.546,
+          "minimum_ms": 1.543,
+          "maximum_ms": 1.717,
+          "source_calls": [
+            0,
+            0,
+            0
+          ],
+          "source_bytes": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    ],
+    "journals": [
+      "ui5-quiet-frequency-original-zhs-1-d6b37d7e6a84.json",
+      "ui5-quiet-frequency-original-zhs-2-d473dddfdb0b.json",
+      "ui5-quiet-frequency-original-zhs-3-ab7dfcfa6b17.json",
+      "ui5-quiet-frequency-reordered-zhs-1-c5cb03e5b1fa.json",
+      "ui5-quiet-frequency-reordered-zhs-2-985affe98802.json",
+      "ui5-quiet-frequency-reordered-zhs-3-c6ac749942e1.json",
+      "ui5-quiet-hover-baseline-eng-1-5cf7b758a8ae.json",
+      "ui5-quiet-hover-baseline-eng-2-5dea2b041b73.json",
+      "ui5-quiet-hover-baseline-eng-3-f5289292100e.json",
+      "ui5-quiet-hover-baseline-zhs-1-21e33dbd0a43.json",
+      "ui5-quiet-hover-baseline-zhs-2-c44874de3a9f.json",
+      "ui5-quiet-hover-baseline-zhs-3-c462b45dbd45.json",
+      "ui5-quiet-hover-stage3-eng-1-cb11b024a644.json",
+      "ui5-quiet-hover-stage3-eng-2-d20c374aee69.json",
+      "ui5-quiet-hover-stage3-eng-3-608e889cfea5.json",
+      "ui5-quiet-hover-stage3-zhs-1-e2f30a6e6f62.json",
+      "ui5-quiet-hover-stage3-zhs-2-de9273e3bcf4.json",
+      "ui5-quiet-hover-stage3-zhs-3-1f80848bc3d5.json"
+    ]
+  },
+  "rejected_candidate": {
+    "order": "character-frequency",
+    "converter_runtime_checkpoint": "55fdd6e703cd921220740f41e1537f864a02b300",
+    "reason": "Across-size interleaving reduced Chinese detail reads but increased cold grids in both languages.",
+    "exact_capture_pairs": 18,
+    "all_capture_pairs_exact": true,
+    "retained_private_report": "stage3-locality-preliminary.json"
+  },
+  "private_evidence": [
+    "stage1-report.json",
+    "stage2-report.json",
+    "stage2-offset-classification.json",
+    "stage3-locality-preliminary.json",
+    "stage4-frequency-preliminary.json",
+    "stage4-quiet-timing.json",
+    "release-resources.json"
+  ],
+  "validation_journals": [
+    "ui5-glyph-frequency-unit-dbc2276e3e93.json",
+    "ui5-glyph-frequency-final-convert-f695d1d13c5f.json",
+    "ui5-card-stage4-driver-stage3-runtime-fab0767c1f55.json",
+    "ui5-card-stage4-driver-baseline-runtime-b3a316cf63c3.json"
+  ]
+}

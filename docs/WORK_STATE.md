@@ -1,5 +1,49 @@
 # Work state — 2026-10-24
 
+## UI5 stage 5: fix real split-package startup before delivery
+
+The stage-4 source was pushed/read back at
+`1ad378862fae54fc8c8b346c2680b5f448e26883`, tree
+`27afe7322e4488aab88dcb3d817aabdfcd06f2bd`. Its ARM/WASM builds and 139+53
+Python tests passed. The complete ASan/UBSan run passed 74/75 suites; the sole
+remaining assertion still expected StarPotion's resource in the status list.
+The corrected fixture instead verifies three stars in the independent counter
+and no status entry, and its full candidate run passes 5,054 checks. A separate
+actual-pack potion fixture now waits for normal combat preparation; both
+languages pass its 805 checks against the unchanged runtime. These two fixture
+repairs need official reruns after this checkpoint; the failed full journal is
+retained rather than relabeled.
+
+Actual stage-4 combat suites and 23 world backend scenarios passed in both
+languages (649 exact native/WASM frames and 30 exact saves per language).
+The offline HTML's real browser startup then caught a production integration
+bug: SplitResourceSource still rejected NSP2 versions above 21. The generated
+stage-4 calculator/HTML pair is therefore a rejected candidate, not delivery.
+This stage uses FrontendContentVersion in the split reader and boot-language
+probe, exercises versions 17–22 and rejects the next unsupported version.
+The reader adds no integrity scan or preload and retains its 104-byte adapter.
+
+Manual review also found the old character-confirm label displaying Standard.
+The original scene actually uses its confirmation tick without a text label;
+the corrected control follows that scene and retains existing localized text
+for other controls. No speculative Embark translation or new art is introduced.
+
+The selected resource combination is unchanged: original English plus Chinese
+per-size glyph-frequency locality. It saves cold reads at every measured
+Chinese entrance, keeps all pixels/state and zero warm I/O, and adds no bytes
+or runtime cache. Mixed host timing samples are preserved without claiming a
+universal CPU/device speedup. Separately, a quiet serial ASan command benchmark
+measured total before+after status callbacks at 31.135→19.144 us for TwinStrike
+and 36.544→26.479 us for DaggerSpray, with matching effect counts, cue hashes
+and canonical saves. These are host observer timings, not calculator FPS.
+
+Source-only frontend, combat, card-performance and pending browser reports
+are included; the reusable combat benchmark is an explicit opt-in CMake target.
+Original assets and all captured frames remain private. Next: preserve this
+repair stage, validate the actual split pair, rebuild both portable runtimes,
+repeat the corrected fixtures/frontend checks, then regenerate and accept the
+offline HTML and ordinary calculator route before main synchronization/saving.
+
 ## UI5 stage 4: final regression repairs and glyph-layout comparison
 
 Stage 3 was pushed/read back at `55fdd6e703cd921220740f41e1537f864a02b300`,

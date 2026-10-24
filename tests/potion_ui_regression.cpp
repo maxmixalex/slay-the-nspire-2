@@ -28,6 +28,8 @@ static void reset(){
     for(int i=0;i<2;++i){app.game.enemies[i].hp=app.game.enemies[i].max_hp=100;app.game.enemies[i].block=0;}
     app.game.potions[0]=Potion::Block;app.game.potions[1]=Potion::Fire;app.game.potions[2]=Potion::FairyInABottle;
     app.render();
+    for(unsigned i=0;app.combat_preparation.active&&i<1024;++i){app.advance(33);app.render();}
+    CHECK(!app.combat_preparation.active);
 }
 int main(int argc,char**argv){
     std::vector<uint8_t>data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());std::fclose(f);CHECK(app.content.open(data.data(),data.size())&&app.content.current_profile());}

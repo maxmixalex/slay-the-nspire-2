@@ -102,6 +102,20 @@ static void menu_rows(unsigned count){
 }
 static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
 
+static void character_click_confirmation(){
+ empty_disk();start();snapshot();a.return_to_title();press(HitKind::Menu,0);
+ CHECK(a.character_select&&a.title);const unsigned run=a.run_number;const Character previous=a.selected_character;
+ const auto portrait=find_hit(HitKind::UiAction,int(UiAction::SelectRegent));
+ a.pointer_move(portrait.x+portrait.w/2,portrait.y+portrait.h/2);a.render();CHECK(a.selected_character==previous);unchanged();
+ a.pointer_button(true);CHECK(a.selected_character==previous);a.pointer_button(false);a.pointer.visible=false;
+ CHECK(a.selected_character==Character::Regent&&a.character_select&&a.run_number==run);unchanged();
+ const auto confirm=find_hit(HitKind::UiAction,int(UiAction::StartCharacter));
+ a.pointer_move(confirm.x+confirm.w/2,confirm.y+confirm.h/2);a.render();CHECK(a.character_select&&a.run_number==run);
+ a.pointer_button(true);CHECK(a.character_select&&a.run_number==run);a.pointer_button(false);a.pointer.visible=false;
+ CHECK(!a.character_select&&!a.title&&a.game.character==Character::Regent&&a.run_number==run+1);
+ CHECK(a.game.world.active&&validate(a.game));
+}
+
 static void title_glow_curve(){
  // Independent floating-point evaluation of the source Curve/Gradient,
  // allowing one output pixel/byte for the runtime's fixed-point rounding.
@@ -407,6 +421,6 @@ int main(int argc,char**argv){
  if(argc>2)capture_directory=argv[2];CHECK(a.init(data.data(),data.size(),{store_run,restore_run,erase_run}));CHECK(a.content.current_profile());
  title_glow_curve();title_particle_curves();title_animation_is_bounded_and_repeats();probe_is_read_only();main_menu_and_continue();pause_save_failure_and_success();abandon_saved_with_confirmation();abandon_current_bypasses_prevention();protected_saved_expeditions();
  canonical_identity_and_save_association();refreshed_continue_metadata();title_confirmation_tracks_run_identity();unreadable_save_does_not_abandon();optional_clear_uses_successful_terminal_probe();
- ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();
+ ending_clears_only_its_checkpoint();modal_isolation_and_fast_mode();character_click_confirmation();
  std::printf("world frontend UI: %u checks passed; %s profile; guarded save lifecycle and presentation-only settings\n",checks,argc>1?"actual":"synthetic");
 }

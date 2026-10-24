@@ -14,7 +14,16 @@ static void native_control(Canvas&c,const char*kind,int x,int y,int w,int h,cons
  }else layer.ui(U_RewardSkip,x,y,w,h,opacity);
  int label_x=x+3,label_w=w-6;
  if(image>=0&&(kind[0]=='B'||kind[0]=='C')){int icon=c.a.content.world_image("common",kind[0]=='B'?"BACK_ARROW":"CONFIRM_TICK");
-  if(icon>=0){layer.picture(icon,x+10,y+(h-15)/2,15,15,opacity);label_x=x+28;label_w=w-36;}}
+  if(icon>=0){
+   if(!*label){
+    // The character-select ConfirmButton contains an 80px cream tick on
+    // its 267px image, and no text node. Keep the glyph centered in the
+    // calculator target while bounding it to the available height.
+    const int size=mn(h,mx(1,w*80/267));Canvas glyph=layer;
+    glyph.tint_green=uint8_t(div255(unsigned(glyph.tint_green)*246));glyph.tint_blue=uint8_t(div255(unsigned(glyph.tint_blue)*226));
+    glyph.picture(icon,x+(w-size)/2,y+(h-size)/2,size,size,opacity);return;
+   }
+   layer.picture(icon,x+10,y+(h-15)/2,15,15,opacity);label_x=x+28;label_w=w-36;}}
  layer.centered(label,label_x+1,y+(h-12)/2+1,label_w,12,Ink);
  layer.centered(label,label_x,y+(h-12)/2,label_w,12,enabled?rgb(255,246,226):Muted);
 }

@@ -221,7 +221,7 @@ static void statuses(){
         {Potion::LuckyTonic,0,20,1},{Potion::GhostInAJar,0,21,1},{Potion::RegenPotion,0,23,5},
         {Potion::Clarity,0,24,3},{Potion::RadiantTincture,0,25,3},{Potion::Duplicator,0,27,1},
         {Potion::HeartOfIron,0,19,7},{Potion::PowderedDemise,1,40,9},{Potion::BeetleJuice,1,41,4},
-        {Potion::PotionOfDoom,1,42,33},{Potion::StarPotion,0,44,3},{Potion::BoneBrew,0,45,15}
+        {Potion::PotionOfDoom,1,42,33},{Potion::BoneBrew,0,45,15}
     };
     for(auto test:cases){
         setup();acquire_potion(test.potion);drink();CHECK(status_amount(a.game,test.actor,test.status)==test.amount);
@@ -230,6 +230,18 @@ static void statuses(){
         while(selected<count&&ids[selected]!=test.status)++selected;CHECK(selected<count);a.status_selected=selected;
         if(test.potion==Potion::Clarity)capture("clarity-status");
         tap(HitKind::StatusItem,selected);a.input(Key::EndTurn);a.input(Key::Collection);CHECK(!a.library&&a.status_actor==test.actor);unchanged(before);
+        a.input(Key::Back);CHECK(a.status_actor<0);unchanged(before);
+    }
+    {
+        // NStarCounter owns this resource; it must not become a Power row.
+        setup();acquire_potion(Potion::StarPotion);drink();CHECK(a.game.expansion.stars==3);
+        auto before=snapshot();a.render();CHECK(a.combat_status_amount(0,44)==3&&a.combat_status.stars_visible);
+        int ids[StatusKinds],count=collect_statuses(a.game,0,ids);
+        for(int i=0;i<count;++i)CHECK(ids[i]!=44);
+        count=a.combat_statuses(0,ids);for(int i=0;i<count;++i)CHECK(ids[i]!=44);
+        CHECK(count==0);a.input(Key::Statuses);CHECK(a.status_actor==0);modal_only();
+        CHECK(!exists(HitKind::StatusItem,0));a.input(Key::EndTurn);a.input(Key::Collection);
+        CHECK(!a.library&&a.status_actor==0);unchanged(before);
         a.input(Key::Back);CHECK(a.status_actor<0);unchanged(before);
     }
     setup();open_model(TheBomb);action(UiAction::LabCard);a.input(Key::Confirm);CHECK(status_amount(a.game,0,43)==1);

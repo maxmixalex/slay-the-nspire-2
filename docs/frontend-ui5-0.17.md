@@ -65,8 +65,20 @@ English and Chinese event, map and reward UI regressions passed. Frontend
 testing stopped on its obsolete v21-only version assertion; that failure is
 retained, and the assertion now permits later compatible resource profiles.
 Stage 2 screenshots exposed a card-reward heading overlapping the relic band;
-the heading now starts below that band. The follow-up source requires a new
-checkpoint and bilingual conversion before its screenshots can be accepted.
+the heading now starts below that band. The restored map viewport also exposed
+a folded-legend/back-button overlap. They now have separate hit regions, and
+the expanded legend uses its own close control.
+
+At stage 3 checkpoint `55fdd6e703cd921220740f41e1537f864a02b300`, the four
+actual-pack frontend/event/map/reward suites pass in both languages: eight
+runs and 168,744 checks. The corrected character-selection capture observes
+the first frame before advancing its entrance, and both final language packs
+pass the stage 4 frontend suite at `1ad378862fae54fc8c8b346c2680b5f448e26883`.
+The accepted Chinese resource subsequently changes only glyph payload order;
+the performance report records exact glyph geometry/pixels, unchanged other
+bytes and 18 exact frame pairs. See
+[executed frontend evidence](validation-ui5-frontend-0.17.json) for source,
+resource hashes, failed-fixture provenance and explicit remaining scope.
 
 These tests and desktop captures do not measure touchpad latency, frame pacing
 or cold resource I/O on physical hardware. Calculator/Firebird timings must be

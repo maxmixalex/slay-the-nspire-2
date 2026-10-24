@@ -57,21 +57,35 @@ int main(int argc,char**argv){
   State s=c>=4?combat_fixture((Character)(c-4)):fixture(c==2?EventId::DoorsOfLightAndDark:EventId::AromaOfChaos,c==1?Character::Silent:Character::Ironclad,c==3);if(!save(s,storage))return 5;
   if(!app.init(pack.data(),n,{save_cb,load_cb}))return 4;
   write(root+"/"+name+"-fixture.bin",storage.bytes,storage.size);
-  fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",c?",":"",name.c_str());unsigned index=0;
-  for(int key:steps[c]){
-   uint32_t revision=app.game.revision;
+  fprintf(manifest,"%s{\"name\":\"%s\",\"steps\":[",c?",":"",name.c_str());unsigned index=0,script_index=0,readiness_steps=0;
+  const auto record=[&](int key){
    if(key<0)app.advance(99);else app.input((Key)key);app.render();
-   if(!app.title&&!validate(app.game))return 6;
-   if(c>=4&&index>=3&&(index-3)%7==0&&(index-3)/7<combat_cards[c-4].size()){
-    if(app.game.revision==revision||app.game.phase!=Phase::Combat)return 11;
-   }
+   if(!app.title&&!validate(app.game))std::exit(6);
    write(root+"/"+name+"-frame-"+std::to_string(index)+".rgb",app.pixels,sizeof app.pixels);
    fprintf(manifest,"%s%d",index?",":"",key);++index;
+  };
+  for(int key:steps[c]){
+   // Real packs first present a bounded preparation screen. A source-timed
+   // multi-hit command can also exceed the old four 99ms playback frames.
+   // Record every necessary update so WASM replays the same visible sequence;
+   // retain every scripted detail/play/navigation/save action and its checks.
+   if(c>=4&&key>=0){unsigned waits=0;
+    while(app.combat_preparation.active||app.combat_actions_locked()){
+     if(++waits>1024){std::fprintf(stderr,"%s did not become ready before script step %u\n",name.c_str(),script_index);return 13;}
+     record(-1);++readiness_steps;
+    }
+   }
+   const uint32_t revision=app.game.revision;record(key);
+   if(c>=4&&script_index>=3&&(script_index-3)%7==0&&(script_index-3)/7<combat_cards[c-4].size()){
+    if(app.game.revision==revision||app.game.phase!=Phase::Combat)return 11;
+   }
+   ++script_index;
   }
   if(c<3&&(app.game.phase!=Phase::Event||app.game.event_page<2))return 7;
   if(c==3&&(!(app.game.shop_sold&(1u<<ShopRemove))||app.game.phase!=Phase::Shop))return 8;
   if(c>=4&&(app.game.phase!=Phase::Combat||app.game.turn!=2||saved!=3))return 12;
   fprintf(manifest,"],\"saves\":%u}",saved);
+  std::printf("%s: %u frames, %u recorded readiness updates, %u saves\n",name.c_str(),index,readiness_steps,saved);
  }
  fprintf(manifest,"]}\n");fclose(manifest);puts("Wrote four controlled room sequences and five character combat sequences");return 0;
 }

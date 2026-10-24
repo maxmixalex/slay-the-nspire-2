@@ -219,6 +219,23 @@ static void character_hover(){
     CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));
     app.pointer.visible=false;app.character_select=false;
 }
+static void character_confirm_art(){
+    const int base=app.content.world_image("common","CONFIRM"),tick=app.content.world_image("common","CONFIRM_TICK");
+    if(base<0||tick<0)return; // The synthetic profile has no original control atlas.
+    CHECK(app.content.image(tick).w&&app.content.image(tick).h);
+    Canvas c{app};app.pointer.visible=false;app.pointer.held=false;app.button_motions[0]={};
+    clear();native_confirm(c,90,80,103,28,"");const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);
+    clear();const auto info=app.content.image(base);CHECK(info.w&&info.h);
+    const int height=103*info.h/info.w,top=80+(28-height)/2;
+    Canvas shadow=c;shadow.tint_red=shadow.tint_green=shadow.tint_blue=0;shadow.picture(base,92,top+2,103,height,64);
+    c.picture(base,90,top,103,height);
+    unsigned changed=0;for(int y=0;y<240;++y)for(int x=0;x<320;++x)if(actual[y*320+x]!=app.pixels[y*320+x]){
+        ++changed;CHECK(x>=127&&x<155&&y>=80&&y<108);
+    }
+    CHECK(changed>20); // The actual atlas tick must be visible at the control center.
+    Canvas cream=c;cream.tint_green=246;cream.tint_blue=226;cream.picture(tick,127,80,28,28);
+    CHECK(!std::memcmp(actual.data(),app.pixels,sizeof app.pixels));
+}
 static void samples(){
     Canvas c{app};new_run(app.game,781,true,Character::Regent);app.title=false;app.character_select=false;app.panel=0;app.pointer.visible=false;app.reset_presentation();
     app.render();unsigned loading_steps=0;
@@ -251,5 +268,5 @@ static void samples(){
 int main(int argc,char**argv){
     Bytes data;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);data.resize(spire_test::pack_size(f));CHECK(std::fread(data.data(),1,data.size(),f)==data.size());CHECK(!std::fclose(f));}else data=fixture();
     if(argc>2)captures=argv[2];CHECK(app.init(data.data(),data.size(),{}));CHECK(app.content.current_profile());new_run(app.game,781,true);
-    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
+    glyph_measurement(data);bounded_canvas();title_layout();card_cache_pixels();focused_card_scale();if(argc==1)synthetic_pixels();character_hover();character_confirm_art();samples();std::printf("card/HUD UI: %u checks passed; %s profile, zero-I/O metrics, exact grid cache, transformed focus, bounded draw and selector samples\n",checks,argc>1?"actual":"synthetic");
 }

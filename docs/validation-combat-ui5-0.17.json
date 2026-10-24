@@ -1,0 +1,338 @@
+{
+  "scope": "Same host GCC 13, O1, ASan+UBSan; total before+after display observer; excludes render and initial snapshot; no device inference",
+  "runs": [
+    {
+      "stage": "stage2",
+      "actors": 2,
+      "iterations": 1000,
+      "effects": 17000,
+      "ns_per_effect": 34118.721,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "stage": "stage2",
+      "actors": 3,
+      "iterations": 1000,
+      "effects": 19000,
+      "ns_per_effect": 36886.858,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    },
+    {
+      "stage": "stage4",
+      "actors": 2,
+      "iterations": 1000,
+      "effects": 17000,
+      "ns_per_effect": 18994.801,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "stage": "stage4",
+      "actors": 3,
+      "iterations": 1000,
+      "effects": 19000,
+      "ns_per_effect": 26170.194,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    },
+    {
+      "stage": "stage4",
+      "actors": 2,
+      "iterations": 1000,
+      "effects": 17000,
+      "ns_per_effect": 19674.597,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "stage": "stage4",
+      "actors": 3,
+      "iterations": 1000,
+      "effects": 19000,
+      "ns_per_effect": 27991.559,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    },
+    {
+      "stage": "stage2",
+      "actors": 2,
+      "iterations": 1000,
+      "effects": 17000,
+      "ns_per_effect": 31108.166,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "stage": "stage2",
+      "actors": 3,
+      "iterations": 1000,
+      "effects": 19000,
+      "ns_per_effect": 36445.183,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    },
+    {
+      "stage": "stage2",
+      "actors": 2,
+      "iterations": 1000,
+      "effects": 17000,
+      "ns_per_effect": 31134.72,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "stage": "stage2",
+      "actors": 3,
+      "iterations": 1000,
+      "effects": 19000,
+      "ns_per_effect": 36543.763,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    },
+    {
+      "stage": "stage4",
+      "actors": 2,
+      "iterations": 1000,
+      "effects": 17000,
+      "ns_per_effect": 19143.908,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "stage": "stage4",
+      "actors": 3,
+      "iterations": 1000,
+      "effects": 19000,
+      "ns_per_effect": 26479.289,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    }
+  ],
+  "summary": [
+    {
+      "actors": 2,
+      "median_ns": {
+        "stage2": 31134.72,
+        "stage4": 19143.908
+      },
+      "reduction_percent": 38.51267009949022,
+      "save_hash": "9a9f5751874312f2",
+      "cue_hash": "73a5dc3304f4b93c"
+    },
+    {
+      "actors": 3,
+      "median_ns": {
+        "stage2": 36543.763,
+        "stage4": 26479.289
+      },
+      "reduction_percent": 27.540880231737486,
+      "save_hash": "6ae389b733af28d7",
+      "cue_hash": "6e9fb7c702479b64"
+    }
+  ],
+  "schema": 1,
+  "reference": "v0.111.0 / 41cef1ea",
+  "runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+  "baseline_checkpoint": "eb6f9564c6f3c88bc47b73829036af21d0489072",
+  "driver": "tests/combat_feedback_benchmark.cpp",
+  "driver_sha256": "9d50c1daad3198fbb798438515d61746306681da6240116e21f639a9dff19f77",
+  "driver_byte_identical_to_measured_source": true,
+  "order": [
+    "stage2",
+    "stage4",
+    "stage4",
+    "stage2",
+    "stage2",
+    "stage4"
+  ],
+  "benchmark_journal": "ui5-stage4-status-serial-abba-b875043a6558",
+  "functional": [
+    {
+      "suite": "world_ui_regression",
+      "language": "eng",
+      "checks": 7830,
+      "journal": "ui5-stage4-world-ui-eng-38ec6baf199a",
+      "passed": true
+    },
+    {
+      "suite": "world_ui_regression",
+      "language": "zhs",
+      "checks": 7830,
+      "journal": "ui5-stage4-world-ui-zhs-0120a71cb5bb",
+      "passed": true
+    },
+    {
+      "suite": "world_text_regression",
+      "language": "eng",
+      "checks": 6983,
+      "journal": "ui5-stage4-world-text-eng-016a21d7a823",
+      "passed": true
+    },
+    {
+      "suite": "world_text_regression",
+      "language": "zhs",
+      "checks": 6766,
+      "journal": "ui5-stage4-world-text-zhs-e004e8e5002b",
+      "passed": true
+    },
+    {
+      "suite": "focused_combat_with_frames",
+      "language": "eng",
+      "checks": 3274,
+      "journal": "ui5-stage4-combat-focused-eng-3d989acdf924",
+      "passed": true
+    },
+    {
+      "suite": "focused_combat_with_frames",
+      "language": "zhs",
+      "checks": 3274,
+      "journal": "ui5-stage4-combat-focused-zhs-f8b1d231f156",
+      "passed": true
+    }
+  ],
+  "unchanged_frames": [
+    {
+      "language": "eng",
+      "scene": "multi-hit-area-first",
+      "size": 230415,
+      "sha256": "0fb042b2b5703439c21171f165a850e959e8b7020cdda32acd4db64a2ec44eaa",
+      "byte_identical": true
+    },
+    {
+      "language": "eng",
+      "scene": "multi-hit-area-first-fast",
+      "size": 230415,
+      "sha256": "05059dee700b590dc7a003eda9b384ed97d31b5ba016aa28b6d67aca6b5bd2c4",
+      "byte_identical": true
+    },
+    {
+      "language": "eng",
+      "scene": "regent-star-resource",
+      "size": 230415,
+      "sha256": "d511795ecaad8e9587b7cd87a2d8c8d3d9f40992ba6f1bb6f2305a2ca37eb751",
+      "byte_identical": true
+    },
+    {
+      "language": "zhs",
+      "scene": "multi-hit-area-first",
+      "size": 230415,
+      "sha256": "703acb7d49ed48efb48ba471fde7fd05a7f2cc259b68d54bc2ba914ecdb0acdb",
+      "byte_identical": true
+    },
+    {
+      "language": "zhs",
+      "scene": "multi-hit-area-first-fast",
+      "size": 230415,
+      "sha256": "a7345c6e39d9de0678d381f924acefb7c814723ebb8011cf525120455c9e6bee",
+      "byte_identical": true
+    },
+    {
+      "language": "zhs",
+      "scene": "regent-star-resource",
+      "size": 230415,
+      "sha256": "1703bf62d3f73e511ae02fdf3e911fe6455ccd12714daa31b9792f79f07e9948",
+      "byte_identical": true
+    }
+  ],
+  "star_motion": {
+    "combined_health_motion_checks": 109989,
+    "value_format": "Q14",
+    "decay_format": "Q30",
+    "reference": "MathHelper.SmoothDamp, NStarCounter, pinned original DLL",
+    "label_exact_tested_frame_ms": [
+      16,
+      17,
+      33,
+      50,
+      100,
+      250,
+      1000
+    ],
+    "tested_targets": [
+      1,
+      3,
+      23,
+      500,
+      9999
+    ],
+    "artificial_1ms_max_count_error": 0.025879,
+    "artificial_1ms_label_difference_bound": 1,
+    "mid_gain_loss_preserves_velocity": true,
+    "zero_and_midpoint_rounding_checked": true
+  },
+  "retained_failures": [
+    {
+      "stage": 2,
+      "kind": "target_link",
+      "journal": "ui5-stage2-arm-2d1500122171",
+      "finding": "ARM star animation required unavailable __aeabi floating-point helpers. Replaced with tested integer damped motion; no software float runtime added."
+    },
+    {
+      "stage": 2,
+      "kind": "runtime",
+      "journal": "ui5-stage2-combat-hook-810ceb0d2ff5",
+      "finding": "Lagavulin woke at input tick 0 while HP hits were still queued for 5 and 16. Added before-effect presentation boundary."
+    },
+    {
+      "stage": 2,
+      "kind": "fixture",
+      "journal": "ui5-stage2-combat-focused-eng-478d86e5e27e",
+      "finding": "New card test pressed Confirm before real-pack preparation finished. Corrected fixture drains the existing preparation gate."
+    },
+    {
+      "stage": 2,
+      "kind": "fixture",
+      "journal": "ui5-stage2-combat-real-eng-6aed3f5faf3e",
+      "finding": "Old potion test assumed a wheel step advanced a page. Corrected to actual per-bottle navigation."
+    },
+    {
+      "stage": 3,
+      "kind": "fixture",
+      "journals": [
+        "ui5-stage3-combat-focused-eng-9533afd10dee",
+        "ui5-stage3-combat-focused-zhs-bc8a2abc2c04"
+      ],
+      "finding": "Directly writing Flutter amount omitted registration in power_order, so no damage hook ran. Fixture now executes EnemyApplyPower."
+    },
+    {
+      "stage": 3,
+      "kind": "runtime",
+      "journal": "ui5-stage3-combat-hook-fixture-3dfc8a72f643",
+      "finding": "Registered Flutter exposed idle refresh reading future IsHovering before the delayed StunTrigger. Bound actors now retain the displayed pose until that hook boundary."
+    },
+    {
+      "stage": 3,
+      "kind": "fixture",
+      "journals": [
+        "ui5-stage3-world-text-eng-c3350dbac784",
+        "ui5-stage3-world-text-zhs-7039a7847d62"
+      ],
+      "finding": "Pointer placed one pixel below the intent hitbox top left the bobbing hit region. Centered pointer passes complete delay/fade checks on the same runtime."
+    },
+    {
+      "stage": 3,
+      "kind": "fixture",
+      "journal": "ui5-stage3-world-ui-eng-633705cc468b",
+      "finding": "Potion lock test still sampled old lower-screen button coordinates. It now finds actual Potion/DiscardPotion hit regions."
+    },
+    {
+      "stage": 3,
+      "kind": "external_probe_launch",
+      "journals": [
+        "ui5-stage3-world-text-center-eng-6621cf3e552f",
+        "ui5-stage3-world-text-center-zhs-533a697dd147",
+        "ui5-stage3-world-text-center-eng2-361a2c1f2ef8",
+        "ui5-stage3-world-text-center-zhs2-33caa35c5449"
+      ],
+      "finding": "External test output was empty/non-executable although compile returned zero. No application runtime executed. A fresh explicit /tmp output executed successfully in both languages; launch failures retained."
+    }
+  ],
+  "limits": [
+    "No unmodified original-game screenshot equivalence or percentage fidelity established.",
+    "No physical-device or calculator performance inferred from ASan host callback timing.",
+    "Power silent-application distinction still lacks a dedicated presentation notification.",
+    "Power flash shader, star-gain particles, overlapping damage-number VFX, and all 15-fps intent sprite frames remain outside this implementation."
+  ]
+}

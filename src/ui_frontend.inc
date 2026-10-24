@@ -203,7 +203,7 @@ static void character_screen(Canvas&c){
         c.ui(character_portrait((Character)i),x+(27-pw)/2,184-ph/2,pw,ph,selected||hover==i?255:145);
         c.action(x-2,159,31,48,actions[i]);
     }
-    native_proceed(c,215,212,103,28,a.practice_entry?"练习":"启程");c.action(213,207,107,33,UiAction::StartCharacter);
+    if(a.practice_entry)native_proceed(c,215,212,103,28,"练习");else native_confirm(c,215,212,103,28,"");c.action(213,207,107,33,UiAction::StartCharacter);
     if(!a.practice_entry){c.button("远征设置",99,216,108,false,23);c.action(96,209,114,31,UiAction::RunSettings);}
     if(a.run_settings){a.hit_count=0;c.dim(0,0,320,240,218);c.ui(U_RewardPanel,17,17,286,213);c.centered("远征设置",0,26,320,20,Gold);
         c.text("进阶等级",39,69,12,White);c.button("−",174,63,36,false,26);c.action(172,62,40,29,UiAction::RunAscensionDown,a.selected_ascension>0);c.num(a.selected_ascension,222,67,16,Gold);c.button("+",252,63,36,false,26);c.action(250,62,40,29,UiAction::RunAscensionUp,a.selected_ascension<10);

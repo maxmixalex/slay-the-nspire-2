@@ -65,6 +65,15 @@ timings, bounded gold stepping against the literal delay sequence, exactly one
 pickup per real claim, failed-belt behavior, and unchanged serialized state
 through animation. Existing reward ownership, card facts, reroll/alternative,
 terminal Proceed and event-combat extra-reward tests remain in place.
+The stage 3 runtime and actual English/Chinese v22 packs each pass 2,915
+reward UI checks, including fixed-clock pixel changes/restoration for newly
+acquired Genetic Algorithm, Scythe, Mad Science and enchanted cards. This is
+recorded in [frontend evidence](validation-ui5-frontend-0.17.json), separately
+from earlier stage 2 results and later resource-layout comparisons.
 Private capture names include `reward-potion-flight` and `reward-relic-flight`.
+Those two single-item fixtures return to the legacy prototype map; their
+background is not a native-map acceptance image. `rewards-combat-extras` uses
+a real native event-combat reward route. `reward-card-genetic-flight` isolates
+the acquired card's stored facts at a fixed presentation clock.
 Desktop captures and synthetic timing checks do not establish physical
 calculator cold-I/O latency or touchpad frame pacing.

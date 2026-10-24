@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "status": "awaiting_rebuilt_runtime",
+  "reference": "v0.111.0 / 41cef1ea",
+  "scope": "Isolated Chromium DOM and Canvas using the actual self-contained offline HTML; private captures and generated save remain outside source control. Browser timings are not calculator performance.",
+  "browser": "134.0.6998.35",
+  "playwright": "1.51.1",
+  "rejected_candidate": {
+    "runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "html_bytes": 115768824,
+    "html_sha256": "9531c22d25be4a29d355e7b0d5293fd379c9813578b02469c0337957c3fe4e76",
+    "package_journal": "ui5-package-release-final-20c09a397e65",
+    "browser_journal": "ui5-offline-browser-isolated-c54f6a9cff7e",
+    "native_reproduction_journal": "ui5-split-v22-reproduction-22fbea92d591",
+    "checks_completed": 0,
+    "page_error": "Startup failed. Please check the resource files. The content pack failed validation.",
+    "root_cause": "SplitResourceSource::open retained an inner NSP2 maximum of 21; both actual published NSL1 language files contain version 22. Full-pack runtime entry accepted the same content, so full-pack regressions did not exercise this gate.",
+    "external_requests": 0
+  },
+  "earlier_host_failure": {
+    "journal": "ui5-offline-browser-69e6533ec8f6",
+    "finding": "Ordinary tool sandbox blocked Chromium launch: sandbox_host_linux.cc shutdown EPERM. No page loaded. Retried through approved isolated execution using a fresh temporary browser profile."
+  },
+  "repair": {
+    "runtime_file": "src/resource_source.cpp",
+    "change": "Use FrontendContentVersion for the split adapter upper bound; keep structural/locale/bounds checks and retain no integrity-only payload scan.",
+    "test": "tests/split_resource_regression.cpp",
+    "coverage": "Every supported version 17..FrontendContentVersion, both languages, direct and streaming sources; current+1 remains rejected.",
+    "quick_checks": 1932,
+    "native_adapter_bytes": 104
+  },
+  "acceptance": null
+}

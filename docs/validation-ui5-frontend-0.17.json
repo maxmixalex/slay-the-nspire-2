@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "reference": "v0.111.0 / 41cef1ea",
+  "reference_manifest": "config/reference-release.json",
+  "scope": "Frontend, ordinary events, map controls and native reward presentation; source-only verification metadata",
+  "source_checkpoint": "55fdd6e703cd921220740f41e1537f864a02b300",
+  "source_tree": "6bf99ad03e0ac9e8f8b9014a716a3f98f72d6aaa",
+  "host_validation": {
+    "instrumentation": ["AddressSanitizer", "UndefinedBehaviorSanitizer"],
+    "environment": "ASAN_OPTIONS=detect_leaks=0",
+    "leak_sanitizer_limitation": "The execution host cannot run LSan under ptrace. This disables leak detection only; ASan/UBSan remain active.",
+    "suites_passed": 8,
+    "checks_passed": 168744,
+    "runs": [
+      {"language": "eng", "target": "world_frontend_ui_regression", "checks": 63723, "status": "passed", "journal": "ui5-final-actual-eng-world_frontend-f3f07a4ff6d2.json"},
+      {"language": "eng", "target": "world_event_ui_regression", "checks": 4519, "status": "passed", "journal": "ui5-final-actual-eng-world_event-e17baad860d2.json"},
+      {"language": "eng", "target": "world_map_ui_regression", "checks": 12956, "status": "passed", "journal": "ui5-final-actual-eng-world_map-e4f6a742f9df.json"},
+      {"language": "eng", "target": "world_reward_ui_regression", "checks": 2915, "status": "passed", "journal": "ui5-final-actual-eng-world_reward-7bde6d429e42.json"},
+      {"language": "zhs", "target": "world_frontend_ui_regression", "checks": 64241, "status": "passed", "journal": "ui5-final-actual-zhs-world_frontend-b06364789c31.json"},
+      {"language": "zhs", "target": "world_event_ui_regression", "checks": 4519, "status": "passed", "journal": "ui5-final-actual-zhs-world_event-aba2b8f12d4a.json"},
+      {"language": "zhs", "target": "world_map_ui_regression", "checks": 12956, "status": "passed", "journal": "ui5-final-actual-zhs-world_map-ad5b67d85668.json"},
+      {"language": "zhs", "target": "world_reward_ui_regression", "checks": 2915, "status": "passed", "journal": "ui5-final-actual-zhs-world_reward-59d8de95d8dc.json"}
+    ]
+  },
+  "resources": {
+    "version": 22,
+    "source_version": 21,
+    "images_added": 10,
+    "clips_added": 0,
+    "auxiliary_count": 1275,
+    "added_common_art_bytes": 9918,
+    "runtime_added_pixel_pools": 0,
+    "runtime_integrity_scan": false,
+    "unchanged_old_payload": true,
+    "unchanged_preexisting_strings": true,
+    "unchanged_old_directory_indices": true,
+    "unchanged_old_decoded_costs": true,
+    "existing_ui_bindings": 935,
+    "new_text_slots": [8103, 8104],
+    "new_text_keys": ["settings_ui.TAB_GENERAL", "settings_ui.TAB_INPUT"],
+    "new_label_glyphs_present_at_sizes": [8, 10, 12, 16, 20],
+    "conversion_journal": "ui5-final-resource-conversion-726ec928d81b.json",
+    "packs": {
+      "eng": {"file": "frontend-eng.nsp", "bytes": 76685257, "added_locale_bytes": 14, "sha256": "bb23c56f807db301fcb6c1014cd6a39f92a8cf69d66ffd3d84a9c0d0695a30ea"},
+      "zhs": {"file": "frontend-zhs.nsp", "bytes": 79467968, "added_locale_bytes": 26, "sha256": "622add5d22ec2a5fd02ab326358fb8238ff5cda4b59e99d6715904855a45559d"}
+    },
+    "split": {
+      "journal": "ui5-final-resource-split-08ec54011d48.json",
+      "byte_identical_roundtrip": true,
+      "common": {"file": "nSpire2.common.tns", "bytes": 74904242, "sha256": "94cf29f154b834e851c596433e5817d681902704afa800519fa0e0c97867562e"},
+      "eng": {"file": "nSpire2.eng.tns", "bytes": 1781175, "sha256": "a39f30f94578a39531ebc47276fd2b6736613c109af8f26bad2f0b02b7268cb0"},
+      "zhs": {"file": "nSpire2.zhs.tns", "bytes": 4563886, "sha256": "79101e9a7ab98dab9d8468496e4b9f996552d4580ae3fa9e6f96055082ef946f"}
+    }
+  },
+  "accepted_release_resources": {
+    "converter_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "eng": {"method": "Keep the original v22 glyph layout", "bytes": 76685257, "sha256": "bb23c56f807db301fcb6c1014cd6a39f92a8cf69d66ffd3d84a9c0d0695a30ea"},
+    "zhs": {"method": "Size-frequency ordering of existing glyph payloads", "bytes": 79467968, "sha256": "cb7ae529b4d61766ccd8cd5a88630ab44657130a442937bf9a36624d879205ac"},
+    "pixel_equality": {
+      "report": "docs/validation-ui5-card-performance-0.17.json",
+      "private_evidence": "stage4-frequency-preliminary.json",
+      "pairs": 18,
+      "all_exact": true,
+      "glyph_pixels_geometry_and_aliases_exact": true,
+      "non_glyph_bytes_exact": true,
+      "driver_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+      "runtime_checkpoint": "55fdd6e703cd921220740f41e1537f864a02b300",
+      "timing_scope": "These pixel/I-O comparisons used the stage 3 runtime; they are not relabeled as stage 4 runtime timing or physical-calculator measurements."
+    },
+    "split": {
+      "journal": "ui5-release-frequency-split-18ad0c739819.json",
+      "byte_identical_roundtrip": true,
+      "stored_bytes": 81249303,
+      "common_sha256": "94cf29f154b834e851c596433e5817d681902704afa800519fa0e0c97867562e",
+      "eng_sha256": "a39f30f94578a39531ebc47276fd2b6736613c109af8f26bad2f0b02b7268cb0",
+      "zhs_sha256": "fbbcf5504f2437895ad6fe0036698b2003897296a58cd2e7a989ec007a3c55bf"
+    }
+  },
+  "stage4_frontend_validation": {
+    "source_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "packs": "accepted_release_resources",
+    "runs": [
+      {"language": "eng", "target": "world_frontend_ui_regression", "checks": 63723, "status": "passed", "journal": "ui5-stage4-actual-eng-world_frontend_ui_regression-18051824f4f9.json"},
+      {"language": "zhs", "target": "world_frontend_ui_regression", "checks": 64241, "status": "passed", "journal": "ui5-stage4-actual-zhs-world_frontend_ui_regression-500fd2fe1454.json"}
+    ],
+    "character_select_capture": "First render observes entry, then 500 ms advances before capture. Both languages now show the settled panel with independent Back/Embark controls."
+  },
+  "potion_fixture_followup": {
+    "runtime_checkpoint": "1ad378862fae54fc8c8b346c2680b5f448e26883",
+    "status": "External corrected fixture passes; source checkpoint and formal rerun pending",
+    "initial_failures": ["ui5-stage4-actual-eng-potion_ui_regression-51d7097e5ad6.json", "ui5-stage4-actual-zhs-potion_ui_regression-08534a5718a1.json"],
+    "diagnostic_journal": "ui5-stage4-potion-find-diagnostic-161d02a5a211.json",
+    "observed_cause": {"missing_kind": "PotionSlot", "missing_value": 1, "phase": "Combat", "preparation_active": true, "preparation_shown": true, "prepared_images": 0, "pending_images": 90, "hit_count": 0},
+    "fixture_change": "reset() renders and settles the existing bounded combat-preparation loop before querying HUD potion slots; it also asserts preparation completed. Runtime code is unchanged.",
+    "corrected_fixture_sha256": "a60c472e90b65036abf0269cefe798b74d63785446dc15219dae0a3ca25f49f5",
+    "external_runs": [
+      {"language": "eng", "checks": 805, "status": "passed", "journal": "ui5-stage4-potion-settled-eng-c4ca9b2b0561.json"},
+      {"language": "zhs", "checks": 805, "status": "passed", "journal": "ui5-stage4-potion-settled-zhs-897a9bf88475.json"}
+    ]
+  },
+  "coverage": [
+    "Presentation-only settings, tab hover/press/release, actual checkbox hit column and bilingual original labels",
+    "Character selection requires a completed click; hover and cancelled gestures preserve selection and canonical save state",
+    "Ordinary event option pagination, Up/Down wrapping, complete narrative reader, visible original illustration and unchanged run/RNG state",
+    "Full-height native map paper, independent folded-legend/back targets and original node/reticle/legend tests",
+    "Reward ownership, claimed-row removal, alternatives and terminal continuation",
+    "500 ms reward window entry, 250 ms empty fade, 350 ms potion/relic arrival and bounded original gold count sequence",
+    "Acquisition observers emit once per successful claim; failed belt claims, repeated frames and save loading cannot create items",
+    "Pickup card pixels preserve Genetic Algorithm/Scythe growth, Mad Science type, Nimble and Tezcatara's Ember facts without another raster pool"
+  ],
+  "captures": {
+    "private_only": true,
+    "languages": ["eng", "zhs"],
+    "directory_name": "ui5-final-captures",
+    "stage4_directory_name": "ui5-stage4-captures",
+    "stage4_key_frames": ["frontend-character-select", "potion-fire-menu", "potion-throw-targeting", "potion-automatic-menu"],
+    "key_frames": ["settings-general", "settings-input", "settings-checked", "event-wellspring", "event-colorful-philosophers", "map-start-frontier", "map-legend", "rewards-card-row", "reward-card-genetic-flight"],
+    "character_select_stage3": "The capture occurred at the first entrance frame because advance preceded first render. The source fixture is corrected in stage 4; this partial entrance frame is not a settled-layout acceptance image.",
+    "pickup_fixture_scope": "Single-potion/relic timing fixtures return to the legacy prototype map. Their screenshots verify the moving icon and withheld destination, not native-map visual parity. rewards-combat-extras is a native event-combat reward route."
+  },
+  "retained_failures": [
+    "Stage 2 actual frontend runs stopped at a test assertion requiring version 21 exactly; stage 3 accepts the compatible v22 profile and both languages pass.",
+    "Stage 3 Python retained-pack test reused the name expected for a label byte string, overwriting its image dictionary between language loops. The isolated test variable is renamed in stage 4; successful real-pack conversion is recorded separately.",
+    "Stage 4 actual potion fixtures initially queried slots during the existing cold-asset loading screen. Their failed journals and exact missing-hit/preparation diagnostic are retained separately from corrected-fixture results."
+  ],
+  "remaining_not_counted_complete": [
+    "Settings GPU blur, persistent preference storage and editable input remapping are not implemented by these layout changes. Audio, multiplayer and Timeline remain excluded.",
+    "Ordinary event delayed title/body reveal, staggered row entrance and complete original hover/press/outline timing are not implemented. Ancient/fake-merchant layouts retain their earlier separate scope.",
+    "The narrative reader, folded legend, minimum hit sizes and reflowed 320x240 geometry are explicit calculator adaptations, not proof of identical PC layout.",
+    "Map cosmetic rotation/dot noise uses stable local presentation randomness rather than the original process-global Chaotic stream.",
+    "Reward card selection entrance/fade and original reward focus-reticle artwork remain unfinished. Card pickup trails, inventory flash shaders and frame-dependent rotation smoothing are not reproduced.",
+    "The legacy prototype reward/map routes are not replaced by the native-world changes.",
+    "Desktop regression passes and stored source timings do not establish physical-calculator input latency, cold-I/O performance, frame pacing or a visual similarity percentage. Performance-agent reports and hardware/emulator evidence must be cited separately."
+  ]
+}
