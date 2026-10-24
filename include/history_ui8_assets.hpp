@@ -54,7 +54,24 @@ enum HistoryUi8Asset {
  I8_Peek,
  I8_PeekFlash,
  I8_AncientNextArrow,
+ I8_PatchNotesIcon,
+ I8_CreditsLogo,
+ I8_CreditsFmod,
+ I8_CreditsSpine,
+ I8_CreditsGodot,
+ I8_FeedbackHappy,
+ I8_FeedbackHeart,
+ I8_FeedbackSad,
+ I8_FeedbackExclaim,
+ I8_FeedbackQuestion,
+ I8_FeedbackSun,
+ I8_FeedbackCupcake,
+ I8_FeedbackFlower,
+ I8_FeedbackFlowerAnticipation,
+ I8_FeedbackFlowerHappy,
+ I8_PatchNotesArrow,
+ I8_KeyboardKeycap,
  HistoryUi8AuxiliaryCount
 };
-static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&I8_CrystalBackground==1984&&I8_Peek==1993&&I8_AncientNextArrow==1995&&HistoryUi8AuxiliaryCount==1996,"Original history, modifier, map and crystal layer order");
+static_assert(I8_TinyCardBack==1945&&I8_ModifierDraft==1955&&I8_MapDraw==1972&&I8_CrystalBackground==1984&&I8_Peek==1993&&I8_AncientNextArrow==1995&&I8_PatchNotesIcon==1996&&I8_KeyboardKeycap==2012&&HistoryUi8AuxiliaryCount==2013,"Original history, modifier, map, crystal and auxiliary-menu layer order");
 }

@@ -113,5 +113,35 @@ class OriginalFontTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'dropped'):
             fonts.replace(bytes(original), 'eng', [(66, 8, 1, 1, 1, 0, b'\xff')])
 
+    def test_scene_face_family_survives_split_pack_validation(self):
+        import split_content
+        original, _, _ = retained.repack(fixture('eng', glyphs=1), fast_images='none')
+        original = bytearray(original); struct.pack_into('<I', original, 4, 28)
+        before = tiles.PackView(original, 1, versions=(28,))
+        cp, off, px, w, h, advance, enc = before.glyphs[0]
+        regular = (cp, px, w, h, advance, enc, bytes(before.block(off, enc or w*h)))
+        rows = [regular, (cp, 6 | 32, 2, 1, 2, 0, b'\xff\x00'),
+                (cp, 14 | 32 | 64, 2, 1, 2, 0, b'\x00\xff')]
+        result, _ = fonts.replace(bytes(original), 'eng', rows)
+        profile = split_content.layout(result, 'eng')
+        self.assertEqual(profile['glyphs'], 3)
+        decoded = tiles.PackView(result, 1, versions=(28,))
+        self.assertEqual({row[2] for row in decoded.glyphs}, {px, 38, 110})
+
+    def test_complete_article_alphabet_uses_its_actual_reader_sizes(self):
+        class SyntheticFace:
+            coverage = set(range(32,127)) | {ord('甲')}
+            def glyph(self, cp, px, style=0):
+                return (cp, px | style << 6, 1, 1, 1, 0, b'\xff')
+            def metadata(self): return dict(family='synthetic')
+        texts=['']*8704;texts[0]='A';texts[8519]='[b]甲[/b]'
+        source=SimpleNamespace(version=28, strings=[(i,len(t.encode())) for i,t in enumerate(texts)],
+            glyphs=[(cp,0,8,1,1,1,0) for cp in range(32,127)],block=lambda off,n:texts[off].encode()[:n])
+        rows,report=fonts.generate(source,[SyntheticFace(),SyntheticFace(),None,None])
+        article={(row[1]&63,row[1]>>6) for row in rows if row[0]==ord('甲')}
+        self.assertEqual(article,{(8,0),(10,0),(8,1),(10,1)})
+        self.assertEqual(report['missing_regular_codepoints'],[])
+        self.assertEqual(report['auxiliary_only_codepoints'],[ord('甲')])
+
 
 if __name__ == '__main__': unittest.main()

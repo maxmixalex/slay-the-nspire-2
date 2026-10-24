@@ -1,0 +1,13 @@
+// Original auxiliary-menu keys; no localized payloads.
+ {"auxiliary.CREDITS",8507},
+ {"settings_ui.CREDITS",8510},
+ {"settings_ui.CREDITS_BUTTON_LABEL",8511},
+ {"settings_ui.FEEDBACK_CATEGORY.balance",8516},
+ {"settings_ui.FEEDBACK_CATEGORY.bug",8515},
+ {"settings_ui.FEEDBACK_CATEGORY.feedback",8517},
+ {"settings_ui.FEEDBACK_CATEGORY.translation",8518},
+ {"settings_ui.FEEDBACK_CATEGORY_LABEL",8513},
+ {"settings_ui.FEEDBACK_DESCRIPTION_PLACEHOLDER",8512},
+ {"settings_ui.FEEDBACK_EMOJI_LABEL",8514},
+ {"settings_ui.SEND_FEEDBACK",8508},
+ {"settings_ui.SEND_FEEDBACK_BUTTON_LABEL",8509},

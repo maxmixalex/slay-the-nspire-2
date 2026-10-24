@@ -30,6 +30,18 @@ KNOWN_TAGS = frozenset(('gold', 'red', 'blue', 'green', 'purple', 'orange',
 TAG = re.compile(r'\[(/?)([a-z_]+)(?:\s+[^\]]*)?\]')
 
 
+def auxiliary_body_slots(source):
+    """Full notes/credits are rendered only at 8/10px by their own reader.
+
+    Keep every codepoint and rich-text face, without baking unused large and
+    six-pixel copies of an alphabet introduced solely by historical articles.
+    """
+    if getattr(source, 'version', 0) < 28: return set()
+    from auxiliary_ui8_assets import TEXTS
+    return {slot for slot, key in TEXTS
+            if key == 'auxiliary.CREDITS' or key.startswith('patch_notes.')}
+
+
 def styled_alphabet(texts):
     """Collect actual rich-text characters, including nested b/i regions.
 
@@ -97,10 +109,14 @@ class Face:
 def generate(source, faces, fallback=None):
     texts = [bytes(source.block(off, length)).decode('utf-8') for off, length in source.strings]
     requested = styled_alphabet(texts)
+    auxiliary = auxiliary_body_slots(source)
+    core_requested = styled_alphabet([value for slot, value in enumerate(texts) if slot not in auxiliary])
+    core_required = set().union(*core_requested)
     rows, retained, substituted = [], [], []
     primary = faces[0]
     tiles.require(primary is not None, 'A regular font is required')
     originals = {(row[0], row[2]): row for row in source.glyphs if row[2] < 32}
+    previous_codepoints = {cp for cp, _px in originals}
     required = set().union(*requested)
     new_codepoints = required - {cp for cp, _px in originals}
     missing_regular = []
@@ -124,7 +140,7 @@ def generate(source, faces, fallback=None):
         if face is None or cp not in face.coverage:
             missing_regular.append(cp)
             continue
-        for px in SIZES:
+        for px in SIZES if cp in core_required else (8, 10):
             row = face.glyph(cp, px)
             rows.append(row)
             originals[(cp, px)] = None
@@ -132,6 +148,7 @@ def generate(source, faces, fallback=None):
     if getattr(source, 'version', 0) >= 28:
         for cp in sorted({cp for cp, _px in originals}):
             if (cp, 6) in originals: continue
+            if cp not in previous_codepoints and cp not in core_required: continue
             face = primary if cp in primary.coverage else fallback
             if face is not None and cp in face.coverage:
                 rows.append(face.glyph(cp, 6)); originals[(cp, 6)] = None
@@ -141,7 +158,8 @@ def generate(source, faces, fallback=None):
         eligible = requested[style] & {cp for cp, _px in originals}
         covered = eligible & font.coverage if font is not None else set()
         for cp, px in originals:
-            if cp in covered: rows.append(font.glyph(cp, px, style))
+            if cp in covered and (cp in core_requested[style] or px in (8, 10)):
+                rows.append(font.glyph(cp, px, style))
         styled_counts[FACE_NAMES[style]] = len(covered)
         unavailable[FACE_NAMES[style]] = sorted(eligible-covered)
     rows.sort(key=lambda row: (row[1], row[0]))
@@ -153,6 +171,8 @@ def generate(source, faces, fallback=None):
         styled_codepoints=styled_counts, missing_style_codepoints=unavailable,
         retained_old_regular_codepoints=sorted(set(retained)),
         fallback_regular_codepoints=sorted(set(substituted)),
+        auxiliary_only_codepoints=sorted(new_codepoints-core_required-set(missing_regular)),
+        auxiliary_body_sizes=[8, 10],
         rasterizer='Pillow/FreeType at native 6/8/10/12/16/20 pixels; not Godot glyph-pixel equivalence')
 
 
@@ -172,14 +192,30 @@ def scene_glyphs(source, faces):
             alphabets[2].update(map(ord,texts[ordinal]))
         if key.startswith('events.CRYSTAL_SPHERE.'):
             alphabets[1].update(set().union(*styled_alphabet([texts[ordinal]])))
-    alphabets[1].update(styled_alphabet(texts)[1])
+    auxiliary = auxiliary_body_slots(source)
+    alphabets[1].update(styled_alphabet([value for slot, value in enumerate(texts) if slot not in auxiliary])[1])
+    auxiliary_bold = styled_alphabet([value for slot, value in enumerate(texts) if slot in auxiliary and slot != 8507])[1]
+    auxiliary_headings = set(map(ord, texts[8507])) if len(texts)>8507 and 8507 in auxiliary else set()
+    for key, ordinal in entries:
+        if key.startswith('card_reward_ui.') or key in ('gameplay_ui.CHOOSE_CARD_HEADER', 'gameplay_ui.TO_INSPECT_PROMPT'):
+            ordinal=int(ordinal)
+            if ordinal<len(texts): alphabets[1].update(map(ord,texts[ordinal]))
     rows=[];report={}
     for i,face in enumerate(faces):
         if face is None: continue
         covered={cp for cp in alphabets[i] if cp>=32 and cp in face.coverage}
+        present=set()
         for cp in sorted(covered):
-            for px in SCENE_SIZES: rows.append(face.glyph(cp,px,4+i))
-        report[('display','explicit_bold','scene_italic')[i]]=dict(**face.metadata(),codepoints=len(covered))
+            for px in SCENE_SIZES:
+                rows.append(face.glyph(cp,px,4+i));present.add((cp,px))
+        if i==1:
+            # PatchText explicitly selects KreonBold at its 8px body size;
+            # the credits reader uses the same face for 10px section labels.
+            for alphabet,px in ((auxiliary_bold,8),(auxiliary_headings,10)):
+                for cp in sorted(alphabet):
+                    if cp>=32 and cp in face.coverage and (cp,px) not in present:
+                        rows.append(face.glyph(cp,px,5));present.add((cp,px));covered.add(cp)
+        report[('display','explicit_bold','scene_italic')[i]]=dict(**face.metadata(),codepoints=len(covered),glyphs=len(present))
     return rows,report
 
 

@@ -17,6 +17,7 @@ from patch_feedback_assets import write_image
 from patch_ui6_assets import cursor_image
 from PIL import Image
 from crystal_ui8_assets import COUNT as CRYSTAL_COUNT, build_crystal_images
+from auxiliary_ui8_assets import IMAGE_SPECS as AUXILIARY_IMAGES, TEXTS as AUXILIARY_TEXTS, build_auxiliary_images, build_auxiliary_text
 
 MAP_IMAGES = [
     ('map-draw', 'images/packed/map/drawing_quill.png', (16, 16)),
@@ -37,7 +38,8 @@ PEEK_IMAGES = [
     ('combat-peek-flash', 'images/packed/common_ui/peek_button_sdf.png', (31, 31)),
     ('ancient-next-arrow', 'images/packed/common_ui/little_arrow.png', (5, 9)),
 ]
-VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1 + len(MAP_IMAGES) + CRYSTAL_COUNT + len(PEEK_IMAGES), 1753, 8704
+VERSION, AUXILIARY, CLIPS, STRINGS = 28, BASE_AUX + COUNT + len(ICONS) + 1 + len(MAP_IMAGES) + CRYSTAL_COUNT + len(PEEK_IMAGES) + len(AUXILIARY_IMAGES), 1753, 8704
+TEXTS=tuple(TEXTS)+AUXILIARY_TEXTS
 
 
 def build_art(path, cache):
@@ -65,7 +67,9 @@ def build_art(path, cache):
             row = write_image(cache, key, image)
             row.update(key=key, source=source, auxiliary=BASE_AUX + len(rows))
             rows.append(row)
+        rows.extend(build_auxiliary_images(pack,cache,BASE_AUX+len(rows)))
         localized = build_mode_text(pack)
+        for language,texts in build_auxiliary_text(pack).items():localized[language].update(texts)
     finally:
         pack.close()
     manifest = dict(schema=1, reference='v0.111.0 / 41cef1ea',
