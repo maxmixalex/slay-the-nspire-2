@@ -3,11 +3,12 @@
 from pathlib import Path
 import subprocess,shutil,base64,argparse,json,re
 ROOT=Path(__file__).resolve().parents[1]
-def compile_runtime():
+def compile_runtime(debug_commands=False):
     clang=shutil.which('clang++') or shutil.which('clang++-18');link=shutil.which('wasm-ld') or shutil.which('wasm-ld-18')
     if not clang or not link:raise SystemExit('LLVM clang++ and wasm-ld are required.')
-    directory=ROOT/'build'/'web';directory.mkdir(parents=True,exist_ok=True)
+    directory=ROOT/'build'/('web-debug' if debug_commands else 'web');directory.mkdir(parents=True,exist_ok=True)
     flags=['--target=wasm32','-std=c++17','-O2','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-threadsafe-statics','-fno-stack-protector','-I'+str(ROOT/'include')]
+    flags += ['-DSPIRE_DEBUG_COMMANDS='+str(int(debug_commands))]
     objects=[]
     for i,source in enumerate(['src/characters.cpp','src/core.cpp','src/potions_extra.cpp','src/potions.cpp','src/ui_input.cpp','src/relics.cpp','src/run.cpp','src/resource_source.cpp','src/content.cpp','src/app.cpp','src/pointer.cpp','src/world_card_factory.cpp', 'src/original_events.cpp', 'src/world_relics.cpp', 'src/world_rng.cpp','src/reference_rng.cpp','src/reference_map.cpp','src/map_preview.cpp','src/reference_math.cpp','src/reference_act.cpp','src/map_preview_input.cpp','src/freestanding.cpp','platform/web/main.cpp','src/lzma2_block.cpp','third_party/lzma2/LzmaDec.c','third_party/lzma2/Lzma2Dec.c']):
         out=directory/f'{i}.o';objects.append(str(out))
@@ -21,7 +22,8 @@ def compile_runtime():
     output=directory/'nSpire2.wasm'
     # Fixed sixteen-MiB WASM memory contains bounded directories, caches and stack.
     # Pack payloads remain in the host ArrayBuffer and enter through range reads.
-    subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','start_split','resource_language','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input','performance_scene','set_seed_entropy','set_preferences','preferences_flags','preferences_pending','preferences_ack']],*objects,'-o',str(output)],check=True)
+    debug_exports=['debug_buffer','debug_capacity','debug_execute','debug_result','debug_catalog','debug_catalog_count'] if debug_commands else []
+    subprocess.run([link,'--no-entry','--export-memory','--initial-memory=16777216','--max-memory=16777216','-z','stack-size=262144',*['--export='+e for e in ['start','start_split','resource_language','framebuffer','input','frame','closed','advance','draw_frame','pointer_move','pointer_button','pointer_cancel','pointer_scroll','text_entry_active','text_input','performance_scene','set_seed_entropy','set_preferences','preferences_flags','preferences_pending','preferences_ack']+debug_exports],*objects,'-o',str(output)],check=True)
     print(f'Built WebAssembly runtime; {output.stat().st_size:,} bytes')
     return output
 
@@ -74,6 +76,7 @@ def main():
     mode=parser.add_mutually_exclusive_group()
     mode.add_argument('--compile-only',action='store_true',help='Build the runtime while private content conversion runs separately')
     mode.add_argument('--package-only',action='store_true',help='Package the already built runtime and the matching private pack')
+    parser.add_argument('--debug-commands',action='store_true',help='Compile developer commands; off in normal builds')
     parser.add_argument('--language',choices=('zhs','eng'),default='zhs',help='Language of a legacy --content pack; split installations select either language in the browser')
     parser.add_argument('--content',type=Path,help='Private content pack to embed')
     parser.add_argument('--common',type=Path,help='Common artwork NSC1 file; encoded only once in the HTML')
@@ -81,6 +84,7 @@ def main():
     parser.add_argument('--zhs',type=Path,help='Chinese NSL1 language file')
     parser.add_argument('--output',type=Path,help='Generated offline HTML destination')
     args=parser.parse_args()
-    if not args.package_only:compile_runtime()
-    if not args.compile_only:package_runtime(args.content,args.output,args.language,args.common,args.eng,args.zhs)
+    runtime=ROOT/'build'/('web-debug' if args.debug_commands else 'web')/'nSpire2.wasm'
+    if not args.package_only:runtime=compile_runtime(args.debug_commands)
+    if not args.compile_only:package_runtime(args.content,args.output,args.language,args.common,args.eng,args.zhs,wasm_path=runtime)
 if __name__=='__main__':main()

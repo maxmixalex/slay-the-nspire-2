@@ -2,6 +2,8 @@
 #include "world_run.hpp"
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
+#include "debug_commands.hpp"
+#include "inplace_reset.hpp"
 namespace spire {
 namespace {static bool world_make_rewards(State&);static bool world_buy(State&,int);static bool world_open_treasure(State&);static bool world_take_treasure(State&);}
 static int min(int a,int b){return a<b?a:b;}
@@ -268,4 +270,7 @@ bool leave_treasure(State&s){
     finish_room(s);return true;
 }
 #include "world_run.inc"
+#if SPIRE_DEBUG_COMMANDS
+#include "debug_world.inc"
+#endif
 } // namespace spire

@@ -2,15 +2,29 @@
 // Timings are authored milliseconds; positions are adapted to 320x240.
 static void combat_power_popups(Canvas&c){
  const auto&a=c.a;const auto&v=a.combat_status;
+ int occupied[CombatStatus::Actors][3]{},heights[CombatStatus::Actors][3]{};uint8_t rows[CombatStatus::Actors]{};
+ const auto place_title=[&](unsigned actor,int desired,int height){
+  // Preserve the native up/down motion until two titles meet. At the
+  // calculator's scale, pack their small text rectangles around that point;
+  // icons retain their authored motion and no status is painted over another.
+  desired=mx(25,mn(139-height,desired));int chosen=desired;
+  for(int delta=0;delta<115;++delta){bool found=false;
+   for(unsigned side=0;side<2;++side){const int y=desired+(side?delta:-delta);if(y<25||y+height>139)continue;bool clear=true;
+    for(unsigned row=0;row<rows[actor];++row)if(y<occupied[actor][row]+heights[actor][row]+2&&y+height+2>occupied[actor][row])clear=false;
+    if(clear){chosen=y;found=true;break;}
+   }if(found)break;
+  }
+  if(rows[actor]<3){const unsigned row=rows[actor]++;occupied[actor][row]=chosen;heights[actor][row]=height;}return chosen;
+ };
  for(unsigned i=0;i<v.popup_count;++i){const auto&p=v.popups[i];const int ms=int32_t(a.animation-p.at)*33;
   if(ms<0||ms>=(p.removed?1750:1250)||p.actor>unsigned(a.game.enemy_count))continue;
   const uint32_t identity=ui_feedback_bound(a)?a.combat_feedback.identity[p.actor]:ui_feedback_identity(a.game,p.actor);
   if(identity!=p.identity)continue;
-  const auto pose=enemy_pose(a.game,p.actor?p.actor-1:0);const int x=p.actor?pose.x:60,cy=(p.actor?pose.feet-32:91)-int(p.lane)*18;
+  const auto pose=enemy_pose(a.game,p.actor?p.actor-1:0);const int x=p.actor?pose.x:combat_player_x(a.game),cy=(p.actor?pose.feet-32:91)-int(p.lane)*18;
   if(p.removed){
    const unsigned alpha=ms<250?TurnBannerPresentation::ease(unsigned(ms),250):ms<750?4096u:unsigned(1750-ms)*4096u/1000u;
    const unsigned rest=unsigned(2000-ms)*1024u/2000u,q2=rest*rest/1024u,moved=1024u-q2*q2/1024u;
-   const int y=cy-24-int(moved*32u/1024u);
+   const int y=place_title(p.actor,cy-24-int(moved*32u/1024u),21);
    Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/4096u);
    const char*title=ui_status_title(a,p.id);const int width=mn(110,c.width(title,10)),left=mx(18,mn(318-width,x-width/2));
    text.picture(ui_status_image(a,p.id),left-16,y+2,13,13,192);
@@ -25,7 +39,7 @@ static void combat_power_popups(Canvas&c){
   c.picture(ui_status_image(a,p.id),x-size*11/20,cy-size*11/20,size*11/10,size*11/10,icon_alpha/2);
   if(ms>=1000)continue;
   const unsigned alpha=ms<250?TurnBannerPresentation::ease(unsigned(ms),250):TurnBannerPresentation::ease(unsigned(1000-ms),750);
-  const unsigned moved=CombatCardMotion::cubic(unsigned(ms),1250);const int y=cy-33+(p.buff?-1:1)*int(moved*17/1024);
+  const unsigned moved=CombatCardMotion::cubic(unsigned(ms),1250);const int y=place_title(p.actor,cy-33+(p.buff?-1:1)*int(moved*17/1024),11);
   const char*title=ui_status_title(a,p.id);const int width=mn(130,c.width(title,10)),left=mx(2,mn(318-width,x-width/2));
   Canvas text=c;text.opacity=uint8_t(unsigned(c.opacity)*alpha/4096);
   health_label(text,title,left,y,width,10,p.buff?rgb(127,255,0):rgb(255,85,85),Ink);
@@ -36,7 +50,7 @@ static void combat_power_popups(Canvas&c){
 static void combat_damage_label(Canvas&c,int value,int cx,int cy,int scale,uint16_t color){
  constexpr int W=128,H=40;uint8_t mask[W*H]{};
  char label[16]{};TextBuffer b{label,sizeof label,0};b.number(value);int width=0,height=0;
- for(const char*p=label;*p;++p){const auto g=c.a.content.glyph(unsigned(*p),16);if(width+g.w>=W)break;
+ for(const char*p=label;*p;++p){const auto g=c.a.content.glyph(unsigned(*p),16);if(width+mx(g.w,g.advance)>=W)break;
   if(g.pixels){unsigned pos=0;
    const auto pixel=[&](unsigned at,unsigned alpha){const unsigned yy=at/g.w,xx=at-yy*g.w;if(yy<H)mask[yy*W+width+xx]=uint8_t(alpha);};
    if(g.encoded_size){for(unsigned at=0;at+1<g.encoded_size&&pos<unsigned(g.w)*g.h;at+=2){unsigned n=mn(g.pixels[at],int(unsigned(g.w)*g.h-pos));const unsigned alpha=g.pixels[at+1];while(n--)pixel(pos++,alpha);}}
@@ -64,7 +78,7 @@ static void combat_damage_popups(Canvas&c){
   const auto p=enemy_pose(a.game,d.actor?d.actor-1:0);
   // The original integration uses 2000px/s^2 gravity, initial vertical
   // velocity -800..-700px/s, and a small independent horizontal scatter.
-  const int cx=(d.actor?p.x:60)+int(d.vx)*ms/6000+int(d.variation%5)-2;
+  const int cx=(d.actor?p.x:combat_player_x(a.game))+int(d.vx)*ms/6000+int(d.variation%5)-2;
   const int cy=(d.actor?p.feet-30:91)+(int(d.vy)*ms+ms*ms)*218/1080000;
   const unsigned u=unsigned(ms)*1024u/2000u,alpha=255u*(1024u-u*u/1024u)/1024u;
   const unsigned rest=ms<1200?unsigned(1200-ms)*1024u/1200u:0u;

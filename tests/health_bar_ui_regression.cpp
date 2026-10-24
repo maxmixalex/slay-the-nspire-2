@@ -93,7 +93,10 @@ static void native_pixels(){
  CHECK(pixel(left,pose.hp+2)!=rgb(241,55,62));CHECK(pixel(left+2,pose.hp+2)==rgb(241,55,62));
  app.game.block=12;app.game.enemies[0].block=7;snapshot();app.render();unchanged();
  CHECK(pixel(50,131)==rgb(59,111,163));CHECK(pixel(left+20,pose.hp+2)==rgb(59,111,163));
- CHECK(pixel(20,126)==0xffff); // The appended full-resolution block skin.
+ CHECK(app.health_bars[0].block_entering&&app.health_bars[0].block_alpha(app.animation*33)==0);
+ const auto entered=app.health_bars[0].block_start_ms;app.render();CHECK(app.health_bars[0].block_start_ms==entered);
+ app.animation+=16;app.render();unchanged();CHECK(app.health_bars[0].block_alpha(app.animation*33)==255);
+ CHECK(pixel(20,126)==0xffff); // The appended full-resolution block skin after its .5s entry.
  capture("health-native-block");
  auto&e=app.game.enemies[0];e.hp=60;e.block=0;e.poison=20;
  app.game.silent.power_count=1;app.game.silent.power_order[0]=unsigned(SPower::Accelerant);

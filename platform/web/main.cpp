@@ -1,5 +1,8 @@
 #include "app.hpp"
 #include "runtime_scene.hpp"
+#if SPIRE_DEBUG_COMMANDS
+#include "original_events.hpp"
+#endif
 extern "C" {
 __attribute__((import_module("env"),import_name("save"))) int host_save(const uint8_t*,unsigned);
 __attribute__((import_module("env"),import_name("load"))) int host_load(uint8_t*,unsigned);
@@ -53,7 +56,7 @@ int start_split(unsigned common_bytes,unsigned language_bytes,unsigned language)
 }
 int resource_language(){return app.content.english()?1:2;}
 unsigned framebuffer(){return (unsigned)(size_t)app.pixels;}
-void input(int key){if(key>=0&&key<=(int)spire::Key::Statuses)app.input((spire::Key)key);}
+void input(int key){if(key>=0&&key<=(int)spire::Key::Debug)app.input((spire::Key)key);}
 void frame(){app.tick();app.render();}
 void advance(unsigned elapsed_ms){app.advance(elapsed_ms);}
 void draw_frame(){app.render();}
@@ -61,8 +64,31 @@ void pointer_move(int x,int y){app.pointer_move(x,y);}
 void pointer_button(int down){app.pointer_button(down!=0);}
 void pointer_cancel(){app.pointer_cancel();app.pointer.visible=false;}
 void pointer_scroll(int rows){app.pointer_scroll(rows);}
-int text_entry_active(){return app.map_preview.open&&app.map_preview.editing;}
-void text_input(int ch){app.reference_text(ch);}
+int text_entry_active(){
+#if SPIRE_DEBUG_COMMANDS
+    if(app.debug_open)return app.debug_editing;
+#endif
+    return app.map_preview.open&&app.map_preview.editing;
+}
+void text_input(int ch){
+#if SPIRE_DEBUG_COMMANDS
+    if(app.debug_open){app.debug_text(ch);return;}
+#endif
+    app.reference_text(ch);
+}
+#if SPIRE_DEBUG_COMMANDS
+unsigned debug_buffer(){return (unsigned)(size_t)app.debug_line;}
+unsigned debug_capacity(){return sizeof(app.debug_line);}
+int debug_execute(){return app.debug_command(app.debug_line)?1:0;}
+unsigned debug_result(){return (unsigned)(size_t)app.debug_reply;}
+unsigned debug_catalog_count(unsigned kind){return kind==1?spire::EncounterKinds:kind==2?unsigned(spire::OriginalEventId::Count):0;}
+unsigned debug_catalog(unsigned kind,unsigned index){
+    const char*key="";
+    if(kind==1&&index<unsigned(spire::EncounterKinds)){const auto*d=spire::encounter_definition(spire::EncounterId(index));if(d)key=d->key;}
+    if(kind==2&&index<unsigned(spire::OriginalEventId::Count))key=spire::original_event_key(spire::OriginalEventId(index));
+    return (unsigned)(size_t)key;
+}
+#endif
 int closed(){return app.quit?1:0;}
 // Read-only scene classification for opt-in host timing; no gameplay mutation.
 int performance_scene(){

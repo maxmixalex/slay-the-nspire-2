@@ -92,6 +92,8 @@ static void tap(HitKind kind,int value){
     auto h=hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);
 }
 static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
+static void fixture_card(){CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();}
+static void fixture_potion(){CHECK(a.detail_item>=WorldRelicKinds&&lab_potion(a.game,(Potion)(a.detail_item-WorldRelicKinds+1)));a.library=false;a.reset_presentation();}
 static void open_model(unsigned model,bool upgraded=false){
     if(!a.library)a.input(Key::Collection);action(UiAction::LibraryCards);
     action(card_colorless(model)?UiAction::FilterColorless:UiAction::FilterAll);
@@ -106,14 +108,14 @@ static void open_potion(Potion potion){
     int index=(int)potion-1;while(a.library_page<index/18)action(UiAction::NextPage);
     tap(HitKind::LibraryItem,index);CHECK(a.detail_item==WorldRelicKinds+index);
 }
-static void acquire_potion(Potion potion){open_potion(potion);action(UiAction::LabPotion);CHECK(!a.library&&a.game.potions[0]==potion);}
+static void acquire_potion(Potion potion){open_potion(potion);fixture_potion();CHECK(!a.library&&a.game.potions[0]==potion);}
 static void drink(){a.input(Key::Potions);CHECK(a.panel==4);a.input(Key::Confirm);if(a.potion_targeting)a.input(Key::Confirm);CHECK(a.panel==0);}
 static void modal_only(){
     a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Battlefield);
 }
 static void acquisitions(){
     for(unsigned kind=0;kind<CardKinds;kind++)if(card_colorless(kind))for(unsigned up=0;up<2;up++){
-        setup();auto before=snapshot();tap(HitKind::Command,(int)Key::Collection);CHECK(a.library);unchanged(before);
+        setup();auto before=snapshot();a.input(Key::Collection);CHECK(a.library);unchanged(before);
         open_model(kind,up!=0);modal_only();unchanged(before);int id=a.game.card_count,deck=a.game.deck_count;
         if(real_profile){
             auto portrait=a.content.image(a.content.card_image(kind));CHECK(portrait.pixels&&portrait.w==82&&portrait.h==60);
@@ -121,22 +123,34 @@ static void acquisitions(){
             CHECK(*text&&!std::strchr(text,'{')&&!std::strchr(text,'}'));
         }
         if(kind==Discovery)capture(up?"discovery-upgrade":"discovery-base");
-        action(UiAction::LabCard);CHECK(!a.library&&a.detail_card<0);CHECK(a.game.card_count==id+1&&a.game.deck_count==deck);
+        fixture_card();CHECK(!a.library&&a.detail_card<0);CHECK(a.game.card_count==id+1&&a.game.deck_count==deck);
         CHECK(a.game.hand.count==1&&a.game.hand.ids[0]==id&&a.game.cards[id].kind==kind&&a.game.cards[id].upgraded==up);
-        CHECK(a.game.zones[id]==Zone::Hand);CHECK(std::strstr(a.notice,"手牌"));CHECK(validate(a.game));++card_acquisitions;
+        CHECK(a.game.zones[id]==Zone::Hand);CHECK(validate(a.game));++card_acquisitions;
     }
     CHECK(card_acquisitions==106);
     for(unsigned id=1;id<=PotionKinds;id++){
         setup();auto before=snapshot();open_potion((Potion)id);modal_only();unchanged(before);
         if(real_profile)CHECK(a.content.image(a.content.potion_image((Potion)id)).pixels);
         if((Potion)id==Potion::ColorlessPotion)capture("colorless-potion-detail");
-        action(UiAction::LabPotion);CHECK(!a.library&&a.detail_item<0&&a.game.potions[0]==(Potion)id&&a.game.potions[1]==Potion::Empty);
+        fixture_potion();CHECK(!a.library&&a.detail_item<0&&a.game.potions[0]==(Potion)id&&a.game.potions[1]==Potion::Empty);
         CHECK(validate(a.game));++potion_acquisitions;
     }
     CHECK(potion_acquisitions==64);
     setup(false);CHECK(exists(HitKind::Command,(int)Key::Map));CHECK(!exists(HitKind::Command,(int)Key::Collection));
 }
 static void acquisition_guards(){
+    setup();open_model(Discovery);auto locked=snapshot();
+#if SPIRE_DEBUG_COMMANDS
+    action(UiAction::LabCard);CHECK(!a.library&&a.detail_card<0);
+#else
+    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));a.ui_action(UiAction::LabCard);a.input(Key::EndTurn);unchanged(locked);
+#endif
+    setup();open_potion(Potion::ColorlessPotion);locked=snapshot();
+#if SPIRE_DEBUG_COMMANDS
+    action(UiAction::LabPotion);CHECK(!a.library&&a.detail_item<0);
+#else
+    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(locked);
+#endif
     for(int mode=0;mode<5;mode++){
         setup(mode!=0);open_model(Discovery);
         if(mode==1)a.title=true;if(mode==2)a.paused=true;if(mode==3)a.help=true;if(mode==4)a.panel=1;
@@ -146,13 +160,24 @@ static void acquisition_guards(){
         CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(before);
     }
     setup();for(int i=0;i<MaxHand;i++)append({Strike,0},Zone::Hand);
-    open_model(Discovery);int id=a.game.card_count;action(UiAction::LabCard);
-    CHECK(a.game.hand.count==MaxHand&&a.game.zones[id]==Zone::Discard);CHECK(std::strstr(a.notice,"弃牌堆"));CHECK(validate(a.game));
+    open_model(Discovery);int id=a.game.card_count;fixture_card();
+    CHECK(a.game.hand.count==MaxHand&&a.game.zones[id]==Zone::Discard);CHECK(validate(a.game));
     setup();while(a.game.card_count<MaxCards)append({Strike,0},Zone::Discard);
-    open_model(Discovery);auto before=snapshot();CHECK(!hit(HitKind::UiAction,(int)UiAction::LabCard).enabled);
-    action(UiAction::LabCard);a.input(Key::EndTurn);unchanged(before);
+    open_model(Discovery);auto before=snapshot();CHECK(!lab_card(a.game,{Discovery,0}));
+#if SPIRE_DEBUG_COMMANDS
+    CHECK(!hit(HitKind::UiAction,(int)UiAction::LabCard).enabled);action(UiAction::LabCard);
+#else
+    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));a.ui_action(UiAction::LabCard);
+#endif
+    a.input(Key::EndTurn);unchanged(before);
     setup();a.game.potions[0]=Potion::Block;a.game.potions[1]=Potion::Fire;open_potion(Potion::ColorlessPotion);before=snapshot();
-    CHECK(!hit(HitKind::UiAction,(int)UiAction::LabPotion).enabled);action(UiAction::LabPotion);a.input(Key::EndTurn);unchanged(before);
+    CHECK(!lab_potion(a.game,Potion::ColorlessPotion));
+#if SPIRE_DEBUG_COMMANDS
+    CHECK(!hit(HitKind::UiAction,(int)UiAction::LabPotion).enabled);action(UiAction::LabPotion);
+#else
+    CHECK(!exists(HitKind::UiAction,(int)UiAction::LabPotion));a.ui_action(UiAction::LabPotion);
+#endif
+    a.input(Key::EndTurn);unchanged(before);
     setup();acquire_potion(Potion::ColorlessPotion);drink();CHECK(a.game.phase==Phase::ExtendedChoice);
     a.input(Key::Collection);open_model(Discovery);before=snapshot();CHECK(!exists(HitKind::UiAction,(int)UiAction::LabCard));
     a.ui_action(UiAction::LabCard);a.input(Key::EndTurn);unchanged(before);
@@ -178,7 +203,7 @@ static void offers(){
         a.input(Key::Collection);a.pointer_button(false);CHECK(a.library&&a.choice_selected_count==0);unchanged(before);a.input(Key::Back);
         a.cursor=1;a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1);
     }
-    setup();open_model(Discovery);action(UiAction::LabCard);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.playing>=0);
+    setup();open_model(Discovery);fixture_card();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExtendedChoice&&a.game.playing>=0);
     auto before=snapshot();tap(HitKind::CombatChoice,a.game.expansion.choices.ids[2]);unchanged(before);action(UiAction::ConfirmChoice);
     CHECK(a.game.phase==Phase::Combat&&a.game.hand.count==1&&a.game.expansion.cards_finished==1);CHECK(validate(a.game));
 }
@@ -244,7 +269,7 @@ static void statuses(){
         CHECK(!a.library&&a.status_actor==0);unchanged(before);
         a.input(Key::Back);CHECK(a.status_actor<0);unchanged(before);
     }
-    setup();open_model(TheBomb);action(UiAction::LabCard);a.input(Key::Confirm);CHECK(status_amount(a.game,0,43)==1);
+    setup();open_model(TheBomb);fixture_card();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(status_amount(a.game,0,43)==1);
     auto before=snapshot();a.input(Key::Statuses);a.render();unchanged(before);a.input(Key::Back);
 }
 static void shop_and_rewards(){

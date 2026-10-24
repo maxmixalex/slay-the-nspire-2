@@ -18,6 +18,9 @@
 #include "feedback_assets.hpp"
 #include "card_face_layout.hpp"
 #include "fitted_text.hpp"
+#if SPIRE_DEBUG_COMMANDS
+#include "debug_commands.hpp"
+#endif
 namespace spire {
 #include "world_enemy_assets.inc"
 #include "character_ui.inc"
@@ -38,6 +41,9 @@ static void world_region_image_key(const State&s,char*out,size_t size){
 #include "world_map_motion.inc"
 static bool ui_ancient_event(OriginalEventId);
 #include "app_input.inc"
+#if SPIRE_DEBUG_COMMANDS
+#include "debug_ui.inc"
+#endif
 #include "reward_presentation.inc"
 static const char* card_type_label(CardType type,const Content*content=nullptr){
     const char*keys[]={"CARD_TYPE.ATTACK","CARD_TYPE.SKILL","CARD_TYPE.POWER","CARD_TYPE.STATUS","CARD_TYPE.CURSE","CARD_TYPE.QUEST"};
@@ -215,7 +221,11 @@ static void detail_screen(Canvas&c){
     int lines=c.paragraph(description,123,66,177,0);a.detail_scroll=mn(a.detail_scroll,mx(0,lines-8));
     c.paragraph(description,123,66,177,8,a.detail_scroll);
     c.text(card_type_label((CardType)type,&a.content),124,48,10,Muted);
+#if SPIRE_DEBUG_COMMANDS
     const bool lab=a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
+#else
+    const bool lab=false;
+#endif
     const bool upgrade_preview=card.upgraded||card_upgradeable(card);
     if(lab){
         c.button("返回",11,205,67,false,25);c.hit(9,202,72,31,HitKind::DetailClose);
@@ -241,6 +251,9 @@ static void detail_screen(Canvas&c){
 
 void App::render(){
     begin_card_face_frame();
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open){Canvas c{*this};debug_screen(c);pointer_overlay(c);return;}
+#endif
     sync_reward_presentation();
     sync_map_window();
     if(!character_select)character_select_presentation.observe(false,0,-1,map_clock_ms);

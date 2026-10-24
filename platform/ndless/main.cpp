@@ -261,7 +261,11 @@ extern "C" int main(int argc,char**argv){
     while(pressed(0x10,2)){} // Release ENTER used to open the document.
     Touchpad pad{};pad.init();spire::TouchpadCursor pad_cursor;
     clock.last=timer_ticks();uint32_t input_clock=0;
-    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail,spire::Key::ReferenceMap,spire::Key::Collection,spire::Key::Statuses};
+    const spire::Key keys[]={spire::Key::Left,spire::Key::Right,spire::Key::Up,spire::Key::Down,spire::Key::Confirm,spire::Key::Back,spire::Key::EndTurn,spire::Key::Inspect,spire::Key::Save,spire::Key::Load,spire::Key::Log,spire::Key::Map,spire::Key::Potions,spire::Key::Relics,spire::Key::Detail,spire::Key::ReferenceMap,spire::Key::Collection,spire::Key::Statuses,spire::Key::DrawPile,spire::Key::DiscardPile,spire::Key::ExhaustPile
+#if SPIRE_DEBUG_COMMANDS
+    ,spire::Key::Debug
+#endif
+    };
     uint32_t previous=0xffff;unsigned repeat[4]={};bool input_ready=false;unsigned quiet_ms=0;
     uint32_t first_start=performance.enabled?timer_ticks():0;
     app.render();uint32_t first_present=performance.enabled?timer_ticks():0;blit(app.pixels);
@@ -299,8 +303,8 @@ extern "C" int main(int argc,char**argv){
         if(pressed(0x1C,0x10))p|=1u<<3; // 2
         if(pressed(0x10,2)||pressed(0x1A,0x40))p|=1u<<4; // ENTER / 5
         if(pressed(0x1C,0x80))p|=1u<<5; // ESC
-        if(pressed(0x10,0x10))p|=1u<<6; // SPACE
-        if(pressed(0x1C,0x200))p|=1u<<7; // TAB
+        if(pressed(0x10,0x10)||pressed(0x18,2))p|=1u<<6; // SPACE / E
+        if(pressed(0x1C,0x200)||pressed(0x14,2))p|=1u<<7; // TAB / Q
         if(pressed(0x12,0x40))p|=1u<<8; // S
         if(pressed(0x14,0x10))p|=1u<<9; // O
         if(pressed(0x16,1))p|=1u<<10; // L
@@ -308,9 +312,14 @@ extern "C" int main(int argc,char**argv){
         if(pressed(0x14,4))p|=1u<<12; // P
         if(pressed(0x14,1))p|=1u<<13; // R: relic collection
         if(pressed(0x16,0x10))p|=1u<<14; // I: inspect selected card
-        if(pressed(0x16,0x40))p|=1u<<15; // G: reference map preview
+#if SPIRE_DEBUG_COMMANDS
+        if(pressed(0x16,0x40))p|=1u<<21; // G: developer command menu
+#endif
         if(pressed(0x18,0x10))p|=1u<<16; // C: compendium
         if(pressed(0x12,4))p|=1u<<17; // V: powers and statuses
+        if(pressed(0x18,0x40))p|=1u<<18; // A: draw pile
+        if(pressed(0x18,4))p|=1u<<19; // D: discard pile
+        if(pressed(0x18,1))p|=1u<<20; // F: exhaust pile
         if(!input_ready){
             // The document launcher may leave ENTER or the pad held. Require a
             // stable release so opening the program cannot also start a run.

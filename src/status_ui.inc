@@ -8,8 +8,9 @@ static void status_strip(Canvas&c,int actor,int x,int y,int width){
     // Measure actual amounts, including negative and three-digit stacks.
     int widths[StatusKinds],rows=1,used=0;
     for(int i=0;i<count;i++){
-        char amount[16]{};TextBuffer number{amount,sizeof amount,0,&c.a.content};number.number(c.a.combat_status_amount(actor,ids[i],true));
-        widths[i]=c.a.combat_status_counter(actor,ids[i])?mx(18,11+c.width(amount,8)):14;
+        widths[i]=14;if(c.a.combat_status_counter(actor,ids[i])){
+            char amount[16]{};TextBuffer number{amount,sizeof amount,0};number.number(c.a.combat_status_amount(actor,ids[i],true));
+            widths[i]=mx(18,11+c.width(amount,8));}
         if(used&&used+widths[i]>width){++rows;used=0;}used+=widths[i];
     }
     // Grow toward the actors when extra rows would enter the resting hand.

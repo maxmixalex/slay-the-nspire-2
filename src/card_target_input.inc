@@ -9,7 +9,7 @@ bool App::card_target_input(Key key){
         int index=-1;for(unsigned i=0;i<game.hand.count;++i)if(game.hand.ids[i]==keyboard_card){index=int(i);break;}
         if(index<0){keyboard_card=-1;return false;}
         cursor=index;
-        if(key==Key::Back){keyboard_card=-1;hand_focus=true;return true;}
+        if(key==Key::Back){sync_combat_cards();keyboard_card=-1;hand_focus=true;return true;}
         if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
             if(card_targets_enemy(game,game.cards[keyboard_card],keyboard_card)){
                 const int direction=key==Key::Left||key==Key::Up?-1:1;
@@ -17,12 +17,14 @@ bool App::card_target_input(Key key){
                     if(game.enemies[next].hp>0){target=next;break;}}
             }return true;
         }
-        if(key==Key::Confirm){keyboard_card=-1;return false;}
+        // Preserve the selected pose until begin_combat_feedback captures it.
+        if(key==Key::Confirm)return false;
         keyboard_card=-1;return false;
     }
     if(key!=Key::Confirm||cursor<0||cursor>=game.hand.count)return false;
     const int instance=game.hand.ids[cursor];
     if(!can_play_card(game,instance)){message("资源不足，或尚未满足出牌条件");return true;}
+    sync_combat_cards();
     keyboard_card=instance;keyboard_card_revision=game.revision;
     // NControllerCardPlay keeps the last valid target, falling back to the
     // first hittable creature. Looking/selection never advances game state.

@@ -1,31 +1,51 @@
 # Work state — 2026-10-24
 
-## UI6 source checkpoint — implementation in progress
+## UI6 functional stage — awaiting complete validation
 
-Continuing the user's original-UI-first feedback with three parallel scopes:
-card/HUD/pile interaction, combat presentation and enemy formations, and rooms/
-map/rewards. Root integrates pinned v23 assets, close/back controls, persistent
-preferences, production cleanup and compile-time debug commands. Private inputs
-were recovered and the pinned DLL/PCK hashes verified; source reference remains
-v0.111.0 / 41cef1ea. This checkpoint preserves real implementation before long
-conversion/build work. It is **not accepted or validated**, and main remains at
-the previously accepted UI5 revision until the complete story is verified.
+The first source checkpoint `d982baf323695bb35b76af99e650e988f6bbb24d`
+(tree `47363c08c98369b206def6cccfe97ebb94d8af7b`) was uploaded blob by
+blob, compared to the local tree, and its work-branch ref read back. Main still
+contains the previously accepted UI5 runtime. No current test result is inferred
+from the historical UI5 acceptance below.
 
-Implemented source so far includes original controller card targeting, deck and
-pile layouts/sorting, hover text and long-description tips, original arrow/cursor
-asset integration, stable original encounter slots, separate damage/expired-power
-VFX, block entrance motion, reward delay separated from corpse disappearance,
-map legend/focus/fade corrections, merchant/rest layout and card-removal motion.
-The new private-resource converter appends original UI images while retaining
-historical payloads, indices and selected Chinese glyph ordering. Settings now
-have a bounded separate eight-byte preference codec and platform persistence.
-Boot progress illustration is removed; actual resource preparation remains bounded.
+The implementation now includes original deck/pile sorting and locale title
+ranks, targeting/cursor/top-bar assets and interactions, keyboard target selection,
+automatic long-description/potion tips, stable named encounter formations,
+separate damage and expired-status VFX, block entrance motion, reward waiting
+separated from corpse fade, map legend/focus/fade fixes, merchant/rest/reward
+layout, card removal, correct close/navigation/confirmation textures, persistent
+settings, removal of the loading illustration and old production practice/map
+entry points, and default-off developer commands on browser/Linux/calculator.
 
-Next: verify v23 resource generation, finish flag-gated debug commands and remove
-remaining legacy production entry points, then checkpoint before native/WASM/ARM
-builds and dual-language flow validation. UI5 results below are historical and
-must not be represented as validation of this work-in-progress tree.
+The merchant orientation audit found an actual converter defect: packed Spine
+atlas regions were unrotated in the wrong direction. The fix follows the official
+4.2 MeshAttachment UV mapping and has a four-rotation asymmetric fixture. A
+private v23 correction replaces affected existing merchant image entries without
+changing clip geometry/timing or their public IDs. It excludes direct-PNG candle
+clips and skips unchanged decoded frames. Historical shared retained groups stay
+intact; the receipt measures any now-unreferenced old payload. Other historical
+animation resources have not all been rebaked and must not be called corrected.
 
+Post-feature optimization reuses the existing small-card pool for the original
+merchant dimensions, reuses same-frame dynamic hand descriptions in tooltips,
+caches presentation-only pile order, bounds expired VFX work and avoids repeated
+status glyph lookup. These are implemented changes; their performance magnitude
+is not accepted until the quiet comparison runs finish.
+
+Initial UI6 resource conversion failed on an atlas resource path (the original
+X lives in compressed.sprites). The path is now corrected, all requested paths
+were checked, and the failed journal remains recorded. The locale-sort generator
+needed a sandbox-approved .NET process; it produced numeric-only ranks, while
+its journal correctly recorded concurrent/expected source changes. Neither run
+is being presented as final immutable validation.
+
+Next: checkpoint this complete source stage and use its immutable archive for
+v23 UI extension, merchant correction, all native/debug regressions, WASM/ARM,
+dual-language original-resource UI flows and ordinary Firebird execution. Then
+measure cold/warm rendering and report remaining limits. See
+[combat UI](combat-ui6-0.17.md), [rooms](rooms-ui6-0.17.md), and
+[developer commands](debug-commands-0.17.md). Private inputs and outputs stay
+outside public Git; no original shaders/textures/DLLs/ROMs/screenshots are added.
 
 ## UI5 accepted delivery: original controls, combat feedback and measured cold-read reductions
 

@@ -193,14 +193,36 @@ static void reticle_pixels(){
     // Set the test clock before reset_presentation binds combat_linger_until.
     // Rewinding only animation afterwards would draw a stale combat screen.
     app.animation=4000;start();finish_routing_fixture();app.fast_mode=false;app.pointer.visible=false;app.map_directional=false;app.reset_map_reticles();
-    app.render();std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
     WorldMapLayout layout;CHECK(world_map_layout(app.game,layout));const auto view=world_map_view(app.game,layout,app.map_scroll);
     app.map_directional=true;app.sync_map_reticles();const unsigned selected=app.map_reticle_current;CHECK(selected<reference::MaxPoints);
     CHECK(world_current_map(app.game)->points[selected].type!=reference::PointType::Boss&&world_current_map(app.game)->points[selected].type!=reference::PointType::Start);
+    // Directional focus also enlarges the actual map icon. Isolate the
+    // reticle oracle from that independent, now correctly mouse-only pulse.
+    app.map_reticles[selected].mode=0;app.render();std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+    app.map_reticles[selected].mode=1;
     reticle_pixel_oracle(expected,layout.points[selected].x,layout.points[selected].y+view.origin,84,84,.22,255);
     app.render();for(unsigned i=0;i<expected.size();++i)CHECK(app.pixels[i]==expected[i]);
     // Full-frame comparison covers texture colors, four mirror directions,
     // transparent/half-alpha texels, shadow order and the map clipping region.
+}
+static uint32_t node_pixels(int x,int y){
+ uint32_t hash=2166136261u;for(int yy=y-17;yy<=y+17;++yy)for(int xx=x-17;xx<=x+17;++xx)
+  if(xx>=0&&xx<320&&yy>=WorldMapTop&&yy<240)hash=(hash^app.pixels[yy*320+xx])*16777619u;
+ return hash;
+}
+static void mouse_frontier_pulses(){
+ start();finish_routing_fixture();app.map_directional=false;app.pointer.visible=false;app.reset_map_reticles();app.render();snapshot();
+ uint8_t ids[reference::Columns];CHECK(world_available_points(app.game,ids,reference::Columns));
+ const auto*m=world_current_map(app.game);app.cursor=m->points[ids[0]].col;
+ WorldMapLayout layout;CHECK(world_map_layout(app.game,layout));const auto view=app.map_view(layout);
+ const int x=layout.points[ids[0]].x,y=layout.points[ids[0]].y+view.origin;
+ const uint32_t old_animation=app.animation,base=(old_animation+1570)/1571*1571;app.animation=base;app.render();const auto first=node_pixels(x,y);
+ app.animation=base+12;app.render();CHECK(node_pixels(x,y)!=first&&app.map_reticle_current==reference::NoPoint);unchanged();
+ // A real hover keeps that same first route enlarged, independent of the
+ // selectable pulse clock; moving away immediately restores the pulse.
+ app.pointer_move(x,y);app.animation=base;app.render();const auto focused=node_pixels(x,y);
+ app.animation=base+12;app.render();CHECK(node_pixels(x,y)==focused);unchanged();
+ app.pointer_move(0,0);app.pointer.visible=false;app.animation=base;app.render();CHECK(node_pixels(x,y)==first);unchanged();app.animation=old_animation;
 }
 static double map_expo(unsigned elapsed,unsigned duration){return elapsed>=duration?1:1.001*(1-std::pow(2.0,-10.0*elapsed/duration));}
 static void map_visual_timing(){
@@ -351,11 +373,12 @@ static void circle_pixels(){
 static void layout_and_input(){
     start();CHECK(app.game.world.visited_rooms[0][app.game.world.current_point]==unsigned(WorldRoom::Event));
     app.input(Key::Map);CHECK(app.panel==3);snapshot();app.render();CHECK(!world_hits());capture("map-neow-inspection");
-    const auto*legend_toggle=find_hit(HitKind::UiAction,int(UiAction::ToggleMapLegend));const auto*map_close=find_hit(HitKind::Close,0);
-    CHECK(legend_toggle&&map_close&&legend_toggle->x+legend_toggle->w<=map_close->x);
-    const auto*target=app.hit_at(legend_toggle->x+legend_toggle->w/2,legend_toggle->y+legend_toggle->h/2);
-    CHECK(target&&target->kind==HitKind::UiAction&&target->value==int(UiAction::ToggleMapLegend));
-    app.input(Key::Detail);CHECK(app.map_legend);app.render();CHECK(!world_hits()&&!find_hit(HitKind::Close,0));app.input(Key::Back);CHECK(!app.map_legend&&app.panel==3&&!app.paused);
+    CHECK(!find_hit(HitKind::UiAction,int(UiAction::ToggleMapLegend))&&find_hit(HitKind::Close,0));
+    for(unsigned i=0;i<6;++i)CHECK(find_hit(HitKind::UiAction,int(UiAction::MapLegendUnknown)+int(i)));
+    const auto*legend=find_hit(HitKind::UiAction,int(UiAction::MapLegendTreasure));CHECK(legend);
+    app.pointer_move(legend->x+legend->w/2,legend->y+legend->h/2);app.render();CHECK(app.map_legend&&app.map_legend_item==2);unchanged();
+    app.pointer_move(0,0);app.render();CHECK(!app.map_legend);unchanged();
+    app.input(Key::Detail);CHECK(app.map_legend);app.render();CHECK(!world_hits()&&find_hit(HitKind::Close,0));app.input(Key::Back);CHECK(!app.map_legend&&app.panel==3&&!app.paused);
     app.input(Key::Back);CHECK(!app.panel);unchanged();finish_routing_fixture();snapshot();
     WorldMapLayout a,b;CHECK(world_map_layout(app.game,a));CHECK(world_map_layout(app.game,b));
     const auto&m=*world_current_map(app.game);unsigned regular=0;
@@ -374,7 +397,7 @@ static void layout_and_input(){
     // A press begun on a real map node cannot turn into a room entry after a
     // modal opens. The ordinary release path must discard the stale gesture.
     app.render();const auto*h=find_hit(HitKind::WorldNode,ids[0]);CHECK(h);const int x=h->x+h->w/2,y=h->y+h->h/2;
-    app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.map_legend=true;app.pointer_button(false);CHECK(world_can_travel(app.game)&&!app.pointer.held);app.map_legend=false;
+    app.pointer_move(x,y);app.pointer_button(true);CHECK(app.pointer.held);app.input(Key::Detail);app.pointer_button(false);CHECK(world_can_travel(app.game)&&!app.pointer.held);app.input(Key::Back);
     for(int i=0;i<40;++i){app.input(Key::Up);app.render();}const auto top=world_map_view(app.game,a,app.map_scroll);CHECK(top.origin==top.maximum);CHECK(!world_hits());capture("map-boss-distant");
     app.input(Key::Confirm);CHECK(world_can_travel(app.game)&&app.map_scroll==0);
     app.advance(67);app.render();CHECK(world_hits()==n);unchanged();
@@ -423,6 +446,6 @@ static void boss_cycles_and_regions(){
 int main(int argc,char**argv){
     actual_profile=argc>1;
     std::vector<uint8_t>pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);CHECK(!std::fseek(f,0,SEEK_END));const long size=std::ftell(f);CHECK(size>0&&size<=MaxContentFile);CHECK(!std::fseek(f,0,SEEK_SET));pack.resize(size);CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());CHECK(!std::fclose(f));}else pack=synthetic_profile();
-    if(argc>2)screenshots=argv[2];CHECK(app.init(pack.data(),pack.size(),{}));reticle_timing();reticle_pixels();map_visual_timing();circle_pixels();layout_and_input();boss_cycles_and_regions();
+    if(argc>2)screenshots=argv[2];CHECK(app.init(pack.data(),pack.size(),{}));reticle_timing();reticle_pixels();mouse_frontier_pulses();map_visual_timing();circle_pixels();layout_and_input();boss_cycles_and_regions();
     std::printf("world map UI: %u checks passed; %s profile\n",checks,argc>1?"actual":"synthetic");
 }

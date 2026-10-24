@@ -43,7 +43,15 @@ inline const EncounterPositions* encounter_positions(EncounterId encounter){
  static constexpr EncounterPositions layouts[]={
 #include "combat_encounter_positions.inc"
  };
- for(const auto&layout:layouts)if(layout.encounter==encounter)return &layout;return nullptr;
+ unsigned low=0,high=sizeof layouts/sizeof layouts[0];
+ while(low<high){const unsigned middle=(low+high)/2;if(unsigned(layouts[middle].encounter)<unsigned(encounter))low=middle+1;else high=middle;}
+ return low<sizeof layouts/sizeof layouts[0]&&layouts[low].encounter==encounter?&layouts[low]:nullptr;
+}
+inline int combat_player_x(const State&s){
+ // KaiserCrabBoss.FullyCenterPlayers; the original local Necrobinder then
+ // moves 150 source pixels left to leave Osty's place beside her.
+ if(s.enemy_world.active&&s.enemy_world.encounter==EncounterId::KaiserCrabBoss)return s.character==Character::Necrobinder?141:160;
+ return 60;
 }
 inline CreaturePose enemy_pose(const State&s,int index){
  if(index<0||index>=s.enemy_count||!s.enemy_world.active)return enemy_pose(s.enemy_count,index);

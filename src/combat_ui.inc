@@ -6,6 +6,9 @@ struct HandTile {
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0;
+    uint32_t sampled_frame=0,sampled_revision=0;
+    int sampled_instance=-1,sampled_deck=-1,sampled_target=-1;
+    const CombatCardMotion::Sprite*sampled_visual=nullptr;
     int energy=0,stars=0,portrait=-1,frame=-1;
     char description[512]{};
     uint16_t pixels[HandTileW*HandTileH]{};
@@ -22,20 +25,28 @@ static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t i
 }
 static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::Sprite* visual=nullptr,int deck=-1){
     auto&a=c.a;Card card=visual?visual->card:a.game.cards[instance];
+    ++hand_tile_clock;
+    // A selected face is requested again by its automatic full-description
+    // tip in the same frame. Reuse the already resolved instance sample;
+    // target/revision/card identity guard input arriving between frames.
+    for(auto&t:hand_tiles)if(t.valid&&t.owner==&a.content&&t.sampled_frame==small_card_frame&&
+        t.sampled_revision==a.game.revision&&t.sampled_instance==instance&&t.sampled_deck==deck&&
+        t.sampled_target==a.target&&t.sampled_visual==visual&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded){t.used=hand_tile_clock;return t;}
+    auto stamp=[&](HandTile&t){t.sampled_frame=small_card_frame;t.sampled_revision=a.game.revision;t.sampled_instance=instance;t.sampled_deck=deck;t.sampled_target=a.target;t.sampled_visual=visual;};
     int energy=visual?visual->energy:cost(a.game,instance),stars=visual?visual->stars:card_star_cost(a.game,card,instance);
     bool playable=visual||can_play_card(a.game,instance);
     char description[512]{};a.card_description(card,card_targets_enemy(a.game,card)?a.target:-1,description,sizeof description,instance,deck);
     int portrait=a.card_face_image(card,instance,deck),frame=a.card_face_frame(card,instance,deck);
-    ++hand_tile_clock;HandTile*slot=nullptr;
+    HandTile*slot=nullptr;
     // A holder index changes when a neighbour leaves the hand. Reuse the
     // visual key across hand, play and flight instead of repainting every
     // shifted slot, while keeping the same ten 80 x 112 cache allocations.
     for(auto&t:hand_tiles){
         if(t.valid&&t.owner==&a.content&&t.card.kind==card.kind&&t.card.upgraded==card.upgraded&&t.energy==energy&&t.stars==stars&&
-           t.playable==playable&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;return t;}
+           t.playable==playable&&t.portrait==portrait&&t.frame==frame&&same_text(t.description,description)){t.used=hand_tile_clock;stamp(t);return t;}
         if(!slot||(!t.valid&&slot->valid)||(t.valid==slot->valid&&int32_t(t.used-slot->used)<0))slot=&t;
     }
-    auto&t=*slot;t.used=hand_tile_clock;
+    auto&t=*slot;t.used=hand_tile_clock;stamp(t);
     t.owner=&a.content;t.card=card;t.energy=energy;t.stars=stars;t.playable=playable;t.portrait=portrait;t.frame=frame;
     for(unsigned i=0;i<sizeof description;i++)t.description[i]=description[i];
     for(int i=0;i<HandTileW*HandTileH;i++){t.pixels[i]=0;t.alpha[i]=0;}
@@ -87,12 +98,12 @@ static void combat_pile(Canvas&c,int image,int count,int x,int y,int tab){
     c.hit(x-3,y-3,29,28,HitKind::OpenPile,tab);
 }
 static void combat_actors(Canvas&c){
-    auto&a=c.a;const auto&s=a.game;c.actor(0,60,124);
+    auto&a=c.a;const auto&s=a.game;const int player_x=combat_player_x(s);c.actor(0,player_x,124);
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){const auto&m=a.osty_motion;const auto clip=a.content.clip(m.clip);const unsigned elapsed=(a.animation-m.start)*33;
-        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,112,123,elapsed,true,false);
-        else if(a.combat_health(MaxEnemies+1).hp>0)c.clip(AnimOstyIdle,112,123,a.animation*33);
-        else c.ui(U_OstyPortrait,103,109,18,18,100);
+        if(m.clip>=0&&elapsed<(unsigned)clip.count*clip.frame_ms)c.clip(m.clip,player_x+52,123,elapsed,true,false);
+        else if(a.combat_health(MaxEnemies+1).hp>0)c.clip(AnimOstyIdle,player_x+52,123,a.animation*33);
+        else c.ui(U_OstyPortrait,player_x+43,109,18,18,100);
     }
     int shared=-1;bool shared_action=false;
     for(int i=0;i<s.enemy_count;i++){
@@ -211,9 +222,9 @@ static void combat_resource_tooltip(Canvas&c,bool stars){
 static void combat_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;c.picture(a.combat_background(),0,22,320,218);
     c.hit(0,44,320,140,HitKind::Battlefield);
-    combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],29,129,62);
+    const int player_x=combat_player_x(s);combat_actors(c);c.hp(a.combat_health(0),a.health_bars[0],player_x-31,129,62);
     if(s.expansion.orb_slots){
-        const int count=s.expansion.orb_slots,left=mx(3,60-count*7);
+        const int count=s.expansion.orb_slots,left=mx(3,player_x-count*7);
         for(int i=0;i<count;i++){
             int x=left+(count-1-i)*14;
             if(i<s.expansion.orb_count)c.ui(orb_image(s.defect.orb_kind[i]),x,46,13,13);
@@ -223,10 +234,10 @@ static void combat_screen(Canvas&c){
     }
     const bool pet=s.character==Character::Necrobinder||s.expansion.osty_max_hp>0;
     if(pet){
-        c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],99,131,34);c.action(96,107,40,41,UiAction::ShowOsty);
+        c.hp(a.combat_health(MaxEnemies+1),a.health_bars[MaxEnemies+1],player_x+39,131,34);c.action(player_x+36,107,40,41,UiAction::ShowOsty);
     }
     const bool stars=combat_stars_visible(a);
-    status_strip(c,0,24,149,96);
+    status_strip(c,0,player_x-36,149,96);
     for(int i=0;i<s.enemy_count;i++){
         const auto&e=s.enemies[i];const auto pos=enemy_pose(s,i);int x=pos.x;
         if(a.combat_health(i+1).hp<=0){if(!s.enemy_world.active)c.centered("已击败",x-32,105,64,10,Muted);continue;}
@@ -250,7 +261,7 @@ static void combat_screen(Canvas&c){
     const auto hand=a.combat_hand();
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
-    const int held_card=a.keyboard_card>=0?a.keyboard_card:a.pointer.armed_card;
+    const int held_card=a.selected_hand_card();
     if(ui_cards_bound(a))a.combat_cards.set_focus(focused&&hand.count?hand.ids[selected]:-1);
     // At rest every card remains on the arc. Focus is earned by hover or keys,
     // not by the cursor index merely existing. The battlefield stays visible.
@@ -283,13 +294,17 @@ static void combat_screen(Canvas&c){
         // A stable bottom selection rail prevents the raised preview from
         // stealing its neighbours when the pointer crosses from card to card.
         for(int i=0;i<hand.count;i++){
+            if(hand.ids[i]==held_card)continue;
             if(!a.combat_hand_settled(unsigned(i),focused&&i==selected))continue;
             auto r=hand_rail(hand.count,i);
             c.hit(r.x,r.y,r.w,r.h,HitKind::Hand,hand.ids[i],!a.combat_actions_locked()&&can_play_card(s,hand.ids[i]));
         }
     }else c.centered("没有手牌",80,197,160,12,Muted);
-    if(held_card>=0&&held_card<s.card_count&&s.zones[held_card]==Zone::Hand)
-        draw_hand_tile(c,hand_tile(c,held_card),{160,198,768,0,1024},false);
+    if(held_card>=0)for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==held_card){
+        const auto pose=a.combat_hand_pose(i,false);draw_hand_tile(c,hand_tile(c,held_card),pose,false);
+        const int width=HandTileW*pose.scale/1024,height=HandTileH*pose.scale/1024;
+        c.hit(pose.cx-width/2,pose.cy-height/2,width,height,HitKind::Hand,held_card,!a.combat_actions_locked());break;
+    }
     if(ui_cards_bound(a))for(const auto&v:a.combat_cards.sprites){
         if(v.mode==CombatCardMotion::Empty||v.mode==CombatCardMotion::Hand||v.id>=s.card_count)continue;
         draw_hand_tile(c,hand_tile(c,v.id,&v),CombatCardMotion::pose(v),false,a.combat_cards.brightness(v));

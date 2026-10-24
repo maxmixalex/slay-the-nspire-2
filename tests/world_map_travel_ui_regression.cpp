@@ -366,6 +366,23 @@ static void free_travel_commits_once(){
     for(unsigned i=0;i<4;++i)app.update_map_travel();advance_ms(900);
     CHECK(world_relic_counter(app.game,WorldRelicWingedBoots)==2);same_state(expected);
 }
+static void preparation_preserves_room_fade(bool fast){
+    fresh(fast);const unsigned destination=first_point();make_oracle(destination);keyboard_begin(destination);
+    advance_ms(fast?600:1100);CHECK(app.game.phase==Phase::Combat&&app.map_travel.fading_in);same_state(expected);
+    app.sync_combat_preparation();auto&preparation=app.combat_preparation;
+    // Hold the public decoder before its first displayed frame. This models
+    // a slow host resource callback without inventing canonical combat work.
+    preparation.active=true;preparation.shown=false;
+    const uint32_t animation=app.animation;
+    for(unsigned i=0;i<4;++i){app.advance(250);CHECK(preparation.active&&app.animation==animation);
+        CHECK(app.map_travel.fade_start==app.map_clock_ms&&app.map_transition_alpha(100)==255);same_state(expected);}
+    app.pointer.visible=false;app.render();CHECK(preparation.shown);
+    for(uint16_t pixel:app.pixels)CHECK(pixel==0); // no synthetic loading art/text
+    app.advance(33);CHECK(!preparation.active&&app.map_travel.fade_start==app.map_clock_ms);
+    app.render();CHECK(app.map_transition_alpha(100)==255);same_state(expected);
+    advance_ms(100);CHECK(app.map_travel.fading_in&&app.map_transition_alpha(100)>0&&app.map_transition_alpha(100)<255);
+    advance_ms(fast?200:700);CHECK(!app.map_travel.fading_in&&!app.map_transition_alpha(100));same_state(expected);
+}
 static void entry_observer_survives_reset(){
     fresh();new_map(reference::ActKind::Underdocks);
     // A supported member of this actual region's boss pool supplies an
@@ -421,6 +438,6 @@ int main(){
     invalid_and_scrolled_input();persistence_during_travel();lifecycle_cancellation();stale_source_guards();
     pending_hud_pointer_remains_available();pending_exit_confirmation();pending_compendium_quit_cancels_immediately();
     fast_rest_can_immediately_start_pointer_travel();fade_in_input_channels(false);fade_in_input_channels(true);
-    free_travel_commits_once();entry_observer_survives_reset();entry_damage_initializes_new_enemy_feedback();
+    free_travel_commits_once();entry_observer_survives_reset();entry_damage_initializes_new_enemy_feedback();preparation_preserves_room_fade(false);preparation_preserves_room_fade(true);
     std::printf("map travel UI: %u checks passed; synthetic current profile; canonical save/RNG oracle\n",checks);
 }

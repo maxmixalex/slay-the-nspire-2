@@ -3,7 +3,7 @@ struct TopBarMotion {
     const Content*owner=nullptr;uint32_t generation=0,start=0;
     int from_angle=0,from_scale=4096;uint8_t state=0;
     int angle=0,scale=4096;
-    void observe(const App&a,unsigned next,bool opened){
+    void observe(const App&a,unsigned next,bool opened,unsigned kind){
         if(owner!=&a.content||generation!=a.content.generation()){
             *this={};owner=&a.content;generation=a.content.generation();start=a.map_clock_ms;
         }
@@ -12,15 +12,19 @@ struct TopBarMotion {
         if(state==1){
             scale=4506;int q=4096;
             if(elapsed<500){const int u=int(elapsed*4096/500)-4096;q=4096+(u*u/4096)*((11066*u/4096)+6970)/4096;}
-            angle=from_angle+(-12000-from_angle)*q/4096;
+            const int to=kind==2?-180000:-12000;angle=from_angle+(to-from_angle)*q/4096;
         }else if(state==2){
-            scale=4506;const int q=4096-int(health_bar::expo_out(mn(1000,int(elapsed)*4)));
-            angle=from_angle+24000*(4096-q)/4096;
+            scale=4506;const int inverse=4096-mn(4096,int(elapsed)*4096/250),q=4096-(inverse*inverse/4096)*inverse/4096;
+            angle=from_angle+(kind==2?45000:24000)*q/4096;
         }else{
             const int q=elapsed>=1000?4096:int(health_bar::expo_out(elapsed));
-            scale=from_scale+(4096-from_scale)*q/4096;angle=from_angle*(4096-q)/4096;
+            scale=from_scale+(4096-from_scale)*q/4096;
+            const int elastic=elapsed>=1000?4096:4096+(4096-q)*CombatCardMotion::sine(int(elapsed)*40960/3000-1024)/1024;
+            angle=from_angle*(4096-elastic)/4096;
         }
-        if(opened&&state!=2)angle=CombatCardMotion::sine(int((a.map_clock_ms%6283)*4096/1571))*6875/1024;
+        if(opened&&state==0)scale=4096;
+        if(opened&&state!=2&&kind==1)angle=CombatCardMotion::sine(int((a.map_clock_ms%6283)*4096/1571))*6875/1024;
+        if(opened&&state!=2&&kind==2)angle=int(a.map_clock_ms%6283)*360000/6283;
     }
 };
 static TopBarMotion top_bar_motions[3];
@@ -29,7 +33,7 @@ static bool hud_pointer_inside(const App&a,int x,int width){return a.pointer.vis
 static void hud_navigation(Canvas&c,int index,int asset,int cx,int hit_x,int hit_width,Key key,bool enabled,bool opened){
     auto&a=c.a;const bool hover=enabled&&hud_pointer_inside(a,hit_x,hit_width);
     const bool press=hover&&a.pointer.held&&a.pointer.captured.kind==HitKind::Command&&a.pointer.captured.value==int(key);
-    auto&motion=top_bar_motions[index];motion.observe(a,press?2:hover?1:0,opened);
+    auto&motion=top_bar_motions[index];motion.observe(a,press?2:hover?1:0,opened,unsigned(index));
     const int size=18*motion.scale/4096,phase=motion.angle*4096/360000;
     Canvas layer=c;if(!enabled)layer.opacity=150;else if(press)layer.brightness=128;
     ui_picture_transform(layer,a.content.ui_image(asset),cx,11,size,size,CombatCardMotion::sine(phase),CombatCardMotion::sine(phase+1024));
@@ -40,6 +44,10 @@ static void hud_static_tip(Canvas&c,const char*key,int x,int y=27,int width=145)
     title_name.text(key);title_name.text(".title");body_name.text(key);body_name.text(".description");
     const auto*title=c.a.content.world_string("static_hover_tips",title_key);const auto*body=c.a.content.world_string("static_hover_tips",body_key);
     if(!*title&&!*body)return;
+    const char*hotkey=wt_equal(key,"DECK")?"Q":wt_equal(key,"MAP")?"M":wt_equal(key,"DRAW_PILE")?"A":wt_equal(key,"DISCARD_PILE")?"D":wt_equal(key,"EXHAUST_PILE")?"F":"None";
+    char formatted_title[128];UiTextContext context{&c.a,hotkey};
+    LocalizedTemplate format_title(formatted_title,sizeof formatted_title,ui_text_value,&context);
+    format_title.format(title);if(!format_title.truncated())title=formatted_title;
     const int lines=c.paragraph(body,0,0,width-16,0,0,10),height=mn(210-y,30+mn(lines,12)*13);
     x=mx(4,mn(316-width,x));
     if(!c.nine_ui(U_HoverTip,x,y,width,height,7,7,7,7)){c.rect(x,y,width,height,Panel);c.box(x,y,width,height,Gold);}
@@ -91,9 +99,11 @@ static void hud(Canvas&c){
     }
     if(slots>3){c.text("›",171,5,10,Gold);c.hit(170,0,11,22,HitKind::PotionPage,1);}
     c.ui(U_TopFloor,183,3,13,16);b[0]=0;t.n=0;t.number(s.floor);c.text_fitted(b,198,5,17,8,Gold);c.hit(182,0,34,22,HitKind::HudInfo,2);
-    if(s.practice)c.text_fitted("图鉴",217,5,31,10,Gold,8,true);
-    else hud_navigation(c,0,U_TopMap,233,216,33,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
-    if(s.practice)c.hit(216,0,33,22,HitKind::Command,(int)Key::Collection);
+#if SPIRE_DEBUG_COMMANDS
+    if(s.practice){c.text_fitted("图鉴",217,5,31,10,Gold,8,true);c.hit(216,0,33,22,HitKind::Command,(int)Key::Collection);}
+    else
+#endif
+    hud_navigation(c,0,U_TopMap,233,216,33,Key::Map,!s.world.active||s.phase!=Phase::Map,c.a.panel==3);
     hud_navigation(c,1,U_TopDeck,266,249,34,Key::Inspect,true,c.a.panel==1&&c.a.pile_tab==0);
     b[0]=0;t.n=0;t.number(s.deck_count);const int count_x=280-c.width(b,8);
     for(int dx=-1;dx<=1;++dx)for(int dy=-1;dy<=1;++dy)if(dx||dy)c.text(b,count_x+dx,12+dy,8,Ink);

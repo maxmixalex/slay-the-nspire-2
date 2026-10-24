@@ -5,7 +5,7 @@ static void pile_screen(Canvas&c){
     auto&a=c.a;auto&s=a.game;HitRegion top[16]{};unsigned top_count=0;
     for(int i=0;i<a.hit_count&&top_count<16;++i){const auto&h=a.hits[i];if(h.y==0&&h.h<=22)top[top_count++]=h;}
     a.hit_count=0;
-    c.dim(0,22,320,218,192);
+    Canvas backdrop=c;backdrop.opacity=192;backdrop.rect(0,22,320,218,0);
     for(unsigned i=0;i<top_count;++i){const auto&h=top[i];c.hit(h.x,h.y,h.w,h.h,h.kind,h.value,h.enabled);}
     const bool deck=a.pile_tab==0;
     if(deck){

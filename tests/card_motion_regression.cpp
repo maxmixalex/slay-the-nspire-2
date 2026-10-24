@@ -106,7 +106,18 @@ static void skipped_frames_and_bounds(){
  hand(1);serial.begin(state,0);serial.apply(transfer(0,Zone::Hand,Zone::Discard));serial.set_hand({});serial.advance(2);
  serial.apply(transfer(0,Zone::Discard,Zone::Draw));CHECK(!serial.find(0));
 }
+static void generated_preview(){
+ hand(0);CombatCardMotion m;m.begin(state,0);const auto saved=state;
+ for(unsigned i=0;i<2;++i){auto cue=transfer(i,Zone::Draw,Zone::Discard);cue.from=CombatCardMotion::NewCard;cue.preview=true;cue.card={Slimed,0};m.apply(cue);}
+ m.counts.discard=2;CHECK(m.find(0)&&m.find(1));CHECK(m.find(0)->mode==CombatCardMotion::Preview&&m.find(0)->x<m.find(1)->x);
+ CHECK(m.find(0)->scale==0&&m.visible_counts().discard==0);
+ m.advance(8);CHECK(m.find(0)->scale==640&&m.find(1)->scale==640);
+ m.advance(43);CHECK(m.find(0)->mode==CombatCardMotion::Preview);
+ m.advance(44);CHECK(m.find(0)->mode==CombatCardMotion::Fly&&m.find(1)->mode==CombatCardMotion::Fly);
+ m.advance(172);CHECK(!m.find(0)&&!m.find(1)&&m.visible_counts().discard==2);
+ CHECK(!std::memcmp(&state,&saved,sizeof state));
+}
 int main(){
- CHECK(sizeof(CombatCardMotion)<=6*1024);body_modulation();holder_responses();draw_and_play();discard_curve();skipped_frames_and_bounds();
+ CHECK(sizeof(CombatCardMotion)<=6*1024);body_modulation();holder_responses();draw_and_play();discard_curve();skipped_frames_and_bounds();generated_preview();
  std::printf("card movement: %u checks passed; %zu bytes of bounded metadata\n",checks,sizeof(CombatCardMotion));
 }

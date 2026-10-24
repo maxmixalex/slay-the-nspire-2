@@ -38,15 +38,20 @@ struct CombatStatus {
  struct Popup {uint32_t at=0,identity=0;uint16_t id=0;uint8_t actor=0,buff=0,lane=0,removed=0;};
  static constexpr unsigned DamageCapacity=48;
  struct Damage {uint32_t at=0,identity=0;int32_t amount=0;int16_t vx=0,vy=0;uint8_t actor=0,variation=0;};
- Damage damages[DamageCapacity]{};uint8_t damage_count=0;uint32_t cosmetic=0x48a56b39u;
+ Damage damages[DamageCapacity]{};uint8_t damage_count=0;uint32_t cosmetic=0x48a56b39u,pruned_at=UINT32_MAX;
  Popup popups[PopupCapacity]{};uint8_t popup_count=0;
- uint32_t reward_at=0;bool reward_scheduled=false;
+ uint32_t reward_at=0;bool reward_scheduled=false,had_live_scene=false;
  uint32_t visual_seed=0,star_gain_at=0,star_rotation_mdeg=0,star_tick=0;int visual_floor=-1,visual_combat=-1,visual_encounter=-1;
  StarCounterMotion star_count{};int star_observed=0;bool stars_visible=false,star_zero=true;
- void reset_visuals(){reward_at=0;reward_scheduled=false;popup_count=damage_count=0;cosmetic=0x48a56b39u;visual_floor=visual_combat=visual_encounter=-1;stars_visible=false;star_observed=0;star_gain_at=star_rotation_mdeg=star_tick=0;star_count={};star_zero=true;}
+ void reset_visuals(){reward_at=0;reward_scheduled=had_live_scene=false;popup_count=damage_count=0;cosmetic=0x48a56b39u;pruned_at=UINT32_MAX;visual_floor=visual_combat=visual_encounter=-1;stars_visible=false;star_observed=0;star_gain_at=star_rotation_mdeg=star_tick=0;star_count={};star_zero=true;}
  static uint32_t popup_ticks(const Popup&p){return p.removed?54u:38u;}
- void popup(unsigned actor,unsigned id,bool buff,uint32_t identity,uint32_t at,uint32_t now,bool removed=false){
+ void expire(uint32_t now){
+  if(now==pruned_at)return;pruned_at=now;
   unsigned out=0;for(unsigned i=0;i<popup_count;++i)if(int32_t(now-popups[i].at)<int32_t(popup_ticks(popups[i])))popups[out++]=popups[i];popup_count=uint8_t(out);
+  out=0;for(unsigned i=0;i<damage_count;++i)if(int32_t(now-damages[i].at)*33<2000)damages[out++]=damages[i];damage_count=uint8_t(out);
+ }
+ void popup(unsigned actor,unsigned id,bool buff,uint32_t identity,uint32_t at,uint32_t now,bool removed=false){
+  expire(now);
   for(unsigned i=0;i<popup_count;++i)if(popups[i].actor==actor&&popups[i].id==id&&popups[i].at==at&&bool(popups[i].removed)==removed){popups[i].buff=uint8_t(buff);return;}
   // Three readable rows keep simultaneous powers distinct at calculator
   // scale. A fourth entry waits for a row, without delaying core commands.
@@ -60,7 +65,7 @@ struct CombatStatus {
  }
  unsigned random(){cosmetic^=cosmetic<<13;cosmetic^=cosmetic>>17;cosmetic^=cosmetic<<5;return cosmetic;}
  void damage(unsigned actor,int amount,uint32_t identity,uint32_t at,uint32_t now){
-  unsigned out=0;for(unsigned i=0;i<damage_count;++i)if(int32_t(now-damages[i].at)*33<2000)damages[out++]=damages[i];damage_count=uint8_t(out);
+  expire(now);
   if(damage_count==DamageCapacity){for(unsigned i=1;i<damage_count;++i)damages[i-1]=damages[i];--damage_count;}
   // NDamageNumVfx's chaotic stream never consumes saved combat RNG.
   damages[damage_count++]={at,identity,amount,int16_t(int(random()%201u)-100),int16_t(-800+int(random()%101u)),uint8_t(actor),uint8_t(random()%101u)};

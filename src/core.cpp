@@ -3,6 +3,7 @@
 #include "world_card_factory.hpp"
 #include "original_events.hpp"
 #include "world_run.hpp"
+#include "debug_commands.hpp"
 
 namespace spire {
 #include "card_definitions.inc"
@@ -62,4 +63,7 @@ bool character_description_value(const State&s,Card c,int target,int instance,co
            enemy_description_value(s,c,target,instance,variable,out)||
            enemy_token_description_value(s,c,target,instance,variable,out);
 }
+#if SPIRE_DEBUG_COMMANDS
+#include "debug_core.inc"
+#endif
 } // namespace spire

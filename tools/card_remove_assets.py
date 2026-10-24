@@ -13,7 +13,7 @@ from PIL import Image
 
 from build_content import texture
 from content_tiles import require
-from merchant_effects import sample_texture
+from merchant_effects import sample_texture as sample_points
 from patch_feedback_assets import write_image
 
 FRAME_COUNT = 24
@@ -21,6 +21,10 @@ FRAME_MS = 50
 WIDTH, HEIGHT = 208, 180
 PIVOT = (104, 90)
 CARD_SCALE = 80 / 300
+
+
+def sample_texture(image, uv, repeat):
+    return sample_points(image, uv.reshape(-1, 2), repeat).reshape((*uv.shape[:-1], 4))
 
 
 def smooth(a, b, x):

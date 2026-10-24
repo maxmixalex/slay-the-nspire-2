@@ -155,12 +155,34 @@ static void frontend_settings_screen(Canvas&c){
  native_back(c,7,211,84,28,"返回",true,a.settings_item==back_item);c.action(3,207,94,33,UiAction::SettingsBack);
 }
 static void frontend_confirm_screen(Canvas&c){
- auto&a=c.a;const bool quitting=a.frontend_confirm==3;a.hit_count=0;c.dim(0,0,320,240,210);c.ui(U_RewardPanel,29,43,262,165);
- c.centered(frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",quitting?"退出游戏":"你确定吗？"),41,63,238,16,Gold);
- c.paragraph(frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。"),51,98,218,3,0,12,White);
- native_back(c,39,161,109,31,frontend_text(a,"main_menu_ui","GENERIC_POPUP.cancel","取消"),true,!a.frontend_choice);
- native_confirm(c,172,161,109,31,frontend_text(a,"main_menu_ui","GENERIC_POPUP.confirm","确认"),true,a.frontend_choice);
- c.action(36,151,115,46,UiAction::FrontendCancel);c.action(169,151,115,46,UiAction::FrontendAccept);
+ auto&a=c.a;const bool quitting=a.frontend_confirm==3;a.hit_count=0;c.dim(0,0,320,240,210);
+ const char*header=frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.header":"ABANDON_RUN_CONFIRMATION.header",quitting?"退出游戏":"你确定吗？");
+ const char*body=frontend_text(a,"main_menu_ui",quitting?"QUIT_CONFIRM_POPUP.body":"ABANDON_RUN_CONFIRMATION.body",quitting?"你确定要退出吗？":"放弃游戏会被视为本局失败。");
+ if(a.content.version()>=Ui6ContentVersion){
+  // NGenericPopup instantiates the 522x600 vertical popup and independent
+  // cancel/confirm skins, not the navigation BackButton/ConfirmButton.
+  c.ui(I6_PopupVertical,73,20,174,200);
+  c.text_fitted(header,80,39,160,12,Gold,10,true);
+  const int lines=c.paragraph(body,90,61,140,0,0,10,White);
+  c.paragraph(body,90,61+mx(0,(101-lines*12)/2),140,8,0,10,White);
+  for(int i=0;i<2;++i){const int x=73+i*114,y=169;const bool selected=!a.pointer.visible&&int(a.frontend_choice)==i;
+   const char*label=frontend_text(a,"main_menu_ui",i?"GENERIC_POPUP.confirm":"GENERIC_POPUP.cancel",i?"确认":"取消");
+   const auto visual=c.control_visual(label,x,y,60,24,ButtonFamily::Action,selected,true);
+   const int w=60*visual.scale/4096,h=24*visual.scale/4096,left=x+(60-w)/2,top=y+(24-h)/2;
+   Canvas layer=c;layer.brightness=uint8_t(div255(unsigned(c.brightness)*visual.shade));
+   if(visual.hover)layer.picture(a.content.ui_image(i?I6_PopupConfirmOutline:I6_PopupCancelOutline),left,top,w,h,unsigned(visual.hover)*128/4096,presentation::Add);
+   layer.ui(i?I6_PopupConfirm:I6_PopupCancel,left,top,w,h);
+   const int label_x=left+(i?10:5),label_w=w-15;
+   layer.text_fitted(label,label_x+1,top+(h-10)/2,label_w,10,i?rgb(31,71,0):rgb(89,18,0),8,true);
+   layer.text_fitted(label,label_x,top+(h-10)/2-1,label_w,10,White,8,true);
+   c.action(x-3,y-4,66,32,i?UiAction::FrontendAccept:UiAction::FrontendCancel);
+  }
+ }else{
+  c.ui(U_RewardPanel,29,43,262,165);c.centered(header,41,63,238,16,Gold);c.paragraph(body,51,98,218,3,0,12,White);
+  c.button(frontend_text(a,"main_menu_ui","GENERIC_POPUP.cancel","取消"),39,161,109,!a.frontend_choice,31);
+  c.button(frontend_text(a,"main_menu_ui","GENERIC_POPUP.confirm","确认"),172,161,109,a.frontend_choice,31);
+  c.action(36,151,115,46,UiAction::FrontendCancel);c.action(169,151,115,46,UiAction::FrontendAccept);
+ }
 }
 static void character_screen(Canvas&c){
     auto&a=c.a;a.hit_count=0;
@@ -294,7 +316,11 @@ static void item_detail_screen(Canvas&c){
     c.paragraph(desc,67,top,188,visible,a.detail_scroll,12,White);
     if(lines>visible){c.text("↑",260,top,10,Gold);c.hit(251,top-2,26,20,HitKind::Scroll,-1,a.detail_scroll>0);
         c.text("↓",260,178,10,Gold);c.hit(251,175,26,21,HitKind::Scroll,1,a.detail_scroll+visible<lines);}
+#if SPIRE_DEBUG_COMMANDS
     const bool lab=!relic&&a.library&&!a.title&&!a.paused&&!a.help&&!a.panel&&a.game.practice&&a.game.phase==Phase::Combat;
+#else
+    const bool lab=false;
+#endif
     if(lab){
         bool room=false;for(unsigned i=0;i<potion_slot_count(a.game);i++)room|=potion_at(a.game,i)==Potion::Empty;
         c.button("返回",57,201,72,false,25);c.action(53,198,80,32,UiAction::Back);

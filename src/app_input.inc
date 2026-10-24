@@ -9,7 +9,7 @@ bool App::init(const uint8_t*p,size_t n,Callbacks cb){invalidate_hand_tiles();re
 bool App::init(ResourceSource source,Callbacks cb){invalidate_hand_tiles();reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_cards.reset();combat_preparation.reset();character_select_presentation.reset();turn_banner.reset();reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};end_turn_glow={};map_travel={};map_visuals.reset();reset_map_window();reset_map_act_intro();callbacks=cb;restore_preferences();if(!content.open(source)||!content.current_profile())return false;refresh_save();return true;}
 void App::message(const char*s){notice=s;notice_ticks=60;}
 void App::animate(int actor,int id,int delay){if(actor<0||actor>MaxEnemies|| (actor&&game.enemy_world.active))return;motion[actor]={id,animation+(uint32_t)mx(0,delay)};}
-void App::reset_presentation(bool keep_map_visuals){reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_cards.reset();combat_preparation.reset();character_select_presentation.reset();turn_banner.reset();turn_banner_seed=0;turn_banner_floor=turn_banner_combat=turn_banner_encounter=-1;turn_banner_number=0;keyword_hover={};reset_map_window();if(!keep_map_visuals){map_travel={};map_visuals.reset();reset_map_act_intro();}else if(map_travel.pending)cancel_map_travel();map_visuals.bind(game,map_clock_ms);reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};end_turn_glow={};for(auto&m:enemy_presentation)m=EnemyPresentation{};for(auto&bar:health_bars)bar.reset();health_bars_active=false;enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;potion_targeting=false;potion_popup_slot=potion_removed_slot=-1;potion_removed=Potion::Empty;potion_page=potion_menu_item=0;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
+void App::reset_presentation(bool keep_map_visuals){++pile_sort_epoch;reward_presentation.reset();combat_feedback.reset();combat_status.reset_visuals();combat_cards.reset();combat_preparation.reset();character_select_presentation.reset();turn_banner.reset();turn_banner_seed=0;turn_banner_floor=turn_banner_combat=turn_banner_encounter=-1;turn_banner_number=0;keyword_hover={};reset_map_window();if(!keep_map_visuals){map_travel={};map_visuals.reset();reset_map_act_intro();}else if(map_travel.pending)cancel_map_travel();map_visuals.bind(game,map_clock_ms);reset_treasure_presentation();reset_map_reticles();for(auto&button:button_motions)button=ButtonMotion{};end_turn_glow={};for(auto&m:enemy_presentation)m=EnemyPresentation{};for(auto&bar:health_bars)bar.reset();health_bars_active=false;enemy_visual_clock=combat_linger_until=animation;shop_open=event_reader=grimoire_select=game_over_summary=false;event_reader_scroll=0;detail_owned=-1;relic_flash_ticks=0;relic_flash_mask=0;seen_relic_revision=game.relic_revision;seen_world_relic_revision=game.world_relics.flash_revision;world_relic_flash=NoWorldRelic;detail_has_facts=false;detail_genetic=detail_scythe=0;map_legend=false;map_legend_item=0;status_actor=-1;status_selected=0;deck_candidate=-1;pointer_cancel();choice_selected_count=0;choice_revision=game.revision;detail_card=detail_item=detail_instance=detail_deck_index=-1;detail_cost_override=-2;reward_cards=false;potion_targeting=false;potion_popup_slot=potion_removed_slot=-1;potion_removed=Potion::Empty;potion_page=potion_menu_item=0;cursor=target=panel=scroll=map_scroll=busy=card_fly=0;osty_motion.clip=-1;last_osty_hp=game.expansion.osty_hp;last_osty_attacks=game.necro.osty_attacks_turn;for(int i=0;i<=MaxEnemies;i++){motion[i].clip=-1;last_hit[i]=hit_start[i]=0;}for(int i=0;i<game.enemy_count;i++)if(game.enemies[i].hp){target=i;break;}}
 void App::sync_character_feedback(){
     int hp=combat_health(MaxEnemies+1).hp,attacks=game.necro.osty_attacks_turn,clip=-1;
     if(combat_phase(game.phase)){
@@ -21,6 +21,9 @@ void App::sync_character_feedback(){
     if(clip>=0)osty_motion={clip,animation};last_osty_hp=hp;last_osty_attacks=attacks;
 }
 void App::advance(uint32_t ms){
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open){map_clock_ms+=ms>250?250:ms;return;}
+#endif
     if(ms>250)ms=250;sync_combat_preparation();map_clock_ms+=ms;
     if(combat_preparation.active){
         // NTransition.RoomFadeIn begins only after the entered room is ready.
@@ -36,7 +39,11 @@ void App::advance(uint32_t ms){
     sync_treasure_presentation();update_map_travel();sync_map_window();
 }
 void App::draw_frame(){render();}
-void App::tick(){if(combat_preparation.active){step_combat_preparation();return;}animation++;sync_map_reticles();if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
+void App::tick(){
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open)return;
+#endif
+    if(combat_preparation.active){step_combat_preparation();return;}animation++;sync_map_reticles();if(relic_flash_ticks>0)--relic_flash_ticks;if(notice_ticks>0)--notice_ticks;if(feedback>0)--feedback;if(busy>0)--busy;if(card_fly>0)--card_fly;}
 #include "card_description.inc"
 static int choice_count(const App&a){
     switch(a.game.phase){case Phase::Map:return a.game.world.active?reference::Columns:3;case Phase::Shop:return ShopLeave+1;case Phase::Event:return a.game.original_events.active?original_event_option_count(a.game):a.game.event_page>=2?1:2;
@@ -48,6 +55,9 @@ static void next_target(App&a){for(int i=1;i<=a.game.enemy_count;i++){int t=(a.t
 #include "card_target_input.inc"
 #include "world_map_input.inc"
 void App::input(Key k){
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_input(k))return;
+#endif
     UiCoreObserver observer(*this);
     sync_combat_preparation();
     if(combat_preparation.active&&!paused&&!frontend_confirm&&k!=Key::Back&&k!=Key::Save&&k!=Key::Load&&k!=Key::Quit)return;
@@ -69,14 +79,18 @@ void App::input(Key k){
     if(status_input(k))return;
     if(reference_input(k))return;
     if(detail_item>=0){
+#if SPIRE_DEBUG_COMMANDS
         if(k==Key::EndTurn&&library&&!title&&!paused&&!help){ui_action(UiAction::LabPotion);return;}
+#endif
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail){detail_item=-1;detail_owned=-1;}
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
         else if(k==Key::Down)++detail_scroll;
         return;
     }
     if(detail_card>=0){
+#if SPIRE_DEBUG_COMMANDS
         if(k==Key::EndTurn&&library&&!title&&!paused&&!help){ui_action(UiAction::LabCard);return;}
+#endif
         if(k==Key::Back||k==Key::Confirm||k==Key::Detail)detail_card=-1;
         else if(k==Key::Up)detail_scroll=mx(0,detail_scroll-1);
         else if(k==Key::Down)++detail_scroll;
@@ -128,6 +142,12 @@ void App::input(Key k){
     if(k==Key::Load){if(load_saved_run())message("已载入");else message("没有有效的存档");return;}
     if(k==Key::Log){panel=panel==2?0:2;scroll=0;return;}
     if(k==Key::Inspect){panel=panel==1&&!pile_tab?0:1;pile_tab=0;scroll=inspect_cursor=0;pile_control_focus=-1;return;}
+    if(k==Key::DrawPile||k==Key::DiscardPile||k==Key::ExhaustPile){
+        if(combat_phase(game.phase)){
+            const int selected=k==Key::DrawPile?1:k==Key::DiscardPile?2:3;
+            panel=panel==1&&pile_tab==selected?0:1;pile_tab=selected;scroll=inspect_cursor=0;pile_control_focus=-1;
+        }return;
+    }
     if(k==Key::Map){
         if(game.practice){message("组合练习没有远征路线");return;}
         if(game.world.active&&game.phase==Phase::Map)return; // MapRoom disables TopBar.Map.
@@ -210,6 +230,7 @@ void App::input(Key k){
         case Phase::Combat:{
             Card card{};if(cursor<game.hand.count)card=game.cards[game.hand.ids[cursor]];
             begin_combat_feedback(cursor>=0&&cursor<game.hand.count?game.hand.ids[cursor]:-1);
+            keyboard_card=-1;pointer.armed_card=-1;
             acted=play(game,cursor,target);
             if(!acted){combat_feedback.reset();message("资源不足，或尚未满足出牌条件");}
             else{animate(0,card.kind==Shiv&&game.character==Character::Silent?AnimSilentShiv:definitions[card.kind].type==CardType::Attack?AnimHeroAttack:AnimHeroCast);

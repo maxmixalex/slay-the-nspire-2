@@ -67,9 +67,10 @@ bool App::map_input(Key key){
     if(!visible)return false;
     if(key==Key::Detail){ui_action(UiAction::ToggleMapLegend);return true;}
     if(map_legend){
-        if(key==Key::Back||key==Key::Confirm){map_legend=false;pointer_cancel();return true;}
-        if(key==Key::Up||key==Key::Left){map_legend_item=uint8_t((map_legend_item+5)%6);return true;}
-        if(key==Key::Down||key==Key::Right){map_legend_item=uint8_t((map_legend_item+1)%6);return true;}
+        if(key==Key::Back||key==Key::Confirm||key==Key::Left){map_legend=false;pointer_cancel();return true;}
+        if(key==Key::Up){map_legend_item=uint8_t((map_legend_item+5)%6);return true;}
+        if(key==Key::Down){map_legend_item=uint8_t((map_legend_item+1)%6);return true;}
+        if(key==Key::Right)return true;
     }else{
         if(key==Key::Up||key==Key::Down){scroll_map(key==Key::Up?1:-1);return true;}
         if(key==Key::Left||key==Key::Right){

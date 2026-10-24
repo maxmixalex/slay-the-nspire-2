@@ -193,7 +193,7 @@ void App::observe_combat_effect(const State&s,Effect effect){
   // AddToCombatAndPreview awaits once for the whole batch. Its 1s Wait is
   // independent of Fast; the .25+1.2s preview and later flight continue.
   const bool in_hand=game.zones[old_card_count]==Zone::Hand;
-  f.effect_at+=in_hand?4u:31u;
+  f.effect_at+=in_hand?4u:31u;enemy_visual_clock=ui_feedback_later(enemy_visual_clock,f.effect_at);
  }
  // Round cumulative command time once, rather than adding rounded waits.
  // Otherwise Fast's 175ms attack +100ms block drifts one 33ms tick later.
@@ -245,6 +245,7 @@ static void ui_feedback_apply(App&a,unsigned actor,const HealthBarValues&value,u
  }
 }
 void App::sync_combat_feedback(){
+ combat_status.expire(animation);
  auto&f=combat_feedback;if(!f.active){sync_combat_cards();return;}
  if(title||!ui_feedback_bound(*this)||game.phase==Phase::Error){f.reset();sync_combat_cards();return;}
  sync_combat_cards();

@@ -1,3 +1,23 @@
+static void removed_card_preview(Canvas&c,const RewardPresentation::RemovedCard&removed){
+ // One bounded visual snapshot is needed after the core compacts the deck.
+ // Rasterize once, then scale its whole face (including labels and costs) as
+ // the original Card node does. Minimum-font layout must not run at 1px size.
+ struct Tile {const Content*owner=nullptr;uint32_t generation=0,start=0;Card card{};int energy=0,stars=0,portrait=-1,frame=-1;CardType type=CardType::Attack;
+  char description[1024]{};uint16_t pixels[96*120]{};uint8_t alpha[96*120]{};};
+ static Tile tile;
+ auto&a=c.a;const int portrait=a.card_face_image(removed.card,-1,-1,&removed.facts),frame=a.card_face_frame(removed.card,-1,-1,&removed.facts);
+ const auto type=a.card_face_type(removed.card,-1,-1,&removed.facts);
+ if(tile.owner!=&a.content||tile.generation!=a.content.generation()||tile.start!=removed.start||tile.card.kind!=removed.card.kind||tile.card.upgraded!=removed.card.upgraded||
+    tile.energy!=removed.energy||tile.stars!=removed.stars||tile.portrait!=portrait||tile.frame!=frame||tile.type!=type||!card_cache_text_equal(tile.description,removed.description)){
+  tile.owner=&a.content;tile.generation=a.content.generation();tile.start=removed.start;tile.card=removed.card;tile.energy=removed.energy;tile.stars=removed.stars;tile.portrait=portrait;tile.frame=frame;tile.type=type;
+  card_cache_text_copy(tile.description,removed.description);
+  for(unsigned i=0;i<96*120;++i){tile.pixels[i]=0;tile.alpha[i]=0;}
+  Canvas face{a,tile.pixels,96,96,120,tile.alpha};
+  draw_card_face(face,removed.card,12,6,80,112,removed.energy,removed.stars,-1,-1,&removed.facts,removed.description);
+ }
+ const unsigned scale=removed.scale(a.map_clock_ms);const int w=int(96*scale/4096),h=int(120*scale/4096);
+ if(w>0&&h>0)c.picture(Picture{reinterpret_cast<const uint8_t*>(tile.pixels),tile.alpha,nullptr,96,120,1},160-int(52*scale/4096),120-int(62*scale/4096),w,h);
+}
 static void reward_pickup_screen(Canvas&c){
  auto&a=c.a;auto&m=a.reward_presentation;
  if(a.title||a.library||a.character_select||a.map_preview.open)return;
@@ -7,9 +27,7 @@ static void reward_pickup_screen(Canvas&c){
   // CardPileCmd.RemoveFromDeck: 250ms CUBIC_OUT preview, 250ms hold,
   // then NCardRemoveVfx; the old card node is freed 400ms later. Capture
   // the old description/facts before deck compaction, never the next slot.
-  if(age<900){const unsigned scale=removed.scale(a.map_clock_ms);const int w=int(80*scale/4096),h=int(112*scale/4096);
-   if(w>0&&h>0)draw_card_face(c,removed.card,160-w/2,120-h/2,w,h,removed.energy,removed.stars,-1,-1,&removed.facts,removed.description);
-  }
+  if(age<900)removed_card_preview(c,removed);
   if(age>=500&&a.content.version()>=Ui6ContentVersion){const unsigned frame=(age-500)/50;
    if(frame<I6_CardRemoveCount)c.ui(I6_CardRemoveStart+int(frame),56,30,208,180);
   }

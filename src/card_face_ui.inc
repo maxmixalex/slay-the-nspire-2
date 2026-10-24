@@ -71,6 +71,7 @@ struct SmallCardFaceCache {
     Card card{};
     int portrait=-1,frame=-1,energy_image=-1,energy=0,stars=0;
     CardType type=CardType::Attack;
+    uint8_t width=0,height=0;
     bool star_visible=false,valid=false;
     char title[128]{},description[512]{};
     uint16_t background[SmallCardCacheW*SmallCardCacheH]{};
@@ -103,7 +104,8 @@ static void begin_card_face_frame(){if(++small_card_frame==0){invalidate_card_fa
 static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr){
     // The 8px energy label has a 1px outline above the energy artwork.
     const int left=x-6,top=y-4;
-    const bool candidate=!description_truncated&&c.a.content.healthy()&&w==47&&h==66&&!c.coverage&&c.opacity==255&&c.brightness==255&&
+    const bool supported_size=(w==47&&h==66)||(w==36&&h==50)||(w==44&&h==62);
+    const bool candidate=!description_truncated&&c.a.content.healthy()&&supported_size&&!c.coverage&&c.opacity==255&&c.brightness==255&&
         c.tint_red==255&&c.tint_green==255&&c.tint_blue==255&&left>=0&&top>=0&&
         left+SmallCardCacheW<=c.clip_w&&top+SmallCardCacheH<=c.clip_h;
     if(!candidate){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description,description_truncated);return;}
@@ -133,7 +135,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
        (star_visible&&!card_cache_label_fits(c,geometry.star,star_count,true,left,top))){
         render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
     SmallCardFaceCache* entry=nullptr;
-    for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&
+    for(auto&slot:small_card_faces)if(slot.valid&&slot.owner==&a.content&&slot.generation==a.content.generation()&&slot.width==w&&slot.height==h&&
         slot.card.kind==card.kind&&slot.card.upgraded==card.upgraded&&slot.portrait==portrait&&slot.frame==frame&&slot.type==type&&
         slot.energy_image==energy_image&&slot.energy==energy&&slot.stars==star_count&&slot.star_visible==star_visible&&
         card_cache_text_equal(slot.title,title)&&card_cache_text_equal(slot.description,description)){
@@ -156,7 +158,7 @@ static void draw_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2
     }
     if(!entry){render_card_face(c,card,x,y,w,h,fee,stars,instance,deck,facts,description);return;}
     entry->valid=false;entry->owner=&a.content;entry->generation=a.content.generation();entry->seen=small_card_frame;
-    entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;
+    entry->card=card;entry->portrait=portrait;entry->frame=frame;entry->type=type;entry->width=uint8_t(w);entry->height=uint8_t(h);
     entry->energy_image=energy_image;entry->energy=energy;entry->stars=star_count;entry->star_visible=star_visible;
     card_cache_text_copy(entry->title,title);card_cache_text_copy(entry->description,description);
     for(int yy=0;yy<SmallCardCacheH;++yy)for(int xx=0;xx<SmallCardCacheW;++xx)

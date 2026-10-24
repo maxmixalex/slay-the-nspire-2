@@ -3,7 +3,8 @@ static bool ui_cards_bound(const App&a){const auto&m=a.combat_cards;const auto&s
 }
 HandPose App::combat_hand_pose(unsigned index,bool focused)const{
  const auto hand=combat_hand();
- return ui_cards_bound(*this)?combat_cards.hand_pose_at(index,focused):hand_pose(hand.count,int(index),focused);
+ if(ui_cards_bound(*this))return combat_cards.hand_pose_at(index,focused);
+ return index<hand.count&&hand.ids[index]==selected_hand_card()?HandPose{160,198,768,0,1024}:hand_pose(hand.count,int(index),focused);
 }
 bool App::combat_hand_settled(unsigned index,bool focused)const{
  return !ui_cards_bound(*this)||combat_cards.settled(index,focused);
@@ -86,6 +87,7 @@ void App::sync_combat_cards(){
  if(!ui_cards_bound(*this)){
   if(!combat_phase(game.phase)){m.reset();return;}m.begin(game,animation);
  }
+ m.set_selected(selected_hand_card());
  ui_sync_card_queues(*this);
  if(!ui_feedback_bound(*this)){
   // Continue, initial preparation and direct fixture/core entry are already

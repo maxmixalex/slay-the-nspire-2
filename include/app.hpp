@@ -127,7 +127,7 @@ inline unsigned ui_reward_actions(const State&s,UiAction*out){
  if(s.necro.grimoire_pending){if(out)out[n]=UiAction::RewardGrimoire;++n;}
  if(out)out[n]=UiAction::LeaveRewards;return n+1;
 }
-enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap,Collection,Statuses };
+enum class Key { Left,Right,Up,Down,Confirm,Back,EndTurn,Inspect,Save,Load,Log,Quit,Map,Potions,Relics,Detail,ReferenceMap,Collection,Statuses,DrawPile,DiscardPile,ExhaustPile,Debug };
 inline bool choice_free_energy(const State&s){
     return s.phase==Phase::ExtendedChoice&&(s.expansion.choice==XChoice::Free||
         (s.expansion.choice_free&&(s.expansion.choice==XChoice::Offer||s.expansion.choice==XChoice::Discard)));
@@ -272,6 +272,7 @@ struct App {
     int library_tab=0,library_page=0,library_selected=0;
     int cursor=0,target=0,menu=0,panel=0,scroll=0,pile_tab=0,notice_ticks=0,feedback=0;
     uint8_t pile_sort_priority[4]{0,1,2,3},pile_sort_descending=0;
+    uint32_t pile_sort_epoch=0;
     bool pile_upgraded=false;
     int pile_control_focus=-1;
     unsigned pile_items(int*out=nullptr)const;
@@ -279,6 +280,7 @@ struct App {
     int keyboard_card=-1;
     uint32_t keyboard_card_revision=0;
     bool card_target_input(Key);
+    int selected_hand_card()const;
     uint8_t potion_menu_item=0,potion_page=0;
     bool potion_targeting=false,potion_removed_discard=false;
     int potion_popup_slot=-1,potion_removed_slot=-1;
@@ -471,6 +473,15 @@ struct App {
     int detail_energy()const;
     int detail_stars()const;
     void message(const char*);
+#if SPIRE_DEBUG_COMMANDS
+    bool debug_open=false,debug_editing=false;
+    int debug_selection=0,debug_variant=0;
+    char debug_line[128]{},debug_reply[256]{};
+    bool debug_command(const char*);
+    bool debug_input(Key);
+    void debug_text(int);
+    void debug_preset();
+#endif
     void animate(int actor,int clip,int delay=0);
     void reset_presentation(bool keep_map_visuals=false);
 };

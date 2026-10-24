@@ -137,4 +137,13 @@ static void star_counter(){
  fixed.value=2*fixed.Scale+fixed.Scale/2;CHECK(fixed.displayed()==2);
  std::printf("star count maximum original-float difference %.6f stars\n",worst);
 }
-int main(){ratios();forecasts();motion(1000);motion(UINT32_MAX-1200);easing();star_counter();std::printf("health bar: %u checks\n",checks);}
+static void block_entry(){
+ HealthBarMotion motion;motion.observe(1,80,80,58,1000);motion.observe_block(0,1000,true);
+ motion.observe_block(12,1033);CHECK(motion.block_entering&&motion.block_alpha(1033)==0&&motion.block_y(1033)==-4);
+ CHECK(motion.block_alpha(1283)>170&&motion.block_alpha(1283)<190);
+ const auto at=motion.block_start_ms;motion.observe_block(20,1333);CHECK(motion.block_start_ms==at);
+ CHECK(motion.block_alpha(1533)==255&&motion.block_y(1533)==0);
+ motion.observe_block(0,1600);CHECK(!motion.block_entering);motion.observe_block(7,1633);CHECK(motion.block_entering&&motion.block_alpha(1633)==0);
+ motion.observe_block(14,1700,true);CHECK(!motion.block_entering&&motion.block_alpha(1700)==255&&motion.block_y(1700)==0);
+}
+int main(){ratios();forecasts();motion(1000);motion(UINT32_MAX-1200);easing();star_counter();block_entry();std::printf("health bar: %u checks\n",checks);}

@@ -3,12 +3,14 @@
 from pathlib import Path
 from types import SimpleNamespace
 import math
+import json
 import sys
 import unittest
 import numpy as np
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from animation import pose, relative_world, clip_mesh, geometry
+from animation import pose, relative_world, clip_mesh, geometry, load_textures
 
 
 def skeleton(values, parents, inherits=None, tracks=(), iks=(), transforms=()):
@@ -27,6 +29,37 @@ UNIT = [0, 0, 0, 1, 1, 0, 0]
 
 
 class AnimationTests(unittest.TestCase):
+    def test_atlas_rotation_restores_spine_uv_orientation_and_trim(self):
+        # Independent asymmetric texel fixtures for the coordinate mapping
+        # in Spine 4.2 MeshAttachment.updateRegion. No game art is bundled.
+        # A 90-degree packed region has atlas(x,y)=(v,1-u): C/F are the
+        # first packed row, A/D the last. Mirroring the actor cannot fix it.
+        packed = {
+            0: [[1, 2, 3], [4, 5, 6]],
+            90: [[3, 6], [2, 5], [1, 4]],
+            180: [[6, 5, 4], [3, 2, 1]],
+            270: [[4, 1], [5, 2], [6, 3]],
+        }
+        for degrees, labels in packed.items():
+            with self.subTest(degrees=degrees):
+                pixels = np.zeros((8, 9, 4), dtype=np.uint8)
+                block = np.asarray(labels, dtype=np.uint8)
+                h, w = block.shape
+                pixels[2:2+h, 3:3+w, 0] = block
+                pixels[2:2+h, 3:3+w, 1] = block * 17
+                pixels[2:2+h, 3:3+w, 3] = 255
+                page = Image.fromarray(pixels)
+                atlas = ('page.png\nsize:9,8\npart\nbounds:3,2,3,2\n'
+                         f'offsets:1,1,6,5\nrotate:{degrees}\n')
+                pack = SimpleNamespace(imported=lambda *_: 'atlas',
+                    read=lambda _: json.dumps({'atlas_data': atlas}).encode())
+                result = load_textures(pack, 'fixture', lambda *_: page)['part']
+                expected = np.zeros((5, 6, 4), dtype=np.uint8)
+                expected[2:4, 1:4, 0] = [[1, 2, 3], [4, 5, 6]]
+                expected[2:4, 1:4, 1] = np.array([[1, 2, 3], [4, 5, 6]]) * 17
+                expected[2:4, 1:4, 3] = 255
+                np.testing.assert_array_equal(result, expected / 255.)
+
     def test_no_rotation_or_reflection_keeps_stretch_and_world_position(self):
         fixtures = [
             ([90, 5, 7, 2, 3, 0, 0], [0, 1, 2, 1, 1, 0, 0],

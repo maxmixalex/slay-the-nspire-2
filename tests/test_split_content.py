@@ -35,7 +35,7 @@ def fixture(language, version=17):
 
 class SplitContentTest(unittest.TestCase):
     def test_lossless_known_versions(self):
-        for version in (17,18,19,20,21,22):
+        for version in (17,18,19,20,21,22,23):
             original={lang:fixture(lang,version) for lang in ("eng","zhs")}
             common,locales,receipt=split.split(original)
             self.assertEqual(receipt["common"]["artwork_bytes"],40)

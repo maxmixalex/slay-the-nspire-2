@@ -49,14 +49,15 @@ static void pointer_overlay(Canvas&c){
     }
     auto&p=a.pointer;bool targeting=false;
     const bool modal=a.title||a.paused||a.settings_open||a.frontend_confirm||a.help||a.library||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||a.map_transition_blocks_pointer();
-    int armed=a.keyboard_card>=0?a.keyboard_card:p.armed_card;
-    if(armed<0&&p.held&&p.dragging&&p.captured.kind==HitKind::Hand)armed=p.captured.value;
+    const int armed=a.selected_hand_card();
     if(!modal&&armed>=0&&armed<a.game.card_count&&a.game.zones[armed]==Zone::Hand&&a.game.phase==Phase::Combat&&card_targets_enemy(a.game,a.game.cards[armed],armed)){
         const bool controller=a.keyboard_card>=0;
         int x=p.x,y=p.y;bool enemy=false;
         if(controller&&a.target>=0&&a.target<a.game.enemy_count&&a.game.enemies[a.target].hp>0){const auto pose=enemy_pose(a.game,a.target);x=pose.x;y=pose.feet-35;enemy=true;}
         else if(const auto*h=a.hit_at(x,y))enemy=h->enabled&&(h->kind==HitKind::Enemy||h->kind==HitKind::EnemyIntent);
-        targeting_arrow(c,160,198,x,y,controller,enemy);targeting=true;
+        HandPose origin{160,198,768,0,1024};const auto hand=a.combat_hand();
+        for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==armed){origin=a.combat_hand_pose(i,false);break;}
+        targeting_arrow(c,origin.cx,origin.cy,x,y,controller,enemy);targeting=true;
     }else if(!modal&&a.panel==4&&a.potion_targeting){
         const bool controller=!p.visible;int x=p.x,y=p.y;bool enemy=false;
         if(controller&&a.game.phase==Phase::Combat&&a.target>=0&&a.target<a.game.enemy_count){const auto pose=enemy_pose(a.game,a.target);x=pose.x;y=pose.feet-35;enemy=true;}

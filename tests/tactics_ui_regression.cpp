@@ -21,7 +21,7 @@ static void setup(){
  a.reset_presentation();a.title=a.library=a.paused=a.help=false;a.callbacks={save_cb,load_cb};CHECK(validate(s));
 }
 static void return_choice(){
- setup();a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();
+ setup();a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ReturnChoice&&a.game.hand.count==0);auto before=snapshot();
  a.render();for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Hand&&a.hits[i].kind!=HitKind::Enemy);
  action(UiAction::NextChoicePage);action(UiAction::NextChoicePage);CHECK(a.cursor==20);unchanged(before);
  CHECK(click(HitKind::CombatChoice,22));CHECK(a.choice_selected_count==1&&a.choice_selected[0]==22);unchanged(before);

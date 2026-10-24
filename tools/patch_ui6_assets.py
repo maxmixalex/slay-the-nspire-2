@@ -28,7 +28,7 @@ from world_scene_assets import load_scene_texture
 VERSION, BASE_AUX, AUXILIARY, CLIPS = 23, 1275, 1320, 1705
 TEXTS = ((8105, 'vfx.POWER_WEARS_OFF'),)
 SPECS = (
-    ('close-x', 'images/atlases/ui_atlas.sprites/back_button_x.tres', (20, 20)),
+    ('close-x', 'images/atlases/compressed.sprites/back_button_x.tres', (20, 20)),
     ('target-head', 'images/ui/combat/targeting_arrow_head.png', (36, 40)),
     ('target-segment', 'images/ui/combat/targeting_arrow_segment.png', (32, 32)),
 ) + tuple(('cursor-' + name, 'images/packed/common_ui/cursor_' + name + '.png', (16, 16))

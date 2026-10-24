@@ -32,7 +32,7 @@ struct CombatCardMotion {
  Counts counts{},observed_counts{};
  uint8_t zones[MaxCards]{};
  uint32_t seed=0,clock=0,cosmetic=0x906b1a4du,manual_started=0,manual_min_end=0,wait_at=0;
- int floor=-1,combat=-1,encounter=-1,focus=-1,manual=-1;
+ int floor=-1,combat=-1,encounter=-1,focus=-1,selected=-1,manual=-1;
  int16_t manual_energy=0,manual_stars=0;
  uint16_t card_count=0;
  uint8_t head=0,count=0,count_head=0,count_count=0,wait_excess=0;
@@ -72,7 +72,7 @@ struct CombatCardMotion {
  }
  void reset(){
   active=overflow=count_overflow=false;head=count=count_head=count_count=0;
-  focus=manual=-1;hand.count=0;for(auto&s:sprites)s.mode=Empty;
+  focus=selected=manual=-1;hand.count=0;for(auto&s:sprites)s.mode=Empty;
  }
  Sprite* find(unsigned id){for(auto&s:sprites)if(s.mode!=Empty&&s.id==id)return &s;return nullptr;}
  const Sprite* find(unsigned id)const{for(const auto&s:sprites)if(s.mode!=Empty&&s.id==id)return &s;return nullptr;}
@@ -110,10 +110,17 @@ struct CombatCardMotion {
  }
  void set_focus(int id){
   if(focus==id)return;focus=id;if(id<0)return;
+  if(id==selected)return;
   for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==id){auto*v=find(unsigned(id));if(!v)return;
    // RefreshLayout snaps the focused holder's Y, angle and scale, while X
    // continues to approach its target through AnimPosition.
    const auto p=hand_pose(hand.count,int(i),true);v->y=p.cy*1024;v->scale=int16_t(p.scale);v->angle=0;return;}
+ }
+ void set_selected(int id){selected=id;}
+ HandPose hand_target(unsigned index,bool focused)const{
+  // NCardPlay.CenterCard changes holder targets, retaining its interpolated
+  // position. Playing midway through selection continues from that pose.
+  return index<hand.count&&int(hand.ids[index])==selected?HandPose{160,198,768,0,1024}:hand_pose(hand.count,int(index),focused);
  }
  static unsigned cubic(unsigned elapsed,unsigned duration){
   if(elapsed>=duration)return 1024;const unsigned rest=(duration-elapsed)*1024/duration;return 1024-rest*rest/1024*rest/1024;
@@ -124,12 +131,12 @@ struct CombatCardMotion {
  HandPose hand_pose_at(unsigned index,bool focused)const{
   if(index>=hand.count)return hand_pose(1,0,focused);
   const auto*v=find(hand.ids[index]);if(!v||v->mode!=Hand)return hand_pose(hand.count,int(index),focused);
-  const auto p=hand_pose(hand.count,int(index),focused);
+  const auto p=hand_target(index,focused);
   if(magnitude(v->x-p.cx*1024)<256&&magnitude(v->y-p.cy*1024)<256&&magnitude(v->scale-p.scale)<2&&magnitude(angle_delta(v->angle,direction(p.sine,p.cosine)))<2)return p;
   return pose(*v);
  }
  bool settled(unsigned index,bool focused)const{
-  if(index>=hand.count)return true;const auto p=hand_pose_at(index,focused),target=hand_pose(hand.count,int(index),focused);
+  if(index>=hand.count)return true;const auto p=hand_pose_at(index,focused),target=hand_target(index,focused);
   return magnitude(p.cx-target.cx)<=1&&magnitude(p.cy-target.cy)<=1&&magnitude(p.scale-target.scale)<=2&&magnitude(p.sine-target.sine)<=3;
  }
  void fly(Sprite&v,uint8_t to,uint32_t at){
@@ -158,7 +165,7 @@ struct CombatCardMotion {
   for(auto&v:sprites){
    if(v.mode==Hand){
     int index=-1;for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==v.id){index=int(i);break;}if(index<0){v.mode=Empty;continue;}
-    const auto p=hand_pose(hand.count,index,int(v.id)==focus);
+    const auto p=hand_target(unsigned(index),int(v.id)==focus);
     const int dx=p.cx*1024-v.x,dy=p.cy*1024-v.y,ds=p.scale-v.scale,da=angle_delta(v.angle,direction(p.sine,p.cosine));
     v.x=magnitude(dx)<256?p.cx*1024:v.x+dx*231/1000;v.y=magnitude(dy)<256?p.cy*1024:v.y+dy*231/1000;
     v.scale=int16_t(magnitude(ds)<=3?p.scale:v.scale+ds*264/1000);v.angle=int16_t(magnitude(da)<=3?direction(p.sine,p.cosine):v.angle+da*330/1000);

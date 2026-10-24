@@ -140,9 +140,9 @@ void App::sync_enemy_feedback(){
  // event/rest/shop must not reconstruct those old corpses as a new battle.
  if(!game.enemy_world.active||(game.world.active&&!combat_phase(game.phase)&&!ui_feedback_bound(*this)&&!world_room_is_combat(game)&&!pending_reward)){
   for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;enemy_visual_encounter=-1;return;}
- bool died_now=false;
  if(enemy_visual_seed!=game.seed||enemy_visual_floor!=game.floor||enemy_visual_combat!=game.world.combat_count||enemy_visual_encounter!=int(game.enemy_world.encounter)){
   for(auto&m:enemy_presentation)m=EnemyPresentation{};enemy_visual_clock=combat_linger_until=animation;
+  combat_status.reward_at=0;combat_status.reward_scheduled=combat_status.had_live_scene=false;
   enemy_visual_seed=game.seed;enemy_visual_floor=game.floor;enemy_visual_combat=game.world.combat_count;enemy_visual_encounter=int(game.enemy_world.encounter);
  }
  for(int i=0;i<game.enemy_count;i++){auto&m=enemy_presentation[i];const auto&source=game.enemy_world.models[i];
@@ -153,29 +153,28 @@ void App::sync_enemy_feedback(){
    ui_enemy_set_state(*this,i,initial,m.facts,animation);if(m.dead)enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");
    ui_enemy_removal(*this,i,m.dead);
   }else{
-   int hp=combat_health(i+1).hp;if(hp<=0&&m.hp>0){died_now=true;m.dead=true;enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");}
+   int hp=combat_health(i+1).hp;if(hp<=0&&m.hp>0){m.dead=true;enemy_trigger(i,source.kind==EnemyId::TestSubject&&(source.flags&EnemyDown)?"DeadTrigger":"Dead");}
    else if(hp>0&&m.hp<=0){m.dead=false;enemy_trigger(i,"Revive");}
    m.hp=hp;
   }
   ui_enemy_advance(*this,i);
   ui_enemy_removal(*this,i);
  }
- if(died_now&&!combat_phase(game.phase)&&game.phase!=Phase::Dead&&!combat_status.reward_scheduled){
-  bool living=false;for(int i=0;i<game.enemy_count;++i)living|=combat_health(i+1).hp>0;
-  if(!living){
-   // NCombatUi.ShowRewards: Normal waits current death track +1s. Fast
-   // waits .5s in ordinary rooms, half the remaining track for a boss.
-   // The later corpse dissolve never gates the reward window.
-   const uint32_t at=ui_feedback_bound(*this)?ui_feedback_later(animation,combat_feedback.end_at):animation;
-   uint32_t remaining=0;for(int i=0;i<game.enemy_count;++i){const auto&m=enemy_presentation[i];if(!m.dead)continue;
-    uint32_t end=m.until;if(m.clip<0&&(game.enemy_world.models[i].kind==EnemyId::Rocket||game.enemy_world.models[i].kind==EnemyId::Crusher))end=animation+76u;
-    if(int32_t(end-at)>int32_t(remaining))remaining=end-at;
-   }
-   const auto*encounter=encounter_definition(game.enemy_world.encounter);const bool boss=encounter&&encounter->type==EncounterClass::Boss;
-   const unsigned wait=fast_mode?(boss?(remaining+1u)/2u:16u):remaining+31u;
-   combat_status.reward_scheduled=true;combat_status.reward_at=at+wait;
-   combat_linger_until=ui_feedback_later(combat_linger_until,combat_status.reward_at);
+ bool living=false;for(int i=0;i<game.enemy_count;++i)living|=combat_health(i+1).hp>0;
+ if(living)combat_status.had_live_scene=true;
+ if(!living&&combat_status.had_live_scene&&!combat_phase(game.phase)&&game.phase!=Phase::Dead&&!combat_status.reward_scheduled){
+  // NCombatUi.ShowRewards: Normal waits current death track +1s. Fast
+  // waits .5s in ordinary rooms, half the remaining track for a boss.
+  // The later corpse dissolve never gates the reward window.
+  const uint32_t at=ui_feedback_bound(*this)?ui_feedback_later(animation,combat_feedback.end_at):animation;
+  uint32_t remaining=0;for(int i=0;i<game.enemy_count;++i){const auto&m=enemy_presentation[i];if(!m.dead)continue;
+   uint32_t end=m.until;if(m.clip<0&&(game.enemy_world.models[i].kind==EnemyId::Rocket||game.enemy_world.models[i].kind==EnemyId::Crusher))end=animation+76u;
+   if(int32_t(end-at)>int32_t(remaining))remaining=end-at;
   }
+  const auto*encounter=encounter_definition(game.enemy_world.encounter);const bool boss=encounter&&encounter->type==EncounterClass::Boss;
+  const unsigned wait=fast_mode?(boss?(remaining+1u)/2u:16u):remaining+31u;
+  combat_status.reward_scheduled=true;combat_status.reward_at=at+wait;
+  combat_linger_until=ui_feedback_later(combat_linger_until,combat_status.reward_at);
  }
 }
 void App::observe_core(const State&s,Log log){

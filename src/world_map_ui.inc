@@ -72,7 +72,7 @@ static void map_normal_node(Canvas&c,const reference::ReferenceMap&m,unsigned id
     const auto visible=world_map_visible_type(s,id);int image=world_point_image(type);
     if(visited&&type==reference::PointType::Unknown&&visible!=type)image=map_named_picture(c.a.content,"UNKNOWN_",map_normal_key(visible));
     const bool highlighted=c.a.map_legend&&type==map_legend_type(c.a.map_legend_item);
-    const int pulse=allowed&&!focused&&!c.a.map_legend?24+map_sin(int((c.a.animation*33u%1571u)*360u/1571u))*5/1024:20;
+    const int pulse=allowed&&!focused&&!highlighted?24+map_sin(int((c.a.animation*33u%1571u)*360u/1571u))*5/1024:20;
     const int size=focused||highlighted?29:pulse;const uint16_t outline=focused?rgb(255,255,255):colors.paper;
     map_picture(c,map_named_picture(c.a.content,"OUTLINE_",map_normal_key(visible)),x,y,size,size,MapShader::Tint,outline,0,focused?191:255,angle);
     map_picture(c,image,x,y,size,size,MapShader::Normal,0,colors.paper,visited||allowed||highlighted?255:128,angle);

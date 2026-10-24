@@ -419,7 +419,11 @@ def load_textures(pack,name,texture):
     for key,r in regions.items():
         x,y,w,h=map(int,r['bounds'].split(','));rot=int(r.get('rotate','0'))
         im=pages[r['page']].crop((x,y,x+(h if rot in (90,270) else w),y+(w if rot in (90,270) else h)))
-        if rot:im=im.rotate(rot,expand=True)
+        # Spine's atlas degrees describe the packed UV rotation. Unpacking
+        # needs the inverse: MeshAttachment.updateRegion maps a 90-degree
+        # region's (u, v) to (v, 1-u), in image coordinates. PIL's positive
+        # angles are counterclockwise; using +rot turns these parts twice.
+        if rot:im=im.rotate(-rot,expand=True)
         ox,oy,ow,oh=map(int,r.get('offsets',f'0,0,{w},{h}').split(','));full=Image.new('RGBA',(ow,oh));full.paste(im,(ox,oh-oy-h));out[key]=np.asarray(full,dtype=float)/255
     return out
 

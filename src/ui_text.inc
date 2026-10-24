@@ -20,9 +20,8 @@ static LocalizedValue ui_text_value(const void* opaque,const char* name){
 const char* App::ui_text(const char* source,char* buffer,size_t capacity)const{
     const char* raw=content.ui_text(source);
     if(!buffer||!capacity)return raw;
-    // Inspect is Tab on both real hosts. The exhaust pile is opened through
-    // the pile UI and has no independent keyboard action; None deliberately
-    // selects the original optional-hint branch instead of inventing a key.
+    // Ordinary UI labels keep a key-free title; hud_static_tip formats each
+    // native hover title with its actual per-control binding.
     const char* hotkey="None";
     if(wt_equal(source,"牌组")||wt_equal(raw,content.ui_text("牌组")))hotkey="Tab";
     UiTextContext context{this,hotkey};

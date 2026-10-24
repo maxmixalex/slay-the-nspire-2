@@ -52,7 +52,8 @@ static void wait_choice_ready(){
     for(unsigned frame=0;!a.combat_choice_ready()&&frame<1800;++frame){a.advance(33);a.render();}
     CHECK(a.combat_choice_ready());
 }
-static void action(UiAction action){if(action==UiAction::LabCard)wait_action_ready();tap(HitKind::UiAction,(int)action);}
+static void action(UiAction action){tap(HitKind::UiAction,(int)action);}
+static void fixture_card(){wait_action_ready();CHECK(a.detail_card>=0&&lab_card(a.game,card_from_token(a.detail_card)));a.library=false;a.reset_presentation();}
 static SaveData snapshot(){SaveData s{};CHECK(validate(a.game));CHECK(save(a.game,s));return s;}
 static void unchanged(const SaveData&before){auto after=snapshot();CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void capture(const char*name){
@@ -61,26 +62,21 @@ static void capture(const char*name){
     for(int y=0;y<240;y++){for(int x=0;x<320;x++){uint16_t p=a.pixels[y*320+x];row[x*3]=(uint8_t)(((p>>11)&31)*255/31);row[x*3+1]=(uint8_t)(((p>>5)&63)*255/63);row[x*3+2]=(uint8_t)((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
 static void start(Character character){
-    a.title=true;a.paused=a.help=a.library=a.character_select=a.map_preview.open=false;a.reset_presentation();
+    new_run(a.game,71,true,character);a.title=a.paused=a.help=a.library=a.character_select=a.map_preview.open=a.settings_open=false;
+    a.selected_character=character;a.reset_presentation();
     a.library_tab=a.library_page=a.library_selected=a.library_filter=a.library_sort=0;a.library_upgraded=false;
-    // The native title's save-dependent menu no longer exposes practice as
-    // a fixed row. Enter the retained lab through Settings in either layout.
-    a.menu=a.has_save?2:1;a.input(Key::Confirm);CHECK(a.settings_open&&!a.character_select);
-    action(UiAction::SettingsPractice);CHECK(a.character_select&&a.practice_entry&&!a.settings_open);
-    const UiAction actions[]={UiAction::SelectIronclad,UiAction::SelectSilent,UiAction::SelectDefect,UiAction::SelectRegent,UiAction::SelectNecrobinder};
-    action(actions[(int)character]);CHECK(a.selected_character==character);action(UiAction::StartCharacter);
     CHECK(a.game.character==character&&a.game.phase==Phase::Combat&&a.game.practice);CHECK(validate(a.game));
 }
 static void clear_hand(){auto&s=a.game;while(s.hand.count){unsigned id=s.hand.ids[--s.hand.count];s.discard.ids[s.discard.count++]=(uint16_t)id;s.zones[id]=Zone::Discard;}CHECK(validate(s));}
 static int add(Card card){
     wait_action_ready();if(a.game.hand.count==MaxHand)clear_hand();unsigned id=a.game.card_count;
-    a.library=true;a.open_card_detail(card);action(UiAction::LabCard);
+    a.library=true;a.open_card_detail(card);fixture_card();
     CHECK(!a.library&&a.detail_card<0&&a.game.card_count==id+1);CHECK(a.game.cards[id].kind==card.kind&&a.game.cards[id].upgraded==card.upgraded);
     CHECK(!a.game.effect_count&&a.game.playing<0&&validate(a.game));return (int)id;
 }
 static void play_ui(int id){
     int index=-1;for(int i=0;i<a.game.hand.count;i++)if(a.game.hand.ids[i]==id)index=i;CHECK(index>=0);
-    wait_action_ready();a.cursor=index;a.input(Key::Confirm);a.render();
+    wait_action_ready();a.cursor=index;a.input(Key::Confirm);a.input(Key::Confirm);a.render();
 }
 static int deck_index(CardKind kind){for(int i=0;i<a.game.deck_count;i++)if(a.game.deck[i].kind==kind)return i;CHECK(false);return -1;}
 static int selected_status(){int ids[StatusKinds];int n=collect_statuses(a.game,a.status_actor,ids);CHECK(a.status_selected>=0&&a.status_selected<n);return ids[a.status_selected];}
@@ -100,8 +96,8 @@ static void directory_and_characters(){
     for(unsigned i=0;i<CardKinds;i++)CHECK(ids[i]==i);
     a.library_upgraded=true;a.select_library_item(Debris);CHECK(card_from_token(a.detail_card).kind==Debris&&!card_from_token(a.detail_card).upgraded);
     CHECK(!hit(HitKind::UiAction,(int)UiAction::ToggleCardUpgrade).enabled);auto before=snapshot();a.input(Key::Right);unchanged(before);CHECK(!card_from_token(a.detail_card).upgraded);
-    action(UiAction::LabCard);CHECK(a.game.cards[a.game.card_count-1].kind==Debris);
-    // All eleven appended generated/status models are usable through the lab.
+    fixture_card();CHECK(a.game.cards[a.game.card_count-1].kind==Debris);
+    // All eleven generated/status models render correctly from explicit fixtures.
     for(CardKind kind=Dazed;kind<CardKinds;kind++)for(int up=0;up<=(card_upgradeable({kind,0})?1:0);up++){
         int id=add({kind,(uint8_t)up});a.open_choice_detail(id);CHECK(card_from_token(a.detail_card).kind==kind&&card_from_token(a.detail_card).upgraded==up);
         before=snapshot();a.render();unchanged(before);a.input(Key::Back);

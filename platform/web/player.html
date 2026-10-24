@@ -10,7 +10,7 @@
 <p id="loading" role="status" hidden>正在载入 / Loading…</p>
 <canvas id="screen" width="320" height="240" tabindex="0" data-i18n-aria="screen" aria-label="nSpire II"></canvas>
 <div id="actions">
-<button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Enter</button><button data-key="6" data-i18n="end_turn">Space</button><button data-key="7" data-i18n="piles">Tab</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="16" data-i18n="reference_map">G</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
+<button data-key="2" data-i18n="up">↑</button><button data-key="0" data-i18n="left">←</button><button data-key="1" data-i18n="right">→</button><button data-key="3" data-i18n="down">↓</button><button data-key="4" data-i18n="confirm">Enter</button><button data-key="6" data-i18n="end_turn">Space</button><button data-key="7" data-i18n="piles">Tab</button><button data-key="10" data-i18n="log">L</button><button data-key="12" data-i18n="map">M</button><button data-key="17" data-i18n="compendium">C</button><button data-key="13" data-i18n="potions">P</button><button data-key="14" data-i18n="relics">R</button><button data-key="18" data-i18n="statuses">V</button><button data-key="5" data-i18n="menu">Esc</button>
 </div>
 <p data-i18n="help"></p><p data-i18n="about"></p>
 <details id="diagnostics"><summary data-i18n="performance"></summary><p data-i18n="performance_help"></p><button id="measure" data-i18n="measure" disabled></button><pre id="performance-report" style="white-space:pre-wrap;max-height:280px;overflow:auto"></pre></details><div id="error" role="alert"></div>
@@ -22,7 +22,7 @@ let language=null;
 const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+translations.eng[key];
 (async()=>{
  const canvas=document.getElementById('screen'),ctx=canvas.getContext('2d',{alpha:false});
- const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,Tab:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,g:16,G:16,c:17,C:17,v:18,V:18};
+ const keyMap={ArrowLeft:0,'4':0,ArrowRight:1,'6':1,ArrowUp:2,'8':2,ArrowDown:3,'2':3,Enter:4,'5':4,Escape:5,' ':6,e:6,E:6,Tab:7,q:7,Q:7,s:8,S:8,o:9,O:9,l:10,L:10,m:12,M:12,p:13,P:13,r:14,R:14,i:15,I:15,c:17,C:17,v:18,V:18,a:19,A:19,d:20,D:20,f:21,F:21};
  let memory,game,ram;
  const loading=document.getElementById('loading'),measureButton=document.getElementById('measure'),reportView=document.getElementById('performance-report'),languageSelect=document.getElementById('language');
  // The shared artwork occurs once in this object and once in decoded memory.
@@ -117,6 +117,19 @@ const t=key=>language?translations[language][key]:translations.zhs[key]+' / '+tr
  }
  function input(action,repaint=true){if(game.closed())return;refreshEntropy();const active=profiling,begin=active?clock():0,index=active?scene():0,calls=ioCalls,bytes=ioBytes,time=ioTime;action();flushPreferences();if(active){add(profile.input,clock()-begin);recordIo(profile.scenes[index],calls,bytes,time);}if(repaint)dirty=true;if(game.closed())document.getElementById('error').textContent=t('closed');}
  function key(k){input(()=>game.input(k));}
+ if(game.debug_execute){
+  keyMap.F1=22;keyMap.g=22;keyMap.G=22;
+  const utf8=new TextEncoder(),decoder=new TextDecoder();
+  function readString(pointer){const bytes=memoryBytes();let end=pointer;while(end<bytes.length&&bytes[end])++end;return decoder.decode(bytes.subarray(pointer,end));}
+  globalThis.nSpire2Debug=command=>{
+   const bytes=utf8.encode(String(command)),limit=game.debug_capacity();if(bytes.length>=limit)throw Error('Debug command is too long');
+   const pointer=game.debug_buffer();memoryBytes().set(bytes,pointer);memoryBytes()[pointer+bytes.length]=0;
+   let ok;input(()=>{ok=game.debug_execute()===1;});return {ok,message:readString(game.debug_result())};
+  };
+  globalThis.nSpire2DebugList=kind=>{const type=kind==='encounters'?1:kind==='events'?2:0,rows=[];
+   for(let i=1;i<game.debug_catalog_count(type);++i)rows.push(readString(game.debug_catalog(type,i)));return rows;};
+  const button=document.createElement('button');button.textContent=language==='eng'?'Debug F1':'调试 F1';button.addEventListener('click',()=>{key(22);canvas.focus();});document.getElementById('actions').append(button);
+ }
  document.addEventListener('keydown',e=>{if(e.target===languageSelect)return;if(game.text_entry_active()&&!e.ctrlKey&&!e.altKey&&!e.metaKey){let code=e.key==='Backspace'?8:e.key==='Enter'?13:e.key==='Escape'?27:e.key.length===1?e.key.codePointAt(0):0;if(code){e.preventDefault();input(()=>game.text_input(code));return;}}if(e.key in keyMap){e.preventDefault();if(!e.repeat)key(keyMap[e.key]);}});
  document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{key(Number(b.dataset.key));canvas.focus();}));
  function position(e){const r=canvas.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)*320/r.width),y:Math.floor((e.clientY-r.top)*240/r.height),inside:e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom};}

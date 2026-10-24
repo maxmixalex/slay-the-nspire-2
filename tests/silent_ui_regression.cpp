@@ -42,7 +42,7 @@ int main(int argc,char**argv){
  // Construct a choice using real instance IDs; production UI must stay modal.
  new_run(a.game,7,true,Character::Silent);a.reset_presentation();a.title=false;
  // A substituted fixture card is detached from the old permanent identity.
- a.game.cards[a.game.hand.ids[1]]={Prepared,1};a.game.event_cards.deck_origin[a.game.hand.ids[1]]=0;a.cursor=1;a.input(Key::Confirm);
+ a.game.cards[a.game.hand.ids[1]]={Prepared,1};a.game.event_cards.deck_origin[a.game.hand.ids[1]]=0;a.cursor=1;a.input(Key::Confirm);a.input(Key::Confirm);
  CHECK(a.game.phase==Phase::DiscardChoice&&a.game.discard_required==2);a.busy=0;a.render();CHECK(save(a.game,prior));
  for(int i=0;i<a.hit_count;i++)CHECK(a.hits[i].kind!=HitKind::Enemy&&a.hits[i].kind!=HitKind::Hand);
  int first=a.game.hand.ids[0],second=a.game.hand.ids[1];
@@ -57,7 +57,7 @@ int main(int argc,char**argv){
  a.cursor=0;a.input(Key::Confirm);a.input(Key::Right);a.input(Key::Confirm);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat);
  // Exhaust uses the same separate grid and confirmation; it never ends the turn.
  new_run(a.game,7,true,Character::Ironclad);a.reset_presentation();a.game.energy=9;
- a.cursor=2;a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.busy=0;int turn=a.game.turn;
+ a.cursor=2;a.input(Key::Confirm);a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.busy=0;int turn=a.game.turn;
  a.input(Key::Confirm);CHECK(a.game.phase==Phase::ExhaustChoice);a.input(Key::EndTurn);CHECK(a.game.phase==Phase::Combat&&a.game.turn==turn);
  printf("Silent UI: %u checks passed\n",checks);
 }

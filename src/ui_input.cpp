@@ -104,11 +104,16 @@ void App::ui_action(UiAction action){
     case UiAction::FrontendCancel:frontend_confirm=frontend_choice=0;break;
     case UiAction::SettingsFastMode:if(settings_open)set_fast_mode(!fast_mode);break;
     case UiAction::SettingsControls:if(settings_open)help=true;break;
+#if SPIRE_DEBUG_COMMANDS
     case UiAction::SettingsPractice:if(settings_open&&title){settings_open=false;practice_entry=true;character_select=true;}break;
     case UiAction::SettingsReference:if(settings_open&&title){settings_open=false;map_preview.open=true;if(!map_preview.generated)map_preview.generate();}break;
+#else
+    case UiAction::SettingsPractice:case UiAction::SettingsReference:break;
+#endif
     case UiAction::SettingsBack:settings_open=false;break;
     case UiAction::SettingsGeneralTab:case UiAction::SettingsInputTab:
         if(settings_open){settings_tab=action==UiAction::SettingsInputTab;settings_item=0;pointer_cancel();}break;
+#if SPIRE_DEBUG_COMMANDS
     case UiAction::LabCard:{
         const bool overflow=game.hand.count>=MaxHand;
         if(library&&!title&&!paused&&!help&&!panel&&!combat_actions_locked()&&detail_card>=0&&lab_card(game,card_from_token(detail_card))){
@@ -120,6 +125,9 @@ void App::ui_action(UiAction action){
             detail_item=-1;library=false;reset_presentation();
             message("已获得药水");
         }break;
+#else
+    case UiAction::LabCard:case UiAction::LabPotion:break;
+#endif
     case UiAction::OpenShop:
         if(!title&&!paused&&!panel&&game.phase==Phase::Shop){shop_open=true;cursor=0;}break;
     case UiAction::CloseShop:

@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 using namespace spire;
 static unsigned checks=0;
 #define CHECK(x) do{++checks;if(!(x)){std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
@@ -24,6 +25,16 @@ int main(){
     app.pointer_move(33,80);app.pointer_button(true);app.pointer_scroll(1);app.pointer_button(false);
     CHECK(app.detail_card<0);unchanged(before);
     app.input(Key::Back);app.render();
+    for(auto key:{Key::DrawPile,Key::DiscardPile,Key::ExhaustPile}){
+        app.input(key);app.render();CHECK(app.panel==1&&app.pile_tab==(key==Key::DrawPile?1:key==Key::DiscardPile?2:3));unchanged(before);
+        for(int i=0;i<app.hit_count;++i)CHECK(app.hits[i].kind!=HitKind::PileTab&&app.hits[i].kind!=HitKind::PileSort);
+        app.input(key);CHECK(!app.panel);unchanged(before);
+    }
+    // Deck always opens its own pile, even after an exhausted-card screen.
+    app.input(Key::Inspect);CHECK(app.panel==1&&app.pile_tab==0);app.render();
+    const HitRegion* settings=nullptr;for(int i=0;i<app.hit_count;++i)if(app.hits[i].kind==HitKind::Command&&app.hits[i].value==int(Key::Back)&&app.hits[i].y==0)settings=&app.hits[i];
+    CHECK(settings);click(settings->x+settings->w/2,settings->y+settings->h/2);CHECK(app.paused&&app.panel==1);unchanged(before);
+    app.input(Key::Back);CHECK(!app.paused&&app.panel==1);app.input(Key::Back);app.render();
     // Expose ten actual card instances. All ten must remain pointer-accessible.
     while(app.game.hand.count<10){auto& s=app.game;int id=s.draw.ids[--s.draw.count];s.hand.ids[s.hand.count++]=(uint16_t)id;s.zones[id]=Zone::Hand;}
     CHECK(save(app.game,before));app.render();

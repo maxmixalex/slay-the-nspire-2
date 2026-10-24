@@ -46,6 +46,9 @@ void App::open_choice_detail(int token){
     if(choice_free_energy(game)&&cost(choice_card(game,token))>=0)detail_cost_override=card_free_preview_cost(game,choice_card(game,token));
 }
 void App::pointer_move(int x,int y){
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open){pointer.x=clamp(x,0,319);pointer.y=clamp(y,0,239);pointer.visible=true;return;}
+#endif
     // The platform pointer API has no Godot motion velocity. An actual
     // coordinate change is the bounded adapter for its mouse-mode switch;
     // repeated stationary samples do not cancel directional focus.
@@ -95,7 +98,10 @@ void App::pointer_move(int x,int y){
     }
 }
 void App::pointer_scroll(int rows){
-    if(!rows||map_transition_blocks_pointer())return;
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open){if(rows)debug_input(rows<0?Key::Up:Key::Down);return;}
+#endif
+    if(!rows||map_transition_blocks_pointer()||settings_open||frontend_confirm)return;
     if(keyword_hover_scroll(*this,rows))return;
     sync_map_window();
     map_directional=false;sync_map_reticles();
@@ -131,7 +137,20 @@ void App::pointer_scroll(int rows){
         ui_action(rows>0?UiAction::NextDeckPage:UiAction::PreviousDeckPage);
 }
 void App::pointer_button(bool down){
+#if SPIRE_DEBUG_COMMANDS
+    if(debug_open){
+        const auto*h=hit_at(pointer.x,pointer.y);
+        if(down){pointer.held=true;pointer.captured=h?*h:HitRegion{};}
+        else{const bool same=pointer.held&&h&&h->kind==pointer.captured.kind&&h->value==pointer.captured.value;pointer.held=false;
+            if(same&&h->enabled){const HitRegion chosen=*h;
+                if(chosen.kind==HitKind::DebugItem){debug_selection=chosen.value;debug_variant=0;debug_editing=false;debug_preset();debug_command(debug_line);}
+                else if(chosen.kind==HitKind::Close)debug_input(Key::Back);
+                else if(chosen.kind==HitKind::Command)debug_input(Key(chosen.value));}}
+        return;
+    }
+#endif
     UiCoreObserver observer(*this);
+    if(down)keyboard_card=-1;
     struct ReticleSync {App&a;~ReticleSync(){a.sync_map_window();a.sync_map_reticles();}} reticle_sync{*this};
     map_directional=false;sync_map_reticles();
     if(map_transition_blocks_pointer()){pointer_cancel();return;}
@@ -167,9 +186,9 @@ void App::pointer_button(bool down){
         Card card=game.cards[id];bool targeted=card_targets_enemy(game,card);
         bool dropping=pointer.dragging&&(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent||(!targeted&&hit.kind==HitKind::Battlefield));
         if(dropping&&hit.enabled){cursor=index;if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent)target=hit.value;
-            pointer.armed_card=-1;pointer_key(Key::Confirm);return;}
+            pointer.armed_card=id;pointer_key(Key::Confirm);return;}
         if(same&&!pointer.dragging){
-            if(pointer.armed_card==id&&!targeted){cursor=index;pointer.armed_card=-1;pointer_key(Key::Confirm);}
+            if(pointer.armed_card==id&&!targeted){cursor=index;pointer_key(Key::Confirm);}
             else pointer.armed_card=pointer.armed_card==id?-1:id;
             return;
         }
@@ -186,7 +205,7 @@ void App::pointer_button(bool down){
         bool targeted=card_targets_enemy(game,game.cards[pointer.armed_card]);
         if(targeted&&hit.kind!=HitKind::Enemy&&hit.kind!=HitKind::EnemyIntent)return;
         cursor=index;if(hit.kind==HitKind::Enemy||hit.kind==HitKind::EnemyIntent)target=hit.value;
-        pointer.armed_card=-1;pointer_key(Key::Confirm);return;
+        pointer_key(Key::Confirm);return;
     }
     pointer.armed_card=-1;
     switch(hit.kind){
@@ -195,7 +214,9 @@ void App::pointer_button(bool down){
     case HitKind::Hand:
         if(game.phase==Phase::ExhaustChoice)for(int i=0;i<game.hand.count;i++)if(game.hand.ids[i]==hit.value){cursor=i;pointer_key(Key::Confirm);break;}
         break;
-    case HitKind::Command:pointer_key((Key)hit.value);break;
+    case HitKind::Command:
+        if(hit.y==0&&Key(hit.value)==Key::Back&&!title){pointer_cancel();paused=true;menu=0;}
+        else pointer_key((Key)hit.value);break;
     case HitKind::OpenPile:panel=1;pile_tab=hit.value;scroll=inspect_cursor=0;pile_control_focus=-1;break;
     case HitKind::PileTab:pile_tab=hit.value;scroll=inspect_cursor=0;break;
     case HitKind::InstanceCard:open_choice_detail(hit.value);break;

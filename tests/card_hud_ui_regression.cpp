@@ -118,6 +118,16 @@ static void title_layout(){
 }
 static void card_cache_pixels(){
     Canvas c{app};invalidate_card_face_cache();
+    // Merchant rest/hover sizes share the same fixed tile pool. A warm cache
+    // must neither replay another size nor overwrite a changed rug pixel.
+    for(int size:{0,1,0,2,1,2})for(unsigned salt:{0u,1u}){
+        const int w=size==0?36:size==1?44:47,h=size==0?50:size==1?62:66;
+        pattern(salt);render_card_face(c,{Strike,0},35,69,w,h,1,0,-1,-1,nullptr,"Shop card.");
+        const std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        for(int repeat=0;repeat<2;++repeat){pattern(salt);begin_card_face_frame();draw_card_face(c,{Strike,0},35,69,w,h,1,0,-1,-1,nullptr,"Shop card.");CHECK(!std::memcmp(expected.data(),app.pixels,sizeof app.pixels));}
+        bool cached=false;for(const auto&slot:small_card_faces)cached|=slot.valid&&slot.width==w&&slot.height==h;CHECK(cached);
+    }
+    invalidate_card_face_cache();
     // Compare full destination surfaces against uncached production drawing,
     // including translucent overlap, changed costs, stars and descriptions.
     for(unsigned salt:{0u,1u})for(unsigned variant=0;variant<9;++variant){
