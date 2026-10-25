@@ -94,6 +94,7 @@ writeReport();
   return tutorialRecord(slot);
  }
  async function point(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.click(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
+ async function move(x,y){const box=await canvas.boundingBox();assert(box);await page.mouse.move(box.x+x*box.width/320,box.y+y*box.height/240);await painted();}
  async function titleRow(row,hasRun){await point(119,(hasRun?137:147)+row*20+8);}
  async function openSettings(hasRun){await titleRow(hasRun?2:1,hasRun);}
  async function toggleFast(){await point(274,128);}
@@ -268,7 +269,10 @@ writeReport();
  await capture('browser-relic-collection');await confirm();await page.waitForTimeout(650);
  await capture('browser-relic-inspector-first');const firstRelic=await canvasPixels(142,87,37,37);
  await point(160,100);await page.waitForTimeout(300);
- assert.ok(pixelDifference(firstRelic,await canvasPixels(142,87,37,37))<2,'clicking the popup must not close the relic inspector');
+ // The game draws its own cursor into this icon rectangle after the click.
+ // Move within the paper without clicking before comparing the icon itself.
+ await move(160,195);await capture('browser-relic-inspector-popup-retained');
+ assert.deepEqual(await canvasPixels(142,87,37,37),firstRelic,'clicking the popup must not close the relic inspector');
  await press('ArrowRight');await page.waitForTimeout(350);const nextRelic=await canvasPixels(142,87,37,37);
  assert.ok(pixelDifference(firstRelic,nextRelic)>.5,'the real inspector arrow must advance to another relic');await capture('browser-relic-inspector-next');
  await press('ArrowLeft');await page.waitForTimeout(350);

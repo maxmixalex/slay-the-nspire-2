@@ -1,5 +1,34 @@
 # Work state — 2026-10-25
 
+## Ordinary browser cursor isolation and storage candidate — 2026-10-25
+
+Runtime `bbb47e23e0939bbcf2534ad2ba7d4221e6adce5f` passes the matching ARM
+build and12,880 /42 /14 linked checks. The launcher is1,421,585 bytes;
+actual allocation is16,755,332 bytes, leaving21,884 under16MiB. The real
+history callback passes9469 checks and exports74,001 bytes that independently
+decode to the exact295,349-byte NSH8 fixture. Python discovery217 plus the
+additional54 tests pass. Matching native and actual-scene groups are running.
+
+The ordinary v34 browser run passes the first15 complete flows, including
+Sealed's real four-column selection. Its next assertion incorrectly counted
+the visible source mouse cursor inside the relic-icon comparison rectangle.
+A normal DOM replay proves that moving the cursor within the still-open paper
+restores the rectangle exactly, without any other input. The corrected test
+keeps the real icon click, moves the cursor out of that rectangle, and now
+requires exact equality. Separate normal-DOM diagnostics also pass right/left
+relic navigation, backstop/Escape, Potion focus purity and the visible card
+library timer. These are diagnostics; the full formal browser rerun remains
+required. This test-only change does not require a different runtime binary.
+
+A private full retained-color experiment preserves every source byte while
+reducing candidate LZMA2 payloads by913,893 bytes across474 of840 groups.
+The pure offline transform and exhaustive scalar-oracle tests are preserved
+here. There is not yet a new resource reader, delivered compressed pack,
+device storage saving or performance result for this experiment. A field-plane
+shuffle alternative was rejected after its sample saved nothing. Adoption
+requires the actual bounded reader, full reversible pack proof and a cold-load
+comparison; the current v34 three-file resources remain unchanged.
+
 ## Matched v34 gates and final visible repairs — 2026-10-25
 
 The remotely verified source `c3a44adfce84ef6355c89b0038210f58ab63afa2`
