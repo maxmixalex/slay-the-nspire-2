@@ -181,6 +181,9 @@ static void run_character(unsigned character,bool fast){
  death_scene(character,200);repeat_render();
  until(began+architect_start+1500);if(original_art){const auto f=architect_scene_frame(a);CHECK(f.architect==51&&f.architect_loop);}
  const unsigned tail[]={2333,1867,2233,4167,2333};until(began+terminal+tail[character]+1);equal_save();
+ // The Silent's1867ms die clip finishes before the independent1950ms
+ // terminal UI intro. Completing an actor clip cannot enable Continue.
+ if(tail[character]+1<1950)until(began+terminal+1950);
  CHECK(a.game_over_button_ready());a.input(Key::Confirm);a.render();CHECK(a.game_over_summary);equal_save();
  if(!character&&!fast){
   CHECK(save(a.game,architect_saved));const auto callbacks=a.callbacks;a.callbacks.load=load_architect;a.return_to_title();
