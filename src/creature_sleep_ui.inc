@@ -10,7 +10,7 @@ static void creature_sleep_particles(Canvas&c,int slot){
  const auto px=[&](int x){return combat_project_x(camera,layout,root.x+(anchor_x+x)*camera.zoom,true);};
  const auto py=[&](int y){return combat_project_y(camera,layout,root.y+(anchor_y+y)*camera.zoom);};
  const unsigned age=now-sleep.start;const uint32_t seed=s.seed^m.identity*0x9e3779b9u;
- if(age<350u){const int side=mx(5,combat_project_extent(camera,layout,220));room_vfx_stamp(c,I7_Glow,px(0)-side/2,py(0)-side/2,side,side,(350u-age)*120u/350u,0xe075ff);}
+ if(age<350u){const int side=mx(5,combat_project_extent(camera,layout,66));room_vfx_stamp(c,I7_Glow,px(0)-side/2,py(0)-side/2,side,side,(350u-age)*120u/350u,0xe075ff);}
  for(unsigned i=0;i<4;++i){const auto z=sleep.sample(i,now,seed);if(!z.visible)continue;
   const int size=mx(4,combat_project_extent(camera,layout,128*z.size*3/1000)),x=px(z.x*3/10),y=py(z.y*3/10);
   Canvas letter=c;letter.opacity=uint8_t(div255(letter.opacity*z.alpha));

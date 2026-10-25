@@ -376,6 +376,7 @@ void App::confirm_deck_choice(){
     if(ok){
       if(phase==Phase::Upgrade)upgraded.add(game.deck[index],game.event_cards.deck[index],index,map_clock_ms);
       reset_presentation(true);if(removed.active)reward_presentation.removed=removed;if(upgraded.count)reward_presentation.upgrades=upgraded;
+      if(upgraded.count)for(unsigned i=0;i<3;++i)screen_effect(ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,2048,250u+i*250u);
       if(rest_selection.pending&&game.world.active&&game.world.room_type==unsigned(WorldRoom::Rest)){
         room_presentation.rest.restore_selection(rest_selection,map_clock_ms);sync_camp_presentation();
       }

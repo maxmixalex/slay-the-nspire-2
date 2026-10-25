@@ -164,7 +164,7 @@ static void swarm(const char*directory){
  app.animation+=20;app.render();unsigned differences=0;
  for(int y=0;y<81;++y)for(int x=0;x<81;++x){const int px=cx+x-40,py=cy+y-40;if(px>=0&&px<320&&py>=22&&py<240)differences+=region[y*81+x]!=app.pixels[py*320+px];}
  CHECK(differences>20);capture(directory,"Entomancer","swarm-later");unchanged();
- app.title=true;app.progress.discovered_acts=15;app.progress.enemies[unsigned(EnemyId::Entomancer)][0]={1,0,0};CHECK(app.open_bestiary());
+ app.title=true;app.progress.discovered_acts=15;app.progress.enemies[unsigned(EnemyId::Entomancer)][0].wins=1;CHECK(app.open_bestiary());
  int entry=-1;for(int row=0;row<app.bestiary.row_count;++row)if(app.bestiary_entry_model(row)==unsigned(EnemyId::Entomancer))entry=row;CHECK(entry>=0);
  app.bestiary_pointer({0,0,0,0,HitKind::BestiaryEntry,int16_t(entry),true});for(unsigned i=0;i<60;++i)app.advance(33);app.render();
  CHECK(app.bestiary.actors[0].model==unsigned(EnemyId::Entomancer));capture(directory,"Entomancer","swarm-bestiary");unchanged();app.input(Key::Back);

@@ -27,7 +27,7 @@ struct ScreenShakePresentation {
   // mathematical floor rather than implementation-dependent signed shifts.
   const int64_t cell=phase>=0?phase/1024:(phase-1023)/1024;
   const int t=int(phase-cell*1024),t2=t*t/1024,t3=t2*t/1024;
-  const int smooth=t3*(10*1024+t*(6*t/1024-15))/1024;
+  const int smooth=t3*(10*1024-15*t+6*t2)/1024;
   const int a=(hash(uint32_t(cell)^seed)&1u)?t:-t;
   const int b=(hash(uint32_t(cell+1)^seed)&1u)?t-1024:1024-t;
   return 2*(a+(b-a)*smooth/1024);

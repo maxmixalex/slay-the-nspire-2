@@ -133,7 +133,7 @@ statistics tooltip lane in both languages, current-language dropdown behavior,
 compendium panels and normal quit. The earlier snapshot/USB failures remain
 separate failed receipts and are not attributed to game execution.
 
-## Final ARM frontend acceptance
+## Closed ARM frontend acceptance for the f4a7cd59 candidate
 
 `final-front-cold-firebird-74d73e8882a4` is closed **passed**, with
 `source_changed=false`, return code 0, no controller error events and 29 LCD
@@ -141,7 +141,7 @@ captures. It binds to runtime `f4a7cd59e7c86477fd820549c394ec44f4d72139` and the
 1,573,025-byte launcher whose SHA-256 is
 `c8ff786ed76d511111c3917e87b7df2c83c8202a44a63d1c78458c336de5dd91`.
 
-The final launcher was transferred by the emulator's ordinary USB path to an
+The tested launcher was transferred by the emulator's ordinary USB path to an
 independent NAND copy. Acceptance started with a cold TI OS boot, ran the
 ordinary Ndless installer from Documents and opened the launcher from its
 folder. The initial attempt to restore an older snapshot is separately
@@ -165,3 +165,66 @@ console, hovered Credits button, role alignment and normal OS return. The
 intermediate capture 22 still shows the dropdown with Chinese highlighted;
 capture 23 is the completed language change. The session did not retrieve a
 performance log, and its correctness captures are not performance evidence.
+
+## Complete native regression closure after the LCD changes
+
+The six assigned frontend suites now complete with their existing interaction,
+ownership and canonical-save checks intact. Their old layout/timing expectations
+were updated to the implemented source portrait order, two-/three-column LCD
+grids, 1,600ms character departure and enlarged moving card holders. Disabled
+cards remain focusable and report the original denial bubble; disabled action
+regions remain present but cannot dispatch.
+
+| Complete suite | Checks | Closed evidence |
+| --- | ---: | --- |
+| Device feedback | 90 | Individual exit0 in `final-front-six-native-ff8445cb3c3c` |
+| Tactics UI | 342 | Individual exit0 in the same batch |
+| Expansion UI | 11,422 | Individual exit0 in the same batch |
+| Silent UI | 4,689 | Individual exit0 in `final-front-three-native-9a2d5d0cdec9` |
+| Five-character UI | 2,635 | Individual exit0 in the same batch |
+| Character UI | 33,535 | Passed `final-front-character-native-af82d9f2624e` |
+
+The two multi-suite journals above failed overall while later targets still
+had old expectations; only the listed individual exit0 results are attributed
+to them. The original six-suite core was frozen at runtime `f4a7cd59` with
+SHA-256 `5077cdced201d4b5b2c614c6b5a1bd6e42669ac17fb4002b38e333be0527a8a1`.
+
+The four additional complete world suites also closed: Bestiary405, keyword
+tooltips21,597, world rewards4,986 and world UI7,739 checks. The last suite's
+closed passed journal is `final-front-world-ui-power-native-c89b3b1c63ae`.
+It retains independent actual-pixel checks for the enlarged intent numbers,
+sequential draw/choice barriers, canonical RNG/save equivalence, merchant
+purchase hits and the nonblocking power-card flight/trail. No interaction or
+save assertion was removed to accommodate the new layout.
+
+These full suites exposed a real `UiHistoryScroll::step` overflow: the existing
+770-row reward list could multiply its Q8 distance by the easing rate beyond
+signed32-bit range. Commit `39086cf` splits the quotient/remainder before
+multiplication, preserving the exact integer result and negative overscroll.
+The last real reward can now be reached and claimed. Both complete world/reward
+suites passed against a matching f4a7cd59 App rebuilt with that one header fix;
+their result must not be attributed to an unrelated App ABI or mutable library.
+
+## Startup preference integration
+
+`ef3e13c` adds the original Skip Intro Logo checkbox after Text Effects, its
+localized right-column description and enabled/disabled toast. It defaults to
+false, reloads independently of a run and resets to false. NSPF6 uses reserved
+bit11 while retaining the108-byte file and both key banks. Versions1..5 retain
+their old meanings, reject the formerly reserved bit, and migrate with the
+option off. Screenshake masks only bits8..10, so enabling skip cannot alter its
+level. Older UI40 resource packs retain readable English/Chinese fallbacks.
+
+The closed passed `startup-preferences-executable-native-8b396680f22b` journal
+checks the codec, actual eight-Down keyboard toggle, reload, reset and unchanged
+save bytes; the full input-bindings suite passes146 checks, auxiliary UI14,429
+and world-frontend UI36,996. The actual English/Chinese UI40 frontend tests each
+pass118 checks including mouse toggling, the still-accessible hovered control,
+scrollbar drag and Credits return. These were scoped native correctness runs
+against the startup/prefs App ABI, not new calculator timing measurements.
+
+The earlier f4a7cd59 Firebird session above predates startup, swarm and later
+merchant changes. Final integrated ARM acceptance is recorded separately by
+the release coordinator. Reproducible completed native binaries were removed
+on request to free189,577,832bytes; their paths, lengths and SHA-256 values remain
+in `completed-native-cleanup.json` beside the retained journals and captures.

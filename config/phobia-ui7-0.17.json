@@ -664,7 +664,7 @@
     }
   ],
   "limitations": [
-    "Entomancer SwarmParticles are not converted by the static replacement body.",
+    "Entomancer's static body is supplemented by the bounded UI12 runtime swarm and its optional original particle append.",
     "Background variation uses the same selected layers and camera as the existing normal packed scene."
   ]
 }
