@@ -121,7 +121,9 @@ def patch_pack(data, manifest, cache, *, base_aux=BASE_AUX, auxiliary=AUXILIARY,
     marker_at, marker_length = source.strings[6110]
     language = data[marker_at:marker_at + marker_length].decode('ascii')
     localized = manifest.get('localized_text', {}).get(language)
-    tiles.require(language in ('eng', 'zhs') and isinstance(localized, dict), 'Missing frontend locale')
+    # Later fixed catalogs also append keys to optional original locales.
+    from split_content import LANGUAGES
+    tiles.require(language in LANGUAGES and isinstance(localized, dict), 'Missing frontend locale')
     new_strings = {}
     for slot, key in texts:
         tiles.require(source.string_payload(slot) == b'\0',

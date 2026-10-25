@@ -5,6 +5,11 @@ void App::sync_turn_banner(){
         turn_banner.reset();turn_banner_seed=game.seed;turn_banner_floor=game.floor;
         turn_banner_combat=game.world.combat_count;turn_banner_encounter=encounter;turn_banner_number=0;
     }
+    // CombatRules precedes Battle Start in the source. Do not spend the
+    // opening clock behind its pages, including an opted-in resumed fight.
+    if(game.turn==1&&content.has_ftue_assets()&&
+       (ftue.id==FtueId::CombatRules||(ftue.pending&ftue_bit(FtueId::CombatRules))||
+        (game.world.active&&!seen_ftue(FtueId::CombatRules))))return;
     if(game.turn>0&&turn_banner_number!=game.turn){
         const bool extra=turn_banner_number>0&&!turn_banner.in_enemy;
         const uint32_t when=int32_t(enemy_visual_clock-animation)>0?enemy_visual_clock:animation;
@@ -100,7 +105,7 @@ static void turn_banner_frame(Canvas&c,TurnBannerPresentation::Frame frame){
     }
 }
 static void turn_banner_screen(Canvas&c){
-    auto&a=c.a;if((!combat_phase(a.game.phase)&&!a.combat_feedback.active)||a.paused||a.help||a.panel||a.settings_open||a.frontend_confirm||a.map_window.visible||
+    auto&a=c.a;if((!combat_phase(a.game.phase)&&!a.combat_feedback.active)||a.ftue.active()||a.paused||a.help||a.panel||a.settings_open||a.frontend_confirm||a.map_window.visible||
        a.detail_card>=0||a.detail_item>=0||a.status_actor>=0||(choice_phase(a.game.phase)&&a.combat_choice_ready()))return;
     const unsigned backstop=a.turn_banner.battle_backstop(a.animation);if(backstop)c.dim(0,88-combat_controls::SceneLift,320,40,backstop);
     turn_banner_frame(c,a.turn_banner.sample_battle(a.animation));

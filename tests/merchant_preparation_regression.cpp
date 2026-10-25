@@ -53,7 +53,7 @@ static void actual(const char*folder){
  for(unsigned i=0;i<40;++i){a.advance(33);a.render();}
  unsigned cards=0;for(int i=0;i<a.hit_count;++i)cards+=a.hits[i].kind==HitKind::Choice&&a.hits[i].value>=0&&a.hits[i].value<ShopCardCount;
  CHECK(cards==ShopCardCount);unchanged();CHECK(a.content.healthy());
- a.input(Key::Back);CHECK(!p.active&&!a.shop_open);unchanged();
- std::printf("actual cold inventory: %u image decodes in %u yielded updates; all seven stock slots visible\n",p.cold_images,steps);
+ const unsigned decoded=p.cold_images;a.input(Key::Back);CHECK(!p.active&&!a.shop_open);unchanged();
+ std::printf("actual cold inventory: %u image decodes in %u yielded updates; all seven stock slots visible\n",decoded,steps);
 }
 int main(int argc,char**argv){CHECK(argc==1||argc==2);pending_controls();if(argc==2)actual(argv[1]);std::printf("merchant preparation: %u checks passed\n",checks);}

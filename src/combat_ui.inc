@@ -8,6 +8,7 @@ struct HandTile {
     const Content* owner=nullptr;
     Card card{};
     uint32_t used=0;
+    uint32_t built=0;
     uint32_t sampled_frame=0,sampled_revision=0;
     int sampled_instance=-1,sampled_deck=-1,sampled_target=-1;
     const CombatCardMotion::Sprite*sampled_visual=nullptr;
@@ -17,12 +18,20 @@ struct HandTile {
     uint8_t alpha[HandTileW*HandTileH]{};
 };
 static HandTile hand_tiles[MaxHand];
+struct SelectedHandReader {
+    HandTile tile{};
+    const HandTile*source=nullptr;
+    uint32_t built=0,started=0;
+    int instance=-1,skip=-1,maximum=0;
+};
+static SelectedHandReader selected_hand_reader;
+static_assert(sizeof(SelectedHandReader)<48u*1024u,"Only one selected description may animate");
 struct HandGlowSlot {HandCardHighlight motion{};const Content*owner=nullptr;int instance=-1;uint32_t used=0;};
 static HandGlowSlot hand_glows[MaxHand];
-static uint32_t hand_tile_clock=0;
+static uint32_t hand_tile_clock=0,hand_build_clock=0;
 static bool same_text(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 }
-static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;for(auto&g:hand_glows)g={};invalidate_card_face_cache();}
+static void invalidate_hand_tiles(){for(auto&t:hand_tiles)t.valid=false;for(auto&g:hand_glows)g={};selected_hand_reader.instance=-1;invalidate_card_face_cache();}
 static void card_title(Canvas&c,const char*name,int x,int y,int width,uint16_t ink){
     for(int dx=-1;dx<=1;dx++)for(int dy=-1;dy<=1;dy++)if(dx||dy)c.centered(name,x+dx,y+dy,width,10,Ink);
     c.centered(name,x,y,width,10,ink);
@@ -67,7 +76,31 @@ static const HandTile& hand_tile(Canvas&c,int instance,const CombatCardMotion::S
     draw_card_face(tile,card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,energy,stars,instance,deck,facts,description,&t.description_truncated,true,upgrade_preview);
     // NHandCardHolder hides its playable highlight; it does not gray the
     // entire portrait, description and resource label when a card cannot play.
-    t.valid=true;return t;
+    t.built=++hand_build_clock;t.valid=true;return t;
+}
+static const HandTile& selected_hand_tile(Canvas&c,int instance){
+    const auto&source=hand_tile(c,instance);auto&r=selected_hand_reader;
+    if(!source.description_truncated){r.instance=-1;return source;}
+    const auto layout=card_face::layout(HandFaceX,HandFaceY,HandFaceW,HandFaceH);auto rect=layout.description;
+    const auto fonts=card_face_fonts(c,HandFaceW);const int size=c.a.content.font_size(fonts.body);
+    if(!fonts.compact){const int bottom=rect.y+rect.h;rect.y=mx(rect.y,layout.type.y+mx(11,layout.type.h));rect.h=mx(0,bottom-rect.y);}
+    if(r.instance!=instance||r.source!=&source||r.built!=source.built){
+        r.instance=instance;r.source=&source;r.built=source.built;r.started=c.a.map_clock_ms;r.skip=-1;
+        const auto metric=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
+        r.maximum=mx(0,fitted_text::line_count(source.description,rect.w,size,metric)-fitted_text::row_capacity(rect.h,size));
+    }
+    if(!r.maximum)return source;
+    // Pause on both ends, expose every line downward, then return to the
+    // beginning. Repaint only this face when the visible row actually changes.
+    const unsigned cycle=3000u+unsigned(r.maximum)*1200u,age=(c.a.map_clock_ms-r.started)%cycle;
+    const int skip=age<1400?0:mn(r.maximum,1+int((age-1400)/1200));
+    if(r.skip==skip)return r.tile;
+    r.skip=skip;r.tile=source;auto&t=r.tile;
+    for(int i=0;i<HandTileW*HandTileH;++i){t.pixels[i]=0;t.alpha[i]=0;}
+    Canvas tile{c.a,t.pixels,HandTileW,HandTileW,HandTileH,t.alpha};
+    const auto*facts=event_card_facts(c.a.game,source.card,instance,-1);
+    render_card_face(tile,source.card,HandFaceX,HandFaceY,HandFaceW,HandFaceH,source.energy,source.stars,instance,-1,facts,source.description,nullptr,true,false,skip);
+    return t;
 }
 static void draw_hand_tile(Canvas&c,const HandTile&t,HandPose p,bool focused,unsigned brightness=255,unsigned erosion=0,bool highlight=false){
     if(p.scale<=0)return;
@@ -375,6 +408,7 @@ static void combat_screen(Canvas&c){
     int selected=mn(mx(a.cursor,0),mx(0,hand.count-1));
     const bool focused=a.hand_focus&&a.hand_can_focus();
     const int held_card=a.selected_hand_card();
+    if(held_card<0)selected_hand_reader.instance=-1;
     if(ui_cards_bound(a))a.combat_cards.set_focus(focused&&hand.count?hand.ids[selected]:-1);
     // Hitboxes use the same live transformed frame as painting, including
     // hover-neighbour motion and interpolation after a card leaves the hand.
@@ -399,7 +433,7 @@ static void combat_screen(Canvas&c){
         }
     }
     if(held_card>=0)for(unsigned i=0;i<hand.count;++i)if(hand.ids[i]==held_card){
-        const auto pose=visible_hand_pose(i,false);draw_hand_tile(c,hand_tile(c,held_card),pose,false,255,0,true);
+        const auto pose=visible_hand_pose(i,false);draw_hand_tile(c,selected_hand_tile(c,held_card),pose,false,255,0,true);
         hand_hit(pose,held_card,!a.combat_actions_locked());break;
     }
     }

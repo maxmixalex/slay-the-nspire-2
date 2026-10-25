@@ -91,9 +91,27 @@ static CardFaceFonts card_face_fonts(const Canvas&c,int width){
         content.font_size(mx(readable,card_face::font_pixels(21,width))),content.font_size(readable),
         content.font_size(mx(width>=80?12:10,card_face::font_pixels(32,width)),5),content.font_size(mx(8,card_face::font_pixels(22,width)),5),8,true};
 }
+// The selected hand face can expose every description line within the same
+// authored rectangle. Ordinary cards keep the static fitted/ellipsis path.
+static void card_description_window(Canvas&c,const char*text,const card_face::Rect&r,int size,int skip){
+ if(r.w<=0||r.h<=2)return;
+ size=c.a.content.font_size(size,c.font_face);const int visible=mn(32,fitted_text::row_capacity(r.h,size));if(!visible)return;
+ char localized[1024]{};text=c.a.ui_text(text,localized,sizeof localized);
+ const auto metric=[&](const RichChar&ch,int px){return c.text_metric(ch,px);};
+ fitted_text::Plan plan{};plan.size=size;plan.step=size+1;plan.rows=plan.total=fitted_text::line_count(text,r.w,size,metric);plan.truncated=false;
+ int widths[32]{};fitted_text::visit(text,r.w,plan,metric,[&](const RichChar&ch,int at,int row,int px){if(row>=skip&&row<skip+visible)widths[row-skip]=at+metric(ch,px).width;});
+ Canvas body=c;body.pixels+=r.y*body.pitch+r.x;if(body.coverage)body.coverage+=r.y*body.pitch+r.x;
+ body.clip_w=mn(r.w,c.clip_w-r.x);body.clip_h=mn(r.h,c.clip_h-r.y);if(body.clip_w<=0||body.clip_h<=0)return;
+ const uint16_t colors[]={White,Gold,rgb(244,122,102),Blue,Green,rgb(190,145,217),rgb(236,164,92),rgb(104,210,205),White,Muted};
+ fitted_text::visit(text,r.w,plan,metric,[&](const RichChar&ch,int at,int row,int px){
+  if(row<skip||row>=skip+visible)return;
+  const auto glyph=c.a.content.glyph(ch.codepoint,px,c.font_style(ch));
+  body.character(ch.codepoint,glyph,at+mx(0,(r.w-widths[row-skip])/2),(row-skip)*plan.step,colors[ch.style.color]);
+ });
+}
 // One scene-based card renderer for every presentation size. Individual
 // screens supply instance-aware costs/descriptions, never rearranged art.
-static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false){
+static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=-2,int stars=-2,int instance=-1,int deck=-1,const EventCardFacts*facts=nullptr,const char*description=nullptr,bool*description_truncated=nullptr,bool known=true,bool upgrade_preview=false,int description_skip=-1){
     auto&a=c.a;if(!facts)facts=event_card_facts(a.game,card,instance,deck);
     const auto type=a.card_face_type(card,instance,deck,facts);
     const unsigned group=card_face::material_group(unsigned(card_rarity(card.kind)));
@@ -140,8 +158,9 @@ static void render_card_face(Canvas&c,Card card,int x,int y,int w,int h,int fee=
     if(!fonts.compact){const int bottom=l.description.y+l.description.h;
         l.description.y=mx(l.description.y,l.type.y+plaque_h);l.description.h=mx(0,bottom-l.description.y);}
     const int body_size=!known&&fonts.compact?a.content.font_size(card_face::font_pixels(40,w)):fonts.body;
-    const auto description_layout=c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,body_size,White,fonts.body_minimum,true);
-    if(description_truncated)*description_truncated=description_layout.truncated;
+    if(description_skip>=0)card_description_window(c,description,l.description,body_size,description_skip);
+    else{const auto description_layout=c.paragraph_fitted(description,l.description.x,l.description.y,l.description.w,l.description.h,body_size,White,fonts.body_minimum,true);
+        if(description_truncated)*description_truncated=description_layout.truncated;}
 
     c.picture(a.content.energy_image(card,!known),l.energy.x,l.energy.y,l.energy.w,l.energy.h);
     const int energy=fee==-2?a.card_offer_cost(card,facts):fee;

@@ -25,6 +25,9 @@ void App::ftue_control(int control){
   if(ftue.page<2){++ftue.page;ftue.page_direction=1;ftue.page_started=map_clock_ms;ftue.text_scroll=ftue.text_maximum=0;++ftue.serial;pointer_cancel();return;}
   mark_ftue(id);
   ftue.banner=true;ftue.banner_player=false;ftue.banner_at=map_clock_ms;
+  // The lesson owns the start gate, not a second banner renderer. A
+  // restored first fight also starts its one sequence after completion.
+  turn_banner.reset();turn_banner_number=0;turn_banner_suppress_intro=false;
  }else if(control!=1&&control!=0&&control!=4)return;
  const RunOptions embark=ftue.embark;
  if(id==FtueId::AcceptTutorials){mark_ftue(id);if(control==0)set_ftues_enabled(false);}
@@ -84,9 +87,6 @@ bool App::ftue_before_action(UiAction action){
 }
 void App::observe_ftue_log(Log log){
  if(log.kind==LogKind::Turn&&game.turn==1&&!seen_ftue(FtueId::CombatRules))ftue.pending|=ftue_bit(FtueId::CombatRules);
- else if(log.kind==LogKind::Turn&&game.turn==1&&content.has_ftue_assets()){
-  ftue.banner=true;ftue.banner_player=false;ftue.banner_at=map_clock_ms;
- }
  if(log.kind==LogKind::Shuffle&&game.turn>0&&!seen_ftue(FtueId::Shuffle)&&combat_feedback.active&&!ftue.shuffle_waiting){
   // The core has resolved the command synchronously. Its visual queue stays
   // before the actual shuffle cue until the source modal is acknowledged.
@@ -101,7 +101,7 @@ void App::observe_ftue_history(const RunHistoryNotice&notice){
 void App::sync_ftues(){
  if(character_departure.active())return;
  if(!content.has_ftue_assets())return;
- if(ftue.banner&&!ftue.banner_player&&map_clock_ms-ftue.banner_at>=2600){ftue.banner_player=true;turn_banner.begin_player(1,animation);}
+ if(ftue.banner&&!ftue.banner_player&&map_clock_ms-ftue.banner_at>=2600)ftue.banner_player=true;
  if(ftue.banner&&map_clock_ms-ftue.banner_at>=5100)ftue.banner=false;
  const auto&w=game.world;
  if(ftue.encounter!=w.combat_count){ftue.encounter=w.combat_count;ftue.no_play_turns=0;}

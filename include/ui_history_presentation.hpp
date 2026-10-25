@@ -19,7 +19,14 @@ struct UiHistoryScroll {
         if(!dragging){const int legal=clamp(target,0,maximum);target+=(legal-target)*dt*12/1000;if(target<0&&target>-128)target=0;if(target>maximum&&target<maximum+128)target=maximum;}
         const int delta=target-position;
         if(delta>-128&&delta<128)position=target;
-        else{const int change=delta*dt*15/1000;position+=change?change:(delta>0?1:-1);}
+        else{
+            // A full 770-row event reward list can span over five million
+            // fixed-point units. Split before multiplication, preserving the
+            // same signed truncation without overflowing delta*dt*15.
+            const int rate=dt*15;
+            const int change=(delta/1000)*rate+(delta%1000)*rate/1000;
+            position+=change?change:(delta>0?1:-1);
+        }
     }
 };
 struct UiMenuTransition {

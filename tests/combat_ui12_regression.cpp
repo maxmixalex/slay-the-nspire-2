@@ -98,6 +98,39 @@ static void battle_entry(){
  CHECK(a.turn_banner.battle_active&&a.turn_banner.player_start==a.animation+TurnBannerPresentation::BattleTicks);unchanged();
  a.animation+=TurnBannerPresentation::BattleTicks;CHECK(a.turn_banner.sample(a.animation).kind==TurnBannerPresentation::Player);
 }
+static void actual_single_battle_banner(){
+ scenario="ordinary first-turn log has one banner and one Player Turn clock";fresh();
+ a.game.phase=Phase::Map;a.reset_presentation();a.game.phase=Phase::Combat;before=a.game;
+ a.observe_ftue_log({LogKind::Turn,1,0});a.sync_turn_banner();
+ CHECK(!a.ftue.banner&&a.turn_banner.battle_active);unchanged();
+ const auto verify_single=[](){
+  const uint32_t tick=a.animation,clock=a.map_clock_ms,player=a.turn_banner.player_start;
+  Canvas c{a};
+  for(unsigned age:{301u,1000u,2200u,2607u,4100u,5100u}){
+   a.map_clock_ms=clock+age;a.animation=tick+age/33;a.sync_ftues();
+   CHECK(a.turn_banner.player_start==player);
+   for(unsigned i=0;i<320u*240u;++i)a.pixels[i]=uint16_t((i*3917u)^(i>>2)^0x8410);
+   turn_banner_screen(c);const std::vector<uint16_t>single(a.pixels,a.pixels+320*240);
+   // The FTUE pass follows turn_banner_screen in the real renderer. It
+   // must neither duplicate the label nor darken its band a second time.
+   ftue_screen(c);CHECK(!std::memcmp(single.data(),a.pixels,sizeof a.pixels));unchanged();
+  }
+  CHECK(a.turn_banner.player_start==tick+79);
+ };
+ verify_single();
+ scenario="the three-page lesson gates the same Battle Start sequence";fresh();
+ a.progress_loaded=true;a.progress.tutorial_flags=uint16_t(FtueFresh|(FtueSeenMask&~ftue_bit(FtueId::CombatRules)));
+ a.game.phase=Phase::Map;a.reset_presentation();a.game.phase=Phase::Combat;before=a.game;
+ a.observe_ftue_log({LogKind::Turn,1,0});a.sync_turn_banner();
+ CHECK(!a.turn_banner.battle_active&&!a.turn_banner.player_active);
+ CHECK(a.open_ftue(FtueId::CombatRules));
+ a.animation+=152;a.map_clock_ms+=5016;a.sync_turn_banner();
+ CHECK(!a.turn_banner.battle_active&&!a.turn_banner.player_active);unchanged();
+ a.ftue_control(3);a.ftue_control(3);CHECK(a.ftue.active());a.ftue_control(3);
+ CHECK(!a.ftue.active()&&a.seen_ftue(FtueId::CombatRules)&&a.ftue.banner);
+ a.sync_turn_banner();CHECK(a.turn_banner.battle_active&&a.turn_banner.battle_start==a.animation);unchanged();
+ verify_single();CHECK(!a.ftue.banner);
+}
 static void smith(){
  scenario="Smith only animates the committed upgraded card";fresh();auto&s=a.game;s.phase=Phase::Camp;
  CHECK(camp(s,true));CHECK(s.phase==Phase::Upgrade);a.reset_presentation();a.map_clock_ms=600;
@@ -184,10 +217,29 @@ static void actual_winning_card(){
  bool retained=false;for(unsigned i=0;i<a.game.enemy_count;++i)retained|=a.enemy_opacity(int(i))>0;
  CHECK(retained&&int32_t(a.combat_linger_until-a.animation)<=0);CHECK(a.content.healthy());
 }
+static void actual_selected_description(){
+ scenario="a selected long description reveals its final value without disturbing static faces";
+ fresh();a.game.cards[0]={Rage,0};a.game.deck[0]={Rage,0};a.cursor=0;a.input(Key::Confirm);CHECK(a.selected_hand_card()==0);before=a.game;
+ Canvas c{a};begin_card_face_frame();const auto&base=hand_tile(c,0);CHECK(base.description_truncated);
+ const auto build=base.built;const std::vector<uint16_t> original(base.pixels,base.pixels+HandTileW*HandTileH);
+ const auto neighbour=hand_tile(c,1).built;
+ const auto&first=selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==0&&selected_hand_reader.maximum>0);
+ const std::vector<uint16_t> initial(first.pixels,first.pixels+HandTileW*HandTileH);
+ const auto rect=card_face::layout(HandFaceX,HandFaceY,HandFaceW,HandFaceH).description;
+ const int maximum=selected_hand_reader.maximum;
+ for(int skip=1;skip<=maximum;++skip){
+  a.map_clock_ms=selected_hand_reader.started+1401u+unsigned(skip-1)*1200u;begin_card_face_frame();const auto&current=selected_hand_tile(c,0);CHECK(selected_hand_reader.skip==skip);
+  unsigned changed=0;for(int y=0;y<HandTileH;++y)for(int x=0;x<HandTileW;++x){const unsigned at=y*HandTileW+x;
+   if(x<rect.x||x>=rect.x+rect.w||y<rect.y||y>=rect.y+rect.h)CHECK(initial[at]==current.pixels[at]);else changed+=initial[at]!=current.pixels[at];}
+  CHECK(changed>10);CHECK(base.built==build&&!std::memcmp(base.pixels,original.data(),sizeof base.pixels));CHECK(hand_tile(c,1).built==neighbour);unchanged();
+ }
+ a.map_clock_ms=selected_hand_reader.started+3000u+unsigned(maximum)*1200u;begin_card_face_frame();selected_hand_tile(c,0);CHECK(!selected_hand_reader.skip);unchanged();
+ a.input(Key::Back);CHECK(a.selected_hand_card()<0);a.render();CHECK(selected_hand_reader.instance<0);unchanged();CHECK(a.content.healthy());
+}
 int main(int argc,char**argv){CHECK(argc==1||argc==2);aimed_preview();numeric_selection();denied_plays();battle_entry();smith();reward_overlap();
  if(argc==2){const std::string root=argv[1];auto common=read(root+"/nSpire2.common.tns"),language=read(root+"/nSpire2.eng.tns");SplitResourceSource split;
   CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));CHECK(a.init(split.source(),{}));
-  aimed_preview();denied_plays();smith();reward_overlap();merchant_cache();actual_label_metrics();actual_aimed_descriptions();actual_winning_card();
+  aimed_preview();denied_plays();battle_entry();actual_single_battle_banner();smith();reward_overlap();merchant_cache();actual_label_metrics();actual_aimed_descriptions();actual_winning_card();actual_selected_description();
  }
  std::printf("combat UI12: %u checks passed%s\n",checks,argc==2?"; actual source cards rendered":"");
 }

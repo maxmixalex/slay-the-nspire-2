@@ -144,46 +144,11 @@ static void ftue_combat_pages(Canvas&c){
  if(f.page){c.ui(I7_SettingsArrowLeft,6,199,28,28);c.hit(6,199,28,28,HitKind::FtueControl,2);}
  c.ui(I7_SettingsArrowRight,286,199,28,28);c.hit(286,199,28,28,HitKind::FtueControl,3);
 }
-static void ftue_start_label(Canvas c,const char*text,unsigned scale){
- c.font_face=source_label_face(c.a.content.original_label_fonts(),4);const int size=c.a.content.font_size(18,c.font_face);
- const int left=160-int(unsigned(c.width(text,size))*scale/4096)/2;int pen64=0;uint32_t previous=0;
- while(*text){const uint32_t cp=utf8(text);const auto g=c.a.content.glyph(cp,size,c.font_face);
-  pen64+=c.a.content.glyph_kerning64(previous,cp,size,c.font_face);
-  const int x=left+text_pixel(int(int64_t(pen64+int(g.bearing_x)*64)*scale/4096));
-  pen64+=g.advance64?g.advance64:int(g.advance)*64;previous=cp;
-  if(!g.pixels||g.w>48||g.h>48)continue;
-  uint8_t alpha[48*48]{};unsigned at=0;
-  if(g.encoded_size){for(unsigned i=0;i+1<g.encoded_size&&at<unsigned(g.w)*g.h;i+=2)for(unsigned j=0;j<g.pixels[i]&&at<unsigned(g.w)*g.h;++j)alpha[at++]=g.pixels[i+1];}
-  else for(unsigned i=0;i<unsigned(g.w)*g.h;++i)alpha[i]=g.pixels[i];
-  const int w=mx(1,int(g.w*scale/4096)),h=mx(1,int(g.h*scale/4096)),r=mx(1,int(5*scale/4096)),top=109-h/2;
-  // Original Label outline24px at the same node scale. A bounded coverage
-  // plane prevents overlapping outline samples from darkening twice.
-  uint8_t outline[96*96]{};const int ow=w+2*r,oh=h+2*r;
-  if(ow<=96&&oh<=96){
-   for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx){const unsigned a=alpha[unsigned(yy*g.h/h)*g.w+unsigned(xx*g.w/w)];if(!a)continue;
-    for(int dy=-r;dy<=r;++dy)for(int dx=-r;dx<=r;++dx)if(dx*dx+dy*dy<=r*r){auto&v=outline[(yy+dy+r)*96+xx+dx+r];if(a>v)v=uint8_t(a);}}
-   for(int yy=0;yy<oh;++yy)for(int xx=0;xx<ow;++xx)if(outline[yy*96+xx]&&x+xx-r>=0&&x+xx-r<c.clip_w&&top+yy-r>=0&&top+yy-r<c.clip_h)
-    c.paint((top+yy-r)*c.pitch+x+xx-r,0,outline[yy*96+xx]/2);
-  }
-  for(int yy=0;yy<h;++yy)for(int xx=0;xx<w;++xx)if(x+xx>=0&&x+xx<c.clip_w&&top+yy>=0&&top+yy<c.clip_h)
-   c.paint((top+yy)*c.pitch+x+xx,rgb(239,200,81),alpha[unsigned(yy*g.h/h)*g.w+unsigned(xx*g.w/w)]);
- }
-}
-static void ftue_combat_start(Canvas&c){
- const auto&f=c.a.ftue;if(!f.banner)return;const uint32_t age=c.a.map_clock_ms-f.banner_at;if(age<300||age>=5100)return;
- const unsigned q=room_curve::expo_out(age-300,750),scale=4096+(4096-q)/5;
- unsigned alpha=64*q/4096;if(age>4100)alpha=64*(4096-room_curve::cubic_out(age-4100,1000))/4096;
- Canvas band=c;band.opacity=uint8_t(div255(band.opacity*alpha));const int dx=int((scale-4096)*183/4096),dy=int((scale-4096)*17/4096);
- band.rect(-dx,88-dy,int(320*scale/4096),int(40*scale/4096),rgb(16,0,0));
- if(age>=2600)return;Canvas label=c;
- const unsigned opacity=age<1600?255*room_curve::expo_out(age-300,1300)/4096:255*(4096-room_curve::cubic_out(age-1600,1000))/4096;
- label.opacity=uint8_t(div255(label.opacity*opacity));ftue_start_label(label,c.a.content.world_string("gameplay_ui","BATTLE_START"),8192-q);
-}
 static void ftue_screen(Canvas&c){
  auto&a=c.a;const auto id=a.ftue.id;
  if(!a.ftue.active()){
   if(a.ftue.closing){const unsigned age=a.map_clock_ms-a.ftue.closing_at;if(age>=300)a.ftue.closing=false;else{Canvas back=c;back.opacity=uint8_t(div255(back.opacity*a.ftue.closing_alpha*(300-age)/300));back.rect(0,0,320,240,0);}}
-  ftue_combat_start(c);return;
+  return;
  }
  a.hit_count=0;Canvas backstop=c;const unsigned alpha=a.ftue.backstop_from+(217-a.ftue.backstop_from)*room_curve::linear(a.ftue.age(a.map_clock_ms),300)/4096;
  backstop.opacity=uint8_t(div255(backstop.opacity*alpha));backstop.rect(0,0,320,240,0);
