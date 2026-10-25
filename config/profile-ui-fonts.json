@@ -66,7 +66,7 @@
   {"key": "stats_screen.TIP_PLAYTIME.description", "pixels": 5, "face": 0, "source_pixels": 24},
   {"key": "stats_screen.TIP_WIN_LOSS.header", "pixels": 5, "face": 5, "source_pixels": 28, "faces": {"eng": 5, "zhs": 0}},
   {"key": "stats_screen.TIP_WIN_LOSS.description", "pixels": 5, "face": 0, "source_pixels": 24},
-  {"key": "run_history.INFO.DATE_TIME", "pixels": 8, "face": 0, "substitutions": {"Date": "0123456789, JanuaryFebruaryMarchAprilMayJuneJulyAugustSeptemberOctoberNovemberDecember—", "Time": "0123456789: AMPM—"}, "substitutions_by_locale": {"zhs": {"Date": "0123456789 :一二三四五六七八九十月上午下午，—", "Time": "0123456789 :一二三四五六七八九十月上午下午，—"}}, "note": "Existing history summary band; locale calendar repair requires an exact glyph at every rendered size."},
+  {"key": "run_history.INFO.DATE_TIME", "pixels": 5, "face": 0, "substitutions": {"Date": "0123456789, JanuaryFebruaryMarchAprilMayJuneJulyAugustSeptemberOctoberNovemberDecember—", "Time": "0123456789: AMPM—"}, "substitutions_by_locale": {"zhs": {"Date": "0123456789 :一二三四五六七八九十月上午下午，—", "Time": "0123456789 :一二三四五六七八九十月上午下午，—"}}, "note": "NRunHistory information uses fixed24px rich text; both locale calendars retain exact glyphs.", "source_pixels": 24},
   {"key": "characters.IRONCLAD.title", "pixels": 10, "face": 4, "faces": {"eng": 4, "zhs": 0}},
   {"key": "characters.IRONCLAD.title", "pixels": 12, "face": 4, "faces": {"eng": 4, "zhs": 0}},
   {"key": "characters.IRONCLAD.title", "pixels": 14, "face": 4, "faces": {"eng": 4, "zhs": 0}},
@@ -725,6 +725,18 @@
   {"key": "acts.OVERGROWTH.title", "pixels": 5, "face": 0, "source_pixels": 28},
   {"key": "acts.UNDERDOCKS.title", "pixels": 5, "face": 0, "source_pixels": 28},
   {"key": "acts.HIVE.title", "pixels": 5, "face": 0, "source_pixels": 28},
-  {"key": "acts.GLORY.title", "pixels": 5, "face": 0, "source_pixels": 28}
+  {"key": "acts.GLORY.title", "pixels": 5, "face": 0, "source_pixels": 28},
+  {"key": "run_history.INFO.SEED", "pixels": 5, "face": 0, "source_pixels": 24, "substitutions": {"Seed": ""}},
+  {"key": "run_history.GAME_MODE.title", "pixels": 5, "face": 0, "source_pixels": 24, "substitutions": {"PlayerCount": "", "GameMode": ""}},
+  {"key": "run_history.PLAYER_COUNT.singleplayer", "pixels": 5, "face": 0, "source_pixels": 24},
+  {"key": "run_history.GAME_MODE.standard", "pixels": 5, "face": 0, "source_pixels": 24},
+  {"key": "run_history.GAME_MODE.custom", "pixels": 5, "face": 0, "source_pixels": 24},
+  {"key": "run_history.GAME_MODE.daily", "pixels": 5, "face": 0, "source_pixels": 24},
+  {"key": "run_history.GAME_MODE.unknown", "pixels": 5, "face": 0, "source_pixels": 24}
+ ],
+ "alphabets": [
+  {"name": "history-hp-gold-floor-duration", "pixels": 6, "face": 5, "faces": {"eng": 5, "zhs": 0}, "characters": "0123456789/:—", "source_pixels": 32},
+  {"name": "history-ascension", "pixels": 4, "face": 0, "characters": "0123456789", "source_pixels": 20},
+  {"name": "history-canonical-seed", "pixels": 5, "face": 0, "characters": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHJKLMNPQRSTUVWXYZ[\\]^_`{|}~", "source_pixels": 24}
  ]
 }

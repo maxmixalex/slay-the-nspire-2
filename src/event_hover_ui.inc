@@ -114,6 +114,16 @@ bool event_hover_target(const App&a,CardHoverTarget&target){
     if(!hit||hit->value<0||unsigned(hit->value)>=original_event_option_count(a.game))return false;
     target.event_option=hit->value;target.owner={hit->x,hit->y,hit->w,hit->h};target.detail=a.keyword_hover.details;
     target.identity=0x60000000u|(unsigned(a.game.original_events.id)<<16)|(unsigned(a.game.original_events.page)<<8)|unsigned(hit->value);
+    if(a.game.original_events.id==OriginalEventId::FakeMerchant&&hit->value<6){
+        // This custom event instantiates the ordinary NMerchantRelic. Its
+        // source hover anchor is the122px slot, separate from the large icon.
+        const int cx=MerchantInventoryLayout::fake_x(unsigned(hit->value));
+        const int cy=MerchantInventoryLayout::fake_y(unsigned(hit->value))+a.room_presentation.merchant.offset(a.map_clock_ms);
+        const int side=MerchantInventoryLayout::size(122,800),half=side/2;
+        target.merchant=true;target.merchant_left=cx>ScreenW/2;
+        target.relic=a.game.original_events.offers[hit->value];target.canonical_relic=true;
+        target.owner={cx+(target.merchant_left?-half:half),cy-half,side,side};
+    }
     return true;
 }
 static bool treasure_hover_target(const App&a,CardHoverTarget&target){

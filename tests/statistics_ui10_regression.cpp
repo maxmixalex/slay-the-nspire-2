@@ -2,6 +2,7 @@
 #include "content_fixture.hpp"
 #include "source_scene_oracle.hpp"
 #include <cstdio>
+#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -16,6 +17,30 @@ static void replace(std::string&value,const char*key,const std::string&replaceme
 static void unchanged(){CHECK(save(app.game,after));CHECK(before.size==after.size&&!std::memcmp(before.bytes,after.bytes,before.size));}
 static void capture(const char*folder,const char*name){if(!folder)return;const std::string path=std::string(folder)+"/"+name+".ppm";FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);
     std::fprintf(f,"P6\n320 240\n255\n");for(auto p:app.pixels){const uint8_t rgb[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(rgb,1,3,f)==3);}CHECK(!std::fclose(f));}
+static void mask_group_pixels(){
+    // Independent source oracle:128px RGBA8 GradientTexture2D, offsets
+    // .125/.15/.975/1 and default bilinear sampling over a240px viewport.
+    const auto texel=[](int i){const double t=i<0?0:i>127?1:double(i)/127;
+        const double a=t<.125?0:t<.15?(t-.125)/(.15-.125):t<.975?1:(1-t)/(1-.975);
+        return int(std::floor(a*255+1e-9));};
+    const auto alpha=[&](int y){const double sample=(y+.5)/240*128-.5;const int index=int(std::floor(sample));
+        return unsigned(std::lround(texel(index)*(1-(sample-index))+texel(index+1)*(sample-index)));};
+    const auto mix=[](uint16_t background,uint16_t foreground,unsigned opacity){uint16_t result=0;
+        for(unsigned shift:{0u,5u,11u}){const unsigned limit=shift==5?63:31;
+            const unsigned value=(((background>>shift)&limit)*(255-opacity)+((foreground>>shift)&limit)*opacity+127)/255;result|=uint16_t(value<<shift);}return result;};
+    for(int y=0;y<240;++y)for(int x=0;x<320;++x)app.pixels[y*320+x]=uint16_t(((x*7+y*11)&31)<<11|((x+y*3)&63)<<5|((x*5+y)&31));
+    const std::vector<uint16_t>background(app.pixels,app.pixels+320*240);Canvas screen{app};const StatisticsMask mask(screen);
+    Canvas content=screen;content.pixels+=29*320;content.clip_h=211;content.opacity=173;content.rect(23,-29,274,240,scene_rgb(36,59,73));
+    content.opacity=111;content.rect(37,-29,241,240,scene_rgb(239,200,81));
+    const std::vector<uint16_t>group(app.pixels,app.pixels+320*240);mask.apply(screen);
+    unsigned changed=0;for(int y=0;y<240;++y){CHECK(StatisticsMask::alpha(y)==alpha(y));for(int x=0;x<320;++x){const unsigned at=y*320+x;
+        CHECK(app.pixels[at]==mix(background[at],group[at],alpha(y)));changed+=app.pixels[at]!=group[at];
+        if(y<29)CHECK(app.pixels[at]==background[at]);if(y>=38&&y<232)CHECK(app.pixels[at]==group[at]);}}
+    CHECK(changed>0&&alpha(28)==0&&alpha(29)>0&&alpha(37)<255&&alpha(38)==255&&alpha(231)==255&&alpha(232)<255&&alpha(239)==0);
+    const int overlap=32*320+50;const unsigned a=alpha(32);
+    const auto primitive=mix(mix(background[overlap],scene_rgb(36,59,73),(173*a+127)/255),scene_rgb(239,200,81),(111*a+127)/255);
+    CHECK(app.pixels[overlap]!=primitive); // Masking each primitive compounds opacity incorrectly.
+}
 static void layout_and_input(){
     clear_ui_progress(app.progress);const UiStatisticsLayout empty(app.progress);CHECK(empty.count==9&&empty.character_count==0&&empty.height==240);
     CHECK(empty.entries[0].x==251&&empty.entries[0].y==276&&empty.entries[0].w==500&&empty.entries[0].h==92);
@@ -55,7 +80,7 @@ static void entry_pixels(const std::vector<uint8_t>&pack){
         app.progress_page_scroll.position=app.progress_page_scroll.target=test.entry>=9?120*256:0;const int scroll=test.entry>=9?120:0;
         for(auto&m:app.statistics_presentation.entries)m={};
         ProgressTextValues upper;upper.amount=test.amount;upper.playtime="3:25:20";upper.fastest="00:59";upper.wins=test.wins;upper.losses=test.losses;ProgressTextValues lower=upper;lower.amount=test.other;
-        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas page{app};page.pixels+=30*320;page.clip_h=210;if(!visible)page.text_visible_characters=0;
+        const auto paint=[&](bool visible){for(auto&pixel:app.pixels)pixel=scene_rgb(21,40,65);Canvas page{app};page.pixels+=29*320;page.clip_h=211;if(!visible)page.text_visible_characters=0;
             statistics_entry(page,layout,test.entry,I7_StatsClock,test.top,test.bottom,upper,lower,test.red);};
         paint(true);const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
         const auto label=[&](const char*key,bool second){if(!key)return;std::string value=text(key);
@@ -88,6 +113,6 @@ static void actual_flow(const std::vector<uint8_t>&pack,const char*folder){
 }
 int main(int argc,char**argv){
     std::vector<uint8_t>pack;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);pack.resize(spire_test::pack_size(f));CHECK(std::fread(pack.data(),1,pack.size(),f)==pack.size());std::fclose(f);CHECK(app.init(pack.data(),pack.size(),{}));}
-    new_run(app.game,0x1735,false,Character::Ironclad);CHECK(save(app.game,before));layout_and_input();actual_flow(pack,argc>2?argv[2]:nullptr);
+    new_run(app.game,0x1735,false,Character::Ironclad);CHECK(save(app.game,before));mask_group_pixels();layout_and_input();actual_flow(pack,argc>2?argv[2]:nullptr);
     std::puts("Statistics: original container geometry, conditional rows, locale fonts/colors, focus/hover/scroll and canonical purity passed");
 }

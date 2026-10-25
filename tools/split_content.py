@@ -51,8 +51,8 @@ def layout(data, language):
     require(language in LANGUAGES, "Unsupported language")
     require(40 <= len(data) <= FILE_LIMIT, "Invalid input size")
     magic, version, reference, length, ni, ng, ns, nc, nk, checksum = struct.unpack_from("<4s9I", data)
-    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37) and reference == REFERENCE,
-            "Expected pinned NSP2/17 through NSP2/37")
+    require(magic == b"NSP2" and version in (17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38) and reference == REFERENCE,
+            "Expected pinned NSP2/17 through NSP2/38")
     require(length == len(data), "Input length differs")
     require(0 < ni <= 65535 and 0 < ng <= (65535 if version >= 35 else 32768) and MARKER < ns <= 16384 and
             0 < nc <= 65535 and 0 < nk <= 65535, "Invalid directory counts")

@@ -47,7 +47,10 @@ class SceneFontsTest(unittest.TestCase):
         for c in '攻击次所有人':
             self.assertIn((ord(c),5,0),required)
         for c in '{}[]|':
-            self.assertFalse(any(cp==ord(c) for cp,px,face in required))
+            # These are legal literal seed characters at5px Regular. They
+            # must still never leak out of formatter/BBCode parsing elsewhere.
+            self.assertIn((ord(c),5,0),required)
+            self.assertFalse(any(cp==ord(c) and (px,face)!=(5,0) for cp,px,face in required))
         # Ordinary normal fonts are locale-substituted even when the scene
         # authored Spectral or Bitter; rich bold is collected separately.
         english_common=scene.room_requirements(Labels(),'common-ui-fonts.json')
@@ -57,7 +60,16 @@ class SceneFontsTest(unittest.TestCase):
         chinese_common=scene.room_requirements(chinese,'common-ui-fonts.json')
         self.assertIn((ord('字'),18,0),chinese_common)
         self.assertIn((ord('字'),4,0),chinese_common)
-        self.assertFalse(any(face in (4,5,6) for cp,px,face in chinese_common))
+        self.assertFalse(any(face in (4,6) for cp,px,face in chinese_common))
+        self.assertIn((ord('字'),5,5),chinese_common)  # Collection headings retain rich bold.
+        english_profile=scene.profile_requirements(Labels())
+        chinese_profile=scene.profile_requirements(chinese)
+        for c in '0123456789/:—':
+            self.assertIn((ord(c),6,5),english_profile)
+            self.assertIn((ord(c),6,0),chinese_profile)
+        for c in '[]{}|@':
+            self.assertIn((ord(c),5,0),english_profile)
+            self.assertIn((ord(c),5,0),chinese_profile)
         labels=Labels()
         labels.values[scene.text_index()['main_menu_ui.PROFILE_SCREEN.BUTTON.title']]='{Unknown}'
         with self.assertRaisesRegex(ValueError,'Unknown profile substitution'):
@@ -90,6 +102,19 @@ class SceneFontsTest(unittest.TestCase):
             tiles.PackView(too_large,auxiliary,versions=(35,))
         with self.assertRaisesRegex(ValueError,'transition'):
             library.rewrite_directory(after,auxiliary,set(),[],output_version=34)
+        with self.assertRaisesRegex(ValueError,'transition'):
+            library.rewrite_directory(after,auxiliary,set(),[],output_version=36)
+        # A font-only edit of a later resource keeps its actual encoding
+        # version and all old payloads. It cannot silently downgrade RGR2.
+        for version in (36,37,38):
+            later=bytearray(after);struct.pack_into('<I',later,4,version)
+            extra=[(0x20000,7,1,1,1,0,b'\x7f')]
+            appended=library.rewrite_directory(bytes(later),auxiliary,set(),extra,output_version=version)
+            current=tiles.PackView(appended,auxiliary,versions=(version,))
+            self.assertEqual(current.version,version)
+            self.assertTrue(library.verify_preserved(bytes(later),appended,auxiliary,set())['exact_complete_old_payload'])
+            with self.assertRaisesRegex(ValueError,'transition'):
+                library.rewrite_directory(bytes(later),auxiliary,set(),[],output_version=35)
 
 
 if __name__=='__main__':

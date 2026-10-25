@@ -98,8 +98,8 @@ static void popup_geometry(){
   CHECK(hit.x==(source_x*4+10)/21&&hit.y==(778*4+10)/21&&hit.w==(180*4+10)/21&&hit.h==(72*4+10)/21&&hit.enabled);found|=accept?2:1;
  }CHECK(found==3);
 }
-static void capture(const char*name){
- if(!capture_directory)return;a.pointer.visible=false;if(a.frontend_confirm){a.render();a.advance(150);a.advance(150);popup_geometry();}a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
+static void capture(const char*name,bool preserve_pointer=false){
+ if(!capture_directory)return;if(!preserve_pointer)a.pointer.visible=false;if(a.frontend_confirm){a.render();a.advance(150);a.advance(150);popup_geometry();}a.render();char path[1024]{};int n=std::snprintf(path,sizeof path,"%s/%s.ppm",capture_directory,name);CHECK(n>0&&unsigned(n)<sizeof path);
  FILE*f=std::fopen(path,"wb");CHECK(f);CHECK(std::fprintf(f,"P6\n320 240\n255\n")>0);uint8_t row[ScreenW*3];
  for(unsigned y=0;y<ScreenH;y++){for(unsigned x=0;x<ScreenW;x++){uint16_t p=a.pixels[y*ScreenW+x];row[x*3]=uint8_t((p>>11)*255/31);row[x*3+1]=uint8_t(((p>>5)&63)*255/63);row[x*3+2]=uint8_t((p&31)*255/31);}CHECK(std::fwrite(row,1,sizeof row,f)==sizeof row);}CHECK(!std::fclose(f));
 }
@@ -118,8 +118,11 @@ static void press(HitKind kind,int value){const auto h=find_hit(kind,value);a.po
 static void action(UiAction value){press(HitKind::UiAction,int(value));}
 static void menu_rows(unsigned count){
  a.render();unsigned seen=0;for(int i=0;i<a.hit_count;i++)if(a.hits[i].kind==HitKind::Menu){const auto&hit=a.hits[i];CHECK(hit.value>=0&&unsigned(hit.value)<count);
-  const int source_y=699+(450-int(count)*50)/2+hit.value*50,expected_y=(source_y*4+10)/21;
-  CHECK(hit.x==106&&hit.y==expected_y&&hit.w==38&&hit.h==((source_y+50)*4+10)/21-expected_y);seen|=1u<<hit.value;}
+  if(a.title){const int source_y=699+(450-int(count)*50)/2+hit.value*50,expected_y=(source_y*4+10)/21;
+   CHECK(hit.x==106&&hit.y==expected_y&&hit.w==38&&hit.h==((source_y+50)*4+10)/21-expected_y);
+  }else{const int pause_y[]={88,104,119,134,149};CHECK(a.paused&&count==5);
+   CHECK(hit.x==125&&hit.y==pause_y[hit.value]&&hit.w==71&&hit.h==15);
+  }seen|=1u<<hit.value;}
  CHECK(seen==((1u<<count)-1));
 }
 static void confirm_accept(){CHECK(a.frontend_confirm&&a.frontend_choice==0);popup_geometry();a.input(Key::Right);CHECK(a.frontend_choice==1);a.input(Key::Confirm);CHECK(!a.frontend_confirm);}
@@ -203,7 +206,7 @@ static void title_background_layers(){
   const uint8_t*pixel=foreground.palette?foreground.palette+2*foreground.pixels[at]:foreground.pixels+2*at;
   colors[at]=uint16_t(pixel[0]|unsigned(pixel[1])<<8);opaque[at]=!foreground.alpha||foreground.alpha[at]==255;
  }
- a.map_clock_ms=50;a.render();std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);capture("frontend-title-particles-50ms");
+ a.map_clock_ms=50;a.render();std::vector<uint16_t>first(a.pixels,a.pixels+ScreenW*ScreenH);capture("frontend-title-particles-50ms",true);
  unsigned visible_changes=0,covered=0;
  for(unsigned time:{1250u,25050u,100050u}){
   a.map_clock_ms=time;a.render();
@@ -214,9 +217,9 @@ static void title_background_layers(){
    // Fully opaque buildings must remain above both particle emitters.
    if(x>=224&&y>=70&&y<225&&opaque[at]){CHECK(a.pixels[at]==colors[at]);++covered;}
   }
-  if(time==1250)capture("frontend-title-glow-bright");
-  if(time==25050)capture("frontend-title-particles-25s");
-  if(time==100050)capture("frontend-title-particles-100s");
+  if(time==1250)capture("frontend-title-glow-bright",true);
+  if(time==25050)capture("frontend-title-particles-25s",true);
+  if(time==100050)capture("frontend-title-particles-100s",true);
  }
  CHECK(visible_changes>0&&covered>0);CHECK(a.content.healthy());unchanged();
 }
@@ -242,7 +245,7 @@ static void title_animation_is_bounded_and_repeats(){
   // rectangle proves the independent light has actually been rendered.
   a.map_clock_ms=1050;a.render();unsigned changed=0;
   for(unsigned y=0;y<ScreenH;++y)for(unsigned x=0;x<ScreenW;++x)if(a.pixels[y*ScreenW+x]!=first[y*ScreenW+x]){CHECK(in_fire(x,y)||in_glow(x,y));changed+=!in_fire(x,y);}
-  CHECK(changed>0);capture("frontend-title-glow-bright");
+  CHECK(changed>0);capture("frontend-title-glow-bright",true);
  }
  a.map_clock_ms=(glow?title_scene::GlowPeriodMs:title_scene::FireFrames*title_scene::FireFrameMs)+50;a.render();
  CHECK(!std::memcmp(first.data(),a.pixels,sizeof a.pixels));unchanged();

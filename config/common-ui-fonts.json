@@ -252,6 +252,25 @@
   ],
   "groups": [
     {
+      "key_pattern": "^relic_collection\\.(?:ANCIENT|ANCIENT_SUBCATEGORY|COMMON|EVENT|RARE|SHOP|STARTER|UNCOMMON)$",
+      "pixels": 5,
+      "face": 0,
+      "faces": {"eng": 0, "zhs": 5},
+      "rich_face": "bold"
+    },
+    {
+      "key_pattern": "^potion_lab\\.(?:COMMON|UNCOMMON|RARE|SPECIAL)$",
+      "pixels": 5,
+      "face": 5,
+      "rich_face": "bold"
+    },
+    {
+      "key_pattern": "^(?:ancients\\.(?:NEOW|OROBAS|PAEL|TEZCATARA|NONUPEIPE|TANX|VAKUU|DARV)\\.title|relic_collection\\.UNKNOWN_ANCIENT)$",
+      "pixels": 5,
+      "face": 0,
+      "faces": {"eng": 0, "zhs": 5}
+    },
+    {
       "key_pattern": "^card_reward_ui\\..*\\.name$",
       "pixels": 6,
       "face": 5,

@@ -81,12 +81,68 @@ def complete_slices(slices, size):
     return end == size
 
 
+def slice_hash(slices):
+    return tiles.sha256(b''.join(SLICE.pack(*row) for row in slices))
+
+
+def previous_results(path):
+    """Read either the historical probe or this converter's own receipt.
+
+    Early converter receipts have no cached-stream path or slice fingerprint.
+    Their matching sibling output supplies those exact bytes without another
+    compression pass. Every imported stream is still decoded against the new
+    source's filtered bytes before it can become a candidate.
+    """
+    path = Path(path)
+    receipt = json.loads(path.read_bytes())
+    rows = {row['first_image']: dict(row) for row in receipt['results']
+            if isinstance(row.get('first_image'), int) and isinstance(row.get('raw_sha256'), str)}
+    if receipt.get('version') == CONTENT_VERSION and 'locales' in receipt:
+        for language, locale in receipt['locales'].items():
+            packed = path.parent / ('ui9-' + language + '.nsp')
+            if not packed.is_file():
+                continue
+            data = packed.read_bytes()
+            tiles.require(tiles.sha256(data) == locale['output_sha256'],
+                          'Previous retained output does not match its receipt')
+            source = view(data)
+            for group in groups(source):
+                row = rows.get(group.first_image)
+                if row is None:
+                    continue
+                payload = source.block(group.offset, group.size)
+                raw_size, start, mode, _table = group_layout(payload, source.version)
+                tiles.require(row.get('mode') == mode and row.get('raw_bytes') == raw_size,
+                              'Previous retained group mode or size differs')
+                row['slice_sha256'] = slice_hash(group.slices)
+                if mode:
+                    row['_stream_bytes'] = bytes(payload[start:])
+            break
+    return {(row['first_image'], row['raw_sha256']): row for row in rows.values()}
+
+
+def proven_previous_mode(prior, raw_size, original_size, slices, planar):
+    if not prior:
+        return None
+    # A missing field is not the historical explicit "chosen: null" result.
+    # The old probe's format-1 transform was incorrect, so those groups still
+    # require the corrected planar transform and full candidate selection.
+    if all(key in prior for key in ('chosen', 'stream', 'stored_bytes', 'best_bytes')):
+        chosen = prior['chosen']
+        mode = 0 if chosen is None else chosen.get('mode') if isinstance(chosen, dict) else None
+        return mode if not planar and mode in (0, 1, 2) else None
+    if (prior.get('mode') in (0, 1, 2) and prior.get('raw_bytes') == raw_size and
+            prior.get('original_bytes') == original_size and prior.get('slice_sha256') == slices):
+        return prior['mode']
+    return None
+
+
 def candidate(source, group, cache, previous):
     original = bytes(source.block(group.offset, group.size))
     raw_size, start, existing_mode, _table = group_layout(original, source.version)
     receipt = dict(first_image=group.first_image, records=len(group.slices),
                    raw_bytes=raw_size, original_bytes=len(original), output_bytes=len(original),
-                   saved_bytes=0, mode=0, reused_candidate=False)
+                   saved_bytes=0, mode=0, reused_candidate=False, slice_sha256=slice_hash(group.slices))
     result = Choice(tiles.sha256(original), group.slices, None, receipt)
     if existing_mode or not complete_slices(group.slices, raw_size):
         receipt['preserved_reason'] = 'already_filtered' if existing_mode else 'unreferenced_or_overlapping_slices'
@@ -95,36 +151,38 @@ def candidate(source, group, cache, previous):
     receipt['raw_sha256'] = tiles.sha256(raw)
     prior = previous.get((group.first_image, receipt['raw_sha256']))
     planar = any(shape >> 24 == 1 for _at, shape in group.slices)
+    previous_mode = proven_previous_mode(prior, raw_size, len(original), receipt['slice_sha256'], planar)
     # A previous non-beneficial screen can only keep the verified old stream;
     # it cannot substitute bytes. Dense-alpha groups must be recomputed because
     # the historical experiment treated their two planes as interleaved RGB/A.
-    if prior and not planar and prior.get('chosen') is None:
+    if previous_mode == 0:
         receipt['preserved_reason'] = 'previous_nonbeneficial_screen'
         return result
     best = original
     for mode in (1, 2):
+        if previous_mode in (1, 2) and mode != previous_mode:
+            continue
         filtered = transform_group(raw, group.slices, mode)
         tiles.require(transform_group(filtered, group.slices, mode, True) == raw,
                       'Retained forward/inverse bytes differ')
         encoded = None
         imported = False
-        if prior and (prior.get('chosen') or {}).get('mode') == mode and prior.get('stream'):
-            path = Path(prior['stream'])
-            if path.is_file():
-                proposed = path.read_bytes()
-                if tiles.decode_lzma2(proposed, raw_size) == filtered:
-                    encoded, imported = proposed, True
         key = tiles.sha256(ENCODER + bytes((mode,)) + filtered)
         cached = cache / (key + '.lzma2')
-        if encoded is None and cached.is_file():
+        if cached.is_file():
             encoded = cached.read_bytes()
             tiles.require(tiles.decode_lzma2(encoded, raw_size) == filtered,
                           'Cached retained filtered bytes differ')
-        # For a matching historical candidate the already-tested best mode
-        # covers the same byte stream and all profiles. The other mode need
-        # not be recompressed; preserving an old group remains the fallback.
-        if encoded is None and prior and not planar:
-            continue
+        if encoded is None and prior:
+            chosen = prior.get('chosen')
+            selected = chosen.get('mode') if isinstance(chosen, dict) else prior.get('mode')
+            proposed = prior.get('_stream_bytes') if selected == mode else None
+            if proposed is None and selected == mode and prior.get('stream'):
+                path = Path(prior['stream'])
+                if path.is_file():
+                    proposed = path.read_bytes()
+            if proposed is not None and tiles.decode_lzma2(proposed, raw_size) == filtered:
+                encoded, imported = proposed, True
         if encoded is None:
             for lc, lp, pb in PROFILES:
                 stream = lzma.compress(filtered, format=lzma.FORMAT_RAW,
@@ -134,13 +192,16 @@ def candidate(source, group, cache, previous):
                     encoded = stream
             tiles.require(tiles.decode_lzma2(encoded, raw_size) == filtered,
                           'Compressed retained filtered bytes differ')
+        # Imports also populate the content-addressed cache. A later reuse of
+        # this converter's receipt must not silently lose the historical wins.
+        if not cached.is_file():
             tiles.atomic_bytes(cached, encoded)
         table = b''.join(SLICE.pack(*row) for row in group.slices)
         payload = tiles.GROUP.pack(b'RGR2', raw_size, len(encoded), 14,
             len(group.slices), mode, len(table), 0) + table + encoded
         if len(payload) <= tiles.ENCODED_LIMIT and aligned(len(payload)) < aligned(len(best)):
             best = payload
-            receipt.update(mode=mode, reused_candidate=imported)
+            receipt.update(mode=mode, reused_candidate=imported, stream=str(cached))
     if best is not original:
         group_layout(best, CONTENT_VERSION)
         result.payload = best
@@ -290,8 +351,7 @@ def main():
     tiles.require(not set(inputs.values()).intersection(outputs.values()), 'Never overwrite an input pack')
     previous = {}
     if args.reuse_receipt:
-        receipt = json.loads(args.reuse_receipt.read_bytes())
-        previous = {(row['first_image'], row['raw_sha256']): row for row in receipt['results']}
+        previous = previous_results(args.reuse_receipt)
     sources = {language: view(path.read_bytes()) for language, path in inputs.items()}
     choices = plan(sources['eng'], cache, jobs=args.jobs, previous=previous)
     packs, receipts = {}, {}

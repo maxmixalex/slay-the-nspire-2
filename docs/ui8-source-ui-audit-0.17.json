@@ -6,7 +6,7 @@
     "dll_sha256": "0861bfa1df347538d932f22d580e75420f08082792eb914e53b4882764acdbe9"
   },
   "supersedes": "ui7-original-ui-inventory-0.17.json",
-  "source_stage": "UI10 source follow-up: profile/compendium/statistics geometry and interaction, source locale font roles, centered library count and Chinese calendars. Matching frozen runtime and paired exact-font acceptance remain pending.",
+  "source_stage": "UI10E source follow-up: source Statistics group mask and History information/counter header, joined Card Library search, exact Chinese collection Bold coverage and repaired independent title/pause/capture fixtures. Matching E runtime/resources and ordinary hosts remain pending.",
   "scope": {
     "excluded": [
       "audio",
@@ -141,12 +141,12 @@
       ],
       "contract": "Filters, discoveries, card grid and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original grid/filter/discovery/debounce contracts and exact4/5/6px sidebar/card-stat bands are retained. UI10 centers the source count markup and applies actual locale font substitution to ordinary sort/filter/cost/check labels.",
-      "remaining": "Source matches title plus description as one string; the current separate-field search and stronger query trimming remain a concrete mismatch. New font, pixel and host gates remain required.",
+      "implemented": "Original grid/filter/discovery/debounce contracts and exact4/5/6px bands remain. UI10 centers the count markup, applies actual locale normal-font substitution and fixes four empty sort-caption lookups. E streams the normalized title+space+description through a128-byte prefix matcher while preserving lowercase-only nonblank query whitespace.",
+      "remaining": "Matching E actual-language and ordinary-host gates are required for joined search and the exact collection Bold font additions.",
       "regressions": [
         "library_ui7_regression"
       ],
-      "acceptance": "UI10c actual run exposed a bounded follow-up recorded in docs/ui10-front-source-review-0.17.md; corrected source awaits next matching runtime. No failure is counted as a pass."
+      "acceptance": "D matched English library target passed. Chinese reached the collection oracle and correctly failed three absent exact Bold glyphs. E adds those glyph requirements; no failed D receipt is counted as a pass."
     },
     {
       "id": "relic_collection",
@@ -156,13 +156,13 @@
       ],
       "contract": "Relic categories and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Original category/starter/Ancient groups, discovery gates, fixed source headings,69px hover columns and related previews remain implemented. Chinese rich bold headings now use the source runtime Bold substitution, while English relic headings keep their authored regular-bold role.",
-      "remaining": "Matching all-category exact-glyph/pixel acceptance remains required after the locale-face repair.",
+      "implemented": "Original category/starter/Ancient groups, discovery gates, fixed source headings,69px hover columns and related previews remain implemented. Chinese rich bold headings now use the source runtime Bold substitution, while English relic headings keep their authored regular-bold role. E records exact source rich-category Bold requirements, including localized Ancient title replacements, separately from ordinary-label substitution.",
+      "remaining": "Matching E all-category exact-glyph/pixel and ordinary-host acceptance remains required.",
       "regressions": [
         "library_ui7_regression",
         "relic_inspect_ui9_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "D English collection oracle passed within library_ui7. D Chinese failed exact Bold coverage; the three missing5px face5 keys are explicitly required by the E converter."
     },
     {
       "id": "potion_lab",
@@ -172,12 +172,12 @@
       ],
       "contract": "Potion catalogue and inspect",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews. Source category headings use fixed5px regular/bold text and full untruncated source lines, independently checked against exact existing glyphs.",
-      "remaining": "Final matching real-pack collection and hover boundary acceptance remains required.",
+      "implemented": "All 64 catalogue entries, original rarity/discovery rules, source 69px/5px primary and related tooltip columns plus separate card previews. Source category headings use fixed5px regular/bold text and full untruncated source lines, independently checked against exact existing glyphs. E records exact source rich-category Bold requirements, including localized Ancient title replacements, separately from ordinary-label substitution.",
+      "remaining": "Matching E all-category exact-glyph/pixel and ordinary-host acceptance remains required.",
       "regressions": [
         "potion_ui_regression"
       ],
-      "acceptance": "The a0df baseline native suite passed; final matched stage8e native, actual-resource, browser and calculator gates remain separate and pending."
+      "acceptance": "D English collection oracle passed within library_ui7. D Chinese failed exact Bold coverage; the three missing5px face5 keys are explicitly required by the E converter."
     },
     {
       "id": "bestiary",
@@ -189,12 +189,12 @@
       "contract": "Enemy list, layouts, move descriptions and character filtering",
       "assessment": "implemented_with_documented_limits",
       "implemented": "Original list/header geometry, known gates, detached actions/statistics previews, persisted names and Kaiser supplements remain implemented. UI10 applies source locale normal-font substitution to the large name, dividers and action/mode labels.",
-      "remaining": "Remaining phase-specific multi-creature preview contexts and secondary visual effects need actual replay; restored ordinary fonts require matching bilingual acceptance.",
+      "remaining": "Remaining phase-specific multi-creature preview contexts and secondary visual effects need actual replay.",
       "regressions": [
         "bestiary_ui7_regression",
         "power_order_ui8_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "D matching actual English/Chinese Bestiary targets pass exact font coverage, detached action/state tests and captures; unvisited preview contexts remain outside that evidence."
     },
     {
       "id": "statistics",
@@ -206,13 +206,13 @@
       ],
       "contract": "General/character statistics and achievements",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "UI10 replaces the enlarged generic layout with the source container minimums, original tabs/backgrounds/font roles, conditional single/pair rows, character colors, bounded entry focus/hover motions, tooltip texts, directional navigation and correct scrollbar capture.",
-      "remaining": "Original alpha mask ramps still need bounded compositing. Source top unlock counts depend on the excluded Timeline; original Achievements tab remains disabled. Matching actual-language scene acceptance is required.",
+      "implemented": "UI10 restores source container minimums, tabs/backgrounds/font roles, conditional rows, character colors, bounded entry focus/hover, tooltips, navigation and scrollbar. E composes the entire scrolling subtree through the original128-sample gradient mask, preserving only17 transition rows in10,880 temporary stack bytes with no persistent pool or ordinary-canvas branch.",
+      "remaining": "Source unlock counts depend on the excluded Timeline and the Achievements tab stays disabled. New group-mask integration requires matched E actual-language/host acceptance.",
       "regressions": [
         "ui_progress_regression",
         "statistics_ui10_regression"
       ],
-      "acceptance": "UI10c actual run exposed a bounded follow-up recorded in docs/ui10-front-source-review-0.17.md; corrected source awaits next matching runtime. No failure is counted as a pass."
+      "acceptance": "D matched actual English and Chinese Statistics tests passed. E group-mask independent floating-point sampler/compositor and unchanged-region oracle pass short diagnostics in both locales against the D core; this is not E release acceptance."
     },
     {
       "id": "run_history",
@@ -224,15 +224,15 @@
       ],
       "contract": "Historical run navigation, per-floor map/deck/relic details",
       "assessment": "implemented_with_documented_limits",
-      "implemented": "Observed run summaries, map/deck/relic carousel and bounded actual journal remain implemented. UI10 restores the Chinese date/time content format and required glyphs.",
-      "remaining": "The source local time zone still differs from the UTC host boundary. Full history header source typography remains a concrete follow-up; earlier unknown/evicted journal facts remain explicitly partial.",
+      "implemented": "Observed summaries, map/deck/relic carousel and bounded journal remain. UI10 restores Chinese calendar contents. E replaces the enlarged two-row summary with source24/32px rich information/counters, source right alignment and HBox minimums/colors, selected portrait/Ascension, original potion backdrop/slots and format38 custom/daily lock. Full singleplayer game-mode markup is restored; unavailable recorded BuildId displays an unknown dash.",
+      "remaining": "Source local time zone still differs from UTC. Map act labels, relic/deck captions and grouped-card body retain earlier8px bands/layout; the source history death-quote/badge strip needs a specific comparison. Old/evicted journal facts remain partial, and historical BuildId was never recorded.",
       "regressions": [
         "history_ui8_regression",
         "run_history_journal_ui8_regression",
         "run_history_acquisition_regression",
         "map_drawing_ui_regression"
       ],
-      "acceptance": "UI10 source implementation and short syntax check only; matching frozen native, actual bilingual, browser and calculator gates remain separate."
+      "acceptance": "D matched History and journal targets passed both locales before the new header. E source HBox and independent complete header-text pixel oracles pass Standard/Custom/Daily/partial-time short diagnostics in both locales; matching38 lock/runtime acceptance remains pending."
     },
     {
       "id": "profiles",
@@ -249,7 +249,7 @@
         "profiles_ui7_regression",
         "ndless_profiles_regression"
       ],
-      "acceptance": "UI10c matching actual English/Chinese profile and compendium font/geometry pixel oracles pass. The next title/popup batch needs its new matching runtime and ordinary-host acceptance."
+      "acceptance": "C matching profile/compendium oracles passed both languages. D failed the new title oracle because its highlight baseline reversed the authored draw order. E restores highlight-after-label composition while retaining complete independent text pixel comparisons; short bilingual diagnostics pass, matching E hosts remain pending."
     },
     {
       "id": "compendium_leaderboards",
@@ -1282,7 +1282,8 @@
       "page_errors": 0,
       "external_requests": 0
     },
-    "github_actions": "8l cancelled when the subsequent test-only8m commit started; earlier c3a44 full CI passed."
+    "github_actions": "8l cancelled when the subsequent test-only8m commit started; earlier c3a44 full CI passed.",
+    "historical_scope": "This section retains the earlier UI9 baseline. New UI10 stages and failures are recorded separately below; it is not the current-tree acceptance."
   },
   "verification_ui10c_front": {
     "checkpoint": "3d6d79907bb76269474acd8bd5c27baf575837f2",
@@ -1299,6 +1300,45 @@
       "statistics_ui10_regression English": "Saturated32-bit counters can exceed the source minimum-font box; test now independently checks clipping, with ordinary-case width checks retained."
     },
     "next_gate": "Matching final title/Continue/popup/runtime/resource checkpoint; rerun corrected actual gates and ordinary hosts.",
+    "fidelity_percentage": null
+  },
+  "verification_ui10d_front": {
+    "checkpoint": "78ac86e35651d3832e1b9638001aa0aa6be3f0a0",
+    "resource_format": 37,
+    "actual_targets": {
+      "eng": {
+        "passed": 14,
+        "total": 15
+      },
+      "zhs": {
+        "passed": 13,
+        "total": 15
+      }
+    },
+    "failed_targets": {
+      "profiles_ui7_regression (both locales)": "New independent title oracle composited highlight before label; corrected E fixture retains full pixel assertions.",
+      "library_ui7_regression (Chinese)": "Actual source rich collection category/Ancient text needs three absent5px Bold glyphs; exact E requirements added."
+    },
+    "separate_world_front_failures": "Shared menu_rows wrongly assumed title geometry for pause; animation capture changed pointer/focus after its baseline. E keeps both source geometry assertions and preserves pointer state in those captures.",
+    "binary_and_pack_unchanged": true,
+    "fidelity_percentage": null,
+    "next_gate": "Matching E build, format38 resources, all corrected actual targets, ordinary browser and calculator acceptance."
+  },
+  "verification_ui10e_front_short": {
+    "scope": "Diagnostic only: current O0 Profiles/Statistics/History test translation units linked against frozen D core and run with D format37 packs, plus current world-front fixture linked to D core.",
+    "passed_both_locales": [
+      "profiles_ui7_regression",
+      "statistics_ui10_regression",
+      "history_ui8_regression",
+      "world_frontend_ui_regression"
+    ],
+    "new_oracles": [
+      "128-sample original gradient, group opacity, overlapping primitives and unchanged rows",
+      "History source HBox minima and fixed-band information/counter/Ascension pixel composition",
+      "Title highlight-after-label ordering with unchanged independent glyph oracle"
+    ],
+    "release_acceptance": false,
+    "format38_lock_tested": false,
     "fidelity_percentage": null
   }
 }

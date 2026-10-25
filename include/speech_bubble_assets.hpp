@@ -9,4 +9,8 @@ enum SpeechBubbleAsset {I10_FakeMerchantWelcome=InspectionAuxiliaryCount,
     SpeechBubbleAuxiliaryCount};
 static_assert(I10_FakeMerchantWelcome==2061&&I10_PopupVertical==2062&&I10_PopupConfirmOutline==2066&&SpeechBubbleAuxiliaryCount==2067,
               "Room artwork must preserve all earlier auxiliary indices");
+constexpr unsigned HistoryHeaderContentVersion=38;
+enum HistoryHeaderAsset {I10_HistoryReminderLock=SpeechBubbleAuxiliaryCount,HistoryHeaderAuxiliaryCount};
+static_assert(I10_HistoryReminderLock==2067&&HistoryHeaderAuxiliaryCount==2068,
+              "History reminder follows every source speech/popup image");
 }

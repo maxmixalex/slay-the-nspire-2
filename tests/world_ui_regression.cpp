@@ -239,7 +239,7 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
  // Search for the requested number's independently composed pixels. Small
  // real font strokes need not contain alpha=255, so use their actual alpha
  // over the captured room, not a predicate that can vacuously match no ink.
- struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0;
+ struct Point {int x,y;unsigned alpha;};std::vector<Point> ink;int width=0,height=0,paint_width=0;
  const unsigned face=a.content.version()>=HistoryUi8ContentVersion&&a.content.english()?5:0;size=a.content.font_size(size,face);
  const int repeat_size=a.content.font_size(4,face);
  const auto append=[&](const char*string,int px,int offset_y){
@@ -249,7 +249,8 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
     for(unsigned n=0;n<g.pixels[i]&&pos<alpha.size();++n)alpha[pos++]=g.pixels[i+1];
    }else std::memcpy(alpha.data(),g.pixels,alpha.size());
    for(unsigned y=0;y<g.h;++y)for(unsigned x=0;x<g.w;++x)if(alpha[y*g.w+x])ink.push_back({width+int(x),offset_y+int(y),alpha[y*g.w+x]});
-   if(offset_y+int(g.h)>height)height=offset_y+g.h;width+=g.advance;
+   if(offset_y+int(g.h)>height)height=offset_y+g.h;
+   if(width+int(g.w)>paint_width)paint_width=width+g.w;width+=g.advance;
   }
  };
  append(text,size,0);append(repeat,repeat_size,size-repeat_size);CHECK(!ink.empty()&&intent_background.size()==ScreenW*ScreenH);
@@ -259,8 +260,13 @@ static int rendered_number(const char*text,int size,int left,int top,int right,i
   const unsigned g=(((back>>5)&63)*(255-alpha)+((fore>>5)&63)*alpha+127)/255;
   const unsigned b=((back&31)*(255-alpha)+(fore&31)*alpha+127)/255;return uint16_t((r<<11)|(g<<5)|b);
  };
- const int stride=width+2,rows=height+2;std::vector<uint16_t> expected(unsigned(stride*rows));
- for(int y=top;y+height<bottom;++y)for(int x=left;x+width<right;++x){
+ // The original5px English bold6 occupies4 bitmap columns but advances3.
+ // Vantom's26 therefore extends past its text advance. Reserve the actual
+ // glyph box plus outline so the last column cannot wrap into the next row
+ // of this independent compositor; retain the strict whole-pixel comparison.
+ const int columns=paint_width>width?paint_width:width,stride=columns+2,rows=height+2;
+ std::vector<uint16_t> expected(unsigned(stride*rows));
+ for(int y=top;y+height<bottom;++y)for(int x=left;x+columns<right;++x){
   for(int yy=0;yy<rows;++yy)for(int xx=0;xx<stride;++xx)expected[yy*stride+xx]=intent_background[(y+yy-1)*ScreenW+x+xx-1];
   for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)if(dx||dy)for(const auto&p:ink){const int at=(p.y+dy+1)*stride+p.x+dx+1;expected[at]=mix(expected[at],outline,p.alpha);}
   for(const auto&p:ink){const int at=(p.y+1)*stride+p.x+1;expected[at]=mix(expected[at],cream,p.alpha);}

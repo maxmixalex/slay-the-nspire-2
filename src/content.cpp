@@ -202,7 +202,7 @@ bool Content::open(ResourceSource source){
     uint8_t h[40];if(!reader_.read(0,h,sizeof h))return false;const uint32_t n=source.length;
     if(u32(h)!=0x3250534E||u32(h+8)!=0x41CEF1EA||u32(h+12)!=n)return false;
     const uint32_t version=u32(h+4),cards=u32(h+32);
-    if(version<3||version>SpeechBubbleContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
+    if(version<3||version>HistoryHeaderContentVersion||(version==3&&cards)||(version==4&&cards!=24)||(version==5&&cards!=26)||(version==6&&cards!=51)||(version==7&&cards!=58)||(version>=8&&version<=10&&cards!=68)||(version==11&&cards!=114)||(version==12&&cards!=228)||(version==13&&cards!=497)||(version>=14&&cards!=CardKinds))return false;
     auto ni=u32(h+16),ng=u32(h+20),ns=u32(h+24),nc=u32(h+28);
     if(ni<A_Count||ni>(version>=14?65535u:8192u)||ng>(version>=14?scene_font_glyph_limit(version):version==13?16384u:8192u)||ns<66||ns>(version>=14?16384u:2048u)||nc!=(version>=BestiaryKaiserContentVersion?BestiaryKaiserAnimationKinds:version>=CharacterDeathContentVersion?CharacterDeathAnimationKinds:version>=PhobiaContentVersion?PhobiaAnimationKinds:version>=Ui7ContentVersion?Ui7AnimationKinds:version>=MerchantEffectsContentVersion?MerchantEffectsAnimationKinds:version==FeedbackContentVersion?FeedbackAnimationKinds:version>=14?AnimationKinds:version==13?38:version>=6?17:11))return false;
     if((version==11&&ns!=407)||(version==12&&ns!=749)||(version==13&&ns!=1556)||
@@ -238,8 +238,14 @@ bool Content::open(ResourceSource source){
                             if(version<SpeechBubbleContentVersion||next>=ni)return false;
                             uint8_t room_suffix[24];if(!reader_.read(base+4,room_suffix,sizeof room_suffix))return false;
                             for(unsigned i=0;i<5;++i)if(u32(room_suffix+i*4)>=ni)return false;
-                            if(u32(room_suffix+20)!=0x314c4954u)return false;
                             auxiliary=SpeechBubbleAuxiliaryCount;base+=24;
+                            if(u32(room_suffix+20)!=0x314c4954u){
+                                // One optional source History reminder icon.
+                                // This remains a bounded one-ID probe.
+                                if(version<HistoryHeaderContentVersion||u32(room_suffix+20)>=ni||
+                                   !reader_.u32(base+4,next)||next!=0x314c4954u)return false;
+                                auxiliary=HistoryHeaderAuxiliaryCount;base+=4;
+                            }
                         }
                     }
                 }

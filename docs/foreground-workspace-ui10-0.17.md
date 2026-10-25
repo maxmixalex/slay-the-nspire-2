@@ -4,8 +4,8 @@ The existing 617,328-byte transfer workspace and 794,788-byte map workspace
 had disjoint production lifetimes. They now occupy one 794,792-byte aligned
 union. The static storage difference is **617,324 bytes**, without reducing
 image pages, decoded groups, text caches, map paths, save capacity or history
-capacity. The final linked ARM allocation still needs to include code,
-relocations and loader overhead; this object-size difference is not that gate.
+capacity. This object-size difference is distinct from the complete linked ARM
+allocation, which also includes code, relocations and loader overhead.
 
 ## Lifetime contract
 
@@ -58,5 +58,23 @@ hidden aggregate constructor cannot reintroduce a large clear. The existing
 retained-image regression now also asks for a map from the real streamed
 resource callback and requires refusal without corrupting the current decode.
 
-Full native suites, the matched ARM link/allocation, original map transcripts
-and ordinary save/continue remain the next frozen-source acceptance gates.
+## Matched ARM allocation
+
+The stage-C checkpoint `3d6d79907bb76269474acd8bd5c27baf575837f2` builds a
+normal 1,445,796-byte launcher. Its actual Zehn prefix plus loaded image/BSS
+allocation is 16,180,804 bytes, leaving 596,412 bytes under the 16,777,216-byte
+limit. The previous ordinary build needed 16,755,332 bytes and left 21,884.
+The complete-build decrease is 574,528 bytes: it differs from the 617,324-byte
+workspace saving because the new UI, glyph memo and RGR2 reader also add code
+and data.
+
+The later stage-D checkpoint `78ac86e35651d3832e1b9638001aa0aa6be3f0a0`
+includes further source UI corrections. Its 1,456,509-byte normal launcher
+allocates 16,196,964 bytes, leaving **580,252 bytes**. The formal passed journal
+is `ui10d-arm-fedaed52f2ad.json`; it records the actual launcher/ELF build and
+the linked ARM division, LZMA2, tile-filter and RGR2 ABI checks. These figures
+are loaded allocation bounds, not compressed launcher sizes or a host estimate.
+
+The final E build and ordinary cold boot/Continue/save remain separate gates.
+The shared workspace changes neither the resource file size nor the save file
+format, and the measured object reduction alone makes no frame-rate claim.

@@ -2,6 +2,7 @@
 // is observed metadata; opening these screens never adopts a historical State.
 struct ProgressTextValues {
     const char*amount=nullptr,*playtime=nullptr,*fastest=nullptr,*seed=nullptr,*date=nullptr,*time=nullptr;
+    const char*player_count=nullptr,*game_mode=nullptr;
     int64_t wins=0,losses=0,total=0,hp=0,max_hp=0,gold=0,floor=0,turns=0;
 };
 static LocalizedValue progress_text_value(const void*context,const char*key){
@@ -15,6 +16,8 @@ static LocalizedValue progress_text_value(const void*context,const char*key){
     if(same(key,"Seed"))return {true,0,1,v.seed?v.seed:"—"};
     if(same(key,"Date"))return {true,0,1,v.date?v.date:"—"};
     if(same(key,"Time"))return {true,0,1,v.time?v.time:"—"};
+    if(same(key,"PlayerCount"))return {true,0,1,v.player_count?v.player_count:"—"};
+    if(same(key,"GameMode"))return {true,0,1,v.game_mode?v.game_mode:"—"};
     if(same(key,"HP"))return {true,v.hp};if(same(key,"MaxHP"))return {true,v.max_hp};if(same(key,"Gold"))return {true,v.gold};
     if(same(key,"FloorNum"))return {true,v.floor};if(same(key,"Turns"))return {true,v.turns};
     return {};
@@ -92,9 +95,29 @@ static void progress_page_chrome(Canvas&c){
     }
 }
 static unsigned progress_bit_count(const uint8_t*bits,unsigned count){unsigned n=0;for(unsigned i=0;i<count;++i)n+=(bits[i/8]>>(i%8))&1;return n;}
+// stats_screen's CLIP_CHILDREN_ONLY applies the mask to the completed group,
+// not separately to its translucent panels and overlapping text. Preserve only
+// the two short transition bands; the central content needs no extra buffer or
+// branch in the canvas raster paths. GradientTexture2D first truncates128 RGBA8
+// samples at j/127, then the default linear texture filter samples pixel centers.
+struct StatisticsMask {
+    static constexpr int Top=29,TopEnd=38,Bottom=232,Rows=TopEnd-Top+240-Bottom;
+    uint16_t underlay[Rows*320];
+    static constexpr unsigned texel(int j){return j<16||j>=127?0:j<20?unsigned((40*j-635)*255/127):j<124?255:unsigned((127-j)*40*255/127);}
+    static constexpr unsigned alpha(int y){
+        if(y<Top||y>=240)return 0;if(y>=TopEnd&&y<Bottom)return 255;
+        const int sample=16*y-7,index=sample/30,weight=sample%30;
+        return (texel(index)*unsigned(30-weight)+texel(index+1)*unsigned(weight)+15)/30;
+    }
+    static constexpr int row(int i){return i<TopEnd-Top?Top+i:Bottom+i-(TopEnd-Top);}
+    explicit StatisticsMask(const Canvas&c){for(int i=0;i<Rows;++i)for(int x=0;x<320;++x)underlay[i*320+x]=c.pixels[row(i)*c.pitch+x];}
+    void apply(Canvas&c)const{for(int i=0;i<Rows;++i){const int y=row(i);const unsigned a=alpha(y);
+        for(int x=0;x<320;++x){const int at=y*c.pitch+x;c.pixels[at]=blend(underlay[i*320+x],c.pixels[at],a);}}}
+};
+static_assert(sizeof(StatisticsMask)==10880,"Statistics mask snapshots only17 screen rows");
 static void statistics_entry(Canvas&c,const UiStatisticsLayout&layout,unsigned index,int icon,const char*top,const char*bottom,const ProgressTextValues&top_values,const ProgressTextValues&bottom_values,bool top_red=false){
     using reference_viewport::project;auto&a=c.a;const auto point=UiStatisticsLayout::projected(layout.entries[index]);
-    const int y=point.y-a.progress_page_scroll.offset(),origin=30;const bool visible=y+point.h>origin&&y<240;
+    const int y=point.y-a.progress_page_scroll.offset(),origin=StatisticsMask::Top;const bool visible=y+point.h>origin&&y<240;
     const bool hover=visible&&!a.pointer.dragging&&progress_hover(a,point.x,y,point.w,point.h);
     const bool focus=hover||(!a.pointer.visible&&a.statistics_presentation.selected==index);
     const int weight=a.statistics_presentation.entries[index].observe(focus,a.map_clock_ms);
@@ -119,9 +142,10 @@ static void statistics_screen(Canvas&c){
     using reference_viewport::project;auto&a=c.a;title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
     const unsigned age=a.map_clock_ms-a.progress_page_started;Canvas foreground=c;foreground.opacity=uint8_t(div255(unsigned(foreground.opacity)*(age>=400?255:age*255/400)));
     const UiStatisticsLayout layout(a.progress);a.progress_page_scroll.configure(layout.height,240);
-    c.hit(UiStatisticsLayout::Left,30,UiStatisticsLayout::Width,210,HitKind::ProgressScroll);
-    Canvas page=foreground;page.pixels+=30*page.pitch;if(page.coverage)page.coverage+=30*page.pitch;page.clip_h=210;
-    const int offset=a.progress_page_scroll.offset(),origin=30;
+    constexpr int origin=StatisticsMask::Top;const StatisticsMask mask(c);
+    c.hit(UiStatisticsLayout::Left,origin,UiStatisticsLayout::Width,240-origin,HitKind::ProgressScroll);
+    Canvas page=foreground;page.pixels+=origin*page.pitch;if(page.coverage)page.coverage+=origin*page.pitch;page.clip_h=240-origin;
+    const int offset=a.progress_page_scroll.offset();
     ProfileTextStyle header{7,source_label_face(a.content.english(),5),rgb(239,200,81),64,2,rgb(77,59,34)};header.shadow_x=2;header.shadow_y=1;
     profile_text_box(page,frontend_text(a,"main_menu_ui","STATISTICS.OVERALL.title","Overall Stats"),UiStatisticsLayout::Left,project(200)-offset-origin,UiStatisticsLayout::Width,project(64),header,false,false);
     Canvas panel=page;panel.opacity=uint8_t(div255(unsigned(panel.opacity)*128));
@@ -167,6 +191,7 @@ static void statistics_screen(Canvas&c){
         TextBuffer bs{best_streak,sizeof best_streak,0};bs.number(s.best_streak);ProgressTextValues lower=values;lower.amount=best_streak;
         statistics_entry(page,layout,11+slot*3,I7_StatsStreak,"ENTRY_CHAR_STREAK.top","ENTRY_CHAR_STREAK.bottom",values,lower);
     }
+    mask.apply(c);
     Canvas tab=foreground;tab.brightness=uint8_t(div255(unsigned(tab.brightness)*229));tab.ui(F_SettingsTab,110,25,49,17);
     foreground.picture(a.content.ui_image(F_SettingsTabStroke),110,25,49,17,255,presentation::Add);
     profile_text_box(foreground,frontend_text(a,"stats_screen","TAB_STATS.header","Statistics"),110,24,49,19,{6,source_label_face(a.content.english(),5),rgb(255,246,226),128,2,0},true,false);
@@ -182,7 +207,7 @@ static void statistics_screen(Canvas&c){
     int focus=-1;if(a.pointer.visible){const auto*hit=a.hit_at(a.pointer.x,a.pointer.y);if(hit&&hit->kind==HitKind::StatisticsEntry&&!a.pointer.held)focus=hit->value;}
     else focus=a.statistics_presentation.selected;
     if(focus==1||(focus==3&&ascensions)){const auto point=UiStatisticsLayout::projected(layout.entries[focus]);const int y=point.y-offset;
-        if(y+point.h>30&&y<240){const bool playtime=focus==1;source_hover_box(foreground,
+        if(y+point.h>origin&&y<240){const bool playtime=focus==1;source_hover_box(foreground,
             frontend_text(a,"stats_screen",playtime?"TIP_PLAYTIME.header":"TIP_WIN_LOSS.header",""),
             frontend_text(a,"stats_screen",playtime?"TIP_PLAYTIME.description":"TIP_WIN_LOSS.description",""),
             point.x+(point.x<128?-project(392):project(532)),y);}}
@@ -247,6 +272,69 @@ static void history_tooltip(Canvas&c,const UiRunHistory&r,int focus,const UiHist
     // NRelicBasicHolder.Model.HoverTips is drawn by the shared keyword stack,
     // including the source's associated cards and mechanic descriptions.
 }
+static int history_label_width(const Canvas&c,const char*text,const ProfileTextStyle&style){
+    Canvas metrics=c;metrics.font_face=uint8_t(style.face);metrics.bold_face=5;
+    RichReader reader(text);RichChar ch{};int width=0,count=0;
+    while(reader.next(ch)){if(ch.codepoint=='\n')break;width+=c.a.content.glyph_metrics(ch.codepoint,style.size,metrics.font_style(ch)).advance;++count;}
+    return width+reference_viewport::project((count>0?count-1:0)*style.tracking_source);
+}
+static void history_header(Canvas&c,const UiRunHistory&r,int dx,int offset){
+    using reference_viewport::project;auto&a=c.a;
+    ProfileTextStyle info{5,0,rgb(255,246,226),128};info.tracking_source=a.content.english()?1:0;
+    ProfileTextStyle counter{6,source_label_face(a.content.english(),5),rgb(239,200,81),128};counter.tracking_source=a.content.english()?2:0;
+    char text[384]{},date[64]{},time[32]{},hp[32]{},gold[24]{},floor[24]{},elapsed[32]{},player_count[64]{},game_mode[64]{};
+    progress_date_text(a,r.started_at,date,sizeof date,time,sizeof time);progress_time_text(elapsed,sizeof elapsed,r.seconds);
+    TextBuffer hp_value{hp,sizeof hp,0};hp_value.number(r.hp);hp_value.ch('/');hp_value.number(r.max_hp);
+    TextBuffer{gold,sizeof gold,0}.number(r.gold);TextBuffer{floor,sizeof floor,0}.number(r.floor);
+    const char*duration=r.partial?"—":elapsed;
+    const unsigned slots=mn(r.potion_count,MaxPotionSlots);const UiHistoryHeaderLayout layout(history_label_width(c,hp,counter),history_label_width(c,gold,counter),history_label_width(c,floor,counter),history_label_width(c,duration,counter),slots);
+    const auto yy=[&](int y){return project(y)-offset;};
+    const auto label=[&](const char*value,int x,int y,int width,int height,const ProfileTextStyle&style,bool right=false){
+        const int measured=history_label_width(c,value,style),left=right?project(x+width)-measured:project(x);
+        profile_text_box(c,value,left+dx,yy(y),right?measured:project(width),project(height),style,false,false);
+    };
+    // RichTextLabel clips neither overflow nor the fixed24px text. Its right
+    // edge stays at1550 even when a localized date extends left of the VBox.
+    ProgressTextValues values;values.seed=r.seed_text;values.date=date;values.time=time;
+    progress_text(a,"run_history","INFO.DATE_TIME",values,text,sizeof text);label(text,1378,UiHistoryHeaderLayout::info_y(0),172,32,info,true);
+    progress_text(a,"run_history","INFO.SEED",values,text,sizeof text);label(text,1378,UiHistoryHeaderLayout::info_y(1),172,32,info,true);
+    const char*mode=r.mode==unsigned(RunMode::Custom)?"GAME_MODE.custom":r.mode==unsigned(RunMode::Daily)?"GAME_MODE.daily":"GAME_MODE.standard";
+    TextBuffer{player_count,sizeof player_count,0}.text(frontend_text(a,"run_history","PLAYER_COUNT.singleplayer",""));
+    TextBuffer{game_mode,sizeof game_mode,0}.text(frontend_text(a,"run_history",mode,""));values.player_count=player_count;values.game_mode=game_mode;
+    progress_text(a,"run_history","GAME_MODE.title",values,text,sizeof text);label(text,1378,UiHistoryHeaderLayout::info_y(2),172,32,info,true);
+    // UiRunHistory predates a saved build identifier. The currently running
+    // port/reference version cannot stand in for the record's unknown BuildId.
+    Canvas build=c;build.opacity=uint8_t(div255(unsigned(build.opacity)*128));
+    profile_text_box(build,"—",project(UiHistoryHeaderLayout::InfoRight)-history_label_width(c,"—",info)+dx,yy(UiHistoryHeaderLayout::info_y(3)),history_label_width(c,"—",info),project(32),info,false,false);
+    const auto image=[&](int image_id,int x,int y,int width,int height){const auto picture=a.content.image(image_id);if(!picture.pixels)return;
+        const int box_w=project(width),box_h=project(height);int w=box_w,h=box_h;
+        if(int(picture.w)*h>int(picture.h)*w)h=mx(1,w*picture.h/picture.w);else w=mx(1,h*picture.w/picture.h);
+        c.picture(picture,project(x)+dx+(box_w-w)/2,yy(y)+(box_h-h)/2,w,h);
+    };
+    const int height=slots?83:80;
+    // Singleplayer Select() retains the authored1.1 icon scale and32px pivot.
+    const ProfileTransform selected{project(138+32)+dx,yy(32+32),4506};
+    profile_image(c,U_TopBarIronclad+int(r.character),project(138)+dx,yy(32),project(64),project(height),selected);
+    if(r.ascension){const int icon_y=32+(height+2-28<70?(height+2+28-70)/2:28);
+        image(a.content.ui_image(U_TopBarAscension),138+43,icon_y,34,70);
+        TextBuffer{ text,sizeof text,0}.number(r.ascension);
+        ProfileTextStyle ascension{4,0,rgb(255,246,226),32,2,rgb(135,41,24)};ascension.shadow_x=1;ascension.shadow_y=1;ascension.tracking_source=a.content.english()?1:0;
+        profile_text_box(c,text,project(138+52)+dx,yy(icon_y-3),project(14),project(88),ascension,true,false);
+    }
+    if(r.mode!=unsigned(RunMode::Standard)&&a.content.has_history_header_assets())c.ui(I10_HistoryReminderLock,project(132)+dx,yy(32),project(30),project(30));
+    image(A_Heart,226,32,46,height);counter.color=rgb(255,100,100);label(hp,layout.hp,32,layout.hp_width,height,counter);
+    image(A_Coin,layout.gold_icon,32,44,height);counter.color=rgb(239,200,81);label(gold,layout.gold,32,layout.gold_width,height,counter);
+    c.nine_image(a.content.ui_image(U_TopBarBackdrop),project(layout.potions)+dx,yy(36),project(layout.potion_width),project(height-12),6,6,6,6);
+    for(unsigned i=0;i<slots;++i){const int x=layout.potions+18+int(i)*62,y=32+4+5;
+        image(a.content.ui_image(U_PotionPlaceholder),x+4,y+4,52,52);
+        if(r.potions[i])image(a.content.potion_image(Potion(r.potions[i])),x,y,60,60);
+    }
+    // Authored FloorInfoIcon and its child FloorInfoIcon2 intentionally overlap.
+    image(a.content.ui_image(U_TopFloor),layout.floor_icon,28,44,height+4);
+    image(a.content.ui_image(U_TopFloor),layout.floor_icon,28,44,84);
+    counter.color=rgb(197,218,206);label(floor,layout.floor,32,layout.floor_width,height,counter);
+    image(a.content.ui_image(I9_RunTimerIcon),layout.timer_icon,32,48,height);counter.color=rgb(239,200,81);label(duration,layout.time,32,layout.time_width,height,counter);
+}
 static void history_screen(Canvas&c){
     auto&a=c.a;const auto*record=a.history_at(a.history_index);if(!record){a.history_open=false;compendium_screen(c);return;}const auto&r=*record;
     title_background(c,false);c.dim(0,0,320,240,210);a.hit_count=0;
@@ -261,24 +349,10 @@ static void history_screen(Canvas&c){
     for(unsigned i=0;i<r.relic_count;++i)history_hit(c,layout.relic(i),dx,offset,HitKind::HistoryRelic,int(i));
     for(unsigned i=0;i<groups;++i)history_hit(c,layout.card(i),dx,offset,HitKind::HistoryCard,indices[i]);
     const int focused=history_focus_id(a,r,indices,groups);motion.observe(focused,a.map_clock_ms);
-    page.ui(U_TopBarIronclad+int(r.character),29+dx,2-offset,22,22);
-    const auto&ch=character_definitions[r.character];const char*name=a.content.world_title("characters",ch.key);
-    page.text_fitted(*name?name:ch.name,54+dx,3-offset,109,11,Gold,8);
-    char text[384]{},date[64]{},time[32]{},elapsed[32]{};progress_date_text(a,r.started_at,date,sizeof date,time,sizeof time);
-    ProgressTextValues values;values.seed=r.seed_text;values.date=date;values.time=time;values.hp=r.hp;values.max_hp=r.max_hp;values.gold=r.gold;values.floor=r.floor;
-    progress_text(a,"run_history","INFO.DATE_TIME",values,text,sizeof text);page.text_fitted(text,168+dx,1-offset,123,8,White,8);
-    progress_text(a,"run_history","INFO.SEED",values,text,sizeof text);page.text_fitted(text,168+dx,12-offset,123,8,White,8);
-    const char*mode_key=r.mode==unsigned(RunMode::Custom)?"GAME_MODE.custom":r.mode==unsigned(RunMode::Daily)?"GAME_MODE.daily":"GAME_MODE.standard";
-    const char*mode=frontend_text(a,"run_history",mode_key,r.mode==unsigned(RunMode::Custom)?"Custom":r.mode==unsigned(RunMode::Daily)?"Daily":"Standard");page.text_fitted(mode,168+dx,23-offset,123,8,White,8);
-    page.text_fitted("v0.111.0 / 41cef1ea",168+dx,34-offset,123,8,Muted,8);
-    page.picture(A_Heart,54+dx,17-offset,9,10);TextBuffer line{text,sizeof text,0};text[0]=0;line.number(r.hp);line.ch('/');line.number(r.max_hp);page.text(text,65+dx,17-offset,8,White);
-    page.picture(A_Coin,103+dx,17-offset,9,10);text[0]=0;line.n=0;line.number(r.gold);page.text(text,114+dx,17-offset,8,Gold);
-    page.ui(U_TopFloor,29+dx,31-offset,10,11);page.num(r.floor,42+dx,32-offset,8,White);
-    progress_time_text(elapsed,sizeof elapsed,r.seconds);page.ui(I7_StatsClock,65+dx,30-offset,12,12);page.text(r.partial?"—":elapsed,79+dx,32-offset,8,White);
-    for(unsigned i=0;i<r.potion_count&&i<10;++i){const int x=127+dx+int(i)*10;
-        page.ui(U_PotionPlaceholder,x,30-offset,10,13);
-        if(r.potions[i])page.picture(a.content.potion_image(Potion(r.potions[i])),x,30-offset,10,13);
-    }
+    // The source32px top margin positions the header; it is not a clip.
+    // Keep its scaled portrait and scrolling labels visible up to screenY0.
+    Canvas header=c;header.opacity=page.opacity;history_header(header,r,dx,offset);
+    char text[384]{};ProgressTextValues values;
     uint32_t quests[3]{};const int journal_owner=a.progress.journal.owner(r.serial);
     for(unsigned i=0;i<a.progress.journal.count;++i){const auto&e=a.progress.journal.at(i);if(e.owner==journal_owner&&e.floor<UiHistoryFloors&&(e.kind==RunHistoryEvent::QuestCompleted||e.kind==RunHistoryEvent::FurCoat))quests[e.floor/32]|=uint32_t(1)<<(e.floor%32);}
     for(unsigned i=0;i<r.floor_count;++i){const auto&f=r.floors[i];const auto point=layout.floor(r,i);const int x=point.x+dx,y=point.y-offset;

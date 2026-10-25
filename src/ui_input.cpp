@@ -4,6 +4,7 @@
 #include "original_events.hpp"
 #include "world_card_factory.hpp"
 #include "ui_core_observer.hpp"
+#include "library_search.hpp"
 namespace spire {
 static bool room_shop_context(const App&a){return a.game.phase==Phase::Shop||(a.game.phase==Phase::Event&&a.game.original_events.active&&a.game.original_events.id==OriginalEventId::FakeMerchant&&!a.game.original_events.finished);}
 static bool room_shop_available(const App&a){return room_shop_context(a)&&!a.title&&!a.paused&&!a.help&&!a.panel&&!a.library&&!a.character_select&&!a.map_preview.open&&!a.event_reader&&!a.frontend_confirm&&!a.settings_open&&!a.map_window.is_open&&a.detail_card<0&&a.detail_item<0&&a.status_actor<0&&a.deck_candidate<0;}
@@ -120,7 +121,8 @@ void App::ui_action(UiAction action){
     case UiAction::LabCard:case UiAction::LabPotion:break;
 #endif
     case UiAction::OpenShop:
-        if(room_shop_available(*this)){shop_open=true;room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);cursor=0;}break;
+        if(room_shop_available(*this)){shop_open=true;room_presentation.merchant.set_open(true,map_clock_ms);room_presentation.merchant.speak(4,map_clock_ms);
+            const bool fake=game.phase==Phase::Event;cursor=merchant_navigation::first(merchant_navigation::stock(game,fake),fake?6:ShopLeave);}break;
     case UiAction::CloseShop:
         if(room_shop_available(*this)){shop_open=false;room_presentation.merchant.set_open(false,map_clock_ms);cursor=0;}break;
     case UiAction::LeaveShop:
@@ -466,7 +468,11 @@ bool App::room_input(Key key){
     if(!room_shop_context(*this))return false;
     if(shop_open){
         if(key==Key::Back||(key==Key::Confirm&&cursor==(fake?6:ShopLeave))){ui_action(UiAction::CloseShop);return true;}
-        if(fake&&(key==Key::Up||key==Key::Down)){cursor=(cursor+(key==Key::Up?6:1))%7;return true;}
+        if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){
+            const auto direction=key==Key::Left?merchant_navigation::Left:key==Key::Right?merchant_navigation::Right:
+                key==Key::Up?merchant_navigation::Up:merchant_navigation::Down;
+            cursor=merchant_navigation::move(cursor,direction,merchant_navigation::stock(game,fake),fake);return true;
+        }
         return false;
     }
     if(key==Key::Left||key==Key::Right||key==Key::Up||key==Key::Down){cursor=cursor?0:1;return true;}

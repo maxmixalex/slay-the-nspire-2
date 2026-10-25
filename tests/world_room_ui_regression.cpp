@@ -509,6 +509,11 @@ static void merchant_motion_and_pickups(){
  constexpr int centers[]={44,102,160,218,277,58,119};
  for(int i=0;i<ShopCardCount;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==centers[i]&&h.w==54&&h.h==85&&h.y+h.h<=235);}
  room_clock(300);CHECK(a.room_presentation.merchant.alpha(a.map_clock_ms)==204);capture("merchant-source-scale");unchanged();
+ // The original vertical graph uses row indices. Shared colorless controls
+ // receive the middle row's links last, including their downward self-link.
+ a.cursor=0;a.input(Key::Left);CHECK(a.cursor==0);a.input(Key::Down);CHECK(a.cursor==5);
+ a.input(Key::Down);CHECK(a.cursor==5);a.input(Key::Right);CHECK(a.cursor==6);a.input(Key::Right);CHECK(a.cursor==7);
+ a.input(Key::Down);CHECK(a.cursor==10);a.input(Key::Up);CHECK(a.cursor==7);a.input(Key::Up);CHECK(a.cursor==2);unchanged();
  auto h=hit(HitKind::Choice,4);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.render();room_clock(250);room_clock(250);
  CHECK(a.room_presentation.merchant.focused==4&&a.room_presentation.merchant.scale(4,a.map_clock_ms)==800);
  CHECK(a.room_presentation.merchant.hand_x/16>240);capture("merchant-pointing-hand");unchanged();
@@ -530,10 +535,13 @@ static void fake_merchant_layout(){
  CHECK(!a.shop_open&&!choices()&&exists(HitKind::UiAction,int(UiAction::OpenShop))&&exists(HitKind::UiAction,int(UiAction::LeaveShop)));
  capture("fake-merchant-closed");click(UiAction::OpenShop);CHECK(a.shop_open);room_clock(1000);CHECK(choices()==6);
  constexpr int x[]={166,227,137,197,272,156},y[]={66,82,132,147,128,206};
- for(int i=0;i<6;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x+h.w/2==x[i]&&h.y+17==y[i]&&h.enabled);}
+ a.pointer_move(319,23);a.render();room_clock(500);
+ for(int i=0;i<6;++i){const auto h=hit(HitKind::Choice,i);CHECK(h.x==x[i]-8&&h.y==y[i]-(a.content.english()?25:27)&&h.w==35&&h.h==35&&h.enabled);}
+ a.cursor=0;a.pointer.visible=false;a.render();const auto enlarged=hit(HitKind::Choice,0);
+ CHECK(enlarged.x==156&&enlarged.y==(a.content.english()?36:32)&&enlarged.w==43&&enlarged.h==43);
  CHECK(!exists(HitKind::UiAction,int(UiAction::LeaveShop)));capture("fake-merchant-inventory");unchanged();
  const unsigned relics=ui_owned_relic_count(a.game);click(HitKind::Choice,0);CHECK(ui_owned_relic_count(a.game)==relics+1&&a.game.original_events.offers[0]==NoWorldRelic);a.render();
- CHECK(!hit(HitKind::Choice,0).enabled&&a.room_presentation.merchant.dialogue==0);
+ CHECK(!hit(HitKind::Choice,0).enabled&&a.room_presentation.merchant.dialogue==0&&a.cursor==1);
  snapshot();click(UiAction::CloseShop);CHECK(!a.shop_open);a.render();room_clock(800);unchanged();click(UiAction::LeaveShop);
  CHECK(a.map_window.is_open&&a.game.original_events.active&&a.game.original_events.finished&&a.game.world.room_open==2);
 }
@@ -547,6 +555,7 @@ static void merchant_model_hover_sets(){
   CHECK(owner.owner.x==MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart)%3)-11);
   CHECK(owner.owner.y==(slot<ShopPotionStart?150:182)-11);
   CHECK(slot<ShopPotionStart?owner.relic==a.game.world.shop_relics[slot-ShopRelicStart]&&owner.canonical_relic:owner.potion==a.game.shop_potions[slot-ShopPotionStart]);
+  if(slot<ShopPotionStart){const auto icon=hit(HitKind::Choice,slot);CHECK(icon.x==MerchantInventoryLayout::item_x(unsigned(slot-ShopRelicStart))-10&&icon.y==137&&icon.w==21&&icon.h==21);}
   HoverTipList tips{};if(owner.relic>=0)collect_relic_hover_tips(a,RelicId(owner.relic),tips,true);else collect_potion_hover_tips(a,Potion(owner.potion),tips);
   CHECK(tips.count>0&&!tips.overflow);if(slot==ShopRelicStart||slot==ShopPotionStart)CHECK(tips.count>1);
   bool visited[MaxCardHoverTips]{};const auto first=card_hover_page(a,owner,tips,0);CHECK(first.pages>0);

@@ -7,12 +7,35 @@ static void ui_potion_description(const App&a,int p,char*out,size_t size){
   if(*a.content.world_string("potions",key)){a.localized_text("potions",key,out,size);return;}}
  TextBuffer b{out,size,0,&a.content};b.text(potion_desc(p));
 }
-static void merchant_price(Canvas&c,int item,int x,int y,int w){
+static void merchant_cost_label(Canvas&c,int amount,int x,int y,unsigned scale,bool affordable,bool sale=false,bool card=false){
+    const bool english=c.a.content.english();const unsigned face=source_label_face(english,5);
+    const int size=c.a.content.font_size(MerchantInventoryLayout::size(39,scale),face,false,true);
+    char value[24]{};TextBuffer text{value,sizeof value,0};text.number(amount);
+    Glyph glyphs[12];int positions[12];unsigned count=0;int advance=0;
+    for(const char*p=value;*p&&count<12;++p){
+        positions[count]=advance+(english?MerchantInventoryLayout::size(int(count)*2,scale):0);
+        glyphs[count]=c.a.content.glyph(uint8_t(*p),size,face);advance+=glyphs[count++].advance;
+    }
+    const int width=advance+(english?MerchantInventoryLayout::size(int(count)*2,scale):0);
+    const int coin=MerchantInventoryLayout::size(54,scale),gap=MerchantInventoryLayout::size(6,scale),left=x-(coin+gap+width)/2;
+    // The source HBox centers its54px coin beside the original39px label.
+    // CostLabel's measured baseline, not the glyph's padded bitmap height,
+    // controls vertical placement. Locale substitution changes that baseline.
+    const int baseline=english?(card?675:643):712; // source pixels *16
+    const int origin=y+(baseline*int(scale)*2+72000)/144000-(size+1);
+    c.picture(A_Coin,left,y+MerchantInventoryLayout::size(card||!english?2:0,scale),coin,coin);
+    Canvas outline=c;outline.opacity=uint8_t(div255(outline.opacity*110));
+    const int radius=MerchantInventoryLayout::size(15,scale),start=left+coin+gap;
+    for(unsigned i=0;i<count;++i)for(int dy=-radius;dy<=radius;++dy)for(int dx=-radius;dx<=radius;++dx)
+        if((dx||dy)&&dx*dx+dy*dy<=radius*radius)outline.glyph(glyphs[i],start+positions[i]+dx,origin+dy,rgb(17,0,0));
+    const auto color=affordable?(sale?rgb(127,255,0):rgb(255,246,226)):rgb(255,85,85);
+    for(unsigned i=0;i<count;++i)c.glyph(glyphs[i],start+positions[i],origin,color);
+}
+static void merchant_price(Canvas&c,int item,int x,int y,unsigned scale){
     auto&s=c.a.game;bool sold=s.shop_sold&(1u<<item);int price=s.world.active?world_shop_price(s,item):item==ShopRemove?remove_price(s):s.shop_prices[item];
     if(sold)return;
-    char value[24]{};TextBuffer t{value,sizeof value,0,&c.a.content};t.number(price);int textw=c.width(value,8),left=x+mx(0,(w-textw-10)/2);
     const bool sale=s.world.active&&item<ShopCardCount&&s.world.shop_sale==item;
-    c.picture(A_Coin,left,y+2,7,7);c.text(value,left+9,y,8,s.gold>=price?(sale?Green:White):Red);
+    merchant_cost_label(c,price,x,y,scale,s.gold>=price,sale,item<ShopCardCount);
 }
 static bool merchant_hovered(const App&a,int item,int x,int y,int w,int h){
     if(a.paused||a.help||a.panel||a.library||a.settings_open||a.event_reader||a.map_window.is_open||a.frontend_confirm||a.detail_card>=0||a.detail_item>=0||a.status_actor>=0)return false;
@@ -123,7 +146,8 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     c.dim(0,22,320,218,motion.alpha(a.map_clock_ms));c.ui(U_MerchantRug,MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY+dy,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH);
     a.cursor=mn(mx(a.cursor,0),ShopLeave);
     int focus=-1,focus_x=0,focus_y=0;
-    if(a.shop_open)for(unsigned item=0;item<ShopLeave;++item){const auto r=MerchantInventoryLayout::bounds(item,dy);
+    if(a.shop_open)for(unsigned item=0;item<ShopLeave;++item){auto r=MerchantInventoryLayout::bounds(item,dy);
+        if(item>=ShopRelicStart&&item<ShopPotionStart)r=MerchantInventoryLayout::relic_bounds(MerchantInventoryLayout::item_x(item-ShopRelicStart),MerchantInventoryLayout::RelicY+dy,motion.scale(item,a.map_clock_ms));
         if(!(s.shop_sold&(1u<<item))&&merchant_hovered(a,int(item),r.x,r.y,r.w,r.h)){
             focus=int(item);focus_x=item<7?MerchantInventoryLayout::card_x(item):item<13?MerchantInventoryLayout::item_x((item-7)%3):MerchantInventoryLayout::RemoveX;
             focus_y=(item<7?MerchantInventoryLayout::card_y(item):item<10?MerchantInventoryLayout::RelicY:item<13?MerchantInventoryLayout::PotionY:MerchantInventoryLayout::RemoveY)+dy;}}
@@ -141,21 +165,22 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
         const int cx=MerchantInventoryLayout::card_x(i),cy=MerchantInventoryLayout::card_y(i)+dy;const bool sold=s.shop_sold&(1u<<i);
         const unsigned scale=motion.scale(unsigned(i),a.map_clock_ms);const auto r=MerchantInventoryLayout::bounds(unsigned(i),dy);
         merchant_card(c,s.world.active?s.world.shop_cards[i]:Card{s.shop_cards[i],0},cx+motion.wiggle(unsigned(i),a.map_clock_ms),cy,scale,sold,s.world.active?&s.world.shop_facts[i]:nullptr);
-        merchant_price(c,i,cx-26,cy+MerchantInventoryLayout::size(220,scale),52);
+        merchant_price(c,i,cx,cy+MerchantInventoryLayout::size(220,scale),scale);
         if(s.world.active&&s.world.shop_sale==i&&!sold){const int sale=a.content.world_image("merchant","SALE_TAG");if(sale>=0)c.picture(sale,cx+MerchantInventoryLayout::size(146,scale)-10,cy-MerchantInventoryLayout::size(153,scale)-8,20,16);}
         if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,i,!sold);
     }
     for(int i=0;i<3;i++){
         const int x=MerchantInventoryLayout::item_x(i);int item=ShopRelicStart+i,index=-1;bool sold=s.shop_sold&(1u<<item);
         if(s.world.active)index=s.world.shop_relics[i]==NoWorldRelic?-1:s.world.shop_relics[i];else for(int r=0;r<RelicKinds;r++)if(relic_definitions[r].id==s.shop_relics[i])index=r;
-        unsigned scale=motion.scale(unsigned(item),a.map_clock_ms);int size=MerchantInventoryLayout::size(128,scale);auto r=MerchantInventoryLayout::bounds(unsigned(item),dy);
-        if(index>=0&&!sold)c.picture(a.relic_face_image(index),x-size/2+motion.wiggle(unsigned(item),a.map_clock_ms),MerchantInventoryLayout::RelicY+dy-size/2,size,size);
-        merchant_price(c,item,x-16,MerchantInventoryLayout::RelicY+dy+MerchantInventoryLayout::size(52,scale),32);
-        if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,item,!sold);
-        item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);scale=motion.scale(unsigned(item),a.map_clock_ms);r=MerchantInventoryLayout::bounds(unsigned(item),dy);
+        unsigned scale=motion.scale(unsigned(item),a.map_clock_ms);
+        const auto icon=MerchantInventoryLayout::relic_bounds(x,MerchantInventoryLayout::RelicY+dy,scale);
+        if(index>=0&&!sold)c.picture(a.relic_face_image(index),icon.x+motion.wiggle(unsigned(item),a.map_clock_ms),icon.y,icon.w,icon.h);
+        merchant_price(c,item,x,MerchantInventoryLayout::RelicY+dy+MerchantInventoryLayout::size(52,scale),scale);
+        if(a.shop_open)c.hit(icon.x,mx(22,icon.y),icon.w,mx(0,icon.y+icon.h-mx(22,icon.y)),HitKind::Choice,item,!sold);
+        item=ShopPotionStart+i;sold=s.shop_sold&(1u<<item);scale=motion.scale(unsigned(item),a.map_clock_ms);const auto r=MerchantInventoryLayout::bounds(unsigned(item),dy);
         const int w=MerchantInventoryLayout::size(90,scale),h=MerchantInventoryLayout::size(120,scale);
         if(!sold)c.picture(a.content.potion_image((Potion)s.shop_potions[i]),x-w/2+motion.wiggle(unsigned(item),a.map_clock_ms),MerchantInventoryLayout::PotionY+dy-h/2,w,h);
-        merchant_price(c,item,x-16,MerchantInventoryLayout::PotionY+dy+MerchantInventoryLayout::size(48,scale),32);
+        merchant_price(c,item,x,MerchantInventoryLayout::PotionY+dy+MerchantInventoryLayout::size(48,scale),scale);
         if(a.shop_open)c.hit(r.x,mx(22,r.y),r.w,mx(0,r.y+r.h-mx(22,r.y)),HitKind::Choice,item,!sold);
     }
     const bool removed=s.shop_sold&(1u<<ShopRemove);const unsigned remove_scale=motion.scale(ShopRemove,a.map_clock_ms);
@@ -168,7 +193,7 @@ static void shop_screen(Canvas&c,bool cull_covered=true){
     }
     const int remove_size=MerchantInventoryLayout::size(270,remove_scale);const auto remove_rect=MerchantInventoryLayout::bounds(ShopRemove,dy);
     c.ui(remove_image,MerchantInventoryLayout::RemoveX-remove_size/2+motion.wiggle(ShopRemove,a.map_clock_ms),MerchantInventoryLayout::RemoveY+dy-remove_size/2,remove_size,remove_size);
-    merchant_price(c,ShopRemove,MerchantInventoryLayout::RemoveX-26,MerchantInventoryLayout::RemoveY+dy+MerchantInventoryLayout::size(177,remove_scale),52);
+    merchant_price(c,ShopRemove,MerchantInventoryLayout::RemoveX,MerchantInventoryLayout::RemoveY+dy+MerchantInventoryLayout::size(177,remove_scale),remove_scale);
     if(a.shop_open){c.hit(remove_rect.x,mx(22,remove_rect.y),remove_rect.w,mx(0,remove_rect.y+remove_rect.h-mx(22,remove_rect.y)),HitKind::Choice,ShopRemove,!removed);
         native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==ShopLeave);c.hit(0,209,61,31,HitKind::Choice,ShopLeave);}
     merchant_hand(c);merchant_dialogue(c);

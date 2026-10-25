@@ -1,5 +1,50 @@
 # Work state — 2026-10-25
 
+## UI10e source follow-up and final matched acceptance
+
+UI10d is remotely preserved at `78ac86e35651d3832e1b9638001aa0aa6be3f0a0`,
+tree `9a271d5013c8397932bd4c6414aba56a1281ebd9`. Its full Python gate passes
+240+54 tests and compileall; ARM and WASM builds pass. The linked ARM image
+uses16,196,964 bytes including the Zehn prefix and BSS, leaving580,252 bytes
+under the unchanged16MiB allocation limit. ARM division/LZMA/tile/RGR2
+regressions pass, including malformed retained-color groups.
+
+The d native gate passes117/118 targets. Its single failure is the frontend
+test incorrectly applying new title-menu bounds to the separately laid-out
+Pause menu; independent bounds for both menus are restored. The complete d
+actual-resource gate passes88/94 targets: the same frontend premise fails
+both locales, the Profiles oracle composited reticles before rather than
+after text in both locales, Chinese collection headings reveal three real
+missing5px bold glyphs, and English world_ui has a separately investigated
+fixture failure. All failures remain in their original receipts.
+
+The e implementation restores the source joined-title/description Card
+Library search and exact query whitespace handling; Statistics composes its
+scrolling subtree once through the source alpha mask; History restores the
+source header fonts, positions, information grouping and reminder icon.
+Ordinary and Fake Merchant inventory navigation now skips sold entries;
+price/icon geometry follows original Godot font/container measurements.
+Turn banners project the source24px/16px outline widths through their current
+zoom, using one bounded scanline to combine half-alpha coverage before drawing.
+The full e runtime and actual resources still require their own acceptance.
+
+The completed d resource split is92,408,754 bytes. Its exact RGR2 transform
+saves949,484 bytes and new-glyph compaction saves21,498 bytes against their
+matching inputs. The first attempted reused compression receipt was stopped
+after exposing an offline reuse bug; it is not counted as a pass. The later
+conversion with the legacy receipt passes. The e converter recognizes both
+receipt forms, validates cached decoded content, and recompresses missing
+cache entries rather than silently skipping profitable groups.
+
+Font-only iteration now preserves versions36–38 and the complete existing
+payload. The next resource build appends only missing e glyphs to d's37,
+compacts only that new literal tail, and appends the original6×6 History lock
+as NSP2/38. No old image recompression, new runtime pool or full startup
+validation pass is introduced. The final common/locale set, ordinary browser
+and cloned-OS USB capacity/Continue results, quiet benchmark, private delivery
+and verified main synchronization remain required. Source inventory and test
+counts do not establish a95% original-game restoration measurement.
+
 ## UI10d title, confirmations and source speech
 
 The verified UI10c checkpoint is `3d6d79907bb76269474acd8bd5c27baf575837f2`.

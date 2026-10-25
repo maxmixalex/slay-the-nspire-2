@@ -143,20 +143,30 @@ static void merchant_welcome(){
 static void merchant(){
  begin(OriginalEventId::FakeMerchant,23,1);a.render();CHECK(!a.shop_open&&!choice_count());
  press_action(UiAction::OpenShop);CHECK(a.shop_open);advance_ms(1000);CHECK(choice_count()==6);HitRegion slots[6];
- for(int i=0;i<6;i++){slots[i]=choice(i);CHECK(slots[i].enabled&&slots[i].w==36&&slots[i].h==42);for(int j=0;j<i;j++)CHECK(!overlap(slots[i],slots[j]));}
+ // NMerchantRelic Large uses the128px holder with4px margins and a2x
+ // parent. Settle all six at .65 before checking their35px input bounds.
+ a.pointer_move(319,23);a.render();advance_ms(500);
+ for(int i=0;i<6;i++){slots[i]=choice(i);CHECK(slots[i].enabled&&slots[i].w==35&&slots[i].h==35);for(int j=0;j<i;j++)CHECK(!overlap(slots[i],slots[j]));}
  CHECK(slots[0].x<slots[1].x&&slots[2].x<slots[3].x&&slots[3].x<slots[4].x);
  CHECK(slots[0].y<slots[2].y&&slots[1].y<slots[4].y&&slots[2].y<slots[5].y&&slots[3].y<slots[5].y&&slots[4].y<slots[5].y);
  snapshot();for(int i=0;i<6;i++){const auto&h=slots[i];a.pointer_move(h.x+h.w/2,h.y+h.h/2);CHECK(a.cursor==i);a.render();const auto*p=a.hit_at(h.x+h.w/2,h.y+h.h/2);CHECK(p&&p->kind==HitKind::Choice&&p->value==i);unchanged();}
  a.cursor=0;a.pointer.visible=false;a.render();auto h=choice(0);int price=a.game.original_events.choice_prices[0];
- uint32_t old_price=image_hash(h.x,h.y+h.h-14,h.w,14);snapshot();
- a.game.original_events.choice_prices[0]=int16_t(price+1);a.render();CHECK(image_hash(h.x,h.y+h.h-14,h.w,14)!=old_price);
+ CHECK(h.w==43&&h.h==43);CardHoverTarget owner{};CHECK(event_hover_target(a,owner));
+ CHECK(owner.merchant&&owner.merchant_left&&owner.canonical_relic&&owner.relic==a.game.original_events.offers[0]);
+ CHECK(owner.owner.x==155&&owner.owner.y==55&&owner.owner.w==22&&owner.owner.h==22);
+ // The price lies below the large icon's click bounds. Its source Cost
+ // origin is66+52*.8*2/9=75px, independent of the icon's upward offset.
+ uint32_t old_price=image_hash(140,75,52,16);snapshot();
+ a.game.original_events.choice_prices[0]=int16_t(price+1);a.render();CHECK(image_hash(140,75,52,16)!=old_price);
  a.game.original_events.choice_prices[0]=int16_t(price);a.render();unchanged();capture("fake-merchant-stock");
  // Stock remains focusable when unaffordable, matching the original failed
  // purchase speech/wiggle; the core still rejects the actual purchase.
  a.game.gold=0;snapshot();a.render();for(int i=0;i<6;i++)CHECK(choice(i).enabled);press_choice(0);unchanged();CHECK(a.room_presentation.merchant.dialogue==1);
  a.game.gold=1000;auto bought=RelicId(a.game.original_events.offers[0]);unsigned count=a.game.world_relics.count;int gold=a.game.gold;press_choice(0);
  CHECK(a.game.phase==Phase::Event&&!a.game.original_events.finished);CHECK(a.game.original_events.offers[0]==NoWorldRelic&&has_world_relic(a.game,bought));
- CHECK(a.game.gold==gold-price&&a.game.world_relics.count==count+1);CHECK(validate(a.game));advance_ms(1000);CHECK(choice_count()==6&&!choice(0).enabled);capture("fake-merchant-sold");
+ CHECK(a.game.gold==gold-price&&a.game.world_relics.count==count+1&&a.cursor==1);CHECK(validate(a.game));advance_ms(1000);CHECK(choice_count()==6&&!choice(0).enabled);capture("fake-merchant-sold");
+ snapshot();a.input(Key::Left);CHECK(a.cursor==1);a.input(Key::Down);CHECK(a.cursor==2);a.input(Key::Right);CHECK(a.cursor==3);
+ a.input(Key::Down);CHECK(a.cursor==5);a.input(Key::Up);CHECK(a.cursor==2);a.input(Key::Up);CHECK(a.cursor==1);unchanged();
  snapshot();press_choice(0);unchanged();press_action(UiAction::CloseShop);CHECK(!a.shop_open);
  // Observe the new closed-rug Proceed before spending its 500ms entry.
  // The existing 800ms room-settle interval also covers that authored move.

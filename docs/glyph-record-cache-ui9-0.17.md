@@ -49,7 +49,7 @@ record every rendered frame's RGB565 fingerprint, all hit-region fields and
 canonical State fingerprint. All867 paired frames in each language match:
 1,734 frame pairs and133,171,200 pixels per side. The unmodified driver's
 canonical before/after byte comparisons also pass, with zero save callbacks.
-All24 measured runs have matching stage counts, range calls, bytes, seeks,
+All 24 measured runs have matching stage counts, range calls, bytes, seeks,
 visible cards and first/settled/last frame observations.
 
 Six serial AB/BA repetitions per language measured180 advancing frames in
@@ -68,3 +68,29 @@ resource reads. Merchant animation continues its deterministic group reads;
 those calls and bytes also match. The memo changes resident directory lookup
 work, and cannot claim a reduction in image or file I/O. Linked ARM allocation
 and physical calculator timing remain separate from this host measurement.
+
+## Reproducible comparison boundary
+
+The private proof bundle is `private-performance-storage/glyph-memo-actual/`.
+Its `receipt.json` and the passed journal
+`ui10-glyph-memo-actual-frames-2168675bd79c.json` retain the frozen source,
+matching archive, input hashes, complete raw repetitions and transcript checks.
+Reproduction changes only the lookup and two remember calls; all other linked
+code and resource bytes must match between the two executables.
+
+`card_grid_benchmark` now reports `process_cpu_ms`, `mean_process_cpu_ms` and
+`maximum_process_cpu_ms` alongside elapsed time. On this single-thread driver,
+process CPU is the executing thread's CPU consumption. The legacy fields named
+`cpu_elapsed_ms` still measure elapsed time for compatibility and explicitly set
+`legacy_cpu_elapsed_is_wall_time`. `NSPIRE_BENCH_SCENE` selects the exact
+`library_ironclad_known` or `library_rainbow_known` fixture, including its card
+inspector and the latter's keyword inspector. A final focused run uses four
+AB/BA repetitions of 180 advancing frames per warm window, pins one allowed
+host CPU and records all range-I/O and frame observations. That final quiet
+measurement is pending; these documents do not derive calculator FPS from
+native host timing.
+
+The 2,052-byte ARM metadata cost is an object-size fact. It is included in the
+complete stage-D linked allocation, together with the workspace reuse and all
+UI additions; see `foreground-workspace-ui10-0.17.md`. It must not be described
+as a pixel cache reduction, storage saving or measured device speedup.

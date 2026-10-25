@@ -5,6 +5,7 @@
 #include "world_run.hpp"
 #include "original_events.hpp"
 #include "rich_text.hpp"
+#include "library_search.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -42,7 +43,8 @@ static void discovery_search_and_capture(){
     spire_test::discover_card(a,ids[0]);spire_test::discover_card(a,ids[2]);a.select_library_item(0);CHECK(a.detail_card>=0&&a.card_inspect.count==2);
     a.input(Key::Right);CHECK(card_from_token(a.detail_card).kind==ids[2]);a.input(Key::Right);CHECK(card_from_token(a.detail_card).kind==ids[2]);a.input(Key::Back);
     control(LibrarySearch);a.library_text(0x5347);a.library_text(0x7ea7);CHECK(!std::strcmp(a.card_library.draft,"升级"));a.library_text(8);CHECK(!std::strcmp(a.card_library.draft,"升"));a.library_text(8);
-    for(char ch:std::string("  RaRe  "))a.library_text(ch);CHECK(a.card_library.query_pending&&!*a.card_library.query);a.advance(249);CHECK(!*a.card_library.query);a.advance(1);CHECK(!std::strcmp(a.card_library.query,"rare"));
+    for(char ch:std::string("  RaRe  "))a.library_text(ch);CHECK(a.card_library.query_pending&&!*a.card_library.query);a.advance(249);CHECK(!*a.card_library.query);a.advance(1);CHECK(!std::strcmp(a.card_library.query,"  rare  ")&&a.library_items()==0);
+    control(LibraryClearSearch);for(char ch:std::string("RaRe"))a.library_text(ch);a.library_text(13);CHECK(!std::strcmp(a.card_library.query,"rare"));
     spire_test::discover_all_cards(a);a.card_library.invalidate();const unsigned rare=a.library_items(ids);CHECK(rare>0);for(unsigned i=0;i<rare;++i)CHECK(card_rarity(ids[i])==4);
     capture("library-rare-search");control(LibraryClearSearch);CHECK(!*a.card_library.query&&a.library_items()==85);a.library_text(13);CHECK(!a.library_search_editing);
     // A pending debounce invalidates an existing captured list index.
@@ -50,6 +52,27 @@ static void discovery_search_and_capture(){
     control(LibraryClearSearch);a.library_text(13);CHECK(spire_test::drag_grid_thumb(a,true));CHECK(spire_test::drag_grid_thumb(a,false));
     a.card_library.control=-1;a.library_selected=0;a.input(Key::Left);CHECK(a.card_library.control==LibraryPoolFirst);
     for(unsigned i=0;i<4;++i)a.input(Key::Right);CHECK(a.card_library.control<0&&a.library_selected==0);
+}
+static void source_search_predicates(){
+    using namespace library_query;
+    char query[128]{};fold(query,sizeof query,"  DéJÀ VU  ");CHECK(!std::strcmp(query,"  déjà vu  "));
+    CHECK(empty(" \t\r\n\xc2\xa0\xe3\x80\x80")&&!empty(" \xe5\xad\x97 "));
+    CHECK(Matcher("strike deal").matches("Strike","[gold]Deal[/gold] 6 damage."));
+    CHECK(Matcher("伤害 获得").matches("造成伤害","[blue]获得[/blue]格挡。"));
+    CHECK(Matcher("draw 2 cards").matches("  Draw\t2\n","<b>Cards</b>  then\t discard."));
+    CHECK(!Matcher("  strike").matches("Strike","Deal 6 damage."));
+    CHECK(!Matcher("strike  deal").matches("Strike","Deal 6 damage."));
+    CHECK(Matcher("strike ").matches("Strike","Deal 6 damage."));
+    CHECK(!Matcher("damage. ").matches("Strike","Deal 6 damage.   "));
+    CHECK(Matcher("aababac").matches("aababab","aababac"));
+    CHECK(Matcher("[literal").matches("[literal","Unmatched markup stays searchable."));
+    CHECK(!Matcher("gold").matches("Strike","[gold]Deal[/gold] damage."));
+    CHECK(Matcher("a\xc2\xa0" "b").matches("a\xc2\xa0" "b","tail"));
+    CHECK(!Matcher("a b").matches("a\xc2\xa0" "b","tail"));
+    a.open_library(0);std::memset(a.progress.discovered_cards,0,sizeof a.progress.discovered_cards);
+    std::strcpy(a.card_library.draft,"   ");a.commit_library_query();CHECK(a.library_items()==85&&!std::strcmp(a.card_library.query,"   "));
+    a.library_control(LibraryClearSearch);CHECK(a.library_search_editing&&!std::strcmp(a.card_library.draft,"   "));
+    a.open_library(0);
 }
 static void hover_discovery_preserves_capture(){
     a.pointer.visible=false;std::memset(a.progress.discovered_cards,0,sizeof a.progress.discovered_cards);
@@ -332,6 +355,6 @@ int main(int argc,char**argv){
         a.render();unsigned preparation=0;while(a.combat_preparation.active&&preparation++<1024){a.advance(33);a.render();}
         CHECK(!a.combat_preparation.active&&a.content.healthy());unchanged(before);
     }
-    library_source_geometry();unchanged(before);library_source_label_pixels(bytes);unchanged(before);pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);collection_header_pixels(bytes);unchanged(before);host_input();observed_rewards();
+    source_search_predicates();unchanged(before);library_source_geometry();unchanged(before);library_source_label_pixels(bytes);unchanged(before);pools_and_filters();unchanged(before);discovery_search_and_capture();unchanged(before);hover_discovery_preserves_capture();unchanged(before);collections();unchanged(before);collection_associated_models();unchanged(before);collection_header_pixels(bytes);unchanged(before);host_input();observed_rewards();
     std::printf("UI7 card library and collections: %u checks passed\n",checks);
 }

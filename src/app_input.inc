@@ -232,11 +232,6 @@ void App::input(Key k){
         }
         else if(game.phase==Phase::Map){map_scroll=mx(-reference::MaxRows,mn(reference::MaxRows,map_scroll+(k==Key::Up?1:-1)));}
         else if(game.phase==Phase::Upgrade||game.phase==Phase::Remove||game.phase==Phase::Transform)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
-        else if(game.phase==Phase::Shop){
-            const int below[15]={5,6,7,8,13,14,14,10,11,12,14,14,14,14,0};
-            const int above[15]={14,14,14,14,14,0,1,2,3,4,7,8,9,4,5};
-            cursor=(k==Key::Down?below:above)[cursor];
-        }
         else if(game.phase==Phase::Camp)cursor=(cursor+(k==Key::Up?count-1:1))%mx(1,count);
         else if(!library&&combat_phase(game.phase))next_target(*this);
     }
@@ -277,17 +272,15 @@ void App::input(Key k){
                 if(potion&&affordable)potion_obtain_failed();
             }else if(acted&&game.phase==Phase::Shop){
                 room_presentation.merchant.speak(0,map_clock_ms);
-                const auto source=MerchantInventoryLayout::bounds(unsigned(item));int nearest=ShopLeave,distance=0x7fffffff;
-                for(int candidate=0;candidate<ShopLeave;++candidate)if(candidate!=item&&!(game.shop_sold&(1u<<candidate))){
-                    const auto to=MerchantInventoryLayout::bounds(unsigned(candidate));const int dx=(to.x*2+to.w)-(source.x*2+source.w),dy=(to.y*2+to.h)-(source.y*2+source.h),length=dx*dx+dy*dy;
-                    if(length<distance){nearest=candidate;distance=length;}
-                }cursor=nearest;
+                cursor=merchant_navigation::after_purchase(merchant_navigation::stock(game,false),unsigned(item),false);
             }
             break;}
         case Phase::Remove:acted=remove_card(game,cursor);if(acted)message("已移除所选卡牌");break;
         case Phase::Event:{const bool fake=game.original_events.active&&game.original_events.id==OriginalEventId::FakeMerchant&&!game.original_events.finished;
             const int item=cursor;acted=event_choice(game,item);scroll=0;
-            if(fake&&item<6){if(acted)room_presentation.merchant.speak(0,map_clock_ms);else room_presentation.merchant.failure(item,1,map_clock_ms);}
+            if(fake&&item<6){if(acted){room_presentation.merchant.speak(0,map_clock_ms);
+                    cursor=merchant_navigation::after_purchase(merchant_navigation::stock(game,true),unsigned(item),true);
+                }else room_presentation.merchant.failure(item,1,map_clock_ms);}
             break;}
         case Phase::Transform:acted=transform_card(game,cursor);if(!acted)message("请选择另一张尚未变化的牌");break;
         case Phase::Treasure:

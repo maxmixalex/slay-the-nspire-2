@@ -21,6 +21,9 @@ struct TurnBannerPresentation {
     static constexpr uint32_t wait_ticks(unsigned normal_ms,unsigned fast_ms,bool fast){return ((fast?fast_ms:normal_ms)+32u)/33u;}
     static constexpr uint32_t enemy_lead_ticks(bool fast){return wait_ticks(800,500,fast);}
     static constexpr uint32_t intent_lead_ticks(bool fast){return wait_ticks(400,250,fast);}
+    // The original title/counter outlines are24/16px on the1680px UI.
+    // The enemy label's2 ->1 transform scales its outline with its glyphs.
+    static constexpr int outline_pixels(unsigned source,unsigned scale=4096){return int((source*4u*scale+21u*2048u)/(21u*4096u));}
     void reset(){*this=TurnBannerPresentation{};}
     static unsigned ease(uint32_t elapsed,uint32_t duration){return health_bar::expo_out(elapsed>=duration?1000:elapsed*1000/duration);}
     void begin_enemy(uint32_t now){

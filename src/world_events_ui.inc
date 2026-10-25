@@ -76,10 +76,6 @@ static void native_ancient_screen(Canvas&c){
  else ancient_next_button(c);
  native_ancient_banner(c);
 }
-static void native_fake_price(Canvas&c,int amount,int x,int y,bool enabled){
- char text[24]{};TextBuffer b{text,sizeof text,0,&c.a.content};b.number(amount);int left=x-(c.width(text,10)+13)/2;
- c.picture(A_Coin,left,y+2,10,10,enabled?255:135);c.text(text,left+12,y,10,enabled?Gold:Red);
-}
 static void native_fake_merchant_screen(Canvas&c){
  auto&a=c.a;const auto&s=a.game;const auto&e=s.original_events;auto&motion=a.room_presentation.merchant;
  motion.set_open(a.shop_open,a.map_clock_ms);
@@ -97,23 +93,24 @@ static void native_fake_merchant_screen(Canvas&c){
  const int dy=motion.offset(a.map_clock_ms);
  c.dim(0,22,320,218,motion.alpha(a.map_clock_ms));
  c.picture(a.content.world_image("events","FAKE_MERCHANT_RUG"),MerchantInventoryLayout::RugX,MerchantInventoryLayout::RugY+dy,MerchantInventoryLayout::RugW,MerchantInventoryLayout::RugH);
- static const int positions[6][2]={{869,218},{1144,288},{737,516},{1010,583},{1345,498},{823,847}};
  int focused=-1,focus_x=0,focus_y=0;
  for(int i=0;i<6;i++){
-  const int x=MerchantInventoryLayout::project(-122+positions[i][0]),y=MerchantInventoryLayout::project(80+positions[i][1])+dy;
+  const int x=MerchantInventoryLayout::fake_x(unsigned(i)),y=MerchantInventoryLayout::fake_y(unsigned(i))+dy;
   const bool stocked=i<e.offer_count&&e.offers[i]<WorldRelicKinds;
-  if(a.shop_open&&stocked&&merchant_hovered(a,i,x-18,y-17,36,42)){focused=i;focus_x=x;focus_y=y;}
+  const auto icon=MerchantInventoryLayout::relic_bounds(x,y,motion.scale(unsigned(i),a.map_clock_ms),true,!a.content.english());
+  if(a.shop_open&&stocked&&merchant_hovered(a,i,icon.x,icon.y,icon.w,icon.h)){focused=i;focus_x=x;focus_y=y;}
  }
  motion.observe_focus(focused,focus_x,focus_y,a.map_clock_ms);
  for(int i=0;i<6;i++){
-  const int x=MerchantInventoryLayout::project(-122+positions[i][0]),y=MerchantInventoryLayout::project(80+positions[i][1])+dy;
+  const int x=MerchantInventoryLayout::fake_x(unsigned(i)),y=MerchantInventoryLayout::fake_y(unsigned(i))+dy;
   const bool stocked=i<e.offer_count&&e.offers[i]<WorldRelicKinds;
-  if(stocked){const int size=MerchantInventoryLayout::size(128,motion.scale(unsigned(i),a.map_clock_ms));
-   c.picture(a.relic_face_image(e.offers[i]),x-size/2+motion.wiggle(unsigned(i),a.map_clock_ms),y-size/2,size,size);
-   native_fake_price(c,e.choice_prices[i],x,y+MerchantInventoryLayout::size(52,motion.scale(unsigned(i),a.map_clock_ms)),s.gold>=e.choice_prices[i]);
+  const unsigned scale=motion.scale(unsigned(i),a.map_clock_ms);
+  const auto icon=MerchantInventoryLayout::relic_bounds(x,y,scale,true,!a.content.english());
+  if(stocked){c.picture(a.relic_face_image(e.offers[i]),icon.x+motion.wiggle(unsigned(i),a.map_clock_ms),icon.y,icon.w,icon.h);
+   merchant_cost_label(c,e.choice_prices[i],x,y+MerchantInventoryLayout::size(52,scale),scale,s.gold>=e.choice_prices[i]);
   }
-  const int top=mx(22,y-17),bottom=mn(240,y+25);
-  if(a.shop_open&&bottom>top)c.hit(x-18,top,36,bottom-top,HitKind::Choice,i,stocked);
+  const int top=mx(22,icon.y),bottom=mn(240,icon.y+icon.h);
+  if(a.shop_open&&bottom>top)c.hit(icon.x,top,icon.w,bottom-top,HitKind::Choice,i,stocked);
  }
  if(a.shop_open){native_back(c,3,212,52,28,"返回",true,!a.pointer.visible&&a.cursor==6);c.action(0,209,61,31,UiAction::CloseShop);}
  merchant_hand(c,true);merchant_dialogue(c,true);

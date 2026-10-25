@@ -4,19 +4,6 @@
 uint16_t App::localized_card_rank(CardKind kind)const{return kind<CardKinds?card_title_sort_rank[content.english()?0:1][kind]:0;}
 static bool library_equal(const char*a,const char*b){while(*a&&*a==*b){++a;++b;}return *a==*b;}
 static void library_copy(char*out,unsigned capacity,const char*in){unsigned n=0;while(n+1<capacity&&in[n]){out[n]=in[n];++n;}out[n]=0;}
-static void library_normalize(char*out,unsigned capacity,const char*in,bool tags=false){
-    unsigned n=0;bool space=false;
-    for(;*in;++in){unsigned char ch=uint8_t(*in);
-        if(tags&&(ch=='['||ch=='<')){const char close=ch=='['?']':'>';while(in[1]&&*in!=close)++in;if(*in==close)continue;}
-        if(ch==' '||ch=='\t'||ch=='\r'||ch=='\n'){if(n)space=true;continue;}
-        if(space&&n+1<capacity)out[n++]=' ';space=false;
-        if(n+1>=capacity)break;out[n++]=ch>='A'&&ch<='Z'?char(ch+32):char(ch);
-    }out[n]=0;
-}
-static bool library_contains(const char*haystack,const char*needle){
-    if(!*needle)return true;
-    for(;*haystack;++haystack){const char*a=haystack,*b=needle;while(*a&&*a==*b){++a;++b;}if(!*b)return true;}return false;
-}
 bool App::library_card_seen(CardKind kind)const{
     return kind<CardKinds&&(progress.discovered_cards[unsigned(kind)/8]&(1u<<(unsigned(kind)%8)));
 }
@@ -46,7 +33,7 @@ unsigned App::library_items(CardKind*out)const{
         static constexpr uint8_t pool_bits[9]={0,1,2,32,16,4,8,64,128};
         static constexpr const char*rarity_names[]={"none","basic","common","uncommon","rare","ancient","event","token","status","curse","quest"};
         const unsigned pool_mask=library_filter>=0&&library_filter<9?pool_bits[library_filter]:0;
-        char normalized[2048];const EventCardFacts canonical{};
+        const bool searching=!library_query::empty(state.query);const library_query::Matcher query(state.query);const EventCardFacts canonical{};
         for(unsigned i=0;i<CardKinds;++i){
             if(!(library_card_metadata[i][0]&pool_mask))continue;
             const int rarity=card_rarity(i),type=int(definitions[i].type);
@@ -57,12 +44,12 @@ unsigned App::library_items(CardKind*out)const{
             const int energy=cost({CardKind(i),0});unsigned cost_bit=energy==-1?0:1u<<(energy<=0?0:energy>=3?3:energy);
             if(energy==-1||library_card_metadata[i][1])cost_bit|=16;
             if(state.costs&&!(state.costs&cost_bit))continue;
-            if(*state.query){
+            if(searching){
                 if(!library_card_seen(CardKind(i)))continue;
                 bool match=rarity>=0&&rarity<11&&library_equal(state.query,rarity_names[rarity]);
-                if(!match){library_normalize(normalized,sizeof normalized,content.card_string(i),true);match=library_contains(normalized,state.query);}
+                if(!match)match=query.matches(content.card_string(i),"");
                 if(!match){char description[2048];world_card_description({CardKind(i),uint8_t(library_upgraded&&card_upgradeable({CardKind(i),0}))},-1,description,sizeof description,-1,-1,&canonical);
-                    library_normalize(normalized,sizeof normalized,description,true);match=library_contains(normalized,state.query);}
+                    match=query.matches(content.card_string(i),description);}
                 if(!match)continue;
             }
             state.ids[state.count++]=uint16_t(i);
@@ -82,7 +69,7 @@ unsigned App::library_items(CardKind*out)const{
     if(out)for(unsigned i=0;i<state.count;++i)out[i]=CardKind(state.ids[i]);return state.count;
 }
 void App::commit_library_query(){
-    char normalized[sizeof card_library.query];library_normalize(normalized,sizeof normalized,card_library.draft);
+    char normalized[sizeof card_library.query];library_query::fold(normalized,sizeof normalized,card_library.draft);
     card_library.query_pending=false;
     if(library_equal(normalized,card_library.query))return;
     // A debounced filter can finish while the pointer is pressed. The old
@@ -113,7 +100,7 @@ void App::library_control(int control){
     card_library.control=int16_t(control);library_search_editing=card_library.editing=false;
     if(control==LibrarySearch||control==LibraryClearSearch){
         library_search_editing=card_library.editing=true;
-        if(control==LibraryClearSearch){card_library.draft[0]=0;commit_library_query();}return;
+        if(control==LibraryClearSearch&&!library_query::empty(card_library.draft)){card_library.draft[0]=0;commit_library_query();}return;
     }
     if(control>=LibraryPoolFirst&&control<=LibraryPoolLast){
         static constexpr uint8_t filters[]={1,2,5,6,4,3,7,8};const int filter=filters[control-LibraryPoolFirst];
@@ -122,7 +109,7 @@ void App::library_control(int control){
     else if(control>=LibraryRarityFirst&&control<=LibraryRarityLast){if(library_filter<=0||library_filter>=7)return;card_library.rarities^=uint8_t(1u<<(control-LibraryRarityFirst));}
     else if(control>=LibraryCostFirst&&control<=LibraryCostLast)card_library.costs^=uint8_t(1u<<(control-LibraryCostFirst));
     else if(control==LibraryViewStats){card_library.show_stats=!card_library.show_stats;return;}
-    else if(control==LibraryViewUpgrades){library_upgraded=!library_upgraded;if(!*card_library.query)return;}
+    else if(control==LibraryViewUpgrades){library_upgraded=!library_upgraded;if(library_query::empty(card_library.query))return;}
     else{const unsigned sorter=control==LibrarySortType?0:control==LibrarySortRarity?1:control==LibrarySortCost?2:3;
         card_library.sort_descending^=uint8_t(1u<<sorter);
         const bool reverse=bool(card_library.sort_descending&(1u<<sorter))!=(sorter==1);

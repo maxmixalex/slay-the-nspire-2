@@ -1,10 +1,12 @@
 """Public synthetic RGR2 conversion, relocation and bilingual readback."""
 from pathlib import Path
+import json
 import random
 import struct
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import compact_retained_colors as colors
@@ -15,7 +17,7 @@ from retained_filter import group_layout, transform_group
 from test_repack_retained import fixture, stored
 
 
-def source(language='eng', glyphs=1):
+def source(language='eng', glyphs=1, group_bytes=128 * 1024):
     data = bytearray(fixture(language, glyphs))
     offset = tiles.IMAGE.unpack_from(data, 40)[0]
     rng = random.Random(3235)
@@ -24,13 +26,87 @@ def source(language='eng', glyphs=1):
         red = (green // 2 + rng.randrange(3)) % 32
         blue = (green // 2 + rng.randrange(2)) % 32
         struct.pack_into('<H', data, offset + pixel * 2, red * 2048 + green * 32 + blue)
-    packed, _receipt, _plan = repack_retained.repack(bytes(data), fast_images='none')
+    packed, _receipt, _plan = repack_retained.repack(bytes(data), fast_images='none', group_bytes=group_bytes)
     data = bytearray(packed)
     struct.pack_into('<I', data, 4, 35)
     return bytes(data)
 
 
 class RetainedColorPackTest(unittest.TestCase):
+    def test_own_receipt_reuses_exact_output_with_an_empty_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old = colors.view(source(group_bytes=4096))
+            initial = colors.plan(old, root / 'warm', jobs=1)
+            output = colors.rewrite(old, initial)
+            (root / 'ui9-eng.nsp').write_bytes(output)
+            receipt = root / 'retained-colors.json'
+            # Reproduce the first release's receipt: it had mode/saved_bytes,
+            # but neither chosen, stream nor a slice fingerprint.
+            records = [{key: value for key, value in choice.receipt.items()
+                        if key not in ('stream', 'slice_sha256')} for choice in initial]
+            receipt.write_text(json.dumps(dict(version=36,
+                locales={'eng': {'output_sha256': tiles.sha256(output)}}, results=records)))
+            previous = colors.previous_results(receipt)
+            with mock.patch.object(colors.lzma, 'compress', side_effect=AssertionError('Unexpected recompression')):
+                repeated = colors.plan(old, root / 'cold', jobs=1, previous=previous)
+            self.assertEqual(colors.rewrite(old, repeated), output)
+            self.assertEqual(sum(row.receipt['saved_bytes'] for row in initial),
+                             sum(row.receipt['saved_bytes'] for row in repeated))
+            self.assertEqual(len(list((root / 'cold').glob('*.lzma2'))),
+                             sum(row.payload is not None for row in initial))
+            # Rerunning already-filtered input produces entries without a raw
+            # fingerprint. Those must not cause a KeyError when reused.
+            already = colors.plan(colors.view(output), root / 'warm', jobs=1)
+            receipt.write_text(json.dumps(dict(results=[row.receipt for row in already])))
+            self.assertEqual(len(colors.previous_results(receipt)),
+                             sum('raw_sha256' in row.receipt for row in already))
+            self.assertEqual(colors.rewrite(colors.view(output), already), output)
+            # A receipt cannot import an unrelated sibling output.
+            receipt.write_text(json.dumps(dict(version=36,
+                locales={'eng': {'output_sha256': '0' * 64}}, results=records)))
+            with self.assertRaisesRegex(ValueError, 'does not match'):
+                colors.previous_results(receipt)
+
+    def test_legacy_winner_populates_cache_and_missing_stream_is_recomputed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old = colors.view(source(group_bytes=4096))
+            initial = colors.plan(old, root / 'warm', jobs=1)
+            group, choice = next((group, choice) for group, choice in zip(colors.groups(old), initial)
+                                if choice.payload is not None and
+                                all(shape >> 24 != 1 for _at, shape in group.slices))
+            row = choice.receipt
+            previous = {(group.first_image, row['raw_sha256']): dict(
+                chosen={'mode': row['mode']}, stream=row['stream'],
+                stored_bytes=row['original_bytes'] - 32, best_bytes=row['output_bytes'] - 32)}
+            cached = root / 'imported'
+            cached.mkdir()
+            with mock.patch.object(colors.lzma, 'compress', side_effect=AssertionError('Unexpected recompression')):
+                imported = colors.candidate(old, group, cached, previous)
+            self.assertEqual(imported.payload, choice.payload)
+            self.assertEqual(len(list(cached.glob('*.lzma2'))), 1)
+            self.assertTrue(imported.receipt['reused_candidate'])
+            previous[group.first_image, row['raw_sha256']]['stream'] = str(root / 'missing.lzma2')
+            recomputed_cache = root / 'recomputed'
+            recomputed_cache.mkdir()
+            recomputed = colors.candidate(old, group, recomputed_cache, previous)
+            self.assertEqual(recomputed.payload, choice.payload)
+
+    def test_unknown_receipt_shape_does_not_mean_nonbeneficial(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old = colors.view(source(group_bytes=4096))
+            initial = colors.plan(old, root / 'warm', jobs=1)
+            group, choice = next((group, choice) for group, choice in zip(colors.groups(old), initial)
+                                if choice.payload is not None and
+                                all(shape >> 24 != 1 for _at, shape in group.slices))
+            cache = root / 'unknown'
+            cache.mkdir()
+            previous = {(group.first_image, choice.receipt['raw_sha256']): {'chosen': None, 'unknown': True}}
+            actual = colors.candidate(old, group, cache, previous)
+            self.assertEqual(actual.payload, choice.payload)
+
     def test_exact_conversion_relocation_and_shared_art(self):
         with tempfile.TemporaryDirectory() as directory:
             before = {language: colors.view(source(language, count))

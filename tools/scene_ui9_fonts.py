@@ -10,6 +10,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+import struct
 import content_tiles as tiles
 import card_library_fonts as library
 from replace_original_glyphs import Face, visible_alphabet, styled_alphabet, tooltip_small_bold_alphabet
@@ -33,8 +34,8 @@ def text_index():
 def profile_requirements(source):
     index, result = text_index(), set()
     language = source.string_payload(split_content.MARKER)[:-1].decode('ascii')
-    labels = json.loads((ROOT/'config/profile-ui-fonts.json').read_text())['labels']
-    for label in labels:
+    config = json.loads((ROOT/'config/profile-ui-fonts.json').read_text())
+    for label in config['labels']:
         key = label['key']
         tiles.require(key in index, 'Unbound profile text: '+key)
         text = source.string_payload(index[key])[:-1].decode('utf-8')
@@ -47,7 +48,14 @@ def profile_requirements(source):
         plain = RICH_TAG.sub('', text)
         tiles.require('[' not in plain and ']' not in plain, 'Unknown profile markup: '+key)
         face = label.get('face_by_locale', label.get('faces', {})).get(language, label['face'])
-        result.update((cp, label['pixels'], face) for cp in visible_alphabet(plain))
+        sizes = label['pixels'] if isinstance(label['pixels'], list) else [label['pixels']]
+        result.update((cp, px, face) for cp in visible_alphabet(plain) for px in sizes)
+    # Numeric values and canonical seeds are literal UI output, not localized
+    # format strings. In particular a seed can contain brackets or braces.
+    for item in config.get('alphabets', []):
+        face = item.get('face_by_locale', item.get('faces', {})).get(language, item['face'])
+        sizes = item['pixels'] if isinstance(item['pixels'], list) else [item['pixels']]
+        result.update((cp, px, face) for cp in visible_alphabet(item['characters']) for px in sizes)
     return result
 
 
@@ -140,7 +148,13 @@ def requirements(source):
 
 
 def patch(data, regular, bold, display=None, italic=None):
-    source = tiles.PackView(data, AUXILIARY, versions=(34, 35), profile=PROFILE)
+    # Later font-only iterations preserve the complete existing artwork and
+    # its encoding/version, including RGR2 and the six source UI37 pictures.
+    version = struct.unpack_from('<I', data, 4)[0] if len(data) >= 8 else 0
+    auxiliary = 2068 if version == 38 else 2067 if version == 37 else AUXILIARY
+    source = tiles.PackView(data, auxiliary, versions=(34, 35, 36, 37, 38),
+                           profile=(*PROFILE[:3], auxiliary))
+    output_version = max(VERSION, source.version)
     language = source.string_payload(split_content.MARKER)[:-1].decode('ascii')
     required = requirements(source)
     known = {(row[0], row[2]) for row in source.glyphs}
@@ -151,17 +165,18 @@ def patch(data, regular, bold, display=None, italic=None):
         tiles.require(font is not None, 'Original display font is required')
         tiles.require(cp in font.coverage, 'Original scene font lacks codepoint '+str(cp))
         additions.append(font.glyph(cp, px, face))
-    out = library.rewrite_directory(data, AUXILIARY, set(), additions,
-                                    profile=PROFILE, output_version=VERSION)
-    proof = library.verify_preserved(data, out, AUXILIARY, set())
-    target = tiles.PackView(out, AUXILIARY, versions=(VERSION,), profile=PROFILE)
+    out = library.rewrite_directory(data, auxiliary, set(), additions,
+                                    profile=(*PROFILE[:3], auxiliary), output_version=output_version)
+    proof = library.verify_preserved(data, out, auxiliary, set())
+    target = tiles.PackView(out, auxiliary, versions=(output_version,),
+                           profile=(*PROFILE[:3], auxiliary))
     keys = {(row[0], row[2]) for row in target.glyphs}
     tiles.require(all((cp, library.encoded_band(px, face)) in keys for cp, px, face in required),
                   'An exact scene glyph is missing')
     layout = split_content.layout(out, language)
     tiles.require(layout['prefix'] <= split_content.DIRECTORY_LIMIT,
                   'Scene fonts exceed the unchanged directory pool')
-    return out, dict(schema=1, reference='v0.111.0/41cef1ea', version=VERSION,
+    return out, dict(schema=1, reference='v0.111.0/41cef1ea', version=output_version,
         language=language, input_bytes=len(data), output_bytes=len(out),
         input_sha256=tiles.sha256(data), output_sha256=tiles.sha256(out),
         input_glyphs=len(source.glyphs), glyphs=len(target.glyphs),

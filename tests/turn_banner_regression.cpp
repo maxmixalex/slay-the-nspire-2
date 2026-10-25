@@ -35,5 +35,8 @@ int main(){
     // Unsigned clocks may wrap once during a long foreground session.
     b.reset();b.begin_enemy(0xfffffff0u);b.begin_player(9,10);CHECK(b.player_start==10);
     CHECK(b.sample_enemy(9).kind==b.Enemy&&b.sample_player(11).kind==b.Player);
+    CHECK(TurnBannerPresentation::outline_pixels(24)==5);
+    CHECK(TurnBannerPresentation::outline_pixels(24,8192)==9);
+    CHECK(TurnBannerPresentation::outline_pixels(16)==3);
     std::printf("turn banner: %u checks passed\n",checks);
 }

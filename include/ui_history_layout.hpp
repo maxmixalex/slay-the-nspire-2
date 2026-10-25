@@ -1,7 +1,25 @@
 #pragma once
 #include "ui_progress.hpp"
 #include "room_ui7_presentation.hpp"
+#include "reference_viewport.hpp"
 namespace spire {
+// run_history.tscn: the1920px Content centered in1680, with250px margins,
+// followed by the TopSection's8px inset. HBox children retain their source
+// minima and expand only when an actual fixed-size label needs more room.
+struct UiHistoryHeaderLayout {
+ static constexpr int Top=32,Height=83,PlayerX=138,InfoRight=1550,InfoHeight=32;
+ int hp=278,hp_width=120,gold_icon=422,gold=472,gold_width=72,potions=568,potion_width=140;
+ int floor_icon=754,floor=804,floor_width=0,timer_icon=876,time=926,time_width=72;
+ static int source_width(int pixels,int minimum){const int scaled=(pixels*21+3)/4;return scaled>minimum?scaled:minimum;}
+ UiHistoryHeaderLayout(int hp_pixels,int gold_pixels,int floor_pixels,int time_pixels,unsigned slots){
+  hp_width=source_width(hp_pixels,120);gold_icon=hp+hp_width+24;gold=gold_icon+44+6;
+  gold_width=source_width(gold_pixels,72);potions=gold+gold_width+24;
+  const int width=18+19+(slots?int(slots)*60+int(slots-1)*2:0);potion_width=width>140?width:140;
+  floor_icon=potions+potion_width+24+16+6;floor=floor_icon+44+6;floor_width=source_width(floor_pixels,0);
+  timer_icon=floor+floor_width+24+24+24;time=timer_icon+48+2;time_width=source_width(time_pixels,72);
+ }
+ static constexpr int info_y(unsigned row){return Top+int(row)*30;}
+};
 // SerializableCard.Equals groups ID, upgrade and enchantment/amount. Other
 // per-card saved properties still belong to the first actual member's preview.
 inline unsigned ui_history_groups(const UiRunHistory&r,uint16_t*indices,uint16_t*counts=nullptr){

@@ -3,6 +3,7 @@ from pathlib import Path
 import random
 import struct
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
@@ -10,8 +11,11 @@ import compact_appended_glyphs as compact
 import content_tiles as tiles
 import card_library_fonts as library
 import split_content as split
+import compact_retained_colors as colors
 from test_card_library_fonts import original_with_flavor_keys
 from test_group_glyphs import independent_pixels
+from test_compact_retained_colors import source as retained_source
+from test_repack_retained import stored
 
 
 def baseline(language='zhs'):
@@ -45,6 +49,58 @@ def append(before, auxiliary, count=400, random_pixels=False):
 
 
 class AppendedGlyphTest(unittest.TestCase):
+    def test_same_version_rgr2_art_and_old_grouped_tails_remain_exact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            old = colors.view(retained_source())
+            choices = colors.plan(old, Path(directory), jobs=1)
+            packed = colors.rewrite(old, choices)
+            self.assertTrue(any(choice.payload for choice in choices))
+            for version in (36, 37, 38):
+                data = bytearray(packed)
+                source = colors.view(packed)
+
+                def grouped(raw):
+                    data.extend(bytes(len(data) & 1))
+                    offset = len(data)
+                    stream = stored(raw)
+                    payload = tiles.GROUP.pack(b'RGR1', len(raw), len(stream), 14, 1, 0, 0, 0) + stream
+                    data.extend(payload)
+                    data.extend(bytes(len(data) & 1))
+                    descriptor = len(data)
+                    data.extend(struct.pack('<iIII', offset - descriptor, len(payload), 0, len(raw)))
+                    return descriptor
+
+                glyph = source.glyphs[0]
+                at = grouped(bytes(source.glyph_payload(0)))
+                tiles.GLYPH.pack_into(data, source.glyph_at, glyph[0], at, *glyph[2:6], glyph[6] | 0x8000)
+                text = bytes(source.string_payload(0))
+                at = grouped(text)
+                struct.pack_into('<II', data, source.string_at, at, (len(text) - 1) | tiles.STRING_GROUP_FLAG)
+                struct.pack_into('<I', data, 4, version)
+                struct.pack_into('<I', data, 12, len(data))
+                before = bytes(data)
+                rows = [(0x12000 + i, 7, 20, 20, 20, 0,
+                         i.to_bytes(2, 'little') + bytes((0, 63, 127, 191, 255)) * 79 + b'\0\x80\xff')
+                        for i in range(80)]
+                original = library.rewrite_directory(before, source.counts[5], set(), rows, output_version=version)
+                result, report = compact.compact(original, before)
+                self.assertGreater(report['saved_bytes'], 0)
+                self.assertEqual(compact.view(result).version, version)
+                self.assertEqual(independent_pixels(original), independent_pixels(result))
+                self.assertTrue(library.verify_preserved(before, result, source.counts[5], set())['exact_complete_old_payload'])
+                candidate = compact.view(result)
+                baseline_view = compact.view(before)
+                old_tiles, new_tiles = tiles.TileReader(baseline_view), tiles.TileReader(candidate)
+                for image, row in enumerate(baseline_view.images):
+                    old_image = old_tiles.image_raw(image) if row[3] == 6 else baseline_view.image_raw(image)
+                    new_image = new_tiles.image_raw(image) if row[3] == 6 else candidate.image_raw(image)
+                    self.assertEqual(old_image, new_image)
+                # A version switch is never a shortcut around the baseline.
+                changed = bytearray(original)
+                struct.pack_into('<I', changed, 4, 37 if version == 36 else 36)
+                with self.assertRaisesRegex(ValueError, 'upgrade or downgrade'):
+                    compact.compact(bytes(changed), before)
+
     def test_existing_groups_and_complete_old_payload_stay_exact(self):
         before, auxiliary = baseline()
         original = append(before, auxiliary)

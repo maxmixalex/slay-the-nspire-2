@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import compact_retained_colors as colors
 import content_tiles as tiles
 import fake_merchant_ui10_assets as speech
+import history_header_ui10_assets as history
 from patch_feedback_assets import write_image
 from patch_frontend_assets import patch_pack
 import repack_retained as retained
@@ -71,6 +72,29 @@ class FakeMerchantSpeechAssetsTest(unittest.TestCase):
                          'unchanged_preexisting_strings', 'verified_all_offset_relocations'):
                 self.assertTrue(proof[name])
             self.assertEqual(split.layout(after, 'eng')['version'], 37)
+            # The later History icon append retains the complete UI37 image
+            # catalogue, filtered groups and already grouped locale tails.
+            lock = write_image(cache, 'synthetic-history-lock', image.resize((6, 6)))
+            final, lock_proof = patch_pack(after, dict(images=[lock], localized_text={'eng': {}}), cache,
+                base_aux=na+6, auxiliary=na+7, input_version=37, version=history.VERSION,
+                texts=(), base_clips=nc, base_strings=ns)
+            current = tiles.PackView(final, na+7, versions=(38,))
+            self.assertEqual(current.counts, (ni+7, ng, ns, nc, nk, na+7))
+            self.assertEqual(current.aux[:-1], target.aux)
+            self.assertEqual(current.images[-1][1:3], (6, 6))
+            tile_reader = tiles.TileReader(current)
+            for i, entry in enumerate(target.images):
+                self.assertEqual(b.image_raw(i) if entry[3] == 6 else target.image_raw(i),
+                                 tile_reader.image_raw(i) if entry[3] == 6 else current.image_raw(i))
+            for i in range(ng):
+                self.assertEqual(target.glyph_payload(i), current.glyph_payload(i))
+                self.assertEqual(target.glyph_alpha(i), current.glyph_alpha(i))
+            for i in range(ns):
+                self.assertEqual(target.string_payload(i), current.string_payload(i))
+            for name in ('unchanged_old_payload', 'unchanged_old_directory_indices',
+                         'unchanged_preexisting_strings', 'verified_all_offset_relocations'):
+                self.assertTrue(lock_proof[name])
+            self.assertEqual(split.layout(final, 'eng')['version'], 38)
 
 
 if __name__ == '__main__':

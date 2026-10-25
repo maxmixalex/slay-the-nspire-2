@@ -1,6 +1,7 @@
-#include "app.hpp"
+#include "../src/app.cpp"
 #include "world_run.hpp"
 #include "content_fixture.hpp"
+#include "source_scene_oracle.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -15,6 +16,44 @@ static HitRegion hit(HitKind kind,int value){a.render();for(int i=a.hit_count-1;
 static void settle(){for(unsigned i=0;i<50;++i)a.advance(33);a.render();}
 static void click(HitKind kind,int value){const auto h=hit(kind,value);a.pointer_move(h.x+h.w/2,h.y+h.h/2);a.pointer_button(true);a.pointer_button(false);}
 static void capture(const char*name){if(!captures)return;a.render();FILE*f=std::fopen((std::string(captures)+"/"+name+".ppm").c_str(),"wb");CHECK(f);std::fprintf(f,"P6\n320 240\n255\n");for(auto p:a.pixels){const uint8_t pixel[]={uint8_t((p>>11)*255/31),uint8_t(((p>>5)&63)*255/63),uint8_t((p&31)*255/31)};CHECK(std::fwrite(pixel,1,3,f)==3);}CHECK(!std::fclose(f));}
+static void history_header_scene(const std::vector<uint8_t>&pack,const UiRunHistory&record){
+    using namespace spire_test;const auto project=[](int n){return (n*4+10)/21;};
+    const UiHistoryHeaderLayout ordinary(10,6,6,18,3);
+    CHECK(ordinary.hp==278&&ordinary.hp_width==120&&ordinary.gold_icon==422&&ordinary.gold==472&&ordinary.gold_width==72);
+    CHECK(ordinary.potions==568&&ordinary.potion_width==221&&ordinary.floor_icon==835&&ordinary.floor==885&&ordinary.floor_width==32);
+    CHECK(ordinary.timer_icon==989&&ordinary.time==1039&&ordinary.time_width==95);
+    CHECK(UiHistoryHeaderLayout::info_y(0)==32&&UiHistoryHeaderLayout::info_y(3)==122);
+    const UiHistoryHeaderLayout many(40,30,20,36,16);CHECK(many.hp_width==210&&many.gold_width==158&&many.potion_width==1027&&many.time>1680);
+    if(pack.empty())return;
+    const auto letters=[&](const std::string&value,unsigned size,unsigned face,int tracking){auto result=scene_letters(a.content,pack,value,size,face);
+        if(a.content.english())for(unsigned i=0;i+1<result.size();++i)result[i].advance+=project(int(i+1)*tracking)-project(int(i)*tracking);return result;};
+    const auto sub=[](std::string&text,const char*key,const std::string&value){const auto at=text.find(key);CHECK(at!=std::string::npos);text.replace(at,std::strlen(key),value);};
+    UiRunHistory r=record;
+    for(unsigned mode=0;mode<3;++mode)for(int scroll:{0,5}){r.mode=uint8_t(mode);r.ascension=mode?10:0;r.partial=mode==2;
+        const auto paint=[&](bool visible){for(auto&p:a.pixels)p=scene_rgb(21,40,65);Canvas canvas{a};if(!visible)canvas.text_visible_characters=0;history_header(canvas,r,0,scroll);};
+        paint(true);const std::vector<uint16_t>actual(a.pixels,a.pixels+320*240);paint(false);std::vector<uint16_t>expected(a.pixels,a.pixels+320*240);
+        const auto info=[&](std::string value,unsigned row,unsigned opacity=255){const auto glyphs=letters(value,5,0,1);CHECK(!glyphs.empty());const int width=scene_width(glyphs);
+            scene_label(expected,glyphs,project(1550)-width,project(32+int(row)*30)-scroll,width,project(32),5,scene_rgb(255,246,226),128,0,0,0,false,false,255,0,0,4096,false,1,0,opacity);};
+        std::string value=a.content.world_string("run_history","INFO.DATE_TIME");
+        sub(value,"{Date}",a.content.english()?"October 24, 2026":"2026 十月 24");sub(value,"{Time}",a.content.english()?"10:40 AM":"10:40 上午");info(value,0);
+        value=a.content.world_string("run_history","INFO.SEED");sub(value,"{Seed}","H1ST0RY");info(value,1);
+        value=a.content.world_string("run_history","GAME_MODE.title");sub(value,"{PlayerCount}",a.content.locale_string("run_history","PLAYER_COUNT.singleplayer"));
+        sub(value,"{GameMode}",a.content.locale_string("run_history",mode==0?"GAME_MODE.standard":mode==1?"GAME_MODE.custom":"GAME_MODE.daily"));info(value,2);info("—",3,128);
+        if(r.ascension){const auto glyphs=letters("10",4,0,1);
+            // The70px minimum expands the full-anchor54/57px ascension
+            // rectangle symmetrically; its Label retains the14x88 offsets.
+            scene_label(expected,glyphs,project(190),project(50)-scroll,project(14),project(88),4,scene_rgb(255,246,226),32,2,scene_rgb(135,41,24),0,true,false,255,0,0,4096,false,1,1);}
+        const unsigned face=a.content.english()?5:0;
+        const auto counter=[&](const std::string&text,int sx,int width,uint16_t color){const auto glyphs=letters(text,6,face,2);
+            scene_label(expected,glyphs,project(sx),project(32)-scroll,project(width),project(83),6,color,128,0,0,0,false,false);};
+        counter("61/80",278,120,scene_rgb(255,100,100));counter("145",472,72,scene_rgb(239,200,81));
+        const int floor_width=(int(scene_width(letters("45",6,face,2)))*21+3)/4;
+        counter("45",885,floor_width,scene_rgb(197,218,206));const std::string duration=r.partial?"—":"1:02:03";
+        const int time_width=std::max(72,(int(scene_width(letters(duration,6,face,2)))*21+3)/4);
+        counter(duration,885+floor_width+24+24+24+48+2,time_width,scene_rgb(239,200,81));
+        unsigned ink=0,top_ink=0;for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"history header mode=%u scroll=%d pixel=%u,%u actual=%u expected=%u\n",mode,scroll,i%320,i/320,actual[i],expected[i]);CHECK(actual[i]==expected[i]);ink+=actual[i]!=a.pixels[i];top_ink+=i<6*320&&actual[i]!=a.pixels[i];}CHECK(ink>0);if(scroll)CHECK(top_ink>0);
+    }
+}
 int main(int argc,char**argv){
     std::vector<uint8_t> bytes;if(argc>1){FILE*f=std::fopen(argv[1],"rb");CHECK(f);bytes.resize(spire_test::pack_size(f));CHECK(std::fread(bytes.data(),1,bytes.size(),f)==bytes.size());std::fclose(f);CHECK(a.init(bytes.data(),bytes.size(),{}));}if(argc>2)captures=argv[2];
     new_run(a.game,0x8813,false);CHECK(world_begin_run(a.game));a.title=true;
@@ -22,6 +61,7 @@ int main(int argc,char**argv){
     std::strcpy(r.seed_text,"H1ST0RY");r.relic_count=36;for(unsigned i=0;i<r.relic_count;++i)r.relics[i]=uint16_t(i);
     r.relics[0]=WorldRelicNinjaScroll;r.relics[1]=WorldRelicDustyTome;
     r.potion_count=3;r.potions[0]=unsigned(Potion::Fire);r.potions[2]=unsigned(Potion::FairyInABottle);
+    history_header_scene(bytes,r);
     for(unsigned i=0;i<r.floor_count;++i){auto&f=r.floors[i];f.floor=uint16_t(i+1);f.act=uint8_t(i/15);f.region=f.act;f.room=unsigned(i%6==0?WorldRoom::Rest:i%7==0?WorldRoom::Shop:i%8==0?WorldRoom::Treasure:WorldRoom::Monster);f.hp=60;f.max_hp=80;f.gold=uint16_t(i*3);f.turns=4;}
     r.deck_count=60;for(unsigned i=0;i<r.deck_count;++i)r.deck[i].card={CardKind(i/2),0};
     // SerializableCard grouping ignores progress values but retains upgrades

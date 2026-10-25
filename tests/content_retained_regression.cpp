@@ -40,7 +40,7 @@ struct Fixture {
     explicit Fixture(unsigned version=20){
         const unsigned strings=version>=34?Ui7StringCount:LocaleStringCount;
         const unsigned clips=version>=34?BestiaryKaiserAnimationKinds:MerchantEffectsAnimationKinds;
-        const unsigned aux=version>=SpeechBubbleContentVersion?unsigned(SpeechBubbleAuxiliaryCount):version>=34?unsigned(GameOverTransitionAuxiliaryCount):
+        const unsigned aux=version>=HistoryHeaderContentVersion?unsigned(HistoryHeaderAuxiliaryCount):version>=SpeechBubbleContentVersion?unsigned(SpeechBubbleAuxiliaryCount):version>=34?unsigned(GameOverTransitionAuxiliaryCount):
             version>=21?unsigned(TitleEffectsAuxiliaryCount):unsigned(MerchantEffectsAuxiliaryCount);
         base=40+Images*16+16+strings*8+clips*16+CardKinds*16+aux*4;
         const unsigned table=base+64;costs=table+16;
@@ -195,6 +195,8 @@ void roundtrip(bool streamed,unsigned version,unsigned mode=0){
     CHECK(ordinary.w==2&&ordinary.h==1&&sparse.w==320&&sparse.h==240&&source.read_bytes==initial);
     CHECK(content->version()==version);
     CHECK(content->has_speech_bubble_assets()==(version>=SpeechBubbleContentVersion));
+    CHECK(content->has_history_header_assets()==(version>=HistoryHeaderContentVersion));
+    if(version>=HistoryHeaderContentVersion)CHECK(content->ui_image(I10_HistoryReminderLock)==0);
     if(version>=SpeechBubbleContentVersion)CHECK(content->has_ftue_assets()&&content->has_selection_assets()&&content->has_inspection_assets()&&content->ui_image(I10_FakeMerchantWelcome)==0);
     CHECK(content->ui_image(U_TitleBackground)==0);
     for(unsigned i=0;i<3;++i)CHECK(content->ui_image(U_TitleBackdrop+i)==(version>=21?int(i+2):-1));
@@ -355,7 +357,7 @@ void reentrant_transfer_and_failure(unsigned mode=0){
 }
 }
 int main(){
-    for(unsigned version:{20u,21u,34u,35u,36u,37u})for(bool streamed:{false,true})roundtrip(streamed,version);
+    for(unsigned version:{20u,21u,34u,35u,36u,37u,38u})for(bool streamed:{false,true})roundtrip(streamed,version);
     for(unsigned mode:{1u,2u})for(bool streamed:{false,true})roundtrip(streamed,RetainedFilterContentVersion,mode);
     for(unsigned mode:{1u,2u})for(bool streamed:{false,true})roundtrip(streamed,SpeechBubbleContentVersion,mode);
     filter_all_bits();filtered_bounds();requested_bounds();

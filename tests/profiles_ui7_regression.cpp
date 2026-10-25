@@ -98,7 +98,7 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
             app.pointer.captured={106,int16_t(saved?171:176),38,10,HitKind::Menu,2,true};app.pointer.context=app.input_context();paint(true);
             app.map_clock_ms+=state==2?200:400;paint(true);}
         if(state==4){app.pointer.held=false;paint(true);app.map_clock_ms+=400;paint(true);}
-        const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);paint(false);std::vector<uint16_t>expected(app.pixels,app.pixels+320*240);
+        const std::vector<uint16_t>actual(app.pixels,app.pixels+320*240);std::vector<uint16_t>expected(320*240,scene_rgb(21,40,65));
         for(unsigned i=0;i<count;++i){auto letters=scene_letters(pack,scene_text(keys[saved][i]),6,0);
             if(app.content.english())for(unsigned n=0;n+1<letters.size();++n)letters[n].advance+=((int(n+1)*8+10)/21)-((int(n)*8+10)/21);
             const int width=int(scene_width(letters)),center_y=((699+(450-int(count)*50)/2+int(i)*50+25)*4+10)/21;
@@ -107,6 +107,10 @@ static void title_source_scene(const std::vector<uint8_t>&pack,const char*captur
             const uint16_t color=!selected||state==4?scene_rgb(255,246,226):state==3?scene_rgb(255,255,255):scene_rgb(239,200,81);
             scene_label(expected,letters,125-width/2,center_y-4,width,8,6,color,0,3,0,0,false,false,128,125,center_y,scale,false,1,0,alpha);
         }
+        // The authored highlight siblings paint after the Label. Preserve
+        // that order when isolating the independently rasterized text; a
+        // highlight-under-text baseline changes their overlapping antialias.
+        Canvas highlight{app};highlight.pixels=expected.data();highlight.text_visible_characters=0;title_menu_labels(highlight);
         for(unsigned i=0;i<actual.size();++i){if(actual[i]!=expected[i])std::fprintf(stderr,"title saved=%u state=%u pixel=%u,%u actual=%u expected=%u\n",saved,state,i%320,i/320,actual[i],expected[i]);SCENE(actual[i]==expected[i]);}
     }
     // Source coordinates include the inherited half-anchor and the settled
