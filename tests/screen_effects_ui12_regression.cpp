@@ -158,6 +158,17 @@ static bool doom_camera(){
  for(unsigned i=0;i<a.screen_motion.count;++i)if(match(a.screen_motion.cues[i]))return true;
  return false;
 }
+static void first_world_combat(){
+ fresh();a.forget_run_checkpoint();CHECK(world_begin_run(a.game,reference::ActKind::Overgrowth,0));
+ // Prior noncombat outcomes are a routing fixture; enter the real first
+ // authored encounter through world_choose_point, not a debug command.
+ for(unsigned step=0;step<32&&!world_room_is_combat(a.game);++step){
+  if(world_can_travel(a.game)){uint8_t points[reference::Columns];const unsigned count=world_available_points(a.game,points,reference::Columns);CHECK(count);CHECK(world_choose_point(a.game,points[0]));}
+  else{if(a.game.original_events.active)a.game.original_events={};CHECK(world_finish_room(a.game));}
+ }
+ CHECK(a.game.phase==Phase::Combat&&a.game.world.active&&a.game.enemy_world.active);a.reset_presentation();a.render();
+ for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}CHECK(!a.combat_preparation.active&&validate(a.game));
+}
 static void actual_doom(){
  scenario="Doom's real immediate check emits only on execution";
  for(unsigned lethal=0;lethal<2;++lethal){
@@ -171,13 +182,24 @@ static void actual_doom(){
  }
  scenario="Doom's own-side hooks cover the enemy and player without changing save bytes";
  for(unsigned player=0;player<2;++player){
-  encounter(EncounterId::NibbitsNormal,EnemyId::Nibbit);auto&s=a.game;
+  scenario=player?"player Doom actual death camera":"enemy Doom actual side-end camera";
+  if(player)first_world_combat();else encounter(EncounterId::NibbitsNormal,EnemyId::Nibbit);auto&s=a.game;
   if(player){s.hp=3;s.necro.player_doom=3;}else{s.enemies[0].hp=1;s.expansion.doom[0]=1;}
   a.reset_presentation();a.render();a.screen_motion.reset();direct=s;CHECK(end_turn(direct));
   {UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(s));}
   equal_save();CHECK(player?s.phase==Phase::Dead:!s.enemies[0].hp);CHECK(doom_camera());
-  bool fired=false;for(unsigned i=0;i<250;++i){a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;}
-  CHECK(fired);equal_save();
+  const auto queued=a.screen_motion;const unsigned at=a.animation,linger=a.combat_linger_until;
+  uint32_t doom_at=queued.punch.at;for(unsigned i=0;i<queued.count;++i)if(queued.cues[i].angle==2048&&queued.cues[i].strength==5)doom_at=queued.cues[i].at;
+  unsigned retained=0,displaced=0;bool fired=false;for(unsigned i=0;i<250;++i){
+   a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;
+   if(player&&a.animation*33u-doom_at<300u){
+    CHECK(screen_combat_target(a)&&a.screen_motion.target==queued.target&&a.screen_motion.punch.at==doom_at);
+    CHECK(a.game_over_presentation.bound&&a.game.phase==Phase::Dead&&a.game.world.finished);
+    int x=0,y=0;a.screen_scene_offset(x,y);displaced+=x||y;++retained;
+   }
+  }
+  if(!fired){std::fprintf(stderr,"Doom trace: player=%u phase=%u tick=%u linger=%u queued=%u punch=%u/%u at=%u target=%u -> %u\n",player,unsigned(s.phase),at,linger,queued.count,queued.punch.strength,queued.punch.angle,queued.punch.at,queued.target,a.screen_motion.target);for(unsigned i=0;i<queued.count;++i){const auto&q=queued.cues[i];std::fprintf(stderr," cue at=%u kind=%u strength=%u angle=%u\n",q.at,q.kind,q.strength,q.angle);}}
+  CHECK(fired);if(player)CHECK(retained>=9&&displaced>0&&!screen_combat_target(a)&&a.game_over_presentation.bound);equal_save();
  }
 }
 static void advance_room(unsigned ms){while(ms){const unsigned step=std::min(ms,33u);a.advance(step);a.render();ms-=step;}}

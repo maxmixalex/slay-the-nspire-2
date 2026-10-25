@@ -182,8 +182,14 @@ void App::observe_run_fact(const State&s,unsigned kind,unsigned value){
         // NDoomVfx starts only when Doom actually executes, including a
         // protected/reviving owner. A large counter or later HP delta does
         // not imply that this command ran. This notice is never a run stat.
-        if(&s==&game&&value<=unsigned(s.enemy_count))screen_effect_at(ui_feedback_bound(*this)?combat_feedback.effect_at:animation,
-            ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,2048);
+        if(&s==&game&&value<=unsigned(s.enemy_count)){
+            const uint32_t at=ui_feedback_bound(*this)?combat_feedback.effect_at:animation;
+            screen_effect_at(at,ScreenShakePresentation::Punch,ScreenShakePresentation::Weak,300,2048);
+            // The player's Doom command can end its entire combat at this
+            // instant. Retain its scene through the 300ms source punch;
+            // otherwise the next frame binds the death screen and clears it.
+            if(!value)combat_linger_until=ui_feedback_later(combat_linger_until,at+10u);
+        }
         return;
     }
     auto&r=progress.current;if(!progress_matches(r,s)||r.outcome)return;
