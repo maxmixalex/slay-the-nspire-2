@@ -39,7 +39,7 @@ def build_art(pack, runtime, cache):
     cache.mkdir(parents=True, exist_ok=True)
     with SpineSampler(pack, runtime=runtime, work_dir=cache/'spine') as sampler:
         meta = sampler.metadata(RESOURCE)
-        clip = next(row for row in meta['animations'] if row['name'] == 'animation')
+        clip = next(row for row in meta['clips'] if row['name'] == 'animation')
         tiles.require(abs(clip['duration_ms']-3000) < 1, 'Pinned logo duration changed')
         setup = sampler.sample(RESOURCE, '', [0])[0]
         vertices = np.concatenate([np.asarray(row['vertices']).reshape(-1, 2) for row in setup['draw']])
