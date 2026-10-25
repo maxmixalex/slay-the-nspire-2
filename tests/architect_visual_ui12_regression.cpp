@@ -88,6 +88,24 @@ static void capture(const char*name){
 static void write_file(const char*name,const uint8_t*bytes,size_t size){
  const auto path=std::string(captures)+"/"+name;FILE*f=std::fopen(path.c_str(),"wb");CHECK(f);CHECK(std::fwrite(bytes,1,size,f)==size);CHECK(!std::fclose(f));
 }
+static void dialogue_text(){
+ if(!original_art)return;
+ char key[256]{},text[8192]{};CHECK(original_event_text_key(a.game,-1,true,key,sizeof key));
+ // The source keeps this combat-event conversation in ancients.json,
+ // unlike ordinary static event descriptions in events.json.
+ CHECK(*a.content.world_string("ancients",key));
+ a.original_event_text(-1,true,text,sizeof text);CHECK(*text);
+}
+static void read_dialogue_end(unsigned character){
+ if(!original_art||!a.event_body_scroll.maximum)return;
+ HitRegion body{};bool found=false;for(int i=0;i<a.hit_count;++i)if(a.hits[i].kind==HitKind::EventScroll&&!a.hits[i].value&&a.hits[i].enabled){body=a.hits[i];found=true;break;}
+ CHECK(found&&body.y>=166&&body.y+body.h<=201);
+ a.pointer_move(body.x+body.w/2,body.y+body.h/2);a.pointer_button(true);a.pointer_button(false);a.pointer.visible=false;
+ CHECK(a.event_body_focus);for(unsigned i=0;i<128&&a.event_body_scroll.position<a.event_body_scroll.maximum;++i){a.input(Key::Down);advance_room(33);}
+ advance_room(250);CHECK(a.event_body_scroll.position==a.event_body_scroll.maximum);equal_save();
+ char name[96];std::snprintf(name,sizeof name,"%s-dialogue-tail",names[character]);capture(name);
+ a.input(Key::Confirm);CHECK(!a.event_body_focus&&a.game.phase==Phase::Event);equal_save();
+}
 static void export_entry(){
  if(!captures)return;
  scenario="production first Architect entry save and separate partial-history profile";
@@ -108,6 +126,8 @@ static void run_character(unsigned character,bool fast){
  const unsigned intro=character==1?(fast?3750u:3950u):2250u;
  CHECK(a.screen_motion.sequence_end(entered)==entered+intro);
  if(!character&&!fast)export_entry();
+ static char stage[96];std::snprintf(stage,sizeof stage,"%s %s source actors and dialogue",names[character],fast?"Fast":"Normal");scenario=stage;
+ dialogue_text();
  const auto pose=source_pose(character),enemy=source_pose(character,true);
  if(original_art){CHECK(a.content.world_clip("Architect","attack")==49&&a.content.world_clip("Architect","hurt")==50&&a.content.world_clip("Architect","idle_loop")==51);
   const auto f=architect_scene_frame(a);CHECK(f.player==idle_clips[character]&&f.architect==51&&f.player_loop&&f.architect_loop);
@@ -125,6 +145,7 @@ static void run_character(unsigned character,bool fast){
  if(original_art){const auto f=architect_scene_frame(a);CHECK(f.player==idle_clips[character]&&f.architect==51&&f.player_loop&&f.architect_loop);
   visible_original(51,sample(51,a.map_clock_ms,true),enemy);visible_original(idle_clips[character],sample(idle_clips[character],a.map_clock_ms,true),pose);}
  char name[128];if(!fast){std::snprintf(name,sizeof name,"%s-idle-dialogue",names[character]);capture(name);}
+ if(!fast)read_dialogue_end(character);
  if(character==4&&original_art){
   // A prior combat pet value cannot add an entity to VisualOnly.Allies.
   const auto saved_hp=a.game.expansion.osty_hp,saved_max=a.game.expansion.osty_max_hp;
@@ -135,6 +156,7 @@ static void run_character(unsigned character,bool fast){
  uint32_t began=0;for(unsigned page=0;page<5&&a.game.phase==Phase::Event;++page){
   for(unsigned i=0;i<200&&!a.room_presentation.event.option_ready(0,a.map_clock_ms);++i)advance_room(33);
   CHECK(a.room_presentation.event.option_ready(0,a.map_clock_ms));began=a.map_clock_ms;
+  dialogue_text();
   direct=a.game;CHECK(original_event_choose(direct,0));a.cursor=0;a.input(Key::Confirm);a.render();equal_save();
  }
  CHECK(a.game.phase==Phase::Complete);
@@ -154,8 +176,9 @@ static void run_character(unsigned character,bool fast){
  until(began+terminal-1);CHECK(!a.game_over_presentation.initial_age(a.map_clock_ms)&&!a.game_over_presentation.black_alpha(a.map_clock_ms));equal_save();
  until(began+terminal);CHECK(a.game_over_presentation.initial_age(a.map_clock_ms)==0);visible_original(int(CharacterDeathAnimationFirst+character),0,pose);equal_save();
  if(!character&&!fast)capture("ironclad-death-origin");
- until(began+terminal+200);death_scene(character,200);repeat_render();
+ until(began+terminal+200);
  if(!fast){std::snprintf(name,sizeof name,"%s-death-200ms",names[character]);capture(name);}
+ death_scene(character,200);repeat_render();
  until(began+architect_start+1500);if(original_art){const auto f=architect_scene_frame(a);CHECK(f.architect==51&&f.architect_loop);}
  const unsigned tail[]={2333,1867,2233,4167,2333};until(began+terminal+tail[character]+1);equal_save();
  CHECK(a.game_over_button_ready());a.input(Key::Confirm);a.render();CHECK(a.game_over_summary);equal_save();
@@ -168,10 +191,11 @@ static void run_character(unsigned character,bool fast){
  }
 }
 int main(int argc,char**argv){
- CHECK(argc==1||argc==2||argc==3);captures=argc==3?argv[2]:nullptr;geometry();
+ CHECK(argc>=1&&argc<=4);captures=argc>=3?argv[2]:nullptr;geometry();
+ const char*locale=argc==4?argv[3]:"eng";CHECK(!std::strcmp(locale,"eng")||!std::strcmp(locale,"zhs"));
  std::vector<uint8_t> common,language;SplitResourceSource split;
- if(argc>=2){common=read(std::string(argv[1])+"/nSpire2.common.tns");language=read(std::string(argv[1])+"/nSpire2.eng.tns");
-  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),ResourceLanguage::English));
+ if(argc>=2){common=read(std::string(argv[1])+"/nSpire2.common.tns");language=read(std::string(argv[1])+"/nSpire2."+locale+".tns");
+  CHECK(split.open(ResourceSource::memory(common.data(),common.size()),ResourceSource::memory(language.data(),language.size()),!std::strcmp(locale,"zhs")?ResourceLanguage::Chinese:ResourceLanguage::English));
   CHECK(a.init(split.source(),{}));original_art=true;}
  for(unsigned fast=0;fast<2;++fast)for(unsigned character=0;character<5;++character)run_character(character,fast);
  std::printf("Architect visual UI12: %u checks passed; five characters x Normal/Fast, production event entry, canonical saves%s\n",checks,original_art?", original actor texels and terminal two-actor composition":" (asset-independent)");

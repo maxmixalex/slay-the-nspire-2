@@ -285,7 +285,14 @@ void App::original_event_text(int option,bool description,char*out,size_t cap)co
    localized_text("ancients",key,out,cap,int(id));return;
   }
  }
- if(original_event_text_key(game,option,description,key,sizeof key)){WorldTextContext x{this,"events",{},int(game.original_events.id)};x.option=option;x.description=description;wt_model_key(x,key);char raw[8192]{};TextBuffer b{raw,sizeof raw,0};b.text(content.world_string("events",key));wt_formatter(out,cap,&x).format(raw);}
+ if(original_event_text_key(game,option,description,key,sizeof key)){
+  // TheArchitect is an EventModel with LocTable="ancients", including its
+  // per-line next labels and final Proceed. Its talk keys are absent from
+  // the ordinary events table; keep the same bound-value formatter.
+  const char*table=game.original_events.id==OriginalEventId::TheArchitect?"ancients":"events";
+  WorldTextContext x{this,table,{},int(game.original_events.id)};x.option=option;x.description=description;wt_model_key(x,key);
+  char raw[8192]{};TextBuffer b{raw,sizeof raw,0};b.text(content.world_string(table,key));wt_formatter(out,cap,&x).format(raw);
+ }
 }
 static card_keyword_text::Labels wt_card_keyword_labels(const Content&content){
  card_keyword_text::Labels labels{};

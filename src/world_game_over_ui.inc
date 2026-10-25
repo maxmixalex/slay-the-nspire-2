@@ -208,7 +208,14 @@ static void native_game_over_screen(Canvas&c){
    game_over_format(a,game_over_text(a,key),quote,sizeof quote);Canvas italic=label;italic.font_face=source_label_face(a.content.original_label_fonts(),6);italic.opacity=uint8_t(div255(italic.opacity*motion.quote_alpha(now)));
    const int height=mn(100,italic.paragraph(quote,26,0,268,0,0,10)*13+2);
    italic.paragraph_fitted(quote,26,motion.quote_y(now)+8,268,height,10,rgb(255,100,100),10,true);
-  }else label.paragraph_fitted(a.content.string(PartialHistoryText),26,96,268,105,10,Muted,10,true);
+  }else{
+   // A compatible older save lacks score facts, but its explanatory text
+   // still belongs to the victory quote stage. Do not cover the retained
+   // Architect sequence or the200ms terminal fade with an opaque fallback.
+   const unsigned age=motion.initial_age(now),elapsed=age<motion.intro_delay()?0:age-motion.intro_delay();
+   label.opacity=uint8_t(div255(label.opacity*255*room_curve::linear(elapsed,2000)/4096));
+   label.paragraph_fitted(a.content.string(PartialHistoryText),26,96,268,105,10,Muted,10,true);
+  }
   game_over_button(c,ContinueX,UiAction::GameOverSummary,game_over_text(a,"BUTTON.continue","Continue"),InputCommand::Select);return;
  }
  // The original terminal sequence remains timed; its readable summary is a

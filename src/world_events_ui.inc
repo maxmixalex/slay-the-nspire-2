@@ -146,8 +146,10 @@ static void native_architect_dialogue(Canvas&c){
   c.ui(I6_ScrollbarGrabber,sx-2,scroll.thumb_y(sy,length)-5,9,10);
   c.hit(tx,ty,tw,th,HitKind::EventScroll,0);c.hit(sx-4,ty,13,th,HitKind::EventScroll,1);
  }
- char label[256]{};native_event_option(a,0,false,label,sizeof label);
- if(!e.finished){const char*next=a.content.world_string("ancients",player?"THE_ARCHITECT.CONTINUE":"THE_ARCHITECT.RESPOND");if(*next){label[0]=0;TextBuffer b{label,sizeof label,0};b.text(next);}}
+ char label[256]{};a.original_event_text(0,false,label,sizeof label);
+ // A line's authored next label takes precedence over Continue/Respond.
+ if(!*label&&!e.finished){const char*next=a.content.world_string("ancients",player?"THE_ARCHITECT.CONTINUE":"THE_ARCHITECT.RESPOND");TextBuffer b{label,sizeof label,0};b.text(next);}
+ if(!*label)native_event_option(a,0,false,label,sizeof label);
  const bool ready=motion.option_ready(0,a.map_clock_ms);a.cursor=0;
  // NEventOptionButton still delays/enables at1s Normal / .5s Fast. Start
  // the retained Proceed image when this line is created, not another .5s
