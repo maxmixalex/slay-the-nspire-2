@@ -175,7 +175,8 @@ static void actual_doom(){
   encounter(EncounterId::NibbitsNormal,EnemyId::Nibbit);auto&s=a.game;
   s.card_count=s.hand.count=1;s.draw.count=s.discard.count=s.exhaust.count=0;s.cards[0]={NecroEndOfDays,0};s.hand.ids[0]=0;s.zones[0]=Zone::Hand;
   for(int i=0;i<s.enemy_count;++i)s.enemies[i].hp=s.enemies[i].max_hp=500;
-  s.enemies[0].hp=lethal?29:100;a.reset_presentation();a.render();a.screen_motion.reset();direct=s;
+  s.enemies[0].hp=lethal?29:100;a.reset_presentation();a.render();
+  for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}CHECK(!a.combat_preparation.active);a.screen_motion.reset();direct=s;
   CHECK(play(direct,0,0));{UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(play(s,0,0));}
   equal_save();CHECK(bool(!s.enemies[0].hp)==bool(lethal));CHECK(doom_camera()==bool(lethal));
   if(lethal){bool fired=false;for(unsigned i=0;i<200;++i){a.advance(33);a.render();fired|=a.screen_motion.punch.angle==2048&&a.screen_motion.punch.strength==5;}CHECK(fired);equal_save();}
@@ -185,7 +186,8 @@ static void actual_doom(){
   scenario=player?"player Doom actual death camera":"enemy Doom actual side-end camera";
   if(player)first_world_combat();else encounter(EncounterId::NibbitsNormal,EnemyId::Nibbit);auto&s=a.game;
   if(player){s.hp=3;s.necro.player_doom=3;}else{s.enemies[0].hp=1;s.expansion.doom[0]=1;}
-  a.reset_presentation();a.render();a.screen_motion.reset();direct=s;CHECK(end_turn(direct));
+  a.reset_presentation();a.render();for(unsigned i=0;a.combat_preparation.active&&i<1024;++i){a.advance(33);a.render();}CHECK(!a.combat_preparation.active);
+  a.screen_motion.reset();direct=s;CHECK(end_turn(direct));
   {UiCoreObserver observer(a);a.begin_combat_feedback();CHECK(end_turn(s));}
   equal_save();CHECK(player?s.phase==Phase::Dead:!s.enemies[0].hp);CHECK(doom_camera());
   const auto queued=a.screen_motion;const unsigned at=a.animation,linger=a.combat_linger_until;
